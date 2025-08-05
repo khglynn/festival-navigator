@@ -245,6 +245,8 @@
         };
         
         const saveSelectionsToBlob = async () => {
+            if (!isOnlineMode) return;
+            
             updateSyncStatus('loading');
             
             try {
@@ -260,11 +262,8 @@
                     const result = await response.json();
                     lastSyncTime = result.timestamp;
                     updateSyncStatus('connected');
-                    console.log('Saved to Vercel Blob:', result);
                 } else {
-                    const errorData = await response.json();
-                    console.error('Save failed:', errorData);
-                    throw new Error(errorData.error || 'Save failed');
+                    throw new Error('Save failed');
                 }
             } catch (error) {
                 console.error('Save to blob failed:', error);
@@ -275,23 +274,17 @@
         };
         
         const loadSelectionsFromBlob = async () => {
+            if (!isOnlineMode) {
+                loadSelectionsFromLocal();
+                return;
+            }
+            
             try {
                 const response = await fetch(`${API_BASE}/selections`);
                 
                 if (response.ok) {
                     const data = await response.json();
-                    if (data && Object.keys(data).length > 0) {
-                        artistSelections = data;
-                        console.log('Loaded from Vercel Blob:', data);
-                    } else {
-                        // Try loading from localStorage if blob is empty
-                        const saved = localStorage.getItem('lollaSelections');
-                        if (saved) {
-                            artistSelections = JSON.parse(saved);
-                            // Save to blob for first time
-                            await saveSelectionsToBlob();
-                        }
-                    }
+                    artistSelections = data;
                     updateSyncStatus('connected');
                     
                     // Update UI
@@ -368,7 +361,7 @@
         // =================================================================
         
         let selectedPerson = null;
-        let currentDay = localStorage.getItem('currentDay') || "Thursday"; // Persist day selection
+        let currentDay = "Thursday";
         let artistSelections = {};
         const opacities = [0.5, 0.75, 1.0];
         let geminiApiKey = localStorage.getItem('geminiApiKey') || '';
@@ -378,11 +371,11 @@
         // --- CORE FUNCTIONS (Updated for Vercel Blob) ---
         // =================================================================
         
-        const saveSelections = async () => {
+        const saveSelections = () => {
             // Always save locally as backup
             localStorage.setItem('lollaSelections', JSON.stringify(artistSelections));
             // Also save to Vercel Blob
-            await saveSelectionsToBlob();
+            saveSelectionsToBlob();
         };
         
         const handleArtistClick = async (artistName) => {
@@ -411,7 +404,7 @@
             }
             
             // Save and sync
-            await saveSelections();
+            saveSelections();
             updateArtistHighlight(artistName);
         };
         
@@ -467,7 +460,6 @@
 
         const renderDay = (day) => {
             currentDay = day;
-            localStorage.setItem('currentDay', day); // Save selected day
             document.getElementById('schedule-day-title').textContent = `${day}'s Schedule`;
             const dayData = scheduleData[day];
             const activeStages = dayData.stages;
@@ -740,15 +732,8 @@
         
         document.addEventListener('DOMContentLoaded', async () => {
             // Initialize backend connection
-            console.log('Initializing Vercel Blob connection...');
             await loadSelectionsFromBlob();
             startSyncPolling();
-            
-            // Test connection by attempting a save if we have data
-            if (Object.keys(artistSelections).length > 0) {
-                console.log('Testing Vercel Blob save...');
-                await saveSelectionsToBlob();
-            }
             
             // API Key modal handlers
             document.getElementById('api-key-save').onclick = () => {
@@ -807,8 +792,8 @@
                 dayTabsContainer.appendChild(button);
             });
             
-            // Initialize with saved day or Thursday
-            renderDay(currentDay);
+            // Initialize with Thursday
+            renderDay('Thursday');
         });
         
     </script>
