@@ -1,0 +1,21 @@
+{
+  "name": "festival-navigator",
+  "version": "1.0.0",
+  "description": "Lollapalooza 2025 Festival Navigator with real-time collaboration",
+  "main": "index.html",
+  "scripts": {
+    "dev": "vercel dev",
+    "build": "echo 'No build step needed for static site'"
+  },
+  "dependencies": {
+    "@vercel/blob": "^0.23.4"
+  },
+  "keywords": [
+    "festival",
+    "lollapalooza",
+    "schedule",
+    "collaboration"
+  ],
+  "author": "Kevin HG",
+  "license": "MIT"
+}

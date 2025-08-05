@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lollapalooza 2025 - Shared Schedule</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* --- Base and Font Styles --- */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #111827;
+        }
+        .lolla-title {
+            font-family: 'Anton', sans-serif;
+            letter-spacing: 0.05em;
+        }
+        .stage-title {
+            font-family: 'Anton', sans-serif;
+            letter-spacing: 0.02em;
+        }
+        .artist-card {
+            transition: all 0.2s ease-in-out;
+            cursor: pointer;
+            border: 1px solid #374151;
+            position: relative;
+            overflow: hidden;
+        }
+        .artist-text-short {
+            font-size: 0.75rem;
+            line-height: 1rem;
+        }
+        .person-selector.selected {
+            transform: scale(1.1);
+            box-shadow: 0 0 15px rgba(255,255,255,0.2);
+            z-index: 10;
+        }
+        .day-tab.active {
+            background-color: #EC4899;
+            color: white;
+        }
+        .schedule-container {
+            background-color: #1F2937;
+            padding: 1rem;
+            border-radius: 0.5rem;
+        }
+        .highlight-artist::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            right: 2px;
+            bottom: 2px;
+            border: 2px dashed rgba(255, 255, 255, 0.8);
+            border-radius: 0.375rem;
+            pointer-events: none;
+        }
+        .schedule-grid-wrapper {
+             overflow-x: auto;
+        }
+        .schedule-grid {
+            display: grid;
+            grid-template-rows: auto repeat(44, 20px);
+            gap: 4px;
+            min-width: 1200px;
+        }
+        .time-label {
+            grid-column: 1;
+            text-align: right;
+            padding-right: 10px;
+            font-size: 12px;
+            color: #9CA3AF;
+            position: relative;
+            top: -7px;
+        }
+        .modal {
+            transition: opacity 0.25s ease;
+        }
+        .modal-content {
+            transition: transform 0.25s ease;
+        }
+        .gemini-button {
+            background-color: #4f46e5;
+            color: white;
+            font-weight: 600;
+            padding: 8px 16px;
+            border-radius: 9999px;
+            transition: background-color 0.2s;
+        }
+        .gemini-button:hover {
+            background-color: #4338ca;
+        }
+        .sync-status {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            z-index: 1000;
+        }
+        .sync-connected {
+            background-color: #10B981;
+            color: white;
+        }
+        .sync-disconnected {
+            background-color: #EF4444;
+            color: white;
+        }
+        .sync-loading {
+            background-color: #F59E0B;
+            color: white;
+        }
+    </style>
+</head>
+<body class="text-white p-2 md:p-6">
+    <!-- Sync Status Indicator -->
+    <div id="sync-status" class="sync-status sync-loading">Connecting...</div>
+
+    <div class="max-w-screen-2xl mx-auto">
+        <!-- Header Section -->
+        <header class="text-center mb-4">
+            <h1 class="lolla-title text-4xl md:text-6xl text-pink-400">LOLLAPALOOZA</h1>
+            <p class="text-xl md:text-2xl font-semibold text-gray-300">SHARED SCHEDULE 2025</p>
+            <p class="text-sm text-gray-400 mt-2">✨ Real-time collaboration - everyone's picks sync instantly!</p>
+        </header>
+
+        <!-- Setup Modal for First Time Users -->
+        <div id="setup-modal" class="modal fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50 hidden">
+            <div class="modal-content bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md transform scale-95">
+                <h3 class="text-xl font-bold mb-4 text-pink-400">Setup Your Backend</h3>
+                <p class="text-gray-300 mb-4">Enter your Supabase credentials to enable real-time sharing:</p>
+                <input type="text" id="supabase-url" class="w-full p-2 rounded bg-gray-700 border border-gray-600 text-white mb-3" placeholder="Supabase Project URL">
+                <input type="text" id="supabase-key" class="w-full p-2 rounded bg-gray-700 border border-gray-600 text-white mb-4" placeholder="Supabase Anon Key">
+                <div class="flex justify-end gap-3">
+                    <button id="setup-skip" class="py-2 px-4 rounded bg-gray-600 hover:bg-gray-500 transition">Use Offline</button>
+                    <button id="setup-save" class="py-2 px-4 rounded bg-pink-500 hover:bg-pink-600 transition">Connect</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Top Controls -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div class="p-4 bg-gray-800 rounded-lg shadow-lg">
+                <h2 class="text-lg font-bold text-center mb-3 text-pink-300">1. Select a Person</h2>
+                <div id="person-selectors" class="flex flex-wrap justify-center gap-3"></div>
+            </div>
+            <div class="p-4 bg-gray-800 rounded-lg shadow-lg">
+                <h2 class="text-lg font-bold text-center mb-3 text-pink-300">2. Choose a Day</h2>
+                <div id="day-tabs" class="flex flex-wrap justify-center gap-2"></div>
+            </div>
+        </div>
+
+        <!-- Main Schedule Display -->
+        <div class="schedule-container">
+            <div class="flex justify-between items-center mb-4">
+                <h2 id="schedule-day-title" class="text-2xl font-bold text-pink-300"></h2>
+                <div class="flex gap-2">
+                    <button id="sync-settings-btn" class="p-2 rounded-full hover:bg-gray-700 transition" title="Sync Settings">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-pink-400"><circle cx="12" cy="12" r="3"/><path d="M12 1v6m0 6v6m11-7h-6m-6 0H1"/></svg>
+                    </button>
+                    <button id="top-download-btn" class="p-2 rounded-full hover:bg-gray-700 transition" title="Download Schedule">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-pink-400"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    </button>
+                </div>
+            </div>
+            <div id="downloadable-content">
+                <div id="schedule-view" class="schedule-grid-wrapper"></div>
+                <div id="color-key-container" class="pt-4 hidden"></div>
+            </div>
+        </div>
+
+        <!-- Bottom Tools Section -->
+        <div class="mt-6 p-4 bg-gray-800 rounded-lg shadow-lg">
+            <h2 class="text-xl font-bold text-center mb-4 text-pink-300">Festival Tools ✨</h2>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 items-start">
+                <div class="text-center">
+                    <h3 class="text-lg font-semibold mb-2">Download Schedule</h3>
+                    <p class="text-sm text-gray-400 mb-3">Save the current day's schedule as a PNG image.</p>
+                    <button id="download-btn" class="gemini-button">Download as Image</button>
+                </div>
+                <div class="text-center">
+                    <h3 class="text-lg font-semibold mb-2">Group Plan Optimizer</h3>
+                     <p class="text-sm text-gray-400 mb-3">Find time conflicts and get a suggested plan for your group.</p>
+                    <button id="conflict-solver-btn" class="gemini-button">Find & Solve Conflicts</button>
+                </div>
+                <div class="text-center">
+                    <h3 class="text-lg font-semibold mb-2">Export All Likes</h3>
+                    <p class="text-sm text-gray-400 mb-3">Get a copy-paste list of the group's picks for all days.</p>
+                    <button id="export-likes-btn" class="gemini-button">Show Likes as List</button>
+                </div>
+                <div class="text-center">
+                    <h3 class="text-lg font-semibold mb-2">Share Group Link</h3>
+                    <p class="text-sm text-gray-400 mb-3">Copy the URL to share with your festival crew.</p>
+                    <button id="share-link-btn" class="gemini-button">Copy Share Link</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Info Modal -->
+    <div id="info-modal" class="modal fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-40 hidden">
+        <div class="modal-content bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-2xl transform scale-95 max-h-[90vh] overflow-y-auto">
+            <div id="info-modal-content"></div>
+            <button id="info-modal-close" class="absolute top-4 right-4 text-gray-400 hover:text-white text-2xl">&times;</button>
+        </div>
+    </div>
+
+    <script>
+        // =================================================================
+        // --- BACKEND CONFIGURATION ---
+        // =================================================================
+        
+        let supabase = null;
+        let isOnlineMode = false;
+        
+        // Initialize Supabase connection
+        const initSupabase = (url, key) => {
+            try {
+                supabase = window.supabase.createClient(url, key);
+                isOnlineMode = true;
+                updateSyncStatus('connected');
+                loadSelectionsFromDatabase();
+                subscribeToChanges();
+                return true;
+            } catch (error) {
+                console.error('Supabase connection failed:', error);
+                updateSyncStatus('disconnected');
+                return false;
+            }
+        };
+        
+        const updateSyncStatus = (status) => {
+            const statusEl = document.getElementById('sync-status');
+            statusEl.className = 'sync-status';
+            
+            switch(status) {
+                case 'connected':
+                    statusEl.classList.add('sync-connected');
+                    statusEl.textContent = '🟢 Synced';
+                    break;
+                case 'disconnected':
+                    statusEl.classList.add('sync-disconnected');
+                    statusEl.textContent = '🔴 Offline';
+                    break;
+                case 'loading':
+                    statusEl.classList.add('sync-loading');
+                    statusEl.textContent = '🟡 Syncing...';
+                    break;
+            }
+        };
+
+        // =================================================================
+        // --- DATA & CONFIGURATION ---
+        // =================================================================
+        
+        const people = {
+            'Kevin': { baseColor: '239, 68, 68' }, 'Molly': { baseColor: '59, 130, 246' }, 'Megan': { baseColor: '34, 197, 94' },
+            'Ross': { baseColor: '251, 191, 36' }, 'Other Fam': { baseColor: '168, 85, 247' }, 'Other Peeps': { baseColor: '236, 72, 153' }
+        };
+
+        const scheduleData = {
+            "Thursday": {
+                stages: ["T-Mobile", "Bud Light", "Lakeshore", "The Grove", "Tito's", "BMI", "DOLLAPALOOZA"],
+                artists: [
+                    { name: "Tyler, the Creator", stage: "T-Mobile", time: "9:00 PM - close" },
+                    { name: "Olivia Rodrigo", stage: "T-Mobile", time: "8:40 PM - 10:00 PM" },
+                    // ... (truncated for brevity - include your full artist list)
+                ]
+            },
+            // ... (include all your schedule data)
+        };
+
+        // =================================================================
+        // --- APPLICATION STATE ---
+        // =================================================================
+        
+        let selectedPerson = null;
+        let currentDay = "Thursday";
+        let artistSelections = {};
+        const opacities = [0.5, 0.75, 1.0];
+
+        // =================================================================
+        // --- DATABASE FUNCTIONS ---
+        // =================================================================
+        
+        const saveSelectionToDatabase = async (artistName, personName, level) => {
+            if (!isOnlineMode || !supabase) return;
+            
+            updateSyncStatus('loading');
+            
+            try {
+                if (level === 0) {
+                    // Delete selection
+                    await supabase
+                        .from('artist_selections')
+                        .delete()
+                        .eq('artist_name', artistName)
+                        .eq('person_name', personName);
+                } else {
+                    // Upsert selection
+                    await supabase
+                        .from('artist_selections')
+                        .upsert({
+                            artist_name: artistName,
+                            person_name: personName,
+                            selection_level: level,
+                            updated_at: new Date().toISOString()
+                        }, {
+                            onConflict: 'artist_name,person_name'
+                        });
+                }
+                updateSyncStatus('connected');
+            } catch (error) {
+                console.error('Database save failed:', error);
+                updateSyncStatus('disconnected');
+            }
+        };
+        
+        const loadSelectionsFromDatabase = async () => {
+            if (!isOnlineMode || !supabase) return;
+            
+            try {
+                const { data, error } = await supabase
+                    .from('artist_selections')
+                    .select('*');
+                    
+                if (error) throw error;
+                
+                // Convert database format to app format
+                artistSelections = {};
+                data.forEach(selection => {
+                    if (!artistSelections[selection.artist_name]) {
+                        artistSelections[selection.artist_name] = {};
+                    }
+                    artistSelections[selection.artist_name][selection.person_name] = selection.selection_level;
+                });
+                
+                // Update UI
+                Object.keys(artistSelections).forEach(updateArtistHighlight);
+                
+            } catch (error) {
+                console.error('Database load failed:', error);
+                updateSyncStatus('disconnected');
+            }
+        };
+        
+        const subscribeToChanges = () => {
+            if (!isOnlineMode || !supabase) return;
+            
+            supabase
+                .channel('artist_selections')
+                .on('postgres_changes', {
+                    event: '*',
+                    schema: 'public',
+                    table: 'artist_selections'
+                }, (payload) => {
+                    console.log('Real-time update:', payload);
+                    loadSelectionsFromDatabase();
+                })
+                .subscribe();
+        };
+
+        // =================================================================
+        // --- CORE FUNCTIONS (Updated for Backend) ---
+        // =================================================================
+        
+        const saveSelections = () => {
+            // Always save locally as backup
+            localStorage.setItem('lollaSelections', JSON.stringify(artistSelections));
+        };
+        
+        const loadSelections = () => {
+            if (isOnlineMode) {
+                loadSelectionsFromDatabase();
+            } else {
+                const saved = localStorage.getItem('lollaSelections');
+                artistSelections = saved ? JSON.parse(saved) : {};
+            }
+        };
+        
+        const handleArtistClick = async (artistName) => {
+            if (!selectedPerson) {
+                openInfoModal(`<p class="text-gray-300">Please select a person first to track their preferences!</p>`);
+                return;
+            }
+
+            if (!artistSelections[artistName]) artistSelections[artistName] = {};
+            
+            const currentLevel = artistSelections[artistName][selectedPerson] || 0;
+            let newLevel;
+
+            if (currentLevel === 0) newLevel = 1;
+            else if (currentLevel === 1) newLevel = 3;
+            else if (currentLevel === 3) newLevel = 2;
+            else newLevel = 0;
+            
+            if (newLevel === 0) {
+                delete artistSelections[artistName][selectedPerson];
+                if (Object.keys(artistSelections[artistName]).length === 0) {
+                    delete artistSelections[artistName];
+                }
+            } else {
+                artistSelections[artistName][selectedPerson] = newLevel;
+            }
+            
+            // Save to both local and database
+            saveSelections();
+            await saveSelectionToDatabase(artistName, selectedPerson, newLevel);
+            updateArtistHighlight(artistName);
+        };
+        
+        // =================================================================
+        // --- UI FUNCTIONS (Same as before, with additions) ---
+        // =================================================================
+        
+        const updateArtistHighlight = (artistName) => {
+            const artistCards = document.querySelectorAll(`[data-artist="${artistName.replace(/"/g, '\\"')}"]`);
+            if (artistCards.length === 0) return;
+
+            const selections = artistSelections[artistName];
+            
+            artistCards.forEach(artistCard => {
+                artistCard.classList.remove('highlight-artist');
+
+                if (!selections || Object.keys(selections).length === 0) {
+                    artistCard.style.background = '';
+                    return;
+                }
+
+                let isHighlight = false;
+                const colorStops = Object.entries(selections).map(([person, level]) => {
+                    if (level === 2) isHighlight = true;
+                    const opacityIndex = level - 1;
+                    return `rgba(${people[person].baseColor}, ${opacities[opacityIndex]})`;
+                });
+
+                if (isHighlight) {
+                    artistCard.classList.add('highlight-artist');
+                }
+                artistCard.style.background = colorStops.length === 1 ? colorStops[0] : `linear-gradient(135deg, ${colorStops.join(', ')})`;
+            });
+        };
+        
+        // ... (include all your other UI functions: renderDay, selectPerson, etc.)
+        
+        const openInfoModal = (content) => {
+            document.getElementById('info-modal-content').innerHTML = content;
+            const modal = document.getElementById('info-modal');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.style.opacity = '1';
+                modal.querySelector('.modal-content').style.transform = 'scale(1)';
+            }, 10);
+        };
+        
+        const closeInfoModal = () => {
+            const modal = document.getElementById('info-modal');
+            modal.style.opacity = '0';
+            modal.querySelector('.modal-content').style.transform = 'scale(0.95)';
+            setTimeout(() => modal.classList.add('hidden'), 250);
+        };
+
+        // =================================================================
+        // --- SETUP AND INITIALIZATION ---
+        // =================================================================
+        
+        const showSetupModal = () => {
+            const modal = document.getElementById('setup-modal');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.style.opacity = '1';
+                modal.querySelector('.modal-content').style.transform = 'scale(1)';
+            }, 10);
+        };
+        
+        const hideSetupModal = () => {
+            const modal = document.getElementById('setup-modal');
+            modal.style.opacity = '0';
+            modal.querySelector('.modal-content').style.transform = 'scale(0.95)';
+            setTimeout(() => modal.classList.add('hidden'), 250);
+        };
+        
+        // Event Listeners
+        document.addEventListener('DOMContentLoaded', () => {
+            // Check for saved Supabase credentials
+            const savedUrl = localStorage.getItem('supabaseUrl');
+            const savedKey = localStorage.getItem('supabaseKey');
+            
+            if (savedUrl && savedKey) {
+                initSupabase(savedUrl, savedKey);
+            } else {
+                showSetupModal();
+                updateSyncStatus('disconnected');
+            }
+            
+            // Setup modal handlers
+            document.getElementById('setup-save').onclick = () => {
+                const url = document.getElementById('supabase-url').value.trim();
+                const key = document.getElementById('supabase-key').value.trim();
+                
+                if (url && key) {
+                    localStorage.setItem('supabaseUrl', url);
+                    localStorage.setItem('supabaseKey', key);
+                    
+                    if (initSupabase(url, key)) {
+                        hideSetupModal();
+                    } else {
+                        alert('Connection failed. Please check your credentials.');
+                    }
+                } else {
+                    alert('Please enter both URL and API key.');
+                }
+            };
+            
+            document.getElementById('setup-skip').onclick = () => {
+                hideSetupModal();
+                updateSyncStatus('disconnected');
+                loadSelections();
+            };
+            
+            document.getElementById('sync-settings-btn').onclick = showSetupModal;
+            
+            document.getElementById('share-link-btn').onclick = () => {
+                navigator.clipboard.writeText(window.location.href);
+                openInfoModal('<p class="text-green-400">✅ Link copied to clipboard!</p><p class="text-gray-300 mt-2">Share this URL with your festival crew so they can add their picks too.</p>');
+            };
+            
+            document.getElementById('info-modal-close').onclick = closeInfoModal;
+            
+            // Initialize the rest of your app...
+            loadSelections();
+            
+            // Create person selectors
+            const personSelectorsContainer = document.getElementById('person-selectors');
+            Object.keys(people).forEach(personName => {
+                const button = document.createElement('button');
+                button.textContent = personName;
+                button.dataset.person = personName;
+                button.className = 'person-selector font-semibold py-2 px-4 rounded-full border-2 transition-all duration-200';
+                const { baseColor } = people[personName];
+                button.style.backgroundColor = `rgba(${baseColor}, 0.4)`;
+                button.style.borderColor = `rgba(${baseColor}, 0.7)`;
+                button.onclick = () => selectPerson(personName);
+                personSelectorsContainer.appendChild(button);
+            });
+            
+            // Create day tabs
+            const dayTabsContainer = document.getElementById('day-tabs');
+            Object.keys(scheduleData).forEach(day => {
+                const button = document.createElement('button');
+                button.textContent = day;
+                button.dataset.day = day;
+                button.className = 'day-tab font-semibold py-2 px-5 rounded-md transition-colors duration-200 bg-gray-700 hover:bg-pink-400';
+                button.onclick = () => renderDay(day);
+                dayTabsContainer.appendChild(button);
+            });
+            
+            // Initialize with Thursday
+            renderDay('Thursday');
+        });
+        
+        // Make functions global for onclick handlers
+        window.handleArtistClick = handleArtistClick;
+        
+        // Add your other functions here (renderDay, selectPerson, etc.)
+        // ... (copy from your original code)
+        
+    </script>
+</body>
+</html>
