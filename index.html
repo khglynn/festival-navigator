@@ -379,7 +379,8 @@
         
         const handleArtistClick = async (artistName) => {
             if (!selectedPerson) {
-                openInfoModal(`<p class="text-gray-300">Please select a person first to track their preferences!</p>`);
+                // Show artist info if no person selected
+                withApiKeyCheck(() => getArtistInfo(artistName));
                 return;
             }
 
