@@ -52,7 +52,27 @@ Each person gets their own unique color:
 
 ## 🔑 API Key Setup (Optional)
 
-For AI-powered features, you'll need a Google Gemini API key:
+### Option 1: Secure Server-Side (Recommended for Public Use)
+
+To let anyone use artist info without exposing your API key:
+
+**In Vercel Dashboard:**
+1. Go to your project → Settings → Environment Variables
+2. Add new variable:
+   - Name: `GEMINI_API_KEY`
+   - Value: Your API key from [Google AI Studio](https://aistudio.google.com/app/apikey)
+   - Environment: All (Production, Preview, Development)
+3. Save and redeploy
+
+**Benefits:**
+- ✅ Your API key stays secret on Vercel's servers
+- ✅ Anyone can click artists for info without a key
+- ✅ Responses cached for 1 hour to reduce API usage
+- ✅ Free within Vercel's Edge Function limits
+
+### Option 2: Client-Side (Personal Use)
+
+For personal use only:
 1. Visit [Google AI Studio](https://aistudio.google.com/app/apikey)
 2. Generate a free API key
 3. Enter it when prompted in the app
