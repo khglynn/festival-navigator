@@ -81,6 +81,64 @@ def check_auth_status() -> dict:
 
 
 @mcp.tool()
+def get_top_artists(
+    time_range: str = "medium_term",
+    limit: int = 50,
+) -> dict:
+    """
+    Get your top artists based on listening history.
+
+    Great for understanding your music taste and finding festival lineups.
+
+    Args:
+        time_range: Time period:
+            - "short_term": Last 4 weeks
+            - "medium_term": Last 6 months (default)
+            - "long_term": All time
+        limit: Number of results (max 50)
+
+    Returns:
+        Ranked list of your top artists with genres and popularity.
+    """
+    return library.get_top_artists(time_range=time_range, limit=limit)
+
+
+@mcp.tool()
+def get_top_tracks(
+    time_range: str = "medium_term",
+    limit: int = 50,
+) -> dict:
+    """
+    Get your top tracks based on listening history.
+
+    Args:
+        time_range: Time period:
+            - "short_term": Last 4 weeks
+            - "medium_term": Last 6 months (default)
+            - "long_term": All time
+        limit: Number of results (max 50)
+
+    Returns:
+        Ranked list of your top tracks with artist and album info.
+    """
+    return library.get_top_tracks(time_range=time_range, limit=limit)
+
+
+@mcp.tool()
+def get_recently_played(limit: int = 50) -> dict:
+    """
+    Get your recently played tracks.
+
+    Args:
+        limit: Number of results (max 50)
+
+    Returns:
+        List of recently played tracks with timestamps.
+    """
+    return library.get_recently_played(limit=limit)
+
+
+@mcp.tool()
 def get_followed_artists(use_cache: bool = True) -> dict:
     """
     Get all artists you follow on Spotify.
@@ -161,6 +219,79 @@ def export_library_summary(use_cache: bool = True) -> dict:
         Complete library summary with statistics.
     """
     return library.export_library_summary(use_cache=use_cache)
+
+
+# =============================================================================
+# Library Modification Tools
+# =============================================================================
+
+
+@mcp.tool()
+def follow_artists(artist_ids: list) -> dict:
+    """
+    Follow artists on Spotify.
+
+    Args:
+        artist_ids: List of Spotify artist IDs to follow
+
+    Returns:
+        Result with count of artists followed.
+
+    Example:
+        follow_artists(["0OdUWJ0sBjDrqHygGUXeCF"])  # Follow Band of Horses
+    """
+    return library.follow_artists(artist_ids=artist_ids)
+
+
+@mcp.tool()
+def unfollow_artists(artist_ids: list, confirm: bool = False) -> dict:
+    """
+    Unfollow artists on Spotify.
+
+    For safety, returns a preview unless confirm=True.
+
+    Args:
+        artist_ids: List of Spotify artist IDs to unfollow
+        confirm: Set to True to actually unfollow (default False for preview)
+
+    Returns:
+        Preview of what will be unfollowed, or result if confirmed.
+    """
+    return library.unfollow_artists(artist_ids=artist_ids, confirm=confirm)
+
+
+@mcp.tool()
+def save_tracks(track_ids: list) -> dict:
+    """
+    Save tracks to your Spotify library (like/heart them).
+
+    Args:
+        track_ids: List of Spotify track IDs to save
+
+    Returns:
+        Result with count of tracks saved.
+
+    Example:
+        save_tracks(["3n3Ppam7vgaVa1iaRUc9Lp"])  # Save "Mr. Brightside"
+    """
+    return library.save_tracks(track_ids=track_ids)
+
+
+@mcp.tool()
+def unsave_tracks(track_ids: list, confirm: bool = False) -> dict:
+    """
+    Remove tracks from your Spotify library.
+
+    For safety, returns a preview unless confirm=True.
+
+    Args:
+        track_ids: List of Spotify track IDs to remove
+        confirm: Set to True to actually remove (default False for preview)
+
+    Returns:
+        Preview of what will be removed, or result if confirmed.
+    """
+    return library.unsave_tracks(track_ids=track_ids, confirm=confirm)
 
 
 # =============================================================================
@@ -388,6 +519,138 @@ def get_playlist_info(playlist_id: str) -> dict:
         Playlist details including name, track count, and URL.
     """
     return playlist.get_playlist_info(playlist_id=playlist_id)
+
+
+@mcp.tool()
+def get_playlist_tracks(playlist_id: str) -> dict:
+    """
+    Get all tracks from a playlist.
+
+    Args:
+        playlist_id: Playlist ID
+
+    Returns:
+        List of all tracks with artist, album, and position info.
+    """
+    return playlist.get_playlist_tracks(playlist_id=playlist_id)
+
+
+@mcp.tool()
+def export_playlist_to_csv(playlist_id: str) -> dict:
+    """
+    Export a playlist to CSV format.
+
+    Great for backing up playlists or sharing song lists.
+
+    Args:
+        playlist_id: Playlist ID
+
+    Returns:
+        CSV content with title, artist, album, and Spotify URI.
+    """
+    return playlist.export_playlist_to_csv(playlist_id=playlist_id)
+
+
+@mcp.tool()
+def compare_playlists(playlist_id_1: str, playlist_id_2: str) -> dict:
+    """
+    Compare two playlists to find shared and unique tracks.
+
+    Args:
+        playlist_id_1: First playlist ID
+        playlist_id_2: Second playlist ID
+
+    Returns:
+        Comparison showing shared tracks and tracks unique to each playlist.
+    """
+    return playlist.compare_playlists(
+        playlist_id_1=playlist_id_1,
+        playlist_id_2=playlist_id_2,
+    )
+
+
+@mcp.tool()
+def find_duplicate_tracks(playlist_id: str) -> dict:
+    """
+    Find duplicate tracks in a playlist.
+
+    Args:
+        playlist_id: Playlist ID
+
+    Returns:
+        List of duplicate tracks with their positions.
+    """
+    return playlist.find_duplicate_tracks(playlist_id=playlist_id)
+
+
+@mcp.tool()
+def remove_duplicate_tracks(playlist_id: str, confirm: bool = False) -> dict:
+    """
+    Remove duplicate tracks from a playlist, keeping the first occurrence.
+
+    For safety, returns a preview unless confirm=True.
+
+    Args:
+        playlist_id: Playlist ID
+        confirm: Set to True to actually remove duplicates
+
+    Returns:
+        Preview of duplicates to remove, or result if confirmed.
+    """
+    return playlist.remove_duplicate_tracks(playlist_id=playlist_id, confirm=confirm)
+
+
+@mcp.tool()
+def remove_tracks_from_playlist(
+    playlist_id: str,
+    track_uris: list,
+    confirm: bool = False,
+) -> dict:
+    """
+    Remove specific tracks from a playlist.
+
+    For safety, returns a preview unless confirm=True.
+
+    Args:
+        playlist_id: Playlist ID
+        track_uris: List of Spotify track URIs to remove
+        confirm: Set to True to actually remove
+
+    Returns:
+        Preview of what will be removed, or result if confirmed.
+    """
+    return playlist.remove_tracks_from_playlist(
+        playlist_id=playlist_id,
+        track_uris=track_uris,
+        confirm=confirm,
+    )
+
+
+@mcp.tool()
+def reorder_playlist_tracks(
+    playlist_id: str,
+    range_start: int,
+    insert_before: int,
+    range_length: int = 1,
+) -> dict:
+    """
+    Move tracks within a playlist.
+
+    Args:
+        playlist_id: Playlist ID
+        range_start: Position of first track to move (0-indexed)
+        insert_before: Position to insert before (0-indexed)
+        range_length: Number of tracks to move (default 1)
+
+    Returns:
+        Result of the reorder operation.
+    """
+    return playlist.reorder_playlist_tracks(
+        playlist_id=playlist_id,
+        range_start=range_start,
+        insert_before=insert_before,
+        range_length=range_length,
+    )
 
 
 # =============================================================================

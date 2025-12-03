@@ -18,12 +18,16 @@ load_dotenv()
 # Required scopes for all our operations
 SCOPES = [
     "user-library-read",      # Read saved tracks/albums
+    "user-library-modify",    # Save/unsave tracks/albums
     "user-follow-read",       # Read followed artists
+    "user-follow-modify",     # Follow/unfollow artists
     "playlist-read-private",  # Read private playlists
     "playlist-read-collaborative",
     "playlist-modify-public", # Create/edit public playlists
     "playlist-modify-private", # Create/edit private playlists
     "user-read-private",      # Read user profile
+    "user-top-read",          # Read top artists/tracks
+    "user-read-recently-played",  # Read recently played tracks
 ]
 
 def get_cache_path() -> Path:

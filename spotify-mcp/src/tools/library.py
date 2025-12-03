@@ -1,11 +1,290 @@
 """
-Library analysis tools for MCP.
+Library analysis and modification tools for MCP.
 """
 
 from collections import defaultdict
 from typing import Any, Dict, List
 
 from ..spotify_client import spotify_client
+
+
+# =============================================================================
+# Follow/Unfollow Artists
+# =============================================================================
+
+
+def follow_artists(artist_ids: List[str]) -> Dict[str, Any]:
+    """
+    Follow artists on Spotify.
+
+    Args:
+        artist_ids: List of Spotify artist IDs to follow
+
+    Returns:
+        Result with count of artists followed
+    """
+    if not artist_ids:
+        return {"success": False, "error": "No artist IDs provided"}
+
+    # Check which artists are already followed
+    follow_status = spotify_client.check_following_artists(artist_ids)
+    already_following = [aid for aid, status in zip(artist_ids, follow_status) if status]
+    to_follow = [aid for aid, status in zip(artist_ids, follow_status) if not status]
+
+    if to_follow:
+        spotify_client.follow_artists(to_follow)
+
+    return {
+        "success": True,
+        "followed": len(to_follow),
+        "already_following": len(already_following),
+        "artist_ids": to_follow,
+    }
+
+
+def unfollow_artists(artist_ids: List[str], confirm: bool = False) -> Dict[str, Any]:
+    """
+    Unfollow artists on Spotify.
+
+    For safety, this returns a preview unless confirm=True.
+
+    Args:
+        artist_ids: List of Spotify artist IDs to unfollow
+        confirm: Set to True to actually unfollow (default False for preview)
+
+    Returns:
+        Preview of what will be unfollowed, or result if confirmed
+    """
+    if not artist_ids:
+        return {"success": False, "error": "No artist IDs provided"}
+
+    # Check which artists are actually followed
+    follow_status = spotify_client.check_following_artists(artist_ids)
+    currently_following = [aid for aid, status in zip(artist_ids, follow_status) if status]
+
+    if not currently_following:
+        return {
+            "success": True,
+            "message": "None of the provided artists are currently followed",
+            "unfollowed": 0,
+        }
+
+    if not confirm:
+        return {
+            "preview": True,
+            "will_unfollow": len(currently_following),
+            "artist_ids": currently_following,
+            "message": "Set confirm=True to proceed with unfollowing",
+        }
+
+    spotify_client.unfollow_artists(currently_following)
+
+    return {
+        "success": True,
+        "unfollowed": len(currently_following),
+        "artist_ids": currently_following,
+    }
+
+
+# =============================================================================
+# Save/Unsave Tracks
+# =============================================================================
+
+
+def save_tracks(track_ids: List[str]) -> Dict[str, Any]:
+    """
+    Save tracks to your Spotify library.
+
+    Args:
+        track_ids: List of Spotify track IDs to save
+
+    Returns:
+        Result with count of tracks saved
+    """
+    if not track_ids:
+        return {"success": False, "error": "No track IDs provided"}
+
+    # Check which tracks are already saved
+    saved_status = spotify_client.check_saved_tracks(track_ids)
+    already_saved = [tid for tid, status in zip(track_ids, saved_status) if status]
+    to_save = [tid for tid, status in zip(track_ids, saved_status) if not status]
+
+    if to_save:
+        spotify_client.save_tracks(to_save)
+
+    return {
+        "success": True,
+        "saved": len(to_save),
+        "already_saved": len(already_saved),
+        "track_ids": to_save,
+    }
+
+
+def unsave_tracks(track_ids: List[str], confirm: bool = False) -> Dict[str, Any]:
+    """
+    Remove tracks from your Spotify library.
+
+    For safety, this returns a preview unless confirm=True.
+
+    Args:
+        track_ids: List of Spotify track IDs to remove
+        confirm: Set to True to actually remove (default False for preview)
+
+    Returns:
+        Preview of what will be removed, or result if confirmed
+    """
+    if not track_ids:
+        return {"success": False, "error": "No track IDs provided"}
+
+    # Check which tracks are actually saved
+    saved_status = spotify_client.check_saved_tracks(track_ids)
+    currently_saved = [tid for tid, status in zip(track_ids, saved_status) if status]
+
+    if not currently_saved:
+        return {
+            "success": True,
+            "message": "None of the provided tracks are currently saved",
+            "removed": 0,
+        }
+
+    if not confirm:
+        return {
+            "preview": True,
+            "will_remove": len(currently_saved),
+            "track_ids": currently_saved,
+            "message": "Set confirm=True to proceed with removing",
+        }
+
+    spotify_client.unsave_tracks(currently_saved)
+
+    return {
+        "success": True,
+        "removed": len(currently_saved),
+        "track_ids": currently_saved,
+    }
+
+
+# =============================================================================
+# Discovery - Top Items & Recently Played
+# =============================================================================
+
+
+def get_top_artists(
+    time_range: str = "medium_term",
+    limit: int = 50,
+) -> Dict[str, Any]:
+    """
+    Get your top artists based on listening history.
+
+    Args:
+        time_range: Time period - "short_term" (4 weeks), "medium_term" (6 months), "long_term" (years)
+        limit: Number of results (max 50)
+
+    Returns:
+        List of top artists with details
+    """
+    artists = spotify_client.get_top_artists(time_range=time_range, limit=limit)
+
+    simplified = [
+        {
+            "rank": i + 1,
+            "name": a["name"],
+            "id": a["id"],
+            "uri": a["uri"],
+            "genres": a.get("genres", []),
+            "popularity": a.get("popularity", 0),
+            "image_url": a["images"][0]["url"] if a.get("images") else None,
+        }
+        for i, a in enumerate(artists)
+    ]
+
+    time_range_labels = {
+        "short_term": "Last 4 weeks",
+        "medium_term": "Last 6 months",
+        "long_term": "All time",
+    }
+
+    return {
+        "time_range": time_range_labels.get(time_range, time_range),
+        "count": len(simplified),
+        "artists": simplified,
+    }
+
+
+def get_top_tracks(
+    time_range: str = "medium_term",
+    limit: int = 50,
+) -> Dict[str, Any]:
+    """
+    Get your top tracks based on listening history.
+
+    Args:
+        time_range: Time period - "short_term" (4 weeks), "medium_term" (6 months), "long_term" (years)
+        limit: Number of results (max 50)
+
+    Returns:
+        List of top tracks with details
+    """
+    tracks = spotify_client.get_top_tracks(time_range=time_range, limit=limit)
+
+    simplified = [
+        {
+            "rank": i + 1,
+            "name": t["name"],
+            "id": t["id"],
+            "uri": t["uri"],
+            "artists": [{"name": a["name"], "id": a["id"]} for a in t["artists"]],
+            "album": t["album"]["name"],
+            "popularity": t.get("popularity", 0),
+            "preview_url": t.get("preview_url"),
+        }
+        for i, t in enumerate(tracks)
+    ]
+
+    time_range_labels = {
+        "short_term": "Last 4 weeks",
+        "medium_term": "Last 6 months",
+        "long_term": "All time",
+    }
+
+    return {
+        "time_range": time_range_labels.get(time_range, time_range),
+        "count": len(simplified),
+        "tracks": simplified,
+    }
+
+
+def get_recently_played(limit: int = 50) -> Dict[str, Any]:
+    """
+    Get your recently played tracks.
+
+    Args:
+        limit: Number of results (max 50)
+
+    Returns:
+        List of recently played tracks with timestamps
+    """
+    items = spotify_client.get_recently_played(limit=limit)
+
+    simplified = [
+        {
+            "played_at": item["played_at"],
+            "name": item["track"]["name"],
+            "id": item["track"]["id"],
+            "uri": item["track"]["uri"],
+            "artists": [
+                {"name": a["name"], "id": a["id"]}
+                for a in item["track"]["artists"]
+            ],
+            "album": item["track"]["album"]["name"],
+        }
+        for item in items
+    ]
+
+    return {
+        "count": len(simplified),
+        "tracks": simplified,
+    }
 
 
 def get_followed_artists(use_cache: bool = True) -> Dict[str, Any]:

@@ -333,6 +333,237 @@ class SpotifyClient:
 
         return tracks
 
+    def remove_tracks_from_playlist(
+        self,
+        playlist_id: str,
+        track_uris: List[str],
+    ) -> None:
+        """
+        Remove tracks from a playlist.
+
+        Args:
+            playlist_id: Playlist ID
+            track_uris: List of Spotify track URIs to remove
+        """
+        # Spotify allows max 100 tracks per request
+        batch_size = 100
+        total = len(track_uris)
+
+        for i in range(0, total, batch_size):
+            batch = track_uris[i : i + batch_size]
+            self._handle_rate_limit(
+                self.client.playlist_remove_all_occurrences_of_items,
+                playlist_id=playlist_id,
+                items=batch,
+            )
+            print(f"Removed {min(i + batch_size, total)}/{total} tracks...", file=sys.stderr)
+            time.sleep(0.2)
+
+    def reorder_playlist_tracks(
+        self,
+        playlist_id: str,
+        range_start: int,
+        insert_before: int,
+        range_length: int = 1,
+    ) -> None:
+        """
+        Reorder tracks in a playlist.
+
+        Args:
+            playlist_id: Playlist ID
+            range_start: Position of first track to move
+            insert_before: Position to insert before
+            range_length: Number of tracks to move
+        """
+        self._handle_rate_limit(
+            self.client.playlist_reorder_items,
+            playlist_id=playlist_id,
+            range_start=range_start,
+            insert_before=insert_before,
+            range_length=range_length,
+        )
+
+    # =========================================================================
+    # Follow/Unfollow Artists
+    # =========================================================================
+
+    def follow_artists(self, artist_ids: List[str]) -> None:
+        """
+        Follow artists.
+
+        Args:
+            artist_ids: List of artist IDs to follow
+        """
+        # Spotify allows max 50 per request
+        batch_size = 50
+        for i in range(0, len(artist_ids), batch_size):
+            batch = artist_ids[i : i + batch_size]
+            self._handle_rate_limit(
+                self.client.user_follow_artists,
+                ids=batch,
+            )
+            time.sleep(0.2)
+
+    def unfollow_artists(self, artist_ids: List[str]) -> None:
+        """
+        Unfollow artists.
+
+        Args:
+            artist_ids: List of artist IDs to unfollow
+        """
+        batch_size = 50
+        for i in range(0, len(artist_ids), batch_size):
+            batch = artist_ids[i : i + batch_size]
+            self._handle_rate_limit(
+                self.client.user_unfollow_artists,
+                ids=batch,
+            )
+            time.sleep(0.2)
+
+    def check_following_artists(self, artist_ids: List[str]) -> List[bool]:
+        """
+        Check if user follows given artists.
+
+        Args:
+            artist_ids: List of artist IDs to check
+
+        Returns:
+            List of booleans indicating follow status
+        """
+        results = []
+        batch_size = 50
+        for i in range(0, len(artist_ids), batch_size):
+            batch = artist_ids[i : i + batch_size]
+            batch_results = self._handle_rate_limit(
+                self.client.current_user_following_artists,
+                ids=batch,
+            )
+            results.extend(batch_results)
+            time.sleep(0.1)
+        return results
+
+    # =========================================================================
+    # Save/Unsave Tracks
+    # =========================================================================
+
+    def save_tracks(self, track_ids: List[str]) -> None:
+        """
+        Save tracks to user's library.
+
+        Args:
+            track_ids: List of track IDs to save
+        """
+        batch_size = 50
+        for i in range(0, len(track_ids), batch_size):
+            batch = track_ids[i : i + batch_size]
+            self._handle_rate_limit(
+                self.client.current_user_saved_tracks_add,
+                tracks=batch,
+            )
+            time.sleep(0.2)
+
+    def unsave_tracks(self, track_ids: List[str]) -> None:
+        """
+        Remove tracks from user's library.
+
+        Args:
+            track_ids: List of track IDs to remove
+        """
+        batch_size = 50
+        for i in range(0, len(track_ids), batch_size):
+            batch = track_ids[i : i + batch_size]
+            self._handle_rate_limit(
+                self.client.current_user_saved_tracks_delete,
+                tracks=batch,
+            )
+            time.sleep(0.2)
+
+    def check_saved_tracks(self, track_ids: List[str]) -> List[bool]:
+        """
+        Check if tracks are saved in user's library.
+
+        Args:
+            track_ids: List of track IDs to check
+
+        Returns:
+            List of booleans indicating saved status
+        """
+        results = []
+        batch_size = 50
+        for i in range(0, len(track_ids), batch_size):
+            batch = track_ids[i : i + batch_size]
+            batch_results = self._handle_rate_limit(
+                self.client.current_user_saved_tracks_contains,
+                tracks=batch,
+            )
+            results.extend(batch_results)
+            time.sleep(0.1)
+        return results
+
+    # =========================================================================
+    # Top Items & Recently Played
+    # =========================================================================
+
+    def get_top_artists(
+        self,
+        time_range: str = "medium_term",
+        limit: int = 50,
+    ) -> List[Dict[str, Any]]:
+        """
+        Get user's top artists.
+
+        Args:
+            time_range: "short_term" (4 weeks), "medium_term" (6 months), "long_term" (years)
+            limit: Number of results (max 50)
+
+        Returns:
+            List of artist objects
+        """
+        result = self._handle_rate_limit(
+            self.client.current_user_top_artists,
+            time_range=time_range,
+            limit=limit,
+        )
+        return result["items"]
+
+    def get_top_tracks(
+        self,
+        time_range: str = "medium_term",
+        limit: int = 50,
+    ) -> List[Dict[str, Any]]:
+        """
+        Get user's top tracks.
+
+        Args:
+            time_range: "short_term" (4 weeks), "medium_term" (6 months), "long_term" (years)
+            limit: Number of results (max 50)
+
+        Returns:
+            List of track objects
+        """
+        result = self._handle_rate_limit(
+            self.client.current_user_top_tracks,
+            time_range=time_range,
+            limit=limit,
+        )
+        return result["items"]
+
+    def get_recently_played(self, limit: int = 50) -> List[Dict[str, Any]]:
+        """
+        Get user's recently played tracks.
+
+        Args:
+            limit: Number of results (max 50)
+
+        Returns:
+            List of play history objects
+        """
+        result = self._handle_rate_limit(
+            self.client.current_user_recently_played,
+            limit=limit,
+        )
+        return result["items"]
+
 
 # Singleton instance
 spotify_client = SpotifyClient()
