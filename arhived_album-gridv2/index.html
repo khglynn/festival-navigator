@@ -1,0 +1,1260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Top Albums - Windows Media Player</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Butterchurn for Milkdrop visualizations -->
+    <script src="https://unpkg.com/butterchurn@2.6.7/lib/butterchurn.js"></script>
+    <script src="https://unpkg.com/butterchurn-presets@2.4.7/lib/butterchurnPresets.js"></script>
+    <!-- audioMotion-analyzer as fallback -->
+    <script src="https://cdn.jsdelivr.net/npm/audiomotion-analyzer@4.5.0/dist/audioMotion-analyzer.umd.js"></script>
+    <script>
+        // Normalize butterchurn access (it's on .default)
+        window.addEventListener('DOMContentLoaded', () => {
+            if (window.butterchurn && window.butterchurn.default) {
+                window.butterchurnLib = window.butterchurn.default;
+                console.log('Butterchurn loaded via .default');
+            } else if (window.butterchurn && window.butterchurn.createVisualizer) {
+                window.butterchurnLib = window.butterchurn;
+                console.log('Butterchurn loaded directly');
+            }
+
+            if (window.butterchurnPresets && window.butterchurnPresets.getPresets) {
+                window.butterchurnPresetsLib = window.butterchurnPresets;
+            } else if (window.butterchurnPresets && window.butterchurnPresets.default) {
+                window.butterchurnPresetsLib = window.butterchurnPresets.default;
+            }
+
+            console.log('=== Visualizer Libraries ===');
+            console.log('butterchurnLib:', window.butterchurnLib);
+            console.log('butterchurnPresetsLib:', window.butterchurnPresetsLib);
+            console.log('AudioMotionAnalyzer:', window.AudioMotionAnalyzer);
+        });
+    </script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Tahoma, 'Segoe UI', sans-serif;
+            background: linear-gradient(180deg, #1a3a5c 0%, #0d1f33 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        /* WMP Player Container */
+        .wmp-player {
+            width: 100%;
+            max-width: 500px;
+            background: #1e3d5a;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow:
+                0 0 0 1px rgba(255,255,255,0.1),
+                0 8px 32px rgba(0,0,0,0.5),
+                inset 0 1px 0 rgba(255,255,255,0.1);
+        }
+
+        /* Title Bar */
+        .wmp-titlebar {
+            height: 33px;
+            background: url('./skin/player_top_left.png') no-repeat left top,
+                        url('./skin/player_top_right.png') no-repeat right top,
+                        url('./skin/player_top_middle.png') repeat-x center top;
+            background-color: #3a6a9a;
+            display: flex;
+            align-items: center;
+            padding: 0 8px;
+            position: relative;
+        }
+
+        .wmp-titlebar-text {
+            color: white;
+            font-size: 11px;
+            font-weight: bold;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+            margin-left: 8px;
+            flex: 1;
+        }
+
+        .wmp-titlebar-controls {
+            display: flex;
+            gap: 2px;
+            margin-right: 4px;
+        }
+
+        .wmp-titlebar-btn {
+            width: 21px;
+            height: 21px;
+            border: none;
+            border-radius: 3px;
+            background: linear-gradient(180deg, #6a9fd4 0%, #4a7fb4 50%, #3a6fa4 100%);
+            color: white;
+            font-size: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.3);
+        }
+
+        .wmp-titlebar-btn:hover {
+            background: linear-gradient(180deg, #7aafe4 0%, #5a8fc4 50%, #4a7fb4 100%);
+        }
+
+        .wmp-titlebar-btn.close {
+            background: linear-gradient(180deg, #d46a6a 0%, #b44a4a 50%, #a43a3a 100%);
+        }
+
+        .wmp-titlebar-btn.close:hover {
+            background: linear-gradient(180deg, #e47a7a 0%, #c45a5a 50%, #b44a4a 100%);
+        }
+
+        /* Visualization Area */
+        .wmp-vis-area {
+            background: #000;
+            aspect-ratio: 16/9;
+            max-height: 300px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .wmp-vis-canvas {
+            width: 100%;
+            height: 100%;
+        }
+
+        .wmp-vis-overlay {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+        }
+
+        .wmp-album-art {
+            width: 120px;
+            height: 120px;
+            border-radius: 4px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+            margin-bottom: 12px;
+        }
+
+        .wmp-track-info {
+            text-align: center;
+            color: white;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+        }
+
+        .wmp-track-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        .wmp-track-artist {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+
+        .wmp-no-track {
+            color: #4a8a4a;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .wmp-no-track-icon {
+            font-size: 48px;
+            margin-bottom: 8px;
+            opacity: 0.5;
+        }
+
+        /* Transport Controls */
+        .wmp-transport {
+            background: linear-gradient(180deg, #2a4a6a 0%, #1a3a5a 100%);
+            padding: 12px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .wmp-transport-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .wmp-transport-buttons {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* Using actual WMP transport buttons */
+        .wmp-btn-prev,
+        .wmp-btn-stop,
+        .wmp-btn-play,
+        .wmp-btn-next {
+            width: 30px;
+            height: 30px;
+            border: none;
+            cursor: pointer;
+            background-color: transparent;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            transition: transform 0.1s;
+        }
+
+        .wmp-btn-play {
+            width: 36px;
+            height: 36px;
+        }
+
+        .wmp-btn-prev:hover,
+        .wmp-btn-stop:hover,
+        .wmp-btn-play:hover,
+        .wmp-btn-next:hover {
+            transform: scale(1.05);
+        }
+
+        .wmp-btn-prev:active,
+        .wmp-btn-stop:active,
+        .wmp-btn-play:active,
+        .wmp-btn-next:active {
+            transform: scale(0.95);
+        }
+
+        /* Custom styled buttons that look like WMP */
+        .wmp-orb-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            background: linear-gradient(180deg, #8ac4f8 0%, #4a94d8 30%, #2a74b8 70%, #1a5498 100%);
+            box-shadow:
+                0 2px 4px rgba(0,0,0,0.3),
+                inset 0 2px 4px rgba(255,255,255,0.4),
+                inset 0 -2px 4px rgba(0,0,0,0.2);
+            color: white;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.1s;
+        }
+
+        .wmp-orb-btn:hover {
+            background: linear-gradient(180deg, #9ad4ff 0%, #5aa4e8 30%, #3a84c8 70%, #2a64a8 100%);
+        }
+
+        .wmp-orb-btn:active {
+            background: linear-gradient(180deg, #3a74a8 0%, #2a64a8 30%, #1a5498 70%, #0a4488 100%);
+            box-shadow:
+                0 1px 2px rgba(0,0,0,0.3),
+                inset 0 1px 2px rgba(0,0,0,0.2);
+        }
+
+        .wmp-orb-btn.play {
+            width: 44px;
+            height: 44px;
+            font-size: 18px;
+        }
+
+        .wmp-orb-btn.play::before {
+            content: "▶";
+            margin-left: 3px;
+        }
+
+        .wmp-orb-btn.pause::before {
+            content: "⏸";
+            margin-left: 0;
+        }
+
+        .wmp-orb-btn.prev::before {
+            content: "⏮";
+        }
+
+        .wmp-orb-btn.next::before {
+            content: "⏭";
+        }
+
+        .wmp-orb-btn.stop::before {
+            content: "⏹";
+        }
+
+        /* Progress Bar - WMP Style */
+        .wmp-progress {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .wmp-progress-time {
+            font-size: 11px;
+            color: #8ab4d4;
+            min-width: 36px;
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+        }
+
+        .wmp-progress-bar {
+            flex: 1;
+            height: 13px;
+            background: url('./skin/track_bar.png') no-repeat center;
+            background-size: 100% 100%;
+            position: relative;
+            cursor: pointer;
+            border-radius: 6px;
+        }
+
+        .wmp-progress-fill {
+            position: absolute;
+            left: 25px;
+            top: 3px;
+            height: 7px;
+            background: url('./skin/track_bar_filled.png') repeat-x;
+            background-size: auto 100%;
+            border-radius: 3px;
+            width: 0%;
+            max-width: calc(100% - 50px);
+        }
+
+        .wmp-progress-thumb {
+            position: absolute;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width: 14px;
+            height: 20px;
+            background: url('./skin/track_bar_slider.png') no-repeat center;
+            background-size: contain;
+            left: 25px;
+            cursor: pointer;
+        }
+
+        /* Volume */
+        .wmp-volume {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .wmp-volume-icon {
+            color: #6a9ac4;
+            font-size: 14px;
+        }
+
+        .wmp-volume-bar {
+            width: 60px;
+            height: 8px;
+            background: linear-gradient(180deg, #1a2a3a 0%, #2a3a4a 100%);
+            border-radius: 4px;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .wmp-volume-fill {
+            height: 100%;
+            background: linear-gradient(180deg, #6ab4f4 0%, #4a94d4 100%);
+            border-radius: 4px;
+            width: 70%;
+        }
+
+        /* Bottom Bar */
+        .wmp-bottom {
+            height: 23px;
+            background: url('./skin/player_bottom_left.png') no-repeat left top,
+                        url('./skin/player_bottom_right.png') no-repeat right top,
+                        url('./skin/player_bottom_middle.png') repeat-x center top;
+            background-color: #1a3a5a;
+        }
+
+        /* Album Grid */
+        .wmp-library {
+            background: linear-gradient(180deg, #0a1a2a 0%, #1a2a3a 100%);
+            padding: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .wmp-library-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+            gap: 8px;
+        }
+
+        .wmp-library-item {
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+
+        .wmp-library-item:hover {
+            transform: scale(1.05);
+        }
+
+        .wmp-library-item img {
+            width: 100%;
+            aspect-ratio: 1;
+            object-fit: cover;
+            border-radius: 2px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .wmp-library-item-title {
+            font-size: 9px;
+            color: #8ab4d4;
+            margin-top: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Auth Screen */
+        .wmp-auth {
+            padding: 40px 20px;
+            text-align: center;
+        }
+
+        .wmp-auth-vis {
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            gap: 4px;
+            height: 80px;
+            margin-bottom: 24px;
+        }
+
+        .wmp-auth-bar {
+            width: 8px;
+            background: linear-gradient(180deg, #6ab4f4 0%, #2a74b8 100%);
+            border-radius: 2px;
+            animation: authPulse 1.2s ease-in-out infinite;
+            animation-delay: var(--delay);
+            height: var(--height);
+            box-shadow: 0 0 8px rgba(106, 180, 244, 0.5);
+        }
+
+        @keyframes authPulse {
+            0%, 100% { transform: scaleY(0.3); opacity: 0.5; }
+            50% { transform: scaleY(1); opacity: 1; }
+        }
+
+        .wmp-auth h1 {
+            color: white;
+            font-size: 20px;
+            margin-bottom: 8px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .wmp-auth p {
+            color: #8ab4d4;
+            font-size: 12px;
+            margin-bottom: 24px;
+        }
+
+        .wmp-auth-btn {
+            padding: 12px 28px;
+            background: #1DB954;
+            border: none;
+            border-radius: 20px;
+            color: white;
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.15s;
+            box-shadow: 0 4px 12px rgba(29, 185, 84, 0.3);
+        }
+
+        .wmp-auth-btn:hover {
+            background: #1ed760;
+            transform: scale(1.02);
+        }
+
+        .wmp-auth-btn:active {
+            transform: scale(0.98);
+        }
+
+        .wmp-auth-footer {
+            margin-top: 16px;
+            font-size: 10px;
+            color: #6a8aa4;
+        }
+
+        /* Loading */
+        .wmp-loading {
+            padding: 40px;
+            text-align: center;
+            color: #8ab4d4;
+        }
+
+        .wmp-spinner {
+            width: 32px;
+            height: 32px;
+            border: 3px solid #1a3a5a;
+            border-top-color: #6ab4f4;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 12px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Tabs */
+        .wmp-tabs {
+            display: flex;
+            background: linear-gradient(180deg, #2a4a6a 0%, #1a3a5a 100%);
+            padding: 4px 8px 0;
+            gap: 2px;
+        }
+
+        .wmp-tab {
+            padding: 6px 16px;
+            font-size: 11px;
+            color: #8ab4d4;
+            background: linear-gradient(180deg, #1a3a5a 0%, #0a2a4a 100%);
+            border: none;
+            border-radius: 4px 4px 0 0;
+            cursor: pointer;
+            transition: all 0.1s;
+        }
+
+        .wmp-tab:hover {
+            background: linear-gradient(180deg, #2a4a6a 0%, #1a3a5a 100%);
+            color: white;
+        }
+
+        .wmp-tab.active {
+            background: #0a1a2a;
+            color: white;
+        }
+
+        /* Mic Button */
+        .wmp-mic-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            padding: 6px 12px;
+            background: rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 4px;
+            color: #8ab4d4;
+            font-size: 10px;
+            cursor: pointer;
+            z-index: 10;
+            transition: all 0.15s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .wmp-mic-btn:hover {
+            background: rgba(0,0,0,0.7);
+            color: white;
+        }
+
+        .wmp-mic-btn.active {
+            background: rgba(29, 185, 84, 0.3);
+            border-color: #1DB954;
+            color: #1DB954;
+        }
+
+        .wmp-mic-icon {
+            font-size: 12px;
+        }
+
+        /* Preset selector */
+        .wmp-preset-btn {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            padding: 6px 12px;
+            background: rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 4px;
+            color: #8ab4d4;
+            font-size: 10px;
+            cursor: pointer;
+            z-index: 10;
+            transition: all 0.15s;
+        }
+
+        .wmp-preset-btn:hover {
+            background: rgba(0,0,0,0.7);
+            color: white;
+        }
+
+        /* Butterchurn canvas */
+        .butterchurn-canvas {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef, useCallback } = React;
+
+        // Spotify Config
+        const SPOTIFY_CLIENT_ID = '4b8e17e088014d58868966b640d26734';
+        const REDIRECT_URI = 'http://127.0.0.1:8080/album-grid/callback.html';
+        const SCOPES = [
+            'streaming',
+            'user-read-email',
+            'user-read-private',
+            'user-library-read',
+            'user-read-playback-state',
+            'user-modify-playback-state'
+        ].join(' ');
+
+        // PKCE Helpers
+        const generateRandomString = (length) => {
+            const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+            const values = crypto.getRandomValues(new Uint8Array(length));
+            return values.reduce((acc, x) => acc + possible[x % possible.length], '');
+        };
+
+        const sha256 = async (plain) => {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(plain);
+            return window.crypto.subtle.digest('SHA-256', data);
+        };
+
+        const base64encode = (input) => {
+            return btoa(String.fromCharCode(...new Uint8Array(input)))
+                .replace(/=/g, '')
+                .replace(/\+/g, '-')
+                .replace(/\//g, '_');
+        };
+
+        const formatTime = (ms) => {
+            if (!ms) return '0:00';
+            const mins = Math.floor(ms / 60000);
+            const secs = Math.floor((ms % 60000) / 1000);
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        };
+
+        // Visualizer Component with Butterchurn + Fallback
+        const Visualizer = ({ isPlaying }) => {
+            const canvasRef = useRef(null);
+            const visualizerRef = useRef(null);
+            const audioContextRef = useRef(null);
+            const analyserRef = useRef(null);
+            const animationRef = useRef(null);
+            const [micEnabled, setMicEnabled] = useState(false);
+            const [presetName, setPresetName] = useState('');
+            const [presetList, setPresetList] = useState([]);
+            const [useButterchurn, setUseButterchurn] = useState(false);
+
+            // Initialize visualizer
+            useEffect(() => {
+                const canvas = canvasRef.current;
+                if (!canvas) return;
+
+                // Check if Butterchurn is available (via our normalized butterchurnLib)
+                const Butterchurn = window.butterchurnLib;
+                const butterchurnAvailable = Butterchurn && typeof Butterchurn.createVisualizer === 'function';
+                console.log('Butterchurn available:', butterchurnAvailable, Butterchurn);
+                setUseButterchurn(butterchurnAvailable);
+
+                if (butterchurnAvailable) {
+                    // Butterchurn setup
+                    const presetsLib = window.butterchurnPresetsLib;
+                    const presets = presetsLib?.getPresets?.() || {};
+                    const presetNames = Object.keys(presets);
+                    console.log('Presets loaded:', presetNames.length);
+                    setPresetList(presetNames);
+
+                    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    audioContextRef.current = audioContext;
+
+                    try {
+                        const visualizer = Butterchurn.createVisualizer(audioContext, canvas, {
+                            width: canvas.offsetWidth || 400,
+                            height: canvas.offsetHeight || 300,
+                            meshWidth: 32,
+                            meshHeight: 24,
+                            pixelRatio: window.devicePixelRatio || 1,
+                            textureRatio: 1
+                        });
+                        visualizerRef.current = visualizer;
+                        console.log('Butterchurn visualizer created:', visualizer);
+
+                        if (presetNames.length > 0) {
+                            const randomPreset = presetNames[Math.floor(Math.random() * presetNames.length)];
+                            visualizer.loadPreset(presets[randomPreset], 0.0);
+                            setPresetName(randomPreset);
+                            console.log('Loaded preset:', randomPreset);
+                        }
+
+                        const render = () => {
+                            if (visualizerRef.current) {
+                                visualizerRef.current.render();
+                            }
+                            animationRef.current = requestAnimationFrame(render);
+                        };
+                        render();
+                    } catch (e) {
+                        console.error('Butterchurn init error:', e);
+                        setUseButterchurn(false);
+                    }
+                }
+
+                // Fallback canvas visualizer
+                if (!butterchurnAvailable || !visualizerRef.current) {
+                    const ctx = canvas.getContext('2d');
+                    const resize = () => {
+                        canvas.width = canvas.offsetWidth * 2;
+                        canvas.height = canvas.offsetHeight * 2;
+                    };
+                    resize();
+                    window.addEventListener('resize', resize);
+
+                    const draw = () => {
+                        const w = canvas.width;
+                        const h = canvas.height;
+                        const time = Date.now() / 1000;
+
+                        // Dark gradient background
+                        const bgGrad = ctx.createLinearGradient(0, 0, 0, h);
+                        bgGrad.addColorStop(0, '#000510');
+                        bgGrad.addColorStop(1, '#001030');
+                        ctx.fillStyle = bgGrad;
+                        ctx.fillRect(0, 0, w, h);
+
+                        const barCount = 48;
+                        const barWidth = (w / barCount) - 2;
+
+                        // Check if we have analyser data
+                        if (analyserRef.current) {
+                            const bufferLength = analyserRef.current.frequencyBinCount;
+                            const dataArray = new Uint8Array(bufferLength);
+                            analyserRef.current.getByteFrequencyData(dataArray);
+
+                            for (let i = 0; i < barCount; i++) {
+                                const dataIndex = Math.floor(i * bufferLength / barCount);
+                                const value = dataArray[dataIndex] / 255;
+                                const barHeight = value * h * 0.85;
+
+                                const grad = ctx.createLinearGradient(0, h - barHeight, 0, h);
+                                grad.addColorStop(0, '#6ad4ff');
+                                grad.addColorStop(0.5, '#4a94d8');
+                                grad.addColorStop(1, '#2a54a8');
+
+                                ctx.fillStyle = grad;
+                                ctx.fillRect(i * (barWidth + 2), h - barHeight, barWidth, barHeight);
+                            }
+                        } else {
+                            // Idle animation
+                            for (let i = 0; i < barCount; i++) {
+                                const value = isPlaying
+                                    ? Math.sin(time * 3 + i * 0.3) * 0.3 + 0.4
+                                    : Math.sin(time * 1.5 + i * 0.2) * 0.15 + 0.2;
+                                const barHeight = value * h * 0.6;
+
+                                const grad = ctx.createLinearGradient(0, h - barHeight, 0, h);
+                                grad.addColorStop(0, 'rgba(106, 180, 244, 0.8)');
+                                grad.addColorStop(1, 'rgba(42, 116, 184, 0.6)');
+
+                                ctx.fillStyle = grad;
+                                ctx.fillRect(i * (barWidth + 2), h - barHeight, barWidth, barHeight);
+                            }
+                        }
+
+                        animationRef.current = requestAnimationFrame(draw);
+                    };
+                    draw();
+
+                    return () => {
+                        window.removeEventListener('resize', resize);
+                        if (animationRef.current) cancelAnimationFrame(animationRef.current);
+                    };
+                }
+
+                const handleResize = () => {
+                    if (visualizerRef.current && canvas) {
+                        visualizerRef.current.setRendererSize(canvas.offsetWidth, canvas.offsetHeight);
+                    }
+                };
+                window.addEventListener('resize', handleResize);
+
+                return () => {
+                    window.removeEventListener('resize', handleResize);
+                    if (animationRef.current) cancelAnimationFrame(animationRef.current);
+                    if (audioContextRef.current) audioContextRef.current.close();
+                };
+            }, [isPlaying]);
+
+            // Toggle microphone
+            const toggleMic = async () => {
+                if (micEnabled) {
+                    setMicEnabled(false);
+                    return;
+                }
+
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+                    if (!audioContextRef.current) {
+                        audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+                    }
+
+                    const audioContext = audioContextRef.current;
+                    if (audioContext.state === 'suspended') {
+                        await audioContext.resume();
+                    }
+
+                    const source = audioContext.createMediaStreamSource(stream);
+
+                    if (useButterchurn && visualizerRef.current) {
+                        visualizerRef.current.connectAudio(source);
+                    } else {
+                        // Fallback: connect to analyser
+                        const analyser = audioContext.createAnalyser();
+                        analyser.fftSize = 256;
+                        source.connect(analyser);
+                        analyserRef.current = analyser;
+                    }
+
+                    setMicEnabled(true);
+                } catch (err) {
+                    console.error('Mic access error:', err);
+                    alert('Could not access microphone. Please allow mic access.');
+                }
+            };
+
+            // Next preset (Butterchurn only)
+            const nextPreset = () => {
+                if (!visualizerRef.current || presetList.length === 0) return;
+
+                const presetsLib = window.butterchurnPresetsLib;
+                const presets = presetsLib?.getPresets?.() || {};
+                const currentIndex = presetList.indexOf(presetName);
+                const nextIndex = (currentIndex + 1) % presetList.length;
+                const nextPresetName = presetList[nextIndex];
+
+                visualizerRef.current.loadPreset(presets[nextPresetName], 2.0);
+                setPresetName(nextPresetName);
+            };
+
+            return (
+                <>
+                    <canvas ref={canvasRef} className="butterchurn-canvas" />
+                    {useButterchurn && (
+                        <button
+                            className="wmp-preset-btn"
+                            onClick={nextPreset}
+                            title={presetName}
+                        >
+                            Next Viz
+                        </button>
+                    )}
+                    <button
+                        className={`wmp-mic-btn ${micEnabled ? 'active' : ''}`}
+                        onClick={toggleMic}
+                    >
+                        <span className="wmp-mic-icon">{micEnabled ? '🎤' : '🎙️'}</span>
+                        {micEnabled ? 'Mic On' : 'Enable Mic'}
+                    </button>
+                </>
+            );
+        };
+
+        // Auth Screen
+        const AuthScreen = () => {
+            const handleLogin = async () => {
+                // Generate PKCE code verifier and challenge
+                const codeVerifier = generateRandomString(64);
+                const hashed = await sha256(codeVerifier);
+                const codeChallenge = base64encode(hashed);
+
+                // Store verifier for token exchange
+                localStorage.setItem('code_verifier', codeVerifier);
+
+                const params = new URLSearchParams({
+                    client_id: SPOTIFY_CLIENT_ID,
+                    response_type: 'code',
+                    redirect_uri: REDIRECT_URI,
+                    scope: SCOPES,
+                    code_challenge_method: 'S256',
+                    code_challenge: codeChallenge,
+                    show_dialog: 'true'
+                });
+
+                window.location.assign(`https://accounts.spotify.com/authorize?${params.toString()}`);
+            };
+
+            return (
+                <div className="wmp-auth">
+                    <div className="wmp-auth-vis">
+                        {[...Array(12)].map((_, i) => (
+                            <div
+                                key={i}
+                                className="wmp-auth-bar"
+                                style={{
+                                    '--delay': `${i * 0.1}s`,
+                                    '--height': `${30 + Math.sin(i * 0.5) * 40}px`
+                                }}
+                            />
+                        ))}
+                    </div>
+                    <h1>My Top Albums</h1>
+                    <p>Your most-loved music, visualized</p>
+                    <button className="wmp-auth-btn" onClick={handleLogin}>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/>
+                        </svg>
+                        Sign in with Spotify
+                    </button>
+                    <div className="wmp-auth-footer">Requires Spotify Premium</div>
+                </div>
+            );
+        };
+
+        // Main App
+        const App = () => {
+            const [token, setToken] = useState(null);
+            const [user, setUser] = useState(null);
+            const [loading, setLoading] = useState(true);
+            const [albums, setAlbums] = useState([]);
+            const [view, setView] = useState('nowPlaying');
+
+            // Player state
+            const [player, setPlayer] = useState(null);
+            const [deviceId, setDeviceId] = useState(null);
+            const [currentTrack, setCurrentTrack] = useState(null);
+            const [isPlaying, setIsPlaying] = useState(false);
+            const [position, setPosition] = useState(0);
+            const [duration, setDuration] = useState(0);
+
+            // Check for token or authorization code
+            useEffect(() => {
+                const exchangeCode = async (code) => {
+                    const codeVerifier = localStorage.getItem('code_verifier');
+                    if (!codeVerifier) {
+                        console.error('No code verifier found');
+                        setLoading(false);
+                        return;
+                    }
+
+                    try {
+                        const response = await fetch('https://accounts.spotify.com/api/token', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded',
+                            },
+                            body: new URLSearchParams({
+                                client_id: SPOTIFY_CLIENT_ID,
+                                grant_type: 'authorization_code',
+                                code: code,
+                                redirect_uri: REDIRECT_URI,
+                                code_verifier: codeVerifier,
+                            }),
+                        });
+
+                        const data = await response.json();
+                        if (data.access_token) {
+                            setToken(data.access_token);
+                            localStorage.setItem('spotify_token', data.access_token);
+                            if (data.refresh_token) {
+                                localStorage.setItem('spotify_refresh_token', data.refresh_token);
+                            }
+                            localStorage.removeItem('code_verifier');
+                        }
+                    } catch (err) {
+                        console.error('Token exchange error:', err);
+                    }
+                    window.history.replaceState({}, '', window.location.pathname);
+                    setLoading(false);
+                };
+
+                // Check for authorization code in URL
+                const urlParams = new URLSearchParams(window.location.search);
+                const code = urlParams.get('code');
+                if (code) {
+                    exchangeCode(code);
+                    return;
+                }
+
+                // Check for hash token (legacy implicit flow)
+                const hash = window.location.hash;
+                if (hash) {
+                    const params = new URLSearchParams(hash.substring(1));
+                    const accessToken = params.get('access_token');
+                    if (accessToken) {
+                        setToken(accessToken);
+                        localStorage.setItem('spotify_token', accessToken);
+                        window.history.replaceState({}, '', window.location.pathname);
+                    }
+                }
+
+                const stored = localStorage.getItem('spotify_token');
+                if (stored) setToken(stored);
+                setLoading(false);
+            }, []);
+
+            // Get user profile
+            useEffect(() => {
+                if (!token) return;
+
+                fetch('https://api.spotify.com/v1/me', {
+                    headers: { Authorization: `Bearer ${token}` }
+                })
+                .then(r => r.ok ? r.json() : Promise.reject())
+                .then(setUser)
+                .catch(() => {
+                    localStorage.removeItem('spotify_token');
+                    setToken(null);
+                });
+            }, [token]);
+
+            // Load albums
+            useEffect(() => {
+                fetch('./albums_data.json')
+                    .then(r => r.json())
+                    .then(setAlbums)
+                    .catch(console.error);
+            }, []);
+
+            // Init Spotify SDK
+            useEffect(() => {
+                if (!token) return;
+
+                const script = document.createElement('script');
+                script.src = 'https://sdk.scdn.co/spotify-player.js';
+                script.async = true;
+                document.body.appendChild(script);
+
+                window.onSpotifyWebPlaybackSDKReady = () => {
+                    const p = new window.Spotify.Player({
+                        name: 'My Top Albums',
+                        getOAuthToken: cb => cb(token),
+                        volume: 0.7
+                    });
+
+                    p.addListener('ready', ({ device_id }) => {
+                        console.log('Player ready:', device_id);
+                        setDeviceId(device_id);
+                    });
+
+                    p.addListener('player_state_changed', state => {
+                        if (!state) return;
+                        setCurrentTrack(state.track_window.current_track);
+                        setIsPlaying(!state.paused);
+                        setPosition(state.position);
+                        setDuration(state.duration);
+                    });
+
+                    p.connect();
+                    setPlayer(p);
+                };
+
+                return () => {
+                    if (player) player.disconnect();
+                };
+            }, [token]);
+
+            // Update position
+            useEffect(() => {
+                if (!isPlaying || !player) return;
+                const interval = setInterval(() => {
+                    player.getCurrentState().then(s => {
+                        if (s) setPosition(s.position);
+                    });
+                }, 500);
+                return () => clearInterval(interval);
+            }, [isPlaying, player]);
+
+            const handlePlayPause = () => player?.togglePlay();
+            const handlePrev = () => player?.previousTrack();
+            const handleNext = () => player?.nextTrack();
+            const handleSeek = (e) => {
+                const rect = e.currentTarget.getBoundingClientRect();
+                const pct = Math.max(0, Math.min(1, (e.clientX - rect.left - 25) / (rect.width - 50)));
+                player?.seek(pct * duration);
+            };
+
+            const playAlbum = async (album) => {
+                if (!token || !deviceId) return;
+                try {
+                    await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
+                        method: 'PUT',
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ context_uri: `spotify:album:${album.id}` })
+                    });
+                    setView('nowPlaying');
+                } catch (e) {
+                    console.error('Play error:', e);
+                }
+            };
+
+            const handleLogout = () => {
+                localStorage.removeItem('spotify_token');
+                setToken(null);
+                setUser(null);
+                player?.disconnect();
+            };
+
+            if (loading) {
+                return (
+                    <div className="wmp-player">
+                        <div className="wmp-loading">
+                            <div className="wmp-spinner"></div>
+                            <p>Loading...</p>
+                        </div>
+                    </div>
+                );
+            }
+
+            const progressPct = duration > 0 ? (position / duration) * 100 : 0;
+
+            return (
+                <div className="wmp-player">
+                    {/* Title Bar */}
+                    <div className="wmp-titlebar">
+                        <span className="wmp-titlebar-text">
+                            {currentTrack ? `${currentTrack.name} - ${currentTrack.artists[0].name}` : 'My Top Albums'}
+                        </span>
+                        <div className="wmp-titlebar-controls">
+                            <button className="wmp-titlebar-btn">─</button>
+                            <button className="wmp-titlebar-btn close" onClick={handleLogout}>×</button>
+                        </div>
+                    </div>
+
+                    {!token ? (
+                        <AuthScreen />
+                    ) : (
+                        <>
+                            {/* Tabs */}
+                            <div className="wmp-tabs">
+                                <button
+                                    className={`wmp-tab ${view === 'nowPlaying' ? 'active' : ''}`}
+                                    onClick={() => setView('nowPlaying')}
+                                >
+                                    Now Playing
+                                </button>
+                                <button
+                                    className={`wmp-tab ${view === 'library' ? 'active' : ''}`}
+                                    onClick={() => setView('library')}
+                                >
+                                    Library
+                                </button>
+                            </div>
+
+                            {/* Visualization */}
+                            <div className="wmp-vis-area">
+                                <Visualizer isPlaying={isPlaying} />
+                                <div className="wmp-vis-overlay">
+                                    {currentTrack ? (
+                                        <>
+                                            <img
+                                                src={currentTrack.album?.images?.[0]?.url}
+                                                alt=""
+                                                className="wmp-album-art"
+                                            />
+                                            <div className="wmp-track-info">
+                                                <div className="wmp-track-title">{currentTrack.name}</div>
+                                                <div className="wmp-track-artist">
+                                                    {currentTrack.artists?.map(a => a.name).join(', ')}
+                                                </div>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <div className="wmp-no-track">
+                                            <div className="wmp-no-track-icon">♫</div>
+                                            <p>Select an album to play</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Library Grid */}
+                            {view === 'library' && (
+                                <div className="wmp-library">
+                                    <div className="wmp-library-grid">
+                                        {albums.map(album => (
+                                            <div
+                                                key={album.id}
+                                                className="wmp-library-item"
+                                                onClick={() => playAlbum(album)}
+                                            >
+                                                <img src={album.images[1]?.url || album.images[0]?.url} alt="" />
+                                                <div className="wmp-library-item-title">{album.name}</div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Transport */}
+                            <div className="wmp-transport">
+                                <div className="wmp-transport-row">
+                                    <div className="wmp-transport-buttons">
+                                        <button className="wmp-orb-btn prev" onClick={handlePrev}></button>
+                                        <button
+                                            className={`wmp-orb-btn play ${isPlaying ? 'pause' : ''}`}
+                                            onClick={handlePlayPause}
+                                        ></button>
+                                        <button className="wmp-orb-btn next" onClick={handleNext}></button>
+                                    </div>
+
+                                    <div className="wmp-progress">
+                                        <span className="wmp-progress-time">{formatTime(position)}</span>
+                                        <div className="wmp-progress-bar" onClick={handleSeek}>
+                                            <div
+                                                className="wmp-progress-fill"
+                                                style={{ width: `${progressPct}%` }}
+                                            />
+                                            <div
+                                                className="wmp-progress-thumb"
+                                                style={{ left: `${25 + progressPct * 0.01 * (100 - 50)}%` }}
+                                            />
+                                        </div>
+                                        <span className="wmp-progress-time">{formatTime(duration)}</span>
+                                    </div>
+
+                                    <div className="wmp-volume">
+                                        <span className="wmp-volume-icon">🔊</span>
+                                        <div className="wmp-volume-bar">
+                                            <div className="wmp-volume-fill"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </>
+                    )}
+
+                    {/* Bottom */}
+                    <div className="wmp-bottom"></div>
+                </div>
+            );
+        };
+
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+</body>
+</html>

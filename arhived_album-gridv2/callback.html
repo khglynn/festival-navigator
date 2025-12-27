@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Signing in...</title>
+    <style>
+        body {
+            font-family: Tahoma, 'Segoe UI', sans-serif;
+            background: linear-gradient(180deg, #1a3a5c 0%, #0d1f33 100%);
+            color: #FFFFFF;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .loading {
+            text-align: center;
+        }
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid #1a3a5a;
+            border-top-color: #6ab4f4;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        p {
+            color: #8ab4d4;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="loading">
+        <div class="spinner"></div>
+        <p>Signing in...</p>
+    </div>
+    <script>
+        // For PKCE flow, Spotify returns a code in the query string
+        const params = new URLSearchParams(window.location.search);
+        const code = params.get('code');
+        const error = params.get('error');
+
+        if (code) {
+            // Redirect to main page with the code
+            window.location.href = './index.html?code=' + encodeURIComponent(code);
+        } else if (error) {
+            // Handle error
+            window.location.href = './index.html?error=' + encodeURIComponent(error);
+        } else {
+            // Check for hash (legacy implicit flow)
+            const hash = window.location.hash;
+            if (hash) {
+                window.location.href = './index.html' + hash;
+            } else {
+                window.location.href = './index.html';
+            }
+        }
+    </script>
+</body>
+</html>

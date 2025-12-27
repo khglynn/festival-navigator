@@ -1,0 +1,7413 @@
+[
+  {
+    "id": "0iv3gV69jA1YY2H0UTy9yF",
+    "name": "Motown: The Complete No. 1's",
+    "artists": [
+      "Various Artists"
+    ],
+    "release_date": "2008-01-01",
+    "total_tracks": 202,
+    "images": [
+      {
+        "url": "https://i.scdn.co/image/ab67616d0000b27348d6f968be4a8cb9c44dc0d3",
+        "height": 640,
+        "width": 640
+      },
+      {
+        "url": "https://i.scdn.co/image/ab67616d00001e0248d6f968be4a8cb9c44dc0d3",
+        "height": 300,
+        "width": 300
+      },
+      {
+        "url": "https://i.scdn.co/image/ab67616d0000485148d6f968be4a8cb9c44dc0d3",
+        "height": 64,
+        "width": 64
+      }
+    ],
+    "external_url": "https://open.spotify.com/album/0iv3gV69jA1YY2H0UTy9yF",
+    "tracks": [
+      {
+        "id": "47IRIQxGDe2Sc6F4pe2FMf",
+        "name": "Shop Around",
+        "track_number": 1,
+        "duration_ms": 169280,
+        "preview_url": null,
+        "artists": [
+          "The Miracles"
+        ]
+      },
+      {
+        "id": "6jX5mso4x00c1EiNMrTU9U",
+        "name": "Please Mr. Postman",
+        "track_number": 2,
+        "duration_ms": 149093,
+        "preview_url": null,
+        "artists": [
+          "The Marvelettes"
+        ]
+      },
+      {
+        "id": "0Omt3rVppHIlYFXNL1VWgL",
+        "name": "Do You Love Me",
+        "track_number": 3,
+        "duration_ms": 172800,
+        "preview_url": null,
+        "artists": [
+          "The Contours"
+        ]
+      },
+      {
+        "id": "4Sz8zFchpHQVQVqVyGz5Jb",
+        "name": "You Beat Me To The Punch",
+        "track_number": 4,
+        "duration_ms": 164853,
+        "preview_url": null,
+        "artists": [
+          "Mary Wells"
+        ]
+      },
+      {
+        "id": "00CmjeeHvAVKvx3tcIiZTy",
+        "name": "Two Lovers",
+        "track_number": 5,
+        "duration_ms": 166146,
+        "preview_url": null,
+        "artists": [
+          "Mary Wells"
+        ]
+      },
+      {
+        "id": "7ifcJ5DDytGf8aITxmgsLN",
+        "name": "You've Really Got A Hold On Me",
+        "track_number": 6,
+        "duration_ms": 191866,
+        "preview_url": null,
+        "artists": [
+          "The Miracles"
+        ]
+      },
+      {
+        "id": "583siylDrKcgJAiN2GxGV1",
+        "name": "Fingertips",
+        "track_number": 7,
+        "duration_ms": 191266,
+        "preview_url": null,
+        "artists": [
+          "Stevie Wonder"
+        ]
+      },
+      {
+        "id": "6o8wm1w9wqOui0rZ2fyfQk",
+        "name": "Heat Wave - Stereo Mix with Fade",
+        "track_number": 8,
+        "duration_ms": 183840,
+        "preview_url": null,
+        "artists": [
+          "Martha Reeves & The Vandellas"
+        ]
+      },
+      {
+        "id": "3496rr5XSGD6n1Z1OKXovb",
+        "name": "The Way You Do The Things You Do",
+        "track_number": 9,
+        "duration_ms": 160493,
+        "preview_url": null,
+        "artists": [
+          "The Temptations"
+        ]
+      },
+      {
+        "id": "4591VqUIXysNlmI5NcAIUd",
+        "name": "My Guy",
+        "track_number": 10,
+        "duration_ms": 171520,
+        "preview_url": null,
+        "artists": [
+          "Mary Wells"
+        ]
+      },
+      {
+        "id": "69RH84na5iUNwrwxpgjC5j",
+        "name": "Where Did Our Love Go",
+        "track_number": 11,
+        "duration_ms": 151853,
+        "preview_url": null,
+        "artists": [
+          "The Supremes"
+        ]
+      },
+      {
+        "id": "5uES1C2NgkdrNHiCwf9jRr",
+        "name": "Baby Love",
+        "track_number": 12,
+        "duration_ms": 156573,
+        "preview_url": null,
+        "artists": [
+          "The Supremes"
+        ]
+      },
+      {
+        "id": "307kcWJQNMdiYYKj1LgClU",
+        "name": "Come See About Me",
+        "track_number": 13,
+        "duration_ms": 162760,
+        "preview_url": null,
+        "artists": [
+          "The Supremes"
+        ]
+      },
+      {
+        "id": "745H5CctFr12Mo7cqa1BMH",
+        "name": "My Girl",
+        "track_number": 14,
+        "duration_ms": 178120,
+        "preview_url": null,
+        "artists": [
+          "The Temptations"
+        ]
+      },
+      {
+        "id": "7Fnw86Fun6yjOhDIYKjKg2",
+        "name": "Shotgun",
+        "track_number": 15,
+        "duration_ms": 199413,
+        "preview_url": null,
+        "artists": [
+          "Jr. Walker & The All Stars"
+        ]
+      },
+      {
+        "id": "52FlwUMMDnTK8TGkCag9Jd",
+        "name": "Stop! In The Name Of Love",
+        "track_number": 16,
+        "duration_ms": 172040,
+        "preview_url": null,
+        "artists": [
+          "The Supremes"
+        ]
+      },
+      {
+        "id": "471yG3FpXwgKcbNlblZ1Yt",
+        "name": "I'll Be Doggone",
+        "track_number": 17,
+        "duration_ms": 166733,
+        "preview_url": null,
+        "artists": [
+          "Marvin Gaye"
+        ]
+      },
+      {
+        "id": "2WjW8DjQru6Ic4KvYDqLys",
+        "name": "Back In My Arms Again",
+        "track_number": 18,
+        "duration_ms": 173840,
+        "preview_url": null,
+        "artists": [
+          "The Supremes"
+        ]
+      },
+      {
+        "id": "6b6IMqP565TbtFFZg9iFf3",
+        "name": "I Can't Help Myself (Sugar Pie, Honey Bunch)",
+        "track_number": 19,
+        "duration_ms": 164586,
+        "preview_url": null,
+        "artists": [
+          "Four Tops"
+        ]
+      },
+      {
+        "id": "5SCB7L1alKg7ZEeSw7Sq9f",
+        "name": "I Hear A Symphony",
+        "track_number": 20,
+        "duration_ms": 163573,
+        "preview_url": null,
+        "artists": [
+          "The Supremes"
+        ]
+      },
+      {
+        "id": "1yyJNEU2gWG6QiJkhPwrde",
+        "name": "Ain't That Peculiar",
+        "track_number": 21,
+        "duration_ms": 179160,
+        "preview_url": null,
+        "artists": [
+          "Marvin Gaye"
+        ]
+      },
+      {
+        "id": "0Hw6SCrtU9pFCjgAONpnGZ",
+        "name": "Uptight (Everything's Alright)",
+        "track_number": 22,
+        "duration_ms": 172880,
+        "preview_url": null,
+        "artists": [
+          "Stevie Wonder"
+        ]
+      },
+      {
+        "id": "676Rf0qIOh2gKNEl9TnCOx",
+        "name": "Get Ready",
+        "track_number": 23,
+        "duration_ms": 158333,
+        "preview_url": null,
+        "artists": [
+          "The Temptations"
+        ]
+      },
+      {
+        "id": "6rLqjzGV5VMLDWEnuUqi8q",
+        "name": "Dancing In The Street",
+        "track_number": 24,
+        "duration_ms": 158773,
+        "preview_url": null,
+        "artists": [
+          "Martha Reeves & The Vandellas"
+        ]
+      },
+      {
+        "id": "2zF8ro2hX0aEYaqXQdEKW1",
+        "name": "How Sweet It Is (To Be Loved By You)",
+        "track_number": 25,
+        "duration_ms": 176413,
+        "preview_url": null,
+        "artists": [
+          "Marvin Gaye"
+        ]
+      },
+      {
+        "id": "5c33j1xFVOL4G24zxYhssB",
+        "name": "This Old Heart Of Mine (Is Weak For You)",
+        "track_number": 26,
+        "duration_ms": 172813,
+        "preview_url": null,
+        "artists": [
+          "The Isley Brothers"
+        ]
+      },
+      {
+        "id": "5JDOqV9OHGga79RTaGdz2l",
+        "name": "Wherever I Lay My Hat (That's My Home)",
+        "track_number": 27,
+        "duration_ms": 140906,
+        "preview_url": null,
+        "artists": [
+          "Marvin Gaye"
+        ]
+      },
+      {
+        "id": "4CoGNqLap7UGU5Q3VdKug0",
+        "name": "Ain't Too Proud To Beg",
+        "track_number": 1,
+        "duration_ms": 151866,
+        "preview_url": null,
+        "artists": [
+          "The Temptations"
+        ]
+      },
+      {
+        "id": "1KWaBh3RdM3iTGmsbKYjAU",
+        "name": "Blowin' In The Wind",
+        "track_number": 2,
+        "duration_ms": 184346,
+        "preview_url": null,
+        "artists": [
+          "Stevie Wonder"
+        ]
+      },
+      {
+        "id": "1OppEieGNdItZbE14gLBEv",
+        "name": "You Can't Hurry Love",
+        "track_number": 3,
+        "duration_ms": 165733,
+        "preview_url": null,
+        "artists": [
+          "The Supremes"
+        ]
+      },
+      {
+        "id": "5igKwBONSuxkQ99H0hk7Ut",
+        "name": "Beauty Is Only Skin Deep",
+        "track_number": 4,
+        "duration_ms": 142666,
+        "preview_url": null,
+        "artists": [
+          "The Temptations"
+        ]
+      },
+      {
+        "id": "6Pkj4nv5K53i64cLVgkVyY",
+        "name": "Reach Out, I'll Be There",
+        "track_number": 5,
+        "duration_ms": 180600,
+        "preview_url": null,
+        "artists": [
+          "Four Tops"
+        ]
+      },
+      {
+        "id": "4a01ClusxuZiloOK5UgLUn",
+        "name": "You Keep Me Hangin' On",
+        "track_number": 6,
+        "duration_ms": 161506,
+        "preview_url": null,
+        "artists": [
+          "The Supremes"
+        ]
+      },
+      {
+        "id": "6y8o4V2R2dSt2ijgL8C72W",
+        "name": "(I Know) I'm Losing You",
+        "track_number": 7,
+        "duration_ms": 147866,
+        "preview_url": null,
+        "artists": [
+          "The Temptations"
+        ]
+      },
+      {
+        "id": "5NqYo7el2XVOHXkMSrS9jH",
+        "name": "The Hunter Gets Captured By The Game",
+        "track_number": 8,
+        "duration_ms": 170920,
+        "preview_url": null,
+        "artists": [
+          "The Marvelettes"
+        ]
+      },
+      {
+        "id": "4KUGhh0lsJ8GxQJ1Um8UrB",
+        "name": "Love Is Here And Now You're Gone",
+        "track_number": 9,
+        "duration_ms": 167253,
+        "preview_url": null,
+        "artists": [
+          "Diana Ross & The Supremes"
+        ]
+      },
+      {
+        "id": "7N3UAu6FkwdBg9J7OONBBP",
+        "name": "Jimmy Mack - Mono Version",
+        "track_number": 10,
+        "duration_ms": 173120,
+        "preview_url": null,
+        "artists": [
+          "Martha Reeves & The Vandellas"
+        ]
+      },
+      {
+        "id": "6IrBgAF2nSiwrdbIcaCKnp",
+        "name": "The Happening",
+        "track_number": 11,
+        "duration_ms": 170666,
+        "preview_url": null,
+        "artists": [
+          "The Supremes"
+        ]
+      },
+      {
+        "id": "2aCKBrLn7rbhStk5k4FwnF",
+        "name": "I Was Made To Love Her",
+        "track_number": 12,
+        "duration_ms": 155760,
+        "preview_url": null,
+        "artists": [
+          "Stevie Wonder"
+        ]
+      },
+      {
+        "id": "1aRrJewQmqU3wMUf86VVc6",
+        "name": "I Heard It Through The Grapevine",
+        "track_number": 13,
+        "duration_ms": 166706,
+        "preview_url": null,
+        "artists": [
+          "Gladys Knight & The Pips"
+        ]
+      },
+      {
+        "id": "6Hd8mrDwBQ8rLo70FwFG5C",
+        "name": "I Second That Emotion",
+        "track_number": 14,
+        "duration_ms": 166453,
+        "preview_url": null,
+        "artists": [
+          "Smokey Robinson & The Miracles"
+        ]
+      },
+      {
+        "id": "1tjpccwiGZTMDfHr5VGCmT",
+        "name": "I Wish It Would Rain",
+        "track_number": 15,
+        "duration_ms": 165733,
+        "preview_url": null,
+        "artists": [
+          "The Temptations"
+        ]
+      },
+      {
+        "id": "3Cqr3l72XDpazdFiQQpFHh",
+        "name": "Shoo-Be-Doo-Be-Doo-Da-Day",
+        "track_number": 16,
+        "duration_ms": 165440,
+        "preview_url": null,
+        "artists": [
+          "Stevie Wonder"
+        ]
+      },
+      {
+        "id": "37soQoNhEEIrhhYgHWK1xU",
+        "name": "Ain't Nothing Like The Real Thing",
+        "track_number": 17,
+        "duration_ms": 133666,
+        "preview_url": null,
+        "artists": [
+          "Marvin Gaye",
+          "Tammi Terrell"
+        ]
+      },
+      {
+        "id": "3IVgZoEiWpv2FKgWpmdPeL",
+        "name": "I Could Never Love Another (After Loving You)",
+        "track_number": 18,
+        "duration_ms": 211906,
+        "preview_url": null,
+        "artists": [
+          "The Temptations"
+        ]
+      },
+      {
+        "id": "6Ndauo9gCxNjTfklsFYS7b",
+        "name": "You're All I Need To Get By",
+        "track_number": 19,
+        "duration_ms": 169280,
+        "preview_url": null,
+        "artists": [
+          "Marvin Gaye",
+          "Tammi Terrell"
+        ]
+      },
+      {
+        "id": "69EILuL34ggLWQsa626bes",
+        "name": "Love Child",
+        "track_number": 20,
+        "duration_ms": 175493,
+        "preview_url": null,
+        "artists": [
+          "Diana Ross & The Supremes"
+        ]
+      },
+      {
+        "id": "1tqT6DhmsrtQgyCKUwotiw",
+        "name": "I Heard It Through The Grapevine",
+        "track_number": 21,
+        "duration_ms": 193546,
+        "preview_url": null,
+        "artists": [
+          "Marvin Gaye"
+        ]
+      },
+      {
+        "id": "4kP69y3GKHi9tXckfgp4bK",
+        "name": "For Once In My Life",
+        "track_number": 22,
+        "duration_ms": 168320,
+        "preview_url": null,
+        "artists": [
+          "Stevie Wonder"
+        ]
+      },
+      {
+        "id": "3Rhxe6P1im82NFVkt9X2qZ",
+        "name": "I'm Gonna Make You Love Me",
+        "track_number": 23,
+        "duration_ms": 187106,
+        "preview_url": null,
+        "artists": [
+          "Diana Ross & The Supremes",
+          "The Temptations"
+        ]
+      },
+      {
+        "id": "7EpTJ0PuN49TO6Lko6c9zR",
+        "name": "What Becomes Of The Brokenhearted",
+        "track_number": 24,
+        "duration_ms": 179760,
+        "preview_url": null,
+        "artists": [
+          "Jimmy Ruffin"
+        ]
+      },
+      {
+        "id": "1g5GjMGQPx00bzcjCcbMWK",
+        "name": "You've Made Me So Very Happy",
+        "track_number": 25,
+        "duration_ms": 171746,
+        "preview_url": null,
+        "artists": [
+          "Brenda Holloway"
+        ]
+      },
+      {
+        "id": "6O7Sx0AWKrwi3SYvPJxMif",
+        "name": "Runaway Child, Running Wild",
+        "track_number": 1,
+        "duration_ms": 286493,
+        "preview_url": null,
+        "artists": [
+          "The Temptations"
+        ]
+      },
+      {
+        "id": "4l2K7IUTjpReNKXfcKLLfj",
+        "name": "Too Busy Thinking About My Baby",
+        "track_number": 2,
+        "duration_ms": 174440,
+        "preview_url": null,
+        "artists": [
+          "Marvin Gaye"
+        ]
+      },
+      {
+        "id": "3d7A8VAhWbyT5250WzX2aZ",
+        "name": "What Does It Take (To Win Your Love)",
+        "track_number": 3,
+        "duration_ms": 147333,
+        "preview_url": null,
+        "artists": [
+          "Jr. Walker & The All Stars"
+        ]
+      },
+      {
+        "id": "68UtD4etxwmnStT24vi4qP",
+        "name": "I Can't Get Next To You",
+        "track_number": 4,
+        "duration_ms": 171986,
+        "preview_url": null,
+        "artists": [
+          "The Temptations"
+        ]
+      },
+      {
+        "id": "6kQPKK7Igm8IQC8sJfXw4L",
+        "name": "Baby, I'm For Real",
+        "track_number": 5,
+        "duration_ms": 201506,
+        "preview_url": null,
+        "artists": [
+          "The Originals"
+        ]
+      },
+      {
+        "id": "2N0gEw1fIkOi44xDtquRqT",
+        "name": "Someday We'll Be Together",
+        "track_number": 6,
+        "duration_ms": 211773,
+        "preview_url": null,
+        "artists": [
+          "Diana Ross & The Supremes"
+        ]
+      },
+      {
+        "id": "0ke6ojnByX3wL68Z0MqGqW",
+        "name": "I Want You Back",
+        "track_number": 7,
+        "duration_ms": 178906,
+        "preview_url": null,
+        "artists": [
+          "The Jackson 5"
+        ]
+      },
+      {
+        "id": "59JvGg0OxAniSA8w3fKOVF",
+        "name": "Yester-Me, Yester-You, Yesterday",
+        "track_number": 8,
+        "duration_ms": 183306,
+        "preview_url": null,
+        "artists": [
+          "Stevie Wonder"
+        ]
+      },
+      {
+        "id": "00Y6j6FJCEI9hbgXcEj2Rl",
+        "name": "ABC",
+        "track_number": 9,
+        "duration_ms": 176960,
+        "preview_url": null,
+        "artists": [
+          "The Jackson 5"
+        ]
+      },
+      {
+        "id": "63VJoGIVgv9YlMxwRUVc3N",
+        "name": "Reach Out And Touch (Somebody's Hand)",
+        "track_number": 10,
+        "duration_ms": 183986,
+        "preview_url": null,
+        "artists": [
+          "Diana Ross"
+        ]
+      },
+      {
+        "id": "66GaAchjB68Kgxw3CIhvP2",
+        "name": "It's All In The Game",
+        "track_number": 11,
+        "duration_ms": 165080,
+        "preview_url": null,
+        "artists": [
+          "Four Tops"
+        ]
+      },
+      {
+        "id": "23a2Ny3F7ypK1IciZRIWKM",
+        "name": "The Love You Save",
+        "track_number": 12,
+        "duration_ms": 183053,
+        "preview_url": null,
+        "artists": [
+          "The Jackson 5"
+        ]
+      },
+      {
+        "id": "5g18Ctsq0u61KMu8OPonuG",
+        "name": "Get Ready",
+        "track_number": 13,
+        "duration_ms": 171386,
+        "preview_url": null,
+        "artists": [
+          "Rare Earth"
+        ]
+      },
+      {
+        "id": "4rM6LtZ5zL9Ug2OVFwAgCo",
+        "name": "Ball Of Confusion (That's What The World Is Today)",
+        "track_number": 14,
+        "duration_ms": 244226,
+        "preview_url": null,
+        "artists": [
+          "The Temptations"
+        ]
+      },
+      {
+        "id": "2INmwxYMfm6npxZKY87nQN",
+        "name": "Signed, Sealed, Delivered (I'm Yours)",
+        "track_number": 15,
+        "duration_ms": 158720,
+        "preview_url": null,
+        "artists": [
+          "Stevie Wonder"
+        ]
+      },
+      {
+        "id": "2OHDo5Lqh6wEUVjhpRvp4z",
+        "name": "War",
+        "track_number": 16,
+        "duration_ms": 203360,
+        "preview_url": null,
+        "artists": [
+          "Edwin Starr"
+        ]
+      },
+      {
+        "id": "7JYFHmgsaBX6UgDkPJcYo1",
+        "name": "The Tears Of A Clown - U.K. Version",
+        "track_number": 17,
+        "duration_ms": 179853,
+        "preview_url": null,
+        "artists": [
+          "Smokey Robinson & The Miracles"
+        ]
+      },
+      {
+        "id": "1hms23mVBU8Q8hlTjaUCre",
+        "name": "Ain't No Mountain High Enough",
+        "track_number": 18,
+        "duration_ms": 215320,
+        "preview_url": null,
+        "artists": [
+          "Diana Ross"
+        ]
+      },
+      {
+        "id": "1OA7dN9eq8Z1gMXmORQ1y8",
+        "name": "I'll Be There",
+        "track_number": 19,
+        "duration_ms": 236360,
+        "preview_url": null,
+        "artists": [
+          "The Jackson 5"
+        ]
+      },
+      {
+        "id": "0M1UgSLQZETlSe2mw19Gpr",
+        "name": "Heaven Help Us All",
+        "track_number": 20,
+        "duration_ms": 192226,
+        "preview_url": null,
+        "artists": [
+          "Stevie Wonder"
+        ]
+      },
+      {
+        "id": "3IWorlNfPiCoUqsBmFYIq9",
+        "name": "The Tears Of A Clown - U.S. Single Version",
+        "track_number": 21,
+        "duration_ms": 184013,
+        "preview_url": null,
+        "artists": [
+          "Smokey Robinson & The Miracles"
+        ]
+      },
+      {
+        "id": "020Cm9jzULFkdktEaAiQmq",
+        "name": "Stoned Love",
+        "track_number": 22,
+        "duration_ms": 246986,
+        "preview_url": null,
+        "artists": [
+          "The Supremes"
+        ]
+      },
+      {
+        "id": "1dX5B4iWn3Xswv6UX9EPOE",
+        "name": "If I Were Your Woman",
+        "track_number": 23,
+        "duration_ms": 196040,
+        "preview_url": null,
+        "artists": [
+          "Gladys Knight & The Pips"
+        ]
+      },
+      {
+        "id": "4z7vx2d3SvYtoMX0Nzr8sD",
+        "name": "Mama's Pearl",
+        "track_number": 1,
+        "duration_ms": 191720,
+        "preview_url": null,
+        "artists": [
+          "The Jackson 5"
+        ]
+      },
+      {
+        "id": "4TnxH82YkhjcjNBKXkFjhN",
+        "name": "Just My Imagination (Running Away With Me)",
+        "track_number": 2,
+        "duration_ms": 227786,
+        "preview_url": null,
+        "artists": [
+          "The Temptations"
+        ]
+      },
+      {
+        "id": "68wla4QMZ8ImclrDfemsJg",
+        "name": "What's Going On",
+        "track_number": 3,
+        "duration_ms": 234040,
+        "preview_url": null,
+        "artists": [
+          "Marvin Gaye"
+        ]
+      },
+      {
+        "id": "4QoGwvndsMGnmSHaxoFfJt",
+        "name": "Never Can Say Goodbye",
+        "track_number": 4,
+        "duration_ms": 180000,
+        "preview_url": null,
+        "artists": [
+          "The Jackson 5"
+        ]
+      },
+      {
+        "id": "19LEImZAHbQGq8DnFbIAca",
+        "name": "Mercy Mercy Me (The Ecology)",
+        "track_number": 5,
+        "duration_ms": 193693,
+        "preview_url": null,
+        "artists": [
+          "Marvin Gaye"
+        ]
+      },
+      {
+        "id": "2AtRHinBYwP1qQkbZEKpFi",
+        "name": "I'm Still Waiting",
+        "track_number": 6,
+        "duration_ms": 224293,
+        "preview_url": null,
+        "artists": [
+          "Diana Ross"
+        ]
+      },
+      {
+        "id": "5yZ53FNlMoPD0P9u9G6KfV",
+        "name": "Smiling Faces Sometimes",
+        "track_number": 7,
+        "duration_ms": 195773,
+        "preview_url": null,
+        "artists": [
+          "The Undisputed Truth"
+        ]
+      },
+      {
+        "id": "5pC0zkoKa7KxwBPl56A27J",
+        "name": "Inner City Blues (Make Me Wanna Holler)",
+        "track_number": 8,
+        "duration_ms": 326933,
+        "preview_url": null,
+        "artists": [
+          "Marvin Gaye"
+        ]
+      },
+      {
+        "id": "2oAEYWLxFeCEOmA59vPKMa",
+        "name": "Got To Be There",
+        "track_number": 9,
+        "duration_ms": 203613,
+        "preview_url": null,
+        "artists": [
+          "Michael Jackson"
+        ]
+      },
+      {
+        "id": "2scMertXujwdpRhzkDM4fZ",
+        "name": "Rockin' Robin",
+        "track_number": 10,
+        "duration_ms": 153706,
+        "preview_url": null,
+        "artists": [
+          "Michael Jackson"
+        ]
+      },
+      {
+        "id": "61lEPMRw6GKmaRsGcnNpwg",
+        "name": "I Wanna Be Where You Are",
+        "track_number": 11,
+        "duration_ms": 178760,
+        "preview_url": null,
+        "artists": [
+          "Michael Jackson"
+        ]
+      },
+      {
+        "id": "1IlXP6AxZHz8EE9xEKAFDC",
+        "name": "Ben",
+        "track_number": 12,
+        "duration_ms": 166120,
+        "preview_url": null,
+        "artists": [
+          "Michael Jackson"
+        ]
+      },
+      {
+        "id": "7nDmzUouYR2PjpjWW56FSH",
+        "name": "Papa Was A Rollin' Stone",
+        "track_number": 13,
+        "duration_ms": 417626,
+        "preview_url": null,
+        "artists": [
+          "The Temptations"
+        ]
+      },
+      {
+        "id": "1eB7A8TLlSAjKhVpBBgvF3",
+        "name": "Superstition",
+        "track_number": 14,
+        "duration_ms": 267706,
+        "preview_url": null,
+        "artists": [
+          "Stevie Wonder"
+        ]
+      },
+      {
+        "id": "32nlKINtFzwIUJFaItRALK",
+        "name": "Neither One Of Us (Wants To Be The First To Say Goodbye)",
+        "track_number": 15,
+        "duration_ms": 262106,
+        "preview_url": null,
+        "artists": [
+          "Gladys Knight & The Pips"
+        ]
+      },
+      {
+        "id": "1dXE1aXim5Trmsqv8vpxC3",
+        "name": "Masterpiece",
+        "track_number": 16,
+        "duration_ms": 263306,
+        "preview_url": null,
+        "artists": [
+          "The Temptations"
+        ]
+      },
+      {
+        "id": "4ZKEaYiGu5COrlzkvYr7Iq",
+        "name": "You Are The Sunshine Of My Life",
+        "track_number": 17,
+        "duration_ms": 171640,
+        "preview_url": null,
+        "artists": [
+          "Stevie Wonder"
+        ]
+      },
+      {
+        "id": "5gPEutjFsIiC4OVpsamtnu",
+        "name": "Touch Me In The Morning",
+        "track_number": 18,
+        "duration_ms": 228986,
+        "preview_url": null,
+        "artists": [
+          "Diana Ross"
+        ]
+      },
+      {
+        "id": "2RQyNKcgxINrgarBSV4f0l",
+        "name": "Let's Get It On",
+        "track_number": 19,
+        "duration_ms": 291120,
+        "preview_url": null,
+        "artists": [
+          "Marvin Gaye"
+        ]
+      },
+      {
+        "id": "6St5OQbyW5mNuya8z4CSAz",
+        "name": "Higher Ground",
+        "track_number": 1,
+        "duration_ms": 224000,
+        "preview_url": null,
+        "artists": [
+          "Stevie Wonder"
+        ]
+      },
+      {
+        "id": "0W5BeDoURahuIlLAk8DDDT",
+        "name": "Keep On Truckin'",
+        "track_number": 2,
+        "duration_ms": 213173,
+        "preview_url": null,
+        "artists": [
+          "Eddie Kendricks"
+        ]
+      },
+      {
+        "id": "1GWBtsX3kWeFFPzPbtrURi",
+        "name": "Living For The City",
+        "track_number": 3,
+        "duration_ms": 444733,
+        "preview_url": null,
+        "artists": [
+          "Stevie Wonder"
+        ]
+      },
+      {
+        "id": "2P0ILSOU34n71GVkG0kUFF",
+        "name": "Let Your Hair Down",
+        "track_number": 4,
+        "duration_ms": 160386,
+        "preview_url": null,
+        "artists": [
+          "The Temptations"
+        ]
+      },
+      {
+        "id": "5QW0cC96jmWE95DkrFd29w",
+        "name": "Boogie Down",
+        "track_number": 5,
+        "duration_ms": 230306,
+        "preview_url": null,
+        "artists": [
+          "Eddie Kendricks"
+        ]
+      },
+      {
+        "id": "0aGfIqlTG9dYSCGUSxbt1b",
+        "name": "Last Time I Saw Him",
+        "track_number": 6,
+        "duration_ms": 168293,
+        "preview_url": null,
+        "artists": [
+          "Diana Ross"
+        ]
+      },
+      {
+        "id": "1gUZU4mBZo9jpbDtid8oOf",
+        "name": "Dancing Machine",
+        "track_number": 7,
+        "duration_ms": 156880,
+        "preview_url": null,
+        "artists": [
+          "The Jackson 5"
+        ]
+      },
+      {
+        "id": "6nQC6wctxdGNtIuTqUa5Bk",
+        "name": "Do It Baby",
+        "track_number": 8,
+        "duration_ms": 183200,
+        "preview_url": null,
+        "artists": [
+          "The Miracles",
+          "Billy Griffin"
+        ]
+      },
+      {
+        "id": "0WKmsxUrPkvpIB52nRtmj6",
+        "name": "You Haven't Done Nothin'",
+        "track_number": 9,
+        "duration_ms": 204040,
+        "preview_url": null,
+        "artists": [
+          "Stevie Wonder"
+        ]
+      },
+      {
+        "id": "0FpR0ACgT7OsE3behZBT87",
+        "name": "Boogie On Reggae Woman",
+        "track_number": 10,
+        "duration_ms": 251813,
+        "preview_url": null,
+        "artists": [
+          "Stevie Wonder"
+        ]
+      },
+      {
+        "id": "1eYOGV5y5pqJATye7BSfEW",
+        "name": "Happy People",
+        "track_number": 11,
+        "duration_ms": 217706,
+        "preview_url": null,
+        "artists": [
+          "The Temptations"
+        ]
+      },
+      {
+        "id": "6EmfTDZ0vrpsWJLj1cbDo6",
+        "name": "Shoeshine Boy",
+        "track_number": 12,
+        "duration_ms": 196920,
+        "preview_url": null,
+        "artists": [
+          "Eddie Kendricks"
+        ]
+      },
+      {
+        "id": "1YSzTUyPjYdUAwM2zkP9yf",
+        "name": "Shakey Ground",
+        "track_number": 13,
+        "duration_ms": 242720,
+        "preview_url": null,
+        "artists": [
+          "The Temptations"
+        ]
+      },
+      {
+        "id": "5HIs1AFTY7MNSxvu9gst8c",
+        "name": "Baby That's Backatcha",
+        "track_number": 14,
+        "duration_ms": 227053,
+        "preview_url": null,
+        "artists": [
+          "Smokey Robinson"
+        ]
+      },
+      {
+        "id": "4BzpeeFdjZpaKyTWWLOdxw",
+        "name": "Slippery When Wet",
+        "track_number": 15,
+        "duration_ms": 200226,
+        "preview_url": null,
+        "artists": [
+          "Commodores"
+        ]
+      },
+      {
+        "id": "62MRN2mtdCZXB1dG1CcND4",
+        "name": "Forever Came Today",
+        "track_number": 16,
+        "duration_ms": 382426,
+        "preview_url": null,
+        "artists": [
+          "The Jackson 5"
+        ]
+      },
+      {
+        "id": "6LMnAICAwo0YolFMnp20Y0",
+        "name": "Walk Away From Love",
+        "track_number": 17,
+        "duration_ms": 330373,
+        "preview_url": null,
+        "artists": [
+          "David Ruffin"
+        ]
+      },
+      {
+        "id": "3BoaDj2A8ZtdPWD7qeFlk8",
+        "name": "Theme From Mahogany (Do You Know Where You're Going To)",
+        "track_number": 18,
+        "duration_ms": 203800,
+        "preview_url": null,
+        "artists": [
+          "Diana Ross"
+        ]
+      },
+      {
+        "id": "5RTtaSri3fFwDx4DDkxggQ",
+        "name": "Devil In The Bottle",
+        "track_number": 19,
+        "duration_ms": 167546,
+        "preview_url": null,
+        "artists": [
+          "T.G. Sheppard"
+        ]
+      },
+      {
+        "id": "4d0fnMH6nVEELXOgqey68c",
+        "name": "Tryin' To Beat The Morning Home",
+        "track_number": 20,
+        "duration_ms": 161786,
+        "preview_url": null,
+        "artists": [
+          "T.G. Sheppard"
+        ]
+      },
+      {
+        "id": "7EQGvEps8g0ozPbRPsfdXZ",
+        "name": "Love Machine - Pt. 1",
+        "track_number": 1,
+        "duration_ms": 179800,
+        "preview_url": null,
+        "artists": [
+          "The Miracles"
+        ]
+      },
+      {
+        "id": "2RyrTTDcJf3oeVss0J8MaE",
+        "name": "Love Hangover",
+        "track_number": 2,
+        "duration_ms": 225026,
+        "preview_url": null,
+        "artists": [
+          "Diana Ross"
+        ]
+      },
+      {
+        "id": "0elDSFpFH4wztu04DJuTTl",
+        "name": "I Want You",
+        "track_number": 3,
+        "duration_ms": 234960,
+        "preview_url": null,
+        "artists": [
+          "Marvin Gaye"
+        ]
+      },
+      {
+        "id": "26FIIWRvZF2ndKelub5ZDh",
+        "name": "Just To Be Close To You",
+        "track_number": 4,
+        "duration_ms": 207413,
+        "preview_url": null,
+        "artists": [
+          "Commodores"
+        ]
+      },
+      {
+        "id": "7CaLuQ2v1YLiMA4rAmj4gU",
+        "name": "Down To Love Town",
+        "track_number": 5,
+        "duration_ms": 354680,
+        "preview_url": null,
+        "artists": [
+          "The Originals"
+        ]
+      },
+      {
+        "id": "3Mu5jepUGmJ9Y5Z7OZgcxl",
+        "name": "Don't Leave Me This Way",
+        "track_number": 6,
+        "duration_ms": 342013,
+        "preview_url": null,
+        "artists": [
+          "Thelma Houston"
+        ]
+      },
+      {
+        "id": "5pSPPvoKRjsgDI8A68yQ0j",
+        "name": "I Wish",
+        "track_number": 7,
+        "duration_ms": 254013,
+        "preview_url": null,
+        "artists": [
+          "Stevie Wonder"
+        ]
+      },
+      {
+        "id": "1LXXuQ02OuquA8COA3Wyp7",
+        "name": "Got To Give It Up (Pt. 1)",
+        "track_number": 8,
+        "duration_ms": 251533,
+        "preview_url": null,
+        "artists": [
+          "Marvin Gaye"
+        ]
+      },
+      {
+        "id": "1VCOTXC3LugKL3wKe6Oz4B",
+        "name": "Sir Duke",
+        "track_number": 9,
+        "duration_ms": 235120,
+        "preview_url": null,
+        "artists": [
+          "Stevie Wonder"
+        ]
+      },
+      {
+        "id": "3GaDRBD5c3JTjtOPAuvDjE",
+        "name": "Easy",
+        "track_number": 10,
+        "duration_ms": 259693,
+        "preview_url": null,
+        "artists": [
+          "Commodores"
+        ]
+      },
+      {
+        "id": "1DpOHHcm8SMFgyiUYE59FF",
+        "name": "You Can't Turn Me Off (In The Middle Of Turning Me On)",
+        "track_number": 11,
+        "duration_ms": 211293,
+        "preview_url": null,
+        "artists": [
+          "High Inergy"
+        ]
+      },
+      {
+        "id": "03MKSwETq8Skfi4X1qcCbT",
+        "name": "Too Hot Ta Trot",
+        "track_number": 12,
+        "duration_ms": 210453,
+        "preview_url": null,
+        "artists": [
+          "Commodores"
+        ]
+      },
+      {
+        "id": "70woDfbwqKu7Zy0kbhKZ53",
+        "name": "You And I",
+        "track_number": 13,
+        "duration_ms": 190800,
+        "preview_url": null,
+        "artists": [
+          "Rick James"
+        ]
+      },
+      {
+        "id": "4y7iyMbYhKsqNI9xRWCaEb",
+        "name": "Three Times A Lady",
+        "track_number": 14,
+        "duration_ms": 218093,
+        "preview_url": null,
+        "artists": [
+          "Commodores"
+        ]
+      },
+      {
+        "id": "1mzfZNUgSv0f1U89PZzFQl",
+        "name": "The Boss",
+        "track_number": 15,
+        "duration_ms": 230520,
+        "preview_url": null,
+        "artists": [
+          "Diana Ross"
+        ]
+      },
+      {
+        "id": "3vHJKkAW1UB6tKDb5GRSlC",
+        "name": "Sail On",
+        "track_number": 16,
+        "duration_ms": 233506,
+        "preview_url": null,
+        "artists": [
+          "Commodores"
+        ]
+      },
+      {
+        "id": "60K5cjp5Kv2MRJw1IisoMh",
+        "name": "Still",
+        "track_number": 17,
+        "duration_ms": 224320,
+        "preview_url": null,
+        "artists": [
+          "Commodores"
+        ]
+      },
+      {
+        "id": "3ne8ZhFVv45MhhA29H3AK1",
+        "name": "Send One Your Love",
+        "track_number": 18,
+        "duration_ms": 243760,
+        "preview_url": null,
+        "artists": [
+          "Stevie Wonder"
+        ]
+      },
+      {
+        "id": "1DSrSnqkInPUSDOeYtwTTn",
+        "name": "Pastime Paradise",
+        "track_number": 19,
+        "duration_ms": 207360,
+        "preview_url": null,
+        "artists": [
+          "Stevie Wonder"
+        ]
+      },
+      {
+        "id": "12bmwuAgbMVSmLPGJt10Ki",
+        "name": "Cruisin'",
+        "track_number": 1,
+        "duration_ms": 268613,
+        "preview_url": null,
+        "artists": [
+          "Smokey Robinson"
+        ]
+      },
+      {
+        "id": "30uxNJzutKNSsHhNuBaTSg",
+        "name": "Let's Get Serious",
+        "track_number": 2,
+        "duration_ms": 215573,
+        "preview_url": null,
+        "artists": [
+          "Jermaine Jackson"
+        ]
+      },
+      {
+        "id": "5rVLJ7iNaD6CCBvhuUd5Uq",
+        "name": "I'm Coming Out",
+        "track_number": 3,
+        "duration_ms": 320280,
+        "preview_url": null,
+        "artists": [
+          "Diana Ross"
+        ]
+      },
+      {
+        "id": "4GzYlAri3DUtdpCDMqdIkL",
+        "name": "Upside Down",
+        "track_number": 4,
+        "duration_ms": 244573,
+        "preview_url": null,
+        "artists": [
+          "Diana Ross"
+        ]
+      },
+      {
+        "id": "3iZ5zTGWEgGmP9n6Uitm2X",
+        "name": "Master Blaster (Jammin')",
+        "track_number": 5,
+        "duration_ms": 309813,
+        "preview_url": null,
+        "artists": [
+          "Stevie Wonder"
+        ]
+      },
+      {
+        "id": "7FIM3CumRLh59fDp009CgX",
+        "name": "Being With You",
+        "track_number": 6,
+        "duration_ms": 240466,
+        "preview_url": null,
+        "artists": [
+          "Smokey Robinson"
+        ]
+      },
+      {
+        "id": "2F9YE8pDDdbNA5oKPxmURc",
+        "name": "Give It To Me Baby",
+        "track_number": 7,
+        "duration_ms": 248840,
+        "preview_url": null,
+        "artists": [
+          "Rick James"
+        ]
+      },
+      {
+        "id": "4GulBLyTWGUwGlo2SReg6k",
+        "name": "Super Freak",
+        "track_number": 8,
+        "duration_ms": 206520,
+        "preview_url": null,
+        "artists": [
+          "Rick James"
+        ]
+      },
+      {
+        "id": "75tc3NttByXY4QgEXnnlsg",
+        "name": "One Day In Your Life",
+        "track_number": 9,
+        "duration_ms": 252973,
+        "preview_url": null,
+        "artists": [
+          "Michael Jackson"
+        ]
+      },
+      {
+        "id": "1pHSZphPUQurFPv5ThncYZ",
+        "name": "Endless Love",
+        "track_number": 10,
+        "duration_ms": 268213,
+        "preview_url": null,
+        "artists": [
+          "Lionel Richie",
+          "Diana Ross"
+        ]
+      },
+      {
+        "id": "6q37AlR5VJdfxB142wztD8",
+        "name": "Lady (You Bring Me Up)",
+        "track_number": 11,
+        "duration_ms": 241546,
+        "preview_url": null,
+        "artists": [
+          "Commodores"
+        ]
+      },
+      {
+        "id": "5bG4620EcDTnUsYc12s3CK",
+        "name": "That Girl",
+        "track_number": 12,
+        "duration_ms": 313786,
+        "preview_url": null,
+        "artists": [
+          "Stevie Wonder"
+        ]
+      },
+      {
+        "id": "0Z754dsnJzwnp70X0ika65",
+        "name": "Let It Whip",
+        "track_number": 13,
+        "duration_ms": 247413,
+        "preview_url": null,
+        "artists": [
+          "Dazz Band"
+        ]
+      },
+      {
+        "id": "0ATgB7lRq1ql9IAdCqQHrv",
+        "name": "I've Never Been To Me",
+        "track_number": 14,
+        "duration_ms": 233906,
+        "preview_url": null,
+        "artists": [
+          "Charlene"
+        ]
+      },
+      {
+        "id": "7fmC8oqKBbcRDKvndAvqpO",
+        "name": "Do I Do",
+        "track_number": 15,
+        "duration_ms": 630453,
+        "preview_url": null,
+        "artists": [
+          "Stevie Wonder"
+        ]
+      },
+      {
+        "id": "63UHV51sAgeA9KimWdM0YI",
+        "name": "Lately",
+        "track_number": 16,
+        "duration_ms": 246573,
+        "preview_url": null,
+        "artists": [
+          "Stevie Wonder"
+        ]
+      },
+      {
+        "id": "1EaGRLsx1BlFF09I0QHHGM",
+        "name": "Truly",
+        "track_number": 1,
+        "duration_ms": 199013,
+        "preview_url": null,
+        "artists": [
+          "Lionel Richie"
+        ]
+      },
+      {
+        "id": "6I8xhomIJJcXzNN43TotPv",
+        "name": "You Are",
+        "track_number": 2,
+        "duration_ms": 246226,
+        "preview_url": null,
+        "artists": [
+          "Lionel Richie"
+        ]
+      },
+      {
+        "id": "0g8iozh7V5XAzr1RB6Ccz0",
+        "name": "My Love",
+        "track_number": 3,
+        "duration_ms": 245626,
+        "preview_url": null,
+        "artists": [
+          "Lionel Richie"
+        ]
+      },
+      {
+        "id": "48bBO1utRUJLOEIGiUhkiB",
+        "name": "All This Love",
+        "track_number": 4,
+        "duration_ms": 250840,
+        "preview_url": null,
+        "artists": [
+          "DeBarge"
+        ]
+      },
+      {
+        "id": "034wT0RoK0HG8E4PhX8YcA",
+        "name": "Cold Blooded",
+        "track_number": 5,
+        "duration_ms": 269013,
+        "preview_url": null,
+        "artists": [
+          "Rick James"
+        ]
+      },
+      {
+        "id": "2P0COBqN70Hd2KYQj4KRjk",
+        "name": "All Night Long (All Night)",
+        "track_number": 6,
+        "duration_ms": 259013,
+        "preview_url": null,
+        "artists": [
+          "Lionel Richie"
+        ]
+      },
+      {
+        "id": "2igPUJiVg3hmKzxEzHMFvs",
+        "name": "Time Will Reveal",
+        "track_number": 7,
+        "duration_ms": 254826,
+        "preview_url": null,
+        "artists": [
+          "DeBarge"
+        ]
+      },
+      {
+        "id": "7ozMJf8OMc9vRcZmAN8wPt",
+        "name": "Somebody's Watching Me",
+        "track_number": 8,
+        "duration_ms": 237026,
+        "preview_url": null,
+        "artists": [
+          "Rockwell"
+        ]
+      },
+      {
+        "id": "2nUZKG0tHQ5trI79QKQ5QY",
+        "name": "Hello",
+        "track_number": 9,
+        "duration_ms": 248426,
+        "preview_url": null,
+        "artists": [
+          "Lionel Richie"
+        ]
+      },
+      {
+        "id": "0eU9DLGwY25yEzpvYbC4TG",
+        "name": "Stuck On You",
+        "track_number": 10,
+        "duration_ms": 191466,
+        "preview_url": null,
+        "artists": [
+          "Lionel Richie"
+        ]
+      },
+      {
+        "id": "1dGKflMm2maY4uCAomoD9y",
+        "name": "I Just Called To Say I Love You",
+        "track_number": 11,
+        "duration_ms": 263000,
+        "preview_url": null,
+        "artists": [
+          "Stevie Wonder"
+        ]
+      },
+      {
+        "id": "6AzZHRKrjET3aZpmL2UOEG",
+        "name": "Penny Lover",
+        "track_number": 12,
+        "duration_ms": 226800,
+        "preview_url": null,
+        "artists": [
+          "Lionel Richie"
+        ]
+      },
+      {
+        "id": "23ZtxgAdGgam3Fv1ZuWZGB",
+        "name": "Nightshift",
+        "track_number": 13,
+        "duration_ms": 261493,
+        "preview_url": null,
+        "artists": [
+          "Commodores"
+        ]
+      },
+      {
+        "id": "3i749PIamGcEauiV4s1ZN4",
+        "name": "In My House",
+        "track_number": 14,
+        "duration_ms": 236840,
+        "preview_url": null,
+        "artists": [
+          "Mary Jane Girls"
+        ]
+      },
+      {
+        "id": "4zwFi1Msz6ep7RSgrSUJHc",
+        "name": "Rhythm Of The Night",
+        "track_number": 15,
+        "duration_ms": 234786,
+        "preview_url": null,
+        "artists": [
+          "DeBarge"
+        ]
+      },
+      {
+        "id": "3qGuoCxA6GtGYBqX8QqKd4",
+        "name": "Glow",
+        "track_number": 16,
+        "duration_ms": 269573,
+        "preview_url": null,
+        "artists": [
+          "Rick James"
+        ]
+      },
+      {
+        "id": "4sc2rnvp94fdCM32DwrCGM",
+        "name": "You Wear It Well",
+        "track_number": 17,
+        "duration_ms": 235720,
+        "preview_url": null,
+        "artists": [
+          "DeBarge"
+        ]
+      },
+      {
+        "id": "4NoIvaqjafFghBsC4RnjAr",
+        "name": "Don't Look Any Further",
+        "track_number": 18,
+        "duration_ms": 243106,
+        "preview_url": null,
+        "artists": [
+          "Dennis Edwards",
+          "Siedah Garrett"
+        ]
+      },
+      {
+        "id": "4Lqa5YQe0CDEbY34VZZXYF",
+        "name": "Part-Time Lover",
+        "track_number": 1,
+        "duration_ms": 253946,
+        "preview_url": null,
+        "artists": [
+          "Stevie Wonder"
+        ]
+      },
+      {
+        "id": "48lwG9rYGJYjazSlp9NqaP",
+        "name": "Say You, Say Me",
+        "track_number": 2,
+        "duration_ms": 242866,
+        "preview_url": null,
+        "artists": [
+          "Lionel Richie"
+        ]
+      },
+      {
+        "id": "6VhcdIKG4xM8sTX9amSO4n",
+        "name": "Go Home",
+        "track_number": 3,
+        "duration_ms": 250013,
+        "preview_url": null,
+        "artists": [
+          "Stevie Wonder"
+        ]
+      },
+      {
+        "id": "5fU1IRuDwjOnk0kjtc0kd0",
+        "name": "If You Should Ever Be Lonely - Club Mix Radio Edit",
+        "track_number": 4,
+        "duration_ms": 255573,
+        "preview_url": null,
+        "artists": [
+          "Val Young"
+        ]
+      },
+      {
+        "id": "7LBm7lBHJ3QCkOhC0MPzAF",
+        "name": "Overjoyed",
+        "track_number": 5,
+        "duration_ms": 222893,
+        "preview_url": null,
+        "artists": [
+          "Stevie Wonder"
+        ]
+      },
+      {
+        "id": "4yzPbMUGfy9inXkIxOIwl3",
+        "name": "Who's Johnny",
+        "track_number": 6,
+        "duration_ms": 249333,
+        "preview_url": null,
+        "artists": [
+          "El DeBarge"
+        ]
+      },
+      {
+        "id": "0QLaOoyYVPosF0Jj1plHSI",
+        "name": "Dancing On The Ceiling",
+        "track_number": 7,
+        "duration_ms": 274946,
+        "preview_url": null,
+        "artists": [
+          "Lionel Richie"
+        ]
+      },
+      {
+        "id": "121w03KP8OI2i2AW0SFykp",
+        "name": "Love Will Conquer All",
+        "track_number": 8,
+        "duration_ms": 257240,
+        "preview_url": null,
+        "artists": [
+          "Lionel Richie"
+        ]
+      },
+      {
+        "id": "3Uqxcpi8irXzk7MMw9cAVU",
+        "name": "Ballerina Girl",
+        "track_number": 9,
+        "duration_ms": 218306,
+        "preview_url": null,
+        "artists": [
+          "Lionel Richie"
+        ]
+      },
+      {
+        "id": "74tEbHEMtaqVuZaseDdll4",
+        "name": "Just To See Her",
+        "track_number": 10,
+        "duration_ms": 242173,
+        "preview_url": null,
+        "artists": [
+          "Smokey Robinson"
+        ]
+      },
+      {
+        "id": "5FzWAKdVk3hM60kslEHp7D",
+        "name": "Tina Cherry",
+        "track_number": 11,
+        "duration_ms": 307813,
+        "preview_url": null,
+        "artists": [
+          "Georgio"
+        ]
+      },
+      {
+        "id": "7BJxkMshWSmS4vktXlmtRe",
+        "name": "Skeletons",
+        "track_number": 12,
+        "duration_ms": 326800,
+        "preview_url": null,
+        "artists": [
+          "Stevie Wonder"
+        ]
+      },
+      {
+        "id": "1opp8EGlAjl5ZP3PvDQdoi",
+        "name": "You Will Know",
+        "track_number": 13,
+        "duration_ms": 302386,
+        "preview_url": null,
+        "artists": [
+          "Stevie Wonder"
+        ]
+      },
+      {
+        "id": "0llhzWKNTaveLvb6UMdHHi",
+        "name": "Dial My Heart",
+        "track_number": 14,
+        "duration_ms": 262386,
+        "preview_url": null,
+        "artists": [
+          "The Boys"
+        ]
+      },
+      {
+        "id": "3CSGD0jwSh8RNAFV7W1C1N",
+        "name": "Lucky Charm",
+        "track_number": 15,
+        "duration_ms": 236613,
+        "preview_url": null,
+        "artists": [
+          "The Boys"
+        ]
+      },
+      {
+        "id": "1FaciX3yUadh5ttQSXQB0S",
+        "name": "Girl I Got My Eyes On You",
+        "track_number": 16,
+        "duration_ms": 299026,
+        "preview_url": null,
+        "artists": [
+          "Today"
+        ]
+      },
+      {
+        "id": "01mBkMbv0KLRrQuXl0jLzi",
+        "name": "Where Do We Go From Here",
+        "track_number": 17,
+        "duration_ms": 255546,
+        "preview_url": null,
+        "artists": [
+          "Stacy Lattisaw",
+          "Johnny Gill"
+        ]
+      },
+      {
+        "id": "3eiB6eyNYWykRg4EYpXsNn",
+        "name": "Dreamin'",
+        "track_number": 18,
+        "duration_ms": 212986,
+        "preview_url": null,
+        "artists": [
+          "Guinn"
+        ]
+      },
+      {
+        "id": "6cJaqQCNBN1cNbCJdt4ISW",
+        "name": "Rub You The Right Way",
+        "track_number": 1,
+        "duration_ms": 255146,
+        "preview_url": null,
+        "artists": [
+          "Johnny Gill"
+        ]
+      },
+      {
+        "id": "5h2IaipBfmXy9zz0lRq4zn",
+        "name": "My, My, My",
+        "track_number": 2,
+        "duration_ms": 245546,
+        "preview_url": null,
+        "artists": [
+          "Johnny Gill"
+        ]
+      },
+      {
+        "id": "7oKhLs0hmEHN6jE6hBPTqH",
+        "name": "Crazy",
+        "track_number": 3,
+        "duration_ms": 244253,
+        "preview_url": null,
+        "artists": [
+          "The Boys"
+        ]
+      },
+      {
+        "id": "6eVb1g4cfnGOXwMSFi5gKx",
+        "name": "Wrap My Body Tight",
+        "track_number": 4,
+        "duration_ms": 224600,
+        "preview_url": null,
+        "artists": [
+          "Johnny Gill"
+        ]
+      },
+      {
+        "id": "7v0ERFYesCxycIXS9hRlCA",
+        "name": "It's So Hard To Say Goodbye To Yesterday",
+        "track_number": 5,
+        "duration_ms": 189586,
+        "preview_url": null,
+        "artists": [
+          "Boyz II Men",
+          "Rex Salas"
+        ]
+      },
+      {
+        "id": "4QwKdOstCCHCaKgOjp9ILQ",
+        "name": "I Love Your Smile",
+        "track_number": 6,
+        "duration_ms": 265266,
+        "preview_url": null,
+        "artists": [
+          "Shanice"
+        ]
+      },
+      {
+        "id": "5TcuiiJ7w0DuJKGFiJ7MlC",
+        "name": "Uhh Ahh",
+        "track_number": 7,
+        "duration_ms": 229960,
+        "preview_url": null,
+        "artists": [
+          "Boyz II Men"
+        ]
+      },
+      {
+        "id": "2f3iMijbxWI3IIwzw4LpRs",
+        "name": "Do It To Me",
+        "track_number": 8,
+        "duration_ms": 271560,
+        "preview_url": null,
+        "artists": [
+          "Lionel Richie"
+        ]
+      },
+      {
+        "id": "1Q2BYzuRKM9qsCGTE25W7e",
+        "name": "End Of The Road",
+        "track_number": 9,
+        "duration_ms": 350386,
+        "preview_url": null,
+        "artists": [
+          "Boyz II Men"
+        ]
+      },
+      {
+        "id": "2KViV34ddPrEEaY0gwzGPJ",
+        "name": "I'll Make Love To You",
+        "track_number": 10,
+        "duration_ms": 235880,
+        "preview_url": null,
+        "artists": [
+          "Boyz II Men"
+        ]
+      },
+      {
+        "id": "2sxrrfGbgz79Ki1Q3Q6nM6",
+        "name": "On Bended Knee",
+        "track_number": 11,
+        "duration_ms": 332333,
+        "preview_url": null,
+        "artists": [
+          "Boyz II Men"
+        ]
+      },
+      {
+        "id": "5awdhpPh2B2sv7qVJOUjta",
+        "name": "Take Me Higher",
+        "track_number": 12,
+        "duration_ms": 259186,
+        "preview_url": null,
+        "artists": [
+          "Diana Ross"
+        ]
+      },
+      {
+        "id": "1fIsScU45D2URbXGKRozd7",
+        "name": "4 Seasons Of Loneliness",
+        "track_number": 13,
+        "duration_ms": 294960,
+        "preview_url": null,
+        "artists": [
+          "Boyz II Men"
+        ]
+      },
+      {
+        "id": "1Wdjn5Cs1gmMpeedG6nQia",
+        "name": "A Song For Mama",
+        "track_number": 14,
+        "duration_ms": 304373,
+        "preview_url": null,
+        "artists": [
+          "Boyz II Men"
+        ]
+      },
+      {
+        "id": "2TZfSQ567tv6gkik8Fi5CC",
+        "name": "Stay",
+        "track_number": 15,
+        "duration_ms": 286853,
+        "preview_url": null,
+        "artists": [
+          "The Temptations"
+        ]
+      },
+      {
+        "id": "1pC1i1K88pQbIycFxdZLaa",
+        "name": "Liar - Radio Edit",
+        "track_number": 16,
+        "duration_ms": 239786,
+        "preview_url": null,
+        "artists": [
+          "Profyle"
+        ]
+      },
+      {
+        "id": "2pUnZcjdZNhRPh3Zlr2vFP",
+        "name": "Bag Lady - Radio Edit",
+        "track_number": 17,
+        "duration_ms": 245706,
+        "preview_url": null,
+        "artists": [
+          "Erykah Badu"
+        ]
+      }
+    ],
+    "saved_songs": 55
+  },
+  {
+    "id": "0HLCM1PkLwDz5NLr5Kl4a4",
+    "name": "Next To Normal (Original Broadway Cast Recording)",
+    "artists": [
+      "Tom Kitt",
+      "Brian Yorkey"
+    ],
+    "release_date": "2009-05-05",
+    "total_tracks": 37,
+    "images": [
+      {
+        "url": "https://i.scdn.co/image/ab67616d0000b2738add1bbf8e9fe4b121b1e8a6",
+        "height": 640,
+        "width": 640
+      },
+      {
+        "url": "https://i.scdn.co/image/ab67616d00001e028add1bbf8e9fe4b121b1e8a6",
+        "height": 300,
+        "width": 300
+      },
+      {
+        "url": "https://i.scdn.co/image/ab67616d000048518add1bbf8e9fe4b121b1e8a6",
+        "height": 64,
+        "width": 64
+      }
+    ],
+    "external_url": "https://open.spotify.com/album/0HLCM1PkLwDz5NLr5Kl4a4",
+    "tracks": [
+      {
+        "id": "3vAv2NevAzAfu6OmYkSf86",
+        "name": "Prelude",
+        "track_number": 1,
+        "duration_ms": 26520,
+        "preview_url": null,
+        "artists": [
+          "'Next To Normal' Band"
+        ]
+      },
+      {
+        "id": "1lMkoUTrBBfUNlepQ40YWp",
+        "name": "Just Another Day",
+        "track_number": 2,
+        "duration_ms": 229893,
+        "preview_url": null,
+        "artists": [
+          "Alice Ripley",
+          "Aaron Tveit",
+          "J. Robert Spencer",
+          "Louis Hobson",
+          "Jennifer Damiano",
+          "Adam Chanler-Berat"
+        ]
+      },
+      {
+        "id": "4os38g20ILYbtoj2g2odxO",
+        "name": "Everything Else",
+        "track_number": 3,
+        "duration_ms": 109866,
+        "preview_url": null,
+        "artists": [
+          "Jennifer Damiano"
+        ]
+      },
+      {
+        "id": "0ZIHLZqtaEoHbUWZiuPQKJ",
+        "name": "Who's Crazy / My Psychopharmacologist and I",
+        "track_number": 4,
+        "duration_ms": 302840,
+        "preview_url": null,
+        "artists": [
+          "Alice Ripley",
+          "Aaron Tveit",
+          "J. Robert Spencer",
+          "Louis Hobson",
+          "Jennifer Damiano",
+          "Adam Chanler-Berat"
+        ]
+      },
+      {
+        "id": "1MynvynUu0GA3xJlZedPrR",
+        "name": "Perfect for You",
+        "track_number": 5,
+        "duration_ms": 123000,
+        "preview_url": null,
+        "artists": [
+          "Jennifer Damiano",
+          "Adam Chanler-Berat"
+        ]
+      },
+      {
+        "id": "1P107IPPLti4M6EWX6GuAx",
+        "name": "I Miss the Mountains",
+        "track_number": 6,
+        "duration_ms": 226066,
+        "preview_url": null,
+        "artists": [
+          "Alice Ripley"
+        ]
+      },
+      {
+        "id": "15OSXLWXY3pXa1pbcQ6Y9u",
+        "name": "It's Gonna Be Good",
+        "track_number": 7,
+        "duration_ms": 85853,
+        "preview_url": null,
+        "artists": [
+          "Alice Ripley",
+          "Aaron Tveit",
+          "J. Robert Spencer",
+          "Louis Hobson",
+          "Jennifer Damiano",
+          "Adam Chanler-Berat"
+        ]
+      },
+      {
+        "id": "134LHoYnSCDswEEcvvpiyL",
+        "name": "He's Not Here",
+        "track_number": 8,
+        "duration_ms": 75373,
+        "preview_url": null,
+        "artists": [
+          "J. Robert Spencer"
+        ]
+      },
+      {
+        "id": "2PBpbmskGqAzovHmSb1YHu",
+        "name": "You Don't Know",
+        "track_number": 9,
+        "duration_ms": 90280,
+        "preview_url": null,
+        "artists": [
+          "Alice Ripley"
+        ]
+      },
+      {
+        "id": "3oUMTVHcH4NdvTLMt1T5xD",
+        "name": "I Am the One",
+        "track_number": 10,
+        "duration_ms": 196333,
+        "preview_url": null,
+        "artists": [
+          "J. Robert Spencer",
+          "Aaron Tveit",
+          "Alice Ripley"
+        ]
+      },
+      {
+        "id": "2B9slMcknpWPGLRVuPVBBK",
+        "name": "Superboy and the Invisible Girl",
+        "track_number": 11,
+        "duration_ms": 128039,
+        "preview_url": null,
+        "artists": [
+          "Jennifer Damiano",
+          "Aaron Tveit",
+          "Alice Ripley"
+        ]
+      },
+      {
+        "id": "6XOK0Sigh112V5C1WHAwo5",
+        "name": "I'm Alive",
+        "track_number": 12,
+        "duration_ms": 194120,
+        "preview_url": null,
+        "artists": [
+          "Aaron Tveit"
+        ]
+      },
+      {
+        "id": "1sDPCsd3gDuA4dGYVo1LKZ",
+        "name": "Make up Your Mind / Catch Me I'm Falling",
+        "track_number": 13,
+        "duration_ms": 238973,
+        "preview_url": null,
+        "artists": [
+          "Alice Ripley",
+          "Aaron Tveit",
+          "J. Robert Spencer",
+          "Louis Hobson",
+          "Jennifer Damiano",
+          "Adam Chanler-Berat"
+        ]
+      },
+      {
+        "id": "4y8f2BxJ3elLxDMu7ijLm8",
+        "name": "I Dreamed a Dance",
+        "track_number": 14,
+        "duration_ms": 140773,
+        "preview_url": null,
+        "artists": [
+          "Alice Ripley",
+          "Aaron Tveit"
+        ]
+      },
+      {
+        "id": "5BNn0ymGox5ycogLZe71Wg",
+        "name": "There's a World",
+        "track_number": 15,
+        "duration_ms": 94466,
+        "preview_url": null,
+        "artists": [
+          "Aaron Tveit"
+        ]
+      },
+      {
+        "id": "3WzBCe8v0PNdLRy3LlK1sT",
+        "name": "I've Been",
+        "track_number": 16,
+        "duration_ms": 164706,
+        "preview_url": null,
+        "artists": [
+          "J. Robert Spencer"
+        ]
+      },
+      {
+        "id": "7asr1gaXNFlvhAtyQHKWBQ",
+        "name": "Didn't I See This Movie?",
+        "track_number": 17,
+        "duration_ms": 90080,
+        "preview_url": null,
+        "artists": [
+          "Alice Ripley"
+        ]
+      },
+      {
+        "id": "5EKy94xLuBG4edmrdqxAzc",
+        "name": "A Light in the Dark",
+        "track_number": 18,
+        "duration_ms": 165786,
+        "preview_url": null,
+        "artists": [
+          "J. Robert Spencer",
+          "Alice Ripley"
+        ]
+      },
+      {
+        "id": "0x21MBsfTsyh6bafP83BBZ",
+        "name": "Wish I Were Here",
+        "track_number": 1,
+        "duration_ms": 186480,
+        "preview_url": null,
+        "artists": [
+          "Alice Ripley",
+          "Aaron Tveit",
+          "J. Robert Spencer",
+          "Louis Hobson",
+          "Jennifer Damiano",
+          "Adam Chanler-Berat"
+        ]
+      },
+      {
+        "id": "6AGagJDZjprj3hA1ULy2rS",
+        "name": "Song of Forgetting",
+        "track_number": 2,
+        "duration_ms": 203933,
+        "preview_url": null,
+        "artists": [
+          "Alice Ripley",
+          "J. Robert Spencer",
+          "Jennifer Damiano"
+        ]
+      },
+      {
+        "id": "7uH72553b8NCzB0Ji8HEZ9",
+        "name": "Hey #1",
+        "track_number": 3,
+        "duration_ms": 99506,
+        "preview_url": null,
+        "artists": [
+          "Jennifer Damiano",
+          "Adam Chanler-Berat"
+        ]
+      },
+      {
+        "id": "0LlSBzOxK4T7jIzvZRxKcM",
+        "name": "Seconds and Years",
+        "track_number": 4,
+        "duration_ms": 39426,
+        "preview_url": null,
+        "artists": [
+          "Louis Hobson",
+          "J. Robert Spencer",
+          "Alice Ripley"
+        ]
+      },
+      {
+        "id": "01XoKIGJNxmQ112o2HmhWZ",
+        "name": "Better Than Before",
+        "track_number": 5,
+        "duration_ms": 268666,
+        "preview_url": null,
+        "artists": [
+          "Alice Ripley",
+          "J. Robert Spencer",
+          "Jennifer Damiano",
+          "Louis Hobson"
+        ]
+      },
+      {
+        "id": "7oUldkQrANbhUHetrpeVAa",
+        "name": "Aftershocks",
+        "track_number": 6,
+        "duration_ms": 107013,
+        "preview_url": null,
+        "artists": [
+          "Aaron Tveit"
+        ]
+      },
+      {
+        "id": "0LnIv4X5F3dR0SHJ9Kx2bn",
+        "name": "Hey #2",
+        "track_number": 7,
+        "duration_ms": 84320,
+        "preview_url": null,
+        "artists": [
+          "Jennifer Damiano",
+          "Adam Chanler-Berat"
+        ]
+      },
+      {
+        "id": "44RZvHogjEyX0iRvC1acmO",
+        "name": "You Don't Know - Reprise",
+        "track_number": 8,
+        "duration_ms": 87786,
+        "preview_url": null,
+        "artists": [
+          "Alice Ripley",
+          "Louis Hobson"
+        ]
+      },
+      {
+        "id": "5gf5BvOkMqUxEZmYYF5Oug",
+        "name": "How Could I Ever Forget?",
+        "track_number": 9,
+        "duration_ms": 170093,
+        "preview_url": null,
+        "artists": [
+          "Alice Ripley",
+          "J. Robert Spencer"
+        ]
+      },
+      {
+        "id": "31I5lzAHxPDBSG6dQwSWnt",
+        "name": "It's Gonna Be Good - Reprise",
+        "track_number": 10,
+        "duration_ms": 32626,
+        "preview_url": null,
+        "artists": [
+          "J. Robert Spencer",
+          "Alice Ripley"
+        ]
+      },
+      {
+        "id": "5mYrSPIwn3iKr5hqUkSj6f",
+        "name": "Why Stay? / A Promise",
+        "track_number": 11,
+        "duration_ms": 155693,
+        "preview_url": null,
+        "artists": [
+          "Alice Ripley",
+          "Jennifer Damiano",
+          "J. Robert Spencer",
+          "Adam Chanler-Berat"
+        ]
+      },
+      {
+        "id": "6my1vDZjyn3bSwUPrpWvrA",
+        "name": "I'm Alive - Reprise",
+        "track_number": 12,
+        "duration_ms": 71786,
+        "preview_url": null,
+        "artists": [
+          "Aaron Tveit"
+        ]
+      },
+      {
+        "id": "27jtE0kjjxYiZp7d2VopYD",
+        "name": "The Break",
+        "track_number": 13,
+        "duration_ms": 83093,
+        "preview_url": null,
+        "artists": [
+          "Alice Ripley"
+        ]
+      },
+      {
+        "id": "0cf41p4iVf4jtW1CHSJu7G",
+        "name": "Make up Your Mind / Catch Me I'm Falling - Reprise",
+        "track_number": 14,
+        "duration_ms": 100933,
+        "preview_url": null,
+        "artists": [
+          "Alice Ripley",
+          "Louis Hobson",
+          "Aaron Tveit"
+        ]
+      },
+      {
+        "id": "4OXL2HLCyLvkmwCFeGZE34",
+        "name": "Maybe (Next to Normal)",
+        "track_number": 15,
+        "duration_ms": 240920,
+        "preview_url": null,
+        "artists": [
+          "Alice Ripley",
+          "Jennifer Damiano"
+        ]
+      },
+      {
+        "id": "6pI6USTyz6ll1xZAw5qqRe",
+        "name": "Hey #3 / Perfect for You - Reprise",
+        "track_number": 16,
+        "duration_ms": 143506,
+        "preview_url": null,
+        "artists": [
+          "Jennifer Damiano",
+          "Aaron Tveit"
+        ]
+      },
+      {
+        "id": "16vJV1HFQZwv6xhiC6ITt2",
+        "name": "So Anyway",
+        "track_number": 17,
+        "duration_ms": 188066,
+        "preview_url": null,
+        "artists": [
+          "Alice Ripley"
+        ]
+      },
+      {
+        "id": "4Yj3tojIqqia2X2T1ONXzK",
+        "name": "I Am the One - Reprise",
+        "track_number": 18,
+        "duration_ms": 136760,
+        "preview_url": null,
+        "artists": [
+          "J. Robert Spencer",
+          "Aaron Tveit"
+        ]
+      },
+      {
+        "id": "5CP3G1uSsCqeT89TNxnbDG",
+        "name": "Light",
+        "track_number": 19,
+        "duration_ms": 261666,
+        "preview_url": null,
+        "artists": [
+          "Alice Ripley",
+          "Aaron Tveit",
+          "J. Robert Spencer",
+          "Louis Hobson",
+          "Jennifer Damiano",
+          "Adam Chanler-Berat"
+        ]
+      }
+    ],
+    "saved_songs": 37
+  },
+  {
+    "id": "52NFKuYav3gArQgbsxiHwS",
+    "name": "The Platinum Collection",
+    "artists": [
+      "Queen"
+    ],
+    "release_date": "2002-09-24",
+    "total_tracks": 51,
+    "images": [
+      {
+        "url": "https://i.scdn.co/image/ab67616d0000b273aa61936fcf25fb36cef342fb",
+        "height": 640,
+        "width": 640
+      },
+      {
+        "url": "https://i.scdn.co/image/ab67616d00001e02aa61936fcf25fb36cef342fb",
+        "height": 300,
+        "width": 300
+      },
+      {
+        "url": "https://i.scdn.co/image/ab67616d00004851aa61936fcf25fb36cef342fb",
+        "height": 64,
+        "width": 64
+      }
+    ],
+    "external_url": "https://open.spotify.com/album/52NFKuYav3gArQgbsxiHwS",
+    "tracks": [
+      {
+        "id": "7tFiyTwD0nx5a1eklYtX2J",
+        "name": "Bohemian Rhapsody - Digital Remaster",
+        "track_number": 1,
+        "duration_ms": 353933,
+        "preview_url": null,
+        "artists": [
+          "Queen"
+        ]
+      },
+      {
+        "id": "57JVGBtBLCfHw2muk5416J",
+        "name": "Another One Bites The Dust - Digital Remaster",
+        "track_number": 2,
+        "duration_ms": 215146,
+        "preview_url": null,
+        "artists": [
+          "Queen"
+        ]
+      },
+      {
+        "id": "7GqWnsKhMtEW0nzki5o0d8",
+        "name": "Killer Queen - Remastered",
+        "track_number": 3,
+        "duration_ms": 180200,
+        "preview_url": null,
+        "artists": [
+          "Queen"
+        ]
+      },
+      {
+        "id": "4o4kpehFSIvjFIGB36mGbm",
+        "name": "Fat Bottomed Girls - Digital Remaster",
+        "track_number": 4,
+        "duration_ms": 205573,
+        "preview_url": null,
+        "artists": [
+          "Queen"
+        ]
+      },
+      {
+        "id": "3lUx27TOwV2nAiKwnYYXxe",
+        "name": "Bicycle Race - Digital Remaster",
+        "track_number": 5,
+        "duration_ms": 181906,
+        "preview_url": null,
+        "artists": [
+          "Queen"
+        ]
+      },
+      {
+        "id": "4OKf7CcYuw5H2HptkcKxcP",
+        "name": "You're My Best Friend - Remastered",
+        "track_number": 6,
+        "duration_ms": 171053,
+        "preview_url": null,
+        "artists": [
+          "Queen"
+        ]
+      },
+      {
+        "id": "7hQJA50XrCWABAu5v6QZ4i",
+        "name": "Don't Stop Me Now - Digital Remaster",
+        "track_number": 7,
+        "duration_ms": 209546,
+        "preview_url": null,
+        "artists": [
+          "Queen"
+        ]
+      },
+      {
+        "id": "2mGEqJahn3CSyCG1BTEqMs",
+        "name": "Save Me - Remastered",
+        "track_number": 8,
+        "duration_ms": 228133,
+        "preview_url": null,
+        "artists": [
+          "Queen"
+        ]
+      },
+      {
+        "id": "35ItUJlMtjOQW3SSiTCrrw",
+        "name": "Crazy Little Thing Called Love - Digital Remaster",
+        "track_number": 9,
+        "duration_ms": 163466,
+        "preview_url": null,
+        "artists": [
+          "Queen"
+        ]
+      },
+      {
+        "id": "6cFZ4PLC19taNlpl9pbGMf",
+        "name": "Somebody To Love - Remastered",
+        "track_number": 10,
+        "duration_ms": 296693,
+        "preview_url": null,
+        "artists": [
+          "Queen"
+        ]
+      },
+      {
+        "id": "0P7YJ9fxIOM0Rq4pZ2qU42",
+        "name": "Now I'm Here - Remastered",
+        "track_number": 11,
+        "duration_ms": 253600,
+        "preview_url": null,
+        "artists": [
+          "Queen"
+        ]
+      },
+      {
+        "id": "1mnQiO568zXIrUncttTZGp",
+        "name": "Good Old-Fashioned Lover Boy - Digital Remaster",
+        "track_number": 12,
+        "duration_ms": 174266,
+        "preview_url": null,
+        "artists": [
+          "Queen"
+        ]
+      },
+      {
+        "id": "4b0mX1GtrQLiUW9jpb6Xcx",
+        "name": "Play The Game - Remastered",
+        "track_number": 13,
+        "duration_ms": 210266,
+        "preview_url": null,
+        "artists": [
+          "Queen"
+        ]
+      },
+      {
+        "id": "6HEHziYj6S0H1UDxtdWYAU",
+        "name": "Flash - Digital Remaster",
+        "track_number": 14,
+        "duration_ms": 169533,
+        "preview_url": null,
+        "artists": [
+          "Queen"
+        ]
+      },
+      {
+        "id": "1e9Tt3nKBwRbuaU79kN3dn",
+        "name": "Seven Seas Of Rhye - Remastered",
+        "track_number": 15,
+        "duration_ms": 168826,
+        "preview_url": null,
+        "artists": [
+          "Queen"
+        ]
+      },
+      {
+        "id": "54flyrjcdnQdco7300avMJ",
+        "name": "We Will Rock You - Remastered",
+        "track_number": 16,
+        "duration_ms": 122333,
+        "preview_url": null,
+        "artists": [
+          "Queen"
+        ]
+      },
+      {
+        "id": "7ccI9cStQbQdystvc6TvxD",
+        "name": "We Are The Champions - Remastered",
+        "track_number": 17,
+        "duration_ms": 181013,
+        "preview_url": null,
+        "artists": [
+          "Queen"
+        ]
+      },
+      {
+        "id": "1LFK84nUerBbYfFd1LmnTm",
+        "name": "A Kind Of Magic - Digital Remaster",
+        "track_number": 1,
+        "duration_ms": 264426,
+        "preview_url": null,
+        "artists": [
+          "Queen"
+        ]
+      },
+      {
+        "id": "7BSMfsUUFos81AGCnQKh5n",
+        "name": "Under Pressure - Digital Remaster",
+        "track_number": 2,
+        "duration_ms": 235040,
+        "preview_url": null,
+        "artists": [
+          "Queen",
+          "David Bowie"
+        ]
+      },
+      {
+        "id": "1HmzAZUvhQLhLo2z3ocpZI",
+        "name": "Radio Ga Ga - Remastered",
+        "track_number": 3,
+        "duration_ms": 346413,
+        "preview_url": null,
+        "artists": [
+          "Queen"
+        ]
+      },
+      {
+        "id": "2VHNZq7dloCtvvTyvTr2mR",
+        "name": "I Want It All - Digital Remaster",
+        "track_number": 4,
+        "duration_ms": 240586,
+        "preview_url": null,
+        "artists": [
+          "Queen"
+        ]
+      },
+      {
+        "id": "1lCzc2COkttERtRRBkjOnv",
+        "name": "I Want To Break Free - Remastered",
+        "track_number": 5,
+        "duration_ms": 256706,
+        "preview_url": null,
+        "artists": [
+          "Queen"
+        ]
+      },
+      {
+        "id": "2OuImA1gcBXJVMrVH9Kn9p",
+        "name": "Innuendo - Digital Remaster",
+        "track_number": 6,
+        "duration_ms": 391280,
+        "preview_url": null,
+        "artists": [
+          "Queen"
+        ]
+      },
+      {
+        "id": "5PTvZMe9mIL0GrRvPBRu6S",
+        "name": "It's A Hard Life - Remastered",
+        "track_number": 7,
+        "duration_ms": 246520,
+        "preview_url": null,
+        "artists": [
+          "Queen"
+        ]
+      },
+      {
+        "id": "3TbyYaMTcfnBfiap2mCYtV",
+        "name": "Breakthru - Remastered",
+        "track_number": 8,
+        "duration_ms": 247253,
+        "preview_url": null,
+        "artists": [
+          "Queen"
+        ]
+      },
+      {
+        "id": "1TlIT9kwyEbJDBaL7j1MgL",
+        "name": "Who Wants To Live Forever - Remastered",
+        "track_number": 9,
+        "duration_ms": 293933,
+        "preview_url": null,
+        "artists": [
+          "Queen"
+        ]
+      },
+      {
+        "id": "7vSmcmanxnODX5Xx5JrI4p",
+        "name": "Headlong - Remastered",
+        "track_number": 10,
+        "duration_ms": 271600,
+        "preview_url": null,
+        "artists": [
+          "Queen"
+        ]
+      },
+      {
+        "id": "55ZMyYbRQRYjcNWceCL5oT",
+        "name": "The Miracle - Remastered",
+        "track_number": 11,
+        "duration_ms": 301386,
+        "preview_url": null,
+        "artists": [
+          "Queen"
+        ]
+      },
+      {
+        "id": "5XkB7gdjZh72aYrfxR8anu",
+        "name": "I'm Going Slightly Mad - Remastered",
+        "track_number": 12,
+        "duration_ms": 247226,
+        "preview_url": null,
+        "artists": [
+          "Queen"
+        ]
+      },
+      {
+        "id": "0h15VlXIzD1MwKwNi12ois",
+        "name": "The Invisible Man - Remastered",
+        "track_number": 13,
+        "duration_ms": 235760,
+        "preview_url": null,
+        "artists": [
+          "Queen"
+        ]
+      },
+      {
+        "id": "30U2ANWm8iFBRiYX3USS5H",
+        "name": "Hammer To Fall - Remastered",
+        "track_number": 14,
+        "duration_ms": 218280,
+        "preview_url": null,
+        "artists": [
+          "Queen"
+        ]
+      },
+      {
+        "id": "0SaopEgTo6O5dJoFXBbulL",
+        "name": "Friends Will Be Friends - Remastered",
+        "track_number": 15,
+        "duration_ms": 246400,
+        "preview_url": null,
+        "artists": [
+          "Queen"
+        ]
+      },
+      {
+        "id": "3aZzLw6O78Q3ZHGWZeo50G",
+        "name": "The Show Must Go On - Remastered",
+        "track_number": 16,
+        "duration_ms": 262013,
+        "preview_url": null,
+        "artists": [
+          "Queen"
+        ]
+      },
+      {
+        "id": "6c359yP0zdP6HVwN2ybZbQ",
+        "name": "One Vision - Remastered",
+        "track_number": 17,
+        "duration_ms": 241440,
+        "preview_url": null,
+        "artists": [
+          "Queen"
+        ]
+      },
+      {
+        "id": "5QB0ySp2IXZBegG0D3kzQa",
+        "name": "The Show Must Go On - Live",
+        "track_number": 1,
+        "duration_ms": 274520,
+        "preview_url": null,
+        "artists": [
+          "Queen",
+          "Elton John"
+        ]
+      },
+      {
+        "id": "0TuLWcAbTsCG81tZEJuLIr",
+        "name": "Under Pressure (Rah Mix) - Remix",
+        "track_number": 2,
+        "duration_ms": 248666,
+        "preview_url": null,
+        "artists": [
+          "Queen",
+          "David Bowie"
+        ]
+      },
+      {
+        "id": "4U21qm7I52yEbtXDnjYfdO",
+        "name": "Barcelona - Duet",
+        "track_number": 3,
+        "duration_ms": 264266,
+        "preview_url": null,
+        "artists": [
+          "Freddie Mercury",
+          "Montserrat Caball\u00e9"
+        ]
+      },
+      {
+        "id": "5eDwoZdv3Qftzs8ijKviYg",
+        "name": "Too Much Love Will Kill You",
+        "track_number": 4,
+        "duration_ms": 258800,
+        "preview_url": null,
+        "artists": [
+          "Queen"
+        ]
+      },
+      {
+        "id": "0c6gaX6Av1GfiXXqfq9Jox",
+        "name": "Somebody To Love - Live",
+        "track_number": 5,
+        "duration_ms": 306933,
+        "preview_url": null,
+        "artists": [
+          "Queen"
+        ]
+      },
+      {
+        "id": "35balOkqaPZ4IrvZtG3YNg",
+        "name": "You Don't Fool Me",
+        "track_number": 6,
+        "duration_ms": 322666,
+        "preview_url": null,
+        "artists": [
+          "Queen"
+        ]
+      },
+      {
+        "id": "4TV25NkS0pqfxI042bANwF",
+        "name": "Heaven For Everyone",
+        "track_number": 7,
+        "duration_ms": 277600,
+        "preview_url": null,
+        "artists": [
+          "Queen"
+        ]
+      },
+      {
+        "id": "5hHpNI203ne4TmVP3c9LPq",
+        "name": "Las Palabras De Amor",
+        "track_number": 8,
+        "duration_ms": 269200,
+        "preview_url": null,
+        "artists": [
+          "Queen"
+        ]
+      },
+      {
+        "id": "5fwDeXiddBrFU3zjTKsiZq",
+        "name": "Driven By You",
+        "track_number": 9,
+        "duration_ms": 249800,
+        "preview_url": null,
+        "artists": [
+          "Brian May"
+        ]
+      },
+      {
+        "id": "6YwKEt4UNMt9xI5ZKSa8ix",
+        "name": "Living On My Own - Remix",
+        "track_number": 10,
+        "duration_ms": 216506,
+        "preview_url": null,
+        "artists": [
+          "Freddie Mercury"
+        ]
+      },
+      {
+        "id": "2OhPBpTYE40CHUb4Ti2WfU",
+        "name": "Let Me Live",
+        "track_number": 11,
+        "duration_ms": 285080,
+        "preview_url": null,
+        "artists": [
+          "Queen"
+        ]
+      },
+      {
+        "id": "5huXWkdoRSeyY1zwC7rMOi",
+        "name": "The Great Pretender",
+        "track_number": 12,
+        "duration_ms": 205093,
+        "preview_url": null,
+        "artists": [
+          "Queen"
+        ]
+      },
+      {
+        "id": "5jNn9QeC5PCZl3t27eusXg",
+        "name": "Princes Of The Universe",
+        "track_number": 13,
+        "duration_ms": 211266,
+        "preview_url": null,
+        "artists": [
+          "Queen"
+        ]
+      },
+      {
+        "id": "04140nyg4wlaktruG5Z3fs",
+        "name": "Another One Bites The Dust - Remix",
+        "track_number": 14,
+        "duration_ms": 260839,
+        "preview_url": null,
+        "artists": [
+          "Queen",
+          "Wyclef Jean"
+        ]
+      },
+      {
+        "id": "1PRsCgYtkgFaKgFMlry3Gr",
+        "name": "No-One But You (Only The Good Die Young)",
+        "track_number": 15,
+        "duration_ms": 251333,
+        "preview_url": null,
+        "artists": [
+          "Queen"
+        ]
+      },
+      {
+        "id": "6L2zQunC8lImxNEH60yxaR",
+        "name": "These Are The Days Of Our Lives",
+        "track_number": 16,
+        "duration_ms": 254360,
+        "preview_url": null,
+        "artists": [
+          "Queen"
+        ]
+      },
+      {
+        "id": "1XKjQVbL9UlbvxVex7d1pY",
+        "name": "Thank God It's Christmas",
+        "track_number": 17,
+        "duration_ms": 261240,
+        "preview_url": null,
+        "artists": [
+          "Queen"
+        ]
+      }
+    ],
+    "saved_songs": 29
+  },
+  {
+    "id": "21OdgQdWFE4nczQRh4uasW",
+    "name": "Next To Normal",
+    "artists": [
+      "Original Cast Recording"
+    ],
+    "release_date": "2009-05-05",
+    "total_tracks": 37,
+    "images": [
+      {
+        "url": "https://i.scdn.co/image/ab67616d0000b273770f8ba034671205039f8b3a",
+        "height": 640,
+        "width": 640
+      },
+      {
+        "url": "https://i.scdn.co/image/ab67616d00001e02770f8ba034671205039f8b3a",
+        "height": 300,
+        "width": 300
+      },
+      {
+        "url": "https://i.scdn.co/image/ab67616d00004851770f8ba034671205039f8b3a",
+        "height": 64,
+        "width": 64
+      }
+    ],
+    "external_url": "https://open.spotify.com/album/21OdgQdWFE4nczQRh4uasW",
+    "tracks": [
+      {
+        "id": "3vAv2NevAzAfu6OmYkSf86",
+        "name": "Prelude",
+        "track_number": 1,
+        "duration_ms": 26520,
+        "preview_url": null,
+        "artists": [
+          "Next to Normal Band"
+        ]
+      },
+      {
+        "id": "1lMkoUTrBBfUNlepQ40YWp",
+        "name": "Just Another Day",
+        "track_number": 2,
+        "duration_ms": 229893,
+        "preview_url": null,
+        "artists": [
+          "Alice Ripley",
+          "Aaron Tveit",
+          "J. Robert Spencer",
+          "Louis Hobson",
+          "Jennifer Damiano",
+          "Adam Chanler-Berat"
+        ]
+      },
+      {
+        "id": "4os38g20ILYbtoj2g2odxO",
+        "name": "Everything Else",
+        "track_number": 3,
+        "duration_ms": 108306,
+        "preview_url": null,
+        "artists": [
+          "Jennifer Damiano"
+        ]
+      },
+      {
+        "id": "0ZIHLZqtaEoHbUWZiuPQKJ",
+        "name": "Who's Crazy/My Psychopharmacologist and I",
+        "track_number": 4,
+        "duration_ms": 302840,
+        "preview_url": null,
+        "artists": [
+          "Alice Ripley",
+          "Aaron Tveit",
+          "J. Robert Spencer",
+          "Louis Hobson",
+          "Jennifer Damiano",
+          "Adam Chanler-Berat"
+        ]
+      },
+      {
+        "id": "1MynvynUu0GA3xJlZedPrR",
+        "name": "Perfect for You",
+        "track_number": 5,
+        "duration_ms": 123000,
+        "preview_url": null,
+        "artists": [
+          "Jennifer Damiano",
+          "Adam Chanler-Berat"
+        ]
+      },
+      {
+        "id": "1P107IPPLti4M6EWX6GuAx",
+        "name": "I Miss the Mountains",
+        "track_number": 6,
+        "duration_ms": 226066,
+        "preview_url": null,
+        "artists": [
+          "Alice Ripley"
+        ]
+      },
+      {
+        "id": "15OSXLWXY3pXa1pbcQ6Y9u",
+        "name": "It's Gonna Be Good",
+        "track_number": 7,
+        "duration_ms": 85853,
+        "preview_url": null,
+        "artists": [
+          "Alice Ripley",
+          "Aaron Tveit",
+          "J. Robert Spencer",
+          "Louis Hobson",
+          "Jennifer Damiano",
+          "Adam Chanler-Berat"
+        ]
+      },
+      {
+        "id": "134LHoYnSCDswEEcvvpiyL",
+        "name": "He's Not Here",
+        "track_number": 8,
+        "duration_ms": 75373,
+        "preview_url": null,
+        "artists": [
+          "J. Robert Spencer"
+        ]
+      },
+      {
+        "id": "2PBpbmskGqAzovHmSb1YHu",
+        "name": "You Don't Know",
+        "track_number": 9,
+        "duration_ms": 90280,
+        "preview_url": null,
+        "artists": [
+          "Alice Ripley",
+          "Aaron Tveit",
+          "J. Robert Spencer"
+        ]
+      },
+      {
+        "id": "3oUMTVHcH4NdvTLMt1T5xD",
+        "name": "I Am The One",
+        "track_number": 10,
+        "duration_ms": 196333,
+        "preview_url": null,
+        "artists": [
+          "Jennifer Damiano",
+          "Alice Ripley",
+          "Adam Chanler-Berat"
+        ]
+      },
+      {
+        "id": "2B9slMcknpWPGLRVuPVBBK",
+        "name": "Superboy and the Invisible Girl",
+        "track_number": 11,
+        "duration_ms": 128039,
+        "preview_url": null,
+        "artists": [
+          "Aaron Tveit"
+        ]
+      },
+      {
+        "id": "6XOK0Sigh112V5C1WHAwo5",
+        "name": "I'm Alive",
+        "track_number": 12,
+        "duration_ms": 194120,
+        "preview_url": null,
+        "artists": [
+          "Alice Ripley",
+          "Aaron Tveit",
+          "J. Robert Spencer",
+          "Louis Hobson",
+          "Jennifer Damiano",
+          "Adam Chanler-Berat"
+        ]
+      },
+      {
+        "id": "1sDPCsd3gDuA4dGYVo1LKZ",
+        "name": "Make Up Your Mind/Catch Me I'm Falling",
+        "track_number": 13,
+        "duration_ms": 238973,
+        "preview_url": null,
+        "artists": [
+          "Alice Ripley",
+          "Aaron Tveit"
+        ]
+      },
+      {
+        "id": "4y8f2BxJ3elLxDMu7ijLm8",
+        "name": "I Dreamed a Dance",
+        "track_number": 14,
+        "duration_ms": 140773,
+        "preview_url": null,
+        "artists": [
+          "Aaron Tveit"
+        ]
+      },
+      {
+        "id": "5BNn0ymGox5ycogLZe71Wg",
+        "name": "There's a World",
+        "track_number": 15,
+        "duration_ms": 94466,
+        "preview_url": null,
+        "artists": [
+          "J. Robert Spencer"
+        ]
+      },
+      {
+        "id": "3WzBCe8v0PNdLRy3LlK1sT",
+        "name": "I've Been",
+        "track_number": 16,
+        "duration_ms": 163080,
+        "preview_url": null,
+        "artists": [
+          "Alice Ripley"
+        ]
+      },
+      {
+        "id": "7asr1gaXNFlvhAtyQHKWBQ",
+        "name": "Didn't I See This Movie?",
+        "track_number": 17,
+        "duration_ms": 89080,
+        "preview_url": null,
+        "artists": [
+          "J. Robert Spencer",
+          "Alice Ripley"
+        ]
+      },
+      {
+        "id": "5EKy94xLuBG4edmrdqxAzc",
+        "name": "A Light in the Dark",
+        "track_number": 18,
+        "duration_ms": 165786,
+        "preview_url": null,
+        "artists": [
+          "Alice Ripley",
+          "Aaron Tveit",
+          "J. Robert Spencer",
+          "Louis Hobson",
+          "Jennifer Damiano",
+          "Adam Chanler-Berat"
+        ]
+      },
+      {
+        "id": "0x21MBsfTsyh6bafP83BBZ",
+        "name": "Wish I Were Here",
+        "track_number": 1,
+        "duration_ms": 186480,
+        "preview_url": null,
+        "artists": [
+          "Alice Ripley",
+          "Jennifer Damiano",
+          "J. Robert Spencer"
+        ]
+      },
+      {
+        "id": "6AGagJDZjprj3hA1ULy2rS",
+        "name": "Song of Forgetting",
+        "track_number": 2,
+        "duration_ms": 203933,
+        "preview_url": null,
+        "artists": [
+          "Jennifer Damiano",
+          "Adam Chanler-Berat"
+        ]
+      },
+      {
+        "id": "7uH72553b8NCzB0Ji8HEZ9",
+        "name": "Hey #1",
+        "track_number": 3,
+        "duration_ms": 99506,
+        "preview_url": null,
+        "artists": [
+          "Louis Hobson",
+          "Alice Ripley",
+          "J. Robert Spencer"
+        ]
+      },
+      {
+        "id": "0LlSBzOxK4T7jIzvZRxKcM",
+        "name": "Seconds and Years",
+        "track_number": 4,
+        "duration_ms": 39426,
+        "preview_url": null,
+        "artists": [
+          "Alice Ripley",
+          "Louis Hobson",
+          "Jennifer Damiano",
+          "J. Robert Spencer"
+        ]
+      },
+      {
+        "id": "01XoKIGJNxmQ112o2HmhWZ",
+        "name": "Better Than Before",
+        "track_number": 5,
+        "duration_ms": 268666,
+        "preview_url": null,
+        "artists": [
+          "Aaron Tveit"
+        ]
+      },
+      {
+        "id": "7oUldkQrANbhUHetrpeVAa",
+        "name": "Aftershocks",
+        "track_number": 6,
+        "duration_ms": 105920,
+        "preview_url": null,
+        "artists": [
+          "Jennifer Damiano",
+          "Adam Chanler-Berat"
+        ]
+      },
+      {
+        "id": "0LnIv4X5F3dR0SHJ9Kx2bn",
+        "name": "Hey #2",
+        "track_number": 7,
+        "duration_ms": 84320,
+        "preview_url": null,
+        "artists": [
+          "Alice Ripley",
+          "Louis Hobson"
+        ]
+      },
+      {
+        "id": "44RZvHogjEyX0iRvC1acmO",
+        "name": "You Don't Know (Reprise)",
+        "track_number": 8,
+        "duration_ms": 86680,
+        "preview_url": null,
+        "artists": [
+          "Alice Ripley",
+          "J. Robert Spencer"
+        ]
+      },
+      {
+        "id": "5gf5BvOkMqUxEZmYYF5Oug",
+        "name": "How Could I Ever Forget?",
+        "track_number": 9,
+        "duration_ms": 170093,
+        "preview_url": null,
+        "artists": [
+          "J. Robert Spencer",
+          "Alice Ripley"
+        ]
+      },
+      {
+        "id": "31I5lzAHxPDBSG6dQwSWnt",
+        "name": "It's Gonna Be Good (Reprise)",
+        "track_number": 10,
+        "duration_ms": 32626,
+        "preview_url": null,
+        "artists": [
+          "Alice Ripley",
+          "Jennifer Damiano"
+        ]
+      },
+      {
+        "id": "5mYrSPIwn3iKr5hqUkSj6f",
+        "name": "Why Stay?/A Promise",
+        "track_number": 11,
+        "duration_ms": 155693,
+        "preview_url": null,
+        "artists": [
+          "J. Robert Spencer",
+          "Adam Chanler-Berat"
+        ]
+      },
+      {
+        "id": "6my1vDZjyn3bSwUPrpWvrA",
+        "name": "I'm Alive (Reprise)",
+        "track_number": 12,
+        "duration_ms": 71786,
+        "preview_url": null,
+        "artists": [
+          "Aaron Tveit"
+        ]
+      },
+      {
+        "id": "27jtE0kjjxYiZp7d2VopYD",
+        "name": "The Break",
+        "track_number": 13,
+        "duration_ms": 83093,
+        "preview_url": null,
+        "artists": [
+          "Alice Ripley"
+        ]
+      },
+      {
+        "id": "0cf41p4iVf4jtW1CHSJu7G",
+        "name": "Make Up Your Mind/Catch Me I'm Falling (Reprise)",
+        "track_number": 14,
+        "duration_ms": 100933,
+        "preview_url": null,
+        "artists": [
+          "Alice Ripley",
+          "Louis Hobson",
+          "Aaron Tveit"
+        ]
+      },
+      {
+        "id": "4OXL2HLCyLvkmwCFeGZE34",
+        "name": "Maybe (Next to Normal)",
+        "track_number": 15,
+        "duration_ms": 240920,
+        "preview_url": null,
+        "artists": [
+          "Alice Ripley",
+          "Jennifer Damiano"
+        ]
+      },
+      {
+        "id": "6pI6USTyz6ll1xZAw5qqRe",
+        "name": "Hey #3/Perfect for You (Reprise)",
+        "track_number": 16,
+        "duration_ms": 143506,
+        "preview_url": null,
+        "artists": [
+          "Jennifer Damiano",
+          "Adam Chanler-Berat"
+        ]
+      },
+      {
+        "id": "16vJV1HFQZwv6xhiC6ITt2",
+        "name": "So Anyway",
+        "track_number": 17,
+        "duration_ms": 188066,
+        "preview_url": null,
+        "artists": [
+          "Alice Ripley"
+        ]
+      },
+      {
+        "id": "4Yj3tojIqqia2X2T1ONXzK",
+        "name": "I Am The One (Reprise)",
+        "track_number": 18,
+        "duration_ms": 136760,
+        "preview_url": null,
+        "artists": [
+          "J. Robert Spencer",
+          "Aaron Tveit"
+        ]
+      },
+      {
+        "id": "5CP3G1uSsCqeT89TNxnbDG",
+        "name": "Light",
+        "track_number": 19,
+        "duration_ms": 261666,
+        "preview_url": null,
+        "artists": [
+          "Alice Ripley",
+          "Aaron Tveit",
+          "J. Robert Spencer",
+          "Louis Hobson",
+          "Jennifer Damiano",
+          "Adam Chanler-Berat"
+        ]
+      }
+    ],
+    "saved_songs": 26
+  },
+  {
+    "id": "7r36rel1M4gyBavfcJP6Yz",
+    "name": "The Essential Billy Joel",
+    "artists": [
+      "Billy Joel"
+    ],
+    "release_date": "2001-10-02",
+    "total_tracks": 36,
+    "images": [
+      {
+        "url": "https://i.scdn.co/image/ab67616d0000b273d287ed0734d4fcf11f9a0000",
+        "height": 640,
+        "width": 640
+      },
+      {
+        "url": "https://i.scdn.co/image/ab67616d00001e02d287ed0734d4fcf11f9a0000",
+        "height": 300,
+        "width": 300
+      },
+      {
+        "url": "https://i.scdn.co/image/ab67616d00004851d287ed0734d4fcf11f9a0000",
+        "height": 64,
+        "width": 64
+      }
+    ],
+    "external_url": "https://open.spotify.com/album/7r36rel1M4gyBavfcJP6Yz",
+    "tracks": [
+      {
+        "id": "3FCto7hnn1shUyZL42YgfO",
+        "name": "Piano Man",
+        "track_number": 1,
+        "duration_ms": 339290,
+        "preview_url": null,
+        "artists": [
+          "Billy Joel"
+        ]
+      },
+      {
+        "id": "4p6p7ynFrJ71chcXoR2FZq",
+        "name": "You're My Home",
+        "track_number": 2,
+        "duration_ms": 193844,
+        "preview_url": null,
+        "artists": [
+          "Billy Joel"
+        ]
+      },
+      {
+        "id": "3ij9d7E3pTbXcr0pPE5a2d",
+        "name": "Captain Jack",
+        "track_number": 3,
+        "duration_ms": 437807,
+        "preview_url": null,
+        "artists": [
+          "Billy Joel"
+        ]
+      },
+      {
+        "id": "7sFX6OyMRjC27PUJY5gp15",
+        "name": "The Entertainer",
+        "track_number": 4,
+        "duration_ms": 220972,
+        "preview_url": null,
+        "artists": [
+          "Billy Joel"
+        ]
+      },
+      {
+        "id": "0h3hyTnhPGaEDvomv6wuMj",
+        "name": "Say Goodbye to Hollywood",
+        "track_number": 5,
+        "duration_ms": 277031,
+        "preview_url": null,
+        "artists": [
+          "Billy Joel"
+        ]
+      },
+      {
+        "id": "3ka3ODhzYjfignpmSB0Os7",
+        "name": "Miami 2017 (Seen the Lights Go Out On Broadway)",
+        "track_number": 6,
+        "duration_ms": 314912,
+        "preview_url": null,
+        "artists": [
+          "Billy Joel"
+        ]
+      },
+      {
+        "id": "3zIIjuvnDALIs9WNl3w3uT",
+        "name": "New York State of Mind",
+        "track_number": 7,
+        "duration_ms": 363286,
+        "preview_url": null,
+        "artists": [
+          "Billy Joel"
+        ]
+      },
+      {
+        "id": "5pQPIO8TU5l6CG50m6097l",
+        "name": "She's Always a Woman",
+        "track_number": 8,
+        "duration_ms": 202267,
+        "preview_url": null,
+        "artists": [
+          "Billy Joel"
+        ]
+      },
+      {
+        "id": "3DBVtnyVhc0WGT51K28TC9",
+        "name": "Movin' Out (Anthony's Song)",
+        "track_number": 9,
+        "duration_ms": 210315,
+        "preview_url": null,
+        "artists": [
+          "Billy Joel"
+        ]
+      },
+      {
+        "id": "4gehZ6WYqLOXZpmMEq3Em9",
+        "name": "Only the Good Die Young",
+        "track_number": 10,
+        "duration_ms": 235562,
+        "preview_url": null,
+        "artists": [
+          "Billy Joel"
+        ]
+      },
+      {
+        "id": "20NBVwyVDqpcyQQ36ygcI6",
+        "name": "Just the Way You Are",
+        "track_number": 11,
+        "duration_ms": 290566,
+        "preview_url": null,
+        "artists": [
+          "Billy Joel"
+        ]
+      },
+      {
+        "id": "5iteQZfH6xKjrm7tA3cU6h",
+        "name": "Honesty",
+        "track_number": 12,
+        "duration_ms": 234159,
+        "preview_url": null,
+        "artists": [
+          "Billy Joel"
+        ]
+      },
+      {
+        "id": "6Ep2XErOa5SCBGzARBpCr4",
+        "name": "My Life",
+        "track_number": 13,
+        "duration_ms": 285009,
+        "preview_url": null,
+        "artists": [
+          "Billy Joel"
+        ]
+      },
+      {
+        "id": "7LbOQt7isddrw3Bs3Czl7E",
+        "name": "It's Still Rock and Roll to Me",
+        "track_number": 14,
+        "duration_ms": 177597,
+        "preview_url": null,
+        "artists": [
+          "Billy Joel"
+        ]
+      },
+      {
+        "id": "4qB3RW5ZifZpAHNXAn3JSf",
+        "name": "You May Be Right",
+        "track_number": 15,
+        "duration_ms": 256372,
+        "preview_url": null,
+        "artists": [
+          "Billy Joel"
+        ]
+      },
+      {
+        "id": "0iAfh5FLixOF3E5JSyk884",
+        "name": "Don't Ask Me Why",
+        "track_number": 16,
+        "duration_ms": 179448,
+        "preview_url": null,
+        "artists": [
+          "Billy Joel"
+        ]
+      },
+      {
+        "id": "723EZydLVlQmEF7UToqiwD",
+        "name": "She's Got a Way - Live at the Paradise, Boston, MA - June 1980",
+        "track_number": 17,
+        "duration_ms": 180923,
+        "preview_url": null,
+        "artists": [
+          "Billy Joel"
+        ]
+      },
+      {
+        "id": "2veYJl7RAW2lkveifGHYKT",
+        "name": "Allentown",
+        "track_number": 18,
+        "duration_ms": 232232,
+        "preview_url": null,
+        "artists": [
+          "Billy Joel"
+        ]
+      },
+      {
+        "id": "4X7UqvLO8ThktU9M2XNxW9",
+        "name": "Goodnight Saigon",
+        "track_number": 1,
+        "duration_ms": 426112,
+        "preview_url": null,
+        "artists": [
+          "Billy Joel"
+        ]
+      },
+      {
+        "id": "4x1LynYPM9qOtmB7ggoVz0",
+        "name": "An Innocent Man",
+        "track_number": 2,
+        "duration_ms": 318770,
+        "preview_url": null,
+        "artists": [
+          "Billy Joel"
+        ]
+      },
+      {
+        "id": "3CSpzkoL1XgDBZ1q9aDCUV",
+        "name": "Uptown Girl",
+        "track_number": 3,
+        "duration_ms": 198294,
+        "preview_url": null,
+        "artists": [
+          "Billy Joel"
+        ]
+      },
+      {
+        "id": "3YhcVZIWyakQSTUJD1YMt4",
+        "name": "The Longest Time",
+        "track_number": 4,
+        "duration_ms": 223176,
+        "preview_url": null,
+        "artists": [
+          "Billy Joel"
+        ]
+      },
+      {
+        "id": "0RfdoNWHJbZxAI3sOWS8Q7",
+        "name": "Tell Her About It",
+        "track_number": 5,
+        "duration_ms": 235748,
+        "preview_url": null,
+        "artists": [
+          "Billy Joel"
+        ]
+      },
+      {
+        "id": "3pokQjeRJg3K7g0izMUlMj",
+        "name": "Leave a Tender Moment Alone",
+        "track_number": 6,
+        "duration_ms": 237255,
+        "preview_url": null,
+        "artists": [
+          "Billy Joel"
+        ]
+      },
+      {
+        "id": "5Miaj9wRfCe3txB9tK65ck",
+        "name": "A Matter of Trust",
+        "track_number": 7,
+        "duration_ms": 252046,
+        "preview_url": null,
+        "artists": [
+          "Billy Joel"
+        ]
+      },
+      {
+        "id": "13GO4xVcrghw46YfwTmTH9",
+        "name": "Baby Grand (with Ray Charles)",
+        "track_number": 8,
+        "duration_ms": 244856,
+        "preview_url": null,
+        "artists": [
+          "Billy Joel",
+          "Ray Charles"
+        ]
+      },
+      {
+        "id": "2xudmLTZqwDNiDGMuOqSRD",
+        "name": "I Go to Extremes",
+        "track_number": 9,
+        "duration_ms": 263367,
+        "preview_url": null,
+        "artists": [
+          "Billy Joel"
+        ]
+      },
+      {
+        "id": "38bDGWuyYdSdNfrFfbCiVS",
+        "name": "We Didn't Start the Fire",
+        "track_number": 10,
+        "duration_ms": 291100,
+        "preview_url": null,
+        "artists": [
+          "Billy Joel"
+        ]
+      },
+      {
+        "id": "0IcFhAtZQqCgdv4ugyjQZx",
+        "name": "Leningrad",
+        "track_number": 11,
+        "duration_ms": 246587,
+        "preview_url": null,
+        "artists": [
+          "Billy Joel"
+        ]
+      },
+      {
+        "id": "78Md5Q7vnKtOlTRTK1m2ru",
+        "name": "The Downeaster 'Alexa'",
+        "track_number": 12,
+        "duration_ms": 225039,
+        "preview_url": null,
+        "artists": [
+          "Billy Joel"
+        ]
+      },
+      {
+        "id": "2r2XzhBMB4liDL9YW80Fqs",
+        "name": "And So It Goes",
+        "track_number": 13,
+        "duration_ms": 220836,
+        "preview_url": null,
+        "artists": [
+          "Billy Joel"
+        ]
+      },
+      {
+        "id": "1ndqYQyhyv0kT13ZhSkoh1",
+        "name": "The River of Dreams",
+        "track_number": 14,
+        "duration_ms": 245893,
+        "preview_url": null,
+        "artists": [
+          "Billy Joel"
+        ]
+      },
+      {
+        "id": "6EdVNX7wbjL2xS3u99xaa0",
+        "name": "All About Soul - Remix",
+        "track_number": 15,
+        "duration_ms": 359671,
+        "preview_url": null,
+        "artists": [
+          "Billy Joel"
+        ]
+      },
+      {
+        "id": "2GTC5mupEuJm5HOB76y08J",
+        "name": "Lullabye (Goodnight, My Angel)",
+        "track_number": 16,
+        "duration_ms": 213871,
+        "preview_url": null,
+        "artists": [
+          "Billy Joel"
+        ]
+      },
+      {
+        "id": "3CPaiWrgFvDOWFFmrZer63",
+        "name": "Waltz No. 1 (Nunley's Carousel)",
+        "track_number": 17,
+        "duration_ms": 418506,
+        "preview_url": null,
+        "artists": [
+          "Billy Joel"
+        ]
+      },
+      {
+        "id": "49uIhP0eyvndLz5ML5FQ0G",
+        "name": "Invention In C minor",
+        "track_number": 18,
+        "duration_ms": 64400,
+        "preview_url": null,
+        "artists": [
+          "Billy Joel"
+        ]
+      }
+    ],
+    "saved_songs": 24
+  },
+  {
+    "id": "2rHgctQLLQqcebs4jN82z1",
+    "name": "Across The Universe (Original Deluxe)",
+    "artists": [
+      "Various Artists"
+    ],
+    "release_date": "2007-01-01",
+    "total_tracks": 29,
+    "images": [
+      {
+        "url": "https://i.scdn.co/image/ab67616d0000b2735f4a507f9d0d9a869344a71c",
+        "height": 640,
+        "width": 640
+      },
+      {
+        "url": "https://i.scdn.co/image/ab67616d00001e025f4a507f9d0d9a869344a71c",
+        "height": 300,
+        "width": 300
+      },
+      {
+        "url": "https://i.scdn.co/image/ab67616d000048515f4a507f9d0d9a869344a71c",
+        "height": 64,
+        "width": 64
+      }
+    ],
+    "external_url": "https://open.spotify.com/album/2rHgctQLLQqcebs4jN82z1",
+    "tracks": [
+      {
+        "id": "3jzzpIMxy4AqdjuJyARWKc",
+        "name": "Girl",
+        "track_number": 1,
+        "duration_ms": 64306,
+        "preview_url": null,
+        "artists": [
+          "Jim Sturgess"
+        ]
+      },
+      {
+        "id": "7ehkwqED6YXCvraia1c9ld",
+        "name": "Hold Me Tight",
+        "track_number": 2,
+        "duration_ms": 155253,
+        "preview_url": null,
+        "artists": [
+          "Evan Rachel Wood"
+        ]
+      },
+      {
+        "id": "7H5Z1do4yZfAO9AL8TAx9j",
+        "name": "All My Loving - From \"Across The Universe\" Soundtrack",
+        "track_number": 3,
+        "duration_ms": 146573,
+        "preview_url": null,
+        "artists": [
+          "Jim Sturgess"
+        ]
+      },
+      {
+        "id": "4Fknl5coWTUwhBHuABw5lu",
+        "name": "I Want To Hold Your Hand - From \"Across The Universe\" Soundtrack",
+        "track_number": 4,
+        "duration_ms": 165533,
+        "preview_url": null,
+        "artists": [
+          "T.V. Carpio"
+        ]
+      },
+      {
+        "id": "2xV6E1kI4CfLX0byYv9IQS",
+        "name": "With A Little Help From My Friends",
+        "track_number": 5,
+        "duration_ms": 191053,
+        "preview_url": null,
+        "artists": [
+          "Joe Anderson",
+          "Jim Sturgess"
+        ]
+      },
+      {
+        "id": "6tP0DpBYLKSHe1UCGUnXiz",
+        "name": "It Won't Be Long - From \"Across The Universe\" Soundtrack",
+        "track_number": 6,
+        "duration_ms": 136760,
+        "preview_url": null,
+        "artists": [
+          "Evan Rachel Wood"
+        ]
+      },
+      {
+        "id": "0ltQMOTEuVOaaxs7JwJ1ru",
+        "name": "I've Just Seen A Face - From \"Across The Universe\" Soundtrack",
+        "track_number": 7,
+        "duration_ms": 110080,
+        "preview_url": null,
+        "artists": [
+          "Jim Sturgess"
+        ]
+      },
+      {
+        "id": "4cAsKEGHGZ2nMxwSduCgVb",
+        "name": "Let It Be - Long Version",
+        "track_number": 8,
+        "duration_ms": 226586,
+        "preview_url": null,
+        "artists": [
+          "Carol Woods",
+          "Timothy T. Mitchum"
+        ]
+      },
+      {
+        "id": "11VQjdpPGuWRrKwy5slWCg",
+        "name": "Come Together - From \"Across The Universe\" Soundtrack",
+        "track_number": 9,
+        "duration_ms": 267693,
+        "preview_url": null,
+        "artists": [
+          "Joe Cocker"
+        ]
+      },
+      {
+        "id": "0gd3hRBQAEAw096YOcUrmR",
+        "name": "If I Fell",
+        "track_number": 10,
+        "duration_ms": 158946,
+        "preview_url": null,
+        "artists": [
+          "Evan Rachel Wood"
+        ]
+      },
+      {
+        "id": "2zpd0M5FkvGrMgOTVOlEMW",
+        "name": "Dear Prudence",
+        "track_number": 11,
+        "duration_ms": 318693,
+        "preview_url": null,
+        "artists": [
+          "Dana Fuchs",
+          "Jim Sturgess",
+          "Evan Rachel Wood",
+          "T.V. Carpio"
+        ]
+      },
+      {
+        "id": "7gV9PwN8GvZQfzxvZRPFw0",
+        "name": "Flying",
+        "track_number": 12,
+        "duration_ms": 235613,
+        "preview_url": null,
+        "artists": [
+          "Secret Machines"
+        ]
+      },
+      {
+        "id": "6Ljd6Nit5jbMq8RyLzDOAE",
+        "name": "Blue Jay Way",
+        "track_number": 13,
+        "duration_ms": 282000,
+        "preview_url": null,
+        "artists": [
+          "Secret Machines"
+        ]
+      },
+      {
+        "id": "0WFcrUDtkvgEcKSJVjzOBC",
+        "name": "I Am The Walrus - From \"Across The Universe\" Soundtrack",
+        "track_number": 1,
+        "duration_ms": 283626,
+        "preview_url": null,
+        "artists": [
+          "Bono",
+          "Secret Machines"
+        ]
+      },
+      {
+        "id": "4htLftByVCbc9nX7EO3gAb",
+        "name": "Being For The Benefit Of Mr. Kite",
+        "track_number": 2,
+        "duration_ms": 160133,
+        "preview_url": null,
+        "artists": [
+          "Eddie Izzard"
+        ]
+      },
+      {
+        "id": "0KjgaRsR2LdKdTjg4xM3rh",
+        "name": "Because",
+        "track_number": 3,
+        "duration_ms": 149773,
+        "preview_url": null,
+        "artists": [
+          "Evan Rachel Wood",
+          "Jim Sturgess",
+          "Joe Anderson",
+          "Dana Fuchs",
+          "T.V. Carpio",
+          "Martin Luther McCoy"
+        ]
+      },
+      {
+        "id": "5HSrny8rr7EtqkyGxDi161",
+        "name": "Something - From \"Across The Universe\" Soundtrack",
+        "track_number": 4,
+        "duration_ms": 179786,
+        "preview_url": null,
+        "artists": [
+          "Jim Sturgess"
+        ]
+      },
+      {
+        "id": "5h6AHOKACUiHsQ9hwuMfKr",
+        "name": "Oh! Darling - From \"Across The Universe\" Soundtrack",
+        "track_number": 5,
+        "duration_ms": 149013,
+        "preview_url": null,
+        "artists": [
+          "Dana Fuchs",
+          "Martin Luther McCoy"
+        ]
+      },
+      {
+        "id": "6A7FLc0NC7hrG3HOT5unly",
+        "name": "Strawberry Fields Forever - From \"Across The Universe\" Soundtrack",
+        "track_number": 6,
+        "duration_ms": 217173,
+        "preview_url": null,
+        "artists": [
+          "Jim Sturgess",
+          "Joe Anderson"
+        ]
+      },
+      {
+        "id": "3iMQ3SyjFevvIA0sIBinJA",
+        "name": "Revolution",
+        "track_number": 7,
+        "duration_ms": 137106,
+        "preview_url": null,
+        "artists": [
+          "Jim Sturgess"
+        ]
+      },
+      {
+        "id": "4ZxgNyYSfC6QiV9eGgPv9g",
+        "name": "While My Guitar Gently Weeps",
+        "track_number": 8,
+        "duration_ms": 242026,
+        "preview_url": null,
+        "artists": [
+          "Martin Luther McCoy"
+        ]
+      },
+      {
+        "id": "3EnaBkCDOofY4cI3ak2UfS",
+        "name": "Across The Universe - From \"Across The Universe\" Soundtrack",
+        "track_number": 9,
+        "duration_ms": 207786,
+        "preview_url": null,
+        "artists": [
+          "Jim Sturgess"
+        ]
+      },
+      {
+        "id": "4FwPNXIKN4czCTd1JFUifF",
+        "name": "Helter Skelter - From \"Across The Universe\" Soundtrack",
+        "track_number": 10,
+        "duration_ms": 221946,
+        "preview_url": null,
+        "artists": [
+          "Dana Fuchs"
+        ]
+      },
+      {
+        "id": "0UioJorCEk66Sy5jae8O55",
+        "name": "Happiness Is A Warm Gun - From \"Across The Universe\" Soundtrack",
+        "track_number": 11,
+        "duration_ms": 186693,
+        "preview_url": null,
+        "artists": [
+          "Joe Anderson",
+          "Salma Hayek"
+        ]
+      },
+      {
+        "id": "2gQhXam6W18YxCNoHQQ24s",
+        "name": "Black Bird - From \"Across The Universe\" Soundtrack",
+        "track_number": 12,
+        "duration_ms": 183746,
+        "preview_url": null,
+        "artists": [
+          "Evan Rachel Wood"
+        ]
+      },
+      {
+        "id": "7917PHR9eHtzinNLAxDoAb",
+        "name": "Hey Jude - From \"Across The Universe\" Soundtrack",
+        "track_number": 13,
+        "duration_ms": 250053,
+        "preview_url": null,
+        "artists": [
+          "Joe Anderson"
+        ]
+      },
+      {
+        "id": "72v1lv47GJMptRI3vZbQVP",
+        "name": "Don't Let Me Down",
+        "track_number": 14,
+        "duration_ms": 185466,
+        "preview_url": null,
+        "artists": [
+          "Dana Fuchs"
+        ]
+      },
+      {
+        "id": "41ix2X8g4niC00TWDv9r1O",
+        "name": "All You Need Is Love",
+        "track_number": 15,
+        "duration_ms": 197946,
+        "preview_url": null,
+        "artists": [
+          "Jim Sturgess",
+          "Dana Fuchs"
+        ]
+      },
+      {
+        "id": "1SzNp2TUi9idNSERbiAj3p",
+        "name": "Lucy In The Sky With Diamonds - From \"Across The Universe\" Soundtrack",
+        "track_number": 16,
+        "duration_ms": 263693,
+        "preview_url": null,
+        "artists": [
+          "Bono"
+        ]
+      }
+    ],
+    "saved_songs": 20
+  },
+  {
+    "id": "6cc5EtgAkZ2Drf3dkie54R",
+    "name": "Les Mis\u00e9rables - Original London Cast Recording",
+    "artists": [
+      "Les Mis\u00e9rables-Original London Cast"
+    ],
+    "release_date": "1985",
+    "total_tracks": 31,
+    "images": [
+      {
+        "url": "https://i.scdn.co/image/ab67616d0000b273a7d0f9561ee3768ffbfcfa3e",
+        "height": 640,
+        "width": 640
+      },
+      {
+        "url": "https://i.scdn.co/image/ab67616d00001e02a7d0f9561ee3768ffbfcfa3e",
+        "height": 300,
+        "width": 300
+      },
+      {
+        "url": "https://i.scdn.co/image/ab67616d00004851a7d0f9561ee3768ffbfcfa3e",
+        "height": 64,
+        "width": 64
+      }
+    ],
+    "external_url": "https://open.spotify.com/album/6cc5EtgAkZ2Drf3dkie54R",
+    "tracks": [
+      {
+        "id": "4ETKM3bvxTM3pVCgz8pzcJ",
+        "name": "Prologue: A Work",
+        "track_number": 1,
+        "duration_ms": 203346,
+        "preview_url": null,
+        "artists": [
+          "Les Mis\u00e9rables-Original London Cast"
+        ]
+      },
+      {
+        "id": "3gBGCemEeXMqeC5Rw2EL6m",
+        "name": "Prologue: Valjean Arrested/Valjean Forgiven",
+        "track_number": 2,
+        "duration_ms": 104346,
+        "preview_url": null,
+        "artists": [
+          "Les Mis\u00e9rables-Original London Cast"
+        ]
+      },
+      {
+        "id": "6zib19PK2PEwAcBxESP0WD",
+        "name": "Prologue: What Have I Done",
+        "track_number": 3,
+        "duration_ms": 197746,
+        "preview_url": null,
+        "artists": [
+          "Les Mis\u00e9rables-Original London Cast"
+        ]
+      },
+      {
+        "id": "2wYXLVWNcqC7Cxlw92aCtK",
+        "name": "At the End of the Day",
+        "track_number": 4,
+        "duration_ms": 291586,
+        "preview_url": null,
+        "artists": [
+          "Les Mis\u00e9rables-Original London Cast"
+        ]
+      },
+      {
+        "id": "13LT9Y0RP7C9KhNIvroXLi",
+        "name": "I Dreamed a Dream",
+        "track_number": 5,
+        "duration_ms": 268213,
+        "preview_url": null,
+        "artists": [
+          "Les Mis\u00e9rables-Original London Cast"
+        ]
+      },
+      {
+        "id": "6mMiGHG6JuMrowGkafuXls",
+        "name": "Lovely Ladies",
+        "track_number": 6,
+        "duration_ms": 247613,
+        "preview_url": null,
+        "artists": [
+          "Les Mis\u00e9rables-Original London Cast"
+        ]
+      },
+      {
+        "id": "40KBTAVPWIYUBwELheOZ1C",
+        "name": "Who Am I?",
+        "track_number": 7,
+        "duration_ms": 168680,
+        "preview_url": null,
+        "artists": [
+          "Les Mis\u00e9rables-Original London Cast"
+        ]
+      },
+      {
+        "id": "6tFKrRGF8PRaelGOzxJ5cs",
+        "name": "Fantine's Death: Come to Me",
+        "track_number": 8,
+        "duration_ms": 224946,
+        "preview_url": null,
+        "artists": [
+          "Les Mis\u00e9rables-Original London Cast"
+        ]
+      },
+      {
+        "id": "4B8kmpqV18wXTI07q0m1Bc",
+        "name": "Fantine's Death: Confrontation",
+        "track_number": 9,
+        "duration_ms": 170746,
+        "preview_url": null,
+        "artists": [
+          "Les Mis\u00e9rables-Original London Cast"
+        ]
+      },
+      {
+        "id": "5CQaqSeXCgHbhfsQg5Nctj",
+        "name": "Castle on a Cloud",
+        "track_number": 10,
+        "duration_ms": 95413,
+        "preview_url": null,
+        "artists": [
+          "Les Mis\u00e9rables-Original London Cast"
+        ]
+      },
+      {
+        "id": "6cX9HbjCK20dfd5C1fftUE",
+        "name": "Master of the House",
+        "track_number": 11,
+        "duration_ms": 299106,
+        "preview_url": null,
+        "artists": [
+          "Les Mis\u00e9rables-Original London Cast"
+        ]
+      },
+      {
+        "id": "3Uftn3QCsD3lg79FuKcbE1",
+        "name": "Thinardier Waltz",
+        "track_number": 12,
+        "duration_ms": 178546,
+        "preview_url": null,
+        "artists": [
+          "Les Mis\u00e9rables-Original London Cast"
+        ]
+      },
+      {
+        "id": "2bQI6Wh9v6SoOjfiKb18G5",
+        "name": "Stars",
+        "track_number": 13,
+        "duration_ms": 204906,
+        "preview_url": null,
+        "artists": [
+          "Les Mis\u00e9rables-Original London Cast"
+        ]
+      },
+      {
+        "id": "2koYHPmR7nERQx7JQgrcii",
+        "name": "Look Down",
+        "track_number": 14,
+        "duration_ms": 153493,
+        "preview_url": null,
+        "artists": [
+          "Les Mis\u00e9rables-Original London Cast"
+        ]
+      },
+      {
+        "id": "5fbFyzSoU80kwqUF7JlV2F",
+        "name": "Little People",
+        "track_number": 15,
+        "duration_ms": 143813,
+        "preview_url": null,
+        "artists": [
+          "Les Mis\u00e9rables-Original London Cast"
+        ]
+      },
+      {
+        "id": "1lhdGCE8MgiUi7sMoSZi82",
+        "name": "Red and Black",
+        "track_number": 16,
+        "duration_ms": 269880,
+        "preview_url": null,
+        "artists": [
+          "Les Mis\u00e9rables-Original London Cast"
+        ]
+      },
+      {
+        "id": "1SFSlwDclv0wT7p8aMsBM1",
+        "name": "Do You Hear the People Sing?",
+        "track_number": 17,
+        "duration_ms": 136346,
+        "preview_url": null,
+        "artists": [
+          "Les Mis\u00e9rables-Original London Cast"
+        ]
+      },
+      {
+        "id": "4q8Hw7k5tpe1AALlTVgKyS",
+        "name": "Love Montage: I Saw Him Once / In My Life / A Heart Full of Love",
+        "track_number": 1,
+        "duration_ms": 318426,
+        "preview_url": null,
+        "artists": [
+          "Les Mis\u00e9rables-Original London Cast"
+        ]
+      },
+      {
+        "id": "1cHv0FqSU4yaOY0QzZayuX",
+        "name": "Plumet Attack",
+        "track_number": 2,
+        "duration_ms": 117066,
+        "preview_url": null,
+        "artists": [
+          "Les Mis\u00e9rables-Original London Cast"
+        ]
+      },
+      {
+        "id": "6cdcZzuQzUhspZo2aJfKaH",
+        "name": "One Day More",
+        "track_number": 3,
+        "duration_ms": 216133,
+        "preview_url": null,
+        "artists": [
+          "Les Mis\u00e9rables-Original London Cast"
+        ]
+      },
+      {
+        "id": "6cs44cWPd4652NlIrzRqNx",
+        "name": "On My Own",
+        "track_number": 4,
+        "duration_ms": 239466,
+        "preview_url": null,
+        "artists": [
+          "Les Mis\u00e9rables-Original London Cast"
+        ]
+      },
+      {
+        "id": "5HZ0RxnwRK9bkmxnwKTAJn",
+        "name": "The Attack",
+        "track_number": 5,
+        "duration_ms": 53773,
+        "preview_url": null,
+        "artists": [
+          "Les Mis\u00e9rables-Original London Cast"
+        ]
+      },
+      {
+        "id": "3SeYUKgbfYg6ZLLbhwzF9t",
+        "name": "A Little Fall Of Rain",
+        "track_number": 6,
+        "duration_ms": 200560,
+        "preview_url": null,
+        "artists": [
+          "Les Mis\u00e9rables-Original London Cast"
+        ]
+      },
+      {
+        "id": "5D2mHuaTpubjIGtrtQ0uQ1",
+        "name": "Drink With Me",
+        "track_number": 7,
+        "duration_ms": 141240,
+        "preview_url": null,
+        "artists": [
+          "Les Mis\u00e9rables-Original London Cast"
+        ]
+      },
+      {
+        "id": "5kWVIa5k3M3kt5MBcayVMb",
+        "name": "Bring Him Home",
+        "track_number": 8,
+        "duration_ms": 173760,
+        "preview_url": null,
+        "artists": [
+          "Les Mis\u00e9rables-Original London Cast"
+        ]
+      },
+      {
+        "id": "7sOTi9bOYSHCGqy0KClraf",
+        "name": "Dog Eats Dog",
+        "track_number": 9,
+        "duration_ms": 114666,
+        "preview_url": null,
+        "artists": [
+          "Les Mis\u00e9rables-Original London Cast"
+        ]
+      },
+      {
+        "id": "5VxaHVcDLbRKn4jMa5kKKc",
+        "name": "Javert's Suicide: Soliliquy",
+        "track_number": 10,
+        "duration_ms": 219240,
+        "preview_url": null,
+        "artists": [
+          "Les Mis\u00e9rables-Original London Cast"
+        ]
+      },
+      {
+        "id": "7dytzjO9B0BYQAVQ4fu8qf",
+        "name": "Turning",
+        "track_number": 11,
+        "duration_ms": 125333,
+        "preview_url": null,
+        "artists": [
+          "Les Mis\u00e9rables-Original London Cast"
+        ]
+      },
+      {
+        "id": "7gEEBjoa8kbp8NJnXuLVf6",
+        "name": "Empty Chairs at Empty Tables",
+        "track_number": 12,
+        "duration_ms": 168160,
+        "preview_url": null,
+        "artists": [
+          "Les Mis\u00e9rables-Original London Cast"
+        ]
+      },
+      {
+        "id": "4yuixCIFG0VguSqw5uLnHN",
+        "name": "Wedding Chorale / Beggars at The Feast",
+        "track_number": 13,
+        "duration_ms": 136306,
+        "preview_url": null,
+        "artists": [
+          "Les Mis\u00e9rables-Original London Cast"
+        ]
+      },
+      {
+        "id": "2J6cFPp3jlASjitfkSzA9W",
+        "name": "Finale",
+        "track_number": 14,
+        "duration_ms": 285866,
+        "preview_url": null,
+        "artists": [
+          "Les Mis\u00e9rables-Original London Cast"
+        ]
+      }
+    ],
+    "saved_songs": 19
+  },
+  {
+    "id": "5maeycU97NHBgwRr2h2A4O",
+    "name": "Born This Way (Special Edition)",
+    "artists": [
+      "Lady Gaga"
+    ],
+    "release_date": "2011-01-01",
+    "total_tracks": 22,
+    "images": [
+      {
+        "url": "https://i.scdn.co/image/ab67616d0000b273a47c0e156ea3cebe37fdcab8",
+        "height": 640,
+        "width": 640
+      },
+      {
+        "url": "https://i.scdn.co/image/ab67616d00001e02a47c0e156ea3cebe37fdcab8",
+        "height": 300,
+        "width": 300
+      },
+      {
+        "url": "https://i.scdn.co/image/ab67616d00004851a47c0e156ea3cebe37fdcab8",
+        "height": 64,
+        "width": 64
+      }
+    ],
+    "external_url": "https://open.spotify.com/album/5maeycU97NHBgwRr2h2A4O",
+    "tracks": [
+      {
+        "id": "4tB0UIYNWsUYsIR3r6a8zY",
+        "name": "Marry The Night",
+        "track_number": 1,
+        "duration_ms": 264520,
+        "preview_url": null,
+        "artists": [
+          "Lady Gaga"
+        ]
+      },
+      {
+        "id": "6r2BECwMgEoRb5yLfp0Hca",
+        "name": "Born This Way",
+        "track_number": 2,
+        "duration_ms": 260252,
+        "preview_url": null,
+        "artists": [
+          "Lady Gaga"
+        ]
+      },
+      {
+        "id": "4KZAsdL0PeGvmPbSr0hyG4",
+        "name": "Government Hooker",
+        "track_number": 3,
+        "duration_ms": 254266,
+        "preview_url": null,
+        "artists": [
+          "Lady Gaga"
+        ]
+      },
+      {
+        "id": "7rr5DQM980mOF1UtIC4q6v",
+        "name": "Judas",
+        "track_number": 4,
+        "duration_ms": 249066,
+        "preview_url": null,
+        "artists": [
+          "Lady Gaga"
+        ]
+      },
+      {
+        "id": "4LrHrb9fZ39fQsMyUdrQXO",
+        "name": "Americano",
+        "track_number": 5,
+        "duration_ms": 246533,
+        "preview_url": null,
+        "artists": [
+          "Lady Gaga"
+        ]
+      },
+      {
+        "id": "2uk0YH2ahN0UE5jaCMa5jn",
+        "name": "Hair",
+        "track_number": 6,
+        "duration_ms": 307893,
+        "preview_url": null,
+        "artists": [
+          "Lady Gaga"
+        ]
+      },
+      {
+        "id": "1RFXENx9ILC6PECmNhEstC",
+        "name": "ScheiBe",
+        "track_number": 7,
+        "duration_ms": 225466,
+        "preview_url": null,
+        "artists": [
+          "Lady Gaga"
+        ]
+      },
+      {
+        "id": "11BKm0j4eYoCPPpCONAVwA",
+        "name": "Bloody Mary",
+        "track_number": 8,
+        "duration_ms": 244760,
+        "preview_url": null,
+        "artists": [
+          "Lady Gaga"
+        ]
+      },
+      {
+        "id": "3u8L4te13sTuqyHNR7j2rB",
+        "name": "Black Jesus + Amen Fashion",
+        "track_number": 9,
+        "duration_ms": 216293,
+        "preview_url": null,
+        "artists": [
+          "Lady Gaga"
+        ]
+      },
+      {
+        "id": "0zW1LzKUCJeHZBKMmkardw",
+        "name": "Bad Kids",
+        "track_number": 10,
+        "duration_ms": 230973,
+        "preview_url": null,
+        "artists": [
+          "Lady Gaga"
+        ]
+      },
+      {
+        "id": "6OpnHKF0mmhZmqsR7yY2pK",
+        "name": "Fashion Of His Love",
+        "track_number": 11,
+        "duration_ms": 219106,
+        "preview_url": null,
+        "artists": [
+          "Lady Gaga"
+        ]
+      },
+      {
+        "id": "63EubPPucSZlK4mXAZOP6G",
+        "name": "Highway Unicorn (Road To Love)",
+        "track_number": 12,
+        "duration_ms": 255746,
+        "preview_url": null,
+        "artists": [
+          "Lady Gaga"
+        ]
+      },
+      {
+        "id": "5yhw9YeXOh3kYCn2NII9bW",
+        "name": "Heavy Metal Lover",
+        "track_number": 13,
+        "duration_ms": 252546,
+        "preview_url": null,
+        "artists": [
+          "Lady Gaga"
+        ]
+      },
+      {
+        "id": "5ovLCLFRWKBThz15ntjE8d",
+        "name": "Electric Chapel",
+        "track_number": 14,
+        "duration_ms": 252240,
+        "preview_url": null,
+        "artists": [
+          "Lady Gaga"
+        ]
+      },
+      {
+        "id": "2WWOPf09hVAMk4Y5G3Qp4R",
+        "name": "The Queen",
+        "track_number": 15,
+        "duration_ms": 316520,
+        "preview_url": null,
+        "artists": [
+          "Lady Gaga"
+        ]
+      },
+      {
+        "id": "6szOfaZn6H3rZXnUqgJ4R7",
+        "name": "You And I",
+        "track_number": 16,
+        "duration_ms": 307360,
+        "preview_url": null,
+        "artists": [
+          "Lady Gaga"
+        ]
+      },
+      {
+        "id": "6uxYfENm7zw050dNUi031W",
+        "name": "The Edge Of Glory",
+        "track_number": 17,
+        "duration_ms": 320546,
+        "preview_url": null,
+        "artists": [
+          "Lady Gaga"
+        ]
+      },
+      {
+        "id": "5R4KVTSMC28Dp46gb3CdqK",
+        "name": "Born This Way - The Country Road Version",
+        "track_number": 1,
+        "duration_ms": 261480,
+        "preview_url": null,
+        "artists": [
+          "Lady Gaga"
+        ]
+      },
+      {
+        "id": "1HSPCKF3GA0gUb84oR4zaX",
+        "name": "Judas - DJ White Shadow Remix",
+        "track_number": 2,
+        "duration_ms": 247480,
+        "preview_url": null,
+        "artists": [
+          "Lady Gaga",
+          "DJ White Shadow"
+        ]
+      },
+      {
+        "id": "3acHQsIoaXtCPX96CDgivm",
+        "name": "Marry The Night - Zedd Remix",
+        "track_number": 3,
+        "duration_ms": 260573,
+        "preview_url": null,
+        "artists": [
+          "Lady Gaga",
+          "Zedd"
+        ]
+      },
+      {
+        "id": "6YMkvvz4RwpKK8WZN5Hfmv",
+        "name": "ScheiBe - DJ White Shadow Mugler",
+        "track_number": 4,
+        "duration_ms": 575240,
+        "preview_url": null,
+        "artists": [
+          "Lady Gaga",
+          "DJ White Shadow"
+        ]
+      },
+      {
+        "id": "5kSRZ8OFJHUURPqHUJXxbl",
+        "name": "Fashion Of His Love - Fernando Garibay Remix",
+        "track_number": 5,
+        "duration_ms": 224893,
+        "preview_url": null,
+        "artists": [
+          "Lady Gaga",
+          "Fernando Garibay"
+        ]
+      }
+    ],
+    "saved_songs": 16
+  },
+  {
+    "id": "316O0Xetgx2NJLRgJBw4uq",
+    "name": "Brat and it\u2019s the same but there\u2019s three more songs so it\u2019s not",
+    "artists": [
+      "Charli xcx"
+    ],
+    "release_date": "2024-06-10",
+    "total_tracks": 18,
+    "images": [
+      {
+        "url": "https://i.scdn.co/image/ab67616d0000b273df174e0dcb15de7b625a7194",
+        "height": 640,
+        "width": 640
+      },
+      {
+        "url": "https://i.scdn.co/image/ab67616d00001e02df174e0dcb15de7b625a7194",
+        "height": 300,
+        "width": 300
+      },
+      {
+        "url": "https://i.scdn.co/image/ab67616d00004851df174e0dcb15de7b625a7194",
+        "height": 64,
+        "width": 64
+      }
+    ],
+    "external_url": "https://open.spotify.com/album/316O0Xetgx2NJLRgJBw4uq",
+    "tracks": [
+      {
+        "id": "5wmv111MUsMc9yLb4gKwa6",
+        "name": "360",
+        "track_number": 1,
+        "duration_ms": 133805,
+        "preview_url": null,
+        "artists": [
+          "Charli xcx"
+        ]
+      },
+      {
+        "id": "7KayrI8K161CtDn1qMiE0l",
+        "name": "Club classics",
+        "track_number": 2,
+        "duration_ms": 153526,
+        "preview_url": null,
+        "artists": [
+          "Charli xcx"
+        ]
+      },
+      {
+        "id": "5EiDSnRLeLu7jOAaBTTMdW",
+        "name": "Sympathy is a knife",
+        "track_number": 3,
+        "duration_ms": 151125,
+        "preview_url": null,
+        "artists": [
+          "Charli xcx"
+        ]
+      },
+      {
+        "id": "4BGQZuzZO5dAq4oV5lusic",
+        "name": "I might say something stupid",
+        "track_number": 4,
+        "duration_ms": 109202,
+        "preview_url": null,
+        "artists": [
+          "Charli xcx"
+        ]
+      },
+      {
+        "id": "78H0KGYg9eoeP7WTZMOx2J",
+        "name": "Talk talk",
+        "track_number": 5,
+        "duration_ms": 161757,
+        "preview_url": null,
+        "artists": [
+          "Charli xcx"
+        ]
+      },
+      {
+        "id": "0F5vlGJbkWrJcUjOH4PICl",
+        "name": "Von dutch",
+        "track_number": 6,
+        "duration_ms": 164284,
+        "preview_url": null,
+        "artists": [
+          "Charli xcx"
+        ]
+      },
+      {
+        "id": "7KfDVIj39efVUY57fzZm5b",
+        "name": "Everything is romantic",
+        "track_number": 7,
+        "duration_ms": 203482,
+        "preview_url": null,
+        "artists": [
+          "Charli xcx"
+        ]
+      },
+      {
+        "id": "3dpvrKP2BLs8ekdU2akEXs",
+        "name": "Rewind",
+        "track_number": 8,
+        "duration_ms": 168443,
+        "preview_url": null,
+        "artists": [
+          "Charli xcx"
+        ]
+      },
+      {
+        "id": "6Zbrj33J7towsJcoEywUKH",
+        "name": "So I",
+        "track_number": 9,
+        "duration_ms": 211352,
+        "preview_url": null,
+        "artists": [
+          "Charli xcx"
+        ]
+      },
+      {
+        "id": "6ZQtYGQgVTgIGSRUdeyTnd",
+        "name": "Girl, so confusing",
+        "track_number": 10,
+        "duration_ms": 174507,
+        "preview_url": null,
+        "artists": [
+          "Charli xcx"
+        ]
+      },
+      {
+        "id": "1juBRo49adrKPIJDdOf6zt",
+        "name": "Apple",
+        "track_number": 11,
+        "duration_ms": 151739,
+        "preview_url": null,
+        "artists": [
+          "Charli xcx"
+        ]
+      },
+      {
+        "id": "22s3XAkdL2B4BZhKclUxoc",
+        "name": "B2b",
+        "track_number": 12,
+        "duration_ms": 178579,
+        "preview_url": null,
+        "artists": [
+          "Charli xcx"
+        ]
+      },
+      {
+        "id": "2ZlwHfWTdCpz1eQvSdTXqZ",
+        "name": "Mean girls",
+        "track_number": 13,
+        "duration_ms": 189410,
+        "preview_url": null,
+        "artists": [
+          "Charli xcx"
+        ]
+      },
+      {
+        "id": "5DNUV01Bup40pm0eQBcY6q",
+        "name": "I think about it all the time",
+        "track_number": 14,
+        "duration_ms": 135878,
+        "preview_url": null,
+        "artists": [
+          "Charli xcx"
+        ]
+      },
+      {
+        "id": "2S2wifpbssbi3lGGwde6Sp",
+        "name": "365",
+        "track_number": 15,
+        "duration_ms": 203618,
+        "preview_url": null,
+        "artists": [
+          "Charli xcx"
+        ]
+      },
+      {
+        "id": "7KA5C1c2byqgzCCgdo0nZR",
+        "name": "Hello goodbye",
+        "track_number": 16,
+        "duration_ms": 219470,
+        "preview_url": null,
+        "artists": [
+          "Charli xcx"
+        ]
+      },
+      {
+        "id": "0xzBmAsCfu3AzX1W0GYtMJ",
+        "name": "Guess",
+        "track_number": 17,
+        "duration_ms": 142265,
+        "preview_url": null,
+        "artists": [
+          "Charli xcx"
+        ]
+      },
+      {
+        "id": "3dk7WaeS0y0JG0OMd0FVcg",
+        "name": "Spring breakers",
+        "track_number": 18,
+        "duration_ms": 142521,
+        "preview_url": null,
+        "artists": [
+          "Charli xcx"
+        ]
+      }
+    ],
+    "saved_songs": 15
+  },
+  {
+    "id": "0LhDyJXelg31FKLW5GDcKi",
+    "name": "Dear Evan Hansen (Original Broadway Cast Recording)",
+    "artists": [
+      "Various Artists"
+    ],
+    "release_date": "2017-02-03",
+    "total_tracks": 14,
+    "images": [
+      {
+        "url": "https://i.scdn.co/image/ab67616d0000b273eefa3ed06dec22db89d0e793",
+        "height": 640,
+        "width": 640
+      },
+      {
+        "url": "https://i.scdn.co/image/ab67616d00001e02eefa3ed06dec22db89d0e793",
+        "height": 300,
+        "width": 300
+      },
+      {
+        "url": "https://i.scdn.co/image/ab67616d00004851eefa3ed06dec22db89d0e793",
+        "height": 64,
+        "width": 64
+      }
+    ],
+    "external_url": "https://open.spotify.com/album/0LhDyJXelg31FKLW5GDcKi",
+    "tracks": [
+      {
+        "id": "0SjjcXfArhzePhEzDNkY8z",
+        "name": "Anybody Have a Map?",
+        "track_number": 1,
+        "duration_ms": 146853,
+        "preview_url": null,
+        "artists": [
+          "Rachel Bay Jones",
+          "Jennifer Laura Thompson"
+        ]
+      },
+      {
+        "id": "0gMW8XpPFPjoApDii5Tj1u",
+        "name": "Waving Through A Window",
+        "track_number": 2,
+        "duration_ms": 236360,
+        "preview_url": null,
+        "artists": [
+          "Ben Platt",
+          "Original Broadway Cast of Dear Evan Hansen"
+        ]
+      },
+      {
+        "id": "0ZWW07BD8W85lUbgx2sn7E",
+        "name": "For Forever",
+        "track_number": 3,
+        "duration_ms": 301013,
+        "preview_url": null,
+        "artists": [
+          "Ben Platt"
+        ]
+      },
+      {
+        "id": "4nna9JONFIwr98bcX6tlta",
+        "name": "Sincerely, Me",
+        "track_number": 4,
+        "duration_ms": 222960,
+        "preview_url": null,
+        "artists": [
+          "Mike Faist",
+          "Ben Platt",
+          "Will Roland"
+        ]
+      },
+      {
+        "id": "6WYHJTCeO3kyRfRmQW9enw",
+        "name": "Requiem",
+        "track_number": 5,
+        "duration_ms": 259693,
+        "preview_url": null,
+        "artists": [
+          "Laura Dreyfuss",
+          "Michael Park",
+          "Jennifer Laura Thompson"
+        ]
+      },
+      {
+        "id": "6nkcPGa0sr24NFCc5l5UjE",
+        "name": "If I Could Tell Her",
+        "track_number": 6,
+        "duration_ms": 248653,
+        "preview_url": null,
+        "artists": [
+          "Ben Platt",
+          "Laura Dreyfuss"
+        ]
+      },
+      {
+        "id": "4VM6WUdnRnBv6cHAjyzxcK",
+        "name": "Disappear",
+        "track_number": 7,
+        "duration_ms": 275813,
+        "preview_url": null,
+        "artists": [
+          "Mike Faist",
+          "Ben Platt",
+          "Kristolyn Lloyd",
+          "Will Roland",
+          "Jennifer Laura Thompson",
+          "Original Broadway Cast of Dear Evan Hansen"
+        ]
+      },
+      {
+        "id": "1H7Zqkq54andtaSSnLRrfp",
+        "name": "You Will Be Found",
+        "track_number": 8,
+        "duration_ms": 360906,
+        "preview_url": null,
+        "artists": [
+          "Ben Platt",
+          "Kristolyn Lloyd",
+          "Will Roland",
+          "Laura Dreyfuss",
+          "Original Broadway Cast of Dear Evan Hansen"
+        ]
+      },
+      {
+        "id": "6433GYPXbZUJWTCIdhW1as",
+        "name": "To Break In a Glove",
+        "track_number": 9,
+        "duration_ms": 230813,
+        "preview_url": null,
+        "artists": [
+          "Michael Park",
+          "Ben Platt"
+        ]
+      },
+      {
+        "id": "7BbtvJqWnQRt8gSrWbUVym",
+        "name": "Only Us",
+        "track_number": 10,
+        "duration_ms": 227186,
+        "preview_url": null,
+        "artists": [
+          "Laura Dreyfuss",
+          "Ben Platt"
+        ]
+      },
+      {
+        "id": "7FIrk5lA1IalpZ3OtieeC8",
+        "name": "Good For You",
+        "track_number": 11,
+        "duration_ms": 185146,
+        "preview_url": null,
+        "artists": [
+          "Rachel Bay Jones",
+          "Kristolyn Lloyd",
+          "Will Roland",
+          "Ben Platt"
+        ]
+      },
+      {
+        "id": "32bZDrurIGh2Cts0l2tRtL",
+        "name": "Words Fail",
+        "track_number": 12,
+        "duration_ms": 351920,
+        "preview_url": null,
+        "artists": [
+          "Ben Platt"
+        ]
+      },
+      {
+        "id": "5M2LiZ8SmRFWl1IJ0F7JNR",
+        "name": "So Big / So Small",
+        "track_number": 13,
+        "duration_ms": 252266,
+        "preview_url": null,
+        "artists": [
+          "Rachel Bay Jones"
+        ]
+      },
+      {
+        "id": "7vU9VpbmB4ZoztAigpXLlJ",
+        "name": "Finale",
+        "track_number": 14,
+        "duration_ms": 95960,
+        "preview_url": null,
+        "artists": [
+          "Ben Platt",
+          "Original Broadway Cast of Dear Evan Hansen"
+        ]
+      }
+    ],
+    "saved_songs": 14
+  },
+  {
+    "id": "7MvSB0JTdtl1pSwZcgvYQX",
+    "name": "The ArchAndroid",
+    "artists": [
+      "Janelle Mon\u00e1e"
+    ],
+    "release_date": "2010-05-17",
+    "total_tracks": 18,
+    "images": [
+      {
+        "url": "https://i.scdn.co/image/ab67616d0000b273120a1366324c2ae1728e17e5",
+        "height": 640,
+        "width": 640
+      },
+      {
+        "url": "https://i.scdn.co/image/ab67616d00001e02120a1366324c2ae1728e17e5",
+        "height": 300,
+        "width": 300
+      },
+      {
+        "url": "https://i.scdn.co/image/ab67616d00004851120a1366324c2ae1728e17e5",
+        "height": 64,
+        "width": 64
+      }
+    ],
+    "external_url": "https://open.spotify.com/album/7MvSB0JTdtl1pSwZcgvYQX",
+    "tracks": [
+      {
+        "id": "4J4doCpLNS2wBif1EHSu0L",
+        "name": "Suite II Overture",
+        "track_number": 1,
+        "duration_ms": 151533,
+        "preview_url": null,
+        "artists": [
+          "Janelle Mon\u00e1e"
+        ]
+      },
+      {
+        "id": "4t18Py5qQvK6DriDoPkPrO",
+        "name": "Dance or Die (feat. Saul Williams)",
+        "track_number": 2,
+        "duration_ms": 192506,
+        "preview_url": null,
+        "artists": [
+          "Janelle Mon\u00e1e"
+        ]
+      },
+      {
+        "id": "5v6suM7KET9x01oE8T1snC",
+        "name": "Faster",
+        "track_number": 3,
+        "duration_ms": 199266,
+        "preview_url": null,
+        "artists": [
+          "Janelle Mon\u00e1e"
+        ]
+      },
+      {
+        "id": "5zdljOuxFgbkVgVgOXbSIE",
+        "name": "Locked Inside",
+        "track_number": 4,
+        "duration_ms": 256813,
+        "preview_url": null,
+        "artists": [
+          "Janelle Mon\u00e1e"
+        ]
+      },
+      {
+        "id": "2XlP76bUQxMHlfMlH6sRRT",
+        "name": "Sir Greendown",
+        "track_number": 5,
+        "duration_ms": 134853,
+        "preview_url": null,
+        "artists": [
+          "Janelle Mon\u00e1e"
+        ]
+      },
+      {
+        "id": "5al9is1AQnaI3lTi20DUG6",
+        "name": "Cold War",
+        "track_number": 6,
+        "duration_ms": 203626,
+        "preview_url": null,
+        "artists": [
+          "Janelle Mon\u00e1e"
+        ]
+      },
+      {
+        "id": "1ljzHUgt2SU2ADkhfa9eBC",
+        "name": "Tightrope (feat. Big Boi) - Big Boi Vocal Edit",
+        "track_number": 7,
+        "duration_ms": 262586,
+        "preview_url": null,
+        "artists": [
+          "Janelle Mon\u00e1e",
+          "Big Boi"
+        ]
+      },
+      {
+        "id": "1Wv14r1lFyrCJVhe36iHWq",
+        "name": "Neon Gumbo",
+        "track_number": 8,
+        "duration_ms": 97400,
+        "preview_url": null,
+        "artists": [
+          "Janelle Mon\u00e1e"
+        ]
+      },
+      {
+        "id": "5eKwaeINlNEX3aMlfpmUtw",
+        "name": "Oh, Maker",
+        "track_number": 9,
+        "duration_ms": 226253,
+        "preview_url": null,
+        "artists": [
+          "Janelle Mon\u00e1e"
+        ]
+      },
+      {
+        "id": "4197HGpsH7jGRz5gInEkfC",
+        "name": "Come Alive (War of the Roses)",
+        "track_number": 10,
+        "duration_ms": 202026,
+        "preview_url": null,
+        "artists": [
+          "Janelle Mon\u00e1e"
+        ]
+      },
+      {
+        "id": "1xxgpQ8RHPcGFcpeMyBZLN",
+        "name": "Mushrooms & Roses",
+        "track_number": 11,
+        "duration_ms": 342013,
+        "preview_url": null,
+        "artists": [
+          "Janelle Mon\u00e1e"
+        ]
+      },
+      {
+        "id": "4M1sI8PeQsSDQJWQXtDzWV",
+        "name": "Suite III Overture",
+        "track_number": 12,
+        "duration_ms": 101146,
+        "preview_url": null,
+        "artists": [
+          "Janelle Mon\u00e1e"
+        ]
+      },
+      {
+        "id": "1N49dCsfnMv00ezWlKdEGn",
+        "name": "Neon Valley Street",
+        "track_number": 13,
+        "duration_ms": 251786,
+        "preview_url": null,
+        "artists": [
+          "Janelle Mon\u00e1e"
+        ]
+      },
+      {
+        "id": "3x3eqcc9GXcMPp1DqT0IEX",
+        "name": "Make the Bus (feat. Of Montreal)",
+        "track_number": 14,
+        "duration_ms": 199053,
+        "preview_url": null,
+        "artists": [
+          "Janelle Mon\u00e1e",
+          "Kevin Barnes",
+          "of Montreal"
+        ]
+      },
+      {
+        "id": "62OPnFEBIWhxGX9T7s9iRx",
+        "name": "Wondaland",
+        "track_number": 15,
+        "duration_ms": 216133,
+        "preview_url": null,
+        "artists": [
+          "Janelle Mon\u00e1e"
+        ]
+      },
+      {
+        "id": "6a930x0L0PmYQIu5itOU82",
+        "name": "57821 (feat. Deep Cotton)",
+        "track_number": 16,
+        "duration_ms": 196293,
+        "preview_url": null,
+        "artists": [
+          "Janelle Mon\u00e1e",
+          "Deep Cotton"
+        ]
+      },
+      {
+        "id": "6wbEygoouLHwgy4J6uQIb1",
+        "name": "Say You'll Go",
+        "track_number": 17,
+        "duration_ms": 360960,
+        "preview_url": null,
+        "artists": [
+          "Janelle Mon\u00e1e"
+        ]
+      },
+      {
+        "id": "2FeVMO6qFT8eYfRaZ7eQge",
+        "name": "BaBopByeYa",
+        "track_number": 18,
+        "duration_ms": 527693,
+        "preview_url": null,
+        "artists": [
+          "Janelle Mon\u00e1e"
+        ]
+      }
+    ],
+    "saved_songs": 14
+  },
+  {
+    "id": "31St5diPbTZoCjOwWXSMWD",
+    "name": "The Essential The Chicks",
+    "artists": [
+      "The Chicks"
+    ],
+    "release_date": "2010",
+    "total_tracks": 30,
+    "images": [
+      {
+        "url": "https://i.scdn.co/image/ab67616d0000b273d6963c4493807fe1a955e70d",
+        "height": 640,
+        "width": 640
+      },
+      {
+        "url": "https://i.scdn.co/image/ab67616d00001e02d6963c4493807fe1a955e70d",
+        "height": 300,
+        "width": 300
+      },
+      {
+        "url": "https://i.scdn.co/image/ab67616d00004851d6963c4493807fe1a955e70d",
+        "height": 64,
+        "width": 64
+      }
+    ],
+    "external_url": "https://open.spotify.com/album/31St5diPbTZoCjOwWXSMWD",
+    "tracks": [
+      {
+        "id": "5dPfweC4kFNvS45Hke0FBF",
+        "name": "Not Ready to Make Nice",
+        "track_number": 1,
+        "duration_ms": 239184,
+        "preview_url": null,
+        "artists": [
+          "The Chicks"
+        ]
+      },
+      {
+        "id": "6xlcSgLEW2Wvr6cwNlsJIk",
+        "name": "The Long Way Around",
+        "track_number": 2,
+        "duration_ms": 274018,
+        "preview_url": null,
+        "artists": [
+          "The Chicks"
+        ]
+      },
+      {
+        "id": "00yPOgKVyqp9bYEq8FQb9q",
+        "name": "Easy Silence",
+        "track_number": 3,
+        "duration_ms": 243830,
+        "preview_url": null,
+        "artists": [
+          "The Chicks"
+        ]
+      },
+      {
+        "id": "33ACGAnhaHj58ENCfoEX03",
+        "name": "Lubbock or Leave It",
+        "track_number": 4,
+        "duration_ms": 234673,
+        "preview_url": null,
+        "artists": [
+          "The Chicks"
+        ]
+      },
+      {
+        "id": "2ONSokHtbUrjFkprQPNPVl",
+        "name": "Bitter End",
+        "track_number": 5,
+        "duration_ms": 278124,
+        "preview_url": null,
+        "artists": [
+          "The Chicks"
+        ]
+      },
+      {
+        "id": "0fNuHEZmLt8HQ2G1QzZqZX",
+        "name": "Silent House",
+        "track_number": 6,
+        "duration_ms": 325312,
+        "preview_url": null,
+        "artists": [
+          "The Chicks"
+        ]
+      },
+      {
+        "id": "1ZLgPA7AN0KJpn5XDKMHL5",
+        "name": "Lullaby",
+        "track_number": 7,
+        "duration_ms": 352666,
+        "preview_url": null,
+        "artists": [
+          "The Chicks"
+        ]
+      },
+      {
+        "id": "3QHZGVBeIfsqGZdvGRe5Qy",
+        "name": "Everybody Knows",
+        "track_number": 8,
+        "duration_ms": 259108,
+        "preview_url": null,
+        "artists": [
+          "The Chicks"
+        ]
+      },
+      {
+        "id": "7xhhDOQa7X36TmU45uoVi6",
+        "name": "Long Time Gone",
+        "track_number": 9,
+        "duration_ms": 249815,
+        "preview_url": null,
+        "artists": [
+          "The Chicks"
+        ]
+      },
+      {
+        "id": "4NVS8Q502FVfuMQXNK2I7t",
+        "name": "Travelin' Soldier",
+        "track_number": 10,
+        "duration_ms": 343497,
+        "preview_url": null,
+        "artists": [
+          "The Chicks"
+        ]
+      },
+      {
+        "id": "65nCVhtlWYUzNvcM1MYp4l",
+        "name": "Landslide",
+        "track_number": 11,
+        "duration_ms": 229757,
+        "preview_url": null,
+        "artists": [
+          "The Chicks"
+        ]
+      },
+      {
+        "id": "111AfLDg68CuoP5DqpqbD6",
+        "name": "Lil' Jack Slade",
+        "track_number": 12,
+        "duration_ms": 144266,
+        "preview_url": null,
+        "artists": [
+          "The Chicks"
+        ]
+      },
+      {
+        "id": "3jBm6PtCdZrobwkurcWubD",
+        "name": "Truth No. 2",
+        "track_number": 13,
+        "duration_ms": 269193,
+        "preview_url": null,
+        "artists": [
+          "The Chicks"
+        ]
+      },
+      {
+        "id": "6GB91cCi1sEd4fguawG1vb",
+        "name": "White Trash Wedding",
+        "track_number": 14,
+        "duration_ms": 140838,
+        "preview_url": null,
+        "artists": [
+          "The Chicks"
+        ]
+      },
+      {
+        "id": "5BhjbbmwEbN84EHfzf4SVt",
+        "name": "Top of the World",
+        "track_number": 15,
+        "duration_ms": 361642,
+        "preview_url": null,
+        "artists": [
+          "The Chicks"
+        ]
+      },
+      {
+        "id": "7uS5Sin6kgaupRtgYZDntE",
+        "name": "Ready to Run",
+        "track_number": 1,
+        "duration_ms": 231787,
+        "preview_url": null,
+        "artists": [
+          "The Chicks"
+        ]
+      },
+      {
+        "id": "4kiJERiGVqZLFAWRm3xmch",
+        "name": "Cowboy Take Me Away",
+        "track_number": 2,
+        "duration_ms": 287832,
+        "preview_url": null,
+        "artists": [
+          "The Chicks"
+        ]
+      },
+      {
+        "id": "6hRZ6K5MzPMKxUoEqHjBW0",
+        "name": "Goodbye Earl",
+        "track_number": 3,
+        "duration_ms": 259721,
+        "preview_url": null,
+        "artists": [
+          "The Chicks"
+        ]
+      },
+      {
+        "id": "069BiJN23l4p6DoMXS43S8",
+        "name": "Some Days You Gotta Dance",
+        "track_number": 4,
+        "duration_ms": 148903,
+        "preview_url": null,
+        "artists": [
+          "The Chicks"
+        ]
+      },
+      {
+        "id": "4p5UC7GGlXLufNFU67DfTP",
+        "name": "Heartbreak Town",
+        "track_number": 5,
+        "duration_ms": 234785,
+        "preview_url": null,
+        "artists": [
+          "The Chicks"
+        ]
+      },
+      {
+        "id": "5wy600JaL7nBWq7gY2teXc",
+        "name": "Sin Wagon",
+        "track_number": 6,
+        "duration_ms": 218510,
+        "preview_url": null,
+        "artists": [
+          "The Chicks"
+        ]
+      },
+      {
+        "id": "3W0bESUh7NcsUmJz8v04YS",
+        "name": "Without You",
+        "track_number": 7,
+        "duration_ms": 211981,
+        "preview_url": null,
+        "artists": [
+          "The Chicks"
+        ]
+      },
+      {
+        "id": "5edTo0TTU6vJRCdPuArpj3",
+        "name": "Let Him Fly",
+        "track_number": 8,
+        "duration_ms": 188495,
+        "preview_url": null,
+        "artists": [
+          "The Chicks"
+        ]
+      },
+      {
+        "id": "6BZDcpo2OSR0fRwR1ltTvh",
+        "name": "Wide Open Spaces",
+        "track_number": 9,
+        "duration_ms": 225887,
+        "preview_url": null,
+        "artists": [
+          "The Chicks"
+        ]
+      },
+      {
+        "id": "5txn76i4JdbDINtXtgSMVr",
+        "name": "There's Your Trouble",
+        "track_number": 10,
+        "duration_ms": 193143,
+        "preview_url": null,
+        "artists": [
+          "The Chicks"
+        ]
+      },
+      {
+        "id": "3O2lMlTAPfnPeKyLOscY6S",
+        "name": "You Were Mine",
+        "track_number": 11,
+        "duration_ms": 218752,
+        "preview_url": null,
+        "artists": [
+          "The Chicks"
+        ]
+      },
+      {
+        "id": "4TzLkmwhBU3xmn3HHnTi1P",
+        "name": "I Can Love You Better",
+        "track_number": 12,
+        "duration_ms": 234848,
+        "preview_url": null,
+        "artists": [
+          "The Chicks"
+        ]
+      },
+      {
+        "id": "5hYxNMWngAfJKcm7HVtehn",
+        "name": "Tonight the Heartache's on Me",
+        "track_number": 13,
+        "duration_ms": 207169,
+        "preview_url": null,
+        "artists": [
+          "The Chicks"
+        ]
+      },
+      {
+        "id": "3ildIZzIH9D2lo7DVqeyzY",
+        "name": "Give It Up or Let Me Go",
+        "track_number": 14,
+        "duration_ms": 297386,
+        "preview_url": null,
+        "artists": [
+          "The Chicks"
+        ]
+      },
+      {
+        "id": "3tuOcrxxMK6EM5CPDMFjyo",
+        "name": "I Believe in Love",
+        "track_number": 15,
+        "duration_ms": 253200,
+        "preview_url": null,
+        "artists": [
+          "The Chicks"
+        ]
+      }
+    ],
+    "saved_songs": 13
+  },
+  {
+    "id": "6Blubl1glavmervPJa3QVs",
+    "name": "Cheers to the Fall",
+    "artists": [
+      "Andra Day"
+    ],
+    "release_date": "2015-08-28",
+    "total_tracks": 13,
+    "images": [
+      {
+        "url": "https://i.scdn.co/image/ab67616d0000b273ccd9af18cc83991382c9ab9a",
+        "height": 640,
+        "width": 640
+      },
+      {
+        "url": "https://i.scdn.co/image/ab67616d00001e02ccd9af18cc83991382c9ab9a",
+        "height": 300,
+        "width": 300
+      },
+      {
+        "url": "https://i.scdn.co/image/ab67616d00004851ccd9af18cc83991382c9ab9a",
+        "height": 64,
+        "width": 64
+      }
+    ],
+    "external_url": "https://open.spotify.com/album/6Blubl1glavmervPJa3QVs",
+    "tracks": [
+      {
+        "id": "5dS4r8s7z5r1LpivqrCP0U",
+        "name": "Forever Mine",
+        "track_number": 1,
+        "duration_ms": 199079,
+        "preview_url": null,
+        "artists": [
+          "Andra Day"
+        ]
+      },
+      {
+        "id": "5eVUAOhOf7hcVtNdO7txb4",
+        "name": "Only Love",
+        "track_number": 2,
+        "duration_ms": 204665,
+        "preview_url": null,
+        "artists": [
+          "Andra Day"
+        ]
+      },
+      {
+        "id": "2lMRuRF4gR15G7FsLR7128",
+        "name": "Gold",
+        "track_number": 3,
+        "duration_ms": 225231,
+        "preview_url": null,
+        "artists": [
+          "Andra Day"
+        ]
+      },
+      {
+        "id": "3bIJbFUZw2Vp77t4RrMqz7",
+        "name": "Not Today",
+        "track_number": 4,
+        "duration_ms": 233813,
+        "preview_url": null,
+        "artists": [
+          "Andra Day"
+        ]
+      },
+      {
+        "id": "4xcxbw7EcAnDRnPU5BkbB9",
+        "name": "Mistakes",
+        "track_number": 5,
+        "duration_ms": 214813,
+        "preview_url": null,
+        "artists": [
+          "Andra Day"
+        ]
+      },
+      {
+        "id": "50fDBRRQPzSOSVgYDvbR7G",
+        "name": "Goodbye Goodnight",
+        "track_number": 6,
+        "duration_ms": 266973,
+        "preview_url": null,
+        "artists": [
+          "Andra Day"
+        ]
+      },
+      {
+        "id": "1G3W58pzxZn3QT6Hh6bnuL",
+        "name": "Rearview",
+        "track_number": 7,
+        "duration_ms": 244166,
+        "preview_url": null,
+        "artists": [
+          "Andra Day"
+        ]
+      },
+      {
+        "id": "0i7ix3cnBO02vtItsLqWda",
+        "name": "Red Flags",
+        "track_number": 8,
+        "duration_ms": 227946,
+        "preview_url": null,
+        "artists": [
+          "Andra Day"
+        ]
+      },
+      {
+        "id": "1GkGI4TRvN4MdDGR1ChIEZ",
+        "name": "Honey or Fire",
+        "track_number": 9,
+        "duration_ms": 197986,
+        "preview_url": null,
+        "artists": [
+          "Andra Day"
+        ]
+      },
+      {
+        "id": "45vNHJv231ikL78USuk17K",
+        "name": "Gin & Juice (Let Go My Hand)",
+        "track_number": 10,
+        "duration_ms": 211080,
+        "preview_url": null,
+        "artists": [
+          "Andra Day"
+        ]
+      },
+      {
+        "id": "0tV8pOpiNsKqUys0ilUcXz",
+        "name": "Rise Up",
+        "track_number": 11,
+        "duration_ms": 253342,
+        "preview_url": null,
+        "artists": [
+          "Andra Day"
+        ]
+      },
+      {
+        "id": "5hL8VGl2wsLWSXPiTq3Fdk",
+        "name": "City Burns",
+        "track_number": 12,
+        "duration_ms": 293120,
+        "preview_url": null,
+        "artists": [
+          "Andra Day"
+        ]
+      },
+      {
+        "id": "3jUDmvxw0ZyGAUmyqRikMj",
+        "name": "Cheers to the Fall",
+        "track_number": 13,
+        "duration_ms": 226746,
+        "preview_url": null,
+        "artists": [
+          "Andra Day"
+        ]
+      }
+    ],
+    "saved_songs": 13
+  },
+  {
+    "id": "2v3UoAXux8q8caeYbGVPza",
+    "name": "Aida",
+    "artists": [
+      "Various Artists"
+    ],
+    "release_date": "2000-01-01",
+    "total_tracks": 22,
+    "images": [
+      {
+        "url": "https://i.scdn.co/image/ab67616d0000b273f7e2403d1e5b4580623db1bc",
+        "height": 640,
+        "width": 640
+      },
+      {
+        "url": "https://i.scdn.co/image/ab67616d00001e02f7e2403d1e5b4580623db1bc",
+        "height": 300,
+        "width": 300
+      },
+      {
+        "url": "https://i.scdn.co/image/ab67616d00004851f7e2403d1e5b4580623db1bc",
+        "height": 64,
+        "width": 64
+      }
+    ],
+    "external_url": "https://open.spotify.com/album/2v3UoAXux8q8caeYbGVPza",
+    "tracks": [
+      {
+        "id": "0WMogrMD3E0PB3ibzfVX3J",
+        "name": "Every Story Is A Love Story",
+        "track_number": 1,
+        "duration_ms": 199933,
+        "preview_url": null,
+        "artists": [
+          "Sherie Rene Scott"
+        ]
+      },
+      {
+        "id": "2qfylXbmlKUBqWq7rDaaml",
+        "name": "Fortune Favors The Brave",
+        "track_number": 2,
+        "duration_ms": 140360,
+        "preview_url": null,
+        "artists": [
+          "Adam Pascal"
+        ]
+      },
+      {
+        "id": "6GBKO0Krsvl3tHmllrWESr",
+        "name": "The Past Is Another Land",
+        "track_number": 3,
+        "duration_ms": 183466,
+        "preview_url": null,
+        "artists": [
+          "Heather Headley"
+        ]
+      },
+      {
+        "id": "0hAvWb3cPU4mNjW4L0jNS8",
+        "name": "Another Pyramid",
+        "track_number": 4,
+        "duration_ms": 215133,
+        "preview_url": null,
+        "artists": [
+          "John Hickok"
+        ]
+      },
+      {
+        "id": "47NXADUZ61vObbsj7jJut1",
+        "name": "How I Know You",
+        "track_number": 5,
+        "duration_ms": 155240,
+        "preview_url": null,
+        "artists": [
+          "Damian Perkins"
+        ]
+      },
+      {
+        "id": "5gEcBFhGrtUF67C6FQFzA0",
+        "name": "My Strongest Suit",
+        "track_number": 6,
+        "duration_ms": 316026,
+        "preview_url": null,
+        "artists": [
+          "Women of the Palace",
+          "Sherie Rene Scott"
+        ]
+      },
+      {
+        "id": "54FliVaE2u8yKFfOWJG8Wo",
+        "name": "Enchantment Passing Through - Broadway Cast Recording",
+        "track_number": 7,
+        "duration_ms": 198306,
+        "preview_url": null,
+        "artists": [
+          "Adam Pascal",
+          "Heather Headley"
+        ]
+      },
+      {
+        "id": "1VQMBtjsygqpCLjE3cxgzH",
+        "name": "My Strongest Suit (Reprise)",
+        "track_number": 8,
+        "duration_ms": 69866,
+        "preview_url": null,
+        "artists": [
+          "Adam Pascal",
+          "Heather Headley"
+        ]
+      },
+      {
+        "id": "3NwGMaBDQs9ZpO0axAy3w4",
+        "name": "Dance Of The Robe",
+        "track_number": 9,
+        "duration_ms": 245893,
+        "preview_url": null,
+        "artists": [
+          "Heather Headley",
+          "Schele Williams"
+        ]
+      },
+      {
+        "id": "3ZmCB7IhVnozmnD6t3xBLA",
+        "name": "Not Me",
+        "track_number": 10,
+        "duration_ms": 225733,
+        "preview_url": null,
+        "artists": [
+          "Adam Pascal",
+          "Damian Perkins",
+          "Heather Headley",
+          "Sherie Rene Scott"
+        ]
+      },
+      {
+        "id": "7fPMKW5szBTd3U3JvCtfEg",
+        "name": "Elaborate Lives",
+        "track_number": 11,
+        "duration_ms": 269440,
+        "preview_url": null,
+        "artists": [
+          "Adam Pascal",
+          "Heather Headley"
+        ]
+      },
+      {
+        "id": "4EJ7gaR0uUqwv6jcnfkqA3",
+        "name": "The Gods Love Nubia",
+        "track_number": 12,
+        "duration_ms": 282493,
+        "preview_url": null,
+        "artists": [
+          "Ensemble - Aida",
+          "Heather Headley",
+          "Schele Williams"
+        ]
+      },
+      {
+        "id": "2yt1Wtobk7V32faBMl0I11",
+        "name": "A Step Too Far",
+        "track_number": 13,
+        "duration_ms": 239440,
+        "preview_url": null,
+        "artists": [
+          "Adam Pascal"
+        ]
+      },
+      {
+        "id": "1XZAk284N7RVDGAKuk6N8D",
+        "name": "Easy As Life",
+        "track_number": 14,
+        "duration_ms": 253733,
+        "preview_url": null,
+        "artists": [
+          "Heather Headley"
+        ]
+      },
+      {
+        "id": "00AgUZTKAskWtCw6OHAbFO",
+        "name": "Like Father, Like Son",
+        "track_number": 15,
+        "duration_ms": 193000,
+        "preview_url": null,
+        "artists": [
+          "Adam Pascal",
+          "John Hickok"
+        ]
+      },
+      {
+        "id": "3hJEk4GfjmMM5kVB1DmhiD",
+        "name": "Radames' Letter",
+        "track_number": 16,
+        "duration_ms": 92293,
+        "preview_url": null,
+        "artists": [
+          "Adam Pascal"
+        ]
+      },
+      {
+        "id": "6k2VjfLpfFr6anDs3LdJAd",
+        "name": "How I Know You (Reprise)",
+        "track_number": 17,
+        "duration_ms": 67400,
+        "preview_url": null,
+        "artists": [
+          "Damian Perkins"
+        ]
+      },
+      {
+        "id": "6uvV1x0xnLFP6kGRghxeOq",
+        "name": "Written In The Stars",
+        "track_number": 18,
+        "duration_ms": 197640,
+        "preview_url": null,
+        "artists": [
+          "Adam Pascal",
+          "Heather Headley"
+        ]
+      },
+      {
+        "id": "3StGxp1MQXYsxpglTpSw4Y",
+        "name": "I Know The Truth",
+        "track_number": 19,
+        "duration_ms": 216293,
+        "preview_url": null,
+        "artists": [
+          "Sherie Rene Scott"
+        ]
+      },
+      {
+        "id": "0gxdzfsMKlNbs6t2SoJyPz",
+        "name": "Elaborate Lives (Reprise)",
+        "track_number": 20,
+        "duration_ms": 263000,
+        "preview_url": null,
+        "artists": [
+          "Adam Pascal",
+          "Heather Headley"
+        ]
+      },
+      {
+        "id": "2KfeQ6jBcWZf6zhwdcNQmW",
+        "name": "Enchantment Passing Through (Reprise)",
+        "track_number": 21,
+        "duration_ms": 52680,
+        "preview_url": null,
+        "artists": [
+          "Adam Pascal",
+          "Heather Headley"
+        ]
+      },
+      {
+        "id": "2kexSzskE17e2YtpEeCPJ6",
+        "name": "Every Story Is A Love Story (Reprise)",
+        "track_number": 22,
+        "duration_ms": 139133,
+        "preview_url": null,
+        "artists": [
+          "Sherie Rene Scott"
+        ]
+      }
+    ],
+    "saved_songs": 12
+  },
+  {
+    "id": "57QGgDgbSf0Ij3QP41jF8D",
+    "name": "Til the Casket Drops",
+    "artists": [
+      "ZZ Ward"
+    ],
+    "release_date": "2012-01-01",
+    "total_tracks": 13,
+    "images": [
+      {
+        "url": "https://i.scdn.co/image/ab67616d0000b273b02f642851816d9384b90aa6",
+        "height": 640,
+        "width": 640
+      },
+      {
+        "url": "https://i.scdn.co/image/ab67616d00001e02b02f642851816d9384b90aa6",
+        "height": 300,
+        "width": 300
+      },
+      {
+        "url": "https://i.scdn.co/image/ab67616d00004851b02f642851816d9384b90aa6",
+        "height": 64,
+        "width": 64
+      }
+    ],
+    "external_url": "https://open.spotify.com/album/57QGgDgbSf0Ij3QP41jF8D",
+    "tracks": [
+      {
+        "id": "55ABlzu9QpD20cCcfKLvCL",
+        "name": "Til the Casket Drops",
+        "track_number": 1,
+        "duration_ms": 185333,
+        "preview_url": null,
+        "artists": [
+          "ZZ Ward"
+        ]
+      },
+      {
+        "id": "63tqSZIWPIbNCcOb9A2gHY",
+        "name": "Put the Gun Down",
+        "track_number": 2,
+        "duration_ms": 169866,
+        "preview_url": null,
+        "artists": [
+          "ZZ Ward"
+        ]
+      },
+      {
+        "id": "6MUkpG6aGjFo7vGKI7xYuh",
+        "name": "Blue Eyes Blind",
+        "track_number": 3,
+        "duration_ms": 204853,
+        "preview_url": null,
+        "artists": [
+          "ZZ Ward"
+        ]
+      },
+      {
+        "id": "4KhtVDBctDfyaCPNmMcXHU",
+        "name": "Home",
+        "track_number": 4,
+        "duration_ms": 220853,
+        "preview_url": null,
+        "artists": [
+          "ZZ Ward"
+        ]
+      },
+      {
+        "id": "63q8MyDPEfsLZlas5oJw8Z",
+        "name": "Cryin Wolf (feat. Kendrick Lamar)",
+        "track_number": 5,
+        "duration_ms": 241213,
+        "preview_url": null,
+        "artists": [
+          "ZZ Ward",
+          "Kendrick Lamar"
+        ]
+      },
+      {
+        "id": "48lHcxvBJQ5iaKJ4J0WUc4",
+        "name": "Save My Life",
+        "track_number": 6,
+        "duration_ms": 199466,
+        "preview_url": null,
+        "artists": [
+          "ZZ Ward"
+        ]
+      },
+      {
+        "id": "04UVqH7qE1vPhtuN9kud5E",
+        "name": "Last Love Song",
+        "track_number": 7,
+        "duration_ms": 210960,
+        "preview_url": null,
+        "artists": [
+          "ZZ Ward"
+        ]
+      },
+      {
+        "id": "0qusvJa0R623oSZwe6WtSK",
+        "name": "Lil Darlin (feat. The O'Mys)",
+        "track_number": 8,
+        "duration_ms": 213893,
+        "preview_url": null,
+        "artists": [
+          "ZZ Ward",
+          "The O' My's"
+        ]
+      },
+      {
+        "id": "4CweTlvTQyGt8T2vrt149a",
+        "name": "Move Like U Stole It",
+        "track_number": 9,
+        "duration_ms": 198053,
+        "preview_url": null,
+        "artists": [
+          "ZZ Ward"
+        ]
+      },
+      {
+        "id": "1q3ApfbdsQAJutFxtfyfHd",
+        "name": "Criminal (feat. Freddie Gibbs)",
+        "track_number": 10,
+        "duration_ms": 230466,
+        "preview_url": null,
+        "artists": [
+          "ZZ Ward",
+          "Freddie Gibbs"
+        ]
+      },
+      {
+        "id": "2K483oX73QGUKgx1qXVJk3",
+        "name": "If I Could Be Her",
+        "track_number": 11,
+        "duration_ms": 169386,
+        "preview_url": null,
+        "artists": [
+          "ZZ Ward"
+        ]
+      },
+      {
+        "id": "4MW6gmUtDHtLkaTjYWeTEk",
+        "name": "Charlie Ain't Home",
+        "track_number": 12,
+        "duration_ms": 215746,
+        "preview_url": null,
+        "artists": [
+          "ZZ Ward"
+        ]
+      },
+      {
+        "id": "6iGQDwewj5VAhY375CIlRa",
+        "name": "365 Days",
+        "track_number": 13,
+        "duration_ms": 207053,
+        "preview_url": null,
+        "artists": [
+          "ZZ Ward"
+        ]
+      }
+    ],
+    "saved_songs": 12
+  },
+  {
+    "id": "6IGpQUt0KNi5rBUXZZOFI6",
+    "name": "Same Trailer Different Park",
+    "artists": [
+      "Kacey Musgraves"
+    ],
+    "release_date": "2013-01-01",
+    "total_tracks": 12,
+    "images": [
+      {
+        "url": "https://i.scdn.co/image/ab67616d0000b27327276e651476643cd5c10e71",
+        "height": 640,
+        "width": 640
+      },
+      {
+        "url": "https://i.scdn.co/image/ab67616d00001e0227276e651476643cd5c10e71",
+        "height": 300,
+        "width": 300
+      },
+      {
+        "url": "https://i.scdn.co/image/ab67616d0000485127276e651476643cd5c10e71",
+        "height": 64,
+        "width": 64
+      }
+    ],
+    "external_url": "https://open.spotify.com/album/6IGpQUt0KNi5rBUXZZOFI6",
+    "tracks": [
+      {
+        "id": "7Cmd1xEuyrUYtiLbbeBfgJ",
+        "name": "Silver Lining",
+        "track_number": 1,
+        "duration_ms": 230733,
+        "preview_url": null,
+        "artists": [
+          "Kacey Musgraves"
+        ]
+      },
+      {
+        "id": "5GMaBMKjisLhVfjRoH5BaW",
+        "name": "My House",
+        "track_number": 2,
+        "duration_ms": 160506,
+        "preview_url": null,
+        "artists": [
+          "Kacey Musgraves"
+        ]
+      },
+      {
+        "id": "5UDqWOgDdixYMAgAyNbpgh",
+        "name": "Merry Go 'Round",
+        "track_number": 3,
+        "duration_ms": 206893,
+        "preview_url": null,
+        "artists": [
+          "Kacey Musgraves"
+        ]
+      },
+      {
+        "id": "2G8NuaPT0tX53r2wTMwmGP",
+        "name": "Dandelion",
+        "track_number": 4,
+        "duration_ms": 182453,
+        "preview_url": null,
+        "artists": [
+          "Kacey Musgraves"
+        ]
+      },
+      {
+        "id": "4oqD7zXh23uvf583rDkunI",
+        "name": "Blowin' Smoke",
+        "track_number": 5,
+        "duration_ms": 188386,
+        "preview_url": null,
+        "artists": [
+          "Kacey Musgraves"
+        ]
+      },
+      {
+        "id": "0jhixjwmzXDlbaV8Fl2Rvh",
+        "name": "I Miss You",
+        "track_number": 6,
+        "duration_ms": 229986,
+        "preview_url": null,
+        "artists": [
+          "Kacey Musgraves"
+        ]
+      },
+      {
+        "id": "5XolYC560U2AD6YJUemw2G",
+        "name": "Step Off",
+        "track_number": 7,
+        "duration_ms": 182680,
+        "preview_url": null,
+        "artists": [
+          "Kacey Musgraves"
+        ]
+      },
+      {
+        "id": "2RX53kRlq6VqR8ipSuFZ2A",
+        "name": "Back On The Map",
+        "track_number": 8,
+        "duration_ms": 246240,
+        "preview_url": null,
+        "artists": [
+          "Kacey Musgraves"
+        ]
+      },
+      {
+        "id": "2fG23IIy7rYN8eMNbAHcS2",
+        "name": "Keep It To Yourself",
+        "track_number": 9,
+        "duration_ms": 196040,
+        "preview_url": null,
+        "artists": [
+          "Kacey Musgraves"
+        ]
+      },
+      {
+        "id": "3yIP9LjgOGpeLMEaRduIPw",
+        "name": "Stupid",
+        "track_number": 10,
+        "duration_ms": 157040,
+        "preview_url": null,
+        "artists": [
+          "Kacey Musgraves"
+        ]
+      },
+      {
+        "id": "4CLPNURPcKztF9RRdcWLGP",
+        "name": "Follow Your Arrow",
+        "track_number": 11,
+        "duration_ms": 199640,
+        "preview_url": null,
+        "artists": [
+          "Kacey Musgraves"
+        ]
+      },
+      {
+        "id": "5f8DgcNpGWrLZ1XKqANebf",
+        "name": "It Is What It Is",
+        "track_number": 12,
+        "duration_ms": 226280,
+        "preview_url": null,
+        "artists": [
+          "Kacey Musgraves"
+        ]
+      }
+    ],
+    "saved_songs": 12
+  },
+  {
+    "id": "0S0KGZnfBGSIssfF54WSJh",
+    "name": "WHEN WE ALL FALL ASLEEP, WHERE DO WE GO?",
+    "artists": [
+      "Billie Eilish"
+    ],
+    "release_date": "2019-03-29",
+    "total_tracks": 14,
+    "images": [
+      {
+        "url": "https://i.scdn.co/image/ab67616d0000b27350a3147b4edd7701a876c6ce",
+        "height": 640,
+        "width": 640
+      },
+      {
+        "url": "https://i.scdn.co/image/ab67616d00001e0250a3147b4edd7701a876c6ce",
+        "height": 300,
+        "width": 300
+      },
+      {
+        "url": "https://i.scdn.co/image/ab67616d0000485150a3147b4edd7701a876c6ce",
+        "height": 64,
+        "width": 64
+      }
+    ],
+    "external_url": "https://open.spotify.com/album/0S0KGZnfBGSIssfF54WSJh",
+    "tracks": [
+      {
+        "id": "0rQtoQXQfwpDW0c7Fw1NeM",
+        "name": "!!!!!!!",
+        "track_number": 1,
+        "duration_ms": 13578,
+        "preview_url": null,
+        "artists": [
+          "Billie Eilish"
+        ]
+      },
+      {
+        "id": "2Fxmhks0bxGSBdJ92vM42m",
+        "name": "bad guy",
+        "track_number": 2,
+        "duration_ms": 194087,
+        "preview_url": null,
+        "artists": [
+          "Billie Eilish"
+        ]
+      },
+      {
+        "id": "4QIo4oxwzzafcBWkKjDpXY",
+        "name": "xanny",
+        "track_number": 3,
+        "duration_ms": 243725,
+        "preview_url": null,
+        "artists": [
+          "Billie Eilish"
+        ]
+      },
+      {
+        "id": "3XF5xLJHOQQRbWya6hBp7d",
+        "name": "you should see me in a crown",
+        "track_number": 4,
+        "duration_ms": 180952,
+        "preview_url": null,
+        "artists": [
+          "Billie Eilish"
+        ]
+      },
+      {
+        "id": "6IRdLKIyS4p7XNiP8r6rsx",
+        "name": "all the good girls go to hell",
+        "track_number": 5,
+        "duration_ms": 168839,
+        "preview_url": null,
+        "artists": [
+          "Billie Eilish"
+        ]
+      },
+      {
+        "id": "3Fj47GNK2kUF0uaEDgXLaD",
+        "name": "wish you were gay",
+        "track_number": 6,
+        "duration_ms": 221543,
+        "preview_url": null,
+        "artists": [
+          "Billie Eilish"
+        ]
+      },
+      {
+        "id": "43zdsphuZLzwA9k4DJhU0I",
+        "name": "when the party's over",
+        "track_number": 7,
+        "duration_ms": 196077,
+        "preview_url": null,
+        "artists": [
+          "Billie Eilish"
+        ]
+      },
+      {
+        "id": "6X29iaaazwho3ab7GNue5r",
+        "name": "8",
+        "track_number": 8,
+        "duration_ms": 173201,
+        "preview_url": null,
+        "artists": [
+          "Billie Eilish"
+        ]
+      },
+      {
+        "id": "3Tc57t9l2O8FwQZtQOvPXK",
+        "name": "my strange addiction",
+        "track_number": 9,
+        "duration_ms": 179889,
+        "preview_url": null,
+        "artists": [
+          "Billie Eilish"
+        ]
+      },
+      {
+        "id": "4SSnFejRGlZikf02HLewEF",
+        "name": "bury a friend",
+        "track_number": 10,
+        "duration_ms": 193143,
+        "preview_url": null,
+        "artists": [
+          "Billie Eilish"
+        ]
+      },
+      {
+        "id": "7qEKqBCD2vE5vIBsrUitpD",
+        "name": "ilomilo",
+        "track_number": 11,
+        "duration_ms": 156370,
+        "preview_url": null,
+        "artists": [
+          "Billie Eilish"
+        ]
+      },
+      {
+        "id": "0tMSssfxAL2oV8Vri0mFHE",
+        "name": "listen before i go",
+        "track_number": 12,
+        "duration_ms": 242652,
+        "preview_url": null,
+        "artists": [
+          "Billie Eilish"
+        ]
+      },
+      {
+        "id": "6CcJMwBtXByIz4zQLzFkKc",
+        "name": "i love you",
+        "track_number": 13,
+        "duration_ms": 291796,
+        "preview_url": null,
+        "artists": [
+          "Billie Eilish"
+        ]
+      },
+      {
+        "id": "3LgWsmilsrWXiPYQFRD0T7",
+        "name": "goodbye",
+        "track_number": 14,
+        "duration_ms": 119409,
+        "preview_url": null,
+        "artists": [
+          "Billie Eilish"
+        ]
+      }
+    ],
+    "saved_songs": 12
+  },
+  {
+    "id": "2eV6DIPDnGl1idcjww6xyX",
+    "name": "This Is Acting (Deluxe Version)",
+    "artists": [
+      "Sia"
+    ],
+    "release_date": "2016-10-21",
+    "total_tracks": 19,
+    "images": [
+      {
+        "url": "https://i.scdn.co/image/ab67616d0000b27309fc2936525fc269032451c9",
+        "height": 640,
+        "width": 640
+      },
+      {
+        "url": "https://i.scdn.co/image/ab67616d00001e0209fc2936525fc269032451c9",
+        "height": 300,
+        "width": 300
+      },
+      {
+        "url": "https://i.scdn.co/image/ab67616d0000485109fc2936525fc269032451c9",
+        "height": 64,
+        "width": 64
+      }
+    ],
+    "external_url": "https://open.spotify.com/album/2eV6DIPDnGl1idcjww6xyX",
+    "tracks": [
+      {
+        "id": "6MowG7MRVgPfGlCMsXKMJ2",
+        "name": "Bird Set Free",
+        "track_number": 1,
+        "duration_ms": 252440,
+        "preview_url": null,
+        "artists": [
+          "Sia"
+        ]
+      },
+      {
+        "id": "25R5Tdr4K7ENb6umHzdCXn",
+        "name": "Alive",
+        "track_number": 2,
+        "duration_ms": 263520,
+        "preview_url": null,
+        "artists": [
+          "Sia"
+        ]
+      },
+      {
+        "id": "1CGFyZ5fSRo0DhIJOLdHVM",
+        "name": "One Million Bullets",
+        "track_number": 3,
+        "duration_ms": 252066,
+        "preview_url": null,
+        "artists": [
+          "Sia"
+        ]
+      },
+      {
+        "id": "73Mfgc0HTZeNCoNrDI46sJ",
+        "name": "Move Your Body",
+        "track_number": 4,
+        "duration_ms": 247213,
+        "preview_url": null,
+        "artists": [
+          "Sia"
+        ]
+      },
+      {
+        "id": "1yvMUkIOTeUNtNWlWRgANS",
+        "name": "Unstoppable",
+        "track_number": 5,
+        "duration_ms": 217746,
+        "preview_url": null,
+        "artists": [
+          "Sia"
+        ]
+      },
+      {
+        "id": "3S4px9f4lceWdKf0gWciFu",
+        "name": "Cheap Thrills",
+        "track_number": 6,
+        "duration_ms": 211666,
+        "preview_url": null,
+        "artists": [
+          "Sia"
+        ]
+      },
+      {
+        "id": "4Vw3UGCAUQetVTmNdh6W5d",
+        "name": "Reaper",
+        "track_number": 7,
+        "duration_ms": 219773,
+        "preview_url": null,
+        "artists": [
+          "Sia"
+        ]
+      },
+      {
+        "id": "2dMmMkZ7SEqFbzTJx4DijY",
+        "name": "House On Fire",
+        "track_number": 8,
+        "duration_ms": 241120,
+        "preview_url": null,
+        "artists": [
+          "Sia"
+        ]
+      },
+      {
+        "id": "7LNAzNyUgpZklrVCVwg70i",
+        "name": "Footprints",
+        "track_number": 9,
+        "duration_ms": 193133,
+        "preview_url": null,
+        "artists": [
+          "Sia"
+        ]
+      },
+      {
+        "id": "4YUfY5mexUui2Lo9y5agMf",
+        "name": "Sweet Design",
+        "track_number": 10,
+        "duration_ms": 145600,
+        "preview_url": null,
+        "artists": [
+          "Sia"
+        ]
+      },
+      {
+        "id": "22iKiimk9wEJWdHlKdtFsA",
+        "name": "Broken Glass",
+        "track_number": 11,
+        "duration_ms": 264986,
+        "preview_url": null,
+        "artists": [
+          "Sia"
+        ]
+      },
+      {
+        "id": "3Wmti6IwvJ2aKeTm9YrZO7",
+        "name": "Space Between",
+        "track_number": 12,
+        "duration_ms": 288093,
+        "preview_url": null,
+        "artists": [
+          "Sia"
+        ]
+      },
+      {
+        "id": "2ONIJ40u0Attbm3miIIpNO",
+        "name": "Cheap Thrills (feat. Sean Paul)",
+        "track_number": 13,
+        "duration_ms": 224493,
+        "preview_url": null,
+        "artists": [
+          "Sia",
+          "Sean Paul"
+        ]
+      },
+      {
+        "id": "7xHWNBFm6ObGEQPaUxHuKO",
+        "name": "The Greatest (feat. Kendrick Lamar)",
+        "track_number": 14,
+        "duration_ms": 210226,
+        "preview_url": null,
+        "artists": [
+          "Sia",
+          "Kendrick Lamar"
+        ]
+      },
+      {
+        "id": "3kikZxz3Sg6lwG72ZLssIL",
+        "name": "Confetti",
+        "track_number": 15,
+        "duration_ms": 246173,
+        "preview_url": null,
+        "artists": [
+          "Sia"
+        ]
+      },
+      {
+        "id": "6LUOMjoORvAkdhBYvESO46",
+        "name": "Move Your Body - Alan Walker Remix",
+        "track_number": 16,
+        "duration_ms": 217906,
+        "preview_url": null,
+        "artists": [
+          "Sia",
+          "Alan Walker"
+        ]
+      },
+      {
+        "id": "5rVElqSBdfsDALQfc7z2ZQ",
+        "name": "Midnight Decisions",
+        "track_number": 17,
+        "duration_ms": 222973,
+        "preview_url": null,
+        "artists": [
+          "Sia"
+        ]
+      },
+      {
+        "id": "5DET60fn3RK36r6qc934tb",
+        "name": "Jesus Wept",
+        "track_number": 18,
+        "duration_ms": 329373,
+        "preview_url": null,
+        "artists": [
+          "Sia"
+        ]
+      },
+      {
+        "id": "6bLopGnirdrilrpdVB6Um1",
+        "name": "The Greatest",
+        "track_number": 19,
+        "duration_ms": 210906,
+        "preview_url": null,
+        "artists": [
+          "Sia"
+        ]
+      }
+    ],
+    "saved_songs": 12
+  },
+  {
+    "id": "27nr57gugCPjxQIFFz2uK3",
+    "name": "Into The Woods",
+    "artists": [
+      "Stephen Sondheim",
+      "Musical Cast Recording"
+    ],
+    "release_date": "1988-02-16",
+    "total_tracks": 19,
+    "images": [
+      {
+        "url": "https://i.scdn.co/image/ab67616d0000b2736d2914d076b1e4af7ecd1f33",
+        "height": 640,
+        "width": 640
+      },
+      {
+        "url": "https://i.scdn.co/image/ab67616d00001e026d2914d076b1e4af7ecd1f33",
+        "height": 300,
+        "width": 300
+      },
+      {
+        "url": "https://i.scdn.co/image/ab67616d000048516d2914d076b1e4af7ecd1f33",
+        "height": 64,
+        "width": 64
+      }
+    ],
+    "external_url": "https://open.spotify.com/album/27nr57gugCPjxQIFFz2uK3",
+    "tracks": [
+      {
+        "id": "6afiCaFJHdZSd0w6hv6OE3",
+        "name": "Into the Woods (Prologue)",
+        "track_number": 1,
+        "duration_ms": 718226,
+        "preview_url": null,
+        "artists": [
+          "Stephen Sondheim",
+          "Original Broadway Cast of Into the Woods"
+        ]
+      },
+      {
+        "id": "21KQvUHtvksi3xRvRwqvCf",
+        "name": "Cinderella at the Grave",
+        "track_number": 2,
+        "duration_ms": 73360,
+        "preview_url": null,
+        "artists": [
+          "Stephen Sondheim",
+          "Kim Crosby",
+          "Merle Louise",
+          "Original Broadway Cast of Into the Woods",
+          "Paul Gemignani"
+        ]
+      },
+      {
+        "id": "6SwDLniduCDIBWSqRWeutm",
+        "name": "Hello, Little Girl",
+        "track_number": 3,
+        "duration_ms": 153506,
+        "preview_url": null,
+        "artists": [
+          "Stephen Sondheim",
+          "Robert Westenberg",
+          "Danielle Ferland",
+          "Original Broadway Cast of Into the Woods",
+          "Paul Gemignani"
+        ]
+      },
+      {
+        "id": "4PE4hfrOttZeEqHqhnpkBW",
+        "name": "I Guess This Is Goodbye / Maybe They're Magic",
+        "track_number": 4,
+        "duration_ms": 123000,
+        "preview_url": null,
+        "artists": [
+          "Stephen Sondheim",
+          "Ben Wright",
+          "Joanna Gleason",
+          "Chip Zien",
+          "Original Broadway Cast of Into the Woods",
+          "Paul Gemignani"
+        ]
+      },
+      {
+        "id": "5YasESzSXVLGP2xZumVE4w",
+        "name": "I Know Things Now",
+        "track_number": 5,
+        "duration_ms": 108960,
+        "preview_url": null,
+        "artists": [
+          "Stephen Sondheim",
+          "Danielle Ferland",
+          "Original Broadway Cast of Into the Woods",
+          "Paul Gemignani"
+        ]
+      },
+      {
+        "id": "4B86PfFv5r7LiM19VdYjsw",
+        "name": "A Very Nice Prince / First Midnight / Giants in the Sky",
+        "track_number": 6,
+        "duration_ms": 319640,
+        "preview_url": null,
+        "artists": [
+          "Stephen Sondheim",
+          "Ben Wright",
+          "Into the Woods Ensemble",
+          "Joanna Gleason",
+          "Kim Crosby",
+          "Original Broadway Cast of Into the Woods",
+          "Paul Gemignani"
+        ]
+      },
+      {
+        "id": "0uaOfUuLTExd5Ez1muQoQw",
+        "name": "Agony",
+        "track_number": 7,
+        "duration_ms": 146533,
+        "preview_url": null,
+        "artists": [
+          "Stephen Sondheim",
+          "Robert Westenberg",
+          "Chuck Wagner",
+          "Original Broadway Cast of Into the Woods",
+          "Paul Gemignani"
+        ]
+      },
+      {
+        "id": "6oJSrjcWAofAVtk69Uih2R",
+        "name": "It Takes Two",
+        "track_number": 8,
+        "duration_ms": 168600,
+        "preview_url": null,
+        "artists": [
+          "Stephen Sondheim",
+          "Joanna Gleason",
+          "Chip Zien",
+          "Original Broadway Cast of Into the Woods",
+          "Paul Gemignani"
+        ]
+      },
+      {
+        "id": "6gMhsEQxhkAtgbGtDBI3ar",
+        "name": "Stay with Me",
+        "track_number": 9,
+        "duration_ms": 161466,
+        "preview_url": null,
+        "artists": [
+          "Stephen Sondheim",
+          "Bernadette Peters",
+          "Pamela Winslow",
+          "Original Broadway Cast of Into the Woods",
+          "Paul Gemignani"
+        ]
+      },
+      {
+        "id": "2sPtYLenU4wAKdswu5XDWK",
+        "name": "On the Steps of the Palace",
+        "track_number": 10,
+        "duration_ms": 154733,
+        "preview_url": null,
+        "artists": [
+          "Stephen Sondheim",
+          "Kim Crosby",
+          "Original Broadway Cast of Into the Woods",
+          "Paul Gemignani"
+        ]
+      },
+      {
+        "id": "1YarbiWaFGK58PutnR2lGp",
+        "name": "Ever After",
+        "track_number": 11,
+        "duration_ms": 140266,
+        "preview_url": null,
+        "artists": [
+          "Stephen Sondheim",
+          "Tom Aldredge",
+          "Into the Woods Ensemble",
+          "Original Broadway Cast of Into the Woods",
+          "Paul Gemignani"
+        ]
+      },
+      {
+        "id": "4peMFZnQjHxaGaGGblLl0F",
+        "name": "So Happy (Prologue Act II)",
+        "track_number": 12,
+        "duration_ms": 229200,
+        "preview_url": null,
+        "artists": [
+          "Stephen Sondheim",
+          "Tom Aldredge",
+          "Into the Woods Ensemble",
+          "Original Broadway Cast of Into the Woods",
+          "Paul Gemignani"
+        ]
+      },
+      {
+        "id": "0gR5KF3QH7z77x8ahIX8VX",
+        "name": "Agony (Reprise)",
+        "track_number": 13,
+        "duration_ms": 136026,
+        "preview_url": null,
+        "artists": [
+          "Stephen Sondheim",
+          "Robert Westenberg",
+          "Chuck Wagner",
+          "Original Broadway Cast of Into the Woods",
+          "Paul Gemignani"
+        ]
+      },
+      {
+        "id": "1UgM0PEshfooR3DSQYYnuF",
+        "name": "Lament",
+        "track_number": 14,
+        "duration_ms": 123573,
+        "preview_url": null,
+        "artists": [
+          "Stephen Sondheim",
+          "Bernadette Peters",
+          "Original Broadway Cast of Into the Woods",
+          "Paul Gemignani"
+        ]
+      },
+      {
+        "id": "2N720jZxeGQQuKjOCIrpPg",
+        "name": "Any Moment / Moments in the Woods",
+        "track_number": 15,
+        "duration_ms": 297560,
+        "preview_url": null,
+        "artists": [
+          "Stephen Sondheim",
+          "Joanna Gleason",
+          "Robert Westenberg",
+          "Original Broadway Cast of Into the Woods",
+          "Paul Gemignani"
+        ]
+      },
+      {
+        "id": "1SKJzwsht7mb2IRNvboqe1",
+        "name": "Your Fault / Last Midnight",
+        "track_number": 16,
+        "duration_ms": 284066,
+        "preview_url": null,
+        "artists": [
+          "Stephen Sondheim",
+          "Bernadette Peters",
+          "Chip Zien",
+          "Ben Wright",
+          "Danielle Ferland",
+          "Kim Crosby",
+          "Original Broadway Cast of Into the Woods",
+          "Paul Gemignani"
+        ]
+      },
+      {
+        "id": "5ttZAAHzUGLugkietoJLXm",
+        "name": "No More",
+        "track_number": 17,
+        "duration_ms": 252706,
+        "preview_url": null,
+        "artists": [
+          "Stephen Sondheim",
+          "Chip Zien",
+          "Tom Aldredge",
+          "Original Broadway Cast of Into the Woods",
+          "Paul Gemignani"
+        ]
+      },
+      {
+        "id": "4NbO691heTb4T4YKy1UhJC",
+        "name": "No One Is Alone (From \"Into The Woods\")",
+        "track_number": 18,
+        "duration_ms": 235600,
+        "preview_url": null,
+        "artists": [
+          "Stephen Sondheim",
+          "Paul Gemignani",
+          "Chip Zien",
+          "Kim Crosby",
+          "Ben Wright",
+          "Danielle Ferland"
+        ]
+      },
+      {
+        "id": "5Xi2J1eW5IOLcVa8iw1ZFz",
+        "name": "Finale: Children Will Listen",
+        "track_number": 19,
+        "duration_ms": 310440,
+        "preview_url": null,
+        "artists": [
+          "Stephen Sondheim",
+          "Bernadette Peters",
+          "Into the Woods Ensemble",
+          "Original Broadway Cast of Into the Woods",
+          "Paul Gemignani"
+        ]
+      }
+    ],
+    "saved_songs": 12
+  },
+  {
+    "id": "5Mxz1P0qfXLR6SgE6xbyBb",
+    "name": "Rockferry (Deluxe Edition)",
+    "artists": [
+      "Duffy"
+    ],
+    "release_date": "2008",
+    "total_tracks": 17,
+    "images": [
+      {
+        "url": "https://i.scdn.co/image/ab67616d0000b273cf6ba83524acdeefe0a11e9c",
+        "height": 640,
+        "width": 640
+      },
+      {
+        "url": "https://i.scdn.co/image/ab67616d00001e02cf6ba83524acdeefe0a11e9c",
+        "height": 300,
+        "width": 300
+      },
+      {
+        "url": "https://i.scdn.co/image/ab67616d00004851cf6ba83524acdeefe0a11e9c",
+        "height": 64,
+        "width": 64
+      }
+    ],
+    "external_url": "https://open.spotify.com/album/5Mxz1P0qfXLR6SgE6xbyBb",
+    "tracks": [
+      {
+        "id": "65M7muGNDnuYo7BMSG00Ox",
+        "name": "Rockferry",
+        "track_number": 1,
+        "duration_ms": 252693,
+        "preview_url": null,
+        "artists": [
+          "Duffy"
+        ]
+      },
+      {
+        "id": "2IMIbiJlbi0pIs3FBpKFhS",
+        "name": "Warwick Avenue",
+        "track_number": 2,
+        "duration_ms": 227160,
+        "preview_url": null,
+        "artists": [
+          "Duffy"
+        ]
+      },
+      {
+        "id": "4LzWe91KPQtHsORdmf04c5",
+        "name": "Serious",
+        "track_number": 3,
+        "duration_ms": 251346,
+        "preview_url": null,
+        "artists": [
+          "Duffy"
+        ]
+      },
+      {
+        "id": "5VWVS4c9oLaCFsFJ2yGkSn",
+        "name": "Stepping Stone",
+        "track_number": 4,
+        "duration_ms": 209453,
+        "preview_url": null,
+        "artists": [
+          "Duffy"
+        ]
+      },
+      {
+        "id": "746InuKpJ6tyPac5qvHjW2",
+        "name": "Syrup & Honey",
+        "track_number": 5,
+        "duration_ms": 198120,
+        "preview_url": null,
+        "artists": [
+          "Duffy"
+        ]
+      },
+      {
+        "id": "477sXlIELfAyi8ouWjGJd4",
+        "name": "Hanging On Too Long",
+        "track_number": 6,
+        "duration_ms": 236386,
+        "preview_url": null,
+        "artists": [
+          "Duffy"
+        ]
+      },
+      {
+        "id": "78twQ5XCFJMTE37ZSU0gsj",
+        "name": "Mercy",
+        "track_number": 7,
+        "duration_ms": 220506,
+        "preview_url": null,
+        "artists": [
+          "Duffy"
+        ]
+      },
+      {
+        "id": "3OTUgcvEHDMw3YMhi819nB",
+        "name": "Delayed Devotion",
+        "track_number": 8,
+        "duration_ms": 178306,
+        "preview_url": null,
+        "artists": [
+          "Duffy"
+        ]
+      },
+      {
+        "id": "0ZaIBQIa1MjMMw8lEc8G2O",
+        "name": "I'm Scared",
+        "track_number": 9,
+        "duration_ms": 189293,
+        "preview_url": null,
+        "artists": [
+          "Duffy"
+        ]
+      },
+      {
+        "id": "1uqXrzulcVflfeZDHbyjIs",
+        "name": "Distant Dreamer",
+        "track_number": 10,
+        "duration_ms": 307813,
+        "preview_url": null,
+        "artists": [
+          "Duffy"
+        ]
+      },
+      {
+        "id": "6Nglmo92oW39OIartzIdBK",
+        "name": "Rain On Your Parade",
+        "track_number": 11,
+        "duration_ms": 209573,
+        "preview_url": null,
+        "artists": [
+          "Duffy"
+        ]
+      },
+      {
+        "id": "2SPwhk5RRRXVrNuBEi2ZnY",
+        "name": "Fool For You",
+        "track_number": 12,
+        "duration_ms": 226866,
+        "preview_url": null,
+        "artists": [
+          "Duffy"
+        ]
+      },
+      {
+        "id": "4RHZPJwefJn5HbDTiy2wFn",
+        "name": "Stop",
+        "track_number": 13,
+        "duration_ms": 250453,
+        "preview_url": null,
+        "artists": [
+          "Duffy"
+        ]
+      },
+      {
+        "id": "4ySE7RwpQaDMIizneAjaGJ",
+        "name": "Oh Boy",
+        "track_number": 14,
+        "duration_ms": 150653,
+        "preview_url": null,
+        "artists": [
+          "Duffy"
+        ]
+      },
+      {
+        "id": "1KCL4RRUtnPzPiEwpp7eQh",
+        "name": "Please Stay",
+        "track_number": 15,
+        "duration_ms": 207506,
+        "preview_url": null,
+        "artists": [
+          "Duffy"
+        ]
+      },
+      {
+        "id": "4f0ZsolMc0aYjM3FqFxUC6",
+        "name": "Breaking My Own Heart",
+        "track_number": 16,
+        "duration_ms": 237933,
+        "preview_url": null,
+        "artists": [
+          "Duffy"
+        ]
+      },
+      {
+        "id": "00hzFg3J78uIchXYUJVa5U",
+        "name": "Enough Love",
+        "track_number": 17,
+        "duration_ms": 199973,
+        "preview_url": null,
+        "artists": [
+          "Duffy"
+        ]
+      }
+    ],
+    "saved_songs": 12
+  }
+]

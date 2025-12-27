@@ -1,6 +1,23 @@
-# Spotify MCP Server
+# Spotify Bulk Actions MCP
 
-A custom MCP (Model Context Protocol) server for Spotify library analysis and playlist management.
+A Model Context Protocol (MCP) server for bulk Spotify operations - batch playlist creation, library exports, and large-scale library management.
+
+**What makes this different from other Spotify MCPs?**
+- **Confidence scoring** - Batch searches return HIGH/MEDIUM/LOW confidence for each match
+- **Human-in-the-loop** - Uncertain matches are exported for review, then re-imported
+- **Bulk operations** - Handle 500+ songs efficiently with rate limiting built-in
+- **Library exports** - Export your complete library data
+- **Podcast playlist focused** - Built specifically for importing song lists from podcast show notes
+
+---
+
+## Support This Project
+
+If this MCP is useful to you, consider buying me a coffee!
+
+[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-support-yellow?style=for-the-badge&logo=buy-me-a-coffee)](https://buymeacoffee.com/kevinhg)
+
+---
 
 ## What This Does
 
@@ -23,19 +40,25 @@ A custom MCP (Model Context Protocol) server for Spotify library analysis and pl
 
 - Python 3.10+
 - A Spotify account
-- Spotify Developer credentials (you already have these!)
+- Spotify Developer credentials ([get them here](https://developer.spotify.com/dashboard))
 
-### 2. Setup (One-Time)
+### 2. Clone & Setup
 
 ```bash
-# Navigate to the project
-cd spotify-mcp
+# Clone the repo
+git clone https://github.com/khglynn/spotify-bulk-actions-mcp.git
+cd spotify-bulk-actions-mcp
 
-# Activate the virtual environment (already created)
-source venv/bin/activate
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
 
-# Verify your credentials are in .env
-cat .env
+# Install dependencies
+pip install -r requirements.txt
+
+# Copy env example and add your credentials
+cp .env.example .env
+# Edit .env with your SPOTIFY_CLIENT_ID and SPOTIFY_CLIENT_SECRET
 ```
 
 ### 3. Authenticate with Spotify (One-Time)
@@ -51,21 +74,20 @@ After login, your token is saved locally in `.spotify_cache/`.
 ### 4. Test It Works
 
 ```bash
-# Quick test
 source venv/bin/activate
 python -c "from src.utils.auth import is_authenticated; print('Auth OK!' if is_authenticated() else 'Not authenticated')"
 ```
 
 ### 5. Connect to Claude Code
 
-Add this to your Claude Code settings (`.claude/settings.local.json` or via settings UI):
+Add this to your Claude Code settings (`~/.claude/settings.local.json`):
 
 ```json
 {
   "mcpServers": {
     "spotify": {
-      "command": "/home/user/spotify-mcp/venv/bin/python",
-      "args": ["/home/user/spotify-mcp/src/server.py"]
+      "command": "/path/to/spotify-bulk-actions-mcp/venv/bin/python",
+      "args": ["/path/to/spotify-bulk-actions-mcp/src/server.py"]
     }
   }
 }
@@ -190,3 +212,11 @@ The server auto-refreshes tokens. If issues persist, re-run `setup_auth.py`.
 - Auth tokens are stored locally in `.spotify_cache/`
 - Never share your `.env` or token files
 - If credentials are exposed, rotate them in Spotify Dashboard
+
+## License
+
+MIT
+
+---
+
+Made cause I can't not have headphones on. If this helps you, [buy me a coffee](https://buymeacoffee.com/kevinhg)!
