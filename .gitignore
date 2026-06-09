@@ -13,3 +13,6 @@ node_modules/
 # Vercel
 .vercel/
 .vercel
+
+# Claude Code project memory — keep out of this public repo
+.claude-memory/
