@@ -184,6 +184,7 @@
         let selectedPerson = null;
         let geminiApiKey = localStorage.getItem(LS.geminiKey) || '';
         let onApiKeySuccess = null;
+        let editSeq = 0; // bumped on every local edit; guards the push/clear race
         const dayCache = {}; // `${fid}|${day}` -> computed artists
 
         // =============================================================
@@ -215,13 +216,13 @@
             const p = (pendingChanges[activeFestivalId] = pendingChanges[activeFestivalId] || {});
             const s = (p.selections = p.selections || {});
             (s[artist] = s[artist] || {})[person] = level;
-            persistPending();
+            editSeq++; persistPending();
         }
         function recordPerson(name, color) {
             const p = (pendingChanges[activeFestivalId] = pendingChanges[activeFestivalId] || {});
             const pe = (p.people = p.people || {});
             pe[name] = { color };
-            persistPending();
+            editSeq++; persistPending();
         }
 
         // =============================================================
@@ -505,13 +506,13 @@
 
         // =============================================================
         // SYNC (offline-first: local is instant, cloud catches up)
+        // Model: the remote document is the shared truth; our not-yet-pushed
+        // edits live in `pendingChanges` and always overlay on top of remote.
         // =============================================================
         let syncTimer = null, isSyncing = false, syncQueued = false;
         function setSyncStatus(s) {
-            const dot = document.getElementById('sync-dot');
-            const label = document.getElementById('sync-label');
-            dot.className = 'sync-dot sync-' + s;
-            label.textContent = s;
+            document.getElementById('sync-dot').className = 'sync-dot sync-' + s;
+            document.getElementById('sync-label').textContent = s;
         }
         function hasPending() { return Object.keys(pendingChanges).length > 0; }
 
@@ -520,58 +521,63 @@
             syncTimer = setTimeout(pushSync, 1200);
         }
 
+        async function fetchRemote() {
+            const res = await fetch('/api/selections', { cache: 'no-store' });
+            if (!res.ok) throw new Error('GET failed: ' + res.status);
+            return await res.json();
+        }
+
+        // Rebuild local state from remote + our pending overlay, repainting only
+        // if the visible festival actually changed (so polling never jumps scroll).
+        function applyRemote(remote) {
+            const before = JSON.stringify(allData[activeFestivalId] || {});
+            allData = deepMerge(remote || {}, pendingChanges);
+            ensureFestivalState(activeFestivalId); // re-seed crew if brand new
+            persist();
+            if (JSON.stringify(allData[activeFestivalId] || {}) !== before) refreshView();
+        }
+
         async function pushSync() {
             if (!navigator.onLine) { setSyncStatus('offline'); return; }
             if (isSyncing) { syncQueued = true; return; }
             isSyncing = true; setSyncStatus('syncing');
+            const seqAtStart = editSeq;
             try {
                 const remote = await fetchRemote();
-                const merged = deepMerge(remote, pendingChanges);
-                allData = deepMerge(allData, merged);
-                persist();
+                const out = deepMerge(remote, pendingChanges);
                 const res = await fetch('/api/selections', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ data: merged })
+                    body: JSON.stringify({ data: out })
                 });
-                if (res.ok) {
-                    const stored = await res.json();
-                    allData = deepMerge(allData, stored);
-                    pendingChanges = {}; persistPending(); persist();
-                    setSyncStatus('online');
-                } else { setSyncStatus('error'); }
-            } catch (e) { console.error('push failed', e); setSyncStatus('offline'); }
-            finally {
+                if (!res.ok) throw new Error('POST failed: ' + res.status);
+                const stored = await res.json();
+                // Clear pending only if no new edit landed during the round-trip;
+                // otherwise keep them and push again so nothing is lost.
+                if (editSeq === seqAtStart) { pendingChanges = {}; persistPending(); }
+                else { scheduleSync(); }
+                applyRemote(stored);
+                setSyncStatus(hasPending() ? 'syncing' : 'online');
+            } catch (e) {
+                console.error('sync push failed', e);
+                setSyncStatus(navigator.onLine ? 'error' : 'offline');
+            } finally {
                 isSyncing = false;
-                refreshView();
                 if (syncQueued) { syncQueued = false; scheduleSync(); }
             }
         }
 
         async function pollSync() {
             if (!navigator.onLine) { setSyncStatus('offline'); return; }
+            if (isSyncing) return; // a push already has the latest in flight
             try {
-                const remote = await fetchRemote();
-                allData = deepMerge(deepMerge(remote, allData_localOnly()), pendingChanges);
-                persist();
+                applyRemote(await fetchRemote());
                 setSyncStatus(hasPending() ? 'syncing' : 'online');
-                refreshView();
                 if (hasPending()) scheduleSync();
-            } catch (e) { setSyncStatus('offline'); }
-        }
-
-        // Keep festivals/people that only exist locally (e.g. just-seeded) when merging remote.
-        function allData_localOnly() { return allData; }
-
-        async function fetchRemote() {
-            const res = await fetch('/api/selections', { cache: 'no-store' });
-            if (!res.ok) throw new Error('GET failed');
-            return await res.json();
+            } catch (e) { setSyncStatus(navigator.onLine ? 'error' : 'offline'); }
         }
 
         function refreshView() {
-            // Make sure the active festival still has a people set, then repaint.
-            ensureFestivalState(activeFestivalId);
             renderPeople();
             if (currentDay) renderDay(currentDay);
         }
@@ -787,10 +793,15 @@
                     const parsed = JSON.parse(old);
                     ensureFestivalState('lollapalooza-2025');
                     const tgt = allData['lollapalooza-2025'].selections;
+                    // Route through pendingChanges too, so these survive the first
+                    // remote merge and sync up to the shared store.
+                    const pend = (pendingChanges['lollapalooza-2025'] = pendingChanges['lollapalooza-2025'] || {});
+                    const ps = (pend.selections = pend.selections || {});
                     Object.entries(parsed).forEach(([artist, sels]) => {
                         tgt[artist] = deepMerge(tgt[artist], sels);
+                        ps[artist] = deepMerge(ps[artist], sels);
                     });
-                    persist();
+                    editSeq++; persist(); persistPending();
                     localStorage.removeItem('lollaSelections'); // migrated
                 } catch (e) { /* ignore */ }
             }
