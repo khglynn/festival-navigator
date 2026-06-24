@@ -1,7 +1,7 @@
 {
   "name": "festival-navigator",
-  "version": "1.0.0",
-  "description": "Lollapalooza 2025 Festival Navigator with real-time collaboration",
+  "version": "2.0.0",
+  "description": "Multi-festival navigator with offline-first shared sync (Electric Forest, Lollapalooza)",
   "main": "index.html",
   "scripts": {
     "dev": "vercel dev",

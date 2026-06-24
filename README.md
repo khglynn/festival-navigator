@@ -1,125 +1,65 @@
-# 🎪 Festival Navigator - Lollapalooza 2025
+# 🎪 Festival Navigator
 
-A vibrant, interactive web app for planning your perfect Lollapalooza 2025 experience with friends and family!
+A fast, mobile-first web app for planning a festival with your crew. Pick who's
+seeing whom across every stage, spot conflicts, and share the plan — and it keeps
+working when the signal doesn't.
+
+Currently loaded festivals:
+- **Electric Forest** — Rothbury, MI (4 days, 7 stages)
+- **Lollapalooza** — Chicago, IL (archived)
 
 ## ✨ Features
 
-### 🎯 Core Functionality
-- **Multi-Person Tracking**: Track preferences for up to 6 people with color-coded selections
-- **Interactive Schedule Grid**: Visual timeline showing all artists across multiple stages
-- **Smart Conflict Resolution**: AI-powered suggestions to optimize your group's festival experience
-- **Priority Levels**: Mark artists as "Must See", "Nice to See", or "Highlight"
+- **Multi-festival** — switch festivals from the dropdown; each keeps its own crew and picks.
+- **Dynamic crew** — add or remove people on the fly, each gets a color automatically.
+- **Visual schedule grid** — all stages on one timeline, including late-night/after-midnight sets.
+- **Tap to prioritize** — Nice to See → Must See → Highlight → clear.
+- **Offline-first** — picks save instantly to your device and sync to the group when you have signal.
+- **Installable (PWA)** — add to your home screen; the app shell works with no connection.
+- **AI tools (optional)** — artist blurbs and a group-plan conflict optimizer.
+- **Export** — download a day as a PNG, or copy/paste everyone's picks.
 
-### 🛠️ Festival Tools
-- **Download Schedule**: Export your daily schedule as a PNG image
-- **Group Plan Optimizer**: Find time conflicts and get AI-suggested compromises
-- **Export All Likes**: Generate a copy-paste list of everyone's selections
-- **Bulk Update**: Quickly add or update multiple artist selections at once
+## 🗂️ Project structure
 
-## 🚀 Live Demo
-
-Visit the live app: [Coming soon after Vercel deployment]
-
-## 💻 Technologies Used
-
-- **HTML5** - Structure and content
-- **Tailwind CSS** - Styling via CDN
-- **Vanilla JavaScript** - Interactive functionality
-- **html2canvas** - Schedule image export
-- **Google Gemini API** - AI-powered features (optional)
-- **Local Storage** - Persistent data storage
-
-## 🎨 Color Coding
-
-Each person gets their own unique color:
-- **Kevin**: Red
-- **Molly**: Blue
-- **Megan**: Green
-- **Ross**: Yellow
-- **Other Fam**: Purple
-- **Other Peeps**: Pink
-
-## 📱 How to Use
-
-1. **Select a Person**: Click on a person's name to activate their selection mode
-2. **Choose a Day**: Navigate between Thursday, Friday, Saturday, and Sunday
-3. **Click Artists**: 
-   - First click: Nice to See (50% opacity)
-   - Second click: Must See (100% opacity)
-   - Third click: Highlight (dashed border)
-   - Fourth click: Remove selection
-4. **Use Festival Tools**: Access AI features, download schedules, and manage selections
-
-## 🔑 API Key Setup (Optional)
-
-### Option 1: Secure Server-Side (Recommended for Public Use)
-
-To let anyone use artist info without exposing your API key:
-
-**In Vercel Dashboard:**
-1. Go to your project → Settings → Environment Variables
-2. Add new variable:
-   - Name: `GEMINI_API_KEY`
-   - Value: Your API key from [Google AI Studio](https://aistudio.google.com/app/apikey)
-   - Environment: All (Production, Preview, Development)
-3. Save and redeploy
-
-**Benefits:**
-- ✅ Your API key stays secret on Vercel's servers
-- ✅ Anyone can click artists for info without a key
-- ✅ Responses cached for 1 hour to reduce API usage
-- ✅ Free within Vercel's Edge Function limits
-
-### Option 2: Client-Side (Personal Use)
-
-For personal use only:
-1. Visit [Google AI Studio](https://aistudio.google.com/app/apikey)
-2. Generate a free API key
-3. Enter it when prompted in the app
-4. The key is stored locally in your browser
-
-## 🏗️ Local Development
-
-```bash
-# Clone the repository
-git clone https://github.com/khglynn/festival-navigator.git
-
-# Navigate to the project
-cd festival-navigator
-
-# Open in browser
-open index.html
-# Or use a local server
-python -m http.server 8000
+```
+index.html            # the whole app (UI + logic)
+data/festivals.js      # all festival/stage/set data — edit lineups here
+api/selections.js      # Vercel Blob store; deep-merges the group's picks
+api/artist-info.js     # server-side Gemini call (keeps the API key secret)
+manifest.json          # PWA manifest
+service-worker.js      # offline app-shell cache
 ```
 
-## 📦 Deployment
+### Editing a lineup
+Open `data/festivals.js`, find the set, and change its name / stage / time. The
+grid, colors, and sync all update automatically. Times can be a single start
+(`"6:30 PM"`) — the app fills the end from the next set on that stage — or a full
+range (`"6:30 PM - 7:30 PM"`).
 
-This project is configured for easy deployment on Vercel:
+## 🔄 How sync works
 
-1. Fork or clone this repository
-2. Connect your GitHub account to Vercel
-3. Import the project
-4. Deploy with zero configuration needed
+Every pick is written to `localStorage` immediately (works with zero signal),
+then pushed to a shared Vercel Blob document in the background. The server
+**deep-merges** updates, so two people editing at once never overwrite each
+other. Other devices pull the merged result on an interval and when the app
+regains focus. The dot by the festival name shows sync status
+(online / syncing / offline).
 
-## 🎵 Festival Data
+### One-time setup (Vercel dashboard)
+1. **Storage → Blob** → connect a Blob store to this project (sets `BLOB_READ_WRITE_TOKEN`).
+2. *(optional)* **Settings → Environment Variables** → add `GEMINI_API_KEY` for the AI features.
+3. Redeploy.
 
-The app includes the complete Lollapalooza 2025 lineup with:
-- 4 days of performances
-- 10+ stages
-- 200+ artists
-- Accurate time slots and stage assignments
+Without the Blob store the app still runs fully — it just stays per-device until
+the store is connected.
+
+## 🏗️ Local development
+
+```bash
+npm install
+vercel dev      # serves the static app + /api functions
+```
 
 ## 📄 License
 
-MIT License - Feel free to use and modify for your own festival planning needs!
-
-## 🙏 Acknowledgments
-
-- Lollapalooza for the amazing festival
-- Google for the Gemini API
-- The festival crew for making memories together
-
----
-
-Made with ❤️ for festival lovers
+MIT

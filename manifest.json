@@ -1,0 +1,18 @@
+{
+  "name": "Festival Navigator",
+  "short_name": "Festival",
+  "description": "Plan your festival with your crew — works offline.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#111827",
+  "theme_color": "#111827",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/recordos-logo-compressed.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
