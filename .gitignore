@@ -16,3 +16,4 @@ node_modules/
 
 # Claude Code project memory — keep out of this public repo
 .claude-memory/
+.env*
