@@ -15,7 +15,7 @@ node_modules/
 .vercel
 
 # Claude Code project memory — keep out of this public repo
-.claude-memory/
+.claude-memory
 .env*
 
 # Playwright test artifacts
