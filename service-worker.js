@@ -1,11 +1,12 @@
 // Festival Navigator service worker — offline-first app shell.
 // Bump CACHE_VERSION whenever you change cached static assets.
-const CACHE_VERSION = 'festival-nav-v1';
+const CACHE_VERSION = 'festival-nav-v3';
 
 const APP_SHELL = [
   '/',
   '/index.html',
   '/data/festivals.js',
+  '/data/spotify-affinity.js',
   '/manifest.json',
   '/recordos-logo-compressed.png',
   'https://cdn.tailwindcss.com',

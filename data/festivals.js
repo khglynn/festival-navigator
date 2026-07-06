@@ -42,11 +42,18 @@
   const electricForest = {
     id: "electric-forest-2025",
     name: "Electric Forest",
-    subtitle: "Rothbury, MI",
+    subtitle: "",
+    year: "'26",
     accent: "16, 185, 129", // emerald
     dayStartHour: 12,
     defaultPeople: ["Kevin", "Roston", "Robert", "Colby", "Drew"],
     stages: EF_STAGES,
+    dayMeta: {
+      "Day 1": { wd: "Thu", num: 1, date: "Jun 25" },
+      "Day 2": { wd: "Fri", num: 2, date: "Jun 26" },
+      "Day 3": { wd: "Sat", num: 3, date: "Jun 27" },
+      "Day 4": { wd: "Sun", num: 4, date: "Jun 28" },
+    },
     days: {
       "Day 1": efDay({
         "Ranch Arena": [
@@ -311,6 +318,52 @@
           ["Red Giant Project", "1:00 AM"],
         ],
       }),
+    },
+    // The Brainery (workshops/wellness) + Silent Disco — single-venue, often
+    // overlapping programming, shown as a time-sorted list below the grid.
+    activities: {
+      "Day 1": [
+        { name: "Intention Setting Ceremony", time: "9:30 AM - 10:15 AM", venue: "The Brainery" },
+        { name: "Inclusive Yoga", time: "10:30 AM - 11:30 AM", venue: "The Brainery" },
+        { name: "Flow State Vinyasa", time: "11:45 AM - 12:30 PM", venue: "The Brainery" },
+        { name: "Embodied Rhythm", time: "12:45 PM - 1:30 PM", venue: "The Brainery" },
+        { name: "Fuel Your Flow", time: "1:45 PM - 2:45 PM", venue: "The Brainery" },
+        { name: "Spiritual Cheerleading", time: "3:00 PM - 3:45 PM", venue: "The Brainery" },
+        { name: "Blackout Poetry", time: "4:00 PM - 4:45 PM", venue: "The Brainery" },
+        { name: "End Overdose Harm Reduction Training", time: "5:00 PM - 5:15 PM", venue: "The Brainery" },
+        { name: "Silent Disco: Chicago, Michigan, West Coast", time: "8:00 PM - 4:00 AM", venue: "Silent Disco" },
+        { name: "Crafter Hours: Fairy Houses", time: "2:00 AM - 5:00 AM", venue: "The Brainery" },
+        { name: "Now Karaoke Band", time: "2:00 AM - 5:00 AM", venue: "The Brainery" },
+      ],
+      "Day 2": [
+        { name: "The Frequency Is You", time: "9:30 AM - 10:30 AM", venue: "The Brainery" },
+        { name: "Laughter Yoga", time: "12:15 PM - 1:00 PM", venue: "The Brainery" },
+        { name: "EDM Zumba", time: "1:15 PM - 2:15 PM", venue: "The Brainery" },
+        { name: "What The Female Hormone?!", time: "2:45 PM - 3:45 PM", venue: "The Brainery" },
+        { name: "DIY Tea Mixer", time: "4:15 PM - 5:15 PM", venue: "The Brainery" },
+        { name: "Sober Meet Up", time: "7:00 PM - 7:15 PM", venue: "The Brainery" },
+        { name: "Silent Disco: Seven Eye Takeover, Breaks Beatdown, Bass Breakdown", time: "8:00 PM - 4:00 AM", venue: "Silent Disco" },
+      ],
+      "Day 3": [
+        { name: "Forest Resonance", time: "9:30 AM - 10:30 AM", venue: "The Brainery" },
+        { name: "Sun Salutations", time: "10:45 AM - 11:45 AM", venue: "The Brainery" },
+        { name: "Guided By Grief", time: "12:00 PM - 12:45 PM", venue: "The Brainery" },
+        { name: "Pride Panel", time: "1:00 PM - 2:00 PM", venue: "The Brainery" },
+        { name: "Happy Hips", time: "2:30 PM - 3:30 PM", venue: "The Brainery" },
+        { name: "1iTF Meet Up", time: "3:45 PM - 4:00 PM", venue: "The Brainery" },
+        { name: "DIY Soap & More", time: "4:15 PM - 5:15 PM", venue: "The Brainery" },
+        { name: "Silent Disco: LCD Soundsystem, Jay Z, Talking Heads", time: "8:00 PM - 4:00 AM", venue: "Silent Disco" },
+        { name: "Now Karaoke Band", time: "2:00 AM - 5:00 AM", venue: "The Brainery" },
+      ],
+      "Day 4": [
+        { name: "Restorative Breathwork", time: "9:45 AM - 10:45 AM", venue: "The Brainery" },
+        { name: "Sun & Moon Flow", time: "11:00 AM - 12:00 PM", venue: "The Brainery" },
+        { name: "Find Your Voice", time: "12:15 PM - 12:45 PM", venue: "The Brainery" },
+        { name: "Her Forest Presents: The Art Of The Pivot", time: "2:45 PM - 3:45 PM", venue: "The Brainery" },
+        { name: "Vision Board Studio", time: "2:45 PM - 3:45 PM", venue: "The Brainery" },
+        { name: "Channels: The Last Dance, TBD, Makeout Session", time: "8:00 PM - 2:00 AM", venue: "Silent Disco" },
+        { name: "Hiscore Mario Kart Kup", time: "1:00 AM - 3:00 AM", venue: "The Brainery" },
+      ],
     },
   };
 

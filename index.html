@@ -18,6 +18,7 @@
         :root { --accent: 16, 185, 129; }
         body { font-family: 'Inter', sans-serif; background-color: #111827; }
         .fest-title { font-family: 'Anton', sans-serif; letter-spacing: 0.05em; color: rgb(var(--accent)); }
+        .fest-year { font-size: 0.45em; vertical-align: super; opacity: 0.7; margin-left: 0.1em; }
         .stage-title { font-family: 'Anton', sans-serif; letter-spacing: 0.02em; color: rgb(var(--accent)); }
         .accent-text { color: rgb(var(--accent)); }
         .artist-card {
@@ -28,6 +29,7 @@
         .artist-text-short { font-size: 0.7rem; line-height: 0.95rem; }
         .person-selector.selected { transform: scale(1.08); box-shadow: 0 0 14px rgba(255,255,255,0.25); z-index: 10; }
         .day-tab.active { background-color: rgb(var(--accent)); color: #111827; font-weight: 700; }
+        .day-num { position: absolute; top: 1px; right: 4px; font-size: 0.6rem; font-weight: 700; opacity: 0.55; }
         .schedule-container { background-color: #1F2937; padding: 1rem; border-radius: 0.5rem; }
         .highlight-artist::after {
             content: ''; position: absolute; top: 2px; left: 2px; right: 2px; bottom: 2px;
@@ -51,6 +53,8 @@
         .sync-offline { background-color: #9CA3AF; }
         .sync-syncing { background-color: #F59E0B; }
         .sync-error { background-color: #EF4444; }
+        .spotify-badge { position: absolute; top: 1px; right: 3px; font-size: 0.58rem; line-height: 1; font-weight: 700; color: #1DB954; pointer-events: none; z-index: 3; text-shadow: 0 1px 2px rgba(0,0,0,0.85); }
+        .has-spotify { box-shadow: inset 3px 0 0 #1DB954; }
     </style>
 </head>
 <body class="text-white p-2 md:p-6">
@@ -61,14 +65,6 @@
                 <h1 id="fest-name" class="fest-title text-4xl md:text-6xl">ELECTRIC FOREST</h1>
             </div>
             <p id="fest-subtitle" class="text-lg md:text-xl font-semibold text-gray-400"></p>
-            <div class="mt-3 flex justify-center items-center gap-2">
-                <label for="festival-select" class="text-sm text-gray-400">Festival:</label>
-                <select id="festival-select" class="bg-gray-700 text-white text-sm rounded-md px-3 py-1 border border-gray-600"></select>
-                <span class="flex items-center gap-1 text-xs text-gray-400 ml-2" title="Sync status">
-                    <span id="sync-dot" class="sync-dot sync-offline"></span>
-                    <span id="sync-label">offline</span>
-                </span>
-            </div>
         </header>
 
         <!-- Controls -->
@@ -102,35 +98,49 @@
             </div>
         </div>
 
+        <!-- Activities: The Brainery + Silent Disco (time-sorted list) -->
+        <div id="activities-view" class="mt-4"></div>
+
         <!-- Tools -->
         <div class="mt-6 p-4 bg-gray-800 rounded-lg shadow-lg">
             <h2 class="text-lg font-bold text-center mb-4 accent-text">Festival Tools ✨</h2>
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 items-start">
-                <div class="text-center">
-                    <h3 class="text-base font-semibold mb-2">Download Schedule</h3>
-                    <p class="text-sm text-gray-400 mb-3">Save the current day as a PNG (great for offline reference).</p>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-5">
+                <div class="text-center flex flex-col items-center">
+                    <h3 class="text-base font-semibold mb-1">Download Schedule</h3>
+                    <p class="text-sm text-gray-400 mb-3 flex-grow">Save the current day as a PNG (great for offline reference).</p>
                     <button id="download-btn" class="accent-button">Download as Image</button>
                 </div>
-                <div class="text-center">
-                    <h3 class="text-base font-semibold mb-2">Group Plan Optimizer</h3>
-                    <p class="text-sm text-gray-400 mb-3">Find time conflicts and get a suggested group plan.</p>
+                <div class="text-center flex flex-col items-center">
+                    <h3 class="text-base font-semibold mb-1">Group Plan Optimizer</h3>
+                    <p class="text-sm text-gray-400 mb-3 flex-grow">Find time conflicts and get a suggested group plan.</p>
                     <button id="conflict-solver-btn" class="accent-button">Find &amp; Solve Conflicts</button>
                 </div>
-                <div class="text-center">
-                    <h3 class="text-base font-semibold mb-2">Export All Likes</h3>
-                    <p class="text-sm text-gray-400 mb-3">Copy-paste list of the group's picks for all days.</p>
+                <div class="text-center flex flex-col items-center">
+                    <h3 class="text-base font-semibold mb-1">Export All Likes</h3>
+                    <p class="text-sm text-gray-400 mb-3 flex-grow">Copy-paste list of the group's picks for all days.</p>
                     <button id="export-likes-btn" class="accent-button">Show Likes as List</button>
                 </div>
-                <div class="text-center">
-                    <h3 class="text-base font-semibold mb-2">Update Likes</h3>
-                    <p class="text-sm text-gray-400 mb-3">Format: <code>Person: Artist (Level)</code><br>Levels: Must See, Nice to See, Highlight</p>
-                    <textarea id="artist-paste-input" class="w-full h-20 p-2 rounded bg-gray-700 border border-gray-600 text-white mb-2" placeholder="e.g. Kevin: GRiZ (Must See)"></textarea>
-                    <button id="bulk-add-btn" class="accent-button">Add/Update Artists</button>
+            </div>
+            <div class="border-t border-gray-700 pt-4">
+                <h3 class="text-base font-semibold mb-1 text-center">Update Likes (bulk paste)</h3>
+                <p class="text-sm text-gray-400 mb-2 text-center">Format: <code>Person: Artist (Level)</code> · Levels: Must See, Nice to See, Highlight</p>
+                <div class="flex flex-col sm:flex-row gap-2 max-w-2xl mx-auto">
+                    <textarea id="artist-paste-input" class="flex-grow h-20 p-2 rounded bg-gray-700 border border-gray-600 text-white" placeholder="e.g. Kevin: GRiZ (Must See)"></textarea>
+                    <button id="bulk-add-btn" class="accent-button self-center whitespace-nowrap">Add / Update</button>
                 </div>
             </div>
         </div>
 
-        <p class="text-center text-xs text-gray-600 mt-6">Festival Navigator · works offline · picks sync to your crew</p>
+        <!-- Bottom controls: festival picker + sync status (kept out of the prime top space) -->
+        <div class="mt-8 flex flex-wrap justify-center items-center gap-3 text-sm text-gray-400">
+            <label for="festival-select">Festival:</label>
+            <select id="festival-select" class="bg-gray-700 text-white text-sm rounded-md px-3 py-1 border border-gray-600"></select>
+            <span class="flex items-center gap-1 ml-1" title="Sync status">
+                <span id="sync-dot" class="sync-dot sync-offline"></span>
+                <span id="sync-label">offline</span>
+            </span>
+        </div>
+        <p class="text-center text-xs text-gray-600 mt-3">Festival Navigator · works offline · picks sync to your crew</p>
     </div>
 
     <!-- API key modal (only needed for optional AI features without a server key) -->
@@ -154,6 +164,7 @@
     </div>
 
     <script src="/data/festivals.js"></script>
+    <script src="/data/spotify-affinity.js"></script>
     <script>
     document.addEventListener('DOMContentLoaded', () => {
         // =============================================================
@@ -342,15 +353,16 @@
             return raw;
         }
 
-        function dayStartMin() { return (fest().dayStartHour || 12) * 60; }
-        function minToRow(min) { return Math.floor((min - dayStartMin()) / 15) + 2; }
+        let gridBaseMin = 12 * 60; // recomputed per day in renderDay to trim empty lead time
+        function minToRow(min) { return Math.floor((min - gridBaseMin) / 15) + 2; }
 
         // =============================================================
         // RENDERING
         // =============================================================
         function applyTheme() {
             document.documentElement.style.setProperty('--accent', fest().accent || '16, 185, 129');
-            document.getElementById('fest-name').textContent = fest().name.toUpperCase();
+            const yr = fest().year ? `<span class="fest-year">${fest().year}</span>` : '';
+            document.getElementById('fest-name').innerHTML = fest().name.toUpperCase() + yr;
             document.getElementById('fest-subtitle').textContent = fest().subtitle || '';
             document.querySelector('meta[name="theme-color"]').setAttribute('content', '#111827');
         }
@@ -400,11 +412,14 @@
         function renderDayTabs() {
             const container = document.getElementById('day-tabs');
             container.innerHTML = '';
+            const meta = fest().dayMeta || {};
             Object.keys(fest().days).forEach(day => {
+                const dm = meta[day];
                 const btn = document.createElement('button');
-                btn.textContent = day;
                 btn.dataset.day = day;
-                btn.className = 'day-tab font-semibold py-2 px-4 rounded-md transition-colors duration-200 bg-gray-700 hover:opacity-80';
+                btn.className = 'day-tab relative font-semibold py-2 px-5 rounded-md transition-colors duration-200 bg-gray-700 hover:opacity-80';
+                if (dm) btn.innerHTML = `${dm.wd}<span class="day-num">${dm.num}</span>`;
+                else btn.textContent = day;
                 btn.onclick = () => renderDay(day);
                 container.appendChild(btn);
             });
@@ -418,14 +433,19 @@
 
         function renderDay(day) {
             currentDay = day;
-            document.getElementById('schedule-day-title').textContent = `${day} · ${fest().name}`;
+            const dm = (fest().dayMeta || {})[day];
+            const dayLabel = dm ? `${dm.wd} ${dm.date}` : day;
+            document.getElementById('schedule-day-title').textContent = `${dayLabel} · ${fest().name}`;
             const dayData = fest().days[day];
             const activeStages = dayData.stages;
             const numStages = activeStages.length;
             document.querySelectorAll('.day-tab').forEach(t => t.classList.toggle('active', t.dataset.day === day));
 
             const computed = getDayArtists(day);
-            const maxMin = computed.reduce((m, a) => Math.max(m, a.endMin), dayStartMin() + 60);
+            // Trim empty lead time: start the grid on the hour ~30 min before the day's first set.
+            const firstStart = computed.length ? Math.min(...computed.map(a => a.startMin)) : (fest().dayStartHour || 12) * 60;
+            gridBaseMin = Math.floor((firstStart - 30) / 60) * 60;
+            const maxMin = computed.reduce((m, a) => Math.max(m, a.endMin), gridBaseMin + 60);
             const lastRow = minToRow(maxMin) + 1;
 
             let html = `<div class="schedule-grid" style="grid-template-columns: 64px repeat(${numStages}, minmax(120px, 1fr)); grid-template-rows: auto repeat(${lastRow}, 20px);">`;
@@ -434,7 +454,7 @@
                 html += `<div class="stage-title text-center sticky top-0 bg-gray-800 p-2 z-10 text-sm">${shortStage(s)}</div>`;
             });
 
-            for (let m = dayStartMin(); m <= maxMin; m += 60) {
+            for (let m = gridBaseMin; m <= maxMin; m += 60) {
                 html += `<div class="time-label" style="grid-row: ${minToRow(m)}">${absMinToLabel(m)}</div>`;
             }
 
@@ -446,10 +466,16 @@
                 const duration = a.endMin - a.startMin;
                 const short = (duration <= 40 || a.name.length > 16) ? 'artist-text-short' : '';
                 const span = Math.max(1, endRow - startRow);
+                const aff = (window.SPOTIFY_AFFINITY || {})[a.name];
+                const affCls = aff ? ' has-spotify' : '';
+                const affBadge = aff
+                    ? `<span class="spotify-badge" title="${aff.followed ? 'You follow them' : ''}${aff.followed && aff.songs ? ' · ' : ''}${aff.songs ? aff.songs + ' liked songs' : ''}">${aff.followed ? '★' : ''}${aff.songs ? '♥' + aff.songs : ''}</span>`
+                    : '';
                 html += `
-                    <div class="artist-card bg-gray-700 rounded-md p-1 flex flex-col justify-center items-center text-center h-full"
+                    <div class="artist-card bg-gray-700 rounded-md p-1 flex flex-col justify-center items-center text-center h-full${affCls}"
                          style="grid-column: ${stageIndex}; grid-row: ${startRow} / span ${span};"
                          data-artist="${escapeHtml(a.name)}">
+                        ${affBadge}
                         <p class="font-bold leading-tight text-gray-100 pointer-events-none ${short}">${escapeHtml(a.name)}</p>
                         <p class="text-xs text-gray-400 pointer-events-none ${short}">${a.startStr}</p>
                     </div>`;
@@ -459,6 +485,7 @@
 
             renderLegend();
             Object.keys(selections()).forEach(updateArtistHighlight);
+            renderActivities(day);
         }
 
         function renderLegend() {
@@ -469,6 +496,32 @@
             html += `<div class="flex items-center gap-2"><span class="w-4 h-4 rounded-full border-2 border-dashed border-white"></span><span>Highlight (Must See+)</span></div>`;
             html += `</div></div>`;
             document.getElementById('color-key-container').innerHTML = html;
+        }
+
+        // The festival "day" runs ~9 AM -> 5 AM next morning, so a pre-9 AM time
+        // reads as after-midnight (sorts to the end), unlike a morning workshop.
+        function activityMinutes(timeStr) {
+            const parts = timeStr.trim().split(' ');
+            let [h, m] = parts[0].split(':').map(Number); m = m || 0;
+            const period = parts[1];
+            if (period === 'PM' && h !== 12) h += 12;
+            if (period === 'AM' && h === 12) h = 0;
+            let total = h * 60 + m;
+            if (total < 9 * 60) total += 24 * 60;
+            return total;
+        }
+        function renderActivities(day) {
+            const el = document.getElementById('activities-view');
+            if (!el) return;
+            const list = (fest().activities || {})[day] || [];
+            if (!list.length) { el.innerHTML = ''; return; }
+            const sorted = [...list].sort((a, b) => activityMinutes(a.time.split(' - ')[0]) - activityMinutes(b.time.split(' - ')[0]));
+            const rows = sorted.map(a => `<div class="flex items-baseline gap-3 py-1.5 border-b border-gray-700">
+                    <span class="text-xs text-gray-400 w-36 shrink-0">${escapeHtml(a.time)}</span>
+                    <span class="flex-grow text-sm text-gray-100">${escapeHtml(a.name)}</span>
+                    <span class="text-xs accent-text shrink-0">${escapeHtml(a.venue)}</span>
+                </div>`).join('');
+            el.innerHTML = `<div class="schedule-container"><h2 class="text-xl md:text-2xl font-bold accent-text mb-3">Also happening · The Brainery &amp; Silent Disco</h2>${rows}</div>`;
         }
 
         function updateArtistHighlight(artistName) {
@@ -491,7 +544,7 @@
         }
 
         function handleArtistClick(artistName) {
-            if (!selectedPerson) { withApiKeyCheck(() => getArtistInfo(artistName)); return; }
+            if (!selectedPerson) { getArtistInfo(artistName); return; }
             const sel = (selections()[artistName] = selections()[artistName] || {});
             const cur = sel[selectedPerson] || 0;
             let next;
@@ -647,6 +700,17 @@
         }
         const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
+        // Run a Gemini prompt: shared server key first (no per-user setup), client key as fallback.
+        // Returns null only when the server is unavailable AND no client key is set.
+        async function geminiText(prompt) {
+            try {
+                const r = await fetch('/api/gemini', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt }) });
+                if (r.ok) { const j = await r.json(); if (j.text) return j.text; }
+            } catch (e) { /* fall through to client key */ }
+            if (!geminiApiKey) return null;
+            return await callGemini(prompt);
+        }
+
         async function getArtistInfo(artistName) {
             openInfoModal(`<div class="text-center"><h3 class="text-2xl font-bold mb-2 accent-text">${escapeHtml(artistName)}</h3><p class="text-gray-300">Getting info... ✨</p></div>`);
             // Try server endpoint first (no key needed for the user).
@@ -675,7 +739,8 @@
             if (!Object.keys(forDay).length) { openInfoModal(`<p>No picks for ${escapeHtml(currentDay)} yet. Tap some artists first!</p>`); return; }
             openInfoModal(`<div class="text-center"><h3 class="text-2xl font-bold mb-2 accent-text">Optimizing ✨</h3><p class="text-gray-300">Analyzing schedules...</p></div>`);
             const prompt = `You are a festival planner for a group at ${fest().name} on ${currentDay}. Selections: ${JSON.stringify(forDay)}. Levels: 1 Nice, 2 Highlight, 3 Must See. Identify the top 2-3 conflicts involving Must See sets and propose creative compromises. Then give a chronological "Suggested Group Plan". Format clean HTML with <h2>,<h3>,<p>,<ul>,<li>,<strong>.`;
-            const text = await callGemini(prompt);
+            const text = await geminiText(prompt);
+            if (text == null) { openApiKeyModal(() => solveConflicts()); return; }
             openInfoModal(text.replace(/<h2>/g, '<h2 class="text-xl font-bold accent-text mt-4 mb-2 border-b border-gray-600 pb-1">').replace(/<h3>/g, '<h3 class="text-lg font-semibold text-gray-100 mt-3">').replace(/<p>/g, '<p class="text-gray-300 mb-2">'));
         }
 
@@ -780,7 +845,7 @@
         };
         document.getElementById('api-key-cancel').onclick = closeApiKeyModal;
         document.getElementById('info-modal-close').onclick = closeInfoModal;
-        document.getElementById('conflict-solver-btn').onclick = () => withApiKeyCheck(solveConflicts);
+        document.getElementById('conflict-solver-btn').onclick = solveConflicts;
         document.getElementById('download-btn').onclick = downloadSchedule;
         document.getElementById('top-download-btn').onclick = downloadSchedule;
         document.getElementById('bulk-add-btn').onclick = handleBulkAdd;
