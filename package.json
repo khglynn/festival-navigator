@@ -1,7 +1,7 @@
 {
   "name": "festival-navigator",
   "version": "2.0.0",
-  "description": "Multi-festival navigator with offline-first shared sync (Electric Forest, Lollapalooza)",
+  "description": "Offline-first festival schedule planner with crew sync — Electric Forest '26 (Lollapalooza archived)",
   "main": "index.html",
   "scripts": {
     "dev": "vercel dev",
@@ -12,9 +12,10 @@
   },
   "keywords": [
     "festival",
-    "lollapalooza",
+    "electric-forest",
     "schedule",
-    "collaboration"
+    "collaboration",
+    "pwa"
   ],
   "author": "Kevin HG",
   "license": "MIT"
