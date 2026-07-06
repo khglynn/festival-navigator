@@ -22,9 +22,9 @@ export default async function handler(request) {
 
   try {
     const { artistName } = await request.json();
-    
-    if (!artistName) {
-      return new Response(JSON.stringify({ error: 'Artist name required' }), {
+
+    if (!artistName || typeof artistName !== 'string' || artistName.length > 200) {
+      return new Response(JSON.stringify({ error: 'Invalid artist name' }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' },
       });

@@ -272,8 +272,10 @@
             const existing = people()[name];
             if (existing && !existing.removed) { alert(`${name} is already on the list.`); return; }
             const color = (existing && existing.color) ? existing.color : nextColor(people());
-            people()[name] = { color }; // revive: drops any prior removed tombstone
-            recordPerson(name, { color });
+            // removed:false is an explicit value the deep-merge can carry — it overwrites
+            // any remote tombstone, so a re-added person doesn't vanish on the next pull.
+            people()[name] = { color, removed: false };
+            recordPerson(name, { color, removed: false });
             persist(); scheduleSync();
             renderPeople();
         }
@@ -768,7 +770,8 @@
                     if (t) t.document.body.innerHTML = `<body style="background:#111827;"><h3 style="color:#fff;font-family:sans-serif;text-align:center;padding:1rem;">Long-press the image to save</h3><img src="${imageUrl}" style="width:100%;"></body>`;
                 } else {
                     const link = document.createElement('a');
-                    link.download = `${fest().id}-${currentDay.toLowerCase().replace(/\s+/g, '-')}.png`;
+                    const dpart = ((fest().dayMeta || {})[currentDay]?.date || currentDay).toLowerCase().replace(/\s+/g, '-');
+                    link.download = `${fest().name.toLowerCase().replace(/\s+/g, '-')}-${dpart}.png`;
                     link.href = imageUrl; link.click();
                 }
             }).catch(err => { console.error(err); openInfoModal(`<p>Sorry, image generation failed.</p>`); })
@@ -786,7 +789,9 @@
             const allArtists = Object.values(fest().days).flatMap(d => d.artists);
             let found = 0; const notFound = [];
             raw.split('\n').forEach(line => {
-                const m = line.match(/([^:]+):\s*([^()]+)\s*\(([^)]+)\)/);
+                // Greedy artist group + end-anchor so names with parentheses survive
+                // the round-trip (e.g. "Suzanne (Opening) (Must See)").
+                const m = line.match(/^([^:]+):\s*(.+)\s*\(([^)]+)\)\s*$/);
                 if (!m) return;
                 const person = m[1].trim(), artistName = m[2].trim(), levelStr = m[3].trim().toLowerCase();
                 if (!isActivePerson(people()[person])) return;
