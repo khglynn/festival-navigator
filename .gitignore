@@ -20,3 +20,6 @@ node_modules/
 
 # Playwright test artifacts
 .playwright-mcp/
+
+# remember plugin state
+.remember/
