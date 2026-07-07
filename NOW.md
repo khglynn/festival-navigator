@@ -1,41 +1,32 @@
-# NOW — festival-navigator prime-time build
+# NOW — festival-navigator prime-time build: SHIPPED to preview
 
-**Updated:** 2026-07-07 ~10:45 CT
-**Branch:** `prime-time` (NOT yet pushed; production untouched)
-**Plan / grounding doc:** `claude-plans/2026-07-07-prime-time.md` — read in full if fresh/post-compaction.
+**Updated:** 2026-07-07 ~11:15 CT · **Branch:** `prime-time` (pushed; production untouched)
+**Plan:** `claude-plans/2026-07-07-prime-time.md` · **History:** DEVLOG.md
 
-## Live state
+## State: build COMPLETE, awaiting Kevin's three items
 
-- **P0–P6 COMPLETE and committed** (9 commits on prime-time): hygiene, module split,
-  crews (capability links + Neon atomic-merge store), festival JSON model + list view +
-  overlap grid + 6 researched lineups, Spotify PKCE, AI hardening, all review fixes.
-- **P7 in progress.** Remaining: CI gets test+validate steps → README truth pass →
-  repo CLAUDE.md → add-a-festival guide → memory update (EF id remap) → final Workflow
-  review fan-out + Playwright sweep → push branch (preview deploy) → Kevin checks preview
-  → promote → teardown (hooks out, close NOW).
+All phases P0–P7 done. 13 commits on `prime-time`, CI green, preview deployed.
+Four independent review passes (2× Codex, 1 background security scan, 1 four-dimension
+workflow fan-out with adversarial verification) — every confirmed finding fixed same-day.
 
-## Blockers / Kevin's move
+## Whose move — Kevin (nothing else blocks)
 
-- **DATABASE_URL is NOT in Vercel envs yet** (classifier denied my `vercel env add`; Kevin's
-  one-liner still pending). Preview/production API will 500 without it. Value = Neon project
-  `floral-meadow-70237530` connection string (in `.env.legacy-snapshot`-adjacent scratch;
-  also retrievable via `vercel env pull` won't have it — get from Neon MCP get_connection_string).
-- Kevin cleanup list (end of session): delete stray empty Vercel project `festivals`
-  (accidental, my bad-cwd vercel dev); decide fate of old public blob store `test-HG`
-  (legacy doc preserved there) + empty private store `festival-navigator-crews` (unused after
-  the Neon pivot); register redirect URI + client ID for his Spotify app; run the Spotify
-  connect flow live (only thing I could not verify without his account).
+1. **`vercel env add DATABASE_URL`** (prod/preview/dev) — the one-liner in chat; without it
+   the deployed API 500s. Then tell the session (or push any commit) to trigger a redeploy.
+2. **Open the preview** (link in chat; Vercel-auth-protected, opens for Kevin's browser)
+   and poke it. Crew link with the real migrated data: `/#g=F4hUPis4l4NfuVMb-UVqUgi2_Zo`.
+3. **Spotify last mile** (only thing not verifiable without his account): in his Spotify app
+   dashboard add redirect URI `https://<domain>/spotify-callback`, paste the Client ID into
+   the app's Spotify panel, connect, scan, make a playlist.
+4. **When happy: merge `prime-time` → `main`** (= production deploy; old installed PWAs
+   self-heal to the new shell on their next online load).
+5. Cleanup (non-urgent): delete stray empty Vercel project `festivals`; delete unused blob
+   stores `festival-navigator-crews` (empty) and — after confirming the migration — `test-HG`
+   (holds the legacy doc); delete `.env.legacy-snapshot` locally after that.
 
-## Do-not-lose facts
+## If resuming later
 
-- **Kevin's migrated crew token: `F4hUPis4l4NfuVMb-UVqUgi2_Zo`** ("The Crew", 5 people,
-  EF-2026 picks + Kevin's 37-artist affinity, verified byte-for-byte, twice).
-- Neon: project `floral-meadow-70237530`, table `crews`, function `jsonb_deep_merge`
-  (source now tracked in `db/schema.sql`). Merge = single inline atomic UPDATE — a CTE
-  version LOST 2/6 concurrent writes; inline survives 18/18. Never reintroduce a CTE read.
-- Vercel Blob was dropped for crew docs: eventually-consistent reads lost writes
-  (measured 3/6 stale, 1 write gone). Blob has NO role anymore.
-- Local dev: `vercel dev` on :3112 needs `export DATABASE_URL=$(cat <scratchpad>/dburl.txt)`.
-  vercel dev does NOT serve files created after it starts — restart after adding files.
-- Spotify: 5-user cap on new dev apps (Mar 2026), owner needs Premium. PKCE, zero server
-  secrets, per-crew clientId, tokens in member localStorage only.
+Compaction hooks in `.claude/settings.json` still point here — fine to leave until the
+branch merges, then remove them + archive the plan per hg-durable-build teardown.
+Key invariants live in CLAUDE.md (Neon atomic merge — never a CTE read; Blob banned for
+crew docs; vercel dev restart-after-new-files; apostrophe-free hook strings).
