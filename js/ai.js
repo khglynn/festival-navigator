@@ -44,6 +44,10 @@ export async function getArtistInfo(artistName) {
 }
 
 export async function solveConflicts() {
+  if (!state.fest().days || !state.currentDay) {
+    openInfoModal(`<p class="text-gray-300">The optimizer needs set times — this festival has no stage schedule yet. Make picks in the list and come back when times drop!</p>`);
+    return;
+  }
   const computed = state.getDayArtists(state.currentDay);
   const forDay = {};
   computed.forEach(a => {

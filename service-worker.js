@@ -1,6 +1,6 @@
 // Festival Navigator service worker — offline-first app shell.
 // Bump CACHE_VERSION whenever you change cached static assets.
-const CACHE_VERSION = 'festival-nav-v6';
+const CACHE_VERSION = 'festival-nav-v7';
 
 const APP_SHELL = [
   '/',
@@ -11,21 +11,27 @@ const APP_SHELL = [
   '/js/app.js',
   '/js/state.js',
   '/js/sync.js',
+  '/js/crew.js',
+  '/js/festivals.js',
   '/js/merge.js',
   '/js/time.js',
+  '/js/overlap.js',
   '/js/parse.js',
   '/js/util.js',
   '/js/ui.js',
   '/js/ai.js',
   '/js/tools.js',
   '/js/render/grid.js',
+  '/js/render/list.js',
   '/js/render/people.js',
-  '/data/festivals.js',
+  '/data/festivals/index.json',
   '/data/spotify-affinity.js',
   '/manifest.json',
   '/icon-192.png',
   '/icon-512.png',
 ];
+// Per-festival JSONs are cached at first fetch by the handler below, so a
+// festival you have opened once keeps working offline.
 
 self.addEventListener('install', (event) => {
   event.waitUntil(

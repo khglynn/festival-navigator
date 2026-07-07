@@ -8,6 +8,9 @@
 //     affinity: {person: {artist: {songs?, followed?}}} }  // crew-wide
 import { deepMerge } from './merge.js';
 import { computeDayArtists } from './time.js';
+import { FESTIVALS, FESTIVAL_INDEX, defaultFestivalId } from './festivals.js';
+
+export { FESTIVALS };
 
 export const COLOR_PALETTE = [
   '239, 68, 68', '59, 130, 246', '34, 197, 94', '251, 191, 36',
@@ -22,8 +25,6 @@ export const LS = {
   fest: (t) => `fn_crew_fest_v3_${t}`,
   geminiKey: 'geminiApiKey',
 };
-
-export const FESTIVALS = window.FESTIVALS || {};
 
 function loadJSON(key, fallback) {
   try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; }
@@ -46,13 +47,16 @@ export function setCurrentDay(d) { currentDay = d; }
 export function setSelectedPerson(p) { selectedPerson = p; }
 
 // Load a crew into the active slot (from cache; sync refreshes it after).
+// NOTE: callers must `await loadFestival(state.activeFestivalId)` before
+// rendering — the index tells us the id is valid, not that data is loaded.
 export function activateCrew(token, doc) {
   crewToken = token;
   crewDoc = doc || loadJSON(LS.doc(token), null) || { v: 3, meta: {}, spotify: {}, people: {}, festivals: {}, affinity: {} };
   pendingChanges = loadJSON(LS.pending(token), {});
   crewDoc = deepMerge(crewDoc, pendingChanges);
   const savedFest = localStorage.getItem(LS.fest(token));
-  activeFestivalId = (savedFest && FESTIVALS[savedFest]) ? savedFest : Object.keys(FESTIVALS)[0];
+  const known = (id) => FESTIVAL_INDEX.some((f) => f.id === id);
+  activeFestivalId = (savedFest && known(savedFest)) ? savedFest : defaultFestivalId();
   currentDay = null;
   selectedPerson = null;
   Object.keys(dayCache).forEach((k) => delete dayCache[k]);

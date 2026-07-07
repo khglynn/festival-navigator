@@ -1,0 +1,342 @@
+{
+  "id": "edc-orlando-2026",
+  "name": "EDC Orlando",
+  "year": "'26",
+  "subtitle": "Tinker Field",
+  "location": "Orlando, FL",
+  "dates": "November 6-8, 2026 (Friday-Sunday)",
+  "accent": "244, 114, 182",
+  "status": "lineup",
+  "artists": [
+    {
+      "name": "A Little Sound"
+    },
+    {
+      "name": "Aaron Hibell"
+    },
+    {
+      "name": "AAT"
+    },
+    {
+      "name": "ACRAZE B2B CID"
+    },
+    {
+      "name": "Adrián Mills"
+    },
+    {
+      "name": "Adventure Club (Sunset Set)"
+    },
+    {
+      "name": "Afrojack"
+    },
+    {
+      "name": "Alan Walker (Sunset Set)"
+    },
+    {
+      "name": "Alesso (Sunset Set)"
+    },
+    {
+      "name": "Alison Wonderland"
+    },
+    {
+      "name": "ALLEYCVT"
+    },
+    {
+      "name": "Alok"
+    },
+    {
+      "name": "Alves"
+    },
+    {
+      "name": "AR/CO"
+    },
+    {
+      "name": "ATLiens"
+    },
+    {
+      "name": "AVELLO"
+    },
+    {
+      "name": "AYYBO"
+    },
+    {
+      "name": "Azzecca"
+    },
+    {
+      "name": "Benda B2B Vastive"
+    },
+    {
+      "name": "Big Florida"
+    },
+    {
+      "name": "Boogie T"
+    },
+    {
+      "name": "Bou B2B Kanine"
+    },
+    {
+      "name": "Boys Noize B2B Brutalismus 3000"
+    },
+    {
+      "name": "Brunello (Sunset Set)"
+    },
+    {
+      "name": "Bullet Tooth B2B Sidney Charles"
+    },
+    {
+      "name": "ChaseWest"
+    },
+    {
+      "name": "Chef Boyarbeatz"
+    },
+    {
+      "name": "Chris Lorenzo"
+    },
+    {
+      "name": "CØNTRA"
+    },
+    {
+      "name": "David Guetta"
+    },
+    {
+      "name": "Dennis Cruz"
+    },
+    {
+      "name": "Deorro B2B DJ Diesel"
+    },
+    {
+      "name": "Devault (Sunset Set)"
+    },
+    {
+      "name": "Discip"
+    },
+    {
+      "name": "Disco Lines"
+    },
+    {
+      "name": "Discovery Project"
+    },
+    {
+      "name": "ESSE"
+    },
+    {
+      "name": "Fallon"
+    },
+    {
+      "name": "Franky Rizardo"
+    },
+    {
+      "name": "Fury with MC Dino"
+    },
+    {
+      "name": "Gabss"
+    },
+    {
+      "name": "Greg 99"
+    },
+    {
+      "name": "Hardwell"
+    },
+    {
+      "name": "HAYLA"
+    },
+    {
+      "name": "Holy Priest"
+    },
+    {
+      "name": "I Hate Models"
+    },
+    {
+      "name": "Ian Asher"
+    },
+    {
+      "name": "IDEMI"
+    },
+    {
+      "name": "Inbal"
+    },
+    {
+      "name": "Interplanetary Criminal"
+    },
+    {
+      "name": "Jessica Audiffred"
+    },
+    {
+      "name": "Jkyl & Hyde"
+    },
+    {
+      "name": "JOA"
+    },
+    {
+      "name": "Joshwa"
+    },
+    {
+      "name": "Kaivon"
+    },
+    {
+      "name": "Kaskade"
+    },
+    {
+      "name": "KI/KI"
+    },
+    {
+      "name": "KinAhau"
+    },
+    {
+      "name": "Klangkuenstler"
+    },
+    {
+      "name": "Know Good"
+    },
+    {
+      "name": "Kompany"
+    },
+    {
+      "name": "KREAM"
+    },
+    {
+      "name": "LAYZ"
+    },
+    {
+      "name": "Level Up"
+    },
+    {
+      "name": "Levity"
+    },
+    {
+      "name": "Luke Dean B2B Max Dean"
+    },
+    {
+      "name": "M81!"
+    },
+    {
+      "name": "Maddix"
+    },
+    {
+      "name": "MADVKTM"
+    },
+    {
+      "name": "Mai Iachetti"
+    },
+    {
+      "name": "MALUGI (Sunset Set)"
+    },
+    {
+      "name": "Marlon Hoffstadt"
+    },
+    {
+      "name": "Martin Garrix"
+    },
+    {
+      "name": "Matthias"
+    },
+    {
+      "name": "Mau P"
+    },
+    {
+      "name": "Me n ü"
+    },
+    {
+      "name": "Meduza"
+    },
+    {
+      "name": "Miguelle & Tons"
+    },
+    {
+      "name": "Monoky"
+    },
+    {
+      "name": "MPH"
+    },
+    {
+      "name": "Nico Moreno"
+    },
+    {
+      "name": "Of The Trees (Sunset Set)"
+    },
+    {
+      "name": "Omar+"
+    },
+    {
+      "name": "Pegassi"
+    },
+    {
+      "name": "phrva"
+    },
+    {
+      "name": "Prospa B2B Josh Baker"
+    },
+    {
+      "name": "RAJE"
+    },
+    {
+      "name": "Ravenscoon"
+    },
+    {
+      "name": "Ray Volpe"
+    },
+    {
+      "name": "Roddy Lima"
+    },
+    {
+      "name": "Rossi. (Sunset Set)"
+    },
+    {
+      "name": "San Holo (Wholesome Riddim Set)"
+    },
+    {
+      "name": "SHDW"
+    },
+    {
+      "name": "Sippy"
+    },
+    {
+      "name": "Skull Machine (Black Tiger Sex Machine x Kai Wachi)"
+    },
+    {
+      "name": "SLANDER (Sunset Set)"
+    },
+    {
+      "name": "Sloth"
+    },
+    {
+      "name": "Steve Aoki"
+    },
+    {
+      "name": "Subsonic"
+    },
+    {
+      "name": "Taiki Nulight"
+    },
+    {
+      "name": "TroyBoi"
+    },
+    {
+      "name": "Twinsick"
+    },
+    {
+      "name": "Ultrathem"
+    },
+    {
+      "name": "Whethan"
+    },
+    {
+      "name": "Wooli"
+    },
+    {
+      "name": "Zack Martino"
+    }
+  ],
+  "meta": {
+    "announcementStatus": "lineup-only",
+    "researchedAt": "2026-07-07",
+    "sources": [
+      "https://orlando.edc.com/lineup/",
+      "https://orlando.edc.com/",
+      "https://orlando.edc.com/experience/the-world-of-edc/",
+      "https://orlando.edc.com/experience/stages/",
+      "https://press.insomniac.com/blog/edc-orlando-announces-artists-lineup-for-2026-edition-november-6-8"
+    ],
+    "note": "Official live lineup page (orlando.edc.com/lineup, checked 2026-07-07) lists 106 billing slots presented A-Z — this is everything shown, not a truncated sample. Several slots are two-artist B2B pairings (e.g., ACRAZE B2B CID, Boys Noize B2B Brutalismus 3000, Deorro B2B DJ Diesel), so the count of distinct performing artists is somewhat higher than 106. One slot (\"Discovery Project\") is Insomniac's recurring emerging-artist/fan-contest showcase rather than a single named act. Note a discrepancy between sources: the initial June 23, 2026 press release (press.insomniac.com) and the Orlando Weekly recap both list a slightly different ~105-entry set that includes generic brand-takeover placeholders not tied to named artists (Bassrush Experience, Factory 93 Presents, Insomniac Records Takeover) and a standalone \"Prospa\" entry, but is missing ChaseWest, Holy Priest, M81!, Maddix, Monoky, and Ravenscoon, which now appear on the current live official page. This output uses the current live official page as the more up-to-date, authoritative list per the task's \"current state\" instruction."
+  }
+}

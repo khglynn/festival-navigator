@@ -3,6 +3,7 @@ import * as state from '../state.js';
 import { absMinToLabel, activityMinutes } from '../time.js';
 import { escapeHtml, cssEscape } from '../util.js';
 import { renderLegend } from './people.js';
+import { computeLanes } from '../overlap.js';
 
 let gridBaseMin = 12 * 60; // recomputed per day in renderDay to trim empty lead time
 function minToRow(min) { return Math.floor((min - gridBaseMin) / 15) + 2; }
@@ -41,14 +42,21 @@ export function renderDay(day) {
     html += `<div class="time-label" style="grid-row: ${minToRow(m)}">${absMinToLabel(m)}</div>`;
   }
 
+  // Same-stage overlaps split the column into side-by-side lanes (the
+  // graceful replacement for the old fixed "also happening" workaround).
+  const lanes = computeLanes(computed);
   computed.forEach(a => {
     const stageIndex = activeStages.indexOf(a.stage) + 2;
     if (stageIndex < 2) return;
     const startRow = minToRow(a.startMin);
     const endRow = minToRow(a.endMin);
     const duration = a.endMin - a.startMin;
-    const short = (duration <= 40 || a.name.length > 16) ? 'artist-text-short' : '';
+    const { lane, lanes: laneCount } = lanes.get(a) || { lane: 0, lanes: 1 };
+    const short = (duration <= 40 || a.name.length > 16 || laneCount > 1) ? 'artist-text-short' : '';
     const span = Math.max(1, endRow - startRow);
+    const laneStyle = laneCount > 1
+      ? ` width: calc(${100 / laneCount}% - 2px); margin-left: ${(100 / laneCount) * lane}%; justify-self: start;`
+      : '';
     const aff = (window.SPOTIFY_AFFINITY || {})[a.name];
     const affCls = aff ? ' has-spotify' : '';
     const affBadge = aff
@@ -56,7 +64,7 @@ export function renderDay(day) {
       : '';
     html += `
         <div class="artist-card bg-gray-700 rounded-md p-1 flex flex-col justify-center items-center text-center h-full${affCls}"
-             style="grid-column: ${stageIndex}; grid-row: ${startRow} / span ${span};"
+             style="grid-column: ${stageIndex}; grid-row: ${startRow} / span ${span};${laneStyle}"
              data-artist="${escapeHtml(a.name)}">
             ${affBadge}
             <p class="font-bold leading-tight text-gray-100 pointer-events-none ${short}">${escapeHtml(a.name)}</p>

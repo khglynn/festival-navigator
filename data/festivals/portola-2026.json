@@ -1,0 +1,273 @@
+{
+  "id": "portola-2026",
+  "name": "Portola",
+  "year": "'26",
+  "subtitle": "Pier 80",
+  "location": "San Francisco, CA",
+  "dates": "September 26–27, 2026",
+  "accent": "56, 189, 248",
+  "status": "lineup",
+  "artists": [
+    {
+      "name": "Robyn",
+      "day": "Saturday"
+    },
+    {
+      "name": "Dog Blood",
+      "day": "Saturday"
+    },
+    {
+      "name": "Soulwax",
+      "day": "Saturday"
+    },
+    {
+      "name": "Prospa",
+      "day": "Saturday"
+    },
+    {
+      "name": "Kettama",
+      "day": "Saturday"
+    },
+    {
+      "name": "Fatboy Slim",
+      "day": "Saturday"
+    },
+    {
+      "name": "Skepta",
+      "day": "Saturday"
+    },
+    {
+      "name": "Tove Lo",
+      "day": "Saturday"
+    },
+    {
+      "name": "Max Styler",
+      "day": "Saturday"
+    },
+    {
+      "name": "Beltran b2b Ben Sterling",
+      "day": "Saturday"
+    },
+    {
+      "name": "Fcukers",
+      "day": "Saturday"
+    },
+    {
+      "name": "Mike D 5D",
+      "day": "Saturday"
+    },
+    {
+      "name": "Groove Armada",
+      "day": "Saturday"
+    },
+    {
+      "name": "DJ Shadow",
+      "day": "Saturday"
+    },
+    {
+      "name": "Bassvictim",
+      "day": "Saturday"
+    },
+    {
+      "name": "Nimino",
+      "day": "Saturday"
+    },
+    {
+      "name": "Melanie C",
+      "day": "Saturday"
+    },
+    {
+      "name": "Oskar Med K",
+      "day": "Saturday"
+    },
+    {
+      "name": "Jigitz",
+      "day": "Saturday"
+    },
+    {
+      "name": "Tricky",
+      "day": "Saturday"
+    },
+    {
+      "name": "Chloé Caillet",
+      "day": "Saturday"
+    },
+    {
+      "name": "Jyoty",
+      "day": "Saturday"
+    },
+    {
+      "name": "Ranger Trucco b2b Alisha",
+      "day": "Saturday"
+    },
+    {
+      "name": "Six Sex",
+      "day": "Saturday"
+    },
+    {
+      "name": "Nate Sib",
+      "day": "Saturday"
+    },
+    {
+      "name": "MGNA Crrrta",
+      "day": "Saturday"
+    },
+    {
+      "name": "Sam Alfred",
+      "day": "Saturday"
+    },
+    {
+      "name": "Gelli Haha",
+      "day": "Saturday"
+    },
+    {
+      "name": "Airwolf Paradise",
+      "day": "Saturday"
+    },
+    {
+      "name": "erika b2b sfcowboy",
+      "day": "Saturday"
+    },
+    {
+      "name": "Felly Fell",
+      "day": "Saturday"
+    },
+    {
+      "name": "Swedish House Mafia",
+      "day": "Sunday"
+    },
+    {
+      "name": "Tiësto",
+      "day": "Sunday",
+      "stage": "Warehouse"
+    },
+    {
+      "name": "Zara Larsson",
+      "day": "Sunday"
+    },
+    {
+      "name": "Four Tet",
+      "day": "Sunday"
+    },
+    {
+      "name": "Parcels",
+      "day": "Sunday"
+    },
+    {
+      "name": "Mochakk",
+      "day": "Sunday"
+    },
+    {
+      "name": "Marlon Hoffstadt",
+      "day": "Sunday"
+    },
+    {
+      "name": "horsegiirL",
+      "day": "Sunday"
+    },
+    {
+      "name": "Overmono",
+      "day": "Sunday"
+    },
+    {
+      "name": "Zulan",
+      "day": "Sunday"
+    },
+    {
+      "name": "Ninajirachi",
+      "day": "Sunday"
+    },
+    {
+      "name": "underscores",
+      "day": "Sunday"
+    },
+    {
+      "name": "Adéla",
+      "day": "Sunday"
+    },
+    {
+      "name": "SG Lewis",
+      "day": "Sunday"
+    },
+    {
+      "name": "Kelela",
+      "day": "Sunday"
+    },
+    {
+      "name": "Daphni",
+      "day": "Sunday"
+    },
+    {
+      "name": "JT",
+      "day": "Sunday"
+    },
+    {
+      "name": "Baby J",
+      "day": "Sunday"
+    },
+    {
+      "name": "Channel Tres",
+      "day": "Sunday"
+    },
+    {
+      "name": "VTSS",
+      "day": "Sunday"
+    },
+    {
+      "name": "ear",
+      "day": "Sunday"
+    },
+    {
+      "name": "Brunello",
+      "day": "Sunday"
+    },
+    {
+      "name": "Ben UFO",
+      "day": "Sunday"
+    },
+    {
+      "name": "Silva Bumpa",
+      "day": "Sunday"
+    },
+    {
+      "name": "Mind Enterprises",
+      "day": "Sunday"
+    },
+    {
+      "name": "Azzecca",
+      "day": "Sunday"
+    },
+    {
+      "name": "Dean Turnley",
+      "day": "Sunday"
+    },
+    {
+      "name": "riria",
+      "day": "Sunday"
+    },
+    {
+      "name": "Torren Foot",
+      "day": "Sunday"
+    },
+    {
+      "name": "Clearcast",
+      "day": "Sunday"
+    },
+    {
+      "name": "Despacio",
+      "day": "Saturday & Sunday"
+    }
+  ],
+  "meta": {
+    "announcementStatus": "lineup-with-days",
+    "researchedAt": "2026-07-07",
+    "sources": [
+      "https://portolamusicfestival.com/",
+      "https://aegwebprod.blob.core.windows.net/content/portola/2026/portola-2026-lineup.jpg",
+      "https://portolamusicfestival.com/set-times/",
+      "https://portolamusicfestival.com/stage-lineups/",
+      "https://abc7news.com/post/portola-2026-lineup-dates-ticket-details-released-san-francisco-music-festival-pier-80/19189548/"
+    ],
+    "note": "Complete list — 62 billed acts, transcribed directly from the official 2026 poster art (released 2026-05-28), which prints every act under a \"SATURDAY, SEP 26\" or \"SUNDAY, SEP 27\" header. Not truncated. Despacio (James Murphy/2manydjs' all-vinyl sound installation) is billed separately as \"ALL WEEKEND LONG,\" so it's tagged for both days rather than one."
+  }
+}

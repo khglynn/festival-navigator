@@ -1,0 +1,2108 @@
+{
+  "id": "electric-forest-2026",
+  "name": "Electric Forest",
+  "year": "'26",
+  "subtitle": "",
+  "location": "Rothbury, MI",
+  "dates": "Jun 25, Jun 26, Jun 27, Jun 28",
+  "accent": "16, 185, 129",
+  "status": "archived",
+  "dayStartHour": 12,
+  "stages": [
+    "Ranch Arena",
+    "Sherwood Court",
+    "Tripolee",
+    "The Observatory",
+    "Honeycomb",
+    "Center Stage",
+    "Grand Artique"
+  ],
+  "dayMeta": {
+    "Day 1": {
+      "wd": "Thu",
+      "num": 1,
+      "date": "Jun 25"
+    },
+    "Day 2": {
+      "wd": "Fri",
+      "num": 2,
+      "date": "Jun 26"
+    },
+    "Day 3": {
+      "wd": "Sat",
+      "num": 3,
+      "date": "Jun 27"
+    },
+    "Day 4": {
+      "wd": "Sun",
+      "num": 4,
+      "date": "Jun 28"
+    }
+  },
+  "days": {
+    "Day 1": {
+      "stages": [
+        "Ranch Arena",
+        "Sherwood Court",
+        "Tripolee",
+        "The Observatory",
+        "Honeycomb",
+        "Center Stage",
+        "Grand Artique"
+      ],
+      "artists": [
+        {
+          "name": "Effin",
+          "stage": "Ranch Arena",
+          "time": "6:30 PM"
+        },
+        {
+          "name": "Midnight Generation",
+          "stage": "Ranch Arena",
+          "time": "8:15 PM"
+        },
+        {
+          "name": "Disco Lines",
+          "stage": "Ranch Arena",
+          "time": "9:45 PM"
+        },
+        {
+          "name": "Excision",
+          "stage": "Ranch Arena",
+          "time": "12:30 AM"
+        },
+        {
+          "name": "Eggy",
+          "stage": "Sherwood Court",
+          "time": "7:00 PM"
+        },
+        {
+          "name": "Night Tapes",
+          "stage": "Sherwood Court",
+          "time": "9:00 PM"
+        },
+        {
+          "name": "Alleycvt",
+          "stage": "Sherwood Court",
+          "time": "11:00 PM"
+        },
+        {
+          "name": "Ganja White Night",
+          "stage": "Sherwood Court",
+          "time": "1:45 AM"
+        },
+        {
+          "name": "H&RRY",
+          "stage": "Tripolee",
+          "time": "6:30 PM"
+        },
+        {
+          "name": "Close Friends Only",
+          "stage": "Tripolee",
+          "time": "7:45 PM"
+        },
+        {
+          "name": "Jackie Hollander",
+          "stage": "Tripolee",
+          "time": "8:45 PM"
+        },
+        {
+          "name": "Daniel Allan",
+          "stage": "Tripolee",
+          "time": "9:45 PM"
+        },
+        {
+          "name": "Devault",
+          "stage": "Tripolee",
+          "time": "10:45 PM"
+        },
+        {
+          "name": "Westend",
+          "stage": "Tripolee",
+          "time": "11:45 PM"
+        },
+        {
+          "name": "D.O.D",
+          "stage": "Tripolee",
+          "time": "12:45 AM"
+        },
+        {
+          "name": "Odd Mob",
+          "stage": "Tripolee",
+          "time": "1:45 AM"
+        },
+        {
+          "name": "Eli Brown",
+          "stage": "Tripolee",
+          "time": "2:45 AM"
+        },
+        {
+          "name": "Dixon's Violin",
+          "stage": "The Observatory",
+          "time": "6:15 PM"
+        },
+        {
+          "name": "Shima",
+          "stage": "The Observatory",
+          "time": "8:00 PM"
+        },
+        {
+          "name": "Hershe",
+          "stage": "The Observatory",
+          "time": "8:45 PM"
+        },
+        {
+          "name": "Jkyl & Hyde",
+          "stage": "The Observatory",
+          "time": "9:45 PM"
+        },
+        {
+          "name": "ProbCause",
+          "stage": "The Observatory",
+          "time": "10:30 PM"
+        },
+        {
+          "name": "?????",
+          "stage": "The Observatory",
+          "time": "11:00 PM"
+        },
+        {
+          "name": "All.Lo Collective",
+          "stage": "The Observatory",
+          "time": "12:15 AM"
+        },
+        {
+          "name": "LSD Clownsystem",
+          "stage": "The Observatory",
+          "time": "2:30 AM"
+        },
+        {
+          "name": "Suzanne (Opening)",
+          "stage": "Honeycomb",
+          "time": "5:00 PM"
+        },
+        {
+          "name": "Bipolar Sunshine",
+          "stage": "Honeycomb",
+          "time": "8:30 PM"
+        },
+        {
+          "name": "Magoo",
+          "stage": "Honeycomb",
+          "time": "10:00 PM"
+        },
+        {
+          "name": "Laszewo",
+          "stage": "Honeycomb",
+          "time": "11:30 PM"
+        },
+        {
+          "name": "MCR-T",
+          "stage": "Honeycomb",
+          "time": "12:30 AM"
+        },
+        {
+          "name": "Midnight Generation",
+          "stage": "Honeycomb",
+          "time": "1:30 AM"
+        },
+        {
+          "name": "Bardo",
+          "stage": "Honeycomb",
+          "time": "2:30 AM"
+        },
+        {
+          "name": "Shauhiin Davari",
+          "stage": "Center Stage",
+          "time": "6:30 PM"
+        },
+        {
+          "name": "Cofresi",
+          "stage": "Center Stage",
+          "time": "7:15 PM"
+        },
+        {
+          "name": "Fireflower",
+          "stage": "Center Stage",
+          "time": "8:15 PM"
+        },
+        {
+          "name": "Supertaste",
+          "stage": "Center Stage",
+          "time": "10:00 PM"
+        },
+        {
+          "name": "Flying Mojito Bros",
+          "stage": "Center Stage",
+          "time": "12:15 AM"
+        },
+        {
+          "name": "Cry Queen",
+          "stage": "Grand Artique",
+          "time": "4:30 PM"
+        },
+        {
+          "name": "Public Works Dept",
+          "stage": "Grand Artique",
+          "time": "6:00 PM"
+        },
+        {
+          "name": "Keys",
+          "stage": "Grand Artique",
+          "time": "7:30 PM"
+        },
+        {
+          "name": "Mr. Wobbles",
+          "stage": "Grand Artique",
+          "time": "9:00 PM"
+        },
+        {
+          "name": "Rambo Party",
+          "stage": "Grand Artique",
+          "time": "10:15 PM"
+        },
+        {
+          "name": "Jerome Joyce",
+          "stage": "Grand Artique",
+          "time": "11:30 PM"
+        },
+        {
+          "name": "King Bubble",
+          "stage": "Grand Artique",
+          "time": "12:45 AM"
+        },
+        {
+          "name": "Tomcat Trumpet",
+          "stage": "Grand Artique",
+          "time": "2:15 AM"
+        }
+      ]
+    },
+    "Day 2": {
+      "stages": [
+        "Ranch Arena",
+        "Sherwood Court",
+        "Tripolee",
+        "The Observatory",
+        "Honeycomb",
+        "Center Stage",
+        "Grand Artique"
+      ],
+      "artists": [
+        {
+          "name": "Motifv",
+          "stage": "Ranch Arena",
+          "time": "4:30 PM"
+        },
+        {
+          "name": "Swimming Paul",
+          "stage": "Ranch Arena",
+          "time": "6:15 PM"
+        },
+        {
+          "name": "Daily Bread",
+          "stage": "Ranch Arena",
+          "time": "8:00 PM"
+        },
+        {
+          "name": "Levity",
+          "stage": "Ranch Arena",
+          "time": "9:45 PM"
+        },
+        {
+          "name": "GRiZ",
+          "stage": "Ranch Arena",
+          "time": "12:00 AM"
+        },
+        {
+          "name": "Kaleena Zanders",
+          "stage": "Sherwood Court",
+          "time": "4:00 PM"
+        },
+        {
+          "name": "Couch",
+          "stage": "Sherwood Court",
+          "time": "5:45 PM"
+        },
+        {
+          "name": "Ship Wrek",
+          "stage": "Sherwood Court",
+          "time": "7:15 PM"
+        },
+        {
+          "name": "Sidepiece",
+          "stage": "Sherwood Court",
+          "time": "9:00 PM"
+        },
+        {
+          "name": "Passion Pit",
+          "stage": "Sherwood Court",
+          "time": "11:00 PM"
+        },
+        {
+          "name": "Sammy Virji",
+          "stage": "Sherwood Court",
+          "time": "2:15 AM"
+        },
+        {
+          "name": "Yoga with Hannah Muse",
+          "stage": "Tripolee",
+          "time": "12:45 PM"
+        },
+        {
+          "name": "Discovery Project",
+          "stage": "Tripolee",
+          "time": "3:45 PM"
+        },
+        {
+          "name": "Saint Ludo",
+          "stage": "Tripolee",
+          "time": "4:30 PM"
+        },
+        {
+          "name": "Muzz",
+          "stage": "Tripolee",
+          "time": "5:45 PM"
+        },
+        {
+          "name": "Nitepunk",
+          "stage": "Tripolee",
+          "time": "6:45 PM"
+        },
+        {
+          "name": "Nikita, The Wicked",
+          "stage": "Tripolee",
+          "time": "7:45 PM"
+        },
+        {
+          "name": "Ivy Lab",
+          "stage": "Tripolee",
+          "time": "8:45 PM"
+        },
+        {
+          "name": "Wilkinson",
+          "stage": "Tripolee",
+          "time": "9:45 PM"
+        },
+        {
+          "name": "Andy C",
+          "stage": "Tripolee",
+          "time": "10:45 PM"
+        },
+        {
+          "name": "Galantis",
+          "stage": "Tripolee",
+          "time": "12:15 AM"
+        },
+        {
+          "name": "Laszewo",
+          "stage": "Tripolee",
+          "time": "1:30 AM"
+        },
+        {
+          "name": "Claude VonStroke",
+          "stage": "Tripolee",
+          "time": "2:30 AM"
+        },
+        {
+          "name": "Supertaste",
+          "stage": "The Observatory",
+          "time": "4:30 PM"
+        },
+        {
+          "name": "Casey Club",
+          "stage": "The Observatory",
+          "time": "6:00 PM"
+        },
+        {
+          "name": "Mild Minds",
+          "stage": "The Observatory",
+          "time": "7:30 PM"
+        },
+        {
+          "name": "Iniko",
+          "stage": "The Observatory",
+          "time": "9:00 PM"
+        },
+        {
+          "name": "Dogs in a Pile",
+          "stage": "The Observatory",
+          "time": "10:30 PM"
+        },
+        {
+          "name": "Ranger Trucco",
+          "stage": "The Observatory",
+          "time": "12:15 AM"
+        },
+        {
+          "name": "SBTRKT",
+          "stage": "The Observatory",
+          "time": "1:15 AM"
+        },
+        {
+          "name": "Richard Finger",
+          "stage": "The Observatory",
+          "time": "2:30 AM"
+        },
+        {
+          "name": "Humanity Circles",
+          "stage": "Honeycomb",
+          "time": "2:30 PM"
+        },
+        {
+          "name": "Rumble in the Bumble Dance Battle",
+          "stage": "Honeycomb",
+          "time": "4:00 PM"
+        },
+        {
+          "name": "Creg",
+          "stage": "Honeycomb",
+          "time": "6:00 PM"
+        },
+        {
+          "name": "Brunello",
+          "stage": "Honeycomb",
+          "time": "8:45 PM"
+        },
+        {
+          "name": "Westend",
+          "stage": "Honeycomb",
+          "time": "11:00 PM"
+        },
+        {
+          "name": "Sidepiece",
+          "stage": "Honeycomb",
+          "time": "12:00 AM"
+        },
+        {
+          "name": "Jkyl, The Wicked",
+          "stage": "Honeycomb",
+          "time": "2:30 AM"
+        },
+        {
+          "name": "Sound Bath Journey",
+          "stage": "Center Stage",
+          "time": "3:00 PM"
+        },
+        {
+          "name": "Ecstatic Dance",
+          "stage": "Center Stage",
+          "time": "4:30 PM"
+        },
+        {
+          "name": "Tricksters",
+          "stage": "Center Stage",
+          "time": "6:00 PM"
+        },
+        {
+          "name": "Mary Lattimore",
+          "stage": "Center Stage",
+          "time": "7:45 PM"
+        },
+        {
+          "name": "Jojo Abot",
+          "stage": "Center Stage",
+          "time": "9:30 PM"
+        },
+        {
+          "name": "Black House Radio",
+          "stage": "Center Stage",
+          "time": "11:15 PM"
+        },
+        {
+          "name": "Gilligan Moss",
+          "stage": "Center Stage",
+          "time": "12:45 AM"
+        },
+        {
+          "name": "Family Blood Feud",
+          "stage": "Grand Artique",
+          "time": "2:30 PM"
+        },
+        {
+          "name": "Kiyoka",
+          "stage": "Grand Artique",
+          "time": "3:00 PM"
+        },
+        {
+          "name": "The Wandering Menstrails",
+          "stage": "Grand Artique",
+          "time": "4:30 PM"
+        },
+        {
+          "name": "Future Joy",
+          "stage": "Grand Artique",
+          "time": "6:00 PM"
+        },
+        {
+          "name": "Raedy Lex",
+          "stage": "Grand Artique",
+          "time": "7:15 PM"
+        },
+        {
+          "name": "LSD Clownsystem",
+          "stage": "Grand Artique",
+          "time": "11:00 PM"
+        },
+        {
+          "name": "Jojo Abot",
+          "stage": "Grand Artique",
+          "time": "12:30 AM"
+        },
+        {
+          "name": "Red Giant Project",
+          "stage": "Grand Artique",
+          "time": "2:00 AM"
+        }
+      ]
+    },
+    "Day 3": {
+      "stages": [
+        "Ranch Arena",
+        "Sherwood Court",
+        "Tripolee",
+        "The Observatory",
+        "Honeycomb",
+        "Center Stage",
+        "Grand Artique"
+      ],
+      "artists": [
+        {
+          "name": "Inji",
+          "stage": "Ranch Arena",
+          "time": "5:30 PM"
+        },
+        {
+          "name": "The String Cheese Incident",
+          "stage": "Ranch Arena",
+          "time": "7:00 PM"
+        },
+        {
+          "name": "Channel Tres",
+          "stage": "Ranch Arena",
+          "time": "12:00 AM"
+        },
+        {
+          "name": "Chris Lake",
+          "stage": "Ranch Arena",
+          "time": "2:00 AM"
+        },
+        {
+          "name": "The Sponges",
+          "stage": "Sherwood Court",
+          "time": "5:00 PM"
+        },
+        {
+          "name": "Starjunk 95",
+          "stage": "Sherwood Court",
+          "time": "6:30 PM"
+        },
+        {
+          "name": "Sam Gellaitry",
+          "stage": "Sherwood Court",
+          "time": "8:00 PM"
+        },
+        {
+          "name": "Madeon",
+          "stage": "Sherwood Court",
+          "time": "9:45 PM"
+        },
+        {
+          "name": "Shpongle",
+          "stage": "Sherwood Court",
+          "time": "11:30 PM"
+        },
+        {
+          "name": "Isoxo",
+          "stage": "Sherwood Court",
+          "time": "1:30 AM"
+        },
+        {
+          "name": "Yoga with Hannah Muse",
+          "stage": "Tripolee",
+          "time": "12:45 PM"
+        },
+        {
+          "name": "Costa",
+          "stage": "Tripolee",
+          "time": "3:15 PM"
+        },
+        {
+          "name": "Steller",
+          "stage": "Tripolee",
+          "time": "4:15 PM"
+        },
+        {
+          "name": "Riot",
+          "stage": "Tripolee",
+          "time": "5:15 PM"
+        },
+        {
+          "name": "Capochino",
+          "stage": "Tripolee",
+          "time": "6:15 PM"
+        },
+        {
+          "name": "Avello",
+          "stage": "Tripolee",
+          "time": "7:15 PM"
+        },
+        {
+          "name": "Sippy",
+          "stage": "Tripolee",
+          "time": "8:15 PM"
+        },
+        {
+          "name": "Heyz",
+          "stage": "Tripolee",
+          "time": "9:15 PM"
+        },
+        {
+          "name": "Ravenscoon",
+          "stage": "Tripolee",
+          "time": "10:15 PM"
+        },
+        {
+          "name": "Whethan",
+          "stage": "Tripolee",
+          "time": "11:15 PM"
+        },
+        {
+          "name": "Kai Wachi",
+          "stage": "Tripolee",
+          "time": "12:15 AM"
+        },
+        {
+          "name": "Sullivan King",
+          "stage": "Tripolee",
+          "time": "1:30 AM"
+        },
+        {
+          "name": "DJ Diesel B2B Teddy Pain",
+          "stage": "Tripolee",
+          "time": "2:45 AM"
+        },
+        {
+          "name": "Tiffany Day",
+          "stage": "The Observatory",
+          "time": "4:30 PM"
+        },
+        {
+          "name": "Rio Kosta",
+          "stage": "The Observatory",
+          "time": "6:00 PM"
+        },
+        {
+          "name": "Lyrah",
+          "stage": "The Observatory",
+          "time": "7:45 PM"
+        },
+        {
+          "name": "Vandelux",
+          "stage": "The Observatory",
+          "time": "9:15 PM"
+        },
+        {
+          "name": "Tourist",
+          "stage": "The Observatory",
+          "time": "10:45 PM"
+        },
+        {
+          "name": "Jigitz",
+          "stage": "The Observatory",
+          "time": "12:15 AM"
+        },
+        {
+          "name": "EOTO",
+          "stage": "The Observatory",
+          "time": "1:45 AM"
+        },
+        {
+          "name": "Hannah Muse Community",
+          "stage": "Honeycomb",
+          "time": "2:30 PM"
+        },
+        {
+          "name": "Mary Lattimore",
+          "stage": "Honeycomb",
+          "time": "3:45 PM"
+        },
+        {
+          "name": "Pride 360",
+          "stage": "Honeycomb",
+          "time": "5:00 PM"
+        },
+        {
+          "name": "Cain Culto",
+          "stage": "Honeycomb",
+          "time": "6:15 PM"
+        },
+        {
+          "name": "Snow Wife",
+          "stage": "Honeycomb",
+          "time": "7:30 PM"
+        },
+        {
+          "name": "Channel Tres",
+          "stage": "Honeycomb",
+          "time": "8:45 PM"
+        },
+        {
+          "name": "Rochelle Jordan",
+          "stage": "Honeycomb",
+          "time": "10:00 PM"
+        },
+        {
+          "name": "Chmura",
+          "stage": "Honeycomb",
+          "time": "11:15 PM"
+        },
+        {
+          "name": "Costa",
+          "stage": "Honeycomb",
+          "time": "12:15 AM"
+        },
+        {
+          "name": "Vandelux",
+          "stage": "Honeycomb",
+          "time": "1:15 AM"
+        },
+        {
+          "name": "Sam Gellaitry",
+          "stage": "Honeycomb",
+          "time": "2:15 AM"
+        },
+        {
+          "name": "Sound Bath Journey",
+          "stage": "Center Stage",
+          "time": "3:00 PM"
+        },
+        {
+          "name": "Ecstatic Dance",
+          "stage": "Center Stage",
+          "time": "4:30 PM"
+        },
+        {
+          "name": "Detroit Party Marching Band",
+          "stage": "Center Stage",
+          "time": "6:15 PM"
+        },
+        {
+          "name": "Red Giant Project",
+          "stage": "Center Stage",
+          "time": "7:30 PM"
+        },
+        {
+          "name": "J Rose Loops & Fungi Flows",
+          "stage": "Center Stage",
+          "time": "8:30 PM"
+        },
+        {
+          "name": "Future Joy",
+          "stage": "Center Stage",
+          "time": "10:00 PM"
+        },
+        {
+          "name": "Big Sis",
+          "stage": "Center Stage",
+          "time": "11:30 PM"
+        },
+        {
+          "name": "Emmie and Ryan",
+          "stage": "Grand Artique",
+          "time": "2:30 PM"
+        },
+        {
+          "name": "The Grand Auction",
+          "stage": "Grand Artique",
+          "time": "3:00 PM"
+        },
+        {
+          "name": "Caitlin Cusack",
+          "stage": "Grand Artique",
+          "time": "4:30 PM"
+        },
+        {
+          "name": "Grand Artique Talent Show",
+          "stage": "Grand Artique",
+          "time": "6:15 PM"
+        },
+        {
+          "name": "Shane Hall",
+          "stage": "Grand Artique",
+          "time": "8:00 PM"
+        },
+        {
+          "name": "Vincent Antone",
+          "stage": "Grand Artique",
+          "time": "9:30 PM"
+        },
+        {
+          "name": "Bob Moses",
+          "stage": "Grand Artique",
+          "time": "10:45 PM"
+        },
+        {
+          "name": "Logie",
+          "stage": "Grand Artique",
+          "time": "2:15 AM"
+        }
+      ]
+    },
+    "Day 4": {
+      "stages": [
+        "Ranch Arena",
+        "Sherwood Court",
+        "Tripolee",
+        "The Observatory",
+        "Honeycomb",
+        "Center Stage",
+        "Grand Artique"
+      ],
+      "artists": [
+        {
+          "name": "Lightcode",
+          "stage": "Ranch Arena",
+          "time": "4:00 PM"
+        },
+        {
+          "name": "Underscores",
+          "stage": "Ranch Arena",
+          "time": "6:00 PM"
+        },
+        {
+          "name": "Jean Dawson",
+          "stage": "Ranch Arena",
+          "time": "7:30 PM"
+        },
+        {
+          "name": "Kaskade",
+          "stage": "Ranch Arena",
+          "time": "9:15 PM"
+        },
+        {
+          "name": "Illenium",
+          "stage": "Ranch Arena",
+          "time": "11:30 PM"
+        },
+        {
+          "name": "Vincent Antone",
+          "stage": "Sherwood Court",
+          "time": "5:00 PM"
+        },
+        {
+          "name": "Daniel Donato's Cosmic Jam",
+          "stage": "Sherwood Court",
+          "time": "6:30 PM"
+        },
+        {
+          "name": "GRiZ",
+          "stage": "Sherwood Court",
+          "time": "8:15 PM"
+        },
+        {
+          "name": "Wooli",
+          "stage": "Sherwood Court",
+          "time": "10:30 PM"
+        },
+        {
+          "name": "LSDream",
+          "stage": "Sherwood Court",
+          "time": "12:30 AM"
+        },
+        {
+          "name": "Yoga with Hannah Muse",
+          "stage": "Tripolee",
+          "time": "12:45 PM"
+        },
+        {
+          "name": "Wes Mills",
+          "stage": "Tripolee",
+          "time": "5:15 PM"
+        },
+        {
+          "name": "Qrion",
+          "stage": "Tripolee",
+          "time": "6:30 PM"
+        },
+        {
+          "name": "Chris Luno",
+          "stage": "Tripolee",
+          "time": "7:45 PM"
+        },
+        {
+          "name": "Omnom",
+          "stage": "Tripolee",
+          "time": "9:00 PM"
+        },
+        {
+          "name": "Yaeji",
+          "stage": "Tripolee",
+          "time": "10:15 PM"
+        },
+        {
+          "name": "Bob Moses",
+          "stage": "Tripolee",
+          "time": "11:30 PM"
+        },
+        {
+          "name": "Lane 8",
+          "stage": "Tripolee",
+          "time": "12:45 AM"
+        },
+        {
+          "name": "GITF Party",
+          "stage": "The Observatory",
+          "time": "1:45 PM"
+        },
+        {
+          "name": "Bricknasty",
+          "stage": "The Observatory",
+          "time": "5:15 PM"
+        },
+        {
+          "name": "Bombargo",
+          "stage": "The Observatory",
+          "time": "6:45 PM"
+        },
+        {
+          "name": "Oppidan",
+          "stage": "The Observatory",
+          "time": "8:15 PM"
+        },
+        {
+          "name": "Mary Droppinz",
+          "stage": "The Observatory",
+          "time": "9:30 PM"
+        },
+        {
+          "name": "MPH",
+          "stage": "The Observatory",
+          "time": "10:45 PM"
+        },
+        {
+          "name": "Frost Children",
+          "stage": "The Observatory",
+          "time": "12:30 AM"
+        },
+        {
+          "name": "Rumble in the Bumble Beatbox Battle",
+          "stage": "Honeycomb",
+          "time": "3:30 PM"
+        },
+        {
+          "name": "Wax Monkey",
+          "stage": "Honeycomb",
+          "time": "6:00 PM"
+        },
+        {
+          "name": "River Tiber",
+          "stage": "Honeycomb",
+          "time": "9:45 PM"
+        },
+        {
+          "name": "Deadtronica",
+          "stage": "Honeycomb",
+          "time": "11:30 PM"
+        },
+        {
+          "name": "Dixon's Violin",
+          "stage": "Honeycomb",
+          "time": "1:00 AM"
+        },
+        {
+          "name": "Sound Bath Journey",
+          "stage": "Center Stage",
+          "time": "3:15 PM"
+        },
+        {
+          "name": "Ecstatic Dance",
+          "stage": "Center Stage",
+          "time": "4:45 PM"
+        },
+        {
+          "name": "Cry Queen",
+          "stage": "Center Stage",
+          "time": "6:00 PM"
+        },
+        {
+          "name": "Shane Hall",
+          "stage": "Center Stage",
+          "time": "7:30 PM"
+        },
+        {
+          "name": "Solid Gold Disco / LCD Clownsystem",
+          "stage": "Center Stage",
+          "time": "9:30 PM"
+        },
+        {
+          "name": "Party Pupils",
+          "stage": "Center Stage",
+          "time": "11:45 PM"
+        },
+        {
+          "name": "Party Pupils (Late)",
+          "stage": "Center Stage",
+          "time": "1:00 AM"
+        },
+        {
+          "name": "The Wandering Menstrails",
+          "stage": "Grand Artique",
+          "time": "3:15 PM"
+        },
+        {
+          "name": "Detroit Party Marching Band",
+          "stage": "Grand Artique",
+          "time": "5:00 PM"
+        },
+        {
+          "name": "Public Works Dept",
+          "stage": "Grand Artique",
+          "time": "6:45 PM"
+        },
+        {
+          "name": "Kiyoka",
+          "stage": "Grand Artique",
+          "time": "7:45 PM"
+        },
+        {
+          "name": "Culturefies",
+          "stage": "Grand Artique",
+          "time": "9:00 PM"
+        },
+        {
+          "name": "Polyjamorous",
+          "stage": "Grand Artique",
+          "time": "10:30 PM"
+        },
+        {
+          "name": "Logie",
+          "stage": "Grand Artique",
+          "time": "11:45 PM"
+        },
+        {
+          "name": "Red Giant Project",
+          "stage": "Grand Artique",
+          "time": "1:00 AM"
+        }
+      ]
+    }
+  },
+  "artists": [
+    {
+      "name": "Effin",
+      "day": "Day 1",
+      "stage": "Ranch Arena"
+    },
+    {
+      "name": "Midnight Generation",
+      "day": "Day 1",
+      "stage": "Ranch Arena"
+    },
+    {
+      "name": "Disco Lines",
+      "day": "Day 1",
+      "stage": "Ranch Arena"
+    },
+    {
+      "name": "Excision",
+      "day": "Day 1",
+      "stage": "Ranch Arena"
+    },
+    {
+      "name": "Eggy",
+      "day": "Day 1",
+      "stage": "Sherwood Court"
+    },
+    {
+      "name": "Night Tapes",
+      "day": "Day 1",
+      "stage": "Sherwood Court"
+    },
+    {
+      "name": "Alleycvt",
+      "day": "Day 1",
+      "stage": "Sherwood Court"
+    },
+    {
+      "name": "Ganja White Night",
+      "day": "Day 1",
+      "stage": "Sherwood Court"
+    },
+    {
+      "name": "H&RRY",
+      "day": "Day 1",
+      "stage": "Tripolee"
+    },
+    {
+      "name": "Close Friends Only",
+      "day": "Day 1",
+      "stage": "Tripolee"
+    },
+    {
+      "name": "Jackie Hollander",
+      "day": "Day 1",
+      "stage": "Tripolee"
+    },
+    {
+      "name": "Daniel Allan",
+      "day": "Day 1",
+      "stage": "Tripolee"
+    },
+    {
+      "name": "Devault",
+      "day": "Day 1",
+      "stage": "Tripolee"
+    },
+    {
+      "name": "Westend",
+      "day": "Day 1",
+      "stage": "Tripolee"
+    },
+    {
+      "name": "D.O.D",
+      "day": "Day 1",
+      "stage": "Tripolee"
+    },
+    {
+      "name": "Odd Mob",
+      "day": "Day 1",
+      "stage": "Tripolee"
+    },
+    {
+      "name": "Eli Brown",
+      "day": "Day 1",
+      "stage": "Tripolee"
+    },
+    {
+      "name": "Dixon's Violin",
+      "day": "Day 1",
+      "stage": "The Observatory"
+    },
+    {
+      "name": "Shima",
+      "day": "Day 1",
+      "stage": "The Observatory"
+    },
+    {
+      "name": "Hershe",
+      "day": "Day 1",
+      "stage": "The Observatory"
+    },
+    {
+      "name": "Jkyl & Hyde",
+      "day": "Day 1",
+      "stage": "The Observatory"
+    },
+    {
+      "name": "ProbCause",
+      "day": "Day 1",
+      "stage": "The Observatory"
+    },
+    {
+      "name": "?????",
+      "day": "Day 1",
+      "stage": "The Observatory"
+    },
+    {
+      "name": "All.Lo Collective",
+      "day": "Day 1",
+      "stage": "The Observatory"
+    },
+    {
+      "name": "LSD Clownsystem",
+      "day": "Day 1",
+      "stage": "The Observatory"
+    },
+    {
+      "name": "Suzanne (Opening)",
+      "day": "Day 1",
+      "stage": "Honeycomb"
+    },
+    {
+      "name": "Bipolar Sunshine",
+      "day": "Day 1",
+      "stage": "Honeycomb"
+    },
+    {
+      "name": "Magoo",
+      "day": "Day 1",
+      "stage": "Honeycomb"
+    },
+    {
+      "name": "Laszewo",
+      "day": "Day 1",
+      "stage": "Honeycomb"
+    },
+    {
+      "name": "MCR-T",
+      "day": "Day 1",
+      "stage": "Honeycomb"
+    },
+    {
+      "name": "Bardo",
+      "day": "Day 1",
+      "stage": "Honeycomb"
+    },
+    {
+      "name": "Shauhiin Davari",
+      "day": "Day 1",
+      "stage": "Center Stage"
+    },
+    {
+      "name": "Cofresi",
+      "day": "Day 1",
+      "stage": "Center Stage"
+    },
+    {
+      "name": "Fireflower",
+      "day": "Day 1",
+      "stage": "Center Stage"
+    },
+    {
+      "name": "Supertaste",
+      "day": "Day 1",
+      "stage": "Center Stage"
+    },
+    {
+      "name": "Flying Mojito Bros",
+      "day": "Day 1",
+      "stage": "Center Stage"
+    },
+    {
+      "name": "Cry Queen",
+      "day": "Day 1",
+      "stage": "Grand Artique"
+    },
+    {
+      "name": "Public Works Dept",
+      "day": "Day 1",
+      "stage": "Grand Artique"
+    },
+    {
+      "name": "Keys",
+      "day": "Day 1",
+      "stage": "Grand Artique"
+    },
+    {
+      "name": "Mr. Wobbles",
+      "day": "Day 1",
+      "stage": "Grand Artique"
+    },
+    {
+      "name": "Rambo Party",
+      "day": "Day 1",
+      "stage": "Grand Artique"
+    },
+    {
+      "name": "Jerome Joyce",
+      "day": "Day 1",
+      "stage": "Grand Artique"
+    },
+    {
+      "name": "King Bubble",
+      "day": "Day 1",
+      "stage": "Grand Artique"
+    },
+    {
+      "name": "Tomcat Trumpet",
+      "day": "Day 1",
+      "stage": "Grand Artique"
+    },
+    {
+      "name": "Motifv",
+      "day": "Day 2",
+      "stage": "Ranch Arena"
+    },
+    {
+      "name": "Swimming Paul",
+      "day": "Day 2",
+      "stage": "Ranch Arena"
+    },
+    {
+      "name": "Daily Bread",
+      "day": "Day 2",
+      "stage": "Ranch Arena"
+    },
+    {
+      "name": "Levity",
+      "day": "Day 2",
+      "stage": "Ranch Arena"
+    },
+    {
+      "name": "GRiZ",
+      "day": "Day 2",
+      "stage": "Ranch Arena"
+    },
+    {
+      "name": "Kaleena Zanders",
+      "day": "Day 2",
+      "stage": "Sherwood Court"
+    },
+    {
+      "name": "Couch",
+      "day": "Day 2",
+      "stage": "Sherwood Court"
+    },
+    {
+      "name": "Ship Wrek",
+      "day": "Day 2",
+      "stage": "Sherwood Court"
+    },
+    {
+      "name": "Sidepiece",
+      "day": "Day 2",
+      "stage": "Sherwood Court"
+    },
+    {
+      "name": "Passion Pit",
+      "day": "Day 2",
+      "stage": "Sherwood Court"
+    },
+    {
+      "name": "Sammy Virji",
+      "day": "Day 2",
+      "stage": "Sherwood Court"
+    },
+    {
+      "name": "Yoga with Hannah Muse",
+      "day": "Day 2",
+      "stage": "Tripolee"
+    },
+    {
+      "name": "Discovery Project",
+      "day": "Day 2",
+      "stage": "Tripolee"
+    },
+    {
+      "name": "Saint Ludo",
+      "day": "Day 2",
+      "stage": "Tripolee"
+    },
+    {
+      "name": "Muzz",
+      "day": "Day 2",
+      "stage": "Tripolee"
+    },
+    {
+      "name": "Nitepunk",
+      "day": "Day 2",
+      "stage": "Tripolee"
+    },
+    {
+      "name": "Nikita, The Wicked",
+      "day": "Day 2",
+      "stage": "Tripolee"
+    },
+    {
+      "name": "Ivy Lab",
+      "day": "Day 2",
+      "stage": "Tripolee"
+    },
+    {
+      "name": "Wilkinson",
+      "day": "Day 2",
+      "stage": "Tripolee"
+    },
+    {
+      "name": "Andy C",
+      "day": "Day 2",
+      "stage": "Tripolee"
+    },
+    {
+      "name": "Galantis",
+      "day": "Day 2",
+      "stage": "Tripolee"
+    },
+    {
+      "name": "Claude VonStroke",
+      "day": "Day 2",
+      "stage": "Tripolee"
+    },
+    {
+      "name": "Casey Club",
+      "day": "Day 2",
+      "stage": "The Observatory"
+    },
+    {
+      "name": "Mild Minds",
+      "day": "Day 2",
+      "stage": "The Observatory"
+    },
+    {
+      "name": "Iniko",
+      "day": "Day 2",
+      "stage": "The Observatory"
+    },
+    {
+      "name": "Dogs in a Pile",
+      "day": "Day 2",
+      "stage": "The Observatory"
+    },
+    {
+      "name": "Ranger Trucco",
+      "day": "Day 2",
+      "stage": "The Observatory"
+    },
+    {
+      "name": "SBTRKT",
+      "day": "Day 2",
+      "stage": "The Observatory"
+    },
+    {
+      "name": "Richard Finger",
+      "day": "Day 2",
+      "stage": "The Observatory"
+    },
+    {
+      "name": "Humanity Circles",
+      "day": "Day 2",
+      "stage": "Honeycomb"
+    },
+    {
+      "name": "Rumble in the Bumble Dance Battle",
+      "day": "Day 2",
+      "stage": "Honeycomb"
+    },
+    {
+      "name": "Creg",
+      "day": "Day 2",
+      "stage": "Honeycomb"
+    },
+    {
+      "name": "Brunello",
+      "day": "Day 2",
+      "stage": "Honeycomb"
+    },
+    {
+      "name": "Jkyl, The Wicked",
+      "day": "Day 2",
+      "stage": "Honeycomb"
+    },
+    {
+      "name": "Sound Bath Journey",
+      "day": "Day 2",
+      "stage": "Center Stage"
+    },
+    {
+      "name": "Ecstatic Dance",
+      "day": "Day 2",
+      "stage": "Center Stage"
+    },
+    {
+      "name": "Tricksters",
+      "day": "Day 2",
+      "stage": "Center Stage"
+    },
+    {
+      "name": "Mary Lattimore",
+      "day": "Day 2",
+      "stage": "Center Stage"
+    },
+    {
+      "name": "Jojo Abot",
+      "day": "Day 2",
+      "stage": "Center Stage"
+    },
+    {
+      "name": "Black House Radio",
+      "day": "Day 2",
+      "stage": "Center Stage"
+    },
+    {
+      "name": "Gilligan Moss",
+      "day": "Day 2",
+      "stage": "Center Stage"
+    },
+    {
+      "name": "Family Blood Feud",
+      "day": "Day 2",
+      "stage": "Grand Artique"
+    },
+    {
+      "name": "Kiyoka",
+      "day": "Day 2",
+      "stage": "Grand Artique"
+    },
+    {
+      "name": "The Wandering Menstrails",
+      "day": "Day 2",
+      "stage": "Grand Artique"
+    },
+    {
+      "name": "Future Joy",
+      "day": "Day 2",
+      "stage": "Grand Artique"
+    },
+    {
+      "name": "Raedy Lex",
+      "day": "Day 2",
+      "stage": "Grand Artique"
+    },
+    {
+      "name": "Red Giant Project",
+      "day": "Day 2",
+      "stage": "Grand Artique"
+    },
+    {
+      "name": "Inji",
+      "day": "Day 3",
+      "stage": "Ranch Arena"
+    },
+    {
+      "name": "The String Cheese Incident",
+      "day": "Day 3",
+      "stage": "Ranch Arena"
+    },
+    {
+      "name": "Channel Tres",
+      "day": "Day 3",
+      "stage": "Ranch Arena"
+    },
+    {
+      "name": "Chris Lake",
+      "day": "Day 3",
+      "stage": "Ranch Arena"
+    },
+    {
+      "name": "The Sponges",
+      "day": "Day 3",
+      "stage": "Sherwood Court"
+    },
+    {
+      "name": "Starjunk 95",
+      "day": "Day 3",
+      "stage": "Sherwood Court"
+    },
+    {
+      "name": "Sam Gellaitry",
+      "day": "Day 3",
+      "stage": "Sherwood Court"
+    },
+    {
+      "name": "Madeon",
+      "day": "Day 3",
+      "stage": "Sherwood Court"
+    },
+    {
+      "name": "Shpongle",
+      "day": "Day 3",
+      "stage": "Sherwood Court"
+    },
+    {
+      "name": "Isoxo",
+      "day": "Day 3",
+      "stage": "Sherwood Court"
+    },
+    {
+      "name": "Costa",
+      "day": "Day 3",
+      "stage": "Tripolee"
+    },
+    {
+      "name": "Steller",
+      "day": "Day 3",
+      "stage": "Tripolee"
+    },
+    {
+      "name": "Riot",
+      "day": "Day 3",
+      "stage": "Tripolee"
+    },
+    {
+      "name": "Capochino",
+      "day": "Day 3",
+      "stage": "Tripolee"
+    },
+    {
+      "name": "Avello",
+      "day": "Day 3",
+      "stage": "Tripolee"
+    },
+    {
+      "name": "Sippy",
+      "day": "Day 3",
+      "stage": "Tripolee"
+    },
+    {
+      "name": "Heyz",
+      "day": "Day 3",
+      "stage": "Tripolee"
+    },
+    {
+      "name": "Ravenscoon",
+      "day": "Day 3",
+      "stage": "Tripolee"
+    },
+    {
+      "name": "Whethan",
+      "day": "Day 3",
+      "stage": "Tripolee"
+    },
+    {
+      "name": "Kai Wachi",
+      "day": "Day 3",
+      "stage": "Tripolee"
+    },
+    {
+      "name": "Sullivan King",
+      "day": "Day 3",
+      "stage": "Tripolee"
+    },
+    {
+      "name": "DJ Diesel B2B Teddy Pain",
+      "day": "Day 3",
+      "stage": "Tripolee"
+    },
+    {
+      "name": "Tiffany Day",
+      "day": "Day 3",
+      "stage": "The Observatory"
+    },
+    {
+      "name": "Rio Kosta",
+      "day": "Day 3",
+      "stage": "The Observatory"
+    },
+    {
+      "name": "Lyrah",
+      "day": "Day 3",
+      "stage": "The Observatory"
+    },
+    {
+      "name": "Vandelux",
+      "day": "Day 3",
+      "stage": "The Observatory"
+    },
+    {
+      "name": "Tourist",
+      "day": "Day 3",
+      "stage": "The Observatory"
+    },
+    {
+      "name": "Jigitz",
+      "day": "Day 3",
+      "stage": "The Observatory"
+    },
+    {
+      "name": "EOTO",
+      "day": "Day 3",
+      "stage": "The Observatory"
+    },
+    {
+      "name": "Hannah Muse Community",
+      "day": "Day 3",
+      "stage": "Honeycomb"
+    },
+    {
+      "name": "Pride 360",
+      "day": "Day 3",
+      "stage": "Honeycomb"
+    },
+    {
+      "name": "Cain Culto",
+      "day": "Day 3",
+      "stage": "Honeycomb"
+    },
+    {
+      "name": "Snow Wife",
+      "day": "Day 3",
+      "stage": "Honeycomb"
+    },
+    {
+      "name": "Rochelle Jordan",
+      "day": "Day 3",
+      "stage": "Honeycomb"
+    },
+    {
+      "name": "Chmura",
+      "day": "Day 3",
+      "stage": "Honeycomb"
+    },
+    {
+      "name": "Detroit Party Marching Band",
+      "day": "Day 3",
+      "stage": "Center Stage"
+    },
+    {
+      "name": "J Rose Loops & Fungi Flows",
+      "day": "Day 3",
+      "stage": "Center Stage"
+    },
+    {
+      "name": "Big Sis",
+      "day": "Day 3",
+      "stage": "Center Stage"
+    },
+    {
+      "name": "Emmie and Ryan",
+      "day": "Day 3",
+      "stage": "Grand Artique"
+    },
+    {
+      "name": "The Grand Auction",
+      "day": "Day 3",
+      "stage": "Grand Artique"
+    },
+    {
+      "name": "Caitlin Cusack",
+      "day": "Day 3",
+      "stage": "Grand Artique"
+    },
+    {
+      "name": "Grand Artique Talent Show",
+      "day": "Day 3",
+      "stage": "Grand Artique"
+    },
+    {
+      "name": "Shane Hall",
+      "day": "Day 3",
+      "stage": "Grand Artique"
+    },
+    {
+      "name": "Vincent Antone",
+      "day": "Day 3",
+      "stage": "Grand Artique"
+    },
+    {
+      "name": "Bob Moses",
+      "day": "Day 3",
+      "stage": "Grand Artique"
+    },
+    {
+      "name": "Logie",
+      "day": "Day 3",
+      "stage": "Grand Artique"
+    },
+    {
+      "name": "Lightcode",
+      "day": "Day 4",
+      "stage": "Ranch Arena"
+    },
+    {
+      "name": "Underscores",
+      "day": "Day 4",
+      "stage": "Ranch Arena"
+    },
+    {
+      "name": "Jean Dawson",
+      "day": "Day 4",
+      "stage": "Ranch Arena"
+    },
+    {
+      "name": "Kaskade",
+      "day": "Day 4",
+      "stage": "Ranch Arena"
+    },
+    {
+      "name": "Illenium",
+      "day": "Day 4",
+      "stage": "Ranch Arena"
+    },
+    {
+      "name": "Daniel Donato's Cosmic Jam",
+      "day": "Day 4",
+      "stage": "Sherwood Court"
+    },
+    {
+      "name": "Wooli",
+      "day": "Day 4",
+      "stage": "Sherwood Court"
+    },
+    {
+      "name": "LSDream",
+      "day": "Day 4",
+      "stage": "Sherwood Court"
+    },
+    {
+      "name": "Wes Mills",
+      "day": "Day 4",
+      "stage": "Tripolee"
+    },
+    {
+      "name": "Qrion",
+      "day": "Day 4",
+      "stage": "Tripolee"
+    },
+    {
+      "name": "Chris Luno",
+      "day": "Day 4",
+      "stage": "Tripolee"
+    },
+    {
+      "name": "Omnom",
+      "day": "Day 4",
+      "stage": "Tripolee"
+    },
+    {
+      "name": "Yaeji",
+      "day": "Day 4",
+      "stage": "Tripolee"
+    },
+    {
+      "name": "Lane 8",
+      "day": "Day 4",
+      "stage": "Tripolee"
+    },
+    {
+      "name": "GITF Party",
+      "day": "Day 4",
+      "stage": "The Observatory"
+    },
+    {
+      "name": "Bricknasty",
+      "day": "Day 4",
+      "stage": "The Observatory"
+    },
+    {
+      "name": "Bombargo",
+      "day": "Day 4",
+      "stage": "The Observatory"
+    },
+    {
+      "name": "Oppidan",
+      "day": "Day 4",
+      "stage": "The Observatory"
+    },
+    {
+      "name": "Mary Droppinz",
+      "day": "Day 4",
+      "stage": "The Observatory"
+    },
+    {
+      "name": "MPH",
+      "day": "Day 4",
+      "stage": "The Observatory"
+    },
+    {
+      "name": "Frost Children",
+      "day": "Day 4",
+      "stage": "The Observatory"
+    },
+    {
+      "name": "Rumble in the Bumble Beatbox Battle",
+      "day": "Day 4",
+      "stage": "Honeycomb"
+    },
+    {
+      "name": "Wax Monkey",
+      "day": "Day 4",
+      "stage": "Honeycomb"
+    },
+    {
+      "name": "River Tiber",
+      "day": "Day 4",
+      "stage": "Honeycomb"
+    },
+    {
+      "name": "Deadtronica",
+      "day": "Day 4",
+      "stage": "Honeycomb"
+    },
+    {
+      "name": "Solid Gold Disco / LCD Clownsystem",
+      "day": "Day 4",
+      "stage": "Center Stage"
+    },
+    {
+      "name": "Party Pupils",
+      "day": "Day 4",
+      "stage": "Center Stage"
+    },
+    {
+      "name": "Party Pupils (Late)",
+      "day": "Day 4",
+      "stage": "Center Stage"
+    },
+    {
+      "name": "Culturefies",
+      "day": "Day 4",
+      "stage": "Grand Artique"
+    },
+    {
+      "name": "Polyjamorous",
+      "day": "Day 4",
+      "stage": "Grand Artique"
+    }
+  ],
+  "activities": {
+    "Day 1": [
+      {
+        "name": "Intention Setting Ceremony",
+        "time": "9:30 AM - 10:15 AM",
+        "venue": "The Brainery"
+      },
+      {
+        "name": "Inclusive Yoga",
+        "time": "10:30 AM - 11:30 AM",
+        "venue": "The Brainery"
+      },
+      {
+        "name": "Flow State Vinyasa",
+        "time": "11:45 AM - 12:30 PM",
+        "venue": "The Brainery"
+      },
+      {
+        "name": "Embodied Rhythm",
+        "time": "12:45 PM - 1:30 PM",
+        "venue": "The Brainery"
+      },
+      {
+        "name": "Fuel Your Flow",
+        "time": "1:45 PM - 2:45 PM",
+        "venue": "The Brainery"
+      },
+      {
+        "name": "Spiritual Cheerleading",
+        "time": "3:00 PM - 3:45 PM",
+        "venue": "The Brainery"
+      },
+      {
+        "name": "Blackout Poetry",
+        "time": "4:00 PM - 4:45 PM",
+        "venue": "The Brainery"
+      },
+      {
+        "name": "End Overdose Harm Reduction Training",
+        "time": "5:00 PM - 5:15 PM",
+        "venue": "The Brainery"
+      },
+      {
+        "name": "Silent Disco: Chicago, Michigan, West Coast",
+        "time": "8:00 PM - 4:00 AM",
+        "venue": "Silent Disco"
+      },
+      {
+        "name": "Crafter Hours: Fairy Houses",
+        "time": "2:00 AM - 5:00 AM",
+        "venue": "The Brainery"
+      },
+      {
+        "name": "Now Karaoke Band",
+        "time": "2:00 AM - 5:00 AM",
+        "venue": "The Brainery"
+      }
+    ],
+    "Day 2": [
+      {
+        "name": "The Frequency Is You",
+        "time": "9:30 AM - 10:30 AM",
+        "venue": "The Brainery"
+      },
+      {
+        "name": "Laughter Yoga",
+        "time": "12:15 PM - 1:00 PM",
+        "venue": "The Brainery"
+      },
+      {
+        "name": "EDM Zumba",
+        "time": "1:15 PM - 2:15 PM",
+        "venue": "The Brainery"
+      },
+      {
+        "name": "What The Female Hormone?!",
+        "time": "2:45 PM - 3:45 PM",
+        "venue": "The Brainery"
+      },
+      {
+        "name": "DIY Tea Mixer",
+        "time": "4:15 PM - 5:15 PM",
+        "venue": "The Brainery"
+      },
+      {
+        "name": "Sober Meet Up",
+        "time": "7:00 PM - 7:15 PM",
+        "venue": "The Brainery"
+      },
+      {
+        "name": "Silent Disco: Seven Eye Takeover, Breaks Beatdown, Bass Breakdown",
+        "time": "8:00 PM - 4:00 AM",
+        "venue": "Silent Disco"
+      }
+    ],
+    "Day 3": [
+      {
+        "name": "Forest Resonance",
+        "time": "9:30 AM - 10:30 AM",
+        "venue": "The Brainery"
+      },
+      {
+        "name": "Sun Salutations",
+        "time": "10:45 AM - 11:45 AM",
+        "venue": "The Brainery"
+      },
+      {
+        "name": "Guided By Grief",
+        "time": "12:00 PM - 12:45 PM",
+        "venue": "The Brainery"
+      },
+      {
+        "name": "Pride Panel",
+        "time": "1:00 PM - 2:00 PM",
+        "venue": "The Brainery"
+      },
+      {
+        "name": "Happy Hips",
+        "time": "2:30 PM - 3:30 PM",
+        "venue": "The Brainery"
+      },
+      {
+        "name": "1iTF Meet Up",
+        "time": "3:45 PM - 4:00 PM",
+        "venue": "The Brainery"
+      },
+      {
+        "name": "DIY Soap & More",
+        "time": "4:15 PM - 5:15 PM",
+        "venue": "The Brainery"
+      },
+      {
+        "name": "Silent Disco: LCD Soundsystem, Jay Z, Talking Heads",
+        "time": "8:00 PM - 4:00 AM",
+        "venue": "Silent Disco"
+      },
+      {
+        "name": "Now Karaoke Band",
+        "time": "2:00 AM - 5:00 AM",
+        "venue": "The Brainery"
+      }
+    ],
+    "Day 4": [
+      {
+        "name": "Restorative Breathwork",
+        "time": "9:45 AM - 10:45 AM",
+        "venue": "The Brainery"
+      },
+      {
+        "name": "Sun & Moon Flow",
+        "time": "11:00 AM - 12:00 PM",
+        "venue": "The Brainery"
+      },
+      {
+        "name": "Find Your Voice",
+        "time": "12:15 PM - 12:45 PM",
+        "venue": "The Brainery"
+      },
+      {
+        "name": "Her Forest Presents: The Art Of The Pivot",
+        "time": "2:45 PM - 3:45 PM",
+        "venue": "The Brainery"
+      },
+      {
+        "name": "Vision Board Studio",
+        "time": "2:45 PM - 3:45 PM",
+        "venue": "The Brainery"
+      },
+      {
+        "name": "Channels: The Last Dance, TBD, Makeout Session",
+        "time": "8:00 PM - 2:00 AM",
+        "venue": "Silent Disco"
+      },
+      {
+        "name": "Hiscore Mario Kart Kup",
+        "time": "1:00 AM - 3:00 AM",
+        "venue": "The Brainery"
+      }
+    ]
+  }
+}

@@ -1,0 +1,1909 @@
+{
+  "id": "lollapalooza-2025",
+  "name": "Lollapalooza",
+  "year": "",
+  "subtitle": "Chicago, IL · 2025",
+  "location": "Chicago, IL",
+  "dates": "",
+  "accent": "236, 72, 153",
+  "status": "archived",
+  "dayStartHour": 12,
+  "stages": [
+    "T-Mobile",
+    "Bud Light",
+    "Lakeshore",
+    "The Grove",
+    "Tito's",
+    "BMI",
+    "DOLLAPALOOZA"
+  ],
+  "days": {
+    "Thursday": {
+      "stages": [
+        "T-Mobile",
+        "Bud Light",
+        "Lakeshore",
+        "The Grove",
+        "Tito's",
+        "BMI",
+        "DOLLAPALOOZA"
+      ],
+      "artists": [
+        {
+          "name": "Silly Goose",
+          "stage": "The Grove",
+          "time": "12:00 PM - 12:30 PM"
+        },
+        {
+          "name": "DJ Heather",
+          "stage": "DOLLAPALOOZA",
+          "time": "12:00 PM - 12:45 PM"
+        },
+        {
+          "name": "The Symposium",
+          "stage": "Lakeshore",
+          "time": "12:30 PM - 1:15 PM"
+        },
+        {
+          "name": "Torren Foot B2B Rawolf Paradiso",
+          "stage": "DOLLAPALOOZA",
+          "time": "12:50 PM - 1:50 PM"
+        },
+        {
+          "name": "Jade LeMac",
+          "stage": "Tito's",
+          "time": "12:45 PM - 1:30 PM"
+        },
+        {
+          "name": "Girl Tones",
+          "stage": "BMI",
+          "time": "1:00 PM - 1:40 PM"
+        },
+        {
+          "name": "Nourished by Time",
+          "stage": "T-Mobile",
+          "time": "1:15 PM - 2:00 PM"
+        },
+        {
+          "name": "The Droptines",
+          "stage": "The Grove",
+          "time": "1:30 PM - 2:15 PM"
+        },
+        {
+          "name": "Black Party",
+          "stage": "The Grove",
+          "time": "1:50 PM - 2:30 PM"
+        },
+        {
+          "name": "Azzecca",
+          "stage": "DOLLAPALOOZA",
+          "time": "2:00 PM - 3:00 PM"
+        },
+        {
+          "name": "Julie",
+          "stage": "Lakeshore",
+          "time": "2:00 PM - 3:00 PM"
+        },
+        {
+          "name": "ALEXSUCKS",
+          "stage": "BMI",
+          "time": "2:10 PM - 2:50 PM"
+        },
+        {
+          "name": "Chicago Made",
+          "stage": "Tito's",
+          "time": "2:15 PM - 3:00 PM"
+        },
+        {
+          "name": "Sunami",
+          "stage": "The Grove",
+          "time": "2:50 PM - 3:30 PM"
+        },
+        {
+          "name": "Durand Bernarr",
+          "stage": "T-Mobile",
+          "time": "3:00 PM - 4:00 PM"
+        },
+        {
+          "name": "Prospa",
+          "stage": "DOLLAPALOOZA",
+          "time": "3:10 PM - 4:10 PM"
+        },
+        {
+          "name": "Yana",
+          "stage": "BMI",
+          "time": "3:20 PM - 4:00 PM"
+        },
+        {
+          "name": "half•alive",
+          "stage": "Tito's",
+          "time": "3:45 PM - 4:45 PM"
+        },
+        {
+          "name": "Fcukers",
+          "stage": "The Grove",
+          "time": "4:00 PM - 4:45 PM"
+        },
+        {
+          "name": "Matt Champion",
+          "stage": "Lakeshore",
+          "time": "4:00 PM - 5:00 PM"
+        },
+        {
+          "name": "The Blessed Madonna",
+          "stage": "DOLLAPALOOZA",
+          "time": "4:20 PM - 5:20 PM"
+        },
+        {
+          "name": "Bo Staloch",
+          "stage": "BMI",
+          "time": "4:30 PM - 5:10 PM"
+        },
+        {
+          "name": "Sierra Ferrell",
+          "stage": "Bud Light",
+          "time": "4:45 PM - 5:45 PM"
+        },
+        {
+          "name": "Barry Can't Swim",
+          "stage": "T-Mobile",
+          "time": "5:00 PM - 6:00 PM"
+        },
+        {
+          "name": "Glass Beams",
+          "stage": "The Grove",
+          "time": "5:15 PM - 6:00 PM"
+        },
+        {
+          "name": "Colby Acuff",
+          "stage": "BMI",
+          "time": "5:40 PM - 6:20 PM"
+        },
+        {
+          "name": "Role Model",
+          "stage": "Tito's",
+          "time": "5:45 PM - 6:45 PM"
+        },
+        {
+          "name": "Cloonee",
+          "stage": "DOLLAPALOOZA",
+          "time": "5:50 PM - 6:50 PM"
+        },
+        {
+          "name": "Magdalena Bay",
+          "stage": "Lakeshore",
+          "time": "6:00 PM - 7:00 PM"
+        },
+        {
+          "name": "Overmono",
+          "stage": "The Grove",
+          "time": "6:30 PM - 7:15 PM"
+        },
+        {
+          "name": "Cage the Elephant",
+          "stage": "Bud Light",
+          "time": "6:45 PM - 7:45 PM"
+        },
+        {
+          "name": "Xaviersobased",
+          "stage": "BMI",
+          "time": "6:50 PM - 7:30 PM"
+        },
+        {
+          "name": "Mau P",
+          "stage": "DOLLAPALOOZA",
+          "time": "7:00 PM - 8:00 PM"
+        },
+        {
+          "name": "Gracie Abrams",
+          "stage": "T-Mobile",
+          "time": "7:00 PM - 8:00 PM"
+        },
+        {
+          "name": "2Hollis",
+          "stage": "The Grove",
+          "time": "7:45 PM - 8:30 PM"
+        },
+        {
+          "name": "Alex Warren",
+          "stage": "Tito's",
+          "time": "7:45 PM - 8:30 PM"
+        },
+        {
+          "name": "Royel Otis",
+          "stage": "Lakeshore",
+          "time": "8:00 PM - 9:00 PM"
+        },
+        {
+          "name": "Dom Dolla",
+          "stage": "DOLLAPALOOZA",
+          "time": "8:30 PM - 9:45 PM"
+        },
+        {
+          "name": "Luke Combs",
+          "stage": "Bud Light",
+          "time": "8:30 PM - 10:00 PM"
+        },
+        {
+          "name": "Xdinary Heroes",
+          "stage": "The Grove",
+          "time": "9:00 PM - 10:00 PM"
+        },
+        {
+          "name": "Tyler, the Creator",
+          "stage": "T-Mobile",
+          "time": "9:00 PM - close"
+        }
+      ]
+    },
+    "Friday": {
+      "stages": [
+        "T-Mobile",
+        "Perry's",
+        "Lakeshore",
+        "BMI",
+        "The Grove",
+        "Tito's",
+        "Bud Light"
+      ],
+      "artists": [
+        {
+          "name": "Tanner Adell",
+          "stage": "T-Mobile",
+          "time": "01:15 PM - 02:00 PM"
+        },
+        {
+          "name": "Gigi Perez",
+          "stage": "T-Mobile",
+          "time": "02:45 PM - 03:40 PM"
+        },
+        {
+          "name": "Foster the People",
+          "stage": "T-Mobile",
+          "time": "04:40 PM - 05:40 PM"
+        },
+        {
+          "name": "Djo",
+          "stage": "T-Mobile",
+          "time": "06:40 PM - 07:40 PM"
+        },
+        {
+          "name": "Olivia Rodrigo",
+          "stage": "T-Mobile",
+          "time": "08:40 PM - 10:00 PM"
+        },
+        {
+          "name": "Mary Droppinz",
+          "stage": "Perry's",
+          "time": "12:00 PM - 12:35 PM"
+        },
+        {
+          "name": "Hex Cougar",
+          "stage": "Perry's",
+          "time": "12:40 PM - 01:15 PM"
+        },
+        {
+          "name": "Viperactive",
+          "stage": "Perry's",
+          "time": "01:25 PM - 02:10 PM"
+        },
+        {
+          "name": "Murda Beatz",
+          "stage": "Perry's",
+          "time": "02:20 PM - 03:05 PM"
+        },
+        {
+          "name": "Alleycvt",
+          "stage": "Perry's",
+          "time": "03:15 PM - 04:00 PM"
+        },
+        {
+          "name": "BUNT.",
+          "stage": "Perry's",
+          "time": "04:15 PM - 05:15 PM"
+        },
+        {
+          "name": "Tape B",
+          "stage": "Perry's",
+          "time": "05:45 PM - 06:45 PM"
+        },
+        {
+          "name": "Isoxo",
+          "stage": "Perry's",
+          "time": "07:00 PM - 08:00 PM"
+        },
+        {
+          "name": "Knock2",
+          "stage": "Perry's",
+          "time": "08:30 PM - 09:45 PM"
+        },
+        {
+          "name": "Dogpark",
+          "stage": "Lakeshore",
+          "time": "12:30 PM - 01:15 PM"
+        },
+        {
+          "name": "Isabel LaRosa",
+          "stage": "Lakeshore",
+          "time": "02:00 PM - 02:45 PM"
+        },
+        {
+          "name": "Ravyn Lenae",
+          "stage": "Lakeshore",
+          "time": "03:40 PM - 04:40 PM"
+        },
+        {
+          "name": "Amaarae",
+          "stage": "Lakeshore",
+          "time": "05:40 PM - 06:40 PM"
+        },
+        {
+          "name": "Wallows",
+          "stage": "Lakeshore",
+          "time": "07:40 PM - 08:40 PM"
+        },
+        {
+          "name": "Winyah",
+          "stage": "BMI",
+          "time": "01:00 PM - 01:40 PM"
+        },
+        {
+          "name": "Cassandra Coleman",
+          "stage": "BMI",
+          "time": "02:10 PM - 02:50 PM"
+        },
+        {
+          "name": "Caroline Kingsbury",
+          "stage": "BMI",
+          "time": "03:20 PM - 04:00 PM"
+        },
+        {
+          "name": "Midnight Generation",
+          "stage": "BMI",
+          "time": "04:30 PM - 05:10 PM"
+        },
+        {
+          "name": "Carol Ades",
+          "stage": "BMI",
+          "time": "05:40 PM - 06:20 PM"
+        },
+        {
+          "name": "Star Bandz",
+          "stage": "BMI",
+          "time": "06:50 PM - 07:30 PM"
+        },
+        {
+          "name": "Jesse Detor",
+          "stage": "The Grove",
+          "time": "12:00 PM - 12:30 PM"
+        },
+        {
+          "name": "Old Mervs",
+          "stage": "The Grove",
+          "time": "12:50 PM - 01:30 PM"
+        },
+        {
+          "name": "Hey, Nothing",
+          "stage": "The Grove",
+          "time": "01:50 PM - 02:30 PM"
+        },
+        {
+          "name": "Zinadelphia",
+          "stage": "The Grove",
+          "time": "02:50 PM - 03:30 PM"
+        },
+        {
+          "name": "Orla Gartland",
+          "stage": "The Grove",
+          "time": "04:00 PM - 04:45 PM"
+        },
+        {
+          "name": "The Dare",
+          "stage": "The Grove",
+          "time": "05:15 PM - 06:00 PM"
+        },
+        {
+          "name": "Ocean Alley",
+          "stage": "The Grove",
+          "time": "06:30 PM - 07:15 PM"
+        },
+        {
+          "name": "Wyatt Flores",
+          "stage": "The Grove",
+          "time": "07:45 PM - 08:30 PM"
+        },
+        {
+          "name": "Bladee",
+          "stage": "The Grove",
+          "time": "09:00 PM - 10:00 PM"
+        },
+        {
+          "name": "Alemeda",
+          "stage": "Tito's",
+          "time": "12:00 PM - 12:45 PM"
+        },
+        {
+          "name": "Kenny Mason",
+          "stage": "Tito's",
+          "time": "01:30 PM - 02:30 PM"
+        },
+        {
+          "name": "Del Water Gap",
+          "stage": "Tito's",
+          "time": "03:30 PM - 04:30 PM"
+        },
+        {
+          "name": "Flipturn",
+          "stage": "Tito's",
+          "time": "05:30 PM - 06:30 PM"
+        },
+        {
+          "name": "Mary Droppinz",
+          "stage": "Tito's",
+          "time": "07:30 PM - 08:30 PM"
+        },
+        {
+          "name": "Jane Remover",
+          "stage": "Bud Light",
+          "time": "12:45 PM - 01:30 PM"
+        },
+        {
+          "name": "Otoboke Beaver",
+          "stage": "Bud Light",
+          "time": "02:30 PM - 03:30 PM"
+        },
+        {
+          "name": "T-Pain",
+          "stage": "Bud Light",
+          "time": "04:30 PM - 05:30 PM"
+        },
+        {
+          "name": "Bleachers",
+          "stage": "Bud Light",
+          "time": "06:30 PM - 07:30 PM"
+        },
+        {
+          "name": "Korn",
+          "stage": "Bud Light",
+          "time": "08:30 PM - 10:00 PM"
+        }
+      ]
+    },
+    "Saturday": {
+      "stages": [
+        "T-Mobile",
+        "Bud Light",
+        "Lakeshore",
+        "Perry's",
+        "The Grove",
+        "Tito's",
+        "BMI",
+        "Kidzapalooza",
+        "Bonus Tracks",
+        "Toyota Music Den"
+      ],
+      "artists": [
+        {
+          "name": "Tessla",
+          "stage": "Perry's",
+          "time": "12:00 PM - 12:35 PM"
+        },
+        {
+          "name": "Birds of a Feather",
+          "stage": "Kidzapalooza",
+          "time": "12:00 PM - 12:30 PM"
+        },
+        {
+          "name": "Landon Conrath",
+          "stage": "The Grove",
+          "time": "12:00 PM - 12:30 PM"
+        },
+        {
+          "name": "Winnetka Bowling League",
+          "stage": "Lakeshore",
+          "time": "12:15 PM - 01:00 PM"
+        },
+        {
+          "name": "Jev",
+          "stage": "Perry's",
+          "time": "12:40 PM - 01:20 PM"
+        },
+        {
+          "name": "Dua Saleh",
+          "stage": "The Grove",
+          "time": "12:50 PM - 01:30 PM"
+        },
+        {
+          "name": "Eddie and the Getaway",
+          "stage": "BMI",
+          "time": "01:00 PM - 01:40 PM"
+        },
+        {
+          "name": "Kickflip",
+          "stage": "Bud Light",
+          "time": "01:00 PM - 01:45 PM"
+        },
+        {
+          "name": "Sam Austins",
+          "stage": "T-Mobile",
+          "time": "01:10 PM - 01:55 PM"
+        },
+        {
+          "name": "Daniel Allan",
+          "stage": "Perry's",
+          "time": "01:30 PM - 02:15 PM"
+        },
+        {
+          "name": "Fyütch & Aura V",
+          "stage": "Kidzapalooza",
+          "time": "01:30 PM - 02:00 PM"
+        },
+        {
+          "name": "Wasia Project",
+          "stage": "Tito's",
+          "time": "01:45 PM - 02:30 PM"
+        },
+        {
+          "name": "Salute",
+          "stage": "The Grove",
+          "time": "01:50 PM - 02:30 PM"
+        },
+        {
+          "name": "Charlotte Lawrence",
+          "stage": "Lakeshore",
+          "time": "01:55 PM - 02:55 PM"
+        },
+        {
+          "name": "Carter Vail",
+          "stage": "BMI",
+          "time": "02:10 PM - 02:50 PM"
+        },
+        {
+          "name": "Layz",
+          "stage": "Perry's",
+          "time": "02:30 PM - 03:15 PM"
+        },
+        {
+          "name": "Bôa",
+          "stage": "Bud Light",
+          "time": "02:30 PM - 03:15 PM"
+        },
+        {
+          "name": "Ole 60",
+          "stage": "The Grove",
+          "time": "02:50 PM - 03:30 PM"
+        },
+        {
+          "name": "Max McNown",
+          "stage": "T-Mobile",
+          "time": "02:55 PM - 03:55 PM"
+        },
+        {
+          "name": "Divinity Roxx & Divi Roxx Kids",
+          "stage": "Kidzapalooza",
+          "time": "03:00 PM - 03:30 PM"
+        },
+        {
+          "name": "The Bingo-Go-Go",
+          "stage": "Bonus Tracks",
+          "time": "03:15 PM - 03:45 PM"
+        },
+        {
+          "name": "Rachel Grae",
+          "stage": "BMI",
+          "time": "03:20 PM - 04:00 PM"
+        },
+        {
+          "name": "Flux Pavilion",
+          "stage": "Perry's",
+          "time": "03:30 PM - 04:30 PM"
+        },
+        {
+          "name": "Montell Fish",
+          "stage": "Tito's",
+          "time": "03:30 PM - 04:30 PM"
+        },
+        {
+          "name": "Bossman Dlow",
+          "stage": "Lakeshore",
+          "time": "03:55 PM - 04:55 PM"
+        },
+        {
+          "name": "The Happiness Club",
+          "stage": "Kidzapalooza",
+          "time": "04:00 PM - 04:30 PM"
+        },
+        {
+          "name": "Naomi Scott",
+          "stage": "The Grove",
+          "time": "04:00 PM - 04:45 PM"
+        },
+        {
+          "name": "Winnetka Bowling League",
+          "stage": "Toyota Music Den",
+          "time": "04:00 PM - 04:30 PM"
+        },
+        {
+          "name": "Young Miko",
+          "stage": "Bud Light",
+          "time": "04:30 PM - 05:30 PM"
+        },
+        {
+          "name": "Marina",
+          "stage": "T-Mobile",
+          "time": "4:55 PM - 5:55 PM"
+        },
+        {
+          "name": "Dr. Fresch",
+          "stage": "Perry's",
+          "time": "04:45 PM - 05:45 PM"
+        },
+        {
+          "name": "Orion Sun",
+          "stage": "The Grove",
+          "time": "05:15 PM - 06:00 PM"
+        },
+        {
+          "name": "Zoe Ko",
+          "stage": "BMI",
+          "time": "05:40 PM - 06:20 PM"
+        },
+        {
+          "name": "Levity",
+          "stage": "Perry's",
+          "time": "05:45 PM - 06:45 PM"
+        },
+        {
+          "name": "Fujii Kaze",
+          "stage": "Tito's",
+          "time": "05:45 PM - 06:45 PM"
+        },
+        {
+          "name": "Bilmuri",
+          "stage": "The Grove",
+          "time": "06:30 PM - 07:15 PM"
+        },
+        {
+          "name": "Clairo",
+          "stage": "Bud Light",
+          "time": "06:30 PM - 07:30 PM"
+        },
+        {
+          "name": "Doechii",
+          "stage": "T-Mobile",
+          "time": "06:55 PM - 07:45 PM"
+        },
+        {
+          "name": "People R Ugly",
+          "stage": "BMI",
+          "time": "06:50 PM - 07:30 PM"
+        },
+        {
+          "name": "Chase & Status",
+          "stage": "Perry's",
+          "time": "07:30 PM - 08:30 PM"
+        },
+        {
+          "name": "Damiano David",
+          "stage": "The Grove",
+          "time": "07:45 PM - 08:30 PM"
+        },
+        {
+          "name": "JPEGMAFIA",
+          "stage": "Lakeshore",
+          "time": "07:45 PM - 08:45 PM"
+        },
+        {
+          "name": "Twice",
+          "stage": "Bud Light",
+          "time": "08:30 PM - 10:00 PM"
+        },
+        {
+          "name": "Two Friends",
+          "stage": "Perry's",
+          "time": "08:45 PM - 09:45 PM"
+        },
+        {
+          "name": "RÜFÜS du Sol",
+          "stage": "T-Mobile",
+          "time": "08:45 PM - 10:00 PM"
+        },
+        {
+          "name": "Mk.gee",
+          "stage": "The Grove",
+          "time": "09:00 PM - 10:00 PM"
+        }
+      ]
+    },
+    "Sunday": {
+      "stages": [
+        "T-Mobile",
+        "Bud Light",
+        "Lakeshore",
+        "Perry's",
+        "The Grove",
+        "Tito's",
+        "BMI",
+        "Kidzapalooza",
+        "Bonus Tracks",
+        "Toyota Music Den",
+        "Fountain",
+        "Bud Light Backyard"
+      ],
+      "artists": [
+        {
+          "name": "Raecola",
+          "stage": "Perry's",
+          "time": "12:00 PM - 12:30 PM"
+        },
+        {
+          "name": "Birds of a Feather",
+          "stage": "Kidzapalooza",
+          "time": "12:00 PM - 12:30 PM"
+        },
+        {
+          "name": "Kaicrewsade",
+          "stage": "The Grove",
+          "time": "12:00 PM - 12:30 PM"
+        },
+        {
+          "name": "Landon Barker",
+          "stage": "Tito's",
+          "time": "12:30 PM - 1:15 PM"
+        },
+        {
+          "name": "Jigitz",
+          "stage": "Perry's",
+          "time": "12:45 PM - 1:30 PM"
+        },
+        {
+          "name": "Joe P",
+          "stage": "Lakeshore",
+          "time": "12:45 PM - 1:30 PM"
+        },
+        {
+          "name": "The Criticals",
+          "stage": "The Grove",
+          "time": "12:50 PM - 1:30 PM"
+        },
+        {
+          "name": "Benches",
+          "stage": "BMI",
+          "time": "1:00 PM - 1:40 PM"
+        },
+        {
+          "name": "Flowerovlove",
+          "stage": "Bud Light",
+          "time": "1:15 PM - 2:00 PM"
+        },
+        {
+          "name": "Laila!",
+          "stage": "T-Mobile",
+          "time": "1:30 PM - 2:15 PM"
+        },
+        {
+          "name": "Divinity Roxx & Divi Roxx Kids",
+          "stage": "Kidzapalooza",
+          "time": "1:30 PM - 2:00 PM"
+        },
+        {
+          "name": "Nimino",
+          "stage": "Perry's",
+          "time": "1:45 PM - 2:45 PM"
+        },
+        {
+          "name": "Vincent Lima",
+          "stage": "The Grove",
+          "time": "1:50 PM - 2:30 PM"
+        },
+        {
+          "name": "Post Animal",
+          "stage": "Tito's",
+          "time": "2:00 PM - 3:00 PM"
+        },
+        {
+          "name": "The Droptines",
+          "stage": "Toyota Music Den",
+          "time": "2:00 PM - 2:30 PM"
+        },
+        {
+          "name": "John Walt Foundation: Chicag...",
+          "stage": "Fountain",
+          "time": "2:00 PM - 4:00 PM"
+        },
+        {
+          "name": "Lekan",
+          "stage": "BMI",
+          "time": "2:10 PM - 2:50 PM"
+        },
+        {
+          "name": "Boynextdoor",
+          "stage": "Lakeshore",
+          "time": "2:15 PM - 3:15 PM"
+        },
+        {
+          "name": "Willow Avalon",
+          "stage": "The Grove",
+          "time": "2:50 PM - 3:30 PM"
+        },
+        {
+          "name": "Rebecca Black",
+          "stage": "Perry's",
+          "time": "3:00 PM - 4:00 PM"
+        },
+        {
+          "name": "Q Brothers",
+          "stage": "Kidzapalooza",
+          "time": "3:00 PM - 3:30 PM"
+        },
+        {
+          "name": "Wild Rivers",
+          "stage": "Bud Light",
+          "time": "3:00 PM - 4:00 PM"
+        },
+        {
+          "name": "Joe P",
+          "stage": "Toyota Music Den",
+          "time": "3:00 PM - 3:30 PM"
+        },
+        {
+          "name": "Katseye",
+          "stage": "T-Mobile",
+          "time": "3:15 PM - 4:00 PM"
+        },
+        {
+          "name": "The Second City: Comedy Mixtape",
+          "stage": "Bonus Tracks",
+          "time": "3:15 PM - 3:45 PM"
+        },
+        {
+          "name": "Sofia Camara",
+          "stage": "BMI",
+          "time": "3:20 PM - 4:00 PM"
+        },
+        {
+          "name": "Mariah the Scientist",
+          "stage": "Lakeshore",
+          "time": "4:00 PM - 5:00 PM"
+        },
+        {
+          "name": "The Happiness Club",
+          "stage": "Kidzapalooza",
+          "time": "4:00 PM - 4:30 PM"
+        },
+        {
+          "name": "La Femme",
+          "stage": "The Grove",
+          "time": "4:00 PM - 4:45 PM"
+        },
+        {
+          "name": "Wave to Earth",
+          "stage": "Tito's",
+          "time": "4:00 PM - 5:00 PM"
+        },
+        {
+          "name": "The Criticals",
+          "stage": "Toyota Music Den",
+          "time": "4:00 PM - 4:30 PM"
+        },
+        {
+          "name": "Chachi (DJ Set)",
+          "stage": "Bud Light Backyard",
+          "time": "4:00 PM - 5:30 PM"
+        },
+        {
+          "name": "Marlon Hoffstadt",
+          "stage": "Perry's",
+          "time": "4:15 PM - 5:15 PM"
+        },
+        {
+          "name": "Aliyah's Interlude",
+          "stage": "BMI",
+          "time": "4:30 PM - 5:10 PM"
+        },
+        {
+          "name": "Isaiah Rashad",
+          "stage": "T-Mobile",
+          "time": "5:00 PM - 6:00 PM"
+        },
+        {
+          "name": "Remi Wolf",
+          "stage": "Bud Light",
+          "time": "5:00 PM - 6:00 PM"
+        },
+        {
+          "name": "Vincent Lima",
+          "stage": "Toyota Music Den",
+          "time": "5:00 PM - 5:30 PM"
+        },
+        {
+          "name": "Fyütch & Aura V",
+          "stage": "Kidzapalooza",
+          "time": "5:15 PM - 5:45 PM"
+        },
+        {
+          "name": "Joey Valence & Brae",
+          "stage": "The Grove",
+          "time": "5:15 PM - 6:00 PM"
+        },
+        {
+          "name": "BLK Odyssy",
+          "stage": "BMI",
+          "time": "5:40 PM - 6:20 PM"
+        },
+        {
+          "name": "Sammy Virji",
+          "stage": "Perry's",
+          "time": "5:45 PM - 6:45 PM"
+        },
+        {
+          "name": "Finneas",
+          "stage": "Lakeshore",
+          "time": "6:00 PM - 7:00 PM"
+        },
+        {
+          "name": "Ian",
+          "stage": "Tito's",
+          "time": "6:00 PM - 7:00 PM"
+        },
+        {
+          "name": "Flowerovlove",
+          "stage": "Toyota Music Den",
+          "time": "6:00 PM - 6:30 PM"
+        },
+        {
+          "name": "Wild Rivers",
+          "stage": "Bud Light Backyard",
+          "time": "6:00 PM - 6:30 PM"
+        },
+        {
+          "name": "Bob's Dance Shop",
+          "stage": "Bonus Tracks",
+          "time": "6:15 PM - 6:45 PM"
+        },
+        {
+          "name": "Maribou State",
+          "stage": "The Grove",
+          "time": "6:30 PM - 7:15 PM"
+        },
+        {
+          "name": "Goo (DJ Set)",
+          "stage": "Bud Light",
+          "time": "6:30 PM - 8:00 PM"
+        },
+        {
+          "name": "Graham Barham",
+          "stage": "BMI",
+          "time": "6:50 PM - 7:30 PM"
+        },
+        {
+          "name": "Dominic Fike",
+          "stage": "T-Mobile",
+          "time": "7:00 PM - 8:00 PM"
+        },
+        {
+          "name": "Gryffin",
+          "stage": "Perry's",
+          "time": "7:00 PM - 8:00 PM"
+        },
+        {
+          "name": "The Marías",
+          "stage": "Bud Light",
+          "time": "7:00 PM - 8:00 PM"
+        },
+        {
+          "name": "Artemas",
+          "stage": "The Grove",
+          "time": "7:45 PM - 8:30 PM"
+        },
+        {
+          "name": "Still Woozy",
+          "stage": "Lakeshore",
+          "time": "8:00 PM - 9:00 PM"
+        },
+        {
+          "name": "Rebecca Black",
+          "stage": "Tito's",
+          "time": "8:00 PM - 8:45 PM"
+        },
+        {
+          "name": "Martin Garrix",
+          "stage": "Perry's",
+          "time": "8:30 PM - 9:45 PM"
+        },
+        {
+          "name": "A$AP Rocky",
+          "stage": "Bud Light",
+          "time": "8:45 PM - 10:00 PM"
+        },
+        {
+          "name": "Sabrina Carpenter",
+          "stage": "T-Mobile",
+          "time": "9:00 PM - 10:00 PM"
+        }
+      ]
+    }
+  },
+  "artists": [
+    {
+      "name": "Silly Goose",
+      "day": "Thursday",
+      "stage": "The Grove"
+    },
+    {
+      "name": "DJ Heather",
+      "day": "Thursday",
+      "stage": "DOLLAPALOOZA"
+    },
+    {
+      "name": "The Symposium",
+      "day": "Thursday",
+      "stage": "Lakeshore"
+    },
+    {
+      "name": "Torren Foot B2B Rawolf Paradiso",
+      "day": "Thursday",
+      "stage": "DOLLAPALOOZA"
+    },
+    {
+      "name": "Jade LeMac",
+      "day": "Thursday",
+      "stage": "Tito's"
+    },
+    {
+      "name": "Girl Tones",
+      "day": "Thursday",
+      "stage": "BMI"
+    },
+    {
+      "name": "Nourished by Time",
+      "day": "Thursday",
+      "stage": "T-Mobile"
+    },
+    {
+      "name": "The Droptines",
+      "day": "Thursday",
+      "stage": "The Grove"
+    },
+    {
+      "name": "Black Party",
+      "day": "Thursday",
+      "stage": "The Grove"
+    },
+    {
+      "name": "Azzecca",
+      "day": "Thursday",
+      "stage": "DOLLAPALOOZA"
+    },
+    {
+      "name": "Julie",
+      "day": "Thursday",
+      "stage": "Lakeshore"
+    },
+    {
+      "name": "ALEXSUCKS",
+      "day": "Thursday",
+      "stage": "BMI"
+    },
+    {
+      "name": "Chicago Made",
+      "day": "Thursday",
+      "stage": "Tito's"
+    },
+    {
+      "name": "Sunami",
+      "day": "Thursday",
+      "stage": "The Grove"
+    },
+    {
+      "name": "Durand Bernarr",
+      "day": "Thursday",
+      "stage": "T-Mobile"
+    },
+    {
+      "name": "Prospa",
+      "day": "Thursday",
+      "stage": "DOLLAPALOOZA"
+    },
+    {
+      "name": "Yana",
+      "day": "Thursday",
+      "stage": "BMI"
+    },
+    {
+      "name": "half•alive",
+      "day": "Thursday",
+      "stage": "Tito's"
+    },
+    {
+      "name": "Fcukers",
+      "day": "Thursday",
+      "stage": "The Grove"
+    },
+    {
+      "name": "Matt Champion",
+      "day": "Thursday",
+      "stage": "Lakeshore"
+    },
+    {
+      "name": "The Blessed Madonna",
+      "day": "Thursday",
+      "stage": "DOLLAPALOOZA"
+    },
+    {
+      "name": "Bo Staloch",
+      "day": "Thursday",
+      "stage": "BMI"
+    },
+    {
+      "name": "Sierra Ferrell",
+      "day": "Thursday",
+      "stage": "Bud Light"
+    },
+    {
+      "name": "Barry Can't Swim",
+      "day": "Thursday",
+      "stage": "T-Mobile"
+    },
+    {
+      "name": "Glass Beams",
+      "day": "Thursday",
+      "stage": "The Grove"
+    },
+    {
+      "name": "Colby Acuff",
+      "day": "Thursday",
+      "stage": "BMI"
+    },
+    {
+      "name": "Role Model",
+      "day": "Thursday",
+      "stage": "Tito's"
+    },
+    {
+      "name": "Cloonee",
+      "day": "Thursday",
+      "stage": "DOLLAPALOOZA"
+    },
+    {
+      "name": "Magdalena Bay",
+      "day": "Thursday",
+      "stage": "Lakeshore"
+    },
+    {
+      "name": "Overmono",
+      "day": "Thursday",
+      "stage": "The Grove"
+    },
+    {
+      "name": "Cage the Elephant",
+      "day": "Thursday",
+      "stage": "Bud Light"
+    },
+    {
+      "name": "Xaviersobased",
+      "day": "Thursday",
+      "stage": "BMI"
+    },
+    {
+      "name": "Mau P",
+      "day": "Thursday",
+      "stage": "DOLLAPALOOZA"
+    },
+    {
+      "name": "Gracie Abrams",
+      "day": "Thursday",
+      "stage": "T-Mobile"
+    },
+    {
+      "name": "2Hollis",
+      "day": "Thursday",
+      "stage": "The Grove"
+    },
+    {
+      "name": "Alex Warren",
+      "day": "Thursday",
+      "stage": "Tito's"
+    },
+    {
+      "name": "Royel Otis",
+      "day": "Thursday",
+      "stage": "Lakeshore"
+    },
+    {
+      "name": "Dom Dolla",
+      "day": "Thursday",
+      "stage": "DOLLAPALOOZA"
+    },
+    {
+      "name": "Luke Combs",
+      "day": "Thursday",
+      "stage": "Bud Light"
+    },
+    {
+      "name": "Xdinary Heroes",
+      "day": "Thursday",
+      "stage": "The Grove"
+    },
+    {
+      "name": "Tyler, the Creator",
+      "day": "Thursday",
+      "stage": "T-Mobile"
+    },
+    {
+      "name": "Tanner Adell",
+      "day": "Friday",
+      "stage": "T-Mobile"
+    },
+    {
+      "name": "Gigi Perez",
+      "day": "Friday",
+      "stage": "T-Mobile"
+    },
+    {
+      "name": "Foster the People",
+      "day": "Friday",
+      "stage": "T-Mobile"
+    },
+    {
+      "name": "Djo",
+      "day": "Friday",
+      "stage": "T-Mobile"
+    },
+    {
+      "name": "Olivia Rodrigo",
+      "day": "Friday",
+      "stage": "T-Mobile"
+    },
+    {
+      "name": "Mary Droppinz",
+      "day": "Friday",
+      "stage": "Perry's"
+    },
+    {
+      "name": "Hex Cougar",
+      "day": "Friday",
+      "stage": "Perry's"
+    },
+    {
+      "name": "Viperactive",
+      "day": "Friday",
+      "stage": "Perry's"
+    },
+    {
+      "name": "Murda Beatz",
+      "day": "Friday",
+      "stage": "Perry's"
+    },
+    {
+      "name": "Alleycvt",
+      "day": "Friday",
+      "stage": "Perry's"
+    },
+    {
+      "name": "BUNT.",
+      "day": "Friday",
+      "stage": "Perry's"
+    },
+    {
+      "name": "Tape B",
+      "day": "Friday",
+      "stage": "Perry's"
+    },
+    {
+      "name": "Isoxo",
+      "day": "Friday",
+      "stage": "Perry's"
+    },
+    {
+      "name": "Knock2",
+      "day": "Friday",
+      "stage": "Perry's"
+    },
+    {
+      "name": "Dogpark",
+      "day": "Friday",
+      "stage": "Lakeshore"
+    },
+    {
+      "name": "Isabel LaRosa",
+      "day": "Friday",
+      "stage": "Lakeshore"
+    },
+    {
+      "name": "Ravyn Lenae",
+      "day": "Friday",
+      "stage": "Lakeshore"
+    },
+    {
+      "name": "Amaarae",
+      "day": "Friday",
+      "stage": "Lakeshore"
+    },
+    {
+      "name": "Wallows",
+      "day": "Friday",
+      "stage": "Lakeshore"
+    },
+    {
+      "name": "Winyah",
+      "day": "Friday",
+      "stage": "BMI"
+    },
+    {
+      "name": "Cassandra Coleman",
+      "day": "Friday",
+      "stage": "BMI"
+    },
+    {
+      "name": "Caroline Kingsbury",
+      "day": "Friday",
+      "stage": "BMI"
+    },
+    {
+      "name": "Midnight Generation",
+      "day": "Friday",
+      "stage": "BMI"
+    },
+    {
+      "name": "Carol Ades",
+      "day": "Friday",
+      "stage": "BMI"
+    },
+    {
+      "name": "Star Bandz",
+      "day": "Friday",
+      "stage": "BMI"
+    },
+    {
+      "name": "Jesse Detor",
+      "day": "Friday",
+      "stage": "The Grove"
+    },
+    {
+      "name": "Old Mervs",
+      "day": "Friday",
+      "stage": "The Grove"
+    },
+    {
+      "name": "Hey, Nothing",
+      "day": "Friday",
+      "stage": "The Grove"
+    },
+    {
+      "name": "Zinadelphia",
+      "day": "Friday",
+      "stage": "The Grove"
+    },
+    {
+      "name": "Orla Gartland",
+      "day": "Friday",
+      "stage": "The Grove"
+    },
+    {
+      "name": "The Dare",
+      "day": "Friday",
+      "stage": "The Grove"
+    },
+    {
+      "name": "Ocean Alley",
+      "day": "Friday",
+      "stage": "The Grove"
+    },
+    {
+      "name": "Wyatt Flores",
+      "day": "Friday",
+      "stage": "The Grove"
+    },
+    {
+      "name": "Bladee",
+      "day": "Friday",
+      "stage": "The Grove"
+    },
+    {
+      "name": "Alemeda",
+      "day": "Friday",
+      "stage": "Tito's"
+    },
+    {
+      "name": "Kenny Mason",
+      "day": "Friday",
+      "stage": "Tito's"
+    },
+    {
+      "name": "Del Water Gap",
+      "day": "Friday",
+      "stage": "Tito's"
+    },
+    {
+      "name": "Flipturn",
+      "day": "Friday",
+      "stage": "Tito's"
+    },
+    {
+      "name": "Jane Remover",
+      "day": "Friday",
+      "stage": "Bud Light"
+    },
+    {
+      "name": "Otoboke Beaver",
+      "day": "Friday",
+      "stage": "Bud Light"
+    },
+    {
+      "name": "T-Pain",
+      "day": "Friday",
+      "stage": "Bud Light"
+    },
+    {
+      "name": "Bleachers",
+      "day": "Friday",
+      "stage": "Bud Light"
+    },
+    {
+      "name": "Korn",
+      "day": "Friday",
+      "stage": "Bud Light"
+    },
+    {
+      "name": "Tessla",
+      "day": "Saturday",
+      "stage": "Perry's"
+    },
+    {
+      "name": "Birds of a Feather",
+      "day": "Saturday",
+      "stage": "Kidzapalooza"
+    },
+    {
+      "name": "Landon Conrath",
+      "day": "Saturday",
+      "stage": "The Grove"
+    },
+    {
+      "name": "Winnetka Bowling League",
+      "day": "Saturday",
+      "stage": "Lakeshore"
+    },
+    {
+      "name": "Jev",
+      "day": "Saturday",
+      "stage": "Perry's"
+    },
+    {
+      "name": "Dua Saleh",
+      "day": "Saturday",
+      "stage": "The Grove"
+    },
+    {
+      "name": "Eddie and the Getaway",
+      "day": "Saturday",
+      "stage": "BMI"
+    },
+    {
+      "name": "Kickflip",
+      "day": "Saturday",
+      "stage": "Bud Light"
+    },
+    {
+      "name": "Sam Austins",
+      "day": "Saturday",
+      "stage": "T-Mobile"
+    },
+    {
+      "name": "Daniel Allan",
+      "day": "Saturday",
+      "stage": "Perry's"
+    },
+    {
+      "name": "Fyütch & Aura V",
+      "day": "Saturday",
+      "stage": "Kidzapalooza"
+    },
+    {
+      "name": "Wasia Project",
+      "day": "Saturday",
+      "stage": "Tito's"
+    },
+    {
+      "name": "Salute",
+      "day": "Saturday",
+      "stage": "The Grove"
+    },
+    {
+      "name": "Charlotte Lawrence",
+      "day": "Saturday",
+      "stage": "Lakeshore"
+    },
+    {
+      "name": "Carter Vail",
+      "day": "Saturday",
+      "stage": "BMI"
+    },
+    {
+      "name": "Layz",
+      "day": "Saturday",
+      "stage": "Perry's"
+    },
+    {
+      "name": "Bôa",
+      "day": "Saturday",
+      "stage": "Bud Light"
+    },
+    {
+      "name": "Ole 60",
+      "day": "Saturday",
+      "stage": "The Grove"
+    },
+    {
+      "name": "Max McNown",
+      "day": "Saturday",
+      "stage": "T-Mobile"
+    },
+    {
+      "name": "Divinity Roxx & Divi Roxx Kids",
+      "day": "Saturday",
+      "stage": "Kidzapalooza"
+    },
+    {
+      "name": "The Bingo-Go-Go",
+      "day": "Saturday",
+      "stage": "Bonus Tracks"
+    },
+    {
+      "name": "Rachel Grae",
+      "day": "Saturday",
+      "stage": "BMI"
+    },
+    {
+      "name": "Flux Pavilion",
+      "day": "Saturday",
+      "stage": "Perry's"
+    },
+    {
+      "name": "Montell Fish",
+      "day": "Saturday",
+      "stage": "Tito's"
+    },
+    {
+      "name": "Bossman Dlow",
+      "day": "Saturday",
+      "stage": "Lakeshore"
+    },
+    {
+      "name": "The Happiness Club",
+      "day": "Saturday",
+      "stage": "Kidzapalooza"
+    },
+    {
+      "name": "Naomi Scott",
+      "day": "Saturday",
+      "stage": "The Grove"
+    },
+    {
+      "name": "Young Miko",
+      "day": "Saturday",
+      "stage": "Bud Light"
+    },
+    {
+      "name": "Marina",
+      "day": "Saturday",
+      "stage": "T-Mobile"
+    },
+    {
+      "name": "Dr. Fresch",
+      "day": "Saturday",
+      "stage": "Perry's"
+    },
+    {
+      "name": "Orion Sun",
+      "day": "Saturday",
+      "stage": "The Grove"
+    },
+    {
+      "name": "Zoe Ko",
+      "day": "Saturday",
+      "stage": "BMI"
+    },
+    {
+      "name": "Levity",
+      "day": "Saturday",
+      "stage": "Perry's"
+    },
+    {
+      "name": "Fujii Kaze",
+      "day": "Saturday",
+      "stage": "Tito's"
+    },
+    {
+      "name": "Bilmuri",
+      "day": "Saturday",
+      "stage": "The Grove"
+    },
+    {
+      "name": "Clairo",
+      "day": "Saturday",
+      "stage": "Bud Light"
+    },
+    {
+      "name": "Doechii",
+      "day": "Saturday",
+      "stage": "T-Mobile"
+    },
+    {
+      "name": "People R Ugly",
+      "day": "Saturday",
+      "stage": "BMI"
+    },
+    {
+      "name": "Chase & Status",
+      "day": "Saturday",
+      "stage": "Perry's"
+    },
+    {
+      "name": "Damiano David",
+      "day": "Saturday",
+      "stage": "The Grove"
+    },
+    {
+      "name": "JPEGMAFIA",
+      "day": "Saturday",
+      "stage": "Lakeshore"
+    },
+    {
+      "name": "Twice",
+      "day": "Saturday",
+      "stage": "Bud Light"
+    },
+    {
+      "name": "Two Friends",
+      "day": "Saturday",
+      "stage": "Perry's"
+    },
+    {
+      "name": "RÜFÜS du Sol",
+      "day": "Saturday",
+      "stage": "T-Mobile"
+    },
+    {
+      "name": "Mk.gee",
+      "day": "Saturday",
+      "stage": "The Grove"
+    },
+    {
+      "name": "Raecola",
+      "day": "Sunday",
+      "stage": "Perry's"
+    },
+    {
+      "name": "Kaicrewsade",
+      "day": "Sunday",
+      "stage": "The Grove"
+    },
+    {
+      "name": "Landon Barker",
+      "day": "Sunday",
+      "stage": "Tito's"
+    },
+    {
+      "name": "Jigitz",
+      "day": "Sunday",
+      "stage": "Perry's"
+    },
+    {
+      "name": "Joe P",
+      "day": "Sunday",
+      "stage": "Lakeshore"
+    },
+    {
+      "name": "The Criticals",
+      "day": "Sunday",
+      "stage": "The Grove"
+    },
+    {
+      "name": "Benches",
+      "day": "Sunday",
+      "stage": "BMI"
+    },
+    {
+      "name": "Flowerovlove",
+      "day": "Sunday",
+      "stage": "Bud Light"
+    },
+    {
+      "name": "Laila!",
+      "day": "Sunday",
+      "stage": "T-Mobile"
+    },
+    {
+      "name": "Nimino",
+      "day": "Sunday",
+      "stage": "Perry's"
+    },
+    {
+      "name": "Vincent Lima",
+      "day": "Sunday",
+      "stage": "The Grove"
+    },
+    {
+      "name": "Post Animal",
+      "day": "Sunday",
+      "stage": "Tito's"
+    },
+    {
+      "name": "John Walt Foundation: Chicag...",
+      "day": "Sunday",
+      "stage": "Fountain"
+    },
+    {
+      "name": "Lekan",
+      "day": "Sunday",
+      "stage": "BMI"
+    },
+    {
+      "name": "Boynextdoor",
+      "day": "Sunday",
+      "stage": "Lakeshore"
+    },
+    {
+      "name": "Willow Avalon",
+      "day": "Sunday",
+      "stage": "The Grove"
+    },
+    {
+      "name": "Rebecca Black",
+      "day": "Sunday",
+      "stage": "Perry's"
+    },
+    {
+      "name": "Q Brothers",
+      "day": "Sunday",
+      "stage": "Kidzapalooza"
+    },
+    {
+      "name": "Wild Rivers",
+      "day": "Sunday",
+      "stage": "Bud Light"
+    },
+    {
+      "name": "Katseye",
+      "day": "Sunday",
+      "stage": "T-Mobile"
+    },
+    {
+      "name": "The Second City: Comedy Mixtape",
+      "day": "Sunday",
+      "stage": "Bonus Tracks"
+    },
+    {
+      "name": "Sofia Camara",
+      "day": "Sunday",
+      "stage": "BMI"
+    },
+    {
+      "name": "Mariah the Scientist",
+      "day": "Sunday",
+      "stage": "Lakeshore"
+    },
+    {
+      "name": "La Femme",
+      "day": "Sunday",
+      "stage": "The Grove"
+    },
+    {
+      "name": "Wave to Earth",
+      "day": "Sunday",
+      "stage": "Tito's"
+    },
+    {
+      "name": "Chachi (DJ Set)",
+      "day": "Sunday",
+      "stage": "Bud Light Backyard"
+    },
+    {
+      "name": "Marlon Hoffstadt",
+      "day": "Sunday",
+      "stage": "Perry's"
+    },
+    {
+      "name": "Aliyah's Interlude",
+      "day": "Sunday",
+      "stage": "BMI"
+    },
+    {
+      "name": "Isaiah Rashad",
+      "day": "Sunday",
+      "stage": "T-Mobile"
+    },
+    {
+      "name": "Remi Wolf",
+      "day": "Sunday",
+      "stage": "Bud Light"
+    },
+    {
+      "name": "Joey Valence & Brae",
+      "day": "Sunday",
+      "stage": "The Grove"
+    },
+    {
+      "name": "BLK Odyssy",
+      "day": "Sunday",
+      "stage": "BMI"
+    },
+    {
+      "name": "Sammy Virji",
+      "day": "Sunday",
+      "stage": "Perry's"
+    },
+    {
+      "name": "Finneas",
+      "day": "Sunday",
+      "stage": "Lakeshore"
+    },
+    {
+      "name": "Ian",
+      "day": "Sunday",
+      "stage": "Tito's"
+    },
+    {
+      "name": "Bob's Dance Shop",
+      "day": "Sunday",
+      "stage": "Bonus Tracks"
+    },
+    {
+      "name": "Maribou State",
+      "day": "Sunday",
+      "stage": "The Grove"
+    },
+    {
+      "name": "Goo (DJ Set)",
+      "day": "Sunday",
+      "stage": "Bud Light"
+    },
+    {
+      "name": "Graham Barham",
+      "day": "Sunday",
+      "stage": "BMI"
+    },
+    {
+      "name": "Dominic Fike",
+      "day": "Sunday",
+      "stage": "T-Mobile"
+    },
+    {
+      "name": "Gryffin",
+      "day": "Sunday",
+      "stage": "Perry's"
+    },
+    {
+      "name": "The Marías",
+      "day": "Sunday",
+      "stage": "Bud Light"
+    },
+    {
+      "name": "Artemas",
+      "day": "Sunday",
+      "stage": "The Grove"
+    },
+    {
+      "name": "Still Woozy",
+      "day": "Sunday",
+      "stage": "Lakeshore"
+    },
+    {
+      "name": "Martin Garrix",
+      "day": "Sunday",
+      "stage": "Perry's"
+    },
+    {
+      "name": "A$AP Rocky",
+      "day": "Sunday",
+      "stage": "Bud Light"
+    },
+    {
+      "name": "Sabrina Carpenter",
+      "day": "Sunday",
+      "stage": "T-Mobile"
+    }
+  ]
+}

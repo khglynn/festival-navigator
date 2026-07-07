@@ -7,6 +7,10 @@ import { scheduleSync } from './sync.js';
 import { parseBulkLine } from './parse.js';
 
 export function downloadSchedule() {
+  if (!state.fest().days || !state.currentDay) {
+    openInfoModal(`<p class="text-gray-300">The image download works on the schedule grid — this festival has no stage schedule yet.</p>`);
+    return;
+  }
   openInfoModal(`<div class="text-center"><h3 class="text-2xl font-bold mb-2 accent-text">Generating Image...</h3><p class="text-gray-300">One moment.</p></div>`);
   const content = document.getElementById('downloadable-content');
   const keyEl = document.getElementById('color-key-container');
@@ -44,7 +48,10 @@ export function handleBulkAdd() {
   const input = document.getElementById('artist-paste-input');
   const raw = input.value.trim();
   if (!raw) { alert('Paste a list of picks first.'); return; }
-  const allArtists = Object.values(state.fest().days).flatMap(d => d.artists);
+  const fest = state.fest();
+  const allArtists = fest.days
+    ? Object.values(fest.days).flatMap(d => d.artists)
+    : fest.artists;
   let found = 0; const notFound = [];
   raw.split('\n').forEach(line => {
     const parsed = parseBulkLine(line);

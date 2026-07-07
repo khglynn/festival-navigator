@@ -1,0 +1,74 @@
+[
+  {
+    "id": "lost-lands-2026",
+    "name": "Lost Lands",
+    "year": "'26",
+    "status": "lineup",
+    "dates": "September 18\u201320, 2026 (main festival, Fri\u2013Sun); a separately-billed \"Early Arrival\" pre-party runs Wednesday Sept 16 and Thursday Sept 17",
+    "location": "Thornville, Ohio",
+    "accent": "74, 222, 128"
+  },
+  {
+    "id": "portola-2026",
+    "name": "Portola",
+    "year": "'26",
+    "status": "lineup",
+    "dates": "September 26\u201327, 2026",
+    "location": "San Francisco, CA",
+    "accent": "56, 189, 248"
+  },
+  {
+    "id": "acl-2026",
+    "name": "ACL Music Festival",
+    "year": "'26",
+    "status": "lineup",
+    "dates": "October 2\u20134, 2026 (Weekend One) and October 9\u201311, 2026 (Weekend Two)",
+    "location": "Austin, TX",
+    "accent": "250, 204, 21"
+  },
+  {
+    "id": "edc-orlando-2026",
+    "name": "EDC Orlando",
+    "year": "'26",
+    "status": "lineup",
+    "dates": "November 6-8, 2026 (Friday-Sunday)",
+    "location": "Orlando, FL",
+    "accent": "244, 114, 182"
+  },
+  {
+    "id": "seismic-9",
+    "name": "Seismic Dance Event 9.0",
+    "year": "'26",
+    "status": "lineup",
+    "dates": "November 13-15, 2026 (Friday-Sunday)",
+    "location": "Austin, TX",
+    "accent": "167, 139, 250"
+  },
+  {
+    "id": "tomorrowland-winter-2027",
+    "name": "Tomorrowland Winter",
+    "year": "'27",
+    "status": "lineup",
+    "dates": "March 20\u201327, 2027 (8-day event, seventh edition)",
+    "location": "Alpe d'Huez, France",
+    "accent": "147, 197, 253"
+  },
+  {
+    "id": "electric-forest-2026",
+    "name": "Electric Forest",
+    "year": "'26",
+    "status": "archived",
+    "dates": "Jun 25, Jun 26, Jun 27, Jun 28",
+    "location": "Rothbury, MI",
+    "accent": "16, 185, 129"
+  },
+  {
+    "id": "lollapalooza-2025",
+    "name": "Lollapalooza",
+    "year": "",
+    "status": "archived",
+    "dates": "",
+    "location": "Chicago, IL",
+    "accent": "236, 72, 153"
+  }
+]

@@ -1,0 +1,396 @@
+{
+  "id": "lost-lands-2026",
+  "name": "Lost Lands",
+  "year": "'26",
+  "subtitle": "Legend Valley",
+  "location": "Thornville, Ohio",
+  "dates": "September 18–20, 2026 (main festival, Fri–Sun); a separately-billed \"Early Arrival\" pre-party runs Wednesday Sept 16 and Thursday Sept 17",
+  "accent": "74, 222, 128",
+  "status": "lineup",
+  "artists": [
+    {
+      "name": "Adventure Club"
+    },
+    {
+      "name": "Æon:Mode"
+    },
+    {
+      "name": "ALLEYCVT"
+    },
+    {
+      "name": "ARMNHMR"
+    },
+    {
+      "name": "ATLiens"
+    },
+    {
+      "name": "Audiofreq"
+    },
+    {
+      "name": "Barely Alive"
+    },
+    {
+      "name": "Bear Grillz"
+    },
+    {
+      "name": "Benda"
+    },
+    {
+      "name": "Blossom"
+    },
+    {
+      "name": "Boogie T"
+    },
+    {
+      "name": "Borgore"
+    },
+    {
+      "name": "Bou"
+    },
+    {
+      "name": "Calcium"
+    },
+    {
+      "name": "Canabliss"
+    },
+    {
+      "name": "Caspa"
+    },
+    {
+      "name": "Crankdat"
+    },
+    {
+      "name": "Craze"
+    },
+    {
+      "name": "Culture Shock"
+    },
+    {
+      "name": "Cyclops"
+    },
+    {
+      "name": "Delta Heavy"
+    },
+    {
+      "name": "Dieselboy"
+    },
+    {
+      "name": "Dion Timmer"
+    },
+    {
+      "name": "Dirt Monkey"
+    },
+    {
+      "name": "Dirtyphonics"
+    },
+    {
+      "name": "Distinct Motive"
+    },
+    {
+      "name": "Doctor P"
+    },
+    {
+      "name": "Dr. Fresch"
+    },
+    {
+      "name": "DRINKURWATER"
+    },
+    {
+      "name": "Effin"
+    },
+    {
+      "name": "Emorfik"
+    },
+    {
+      "name": "Eptic"
+    },
+    {
+      "name": "Excision (2-Hour Set)"
+    },
+    {
+      "name": "Excision (Detox Set)"
+    },
+    {
+      "name": "Excision B2B Space Laces"
+    },
+    {
+      "name": "Flosstradamus"
+    },
+    {
+      "name": "Flux Pavilion"
+    },
+    {
+      "name": "FuntCase"
+    },
+    {
+      "name": "Ganja White Night"
+    },
+    {
+      "name": "Ghastly"
+    },
+    {
+      "name": "GHENGAR"
+    },
+    {
+      "name": "gladde paling"
+    },
+    {
+      "name": "Grabbitz"
+    },
+    {
+      "name": "Hairitage"
+    },
+    {
+      "name": "Hedex"
+    },
+    {
+      "name": "HEYZ"
+    },
+    {
+      "name": "HOL!"
+    },
+    {
+      "name": "Illenium"
+    },
+    {
+      "name": "INFEKT"
+    },
+    {
+      "name": "Ivy Lab"
+    },
+    {
+      "name": "Jantsen"
+    },
+    {
+      "name": "Jessica Audiffred"
+    },
+    {
+      "name": "Jkyl & Hyde"
+    },
+    {
+      "name": "Kai Wachi"
+    },
+    {
+      "name": "Know Good"
+    },
+    {
+      "name": "Kompany"
+    },
+    {
+      "name": "Krewella"
+    },
+    {
+      "name": "LAYZ"
+    },
+    {
+      "name": "Level Up"
+    },
+    {
+      "name": "Levity"
+    },
+    {
+      "name": "Lil Texas"
+    },
+    {
+      "name": "Liquid Stranger"
+    },
+    {
+      "name": "LYNY"
+    },
+    {
+      "name": "Mefjus"
+    },
+    {
+      "name": "NGHTMRE"
+    },
+    {
+      "name": "Oliverse"
+    },
+    {
+      "name": "Passport"
+    },
+    {
+      "name": "PhaseOne"
+    },
+    {
+      "name": "Ravenscoon"
+    },
+    {
+      "name": "Ray Volpe"
+    },
+    {
+      "name": "Reaper"
+    },
+    {
+      "name": "THE RESISTANCE"
+    },
+    {
+      "name": "Riot Ten"
+    },
+    {
+      "name": "Samplifire"
+    },
+    {
+      "name": "Seven Lions"
+    },
+    {
+      "name": "Sigma"
+    },
+    {
+      "name": "SIPPY"
+    },
+    {
+      "name": "SLANDER"
+    },
+    {
+      "name": "Smoakland"
+    },
+    {
+      "name": "SoDown"
+    },
+    {
+      "name": "Stumpi"
+    },
+    {
+      "name": "Subtronics"
+    },
+    {
+      "name": "Sullivan King"
+    },
+    {
+      "name": "Taiki Nulight"
+    },
+    {
+      "name": "Trivecta"
+    },
+    {
+      "name": "TRUTH"
+    },
+    {
+      "name": "Virtual Riot"
+    },
+    {
+      "name": "Wax Motif"
+    },
+    {
+      "name": "Whethan"
+    },
+    {
+      "name": "The Widdler"
+    },
+    {
+      "name": "William Black"
+    },
+    {
+      "name": "WonkyWilla"
+    },
+    {
+      "name": "Wooli"
+    },
+    {
+      "name": "YOOKiE"
+    },
+    {
+      "name": "Zingara"
+    },
+    {
+      "name": "Zomboy"
+    },
+    {
+      "name": "Chassi",
+      "day": "Wednesday, Sept 16 (Early Arrival Pre-Party)"
+    },
+    {
+      "name": "Gardella",
+      "day": "Wednesday, Sept 16 (Early Arrival Pre-Party)"
+    },
+    {
+      "name": "HerShe",
+      "day": "Wednesday, Sept 16 (Early Arrival Pre-Party)"
+    },
+    {
+      "name": "Hydraulix",
+      "day": "Wednesday, Sept 16 (Early Arrival Pre-Party)"
+    },
+    {
+      "name": "Izzy Vadim",
+      "day": "Wednesday, Sept 16 (Early Arrival Pre-Party)"
+    },
+    {
+      "name": "Jaenga",
+      "day": "Wednesday, Sept 16 (Early Arrival Pre-Party)"
+    },
+    {
+      "name": "Mad Dubz",
+      "day": "Wednesday, Sept 16 (Early Arrival Pre-Party)"
+    },
+    {
+      "name": "Mile32",
+      "day": "Wednesday, Sept 16 (Early Arrival Pre-Party)"
+    },
+    {
+      "name": "Mport",
+      "day": "Wednesday, Sept 16 (Early Arrival Pre-Party)"
+    },
+    {
+      "name": "Muerte",
+      "day": "Wednesday, Sept 16 (Early Arrival Pre-Party)"
+    },
+    {
+      "name": "Nikita The Wicked",
+      "day": "Wednesday, Sept 16 (Early Arrival Pre-Party)"
+    },
+    {
+      "name": "Usaybflow",
+      "day": "Wednesday, Sept 16 (Early Arrival Pre-Party)"
+    },
+    {
+      "name": "AlienPark",
+      "day": "Thursday, Sept 17 (Early Arrival Pre-Party)"
+    },
+    {
+      "name": "Deadcrow",
+      "day": "Thursday, Sept 17 (Early Arrival Pre-Party)"
+    },
+    {
+      "name": "Machaki",
+      "day": "Thursday, Sept 17 (Early Arrival Pre-Party)"
+    },
+    {
+      "name": "Mindset",
+      "day": "Thursday, Sept 17 (Early Arrival Pre-Party)"
+    },
+    {
+      "name": "Phrva",
+      "day": "Thursday, Sept 17 (Early Arrival Pre-Party)"
+    },
+    {
+      "name": "rSUN",
+      "day": "Thursday, Sept 17 (Early Arrival Pre-Party)"
+    },
+    {
+      "name": "RZRKT",
+      "day": "Thursday, Sept 17 (Early Arrival Pre-Party)"
+    },
+    {
+      "name": "Super Future",
+      "day": "Thursday, Sept 17 (Early Arrival Pre-Party)"
+    },
+    {
+      "name": "Zen Selekta",
+      "day": "Thursday, Sept 17 (Early Arrival Pre-Party)"
+    }
+  ],
+  "meta": {
+    "announcementStatus": "lineup-with-days",
+    "researchedAt": "2026-07-07",
+    "sources": [
+      "https://www.lostlandsfestival.com/",
+      "https://www.lostlandsfestival.com/lineup/",
+      "https://www.lostlandsfestival.com/wp-content/uploads/2026/05/Lost_Lands_2026_Lineup_4x5.jpg",
+      "https://www.lostlandsfestival.com/wp-content/uploads/2026/05/Lost_Lands_2026_Weds_Thurs_Lineup4_4x5.jpg",
+      "https://www.lostlandsfestival.com/know-before-you-go/"
+    ],
+    "note": "Returned list = the 96 names/credited-sets on the official poster's \"main bill\" tier (94 unique acts — Excision is billed 3 times: a 2-hour set, a Detox set, and a B2B with his Space Laces alias). The same official poster has a second, larger tier below it with 114 more acts (mostly support/up-and-coming), which I did not include in the array to respect the ~120 cap — festival press describes the combined bill as \"210 artists\" total. Both tiers are alphabetized on the poster, not ranked by prominence/font size (aside from Excision's header billing), so \"billing order\" here effectively means alphabetical-within-tier rather than headliner-first. Happy to supply the full 114-name second tier on request — I have it transcribed. Full second tier (alphabetical): $J, 2DY4, AlienPark, All The Reason, Arlo, Au5, Austeria, Avello, BadKlaat, Basstripper, Bella Renee, Big Florida, Brainrack, Capochino, Casey Club, Champagne Drip, Chassi, Chozen, Codd Dubz, Crizzly, Crumb Pit, Crystal Skies, Darksiderz, Deadcrow, DirtySnatcha, Distant Matter, Dodge & Fuski, Dr. Ushūu, Dream Takers, Dubscribe, Finnuh, Future Exit, Gardella, Green Matter, HALIENE, HerShe, Hostage Situation, HURTBOX, HVDES, Hydraulix, Imanu, Ivory, Izadi, Izzy Vadim, Jaenga, Josh Teed, Killmatter, Kliptic, Klo, Lazrus, Leotrix, Lowcation, Luci, Lumasi, Machaki, Mad Dubz, MADGRRL, Mile32, Mindset, Modal Nodes, Mozey, Mport, Muerte, Myrias, MYTHM, Neotek, Neumonic, Nikita The Wicked, Nimda, Noetika, OG Nixin, Onara, Paper Skies, Pegboard Nerds, Phrva, Poni, Pretty Sweet, ProbCause, Prosecute, RemK, Richard Finger, Riot, Roi*, rSUN, Ryns, RZRKT, Saint Miller, Seth David, Shlump, SISTO, Skilah, Space Wizard, SPORTMODE, SQISHI, Stoned Level, Subsonic, Super Future, Tisoki, Tokyo Machine, Twopercent, TYNAN, Usaybflow, VAMPA, VKTM, Warlord, Whales, Wiley, Wraz, Xotix, yetep, yvm3, Zen Selekta, Zero, Zoey808."
+  }
+}

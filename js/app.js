@@ -3,9 +3,11 @@
 // own modules.
 import * as state from './state.js';
 import * as crew from './crew.js';
+import { loadFestivalIndex, loadFestival, FESTIVAL_INDEX } from './festivals.js';
 import { initSync, setSyncStatus, scheduleSync, pushSync, pollSync } from './sync.js';
 import { renderPeople as renderPeopleView } from './render/people.js';
 import { renderDay, updateArtistHighlight } from './render/grid.js';
+import { renderList, resetListState } from './render/list.js';
 import { wireModals, openInfoModal } from './ui.js';
 import { getArtistInfo, solveConflicts } from './ai.js';
 import { downloadSchedule, handleBulkAdd, exportLikes } from './tools.js';
@@ -18,10 +20,31 @@ function validName(name) { return NAME_RE.test(name) && name.trim() === name && 
 const peopleCallbacks = { onSelect: selectPerson, onRemove: removePerson, onAdd: addPerson };
 function renderPeople() { renderPeopleView(peopleCallbacks); }
 
+// ---- view dispatch (grid for scheduled festivals, list otherwise) -----------
+let viewMode = 'grid'; // per-festival session preference; reset on switch
+
+function festHasSchedule() {
+  const f = state.fest();
+  return !!f.days && Object.keys(f.days).length > 0;
+}
+
+function renderCurrentView() {
+  const scheduled = festHasSchedule();
+  const showGrid = scheduled && viewMode === 'grid';
+  document.getElementById('grid-container').classList.toggle('hidden', !showGrid);
+  document.getElementById('day-box').classList.toggle('hidden', !showGrid);
+  document.getElementById('list-view').classList.toggle('hidden', showGrid);
+  const toggle = document.getElementById('view-toggle-btn');
+  toggle.classList.toggle('hidden', !scheduled);
+  toggle.textContent = showGrid ? 'List' : 'Grid';
+  if (showGrid) renderDay(state.currentDay || Object.keys(state.fest().days)[0]);
+  else renderList();
+}
+
 function refreshView() {
   renderPeople();
   renderCrewBar();
-  if (state.currentDay) renderDay(state.currentDay);
+  renderCurrentView();
 }
 
 // ---- view switching ---------------------------------------------------------
@@ -62,19 +85,22 @@ function showJoin(token, doc) {
   };
 }
 
-function enterApp(token, doc) {
+async function enterApp(token, doc) {
   show('landing-view', false); show('join-view', false); show('main-view', true);
   crew.setActiveCrew(token);
   state.activateCrew(token, doc);
+  await loadFestival(state.activeFestivalId);
   state.persist();
   const my = crew.me(token);
   if (my && state.isActivePerson(state.people()[my])) state.setSelectedPerson(my);
+  viewMode = 'grid';
+  resetListState();
   renderFestivalSelect();
   applyTheme();
   renderPeople();
   renderDayTabs();
   renderCrewBar();
-  renderDay(Object.keys(state.fest().days)[0]);
+  renderCurrentView();
   setSyncStatus(navigator.onLine ? 'syncing' : 'offline');
   pollSync();
   if (state.hasPending()) scheduleSync();
@@ -193,9 +219,10 @@ function applyTheme() {
 function renderFestivalSelect() {
   const sel = document.getElementById('festival-select');
   sel.innerHTML = '';
-  Object.values(state.FESTIVALS).forEach(f => {
+  FESTIVAL_INDEX.forEach(f => {
     const opt = document.createElement('option');
-    opt.value = f.id; opt.textContent = f.name;
+    opt.value = f.id;
+    opt.textContent = f.status === 'archived' ? `${f.name} ${f.year || ''} (past)` : `${f.name} ${f.year || ''}`;
     if (f.id === state.activeFestivalId) opt.selected = true;
     sel.appendChild(opt);
   });
@@ -204,8 +231,10 @@ function renderFestivalSelect() {
 function renderDayTabs() {
   const container = document.getElementById('day-tabs');
   container.innerHTML = '';
-  const meta = state.fest().dayMeta || {};
-  Object.keys(state.fest().days).forEach(day => {
+  const fest = state.fest();
+  if (!fest.days) return;
+  const meta = fest.dayMeta || {};
+  Object.keys(fest.days).forEach(day => {
     const dm = meta[day];
     const btn = document.createElement('button');
     btn.dataset.day = day;
@@ -217,19 +246,29 @@ function renderDayTabs() {
   });
 }
 
-function switchFestival(fid) {
-  if (!state.FESTIVALS[fid]) return;
+async function switchFestival(fid) {
+  if (!FESTIVAL_INDEX.some(f => f.id === fid)) return;
+  try { await loadFestival(fid); }
+  catch (e) { alert('Could not load that festival (offline and not cached yet).'); renderFestivalSelect(); return; }
   state.setActiveFestivalId(fid);
   state.ensureFestivalState(fid);
+  state.setCurrentDay(null);
+  viewMode = 'grid';
+  resetListState();
   applyTheme();
   renderPeople();
   renderDayTabs();
-  renderDay(Object.keys(state.fest().days)[0]);
+  renderCurrentView();
   pollSync();
 }
 
 // ---- boot ----------------------------------------------------------------------
 async function boot() {
+  try { await loadFestivalIndex(); }
+  catch (e) {
+    showLanding('Could not load festival data — are you offline? Try again once connected.');
+    return;
+  }
   const hashToken = crew.tokenFromHash();
   if (hashToken) {
     let doc = null;
@@ -261,6 +300,14 @@ function wireStatic() {
     const card = e.target.closest('.artist-card');
     if (card) handleArtistClick(card.dataset.artist);
   });
+  document.getElementById('list-view').addEventListener('click', (e) => {
+    const row = e.target.closest('.list-artist');
+    if (row) { handleArtistClick(row.dataset.artist); renderList(); }
+  });
+  document.getElementById('view-toggle-btn').onclick = () => {
+    viewMode = viewMode === 'grid' ? 'list' : 'grid';
+    renderCurrentView();
+  };
   document.getElementById('festival-select').onchange = (e) => switchFestival(e.target.value);
   document.getElementById('crew-select').onchange = onCrewSelect;
   document.getElementById('share-crew-btn').onclick = shareCrew;

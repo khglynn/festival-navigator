@@ -1,0 +1,644 @@
+{
+  "id": "acl-2026",
+  "name": "ACL Music Festival",
+  "year": "'26",
+  "subtitle": "Zilker Park · both weekends",
+  "location": "Austin, TX",
+  "dates": "October 2–4, 2026 (Weekend One) and October 9–11, 2026 (Weekend Two)",
+  "accent": "250, 204, 21",
+  "status": "lineup",
+  "artists": [
+    {
+      "name": "Charli xcx",
+      "day": "Friday",
+      "weekends": "both"
+    },
+    {
+      "name": "Skrillex",
+      "day": "Friday",
+      "weekends": "W1"
+    },
+    {
+      "name": "Kings of Leon",
+      "day": "Friday",
+      "weekends": "W2"
+    },
+    {
+      "name": "Turnstile",
+      "day": "Friday",
+      "weekends": "both"
+    },
+    {
+      "name": "Labrinth",
+      "day": "Friday",
+      "weekends": "both"
+    },
+    {
+      "name": "The Chainsmokers",
+      "day": "Friday",
+      "weekends": "both"
+    },
+    {
+      "name": "Leon Thomas",
+      "day": "Friday",
+      "weekends": "both"
+    },
+    {
+      "name": "Brandon Flowers",
+      "day": "Friday",
+      "weekends": "W1"
+    },
+    {
+      "name": "Amyl and the Sniffers",
+      "day": "Friday",
+      "weekends": "both"
+    },
+    {
+      "name": "Steve Aoki",
+      "day": "Friday",
+      "weekends": "both"
+    },
+    {
+      "name": "Jesse Welles",
+      "day": "Friday",
+      "weekends": "both"
+    },
+    {
+      "name": "BUNT.",
+      "day": "Friday",
+      "weekends": "both"
+    },
+    {
+      "name": "Natasha Bedingfield",
+      "day": "Friday",
+      "weekends": "W2"
+    },
+    {
+      "name": "Kingfishr",
+      "day": "Friday",
+      "weekends": "W2"
+    },
+    {
+      "name": "Paris Paloma",
+      "day": "Friday",
+      "weekends": "both"
+    },
+    {
+      "name": "LP",
+      "day": "Friday",
+      "weekends": "both"
+    },
+    {
+      "name": "rusowsky",
+      "day": "Friday",
+      "weekends": "both"
+    },
+    {
+      "name": "Marlon Funaki",
+      "day": "Friday",
+      "weekends": "W1"
+    },
+    {
+      "name": "CMAT",
+      "day": "Friday",
+      "weekends": "both"
+    },
+    {
+      "name": "World Famous Pets",
+      "day": "Friday",
+      "weekends": "W2"
+    },
+    {
+      "name": "Rebecca Black",
+      "day": "Friday",
+      "weekends": "W1"
+    },
+    {
+      "name": "Bella Kay",
+      "day": "Friday",
+      "weekends": "W2"
+    },
+    {
+      "name": "Bo Staloch",
+      "day": "Friday",
+      "weekends": "W1"
+    },
+    {
+      "name": "Molly Santana",
+      "day": "Friday",
+      "weekends": "W1"
+    },
+    {
+      "name": "Faouzia",
+      "day": "Friday",
+      "weekends": "both"
+    },
+    {
+      "name": "S.G. Goodman",
+      "day": "Friday",
+      "weekends": "W2"
+    },
+    {
+      "name": "Hunx and his Punx",
+      "day": "Friday",
+      "weekends": "W1"
+    },
+    {
+      "name": "Cassandra Coleman",
+      "day": "Friday",
+      "weekends": "W2"
+    },
+    {
+      "name": "Brigitte Calls Me Baby",
+      "day": "Friday",
+      "weekends": "W2"
+    },
+    {
+      "name": "New Constellations",
+      "day": "Friday",
+      "weekends": "W1"
+    },
+    {
+      "name": "Asleep at the Wheel",
+      "day": "Friday",
+      "weekends": "W1"
+    },
+    {
+      "name": "Night Traveler",
+      "day": "Friday",
+      "weekends": "W1"
+    },
+    {
+      "name": "Dallas Wax",
+      "day": "Friday",
+      "weekends": "W2"
+    },
+    {
+      "name": "Joe Jordan",
+      "day": "Friday",
+      "weekends": "W2"
+    },
+    {
+      "name": "Happy Landing",
+      "day": "Friday",
+      "weekends": "W2"
+    },
+    {
+      "name": "Girlfriend",
+      "day": "Friday",
+      "weekends": "W2"
+    },
+    {
+      "name": "Almost Heaven",
+      "day": "Friday",
+      "weekends": "W2"
+    },
+    {
+      "name": "Grocery Bag",
+      "day": "Friday",
+      "weekends": "W1"
+    },
+    {
+      "name": "Elle Coves",
+      "day": "Friday",
+      "weekends": "W1"
+    },
+    {
+      "name": "Izzy Escobar",
+      "day": "Friday",
+      "weekends": "W1"
+    },
+    {
+      "name": "Soloman Hicks",
+      "day": "Friday",
+      "weekends": "W1"
+    },
+    {
+      "name": "The 4411",
+      "day": "Friday",
+      "weekends": "W1"
+    },
+    {
+      "name": "Łaszewo",
+      "day": "Friday",
+      "weekends": "W2"
+    },
+    {
+      "name": "Leon Knight",
+      "day": "Friday",
+      "weekends": "W2"
+    },
+    {
+      "name": "RÜFÜS DU SOL",
+      "day": "Saturday",
+      "weekends": "both"
+    },
+    {
+      "name": "Lorde",
+      "day": "Saturday",
+      "weekends": "both"
+    },
+    {
+      "name": "Lola Young",
+      "day": "Saturday",
+      "weekends": "both"
+    },
+    {
+      "name": "Young Miko",
+      "day": "Saturday",
+      "weekends": "both"
+    },
+    {
+      "name": "Bleachers",
+      "day": "Saturday",
+      "weekends": "both"
+    },
+    {
+      "name": "Lykke Li",
+      "day": "Saturday",
+      "weekends": "both"
+    },
+    {
+      "name": "Levity",
+      "day": "Saturday",
+      "weekends": "both"
+    },
+    {
+      "name": "Suki Waterhouse",
+      "day": "Saturday",
+      "weekends": "both"
+    },
+    {
+      "name": "Sienna Spiro",
+      "day": "Saturday",
+      "weekends": "W2"
+    },
+    {
+      "name": "Snow Strippers",
+      "day": "Saturday",
+      "weekends": "both"
+    },
+    {
+      "name": "It's Murph",
+      "day": "Saturday",
+      "weekends": "both"
+    },
+    {
+      "name": "Fakemink",
+      "day": "Saturday",
+      "weekends": "both"
+    },
+    {
+      "name": "Palace",
+      "day": "Saturday",
+      "weekends": "W1"
+    },
+    {
+      "name": "¥ØU$UK€ ¥UK1MAT$U",
+      "day": "Saturday",
+      "weekends": "both"
+    },
+    {
+      "name": "Skye Newman",
+      "day": "Saturday",
+      "weekends": "both"
+    },
+    {
+      "name": "Rodrigo y Gabriela",
+      "day": "Saturday",
+      "weekends": "both"
+    },
+    {
+      "name": "Balu Brigada",
+      "day": "Saturday",
+      "weekends": "both"
+    },
+    {
+      "name": "Rochelle Jordan",
+      "day": "Saturday",
+      "weekends": "W1"
+    },
+    {
+      "name": "Arcy Drive",
+      "day": "Saturday",
+      "weekends": "both"
+    },
+    {
+      "name": "Finn Wolfhard",
+      "day": "Saturday",
+      "weekends": "both"
+    },
+    {
+      "name": "Ryan Beatty",
+      "day": "Saturday",
+      "weekends": "both"
+    },
+    {
+      "name": "Don West",
+      "day": "Saturday",
+      "weekends": "both"
+    },
+    {
+      "name": "Temper City",
+      "day": "Saturday",
+      "weekends": "both"
+    },
+    {
+      "name": "Night Tapes",
+      "day": "Saturday",
+      "weekends": "both"
+    },
+    {
+      "name": "Gabriel Jacoby",
+      "day": "Saturday",
+      "weekends": "W2"
+    },
+    {
+      "name": "DJ Cassandra",
+      "day": "Saturday",
+      "weekends": "W1"
+    },
+    {
+      "name": "Cure for Paranoia",
+      "day": "Saturday",
+      "weekends": "W1"
+    },
+    {
+      "name": "Fai Laci",
+      "day": "Saturday",
+      "weekends": "W1"
+    },
+    {
+      "name": "Emma Ogier",
+      "day": "Saturday",
+      "weekends": "W1"
+    },
+    {
+      "name": "Coleman Jennings",
+      "day": "Saturday",
+      "weekends": "W1"
+    },
+    {
+      "name": "Fightmaster",
+      "day": "Saturday",
+      "weekends": "W1"
+    },
+    {
+      "name": "Left Lucid",
+      "day": "Saturday",
+      "weekends": "W1"
+    },
+    {
+      "name": "Nat Myers",
+      "day": "Saturday",
+      "weekends": "W2"
+    },
+    {
+      "name": "Chloe Qisha",
+      "day": "Saturday",
+      "weekends": "W2"
+    },
+    {
+      "name": "Common People",
+      "day": "Saturday",
+      "weekends": "W2"
+    },
+    {
+      "name": "Damaris Bojor",
+      "day": "Saturday",
+      "weekends": "W2"
+    },
+    {
+      "name": "lluvii",
+      "day": "Saturday",
+      "weekends": "W2"
+    },
+    {
+      "name": "Montclair",
+      "day": "Saturday",
+      "weekends": "W2"
+    },
+    {
+      "name": "Presley Regier",
+      "day": "Saturday",
+      "weekends": "W2"
+    },
+    {
+      "name": "Twenty One Pilots",
+      "day": "Sunday",
+      "weekends": "both"
+    },
+    {
+      "name": "The xx",
+      "day": "Sunday",
+      "weekends": "both"
+    },
+    {
+      "name": "Geese",
+      "day": "Sunday",
+      "weekends": "both"
+    },
+    {
+      "name": "SOFI TUKKER",
+      "day": "Sunday",
+      "weekends": "both"
+    },
+    {
+      "name": "Parcels",
+      "day": "Sunday",
+      "weekends": "both"
+    },
+    {
+      "name": "The War on Drugs",
+      "day": "Sunday",
+      "weekends": "both"
+    },
+    {
+      "name": "Blood Orange",
+      "day": "Sunday",
+      "weekends": "both"
+    },
+    {
+      "name": "Max McNown",
+      "day": "Sunday",
+      "weekends": "both"
+    },
+    {
+      "name": "Cannons",
+      "day": "Sunday",
+      "weekends": "W1"
+    },
+    {
+      "name": "Houndmouth",
+      "day": "Sunday",
+      "weekends": "W2"
+    },
+    {
+      "name": "Audrey Hobert",
+      "day": "Sunday",
+      "weekends": "both"
+    },
+    {
+      "name": "Saint Motel",
+      "day": "Sunday",
+      "weekends": "both"
+    },
+    {
+      "name": "Fcukers",
+      "day": "Sunday",
+      "weekends": "both"
+    },
+    {
+      "name": "Stella Lefty",
+      "day": "Sunday",
+      "weekends": "W1"
+    },
+    {
+      "name": "Underscores",
+      "day": "Sunday",
+      "weekends": "W1"
+    },
+    {
+      "name": "Claire Rosinkranz",
+      "day": "Sunday",
+      "weekends": "both"
+    },
+    {
+      "name": "Noga Erez",
+      "day": "Sunday",
+      "weekends": "both"
+    },
+    {
+      "name": "Rio Kosta",
+      "day": "Sunday",
+      "weekends": "both"
+    },
+    {
+      "name": "Josh Conway",
+      "day": "Sunday",
+      "weekends": "W1"
+    },
+    {
+      "name": "Ethan Regan",
+      "day": "Sunday",
+      "weekends": "W2"
+    },
+    {
+      "name": "Bad Nerves",
+      "day": "Sunday",
+      "weekends": "W2"
+    },
+    {
+      "name": "Charlotte Lawrence",
+      "day": "Sunday",
+      "weekends": "W2"
+    },
+    {
+      "name": "Rum Jungle",
+      "day": "Sunday",
+      "weekends": "W2"
+    },
+    {
+      "name": "Paloma Morphy",
+      "day": "Sunday",
+      "weekends": "both"
+    },
+    {
+      "name": "Sunday (1994)",
+      "day": "Sunday",
+      "weekends": "both"
+    },
+    {
+      "name": "Calder Allen",
+      "day": "Sunday",
+      "weekends": "both"
+    },
+    {
+      "name": "Fancy Hagood",
+      "day": "Sunday",
+      "weekends": "W1"
+    },
+    {
+      "name": "Britton",
+      "day": "Sunday",
+      "weekends": "W1"
+    },
+    {
+      "name": "Solya",
+      "day": "Sunday",
+      "weekends": "W1"
+    },
+    {
+      "name": "Villanelle",
+      "day": "Sunday",
+      "weekends": "W1"
+    },
+    {
+      "name": "Aaron Rowe",
+      "day": "Sunday",
+      "weekends": "W1"
+    },
+    {
+      "name": "Lauren Sanderson",
+      "day": "Sunday",
+      "weekends": "W1"
+    },
+    {
+      "name": "Rubio",
+      "day": "Sunday",
+      "weekends": "W1"
+    },
+    {
+      "name": "The Moriah Sisters",
+      "day": "Sunday",
+      "weekends": "W1"
+    },
+    {
+      "name": "Kevin Atwater",
+      "day": "Sunday",
+      "weekends": "W2"
+    },
+    {
+      "name": "Thomas Day",
+      "day": "Sunday",
+      "weekends": "W2"
+    },
+    {
+      "name": "Vwillz",
+      "day": "Sunday",
+      "weekends": "W2"
+    },
+    {
+      "name": "Sasha Keable",
+      "day": "Sunday",
+      "weekends": "W2"
+    },
+    {
+      "name": "Marzz",
+      "day": "Sunday",
+      "weekends": "W2"
+    },
+    {
+      "name": "Chelsea Jordan",
+      "day": "Sunday",
+      "weekends": "W2"
+    },
+    {
+      "name": "Huston-Tillotson University Jazz Collective",
+      "day": "Sunday",
+      "weekends": "W2"
+    }
+  ],
+  "meta": {
+    "announcementStatus": "lineup-with-days",
+    "researchedAt": "2026-07-07",
+    "sources": [
+      "https://www.aclfestival.com/",
+      "https://www.aclfestival.com/lineup",
+      "https://newsroom.livenation.com/news/charli-xcx-rufus-du-sol-twenty-one-pilots-lorde-skrillex-kings-of-leon-and-the-xx-to-headline-the-25th-anniversary-of-austin-city-limits-music-festival-2026/",
+      "https://www.kvue.com/article/entertainment/events/austin-city-limits/artists-lineup-2026-austin-city-limits-festival/269-cae3083e-0a6c-4b43-8ffd-e7f9221a55d9",
+      "https://www.kvue.com/article/entertainment/events/austin-city-limits/acl-fest-lineup-2026/269-73e294b6-3f62-4bbf-b07b-57b13162622c"
+    ],
+    "note": "Captured 124 unique confirmed acts — the full day-by-day breakdown for both weekends, as reported by KVUE (Austin) on 2026-05-12 based on ACL's own by-day lineup graphic, cross-validated line-by-line against the official Live Nation/C3 Presents press release (2026-05-05). No stages or set times exist yet (C3 Presents has explicitly said daily set-time schedules \"will be announced at a later date\"), so those fields are null throughout. Two corrections applied versus the raw KVUE text: (1) KVUE's W1-Friday list had \"Brandon Thomas\" immediately after \"Leon Thomas\" — this is an evident OCR/typo error for \"Brandon Flowers\" (of The Killers), confirmed by the official press release's identical adjacent ordering and by three other outlets (BrooklynVegan, CultureMap, Billboard) explicitly naming Brandon Flowers as a Weekend-1-only act; (2) KVUE listed Izzy Escobar under both weekends' Friday bills, but the official Live Nation press release explicitly tags \"Izzy Escobar(W1)\" — the official/primary source was trusted over the secondary compilation. One quality-control flag: a few aggregator sites (e.g., liveforlivemusic.com) list The Marías, Role Model, Rilo Kiley, Djo, Pierce The Veil, and Sabrina Claudio as part of the 2026 bill. None of these appear in the official Live Nation press release, the KVUE day-by-day breakdown, or BrooklynVegan's coverage — and all six performed at ACL 2025, so this reads as a copy-paste/template carryover error in that one article rather than a confirmed 2026 booking. Deliberately excluded here; flag to Kevin if seen elsewhere."
+  }
+}
