@@ -9,7 +9,14 @@ All phases P0–P7 done. 13 commits on `prime-time`, CI green, preview deployed.
 Four independent review passes (2× Codex, 1 background security scan, 1 four-dimension
 workflow fan-out with adversarial verification) — every confirmed finding fixed same-day.
 
-## Whose move — Kevin (nothing else blocks)
+## Whose move — Kevin (consolidated 2026-07-07 evening; nothing else blocks)
+
+NEW since the last list: Slack access-request flow shipped (needs SLACK_WEBHOOK_URL +
+APPROVE_SECRET + OWNER_SPOTIFY_CLIENT_ID envs); staging rig built (Neon branch
+br-delicate-smoke-ajexourx = preview DATABASE_URL; git branch `staging` pushed;
+dev.fest.kevinhg.com attached — pin it to the staging branch in Vercel dashboard);
+Cloudflare zone import file on Desktop (incl. dev.fest); env one-liners staged in
+scratchpad (dburl.txt, dburl-staging.txt, approve-secret.txt).
 
 1. **`vercel env add DATABASE_URL`** (prod/preview/dev) — one-liner in chat. Deployed API
    500s without it.
