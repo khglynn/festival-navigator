@@ -7,30 +7,60 @@
 // owner to the Spotify dashboard to paste the email (the REAL gate) -> the
 // friend's app polls its way to "approved" and offers the connect button.
 //
-//   GET  /api/access?config=1                     -> { enabled, ownerClientId }
-//   POST /api/access            { email }         -> { status }  (+ Slack ping)
-//   GET  /api/access?email=x                      -> { status }  (polled)
-//   GET  /api/access?approve=1&email=x&token=y    -> 302 to Spotify dashboard
+//   GET  /api/access?config=1                         -> { enabled, ownerClientId }
+//   POST /api/access            { email }             -> { status }  (+ Slack ping)
+//   GET  /api/access?email=x                          -> { status }  (polled)
+//   GET  /api/access?approve=1&email=x&exp=t&sig=h    -> 302 to Spotify dashboard
 //
 // Enabled only when SLACK_WEBHOOK_URL + APPROVE_SECRET + OWNER_SPOTIFY_CLIENT_ID
 // are set; the client shows the flow only for crews using the owner's app —
 // other crews bring their own Spotify apps and their owners aren't on this Slack.
+//
+// Security: the approve link carries a per-email, time-limited HMAC (not the
+// raw secret), and its origin comes from a trusted canonical base URL, never
+// the request Host header. So a spoofed-Host request cannot make the Slack
+// link point at an attacker origin, and a leaked link cannot approve any
+// email but the one it was minted for, nor survive past its expiry.
 import crypto from 'node:crypto';
 import { neon } from '@neondatabase/serverless';
 import { rateLimited, crossSite } from './_lib/guard.mjs';
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+const APPROVE_TTL_MS = 60 * 60 * 1000; // approve links expire after an hour
+// Hosts we will build an approve link for when PUBLIC_BASE_URL is unset.
+const HOST_ALLOW = /(^|\.)kevinhg\.com$|\.vercel\.app$/;
 
 const enabled = () =>
   !!(process.env.SLACK_WEBHOOK_URL && process.env.APPROVE_SECRET && process.env.OWNER_SPOTIFY_CLIENT_ID);
 
-function tokensMatch(a, b) {
-  const ba = Buffer.from(String(a)), bb = Buffer.from(String(b));
-  return ba.length === bb.length && crypto.timingSafeEqual(ba, bb);
+// Per-email, expiring HMAC. base64url(HMAC-SHA256(secret, "email|exp")).
+function sign(email, exp) {
+  return crypto.createHmac('sha256', process.env.APPROVE_SECRET)
+    .update(`${email}|${exp}`).digest('base64url');
+}
+function validSig(email, exp, sig) {
+  const expNum = Number(exp);
+  if (!Number.isFinite(expNum) || Date.now() > expNum) return false;
+  const expected = sign(email, exp);
+  const a = Buffer.from(expected), b = Buffer.from(String(sig));
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
+
+// Trusted origin for the approve link — env first, then an allowlisted Host.
+// Returns null if neither is trustworthy (link is then omitted, never forged).
+function canonicalBaseUrl(req) {
+  if (process.env.PUBLIC_BASE_URL) return process.env.PUBLIC_BASE_URL.replace(/\/+$/, '');
+  const host = (req.headers.host || '').toString();
+  if (HOST_ALLOW.test(host.split(':')[0])) {
+    const proto = (req.headers['x-forwarded-proto'] || 'https').toString().split(',')[0];
+    return `${proto}://${host}`;
+  }
+  return null;
 }
 
 async function notifySlack(email, baseUrl) {
-  const approveUrl = `${baseUrl}/api/access?approve=1&email=${encodeURIComponent(email)}&token=${encodeURIComponent(process.env.APPROVE_SECRET)}`;
+  const exp = Date.now() + APPROVE_TTL_MS;
+  const approveUrl = `${baseUrl}/api/access?approve=1&email=${encodeURIComponent(email)}&exp=${exp}&sig=${sign(email, exp)}`;
   const res = await fetch(process.env.SLACK_WEBHOOK_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -59,14 +89,18 @@ export default async function handler(req, res) {
 
   // ---- owner approval (the Slack button) ----
   if (req.method === 'GET' && req.query.approve) {
-    const { email, token } = req.query;
-    if (!token || !tokensMatch(token, process.env.APPROVE_SECRET)) {
-      return res.status(403).json({ error: 'Bad approval token' });
+    const email = String(req.query.email || '').toLowerCase();
+    if (!validSig(email, req.query.exp, req.query.sig)) {
+      return res.status(403).json({ error: 'Approval link is invalid or expired' });
     }
     const rows = await sql`
       UPDATE access_requests SET status = 'approved', approved_at = now()
-      WHERE email = ${String(email).toLowerCase()} RETURNING email`;
+      WHERE email = ${email} RETURNING email`;
     if (!rows.length) return res.status(404).json({ error: 'No such request' });
+    // no-referrer so the signed link is not sent on to spotify.com; no-store
+    // so no intermediary caches the approval redirect.
+    res.setHeader('Referrer-Policy', 'no-referrer');
+    res.setHeader('Cache-Control', 'no-store');
     res.setHeader('Location', `https://developer.spotify.com/dashboard/${process.env.OWNER_SPOTIFY_CLIENT_ID}/users`);
     return res.status(302).end();
   }
@@ -94,9 +128,12 @@ export default async function handler(req, res) {
     const status = rows[0].status;
     let notified = false;
     if (status === 'pending') {
-      const proto = (req.headers['x-forwarded-proto'] || 'https').toString().split(',')[0];
-      const baseUrl = `${proto}://${req.headers.host}`;
-      try { notified = await notifySlack(email, baseUrl); } catch (e) { console.error('slack notify failed:', e); }
+      const baseUrl = canonicalBaseUrl(req);
+      if (baseUrl) {
+        try { notified = await notifySlack(email, baseUrl); } catch (e) { console.error('slack notify failed:', e); }
+      } else {
+        console.error('access: no trusted base URL (set PUBLIC_BASE_URL); Slack link omitted');
+      }
     }
     return res.status(200).json({ status, notified });
   }
