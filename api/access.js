@@ -28,7 +28,16 @@ import { rateLimited, crossSite } from './_lib/guard.mjs';
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 const APPROVE_TTL_MS = 60 * 60 * 1000; // approve links expire after an hour
 // Hosts we will build an approve link for when PUBLIC_BASE_URL is unset.
-const HOST_ALLOW = /(^|\.)kevinhg\.com$|\.vercel\.app$/;
+// Only THIS project's own hostnames: any kevinhg.com subdomain (all anchored
+// at the end so kevinhg.com.evil.com is rejected), and this project's Vercel
+// preview URLs, whose `-kevinhg` team-slug suffix an attacker cannot forge.
+// A bare `.vercel.app$` would trust every tenant's deployments — the hole
+// this list closes.
+const HOST_ALLOW = [
+  /^([a-z0-9-]+\.)*kevinhg\.com$/,
+  /^festival-navigator-[a-z0-9]+-kevinhg\.vercel\.app$/,
+];
+const hostAllowed = (host) => HOST_ALLOW.some((re) => re.test(host));
 
 const enabled = () =>
   !!(process.env.SLACK_WEBHOOK_URL && process.env.APPROVE_SECRET && process.env.OWNER_SPOTIFY_CLIENT_ID);
@@ -51,7 +60,7 @@ function validSig(email, exp, sig) {
 function canonicalBaseUrl(req) {
   if (process.env.PUBLIC_BASE_URL) return process.env.PUBLIC_BASE_URL.replace(/\/+$/, '');
   const host = (req.headers.host || '').toString();
-  if (HOST_ALLOW.test(host.split(':')[0])) {
+  if (hostAllowed(host.split(':')[0])) {
     const proto = (req.headers['x-forwarded-proto'] || 'https').toString().split(',')[0];
     return `${proto}://${host}`;
   }
