@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connecting Spotify…</title>
+    <style>
+        body { font-family: system-ui, sans-serif; background: #111827; color: #e5e7eb;
+               display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+        .card { text-align: center; max-width: 420px; padding: 2rem; }
+        .err { color: #f87171; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2 id="msg">Connecting your Spotify…</h2>
+        <p id="detail" class="err"></p>
+    </div>
+    <script type="module">
+        import { completeAuth } from '/js/spotify.js';
+        const q = new URLSearchParams(location.search);
+        const back = () => { location.replace('/'); };
+        if (q.get('error')) {
+            document.getElementById('msg').textContent = 'Spotify said no';
+            document.getElementById('detail').textContent = q.get('error') + ' — close this and try again from the app.';
+            setTimeout(back, 4000);
+        } else {
+            completeAuth(q.get('code'), q.get('state'))
+                .then((returnTo) => location.replace(returnTo || '/'))
+                .catch((e) => {
+                    document.getElementById('msg').textContent = 'Connection failed';
+                    document.getElementById('detail').textContent = e.message;
+                    setTimeout(back, 5000);
+                });
+        }
+    </script>
+</body>
+</html>

@@ -114,6 +114,20 @@
                     <button id="export-likes-btn" class="accent-button">Show Likes as List</button>
                 </div>
             </div>
+            <div class="border-t border-gray-700 pt-4 mb-4">
+                <h3 class="text-base font-semibold mb-1 text-center">Spotify <span id="spotify-status" class="text-sm text-gray-400 font-normal"></span></h3>
+                <p class="text-sm text-gray-400 mb-3 text-center">Badge artists you already listen to, and turn picks into playlists on your own account.</p>
+                <div id="spotify-panel" class="flex flex-wrap justify-center items-center gap-2 mb-2"></div>
+                <details class="text-sm text-gray-400 max-w-2xl mx-auto">
+                    <summary class="cursor-pointer text-center accent-text">Crew Spotify setup (one-time, done by the crew lead)</summary>
+                    <ol class="list-decimal list-inside mt-2 space-y-1">
+                        <li>Go to <a href="https://developer.spotify.com/dashboard" target="_blank" class="accent-text underline">developer.spotify.com/dashboard</a> and create an app (any name).</li>
+                        <li>In the app settings, add this exact Redirect URI: <code id="spotify-redirect-hint" class="text-gray-300"></code></li>
+                        <li>Copy the app's <strong>Client ID</strong> and paste it into the box above.</li>
+                        <li>In "User Management", add the Spotify emails of crew members who want to connect. <strong>Spotify caps new apps at 5 users and the app owner needs Premium</strong> — their rule, not ours (since March 2026).</li>
+                    </ol>
+                </details>
+            </div>
             <div class="border-t border-gray-700 pt-4">
                 <h3 class="text-base font-semibold mb-1 text-center">Update Likes (bulk paste)</h3>
                 <p class="text-sm text-gray-400 mb-2 text-center">Format: <code>Person: Artist (Level)</code> · Levels: Must See, Nice to See, Highlight</p>
@@ -159,7 +173,6 @@
         </div>
     </div>
 
-    <script src="/data/spotify-affinity.js"></script>
     <script type="module" src="/js/app.js"></script>
     <script defer src="/_vercel/insights/script.js"></script>
 </body>

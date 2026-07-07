@@ -75,7 +75,12 @@ export function renderList() {
       <span class="text-xs text-gray-500">${rows.length} artists · tap to pick</span>
     </div>`;
 
+  const affMap = state.affinityLookup(state.selectedPerson);
   const items = rows.map((r) => {
+    const aff = affMap ? affMap[r.name.toLowerCase()] : null;
+    const affBadge = aff
+      ? `<span class="text-[10px] font-bold text-[#1DB954] ml-1" title="${aff.followed ? 'You follow them' : ''}${aff.followed && aff.songs ? ' · ' : ''}${aff.songs ? aff.songs + ' liked songs' : ''}">${aff.followed ? '★' : ''}${aff.songs ? '♥' + aff.songs : ''}</span>`
+      : '';
     const active = Object.entries(r.sel).filter(([p, lvl]) => lvl > 0 && state.isActivePerson(peopleObj[p]));
     const dots = active.map(([p, lvl]) =>
       `<span class="inline-block w-3 h-3 rounded-full border border-gray-900" title="${escapeHtml(p)}: ${lvl === 3 ? 'Must See' : lvl === 2 ? 'Highlight' : 'Nice to See'}" style="background: rgba(${peopleObj[p].color}, ${state.opacities[lvl - 1]})"></span>`
@@ -91,7 +96,7 @@ export function renderList() {
       <div class="list-artist flex items-center gap-3 py-2 px-3 rounded-md bg-gray-700/60 cursor-pointer select-none ${ring}"
            style="${bg}" data-artist="${escapeHtml(r.name)}">
         <div class="flex-grow min-w-0">
-          <p class="font-semibold text-gray-100 truncate">${escapeHtml(r.name)}${wk}</p>
+          <p class="font-semibold text-gray-100 truncate">${escapeHtml(r.name)}${affBadge}${wk}</p>
           ${meta ? `<p class="text-xs text-gray-400">${escapeHtml(meta)}</p>` : ''}
         </div>
         <div class="flex gap-1 shrink-0">${dots}</div>

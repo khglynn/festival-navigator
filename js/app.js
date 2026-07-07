@@ -11,6 +11,7 @@ import { renderList, resetListState } from './render/list.js';
 import { wireModals, openInfoModal } from './ui.js';
 import { getArtistInfo, solveConflicts } from './ai.js';
 import { downloadSchedule, handleBulkAdd, exportLikes } from './tools.js';
+import * as spotify from './spotify.js';
 
 // Mirrors the server's SAFE_NAME_RE (api/_lib/crew-shared.mjs) so users get
 // a friendly message instead of a 400.
@@ -44,6 +45,7 @@ function renderCurrentView() {
 function refreshView() {
   renderPeople();
   renderCrewBar();
+  renderSpotifyPanel();
   renderCurrentView();
 }
 
@@ -100,6 +102,8 @@ async function enterApp(token, doc) {
   renderPeople();
   renderDayTabs();
   renderCrewBar();
+  renderSpotifyPanel();
+  applyAffinityForActiveFestival();
   renderCurrentView();
   setSyncStatus(navigator.onLine ? 'syncing' : 'offline');
   pollSync();
@@ -145,6 +149,117 @@ function shareCrew() {
   }).catch(() => {
     openInfoModal(`<h2 class="text-xl font-bold accent-text mb-2">Crew link</h2><p class="text-xs text-gray-400 break-all">${link}</p>`);
   });
+}
+
+// ---- Spotify panel --------------------------------------------------------------
+function myName() { return crew.me(state.getCrewToken()); }
+
+function applyAffinityForActiveFestival() {
+  const me = myName();
+  if (!me || !spotify.isConnected() || !spotify.libraryMap()) return;
+  const names = (state.fest().artists || []).map((a) => a.name);
+  if (!names.length) return;
+  const n = spotify.applyAffinityToCrew(me, names);
+  if (n) { state.persist(); scheduleSync(); }
+}
+
+function renderSpotifyPanel() {
+  const panel = document.getElementById('spotify-panel');
+  const status = document.getElementById('spotify-status');
+  const hint = document.getElementById('spotify-redirect-hint');
+  if (hint) hint.textContent = `${location.origin}/spotify-callback`;
+  panel.innerHTML = '';
+  const btn = (label, onclick, extraCls = '') => {
+    const b = document.createElement('button');
+    b.textContent = label; b.className = 'accent-button ' + extraCls; b.onclick = onclick;
+    panel.appendChild(b);
+    return b;
+  };
+
+  const clientId = state.spotifyClientId();
+  if (!clientId) {
+    status.textContent = '· not set up for this crew yet';
+    const input = document.createElement('input');
+    input.placeholder = 'Crew Spotify app Client ID';
+    input.className = 'p-2 rounded bg-gray-700 border border-gray-600 text-white text-sm w-72';
+    panel.appendChild(input);
+    btn('Save', () => {
+      const v = input.value.trim();
+      if (!/^[0-9a-fA-F]{32}$/.test(v)) { alert('That does not look like a Spotify Client ID (32 hex characters).'); return; }
+      state.crewDoc.spotify = { clientId: v };
+      state.recordSpotifyClientId(v);
+      state.persist(); scheduleSync();
+      renderSpotifyPanel();
+    });
+    return;
+  }
+
+  if (!spotify.isConnected()) {
+    status.textContent = '· crew app ready';
+    btn('Connect my Spotify', () => spotify.connect().catch((e) => alert(e.message)));
+    return;
+  }
+
+  status.textContent = spotify.libraryMap()
+    ? `· connected (library scanned ${new Date(spotify.libraryMap().fetchedAt).toLocaleDateString()})`
+    : '· connected';
+
+  btn(spotify.libraryMap() ? 'Rescan my likes' : 'Scan my likes', async () => {
+    openInfoModal(`<h2 class="text-xl font-bold accent-text mb-2">Scanning your Spotify library</h2><p id="scan-progress" class="text-gray-300">Starting…</p><p class="text-xs text-gray-500 mt-2">Big libraries take a few minutes — leave this open.</p>`);
+    try {
+      await spotify.scanLibrary((msg) => { const el = document.getElementById('scan-progress'); if (el) el.textContent = msg; });
+      applyAffinityForActiveFestival();
+      openInfoModal(`<h2 class="text-xl font-bold accent-text mb-2">Library scanned ✓</h2><p class="text-gray-300">Artists you listen to now show a <span style="color:#1DB954">★/♥</span> badge on this festival's lineup — and on any festival you open next.</p>`);
+      refreshView();
+    } catch (e) { openInfoModal(`<h2 class="text-xl font-bold text-red-400 mb-2">Scan failed</h2><p class="text-gray-300">${e.message}</p>`); }
+  });
+
+  btn('Playlist from picks…', () => openPlaylistBuilder());
+  btn('Disconnect', () => { spotify.disconnect(); renderSpotifyPanel(); }, '!bg-gray-600 !text-gray-200');
+}
+
+function openPlaylistBuilder() {
+  const fest = state.fest();
+  openInfoModal(`
+    <h2 class="text-xl font-bold accent-text mb-3">Playlist from picks</h2>
+    <div class="flex flex-col gap-3 text-gray-200">
+      <label class="flex items-center justify-between gap-3">Whose picks
+        <select id="pl-scope" class="bg-gray-700 rounded p-2 text-sm"><option value="me">Just mine</option><option value="crew" selected>Whole crew</option></select>
+      </label>
+      <label class="flex items-center justify-between gap-3">Which picks
+        <select id="pl-level" class="bg-gray-700 rounded p-2 text-sm"><option value="1" selected>Everything picked</option><option value="3">Must See and up</option><option value="2">Highlights only</option></select>
+      </label>
+      <label class="flex items-center justify-between gap-3">Tracks per artist
+        <select id="pl-tracks" class="bg-gray-700 rounded p-2 text-sm"><option value="1">1</option><option value="2" selected>2</option><option value="3">3</option></select>
+      </label>
+      <button id="pl-create" class="accent-button">Create on my Spotify</button>
+      <p id="pl-progress" class="text-sm text-gray-400"></p>
+    </div>`);
+  document.getElementById('pl-create').onclick = async () => {
+    const scope = document.getElementById('pl-scope').value;
+    const minLevel = Number(document.getElementById('pl-level').value);
+    const tracksPerArtist = Number(document.getElementById('pl-tracks').value);
+    const me = myName();
+    const qualifies = (lvl) => minLevel === 1 ? lvl >= 1 : minLevel === 3 ? (lvl === 3 || lvl === 2) : lvl === 2;
+    const artistNames = Object.entries(state.selections())
+      .filter(([, byPerson]) => Object.entries(byPerson).some(([p, lvl]) =>
+        qualifies(lvl) && state.isActivePerson(state.people()[p]) && (scope === 'crew' || p === me)))
+      .map(([artist]) => artist);
+    if (!artistNames.length) { document.getElementById('pl-progress').textContent = 'No picks match those filters yet.'; return; }
+    document.getElementById('pl-create').disabled = true;
+    try {
+      const title = `${state.crewName()} · ${fest.name} ${fest.year || ''}`.trim();
+      const result = await spotify.playlistFromPicks({
+        title, artistNames, tracksPerArtist,
+        onProgress: (m) => { const el = document.getElementById('pl-progress'); if (el) el.textContent = m; },
+      });
+      openInfoModal(`<h2 class="text-xl font-bold accent-text mb-2">Playlist created 🎧</h2><p class="text-gray-300 mb-3">${result.trackCount} tracks from ${artistNames.length} artists${result.misses ? ` (${result.misses} artists not found on Spotify)` : ''}.</p><a href="${result.url}" target="_blank" class="accent-button inline-block">Open in Spotify</a>`);
+    } catch (e) {
+      const el = document.getElementById('pl-progress');
+      if (el) el.textContent = 'Failed: ' + e.message;
+      document.getElementById('pl-create').disabled = false;
+    }
+  };
 }
 
 // ---- crew management ----------------------------------------------------------
@@ -258,6 +373,7 @@ async function switchFestival(fid) {
   applyTheme();
   renderPeople();
   renderDayTabs();
+  applyAffinityForActiveFestival(); // badge the new lineup from the cached library scan
   renderCurrentView();
   pollSync();
 }

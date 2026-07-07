@@ -45,6 +45,8 @@ export function renderDay(day) {
   // Same-stage overlaps split the column into side-by-side lanes (the
   // graceful replacement for the old fixed "also happening" workaround).
   const lanes = computeLanes(computed);
+  // Spotify badges follow the selected person (their liked/followed artists).
+  const affMap = state.affinityLookup(state.selectedPerson);
   computed.forEach(a => {
     const stageIndex = activeStages.indexOf(a.stage) + 2;
     if (stageIndex < 2) return;
@@ -57,7 +59,7 @@ export function renderDay(day) {
     const laneStyle = laneCount > 1
       ? ` width: calc(${100 / laneCount}% - 2px); margin-left: ${(100 / laneCount) * lane}%; justify-self: start;`
       : '';
-    const aff = (window.SPOTIFY_AFFINITY || {})[a.name];
+    const aff = affMap ? affMap[a.name.toLowerCase()] : null;
     const affCls = aff ? ' has-spotify' : '';
     const affBadge = aff
       ? `<span class="spotify-badge" title="${aff.followed ? 'You follow them' : ''}${aff.followed && aff.songs ? ' · ' : ''}${aff.songs ? aff.songs + ' liked songs' : ''}">${aff.followed ? '★' : ''}${aff.songs ? '♥' + aff.songs : ''}</span>`

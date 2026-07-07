@@ -77,6 +77,16 @@ export function crewName() { return (crewDoc.meta && crewDoc.meta.name) || 'Your
 export function people() { return crewDoc.people; }
 export function selections() { return crewDoc.festivals[activeFestivalId].selections; }
 export function affinityFor(person) { return (crewDoc.affinity || {})[person] || null; }
+
+// Case-insensitive affinity lookup for renderers: lineup names and Spotify
+// names sometimes differ in casing.
+export function affinityLookup(person) {
+  const aff = person ? affinityFor(person) : null;
+  if (!aff) return null;
+  const map = {};
+  for (const [name, v] of Object.entries(aff)) map[name.toLowerCase()] = v;
+  return map;
+}
 export function spotifyClientId() { return (crewDoc.spotify || {}).clientId || ''; }
 
 // A removed person is tombstoned ({removed:true}) rather than deleted,
