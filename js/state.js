@@ -70,8 +70,6 @@ export function recordPerson(name, obj) {
   editSeq++; persistPending();
 }
 
-export function bumpEditSeq() { editSeq++; }
-
 export function ensureFestivalState(fid) {
   if (!allData[fid]) allData[fid] = { people: {}, selections: {} };
   if (!allData[fid].people) allData[fid].people = {};

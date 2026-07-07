@@ -1,25 +1,38 @@
 // Festival Navigator service worker — offline-first app shell.
 // Bump CACHE_VERSION whenever you change cached static assets.
-const CACHE_VERSION = 'festival-nav-v5';
+const CACHE_VERSION = 'festival-nav-v6';
 
 const APP_SHELL = [
   '/',
   '/index.html',
+  '/assets/tailwind.css',
+  '/assets/custom.css',
+  '/vendor/html2canvas.min.js',
+  '/js/app.js',
+  '/js/state.js',
+  '/js/sync.js',
+  '/js/merge.js',
+  '/js/time.js',
+  '/js/parse.js',
+  '/js/util.js',
+  '/js/ui.js',
+  '/js/ai.js',
+  '/js/tools.js',
+  '/js/render/grid.js',
+  '/js/render/people.js',
   '/data/festivals.js',
   '/data/spotify-affinity.js',
   '/manifest.json',
   '/icon-192.png',
   '/icon-512.png',
-  'https://cdn.tailwindcss.com',
-  'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js',
 ];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_VERSION).then((cache) =>
-      // Best-effort: don't fail install if a CDN asset hiccups.
+      // Best-effort: don't fail install if one asset hiccups.
       Promise.all(APP_SHELL.map((url) =>
-        cache.add(new Request(url, { mode: 'no-cors' })).catch(() => {})
+        cache.add(new Request(url)).catch(() => {})
       ))
     ).then(() => self.skipWaiting())
   );
