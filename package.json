@@ -4,8 +4,9 @@
   "description": "Offline-first festival schedule planner with crew sync — Electric Forest '26 (Lollapalooza archived)",
   "main": "index.html",
   "scripts": {
-    "dev": "vercel dev",
-    "build": "echo 'No build step needed for static site'"
+    "build": "echo 'No build step needed for static site'",
+    "test": "node --test tests/*.test.mjs",
+    "css": "tailwindcss -c tailwind.config.js -i assets/tailwind.in.css -o assets/tailwind.css --minify"
   },
   "dependencies": {
     "@vercel/blob": "^2.5.0"
@@ -18,5 +19,8 @@
     "pwa"
   ],
   "author": "Kevin HG",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "tailwindcss": "^3.4.19"
+  }
 }
