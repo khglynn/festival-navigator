@@ -1,0 +1,31 @@
+-- Festival Navigator crew store — complete Neon/Postgres schema.
+-- Idempotent: safe to run on a fresh database or re-run on an existing one.
+--   psql "$DATABASE_URL" -f db/schema.sql
+--
+-- The app performs every crew merge as ONE atomic UPDATE through
+-- jsonb_deep_merge(), so there is no read-modify-write race anywhere.
+-- api/_lib/crew-shared.mjs holds the readable JS twin of the merge semantics
+-- (leaf overwrite wins, objects merge recursively, deletions inexpressible).
+
+CREATE OR REPLACE FUNCTION jsonb_deep_merge(base jsonb, ovl jsonb) RETURNS jsonb
+LANGUAGE plpgsql IMMUTABLE AS $fn$
+DECLARE result jsonb;
+BEGIN
+  IF jsonb_typeof(base) = 'object' AND jsonb_typeof(ovl) = 'object' THEN
+    SELECT COALESCE(jsonb_object_agg(COALESCE(b.key, o.key),
+      CASE WHEN b.value IS NOT NULL AND o.value IS NOT NULL THEN jsonb_deep_merge(b.value, o.value)
+           WHEN o.value IS NOT NULL THEN o.value
+           ELSE b.value END), '{}'::jsonb)
+    INTO result
+    FROM jsonb_each(base) b FULL OUTER JOIN jsonb_each(ovl) o ON b.key = o.key;
+    RETURN result;
+  END IF;
+  RETURN COALESCE(ovl, base);
+END $fn$;
+
+CREATE TABLE IF NOT EXISTS crews (
+  token TEXT PRIMARY KEY CHECK (token ~ '^[A-Za-z0-9_-]{20,40}$'),
+  doc JSONB NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);

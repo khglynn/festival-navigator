@@ -17,27 +17,8 @@ import { neon } from '@neondatabase/serverless';
 import {
   deepMerge, newCrewDoc, validateIncoming, LIMITS, TOKEN_RE,
 } from './_lib/crew-shared.mjs';
+import { rateLimited, crossSite } from './_lib/guard.mjs';
 
-// Best-effort per-instance rate limit for crew creation (serverless instances
-// are ephemeral, so this is a speed bump, not a wall — the real budget guard
-// is that a crew row costs ~300 bytes).
-const createHits = new Map();
-function createRateLimited(ip) {
-  const now = Date.now();
-  const rec = createHits.get(ip) || { count: 0, since: now };
-  if (now - rec.since > 60 * 60 * 1000) { rec.count = 0; rec.since = now; }
-  rec.count++;
-  createHits.set(ip, rec);
-  return rec.count > 10;
-}
-
-// Browser cross-site JS is refused; requests without an Origin (curl, native
-// fetch from the same origin in some browsers) pass — the token is the gate.
-function crossSite(req) {
-  const origin = req.headers.origin;
-  if (!origin) return false;
-  try { return new URL(origin).host !== req.headers.host; } catch { return true; }
-}
 
 export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(204).end();
@@ -51,8 +32,7 @@ export default async function handler(req, res) {
 
     // ---- create ----
     if (req.method === 'POST' && !token) {
-      const ip = (req.headers['x-forwarded-for'] || 'unknown').toString().split(',')[0].trim();
-      if (createRateLimited(ip)) return res.status(429).json({ error: 'Too many crews created — try again later' });
+      if (rateLimited(req, 'crew-create', 10, 60 * 60 * 1000)) return res.status(429).json({ error: 'Too many crews created — try again later' });
       const body = req.body || {};
       const name = typeof body.name === 'string' ? body.name.trim() : '';
       const seed = { meta: { name }, ...(body.people ? { people: body.people } : {}) };
@@ -94,7 +74,7 @@ export default async function handler(req, res) {
         UPDATE crews
         SET doc = jsonb_deep_merge(doc, ${delta}::jsonb), updated_at = now()
         WHERE token = ${token}
-          AND pg_column_size(jsonb_deep_merge(doc, ${delta}::jsonb)) <= ${LIMITS.docBytes}
+          AND octet_length(jsonb_deep_merge(doc, ${delta}::jsonb)::text) <= ${LIMITS.docBytes}
           AND (SELECT count(*)
                FROM jsonb_each(COALESCE(jsonb_deep_merge(doc, ${delta}::jsonb)->'people', '{}'::jsonb)) p
                WHERE NOT COALESCE((p.value->>'removed')::boolean, false)) <= ${LIMITS.activePeople}

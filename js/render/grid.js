@@ -60,9 +60,13 @@ export function renderDay(day) {
       ? ` width: calc(${100 / laneCount}% - 2px); margin-left: ${(100 / laneCount) * lane}%; justify-self: start;`
       : '';
     const aff = affMap ? affMap[a.name.toLowerCase()] : null;
-    const affCls = aff ? ' has-spotify' : '';
-    const affBadge = aff
-      ? `<span class="spotify-badge" title="${aff.followed ? 'You follow them' : ''}${aff.followed && aff.songs ? ' · ' : ''}${aff.songs ? aff.songs + ' liked songs' : ''}">${aff.followed ? '★' : ''}${aff.songs ? '♥' + aff.songs : ''}</span>`
+    // Affinity is server-validated (songs int, followed bool), but it syncs
+    // from other crew members — coerce at the sink anyway.
+    const songs = aff ? (Number(aff.songs) || 0) : 0;
+    const followed = aff ? aff.followed === true : false;
+    const affCls = (songs || followed) ? ' has-spotify' : '';
+    const affBadge = (songs || followed)
+      ? `<span class="spotify-badge" title="${followed ? 'You follow them' : ''}${followed && songs ? ' · ' : ''}${songs ? songs + ' liked songs' : ''}">${followed ? '★' : ''}${songs ? '♥' + songs : ''}</span>`
       : '';
     html += `
         <div class="artist-card bg-gray-700 rounded-md p-1 flex flex-col justify-center items-center text-center h-full${affCls}"

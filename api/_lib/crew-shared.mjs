@@ -23,11 +23,19 @@ const CLIENT_ID_RE = /^[0-9a-fA-F]{32}$/;
 // Person and crew names end up in HTML and in AI prompts — keep them tame.
 const SAFE_NAME_RE = /^[^\x00-\x1f<>"'`&\\]{1,}$/;
 
+// Keys that would rebind an object's prototype through the bracket-assign
+// merge below. Validators reject them, and the merge skips them anyway
+// (defense in depth — never rely on a single layer for pollution).
+export const FORBIDDEN_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+
 export function deepMerge(base, overlay) {
   if (overlay === undefined || overlay === null) return base;
   if (typeof overlay !== 'object') return overlay;
   const out = (base && typeof base === 'object' && !Array.isArray(base)) ? { ...base } : {};
-  for (const k in overlay) out[k] = deepMerge(out[k], overlay[k]);
+  for (const k in overlay) {
+    if (FORBIDDEN_KEYS.has(k)) continue;
+    out[k] = deepMerge(out[k], overlay[k]);
+  }
   return out;
 }
 
@@ -50,7 +58,13 @@ function isPlainObject(v) {
 }
 
 function validName(v, max) {
-  return typeof v === 'string' && v.length <= max && SAFE_NAME_RE.test(v) && v.trim() === v;
+  return typeof v === 'string' && v.length <= max && SAFE_NAME_RE.test(v)
+    && v.trim() === v && !FORBIDDEN_KEYS.has(v);
+}
+
+function validArtistKey(v) {
+  return typeof v === 'string' && v.length > 0 && v.length <= LIMITS.artistName
+    && !/[\x00-\x1f]/.test(v) && !FORBIDDEN_KEYS.has(v);
 }
 
 function validatePeople(people) {
@@ -70,8 +84,7 @@ function validatePeople(people) {
 function validateSelections(selections) {
   if (!isPlainObject(selections)) return fail('selections must be an object');
   for (const [artist, byPerson] of Object.entries(selections)) {
-    if (typeof artist !== 'string' || artist.length === 0 || artist.length > LIMITS.artistName) return fail('invalid artist key');
-    if (/[\x00-\x1f]/.test(artist)) return fail('invalid artist key');
+    if (!validArtistKey(artist)) return fail('invalid artist key');
     if (!isPlainObject(byPerson)) return fail(`selections[${artist}] must be an object`);
     for (const [person, level] of Object.entries(byPerson)) {
       if (!validName(person, LIMITS.personName)) return fail(`selections[${artist}]: invalid person`);
@@ -101,7 +114,7 @@ function validateAffinity(affinity) {
     if (!validName(person, LIMITS.personName)) return fail('affinity: invalid person name');
     if (!isPlainObject(byArtist)) return fail(`affinity[${person}] must be an object`);
     for (const [artist, aff] of Object.entries(byArtist)) {
-      if (typeof artist !== 'string' || artist.length === 0 || artist.length > LIMITS.artistName) return fail('affinity: invalid artist key');
+      if (!validArtistKey(artist)) return fail('affinity: invalid artist key');
       if (!isPlainObject(aff)) return fail(`affinity[${person}][${artist}] must be an object`);
       for (const [k, v] of Object.entries(aff)) {
         if (k === 'songs') { if (!Number.isInteger(v) || v < 0 || v > LIMITS.affinitySongs) return fail('affinity: bad songs count'); }

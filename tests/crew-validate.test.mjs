@@ -97,3 +97,14 @@ test('merge + validate round trip preserves crew semantics', () => {
   assert.equal(merged.festivals.ef.selections.GRiZ.Kevin, 3);
   assert.equal(validateMergedDoc(merged).ok, true);
 });
+
+test('prototype-pollution keys rejected everywhere and skipped by merge', () => {
+  bad({ people: { ['__proto__']: { color: '1, 2, 3' } } });
+  bad({ people: { constructor: { color: '1, 2, 3' } } });
+  bad({ festivals: { f: { selections: { ['__proto__']: { Kevin: 1 } } } } });
+  bad({ affinity: { Kevin: { prototype: { songs: 1 } } } });
+  const out = deepMerge({}, JSON.parse('{"__proto__": {"polluted": true}, "safe": 1}'));
+  assert.equal(out.safe, 1);
+  assert.equal({}.polluted, undefined);
+  assert.equal(Object.getPrototypeOf(out), Object.prototype);
+});

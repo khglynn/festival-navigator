@@ -78,8 +78,12 @@ export function renderList() {
   const affMap = state.affinityLookup(state.selectedPerson);
   const items = rows.map((r) => {
     const aff = affMap ? affMap[r.name.toLowerCase()] : null;
-    const affBadge = aff
-      ? `<span class="text-[10px] font-bold text-[#1DB954] ml-1" title="${aff.followed ? 'You follow them' : ''}${aff.followed && aff.songs ? ' · ' : ''}${aff.songs ? aff.songs + ' liked songs' : ''}">${aff.followed ? '★' : ''}${aff.songs ? '♥' + aff.songs : ''}</span>`
+    // Affinity is server-validated (songs int, followed bool), but it syncs
+    // from other crew members — coerce at the sink anyway.
+    const songs = aff ? (Number(aff.songs) || 0) : 0;
+    const followed = aff ? aff.followed === true : false;
+    const affBadge = (songs || followed)
+      ? `<span class="text-[10px] font-bold text-[#1DB954] ml-1" title="${followed ? 'You follow them' : ''}${followed && songs ? ' · ' : ''}${songs ? songs + ' liked songs' : ''}">${followed ? '★' : ''}${songs ? '♥' + songs : ''}</span>`
       : '';
     const active = Object.entries(r.sel).filter(([p, lvl]) => lvl > 0 && state.isActivePerson(peopleObj[p]));
     const dots = active.map(([p, lvl]) =>
