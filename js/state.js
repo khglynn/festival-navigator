@@ -139,6 +139,11 @@ export function recordSpotifyClientId(clientId) {
 export function hasPending() { return Object.keys(pendingChanges).length > 0; }
 export function clearPending() { pendingChanges = {}; persistPending(); }
 
+// Cached copy of a crew doc (for offline joins / crew switching).
+export function cachedDoc(token) { return loadJSON(LS.doc(token), null); }
+export function cachedPending(token) { return loadJSON(LS.pending(token), {}); }
+export function clearCachedPending(token) { localStorage.removeItem(LS.pending(token)); }
+
 // Rebuild local doc from remote + our pending overlay. Returns true if the
 // visible slice actually changed (so callers repaint only when needed).
 export function applyRemoteDoc(remote) {

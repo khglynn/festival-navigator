@@ -57,8 +57,12 @@ function showLanding(message) {
   document.getElementById('landing-message').textContent = message || '';
 }
 
-function showJoin(token, doc) {
+function showJoin(token, fetchedDoc) {
   show('landing-view', false); show('join-view', true); show('main-view', false);
+  // Offline or transient failure: fall back to the locally-cached copy so the
+  // join screen shows real people, and so a join never overwrites a richer
+  // cached doc with an empty stub.
+  const doc = fetchedDoc || state.cachedDoc(token) || { meta: {}, people: {} };
   document.getElementById('join-crew-name').textContent = (doc.meta && doc.meta.name) || 'this crew';
   const holder = document.getElementById('join-people');
   holder.innerHTML = '';
@@ -87,7 +91,26 @@ function showJoin(token, doc) {
   };
 }
 
+// Push the OUTGOING crew's queued edits before switching away — the sync
+// debounce timer is global, so without this a pick made right before a crew
+// switch would sit unsynced (safe in localStorage, but invisible to the crew)
+// until this device reopened that crew.
+async function flushOutgoingCrew() {
+  const token = state.getCrewToken();
+  if (!token || !state.hasPending()) return;
+  const pending = state.pendingChanges;
+  try {
+    const res = await fetch(`/api/crew?t=${encodeURIComponent(token)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ data: pending }),
+    });
+    if (res.ok) state.clearCachedPending(token);
+  } catch (e) { /* stays in localStorage; re-pushed when this crew is reopened */ }
+}
+
 async function enterApp(token, doc) {
+  if (state.getCrewToken() && state.getCrewToken() !== token) await flushOutgoingCrew();
   show('landing-view', false); show('join-view', false); show('main-view', true);
   crew.setActiveCrew(token);
   state.activateCrew(token, doc);
@@ -130,11 +153,10 @@ async function onCrewSelect(e) {
   const v = e.target.value;
   if (v === '__new__') { showLanding(); return; }
   if (v === state.getCrewToken()) return;
-  const cached = null; // force-refresh via cache in activateCrew + poll
   const doc = await crew.fetchCrew(v).catch(() => null);
-  if (!doc) { alert('Could not load that crew right now — using the local copy.'); }
-  if (!crew.me(v)) { showJoin(v, doc || { meta: {}, people: {} }); return; }
-  enterApp(v, doc || cached);
+  if (!crew.me(v)) { showJoin(v, doc); return; }
+  // null doc -> activateCrew falls back to the locally-cached copy.
+  enterApp(v, doc);
 }
 
 function shareCrew() {
@@ -379,10 +401,17 @@ async function switchFestival(fid) {
 }
 
 // ---- boot ----------------------------------------------------------------------
+// Guards overlapping boots (e.g. back/forward between two crew links): only
+// the newest boot() is allowed to change what's on screen — a slower, earlier
+// fetch resolving late must not swap the view back to a stale crew.
+let bootGeneration = 0;
+
 async function boot() {
+  const gen = ++bootGeneration;
+  const current = () => gen === bootGeneration;
   try { await loadFestivalIndex(); }
   catch (e) {
-    showLanding('Could not load festival data — are you offline? Try again once connected.');
+    if (current()) showLanding('Could not load festival data — are you offline? Try again once connected.');
     return;
   }
   const hashToken = crew.tokenFromHash();
@@ -390,17 +419,19 @@ async function boot() {
     let doc = null;
     try { doc = await crew.fetchCrew(hashToken); }
     catch (e) { /* offline with a link: fall through to cached copy */ }
+    if (!current()) return;
     if (!doc) {
       const known = crew.knownCrews().some((c) => c.token === hashToken);
       if (!known) { showLanding('That crew link does not work (or you are offline). Create a crew or try again.'); return; }
     } else {
       crew.rememberCrew(hashToken, (doc.meta && doc.meta.name) || '');
     }
-    if (!crew.me(hashToken)) { showJoin(hashToken, doc || { meta: {}, people: {} }); return; }
+    if (!crew.me(hashToken)) { showJoin(hashToken, doc); return; }
     enterApp(hashToken, doc);
     return;
   }
   const active = crew.activeCrewToken();
+  if (!current()) return;
   if (active) { enterApp(active, null); pollSync(); return; }
   showLanding();
 }

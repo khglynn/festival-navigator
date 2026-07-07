@@ -15,6 +15,10 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+      - run: npm test
+      - run: node scripts/validate-festivals.mjs
       # Production-only, High-threshold: quiet enough to be believed,
       # loud only when a user-reachable dependency is actually at risk.
       - run: npm audit --omit=dev --audit-level=high
+      # The committed Tailwind build must match the sources (deploy is build-less).
+      - run: npm run css && git diff --exit-code assets/tailwind.css

@@ -91,7 +91,7 @@ export function renderList() {
     ).join('');
     const meta = [r.day, r.stage, r.time].filter(Boolean).join(' · ');
     const wk = r.weekends && r.weekends !== 'both'
-      ? `<span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-gray-600 text-gray-200 ml-1">${r.weekends} only</span>` : '';
+      ? `<span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-gray-600 text-gray-200 ml-1">${escapeHtml(r.weekends)} only</span>` : '';
     const myLvl = r.myLevel;
     const ring = myLvl === 2 ? 'outline outline-2 outline-dashed outline-white/80' : '';
     const bg = myLvl > 0 && state.selectedPerson
