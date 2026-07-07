@@ -1,0 +1,20 @@
+name: CI
+
+on:
+  push:
+    branches: [main, prime-time]
+  pull_request:
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      # Production-only, High-threshold: quiet enough to be believed,
+      # loud only when a user-reachable dependency is actually at risk.
+      - run: npm audit --omit=dev --audit-level=high

@@ -1,10 +1,13 @@
 # Non-app files — kept in the repo but never deployed to the live site.
-# (recordos-logo-compressed.png is intentionally NOT ignored — it's the PWA icon.)
-Tracks not using right now/
-Music files/
-media player references/
-arhived_album-gridv2/
-spotify-mcp/
-BACKEND_SETUP.md
+claude-plans/
+NOW.md
+DEVLOG.md
 VERCEL_SETUP.md
+README.md
+.claude/
+.github/
 .remember/
+.playwright-mcp/
+screenshots/
+tests/
+scripts/
