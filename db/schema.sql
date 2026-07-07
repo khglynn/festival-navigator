@@ -29,3 +29,13 @@ CREATE TABLE IF NOT EXISTS crews (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- Spotify allowlist requests (the recordOS-style Slack flow, api/access.js).
+-- Two separate gates by design: this table only drives in-app UI state; the
+-- REAL gate is the owner pasting the email into the Spotify dev dashboard.
+CREATE TABLE IF NOT EXISTS access_requests (
+  email TEXT PRIMARY KEY CHECK (email ~ '^[^@\s]+@[^@\s]+\.[^@\s]+$' AND length(email) <= 254),
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved')),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  approved_at TIMESTAMPTZ
+);

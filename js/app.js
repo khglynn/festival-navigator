@@ -12,6 +12,7 @@ import { wireModals, openInfoModal } from './ui.js';
 import { getArtistInfo, solveConflicts } from './ai.js';
 import { downloadSchedule, handleBulkAdd, exportLikes } from './tools.js';
 import * as spotify from './spotify.js';
+import * as access from './access.js';
 
 // Mirrors the server's SAFE_NAME_RE (api/_lib/crew-shared.mjs) so users get
 // a friendly message instead of a 400.
@@ -219,6 +220,15 @@ function renderSpotifyPanel() {
   if (!spotify.isConnected()) {
     status.textContent = '· crew app ready';
     btn('Connect my Spotify', () => spotify.connect().catch((e) => alert(e.message)));
+    // Allowlist request flow — only for crews on the deployment owner's app.
+    access.accessConfig().then((cfg) => {
+      if (!cfg.enabled || cfg.ownerClientId !== clientId) return;
+      const stored = access.storedRequest();
+      const label = stored?.status === 'approved' ? 'Access approved ✓ (connect above)'
+        : stored?.status === 'pending' ? 'Access requested — check status'
+        : 'Not on the list yet? Request access';
+      btn(label, () => openAccessRequest(), '!bg-gray-600 !text-gray-200');
+    });
     return;
   }
 
@@ -239,6 +249,72 @@ function renderSpotifyPanel() {
   btn('Playlist from picks…', () => openPlaylistBuilder());
   btn('Disconnect', () => { spotify.disconnect(); renderSpotifyPanel(); }, '!bg-gray-600 !text-gray-200');
 }
+
+// Spotify allowlist request: email in -> owner pinged in Slack -> poll to
+// approved -> connect. The modal polls every 5s while it stays open.
+function openAccessRequest() {
+  const stored = access.storedRequest();
+  let pollTimer = null;
+  const stopPoll = () => { if (pollTimer) { clearInterval(pollTimer); pollTimer = null; } };
+
+  const render = (state, email) => {
+    stopPoll();
+    if (state === 'approved') {
+      openInfoModal(`
+        <h2 class="text-xl font-bold accent-text mb-2">You're on the list 🎟️</h2>
+        <p class="text-gray-300 mb-3">The crew's app owner added <strong>${escapeHtmlLite(email)}</strong>. Hit Connect and you're in.</p>
+        <button id="acc-connect" class="accent-button">Connect my Spotify</button>`);
+      document.getElementById('acc-connect').onclick = () => spotify.connect().catch((e) => alert(e.message));
+      renderSpotifyPanel();
+      return;
+    }
+    if (state === 'pending') {
+      openInfoModal(`
+        <h2 class="text-xl font-bold accent-text mb-2">Owner pinged 📨</h2>
+        <p class="text-gray-300 mb-1">A Slack message just went out for <strong>${escapeHtmlLite(email)}</strong>.</p>
+        <p class="text-gray-400 text-sm mb-3">Spotify makes app owners add people by hand — give them a few minutes. This screen checks automatically; picks work fine in the meantime.</p>
+        <p id="acc-status" class="text-sm text-gray-500">Checking every few seconds…</p>`);
+      pollTimer = setInterval(async () => {
+        if (document.getElementById('info-modal').classList.contains('hidden')) { stopPoll(); return; }
+        const s = await access.checkStatus(email);
+        if (s === 'approved') render('approved', email);
+      }, 5000);
+      return;
+    }
+    // fresh form
+    openInfoModal(`
+      <h2 class="text-xl font-bold accent-text mb-2">Request Spotify access</h2>
+      <p class="text-gray-400 text-sm mb-3">Spotify caps this crew's app at a handful of users, added by email. Enter the email on <em>your Spotify account</em> and the app owner gets pinged in Slack.</p>
+      <div class="flex gap-2">
+        <input id="acc-email" type="email" placeholder="you@example.com" class="flex-grow p-2 rounded bg-gray-700 border border-gray-600 text-white">
+        <button id="acc-send" class="accent-button whitespace-nowrap">Send it</button>
+      </div>
+      <p id="acc-err" class="text-sm text-red-400 mt-2"></p>`);
+    document.getElementById('acc-send').onclick = async () => {
+      const email = document.getElementById('acc-email').value.trim().toLowerCase();
+      const errEl = document.getElementById('acc-err');
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { errEl.textContent = 'That does not look like an email address.'; return; }
+      document.getElementById('acc-send').disabled = true;
+      try {
+        const result = await access.requestAccess(email);
+        render(result.status, email);
+      } catch (e) {
+        errEl.textContent = e.message;
+        document.getElementById('acc-send').disabled = false;
+      }
+    };
+  };
+
+  if (stored) {
+    // Re-check on open in case approval already happened.
+    access.checkStatus(stored.email).then((s) => render(s === 'approved' ? 'approved' : 'pending', stored.email));
+  } else {
+    render('new');
+  }
+}
+
+// Names here come from the user's own input, not the crew doc — still escape.
+function escapeHtmlLite(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 
 function openPlaylistBuilder() {
   const fest = state.fest();
