@@ -159,23 +159,33 @@ export function applyAffinityToCrew(myName, festivalArtistNames) {
 
 // ---- playlist from picks ------------------------------------------------------
 // Creates the playlist on the CONNECTED MEMBER'S own account.
+//
+// Endpoint choices matter here: Spotify's February 2026 Development Mode
+// changes REMOVED /artists/{id}/top-tracks (no replacement) and
+// /users/{id}/playlists, and renamed playlist track-adding to
+// /playlists/{id}/items. So tracks come from plain track SEARCH (top hits
+// for the artist), creation goes through /me/playlists, and adds go through
+// /items. Do not "modernize" these back to the classic endpoints — they 403
+// for dev-mode apps. (developer.spotify.com/documentation/web-api/tutorials/
+// february-2026-migration-guide)
 export async function playlistFromPicks({ title, artistNames, tracksPerArtist = 2, onProgress }) {
-  const me = await api('/me');
   const uris = [];
   let misses = 0;
   for (let i = 0; i < artistNames.length; i++) {
     const name = artistNames[i];
-    if (onProgress) onProgress(`Finding top tracks ${i + 1}/${artistNames.length}: ${name}`);
+    if (onProgress) onProgress(`Finding tracks ${i + 1}/${artistNames.length}: ${name}`);
     try {
-      const search = await api(`/search?q=${encodeURIComponent(`artist:"${name}"`)}&type=artist&limit=1`);
-      const artist = search.artists.items[0];
-      if (!artist) { misses++; continue; }
-      const top = await api(`/artists/${artist.id}/top-tracks`);
-      top.tracks.slice(0, tracksPerArtist).forEach((t) => uris.push(t.uri));
+      const search = await api(`/search?q=${encodeURIComponent(`artist:"${name}"`)}&type=track&limit=${tracksPerArtist * 3}`);
+      const wanted = name.toLowerCase();
+      const hits = (search.tracks?.items || [])
+        .filter((t) => (t.artists || []).some((a) => a.name.toLowerCase() === wanted));
+      const chosen = (hits.length ? hits : (search.tracks?.items || [])).slice(0, tracksPerArtist);
+      if (!chosen.length) { misses++; continue; }
+      chosen.forEach((t) => uris.push(t.uri));
     } catch (e) { misses++; }
   }
-  if (!uris.length) throw new Error('No tracks found for those picks.');
-  const createRes = await fetch(`https://api.spotify.com/v1/users/${encodeURIComponent(me.id)}/playlists`, {
+  if (!uris.length) throw new Error('No tracks found for those picks — Spotify search returned nothing (or the crew app lost API access).');
+  const createRes = await fetch('https://api.spotify.com/v1/me/playlists', {
     method: 'POST',
     headers: { Authorization: `Bearer ${await accessToken()}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({ name: title, public: false, description: 'Made with Festival Navigator' }),
@@ -183,12 +193,12 @@ export async function playlistFromPicks({ title, artistNames, tracksPerArtist = 
   if (!createRes.ok) throw new Error('Playlist creation failed: ' + createRes.status);
   const playlist = await createRes.json();
   for (let i = 0; i < uris.length; i += 100) {
-    const addRes = await fetch(`https://api.spotify.com/v1/playlists/${playlist.id}/tracks`, {
+    const addRes = await fetch(`https://api.spotify.com/v1/playlists/${playlist.id}/items`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${await accessToken()}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ uris: uris.slice(i, i + 100) }),
     });
     if (!addRes.ok) throw new Error('Adding tracks failed: ' + addRes.status);
   }
-  return { url: playlist.external_urls.spotify, trackCount: uris.length, misses };
+  return { url: playlist.external_urls?.spotify || `https://open.spotify.com/playlist/${playlist.id}`, trackCount: uris.length, misses };
 }

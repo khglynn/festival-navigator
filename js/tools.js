@@ -11,6 +11,11 @@ export function downloadSchedule() {
     openInfoModal(`<p class="text-gray-300">The image download works on the schedule grid — this festival has no stage schedule yet.</p>`);
     return;
   }
+  // Safari kills window.open() outside the synchronous click window, so the
+  // mobile tab must be opened NOW, before the async html2canvas render.
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  const mobileTab = isMobile ? window.open() : null;
+  if (mobileTab) mobileTab.document.body.innerHTML = '<body style="background:#111827;"><h3 style="color:#fff;font-family:sans-serif;text-align:center;padding:1rem;">Rendering your schedule…</h3></body>';
   openInfoModal(`<div class="text-center"><h3 class="text-2xl font-bold mb-2 accent-text">Generating Image...</h3><p class="text-gray-300">One moment.</p></div>`);
   const content = document.getElementById('downloadable-content');
   const keyEl = document.getElementById('color-key-container');
@@ -26,17 +31,15 @@ export function downloadSchedule() {
   wrapper.appendChild(content); document.body.appendChild(wrapper);
   html2canvas(wrapper, { backgroundColor: '#1F2937', scale: 2, width, windowWidth: width }).then(canvas => {
     const imageUrl = canvas.toDataURL('image/png');
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
     if (isMobile) {
-      const t = window.open();
-      if (t) t.document.body.innerHTML = `<body style="background:#111827;"><h3 style="color:#fff;font-family:sans-serif;text-align:center;padding:1rem;">Long-press the image to save</h3><img src="${imageUrl}" style="width:100%;"></body>`;
+      if (mobileTab) mobileTab.document.body.innerHTML = `<body style="background:#111827;"><h3 style="color:#fff;font-family:sans-serif;text-align:center;padding:1rem;">Long-press the image to save</h3><img src="${imageUrl}" style="width:100%;"></body>`;
     } else {
       const link = document.createElement('a');
       const dpart = ((fest.dayMeta || {})[state.currentDay]?.date || state.currentDay).toLowerCase().replace(/\s+/g, '-');
       link.download = `${fest.name.toLowerCase().replace(/\s+/g, '-')}-${dpart}.png`;
       link.href = imageUrl; link.click();
     }
-  }).catch(err => { console.error(err); openInfoModal(`<p>Sorry, image generation failed.</p>`); })
+  }).catch(err => { console.error(err); if (mobileTab) mobileTab.close(); openInfoModal(`<p>Sorry, image generation failed.</p>`); })
     .finally(() => {
       headers.forEach(h => h.classList.add('sticky'));
       keyEl.classList.add('hidden'); keyEl.classList.remove('bg-gray-900', 'border-t-2');
@@ -52,21 +55,22 @@ export function handleBulkAdd() {
   const allArtists = fest.days
     ? Object.values(fest.days).flatMap(d => d.artists)
     : fest.artists;
-  let found = 0; const notFound = [];
+  let found = 0; const notFound = []; const unknownPeople = [];
   raw.split('\n').forEach(line => {
     const parsed = parseBulkLine(line);
     if (!parsed) return;
     const { person, artistName, level } = parsed;
-    if (!state.isActivePerson(state.people()[person])) return;
+    if (!state.isActivePerson(state.people()[person])) { unknownPeople.push(person); return; }
     const hit = allArtists.find(a => a.name.toUpperCase() === artistName.toUpperCase());
     if (!hit) { notFound.push(artistName); return; }
     (state.selections()[hit.name] = state.selections()[hit.name] || {})[person] = level;
     state.recordSelection(hit.name, person, level);
     found++;
   });
-  state.persist(); scheduleSync(); renderDay(state.currentDay); input.value = '';
+  state.persist(); scheduleSync(); if (state.currentDay) renderDay(state.currentDay); input.value = '';
   let html = `<h2 class="text-xl font-bold accent-text mb-2">Bulk Add Results</h2><p class="text-gray-300 mb-2">Added/updated ${found} selections.</p>`;
-  if (notFound.length) html += `<h3 class="text-lg font-semibold text-gray-100 mt-3">Not found:</h3><ul>${[...new Set(notFound)].map(n => `<li class="text-gray-300 ml-4 list-disc list-inside">${escapeHtml(n)}</li>`).join('')}</ul>`;
+  if (notFound.length) html += `<h3 class="text-lg font-semibold text-gray-100 mt-3">Artists not found:</h3><ul>${[...new Set(notFound)].map(n => `<li class="text-gray-300 ml-4 list-disc list-inside">${escapeHtml(n)}</li>`).join('')}</ul>`;
+  if (unknownPeople.length) html += `<h3 class="text-lg font-semibold text-gray-100 mt-3">Not in this crew (names are exact, including case):</h3><ul>${[...new Set(unknownPeople)].map(n => `<li class="text-gray-300 ml-4 list-disc list-inside">${escapeHtml(n)}</li>`).join('')}</ul>`;
   openInfoModal(html);
 }
 

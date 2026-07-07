@@ -17,7 +17,12 @@ async function callGemini(prompt) {
   for (let i = 0; i < 4; i++) {
     try {
       const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: prompt }] }] }) });
-      if (r.ok) { const j = await r.json(); return j.candidates[0].content.parts[0].text; }
+      if (r.ok) {
+        const j = await r.json();
+        // Gemini can 200 with no candidates (safety filtering) — degrade politely.
+        const text = j.candidates?.[0]?.content?.parts?.[0]?.text;
+        return text || 'The AI declined to answer that one — try again or rephrase.';
+      }
       if (r.status === 429) { await sleep(delay); delay *= 2; continue; }
       const e = await r.json(); throw new Error(e?.error?.message || r.statusText);
     } catch (err) { if (i === 3) return `Error: ${err.message}.`; await sleep(delay); delay *= 2; }
@@ -26,9 +31,10 @@ async function callGemini(prompt) {
 
 export async function getArtistInfo(artistName) {
   openInfoModal(`<div class="text-center"><h3 class="text-2xl font-bold mb-2 accent-text">${escapeHtml(artistName)}</h3><p class="text-gray-300">Getting info... ✨</p></div>`);
-  // Try server endpoint first (no key needed for the user).
+  // Try server endpoint first (no key needed for the user). GET so the CDN
+  // actually caches per artist.
   try {
-    const r = await fetch('/api/artist-info', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ artistName }) });
+    const r = await fetch(`/api/artist-info?artist=${encodeURIComponent(artistName)}`);
     if (r.ok) {
       const j = await r.json();
       if (j.artistInfo) {

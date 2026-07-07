@@ -126,6 +126,9 @@ export function recordPerson(name, obj) {
 }
 
 export function recordAffinity(person, artistMap) {
+  // Double-write like every other recorder: local doc for the immediate
+  // render, pending for the sync push.
+  (crewDoc.affinity = crewDoc.affinity || {})[person] = artistMap;
   const aff = (pendingChanges.affinity = pendingChanges.affinity || {});
   aff[person] = artistMap;
   editSeq++; persistPending();

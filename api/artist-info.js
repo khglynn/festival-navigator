@@ -1,17 +1,19 @@
 // Artist blurbs (server key so users need no setup). Bounded input, per-IP
 // rate limit, and a CDN cache per artist so repeat taps cost nothing.
-// POST { artistName } -> { artistInfo }
+// GET ?artist=<name> -> { artistInfo }
+// (GET, not POST, deliberately: CDNs only cache GET/HEAD responses, so a
+// POST version of this endpoint re-billed Gemini on every repeat tap.)
 import { rateLimited, crossSite, callGemini } from './_lib/guard.mjs';
 
 export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(204).end();
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+  if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
   if (crossSite(req)) return res.status(403).json({ error: 'Cross-origin requests are not allowed' });
   if (rateLimited(req, 'artist-info', 30, 10 * 60 * 1000)) {
     return res.status(429).json({ error: 'Slow down a little — try again in a few minutes' });
   }
 
-  const artistName = req.body && req.body.artistName;
+  const artistName = (req.query.artist || '').toString();
   if (!artistName || typeof artistName !== 'string' || artistName.length > 100 || /[\x00-\x1f]/.test(artistName)) {
     return res.status(400).json({ error: 'Invalid artist name' });
   }

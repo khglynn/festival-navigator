@@ -6,7 +6,9 @@
 import { rateLimited, crossSite, callGemini } from './_lib/guard.mjs';
 
 const MAX_ARTISTS = 120;
-const SHORT = (v, n) => typeof v === 'string' && v.length > 0 && v.length <= n && !/[\x00-\x1f]/.test(v);
+const MAX_PEOPLE_PER_ARTIST = 24; // mirrors the crew's active-people cap
+const FORBIDDEN_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+const SHORT = (v, n) => typeof v === 'string' && v.length > 0 && v.length <= n && !/[\x00-\x1f]/.test(v) && !FORBIDDEN_KEYS.has(v);
 
 function validate(body) {
   if (!body || typeof body !== 'object') return null;
@@ -20,8 +22,10 @@ function validate(body) {
     if (!SHORT(artist, 100) || !info || typeof info !== 'object') return null;
     if (!SHORT(info.time, 30) || !SHORT(info.stage, 60)) return null;
     if (!info.people || typeof info.people !== 'object') return null;
+    const peopleEntries = Object.entries(info.people);
+    if (peopleEntries.length > MAX_PEOPLE_PER_ARTIST) return null;
     const people = {};
-    for (const [name, level] of Object.entries(info.people)) {
+    for (const [name, level] of peopleEntries) {
       if (!SHORT(name, 24) || !Number.isInteger(level) || level < 1 || level > 3) return null;
       people[name] = level;
     }
