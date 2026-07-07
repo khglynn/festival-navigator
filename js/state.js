@@ -1,5 +1,11 @@
-// App state: festival data access, crew/selection state, localStorage
-// persistence, and the pendingChanges overlay that makes sync offline-safe.
+// App state for the ACTIVE crew: the crew document, the pendingChanges
+// overlay that makes sync offline-safe, and festival data access.
+//
+// Crew doc shape (v3, mirrors api/_lib/crew-shared.mjs):
+//   { v, meta:{name,createdAt}, spotify:{clientId?},
+//     people:  {name: {color, removed?}},                  // crew-wide
+//     festivals: {fid: {selections: {artist: {person: level}}}},
+//     affinity: {person: {artist: {songs?, followed?}}} }  // crew-wide
 import { deepMerge } from './merge.js';
 import { computeDayArtists } from './time.js';
 
@@ -11,10 +17,10 @@ export const COLOR_PALETTE = [
 export const opacities = [0.5, 0.75, 1.0]; // index = level-1
 
 export const LS = {
-  active: 'fn_active_festival',
-  data: 'fn_data_v2',
-  pending: 'fn_pending_v2',
-  geminiKey: 'geminiApiKey'
+  doc: (t) => `fn_crew_doc_v3_${t}`,
+  pending: (t) => `fn_crew_pending_v3_${t}`,
+  fest: (t) => `fn_crew_fest_v3_${t}`,
+  geminiKey: 'geminiApiKey',
 };
 
 export const FESTIVALS = window.FESTIVALS || {};
@@ -24,67 +30,59 @@ function loadJSON(key, fallback) {
   catch (e) { return fallback; }
 }
 
-// allData[festId] = { people: {name:{color}}, selections: {artist:{person:level}} }
-export let allData = loadJSON(LS.data, {});
-// pendingChanges mirrors allData but only locally-changed leaves not yet pushed
-export let pendingChanges = loadJSON(LS.pending, {});
-
-export let activeFestivalId = localStorage.getItem(LS.active) || window.DEFAULT_FESTIVAL || Object.keys(FESTIVALS)[0];
-if (!FESTIVALS[activeFestivalId]) activeFestivalId = Object.keys(FESTIVALS)[0];
-
+// ---- active crew context ----------------------------------------------------
+let crewToken = null;
+export let crewDoc = null;        // full crew document (remote truth + pending overlay)
+export let pendingChanges = {};   // only locally-changed leaves not yet pushed
+export let activeFestivalId = null;
 export let currentDay = null;
 export let selectedPerson = null;
 let editSeq = 0; // bumped on every local edit; guards the push/clear race
 const dayCache = {}; // `${fid}|${day}` -> computed artists
 
+export function getCrewToken() { return crewToken; }
+export function getEditSeq() { return editSeq; }
 export function setCurrentDay(d) { currentDay = d; }
 export function setSelectedPerson(p) { selectedPerson = p; }
-export function setActiveFestivalId(fid) { activeFestivalId = fid; localStorage.setItem(LS.active, fid); }
-export function getEditSeq() { return editSeq; }
 
-export function persist() { localStorage.setItem(LS.data, JSON.stringify(allData)); }
-export function persistPending() { localStorage.setItem(LS.pending, JSON.stringify(pendingChanges)); }
+// Load a crew into the active slot (from cache; sync refreshes it after).
+export function activateCrew(token, doc) {
+  crewToken = token;
+  crewDoc = doc || loadJSON(LS.doc(token), null) || { v: 3, meta: {}, spotify: {}, people: {}, festivals: {}, affinity: {} };
+  pendingChanges = loadJSON(LS.pending(token), {});
+  crewDoc = deepMerge(crewDoc, pendingChanges);
+  const savedFest = localStorage.getItem(LS.fest(token));
+  activeFestivalId = (savedFest && FESTIVALS[savedFest]) ? savedFest : Object.keys(FESTIVALS)[0];
+  currentDay = null;
+  selectedPerson = null;
+  Object.keys(dayCache).forEach((k) => delete dayCache[k]);
+  ensureFestivalState(activeFestivalId);
+}
 
+export function setActiveFestivalId(fid) {
+  activeFestivalId = fid;
+  localStorage.setItem(LS.fest(crewToken), fid);
+}
+
+export function persist() { localStorage.setItem(LS.doc(crewToken), JSON.stringify(crewDoc)); }
+export function persistPending() { localStorage.setItem(LS.pending(crewToken), JSON.stringify(pendingChanges)); }
+
+// ---- accessors ---------------------------------------------------------------
 export function fest() { return FESTIVALS[activeFestivalId]; }
-export function festState() { return allData[activeFestivalId]; }
-export function people() { return festState().people; }
-export function selections() { return festState().selections; }
+export function crewName() { return (crewDoc.meta && crewDoc.meta.name) || 'Your crew'; }
+export function people() { return crewDoc.people; }
+export function selections() { return crewDoc.festivals[activeFestivalId].selections; }
+export function affinityFor(person) { return (crewDoc.affinity || {})[person] || null; }
+export function spotifyClientId() { return (crewDoc.spotify || {}).clientId || ''; }
 
 // A removed person is tombstoned ({removed:true}) rather than deleted,
 // so the removal can sync (deep-merge can't express a key deletion).
 export function isActivePerson(p) { return !!p && !p.removed; }
 export function activePeople() { return Object.entries(people()).filter(([, p]) => isActivePerson(p)); }
 
-// Record a single changed leaf into pendingChanges so it syncs & survives.
-export function recordSelection(artist, person, level) {
-  const p = (pendingChanges[activeFestivalId] = pendingChanges[activeFestivalId] || {});
-  const s = (p.selections = p.selections || {});
-  (s[artist] = s[artist] || {})[person] = level;
-  editSeq++; persistPending();
-}
-
-export function recordPerson(name, obj) {
-  const p = (pendingChanges[activeFestivalId] = pendingChanges[activeFestivalId] || {});
-  const pe = (p.people = p.people || {});
-  pe[name] = obj;
-  editSeq++; persistPending();
-}
-
 export function ensureFestivalState(fid) {
-  if (!allData[fid]) allData[fid] = { people: {}, selections: {} };
-  if (!allData[fid].people) allData[fid].people = {};
-  if (!allData[fid].selections) allData[fid].selections = {};
-  // Seed default crew the first time this festival is opened with nobody set.
-  if (Object.keys(allData[fid].people).length === 0) {
-    const prev = activeFestivalId; activeFestivalId = fid; // so recordPerson targets fid
-    (FESTIVALS[fid].defaultPeople || []).forEach((name) => {
-      const color = nextColor(allData[fid].people);
-      allData[fid].people[name] = { color };
-      recordPerson(name, { color });
-    });
-    activeFestivalId = prev;
-  }
-  persist();
+  if (!crewDoc.festivals[fid]) crewDoc.festivals[fid] = { selections: {} };
+  if (!crewDoc.festivals[fid].selections) crewDoc.festivals[fid].selections = {};
 }
 
 export function nextColor(peopleObj) {
@@ -93,17 +91,53 @@ export function nextColor(peopleObj) {
   return open || COLOR_PALETTE[Object.keys(peopleObj).length % COLOR_PALETTE.length];
 }
 
+// ---- pending-change recorders (each also applies to the local doc) -----------
+export function recordSelection(artist, person, level) {
+  recordSelectionFor(activeFestivalId, artist, person, level);
+}
+
+// Same, but for an explicit festival (person removal clears picks crew-wide).
+export function recordSelectionFor(fid, artist, person, level) {
+  const f = (pendingChanges.festivals = pendingChanges.festivals || {});
+  const entry = (f[fid] = f[fid] || {});
+  const s = (entry.selections = entry.selections || {});
+  (s[artist] = s[artist] || {})[person] = level;
+  editSeq++; persistPending();
+}
+
+export function recordPerson(name, obj) {
+  const pe = (pendingChanges.people = pendingChanges.people || {});
+  pe[name] = obj;
+  editSeq++; persistPending();
+}
+
+export function recordAffinity(person, artistMap) {
+  const aff = (pendingChanges.affinity = pendingChanges.affinity || {});
+  aff[person] = artistMap;
+  editSeq++; persistPending();
+}
+
+export function recordSpotifyClientId(clientId) {
+  pendingChanges.spotify = { clientId };
+  editSeq++; persistPending();
+}
+
 export function hasPending() { return Object.keys(pendingChanges).length > 0; }
 export function clearPending() { pendingChanges = {}; persistPending(); }
 
-// Rebuild local state from remote + our pending overlay. Returns true if the
-// visible festival actually changed (so callers repaint only when needed).
-export function applyRemoteData(remote) {
-  const before = JSON.stringify(allData[activeFestivalId] || {});
-  allData = deepMerge(remote || {}, pendingChanges);
-  ensureFestivalState(activeFestivalId); // re-seed crew if brand new
+// Rebuild local doc from remote + our pending overlay. Returns true if the
+// visible slice actually changed (so callers repaint only when needed).
+export function applyRemoteDoc(remote) {
+  const visible = () => JSON.stringify({
+    p: crewDoc.people,
+    s: (crewDoc.festivals[activeFestivalId] || {}).selections || {},
+    a: crewDoc.affinity || {},
+  });
+  const before = visible();
+  crewDoc = deepMerge(remote || {}, pendingChanges);
+  ensureFestivalState(activeFestivalId);
   persist();
-  return JSON.stringify(allData[activeFestivalId] || {}) !== before;
+  return visible() !== before;
 }
 
 // Returns computed artists for a day with startMin/endMin resolved (cached).
@@ -113,26 +147,4 @@ export function getDayArtists(day) {
   const computed = computeDayArtists(fest().days[day]);
   dayCache[key] = computed;
   return computed;
-}
-
-// One-time migration of the pre-multi-festival localStorage key.
-export function migrateOldData() {
-  const old = localStorage.getItem('lollaSelections');
-  if (old && FESTIVALS['lollapalooza-2025']) {
-    try {
-      const parsed = JSON.parse(old);
-      ensureFestivalState('lollapalooza-2025');
-      const tgt = allData['lollapalooza-2025'].selections;
-      // Route through pendingChanges too, so these survive the first
-      // remote merge and sync up to the shared store.
-      const pend = (pendingChanges['lollapalooza-2025'] = pendingChanges['lollapalooza-2025'] || {});
-      const ps = (pend.selections = pend.selections || {});
-      Object.entries(parsed).forEach(([artist, sels]) => {
-        tgt[artist] = deepMerge(tgt[artist], sels);
-        ps[artist] = deepMerge(ps[artist], sels);
-      });
-      editSeq++; persist(); persistPending();
-      localStorage.removeItem('lollaSelections'); // migrated
-    } catch (e) { /* ignore */ }
-  }
 }

@@ -17,7 +17,37 @@
     <script src="/vendor/html2canvas.min.js" defer></script>
 </head>
 <body class="text-white p-2 md:p-6">
-    <div class="max-w-screen-2xl mx-auto">
+    <!-- Landing: create a crew (shown when no crew is active) -->
+    <div id="landing-view" class="hidden max-w-md mx-auto mt-10">
+        <h1 class="fest-title text-4xl text-center mb-2">FESTIVAL NAVIGATOR</h1>
+        <p class="text-center text-gray-400 mb-6">Plan any festival with your crew — picks sync live, works offline.</p>
+        <p id="landing-message" class="text-center text-amber-400 text-sm mb-4"></p>
+        <div class="p-5 bg-gray-800 rounded-lg shadow-lg">
+            <h2 class="text-lg font-bold accent-text mb-3">Start a crew</h2>
+            <label class="block text-sm text-gray-400 mb-1" for="create-crew-name">Crew name</label>
+            <input id="create-crew-name" class="w-full p-2 rounded bg-gray-700 border border-gray-600 text-white mb-3" placeholder="e.g. Forest Fam" maxlength="40">
+            <label class="block text-sm text-gray-400 mb-1" for="create-my-name">Your name</label>
+            <input id="create-my-name" class="w-full p-2 rounded bg-gray-700 border border-gray-600 text-white mb-4" placeholder="e.g. Kevin" maxlength="24">
+            <button id="create-crew-btn" class="accent-button w-full">Start crew</button>
+        </div>
+        <p class="text-center text-gray-500 text-sm mt-4">Got a crew link? Just open it — you'll join from there.</p>
+    </div>
+
+    <!-- Join: claim your name in a crew you opened by link -->
+    <div id="join-view" class="hidden max-w-md mx-auto mt-10">
+        <h1 class="fest-title text-4xl text-center mb-2">FESTIVAL NAVIGATOR</h1>
+        <div class="p-5 bg-gray-800 rounded-lg shadow-lg mt-6">
+            <h2 class="text-lg font-bold mb-1">Joining <span id="join-crew-name" class="accent-text"></span></h2>
+            <p class="text-sm text-gray-400 mb-4">Who are you? Tap your name, or add yourself.</p>
+            <div id="join-people" class="flex flex-wrap gap-2 mb-4"></div>
+            <div class="flex gap-2">
+                <input id="join-name-input" class="flex-grow p-2 rounded bg-gray-700 border border-gray-600 text-white" placeholder="Your name" maxlength="24">
+                <button id="join-add-btn" class="accent-button whitespace-nowrap">Join</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="main-view" class="hidden max-w-screen-2xl mx-auto">
         <!-- Header -->
         <header class="text-center mb-4">
             <div class="flex justify-center items-center gap-3 flex-wrap">
@@ -90,9 +120,12 @@
             </div>
         </div>
 
-        <!-- Bottom controls: festival picker + sync status (kept out of the prime top space) -->
+        <!-- Bottom controls: crew + festival pickers + sync status (kept out of the prime top space) -->
         <div class="mt-8 flex flex-wrap justify-center items-center gap-3 text-sm text-gray-400">
-            <label for="festival-select">Festival:</label>
+            <label for="crew-select">Crew:</label>
+            <select id="crew-select" class="bg-gray-700 text-white text-sm rounded-md px-3 py-1 border border-gray-600"></select>
+            <button id="share-crew-btn" class="accent-button !py-1 !px-3 text-sm" title="Copy the crew invite link">Share link</button>
+            <label for="festival-select" class="ml-2">Festival:</label>
             <select id="festival-select" class="bg-gray-700 text-white text-sm rounded-md px-3 py-1 border border-gray-600"></select>
             <span class="flex items-center gap-1 ml-1" title="Sync status">
                 <span id="sync-dot" class="sync-dot sync-offline"></span>
