@@ -62,7 +62,9 @@ export async function pushSync() {
     applyRemote(stored);
     setSyncStatus(state.hasPending() ? 'syncing' : 'online');
   } catch (e) {
-    if (e instanceof CrewGoneError) { onCrewGone(); return; }
+    // Thread the token: this 404 is about the crew the request was FOR,
+    // which may no longer be the active one after a mid-flight switch.
+    if (e instanceof CrewGoneError) { onCrewGone(tokenAtStart); return; }
     console.error('sync push failed', e);
     setSyncStatus(navigator.onLine ? 'error' : 'offline');
   } finally {
@@ -83,7 +85,7 @@ export async function pollSync() {
     setSyncStatus(state.hasPending() ? 'syncing' : 'online');
     if (state.hasPending()) scheduleSync();
   } catch (e) {
-    if (e instanceof CrewGoneError) { onCrewGone(); return; }
+    if (e instanceof CrewGoneError) { onCrewGone(tokenAtStart); return; }
     setSyncStatus(navigator.onLine ? 'error' : 'offline');
   }
 }

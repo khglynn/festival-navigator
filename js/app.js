@@ -440,7 +440,13 @@ function wireStatic() {
   wireModals();
   initSync({
     onRemoteChange: refreshView,
-    onCrewGone: () => { crew.forgetCrew(state.getCrewToken()); showLanding('That crew no longer exists.'); },
+    onCrewGone: (goneToken) => {
+      // Only evict the crew the 404 was actually about; a stale response for
+      // a crew we already switched away from must not nuke the active one.
+      crew.forgetCrew(goneToken);
+      if (goneToken === state.getCrewToken()) showLanding('That crew no longer exists.');
+      else renderCrewBar();
+    },
   });
 
   document.getElementById('schedule-view').addEventListener('click', (e) => {
