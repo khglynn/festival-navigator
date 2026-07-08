@@ -22,7 +22,7 @@
   "author": "Kevin HG",
   "license": "MIT",
   "devDependencies": {
-    "tailwindcss": "^3.4.19"
+    "tailwindcss": "^4.3.2"
   },
   "type": "module"
 }
