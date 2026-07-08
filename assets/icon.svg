@@ -1,0 +1,14 @@
+<svg width="512" height="512" viewBox="88 88 336 336" xmlns="http://www.w3.org/2000/svg">
+  <!-- Festival Navigator mark: a schedule grid with one set "highlighted"
+       using the app's dashed Must-See border, in the app's emerald accent.
+       Transparent background; tight square crop. -->
+  <rect x="96"  y="128" width="88" height="120" rx="16" fill="#1F2937"/>
+  <rect x="96"  y="264" width="88" height="72"  rx="16" fill="#10B981"/>
+  <rect x="96"  y="352" width="88" height="56"  rx="16" fill="#1F2937"/>
+  <rect x="212" y="104" width="88" height="72"  rx="16" fill="#1F2937"/>
+  <rect x="212" y="192" width="88" height="128" rx="16" fill="#34D399" stroke="#ffffff" stroke-width="6" stroke-dasharray="18 12"/>
+  <rect x="212" y="336" width="88" height="72"  rx="16" fill="#1F2937"/>
+  <rect x="328" y="128" width="88" height="88"  rx="16" fill="#1F2937"/>
+  <rect x="328" y="232" width="88" height="64"  rx="16" fill="#059669"/>
+  <rect x="328" y="312" width="88" height="96"  rx="16" fill="#1F2937"/>
+</svg>

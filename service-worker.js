@@ -1,6 +1,6 @@
 // Festival Navigator service worker — offline-first app shell.
 // Bump CACHE_VERSION whenever you change cached static assets.
-const CACHE_VERSION = 'festival-nav-v10';
+const CACHE_VERSION = 'festival-nav-v11';
 
 const APP_SHELL = [
   '/',
@@ -31,6 +31,7 @@ const APP_SHELL = [
   '/manifest.json',
   '/icon-192.png',
   '/icon-512.png',
+  '/favicon.png',
 ];
 // Per-festival JSONs are cached at first fetch by the handler below, so a
 // festival you have opened once keeps working offline.
