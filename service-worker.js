@@ -1,6 +1,6 @@
 // Festival Navigator service worker — offline-first app shell.
 // Bump CACHE_VERSION whenever you change cached static assets.
-const CACHE_VERSION = 'festival-nav-v9';
+const CACHE_VERSION = 'festival-nav-v10';
 
 const APP_SHELL = [
   '/',

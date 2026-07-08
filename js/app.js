@@ -160,6 +160,18 @@ async function onCrewSelect(e) {
   enterApp(v, doc);
 }
 
+function renameCrew() {
+  const current = state.crewName();
+  const name = (prompt('Rename this crew:', current) || '').trim();
+  if (!name || name === current) return;
+  if (!validName(name) || name.length > 40) { alert('Crew name: 1-40 characters, no <, >, quotes or backslashes.'); return; }
+  state.recordCrewName(name);
+  state.persist();
+  crew.rememberCrew(state.getCrewToken(), name); // keep the local crew-switcher label in sync
+  renderCrewBar();
+  scheduleSync();
+}
+
 function shareCrew() {
   const link = crew.crewLink(state.getCrewToken());
   const name = state.crewName();
@@ -540,6 +552,7 @@ function wireStatic() {
   document.getElementById('festival-select').onchange = (e) => switchFestival(e.target.value);
   document.getElementById('crew-select').onchange = onCrewSelect;
   document.getElementById('share-crew-btn').onclick = shareCrew;
+  document.getElementById('rename-crew-btn').onclick = renameCrew;
   document.getElementById('conflict-solver-btn').onclick = solveConflicts;
   document.getElementById('download-btn').onclick = downloadSchedule;
   document.getElementById('top-download-btn').onclick = downloadSchedule;

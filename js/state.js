@@ -139,6 +139,13 @@ export function recordSpotifyClientId(clientId) {
   editSeq++; persistPending();
 }
 
+export function recordCrewName(name) {
+  crewDoc.meta = crewDoc.meta || {};
+  crewDoc.meta.name = name;
+  (pendingChanges.meta = pendingChanges.meta || {}).name = name;
+  editSeq++; persistPending();
+}
+
 export function hasPending() { return Object.keys(pendingChanges).length > 0; }
 export function clearPending() { pendingChanges = {}; persistPending(); }
 
