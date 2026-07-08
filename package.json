@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",
-    "@vercel/blob": "^2.5.0"
+    "@vercel/blob": "^2.6.0"
   },
   "keywords": [
     "festival",
