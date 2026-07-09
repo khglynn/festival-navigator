@@ -1,0 +1,632 @@
+{
+  "id": "acl-2025",
+  "name": "ACL Music Festival",
+  "year": "'25",
+  "subtitle": "Zilker Park · both weekends",
+  "location": "Austin, TX",
+  "dates": "October 3-5 and October 10-12, 2025",
+  "accent": "250, 204, 21",
+  "status": "archived",
+  "artists": [
+    {
+      "name": "Hozier",
+      "day": "Friday",
+      "weekends": "both"
+    },
+    {
+      "name": "Luke Combs",
+      "day": "Friday",
+      "weekends": "both"
+    },
+    {
+      "name": "Cage the Elephant",
+      "day": "Friday",
+      "weekends": "both"
+    },
+    {
+      "name": "Empire of the Sun",
+      "day": "Friday",
+      "weekends": "both"
+    },
+    {
+      "name": "Rilo Kiley",
+      "day": "Friday",
+      "weekends": "W2"
+    },
+    {
+      "name": "Maren Morris",
+      "day": "Friday",
+      "weekends": "W1"
+    },
+    {
+      "name": "ROLE MODEL",
+      "day": "Friday",
+      "weekends": "both"
+    },
+    {
+      "name": "Dr. Dog",
+      "day": "Friday",
+      "weekends": "both"
+    },
+    {
+      "name": "King Princess",
+      "day": "Friday",
+      "weekends": "both"
+    },
+    {
+      "name": "Sam Barber",
+      "day": "Friday",
+      "weekends": "W2"
+    },
+    {
+      "name": "Dylan Gossett",
+      "day": "Friday",
+      "weekends": "both"
+    },
+    {
+      "name": "MJ Lenderman",
+      "day": "Friday",
+      "weekends": "both"
+    },
+    {
+      "name": "The Favors",
+      "day": "Friday",
+      "weekends": "both"
+    },
+    {
+      "name": "Bilmuri",
+      "day": "Friday",
+      "weekends": "W2"
+    },
+    {
+      "name": "Willow Avalon",
+      "day": "Friday",
+      "weekends": "W1"
+    },
+    {
+      "name": "Briscoe",
+      "day": "Friday",
+      "weekends": "W1"
+    },
+    {
+      "name": "Confidence Man",
+      "day": "Friday",
+      "weekends": "both"
+    },
+    {
+      "name": "Panda Bear",
+      "day": "Friday",
+      "weekends": "both"
+    },
+    {
+      "name": "Tanner Usrey",
+      "day": "Friday",
+      "weekends": "both"
+    },
+    {
+      "name": "Good Neighbours",
+      "day": "Friday",
+      "weekends": "both"
+    },
+    {
+      "name": "spill tab",
+      "day": "Friday",
+      "weekends": "both"
+    },
+    {
+      "name": "Jensen McRae",
+      "day": "Friday",
+      "weekends": "both"
+    },
+    {
+      "name": "honestav",
+      "day": "Friday",
+      "weekends": "W1"
+    },
+    {
+      "name": "Vincent Lima",
+      "day": "Friday",
+      "weekends": "both"
+    },
+    {
+      "name": "Amble",
+      "day": "Friday",
+      "weekends": "both"
+    },
+    {
+      "name": "Crowe Boys",
+      "day": "Friday",
+      "weekends": "W2"
+    },
+    {
+      "name": "Tiera Kennedy",
+      "day": "Friday",
+      "weekends": "W1"
+    },
+    {
+      "name": "Asleep at the Wheel",
+      "day": "Friday",
+      "weekends": "W1"
+    },
+    {
+      "name": "Aidan Bissett",
+      "day": "Friday",
+      "weekends": "W2"
+    },
+    {
+      "name": "Johnny Stimson",
+      "day": "Friday",
+      "weekends": "W2"
+    },
+    {
+      "name": "Nicky Youre",
+      "day": "Friday",
+      "weekends": "W1"
+    },
+    {
+      "name": "Judy Blank",
+      "day": "Friday",
+      "weekends": "W2"
+    },
+    {
+      "name": "Skrilla",
+      "day": "Friday",
+      "weekends": "W2"
+    },
+    {
+      "name": "Moody Joody",
+      "day": "Friday",
+      "weekends": "W1"
+    },
+    {
+      "name": "Chance Emerson",
+      "day": "Friday",
+      "weekends": "W1"
+    },
+    {
+      "name": "Maggie Antone",
+      "day": "Friday",
+      "weekends": "W2"
+    },
+    {
+      "name": "Girl Tones",
+      "day": "Friday",
+      "weekends": "W2"
+    },
+    {
+      "name": "LVVRS",
+      "day": "Friday",
+      "weekends": "W1"
+    },
+    {
+      "name": "The Animeros",
+      "day": "Friday",
+      "weekends": "W1"
+    },
+    {
+      "name": "Farmer's Wife",
+      "day": "Friday",
+      "weekends": "W2"
+    },
+    {
+      "name": "Sabrina Carpenter",
+      "day": "Saturday",
+      "weekends": "both"
+    },
+    {
+      "name": "The Strokes",
+      "day": "Saturday",
+      "weekends": "both"
+    },
+    {
+      "name": "Doechii",
+      "day": "Saturday",
+      "weekends": "both"
+    },
+    {
+      "name": "Djo",
+      "day": "Saturday",
+      "weekends": "both"
+    },
+    {
+      "name": "Pierce The Veil",
+      "day": "Saturday",
+      "weekends": "W2"
+    },
+    {
+      "name": "Zeds Dead",
+      "day": "Saturday",
+      "weekends": "W2"
+    },
+    {
+      "name": "Sammy Virji",
+      "day": "Saturday",
+      "weekends": "W1"
+    },
+    {
+      "name": "The Backseat Lovers",
+      "day": "Saturday",
+      "weekends": "W1"
+    },
+    {
+      "name": "Modest Mouse",
+      "day": "Saturday",
+      "weekends": "W1"
+    },
+    {
+      "name": "Japanese Breakfast",
+      "day": "Saturday",
+      "weekends": "both"
+    },
+    {
+      "name": "Car Seat Headrest",
+      "day": "Saturday",
+      "weekends": "W2"
+    },
+    {
+      "name": "Magdalena Bay",
+      "day": "Saturday",
+      "weekends": "both"
+    },
+    {
+      "name": "Olivia Dean",
+      "day": "Saturday",
+      "weekends": "both"
+    },
+    {
+      "name": "MARINA",
+      "day": "Saturday",
+      "weekends": "both"
+    },
+    {
+      "name": "RIIZE",
+      "day": "Saturday",
+      "weekends": "W1"
+    },
+    {
+      "name": "Fujii Kaze",
+      "day": "Saturday",
+      "weekends": "W2"
+    },
+    {
+      "name": "LATIN MAFIA",
+      "day": "Saturday",
+      "weekends": "both"
+    },
+    {
+      "name": "Ocean Alley",
+      "day": "Saturday",
+      "weekends": "both"
+    },
+    {
+      "name": "Joey Valence & Brae",
+      "day": "Saturday",
+      "weekends": "both"
+    },
+    {
+      "name": "LP Giobbi",
+      "day": "Saturday",
+      "weekends": "both"
+    },
+    {
+      "name": "LEISURE",
+      "day": "Saturday",
+      "weekends": "W2"
+    },
+    {
+      "name": "Spacey Jane",
+      "day": "Saturday",
+      "weekends": "both"
+    },
+    {
+      "name": "Yoke Lore",
+      "day": "Saturday",
+      "weekends": "both"
+    },
+    {
+      "name": "Mallrat",
+      "day": "Saturday",
+      "weekends": "W1"
+    },
+    {
+      "name": "LA LOM",
+      "day": "Saturday",
+      "weekends": "both"
+    },
+    {
+      "name": "TOPS",
+      "day": "Saturday",
+      "weekends": "W2"
+    },
+    {
+      "name": "Alemeda",
+      "day": "Saturday",
+      "weekends": "both"
+    },
+    {
+      "name": "Odeal",
+      "day": "Saturday",
+      "weekends": "W2"
+    },
+    {
+      "name": "The Heavy Heavy",
+      "day": "Saturday",
+      "weekends": "W1"
+    },
+    {
+      "name": "Hotline TNT",
+      "day": "Saturday",
+      "weekends": "W1"
+    },
+    {
+      "name": "INOHA",
+      "day": "Saturday",
+      "weekends": "W1"
+    },
+    {
+      "name": "Sydney Rose",
+      "day": "Saturday",
+      "weekends": "both"
+    },
+    {
+      "name": "Next of Kin",
+      "day": "Saturday",
+      "weekends": "W1"
+    },
+    {
+      "name": "Clover County",
+      "day": "Saturday",
+      "weekends": "W1"
+    },
+    {
+      "name": "S.L. Houser",
+      "day": "Saturday",
+      "weekends": "W1"
+    },
+    {
+      "name": "Eric Slick",
+      "day": "Saturday",
+      "weekends": "W2"
+    },
+    {
+      "name": "GoldFord",
+      "day": "Saturday",
+      "weekends": "W1"
+    },
+    {
+      "name": "Southall",
+      "day": "Saturday",
+      "weekends": "W2"
+    },
+    {
+      "name": "South Arcade",
+      "day": "Saturday",
+      "weekends": "W2"
+    },
+    {
+      "name": "Dizzy Fae",
+      "day": "Saturday",
+      "weekends": "W2"
+    },
+    {
+      "name": "Animal Arcade",
+      "day": "Saturday",
+      "weekends": "W1"
+    },
+    {
+      "name": "Shallowater",
+      "day": "Saturday",
+      "weekends": "W2"
+    },
+    {
+      "name": "Ted Hammig & the Campaign",
+      "day": "Saturday",
+      "weekends": "W2"
+    },
+    {
+      "name": "The Killers",
+      "day": "Sunday",
+      "weekends": "both"
+    },
+    {
+      "name": "John Summit",
+      "day": "Sunday",
+      "weekends": "both"
+    },
+    {
+      "name": "Feid",
+      "day": "Sunday",
+      "weekends": "both"
+    },
+    {
+      "name": "T-Pain",
+      "day": "Sunday",
+      "weekends": "both"
+    },
+    {
+      "name": "Mk.gee",
+      "day": "Sunday",
+      "weekends": "both"
+    },
+    {
+      "name": "Polo & Pan",
+      "day": "Sunday",
+      "weekends": "both"
+    },
+    {
+      "name": "Rainbow Kitten Surprise",
+      "day": "Sunday",
+      "weekends": "both"
+    },
+    {
+      "name": "Wet Leg",
+      "day": "Sunday",
+      "weekends": "both"
+    },
+    {
+      "name": "Gigi Perez",
+      "day": "Sunday",
+      "weekends": "both"
+    },
+    {
+      "name": "Disco Lines",
+      "day": "Sunday",
+      "weekends": "both"
+    },
+    {
+      "name": "Gregory Alan Isakov",
+      "day": "Sunday",
+      "weekends": "W2"
+    },
+    {
+      "name": "Phantogram",
+      "day": "Sunday",
+      "weekends": "W1"
+    },
+    {
+      "name": "Passion Pit",
+      "day": "Sunday",
+      "weekends": "both"
+    },
+    {
+      "name": "The Dare",
+      "day": "Sunday",
+      "weekends": "both"
+    },
+    {
+      "name": "CA7RIEL & Paco Amoroso",
+      "day": "Sunday",
+      "weekends": "W2"
+    },
+    {
+      "name": "Wild Rivers",
+      "day": "Sunday",
+      "weekends": "W1"
+    },
+    {
+      "name": "Anderson East",
+      "day": "Sunday",
+      "weekends": "both"
+    },
+    {
+      "name": "Lucius",
+      "day": "Sunday",
+      "weekends": "both"
+    },
+    {
+      "name": "Royal & the Serpent",
+      "day": "Sunday",
+      "weekends": "both"
+    },
+    {
+      "name": "flowerovlove",
+      "day": "Sunday",
+      "weekends": "both"
+    },
+    {
+      "name": "julie",
+      "day": "Sunday",
+      "weekends": "W2"
+    },
+    {
+      "name": "Hans Williams",
+      "day": "Sunday",
+      "weekends": "W2"
+    },
+    {
+      "name": "Haute & Freddy",
+      "day": "Sunday",
+      "weekends": "W1"
+    },
+    {
+      "name": "Midnight Generation",
+      "day": "Sunday",
+      "weekends": "both"
+    },
+    {
+      "name": "Chezile",
+      "day": "Sunday",
+      "weekends": "both"
+    },
+    {
+      "name": "Bebe Stockwell",
+      "day": "Sunday",
+      "weekends": "W1"
+    },
+    {
+      "name": "hey, nothing",
+      "day": "Sunday",
+      "weekends": "both"
+    },
+    {
+      "name": "Case Oats",
+      "day": "Sunday",
+      "weekends": "W2"
+    },
+    {
+      "name": "Lamont Landers",
+      "day": "Sunday",
+      "weekends": "W1"
+    },
+    {
+      "name": "The Bends",
+      "day": "Sunday",
+      "weekends": "W2"
+    },
+    {
+      "name": "Supertaste",
+      "day": "Sunday",
+      "weekends": "W2"
+    },
+    {
+      "name": "The Point.",
+      "day": "Sunday",
+      "weekends": "W2"
+    },
+    {
+      "name": "Chuwi",
+      "day": "Sunday",
+      "weekends": "W1"
+    },
+    {
+      "name": "Zinadelphia",
+      "day": "Sunday",
+      "weekends": "W1"
+    },
+    {
+      "name": "Tyler Ballgame",
+      "day": "Sunday",
+      "weekends": "W1"
+    },
+    {
+      "name": "Ally Salort",
+      "day": "Sunday",
+      "weekends": "W2"
+    },
+    {
+      "name": "Geto Gala",
+      "day": "Sunday",
+      "weekends": "W1"
+    },
+    {
+      "name": "Alex Amen",
+      "day": "Sunday",
+      "weekends": "W2"
+    },
+    {
+      "name": "Aaron Page",
+      "day": "Sunday",
+      "weekends": "W1"
+    },
+    {
+      "name": "The Huston-Tillotson University Jazz Collective",
+      "day": "Sunday",
+      "weekends": "W2"
+    },
+    {
+      "name": "Disciples of Christ",
+      "day": "Sunday",
+      "weekends": "W1"
+    }
+  ]
+}

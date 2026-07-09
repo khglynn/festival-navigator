@@ -63,6 +63,33 @@
     "accent": "16, 185, 129"
   },
   {
+    "id": "ubbi-dubbi-2026",
+    "name": "Ubbi Dubbi",
+    "year": "'26",
+    "status": "archived",
+    "dates": "April 24-25, 2026",
+    "location": "Fort Worth, TX",
+    "accent": "34, 211, 238"
+  },
+  {
+    "id": "wicked-oaks-2025",
+    "name": "Wicked Oaks",
+    "year": "'25",
+    "status": "archived",
+    "dates": "October 25-26, 2025",
+    "location": "Austin, TX",
+    "accent": "251, 146, 60"
+  },
+  {
+    "id": "acl-2025",
+    "name": "ACL Music Festival",
+    "year": "'25",
+    "status": "archived",
+    "dates": "October 3-5 and October 10-12, 2025",
+    "location": "Austin, TX",
+    "accent": "250, 204, 21"
+  },
+  {
     "id": "lollapalooza-2025",
     "name": "Lollapalooza",
     "year": "",

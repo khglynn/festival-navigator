@@ -1,0 +1,284 @@
+{
+  "id": "wicked-oaks-2025",
+  "name": "Wicked Oaks",
+  "year": "'25",
+  "subtitle": "Carson Creek Ranch",
+  "location": "Austin, TX",
+  "dates": "October 25-26, 2025",
+  "accent": "251, 146, 60",
+  "status": "archived",
+  "artists": [
+    {
+      "name": "Eric Prydz",
+      "day": "Saturday"
+    },
+    {
+      "name": "Kaskade",
+      "day": "Saturday"
+    },
+    {
+      "name": "Bob Moses",
+      "day": "Saturday"
+    },
+    {
+      "name": "Max Styler",
+      "day": "Saturday"
+    },
+    {
+      "name": "Kasablanca",
+      "day": "Saturday"
+    },
+    {
+      "name": "Jackie Hollander",
+      "day": "Saturday"
+    },
+    {
+      "name": "JEV",
+      "day": "Saturday"
+    },
+    {
+      "name": "SHIMA",
+      "day": "Saturday"
+    },
+    {
+      "name": "Dairy",
+      "day": "Saturday"
+    },
+    {
+      "name": "VOYD",
+      "day": "Saturday"
+    },
+    {
+      "name": "NGHTMRE",
+      "day": "Saturday"
+    },
+    {
+      "name": "Kompany",
+      "day": "Saturday"
+    },
+    {
+      "name": "Flux Pavilion",
+      "day": "Saturday"
+    },
+    {
+      "name": "INFEKT",
+      "day": "Saturday"
+    },
+    {
+      "name": "SampliFire",
+      "day": "Saturday"
+    },
+    {
+      "name": "Automhate",
+      "day": "Saturday"
+    },
+    {
+      "name": "MAD DUBZ",
+      "day": "Saturday"
+    },
+    {
+      "name": "Prosecute",
+      "day": "Saturday"
+    },
+    {
+      "name": "Simula",
+      "day": "Saturday"
+    },
+    {
+      "name": "VAMPA",
+      "day": "Saturday"
+    },
+    {
+      "name": "JEANIE",
+      "day": "Saturday"
+    },
+    {
+      "name": "Akeos",
+      "day": "Saturday"
+    },
+    {
+      "name": "HEXX",
+      "day": "Saturday"
+    },
+    {
+      "name": "Bejalvin",
+      "day": "Saturday"
+    },
+    {
+      "name": "Vanfleet",
+      "day": "Saturday"
+    },
+    {
+      "name": "Otsukare",
+      "day": "Saturday"
+    },
+    {
+      "name": "Surf Mesa",
+      "day": "Saturday"
+    },
+    {
+      "name": "Tony Romera",
+      "day": "Saturday"
+    },
+    {
+      "name": "Sistek",
+      "day": "Saturday"
+    },
+    {
+      "name": "Autograf",
+      "day": "Saturday"
+    },
+    {
+      "name": "Wenzday",
+      "day": "Saturday"
+    },
+    {
+      "name": "Dark Heart",
+      "day": "Saturday"
+    },
+    {
+      "name": "TRN ME UP",
+      "day": "Saturday"
+    },
+    {
+      "name": "Sonrizas",
+      "day": "Saturday"
+    },
+    {
+      "name": "Martin Garrix",
+      "day": "Sunday"
+    },
+    {
+      "name": "Gryffin",
+      "day": "Sunday"
+    },
+    {
+      "name": "BUNT.",
+      "day": "Sunday"
+    },
+    {
+      "name": "Cloonee",
+      "day": "Sunday"
+    },
+    {
+      "name": "LP Giobbi",
+      "day": "Sunday"
+    },
+    {
+      "name": "Angrybaby",
+      "day": "Sunday"
+    },
+    {
+      "name": "jigitz",
+      "day": "Sunday"
+    },
+    {
+      "name": "Carola",
+      "day": "Sunday"
+    },
+    {
+      "name": "Chris Schambacher",
+      "day": "Sunday"
+    },
+    {
+      "name": "SVDDEN DEATH",
+      "day": "Sunday"
+    },
+    {
+      "name": "yvm3",
+      "day": "Sunday"
+    },
+    {
+      "name": "Nimda",
+      "day": "Sunday"
+    },
+    {
+      "name": "Kai Wachi",
+      "day": "Sunday"
+    },
+    {
+      "name": "Eptic",
+      "day": "Sunday"
+    },
+    {
+      "name": "Hedex",
+      "day": "Sunday"
+    },
+    {
+      "name": "MUST DIE!",
+      "day": "Sunday"
+    },
+    {
+      "name": "Syzy",
+      "day": "Sunday"
+    },
+    {
+      "name": "PhaseOne",
+      "day": "Sunday"
+    },
+    {
+      "name": "HVDES",
+      "day": "Sunday"
+    },
+    {
+      "name": "Codd Dubz",
+      "day": "Sunday"
+    },
+    {
+      "name": "PYKE",
+      "day": "Sunday"
+    },
+    {
+      "name": "BLVNKSPVCE",
+      "day": "Sunday"
+    },
+    {
+      "name": "HAMRO",
+      "day": "Sunday"
+    },
+    {
+      "name": "SQISHI",
+      "day": "Sunday"
+    },
+    {
+      "name": "Phiso",
+      "day": "Sunday"
+    },
+    {
+      "name": "Aweminus",
+      "day": "Sunday"
+    },
+    {
+      "name": "MYTHM",
+      "day": "Sunday"
+    },
+    {
+      "name": "STVG",
+      "day": "Sunday"
+    },
+    {
+      "name": "SOSA",
+      "day": "Sunday"
+    },
+    {
+      "name": "Luuk Van Dijk",
+      "day": "Sunday"
+    },
+    {
+      "name": "Classmatic",
+      "day": "Sunday"
+    },
+    {
+      "name": "Mahony",
+      "day": "Sunday"
+    },
+    {
+      "name": "Maxinne",
+      "day": "Sunday"
+    },
+    {
+      "name": "BOYCOTT",
+      "day": "Sunday"
+    }
+  ]
+}
