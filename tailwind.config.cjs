@@ -3,7 +3,7 @@
  *   npm run css
  */
 module.exports = {
-  content: ['./index.html', './js/**/*.js'],
+  content: ['./index.html', './recover.html', './js/**/*.js'],
   theme: { extend: {} },
   plugins: [],
 };
