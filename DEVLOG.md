@@ -2,6 +2,36 @@
 
 Newest first. One entry per meaningful unit of work.
 
+## 2026-07-09 — Data archaeology + archive fests (branch `rescue-and-archives`)
+
+- **Root-caused the "missing EF saves"**: the legacy blob was clobbered to 402
+  bytes at 09:10:14 on Jul 7 — sixty seconds before `migrate-legacy.mjs` ran —
+  so the migration's byte-for-byte verify faithfully copied an already-emptied
+  doc. The 3 surviving picks were all that reached Neon. (The Blob write-loss
+  failure mode, again; it destroyed real data before the ban was written.)
+- **Recovered Lollapalooza 2025**: two independent survivors — `lollaSelections`
+  in Chrome Profile 2's LevelDB (10 artists/17 picks, read via classic-level on
+  a copy) + the Aug-2025 blob (4 more artists). Union validated against the
+  shipped lineup (0 orphans), written as new crew "Lolla 2025" (6 people,
+  21 picks, verified leaf-by-leaf). Token in chat only — repo is public.
+- **recover.html**: self-serve rescue page for device localStorage (all key
+  generations: `fn_data_v2`/`fn_pending_v2`, `lollaSelections`,
+  `fn_spotify_libmap_v1`). Preview → merge via existing `/api/crew` → read-back
+  verify; EF id remap, tombstone drop, unknown-people skip, never-lower rule.
+  E2E-tested with Playwright against a throwaway prod crew (then deleted via
+  Neon). Exists because phones that synced at EF still hold the crew's picks.
+- **Three archived festivals** researched + adversarially verified (6-agent
+  workflow, ~766K tokens): `ubbi-dubbi-2026` (50 acts; Day 2 weather-cancelled
+  mid-event), `wicked-oaks-2025` (68 acts; 4 announced-but-cut excluded),
+  `acl-2025` (124 acts, day + W1/W2 flags; final performed lineup incl. Killers
+  headliner swap). Principle: final published set times are truth.
+- **Learned the level semantics**: 1=Nice to See, **2=Highlight, 3=Must See**
+  (`js/ai.js:84`, tap cycle `js/app.js:423-425`) — don't assume 2=Must.
+- **Security**: The Crew's token is in this public repo's git history (NOW.md).
+  Removed from HEAD; rotation queued as Kevin's decision. New rule in project
+  memory: grep for `#g=` before committing docs.
+- SW cache v11→v12 (tailwind.css grew recover.html's classes).
+
 ## 2026-07-07 — Prime-time build (P1–P7, one session)
 
 - **Crews shipped**: capability-link model (160-bit token = access), landing/join flows,
