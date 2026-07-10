@@ -173,10 +173,103 @@ export function applySort(artists, mode, ctx) {
   return arr; // 'billing' and 'day' keep source order; day grouping handles days
 }
 
+// ---- set-times grid (atlas 21d: the same cards, on a clock) ---------------------
+// One vertical page: every day gets a rule + a clock grid. Mobile shows ~2
+// stages and swipes (scroll-snap inside .times-scroll); desktop fits them all.
+function renderScheduledDay(root, day, ctx) {
+  const fest = state.fest();
+  const dayData = fest.days[day];
+  const computed = state.getDayArtists(day);
+  const stages = dayData.stages || [];
+  const meta = (fest.dayMeta || {})[day];
+  root.appendChild(dayHeader(day, meta ? `${meta.wd || ''} ${meta.num || ''}`.trim() : ''));
+
+  const dayStart = Math.min(...computed.map((a) => a.startMin));
+  const dayEnd = Math.max(...computed.map((a) => a.endMin ?? a.startMin + 60));
+  const startRow = Math.floor(dayStart / 15);
+  const rows = Math.ceil(dayEnd / 15) - startRow;
+
+  const scroll = document.createElement('div');
+  scroll.className = 'times-scroll';
+  const grid = document.createElement('div');
+  grid.className = 'times-grid';
+  grid.style.gridTemplateColumns = `40px repeat(${stages.length}, minmax(150px, 1fr))`;
+  grid.style.gridTemplateRows = `auto repeat(${rows}, 20px)`;
+
+  grid.appendChild(document.createElement('div'));
+  for (const s of stages) {
+    const h = document.createElement('div');
+    h.className = 'stage-head';
+    h.textContent = s;
+    grid.appendChild(h);
+  }
+  for (let r = startRow; r < startRow + rows; r++) {
+    if (r % 4 !== 0) continue; // hour marks only
+    const mins = r * 15;
+    const hr = Math.floor(mins / 60) % 24;
+    const label = document.createElement('div');
+    label.className = 'hour-label';
+    label.style.gridColumn = '1';
+    label.style.gridRow = String(r - startRow + 2);
+    label.textContent = `${hr % 12 === 0 ? 12 : hr % 12} ${hr < 12 ? 'AM' : 'PM'}`;
+    grid.appendChild(label);
+  }
+  for (const a of computed) {
+    const col = stages.indexOf(a.stage);
+    if (col === -1) continue;
+    const cell = renderCard(a.name, ctx, { cell: true, time: a.startStr });
+    cell.style.gridColumn = String(col + 2);
+    const row = Math.floor(a.startMin / 15) - startRow + 2;
+    const span = Math.max(1, Math.ceil(((a.endMin ?? a.startMin + 60) - a.startMin) / 15));
+    cell.style.gridRow = `${row} / span ${span}`;
+    cell.style.minHeight = '0';
+    grid.appendChild(cell);
+  }
+  scroll.appendChild(grid);
+  root.appendChild(scroll);
+
+  // Non-stage programming (workshops, silent disco) — data-driven list under
+  // the grid, kept from the old model (docs/add-a-festival.md activities{}).
+  const acts = (fest.activities || {})[day];
+  if (Array.isArray(acts) && acts.length) {
+    const list = document.createElement('div');
+    list.style.cssText = 'display: flex; flex-direction: column; gap: 4px;';
+    for (const a of acts) {
+      const row = document.createElement('div');
+      row.style.cssText = 'display: flex; gap: 10px; align-items: baseline; font-size: 11.5px;';
+      const t = document.createElement('span');
+      t.style.cssText = 'color: var(--text-tertiary); font-weight: 600; flex: none; width: 130px;';
+      t.textContent = a.time;
+      const n = document.createElement('span');
+      n.style.cssText = 'color: var(--text-body); font-weight: 600;';
+      n.textContent = a.name;
+      const v = document.createElement('span');
+      v.style.cssText = 'color: var(--text-tertiary); font-weight: 600; margin-left: auto;';
+      v.textContent = a.venue;
+      row.append(t, n, v);
+      list.appendChild(row);
+    }
+    root.appendChild(list);
+  }
+  if (ctx.onNotesChange) root.appendChild(notesSection('day', day, day, ctx, ctx.onNotesChange));
+}
+
 // ---- the wall ------------------------------------------------------------------
 export function renderWall(root, ctx) {
   root.textContent = '';
   const fest = state.fest();
+
+  // Scheduled fests (days{} with set times) render the clock view; search
+  // falls back to the flat lineup so filtering stays usable.
+  if (fest.days && Object.keys(fest.days).length && !ctx.query) {
+    for (const day of Object.keys(fest.days)) renderScheduledDay(root, day, ctx);
+    if (ctx.onNotesChange) {
+      root.appendChild(dayHeader(`NOTES · ${fest.name.toUpperCase()}`, ''));
+      root.appendChild(notesSection('fest', null, '', ctx, ctx.onNotesChange));
+    }
+    return;
+  }
+
   const artists = applySort(applyFilter(fest.artists || [], ctx.query), ctx.sort, ctx);
 
   if (!artists.length) {

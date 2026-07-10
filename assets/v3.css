@@ -170,7 +170,9 @@
               background: none; cursor: pointer; width: 100%; }
 
 /* ---- set-times grid ----------------------------------------------------------- */
-.times-grid { display: grid; gap: 4px; } /* columns set inline: 40px repeat(n, 1fr) */
+.times-scroll { overflow-x: auto; scroll-snap-type: x proximity; -webkit-overflow-scrolling: touch; }
+.times-grid { display: grid; gap: 4px; min-width: 100%; } /* columns set inline: 40px repeat(n, minmax(150px,1fr)) */
+.times-grid .stage-head { scroll-snap-align: start; }
 .stage-head { font-family: var(--font-display); letter-spacing: var(--track-display);
               color: rgb(var(--fest)); font-size: 12.5px; text-align: center;
               padding: 6px 0; background: var(--card); border-radius: var(--r-card); }

@@ -116,12 +116,18 @@ function renderDockDays() {
   const days = $('dock-days');
   days.textContent = '';
   const fest = state.fest();
-  const groups = new Set((fest.artists || []).map((a) => a.day).filter(Boolean));
+  // Scheduled fests: tabs from days{} keys (labels via dayMeta weekday, e.g.
+  // EF's "Day 1" -> THU). Lineup fests: tabs from the artists' day fields.
+  const scheduled = fest.days && Object.keys(fest.days).length;
+  const groups = scheduled
+    ? Object.keys(fest.days)
+    : [...new Set((fest.artists || []).map((a) => a.day).filter(Boolean))];
   for (const day of groups) {
+    const meta = (fest.dayMeta || {})[day];
     const tab = document.createElement('button');
     tab.className = 'day-tab';
     tab.dataset.day = day;
-    tab.textContent = day.slice(0, 3).toUpperCase();
+    tab.textContent = (meta?.wd || day).slice(0, 3).toUpperCase();
     tab.addEventListener('click', () => {
       const target = document.querySelector(`.day-rule[data-day="${CSS.escape(day)}"]`);
       if (target) target.scrollIntoView({ behavior: ctx.lowPower ? 'auto' : 'smooth', block: 'start' });
