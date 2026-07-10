@@ -25,18 +25,28 @@ export function crossSite(req) {
   try { return new URL(origin).host !== req.headers.host; } catch { return true; }
 }
 
-export async function callGemini(promptText) {
+export async function callGemini(promptText, { grounded = false } = {}) {
   const KEY = process.env.GEMINI_API_KEY;
   if (!KEY) return { error: 'API key not configured', status: 500 };
+  const body = { contents: [{ role: 'user', parts: [{ text: promptText }] }] };
+  // Google-search grounding: the model cites live web sources. NOTE: cannot
+  // be combined with responseMimeType JSON — grounded callers parse JSON out
+  // of the text themselves and validate hard.
+  if (grounded) body.tools = [{ google_search: {} }];
   const r = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${KEY}`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: promptText }] }] }),
+      body: JSON.stringify(body),
     }
   );
   if (!r.ok) return { error: 'Gemini request failed: ' + r.status, status: 502 };
   const data = await r.json();
-  return { text: data?.candidates?.[0]?.content?.parts?.[0]?.text || '' };
+  const cand = data?.candidates?.[0];
+  const text = cand?.content?.parts?.map((p) => p.text || '').join('') || '';
+  // Grounding metadata -> source URLs (provenance travels with the value).
+  const sources = (cand?.groundingMetadata?.groundingChunks || [])
+    .map((c) => c?.web?.uri).filter(Boolean).slice(0, 12);
+  return { text, sources };
 }

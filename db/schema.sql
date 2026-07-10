@@ -30,6 +30,22 @@ CREATE TABLE IF NOT EXISTS crews (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- Crew-private festivals added via LLM research (api/festival-add.js).
+-- Provenance travels with the value: source_urls from search grounding,
+-- model, who added it, when. The repo's data/festivals/*.json stays canonical
+-- for shared festivals; these are scoped to one crew's token.
+CREATE TABLE IF NOT EXISTS custom_festivals (
+  token TEXT NOT NULL REFERENCES crews(token) ON DELETE CASCADE,
+  fest_id TEXT NOT NULL CHECK (fest_id ~ '^[a-z0-9-]{1,64}$'),
+  doc JSONB NOT NULL,
+  source_urls JSONB,
+  model TEXT,
+  created_by TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (token, fest_id)
+);
+
 -- Spotify allowlist requests (the recordOS-style Slack flow, api/access.js).
 -- Two separate gates by design: this table only drives in-app UI state; the
 -- REAL gate is the owner pasting the email into the Spotify dev dashboard.

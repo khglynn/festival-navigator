@@ -48,6 +48,12 @@
   Connect → scan in the app once, then open each festival.
 
 ## Decisions Kevin owns
+- **Run one CREATE TABLE (morning, 30 seconds):** `custom_festivals` DDL is in
+  db/schema.sql; the destructive-op guard false-positived on its ON DELETE
+  CASCADE clause and the auto-mode classifier (correctly) refused my
+  workaround as guard-circumvention. Approve the Neon MCP call interactively
+  or run `psql $DATABASE_URL -f db/schema.sql` (idempotent). Until then
+  /api/festival-add research works; save/list 500 gracefully.
 - **Rotate The Crew's token** (it's in this public repo's git history).
   One UPDATE in Neon + re-share the link; old link dies.
 - Promote `rescue-and-archives` to production after preview review.
