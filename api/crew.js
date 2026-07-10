@@ -67,8 +67,9 @@ export default async function handler(req, res) {
       // latest version. A CTE-based read would merge against a pre-lock
       // snapshot and lose the earlier write (verified: 2/6 concurrent merges
       // were lost with a CTE; 6/6 survive inline).
-      // `v` and `meta.createdAt` need no SQL guard — validateIncoming
-      // rejects both before we get here.
+      // `meta.createdAt` needs no SQL guard — validateIncoming rejects it
+      // before we get here. `v` is writable as exactly 4 (one-way upgrade
+      // stamp; validateVersion), never anything else.
       const delta = JSON.stringify(incoming);
       const rows = await sql`
         UPDATE crews

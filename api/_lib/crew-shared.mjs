@@ -13,6 +13,11 @@ export const LIMITS = {
   crewName: 40,
   festivalId: 64,
   affinitySongs: 99999,
+  noteText: 500,
+  noteId: 80,
+  isoTs: 32,
+  colorIndexMax: 23,      // the 24-board (js/v3/palette.js)
+  spotifyCount: 999999,
 };
 
 export const TOKEN_RE = /^[A-Za-z0-9_-]{20,40}$/;
@@ -41,9 +46,10 @@ export function deepMerge(base, overlay) {
 
 export function newCrewDoc(name, createdAt) {
   return {
-    v: 3,
+    v: 4, // v4 semantics from birth: picks 0-4, keyed-object notes
     meta: { name, createdAt },
     spotify: {},
+    spotifyStats: {},
     people: {},
     festivals: {},
     affinity: {},
@@ -75,6 +81,7 @@ function validatePeople(people) {
     for (const [k, v] of Object.entries(p)) {
       if (k === 'color') { if (typeof v !== 'string' || !COLOR_RE.test(v)) return fail(`person ${name}: bad color`); }
       else if (k === 'removed') { if (typeof v !== 'boolean') return fail(`person ${name}: removed must be boolean`); }
+      else if (k === 'colorIndex') { if (!Number.isInteger(v) || v < 0 || v > LIMITS.colorIndexMax) return fail(`person ${name}: colorIndex must be 0..${LIMITS.colorIndexMax}`); }
       else return fail(`person ${name}: unknown key ${k}`);
     }
   }
@@ -88,7 +95,66 @@ function validateSelections(selections) {
     if (!isPlainObject(byPerson)) return fail(`selections[${artist}] must be an object`);
     for (const [person, level] of Object.entries(byPerson)) {
       if (!validName(person, LIMITS.personName)) return fail(`selections[${artist}]: invalid person`);
-      if (!Number.isInteger(level) || level < 0 || level > 3) return fail(`selections[${artist}][${person}]: level must be 0..3`);
+      // v4 semantics: 0 tombstone, 1-3 picked (alpha ladder), 4 must.
+      // Legacy v3 docs hold 0..3 with 3 meaning "Must See" — readers map
+      // 3->4 by doc version (js/v3/model.js); the server accepts the union.
+      if (!Number.isInteger(level) || level < 0 || level > 4) return fail(`selections[${artist}][${person}]: level must be 0..4`);
+    }
+  }
+  return OK;
+}
+
+// Notes are keyed objects at EVERY level (never arrays — jsonb_deep_merge
+// replaces arrays wholesale, which would eat concurrent notes). A note may be
+// tombstoned by its author via deleted:true; text of tombstones may be ''.
+const NOTE_ID_RE = /^[A-Za-z0-9|_.-]{8,80}$/;
+const NOTE_SCOPES = new Set(['artist', 'day', 'fest']);
+
+function validNoteTs(v) {
+  return typeof v === 'string' && v.length <= LIMITS.isoTs && !Number.isNaN(Date.parse(v));
+}
+
+function validateNote(note, where) {
+  if (!isPlainObject(note)) return fail(`${where}: note must be an object`);
+  if (!validName(note.author ?? '', LIMITS.personName)) return fail(`${where}: bad author`);
+  if (!validNoteTs(note.ts)) return fail(`${where}: bad ts`);
+  for (const [k, v] of Object.entries(note)) {
+    if (k === 'author' || k === 'ts') continue;
+    else if (k === 'text') {
+      if (typeof v !== 'string' || v.length > LIMITS.noteText || /[\x00-\x08\x0b-\x1f]/.test(v)) return fail(`${where}: bad text`);
+    } else if (k === 'deleted') {
+      if (v !== true) return fail(`${where}: deleted may only be true`);
+    } else return fail(`${where}: unknown key ${k}`);
+  }
+  if (typeof note.text !== 'string') return fail(`${where}: text required`);
+  if (note.text.length === 0 && note.deleted !== true) return fail(`${where}: empty text`);
+  return OK;
+}
+
+function validateNoteMap(map, where) {
+  if (!isPlainObject(map)) return fail(`${where} must be an object`);
+  for (const [noteId, note] of Object.entries(map)) {
+    if (!NOTE_ID_RE.test(noteId) || FORBIDDEN_KEYS.has(noteId)) return fail(`${where}: bad note id`);
+    const r = validateNote(note, `${where}[${noteId.slice(0, 20)}]`);
+    if (!r.ok) return r;
+  }
+  return OK;
+}
+
+function validateNotes(notes, fid) {
+  if (!isPlainObject(notes)) return fail(`festivals[${fid}].notes must be an object`);
+  for (const [scope, targets] of Object.entries(notes)) {
+    if (!NOTE_SCOPES.has(scope)) return fail(`festivals[${fid}].notes: unknown scope ${scope}`);
+    if (scope === 'fest') {
+      const r = validateNoteMap(targets, `notes.fest`);
+      if (!r.ok) return r;
+      continue;
+    }
+    if (!isPlainObject(targets)) return fail(`notes.${scope} must be an object`);
+    for (const [target, map] of Object.entries(targets)) {
+      if (!validArtistKey(target)) return fail(`notes.${scope}: invalid target key`);
+      const r = validateNoteMap(map, `notes.${scope}[${target.slice(0, 30)}]`);
+      if (!r.ok) return r;
     }
   }
   return OK;
@@ -100,9 +166,13 @@ function validateFestivals(festivals) {
     if (!FESTIVAL_ID_RE.test(fid)) return fail(`invalid festival id: ${fid.slice(0, 60)}`);
     if (!isPlainObject(entry)) return fail(`festivals[${fid}] must be an object`);
     for (const [k, v] of Object.entries(entry)) {
-      if (k !== 'selections') return fail(`festivals[${fid}]: unknown key ${k}`);
-      const r = validateSelections(v);
-      if (!r.ok) return r;
+      if (k === 'selections') {
+        const r = validateSelections(v);
+        if (!r.ok) return r;
+      } else if (k === 'notes') {
+        const r = validateNotes(v, fid);
+        if (!r.ok) return r;
+      } else return fail(`festivals[${fid}]: unknown key ${k}`);
     }
   }
   return OK;
@@ -145,12 +215,41 @@ function validateMeta(meta) {
   return OK;
 }
 
+// Per-person Spotify glance stats (Settings shows state; the drill page acts).
+// Badges themselves stay in `affinity` — this is display metadata only.
+function validateSpotifyStats(stats) {
+  if (!isPlainObject(stats)) return fail('spotifyStats must be an object');
+  for (const [person, s] of Object.entries(stats)) {
+    if (!validName(person, LIMITS.personName)) return fail('spotifyStats: invalid person');
+    if (!isPlainObject(s)) return fail(`spotifyStats[${person}] must be an object`);
+    for (const [k, v] of Object.entries(s)) {
+      if (k === 'likedCount' || k === 'artistCount') {
+        if (!Number.isInteger(v) || v < 0 || v > LIMITS.spotifyCount) return fail(`spotifyStats[${person}]: bad ${k}`);
+      } else if (k === 'lastSynced') {
+        if (!validNoteTs(v)) return fail(`spotifyStats[${person}]: bad lastSynced`);
+      } else if (k === 'user') {
+        if (!validName(v, 64)) return fail(`spotifyStats[${person}]: bad user`);
+      } else return fail(`spotifyStats[${person}]: unknown key ${k}`);
+    }
+  }
+  return OK;
+}
+
+// Doc schema version: writable as exactly 4, one-way (v3 -> v4 upgrade stamp
+// sent by the first v4 client together with the full level conversion — see
+// js/v3/model.js migrationOverlay).
+function validateVersion(v) {
+  return v === 4 ? OK : fail('v may only be written as 4');
+}
+
 const SECTION_VALIDATORS = {
   people: validatePeople,
   festivals: validateFestivals,
   affinity: validateAffinity,
   spotify: validateSpotify,
+  spotifyStats: validateSpotifyStats,
   meta: validateMeta,
+  v: validateVersion,
 };
 
 // Validate an incoming merge overlay (client-sent partial crew doc).

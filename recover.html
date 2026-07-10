@@ -53,12 +53,16 @@
 </div>
 
 <script type="module">
+import { migrationOverlay, readLevel } from '/js/v3/model.js';
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 $('origin-label').textContent = location.origin;
 
 const ID_REMAP = { 'electric-forest-2025': 'electric-forest-2026' };
 const remap = (fid) => ID_REMAP[fid] || fid;
+// Legacy device data carries v3 level semantics (3 = "Must See") — rescued
+// picks are written in v4 semantics (3 -> 4 = must). See js/v3/model.js.
+const LEGACY_LEVEL = { 1: 1, 2: 2, 3: 4 };
 
 function readJSON(key) {
     try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : null; }
@@ -90,7 +94,7 @@ function legacySelections() {
                     out[f][artist] = out[f][artist] || {};
                     // last write wins: pending_v2 is applied after data_v2 on
                     // purpose — unsynced local edits are the newer intent
-                    out[f][artist][person] = level;
+                    out[f][artist][person] = LEGACY_LEVEL[level];
                 }
             }
         }
@@ -105,7 +109,7 @@ function legacySelections() {
                 if (!Number.isInteger(level) || level < 1 || level > 3) continue;
                 out[f] = out[f] || {};
                 out[f][artist] = out[f][artist] || {};
-                if (!out[f][artist][person]) out[f][artist][person] = level;
+                if (!out[f][artist][person]) out[f][artist][person] = LEGACY_LEVEL[level];
             }
         }
     }
@@ -155,8 +159,8 @@ function renderPreview() {
         for (const [artist, byP] of Object.entries(sels)) {
             for (const [person, level] of Object.entries(byP)) {
                 if (!crewPeople.has(person)) { skipLeaves++; skippedPeople.add(person); continue; }
-                const cur = crewDoc.festivals?.[fid]?.selections?.[artist]?.[person];
-                if (Number.isInteger(cur) && cur >= level) continue; // same skip rule as merge
+                const cur = readLevel(crewDoc, crewDoc.festivals?.[fid]?.selections?.[artist]?.[person]);
+                if (Number.isInteger(cur) && cur >= level) continue; // same skip rule as merge (normalized)
                 perPerson[person] = (perPerson[person] || 0) + 1;
                 mergeLeaves++;
             }
@@ -217,13 +221,18 @@ $('merge-btn').onclick = async () => {
     $('result').textContent = 'Merging…';
     try {
         const crewPeople = new Set(Object.keys(crewDoc.people || {}));
-        const festivals = {};
+        // If the target doc still carries v3 semantics, fold the one-shot
+        // v4 migration into this same merge (converts every existing leaf
+        // and stamps v:4 atomically with the rescue).
+        const migration = migrationOverlay(crewDoc);
+        const festivals = migration?.festivals ? migration.festivals : {};
         for (const [fid, sels] of Object.entries(found)) {
             for (const [artist, byPerson] of Object.entries(sels)) {
                 for (const [person, level] of Object.entries(byPerson)) {
                     if (!crewPeople.has(person)) continue;
-                    const cur = crewDoc.festivals?.[fid]?.selections?.[artist]?.[person];
-                    if (Number.isInteger(cur) && cur >= level) continue; // never lower
+                    // never lower — compare in normalized v4 space
+                    const cur = readLevel(crewDoc, crewDoc.festivals?.[fid]?.selections?.[artist]?.[person]);
+                    if (Number.isInteger(cur) && cur >= level) continue;
                     festivals[fid] = festivals[fid] || { selections: {} };
                     festivals[fid].selections[artist] = festivals[fid].selections[artist] || {};
                     festivals[fid].selections[artist][person] = level;
@@ -231,6 +240,7 @@ $('merge-btn').onclick = async () => {
             }
         }
         const data = {};
+        if (migration) data.v = 4;
         if (Object.keys(festivals).length) data.festivals = festivals;
         const affSel = document.getElementById('aff-person');
         if (affSel) {

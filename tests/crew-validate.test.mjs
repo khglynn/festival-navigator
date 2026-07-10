@@ -35,8 +35,8 @@ test('person names: HTML-dangerous and control chars rejected', () => {
   ok({ people: { "Zoë O-Møller.Jr": { color: '1, 2, 3' } } }); // real-name chars fine
 });
 
-test('levels bounded 0..3, integers only', () => {
-  bad({ festivals: { f: { selections: { A: { Kevin: 4 } } } } });
+test('levels bounded 0..4 (v4: 4 = must), integers only', () => {
+  bad({ festivals: { f: { selections: { A: { Kevin: 5 } } } } });
   bad({ festivals: { f: { selections: { A: { Kevin: -1 } } } } });
   bad({ festivals: { f: { selections: { A: { Kevin: 1.5 } } } } });
   bad({ festivals: { f: { selections: { A: { Kevin: '3' } } } } });
