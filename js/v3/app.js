@@ -9,6 +9,7 @@ import { loadFestivalIndex, loadFestival } from '../festivals.js';
 import { renderWall, refreshCard, showUndoToast, wireScrollspy, colorIndexOf } from './wall.js';
 import { openArtistSheet, openAllNotes, closeSheet } from './notes.js';
 import { renderSettings, appSettings } from './settings.js';
+import { startFavicon, stopFavicon } from './favicon.js';
 import { hslOf, strokeOf, nextColorIndex } from './palette.js';
 
 const $ = (id) => document.getElementById(id);
@@ -78,6 +79,7 @@ function applyFestTheme() {
   $('dock-fest-name').textContent = `${fest.name.toUpperCase()} ${fest.year || ''}`.trim();
   $('desk-fest-pill').textContent = `${fest.name.toUpperCase()} ${fest.year || ''}`.trim();
   document.title = `${fest.name} — Festival Navigator`;
+  startFavicon(fest.accent, { lowPower: ctx.lowPower });
 }
 
 function renderPersonChips() {
@@ -157,6 +159,8 @@ function show(screen) {
 function applyLowPower(on) {
   ctx.lowPower = !!on;
   document.body.classList.toggle('low-power', ctx.lowPower);
+  if (ctx.lowPower) stopFavicon();
+  else if (state.getCrewToken()) startFavicon(state.fest()?.accent, { lowPower: false });
 }
 
 function openSettings() {
