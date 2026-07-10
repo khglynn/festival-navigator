@@ -9,6 +9,7 @@ import * as state from '../state.js';
 import * as model from './model.js';
 import { auraBackground, whoCorner, aboutCorner, nameColor } from './aura.js';
 import { BOARD } from './palette.js';
+import { notesSection } from './notes.js'; // runtime-only cycle with this module (colorIndexOf) — safe
 
 // ---- person -> board color ---------------------------------------------------
 // v4 people carry colorIndex. Legacy people carry a "R, G, B" string from the
@@ -76,9 +77,28 @@ export function renderCard(artistName, ctx, opts = {}) {
     c.className = chip.kind === 'notes' ? 'chip-notes' : 'chip-spotify';
     c.textContent = chip.label;
     if (chip.kind === 'spotify' && chip.followed) c.appendChild(svgBookmark());
+    if (chip.kind === 'notes' && ctx.onOpenNotes) {
+      c.style.cursor = 'pointer';
+      c.addEventListener('click', (e) => { e.stopPropagation(); ctx.onOpenNotes(artistName); });
+    }
     about.appendChild(c);
   }
   el.appendChild(about);
+
+  // Long-press (mobile) opens the artist notes sheet (~500ms, atlas 21g).
+  if (ctx.onOpenNotes) {
+    let pressTimer = null;
+    let longPressed = false;
+    el.addEventListener('pointerdown', () => {
+      longPressed = false;
+      pressTimer = setTimeout(() => { longPressed = true; ctx.onOpenNotes(artistName); }, 500);
+    });
+    const cancel = () => clearTimeout(pressTimer);
+    el.addEventListener('pointerup', cancel);
+    el.addEventListener('pointerleave', cancel);
+    el.addEventListener('pointermove', cancel);
+    el.addEventListener('click', (e) => { if (longPressed) { e.stopImmediatePropagation(); } }, true);
+  }
 
   const who = document.createElement('span');
   who.className = 'corner-who';
@@ -178,6 +198,16 @@ export function renderWall(root, ctx) {
     grid.className = 'wall-grid';
     for (const a of list) grid.appendChild(renderCard(a.name, ctx));
     root.appendChild(grid);
+    // Day notes with personal pins live under each real day's cards (21e).
+    if (day && ctx.onNotesChange) {
+      root.appendChild(notesSection('day', day, day, ctx, ctx.onNotesChange));
+    }
+  }
+
+  // Fest-wide notes close the wall (21c bottom).
+  if (ctx.onNotesChange) {
+    root.appendChild(dayHeader(`NOTES · ${fest.name.toUpperCase()}`, ''));
+    root.appendChild(notesSection('fest', null, '', ctx, ctx.onNotesChange));
   }
 }
 

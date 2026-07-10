@@ -119,6 +119,22 @@ export function recordSelectionFor(fid, artist, person, level) {
   editSeq++; persistPending();
 }
 
+// Notes are keyed objects (never arrays — deep-merge would eat concurrent
+// writes). Double-write: local doc for instant render, pending for the push.
+export function recordNote(fid, scope, target, noteId, note) {
+  const build = (root) => {
+    const f = (root.festivals = root.festivals || {});
+    const entry = (f[fid] = f[fid] || {});
+    const notes = (entry.notes = entry.notes || {});
+    const scoped = (notes[scope] = notes[scope] || {});
+    const map = scope === 'fest' ? scoped : (scoped[target] = scoped[target] || {});
+    map[noteId] = note;
+  };
+  build(pendingChanges);
+  build(crewDoc);
+  editSeq++; persistPending(); persist();
+}
+
 export function recordPerson(name, obj) {
   const pe = (pendingChanges.people = pendingChanges.people || {});
   pe[name] = obj;

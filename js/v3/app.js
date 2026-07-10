@@ -7,6 +7,7 @@ import * as sync from '../sync.js';
 import * as model from './model.js';
 import { loadFestivalIndex, loadFestival } from '../festivals.js';
 import { renderWall, refreshCard, showUndoToast, wireScrollspy, colorIndexOf } from './wall.js';
+import { openArtistSheet, closeSheet } from './notes.js';
 import { hslOf, strokeOf, nextColorIndex } from './palette.js';
 
 const $ = (id) => document.getElementById(id);
@@ -21,7 +22,14 @@ const ctx = {
   sort: 'billing',
   lowPower: false,
   onTap: handleTap,
+  onOpenNotes: (artist) => openArtistSheet(artist, ctx, onNotesChange),
+  onNotesChange: () => onNotesChange(),
 };
+
+function onNotesChange() {
+  sync.scheduleSync();
+  repaintWall();
+}
 
 function refreshCtx() {
   ctx.fid = state.activeFestivalId;
@@ -127,6 +135,7 @@ function repaintWall() {
   refreshCtx();
   renderWall($('wall-root'), ctx);
   renderDockDays();
+  $('notes-count').textContent = String(model.totalNoteCount(state.crewDoc, ctx.fid));
 }
 
 // ---- screens ----------------------------------------------------------------------
@@ -257,8 +266,9 @@ export function init() {
   $('dock-you').addEventListener('click', () => window.scrollTo({ top: 0, behavior: ctx.lowPower ? 'auto' : 'smooth' }));
   setInterval(() => sync.pollSync(), 25000);
   document.addEventListener('visibilitychange', () => { if (!document.hidden) sync.pollSync(); });
-  window.addEventListener('hashchange', () => boot());
+  window.addEventListener('hashchange', () => { closeSheet(); boot(); });
   window.addEventListener('online', () => sync.pushSync());
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeSheet(); });
   boot();
 }
 
