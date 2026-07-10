@@ -329,10 +329,16 @@ function renderJoin(token, doc) {
   };
 }
 
-async function enterApp(token, doc) {
+// `current` threads boot's generation guard through the awaits: if a newer
+// boot started (rapid crew-link switch), this activation aborts instead of
+// swapping page-level state under a wall the user can still see and tap —
+// which could attribute a tap on the OLD crew's card to the NEW crew's
+// pendingChanges (Codex P6 gate, finding P1-2).
+async function enterApp(token, doc, current = () => true) {
   crew.setActiveCrew(token);
   crew.rememberCrew(token, (doc.meta && doc.meta.name) || '');
   await loadCustomFestivals(token); // crew-private fests join the catalog first
+  if (!current()) return;
   state.activateCrew(token, doc);
   // Migrate BEFORE the wall becomes interactive: a raw 3 written onto a
   // still-v3 doc would later be rewritten to 4 by the migrate op — silently
@@ -341,11 +347,13 @@ async function enterApp(token, doc) {
   // the poll loop retries; reads are safe throughout (readLevel maps by v).
   if (model.needsMigration(state.crewDoc)) {
     await sync.requestMigration();
+    if (!current()) return;
     ctx.migrationPending = model.needsMigration(state.crewDoc);
   } else {
     ctx.migrationPending = false;
   }
   await loadFestival(state.activeFestivalId);
+  if (!current()) return;
   show('screen-app');
   applyFestTheme();
   refreshCtx();
@@ -373,7 +381,7 @@ export async function boot() {
   if (!doc) { doc = state.cachedDoc(token); }
   if (!doc) { renderLanding(); return; }
   if (!crew.me(token)) { renderJoin(token, doc); return; }
-  await enterApp(token, doc);
+  await enterApp(token, doc, current);
 }
 
 // ---- wiring ----------------------------------------------------------------------
