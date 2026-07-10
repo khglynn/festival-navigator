@@ -2,6 +2,26 @@
 
 Newest first. One entry per meaningful unit of work.
 
+## 2026-07-10 (overnight) — v3 P0+P1: grounding, rig, design system (branch `v3-design`)
+
+- **P0**: four foundation docs deep-read → distillation in the grounding doc;
+  compaction hooks + Neon destructive-op guard installed and behavior-tested;
+  design atlas read in full → `assets/v3-tokens.css` + `claude-plans/
+  v3-inventory.md`; @vercel/blob + migrate-legacy.mjs deleted (prod deps = 1);
+  Anton/Inter self-hosted (Inter as one variable woff2); CI now runs on all
+  branch pushes.
+- **P1**: `js/v3/palette.js` (24-board from the design project's 12a AURA,
+  canonical first four; stable colorIndex) + `js/v3/aura.js` (pure-function
+  port of the atlas renderVals — 9 tests pin the EXACT gradient strings) +
+  `assets/v3.css` (every component: cards/cells, corners, chips, toolbar,
+  sheet, dock, settings, notes, segmented, toggles) + `gallery.html`
+  exercising the production stylesheet with atlas-verbatim data. Verified in
+  Playwright: computed backgrounds match the engine, self-hosted fonts load,
+  full-page screenshot eyeballed against the atlas.
+- Palette nuance worth remembering: slot 3 is the README's curated green
+  hsl(150,70%,50%), NOT the board's naive 150-bright — greens at 90% sat fail
+  the 0.5-alpha-on-#141021 legibility rule.
+
 ## 2026-07-09 — Data archaeology + archive fests (branch `rescue-and-archives`)
 
 - **Root-caused the "missing EF saves"**: the legacy blob was clobbered to 402

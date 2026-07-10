@@ -6,18 +6,20 @@
 
 ## ▶️ LIVE STATE (loop maintains this block)
 
-- **Phase:** P0 COMPLETE → P1 design system. Hooks + guard installed and verified; branch cut;
+- **Phase:** P1 COMPLETE → P2 data layer. Hooks + guard installed and verified; branch cut;
   plan + grounding committed; four foundation docs deep-read ✓; atlas read in
   full → v3-tokens.css + v3-inventory.md banked ✓ (aura algorithm found as
   reference code in the atlas script — port, do not invent); CLAUDE.md carries
   the non-inferable v3 rules ✓.
 - **Design source:** scratchpad `design/design_handoff_festival_navigator/`
   (re-extract from `~/Downloads/Festival navigator v2.zip` if cleaned).
-- **EXACT NEXT STEP:** P1 continues — remaining components as modules +
-  gallery sections: bottom sheet, search/billing/notes-chip toolbar, settings
-  card + list rows, hero sizes, set-times grid cell variant. Then P1 gate
-  (self-verify vs atlas screenshots) and P2 opens (doc v4 schema + server
-  validation + merge tests; Codex gate blocks P3).
+- **EXACT NEXT STEP:** P2 — doc v4 data layer. (1) js/v3/model.js: doc-version
+  detection + legacy read mapping (1→1, 2→2, 3→4) + pick/notes accessors;
+  (2) api/_lib/crew-shared.mjs: validation for picks 0-4, notes as keyed
+  objects (id = author-ts-nonce; text cap; author must exist), per-person
+  spotify block, colorIndex 0-23; (3) merge tests incl. concurrent notes
+  (two writers, no loss) + level-4 round-trip; (4) recover.html mapping
+  update (legacy 3 → 4). Then BLOCKING Codex gate before P3 screens.
 - **Kevin authorized promote-to-production when P6 fully passes (this run only).**
 
 ## 🎉 LIVE (since 2026-07-08)

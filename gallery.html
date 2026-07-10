@@ -5,115 +5,161 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex">
 <title>v3 component gallery</title>
+<link rel="icon" type="image/png" href="/favicon.png">
 <link rel="stylesheet" href="/assets/fonts/fonts.css">
 <link rel="stylesheet" href="/assets/v3-tokens.css">
+<link rel="stylesheet" href="/assets/v3.css">
 <style>
+  /* Gallery scaffolding only — every component style comes from v3.css so the
+     gallery exercises the real production stylesheet. */
   body { margin: 0; background: var(--page); color: var(--text-body); font-family: var(--font-ui); padding: 28px; }
   h1 { font-family: var(--font-display); letter-spacing: var(--track-display); color: var(--text-header); font-size: 22px; margin: 0 0 4px; }
   .hint { color: var(--text-tertiary); font-size: 11px; font-weight: 600; margin-bottom: 20px; }
   section { margin-bottom: 26px; }
-  .label { color: var(--text-tertiary); font-size: 10px; font-weight: 800; letter-spacing: var(--track-label); text-transform: uppercase; margin-bottom: 10px; }
+  .g-label { color: var(--text-tertiary); font-size: 10px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; margin-bottom: 10px; }
   .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
-  .grid { display: grid; grid-template-columns: repeat(4, 170px); gap: 7px; }
-
-  /* Artist card (the atom) — geometry from the atlas wall */
-  .card { position: relative; min-height: 64px; border: 1px solid var(--hairline); border-radius: var(--r-card);
-          display: flex; align-items: center; justify-content: center; padding: 9px 11px 20px; text-align: center; overflow: hidden; }
-  .card.animated { background-size: 180% 180%; animation: gradShift 12s ease-in-out infinite; }
-  .card .name { position: relative; font-weight: 700; font-size: 13.5px; line-height: 1.2; }
-  .corner-about { position: absolute; bottom: 4px; left: 6px; display: flex; align-items: center; gap: 3px; }
-  .corner-who { position: absolute; bottom: 4px; right: 5px; display: flex; align-items: center; }
-  .chip-notes { display: inline-flex; align-items: center; height: 13px; padding: 0 6px; border-radius: var(--r-bubble);
-                background: var(--notes-fill); border: 1px solid var(--notes-stroke); color: #fff; font-size: 8.5px; font-weight: 800; line-height: 1; }
-  .chip-spotify { display: inline-flex; align-items: center; gap: 3px; height: 12px; padding: 0 6px; border-radius: var(--r-pill);
-                  background: var(--spotify-fill); border: 1px solid var(--spotify-stroke); color: #fff; font-size: 8.5px; font-weight: 800; line-height: 1; }
-  .mark { height: 12px; border-radius: var(--r-pill); color: #fff; font-weight: 800; display: inline-flex;
-          align-items: center; justify-content: center; margin-left: 3px; flex: none; }
-  .mark.ghost { border: 1px dashed var(--border-emphasis); background: transparent; color: var(--text-secondary); padding: 0 4px; font-size: 7.5px; }
-
-  .person-chip { color: #fff; font-size: 11.5px; padding: 5px 12px; border-radius: var(--r-pill); }
-  .avatar { width: 17px; height: 17px; border-radius: var(--r-pill); color: #fff; font-size: 8px; font-weight: 800;
-            display: inline-flex; align-items: center; justify-content: center; }
-  .avatar + .avatar { margin-left: -5px; }
-
-  .day-rule { display: flex; align-items: baseline; gap: 10px; }
-  .day-rule .day { font-family: var(--font-display); letter-spacing: var(--track-display); font-size: 16px; color: var(--text-header); }
-  .day-rule .date { color: var(--text-tertiary); font-size: 10px; font-weight: 700; }
-  .day-rule .line { flex: 1; height: 1px; background: var(--hairline); }
-
-  .note-row { display: flex; gap: 9px; max-width: 420px; }
-  .note-row .avatar { width: 22px; height: 22px; font-size: 9px; }
-  .bubble { color: var(--text-body); font-size: 12.5px; line-height: 1.5; background: var(--card);
-            border: 1px solid var(--hairline); border-radius: var(--r-bubble); padding: 9px 11px; flex: 1; }
-  .bubble.pinned { border-color: var(--notes-stroke); }
-  .bubble .meta { display: block; color: var(--text-tertiary); font-size: 10px; font-weight: 600; margin-top: 3px; }
-
-  .dock { background: var(--dock); border-top: 1px solid var(--hairline); padding: 9px 16px;
-          display: flex; align-items: center; gap: 14px; width: 358px; }
-  .dock .you { width: 26px; height: 26px; font-size: 10px; border-width: 1.5px; }
-  .dock .days { flex: 1; display: flex; justify-content: center; gap: 24px; }
-  .dock .day-tab { font-weight: 700; font-size: 12px; padding-bottom: 3px; border-bottom: 2px solid transparent; color: var(--text-tertiary); }
-  .dock .day-tab.active { color: rgb(var(--fest)); font-weight: 800; border-bottom-color: rgb(var(--fest)); }
-  .dock .fest { font-family: var(--font-display); letter-spacing: .04em; font-size: 13px; color: rgb(var(--fest)); }
-  .dot { width: 7px; height: 7px; border-radius: var(--r-pill); background: var(--sync-ok); display: inline-block; }
+  .grid4 { display: grid; grid-template-columns: repeat(4, 170px); gap: 7px; }
+  .demo-dock .dock, .demo-sheet .sheet { position: static; display: flex !important; }
+  .demo-dock .dock { width: 358px; }
+  .demo-sheet .sheet { width: 358px; box-shadow: 0 8px 30px rgba(0,0,0,.5); border-radius: 20px; }
+  .col { display: flex; flex-direction: column; gap: 8px; max-width: 420px; }
 </style>
 </head>
 <body style="--fest: 56, 189, 248">
 <h1>V3 GALLERY</h1>
-<div class="hint">every component in every state · data mirrors the design atlas (turn 21) for 1:1 comparison · fest accent set to Portola blue</div>
+<div class="hint">every component in every state · data mirrors the design atlas (turn 21) for 1:1 comparison · fest accent set to Portola blue · styles come from assets/v3.css (production)</div>
 
 <section>
-  <div class="label">Tap ladder — one person, levels 1 → 4 (must) · then unpicked</div>
-  <div class="grid" id="ladder"></div>
+  <div class="g-label">Tap ladder — one person, levels 1 → 4 (must) · then unpicked</div>
+  <div class="grid4" id="ladder"></div>
 </section>
 
 <section>
-  <div class="label">The atlas Saturday wall — 8 cards, exact renderVals data</div>
-  <div class="grid" id="satwall"></div>
+  <div class="g-label">The atlas Saturday wall — 8 cards, exact renderVals data</div>
+  <div class="grid4" id="satwall"></div>
 </section>
 
 <section>
-  <div class="label">Person chips (you = white stroke) + add · letter avatars cluster</div>
-  <div class="row" id="chips"></div>
+  <div class="g-label">Set-times grid cells — same cards on a clock (atlas 21d)</div>
+  <div class="times-grid" id="timegrid" style="grid-template-columns: 40px 1fr 1fr; grid-template-rows: auto repeat(16, 20px); width: 390px;"></div>
 </section>
 
 <section>
-  <div class="label">Hero button · pulse text · tonal + ghost buttons · toggles</div>
+  <div class="g-label">Toolbar — person chips · search · billing · notes chip</div>
+  <div class="row">
+    <span id="toolbar-chips" class="row" style="gap: 6px;"></span>
+    <span class="toolbar-divider"></span>
+    <span class="search-pill" style="width: 180px;">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#8E86A8" stroke-width="2.5"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.5" y2="16.5"></line></svg>
+      Search…
+    </span>
+    <button class="sort-chip">Billing <span class="caret">▾</span></button>
+    <button class="notes-chip">Notes <span class="count">7</span></button>
+  </div>
+</section>
+
+<section>
+  <div class="g-label">Hero button · pulse text · tonal + ghost + segmented · toggles</div>
   <div class="row">
     <div class="hero" style="width: 240px; height: 48px;"><span class="hero-bg"></span><span class="hero-grain"></span><span class="hero-label" style="font-size: 15px;">ADD A FESTIVAL →</span></div>
     <span class="pulse-text" style="font-family: var(--font-display); font-size: 28px; letter-spacing: .04em;">NAVIGATOR</span>
     <button class="btn-tonal" style="font-size: 12px; padding: 9px 16px;">Refresh my likes</button>
     <button class="btn-ghost" style="font-size: 12px; padding: 8px 14px;">Disconnect</button>
+    <button class="seg active">Everyone</button>
+    <button class="seg">Just mine</button>
     <button class="toggle" role="switch" aria-checked="true"><span class="toggle-knob"></span></button>
     <button class="toggle" role="switch" aria-checked="false"><span class="toggle-knob"></span></button>
   </div>
 </section>
 
 <section>
-  <div class="label">Day header rule · note rows (pinned + plain)</div>
-  <div class="day-rule" style="max-width: 420px; margin-bottom: 10px;"><span class="day">SATURDAY</span><span class="date">SEP 26</span><span class="line"></span></div>
-  <div class="note-row" style="margin-bottom: 8px;">
-    <span class="avatar" style="background: hsl(221,90%,62%)">M</span>
-    <div class="bubble pinned">Leaving after Robyn — early flight.<span class="meta">Maya · 2h ago</span></div>
+  <div class="g-label">Day header · note rows (pinned + plain) · composer</div>
+  <div class="col">
+    <div class="day-rule"><span class="day">SATURDAY</span><span class="date">SEP 26</span><span class="line"></span></div>
+    <div class="micro-label">Pinned by you</div>
+    <div class="note-row">
+      <span class="avatar" style="background: hsl(221,90%,62%)">M</span>
+      <div class="bubble pinned">Leaving after Robyn — early flight.<span class="meta">Maya · 2h ago</span></div>
+      <button class="pin-btn active">Unpin</button>
+    </div>
+    <div class="note-row">
+      <span class="avatar" style="background: hsl(10,90%,62%)">K</span>
+      <div class="bubble">Lockers by the Warehouse entrance.<span class="meta">you · just now</span></div>
+      <button class="pin-btn">Pin</button>
+    </div>
+    <div class="composer">
+      <input placeholder="Add a note for Saturday…">
+      <button class="btn-tonal" style="font-size: 12px; padding: 9px 15px;">Save</button>
+    </div>
   </div>
-  <div class="note-row">
-    <span class="avatar" style="background: hsl(10,90%,62%)">K</span>
-    <div class="bubble">Lockers by the Warehouse entrance.<span class="meta">you · just now</span></div>
+</section>
+
+<section class="demo-sheet">
+  <div class="g-label">Artist notes bottom sheet (atlas 21g)</div>
+  <div class="sheet">
+    <div class="grabber"></div>
+    <div style="display: flex; align-items: baseline; gap: 9px;">
+      <span class="sheet-title">ROBYN</span>
+      <span style="color: var(--text-tertiary); font-size: 11px; font-weight: 600;">Sat · Pier</span>
+    </div>
+    <div class="note-row">
+      <span class="avatar" style="background: hsl(221,90%,62%)">M</span>
+      <div class="bubble">Front left is the move — the pit floods from the right gate.<span class="meta">2h ago</span></div>
+    </div>
+    <div class="composer">
+      <input placeholder="Add a note…">
+      <button class="btn-tonal" style="font-size: 12px; padding: 9px 15px;">Save</button>
+    </div>
   </div>
 </section>
 
 <section>
-  <div class="label">Mobile dock (Portola active, Saturday)</div>
+  <div class="g-label">Settings — current fest card · fest row · list rows · dashed add</div>
+  <div class="col">
+    <div class="settings-card current">
+      <div style="display: flex; align-items: baseline; gap: 8px;">
+        <span class="fest-name" style="font-family: var(--font-display); letter-spacing: .04em; font-size: 19px; color: rgb(var(--fest));">PORTOLA <span style="font-size: .62em; opacity: .75;">'26</span></span>
+        <span style="color: var(--text-tertiary); font-size: 11px; font-weight: 600;">Sep 26–27</span>
+        <span style="margin-left: auto; color: var(--sync-ok); font-size: 10.5px; font-weight: 700;">synced</span>
+      </div>
+      <div class="row" style="gap: 5px; margin-top: 10px;" id="settings-chips"></div>
+      <div style="display: flex; gap: 8px; margin-top: 10px;">
+        <button class="btn-tonal" style="flex: 1; font-size: 12px; padding: 9px;">Share invite</button>
+        <button class="btn-ghost" style="font-size: 12px; padding: 9px 14px;">48 picks</button>
+      </div>
+    </div>
+    <div class="fest-row">
+      <div style="flex: 1; min-width: 0;">
+        <span class="fest-name" style="color: rgb(74,222,128); font-size: 15px;">LOST LANDS <span class="yr">'26</span></span>
+        <div class="fest-dates">Sep 18–20 · 31 picks</div>
+      </div>
+      <span class="avatar-cluster" id="festrow-cluster"></span>
+      <span class="chev">›</span>
+    </div>
+    <button class="dashed-row">+ Add a festival</button>
+    <div class="settings-list">
+      <div class="list-row"><span class="row-title" style="flex: 1;">How it works</span><span class="chev">›</span></div>
+      <div class="list-row">
+        <div style="flex: 1;"><div class="row-title">Low power</div><div class="row-sub">no animation · sync every 5 min</div></div>
+        <button class="toggle" role="switch" aria-checked="false"><span class="toggle-knob"></span></button>
+      </div>
+      <div class="list-row"><span class="row-title" style="flex: 1;">Bulk paste likes</span><span class="chev">›</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="demo-dock">
+  <div class="g-label">Mobile dock (Portola active, Saturday)</div>
   <div class="dock">
     <span class="avatar you" id="dock-you" style="border: 1.5px solid #fff;">K</span>
-    <span class="days"><span class="day-tab active">SAT</span><span class="day-tab">SUN</span></span>
-    <span style="display: inline-flex; align-items: center; gap: 6px;"><span class="fest">PORTOLA '26</span><span class="dot"></span></span>
+    <span class="days"><button class="day-tab active">SAT</button><button class="day-tab">SUN</button></span>
+    <button class="fest-link"><span class="fest-name">PORTOLA '26</span><span class="sync-dot"></span></button>
   </div>
 </section>
 
 <script type="module">
 import { hslOf, strokeOf } from '/js/v3/palette.js';
-import { auraBackground, whoCorner, aboutCorner, nameColor } from '/js/v3/aura.js';
+import { auraBackground, whoCorner, aboutCorner, nameColor, subColor } from '/js/v3/aura.js';
 
 const K = { name: 'Kevin', colorIndex: 0, isYou: true };
 const M = { name: 'Maya', colorIndex: 1 };
@@ -123,9 +169,9 @@ const p = (b, level) => ({ ...b, level });
 
 const BOOKMARK = '<svg width="7" height="9" viewBox="0 0 10 13"><path d="M1 1h8v11l-4-3-4 3z" fill="#fff"></path></svg>';
 
-function card(name, people, about = {}) {
+function card(name, people, about = {}, opts = {}) {
   const el = document.createElement('div');
-  el.className = 'card';
+  el.className = 'card' + (opts.cell ? ' cell' : '');
   const { background, animated } = auraBackground(people);
   el.style.background = background;
   if (animated) {
@@ -139,7 +185,13 @@ function card(name, people, about = {}) {
   nm.style.color = nameColor(people);
   nm.textContent = name;
   el.appendChild(nm);
-
+  if (opts.time) {
+    const t = document.createElement('span');
+    t.className = 'time';
+    t.style.color = subColor(people);
+    t.textContent = opts.time;
+    el.appendChild(t);
+  }
   const ac = document.createElement('span');
   ac.className = 'corner-about';
   for (const chip of aboutCorner(about)) {
@@ -150,7 +202,6 @@ function card(name, people, about = {}) {
     ac.appendChild(c);
   }
   el.appendChild(ac);
-
   const wc = document.createElement('span');
   wc.className = 'corner-who';
   for (const m of whoCorner(people)) {
@@ -169,12 +220,12 @@ function card(name, people, about = {}) {
   return el;
 }
 
-// Tap ladder: Kevin at 1, 2, 3, must, then unpicked
+// Tap ladder
 const ladder = document.getElementById('ladder');
 [1, 2, 3, 4].forEach((lvl) => ladder.appendChild(card(lvl === 4 ? 'must' : 'picked ×' + lvl, [p(K, lvl)])));
 ladder.appendChild(card('Unpicked Artist', []));
 
-// The atlas satF data, verbatim
+// Atlas satF wall
 const sat = [
   ['Robyn', [p(K, 4), p(M, 4)], { noteCount: 2 }],
   ['Dog Blood', [p(K, 4)], { spotify: { songs: 41, followed: true } }],
@@ -188,25 +239,53 @@ const sat = [
 const wall = document.getElementById('satwall');
 for (const [name, people, about] of sat) wall.appendChild(card(name, people, about));
 
-// Person chips + avatar cluster
-const chips = document.getElementById('chips');
-for (const person of [K, M, J, S]) {
-  const c = document.createElement('span');
-  c.className = 'person-chip';
+// Set-times grid — the atlas 21d cells and positions, verbatim
+const tg = document.getElementById('timegrid');
+tg.insertAdjacentHTML('beforeend', '<div></div><div class="stage-head">PIER</div><div class="stage-head">WAREHOUSE</div>');
+for (const [row, label] of [[2, '7 PM'], [6, '8 PM'], [10, '9 PM'], [14, '10 PM']]) {
+  const h = document.createElement('div');
+  h.className = 'hour-label';
+  h.style.gridColumn = '1';
+  h.style.gridRow = String(row);
+  h.textContent = label;
+  tg.appendChild(h);
+}
+const cells = [
+  ['Tove Lo', [p(S, 4), p(M, 1)], { noteCount: 1 }, { col: 2, row: 3, span: 3, time: '7:10 PM' }],
+  ['Fatboy Slim', [p(J, 4), p(S, 1)], {}, { col: 2, row: 7, span: 4, time: '8:20 PM' }],
+  ['Robyn', [p(K, 4), p(M, 4)], { noteCount: 2 }, { col: 2, row: 12, span: 5, time: '9:30 PM' }],
+  ['Kettama', [], {}, { col: 3, row: 2, span: 4, time: '7:00 PM' }],
+  ['Soulwax', [p(M, 2), p(K, 1)], { noteCount: 1, spotify: { songs: 7 } }, { col: 3, row: 8, span: 3, time: '8:30 PM' }],
+  ['Dog Blood', [p(K, 4)], { spotify: { songs: 41, followed: true } }, { col: 3, row: 14, span: 3, time: '10:15 PM' }],
+];
+for (const [name, people, about, pos] of cells) {
+  const c = card(name, people, about, { cell: true, time: pos.time });
+  c.style.gridColumn = String(pos.col);
+  c.style.gridRow = `${pos.row} / span ${pos.span}`;
+  c.style.minHeight = '0';
+  tg.appendChild(c);
+}
+
+// Person chips (toolbar + settings) and clusters
+function chipFor(person) {
+  const c = document.createElement('button');
+  c.className = 'person-chip' + (person.isYou ? ' you' : '');
   c.style.background = hslOf(person.colorIndex, 0.5);
   c.style.border = '1px solid ' + strokeOf(person.colorIndex, person.isYou);
-  c.style.fontWeight = person.isYou ? '700' : '600';
   c.textContent = person.name;
-  chips.appendChild(c);
+  return c;
 }
-const add = document.createElement('span');
-add.className = 'person-chip';
-add.style.cssText = 'border: 1.5px dashed var(--border-emphasis); color: var(--text-secondary); font-weight: 600; padding: 4px 10px;';
+const tb = document.getElementById('toolbar-chips');
+for (const person of [K, M, J, S]) tb.appendChild(chipFor(person));
+const add = document.createElement('button');
+add.className = 'person-chip add';
 add.textContent = '+';
-chips.appendChild(add);
-const cluster = document.createElement('span');
-cluster.style.cssText = 'display: inline-flex; margin-left: 16px;';
-for (const person of [K, M, J, S]) {
+tb.appendChild(add);
+const sc = document.getElementById('settings-chips');
+for (const person of [K, M, J, S]) sc.appendChild(chipFor(person));
+
+const cluster = document.getElementById('festrow-cluster');
+for (const person of [K, S]) {
   const a = document.createElement('span');
   a.className = 'avatar';
   a.style.background = hslOf(person.colorIndex, 0.5);
@@ -214,11 +293,7 @@ for (const person of [K, M, J, S]) {
   a.textContent = person.name[0];
   cluster.appendChild(a);
 }
-chips.appendChild(cluster);
-
-// Dock you-chip fill
-const dockYou = document.getElementById('dock-you');
-dockYou.style.background = hslOf(0, 0.5);
+document.getElementById('dock-you').style.background = hslOf(0, 0.5);
 </script>
 </body>
 </html>
