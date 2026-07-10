@@ -13,17 +13,16 @@
   the non-inferable v3 rules ✓.
 - **Design source:** scratchpad `design/design_handoff_festival_navigator/`
   (re-extract from `~/Downloads/Festival navigator v2.zip` if cleaned).
-- **EXACT NEXT STEP:** P6 opens — (1) live migrate-op integrity test: INSERT
-  a synthetic v3 crew row via Neon MCP (INSERT passes the guard; use token
-  prefix v3test- pattern is invalid — token must match ^[A-Za-z0-9_-]{20,40}$;
-  generate one, note for cleanup), call POST ?op=migrate on prod-code path
-  (local vercel dev :3111 hits the real Neon DB), verify every 3 became 4 and
-  v=4, idempotent second call; ALSO verify the three real crews read correctly
-  through v3 model (The Crew is still doc v3 — reads must map). (2) Process
-  codex-p3-trail findings when they land. (3) triple-check pass. (4) Merge to
-  main + promote (Kevin authorized) + verify prod domains. (5) Teardown:
-  guard out of settings.json, NOW closed, DEVLOG, morning report with
-  screenshots + deviations + decisions queue.
+- **EXACT NEXT STEP:** (1) triple-check pass on the main loop while the
+  FINAL BLOCKING gate reviewer (codex-p6-gate, banking to
+  .claude/codex-v3-p6-review.md) runs — the p3 trail reviewer died silently,
+  scope folded into this gate. (2) Process gate findings; fix P0/P1. (3)
+  Merge to main + promote (Kevin authorized) + verify prod domains serve v3.
+  (4) Teardown: guard out, NOW closed, DEVLOG, morning report.
+  DONE ALREADY: live migrate integrity PASSED on real Postgres (synthetic v3
+  row migratetest0000000000eeeee — 3->4 both fests, idempotent, stale-write
+  mapping works, declared sv:4 write stays 3, real crews untouched at v3).
+  Cleanup queue: that synthetic row + V3 Wall Test crew + 6 old test crews.
   Local test rig: vercel dev on :3111 (task b6lhnujql) + throwaway crew token
   in scratchpad/v3-test-crew.txt ("V3 Wall Test" — Neon debris, morning
   cleanup). NOTE: old SW (v11) controls prior tabs through one reload —
