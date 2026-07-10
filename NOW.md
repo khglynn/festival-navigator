@@ -6,7 +6,8 @@
 ## 🎉 v3 LIVE (2026-07-10, overnight build)
 
 - **fest.kevinhg.com** · festival.kevinhg.com · crew.kevinhg.com — all serving
-  the v3 redesign, SW v13, all three real crews pre-migrated to doc v4.
+  the v3 redesign, SW v14 (verified live 2026-07-10 AM), all three real crews
+  pre-migrated to doc v4.
 - Run docs archived in claude-plans/ (plan, grounding, inventory, gate reviews
   in .claude/codex-v3-*.md). Build guard removed at teardown; compaction hooks
   softened to generic project re-grounding.
