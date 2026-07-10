@@ -7,14 +7,15 @@
 ## ▶️ LIVE STATE (loop maintains this block)
 
 - **Phase:** P0 — ground + rig. Hooks + guard installed and verified; branch cut;
-  plan + grounding committed.
+  plan + grounding committed; **four foundation docs deep-read, distillation
+  appended to grounding doc ✓**.
 - **Design source:** scratchpad `design/design_handoff_festival_navigator/`
   (re-extract from `~/Downloads/Festival navigator v2.zip` if cleaned).
-- **EXACT NEXT STEP:** deep-read the four hg-ground-it reference docs (~45k
-  tokens, really read), append the build-relevant distillation to the grounding
-  doc appendix, then extract the Screens atlas → `claude-plans/v3-inventory.md`
-  (every screen, component, token, with source line refs) + first-pass
-  `assets/v3-tokens.css`.
+- **EXACT NEXT STEP:** extract the Screens atlas + Handoff rules card →
+  `claude-plans/v3-inventory.md` (every screen, component, token, with source
+  refs) + first-pass `assets/v3-tokens.css`; paste the 16a rules card into
+  CLAUDE.md filtered to non-inferable facts only. Then P0 close-out: retire
+  @vercel/blob + migrate-legacy.mjs, add CI audit gate, self-host fonts.
 - **Kevin authorized promote-to-production when P6 fully passes (this run only).**
 
 ## 🎉 LIVE (since 2026-07-08)

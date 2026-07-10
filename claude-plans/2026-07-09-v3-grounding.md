@@ -72,8 +72,64 @@ need). Morning report at P6 teardown regardless.
 - Codex hangs sometimes: past ~3 min, kill it and verify another way; a flaky
   reviewer is never a reason to skip review.
 
-## P0 distillation appendix
+## P0 distillation appendix (deep read done 2026-07-10 ~00:15; all four docs read in full)
 
-(The first loop firing deep-reads the four hg-ground-it docs — ~45k tokens — and
-appends the build-relevant distillation HERE, so later firings inherit the
-grounding without the re-read. Until that append exists, P0 is not done.)
+**From codebase legibility — the lying-code discipline:**
+- CLAUDE.md additions are non-inferable facts ONLY (ETH: LLM-expanded context
+  files measurably hurt; greppable facts do not earn a line). The design rules
+  card (Handoff 16a) gets filtered through this before pasting: tokens,
+  vocabulary, chip spec = non-inferable, keep; anything re-derivable from
+  v3.css or the atlas = leave out.
+- DELETE removed features outright, never comment out or disclaim (defective
+  code in context → 58% defect rate; prompts to ignore it barely help). The
+  optimizer cut means `api/optimize.js` + its client code + UI + tests all GO.
+  Same for Tailwind if retired: full removal, not a stranded stylesheet.
+- Verify by outcome, not claim: after touching a symbol, grep for every other
+  usage before calling the unit done. Tests must pass AND their output be read.
+- The festival validator is our fitness function — extend it: a crew-doc-v4
+  shape validator with tests becomes the schema fitness gate in CI.
+- Provenance travels with the value: LLM-researched festivals store their
+  source URLs + fetched-at; a date Gemini cannot source stays absent, never
+  guessed (NULL over silent default).
+
+**From dependency security:**
+- `@vercel/blob` gets REMOVED from package.json (banned store, drained, only
+  importer is the one-time migrate-legacy script — retire script to
+  claude-plans/archive note, drop the dep). Target prod dep count: 1
+  (@neondatabase/serverless).
+- CI gains: `npm ci` (frozen installs) + `npm audit --omit=dev
+  --audit-level=high` as a blocking step.
+- Fonts: self-host Anton + Inter woff2 in assets/fonts (deliberate deviation
+  from the README's "Google Fonts" line — the app's own pitch is "works with
+  no signal"; a CDN font breaks that AND adds supply-chain surface. Spirit
+  over letter; note it in the handoff report).
+
+**From running-off-laptop:**
+- The five operational questions, answered for v3: starts = user action /
+  Vercel request; runs = Vercel functions + static; remembers = Neon (crew
+  docs + custom fests) + device localStorage; human approval = festival-add
+  shows a PREVIEW the user confirms before anything is saved (agent-inbox
+  pattern, smallest form); output-stayed-good = validator in CI + sync status
+  dot + morning Playwright walk.
+- Lethal-trifecta check on `/api/festival-add`: it reads untrusted web content
+  (Gemini grounding), can write to the crew store, and is publicly reachable —
+  so ALL THREE mitigations are mandatory, not optional: schema validation
+  reusing validate-festivals rules; explicit user preview-approve before save;
+  per-IP + per-token rate limits. LLM output never executes, only data.
+- Idempotent writes: custom-festival save is an upsert keyed (token, festId);
+  retries are safe.
+
+**From memory-systems:**
+- P13 governs: the right sophistication is what is debuggable on a bad
+  Tuesday. jsonb crew doc + atomic deep-merge stays; no event sourcing, no
+  CQRS, no separate audit infrastructure tonight.
+- Notes are append-only by design (nobody deletes others' notes) and keyed-
+  object stored — this satisfies "append-only where irreversibility hurts"
+  without any new machinery.
+- Untrusted-content boundary: note text and artist names are user content —
+  escape on render everywhere, cap lengths server-side, and NEVER interpolate
+  crew-doc content into LLM prompts (festival-add takes only the user's typed
+  festival name).
+- custom_festivals columns include provenance: `source_urls jsonb`,
+  `created_by`, `created_at`, `model`. Files stay canonical for human-edited
+  festivals; DB holds the machine-ingested ones. Do not invert.
