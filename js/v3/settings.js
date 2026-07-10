@@ -219,7 +219,11 @@ function openAddFestival(actions) {
         });
         const b2 = await r2.json();
         if (!r2.ok) { status.textContent = b2.error || 'Save failed.'; save.disabled = false; return; }
-        status.textContent = 'Saved — it will appear in your festivals on next load.';
+        // Pull the crew's customs into the live catalog right now — the fest
+        // appears under Your Festivals immediately (Codex P3 trail, P0).
+        const { loadCustomFestivals } = await import('../festivals.js');
+        await loadCustomFestivals(state.getCrewToken());
+        status.textContent = 'Saved — find it under Your festivals.';
       });
       const discard = el('button', 'font-size: 12px; padding: 9px 14px;', 'Discard');
       discard.className = 'btn-ghost';
@@ -420,6 +424,7 @@ function openSpotifyDrill(ctx, actions) {
     const refresh = el('button', 'font-size: 12px; padding: 9px 16px; align-self: flex-start;', 'Refresh my likes');
     refresh.className = 'btn-tonal';
     refresh.addEventListener('click', async () => {
+      if (!ctx.meName) { msg.textContent = 'Claim your name first (open your crew link).'; return; }
       try {
         refresh.disabled = true;
         await spotify.scanLibrary((p) => { msg.textContent = p; });

@@ -59,6 +59,12 @@ export function newCrewDoc(name, createdAt) {
 const fail = (error) => ({ ok: false, error });
 const OK = { ok: true };
 
+// Attacker-controlled keys (artist names legitimately contain <>&"') get
+// sanitized before riding an error message — error bodies end up in client
+// UIs and logs, and raw reflection there is a latent XSS vector (Codex P3
+// trail, finding 4).
+const safeKey = (k) => String(k).replace(/[<>&"'`\\]/g, '').slice(0, 40);
+
 function isPlainObject(v) {
   return v !== null && typeof v === 'object' && !Array.isArray(v);
 }
@@ -92,13 +98,13 @@ function validateSelections(selections) {
   if (!isPlainObject(selections)) return fail('selections must be an object');
   for (const [artist, byPerson] of Object.entries(selections)) {
     if (!validArtistKey(artist)) return fail('invalid artist key');
-    if (!isPlainObject(byPerson)) return fail(`selections[${artist}] must be an object`);
+    if (!isPlainObject(byPerson)) return fail(`selections[${safeKey(artist)}] must be an object`);
     for (const [person, level] of Object.entries(byPerson)) {
-      if (!validName(person, LIMITS.personName)) return fail(`selections[${artist}]: invalid person`);
+      if (!validName(person, LIMITS.personName)) return fail(`selections[${safeKey(artist)}]: invalid person`);
       // v4 semantics: 0 tombstone, 1-3 picked (alpha ladder), 4 must.
       // Legacy v3 docs hold 0..3 with 3 meaning "Must See" — readers map
       // 3->4 by doc version (js/v3/model.js); the server accepts the union.
-      if (!Number.isInteger(level) || level < 0 || level > 4) return fail(`selections[${artist}][${person}]: level must be 0..4`);
+      if (!Number.isInteger(level) || level < 0 || level > 4) return fail(`selections[${safeKey(artist)}][${safeKey(person)}]: level must be 0..4`);
     }
   }
   return OK;
@@ -167,7 +173,7 @@ function validateNotes(notes, fid) {
     if (!isPlainObject(targets)) return fail(`notes.${scope} must be an object`);
     for (const [target, map] of Object.entries(targets)) {
       if (!validArtistKey(target)) return fail(`notes.${scope}: invalid target key`);
-      const r = validateNoteMap(map, `notes.${scope}[${target.slice(0, 30)}]`);
+      const r = validateNoteMap(map, `notes.${scope}[${safeKey(target).slice(0, 30)}]`);
       if (!r.ok) return r;
     }
   }
@@ -199,7 +205,7 @@ function validateAffinity(affinity) {
     if (!isPlainObject(byArtist)) return fail(`affinity[${person}] must be an object`);
     for (const [artist, aff] of Object.entries(byArtist)) {
       if (!validArtistKey(artist)) return fail('affinity: invalid artist key');
-      if (!isPlainObject(aff)) return fail(`affinity[${person}][${artist}] must be an object`);
+      if (!isPlainObject(aff)) return fail(`affinity[${safeKey(person)}][${safeKey(artist)}] must be an object`);
       for (const [k, v] of Object.entries(aff)) {
         if (k === 'songs') { if (!Number.isInteger(v) || v < 0 || v > LIMITS.affinitySongs) return fail('affinity: bad songs count'); }
         else if (k === 'followed') { if (typeof v !== 'boolean') return fail('affinity: followed must be boolean'); }

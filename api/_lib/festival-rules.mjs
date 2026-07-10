@@ -22,6 +22,11 @@ export function validateFestivalDoc(fest, { filename } = {}) {
   if (!fest.id || !SLUG_RE.test(fest.id)) err(`bad id ${JSON.stringify(fest.id)}`);
   if (filename && filename !== `${fest.id}.json`) err(`filename must match id (${fest.id}.json)`);
   if (!fest.name) err('missing name');
+  // Length caps on free-text fields — LLM-researched candidates flow through
+  // here too, and unbounded strings are a doc-bloat / UI-overflow vector.
+  for (const [k, cap] of [['name', 80], ['year', 8], ['subtitle', 120], ['location', 80], ['dates', 200], ['accent', 20]]) {
+    if (fest[k] !== undefined && (typeof fest[k] !== 'string' || fest[k].length > cap)) err(`${k} must be a string of at most ${cap} chars`);
+  }
   if (!STATUSES.includes(fest.status)) err(`status must be one of ${STATUSES.join('|')}`);
   if (fest.accent && !ACCENT_RE.test(fest.accent)) err(`accent must be "R, G, B" (got ${fest.accent})`);
   if (!Array.isArray(fest.artists)) err('artists[] must be an array');
@@ -33,6 +38,7 @@ export function validateFestivalDoc(fest, { filename } = {}) {
   const artistNames = new Set();
   (Array.isArray(fest.artists) ? fest.artists : []).forEach((a, i) => {
     if (!a || !a.name || typeof a.name !== 'string') err(`artists[${i}]: missing name`);
+    else if (a.name.length > 100) err(`artists[${i}]: name over 100 chars`);
     else {
       const key = a.name.toUpperCase();
       if (artistNames.has(key)) warn(`duplicate artist in artists[]: ${a.name}`);

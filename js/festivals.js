@@ -26,6 +26,44 @@ export async function loadFestival(id) {
   return fest;
 }
 
+// Crew-private festivals added via LLM research (api/festival-add.js).
+// Fetched once the crew token is known, merged into the catalog, and cached
+// per-crew in localStorage so they survive offline (the SW never caches /api/).
+const LS_CUSTOM = (t) => `fn_custom_fests_v1_${t}`;
+
+function mergeCustoms(list) {
+  for (const fest of list) {
+    if (!fest || !fest.id) continue;
+    FESTIVALS[fest.id] = fest; // full doc — no lazy fetch for customs
+    if (!FESTIVAL_INDEX.some((f) => f.id === fest.id)) {
+      FESTIVAL_INDEX.push({
+        id: fest.id, name: fest.name, year: fest.year, status: fest.status,
+        dates: fest.dates, location: fest.location, accent: fest.accent,
+        custom: true,
+      });
+    }
+  }
+}
+
+export async function loadCustomFestivals(token) {
+  if (!token) return [];
+  let list = [];
+  try {
+    const res = await fetch(`/api/festival-add?t=${encodeURIComponent(token)}`, { cache: 'no-store' });
+    if (res.ok) {
+      list = (await res.json()).festivals || [];
+      try { localStorage.setItem(LS_CUSTOM(token), JSON.stringify(list)); } catch { /* quota */ }
+    } else {
+      throw new Error(String(res.status));
+    }
+  } catch {
+    // offline or endpoint down: serve the last-known customs from cache
+    try { list = JSON.parse(localStorage.getItem(LS_CUSTOM(token))) || []; } catch { list = []; }
+  }
+  mergeCustoms(list);
+  return list;
+}
+
 export function isScheduled(fest) {
   return fest.status === 'archived' || fest.status === 'scheduled'
     ? !!fest.days && Object.keys(fest.days).length > 0

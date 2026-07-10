@@ -86,18 +86,25 @@ export function renderCard(artistName, ctx, opts = {}) {
   el.appendChild(about);
 
   // Long-press (mobile) opens the artist notes sheet (~500ms, atlas 21g).
+  // Digitizer jitter fires pointermove even on a still finger, so cancel only
+  // past a real movement threshold (10px) — a genuine scroll-drag cancels,
+  // a held finger does not (Codex P3 trail, finding 1).
   if (ctx.onOpenNotes) {
     let pressTimer = null;
     let longPressed = false;
-    el.addEventListener('pointerdown', () => {
+    let startX = 0, startY = 0;
+    el.addEventListener('pointerdown', (e) => {
       longPressed = false;
+      startX = e.clientX; startY = e.clientY;
       pressTimer = setTimeout(() => { longPressed = true; ctx.onOpenNotes(artistName); }, 500);
     });
     const cancel = () => clearTimeout(pressTimer);
     el.addEventListener('pointerup', cancel);
     el.addEventListener('pointerleave', cancel);
-    el.addEventListener('pointermove', cancel);
-    el.addEventListener('click', (e) => { if (longPressed) { e.stopImmediatePropagation(); } }, true);
+    el.addEventListener('pointermove', (e) => {
+      if (Math.hypot(e.clientX - startX, e.clientY - startY) > 10) cancel();
+    });
+    el.addEventListener('click', (e) => { if (longPressed) { e.stopImmediatePropagation(); longPressed = false; } }, true);
   }
 
   const who = document.createElement('span');

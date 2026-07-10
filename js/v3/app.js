@@ -5,7 +5,7 @@ import * as state from '../state.js';
 import * as crew from '../crew.js';
 import * as sync from '../sync.js';
 import * as model from './model.js';
-import { loadFestivalIndex, loadFestival } from '../festivals.js';
+import { loadFestivalIndex, loadFestival, loadCustomFestivals } from '../festivals.js';
 import { renderWall, refreshCard, showUndoToast, wireScrollspy, colorIndexOf } from './wall.js';
 import { openArtistSheet, openAllNotes, closeSheet } from './notes.js';
 import { renderSettings, appSettings } from './settings.js';
@@ -48,14 +48,19 @@ function handleTap(artistName, cardEl) {
   state.recordSelection(artistName, ctx.meName, next);
   applyLocalPick(artistName, ctx.meName, next);
   refreshCtx();
-  const freshEl = refreshCard(cardEl, artistName, ctx);
+  refreshCard(cardEl, artistName, ctx);
   sync.scheduleSync();
   if (current === 4 && next === 0) {
     showUndoToast($('toast-root'), 'Cleared your must for ' + artistName, () => {
       state.recordSelection(artistName, ctx.meName, 4);
       applyLocalPick(artistName, ctx.meName, 4);
       refreshCtx();
-      refreshCard(freshEl, artistName, ctx);
+      // Re-query by artist: a remote-poll repaint during the 5s undo window
+      // detaches the closed-over node and replaceWith would silently no-op
+      // (Codex P3 trail, finding 2).
+      const liveEl = document.querySelector(`#wall-root .card[data-artist="${CSS.escape(artistName)}"]`);
+      if (liveEl) refreshCard(liveEl, artistName, ctx);
+      else repaintWall();
       sync.scheduleSync();
     });
   }
@@ -261,6 +266,7 @@ function renderJoin(token, doc) {
 async function enterApp(token, doc) {
   crew.setActiveCrew(token);
   crew.rememberCrew(token, (doc.meta && doc.meta.name) || '');
+  await loadCustomFestivals(token); // crew-private fests join the catalog first
   state.activateCrew(token, doc);
   await loadFestival(state.activeFestivalId);
   show('screen-app');
@@ -321,7 +327,10 @@ export function init() {
     if (ctx.lowPower && (lowTick = (lowTick + 1) % 12) !== 0) return;
     sync.pollSync();
   }, 25000);
-  document.addEventListener('visibilitychange', () => { if (!document.hidden) sync.pollSync(); });
+  document.addEventListener('visibilitychange', () => {
+    // Respect low power: returning to the tab does not bypass the 5-min throttle.
+    if (!document.hidden && !ctx.lowPower) sync.pollSync();
+  });
   window.addEventListener('hashchange', () => { closeSheet(); boot(); });
   window.addEventListener('online', () => sync.pushSync());
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeSheet(); });

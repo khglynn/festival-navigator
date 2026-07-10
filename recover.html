@@ -296,7 +296,7 @@ $('merge-btn').onclick = async () => {
         $('result').innerHTML = bad.length
             ? `<span class="bad">⚠️ ${bad.length} picks did not verify: ${esc(bad.slice(0, 5).join(', '))}…</span>`
             : `<span class="ok">✅ Verified: ${ok} picks merged${affCount ? ` + Spotify badges for ${affCount} artists` : ''}. Open the app and they're live for the whole crew.</span>`;
-    } catch (e) { $('result').innerHTML = `<span class="bad">Failed: ${e.message}</span>`; }
+    } catch (e) { $('result').innerHTML = `<span class="bad">Failed: ${esc(e.message)}</span>`; }
 };
 
 $('copy-btn').onclick = async () => {
