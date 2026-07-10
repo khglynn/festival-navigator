@@ -11,13 +11,18 @@
   in .claude/codex-v3-*.md). Build guard removed at teardown; compaction hooks
   softened to generic project re-grounding.
 
-## Kevin's morning list (full detail in the morning report)
+## Morning follow-ups (2026-07-10 AM — items 1+4 DONE, list updated)
 
-1. CREATE TABLE custom_festivals (one command; unlocks festival-add saves).
-2. Phone rescue for EF picks: fest.kevinhg.com/recover.html on your phone.
-3. Rotate The Crew token (public-repo git history leak).
-4. Neon debris cleanup (6 old test crews + 3 from tonight, listed in report).
-5. Eyeball the live app.
+- DONE: custom_festivals table live; 9 test crews/rows deleted (DB = exactly
+  The Crew, Lolla 2025, Amish ACL). recover.html deleted (its EF-rescue
+  mission was void — the app was never live at EF; git history keeps it).
+- NEXT (post-compaction): Kevin's app notes from his eyeball pass; fresh
+  Spotify scan via Settings -> Spotify -> Refresh my likes (replaces any old
+  libmap); import Kevin's saves from the OFFICIAL Electric Forest app (he
+  will share them — bulk-paste or a small converter); token rotation decision
+  (The Crew's #g= share link is in this public repo's git history — rotating
+  = new link to re-share with the crew); fast-follows list in the morning
+  report.
 
 ## Standing facts
 

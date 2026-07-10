@@ -1,11 +1,10 @@
 // Festival Navigator service worker — offline-first app shell.
 // Bump CACHE_VERSION whenever you change cached static assets.
-const CACHE_VERSION = 'festival-nav-v13'; // v13 = the v3 redesign shell
+const CACHE_VERSION = 'festival-nav-v14'; // v14 = recover.html removed
 
 const APP_SHELL = [
   '/',
   '/index.html',
-  '/recover.html',
   '/404.html',
   '/assets/v3-tokens.css',
   '/assets/v3.css',
