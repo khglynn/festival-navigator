@@ -144,7 +144,7 @@ function describeFound() {
     }
     if (raw.libmap && raw.libmap.artists) {
         const n = Object.keys(raw.libmap.artists).length;
-        lines.push(`<div>🎧 <b>Spotify library map</b>: ${n.toLocaleString()} artists (scanned ${raw.libmap.fetchedAt || 'unknown date'})</div>`);
+        lines.push(`<div>🎧 <b>Spotify library map</b>: ${n.toLocaleString()} artists (scanned ${esc(raw.libmap.fetchedAt || 'unknown date')})</div>`);
     }
     if (!lines.length) lines.push('<div>Nothing recoverable in this browser. Try the domain you originally used.</div>');
     $('found').innerHTML = lines.join('');
@@ -186,7 +186,7 @@ function renderPreview() {
         rows.push(`<div><b>${esc(fid)}</b>: ${detail}</div>`);
     }
     if (raw.libmap && raw.libmap.artists) {
-        rows.push(`<div><b>Spotify badges</b>: will be applied for <select id="aff-person" class="bg-gray-700 rounded p-1 text-white">${
+        rows.push(`<div><b>Spotify badges</b>: will be applied for <select id="aff-person" style="background: var(--card); border: 1px solid var(--border-input); border-radius: 6px; padding: 4px 6px; color: var(--text-primary); font-family: var(--font-ui); font-size: 12px;">${
             [...crewPeople].map((p) => `<option${p === 'Kevin' ? ' selected' : ''}>${esc(p)}</option>`).join('')
         }</select> across all this crew's festivals</div>`);
     }

@@ -63,7 +63,7 @@ const OK = { ok: true };
 // sanitized before riding an error message — error bodies end up in client
 // UIs and logs, and raw reflection there is a latent XSS vector (Codex P3
 // trail, finding 4).
-const safeKey = (k) => String(k).replace(/[<>&"'`\\]/g, '').slice(0, 40);
+export const safeKey = (k) => String(k).replace(/[<>&"'`\\]/g, '').slice(0, 40);
 
 function isPlainObject(v) {
   return v !== null && typeof v === 'object' && !Array.isArray(v);

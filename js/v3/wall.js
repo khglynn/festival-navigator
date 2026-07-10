@@ -7,6 +7,7 @@
 // innerHTML interpolation of doc-derived strings, ever.
 import * as state from '../state.js';
 import * as model from './model.js';
+import { computeLanes } from '../overlap.js';
 import { auraBackground, whoCorner, aboutCorner, nameColor } from './aura.js';
 import { BOARD } from './palette.js';
 import { notesSection } from './notes.js'; // runtime-only cycle with this module (colorIndexOf) — safe
@@ -221,6 +222,10 @@ function renderScheduledDay(root, day, ctx) {
     label.textContent = `${hr % 12 === 0 ? 12 : hr % 12} ${hr < 12 ? 'AM' : 'PM'}`;
     grid.appendChild(label);
   }
+  // Same-stage overlaps split their column into side-by-side lanes (the old
+  // grid's fix, dropped in the first v3 pass — the Codex P6 sweep surfaced
+  // that EF genuinely has these; js/overlap.js is very much alive).
+  const lanes = computeLanes(computed);
   for (const a of computed) {
     const col = stages.indexOf(a.stage);
     if (col === -1) continue;
@@ -230,6 +235,11 @@ function renderScheduledDay(root, day, ctx) {
     const span = Math.max(1, Math.ceil(((a.endMin ?? a.startMin + 60) - a.startMin) / 15));
     cell.style.gridRow = `${row} / span ${span}`;
     cell.style.minHeight = '0';
+    const lane = lanes.get(a);
+    if (lane && lane.lanes > 1) {
+      cell.style.width = `calc(${(100 / lane.lanes).toFixed(3)}% - 2px)`;
+      cell.style.marginLeft = `${((lane.lane * 100) / lane.lanes).toFixed(3)}%`;
+    }
     grid.appendChild(cell);
   }
   scroll.appendChild(grid);

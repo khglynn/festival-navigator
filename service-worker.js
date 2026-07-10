@@ -23,7 +23,6 @@ const APP_SHELL = [
   '/js/parse.js',
   '/js/util.js',
   '/js/spotify.js',
-  '/js/access.js',
   '/js/v3/app.js',
   '/js/v3/wall.js',
   '/js/v3/notes.js',

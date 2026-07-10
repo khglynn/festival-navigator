@@ -2,6 +2,7 @@
 // consumed by BOTH scripts/validate-festivals.mjs (CI) and api/festival-add.js
 // (LLM-researched candidates). If a rule changes, it changes here once.
 import { timeToMinutes } from '../../js/time.js';
+import { safeKey } from './crew-shared.mjs';
 
 export const SLUG_RE = /^[a-z0-9-]{1,64}$/;
 export const ACCENT_RE = /^\d{1,3}, \d{1,3}, \d{1,3}$/;
@@ -28,7 +29,7 @@ export function validateFestivalDoc(fest, { filename } = {}) {
     if (fest[k] !== undefined && (typeof fest[k] !== 'string' || fest[k].length > cap)) err(`${k} must be a string of at most ${cap} chars`);
   }
   if (!STATUSES.includes(fest.status)) err(`status must be one of ${STATUSES.join('|')}`);
-  if (fest.accent && !ACCENT_RE.test(fest.accent)) err(`accent must be "R, G, B" (got ${fest.accent})`);
+  if (fest.accent && !ACCENT_RE.test(fest.accent)) err(`accent must be "R, G, B" (got ${safeKey(fest.accent)})`);
   if (!Array.isArray(fest.artists)) err('artists[] must be an array');
   else if (fest.artists.length === 0) {
     if (fest.status === 'lineup') warn('empty lineup (festival announced but no artists yet)');
@@ -44,8 +45,8 @@ export function validateFestivalDoc(fest, { filename } = {}) {
       if (artistNames.has(key)) warn(`duplicate artist in artists[]: ${a.name}`);
       artistNames.add(key);
     }
-    if (a && a.time && !TIME_RE.test(a.time)) err(`artists[${i}] (${a.name}): unparseable time ${JSON.stringify(a.time)}`);
-    if (a && a.weekends && !['W1', 'W2', 'both'].includes(a.weekends)) err(`artists[${i}] (${a.name}): weekends must be W1|W2|both`);
+    if (a && a.time && !TIME_RE.test(a.time)) err(`artists[${i}] (${safeKey(a.name)}): unparseable time ${JSON.stringify(safeKey(a.time))}`);
+    if (a && a.weekends && !['W1', 'W2', 'both'].includes(a.weekends)) err(`artists[${i}] (${safeKey(a.name)}): weekends must be W1|W2|both`);
   });
 
   if (fest.status === 'scheduled') {
@@ -58,9 +59,9 @@ export function validateFestivalDoc(fest, { filename } = {}) {
       if (!Array.isArray(day.artists) || !day.artists.length) { err(`${label}: missing artists[]`); continue; }
       day.artists.forEach((a, i) => {
         if (!a.name) err(`${label}.artists[${i}]: missing name`);
-        if (!a.stage) err(`${label}.artists[${i}] (${a.name}): missing stage`);
-        else if (!day.stages.includes(a.stage)) err(`${label}.artists[${i}] (${a.name}): stage ${JSON.stringify(a.stage)} not in day stages`);
-        if (!a.time || !TIME_RE.test(a.time)) err(`${label}.artists[${i}] (${a.name}): bad time ${JSON.stringify(a.time)}`);
+        if (!a.stage) err(`${safeKey(label)}.artists[${i}] (${safeKey(a.name)}): missing stage`);
+        else if (!day.stages.includes(a.stage)) err(`${safeKey(label)}.artists[${i}] (${safeKey(a.name)}): stage ${JSON.stringify(safeKey(a.stage))} not in day stages`);
+        if (!a.time || !TIME_RE.test(a.time)) err(`${safeKey(label)}.artists[${i}] (${safeKey(a.name)}): bad time ${JSON.stringify(safeKey(a.time))}`);
         else { try { timeToMinutes(a.time.split(' - ')[0]); } catch { err(`${label}.artists[${i}]: time did not parse`); } }
         if (a.name && !artistNames.has(a.name.toUpperCase())) warn(`${label}: ${a.name} plays but is missing from artists[]`);
       });

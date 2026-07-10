@@ -382,7 +382,11 @@ export function init() {
     onRemoteChange: () => { repaintWall(); renderPersonChips(); },
     onCrewGone: () => { renderLanding(); },
   });
-  $('search-input').addEventListener('input', (e) => { ctx.query = e.target.value; renderWall($('wall-root'), ctx); });
+  $('search-input').addEventListener('input', (e) => {
+    ctx.query = e.target.value;
+    renderWall($('wall-root'), ctx);
+    renderDockDays(); // scrollspy re-wires against the filtered day rules (gate F8)
+  });
   $('sort-select').addEventListener('change', (e) => { ctx.sort = e.target.value; repaintWall(); });
   const dock = $('dock');
   $('search-input').addEventListener('focus', () => dock.classList.add('hidden'));
