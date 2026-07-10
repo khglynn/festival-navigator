@@ -7,7 +7,7 @@ import * as sync from '../sync.js';
 import * as model from './model.js';
 import { loadFestivalIndex, loadFestival } from '../festivals.js';
 import { renderWall, refreshCard, showUndoToast, wireScrollspy, colorIndexOf } from './wall.js';
-import { openArtistSheet, closeSheet } from './notes.js';
+import { openArtistSheet, openAllNotes, closeSheet } from './notes.js';
 import { renderSettings, appSettings } from './settings.js';
 import { hslOf, strokeOf, nextColorIndex } from './palette.js';
 
@@ -177,6 +177,11 @@ function openSettings() {
     },
     onLowPower: (on) => { applyLowPower(on); },
     onStayOffline: (on) => { sync.setStayOffline(on); if (!on) sync.pushSync(); },
+    recordPick: (artist, person, level) => {
+      state.recordSelection(artist, person, level);
+      applyLocalPick(artist, person, level);
+    },
+    afterBulk: () => { sync.scheduleSync(); refreshCtx(); },
   });
 }
 
@@ -301,6 +306,7 @@ export function init() {
   $('dock-you').addEventListener('click', () => window.scrollTo({ top: 0, behavior: ctx.lowPower ? 'auto' : 'smooth' }));
   $('gear-btn').addEventListener('click', openSettings);
   $('dock-fest-link').addEventListener('click', openSettings);
+  $('notes-chip').addEventListener('click', () => { refreshCtx(); openAllNotes(ctx); });
   const saved = appSettings();
   applyLowPower(saved.lowPower);
   sync.setStayOffline(saved.stayOffline);

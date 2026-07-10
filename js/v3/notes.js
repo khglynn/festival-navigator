@@ -133,6 +133,45 @@ export function closeSheet() {
   document.getElementById('artist-sheet')?.remove();
 }
 
+// ---- all-notes view (the wall's Notes chip) ----------------------------------------
+export function openAllNotes(ctx) {
+  closeSheet();
+  const backdrop = document.createElement('div');
+  backdrop.className = 'sheet-backdrop';
+  backdrop.id = 'sheet-backdrop';
+  backdrop.addEventListener('click', closeSheet);
+  const sheet = document.createElement('div');
+  sheet.className = 'sheet';
+  sheet.id = 'artist-sheet';
+  const grabber = document.createElement('div');
+  grabber.className = 'grabber';
+  const title = document.createElement('span');
+  title.className = 'sheet-title';
+  title.textContent = 'ALL NOTES';
+  sheet.append(grabber, title);
+
+  const notes = state.crewDoc?.festivals?.[ctx.fid]?.notes || {};
+  const section = (label, scope, target) => {
+    const list = model.notesFor(state.crewDoc, ctx.fid, scope, target);
+    if (!list.length) return;
+    const lbl = document.createElement('div');
+    lbl.className = 'micro-label';
+    lbl.textContent = label;
+    sheet.appendChild(lbl);
+    for (const n of list) sheet.appendChild(noteRow(n, ctx));
+  };
+  section('This festival', 'fest', null);
+  for (const day of Object.keys(notes.day || {})) section(day, 'day', day);
+  for (const artist of Object.keys(notes.artist || {})) section(artist, 'artist', artist);
+  if (sheet.children.length === 2) {
+    const empty = document.createElement('div');
+    empty.style.cssText = 'color: var(--text-tertiary); font-size: 12px; font-weight: 600; text-align: center; padding: 16px 0;';
+    empty.textContent = 'No notes yet — long-press an artist or write under a day.';
+    sheet.appendChild(empty);
+  }
+  document.body.append(backdrop, sheet);
+}
+
 // ---- day + fest note sections (21e) ----------------------------------------------
 // Renders under a day's cards (scope 'day') or at the wall's end (scope 'fest').
 export function notesSection(scope, target, label, ctx, onChange) {

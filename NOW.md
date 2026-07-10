@@ -6,21 +6,22 @@
 
 ## ▶️ LIVE STATE (loop maintains this block)
 
-- **Phase:** P3 — wall SHIPPED and live-verified; remaining screens next. Hooks + guard installed and verified; branch cut;
+- **Phase:** P3 build COMPLETE → P3 GATE (walk + trailing Codex + old-UI deletion). Hooks + guard installed and verified; branch cut;
   plan + grounding committed; four foundation docs deep-read ✓; atlas read in
   full → v3-tokens.css + v3-inventory.md banked ✓ (aura algorithm found as
   reference code in the atlas script — port, do not invent); CLAUDE.md carries
   the non-inferable v3 rules ✓.
 - **Design source:** scratchpad `design/design_handoff_festival_navigator/`
   (re-extract from `~/Downloads/Festival navigator v2.zip` if cleaned).
-- **EXACT NEXT STEP:** P3 remaining — (a) all-notes view from the Notes chip;
-  (b) Settings tools: Bulk paste (js/parse.js), Export likes, Download PNG
-  (html2canvas), Spotify glance card + drill page (restyle js/spotify.js
-  flows: connect/PKCE, scan, playlist builder, disconnect); then the P3 GATE:
-  Playwright walk of every screen at 390x844 + 1280x800 with screenshots
-  READ, plus trailing Codex on the P3 diff. Old-UI module deletion (js/app.js,
-  js/render/*, js/ui.js, js/tools.js, assets/tailwind* + custom.css prune)
-  happens at gate-pass, delete-not-disclaim. XSS rule stands.
+- **EXACT NEXT STEP:** P3 GATE — (1) Playwright walk: landing, join, wall
+  (lineup + scheduled), notes sheet, all-notes, settings + subviews, 404 at
+  390x844 AND 1280x800; screenshot each and LOOK at them; fix what is off.
+  (2) Old-UI deletion (delete-not-disclaim): js/app.js, js/render/, js/ui.js,
+  js/tools.js, js/ai.js?, api/optimize.js (optimizer cut), assets/tailwind*
+  + custom.css prune (keep only rules v3 still uses — check recover.html
+  which links custom.css + tailwind), gallery/index refs, npm tailwind dep,
+  CI css-freshness step. (3) Launch trailing Codex on the full P3 diff while
+  P5 (SW precache update + favicon canvas) starts. Then P5.
   Local test rig: vercel dev on :3111 (task b6lhnujql) + throwaway crew token
   in scratchpad/v3-test-crew.txt ("V3 Wall Test" — Neon debris, morning
   cleanup). NOTE: old SW (v11) controls prior tabs through one reload —

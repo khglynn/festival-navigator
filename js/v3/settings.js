@@ -3,9 +3,11 @@
 // How-it-works (21i) renders as a sub-view. All doc strings via textContent.
 import * as state from '../state.js';
 import * as crew from '../crew.js';
+import * as spotify from '../spotify.js';
 import { FESTIVAL_INDEX } from '../festivals.js';
 import { hslOf, strokeOf } from './palette.js';
 import { colorIndexOf } from './wall.js';
+import { openExportLikes, openBulkPaste, downloadWallImage } from './tools.js';
 
 const LS_SETTINGS = 'fn_settings_v1'; // {lowPower, stayOffline}
 
@@ -317,9 +319,25 @@ export function renderSettings(root, ctx, actions) {
   }
   main.appendChild(youCard);
 
+  // Spotify glance (state only; the drill page holds every action — 21f rule)
+  const sp = el('div'); sp.className = 'settings-card';
+  sp.style.cssText += 'display: flex; flex-direction: column; gap: 9px; cursor: pointer; margin-top: 8px;';
+  const spHead = el('div', 'display: flex; align-items: baseline; gap: 8px;');
+  spHead.appendChild(el('span', 'color: #fff; font-weight: 700; font-size: 14px;', 'Spotify'));
+  const lib = spotify.libraryMap();
+  spHead.appendChild(el('span', `color: ${spotify.isConnected() ? 'var(--spotify-stroke)' : 'var(--text-tertiary)'}; font-size: 11px; font-weight: 700;`,
+    spotify.isConnected() ? 'connected' : 'not connected'));
+  spHead.appendChild(el('span', 'margin-left: auto; color: var(--text-tertiary); font-size: 10.5px; font-weight: 600;', lib ? `synced ${lib.fetchedAt?.slice(0, 10) || ''} ›` : '›'));
+  sp.appendChild(spHead);
+  if (lib) sp.appendChild(el('div', 'color: var(--text-secondary); font-size: 12px; font-weight: 600;', `${Object.keys(lib.artists || {}).length.toLocaleString()} artists in your library`));
+  sp.addEventListener('click', () => { main.style.display = 'none'; openSpotifyDrill(ctx, { ...actions, rerender: () => renderSettings(root, ctx, actions) }); });
+  main.appendChild(sp);
+
   main.appendChild(microLabel('App'));
   const list = el('div'); list.className = 'settings-list';
-  list.appendChild(linkRow('How it works', () => { main.style.display = 'none'; openHowItWorks({ ...actions, rerender: () => renderSettings(root, ctx, actions) }); }));
+  const sub2 = () => { main.style.display = 'none'; };
+  const rerender = () => renderSettings(root, ctx, actions);
+  list.appendChild(linkRow('How it works', () => { sub2(); openHowItWorks({ ...actions, rerender }); }));
   const s = appSettings();
   list.appendChild(toggleRow('Low power', 'no animation · sync every 5 min', s.lowPower, (on) => {
     saveAppSettings({ ...appSettings(), lowPower: on });
@@ -329,7 +347,133 @@ export function renderSettings(root, ctx, actions) {
     saveAppSettings({ ...appSettings(), stayOffline: on });
     actions.onStayOffline(on);
   }));
+  list.appendChild(linkRow('Bulk paste likes', () => {
+    sub2();
+    openBulkPaste(document.getElementById('settings-subview'), {
+      back: () => { document.getElementById('settings-subview').textContent = ''; rerender(); },
+      recordPick: actions.recordPick,
+      afterApply: actions.afterBulk,
+    });
+  }));
+  list.appendChild(linkRow('Export likes', () => {
+    sub2();
+    openExportLikes(document.getElementById('settings-subview'), ctx,
+      () => { document.getElementById('settings-subview').textContent = ''; rerender(); });
+  }));
+  list.appendChild(linkRow('Download day image', async () => {
+    try { await downloadWallImage(state.fest().name); }
+    catch { /* html2canvas missing — the row simply does nothing rather than crash */ }
+  }));
   main.appendChild(list);
 
   root.append(sub, main);
+}
+
+// ---- Spotify drill (21f) — every action lives here ----------------------------------
+function openSpotifyDrill(ctx, actions) {
+  const host = document.getElementById('settings-subview');
+  host.textContent = '';
+  const col = el('div', 'display: flex; flex-direction: column; gap: 10px;');
+  const head = el('div', 'display: flex; align-items: center; gap: 10px;');
+  const back = el('button', '', '‹'); back.className = 'back-btn';
+  back.addEventListener('click', () => { host.textContent = ''; actions.rerender(); });
+  head.append(back, el('div', '', 'SPOTIFY'));
+  head.lastChild.className = 'screen-title';
+  const status = el('span', 'margin-left: auto; color: var(--spotify-stroke); font-size: 11.5px; font-weight: 700;',
+    spotify.isConnected() ? 'connected' : '');
+  head.appendChild(status);
+  col.appendChild(head);
+  const msg = el('div', 'color: var(--text-tertiary); font-size: 11.5px; font-weight: 600; line-height: 1.5;');
+
+  if (!spotify.isConnected()) {
+    if (!state.spotifyClientId()) {
+      msg.textContent = 'The crew lead sets a Spotify Client ID once (Settings on their device); then everyone can connect.';
+      const row = el('div', 'display: flex; gap: 8px;');
+      const input = el('input');
+      input.placeholder = 'Crew Spotify app Client ID';
+      input.maxLength = 32;
+      input.style.cssText = 'flex: 1; background: var(--card); border: 1px solid var(--border-input); border-radius: var(--r-card); padding: 10px 12px; color: #fff; font-size: 12.5px; font-family: var(--font-ui); outline: none;';
+      const save = el('button', 'font-size: 12px; padding: 9px 14px;', 'Save');
+      save.className = 'btn-tonal';
+      save.addEventListener('click', () => {
+        const v = input.value.trim();
+        if (!/^[0-9a-fA-F]{32}$/.test(v)) { msg.textContent = 'That does not look like a 32-character Client ID.'; return; }
+        state.recordSpotifyClientId(v);
+        actions.afterBulk();
+        msg.textContent = 'Saved — connect below once it syncs.';
+      });
+      row.append(input, save);
+      col.append(msg, row);
+    } else {
+      const connect = el('button', 'font-size: 13px; padding: 11px 18px; align-self: flex-start;', 'Connect my Spotify');
+      connect.className = 'btn-tonal';
+      connect.addEventListener('click', () => spotify.connect().catch((e) => { msg.textContent = String(e.message || e); }));
+      col.append(connect, msg);
+    }
+  } else {
+    const lib = spotify.libraryMap();
+    const card = el('div'); card.className = 'settings-card';
+    card.style.cssText += 'display: flex; flex-direction: column; gap: 9px;';
+    card.appendChild(el('span', 'color: #fff; font-weight: 700; font-size: 14px;', 'Your library'));
+    card.appendChild(el('div', 'color: var(--text-secondary); font-size: 12px; font-weight: 600;',
+      lib ? `${Object.keys(lib.artists || {}).length.toLocaleString()} artists · synced ${lib.fetchedAt?.slice(0, 10) || ''}` : 'not scanned yet'));
+    const refresh = el('button', 'font-size: 12px; padding: 9px 16px; align-self: flex-start;', 'Refresh my likes');
+    refresh.className = 'btn-tonal';
+    refresh.addEventListener('click', async () => {
+      try {
+        refresh.disabled = true;
+        await spotify.scanLibrary((p) => { msg.textContent = p; });
+        const names = (state.fest().artists || []).map((a) => a.name);
+        const n = spotify.applyAffinityToCrew(ctx.meName, names);
+        msg.textContent = `Badged ${n} artists on this fest. Open other fests to badge them too.`;
+        actions.afterBulk();
+      } catch (e) { msg.textContent = String(e.message || e); }
+      finally { refresh.disabled = false; }
+    });
+    card.appendChild(refresh);
+    col.appendChild(card);
+
+    const pl = el('div'); pl.className = 'settings-card';
+    pl.style.cssText += 'display: flex; flex-direction: column; gap: 10px;';
+    pl.appendChild(el('span', 'color: #fff; font-weight: 700; font-size: 14px;', 'Playlist from our picks'));
+    const segRow = el('div', 'display: flex; gap: 6px;');
+    const segAll = el('button', '', 'Everyone'); segAll.className = 'seg active';
+    const segMine = el('button', '', 'Just mine'); segMine.className = 'seg';
+    let mineOnly = false;
+    segAll.addEventListener('click', () => { mineOnly = false; segAll.classList.add('active'); segMine.classList.remove('active'); });
+    segMine.addEventListener('click', () => { mineOnly = true; segMine.classList.add('active'); segAll.classList.remove('active'); });
+    segRow.append(segAll, segMine);
+    pl.appendChild(segRow);
+    pl.appendChild(el('div', 'color: var(--text-tertiary); font-size: 11px; font-weight: 600;', 'One track per picked artist, musts first. Made in your account.'));
+    const make = el('button', 'font-size: 12px; padding: 9px 16px; align-self: flex-start;', 'Make playlist');
+    make.className = 'btn-tonal';
+    make.addEventListener('click', async () => {
+      try {
+        make.disabled = true;
+        const picks = ctx.picks;
+        const names = Object.entries(picks)
+          .map(([artist, byP]) => ({ artist, level: mineOnly ? (byP[ctx.meName] || 0) : Math.max(...Object.values(byP)) }))
+          .filter((x) => x.level > 0)
+          .sort((a, b) => b.level - a.level)
+          .map((x) => x.artist);
+        if (!names.length) { msg.textContent = 'No picks yet.'; return; }
+        await spotify.playlistFromPicks({
+          title: `${state.fest().name} — ${mineOnly ? ctx.meName : 'the crew'}`,
+          artistNames: names,
+          onProgress: (p) => { msg.textContent = p; },
+        });
+        msg.textContent = 'Playlist created in your Spotify.';
+      } catch (e) { msg.textContent = String(e.message || e); }
+      finally { make.disabled = false; }
+    });
+    pl.appendChild(make);
+    col.appendChild(pl);
+
+    const dis = el('button', 'font-size: 12px; padding: 8px 14px; align-self: flex-start;', 'Disconnect');
+    dis.className = 'btn-ghost';
+    dis.addEventListener('click', () => { spotify.disconnect(); host.textContent = ''; actions.rerender(); });
+    col.append(dis, el('div', 'color: var(--text-tertiary); font-size: 10.5px; font-weight: 600; line-height: 1.55;',
+      'Disconnect keeps picks and notes — only the badges disappear.'), msg);
+  }
+  host.appendChild(col);
 }
