@@ -9,8 +9,7 @@
     "css": "tailwindcss -c tailwind.config.cjs -i assets/tailwind.in.css -o assets/tailwind.css --minify"
   },
   "dependencies": {
-    "@neondatabase/serverless": "^1.1.0",
-    "@vercel/blob": "^2.5.0"
+    "@neondatabase/serverless": "^1.1.0"
   },
   "keywords": [
     "festival",

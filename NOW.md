@@ -6,18 +6,17 @@
 
 ## ▶️ LIVE STATE (loop maintains this block)
 
-- **Phase:** P0 — ground + rig. Hooks + guard installed and verified; branch cut;
+- **Phase:** P0 COMPLETE → P1 design system. Hooks + guard installed and verified; branch cut;
   plan + grounding committed; four foundation docs deep-read ✓; atlas read in
   full → v3-tokens.css + v3-inventory.md banked ✓ (aura algorithm found as
   reference code in the atlas script — port, do not invent); CLAUDE.md carries
   the non-inferable v3 rules ✓.
 - **Design source:** scratchpad `design/design_handoff_festival_navigator/`
   (re-extract from `~/Downloads/Festival navigator v2.zip` if cleaned).
-- **EXACT NEXT STEP:** P0 close-out — retire @vercel/blob + migrate-legacy.mjs
-  (delete, not disclaim), add CI gate (npm ci + audit --omit=dev
-  --audit-level=high), self-host Anton+Inter woff2 into assets/fonts. Then
-  P1 opens: js/v3/aura.js (port renderVals verbatim from the atlas script,
-  turn 21) + component modules + gallery.html.
+- **EXACT NEXT STEP:** P1 opens — js/v3/aura.js (port renderVals verbatim from
+  the atlas script, turn 21, per v3-inventory.md) + who-corner/about-corner
+  chip renderers + gallery.html rendering every component in every state.
+  Verify gallery visually in Playwright against the atlas before moving on.
 - **Kevin authorized promote-to-production when P6 fully passes (this run only).**
 
 ## 🎉 LIVE (since 2026-07-08)

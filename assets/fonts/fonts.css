@@ -1,0 +1,19 @@
+/* Self-hosted Anton + Inter (latin subset, woff2) — OFL licensed.
+ * Self-hosted so the app works with no signal and carries no CDN dependency
+ * (deliberate deviation from the design README's Google Fonts link; see
+ * claude-plans/v3-inventory.md deviations). Inter ships as ONE variable font
+ * covering weights 400-800 — Google serves the identical file per weight. */
+@font-face {
+  font-family: 'Anton';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(/assets/fonts/anton-400-latin.woff2) format('woff2');
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400 800;
+  font-display: swap;
+  src: url(/assets/fonts/inter-var-latin.woff2) format('woff2');
+}

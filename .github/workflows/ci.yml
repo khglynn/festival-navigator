@@ -2,7 +2,6 @@ name: CI
 
 on:
   push:
-    branches: [main, prime-time]
   pull_request:
 
 jobs:
