@@ -4,179 +4,127 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Festival Navigator</title>
-    <meta name="theme-color" content="#111827">
+    <meta name="theme-color" content="#0C0A14">
     <link rel="manifest" href="/manifest.json">
     <link rel="icon" type="image/png" href="/favicon.png">
     <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
     <link rel="apple-touch-icon" href="/icon-192.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/assets/tailwind.css">
-    <link rel="stylesheet" href="/assets/custom.css">
-    <script src="/vendor/html2canvas.min.js" defer></script>
+    <link rel="stylesheet" href="/assets/fonts/fonts.css">
+    <link rel="stylesheet" href="/assets/v3-tokens.css">
+    <link rel="stylesheet" href="/assets/v3.css">
+    <style>
+      body { margin: 0; background: var(--page); color: var(--text-body);
+             font-family: var(--font-ui); min-height: 100vh; }
+      .shell { max-width: 960px; margin: 0 auto; padding: 16px 14px calc(84px + env(safe-area-inset-bottom)); }
+      @media (min-width: 720px) { .shell { padding: 22px 24px 40px; } }
+      .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+      .app-header { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+      .app-header .title { font-family: var(--font-display); letter-spacing: .05em;
+                           color: rgb(var(--fest)); font-size: 26px; line-height: 1; }
+      @media (min-width: 720px) { .app-header .title { font-size: 34px; } }
+      .app-header .title .yr { font-size: .45em; vertical-align: super; opacity: .7; margin-left: .1em; }
+      .app-header .sub { color: var(--text-tertiary); font-size: 11px; font-weight: 600; align-self: flex-end; padding-bottom: 2px; }
+      .header-right { margin-left: auto; display: none; align-items: center; gap: 6px; }
+      @media (min-width: 720px) { .header-right { display: inline-flex; } }
+      .toolbar { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin-top: 11px; }
+      .wall-wrap { margin-top: 13px; display: flex; flex-direction: column; gap: 13px; }
+      .center-col { max-width: 480px; margin: 40px auto 0; display: flex; flex-direction: column; gap: 16px; padding: 0 22px; }
+      .brand { font-family: var(--font-display); letter-spacing: .04em; font-size: 42px; line-height: 1.04; color: #fff; text-align: center; }
+      .gear-btn { background: none; border: none; cursor: pointer; padding: 4px; margin-left: auto; }
+      @media (min-width: 720px) { .gear-btn { margin-left: 0; } }
+    </style>
 </head>
-<body class="text-white p-2 md:p-6">
-    <!-- Landing: create a crew (shown when no crew is active) -->
-    <div id="landing-view" class="hidden max-w-md mx-auto mt-10">
-        <h1 class="fest-title text-4xl text-center mb-2">FESTIVAL NAVIGATOR</h1>
-        <p class="text-center text-gray-400 mb-6">Plan any festival with your crew — picks sync live, works offline.</p>
-        <p id="landing-message" class="text-center text-amber-400 text-sm mb-4"></p>
-        <div class="p-5 bg-gray-800 rounded-lg shadow-lg">
-            <h2 class="text-lg font-bold accent-text mb-3">Start a crew</h2>
-            <label class="block text-sm text-gray-400 mb-1" for="create-crew-name">Crew name</label>
-            <input id="create-crew-name" class="w-full p-2 rounded bg-gray-700 border border-gray-600 text-white mb-3" placeholder="e.g. Forest Fam" maxlength="40">
-            <label class="block text-sm text-gray-400 mb-1" for="create-my-name">Your name</label>
-            <input id="create-my-name" class="w-full p-2 rounded bg-gray-700 border border-gray-600 text-white mb-4" placeholder="e.g. Kevin" maxlength="24">
-            <button id="create-crew-btn" class="accent-button w-full">Start crew</button>
-        </div>
-        <p class="text-center text-gray-500 text-sm mt-4">Got a crew link? Just open it — you'll join from there.</p>
+<body>
+    <noscript><div style="padding:40px;text-align:center;font-weight:600;">Festival Navigator needs JavaScript.</div></noscript>
+
+    <!-- Landing (atlas 21a) -->
+    <div id="screen-landing" style="display:none">
+      <div class="center-col">
+        <div class="brand">FESTIVAL<br><span class="pulse-text">NAVIGATOR</span></div>
+        <div style="color: var(--text-secondary); font-size: 13px; text-align: center; line-height: 1.55;">
+          Pick artists with your people.<br>Works with no signal.</div>
+        <a class="hero" href="/#new" id="landing-add" style="height: 48px; text-decoration: none;">
+          <span class="hero-bg"></span><span class="hero-grain"></span>
+          <span class="hero-label" style="font-size: 16px;">ADD A FESTIVAL →</span>
+        </a>
+        <div style="color: var(--text-tertiary); font-size: 11.5px; font-weight: 600; text-align: center; line-height: 1.5;">
+          Pick the fest and your name next, then share one link.<br>Got a link? Just open it — that's joining.</div>
+        <div class="micro-label">Your festivals</div>
+        <div id="landing-fests" style="display: flex; flex-direction: column; gap: 7px;"></div>
+        <div id="landing-empty" style="color: var(--text-tertiary); font-size: 11.5px; font-weight: 600; text-align: center;">
+          Nothing yet — add a festival or open a link someone shared.</div>
+      </div>
     </div>
 
-    <!-- Join: claim your name in a crew you opened by link -->
-    <div id="join-view" class="hidden max-w-md mx-auto mt-10">
-        <h1 class="fest-title text-4xl text-center mb-2">FESTIVAL NAVIGATOR</h1>
-        <div class="p-5 bg-gray-800 rounded-lg shadow-lg mt-6">
-            <h2 class="text-lg font-bold mb-1">Joining <span id="join-crew-name" class="accent-text"></span></h2>
-            <p class="text-sm text-gray-400 mb-4">Who are you? Tap your name, or add yourself.</p>
-            <div id="join-people" class="flex flex-wrap gap-2 mb-4"></div>
-            <div class="flex gap-2">
-                <input id="join-name-input" class="flex-grow p-2 rounded bg-gray-700 border border-gray-600 text-white" placeholder="Your name" maxlength="24">
-                <button id="join-add-btn" class="accent-button whitespace-nowrap">Join</button>
-            </div>
+    <!-- Join / claim (atlas 21b) -->
+    <div id="screen-join" style="display:none">
+      <div class="center-col">
+        <div style="text-align: center;">
+          <div class="micro-label" style="letter-spacing: .14em;">You're invited to</div>
+          <div id="join-fest-name" style="font-family: var(--font-display); letter-spacing: .04em; font-size: 40px; line-height: 1; color: rgb(var(--fest)); margin-top: 4px;"></div>
+          <div style="color: var(--text-secondary); font-size: 13px; margin-top: 8px;">Tap your name, or add yourself.</div>
         </div>
+        <div id="join-people" style="display: flex; flex-direction: column; gap: 8px;"></div>
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <input id="join-name-input" maxlength="24" placeholder="I'm someone new…"
+                 style="flex: 1; background: var(--page); border: 1px solid var(--border-input); border-radius: 9px; padding: 12px 13px; color: #fff; font-size: 14px; font-family: var(--font-ui); outline: none;">
+          <button id="join-add-btn" class="btn-tonal" style="font-size: 14px; padding: 12px 24px;">Join</button>
+        </div>
+      </div>
     </div>
 
-    <div id="main-view" class="hidden max-w-screen-2xl mx-auto">
-        <!-- Header -->
-        <header class="text-center mb-4">
-            <div class="flex justify-center items-center gap-3 flex-wrap">
-                <h1 id="fest-name" class="fest-title text-4xl md:text-6xl">ELECTRIC FOREST</h1>
-            </div>
-            <p id="fest-subtitle" class="text-lg md:text-xl font-semibold text-gray-400"></p>
+    <!-- The wall (atlas 21c) -->
+    <div id="screen-app" style="display:none">
+      <div class="shell">
+        <header class="app-header">
+          <span class="title"><span id="fest-name"></span><span class="yr" id="fest-year"></span></span>
+          <span class="sub" id="fest-sub"></span>
+          <span class="header-right">
+            <span style="font-family: var(--font-display); letter-spacing: .04em; font-size: 13px; color: rgb(var(--fest));" id="desk-fest-pill"></span>
+            <span class="sync-dot" id="sync-dot"></span>
+            <span class="sr-only" id="sync-label">online</span>
+          </span>
+          <button class="gear-btn" id="gear-btn" title="Settings" aria-label="Settings">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#8E86A8" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.01a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.01a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.01a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+          </button>
         </header>
-
-        <!-- Controls -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            <div class="p-4 bg-gray-800 rounded-lg shadow-lg">
-                <h2 class="text-base font-bold text-center mb-3 accent-text">1. Select a Person</h2>
-                <div id="person-selectors" class="flex flex-wrap justify-center gap-2 items-center"></div>
-            </div>
-            <div id="day-box" class="p-4 bg-gray-800 rounded-lg shadow-lg">
-                <h2 class="text-base font-bold text-center mb-3 accent-text">2. Choose a Day</h2>
-                <div id="day-tabs" class="flex flex-wrap justify-center gap-2"></div>
-            </div>
+        <div class="toolbar">
+          <span id="person-chips" style="display: inline-flex; gap: 5px; flex-wrap: wrap;"></span>
+          <span class="toolbar-divider"></span>
+          <span class="search-pill" style="flex: 1; min-width: 140px;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#8E86A8" stroke-width="2.5"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.5" y2="16.5"></line></svg>
+            <input id="search-input" placeholder="Search…" aria-label="Search artists">
+          </span>
+          <select id="sort-select" class="sort-chip" aria-label="Sort artists" style="appearance: none;">
+            <option value="billing">Billing</option>
+            <option value="az">A → Z</option>
+            <option value="mine">My picks</option>
+            <option value="crew">Crew favorites</option>
+          </select>
+          <button class="notes-chip" id="notes-chip">Notes <span class="count" id="notes-count">0</span></button>
         </div>
+        <div class="wall-wrap" id="wall-root"></div>
+      </div>
 
-        <!-- Schedule -->
-        <div id="grid-container" class="schedule-container">
-            <div class="flex justify-between items-center mb-4">
-                <h2 id="schedule-day-title" class="text-xl md:text-2xl font-bold accent-text"></h2>
-                <div class="flex gap-2">
-                    <button id="view-toggle-btn" class="p-2 px-3 rounded-full hover:bg-gray-700 transition text-sm font-semibold accent-text hidden" title="Switch between grid and list">List</button>
-                    <button id="refresh-btn" class="p-2 rounded-full hover:bg-gray-700 transition" title="Sync now">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="accent-text"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg>
-                    </button>
-                    <button id="top-download-btn" class="p-2 rounded-full hover:bg-gray-700 transition" title="Download Schedule">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="accent-text"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                    </button>
-                </div>
-            </div>
-            <div id="downloadable-content">
-                <div id="schedule-view" class="schedule-grid-wrapper"></div>
-                <div id="color-key-container" class="pt-4 hidden"></div>
-            </div>
-        </div>
-
-        <!-- Artist list (lineup-only festivals; toggle for scheduled ones) -->
-        <div id="list-view" class="hidden"></div>
-
-        <!-- Activities: The Brainery + Silent Disco (time-sorted list) -->
-        <div id="activities-view" class="mt-4"></div>
-
-        <!-- Tools -->
-        <div class="mt-6 p-4 bg-gray-800 rounded-lg shadow-lg">
-            <h2 class="text-lg font-bold text-center mb-4 accent-text">Festival Tools ✨</h2>
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-5">
-                <div class="text-center flex flex-col items-center">
-                    <h3 class="text-base font-semibold mb-1">Download Schedule</h3>
-                    <p class="text-sm text-gray-400 mb-3 flex-grow">Save the current day as a PNG (great for offline reference).</p>
-                    <button id="download-btn" class="accent-button">Download as Image</button>
-                </div>
-                <div class="text-center flex flex-col items-center">
-                    <h3 class="text-base font-semibold mb-1">Group Plan Optimizer</h3>
-                    <p class="text-sm text-gray-400 mb-3 flex-grow">Find time conflicts and get a suggested group plan.</p>
-                    <button id="conflict-solver-btn" class="accent-button">Find &amp; Solve Conflicts</button>
-                </div>
-                <div class="text-center flex flex-col items-center">
-                    <h3 class="text-base font-semibold mb-1">Export All Likes</h3>
-                    <p class="text-sm text-gray-400 mb-3 flex-grow">Copy-paste list of the group's picks for all days.</p>
-                    <button id="export-likes-btn" class="accent-button">Show Likes as List</button>
-                </div>
-            </div>
-            <div class="border-t border-gray-700 pt-4 mb-4">
-                <h3 class="text-base font-semibold mb-1 text-center">Spotify <span id="spotify-status" class="text-sm text-gray-400 font-normal"></span></h3>
-                <p class="text-sm text-gray-400 mb-3 text-center">Badge artists you already listen to, and turn picks into playlists on your own account.</p>
-                <div id="spotify-panel" class="flex flex-wrap justify-center items-center gap-2 mb-2"></div>
-                <details class="text-sm text-gray-400 max-w-2xl mx-auto">
-                    <summary class="cursor-pointer text-center accent-text">Crew Spotify setup (one-time, done by the crew lead)</summary>
-                    <ol class="list-decimal list-inside mt-2 space-y-1">
-                        <li>Go to <a href="https://developer.spotify.com/dashboard" target="_blank" class="accent-text underline">developer.spotify.com/dashboard</a> and create an app (any name).</li>
-                        <li>In the app settings, add this exact Redirect URI: <code id="spotify-redirect-hint" class="text-gray-300"></code></li>
-                        <li>Copy the app's <strong>Client ID</strong> and paste it into the box above.</li>
-                        <li>In "User Management", add the Spotify emails of crew members who want to connect. <strong>Spotify caps new apps at 5 users and the app owner needs Premium</strong> — their rule, not ours (since March 2026).</li>
-                    </ol>
-                </details>
-            </div>
-            <div class="border-t border-gray-700 pt-4">
-                <h3 class="text-base font-semibold mb-1 text-center">Update Likes (bulk paste)</h3>
-                <p class="text-sm text-gray-400 mb-2 text-center">Format: <code>Person: Artist (Level)</code> · Levels: Must See, Nice to See, Highlight</p>
-                <div class="flex flex-col sm:flex-row gap-2 max-w-2xl mx-auto">
-                    <textarea id="artist-paste-input" class="flex-grow h-20 p-2 rounded bg-gray-700 border border-gray-600 text-white" placeholder="e.g. Kevin: GRiZ (Must See)"></textarea>
-                    <button id="bulk-add-btn" class="accent-button self-center whitespace-nowrap">Add / Update</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Bottom controls: crew + festival pickers + sync status (kept out of the prime top space) -->
-        <div class="mt-8 flex flex-wrap justify-center items-center gap-3 text-sm text-gray-400">
-            <label for="crew-select">Crew:</label>
-            <select id="crew-select" class="bg-gray-700 text-white text-sm rounded-md px-3 py-1 border border-gray-600"></select>
-            <button id="share-crew-btn" class="accent-button !py-1 !px-3 text-sm" title="Copy the crew invite link">Share link</button>
-            <button id="rename-crew-btn" class="text-gray-400 hover:text-white text-sm underline" title="Rename this crew">rename</button>
-            <label for="festival-select" class="ml-2">Festival:</label>
-            <select id="festival-select" class="bg-gray-700 text-white text-sm rounded-md px-3 py-1 border border-gray-600"></select>
-            <span class="flex items-center gap-1 ml-1" title="Sync status">
-                <span id="sync-dot" class="sync-dot sync-offline"></span>
-                <span id="sync-label">offline</span>
-            </span>
-        </div>
-        <p class="text-center text-xs text-gray-600 mt-3">Festival Navigator · works offline · picks sync to your crew</p>
+      <!-- Mobile dock (atlas 21c) -->
+      <div class="dock" id="dock">
+        <button class="avatar you" id="dock-you" aria-label="Jump to top" style="background: none; border: 1.5px solid #fff; cursor: pointer;"></button>
+        <span class="days" id="dock-days"></span>
+        <button class="fest-link" id="dock-fest-link" aria-label="Open settings">
+          <span class="fest-name" id="dock-fest-name"></span>
+          <span class="sync-dot"></span>
+        </button>
+      </div>
     </div>
 
-    <!-- API key modal (only needed for optional AI features without a server key) -->
-    <div id="api-key-modal" class="modal fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50 hidden">
-        <div class="modal-content bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md transform scale-95">
-            <h3 class="text-xl font-bold mb-4 accent-text">Enter Your Gemini API Key</h3>
-            <p class="text-gray-300 mb-4">For AI features without a server key, paste a free key from <a href="https://aistudio.google.com/app/apikey" target="_blank" class="accent-text underline">Google AI Studio</a>. Stored locally on this device only.</p>
-            <input type="password" id="api-key-input" class="w-full p-2 rounded bg-gray-700 border border-gray-600 text-white mb-4" placeholder="Enter your API key here...">
-            <div class="flex justify-end gap-3">
-                <button id="api-key-cancel" class="py-2 px-4 rounded bg-gray-600 hover:bg-gray-500 transition">Cancel</button>
-                <button id="api-key-save" class="py-2 px-4 rounded accent-button">Save &amp; Continue</button>
-            </div>
-        </div>
-    </div>
+    <div id="toast-root"></div>
 
-    <div id="info-modal" class="modal fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-40 hidden">
-        <div class="modal-content bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-2xl transform scale-95 max-h-[90vh] overflow-y-auto">
-            <div id="info-modal-content"></div>
-            <button id="info-modal-close" class="absolute top-4 right-4 text-gray-400 hover:text-white text-2xl">&times;</button>
-        </div>
-    </div>
-
-    <script type="module" src="/js/app.js"></script>
+    <script type="module" src="/js/v3/app.js"></script>
+    <script>
+      if ('serviceWorker' in navigator) navigator.serviceWorker.register('/service-worker.js').catch(function () {});
+    </script>
     <script defer src="/_vercel/insights/script.js"></script>
 </body>
 </html>

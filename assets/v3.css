@@ -135,9 +135,10 @@
 .dock.hidden { display: none; }
 @media (min-width: 720px) { .dock { display: none; } } /* desktop has no dock */
 
-.sync-dot { width: 7px; height: 7px; border-radius: var(--r-pill); background: var(--sync-ok); }
-.sync-dot.syncing { background: var(--sync-syncing); }
-.sync-dot.offline { background: var(--sync-offline); }
+/* class names match js/sync.js setSyncStatus: sync-online|syncing|offline|error */
+.sync-dot { width: 7px; height: 7px; border-radius: var(--r-pill); background: var(--sync-ok); display: inline-block; }
+.sync-dot.sync-syncing { background: var(--sync-syncing); }
+.sync-dot.sync-offline, .sync-dot.sync-error { background: var(--sync-offline); }
 
 /* ---- settings ---------------------------------------------------------------- */
 .micro-label { color: var(--text-tertiary); font-size: 10px; font-weight: 800;
@@ -175,6 +176,21 @@
               padding: 6px 0; background: var(--card); border-radius: var(--r-card); }
 .hour-label { text-align: right; padding-right: 6px; font-size: 9.5px;
               color: var(--text-tertiary); font-weight: 600; position: relative; top: -7px; }
+
+/* ---- wall grid + undo toast ---------------------------------------------------- */
+.wall-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
+@media (min-width: 720px) { .wall-grid { grid-template-columns: repeat(4, 1fr); gap: 7px; } }
+.undo-toast {
+  position: fixed; left: 50%; transform: translateX(-50%);
+  bottom: calc(64px + env(safe-area-inset-bottom)); z-index: 50;
+  background: var(--dock); border: 1px solid var(--border-emphasis);
+  border-radius: var(--r-row); padding: 10px 14px;
+  display: flex; align-items: center; gap: 12px;
+  color: var(--text-body); font-size: 12.5px; font-weight: 600;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, .5);
+}
+.undo-btn { background: none; border: none; color: var(--tonal-text);
+            font-weight: 800; font-size: 12.5px; cursor: pointer; }
 
 /* ---- misc -------------------------------------------------------------------- */
 .back-btn { color: var(--text-secondary); font-size: 16px; background: none; border: none; cursor: pointer; }

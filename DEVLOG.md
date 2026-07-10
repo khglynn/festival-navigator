@@ -2,7 +2,37 @@
 
 Newest first. One entry per meaningful unit of work.
 
-## 2026-07-10 (overnight) — v3 P0+P1: grounding, rig, design system (branch `v3-design`)
+## 2026-07-10 (overnight) — v3 P3: THE WALL SHIPS (branch `v3-design`)
+
+- index.html replaced wholesale with the v3 shell (landing 21a, join 21b,
+  wall 21c). js/v3/app.js orchestrates boot -> join -> wall; js/v3/wall.js
+  renders day sections of aura cards from live picks (model.js reads), owns
+  the tap cycle (0-4-0 with undo toast on the 5th tap), search/sort, and the
+  dock scrollspy (IntersectionObserver). Legacy person colors map onto the
+  24-board deterministically (old palette position -> board slot, no writes).
+- sync.js: sv:4 semantics declaration on every push; requestMigration() calls
+  the server-side op; setSyncStatus feeds both dots. All doc-derived strings
+  render via textContent (gate rule).
+- LIVE-VERIFIED on the branch API (vercel dev :3111 + throwaway v4 crew):
+  join -> claim -> 117-artist wall -> tap x5 = alpha ladder/must-pill/clear+
+  toast in the DOM -> server doc shows level 4, v:4, sync online. The one
+  test hiccup was the July-7 service worker still controlling old tabs —
+  expected; skipWaiting converges on the second load.
+
+## 2026-07-10 (overnight) — v3 P0+P1+P2: grounding, rig, design system, data layer (branch `v3-design`)
+
+- **P2**: doc v4 semantics (picks 0-4, keyed-object notes, spotifyStats,
+  colorIndex) + version-aware client reads. Codex gate (blocking) found 3
+  P0s; all fixed STRUCTURALLY: migration moved server-side (?op=migrate, one
+  atomic SQL transform, v never client-writable), note ids must carry their
+  author prefix, sv:4 semantics declarations with SQL choosing the mapped
+  delta for stale clients. 56/56 tests incl. concurrent-notes both-orders.
+- **P4 core**: /api/festival-add — Gemini search-grounded research ->
+  validated candidate + sources -> user-confirm -> crew-private upsert.
+  Festival rules extracted to api/_lib/festival-rules.mjs (single source of
+  truth with CI validator). custom_festivals DDL deferred to Kevin (guard
+  false-positive on ON DELETE CASCADE; classifier rightly blocked the
+  workaround).
 
 - **P0**: four foundation docs deep-read → distillation in the grounding doc;
   compaction hooks + Neon destructive-op guard installed and behavior-tested;

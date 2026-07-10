@@ -13,8 +13,10 @@ export function initSync(opts) {
 }
 
 export function setSyncStatus(s) {
-  document.getElementById('sync-dot').className = 'sync-dot sync-' + s;
-  document.getElementById('sync-label').textContent = s;
+  // v3 has two dots (desktop header + mobile dock) — update every instance.
+  document.querySelectorAll('.sync-dot').forEach((el) => { el.className = 'sync-dot sync-' + s; });
+  const label = document.getElementById('sync-label');
+  if (label) label.textContent = s;
 }
 
 export function scheduleSync() {
@@ -47,7 +49,9 @@ export async function pushSync() {
     const res = await fetch(`/api/crew?t=${encodeURIComponent(tokenAtStart)}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ data: state.pendingChanges }),
+      // sv:4 declares v4 pick semantics (1-3 picked, 4 must) — without it the
+      // server treats level 3 as legacy "Must See" and maps it on v4 docs.
+      body: JSON.stringify({ data: state.pendingChanges, sv: 4 }),
     });
     if (res.status === 404) throw new CrewGoneError();
     if (!res.ok) throw new Error('POST failed: ' + res.status);
@@ -71,6 +75,25 @@ export async function pushSync() {
     isSyncing = false;
     if (syncQueued) { syncQueued = false; scheduleSync(); }
   }
+}
+
+// One-shot server-side v3->v4 migration (atomic + idempotent server-side;
+// see api/crew.js op=migrate). Called by boot when the loaded doc is v3.
+export async function requestMigration() {
+  const token = state.getCrewToken();
+  if (!token || !navigator.onLine) return false;
+  try {
+    const res = await fetch(`/api/crew?t=${encodeURIComponent(token)}&op=migrate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: '{}',
+    });
+    if (!res.ok) return false;
+    const doc = await res.json();
+    if (state.getCrewToken() !== token) return false;
+    applyRemote(doc);
+    return true;
+  } catch { return false; }
 }
 
 export async function pollSync() {
