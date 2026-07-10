@@ -2,6 +2,17 @@
 
 Non-inferable facts only (the code answers everything else — read it).
 
+- **v3 design system**: static tokens in `assets/v3-tokens.css`, screen map +
+  aura algorithm in `claude-plans/v3-inventory.md` — look values up, never
+  invent them. UI vocabulary is exactly: picked / must / notes / fest. Pick
+  levels are 0–4 (0 tombstone, 1–3 picked at alpha .5/.75/1, 4 must); legacy
+  v3-doc levels map 1→1, 2→2, 3→4 at read time (old "Must See"=3 IS must —
+  labels, not alphas, carry the semantics). Festival accent color appears ONLY
+  on: fest name, active day tab, stage headers, current-fest border in
+  Settings — everything else neutral. Never a music-note glyph (Spotify is
+  the green pill). Notes are stored as keyed objects, never arrays
+  (jsonb_deep_merge replaces arrays — an array eats concurrent notes).
+
 - **Crew store is Neon Postgres**, project `floral-meadow-70237530` (Kevin's
   personal org). Merges MUST stay a single inline atomic `UPDATE` through
   `jsonb_deep_merge()` — a CTE-based read merges against a pre-lock snapshot
