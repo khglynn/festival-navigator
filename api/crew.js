@@ -55,11 +55,61 @@ export default async function handler(req, res) {
       return res.status(200).json(rows[0].doc);
     }
 
+    // ---- v3 -> v4 migration (server-computed, atomic, idempotent) ----
+    // Maps every legacy selection level 3 ("Must See") to 4 (must) and stamps
+    // v=4 in ONE statement guarded on the current version — no client payload,
+    // so there is nothing to go stale and no partial stamp is possible.
+    if (req.method === 'POST' && req.query.op === 'migrate') {
+      const rows = await sql`
+        UPDATE crews
+        SET doc = jsonb_set(
+          CASE WHEN doc ? 'festivals' THEN jsonb_set(doc, '{festivals}', COALESCE((
+            SELECT jsonb_object_agg(f.key,
+              CASE WHEN f.value ? 'selections' THEN jsonb_set(f.value, '{selections}', COALESCE((
+                SELECT jsonb_object_agg(a.key, COALESCE((
+                  SELECT jsonb_object_agg(p.key,
+                    CASE WHEN p.value = '3'::jsonb THEN '4'::jsonb ELSE p.value END)
+                  FROM jsonb_each(a.value) p), '{}'::jsonb))
+                FROM jsonb_each(f.value->'selections') a), '{}'::jsonb))
+              ELSE f.value END)
+            FROM jsonb_each(doc->'festivals') f), '{}'::jsonb))
+          ELSE doc END,
+          '{v}', '4'::jsonb), updated_at = now()
+        WHERE token = ${token} AND (doc->>'v') IS DISTINCT FROM '4'
+        RETURNING doc`;
+      if (rows.length) return res.status(200).json(rows[0].doc);
+      const cur = await sql`SELECT doc FROM crews WHERE token = ${token}`;
+      if (!cur.length) return res.status(404).json({ error: 'Crew not found' });
+      return res.status(200).json(cur[0].doc); // already v4 — idempotent
+    }
+
     // ---- merge write (single atomic statement; invariants inside) ----
     if (req.method === 'POST') {
       const incoming = req.body && req.body.data;
       const check = validateIncoming(incoming);
       if (!check.ok) return res.status(400).json({ error: check.error });
+
+      // Semantics guard for STALE clients (offline-first: an old tab can
+      // flush pending picks long after the doc migrated). Clients running v4
+      // code declare it with sv:4; a write WITHOUT that declaration carries
+      // legacy semantics, so if the stored doc is already v4 its level-3
+      // leaves ("Must See") are mapped to 4 before merging. Both variants go
+      // into ONE statement and SQL picks by the row's CURRENT version — no
+      // read-then-write gap. (Codex P2 gate, finding 3.)
+      const declaresV4 = req.body && req.body.sv === 4;
+      const mapLegacyLevels = (data) => {
+        if (declaresV4 || !data || !data.festivals) return data;
+        const copy = JSON.parse(JSON.stringify(data));
+        for (const entry of Object.values(copy.festivals || {})) {
+          for (const byPerson of Object.values(entry?.selections || {})) {
+            for (const [person, level] of Object.entries(byPerson)) {
+              if (level === 3) byPerson[person] = 4;
+            }
+          }
+        }
+        return copy;
+      };
+      const incomingForV4 = mapLegacyLevels(incoming);
 
       // Merge is computed INLINE in the UPDATE (not via a CTE): when two
       // writes race, the second blocks on the row lock and then re-evaluates
@@ -67,17 +117,21 @@ export default async function handler(req, res) {
       // latest version. A CTE-based read would merge against a pre-lock
       // snapshot and lose the earlier write (verified: 2/6 concurrent merges
       // were lost with a CTE; 6/6 survive inline).
-      // `meta.createdAt` needs no SQL guard — validateIncoming rejects it
-      // before we get here. `v` is writable as exactly 4 (one-way upgrade
-      // stamp; validateVersion), never anything else.
+      // `meta.createdAt` and `v` need no SQL guard — validateIncoming rejects
+      // both before we get here (v is only ever set by the migrate op above).
       const delta = JSON.stringify(incoming);
+      const deltaV4 = JSON.stringify(incomingForV4);
       const rows = await sql`
         UPDATE crews
-        SET doc = jsonb_deep_merge(doc, ${delta}::jsonb), updated_at = now()
+        SET doc = jsonb_deep_merge(doc,
+              CASE WHEN doc->>'v' = '4' THEN ${deltaV4}::jsonb ELSE ${delta}::jsonb END),
+            updated_at = now()
         WHERE token = ${token}
-          AND octet_length(jsonb_deep_merge(doc, ${delta}::jsonb)::text) <= ${LIMITS.docBytes}
+          AND octet_length(jsonb_deep_merge(doc,
+              CASE WHEN doc->>'v' = '4' THEN ${deltaV4}::jsonb ELSE ${delta}::jsonb END)::text) <= ${LIMITS.docBytes}
           AND (SELECT count(*)
-               FROM jsonb_each(COALESCE(jsonb_deep_merge(doc, ${delta}::jsonb)->'people', '{}'::jsonb)) p
+               FROM jsonb_each(COALESCE(jsonb_deep_merge(doc,
+                 CASE WHEN doc->>'v' = '4' THEN ${deltaV4}::jsonb ELSE ${delta}::jsonb END)->'people', '{}'::jsonb)) p
                WHERE NOT COALESCE((p.value->>'removed')::boolean, false)) <= ${LIMITS.activePeople}
         RETURNING doc`;
       if (rows.length) return res.status(200).json(rows[0].doc);

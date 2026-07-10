@@ -6,11 +6,17 @@
 //   v3 docs: 0 cleared, 1 Nice, 2 Highlight, 3 "Must See".
 // The LABELS carry meaning across versions, not the alphas: legacy 3 IS the
 // new must. Read mapping is 1->1, 2->2, 3->4; nothing else changes.
-// A v3 doc is upgraded ONCE by the first v4 writer: migrationOverlay() sends
-// every mapped selection leaf plus {v: 4} in a single atomic merge, so a doc
-// is never half-migrated and the mapping never runs twice (readers trust v).
+// A v3 doc is upgraded ONCE, SERVER-SIDE (api/crew.js ?op=migrate): one
+// atomic UPDATE maps every legacy leaf and stamps v=4 together. Clients
+// cannot write v at all — a client-computed overlay could go stale between
+// read and merge, and a bare stamp would corrupt legacy musts (Codex P2
+// gate, findings 1 + 4). Clients just call the op when they see v3.
+//
+// LEGACY_MAP passes 4 through: a v4-semantics write can land on a not-yet-
+// migrated doc in the migrate-race window, and reading it as 0 would eat
+// the pick.
 
-const LEGACY_MAP = { 0: 0, 1: 1, 2: 2, 3: 4 };
+const LEGACY_MAP = { 0: 0, 1: 1, 2: 2, 3: 4, 4: 4 };
 
 export function docVersion(doc) {
   return doc && doc.v === 4 ? 4 : 3;
@@ -36,25 +42,10 @@ export function picksFor(doc, fid) {
   return out;
 }
 
-// The one-shot upgrade overlay for a v3 doc; null when nothing to do.
-// Includes EVERY selection leaf (mapped) so the stamped doc reads correctly
-// as v4, including leaves whose value is unchanged (idempotent by value).
-export function migrationOverlay(doc) {
-  if (docVersion(doc) === 4) return null;
-  const festivals = {};
-  for (const [fid, entry] of Object.entries(doc?.festivals || {})) {
-    const sels = entry?.selections || {};
-    for (const [artist, byPerson] of Object.entries(sels)) {
-      for (const [person, raw] of Object.entries(byPerson)) {
-        const mapped = LEGACY_MAP[raw];
-        if (mapped === undefined) continue; // implausible value: leave, do not invent
-        festivals[fid] = festivals[fid] || { selections: {} };
-        festivals[fid].selections[artist] = festivals[fid].selections[artist] || {};
-        festivals[fid].selections[artist][person] = mapped;
-      }
-    }
-  }
-  return Object.keys(festivals).length ? { v: 4, festivals } : { v: 4 };
+// True when a client should request the server-side migrate op before its
+// first v4-semantics write.
+export function needsMigration(doc) {
+  return docVersion(doc) !== 4;
 }
 
 // The tap cycle: 0 -> 1 -> 2 -> 3 -> 4(must) -> 0 (the 5th tap clears; the

@@ -131,12 +131,26 @@ function validateNote(note, where) {
   return OK;
 }
 
+// Note ids embed their author (sanitized) as the first dot-segment — the
+// server requires the id prefix to match the note's author. Honest limits:
+// with one shared capability token there is no per-user auth, so a member
+// can still FORGE an author outright (same trust model as person names).
+// What this rule does guarantee: a client writing under its own author can
+// never accidentally or casually overwrite/tombstone a DIFFERENT author's
+// note, because it cannot produce a matching id for them without also
+// forging the author field (Codex P2 gate, findings 2 + 8).
+export function sanitizeAuthorForId(author) {
+  return String(author).replace(/[^A-Za-z0-9_.-]/g, '').slice(0, 20) || 'anon';
+}
+
 function validateNoteMap(map, where) {
   if (!isPlainObject(map)) return fail(`${where} must be an object`);
   for (const [noteId, note] of Object.entries(map)) {
     if (!NOTE_ID_RE.test(noteId) || FORBIDDEN_KEYS.has(noteId)) return fail(`${where}: bad note id`);
     const r = validateNote(note, `${where}[${noteId.slice(0, 20)}]`);
     if (!r.ok) return r;
+    const prefix = `${sanitizeAuthorForId(note.author)}.`;
+    if (!noteId.startsWith(prefix)) return fail(`${where}: note id must begin with its author (${prefix}...)`);
   }
   return OK;
 }
@@ -235,13 +249,11 @@ function validateSpotifyStats(stats) {
   return OK;
 }
 
-// Doc schema version: writable as exactly 4, one-way (v3 -> v4 upgrade stamp
-// sent by the first v4 client together with the full level conversion — see
-// js/v3/model.js migrationOverlay).
-function validateVersion(v) {
-  return v === 4 ? OK : fail('v may only be written as 4');
-}
-
+// Doc schema version is NOT client-writable. The v3 -> v4 upgrade happens
+// ONLY through the server-side migrate op (api/crew.js ?op=migrate): one
+// atomic UPDATE that maps every legacy selection leaf (3 -> 4) and stamps
+// v=4 together — a bare {v:4} stamp that skipped conversion would silently
+// downgrade every legacy "Must See" to picked-x3 (Codex P2 gate, finding 1).
 const SECTION_VALIDATORS = {
   people: validatePeople,
   festivals: validateFestivals,
@@ -249,7 +261,6 @@ const SECTION_VALIDATORS = {
   spotify: validateSpotify,
   spotifyStats: validateSpotifyStats,
   meta: validateMeta,
-  v: validateVersion,
 };
 
 // Validate an incoming merge overlay (client-sent partial crew doc).

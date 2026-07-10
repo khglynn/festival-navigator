@@ -4,7 +4,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  docVersion, readLevel, picksFor, migrationOverlay, nextTapLevel,
+  docVersion, readLevel, picksFor, needsMigration, nextTapLevel,
   makeNoteId, notesFor, noteCount, totalNoteCount, noteOverlay,
   togglePin, sortWithPins,
 } from '../js/v3/model.js';
@@ -40,21 +40,19 @@ test('v4 docs read raw: 3 means picked x3, not must', () => {
   assert.equal(picksFor(v4, 'lollapalooza-2025')['Wild Rivers'].Kevin, 3);
 });
 
-test('migration overlay converts every leaf, stamps v4, validates, is idempotent', () => {
-  const overlay = migrationOverlay(V3_DOC);
-  assert.equal(overlay.v, 4);
-  assert.equal(overlay.festivals['electric-forest-2026'].selections['Alleycvt'].Colby, 4);
-  assert.equal(overlay.festivals['lollapalooza-2025'].selections['Wild Rivers'].Kevin, 4);
-  assert.equal(overlay.festivals['electric-forest-2026'].selections['Muzz'].Colby, 0);
-  // The overlay must pass the server validator
-  assert.deepEqual(validateIncoming(overlay), { ok: true });
-  // Merged result reads identically to the pre-migration mapped view
-  const before = picksFor(V3_DOC, 'electric-forest-2026');
-  const merged = deepMerge(V3_DOC, overlay);
-  assert.equal(docVersion(merged), 4);
-  assert.deepEqual(picksFor(merged, 'electric-forest-2026'), before);
-  // Second migration is a no-op
-  assert.equal(migrationOverlay(merged), null);
+test('migration is server-only: clients cannot write v at all', () => {
+  assert.equal(needsMigration(V3_DOC), true);
+  assert.equal(needsMigration({ ...V3_DOC, v: 4 }), false);
+  // The bare-stamp attack from the Codex gate (finding 1): rejected outright.
+  assert.equal(validateIncoming({ v: 4 }).ok, false);
+  assert.equal(validateIncoming({ v: 4, festivals: {} }).ok, false);
+  assert.equal(validateIncoming({ v: 3 }).ok, false);
+});
+
+test('LEGACY_MAP passes 4 through: v4 write landing pre-migration is not eaten', () => {
+  // A v4-semantics must (4) written onto a still-v3 doc must read as must,
+  // not collapse to 0 through the legacy map.
+  assert.equal(readLevel(V3_DOC, 4), 4);
 });
 
 test('tap cycle 0->1->2->3->4->0', () => {
@@ -104,13 +102,12 @@ test('note ordering, counts, and tombstones', () => {
 
 test('server validator: new sections accept good and reject bad', () => {
   const ok = validateIncoming({
-    v: 4,
     people: { Kevin: { colorIndex: 23 } },
     spotifyStats: { Kevin: { likedCount: 11423, artistCount: 342, lastSynced: '2026-06-24T00:00:00Z', user: 'kevglynn.sf' } },
     festivals: { 'portola-2026': { selections: { Robyn: { Kevin: 4 } } } },
   });
   assert.deepEqual(ok, { ok: true });
-  assert.equal(validateIncoming({ v: 3 }).ok, false);       // one-way: only 4
+  assert.equal(validateIncoming({ v: 4 }).ok, false); // v is never client-writable
   assert.equal(validateIncoming({ v: 5 }).ok, false);
   assert.equal(validateIncoming({ people: { K: { colorIndex: 24 } } }).ok, false);
   assert.equal(validateIncoming({ festivals: { f: { selections: { A: { K: 5 } } } } }).ok, false);
@@ -137,4 +134,19 @@ test('makeNoteId sanitizes hostile authors into the server id alphabet', () => {
   const id = makeNoteId('K<img>|evil name', '2026-07-10T06:00:00Z', 'abc123');
   assert.match(id, /^[A-Za-z0-9|_.-]{8,80}$/);
   assert.ok(!id.includes('<') && !id.includes('|evil'));
+});
+
+test('note ownership: id prefix must match author (Codex finding 2)', () => {
+  const note = (author) => ({ author, ts: '2026-07-10T06:00:00Z', text: 'hi' });
+  const wrap = (id, n) => ({ festivals: { f: { notes: { artist: { Robyn: { [id]: n } } } } } });
+  // Kevin writing under his own id: fine
+  assert.equal(validateIncoming(wrap('Kevin.123.abcdef', note('Kevin'))).ok, true);
+  // Kevin's client targeting MAYA's note id while authoring as Kevin: rejected
+  assert.equal(validateIncoming(wrap('Maya.123.abcdef', note('Kevin'))).ok, false);
+  // Tombstoning someone else's id under your own author: rejected
+  assert.equal(validateIncoming(wrap('Maya.123.abcdef',
+    { author: 'Kevin', ts: '2026-07-10T06:00:00Z', text: '', deleted: true })).ok, false);
+  // makeNoteId output always satisfies the prefix rule for its own author
+  const id = makeNoteId('Maya', '2026-07-10T06:00:00Z', 'zzzzzz');
+  assert.equal(validateIncoming(wrap(id, note('Maya'))).ok, true);
 });

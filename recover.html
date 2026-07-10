@@ -53,7 +53,7 @@
 </div>
 
 <script type="module">
-import { migrationOverlay, readLevel } from '/js/v3/model.js';
+import { needsMigration, readLevel } from '/js/v3/model.js';
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 $('origin-label').textContent = location.origin;
@@ -174,7 +174,7 @@ function renderPreview() {
         }</select> across all this crew's festivals</div>`);
     }
     if (skipLeaves) rows.push(`<div class="text-yellow-400">⚠️ ${skipLeaves} picks skipped — people not in this crew: ${esc([...skippedPeople].join(', '))}</div>`);
-    rows.push(`<div class="text-gray-400">${mergeLeaves} picks will be merged. Existing picks are never lowered or deleted — highest level wins.</div>`);
+    rows.push(`<div class="text-gray-400">${mergeLeaves} picks will be merged. The rescue only raises or adds — it skips anything the crew already has at the same or higher level (checked against the live doc at merge time).</div>`);
     $('preview').innerHTML = rows.join('');
     $('merge-btn').classList.toggle('hidden', mergeLeaves === 0 && !(raw.libmap && raw.libmap.artists));
 }
@@ -220,17 +220,24 @@ $('merge-btn').onclick = async () => {
     if (!crewToken || !crewDoc) return;
     $('result').textContent = 'Merging…';
     try {
+        // Ask the server to run its atomic v3->v4 migration first if needed
+        // (server-computed — nothing here can go stale), then REFRESH the doc
+        // so the skip decisions below run against the freshest state.
+        if (needsMigration(crewDoc)) {
+            const m = await fetch(`/api/crew?t=${crewToken}&op=migrate`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+            if (!m.ok) throw new Error(`migration failed (${m.status})`);
+        }
+        crewDoc = await loadCrew(crewToken);
         const crewPeople = new Set(Object.keys(crewDoc.people || {}));
-        // If the target doc still carries v3 semantics, fold the one-shot
-        // v4 migration into this same merge (converts every existing leaf
-        // and stamps v:4 atomically with the rescue).
-        const migration = migrationOverlay(crewDoc);
-        const festivals = migration?.festivals ? migration.festivals : {};
+        const festivals = {};
         for (const [fid, sels] of Object.entries(found)) {
             for (const [artist, byPerson] of Object.entries(sels)) {
                 for (const [person, level] of Object.entries(byPerson)) {
                     if (!crewPeople.has(person)) continue;
-                    // never lower — compare in normalized v4 space
+                    // rescue only raises what it knew — compare in v4 space
+                    // against the just-refetched doc (a concurrent edit in
+                    // the same instant can still win; existing data is never
+                    // the loser by design of jsonb_deep_merge last-write-wins)
                     const cur = readLevel(crewDoc, crewDoc.festivals?.[fid]?.selections?.[artist]?.[person]);
                     if (Number.isInteger(cur) && cur >= level) continue;
                     festivals[fid] = festivals[fid] || { selections: {} };
@@ -240,7 +247,6 @@ $('merge-btn').onclick = async () => {
             }
         }
         const data = {};
-        if (migration) data.v = 4;
         if (Object.keys(festivals).length) data.festivals = festivals;
         const affSel = document.getElementById('aff-person');
         if (affSel) {
@@ -252,7 +258,7 @@ $('merge-btn').onclick = async () => {
         const res = await fetch(`/api/crew?t=${crewToken}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ data }),
+            body: JSON.stringify({ data, sv: 4 }),
         });
         if (!res.ok) throw new Error(`merge failed (${res.status}): ${await res.text()}`);
         const merged = await res.json();

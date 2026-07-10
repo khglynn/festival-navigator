@@ -6,20 +6,22 @@
 
 ## ▶️ LIVE STATE (loop maintains this block)
 
-- **Phase:** P2 core built — Codex gate IN PROGRESS (blocking P3). Hooks + guard installed and verified; branch cut;
+- **Phase:** P2 GATE PASSED (Codex findings fixed) → P3 screens. Hooks + guard installed and verified; branch cut;
   plan + grounding committed; four foundation docs deep-read ✓; atlas read in
   full → v3-tokens.css + v3-inventory.md banked ✓ (aura algorithm found as
   reference code in the atlas script — port, do not invent); CLAUDE.md carries
   the non-inferable v3 rules ✓.
 - **Design source:** scratchpad `design/design_handoff_festival_navigator/`
   (re-extract from `~/Downloads/Festival navigator v2.zip` if cleaned).
-- **EXACT NEXT STEP:** Codex review of the P2 data layer (crew-shared.mjs
-  diff, js/v3/model.js, recover.html changes) — BLOCKING: P3 screens build on
-  these semantics. Brief Codex on: v3→v4 level mapping soundness (3→4), the
-  one-shot migration overlay's atomicity + idempotence, keyed-object notes
-  merge safety, validation completeness (injection, prototype pollution,
-  caps), never-lower normalization in recover.html. Fix what it finds, then
-  P3 opens with the wall screen.
+- **EXACT NEXT STEP:** P3 opens — the wall screen (js/v3 app shell +
+  index.html rebuild): header, toolbar, day sections with aura cards wired to
+  live picks via model.js, tap cycle w/ undo toast on 5th tap, mobile dock w/
+  scrollspy, desktop no-dock. HARD RULE from the gate (finding 6): every
+  note.text / artist name / target string renders via textContent or esc() —
+  never innerHTML interpolation. New-client merges MUST send sv:4 and call
+  op=migrate when doc v is 3. P6 must live-test the migrate op SQL against a
+  synthetic v3 crew row (INSERT via MCP passes the guard; row cleanup queued
+  for Kevin with the other Neon debris).
 - **Kevin authorized promote-to-production when P6 fully passes (this run only).**
 
 ## 🎉 LIVE (since 2026-07-08)
