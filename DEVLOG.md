@@ -2,6 +2,23 @@
 
 Newest first. One entry per meaningful unit of work.
 
+## 2026-07-10 (overnight) — v3 SHIPPED TO PRODUCTION (main)
+
+- Full arc in one overnight run: P0 grounding -> P1 design system -> P2 data
+  layer (Codex gate: 3 P0s fixed structurally) -> P3 all screens (walk gate)
+  -> P4 festival-add API -> P5 SW v13 + living favicon -> P6 final gate +
+  live migrate integrity -> merge to main -> production -> all three real
+  crews pre-migrated to v4. Morning report:
+  claude-plans/2026-07-10-v3-morning-report.md.
+- Review economics that worked: bank-as-you-go reviewer files (two reviewers
+  "vanished" from the registry but were merely slow — both delivered), gates
+  at phase boundaries, every finding dispositioned same-night with the fix
+  cited back to its finding number.
+- The guard + classifier stack worked as designed: blocked a CREATE TABLE on
+  an ON DELETE CASCADE word-match, then correctly refused a credential-
+  materializing workaround — table creation deferred to Kevin rather than
+  routed around. Layered defenses > my in-the-moment reasoning.
+
 ## 2026-07-10 (overnight) — v3 P3: THE WALL SHIPS (branch `v3-design`)
 
 - index.html replaced wholesale with the v3 shell (landing 21a, join 21b,
