@@ -1,7 +1,21 @@
-# NOW — festival-navigator: live in production + data-rescue push
+# NOW — festival-navigator: v3 OVERNIGHT BUILD RUNNING
 
-**Updated:** 2026-07-09 evening CT · **Branch:** `rescue-and-archives` (preview; production untouched)
-**History:** DEVLOG.md
+**Updated:** 2026-07-10 ~00:05 CT · **Branch:** `v3-design` (cut from rescue-and-archives)
+**Run docs:** `claude-plans/2026-07-09-v3-design-build.md` (plan) ·
+`claude-plans/2026-07-09-v3-grounding.md` (read on resume) · **History:** DEVLOG.md
+
+## ▶️ LIVE STATE (loop maintains this block)
+
+- **Phase:** P0 — ground + rig. Hooks + guard installed and verified; branch cut;
+  plan + grounding committed.
+- **Design source:** scratchpad `design/design_handoff_festival_navigator/`
+  (re-extract from `~/Downloads/Festival navigator v2.zip` if cleaned).
+- **EXACT NEXT STEP:** deep-read the four hg-ground-it reference docs (~45k
+  tokens, really read), append the build-relevant distillation to the grounding
+  doc appendix, then extract the Screens atlas → `claude-plans/v3-inventory.md`
+  (every screen, component, token, with source line refs) + first-pass
+  `assets/v3-tokens.css`.
+- **Kevin authorized promote-to-production when P6 fully passes (this run only).**
 
 ## 🎉 LIVE (since 2026-07-08)
 
