@@ -13,10 +13,16 @@
   the non-inferable v3 rules ✓.
 - **Design source:** scratchpad `design/design_handoff_festival_navigator/`
   (re-extract from `~/Downloads/Festival navigator v2.zip` if cleaned).
-- **EXACT NEXT STEP:** P1 opens — js/v3/aura.js (port renderVals verbatim from
-  the atlas script, turn 21, per v3-inventory.md) + who-corner/about-corner
-  chip renderers + gallery.html rendering every component in every state.
-  Verify gallery visually in Playwright against the atlas before moving on.
+- **EXACT NEXT STEP:** P1 — js/v3/palette.js + js/v3/aura.js + gallery.html.
+  The 24-board is CONFIRMED from Final.dc.html (12a AURA, fetched via
+  DesignSync): hues AURA_H = [10, 28, 42, 72, 150, 172, 200, 221, 233, 262,
+  305, 345], tones bright hsl(H,90%,62%) / deep hsl(H,75%,46%) (mkPal rows
+  [[90,62],[75,46]]); assignment order puts first four ~90-120 degrees apart
+  (10, 221, 305, 150 per the atlas A4). Exception in atlas: P4 Sam uses
+  hsl(150,70%,50%) not (150,90%,62%) — re-check assignment tone order when
+  porting (deep-vs-bright per slot). Then chips + gallery, verify in
+  Playwright vs atlas. (Paused 2026-07-10 ~00:05 CT at Kevin's request —
+  usage budget; resume ~01:05 CT.)
 - **Kevin authorized promote-to-production when P6 fully passes (this run only).**
 
 ## 🎉 LIVE (since 2026-07-08)
