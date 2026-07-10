@@ -6,6 +6,13 @@ import * as state from './state.js';
 let syncTimer = null, isSyncing = false, syncQueued = false;
 let onRemoteChange = () => {};
 let onCrewGone = () => {};
+// "Stay offline" (manual, never auto-toggled): suppress every network
+// attempt until switched off. Picks still save locally first, always.
+let stayOffline = false;
+export function setStayOffline(on) {
+  stayOffline = !!on;
+  if (stayOffline) setSyncStatus('offline');
+}
 
 export function initSync(opts) {
   if (opts && opts.onRemoteChange) onRemoteChange = opts.onRemoteChange;
@@ -40,6 +47,7 @@ function applyRemote(remote) {
 
 export async function pushSync() {
   if (!state.getCrewToken()) return;
+  if (stayOffline) { setSyncStatus('offline'); return; }
   if (!navigator.onLine) { setSyncStatus('offline'); return; }
   if (isSyncing) { syncQueued = true; return; }
   isSyncing = true; setSyncStatus('syncing');
@@ -98,6 +106,7 @@ export async function requestMigration() {
 
 export async function pollSync() {
   if (!state.getCrewToken()) return;
+  if (stayOffline) { setSyncStatus('offline'); return; }
   if (!navigator.onLine) { setSyncStatus('offline'); return; }
   if (isSyncing) return; // a push already has the latest in flight
   const tokenAtStart = state.getCrewToken();

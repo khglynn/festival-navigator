@@ -13,12 +13,14 @@
   the non-inferable v3 rules ✓.
 - **Design source:** scratchpad `design/design_handoff_festival_navigator/`
   (re-extract from `~/Downloads/Festival navigator v2.zip` if cleaned).
-- **EXACT NEXT STEP:** P3 continues — Settings screen (one page, two doors:
-  gear + dock fest link): YOUR FESTIVALS (current card w/ members + Share
-  invite + festival switcher; add-a-festival flow wiring to /api/festival-add
-  preview+confirm), YOU (name/color), APP (How it works view, Low power,
-  Stay offline, Bulk paste, Export likes, Download PNG). Then set-times grid
-  view + all-notes view + Spotify drill. XSS rule stands.
+- **EXACT NEXT STEP:** P3 remaining — (a) set-times grid view (scheduled
+  fests render cells-on-clock via computeDayArtists; EF + Lolla are the
+  scheduled data); (b) all-notes view from the Notes chip; (c) Settings YOU
+  actions (rename/color) + APP tools (Bulk paste via js/parse.js, Export
+  likes, Download PNG via html2canvas) + Spotify glance/drill (reuse
+  js/spotify.js flows restyled); then the P3 GATE: Playwright walk of every
+  screen at 390x844 + 1280x800 with screenshots READ, plus trailing Codex on
+  the P3 diff. XSS rule stands.
   Local test rig: vercel dev on :3111 (task b6lhnujql) + throwaway crew token
   in scratchpad/v3-test-crew.txt ("V3 Wall Test" — Neon debris, morning
   cleanup). NOTE: old SW (v11) controls prior tabs through one reload —

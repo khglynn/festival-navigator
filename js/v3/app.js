@@ -8,6 +8,7 @@ import * as model from './model.js';
 import { loadFestivalIndex, loadFestival } from '../festivals.js';
 import { renderWall, refreshCard, showUndoToast, wireScrollspy, colorIndexOf } from './wall.js';
 import { openArtistSheet, closeSheet } from './notes.js';
+import { renderSettings, appSettings } from './settings.js';
 import { hslOf, strokeOf, nextColorIndex } from './palette.js';
 
 const $ = (id) => document.getElementById(id);
@@ -140,9 +141,37 @@ function repaintWall() {
 
 // ---- screens ----------------------------------------------------------------------
 function show(screen) {
-  for (const id of ['screen-landing', 'screen-join', 'screen-app']) {
+  for (const id of ['screen-landing', 'screen-join', 'screen-app', 'screen-settings']) {
     $(id).style.display = id === screen ? '' : 'none';
   }
+}
+
+// ---- settings (one page, two doors) -----------------------------------------------
+function applyLowPower(on) {
+  ctx.lowPower = !!on;
+  document.body.classList.toggle('low-power', ctx.lowPower);
+}
+
+function openSettings() {
+  closeSheet();
+  refreshCtx();
+  show('screen-settings');
+  renderSettings($('settings-root'), ctx, {
+    close: () => { show('screen-app'); repaintWall(); },
+    rerender: openSettings,
+    switchFestival: async (fid) => {
+      state.setActiveFestivalId(fid);
+      state.ensureFestivalState(fid);
+      state.setCurrentDay(null);
+      await loadFestival(fid);
+      show('screen-app');
+      applyFestTheme();
+      repaintWall();
+      sync.pollSync();
+    },
+    onLowPower: (on) => { applyLowPower(on); },
+    onStayOffline: (on) => { sync.setStayOffline(on); if (!on) sync.pushSync(); },
+  });
 }
 
 function renderLanding() {
@@ -264,7 +293,17 @@ export function init() {
   $('search-input').addEventListener('focus', () => dock.classList.add('hidden'));
   $('search-input').addEventListener('blur', () => dock.classList.remove('hidden'));
   $('dock-you').addEventListener('click', () => window.scrollTo({ top: 0, behavior: ctx.lowPower ? 'auto' : 'smooth' }));
-  setInterval(() => sync.pollSync(), 25000);
+  $('gear-btn').addEventListener('click', openSettings);
+  $('dock-fest-link').addEventListener('click', openSettings);
+  const saved = appSettings();
+  applyLowPower(saved.lowPower);
+  sync.setStayOffline(saved.stayOffline);
+  // Poll every 25s normally; low power stretches to every 5 min (design 21h).
+  let lowTick = 0;
+  setInterval(() => {
+    if (ctx.lowPower && (lowTick = (lowTick + 1) % 12) !== 0) return;
+    sync.pollSync();
+  }, 25000);
   document.addEventListener('visibilitychange', () => { if (!document.hidden) sync.pollSync(); });
   window.addEventListener('hashchange', () => { closeSheet(); boot(); });
   window.addEventListener('online', () => sync.pushSync());
