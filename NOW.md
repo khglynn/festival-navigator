@@ -6,22 +6,24 @@
 
 ## ▶️ LIVE STATE (loop maintains this block)
 
-- **Phase:** P3 CLOSED (walk passed, old UI deleted, Codex trailing) → P5. Hooks + guard installed and verified; branch cut;
+- **Phase:** P5 COMPLETE → P6 (verify + ship). Hooks + guard installed and verified; branch cut;
   plan + grounding committed; four foundation docs deep-read ✓; atlas read in
   full → v3-tokens.css + v3-inventory.md banked ✓ (aura algorithm found as
   reference code in the atlas script — port, do not invent); CLAUDE.md carries
   the non-inferable v3 rules ✓.
 - **Design source:** scratchpad `design/design_handoff_festival_navigator/`
   (re-extract from `~/Downloads/Festival navigator v2.zip` if cleaned).
-- **EXACT NEXT STEP:** P5 — (1) service-worker APP_SHELL rebuilt for the v3
-  module graph (index, recover, 404, gallery?, assets/fonts + v3 css, js/v3/*
-  + surviving js/*, favicon/manifest/icons) + CACHE_VERSION v13; (2) living
-  canvas favicon (fest accent -> brand violet, ~10s redraw, skipped in low
-  power + static fallback); (3) process codex-p3-trail findings when they
-  arrive (.claude/codex-v3-p3-review.md). Then P6: triple-check, final Codex
-  gate, live-data integrity (incl. op=migrate live test via synthetic v3 row
-  INSERT), merge to main, promote (Kevin authorized), teardown + morning
-  report.
+- **EXACT NEXT STEP:** P6 opens — (1) live migrate-op integrity test: INSERT
+  a synthetic v3 crew row via Neon MCP (INSERT passes the guard; use token
+  prefix v3test- pattern is invalid — token must match ^[A-Za-z0-9_-]{20,40}$;
+  generate one, note for cleanup), call POST ?op=migrate on prod-code path
+  (local vercel dev :3111 hits the real Neon DB), verify every 3 became 4 and
+  v=4, idempotent second call; ALSO verify the three real crews read correctly
+  through v3 model (The Crew is still doc v3 — reads must map). (2) Process
+  codex-p3-trail findings when they land. (3) triple-check pass. (4) Merge to
+  main + promote (Kevin authorized) + verify prod domains. (5) Teardown:
+  guard out of settings.json, NOW closed, DEVLOG, morning report with
+  screenshots + deviations + decisions queue.
   Local test rig: vercel dev on :3111 (task b6lhnujql) + throwaway crew token
   in scratchpad/v3-test-crew.txt ("V3 Wall Test" — Neon debris, morning
   cleanup). NOTE: old SW (v11) controls prior tabs through one reload —
