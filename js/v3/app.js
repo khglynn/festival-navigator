@@ -76,6 +76,7 @@ function applyFestTheme() {
   $('fest-year').textContent = fest.year || '';
   $('fest-sub').textContent = [fest.subtitle, fest.dates].filter(Boolean).join(' · ');
   $('dock-fest-name').textContent = `${fest.name.toUpperCase()} ${fest.year || ''}`.trim();
+  $('desk-fest-pill').textContent = `${fest.name.toUpperCase()} ${fest.year || ''}`.trim();
   document.title = `${fest.name} — Festival Navigator`;
 }
 

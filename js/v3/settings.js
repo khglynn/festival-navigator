@@ -69,10 +69,10 @@ function currentFestCard(ctx, actions) {
   const card = el('div');
   card.className = 'settings-card current';
   const head = el('div', 'display: flex; align-items: baseline; gap: 8px;');
-  const nm = el('span', `font-family: var(--font-display); letter-spacing: .04em; font-size: 19px; color: rgb(var(--fest));`, fest.name.toUpperCase());
+  const nm = el('span', `font-family: var(--font-display); letter-spacing: .04em; font-size: 19px; color: rgb(var(--fest)); white-space: nowrap;`, fest.name.toUpperCase());
   const yr = el('span', 'font-size: .62em; opacity: .75;', ' ' + (fest.year || ''));
   nm.appendChild(yr);
-  const dates = el('span', 'color: var(--text-tertiary); font-size: 11px; font-weight: 600;', fest.dates || '');
+  const dates = el('span', 'color: var(--text-tertiary); font-size: 11px; font-weight: 600; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;', fest.dates || '');
   const syncState = el('span', 'margin-left: auto; color: var(--sync-ok); font-size: 10.5px; font-weight: 700;',
     state.hasPending() ? 'syncing' : 'synced');
   head.append(nm, dates, syncState);

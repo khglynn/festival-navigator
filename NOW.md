@@ -13,15 +13,16 @@
   the non-inferable v3 rules ✓.
 - **Design source:** scratchpad `design/design_handoff_festival_navigator/`
   (re-extract from `~/Downloads/Festival navigator v2.zip` if cleaned).
-- **EXACT NEXT STEP:** P3 GATE — (1) Playwright walk: landing, join, wall
-  (lineup + scheduled), notes sheet, all-notes, settings + subviews, 404 at
-  390x844 AND 1280x800; screenshot each and LOOK at them; fix what is off.
-  (2) Old-UI deletion (delete-not-disclaim): js/app.js, js/render/, js/ui.js,
-  js/tools.js, js/ai.js?, api/optimize.js (optimizer cut), assets/tailwind*
-  + custom.css prune (keep only rules v3 still uses — check recover.html
-  which links custom.css + tailwind), gallery/index refs, npm tailwind dep,
-  CI css-freshness step. (3) Launch trailing Codex on the full P3 diff while
-  P5 (SW precache update + favicon canvas) starts. Then P5.
+- **EXACT NEXT STEP:** P3 gate walk DONE (7 screens read; findings fixed:
+  desktop fest pill wired, dates clamped in header/fest-rows/settings-card).
+  Next: (1) old-UI deletion (delete-not-disclaim): js/app.js, js/render/,
+  js/ui.js, js/tools.js, js/ai.js, api/optimize.js (optimizer cut),
+  assets/tailwind* + tailwind config + npm dep + CI css-freshness step;
+  custom.css pruned to what recover.html still uses (accent-button etc.) or
+  recover.html restyled onto v3 tokens; gallery stays (uses v3.css). recover
+  page keeps working — verify after deletion. (2) Launch trailing Codex on
+  the P3+P4 diff. (3) P5: SW precache list rebuilt for v3 modules + fonts +
+  CACHE_VERSION v13; canvas favicon; contrast check.
   Local test rig: vercel dev on :3111 (task b6lhnujql) + throwaway crew token
   in scratchpad/v3-test-crew.txt ("V3 Wall Test" — Neon debris, morning
   cleanup). NOTE: old SW (v11) controls prior tabs through one reload —
