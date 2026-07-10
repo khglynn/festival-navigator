@@ -22,7 +22,8 @@
   DONE ALREADY: live migrate integrity PASSED on real Postgres (synthetic v3
   row migratetest0000000000eeeee — 3->4 both fests, idempotent, stale-write
   mapping works, declared sv:4 write stays 3, real crews untouched at v3).
-  Cleanup queue: that synthetic row + V3 Wall Test crew + 6 old test crews.
+  Cleanup queue: synthetic migrate row + V3 Wall Test crew + Zed's Portola 26
+  create-flow test crew (GmP9H94rRa...) + 6 old test crews.
   Local test rig: vercel dev on :3111 (task b6lhnujql) + throwaway crew token
   in scratchpad/v3-test-crew.txt ("V3 Wall Test" — Neon debris, morning
   cleanup). NOTE: old SW (v11) controls prior tabs through one reload —

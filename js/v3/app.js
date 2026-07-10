@@ -5,7 +5,7 @@ import * as state from '../state.js';
 import * as crew from '../crew.js';
 import * as sync from '../sync.js';
 import * as model from './model.js';
-import { loadFestivalIndex, loadFestival, loadCustomFestivals } from '../festivals.js';
+import { loadFestivalIndex, loadFestival, loadCustomFestivals, FESTIVAL_INDEX } from '../festivals.js';
 import { renderWall, refreshCard, showUndoToast, wireScrollspy, colorIndexOf } from './wall.js';
 import { openArtistSheet, openAllNotes, closeSheet } from './notes.js';
 import { renderSettings, appSettings } from './settings.js';
@@ -23,6 +23,7 @@ const ctx = {
   query: '',
   sort: 'billing',
   lowPower: false,
+  migrationPending: false,
   onTap: handleTap,
   onOpenNotes: (artist) => openArtistSheet(artist, ctx, onNotesChange),
   onNotesChange: () => onNotesChange(),
@@ -43,6 +44,10 @@ function refreshCtx() {
 // ---- tap cycle -------------------------------------------------------------------
 function handleTap(artistName, cardEl) {
   if (!ctx.meName) return;
+  if (ctx.migrationPending) {
+    showUndoToast($('toast-root'), 'Updating this crew — picks unlock in a moment', () => {});
+    return;
+  }
   const current = (ctx.picks[artistName] || {})[ctx.meName] || 0;
   const next = model.nextTapLevel(current);
   state.recordSelection(artistName, ctx.meName, next);
@@ -155,8 +160,68 @@ function repaintWall() {
 
 // ---- screens ----------------------------------------------------------------------
 function show(screen) {
-  for (const id of ['screen-landing', 'screen-join', 'screen-app', 'screen-settings']) {
+  for (const id of ['screen-landing', 'screen-join', 'screen-create', 'screen-app', 'screen-settings']) {
     $(id).style.display = id === screen ? '' : 'none';
+  }
+}
+
+// ---- create: pick the fest + your name -> a fresh crew ------------------------------
+let createFid = null;
+function renderCreate() {
+  show('screen-create');
+  createFid = null;
+  $('create-status').textContent = '';
+  const list = $('create-fests');
+  list.textContent = '';
+  for (const f of FESTIVAL_INDEX.filter((x) => x.status !== 'archived')) {
+    const row = document.createElement('button');
+    row.className = 'fest-row';
+    row.style.width = '100%';
+    const left = document.createElement('div');
+    left.style.cssText = 'flex: 1; min-width: 0; text-align: left;';
+    const nm = document.createElement('span');
+    nm.style.cssText = `font-family: var(--font-display); letter-spacing: .04em; font-size: 16px; color: rgb(${f.accent || '237, 234, 244'}); white-space: nowrap;`;
+    nm.textContent = f.name.toUpperCase();
+    const yr = document.createElement('span');
+    yr.style.cssText = 'font-size: .65em; opacity: .75;';
+    yr.textContent = ' ' + (f.year || '');
+    nm.appendChild(yr);
+    left.appendChild(nm);
+    const sub = document.createElement('div');
+    sub.className = 'fest-dates';
+    sub.textContent = f.dates || '';
+    left.appendChild(sub);
+    row.appendChild(left);
+    row.addEventListener('click', () => {
+      createFid = f.id;
+      [...list.children].forEach((c) => { c.style.borderColor = ''; c.style.borderWidth = ''; });
+      row.style.borderColor = `rgba(${f.accent || '192, 132, 252'}, .55)`;
+      row.style.borderWidth = '1.5px';
+      $('create-status').textContent = `${f.name} it is — now your name.`;
+    });
+    list.appendChild(row);
+  }
+}
+
+async function createCrewFlow() {
+  const myName = $('create-name-input').value.trim();
+  const status = $('create-status');
+  if (!createFid) { status.textContent = 'Pick the fest first.'; return; }
+  if (!myName) { status.textContent = 'And your name — that becomes your color.'; return; }
+  const btn = $('create-go-btn');
+  btn.disabled = true;
+  status.textContent = 'Creating…';
+  try {
+    const meta = FESTIVAL_INDEX.find((f) => f.id === createFid);
+    // SAFE_NAME_RE bans apostrophes — "'26" becomes "26" in the crew name.
+    const crewName = `${meta.name} ${(meta.year || '').replace(/'/g, '')}`.trim().slice(0, 40);
+    const { token, doc } = await crew.createCrew(crewName, myName, { colorIndex: 0 });
+    crew.setMe(token, myName);
+    localStorage.setItem(`fn_crew_fest_v3_${token}`, createFid);
+    await enterApp(token, doc);
+  } catch (e) {
+    status.textContent = String(e.message || e);
+    btn.disabled = false;
   }
 }
 
@@ -188,6 +253,7 @@ function openSettings() {
     onLowPower: (on) => { applyLowPower(on); },
     onStayOffline: (on) => { sync.setStayOffline(on); if (!on) sync.pushSync(); },
     recordPick: (artist, person, level) => {
+      if (ctx.migrationPending) return; // same gate as handleTap (bulk paste path)
       state.recordSelection(artist, person, level);
       applyLocalPick(artist, person, level);
     },
@@ -268,6 +334,17 @@ async function enterApp(token, doc) {
   crew.rememberCrew(token, (doc.meta && doc.meta.name) || '');
   await loadCustomFestivals(token); // crew-private fests join the catalog first
   state.activateCrew(token, doc);
+  // Migrate BEFORE the wall becomes interactive: a raw 3 written onto a
+  // still-v3 doc would later be rewritten to 4 by the migrate op — silently
+  // corrupting a genuine "picked x3" into "must" (Codex P6 gate, finding 1).
+  // Offline/failed migration -> writes stay gated (ctx.migrationPending) and
+  // the poll loop retries; reads are safe throughout (readLevel maps by v).
+  if (model.needsMigration(state.crewDoc)) {
+    await sync.requestMigration();
+    ctx.migrationPending = model.needsMigration(state.crewDoc);
+  } else {
+    ctx.migrationPending = false;
+  }
   await loadFestival(state.activeFestivalId);
   show('screen-app');
   applyFestTheme();
@@ -276,11 +353,6 @@ async function enterApp(token, doc) {
   renderDockYou();
   repaintWall();
   history.replaceState(null, '', `/#g=${token}`);
-  // Server-side v4 migration for legacy docs, then repaint from truth.
-  if (model.needsMigration(state.crewDoc)) {
-    await sync.requestMigration();
-    repaintWall();
-  }
   sync.pollSync();
 }
 
@@ -291,6 +363,7 @@ export async function boot() {
   const current = () => gen === bootGeneration;
   try { await loadFestivalIndex(); } catch { /* offline with cache: proceed */ }
 
+  if (location.hash === '#new') { renderCreate(); return; }
   const token = crew.tokenFromHash() || crew.activeCrewToken();
   if (!token) { renderLanding(); return; }
 
@@ -318,13 +391,23 @@ export function init() {
   $('gear-btn').addEventListener('click', openSettings);
   $('dock-fest-link').addEventListener('click', openSettings);
   $('notes-chip').addEventListener('click', () => { refreshCtx(); openAllNotes(ctx); });
+  $('create-go-btn').addEventListener('click', createCrewFlow);
+  $('create-back').addEventListener('click', () => { history.replaceState(null, '', '/'); renderLanding(); });
   const saved = appSettings();
   applyLowPower(saved.lowPower);
   sync.setStayOffline(saved.stayOffline);
   // Poll every 25s normally; low power stretches to every 5 min (design 21h).
   let lowTick = 0;
-  setInterval(() => {
+  setInterval(async () => {
     if (ctx.lowPower && (lowTick = (lowTick + 1) % 12) !== 0) return;
+    // Retry the one-shot migration until it lands (offline first-open case),
+    // then unlock writes.
+    if (ctx.migrationPending && navigator.onLine) {
+      if (await sync.requestMigration()) {
+        ctx.migrationPending = model.needsMigration(state.crewDoc);
+        if (!ctx.migrationPending) repaintWall();
+      }
+    }
     sync.pollSync();
   }, 25000);
   document.addEventListener('visibilitychange', () => {

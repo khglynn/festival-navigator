@@ -53,11 +53,11 @@ export async function fetchCrew(token) {
   return await res.json();
 }
 
-export async function createCrew(crewName, myName, color) {
+export async function createCrew(crewName, myName, personObj) {
   const res = await fetch('/api/crew', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name: crewName, people: { [myName]: { color } } }),
+    body: JSON.stringify({ name: crewName, people: { [myName]: personObj } }),
   });
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));

@@ -59,6 +59,26 @@
       </div>
     </div>
 
+    <!-- Create: pick the fest + your name (design: "Pick the fest and your
+         name next, then share one link") -->
+    <div id="screen-create" style="display:none">
+      <div class="center-col">
+        <div style="text-align: center;">
+          <div class="micro-label" style="letter-spacing: .14em;">Add a festival</div>
+          <div style="font-family: var(--font-display); letter-spacing: .04em; font-size: 34px; line-height: 1.05; color: #fff; margin-top: 4px;">PICK THE FEST</div>
+          <div style="color: var(--text-secondary); font-size: 13px; margin-top: 8px;">Then your name. Share one link — that's the whole crew setup.</div>
+        </div>
+        <div id="create-fests" style="display: flex; flex-direction: column; gap: 7px;"></div>
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <input id="create-name-input" maxlength="24" placeholder="Your name"
+                 style="flex: 1; background: var(--page); border: 1px solid var(--border-input); border-radius: 9px; padding: 12px 13px; color: #fff; font-size: 14px; font-family: var(--font-ui); outline: none;">
+          <button id="create-go-btn" class="btn-tonal" style="font-size: 14px; padding: 12px 24px;">Create</button>
+        </div>
+        <div id="create-status" style="color: var(--text-tertiary); font-size: 11.5px; font-weight: 600; text-align: center;"></div>
+        <button id="create-back" class="btn-ghost" style="font-size: 12px; padding: 8px 14px; align-self: center;">‹ Back</button>
+      </div>
+    </div>
+
     <!-- Join / claim (atlas 21b) -->
     <div id="screen-join" style="display:none">
       <div class="center-col">
