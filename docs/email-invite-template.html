@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<!-- Invite email template (design atlas 21j). LIGHT MODE BY NECESSITY (email
+     clients). Table-free simplified markup for reference/copy-paste; when
+     wiring real sending, convert to table layout + inline everything and
+     replace the gradient banner/button with STATIC IMAGES (email clients do
+     not run CSS gradients reliably; the design says "gradients are static
+     images in email"). Placeholders: {{INVITER}} {{FEST}} {{NAMES}}
+     {{LINK}} {{AVATARS}}. Not linked from the app; sending infra is a later
+     decision (NOW.md decisions queue). -->
+<head>
+<meta charset="UTF-8">
+<title>You're invited</title>
+</head>
+<body style="margin:0;background:#F3F0E9;font-family:Inter,Helvetica,Arial,sans-serif;">
+<div style="max-width:600px;margin:0 auto;background:#F3F0E9;">
+  <!-- banner: replace with a static image of the aura gradient in production -->
+  <div style="position:relative;height:88px;overflow:hidden;background:#12101E;background-image:radial-gradient(45% 90% at 12% 25%, rgba(255,153,51,.95), transparent 70%),radial-gradient(40% 80% at 55% 95%, rgba(238,68,204,.9), transparent 70%),radial-gradient(50% 95% at 92% 10%, rgba(41,98,235,.95), transparent 70%);">
+    <div style="height:88px;display:flex;align-items:center;justify-content:center;gap:10px;">
+      <span style="width:11px;height:11px;border-radius:3px;background:#fff;display:inline-block;"></span>
+      <span style="font-family:Anton,Impact,sans-serif;letter-spacing:.08em;font-size:16px;color:#fff;">FESTIVAL NAVIGATOR</span>
+    </div>
+  </div>
+  <div style="padding:32px 36px 28px;text-align:center;">
+    <!-- {{AVATARS}}: 34px circles, solid person hue, 3px #F3F0E9 ring, -10px overlap -->
+    <div style="margin-bottom:16px;">
+      <span style="display:inline-block;width:34px;height:34px;border-radius:999px;background:hsl(221,90%,62%);border:3px solid #F3F0E9;color:#fff;font-weight:800;font-size:13px;line-height:34px;">M</span><span style="display:inline-block;width:34px;height:34px;border-radius:999px;background:hsl(10,90%,62%);border:3px solid #F3F0E9;color:#fff;font-weight:800;font-size:13px;line-height:34px;margin-left:-10px;">K</span><span style="display:inline-block;width:34px;height:34px;border-radius:999px;background:hsl(305,90%,62%);border:3px solid #F3F0E9;color:#fff;font-weight:800;font-size:13px;line-height:34px;margin-left:-10px;">J</span>
+    </div>
+    <div style="font-family:Anton,Impact,sans-serif;letter-spacing:.02em;font-size:34px;line-height:1.05;color:#191621;margin-bottom:16px;">{{INVITER}} ADDED YOU<br>TO {{FEST}}.</div>
+    <div style="color:#5B5468;font-size:14px;line-height:1.55;max-width:380px;margin:0 auto 16px;">{{NAMES}} are planning <strong style="color:#191621;">{{FEST}}</strong>. Tap in, claim your color, and mark what you want to see.</div>
+    <!-- button: replace background with a static gradient image in production -->
+    <a href="{{LINK}}" style="display:block;width:260px;height:50px;margin:0 auto 16px;border-radius:10px;background:#12101E;background-image:radial-gradient(45% 90% at 12% 25%, rgba(255,153,51,.95), transparent 70%),radial-gradient(40% 80% at 55% 95%, rgba(238,68,204,.9), transparent 70%),radial-gradient(50% 95% at 92% 10%, rgba(41,98,235,.95), transparent 70%);text-decoration:none;">
+      <span style="display:block;line-height:50px;text-align:center;font-family:Anton,Impact,sans-serif;letter-spacing:.06em;font-size:16px;color:#fff;">OPEN THE FESTIVAL →</span>
+    </a>
+    <div style="color:#8B8496;font-size:11.5px;line-height:1.6;">No account, no password — the link is the key.<br>Button not working? Paste this: <span style="color:#5B5468;font-family:Menlo,monospace;">{{LINK}}</span></div>
+  </div>
+  <div style="border-top:1px solid #E2DDD2;padding:14px 36px;">
+    <table width="100%" cellpadding="0" cellspacing="0"><tr>
+      <td style="color:#8B8496;font-size:10.5px;font-weight:600;">works offline · picks sync live</td>
+      <td style="color:#B4AEC0;font-size:10.5px;font-weight:600;text-align:right;">you got this because {{INVITER}} entered your email</td>
+    </tr></table>
+  </div>
+</div>
+</body>
+</html>
