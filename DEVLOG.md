@@ -2,6 +2,30 @@
 
 Newest first. One entry per meaningful unit of work.
 
+## 2026-07-11 (afternoon) — v3.1 discovery: audit-first, findings banked
+
+- Kevin's morning pass found ~10 real problems the overnight gates missed
+  (incl. a set-times vanish bug and broken Spotify OAuth) → run restructured
+  audit-FIRST at his direction: "don't play whack-a-mole; robust, top to
+  bottom." His findings became the calibration set for the machinery.
+- Discovery engines: (1) 54-agent design-audit workflow — 3 Playwright walkers
+  on prod at 390/768/1440 as throwaway crew "Audit Rig" + code finders +
+  reviewer lenses + opus dedupe + adversarial verify → 34 confirmed findings
+  in 8 classes (claude-plans/2026-07-11-v31-backlog-workflow.md); (2) blind Codex gpt-5.6-sol
+  whole-repo UX pass → 51 findings (claude-plans/2026-07-11-codex-v31-ux-review.md).
+- Calibration: 15/16 of Kevin's findings independently rediscovered. One
+  structural miss (Spotify redirect — rig had no Client ID, walkers died one
+  step early); lesson: Stage-4 re-run must seed a Client ID + walk offline.
+- Cross-model headline: both engines independently flagged the same P0 —
+  invites lose festival context on new devices (joiner lands on Lost Lands).
+- Merged, re-judged, sequenced: claude-plans/2026-07-11-v31-backlog.md — 1 P0 / 24 P1 / 32 P2
+  in 9 fix classes. Supporting docs shipped same run: docs/user-flows.md (the
+  executable spec — mismatch is always a finding), design direction, fix-phase
+  grounding (hg-save-it lens), frontend-design skill installed to hg-agents.
+- Deliberate boundary: ZERO app-code edits this session — findings cite
+  file:line against a stable tree; the fix phase starts from a cleared
+  context reading the banked docs (NOW.md has the read order).
+
 ## 2026-07-10 (overnight) — v3 SHIPPED TO PRODUCTION (main)
 
 - Full arc in one overnight run: P0 grounding -> P1 design system -> P2 data

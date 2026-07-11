@@ -3,7 +3,7 @@
 **Written 2026-07-11 by the discovery session, for the session that builds.**
 Read this before touching anything. Then: NOW.md (live state),
 `2026-07-11-v31-design-direction.md` (the design decisions),
-`.claude/v31-backlog.md` (the merged findings), `docs/user-flows.md` (the spec).
+`claude-plans/2026-07-11-v31-backlog.md` (the merged findings), `docs/user-flows.md` (the spec).
 If anything here contradicts what you find in the code or on the live site,
 trust what you see, fix the doc, and keep moving — these files serve the work,
 not the other way around.
@@ -78,8 +78,10 @@ So hold this posture:
   verification breadth: the Stage-4 audit re-run, test sweeps, screenshot
   walks. Never frontier models in fan-outs.
 - **Ultracode is on** — orchestrate substantive verification through the
-  Workflow tool; the audit workflow script is reusable at
-  `.claude/workflows-design-audit.md` pointer in NOW.md (same seeded rig).
+  Workflow tool. The audit workflow script is banked at
+  `claude-plans/2026-07-11-design-audit.workflow.js` — re-run it via
+  Workflow({scriptPath}) with fresh args ({repo, base, link, shotDir, ts};
+  the Audit Rig link comes from the private token note, never the repo).
 - **Skills that carry this run:** frontend-design (loaded for any UI work),
   hg-durable-build (the kit), triple-check before declaring phases done.
 - **Notify Kevin only on true blockers.** He's away on purpose. Production
