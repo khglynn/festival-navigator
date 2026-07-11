@@ -24,3 +24,7 @@ node_modules/
 # remember plugin state
 .remember/
 screenshots/
+
+# Session-local review artifacts — screenshots + notes stay off the public repo
+.claude/
+390/
