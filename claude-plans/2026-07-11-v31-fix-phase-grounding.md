@@ -72,7 +72,11 @@ So hold this posture:
 - **Codex (gpt-5.6-sol as of 2026-07-11) is a partner, not a gate.** Reach for
   it when a diagnosis feels thin or a design call wants a second mind — plus
   the formal blocking gate on the full diff before ship. It hangs sometimes;
-  past ~3 min of silence, kill and verify another way.
+  past ~3 min of silence, kill and verify another way. NEW since discovery:
+  Codex has outbound network by default (can curl the live site / preview
+  URLs — use that in the ship gate), `--search` for live web search, and a
+  browser via the CDP bridge pattern — full recipe + caveats in
+  `~/DevKev/helper/guides/codex-capabilities.md`.
 - **Workflows for breadth, main loop for coupled edits.** The CSS/JS fix work
   is coupled — one mind holds the invariants. Fan out (sonnet agents) for
   verification breadth: the Stage-4 audit re-run, test sweeps, screenshot
