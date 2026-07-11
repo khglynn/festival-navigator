@@ -18,12 +18,21 @@ Kevin's call — build on a branch, verify on preview.
 
 ## EXACT NEXT STEP
 
-While engines run: (1) ground-it read of the codebase-legibility doc, (2) write
-the v3.1 design-direction spec (frontend-design lens: type scale, breakpoints,
-sheet dialog, sort menu, day rail) into claude-plans/. When BOTH engines land:
-calibration check (did machinery independently rediscover Kevin's A1–I2 list in
-the plan? misses = strengthen + re-run), then merge Kevin+Codex+workflow into
-ONE ranked backlog, then fix by class on branch `v31-polish`.
+When BOTH engines land: calibration check (did machinery independently
+rediscover Kevin's A1–I2 list in the archived plan? misses = strengthen +
+re-run), then merge Kevin+Codex+workflow into ONE ranked backlog at
+`.claude/v31-backlog.md`, rescue scratchpad artifacts into the repo, then
+**Kevin clears the session** and the fix phase starts fresh.
+
+**POST-CLEAR READ ORDER (fix-phase session starts here):**
+1. `claude-plans/2026-07-11-v31-fix-phase-grounding.md` — the brief + spirit +
+   gates (read in full, it exists to survive the clear)
+2. This file (live state)
+3. `claude-plans/2026-07-11-v31-design-direction.md` — the design decisions
+4. `.claude/v31-backlog.md` — the merged findings (floor, not ceiling)
+5. `docs/user-flows.md` — the spec
+Grounding + design-direction done this session (ground-it legibility read,
+frontend-design lens loaded — reload that skill for UI work).
 
 ## Hard rules for this run
 
