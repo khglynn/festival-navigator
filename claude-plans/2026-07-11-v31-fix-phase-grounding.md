@@ -95,7 +95,8 @@ So hold this posture:
 ## Verification gates (in order, none skippable)
 
 1. `npm test` green AND output read — plus new regression tests for every P0/P1
-   (refreshCard-in-grid, groupByDay split, history router, notes composers).
+   (FLOW-1: join lands on the crew's fest, not defaultFestivalId();
+   refreshCard-in-grid, groupByDay split, history router, notes composers).
 2. **Audit re-run** (same workflow, same seeded Audit Rig crew) — prior
    findings gone, no new criticals. This re-run is the anti-whack-a-mole proof;
    it, not your confidence, is what "done" means here.
@@ -121,4 +122,7 @@ So hold this posture:
 - Crew-doc SHAPE is frozen this run: display/UX layer only, no migrations, no
   destructive DB ops. (Rationale: the v4 migration just shipped and is stable;
   churning the data layer during a polish pass risks real crews for zero UX
-  gain.)
+  gain.) **One explicit carve-out, decided at triple-check:** FLOW-1 may add
+  the single additive optional field `meta.inviteFestId` through the normal
+  validated merge path (plus its validator rule) — that's the entire
+  exception. Anything beyond it re-opens the freeze conversation with Kevin.

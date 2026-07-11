@@ -41,7 +41,8 @@ frontend-design lens loaded — reload that skill for UI work).
 - Fixes are display/UX-layer; NO crew-doc shape changes, NO destructive DB ops.
   (Build guard not reinstalled — nothing in scope mutates data. The one
   teardown DB action: delete the "Audit Rig" crew, explicit and single.)
-- Audit Rig crew token: scratchpad/audit/crew-token.txt (never in repo).
+- Audit Rig crew token lives ONLY at `~/.claude/plans/v31-audit-rig-token.md`
+  (outside the repo — never write a token anywhere under the project tree).
 - Public repo: grep for `#g=` before committing any doc.
 - vercel dev doesn't serve files created after start; Chrome heuristic-caches
   modules (fetch cache:'reload' + reload); Write-tool control-byte check after
