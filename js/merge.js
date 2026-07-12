@@ -16,3 +16,36 @@ export function deepMerge(base, overlay) {
   }
   return out;
 }
+
+// The inverse operation, and the reason it exists: after a push succeeds we
+// must drop the leaves the server now has — but NOT the leaves another tab
+// wrote to disk while our request was in flight. Overwriting the pending blob
+// with '{}' is the last-writer-wins bug persistPending() was already fixed for,
+// left standing on the clear path (finish pass, 2026-07-12).
+//
+// A leaf is removed only when it is IDENTICAL to what we pushed. A leaf whose
+// value differs is somebody's newer edit — keep it and let it sync next round.
+// Emptied objects are pruned so hasPending() cannot report a husk of {} as work.
+export function subtractLeaves(base, pushed) {
+  if (!base || typeof base !== 'object' || Array.isArray(base)) return base;
+  if (!pushed || typeof pushed !== 'object' || Array.isArray(pushed)) return base;
+  const out = {};
+  for (const k in base) {
+    if (FORBIDDEN_KEYS.has(k)) continue;
+    if (!(k in pushed)) { out[k] = base[k]; continue; }
+
+    const b = base[k], p = pushed[k];
+    const bothBranches = b && p && typeof b === 'object' && typeof p === 'object'
+      && !Array.isArray(b) && !Array.isArray(p);
+
+    if (bothBranches) {
+      const rest = subtractLeaves(b, p);
+      if (Object.keys(rest).length) out[k] = rest; // prune fully-acked branches
+      continue;
+    }
+    // Leaf: identical means the server has it — drop it. Different means a
+    // concurrent writer changed it after we serialized our payload — keep it.
+    if (JSON.stringify(b) !== JSON.stringify(p)) out[k] = b;
+  }
+  return out;
+}

@@ -21,6 +21,7 @@
   "license": "MIT",
   "type": "module",
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.4",
     "jsdom": "^29.1.1"
   }
 }

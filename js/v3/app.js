@@ -13,6 +13,7 @@ import { renderWall, refreshCard, showUndoToast, showToast, wireScrollspy, color
 import { disclosureFold, eqLoader } from './tools.js';
 import { openArtistSheet, openDayNotes, openAllNotes, closeSheet, refreshOpenSheet } from './notes.js';
 import { renderSettings, appSettings, openSubviewByKey } from './settings.js';
+import { onStorageWriteFail } from '../util.js';
 import { router } from './router.js';
 import { createSortControl } from './sort-control.js';
 import { nameProblem } from '../name-rules.mjs';
@@ -1165,9 +1166,21 @@ export function init() {
     },
     // A limit/validation rejection stops the retry loop (sync.js) — the
     // human hears the server's own reason instead of a forever-gray dot.
+    // The server's reason is a sentence fragment as often as not, so punctuate
+    // it here rather than running two sentences together ("...hit a limit Your
+    // changes are safe").
     onSyncBlocked: (reason) => {
-      showToast($('toast-root'), `Couldn’t sync: ${reason} Your changes are safe on this device.`, 8000);
+      const said = /[.!?]$/.test(reason.trim()) ? reason.trim() : `${reason.trim()}.`;
+      showToast($('toast-root'), `${said} Your picks are safe on this phone — they'll sync as soon as the crew has room.`, 8000);
     },
+  });
+
+  // A localStorage write that fails is the one way a pick can vanish without a
+  // trace: the edit is in memory, the push is 1.2s away, and the on-disk copy
+  // that would survive a reload never happened. It used to console.warn. Now
+  // the person holding the phone finds out.
+  onStorageWriteFail(() => {
+    showToast($('toast-root'), 'This phone’s storage is full, so picks can’t be saved offline. They still sync while you have signal.', 9000);
   });
 
   // Browser navigation models the layer stack (FLOW-2): back closes the top
@@ -1250,7 +1263,14 @@ export function init() {
   document.addEventListener('visibilitychange', () => {
     // Respect low power: returning to the tab does not bypass the 5-min throttle.
     if (!document.hidden && !ctx.lowPower) sync.pollSync();
+    // Going away is the dangerous direction: a pick made inside the 1.2s
+    // debounce dies with a backgrounded tab. Beacon it out before we lose the
+    // chance — this is the last code that is guaranteed to run.
+    if (document.hidden) sync.flushOnHide();
   });
+  // pagehide covers the cases visibilitychange does not: bfcache, tab close,
+  // and iOS Safari, where it is often the only one that fires at all.
+  window.addEventListener('pagehide', () => sync.flushOnHide());
   window.addEventListener('hashchange', () => { closeSheet(); boot(); });
   window.addEventListener('online', () => { sync.pushSync(); updateMigrationBanner(); });
   // The dot goes gray the moment the radio does — not five minutes later at

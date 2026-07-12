@@ -290,10 +290,13 @@ button, input, textarea, select, a, [role="button"], [role="option"] { outline: 
 .dock.hidden { display: none; }
 @media (min-width: 720px) { .dock { display: none; } } /* desktop has no dock */
 
-/* class names match js/sync.js setSyncStatus: sync-online|syncing|offline|error */
+/* class names match js/sync.js setSyncStatus: sync-online|syncing|offline|error|blocked */
 .sync-dot { width: 7px; height: 7px; border-radius: var(--r-pill); background: var(--sync-ok); display: inline-block; }
 .sync-dot.sync-syncing { background: var(--sync-syncing); }
-.sync-dot.sync-offline, .sync-dot.sync-error { background: var(--sync-offline); }
+.sync-dot.sync-offline { background: var(--sync-offline); }
+/* Something is wrong and it is not just the radio — say so in the same color
+ * the Settings label says it in. */
+.sync-dot.sync-error, .sync-dot.sync-blocked { background: var(--sync-error); }
 
 /* ---- settings ---------------------------------------------------------------- */
 .micro-label { color: var(--text-tertiary); font-size: var(--fs-micro); font-weight: 800;

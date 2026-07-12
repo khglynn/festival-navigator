@@ -41,16 +41,34 @@ const freshCrew = (token) => {
   state.ensureFestivalState('hard-fest');
 };
 
-test('413 rejection: retry loop stops, human hears the reason, pending survives', async () => {
+test('413 rejection: the SAME payload is never re-sent, and a new edit un-sticks it', async () => {
   freshCrew('hardtoken_413_0123456789');
   state.recordSelection('GRiZ', 'K', 2);
   let blockedReason = null;
   sync.initSync({ onSyncBlocked: (r) => { blockedReason = r; } });
-  globalThis.fetch = async () => mkRes(413, { error: 'Crew document would exceed limits (…)' });
+
+  let posts = 0;
+  globalThis.fetch = async (_url, opts) => {
+    if (opts && opts.method === 'POST') posts++;
+    return mkRes(413, { error: 'Crew document would exceed limits (…)' });
+  };
+
   await sync.pushSync();
-  assert.match(blockedReason, /exceed limits/, 'the server’s own reason reaches the callback');
+  assert.match(blockedReason, /exceed limits/, 'the server’s own reason reaches the human');
   assert.equal(state.hasPending(), true, 'nothing local is thrown away');
-  assert.equal(sync.syncState(), 'error');
+  assert.equal(sync.syncState(), 'blocked', 'blocked is its own state — the server answered, and said no');
+  assert.equal(posts, 1);
+
+  // The old code re-POSTed this doomed payload every 25s forever, blocking
+  // every other edit on the device behind it. Pushing again must be a no-op.
+  await sync.pushSync();
+  await sync.pushSync();
+  assert.equal(posts, 1, 'a payload the server already refused is never sent again');
+
+  // ...but the moment anything changes, we try again on our own. No dead end.
+  state.recordSelection('Lane 8', 'K', 4);
+  await sync.pushSync();
+  assert.equal(posts, 2, 'a NEW edit produces a new payload, which earns a fresh attempt');
 });
 
 test('a push completing mid-poll wins: the stale poll doc is discarded', async () => {

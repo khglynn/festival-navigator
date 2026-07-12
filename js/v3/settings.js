@@ -73,7 +73,15 @@ function currentFestCard(ctx, actions) {
   dates.title = fest.dates || ''; // truncated long date strings recover on hover (audit 9.1)
   // The ONE sync state (PS-5): same source as the dot — a "synced" label
   // computed from hasPending alone lied whenever the network was down.
-  const LABELS = { online: ['synced', 'var(--sync-ok)'], syncing: ['syncing', 'var(--sync-syncing)'], offline: ['offline', 'var(--sync-offline)'], error: ['sync error', '#F87171'] };
+  const LABELS = {
+    online: ['synced', 'var(--sync-ok)'],
+    syncing: ['syncing', 'var(--sync-syncing)'],
+    offline: ['offline', 'var(--sync-offline)'],
+    error: ['sync error', 'var(--sync-error)'],
+    // Not "error": the server understood us and said no. Different problem,
+    // different word, same color — because both need a human.
+    blocked: ['can’t sync', 'var(--sync-error)'],
+  };
   const [label, color] = LABELS[sync.syncState()] || LABELS.online;
   const syncLabel = el('span', `margin-left: auto; color: ${color}; font-size: 10.5px; font-weight: 700;`, label);
   head.append(nm, dates, syncLabel);

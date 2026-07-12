@@ -39,6 +39,12 @@
   --sync-ok: #10B981;
   --sync-syncing: #F59E0B;
   --sync-offline: #6B7280;
+  /* Offline is GRAY (a state, not a fault — you are in a field, we expected
+   * this). Error and blocked are RED (something needs you). The dot used to
+   * paint error gray while the Settings label painted the same status red:
+   * one state, two colors, and the quieter one was lying. */
+  --sync-error: #F87171;
+  --danger: #F87171;
 
   /* Festival accent is set per-fest at runtime: --fest: R, G, B */
   --fest: 192, 132, 252; /* fallback: brand violet */

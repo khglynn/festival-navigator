@@ -9,6 +9,21 @@ let pushGen = 0; // bumped when a push APPLIES its merged doc — guards the pol
 let onRemoteChange = () => {};
 let onCrewGone = () => {};
 let onSyncBlocked = () => {};
+
+// The payload the server has already refused (400/413). A rejection like that
+// is deterministic: re-sending the identical bytes gets the identical refusal.
+// The old code "stopped the retry loop" only in its comment — pollSync still
+// saw hasPending() and re-armed scheduleSync() every 25s, so one poisoned
+// payload re-POSTed forever, re-toasting the same false reassurance and
+// blocking every OTHER pending edit on the device behind it (finish pass,
+// 2026-07-12).
+//
+// Remembering the exact refused payload (not just "we are blocked") is what
+// keeps this from becoming a dead end: the moment the user changes ANYTHING,
+// the payload differs, and we try again on our own. No stuck state to escape.
+let refusedPayload = null;
+const sig = (o) => JSON.stringify(o);
+const isRefused = (payload) => refusedPayload !== null && sig(payload) === refusedPayload;
 // "Stay offline" (manual, never auto-toggled): suppress every network
 // attempt until switched off. Picks still save locally first, always.
 let stayOffline = false;
@@ -69,8 +84,18 @@ export async function pushSync() {
   if (stayOffline) { setSyncStatus('offline'); return; }
   if (!navigator.onLine) { setSyncStatus('offline'); return; }
   if (isSyncing) { syncQueued = true; return; }
+
+  // Freeze the payload. state.pendingChanges is live and can gain leaves while
+  // the request is in flight; both the refusal check and the post-success
+  // subtraction have to talk about the exact bytes we actually sent.
+  const payload = JSON.parse(JSON.stringify(state.pendingChanges));
+
+  // Already refused, unchanged since. Sending it again would produce the same
+  // rejection and the same toast, forever. Stay put — visibly — until an edit
+  // changes the payload or the crew frees up room.
+  if (isRefused(payload)) { setSyncStatus('blocked'); return; }
+
   isSyncing = true; setSyncStatus('syncing');
-  const seqAtStart = state.getEditSeq();
   const tokenAtStart = state.getCrewToken();
   try {
     const res = await fetch(`/api/crew?t=${encodeURIComponent(tokenAtStart)}`, {
@@ -78,19 +103,20 @@ export async function pushSync() {
       headers: { 'Content-Type': 'application/json' },
       // sv:4 declares v4 pick semantics (1-3 picked, 4 must) — without it the
       // server treats level 3 as legacy "Must See" and maps it on v4 docs.
-      body: JSON.stringify({ data: state.pendingChanges, sv: 4 }),
+      body: JSON.stringify({ data: payload, sv: 4 }),
       signal: timeoutSignal(),
     });
     if (isApiNotFound(res)) throw new CrewGoneError();
-    // A validation/limit rejection is NOT transient (sweep P1, 2026-07-12):
-    // retrying the identical payload forever jammed sync with a generic
-    // error dot and no way out. Nothing is lost — the edits stay local and
-    // pending — but the human hears WHY, and the retry loop stops (the next
-    // local edit re-attempts with a fresh payload anyway).
+    // A validation/limit rejection is deterministic, not transient: the same
+    // bytes will be refused every time. Remember them so we stop asking, tell
+    // the human plainly, and leave the door open — any new edit changes the
+    // payload and we retry by ourselves. Nothing is lost either way: the edits
+    // are still on disk and still pending.
     if (res.status === 413 || res.status === 400) {
       const body = await res.json().catch(() => ({}));
-      setSyncStatus('error');
-      onSyncBlocked(body.error || 'This change can’t sync right now — the crew may have hit a limit.');
+      refusedPayload = sig(payload);
+      setSyncStatus('blocked');
+      onSyncBlocked(body.error || 'These changes can’t sync — the crew may have hit a limit.');
       return;
     }
     if (!res.ok) throw new Error('POST failed: ' + res.status);
@@ -98,12 +124,14 @@ export async function pushSync() {
     // The crew may have been switched while the request was in flight —
     // never apply one crew's document to another crew's state.
     if (state.getCrewToken() !== tokenAtStart) return;
-    // Clear pending only if no new edit landed during the round-trip;
-    // otherwise keep them and push again so nothing is lost.
-    if (state.getEditSeq() === seqAtStart) { state.clearPending(); }
-    else { scheduleSync(); }
+    refusedPayload = null; // the server is accepting our writes again
+    // Subtract exactly what was ACKED from memory and disk. Anything left over
+    // is either an edit made during the round-trip or another tab's write —
+    // both real, both still owed a push.
+    state.clearPending(payload);
     applyRemote(stored);
     pushGen++;
+    if (state.hasPending()) scheduleSync();
     setSyncStatus(state.hasPending() ? 'syncing' : 'online');
   } catch (e) {
     // Thread the token: this 404 is about the crew the request was FOR,
@@ -114,6 +142,35 @@ export async function pushSync() {
   } finally {
     isSyncing = false;
     if (syncQueued) { syncQueued = false; scheduleSync(); }
+  }
+}
+
+// Last call before the page dies.
+//
+// Every edit sits in a 1.2s debounce before pushSync() even starts, and the
+// most ordinary thing anyone does at a festival — pick a set, lock the phone,
+// put it in a pocket — lands squarely inside that window. A backgrounded tab
+// can be reaped by the OS with no further JS run, and an in-flight fetch() dies
+// with it. sendBeacon is the one send the browser promises to finish anyway.
+//
+// We deliberately ignore the response: we cannot read it, so pending stays
+// pending and the next boot pushes it again. That is safe precisely because the
+// merge is idempotent — re-sending the same delta lands the same document.
+// Sending twice is free; not sending once loses somebody's pick.
+export function flushOnHide() {
+  if (stayOffline || !navigator.onLine) return false;
+  const token = state.getCrewToken();
+  if (!token || !state.hasPending()) return false;
+  if (isRefused(state.pendingChanges)) return false; // the server already said no
+  if (typeof navigator.sendBeacon !== 'function') return false;
+  try {
+    const body = new Blob(
+      [JSON.stringify({ data: state.pendingChanges, sv: 4 })],
+      { type: 'application/json' },
+    );
+    return navigator.sendBeacon(`/api/crew?t=${encodeURIComponent(token)}`, body);
+  } catch {
+    return false;
   }
 }
 

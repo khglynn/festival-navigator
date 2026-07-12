@@ -6,7 +6,7 @@
 //     people:  {name: {color, removed?}},                  // crew-wide
 //     festivals: {fid: {selections: {artist: {person: level}}}},
 //     affinity: {person: {artist: {songs?, followed?}}} }  // crew-wide
-import { deepMerge } from './merge.js';
+import { deepMerge, subtractLeaves } from './merge.js';
 import { computeDayArtists } from './time.js';
 import { loadJSON, saveLS } from './util.js';
 import { FESTIVALS, FESTIVAL_INDEX, defaultFestivalId } from './festivals.js';
@@ -187,9 +187,33 @@ export function recordInviteFest(fid) {
 }
 
 export function hasPending() { return Object.keys(pendingChanges).length > 0; }
-// Explicit empty write — persistPending() merges with disk, which can never
-// express "cleared".
-export function clearPending() { pendingChanges = {}; saveLS(LS.pending(crewToken), '{}'); }
+
+// Drop the leaves the server just accepted — and ONLY those.
+//
+// This used to write '{}' unconditionally, which re-opened on the clear path
+// the exact race persistPending() closed on the write path: a second tab that
+// recorded a pick to disk while our push was in flight had it erased, and if
+// that tab closed before its own debounced push, the pick was gone for good.
+// Subtracting the acked payload leaf-by-leaf leaves a concurrent tab's newer
+// edits on disk to sync next round (finish pass, 2026-07-12).
+//
+// `pushed` is the exact payload the server accepted. Omitting it clears
+// everything, which is only correct when there is nothing else to protect
+// (crew switch, forget-crew).
+export function clearPending(pushed) {
+  if (!pushed) {
+    pendingChanges = {};
+    saveLS(LS.pending(crewToken), '{}');
+    return;
+  }
+  // Subtract from BOTH copies, never blank either one:
+  //   memory — an edit made while the push was in flight lives here, and
+  //            blanking it would drop the edit from the next push entirely.
+  //   disk   — another tab's edit lives here, and blanking it would drop that.
+  pendingChanges = subtractLeaves(pendingChanges, pushed);
+  const onDisk = loadJSON(LS.pending(crewToken), {});
+  saveLS(LS.pending(crewToken), JSON.stringify(subtractLeaves(onDisk, pushed)));
+}
 
 // Cached copy of a crew doc (for offline joins / crew switching).
 export function cachedDoc(token) { return loadJSON(LS.doc(token), null); }

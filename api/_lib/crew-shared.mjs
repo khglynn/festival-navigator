@@ -289,8 +289,30 @@ export function validateIncoming(data) {
 // (same limits, SQL-side) so there is no check-then-write gap. This JS twin
 // is the readable reference implementation, exercised by the test suite.
 export function validateMergedDoc(doc) {
-  const active = Object.values(doc.people || {}).filter(p => p && !p.removed).length;
-  if (active > LIMITS.activePeople) return fail(`too many active people (max ${LIMITS.activePeople})`);
+  const activeNames = Object.entries(doc.people || {})
+    .filter(([, p]) => p && !p.removed)
+    .map(([name]) => name);
+
+  if (activeNames.length > LIMITS.activePeople) return fail(`too many active people (max ${LIMITS.activePeople})`);
+
+  // Two members whose names differ only by case are ONE person to every human
+  // who looks at the crew, and two people to the document forever: their picks,
+  // notes and Spotify badges split silently down the middle with nothing on
+  // screen to explain it. The clients each check for this, but only against
+  // their own in-memory copy — which cannot see the other phone joining in the
+  // same breath. The merge is the only place both writes are visible, so the
+  // invariant belongs here (finish pass, 2026-07-12; verified first that no
+  // existing crew already holds such a pair, or this rule would have bricked
+  // every future write to it).
+  const seen = new Map();
+  for (const name of activeNames) {
+    const key = name.toLowerCase();
+    if (seen.has(key)) {
+      return fail(`two crew members named "${safeKey(seen.get(key))}" and "${safeKey(name)}" — names must differ by more than capitalization`);
+    }
+    seen.set(key, name);
+  }
+
   const bytes = Buffer.byteLength(JSON.stringify(doc), 'utf8');
   if (bytes > LIMITS.docBytes) return fail(`crew document too large (${bytes} bytes, max ${LIMITS.docBytes})`);
   return OK;

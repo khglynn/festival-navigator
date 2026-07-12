@@ -18,6 +18,7 @@ import {
   deepMerge, newCrewDoc, validateIncoming, validateMergedDoc, LIMITS, TOKEN_RE,
 } from './_lib/crew-shared.mjs';
 import { rateLimited, crossSite } from './_lib/guard.mjs';
+import { MERGE_SQL, DIAGNOSE_SQL } from './_lib/crew-sql.mjs';
 
 
 export default async function handler(req, res) {
@@ -126,25 +127,27 @@ export default async function handler(req, res) {
       // both before we get here (v is only ever set by the migrate op above).
       const delta = JSON.stringify(incoming);
       const deltaV4 = JSON.stringify(incomingForV4);
-      const rows = await sql`
-        UPDATE crews
-        SET doc = jsonb_deep_merge(doc,
-              CASE WHEN doc->>'v' = '4' THEN ${deltaV4}::jsonb ELSE ${delta}::jsonb END),
-            updated_at = now()
-        WHERE token = ${token}
-          AND octet_length(jsonb_deep_merge(doc,
-              CASE WHEN doc->>'v' = '4' THEN ${deltaV4}::jsonb ELSE ${delta}::jsonb END)::text) <= ${LIMITS.docBytes}
-          AND (SELECT count(*)
-               FROM jsonb_each(COALESCE(jsonb_deep_merge(doc,
-                 CASE WHEN doc->>'v' = '4' THEN ${deltaV4}::jsonb ELSE ${delta}::jsonb END)->'people', '{}'::jsonb)) p
-               WHERE NOT COALESCE((p.value->>'removed')::boolean, false)) <= ${LIMITS.activePeople}
-        RETURNING doc`;
+      // The statement lives in api/_lib/crew-sql.mjs so that tests can execute
+      // THESE EXACT BYTES against a real Postgres (tests/db-merge.test.mjs).
+      // It used to be inline here, where nothing but production could reach it.
+      const rows = await sql.query(MERGE_SQL, [token, deltaV4, delta, LIMITS.docBytes, LIMITS.activePeople]);
       if (rows.length) return res.status(200).json(rows[0].doc);
 
-      // No row updated: either the crew doesn't exist or an invariant tripped.
+      // No row updated: the crew is gone, or one of the three invariants
+      // refused the write. Ask WHICH — a blanket "would exceed limits" told a
+      // person whose real problem was a duplicate name to go delete their picks.
       const exists = await sql`SELECT 1 FROM crews WHERE token = ${token}`;
       if (!exists.length) return res.status(404).json({ error: 'Crew not found' });
-      return res.status(413).json({ error: `Crew document would exceed limits (${LIMITS.docBytes} bytes / ${LIMITS.activePeople} active people)` });
+
+      const [why] = await sql.query(DIAGNOSE_SQL, [token, deltaV4, delta]);
+
+      if (why && Number(why.dupes) > 0) {
+        return res.status(400).json({ error: 'Someone in the crew already has that name — pick one that differs by more than capitalization' });
+      }
+      if (why && Number(why.active) > LIMITS.activePeople) {
+        return res.status(413).json({ error: `This crew is full (${LIMITS.activePeople} people max)` });
+      }
+      return res.status(413).json({ error: `This crew's board is full (${LIMITS.docBytes} bytes max) — clearing some notes will make room` });
     }
 
     return res.status(405).json({ error: 'Method not allowed' });
