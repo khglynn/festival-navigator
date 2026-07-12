@@ -1,23 +1,22 @@
-# NOW — festival-navigator: v3.1 notes arc (Kevin's feedback pass)
+# NOW — festival-navigator: notes arc COMPLETE — Kevin's promote call
 
-## CURRENT ARC (2026-07-12)
+## CURRENT STATE (2026-07-12 afternoon)
 
-Kevin's notes arrived — 8 UX/product notes plus three session asks (clear-eyed
-sweep, staging env, memory explainer). Full notes + interpretation:
-`claude-plans/2026-07-12-v31-kevin-notes.md`. Quality bar unchanged:
-`claude-plans/2026-07-11-v31-fix-phase-grounding.md`. Work stays on
-`v31-polish`; promote is Kevin's call.
+**All 8 of Kevin's notes + the sweep's confirmed findings are implemented,
+tested (95/95), Codex-gated, and live on https://stage.fest.kevinhg.com**
+(the new staging env: own Vercel project `festival-navigator-staging`,
+production branch = v31-polish, public by design, auto-builds only that
+branch; main project's preview protection untouched). Notes + read:
+`claude-plans/2026-07-12-v31-kevin-notes.md`; sweep verdict + dispositions:
+`claude-plans/2026-07-12-v31-sweep-findings.md`; the run story: DEVLOG
+2026-07-12. Work stays on `v31-polish`; **promote is Kevin's call** (steps
+below still current — SW now v19).
 
-Checkpoint state: **sweep done** (findings + execution plan:
-`claude-plans/2026-07-12-v31-sweep-findings.md`); **staging LIVE at
-https://stage.fest.kevinhg.com** — its own Vercel project
-`festival-navigator-staging` whose PRODUCTION branch is v31-polish (public
-by design; main project's preview protection untouched; only v31-polish
-builds there via ignore-command). **Memory explainer published** as a Claude
-artifact. Next: implement clusters A→E from the sweep doc (Kevin's 8 notes
-merged with confirmed findings). Everything below is standing state from
-the fix phase. Stage-4 findings + disposition:
-`claude-plans/2026-07-12-v31-stage4-audit-backlog.md`.
+Open Kevin decisions: promote; Spotify redirect URI registration
+(post-promote); The-Crew token rotation (still pending from 2026-07-09);
+the four Stage-4 design judgment calls (unchanged). New fast-follow ideas
+parked in the sweep doc's accepted list (colorIndex collision,
+rename-orphan) — deliberate, documented.
 
 **Updated:** 2026-07-12 ~01:30 CT · **Branch:** `v31-polish` (pushed; preview
 verified) · **History:** DEVLOG.md · **Audit result:**

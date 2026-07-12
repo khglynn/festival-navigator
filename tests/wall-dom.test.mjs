@@ -143,3 +143,32 @@ test('scheduled wall: one strip, canonical columns, mirrored scroll, guarded edg
 
   root.remove();
 });
+
+// Codex arc-gate P1: the 2-row readability floor can make two time-disjoint
+// short sets overlap VISUALLY — lane math must run on display extents so
+// they split the column like real overlaps.
+test('display-floored short sets on one stage get lanes despite no time overlap', () => {
+  state.FESTIVALS['floor-fest'] = {
+    id: 'floor-fest', name: 'Floor Fest',
+    days: {
+      Friday: {
+        stages: ['Solo'],
+        artists: [
+          { name: 'QuickOne', stage: 'Solo', time: '2:00 PM - 2:10 PM' },
+          { name: 'QuickTwo', stage: 'Solo', time: '2:20 PM - 2:40 PM' },
+        ],
+      },
+    },
+  };
+  state.setActiveFestivalId('floor-fest');
+  const root = document.createElement('div');
+  renderWall(root, ctx);
+  const one = root.querySelector('.card[data-artist="QuickOne"]');
+  const two = root.querySelector('.card[data-artist="QuickTwo"]');
+  // 10-minute set still gets the readable 2-row floor…
+  assert.match(one.style.gridRow, /span 2$/);
+  // …and BOTH cards lane-split, because the floored card reaches into the
+  // second card's rows even though their real times never overlap.
+  assert.ok(one.style.width.includes('50'), `QuickOne lane width: ${one.style.width || '(full)'}`);
+  assert.ok(two.style.width.includes('50'), `QuickTwo lane width: ${two.style.width || '(full)'}`);
+});

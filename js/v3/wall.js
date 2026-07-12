@@ -429,8 +429,16 @@ function renderScheduledDay(root, day, ctx, layout) {
     return;
   }
 
-  const dayStart = Math.min(...computed.map((a) => a.startMin));
-  const dayEnd = Math.max(...computed.map((a) => a.endMin ?? a.startMin + 60));
+  // Cards are laid out on DISPLAY extents: every set gets at least 30 visual
+  // minutes (2 rows) so its name + time always fit. The lane math further
+  // down runs on these same extents — the readability floor can make two
+  // sets overlap VISUALLY that never overlap in time, and they need lanes
+  // exactly like real overlaps (Codex arc gate, P1).
+  const drawn = computed.map((a) => ({
+    ...a, endMin: Math.max(a.endMin ?? a.startMin + 60, a.startMin + 30),
+  }));
+  const dayStart = Math.min(...drawn.map((a) => a.startMin));
+  const dayEnd = Math.max(...drawn.map((a) => a.endMin));
   const startRow = Math.floor(dayStart / 15);
   const rows = Math.ceil(dayEnd / 15) - startRow;
 
@@ -464,22 +472,24 @@ function renderScheduledDay(root, day, ctx, layout) {
   // Everything that isn't a stage set lives in ONE far-right column (ST-2):
   // activities (workshops, ceremonies) and any set whose stage isn't a known
   // column. Anything with stage+time stays on the clock.
-  const strays = computed.filter((a) => stages.indexOf(a.stage) === -1);
+  const strays = drawn.filter((a) => stages.indexOf(a.stage) === -1);
   const dayHasEE = acts.length > 0 || strays.length > 0;
 
   // Same-stage overlaps split their column into side-by-side lanes (the old
   // grid's fix, dropped in the first v3 pass — the Codex P6 sweep surfaced
-  // that EF genuinely has these; js/overlap.js is very much alive).
-  const lanes = computeLanes(computed);
-  for (const a of computed) {
+  // that EF genuinely has these; js/overlap.js is very much alive). Lanes are
+  // computed on the drawn extents above, so display-floored collisions split
+  // the column too.
+  const lanes = computeLanes(drawn);
+  for (const a of drawn) {
     const col = stages.indexOf(a.stage);
     if (col === -1) continue; // strays render in the everything-else column
     const cell = renderCard(a.name, ctx, { cell: true, time: a.startStr });
     cell.style.gridColumn = String(col + 1);
     const row = Math.floor(a.startMin / 15) - startRow + 1;
-    // Two-row floor (44px): below that, the name + time can't physically fit
-    // and the top of the name gets shaved off (Kevin's screenshot, 2026-07-12).
-    const span = Math.max(2, Math.ceil(((a.endMin ?? a.startMin + 60) - a.startMin) / 15));
+    // endMin here IS the display extent — minimum 2 rows (44px), below which
+    // the name + time can't fit (Kevin's screenshot, 2026-07-12).
+    const span = Math.max(1, Math.ceil((a.endMin - a.startMin) / 15));
     cell.style.gridRow = `${row} / span ${span}`;
     cell.style.minHeight = '0';
     const lane = lanes.get(a);

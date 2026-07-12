@@ -2,6 +2,50 @@
 
 Newest first. One entry per meaningful unit of work.
 
+## 2026-07-12 — Kevin's notes arc: all 8 notes + sweep, staging born, memory explainer
+
+- **Staging is live: https://stage.fest.kevinhg.com** — its own Vercel
+  project (`festival-navigator-staging`) whose PRODUCTION branch is
+  v31-polish, so the URL is public (Standard Protection exempts production
+  custom domains) while the main project's preview protection stays intact.
+  Only v31-polish builds there (ignore-command); Cloudflare A record,
+  unproxied. Discovered on the way: custom domains on preview branches AND
+  custom environments stay SSO-protected; the per-env `deploymentProtection:
+  "disabled"` field stores but the edge ignores it (add-on-gated). The
+  dedicated-project pattern is the reliable public-staging recipe.
+- **Clear-eyed sweep** (5 Sonnet lenses + adversarial verify + main-loop
+  synthesis after the Opus agent hit a schema retry cap; results recovered
+  from the workflow journal): honest verdict + findings in
+  claude-plans/2026-07-12-v31-sweep-findings.md. Lens grades B-/B-/B-/B-/C+;
+  model layer elegant, screen-assembly layer frayed, timetable was the C+.
+- **All 8 of Kevin's notes shipped in 5 clusters** (each committed + tested +
+  staged): (A) canonical cross-day stage columns + ONE sticky stage strip +
+  mirrored horizontal scroll; lane splits contained by border-box; clipped
+  names killed (real cause: flex-shrink squeezing the name box — measured
+  live); day-rail unified with the dock (avatar + fest name + sync dot).
+  (B) back-button truth (bootTokenFor: resume only on cold start), heading ‹
+  to the fest list, add-member-on-their-behalf with personal &me= claim
+  links + case-insensitive claiming (Drew scenario verified end-to-end on
+  staging). (C) sync hardening: 413/400 stop retrying + speak, pushGen kills
+  the stale-poll rollback, create-path caps, Slack mrkdwn escape, two-tab
+  pending merge; dead artist-info.js deleted. (D) Spotify three-door access
+  model (owner app from /api/access?config=1 = main path; request-access
+  door; BYO in a fold — api/access.js was already the recordOS-style
+  backend), fest-notes strip at the wall top, past-fests weight rebalance.
+  (E) legibility per the ground-it guide: util.js became the real shared
+  home (5 hand-rolled LS pairs consolidated, unguarded writes fixed),
+  el/subviewHead shared, legacy parseBulkLine deleted, comment lies fixed.
+- Codex arc gate caught a real P1: the 2-row readability floor could stack
+  two time-disjoint short sets — lane math now runs on display extents
+  (regression test added).
+- Tests 89 → 95. SW v16 → v19. Memory explainer published as a Claude
+  artifact (the link/device/cloud story, built in the app's own tokens).
+- Browser-walk gotchas banked: the Playwright MCP's evaluate runs in an
+  isolated world (page fetch stubs need browser_run_code_unsafe +
+  page.evaluate), goto to the same URL+hash is a same-document navigation
+  (modules keep state — go via about:blank to truly reload), and SW-origin
+  requests bypass page.route.
+
 ## 2026-07-12 — Stage-4 audit re-run PASSED + full response pass
 
 - The gate's proof landed: 71-agent re-run (3 viewport walkers + offline
