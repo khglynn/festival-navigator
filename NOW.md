@@ -1,99 +1,94 @@
-# NOW — festival-navigator: FINISH PASS approved — next arc
+# NOW — festival-navigator: finish pass done, promote is Kevin's call
 
-## CURRENT STATE (2026-07-12 evening, banked pre-compaction)
+## CURRENT STATE (2026-07-12, late)
 
-**Kevin approved the finish-pass plan and the taste rubric** ("cool I'm game
-with all of that"). THE NEXT ARC: close every surface against
-`claude-plans/2026-07-12-taste-rubric.md` (8 lines, per screen × 390/1440),
-fix everything found, mark surfaces CLOSED with screenshot pairs — then
-Kevin's final walk is the promote gate. Run it per the grounding doc
-(`claude-plans/2026-07-11-v31-fix-phase-grounding.md`) with the usual
-machinery: workflow fan-out for the audit breadth (Sonnet walkers, never
-frontier), main-loop fixes, tests per fix, Codex gate, staging verification.
-A fresh disposable rig crew is needed (the old one was torn down) — create
-on staging, delete at teardown, token in chat/scratchpad only.
+The finish pass ran and is **complete**. A 12-agent audit (6 browser walkers
+across every surface at 390 and 1440, 6 code/test/doc dimensions) produced **86
+findings**; everything that mattered is fixed, tested, deployed to staging, and
+verified in a real browser. Tests **95 → 131**. Branch `v31-polish`, live at
+https://stage.fest.kevinhg.com (SW v25).
 
-Done today on `v31-polish` (all live on staging, SW v22, tests 95/95):
-the full notes arc (8 notes + sweep, see DEVLOG), Kevin's round-2 review
-fixes (centered cells via safe-center, chip-tap identity switch with two-tap
-confirm, OAuth hop generalized past the allowlist, one disclosureFold for
-past fests, eq-loader wait states, near-opaque sticky chrome, resize
-scroll re-mirror), and the copy pass (tier-1 applied + Kevin approved; doc:
-`claude-plans/2026-07-12-copy-pass.md`; manifest + Portola items
-deliberately left). Open wide-screen item: Kevin's "wonky left edge"
-screenshot — two likely causes shipped (opacity + resize re-mirror) but his
-exact repro was never reproduced; the finish pass re-walks it explicitly.
+**The honest headline:** almost nothing here was crashing. Nearly everything
+found was the app *quietly saying something untrue* — or quietly losing a tap.
 
-Open Kevin decisions: promote; The-Crew token rotation (still pending from
-2026-07-09); the four Stage-4 design judgment calls (unchanged). Fast-follow
-ideas parked in the sweep doc's accepted list.
+### The four ways a pick could vanish (all closed)
+1. `saveLS()` swallowed every localStorage failure with a `console.warn`. A full
+   or private-mode store meant the edit lived only in memory, and the push is
+   debounced 1.2s behind it. Lock the phone in that window — the single most
+   ordinary thing anyone does at a festival — and the pick was gone, with nothing
+   on screen ever having said so.
+2. That 1.2s debounce was itself a grave: a backgrounded tab gets reaped and an
+   in-flight `fetch()` dies with it. `sync.flushOnHide()` now beacons pending
+   picks out on pagehide — the one send the browser promises to finish.
+3. A 400/413 **permanently poisoned the pending queue**. The code comment claimed
+   "the retry loop stops"; it did not — `pollSync` re-armed it every 25s, forever
+   re-POSTing the same doomed payload and blocking every *other* edit on that
+   device behind it. It now remembers the refused payload and waits for a new one.
+4. `clearPending()` blind-wrote `'{}'`, erasing a second tab's un-pushed edits —
+   re-opening on the clear path the exact race `persistPending()` had been fixed
+   to close.
 
-**Spotify (updated 2026-07-12 after Kevin's redirect_uri error + the Feb
-2026 policy change):** add `https://fest.kevinhg.com/spotify-callback` to
-the MCP HG app's redirect URIs at developer.spotify.com/dashboard — that's
-the whole fix for the error he hit (the stage-domain hop bug is fixed in
-code; every non-canonical host now hops). Policy reality per Spotify's
-2026-02-06 announcement: dev-mode apps are capped at **5 authorized users**,
-**one dev-mode client ID per developer** (MCP HG is it — shared with
-recordOS by design), owner needs Premium; endpoint restrictions for existing
-apps postponed. So crew Spotify = Kevin + ~4 friends per the allowlist;
-the request-access flow manages exactly that list.
+Plus: two members named "Drew" and "drew" forked into two permanent identities,
+splitting their picks down the middle. Now refused *in the merge* — the only
+place both concurrent writes are visible.
 
-**Updated:** 2026-07-12 ~01:30 CT · **Branch:** `v31-polish` (pushed; preview
-verified) · **History:** DEVLOG.md · **Audit result:**
-`claude-plans/2026-07-12-v31-stage4-audit-backlog.md`
+### The thing that should have scared us most
+`jsonb_deep_merge` — the SQL function every concurrency guarantee in this app
+rests on — **was executed by zero tests.** "6 of 6 concurrent merges survive" had
+been a comment, not a fact, since July. The SQL now lives in
+`api/_lib/crew-sql.mjs` and `tests/db-merge.test.mjs` runs *those exact bytes*
+against real Postgres (PGlite — in-process, no server, no secrets, runs in CI).
+The 6-of-6 claim is now **proven**, along with arrays-are-replaced-wholesale
+(which is *why* notes must be keyed objects) and every WHERE-clause invariant.
 
-## THE DECISION IN FRONT OF KEVIN
+### Calibration worth keeping
+An agent claimed the 256KB doc cap was "structurally guaranteed" to be hit. I
+checked the live store: the busiest **real** crew is 1,643 bytes — **0.6% of the
+cap**. The failure mode was real; the stated cause was not. No compaction was
+built. (Verify before building on a claim, including an agent's.)
 
-**Promote `v31-polish` to production** (your call, always):
+## ⚠️ KEVIN'S CALL
 
-1. Review the preview: `vercel ls festival-navigator` → newest Preview URL
-   (deployment-protected — open it logged into Vercel, or
-   `vercel promote <url>` straight from the CLI after your own look).
-2. Merge: `git checkout main && git merge v31-polish && git push` (Vercel
-   auto-deploys main to the three prod domains; SW bumps v14 → v15 which
-   force-refreshes every installed client's shell).
-3. After promote, one manual action queued below (Spotify dashboard).
+1. **Promote to production.** Walk staging first:
+   `https://stage.fest.kevinhg.com` — then
+   `git checkout main && git merge v31-polish && git push`
+   (Vercel auto-deploys main; SW v25 force-refreshes every installed client.)
+2. **Spotify dashboard (still queued, unchanged):** add redirect URI
+   `https://fest.kevinhg.com/spotify-callback` to the MCP HG app at
+   developer.spotify.com/dashboard. The code side is done — every non-canonical
+   host now hops to fest.kevinhg.com, so this one URI covers staging too.
+   Note the Feb-2026 rules: dev-mode apps are capped at **5 authorized users**,
+   **one dev-mode app per developer**, owner needs Premium.
+3. **`BLOB_READ_WRITE_TOKEN` is live in all three Vercel environments and read by
+   zero lines of code.** Vercel Blob is banned here. It is a dead write
+   credential — say the word and I will remove it.
+4. **The Crew's token rotation** — still pending from the 2026-07-09 NOW.md leak.
+   Unrelated to this arc; your call.
+5. **Refresh-after-back** — after "‹ back to fest list", a hard refresh on the
+   bare URL cold-start-resumes the crew you just left. Codex called it
+   design-coherent (PWA resume philosophy) and wants your sign-off.
 
-## What shipped (the whole v3.1 backlog + everything the gates found)
+## Deliberately NOT done (and why)
 
-- All 73 discovery findings (1 P0 / 32 P1 / 40 P2) fixed across 7 classes:
-  invite context (with self-healing backfill for links already in group
-  chats), the broken-behavior CORE sweep, history-backed navigation, lost
-  states, the desktop body (day rail, dialogs, full-bleed timetable, fluid
-  type), a11y layer (computed AA contrast, keyboard-first cards, dialog
-  semantics), notes home w/ edit+delete, everything-else column, ACL weekend
-  view, five-state Spotify drill on one OAuth origin, honest SW/sync/PWA.
-- Both gates passed with findings, ALL addressed: Codex diff review (2 rounds
-  — router refresh P1 reproduced+fixed; rename tombstones; setup ungated) and
-  the 71-agent Stage-4 audit re-run (0 P0, ZERO discovery findings
-  rediscovered; its 4 P1s fixed same-session — repaint now preserves scroll/
-  drafts/focus, sort popover clamps, OAuth returns land in the drill).
-- Tests 63 → 89 green · validator clean · 20 commits on `v31-polish`.
-
-## ⚠️ KEVIN ACTIONS QUEUED
-
-1. **Spotify dashboard (SPOT-1):** add redirect URI
-   `https://fest.kevinhg.com/spotify-callback` to the crew Spotify app at
-   developer.spotify.com/dashboard. The app now canonicalizes all OAuth to
-   fest.kevinhg.com (aliases hop with crew+fest context carried).
-2. **FYI — token incident, resolved, no action needed:** a mid-run commit
-   briefly (minutes) exposed two AUDIT-crew tokens on the public repo
-   (walker logs swept in by `git add -A`). History rewritten same minute;
-   both crews were disposable audit artifacts and are now deleted, mooting
-   the exposure. **No real crew token was exposed.** Process hardened
-   (gitignore + gated scans + memory).
-3. **Fast-follows for your call** (from the audit, deliberately not done
-   unattended): settings drills' desktop composition (the atlas says 560px
-   column on purpose — the audit disagrees; your taste decides), in-app
-   research provenance for saved fests, The-Crew token rotation from the
-   2026-07-09 NOW.md leak (still pending, unrelated to this run).
+- **Splitting app.js / settings.js.** They are 1,272 and 1,032 lines. The audit's
+  own verdict was that file length is not the real pain — one 184-line, 6-branch
+  Spotify state machine is — and a split at ship time trades a legibility problem
+  for a circular-import problem. The duplicated *components* (festRow, sheet
+  chrome) were extracted instead, which is where the actual bugs lived.
+- **Doc compaction.** See the calibration above: 0.6% of cap.
+- **Wiring Spotify env vars into staging.** `enabled()` needs all four, and a
+  test there would fire a real Slack message at you. Production has them; the
+  fork-deployment fallback (BYO client ID only) is what staging correctly shows.
 
 ## Standing facts
 
-- Preview env now has DATABASE_URL (added this run — previews hit the real
-  Neon DB). GEMINI_API_KEY already covered Preview.
-- Audit crews (Audit Rig, Portola 26) deleted at teardown; walker scratch
-  dirs (390/ 768/ 1440/ offline/) are gitignored — never commit them.
-- Crew links in chat/scratchpad only — never commit a token; token scans
-  GATE commits (`&&`, never `;`).
+- Rig crew for this audit: **deleted at teardown** (see DEVLOG). Real crews were
+  never written to.
+- The service worker will serve you a STALE app after a deploy — unregister it
+  and delete its caches before believing any browser check. Cost me a full round
+  of "the fix didn't work" today.
+- Token scans GATE commits (`&&`, never `;`). `.gitignore` now denies `*.png` by
+  default — a walker run dumped 50 screenshots into the repo root.
+
+**Updated:** 2026-07-12 late · **Branch:** `v31-polish` (pushed) ·
+**History:** DEVLOG.md · **Rubric:** `claude-plans/2026-07-12-taste-rubric.md`

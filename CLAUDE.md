@@ -7,20 +7,58 @@ Non-inferable facts only (the code answers everything else — read it).
   invent them. UI vocabulary is exactly: picked / must / notes / fest. Pick
   levels are 0–4 (0 tombstone, 1–3 picked at alpha .5/.75/1, 4 must); legacy
   v3-doc levels map 1→1, 2→2, 3→4 at read time (old "Must See"=3 IS must —
-  labels, not alphas, carry the semantics). Festival accent color appears ONLY
-  on: fest name, active day tab, stage headers, current-fest border in
-  Settings — everything else neutral. Never a music-note glyph (Spotify is
+  labels, not alphas, carry the semantics). Never a music-note glyph (Spotify is
   the green pill). Notes are stored as keyed objects, never arrays
   (jsonb_deep_merge replaces arrays — an array eats concurrent notes).
+
+- **The festival accent (`--fest`) appears in exactly FOUR places**: the fest
+  name, the active day tab, stage headers, and the current-fest border in
+  Settings. Anything else that wants to look selected or "ours" uses `--brand`.
+  This is a rule with teeth: the accent had crept into seven places by
+  2026-07-12, including the loader shown while a crew is being CREATED — i.e.
+  wearing a festival's colour before a festival had been chosen.
+
+- **The 44px touch floor is applied to `button`, not to a list of selectors.**
+  It used to name six, and the naming WAS the bug — every control added after
+  those six (chips at 26px, the "+ ✎" note chip at 17px, every button in
+  Settings) silently got nothing. If you add a control, it inherits the floor by
+  being a button. Do not go back to enumerating. Cards are excluded on purpose
+  (expanding them steals taps from neighbouring picks); the narrow *glyph*
+  buttons get a wider horizontal upgrade, and that list only ever upgrades —
+  forgetting to add to it still leaves a control safe.
 
 - **Crew store is Neon Postgres**, project `floral-meadow-70237530` (Kevin's
   personal org). Merges MUST stay a single inline atomic `UPDATE` through
   `jsonb_deep_merge()` — a CTE-based read merges against a pre-lock snapshot
   and measurably lost 2/6 concurrent writes (2026-07-07). Schema source of
   truth: `db/schema.sql`.
+- **The merge SQL lives in `api/_lib/crew-sql.mjs`, and that is deliberate**:
+  `tests/db-merge.test.mjs` executes THOSE EXACT BYTES against a real Postgres
+  (PGlite — in-process, no server, no secrets, runs in CI). Before 2026-07-12 the
+  SQL sat inline in api/crew.js where only production could reach it, and the
+  suite tested a JS "reference twin" that its own comments admit is NOT what
+  production enforces. If you change the merge, change it there, and the test
+  follows automatically. Never re-type the SQL into a test — a test against a
+  copy passes through exactly the regression it exists to catch.
+- **Active member names must be unique case-insensitively.** "Drew" and "drew"
+  are one person to every human and two forever to the document, splitting their
+  picks down the middle. Enforced in the merge's WHERE clause (the only place
+  both concurrent writes are visible) as well as in validateMergedDoc.
 - **Vercel Blob is banned for the crew doc.** Its read path is eventually
   consistent even with cache-busting query params; rapid merges lost writes
   outright (measured 2026-07-07). Old stores may still exist on the account.
+- **Sync states are online / syncing / offline / error / blocked.** `offline` is
+  gray because it is a state, not a fault (you are in a field; we expected this).
+  `error` and `blocked` are red because a human is needed. `blocked` means the
+  server understood us and said no — a deterministic rejection, so re-sending the
+  same bytes is pointless; sync.js remembers the refused payload and waits for a
+  NEW edit rather than re-POSTing forever.
+- **Docs cannot lie any more, and that is enforced**: `tests/docs-truth.test.mjs`
+  asserts the README's structure block points at files that exist, that no doc
+  tells anyone to run an npm script that does not exist, that no doc presents
+  Tailwind or Blob as part of the stack, and that the festival list lives ONLY in
+  `data/festivals/index.json`. History files (DEVLOG, claude-plans) are exempt —
+  they are supposed to talk about what we dropped.
 - `vercel dev` does not serve files created after it starts, and can serve
   STALE copies of edited files too (measured 2026-07-12: an edited app.js
   served an old version until restart) — when in doubt, restart it, and
@@ -29,18 +67,27 @@ Non-inferable facts only (the code answers everything else — read it).
   which is why there is no `dev` script. Local `vercel dev` pulls the REAL
   cloud env (DATABASE_URL included) — localhost /api hits the production
   Neon DB; treat writes accordingly.
-- (Removed 2026-07-12: the "Tailwind precompiled, npm run css" fact — v3
-  dropped Tailwind entirely; styles are hand-written in assets/v3*.css.)
+- **The service worker will serve you a stale app while you are testing.** After
+  deploying, a browser that already has the old SW keeps serving the OLD cached
+  JS/CSS even though the server has the new bytes — verified live 2026-07-12,
+  where every fix read as "not applied" until the SW was unregistered and its
+  cache deleted. `curl | md5` says the server is right; the browser is lying.
+  Unregister + `caches.delete()` + hard reload before believing a browser check.
+  And bump `CACHE_VERSION` on every asset-changing commit.
 - Styling is hand-written CSS in `assets/v3-tokens.css` (tokens) and
-  `assets/v3.css` (components) — no build step, no framework.
+  `assets/v3.css` (components) — no build step, no framework. (Tailwind was
+  dropped in v3; there is no `npm run css`.)
 - Hook command strings in `.claude/settings.json` must stay apostrophe-free
   (a `'` closes the shell quote and silently breaks compaction).
 - The Write tool has serialized literal control bytes (`\x00`) into files in
   this repo twice when escape sequences were intended — after writing
   regexes/tests with `\xNN`, verify with `python3 -c "open(...,'rb')"`.
+- **This repo is PUBLIC.** A crew token (`#g=…`) IS the credential for that
+  crew's data. Never commit one; scan before every commit with `&&` (never `;`,
+  which runs the commit even when the scan trips). `.gitignore` denies `*.png`
+  by default and allowlists the three icons that ship, because an audit run once
+  dumped 50 screenshots into the repo root.
 - Deploy is gated: branch pushes = preview only; production promote is
   Kevin's call, always.
-- Kevin's crew token (real data, migrated from EF 2026): see NOW.md while the
-  prime-time build is active; never commit tokens to the repo.
 - Adding a festival: `docs/add-a-festival.md`. Validate with
   `node scripts/validate-festivals.mjs` before committing — CI enforces it.

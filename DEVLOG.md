@@ -2,6 +2,106 @@
 
 Newest first. One entry per meaningful unit of work.
 
+## 2026-07-12 (late) — THE FINISH PASS: 86 findings, and what they were really about
+
+A 12-agent audit against the taste rubric: 6 browser walkers (every surface at
+390 and 1440, driving a seeded rig crew with deliberately messy data — 5 members
+incl. a tombstone, picks at every level, notes at all three scopes) plus 6
+code/test/doc dimensions. 86 findings, zero agent failures, 2.7M tokens.
+
+**The pattern:** almost nothing was crashing. Nearly everything was the app
+quietly saying something untrue, or quietly losing a tap. That is exactly the
+class of bug a green test suite cannot see, and it is why the suite was green.
+
+### Data loss (the only bug that really matters here)
+- `saveLS()` swallowed every localStorage failure with a `console.warn`. Quota
+  exceeded or private mode → the edit lives only in memory, and the push is 1.2s
+  behind it. Lock the phone in that window and the pick is gone, silently. It
+  reports now.
+- The 1.2s debounce was a grave for a backgrounded tab. `flushOnHide()` beacons
+  pending picks on pagehide; we keep pending afterwards (a beacon's reply is
+  unreadable) and re-send next boot — safe precisely because the merge is
+  idempotent. Sending twice is free; not sending once loses a pick.
+- **A 400/413 permanently poisoned the pending queue.** The comment in sync.js
+  said "the retry loop stops". It did not: `pollSync` saw `hasPending()` and
+  re-armed `scheduleSync()` every 25s, re-POSTing the same doomed payload
+  forever and blocking every *other* edit on that device behind it. We now
+  remember the exact refused payload, stop asking, and let any NEW edit earn a
+  fresh attempt — so there is no dead end to escape. New `blocked` sync state.
+- `clearPending()` blind-wrote `'{}'`, re-opening on the clear path the exact
+  last-writer-wins race `persistPending()` had been fixed to close. It now
+  subtracts only the ACKED leaves, from memory and disk both.
+- "Drew" and "drew" forked into two permanent identities. Each client checked
+  for it against its own in-memory doc, which cannot see the other phone joining
+  in the same breath. The invariant moved to the merge — the only place both
+  writes are visible. Checked the live store FIRST: no existing crew holds such a
+  pair, or the rule would have bricked every future write to it.
+
+### The SQL was never tested
+`jsonb_deep_merge` — the function every concurrency guarantee rests on — was
+executed by ZERO tests. "6 of 6 concurrent merges survive" had been a comment,
+not a fact, since July, and the suite tested a JS "reference twin" whose own
+comments admit it is not what production enforces. The statements moved to
+`api/_lib/crew-sql.mjs`; `tests/db-merge.test.mjs` runs **those exact bytes**
+against real Postgres via **PGlite** (in-process, no server, no secrets, runs in
+CI). 6-of-6 now proven. So is arrays-are-replaced-wholesale — which is *why*
+notes must be keyed objects — and every WHERE-clause invariant.
+Verified `sql.query()` returns rows the same shape as the tagged template, and
+that both statements plan against the real production schema, before shipping the
+call-shape change.
+
+### Calibration: don't build on an agent's claim either
+An agent called the 256KB doc cap "structurally guaranteed" to be hit and
+recommended a compaction subsystem. Queried the live store: the busiest real crew
+is **1,643 bytes — 0.6% of cap**. The failure mode was real; the stated cause was
+not. No compaction built. Taking it on faith would have meant real complexity and
+real risk, at ship time, to solve a problem 0.6% of the way to existing.
+
+### The lies (rubric 8)
+Archived-fest banner froze on the *first* archived fest's name (`if (existing)
+return`) — the screen calmly saying Electric Forest while showing Lollapalooza.
+The day-tab scrollspy watched a 10%-band and any big scroll cleared it in one go,
+so the tab said Thursday while you stood in Sunday. Export promised "paste-ready
+for Bulk paste" while emitting removed members' picks that Bulk paste refuses.
+Search survived a fest switch → "No artists match" over a full lineup. The sync
+dot painted `error` gray while the Settings label painted it red.
+
+### The touch floor was a list nobody edits
+Three walkers found it in three places, which is the tell it was never three
+bugs. The 44px rule NAMED six selectors — and the naming was the bug: every
+control added since (chips 26px, "+ ✎" 17px, all of Settings, the whole desktop
+day rail) got nothing. It applies to `button` now, so new controls inherit it by
+being what they are. Tuned against real geometry afterwards: -5px horizontal made
+neighbouring chips (5px apart) overlap across the whole gap — a tap swallowed by
+the wrong person's chip is worse than the small target it fixed.
+
+### Docs that cannot lie
+The README described an app that had not existed for two releases: a deleted
+`js/render/`, an `npm run css` Tailwind step for a framework v3 dropped, removed
+API endpoints, the pre-v3 pick vocabulary. `VERCEL_SETUP.md` was a confident
+setup guide for **Vercel Blob** — the backend we BANNED for losing writes ("Vercel
+Blob is perfect!" it said). Deleted. The durable half is
+`tests/docs-truth.test.mjs`: paths must exist, no doc may name an npm script that
+does not exist, no doc may present Tailwind/Blob as current, and the festival list
+lives ONLY in index.json. All six failed against the docs as they were.
+
+`.gitignore` claimed to ignore `.claude/` while git tracked seven files inside it
+— a rule that read as protection while providing none. Codex reviews moved to
+`claude-plans/codex-reviews/`; `*.png` now denied by default (a walker run dumped
+50 screenshots into the repo root, and audit artifacts can carry crew tokens).
+
+### Two lessons for next time
+1. **The service worker lies to you after a deploy.** Every fix read as "not
+   applied" in the browser while `curl | md5` proved the server had the new bytes:
+   the old SW was serving its v22 cache. Unregister + `caches.delete()` before
+   believing any browser check.
+2. **Green tests are necessary, not sufficient.** The focus-restore fix was
+   complete and correct in three files, all tests passed — and it was still broken
+   live, because `closeSheet()` nulled the opener it had just been handed. jsdom
+   has no real focus model to break. Only driving the actual browser found it.
+
+Tests 95 → 131. Rig crew deleted at teardown; real crews never written to.
+
 ## 2026-07-12 (evening) — round-2 review + copy pass + finish-pass approved
 
 - Kevin's staging review round: cells re-centered (safe-center keeps the
