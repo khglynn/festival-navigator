@@ -88,6 +88,27 @@ test('restore re-opens layers captured before a refresh', () => {
   assert.deepEqual(h.log, ['open settings', 'open sub:how']);
 });
 
+test('refresh-restore: the current entry keeps its layers — one back closes ONE layer', () => {
+  // Replays enterApp's real post-refresh sequence (Codex trailing review P1:
+  // replaceState(null) before restore() made one Back collapse the whole
+  // stack and killed Forward). Session history before the refresh: base,
+  // settings, drill — the reload lands on the drill entry.
+  const h = harness();
+  h.router.push('settings');
+  h.router.push('sub:spotify');
+  // --- reload: fresh page = empty router stack over the SAME session history ---
+  h.router.reset();
+  const savedLayers = ['settings', 'sub:spotify']; // history.state at load
+  h.hist.replaceState(savedLayers ? { layers: savedLayers } : null, '');
+  h.router.restore(savedLayers);
+  assert.deepEqual(h.router.current(), ['settings', 'sub:spotify']);
+
+  h.hist.back(); // must close ONLY the drill
+  assert.deepEqual(h.router.current(), ['settings'], 'one back closes one layer');
+  h.hist.forward(); // and forward must bring it back
+  assert.deepEqual(h.router.current(), ['settings', 'sub:spotify'], 'forward re-opens after refresh');
+});
+
 test('push during reconcile is ignored (openers may call UI paths that push)', () => {
   const log = [];
   const hist = { pushState: () => log.push('PUSH'), replaceState: () => {}, back: () => {} };

@@ -398,7 +398,10 @@ function renderJoin(token, doc) {
     if (!name) return;
     const taken = Object.values(doc.people || {})
       .map((p) => p.colorIndex).filter(Number.isInteger);
-    state.activateCrew(token, doc);
+    // recordPerson needs an active crew; activate WITH the invite's fest hint
+    // (read, not consumed — enterApp re-reads it idempotently) so no window
+    // ever holds the wrong festival (Codex trailing review, P3).
+    state.activateCrew(token, doc, pendingFestHint || (doc.meta && doc.meta.inviteFestId) || null);
     state.recordPerson(name, { colorIndex: nextColorIndex(taken) });
     crew.setMe(token, name);
     enterApp(token, state.crewDoc);
@@ -448,8 +451,11 @@ async function enterApp(token, doc, current = () => true) {
     showToast($('toast-root'), `Couldn’t load ${wantedName} offline — it opens once you’re back online.`, 6000);
   }
   if (!current()) return;
-  // Captured before replaceState wipes it: which layers were open when the
-  // page was refreshed (spec F10 — refresh restores the same surface).
+  // Captured before replaceState rewrites the entry: which layers were open
+  // when the page was refreshed (spec F10 — refresh restores the same
+  // surface). The entry must KEEP representing those layers — writing null
+  // here made one Back collapse the whole restored stack and killed Forward
+  // (Codex trailing review, P1, reproduced).
   const savedLayers = (history.state && history.state.layers) || null;
   show('screen-app');
   applyFestTheme();
@@ -457,7 +463,7 @@ async function enterApp(token, doc, current = () => true) {
   renderPersonChips();
   renderDockYou();
   repaintWall();
-  history.replaceState(null, '', `/#g=${token}`);
+  history.replaceState(savedLayers ? { layers: savedLayers } : null, '', `/#g=${token}`);
   sync.pollSync();
   router.reset();
   if (savedLayers) router.restore(savedLayers);
@@ -518,6 +524,9 @@ export async function boot() {
       gone = doc === null;
     } catch { /* network failure — try the cache below */ }
     if (!current()) return;
+    // A deleted crew is deleted NOW — don't re-enter the app on a stale
+    // cached doc just to bounce out one sync later (Codex trailing review).
+    if (gone) { renderBadLink(token, { gone: true }); return; }
     if (!doc) doc = state.cachedDoc(token);
     if (!doc) { renderBadLink(token, { gone }); return; }
     if (!crew.me(token)) { renderJoin(token, doc); return; }
