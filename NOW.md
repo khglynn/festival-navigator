@@ -1,5 +1,18 @@
 # NOW — festival-navigator: v3.1 FIX PHASE COMPLETE — Kevin's promote call
 
+## POST-COMPACTION NOTE (2026-07-12 morning)
+
+Kevin reviewed the preview, loves it, and is about to share NOTES — the next
+arc is his feedback pass on the v3.1 build. Receive those notes per
+hg-partner (signal, not spec) with the fix-phase grounding doc's quality bar
+(`claude-plans/2026-07-11-v31-fix-phase-grounding.md` — the brief still
+rules). Work continues on `v31-polish` until Kevin promotes; do not re-open
+finished classes unless his notes point there. Everything below this section
+is the standing state: the promote steps, his queued actions, and what
+shipped. The Stage-4 findings + disposition (incl. four design calls
+deliberately left for him) live in
+`claude-plans/2026-07-12-v31-stage4-audit-backlog.md`.
+
 **Updated:** 2026-07-12 ~01:30 CT · **Branch:** `v31-polish` (pushed; preview
 verified) · **History:** DEVLOG.md · **Audit result:**
 `claude-plans/2026-07-12-v31-stage4-audit-backlog.md`
