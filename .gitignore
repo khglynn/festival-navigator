@@ -1,37 +1,39 @@
-# Per-machine Claude Code state — never sync via git
-.claude/settings.local.json
-.claude/worktrees/
+# This is a PUBLIC repo. Everything below is either machine-local state, a
+# secret, or an audit artifact that can carry a crew token (`#g=...` — the
+# capability credential that IS access to a crew's data). Deny by default.
 
-# Node
-node_modules/
-
-# Environment files
-.env
-.env.local
-.env*.local
-
-# Vercel
-.vercel/
-.vercel
-
-# Claude Code project memory — keep out of this public repo
-.claude-memory
+# Secrets
 .env*
 
-# Playwright test artifacts
-.playwright-mcp/
+# Node / Vercel
+node_modules/
+.vercel
+.vercel/
 
-# remember plugin state
-.remember/
+# Claude Code: local state is ignored, but settings.json SHIPS — it holds the
+# shared hooks every session on this repo relies on. Naming the exception here
+# beats the old blanket `.claude/` rule, which claimed to ignore a directory
+# that in fact had seven tracked files in it.
+.claude/*
+!.claude/settings.json
+
+# Project memory (symlinked out of the repo; never belongs in a public one)
+.claude-memory
+
+# Audit + review artifacts. Walkers drive a real browser, and the Playwright MCP
+# sandbox can only write INSIDE the repo — so screenshots land here no matter
+# where they are pointed. A 2026-07-12 run dumped 50 stray PNGs into the repo
+# root; a careless `git add -A` is exactly how one of those reaches the public.
 screenshots/
-
-# Session-local review artifacts — screenshots + notes stay off the public repo
-.claude/
-390/
-
-# walker scratch dirs (audit runs) — never commit; contain crew tokens
+.playwright-mcp/
+.remember/
 390/
 768/
 1440/
 offline/
-baseline-*.png
+
+# Deny every image by default; name the three that actually ship.
+*.png
+!favicon.png
+!icon-192.png
+!icon-512.png

@@ -30,7 +30,7 @@ forth and fable" is complete: the full redesign is LIVE ON PRODUCTION.**
   P3 both-viewport Playwright walk (every screen read), Codex P3 trail
   (12 findings — incl. a real P0: customs were saved but never loaded),
   Codex P6 final gate (migration race P0 + dead create-flow P1 + 5 P2s; its
-  full clean-section list is in .claude/codex-v3-p6-review.md).
+  full clean-section list is in claude-plans/codex-reviews/codex-v3-p6-review.md).
 - Live-data integrity on real Postgres: synthetic v3 crew → migrate op →
   3→4 both fests, idempotent, stale-write mapping verified both directions.
 - 56/56 tests; every screen verified against the real branch API in a real
