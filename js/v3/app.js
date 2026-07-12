@@ -1130,6 +1130,11 @@ export function init() {
       renderLanding();
       showToast($('toast-root'), 'That crew link no longer works — removed from your festivals.', 6000);
     },
+    // A limit/validation rejection stops the retry loop (sync.js) — the
+    // human hears the server's own reason instead of a forever-gray dot.
+    onSyncBlocked: (reason) => {
+      showToast($('toast-root'), `Couldn’t sync: ${reason} Your changes are safe on this device.`, 8000);
+    },
   });
 
   // Browser navigation models the layer stack (FLOW-2): back closes the top

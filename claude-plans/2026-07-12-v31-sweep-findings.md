@@ -44,6 +44,16 @@ client edges not yet** — five concrete gaps below, all fixable this arc.
 - **P3:** a scheduled day with zero sets → NaN/Infinity in grid rows.
 
 ### Multi-user / sync edges
+
+**Disposition (cluster C, same day):** 413/poll-race/create-caps/mrkdwn/
+cross-tab all FIXED (tests in sync-hardening.test.mjs); artist-info.js
+deleted (zero client callers — grep-verified, guards were present but the
+endpoint was dead Gemini spend). ACCEPTED with rationale: colorIndex
+collision on simultaneous joins (visual-only, self-heals when either member
+picks a color; a server-assigned index would unfreeze the doc schema for a
+cosmetic edge) and the rename-vs-pick orphan (orphaned picks are invisible
+everywhere — every reader filters removed people; the loss is one pick not
+following a rename, only when a second device wrote it mid-rename).
 - **P1 · 413 dead-end:** doc-size/people-cap rejection is treated as a
   transient error — pendingChanges accumulate forever, dot shows generic
   error, no recovery path. `js/sync.js:64-103` + `api/crew.js:124-142`.

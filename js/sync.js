@@ -5,8 +5,10 @@ import * as state from './state.js';
 import { isApiNotFound } from './crew.js';
 
 let syncTimer = null, isSyncing = false, syncQueued = false;
+let pushGen = 0; // bumped when a push APPLIES its merged doc — guards the poll race
 let onRemoteChange = () => {};
 let onCrewGone = () => {};
+let onSyncBlocked = () => {};
 // "Stay offline" (manual, never auto-toggled): suppress every network
 // attempt until switched off. Picks still save locally first, always.
 let stayOffline = false;
@@ -18,6 +20,7 @@ export function setStayOffline(on) {
 export function initSync(opts) {
   if (opts && opts.onRemoteChange) onRemoteChange = opts.onRemoteChange;
   if (opts && opts.onCrewGone) onCrewGone = opts.onCrewGone;
+  if (opts && opts.onSyncBlocked) onSyncBlocked = opts.onSyncBlocked;
 }
 
 // ONE observable sync state (PS-5): the dot, the settings label, and any
@@ -79,6 +82,17 @@ export async function pushSync() {
       signal: timeoutSignal(),
     });
     if (isApiNotFound(res)) throw new CrewGoneError();
+    // A validation/limit rejection is NOT transient (sweep P1, 2026-07-12):
+    // retrying the identical payload forever jammed sync with a generic
+    // error dot and no way out. Nothing is lost — the edits stay local and
+    // pending — but the human hears WHY, and the retry loop stops (the next
+    // local edit re-attempts with a fresh payload anyway).
+    if (res.status === 413 || res.status === 400) {
+      const body = await res.json().catch(() => ({}));
+      setSyncStatus('error');
+      onSyncBlocked(body.error || 'This change can’t sync right now — the crew may have hit a limit.');
+      return;
+    }
     if (!res.ok) throw new Error('POST failed: ' + res.status);
     const stored = await res.json();
     // The crew may have been switched while the request was in flight —
@@ -89,6 +103,7 @@ export async function pushSync() {
     if (state.getEditSeq() === seqAtStart) { state.clearPending(); }
     else { scheduleSync(); }
     applyRemote(stored);
+    pushGen++;
     setSyncStatus(state.hasPending() ? 'syncing' : 'online');
   } catch (e) {
     // Thread the token: this 404 is about the crew the request was FOR,
@@ -128,9 +143,14 @@ export async function pollSync() {
   if (!navigator.onLine) { setSyncStatus('offline'); return; }
   if (isSyncing) return; // a push already has the latest in flight
   const tokenAtStart = state.getCrewToken();
+  const genAtStart = pushGen;
   try {
     const remote = await fetchRemote();
     if (state.getCrewToken() !== tokenAtStart) return;
+    // A push that COMPLETED while this GET was in flight applied a doc newer
+    // than the one this poll is carrying — applying the stale snapshot rolled
+    // freshly-synced picks back for a visible ~25s (sweep P1, 2026-07-12).
+    if (pushGen !== genAtStart) return;
     applyRemote(remote);
     setSyncStatus(state.hasPending() ? 'syncing' : 'online');
     if (state.hasPending()) scheduleSync();

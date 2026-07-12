@@ -15,7 +15,7 @@
 import crypto from 'node:crypto';
 import { neon } from '@neondatabase/serverless';
 import {
-  deepMerge, newCrewDoc, validateIncoming, LIMITS, TOKEN_RE,
+  deepMerge, newCrewDoc, validateIncoming, validateMergedDoc, LIMITS, TOKEN_RE,
 } from './_lib/crew-shared.mjs';
 import { rateLimited, crossSite } from './_lib/guard.mjs';
 
@@ -39,8 +39,13 @@ export default async function handler(req, res) {
       const check = validateIncoming(seed);
       if (!check.ok) return res.status(400).json({ error: check.error });
 
+      // The same size/people invariants the merge path enforces (sweep P1,
+      // 2026-07-12): creation used to skip them entirely, so a single crafted
+      // create could mint a row past every cap the merge UPDATE guards.
       const newToken = crypto.randomBytes(20).toString('base64url');
       const doc = deepMerge(newCrewDoc(name, new Date().toISOString()), body.people ? { people: body.people } : {});
+      const merged = validateMergedDoc(doc);
+      if (!merged.ok) return res.status(413).json({ error: merged.error });
       await sql`INSERT INTO crews (token, doc) VALUES (${newToken}, ${JSON.stringify(doc)}::jsonb)`;
       return res.status(201).json({ token: newToken, doc });
     }

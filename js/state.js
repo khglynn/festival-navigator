@@ -82,7 +82,16 @@ export function setActiveFestivalId(fid) {
 }
 
 export function persist() { saveLS(LS.doc(crewToken), JSON.stringify(crewDoc)); }
-export function persistPending() { saveLS(LS.pending(crewToken), JSON.stringify(pendingChanges)); }
+
+// Merge with what's already on disk, never a blind overwrite: two tabs on the
+// same crew each hold their own in-memory pendingChanges, and last-writer-
+// wins on the whole blob silently dropped the other tab's un-pushed edits
+// (sweep, 2026-07-12). With the merge, the residual loss window is only a tab
+// closing in the ~1s between the OTHER tab's clearPending and its own push.
+export function persistPending() {
+  const onDisk = loadJSON(LS.pending(crewToken), {});
+  saveLS(LS.pending(crewToken), JSON.stringify(deepMerge(onDisk, pendingChanges)));
+}
 
 // ---- accessors ---------------------------------------------------------------
 export function fest() { return FESTIVALS[activeFestivalId]; }
@@ -190,7 +199,9 @@ export function recordInviteFest(fid) {
 }
 
 export function hasPending() { return Object.keys(pendingChanges).length > 0; }
-export function clearPending() { pendingChanges = {}; persistPending(); }
+// Explicit empty write — persistPending() merges with disk, which can never
+// express "cleared".
+export function clearPending() { pendingChanges = {}; saveLS(LS.pending(crewToken), '{}'); }
 
 // Cached copy of a crew doc (for offline joins / crew switching).
 export function cachedDoc(token) { return loadJSON(LS.doc(token), null); }

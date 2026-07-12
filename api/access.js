@@ -25,7 +25,14 @@ import crypto from 'node:crypto';
 import { neon } from '@neondatabase/serverless';
 import { rateLimited, crossSite } from './_lib/guard.mjs';
 
-const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+// Conservative address shape: the permissive old RE ([^@\s]+) admitted Slack
+// mrkdwn metacharacters (<, |, *) in the local part — enough to inject a
+// styled link into the OWNER's approval message (sweep P1, 2026-07-12).
+const EMAIL_RE = /^[A-Za-z0-9._%+'-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+
+// Belt to the RE's suspenders: escape mrkdwn's specials wherever an email is
+// interpolated into a Slack message (per Slack's own escaping rules).
+const mrkdwnEscape = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 const APPROVE_TTL_MS = 60 * 60 * 1000; // approve links expire after an hour
 // Hosts we will build an approve link for when PUBLIC_BASE_URL is unset.
 // Only THIS project's own hostnames: any kevinhg.com subdomain (all anchored
@@ -76,7 +83,7 @@ async function notifySlack(email, baseUrl) {
     body: JSON.stringify({
       blocks: [
         { type: 'header', text: { type: 'plain_text', text: '🎪 Festival Navigator — Spotify access request' } },
-        { type: 'section', text: { type: 'mrkdwn', text: `*${email}* wants to connect Spotify.\nApproving opens the Spotify dashboard — paste their email under User Management there (that's the real gate).` } },
+        { type: 'section', text: { type: 'mrkdwn', text: `*${mrkdwnEscape(email)}* wants to connect Spotify.\nApproving opens the Spotify dashboard — paste their email under User Management there (that's the real gate).` } },
         { type: 'actions', elements: [{ type: 'button', style: 'primary', text: { type: 'plain_text', text: 'Approve + open Spotify dashboard' }, url: approveUrl }] },
       ],
     }),
