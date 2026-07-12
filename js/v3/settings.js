@@ -6,10 +6,11 @@ import * as crew from '../crew.js';
 import * as spotify from '../spotify.js';
 import * as model from './model.js';
 import { FESTIVAL_INDEX } from '../festivals.js';
-import { hslOf, strokeOf } from './palette.js';
+import { BOARD, hslOf, strokeOf } from './palette.js';
 import { colorIndexOf } from './wall.js';
 import { openExportLikes, openBulkPaste, openDayImage } from './tools.js';
 import { router } from './router.js';
+import { nameProblem, NAME_LIMITS } from '../name-rules.mjs';
 
 const LS_SETTINGS = 'fn_settings_v1'; // {lowPower, stayOffline}
 
@@ -107,10 +108,18 @@ function currentFestCard(ctx, actions) {
       state.recordInviteFest(fid);
       actions.afterBulk(); // schedules the sync push
     }
+    const copyFallback = async () => {
+      try { await navigator.clipboard.writeText(link); share.textContent = 'Link copied ✓'; setTimeout(() => { share.textContent = 'Share invite'; }, 1800); }
+      catch { share.textContent = 'See the link below'; setTimeout(() => { share.textContent = 'Share invite'; }, 2500); }
+    };
     try {
       if (navigator.share) await navigator.share({ title: 'Festival Navigator', url: link });
-      else { await navigator.clipboard.writeText(link); share.textContent = 'Link copied ✓'; setTimeout(() => { share.textContent = 'Share invite'; }, 1800); }
-    } catch { /* user dismissed the share sheet */ }
+      else await copyFallback();
+    } catch (e) {
+      // A dismissed share sheet is a choice; anything else falls back to the
+      // clipboard instead of silently doing nothing (FLOW-12).
+      if (!e || e.name !== 'AbortError') await copyFallback();
+    }
   });
   // Real picks only — raw selection keys include cleared level-0 tombstones
   // and would overcount (CORE-13).
@@ -325,6 +334,216 @@ function openHowItWorks(actions) {
   host.appendChild(col);
 }
 
+// ---- CREW door (spec F11 / FLOW-6): members, rename, link, switch, danger ----------
+function crewSection(ctx, actions) {
+  const wrap = el('div', 'display: flex; flex-direction: column; gap: 8px;');
+  wrap.appendChild(microLabel('Crew'));
+  const card = el('div'); card.className = 'settings-card';
+  card.style.cssText += 'display: flex; flex-direction: column; gap: 11px;';
+
+  const status = el('div', 'color: var(--text-tertiary); font-size: 11px; font-weight: 600;');
+  const nameRow = el('div', 'display: flex; align-items: center; gap: 9px;');
+  const nm = el('span', 'color: #fff; font-weight: 800; font-size: 15px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis;', state.crewName());
+  const renameBtn = el('button', 'font-size: 11.5px; padding: 6px 12px; flex: none;', 'Rename');
+  renameBtn.className = 'btn-ghost';
+  nameRow.append(nm, renameBtn);
+  card.appendChild(nameRow);
+  const renameHost = el('div');
+  card.appendChild(renameHost);
+  renameBtn.addEventListener('click', () => {
+    renameHost.textContent = '';
+    const row = el('div', 'display: flex; gap: 8px;');
+    const input = el('input');
+    input.value = state.crewName();
+    input.maxLength = NAME_LIMITS.crewName;
+    input.setAttribute('aria-label', 'Crew name');
+    input.style.cssText = 'flex: 1; min-width: 0; background: var(--page); border: 1px solid var(--border-input); border-radius: var(--r-card); padding: 9px 11px; color: #fff; font-size: 13px; font-family: var(--font-ui);';
+    const save = el('button', 'font-size: 12px; padding: 8px 14px; flex: none;', 'Save');
+    save.className = 'btn-tonal';
+    const doSave = () => {
+      const v = input.value.trim();
+      const problem = nameProblem(v, NAME_LIMITS.crewName);
+      if (problem) { status.textContent = problem; return; }
+      state.recordCrewName(v);
+      actions.afterBulk();
+      actions.rerender();
+    };
+    save.addEventListener('click', doSave);
+    input.addEventListener('keydown', (e) => { if (e.key === 'Enter') doSave(); });
+    row.append(input, save);
+    renameHost.appendChild(row);
+    input.focus();
+  });
+
+  const chips = el('div', 'display: flex; gap: 5px; flex-wrap: wrap;');
+  for (const [name, p] of state.activePeople()) {
+    const chip = el('span', '', name);
+    chip.className = 'person-chip' + (name === ctx.meName ? ' you' : '');
+    const ci = colorIndexOf(name, p);
+    chip.style.background = hslOf(ci, 0.5);
+    chip.style.border = '1px solid ' + strokeOf(ci, name === ctx.meName);
+    chip.style.fontSize = '11px';
+    chip.style.padding = '4px 11px';
+    chips.appendChild(chip);
+  }
+  card.appendChild(chips);
+
+  // The invite link, always visible (FLOW-12): share sheets fail silently,
+  // a printed URL never does.
+  const link = crew.crewLink(state.getCrewToken(), state.activeFestivalId);
+  const linkRowEl = el('div', 'display: flex; gap: 8px; align-items: center;');
+  const linkBox = el('input');
+  linkBox.readOnly = true;
+  linkBox.value = link;
+  linkBox.setAttribute('aria-label', 'Crew invite link');
+  linkBox.style.cssText = 'flex: 1; min-width: 0; background: var(--page); border: 1px solid var(--border-input); border-radius: var(--r-card); padding: 8px 11px; color: var(--text-secondary); font-size: 11.5px; font-family: var(--font-ui);';
+  linkBox.addEventListener('focus', () => linkBox.select());
+  const copyBtn = el('button', 'font-size: 11.5px; padding: 8px 13px; flex: none;', 'Copy');
+  copyBtn.className = 'btn-tonal';
+  copyBtn.addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText(link); copyBtn.textContent = 'Copied ✓'; setTimeout(() => { copyBtn.textContent = 'Copy'; }, 1800); }
+    catch { linkBox.select(); }
+  });
+  linkRowEl.append(linkBox, copyBtn);
+  card.appendChild(linkRowEl);
+  card.appendChild(status);
+  wrap.appendChild(card);
+
+  const listEl = el('div'); listEl.className = 'settings-list';
+  listEl.appendChild(linkRow('Switch crew', actions.switchCrew));
+  // Danger zone: two-tap confirm — device-local, the link gets you back in.
+  const dangerRow = el('button');
+  dangerRow.className = 'list-row';
+  dangerRow.style.cssText = 'cursor: pointer; width: 100%; background: none; border: none; font: inherit; text-align: left; color: inherit;';
+  const dLeft = el('div', 'flex: 1;');
+  const dTitle = el('div', '', 'Forget this crew on this device');
+  dTitle.className = 'row-title';
+  dTitle.style.color = '#F87171';
+  const dSub = el('div', '', 'Picks and notes stay in the crew — the invite link gets you back in.');
+  dSub.className = 'row-sub';
+  dLeft.append(dTitle, dSub);
+  dangerRow.appendChild(dLeft);
+  let armed = false;
+  dangerRow.addEventListener('click', () => {
+    if (!armed) {
+      armed = true;
+      dTitle.textContent = 'Tap again to forget this crew';
+      setTimeout(() => { armed = false; dTitle.textContent = 'Forget this crew on this device'; }, 4000);
+      return;
+    }
+    actions.leaveCrew();
+  });
+  listEl.appendChild(dangerRow);
+  wrap.appendChild(listEl);
+  return wrap;
+}
+
+// ---- YOU door (spec F11 / FLOW-8): identity, rename, color -------------------------
+function youSection(ctx, actions) {
+  const wrap = el('div', 'display: flex; flex-direction: column; gap: 8px;');
+  wrap.appendChild(microLabel('You'));
+  const card = el('div');
+  card.className = 'settings-card';
+  card.style.cssText += 'display: flex; flex-direction: column; gap: 11px;';
+  if (!ctx.meName) {
+    card.appendChild(el('span', 'color: var(--text-tertiary); font-size: 12px; font-weight: 600;', 'Open your crew link to claim a name.'));
+    wrap.appendChild(card);
+    return wrap;
+  }
+  const p = state.people()[ctx.meName];
+  const status = el('div', 'color: var(--text-tertiary); font-size: 11px; font-weight: 600;');
+  const row = el('div', 'display: flex; align-items: center; gap: 11px;');
+  const av = el('span', '', ctx.meName.charAt(0).toUpperCase());
+  av.className = 'avatar';
+  av.style.cssText += 'width: 26px; height: 26px; font-size: 10px; border: 1.5px solid #fff;';
+  av.style.background = hslOf(colorIndexOf(ctx.meName, p), 0.5);
+  const nm = el('span', 'color: #fff; font-weight: 700; font-size: 14px; flex: 1;', ctx.meName);
+  row.append(av, nm);
+  card.appendChild(row);
+  const expandHost = el('div');
+
+  const btnRow = el('div', 'display: flex; gap: 6px; flex-wrap: wrap;');
+  const mk = (label) => {
+    const b = el('button', 'font-size: 11.5px; padding: 6px 12px;', label);
+    b.className = 'btn-ghost';
+    return b;
+  };
+  const switchBtn = mk('Not you? Switch');
+  const renameBtn = mk('Rename me');
+  const colorBtn = mk('Change color');
+  btnRow.append(switchBtn, renameBtn, colorBtn);
+  card.append(btnRow, expandHost, status);
+
+  // Identity change is explicit and confirmable (FLOW-8) — never a stray tap.
+  switchBtn.addEventListener('click', () => {
+    expandHost.textContent = '';
+    const list = el('div', 'display: flex; flex-direction: column; gap: 6px;');
+    for (const [name, person] of state.activePeople()) {
+      if (name === ctx.meName) continue;
+      const b = el('button', 'width: 100%;');
+      b.className = 'fest-row';
+      const bAv = el('span', '', name.charAt(0).toUpperCase());
+      bAv.className = 'avatar';
+      bAv.style.background = hslOf(colorIndexOf(name, person), 0.5);
+      const bNm = el('span', 'color: #fff; font-weight: 700; font-size: 13px; flex: 1; text-align: left;', `I’m ${name}`);
+      b.append(bAv, bNm);
+      b.addEventListener('click', () => { actions.switchIdentity(name); actions.rerender(); });
+      list.appendChild(b);
+    }
+    if (!list.children.length) list.appendChild(el('div', 'color: var(--text-tertiary); font-size: 11.5px; font-weight: 600;', 'No one else has joined yet.'));
+    expandHost.appendChild(list);
+  });
+
+  renameBtn.addEventListener('click', () => {
+    expandHost.textContent = '';
+    const col = el('div', 'display: flex; flex-direction: column; gap: 7px;');
+    const rrow = el('div', 'display: flex; gap: 8px;');
+    const input = el('input');
+    input.value = ctx.meName;
+    input.maxLength = NAME_LIMITS.personName;
+    input.setAttribute('aria-label', 'Your name');
+    input.style.cssText = 'flex: 1; min-width: 0; background: var(--page); border: 1px solid var(--border-input); border-radius: var(--r-card); padding: 9px 11px; color: #fff; font-size: 13px; font-family: var(--font-ui);';
+    const save = el('button', 'font-size: 12px; padding: 8px 14px; flex: none;', 'Save');
+    save.className = 'btn-tonal';
+    const doSave = () => {
+      const v = input.value.trim();
+      if (v === ctx.meName) { expandHost.textContent = ''; return; }
+      const problem = nameProblem(v);
+      if (problem) { status.textContent = problem; return; }
+      if (state.people()[v] && !state.people()[v].removed) { status.textContent = 'That name is taken in this crew.'; return; }
+      actions.renameSelf(v);
+      actions.rerender();
+    };
+    save.addEventListener('click', doSave);
+    input.addEventListener('keydown', (e) => { if (e.key === 'Enter') doSave(); });
+    rrow.append(input, save);
+    col.appendChild(rrow);
+    col.appendChild(el('div', 'color: var(--text-tertiary); font-size: 10.5px; font-weight: 600; line-height: 1.5;',
+      'Your picks move with you. Notes you already wrote keep your old name.'));
+    expandHost.appendChild(col);
+    input.focus();
+  });
+
+  colorBtn.addEventListener('click', () => {
+    expandHost.textContent = '';
+    const grid = el('div', 'display: grid; grid-template-columns: repeat(12, 1fr); gap: 6px;');
+    const taken = new Set(state.activePeople().filter(([n]) => n !== ctx.meName).map(([, pp]) => pp.colorIndex).filter(Number.isInteger));
+    const mine = colorIndexOf(ctx.meName, p);
+    for (let i = 0; i < BOARD.length; i++) {
+      const dot = el('button');
+      dot.setAttribute('aria-label', `Color ${i + 1}${taken.has(i) ? ' (taken)' : ''}${i === mine ? ' (yours)' : ''}`);
+      dot.style.cssText = `aspect-ratio: 1; border-radius: var(--r-pill); cursor: pointer; background: ${hslOf(i, 0.85)}; border: 2px solid ${i === mine ? '#fff' : 'transparent'}; opacity: ${taken.has(i) ? '.25' : '1'};`;
+      dot.disabled = taken.has(i);
+      dot.addEventListener('click', () => { actions.changeColor(i); actions.rerender(); });
+      grid.appendChild(dot);
+    }
+    expandHost.appendChild(grid);
+  });
+
+  wrap.appendChild(card);
+  return wrap;
+}
+
 // ---- the settings screen --------------------------------------------------------------
 export function renderSettings(root, ctx, actions) {
   root.textContent = '';
@@ -341,22 +560,8 @@ export function renderSettings(root, ctx, actions) {
   main.appendChild(head);
 
   main.appendChild(festivalsSection(ctx, actions));
-
-  main.appendChild(microLabel('You'));
-  const youCard = el('div', 'display: flex; align-items: center; gap: 11px; padding: 12px 14px;');
-  youCard.className = 'settings-card';
-  if (ctx.meName) {
-    const p = state.people()[ctx.meName];
-    const av = el('span', '', ctx.meName.charAt(0).toUpperCase());
-    av.className = 'avatar';
-    av.style.cssText += 'width: 26px; height: 26px; font-size: 10px; border: 1.5px solid #fff;';
-    av.style.background = hslOf(colorIndexOf(ctx.meName, p), 0.5);
-    const nm = el('span', 'color: #fff; font-weight: 700; font-size: 14px; flex: 1;', ctx.meName);
-    youCard.append(av, nm);
-  } else {
-    youCard.appendChild(el('span', 'color: var(--text-tertiary); font-size: 12px; font-weight: 600;', 'Open your crew link to claim a name.'));
-  }
-  main.appendChild(youCard);
+  main.appendChild(crewSection(ctx, actions));
+  main.appendChild(youSection(ctx, actions));
 
   // Spotify glance (state only; the drill page holds every action — 21f rule)
   const sp = el('button'); sp.className = 'settings-card';

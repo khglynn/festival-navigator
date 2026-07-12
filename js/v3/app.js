@@ -11,6 +11,7 @@ import { openArtistSheet, openAllNotes, closeSheet, refreshOpenSheet } from './n
 import { renderSettings, appSettings, openSubviewByKey } from './settings.js';
 import { router } from './router.js';
 import { createSortControl } from './sort-control.js';
+import { nameProblem } from '../name-rules.mjs';
 import { startFavicon, stopFavicon } from './favicon.js';
 import { hslOf, strokeOf, nextColorIndex } from './palette.js';
 
@@ -100,25 +101,31 @@ function applyFestTheme() {
   startFavicon(fest.accent, { lowPower: ctx.lowPower });
 }
 
+// Presence display only (FLOW-8): a chip tap used to silently REASSIGN this
+// device's identity — one stray thumb and your picks start landing on someone
+// else. Switching who you are is an explicit Settings action now.
 function renderPersonChips() {
   const row = $('person-chips');
   row.textContent = '';
   for (const [name, p] of state.activePeople()) {
-    const chip = document.createElement('button');
+    const chip = document.createElement('span');
     chip.className = 'person-chip' + (name === ctx.meName ? ' you' : '');
     const ci = colorIndexOf(name, p);
     chip.style.background = hslOf(ci, 0.5);
     chip.style.border = '1px solid ' + strokeOf(ci, name === ctx.meName);
+    chip.style.cursor = 'default';
     chip.textContent = name;
-    chip.addEventListener('click', () => {
-      crew.setMe(state.getCrewToken(), name);
-      refreshCtx();
-      renderPersonChips();
-      repaintWall();
-      renderDockYou();
-    });
     row.appendChild(chip);
   }
+}
+
+// The explicit identity switch (FLOW-8), called from Settings.
+function switchIdentity(name) {
+  crew.setMe(state.getCrewToken(), name);
+  refreshCtx();
+  renderPersonChips();
+  renderDockYou();
+  showToast($('toast-root'), `You’re ${name} on this device now.`);
 }
 
 function renderDockYou() {
@@ -226,49 +233,85 @@ function show(screen) {
 }
 const anyScreenVisible = () => SCREENS.some((id) => $(id).style.display !== 'none');
 
-// ---- create: pick the fest + your name -> a fresh crew ------------------------------
+// ---- create, two steps (spec F2): pick the fest, then your name --------------------
 let createFid = null;
+
+function festPickRow(f, { muted = false, onPick }) {
+  const row = document.createElement('button');
+  row.className = 'fest-row';
+  row.style.width = '100%';
+  if (muted) row.style.opacity = '.72';
+  const left = document.createElement('div');
+  left.style.cssText = 'flex: 1; min-width: 0; text-align: left;';
+  const nm = document.createElement('span');
+  nm.style.cssText = `font-family: var(--font-display); letter-spacing: .04em; font-size: var(--fs-day); color: rgb(${f.accent || '237, 234, 244'}); white-space: nowrap;`;
+  nm.textContent = f.name.toUpperCase();
+  const yr = document.createElement('span');
+  yr.style.cssText = 'font-size: .65em; opacity: .75;';
+  yr.textContent = ' ' + (f.year || '');
+  nm.appendChild(yr);
+  left.appendChild(nm);
+  const sub = document.createElement('div');
+  sub.className = 'fest-dates';
+  sub.textContent = f.dates || '';
+  left.appendChild(sub);
+  row.appendChild(left);
+  if (muted) {
+    const badge = document.createElement('span');
+    badge.style.cssText = 'flex: none; color: var(--text-tertiary); font-size: 10px; font-weight: 800; letter-spacing: .08em; border: 1px solid var(--border-card); border-radius: var(--r-pill); padding: 3px 8px;';
+    badge.textContent = 'PAST';
+    row.appendChild(badge);
+  }
+  row.addEventListener('click', () => onPick(f));
+  return row;
+}
+
 function renderCreate() {
   show('screen-create');
   createFid = null;
+  $('create-step-1').style.display = 'flex';
+  $('create-step-2').style.display = 'none';
   $('create-status').textContent = '';
   const list = $('create-fests');
   list.textContent = '';
+  const pick = (f) => createStepTwo(f);
   for (const f of FESTIVAL_INDEX.filter((x) => x.status !== 'archived')) {
-    const row = document.createElement('button');
-    row.className = 'fest-row';
-    row.style.width = '100%';
-    const left = document.createElement('div');
-    left.style.cssText = 'flex: 1; min-width: 0; text-align: left;';
-    const nm = document.createElement('span');
-    nm.style.cssText = `font-family: var(--font-display); letter-spacing: .04em; font-size: var(--fs-day); color: rgb(${f.accent || '237, 234, 244'}); white-space: nowrap;`;
-    nm.textContent = f.name.toUpperCase();
-    const yr = document.createElement('span');
-    yr.style.cssText = 'font-size: .65em; opacity: .75;';
-    yr.textContent = ' ' + (f.year || '');
-    nm.appendChild(yr);
-    left.appendChild(nm);
-    const sub = document.createElement('div');
-    sub.className = 'fest-dates';
-    sub.textContent = f.dates || '';
-    left.appendChild(sub);
-    row.appendChild(left);
-    row.addEventListener('click', () => {
-      createFid = f.id;
-      [...list.children].forEach((c) => { c.style.borderColor = ''; c.style.borderWidth = ''; });
-      row.style.borderColor = `rgba(${f.accent || '192, 132, 252'}, .55)`;
-      row.style.borderWidth = '1.5px';
-      $('create-status').textContent = `${f.name} it is — now your name.`;
-    });
-    list.appendChild(row);
+    list.appendChild(festPickRow(f, { onPick: pick }));
   }
+  // Past festivals stay reachable (spec F2/F12) — visually secondary, same anatomy.
+  const past = FESTIVAL_INDEX.filter((x) => x.status === 'archived');
+  if (past.length) {
+    const divider = document.createElement('div');
+    divider.className = 'micro-label';
+    divider.style.cssText = 'margin-top: 8px;';
+    divider.textContent = 'Past festivals';
+    list.appendChild(divider);
+    for (const f of past) list.appendChild(festPickRow(f, { muted: true, onPick: pick }));
+  }
+}
+
+function createStepTwo(f) {
+  createFid = f.id;
+  $('create-step-1').style.display = 'none';
+  $('create-step-2').style.display = 'flex';
+  $('create-status').textContent = '';
+  // Chosen-fest chip — fest accent border is the current-fest border rule.
+  const chosen = $('create-chosen');
+  chosen.textContent = '';
+  const chip = document.createElement('span');
+  chip.style.cssText = `display: inline-flex; align-items: baseline; gap: 6px; border: 1.5px solid rgba(${f.accent || '192, 132, 252'}, .55); border-radius: var(--r-pill); padding: 8px 16px; font-family: var(--font-display); letter-spacing: .04em; font-size: 15px; color: rgb(${f.accent || '237, 234, 244'});`;
+  chip.textContent = `${f.name.toUpperCase()} ${f.year || ''}`.trim();
+  chosen.appendChild(chip);
+  $('create-name-input').focus();
 }
 
 async function createCrewFlow() {
   const myName = $('create-name-input').value.trim();
   const status = $('create-status');
-  if (!createFid) { status.textContent = 'Pick the fest first.'; return; }
-  if (!myName) { status.textContent = 'And your name — that becomes your color.'; return; }
+  if (!createFid) { status.textContent = 'Pick the fest first.'; renderCreate(); return; }
+  // Same rule the server enforces (FLOW-5) — the form catches it, not the 400.
+  const problem = nameProblem(myName);
+  if (problem) { status.textContent = problem; return; }
   const btn = $('create-go-btn');
   btn.disabled = true;
   status.textContent = 'Creating…';
@@ -284,10 +327,79 @@ async function createCrewFlow() {
     // even when a shared link lost its &f= param (FLOW-1).
     state.recordInviteFest(createFid);
     sync.scheduleSync();
+    // The share moment (FLOW-7): a crew of one isn't a crew yet.
+    openShareMoment();
+    router.push('sheet:share');
   } catch (e) {
     status.textContent = String(e.message || e);
+  } finally {
     btn.disabled = false;
   }
+}
+
+// ---- the share moment (FLOW-7/FLOW-12) ----------------------------------------------
+// One centered dialog right after create (and re-openable from Settings):
+// the link is VISIBLE — share sheets fail silently, a printed URL never does.
+function openShareMoment() {
+  closeSheet();
+  const backdrop = document.createElement('div');
+  backdrop.className = 'sheet-backdrop';
+  backdrop.id = 'sheet-backdrop';
+  backdrop.addEventListener('click', () => { if (!router.requestClose()) closeSheet(); });
+  const sheet = document.createElement('div');
+  sheet.className = 'sheet';
+  sheet.id = 'artist-sheet'; // closeSheet + the router's sheet kind own this id
+  const grabber = document.createElement('div');
+  grabber.className = 'grabber';
+  const title = document.createElement('span');
+  title.className = 'sheet-title';
+  title.textContent = 'ONE LINK MAKES IT A CREW';
+  const sub = document.createElement('div');
+  sub.style.cssText = 'color: var(--text-secondary); font-size: 12.5px; line-height: 1.55;';
+  sub.textContent = `Anyone who opens it lands in ${state.crewName()} — no accounts, no setup.`;
+  const link = crew.crewLink(state.getCrewToken(), state.activeFestivalId);
+  if ((state.crewDoc.meta || {}).inviteFestId !== state.activeFestivalId) {
+    state.recordInviteFest(state.activeFestivalId);
+    sync.scheduleSync();
+  }
+  const linkRowEl = document.createElement('div');
+  linkRowEl.style.cssText = 'display: flex; gap: 8px; align-items: center;';
+  const linkBox = document.createElement('input');
+  linkBox.readOnly = true;
+  linkBox.value = link;
+  linkBox.setAttribute('aria-label', 'Crew invite link');
+  linkBox.style.cssText = 'flex: 1; min-width: 0; background: var(--card); border: 1px solid var(--border-input); border-radius: var(--r-card); padding: 10px 12px; color: var(--text-body); font-size: 12px; font-family: var(--font-ui);';
+  linkBox.addEventListener('focus', () => linkBox.select());
+  const copy = document.createElement('button');
+  copy.className = 'btn-tonal';
+  copy.style.cssText = 'font-size: 12px; padding: 9px 15px; flex: none;';
+  copy.textContent = 'Copy';
+  copy.addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText(link); copy.textContent = 'Copied ✓'; setTimeout(() => { copy.textContent = 'Copy'; }, 1800); }
+    catch { linkBox.select(); }
+  });
+  linkRowEl.append(linkBox, copy);
+  const actionsRow = document.createElement('div');
+  actionsRow.style.cssText = 'display: flex; gap: 8px;';
+  if (navigator.share) {
+    const shareBtn = document.createElement('button');
+    shareBtn.className = 'btn-tonal';
+    shareBtn.style.cssText = 'flex: 1; font-size: 13px; padding: 11px;';
+    shareBtn.textContent = 'Share the link';
+    shareBtn.addEventListener('click', async () => {
+      try { await navigator.share({ title: 'Festival Navigator', url: link }); }
+      catch { /* dismissed — the visible link is the fallback */ }
+    });
+    actionsRow.appendChild(shareBtn);
+  }
+  const later = document.createElement('button');
+  later.className = 'btn-ghost';
+  later.style.cssText = 'font-size: 12px; padding: 11px 16px;' + (navigator.share ? '' : ' flex: 1;');
+  later.textContent = 'Later — to the wall';
+  later.addEventListener('click', () => { if (!router.requestClose()) closeSheet(); });
+  actionsRow.appendChild(later);
+  sheet.append(grabber, title, sub, linkRowEl, actionsRow);
+  document.body.append(backdrop, sheet);
 }
 
 // ---- settings (one page, two doors) -----------------------------------------------
@@ -334,6 +446,65 @@ function openSettings() {
       return true;
     },
     afterBulk: () => { sync.scheduleSync(); refreshCtx(); },
+    // FLOW-8: identity change is an explicit, named action — never a chip tap.
+    switchIdentity: (name) => switchIdentity(name),
+    // FLOW-6: the landing is the crew switcher; the current crew stays remembered.
+    switchCrew: () => {
+      router.reset();
+      history.replaceState(null, '', '/');
+      renderLanding();
+    },
+    leaveCrew: () => {
+      const t = state.getCrewToken();
+      crew.forgetCrew(t);
+      router.reset();
+      history.replaceState(null, '', '/');
+      renderLanding();
+      showToast($('toast-root'), 'Crew forgotten on this device — the invite link gets you back in.', 6000);
+    },
+    // Self-rename (FLOW-11): a person IS their key in the doc, so renaming is
+    // new person + tombstone old + picks (and Spotify badges) migrated through
+    // the normal additive merge. Old notes keep the old byline — honest history.
+    renameSelf: (newName) => {
+      const old = ctx.meName;
+      const person = state.people()[old];
+      state.recordPerson(newName, { colorIndex: colorIndexOf(old, person) });
+      // recordPerson writes pending only — mirror into the local doc so the
+      // rename is visible before the sync round-trip (recorder convention).
+      state.crewDoc.people[newName] = { colorIndex: colorIndexOf(old, person) };
+      for (const [fid, entry] of Object.entries(state.crewDoc.festivals || {})) {
+        for (const [artist, byPerson] of Object.entries(entry.selections || {})) {
+          const level = model.readLevel(state.crewDoc, byPerson[old]);
+          if (level > 0) {
+            state.recordSelectionFor(fid, artist, newName, level);
+            state.ensureFestivalState(fid);
+            const sels = state.crewDoc.festivals[fid].selections;
+            (sels[artist] = sels[artist] || {})[newName] = level;
+          }
+        }
+      }
+      const aff = state.affinityFor(old);
+      if (aff) state.recordAffinity(newName, aff);
+      state.recordPerson(old, { removed: true });
+      if (state.crewDoc.people[old]) state.crewDoc.people[old].removed = true;
+      state.persist();
+      crew.setMe(state.getCrewToken(), newName);
+      sync.scheduleSync();
+      refreshCtx();
+      renderPersonChips();
+      renderDockYou();
+      showToast($('toast-root'), `You’re ${newName} now — picks came with you.`);
+    },
+    changeColor: (idx) => {
+      state.recordPerson(ctx.meName, { colorIndex: idx });
+      const mine = state.people()[ctx.meName];
+      if (mine) mine.colorIndex = idx; // local doc mirror for instant render
+      state.persist();
+      sync.scheduleSync();
+      refreshCtx();
+      renderPersonChips();
+      renderDockYou();
+    },
   };
   renderSettings($('settings-root'), ctx, settingsActions);
 }
@@ -372,7 +543,22 @@ function renderLanding() {
 
 function renderJoin(token, doc) {
   show('screen-join');
-  $('join-fest-name').textContent = (doc.meta && doc.meta.name) || 'THE FESTIVAL';
+  // The invite names the FESTIVAL (FLOW-10) — the fest is why you came; the
+  // crew is who with. Fest context comes from the link's &f= or the doc stamp.
+  const hintId = pendingFestHint || (doc.meta && doc.meta.inviteFestId) || null;
+  const festMeta = hintId ? FESTIVAL_INDEX.find((f) => f.id === hintId) : null;
+  const crewLabel = (doc.meta && doc.meta.name) || 'your crew';
+  const headline = $('join-fest-name');
+  if (festMeta) {
+    headline.textContent = `${festMeta.name.toUpperCase()} ${festMeta.year || ''}`.trim();
+    headline.style.color = `rgb(${festMeta.accent || '192, 132, 252'})`;
+    $('join-crew-sub').textContent = `with ${crewLabel}`;
+  } else {
+    headline.textContent = crewLabel;
+    headline.style.color = '';
+    $('join-crew-sub').textContent = '';
+  }
+  $('join-status').textContent = '';
   const list = $('join-people');
   list.textContent = '';
   for (const [name, p] of Object.entries(doc.people || {})) {
@@ -395,17 +581,49 @@ function renderJoin(token, doc) {
   }
   $('join-add-btn').onclick = async () => {
     const name = $('join-name-input').value.trim();
-    if (!name) return;
+    const status = $('join-status');
+    // Same rule the server enforces (FLOW-5): the form answers, never a 400.
+    const problem = nameProblem(name);
+    if (problem) { status.textContent = problem; return; }
+    // Typing an existing member's name is a returning member recognizing
+    // themselves — claim it, same as tapping the row.
+    const existing = (doc.people || {})[name];
+    if (existing && !existing.removed) { crew.setMe(token, name); enterApp(token, doc); return; }
+    const btn = $('join-add-btn');
+    btn.disabled = true;
+    status.textContent = 'Joining…';
     const taken = Object.values(doc.people || {})
       .map((p) => p.colorIndex).filter(Number.isInteger);
-    // recordPerson needs an active crew; activate WITH the invite's fest hint
-    // (read, not consumed — enterApp re-reads it idempotently) so no window
-    // ever holds the wrong festival (Codex trailing review, P3).
-    state.activateCrew(token, doc, pendingFestHint || (doc.meta && doc.meta.inviteFestId) || null);
-    state.recordPerson(name, { colorIndex: nextColorIndex(taken) });
-    crew.setMe(token, name);
-    enterApp(token, state.crewDoc);
-    sync.scheduleSync();
+    const person = { colorIndex: nextColorIndex(taken) };
+    const festHint = pendingFestHint || (doc.meta && doc.meta.inviteFestId) || null;
+    try {
+      // The first write happens BEFORE entry (FLOW-5): if the server says no
+      // (people cap, doc size), the joiner hears it here — not as a forever-
+      // gray sync dot after picking twenty artists that never left the phone.
+      const res = await fetch(`/api/crew?t=${encodeURIComponent(token)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ data: { people: { [name]: person } }, sv: 4 }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        status.textContent = body.error || 'Couldn’t join — try a different name.';
+        btn.disabled = false;
+        return;
+      }
+      const merged = await res.json();
+      crew.setMe(token, name);
+      await enterApp(token, merged);
+    } catch {
+      // Network failure: offline-first join, sync catches up (old behavior).
+      state.activateCrew(token, doc, festHint);
+      state.recordPerson(name, person);
+      crew.setMe(token, name);
+      enterApp(token, state.crewDoc);
+      sync.scheduleSync();
+    } finally {
+      btn.disabled = false;
+    }
   };
 }
 
@@ -557,6 +775,7 @@ export function init() {
   router.registerKind('sheet:', (key) => {
     refreshCtx();
     if (key === 'sheet:all') openAllNotes(ctx);
+    else if (key === 'sheet:share') openShareMoment();
     else if (key.startsWith('sheet:notes:')) openArtistSheet(key.slice('sheet:notes:'.length), ctx, onNotesChange);
   }, () => closeSheet());
   window.addEventListener('popstate', (e) => router.onPopState(e.state));
@@ -579,6 +798,15 @@ export function init() {
   $('notes-chip').addEventListener('click', () => { refreshCtx(); openAllNotes(ctx); router.push('sheet:all'); });
   $('create-go-btn').addEventListener('click', createCrewFlow);
   $('create-back').addEventListener('click', () => { history.replaceState(null, '', '/'); renderLanding(); });
+  $('create-back-2').addEventListener('click', () => renderCreate());
+  // Enter submits every entry form (FLOW-13) — the keyboard's Go button on
+  // mobile is the same event.
+  const enterClicks = (inputId, btnId) => {
+    $(inputId).addEventListener('keydown', (e) => { if (e.key === 'Enter') $(btnId).click(); });
+  };
+  enterClicks('create-name-input', 'create-go-btn');
+  enterClicks('join-name-input', 'join-add-btn');
+  enterClicks('badlink-input', 'badlink-open');
   const saved = appSettings();
   // prefers-reduced-motion rides the same path as Low power (quality floor):
   // the aura/favicon animations stop without the user hunting for a setting.

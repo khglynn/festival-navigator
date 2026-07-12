@@ -2,6 +2,30 @@
 
 Newest first. One entry per meaningful unit of work.
 
+## 2026-07-11 (night) — FLOWS 5–13: joins that can't strand, settings with two doors
+
+- **FLOW-5**: js/name-rules.mjs is now the ONE name rule — client forms and
+  the server validator import the same module (drift impossible; parity test
+  probes 17 names incl. the classic O'Brien). Join's first write happens
+  BEFORE entry: the server's answer reaches the joiner as form copy, never as
+  a forever-gray sync dot; offline falls back to local-first join.
+- **FLOW-9/13**: create is two real steps (pick → NOW YOU with chosen-fest
+  chip in accent border; past fests reachable in a muted section with PAST
+  badges). Enter submits every entry form.
+- **FLOW-10**: the join screen names the FESTIVAL (from &f= or the doc stamp),
+  in the fest's accent, with "with <crew>" under it — verified live.
+- **FLOW-7/12**: post-create share moment (dialog with the URL VISIBLE +
+  copy + native share); settings share falls back to clipboard on non-abort
+  failures; the crew door prints the invite link permanently.
+- **FLOW-8**: person chips are presence display only — identity switching is
+  an explicit Settings action with a toast.
+- **FLOW-6/11**: settings has the spec's two doors. CREW: rename (validated),
+  members, visible link, Switch crew (landing), two-tap Forget-on-this-device
+  (device-local; back can undo it via history — that's honest). YOU: switch
+  identity, self-rename (new person + tombstone + picks/affinity migrate
+  through additive merges; old notes keep the old byline), 24-board color
+  picker with taken colors disabled.
+
 ## 2026-07-11 (late evening) — DESKTOP + A11Y foundations: the app gets a desktop body
 
 - **Tokens** (design-direction doc): fluid type scale --fs-display/screen/day/

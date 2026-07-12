@@ -70,40 +70,52 @@
       </div>
     </div>
 
-    <!-- Create: pick the fest + your name (design: "Pick the fest and your
-         name next, then share one link") -->
+    <!-- Create, two steps (spec F2): 1 pick the fest, 2 your name -->
     <div id="screen-create" class="entry-screen" style="display:none">
       <div class="center-col">
-        <div style="text-align: center;">
-          <div class="micro-label" style="letter-spacing: .14em;">Add a festival</div>
-          <div class="screen-headline">PICK THE FEST</div>
-          <div style="color: var(--text-secondary); font-size: 13px; margin-top: 8px;">Then your name. Share one link — that's the whole crew setup.</div>
+        <div id="create-step-1" style="display: flex; flex-direction: column; gap: 16px;">
+          <div style="text-align: center;">
+            <div class="micro-label" style="letter-spacing: .14em;">Add a festival</div>
+            <div class="screen-headline">PICK THE FEST</div>
+            <div style="color: var(--text-secondary); font-size: 13px; margin-top: 8px;">Pick the fest. Your name comes next.</div>
+          </div>
+          <div id="create-fests" style="display: flex; flex-direction: column; gap: 7px;"></div>
+          <button id="create-back" class="btn-ghost" style="font-size: 12px; padding: 8px 14px; align-self: center;">‹ Back</button>
         </div>
-        <div id="create-fests" style="display: flex; flex-direction: column; gap: 7px;"></div>
-        <div style="display: flex; gap: 8px; align-items: center;">
-          <input id="create-name-input" maxlength="24" placeholder="Your name" aria-label="Your name"
-                 style="flex: 1; background: var(--page); border: 1px solid var(--border-input); border-radius: 9px; padding: 12px 13px; color: #fff; font-size: 14px; font-family: var(--font-ui);">
-          <button id="create-go-btn" class="btn-tonal" style="font-size: 14px; padding: 12px 24px;">Create</button>
+        <div id="create-step-2" style="display: none; flex-direction: column; gap: 16px;">
+          <div style="text-align: center;">
+            <div class="micro-label" style="letter-spacing: .14em;">Add a festival</div>
+            <div class="screen-headline">NOW YOU</div>
+            <div style="color: var(--text-secondary); font-size: 13px; margin-top: 8px;">Your name becomes your color.</div>
+          </div>
+          <div id="create-chosen" style="align-self: center;"></div>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <input id="create-name-input" maxlength="24" placeholder="Your name" aria-label="Your name"
+                   style="flex: 1; min-width: 0; background: var(--page); border: 1px solid var(--border-input); border-radius: 9px; padding: 12px 13px; color: #fff; font-size: 14px; font-family: var(--font-ui);">
+            <button id="create-go-btn" class="btn-tonal" style="font-size: 14px; padding: 12px 24px;">Create</button>
+          </div>
+          <div id="create-status" style="color: var(--text-tertiary); font-size: 11.5px; font-weight: 600; text-align: center;"></div>
+          <button id="create-back-2" class="btn-ghost" style="font-size: 12px; padding: 8px 14px; align-self: center;">‹ Pick a different fest</button>
         </div>
-        <div id="create-status" style="color: var(--text-tertiary); font-size: 11.5px; font-weight: 600; text-align: center;"></div>
-        <button id="create-back" class="btn-ghost" style="font-size: 12px; padding: 8px 14px; align-self: center;">‹ Back</button>
       </div>
     </div>
 
-    <!-- Join / claim (atlas 21b) -->
+    <!-- Join / claim (atlas 21b) — the invite names the festival (FLOW-10) -->
     <div id="screen-join" class="entry-screen" style="display:none">
       <div class="center-col">
         <div style="text-align: center;">
           <div class="micro-label" style="letter-spacing: .14em;">You're invited to</div>
           <div id="join-fest-name" class="screen-headline" style="color: rgb(var(--fest));"></div>
-          <div style="color: var(--text-secondary); font-size: 13px; margin-top: 8px;">Tap your name, or add yourself.</div>
+          <div id="join-crew-sub" style="color: var(--text-secondary); font-size: 13px; margin-top: 8px;"></div>
+          <div style="color: var(--text-tertiary); font-size: 12px; font-weight: 600; margin-top: 6px;">Tap your name, or add yourself.</div>
         </div>
         <div id="join-people" style="display: flex; flex-direction: column; gap: 8px;"></div>
         <div style="display: flex; gap: 8px; align-items: center;">
           <input id="join-name-input" maxlength="24" placeholder="I'm someone new…" aria-label="Your name"
-                 style="flex: 1; background: var(--page); border: 1px solid var(--border-input); border-radius: 9px; padding: 12px 13px; color: #fff; font-size: 14px; font-family: var(--font-ui);">
+                 style="flex: 1; min-width: 0; background: var(--page); border: 1px solid var(--border-input); border-radius: 9px; padding: 12px 13px; color: #fff; font-size: 14px; font-family: var(--font-ui);">
           <button id="join-add-btn" class="btn-tonal" style="font-size: 14px; padding: 12px 24px;">Join</button>
         </div>
+        <div id="join-status" style="color: var(--text-tertiary); font-size: 11.5px; font-weight: 600; text-align: center;"></div>
       </div>
     </div>
 

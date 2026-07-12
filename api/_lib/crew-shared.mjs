@@ -5,12 +5,17 @@
 // implausible values at write time so garbage never reaches the stored doc.
 // The capability token is the access gate; validation is the shape gate.
 
+// Name rules are SHARED with the client (js/name-rules.mjs): the join and
+// create forms validate with exactly the rule this validator enforces, so a
+// name can never pass the UI and fail the write (FLOW-5).
+import { SAFE_NAME_RE, NAME_LIMITS, FORBIDDEN_NAME_KEYS, validName } from '../../js/name-rules.mjs';
+
 export const LIMITS = {
   docBytes: 256 * 1024,   // hard cap on the stored crew document
   activePeople: 24,
-  personName: 24,
+  personName: NAME_LIMITS.personName,
   artistName: 100,
-  crewName: 40,
+  crewName: NAME_LIMITS.crewName,
   festivalId: 64,
   affinitySongs: 99999,
   noteText: 500,
@@ -24,14 +29,12 @@ export const TOKEN_RE = /^[A-Za-z0-9_-]{20,40}$/;
 const COLOR_RE = /^\d{1,3}, \d{1,3}, \d{1,3}$/;
 const FESTIVAL_ID_RE = /^[a-z0-9-]{1,64}$/;
 const CLIENT_ID_RE = /^[0-9a-fA-F]{32}$/;
-// Printable, no angle brackets / quotes / backticks / control chars.
-// Person and crew names end up in HTML and in AI prompts — keep them tame.
-const SAFE_NAME_RE = /^[^\x00-\x1f<>"'`&\\]{1,}$/;
 
 // Keys that would rebind an object's prototype through the bracket-assign
 // merge below. Validators reject them, and the merge skips them anyway
 // (defense in depth — never rely on a single layer for pollution).
-export const FORBIDDEN_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+export const FORBIDDEN_KEYS = FORBIDDEN_NAME_KEYS;
+export { SAFE_NAME_RE };
 
 export function deepMerge(base, overlay) {
   if (overlay === undefined || overlay === null) return base;
@@ -67,11 +70,6 @@ export const safeKey = (k) => String(k).replace(/[<>&"'`\\]/g, '').slice(0, 40);
 
 function isPlainObject(v) {
   return v !== null && typeof v === 'object' && !Array.isArray(v);
-}
-
-function validName(v, max) {
-  return typeof v === 'string' && v.length <= max && SAFE_NAME_RE.test(v)
-    && v.trim() === v && !FORBIDDEN_KEYS.has(v);
 }
 
 function validArtistKey(v) {
