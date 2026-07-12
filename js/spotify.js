@@ -78,6 +78,18 @@ export async function connect() {
 }
 
 // Called by spotify-callback.html with the ?code from Spotify.
+// The person sees a sentence; the console keeps the forensics.
+//
+// These two throw sites used to interpolate a raw HTTP body and a
+// `Spotify API 429 on /v1/me/tracks` string straight into a message the
+// Settings drill renders with textContent — so a bad moment with Spotify put
+// status codes and endpoint paths on screen in front of someone who just wanted
+// their liked songs badged (finish pass, 2026-07-12).
+function spotifyError(message, detail) {
+  if (detail) console.warn('spotify:', detail);
+  return new Error(message);
+}
+
 export async function completeAuth(code, returnedState) {
   const pkce = JSON.parse(sessionStorage.getItem('fn_spotify_pkce') || 'null');
   if (!pkce || pkce.state !== returnedState) throw new Error('Auth state mismatch — try connecting again.');
@@ -90,7 +102,12 @@ export async function completeAuth(code, returnedState) {
       client_id: pkce.clientId, code_verifier: pkce.verifier,
     }),
   });
-  if (!res.ok) throw new Error('Token exchange failed: ' + (await res.text()).slice(0, 200));
+  if (!res.ok) {
+    throw spotifyError(
+      'Spotify couldn’t finish signing you in. Try connecting again.',
+      `token exchange ${res.status}: ${(await res.text()).slice(0, 200)}`,
+    );
+  }
   const t = await res.json();
   saveLS(LS_AUTH, JSON.stringify({
     clientId: pkce.clientId, access_token: t.access_token,
@@ -138,7 +155,12 @@ async function api(path) {
       await new Promise((r) => setTimeout(r, wait));
       continue;
     }
-    if (!res.ok) throw new Error(`Spotify API ${res.status} on ${path}`);
+    if (!res.ok) {
+      throw spotifyError(
+        'Spotify isn’t responding right now — try again in a minute.',
+        `API ${res.status} on ${path}`,
+      );
+    }
     return await res.json();
   }
   throw new Error('Spotify rate limit would not clear.');

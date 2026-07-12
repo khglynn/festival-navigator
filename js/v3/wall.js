@@ -759,5 +759,40 @@ export function wireScrollspy(containers, wallRoot) {
     }
   }, { rootMargin: '-10% 0px -80% 0px' });
   headers.forEach((h) => io.observe(h));
-  return () => io.disconnect();
+
+  // The observer only speaks when a header crosses a thin band at 10–20% of the
+  // viewport. Any scroll big enough to clear that band in one go — a scrollbar
+  // drag, End, Page-Down, a hard fling on a 6,000px page — never trips it, so
+  // the day tab kept pointing at Thursday while you stood in Sunday's grid, and
+  // stayed wrong until a header happened to drift back through the band. A nav
+  // indicator that lies about where you are is worse than no indicator.
+  //
+  // So geometry gets the last word: after every scroll, the active day is simply
+  // the last day-rule you have scrolled past. rAF-throttled, and it reads the
+  // same --jump-offset the day-tab jump lands against, so the two agree.
+  let ticking = false;
+  const syncFromGeometry = () => {
+    ticking = false;
+    if (!headers.length) return;
+    const offset = parseFloat(
+      getComputedStyle(document.documentElement).getPropertyValue('--jump-offset'),
+    ) || 8;
+    let current = headers[0];
+    for (const h of headers) {
+      if (h.getBoundingClientRect().top <= offset + 1) current = h;
+      else break; // headers are in document order
+    }
+    setActive(current.dataset.day);
+  };
+  const onScroll = () => {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(syncFromGeometry);
+  };
+  window.addEventListener('scroll', onScroll, { passive: true });
+
+  return () => {
+    io.disconnect();
+    window.removeEventListener('scroll', onScroll);
+  };
 }

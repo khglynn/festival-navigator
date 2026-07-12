@@ -12,6 +12,46 @@ export const el = (tag, css, text) => {
   return n;
 };
 
+// ONE festival row, for the create-flow picker and the Settings list both.
+//
+// There were two of these, hand-built, and they had drifted exactly the way two
+// copies of one component always do: the create-flow version muted past
+// festivals and gave them a PAST badge; the Settings version — sitting inside a
+// fold literally labelled "Past festivals" — rendered them at full opacity with
+// no badge, so five archived festivals shouted as loudly as the live one. Kevin
+// asked for "the same component for past festivals in both places" on
+// 2026-07-12; the FOLD was shared that day, but the row inside it was not, so
+// the bug he actually saw survived the fix. This is the row.
+//
+// `sub` lets Settings add its pick counts without forking the component;
+// `chev` lets it keep its drill-in affordance. Everything else is shared.
+export function festRow(f, { muted = false, sub, chev = false, onPick }) {
+  const row = el('button', 'width: 100%;');
+  row.className = 'fest-row';
+  if (muted) row.style.opacity = '.72';
+
+  const left = el('div', 'flex: 1; min-width: 0; text-align: left;');
+  const nm = el('span', `font-family: var(--font-display); letter-spacing: .04em; font-size: var(--fs-day); color: rgb(${f.accent || '237, 234, 244'}); white-space: nowrap;`, f.name.toUpperCase());
+  nm.appendChild(el('span', 'font-size: .65em; opacity: .75;', ' ' + (f.year || '')));
+  left.appendChild(nm);
+  const subEl = el('div', '', sub !== undefined ? sub : (f.dates || ''));
+  subEl.className = 'fest-dates';
+  left.appendChild(subEl);
+  row.appendChild(left);
+
+  if (muted) {
+    const badge = el('span', 'flex: none; color: var(--text-tertiary); font-size: 10px; font-weight: 800; letter-spacing: .08em; border: 1px solid var(--border-card); border-radius: var(--r-pill); padding: 3px 8px;', 'PAST');
+    row.appendChild(badge);
+  }
+  if (chev) {
+    const c = el('span', '', '›');
+    c.className = 'chev';
+    row.appendChild(c);
+  }
+  row.addEventListener('click', () => onPick(f));
+  return row;
+}
+
 export function subviewHead(title, onBack) {
   const head = el('div', 'display: flex; align-items: center; gap: 10px;');
   const back = el('button', '', '‹'); back.className = 'back-btn';
@@ -58,9 +98,17 @@ export function eqLoader(labelText) {
 // ---- export picks (function names keep the legacy likes wording) ---------------------------------------------------------------
 export function exportLikesText(ctx) {
   const picks = model.picksFor(state.crewDoc, ctx.fid);
+  // Active members only. Export's own caption calls this output "paste-ready for
+  // Bulk paste" — and Bulk paste accepts active members ONLY, so every line we
+  // emitted for a removed member came straight back as "Unknown people skipped".
+  // The app was handing you a file and then refusing to read it. (Their picks
+  // would not render anywhere even if re-imported: every reader filters
+  // tombstoned people.) Finish pass, 2026-07-12.
+  const isActive = (person) => state.isActivePerson(state.people()[person]);
   const byPerson = {};
   for (const [artist, byP] of Object.entries(picks)) {
     for (const [person, level] of Object.entries(byP)) {
+      if (!isActive(person)) continue;
       (byPerson[person] = byPerson[person] || []).push({ artist, level });
     }
   }
@@ -142,7 +190,7 @@ export function openBulkPaste(host, actions) {
       status.textContent = 'This crew is still updating — nothing was applied. Try again in a moment.';
       return;
     }
-    const parts = [`${r.applied} picks applied.`];
+    const parts = [`${r.applied} pick${r.applied === 1 ? '' : 's'} applied.`];
     if (r.unknownPeople.length) parts.push(`Unknown people skipped: ${r.unknownPeople.join(', ')}.`);
     if (r.unknownArtists.length) {
       const shown = r.unknownArtists.slice(0, 8).join(', ');

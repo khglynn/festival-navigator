@@ -6,17 +6,12 @@
  * dialogs, auto-fill grid), and the unannounced quality floor (focus-visible
  * everywhere, 44px touch targets, reduced-motion). */
 
-/* ---- focus + motion floor (AX-2) ---------------------------------------------- */
-/* Quiet by default, unmistakable on keyboard: one focus language everywhere. */
-button, input, textarea, select, a, [role="button"], [role="option"] { outline: none; }
-:focus-visible {
-  outline: 2px solid rgba(var(--fest), .9) !important; /* beats inline resets */
-  outline-offset: 2px;
-}
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation: none !important; transition: none !important; }
-  .hero-grain, .card-grain { display: none; }
-}
+/* The focus + motion floor (AX-2) MOVED to v3-tokens.css on 2026-07-12.
+ * It lived here, and 404.html does not load this file — so the 404 page, which
+ * runs two infinite animations, ignored prefers-reduced-motion entirely. An
+ * accessibility floor that only applies to pages someone remembered to wire up
+ * is not a floor. It now sits in the tokens file, which every styled page
+ * loads, so the next standalone page inherits it without anyone thinking. */
 
 /* ---- artist card (the atom) ------------------------------------------------ */
 .card {
@@ -106,6 +101,12 @@ button, input, textarea, select, a, [role="button"], [role="option"] { outline: 
 .person-chip { color: #fff; font-size: 11.5px; font-weight: 600; padding: 5px 12px;
                border-radius: var(--r-pill); border: none; cursor: pointer; }
 .person-chip.you { font-weight: 700; }
+/* A chip's job is to say "this person, in their colour". On the wall and in the
+ * crew list it is also a button. In the Settings fest card it is a roster — and
+ * it was rendering as an inert <span> that still inherited cursor:pointer, so it
+ * looked exactly like the two chips that DO something and silently did nothing
+ * when tapped. Same component, honest about which job it is doing here. */
+.person-chip.static { cursor: default; }
 .person-chip.add { background: transparent; border: 1.5px dashed var(--border-emphasis);
                    color: var(--text-secondary); padding: 4px 10px; }
 .avatar { width: 17px; height: 17px; border-radius: var(--r-pill); color: #fff; font-size: 8px;
@@ -148,7 +149,9 @@ button, input, textarea, select, a, [role="button"], [role="option"] { outline: 
 .sort-pop [role="option"]:hover, .sort-pop [role="option"].kb-active {
   background: rgba(255, 255, 255, .08);
 }
-.sort-pop [role="option"][aria-selected="true"] { color: rgb(var(--fest)); }
+/* Brand, not fest accent: a selected sort option is app chrome. The accent is
+ * reserved for fest name / active day tab / stage headers / current-fest border. */
+.sort-pop [role="option"][aria-selected="true"] { color: rgb(var(--brand)); }
 .sort-pop .check { width: 12px; flex: none; font-size: 11px; }
 .notes-chip {
   display: inline-flex; align-items: center; gap: 5px; background: transparent;
@@ -271,13 +274,35 @@ button, input, textarea, select, a, [role="button"], [role="option"] { outline: 
                  background: none; border-top: none; border-left: none; border-right: none;
                  cursor: pointer; font-family: var(--font-ui); flex: none; position: relative; }
 /* 44px touch floor on coarse pointers without moving a pixel of layout:
- * expand the hit area, not the element (AX-6). */
+ * expand the hit area, not the element (AX-6).
+ *
+ * This used to NAME six selectors, and the naming was the bug. Every control
+ * added since — the person chips, the Notes chip, the day-rule "+ note" chip,
+ * every ghost/tonal button in Settings and in all five drills, the toggles, the
+ * colour swatches, the whole desktop day rail — simply never got added to the
+ * list, and measured 17–28px on a phone. Three independent walkers found it in
+ * three different places, which is the tell that it was never six bugs: it was
+ * one list nobody remembers to edit (finish pass, 2026-07-12).
+ *
+ * So it applies to BUTTONS, and every future control inherits it by being what
+ * it already is. The floor stops being something you have to remember.
+ *
+ * -14px vertical clears the floor from the shortest real control (17px -> 45px).
+ * Horizontal stays at -5px on purpose: chips sit ~6px apart in a row, and a
+ * generous horizontal grab would let one chip swallow taps meant for its
+ * neighbour — in a crowd, that is a wrong pick under someone's name. */
 @media (pointer: coarse) {
-  .dock .you::after, .dock .day-tab::after, .gear-btn::after, .pin-btn::after,
-  .back-btn::after, .fest-link::after {
-    content: ''; position: absolute; inset: -10px;
-  }
-  .gear-btn, .pin-btn, .back-btn, .fest-link { position: relative; }
+  button { position: relative; }
+  button::after { content: ''; position: absolute; inset: -14px -5px; }
+
+  /* Controls INSIDE a card are the exception: the card IS the tap target. An
+   * expanded edit-note button would steal taps meant for the pick underneath
+   * it, on the densest surface in the app. */
+  .card button::after { content: none; }
+
+  /* An input cannot carry a pseudo-element, so the search field is the one
+   * place the floor has to be real height rather than borrowed space. */
+  #search-input { min-height: 44px; }
 }
 .dock .day-tab .num { font-size: 9px; font-weight: 600; margin-left: 2px; }
 .dock .day-tab.active { color: rgb(var(--fest)); font-weight: 800; border-bottom-color: rgb(var(--fest)); }
@@ -411,7 +436,9 @@ button, input, textarea, select, a, [role="button"], [role="option"] { outline: 
 /* Tiny equalizer — the app's "working" pulse (crew create, lineup research).
  * The global reduced-motion rule freezes it into three quiet bars. */
 .eq-loader { display: inline-flex; align-items: flex-end; gap: 2.5px; height: 13px; vertical-align: middle; }
-.eq-loader span { width: 3px; border-radius: 2px; background: rgb(var(--fest)); height: 30%;
+/* Brand, not fest accent — this loader runs while a crew is being created,
+ * i.e. before a festival has been picked at all. */
+.eq-loader span { width: 3px; border-radius: 2px; background: rgb(var(--brand)); height: 30%;
                   animation: eqBounce .9s ease-in-out infinite; }
 .eq-loader span:nth-child(2) { animation-delay: .15s; }
 .eq-loader span:nth-child(3) { animation-delay: .3s; }
@@ -422,4 +449,4 @@ button, input, textarea, select, a, [role="button"], [role="option"] { outline: 
                 font-size: 18px; color: var(--text-header); }
 .seg { border: 1px solid var(--border-input); color: var(--text-secondary); font-weight: 600;
        font-size: 12px; padding: 7px 13px; border-radius: var(--r-pill); background: none; cursor: pointer; }
-.seg.active { background: rgba(var(--fest), .14); color: #fff; border-color: transparent; font-weight: 700; }
+.seg.active { background: rgba(var(--brand), .14); color: #fff; border-color: transparent; font-weight: 700; }

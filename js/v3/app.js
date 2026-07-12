@@ -10,8 +10,8 @@ import * as spotify from '../spotify.js';
 import * as model from './model.js';
 import { loadFestivalIndex, loadFestival, loadCustomFestivals, FESTIVAL_INDEX, defaultFestivalId } from '../festivals.js';
 import { renderWall, refreshCard, showUndoToast, showToast, wireScrollspy, colorIndexOf, groupByDay, knownDaysOf } from './wall.js';
-import { disclosureFold, eqLoader } from './tools.js';
-import { openArtistSheet, openDayNotes, openAllNotes, closeSheet, refreshOpenSheet } from './notes.js';
+import { disclosureFold, eqLoader, festRow } from './tools.js';
+import { openArtistSheet, openDayNotes, openAllNotes, closeSheet, refreshOpenSheet, sheetChrome, dialogize, rememberOpener } from './notes.js';
 import { renderSettings, appSettings, openSubviewByKey } from './settings.js';
 import { onStorageWriteFail } from '../util.js';
 import { router } from './router.js';
@@ -326,15 +326,30 @@ function maybeShowCoachMark() {
 }
 
 // An archived fest reads as a memory, not a live plan (ST-5).
+//
+// The banner is keyed to the fest it was written for. It used to bail out with
+// `if (existing) return`, so switching from one archived festival straight to
+// another left the PREVIOUS festival's name sitting above the new one's wall —
+// the screen calmly saying you were looking at Electric Forest while showing
+// you Lollapalooza (finish pass, 2026-07-12).
 function updateArchiveNote() {
   const existing = document.getElementById('archive-note');
   const fest = state.fest();
   if (fest.status !== 'archived') { if (existing) existing.remove(); return; }
-  if (existing) return;
+
+  const text = `${fest.name} ${fest.year || ''} already happened — this wall is the memory. Picks still work for the record.`.replace('  ', ' ');
+  if (existing) {
+    if (existing.dataset.fid !== fest.id) {
+      existing.dataset.fid = fest.id;
+      existing.textContent = text;
+    }
+    return;
+  }
   const bar = document.createElement('div');
   bar.id = 'archive-note';
+  bar.dataset.fid = fest.id;
   bar.style.cssText = 'margin-top: 11px; padding: 9px 13px; border: 1px solid var(--border-card); border-radius: var(--r-row); color: var(--text-secondary); font-size: 12px; font-weight: 600; line-height: 1.45; background: var(--card);';
-  bar.textContent = `${fest.name} ${fest.year || ''} already happened — this wall is the memory. Picks still work for the record.`.replace('  ', ' ');
+  bar.textContent = text;
   insertStrip(bar);
 }
 
@@ -394,34 +409,11 @@ const anyScreenVisible = () => SCREENS.some((id) => $(id).style.display !== 'non
 // ---- create, two steps (spec F2): pick the fest, then your name --------------------
 let createFid = null;
 
+// The shared row (tools.js). This used to be a second hand-built copy, and the
+// copy is how Settings ended up showing past festivals at full weight while
+// this screen muted them.
 function festPickRow(f, { muted = false, onPick }) {
-  const row = document.createElement('button');
-  row.className = 'fest-row';
-  row.style.width = '100%';
-  if (muted) row.style.opacity = '.72';
-  const left = document.createElement('div');
-  left.style.cssText = 'flex: 1; min-width: 0; text-align: left;';
-  const nm = document.createElement('span');
-  nm.style.cssText = `font-family: var(--font-display); letter-spacing: .04em; font-size: var(--fs-day); color: rgb(${f.accent || '237, 234, 244'}); white-space: nowrap;`;
-  nm.textContent = f.name.toUpperCase();
-  const yr = document.createElement('span');
-  yr.style.cssText = 'font-size: .65em; opacity: .75;';
-  yr.textContent = ' ' + (f.year || '');
-  nm.appendChild(yr);
-  left.appendChild(nm);
-  const sub = document.createElement('div');
-  sub.className = 'fest-dates';
-  sub.textContent = f.dates || '';
-  left.appendChild(sub);
-  row.appendChild(left);
-  if (muted) {
-    const badge = document.createElement('span');
-    badge.style.cssText = 'flex: none; color: var(--text-tertiary); font-size: 10px; font-weight: 800; letter-spacing: .08em; border: 1px solid var(--border-card); border-radius: var(--r-pill); padding: 3px 8px;';
-    badge.textContent = 'PAST';
-    row.appendChild(badge);
-  }
-  row.addEventListener('click', () => onPick(f));
-  return row;
+  return festRow(f, { muted, onPick });
 }
 
 function renderCreate() {
@@ -504,6 +496,7 @@ async function createCrewFlow() {
 // One centered dialog right after create (and re-openable from Settings):
 // the link is VISIBLE — share sheets fail silently, a printed URL never does.
 function openShareMoment() {
+  rememberOpener();
   closeSheet();
   const backdrop = document.createElement('div');
   backdrop.className = 'sheet-backdrop';
@@ -512,11 +505,11 @@ function openShareMoment() {
   const sheet = document.createElement('div');
   sheet.className = 'sheet';
   sheet.id = 'artist-sheet'; // closeSheet + the router's sheet kind own this id
-  const grabber = document.createElement('div');
-  grabber.className = 'grabber';
-  const title = document.createElement('span');
-  title.className = 'sheet-title';
-  title.textContent = 'ONE LINK MAKES IT A CREW';
+  // The shared chrome from notes.js — grabber that really swipes, title, and a
+  // real ✕. This sheet used to hand-copy the markup, which is exactly how it
+  // drifted into having no close button and no dialog semantics while looking
+  // pixel-identical to the ones that do.
+  sheetChrome(sheet, 'ONE LINK MAKES IT A CREW');
   const sub = document.createElement('div');
   sub.style.cssText = 'color: var(--text-secondary); font-size: 12.5px; line-height: 1.55;';
   sub.textContent = `Anyone who opens it lands in ${state.crewName()} — no accounts, no setup.`;
@@ -561,7 +554,8 @@ function openShareMoment() {
   later.textContent = 'Later';
   later.addEventListener('click', () => { if (!router.requestClose()) closeSheet(); });
   actionsRow.appendChild(later);
-  sheet.append(grabber, title, sub, linkRowEl, actionsRow);
+  sheet.append(sub, linkRowEl, actionsRow); // chrome (grabber + title + ✕) is already on
+  dialogize(sheet, 'Share your crew link');
   document.body.append(backdrop, sheet);
 }
 
@@ -572,6 +566,7 @@ function openShareMoment() {
 // per-person claim link (&me=) — opening it lands them on THEIR circle with
 // every pick already theirs.
 function openAddMember() {
+  rememberOpener();
   closeSheet();
   const backdrop = document.createElement('div');
   backdrop.className = 'sheet-backdrop';
@@ -580,11 +575,7 @@ function openAddMember() {
   const sheet = document.createElement('div');
   sheet.className = 'sheet';
   sheet.id = 'artist-sheet'; // closeSheet + the router's sheet kind own this id
-  const grabber = document.createElement('div');
-  grabber.className = 'grabber';
-  const title = document.createElement('span');
-  title.className = 'sheet-title';
-  title.textContent = 'ADD SOMEONE';
+  sheetChrome(sheet, 'ADD SOMEONE'); // one sheet anatomy, everywhere (see openShareMoment)
   const sub = document.createElement('div');
   sub.style.cssText = 'color: var(--text-secondary); font-size: 12.5px; line-height: 1.55;';
   sub.textContent = 'You pick for them until they claim it — their link makes it theirs the moment they open it.';
@@ -602,7 +593,8 @@ function openAddMember() {
   row.append(input, addBtn);
   const status = document.createElement('div');
   status.style.cssText = 'color: var(--text-tertiary); font-size: 11.5px; font-weight: 600;';
-  sheet.append(grabber, title, sub, row, status);
+  sheet.append(sub, row, status); // chrome (grabber + title + ✕) is already on
+  dialogize(sheet, 'Add someone to the crew');
   document.body.append(backdrop, sheet);
   input.focus();
 
@@ -611,9 +603,9 @@ function openAddMember() {
     renderPersonChips();
     repaintWall();
     sheet.textContent = '';
-    const done = document.createElement('span');
-    done.className = 'sheet-title';
-    done.textContent = `${canonical.toUpperCase()} IS IN`;
+    // Re-chrome the success state too, or it loses the ✕ and the swipe-to-close
+    // the moment it becomes the thing you are actually looking at.
+    sheetChrome(sheet, `${canonical.toUpperCase()} IS IN`);
     const explain = document.createElement('div');
     explain.style.cssText = 'color: var(--text-secondary); font-size: 12.5px; line-height: 1.55;';
     explain.textContent = `Pick for ${canonical} by switching to them in Settings → You. Or send them their own link — opening it puts your picks in their hands:`;
@@ -654,7 +646,7 @@ function openAddMember() {
     doneBtn.textContent = 'Done';
     doneBtn.addEventListener('click', () => { if (!router.requestClose()) closeSheet(); });
     actionsRow.appendChild(doneBtn);
-    sheet.append(grabber, done, explain, linkRowEl, actionsRow);
+    sheet.append(explain, linkRowEl, actionsRow);
   };
 
   const doAdd = async () => {
@@ -756,6 +748,13 @@ function openSettings() {
       state.setActiveFestivalId(fid);
       state.ensureFestivalState(fid);
       state.setCurrentDay(null);
+      // Drop the search query with the festival it belonged to. It used to
+      // survive the switch, so arriving at a festival you had never searched
+      // showed you "No artists match" over a full lineup — the app reporting an
+      // empty festival because of something you typed on a different one.
+      ctx.query = '';
+      const searchBox = $('search-input');
+      if (searchBox) searchBox.value = '';
       // The scanned library is a device asset — switching fests badges the
       // new lineup from the cache, no rescan (SPOT-5).
       if (ctx.meName && spotify.isConnected() && spotify.libraryMap()) {
@@ -1076,16 +1075,21 @@ async function enterApp(token, doc, current = () => true) {
 // retyped). Otherwise: offline OR a server error — and the copy must not
 // blame the user's connection for the server's problem (audit re-run finding:
 // a 500 used to read as "you're offline" while navigator.onLine was true).
-function renderBadLink(token, { gone }) {
+function renderBadLink(token, { gone, malformed }) {
   show('screen-badlink');
   document.title = 'Festival Navigator';
-  $('badlink-msg').textContent = gone
-    ? 'It may have been retyped, or the crew was deleted. Ask your crew for a fresh link and paste it here.'
-    : (navigator.onLine
-      ? 'The crew service hit an error — it’s not you, and your link is probably fine. Try again in a minute.'
-      : 'You’re offline and this crew isn’t saved on this device yet. Reconnect, then open the link again.');
+  $('badlink-msg').textContent = malformed
+    // The commonest cause by far: a chat app clipped the link, or only half of
+    // it got pasted. Name that, and give them the one thing that fixes it.
+    ? 'That crew link looks cut off — messaging apps sometimes clip long links. Paste the whole thing here, ending in a long jumble of letters.'
+    : gone
+      ? 'It may have been retyped, or the crew was deleted. Ask your crew for a fresh link and paste it here.'
+      : (navigator.onLine
+        ? 'The crew service hit an error — it’s not you, and your link is probably fine. Try again in a minute.'
+        : 'You’re offline and this crew isn’t saved on this device yet. Reconnect, then open the link again.');
   if (gone) crew.forgetCrew(token); // dead crews don't haunt the landing list
-  else $('badlink-input').value = crew.crewLink(token);
+  else if (!malformed) $('badlink-input').value = crew.crewLink(token);
+  else $('badlink-input').value = ''; // nothing worth pre-filling from a broken link
   $('badlink-status').textContent = '';
   $('badlink-open').onclick = () => {
     const m = ($('badlink-input').value || '').match(/g=([A-Za-z0-9_-]{20,40})/);
@@ -1128,6 +1132,10 @@ export async function boot() {
     try { await loadFestivalIndex(); } catch { /* offline with cache: proceed */ }
 
     if (location.hash === '#new') { renderCreate(); return; }
+    // A crew link that is present but malformed (truncated by a chat app, half
+    // pasted) must say so. Falling through to the landing page told the person
+    // nothing at all — the app quietly acting as if they had never clicked.
+    if (crew.hashHasBrokenToken()) { renderBadLink('', { gone: false, malformed: true }); return; }
     const token = crew.bootTokenFor(crew.tokenFromHash(), crew.activeCrewToken(), isFirst);
     if (!token) { renderLanding(); return; }
 

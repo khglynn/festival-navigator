@@ -167,7 +167,10 @@ function composer(placeholder, onSave, draftKey) {
 }
 
 // ---- sheet chrome: grabber (with a real swipe), title, a real close (NT-5) ----------
-function sheetChrome(sheet, titleText) {
+// Exported so app.js's share + add-member sheets use THIS one instead of
+// hand-copying the markup — which is how they ended up without a close button,
+// without role=dialog, and without focus restore, while looking identical.
+export function sheetChrome(sheet, titleText) {
   const grabber = document.createElement('div');
   grabber.className = 'grabber';
   // The grabber advertises a swipe — so it swipes. Drag down past 70px closes.
@@ -214,12 +217,32 @@ export function refreshOpenSheet() {
 // Dialog semantics + focus management (AX-4): the sheet is a modal — it takes
 // focus on open, Tab cycles inside it, and focus returns where it was on close.
 let restoreFocusTo = null;
-function dialogize(sheet, label) {
+
+// Whoever opened the sheet — captured ONCE, and deliberately not re-captured.
+//
+// Adding or deleting a note tears the sheet down and rebuilds it. The rebuild
+// used to re-capture document.activeElement, which at that moment is the Delete
+// button inside the sheet that is about to be destroyed — so on close, focus had
+// nowhere to go and fell through to <body>. A keyboard user had to tab from the
+// top of the page to find their place again, but only after they had actually
+// USED the sheet (finish pass, 2026-07-12).
+export function rememberOpener() {
+  if (!document.getElementById('sheet-backdrop')) restoreFocusTo = document.activeElement;
+}
+
+// Remove the sheet WITHOUT touching focus — this is the re-render path.
+// closeSheet() is the "we are really done here" path, and it restores.
+function teardownSheet() {
+  document.getElementById('sheet-backdrop')?.remove();
+  document.getElementById('artist-sheet')?.remove();
+  activeSheetRepaint = null;
+}
+
+export function dialogize(sheet, label) {
   sheet.setAttribute('role', 'dialog');
   sheet.setAttribute('aria-modal', 'true');
   sheet.setAttribute('aria-label', label);
   sheet.tabIndex = -1;
-  restoreFocusTo = document.activeElement;
   requestAnimationFrame(() => sheet.focus());
   sheet.addEventListener('keydown', (e) => {
     if (e.key !== 'Tab') return;
@@ -234,7 +257,8 @@ function dialogize(sheet, label) {
 
 // ---- scope sheet (artist or day) — one surface, two scopes (21g / NT-2) -------------
 function openScopeSheet(scope, target, titleText, ctx, onChange) {
-  closeSheet();
+  rememberOpener();  // no-op on a re-render — the original opener is kept
+  teardownSheet();   // NOT closeSheet(): a re-render must not restore focus
   const backdrop = document.createElement('div');
   backdrop.className = 'sheet-backdrop';
   backdrop.id = 'sheet-backdrop';
@@ -291,9 +315,7 @@ export function openDayNotes(day, ctx, onChange) {
 
 export function closeSheet() {
   const wasOpen = document.getElementById('artist-sheet');
-  document.getElementById('sheet-backdrop')?.remove();
-  document.getElementById('artist-sheet')?.remove();
-  activeSheetRepaint = null;
+  teardownSheet();
   if (wasOpen && restoreFocusTo && restoreFocusTo.isConnected) restoreFocusTo.focus();
   restoreFocusTo = null;
 }
@@ -302,7 +324,8 @@ export function closeSheet() {
 // You can always ADD a festival note right here — composer first, then the
 // scope sections. The empty state is an invitation, never a redirect.
 export function openAllNotes(ctx) {
-  closeSheet();
+  rememberOpener();
+  teardownSheet();
   const backdrop = document.createElement('div');
   backdrop.className = 'sheet-backdrop';
   backdrop.id = 'sheet-backdrop';

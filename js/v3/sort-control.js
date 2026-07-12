@@ -9,7 +9,7 @@ const OPTIONS = [
   { value: 'billing', label: 'Billing' },
   { value: 'az', label: 'A → Z' },
   { value: 'mine', label: 'My picks' },
-  { value: 'crew', label: 'Crew favorites' },
+  { value: 'crew', label: 'Most picked' },  // vocabulary is picked/must/notes/fest — never 'favorites'
 ];
 
 export function createSortControl({ initial = 'billing', onChange }) {

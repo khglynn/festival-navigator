@@ -23,7 +23,7 @@ export function validName(v, max) {
 
 // Human-facing reason for the join/create forms (null = fine).
 export function nameProblem(name, max = NAME_LIMITS.personName) {
-  if (!name) return 'A name is needed — it becomes your color.';
+  if (!name) return 'Add your name so the crew knows whose picks are whose.';
   if (name.trim() !== name) return 'No spaces at the start or end.';
   if (name.length > max) return `Keep it under ${max} characters.`;
   if (!SAFE_NAME_RE.test(name) || FORBIDDEN_NAME_KEYS.has(name)) {

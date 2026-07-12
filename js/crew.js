@@ -39,6 +39,21 @@ export function tokenFromHash() {
   return m ? m[1] : null;
 }
 
+// "There is a crew link here, and it is broken" — which is a completely
+// different thing from "there is no crew link here".
+//
+// A truncated link (chat apps clip long URLs; people paste half of one) failed
+// tokenFromHash's shape check, returned null, and dropped the person on the
+// plain landing page with no explanation at all — the app silently pretending
+// they had never clicked anything. They are staring at the wrong screen with no
+// idea why, holding what they believe is a valid invite (finish pass,
+// 2026-07-12).
+export function hashHasBrokenToken() {
+  const hash = location.hash || '';
+  if (!/[#&]g=/.test(hash)) return false;   // no crew link at all — landing is right
+  return tokenFromHash() === null;          // a crew link that does not parse
+}
+
 // The festival context riding an invite link (#g=<token>&f=<festId>). Read it
 // at boot, BEFORE enterApp's replaceState strips the hash down to #g=.
 export function festFromHash() {

@@ -36,6 +36,13 @@
   --notes-chip-text: #A99BFF;
   --tonal-fill: rgba(192, 132, 252, .13);
   --tonal-text: #D8B4FE;
+  /* The APP's own violet, as an R,G,B triple. Distinct from --fest on purpose:
+   * the festival accent is reserved for exactly four places (fest name, active
+   * day tab, stage headers, the current-fest border). Everything else that
+   * wants to look "selected" or "ours" reaches for this instead — including the
+   * loader shown while a crew is being CREATED, which used to wear a festival's
+   * accent before any festival had been chosen. */
+  --brand: 192, 132, 252;
   --sync-ok: #10B981;
   --sync-syncing: #F59E0B;
   --sync-offline: #6B7280;
@@ -83,19 +90,31 @@
   :root { --shell-max: 1080px; }
 }
 
+/* ---- focus + motion floor (AX-2) ----------------------------------------------
+ * Lives HERE, not in v3.css, because 404.html does not load v3.css — so the 404
+ * page ran two infinite animations straight through prefers-reduced-motion. A
+ * floor that only covers the pages someone remembered to wire up is not a
+ * floor. Every styled page loads this file (finish pass, 2026-07-12). */
+/* Quiet by default, unmistakable on keyboard: one focus language everywhere. */
+button, input, textarea, select, a, [role="button"], [role="option"] { outline: none; }
+:focus-visible {
+  outline: 2px solid rgba(var(--fest), .9) !important; /* beats inline resets */
+  outline-offset: 2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+  .hero-grain, .card-grain { display: none; }
+}
+
 @keyframes gradShift {
   0% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
   100% { background-position: 0% 50%; }
 }
-@keyframes hueSpin { to { filter: hue-rotate(360deg); } }
+/* (hueSpin removed 2026-07-12 — see .hero-bg below.) */
 
-/* Brand gradient ("the pulse") — chrome accents, toggle-on, gradient text */
-.pulse-bg {
-  background: linear-gradient(90deg, #C084FC, #F472B6, #8B5CF6, #C084FC);
-  background-size: 300% 100%;
-  animation: gradShift 8s ease-in-out infinite;
-}
+/* Brand gradient ("the pulse") — gradient text on the wordmark.
+ * (.pulse-bg removed 2026-07-12: zero consumers, grep-verified.) */
 .pulse-text {
   background: linear-gradient(90deg, #C084FC, #F472B6, #8B5CF6, #C084FC);
   background-size: 300% 100%;
@@ -118,7 +137,13 @@
     radial-gradient(50% 95% at 92% 10%, hsla(221, 90%, 58%, .95) 0%, hsla(221, 90%, 58%, .4) 55%, transparent 100%),
     #12101E;
   background-size: 220% 220%;
-  animation: gradShift 18s ease-in-out infinite, hueSpin 34s linear infinite;
+  /* gradShift only. A hueSpin 34s hue-rotate(360deg) used to ride on top, which
+   * means the three stops above — chosen orange, pink, blue — were only ever on
+   * screen for a sliver of each cycle. The rest of the time the app's very first
+   * call to action sat in muddy olive and brown, on the landing page, for a new
+   * person's first impression. Rotating a deliberately-chosen palette through
+   * every hue is not motion that communicates; it just undoes the palette. */
+  animation: gradShift 18s ease-in-out infinite;
 }
 .hero-grain { position: absolute; inset: 0; background-image: var(--grain); opacity: .4; mix-blend-mode: overlay; }
 .hero-label {

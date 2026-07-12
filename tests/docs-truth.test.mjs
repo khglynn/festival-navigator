@@ -113,15 +113,19 @@ test('the README uses the real pick vocabulary', () => {
 });
 
 test('package.json describes the app that exists, not one festival', () => {
-  // The description used to hardcode "Electric Forest '26 (Lollapalooza archived)".
-  // Festivals come and go from data/festivals/; the description must not name them
-  // or it is stale the day a festival is added.
+  // The description used to hardcode "Electric Forest '26 (Lollapalooza archived)"
+  // and the keywords still listed "electric-forest" one line below. Festivals come
+  // and go from data/festivals/; naming one here is stale the day another is added.
   const index = JSON.parse(read('data/festivals/index.json'));
+  const slug = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+  const haystack = `${pkg.description} ${(pkg.keywords || []).join(' ')}`.toLowerCase();
+
   const named = index
     .map((f) => f.name)
-    .filter((name) => pkg.description.includes(name));
+    .filter((name) => haystack.includes(name.toLowerCase()) || haystack.includes(slug(name)));
+
   assert.deepEqual(
     named, [],
-    `package.json description names specific festivals (${named.join(', ')}) — it will rot; describe the app instead`,
+    `package.json names specific festivals (${named.join(', ')}) in its description/keywords — it will rot; describe the app instead`,
   );
 });

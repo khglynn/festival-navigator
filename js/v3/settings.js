@@ -9,7 +9,7 @@ import * as model from './model.js';
 import { FESTIVAL_INDEX } from '../festivals.js';
 import { BOARD, hslOf, strokeOf } from './palette.js';
 import { colorIndexOf } from './wall.js';
-import { el, subviewHead, disclosureFold, eqLoader, openExportLikes, openBulkPaste, openDayImage } from './tools.js';
+import { el, subviewHead, disclosureFold, eqLoader, festRow, openExportLikes, openBulkPaste, openDayImage } from './tools.js';
 import { router } from './router.js';
 import { nameProblem, NAME_LIMITS } from '../name-rules.mjs';
 import { loadJSON, saveLS } from '../util.js';
@@ -39,11 +39,17 @@ function toggleRow(title, sub, checked, onFlip) {
   toggle.setAttribute('aria-label', title);
   toggle.appendChild(el('span')).className = '';
   toggle.firstChild.className = 'toggle-knob';
-  toggle.addEventListener('click', () => {
+  const flip = () => {
     const now = toggle.getAttribute('aria-checked') !== 'true';
     toggle.setAttribute('aria-checked', String(now));
     onFlip(now);
-  });
+  };
+  toggle.addEventListener('click', (e) => { e.stopPropagation(); flip(); });
+  // The whole row flips it. The 40x24 switch was the only live target, so
+  // tapping the words "Low power" — the obvious thing to tap, and the big
+  // thing to tap — did nothing at all (finish pass, 2026-07-12).
+  row.style.cursor = 'pointer';
+  row.addEventListener('click', flip);
   row.append(left, toggle);
   return row;
 }
@@ -69,8 +75,11 @@ function currentFestCard(ctx, actions) {
   const nm = el('span', `font-family: var(--font-display); letter-spacing: .04em; font-size: 19px; color: rgb(var(--fest)); white-space: nowrap;`, fest.name.toUpperCase());
   const yr = el('span', 'font-size: .62em; opacity: .75;', ' ' + (fest.year || ''));
   nm.appendChild(yr);
-  const dates = el('span', 'color: var(--text-tertiary); font-size: 11px; font-weight: 600; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;', fest.dates || '');
-  dates.title = fest.dates || ''; // truncated long date strings recover on hover (audit 9.1)
+  // Two-line clamp, not a one-line ellipsis. ACL runs two weekends and its date
+  // string says so; clipping it to "October 2-4, 20..." with a title= tooltip
+  // meant a phone — where title= does nothing at all — could never show the
+  // second weekend. The dates are the whole point of the card.
+  const dates = el('span', 'color: var(--text-tertiary); font-size: 11px; font-weight: 600; flex: 1; min-width: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;', fest.dates || '');
   // The ONE sync state (PS-5): same source as the dot — a "synced" label
   // computed from hasPending alone lied whenever the network was down.
   const LABELS = {
@@ -89,8 +98,10 @@ function currentFestCard(ctx, actions) {
 
   const chips = el('div', 'display: flex; gap: 5px; flex-wrap: wrap; margin-top: 10px;');
   for (const [name, p] of state.activePeople()) {
+    // A roster, not a control — `static` drops the cursor:pointer this chip
+    // inherits, so it stops promising a tap it never handled.
     const chip = el('span', '', name);
-    chip.className = 'person-chip' + (name === ctx.meName ? ' you' : '');
+    chip.className = 'person-chip static' + (name === ctx.meName ? ' you' : '');
     const ci = colorIndexOf(name, p);
     chip.style.background = hslOf(ci, 0.5);
     chip.style.border = '1px solid ' + strokeOf(ci, name === ctx.meName);
@@ -144,23 +155,18 @@ function festivalsSection(ctx, actions) {
 
   const active = FESTIVAL_INDEX.filter((f) => f.status !== 'archived' && f.id !== state.activeFestivalId);
   const archived = FESTIVAL_INDEX.filter((f) => f.status === 'archived' && f.id !== state.activeFestivalId);
-  const festRow = (f) => {
-    const row = el('button', 'width: 100%;');
-    row.className = 'fest-row';
-    const left = el('div', 'flex: 1; min-width: 0; text-align: left;');
-    const nm = el('span', `font-family: var(--font-display); letter-spacing: .04em; font-size: 15px; color: rgb(${f.accent || '237, 234, 244'}); white-space: nowrap;`, f.name.toUpperCase());
-    nm.appendChild(el('span', 'font-size: .65em; opacity: .75;', ' ' + (f.year || '')));
-    left.appendChild(nm);
+  // The shared row (tools.js) — the same one the create-flow picker uses, so a
+  // past festival cannot look "past" on one screen and current on the other.
+  const row = (f, muted) => {
     const picks = Object.keys(model.picksFor(state.crewDoc, f.id)).length;
-    const sub = el('div', '', [f.dates, picks ? `${picks} artist${picks === 1 ? '' : 's'} picked` : ''].filter(Boolean).join(' · '));
-    sub.className = 'fest-dates';
-    left.appendChild(sub);
-    const chev = el('span', '', '›'); chev.className = 'chev';
-    row.append(left, chev);
-    row.addEventListener('click', () => actions.switchFestival(f.id));
-    return row;
+    return festRow(f, {
+      muted,
+      chev: true,
+      sub: [f.dates, picks ? `${picks} artist${picks === 1 ? '' : 's'} picked` : ''].filter(Boolean).join(' · '),
+      onPick: () => actions.switchFestival(f.id),
+    });
   };
-  for (const f of active) wrap.appendChild(festRow(f));
+  for (const f of active) wrap.appendChild(row(f, false));
 
   const add = el('button', '', '+ Add a festival');
   add.className = 'dashed-row';
@@ -171,7 +177,9 @@ function festivalsSection(ctx, actions) {
     // The same disclosure component the create screen uses (Kevin: one
     // component, both places, 2026-07-12).
     wrap.appendChild(disclosureFold(`Past festivals · ${archived.length}`, (rows) => {
-      for (const f of archived) rows.appendChild(festRow(f));
+      // muted: quiet, and wearing the PAST badge — inside a fold that says
+      // "Past festivals", they were rendering at full weight.
+      for (const f of archived) rows.appendChild(row(f, true));
     }));
   }
   return wrap;
@@ -343,7 +351,7 @@ function openHowItWorks(actions) {
   }, 'Pin a note', 'to keep it on top of its day. Pins are yours — everyone has their own.'));
   card.appendChild(lesson((d) => {
     d.appendChild(el('span', 'font-family: var(--font-ui); font-size: 10px; font-weight: 700; color: #E5E7EB; border: 1px solid var(--border-card); border-radius: 999px; padding: 4px 10px;', 'Billing ▾'));
-  }, '“Billing” = poster order.', 'The lineup as the festival ranks it — biggest names first. Sort flips to A→Z, your picks, or crew favorites.'));
+  }, '“Billing” = poster order.', 'The lineup as the festival ranks it — biggest names first. Sort flips to A→Z, your picks, or what the crew picked most.'));
   // PORTOLA ’26 is a hardcoded example — goes stale if Portola leaves the catalog (copy pass flag).
   card.appendChild(lesson((d) => {
     d.appendChild(el('span', 'font-family: var(--font-display); letter-spacing: .04em; font-size: 11px; color: rgb(var(--fest));', 'PORTOLA ’26'));
