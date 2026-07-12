@@ -309,9 +309,19 @@
    * remembers to add here still keeps the safe baseline above, which is the
    * whole difference from the rule this replaced. */
   .back-btn::after, .gear-btn::after, .pin-btn::after,
-  .fest-link::after, .sheet-close::after, .chip-notes::after {
+  .fest-link::after, .sheet-close::after, .chip-notes::after,
+  button.avatar::after { /* the round 26x26 "you" circle: tall enough on the
+                          * baseline, but only 30px WIDE, and a round target is
+                          * exactly the case where width matters as much as
+                          * height. `button.` on purpose — the avatars inside
+                          * cards are spans, and giving THEM a hit area would
+                          * steal taps from the pick underneath. */
     inset: -15px -14px;
   }
+  /* Day tabs keep the -2px baseline horizontally: they sit in a row, so a wide
+   * grab would let one day swallow taps meant for the next. 24 -> 54px tall and
+   * 32px wide clears the WCAG minimum, and the vertical axis is the one that
+   * was actually unusable. */
 
   /* Controls INSIDE a card are the exception: the card IS the tap target. An
    * expanded edit-note button would steal taps meant for the pick underneath

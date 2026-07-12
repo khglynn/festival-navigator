@@ -1,6 +1,6 @@
 // Festival Navigator service worker — offline-first app shell.
 // Bump CACHE_VERSION whenever you change cached static assets.
-const CACHE_VERSION = 'festival-nav-v24'; // v24 = touch floor tuned to real geometry; sheet focus restore
+const CACHE_VERSION = 'festival-nav-v25'; // v25 = avatar hit area; touch floor complete
 
 // The shell that MUST be complete for offline to be real: if any of these
 // fail, install fails and the old worker keeps serving — a half-cached shell
