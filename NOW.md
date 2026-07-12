@@ -1,38 +1,42 @@
-# NOW — festival-navigator: v3.1 AUDIT-FIRST RUN (ACTIVE, unattended)
+# NOW — festival-navigator: v3.1 FIX PHASE (ACTIVE, unattended)
 
-**Updated:** 2026-07-11 ~13:25 CT · **Branch:** main (fixes will branch)
-**Plan:** `claude-plans/2026-07-11-v31-audit-first-plan.md` · **History:** DEVLOG.md
+**Updated:** 2026-07-11 late evening · **Branch:** `v31-polish` (off main)
+**Plan:** `claude-plans/2026-07-11-v31-backlog.md` (the floor) + fix-phase
+grounding doc (the brief) · **History:** DEVLOG.md
 **Kevin's brief (verbatim):** "build a kick-ass app that has a knock-you-back-
 stunning UI, a thoughtful and no page or user flow neglected UX, and a rock
 solid won't leave folks stuck and lost in the middle of a festival backend."
 Kevin is away; run autonomously per hg-durable-build. Production promote stays
 Kevin's call — build on a branch, verify on preview.
 
-## Discovery COMPLETE (2026-07-11 PM) — safe to clear
+## Fix-phase progress
 
-Both engines landed; findings merged, calibrated (15/16 rediscovered; the one
-miss was structural — see backlog's calibration section), committed. Scratchpad
-artifacts rescued: walk-logs → `screenshots/audit-2026-07-11/` (gitignored,
-machine-local), workflow backlog + Codex review + merged index + the audit
-workflow script itself → `claude-plans/` (all dated 2026-07-11).
-Audit Rig token → `~/.claude/plans/v31-audit-rig-token.md` (keep the crew —
-the Stage-4 re-run reuses it; seed a Spotify Client ID into it first).
+- ✅ FLOW-1 (P0) — invite fest context, hybrid fix + 7 tests (b92fdb8)
+- ✅ CORE 1–18 + FLOW-2/3/4 + ST-1 — broken-behavior sweep, history router,
+  lost-state screens, crew-gone hardening; tests 63→87 (ff85c3b)
+- 🔄 NEXT: DESKTOP + A11Y foundations (tokens first — clamp type scale,
+  contrast retune, focus-visible; then day rail, dialogs ≥720, sort listbox,
+  entry centering) per design-direction doc. Then FLOWS 5–13, NOTES+ST,
+  SPOTIFY, PWA/CONTENT, then the 5 gates (grounding doc, in order).
+- Codex trailing review of b92fdb8+ff85c3b runs in background (pipeline
+  pattern — foundations don't build on CORE logic; findings get first-class
+  re-engagement when they land).
 
-## EXACT NEXT STEP
+**POST-COMPACTION READ ORDER:**
+1. `claude-plans/2026-07-11-v31-fix-phase-grounding.md` (in full)
+2. This file
+3. `claude-plans/2026-07-11-v31-design-direction.md`
+4. `claude-plans/2026-07-11-v31-backlog.md`
+5. `docs/user-flows.md`
+frontend-design + hg-partner + hg-durable-build skills reload on resume.
 
-**Fix phase, fresh session.** Branch `v31-polish` off main. Work
-`claude-plans/2026-07-11-v31-backlog.md` in its sequencing order (FLOW-1 first). The backlog
-is the floor — the grounding doc carries the actual brief.
+## Session facts (this run)
 
-**POST-CLEAR READ ORDER (fix-phase session starts here):**
-1. `claude-plans/2026-07-11-v31-fix-phase-grounding.md` — the brief + spirit +
-   gates (read in full, it exists to survive the clear)
-2. This file (live state)
-3. `claude-plans/2026-07-11-v31-design-direction.md` — the design decisions
-4. `claude-plans/2026-07-11-v31-backlog.md` — the merged findings (floor, not ceiling)
-5. `docs/user-flows.md` — the spec
-Grounding + design-direction done this session (ground-it legibility read,
-frontend-design lens loaded — reload that skill for UI work).
+- Local `vercel dev` on :3111 has NO api env (DATABASE_URL unset) — /api 404s
+  locally; walk data flows on the Vercel preview, not localhost.
+- CLAUDE.md's "Tailwind precompiled, npm run css" fact is STALE (no
+  tailwind.css, no css script since v3) — fix CLAUDE.md at teardown.
+- jsdom is a devDependency now (DOM regression tests).
 
 ## Hard rules for this run
 
