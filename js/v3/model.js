@@ -48,6 +48,22 @@ export function needsMigration(doc) {
   return docVersion(doc) !== 4;
 }
 
+// The crew's "home" festival by evidence: where the picks live. Used to
+// backfill meta.inviteFestId on pre-v3.1 docs (FLOW-1) — links already out
+// in group chats predate the stamp, so the app heals its own doc from the
+// strongest crew-level signal instead of any one device's view.
+export function busiestFestival(doc, knownIds) {
+  const known = new Set(knownIds || []);
+  let best = null;
+  let bestCount = 0;
+  for (const fid of Object.keys(doc?.festivals || {})) {
+    if (!known.has(fid)) continue;
+    const count = Object.keys(picksFor(doc, fid)).length;
+    if (count > bestCount) { best = fid; bestCount = count; }
+  }
+  return best; // null when no fest has picks — caller falls back
+}
+
 // The tap cycle: 0 -> 1 -> 2 -> 3 -> 4(must) -> 0 (the 5th tap clears; the
 // UI wraps this in an undo toast — design open question 1, decided).
 export function nextTapLevel(current) {

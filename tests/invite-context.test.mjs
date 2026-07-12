@@ -81,6 +81,22 @@ test('recordInviteFest writes a merge overlay the server accepts', () => {
   assert.equal(check.ok, true, check.error);
 });
 
+test('busiestFestival: the crew home is where the picks live', async () => {
+  const { busiestFestival } = await import('../js/v3/model.js');
+  const doc = {
+    v: 4,
+    festivals: {
+      'electric-forest-2026': { selections: { GRiZ: { Kevin: 4 }, Zeds: { Kevin: 2 }, Odesza: { Drew: 1 } } },
+      'portola-2026': { selections: { Skrillex: { Kevin: 1 } } },
+      'ghost-fest': { selections: { X: { Kevin: 4 } } }, // not in the catalog — never wins
+      'lost-lands-2026': { selections: { Cleared: { Kevin: 0 } } }, // tombstones don't count
+    },
+  };
+  const known = ['electric-forest-2026', 'portola-2026', 'lost-lands-2026'];
+  assert.equal(busiestFestival(doc, known), 'electric-forest-2026');
+  assert.equal(busiestFestival({ v: 4, festivals: {} }, known), null, 'no picks anywhere = no signal');
+});
+
 test('validator: meta.inviteFestId is the one extra meta field', () => {
   assert.equal(validateIncoming({ meta: { inviteFestId: 'electric-forest-2026' } }).ok, true);
   assert.equal(validateIncoming({ meta: { name: 'The Crew', inviteFestId: 'ef' } }).ok, true);

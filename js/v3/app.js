@@ -757,6 +757,19 @@ async function enterApp(token, doc, current = () => true) {
   const festHint = pendingFestHint || (doc.meta && doc.meta.inviteFestId) || null;
   pendingFestHint = null;
   state.activateCrew(token, doc, festHint);
+  // Backfill (audit re-run finding): crews older than the fix never got the
+  // stamp, so THEIR links — the ones already in group chats — still showed
+  // joiners no festival. Any claimed member's boot heals the doc once, from
+  // the crew's busiest fest (where the picks live), through the sanctioned
+  // carve-out field. Share invite keeps refreshing it afterwards.
+  if (crew.me(token) && !(state.crewDoc.meta && state.crewDoc.meta.inviteFestId)) {
+    const stamp = model.busiestFestival(state.crewDoc, FESTIVAL_INDEX.map((f) => f.id))
+      || state.activeFestivalId;
+    if (FESTIVAL_INDEX.some((f) => f.id === stamp)) {
+      state.recordInviteFest(stamp);
+      sync.scheduleSync();
+    }
+  }
   // Migrate BEFORE the wall becomes interactive: a raw 3 written onto a
   // still-v3 doc would later be rewritten to 4 by the migrate op — silently
   // corrupting a genuine "picked x3" into "must" (Codex P6 gate, finding 1).
