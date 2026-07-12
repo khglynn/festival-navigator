@@ -1,4 +1,4 @@
-// Settings -> APP tools: bulk paste (round-trips with export), export likes,
+// Settings -> APP tools: bulk paste (round-trips with export), export picks,
 // download the wall as a PNG. Kevin's explicit keeps live here.
 import * as state from '../state.js';
 import * as model from './model.js';
@@ -55,7 +55,7 @@ export function eqLoader(labelText) {
   return wrap;
 }
 
-// ---- export likes ---------------------------------------------------------------
+// ---- export picks (function names keep the legacy likes wording) ---------------------------------------------------------------
 export function exportLikesText(ctx) {
   const picks = model.picksFor(state.crewDoc, ctx.fid);
   const byPerson = {};
@@ -75,7 +75,7 @@ export function exportLikesText(ctx) {
 export function openExportLikes(host, ctx, onBack) {
   host.textContent = '';
   const col = el('div', 'display: flex; flex-direction: column; gap: 10px;');
-  col.appendChild(subviewHead('EXPORT LIKES', onBack));
+  col.appendChild(subviewHead('EXPORT PICKS', onBack));
   const ta = document.createElement('textarea');
   ta.readOnly = true;
   ta.value = exportLikesText(ctx) || 'No picks yet.';
@@ -126,7 +126,7 @@ export function applyBulkText(text, record) {
 export function openBulkPaste(host, actions) {
   host.textContent = '';
   const col = el('div', 'display: flex; flex-direction: column; gap: 10px;');
-  col.appendChild(subviewHead('BULK PASTE LIKES', actions.back));
+  col.appendChild(subviewHead('BULK PASTE PICKS', actions.back));
   col.appendChild(el('div', 'color: var(--text-tertiary); font-size: 11.5px; font-weight: 600; line-height: 1.5;',
     'One per line: Person: Artist (Must) · levels: Picked, Picked ×2, Picked ×3, Must. Old exports (Must See, Highlight, Nice to See) work too.'));
   const ta = document.createElement('textarea');
@@ -221,7 +221,7 @@ export function openDayImage(host, ctx, onBack) {
     row.append(label, chev);
     row.addEventListener('click', async () => {
       row.disabled = true;
-      status.textContent = 'Building the image…';
+      status.textContent = 'Framing your wall…';
       try {
         const canvas = await buildDayCanvas(day, ctx);
         const a = document.createElement('a');

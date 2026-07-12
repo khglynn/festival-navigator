@@ -304,7 +304,7 @@ function maybeShowCoachMark() {
   msg.append('Tap an artist to pick — brighter each tap, 4th is a must. Hold one for notes. ');
   const how = document.createElement('button');
   how.style.cssText = 'background: none; border: none; padding: 0; cursor: pointer; color: var(--notes-chip-text); font-size: 12px; font-weight: 700; text-decoration: underline; text-underline-offset: 2px;';
-  how.textContent = 'How it all works';
+  how.textContent = 'How it works';
   how.addEventListener('click', () => {
     openSettings();
     router.push('settings');
@@ -677,7 +677,8 @@ function openAddMember() {
     const taken = Object.values(people).map((p) => p.colorIndex).filter(Number.isInteger);
     const person = { colorIndex: nextColorIndex(taken), removed: false };
     addBtn.disabled = true;
-    status.textContent = 'Adding…';
+    status.textContent = '';
+    status.appendChild(eqLoader(`Adding ${canonical}…`));
     try {
       const res = await fetch(`/api/crew?t=${encodeURIComponent(tokenAtStart)}`, {
         method: 'POST',
@@ -945,7 +946,8 @@ function renderJoin(token, doc) {
     if (existingEntry) { crew.setMe(token, existingEntry[0]); enterApp(token, doc); return; }
     const btn = $('join-add-btn');
     btn.disabled = true;
-    status.textContent = 'Joining…';
+    status.textContent = '';
+    status.appendChild(eqLoader('Finding your people…'));
     const taken = Object.values(doc.people || {})
       .map((p) => p.colorIndex).filter(Number.isInteger);
     // removed:false explicitly: deep-merge can't delete a tombstone, so a

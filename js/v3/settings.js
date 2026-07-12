@@ -209,7 +209,7 @@ function openAddFestival(actions) {
     if (name.length < 2) return;
     go.disabled = true;
     status.textContent = '';
-    status.appendChild(eqLoader('Researching the lineup — about 20 seconds…'));
+    status.appendChild(eqLoader('Digging up the lineup — about 20 seconds…'));
     preview.textContent = '';
     try {
       const res = await fetch(`/api/festival-add?t=${encodeURIComponent(state.getCrewToken())}`, {
@@ -638,8 +638,8 @@ export function renderSettings(root, ctx, actions) {
     saveAppSettings({ ...appSettings(), stayOffline: on });
     actions.onStayOffline(on);
   }));
-  list.appendChild(linkRow('Bulk paste likes', () => openSub('sub:bulk')));
-  list.appendChild(linkRow('Export likes', () => openSub('sub:export')));
+  list.appendChild(linkRow('Bulk paste picks', () => openSub('sub:bulk')));
+  list.appendChild(linkRow('Export picks', () => openSub('sub:export')));
   list.appendChild(linkRow('Day image', () => openSub('sub:day-image')));
   main.appendChild(list);
 
