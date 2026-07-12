@@ -8,12 +8,16 @@ sweep, staging env, memory explainer). Full notes + interpretation:
 `claude-plans/2026-07-11-v31-fix-phase-grounding.md`. Work stays on
 `v31-polish`; promote is Kevin's call.
 
-Live streams: clear-eyed sweep workflow (bg, run wf_6939fb9a-a88);
-staging env `stage.fest.kevinhg.com` (Vercel custom environment "staging"
-tracking v31-polish + Cloudflare A record — first deploy into the env
-pending); memory artifact published. Then: implement the 8 notes.
-Everything below is standing state from the fix phase. Stage-4 findings +
-disposition: `claude-plans/2026-07-12-v31-stage4-audit-backlog.md`.
+Checkpoint state: **sweep done** (findings + execution plan:
+`claude-plans/2026-07-12-v31-sweep-findings.md`); **staging LIVE at
+https://stage.fest.kevinhg.com** — its own Vercel project
+`festival-navigator-staging` whose PRODUCTION branch is v31-polish (public
+by design; main project's preview protection untouched; only v31-polish
+builds there via ignore-command). **Memory explainer published** as a Claude
+artifact. Next: implement clusters A→E from the sweep doc (Kevin's 8 notes
+merged with confirmed findings). Everything below is standing state from
+the fix phase. Stage-4 findings + disposition:
+`claude-plans/2026-07-12-v31-stage4-audit-backlog.md`.
 
 **Updated:** 2026-07-12 ~01:30 CT · **Branch:** `v31-polish` (pushed; preview
 verified) · **History:** DEVLOG.md · **Audit result:**
