@@ -12,11 +12,20 @@ branch; main project's preview protection untouched). Notes + read:
 2026-07-12. Work stays on `v31-polish`; **promote is Kevin's call** (steps
 below still current — SW now v19).
 
-Open Kevin decisions: promote; Spotify redirect URI registration
-(post-promote); The-Crew token rotation (still pending from 2026-07-09);
-the four Stage-4 design judgment calls (unchanged). New fast-follow ideas
-parked in the sweep doc's accepted list (colorIndex collision,
-rename-orphan) — deliberate, documented.
+Open Kevin decisions: promote; The-Crew token rotation (still pending from
+2026-07-09); the four Stage-4 design judgment calls (unchanged). Fast-follow
+ideas parked in the sweep doc's accepted list.
+
+**Spotify (updated 2026-07-12 after Kevin's redirect_uri error + the Feb
+2026 policy change):** add `https://fest.kevinhg.com/spotify-callback` to
+the MCP HG app's redirect URIs at developer.spotify.com/dashboard — that's
+the whole fix for the error he hit (the stage-domain hop bug is fixed in
+code; every non-canonical host now hops). Policy reality per Spotify's
+2026-02-06 announcement: dev-mode apps are capped at **5 authorized users**,
+**one dev-mode client ID per developer** (MCP HG is it — shared with
+recordOS by design), owner needs Premium; endpoint restrictions for existing
+apps postponed. So crew Spotify = Kevin + ~4 friends per the allowlist;
+the request-access flow manages exactly that list.
 
 **Updated:** 2026-07-12 ~01:30 CT · **Branch:** `v31-polish` (pushed; preview
 verified) · **History:** DEVLOG.md · **Audit result:**

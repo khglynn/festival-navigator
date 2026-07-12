@@ -10,6 +10,7 @@ import * as spotify from '../spotify.js';
 import * as model from './model.js';
 import { loadFestivalIndex, loadFestival, loadCustomFestivals, FESTIVAL_INDEX, defaultFestivalId } from '../festivals.js';
 import { renderWall, refreshCard, showUndoToast, showToast, wireScrollspy, colorIndexOf, groupByDay, knownDaysOf } from './wall.js';
+import { disclosureFold, eqLoader } from './tools.js';
 import { openArtistSheet, openDayNotes, openAllNotes, closeSheet, refreshOpenSheet } from './notes.js';
 import { renderSettings, appSettings, openSubviewByKey } from './settings.js';
 import { router } from './router.js';
@@ -113,20 +114,36 @@ function applyFestTheme() {
   startFavicon(fest.accent, { lowPower: ctx.lowPower });
 }
 
-// Presence display only (FLOW-8): a chip tap used to silently REASSIGN this
-// device's identity — one stray thumb and your picks start landing on someone
-// else. Switching who you are is an explicit Settings action now.
+// Chips switch identity through the app's two-tap confirm (FLOW-8 evolved,
+// Kevin 2026-07-12): one stray thumb still can't reassign the device — the
+// first tap only ARMS the chip ("Pick as Drew?"), the second within 3s
+// switches. Shared-phone crews pick for each other without a settings trip.
 function renderPersonChips() {
   const row = $('person-chips');
   row.textContent = '';
   for (const [name, p] of state.activePeople()) {
-    const chip = document.createElement('span');
-    chip.className = 'person-chip' + (name === ctx.meName ? ' you' : '');
+    const isMe = name === ctx.meName;
+    const chip = document.createElement(isMe ? 'span' : 'button');
+    chip.className = 'person-chip' + (isMe ? ' you' : '');
     const ci = colorIndexOf(name, p);
     chip.style.background = hslOf(ci, 0.5);
-    chip.style.border = '1px solid ' + strokeOf(ci, name === ctx.meName);
-    chip.style.cursor = 'default';
+    chip.style.border = '1px solid ' + strokeOf(ci, isMe);
+    chip.style.cursor = isMe ? 'default' : 'pointer';
     chip.textContent = name;
+    if (!isMe && ctx.meName) {
+      chip.setAttribute('aria-label', `Switch to picking as ${name}`);
+      let armed = false;
+      chip.addEventListener('click', () => {
+        if (!armed) {
+          armed = true;
+          chip.textContent = `Pick as ${name}?`;
+          setTimeout(() => { armed = false; chip.textContent = name; }, 3000);
+          return;
+        }
+        switchIdentity(name);
+        repaintWall();
+      });
+    }
     row.appendChild(chip);
   }
   // Add-on-their-behalf lives right where the crew is visible (note 5) —
@@ -233,7 +250,6 @@ function repaintWall() {
   updateMigrationBanner();
   updateWeekendRow();
   updateArchiveNote();
-  updateFestNotesStrip();
   maybeShowCoachMark();
   measureStickyChrome();
 }
@@ -306,37 +322,6 @@ function maybeShowCoachMark() {
   });
   bar.append(msg, dismiss);
   insertStrip(bar);
-}
-
-// Festival-level notes surface at the TOP when they exist (Kevin note 6):
-// "important to know" info — parking, entry, water — was invisible three
-// scrolls down at the wall's end. The strip shows the freshest note and
-// opens the notes home. No notes, no strip.
-function updateFestNotesStrip() {
-  const existing = document.getElementById('fest-notes-strip');
-  const notes = model.notesFor(state.crewDoc, ctx.fid, 'fest', null);
-  if (!notes.length) { if (existing) existing.remove(); return; }
-  const latest = notes[notes.length - 1];
-  let bar = existing;
-  if (!bar) {
-    bar = document.createElement('button');
-    bar.id = 'fest-notes-strip';
-    bar.style.cssText = 'display: flex; align-items: center; gap: 10px; margin-top: 11px; padding: 10px 13px; border: 1px solid var(--notes-chip-stroke); border-radius: var(--r-row); background: rgba(139, 123, 255, .07); cursor: pointer; width: 100%; font-family: inherit; text-align: left;';
-    bar.addEventListener('click', () => { refreshCtx(); openAllNotes(ctx); router.push('sheet:all'); });
-    insertStrip(bar);
-  }
-  bar.textContent = '';
-  bar.setAttribute('aria-label', `${notes.length} festival note${notes.length === 1 ? '' : 's'} — open notes`);
-  const pen = document.createElement('span');
-  pen.style.cssText = 'color: var(--notes-chip-text); font-size: 13px; flex: none;';
-  pen.textContent = '✎';
-  const text = document.createElement('span');
-  text.style.cssText = 'flex: 1; min-width: 0; color: var(--text-body); font-size: 12px; font-weight: 600; line-height: 1.45; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;';
-  text.textContent = latest.text;
-  const count = document.createElement('span');
-  count.style.cssText = 'flex: none; color: var(--notes-chip-text); font-size: 11px; font-weight: 800;';
-  count.textContent = notes.length === 1 ? 'fest note ›' : `${notes.length} fest notes ›`;
-  bar.append(pen, text, count);
 }
 
 // An archived fest reads as a memory, not a live plan (ST-5).
@@ -455,25 +440,9 @@ function renderCreate() {
   // wrong emphasis on the doorway screen (Kevin note 8).
   const past = FESTIVAL_INDEX.filter((x) => x.status === 'archived');
   if (past.length) {
-    const fold = document.createElement('button');
-    fold.style.cssText = 'margin-top: 8px; padding: 9px 4px; color: var(--text-tertiary); font-size: 11.5px; font-weight: 700; display: flex; align-items: center; cursor: pointer; width: 100%; background: none; border: none; font-family: inherit;';
-    fold.setAttribute('aria-expanded', 'false');
-    const lbl = document.createElement('span');
-    lbl.textContent = `Past festivals · ${past.length}`;
-    const caret = document.createElement('span');
-    caret.style.marginLeft = 'auto';
-    caret.textContent = '▸';
-    fold.append(lbl, caret);
-    const pastList = document.createElement('div');
-    pastList.style.cssText = 'display: none; flex-direction: column; gap: 7px;';
-    for (const f of past) pastList.appendChild(festPickRow(f, { muted: true, onPick: pick }));
-    fold.addEventListener('click', () => {
-      const open = pastList.style.display === 'none';
-      pastList.style.display = open ? 'flex' : 'none';
-      caret.textContent = open ? '▾' : '▸';
-      fold.setAttribute('aria-expanded', String(open));
-    });
-    list.append(fold, pastList);
+    list.appendChild(disclosureFold(`Past festivals · ${past.length}`, (rows) => {
+      for (const f of past) rows.appendChild(festPickRow(f, { muted: true, onPick: pick }));
+    }));
   }
 }
 
@@ -501,7 +470,8 @@ async function createCrewFlow() {
   if (problem) { status.textContent = problem; return; }
   const btn = $('create-go-btn');
   btn.disabled = true;
-  status.textContent = 'Creating…';
+  status.textContent = '';
+  status.appendChild(eqLoader('Setting the stage…'));
   try {
     const meta = FESTIVAL_INDEX.find((f) => f.id === createFid);
     // SAFE_NAME_RE bans apostrophes — "'26" becomes "26" in the crew name.
@@ -587,7 +557,7 @@ function openShareMoment() {
   const later = document.createElement('button');
   later.className = 'btn-ghost';
   later.style.cssText = 'font-size: 12px; padding: 11px 16px;' + (navigator.share ? '' : ' flex: 1;');
-  later.textContent = 'Later — to the wall';
+  later.textContent = 'Later';
   later.addEventListener('click', () => { if (!router.requestClose()) closeSheet(); });
   actionsRow.appendChild(later);
   sheet.append(grabber, title, sub, linkRowEl, actionsRow);
@@ -1220,7 +1190,16 @@ export function init() {
   let resizeTimer = null;
   window.addEventListener('resize', () => {
     clearTimeout(resizeTimer);
-    resizeTimer = setTimeout(measureStickyChrome, 150);
+    resizeTimer = setTimeout(() => {
+      measureStickyChrome();
+      // Each scroller clamps its own scrollLeft during a resize, which can
+      // desync the mirrored columns from the strip (Kevin's wide-screen
+      // wonk screenshot, 2026-07-12) — re-mirror everyone to the first.
+      const scrollers = [...document.querySelectorAll('#wall-root .times-scroll')];
+      for (const sc of scrollers.slice(1)) {
+        if (sc.scrollLeft !== scrollers[0].scrollLeft) sc.scrollLeft = scrollers[0].scrollLeft;
+      }
+    }, 150);
   });
   const sortCtl = createSortControl({ initial: ctx.sort, onChange: (v) => { ctx.sort = v; repaintWall(); } });
   $('sort-control').appendChild(sortCtl.el);

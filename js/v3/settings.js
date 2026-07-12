@@ -9,7 +9,7 @@ import * as model from './model.js';
 import { FESTIVAL_INDEX } from '../festivals.js';
 import { BOARD, hslOf, strokeOf } from './palette.js';
 import { colorIndexOf } from './wall.js';
-import { el, subviewHead, openExportLikes, openBulkPaste, openDayImage } from './tools.js';
+import { el, subviewHead, disclosureFold, eqLoader, openExportLikes, openBulkPaste, openDayImage } from './tools.js';
 import { router } from './router.js';
 import { nameProblem, NAME_LIMITS } from '../name-rules.mjs';
 import { loadJSON, saveLS } from '../util.js';
@@ -160,23 +160,11 @@ function festivalsSection(ctx, actions) {
   wrap.appendChild(add);
 
   if (archived.length) {
-    // A real disclosure button (audit 4.2): this is the ONLY path to the
-    // archived fests, so it earns card-level presence — the old bare-text row
-    // was invisible next to the fest cards around it (Kevin note 8).
-    const arch = el('button', 'padding: 12px 14px; color: var(--text-secondary); font-size: 12.5px; font-weight: 700; display: flex; align-items: center; cursor: pointer; width: 100%; background: var(--card); border: 1px solid var(--border-card); border-radius: var(--r-settings); font-family: inherit;');
-    arch.setAttribute('aria-expanded', 'false');
-    const lbl = el('span', '', `Past festivals · ${archived.length}`);
-    const caret = el('span', 'margin-left: auto; color: var(--text-tertiary);', '▸');
-    arch.append(lbl, caret);
-    const list = el('div', 'display: none; flex-direction: column; gap: 8px;');
-    for (const f of archived) list.appendChild(festRow(f));
-    arch.addEventListener('click', () => {
-      const open = list.style.display === 'none';
-      list.style.display = open ? 'flex' : 'none';
-      caret.textContent = open ? '▾' : '▸';
-      arch.setAttribute('aria-expanded', String(open));
-    });
-    wrap.append(arch, list);
+    // The same disclosure component the create screen uses (Kevin: one
+    // component, both places, 2026-07-12).
+    wrap.appendChild(disclosureFold(`Past festivals · ${archived.length}`, (rows) => {
+      for (const f of archived) rows.appendChild(festRow(f));
+    }));
   }
   return wrap;
 }
@@ -220,7 +208,8 @@ function openAddFestival(actions) {
     const name = input.value.trim();
     if (name.length < 2) return;
     go.disabled = true;
-    status.textContent = 'Researching — this takes ~20 seconds…';
+    status.textContent = '';
+    status.appendChild(eqLoader('Researching the lineup — about 20 seconds…'));
     preview.textContent = '';
     try {
       const res = await fetch(`/api/festival-add?t=${encodeURIComponent(state.getCrewToken())}`, {

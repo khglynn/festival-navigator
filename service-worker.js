@@ -1,6 +1,6 @@
 // Festival Navigator service worker — offline-first app shell.
 // Bump CACHE_VERSION whenever you change cached static assets.
-const CACHE_VERSION = 'festival-nav-v19'; // v19 = notes arc C/D/E (sync hardening, spotify doors, fest-notes strip, legibility)
+const CACHE_VERSION = 'festival-nav-v20'; // v20 = round-2 polish (centered cells, chip switch, hop fix, loader, unified folds)
 
 // The shell that MUST be complete for offline to be real: if any of these
 // fail, install fails and the old worker keeps serving — a half-cached shell

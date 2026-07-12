@@ -21,6 +21,40 @@ export function subviewHead(title, onBack) {
   return head;
 }
 
+// ONE disclosure for tucked-away lists — past festivals use this on both the
+// create screen and in settings (Kevin: same component, both places,
+// 2026-07-12). Rows build lazily on first open.
+export function disclosureFold(label, buildRows) {
+  const wrap = el('div', 'display: flex; flex-direction: column; gap: 8px;');
+  const btn = el('button', 'padding: 12px 14px; color: var(--text-secondary); font-size: 12.5px; font-weight: 700; display: flex; align-items: center; cursor: pointer; width: 100%; background: var(--card); border: 1px solid var(--border-card); border-radius: var(--r-settings); font-family: inherit; text-align: left;');
+  btn.setAttribute('aria-expanded', 'false');
+  const lbl = el('span', '', label);
+  const caret = el('span', 'margin-left: auto; color: var(--text-tertiary);', '▸');
+  btn.append(lbl, caret);
+  const list = el('div', 'display: none; flex-direction: column; gap: 7px;');
+  let built = false;
+  btn.addEventListener('click', () => {
+    if (!built) { buildRows(list); built = true; }
+    const open = list.style.display === 'none';
+    list.style.display = open ? 'flex' : 'none';
+    caret.textContent = open ? '▾' : '▸';
+    btn.setAttribute('aria-expanded', String(open));
+  });
+  wrap.append(btn, list);
+  return wrap;
+}
+
+// The "working" pulse: a tiny equalizer + a line of copy. Anything that used
+// to be a bare gerund ("Creating…") gets stage lights instead.
+export function eqLoader(labelText) {
+  const wrap = el('span', 'display: inline-flex; align-items: center; gap: 8px;');
+  const eq = el('span');
+  eq.className = 'eq-loader';
+  eq.append(el('span'), el('span'), el('span'));
+  wrap.append(eq, el('span', '', labelText));
+  return wrap;
+}
+
 // ---- export likes ---------------------------------------------------------------
 export function exportLikesText(ctx) {
   const picks = model.picksFor(state.crewDoc, ctx.fid);

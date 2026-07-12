@@ -15,13 +15,16 @@ const SCOPES = 'user-library-read user-follow-read playlist-modify-public playli
 const redirectUri = () => `${location.origin}/spotify-callback`;
 
 // OAuth happens on ONE origin (SPOT-1): the Spotify app registers exactly
-// fest.kevinhg.com/spotify-callback. The prod aliases can't run the PKCE
-// dance (sessionStorage is per-origin), so they hop — carrying the crew, the
-// fest, and an sp=1 flag that re-opens the Spotify drill after the hop.
-const PROD_HOSTS = ['fest.kevinhg.com', 'festival.kevinhg.com', 'crew.kevinhg.com'];
+// fest.kevinhg.com/spotify-callback. Every OTHER host hops — aliases,
+// staging, previews — carrying the crew, the fest, and an sp=1 flag that
+// re-opens the Spotify drill after the hop. This used to be an allowlist of
+// known aliases, which silently broke OAuth on any new domain: staging sent
+// Spotify a stage.fest redirect URI and got "redirect_uri: Not matching
+// configuration" (Kevin, 2026-07-12). Localhost stays in place for dev.
 const CANONICAL_HOST = 'fest.kevinhg.com';
+const LOCAL_HOSTS = ['localhost', '127.0.0.1'];
 export function canonicalHopUrl() {
-  if (!PROD_HOSTS.includes(location.host) || location.host === CANONICAL_HOST) return null;
+  if (location.host === CANONICAL_HOST || LOCAL_HOSTS.includes(location.hostname)) return null;
   const token = state.getCrewToken();
   if (!token) return `https://${CANONICAL_HOST}/`;
   return `https://${CANONICAL_HOST}/#g=${token}&f=${state.activeFestivalId}&sp=1`;
