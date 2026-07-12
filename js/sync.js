@@ -22,8 +22,12 @@ let onSyncBlocked = () => {};
 // keeps this from becoming a dead end: the moment the user changes ANYTHING,
 // the payload differs, and we try again on our own. No stuck state to escape.
 let refusedPayload = null;
+let refusedFor = null; // the crew it was refused FOR — a refusal does not travel
 const sig = (o) => JSON.stringify(o);
-const isRefused = (payload) => refusedPayload !== null && sig(payload) === refusedPayload;
+const isRefused = (payload, token) => refusedPayload !== null
+  && refusedFor === token
+  && sig(payload) === refusedPayload;
+const clearRefused = () => { refusedPayload = null; refusedFor = null; };
 // "Stay offline" (manual, never auto-toggled): suppress every network
 // attempt until switched off. Picks still save locally first, always.
 let stayOffline = false;
@@ -90,13 +94,16 @@ export async function pushSync() {
   // subtraction have to talk about the exact bytes we actually sent.
   const payload = JSON.parse(JSON.stringify(state.pendingChanges));
 
+  const tokenAtStart = state.getCrewToken();
+
   // Already refused, unchanged since. Sending it again would produce the same
   // rejection and the same toast, forever. Stay put — visibly — until an edit
-  // changes the payload or the crew frees up room.
-  if (isRefused(payload)) { setSyncStatus('blocked'); return; }
+  // changes the payload or the crew frees up room. The refusal is remembered
+  // against the CREW it happened to: switching crews must not inherit another
+  // crew's blocked state.
+  if (isRefused(payload, tokenAtStart)) { setSyncStatus('blocked'); return; }
 
   isSyncing = true; setSyncStatus('syncing');
-  const tokenAtStart = state.getCrewToken();
   try {
     const res = await fetch(`/api/crew?t=${encodeURIComponent(tokenAtStart)}`, {
       method: 'POST',
@@ -115,6 +122,7 @@ export async function pushSync() {
     if (res.status === 413 || res.status === 400) {
       const body = await res.json().catch(() => ({}));
       refusedPayload = sig(payload);
+      refusedFor = tokenAtStart;
       setSyncStatus('blocked');
       onSyncBlocked(body.error || 'These changes can’t sync — the crew may have hit a limit.');
       return;
@@ -124,7 +132,7 @@ export async function pushSync() {
     // The crew may have been switched while the request was in flight —
     // never apply one crew's document to another crew's state.
     if (state.getCrewToken() !== tokenAtStart) return;
-    refusedPayload = null; // the server is accepting our writes again
+    clearRefused(); // the server is accepting our writes again
     // Subtract exactly what was ACKED from memory and disk. Anything left over
     // is either an edit made during the round-trip or another tab's write —
     // both real, both still owed a push.
@@ -161,7 +169,7 @@ export function flushOnHide() {
   if (stayOffline || !navigator.onLine) return false;
   const token = state.getCrewToken();
   if (!token || !state.hasPending()) return false;
-  if (isRefused(state.pendingChanges)) return false; // the server already said no
+  if (isRefused(state.pendingChanges, token)) return false; // the server already said no
   if (typeof navigator.sendBeacon !== 'function') return false;
   try {
     const body = new Blob(
@@ -208,7 +216,20 @@ export async function pollSync() {
     // than the one this poll is carrying — applying the stale snapshot rolled
     // freshly-synced picks back for a visible ~25s (sweep P1, 2026-07-12).
     if (pushGen !== genAtStart) return;
-    applyRemote(remote);
+
+    const changed = state.applyRemoteDoc(remote);
+    if (changed) {
+      onRemoteChange();
+      // The crew moved, so a refusal made against the OLD crew document may no
+      // longer hold: the commonest case is exactly the one the toast promises —
+      // the crew was full, somebody deleted some notes, and now there is room.
+      // Without this, "they'll sync as soon as the crew has room" was a lie:
+      // unchanged pending bytes had no retry path at all, and only an unrelated
+      // local edit or a full reload would ever clear it (Codex gate, 2026-07-12).
+      // Clearing on a CHANGED remote bounds the retries: one attempt per real
+      // change to the crew, not a 25s loop.
+      clearRefused();
+    }
     setSyncStatus(state.hasPending() ? 'syncing' : 'online');
     if (state.hasPending()) scheduleSync();
   } catch (e) {

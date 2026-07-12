@@ -92,6 +92,86 @@ test('a refused payload is not re-sent, but a new edit is', async () => {
   assert.equal(state.hasPending(), true, 'and the edit is still held, not discarded');
 });
 
+// Both of these were WEAK-TEST gaps Codex named: the suite only ever exercised
+// one crew, and only ever recovered via a new local edit.
+
+test('a refusal belongs to ONE crew — switching crews does not inherit it', async () => {
+  sync.initSync({ onSyncBlocked: () => {} });
+
+  // Crew A is refused.
+  freshCrew('losstoken_crewA_01234567');
+  state.recordSelection('GRiZ', 'K', 2);
+  let posts = 0;
+  globalThis.fetch = async (_u, opts) => {
+    if (opts && opts.method === 'POST') posts++;
+    return mkRes(413, { error: 'full' });
+  };
+  await sync.pushSync();
+  assert.equal(posts, 1);
+  assert.equal(sync.syncState(), 'blocked');
+
+  // Crew B, whose pending delta happens to serialize IDENTICALLY (same person,
+  // same artist, same level, same festival — entirely plausible).
+  freshCrew('losstoken_crewB_01234567');
+  state.recordSelection('GRiZ', 'K', 2);
+  globalThis.fetch = async (_u, opts) => {
+    if (opts && opts.method === 'POST') posts++;
+    return mkRes(200, {
+      v: 4, meta: {}, spotify: {}, people: { K: { colorIndex: 0 } },
+      festivals: { 'loss-fest': { selections: { GRiZ: { K: 2 } } } }, affinity: {},
+    });
+  };
+  await sync.pushSync();
+
+  assert.equal(posts, 2, 'crew B’s perfectly good edit must not be blocked by crew A’s rejection');
+  assert.equal(state.hasPending(), false, 'and it lands');
+});
+
+test('when the server frees up, the refused payload gets another go', async () => {
+  // The toast says "they'll sync as soon as the crew has room". Before this,
+  // that was a lie: nothing ever retried unchanged pending bytes, so the only
+  // ways out were an unrelated local edit or a full reload.
+  freshCrew('losstoken_recover_012345');
+  state.recordSelection('GRiZ', 'K', 4);
+
+  let posts = 0;
+  let full = true;
+  sync.initSync({ onSyncBlocked: () => {}, onRemoteChange: () => {} });
+
+  const roomyDoc = {
+    v: 4, meta: { name: 'roomy' }, spotify: {}, people: { K: { colorIndex: 0 } },
+    festivals: { 'loss-fest': { selections: {} } }, affinity: {},
+  };
+  globalThis.fetch = async (_u, opts) => {
+    if (opts && opts.method === 'POST') {
+      posts++;
+      if (full) return mkRes(413, { error: 'This crew’s board is full' });
+      return mkRes(200, {
+        ...roomyDoc,
+        festivals: { 'loss-fest': { selections: { GRiZ: { K: 4 } } } },
+      });
+    }
+    return mkRes(200, roomyDoc); // the GET: another member freed up room
+  };
+
+  await sync.pushSync();
+  assert.equal(posts, 1);
+  assert.equal(sync.syncState(), 'blocked');
+
+  // Stuck: the same bytes are refused, so we correctly stop asking.
+  await sync.pushSync();
+  assert.equal(posts, 1, 'still not re-sending the doomed payload');
+
+  // Now somebody else deletes some notes. Our poll sees a CHANGED crew document.
+  full = false;
+  await sync.pollSync();
+  await sync.pushSync();
+
+  assert.equal(posts, 2, 'a real change to the crew earns the blocked payload one more attempt');
+  assert.equal(state.hasPending(), false, 'and this time it lands');
+  assert.equal(sync.syncState(), 'online');
+});
+
 // ---- clearPending must not eat a concurrent tab's edit ------------------------
 
 test('clearPending drops only what the server acked — another tab’s edit survives', () => {

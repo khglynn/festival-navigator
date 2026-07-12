@@ -291,46 +291,72 @@
  * Horizontal stays at -5px on purpose: chips sit ~6px apart in a row, and a
  * generous horizontal grab would let one chip swallow taps meant for its
  * neighbour — in a crowd, that is a wrong pick under someone's name. */
+/* Two ways to reach the floor, and picking the wrong one is a real hazard.
+ *
+ * REAL HEIGHT is the default. Every button gets min-height:44px unless it opts
+ * out. It cannot overlap anything, so it is always safe, and a control nobody
+ * remembers to think about lands safe automatically.
+ *
+ * BORROWED SPACE (an expanded ::after) is the exception, for the handful of
+ * controls where 44px of real height would wreck the design — the person chips,
+ * the day tabs, the little glyph buttons. Those opt out of min-height and take a
+ * hit area instead, and each one has been checked for room around it.
+ *
+ * The first cut of this rule expanded EVERY button unconditionally by 30px, and
+ * Codex caught what that does: the Settings list stacks its rows with no gaps,
+ * so each row's hit area reached 15px into its neighbours, and the later-painted
+ * sibling wins an overlap. Tapping "Stay offline" could fire "Bulk paste picks"
+ * — and a tap near the bottom of "Switch crew" could arm "Forget this crew".
+ * A touch-target fix that hands you a destructive mis-tap is not a fix.
+ * Unconditional growth is not a floor. (finish pass, 2026-07-12) */
 @media (pointer: coarse) {
-  button { position: relative; }
-
-  /* The baseline every button gets for free. -15px vertical clears 44px from the
-   * shortest real control in the app (a 14px text button -> 44px exactly).
-   * Horizontal stays at -2px because the person chips sit 5px apart: at -5px,
-   * two neighbouring chips' hit areas overlapped across the whole gap, and the
-   * one later in the DOM would quietly win taps aimed at the other. In a crowd
-   * that is a pick recorded under the wrong person's name. */
-  button::after { content: ''; position: absolute; inset: -15px -2px; }
-
-  /* Narrow glyph controls (‹ back, the gear, the sheet ✕, the "+ ✎" note chip)
-   * are 17-28px WIDE, so a tall-but-thin target is still a miss. They are also
-   * isolated — nothing sits within 14px of them — so they can take the
-   * horizontal room. This list only ever UPGRADES: a glyph button nobody
-   * remembers to add here still keeps the safe baseline above, which is the
-   * whole difference from the rule this replaced. */
-  .back-btn::after, .gear-btn::after, .pin-btn::after,
-  .fest-link::after, .sheet-close::after, .chip-notes::after,
-  button.avatar::after { /* the round 26x26 "you" circle: tall enough on the
-                          * baseline, but only 30px WIDE, and a round target is
-                          * exactly the case where width matters as much as
-                          * height. `button.` on purpose — the avatars inside
-                          * cards are spans, and giving THEM a hit area would
-                          * steal taps from the pick underneath. */
-    inset: -15px -14px;
-  }
-  /* Day tabs keep the -2px baseline horizontally: they sit in a row, so a wide
-   * grab would let one day swallow taps meant for the next. 24 -> 54px tall and
-   * 32px wide clears the WCAG minimum, and the vertical axis is the one that
-   * was actually unusable. */
-
-  /* Controls INSIDE a card are the exception: the card IS the tap target. An
-   * expanded edit-note button would steal taps meant for the pick underneath
-   * it, on the densest surface in the app. */
-  .card button::after { content: none; }
-
-  /* An input cannot carry a pseudo-element, so the search field is the one
-   * place the floor has to be real height rather than borrowed space. */
+  /* --- the safe default ------------------------------------------------- */
+  button { min-height: 44px; }
+  /* An input cannot carry a pseudo-element either way. */
   #search-input { min-height: 44px; }
+
+  /* Settings rows are DIVs, so `button` never reaches them — and the row is the
+   * real target now that tapping the label flips the toggle. Give the row the
+   * height, and let the 40x24 switch inside it keep its designed size. */
+  .list-row { min-height: 44px; }
+
+  /* --- the opt-outs: small controls that take borrowed space instead ------ */
+  .person-chip, .notes-chip, .chip-notes,
+  .dock .day-tab, .day-rail .day-tab,
+  .back-btn, .gear-btn, .pin-btn, .fest-link, .sheet-close,
+  button.avatar,
+  .toggle,      /* a 40x24 switch; stretching its track to 44 breaks it, and the
+                 * whole row is the tap target anyway */
+  .card button {
+    min-height: 0;
+  }
+  .person-chip, .notes-chip, .chip-notes,
+  .dock .day-tab, .day-rail .day-tab,
+  .back-btn, .gear-btn, .pin-btn, .fest-link, .sheet-close,
+  button.avatar {
+    position: relative;
+  }
+  /* Chips and day tabs sit in ROWS, ~5px apart. Vertical is where they were
+   * unusable (17-28px); horizontal stays at -2px so one chip cannot swallow the
+   * tap meant for its neighbour — in a crowd, that is a pick recorded under the
+   * wrong person's name. */
+  .person-chip::after, .notes-chip::after,
+  .dock .day-tab::after, .day-rail .day-tab::after {
+    content: ''; position: absolute; inset: -14px -2px;
+  }
+  /* Narrow glyph controls are 17-28px WIDE, so a tall-but-thin target is still a
+   * miss — and they are isolated, so they can take the horizontal room.
+   * `button.avatar` on purpose: the avatars inside cards are spans, and giving
+   * THEM a hit area would steal taps from the pick underneath. */
+  .back-btn::after, .gear-btn::after, .pin-btn::after, .fest-link::after,
+  .sheet-close::after, .chip-notes::after, button.avatar::after {
+    content: ''; position: absolute; inset: -14px -12px;
+  }
+
+  /* Controls INSIDE a card get neither: the card IS the tap target, and an
+   * expanded edit-note button would steal taps meant for the pick underneath it,
+   * on the densest surface in the app. */
+  .card button::after { content: none; }
 }
 .dock .day-tab .num { font-size: 9px; font-weight: 600; margin-left: 2px; }
 .dock .day-tab.active { color: rgb(var(--fest)); font-weight: 800; border-bottom-color: rgb(var(--fest)); }
