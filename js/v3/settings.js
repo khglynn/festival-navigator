@@ -336,6 +336,7 @@ function openHowItWorks(actions) {
   card.appendChild(lesson((d) => {
     d.appendChild(el('span', 'font-family: var(--font-ui); font-size: 10px; font-weight: 700; color: #E5E7EB; border: 1px solid var(--border-card); border-radius: 999px; padding: 4px 10px;', 'Billing ▾'));
   }, '“Billing” = poster order.', 'The lineup as the festival ranks it — biggest names first. Sort flips to A→Z, your picks, or crew favorites.'));
+  // PORTOLA ’26 is a hardcoded example — goes stale if Portola leaves the catalog (copy pass flag).
   card.appendChild(lesson((d) => {
     d.appendChild(el('span', 'font-family: var(--font-display); letter-spacing: .04em; font-size: 11px; color: rgb(var(--fest));', 'PORTOLA ’26'));
     const dot = el('span'); dot.className = 'sync-dot';
@@ -753,6 +754,22 @@ function requestAccessRow(rerenderDrill) {
   return wrap;
 }
 
+// The full own-app guide, shared by the BYO fold and fork deployments.
+// Reflects Spotify's Feb-2026 developer rules (one dev-mode app per account,
+// Premium required, 5 authorized users, dashboard-managed allowlist).
+function spotifyAppSteps() {
+  const steps = el('div', 'display: flex; flex-direction: column; gap: 6px; color: var(--text-tertiary); font-size: 11px; font-weight: 600; line-height: 1.55;');
+  const lines = [
+    '1. developer.spotify.com/dashboard → Create app. You need Spotify Premium, and Spotify allows ONE development-mode app per account — reuse it across projects if you already have one.',
+    '2. In the app’s settings, add this exact Redirect URI: https://fest.kevinhg.com/spotify-callback — running your own fork on another domain? Use https://YOUR-DOMAIN/spotify-callback and change CANONICAL_HOST in js/spotify.js to match.',
+    '3. Pick “Web API” when it asks which APIs you’re using.',
+    '4. Copy the Client ID from the app page and paste it here.',
+    '5. Spotify caps development apps at 5 authorized users: on the app page, open User Management and add each friend’s Spotify account email — nobody can connect until their email is on that list.',
+  ];
+  for (const l of lines) steps.appendChild(el('div', '', l));
+  return steps;
+}
+
 // Door (c): bring-your-own Spotify app — deliberately a quiet fold, not a
 // peer of the main path ("main path is my friends, my spotify" — Kevin).
 function byoAppFold(actions, rerenderDrill, msg) {
@@ -761,9 +778,10 @@ function byoAppFold(actions, rerenderDrill, msg) {
   sum.textContent = 'Using your own Spotify app instead';
   sum.style.cssText = 'color: var(--text-tertiary); font-size: 11px; font-weight: 700; cursor: pointer;';
   fold.appendChild(sum);
-  const inner = el('div', 'display: flex; flex-direction: column; gap: 7px; margin-top: 7px;');
-  inner.appendChild(el('div', 'color: var(--text-tertiary); font-size: 11px; font-weight: 600; line-height: 1.6;',
-    'For forks of this app or crews outside the owner’s circle: create an app at developer.spotify.com/dashboard, add the redirect URI https://fest.kevinhg.com/spotify-callback, and paste its Client ID:'));
+  const inner = el('div', 'display: flex; flex-direction: column; gap: 8px; margin-top: 7px;');
+  inner.appendChild(el('div', 'color: var(--text-tertiary); font-size: 11px; font-weight: 600; line-height: 1.55;',
+    'For forks of this app, or crews outside the owner’s circle:'));
+  inner.appendChild(spotifyAppSteps());
   inner.appendChild(clientIdInputRow(actions, rerenderDrill, msg));
   fold.appendChild(inner);
   return fold;
@@ -905,16 +923,14 @@ function openSpotifyDrill(ctx, actions) {
       'One-time crew setup — any member can do it. Paste the crew’s Spotify app Client ID:'));
     card.appendChild(clientIdInputRow(actions, rerenderDrill, msg));
     const fold = document.createElement('details');
+    fold.open = true; // the only path on a fork deployment — no hiding it
     const sum = document.createElement('summary');
-    sum.textContent = 'How to get a Client ID';
+    sum.textContent = 'How to set up the Spotify app';
     sum.style.cssText = 'color: var(--text-secondary); font-size: 11.5px; font-weight: 700; cursor: pointer;';
     fold.appendChild(sum);
-    const steps = el('div', 'color: var(--text-tertiary); font-size: 11.5px; font-weight: 600; line-height: 1.6; margin-top: 6px;');
-    steps.textContent = '1. developer.spotify.com/dashboard → Create app. '
-      + '2. Add the redirect URI https://fest.kevinhg.com/spotify-callback. '
-      + '3. Copy the Client ID from the app page and paste it above. '
-      + 'Development mode allows 5 users, and the app owner needs Premium.';
-    fold.appendChild(steps);
+    const stepsWrap = el('div', 'margin-top: 6px;');
+    stepsWrap.appendChild(spotifyAppSteps());
+    fold.appendChild(stepsWrap);
     card.appendChild(fold);
     col.append(card, msg);
   } else if (!spotify.isConnected()) {
@@ -943,7 +959,7 @@ function openSpotifyDrill(ctx, actions) {
     card.appendChild(el('span', 'color: #fff; font-weight: 700; font-size: 14px;', 'Your library'));
     card.appendChild(el('div', 'color: var(--text-secondary); font-size: 12px; font-weight: 600;',
       lib ? `${Object.keys(lib.artists || {}).length.toLocaleString()} artists · synced ${lib.fetchedAt?.slice(0, 10) || ''}` : 'not scanned yet'));
-    const refresh = el('button', 'font-size: 12px; padding: 9px 16px; align-self: flex-start;', 'Refresh my likes');
+    const refresh = el('button', 'font-size: 12px; padding: 9px 16px; align-self: flex-start;', 'Rescan my Spotify');
     refresh.className = 'btn-tonal';
     refresh.addEventListener('click', async () => {
       if (!ctx.meName) { msg.textContent = 'Claim your name first (open your crew link).'; return; }
