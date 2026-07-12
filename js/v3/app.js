@@ -714,13 +714,18 @@ function openAddMember() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ data: { people: { [canonical]: person } }, sv: 4 }),
       });
-      if (state.getCrewToken() !== tokenAtStart) return; // crew switched mid-flight
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
+        if (state.getCrewToken() !== tokenAtStart) return; // crew switched mid-flight
         status.textContent = body.error || 'The crew service hiccuped — give it a second and try again.';
         return;
       }
-      state.applyRemoteDoc(await res.json());
+      const merged = await res.json();
+      // The switch check comes AFTER the last await, or a crew change during
+      // the json() parse still slips the old crew's doc into the new crew's
+      // state (TOCTOU — commit security review, 2026-07-12).
+      if (state.getCrewToken() !== tokenAtStart) return;
+      state.applyRemoteDoc(merged);
       succeed(canonical);
     } catch {
       if (state.getCrewToken() !== tokenAtStart) return; // crew switched mid-flight
