@@ -172,23 +172,62 @@ test('the diagnostic says WHICH invariant refused the write', async () => {
   assert.ok(Number(r.rows[0].active) <= LIMITS.activePeople, '...not as "your crew is full"');
 });
 
-// ---- the claim the comments have been making for months ------------------------
+// ---- what this file can and CANNOT prove ---------------------------------------
 
-test('CONCURRENT MERGES: every writer survives — the claim, finally tested', async () => {
-  // db/schema.sql and api/_lib/crew-sql.mjs both assert this in prose: the merge
-  // is computed INSIDE the UPDATE, so a second writer blocks on the row lock and
-  // re-evaluates against the winner's committed row. A CTE-based version
-  // measurably lost 2 of 6 writes (DEVLOG 2026-07-07) and is what got that
-  // approach thrown out. Nothing ever checked that the surviving version works.
+test('many writers merged in sequence all survive (NOT a concurrency test — see below)', async () => {
+  // This used to be called "CONCURRENT MERGES: every writer survives — the claim,
+  // finally tested", and it was a lie. Codex disproved it (finish gate,
+  // 2026-07-12): it swapped the inline UPDATE for the BANNED pre-lock CTE — the
+  // exact shape that lost 2 of 6 writes in production — reran this Promise.all
+  // for 50 rounds, and lost ZERO writes. The test stayed green through precisely
+  // the regression it existed to catch.
+  //
+  // The reason: PGlite is a SINGLE connection. Promise.all does not make these
+  // writers race; it serialises them. Nothing here can ever collide on a row lock,
+  // so nothing here can ever prove the row lock works.
+  //
+  // Real concurrency lives in tests/db-concurrency.test.mjs, which uses Neon's
+  // HTTP driver (one independent session per request) and carries a CONTROL that
+  // asserts the banned CTE shape DOES lose writes — so we know the harness can
+  // see a lost write, rather than trusting another green tick.
+  //
+  // What THIS file is genuinely good for is everything above: merge semantics and
+  // the WHERE-clause invariants, run against real Postgres, in CI, with no
+  // database to provision. That is worth having. It just isn't this.
   await seed();
 
   const writers = ['Kev', 'Drew', 'Sam', 'Riley', 'Alex', 'Jo'];
-  await Promise.all(writers.map((who) =>
-    merge({ festivals: { ef: { selections: { GRiZ: { [who]: 4 } } } } })));
+  for (const who of writers) {
+    await merge({ festivals: { ef: { selections: { GRiZ: { [who]: 4 } } } } });
+  }
 
   const picks = (await readDoc()).festivals.ef.selections.GRiZ;
   assert.deepEqual(
     Object.keys(picks).sort(), [...writers].sort(),
-    `all ${writers.length} concurrent picks must survive — a lost write here is the bug that banned Vercel Blob`,
+    'every writer\'s pick lands and none clobbers another (sequentially — the row-lock behaviour is db-concurrency.test.mjs)',
+  );
+});
+
+test('the v4 and legacy deltas are not swapped — $2 and $3 select by the row\'s OWN version', async () => {
+  // Codex: the helper above passes the SAME json for $2 and $3, so it could never
+  // catch a swapped placeholder or an inverted CASE branch, even though production
+  // deliberately sends DIFFERENT deltaV4 and delta values. Send different ones.
+  const v4Delta = JSON.stringify({ festivals: { ef: { selections: { GRiZ: { Kev: 4 } } } } });
+  const legacyDelta = JSON.stringify({ festivals: { ef: { selections: { GRiZ: { Kev: 3 } } } } });
+
+  // A v4 stored doc must take $2 (the v4-mapped delta).
+  await seed(); // baseDoc is v:4
+  await db.query(MERGE_SQL, [TOKEN, v4Delta, legacyDelta, LIMITS.docBytes, LIMITS.activePeople]);
+  assert.equal(
+    (await readDoc()).festivals.ef.selections.GRiZ.Kev, 4,
+    'a v4 doc takes the v4 delta ($2)',
+  );
+
+  // A legacy (v3) stored doc must take $3 — the client's un-remapped bytes.
+  await seed({ ...baseDoc(), v: 3 });
+  await db.query(MERGE_SQL, [TOKEN, v4Delta, legacyDelta, LIMITS.docBytes, LIMITS.activePeople]);
+  assert.equal(
+    (await readDoc()).festivals.ef.selections.GRiZ.Kev, 3,
+    'a v3 doc takes the legacy delta ($3) — swap the placeholders and this flips',
   );
 });

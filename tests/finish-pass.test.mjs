@@ -104,6 +104,59 @@ test('festRow is ONE component — Settings’ chevron variant is an option, not
   assert.equal(withChev.className, plain.className);
 });
 
+// ---- The accent rule, enforced -------------------------------------------------
+
+test('the festival accent appears ONLY on its four sanctioned surfaces', async () => {
+  // It had crept to SEVEN by 2026-07-12 — including the loader shown while a crew
+  // was being CREATED, i.e. wearing a festival's colour before a festival had been
+  // chosen, and the global focus ring, which is app chrome. A rule this
+  // load-bearing needs something other than good intentions holding it up.
+  const { readFileSync } = await import('node:fs');
+  const root = new URL('../', import.meta.url);
+  const files = [
+    'assets/v3.css', 'assets/v3-tokens.css',
+    'js/v3/app.js', 'js/v3/settings.js', 'js/v3/notes.js',
+    'js/v3/tools.js', 'js/v3/wall.js',
+  ];
+
+  // The four surfaces. `fest-name` / `fest.name` is surface one wherever it renders.
+  const SANCTIONED = [
+    /day-tab\.active/,              // 2. the active day tab (dock + desktop rail)
+    /\.stage-head/,                 // 3. stage headers
+    /settings-card\.current/,       // 4. the current-fest border in Settings
+    /fest-name|fest\.name|PORTOLA/, // 1. the fest name (incl. the how-it-works example)
+    /--fest:/,                      // the token's own declaration + fallback
+  ];
+
+  const offenders = [];
+  for (const f of files) {
+    const text = readFileSync(new URL(f, root), 'utf8');
+
+    if (f.endsWith('.css')) {
+      // CSS rules span lines — the selector that justifies the accent is often
+      // on the line ABOVE the colour. Judge the whole rule block, not the line.
+      for (const block of text.split('}')) {
+        if (!/var\(--fest\)/.test(block)) continue;
+        if (SANCTIONED.some((re) => re.test(block))) continue;
+        const line = block.split('\n').find((l) => /var\(--fest\)/.test(l)) || block;
+        offenders.push(`${f}  ${line.trim().slice(0, 72)}`);
+      }
+    } else {
+      text.split('\n').forEach((line, i) => {
+        if (!/var\(--fest\)/.test(line)) return;
+        if (/^\s*(\/\/|\*|\/\*)/.test(line)) return; // a comment ABOUT the rule is not a use of it
+        if (SANCTIONED.some((re) => re.test(line))) return;
+        offenders.push(`${f}:${i + 1}  ${line.trim().slice(0, 72)}`);
+      });
+    }
+  }
+
+  assert.deepEqual(
+    offenders, [],
+    `the festival accent escaped its four surfaces — use rgb(var(--brand)) for app chrome:\n${offenders.join('\n')}`,
+  );
+});
+
 // ---- Sheets must give focus back --------------------------------------------
 
 test('a no-op closeSheet() does not forget who opened the sheet', async () => {

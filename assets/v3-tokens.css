@@ -98,7 +98,10 @@
 /* Quiet by default, unmistakable on keyboard: one focus language everywhere. */
 button, input, textarea, select, a, [role="button"], [role="option"] { outline: none; }
 :focus-visible {
-  outline: 2px solid rgba(var(--fest), .9) !important; /* beats inline resets */
+  /* --brand, not --fest: a focus ring is app chrome, not festival content, and
+   * the accent is reserved for exactly four surfaces. It also has to work on
+   * screens where no festival is chosen yet. */
+  outline: 2px solid rgba(var(--brand), .9) !important; /* beats inline resets */
   outline-offset: 2px;
 }
 @media (prefers-reduced-motion: reduce) {

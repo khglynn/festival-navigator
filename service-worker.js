@@ -1,6 +1,6 @@
 // Festival Navigator service worker — offline-first app shell.
 // Bump CACHE_VERSION whenever you change cached static assets.
-const CACHE_VERSION = 'festival-nav-v26'; // v26 = Codex gate: touch floor no longer overlaps; refusal scoped + recoverable
+const CACHE_VERSION = 'festival-nav-v27'; // v27 = accent rule enforced; focus ring + personal link on brand
 
 // The shell that MUST be complete for offline to be real: if any of these
 // fail, install fails and the old worker keeps serving — a half-cached shell

@@ -925,9 +925,11 @@ function renderJoin(token, doc) {
     nm.textContent = name;
     row.append(av, nm);
     if (meHint && name.toLowerCase() === meHint) {
-      row.style.border = '1.5px solid rgba(var(--fest), .7)';
+      // --brand: "this link is yours" is about a PERSON, on the join screen,
+      // before any festival is even on screen. Not one of the accent's four.
+      row.style.border = '1.5px solid rgba(var(--brand), .7)';
       const hint = document.createElement('span');
-      hint.style.cssText = 'margin-left: auto; color: rgb(var(--fest)); font-size: 11px; font-weight: 800; flex: none;';
+      hint.style.cssText = 'margin-left: auto; color: rgb(var(--brand)); font-size: 11px; font-weight: 800; flex: none;';
       hint.textContent = 'this link is yours';
       row.appendChild(hint);
     }
