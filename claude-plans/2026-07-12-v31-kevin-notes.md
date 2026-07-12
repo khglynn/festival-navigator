@@ -54,6 +54,14 @@ Use case: shared phone — one person tracking for everyone; not everyone
 joins via invite link. Mechanically: create member (name + color) directly in
 the crew doc, then the existing identity switcher covers flipping between
 members on one device.
+**Kevin clarification (2026-07-12):** the added person must reconcile with a
+later real join — "let's say I add drew myself and make a few picks for him.
+I should also be able to send him a link and have his join linked to those
+picks and that name in the UI." Design: the join screen's existing
+claim-your-circle already inherits picks; add (a) a per-person share link
+(`&me=<name>`) minted from the add-member flow that pre-selects Drew's
+identity on the join screen, (b) case-insensitive claim matching so
+"drew" doesn't fork a duplicate member.
 
 **6. Festival-level notes** — info found while pulling in festival data that
 doesn't fit the grid ("more a project callout, idk if there's stuff we should
@@ -69,6 +77,10 @@ default — friends should never need to know a code. "Request access" =
 capture the joiner's email/ask for Kevin, since Spotify dev-mode allowlists
 are dashboard-managed only (no API). Reference: recordOS's flow (workflow
 agent reading it).
+**Kevin clarification (2026-07-12):** BYO client ID survives as a "subtle
+tertiary option" for repo-forkers/non-friends with their own crews — do not
+remove it, just tuck it behind an advanced path. "Main path is my friends,
+my spotify, and making that easy."
 
 **8. Past fests button** — too subtle in settings, too prominent on the
 landing page. Rebalance both.
