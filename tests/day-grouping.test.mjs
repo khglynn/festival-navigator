@@ -21,11 +21,14 @@ const DAYS = ['Friday', 'Saturday', 'Sunday'];
 test('splitDays: clean combinations of known days split; anything else stays', () => {
   assert.deepEqual(splitDays('Saturday & Sunday', DAYS), ['Saturday', 'Sunday']);
   assert.deepEqual(splitDays('saturday and sunday', DAYS), ['Saturday', 'Sunday']);
-  assert.deepEqual(splitDays('Friday, Saturday & Sunday', DAYS), ['Friday', 'Saturday', 'Sunday']);
+  assert.deepEqual(splitDays('Friday & Saturday & Sunday', DAYS), ['Friday', 'Saturday', 'Sunday']);
   assert.equal(splitDays('Saturday', DAYS), null, 'single day is not a combination');
   assert.equal(splitDays('Saturday & Someday', DAYS), null, 'unknown part = literal group');
   assert.equal(splitDays('', DAYS), null);
   assert.equal(splitDays('Saturday & Sunday', []), null, 'no known days = no split');
+  // Commas are NOT combiners — they live inside single-day labels.
+  const LL = ['Wednesday, Sept 16 (Early Arrival Pre-Party)'];
+  assert.equal(splitDays('Wednesday, Sept 16 (Early Arrival Pre-Party)', LL), null);
 });
 
 test('groupByDay: multi-day artists land under each day, order follows known days', () => {

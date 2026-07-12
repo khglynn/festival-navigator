@@ -9,6 +9,7 @@ import * as state from '../state.js';
 import * as model from './model.js';
 import { LEVEL_LABELS_V4 } from '../parse.js';
 import { computeLanes } from '../overlap.js';
+import { activityMinutes } from '../time.js';
 import { auraBackground, whoCorner, aboutCorner, nameColor, subColor } from './aura.js';
 import { BOARD } from './palette.js';
 import { notesSection } from './notes.js'; // runtime-only cycle with this module (colorIndexOf) — safe
@@ -69,6 +70,13 @@ export function renderCard(artistName, ctx, opts = {}) {
   // render — a single-card refresh must preserve every invariant the full
   // render established (CORE-1/CORE-3).
   if (opts.time) el.dataset.time = opts.time;
+  if (opts.tag) el.dataset.tag = opts.tag;
+  if (opts.tag) {
+    const tag = document.createElement('span');
+    tag.className = 'chip-weekend';
+    tag.textContent = opts.tag;
+    el.appendChild(tag);
+  }
   const { background, animated } = auraBackground(people);
   el.style.background = background;
   if (animated && !ctx.lowPower) {
@@ -176,6 +184,7 @@ export function refreshCard(el, artistName, ctx) {
   const fresh = renderCard(artistName, ctx, {
     cell: el.classList.contains('cell'),
     time: el.dataset.time || undefined,
+    tag: el.dataset.tag || undefined,
   });
   for (const prop of PLACEMENT_PROPS) {
     const v = el.style.getPropertyValue(prop);
@@ -191,7 +200,9 @@ export function refreshCard(el, artistName, ctx) {
 // the string isn't a clean combination and stays a literal group (ST-1).
 export function splitDays(dayStr, knownDays) {
   if (!dayStr || !knownDays?.length) return null;
-  const parts = String(dayStr).split(/\s*[&+/,]\s*|\s+and\s+/i).map((s) => s.trim()).filter(Boolean);
+  // No comma in the separator set: real combinations use & / + / "and", while
+  // commas live inside single-day labels ("Wednesday, Sept 16 (pre-party)").
+  const parts = String(dayStr).split(/\s*[&+/]\s*|\s+and\s+/i).map((s) => s.trim()).filter(Boolean);
   if (parts.length < 2) return null;
   const canon = new Map(knownDays.map((d) => [d.toLowerCase(), d]));
   const mapped = parts.map((p) => canon.get(p.toLowerCase()));
@@ -205,7 +216,7 @@ export function knownDaysOf(fest) {
   if (meta.length) return meta;
   const days = [];
   for (const a of fest.artists || []) {
-    if (!a.day || /[&+/,]|\s+and\s+/i.test(a.day)) continue;
+    if (!a.day || /[&+/]|\s+and\s+/i.test(a.day)) continue;
     if (!days.includes(a.day)) days.push(a.day);
   }
   return days;
@@ -234,7 +245,7 @@ export function groupByDay(artists, knownDays = []) {
   return ordered;
 }
 
-function dayHeader(label, sub) {
+function dayHeader(label, sub, opts = {}) {
   const rule = document.createElement('div');
   rule.className = 'day-rule';
   rule.dataset.day = label;
@@ -247,14 +258,37 @@ function dayHeader(label, sub) {
   const line = document.createElement('span');
   line.className = 'line';
   rule.append(d, dt, line);
+  // Day notes live at the day's front door (NT-2), not three scrolls past it.
+  if (opts.onOpenNotes) {
+    const chip = document.createElement('button');
+    chip.className = 'chip-notes';
+    chip.style.cssText = 'height: 17px; cursor: pointer; flex: none;';
+    chip.textContent = opts.noteCount ? `${opts.noteCount} ✎` : '+ ✎';
+    chip.setAttribute('aria-label', `Notes for ${label}`);
+    chip.addEventListener('click', opts.onOpenNotes);
+    rule.appendChild(chip);
+  }
   return rule;
 }
 
-// ---- search / sort -------------------------------------------------------------
+// The day rule's subtitle: real dates beat internal numbering (ST-4).
+function dayRuleSub(meta) {
+  if (!meta) return '';
+  return [meta.wd, meta.date || (meta.num ? `Day ${meta.num}` : '')].filter(Boolean).join(' · ');
+}
+
+// ---- search / sort / weekend -----------------------------------------------------
 export function applyFilter(artists, query) {
   const q = (query || '').trim().toLowerCase();
   if (!q) return artists;
   return artists.filter((a) => a.name.toLowerCase().includes(q));
+}
+
+// Multi-weekend fests (ST-3): 'all' shows everyone; W1/W2 shows that
+// weekend's lineup (artists playing both always stay).
+export function applyWeekend(artists, weekend) {
+  if (!weekend || weekend === 'all') return artists;
+  return artists.filter((a) => !a.weekends || a.weekends === 'both' || a.weekends === weekend);
 }
 
 export function applySort(artists, mode, ctx) {
@@ -276,7 +310,10 @@ function renderScheduledDay(root, day, ctx) {
   const computed = state.getDayArtists(day);
   const stages = dayData.stages || [];
   const meta = (fest.dayMeta || {})[day];
-  root.appendChild(dayHeader(day, meta ? `${meta.wd || ''} ${meta.num || ''}`.trim() : ''));
+  root.appendChild(dayHeader(day, dayRuleSub(meta), {
+    noteCount: model.noteCount(state.crewDoc, ctx.fid, 'day', day),
+    onOpenNotes: ctx.onOpenDayNotes ? () => ctx.onOpenDayNotes(day) : null,
+  }));
 
   const dayStart = Math.min(...computed.map((a) => a.startMin));
   const dayEnd = Math.max(...computed.map((a) => a.endMin ?? a.startMin + 60));
@@ -315,13 +352,29 @@ function renderScheduledDay(root, day, ctx) {
     label.textContent = `${hr % 12 === 0 ? 12 : hr % 12} ${hr < 12 ? 'AM' : 'PM'}`;
     rail.appendChild(label);
   }
+  // Everything that isn't a stage set lives in ONE far-right column (ST-2):
+  // activities (workshops, ceremonies) and any set whose stage isn't a known
+  // column — which the old code silently DROPPED. Anything with stage+time
+  // stays on the clock; the old below-grid list is gone.
+  const acts = (fest.activities || {})[day] || [];
+  const strays = computed.filter((a) => stages.indexOf(a.stage) === -1);
+  const hasEE = acts.length > 0 || strays.length > 0;
+  grid.style.gridTemplateColumns = `repeat(${stages.length + (hasEE ? 1 : 0)}, minmax(150px, 1fr))`;
+  if (hasEE) {
+    const h = document.createElement('div');
+    h.className = 'stage-head';
+    h.style.color = 'var(--text-secondary)'; // neutral tint — not a stage
+    h.textContent = 'EVERYTHING ELSE';
+    grid.appendChild(h);
+  }
+
   // Same-stage overlaps split their column into side-by-side lanes (the old
   // grid's fix, dropped in the first v3 pass — the Codex P6 sweep surfaced
   // that EF genuinely has these; js/overlap.js is very much alive).
   const lanes = computeLanes(computed);
   for (const a of computed) {
     const col = stages.indexOf(a.stage);
-    if (col === -1) continue;
+    if (col === -1) continue; // strays render in the everything-else column
     const cell = renderCard(a.name, ctx, { cell: true, time: a.startStr });
     cell.style.gridColumn = String(col + 1);
     const row = Math.floor(a.startMin / 15) - startRow + 2;
@@ -335,33 +388,41 @@ function renderScheduledDay(root, day, ctx) {
     }
     grid.appendChild(cell);
   }
+
+  if (hasEE) {
+    const col = document.createElement('div');
+    col.className = 'ee-col';
+    col.style.gridColumn = String(stages.length + 1);
+    col.style.gridRow = `2 / span ${rows}`;
+    const entries = [
+      ...strays.map((a) => ({ min: a.startMin, artist: a })),
+      ...acts.map((a) => ({ min: activityMinutes((a.time || '').split(' - ')[0] || '12:00 PM'), act: a })),
+    ].sort((x, y) => x.min - y.min);
+    for (const e of entries) {
+      if (e.artist) {
+        col.appendChild(renderCard(e.artist.name, ctx, { cell: true, time: e.artist.startStr }));
+      } else {
+        const rowEl = document.createElement('div');
+        rowEl.className = 'ee-item';
+        const t = document.createElement('span');
+        t.className = 'ee-time';
+        t.textContent = e.act.time || '';
+        const n = document.createElement('span');
+        n.className = 'ee-name';
+        n.textContent = e.act.name;
+        const v = document.createElement('span');
+        v.className = 'ee-venue';
+        v.textContent = e.act.venue || '';
+        rowEl.append(t, n, v);
+        col.appendChild(rowEl);
+      }
+    }
+    grid.appendChild(col);
+  }
   scroll.appendChild(grid);
   wrap.append(rail, scroll);
   root.appendChild(wrap);
 
-  // Non-stage programming (workshops, silent disco) — data-driven list under
-  // the grid, kept from the old model (docs/add-a-festival.md activities{}).
-  const acts = (fest.activities || {})[day];
-  if (Array.isArray(acts) && acts.length) {
-    const list = document.createElement('div');
-    list.style.cssText = 'display: flex; flex-direction: column; gap: 4px;';
-    for (const a of acts) {
-      const row = document.createElement('div');
-      row.style.cssText = 'display: flex; gap: 10px; align-items: baseline; font-size: 11.5px;';
-      const t = document.createElement('span');
-      t.style.cssText = 'color: var(--text-tertiary); font-weight: 600; flex: none; width: 130px;';
-      t.textContent = a.time;
-      const n = document.createElement('span');
-      n.style.cssText = 'color: var(--text-body); font-weight: 600;';
-      n.textContent = a.name;
-      const v = document.createElement('span');
-      v.style.cssText = 'color: var(--text-tertiary); font-weight: 600; margin-left: auto;';
-      v.textContent = a.venue;
-      row.append(t, n, v);
-      list.appendChild(row);
-    }
-    root.appendChild(list);
-  }
   if (ctx.onNotesChange) root.appendChild(notesSection('day', day, day, ctx, ctx.onNotesChange));
 }
 
@@ -419,7 +480,7 @@ export function renderWall(root, ctx) {
     return;
   }
 
-  const artists = applySort(applyFilter(fest.artists || [], ctx.query), ctx.sort, ctx);
+  const artists = applySort(applyFilter(applyWeekend(fest.artists || [], ctx.weekend), ctx.query), ctx.sort, ctx);
 
   if (!artists.length) {
     const empty = document.createElement('div');
@@ -443,11 +504,19 @@ export function renderWall(root, ctx) {
     const meta = (fest.dayMeta || {})[day];
     root.appendChild(dayHeader(
       day || 'THE LINEUP',
-      day ? (meta ? `${meta.wd || ''} ${meta.num || ''}`.trim() : '') : (ctx.sort === 'billing' ? 'BILLING ORDER' : ''),
+      day ? dayRuleSub(meta) : (ctx.sort === 'billing' ? 'BILLING ORDER' : ''),
+      day && ctx.onOpenDayNotes ? {
+        noteCount: model.noteCount(state.crewDoc, ctx.fid, 'day', day),
+        onOpenNotes: () => ctx.onOpenDayNotes(day),
+      } : {},
     ));
     const grid = document.createElement('div');
     grid.className = 'wall-grid';
-    for (const a of list) grid.appendChild(renderCard(a.name, ctx));
+    const showTags = !ctx.weekend || ctx.weekend === 'all';
+    for (const a of list) {
+      const tag = showTags && (a.weekends === 'W1' || a.weekends === 'W2') ? a.weekends : undefined;
+      grid.appendChild(renderCard(a.name, ctx, { tag }));
+    }
     root.appendChild(grid);
     // Day notes with personal pins live under each real day's cards (21e).
     if (day && ctx.onNotesChange) {

@@ -2,6 +2,27 @@
 
 Newest first. One entry per meaningful unit of work.
 
+## 2026-07-12 (early) — NOTES + SET-TIMES: the experience classes
+
+- **Notes**: one scope sheet serves artists AND days (NT-2 — day headers carry
+  a ✎ chip with count); notes are editable and deletable through the tombstone
+  model (edit keeps id+ts so order holds; the server's id-prefix rule already
+  means only your own) (NT-3); pins work in every surface (NT-4); sheets get a
+  real close ✕ and the grabber actually swipes down to close (NT-5). The
+  all-notes view is the notes HOME (NT-1): festival composer first — present
+  even (especially) in the empty state.
+- **Set-times**: the below-grid activity list died — activities and any set
+  with an unknown stage (previously silently DROPPED) live in one neutral
+  "EVERYTHING ELSE" column, chronological (ST-2). Day rules show real dates
+  from dayMeta (ST-4). Archived fests carry a memory banner (ST-5).
+- **Weekends (ST-3)**: fests with W1/W2 artists get a Weekend view (Both/One/
+  Two, persisted per fest per device); W1/W2-only artists carry a quiet tag in
+  Both view so a wrong-weekend must can't sneak in. Verified live on ACL.
+- **Data honesty (ST-6)**: Lolla '25 got its year + dates back (file + index);
+  the validator now warns on archived fests missing either, and on combined
+  day strings that won't split (comma dropped from the separator set — commas
+  live inside single-day labels like Lost Lands' pre-party days).
+
 ## 2026-07-11 (night) — FLOWS 5–13: joins that can't strand, settings with two doors
 
 - **FLOW-5**: js/name-rules.mjs is now the ONE name rule — client forms and

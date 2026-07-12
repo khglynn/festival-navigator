@@ -36,6 +36,21 @@ export function validateFestivalDoc(fest, { filename } = {}) {
     else err(`artists[] must be non-empty for status=${fest.status}`);
   }
 
+  // Archived fests are the crew's memories — a memory without a date rots
+  // into "which year was that?" (ST-6).
+  if (fest.status === 'archived') {
+    for (const k of ['year', 'dates']) {
+      if (!fest[k]) warn(`archived festival missing ${k} — memories need dates`);
+    }
+  }
+
+  // No comma in the separator set — commas live inside single-day labels
+  // ("Wednesday, Sept 16 (pre-party)"); combinations use & / + / "and".
+  const knownDays = new Set(
+    (Array.isArray(fest.artists) ? fest.artists : [])
+      .map((a) => a && a.day)
+      .filter((d) => typeof d === 'string' && !/[&+/]|\s+and\s+/i.test(d)),
+  );
   const artistNames = new Set();
   (Array.isArray(fest.artists) ? fest.artists : []).forEach((a, i) => {
     if (!a || !a.name || typeof a.name !== 'string') err(`artists[${i}]: missing name`);
@@ -47,6 +62,14 @@ export function validateFestivalDoc(fest, { filename } = {}) {
     }
     if (a && a.time && !TIME_RE.test(a.time)) err(`artists[${i}] (${safeKey(a.name)}): unparseable time ${JSON.stringify(safeKey(a.time))}`);
     if (a && a.weekends && !['W1', 'W2', 'both'].includes(a.weekends)) err(`artists[${i}] (${safeKey(a.name)}): weekends must be W1|W2|both`);
+    // Combined day strings ("Saturday & Sunday") render split (ST-1) — but
+    // only when every part matches a real day; flag the ones that won't.
+    if (a && typeof a.day === 'string' && /[&+/]|\s+and\s+/i.test(a.day)) {
+      const parts = a.day.split(/\s*[&+/]\s*|\s+and\s+/i).map((s) => s.trim()).filter(Boolean);
+      if (!parts.every((p) => [...knownDays].some((d) => d.toLowerCase() === p.toLowerCase()))) {
+        warn(`artists[${i}] (${safeKey(a.name)}): combined day ${JSON.stringify(safeKey(a.day))} has parts that match no known day — it will render as a literal section`);
+      }
+    }
   });
 
   if (fest.status === 'scheduled') {

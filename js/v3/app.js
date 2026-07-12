@@ -7,7 +7,7 @@ import * as sync from '../sync.js';
 import * as model from './model.js';
 import { loadFestivalIndex, loadFestival, loadCustomFestivals, FESTIVAL_INDEX, defaultFestivalId } from '../festivals.js';
 import { renderWall, refreshCard, showUndoToast, showToast, wireScrollspy, colorIndexOf, groupByDay, knownDaysOf } from './wall.js';
-import { openArtistSheet, openAllNotes, closeSheet, refreshOpenSheet } from './notes.js';
+import { openArtistSheet, openDayNotes, openAllNotes, closeSheet, refreshOpenSheet } from './notes.js';
 import { renderSettings, appSettings, openSubviewByKey } from './settings.js';
 import { router } from './router.js';
 import { createSortControl } from './sort-control.js';
@@ -32,6 +32,10 @@ const ctx = {
     openArtistSheet(artist, ctx, onNotesChange);
     router.push(`sheet:notes:${artist}`);
   },
+  onOpenDayNotes: (day) => {
+    openDayNotes(day, ctx, onNotesChange);
+    router.push(`sheet:day:${day}`);
+  },
   onNotesChange: () => onNotesChange(),
 };
 
@@ -45,6 +49,9 @@ function refreshCtx() {
   ctx.meName = crew.me(state.getCrewToken());
   ctx.picks = model.picksFor(state.crewDoc, ctx.fid);
   ctx.affinity = state.affinityLookup(ctx.meName);
+  // Weekend view is a device-local preference per fest (ST-3): set it once
+  // ("I'm going W2") and wrong-weekend picks announce themselves.
+  ctx.weekend = localStorage.getItem(`fn_weekend_v1_${ctx.fid}`) || 'all';
 }
 
 // ---- tap cycle -------------------------------------------------------------------
@@ -188,6 +195,55 @@ function repaintWall() {
   const scheduled = !!(state.fest().days && Object.keys(state.fest().days).length);
   $('sort-control').style.display = scheduled ? 'none' : '';
   updateMigrationBanner();
+  updateWeekendRow();
+  updateArchiveNote();
+}
+
+// Multi-weekend fests (ACL) get a weekend view (ST-3): pick yours once and
+// the wall shows who's actually playing it; W1/W2-only artists carry a tag
+// in the Both view so a wrong-weekend must can't sneak in.
+function updateWeekendRow() {
+  const existing = document.getElementById('weekend-row');
+  const fest = state.fest();
+  const has = (fest.artists || []).some((a) => a.weekends === 'W1' || a.weekends === 'W2');
+  if (!has) { if (existing) existing.remove(); return; }
+  let row = existing;
+  if (!row) {
+    row = document.createElement('div');
+    row.id = 'weekend-row';
+    row.style.cssText = 'display: flex; align-items: center; gap: 6px; margin-top: 11px;';
+    const lbl = document.createElement('span');
+    lbl.className = 'micro-label';
+    lbl.style.marginRight = '4px';
+    lbl.textContent = 'Weekend';
+    row.appendChild(lbl);
+    for (const [val, label] of [['all', 'Both'], ['W1', 'One'], ['W2', 'Two']]) {
+      const b = document.createElement('button');
+      b.className = 'seg';
+      b.dataset.w = val;
+      b.textContent = label;
+      b.addEventListener('click', () => {
+        localStorage.setItem(`fn_weekend_v1_${ctx.fid}`, val);
+        repaintWall();
+      });
+      row.appendChild(b);
+    }
+    document.querySelector('#screen-app .toolbar').after(row);
+  }
+  row.querySelectorAll('.seg').forEach((b) => b.classList.toggle('active', b.dataset.w === (ctx.weekend || 'all')));
+}
+
+// An archived fest reads as a memory, not a live plan (ST-5).
+function updateArchiveNote() {
+  const existing = document.getElementById('archive-note');
+  const fest = state.fest();
+  if (fest.status !== 'archived') { if (existing) existing.remove(); return; }
+  if (existing) return;
+  const bar = document.createElement('div');
+  bar.id = 'archive-note';
+  bar.style.cssText = 'margin-top: 11px; padding: 9px 13px; border: 1px solid var(--border-card); border-radius: var(--r-row); color: var(--text-secondary); font-size: 12px; font-weight: 600; line-height: 1.45; background: var(--card);';
+  bar.textContent = `${fest.name} ${fest.year || ''} already happened — this wall is the memory. Picks still work for the record.`.replace('  ', ' ');
+  document.querySelector('#screen-app .toolbar').after(bar);
 }
 
 // While a legacy crew's server-side migration is pending, picking is gated —
@@ -776,6 +832,7 @@ export function init() {
     refreshCtx();
     if (key === 'sheet:all') openAllNotes(ctx);
     else if (key === 'sheet:share') openShareMoment();
+    else if (key.startsWith('sheet:day:')) openDayNotes(key.slice('sheet:day:'.length), ctx, onNotesChange);
     else if (key.startsWith('sheet:notes:')) openArtistSheet(key.slice('sheet:notes:'.length), ctx, onNotesChange);
   }, () => closeSheet());
   window.addEventListener('popstate', (e) => router.onPopState(e.state));

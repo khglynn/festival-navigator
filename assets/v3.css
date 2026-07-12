@@ -70,6 +70,10 @@ button, input, textarea, select, a, [role="button"], [role="option"] { outline: 
 }
 .mark { height: 12px; border-radius: var(--r-pill); color: #fff; font-weight: 800;
         display: inline-flex; align-items: center; justify-content: center; margin-left: 3px; flex: none; }
+/* Weekend tag (ST-3): quiet top-left marker for W1/W2-only artists in Both view */
+.chip-weekend { position: absolute; top: 4px; left: 5px; font-size: 8px; font-weight: 800;
+                letter-spacing: .06em; color: var(--text-tertiary); border: 1px solid var(--border-card);
+                border-radius: var(--r-pill); padding: 1px 5px; background: rgba(10, 8, 18, .6); }
 .mark.ghost { border: 1px dashed var(--border-emphasis); background: transparent;
               color: var(--text-secondary); padding: 0 4px; font-size: 7.5px; }
 
@@ -196,9 +200,17 @@ button, input, textarea, select, a, [role="button"], [role="option"] { outline: 
 }
 @keyframes sheetIn { from { opacity: 0; transform: scale(.98); } }
 .sheet .grabber { width: 36px; height: 4px; border-radius: var(--r-pill);
-                  background: var(--border-card); margin: 0 auto; flex: none; }
+                  background: var(--border-card); margin: 0 auto; flex: none;
+                  touch-action: none; cursor: grab; padding: 6px 30px; background-clip: content-box; }
 .sheet .sheet-title { font-family: var(--font-display); letter-spacing: .04em;
                       font-size: 19px; color: var(--text-header); }
+.sheet .sheet-close { width: 30px; height: 30px; flex: none; border-radius: var(--r-pill);
+                      background: var(--card); border: 1px solid var(--border-card);
+                      color: var(--text-secondary); font-size: 12px; cursor: pointer;
+                      display: inline-flex; align-items: center; justify-content: center; }
+.note-action { background: none; border: none; padding: 0; cursor: pointer;
+               color: var(--text-tertiary); font-size: 10px; font-weight: 700;
+               text-decoration: underline; text-underline-offset: 2px; }
 /* A full-width strip pinned to the bottom of a 1440px window is a phone
  * pattern stretched — ≥720 the same surface is a centered dialog. */
 @media (min-width: 720px) {
@@ -309,6 +321,14 @@ button, input, textarea, select, a, [role="button"], [role="option"] { outline: 
               background: var(--card); border-radius: var(--r-card); }
 .hour-label { text-align: right; padding-right: 6px; font-size: 9.5px;
               color: var(--text-tertiary); font-weight: 600; position: relative; top: -7px; }
+/* Everything-else column (ST-2): activities + stage-less sets, chronological.
+ * Quiet by design — it shares the grid but never competes with the stages. */
+.ee-col { display: flex; flex-direction: column; gap: 4px; align-items: stretch; min-height: 0; }
+.ee-item { display: flex; flex-direction: column; gap: 1px; background: var(--card);
+           border: 1px solid var(--hairline); border-radius: var(--r-card); padding: 6px 9px; }
+.ee-item .ee-time { color: var(--text-tertiary); font-size: 9px; font-weight: 700; }
+.ee-item .ee-name { color: var(--text-body); font-size: 11.5px; font-weight: 600; line-height: 1.25; }
+.ee-item .ee-venue { color: var(--text-tertiary); font-size: 9.5px; font-weight: 600; }
 
 /* ---- wall grid + undo toast ---------------------------------------------------- */
 /* Density scales with the window (DT-3): as many ~176px columns as fit, so a
