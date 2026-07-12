@@ -1,73 +1,139 @@
 # 🎪 Festival Navigator
 
-A fast, mobile-first PWA for planning any festival with your crew. Make a crew,
-share one link, and everyone's picks sync live — including when the lineup is
-out but set times aren't. Works offline once loaded.
+A fast, mobile-first PWA for planning a music festival with your crew. Start a
+crew, share one link, and everyone's picks sync live — whether the lineup just
+dropped or the set times are already out. Works offline once loaded, because the
+place you actually need it is a field with one bar of signal.
 
-**Loaded festivals (July 2026):** Lost Lands, Portola, ACL (both weekends),
-EDC Orlando, Seismic 9.0, Tomorrowland Winter '27 (dates only) · Electric
-Forest '26 + Lollapalooza '25 archived with full schedules.
+**Festivals loaded:** 11 — the list lives in
+[`data/festivals/index.json`](data/festivals/index.json), which is the only place
+it lives. Adding one: [`docs/add-a-festival.md`](docs/add-a-festival.md).
 
 ## ✨ How it works
 
-- **Crews via share links** — "Start a crew" mints an unguessable link; the
-  link is the access (no accounts, no passwords). A crew keeps its people and
-  picks across every festival.
-- **Two views** — a sortable/searchable **artist list** while only the lineup
-  is announced (sort by billing, day, my picks, crew favorites; ACL gets a
-  weekend 1/2 filter), and the **schedule grid** once set times drop. Picks
-  carry over automatically because they're artist-keyed.
-- **Tap to prioritize** — Nice to See → Must See → Highlight → clear. Everyone
-  gets a color; overlapping picks blend on the grid.
-- **Offline-first** — picks save to the device instantly and sync when signal
-  returns. The server merges every write atomically, so nobody's picks ever
-  clobber anyone else's.
-- **Spotify (optional, per crew)** — the crew lead creates a free Spotify app
-  and pastes its Client ID; members connect via PKCE (no secrets anywhere),
-  get ★/♥ badges on artists they already listen to, and can turn picks into a
-  playlist on their own account. Note Spotify's 2026 rules: new dev apps are
-  capped at 5 allowlisted users and the app owner needs Premium.
-- **AI tools** — artist blurbs and a group conflict optimizer (server key via
-  `GEMINI_API_KEY`, or bring-your-own key client-side).
-- **Export** — day grid as PNG, or copy/paste all picks as text.
+- **Crews are share links.** "Start a crew" mints an unguessable link. The link
+  *is* the access — no accounts, no passwords, no email. Anyone holding it can
+  read and write that crew, and nobody can touch any other crew. One crew keeps
+  its people and picks across every festival.
+- **Two walls.** While only the lineup is announced you get a sortable,
+  searchable **artist list**; once set times drop the same picks render as a
+  **timetable** — stage columns, honest clock, overlaps side by side. Picks carry
+  over automatically because they are keyed by artist, not by slot.
+- **Tap to pick.** Levels are `picked ×1 → ×2 → ×3 → must → clear`. Everyone in
+  the crew gets a color, and overlapping picks blend on the wall so you can see
+  at a glance where the crew is converging.
+- **Notes** attach to an artist, a day, or the festival itself.
+- **Offline-first.** Picks land in `localStorage` instantly and sync when signal
+  returns. The server merges every write atomically, so two people picking at
+  once can never clobber each other.
+- **Spotify (optional).** Members connect via PKCE — no secrets in the client —
+  and artists they already listen to get badges on the wall. Picks can become a
+  playlist on their own account. See *Spotify setup* below; the 2026 rules are
+  restrictive and worth reading before you plan around them.
+- **Add a festival with AI.** `api/festival-add.js` uses search-grounded Gemini
+  to research a lineup and returns a *validated candidate* — nothing is saved
+  until a human confirms it on screen.
+- **Export.** A day of the wall as a PNG, or all your picks as paste-able text.
 
 ## 🗂️ Project structure
 
+Full paths, one per line — `tests/docs-truth.test.mjs` asserts every one of them
+still exists, so this block cannot quietly rot.
+
 ```
-index.html               app shell (landing / join / main views)
-js/                      ES modules, no bundler
-  app.js                 boot flow + wiring        state.js   crew doc + pending overlay
-  sync.js                push/poll sync            crew.js    tokens, registry, share links
-  festivals.js           lazy festival loader      spotify.js PKCE + library scan + playlists
-  overlap.js             same-stage lane math      render/    grid, list, people
-data/festivals/          one JSON per festival + index.json (see docs/add-a-festival.md)
-api/                     Vercel functions: crew store, artist-info, optimize
-api/_lib/                shared validation + guards (node:test covered)
-db/schema.sql            Neon Postgres schema incl. the atomic jsonb_deep_merge()
-scripts/                 festival validator/importer, one-time legacy migration
-tests/                   node --test suites (npm test)
+index.html                    app shell — all screens live here
+service-worker.js             offline shell; bump CACHE_VERSION on any asset change
+js/v3/app.js                  boot, wiring, screen assembly, sheets
+js/v3/wall.js                 the wall: timetable + lineup, lanes, sticky stage strip
+js/v3/settings.js             settings and its drills (Spotify, export, bulk paste)
+js/v3/notes.js                notes at artist / day / fest scope
+js/v3/model.js                the read model over a crew doc + festival data
+js/v3/aura.js                 how a crew's picks blend into one card's color
+js/v3/palette.js              the 24-color member board
+js/v3/router.js               history-backed navigation
+js/state.js                   crew doc + the pending-changes overlay
+js/sync.js                    push / poll, retry, and the sync dot's one truth
+js/crew.js                    tokens, the local crew registry, share links
+js/merge.js                   the deep-merge the client and server agree on
+js/overlap.js                 same-stage lane math
+js/time.js                    parsing and flooring set times
+js/name-rules.mjs             name validation SHARED with the server
+api/crew.js                   the crew store: create, read, atomic merge
+api/access.js                 Spotify access requests (Slack approve flow)
+api/festival-add.js           AI lineup research; returns a candidate, saves nothing
+api/selections.js             RETIRED endpoint — answers 410 so old clients self-heal
+api/_lib/                     validation + guards shared by client and server
+db/schema.sql                 Neon Postgres schema incl. the atomic jsonb_deep_merge()
+assets/v3-tokens.css          design tokens — look values up here, never invent them
+assets/v3.css                 components; hand-written, no framework, no build step
+data/festivals/index.json     the festival list (single source of truth)
+scripts/validate-festivals.mjs  run before committing festival data; CI enforces it
+tests/                        node --test suites (npm test)
+docs/user-flows.md            what every screen is supposed to do
+docs/add-a-festival.md        how to add a festival
 ```
 
 ## 🔄 Sync model
 
-Every pick is written to `localStorage` immediately, then the **delta** is
-pushed to `/api/crew` where Postgres merges it into the crew document in a
-single atomic `UPDATE` (via `jsonb_deep_merge`, see `db/schema.sql`) — write
-races are structurally impossible. Other devices poll the merged doc every
-20s and on focus. Removals sync as tombstones (`removed: true`) and level-0
-picks because a deep-merge can't express deletion.
+Every pick writes to `localStorage` immediately, then the **delta** is pushed to
+`/api/crew`, where Postgres merges it into the crew document in a single atomic
+`UPDATE` via `jsonb_deep_merge()` (see [`db/schema.sql`](db/schema.sql)). Because
+the merge is computed *inside* the UPDATE, a second write blocks on the row lock
+and then re-evaluates against the winner's committed row — so write races are
+structurally impossible rather than merely unlikely.
 
-## 🏗️ Setup (fork/self-host)
+Other devices poll the merged doc every 25 seconds (stretching to 5 minutes in
+low-power mode) and on focus. Removals sync as **tombstones** (`removed: true`,
+and level-`0` picks) because a deep-merge cannot express deletion.
 
-1. Deploy to Vercel (static + functions; no build step — Tailwind is
-   precompiled and committed, `npm run css` after class changes).
-2. Create a Postgres database (free Neon tier is plenty) and run
-   `psql "$DATABASE_URL" -f db/schema.sql`.
-3. Set env vars: `DATABASE_URL` (required), `GEMINI_API_KEY` (optional — AI
-   features fall back to bring-your-own-key without it).
-4. Local dev: `npm i && vercel dev` (pulls env from the linked project).
-   Note: restart `vercel dev` after creating new files — it only serves files
-   that existed at startup.
+Two consequences worth knowing before you change anything here:
+
+- **Notes are keyed objects at every level, never arrays.** `jsonb_deep_merge`
+  replaces arrays wholesale, so an array would eat concurrent notes.
+- **Vercel Blob is not an option for the crew document.** It was tried first and
+  dropped: its read path is eventually consistent and it measurably lost writes
+  under rapid merges.
+
+## 🏗️ Setup (fork / self-host)
+
+No build step — the CSS is hand-written and the JS ships as ES modules.
+
+1. **Deploy to Vercel** (static + functions).
+2. **Create a Postgres database** (the free Neon tier is plenty) and load the
+   schema: `psql "$DATABASE_URL" -f db/schema.sql`
+3. **Set environment variables:**
+
+   | Variable | Required | What it does |
+   |---|---|---|
+   | `DATABASE_URL` | **yes** | the crew store |
+   | `GEMINI_API_KEY` | no | AI festival research (`api/festival-add.js`) |
+   | `OWNER_SPOTIFY_CLIENT_ID` | no | your Spotify app, offered to your crew |
+   | `SLACK_WEBHOOK_URL` | no | where access requests get sent |
+   | `APPROVE_SECRET` | no | signs the approve link in that Slack message |
+   | `PUBLIC_BASE_URL` | no | the canonical origin for approve links |
+
+   The last four are one feature and all four must be set together, or the app
+   falls back to asking each member for their own Spotify Client ID.
+
+4. **Local dev:** `npm i && vercel dev`. Two real gotchas: `vercel dev` will not
+   serve files created after it started (restart it), and it pulls the *real*
+   cloud env — so `localhost` hits your production database.
+
+## 🎧 Spotify setup
+
+Spotify's February 2026 rules shape this whole feature, so plan around them:
+a development-mode app is capped at **5 authorized users**, a developer may hold
+**one** development-mode app, and the app's owner needs **Premium**.
+
+That is why the app offers three doors, in order of how most people will use it:
+
+1. **Connect with the crew's app** — if the deployment sets the four variables
+   above, members just connect. The owner adds them to the app's allowlist.
+2. **Request access** — a member who is not yet allowlisted asks; the owner gets
+   a Slack message with an approve button that drops them on the Spotify
+   dashboard's user page.
+3. **Bring your own Client ID** — the fork path. If you self-host and have your
+   own Spotify app, paste its Client ID. Settings has a five-step guide.
 
 ## 📄 License
 
