@@ -9,18 +9,22 @@ solid won't leave folks stuck and lost in the middle of a festival backend."
 Kevin is away; run autonomously per hg-durable-build. Production promote stays
 Kevin's call — build on a branch, verify on preview.
 
-## Fix-phase progress
+## Fix-phase progress — ALL 7 FIX CLASSES DONE, gates in progress
 
-- ✅ FLOW-1 (P0) — invite fest context, hybrid fix + 7 tests (b92fdb8)
-- ✅ CORE 1–18 + FLOW-2/3/4 + ST-1 — broken-behavior sweep, history router,
-  lost-state screens, crew-gone hardening; tests 63→87 (ff85c3b)
-- 🔄 NEXT: DESKTOP + A11Y foundations (tokens first — clamp type scale,
-  contrast retune, focus-visible; then day rail, dialogs ≥720, sort listbox,
-  entry centering) per design-direction doc. Then FLOWS 5–13, NOTES+ST,
-  SPOTIFY, PWA/CONTENT, then the 5 gates (grounding doc, in order).
-- Codex trailing review of b92fdb8+ff85c3b runs in background (pipeline
-  pattern — foundations don't build on CORE logic; findings get first-class
-  re-engagement when they land).
+- ✅ FLOW-1 (P0) hybrid fix (b92fdb8) · CORE 1–18 + FLOW-2/3/4 + ST-1
+  (ff85c3b) · Codex-review fixes incl. confirmed router P1 (331517d) ·
+  foundations: tokens/a11y/desktop body (8081f64) · FLOWS 5–13 (4f50c4b) ·
+  NOTES+SET-TIMES (4a1df15) · SPOTIFY + SW honesty (fa37184) · PWA/CONTENT
+  (3623465). Tests 63 → 88, all green. SW v14 → v15.
+- Codex trailing review of the first two commits: landed, 1 P1 (reproduced)
+  + 2 P3 — ALL fixed with a new regression test.
+- 🔄 NOW: the 5 gates, in order (grounding doc): tests ✓ → push branch for
+  preview → audit re-run (seed Client ID into Audit Rig, walk F13 + offline)
+  → Codex blocking diff gate → taste pass 390/1440 → NOW.md promote note +
+  teardown (delete Audit Rig crew, remove stale CLAUDE.md tailwind fact).
+- ⚠️ KEVIN ACTION queued: register https://fest.kevinhg.com/spotify-callback
+  as the redirect URI in the Spotify developer dashboard (SPOT-1). The app
+  now canonicalizes all OAuth to fest.kevinhg.com.
 
 **POST-COMPACTION READ ORDER:**
 1. `claude-plans/2026-07-11-v31-fix-phase-grounding.md` (in full)
