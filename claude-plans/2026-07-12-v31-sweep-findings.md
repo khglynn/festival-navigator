@@ -137,3 +137,19 @@ ad hoc) — festival-navigator's version should be in `db/schema.sql`.
 Gates per grounding doc: tests per fix (extend `tests/`), Codex review at
 cluster boundaries, staging walk (stage.fest.kevinhg.com) before declaring
 the arc done.
+
+## Codex arc-gate results (end of arc, same day)
+
+Full diff review (9af902b..e260853): 2 confirmed P1s, both FIXED same
+session — (1) the 2-row display floor could stack time-disjoint short sets
+(lane math now runs on display extents, regression-tested); (2) add-member
+applied its async result without a crew-switch guard (tokenAtStart bail
+added, both branches). One P3 fixed: base-card border-box silently shrank
+lineup-mode card floors ~29px — border-box now scoped to `.card.cell`, the
+only place lane math needs it. **One product call flagged for Kevin:** after
+'‹ back to fest list', a hard REFRESH on the bare URL cold-start-resumes the
+crew you just left (PWA resume philosophy vs. explicit-leave intent — Codex
+says design-coherent, wants your sign-off). One informational fast-follow:
+a permanently-invalid pending leaf (future client bug) would ride every
+push forever — a quarantine path would be nice-to-have; today's behavior
+(visible reason, no thrash) is strictly better than the old silent spin.

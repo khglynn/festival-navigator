@@ -690,6 +690,11 @@ function openAddMember() {
     const name = input.value.trim();
     const problem = nameProblem(name);
     if (problem) { status.textContent = problem; return; }
+    // Never apply one crew's add to another crew's state (sync.js's own
+    // convention): switching crews while the request is in flight must
+    // abandon the result, or the person lands in the WRONG crew — and the
+    // offline branch would even persist + push it there (Codex arc gate P1).
+    const tokenAtStart = state.getCrewToken();
     const people = state.people();
     const activeMatch = Object.entries(people)
       .find(([n, p]) => n.toLowerCase() === name.toLowerCase() && state.isActivePerson(p));
@@ -704,11 +709,12 @@ function openAddMember() {
     addBtn.disabled = true;
     status.textContent = 'Adding…';
     try {
-      const res = await fetch(`/api/crew?t=${encodeURIComponent(state.getCrewToken())}`, {
+      const res = await fetch(`/api/crew?t=${encodeURIComponent(tokenAtStart)}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ data: { people: { [canonical]: person } }, sv: 4 }),
       });
+      if (state.getCrewToken() !== tokenAtStart) return; // crew switched mid-flight
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         status.textContent = body.error || 'The crew service hiccuped — give it a second and try again.';
@@ -717,6 +723,7 @@ function openAddMember() {
       state.applyRemoteDoc(await res.json());
       succeed(canonical);
     } catch {
+      if (state.getCrewToken() !== tokenAtStart) return; // crew switched mid-flight
       // Offline: local-first add, sync catches up — same as every pick.
       state.recordPerson(canonical, person);
       state.crewDoc.people[canonical] = person;
