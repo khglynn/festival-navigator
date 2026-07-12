@@ -124,12 +124,14 @@ function renderPersonChips() {
   row.textContent = '';
   for (const [name, p] of state.activePeople()) {
     const isMe = name === ctx.meName;
+    // You are already you: your own chip is a label, not a switch. `static`
+    // carries that (one mechanism, shared with Settings) instead of an inline
+    // cursor override doing the same job a second way.
     const chip = document.createElement(isMe ? 'span' : 'button');
-    chip.className = 'person-chip' + (isMe ? ' you' : '');
+    chip.className = 'person-chip' + (isMe ? ' you static' : '');
     const ci = colorIndexOf(name, p);
     chip.style.background = hslOf(ci, 0.5);
     chip.style.border = '1px solid ' + strokeOf(ci, isMe);
-    chip.style.cursor = isMe ? 'default' : 'pointer';
     chip.textContent = name;
     if (!isMe && ctx.meName) {
       chip.setAttribute('aria-label', `Switch to picking as ${name}`);

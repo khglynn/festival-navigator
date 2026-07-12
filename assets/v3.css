@@ -293,7 +293,25 @@
  * neighbour — in a crowd, that is a wrong pick under someone's name. */
 @media (pointer: coarse) {
   button { position: relative; }
-  button::after { content: ''; position: absolute; inset: -14px -5px; }
+
+  /* The baseline every button gets for free. -15px vertical clears 44px from the
+   * shortest real control in the app (a 14px text button -> 44px exactly).
+   * Horizontal stays at -2px because the person chips sit 5px apart: at -5px,
+   * two neighbouring chips' hit areas overlapped across the whole gap, and the
+   * one later in the DOM would quietly win taps aimed at the other. In a crowd
+   * that is a pick recorded under the wrong person's name. */
+  button::after { content: ''; position: absolute; inset: -15px -2px; }
+
+  /* Narrow glyph controls (‹ back, the gear, the sheet ✕, the "+ ✎" note chip)
+   * are 17-28px WIDE, so a tall-but-thin target is still a miss. They are also
+   * isolated — nothing sits within 14px of them — so they can take the
+   * horizontal room. This list only ever UPGRADES: a glyph button nobody
+   * remembers to add here still keeps the safe baseline above, which is the
+   * whole difference from the rule this replaced. */
+  .back-btn::after, .gear-btn::after, .pin-btn::after,
+  .fest-link::after, .sheet-close::after, .chip-notes::after {
+    inset: -15px -14px;
+  }
 
   /* Controls INSIDE a card are the exception: the card IS the tap target. An
    * expanded edit-note button would steal taps meant for the pick underneath
