@@ -31,6 +31,14 @@ function loadJSON(key, fallback) {
   catch (e) { return fallback; }
 }
 
+// Writes are guarded like reads (PS-6): a full/blocked localStorage (quota,
+// private mode) must never throw mid-tap — memory state stays right and sync
+// still pushes; only the local cache is lost.
+function saveLS(key, value) {
+  try { localStorage.setItem(key, value); }
+  catch (e) { console.warn('localStorage write failed:', key, e); }
+}
+
 // ---- active crew context ----------------------------------------------------
 let crewToken = null;
 export let crewDoc = null;        // full crew document (remote truth + pending overlay)
@@ -61,7 +69,7 @@ export function activateCrew(token, doc, festHint) {
   const known = (id) => FESTIVAL_INDEX.some((f) => f.id === id);
   const hinted = (festHint && known(festHint)) ? festHint : null;
   activeFestivalId = (savedFest && known(savedFest)) ? savedFest : (hinted || defaultFestivalId());
-  if (hinted && activeFestivalId === hinted) localStorage.setItem(LS.fest(token), hinted);
+  if (hinted && activeFestivalId === hinted) saveLS(LS.fest(token), hinted);
   currentDay = null;
   selectedPerson = null;
   Object.keys(dayCache).forEach((k) => delete dayCache[k]);
@@ -70,11 +78,11 @@ export function activateCrew(token, doc, festHint) {
 
 export function setActiveFestivalId(fid) {
   activeFestivalId = fid;
-  localStorage.setItem(LS.fest(crewToken), fid);
+  saveLS(LS.fest(crewToken), fid);
 }
 
-export function persist() { localStorage.setItem(LS.doc(crewToken), JSON.stringify(crewDoc)); }
-export function persistPending() { localStorage.setItem(LS.pending(crewToken), JSON.stringify(pendingChanges)); }
+export function persist() { saveLS(LS.doc(crewToken), JSON.stringify(crewDoc)); }
+export function persistPending() { saveLS(LS.pending(crewToken), JSON.stringify(pendingChanges)); }
 
 // ---- accessors ---------------------------------------------------------------
 export function fest() { return FESTIVALS[activeFestivalId]; }

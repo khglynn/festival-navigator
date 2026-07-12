@@ -198,6 +198,7 @@ function repaintWall() {
   updateMigrationBanner();
   updateWeekendRow();
   updateArchiveNote();
+  maybeShowCoachMark();
 }
 
 // Multi-weekend fests (ACL) get a weekend view (ST-3): pick yours once and
@@ -232,6 +233,42 @@ function updateWeekendRow() {
     document.querySelector('#screen-app .toolbar').after(row);
   }
   row.querySelectorAll('.seg').forEach((b) => b.classList.toggle('active', b.dataset.w === (ctx.weekend || 'all')));
+}
+
+// First-wall coach mark (CT-1): the pick mechanic and long-press are
+// un-inferable — one dismissible line, once per device, pointing at the
+// full legend for more.
+const LS_COACH = 'fn_coach_v1';
+function maybeShowCoachMark() {
+  if (document.getElementById('coach-mark')) return;
+  try { if (localStorage.getItem(LS_COACH)) return; } catch { return; }
+  if (!ctx.meName) return;
+  const bar = document.createElement('div');
+  bar.id = 'coach-mark';
+  bar.style.cssText = 'display: flex; align-items: center; gap: 10px; margin-top: 11px; padding: 10px 13px; border: 1px solid var(--notes-chip-stroke); border-radius: var(--r-row); background: rgba(139, 123, 255, .07);';
+  const msg = document.createElement('span');
+  msg.style.cssText = 'flex: 1; color: var(--text-body); font-size: 12px; font-weight: 600; line-height: 1.45;';
+  msg.append('Tap an artist to pick — brighter each tap, 4th is a must. Hold one for notes. ');
+  const how = document.createElement('button');
+  how.style.cssText = 'background: none; border: none; padding: 0; cursor: pointer; color: var(--notes-chip-text); font-size: 12px; font-weight: 700; text-decoration: underline; text-underline-offset: 2px;';
+  how.textContent = 'How it all works';
+  how.addEventListener('click', () => {
+    openSettings();
+    router.push('settings');
+    openSubviewByKey('sub:how', ctx, settingsActions);
+    router.push('sub:how');
+  });
+  msg.appendChild(how);
+  const dismiss = document.createElement('button');
+  dismiss.setAttribute('aria-label', 'Dismiss');
+  dismiss.style.cssText = 'background: none; border: none; cursor: pointer; color: var(--text-tertiary); font-size: 13px; flex: none; padding: 2px 4px;';
+  dismiss.textContent = '✕';
+  dismiss.addEventListener('click', () => {
+    try { localStorage.setItem(LS_COACH, '1'); } catch { /* private mode */ }
+    bar.remove();
+  });
+  bar.append(msg, dismiss);
+  document.querySelector('#screen-app .toolbar').after(bar);
 }
 
 // An archived fest reads as a memory, not a live plan (ST-5).
@@ -912,7 +949,9 @@ export function init() {
   });
   window.addEventListener('hashchange', () => { closeSheet(); boot(); });
   window.addEventListener('online', () => { sync.pushSync(); updateMigrationBanner(); });
-  window.addEventListener('offline', () => { updateMigrationBanner(); });
+  // The dot goes gray the moment the radio does — not five minutes later at
+  // the next poll (PS-3).
+  window.addEventListener('offline', () => { sync.setSyncStatus('offline'); updateMigrationBanner(); });
   // Escape is universal back: pops the top layer through history so the
   // browser's back button and the keyboard always agree (FLOW-2).
   document.addEventListener('keydown', (e) => {

@@ -2,6 +2,26 @@
 
 Newest first. One entry per meaningful unit of work.
 
+## 2026-07-12 (early) — PWA/SYNC honesty + first-run content
+
+- **PS-3/4/5**: the dot goes gray the instant the radio does (offline event);
+  every sync fetch carries a 20s AbortSignal timeout so a hung request can
+  never jam isSyncing forever; sync state is ONE observable (sync.syncState())
+  — the settings label reads it instead of recomputing from hasPending (which
+  lied offline) and shows synced/syncing/offline/sync-error honestly.
+- **PS-6**: every hot-path localStorage write in state.js + crew.js goes
+  through a quota-guarded saveLS — a full store degrades to memory-only +
+  console warning, never a throw mid-tap.
+- **PS-7**: manifest orientation lock dropped (landscape timetable reading is
+  legit); theme/background colors corrected to the v3 --page (#0C0A14 — they
+  still carried the pre-v3 gray).
+- **CT-1**: one-time dismissible coach mark on the first wall (pick mechanic +
+  long-press + a link into How-it-works). CT-2: research preview shows the
+  FULL lineup behind a review fold, source hostnames only when real (no more
+  "0 sources"), discard clears state and refocuses, error copy stops promising
+  a manual path that doesn't exist. CT-3: empty-state sweep.
+- (PS-1/PS-2 shipped with the Spotify commit — same SW file.)
+
 ## 2026-07-12 (early) — SPOTIFY: five states, one OAuth origin, honest SW
 
 - **The drill is a state machine now (SPOT-2)**: five explicit states, each

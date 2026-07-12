@@ -20,12 +20,25 @@ export function initSync(opts) {
   if (opts && opts.onCrewGone) onCrewGone = opts.onCrewGone;
 }
 
+// ONE observable sync state (PS-5): the dot, the settings label, and any
+// future surface all read this — never a parallel computation that can lie.
+let currentStatus = 'online';
+export function syncState() { return currentStatus; }
+
 export function setSyncStatus(s) {
+  currentStatus = s;
   // v3 has two dots (desktop header + mobile dock) — update every instance.
   document.querySelectorAll('.sync-dot').forEach((el) => { el.className = 'sync-dot sync-' + s; });
   const label = document.getElementById('sync-label');
   if (label) label.textContent = s;
 }
+
+// A hung fetch used to jam sync forever — isSyncing never cleared because the
+// promise never settled (PS-4). 20s is generous for a crew-doc round trip.
+const SYNC_TIMEOUT_MS = 20000;
+const timeoutSignal = () => (typeof AbortSignal !== 'undefined' && AbortSignal.timeout
+  ? AbortSignal.timeout(SYNC_TIMEOUT_MS)
+  : undefined);
 
 export function scheduleSync() {
   if (syncTimer) clearTimeout(syncTimer);
@@ -36,7 +49,7 @@ class CrewGoneError extends Error {}
 
 async function fetchRemote() {
   const token = state.getCrewToken();
-  const res = await fetch(`/api/crew?t=${encodeURIComponent(token)}`, { cache: 'no-store' });
+  const res = await fetch(`/api/crew?t=${encodeURIComponent(token)}`, { cache: 'no-store', signal: timeoutSignal() });
   // Only OUR API's JSON 404 means the crew is gone — a platform/routing 404
   // (broken deploy, stale SW) is transient and must never forget crews.
   if (isApiNotFound(res)) throw new CrewGoneError();
@@ -63,6 +76,7 @@ export async function pushSync() {
       // sv:4 declares v4 pick semantics (1-3 picked, 4 must) — without it the
       // server treats level 3 as legacy "Must See" and maps it on v4 docs.
       body: JSON.stringify({ data: state.pendingChanges, sv: 4 }),
+      signal: timeoutSignal(),
     });
     if (isApiNotFound(res)) throw new CrewGoneError();
     if (!res.ok) throw new Error('POST failed: ' + res.status);
@@ -98,6 +112,7 @@ export async function requestMigration() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: '{}',
+      signal: timeoutSignal(),
     });
     if (!res.ok) return false;
     const doc = await res.json();

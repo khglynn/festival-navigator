@@ -474,7 +474,7 @@ export function renderWall(root, ctx) {
     if (!any) {
       const empty = document.createElement('div');
       empty.style.cssText = 'color: var(--text-tertiary); font-size: 12px; font-weight: 600; text-align: center; padding: 30px 0;';
-      empty.textContent = 'No artists match.';
+      empty.textContent = 'No artists match — try fewer letters.';
       root.appendChild(empty);
     }
     return;
@@ -485,7 +485,7 @@ export function renderWall(root, ctx) {
   if (!artists.length) {
     const empty = document.createElement('div');
     empty.style.cssText = 'color: var(--text-tertiary); font-size: 12px; font-weight: 600; text-align: center; padding: 30px 0;';
-    empty.textContent = ctx.query ? 'No artists match.' : 'Lineup coming soon — notes work now. Leave the first one below.';
+    empty.textContent = ctx.query ? 'No artists match — try fewer letters.' : 'Lineup coming soon — notes work now. Leave the first one below.';
     root.appendChild(empty);
     if (ctx.query) return;
     // An empty lineup is when planning notes matter MOST (CORE-10) — the

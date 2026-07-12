@@ -4,6 +4,7 @@
 import * as state from '../state.js';
 import * as crew from '../crew.js';
 import * as spotify from '../spotify.js';
+import * as sync from '../sync.js';
 import * as model from './model.js';
 import { FESTIVAL_INDEX } from '../festivals.js';
 import { BOARD, hslOf, strokeOf } from './palette.js';
@@ -78,9 +79,12 @@ function currentFestCard(ctx, actions) {
   const yr = el('span', 'font-size: .62em; opacity: .75;', ' ' + (fest.year || ''));
   nm.appendChild(yr);
   const dates = el('span', 'color: var(--text-tertiary); font-size: 11px; font-weight: 600; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;', fest.dates || '');
-  const syncState = el('span', 'margin-left: auto; color: var(--sync-ok); font-size: 10.5px; font-weight: 700;',
-    state.hasPending() ? 'syncing' : 'synced');
-  head.append(nm, dates, syncState);
+  // The ONE sync state (PS-5): same source as the dot — a "synced" label
+  // computed from hasPending alone lied whenever the network was down.
+  const LABELS = { online: ['synced', 'var(--sync-ok)'], syncing: ['syncing', 'var(--sync-syncing)'], offline: ['offline', 'var(--sync-offline)'], error: ['sync error', '#F87171'] };
+  const [label, color] = LABELS[sync.syncState()] || LABELS.online;
+  const syncLabel = el('span', `margin-left: auto; color: ${color}; font-size: 10.5px; font-weight: 700;`, label);
+  head.append(nm, dates, syncLabel);
   card.appendChild(head);
 
   const chips = el('div', 'display: flex; gap: 5px; flex-wrap: wrap; margin-top: 10px;');
@@ -210,6 +214,7 @@ function openAddFestival(actions) {
   input.style.cssText = 'flex: 1; background: var(--card); border: 1px solid var(--border-input); border-radius: var(--r-card); padding: 10px 12px; color: #fff; font-size: 13px; font-family: var(--font-ui);';
   const go = el('button', 'font-size: 12px; padding: 9px 15px; flex: none;', 'Research');
   go.className = 'btn-tonal';
+  input.addEventListener('keydown', (e) => { if (e.key === 'Enter') go.click(); });
   row.append(input, go);
   col.appendChild(row);
   const status = el('div', 'color: var(--text-tertiary); font-size: 11.5px; font-weight: 600; line-height: 1.5;',
@@ -239,9 +244,28 @@ function openAddFestival(actions) {
       card.appendChild(el('div', 'color: var(--text-secondary); font-size: 12px; font-weight: 600; margin-top: 4px;',
         [c.subtitle, c.location, c.dates].filter(Boolean).join(' · ')));
       card.appendChild(el('div', 'color: var(--text-tertiary); font-size: 11.5px; font-weight: 600; margin-top: 6px;',
-        `${(c.artists || []).length} artists found${body.sources?.length ? ` · ${body.sources.length} sources` : ''}`));
+        `${(c.artists || []).length} artists found`));
+      // "Looks right" needs the WHOLE lineup reviewable, not a 12-name teaser
+      // (CT-2) — wrongness has to be visible before the save.
       const sample = (c.artists || []).slice(0, 12).map((a) => a.name).join(' · ');
       card.appendChild(el('div', 'color: var(--text-body); font-size: 11.5px; margin-top: 6px; line-height: 1.5;', sample + ((c.artists || []).length > 12 ? ' …' : '')));
+      if ((c.artists || []).length > 12) {
+        const fold = document.createElement('details');
+        const sum = document.createElement('summary');
+        sum.textContent = `Review all ${c.artists.length} artists`;
+        sum.style.cssText = 'color: var(--text-secondary); font-size: 11.5px; font-weight: 700; cursor: pointer; margin-top: 6px;';
+        fold.appendChild(sum);
+        fold.appendChild(el('div', 'color: var(--text-body); font-size: 11.5px; line-height: 1.6; margin-top: 5px;',
+          c.artists.map((a) => a.name).join(' · ')));
+        card.appendChild(fold);
+      }
+      // Sources by hostname when present; silence when not — "0 sources" as a
+      // trust marker was worse than nothing (CT-2).
+      const hosts = [...new Set((body.sources || []).map((s) => { try { return new URL(s).hostname.replace(/^www\./, ''); } catch { return null; } }).filter(Boolean))];
+      if (hosts.length) {
+        card.appendChild(el('div', 'color: var(--text-tertiary); font-size: 10.5px; font-weight: 600; margin-top: 6px;',
+          `Sourced from ${hosts.slice(0, 4).join(', ')}${hosts.length > 4 ? '…' : ''}`));
+      }
       const confirmRow = el('div', 'display: flex; gap: 8px; margin-top: 10px;');
       const save = el('button', 'flex: 1; font-size: 12px; padding: 9px;', 'Looks right — save it');
       save.className = 'btn-tonal';
@@ -271,15 +295,22 @@ function openAddFestival(actions) {
       });
       const discard = el('button', 'font-size: 12px; padding: 9px 14px;', 'Discard');
       discard.className = 'btn-ghost';
-      discard.addEventListener('click', () => { preview.textContent = ''; });
+      discard.addEventListener('click', () => {
+        preview.textContent = '';
+        status.textContent = 'Discarded — search again with a more specific name if that was the wrong one.';
+        input.focus();
+      });
       confirmRow.append(save, discard);
       card.appendChild(confirmRow);
       preview.appendChild(card);
     } catch {
-      status.textContent = 'Research failed — check your connection.';
+      // Honest recovery paths only — no promising a manual entry that
+      // doesn't exist (CT-2).
+      status.textContent = 'Research failed — check your connection, or try a more specific name like “Bonnaroo 2026”.';
     } finally { go.disabled = false; }
   });
   host.appendChild(col);
+  input.focus();
 }
 
 // ---- HOW IT WORKS (21i) -------------------------------------------------------------

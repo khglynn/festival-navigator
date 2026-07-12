@@ -16,25 +16,31 @@ function loadJSON(key, fallback) {
   catch { return fallback; }
 }
 
+// Guarded writes (PS-6): a blocked localStorage never throws into a flow.
+function saveLS(key, value) {
+  try { localStorage.setItem(key, value); }
+  catch (e) { console.warn('localStorage write failed:', key, e); }
+}
+
 export function knownCrews() { return loadJSON(K.crews, []); }
 
 export function rememberCrew(token, name) {
   const crews = knownCrews().filter((c) => c.token !== token);
   crews.push({ token, name });
-  localStorage.setItem(K.crews, JSON.stringify(crews));
+  saveLS(K.crews, JSON.stringify(crews));
 }
 
 export function forgetCrew(token) {
-  localStorage.setItem(K.crews, JSON.stringify(knownCrews().filter((c) => c.token !== token)));
+  saveLS(K.crews, JSON.stringify(knownCrews().filter((c) => c.token !== token)));
   localStorage.removeItem(K.me(token));
   if (activeCrewToken() === token) localStorage.removeItem(K.active);
 }
 
 export function activeCrewToken() { return localStorage.getItem(K.active) || null; }
-export function setActiveCrew(token) { localStorage.setItem(K.active, token); }
+export function setActiveCrew(token) { saveLS(K.active, token); }
 
 export function me(token) { return localStorage.getItem(K.me(token)) || null; }
-export function setMe(token, name) { localStorage.setItem(K.me(token), name); }
+export function setMe(token, name) { saveLS(K.me(token), name); }
 
 // The token riding in the URL hash (#g=...), i.e. an opened share link.
 export function tokenFromHash() {
