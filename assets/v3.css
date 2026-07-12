@@ -1,7 +1,22 @@
 /* v3 component styles — geometry and chrome from the design atlas
  * (claude-plans/v3-inventory.md maps every value to its atlas turn).
  * Tokens live in v3-tokens.css; per-card aura backgrounds are computed by
- * js/v3/aura.js. Look values up in the atlas before changing anything. */
+ * js/v3/aura.js. Look values up in the atlas before changing anything.
+ * v3.1 layers on: fluid type via --fs-* tokens, the desktop body (day rail,
+ * dialogs, auto-fill grid), and the unannounced quality floor (focus-visible
+ * everywhere, 44px touch targets, reduced-motion). */
+
+/* ---- focus + motion floor (AX-2) ---------------------------------------------- */
+/* Quiet by default, unmistakable on keyboard: one focus language everywhere. */
+button, input, textarea, select, a, [role="button"], [role="option"] { outline: none; }
+:focus-visible {
+  outline: 2px solid rgba(var(--fest), .9) !important; /* beats inline resets */
+  outline-offset: 2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+  .hero-grain, .card-grain { display: none; }
+}
 
 /* ---- artist card (the atom) ------------------------------------------------ */
 .card {
@@ -10,11 +25,28 @@
   display: flex; align-items: center; justify-content: center;
   padding: 9px 11px 20px; text-align: center; overflow: hidden;
   cursor: pointer; -webkit-touch-callout: none; user-select: none;
+  font-family: inherit; color: inherit; /* role=button div, keyboard-first (AX-1) */
 }
 .card.animated { background-size: 180% 180%; animation: gradShift 12s ease-in-out infinite; }
-.card .name { position: relative; font-weight: 700; font-size: 13.5px; line-height: 1.2; }
+.card .name { position: relative; font-weight: 700; font-size: var(--fs-card); line-height: 1.2; }
 .card .time { position: relative; font-size: 9px; font-weight: 600; }
 .card.timed { flex-direction: column; gap: 2px; } /* search results carry stage · time */
+
+/* Hover note affordance for pointer users (DT-6): the ✎ chip appears on
+ * hover/focus, never on touch (long-press owns that path). Never a music
+ * note — the glyph is reserved for Spotify. */
+.card .note-affordance {
+  position: absolute; top: 4px; right: 4px; width: 24px; height: 24px;
+  display: none; align-items: center; justify-content: center;
+  background: rgba(10, 8, 18, .72); border: 1px solid var(--border-card);
+  border-radius: var(--r-pill); color: var(--notes-chip-text); font-size: 11px;
+  cursor: pointer; opacity: 0; transition: opacity .12s ease; padding: 0;
+}
+@media (hover: hover) and (pointer: fine) {
+  .card .note-affordance { display: inline-flex; }
+  .card:hover .note-affordance, .card:focus-within .note-affordance,
+  .card:focus-visible .note-affordance { opacity: 1; }
+}
 
 /* Set-times grid cell variant: same card, tighter corners, time line */
 .card.cell { flex-direction: column; gap: 1px; padding: 4px 8px 17px; }
@@ -65,8 +97,30 @@
   display: inline-flex; align-items: center; gap: 4px; background: var(--card);
   border: 1px solid var(--border-card); border-radius: var(--r-pill);
   padding: 7px 12px; color: #E5E7EB; font-size: 11.5px; font-weight: 700; cursor: pointer;
+  font-family: var(--font-ui);
 }
-.sort-chip .caret { color: var(--text-tertiary); }
+.sort-chip .caret { color: var(--text-tertiary); transition: transform .12s ease; }
+.sort-chip[aria-expanded="true"] .caret { transform: rotate(180deg); }
+
+/* Sort popover listbox (DT-7): part of the app's control family — quiet
+ * surface, live caret, full keyboard (arrows / Enter / Esc / typeahead). */
+.sort-wrap { position: relative; display: inline-flex; }
+.sort-pop {
+  position: absolute; top: calc(100% + 6px); right: 0; z-index: 35;
+  min-width: 168px; background: #141021; border: 1px solid var(--border-card);
+  border-radius: 12px; padding: 5px; margin: 0; list-style: none;
+  box-shadow: 0 12px 34px rgba(0, 0, 0, .5);
+}
+.sort-pop [role="option"] {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 11px; border-radius: 8px;
+  color: var(--text-body); font-size: 13px; font-weight: 600; cursor: pointer;
+}
+.sort-pop [role="option"]:hover, .sort-pop [role="option"].kb-active {
+  background: rgba(255, 255, 255, .08);
+}
+.sort-pop [role="option"][aria-selected="true"] { color: rgb(var(--fest)); }
+.sort-pop .check { width: 12px; flex: none; font-size: 11px; }
 .notes-chip {
   display: inline-flex; align-items: center; gap: 5px; background: transparent;
   border: 1.5px solid var(--notes-chip-stroke); color: var(--notes-chip-text);
@@ -79,14 +133,44 @@
 /* ---- day header rule --------------------------------------------------------- */
 .day-rule { display: flex; align-items: baseline; gap: 10px; }
 .day-rule .day { font-family: var(--font-display); letter-spacing: var(--track-display);
-                 font-size: 16px; color: var(--text-header); }
+                 font-size: var(--fs-day); color: var(--text-header); }
 .day-rule .date { color: var(--text-tertiary); font-size: 10px; font-weight: 700; }
 .day-rule .line { flex: 1; height: 1px; background: var(--hairline); }
+
+/* ---- desktop day rail (DT-1) --------------------------------------------------- */
+/* ≥720 the dock dies; the rail is its desktop body — sticky under the top of
+ * the window, YOU chip jumps to top, tabs scrollspy with the wall. */
+.day-rail { display: none; }
+@media (min-width: 720px) {
+  .day-rail {
+    display: flex; align-items: center; gap: 18px;
+    position: sticky; top: 0; z-index: 25;
+    margin: 4px calc(-1 * var(--sp-gutter)) 0;
+    padding: 9px var(--sp-gutter);
+    background: rgba(12, 10, 20, .78);
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--hairline);
+  }
+  .day-rail .rail-you {
+    font-family: var(--font-display); letter-spacing: var(--track-label);
+    font-size: var(--fs-micro); color: var(--text-secondary);
+    background: none; border: none; cursor: pointer; padding: 2px 0; flex: none;
+  }
+  .day-rail .rail-days { display: flex; gap: 20px; overflow-x: auto; }
+  .day-rail .day-tab {
+    font-family: var(--font-display); letter-spacing: var(--track-label);
+    font-size: var(--fs-micro); text-transform: uppercase;
+    color: var(--text-tertiary); background: none; border: none;
+    border-bottom: 2px solid transparent; padding: 2px 0 3px;
+    cursor: pointer; flex: none;
+  }
+  .day-rail .day-tab.active { color: rgb(var(--fest)); border-bottom-color: rgb(var(--fest)); }
+}
 
 /* ---- notes ------------------------------------------------------------------- */
 .note-row { display: flex; gap: 9px; }
 .note-row .avatar { width: 22px; height: 22px; font-size: 9px; }
-.bubble { color: var(--text-body); font-size: 12.5px; line-height: 1.5; background: var(--card);
+.bubble { color: var(--text-body); font-size: var(--fs-body); line-height: 1.5; background: var(--card);
           border: 1px solid var(--hairline); border-radius: var(--r-bubble); padding: 9px 11px; flex: 1; }
 .bubble.pinned { border-color: var(--notes-stroke); }
 .bubble .meta { display: block; color: var(--text-tertiary); font-size: 10px; font-weight: 600; margin-top: 3px; }
@@ -100,7 +184,7 @@
 }
 .composer input::placeholder { color: var(--text-tertiary); }
 
-/* ---- bottom sheet ------------------------------------------------------------ */
+/* ---- bottom sheet / desktop dialog (DT-2) --------------------------------------- */
 .sheet-backdrop { position: fixed; inset: 0; background: rgba(0, 0, 0, .45); z-index: 40; }
 .sheet {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 41;
@@ -108,11 +192,25 @@
   box-shadow: 0 -8px 30px rgba(0, 0, 0, .5);
   padding: 16px; display: flex; flex-direction: column; gap: 12px;
   max-height: 72vh; overflow-y: auto;
+  animation: sheetIn .15s ease;
 }
+@keyframes sheetIn { from { opacity: 0; transform: scale(.98); } }
 .sheet .grabber { width: 36px; height: 4px; border-radius: var(--r-pill);
                   background: var(--border-card); margin: 0 auto; flex: none; }
 .sheet .sheet-title { font-family: var(--font-display); letter-spacing: .04em;
                       font-size: 19px; color: var(--text-header); }
+/* A full-width strip pinned to the bottom of a 1440px window is a phone
+ * pattern stretched — ≥720 the same surface is a centered dialog. */
+@media (min-width: 720px) {
+  .sheet {
+    inset: auto; left: 50%; top: 50%; right: auto; bottom: auto;
+    translate: -50% -50%;
+    width: min(560px, 92vw); max-height: 80vh;
+    border-radius: 20px;
+    box-shadow: 0 18px 50px rgba(0, 0, 0, .55);
+  }
+  .sheet .grabber { display: none; }
+}
 
 /* ---- dock (mobile only) ------------------------------------------------------ */
 .dock {
@@ -121,12 +219,25 @@
   padding: 9px 16px calc(9px + env(safe-area-inset-bottom));
   display: flex; align-items: center; gap: 14px;
 }
-.dock .you { width: 26px; height: 26px; font-size: 10px; }
-.dock .days { flex: 1; display: flex; justify-content: center; gap: 24px; overflow-x: auto; }
+.dock .you { width: 26px; height: 26px; font-size: 10px; position: relative; }
+/* Centered when they fit, scrollable from the START when they don't — plain
+ * justify-content:center clips the first tabs unreachably at 390px (AX-6). */
+.dock .days { flex: 1; display: flex; gap: 24px; overflow-x: auto; }
+.dock .day-tab:first-child { margin-left: auto; }
+.dock .day-tab:last-child { margin-right: auto; }
 .dock .day-tab { font-weight: 700; font-size: 12px; padding-bottom: 3px;
                  border-bottom: 2px solid transparent; color: var(--text-tertiary);
                  background: none; border-top: none; border-left: none; border-right: none;
-                 cursor: pointer; font-family: var(--font-ui); flex: none; }
+                 cursor: pointer; font-family: var(--font-ui); flex: none; position: relative; }
+/* 44px touch floor on coarse pointers without moving a pixel of layout:
+ * expand the hit area, not the element (AX-6). */
+@media (pointer: coarse) {
+  .dock .you::after, .dock .day-tab::after, .gear-btn::after, .pin-btn::after,
+  .back-btn::after, .dock .fest-link::after {
+    content: ''; position: absolute; inset: -10px;
+  }
+  .gear-btn, .pin-btn, .back-btn, .dock .fest-link { position: relative; }
+}
 .dock .day-tab .num { font-size: 9px; font-weight: 600; margin-left: 2px; }
 .dock .day-tab.active { color: rgb(var(--fest)); font-weight: 800; border-bottom-color: rgb(var(--fest)); }
 .dock .fest-link { display: inline-flex; align-items: center; gap: 6px; background: none;
@@ -142,7 +253,7 @@
 .sync-dot.sync-offline, .sync-dot.sync-error { background: var(--sync-offline); }
 
 /* ---- settings ---------------------------------------------------------------- */
-.micro-label { color: var(--text-tertiary); font-size: 10px; font-weight: 800;
+.micro-label { color: var(--text-tertiary); font-size: var(--fs-micro); font-weight: 800;
                letter-spacing: var(--track-label); text-transform: uppercase; }
 .settings-card { background: var(--card); border: 1px solid var(--border-card);
                  border-radius: var(--r-settings); padding: 14px; }
@@ -156,10 +267,10 @@
 .list-row .row-sub { color: var(--text-tertiary); font-size: 11px; font-weight: 600; }
 .list-row .chev { color: var(--text-tertiary); margin-left: auto; }
 
-/* fest row (landing + settings "other festivals") */
+/* fest row (landing + settings "other festivals") — padding rides the gutter */
 .fest-row { display: flex; align-items: center; gap: 11px; background: var(--card);
             border: 1px solid var(--border-card); border-radius: var(--r-settings);
-            padding: 12px 14px; cursor: pointer; }
+            padding: 12px clamp(14px, 1.6vw, 20px); cursor: pointer; }
 .fest-row .fest-name { font-family: var(--font-display); letter-spacing: .04em;
                        font-size: 16px; white-space: nowrap; }
 .fest-row .fest-name .yr { font-size: .65em; opacity: .75; }
@@ -179,6 +290,17 @@
 .times-rail { display: grid; width: 40px; flex: none; row-gap: 4px; }
 .times-scroll { overflow-x: auto; scroll-snap-type: x proximity; -webkit-overflow-scrolling: touch;
                 flex: 1; min-width: 0; }
+/* The timetable wall goes full-viewport ≥720 (DT-5, the run's one aesthetic
+ * risk): a real festival timetable pinned flat. The rail column stays aligned
+ * with the shell's left edge; body overflow-x:clip guarantees no page wiggle. */
+@media (min-width: 720px) {
+  .times-wrap {
+    width: 100vw;
+    margin-inline: calc(50% - 50vw);
+    padding-inline: max(var(--sp-gutter), calc(50vw - var(--shell-max) / 2));
+    box-sizing: border-box;
+  }
+}
 .times-grid { display: grid; gap: 4px; min-width: 100%; } /* columns set inline: repeat(n, minmax(150px,1fr)) */
 .times-grid .stage-head { scroll-snap-align: start; }
 .stage-head { font-family: var(--font-display); letter-spacing: var(--track-display);
@@ -189,8 +311,11 @@
               color: var(--text-tertiary); font-weight: 600; position: relative; top: -7px; }
 
 /* ---- wall grid + undo toast ---------------------------------------------------- */
+/* Density scales with the window (DT-3): as many ~176px columns as fit, so a
+ * 1080px shell breathes at 5-6 columns instead of stretching 4. */
 .wall-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
-@media (min-width: 720px) { .wall-grid { grid-template-columns: repeat(4, 1fr); gap: 7px; } }
+@media (min-width: 720px) { .wall-grid { grid-template-columns: repeat(auto-fill, minmax(176px, 1fr)); gap: 7px; } }
+@media (min-width: 1100px) { .wall-grid { gap: 9px; } }
 .undo-toast {
   position: fixed; left: 50%; transform: translateX(-50%);
   bottom: calc(64px + env(safe-area-inset-bottom)); z-index: 50;

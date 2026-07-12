@@ -76,8 +76,10 @@ export function whoCorner(people) {
 export function nameColor(people) {
   return ordered(people).length ? '#fff' : '#B9B3CC';
 }
+// Unpicked sub text tracks the AX-3 tertiary retune (was #5D5578, 2.5:1 on
+// the unpicked card base) — this is text legibility, not gradient math.
 export function subColor(people) {
-  return ordered(people).length ? 'rgba(255,255,255,.75)' : '#5D5578';
+  return ordered(people).length ? 'rgba(255,255,255,.75)' : '#877FA4';
 }
 
 // About-corner (bottom-left) data: violet notes bubble then green Spotify.

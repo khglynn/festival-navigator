@@ -2,6 +2,36 @@
 
 Newest first. One entry per meaningful unit of work.
 
+## 2026-07-11 (late evening) — DESKTOP + A11Y foundations: the app gets a desktop body
+
+- **Tokens** (design-direction doc): fluid type scale --fs-display/screen/day/
+  card/body/micro, --shell-max 960→1080 @1100, --sp-gutter clamp. AX-3 contrast
+  retune COMPUTED (scratchpad script, WCAG math): --text-tertiary #5D5578
+  (2.84:1) → #877FA4 — same hue/sat, ≥4.5:1 on all three surfaces (worst 4.61).
+  aura.js subColor follows (text legibility, not gradient math). Taste-pass
+  note: tertiary now sits near secondary — watch the gray ladder.
+- **A11Y layer**: cards are role=button + tabIndex + Enter/Space + pick level
+  in the accessible name (AX-1); one :focus-visible language, inline
+  outline:none purged (AX-2); sheets are real dialogs w/ focus trap + restore
+  (AX-4); labels on every input (AX-5); 44px coarse-pointer hit areas via
+  ::after + dock tabs scroll-safe centering (AX-6); settings rows/toggles are
+  named buttons (AX-7). prefers-reduced-motion rides the low-power path.
+- **Desktop body**: sticky day rail ≥720 (YOU ↑ + Anton micro tabs, shared
+  scrollspy with the dock — one observer, two containers) (DT-1); sheets
+  become centered dialogs ≥720, 150ms fade+scale, reduced-motion kills it
+  (DT-2); wall grid auto-fills ~176px columns (DT-3); entry screens center
+  via margin-block:auto overflow-safe (DT-4); the timetable goes FULL-BLEED
+  ≥720 with rail aligned to the shell edge — body overflow-x:clip makes
+  horizontal page scroll structurally impossible (DT-5); hover ✎ chip on
+  fine pointers, keyboard-reachable (DT-6); native select replaced by
+  js/v3/sort-control.js — chip + popover listbox, arrows/Enter/Esc/typeahead
+  (DT-7).
+- Verified live at 1440 + 390 on the Audit Rig crew (localhost vercel dev,
+  which — correction to earlier note — has FULL cloud env: /api works against
+  real Neon; the "deleted crew" toasts in smoke were genuinely-deleted test
+  crews, correct behavior). Browser-back closed an open dialog in the real
+  browser with the #g= link intact (FLOW-2 live check).
+
 ## 2026-07-11 (evening) — CORE class (18) + FLOW-2/3/4 + ST-1: the broken-behavior sweep
 
 - **Cards**: refreshCard now reproduces the original render exactly — placement

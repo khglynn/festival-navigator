@@ -15,15 +15,19 @@
     <link rel="stylesheet" href="/assets/v3-tokens.css">
     <link rel="stylesheet" href="/assets/v3.css">
     <style>
+      /* Wide content (timetable full-bleed) uses 100vw — clip, never a body
+         horizontal scroll. overflow:clip does not create a scroll container,
+         so position:sticky descendants keep working. */
+      html, body { overflow-x: clip; }
       body { margin: 0; background: var(--page); color: var(--text-body);
              font-family: var(--font-ui); min-height: 100vh; }
-      .shell { max-width: 960px; margin: 0 auto; padding: 16px 14px calc(84px + env(safe-area-inset-bottom)); }
-      @media (min-width: 720px) { .shell { padding: 22px 24px 40px; } }
+      .shell { max-width: var(--shell-max); margin: 0 auto;
+               padding: 16px var(--sp-gutter) calc(84px + env(safe-area-inset-bottom)); }
+      @media (min-width: 720px) { .shell { padding: 22px var(--sp-gutter) 40px; } }
       .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
       .app-header { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
       .app-header .title { font-family: var(--font-display); letter-spacing: .05em;
-                           color: rgb(var(--fest)); font-size: 26px; line-height: 1; }
-      @media (min-width: 720px) { .app-header .title { font-size: 34px; } }
+                           color: rgb(var(--fest)); font-size: var(--fs-display); line-height: 1; }
       .app-header .title .yr { font-size: .45em; vertical-align: super; opacity: .7; margin-left: .1em; }
       .app-header .sub { color: var(--text-tertiary); font-size: 11px; font-weight: 600; align-self: flex-end; padding-bottom: 2px;
                          display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
@@ -31,8 +35,15 @@
       @media (min-width: 720px) { .header-right { display: inline-flex; } }
       .toolbar { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin-top: 11px; }
       .wall-wrap { margin-top: 13px; display: flex; flex-direction: column; gap: 13px; }
-      .center-col { max-width: 480px; margin: 40px auto 0; display: flex; flex-direction: column; gap: 16px; padding: 0 22px; }
-      .brand { font-family: var(--font-display); letter-spacing: .04em; font-size: 42px; line-height: 1.04; color: #fff; text-align: center; }
+      /* Entry screens center their content on tall viewports and scroll when
+         tall (margin-block:auto is overflow-safe, unlike align-items:center). */
+      .entry-screen { min-height: 100svh; display: flex; flex-direction: column; }
+      .center-col { max-width: 480px; width: 100%; box-sizing: border-box; margin-block: auto;
+                    margin-inline: auto; display: flex; flex-direction: column; gap: 16px; padding: 40px 22px; }
+      @media (min-width: 720px) { .center-col { max-width: 560px; } }
+      .screen-headline { font-family: var(--font-display); letter-spacing: .04em;
+                         font-size: var(--fs-screen); line-height: 1.05; color: #fff; margin-top: 4px; }
+      .brand { font-family: var(--font-display); letter-spacing: .04em; font-size: clamp(42px, 5.5vw, 54px); line-height: 1.04; color: #fff; text-align: center; }
       .gear-btn { background: none; border: none; cursor: pointer; padding: 4px; margin-left: auto; }
       @media (min-width: 720px) { .gear-btn { margin-left: 0; } }
     </style>
@@ -41,7 +52,7 @@
     <noscript><div style="padding:40px;text-align:center;font-weight:600;">Festival Navigator needs JavaScript.</div></noscript>
 
     <!-- Landing (atlas 21a) -->
-    <div id="screen-landing" style="display:none">
+    <div id="screen-landing" class="entry-screen" style="display:none">
       <div class="center-col">
         <div class="brand">FESTIVAL<br><span class="pulse-text">NAVIGATOR</span></div>
         <div style="color: var(--text-secondary); font-size: 13px; text-align: center; line-height: 1.55;">
@@ -61,17 +72,17 @@
 
     <!-- Create: pick the fest + your name (design: "Pick the fest and your
          name next, then share one link") -->
-    <div id="screen-create" style="display:none">
+    <div id="screen-create" class="entry-screen" style="display:none">
       <div class="center-col">
         <div style="text-align: center;">
           <div class="micro-label" style="letter-spacing: .14em;">Add a festival</div>
-          <div style="font-family: var(--font-display); letter-spacing: .04em; font-size: 34px; line-height: 1.05; color: #fff; margin-top: 4px;">PICK THE FEST</div>
+          <div class="screen-headline">PICK THE FEST</div>
           <div style="color: var(--text-secondary); font-size: 13px; margin-top: 8px;">Then your name. Share one link — that's the whole crew setup.</div>
         </div>
         <div id="create-fests" style="display: flex; flex-direction: column; gap: 7px;"></div>
         <div style="display: flex; gap: 8px; align-items: center;">
-          <input id="create-name-input" maxlength="24" placeholder="Your name"
-                 style="flex: 1; background: var(--page); border: 1px solid var(--border-input); border-radius: 9px; padding: 12px 13px; color: #fff; font-size: 14px; font-family: var(--font-ui); outline: none;">
+          <input id="create-name-input" maxlength="24" placeholder="Your name" aria-label="Your name"
+                 style="flex: 1; background: var(--page); border: 1px solid var(--border-input); border-radius: 9px; padding: 12px 13px; color: #fff; font-size: 14px; font-family: var(--font-ui);">
           <button id="create-go-btn" class="btn-tonal" style="font-size: 14px; padding: 12px 24px;">Create</button>
         </div>
         <div id="create-status" style="color: var(--text-tertiary); font-size: 11.5px; font-weight: 600; text-align: center;"></div>
@@ -80,17 +91,17 @@
     </div>
 
     <!-- Join / claim (atlas 21b) -->
-    <div id="screen-join" style="display:none">
+    <div id="screen-join" class="entry-screen" style="display:none">
       <div class="center-col">
         <div style="text-align: center;">
           <div class="micro-label" style="letter-spacing: .14em;">You're invited to</div>
-          <div id="join-fest-name" style="font-family: var(--font-display); letter-spacing: .04em; font-size: 40px; line-height: 1; color: rgb(var(--fest)); margin-top: 4px;"></div>
+          <div id="join-fest-name" class="screen-headline" style="color: rgb(var(--fest));"></div>
           <div style="color: var(--text-secondary); font-size: 13px; margin-top: 8px;">Tap your name, or add yourself.</div>
         </div>
         <div id="join-people" style="display: flex; flex-direction: column; gap: 8px;"></div>
         <div style="display: flex; gap: 8px; align-items: center;">
-          <input id="join-name-input" maxlength="24" placeholder="I'm someone new…"
-                 style="flex: 1; background: var(--page); border: 1px solid var(--border-input); border-radius: 9px; padding: 12px 13px; color: #fff; font-size: 14px; font-family: var(--font-ui); outline: none;">
+          <input id="join-name-input" maxlength="24" placeholder="I'm someone new…" aria-label="Your name"
+                 style="flex: 1; background: var(--page); border: 1px solid var(--border-input); border-radius: 9px; padding: 12px 13px; color: #fff; font-size: 14px; font-family: var(--font-ui);">
           <button id="join-add-btn" class="btn-tonal" style="font-size: 14px; padding: 12px 24px;">Join</button>
         </div>
       </div>
@@ -118,13 +129,13 @@
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#8E86A8" stroke-width="2.5"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.5" y2="16.5"></line></svg>
             <input id="search-input" placeholder="Search…" aria-label="Search artists">
           </span>
-          <select id="sort-select" class="sort-chip" aria-label="Sort artists" style="appearance: none;">
-            <option value="billing">Billing</option>
-            <option value="az">A → Z</option>
-            <option value="mine">My picks</option>
-            <option value="crew">Crew favorites</option>
-          </select>
+          <span id="sort-control"></span>
           <button class="notes-chip" id="notes-chip">Notes <span class="count" id="notes-count">0</span></button>
+        </div>
+        <!-- Desktop day rail (DT-1): the dock's ≥720 body -->
+        <div class="day-rail" id="day-rail">
+          <button class="rail-you" id="rail-you" aria-label="Jump to top">YOU ↑</button>
+          <span class="rail-days" id="rail-days"></span>
         </div>
         <div class="wall-wrap" id="wall-root"></div>
       </div>
@@ -146,23 +157,23 @@
     </div>
 
     <!-- Lost states (spec F16): a link that didn't resolve, and the boot error boundary -->
-    <div id="screen-badlink" style="display:none">
+    <div id="screen-badlink" class="entry-screen" style="display:none">
       <div class="center-col">
         <div style="text-align: center;">
           <div class="micro-label" style="letter-spacing: .14em;">Hmm.</div>
-          <div style="font-family: var(--font-display); letter-spacing: .04em; font-size: 38px; line-height: 1.05; color: #fff; margin-top: 4px;">THAT LINK<br>DIDN&rsquo;T WORK</div>
+          <div class="screen-headline">THAT LINK<br>DIDN&rsquo;T WORK</div>
         </div>
         <div id="badlink-msg" style="color: var(--text-secondary); font-size: 13px; text-align: center; line-height: 1.55;"></div>
         <div style="display: flex; gap: 8px; align-items: center;">
-          <input id="badlink-input" placeholder="Paste the invite link here&hellip;"
-                 style="flex: 1; min-width: 0; background: var(--page); border: 1px solid var(--border-input); border-radius: 9px; padding: 12px 13px; color: #fff; font-size: 14px; font-family: var(--font-ui); outline: none;">
+          <input id="badlink-input" placeholder="Paste the invite link here&hellip;" aria-label="Invite link"
+                 style="flex: 1; min-width: 0; background: var(--page); border: 1px solid var(--border-input); border-radius: 9px; padding: 12px 13px; color: #fff; font-size: 14px; font-family: var(--font-ui);">
           <button id="badlink-open" class="btn-tonal" style="font-size: 14px; padding: 12px 24px;">Open</button>
         </div>
         <div id="badlink-status" style="color: var(--text-tertiary); font-size: 11.5px; font-weight: 600; text-align: center;"></div>
         <button id="badlink-home" class="btn-ghost" style="font-size: 12px; padding: 8px 14px; align-self: center;">&lsaquo; Your festivals</button>
       </div>
     </div>
-    <div id="screen-error" style="display:none">
+    <div id="screen-error" class="entry-screen" style="display:none">
       <div class="center-col">
         <div class="brand" style="font-size: 34px;">WELL, THAT<br><span class="pulse-text">WASN&rsquo;T THE PLAN</span></div>
         <div style="color: var(--text-secondary); font-size: 13px; text-align: center; line-height: 1.55;">

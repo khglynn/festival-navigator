@@ -21,7 +21,10 @@
   --text-primary: #FFFFFF;
   --text-body: #C6CBD6;
   --text-secondary: #8E86A8;
-  --text-tertiary: #5D5578;
+  /* v3.1 retune (AX-3): was #5D5578 = 2.84:1 on --page — failed AA on real
+   * copy read in daylight. Same hue/sat, L 40% -> 57%; computed ≥4.5:1 on
+   * --page (5.24), --card (4.98), --card-unpicked (4.61). */
+  --text-tertiary: #877FA4;
   --text-unpicked-name: #B9B3CC; /* artist name on a card nobody picked */
 
   /* Fixed identity colors */
@@ -56,6 +59,22 @@
   --font-ui: 'Inter', system-ui, sans-serif;
   --track-display: .05em;   /* atlas range .04-.06em */
   --track-label: .12em;     /* section micro-labels, 10px/800 */
+
+  /* v3.1 fluid scale (design-direction doc): one axis, 390 -> 1440. Desktop
+   * is a designed size, not a stretched phone. Micro labels stay fixed. */
+  --fs-display: clamp(26px, 4.5vw, 40px);  /* app-header fest title */
+  --fs-screen: clamp(30px, 5vw, 44px);     /* PICK THE FEST, join headline */
+  --fs-day: clamp(16px, 1.6vw, 19px);      /* day-rule headers */
+  --fs-card: clamp(13.5px, 1.2vw, 15px);   /* card names */
+  --fs-body: clamp(12.5px, 1.1vw, 13.5px);
+  --fs-micro: 11px;
+  --shell-max: 960px;
+  --sp-gutter: clamp(14px, 2.5vw, 28px);
+}
+
+/* The one "wide" breakpoint (1100): shell widens, everything else is fluid. */
+@media (min-width: 1100px) {
+  :root { --shell-max: 1080px; }
 }
 
 @keyframes gradShift {

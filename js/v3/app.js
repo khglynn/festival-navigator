@@ -10,6 +10,7 @@ import { renderWall, refreshCard, showUndoToast, showToast, wireScrollspy, color
 import { openArtistSheet, openAllNotes, closeSheet, refreshOpenSheet } from './notes.js';
 import { renderSettings, appSettings, openSubviewByKey } from './settings.js';
 import { router } from './router.js';
+import { createSortControl } from './sort-control.js';
 import { startFavicon, stopFavicon } from './favicon.js';
 import { hslOf, strokeOf, nextColorIndex } from './palette.js';
 
@@ -132,43 +133,53 @@ function renderDockYou() {
 }
 
 let unspy = () => {};
-function renderDockDays() {
-  const days = $('dock-days');
-  days.textContent = '';
+// One day list feeds BOTH navigations: the mobile dock and the desktop day
+// rail (DT-1). Scheduled fests: tabs from days{} keys (labels via dayMeta
+// weekday). Lineup fests: the same split-aware grouping the wall renders —
+// a "Saturday & Sunday" artist must not mint its own tab (ST-1).
+function renderDayNav() {
+  const dock = $('dock-days');
+  const rail = $('rail-days');
+  dock.textContent = '';
+  rail.textContent = '';
   const fest = state.fest();
-  // Scheduled fests: tabs from days{} keys (labels via dayMeta weekday, e.g.
-  // EF's "Day 1" -> THU). Lineup fests: the same split-aware grouping the
-  // wall renders — a "Saturday & Sunday" artist must not mint its own tab
-  // (ST-1); tabs and day rules always agree.
   const scheduled = fest.days && Object.keys(fest.days).length;
   const groups = scheduled
     ? Object.keys(fest.days)
     : [...groupByDay(fest.artists || [], knownDaysOf(fest)).keys()].filter(Boolean);
   for (const day of groups) {
     const meta = (fest.dayMeta || {})[day];
-    const tab = document.createElement('button');
-    tab.className = 'day-tab';
-    tab.dataset.day = day;
-    tab.textContent = (meta?.wd || day).slice(0, 3).toUpperCase();
-    tab.addEventListener('click', () => {
+    const jump = () => {
       const target = document.querySelector(`.day-rule[data-day="${CSS.escape(day)}"]`);
       if (target) target.scrollIntoView({ behavior: ctx.lowPower ? 'auto' : 'smooth', block: 'start' });
-    });
-    days.appendChild(tab);
+    };
+    const mkTab = (label) => {
+      const tab = document.createElement('button');
+      tab.className = 'day-tab';
+      tab.dataset.day = day;
+      tab.textContent = label;
+      tab.addEventListener('click', jump);
+      return tab;
+    };
+    dock.appendChild(mkTab((meta?.wd || day).slice(0, 3).toUpperCase()));
+    // Rail tabs stay compact: drop parenthetical asides from verbose day keys
+    // ("Wednesday, Sept 16 (Early Arrival pre-party)" -> "WEDNESDAY, SEPT 16").
+    const railLabel = meta?.wd ? `${meta.wd} ${meta.num || ''}`.trim() : day.replace(/\s*\(.*\)\s*$/, '');
+    rail.appendChild(mkTab(railLabel.toUpperCase()));
   }
   unspy();
-  unspy = wireScrollspy(days, $('wall-root'));
+  unspy = wireScrollspy([dock, rail], $('wall-root'));
 }
 
 function repaintWall() {
   refreshCtx();
   renderWall($('wall-root'), ctx);
-  renderDockDays();
+  renderDayNav();
   $('notes-count').textContent = String(model.totalNoteCount(state.crewDoc, ctx.fid));
   // A timetable has one true order — a sort control there would be a lie
   // (CORE-5). Searching a scheduled fest sorts chronologically by design.
   const scheduled = !!(state.fest().days && Object.keys(state.fest().days).length);
-  $('sort-select').style.display = scheduled ? 'none' : '';
+  $('sort-control').style.display = scheduled ? 'none' : '';
   updateMigrationBanner();
 }
 
@@ -230,7 +241,7 @@ function renderCreate() {
     const left = document.createElement('div');
     left.style.cssText = 'flex: 1; min-width: 0; text-align: left;';
     const nm = document.createElement('span');
-    nm.style.cssText = `font-family: var(--font-display); letter-spacing: .04em; font-size: 16px; color: rgb(${f.accent || '237, 234, 244'}); white-space: nowrap;`;
+    nm.style.cssText = `font-family: var(--font-display); letter-spacing: .04em; font-size: var(--fs-day); color: rgb(${f.accent || '237, 234, 244'}); white-space: nowrap;`;
     nm.textContent = f.name.toUpperCase();
     const yr = document.createElement('span');
     yr.style.cssText = 'font-size: .65em; opacity: .75;';
@@ -341,7 +352,7 @@ function renderLanding() {
     left.style.cssText = 'flex: 1; min-width: 0; text-align: left;';
     const nm = document.createElement('span');
     nm.className = 'fest-name';
-    nm.style.cssText = 'font-family: var(--font-display); letter-spacing: .04em; font-size: 16px; color: var(--text-header);';
+    nm.style.cssText = 'font-family: var(--font-display); letter-spacing: .04em; font-size: var(--fs-day); color: var(--text-header);';
     nm.textContent = c.name || 'Your festival';
     left.appendChild(nm);
     const sub = document.createElement('div');
@@ -543,13 +554,16 @@ export function init() {
   $('search-input').addEventListener('input', (e) => {
     ctx.query = e.target.value;
     renderWall($('wall-root'), ctx);
-    renderDockDays(); // scrollspy re-wires against the filtered day rules (gate F8)
+    renderDayNav(); // scrollspy re-wires against the filtered day rules (gate F8)
   });
-  $('sort-select').addEventListener('change', (e) => { ctx.sort = e.target.value; repaintWall(); });
+  const sortCtl = createSortControl({ initial: ctx.sort, onChange: (v) => { ctx.sort = v; repaintWall(); } });
+  $('sort-control').appendChild(sortCtl.el);
   const dock = $('dock');
   $('search-input').addEventListener('focus', () => dock.classList.add('hidden'));
   $('search-input').addEventListener('blur', () => dock.classList.remove('hidden'));
-  $('dock-you').addEventListener('click', () => window.scrollTo({ top: 0, behavior: ctx.lowPower ? 'auto' : 'smooth' }));
+  const jumpTop = () => window.scrollTo({ top: 0, behavior: ctx.lowPower ? 'auto' : 'smooth' });
+  $('dock-you').addEventListener('click', jumpTop);
+  $('rail-you').addEventListener('click', jumpTop);
   const openSettingsLayer = () => { openSettings(); router.push('settings'); };
   $('gear-btn').addEventListener('click', openSettingsLayer);
   $('dock-fest-link').addEventListener('click', openSettingsLayer);
@@ -557,7 +571,9 @@ export function init() {
   $('create-go-btn').addEventListener('click', createCrewFlow);
   $('create-back').addEventListener('click', () => { history.replaceState(null, '', '/'); renderLanding(); });
   const saved = appSettings();
-  applyLowPower(saved.lowPower);
+  // prefers-reduced-motion rides the same path as Low power (quality floor):
+  // the aura/favicon animations stop without the user hunting for a setting.
+  applyLowPower(saved.lowPower || window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   sync.setStayOffline(saved.stayOffline);
   // Poll every 25s normally; low power stretches to every 5 min (design 21h).
   let lowTick = 0;

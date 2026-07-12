@@ -70,6 +70,7 @@ function composer(placeholder, onSave) {
   const input = document.createElement('input');
   input.maxLength = 500;
   input.placeholder = placeholder;
+  input.setAttribute('aria-label', placeholder);
   const btn = document.createElement('button');
   btn.className = 'btn-tonal';
   btn.style.cssText = 'font-size: 12px; padding: 9px 15px; flex: none;';
@@ -99,6 +100,27 @@ function addNote(ctx, scope, target, text) {
 let activeSheetRepaint = null;
 export function refreshOpenSheet() {
   if (activeSheetRepaint) activeSheetRepaint();
+}
+
+// Dialog semantics + focus management (AX-4): the sheet is a modal — it takes
+// focus on open, Tab cycles inside it, and focus returns where it was on close.
+let restoreFocusTo = null;
+function dialogize(sheet, label) {
+  sheet.setAttribute('role', 'dialog');
+  sheet.setAttribute('aria-modal', 'true');
+  sheet.setAttribute('aria-label', label);
+  sheet.tabIndex = -1;
+  restoreFocusTo = document.activeElement;
+  requestAnimationFrame(() => sheet.focus());
+  sheet.addEventListener('keydown', (e) => {
+    if (e.key !== 'Tab') return;
+    const f = [...sheet.querySelectorAll('button, input, textarea, [tabindex="0"]')].filter((n) => !n.disabled);
+    if (!f.length) return;
+    const first = f[0];
+    const last = f[f.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  });
 }
 
 // ---- artist notes bottom sheet (21g) --------------------------------------------
@@ -138,13 +160,17 @@ export function openArtistSheet(artistName, ctx, onChange) {
     onChange();
   }));
   document.body.append(backdrop, sheet);
+  dialogize(sheet, `Notes for ${artistName}`);
   activeSheetRepaint = paint;
 }
 
 export function closeSheet() {
+  const wasOpen = document.getElementById('artist-sheet');
   document.getElementById('sheet-backdrop')?.remove();
   document.getElementById('artist-sheet')?.remove();
   activeSheetRepaint = null;
+  if (wasOpen && restoreFocusTo && restoreFocusTo.isConnected) restoreFocusTo.focus();
+  restoreFocusTo = null;
 }
 
 // ---- all-notes view (the wall's Notes chip) ----------------------------------------
@@ -188,6 +214,7 @@ export function openAllNotes(ctx) {
   };
   paint();
   document.body.append(backdrop, sheet);
+  dialogize(sheet, 'All notes');
   activeSheetRepaint = paint;
 }
 

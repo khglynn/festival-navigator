@@ -7,6 +7,7 @@
 // innerHTML interpolation of doc-derived strings, ever.
 import * as state from '../state.js';
 import * as model from './model.js';
+import { LEVEL_LABELS_V4 } from '../parse.js';
 import { computeLanes } from '../overlap.js';
 import { auraBackground, whoCorner, aboutCorner, nameColor, subColor } from './aura.js';
 import { BOARD } from './palette.js';
@@ -55,6 +56,15 @@ export function renderCard(artistName, ctx, opts = {}) {
   const el = document.createElement('div');
   el.className = 'card' + (opts.cell ? ' cell' : '') + (opts.time && !opts.cell ? ' timed' : '');
   el.dataset.artist = artistName;
+  // Keyboard-first card (AX-1): real button semantics, the pick level in the
+  // accessible name so a screen reader hears state, Enter/Space cycle.
+  el.setAttribute('role', 'button');
+  el.tabIndex = 0;
+  const myLevel = (ctx.picks[artistName] || {})[ctx.meName] || 0;
+  el.setAttribute('aria-label', `${artistName} — ${myLevel === 4 ? 'must' : (LEVEL_LABELS_V4[myLevel] || 'not picked').toLowerCase()}`);
+  el.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); ctx.onTap(artistName, el); }
+  });
   // Stash render opts on the node so refreshCard can reproduce this exact
   // render — a single-card refresh must preserve every invariant the full
   // render established (CORE-1/CORE-3).
@@ -96,6 +106,17 @@ export function renderCard(artistName, ctx, opts = {}) {
     about.appendChild(c);
   }
   el.appendChild(about);
+
+  // Pointer-fine hover affordance (DT-6): notes are reachable without knowing
+  // the long-press. ✎, never a music note — that glyph belongs to Spotify.
+  if (ctx.onOpenNotes) {
+    const pen = document.createElement('button');
+    pen.className = 'note-affordance';
+    pen.textContent = '✎';
+    pen.setAttribute('aria-label', `Notes for ${artistName}`);
+    pen.addEventListener('click', (e) => { e.stopPropagation(); ctx.onOpenNotes(artistName); });
+    el.appendChild(pen);
+  }
 
   // Long-press (mobile) opens the artist notes sheet (~500ms, atlas 21g).
   // Digitizer jitter fires pointermove even on a still finger, so cancel only
@@ -474,17 +495,19 @@ export function showUndoToast(container, message, onUndo) {
   toastTimer = setTimeout(() => { container.textContent = ''; }, 5000);
 }
 
-// ---- dock scrollspy -------------------------------------------------------------
-export function wireScrollspy(dockDays, wallRoot) {
-  const tabs = [...dockDays.querySelectorAll('.day-tab')];
+// ---- day-nav scrollspy ------------------------------------------------------------
+// One observer drives every tab container (mobile dock + desktop rail): the
+// active day is a single fact rendered in two places.
+export function wireScrollspy(containers, wallRoot) {
+  const list = Array.isArray(containers) ? containers : [containers];
+  const tabs = list.flatMap((c) => [...c.querySelectorAll('.day-tab')]);
   if (!tabs.length) return () => {};
   const headers = [...wallRoot.querySelectorAll('.day-rule[data-day]')];
-  const byDay = new Map(tabs.map((t) => [t.dataset.day, t]));
   const io = new IntersectionObserver((entries) => {
     for (const e of entries) {
       if (!e.isIntersecting) continue;
       const day = e.target.dataset.day;
-      tabs.forEach((t) => t.classList.toggle('active', t === byDay.get(day)));
+      tabs.forEach((t) => t.classList.toggle('active', t.dataset.day === day));
     }
   }, { rootMargin: '-10% 0px -80% 0px' });
   headers.forEach((h) => io.observe(h));

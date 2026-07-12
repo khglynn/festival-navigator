@@ -97,7 +97,8 @@ export function openBulkPaste(host, actions) {
     'One per line: Person: Artist (Must) · levels: Picked, Picked ×2, Picked ×3, Must. Old exports (Must See, Highlight, Nice to See) work too.'));
   const ta = document.createElement('textarea');
   ta.placeholder = 'Kevin: GRiZ (Must)';
-  ta.style.cssText = 'width: 100%; min-height: 160px; background: var(--card); border: 1px solid var(--border-input); border-radius: var(--r-settings); color: var(--text-primary); font-size: 12.5px; font-family: var(--font-ui); padding: 12px; box-sizing: border-box; outline: none;';
+  ta.setAttribute('aria-label', 'Bulk paste picks, one per line');
+  ta.style.cssText = 'width: 100%; min-height: 160px; background: var(--card); border: 1px solid var(--border-input); border-radius: var(--r-settings); color: var(--text-primary); font-size: 12.5px; font-family: var(--font-ui); padding: 12px; box-sizing: border-box;';
   const status = el('div', 'color: var(--text-tertiary); font-size: 11.5px; font-weight: 600;');
   const go = el('button', 'font-size: 12px; padding: 9px 16px; align-self: flex-start;', 'Add / Update');
   go.className = 'btn-tonal';

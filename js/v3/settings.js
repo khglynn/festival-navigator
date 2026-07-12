@@ -43,6 +43,7 @@ function toggleRow(title, sub, checked, onFlip) {
   toggle.className = 'toggle';
   toggle.setAttribute('role', 'switch');
   toggle.setAttribute('aria-checked', String(!!checked));
+  toggle.setAttribute('aria-label', title);
   toggle.appendChild(el('span')).className = '';
   toggle.firstChild.className = 'toggle-knob';
   toggle.addEventListener('click', () => {
@@ -55,9 +56,10 @@ function toggleRow(title, sub, checked, onFlip) {
 }
 
 function linkRow(title, onOpen) {
-  const row = el('div');
+  // A real button (AX-7): keyboard-reachable, announced as interactive.
+  const row = el('button');
   row.className = 'list-row';
-  row.style.cursor = 'pointer';
+  row.style.cssText = 'cursor: pointer; width: 100%; background: none; border: none; border-bottom: 1px solid var(--hairline); font: inherit; text-align: left; color: inherit;';
   const t = el('span', 'flex: 1;', title); t.className = 'row-title';
   const chev = el('span', '', '›'); chev.className = 'chev';
   row.append(t, chev);
@@ -195,7 +197,8 @@ function openAddFestival(actions) {
   const input = el('input');
   input.placeholder = 'Festival name (e.g. Bonnaroo 2026)';
   input.maxLength = 80;
-  input.style.cssText = 'flex: 1; background: var(--card); border: 1px solid var(--border-input); border-radius: var(--r-card); padding: 10px 12px; color: #fff; font-size: 13px; font-family: var(--font-ui); outline: none;';
+  input.setAttribute('aria-label', 'Festival name');
+  input.style.cssText = 'flex: 1; background: var(--card); border: 1px solid var(--border-input); border-radius: var(--r-card); padding: 10px 12px; color: #fff; font-size: 13px; font-family: var(--font-ui);';
   const go = el('button', 'font-size: 12px; padding: 9px 15px; flex: none;', 'Research');
   go.className = 'btn-tonal';
   row.append(input, go);
@@ -356,8 +359,9 @@ export function renderSettings(root, ctx, actions) {
   main.appendChild(youCard);
 
   // Spotify glance (state only; the drill page holds every action — 21f rule)
-  const sp = el('div'); sp.className = 'settings-card';
-  sp.style.cssText += 'display: flex; flex-direction: column; gap: 9px; cursor: pointer; margin-top: 8px;';
+  const sp = el('button'); sp.className = 'settings-card';
+  sp.style.cssText += 'display: flex; flex-direction: column; gap: 9px; cursor: pointer; margin-top: 8px; width: 100%; font: inherit; text-align: left; color: inherit;';
+  sp.setAttribute('aria-label', 'Spotify settings');
   const spHead = el('div', 'display: flex; align-items: baseline; gap: 8px;');
   spHead.appendChild(el('span', 'color: #fff; font-weight: 700; font-size: 14px;', 'Spotify'));
   const lib = spotify.libraryMap();
@@ -430,8 +434,9 @@ function openSpotifyDrill(ctx, actions) {
       const row = el('div', 'display: flex; gap: 8px;');
       const input = el('input');
       input.placeholder = 'Crew Spotify app Client ID';
+      input.setAttribute('aria-label', 'Crew Spotify app Client ID');
       input.maxLength = 32;
-      input.style.cssText = 'flex: 1; background: var(--card); border: 1px solid var(--border-input); border-radius: var(--r-card); padding: 10px 12px; color: #fff; font-size: 12.5px; font-family: var(--font-ui); outline: none;';
+      input.style.cssText = 'flex: 1; background: var(--card); border: 1px solid var(--border-input); border-radius: var(--r-card); padding: 10px 12px; color: #fff; font-size: 12.5px; font-family: var(--font-ui);';
       const save = el('button', 'font-size: 12px; padding: 9px 14px;', 'Save');
       save.className = 'btn-tonal';
       save.addEventListener('click', () => {
