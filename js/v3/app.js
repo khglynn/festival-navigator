@@ -804,12 +804,16 @@ async function enterApp(token, doc, current = () => true) {
 // ---- lost states (spec F16) --------------------------------------------------------
 // A link that doesn't resolve gets a real screen with a way forward — never a
 // silent fall to landing (FLOW-3). `gone` = the server said 404 (deleted or
-// retyped); otherwise we're offline with nothing cached.
+// retyped). Otherwise: offline OR a server error — and the copy must not
+// blame the user's connection for the server's problem (audit re-run finding:
+// a 500 used to read as "you're offline" while navigator.onLine was true).
 function renderBadLink(token, { gone }) {
   show('screen-badlink');
   $('badlink-msg').textContent = gone
     ? 'It may have been retyped, or the crew was deleted. Ask your crew for a fresh link and paste it here.'
-    : 'You’re offline and this crew isn’t saved on this device yet. Reconnect, then open the link again.';
+    : (navigator.onLine
+      ? 'The crew service hit an error — it’s not you, and your link is probably fine. Try again in a minute.'
+      : 'You’re offline and this crew isn’t saved on this device yet. Reconnect, then open the link again.');
   if (gone) crew.forgetCrew(token); // dead crews don't haunt the landing list
   else $('badlink-input').value = crew.crewLink(token);
   $('badlink-status').textContent = '';
