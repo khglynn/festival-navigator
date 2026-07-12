@@ -64,6 +64,20 @@ export function busiestFestival(doc, knownIds) {
   return best; // null when no fest has picks — caller falls back
 }
 
+// One stage-column order for the whole festival: the union of every day's
+// stages, in first-appearance order. Each day's stages array is authored
+// independently in the festival data, so the same physical stage used to sit
+// in a different column on different days — scrolling down a stage silently
+// changed stages under you. Days missing a stage render an empty column;
+// that's the graceful case, not an error.
+export function canonicalStages(fest) {
+  const out = [];
+  for (const day of Object.keys(fest?.days || {})) {
+    for (const s of fest.days[day].stages || []) if (!out.includes(s)) out.push(s);
+  }
+  return out;
+}
+
 // The tap cycle: 0 -> 1 -> 2 -> 3 -> 4(must) -> 0 (the 5th tap clears; the
 // UI wraps this in an undo toast — design open question 1, decided).
 export function nextTapLevel(current) {

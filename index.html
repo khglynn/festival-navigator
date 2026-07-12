@@ -129,11 +129,6 @@
         <header class="app-header">
           <span class="title"><span id="fest-name"></span><span class="yr" id="fest-year"></span></span>
           <span class="sub" id="fest-sub"></span>
-          <span class="header-right">
-            <span style="font-family: var(--font-display); letter-spacing: .04em; font-size: 13px; color: rgb(var(--fest));" id="desk-fest-pill"></span>
-            <span class="sync-dot" id="sync-dot"></span>
-            <span class="sr-only" id="sync-label">online</span>
-          </span>
           <button class="gear-btn" id="gear-btn" title="Settings" aria-label="Settings">
             <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#8E86A8" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.01a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.01a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.01a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
           </button>
@@ -148,17 +143,23 @@
           <span id="sort-control"></span>
           <button class="notes-chip" id="notes-chip">Notes <span class="count" id="notes-count">0</span></button>
         </div>
-        <!-- Desktop day rail (DT-1): the dock's ≥720 body -->
+        <!-- Desktop day rail (DT-1): the dock's ≥720 body — same anatomy:
+             avatar, day tabs, fest name + sync dot (unified, Kevin note 1.1) -->
         <div class="day-rail" id="day-rail">
-          <button class="rail-you" id="rail-you" aria-label="Jump to top">YOU ↑</button>
+          <button class="avatar you you-avatar" id="rail-you" aria-label="Jump to top"></button>
           <span class="rail-days" id="rail-days"></span>
+          <button class="fest-link" id="rail-fest-link" aria-label="Open settings">
+            <span class="fest-name" id="rail-fest-name"></span>
+            <span class="sync-dot"></span>
+            <span class="sr-only" id="sync-label">online</span>
+          </button>
         </div>
         <div class="wall-wrap" id="wall-root"></div>
       </div>
 
       <!-- Mobile dock (atlas 21c) -->
       <div class="dock" id="dock">
-        <button class="avatar you" id="dock-you" aria-label="Jump to top" style="background: none; border: 1.5px solid #fff; cursor: pointer;"></button>
+        <button class="avatar you you-avatar" id="dock-you" aria-label="Jump to top"></button>
         <span class="days" id="dock-days"></span>
         <button class="fest-link" id="dock-fest-link" aria-label="Open settings">
           <span class="fest-name" id="dock-fest-name"></span>

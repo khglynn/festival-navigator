@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import {
   docVersion, readLevel, picksFor, needsMigration, nextTapLevel,
   makeNoteId, notesFor, noteCount, totalNoteCount, noteOverlay,
-  togglePin, sortWithPins,
+  togglePin, sortWithPins, canonicalStages,
 } from '../js/v3/model.js';
 import { deepMerge, validateIncoming, newCrewDoc } from '../api/_lib/crew-shared.mjs';
 
@@ -149,4 +149,24 @@ test('note ownership: id prefix must match author (Codex finding 2)', () => {
   // makeNoteId output always satisfies the prefix rule for its own author
   const id = makeNoteId('Maya', '2026-07-10T06:00:00Z', 'zzzzzz');
   assert.equal(validateIncoming(wrap(id, note('Maya'))).ok, true);
+});
+
+// ---- canonical cross-day stage columns (Kevin note 1.2, 2026-07-12) ----------
+// Same physical stage, same column, every day — regardless of how each day's
+// stages array was authored.
+test('canonicalStages: union across days in first-appearance order', () => {
+  const fest = {
+    days: {
+      Friday: { stages: ['Alpha', 'Beta'] },
+      Saturday: { stages: ['Beta', 'Gamma', 'Alpha'] },
+      Sunday: { stages: ['Delta'] },
+    },
+  };
+  assert.deepEqual(canonicalStages(fest), ['Alpha', 'Beta', 'Gamma', 'Delta']);
+});
+
+test('canonicalStages: tolerates missing days, missing stages, empty fest', () => {
+  assert.deepEqual(canonicalStages({}), []);
+  assert.deepEqual(canonicalStages(null), []);
+  assert.deepEqual(canonicalStages({ days: { Friday: {} } }), []);
 });

@@ -103,8 +103,10 @@ function applyFestTheme() {
   $('fest-name').textContent = fest.name.toUpperCase();
   $('fest-year').textContent = fest.year || '';
   $('fest-sub').textContent = [fest.subtitle, fest.dates].filter(Boolean).join(' · ');
+  // Dock (mobile bottom) and day rail (desktop top) carry the same fest
+  // name + sync dot — one component vocabulary, two positions (note 1.1).
   $('dock-fest-name').textContent = `${fest.name.toUpperCase()} ${fest.year || ''}`.trim();
-  $('desk-fest-pill').textContent = `${fest.name.toUpperCase()} ${fest.year || ''}`.trim();
+  $('rail-fest-name').textContent = `${fest.name.toUpperCase()} ${fest.year || ''}`.trim();
   document.title = `${fest.name} — Festival Navigator`;
   startFavicon(fest.accent, { lowPower: ctx.lowPower });
 }
@@ -132,19 +134,39 @@ function switchIdentity(name) {
   crew.setMe(state.getCrewToken(), name);
   refreshCtx();
   renderPersonChips();
-  renderDockYou();
+  renderYou();
   showToast($('toast-root'), `You’re ${name} on this device now.`);
 }
 
-function renderDockYou() {
-  const you = $('dock-you');
-  you.textContent = '';
-  if (!ctx.meName) return;
-  const p = state.people()[ctx.meName];
-  const ci = colorIndexOf(ctx.meName, p);
-  you.style.background = hslOf(ci, 0.5);
-  you.style.border = '1.5px solid #fff';
-  you.textContent = ctx.meName.charAt(0).toUpperCase();
+// Paints BOTH "you" avatars — mobile dock and desktop day rail — from the
+// same identity fact (unified chrome, note 1.1).
+function renderYou() {
+  for (const id of ['dock-you', 'rail-you']) {
+    const you = $(id);
+    you.textContent = '';
+    if (!ctx.meName) continue;
+    const p = state.people()[ctx.meName];
+    const ci = colorIndexOf(ctx.meName, p);
+    you.style.background = hslOf(ci, 0.5);
+    you.textContent = ctx.meName.charAt(0).toUpperCase();
+    you.title = ctx.meName;
+    you.setAttribute('aria-label', `${ctx.meName} — jump to top`);
+  }
+}
+
+// Sticky-chrome geometry, measured not hardcoded: the stage strip pins below
+// the day rail (--rail-h; 0 on mobile where the rail is display:none), and
+// day jumps land headers below rail + strip (--jump-offset via
+// scroll-margin-top). Re-measured every repaint and on resize — fluid type
+// makes both heights breakpoint-dependent.
+function measureStickyChrome() {
+  const rail = $('day-rail');
+  const railH = rail && rail.offsetHeight ? rail.offsetHeight : 0;
+  const strip = document.querySelector('.stage-strip');
+  const stripH = strip ? strip.offsetHeight : 0;
+  const rootStyle = document.documentElement.style;
+  rootStyle.setProperty('--rail-h', `${railH}px`);
+  rootStyle.setProperty('--jump-offset', `${railH + stripH + 6}px`);
 }
 
 let unspy = () => {};
@@ -199,6 +221,7 @@ function repaintWall() {
   updateWeekendRow();
   updateArchiveNote();
   maybeShowCoachMark();
+  measureStickyChrome();
 }
 
 // Multi-weekend fests (ACL) get a weekend view (ST-3): pick yours once and
@@ -618,7 +641,7 @@ function openSettings() {
       sync.scheduleSync();
       refreshCtx();
       renderPersonChips();
-      renderDockYou();
+      renderYou();
       showToast($('toast-root'), `You’re ${newName} now — picks came with you.`);
     },
     changeColor: (idx) => {
@@ -629,7 +652,7 @@ function openSettings() {
       sync.scheduleSync();
       refreshCtx();
       renderPersonChips();
-      renderDockYou();
+      renderYou();
     },
   };
   renderSettings($('settings-root'), ctx, settingsActions);
@@ -823,7 +846,7 @@ async function enterApp(token, doc, current = () => true) {
   applyFestTheme();
   refreshCtx();
   renderPersonChips();
-  renderDockYou();
+  renderYou();
   repaintWall();
   history.replaceState(savedLayers ? { layers: savedLayers } : null, '', `/#g=${token}`);
   sync.pollSync();
@@ -921,7 +944,7 @@ export function init() {
   sync.initSync({
     // Everything that renders identity/state repaints together — the dock
     // avatar was the one holdout showing a stale color (audit 1.5).
-    onRemoteChange: () => { repaintWall(); renderPersonChips(); renderDockYou(); refreshOpenSheet(); },
+    onRemoteChange: () => { repaintWall(); renderPersonChips(); renderYou(); refreshOpenSheet(); },
     onCrewGone: (token) => {
       // The server said this crew no longer exists — a dead row on the
       // landing list would just 404 again (FLOW-3).
@@ -947,6 +970,12 @@ export function init() {
     ctx.query = e.target.value;
     renderWall($('wall-root'), ctx);
     renderDayNav(); // scrollspy re-wires against the filtered day rules (gate F8)
+    measureStickyChrome(); // search mode drops the stage strip — jump offset shrinks
+  });
+  let resizeTimer = null;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(measureStickyChrome, 150);
   });
   const sortCtl = createSortControl({ initial: ctx.sort, onChange: (v) => { ctx.sort = v; repaintWall(); } });
   $('sort-control').appendChild(sortCtl.el);
@@ -959,6 +988,7 @@ export function init() {
   const openSettingsLayer = () => { openSettings(); router.push('settings'); };
   $('gear-btn').addEventListener('click', openSettingsLayer);
   $('dock-fest-link').addEventListener('click', openSettingsLayer);
+  $('rail-fest-link').addEventListener('click', openSettingsLayer);
   $('notes-chip').addEventListener('click', () => { refreshCtx(); openAllNotes(ctx); router.push('sheet:all'); });
   $('create-go-btn').addEventListener('click', createCrewFlow);
   $('create-back').addEventListener('click', () => { history.replaceState(null, '', '/'); renderLanding(); });

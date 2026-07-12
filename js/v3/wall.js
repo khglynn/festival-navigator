@@ -327,17 +327,107 @@ export function applySort(artists, mode, ctx) {
 
 // ---- set-times grid (atlas 21d: the same cards, on a clock) ---------------------
 // One vertical page: every day gets a rule + a clock grid. Mobile shows ~2
-// stages and swipes (scroll-snap inside .times-scroll); desktop fits them all.
-function renderScheduledDay(root, day, ctx) {
+// stages and swipes; desktop fits them all.
+//
+// The stage columns are CANONICAL across days (model.canonicalStages): every
+// day renders the same columns in the same order on the same template, all
+// day scrollers mirror ONE horizontal position, and a single sticky strip
+// carries the stage names for the whole page — so scrolling straight down a
+// column stays on one stage from Thursday to Sunday. The strip lives OUTSIDE
+// the horizontal scrollers because position:sticky can't escape an
+// overflow-x container (the same physics that put the hour rail outside).
+export function computeTimesLayout(fest, getDayArtists) {
+  const stages = model.canonicalStages(fest);
+  const days = Object.keys(fest.days || {});
+  // The everything-else column is reserved festival-wide: if ANY day needs
+  // it, every day gets it, or the shared template (and the strip) would lie.
+  const hasEE = days.some((d) => ((fest.activities || {})[d] || []).length > 0
+    || getDayArtists(d).some((a) => !stages.includes(a.stage)));
+  return {
+    stages,
+    hasEE,
+    colsTemplate: `repeat(${stages.length + (hasEE ? 1 : 0)}, minmax(150px, 1fr))`,
+  };
+}
+
+function stageHead(label, { muted = false } = {}) {
+  const h = document.createElement('div');
+  h.className = 'stage-head';
+  if (muted) h.style.color = 'var(--text-secondary)'; // neutral tint — not a stage
+  h.textContent = label;
+  h.title = label; // long names ellipsize — hover recovers
+  return h;
+}
+
+function renderStageStrip(layout) {
+  const strip = document.createElement('div');
+  strip.className = 'times-wrap stage-strip';
+  const spacer = document.createElement('div');
+  spacer.className = 'strip-rail'; // matches the hour rail's width for column alignment
+  const scroll = document.createElement('div');
+  scroll.className = 'times-scroll';
+  const grid = document.createElement('div');
+  grid.className = 'times-grid';
+  grid.style.gridTemplateColumns = layout.colsTemplate;
+  grid.style.gridTemplateRows = '32px';
+  for (const s of layout.stages) grid.appendChild(stageHead(s));
+  if (layout.hasEE) grid.appendChild(stageHead('EVERYTHING ELSE', { muted: true }));
+  scroll.appendChild(grid);
+  strip.append(spacer, scroll);
+  return strip;
+}
+
+// Mirror one horizontal position across the strip and every day's scroller.
+// Setting scrollLeft programmatically fires a scroll event on the target; the
+// lastSet map recognizes that echo (same element, same value) and drops it
+// instead of ping-ponging.
+export function wireTimesScrollSync(root) {
+  const scrollers = [...root.querySelectorAll('.times-scroll')];
+  if (scrollers.length < 2) return;
+  const lastSet = new Map();
+  for (const s of scrollers) {
+    s.addEventListener('scroll', () => {
+      if (lastSet.get(s) === s.scrollLeft) { lastSet.delete(s); return; }
+      for (const o of scrollers) {
+        if (o !== s && o.scrollLeft !== s.scrollLeft) {
+          lastSet.set(o, s.scrollLeft);
+          o.scrollLeft = s.scrollLeft;
+        }
+      }
+    }, { passive: true });
+  }
+}
+
+function renderScheduledDay(root, day, ctx, layout) {
   const fest = state.fest();
-  const dayData = fest.days[day];
   const computed = state.getDayArtists(day);
-  const stages = dayData.stages || [];
+  const stages = layout.stages;
   const meta = (fest.dayMeta || {})[day];
   root.appendChild(dayHeader(day, dayRuleSub(meta), {
     noteCount: model.noteCount(state.crewDoc, ctx.fid, 'day', day),
     onOpenNotes: ctx.onOpenDayNotes ? () => ctx.onOpenDayNotes(day) : null,
   }));
+
+  const acts = (fest.activities || {})[day] || [];
+
+  // A day with no timed sets must not mint a NaN grid (Math.min of nothing
+  // is Infinity). Activities-only days render as a quiet list; truly empty
+  // days say so instead of rendering nothing.
+  if (!computed.length) {
+    if (acts.length) {
+      const list = document.createElement('div');
+      list.className = 'ee-col';
+      for (const a of acts) list.appendChild(eeActivityRow(a));
+      root.appendChild(list);
+    } else {
+      const empty = document.createElement('div');
+      empty.style.cssText = 'color: var(--text-tertiary); font-size: 12px; font-weight: 600; padding: 6px 0 2px;';
+      empty.textContent = 'No set times for this day yet.';
+      root.appendChild(empty);
+    }
+    if (ctx.onNotesChange) root.appendChild(notesSection('day', day, day, ctx, ctx.onNotesChange));
+    return;
+  }
 
   const dayStart = Math.min(...computed.map((a) => a.startMin));
   const dayEnd = Math.max(...computed.map((a) => a.endMin ?? a.startMin + 60));
@@ -345,9 +435,9 @@ function renderScheduledDay(root, day, ctx) {
   const rows = Math.ceil(dayEnd / 15) - startRow;
 
   // Rail and grid are siblings sharing one rows template: the hour axis stays
-  // pinned at the left while stage columns scroll (CORE-2). The 32px header
-  // row is fixed (not auto) so the rail's empty first row aligns exactly.
-  const rowsTemplate = `32px repeat(${rows}, 20px)`;
+  // pinned at the left while stage columns scroll (CORE-2). Stage names live
+  // in the shared sticky strip above, not in per-day header rows.
+  const rowsTemplate = `repeat(${rows}, 20px)`;
   const wrap = document.createElement('div');
   wrap.className = 'times-wrap';
   const rail = document.createElement('div');
@@ -355,42 +445,27 @@ function renderScheduledDay(root, day, ctx) {
   rail.style.gridTemplateRows = rowsTemplate;
   const scroll = document.createElement('div');
   scroll.className = 'times-scroll';
-  scroll.dataset.day = day; // scroll position survives repaints (audit 1.1)
+  scroll.dataset.day = day;
   const grid = document.createElement('div');
   grid.className = 'times-grid';
-  grid.style.gridTemplateRows = rowsTemplate; // columns set below once hasEE is known
+  grid.style.gridTemplateRows = rowsTemplate;
+  grid.style.gridTemplateColumns = layout.colsTemplate;
 
-  for (const s of stages) {
-    const h = document.createElement('div');
-    h.className = 'stage-head';
-    h.textContent = s;
-    grid.appendChild(h);
-  }
   for (let r = startRow; r < startRow + rows; r++) {
     if (r % 4 !== 0) continue; // hour marks only
     const mins = r * 15;
     const hr = Math.floor(mins / 60) % 24;
     const label = document.createElement('div');
     label.className = 'hour-label';
-    label.style.gridRow = String(r - startRow + 2);
+    label.style.gridRow = String(r - startRow + 1);
     label.textContent = `${hr % 12 === 0 ? 12 : hr % 12} ${hr < 12 ? 'AM' : 'PM'}`;
     rail.appendChild(label);
   }
   // Everything that isn't a stage set lives in ONE far-right column (ST-2):
   // activities (workshops, ceremonies) and any set whose stage isn't a known
-  // column — which the old code silently DROPPED. Anything with stage+time
-  // stays on the clock; the old below-grid list is gone.
-  const acts = (fest.activities || {})[day] || [];
+  // column. Anything with stage+time stays on the clock.
   const strays = computed.filter((a) => stages.indexOf(a.stage) === -1);
-  const hasEE = acts.length > 0 || strays.length > 0;
-  grid.style.gridTemplateColumns = `repeat(${stages.length + (hasEE ? 1 : 0)}, minmax(150px, 1fr))`;
-  if (hasEE) {
-    const h = document.createElement('div');
-    h.className = 'stage-head';
-    h.style.color = 'var(--text-secondary)'; // neutral tint — not a stage
-    h.textContent = 'EVERYTHING ELSE';
-    grid.appendChild(h);
-  }
+  const dayHasEE = acts.length > 0 || strays.length > 0;
 
   // Same-stage overlaps split their column into side-by-side lanes (the old
   // grid's fix, dropped in the first v3 pass — the Codex P6 sweep surfaced
@@ -401,23 +476,27 @@ function renderScheduledDay(root, day, ctx) {
     if (col === -1) continue; // strays render in the everything-else column
     const cell = renderCard(a.name, ctx, { cell: true, time: a.startStr });
     cell.style.gridColumn = String(col + 1);
-    const row = Math.floor(a.startMin / 15) - startRow + 2;
-    const span = Math.max(1, Math.ceil(((a.endMin ?? a.startMin + 60) - a.startMin) / 15));
+    const row = Math.floor(a.startMin / 15) - startRow + 1;
+    // Two-row floor (44px): below that, the name + time can't physically fit
+    // and the top of the name gets shaved off (Kevin's screenshot, 2026-07-12).
+    const span = Math.max(2, Math.ceil(((a.endMin ?? a.startMin + 60) - a.startMin) / 15));
     cell.style.gridRow = `${row} / span ${span}`;
     cell.style.minHeight = '0';
     const lane = lanes.get(a);
     if (lane && lane.lanes > 1) {
+      // Lane math assumes border-box sizing (v3.css sets it on .card):
+      // width% + margin-left% ≤ 100% keeps every lane inside its own column.
       cell.style.width = `calc(${(100 / lane.lanes).toFixed(3)}% - 2px)`;
       cell.style.marginLeft = `${((lane.lane * 100) / lane.lanes).toFixed(3)}%`;
     }
     grid.appendChild(cell);
   }
 
-  if (hasEE) {
+  if (dayHasEE) {
     const col = document.createElement('div');
     col.className = 'ee-col';
     col.style.gridColumn = String(stages.length + 1);
-    col.style.gridRow = `2 / span ${rows}`;
+    col.style.gridRow = `1 / span ${rows}`;
     const entries = [
       ...strays.map((a) => ({ min: a.startMin, artist: a })),
       ...acts.map((a) => ({ min: activityMinutes((a.time || '').split(' - ')[0] || '12:00 PM'), act: a })),
@@ -426,19 +505,7 @@ function renderScheduledDay(root, day, ctx) {
       if (e.artist) {
         col.appendChild(renderCard(e.artist.name, ctx, { cell: true, time: e.artist.startStr }));
       } else {
-        const rowEl = document.createElement('div');
-        rowEl.className = 'ee-item';
-        const t = document.createElement('span');
-        t.className = 'ee-time';
-        t.textContent = e.act.time || '';
-        const n = document.createElement('span');
-        n.className = 'ee-name';
-        n.textContent = e.act.name;
-        const v = document.createElement('span');
-        v.className = 'ee-venue';
-        v.textContent = e.act.venue || '';
-        rowEl.append(t, n, v);
-        col.appendChild(rowEl);
+        col.appendChild(eeActivityRow(e.act));
       }
     }
     grid.appendChild(col);
@@ -450,15 +517,33 @@ function renderScheduledDay(root, day, ctx) {
   if (ctx.onNotesChange) root.appendChild(notesSection('day', day, day, ctx, ctx.onNotesChange));
 }
 
+// One quiet row in the everything-else column (also the whole body of an
+// activities-only day).
+function eeActivityRow(act) {
+  const rowEl = document.createElement('div');
+  rowEl.className = 'ee-item';
+  const t = document.createElement('span');
+  t.className = 'ee-time';
+  t.textContent = act.time || '';
+  const n = document.createElement('span');
+  n.className = 'ee-name';
+  n.textContent = act.name;
+  const v = document.createElement('span');
+  v.className = 'ee-venue';
+  v.textContent = act.venue || '';
+  rowEl.append(t, n, v);
+  return rowEl;
+}
+
 // ---- the wall ------------------------------------------------------------------
 // The repaint boundary preserves ephemeral client state (audit Class 1): a
 // remote sync tearing down #wall-root must never cost the user their scroll
 // position or a half-typed note. Harvest before teardown, restore after.
 function harvestEphemera(root) {
   const scrolls = new Map();
-  for (const s of root.querySelectorAll('.times-scroll[data-day]')) {
-    if (s.scrollLeft) scrolls.set(s.dataset.day, s.scrollLeft);
-  }
+  // Every timetable scroller mirrors one shared position now — harvest it once.
+  const anyScroller = root.querySelector('.times-scroll');
+  if (anyScroller && anyScroller.scrollLeft) scrolls.set('*', anyScroller.scrollLeft);
   const drafts = new Map();
   for (const input of root.querySelectorAll('.composer input[data-draft-key]')) {
     if (input.value) {
@@ -473,9 +558,9 @@ function harvestEphemera(root) {
 }
 
 function restoreEphemera(root, { scrolls, drafts }) {
-  for (const s of root.querySelectorAll('.times-scroll[data-day]')) {
-    const left = scrolls.get(s.dataset.day);
-    if (left) s.scrollLeft = left;
+  const left = scrolls.get('*');
+  if (left) {
+    for (const s of root.querySelectorAll('.times-scroll')) s.scrollLeft = left;
   }
   for (const input of root.querySelectorAll('.composer input[data-draft-key]')) {
     const d = drafts.get(input.dataset.draftKey);
@@ -500,7 +585,10 @@ function renderWallInner(root, ctx) {
   const scheduled = fest.days && Object.keys(fest.days).length;
 
   if (scheduled && !ctx.query) {
-    for (const day of Object.keys(fest.days)) renderScheduledDay(root, day, ctx);
+    const layout = computeTimesLayout(fest, state.getDayArtists);
+    if (layout.stages.length) root.appendChild(renderStageStrip(layout));
+    for (const day of Object.keys(fest.days)) renderScheduledDay(root, day, ctx, layout);
+    wireTimesScrollSync(root);
     if (ctx.onNotesChange) {
       root.appendChild(dayHeader(`NOTES · ${fest.name.toUpperCase()}`, ''));
       root.appendChild(notesSection('fest', null, '', ctx, ctx.onNotesChange));
