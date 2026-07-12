@@ -1,6 +1,8 @@
-// v3 app shell: boot flow (landing -> join/claim -> wall), wall wiring,
-// sync cadence, and the server-side v4 migration call. Screen renderers live
-// in wall.js; Settings/notes/Spotify screens mount here as they land.
+// v3 app shell: boot flow, screen switching (landing / create / join / wall /
+// settings / lost states — all six render HERE), wall wiring, sync cadence,
+// sheets (share moment, add member), and the server-side v4 migration call.
+// wall.js renders the wall's CONTENT; settings.js and notes.js own their
+// surfaces and mount into hosts this shell controls.
 import * as state from '../state.js';
 import * as crew from '../crew.js';
 import * as sync from '../sync.js';

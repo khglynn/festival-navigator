@@ -5,6 +5,7 @@
 // users and require the app OWNER to keep Premium — the setup guide in the
 // UI spells this out.
 import * as state from './state.js';
+import { loadJSON as loadJSONShared, saveLS } from './util.js';
 
 const LS_AUTH = 'fn_spotify_auth_v1';       // {clientId, access_token, refresh_token, expires_at}
 const LS_LIBMAP = 'fn_spotify_libmap_v1';   // {clientId, userId, fetchedAt, artists: {lowerName: {songs, followed}}}
@@ -35,10 +36,7 @@ export function clearError() {
   try { sessionStorage.removeItem(LS_ERROR); } catch { /* private mode */ }
 }
 
-function loadJSON(key) {
-  try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : null; }
-  catch { return null; }
-}
+const loadJSON = (key) => loadJSONShared(key, null);
 
 export function auth() { return loadJSON(LS_AUTH); }
 export function isConnected() {
@@ -91,7 +89,7 @@ export async function completeAuth(code, returnedState) {
   });
   if (!res.ok) throw new Error('Token exchange failed: ' + (await res.text()).slice(0, 200));
   const t = await res.json();
-  localStorage.setItem(LS_AUTH, JSON.stringify({
+  saveLS(LS_AUTH, JSON.stringify({
     clientId: pkce.clientId, access_token: t.access_token,
     refresh_token: t.refresh_token, expires_at: Date.now() + (t.expires_in - 60) * 1000,
   }));
@@ -118,7 +116,7 @@ async function accessToken() {
     throw new Error('Spotify had a hiccup refreshing your session — try again in a minute.');
   }
   const t = await res.json();
-  localStorage.setItem(LS_AUTH, JSON.stringify({
+  saveLS(LS_AUTH, JSON.stringify({
     ...a, access_token: t.access_token,
     refresh_token: t.refresh_token || a.refresh_token,
     expires_at: Date.now() + (t.expires_in - 60) * 1000,
@@ -174,7 +172,7 @@ export async function scanLibrary(onProgress) {
     if (onProgress) onProgress(`Scanned library + ${followed} followed artists…`);
   } while (after);
   const map = { clientId: auth().clientId, userId: me.id, fetchedAt: new Date().toISOString(), artists };
-  localStorage.setItem(LS_LIBMAP, JSON.stringify(map));
+  saveLS(LS_LIBMAP, JSON.stringify(map));
   return map;
 }
 

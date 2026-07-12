@@ -8,6 +8,7 @@
 //     affinity: {person: {artist: {songs?, followed?}}} }  // crew-wide
 import { deepMerge } from './merge.js';
 import { computeDayArtists } from './time.js';
+import { loadJSON, saveLS } from './util.js';
 import { FESTIVALS, FESTIVAL_INDEX, defaultFestivalId } from './festivals.js';
 
 export { FESTIVALS };
@@ -25,19 +26,6 @@ export const LS = {
   fest: (t) => `fn_crew_fest_v3_${t}`,
   geminiKey: 'geminiApiKey',
 };
-
-function loadJSON(key, fallback) {
-  try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; }
-  catch (e) { return fallback; }
-}
-
-// Writes are guarded like reads (PS-6): a full/blocked localStorage (quota,
-// private mode) must never throw mid-tap — memory state stays right and sync
-// still pushes; only the local cache is lost.
-function saveLS(key, value) {
-  try { localStorage.setItem(key, value); }
-  catch (e) { console.warn('localStorage write failed:', key, e); }
-}
 
 // ---- active crew context ----------------------------------------------------
 let crewToken = null;

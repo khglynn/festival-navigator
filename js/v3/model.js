@@ -125,7 +125,9 @@ export function totalNoteCount(doc, fid) {
   return n;
 }
 
-// Merge payload for adding one note.
+// Merge payload for adding one note. Consumed by the merge-safety tests
+// (tests/v3-model.test.mjs) as the canonical note-write shape; the live
+// write path (state.recordNote) builds the same shape against two roots.
 export function noteOverlay(fid, scope, target, note, id) {
   const noteId = id ?? makeNoteId(note.author, note.ts);
   const leaf = { [noteId]: note };

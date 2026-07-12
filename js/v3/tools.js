@@ -5,14 +5,14 @@ import * as model from './model.js';
 import { parseBulkLineV4, LEVEL_LABELS_V4 } from '../parse.js';
 import { renderCard, groupByDay, knownDaysOf } from './wall.js';
 
-const el = (tag, css, text) => {
+export const el = (tag, css, text) => {
   const n = document.createElement(tag);
   if (css) n.style.cssText = css;
   if (text !== undefined) n.textContent = text;
   return n;
 };
 
-function subviewHead(title, onBack) {
+export function subviewHead(title, onBack) {
   const head = el('div', 'display: flex; align-items: center; gap: 10px;');
   const back = el('button', '', '‹'); back.className = 'back-btn';
   back.addEventListener('click', onBack);

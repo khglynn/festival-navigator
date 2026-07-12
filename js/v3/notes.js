@@ -10,6 +10,7 @@ import * as model from './model.js';
 import { hslOf, strokeOf } from './palette.js';
 import { colorIndexOf } from './wall.js';
 import { router } from './router.js';
+import { loadJSON, saveLS } from '../util.js';
 
 const LS_PINS = 'fn_pins_v1';
 
@@ -17,11 +18,8 @@ const LS_PINS = 'fn_pins_v1';
 // backdrop agree; the direct close stays as the desync-proof fallback.
 const requestSheetClose = () => { if (!router || !router.requestClose()) closeSheet(); };
 
-function loadPins() {
-  try { return JSON.parse(localStorage.getItem(LS_PINS)) || {}; }
-  catch { return {}; }
-}
-function savePins(pins) { localStorage.setItem(LS_PINS, JSON.stringify(pins)); }
+const loadPins = () => loadJSON(LS_PINS, {});
+const savePins = (pins) => saveLS(LS_PINS, JSON.stringify(pins));
 
 function relTime(ts) {
   const ms = Date.now() - Date.parse(ts);

@@ -9,24 +9,15 @@ import * as model from './model.js';
 import { FESTIVAL_INDEX } from '../festivals.js';
 import { BOARD, hslOf, strokeOf } from './palette.js';
 import { colorIndexOf } from './wall.js';
-import { openExportLikes, openBulkPaste, openDayImage } from './tools.js';
+import { el, subviewHead, openExportLikes, openBulkPaste, openDayImage } from './tools.js';
 import { router } from './router.js';
 import { nameProblem, NAME_LIMITS } from '../name-rules.mjs';
+import { loadJSON, saveLS } from '../util.js';
 
 const LS_SETTINGS = 'fn_settings_v1'; // {lowPower, stayOffline}
 
-export function appSettings() {
-  try { return JSON.parse(localStorage.getItem(LS_SETTINGS)) || {}; }
-  catch { return {}; }
-}
-export function saveAppSettings(s) { localStorage.setItem(LS_SETTINGS, JSON.stringify(s)); }
-
-const el = (tag, css, text) => {
-  const n = document.createElement(tag);
-  if (css) n.style.cssText = css;
-  if (text !== undefined) n.textContent = text;
-  return n;
-};
+export function appSettings() { return loadJSON(LS_SETTINGS, {}); }
+export function saveAppSettings(s) { saveLS(LS_SETTINGS, JSON.stringify(s)); }
 
 function microLabel(text) {
   const n = el('div', 'margin-top: 8px;', text);
@@ -206,12 +197,7 @@ function openAddFestival(actions) {
   const host = document.getElementById('settings-subview');
   host.textContent = '';
   const col = el('div', 'display: flex; flex-direction: column; gap: 10px;');
-  const head = el('div', 'display: flex; align-items: center; gap: 10px;');
-  const back = el('button', '', '‹'); back.className = 'back-btn';
-  back.addEventListener('click', subviewBack(actions));
-  const title = el('div', '', 'ADD A FESTIVAL'); title.className = 'screen-title';
-  head.append(back, title);
-  col.appendChild(head);
+  col.appendChild(subviewHead('ADD A FESTIVAL', subviewBack(actions)));
 
   const row = el('div', 'display: flex; gap: 8px;');
   const input = el('input');
@@ -325,12 +311,7 @@ function openHowItWorks(actions) {
   const host = document.getElementById('settings-subview');
   host.textContent = '';
   const col = el('div', 'display: flex; flex-direction: column; gap: 10px;');
-  const head = el('div', 'display: flex; align-items: center; gap: 10px;');
-  const back = el('button', '', '‹'); back.className = 'back-btn';
-  back.addEventListener('click', subviewBack(actions));
-  const title = el('div', '', 'HOW IT WORKS'); title.className = 'screen-title';
-  head.append(back, title);
-  col.appendChild(head);
+  col.appendChild(subviewHead('HOW IT WORKS', subviewBack(actions)));
 
   const card = el('div'); card.className = 'settings-card';
   card.style.cssText += 'display: flex; flex-direction: column; gap: 12px;';
@@ -769,7 +750,7 @@ function requestAccessRow(rerenderDrill) {
       });
       const body = await res.json();
       if (!res.ok) { status.textContent = body.error || 'Request failed — try again.'; return; }
-      localStorage.setItem(LS_ACCESS_EMAIL, email.toLowerCase());
+      saveLS(LS_ACCESS_EMAIL, email.toLowerCase());
       status.textContent = body.status === 'approved'
         ? 'You’re already approved ✓ — hit Connect above.'
         : 'Sent ✓ — the owner gets a ping and adds you. Come back and Connect in a bit.';
@@ -863,14 +844,9 @@ function openSpotifyDrill(ctx, actions) {
   host.textContent = '';
   const rerenderDrill = () => openSpotifyDrill(ctx, actions);
   const col = el('div', 'display: flex; flex-direction: column; gap: 10px;');
-  const head = el('div', 'display: flex; align-items: center; gap: 10px;');
-  const back = el('button', '', '‹'); back.className = 'back-btn';
-  back.addEventListener('click', subviewBack(actions));
-  head.append(back, el('div', '', 'SPOTIFY'));
-  head.lastChild.className = 'screen-title';
-  const status = el('span', 'margin-left: auto; color: var(--spotify-stroke); font-size: 11.5px; font-weight: 700;',
-    spotify.isConnected() ? 'connected' : '');
-  head.appendChild(status);
+  const head = subviewHead('SPOTIFY', subviewBack(actions));
+  head.appendChild(el('span', 'margin-left: auto; color: var(--spotify-stroke); font-size: 11.5px; font-weight: 700;',
+    spotify.isConnected() ? 'connected' : ''));
   col.appendChild(head);
   const msg = el('div', 'color: var(--text-tertiary); font-size: 11.5px; font-weight: 600; line-height: 1.5;');
 

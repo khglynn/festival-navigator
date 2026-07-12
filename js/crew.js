@@ -5,22 +5,13 @@
 //   - create / fetch / join API calls
 // Document state (the crew doc itself + pending changes) lives in state.js.
 
+import { loadJSON, saveLS } from './util.js';
+
 const K = {
   crews: 'fn_crews_v3',            // [{token, name}]
   active: 'fn_active_crew_v3',     // token
   me: (t) => `fn_me_v3_${t}`,      // my person name within crew t
 };
-
-function loadJSON(key, fallback) {
-  try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; }
-  catch { return fallback; }
-}
-
-// Guarded writes (PS-6): a blocked localStorage never throws into a flow.
-function saveLS(key, value) {
-  try { localStorage.setItem(key, value); }
-  catch (e) { console.warn('localStorage write failed:', key, e); }
-}
 
 export function knownCrews() { return loadJSON(K.crews, []); }
 
