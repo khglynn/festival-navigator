@@ -2,6 +2,29 @@
 
 Newest first. One entry per meaningful unit of work.
 
+## 2026-07-12 — Codex ship gate: fix-first verdict, all 7 findings addressed
+
+- Verdict was 0 P1 / 4 P2 / 3 P3 (clean on data-loss, cross-crew writes, XSS,
+  SW core list, OAuth leakage). Fixed: renameSelf now TOMBSTONES the old
+  name's picks (Export Likes ghosts + reused-name double-render); rename
+  blocks previously-used names entirely (merge can't delete tombstones);
+  Spotify setup is open to any member — "lead" is copy flavor, never a gate
+  (the first-position heuristic broke when the founder renamed themselves);
+  sort control's first arrow press opens without advancing, and the popover
+  closes on focusout; join-with-a-formerly-removed-name resurrects explicitly
+  (removed:false) instead of entering invisible; wall.js tidies.
+- DELIBERATE non-fix (Codex P2-4): switchCrew/leaveCrew leave stale history
+  entries; Back after leaving re-opens that crew's link (the join screen).
+  That's coherent capability-model behavior (back = reopen the link), and the
+  "real" fix needs async history collapse with worse failure modes. Instead
+  the router's reconcile is hardened: every layer open/close is individually
+  guarded, so a stale key from any old entry can never crash the app.
+- Audit re-run infra: preview env lacked DATABASE_URL (the NOW.md standing
+  fact, finally connected) — added to Preview scope; server 500s no longer
+  render as "you're offline" (13ef1ce). Workflow args once arrived as a JSON
+  string (walkers got literal "undefined" prompts) — the rerun script now
+  parses string args and FAILS FAST on missing values.
+
 ## 2026-07-12 (early) — PWA/SYNC honesty + first-run content
 
 - **PS-3/4/5**: the dot goes gray the instant the radio does (offline event);

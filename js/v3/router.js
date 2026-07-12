@@ -28,8 +28,18 @@ export function createRouter(hist) {
     navigating = true;
     try {
       const { toClose, toOpen } = diffStacks(stack, target);
-      for (const key of toClose) { stack.pop(); kindOf(key)?.close(key); }
-      for (const key of toOpen) { stack.push(key); kindOf(key)?.open(key); }
+      // Openers/closers are guarded individually: a stale layer key from an
+      // old history entry (e.g. forward-nav into an abandoned crew's layers)
+      // must never take the whole app down — worst case that one layer
+      // silently doesn't open and the safety nets (hashchange -> boot) land.
+      for (const key of toClose) {
+        stack.pop();
+        try { kindOf(key)?.close(key); } catch (e) { console.warn('layer close failed:', key, e); }
+      }
+      for (const key of toOpen) {
+        stack.push(key);
+        try { kindOf(key)?.open(key); } catch (e) { console.warn('layer open failed:', key, e); }
+      }
     } finally { navigating = false; }
   }
 

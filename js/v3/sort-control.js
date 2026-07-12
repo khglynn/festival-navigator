@@ -84,7 +84,12 @@ export function createSortControl({ initial = 'billing', onChange }) {
 
   chip.addEventListener('click', () => setOpen(!open));
   chip.addEventListener('keydown', (e) => {
-    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); setOpen(true); }
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      // The first arrow press OPENS and highlights the current choice — it
+      // must not also advance past it (Codex ship gate, P2).
+      if (!open) { setOpen(true); return; }
+    }
     if (e.key === 'Escape' && open) { e.stopPropagation(); setOpen(false); }
     if (open && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); select(activeIdx); return; }
     if (open && e.key === 'ArrowDown') { activeIdx = (activeIdx + 1) % OPTIONS.length; paint(); }
@@ -95,6 +100,11 @@ export function createSortControl({ initial = 'billing', onChange }) {
     }
   });
   document.addEventListener('click', (e) => { if (open && !wrap.contains(e.target)) setOpen(false); });
+  // Tabbing away closes the popover too — a click elsewhere isn't the only
+  // way focus leaves (options aren't focusable, so option clicks are safe).
+  wrap.addEventListener('focusout', (e) => {
+    if (open && !wrap.contains(e.relatedTarget)) setOpen(false);
+  });
 
   wrap.append(chip, pop);
   paint();

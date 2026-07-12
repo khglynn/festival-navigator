@@ -15,12 +15,20 @@ export const meta = {
   ],
 }
 
-const REPO = args.repo
-const LINK = args.link
-const BASE = args.base
-const SHOTS = args.shotDir
-const TS = args.ts
-const AUTH_URL = args.authUrl
+// Defensive: args have arrived as a JSON STRING at least once (2026-07-12
+// run wf_00ce52e0 — walker prompts read "live at undefined" and args.link
+// resolved to String.prototype.link). Parse if needed, then FAIL FAST if any
+// required arg is missing — 12 agents walking "undefined" is pure waste.
+const A = typeof args === 'string' ? JSON.parse(args) : args
+const REPO = A.repo
+const LINK = A.link
+const BASE = A.base
+const SHOTS = A.shotDir
+const TS = A.ts
+const AUTH_URL = A.authUrl
+for (const [k, v] of Object.entries({ REPO, LINK, BASE, SHOTS, TS, AUTH_URL })) {
+  if (typeof v !== 'string' || !v.length) throw new Error(`workflow arg ${k} missing/invalid: ${String(v).slice(0, 60)}`)
+}
 
 const FINDING = {
   type: 'object', required: ['severity', 'title', 'description'], additionalProperties: false,

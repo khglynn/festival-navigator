@@ -541,7 +541,10 @@ function youSection(ctx, actions) {
       if (v === ctx.meName) { expandHost.textContent = ''; return; }
       const problem = nameProblem(v);
       if (problem) { status.textContent = problem; return; }
-      if (state.people()[v] && !state.people()[v].removed) { status.textContent = 'That name is taken in this crew.'; return; }
+      // Removed names stay blocked too: deep-merge can't delete, so a vacated
+      // key still carries removed:true and history — reusing it would tangle
+      // identities (Codex ship gate).
+      if (state.people()[v]) { status.textContent = 'That name has been used in this crew — pick a different one.'; return; }
       actions.renameSelf(v);
       actions.rerender();
     };
@@ -729,8 +732,12 @@ function openSpotifyDrill(ctx, actions) {
   const oauthError = spotify.lastError();
   const clientId = state.spotifyClientId();
   const members = state.activePeople();
+  // "Lead" is COPY FLAVOR only, never a gate: first-position is a heuristic
+  // that breaks the moment the founder renames themselves (rename appends the
+  // new key last), and the crew's real trust model is the token — anyone
+  // holding it can already write (Codex ship gate, P2).
   const leadName = members.length ? members[0][0] : null;
-  const isLead = !!ctx.meName && (leadName === ctx.meName || members.length <= 1);
+  const looksLikeLead = !!ctx.meName && (leadName === ctx.meName || members.length <= 1);
 
   if (oauthError) {
     // State 5: something failed — say what, offer the retry, IN the app.
@@ -751,18 +758,16 @@ function openSpotifyDrill(ctx, actions) {
     btns.append(retry, dismiss);
     card.appendChild(btns);
     col.append(card, msg);
-  } else if (!clientId && !isLead) {
-    // State 1: not set up, and this member can't fix that — name who can.
-    const card = el('div'); card.className = 'settings-card';
-    card.appendChild(el('div', 'color: var(--text-body); font-size: 12.5px; font-weight: 600; line-height: 1.55;',
-      `Spotify isn’t set up for this crew yet — ask your crew lead${leadName ? ` (probably ${leadName})` : ''} to add the crew’s Client ID here.`));
-    col.append(card, msg);
   } else if (!clientId) {
-    // State 2: one-time crew setup, clearly framed as the lead's single step.
+    // Setup state (design states 1+2 merged): framed as the lead's one-time
+    // step, but open to any member — a heuristic must never lock the actual
+    // founder out of their own crew's setup.
     const card = el('div'); card.className = 'settings-card';
     card.style.cssText += 'display: flex; flex-direction: column; gap: 10px;';
     card.appendChild(el('div', 'color: var(--text-body); font-size: 12.5px; font-weight: 600; line-height: 1.55;',
-      'One-time crew setup: paste your Spotify app’s Client ID. Every member connects through it after that.'));
+      looksLikeLead
+        ? 'One-time crew setup: paste your Spotify app’s Client ID. Every member connects through it after that.'
+        : `One-time crew setup — usually ${leadName || 'whoever made the crew'} does this, but any member can. Paste the crew’s Spotify app Client ID:`));
     card.appendChild(clientIdInputRow(actions, rerenderDrill, msg));
     const fold = document.createElement('details');
     const sum = document.createElement('summary');

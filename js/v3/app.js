@@ -582,9 +582,15 @@ function openSettings() {
           const level = model.readLevel(state.crewDoc, byPerson[old]);
           if (level > 0) {
             state.recordSelectionFor(fid, artist, newName, level);
+            // Tombstone the OLD name's pick too (level 0) — "your picks move
+            // with you" means MOVE: without this, Export Likes ghosts the old
+            // name forever and a reused name would double-render picks
+            // (Codex ship gate, P2).
+            state.recordSelectionFor(fid, artist, old, 0);
             state.ensureFestivalState(fid);
             const sels = state.crewDoc.festivals[fid].selections;
             (sels[artist] = sels[artist] || {})[newName] = level;
+            sels[artist][old] = 0;
           }
         }
       }
@@ -699,7 +705,11 @@ function renderJoin(token, doc) {
     status.textContent = 'Joining…';
     const taken = Object.values(doc.people || {})
       .map((p) => p.colorIndex).filter(Number.isInteger);
-    const person = { colorIndex: nextColorIndex(taken) };
+    // removed:false explicitly: deep-merge can't delete a tombstone, so a
+    // joiner reclaiming a previously-removed name would otherwise merge onto
+    // removed:true and enter the crew invisible. Holding the link IS the
+    // capability — rejoining resurrects.
+    const person = { colorIndex: nextColorIndex(taken), removed: false };
     const festHint = pendingFestHint || (doc.meta && doc.meta.inviteFestId) || null;
     try {
       // The first write happens BEFORE entry (FLOW-5): if the server says no

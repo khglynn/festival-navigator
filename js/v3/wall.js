@@ -70,8 +70,8 @@ export function renderCard(artistName, ctx, opts = {}) {
   // render — a single-card refresh must preserve every invariant the full
   // render established (CORE-1/CORE-3).
   if (opts.time) el.dataset.time = opts.time;
-  if (opts.tag) el.dataset.tag = opts.tag;
   if (opts.tag) {
+    el.dataset.tag = opts.tag;
     const tag = document.createElement('span');
     tag.className = 'chip-weekend';
     tag.textContent = opts.tag;
@@ -333,8 +333,7 @@ function renderScheduledDay(root, day, ctx) {
   scroll.className = 'times-scroll';
   const grid = document.createElement('div');
   grid.className = 'times-grid';
-  grid.style.gridTemplateColumns = `repeat(${stages.length}, minmax(150px, 1fr))`;
-  grid.style.gridTemplateRows = rowsTemplate;
+  grid.style.gridTemplateRows = rowsTemplate; // columns set below once hasEE is known
 
   for (const s of stages) {
     const h = document.createElement('div');
