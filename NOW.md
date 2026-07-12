@@ -1,17 +1,19 @@
-# NOW — festival-navigator: v3.1 FIX PHASE COMPLETE — Kevin's promote call
+# NOW — festival-navigator: v3.1 notes arc (Kevin's feedback pass)
 
-## POST-COMPACTION NOTE (2026-07-12 morning)
+## CURRENT ARC (2026-07-12)
 
-Kevin reviewed the preview, loves it, and is about to share NOTES — the next
-arc is his feedback pass on the v3.1 build. Receive those notes per
-hg-partner (signal, not spec) with the fix-phase grounding doc's quality bar
-(`claude-plans/2026-07-11-v31-fix-phase-grounding.md` — the brief still
-rules). Work continues on `v31-polish` until Kevin promotes; do not re-open
-finished classes unless his notes point there. Everything below this section
-is the standing state: the promote steps, his queued actions, and what
-shipped. The Stage-4 findings + disposition (incl. four design calls
-deliberately left for him) live in
-`claude-plans/2026-07-12-v31-stage4-audit-backlog.md`.
+Kevin's notes arrived — 8 UX/product notes plus three session asks (clear-eyed
+sweep, staging env, memory explainer). Full notes + interpretation:
+`claude-plans/2026-07-12-v31-kevin-notes.md`. Quality bar unchanged:
+`claude-plans/2026-07-11-v31-fix-phase-grounding.md`. Work stays on
+`v31-polish`; promote is Kevin's call.
+
+Live streams: clear-eyed sweep workflow (bg, run wf_6939fb9a-a88);
+staging env `stage.fest.kevinhg.com` (Vercel custom environment "staging"
+tracking v31-polish + Cloudflare A record — first deploy into the env
+pending); memory artifact published. Then: implement the 8 notes.
+Everything below is standing state from the fix phase. Stage-4 findings +
+disposition: `claude-plans/2026-07-12-v31-stage4-audit-backlog.md`.
 
 **Updated:** 2026-07-12 ~01:30 CT · **Branch:** `v31-polish` (pushed; preview
 verified) · **History:** DEVLOG.md · **Audit result:**
