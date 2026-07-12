@@ -49,14 +49,19 @@ export function setSelectedPerson(p) { selectedPerson = p; }
 // Load a crew into the active slot (from cache; sync refreshes it after).
 // NOTE: callers must `await loadFestival(state.activeFestivalId)` before
 // rendering — the index tells us the id is valid, not that data is loaded.
-export function activateCrew(token, doc) {
+// `festHint` (optional) is the invite's festival context — from the share
+// link's &f= param or the doc's meta.inviteFestId. It only fills the void on
+// a device with no saved fest for this crew; a returning device keeps its own.
+export function activateCrew(token, doc, festHint) {
   crewToken = token;
   crewDoc = doc || loadJSON(LS.doc(token), null) || { v: 3, meta: {}, spotify: {}, people: {}, festivals: {}, affinity: {} };
   pendingChanges = loadJSON(LS.pending(token), {});
   crewDoc = deepMerge(crewDoc, pendingChanges);
   const savedFest = localStorage.getItem(LS.fest(token));
   const known = (id) => FESTIVAL_INDEX.some((f) => f.id === id);
-  activeFestivalId = (savedFest && known(savedFest)) ? savedFest : defaultFestivalId();
+  const hinted = (festHint && known(festHint)) ? festHint : null;
+  activeFestivalId = (savedFest && known(savedFest)) ? savedFest : (hinted || defaultFestivalId());
+  if (hinted && activeFestivalId === hinted) localStorage.setItem(LS.fest(token), hinted);
   currentDay = null;
   selectedPerson = null;
   Object.keys(dayCache).forEach((k) => delete dayCache[k]);
@@ -159,6 +164,15 @@ export function recordCrewName(name) {
   crewDoc.meta = crewDoc.meta || {};
   crewDoc.meta.name = name;
   (pendingChanges.meta = pendingChanges.meta || {}).name = name;
+  editSeq++; persistPending();
+}
+
+// Where new joiners land (FLOW-1): stamped at crew creation, refreshed when
+// an invite is shared — so even old token-only links resolve to the right fest.
+export function recordInviteFest(fid) {
+  crewDoc.meta = crewDoc.meta || {};
+  crewDoc.meta.inviteFestId = fid;
+  (pendingChanges.meta = pendingChanges.meta || {}).inviteFestId = fid;
   editSeq++; persistPending();
 }
 

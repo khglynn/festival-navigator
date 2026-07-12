@@ -2,6 +2,19 @@
 
 Newest first. One entry per meaningful unit of work.
 
+## 2026-07-11 (evening) — v3.1 fix phase begins: FLOW-1 (the P0) on v31-polish
+
+- Branch `v31-polish` off main. FLOW-1 fixed per the decided hybrid: share
+  links now carry `&f=<festId>` (crewLink + festFromHash, captured at boot
+  before enterApp's replaceState strips it), and `meta.inviteFestId` — the one
+  carve-out from the doc-shape freeze — is stamped at crew creation and
+  refreshed on Share invite, through the normal validated merge path.
+- activateCrew takes the hint only when the device has no saved fest for that
+  crew (returning devices keep their own context); unknown ids fall through to
+  the old default. Validator: meta accepts exactly name + inviteFestId.
+- 7 regression tests in tests/invite-context.test.mjs, incl. an end-to-end
+  check that recordInviteFest's overlay passes validateIncoming. 63/63 green.
+
 ## 2026-07-11 (afternoon) — v3.1 discovery: audit-first, findings banked
 
 - Kevin's morning pass found ~10 real problems the overnight gates missed

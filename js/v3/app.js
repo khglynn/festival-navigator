@@ -219,6 +219,10 @@ async function createCrewFlow() {
     crew.setMe(token, myName);
     localStorage.setItem(`fn_crew_fest_v3_${token}`, createFid);
     await enterApp(token, doc);
+    // Stamp the crew's fest into the doc so invites resolve on new devices
+    // even when a shared link lost its &f= param (FLOW-1).
+    state.recordInviteFest(createFid);
+    sync.scheduleSync();
   } catch (e) {
     status.textContent = String(e.message || e);
     btn.disabled = false;
@@ -339,7 +343,11 @@ async function enterApp(token, doc, current = () => true) {
   crew.rememberCrew(token, (doc.meta && doc.meta.name) || '');
   await loadCustomFestivals(token); // crew-private fests join the catalog first
   if (!current()) return;
-  state.activateCrew(token, doc);
+  // Invite festival context (FLOW-1): the link's &f= wins (freshest), then the
+  // doc's stamp. Consumed once — only fills the void on a fest-less device.
+  const festHint = pendingFestHint || (doc.meta && doc.meta.inviteFestId) || null;
+  pendingFestHint = null;
+  state.activateCrew(token, doc, festHint);
   // Migrate BEFORE the wall becomes interactive: a raw 3 written onto a
   // still-v3 doc would later be rewritten to 4 by the migrate op — silently
   // corrupting a genuine "picked x3" into "must" (Codex P6 gate, finding 1).
@@ -366,9 +374,12 @@ async function enterApp(token, doc, current = () => true) {
 
 // ---- boot -----------------------------------------------------------------------
 let bootGeneration = 0;
+let pendingFestHint = null; // &f= from the opened invite link, consumed by enterApp
 export async function boot() {
   const gen = ++bootGeneration;
   const current = () => gen === bootGeneration;
+  // Capture before any await: enterApp's replaceState strips the hash to #g=.
+  pendingFestHint = crew.festFromHash();
   try { await loadFestivalIndex(); } catch { /* offline with cache: proceed */ }
 
   if (location.hash === '#new') { renderCreate(); return; }

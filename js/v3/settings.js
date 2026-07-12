@@ -95,7 +95,14 @@ function currentFestCard(ctx, actions) {
   const share = el('button', 'flex: 1; font-size: 12px; padding: 9px;', 'Share invite');
   share.className = 'btn-tonal';
   share.addEventListener('click', async () => {
-    const link = crew.crewLink(state.getCrewToken());
+    // The invite carries the fest being shared (FLOW-1): &f= on the link for
+    // this invite, meta.inviteFestId in the doc for links already out there.
+    const fid = state.activeFestivalId;
+    const link = crew.crewLink(state.getCrewToken(), fid);
+    if ((state.crewDoc.meta || {}).inviteFestId !== fid) {
+      state.recordInviteFest(fid);
+      actions.afterBulk(); // schedules the sync push
+    }
     try {
       if (navigator.share) await navigator.share({ title: 'Festival Navigator', url: link });
       else { await navigator.clipboard.writeText(link); share.textContent = 'Link copied ✓'; setTimeout(() => { share.textContent = 'Share invite'; }, 1800); }

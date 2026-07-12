@@ -229,8 +229,13 @@ function validateSpotify(spotify) {
 function validateMeta(meta) {
   if (!isPlainObject(meta)) return fail('meta must be an object');
   for (const [k, v] of Object.entries(meta)) {
-    if (k !== 'name') return fail(`meta: only name may be written (got ${k})`);
-    if (!validName(v, LIMITS.crewName)) return fail('meta.name invalid');
+    if (k === 'name') {
+      if (!validName(v, LIMITS.crewName)) return fail('meta.name invalid');
+    } else if (k === 'inviteFestId') {
+      // The festival new joiners should land on (FLOW-1). Recorded when a
+      // crew is created and refreshed when an invite is shared.
+      if (typeof v !== 'string' || !FESTIVAL_ID_RE.test(v)) return fail('meta.inviteFestId invalid');
+    } else return fail(`meta: only name and inviteFestId may be written (got ${k})`);
   }
   return OK;
 }

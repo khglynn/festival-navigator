@@ -42,8 +42,20 @@ export function tokenFromHash() {
   return m ? m[1] : null;
 }
 
-export function crewLink(token) {
-  return `${location.origin}/#g=${token}`;
+// The festival context riding an invite link (#g=<token>&f=<festId>). Read it
+// at boot, BEFORE enterApp's replaceState strips the hash down to #g=.
+export function festFromHash() {
+  const m = (location.hash || '').match(/[#&]f=([a-z0-9-]{1,64})(?:&|$)/);
+  return m ? m[1] : null;
+}
+
+const FEST_ID_RE = /^[a-z0-9-]{1,64}$/;
+
+// Share links carry the sharer's festival so a joiner on a fresh device lands
+// on the crew's fest instead of the catalog default (FLOW-1).
+export function crewLink(token, festId) {
+  const f = festId && FEST_ID_RE.test(festId) ? `&f=${festId}` : '';
+  return `${location.origin}/#g=${token}${f}`;
 }
 
 export async function fetchCrew(token) {
