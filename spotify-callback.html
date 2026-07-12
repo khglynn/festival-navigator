@@ -17,21 +17,23 @@
         <p id="detail" class="err"></p>
     </div>
     <script type="module">
+        // Failures land IN the app (design state 5): bank the reason, bounce
+        // home fast, and the Spotify drill shows it with a retry — never a
+        // dead browser page a muddy-fielded human has to interpret.
         import { completeAuth } from '/js/spotify.js';
         const q = new URLSearchParams(location.search);
-        const back = () => { location.replace('/'); };
+        const backWithError = (reason) => {
+            try { sessionStorage.setItem('fn_spotify_error', reason); } catch { /* private mode */ }
+            document.getElementById('msg').textContent = 'That didn’t connect';
+            document.getElementById('detail').textContent = 'Heading back to the app…';
+            setTimeout(() => location.replace('/'), 1200);
+        };
         if (q.get('error')) {
-            document.getElementById('msg').textContent = 'Spotify said no';
-            document.getElementById('detail').textContent = q.get('error') + ' — close this and try again from the app.';
-            setTimeout(back, 4000);
+            backWithError(q.get('error'));
         } else {
             completeAuth(q.get('code'), q.get('state'))
                 .then((returnTo) => location.replace(returnTo || '/'))
-                .catch((e) => {
-                    document.getElementById('msg').textContent = 'Connection failed';
-                    document.getElementById('detail').textContent = e.message;
-                    setTimeout(back, 5000);
-                });
+                .catch((e) => backWithError(e.message || 'token exchange failed'));
         }
     </script>
 </body>

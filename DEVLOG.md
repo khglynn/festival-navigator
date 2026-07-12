@@ -2,6 +2,33 @@
 
 Newest first. One entry per meaningful unit of work.
 
+## 2026-07-12 (early) — SPOTIFY: five states, one OAuth origin, honest SW
+
+- **The drill is a state machine now (SPOT-2)**: five explicit states, each
+  one sentence + one action. Not-set-up members are pointed at the likely
+  crew lead; the lead gets the one-time setup with a how-to fold (redirect
+  URI + dev-mode limits); ready state explains what's read and what's never
+  posted; connected state keeps stats/refresh/playlist/disconnect; failures
+  land IN the app with the reason and a retry — spotify-callback.html banks
+  the error and bounces home instead of dead-ending (state 5).
+- **One OAuth origin (SPOT-1)**: PKCE runs only on fest.kevinhg.com; the prod
+  aliases show "Continue on fest.kevinhg.com" which hops WITH crew + fest +
+  an sp=1 flag that reopens the drill after landing (sessionStorage is
+  per-origin — the dance can't span hosts). ⚠️ Kevin action queued in NOW.md:
+  register https://fest.kevinhg.com/spotify-callback in the Spotify dashboard.
+- **Config is correctable (SPOT-3)**: the crew app row shows the masked id
+  with Change + two-tap Clear in both ready and connected states.
+- **SW honesty (SPOT-4 + PS-1/PS-2, pulled forward)**: cross-origin requests
+  are no longer touched (cache-first api.spotify.com made every re-scan one
+  scan stale); core shell install is ATOMIC (addAll — no more offline-ready
+  claims over a half-cached shell); navigations are network-first with cache
+  fallback so a stale shell can't pin. v14 → v15.
+- **Badges follow the library, not the fest (SPOT-5)**: applyAffinity MERGES
+  (a per-fest apply used to wipe other fests' badges locally) and fest
+  switches auto-badge from the cached scan — no rescan. Playlists keep the
+  UI's one-track-per-artist promise (SPOT-7). SPOT-6 (access requests)
+  consciously parked — dashboard allowlisting is Kevin's fast-follow.
+
 ## 2026-07-12 (early) — NOTES + SET-TIMES: the experience classes
 
 - **Notes**: one scope sheet serves artists AND days (NT-2 — day headers carry

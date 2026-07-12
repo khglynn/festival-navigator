@@ -8,9 +8,32 @@ import * as state from './state.js';
 
 const LS_AUTH = 'fn_spotify_auth_v1';       // {clientId, access_token, refresh_token, expires_at}
 const LS_LIBMAP = 'fn_spotify_libmap_v1';   // {clientId, userId, fetchedAt, artists: {lowerName: {songs, followed}}}
+const LS_ERROR = 'fn_spotify_error';        // sessionStorage: last OAuth failure, shown IN the app
 const SCOPES = 'user-library-read user-follow-read playlist-modify-public playlist-modify-private';
 
 const redirectUri = () => `${location.origin}/spotify-callback`;
+
+// OAuth happens on ONE origin (SPOT-1): the Spotify app registers exactly
+// fest.kevinhg.com/spotify-callback. The prod aliases can't run the PKCE
+// dance (sessionStorage is per-origin), so they hop — carrying the crew, the
+// fest, and an sp=1 flag that re-opens the Spotify drill after the hop.
+const PROD_HOSTS = ['fest.kevinhg.com', 'festival.kevinhg.com', 'crew.kevinhg.com'];
+const CANONICAL_HOST = 'fest.kevinhg.com';
+export function canonicalHopUrl() {
+  if (!PROD_HOSTS.includes(location.host) || location.host === CANONICAL_HOST) return null;
+  const token = state.getCrewToken();
+  if (!token) return `https://${CANONICAL_HOST}/`;
+  return `https://${CANONICAL_HOST}/#g=${token}&f=${state.activeFestivalId}&sp=1`;
+}
+
+// The last OAuth failure, banked by spotify-callback.html so the error lands
+// IN the app's drill — never a dead browser page (design state 5).
+export function lastError() {
+  try { return sessionStorage.getItem(LS_ERROR); } catch { return null; }
+}
+export function clearError() {
+  try { sessionStorage.removeItem(LS_ERROR); } catch { /* private mode */ }
+}
 
 function loadJSON(key) {
   try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : null; }
@@ -153,7 +176,11 @@ export function applyAffinityToCrew(myName, festivalArtistNames) {
     if (hit.followed) aff.followed = true;
     if (Object.keys(aff).length) out[name] = aff;
   }
-  state.recordAffinity(myName, out);
+  // MERGE with what's already badged — recordAffinity replaces the person's
+  // whole map locally, and a per-fest apply must never wipe another fest's
+  // badges (SPOT-5). The cached library map means fest switches badge free.
+  const merged = { ...(state.affinityFor(myName) || {}), ...out };
+  state.recordAffinity(myName, merged);
   return Object.keys(out).length;
 }
 
@@ -168,7 +195,9 @@ export function applyAffinityToCrew(myName, festivalArtistNames) {
 // /items. Do not "modernize" these back to the classic endpoints — they 403
 // for dev-mode apps. (developer.spotify.com/documentation/web-api/tutorials/
 // february-2026-migration-guide)
-export async function playlistFromPicks({ title, artistNames, tracksPerArtist = 2, onProgress }) {
+// tracksPerArtist defaults to 1 — the UI promises "one track per picked
+// artist" and the artifact should keep the promise (SPOT-7).
+export async function playlistFromPicks({ title, artistNames, tracksPerArtist = 1, onProgress }) {
   const uris = [];
   let misses = 0;
   for (let i = 0; i < artistNames.length; i++) {

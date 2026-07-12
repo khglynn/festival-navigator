@@ -617,10 +617,72 @@ export function openSubviewByKey(key, ctx, actions) {
   else if (key === 'sub:day-image') openDayImage(host, ctx, back);
 }
 
-// ---- Spotify drill (21f) — every action lives here ----------------------------------
+// ---- Spotify drill (21f / SPOT-2) — one state-driven card, five states -------------
+// Every state explains itself in one sentence and offers exactly one action.
+
+// The crew's Spotify config, visible and correctable (SPOT-3): a wrong Client
+// ID used to be uncorrectable — the input only rendered while the id was empty.
+function clientIdConfigRow(actions, rerenderDrill) {
+  const wrap = el('div', 'display: flex; flex-direction: column; gap: 7px; border-top: 1px solid var(--hairline); padding-top: 10px; margin-top: 2px;');
+  const row = el('div', 'display: flex; align-items: center; gap: 8px;');
+  row.appendChild(el('span', 'color: var(--text-tertiary); font-size: 10.5px; font-weight: 700; letter-spacing: .06em; flex: 1;',
+    `CREW APP · …${state.spotifyClientId().slice(-6)}`));
+  const change = el('button', 'font-size: 11px; padding: 5px 11px;', 'Change');
+  change.className = 'btn-ghost';
+  const clear = el('button', 'font-size: 11px; padding: 5px 11px;', 'Clear');
+  clear.className = 'btn-ghost';
+  row.append(change, clear);
+  wrap.appendChild(row);
+  const host = el('div');
+  wrap.appendChild(host);
+  change.addEventListener('click', () => {
+    host.textContent = '';
+    host.appendChild(clientIdInputRow(actions, rerenderDrill));
+  });
+  let armed = false;
+  clear.addEventListener('click', () => {
+    if (!armed) {
+      armed = true;
+      clear.textContent = 'Sure?';
+      setTimeout(() => { armed = false; clear.textContent = 'Clear'; }, 3000);
+      return;
+    }
+    state.recordSpotifyClientId(''); // '' is the documented clear value
+    actions.afterBulk();
+    rerenderDrill();
+  });
+  return wrap;
+}
+
+function clientIdInputRow(actions, rerenderDrill, msg) {
+  const row = el('div', 'display: flex; gap: 8px;');
+  const input = el('input');
+  input.placeholder = 'Spotify app Client ID';
+  input.setAttribute('aria-label', 'Spotify app Client ID');
+  input.maxLength = 32;
+  input.style.cssText = 'flex: 1; min-width: 0; background: var(--page); border: 1px solid var(--border-input); border-radius: var(--r-card); padding: 10px 12px; color: #fff; font-size: 12.5px; font-family: var(--font-ui);';
+  const save = el('button', 'font-size: 12px; padding: 9px 14px; flex: none;', 'Save');
+  save.className = 'btn-tonal';
+  const doSave = () => {
+    const v = input.value.trim();
+    if (!/^[0-9a-fA-F]{32}$/.test(v)) {
+      if (msg) msg.textContent = 'A Client ID is 32 hex characters — copy it from the app page on the Spotify dashboard.';
+      return;
+    }
+    state.recordSpotifyClientId(v);
+    actions.afterBulk();
+    rerenderDrill(); // the Connect state appears NOW (CORE-14)
+  };
+  save.addEventListener('click', doSave);
+  input.addEventListener('keydown', (e) => { if (e.key === 'Enter') doSave(); });
+  row.append(input, save);
+  return row;
+}
+
 function openSpotifyDrill(ctx, actions) {
   const host = document.getElementById('settings-subview');
   host.textContent = '';
+  const rerenderDrill = () => openSpotifyDrill(ctx, actions);
   const col = el('div', 'display: flex; flex-direction: column; gap: 10px;');
   const head = el('div', 'display: flex; align-items: center; gap: 10px;');
   const back = el('button', '', '‹'); back.className = 'back-btn';
@@ -633,34 +695,76 @@ function openSpotifyDrill(ctx, actions) {
   col.appendChild(head);
   const msg = el('div', 'color: var(--text-tertiary); font-size: 11.5px; font-weight: 600; line-height: 1.5;');
 
-  if (!spotify.isConnected()) {
-    if (!state.spotifyClientId()) {
-      msg.textContent = 'The crew lead sets a Spotify Client ID once (Settings on their device); then everyone can connect.';
-      const row = el('div', 'display: flex; gap: 8px;');
-      const input = el('input');
-      input.placeholder = 'Crew Spotify app Client ID';
-      input.setAttribute('aria-label', 'Crew Spotify app Client ID');
-      input.maxLength = 32;
-      input.style.cssText = 'flex: 1; background: var(--card); border: 1px solid var(--border-input); border-radius: var(--r-card); padding: 10px 12px; color: #fff; font-size: 12.5px; font-family: var(--font-ui);';
-      const save = el('button', 'font-size: 12px; padding: 9px 14px;', 'Save');
-      save.className = 'btn-tonal';
-      save.addEventListener('click', () => {
-        const v = input.value.trim();
-        if (!/^[0-9a-fA-F]{32}$/.test(v)) { msg.textContent = 'That does not look like a 32-character Client ID.'; return; }
-        state.recordSpotifyClientId(v);
-        actions.afterBulk();
-        // Re-render the drill so the Connect state appears NOW — the old
-        // "connect below once it syncs" promise pointed at nothing (CORE-14).
-        openSpotifyDrill(ctx, actions);
-      });
-      row.append(input, save);
-      col.append(msg, row);
-    } else {
-      const connect = el('button', 'font-size: 13px; padding: 11px 18px; align-self: flex-start;', 'Connect my Spotify');
-      connect.className = 'btn-tonal';
-      connect.addEventListener('click', () => spotify.connect().catch((e) => { msg.textContent = String(e.message || e); }));
-      col.append(connect, msg);
-    }
+  const oauthError = spotify.lastError();
+  const clientId = state.spotifyClientId();
+  const members = state.activePeople();
+  const leadName = members.length ? members[0][0] : null;
+  const isLead = !!ctx.meName && (leadName === ctx.meName || members.length <= 1);
+
+  if (oauthError) {
+    // State 5: something failed — say what, offer the retry, IN the app.
+    const card = el('div'); card.className = 'settings-card';
+    card.style.cssText += 'display: flex; flex-direction: column; gap: 9px;';
+    card.appendChild(el('span', 'color: #F87171; font-weight: 700; font-size: 14px;', 'That connection didn’t go through'));
+    card.appendChild(el('div', 'color: var(--text-body); font-size: 12px; font-weight: 600; line-height: 1.5;', `Spotify said: ${oauthError}`));
+    const retry = el('button', 'font-size: 12.5px; padding: 10px 16px; align-self: flex-start;', 'Try connecting again');
+    retry.className = 'btn-tonal';
+    retry.addEventListener('click', () => {
+      spotify.clearError();
+      spotify.connect().catch((e) => { msg.textContent = String(e.message || e); });
+    });
+    const dismiss = el('button', 'font-size: 11.5px; padding: 8px 13px; align-self: flex-start;', 'Dismiss');
+    dismiss.className = 'btn-ghost';
+    dismiss.addEventListener('click', () => { spotify.clearError(); rerenderDrill(); });
+    const btns = el('div', 'display: flex; gap: 8px;');
+    btns.append(retry, dismiss);
+    card.appendChild(btns);
+    col.append(card, msg);
+  } else if (!clientId && !isLead) {
+    // State 1: not set up, and this member can't fix that — name who can.
+    const card = el('div'); card.className = 'settings-card';
+    card.appendChild(el('div', 'color: var(--text-body); font-size: 12.5px; font-weight: 600; line-height: 1.55;',
+      `Spotify isn’t set up for this crew yet — ask your crew lead${leadName ? ` (probably ${leadName})` : ''} to add the crew’s Client ID here.`));
+    col.append(card, msg);
+  } else if (!clientId) {
+    // State 2: one-time crew setup, clearly framed as the lead's single step.
+    const card = el('div'); card.className = 'settings-card';
+    card.style.cssText += 'display: flex; flex-direction: column; gap: 10px;';
+    card.appendChild(el('div', 'color: var(--text-body); font-size: 12.5px; font-weight: 600; line-height: 1.55;',
+      'One-time crew setup: paste your Spotify app’s Client ID. Every member connects through it after that.'));
+    card.appendChild(clientIdInputRow(actions, rerenderDrill, msg));
+    const fold = document.createElement('details');
+    const sum = document.createElement('summary');
+    sum.textContent = 'How to get a Client ID';
+    sum.style.cssText = 'color: var(--text-secondary); font-size: 11.5px; font-weight: 700; cursor: pointer;';
+    fold.appendChild(sum);
+    const steps = el('div', 'color: var(--text-tertiary); font-size: 11.5px; font-weight: 600; line-height: 1.6; margin-top: 6px;');
+    steps.textContent = '1. developer.spotify.com/dashboard → Create app. '
+      + '2. Add the redirect URI https://fest.kevinhg.com/spotify-callback. '
+      + '3. Copy the Client ID from the app page and paste it above. '
+      + 'Development mode allows 5 users, and the app owner needs Premium.';
+    fold.appendChild(steps);
+    card.appendChild(fold);
+    col.append(card, msg);
+  } else if (!spotify.isConnected()) {
+    // State 3: ready — one primary action; prod aliases hop to the ONE
+    // registered OAuth origin (SPOT-1), and the button says so.
+    const card = el('div'); card.className = 'settings-card';
+    card.style.cssText += 'display: flex; flex-direction: column; gap: 10px;';
+    const hop = spotify.canonicalHopUrl();
+    const connect = el('button', 'font-size: 13px; padding: 11px 18px; align-self: flex-start;',
+      hop ? 'Continue on fest.kevinhg.com' : 'Connect my Spotify');
+    connect.className = 'btn-tonal';
+    connect.addEventListener('click', () => {
+      if (hop) { location.assign(hop); return; }
+      spotify.connect().catch((e) => { msg.textContent = String(e.message || e); });
+    });
+    card.appendChild(connect);
+    card.appendChild(el('div', 'color: var(--text-tertiary); font-size: 11.5px; font-weight: 600; line-height: 1.5;',
+      hop ? 'Spotify connects from one address — your crew and picks come along.'
+          : 'We read your liked songs and follows to badge artists — nothing is posted.'));
+    card.appendChild(clientIdConfigRow(actions, rerenderDrill));
+    col.append(card, msg);
   } else {
     const lib = spotify.libraryMap();
     const card = el('div'); card.className = 'settings-card';
@@ -675,8 +779,11 @@ function openSpotifyDrill(ctx, actions) {
       try {
         refresh.disabled = true;
         await spotify.scanLibrary((p) => { msg.textContent = p; });
-        const names = (state.fest().artists || []).map((a) => a.name);
-        const n = spotify.applyAffinityToCrew(ctx.meName, names);
+        const names = new Set((state.fest().artists || []).map((a) => a.name));
+        for (const d of Object.keys(state.fest().days || {})) {
+          for (const a of state.fest().days[d].artists || []) names.add(a.name);
+        }
+        const n = spotify.applyAffinityToCrew(ctx.meName, [...names]);
         msg.textContent = `Badged ${n} artists on this fest. Open other fests to badge them too.`;
         actions.afterBulk();
       } catch (e) { msg.textContent = String(e.message || e); }
@@ -723,9 +830,12 @@ function openSpotifyDrill(ctx, actions) {
 
     const dis = el('button', 'font-size: 12px; padding: 8px 14px; align-self: flex-start;', 'Disconnect');
     dis.className = 'btn-ghost';
-    dis.addEventListener('click', () => { spotify.disconnect(); host.textContent = ''; actions.rerender(); });
+    dis.addEventListener('click', () => { spotify.disconnect(); rerenderDrill(); });
     col.append(dis, el('div', 'color: var(--text-tertiary); font-size: 10.5px; font-weight: 600; line-height: 1.55;',
-      'Disconnect keeps picks and notes — only the badges disappear.'), msg);
+      'Disconnect keeps picks and notes — only the badges disappear.'));
+    const cfg = el('div'); cfg.className = 'settings-card';
+    cfg.appendChild(clientIdConfigRow(actions, rerenderDrill));
+    col.append(cfg, msg);
   }
   host.appendChild(col);
 }

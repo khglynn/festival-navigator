@@ -4,6 +4,7 @@
 import * as state from '../state.js';
 import * as crew from '../crew.js';
 import * as sync from '../sync.js';
+import * as spotify from '../spotify.js';
 import * as model from './model.js';
 import { loadFestivalIndex, loadFestival, loadCustomFestivals, FESTIVAL_INDEX, defaultFestivalId } from '../festivals.js';
 import { renderWall, refreshCard, showUndoToast, showToast, wireScrollspy, colorIndexOf, groupByDay, knownDaysOf } from './wall.js';
@@ -489,6 +490,17 @@ function openSettings() {
       state.setActiveFestivalId(fid);
       state.ensureFestivalState(fid);
       state.setCurrentDay(null);
+      // The scanned library is a device asset — switching fests badges the
+      // new lineup from the cache, no rescan (SPOT-5).
+      if (ctx.meName && spotify.isConnected() && spotify.libraryMap()) {
+        try {
+          const names = new Set((state.fest().artists || []).map((a) => a.name));
+          for (const d of Object.keys(state.fest().days || {})) {
+            for (const a of state.fest().days[d].artists || []) names.add(a.name);
+          }
+          if (spotify.applyAffinityToCrew(ctx.meName, [...names]) > 0) sync.scheduleSync();
+        } catch { /* stale map — the drill's Refresh is the recovery path */ }
+      }
       applyFestTheme();
       if (!router.requestClose()) closeSettings();
       sync.pollSync();
@@ -741,6 +753,15 @@ async function enterApp(token, doc, current = () => true) {
   sync.pollSync();
   router.reset();
   if (savedLayers) router.restore(savedLayers);
+  // A hop from an alias domain mid-Spotify-setup (SPOT-1): reopen the drill
+  // so the member lands exactly where they left off.
+  if (pendingSpotifyOpen) {
+    pendingSpotifyOpen = false;
+    openSettings();
+    router.push('settings');
+    openSubviewByKey('sub:spotify', ctx, settingsActions);
+    router.push('sub:spotify');
+  }
 }
 
 // ---- lost states (spec F16) --------------------------------------------------------
@@ -778,12 +799,14 @@ function renderFatal() {
 // ---- boot -----------------------------------------------------------------------
 let bootGeneration = 0;
 let pendingFestHint = null; // &f= from the opened invite link, consumed by enterApp
+let pendingSpotifyOpen = false; // &sp=1 from the canonical-domain hop (SPOT-1)
 export async function boot() {
   const gen = ++bootGeneration;
   const current = () => gen === bootGeneration;
   router.reset();
   // Capture before any await: enterApp's replaceState strips the hash to #g=.
   pendingFestHint = crew.festFromHash();
+  pendingSpotifyOpen = /[#&]sp=1(?:&|$)/.test(location.hash || '');
   try {
     try { await loadFestivalIndex(); } catch { /* offline with cache: proceed */ }
 
