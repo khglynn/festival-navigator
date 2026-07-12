@@ -1,75 +1,60 @@
-# NOW — festival-navigator: v3.1 FIX PHASE (ACTIVE, unattended)
+# NOW — festival-navigator: v3.1 FIX PHASE COMPLETE — Kevin's promote call
 
-**Updated:** 2026-07-11 late evening · **Branch:** `v31-polish` (off main)
-**Plan:** `claude-plans/2026-07-11-v31-backlog.md` (the floor) + fix-phase
-grounding doc (the brief) · **History:** DEVLOG.md
-**Kevin's brief (verbatim):** "build a kick-ass app that has a knock-you-back-
-stunning UI, a thoughtful and no page or user flow neglected UX, and a rock
-solid won't leave folks stuck and lost in the middle of a festival backend."
-Kevin is away; run autonomously per hg-durable-build. Production promote stays
-Kevin's call — build on a branch, verify on preview.
+**Updated:** 2026-07-12 ~01:30 CT · **Branch:** `v31-polish` (pushed; preview
+verified) · **History:** DEVLOG.md · **Audit result:**
+`claude-plans/2026-07-12-v31-stage4-audit-backlog.md`
 
-## Fix-phase progress — ALL 7 FIX CLASSES DONE, gates in progress
+## THE DECISION IN FRONT OF KEVIN
 
-- ✅ FLOW-1 (P0) hybrid fix (b92fdb8) · CORE 1–18 + FLOW-2/3/4 + ST-1
-  (ff85c3b) · Codex-review fixes incl. confirmed router P1 (331517d) ·
-  foundations: tokens/a11y/desktop body (8081f64) · FLOWS 5–13 (4f50c4b) ·
-  NOTES+SET-TIMES (4a1df15) · SPOTIFY + SW honesty (fa37184) · PWA/CONTENT
-  (3623465). Tests 63 → 88, all green. SW v14 → v15.
-- Codex trailing review of the first two commits: landed, 1 P1 (reproduced)
-  + 2 P3 — ALL fixed with a new regression test.
-- 🔄 NOW: the 5 gates, in order (grounding doc): tests ✓ → push branch for
-  preview → audit re-run (seed Client ID into Audit Rig, walk F13 + offline)
-  → Codex blocking diff gate → taste pass 390/1440 → NOW.md promote note +
-  teardown (delete Audit Rig crew, remove stale CLAUDE.md tailwind fact).
-- ⚠️ KEVIN ACTION queued: register https://fest.kevinhg.com/spotify-callback
-  as the redirect URI in the Spotify developer dashboard (SPOT-1). The app
-  now canonicalizes all OAuth to fest.kevinhg.com.
+**Promote `v31-polish` to production** (your call, always):
 
-**POST-COMPACTION READ ORDER:**
-1. `claude-plans/2026-07-11-v31-fix-phase-grounding.md` (in full)
-2. This file
-3. `claude-plans/2026-07-11-v31-design-direction.md`
-4. `claude-plans/2026-07-11-v31-backlog.md`
-5. `docs/user-flows.md`
-frontend-design + hg-partner + hg-durable-build skills reload on resume.
+1. Review the preview: `vercel ls festival-navigator` → newest Preview URL
+   (deployment-protected — open it logged into Vercel, or
+   `vercel promote <url>` straight from the CLI after your own look).
+2. Merge: `git checkout main && git merge v31-polish && git push` (Vercel
+   auto-deploys main to the three prod domains; SW bumps v14 → v15 which
+   force-refreshes every installed client's shell).
+3. After promote, one manual action queued below (Spotify dashboard).
 
-## Session facts (this run)
+## What shipped (the whole v3.1 backlog + everything the gates found)
 
-- Local `vercel dev` on :3111 has NO api env (DATABASE_URL unset) — /api 404s
-  locally; walk data flows on the Vercel preview, not localhost.
-- CLAUDE.md's "Tailwind precompiled, npm run css" fact is STALE (no
-  tailwind.css, no css script since v3) — fix CLAUDE.md at teardown.
-- jsdom is a devDependency now (DOM regression tests).
+- All 73 discovery findings (1 P0 / 32 P1 / 40 P2) fixed across 7 classes:
+  invite context (with self-healing backfill for links already in group
+  chats), the broken-behavior CORE sweep, history-backed navigation, lost
+  states, the desktop body (day rail, dialogs, full-bleed timetable, fluid
+  type), a11y layer (computed AA contrast, keyboard-first cards, dialog
+  semantics), notes home w/ edit+delete, everything-else column, ACL weekend
+  view, five-state Spotify drill on one OAuth origin, honest SW/sync/PWA.
+- Both gates passed with findings, ALL addressed: Codex diff review (2 rounds
+  — router refresh P1 reproduced+fixed; rename tombstones; setup ungated) and
+  the 71-agent Stage-4 audit re-run (0 P0, ZERO discovery findings
+  rediscovered; its 4 P1s fixed same-session — repaint now preserves scroll/
+  drafts/focus, sort popover clamps, OAuth returns land in the drill).
+- Tests 63 → 89 green · validator clean · 20 commits on `v31-polish`.
 
-## Hard rules for this run
+## ⚠️ KEVIN ACTIONS QUEUED
 
-- (Discovery's code-freeze is OVER — the audit completed against tree
-  b0fde34..73a74bf. Fix-phase edits happen on branch `v31-polish`.)
-- Fixes are display/UX-layer; NO crew-doc shape changes, NO destructive DB ops.
-  (Build guard not reinstalled — nothing in scope mutates data. The one
-  teardown DB action: delete the "Audit Rig" crew, explicit and single.)
-- Audit Rig crew token lives ONLY at `~/.claude/plans/v31-audit-rig-token.md`
-  (outside the repo — never write a token anywhere under the project tree).
-- Public repo: grep for `#g=` before committing any doc.
-- vercel dev doesn't serve files created after start; Chrome heuristic-caches
-  modules (fetch cache:'reload' + reload); Write-tool control-byte check after
-  regex-heavy writes.
-
-## Done this run
-
-- docs/user-flows.md (the spec the audit walks) — committed 1f83288.
-- Audit Rig crew created + seeded (2 people, picks, notes ×3 scopes) — verified
-  via live GET.
-- frontend-design skill installed to hg-agents (80431aa) + symlinked, live.
-- Plan approved-in-spirit (Kevin exited plan mode + gave the go-forth brief).
-
-## Post-run queue (Kevin-gated, unchanged)
-
-Spotify scan (blocked on I1 redirect fix + Spotify-dashboard registration —
-Kevin action), EF-app saves import, token rotation decision, fast-follows.
+1. **Spotify dashboard (SPOT-1):** add redirect URI
+   `https://fest.kevinhg.com/spotify-callback` to the crew Spotify app at
+   developer.spotify.com/dashboard. The app now canonicalizes all OAuth to
+   fest.kevinhg.com (aliases hop with crew+fest context carried).
+2. **FYI — token incident, resolved, no action needed:** a mid-run commit
+   briefly (minutes) exposed two AUDIT-crew tokens on the public repo
+   (walker logs swept in by `git add -A`). History rewritten same minute;
+   both crews were disposable audit artifacts and are now deleted, mooting
+   the exposure. **No real crew token was exposed.** Process hardened
+   (gitignore + gated scans + memory).
+3. **Fast-follows for your call** (from the audit, deliberately not done
+   unattended): settings drills' desktop composition (the atlas says 560px
+   column on purpose — the audit disagrees; your taste decides), in-app
+   research provenance for saved fests, The-Crew token rotation from the
+   2026-07-09 NOW.md leak (still pending, unrelated to this run).
 
 ## Standing facts
 
-- dev.fest.kevinhg.com staging unpinned; preview env vars unset.
-- Crew links in chat/scratchpad only — never commit a token.
+- Preview env now has DATABASE_URL (added this run — previews hit the real
+  Neon DB). GEMINI_API_KEY already covered Preview.
+- Audit crews (Audit Rig, Portola 26) deleted at teardown; walker scratch
+  dirs (390/ 768/ 1440/ offline/) are gitignored — never commit them.
+- Crew links in chat/scratchpad only — never commit a token; token scans
+  GATE commits (`&&`, never `;`).

@@ -1,6 +1,6 @@
 // Festival Navigator service worker — offline-first app shell.
 // Bump CACHE_VERSION whenever you change cached static assets.
-const CACHE_VERSION = 'festival-nav-v15'; // v15 = v3.1 polish (router, sort-control, name-rules; SW honesty pass)
+const CACHE_VERSION = 'festival-nav-v16'; // v16 = v3.1 gate fixes (repaint ephemera, audit response) — v15 never reached prod
 
 // The shell that MUST be complete for offline to be real: if any of these
 // fail, install fails and the old worker keeps serving — a half-cached shell

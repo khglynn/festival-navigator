@@ -299,10 +299,13 @@ function dayRuleSub(meta) {
 }
 
 // ---- search / sort / weekend -----------------------------------------------------
+// Fold diacritics so "tiesto" finds Tiësto — nobody hunts for the ë on a
+// phone keyboard in a field (audit walker anomaly, verified real).
+const fold = (s) => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 export function applyFilter(artists, query) {
-  const q = (query || '').trim().toLowerCase();
+  const q = fold((query || '').trim());
   if (!q) return artists;
-  return artists.filter((a) => a.name.toLowerCase().includes(q));
+  return artists.filter((a) => fold(a.name).includes(q));
 }
 
 // Multi-weekend fests (ST-3): 'all' shows everyone; W1/W2 shows that
