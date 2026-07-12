@@ -149,10 +149,12 @@ OAuth shows a recoverable in-app message, never a dead browser error page.
 
 ## F14 · Tools — export + share artifacts
 
-1. Export likes (text) and Download-as-PNG (html2canvas) from settings/tools.
-2. Bulk paste (v4 semantics) for importing picks.
+1. Export likes (text) and Day image (pick a day → PNG of its wall,
+   html2canvas offscreen render) from settings/tools.
+2. Bulk paste (v4 semantics) for importing picks — unknown artists/levels are
+   reported, never silently coerced.
 **Expected:** artifacts match the wall's current fest + state; PNG is legible
-on a phone share sheet.
+on a phone share sheet; export failures say so in the UI.
 
 ## F15 · Offline / PWA
 

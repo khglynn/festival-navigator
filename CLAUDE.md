@@ -21,11 +21,18 @@ Non-inferable facts only (the code answers everything else — read it).
 - **Vercel Blob is banned for the crew doc.** Its read path is eventually
   consistent even with cache-busting query params; rapid merges lost writes
   outright (measured 2026-07-07). Old stores may still exist on the account.
-- `vercel dev` does not serve files created after it starts — restart it.
-  It also refuses to run if package.json has a `dev` script that calls
-  `vercel dev` (recursion check), which is why there is no `dev` script.
-- Tailwind is precompiled and committed (`assets/tailwind.css`); run
-  `npm run css` after changing classes or CI fails the freshness diff.
+- `vercel dev` does not serve files created after it starts, and can serve
+  STALE copies of edited files too (measured 2026-07-12: an edited app.js
+  served an old version until restart) — when in doubt, restart it, and
+  verify with `curl | md5` against the local file. It also refuses to run if
+  package.json has a `dev` script that calls `vercel dev` (recursion check),
+  which is why there is no `dev` script. Local `vercel dev` pulls the REAL
+  cloud env (DATABASE_URL included) — localhost /api hits the production
+  Neon DB; treat writes accordingly.
+- (Removed 2026-07-12: the "Tailwind precompiled, npm run css" fact — v3
+  dropped Tailwind entirely; styles are hand-written in assets/v3*.css.)
+- Styling is hand-written CSS in `assets/v3-tokens.css` (tokens) and
+  `assets/v3.css` (components) — no build step, no framework.
 - Hook command strings in `.claude/settings.json` must stay apostrophe-free
   (a `'` closes the shell quote and silently breaks compaction).
 - The Write tool has serialized literal control bytes (`\x00`) into files in
