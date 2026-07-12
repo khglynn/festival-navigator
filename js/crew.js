@@ -58,10 +58,32 @@ export function festFromHash() {
 const FEST_ID_RE = /^[a-z0-9-]{1,64}$/;
 
 // Share links carry the sharer's festival so a joiner on a fresh device lands
-// on the crew's fest instead of the catalog default (FLOW-1).
-export function crewLink(token, festId) {
+// on the crew's fest instead of the catalog default (FLOW-1). A personal link
+// (`meName`) additionally carries WHO it's for: someone added on another
+// member's phone opens their link and lands on their own circle, picks
+// already theirs (Kevin note 5, 2026-07-12).
+export function crewLink(token, festId, meName) {
   const f = festId && FEST_ID_RE.test(festId) ? `&f=${festId}` : '';
-  return `${location.origin}/#g=${token}${f}`;
+  const m = meName ? `&me=${encodeURIComponent(meName)}` : '';
+  return `${location.origin}/#g=${token}${f}${m}`;
+}
+
+// The member a personal invite link is for (#g=<token>&me=<name>). Read at
+// boot, BEFORE enterApp's replaceState strips the hash down to #g=.
+export function meFromHash() {
+  const m = (location.hash || '').match(/[#&]me=([^&]+)/);
+  if (!m) return null;
+  try { return decodeURIComponent(m[1]).trim() || null; }
+  catch { return null; }
+}
+
+// Which crew a boot should open. A cold start (first boot of this page load)
+// resumes the remembered crew — reopening the PWA lands you where you were.
+// Any LATER boot is an in-app navigation (hashchange, browser back): a bare
+// URL then means the user deliberately left the crew, so it's the landing —
+// resuming there made Back from the wall a re-entry loop (Kevin note 2).
+export function bootTokenFor(hashToken, activeToken, isFirstBoot) {
+  return hashToken || (isFirstBoot ? activeToken : null);
 }
 
 // "Crew not found" means OUR API said so (JSON 404). A routing/platform 404

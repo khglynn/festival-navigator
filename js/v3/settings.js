@@ -415,18 +415,51 @@ function crewSection(ctx, actions) {
     input.focus();
   });
 
+  // Member chips open their personal claim link (&me=) — never an identity
+  // switch (FLOW-8 still holds): "send Drew HIS link" after adding him on
+  // your phone is the whole shared-phone story (Kevin note 5).
+  const memberLinkHost = el('div');
   const chips = el('div', 'display: flex; gap: 5px; flex-wrap: wrap;');
   for (const [name, p] of state.activePeople()) {
-    const chip = el('span', '', name);
+    const chip = el('button', 'cursor: pointer;', name);
     chip.className = 'person-chip' + (name === ctx.meName ? ' you' : '');
+    chip.setAttribute('aria-label', `${name} — get their personal link`);
     const ci = colorIndexOf(name, p);
     chip.style.background = hslOf(ci, 0.5);
     chip.style.border = '1px solid ' + strokeOf(ci, name === ctx.meName);
     chip.style.fontSize = '11px';
     chip.style.padding = '4px 11px';
+    chip.addEventListener('click', () => {
+      memberLinkHost.textContent = '';
+      const mLink = crew.crewLink(state.getCrewToken(), state.activeFestivalId, name);
+      const mRow = el('div', 'display: flex; gap: 8px; align-items: center;');
+      const mBox = el('input');
+      mBox.readOnly = true;
+      mBox.value = mLink;
+      mBox.setAttribute('aria-label', `${name}'s personal invite link`);
+      mBox.style.cssText = 'flex: 1; min-width: 0; background: var(--page); border: 1px solid var(--border-input); border-radius: var(--r-card); padding: 8px 11px; color: var(--text-secondary); font-size: 11.5px; font-family: var(--font-ui);';
+      mBox.addEventListener('focus', () => mBox.select());
+      const mCopy = el('button', 'font-size: 11.5px; padding: 8px 13px; flex: none;', `Copy ${name}’s link`);
+      mCopy.className = 'btn-tonal';
+      mCopy.addEventListener('click', async () => {
+        try { await navigator.clipboard.writeText(mLink); mCopy.textContent = 'Copied ✓'; setTimeout(() => { memberLinkHost.textContent = ''; }, 1500); }
+        catch { mBox.select(); }
+      });
+      mRow.append(mBox, mCopy);
+      memberLinkHost.append(mRow,
+        el('div', 'color: var(--text-tertiary); font-size: 10.5px; font-weight: 600; margin-top: 4px;',
+          `Opening it lands ${name} on their own circle — picks made for them included.`));
+    });
     chips.appendChild(chip);
   }
+  if (ctx.meName && actions.addMember) {
+    const add = el('button', 'cursor: pointer;', '+ Add someone');
+    add.className = 'person-chip add';
+    add.addEventListener('click', actions.addMember);
+    chips.appendChild(add);
+  }
   card.appendChild(chips);
+  card.appendChild(memberLinkHost);
 
   // The invite link, always visible (FLOW-12): share sheets fail silently,
   // a printed URL never does.

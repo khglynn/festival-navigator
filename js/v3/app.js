@@ -127,6 +127,17 @@ function renderPersonChips() {
     chip.textContent = name;
     row.appendChild(chip);
   }
+  // Add-on-their-behalf lives right where the crew is visible (note 5) —
+  // only for claimed devices; a spectator can't grow the crew.
+  if (ctx.meName) {
+    const add = document.createElement('button');
+    add.className = 'person-chip add';
+    add.textContent = '+ Add';
+    add.setAttribute('aria-label', 'Add someone to the crew');
+    add.style.cursor = 'pointer';
+    add.addEventListener('click', () => { openAddMember(); router.push('sheet:add-member'); });
+    row.appendChild(add);
+  }
 }
 
 // The explicit identity switch (FLOW-8), called from Settings.
@@ -534,6 +545,153 @@ function openShareMoment() {
   document.body.append(backdrop, sheet);
 }
 
+// ---- add a member on their behalf (Kevin note 5, 2026-07-12) -----------------------
+// Shared-phone crews: one person tracks for everyone; not everyone joins via
+// a link. Server-first like the join screen (FLOW-5) so the people-cap
+// answers here; offline falls back to the local doc + sync. Success mints the
+// per-person claim link (&me=) — opening it lands them on THEIR circle with
+// every pick already theirs.
+function openAddMember() {
+  closeSheet();
+  const backdrop = document.createElement('div');
+  backdrop.className = 'sheet-backdrop';
+  backdrop.id = 'sheet-backdrop';
+  backdrop.addEventListener('click', () => { if (!router.requestClose()) closeSheet(); });
+  const sheet = document.createElement('div');
+  sheet.className = 'sheet';
+  sheet.id = 'artist-sheet'; // closeSheet + the router's sheet kind own this id
+  const grabber = document.createElement('div');
+  grabber.className = 'grabber';
+  const title = document.createElement('span');
+  title.className = 'sheet-title';
+  title.textContent = 'ADD SOMEONE';
+  const sub = document.createElement('div');
+  sub.style.cssText = 'color: var(--text-secondary); font-size: 12.5px; line-height: 1.55;';
+  sub.textContent = 'You pick for them until they claim it — their link makes it theirs the moment they open it.';
+  const row = document.createElement('div');
+  row.style.cssText = 'display: flex; gap: 8px; align-items: center;';
+  const input = document.createElement('input');
+  input.maxLength = 24;
+  input.placeholder = 'Their name';
+  input.setAttribute('aria-label', 'Their name');
+  input.style.cssText = 'flex: 1; min-width: 0; background: var(--page); border: 1px solid var(--border-input); border-radius: var(--r-card); padding: 11px 12px; color: #fff; font-size: 14px; font-family: var(--font-ui);';
+  const addBtn = document.createElement('button');
+  addBtn.className = 'btn-tonal';
+  addBtn.style.cssText = 'font-size: 13px; padding: 11px 20px; flex: none;';
+  addBtn.textContent = 'Add';
+  row.append(input, addBtn);
+  const status = document.createElement('div');
+  status.style.cssText = 'color: var(--text-tertiary); font-size: 11.5px; font-weight: 600;';
+  sheet.append(grabber, title, sub, row, status);
+  document.body.append(backdrop, sheet);
+  input.focus();
+
+  const succeed = (canonical) => {
+    refreshCtx();
+    renderPersonChips();
+    repaintWall();
+    sheet.textContent = '';
+    const done = document.createElement('span');
+    done.className = 'sheet-title';
+    done.textContent = `${canonical.toUpperCase()} IS IN`;
+    const explain = document.createElement('div');
+    explain.style.cssText = 'color: var(--text-secondary); font-size: 12.5px; line-height: 1.55;';
+    explain.textContent = `Pick for ${canonical} by switching to them in Settings → You. Or send them their own link — opening it puts your picks in their hands:`;
+    const link = crew.crewLink(state.getCrewToken(), state.activeFestivalId, canonical);
+    const linkRowEl = document.createElement('div');
+    linkRowEl.style.cssText = 'display: flex; gap: 8px; align-items: center;';
+    const linkBox = document.createElement('input');
+    linkBox.readOnly = true;
+    linkBox.value = link;
+    linkBox.setAttribute('aria-label', `${canonical}'s personal invite link`);
+    linkBox.style.cssText = 'flex: 1; min-width: 0; background: var(--card); border: 1px solid var(--border-input); border-radius: var(--r-card); padding: 10px 12px; color: var(--text-body); font-size: 12px; font-family: var(--font-ui);';
+    linkBox.addEventListener('focus', () => linkBox.select());
+    const copy = document.createElement('button');
+    copy.className = 'btn-tonal';
+    copy.style.cssText = 'font-size: 12px; padding: 9px 15px; flex: none;';
+    copy.textContent = 'Copy';
+    copy.addEventListener('click', async () => {
+      try { await navigator.clipboard.writeText(link); copy.textContent = 'Copied ✓'; setTimeout(() => { copy.textContent = 'Copy'; }, 1800); }
+      catch { linkBox.select(); }
+    });
+    linkRowEl.append(linkBox, copy);
+    const actionsRow = document.createElement('div');
+    actionsRow.style.cssText = 'display: flex; gap: 8px;';
+    if (navigator.share) {
+      const shareBtn = document.createElement('button');
+      shareBtn.className = 'btn-tonal';
+      shareBtn.style.cssText = 'flex: 1; font-size: 13px; padding: 11px;';
+      shareBtn.textContent = `Share ${canonical}’s link`;
+      shareBtn.addEventListener('click', async () => {
+        try { await navigator.share({ title: 'Festival Navigator', url: link }); }
+        catch { /* dismissed — the visible link is the fallback */ }
+      });
+      actionsRow.appendChild(shareBtn);
+    }
+    const doneBtn = document.createElement('button');
+    doneBtn.className = 'btn-ghost';
+    doneBtn.style.cssText = 'font-size: 12px; padding: 11px 16px;' + (navigator.share ? '' : ' flex: 1;');
+    doneBtn.textContent = 'Done';
+    doneBtn.addEventListener('click', () => { if (!router.requestClose()) closeSheet(); });
+    actionsRow.appendChild(doneBtn);
+    sheet.append(grabber, done, explain, linkRowEl, actionsRow);
+  };
+
+  const doAdd = async () => {
+    const name = input.value.trim();
+    const problem = nameProblem(name);
+    if (problem) { status.textContent = problem; return; }
+    const people = state.people();
+    const activeMatch = Object.entries(people)
+      .find(([n, p]) => n.toLowerCase() === name.toLowerCase() && state.isActivePerson(p));
+    if (activeMatch) { status.textContent = `${activeMatch[0]} is already in this crew.`; return; }
+    // A removed member returning keeps their old key — resurrecting brings
+    // their history back, same as the join screen's reclaim path.
+    const removedMatch = Object.entries(people)
+      .find(([n]) => n.toLowerCase() === name.toLowerCase());
+    const canonical = removedMatch ? removedMatch[0] : name;
+    const taken = Object.values(people).map((p) => p.colorIndex).filter(Number.isInteger);
+    const person = { colorIndex: nextColorIndex(taken), removed: false };
+    addBtn.disabled = true;
+    status.textContent = 'Adding…';
+    try {
+      const res = await fetch(`/api/crew?t=${encodeURIComponent(state.getCrewToken())}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ data: { people: { [canonical]: person } }, sv: 4 }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        status.textContent = body.error || 'The crew service hiccuped — give it a second and try again.';
+        return;
+      }
+      state.applyRemoteDoc(await res.json());
+      succeed(canonical);
+    } catch {
+      // Offline: local-first add, sync catches up — same as every pick.
+      state.recordPerson(canonical, person);
+      state.crewDoc.people[canonical] = person;
+      state.persist();
+      sync.scheduleSync();
+      succeed(canonical);
+    } finally {
+      addBtn.disabled = false;
+    }
+  };
+  addBtn.addEventListener('click', doAdd);
+  input.addEventListener('keydown', (e) => { if (e.key === 'Enter') doAdd(); });
+}
+
+// The heading's ‹ returns to the fest list (Kevin note 5, "like we had
+// before") as a REAL history entry — browser back from the landing returns
+// to the wall you left.
+function goToFestList() {
+  closeSheet();
+  router.reset();
+  history.pushState(null, '', '/');
+  renderLanding();
+}
+
 // ---- settings (one page, two doors) -----------------------------------------------
 function applyLowPower(on) {
   ctx.lowPower = !!on;
@@ -591,6 +749,8 @@ function openSettings() {
     afterBulk: () => { sync.scheduleSync(); refreshCtx(); },
     // FLOW-8: identity change is an explicit, named action — never a chip tap.
     switchIdentity: (name) => switchIdentity(name),
+    // Add-on-their-behalf (note 5): the sheet opens OVER settings.
+    addMember: () => { openAddMember(); router.push('sheet:add-member'); },
     // FLOW-6: the landing is the crew switcher; the current crew stays remembered.
     switchCrew: () => {
       router.reset();
@@ -711,8 +871,12 @@ function renderJoin(token, doc) {
   $('join-status').textContent = '';
   const list = $('join-people');
   list.textContent = '';
-  for (const [name, p] of Object.entries(doc.people || {})) {
-    if (p && p.removed) continue;
+  // A personal link (&me=Drew) floats Drew's circle to the top and marks it —
+  // their picks are already waiting behind that tap (Kevin note 5).
+  const meHint = pendingMeHint ? pendingMeHint.toLowerCase() : null;
+  const entries = Object.entries(doc.people || {}).filter(([, p]) => !(p && p.removed));
+  entries.sort(([a], [b]) => (b.toLowerCase() === meHint) - (a.toLowerCase() === meHint));
+  for (const [name, p] of entries) {
     const row = document.createElement('button');
     row.className = 'fest-row';
     row.style.width = '100%';
@@ -726,6 +890,13 @@ function renderJoin(token, doc) {
     nm.style.cssText = 'color: #fff; font-weight: 700; font-size: 15px;';
     nm.textContent = name;
     row.append(av, nm);
+    if (meHint && name.toLowerCase() === meHint) {
+      row.style.border = '1.5px solid rgba(var(--fest), .7)';
+      const hint = document.createElement('span');
+      hint.style.cssText = 'margin-left: auto; color: rgb(var(--fest)); font-size: 11px; font-weight: 800; flex: none;';
+      hint.textContent = 'this link is yours';
+      row.appendChild(hint);
+    }
     row.addEventListener('click', () => { crew.setMe(token, name); enterApp(token, doc); });
     list.appendChild(row);
   }
@@ -736,9 +907,11 @@ function renderJoin(token, doc) {
     const problem = nameProblem(name);
     if (problem) { status.textContent = problem; return; }
     // Typing an existing member's name is a returning member recognizing
-    // themselves — claim it, same as tapping the row.
-    const existing = (doc.people || {})[name];
-    if (existing && !existing.removed) { crew.setMe(token, name); enterApp(token, doc); return; }
+    // themselves — claim it, same as tapping the row. Case-insensitive:
+    // "drew" typing in must claim Drew, never fork a second member.
+    const existingEntry = Object.entries(doc.people || {})
+      .find(([n, p]) => n.toLowerCase() === name.toLowerCase() && p && !p.removed);
+    if (existingEntry) { crew.setMe(token, existingEntry[0]); enterApp(token, doc); return; }
     const btn = $('join-add-btn');
     btn.disabled = true;
     status.textContent = 'Joining…';
@@ -903,20 +1076,25 @@ function renderFatal() {
 
 // ---- boot -----------------------------------------------------------------------
 let bootGeneration = 0;
+let firstBoot = true; // cold start resumes the active crew; later boots don't (note 2)
 let pendingFestHint = null; // &f= from the opened invite link, consumed by enterApp
+let pendingMeHint = null; // &me= from a personal invite link, consumed by renderJoin
 let pendingSpotifyOpen = false; // &sp=1 from the canonical-domain hop (SPOT-1)
 export async function boot() {
   const gen = ++bootGeneration;
   const current = () => gen === bootGeneration;
+  const isFirst = firstBoot;
+  firstBoot = false;
   router.reset();
   // Capture before any await: enterApp's replaceState strips the hash to #g=.
   pendingFestHint = crew.festFromHash();
+  pendingMeHint = crew.meFromHash();
   pendingSpotifyOpen = /[#&]sp=1(?:&|$)/.test(location.hash || '');
   try {
     try { await loadFestivalIndex(); } catch { /* offline with cache: proceed */ }
 
     if (location.hash === '#new') { renderCreate(); return; }
-    const token = crew.tokenFromHash() || crew.activeCrewToken();
+    const token = crew.bootTokenFor(crew.tokenFromHash(), crew.activeCrewToken(), isFirst);
     if (!token) { renderLanding(); return; }
 
     let doc = null;
@@ -962,6 +1140,7 @@ export function init() {
     refreshCtx();
     if (key === 'sheet:all') openAllNotes(ctx);
     else if (key === 'sheet:share') openShareMoment();
+    else if (key === 'sheet:add-member') openAddMember();
     else if (key.startsWith('sheet:day:')) openDayNotes(key.slice('sheet:day:'.length), ctx, onNotesChange);
     else if (key.startsWith('sheet:notes:')) openArtistSheet(key.slice('sheet:notes:'.length), ctx, onNotesChange);
   }, () => closeSheet());
@@ -989,6 +1168,7 @@ export function init() {
   $('gear-btn').addEventListener('click', openSettingsLayer);
   $('dock-fest-link').addEventListener('click', openSettingsLayer);
   $('rail-fest-link').addEventListener('click', openSettingsLayer);
+  $('fest-list-btn').addEventListener('click', goToFestList);
   $('notes-chip').addEventListener('click', () => { refreshCtx(); openAllNotes(ctx); router.push('sheet:all'); });
   $('create-go-btn').addEventListener('click', createCrewFlow);
   $('create-back').addEventListener('click', () => { history.replaceState(null, '', '/'); renderLanding(); });
