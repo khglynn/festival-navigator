@@ -9,6 +9,7 @@
     <link rel="icon" type="image/png" href="/favicon.png">
     <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
     <link rel="apple-touch-icon" href="/icon-192.png">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="stylesheet" href="/assets/fonts/fonts.css">
@@ -105,6 +106,8 @@
     <div id="screen-join" class="entry-screen" style="display:none">
       <div class="center-col">
         <div style="text-align: center;">
+          <!-- A cold-linked stranger deserves to know what app this is (audit 7.2) -->
+          <div style="font-family: var(--font-display); letter-spacing: .06em; font-size: 14px; margin-bottom: 14px;">FESTIVAL <span class="pulse-text">NAVIGATOR</span></div>
           <div class="micro-label" style="letter-spacing: .14em;">You're invited to</div>
           <div id="join-fest-name" class="screen-headline" style="color: rgb(var(--fest));"></div>
           <div id="join-crew-sub" style="color: var(--text-secondary); font-size: 13px; margin-top: 8px;"></div>
@@ -188,7 +191,7 @@
     </div>
     <div id="screen-error" class="entry-screen" style="display:none">
       <div class="center-col">
-        <div class="brand" style="font-size: 34px;">WELL, THAT<br><span class="pulse-text">WASN&rsquo;T THE PLAN</span></div>
+        <div class="brand" style="font-size: clamp(34px, 4.5vw, 46px);">WELL, THAT<br><span class="pulse-text">WASN&rsquo;T THE PLAN</span></div>
         <div style="color: var(--text-secondary); font-size: 13px; text-align: center; line-height: 1.55;">
           The app hit an error while loading. Your picks are safe on this device.</div>
         <button id="error-retry" class="btn-tonal" style="font-size: 14px; padding: 12px 24px; align-self: center;">Try again</button>

@@ -58,8 +58,15 @@ export async function connect() {
   const verifier = b64url(crypto.getRandomValues(new Uint8Array(48)));
   const challenge = b64url(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier)));
   const stateParam = b64url(crypto.getRandomValues(new Uint8Array(12)));
+  // returnTo carries sp=1 so the OAuth return re-opens the drill on EVERY
+  // path (audit 6.1) — enterApp's replaceState strips the flag from the URL
+  // bar afterwards, but boot reads it first.
+  const token = state.getCrewToken();
+  const returnTo = token
+    ? `${location.origin}/#g=${token}&f=${state.activeFestivalId}&sp=1`
+    : location.href;
   sessionStorage.setItem('fn_spotify_pkce', JSON.stringify({
-    verifier, state: stateParam, clientId, returnTo: location.href,
+    verifier, state: stateParam, clientId, returnTo,
   }));
   const p = new URLSearchParams({
     response_type: 'code', client_id: clientId, scope: SCOPES,
@@ -100,7 +107,16 @@ async function accessToken() {
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({ grant_type: 'refresh_token', refresh_token: a.refresh_token, client_id: a.clientId }),
   });
-  if (!res.ok) { disconnect(); throw new Error('Spotify session expired — connect again.'); }
+  if (!res.ok) {
+    // Only a REJECTED token is fatal — a transient 5xx/429 during a Spotify
+    // blip must not wipe a valid refresh token + the whole library scan
+    // (audit 6.2).
+    if (res.status === 400 || res.status === 401 || res.status === 403) {
+      disconnect();
+      throw new Error('Spotify session expired — connect again.');
+    }
+    throw new Error('Spotify had a hiccup refreshing your session — try again in a minute.');
+  }
   const t = await res.json();
   localStorage.setItem(LS_AUTH, JSON.stringify({
     ...a, access_token: t.access_token,

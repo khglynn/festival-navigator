@@ -46,7 +46,16 @@ export async function callGemini(promptText, { grounded = false } = {}) {
   const cand = data?.candidates?.[0];
   const text = cand?.content?.parts?.map((p) => p.text || '').join('') || '';
   // Grounding metadata -> source URLs (provenance travels with the value).
-  const sources = (cand?.groundingMetadata?.groundingChunks || [])
-    .map((c) => c?.web?.uri).filter(Boolean).slice(0, 12);
+  // Checked across known response shapes (audit 5.1: live runs returned zero
+  // sources) — groundingChunks is current, citationSources is the older
+  // shape; the UI now also says out loud when NOTHING comes back.
+  const chunks = cand?.groundingMetadata?.groundingChunks
+    || cand?.groundingMetadata?.groundingAttributions
+    || [];
+  const cites = cand?.citationMetadata?.citationSources || [];
+  const sources = [
+    ...chunks.map((c) => c?.web?.uri || c?.sourceId?.web?.uri),
+    ...cites.map((c) => c?.uri),
+  ].filter(Boolean).slice(0, 12);
   return { text, sources };
 }

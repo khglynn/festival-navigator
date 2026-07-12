@@ -268,7 +268,7 @@ function maybeShowCoachMark() {
     bar.remove();
   });
   bar.append(msg, dismiss);
-  document.querySelector('#screen-app .toolbar').after(bar);
+  insertStrip(bar);
 }
 
 // An archived fest reads as a memory, not a live plan (ST-5).
@@ -281,7 +281,17 @@ function updateArchiveNote() {
   bar.id = 'archive-note';
   bar.style.cssText = 'margin-top: 11px; padding: 9px 13px; border: 1px solid var(--border-card); border-radius: var(--r-row); color: var(--text-secondary); font-size: 12px; font-weight: 600; line-height: 1.45; background: var(--card);';
   bar.textContent = `${fest.name} ${fest.year || ''} already happened — this wall is the memory. Picks still work for the record.`.replace('  ', ' ');
-  document.querySelector('#screen-app .toolbar').after(bar);
+  insertStrip(bar);
+}
+
+
+// Toolbar strips insert in call order (audit 1.4): each lands after the last
+// existing strip, so priority order in code IS priority order on screen.
+function insertStrip(bar) {
+  bar.classList.add('toolbar-strip');
+  const strips = document.querySelectorAll('#screen-app .toolbar-strip');
+  const anchor = strips.length ? strips[strips.length - 1] : document.querySelector('#screen-app .toolbar');
+  anchor.after(bar);
 }
 
 // While a legacy crew's server-side migration is pending, picking is gated —
@@ -311,7 +321,7 @@ function updateMigrationBanner() {
       else updateMigrationBanner();
     });
     bar.append(msg, retry);
-    document.querySelector('#screen-app .toolbar').after(bar);
+    insertStrip(bar);
   }
   bar.querySelector('.msg').textContent = navigator.onLine
     ? 'Updating this crew to the new pick format — picks unlock in a moment.'
@@ -425,7 +435,12 @@ async function createCrewFlow() {
     openShareMoment();
     router.push('sheet:share');
   } catch (e) {
-    status.textContent = String(e.message || e);
+    // A network-level failure surfaces as browser jargon ("Failed to fetch")
+    // — translate it; keep the server's own plain-language errors (audit 5.4).
+    const raw = String(e.message || e);
+    status.textContent = /fetch|network|load/i.test(raw) && !/crew|name|festival/i.test(raw)
+      ? 'Couldn’t reach the crew service — check your connection and try again.'
+      : raw;
   } finally {
     btn.disabled = false;
   }
@@ -622,6 +637,7 @@ function openSettings() {
 
 function renderLanding() {
   show('screen-landing');
+  document.title = 'Festival Navigator';
   const list = $('landing-fests');
   list.textContent = '';
   const crews = crew.knownCrews();
@@ -722,7 +738,7 @@ function renderJoin(token, doc) {
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        status.textContent = body.error || 'Couldn’t join — try a different name.';
+        status.textContent = body.error || 'The crew service hiccuped — give it a second and tap Join again.';
         btn.disabled = false;
         return;
       }
@@ -832,6 +848,7 @@ async function enterApp(token, doc, current = () => true) {
 // a 500 used to read as "you're offline" while navigator.onLine was true).
 function renderBadLink(token, { gone }) {
   show('screen-badlink');
+  document.title = 'Festival Navigator';
   $('badlink-msg').textContent = gone
     ? 'It may have been retyped, or the crew was deleted. Ask your crew for a fresh link and paste it here.'
     : (navigator.onLine
@@ -855,6 +872,7 @@ function renderBadLink(token, { gone }) {
 function renderFatal() {
   try {
     show('screen-error');
+    document.title = 'Festival Navigator';
     $('error-retry').onclick = () => location.reload();
     $('error-home').onclick = () => { history.replaceState(null, '', '/'); renderLanding(); };
   } catch { /* even the error screen failed — nothing safe left to render */ }
@@ -901,7 +919,9 @@ export async function boot() {
 // ---- wiring ----------------------------------------------------------------------
 export function init() {
   sync.initSync({
-    onRemoteChange: () => { repaintWall(); renderPersonChips(); refreshOpenSheet(); },
+    // Everything that renders identity/state repaints together — the dock
+    // avatar was the one holdout showing a stale color (audit 1.5).
+    onRemoteChange: () => { repaintWall(); renderPersonChips(); renderDockYou(); refreshOpenSheet(); },
     onCrewGone: (token) => {
       // The server said this crew no longer exists — a dead row on the
       // landing list would just 404 again (FLOW-3).

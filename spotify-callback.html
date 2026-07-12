@@ -22,11 +22,15 @@
         // dead browser page a muddy-fielded human has to interpret.
         import { completeAuth } from '/js/spotify.js';
         const q = new URLSearchParams(location.search);
+        // Return WITH the drill-reopen flag on failure too (audit 6.1): the
+        // banked error is surfaced by the drill, so land the user in it.
+        let pkceReturn = '/';
+        try { pkceReturn = (JSON.parse(sessionStorage.getItem('fn_spotify_pkce') || 'null') || {}).returnTo || '/'; } catch { /* fine */ }
         const backWithError = (reason) => {
             try { sessionStorage.setItem('fn_spotify_error', reason); } catch { /* private mode */ }
             document.getElementById('msg').textContent = 'That didn’t connect';
             document.getElementById('detail').textContent = 'Heading back to the app…';
-            setTimeout(() => location.replace('/'), 1200);
+            setTimeout(() => location.replace(pkceReturn), 1200);
         };
         if (q.get('error')) {
             backWithError(q.get('error'));

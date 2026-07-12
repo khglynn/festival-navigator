@@ -155,7 +155,7 @@ async function buildDayCanvas(day, ctx) {
   const exportCtx = { ...ctx, lowPower: true, onOpenNotes: null, onTap: () => {} };
   for (const a of dayArtistsFor(day)) grid.appendChild(renderCard(a.name, exportCtx, { time: a.time }));
   node.appendChild(grid);
-  node.appendChild(el('div', 'margin-top: 18px; color: #5D5578; font-size: 12px; font-weight: 700; letter-spacing: .08em;', `${state.crewName().toUpperCase()} · FESTIVAL NAVIGATOR`));
+  node.appendChild(el('div', 'margin-top: 18px; color: #877FA4; font-size: 12px; font-weight: 700; letter-spacing: .08em;', `${state.crewName().toUpperCase()} · FESTIVAL NAVIGATOR`));
   document.body.appendChild(node);
   try {
     const canvas = await window.html2canvas(node, { backgroundColor: '#0C0A14', scale: 2, width: 1080, windowWidth: 1080 });

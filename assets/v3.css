@@ -62,6 +62,7 @@ button, input, textarea, select, a, [role="button"], [role="option"] { outline: 
   display: inline-flex; align-items: center; height: 13px; padding: 0 6px;
   border-radius: var(--r-bubble); background: var(--notes-fill);
   border: 1px solid var(--notes-stroke); color: #fff; font-size: 8.5px; font-weight: 800; line-height: 1;
+  font-family: inherit; /* the count chip is a real <button> now (audit 4.4) */
 }
 .chip-spotify {
   display: inline-flex; align-items: center; gap: 3px; height: 12px; padding: 0 6px;
@@ -74,8 +75,10 @@ button, input, textarea, select, a, [role="button"], [role="option"] { outline: 
 .chip-weekend { position: absolute; top: 4px; left: 5px; font-size: 8px; font-weight: 800;
                 letter-spacing: .06em; color: var(--text-tertiary); border: 1px solid var(--border-card);
                 border-radius: var(--r-pill); padding: 1px 5px; background: rgba(10, 8, 18, .6); }
-.mark.ghost { border: 1px dashed var(--border-emphasis); background: transparent;
-              color: var(--text-secondary); padding: 0 4px; font-size: 7.5px; }
+/* The '+n' ghost only appears over saturated multi-person auras (3+ pickers)
+ * — it gets the same white-on-scrim treatment as every other mark (audit 8.1). */
+.mark.ghost { border: 1px dashed rgba(255, 255, 255, .55); background: rgba(12, 10, 20, .55);
+              color: #fff; padding: 0 4px; font-size: 7.5px; }
 
 /* ---- people ----------------------------------------------------------------- */
 .person-chip { color: #fff; font-size: 11.5px; font-weight: 600; padding: 5px 12px;
@@ -309,7 +312,10 @@ button, input, textarea, select, a, [role="button"], [role="option"] { outline: 
   .times-wrap {
     width: 100vw;
     margin-inline: calc(50% - 50vw);
-    padding-inline: max(var(--sp-gutter), calc(50vw - var(--shell-max) / 2));
+    /* Asymmetric on purpose (audit 3.2): the LEFT edge aligns with the shell
+     * (reading rhythm holds), the RIGHT runs to the window minus a gutter —
+     * "as many columns as fit the window" (F5), not re-capped at shell-max. */
+    padding-inline: max(var(--sp-gutter), calc(50vw - var(--shell-max) / 2)) var(--sp-gutter);
     box-sizing: border-box;
   }
 }

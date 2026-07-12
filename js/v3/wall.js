@@ -57,12 +57,22 @@ export function renderCard(artistName, ctx, opts = {}) {
   const el = document.createElement('div');
   el.className = 'card' + (opts.cell ? ' cell' : '') + (opts.time && !opts.cell ? ' timed' : '');
   el.dataset.artist = artistName;
-  // Keyboard-first card (AX-1): real button semantics, the pick level in the
-  // accessible name so a screen reader hears state, Enter/Space cycle.
+  // Keyboard-first card (AX-1): real button semantics, and the accessible
+  // name carries what SIGHTED users see — your level, the crew's picks, note
+  // count, Spotify badge (audit 4.3). The explicit label overrides children,
+  // so anything not folded in here is invisible to AT.
   el.setAttribute('role', 'button');
   el.tabIndex = 0;
   const myLevel = (ctx.picks[artistName] || {})[ctx.meName] || 0;
-  el.setAttribute('aria-label', `${artistName} — ${myLevel === 4 ? 'must' : (LEVEL_LABELS_V4[myLevel] || 'not picked').toLowerCase()}`);
+  const crewCount = people.filter((p) => !p.isYou).length;
+  const noteCountForLabel = model.noteCount(state.crewDoc, ctx.fid, 'artist', artistName);
+  const affForLabel = ctx.affinity ? ctx.affinity[artistName.toLowerCase()] : null;
+  const labelParts = [`${artistName} — ${myLevel === 4 ? 'must' : (LEVEL_LABELS_V4[myLevel] || 'not picked').toLowerCase()}`];
+  if (crewCount) labelParts.push(`${crewCount} crew`);
+  if (noteCountForLabel) labelParts.push(`${noteCountForLabel} note${noteCountForLabel === 1 ? '' : 's'}`);
+  if (affForLabel) labelParts.push('in your Spotify');
+  el.setAttribute('aria-label', labelParts.join(', '));
+  el.title = artistName; // lane-split cells truncate hard — hover recovers (audit 9.2)
   el.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); ctx.onTap(artistName, el); }
   });
@@ -103,12 +113,16 @@ export function renderCard(artistName, ctx, opts = {}) {
   const noteN = model.noteCount(state.crewDoc, ctx.fid, 'artist', artistName);
   const aff = ctx.affinity ? ctx.affinity[artistName.toLowerCase()] : null;
   for (const chip of aboutCorner({ noteCount: noteN, spotify: aff ? { songs: aff.songs || 0, followed: !!aff.followed } : null })) {
-    const c = document.createElement('span');
+    // The clickable note-count chip is a real button (audit 4.4); the Spotify
+    // chip stays a passive span.
+    const clickable = chip.kind === 'notes' && ctx.onOpenNotes;
+    const c = document.createElement(clickable ? 'button' : 'span');
     c.className = chip.kind === 'notes' ? 'chip-notes' : 'chip-spotify';
     c.textContent = chip.label;
     if (chip.kind === 'spotify' && chip.followed) c.appendChild(svgBookmark());
-    if (chip.kind === 'notes' && ctx.onOpenNotes) {
+    if (clickable) {
       c.style.cursor = 'pointer';
+      c.setAttribute('aria-label', `${chip.label} note${chip.label === '1' ? '' : 's'} for ${artistName}`);
       c.addEventListener('click', (e) => { e.stopPropagation(); ctx.onOpenNotes(artistName); });
     }
     about.appendChild(c);
@@ -140,7 +154,10 @@ export function renderCard(artistName, ctx, opts = {}) {
       // If a poll repaint detached this node mid-press, the new node owns the
       // gesture — a fire from the orphan would open the sheet uninvited.
       pressTimer = setTimeout(() => {
-        if (!el.isConnected) return;
+        // isConnected covers repaint detachment; offsetParent covers a screen
+        // change hiding the wall mid-press (audit 10.2) — a sheet must never
+        // pop over Settings or the landing after the fact.
+        if (!el.isConnected || el.offsetParent === null) return;
         longPressed = true;
         ctx.onOpenNotes(artistName);
       }, 500);
@@ -190,7 +207,11 @@ export function refreshCard(el, artistName, ctx) {
     const v = el.style.getPropertyValue(prop);
     if (v) fresh.style.setProperty(prop, v);
   }
+  // Keyboard users keep their place: replacing a focused node silently dumps
+  // focus to <body>, forcing a full re-Tab per pick tap (audit 4.1).
+  const hadFocus = document.activeElement === el;
   el.replaceWith(fresh);
+  if (hadFocus) fresh.focus();
   return fresh;
 }
 
@@ -331,6 +352,7 @@ function renderScheduledDay(root, day, ctx) {
   rail.style.gridTemplateRows = rowsTemplate;
   const scroll = document.createElement('div');
   scroll.className = 'times-scroll';
+  scroll.dataset.day = day; // scroll position survives repaints (audit 1.1)
   const grid = document.createElement('div');
   grid.className = 'times-grid';
   grid.style.gridTemplateRows = rowsTemplate; // columns set below once hasEE is known
@@ -426,7 +448,50 @@ function renderScheduledDay(root, day, ctx) {
 }
 
 // ---- the wall ------------------------------------------------------------------
+// The repaint boundary preserves ephemeral client state (audit Class 1): a
+// remote sync tearing down #wall-root must never cost the user their scroll
+// position or a half-typed note. Harvest before teardown, restore after.
+function harvestEphemera(root) {
+  const scrolls = new Map();
+  for (const s of root.querySelectorAll('.times-scroll[data-day]')) {
+    if (s.scrollLeft) scrolls.set(s.dataset.day, s.scrollLeft);
+  }
+  const drafts = new Map();
+  for (const input of root.querySelectorAll('.composer input[data-draft-key]')) {
+    if (input.value) {
+      drafts.set(input.dataset.draftKey, {
+        value: input.value,
+        focused: document.activeElement === input,
+        caret: input.selectionStart,
+      });
+    }
+  }
+  return { scrolls, drafts };
+}
+
+function restoreEphemera(root, { scrolls, drafts }) {
+  for (const s of root.querySelectorAll('.times-scroll[data-day]')) {
+    const left = scrolls.get(s.dataset.day);
+    if (left) s.scrollLeft = left;
+  }
+  for (const input of root.querySelectorAll('.composer input[data-draft-key]')) {
+    const d = drafts.get(input.dataset.draftKey);
+    if (!d) continue;
+    input.value = d.value;
+    if (d.focused) {
+      input.focus();
+      try { input.setSelectionRange(d.caret, d.caret); } catch { /* type quirks */ }
+    }
+  }
+}
+
 export function renderWall(root, ctx) {
+  const ephemera = harvestEphemera(root);
+  renderWallInner(root, ctx);
+  restoreEphemera(root, ephemera);
+}
+
+function renderWallInner(root, ctx) {
   root.textContent = '';
   const fest = state.fest();
   const scheduled = fest.days && Object.keys(fest.days).length;
@@ -570,12 +635,26 @@ export function wireScrollspy(containers, wallRoot) {
   const list = Array.isArray(containers) ? containers : [containers];
   const tabs = list.flatMap((c) => [...c.querySelectorAll('.day-tab')]);
   if (!tabs.length) return () => {};
-  const headers = [...wallRoot.querySelectorAll('.day-rule[data-day]')];
+  const tabDays = new Set(tabs.map((t) => t.dataset.day));
+  // Observe ONLY headers that correspond to a tab — the NOTES/EVERYTHING-ELSE
+  // pseudo-headers share dayHeader() anatomy and used to de-highlight every
+  // tab when they scrolled into the band (audit 1.3).
+  const headers = [...wallRoot.querySelectorAll('.day-rule[data-day]')]
+    .filter((h) => tabDays.has(h.dataset.day));
+  const setActive = (day) => {
+    tabs.forEach((t) => {
+      const on = t.dataset.day === day;
+      t.classList.toggle('active', on);
+      if (on) t.setAttribute('aria-current', 'true');
+      else t.removeAttribute('aria-current');
+    });
+  };
+  // The first day is on screen at load — say so instead of nothing.
+  setActive(tabs[0].dataset.day);
   const io = new IntersectionObserver((entries) => {
     for (const e of entries) {
       if (!e.isIntersecting) continue;
-      const day = e.target.dataset.day;
-      tabs.forEach((t) => t.classList.toggle('active', t.dataset.day === day));
+      setActive(e.target.dataset.day);
     }
   }, { rootMargin: '-10% 0px -80% 0px' });
   headers.forEach((h) => io.observe(h));

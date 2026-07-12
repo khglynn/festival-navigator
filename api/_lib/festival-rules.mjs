@@ -97,9 +97,20 @@ export function validateFestivalDoc(fest, { filename } = {}) {
       if (!Array.isArray(list)) { err(`activities.${label} must be an array`); continue; }
       list.forEach((a, i) => {
         if (!a.name || !a.time || !a.venue) err(`activities.${label}[${i}]: needs name, time, venue`);
+        // The everything-else column sorts by parsed time — a free-text time
+        // would scramble it silently (audit 12.4).
+        else if (!TIME_RE.test(a.time)) err(`activities.${safeKey(label)}[${i}] (${safeKey(a.name)}): unparseable time ${JSON.stringify(safeKey(a.time))}`);
       });
     }
   }
+
+  // Day labels render in the day-rule strip designed for weekday-length text;
+  // sentence-length labels wrap it to three lines (audit 12.5).
+  (Array.isArray(fest.artists) ? fest.artists : []).forEach((a, i) => {
+    if (a && typeof a.day === 'string' && a.day.length > 48) {
+      warn(`artists[${i}] (${safeKey(a.name)}): day label is ${a.day.length} chars — day-rule strips are designed for short labels`);
+    }
+  });
 
   return { errors, warnings };
 }

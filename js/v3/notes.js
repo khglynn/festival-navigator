@@ -142,13 +142,16 @@ function noteRow(note, ctx, opts = {}) {
   return row;
 }
 
-function composer(placeholder, onSave) {
+function composer(placeholder, onSave, draftKey) {
   const wrap = document.createElement('div');
   wrap.className = 'composer';
   const input = document.createElement('input');
   input.maxLength = 500;
   input.placeholder = placeholder;
   input.setAttribute('aria-label', placeholder);
+  // Keyed composers survive the wall repaint: renderWall harvests drafts by
+  // this key before teardown and restores value/focus/caret after (audit 1.2).
+  if (draftKey) input.dataset.draftKey = draftKey;
   const btn = document.createElement('button');
   btn.className = 'btn-tonal';
   btn.style.cssText = 'font-size: 12px; padding: 9px 15px; flex: none;';
@@ -311,19 +314,23 @@ export function openAllNotes(ctx) {
   sheet.id = 'artist-sheet';
   sheetChrome(sheet, 'ALL NOTES');
 
+  // The composer lives OUTSIDE paint() — a remote sync repainting the list
+  // must never eat a half-typed festival note (audit 1.2, same discipline as
+  // the scope sheet).
+  const paint = () => paintBody();
+  if (ctx.meName) {
+    sheet.appendChild(composer('Add a festival note…', (text) => {
+      addNote(ctx, 'fest', null, text);
+      paint();
+      ctx.onNotesChange();
+    }));
+  }
   const body = document.createElement('div');
   body.style.cssText = 'display: flex; flex-direction: column; gap: 10px;';
   sheet.appendChild(body);
 
-  const paint = () => {
+  const paintBody = () => {
     body.textContent = '';
-    if (ctx.meName) {
-      body.appendChild(composer('Add a festival note…', (text) => {
-        addNote(ctx, 'fest', null, text);
-        paint();
-        ctx.onNotesChange();
-      }));
-    }
     const pins = loadPins();
     const pinnedIds = new Set(pins[ctx.fid] || []);
     const notes = state.crewDoc?.festivals?.[ctx.fid]?.notes || {};
@@ -351,8 +358,12 @@ export function openAllNotes(ctx) {
     if (!any) {
       const empty = document.createElement('div');
       empty.style.cssText = 'color: var(--text-tertiary); font-size: 12px; font-weight: 600; text-align: center; padding: 12px 0;';
+      // The gesture hint matches the device (audit 11.2): long-press is the
+      // touch idiom; pointer-fine users get the hover ✎.
+      const fine = typeof window.matchMedia === 'function'
+        && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
       empty.textContent = ctx.meName
-        ? 'No notes yet — add the first above, or long-press any artist.'
+        ? `No notes yet — add the first above, or ${fine ? 'use the ✎ on any artist' : 'long-press any artist'}.`
         : 'No notes yet.';
       body.appendChild(empty);
     }
@@ -396,7 +407,7 @@ export function notesSection(scope, target, label, ctx, onChange) {
     wrap.appendChild(composer(`Add a note${label ? ` for ${label}` : ''}…`, (text) => {
       addNote(ctx, scope, target, text);
       onChange();
-    }));
+    }, `${scope}|${target || ''}`));
   }
   return wrap;
 }

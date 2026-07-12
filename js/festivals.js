@@ -67,11 +67,9 @@ export async function loadCustomFestivals(token) {
   return list;
 }
 
-export function isScheduled(fest) {
-  return fest.status === 'archived' || fest.status === 'scheduled'
-    ? !!fest.days && Object.keys(fest.days).length > 0
-    : false;
-}
+// (isScheduled() was deleted 2026-07-12 — dead code whose status-gated logic
+// disagreed with the renderer's actual check (`fest.days` presence). The
+// renderer's inline check is the one truth; audit finding 12.3.)
 
 // The sensible default for a fresh crew/device: the next upcoming festival
 // (index.json is ordered by date, archived last).

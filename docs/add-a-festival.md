@@ -29,7 +29,7 @@ Two files, one command:
    - `artists[]` is always required (it feeds the list view). Optional per
      artist: `day`, `stage`, `time`, `weekends` (`"W1"|"W2"|"both"`, for
      two-weekend festivals — enables the weekend filter).
-   - When set times drop, add `stages`, `dayMeta`, and `days{}` (see
+   - When set times drop, add `dayMeta` and `days{}` — each day carries its own `stages[]`; there is no top-level stages field (the renderer and validator only read `fest.days.<day>.stages`) (see
      `electric-forest-2026.json` for the full scheduled shape) and flip
      `status` to `scheduled`. Times are `"6:30 PM"` or `"6:30 PM - 7:30 PM"`;
      a missing end is filled from the next set on that stage.

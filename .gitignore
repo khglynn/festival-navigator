@@ -28,3 +28,10 @@ screenshots/
 # Session-local review artifacts — screenshots + notes stay off the public repo
 .claude/
 390/
+
+# walker scratch dirs (audit runs) — never commit; contain crew tokens
+390/
+768/
+1440/
+offline/
+baseline-*.png

@@ -79,6 +79,7 @@ function currentFestCard(ctx, actions) {
   const yr = el('span', 'font-size: .62em; opacity: .75;', ' ' + (fest.year || ''));
   nm.appendChild(yr);
   const dates = el('span', 'color: var(--text-tertiary); font-size: 11px; font-weight: 600; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;', fest.dates || '');
+  dates.title = fest.dates || ''; // truncated long date strings recover on hover (audit 9.1)
   // The ONE sync state (PS-5): same source as the dot — a "synced" label
   // computed from hasPending alone lied whenever the network was down.
   const LABELS = { online: ['synced', 'var(--sync-ok)'], syncing: ['syncing', 'var(--sync-syncing)'], offline: ['offline', 'var(--sync-offline)'], error: ['sync error', '#F87171'] };
@@ -127,8 +128,9 @@ function currentFestCard(ctx, actions) {
   });
   // Real picks only — raw selection keys include cleared level-0 tombstones
   // and would overcount (CORE-13).
+  const nPicks = Object.keys(model.picksFor(state.crewDoc, state.activeFestivalId)).length;
   const count = el('button', 'font-size: 12px; padding: 9px 14px;',
-    `${Object.keys(model.picksFor(state.crewDoc, state.activeFestivalId)).length} artists picked`);
+    `${nPicks} artist${nPicks === 1 ? '' : 's'} picked`);
   count.className = 'btn-ghost';
   count.addEventListener('click', actions.close);
   row.append(share, count);
@@ -151,7 +153,7 @@ function festivalsSection(ctx, actions) {
     nm.appendChild(el('span', 'font-size: .65em; opacity: .75;', ' ' + (f.year || '')));
     left.appendChild(nm);
     const picks = Object.keys(model.picksFor(state.crewDoc, f.id)).length;
-    const sub = el('div', '', [f.dates, picks ? `${picks} artists picked` : ''].filter(Boolean).join(' · '));
+    const sub = el('div', '', [f.dates, picks ? `${picks} artist${picks === 1 ? '' : 's'} picked` : ''].filter(Boolean).join(' · '));
     sub.className = 'fest-dates';
     left.appendChild(sub);
     const chev = el('span', '', '›'); chev.className = 'chev';
@@ -167,7 +169,10 @@ function festivalsSection(ctx, actions) {
   wrap.appendChild(add);
 
   if (archived.length) {
-    const arch = el('div', 'padding: 2px 4px; color: var(--text-tertiary); font-size: 11.5px; font-weight: 600; display: flex; align-items: center; cursor: pointer;');
+    // A real disclosure button (audit 4.2): this is the ONLY path to the
+    // scheduled/archived fests — keyboard and screen-reader users included.
+    const arch = el('button', 'padding: 8px 4px; color: var(--text-tertiary); font-size: 11.5px; font-weight: 600; display: flex; align-items: center; cursor: pointer; width: 100%; background: none; border: none; font-family: inherit;');
+    arch.setAttribute('aria-expanded', 'false');
     const lbl = el('span', '', `Archived · ${archived.length}`);
     const caret = el('span', 'margin-left: auto;', '▸');
     arch.append(lbl, caret);
@@ -177,6 +182,7 @@ function festivalsSection(ctx, actions) {
       const open = list.style.display === 'none';
       list.style.display = open ? 'flex' : 'none';
       caret.textContent = open ? '▾' : '▸';
+      arch.setAttribute('aria-expanded', String(open));
     });
     wrap.append(arch, list);
   }
@@ -262,10 +268,10 @@ function openAddFestival(actions) {
       // Sources by hostname when present; silence when not — "0 sources" as a
       // trust marker was worse than nothing (CT-2).
       const hosts = [...new Set((body.sources || []).map((s) => { try { return new URL(s).hostname.replace(/^www\./, ''); } catch { return null; } }).filter(Boolean))];
-      if (hosts.length) {
-        card.appendChild(el('div', 'color: var(--text-tertiary); font-size: 10.5px; font-weight: 600; margin-top: 6px;',
-          `Sourced from ${hosts.slice(0, 4).join(', ')}${hosts.length > 4 ? '…' : ''}`));
-      }
+      card.appendChild(el('div', 'color: var(--text-tertiary); font-size: 10.5px; font-weight: 600; margin-top: 6px;',
+        hosts.length
+          ? `Sourced from ${hosts.slice(0, 4).join(', ')}${hosts.length > 4 ? '…' : ''}`
+          : 'No sources came back with this result — double-check the lineup before saving.'));
       const confirmRow = el('div', 'display: flex; gap: 8px; margin-top: 10px;');
       const save = el('button', 'flex: 1; font-size: 12px; padding: 9px;', 'Looks right — save it');
       save.className = 'btn-tonal';
@@ -356,6 +362,9 @@ function openHowItWorks(actions) {
     p.style.cssText += 'height: auto; padding: 3px 8px; letter-spacing: .06em; font-size: 8px;';
     d.appendChild(p);
   }, 'Pin a note', 'to keep it on top of its day. Pins are yours — everyone has their own.'));
+  card.appendChild(lesson((d) => {
+    d.appendChild(el('span', 'font-family: var(--font-ui); font-size: 10px; font-weight: 700; color: #E5E7EB; border: 1px solid var(--border-card); border-radius: 999px; padding: 4px 10px;', 'Billing ▾'));
+  }, '“Billing” = poster order.', 'The lineup as the festival ranks it — biggest names first. Sort flips to A→Z, your picks, or crew favorites.'));
   card.appendChild(lesson((d) => {
     d.appendChild(el('span', 'font-family: var(--font-display); letter-spacing: .04em; font-size: 11px; color: rgb(var(--fest));', 'PORTOLA ’26'));
     const dot = el('span'); dot.className = 'sync-dot';
@@ -852,12 +861,16 @@ function openSpotifyDrill(ctx, actions) {
           .sort((a, b) => b.level - a.level)
           .map((x) => x.artist);
         if (!names.length) { msg.textContent = 'No picks yet.'; return; }
-        await spotify.playlistFromPicks({
+        const made = await spotify.playlistFromPicks({
           title: `${state.fest().name} — ${mineOnly ? ctx.meName : 'the crew'}`,
           artistNames: names,
           onProgress: (p) => { msg.textContent = p; },
         });
-        msg.textContent = 'Playlist created in your Spotify.';
+        // Skips are always reported (audit 5.2) — a flat success over 3
+        // missing artists is a quiet lie.
+        msg.textContent = made.misses
+          ? `Playlist created — ${made.trackCount} tracks. ${made.misses} artist${made.misses === 1 ? '' : 's'} had no findable track.`
+          : `Playlist created in your Spotify — ${made.trackCount} tracks.`;
       } catch (e) { msg.textContent = String(e.message || e); }
       finally { make.disabled = false; }
     });

@@ -2,6 +2,33 @@
 
 Newest first. One entry per meaningful unit of work.
 
+## 2026-07-12 — Stage-4 audit re-run PASSED + full response pass
+
+- The gate's proof landed: 71-agent re-run (3 viewport walkers + offline
+  prober + code finders → review lenses → adversarial verify) against the
+  cc37d7d preview found **0 P0 and ZERO of the 73 discovery findings** —
+  whack-a-mole broken. 42 new findings (4 P1 / 10 P2 / 28 P3), full list +
+  disposition: claude-plans/2026-07-12-v31-stage4-audit-backlog.md.
+- Response pass (this session): the repaint boundary now preserves ephemeral
+  state — timetable scrollLeft per day, composer drafts (value+focus+caret),
+  keyboard focus through card refresh — so a crew member's sync can never
+  yank your scroll or eat your half-typed note; scrollspy only observes real
+  day headers, defaults to day one, and carries aria-current; sort popover
+  clamps to the viewport; OAuth returns land back IN the drill with the
+  banked error shown; transient Spotify 5xx no longer nukes valid sessions;
+  card accessible names carry crew picks/notes/Spotify; archived disclosure
+  is a real button; asymmetric timetable bleed fills wide windows; join gets
+  the wordmark; misses/sources/plurals/copy all report honestly; data +
+  validator + docs hygiene (Lolla dayMeta, dead fields dropped, activities
+  time format enforced, stages[] doc corrected).
+- Three infra lessons banked to memory the hard way: workflow args can
+  arrive as a JSON string (script now fails fast), Vercel share links die on
+  every new deployment (mint after the last push), and preview needed
+  DATABASE_URL added to its env scope.
+- Deliberate non-fixes flagged for Kevin in the banked backlog: settings
+  column width (atlas says 560 on purpose), entry-screen composition, saved-
+  fest provenance surface.
+
 ## 2026-07-12 — Codex ship gate: fix-first verdict, all 7 findings addressed
 
 - Verdict was 0 P1 / 4 P2 / 3 P3 (clean on data-loss, cross-crew writes, XSS,

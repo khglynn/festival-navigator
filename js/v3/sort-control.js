@@ -69,6 +69,17 @@ export function createSortControl({ initial = 'billing', onChange }) {
     open = next;
     if (open) activeIdx = OPTIONS.findIndex((o) => o.value === value);
     paint();
+    if (open) {
+      // Viewport collision (audit 2.1): the popover is right-anchored by
+      // default, but when the chip sits near the LEFT edge (390px wraps the
+      // toolbar) that pushes most of the menu off-canvas — and body
+      // overflow-x:clip makes it unreachable. Flip to left-anchored when it
+      // would spill.
+      pop.style.right = '';
+      pop.style.left = '';
+      const r = pop.getBoundingClientRect();
+      if (r.left < 8) { pop.style.right = 'auto'; pop.style.left = '0'; }
+    }
   }
 
   function select(i) {

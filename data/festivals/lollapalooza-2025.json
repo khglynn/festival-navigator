@@ -7,7 +7,6 @@
   "dates": "July 31 – August 3, 2025",
   "accent": "236, 72, 153",
   "status": "archived",
-  "dayStartHour": 12,
   "stages": [
     "T-Mobile",
     "Bud Light",
@@ -1905,5 +1904,27 @@
       "day": "Sunday",
       "stage": "T-Mobile"
     }
-  ]
+  ],
+  "dayMeta": {
+    "Thursday": {
+      "wd": "Thu",
+      "num": 1,
+      "date": "Jul 31"
+    },
+    "Friday": {
+      "wd": "Fri",
+      "num": 2,
+      "date": "Aug 1"
+    },
+    "Saturday": {
+      "wd": "Sat",
+      "num": 3,
+      "date": "Aug 2"
+    },
+    "Sunday": {
+      "wd": "Sun",
+      "num": 4,
+      "date": "Aug 3"
+    }
+  }
 }
