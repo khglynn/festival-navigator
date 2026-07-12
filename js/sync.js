@@ -2,6 +2,7 @@
 // Model: the remote crew document is the shared truth; our not-yet-pushed
 // edits live in state.pendingChanges and always overlay on top of remote.
 import * as state from './state.js';
+import { isApiNotFound } from './crew.js';
 
 let syncTimer = null, isSyncing = false, syncQueued = false;
 let onRemoteChange = () => {};
@@ -36,7 +37,9 @@ class CrewGoneError extends Error {}
 async function fetchRemote() {
   const token = state.getCrewToken();
   const res = await fetch(`/api/crew?t=${encodeURIComponent(token)}`, { cache: 'no-store' });
-  if (res.status === 404) throw new CrewGoneError();
+  // Only OUR API's JSON 404 means the crew is gone — a platform/routing 404
+  // (broken deploy, stale SW) is transient and must never forget crews.
+  if (isApiNotFound(res)) throw new CrewGoneError();
   if (!res.ok) throw new Error('GET failed: ' + res.status);
   return await res.json();
 }
@@ -61,7 +64,7 @@ export async function pushSync() {
       // server treats level 3 as legacy "Must See" and maps it on v4 docs.
       body: JSON.stringify({ data: state.pendingChanges, sv: 4 }),
     });
-    if (res.status === 404) throw new CrewGoneError();
+    if (isApiNotFound(res)) throw new CrewGoneError();
     if (!res.ok) throw new Error('POST failed: ' + res.status);
     const stored = await res.json();
     // The crew may have been switched while the request was in flight —

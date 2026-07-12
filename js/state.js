@@ -156,8 +156,13 @@ export function recordAffinity(person, artistMap) {
 }
 
 export function recordSpotifyClientId(clientId) {
+  // Double-write like every other recorder — spotifyClientId() reads the
+  // local doc, so a pending-only write left the drill stuck on the setup
+  // state until the next full sync round-trip (CORE-14).
+  crewDoc.spotify = crewDoc.spotify || {};
+  crewDoc.spotify.clientId = clientId;
   pendingChanges.spotify = { clientId };
-  editSeq++; persistPending();
+  editSeq++; persistPending(); persist();
 }
 
 export function recordCrewName(name) {
@@ -187,10 +192,14 @@ export function clearCachedPending(token) { localStorage.removeItem(LS.pending(t
 // Rebuild local doc from remote + our pending overlay. Returns true if the
 // visible slice actually changed (so callers repaint only when needed).
 export function applyRemoteDoc(remote) {
+  // The "visible slice" must cover everything the wall renders — notes and
+  // meta included, or a note-only remote change never repaints (CORE-6).
   const visible = () => JSON.stringify({
     p: crewDoc.people,
     s: (crewDoc.festivals[activeFestivalId] || {}).selections || {},
+    n: (crewDoc.festivals[activeFestivalId] || {}).notes || {},
     a: crewDoc.affinity || {},
+    m: crewDoc.meta || {},
   });
   const before = visible();
   crewDoc = deepMerge(remote || {}, pendingChanges);

@@ -5,10 +5,11 @@ import * as state from '../state.js';
 import * as crew from '../crew.js';
 import * as sync from '../sync.js';
 import * as model from './model.js';
-import { loadFestivalIndex, loadFestival, loadCustomFestivals, FESTIVAL_INDEX } from '../festivals.js';
-import { renderWall, refreshCard, showUndoToast, wireScrollspy, colorIndexOf } from './wall.js';
-import { openArtistSheet, openAllNotes, closeSheet } from './notes.js';
-import { renderSettings, appSettings } from './settings.js';
+import { loadFestivalIndex, loadFestival, loadCustomFestivals, FESTIVAL_INDEX, defaultFestivalId } from '../festivals.js';
+import { renderWall, refreshCard, showUndoToast, showToast, wireScrollspy, colorIndexOf, groupByDay, knownDaysOf } from './wall.js';
+import { openArtistSheet, openAllNotes, closeSheet, refreshOpenSheet } from './notes.js';
+import { renderSettings, appSettings, openSubviewByKey } from './settings.js';
+import { router } from './router.js';
 import { startFavicon, stopFavicon } from './favicon.js';
 import { hslOf, strokeOf, nextColorIndex } from './palette.js';
 
@@ -25,7 +26,10 @@ const ctx = {
   lowPower: false,
   migrationPending: false,
   onTap: handleTap,
-  onOpenNotes: (artist) => openArtistSheet(artist, ctx, onNotesChange),
+  onOpenNotes: (artist) => {
+    openArtistSheet(artist, ctx, onNotesChange);
+    router.push(`sheet:notes:${artist}`);
+  },
   onNotesChange: () => onNotesChange(),
 };
 
@@ -42,10 +46,18 @@ function refreshCtx() {
 }
 
 // ---- tap cycle -------------------------------------------------------------------
-function handleTap(artistName, cardEl) {
+// A multi-day artist has one card under EACH day — a pick must repaint every
+// sibling, or the others go stale and invite double-cycling (CORE-15).
+function refreshArtistCards(artistName) {
+  const els = document.querySelectorAll(`#wall-root .card[data-artist="${CSS.escape(artistName)}"]`);
+  if (!els.length) { repaintWall(); return; }
+  els.forEach((el) => refreshCard(el, artistName, ctx));
+}
+
+function handleTap(artistName) {
   if (!ctx.meName) return;
   if (ctx.migrationPending) {
-    showUndoToast($('toast-root'), 'Updating this crew — picks unlock in a moment', () => {});
+    showToast($('toast-root'), 'Updating this crew — picks unlock in a moment');
     return;
   }
   const current = (ctx.picks[artistName] || {})[ctx.meName] || 0;
@@ -53,19 +65,14 @@ function handleTap(artistName, cardEl) {
   state.recordSelection(artistName, ctx.meName, next);
   applyLocalPick(artistName, ctx.meName, next);
   refreshCtx();
-  refreshCard(cardEl, artistName, ctx);
+  refreshArtistCards(artistName);
   sync.scheduleSync();
   if (current === 4 && next === 0) {
     showUndoToast($('toast-root'), 'Cleared your must for ' + artistName, () => {
       state.recordSelection(artistName, ctx.meName, 4);
       applyLocalPick(artistName, ctx.meName, 4);
       refreshCtx();
-      // Re-query by artist: a remote-poll repaint during the 5s undo window
-      // detaches the closed-over node and replaceWith would silently no-op
-      // (Codex P3 trail, finding 2).
-      const liveEl = document.querySelector(`#wall-root .card[data-artist="${CSS.escape(artistName)}"]`);
-      if (liveEl) refreshCard(liveEl, artistName, ctx);
-      else repaintWall();
+      refreshArtistCards(artistName);
       sync.scheduleSync();
     });
   }
@@ -130,11 +137,13 @@ function renderDockDays() {
   days.textContent = '';
   const fest = state.fest();
   // Scheduled fests: tabs from days{} keys (labels via dayMeta weekday, e.g.
-  // EF's "Day 1" -> THU). Lineup fests: tabs from the artists' day fields.
+  // EF's "Day 1" -> THU). Lineup fests: the same split-aware grouping the
+  // wall renders — a "Saturday & Sunday" artist must not mint its own tab
+  // (ST-1); tabs and day rules always agree.
   const scheduled = fest.days && Object.keys(fest.days).length;
   const groups = scheduled
     ? Object.keys(fest.days)
-    : [...new Set((fest.artists || []).map((a) => a.day).filter(Boolean))];
+    : [...groupByDay(fest.artists || [], knownDaysOf(fest)).keys()].filter(Boolean);
   for (const day of groups) {
     const meta = (fest.dayMeta || {})[day];
     const tab = document.createElement('button');
@@ -156,14 +165,55 @@ function repaintWall() {
   renderWall($('wall-root'), ctx);
   renderDockDays();
   $('notes-count').textContent = String(model.totalNoteCount(state.crewDoc, ctx.fid));
+  // A timetable has one true order — a sort control there would be a lie
+  // (CORE-5). Searching a scheduled fest sorts chronologically by design.
+  const scheduled = !!(state.fest().days && Object.keys(state.fest().days).length);
+  $('sort-select').style.display = scheduled ? 'none' : '';
+  updateMigrationBanner();
+}
+
+// While a legacy crew's server-side migration is pending, picking is gated —
+// a persistent banner says so instead of leaving taps mysteriously dead
+// (CORE-18). Notes and reading work throughout.
+function updateMigrationBanner() {
+  const existing = document.getElementById('migration-banner');
+  if (!ctx.migrationPending) { if (existing) existing.remove(); return; }
+  let bar = existing;
+  if (!bar) {
+    bar = document.createElement('div');
+    bar.id = 'migration-banner';
+    bar.style.cssText = 'display: flex; align-items: center; gap: 10px; margin-top: 11px; padding: 10px 13px; border: 1px solid rgba(245, 158, 11, .35); border-radius: var(--r-row); background: rgba(245, 158, 11, .08);';
+    const msg = document.createElement('span');
+    msg.className = 'msg';
+    msg.style.cssText = 'flex: 1; color: var(--text-body); font-size: 12px; font-weight: 600; line-height: 1.45;';
+    const retry = document.createElement('button');
+    retry.className = 'btn-tonal';
+    retry.style.cssText = 'font-size: 11.5px; padding: 7px 13px; flex: none;';
+    retry.textContent = 'Try now';
+    retry.addEventListener('click', async () => {
+      retry.disabled = true;
+      await sync.requestMigration();
+      ctx.migrationPending = model.needsMigration(state.crewDoc);
+      retry.disabled = false;
+      if (!ctx.migrationPending) repaintWall();
+      else updateMigrationBanner();
+    });
+    bar.append(msg, retry);
+    document.querySelector('#screen-app .toolbar').after(bar);
+  }
+  bar.querySelector('.msg').textContent = navigator.onLine
+    ? 'Updating this crew to the new pick format — picks unlock in a moment.'
+    : 'You’re offline — picks unlock after one online update. Notes and reading work now.';
 }
 
 // ---- screens ----------------------------------------------------------------------
+const SCREENS = ['screen-landing', 'screen-join', 'screen-create', 'screen-app', 'screen-settings', 'screen-badlink', 'screen-error'];
 function show(screen) {
-  for (const id of ['screen-landing', 'screen-join', 'screen-create', 'screen-app', 'screen-settings']) {
+  for (const id of SCREENS) {
     $(id).style.display = id === screen ? '' : 'none';
   }
 }
+const anyScreenVisible = () => SCREENS.some((id) => $(id).style.display !== 'none');
 
 // ---- create: pick the fest + your name -> a fresh crew ------------------------------
 let createFid = null;
@@ -237,32 +287,44 @@ function applyLowPower(on) {
   else if (state.getCrewToken()) startFavicon(state.fest()?.accent, { lowPower: false });
 }
 
+// The most recent settings actions object — the router's forward re-open of
+// a settings drill needs it (openSettings rebuilds it on every render).
+let settingsActions = null;
+function closeSettings() { show('screen-app'); repaintWall(); }
+
 function openSettings() {
   closeSheet();
   refreshCtx();
   show('screen-settings');
-  renderSettings($('settings-root'), ctx, {
-    close: () => { show('screen-app'); repaintWall(); },
+  settingsActions = {
+    close: () => { if (!router.requestClose()) closeSettings(); },
     rerender: openSettings,
     switchFestival: async (fid) => {
+      // Load BEFORE persisting the switch: an offline device must never be
+      // left pointing at a festival it cannot render (CORE-12).
+      try { await loadFestival(fid); }
+      catch {
+        showToast($('toast-root'), 'Can’t open that festival offline yet — it loads once you’re back online.');
+        return;
+      }
       state.setActiveFestivalId(fid);
       state.ensureFestivalState(fid);
       state.setCurrentDay(null);
-      await loadFestival(fid);
-      show('screen-app');
       applyFestTheme();
-      repaintWall();
+      if (!router.requestClose()) closeSettings();
       sync.pollSync();
     },
     onLowPower: (on) => { applyLowPower(on); },
     onStayOffline: (on) => { sync.setStayOffline(on); if (!on) sync.pushSync(); },
     recordPick: (artist, person, level) => {
-      if (ctx.migrationPending) return; // same gate as handleTap (bulk paste path)
+      if (ctx.migrationPending) return false; // same gate as handleTap (bulk paste path)
       state.recordSelection(artist, person, level);
       applyLocalPick(artist, person, level);
+      return true;
     },
     afterBulk: () => { sync.scheduleSync(); refreshCtx(); },
-  });
+  };
+  renderSettings($('settings-root'), ctx, settingsActions);
 }
 
 function renderLanding() {
@@ -360,8 +422,24 @@ async function enterApp(token, doc, current = () => true) {
   } else {
     ctx.migrationPending = false;
   }
-  await loadFestival(state.activeFestivalId);
+  try {
+    await loadFestival(state.activeFestivalId);
+  } catch {
+    // Offline with this fest uncached: fall back to a loadable fest rather
+    // than stranding a blank wall (CORE-12). If the default also fails,
+    // boot's error boundary takes over.
+    const fallback = defaultFestivalId();
+    if (state.activeFestivalId === fallback) throw new Error(`festival ${fallback} failed to load`);
+    const wantedName = FESTIVAL_INDEX.find((f) => f.id === state.activeFestivalId)?.name || 'that festival';
+    state.setActiveFestivalId(fallback);
+    state.ensureFestivalState(fallback);
+    await loadFestival(fallback);
+    showToast($('toast-root'), `Couldn’t load ${wantedName} offline — it opens once you’re back online.`, 6000);
+  }
   if (!current()) return;
+  // Captured before replaceState wipes it: which layers were open when the
+  // page was refreshed (spec F10 — refresh restores the same surface).
+  const savedLayers = (history.state && history.state.layers) || null;
   show('screen-app');
   applyFestTheme();
   refreshCtx();
@@ -370,6 +448,40 @@ async function enterApp(token, doc, current = () => true) {
   repaintWall();
   history.replaceState(null, '', `/#g=${token}`);
   sync.pollSync();
+  router.reset();
+  if (savedLayers) router.restore(savedLayers);
+}
+
+// ---- lost states (spec F16) --------------------------------------------------------
+// A link that doesn't resolve gets a real screen with a way forward — never a
+// silent fall to landing (FLOW-3). `gone` = the server said 404 (deleted or
+// retyped); otherwise we're offline with nothing cached.
+function renderBadLink(token, { gone }) {
+  show('screen-badlink');
+  $('badlink-msg').textContent = gone
+    ? 'It may have been retyped, or the crew was deleted. Ask your crew for a fresh link and paste it here.'
+    : 'You’re offline and this crew isn’t saved on this device yet. Reconnect, then open the link again.';
+  if (gone) crew.forgetCrew(token); // dead crews don't haunt the landing list
+  else $('badlink-input').value = crew.crewLink(token);
+  $('badlink-status').textContent = '';
+  $('badlink-open').onclick = () => {
+    const m = ($('badlink-input').value || '').match(/g=([A-Za-z0-9_-]{20,40})/);
+    if (!m) { $('badlink-status').textContent = 'That doesn’t look like a crew link — it has a #g= part.'; return; }
+    const target = `#g=${m[1]}`;
+    if (location.hash === target) boot();
+    else location.hash = target; // hashchange boots
+  };
+  $('badlink-home').onclick = () => { history.replaceState(null, '', '/'); renderLanding(); };
+}
+
+// The last-resort screen (FLOW-4): an exception escaping boot/enterApp used
+// to leave every screen display:none — a permanently blank page.
+function renderFatal() {
+  try {
+    show('screen-error');
+    $('error-retry').onclick = () => location.reload();
+    $('error-home').onclick = () => { history.replaceState(null, '', '/'); renderLanding(); };
+  } catch { /* even the error screen failed — nothing safe left to render */ }
 }
 
 // ---- boot -----------------------------------------------------------------------
@@ -378,29 +490,56 @@ let pendingFestHint = null; // &f= from the opened invite link, consumed by ente
 export async function boot() {
   const gen = ++bootGeneration;
   const current = () => gen === bootGeneration;
+  router.reset();
   // Capture before any await: enterApp's replaceState strips the hash to #g=.
   pendingFestHint = crew.festFromHash();
-  try { await loadFestivalIndex(); } catch { /* offline with cache: proceed */ }
+  try {
+    try { await loadFestivalIndex(); } catch { /* offline with cache: proceed */ }
 
-  if (location.hash === '#new') { renderCreate(); return; }
-  const token = crew.tokenFromHash() || crew.activeCrewToken();
-  if (!token) { renderLanding(); return; }
+    if (location.hash === '#new') { renderCreate(); return; }
+    const token = crew.tokenFromHash() || crew.activeCrewToken();
+    if (!token) { renderLanding(); return; }
 
-  let doc = null;
-  try { doc = await crew.fetchCrew(token); } catch { doc = state.cachedDoc(token); }
-  if (!current()) return;
-  if (!doc) { doc = state.cachedDoc(token); }
-  if (!doc) { renderLanding(); return; }
-  if (!crew.me(token)) { renderJoin(token, doc); return; }
-  await enterApp(token, doc, current);
+    let doc = null;
+    let gone = false;
+    try {
+      doc = await crew.fetchCrew(token);
+      gone = doc === null;
+    } catch { /* network failure — try the cache below */ }
+    if (!current()) return;
+    if (!doc) doc = state.cachedDoc(token);
+    if (!doc) { renderBadLink(token, { gone }); return; }
+    if (!crew.me(token)) { renderJoin(token, doc); return; }
+    await enterApp(token, doc, current);
+  } catch (e) {
+    console.error('boot failed', e);
+    if (current()) renderFatal();
+  }
 }
 
 // ---- wiring ----------------------------------------------------------------------
 export function init() {
   sync.initSync({
-    onRemoteChange: () => { repaintWall(); renderPersonChips(); },
-    onCrewGone: () => { renderLanding(); },
+    onRemoteChange: () => { repaintWall(); renderPersonChips(); refreshOpenSheet(); },
+    onCrewGone: (token) => {
+      // The server said this crew no longer exists — a dead row on the
+      // landing list would just 404 again (FLOW-3).
+      crew.forgetCrew(token);
+      renderLanding();
+      showToast($('toast-root'), 'That crew link no longer works — removed from your festivals.', 6000);
+    },
   });
+
+  // Browser navigation models the layer stack (FLOW-2): back closes the top
+  // layer, forward re-opens it, refresh restores it (spec F10).
+  router.registerKind('settings', () => openSettings(), () => closeSettings());
+  router.registerKind('sub:', (key) => { openSettings(); openSubviewByKey(key, ctx, settingsActions); }, () => openSettings());
+  router.registerKind('sheet:', (key) => {
+    refreshCtx();
+    if (key === 'sheet:all') openAllNotes(ctx);
+    else if (key.startsWith('sheet:notes:')) openArtistSheet(key.slice('sheet:notes:'.length), ctx, onNotesChange);
+  }, () => closeSheet());
+  window.addEventListener('popstate', (e) => router.onPopState(e.state));
   $('search-input').addEventListener('input', (e) => {
     ctx.query = e.target.value;
     renderWall($('wall-root'), ctx);
@@ -411,9 +550,10 @@ export function init() {
   $('search-input').addEventListener('focus', () => dock.classList.add('hidden'));
   $('search-input').addEventListener('blur', () => dock.classList.remove('hidden'));
   $('dock-you').addEventListener('click', () => window.scrollTo({ top: 0, behavior: ctx.lowPower ? 'auto' : 'smooth' }));
-  $('gear-btn').addEventListener('click', openSettings);
-  $('dock-fest-link').addEventListener('click', openSettings);
-  $('notes-chip').addEventListener('click', () => { refreshCtx(); openAllNotes(ctx); });
+  const openSettingsLayer = () => { openSettings(); router.push('settings'); };
+  $('gear-btn').addEventListener('click', openSettingsLayer);
+  $('dock-fest-link').addEventListener('click', openSettingsLayer);
+  $('notes-chip').addEventListener('click', () => { refreshCtx(); openAllNotes(ctx); router.push('sheet:all'); });
   $('create-go-btn').addEventListener('click', createCrewFlow);
   $('create-back').addEventListener('click', () => { history.replaceState(null, '', '/'); renderLanding(); });
   const saved = appSettings();
@@ -438,8 +578,18 @@ export function init() {
     if (!document.hidden && !ctx.lowPower) sync.pollSync();
   });
   window.addEventListener('hashchange', () => { closeSheet(); boot(); });
-  window.addEventListener('online', () => sync.pushSync());
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeSheet(); });
+  window.addEventListener('online', () => { sync.pushSync(); updateMigrationBanner(); });
+  window.addEventListener('offline', () => { updateMigrationBanner(); });
+  // Escape is universal back: pops the top layer through history so the
+  // browser's back button and the keyboard always agree (FLOW-2).
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !router.requestClose()) closeSheet();
+  });
+  // Last-resort net (FLOW-4): an early crash used to leave every screen
+  // display:none. Only fires when nothing is rendered — a background sync
+  // hiccup must never nuke a working wall.
+  window.addEventListener('error', () => { if (!anyScreenVisible()) renderFatal(); });
+  window.addEventListener('unhandledrejection', () => { if (!anyScreenVisible()) renderFatal(); });
   boot();
 }
 

@@ -1,7 +1,7 @@
 {
   "name": "festival-navigator",
   "version": "2.0.0",
-  "description": "Offline-first festival schedule planner with crew sync \u2014 Electric Forest '26 (Lollapalooza archived)",
+  "description": "Offline-first festival schedule planner with crew sync — Electric Forest '26 (Lollapalooza archived)",
   "main": "index.html",
   "scripts": {
     "build": "echo 'No build step needed for static site'",
@@ -19,5 +19,8 @@
   ],
   "author": "Kevin HG",
   "license": "MIT",
-  "type": "module"
+  "type": "module",
+  "devDependencies": {
+    "jsdom": "^29.1.1"
+  }
 }

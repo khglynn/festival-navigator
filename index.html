@@ -145,6 +145,33 @@
       <div style="max-width: 560px; margin: 0 auto; padding: 18px 16px calc(40px + env(safe-area-inset-bottom));" id="settings-root"></div>
     </div>
 
+    <!-- Lost states (spec F16): a link that didn't resolve, and the boot error boundary -->
+    <div id="screen-badlink" style="display:none">
+      <div class="center-col">
+        <div style="text-align: center;">
+          <div class="micro-label" style="letter-spacing: .14em;">Hmm.</div>
+          <div style="font-family: var(--font-display); letter-spacing: .04em; font-size: 38px; line-height: 1.05; color: #fff; margin-top: 4px;">THAT LINK<br>DIDN&rsquo;T WORK</div>
+        </div>
+        <div id="badlink-msg" style="color: var(--text-secondary); font-size: 13px; text-align: center; line-height: 1.55;"></div>
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <input id="badlink-input" placeholder="Paste the invite link here&hellip;"
+                 style="flex: 1; min-width: 0; background: var(--page); border: 1px solid var(--border-input); border-radius: 9px; padding: 12px 13px; color: #fff; font-size: 14px; font-family: var(--font-ui); outline: none;">
+          <button id="badlink-open" class="btn-tonal" style="font-size: 14px; padding: 12px 24px;">Open</button>
+        </div>
+        <div id="badlink-status" style="color: var(--text-tertiary); font-size: 11.5px; font-weight: 600; text-align: center;"></div>
+        <button id="badlink-home" class="btn-ghost" style="font-size: 12px; padding: 8px 14px; align-self: center;">&lsaquo; Your festivals</button>
+      </div>
+    </div>
+    <div id="screen-error" style="display:none">
+      <div class="center-col">
+        <div class="brand" style="font-size: 34px;">WELL, THAT<br><span class="pulse-text">WASN&rsquo;T THE PLAN</span></div>
+        <div style="color: var(--text-secondary); font-size: 13px; text-align: center; line-height: 1.55;">
+          The app hit an error while loading. Your picks are safe on this device.</div>
+        <button id="error-retry" class="btn-tonal" style="font-size: 14px; padding: 12px 24px; align-self: center;">Try again</button>
+        <button id="error-home" class="btn-ghost" style="font-size: 12px; padding: 8px 14px; align-self: center;">&lsaquo; Your festivals</button>
+      </div>
+    </div>
+
     <div id="toast-root"></div>
 
     <script src="/vendor/html2canvas.min.js" defer></script>

@@ -5,6 +5,11 @@ import * as state from '../state.js';
 import * as model from './model.js';
 import { hslOf, strokeOf } from './palette.js';
 import { colorIndexOf } from './wall.js';
+import { router } from './router.js';
+
+// Sheet dismissals go through history (FLOW-2) so browser back and the
+// backdrop agree; the direct close stays as the desync-proof fallback.
+const requestSheetClose = () => { if (!router || !router.requestClose()) closeSheet(); };
 
 const LS_PINS = 'fn_pins_v1';
 
@@ -89,13 +94,20 @@ function addNote(ctx, scope, target, text) {
   state.recordNote(ctx.fid, scope, target, id, note);
 }
 
+// The open sheet's repaint hook: remote syncs call refreshOpenSheet() so a
+// sheet someone is reading picks up the crew's new notes live (CORE-16).
+let activeSheetRepaint = null;
+export function refreshOpenSheet() {
+  if (activeSheetRepaint) activeSheetRepaint();
+}
+
 // ---- artist notes bottom sheet (21g) --------------------------------------------
 export function openArtistSheet(artistName, ctx, onChange) {
   closeSheet();
   const backdrop = document.createElement('div');
   backdrop.className = 'sheet-backdrop';
   backdrop.id = 'sheet-backdrop';
-  backdrop.addEventListener('click', closeSheet);
+  backdrop.addEventListener('click', requestSheetClose);
   const sheet = document.createElement('div');
   sheet.className = 'sheet';
   sheet.id = 'artist-sheet';
@@ -126,11 +138,13 @@ export function openArtistSheet(artistName, ctx, onChange) {
     onChange();
   }));
   document.body.append(backdrop, sheet);
+  activeSheetRepaint = paint;
 }
 
 export function closeSheet() {
   document.getElementById('sheet-backdrop')?.remove();
   document.getElementById('artist-sheet')?.remove();
+  activeSheetRepaint = null;
 }
 
 // ---- all-notes view (the wall's Notes chip) ----------------------------------------
@@ -139,7 +153,7 @@ export function openAllNotes(ctx) {
   const backdrop = document.createElement('div');
   backdrop.className = 'sheet-backdrop';
   backdrop.id = 'sheet-backdrop';
-  backdrop.addEventListener('click', closeSheet);
+  backdrop.addEventListener('click', requestSheetClose);
   const sheet = document.createElement('div');
   sheet.className = 'sheet';
   sheet.id = 'artist-sheet';
@@ -150,26 +164,31 @@ export function openAllNotes(ctx) {
   title.textContent = 'ALL NOTES';
   sheet.append(grabber, title);
 
-  const notes = state.crewDoc?.festivals?.[ctx.fid]?.notes || {};
-  const section = (label, scope, target) => {
-    const list = model.notesFor(state.crewDoc, ctx.fid, scope, target);
-    if (!list.length) return;
-    const lbl = document.createElement('div');
-    lbl.className = 'micro-label';
-    lbl.textContent = label;
-    sheet.appendChild(lbl);
-    for (const n of list) sheet.appendChild(noteRow(n, ctx));
+  const paint = () => {
+    while (sheet.children.length > 2) sheet.lastChild.remove();
+    const notes = state.crewDoc?.festivals?.[ctx.fid]?.notes || {};
+    const section = (label, scope, target) => {
+      const list = model.notesFor(state.crewDoc, ctx.fid, scope, target);
+      if (!list.length) return;
+      const lbl = document.createElement('div');
+      lbl.className = 'micro-label';
+      lbl.textContent = label;
+      sheet.appendChild(lbl);
+      for (const n of list) sheet.appendChild(noteRow(n, ctx));
+    };
+    section('This festival', 'fest', null);
+    for (const day of Object.keys(notes.day || {})) section(day, 'day', day);
+    for (const artist of Object.keys(notes.artist || {})) section(artist, 'artist', artist);
+    if (sheet.children.length === 2) {
+      const empty = document.createElement('div');
+      empty.style.cssText = 'color: var(--text-tertiary); font-size: 12px; font-weight: 600; text-align: center; padding: 16px 0;';
+      empty.textContent = 'No notes yet — long-press an artist or write under a day.';
+      sheet.appendChild(empty);
+    }
   };
-  section('This festival', 'fest', null);
-  for (const day of Object.keys(notes.day || {})) section(day, 'day', day);
-  for (const artist of Object.keys(notes.artist || {})) section(artist, 'artist', artist);
-  if (sheet.children.length === 2) {
-    const empty = document.createElement('div');
-    empty.style.cssText = 'color: var(--text-tertiary); font-size: 12px; font-weight: 600; text-align: center; padding: 16px 0;';
-    empty.textContent = 'No notes yet — long-press an artist or write under a day.';
-    sheet.appendChild(empty);
-  }
+  paint();
   document.body.append(backdrop, sheet);
+  activeSheetRepaint = paint;
 }
 
 // ---- day + fest note sections (21e) ----------------------------------------------

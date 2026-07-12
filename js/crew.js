@@ -58,9 +58,17 @@ export function crewLink(token, festId) {
   return `${location.origin}/#g=${token}${f}`;
 }
 
+// "Crew not found" means OUR API said so (JSON 404). A routing/platform 404
+// (HTML body — broken deploy, stale SW, misconfigured env) must read as a
+// transient failure, or one bad deploy would wipe every device's remembered
+// crews via the crew-gone path.
+export function isApiNotFound(res) {
+  return res.status === 404 && (res.headers.get('content-type') || '').includes('application/json');
+}
+
 export async function fetchCrew(token) {
   const res = await fetch(`/api/crew?t=${encodeURIComponent(token)}`, { cache: 'no-store' });
-  if (res.status === 404) return null;
+  if (isApiNotFound(res)) return null;
   if (!res.ok) throw new Error('crew fetch failed: ' + res.status);
   return await res.json();
 }

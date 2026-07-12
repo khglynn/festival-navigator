@@ -34,6 +34,9 @@ const LS_CUSTOM = (t) => `fn_custom_fests_v1_${t}`;
 function mergeCustoms(list) {
   for (const fest of list) {
     if (!fest || !fest.id) continue;
+    // A custom may never shadow a canonical catalog fest (CORE-9): whatever
+    // is stored, the checked-in data wins at read time.
+    if (FESTIVAL_INDEX.some((f) => f.id === fest.id && !f.custom)) continue;
     FESTIVALS[fest.id] = fest; // full doc — no lazy fetch for customs
     if (!FESTIVAL_INDEX.some((f) => f.id === fest.id)) {
       FESTIVAL_INDEX.push({

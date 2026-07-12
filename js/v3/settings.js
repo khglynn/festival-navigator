@@ -4,10 +4,12 @@
 import * as state from '../state.js';
 import * as crew from '../crew.js';
 import * as spotify from '../spotify.js';
+import * as model from './model.js';
 import { FESTIVAL_INDEX } from '../festivals.js';
 import { hslOf, strokeOf } from './palette.js';
 import { colorIndexOf } from './wall.js';
-import { openExportLikes, openBulkPaste, downloadWallImage } from './tools.js';
+import { openExportLikes, openBulkPaste, openDayImage } from './tools.js';
+import { router } from './router.js';
 
 const LS_SETTINGS = 'fn_settings_v1'; // {lowPower, stayOffline}
 
@@ -108,8 +110,10 @@ function currentFestCard(ctx, actions) {
       else { await navigator.clipboard.writeText(link); share.textContent = 'Link copied ✓'; setTimeout(() => { share.textContent = 'Share invite'; }, 1800); }
     } catch { /* user dismissed the share sheet */ }
   });
+  // Real picks only — raw selection keys include cleared level-0 tombstones
+  // and would overcount (CORE-13).
   const count = el('button', 'font-size: 12px; padding: 9px 14px;',
-    `${Object.keys((state.crewDoc.festivals[state.activeFestivalId] || {}).selections || {}).length} artists picked`);
+    `${Object.keys(model.picksFor(state.crewDoc, state.activeFestivalId)).length} artists picked`);
   count.className = 'btn-ghost';
   count.addEventListener('click', actions.close);
   row.append(share, count);
@@ -131,7 +135,7 @@ function festivalsSection(ctx, actions) {
     const nm = el('span', `font-family: var(--font-display); letter-spacing: .04em; font-size: 15px; color: rgb(${f.accent || '237, 234, 244'}); white-space: nowrap;`, f.name.toUpperCase());
     nm.appendChild(el('span', 'font-size: .65em; opacity: .75;', ' ' + (f.year || '')));
     left.appendChild(nm);
-    const picks = Object.keys((state.crewDoc.festivals[f.id] || {}).selections || {}).length;
+    const picks = Object.keys(model.picksFor(state.crewDoc, f.id)).length;
     const sub = el('div', '', [f.dates, picks ? `${picks} artists picked` : ''].filter(Boolean).join(' · '));
     sub.className = 'fest-dates';
     left.appendChild(sub);
@@ -144,7 +148,7 @@ function festivalsSection(ctx, actions) {
 
   const add = el('button', '', '+ Add a festival');
   add.className = 'dashed-row';
-  add.addEventListener('click', () => openAddFestival(actions));
+  add.addEventListener('click', () => { openSubviewByKey('sub:add-fest', ctx, actions); router.push('sub:add-fest'); });
   wrap.appendChild(add);
 
   if (archived.length) {
@@ -164,6 +168,17 @@ function festivalsSection(ctx, actions) {
   return wrap;
 }
 
+// Subview back buttons pop the history layer (FLOW-2); the direct restore
+// stays as the desync-proof fallback.
+function subviewBack(actions) {
+  return () => {
+    if (router.requestClose()) return;
+    const host = document.getElementById('settings-subview');
+    if (host) host.textContent = '';
+    actions.rerender();
+  };
+}
+
 // ---- add a festival (LLM research -> preview -> confirm; api/festival-add) --------
 function openAddFestival(actions) {
   const host = document.getElementById('settings-subview');
@@ -171,7 +186,7 @@ function openAddFestival(actions) {
   const col = el('div', 'display: flex; flex-direction: column; gap: 10px;');
   const head = el('div', 'display: flex; align-items: center; gap: 10px;');
   const back = el('button', '', '‹'); back.className = 'back-btn';
-  back.addEventListener('click', () => { host.textContent = ''; actions.rerender(); });
+  back.addEventListener('click', subviewBack(actions));
   const title = el('div', '', 'ADD A FESTIVAL'); title.className = 'screen-title';
   head.append(back, title);
   col.appendChild(head);
@@ -220,17 +235,27 @@ function openAddFestival(actions) {
       save.className = 'btn-tonal';
       save.addEventListener('click', async () => {
         save.disabled = true;
-        const r2 = await fetch(`/api/festival-add?t=${encodeURIComponent(state.getCrewToken())}`, {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ confirm: true, festival: c, sources: body.sources, person: crew.me(state.getCrewToken()) }),
-        });
-        const b2 = await r2.json();
-        if (!r2.ok) { status.textContent = b2.error || 'Save failed.'; save.disabled = false; return; }
-        // Pull the crew's customs into the live catalog right now — the fest
-        // appears under Your Festivals immediately (Codex P3 trail, P0).
-        const { loadCustomFestivals } = await import('../festivals.js');
-        await loadCustomFestivals(state.getCrewToken());
-        status.textContent = 'Saved — find it under Your festivals.';
+        try {
+          // A custom must never collide with (and shadow) a built-in catalog
+          // fest — same researched id gets a crew-private suffix (CORE-9).
+          if (FESTIVAL_INDEX.some((f) => f.id === c.id && !f.custom)) c.id = `${c.id}-crew`.slice(0, 64);
+          const r2 = await fetch(`/api/festival-add?t=${encodeURIComponent(state.getCrewToken())}`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ confirm: true, festival: c, sources: body.sources, person: crew.me(state.getCrewToken()) }),
+          });
+          const b2 = await r2.json();
+          if (!r2.ok) { status.textContent = b2.error || 'Save failed.'; save.disabled = false; return; }
+          // Pull the crew's customs into the live catalog right now — the fest
+          // appears under Your Festivals immediately (Codex P3 trail, P0).
+          const { loadCustomFestivals } = await import('../festivals.js');
+          await loadCustomFestivals(state.getCrewToken());
+          status.textContent = 'Saved — find it under Your festivals.';
+        } catch {
+          // No try/finally used to exist here — one network error wedged the
+          // button disabled forever (CORE-11).
+          status.textContent = 'Save failed — check your connection and try again.';
+          save.disabled = false;
+        }
       });
       const discard = el('button', 'font-size: 12px; padding: 9px 14px;', 'Discard');
       discard.className = 'btn-ghost';
@@ -252,7 +277,7 @@ function openHowItWorks(actions) {
   const col = el('div', 'display: flex; flex-direction: column; gap: 10px;');
   const head = el('div', 'display: flex; align-items: center; gap: 10px;');
   const back = el('button', '', '‹'); back.className = 'back-btn';
-  back.addEventListener('click', () => { host.textContent = ''; actions.rerender(); });
+  back.addEventListener('click', subviewBack(actions));
   const title = el('div', '', 'HOW IT WORKS'); title.className = 'screen-title';
   head.append(back, title);
   col.appendChild(head);
@@ -341,14 +366,13 @@ export function renderSettings(root, ctx, actions) {
   spHead.appendChild(el('span', 'margin-left: auto; color: var(--text-tertiary); font-size: 10.5px; font-weight: 600;', lib ? `synced ${lib.fetchedAt?.slice(0, 10) || ''} ›` : '›'));
   sp.appendChild(spHead);
   if (lib) sp.appendChild(el('div', 'color: var(--text-secondary); font-size: 12px; font-weight: 600;', `${Object.keys(lib.artists || {}).length.toLocaleString()} artists in your library`));
-  sp.addEventListener('click', () => { main.style.display = 'none'; openSpotifyDrill(ctx, { ...actions, rerender: () => renderSettings(root, ctx, actions) }); });
+  const openSub = (key) => { openSubviewByKey(key, ctx, actions); router.push(key); };
+  sp.addEventListener('click', () => openSub('sub:spotify'));
   main.appendChild(sp);
 
   main.appendChild(microLabel('App'));
   const list = el('div'); list.className = 'settings-list';
-  const sub2 = () => { main.style.display = 'none'; };
-  const rerender = () => renderSettings(root, ctx, actions);
-  list.appendChild(linkRow('How it works', () => { sub2(); openHowItWorks({ ...actions, rerender }); }));
+  list.appendChild(linkRow('How it works', () => openSub('sub:how')));
   const s = appSettings();
   list.appendChild(toggleRow('Low power', 'no animation · sync every 5 min', s.lowPower, (on) => {
     saveAppSettings({ ...appSettings(), lowPower: on });
@@ -358,26 +382,30 @@ export function renderSettings(root, ctx, actions) {
     saveAppSettings({ ...appSettings(), stayOffline: on });
     actions.onStayOffline(on);
   }));
-  list.appendChild(linkRow('Bulk paste likes', () => {
-    sub2();
-    openBulkPaste(document.getElementById('settings-subview'), {
-      back: () => { document.getElementById('settings-subview').textContent = ''; rerender(); },
-      recordPick: actions.recordPick,
-      afterApply: actions.afterBulk,
-    });
-  }));
-  list.appendChild(linkRow('Export likes', () => {
-    sub2();
-    openExportLikes(document.getElementById('settings-subview'), ctx,
-      () => { document.getElementById('settings-subview').textContent = ''; rerender(); });
-  }));
-  list.appendChild(linkRow('Download day image', async () => {
-    try { await downloadWallImage(state.fest().name); }
-    catch { /* html2canvas missing — the row simply does nothing rather than crash */ }
-  }));
+  list.appendChild(linkRow('Bulk paste likes', () => openSub('sub:bulk')));
+  list.appendChild(linkRow('Export likes', () => openSub('sub:export')));
+  list.appendChild(linkRow('Day image', () => openSub('sub:day-image')));
   main.appendChild(list);
 
   root.append(sub, main);
+}
+
+// Open a settings drill by its router key — the one entry point both the
+// in-UI rows and the router's forward/refresh re-open path share (FLOW-2).
+export function openSubviewByKey(key, ctx, actions) {
+  const root = document.getElementById('settings-root');
+  const rerender = () => renderSettings(root, ctx, actions);
+  const main = document.getElementById('settings-main');
+  if (main) main.style.display = 'none';
+  const host = document.getElementById('settings-subview');
+  const sub = { ...actions, rerender };
+  const back = subviewBack(sub);
+  if (key === 'sub:how') openHowItWorks(sub);
+  else if (key === 'sub:add-fest') openAddFestival(sub);
+  else if (key === 'sub:spotify') openSpotifyDrill(ctx, sub);
+  else if (key === 'sub:bulk') openBulkPaste(host, { back, recordPick: actions.recordPick, afterApply: actions.afterBulk });
+  else if (key === 'sub:export') openExportLikes(host, ctx, back);
+  else if (key === 'sub:day-image') openDayImage(host, ctx, back);
 }
 
 // ---- Spotify drill (21f) — every action lives here ----------------------------------
@@ -387,7 +415,7 @@ function openSpotifyDrill(ctx, actions) {
   const col = el('div', 'display: flex; flex-direction: column; gap: 10px;');
   const head = el('div', 'display: flex; align-items: center; gap: 10px;');
   const back = el('button', '', '‹'); back.className = 'back-btn';
-  back.addEventListener('click', () => { host.textContent = ''; actions.rerender(); });
+  back.addEventListener('click', subviewBack(actions));
   head.append(back, el('div', '', 'SPOTIFY'));
   head.lastChild.className = 'screen-title';
   const status = el('span', 'margin-left: auto; color: var(--spotify-stroke); font-size: 11.5px; font-weight: 700;',
@@ -411,7 +439,9 @@ function openSpotifyDrill(ctx, actions) {
         if (!/^[0-9a-fA-F]{32}$/.test(v)) { msg.textContent = 'That does not look like a 32-character Client ID.'; return; }
         state.recordSpotifyClientId(v);
         actions.afterBulk();
-        msg.textContent = 'Saved — connect below once it syncs.';
+        // Re-render the drill so the Connect state appears NOW — the old
+        // "connect below once it syncs" promise pointed at nothing (CORE-14).
+        openSpotifyDrill(ctx, actions);
       });
       row.append(input, save);
       col.append(msg, row);

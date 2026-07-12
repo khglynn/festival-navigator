@@ -2,6 +2,46 @@
 
 Newest first. One entry per meaningful unit of work.
 
+## 2026-07-11 (evening) — CORE class (18) + FLOW-2/3/4 + ST-1: the broken-behavior sweep
+
+- **Cards**: refreshCard now reproduces the original render exactly — placement
+  styles copied, render opts stashed in dataset (CORE-1: set-times vanish);
+  renderCard renders its time line (CORE-3); long-press hardened with
+  pointercancel + isConnected (CORE-15); a pick repaints every sibling card of
+  a multi-day artist. groupByDay splits "Saturday & Sunday" into real days
+  against known day names — wall sections and dock tabs share the logic (ST-1).
+- **Set-times**: hour rail moved OUTSIDE the horizontal scroller (sticky-in-grid
+  is a no-op — a grid item's containing block is its own area), rail + grid
+  share one rows template (CORE-2). Search in a scheduled fest renders per-day
+  chronological results with stage · time on each card (CORE-4); the sort
+  control hides in timetable view rather than silently no-op (CORE-5 — a
+  timetable has one true order; search results sort by time).
+- **Sync honesty**: applyRemoteDoc's visible slice now includes notes + meta
+  (CORE-6); open sheets repaint on remote change (CORE-16). NEW from smoke
+  testing: crew-gone now requires the API's own JSON 404 — a platform/routing
+  404 (broken deploy, stale SW) must never wipe remembered crews.
+- **Navigation (FLOW-2)**: js/v3/router.js — history-backed layer stack
+  (settings / drills / sheets), back closes top layer, forward re-opens,
+  refresh restores, Escape = universal back, #g= survives. Pure diff logic
+  unit-tested with a simulated session history.
+- **Lost states**: bad/expired links get a real screen with paste-a-link
+  recovery; dead crews are forgotten with a toast (FLOW-3). Boot has an error
+  boundary + global no-screen-visible net (FLOW-4). Offline fest-switch loads
+  before persisting; boot falls back to a loadable fest with a toast (CORE-12).
+- **Tools**: bulk paste is an integrity gate — strict level labels, lineup-only
+  artists recorded under canonical spelling, migration-gate blocks the whole
+  batch, every skip reported (CORE-8). Day image rebuilt: offscreen fixed-width
+  render per day, real error surfacing (CORE-7 — old path shipped 0-byte PNGs).
+  Pick counts use picksFor, dropping tombstones (CORE-13).
+- **Misc**: custom fests can't shadow canonical ids (client guard at save +
+  read — server-side guard deliberately skipped: token holders only hurt their
+  own crew's view, and read-time canonical-wins makes shadowing impossible)
+  (CORE-9); empty-lineup fests keep the notes composer (CORE-10); add-festival
+  save try/catches (CORE-11); Spotify Client-ID save double-writes + re-renders
+  the drill (CORE-14); honest no-button toast + migration banner w/ retry
+  (CORE-17/18).
+- Tests 63 → 87 (jsdom added as devDependency for DOM regressions).
+
 ## 2026-07-11 (evening) — v3.1 fix phase begins: FLOW-1 (the P0) on v31-polish
 
 - Branch `v31-polish` off main. FLOW-1 fixed per the decided hybrid: share

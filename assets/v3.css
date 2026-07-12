@@ -14,6 +14,7 @@
 .card.animated { background-size: 180% 180%; animation: gradShift 12s ease-in-out infinite; }
 .card .name { position: relative; font-weight: 700; font-size: 13.5px; line-height: 1.2; }
 .card .time { position: relative; font-size: 9px; font-weight: 600; }
+.card.timed { flex-direction: column; gap: 2px; } /* search results carry stage · time */
 
 /* Set-times grid cell variant: same card, tighter corners, time line */
 .card.cell { flex-direction: column; gap: 1px; padding: 4px 8px 17px; }
@@ -171,12 +172,19 @@
               background: none; cursor: pointer; width: 100%; }
 
 /* ---- set-times grid ----------------------------------------------------------- */
-.times-scroll { overflow-x: auto; scroll-snap-type: x proximity; -webkit-overflow-scrolling: touch; }
-.times-grid { display: grid; gap: 4px; min-width: 100%; } /* columns set inline: 40px repeat(n, minmax(150px,1fr)) */
+/* The hour rail lives OUTSIDE the horizontal scroller (CORE-2): stages swipe,
+ * the time axis never leaves the screen. Rail + grid share the exact same
+ * grid-template-rows string (set inline) so hours align with cards. */
+.times-wrap { display: flex; align-items: flex-start; }
+.times-rail { display: grid; width: 40px; flex: none; row-gap: 4px; }
+.times-scroll { overflow-x: auto; scroll-snap-type: x proximity; -webkit-overflow-scrolling: touch;
+                flex: 1; min-width: 0; }
+.times-grid { display: grid; gap: 4px; min-width: 100%; } /* columns set inline: repeat(n, minmax(150px,1fr)) */
 .times-grid .stage-head { scroll-snap-align: start; }
 .stage-head { font-family: var(--font-display); letter-spacing: var(--track-display);
-              color: rgb(var(--fest)); font-size: 12.5px; text-align: center;
-              padding: 6px 0; background: var(--card); border-radius: var(--r-card); }
+              color: rgb(var(--fest)); font-size: 12.5px;
+              display: flex; align-items: center; justify-content: center;
+              background: var(--card); border-radius: var(--r-card); }
 .hour-label { text-align: right; padding-right: 6px; font-size: 9.5px;
               color: var(--text-tertiary); font-weight: 600; position: relative; top: -7px; }
 
