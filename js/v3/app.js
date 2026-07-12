@@ -231,6 +231,7 @@ function repaintWall() {
   updateMigrationBanner();
   updateWeekendRow();
   updateArchiveNote();
+  updateFestNotesStrip();
   maybeShowCoachMark();
   measureStickyChrome();
 }
@@ -303,6 +304,37 @@ function maybeShowCoachMark() {
   });
   bar.append(msg, dismiss);
   insertStrip(bar);
+}
+
+// Festival-level notes surface at the TOP when they exist (Kevin note 6):
+// "important to know" info — parking, entry, water — was invisible three
+// scrolls down at the wall's end. The strip shows the freshest note and
+// opens the notes home. No notes, no strip.
+function updateFestNotesStrip() {
+  const existing = document.getElementById('fest-notes-strip');
+  const notes = model.notesFor(state.crewDoc, ctx.fid, 'fest', null);
+  if (!notes.length) { if (existing) existing.remove(); return; }
+  const latest = notes[notes.length - 1];
+  let bar = existing;
+  if (!bar) {
+    bar = document.createElement('button');
+    bar.id = 'fest-notes-strip';
+    bar.style.cssText = 'display: flex; align-items: center; gap: 10px; margin-top: 11px; padding: 10px 13px; border: 1px solid var(--notes-chip-stroke); border-radius: var(--r-row); background: rgba(139, 123, 255, .07); cursor: pointer; width: 100%; font-family: inherit; text-align: left;';
+    bar.addEventListener('click', () => { refreshCtx(); openAllNotes(ctx); router.push('sheet:all'); });
+    insertStrip(bar);
+  }
+  bar.textContent = '';
+  bar.setAttribute('aria-label', `${notes.length} festival note${notes.length === 1 ? '' : 's'} — open notes`);
+  const pen = document.createElement('span');
+  pen.style.cssText = 'color: var(--notes-chip-text); font-size: 13px; flex: none;';
+  pen.textContent = '✎';
+  const text = document.createElement('span');
+  text.style.cssText = 'flex: 1; min-width: 0; color: var(--text-body); font-size: 12px; font-weight: 600; line-height: 1.45; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;';
+  text.textContent = latest.text;
+  const count = document.createElement('span');
+  count.style.cssText = 'flex: none; color: var(--notes-chip-text); font-size: 11px; font-weight: 800;';
+  count.textContent = notes.length === 1 ? 'fest note ›' : `${notes.length} fest notes ›`;
+  bar.append(pen, text, count);
 }
 
 // An archived fest reads as a memory, not a live plan (ST-5).
@@ -416,15 +448,30 @@ function renderCreate() {
   for (const f of FESTIVAL_INDEX.filter((x) => x.status !== 'archived')) {
     list.appendChild(festPickRow(f, { onPick: pick }));
   }
-  // Past festivals stay reachable (spec F2/F12) — visually secondary, same anatomy.
+  // Past festivals stay reachable (spec F2/F12) but folded: full-size rows
+  // gave history the same weight as the fests you'd actually plan — the
+  // wrong emphasis on the doorway screen (Kevin note 8).
   const past = FESTIVAL_INDEX.filter((x) => x.status === 'archived');
   if (past.length) {
-    const divider = document.createElement('div');
-    divider.className = 'micro-label';
-    divider.style.cssText = 'margin-top: 8px;';
-    divider.textContent = 'Past festivals';
-    list.appendChild(divider);
-    for (const f of past) list.appendChild(festPickRow(f, { muted: true, onPick: pick }));
+    const fold = document.createElement('button');
+    fold.style.cssText = 'margin-top: 8px; padding: 9px 4px; color: var(--text-tertiary); font-size: 11.5px; font-weight: 700; display: flex; align-items: center; cursor: pointer; width: 100%; background: none; border: none; font-family: inherit;';
+    fold.setAttribute('aria-expanded', 'false');
+    const lbl = document.createElement('span');
+    lbl.textContent = `Past festivals · ${past.length}`;
+    const caret = document.createElement('span');
+    caret.style.marginLeft = 'auto';
+    caret.textContent = '▸';
+    fold.append(lbl, caret);
+    const pastList = document.createElement('div');
+    pastList.style.cssText = 'display: none; flex-direction: column; gap: 7px;';
+    for (const f of past) pastList.appendChild(festPickRow(f, { muted: true, onPick: pick }));
+    fold.addEventListener('click', () => {
+      const open = pastList.style.display === 'none';
+      pastList.style.display = open ? 'flex' : 'none';
+      caret.textContent = open ? '▾' : '▸';
+      fold.setAttribute('aria-expanded', String(open));
+    });
+    list.append(fold, pastList);
   }
 }
 

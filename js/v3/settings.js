@@ -170,11 +170,12 @@ function festivalsSection(ctx, actions) {
 
   if (archived.length) {
     // A real disclosure button (audit 4.2): this is the ONLY path to the
-    // scheduled/archived fests — keyboard and screen-reader users included.
-    const arch = el('button', 'padding: 8px 4px; color: var(--text-tertiary); font-size: 11.5px; font-weight: 600; display: flex; align-items: center; cursor: pointer; width: 100%; background: none; border: none; font-family: inherit;');
+    // archived fests, so it earns card-level presence — the old bare-text row
+    // was invisible next to the fest cards around it (Kevin note 8).
+    const arch = el('button', 'padding: 12px 14px; color: var(--text-secondary); font-size: 12.5px; font-weight: 700; display: flex; align-items: center; cursor: pointer; width: 100%; background: var(--card); border: 1px solid var(--border-card); border-radius: var(--r-settings); font-family: inherit;');
     arch.setAttribute('aria-expanded', 'false');
-    const lbl = el('span', '', `Archived · ${archived.length}`);
-    const caret = el('span', 'margin-left: auto;', '▸');
+    const lbl = el('span', '', `Past festivals · ${archived.length}`);
+    const caret = el('span', 'margin-left: auto; color: var(--text-tertiary);', '▸');
     arch.append(lbl, caret);
     const list = el('div', 'display: none; flex-direction: column; gap: 8px;');
     for (const f of archived) list.appendChild(festRow(f));
@@ -693,8 +694,110 @@ export function openSubviewByKey(key, ctx, actions) {
   else if (key === 'sub:day-image') openDayImage(host, ctx, back);
 }
 
-// ---- Spotify drill (21f / SPOT-2) — one state-driven card, five states -------------
+// ---- Spotify drill (21f / SPOT-2) — one state-driven card ---------------------------
 // Every state explains itself in one sentence and offers exactly one action.
+//
+// Access model (Kevin note 7, 2026-07-12, recordOS-style): the MAIN path is
+// the deployment owner's Spotify app — its client ID ships via
+// /api/access?config=1 (public by design under PKCE), so friends never see a
+// code. Door (a): already on the app's allowlist -> just Connect. Door (b):
+// not yet -> request access in-app (email -> Slack ping -> owner adds them in
+// the Spotify dashboard). Door (c), tucked away: bring-your-own client ID —
+// for repo forks and crews outside the owner's circle.
+
+const LS_ACCESS_EMAIL = 'fn_spotify_access_email';
+let accessConfig; // {enabled, ownerClientId} — fetched once per session
+async function fetchAccessConfig() {
+  if (accessConfig !== undefined) return accessConfig;
+  try {
+    const res = await fetch('/api/access?config=1');
+    accessConfig = res.ok ? await res.json() : { enabled: false, ownerClientId: '' };
+  } catch { accessConfig = { enabled: false, ownerClientId: '' }; }
+  return accessConfig;
+}
+
+// Door (b): request a spot on the owner app's allowlist. Remembers the email
+// locally so reopening the drill shows where the request stands.
+function requestAccessRow(rerenderDrill) {
+  const wrap = el('div', 'display: flex; flex-direction: column; gap: 7px; border-top: 1px solid var(--hairline); padding-top: 10px;');
+  const saved = localStorage.getItem(LS_ACCESS_EMAIL);
+  const status = el('div', 'color: var(--text-tertiary); font-size: 11px; font-weight: 600; line-height: 1.5;');
+  if (saved) {
+    wrap.appendChild(el('div', 'color: var(--text-secondary); font-size: 11.5px; font-weight: 600;',
+      `Access request sent for ${saved}.`));
+    const check = el('button', 'font-size: 11px; padding: 6px 12px; align-self: flex-start;', 'Check status');
+    check.className = 'btn-ghost';
+    check.addEventListener('click', async () => {
+      check.disabled = true;
+      try {
+        const res = await fetch(`/api/access?email=${encodeURIComponent(saved)}`);
+        const body = await res.json();
+        if (body.status === 'approved') {
+          status.textContent = 'Approved ✓ — hit Connect above and you’re in.';
+        } else if (body.status === 'pending') {
+          status.textContent = 'Still pending — the owner gets a ping and adds you; usually quick.';
+        } else {
+          status.textContent = 'No request on file — send it again below.';
+          localStorage.removeItem(LS_ACCESS_EMAIL);
+          rerenderDrill();
+        }
+      } catch { status.textContent = 'Couldn’t check right now — try again in a moment.'; }
+      finally { check.disabled = false; }
+    });
+    wrap.append(check, status);
+    return wrap;
+  }
+  wrap.appendChild(el('div', 'color: var(--text-secondary); font-size: 11.5px; font-weight: 600; line-height: 1.5;',
+    'First time? Spotify needs you on the crew app’s guest list — request it with the email on your Spotify account:'));
+  const row = el('div', 'display: flex; gap: 8px;');
+  const input = el('input');
+  input.type = 'email';
+  input.placeholder = 'you@spotify-account.email';
+  input.maxLength = 254;
+  input.setAttribute('aria-label', 'Your Spotify account email');
+  input.style.cssText = 'flex: 1; min-width: 0; background: var(--page); border: 1px solid var(--border-input); border-radius: var(--r-card); padding: 9px 11px; color: #fff; font-size: 12.5px; font-family: var(--font-ui);';
+  const send = el('button', 'font-size: 11.5px; padding: 8px 14px; flex: none;', 'Request access');
+  send.className = 'btn-tonal';
+  const doSend = async () => {
+    const email = input.value.trim();
+    if (!email.includes('@')) { status.textContent = 'That doesn’t look like an email.'; return; }
+    send.disabled = true;
+    try {
+      const res = await fetch('/api/access', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      const body = await res.json();
+      if (!res.ok) { status.textContent = body.error || 'Request failed — try again.'; return; }
+      localStorage.setItem(LS_ACCESS_EMAIL, email.toLowerCase());
+      status.textContent = body.status === 'approved'
+        ? 'You’re already approved ✓ — hit Connect above.'
+        : 'Sent ✓ — the owner gets a ping and adds you. Come back and Connect in a bit.';
+    } catch { status.textContent = 'Couldn’t reach the crew service — try again in a moment.'; }
+    finally { send.disabled = false; }
+  };
+  send.addEventListener('click', doSend);
+  input.addEventListener('keydown', (e) => { if (e.key === 'Enter') doSend(); });
+  row.append(input, send);
+  wrap.append(row, status);
+  return wrap;
+}
+
+// Door (c): bring-your-own Spotify app — deliberately a quiet fold, not a
+// peer of the main path ("main path is my friends, my spotify" — Kevin).
+function byoAppFold(actions, rerenderDrill, msg) {
+  const fold = document.createElement('details');
+  const sum = document.createElement('summary');
+  sum.textContent = 'Using your own Spotify app instead';
+  sum.style.cssText = 'color: var(--text-tertiary); font-size: 11px; font-weight: 700; cursor: pointer;';
+  fold.appendChild(sum);
+  const inner = el('div', 'display: flex; flex-direction: column; gap: 7px; margin-top: 7px;');
+  inner.appendChild(el('div', 'color: var(--text-tertiary); font-size: 11px; font-weight: 600; line-height: 1.6;',
+    'For forks of this app or crews outside the owner’s circle: create an app at developer.spotify.com/dashboard, add the redirect URI https://fest.kevinhg.com/spotify-callback, and paste its Client ID:'));
+  inner.appendChild(clientIdInputRow(actions, rerenderDrill, msg));
+  fold.appendChild(inner);
+  return fold;
+}
 
 // The crew's Spotify config, visible and correctable (SPOT-3): a wrong Client
 // ID used to be uncorrectable — the input only rendered while the id was empty.
@@ -773,16 +876,20 @@ function openSpotifyDrill(ctx, actions) {
 
   const oauthError = spotify.lastError();
   const clientId = state.spotifyClientId();
-  const members = state.activePeople();
-  // "Lead" is COPY FLAVOR only, never a gate: first-position is a heuristic
-  // that breaks the moment the founder renames themselves (rename appends the
-  // new key last), and the crew's real trust model is the token — anyone
-  // holding it can already write (Codex ship gate, P2).
-  const leadName = members.length ? members[0][0] : null;
-  const looksLikeLead = !!ctx.meName && (leadName === ctx.meName || members.length <= 1);
+  // The owner-app config decides which doors render; first open fetches it
+  // and repaints (cheap, cached for the session).
+  if (accessConfig === undefined) {
+    fetchAccessConfig().then(() => {
+      if (document.getElementById('settings-subview')?.contains(col)) rerenderDrill();
+    });
+  }
+  const owner = accessConfig || { enabled: false, ownerClientId: '' };
+  const usesOwnerApp = owner.enabled && (!clientId || clientId === owner.ownerClientId);
 
   if (oauthError) {
-    // State 5: something failed — say what, offer the retry, IN the app.
+    // Failure state: say what happened, offer the retry, IN the app. A
+    // dev-mode allowlist rejection is the expected first-contact failure on
+    // the owner's app — that's exactly where the request-access door goes.
     const card = el('div'); card.className = 'settings-card';
     card.style.cssText += 'display: flex; flex-direction: column; gap: 9px;';
     card.appendChild(el('span', 'color: #F87171; font-weight: 700; font-size: 14px;', 'That connection didn’t go through'));
@@ -799,17 +906,38 @@ function openSpotifyDrill(ctx, actions) {
     const btns = el('div', 'display: flex; gap: 8px;');
     btns.append(retry, dismiss);
     card.appendChild(btns);
+    if (usesOwnerApp) card.appendChild(requestAccessRow(rerenderDrill));
     col.append(card, msg);
-  } else if (!clientId) {
-    // Setup state (design states 1+2 merged): framed as the lead's one-time
-    // step, but open to any member — a heuristic must never lock the actual
-    // founder out of their own crew's setup.
+  } else if (!clientId && owner.enabled) {
+    // MAIN PATH (note 7): the crew rides the owner's Spotify app — no codes,
+    // no setup. Connect just works for allowlisted folks; everyone else
+    // requests access right here. BYO stays as the quiet third door.
     const card = el('div'); card.className = 'settings-card';
     card.style.cssText += 'display: flex; flex-direction: column; gap: 10px;';
     card.appendChild(el('div', 'color: var(--text-body); font-size: 12.5px; font-weight: 600; line-height: 1.55;',
-      looksLikeLead
-        ? 'One-time crew setup: paste your Spotify app’s Client ID. Every member connects through it after that.'
-        : `One-time crew setup — usually ${leadName || 'whoever made the crew'} does this, but any member can. Paste the crew’s Spotify app Client ID:`));
+      'Connect your Spotify to badge artists you already love — liked songs and follows, read-only, nothing posted.'));
+    const connect = el('button', 'font-size: 13px; padding: 11px 18px; align-self: flex-start;', 'Connect my Spotify');
+    connect.className = 'btn-tonal';
+    connect.addEventListener('click', () => {
+      // Adopting the owner app is the crew's default — recorded on first
+      // connect so every member (and the OAuth return) uses the same app.
+      state.recordSpotifyClientId(owner.ownerClientId);
+      actions.afterBulk();
+      const hop = spotify.canonicalHopUrl();
+      if (hop) { location.assign(hop); return; }
+      spotify.connect().catch((e) => { msg.textContent = String(e.message || e); });
+    });
+    card.appendChild(connect);
+    card.appendChild(requestAccessRow(rerenderDrill));
+    card.appendChild(byoAppFold(actions, rerenderDrill, msg));
+    col.append(card, msg);
+  } else if (!clientId) {
+    // Fork deployments (no owner app configured): BYO setup is the only
+    // path, so it speaks first — any member can do it.
+    const card = el('div'); card.className = 'settings-card';
+    card.style.cssText += 'display: flex; flex-direction: column; gap: 10px;';
+    card.appendChild(el('div', 'color: var(--text-body); font-size: 12.5px; font-weight: 600; line-height: 1.55;',
+      'One-time crew setup — any member can do it. Paste the crew’s Spotify app Client ID:'));
     card.appendChild(clientIdInputRow(actions, rerenderDrill, msg));
     const fold = document.createElement('details');
     const sum = document.createElement('summary');
