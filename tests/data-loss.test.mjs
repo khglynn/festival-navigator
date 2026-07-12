@@ -154,6 +154,38 @@ test('subtractLeaves prunes emptied branches so hasPending() cannot see a husk',
   assert.deepEqual(left, {}, 'a fully-acked payload leaves nothing behind, not {festivals:{f:{...{}}}}');
 });
 
+test('a note edited mid-push goes back WHOLE — never as a fragment the server would reject', async () => {
+  // The trap: two correct-looking fixes combining into a worse bug than either
+  // solved. subtractLeaves recurses into objects; a note IS an object; and the
+  // server requires author+ts on every note (validateNote). Edit a note while a
+  // push is in flight and naive subtraction drops the unchanged author and ts,
+  // leaving {text}. The server 400s that fragment — and the refused-payload guard
+  // then wedges the device's sync completely. So: notes travel whole.
+  const TOKEN = 'losstoken_noteatomic_012';
+  freshCrew(TOKEN);
+
+  const NOTE = { author: 'Kev', ts: '2026-07-12T00:00:00.000Z', text: 'meet at the rail' };
+  state.recordNote('loss-fest', 'artist', 'GRiZ', 'Kev.note-0001', NOTE);
+  const pushed = JSON.parse(JSON.stringify(state.pendingChanges));
+
+  // ...the push is in the air, and they fix a typo.
+  state.recordNote('loss-fest', 'artist', 'GRiZ', 'Kev.note-0001',
+    { ...NOTE, text: 'meet at the rail, stage left' });
+
+  state.clearPending(pushed);
+
+  const left = state.pendingChanges.festivals?.['loss-fest']?.notes?.artist?.GRiZ?.['Kev.note-0001'];
+  assert.ok(left, 'the edit is still pending');
+  assert.equal(left.text, 'meet at the rail, stage left');
+  assert.equal(left.author, 'Kev', 'author survives — without it the server rejects the note outright');
+  assert.ok(left.ts, 'and so does ts');
+
+  // Prove it against the real validator, not just against my expectations.
+  const { validateIncoming } = await import('../api/_lib/crew-shared.mjs');
+  const check = validateIncoming(state.pendingChanges);
+  assert.equal(check.ok, true, `the next push must be a payload the server accepts (got: ${check.error})`);
+});
+
 // ---- the flush that beats the lock screen ------------------------------------
 
 test('hiding the page beacons pending picks out — the 1.2s debounce is not a grave', () => {

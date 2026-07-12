@@ -26,7 +26,10 @@ export function deepMerge(base, overlay) {
 // A leaf is removed only when it is IDENTICAL to what we pushed. A leaf whose
 // value differs is somebody's newer edit — keep it and let it sync next round.
 // Emptied objects are pruned so hasPending() cannot report a husk of {} as work.
-export function subtractLeaves(base, pushed) {
+// `isAtomic(path)` marks a subtree that must travel WHOLE — see state.js.
+// Without it, subtraction happily descends INTO a value-object and emits a
+// partial one, and some value-objects are only valid complete.
+export function subtractLeaves(base, pushed, isAtomic = () => false, path = []) {
   if (!base || typeof base !== 'object' || Array.isArray(base)) return base;
   if (!pushed || typeof pushed !== 'object' || Array.isArray(pushed)) return base;
   const out = {};
@@ -35,17 +38,25 @@ export function subtractLeaves(base, pushed) {
     if (!(k in pushed)) { out[k] = base[k]; continue; }
 
     const b = base[k], p = pushed[k];
+    const here = [...path, k];
+    const same = JSON.stringify(b) === JSON.stringify(p);
+
+    // Acked exactly as sent — the server has it.
+    if (same) continue;
+
+    // An atomic subtree differs, so it goes back in FULL. Never a fragment of one.
+    if (isAtomic(here)) { out[k] = b; continue; }
+
     const bothBranches = b && p && typeof b === 'object' && typeof p === 'object'
       && !Array.isArray(b) && !Array.isArray(p);
 
     if (bothBranches) {
-      const rest = subtractLeaves(b, p);
+      const rest = subtractLeaves(b, p, isAtomic, here);
       if (Object.keys(rest).length) out[k] = rest; // prune fully-acked branches
       continue;
     }
-    // Leaf: identical means the server has it — drop it. Different means a
-    // concurrent writer changed it after we serialized our payload — keep it.
-    if (JSON.stringify(b) !== JSON.stringify(p)) out[k] = b;
+    // Leaf changed under us: a concurrent writer moved it after we serialized.
+    out[k] = b;
   }
   return out;
 }

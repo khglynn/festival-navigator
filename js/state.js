@@ -200,6 +200,25 @@ export function hasPending() { return Object.keys(pendingChanges).length > 0; }
 // `pushed` is the exact payload the server accepted. Omitting it clears
 // everything, which is only correct when there is nothing else to protect
 // (crew switch, forget-crew).
+// A NOTE must travel whole, and it is the only thing in this document that must.
+//
+// The server requires `author` and `ts` on every note it accepts (validateNote,
+// api/_lib/crew-shared.mjs). Everything else in the crew doc is either a plain
+// value (a pick level) or an object whose keys are independently optional (a
+// person's colour, a Spotify stat). Notes are not: they are valid only complete.
+//
+// So subtraction must not descend into one. Edit a note while a push is in
+// flight and a naive leaf-by-leaf subtraction drops the unchanged author and ts
+// and leaves `{text: "..."}` — a fragment the server rejects with a 400, which
+// (thanks to the refused-payload guard) would then wedge that device's sync
+// entirely. Found by reading the two fixes against each other, before Codex did.
+//
+// path: festivals.<fid>.notes.<scope>.<target>.<noteId>   (fest scope has no target)
+const NOTE_IS_ATOMIC = (path) => {
+  if (path[0] !== 'festivals' || path[2] !== 'notes') return false;
+  return path[3] === 'fest' ? path.length === 5 : path.length === 6;
+};
+
 export function clearPending(pushed) {
   if (!pushed) {
     pendingChanges = {};
@@ -210,9 +229,9 @@ export function clearPending(pushed) {
   //   memory — an edit made while the push was in flight lives here, and
   //            blanking it would drop the edit from the next push entirely.
   //   disk   — another tab's edit lives here, and blanking it would drop that.
-  pendingChanges = subtractLeaves(pendingChanges, pushed);
+  pendingChanges = subtractLeaves(pendingChanges, pushed, NOTE_IS_ATOMIC);
   const onDisk = loadJSON(LS.pending(crewToken), {});
-  saveLS(LS.pending(crewToken), JSON.stringify(subtractLeaves(onDisk, pushed)));
+  saveLS(LS.pending(crewToken), JSON.stringify(subtractLeaves(onDisk, pushed, NOTE_IS_ATOMIC)));
 }
 
 // Cached copy of a crew doc (for offline joins / crew switching).
