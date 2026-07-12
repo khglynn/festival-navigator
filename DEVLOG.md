@@ -2,6 +2,28 @@
 
 Newest first. One entry per meaningful unit of work.
 
+## 2026-07-12 (evening) — round-2 review + copy pass + finish-pass approved
+
+- Kevin's staging review round: cells re-centered (safe-center keeps the
+  clip-proof fallback), person chips switch identity via two-tap confirm
+  (pick for who you just added, no settings trip), canonicalHopUrl inverted
+  from allowlist to hop-everything-but-canonical (staging OAuth sent Spotify
+  a stage redirect URI), one disclosureFold for past fests both places,
+  fest-notes strip removed (Notes chip owns it), eq-loader wait states,
+  near-opaque sticky chrome, resize re-mirrors the timetable scrollers.
+- Spotify Feb-2026 policy landed in the model: 5 authorized users, ONE
+  dev-mode app per account, Premium required, endpoint cuts postponed for
+  existing apps. The in-app own-app guide (spotifyAppSteps) now teaches the
+  real flow incl. User Management; NO staging redirect URI needed by design.
+  Kevin's one dashboard task: add fest.kevinhg.com/spotify-callback to MCP HG.
+- Copy pass (Opus teammate): full string inventory, zero lying strings,
+  "genuinely close" verdict. Tier-1 applied (Export/Bulk paste PICKS —
+  vocabulary rule; flavored indeterminate waits; one "How it works") +
+  Kevin approved; "Rescan my Spotify" + 404 "YOUR FESTIVALS" applied as
+  recommendations; manifest "plan" + Portola example deliberately kept.
+- Taste rubric written and APPROVED (claude-plans/2026-07-12-taste-rubric.md)
+  — the finish pass closes every surface against it; that arc is next.
+
 ## 2026-07-12 — Kevin's notes arc: all 8 notes + sweep, staging born, memory explainer
 
 - **Staging is live: https://stage.fest.kevinhg.com** — its own Vercel

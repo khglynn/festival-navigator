@@ -1,16 +1,28 @@
-# NOW — festival-navigator: notes arc COMPLETE — Kevin's promote call
+# NOW — festival-navigator: FINISH PASS approved — next arc
 
-## CURRENT STATE (2026-07-12 afternoon)
+## CURRENT STATE (2026-07-12 evening, banked pre-compaction)
 
-**All 8 of Kevin's notes + the sweep's confirmed findings are implemented,
-tested (95/95), Codex-gated, and live on https://stage.fest.kevinhg.com**
-(the new staging env: own Vercel project `festival-navigator-staging`,
-production branch = v31-polish, public by design, auto-builds only that
-branch; main project's preview protection untouched). Notes + read:
-`claude-plans/2026-07-12-v31-kevin-notes.md`; sweep verdict + dispositions:
-`claude-plans/2026-07-12-v31-sweep-findings.md`; the run story: DEVLOG
-2026-07-12. Work stays on `v31-polish`; **promote is Kevin's call** (steps
-below still current — SW now v19).
+**Kevin approved the finish-pass plan and the taste rubric** ("cool I'm game
+with all of that"). THE NEXT ARC: close every surface against
+`claude-plans/2026-07-12-taste-rubric.md` (8 lines, per screen × 390/1440),
+fix everything found, mark surfaces CLOSED with screenshot pairs — then
+Kevin's final walk is the promote gate. Run it per the grounding doc
+(`claude-plans/2026-07-11-v31-fix-phase-grounding.md`) with the usual
+machinery: workflow fan-out for the audit breadth (Sonnet walkers, never
+frontier), main-loop fixes, tests per fix, Codex gate, staging verification.
+A fresh disposable rig crew is needed (the old one was torn down) — create
+on staging, delete at teardown, token in chat/scratchpad only.
+
+Done today on `v31-polish` (all live on staging, SW v22, tests 95/95):
+the full notes arc (8 notes + sweep, see DEVLOG), Kevin's round-2 review
+fixes (centered cells via safe-center, chip-tap identity switch with two-tap
+confirm, OAuth hop generalized past the allowlist, one disclosureFold for
+past fests, eq-loader wait states, near-opaque sticky chrome, resize
+scroll re-mirror), and the copy pass (tier-1 applied + Kevin approved; doc:
+`claude-plans/2026-07-12-copy-pass.md`; manifest + Portola items
+deliberately left). Open wide-screen item: Kevin's "wonky left edge"
+screenshot — two likely causes shipped (opacity + resize re-mirror) but his
+exact repro was never reproduced; the finish pass re-walks it explicitly.
 
 Open Kevin decisions: promote; The-Crew token rotation (still pending from
 2026-07-09); the four Stage-4 design judgment calls (unchanged). Fast-follow
