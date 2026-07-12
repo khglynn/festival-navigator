@@ -316,7 +316,14 @@ export function openDayNotes(day, ctx, onChange) {
 export function closeSheet() {
   const wasOpen = document.getElementById('artist-sheet');
   teardownSheet();
-  if (wasOpen && restoreFocusTo && restoreFocusTo.isConnected) restoreFocusTo.focus();
+  // Nothing was open, so there is nothing to restore — and crucially, nothing to
+  // FORGET either. Callers open a sheet with `rememberOpener(); closeSheet();`
+  // (belt-and-braces against a sheet already being up), and an unconditional
+  // `restoreFocusTo = null` here threw the opener away a moment after it was
+  // captured. Caught on staging: the ✕ closed the sheet and focus fell to <body>
+  // even though every piece of the fix was in place (finish pass, 2026-07-12).
+  if (!wasOpen) return;
+  if (restoreFocusTo && restoreFocusTo.isConnected) restoreFocusTo.focus();
   restoreFocusTo = null;
 }
 

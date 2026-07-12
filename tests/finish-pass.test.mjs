@@ -104,6 +104,42 @@ test('festRow is ONE component — Settings’ chevron variant is an option, not
   assert.equal(withChev.className, plain.className);
 });
 
+// ---- Sheets must give focus back --------------------------------------------
+
+test('a no-op closeSheet() does not forget who opened the sheet', async () => {
+  // The real bug, caught on staging with every piece of the fix already in
+  // place: sheets open with `rememberOpener(); closeSheet();` — the closeSheet
+  // being belt-and-braces in case one was already up. closeSheet() then nulled
+  // the opener unconditionally, so it was thrown away a moment after capture and
+  // focus fell to <body> on close. Green unit tests, broken app.
+  const { rememberOpener, closeSheet } = await import('../js/v3/notes.js');
+
+  const opener = document.createElement('button');
+  opener.textContent = 'Open the sheet';
+  document.body.appendChild(opener);
+  opener.focus();
+  assert.equal(document.activeElement, opener);
+
+  rememberOpener();
+  closeSheet();            // nothing is open — this must not forget the opener
+
+  // Now a sheet really is up, and something inside it has focus.
+  const sheet = document.createElement('div');
+  sheet.id = 'artist-sheet';
+  const inner = document.createElement('button');
+  sheet.appendChild(inner);
+  document.body.appendChild(sheet);
+  inner.focus();
+
+  closeSheet();            // the real close
+
+  assert.equal(
+    document.activeElement, opener,
+    'focus returns to whatever opened the sheet, not to <body>',
+  );
+  opener.remove();
+});
+
 test('festRow fires its callback with the festival', () => {
   const f = { id: 'chosen', name: 'Fest', year: "'26" };
   let got = null;
