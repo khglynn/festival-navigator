@@ -90,17 +90,52 @@ lives ONLY in index.json. All six failed against the docs as they were.
 `claude-plans/codex-reviews/`; `*.png` now denied by default (a walker run dumped
 50 screenshots into the repo root, and audit artifacts can carry crew tokens).
 
-### Two lessons for next time
+### The Codex gate found two P1s — and shot down my best test
+Full write-up: `claude-plans/2026-07-12-codex-finish-gate.md`.
+
+- **The touch-target fix was a hazard.** Settings rows stack with no gaps, so a
+  universal `button::after { inset: -15px }` grew every row's hit area 15px into
+  its neighbours, and the later-painted sibling wins an overlap. A tap near the
+  bottom of "Switch crew" could arm the destructive "Forget this crew". A touch
+  fix that hands you a destructive mis-tap is not a fix. Default inverted: real
+  `min-height: 44px` (cannot overlap) unless a control opts out; borrowed space
+  only where there is room. Verified in-browser — zero overlaps, 31 controls.
+- **The sync block never lifted.** The toast promised "they'll sync as soon as the
+  crew has room" and nothing ever retried unchanged pending bytes, so a phone
+  stayed stuck even after another member freed up room. The app was making a
+  promise it had no mechanism to keep. A poll seeing a CHANGED remote doc now
+  clears the refusal (bounded: one retry per real change).
+- **My concurrency test was a rubber stamp, and Codex proved it empirically** — it
+  swapped in the banned pre-lock CTE, reran the six-way Promise.all 50 times, and
+  lost zero writes. PGlite is one connection; Promise.all serialises. The real
+  test (`tests/db-concurrency.test.mjs`) uses Neon's HTTP driver — one independent
+  session per request — and carries a CONTROL asserting the banned CTE *does* lose
+  writes there, so the harness is provably able to see a lost write. Without that
+  control we would just be trusting a green tick a second time.
+
+And one P0 I caught in my own new code before Codex got to it: `subtractLeaves`
+recursed into note objects, so editing a note mid-push sent back `{text}` with no
+author/ts — which the server rejects, which the brand-new refusal guard then turns
+into a permanently blocked device. Two correct-looking fixes combining into
+something worse than either solved. Notes travel whole now.
+
+### Three lessons for next time
 1. **The service worker lies to you after a deploy.** Every fix read as "not
    applied" in the browser while `curl | md5` proved the server had the new bytes:
-   the old SW was serving its v22 cache. Unregister + `caches.delete()` before
-   believing any browser check.
+   the old SW was serving its stale cache. It fooled me twice. Unregister +
+   `caches.delete()` before believing any browser check.
 2. **Green tests are necessary, not sufficient.** The focus-restore fix was
-   complete and correct in three files, all tests passed — and it was still broken
-   live, because `closeSheet()` nulled the opener it had just been handed. jsdom
-   has no real focus model to break. Only driving the actual browser found it.
+   complete and correct across three files, all tests passed — and it was still
+   broken live, because `closeSheet()` nulled the opener it had just been handed.
+   jsdom has no real focus model to break. Only the actual browser found it.
+3. **A test you cannot fail is a test you cannot trust.** Two of the best things
+   here came from proving a test could FAIL: reverting a fix to watch its
+   regression test go red, and the CTE control that proves the concurrency harness
+   can see a lost write. A green tick is evidence of nothing until you have seen
+   it go red for the right reason.
 
-Tests 95 → 131. Rig crew deleted at teardown; real crews never written to.
+Tests 95 → 136 (+1 skipped in CI: the Neon concurrency test). Rig crew and both
+walker-created crews deleted at teardown; no real crew was ever written to.
 
 ## 2026-07-12 (evening) — round-2 review + copy pass + finish-pass approved
 

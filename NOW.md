@@ -47,6 +47,36 @@ checked the live store: the busiest **real** crew is 1,643 bytes — **0.6% of t
 cap**. The failure mode was real; the stated cause was not. No compaction was
 built. (Verify before building on a claim, including an agent's.)
 
+### The Codex gate (independent review, after all of the above)
+
+It found two P1s and a P2 — and its best finding was aimed at the test I was
+proudest of. Full write-up: `claude-plans/2026-07-12-codex-finish-gate.md`.
+
+- **My touch-target fix could have armed "Forget this crew."** Settings rows stack
+  with no gaps, so a universal `button::after { inset: -15px }` grew every row's
+  hit area 15px into its neighbours — and the later-painted sibling wins. A tap
+  near the bottom of "Switch crew" could hit the destructive Forget. Fixed by
+  inverting the default: real `min-height: 44px` (which cannot overlap) unless a
+  control opts out, and borrowed space only for small controls with room around
+  them. **Verified in-browser: zero overlaps across all 31 Settings controls.**
+- **A sync block never lifted.** The toast promises "they'll sync as soon as the
+  crew has room" — but nothing retried unchanged pending bytes, so if another
+  member DID free up room, that phone stayed stuck. A poll that sees a changed
+  remote document now clears the refusal. (It also leaked across crews. It no
+  longer does.)
+- **My concurrency test was a rubber stamp.** Codex *proved* it: it swapped in the
+  banned pre-lock CTE — the shape that lost 2/6 writes in production — reran my
+  six-way `Promise.all` for 50 rounds, and lost zero writes. PGlite is a single
+  connection; `Promise.all` just serialises. `tests/db-concurrency.test.mjs` is
+  the real one (Neon, independent sessions, 8/8 survive) and it carries a
+  **control** asserting the banned CTE *does* lose writes — so we know the harness
+  can see a lost write instead of trusting another green tick.
+
+And one P0 I found in my own new code before Codex did: `subtractLeaves` recursed
+into note objects, so editing a note mid-push sent back a `{text}` fragment
+without `author`/`ts` — which the server rejects, which the new refusal guard then
+turns into a permanently blocked device. Notes travel whole now.
+
 ## ⚠️ KEVIN'S CALL
 
 1. **Promote to production.** Walk staging first:
@@ -67,6 +97,12 @@ built. (Verify before building on a claim, including an agent's.)
 5. **Refresh-after-back** — after "‹ back to fest list", a hard refresh on the
    bare URL cold-start-resumes the crew you just left. Codex called it
    design-coherent (PWA resume philosophy) and wants your sign-off.
+6. **Two crews in the store I did not create and did not touch:** "Electric Forest
+   26" (2 people) and a second "Portola 26" (2 people), both from ~19:30 today —
+   before this session started. They look like test crews from the earlier arc,
+   but they are not mine to delete. Say the word and they go. (Everything I DID
+   create — the audit rig and two crews the walkers made — is deleted. No real
+   crew was ever written to.)
 
 ## Deliberately NOT done (and why)
 
