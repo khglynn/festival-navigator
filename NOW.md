@@ -1,5 +1,58 @@
 # NOW — festival-navigator: finish pass done, promote is Kevin's call
 
+## SPOTIFY FLOW REBUILD (2026-07-12, latest — session ended here, usage-limited)
+
+Kevin's live screenshots showed the Spotify connect flow was broken end to end:
+OAuth `redirect_uri: Not matching configuration`, a two-step hop with a second
+"Connect" button on a sparse page showing raw plumbing (`CREW APP · ...d26734`),
+and the gear icon stranded alone on the far left under Lost Lands' long date
+string. His model — "connect once, all my fests fill in; add a fest later and
+Spotify should just pull" — was correct; the app didn't do that.
+
+**Shipped and verified:**
+- **Gear pin fix** (`index.html`): the header wraps on long date strings, and a
+  `≥720px` rule was stripping the gear's `margin-left: auto`, parking it far-left
+  alone. Now `order: 3; flex: none`, pinned right at every width. **Verified live
+  on staging on Lost Lands itself** — the exact festival from Kevin's screenshot.
+- **One-press connect** (`js/spotify.js` `canonicalHopUrl({autoConnect})`,
+  `js/v3/app.js` boot): the hop to `fest.kevinhg.com` now carries `sp=connect`
+  and auto-continues on arrival — no second "Connect" button on a second screen.
+- **Badge every festival, one write** (`js/spotify.js` `badgeAllCrewFests`,
+  `artistNamesOf`): connecting reads the library once and badges every festival
+  the crew has, in a single `recordAffinity` call — not the one-fest-at-a-time
+  "Open other fests to badge them too" chore it was. A festival added later
+  self-badges via the existing `switchFestival` path (now calling the same
+  shared `artistNamesOf`), no reconnect needed.
+- **Drill rebuilt** (`js/v3/settings.js`): every not-yet-connected state now
+  shares one `connectCard` that says what connecting does; the raw client-ID row
+  moved behind an "Advanced" fold (also holds the exact redirect URI string for
+  whoever owns the app); the connected state shows a per-festival badge count
+  instead of telling you to go do more work.
+- **5 new unit tests** (`tests/spotify-flow.test.mjs`) prove: badging reaches a
+  NON-active festival, a newly-added festival self-badges from the cached
+  library, badging one fest never wipes another's badges, the whole sweep is one
+  write not N, and the hop URL carries `sp=connect` + the crew token.
+- Full suite: 141 passing + 1 correctly skipped (Neon-only concurrency test).
+  Fork/BYO drill path (the only one exercisable on staging — see below) visually
+  confirmed clean, no naked client-ID plumbing outside the fold.
+
+**NOT verified — could not be, not skipped by choice:**
+- The main "Connect my Spotify" 3-door flow (owner app / request access / BYO)
+  is what Kevin will actually hit in production, but **staging has no Spotify
+  env vars** (`SLACK_WEBHOOK_URL` etc. are Production-only — confirmed earlier
+  this session), so that exact card only renders on `fest.kevinhg.com`. And the
+  real OAuth round-trip needs Kevin's own Spotify login, which nothing here can
+  simulate. Code-reviewed + unit-tested, not eyeballed live.
+- **The one thing that was never a code bug**: `redirect_uri: Not matching
+  configuration` is Spotify refusing because `https://fest.kevinhg.com/spotify-callback`
+  isn't registered in the app's dashboard. That's a field only Kevin can edit —
+  see "KEVIN ACTIONS QUEUED" below, unchanged from earlier in this session.
+
+**If Kevin hits anything else in the Spotify flow**: the natural next move is a
+Codex pass on `js/spotify.js` + the `openSpotifyDrill` function in
+`js/v3/settings.js` specifically, since that's the one surface this session
+could not fully browser-verify.
+
 ## CURRENT STATE (2026-07-12, late)
 
 The finish pass ran and is **complete**. A 12-agent audit (6 browser walkers

@@ -2,6 +2,37 @@
 
 Newest first. One entry per meaningful unit of work.
 
+## 2026-07-12 (latest) — Spotify flow: connect once, badge everything
+
+Kevin tried the real flow after the finish pass shipped and it was broken: OAuth
+`redirect_uri: Not matching configuration`, a confusing two-hop connect with a
+second button on a sparse page showing raw client-ID plumbing, and the gear icon
+stranded far-left under Lost Lands' long date string. His model was right and the
+app wasn't honoring it: connect once, every festival badges, add a festival later
+and it just pulls from the library already on the device.
+
+Fixed: the gear pin (a `≥720px` rule stripped its `margin-left:auto` whenever the
+header wrapped — verified live on the exact festival from his screenshot), the
+connect hop (now one press, `sp=connect` auto-continues on the canonical host
+instead of showing a second Connect button), and the core promise —
+`badgeAllCrewFests()` reads the library once and badges every festival the crew
+has in a single write, and a festival added later self-badges via the existing
+`switchFestival` path. The drill itself got rebuilt around one shared
+`connectCard` (says what it does, no raw client-ID on the first screen) with the
+plumbing folded under Advanced.
+
+5 new tests prove the actual promise: a non-active festival gets badged, a
+newly-added one self-badges, badging one never wipes another's, the whole sweep
+is one doc write not N. What could NOT be verified this session: the real 3-door
+owner-app flow only renders where the Spotify env vars exist (production, not
+staging), and the real OAuth round-trip needs Kevin's own login. The
+`redirect_uri` error itself was never a code bug — it's one field in Kevin's
+Spotify dashboard, queued in NOW.md since earlier today.
+
+Session ended here — usage-limited, switched to Sonnet, wrapped clean rather than
+push further. Tests 141 passing + 1 skipped (Neon-only). Rig crew created for
+verification deleted; no real crew touched.
+
 ## 2026-07-12 (late) — THE FINISH PASS: 86 findings, and what they were really about
 
 A 12-agent audit against the taste rubric: 6 browser walkers (every surface at
