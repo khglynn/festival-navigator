@@ -2,6 +2,27 @@
 
 Newest first. One entry per meaningful unit of work.
 
+## 2026-07-13 — Production promote + Spotify proven live + same-day polish
+
+- The whole v3.1 arc reached production (v14 → v29 in one afternoon, three
+  domains, each deploy verified by served CACHE_VERSION — never HTTP 200).
+- Spotify's last unverifiable mile closed: Kevin registered the one canonical
+  redirect URI, connected live, 6,180 artists scanned, every crew fest badged
+  in one pass. Root causes of his "still broken" report were prod being 14
+  versions stale + the dashboard field — zero code bugs in the rebuilt flow.
+- His first-connect feedback shipped same-day: scan ticker with album covers
+  (data was already in the pages — zero extra API calls), playlist card that
+  reports where you can see it (old status line rendered below the fold —
+  "Make playlist" wasn't broken, it was invisible), collaborative crew
+  playlists in the doc (spotify.playlists — members auto-join on connect),
+  affinity corner-glow tiers, restored spotifyStats write.
+- Verification found the stats write missing by diffing the LIVE crew doc
+  against what the drill displayed — the drill was reading local cache and
+  looked fine. Check the store, not the screen.
+- Also: dead BLOB token removed from all Vercel envs; Codex gained
+  network-by-default + a CDP browser bridge (helper/guides/
+  codex-capabilities.md) after its sandbox blindness showed in the audit.
+
 ## 2026-07-12 (latest) — Spotify flow: connect once, badge everything
 
 Kevin tried the real flow after the finish pass shipped and it was broken: OAuth

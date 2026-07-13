@@ -1,6 +1,32 @@
-# NOW — festival-navigator: finish pass done, promote is Kevin's call
+# NOW — festival-navigator: v3.1 PROMOTED + Spotify polish live (v29)
 
-## SPOTIFY FLOW REBUILD (2026-07-12, latest — session ended here, usage-limited)
+## 2026-07-13 — PROMOTED TO PRODUCTION + Spotify live-tested + polish shipped
+
+- **v31-polish merged to main** (Kevin's go): prod went v14 → v28 → v29 on all
+  three domains, verified by served CACHE_VERSION each time. 145/146 tests.
+- **Spotify OAuth verified LIVE end to end** — Kevin registered the redirect
+  URI, connected, scanned 6,180 artists, EF badged 38. The one flow no session
+  could verify is now proven on production.
+- **Polish batch (Kevin's first-connect feedback, all shipped same day):**
+  scan ticker (real counter + bar + album covers, fest-find highlights, wall
+  pill when you leave the drill, reduced-motion safe) · playlist card rebuilt
+  (name-first input, inline progress/success/errors, Open-in-Spotify link —
+  its old status line rendered BELOW the Advanced fold, invisible) ·
+  Everyone-playlists are collaborative + recorded in crew doc
+  (spotify.playlists, validated; later-connecting members auto-join their
+  picks; "Add new picks" top-up) · affinity glow (followed + 5+ songs = green
+  corner mini-aura; followed-only artists now chip at all) · spotifyStats
+  write restored (dropped in the 07-12 rebuild).
+- **Dead BLOB_READ_WRITE_TOKEN removed** from all three Vercel envs.
+- **UNVERIFIED, next live test:** the collaborative auto-join path needs a
+  SECOND member's account (Spotify dev-mode may refuse cross-user adds even
+  on collab playlists — the drill reports and offers retry if so). Also the
+  "Electric Forest 26"/"Portola 26" crews are Kevin's own (with Ross) — keep.
+- **Still Kevin's call:** The Crew token rotation (public git history) ·
+  refresh-after-back sign-off · dev-mode 5-user allowlist vs The Crew's 6
+  members · rotate the screenshotted client secret.
+
+## SPOTIFY FLOW REBUILD (2026-07-12 — superseded by the above; kept for context)
 
 Kevin's live screenshots showed the Spotify connect flow was broken end to end:
 OAuth `redirect_uri: Not matching configuration`, a two-step hop with a second
