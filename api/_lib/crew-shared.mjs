@@ -39,6 +39,10 @@ export { SAFE_NAME_RE };
 export function deepMerge(base, overlay) {
   if (overlay === undefined || overlay === null) return base;
   if (typeof overlay !== 'object') return overlay;
+  // Arrays replace wholesale, matching jsonb_deep_merge (object×object is the
+  // only recursing case there). Without this, an overlay array walked the
+  // object path below and came out as {"0":..} — see js/merge.js twin.
+  if (Array.isArray(overlay)) return overlay.slice();
   const out = (base && typeof base === 'object' && !Array.isArray(base)) ? { ...base } : {};
   for (const k in overlay) {
     if (FORBIDDEN_KEYS.has(k)) continue;

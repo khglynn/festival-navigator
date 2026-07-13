@@ -90,6 +90,24 @@ test('ARRAYS ARE REPLACED WHOLESALE — this is why notes are keyed objects', as
   assert.deepEqual((await readDoc()).arr, ['z'], 'the whole array is replaced, not merged');
 });
 
+test('the JS merge twins agree with the SQL, arrays included', async () => {
+  // "The same shape runs on the server" (js/merge.js header) is a claim this
+  // test makes executable. The twins diverged once — the client index-merged
+  // arrays into {"0":..} while the SQL replaced them — and the divergence
+  // sync-blocked a real device (2026-07-13). Merge the playlist-artists shape
+  // through all three and demand byte-identical docs.
+  const { deepMerge: clientMerge } = await import('../js/merge.js');
+  const { deepMerge: serverMerge } = await import('../api/_lib/crew-shared.mjs');
+  const start = { ...baseDoc(), spotify: { playlists: { ef: { id: 'x', artists: ['GRiZ', 'Lane 8'] } } } };
+  const delta = { spotify: { playlists: { ef: { artists: ['GRiZ', 'Lane 8', 'Excision'] } }, clientId: 'a'.repeat(32) } };
+  await seed(start);
+  await merge(delta);
+  const sql = await readDoc();
+  assert.deepEqual(clientMerge(start, delta), sql, 'js/merge.js drifted from jsonb_deep_merge');
+  assert.deepEqual(serverMerge(start, delta), sql, 'crew-shared deepMerge drifted from jsonb_deep_merge');
+  assert.ok(Array.isArray(sql.spotify.playlists.ef.artists));
+});
+
 test('deletion is inexpressible — which is why tombstones exist', async () => {
   await seed();
   await merge({ people: { Drew: { colorIndex: 1 } } });

@@ -1,6 +1,6 @@
 // Festival Navigator service worker — offline-first app shell.
 // Bump CACHE_VERSION whenever you change cached static assets.
-const CACHE_VERSION = 'festival-nav-v30'; // v30 = added fests sync crew-wide, crews auto-badge on open, likes-first playlists
+const CACHE_VERSION = 'festival-nav-v31'; // v31 = merge twins replace arrays like the SQL; corrupted pending blobs self-heal (sync-block fix)
 
 // The shell that MUST be complete for offline to be real: if any of these
 // fail, install fails and the old worker keeps serving — a half-cached shell

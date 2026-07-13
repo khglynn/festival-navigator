@@ -39,3 +39,23 @@ test('does not mutate base', () => {
   deepMerge(base, { a: { c: 2 } });
   assert.deepEqual(base, { a: { b: 1 } });
 });
+
+// THE REGRESSION (2026-07-13): an array landing on a key that held nothing
+// walked the object path and came out as {"0":..,"1":..}. persistPending
+// wrote that to disk, every push re-sent it, the server validator refused it
+// ("artists must be an array"), and the device was sync-blocked forever.
+test('an array landing where nothing existed STAYS an array', () => {
+  const merged = deepMerge(undefined, ['GRiZ', 'Lane 8']);
+  assert.ok(Array.isArray(merged));
+  assert.deepEqual(merged, ['GRiZ', 'Lane 8']);
+  const nested = deepMerge({}, { spotify: { playlists: { ef: { artists: ['GRiZ'] } } } });
+  assert.ok(Array.isArray(nested.spotify.playlists.ef.artists));
+});
+
+test('arrays replace wholesale — same semantics as jsonb_deep_merge', () => {
+  // No index-merge: a shorter overlay must not keep the base's stale tail.
+  assert.deepEqual(deepMerge({ a: ['x', 'y', 'z'] }, { a: ['q'] }), { a: ['q'] });
+  // Type flips replace in both directions, like the SQL's non-object branch.
+  assert.deepEqual(deepMerge({ a: ['x'] }, { a: { k: 1 } }), { a: { k: 1 } });
+  assert.deepEqual(deepMerge({ a: { k: 1 } }, { a: ['x'] }), { a: ['x'] });
+});

@@ -52,6 +52,11 @@ export function activateCrew(token, doc, festHint) {
   crewToken = token;
   crewDoc = doc || loadJSON(LS.doc(token), null) || { v: 3, meta: {}, spotify: {}, people: {}, festivals: {}, affinity: {} };
   pendingChanges = loadJSON(LS.pending(token), {});
+  // Write a heal back to disk immediately: subtractLeaves can never match the
+  // corrupted disk leaf against the healed pushed one, so without this the
+  // stale blob survives every successful push and re-pushes on every boot.
+  if (healPlaylistArtists(pendingChanges)) saveLS(LS.pending(token), JSON.stringify(pendingChanges));
+  healPlaylistArtists(crewDoc); // rendered copy; persists via the normal paths
   crewDoc = deepMerge(crewDoc, pendingChanges);
   const savedFest = localStorage.getItem(LS.fest(token));
   const known = (id) => FESTIVAL_INDEX.some((f) => f.id === id);
@@ -270,9 +275,33 @@ export function clearPending(pushed) {
   saveLS(LS.pending(crewToken), JSON.stringify(subtractLeaves(onDisk, pushed, NOTE_IS_ATOMIC)));
 }
 
+// The pre-v31 deepMerge object-ified arrays ({"0":..,"1":..}) whenever one
+// landed on a key that wasn't already an array. The playlist artists ledger
+// is the only array that travels through pending, and a blob corrupted that
+// way was refused by the server on every push — sync-blocking the device
+// (live, 2026-07-13). The merge is fixed; this rebuilds blobs the old code
+// already wrote to disk. Idempotent, drops nothing.
+function healPlaylistArtists(container) {
+  const lists = container && container.spotify && container.spotify.playlists;
+  if (!lists) return false;
+  let changed = false;
+  for (const meta of Object.values(lists)) {
+    const a = meta && meta.artists;
+    if (a && typeof a === 'object' && !Array.isArray(a)) {
+      meta.artists = Object.keys(a).sort((x, y) => Number(x) - Number(y)).map((k) => a[k]);
+      changed = true;
+    }
+  }
+  return changed;
+}
+
 // Cached copy of a crew doc (for offline joins / crew switching).
 export function cachedDoc(token) { return loadJSON(LS.doc(token), null); }
-export function cachedPending(token) { return loadJSON(LS.pending(token), {}); }
+export function cachedPending(token) {
+  const p = loadJSON(LS.pending(token), {});
+  healPlaylistArtists(p);
+  return p;
+}
 export function clearCachedPending(token) { localStorage.removeItem(LS.pending(token)); }
 
 // Rebuild local doc from remote + our pending overlay. Returns true if the

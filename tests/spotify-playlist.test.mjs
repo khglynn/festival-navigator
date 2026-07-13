@@ -82,6 +82,48 @@ test('recordSpotifyPlaylist: doc + pending + lookup', () => {
   assert.equal(validateIncoming({ spotify: { playlists: { 'electric-forest-2026': PLAYLIST } } }).ok, true);
 });
 
+test('the artists ledger survives the disk round-trip AS AN ARRAY (sync-block regression)', () => {
+  // The failure that blocked a real device (2026-07-13): recordSpotifyPlaylist
+  // held a real array in memory, persistPending deep-merged it onto a disk
+  // blob that had no playlists key, and the old merge object-ified it. Every
+  // later boot loaded {"0":..}, pushed it, and the server refused the write.
+  store.clear();
+  const token = 'sptoken_disk_01234567890';
+  state.activateCrew(token, {
+    v: 4, meta: {}, spotify: {}, people: { Kev: { colorIndex: 0 } }, festivals: {}, affinity: {},
+  });
+  state.recordSpotifyPlaylist('electric-forest-2026', PLAYLIST);
+  const onDisk = JSON.parse(localStorage.getItem(`fn_crew_pending_v3_${token}`));
+  assert.ok(Array.isArray(onDisk.spotify.playlists['electric-forest-2026'].artists),
+    'the ledger written to disk is a real array');
+  assert.equal(validateIncoming(onDisk).ok, true, 'so the server will accept the push');
+});
+
+test('a pending blob the old merge already corrupted heals on load', () => {
+  // Devices that hit the bug have {"0":..} sitting in localStorage right now.
+  // Fixing the merge alone leaves them blocked forever — load must rebuild.
+  store.clear();
+  const token = 'sptoken_heal_01234567890';
+  const corrupted = {
+    spotify: { playlists: { 'electric-forest-2026': { ...PLAYLIST, artists: { 0: 'GRiZ', 1: 'Lane 8' } } } },
+  };
+  localStorage.setItem(`fn_crew_pending_v3_${token}`, JSON.stringify(corrupted));
+  state.activateCrew(token, {
+    v: 4, meta: {}, spotify: {}, people: { Kev: { colorIndex: 0 } }, festivals: {}, affinity: {},
+  });
+  const healed = state.cachedPending(token); // disk copy heals through the same gate
+  assert.deepEqual(healed.spotify.playlists['electric-forest-2026'].artists, ['GRiZ', 'Lane 8']);
+  assert.ok(Array.isArray(state.crewDoc.spotify.playlists['electric-forest-2026'].artists),
+    'the rendered doc heals too');
+  assert.equal(validateIncoming(healed).ok, true, 'the healed blob unblocks the device');
+  // And the DISK blob is rewritten, not just the in-memory copy: subtractLeaves
+  // can never match corrupted-disk against healed-pushed, so a heal that
+  // stayed memory-only would re-push the same playlist meta on every boot.
+  const rawDisk = JSON.parse(localStorage.getItem(`fn_crew_pending_v3_${token}`));
+  assert.ok(Array.isArray(rawDisk.spotify.playlists['electric-forest-2026'].artists),
+    'activateCrew writes the heal back to disk');
+});
+
 test('ensureFestivalState queues the membership for sync (ghost-festival fix)', () => {
   store.clear();
   state.activateCrew('sptoken_fest_012345678', {

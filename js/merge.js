@@ -9,7 +9,12 @@ const FORBIDDEN_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
 export function deepMerge(base, overlay) {
   if (overlay === undefined || overlay === null) return base;
   if (typeof overlay !== 'object') return overlay;
-  const out = (base && typeof base === 'object') ? Array.isArray(base) ? [...base] : { ...base } : {};
+  // Arrays replace wholesale — jsonb_deep_merge only recurses object×object,
+  // and this twin must match it. Index-merging object-ified arrays: an array
+  // landing where none existed came back as {"0":..,"1":..}, the server
+  // rightly refused it, and the device was sync-blocked (live, 2026-07-13).
+  if (Array.isArray(overlay)) return overlay.slice();
+  const out = (base && typeof base === 'object' && !Array.isArray(base)) ? { ...base } : {};
   for (const k in overlay) {
     if (FORBIDDEN_KEYS.has(k)) continue;
     out[k] = deepMerge(out[k], overlay[k]);
