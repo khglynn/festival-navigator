@@ -1,4 +1,32 @@
-# NOW — festival-navigator: v3.1 PROMOTED + Spotify polish live (v29)
+# NOW — festival-navigator: v3.1 PROMOTED + Spotify polish live (v31)
+
+## 2026-07-13 (round 3, v31) — merge twins now replace arrays like the SQL
+
+- **Kevin's "dunno if it matters" toast was a P1**: "playlist: artists must be
+  an array (max 500)" = the server refusing EVERY push from his device for the
+  EF crew. The client deepMerge index-merged arrays — an array landing on a
+  key holding nothing came back `{"0":..}` — and the playlist artists ledger
+  is the first array ever sent through pending sync. persistPending wrote the
+  corruption to disk; each boot reloaded and re-pushed it; deterministic 400
+  forever. Picks were safe locally, invisible to the crew.
+- **Fix**: both JS twins (js/merge.js, api/_lib/crew-shared.mjs) early-return
+  array overlays as copies, matching jsonb_deep_merge (object×object is its
+  only recursing case). db-merge.test.mjs now holds client JS, server JS, and
+  the real SQL to byte-identical output — the twins can't drift silently.
+- **Self-heal**: activateCrew rebuilds corrupted blobs AND writes them back to
+  disk — memory-only healing left a zombie (subtractLeaves can't match a
+  corrupted-disk leaf against the healed-pushed leaf) that re-pushed the same
+  meta every boot. Kevin's device needs only a reload (×2 for SW handover).
+- 153/154 tests. Codex gate: SHIP, zero findings, regression tests verified
+  to fail against pre-fix code. SW v31 on staging + all three prod domains.
+- **Open product question (Kevin deciding)**: one-link-restores-all-crews.
+  Options on the table: (A) consolidate solo fests into one personal crew
+  (feature exists — Settings → Your festivals → + Add a festival — needs a
+  one-time picks migration between crew docs), (B) "save all my crews" bundle
+  link (new build, all tokens in one URL = louder blast radius), (C) leave it.
+  Related regardless of choice: the landing page teaches one-fest-per-crew
+  ("ADD A FESTIVAL →" creates a CREW; the crew list is headed "YOUR
+  FESTIVALS") — that copy/IA steered Kevin into four single-fest crews.
 
 ## 2026-07-13 — PROMOTED TO PRODUCTION + Spotify live-tested + polish shipped
 
