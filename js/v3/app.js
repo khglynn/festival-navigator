@@ -759,14 +759,15 @@ function openSettings() {
       if (searchBox) searchBox.value = '';
       // The scanned library is a device asset — switching fests badges the
       // new lineup from the cache, no rescan (SPOT-5).
+      // A festival you just added (or switched to) badges itself from the
+      // library already on this device — no reconnect, no rescan, no trip to
+      // Settings. "If I add fests later Spotify should just pull" (Kevin,
+      // 2026-07-12); this is the "just pull".
       if (ctx.meName && spotify.isConnected() && spotify.libraryMap()) {
         try {
-          const names = new Set((state.fest().artists || []).map((a) => a.name));
-          for (const d of Object.keys(state.fest().days || {})) {
-            for (const a of state.fest().days[d].artists || []) names.add(a.name);
-          }
+          const names = spotify.artistNamesOf(state.fest());
           if (spotify.applyAffinityToCrew(ctx.meName, [...names]) > 0) sync.scheduleSync();
-        } catch { /* stale map — the drill's Refresh is the recovery path */ }
+        } catch { /* stale map — "Read it again" in the drill is the recovery */ }
       }
       applyFestTheme();
       if (!router.requestClose()) closeSettings();
@@ -1065,11 +1066,19 @@ async function enterApp(token, doc, current = () => true) {
   // A hop from an alias domain mid-Spotify-setup (SPOT-1): reopen the drill
   // so the member lands exactly where they left off.
   if (pendingSpotifyOpen) {
+    const auto = pendingSpotifyOpen === 'connect';
     pendingSpotifyOpen = false;
     openSettings();
     router.push('settings');
     openSubviewByKey('sub:spotify', ctx, settingsActions);
     router.push('sub:spotify');
+    // They already pressed Connect on the other host. Do not make them press it
+    // again — the hop is our plumbing, not their errand.
+    if (auto && !spotify.isConnected()) {
+      spotify.connect().catch((e) => {
+        showToast($('toast-root'), String(e.message || e), 6000);
+      });
+    }
   }
 }
 
@@ -1131,7 +1140,10 @@ export async function boot() {
   // Capture before any await: enterApp's replaceState strips the hash to #g=.
   pendingFestHint = crew.festFromHash();
   pendingMeHint = crew.meFromHash();
-  pendingSpotifyOpen = /[#&]sp=1(?:&|$)/.test(location.hash || '');
+  // sp=1 -> reopen the drill. sp=connect -> reopen it AND continue the connect
+  // the person already asked for on the other host.
+  const spMatch = /[#&]sp=(connect|1)(?:&|$)/.exec(location.hash || '');
+  pendingSpotifyOpen = spMatch ? spMatch[1] : false;
   try {
     try { await loadFestivalIndex(); } catch { /* offline with cache: proceed */ }
 

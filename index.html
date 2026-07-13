@@ -46,8 +46,14 @@
       .screen-headline { font-family: var(--font-display); letter-spacing: .04em;
                          font-size: var(--fs-screen); line-height: 1.05; color: #fff; margin-top: 4px; }
       .brand { font-family: var(--font-display); letter-spacing: .04em; font-size: clamp(42px, 5.5vw, 54px); line-height: 1.04; color: #fff; text-align: center; }
-      .gear-btn { background: none; border: none; cursor: pointer; padding: 4px; margin-left: auto; }
-      @media (min-width: 720px) { .gear-btn { margin-left: 0; } }
+      /* The gear pins to the right of the header row, at every width.
+         It used to lose `margin-left: auto` at >=720, and .app-header wraps — so a
+         festival with a long date string (Lost Lands' runs to two clauses) pushed
+         the gear onto a line of its own and that override then parked it at the FAR
+         LEFT, alone, under the dates (Kevin, 2026-07-12). `order` keeps it last in
+         the visual row even if the sub wraps; `flex: none` stops it being squeezed. */
+      .gear-btn { background: none; border: none; cursor: pointer; padding: 4px;
+                  margin-left: auto; flex: none; order: 3; align-self: center; }
     </style>
 </head>
 <body>

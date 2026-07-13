@@ -6,6 +6,7 @@
 // UI spells this out.
 import * as state from './state.js';
 import { loadJSON as loadJSONShared, saveLS } from './util.js';
+import { loadFestival, FESTIVALS } from './festivals.js';
 
 const LS_AUTH = 'fn_spotify_auth_v1';       // {clientId, access_token, refresh_token, expires_at}
 const LS_LIBMAP = 'fn_spotify_libmap_v1';   // {clientId, userId, fetchedAt, artists: {lowerName: {songs, followed}}}
@@ -23,11 +24,18 @@ const redirectUri = () => `${location.origin}/spotify-callback`;
 // configuration" (Kevin, 2026-07-12). Localhost stays in place for dev.
 const CANONICAL_HOST = 'fest.kevinhg.com';
 const LOCAL_HOSTS = ['localhost', '127.0.0.1'];
-export function canonicalHopUrl() {
+
+// `sp=connect` means "the person already pressed Connect — just keep going".
+// The hop used to land them on the canonical host with the drill open and a
+// SECOND Connect button to press, which reads as a dead end wearing a different
+// hat: you asked to connect, and the app moved you somewhere else to ask again
+// (Kevin, 2026-07-12). One press, one connect, wherever you started.
+export function canonicalHopUrl({ autoConnect = false } = {}) {
   if (location.host === CANONICAL_HOST || LOCAL_HOSTS.includes(location.hostname)) return null;
   const token = state.getCrewToken();
   if (!token) return `https://${CANONICAL_HOST}/`;
-  return `https://${CANONICAL_HOST}/#g=${token}&f=${state.activeFestivalId}&sp=1`;
+  const sp = autoConnect ? 'connect' : '1';
+  return `https://${CANONICAL_HOST}/#g=${token}&f=${state.activeFestivalId}&sp=${sp}`;
 }
 
 // The last OAuth failure, banked by spotify-callback.html so the error lands
@@ -48,6 +56,9 @@ export function isConnected() {
 }
 export function libraryMap() { return loadJSON(LS_LIBMAP); }
 export function disconnect() { localStorage.removeItem(LS_AUTH); localStorage.removeItem(LS_LIBMAP); }
+// Drop the cached library but STAY connected — "read it again" re-runs the whole
+// sweep (read + badge every festival) without making anyone re-authorise.
+export function disconnectLibrary() { localStorage.removeItem(LS_LIBMAP); }
 
 // ---- PKCE connect -----------------------------------------------------------
 const b64url = (bytes) => btoa(String.fromCharCode(...new Uint8Array(bytes)))
@@ -199,6 +210,72 @@ export async function scanLibrary(onProgress) {
   const map = { clientId: auth().clientId, userId: me.id, fetchedAt: new Date().toISOString(), artists };
   saveLS(LS_LIBMAP, JSON.stringify(map));
   return map;
+}
+
+// Every artist name in a festival, lineup + schedule.
+export function artistNamesOf(fest) {
+  const names = new Set((fest.artists || []).map((a) => a.name));
+  for (const day of Object.keys(fest.days || {})) {
+    for (const a of (fest.days[day].artists || [])) names.add(a.name);
+  }
+  return names;
+}
+
+// Badge EVERY festival this crew has, in one pass — the thing connecting was
+// always supposed to do.
+//
+// It did not. Scanning badged only the festival you happened to be looking at,
+// and then told you so: "Badged 42 artists on this fest. Open other fests to
+// badge them too." The app handed the user a chore. Kevin's model — "if I
+// connect Spotify it should fill in all my fests, and if I add fests later
+// Spotify should just pull" — is the correct one, and this is it (2026-07-12).
+//
+// Scope is the CREW's festivals, not the whole catalogue: badging all 11 would
+// bloat the crew doc toward its 256KB cap for artists nobody is planning to see.
+// A festival added later gets badged on the spot (app.js switchFestival), from
+// the same cached library — no reconnect, no rescan.
+export async function badgeAllCrewFests(myName) {
+  const lib = libraryMap();
+  if (!lib) throw new Error('Scan your library first.');
+
+  const fids = new Set(Object.keys(state.crewDoc.festivals || {}));
+  if (state.activeFestivalId) fids.add(state.activeFestivalId);
+
+  const perFest = {};
+  const merged = { ...(state.affinityFor(myName) || {}) };
+  let total = 0;
+
+  for (const fid of fids) {
+    let fest = FESTIVALS[fid];
+    if (!fest) {
+      // A festival the crew has but this device has never opened.
+      try { await loadFestival(fid); } catch { continue; } // offline: skip, badge it on next open
+      fest = FESTIVALS[fid];
+      if (!fest) continue;
+    }
+    let hits = 0;
+    for (const name of artistNamesOf(fest)) {
+      const aff = affinityOf(lib, name);
+      if (!aff) continue;
+      merged[name] = aff;
+      hits++;
+    }
+    perFest[fid] = { name: fest.name, hits };
+    total += hits;
+  }
+
+  // ONE write for the whole sweep, not one per festival.
+  state.recordAffinity(myName, merged);
+  return { total, perFest };
+}
+
+function affinityOf(lib, artistName) {
+  const hit = lib.artists[artistName.toLowerCase()];
+  if (!hit) return null;
+  const aff = {};
+  if (hit.songs) aff.songs = Math.min(hit.songs, 99999);
+  if (hit.followed) aff.followed = true;
+  return Object.keys(aff).length ? aff : null;
 }
 
 // Filter the cached library map to every artist across the crew's loaded

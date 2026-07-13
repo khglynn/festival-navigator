@@ -6,7 +6,7 @@ import * as crew from '../crew.js';
 import * as spotify from '../spotify.js';
 import * as sync from '../sync.js';
 import * as model from './model.js';
-import { FESTIVAL_INDEX } from '../festivals.js';
+import { FESTIVAL_INDEX, FESTIVALS } from '../festivals.js';
 import { BOARD, hslOf, strokeOf } from './palette.js';
 import { colorIndexOf } from './wall.js';
 import { el, subviewHead, disclosureFold, eqLoader, festRow, openExportLikes, openBulkPaste, openDayImage } from './tools.js';
@@ -862,6 +862,105 @@ function clientIdInputRow(actions, rerenderDrill, msg) {
   return row;
 }
 
+// ---- Spotify: one press, then it just works -----------------------------------
+// The whole flow used to be five screens and three presses (Connect -> hop ->
+// Connect again -> Rescan -> "now go open your other festivals"). Kevin's model
+// is the right one: "if I connect Spotify it should fill in all my fests, and if
+// I add fests later Spotify should just pull." Everything below serves that.
+
+let scanning = false; // a scan survives a re-render of the drill
+
+// ONE card, used by every not-yet-connected state, so the first Spotify screen a
+// member sees says what connecting DOES instead of showing them a client ID.
+function connectCard({ onConnect, extras = [] }) {
+  const card = el('div');
+  card.className = 'settings-card';
+  card.style.cssText += 'display: flex; flex-direction: column; gap: 10px; align-items: flex-start;';
+  card.appendChild(el('div', 'color: var(--text-body); font-size: 12.5px; font-weight: 600; line-height: 1.55;',
+    'Connect Spotify and every artist you already listen to gets badged — across every festival in your crew, and any you add later.'));
+  const btn = el('button', 'font-size: 13px; padding: 11px 18px;', 'Connect my Spotify');
+  btn.className = 'btn-tonal';
+  btn.addEventListener('click', onConnect);
+  card.appendChild(btn);
+  card.appendChild(el('div', 'color: var(--text-tertiary); font-size: 11px; font-weight: 600; line-height: 1.5;',
+    'We read your liked songs and follows. Read-only — nothing is ever posted to your account.'));
+  for (const x of extras) card.appendChild(x);
+  return card;
+}
+
+// One press connects, wherever you started. The hop to the canonical OAuth
+// origin happens underneath and continues by itself on arrival (sp=connect).
+function startConnect(msg) {
+  const hop = spotify.canonicalHopUrl({ autoConnect: true });
+  if (hop) { location.assign(hop); return; }
+  spotify.connect().catch((e) => { msg.textContent = String(e.message || e); });
+}
+
+// Read the library, then badge EVERY festival the crew has. Both halves, always,
+// with no button in between — because connecting was the ask.
+async function runFullSync(ctx, actions, onProgress, rerenderDrill, msg) {
+  if (!ctx.meName) { msg.textContent = 'Claim your name first (open your crew link).'; return; }
+  scanning = true;
+  try {
+    await spotify.scanLibrary((p) => onProgress(p));
+    onProgress('Badging your festivals…');
+    const { total, perFest } = await spotify.badgeAllCrewFests(ctx.meName);
+    const fests = Object.keys(perFest).length;
+    actions.afterBulk();
+    scanning = false;
+    rerenderDrill();
+    msg.textContent = total
+      ? `Badged ${total} artist${total === 1 ? '' : 's'} across ${fests} festival${fests === 1 ? '' : 's'}.`
+      : 'Nothing in your library matches these lineups yet — it will badge new festivals as you add them.';
+  } catch (e) {
+    scanning = false;
+    msg.textContent = String(e.message || e);
+    rerenderDrill();
+  }
+}
+
+// How many artists are badged on each of the crew's festivals — computed from
+// what is actually in the crew doc, so it cannot claim a badge that isn't there.
+function badgeCountsByFest(meName) {
+  const aff = state.affinityFor(meName) || {};
+  if (!Object.keys(aff).length) return [];
+  const out = [];
+  const fids = new Set(Object.keys(state.crewDoc.festivals || {}));
+  if (state.activeFestivalId) fids.add(state.activeFestivalId);
+  for (const fid of fids) {
+    const fest = FESTIVALS[fid];
+    if (!fest) continue; // not loaded on this device — do not guess
+    let hits = 0;
+    for (const name of spotify.artistNamesOf(fest)) if (aff[name]) hits++;
+    out.push({ id: fid, name: `${fest.name} ${fest.year || ''}`.trim(), hits });
+  }
+  return out.sort((a, b) => b.hits - a.hits);
+}
+
+// The plumbing — which Spotify app the crew rides, and the fork path. A member
+// never needs this, so it does not get to be the first thing they see.
+function advancedFold(actions, rerenderDrill, msg, { owner }) {
+  const fold = document.createElement('details');
+  const sum = document.createElement('summary');
+  sum.textContent = 'Advanced';
+  sum.style.cssText = 'color: var(--text-tertiary); font-size: 11px; font-weight: 700; cursor: pointer;';
+  fold.appendChild(sum);
+  const body = el('div', 'margin-top: 8px; display: flex; flex-direction: column; gap: 10px;');
+  if (owner) {
+    // The owner (and only the owner) needs this exact string, and getting it
+    // wrong is the difference between working and "redirect_uri: Not matching
+    // configuration" on a dead Spotify page.
+    body.appendChild(el('div', 'color: var(--text-tertiary); font-size: 10.5px; font-weight: 600; line-height: 1.5;',
+      `App owner: this app’s Spotify redirect URI must be exactly https://${SPOTIFY_CANONICAL_HOST}/spotify-callback`));
+  }
+  body.appendChild(clientIdConfigRow(actions, rerenderDrill));
+  body.appendChild(byoAppFold(actions, rerenderDrill, msg));
+  fold.appendChild(body);
+  return fold;
+}
+
+const SPOTIFY_CANONICAL_HOST = 'fest.kevinhg.com';
+
 function openSpotifyDrill(ctx, actions) {
   const host = document.getElementById('settings-subview');
   host.textContent = '';
@@ -908,28 +1007,20 @@ function openSpotifyDrill(ctx, actions) {
     if (usesOwnerApp) card.appendChild(requestAccessRow(rerenderDrill));
     col.append(card, msg);
   } else if (!clientId && owner.enabled) {
-    // MAIN PATH (note 7): the crew rides the owner's Spotify app — no codes,
-    // no setup. Connect just works for allowlisted folks; everyone else
-    // requests access right here. BYO stays as the quiet third door.
-    const card = el('div'); card.className = 'settings-card';
-    card.style.cssText += 'display: flex; flex-direction: column; gap: 10px;';
-    card.appendChild(el('div', 'color: var(--text-body); font-size: 12.5px; font-weight: 600; line-height: 1.55;',
-      'Connect your Spotify to badge artists you already love — liked songs and follows, read-only, nothing posted.'));
-    const connect = el('button', 'font-size: 13px; padding: 11px 18px; align-self: flex-start;', 'Connect my Spotify');
-    connect.className = 'btn-tonal';
-    connect.addEventListener('click', () => {
-      // Adopting the owner app is the crew's default — recorded on first
-      // connect so every member (and the OAuth return) uses the same app.
-      state.recordSpotifyClientId(owner.ownerClientId);
-      actions.afterBulk();
-      const hop = spotify.canonicalHopUrl();
-      if (hop) { location.assign(hop); return; }
-      spotify.connect().catch((e) => { msg.textContent = String(e.message || e); });
-    });
-    card.appendChild(connect);
-    card.appendChild(requestAccessRow(rerenderDrill));
-    card.appendChild(byoAppFold(actions, rerenderDrill, msg));
-    col.append(card, msg);
+    // MAIN PATH: the crew rides the owner's Spotify app — no codes, no setup.
+    // ONE button, and it works from whatever host you are on (the hop to the
+    // canonical OAuth origin is our plumbing, not the member's errand).
+    col.appendChild(connectCard({
+      onConnect: () => {
+        // Adopting the owner app is the crew's default — recorded on first
+        // connect so every member (and the OAuth return) uses the same app.
+        state.recordSpotifyClientId(owner.ownerClientId);
+        actions.afterBulk();
+        startConnect(msg);
+      },
+      extras: [requestAccessRow(rerenderDrill), advancedFold(actions, rerenderDrill, msg, { owner: true })],
+    }));
+    col.appendChild(msg);
   } else if (!clientId) {
     // Fork deployments (no owner app configured): BYO setup is the only
     // path, so it speaks first — any member can do it.
@@ -950,47 +1041,71 @@ function openSpotifyDrill(ctx, actions) {
     card.appendChild(fold);
     col.append(card, msg);
   } else if (!spotify.isConnected()) {
-    // State 3: ready — one primary action; prod aliases hop to the ONE
-    // registered OAuth origin (SPOT-1), and the button says so.
+    // Ready: the crew has an app, this member has not connected yet.
+    //
+    // This screen used to be a lone "Continue on fest.kevinhg.com" button, one
+    // line of caption, and a row reading "CREW APP · ...d26734 [Change] [Clear]"
+    // — internal plumbing, on the first Spotify screen a member ever sees, with
+    // no explanation of what connecting even does. Kevin's word was "sparse and
+    // weird" and he was being generous (2026-07-12). Same card as the main path
+    // now: say what it does, one button, plumbing folded away.
+    col.appendChild(connectCard({
+      onConnect: () => startConnect(msg),
+      extras: [
+        owner.enabled ? requestAccessRow(rerenderDrill) : null,
+        advancedFold(actions, rerenderDrill, msg, { owner: owner.enabled }),
+      ].filter(Boolean),
+    }));
+    col.appendChild(msg);
+  } else if (!spotify.libraryMap() || scanning) {
+    // Connected, nothing read yet — so READ IT. No button.
+    //
+    // Connecting used to leave you here staring at "not scanned yet" beside a
+    // "Rescan my Spotify" button you had to press yourself, and pressing it
+    // badged only the festival you happened to be on, then told you to go open
+    // the others by hand. Connecting IS the ask. Everything after it is ours.
     const card = el('div'); card.className = 'settings-card';
-    card.style.cssText += 'display: flex; flex-direction: column; gap: 10px;';
-    const hop = spotify.canonicalHopUrl();
-    const connect = el('button', 'font-size: 13px; padding: 11px 18px; align-self: flex-start;',
-      hop ? 'Continue on fest.kevinhg.com' : 'Connect my Spotify');
-    connect.className = 'btn-tonal';
-    connect.addEventListener('click', () => {
-      if (hop) { location.assign(hop); return; }
-      spotify.connect().catch((e) => { msg.textContent = String(e.message || e); });
-    });
-    card.appendChild(connect);
-    card.appendChild(el('div', 'color: var(--text-tertiary); font-size: 11.5px; font-weight: 600; line-height: 1.5;',
-      hop ? 'Spotify connects from one address — your crew and picks come along.'
-          : 'We read your liked songs and follows to badge artists — nothing is posted.'));
-    card.appendChild(clientIdConfigRow(actions, rerenderDrill));
+    card.style.cssText += 'display: flex; flex-direction: column; gap: 12px; align-items: flex-start;';
+    card.appendChild(el('span', 'color: #fff; font-weight: 700; font-size: 14px;', 'Reading your Spotify'));
+    const progress = el('div', 'color: var(--text-secondary); font-size: 12px; font-weight: 600; line-height: 1.5;',
+      'Liked songs and follows — then we badge every festival in your crew.');
+    card.append(eqLoader('Reading your library…'), progress);
     col.append(card, msg);
+    if (!scanning) runFullSync(ctx, actions, (t) => { progress.textContent = t; }, rerenderDrill, msg);
   } else {
     const lib = spotify.libraryMap();
     const card = el('div'); card.className = 'settings-card';
     card.style.cssText += 'display: flex; flex-direction: column; gap: 9px;';
-    card.appendChild(el('span', 'color: #fff; font-weight: 700; font-size: 14px;', 'Your library'));
+    card.appendChild(el('span', 'color: #fff; font-weight: 700; font-size: 14px;', 'Your Spotify'));
     card.appendChild(el('div', 'color: var(--text-secondary); font-size: 12px; font-weight: 600;',
-      lib ? `${Object.keys(lib.artists || {}).length.toLocaleString()} artists · synced ${lib.fetchedAt?.slice(0, 10) || ''}` : 'not scanned yet'));
-    const refresh = el('button', 'font-size: 12px; padding: 9px 16px; align-self: flex-start;', 'Rescan my Spotify');
-    refresh.className = 'btn-tonal';
-    refresh.addEventListener('click', async () => {
+      `${Object.keys(lib.artists || {}).length.toLocaleString()} artists in your library · read ${lib.fetchedAt?.slice(0, 10) || ''}`));
+
+    // What it actually DID, per festival — the answer to "did that work?".
+    // The old screen could only say "Badged 42 artists on this fest. Open other
+    // fests to badge them too", which is the app assigning you homework.
+    const badged = badgeCountsByFest(ctx.meName);
+    if (badged.length) {
+      const list = el('div', 'display: flex; flex-direction: column; gap: 4px; margin-top: 2px;');
+      for (const f of badged) {
+        const row = el('div', 'display: flex; gap: 8px; align-items: baseline; font-size: 11.5px; font-weight: 600;');
+        row.append(
+          el('span', 'color: var(--text-body); flex: 1; min-width: 0;', f.name),
+          el('span', 'color: var(--spotify-stroke); flex: none;',
+            f.hits ? `${f.hits} badged` : 'none of these yet'),
+        );
+        list.appendChild(row);
+      }
+      card.appendChild(list);
+      card.appendChild(el('div', 'color: var(--text-tertiary); font-size: 10.5px; font-weight: 600; line-height: 1.5;',
+        'Add a festival later and it badges itself — no reconnecting.'));
+    }
+
+    const refresh = el('button', 'font-size: 12px; padding: 9px 16px; align-self: flex-start;', 'Read it again');
+    refresh.className = 'btn-ghost';
+    refresh.addEventListener('click', () => {
       if (!ctx.meName) { msg.textContent = 'Claim your name first (open your crew link).'; return; }
-      try {
-        refresh.disabled = true;
-        await spotify.scanLibrary((p) => { msg.textContent = p; });
-        const names = new Set((state.fest().artists || []).map((a) => a.name));
-        for (const d of Object.keys(state.fest().days || {})) {
-          for (const a of state.fest().days[d].artists || []) names.add(a.name);
-        }
-        const n = spotify.applyAffinityToCrew(ctx.meName, [...names]);
-        msg.textContent = `Badged ${n} artists on this fest. Open other fests to badge them too.`;
-        actions.afterBulk();
-      } catch (e) { msg.textContent = String(e.message || e); }
-      finally { refresh.disabled = false; }
+      spotify.disconnectLibrary();
+      rerenderDrill(); // falls into the reading state, which does the whole sweep
     });
     card.appendChild(refresh);
     col.appendChild(card);
@@ -1040,8 +1155,10 @@ function openSpotifyDrill(ctx, actions) {
     dis.addEventListener('click', () => { spotify.disconnect(); rerenderDrill(); });
     col.append(dis, el('div', 'color: var(--text-tertiary); font-size: 10.5px; font-weight: 600; line-height: 1.55;',
       'Disconnect keeps picks and notes — only the badges disappear.'));
+    // The which-app plumbing lives behind Advanced here too — a connected member
+    // has even less reason to look at a client ID than an unconnected one.
     const cfg = el('div'); cfg.className = 'settings-card';
-    cfg.appendChild(clientIdConfigRow(actions, rerenderDrill));
+    cfg.appendChild(advancedFold(actions, rerenderDrill, msg, { owner: owner.enabled }));
     col.append(cfg, msg);
   }
   host.appendChild(col);
