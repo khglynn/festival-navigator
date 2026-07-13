@@ -1063,6 +1063,16 @@ async function enterApp(token, doc, current = () => true) {
   sync.pollSync();
   router.reset();
   if (savedLayers) router.restore(savedLayers);
+  // Badges are per-crew, the scanned library is per-device: opening a crew
+  // this library has never badged fills it in right here — connect on one
+  // crew and every crew you open follows (Kevin's report, 2026-07-13: The
+  // Crew showed no likes after he connected on another crew). No-op when
+  // nothing changed; badgeAllCrewFests skips the write itself.
+  if (ctx.meName && spotify.isConnected() && spotify.libraryMap()) {
+    spotify.badgeAllCrewFests(ctx.meName).then(({ changed }) => {
+      if (changed && current()) { sync.scheduleSync(); refreshCtx(); repaintWall(); }
+    }).catch((e) => console.warn('crew badge sweep:', e));
+  }
   // A hop from an alias domain mid-Spotify-setup (SPOT-1): reopen the drill
   // so the member lands exactly where they left off.
   if (pendingSpotifyOpen) {

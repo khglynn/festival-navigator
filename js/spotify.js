@@ -189,9 +189,13 @@ async function api(path) {
 // `statsFor` records crew-visible spotifyStats under that member name — the
 // 07-12 rebuild dropped this write and nobody's connection was visible to
 // their crew (verified live 2026-07-13).
-export async function scanLibrary(onProgress, { festNames = null, statsFor = null } = {}) {
+export async function scanLibrary(onProgress, { festNames = null } = {}) {
   const me = await api('/me');
   const artists = {}; // lowerName -> {songs, followed}
+  // Liked-track URIs for FEST artists only (capped) — what lets a playlist
+  // carry the songs you actually saved, not just search's top hits. Fest-only
+  // keeps the cache small; it never enters the crew doc.
+  const trackUris = {}; // lowerName -> [spotify:track:...]
   let url = '/me/tracks?limit=50', scanned = 0, likedTotal = 0, finds = 0;
   const seenFinds = new Set();
   while (url) {
@@ -205,9 +209,15 @@ export async function scanLibrary(onProgress, { festNames = null, statsFor = nul
       for (const a of (item.track?.artists || [])) {
         const key = a.name.toLowerCase();
         (artists[key] = artists[key] || { songs: 0 }).songs++;
-        if (festNames && festNames.has(key) && !seenFinds.has(key)) {
-          seenFinds.add(key); finds++;
-          if (img) festCover = img;
+        if (festNames && festNames.has(key)) {
+          if (item.track?.uri) {
+            (trackUris[key] = trackUris[key] || []);
+            if (trackUris[key].length < 10) trackUris[key].push(item.track.uri);
+          }
+          if (!seenFinds.has(key)) {
+            seenFinds.add(key); finds++;
+            if (img) festCover = img;
+          }
         }
       }
     }
@@ -248,17 +258,25 @@ export async function scanLibrary(onProgress, { festNames = null, statsFor = nul
       });
     }
   } while (after);
-  const map = { clientId: auth().clientId, userId: me.id, fetchedAt: new Date().toISOString(), artists };
+  const map = { clientId: auth().clientId, userId: me.id, fetchedAt: new Date().toISOString(), artists, trackUris };
   saveLS(LS_LIBMAP, JSON.stringify(map));
-  if (statsFor) {
-    state.recordSpotifyStats(statsFor, {
-      likedCount: likedTotal,
-      artistCount: Object.keys(artists).length,
-      lastSynced: map.fetchedAt,
-      user: me.id,
-    });
-  }
+  // Stats are RETURNED, not recorded here: the caller must decide whether the
+  // crew this scan started on is still the crew on screen (a scan spans
+  // minutes; recording blindly is how "Kevin HG" ghost-stats landed on a crew
+  // he isn't in, live 2026-07-13).
+  map.stats = {
+    likedCount: likedTotal,
+    artistCount: Object.keys(artists).length,
+    lastSynced: map.fetchedAt,
+    user: me.id,
+  };
   return map;
+}
+
+// My saved tracks for one artist, from the scan cache (fest artists only).
+export function likedUrisOf(artistName) {
+  const lib = libraryMap();
+  return lib?.trackUris?.[artistName.toLowerCase()] || [];
 }
 
 // Every artist name in a festival, lineup + schedule.
@@ -313,9 +331,13 @@ export async function badgeAllCrewFests(myName) {
     total += hits;
   }
 
-  // ONE write for the whole sweep, not one per festival.
-  state.recordAffinity(myName, merged);
-  return { total, perFest };
+  // ONE write for the whole sweep, not one per festival — and NO write when
+  // nothing changed (this also runs at every crew activation now; identical
+  // re-writes would be pure sync churn).
+  const before = state.affinityFor(myName) || {};
+  const changed = JSON.stringify(merged) !== JSON.stringify(before);
+  if (changed) state.recordAffinity(myName, merged);
+  return { total, perFest, changed };
 }
 
 function affinityOf(lib, artistName) {
@@ -360,8 +382,13 @@ export function applyAffinityToCrew(myName, festivalArtistNames) {
 // /items. Do not "modernize" these back to the classic endpoints — they 403
 // for dev-mode apps. (developer.spotify.com/documentation/web-api/tutorials/
 // february-2026-migration-guide)
-// tracksPerArtist defaults to 1 — the UI promises "one track per picked
-// artist" and the artifact should keep the promise (SPOT-7).
+// tracksPerArtist defaults to 3 + the maker's own saved tracks per artist —
+// "always top 3 + any likes" (Kevin, 2026-07-13; supersedes SPOT-7's
+// one-track promise — the UI copy moved with it).
+// Per artist: their top tracks by search PLUS every track of theirs you
+// actually saved (from the scan cache), deduped. "Always top 3 + any likes"
+// — Kevin's spec, 2026-07-13. Liked tracks lead so the playlist opens with
+// the songs you know.
 async function findTrackUris(artistNames, tracksPerArtist, onProgress) {
   const uris = [];
   const found = [];
@@ -369,18 +396,38 @@ async function findTrackUris(artistNames, tracksPerArtist, onProgress) {
   for (let i = 0; i < artistNames.length; i++) {
     const name = artistNames[i];
     if (onProgress) onProgress({ i: i + 1, of: artistNames.length, name });
+    const liked = likedUrisOf(name);
     try {
       const search = await api(`/search?q=${encodeURIComponent(`artist:"${name}"`)}&type=track&limit=${tracksPerArtist * 3}`);
       const wanted = name.toLowerCase();
       const hits = (search.tracks?.items || [])
         .filter((t) => (t.artists || []).some((a) => a.name.toLowerCase() === wanted));
-      const chosen = (hits.length ? hits : (search.tracks?.items || [])).slice(0, tracksPerArtist);
-      if (!chosen.length) { misses++; continue; }
-      chosen.forEach((t) => uris.push(t.uri));
+      const top = (hits.length ? hits : (search.tracks?.items || [])).slice(0, tracksPerArtist).map((t) => t.uri);
+      const mine = new Set(liked);
+      const combined = [...liked, ...top.filter((u) => !mine.has(u))];
+      if (!combined.length) { misses++; continue; }
+      uris.push(...combined);
       found.push(name);
-    } catch (e) { misses++; }
+    } catch (e) {
+      // Search down but we still have the person's own saves — use them.
+      if (liked.length) { uris.push(...liked); found.push(name); }
+      else misses++;
+    }
   }
   return { uris, found, misses };
+}
+
+// Every track URI already in the playlist — the append-side dedupe. Reads
+// live items (paginated) so manual edits and other members' adds count.
+async function playlistTrackUris(playlistId) {
+  const have = new Set();
+  let path = `/playlists/${playlistId}/items?limit=100&fields=items(track(uri)),next`;
+  while (path) {
+    const page = await api(path);
+    for (const it of (page.items || [])) if (it.track?.uri) have.add(it.track.uri);
+    path = page.next ? page.next.replace('https://api.spotify.com/v1', '') : null;
+  }
+  return have;
 }
 
 async function pushTracks(playlistId, uris) {
@@ -398,7 +445,7 @@ async function pushTracks(playlistId, uris) {
 // Spotify only lets OTHER members' tokens append to a playlist they don't own
 // when it's collaborative (and collab requires public:false). Solo "Just mine"
 // playlists stay plain private.
-export async function playlistFromPicks({ title, artistNames, tracksPerArtist = 1, collaborative = false, onProgress }) {
+export async function playlistFromPicks({ title, artistNames, tracksPerArtist = 3, collaborative = false, onProgress }) {
   const { uris, found, misses } = await findTrackUris(artistNames, tracksPerArtist, onProgress);
   if (!uris.length) throw new Error('No tracks found for those picks — Spotify search returned nothing (or the crew app lost API access).');
   const createRes = await fetch('https://api.spotify.com/v1/me/playlists', {
@@ -423,11 +470,15 @@ export async function playlistFromPicks({ title, artistNames, tracksPerArtist = 
 // auto-extend path when a member connects later or picks change. The diff is
 // computed against the crew doc's recorded artist list (not Spotify's items —
 // cheaper, and resilient to manual playlist edits).
-export async function addArtistsToPlaylist({ playlistId, artistNames, tracksPerArtist = 1, onProgress }) {
+export async function addArtistsToPlaylist({ playlistId, artistNames, tracksPerArtist = 3, onProgress }) {
   if (!artistNames.length) return { added: 0, misses: 0, found: [] };
   const { uris, found, misses } = await findTrackUris(artistNames, tracksPerArtist, onProgress);
-  if (uris.length) await pushTracks(playlistId, uris);
-  return { added: uris.length, misses, found };
+  // Track-level dedupe against the LIVE playlist — the ledger dedupes
+  // artists, but two members can both like the same song.
+  const have = await playlistTrackUris(playlistId);
+  const fresh = uris.filter((u) => !have.has(u));
+  if (fresh.length) await pushTracks(playlistId, fresh);
+  return { added: fresh.length, misses, found };
 }
 
 // Pure diff helper (unit-tested): which currently-picked artists are missing

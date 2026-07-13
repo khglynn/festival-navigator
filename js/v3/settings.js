@@ -977,13 +977,25 @@ async function runFullSync(ctx, actions, onProgressIn, rerenderDrill, msg) {
         : `Spotify · reading your library${p.total ? ` ${Math.round(((p.scanned || 0) / p.total) * 100)}%` : '…'}`);
     } else scanPill(null);
   };
+  // The scan spans minutes and every recorder writes into the CURRENT crew
+  // doc — if the person switches crews mid-scan, blind writes land the old
+  // crew's identity on the new crew (live ghost: "Kevin HG" stats on a crew
+  // he isn't in, 2026-07-13). Same crew at the end, or nothing is written.
+  const tokenAtStart = state.getCrewToken();
+  const meAtStart = ctx.meName;
   try {
-    await spotify.scanLibrary((p) => onProgress(p), {
+    const map = await spotify.scanLibrary((p) => onProgress(p), {
       festNames: crewFestNamesLower(),
-      statsFor: ctx.meName, // crew-visible stats — dropped in the 07-12 rebuild
     });
+    if (state.getCrewToken() !== tokenAtStart) {
+      scanning = false;
+      scanPill(null);
+      console.warn('spotify: crew changed mid-scan — library cached, crew writes skipped (reopen the drill to badge this crew)');
+      return;
+    }
+    state.recordSpotifyStats(meAtStart, map.stats); // the 07-12 dropped write
     onProgress({ text: 'Badging your festivals…', phase: 'badge' });
-    const { total, perFest } = await spotify.badgeAllCrewFests(ctx.meName);
+    const { total, perFest } = await spotify.badgeAllCrewFests(meAtStart);
     const fests = Object.keys(perFest).length;
     actions.afterBulk();
     // Your picks may be new to the crew playlist — fold them in while we're
@@ -1299,7 +1311,7 @@ function openSpotifyDrill(ctx, actions) {
     pl.appendChild(nameInput);
 
     pl.appendChild(el('div', 'color: var(--text-tertiary); font-size: 11px; font-weight: 600;',
-      'One track per picked artist, musts first. Made in your account — Everyone playlists are collaborative, so crew-mates who connect join in automatically.'));
+      'Top tracks plus your saved songs for every picked artist, musts first. Made in your account — Everyone playlists are collaborative, so crew-mates who connect add their saves automatically.'));
     const make = el('button', 'font-size: 12px; padding: 9px 16px; align-self: flex-start;', existing ? 'Make a new one' : 'Make playlist');
     make.className = 'btn-tonal';
     make.addEventListener('click', async () => {

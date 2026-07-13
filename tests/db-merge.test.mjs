@@ -231,3 +231,20 @@ test('the v4 and legacy deltas are not swapped — $2 and $3 select by the row\'
     'a v3 doc takes the legacy delta ($3) — swap the placeholders and this flips',
   );
 });
+
+// ---- festival membership sync (the ghost-festival fix, 2026-07-13) -----------
+// Adding a festival used to write only the local doc — The Crew's server doc
+// held ONE festival while Kevin's device showed six. The fix syncs an empty
+// selections object; this proves the real SQL creates the key from it.
+test('an added festival with zero picks still lands as a key on the server doc', async () => {
+  await seed();
+  await merge({ festivals: { 'lollapalooza-2025': { selections: {} } } });
+  const doc = await readDoc();
+  assert.ok(doc.festivals['lollapalooza-2025'], 'the festival key exists crew-wide');
+  assert.deepEqual(doc.festivals['lollapalooza-2025'].selections, {});
+  assert.deepEqual(doc.festivals.ef.selections, {}, 'existing fests untouched');
+  // And a later pick merges INTO it rather than replacing it.
+  await merge({ festivals: { 'lollapalooza-2025': { selections: { 'Wild Rivers': { Kev: 4 } } } } });
+  const doc2 = await readDoc();
+  assert.equal(doc2.festivals['lollapalooza-2025'].selections['Wild Rivers'].Kev, 4);
+});

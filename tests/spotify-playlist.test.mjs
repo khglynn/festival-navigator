@@ -81,3 +81,32 @@ test('recordSpotifyPlaylist: doc + pending + lookup', () => {
   assert.equal(state.hasPending(), true);
   assert.equal(validateIncoming({ spotify: { playlists: { 'electric-forest-2026': PLAYLIST } } }).ok, true);
 });
+
+test('ensureFestivalState queues the membership for sync (ghost-festival fix)', () => {
+  store.clear();
+  state.activateCrew('sptoken_fest_012345678', {
+    v: 4, meta: {}, spotify: {}, people: { Kev: { colorIndex: 0 } },
+    festivals: { 'pl-test': { selections: {} } }, affinity: {},
+  });
+  assert.equal(state.hasPending(), false, 'clean start');
+  state.ensureFestivalState('lollapalooza-2025');
+  assert.ok(state.crewDoc.festivals['lollapalooza-2025'], 'local render immediately');
+  assert.equal(state.hasPending(), true, 'AND the crew will hear about it');
+  assert.equal(validateIncoming({ festivals: { 'lollapalooza-2025': { selections: {} } } }).ok,
+    true, 'and the server validator takes the empty-fest delta');
+  // Re-ensuring an existing fest queues nothing new (no sync churn).
+  const seqBefore = state.hasPending();
+  state.ensureFestivalState('lollapalooza-2025');
+  assert.equal(state.hasPending(), seqBefore);
+});
+
+test('likedUrisOf reads the fest-artist track cache; playlist union prefers likes', () => {
+  store.clear();
+  localStorage.setItem('fn_spotify_libmap_v1', JSON.stringify({
+    clientId: 'x'.repeat(32), userId: 'kev', fetchedAt: '2026-07-13T00:00:00Z',
+    artists: { 'big sis': { songs: 15, followed: true } },
+    trackUris: { 'big sis': ['spotify:track:aaa', 'spotify:track:bbb'] },
+  }));
+  assert.deepEqual(spotify.likedUrisOf('Big Sis'), ['spotify:track:aaa', 'spotify:track:bbb']);
+  assert.deepEqual(spotify.likedUrisOf('Unknown'), []);
+});

@@ -105,7 +105,18 @@ export function isActivePerson(p) { return !!p && !p.removed; }
 export function activePeople() { return Object.entries(people()).filter(([, p]) => isActivePerson(p)); }
 
 export function ensureFestivalState(fid) {
-  if (!crewDoc.festivals[fid]) crewDoc.festivals[fid] = { selections: {} };
+  if (!crewDoc.festivals[fid]) {
+    crewDoc.festivals[fid] = { selections: {} };
+    // Sync the membership, not just the local render: this write is what
+    // makes "the crew has this festival" true for OTHER devices. Without it,
+    // every added festival was a ghost only this device could see — The
+    // Crew's server doc held one festival while Kevin's phone showed six
+    // (live, 2026-07-13). An empty selections object merges as a key with no
+    // leaves, which is exactly right.
+    const pf = (pendingChanges.festivals = pendingChanges.festivals || {});
+    pf[fid] = pf[fid] || { selections: {} };
+    editSeq++; persistPending();
+  }
   if (!crewDoc.festivals[fid].selections) crewDoc.festivals[fid].selections = {};
 }
 
