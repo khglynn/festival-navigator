@@ -896,24 +896,110 @@ function startConnect(msg) {
   spotify.connect().catch((e) => { msg.textContent = String(e.message || e); });
 }
 
+// Every artist across the crew's loaded festivals, lowercased — what lets the
+// scan ticker celebrate a find the moment it streams past.
+function crewFestNamesLower() {
+  const names = new Set();
+  const fids = new Set(Object.keys(state.crewDoc.festivals || {}));
+  if (state.activeFestivalId) fids.add(state.activeFestivalId);
+  for (const fid of fids) {
+    const fest = FESTIVALS[fid];
+    if (!fest) continue;
+    for (const n of spotify.artistNamesOf(fest)) names.add(n.toLowerCase());
+  }
+  return names;
+}
+
+// Everyone-mode crew playlists: append tracks for picked artists that aren't
+// in the playlist's ledger yet. Runs quietly after a member connects (their
+// picks may be new to the playlist) and behind the drill's Update button.
+// Collaborative playlists accept other members' tokens; if Spotify refuses
+// anyway, say so and leave the manual retry — never fail the sync over it.
+async function syncEveryonePlaylists(ctx, actions, onNote) {
+  const lists = state.crewDoc.spotify?.playlists || {};
+  let added = 0;
+  for (const [fid, meta] of Object.entries(lists)) {
+    if (meta.mode !== 'everyone') continue;
+    const fest = FESTIVALS[fid];
+    if (!fest) continue;
+    const picks = model.picksFor(state.crewDoc, fid);
+    const names = Object.entries(picks)
+      .map(([artist, byP]) => ({ artist, level: Math.max(0, ...Object.values(byP)) }))
+      .filter((x) => x.level > 0).sort((a, b) => b.level - a.level)
+      .map((x) => x.artist);
+    const missing = spotify.playlistMissingArtists(names, meta);
+    if (!missing.length) continue;
+    try {
+      const r = await spotify.addArtistsToPlaylist({ playlistId: meta.id, artistNames: missing });
+      if (r.found.length) {
+        state.recordSpotifyPlaylist(fid, { ...meta, artists: [...(meta.artists || []), ...r.found] });
+        actions.afterBulk();
+        added += r.added;
+      }
+    } catch (e) {
+      console.warn('playlist sync:', e);
+      if (onNote) onNote('Couldn’t add to the crew playlist — the Update button in the drill can retry.');
+    }
+  }
+  if (added && onNote) onNote(`Added ${added} track${added === 1 ? '' : 's'} to the crew playlist.`);
+  return added;
+}
+
+// A body-level pill so the scan stays visible when the person leaves the
+// drill to browse the wall — the scan keeps running either way, and badges
+// popping in later without explanation reads as haunted. Fixed-position,
+// never blocks anything.
+function scanPill(text) {
+  let pill = document.getElementById('spot-scan-pill');
+  if (text === null) { pill?.remove(); return; }
+  if (!pill) {
+    pill = el('div');
+    pill.id = 'spot-scan-pill';
+    pill.className = 'spot-pill';
+    pill.setAttribute('role', 'status');
+    document.body.appendChild(pill);
+  }
+  pill.textContent = text;
+}
+
 // Read the library, then badge EVERY festival the crew has. Both halves, always,
 // with no button in between — because connecting was the ask.
-async function runFullSync(ctx, actions, onProgress, rerenderDrill, msg) {
+async function runFullSync(ctx, actions, onProgressIn, rerenderDrill, msg) {
   if (!ctx.meName) { msg.textContent = 'Claim your name first (open your crew link).'; return; }
   scanning = true;
+  const onProgress = (p) => {
+    onProgressIn(p);
+    // Only speak up when the drill isn't on screen — no double narration.
+    // offsetParent is null whenever the settings screen is display:none.
+    const drillVisible = !!document.getElementById('settings-subview')?.offsetParent;
+    if (!drillVisible) {
+      scanPill(p.phase === 'badge' ? 'Spotify · badging your festivals…'
+        : `Spotify · reading your library${p.total ? ` ${Math.round(((p.scanned || 0) / p.total) * 100)}%` : '…'}`);
+    } else scanPill(null);
+  };
   try {
-    await spotify.scanLibrary((p) => onProgress(p));
-    onProgress('Badging your festivals…');
+    await spotify.scanLibrary((p) => onProgress(p), {
+      festNames: crewFestNamesLower(),
+      statsFor: ctx.meName, // crew-visible stats — dropped in the 07-12 rebuild
+    });
+    onProgress({ text: 'Badging your festivals…', phase: 'badge' });
     const { total, perFest } = await spotify.badgeAllCrewFests(ctx.meName);
     const fests = Object.keys(perFest).length;
     actions.afterBulk();
+    // Your picks may be new to the crew playlist — fold them in while we're
+    // here (Kevin's model: someone who auths joins the playlist too).
+    const notes = [];
+    await syncEveryonePlaylists(ctx, actions, (n) => notes.push(n));
     scanning = false;
+    scanPill(null);
     rerenderDrill();
-    msg.textContent = total
+    const badgeLine = total
       ? `Badged ${total} artist${total === 1 ? '' : 's'} across ${fests} festival${fests === 1 ? '' : 's'}.`
       : 'Nothing in your library matches these lineups yet — it will badge new festivals as you add them.';
+    msg.textContent = [badgeLine, ...notes].join(' ');
   } catch (e) {
     scanning = false;
+    scanPill(null);
     msg.textContent = String(e.message || e);
     rerenderDrill();
   }
@@ -1067,11 +1153,52 @@ function openSpotifyDrill(ctx, actions) {
     const card = el('div'); card.className = 'settings-card';
     card.style.cssText += 'display: flex; flex-direction: column; gap: 12px; align-items: flex-start;';
     card.appendChild(el('span', 'color: #fff; font-weight: 700; font-size: 14px;', 'Reading your Spotify'));
-    const progress = el('div', 'color: var(--text-secondary); font-size: 12px; font-weight: 600; line-height: 1.5;',
-      'Liked songs and follows — then we badge every festival in your crew.');
-    card.append(eqLoader('Reading your library…'), progress);
+
+    // Real progress, not a spinner promise: album covers flick by as pages
+    // stream in (fest-relevant finds hold a beat longer + tint green), over a
+    // live counter and a bar. Reduced-motion gets the numbers without the
+    // flicker (Kevin, 2026-07-13: "communication of progress" — the covers
+    // are the proof the scan is really reading YOUR library).
+    const ticker = el('div', 'display: flex; gap: 12px; align-items: center; width: 100%;');
+    const tile = el('div');
+    tile.className = 'scan-tile';
+    ticker.appendChild(tile);
+    const lines = el('div', 'display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 0;');
+    const counter = el('div', 'color: var(--text-body); font-size: 12.5px; font-weight: 700;', 'Reading your library…');
+    const finds = el('div', 'color: var(--spotify-stroke); font-size: 11.5px; font-weight: 700; min-height: 14px;', '');
+    const barWrap = el('div');
+    barWrap.className = 'scan-bar';
+    const bar = el('div');
+    bar.className = 'scan-bar-fill';
+    barWrap.appendChild(bar);
+    lines.append(counter, finds, barWrap);
+    ticker.appendChild(lines);
+    const sub = el('div', 'color: var(--text-tertiary); font-size: 11px; font-weight: 600; line-height: 1.5;',
+      'Liked songs and follows — then every festival in your crew badges itself.');
+    card.append(ticker, sub);
     col.append(card, msg);
-    if (!scanning) runFullSync(ctx, actions, (t) => { progress.textContent = t; }, rerenderDrill, msg);
+
+    const noMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    let lastFlick = 0, holdUntil = 0;
+    const onProgress = (p) => {
+      if (p.phase === 'badge') { counter.textContent = p.text; bar.style.width = '100%'; return; }
+      counter.textContent = p.phase === 'follows'
+        ? `${p.followed} followed artists · ${p.artists.toLocaleString()} artists total`
+        : `${p.text} · ${p.artists.toLocaleString()} artists`;
+      if (p.finds > 0) finds.textContent = `${p.finds} at your festivals ✓`;
+      if (p.total > 0 && p.phase === 'likes') bar.style.width = `${Math.min(100, (p.scanned / p.total) * 95)}%`;
+      if (p.phase === 'follows') bar.style.width = '97%';
+      const now = Date.now();
+      if (p.cover && !noMotion && now >= holdUntil && now - lastFlick > 350) {
+        lastFlick = now;
+        if (p.coverIsFind) { holdUntil = now + 1100; tile.classList.add('find'); }
+        else tile.classList.remove('find');
+        const img = document.createElement('img');
+        img.src = p.cover; img.alt = ''; img.decoding = 'async';
+        img.onload = () => { tile.replaceChildren(img); };
+      }
+    };
+    if (!scanning) runFullSync(ctx, actions, onProgress, rerenderDrill, msg);
   } else {
     const lib = spotify.libraryMap();
     const card = el('div'); card.className = 'settings-card';
@@ -1110,19 +1237,70 @@ function openSpotifyDrill(ctx, actions) {
     card.appendChild(refresh);
     col.appendChild(card);
 
+    // Playlist card. Everything it says happens INSIDE the card — its old
+    // status line lived at the very bottom of the drill, below the Advanced
+    // fold, so "Make playlist" looked like it did nothing (Kevin, live,
+    // 2026-07-13: "didn't do anything as far as I can tell" — it had said
+    // 'No picks yet.' two screens below his viewport).
     const pl = el('div'); pl.className = 'settings-card';
     pl.style.cssText += 'display: flex; flex-direction: column; gap: 10px;';
     pl.appendChild(el('span', 'color: #fff; font-weight: 700; font-size: 14px;', 'Playlist from our picks'));
+
+    const plStatus = el('div', 'color: var(--text-secondary); font-size: 11.5px; font-weight: 600; line-height: 1.5; min-height: 15px;');
+    const fid = ctx.fid;
+    const existing = state.spotifyPlaylistFor(fid);
+
+    if (existing && existing.mode === 'everyone') {
+      // The crew already has one — show it, link it, offer the top-up.
+      const row = el('div', 'display: flex; gap: 8px; align-items: center; flex-wrap: wrap;');
+      const open = document.createElement('a');
+      open.href = existing.url; open.target = '_blank'; open.rel = 'noopener';
+      open.textContent = 'Open in Spotify ↗';
+      open.style.cssText = 'color: var(--spotify-stroke); font-size: 12.5px; font-weight: 700; text-decoration: none;';
+      row.append(
+        el('span', 'color: var(--text-body); font-size: 12px; font-weight: 600;',
+          `Crew playlist · ${(existing.artists || []).length} artists · by ${existing.by || '?'}`),
+        open,
+      );
+      pl.appendChild(row);
+      const update = el('button', 'font-size: 12px; padding: 8px 14px; align-self: flex-start;', 'Add new picks');
+      update.className = 'btn-ghost';
+      update.addEventListener('click', async () => {
+        update.disabled = true;
+        plStatus.textContent = 'Checking for new picks…';
+        try {
+          const added = await syncEveryonePlaylists(ctx, actions, (n) => { plStatus.textContent = n; });
+          if (!added) plStatus.textContent = 'Playlist already has everyone’s picks.';
+        } catch (e) { plStatus.textContent = String(e.message || e); }
+        finally { update.disabled = false; }
+      });
+      pl.appendChild(update);
+    }
+
     const segRow = el('div', 'display: flex; gap: 6px;');
     const segAll = el('button', '', 'Everyone'); segAll.className = 'seg active';
     const segMine = el('button', '', 'Just mine'); segMine.className = 'seg';
     let mineOnly = false;
-    segAll.addEventListener('click', () => { mineOnly = false; segAll.classList.add('active'); segMine.classList.remove('active'); });
-    segMine.addEventListener('click', () => { mineOnly = true; segMine.classList.add('active'); segAll.classList.remove('active'); });
+    const defaultTitle = () => `${state.fest().name} — ${mineOnly ? ctx.meName : 'the crew'}`;
     segRow.append(segAll, segMine);
     pl.appendChild(segRow);
-    pl.appendChild(el('div', 'color: var(--text-tertiary); font-size: 11px; font-weight: 600;', 'One track per picked artist, musts first. Made in your account.'));
-    const make = el('button', 'font-size: 12px; padding: 9px 16px; align-self: flex-start;', 'Make playlist');
+
+    // Pick the name before it exists — a playlist you named is one you keep.
+    const nameInput = document.createElement('input');
+    nameInput.type = 'text'; nameInput.maxLength = 100;
+    nameInput.value = defaultTitle();
+    nameInput.setAttribute('aria-label', 'Playlist name');
+    nameInput.style.cssText = 'width: 100%; box-sizing: border-box; background: rgba(255,255,255,.05); border: 1px solid var(--border-card); border-radius: 9px; padding: 8px 10px; color: #fff; font-size: 12.5px; font-weight: 600; font-family: inherit;';
+    let nameDirty = false;
+    nameInput.addEventListener('input', () => { nameDirty = true; });
+    const retitle = () => { if (!nameDirty) nameInput.value = defaultTitle(); };
+    segAll.addEventListener('click', () => { mineOnly = false; segAll.classList.add('active'); segMine.classList.remove('active'); retitle(); });
+    segMine.addEventListener('click', () => { mineOnly = true; segMine.classList.add('active'); segAll.classList.remove('active'); retitle(); });
+    pl.appendChild(nameInput);
+
+    pl.appendChild(el('div', 'color: var(--text-tertiary); font-size: 11px; font-weight: 600;',
+      'One track per picked artist, musts first. Made in your account — Everyone playlists are collaborative, so crew-mates who connect join in automatically.'));
+    const make = el('button', 'font-size: 12px; padding: 9px 16px; align-self: flex-start;', existing ? 'Make a new one' : 'Make playlist');
     make.className = 'btn-tonal';
     make.addEventListener('click', async () => {
       try {
@@ -1133,21 +1311,38 @@ function openSpotifyDrill(ctx, actions) {
           .filter((x) => x.level > 0)
           .sort((a, b) => b.level - a.level)
           .map((x) => x.artist);
-        if (!names.length) { msg.textContent = 'No picks yet.'; return; }
+        if (!names.length) {
+          plStatus.textContent = mineOnly
+            ? 'You haven’t picked any artists on this fest yet — tap some cards first.'
+            : 'Nobody has picked artists on this fest yet — tap some cards first.';
+          return;
+        }
+        const title = nameInput.value.trim() || defaultTitle();
         const made = await spotify.playlistFromPicks({
-          title: `${state.fest().name} — ${mineOnly ? ctx.meName : 'the crew'}`,
-          artistNames: names,
-          onProgress: (p) => { msg.textContent = p; },
+          title, artistNames: names, collaborative: !mineOnly,
+          onProgress: (p) => { plStatus.textContent = `Finding tracks ${p.i}/${p.of} — ${p.name}`; },
         });
+        if (!mineOnly) {
+          state.recordSpotifyPlaylist(fid, {
+            id: made.id, url: made.url, mode: 'everyone', by: ctx.meName,
+            at: new Date().toISOString(), artists: made.found,
+          });
+          actions.afterBulk();
+        }
         // Skips are always reported (audit 5.2) — a flat success over 3
         // missing artists is a quiet lie.
-        msg.textContent = made.misses
-          ? `Playlist created — ${made.trackCount} tracks. ${made.misses} artist${made.misses === 1 ? '' : 's'} had no findable track.`
-          : `Playlist created in your Spotify — ${made.trackCount} tracks.`;
-      } catch (e) { msg.textContent = String(e.message || e); }
+        plStatus.textContent = '';
+        const done = el('span', 'color: var(--text-body); font-size: 12px; font-weight: 600;',
+          `✓ “${title}” — ${made.trackCount} tracks.${made.misses ? ` ${made.misses} artist${made.misses === 1 ? '' : 's'} had no findable track.` : ''} `);
+        const link = document.createElement('a');
+        link.href = made.url; link.target = '_blank'; link.rel = 'noopener';
+        link.textContent = 'Open in Spotify ↗';
+        link.style.cssText = 'color: var(--spotify-stroke); font-weight: 700; text-decoration: none;';
+        plStatus.replaceChildren(done, link);
+      } catch (e) { plStatus.textContent = String(e.message || e); }
       finally { make.disabled = false; }
     });
-    pl.appendChild(make);
+    pl.append(make, plStatus);
     col.appendChild(pl);
 
     const dis = el('button', 'font-size: 12px; padding: 8px 14px; align-self: flex-start;', 'Disconnect');

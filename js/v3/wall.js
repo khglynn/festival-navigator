@@ -120,6 +120,16 @@ export function renderCard(artistName, ctx, opts = {}) {
     c.className = chip.kind === 'notes' ? 'chip-notes' : 'chip-spotify';
     c.textContent = chip.label;
     if (chip.kind === 'spotify' && chip.followed) c.appendChild(svgBookmark());
+    // Corner glow for high-affinity artists (followed + 5+ songs): a soft
+    // Spotify-green mini-aura behind the badge corner — same visual language
+    // as the people-auras, card geometry untouched (Kevin picked this over
+    // rings/outlines 2026-07-13; thicker outlines broke pixel rhythm before).
+    if (chip.kind === 'spotify' && chip.hot) {
+      const glow = document.createElement('span');
+      glow.className = 'spot-glow';
+      glow.setAttribute('aria-hidden', 'true');
+      el.appendChild(glow);
+    }
     if (clickable) {
       c.style.cursor = 'pointer';
       c.setAttribute('aria-label', `${chip.label} note${chip.label === '1' ? '' : 's'} for ${artistName}`);

@@ -214,12 +214,50 @@ function validateAffinity(affinity) {
   return OK;
 }
 
+// The crew-shared playlist registry (spotify.playlists[fid]) is what lets a
+// member who connects LATER find, open, and auto-extend the crew playlist.
+// The recorded `artists` list is the dedupe ledger for auto-extend — capped
+// so a hostile write can't balloon the doc.
+const SPOTIFY_PLAYLIST_ID_RE = /^[A-Za-z0-9]{10,40}$/;
+const SPOTIFY_PLAYLIST_URL_RE = /^https:\/\/open\.spotify\.com\/playlist\/[A-Za-z0-9]{10,40}(\?[\w=&-]*)?$/;
+
+function validateSpotifyPlaylist(fid, p) {
+  if (typeof fid !== 'string' || !FESTIVAL_ID_RE.test(fid)) return fail('spotify.playlists: bad festival id');
+  if (!isPlainObject(p)) return fail(`spotify.playlists[${safeKey(fid)}] must be an object`);
+  for (const [k, v] of Object.entries(p)) {
+    if (k === 'id') {
+      if (typeof v !== 'string' || !SPOTIFY_PLAYLIST_ID_RE.test(v)) return fail('playlist: bad id');
+    } else if (k === 'url') {
+      if (typeof v !== 'string' || !SPOTIFY_PLAYLIST_URL_RE.test(v)) return fail('playlist: url must be an open.spotify.com playlist link');
+    } else if (k === 'mode') {
+      if (v !== 'everyone' && v !== 'mine') return fail('playlist: mode must be everyone|mine');
+    } else if (k === 'by') {
+      if (!validName(v, LIMITS.personName)) return fail('playlist: bad by');
+    } else if (k === 'at') {
+      if (!validNoteTs(v)) return fail('playlist: bad at');
+    } else if (k === 'artists') {
+      if (!Array.isArray(v) || v.length > 500) return fail('playlist: artists must be an array (max 500)');
+      for (const n of v) if (typeof n !== 'string' || !n.length || n.length > LIMITS.artistName) return fail('playlist: bad artist name');
+    } else return fail(`playlist: unknown key ${safeKey(k)}`);
+  }
+  if (!p.id || !p.url) return fail('playlist: id and url are required');
+  return OK;
+}
+
 function validateSpotify(spotify) {
   if (!isPlainObject(spotify)) return fail('spotify must be an object');
   for (const [k, v] of Object.entries(spotify)) {
-    if (k !== 'clientId') return fail(`spotify: unknown key ${k}`);
-    // Empty string allowed: it is how a crew clears its client ID.
-    if (typeof v !== 'string' || (v !== '' && !CLIENT_ID_RE.test(v))) return fail('spotify.clientId must be a 32-hex-char Spotify Client ID');
+    if (k === 'clientId') {
+      // Empty string allowed: it is how a crew clears its client ID.
+      if (typeof v !== 'string' || (v !== '' && !CLIENT_ID_RE.test(v))) return fail('spotify.clientId must be a 32-hex-char Spotify Client ID');
+    } else if (k === 'playlists') {
+      if (!isPlainObject(v)) return fail('spotify.playlists must be an object');
+      if (Object.keys(v).length > 24) return fail('spotify.playlists: too many');
+      for (const [fid, p] of Object.entries(v)) {
+        const r = validateSpotifyPlaylist(fid, p);
+        if (!r.ok) return r;
+      }
+    } else return fail(`spotify: unknown key ${safeKey(k)}`);
   }
   return OK;
 }

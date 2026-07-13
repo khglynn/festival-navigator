@@ -180,35 +180,84 @@ async function api(path) {
 // ---- library scan -> affinity ------------------------------------------------
 // Scans liked songs + followed artists into a device-cached full-library map,
 // then filters it to the crew's festival lineups (kept small in the crew doc).
-export async function scanLibrary(onProgress) {
+//
+// onProgress receives a structured object (not a string): {text, scanned,
+// total, artists, finds, cover, phase} — the drill renders a real counter and
+// flicks album covers by as pages stream in. `festNames` (a lowercase Set of
+// every artist across the crew's fests) is what lets the ticker celebrate a
+// FIND ("14 at your fests") and hold fest-relevant covers a beat longer.
+// `statsFor` records crew-visible spotifyStats under that member name — the
+// 07-12 rebuild dropped this write and nobody's connection was visible to
+// their crew (verified live 2026-07-13).
+export async function scanLibrary(onProgress, { festNames = null, statsFor = null } = {}) {
   const me = await api('/me');
-  const artists = {}; // lowerName -> {songs, followed, name}
-  let url = '/me/tracks?limit=50', scanned = 0;
+  const artists = {}; // lowerName -> {songs, followed}
+  let url = '/me/tracks?limit=50', scanned = 0, likedTotal = 0, finds = 0;
+  const seenFinds = new Set();
   while (url) {
     const page = await api(url);
+    likedTotal = page.total || likedTotal;
+    let cover = null, festCover = null;
     for (const item of page.items) {
+      const imgs = item.track?.album?.images || [];
+      const img = imgs.length ? imgs[imgs.length - 1].url : null; // smallest
+      if (img && !cover) cover = img;
       for (const a of (item.track?.artists || [])) {
         const key = a.name.toLowerCase();
         (artists[key] = artists[key] || { songs: 0 }).songs++;
+        if (festNames && festNames.has(key) && !seenFinds.has(key)) {
+          seenFinds.add(key); finds++;
+          if (img) festCover = img;
+        }
       }
     }
     scanned += page.items.length;
-    if (onProgress) onProgress(`Scanned ${scanned.toLocaleString()} of ${page.total.toLocaleString()} liked songs…`);
+    if (onProgress) {
+      onProgress({
+        phase: 'likes', scanned, total: likedTotal,
+        artists: Object.keys(artists).length, finds,
+        cover: festCover || cover, coverIsFind: !!festCover,
+        text: `${scanned.toLocaleString()} of ${likedTotal.toLocaleString()} liked songs`,
+      });
+    }
     url = page.next ? page.next.replace('https://api.spotify.com/v1', '') : null;
   }
   let after = null, followed = 0;
   do {
     const page = await api(`/me/following?type=artist&limit=50${after ? `&after=${after}` : ''}`);
+    let cover = null, festCover = null;
     for (const a of page.artists.items) {
       const key = a.name.toLowerCase();
       (artists[key] = artists[key] || {}).followed = true;
       followed++;
+      const imgs = a.images || [];
+      const img = imgs.length ? imgs[imgs.length - 1].url : null;
+      if (img && !cover) cover = img;
+      if (festNames && festNames.has(key)) {
+        if (!seenFinds.has(key)) { seenFinds.add(key); finds++; }
+        if (img) festCover = img;
+      }
     }
     after = page.artists.cursors?.after || null;
-    if (onProgress) onProgress(`Scanned library + ${followed} followed artists…`);
+    if (onProgress) {
+      onProgress({
+        phase: 'follows', scanned, total: likedTotal,
+        artists: Object.keys(artists).length, followed, finds,
+        cover: festCover || cover, coverIsFind: !!festCover,
+        text: `${followed} followed artists`,
+      });
+    }
   } while (after);
   const map = { clientId: auth().clientId, userId: me.id, fetchedAt: new Date().toISOString(), artists };
   saveLS(LS_LIBMAP, JSON.stringify(map));
+  if (statsFor) {
+    state.recordSpotifyStats(statsFor, {
+      likedCount: likedTotal,
+      artistCount: Object.keys(artists).length,
+      lastSynced: map.fetchedAt,
+      user: me.id,
+    });
+  }
   return map;
 }
 
@@ -313,12 +362,13 @@ export function applyAffinityToCrew(myName, festivalArtistNames) {
 // february-2026-migration-guide)
 // tracksPerArtist defaults to 1 — the UI promises "one track per picked
 // artist" and the artifact should keep the promise (SPOT-7).
-export async function playlistFromPicks({ title, artistNames, tracksPerArtist = 1, onProgress }) {
+async function findTrackUris(artistNames, tracksPerArtist, onProgress) {
   const uris = [];
+  const found = [];
   let misses = 0;
   for (let i = 0; i < artistNames.length; i++) {
     const name = artistNames[i];
-    if (onProgress) onProgress(`Finding tracks ${i + 1}/${artistNames.length}: ${name}`);
+    if (onProgress) onProgress({ i: i + 1, of: artistNames.length, name });
     try {
       const search = await api(`/search?q=${encodeURIComponent(`artist:"${name}"`)}&type=track&limit=${tracksPerArtist * 3}`);
       const wanted = name.toLowerCase();
@@ -327,23 +377,62 @@ export async function playlistFromPicks({ title, artistNames, tracksPerArtist = 
       const chosen = (hits.length ? hits : (search.tracks?.items || [])).slice(0, tracksPerArtist);
       if (!chosen.length) { misses++; continue; }
       chosen.forEach((t) => uris.push(t.uri));
+      found.push(name);
     } catch (e) { misses++; }
   }
-  if (!uris.length) throw new Error('No tracks found for those picks — Spotify search returned nothing (or the crew app lost API access).');
-  const createRes = await fetch('https://api.spotify.com/v1/me/playlists', {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${await accessToken()}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name: title, public: false, description: 'Made with Festival Navigator' }),
-  });
-  if (!createRes.ok) throw new Error('Playlist creation failed: ' + createRes.status);
-  const playlist = await createRes.json();
+  return { uris, found, misses };
+}
+
+async function pushTracks(playlistId, uris) {
   for (let i = 0; i < uris.length; i += 100) {
-    const addRes = await fetch(`https://api.spotify.com/v1/playlists/${playlist.id}/items`, {
+    const addRes = await fetch(`https://api.spotify.com/v1/playlists/${playlistId}/items`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${await accessToken()}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ uris: uris.slice(i, i + 100) }),
     });
     if (!addRes.ok) throw new Error('Adding tracks failed: ' + addRes.status);
   }
-  return { url: playlist.external_urls?.spotify || `https://open.spotify.com/playlist/${playlist.id}`, trackCount: uris.length, misses };
+}
+
+// `collaborative` is what makes the crew-shared "Everyone" playlist work:
+// Spotify only lets OTHER members' tokens append to a playlist they don't own
+// when it's collaborative (and collab requires public:false). Solo "Just mine"
+// playlists stay plain private.
+export async function playlistFromPicks({ title, artistNames, tracksPerArtist = 1, collaborative = false, onProgress }) {
+  const { uris, found, misses } = await findTrackUris(artistNames, tracksPerArtist, onProgress);
+  if (!uris.length) throw new Error('No tracks found for those picks — Spotify search returned nothing (or the crew app lost API access).');
+  const createRes = await fetch('https://api.spotify.com/v1/me/playlists', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${await accessToken()}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      name: title, public: false, collaborative: !!collaborative,
+      description: 'Made with Festival Navigator',
+    }),
+  });
+  if (!createRes.ok) throw new Error('Playlist creation failed: ' + createRes.status);
+  const playlist = await createRes.json();
+  await pushTracks(playlist.id, uris);
+  return {
+    id: playlist.id,
+    url: playlist.external_urls?.spotify || `https://open.spotify.com/playlist/${playlist.id}`,
+    trackCount: uris.length, misses, found,
+  };
+}
+
+// Append tracks for artists that aren't in the crew playlist yet — the
+// auto-extend path when a member connects later or picks change. The diff is
+// computed against the crew doc's recorded artist list (not Spotify's items —
+// cheaper, and resilient to manual playlist edits).
+export async function addArtistsToPlaylist({ playlistId, artistNames, tracksPerArtist = 1, onProgress }) {
+  if (!artistNames.length) return { added: 0, misses: 0, found: [] };
+  const { uris, found, misses } = await findTrackUris(artistNames, tracksPerArtist, onProgress);
+  if (uris.length) await pushTracks(playlistId, uris);
+  return { added: uris.length, misses, found };
+}
+
+// Pure diff helper (unit-tested): which currently-picked artists are missing
+// from the playlist's recorded artist list?
+export function playlistMissingArtists(pickedNames, meta) {
+  const have = new Set((meta?.artists || []).map((n) => n.toLowerCase()));
+  return pickedNames.filter((n) => !have.has(n.toLowerCase()));
 }

@@ -160,6 +160,31 @@ export function recordAffinity(person, artistMap) {
   editSeq++; persistPending();
 }
 
+export function recordSpotifyStats(person, stats) {
+  // Crew-visible "who's connected" glance: {likedCount, artistCount,
+  // lastSynced, user}. Dropped in the 2026-07-12 rebuild (badgeAllCrewFests
+  // wrote affinity only) — the drill showed local-cache numbers while the
+  // crew doc stayed empty, verified live 2026-07-13.
+  (crewDoc.spotifyStats = crewDoc.spotifyStats || {})[person] = stats;
+  const st = (pendingChanges.spotifyStats = pendingChanges.spotifyStats || {});
+  st[person] = stats;
+  editSeq++; persistPending();
+}
+
+// Crew-shared playlist registry: spotify.playlists[fid] = {id, url, mode, by,
+// at, artists[]} — what lets a later-connecting member find, open, and
+// auto-extend the crew playlist. Validated server-side (crew-shared).
+export function recordSpotifyPlaylist(fid, meta) {
+  crewDoc.spotify = crewDoc.spotify || {};
+  (crewDoc.spotify.playlists = crewDoc.spotify.playlists || {})[fid] = meta;
+  const sp = (pendingChanges.spotify = pendingChanges.spotify || {});
+  (sp.playlists = sp.playlists || {})[fid] = meta;
+  editSeq++; persistPending();
+}
+export function spotifyPlaylistFor(fid) {
+  return crewDoc.spotify?.playlists?.[fid] || null;
+}
+
 export function recordSpotifyClientId(clientId) {
   // Double-write like every other recorder — spotifyClientId() reads the
   // local doc, so a pending-only write left the drill stuck on the setup

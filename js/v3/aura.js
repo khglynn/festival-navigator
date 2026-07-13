@@ -86,11 +86,18 @@ export function subColor(people) {
 export function aboutCorner({ noteCount = 0, spotify = null } = {}) {
   const chips = [];
   if (noteCount > 0) chips.push({ kind: 'notes', label: String(noteCount) });
-  if (spotify && spotify.songs > 0) {
+  // Followed-only artists (0 saved songs) chip too — a follow is a stronger
+  // signal than one liked song, and showing nothing for it read as "Spotify
+  // doesn't know this artist" (Kevin, 2026-07-13; supersedes the atlas rule
+  // that gated the chip on songs > 0).
+  if (spotify && (spotify.songs > 0 || spotify.followed)) {
     chips.push({
       kind: 'spotify',
-      label: String(spotify.songs),
+      label: spotify.songs > 0 ? String(spotify.songs) : '',
       followed: !!spotify.followed,
+      // 'hot' drives the corner glow: followed AND 5+ saved songs — the
+      // artists this person demonstrably already loves.
+      hot: !!spotify.followed && spotify.songs >= 5,
     });
   }
   return chips;

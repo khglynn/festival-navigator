@@ -80,12 +80,25 @@ test('duplicate initials get two letters', () => {
   assert.equal(initialFor(people[0], [people[0]]), 'K');
 });
 
-test('about-corner: notes then spotify; bookmark only when followed', () => {
+test('about-corner: notes then spotify; affinity tiers drive the glow', () => {
   assert.deepEqual(aboutCorner({}), []);
   const chips = aboutCorner({ noteCount: 2, spotify: { songs: 41, followed: true } });
   assert.deepEqual(chips.map((c) => c.kind), ['notes', 'spotify']);
   assert.equal(chips[1].followed, true);
-  assert.deepEqual(aboutCorner({ spotify: { songs: 0, followed: true } }), []);
+  assert.equal(chips[1].hot, true); // followed + 5+ songs = corner glow
+  // Followed-only artists chip too (bookmark, no count) — supersedes the
+  // atlas songs>0 gate (Kevin, 2026-07-13: a follow is a stronger signal
+  // than one liked song).
+  const followedOnly = aboutCorner({ spotify: { songs: 0, followed: true } });
+  assert.equal(followedOnly.length, 1);
+  assert.equal(followedOnly[0].label, '');
+  assert.equal(followedOnly[0].followed, true);
+  assert.equal(followedOnly[0].hot, false); // needs 5+ songs too
+  // 4 songs + followed: chipped but no glow; 5 songs unfollowed: no glow.
+  assert.equal(aboutCorner({ spotify: { songs: 4, followed: true } })[0].hot, false);
+  assert.equal(aboutCorner({ spotify: { songs: 9, followed: false } })[0].hot, false);
+  // Nothing at all still renders nothing.
+  assert.deepEqual(aboutCorner({ spotify: { songs: 0, followed: false } }), []);
 });
 
 test('palette helpers: Sam tint respects sub-85 saturation; slots assign stable', () => {

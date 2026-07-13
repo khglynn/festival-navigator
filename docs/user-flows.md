@@ -139,10 +139,20 @@ fallback).
 1. Settings → Spotify: state-driven flow — crew lead sets the app Client ID
    once (clearly framed as one-time crew setup, not something every member
    configures); members then Connect (PKCE OAuth) → callback returns to the
-   app → Scan reads liked songs + follows → per-artist badges (songs saved,
-   followed) light up on the wall; playlist tools + Refresh + Disconnect live
-   in the drill.
-2. OAuth redirect works from every production domain the app is served on.
+   app → the library read starts on its own with REAL progress (live counter +
+   progress bar + album covers flicking by; fest-relevant finds highlighted;
+   reduced-motion gets the numbers without the flicker) → every crew festival
+   badges in one pass; playlist tools + Refresh + Disconnect live in the drill.
+2. Leaving the drill mid-read shows a quiet wall pill ("Spotify · reading your
+   library 62%") — browsing is never blocked; the pill clears itself.
+3. Playlist: name it before making it (editable, sensible default); progress,
+   success (track count + Open-in-Spotify link), and errors all render inside
+   the playlist card. "Everyone" playlists are collaborative and recorded in
+   the crew doc — a member who connects later auto-joins their picks in, and
+   an "Add new picks" button tops it up anytime.
+4. High-affinity artists (followed + 5 or more saved songs) carry a soft green
+   corner glow; followed-only artists still get the bookmark chip.
+5. OAuth redirect works from every production domain the app is served on.
 **Expected:** each state explains itself in one sentence; the drill looks like
 part of the app (Class-A layout, not a floating button in a void); a failed
 OAuth shows a recoverable in-app message, never a dead browser error page.

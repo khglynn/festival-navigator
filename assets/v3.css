@@ -86,6 +86,42 @@
   border-radius: var(--r-pill); background: var(--spotify-fill);
   border: 1px solid var(--spotify-stroke); color: #fff; font-size: 8.5px; font-weight: 800; line-height: 1;
 }
+/* High-affinity corner glow (followed + 5+ songs): a soft Spotify-green
+ * mini-aura rising from the badge corner — the aura language, not a border.
+ * Absolutely positioned inside the already-relative card: zero layout shift,
+ * never intercepts taps, sits under the chips. */
+.spot-glow {
+  position: absolute; left: 0; bottom: 0; width: 58%; height: 58%;
+  pointer-events: none; border-radius: inherit;
+  background: radial-gradient(120% 120% at 8% 96%, rgba(103, 185, 138, .34) 0%, rgba(103, 185, 138, .12) 45%, transparent 72%);
+}
+.corner-about, .corner-who { position: absolute; z-index: 1; }
+.card.cell .spot-glow { width: 70%; height: 45%; }
+
+/* ---- Spotify scan ticker: covers flick by over a real counter + bar ------- */
+.scan-tile {
+  width: 56px; height: 56px; flex: none; border-radius: 10px; overflow: hidden;
+  background: var(--card-unpicked, #1C1731); border: 1px solid var(--border-card, rgba(255,255,255,.08));
+  transition: box-shadow .25s ease;
+}
+.scan-tile img { width: 100%; height: 100%; object-fit: cover; display: block; animation: scan-pop .3s ease; }
+.scan-tile.find { box-shadow: 0 0 0 1px var(--spotify-stroke), 0 0 14px rgba(103, 185, 138, .45); }
+@keyframes scan-pop { from { opacity: 0; transform: scale(1.06); } to { opacity: 1; transform: scale(1); } }
+.scan-bar { width: 100%; height: 3px; border-radius: 2px; background: rgba(255,255,255,.08); overflow: hidden; }
+.scan-bar-fill { height: 100%; width: 0%; border-radius: 2px; background: var(--spotify-stroke); transition: width .4s ease; }
+@media (prefers-reduced-motion: reduce) {
+  .scan-tile img { animation: none; }
+  .scan-bar-fill { transition: none; }
+}
+/* Wall-side scan pill: the library read keeps going when you leave the drill —
+ * this says so. Above the dock, never interactive. */
+.spot-pill {
+  position: fixed; right: 12px; bottom: calc(70px + env(safe-area-inset-bottom, 0px));
+  z-index: 35; padding: 7px 12px; border-radius: var(--r-pill);
+  background: rgba(10, 8, 18, .92); border: 1px solid var(--spotify-stroke);
+  color: var(--spotify-stroke); font-size: 11px; font-weight: 700; pointer-events: none;
+}
+@media (min-width: 720px) { .spot-pill { bottom: 16px; } }
 .mark { height: 12px; border-radius: var(--r-pill); color: #fff; font-weight: 800;
         display: inline-flex; align-items: center; justify-content: center; margin-left: 3px; flex: none; }
 /* Weekend tag (ST-3): quiet top-left marker for W1/W2-only artists in Both view */
