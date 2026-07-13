@@ -18,6 +18,17 @@
   corner mini-aura; followed-only artists now chip at all) · spotifyStats
   write restored (dropped in the 07-12 rebuild).
 - **Dead BLOB_READ_WRITE_TOKEN removed** from all three Vercel envs.
+- **Round 2 same day (v30):** Kevin's resync test exposed three real bugs —
+  ghost festivals (ensureFestivalState never queued the new key for sync; The
+  Crew's server doc held 1 fest vs his device's 6), crews never badging on
+  open (per-crew badges vs per-device library — enterApp now sweeps from
+  cache, write-skipped when unchanged), and mid-scan crew-switch writes
+  landing on the wrong crew (token captured at start; mismatch = no writes;
+  the "Kevin HG" ghost stats on EF26's doc are that bug's fossil — additive
+  merge can't delete it, cosmetic, ignore). Playlist logic re-specced by
+  Kevin: top-3 search + the maker's saved tracks per artist (fest-artist URIs
+  cached at scan), track-level dedupe vs the LIVE playlist on append.
+  148/149 tests incl. empty-fest merge vs production SQL bytes.
 - **UNVERIFIED, next live test:** the collaborative auto-join path needs a
   SECOND member's account (Spotify dev-mode may refuse cross-user adds even
   on collab playlists — the drill reports and offers retry if so). Also the
