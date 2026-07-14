@@ -930,7 +930,7 @@ function openSettings() {
       refreshCtx();
       renderPersonChips();
       renderYou();
-      stampIdentity(state.getCrewToken()); // the person record follows the rename
+      stampIdentity(state.getCrewToken(), () => true, { rename: true }); // the record follows a self-rename
       showToast($('toast-root'), `You’re ${newName} now — picks came with you.`);
     },
     changeColor: (idx) => {
@@ -953,13 +953,14 @@ function openSettings() {
 
 // Opening a me link on any device: pull the person record, register every
 // crew it lists (union — never removes anything this device already knows),
-// claim the names, land on the landing with the lot. The hash is stripped
-// FIRST, unconditionally: the person token is a master key and must not sit
-// in the address bar, the history, or a screenshot.
-async function restoreFromMeLink(token) {
-  history.replaceState(null, '', '/');
+// claim the names, land on the landing with the lot. boot() strips the hash
+// before calling this — the master key never survives past the first frame.
+// `current` is boot's generation guard: a stale restore racing a newer boot
+// must not write a word (the sync.js tokenAtStart convention).
+async function restoreFromMeLink(token, current = () => true) {
   let fetched = null, failed = false;
   try { fetched = await crew.fetchPerson(token); } catch { failed = true; }
+  if (!current()) return;
   if (!fetched) {
     renderLanding();
     showToast($('toast-root'), failed
@@ -1203,17 +1204,25 @@ function renderJoin(token, doc) {
 // backfills one open at a time with no migration event. Silent and
 // non-blocking: identity plumbing never stands between a person and their
 // wall; a failure here just retries on the next open.
-async function stampIdentity(token, current = () => true) {
+async function stampIdentity(token, current = () => true, { rename = false } = {}) {
   const name = ctx.meName;
   if (!name) return;
   try {
     const p = await crew.ensurePerson(name);
-    if (!p || !current() || state.getCrewToken() !== token) return;
+    // Re-check EVERYTHING after the await: crew switched, boot superseded,
+    // or the picker changed mid-flight — any of those and this stamp would
+    // write the wrong identity into the wrong place (Codex gate, P1).
+    if (!p || !current() || state.getCrewToken() !== token || ctx.meName !== name) return;
+    // Shared-phone guard: the record belongs to one human; switchIdentity
+    // must never rewrite the owner's claim. renameSelf passes rename.
+    if (!crew.mayStampPerson(p, token, name, { rename })) return;
     crew.stampPersonCrew(token, name, state.crewName());
     // The crew doc points back with the PUBLIC id only — never the person
     // token (crew docs are readable by everyone holding that crew's link).
+    // And only into an EMPTY slot: a differing pid belongs to someone else's
+    // person record, and overwriting it would merge two humans.
     const me = state.people()[name];
-    if (me && !me.removed && me.pid !== p.id) {
+    if (me && !me.removed && !me.pid) {
       const queued = (state.pendingChanges.people || {})[name] || {};
       state.recordPerson(name, { ...queued, pid: p.id });
       me.pid = p.id; // local doc mirror, recorder convention
@@ -1380,21 +1389,23 @@ export async function boot() {
   // the person already asked for on the other host.
   const spMatch = /[#&]sp=(connect|1)(?:&|$)/.exec(location.hash || '');
   pendingSpotifyOpen = spMatch ? spMatch[1] : false;
+  // The me link is a MASTER KEY: capture and strip it synchronously, before
+  // the first await can leave it sitting in the address bar and history while
+  // the network dawdles (Codex gate, P1). Routed before crew links; a broken
+  // one says so — same contract as broken crew links.
+  const personToken = crew.personFromHash();
+  const personLinkBroken = crew.hashHasBrokenPersonLink();
+  if (personToken || personLinkBroken) history.replaceState(null, '', '/');
   try {
     try { await loadFestivalIndex(); } catch { /* offline with cache: proceed */ }
 
-    // A me link (#p=) restores this device — every crew on the person record
-    // registers here, names already claimed. Routed before crew links, and a
-    // broken one says so (same contract as broken crew links: silence would
-    // mean staring at the wrong screen holding a link you believe in).
-    if (crew.hashHasBrokenPersonLink()) {
-      history.replaceState(null, '', '/');
+    if (personLinkBroken) {
+      if (!current()) return;
       renderLanding();
       showToast($('toast-root'), 'That link looks cut off — copy it again from your other device.', 6000);
       return;
     }
-    const personToken = crew.personFromHash();
-    if (personToken) { await restoreFromMeLink(personToken); return; }
+    if (personToken) { await restoreFromMeLink(personToken, current); return; }
 
     if (location.hash === '#new') { renderCreate(); return; }
     // A crew link that is present but malformed (truncated by a chat app, half

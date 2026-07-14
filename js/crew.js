@@ -152,8 +152,13 @@ export function hashHasBrokenPersonLink() {
   return personFromHash() === null;
 }
 
+// The person token travels ONLY in this header — a query param would put the
+// master key in platform logs and proxies (Codex gate, P1).
 export async function fetchPerson(token) {
-  const res = await fetch(`/api/person?t=${encodeURIComponent(token)}`, { cache: 'no-store' });
+  const res = await fetch('/api/person', {
+    headers: { 'X-Person-Token': token },
+    cache: 'no-store',
+  });
   if (isApiNotFound(res)) return null;
   if (!res.ok) throw new Error('person fetch failed: ' + res.status);
   return await res.json(); // {id, doc}
@@ -172,10 +177,28 @@ export async function ensurePerson(name) {
     });
     if (!res.ok) return null;
     const { token, id, doc } = await res.json();
+    // Re-check after EVERY await, flush against the write: another caller
+    // (second tab, double-tap) may have stored a record while ours was in
+    // flight. First write wins — our freshly minted row is abandoned
+    // unreferenced, and every caller converges on ONE record before any pid
+    // reaches a crew doc (Codex gate, P1; the check used to sit before
+    // res.json(), and that one yield point was enough to lose the race).
+    const raced = myPerson();
+    if (raced) return raced;
     const p = { token, id, name: doc.name, crews: {} };
     setMyPerson(p);
     return p;
   } catch { return null; }
+}
+
+// May the automatic identity stamp write for this (crew, name)? This device's
+// person record belongs to ONE human. If the record already claims a
+// DIFFERENT name in this crew, the current picker is someone else on a shared
+// phone (FLOW-8 switchIdentity) — never overwrite the owner's claim or hand
+// their pid to another member. A self-rename is the sanctioned exception.
+export function mayStampPerson(person, crewToken, name, { rename = false } = {}) {
+  const mirror = person && (person.crews || {})[crewToken];
+  return !mirror || mirror.name === name || rename;
 }
 
 // Record "in this crew I am <name>" on the person doc. Idempotent via the
@@ -186,9 +209,9 @@ export async function stampPersonCrew(crewToken, myName, crewName) {
   const cur = (p.crews || {})[crewToken];
   if (cur && cur.name === myName && cur.crewName === crewName) return true;
   try {
-    const res = await fetch(`/api/person?t=${encodeURIComponent(p.token)}`, {
+    const res = await fetch('/api/person', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'X-Person-Token': p.token },
       body: JSON.stringify({ data: { crews: { [crewToken]: { name: myName, crewName } } } }),
     });
     if (!res.ok) return false;

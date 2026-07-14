@@ -37,7 +37,9 @@ CREATE TABLE IF NOT EXISTS crews (
 --           crew can reference a person WITHOUT exposing their credential
 --           (crew docs are readable by anyone holding that crew's link).
 CREATE TABLE IF NOT EXISTS persons (
-  id TEXT PRIMARY KEY CHECK (id ~ '^[A-Za-z0-9_-]{8,24}$'),
+  -- id length range is DISJOINT from the token's {20,40}: a token can never
+  -- pass where a pid belongs, even by accident.
+  id TEXT PRIMARY KEY CHECK (id ~ '^[A-Za-z0-9_-]{10,16}$'),
   token TEXT NOT NULL UNIQUE CHECK (token ~ '^[A-Za-z0-9_-]{20,40}$'),
   doc JSONB NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),

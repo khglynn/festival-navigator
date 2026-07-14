@@ -6,7 +6,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  newPersonDoc, validatePersonIncoming, validateIncoming, PID_RE,
+  newPersonDoc, validatePersonIncoming, validateIncoming, PID_RE, TOKEN_RE,
 } from '../api/_lib/crew-shared.mjs';
 
 const CREW_TOKEN = 'crewtoken_test_0123456789';
@@ -46,7 +46,18 @@ test('crew docs accept pid — and only a plausible one', () => {
   assert.equal(validateIncoming({ people: { Kevin: { pid: 'pid_abc12345' } } }).ok, true);
   assert.equal(validateIncoming({ people: { Kevin: { pid: 'no' } } }).ok, false, 'too short');
   assert.equal(validateIncoming({ people: { Kevin: { pid: 'x'.repeat(30) } } }).ok, false, 'too long');
-  // A person TOKEN (20-40 chars) must not fit where a pid belongs — the regex
-  // caps at 24, so a full-length 27-char token is structurally rejected.
-  assert.equal(PID_RE.test('a'.repeat(27)), false);
+});
+
+test('PID_RE and TOKEN_RE are DISJOINT — no value can pass as both', () => {
+  // The pid is the only person identifier a crew doc may hold; the token is
+  // a master key. Overlapping length ranges would let a token-shaped value
+  // validate as a pid (Codex gate, P2). Sweep every length 1..50: nothing
+  // may match both regexes, generated shapes must match their own.
+  for (let len = 1; len <= 50; len++) {
+    const v = 'a'.repeat(len);
+    assert.ok(!(PID_RE.test(v) && TOKEN_RE.test(v)), `length ${len} passes BOTH — ranges overlap`);
+  }
+  assert.equal(PID_RE.test('a'.repeat(12)), true, 'generated ids (12 chars) pass PID_RE');
+  assert.equal(TOKEN_RE.test('a'.repeat(27)), true, 'generated tokens (27 chars) pass TOKEN_RE');
+  assert.equal(PID_RE.test('a'.repeat(27)), false, 'a real token can never sit in a pid slot');
 });

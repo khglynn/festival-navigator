@@ -1,13 +1,18 @@
 // Person store — one row per person, across crews (the "me link").
 //
-//   POST /api/person            {name}                -> create, returns {token, id, doc}
-//   GET  /api/person?t=<token>                        -> {id, doc}
-//   POST /api/person?t=<token>  {data: <partial doc>} -> validated deep-merge, returns {id, doc}
+//   POST /api/person   {name}                 no X-Person-Token -> create, returns {token, id, doc}
+//   GET  /api/person   X-Person-Token: <t>                      -> {id, doc}
+//   POST /api/person   X-Person-Token: <t>   {data: <partial>}  -> validated deep-merge, returns {id, doc}
 //
 // Two identifiers, deliberately: the token is the credential (its doc lists
 // every crew token the person is in — a master key, shared with nobody); the
 // id is public and is what crew docs may reference (people.<Name>.pid). All
 // lookups here go by token — the id is never an access path.
+//
+// The token travels in a HEADER, never a query param — unlike crew tokens
+// (whose ?t= exposure is scoped to one crew), this one unlocks everything the
+// person is in, and query strings land in platform logs and proxies (Codex
+// gate, P1). There are no legacy clients to humor: header-only from birth.
 import crypto from 'node:crypto';
 import { neon } from '@neondatabase/serverless';
 import {
@@ -24,7 +29,7 @@ export default async function handler(req, res) {
   const sql = neon(process.env.DATABASE_URL);
 
   try {
-    const token = (req.query.t || '').toString();
+    const token = (req.headers['x-person-token'] || '').toString();
 
     // ---- create ----
     if (req.method === 'POST' && !token) {

@@ -69,6 +69,58 @@ test('ensurePerson creates once, then reuses; failure and offline return null', 
   assert.equal(await crew.ensurePerson('Kevin'), null, 'offline is a quiet null');
 });
 
+test('two ensurePerson calls in flight converge on ONE record (double-create race)', async () => {
+  // Two tabs both see no fn_person_v1 and both POST. Whoever lands first
+  // wins; the loser must adopt the winner's record, not overwrite it — a
+  // device split across two person records leaves the crew pid pointing at
+  // a record the me link can't reach (Codex gate, P1).
+  store.clear();
+  let n = 0;
+  const gates = [];
+  fetchImpl = () => new Promise((resolve) => {
+    const mine = ++n;
+    gates.push(() => resolve(jsonRes(201, {
+      token: `persontoken_race_${mine}_0123456789`.slice(0, 27),
+      id: `pid_race_${mine}000`,
+      doc: { v: 1, name: 'Kevin', crews: {} },
+    })));
+  });
+  const a = crew.ensurePerson('Kevin');
+  const b = crew.ensurePerson('Kevin');
+  gates.forEach((open) => open()); // both responses land
+  const [pa, pb] = await Promise.all([a, b]);
+  assert.equal(pa.id, pb.id, 'both callers converge on the same record');
+  assert.equal(crew.myPerson().id, pa.id, 'and it is the stored one');
+});
+
+test('the person token travels in a header, never in a URL', async () => {
+  store.clear();
+  crew.setMyPerson({ token: P_TOKEN, id: 'pid_abc12345', name: 'Kevin', crews: {} });
+  const seen = [];
+  fetchImpl = async (url, opts = {}) => {
+    seen.push({ url: String(url), headers: opts.headers || {} });
+    return jsonRes(200, { id: 'pid_abc12345', doc: { v: 1, name: 'Kevin', crews: {} } });
+  };
+  await crew.fetchPerson(P_TOKEN);
+  await crew.stampPersonCrew(CREW_TOKEN, 'Kevin', 'EF 26');
+  for (const req of seen) {
+    assert.ok(!req.url.includes(P_TOKEN), `master key must not appear in a URL: ${req.url}`);
+    assert.equal(req.headers['X-Person-Token'], P_TOKEN, 'header carries the credential');
+  }
+});
+
+test('mayStampPerson: shared-phone switch never rewrites the owner; renames may', () => {
+  const person = { crews: { [CREW_TOKEN]: { name: 'Kevin', crewName: 'EF 26' } } };
+  assert.equal(crew.mayStampPerson(person, CREW_TOKEN, 'Kevin'), true, 'owner restamps freely');
+  assert.equal(crew.mayStampPerson(person, CREW_TOKEN, 'Drew'), false,
+    'a different picker on the same phone must not become the record owner');
+  assert.equal(crew.mayStampPerson(person, CREW_TOKEN, 'Drew', { rename: true }), true,
+    'a self-rename is the sanctioned exception');
+  assert.equal(crew.mayStampPerson(person, 'othercrew_token_0123456789', 'Drew'), true,
+    'an unclaimed crew is open to whoever enters first');
+  assert.equal(crew.mayStampPerson(null, CREW_TOKEN, 'Kevin'), true, 'no record yet — nothing to protect');
+});
+
 test('stampPersonCrew: mirrors skip the network, merges update the mirror, failures are false', async () => {
   store.clear();
   crew.setMyPerson({ token: P_TOKEN, id: 'pid_abc12345', name: 'Kevin', crews: {} });

@@ -29,8 +29,10 @@ export const LIMITS = {
 export const TOKEN_RE = /^[A-Za-z0-9_-]{20,40}$/;
 // Public person id — the ONLY person identifier allowed inside a crew doc.
 // The person TOKEN is a master key (its doc lists every crew token) and must
-// never appear where crew members can read it.
-export const PID_RE = /^[A-Za-z0-9_-]{8,24}$/;
+// never appear where crew members can read it. The length range is DISJOINT
+// from TOKEN_RE's {20,40} on purpose: no token-shaped value can ever pass as
+// a pid, even by accident (Codex gate, P2). Generated ids are 12 chars.
+export const PID_RE = /^[A-Za-z0-9_-]{10,16}$/;
 const COLOR_RE = /^\d{1,3}, \d{1,3}, \d{1,3}$/;
 const FESTIVAL_ID_RE = /^[a-z0-9-]{1,64}$/;
 const CLIENT_ID_RE = /^[0-9a-fA-F]{32}$/;
