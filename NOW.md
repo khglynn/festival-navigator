@@ -1,6 +1,44 @@
-# NOW — festival-navigator: model pivot locked · v32 HELD on staging · prod at v31
+# NOW — festival-navigator: fest-first reshape ON STAGING (v33) · prod at v31
 
-## 2026-07-14 — FESTS × CIRCLES × YOU: the model pivot (direction locked, reshape next)
+## 2026-07-14 (later) — THE FEST-FIRST RESHAPE — built, gated twice, staged
+
+Kevin's "go" on the direction doc → built in the same session (main-loop,
+legibility guide re-read; the other three ground-it docs deferred as
+out-of-territory — deliberate, stated).
+
+- **Landing = festivals** (landingPairs over (crew × fest) pairs, index
+  order, fest accents, avatar clusters, "just you — add your people
+  inside"). Tap Seismic → GET Seismic (the row writes the fest key,
+  verify-after-write, refuses to boot ambiguously on blocked storage).
+- **Create = multi-pick** (≤8/batch — the 10/hr create limit must not be
+  outrun), name step survives only for a device with no person record —
+  once, ever. Boards are BORN knowing their fest (api/crew.js create now
+  accepts `festivals`) and born linked (create body carries pid); each
+  board is stamped onto the person record before leaving the screen
+  (checked + retried; failures TOLD to the user, enterApp backfill is the
+  durable catch-up). WHO'S THIS WITH? deleted wholesale.
+- **+ Add grew the recurring-humans picker** ("From your other fests" —
+  otherFestPeople, tested) and settings member links say linked (pid) vs
+  placeholder.
+- **Gate round 1 (NO SHIP, 2 high + 3 med)**: batch boards missed the me
+  link; create was re-entrant (double-tap = duplicate circles); stranded
+  loader after post-create activation failure; batch could outrun the
+  create quota; unverified fest-key write. All five fixed. **Verify round
+  2** still failed two — the stamp's boolean was ignored (false ≠ throw)
+  and the read-back could throw on storage-denied browsers — both fixed;
+  final two touch-ups shipped self-verified (mechanical, walked each path).
+- 175 tests / 174 pass. Live-walked end to end on vercel dev (multi-pick →
+  boards → tap-fest-get-fest → typed add → one-tap picker add), throwaway
+  rows deleted after. **Lesson re-learned live: hash-only navigations keep
+  the browser's module map — verifying edited JS needs a REAL document
+  reload (about:blank hop), not just SW-unregister.**
+- **Staging = v33, awaiting Kevin's eyeball. Prod promote = Kevin's call.**
+- Accepted, documented in code: cross-tab create-spam (no server
+  idempotency key; rate limiter caps damage) · server-side batch quota
+  reservation · both filed under Phase-2 hardening with the person-create
+  twins.
+
+## 2026-07-14 — FESTS × CIRCLES × YOU: the model pivot (direction locked, reshape SHIPPED same day — see above)
 
 Kevin live-tested v32 on staging and rejected the "WHO'S THIS WITH?" framing
 (a people question answered with crew names that read as festivals; a crew
