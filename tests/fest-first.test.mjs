@@ -7,9 +7,12 @@ import assert from 'node:assert/strict';
 import { landingPairs, festLabelFor, otherFestPeople } from '../js/v3/model.js';
 
 const INDEX = [
-  { id: 'seismic-2026', name: 'Seismic Dance Event 9.0', year: "'26", accent: '250, 204, 21' },
-  { id: 'portola-2026', name: 'Portola', year: "'26", accent: '56, 189, 248' },
-  { id: 'ef-2026', name: 'Electric Forest', year: "'26" },
+  // Deliberately NOT in date order — the sort must come from startsOn.
+  { id: 'seismic-2026', name: 'Seismic Dance Event 9.0', year: "'26", startsOn: '2026-11-13', accent: '250, 204, 21' },
+  { id: 'portola-2026', name: 'Portola', year: "'26", startsOn: '2026-09-26', accent: '56, 189, 248' },
+  { id: 'ef-2026', name: 'Electric Forest', year: "'26", startsOn: '2026-06-25' },
+  { id: 'lolla-2025', name: 'Lollapalooza', year: "'25", startsOn: '2025-07-31', status: 'archived' },
+  { id: 'wicked-2025', name: 'Wicked Oaks', year: "'25", startsOn: '2025-10-25', status: 'archived' },
 ];
 
 const docs = {
@@ -20,13 +23,19 @@ const docs = {
 };
 const docFor = (t) => docs[t] || null;
 
-test('landingPairs: every (crew, fest) pair becomes a row, in festival-index order', () => {
+test('landingPairs: every (crew, fest) pair becomes a row, DATE-sorted, past sinking muted-last', () => {
   const crews = [{ token: 'crewA', name: 'Portola 26' }, { token: 'crewB', name: 'EF Crew' }];
+  docs.crewB.festivals['lolla-2025'] = {};
+  docs.crewB.festivals['wicked-2025'] = {};
   const pairs = landingPairs(crews, docFor, INDEX);
-  assert.deepEqual(pairs.map((p) => p.fid), ['seismic-2026', 'portola-2026', 'ef-2026'],
-    'index order wins — NOT crew-registry order (the Portola-crew-opens-Seismic confusion, fixed)');
-  assert.equal(pairs[0].token, 'crewA', 'both crewA fests point back at crewA');
-  assert.deepEqual(pairs[2].people.map((x) => x.name), ['Kevin', 'Drew'], 'tombstoned people excluded');
+  assert.deepEqual(pairs.map((p) => p.fid),
+    ['ef-2026', 'portola-2026', 'seismic-2026', 'wicked-2025', 'lolla-2025'],
+    'upcoming soonest-first by startsOn (registry order must not leak through); past fests last, most recent first');
+  assert.deepEqual(pairs.map((p) => p.past), [false, false, false, true, true]);
+  assert.equal(pairs[1].token, 'crewA', 'each fest row points back at its crew');
+  assert.deepEqual(pairs[0].people.map((x) => x.name), ['Kevin', 'Drew'], 'tombstoned people excluded');
+  delete docs.crewB.festivals['lolla-2025'];
+  delete docs.crewB.festivals['wicked-2025'];
 });
 
 test('landingPairs: an uncached crew falls back to one crew-named row, sorted last', () => {
@@ -37,9 +46,13 @@ test('landingPairs: an uncached crew falls back to one crew-named row, sorted la
   assert.equal(pairs[1].crewName, 'Restored Crew');
 });
 
-test('festLabelFor: catalog fests get real metadata; crew-private ids prettify', () => {
-  assert.equal(festLabelFor('portola-2026', INDEX).name, 'Portola');
-  assert.equal(festLabelFor('portola-2026', INDEX).accent, '56, 189, 248');
+test('festLabelFor: month rides the year ("Sep \'26" — when, at a glance); slugs prettify', () => {
+  const portola = festLabelFor('portola-2026', INDEX);
+  assert.equal(portola.name, 'Portola');
+  assert.equal(portola.year, "Sep '26", 'month from startsOn + the styled year');
+  assert.equal(portola.accent, '56, 189, 248');
+  const noStart = festLabelFor('x', [{ id: 'x', name: 'X Fest', year: "'27" }]);
+  assert.equal(noStart.year, "'27", 'no startsOn — year alone, never NaN-month');
   const custom = festLabelFor('amish-acl-2026', INDEX);
   assert.equal(custom.name, 'Amish Acl 2026', 'a slug never renders raw');
   assert.equal(custom.accent, null);

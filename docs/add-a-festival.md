@@ -38,6 +38,9 @@ Two files, one command:
 
 2. **Add an entry to `data/festivals/index.json`** (keep it ordered by date,
    archived last — the first non-archived entry is the default festival).
+   Every index entry needs `startsOn: "YYYY-MM-DD"` (the festival's first
+   day) — it drives the landing's date sort and its "Sep '26" labels; the
+   validator rejects entries without it.
 
 3. **Validate:** `node scripts/validate-festivals.mjs` — errors block CI.
    `scripts/import-festival.mjs` helps convert pasted lineup text.

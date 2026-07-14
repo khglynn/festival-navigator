@@ -9,7 +9,7 @@ import * as model from './model.js';
 import { FESTIVAL_INDEX, FESTIVALS } from '../festivals.js';
 import { BOARD, hslOf, strokeOf } from './palette.js';
 import { colorIndexOf } from './wall.js';
-import { el, subviewHead, disclosureFold, eqLoader, festRow, openExportLikes, openBulkPaste, openDayImage } from './tools.js';
+import { el, subviewHead, eqLoader, festRow, openExportLikes, openBulkPaste, openDayImage } from './tools.js';
 import { router } from './router.js';
 import { nameProblem, NAME_LIMITS } from '../name-rules.mjs';
 import { loadJSON, saveLS } from '../util.js';
@@ -153,35 +153,42 @@ function festivalsSection(ctx, actions) {
   wrap.appendChild(microLabel('Your festivals'));
   wrap.appendChild(currentFestCard(ctx, actions));
 
-  const active = FESTIVAL_INDEX.filter((f) => f.status !== 'archived' && f.id !== state.activeFestivalId);
-  const archived = FESTIVAL_INDEX.filter((f) => f.status === 'archived' && f.id !== state.activeFestivalId);
-  // The shared row (tools.js) — the same one the create-flow picker uses, so a
-  // past festival cannot look "past" on one screen and current on the other.
-  const row = (f, muted) => {
-    const picks = Object.keys(model.picksFor(state.crewDoc, f.id)).length;
-    return festRow(f, {
-      muted,
+  // YOUR boards, not the catalog (Kevin, 2026-07-14: "just show the fests
+  // I've picked — we don't need to repeat all the pick-fest options here").
+  // Same-circle fests switch in place; boards in other circles open the way
+  // landing rows do. Adding a fest goes to the shared multi-pick page.
+  const pairs = model.landingPairs(crew.knownCrews(), state.cachedDoc, FESTIVAL_INDEX)
+    .filter((p) => p.fid && !(p.token === state.getCrewToken() && p.fid === state.activeFestivalId));
+  for (const p of pairs) {
+    const meta = FESTIVAL_INDEX.find((f) => f.id === p.fid)
+      || { id: p.fid, name: model.festLabelFor(p.fid, FESTIVAL_INDEX).name };
+    const sameCrew = p.token === state.getCrewToken();
+    const picks = sameCrew ? Object.keys(model.picksFor(state.crewDoc, p.fid)).length : 0;
+    const names = p.people.map((x) => x.name);
+    wrap.appendChild(festRow(meta, {
+      muted: meta.status === 'archived',
       chev: true,
-      sub: [f.dates, picks ? `${picks} artist${picks === 1 ? '' : 's'} picked` : ''].filter(Boolean).join(' · '),
-      onPick: () => actions.switchFestival(f.id),
-    });
-  };
-  for (const f of active) wrap.appendChild(row(f, false));
+      sub: [
+        meta.dates,
+        sameCrew && picks ? `${picks} artist${picks === 1 ? '' : 's'} picked` : '',
+        !sameCrew && names.length > 1 ? names.slice(0, 3).join(', ') : '',
+      ].filter(Boolean).join(' · '),
+      onPick: () => (sameCrew ? actions.switchFestival(p.fid) : actions.openBoard(p.token, p.fid)),
+    }));
+  }
 
   const add = el('button', '', '+ Add a festival');
   add.className = 'dashed-row';
-  add.addEventListener('click', () => { openSubviewByKey('sub:add-fest', ctx, actions); router.push('sub:add-fest'); });
+  add.addEventListener('click', actions.addFestival);
   wrap.appendChild(add);
 
-  if (archived.length) {
-    // The same disclosure component the create screen uses (Kevin: one
-    // component, both places, 2026-07-12).
-    wrap.appendChild(disclosureFold(`Past festivals · ${archived.length}`, (rows) => {
-      // muted: quiet, and wearing the PAST badge — inside a fold that says
-      // "Past festivals", they were rendering at full weight.
-      for (const f of archived) rows.appendChild(row(f, true));
-    }));
-  }
+  // The AI/custom add keeps its own quiet door — it is the ONLY path for a
+  // fest that isn't in the catalog, and it lands on THIS board's circle.
+  const custom = el('button', 'font-size: 11.5px; padding: 8px 12px; align-self: center;',
+    'Fest not in the catalog? Research + add it to this board');
+  custom.className = 'btn-ghost';
+  custom.addEventListener('click', () => { openSubviewByKey('sub:add-fest', ctx, actions); router.push('sub:add-fest'); });
+  wrap.appendChild(custom);
   return wrap;
 }
 
@@ -898,9 +905,16 @@ function connectCard({ onConnect, extras = [] }) {
 
 // One press connects, wherever you started. The hop to the canonical OAuth
 // origin happens underneath and continues by itself on arrival (sp=connect).
+// It ANNOUNCES itself now — a silent origin change reads as the app losing
+// everything (Kevin, 2026-07-14) — and the hop URL carries the me link, so
+// every board arrives too.
 function startConnect(msg) {
   const hop = spotify.canonicalHopUrl({ autoConnect: true });
-  if (hop) { location.assign(hop); return; }
+  if (hop) {
+    msg.textContent = 'Connecting on fest.kevinhg.com — your boards come along…';
+    setTimeout(() => location.assign(hop), 650);
+    return;
+  }
   spotify.connect().catch((e) => { msg.textContent = String(e.message || e); });
 }
 
@@ -1006,9 +1020,15 @@ async function runFullSync(ctx, actions, onProgressIn, rerenderDrill, msg) {
     const { total, perFest } = await spotify.badgeAllCrewFests(meAtStart);
     const fests = Object.keys(perFest).length;
     actions.afterBulk();
+    // Fest-first: your other boards are their own crews — one connect fills
+    // ALL of them, not just the one you happened to be on (Kevin, 2026-07-14:
+    // "I'd expect my Spotify connection to populate all my fests").
+    onProgress({ text: 'Filling your other boards…', phase: 'badge' });
+    const others = await spotify.badgeEveryKnownCrew();
     // Your picks may be new to the crew playlist — fold them in while we're
     // here (Kevin's model: someone who auths joins the playlist too).
     const notes = [];
+    if (others.crews) notes.push(`Filled ${others.crews} other board${others.crews === 1 ? '' : 's'} too.`);
     await syncEveryonePlaylists(ctx, actions, (n) => notes.push(n));
     scanning = false;
     scanPill(null);

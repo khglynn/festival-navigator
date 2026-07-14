@@ -924,6 +924,25 @@ function openSettings() {
       history.replaceState(null, '', '/');
       renderLanding();
     },
+    // Fest-first: settings lists YOUR boards; adding goes to the shared
+    // multi-pick page, and a board in another circle opens like a landing row.
+    addFestival: () => {
+      router.reset();
+      location.hash = '#new';
+      boot();
+    },
+    openBoard: (token, fid) => {
+      saveLS(state.LS.fest(token), fid);
+      let stored = null;
+      try { stored = localStorage.getItem(state.LS.fest(token)); } catch { /* read denied */ }
+      if (stored !== fid) {
+        showToast($('toast-root'), 'This device’s storage is blocked — couldn’t point the board at that festival.', 6000);
+        return;
+      }
+      router.reset();
+      location.hash = `#g=${token}`;
+      boot();
+    },
     leaveCrew: () => {
       const t = state.getCrewToken();
       crew.forgetCrew(t);
@@ -990,6 +1009,21 @@ function openSettings() {
   renderSettings($('settings-root'), ctx, settingsActions);
 }
 
+// Union a fetched person doc into this device: remember every crew, claim
+// unclaimed names, store the person. Never removes anything. Shared by the
+// me-link restore (renders landing after) and the canonical-host hop absorb
+// (falls through into the crew flow instead).
+function absorbPersonDoc(token, fetched) {
+  const doc = fetched.doc || {};
+  crew.setMyPerson({ token, id: fetched.id, name: doc.name || '', crews: doc.crews || {} });
+  for (const [ct, entry] of Object.entries(doc.crews || {})) {
+    const known = crew.knownCrews().find((c) => c.token === ct);
+    crew.rememberCrew(ct, (entry && entry.crewName) || (known && known.name) || '');
+    if (entry && entry.name && !crew.me(ct)) crew.setMe(ct, entry.name);
+  }
+  return Object.keys(doc.crews || {}).length;
+}
+
 // Opening a me link on any device: pull the person record, register every
 // crew it lists (union — never removes anything this device already knows),
 // claim the names, land on the landing with the lot. boot() strips the hash
@@ -1007,15 +1041,9 @@ async function restoreFromMeLink(token, current = () => true) {
       : 'That link doesn’t work anymore.', 6000);
     return;
   }
+  const total = absorbPersonDoc(token, fetched);
   const doc = fetched.doc || {};
-  crew.setMyPerson({ token, id: fetched.id, name: doc.name || '', crews: doc.crews || {} });
-  for (const [ct, entry] of Object.entries(doc.crews || {})) {
-    const known = crew.knownCrews().find((c) => c.token === ct);
-    crew.rememberCrew(ct, (entry && entry.crewName) || (known && known.name) || '');
-    if (entry && entry.name && !crew.me(ct)) crew.setMe(ct, entry.name);
-  }
   renderLanding();
-  const total = Object.keys(doc.crews || {}).length;
   showToast($('toast-root'), total
     ? `Welcome back${doc.name ? ', ' + doc.name : ''} — ${total} crew${total === 1 ? '' : 's'} on this device now.`
     : 'Link saved — crews you join will follow you from here.', 6000);
@@ -1077,6 +1105,7 @@ function renderLanding() {
     const row = document.createElement('button');
     row.className = 'fest-row';
     row.style.width = '100%';
+    if (pair.past) row.style.opacity = '.55'; // past fests stay, quietly (Kevin, 2026-07-14)
     const left = document.createElement('div');
     left.style.cssText = 'flex: 1; min-width: 0; text-align: left;';
     const nm = document.createElement('span');
@@ -1459,10 +1488,15 @@ export async function boot() {
   // The me link is a MASTER KEY: capture and strip it synchronously, before
   // the first await can leave it sitting in the address bar and history while
   // the network dawdles (Codex gate, P1). Routed before crew links; a broken
-  // one says so — same contract as broken crew links.
+  // one says so — same contract as broken crew links. A URL carrying BOTH a
+  // person and a crew token is a canonical-host hop (Spotify OAuth): the
+  // strip keeps the crew part so the connect flow continues after the absorb.
   const personToken = crew.personFromHash();
   const personLinkBroken = crew.hashHasBrokenPersonLink();
-  if (personToken || personLinkBroken) history.replaceState(null, '', '/');
+  const hopCrewToken = personToken ? crew.tokenFromHash() : null;
+  if (personToken || personLinkBroken) {
+    history.replaceState(null, '', hopCrewToken ? `/#g=${hopCrewToken}` : '/');
+  }
   try {
     try { await loadFestivalIndex(); } catch { /* offline with cache: proceed */ }
 
@@ -1472,7 +1506,17 @@ export async function boot() {
       showToast($('toast-root'), 'That link looks cut off — copy it again from your other device.', 6000);
       return;
     }
-    if (personToken) { await restoreFromMeLink(personToken, current); return; }
+    if (personToken && !hopCrewToken) { await restoreFromMeLink(personToken, current); return; }
+    if (personToken && hopCrewToken) {
+      // Quiet absorb: register every board the person has, then fall through
+      // into the crew the hop points at — landing here with one crew and
+      // none of the rest is how a whole map "disappeared" (2026-07-14).
+      try {
+        const fetched = await crew.fetchPerson(personToken);
+        if (fetched) absorbPersonDoc(personToken, fetched);
+      } catch { /* offline — the crew flow still works; reopen the me link later */ }
+      if (!current()) return;
+    }
 
     if (location.hash === '#new') { renderCreate(); return; }
     // A crew link that is present but malformed (truncated by a chat app, half

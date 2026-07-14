@@ -35,6 +35,11 @@ for (const file of files) {
 for (const entry of index) {
   if (!files.includes(`${entry.id}.json`)) errors.push(`index.json: lists ${entry.id} but ${entry.id}.json missing`);
   for (const k of ['id', 'name', 'status']) if (!entry[k]) errors.push(`index.json: ${entry.id || '?'}: missing ${k}`);
+  // startsOn drives the landing's date sort and its "Sep '26" labels —
+  // free-text `dates` can't be sorted, so the ISO key is required.
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(entry.startsOn || '')) {
+    errors.push(`index.json: ${entry.id || '?'}: startsOn must be YYYY-MM-DD`);
+  }
 }
 
 warnings.forEach((w) => console.log(`⚠️  ${w}`));

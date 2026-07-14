@@ -5,6 +5,7 @@
 // users and require the app OWNER to keep Premium — the setup guide in the
 // UI spells this out.
 import * as state from './state.js';
+import * as crewStore from './crew.js';
 import { loadJSON as loadJSONShared, saveLS } from './util.js';
 import { loadFestival, FESTIVALS } from './festivals.js';
 
@@ -35,7 +36,13 @@ export function canonicalHopUrl({ autoConnect = false } = {}) {
   const token = state.getCrewToken();
   if (!token) return `https://${CANONICAL_HOST}/`;
   const sp = autoConnect ? 'connect' : '1';
-  return `https://${CANONICAL_HOST}/#g=${token}&f=${state.activeFestivalId}&sp=${sp}`;
+  // The hop carries the ME LINK too: arriving on the canonical host with one
+  // crew token and none of the person's other boards is how a whole map
+  // "disappears" (Kevin, staging→prod, 2026-07-14). boot() absorbs the person
+  // quietly and strips the master key from the URL in the same synchronous
+  // frame it uses for any me link.
+  const p = crewStore.myPerson();
+  return `https://${CANONICAL_HOST}/#g=${token}&f=${state.activeFestivalId}${p ? `&p=${p.token}` : ''}&sp=${sp}`;
 }
 
 // The last OAuth failure, banked by spotify-callback.html so the error lands
@@ -347,6 +354,54 @@ function affinityOf(lib, artistName) {
   if (hit.songs) aff.songs = Math.min(hit.songs, 99999);
   if (hit.followed) aff.followed = true;
   return Object.keys(aff).length ? aff : null;
+}
+
+// Fest-first (2026-07-14): every board is its own circle, so "connect once,
+// everything fills in" must reach across CREWS, not just across the active
+// crew's fests. For each known crew where this device holds a claimed name:
+// fetch the doc, compute my affinity for its fests' artists, POST the merge
+// DIRECTLY — state.pendingChanges belongs to the ACTIVE crew only, and a
+// cross-crew write must never ride it (the sync.js wrong-crew rule). The
+// active crew keeps its richer local path (badgeAllCrewFests). Crew-private
+// (AI-added) fests in other crews are skipped — their data only loads inside
+// their crew; the enterApp sweep badges them on first open.
+export async function badgeEveryKnownCrew(onProgress) {
+  const lib = libraryMap();
+  if (!lib) return { crews: 0, skipped: 0 };
+  let crews = 0;
+  let skipped = 0;
+  for (const c of crewStore.knownCrews()) {
+    if (c.token === state.getCrewToken()) continue; // active crew: badgeAllCrewFests owns it
+    const myName = crewStore.me(c.token);
+    if (!myName) { skipped++; continue; } // no claim here — no name to badge under
+    try {
+      const doc = await crewStore.fetchCrew(c.token);
+      if (!doc) { skipped++; continue; }
+      const before = (doc.affinity || {})[myName] || {};
+      const merged = { ...before };
+      for (const fid of Object.keys(doc.festivals || {})) {
+        let fest = FESTIVALS[fid];
+        if (!fest) {
+          try { await loadFestival(fid); } catch { continue; }
+          fest = FESTIVALS[fid];
+          if (!fest) continue;
+        }
+        for (const name of artistNamesOf(fest)) {
+          const aff = affinityOf(lib, name);
+          if (aff) merged[name] = aff;
+        }
+      }
+      if (JSON.stringify(merged) === JSON.stringify(before)) continue; // nothing new — no write
+      const res = await fetch(`/api/crew?t=${encodeURIComponent(c.token)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ data: { affinity: { [myName]: merged } }, sv: 4 }),
+      });
+      if (res.ok) { crews++; if (onProgress) onProgress({ crews, crewName: c.name }); }
+      else skipped++;
+    } catch { skipped++; }
+  }
+  return { crews, skipped };
 }
 
 // Filter the cached library map to every artist across the crew's loaded

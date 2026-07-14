@@ -162,7 +162,18 @@ export function sortWithPins(notes, pinnedIds) {
 // and falls back to a single crew-named row (fid null).
 
 export function landingPairs(crews, docFor, festIndex) {
-  const order = new Map(festIndex.map((f, i) => [f.id, i]));
+  // Date order, not index order (Kevin, 2026-07-14: "sort by and show dates").
+  // Upcoming fests soonest-first; archived ones sink below, most recent
+  // first, muted by the renderer. startsOn is an ISO string, so plain string
+  // comparison sorts it — no Date parsing, no clock needed (archived status,
+  // not "today", decides what counts as past).
+  const meta = new Map(festIndex.map((f) => [f.id, f]));
+  const sortKey = (fid) => {
+    const m = fid ? meta.get(fid) : null;
+    if (!m || !m.startsOn) return { past: 2, key: '' };           // uncached / custom: last
+    if (m.status === 'archived') return { past: 1, key: m.startsOn }; // past, recent first
+    return { past: 0, key: m.startsOn };                          // upcoming, soonest first
+  };
   const pairs = [];
   for (const c of crews) {
     const doc = docFor(c.token);
@@ -170,21 +181,35 @@ export function landingPairs(crews, docFor, festIndex) {
     const people = doc
       ? Object.entries(doc.people || {}).filter(([, p]) => p && !p.removed).map(([n, p]) => ({ name: n, p }))
       : [];
-    if (!fids.length) { pairs.push({ token: c.token, fid: null, crewName: c.name || '', people, ord: Infinity }); continue; }
+    if (!fids.length) { pairs.push({ token: c.token, fid: null, crewName: c.name || '', people, past: false }); continue; }
     for (const fid of fids) {
-      pairs.push({ token: c.token, fid, crewName: c.name || '', people, ord: order.has(fid) ? order.get(fid) : Infinity });
+      pairs.push({ token: c.token, fid, crewName: c.name || '', people, past: (meta.get(fid) || {}).status === 'archived' });
     }
   }
-  return pairs.sort((a, b) => a.ord - b.ord);
+  return pairs.sort((a, b) => {
+    const ka = sortKey(a.fid);
+    const kb = sortKey(b.fid);
+    if (ka.past !== kb.past) return ka.past - kb.past;
+    if (ka.past === 1) return kb.key.localeCompare(ka.key); // past: most recent first
+    return ka.key.localeCompare(kb.key);
+  });
 }
 
 // Label a fest id the landing may not have metadata for: catalog fests come
 // from the index; crew-private (AI-added) fests only load inside their crew,
 // so their id prettifies ("amish-acl-2026" -> "Amish Acl 2026") rather than
 // rendering as a slug.
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
 export function festLabelFor(fid, festIndex) {
   const meta = festIndex.find((f) => f.id === fid);
-  if (meta) return { name: meta.name, year: meta.year || '', accent: meta.accent || null };
+  if (meta) {
+    // "Sep '26" beside the name — "I just want to know WHEN when looking at
+    // lists" (Kevin, 2026-07-14). Month from startsOn, year as already styled.
+    const month = meta.startsOn ? MONTHS[Number(meta.startsOn.slice(5, 7)) - 1] : '';
+    const year = [month, meta.year || ''].filter(Boolean).join(' ');
+    return { name: meta.name, year, accent: meta.accent || null };
+  }
   const pretty = String(fid).split('-').map((w) => (w ? w[0].toUpperCase() + w.slice(1) : w)).join(' ');
   return { name: pretty, year: '', accent: null };
 }
