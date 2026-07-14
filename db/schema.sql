@@ -46,6 +46,15 @@ CREATE TABLE IF NOT EXISTS persons (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- CREATE TABLE IF NOT EXISTS cannot retighten a CHECK on a table that already
+-- exists, and this file advertises itself as idempotent — so the pid
+-- disjointness upgrade (pre-v32 range was {8,24}, overlapping token lengths)
+-- is applied explicitly. Drop-then-add inside one block is safely re-runnable.
+DO $persons_pid_mig$ BEGIN
+  ALTER TABLE persons DROP CONSTRAINT IF EXISTS persons_id_check;
+  ALTER TABLE persons ADD CONSTRAINT persons_id_check CHECK (id ~ '^[A-Za-z0-9_-]{10,16}$');
+END $persons_pid_mig$;
+
 -- Crew-private festivals added via LLM research (api/festival-add.js).
 -- Provenance travels with the value: source_urls from search grounding,
 -- model, who added it, when. The repo's data/festivals/*.json stays canonical

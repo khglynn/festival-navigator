@@ -109,16 +109,35 @@ test('the person token travels in a header, never in a URL', async () => {
   }
 });
 
-test('mayStampPerson: shared-phone switch never rewrites the owner; renames may', () => {
-  const person = { crews: { [CREW_TOKEN]: { name: 'Kevin', crewName: 'EF 26' } } };
+test('mayStampPerson: ownership is checked both ways — claimed and unclaimed crews', () => {
+  const person = { name: 'Kevin', crews: { [CREW_TOKEN]: { name: 'Kevin', crewName: 'EF 26' } } };
+  const other = 'othercrew_token_0123456789';
+  // Claimed crew: only the claimed name, or a rename FROM it.
   assert.equal(crew.mayStampPerson(person, CREW_TOKEN, 'Kevin'), true, 'owner restamps freely');
   assert.equal(crew.mayStampPerson(person, CREW_TOKEN, 'Drew'), false,
-    'a different picker on the same phone must not become the record owner');
-  assert.equal(crew.mayStampPerson(person, CREW_TOKEN, 'Drew', { rename: true }), true,
-    'a self-rename is the sanctioned exception');
-  assert.equal(crew.mayStampPerson(person, 'othercrew_token_0123456789', 'Drew'), true,
-    'an unclaimed crew is open to whoever enters first');
-  assert.equal(crew.mayStampPerson(null, CREW_TOKEN, 'Kevin'), true, 'no record yet — nothing to protect');
+    'a switched picker must not become the record owner');
+  assert.equal(crew.mayStampPerson(person, CREW_TOKEN, 'KevinHG', { renameFrom: 'Kevin' }), true,
+    'a rename from the claimed name is sanctioned');
+  assert.equal(crew.mayStampPerson(person, CREW_TOKEN, 'Drew', { renameFrom: 'Drew Sr' }), false,
+    'a rename NOT starting from the claimed name transfers nothing — the switched-picker rename door is closed');
+  // Unclaimed crew: open only to a picker matching the record's own name.
+  assert.equal(crew.mayStampPerson(person, other, 'Kevin'), true, 'the owner claims a new crew');
+  assert.equal(crew.mayStampPerson(person, other, 'kevin'), true, 'case-insensitively');
+  assert.equal(crew.mayStampPerson(person, other, 'Drew'), false,
+    'a different picker in an unclaimed crew does NOT inherit the record — the mirror-empty door is closed');
+  assert.equal(crew.mayStampPerson(null, CREW_TOKEN, 'Kevin'), false, 'no record — nothing may stamp');
+});
+
+test('same-tab concurrent ensurePerson calls make exactly ONE create POST', async () => {
+  store.clear();
+  let posts = 0;
+  fetchImpl = () => new Promise((resolve) => setTimeout(() => {
+    posts++;
+    resolve(jsonRes(201, { token: P_TOKEN, id: 'pid_abc12345', doc: { v: 1, name: 'Kevin', crews: {} } }));
+  }, 10));
+  const [a, b] = await Promise.all([crew.ensurePerson('Kevin'), crew.ensurePerson('Kevin')]);
+  assert.equal(posts, 1, 'the in-flight memo collapses the double-tap to one server row');
+  assert.equal(a.id, b.id);
 });
 
 test('stampPersonCrew: mirrors skip the network, merges update the mirror, failures are false', async () => {

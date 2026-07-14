@@ -131,6 +131,29 @@ test('person merge: the exact production bytes land a crews entry and return id 
   assert.equal(gone.rows.length, 0);
 });
 
+test('re-running schema.sql on a PRE-v32 database retightens the pid CHECK', async () => {
+  // CREATE TABLE IF NOT EXISTS silently skips an existing table, so the
+  // {8,24}→{10,16} disjointness fix needed an explicit migration block —
+  // this test builds the OLD schema first, applies the current file, and
+  // proves a token-length id can no longer be inserted (Codex gate round 2).
+  const old = new PGlite();
+  await old.exec(`CREATE TABLE persons (
+    id TEXT PRIMARY KEY CHECK (id ~ '^[A-Za-z0-9_-]{8,24}$'),
+    token TEXT NOT NULL UNIQUE CHECK (token ~ '^[A-Za-z0-9_-]{20,40}$'),
+    doc JSONB NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now())`);
+  await old.exec(readFileSync(new URL('../db/schema.sql', import.meta.url), 'utf8'));
+  await assert.rejects(
+    old.query('INSERT INTO persons (id, token, doc) VALUES ($1, $2, $3::jsonb)',
+      ['a'.repeat(20), 'upgradetest_token_0123456789', '{}']),
+    /persons_id_check/,
+    'a 20-char (token-length) id must violate the migrated CHECK');
+  await old.query('INSERT INTO persons (id, token, doc) VALUES ($1, $2, $3::jsonb)',
+    ['pid_upgrade_ok', 'upgradetest_token_0123456780', '{}']); // 14 chars still fits
+  await old.close();
+});
+
 test('deletion is inexpressible — which is why tombstones exist', async () => {
   await seed();
   await merge({ people: { Drew: { colorIndex: 1 } } });

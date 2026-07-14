@@ -930,7 +930,7 @@ function openSettings() {
       refreshCtx();
       renderPersonChips();
       renderYou();
-      stampIdentity(state.getCrewToken(), () => true, { rename: true }); // the record follows a self-rename
+      stampIdentity(state.getCrewToken(), () => true, { renameFrom: old }); // the record follows a self-rename
       showToast($('toast-root'), `You’re ${newName} now — picks came with you.`);
     },
     changeColor: (idx) => {
@@ -1204,7 +1204,7 @@ function renderJoin(token, doc) {
 // backfills one open at a time with no migration event. Silent and
 // non-blocking: identity plumbing never stands between a person and their
 // wall; a failure here just retries on the next open.
-async function stampIdentity(token, current = () => true, { rename = false } = {}) {
+async function stampIdentity(token, current = () => true, { renameFrom = null } = {}) {
   const name = ctx.meName;
   if (!name) return;
   try {
@@ -1214,8 +1214,9 @@ async function stampIdentity(token, current = () => true, { rename = false } = {
     // write the wrong identity into the wrong place (Codex gate, P1).
     if (!p || !current() || state.getCrewToken() !== token || ctx.meName !== name) return;
     // Shared-phone guard: the record belongs to one human; switchIdentity
-    // must never rewrite the owner's claim. renameSelf passes rename.
-    if (!crew.mayStampPerson(p, token, name, { rename })) return;
+    // must never rewrite the owner's claim or take their pid. A rename is
+    // honored only FROM the currently-claimed name (renameSelf passes it).
+    if (!crew.mayStampPerson(p, token, name, { renameFrom })) return;
     crew.stampPersonCrew(token, name, state.crewName());
     // The crew doc points back with the PUBLIC id only — never the person
     // token (crew docs are readable by everyone holding that crew's link).

@@ -166,9 +166,22 @@ export async function fetchPerson(token) {
 
 // Create-if-missing, silently. Identity plumbing must never block entering a
 // crew — every failure path returns null and the next crew open retries.
+// The in-flight memo collapses same-tab concurrent calls (double-tap, two
+// stamps racing) to ONE create POST. Two separate TABS racing can still mint
+// an orphan server row — accepted for Phase 1: the row is unreferenced,
+// localStorage converges first-write-wins, and the pid only ever comes from
+// the converged record. Server-idempotent creation is Phase 2 hardening.
+let personCreateInFlight = null;
 export async function ensurePerson(name) {
   const existing = myPerson();
   if (existing) return existing;
+  if (personCreateInFlight) return personCreateInFlight;
+  personCreateInFlight = createPersonOnce(name);
+  try { return await personCreateInFlight; }
+  finally { personCreateInFlight = null; }
+}
+
+async function createPersonOnce(name) {
   try {
     const res = await fetch('/api/person', {
       method: 'POST',
@@ -191,14 +204,21 @@ export async function ensurePerson(name) {
   } catch { return null; }
 }
 
-// May the automatic identity stamp write for this (crew, name)? This device's
-// person record belongs to ONE human. If the record already claims a
-// DIFFERENT name in this crew, the current picker is someone else on a shared
-// phone (FLOW-8 switchIdentity) — never overwrite the owner's claim or hand
-// their pid to another member. A self-rename is the sanctioned exception.
-export function mayStampPerson(person, crewToken, name, { rename = false } = {}) {
+// May the identity stamp write for this (crew, name)? This device's person
+// record belongs to ONE human, and a shared phone hands the picker to others
+// (FLOW-8 switchIdentity) — so ownership is checked BOTH ways (Codex gate
+// round 2, high):
+//   - claimed crew: only the claimed name may restamp, and a rename is
+//     honored only when it starts FROM that claimed name — a switched picker
+//     invoking rename cannot transfer the record.
+//   - unclaimed crew: open only to a picker matching the record's own name
+//     (case-insensitive). A mismatched picker simply doesn't ride the me
+//     link for that crew — the safe side of ambiguity.
+export function mayStampPerson(person, crewToken, name, { renameFrom = null } = {}) {
   const mirror = person && (person.crews || {})[crewToken];
-  return !mirror || mirror.name === name || rename;
+  if (mirror) return mirror.name === name || (!!renameFrom && mirror.name === renameFrom);
+  return !!person && typeof person.name === 'string'
+    && person.name.toLowerCase() === String(name).toLowerCase();
 }
 
 // Record "in this crew I am <name>" on the person doc. Idempotent via the
