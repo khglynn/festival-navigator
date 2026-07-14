@@ -541,8 +541,18 @@ async function batchCreateFlow(myName) {
         // Cache the doc so the landing can render this fest's row immediately
         // (the fest-first landing reads cached docs for its pairs).
         saveLS(state.LS.doc(token), JSON.stringify(doc));
-        if (person) await crew.stampPersonCrew(token, myName, crewName);
-        made.push({ token, doc, fid, name: meta.name });
+        // The stamp returns false on failure rather than throwing — check it,
+        // retry once, and never report a board as recovery-linked when it
+        // isn't (Codex verify round, high). An unstamped board still lives on
+        // this device; the enterApp backfill stamps it on first open — the
+        // only true loss window is device-wipe-before-open, and the toast
+        // below says so instead of pretending.
+        let stamped = false;
+        if (person) {
+          stamped = await crew.stampPersonCrew(token, myName, crewName)
+            || await crew.stampPersonCrew(token, myName, crewName);
+        }
+        made.push({ token, doc, fid, name: meta.name, stamped });
       } catch (e) {
         failed = { name: meta.name, err: String(e.message || e) };
         break; // stop the batch — the same failure would repeat (rate limit, offline)
@@ -579,10 +589,12 @@ async function batchCreateFlow(myName) {
     // "add all the fests I'm going to, then quickly add people to them."
     history.replaceState(null, '', '/');
     renderLanding();
-    const note = failed
+    const unstamped = made.filter((m) => !m.stamped).length;
+    let note = failed
       ? `${made.length} ready — ${failed.name} didn’t make it (${failed.err}). It’s still in the picker.`
       : `${made.length} festivals ready — tap one and add your people.`;
-    showToast($('toast-root'), note, 7000);
+    if (unstamped) note += ` (${unstamped} not on your My link yet — opening each fixes that.)`;
+    showToast($('toast-root'), note, 8000);
   } finally {
     createInFlight = false;
     goBtns.forEach((b) => { b.disabled = false; });
@@ -1123,8 +1135,14 @@ function renderLanding() {
       // Stop and say so instead (Codex reshape gate, P2).
       if (pair.fid) {
         saveLS(state.LS.fest(pair.token), pair.fid);
-        if (localStorage.getItem(state.LS.fest(pair.token)) !== pair.fid) {
-          showToast($('toast-root'), 'This device’s storage is full — couldn’t point the board at that festival.', 6000);
+        // The read-back is guarded too: storage-denied browsers throw on
+        // READS as well as writes, and an uncaught throw here would kill
+        // every row (Codex verify round). Write-fail, read-fail, and
+        // mismatch all take the same honest exit.
+        let stored = null;
+        try { stored = localStorage.getItem(state.LS.fest(pair.token)); } catch { /* read denied */ }
+        if (stored !== pair.fid) {
+          showToast($('toast-root'), 'This device’s storage is blocked — couldn’t point the board at that festival.', 6000);
           return;
         }
       }
