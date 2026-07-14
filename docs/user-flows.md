@@ -17,18 +17,29 @@ All doc-derived strings render via textContent/createElement (XSS rule).
 
 1. Open the root domain with no hash → landing screen.
 2. See: brand, one-line promise, ADD A FESTIVAL button, "got a link?" hint,
-   YOUR FESTIVALS list (empty state if none remembered).
+   YOU card (only once a person record exists: avatar, name, My-link copy
+   button with its keep-it-to-yourself warning), YOUR CREWS list (empty state
+   if none remembered).
 **Expected:** content vertically centered on tall viewports; type scales up on
-desktop; remembered crews (localStorage) listed as tappable rows.
+desktop; remembered crews listed as tappable rows, each showing the crew name,
+its festivals by name (custom ones folded into a count), and an avatar cluster
+of its people in their colors.
 
 ## F2 · Create a crew
 
 1. Landing → ADD A FESTIVAL → **step 1: pick the fest** — upcoming festivals
    prominent, past festivals available in a visually secondary section.
-2. Pick a fest → **step 2: your name** — chosen-fest chip shown, name input,
+2. Pick a fest → **step 1.5: WHO'S THIS WITH?** — only when this device
+   already knows ≥1 crew: rows for each crew (members listed; "already has
+   this fest" when it does) plus "+ A NEW CREW". Fresh devices skip straight
+   to the name step.
+   - Existing crew → festival loads first, then the crew opens on it; the
+     membership write syncs to the whole crew. A crew known but never claimed
+     routes through the join screen.
+3. New crew → **step 2: your name** — chosen-fest chip shown, name input,
    Create; back returns to step 1.
-3. Create → crew is born, wall opens on that fest, URL carries the `#g=` link.
-**Expected:** two distinct steps (name entry never reads as a festival option);
+4. Create → crew is born, wall opens on that fest, URL carries the `#g=` link.
+**Expected:** distinct steps (name entry never reads as a festival option);
 apostrophes stripped from generated crew names; helper text guides each step.
 
 ## F3 · Join via shared link
@@ -179,6 +190,22 @@ not a broken page. /api/ never served from cache.
 1. Unknown routes → 404 "WYA?" page, centered, on-brand, links home.
 2. A `#g=` token that doesn't resolve → clear "link didn't work" state with a
    path forward (not a blank wall).
+
+## F17 · Me link — one person across crews
+
+1. Entering any crew (create, join, or reopening an old one) silently ensures
+   a person record and stamps this crew onto it; the crew doc gets only the
+   public `pid`, never the person token.
+2. Landing YOU card → "My link" copies `#p=<token>` — the personal restore
+   link. Its copy carries the consequence: sharing it makes someone else you.
+3. Open the me link on a new device → every crew on the record registers
+   (union — never removes), names come pre-claimed, landing shows the lot,
+   and the hash is stripped from the URL immediately.
+4. A broken (truncated) me link says so; a deleted/unknown one says "doesn't
+   work anymore"; offline says try again online.
+**Expected:** identity plumbing never blocks entering a crew — every failure
+is silent-and-retried on the next open. The person token appears nowhere but
+the me link and the device's own storage.
 
 ---
 

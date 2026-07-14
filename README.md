@@ -59,6 +59,7 @@ js/overlap.js                 same-stage lane math
 js/time.js                    parsing and flooring set times
 js/name-rules.mjs             name validation SHARED with the server
 api/crew.js                   the crew store: create, read, atomic merge
+api/person.js                 the me link: one person across crews (public pid, secret token)
 api/access.js                 Spotify access requests (Slack approve flow)
 api/festival-add.js           AI lineup research; returns a candidate, saves nothing
 api/selections.js             RETIRED endpoint — answers 410 so old clients self-heal
