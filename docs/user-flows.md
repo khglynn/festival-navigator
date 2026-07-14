@@ -1,5 +1,13 @@
 # Festival Navigator — user flows (the spec the audit walks)
 
+> **DIRECTION PIVOT (2026-07-14, Kevin):** the model is now **fests × circles
+> × you** — the home page lists FESTIVALS (not crews), people questions move
+> to "+ Add" on a fest, and F2's "WHO'S THIS WITH?" step gets deleted by the
+> fest-first reshape. This doc keeps describing the CODE AS BUILT (that's its
+> job — the audit walks it) until the reshape ships, then F1/F2 get rewritten
+> with it. Locked model + reshape scope:
+> `claude-plans/2026-07-14-fests-circles-you-direction.md`.
+
 **Created 2026-07-11 · maintained as part of every design/UX change.**
 This is the canonical inventory of what a user can do and what correct looks
 like. The design-audit workflow walks these flows in a real browser at 390px /

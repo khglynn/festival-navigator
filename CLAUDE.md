@@ -27,6 +27,19 @@ Non-inferable facts only (the code answers everything else — read it).
   buttons get a wider horizontal upgrade, and that list only ever upgrades —
   forgetting to add to it still leaves a control safe.
 
+- **The model is fests × circles × you (2026-07-14):** the UI is
+  festival-first; a "crew" is internally a circle — one cluster, one link,
+  the consent boundary — and the word barely surfaces. Two laws with teeth:
+  (1) nobody ever sees people in circles they're not in — suggestions may
+  rank what a person can already see, never expand it; (2) mute/hide is
+  viewer-side only (device/person record), NEVER written to the shared doc.
+  Direction doc: `claude-plans/2026-07-14-fests-circles-you-direction.md`.
+- **The person token is a master key** (its doc lists every crew token): it
+  travels ONLY in the `X-Person-Token` header — never a query param
+  (platform logs), never in a crew doc (crew-readable). Crew docs carry the
+  public `pid` only; PID_RE/TOKEN_RE length ranges are deliberately disjoint
+  so one can never pass as the other.
+
 - **Crew store is Neon Postgres**, project `floral-meadow-70237530` (Kevin's
   personal org). Merges MUST stay a single inline atomic `UPDATE` through
   `jsonb_deep_merge()` — a CTE-based read merges against a pre-lock snapshot

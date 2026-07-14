@@ -1,6 +1,28 @@
-# NOW — festival-navigator: me link ON STAGING (v32) · prod at v31
+# NOW — festival-navigator: model pivot locked · v32 HELD on staging · prod at v31
 
-## 2026-07-13/14 — THE ME LINK (Phase 1) — staged, awaiting Kevin's promote
+## 2026-07-14 — FESTS × CIRCLES × YOU: the model pivot (direction locked, reshape next)
+
+Kevin live-tested v32 on staging and rejected the "WHO'S THIS WITH?" framing
+(a people question answered with crew names that read as festivals; a crew
+named Portola opening on Seismic with the fest switcher buried). His model:
+**festival-first, ego-centric circles** — everyone is the center of their own
+map. Talked through his real festival year, mapped it in an artifact, aligned.
+
+- **Canonical direction doc: `claude-plans/2026-07-14-fests-circles-you-direction.md`**
+  (the locked model, the 8 decisions, the reshape checklist). Read it before
+  touching landing/create/join/share code.
+- **v32 stays on staging by Kevin's call** — the reshape (fest-first home,
+  multi-pick add, kill step 1.5, + Add people sheet) lands on top, then
+  promote. Nothing from v32 is wasted: the me-link/pid plumbing is the
+  foundation the circle model runs on.
+- Reshape kickoff = plan mode + FULL hg-ground-it read (tonight only the
+  legibility guide was read — deliberate budget call). Merged-board +
+  join-picker/mute engine is its own later arc (Phase B).
+- Docs grounded tonight: user-flows.md carries the pivot banner; the executed
+  me-link plan archived to `claude-plans/2026-07-13-me-link-phase-1.md`
+  (its Phase 2 Spotify-summary design still applies under circles).
+
+## 2026-07-13/14 — THE ME LINK (Phase 1) — staged; UI layer superseded same night
 
 Kevin's frame: "I am me, friends are friends, and we mix and match across
 crews." Plan-mode approved; Kevin picked fest-first→"WHO'S THIS WITH?" for
@@ -36,9 +58,10 @@ the landing CTA and Phase-1-now/bank-Phase-2 for scope.
   fest to SAME crew → wipe → #p= restores crew+claim+YOU card. 170 tests.
 - **Phase 2 banked** (plan doc): library summary on person record,
   client-composed via a crew-scoped endpoint — crew GET hot path untouched.
-- **Kevin's moves**: eyeball staging (stage.fest.kevinhg.com, SW v32) →
-  promote to prod (his call, always) → open each of his 4 crews once on his
-  phone (backfills the me link) → copy My link somewhere safe.
+- ~~Kevin's moves: eyeball staging → promote~~ **OVERTAKEN 2026-07-14**: he
+  eyeballed, the who's-with framing failed the test, direction pivoted (see
+  the section above). Promote waits for the reshape. Still true after it
+  ships: open each crew once to backfill the me link, then stash My link.
 
 # Previous: v3.1 PROMOTED + Spotify polish live (v31)
 
