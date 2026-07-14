@@ -884,6 +884,9 @@ function clientIdInputRow(actions, rerenderDrill, msg) {
 // I add fests later Spotify should just pull." Everything below serves that.
 
 let scanning = false; // a scan survives a re-render of the drill
+// The completion line survives the drill's re-render — writing it into the
+// pre-rerender msg node talked to a detached element (Codex round 5, P2).
+let lastSyncNote = '';
 
 // ONE card, used by every not-yet-connected state, so the first Spotify screen a
 // member sees says what connecting DOES instead of showing them a client ID.
@@ -1033,15 +1036,15 @@ async function runFullSync(ctx, actions, onProgressIn, rerenderDrill, msg) {
     await syncEveryonePlaylists(ctx, actions, (n) => notes.push(n));
     scanning = false;
     scanPill(null);
-    rerenderDrill();
     const badgeLine = total
       ? `Badged ${total} artist${total === 1 ? '' : 's'} across ${fests} festival${fests === 1 ? '' : 's'}.`
       : 'Nothing in your library matches these lineups yet — it will badge new festivals as you add them.';
-    msg.textContent = [badgeLine, ...notes].join(' ');
+    lastSyncNote = [badgeLine, ...notes].join(' ');
+    rerenderDrill(); // renders lastSyncNote into the FRESH msg node
   } catch (e) {
     scanning = false;
     scanPill(null);
-    msg.textContent = String(e.message || e);
+    lastSyncNote = String(e.message || e);
     rerenderDrill();
   }
 }
@@ -1098,6 +1101,7 @@ function openSpotifyDrill(ctx, actions) {
     spotify.isConnected() ? 'connected' : ''));
   col.appendChild(head);
   const msg = el('div', 'color: var(--text-tertiary); font-size: 11.5px; font-weight: 600; line-height: 1.5;');
+  if (lastSyncNote) msg.textContent = lastSyncNote;
 
   const oauthError = spotify.lastError();
   const clientId = state.spotifyClientId();

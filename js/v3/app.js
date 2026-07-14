@@ -1519,8 +1519,14 @@ export async function boot() {
       ? personToken
       : (() => { try { return sessionStorage.getItem('fn_pending_absorb'); } catch { return null; } })();
     if (pendingAbsorb) {
+      // Park FIRST, synchronously: the URL is already stripped, so if a newer
+      // boot supersedes this one mid-fetch, the parked copy is the only one
+      // left anywhere (Codex round 5, P2). Success — by whichever generation
+      // survives — clears it.
+      try { sessionStorage.setItem('fn_pending_absorb', pendingAbsorb); } catch { /* private mode — me link reopens */ }
       let fetched = null;
-      try { fetched = await crew.fetchPerson(pendingAbsorb); } catch { /* offline — retried next boot */ }
+      let failed = false;
+      try { fetched = await crew.fetchPerson(pendingAbsorb); } catch { failed = true; }
       // The generation guard comes BEFORE any mutation: a stale response
       // must not replace the device's identity after a newer boot started
       // (Codex round 4, P1 — same law as restoreFromMeLink).
@@ -1531,9 +1537,12 @@ export async function boot() {
         // restore's job, not a side effect of connecting Spotify.
         absorbPersonDoc(pendingAbsorb, fetched, { replaceIdentity: false });
         try { sessionStorage.removeItem('fn_pending_absorb'); } catch { /* fine */ }
-      } else {
-        try { sessionStorage.setItem('fn_pending_absorb', pendingAbsorb); } catch { /* private mode — me link reopens */ }
+      } else if (failed) {
         showToast($('toast-root'), 'Couldn’t bring your other boards over yet — they’ll follow once you’re online.', 6000);
+      } else {
+        // The server SAID the person doesn't exist — retrying a dead link
+        // every boot would just re-toast forever.
+        try { sessionStorage.removeItem('fn_pending_absorb'); } catch { /* fine */ }
       }
     }
 

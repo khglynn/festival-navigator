@@ -40,8 +40,10 @@ for (const entry of index) {
   // must be a REAL calendar date (2026-99-99 sorts lexically and months
   // beyond Dec render as no month at all — shape alone isn't enough).
   const so = entry.startsOn || '';
+  const parsed = new Date(`${so}T00:00:00Z`);
   const roundTrips = /^\d{4}-\d{2}-\d{2}$/.test(so)
-    && new Date(`${so}T00:00:00Z`).toISOString().slice(0, 10) === so;
+    && !Number.isNaN(parsed.getTime()) // guard BEFORE toISOString — an invalid date THROWS there
+    && parsed.toISOString().slice(0, 10) === so;
   if (!roundTrips) {
     errors.push(`index.json: ${entry.id || '?'}: startsOn must be a real YYYY-MM-DD date`);
   }

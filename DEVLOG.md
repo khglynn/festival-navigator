@@ -34,7 +34,7 @@ Newest first. One entry per meaningful unit of work.
 - Also that night, before all this: the array-eating deepMerge (a sync-
   blocked device from one "harmless" toast) — both JS twins now replace
   arrays like the SQL, with a three-way byte-parity test.
-- 175 tests (174 pass, 1 env-gated skip). Staging = v34 across the arc's
+- 175 tests (174 pass, 1 env-gated skip). Staging = v35 across the arc's
   final state; **prod stays at v31 until Kevin promotes** after his
   fest-month shakedown. Phase B banked: merged fest board + join-picker/mute.
 

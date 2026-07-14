@@ -1,6 +1,6 @@
 // Festival Navigator service worker — offline-first app shell.
 // Bump CACHE_VERSION whenever you change cached static assets.
-const CACHE_VERSION = 'festival-nav-v34'; // v34 = connect fills EVERY board, hop carries the me link + announces, settings lists YOUR fests, date-sorted landing w/ months
+const CACHE_VERSION = 'festival-nav-v35'; // v35 = the identity-night wrap: sweep writes as the person record, hop absorb parks-first, honest partial reporting
 
 // The shell that MUST be complete for offline to be real: if any of these
 // fail, install fails and the old worker keeps serving — a half-cached shell

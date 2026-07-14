@@ -1,4 +1,33 @@
-# NOW — festival-navigator: fest-first reshape ON STAGING (v33) · prod at v31
+# NOW — festival-navigator: fest-first reshape ON STAGING (v35) · prod at v31
+
+## 2026-07-14 (session close, v35) — Kevin's staging round + gate rounds 4-5
+
+Kevin live-tested the reshape on staging, found the Spotify canonical-host
+hop trap (his boards "disappeared" — he'd changed ORIGINS: OAuth hopped him
+from stage.fest to fest.kevinhg.com, which ran old prod code and knew one
+crew; nothing was lost, staging and prod share the DB), and asked for:
+connect fills ALL fests · settings shows MY fests not the catalog · dates
+on the home list. All shipped, then two more Codex gate rounds (identity
+boundaries, races, honesty of partial-failure reporting) fixed in full:
+
+- **badgeEveryKnownCrew**: one connect fills EVERY board — identity resolved
+  from the PERSON RECORD's claim (sweepIdentityFor, 7-case tested; never the
+  device picker), sparse-leaf direct POSTs per crew, skips surfaced ("N
+  boards couldn't fill yet — each catches up when you open it"; the
+  enterApp per-open sweep is the durable retry).
+- **The hop announces itself and carries the me link**: boot parks the
+  token in sessionStorage FIRST, absorbs quietly (union, never dethrones an
+  existing identity), generation-guarded, retries offline, drops dead links.
+- **Settings = your boards** (landingPairs rows; + Add → the shared multi-
+  pick page; AI/custom add keeps its quiet door). **Landing tells time**:
+  `startsOn` in index.json (validator round-trip-enforced, documented),
+  date sort, "Sep '26" labels, past fests sink muted.
+- **Kevin's morning list**: eyeball staging on a FRESH browser (or
+  SW-unregister) · add `https://stage.fest.kevinhg.com/spotify-callback` in
+  the Spotify dashboard (staging then OAuths on-origin, no hop) · promote
+  call · Portola/Seismic crew split still on my queue post-promote.
+- 176 tests / 175 pass. Five gate rounds total tonight; every NO SHIP
+  caught something real.
 
 ## 2026-07-14 (later) — THE FEST-FIRST RESHAPE — built, gated twice, staged
 
@@ -32,7 +61,8 @@ out-of-territory — deliberate, stated).
   rows deleted after. **Lesson re-learned live: hash-only navigations keep
   the browser's module map — verifying edited JS needs a REAL document
   reload (about:blank hop), not just SW-unregister.**
-- **Staging = v33, awaiting Kevin's eyeball. Prod promote = Kevin's call.**
+- **Staging = v35 (v33 + Kevin's staging round + gate rounds 4-5), awaiting
+  his eyeball. Prod promote = Kevin's call.**
 - Accepted, documented in code: cross-tab create-spam (no server
   idempotency key; rate limiter caps damage) · server-side batch quota
   reservation · both filed under Phase-2 hardening with the person-create

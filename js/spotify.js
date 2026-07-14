@@ -400,19 +400,23 @@ export async function badgeEveryKnownCrew(onProgress) {
       if (!myName) { skipped++; continue; }
       const existing = (doc.affinity || {})[myName] || {};
       const out = {};
+      let loadFailed = false; // a fest we couldn't read is a PARTIAL sweep, not a clean no-op
       for (const fid of Object.keys(doc.festivals || {})) {
         let fest = FESTIVALS[fid];
         if (!fest) {
-          try { await loadFestival(fid); } catch { continue; }
+          try { await loadFestival(fid); } catch { loadFailed = true; continue; }
           fest = FESTIVALS[fid];
-          if (!fest) continue;
+          if (!fest) { loadFailed = true; continue; }
         }
         for (const name of artistNamesOf(fest)) {
           const aff = affinityOf(lib, name);
           if (aff && JSON.stringify(existing[name]) !== JSON.stringify(aff)) out[name] = aff;
         }
       }
-      if (!Object.keys(out).length) continue; // nothing new — no write, not a failure
+      if (!Object.keys(out).length) {
+        if (loadFailed) skipped++; // report it — the per-open sweep is the retry
+        continue;
+      }
       const res = await fetch(`/api/crew?t=${encodeURIComponent(c.token)}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
