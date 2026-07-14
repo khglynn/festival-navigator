@@ -1,9 +1,10 @@
 # 🎪 Festival Navigator
 
-A fast, mobile-first PWA for planning a music festival with your crew. Start a
-crew, share one link, and everyone's picks sync live — whether the lineup just
-dropped or the set times are already out. Works offline once loaded, because the
-place you actually need it is a field with one bar of signal.
+A fast, mobile-first PWA for planning your festivals with your people. Add
+your fests, add each fest's circle of friends, share one link per group — and
+everyone's picks sync live, whether the lineup just dropped or the set times
+are already out. Works offline once loaded, because the place you actually
+need it is a field with one bar of signal.
 
 **Festivals loaded:** 11 — the list lives in
 [`data/festivals/index.json`](data/festivals/index.json), which is the only place
@@ -11,10 +12,12 @@ it lives. Adding one: [`docs/add-a-festival.md`](docs/add-a-festival.md).
 
 ## ✨ How it works
 
-- **Crews are share links.** "Start a crew" mints an unguessable link. The link
-  *is* the access — no accounts, no passwords, no email. Anyone holding it can
-  read and write that crew, and nobody can touch any other crew. One crew keeps
-  its people and picks across every festival.
+- **Your groups are share links.** Every festival board mints an unguessable
+  link for its circle of people. The link *is* the access — no accounts, no
+  passwords, no email. Anyone holding it can read and write that board, and
+  nobody can touch any other. Different friend groups get different links,
+  exactly like real life; your own "My link" on the front page brings all of
+  yours back on any device.
 - **Two walls.** While only the lineup is announced you get a sortable,
   searchable **artist list**; once set times drop the same picks render as a
   **timetable** — stage columns, honest clock, overlaps side by side. Picks carry

@@ -1,6 +1,6 @@
 // Festival Navigator service worker — offline-first app shell.
 // Bump CACHE_VERSION whenever you change cached static assets.
-const CACHE_VERSION = 'festival-nav-v32'; // v32 = the me link (one person across crews), landing you-card + crew rows, who's-this-with create step
+const CACHE_VERSION = 'festival-nav-v33'; // v33 = fest-first reshape: landing lists festivals, multi-pick create, who's-this-with deleted, + Add picker
 
 // The shell that MUST be complete for offline to be real: if any of these
 // fail, install fails and the old worker keeps serving — a half-cached shell

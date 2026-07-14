@@ -434,9 +434,14 @@ function crewSection(ctx, actions) {
         catch { mBox.select(); }
       });
       mRow.append(mBox, mCopy);
+      // Linked vs placeholder (decision 4): a pid means a real person claimed
+      // this name — their me link already carries this crew. No pid = a name
+      // waiting for its human; the claim link below is how they arrive.
       memberLinkHost.append(mRow,
         el('div', 'color: var(--text-tertiary); font-size: 10.5px; font-weight: 600; margin-top: 4px;',
-          `Opening it lands ${name} on their own circle — picks made for them included.`));
+          p.pid
+            ? `${name} is linked — they've claimed this name, and this crew follows them. The link still works as a doorway back.`
+            : `${name} hasn't claimed this name yet. Opening this link makes it theirs — picks made for them included.`));
     });
     chips.appendChild(chip);
   }

@@ -36,7 +36,15 @@ export default async function handler(req, res) {
       if (rateLimited(req, 'crew-create', 10, 60 * 60 * 1000)) return res.status(429).json({ error: 'Too many crews created — try again later' });
       const body = req.body || {};
       const name = typeof body.name === 'string' ? body.name.trim() : '';
-      const seed = { meta: { name }, ...(body.people ? { people: body.people } : {}) };
+      // `festivals` is accepted at birth (fest-first reshape, 2026-07-14) so a
+      // board is created already knowing its fest — the old shape relied on
+      // the first enterApp to add the key, which left multi-created boards as
+      // festival-less ghosts until each was opened once.
+      const seed = {
+        meta: { name },
+        ...(body.people ? { people: body.people } : {}),
+        ...(body.festivals ? { festivals: body.festivals } : {}),
+      };
       const check = validateIncoming(seed);
       if (!check.ok) return res.status(400).json({ error: check.error });
 
@@ -44,7 +52,10 @@ export default async function handler(req, res) {
       // 2026-07-12): creation used to skip them entirely, so a single crafted
       // create could mint a row past every cap the merge UPDATE guards.
       const newToken = crypto.randomBytes(20).toString('base64url');
-      const doc = deepMerge(newCrewDoc(name, new Date().toISOString()), body.people ? { people: body.people } : {});
+      const doc = deepMerge(newCrewDoc(name, new Date().toISOString()), {
+        ...(body.people ? { people: body.people } : {}),
+        ...(body.festivals ? { festivals: body.festivals } : {}),
+      });
       const merged = validateMergedDoc(doc);
       if (!merged.ok) return res.status(413).json({ error: merged.error });
       await sql`INSERT INTO crews (token, doc) VALUES (${newToken}, ${JSON.stringify(doc)}::jsonb)`;

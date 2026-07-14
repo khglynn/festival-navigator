@@ -107,11 +107,17 @@ export async function fetchCrew(token) {
   return await res.json();
 }
 
-export async function createCrew(crewName, myName, personObj) {
+export async function createCrew(crewName, myName, personObj, festId) {
   const res = await fetch('/api/crew', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name: crewName, people: { [myName]: personObj } }),
+    body: JSON.stringify({
+      name: crewName,
+      people: { [myName]: personObj },
+      // Born knowing its fest: the returned (and cached) doc can render its
+      // landing row before the board is ever opened (fest-first reshape).
+      ...(festId ? { festivals: { [festId]: { selections: {} } } } : {}),
+    }),
   });
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));

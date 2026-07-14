@@ -13,7 +13,7 @@ import { renderWall, refreshCard, showUndoToast, showToast, wireScrollspy, color
 import { disclosureFold, eqLoader, festRow } from './tools.js';
 import { openArtistSheet, openDayNotes, openAllNotes, closeSheet, refreshOpenSheet, sheetChrome, dialogize, rememberOpener } from './notes.js';
 import { renderSettings, appSettings, openSubviewByKey } from './settings.js';
-import { onStorageWriteFail } from '../util.js';
+import { onStorageWriteFail, saveLS } from '../util.js';
 import { router } from './router.js';
 import { createSortControl } from './sort-control.js';
 import { nameProblem } from '../name-rules.mjs';
@@ -408,8 +408,7 @@ function show(screen) {
 }
 const anyScreenVisible = () => SCREENS.some((id) => $(id).style.display !== 'none');
 
-// ---- create, two steps (spec F2): pick the fest, then your name --------------------
-let createFid = null;
+// ---- create (spec F2, reshaped 2026-07-14): multi-pick fests, name once ------------
 
 // The shared row (tools.js). This used to be a second hand-built copy, and the
 // copy is how Settings ended up showing past festivals at full weight while
@@ -418,18 +417,37 @@ function festPickRow(f, { muted = false, onPick }) {
   return festRow(f, { muted, onPick });
 }
 
+// Multi-pick (fests × circles × you, decision 2): tap toggles a fest into the
+// selection, one button creates a board per fest. "Add all the fests I'm
+// going to, then quickly add people to them" — the people step is gone from
+// here entirely; people questions live on each fest's + Add.
+const createSel = new Set();
 function renderCreate() {
   show('screen-create');
-  createFid = null;
+  createSel.clear();
   $('create-step-1').style.display = 'flex';
-  $('create-step-crew').style.display = 'none';
   $('create-step-2').style.display = 'none';
   $('create-status').textContent = '';
   const list = $('create-fests');
   list.textContent = '';
-  const pick = (f) => createStepTwo(f);
+  const goBtn = document.createElement('button');
+  goBtn.id = 'create-go-multi';
+  goBtn.className = 'btn-tonal';
+  goBtn.style.cssText = 'font-size: 15px; padding: 13px 24px; width: 100%;';
+  const paintGo = () => {
+    const n = createSel.size;
+    goBtn.disabled = !n;
+    goBtn.textContent = n ? `ADD ${n} FESTIVAL${n === 1 ? '' : 'S'} →` : 'Pick your fests';
+  };
+  const pick = (f, rowEl) => {
+    if (createSel.has(f.id)) createSel.delete(f.id);
+    else createSel.add(f.id);
+    rowEl.classList.toggle('sel-fest', createSel.has(f.id));
+    paintGo();
+  };
   for (const f of FESTIVAL_INDEX.filter((x) => x.status !== 'archived')) {
-    list.appendChild(festPickRow(f, { onPick: pick }));
+    const rowEl = festPickRow(f, { onPick: () => pick(f, rowEl) });
+    list.appendChild(rowEl);
   }
   // Past festivals stay reachable (spec F2/F12) but folded: full-size rows
   // gave history the same weight as the fests you'd actually plan — the
@@ -437,9 +455,21 @@ function renderCreate() {
   const past = FESTIVAL_INDEX.filter((x) => x.status === 'archived');
   if (past.length) {
     list.appendChild(disclosureFold(`Past festivals · ${past.length}`, (rows) => {
-      for (const f of past) rows.appendChild(festPickRow(f, { muted: true, onPick: pick }));
+      for (const f of past) {
+        const rowEl = festPickRow(f, { muted: true, onPick: () => pick(f, rowEl) });
+        rows.appendChild(rowEl);
+      }
     }));
   }
+  list.appendChild(goBtn);
+  paintGo();
+  goBtn.addEventListener('click', () => {
+    if (!createSel.size) return;
+    // A device that already knows who it is skips the name step forever.
+    const p = crew.myPerson();
+    if (p && p.name) { batchCreateFlow(p.name); return; }
+    createStepName();
+  });
 }
 
 function chosenFestChip(f) {
@@ -449,143 +479,81 @@ function chosenFestChip(f) {
   return chip;
 }
 
-// Step 1.5 (Kevin's pick, 2026-07-13): a fest goes to a crew you're already
-// in, or to a new one — the crew is the people boundary, and this step is
-// where the app finally SAYS that. Fresh devices (no crews) never see it.
-function createStepTwo(f) {
-  if (crew.knownCrews().length) { createStepCrew(f); return; }
-  createStepName(f);
-}
-
-function createStepCrew(f) {
-  createFid = f.id;
+// Name step — only ever seen ONCE per device (no person record yet). After
+// that, the me link knows who you are and multi-pick goes straight to boards.
+function createStepName() {
   $('create-step-1').style.display = 'none';
-  $('create-step-2').style.display = 'none';
-  $('create-step-crew').style.display = 'flex';
-  $('create-crew-status').textContent = '';
-  const chosen = $('create-chosen-crew');
-  chosen.textContent = '';
-  chosen.appendChild(chosenFestChip(f));
-  const list = $('create-crews');
-  list.textContent = '';
-  for (const c of crew.knownCrews()) {
-    const doc = state.cachedDoc(c.token);
-    const active = doc ? Object.entries(doc.people || {}).filter(([, p]) => p && !p.removed) : [];
-    const has = doc && doc.festivals && doc.festivals[f.id];
-    const row = document.createElement('button');
-    row.className = 'fest-row';
-    row.style.width = '100%';
-    const left = document.createElement('div');
-    left.style.cssText = 'flex: 1; min-width: 0; text-align: left;';
-    const nm = document.createElement('span');
-    nm.className = 'fest-name';
-    nm.style.cssText = 'font-family: var(--font-display); letter-spacing: .04em; font-size: var(--fs-day); color: var(--text-header);';
-    nm.textContent = c.name || 'Your crew';
-    const sub = document.createElement('div');
-    sub.className = 'fest-dates';
-    sub.textContent = has ? 'already has this fest — tap to open'
-      : (active.length ? active.map(([n]) => n).slice(0, 4).join(', ') + (active.length > 4 ? ` +${active.length - 4}` : '') : 'tap to add it here');
-    left.append(nm, sub);
-    const chev = document.createElement('span');
-    chev.className = 'chev';
-    chev.textContent = '›';
-    row.append(left, chev);
-    row.addEventListener('click', () => addFestToCrew(c, f));
-    list.appendChild(row);
-  }
-  const fresh = document.createElement('button');
-  fresh.className = 'fest-row';
-  fresh.style.width = '100%';
-  const fl = document.createElement('div');
-  fl.style.cssText = 'flex: 1; min-width: 0; text-align: left;';
-  const fn = document.createElement('span');
-  fn.className = 'fest-name';
-  fn.style.cssText = 'font-family: var(--font-display); letter-spacing: .04em; font-size: var(--fs-day); color: var(--brand);';
-  fn.textContent = '+ A NEW CREW';
-  const fs = document.createElement('div');
-  fs.className = 'fest-dates';
-  fs.textContent = 'new people, new link';
-  fl.append(fn, fs);
-  fresh.appendChild(fl);
-  fresh.addEventListener('click', () => createStepName(f));
-  list.appendChild(fresh);
-}
-
-// The fest is chosen and the crew will be NEW — name yourself (old step 2).
-function createStepName(f) {
-  createFid = f.id;
-  $('create-step-1').style.display = 'none';
-  $('create-step-crew').style.display = 'none';
   $('create-step-2').style.display = 'flex';
   $('create-status').textContent = '';
   const chosen = $('create-chosen');
   chosen.textContent = '';
-  chosen.appendChild(chosenFestChip(f));
+  for (const fid of createSel) {
+    const meta = FESTIVAL_INDEX.find((f) => f.id === fid);
+    if (meta) chosen.appendChild(chosenFestChip(meta));
+  }
   $('create-name-input').focus();
 }
 
-// Add the chosen fest to a crew this device already knows. Load the festival
-// FIRST (CORE-12 — never strand a device pointing at a fest it can't render),
-// then enter the crew; activateCrew's ensureFestivalState queues the
-// membership write for the whole crew (the ghost-festival rule).
-async function addFestToCrew(entry, f) {
-  const stat = $('create-crew-status');
-  stat.textContent = '';
-  stat.appendChild(eqLoader('Opening…'));
-  try { await loadFestival(f.id); }
-  catch { stat.textContent = 'Can’t load that festival offline — it works once you’re back online.'; return; }
-  let doc = null, gone = false;
-  try { doc = await crew.fetchCrew(entry.token); gone = doc === null; }
-  catch { /* offline — cache below */ }
-  if (gone) { stat.textContent = 'That crew doesn’t exist any more.'; return; }
-  if (!doc) doc = state.cachedDoc(entry.token);
-  if (!doc) { stat.textContent = 'Couldn’t reach that crew — check your signal and try again.'; return; }
-  localStorage.setItem(`fn_crew_fest_v3_${entry.token}`, f.id);
-  // A crew this device knows but never claimed a name in (a me-link restore
-  // can register crews without claims) still goes through the join screen —
-  // enterApp with no identity would render a wall you can't pick on.
-  if (!crew.me(entry.token)) { pendingFestHint = f.id; renderJoin(entry.token, doc); return; }
-  await enterApp(entry.token, doc);
-  if (state.hasPending()) sync.scheduleSync();
-}
-
-async function createCrewFlow() {
-  const myName = $('create-name-input').value.trim();
+// One board per picked fest, each its own circle of one (decision 2 — a fest
+// never lands in an existing circle from here; deliberate multi-fest circles
+// use Settings → Your festivals → + Add a festival). Sequential creates so
+// a mid-batch failure reports exactly what made it and what didn't.
+async function batchCreateFlow(myName) {
   const status = $('create-status');
-  if (!createFid) { status.textContent = 'Pick the fest first.'; renderCreate(); return; }
-  // Same rule the server enforces (FLOW-5) — the form catches it, not the 400.
   const problem = nameProblem(myName);
-  if (problem) { status.textContent = problem; return; }
-  const btn = $('create-go-btn');
-  btn.disabled = true;
+  if (problem) { createStepName(); status.textContent = problem; return; }
+  const fids = [...createSel];
+  const made = [];
+  let failed = null;
   status.textContent = '';
   status.appendChild(eqLoader('Setting the stage…'));
-  try {
-    const meta = FESTIVAL_INDEX.find((f) => f.id === createFid);
-    // SAFE_NAME_RE bans apostrophes — "'26" becomes "26" in the crew name.
-    const crewName = `${meta.name} ${(meta.year || '').replace(/'/g, '')}`.trim().slice(0, 40);
-    const { token, doc } = await crew.createCrew(crewName, myName, { colorIndex: 0 });
-    crew.setMe(token, myName);
-    localStorage.setItem(`fn_crew_fest_v3_${token}`, createFid);
-    await enterApp(token, doc);
-    // Stamp the crew's fest into the doc so invites resolve on new devices
-    // even when a shared link lost its &f= param (FLOW-1).
-    state.recordInviteFest(createFid);
-    sync.scheduleSync();
-    // The share moment (FLOW-7): a crew of one isn't a crew yet.
-    openShareMoment();
-    router.push('sheet:share');
-  } catch (e) {
-    // A network-level failure surfaces as browser jargon ("Failed to fetch")
-    // — translate it; keep the server's own plain-language errors (audit 5.4).
-    const raw = String(e.message || e);
+  crew.ensurePerson(myName); // fire-and-forget — the YOU card exists on arrival
+  for (const fid of fids) {
+    const meta = FESTIVAL_INDEX.find((f) => f.id === fid);
+    if (!meta) continue;
+    try {
+      // SAFE_NAME_RE bans apostrophes — "'26" becomes "26" in the crew name.
+      const crewName = `${meta.name} ${(meta.year || '').replace(/'/g, '')}`.trim().slice(0, 40);
+      const { token, doc } = await crew.createCrew(crewName, myName, { colorIndex: 0 }, fid);
+      crew.setMe(token, myName);
+      crew.rememberCrew(token, crewName);
+      saveLS(state.LS.fest(token), fid);
+      // Cache the doc so the landing can render this fest's row immediately
+      // (the fest-first landing reads cached docs for its pairs).
+      saveLS(state.LS.doc(token), JSON.stringify(doc));
+      made.push({ token, doc, fid, name: meta.name });
+    } catch (e) {
+      failed = { name: meta.name, err: String(e.message || e) };
+      break; // stop the batch — the same failure would repeat (rate limit, offline)
+    }
+  }
+  if (!made.length) {
+    const raw = failed ? failed.err : 'Nothing was created.';
     status.textContent = /fetch|network|load/i.test(raw) && !/crew|name|festival/i.test(raw)
       ? 'Couldn’t reach the crew service — check your connection and try again.'
       : raw;
-  } finally {
-    btn.disabled = false;
+    return;
   }
+  if (made.length === 1 && !failed) {
+    // Single fest keeps today's arc: straight onto the board, share moment up.
+    const { token, doc, fid } = made[0];
+    await enterApp(token, doc);
+    state.recordInviteFest(fid); // invites resolve on fresh devices (FLOW-1)
+    sync.scheduleSync();
+    openShareMoment();
+    router.push('sheet:share');
+    return;
+  }
+  // Several boards born: land on the festival list where they all are —
+  // "add all the fests I'm going to, then quickly add people to them."
+  history.replaceState(null, '', '/');
+  renderLanding();
+  const note = failed
+    ? `${made.length} ready — ${failed.name} didn’t make it (${failed.err}). It’s still in the picker.`
+    : `${made.length} festivals ready — tap one and add your people.`;
+  showToast($('toast-root'), note, 7000);
 }
+
 
 // ---- the share moment (FLOW-7/FLOW-12) ----------------------------------------------
 // One centered dialog right after create (and re-openable from Settings):
@@ -689,6 +657,30 @@ function openAddMember() {
   const status = document.createElement('div');
   status.style.cssText = 'color: var(--text-tertiary); font-size: 11.5px; font-weight: 600;';
   sheet.append(sub, row, status); // chrome (grabber + title + ✕) is already on
+  // Recurring humans, one tap (fests × circles × you, decision 4): the people
+  // from your OTHER fests — Drew doesn't get retyped a third time.
+  const others = model.otherFestPeople(
+    state.getCrewToken(), crew.knownCrews(), state.cachedDoc, state.people(), ctx.meName,
+  );
+  if (others.length) {
+    const pickWrap = document.createElement('div');
+    const pickLabel = document.createElement('div');
+    pickLabel.className = 'micro-label';
+    pickLabel.style.cssText = 'margin-bottom: 7px;';
+    pickLabel.textContent = 'From your other fests';
+    const chips = document.createElement('div');
+    chips.style.cssText = 'display: flex; flex-wrap: wrap; gap: 6px;';
+    for (const { name } of others.slice(0, 12)) {
+      const chip = document.createElement('button');
+      chip.className = 'btn-tonal';
+      chip.style.cssText = 'font-size: 12.5px; padding: 7px 13px;';
+      chip.textContent = `+ ${name}`;
+      chip.addEventListener('click', () => { input.value = name; doAdd(); });
+      chips.appendChild(chip);
+    }
+    pickWrap.append(pickLabel, chips);
+    sheet.appendChild(pickWrap);
+  }
   dialogize(sheet, 'Add someone to the crew');
   document.body.append(backdrop, sheet);
   input.focus();
@@ -1027,11 +1019,14 @@ function renderLanding() {
     youBox.appendChild(card);
   }
 
+  // FESTIVAL rows, not crew rows (fests × circles × you, 2026-07-14): every
+  // (crew, fest) pair is one row in festival-index order — tapping Seismic
+  // opens Seismic, whatever circle it lives in. Two circles at one fest =
+  // two rows, told apart by their people (unfused until the merged-board arc).
   const list = $('landing-fests');
   list.textContent = '';
   const crews = crew.knownCrews();
-  for (const c of crews) {
-    const doc = state.cachedDoc(c.token);
+  for (const pair of model.landingPairs(crews, state.cachedDoc, FESTIVAL_INDEX)) {
     const row = document.createElement('button');
     row.className = 'fest-row';
     row.style.width = '100%';
@@ -1039,30 +1034,33 @@ function renderLanding() {
     left.style.cssText = 'flex: 1; min-width: 0; text-align: left;';
     const nm = document.createElement('span');
     nm.className = 'fest-name';
-    nm.style.cssText = 'font-family: var(--font-display); letter-spacing: .04em; font-size: var(--fs-day); color: var(--text-header);';
-    nm.textContent = c.name || 'Your crew';
+    const label = pair.fid ? model.festLabelFor(pair.fid, FESTIVAL_INDEX) : null;
+    const festColor = label && label.accent ? `rgb(${label.accent})` : 'var(--text-header)';
+    nm.style.cssText = `font-family: var(--font-display); letter-spacing: .04em; font-size: var(--fs-day); color: ${festColor};`;
+    if (label) {
+      nm.textContent = label.name;
+      if (label.year) {
+        const yr = document.createElement('span');
+        yr.className = 'yr';
+        yr.textContent = ` ${label.year}`;
+        nm.appendChild(yr);
+      }
+    } else {
+      nm.textContent = pair.crewName || 'Your crew';
+    }
     left.appendChild(nm);
     const sub = document.createElement('div');
     sub.className = 'fest-dates';
-    // The row teaches the model: a crew HOLDS fests. Known fests by name,
-    // crew-private ones folded into the count.
-    const fids = doc ? Object.keys(doc.festivals || {}) : [];
-    const names = fids
-      .map((id) => FESTIVAL_INDEX.find((f) => f.id === id))
-      .filter(Boolean)
-      .map((f) => `${f.name} ${f.year || ''}`.trim());
-    const unknown = fids.length - names.length;
-    const festLine = names.slice(0, 3).join(' · ')
-      + (names.length > 3 ? ` +${names.length - 3}` : '')
-      + (unknown > 0 ? (names.length ? ` +${unknown}` : `${unknown} festival${unknown === 1 ? '' : 's'}`) : '');
-    sub.textContent = festLine || (doc ? 'no fests yet' : 'tap to open');
+    const names = pair.people.map((x) => x.name);
+    sub.textContent = pair.fid
+      ? (names.length > 1
+        ? names.slice(0, 3).join(', ') + (names.length > 3 ? ` +${names.length - 3}` : '')
+        : 'just you — add your people inside')
+      : 'tap to open';
     left.appendChild(sub);
-    // Avatar cluster (the 21a spec finally built): the crew's people at a
-    // glance, in their own colors.
     const cluster = document.createElement('span');
     cluster.className = 'avatar-cluster';
-    const active = doc ? Object.entries(doc.people || {}).filter(([, p]) => p && !p.removed) : [];
-    for (const [name, p] of active.slice(0, 5)) {
+    for (const { name, p } of pair.people.slice(0, 5)) {
       const a = document.createElement('span');
       a.className = 'avatar';
       const ci = colorIndexOf(name, p);
@@ -1071,18 +1069,24 @@ function renderLanding() {
       a.textContent = name.charAt(0).toUpperCase();
       cluster.appendChild(a);
     }
-    if (active.length > 5) {
+    if (pair.people.length > 5) {
       const more = document.createElement('span');
       more.className = 'avatar';
       more.style.background = 'rgba(255,255,255,.08)';
-      more.textContent = `+${active.length - 5}`;
+      more.textContent = `+${pair.people.length - 5}`;
       cluster.appendChild(more);
     }
     const chev = document.createElement('span');
     chev.className = 'chev';
     chev.textContent = '›';
     row.append(left, cluster, chev);
-    row.addEventListener('click', () => { location.hash = `#g=${c.token}`; boot(); });
+    row.addEventListener('click', () => {
+      // Land on THIS fest, not the crew's last-open one — the row's whole
+      // promise is "tap Seismic, get Seismic" (Kevin, 2026-07-14).
+      if (pair.fid) saveLS(state.LS.fest(pair.token), pair.fid);
+      location.hash = `#g=${pair.token}`;
+      boot();
+    });
     list.appendChild(row);
   }
   $('landing-empty').style.display = crews.length ? 'none' : '';
@@ -1515,10 +1519,9 @@ export function init() {
   $('rail-fest-link').addEventListener('click', openSettingsLayer);
   $('fest-list-btn').addEventListener('click', goToFestList);
   $('notes-chip').addEventListener('click', () => { refreshCtx(); openAllNotes(ctx); router.push('sheet:all'); });
-  $('create-go-btn').addEventListener('click', createCrewFlow);
+  $('create-go-btn').addEventListener('click', () => batchCreateFlow($('create-name-input').value.trim()));
   $('create-back').addEventListener('click', () => { history.replaceState(null, '', '/'); renderLanding(); });
   $('create-back-2').addEventListener('click', () => renderCreate());
-  $('create-back-crew').addEventListener('click', () => renderCreate());
   // Enter submits every entry form (FLOW-13) — the keyboard's Go button on
   // mobile is the same event.
   const enterClicks = (inputId, btnId) => {

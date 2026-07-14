@@ -1,11 +1,8 @@
 # Festival Navigator — user flows (the spec the audit walks)
 
-> **DIRECTION PIVOT (2026-07-14, Kevin):** the model is now **fests × circles
-> × you** — the home page lists FESTIVALS (not crews), people questions move
-> to "+ Add" on a fest, and F2's "WHO'S THIS WITH?" step gets deleted by the
-> fest-first reshape. This doc keeps describing the CODE AS BUILT (that's its
-> job — the audit walks it) until the reshape ships, then F1/F2 get rewritten
-> with it. Locked model + reshape scope:
+> **Model: fests × circles × you (pivot 2026-07-14, reshape shipped with this
+> edit).** The home page lists FESTIVALS; a "crew" is internally a circle —
+> one cluster, one link — and barely surfaces as a word. Locked model:
 > `claude-plans/2026-07-14-fests-circles-you-direction.md`.
 
 **Created 2026-07-11 · maintained as part of every design/UX change.**
@@ -26,29 +23,44 @@ All doc-derived strings render via textContent/createElement (XSS rule).
 1. Open the root domain with no hash → landing screen.
 2. See: brand, one-line promise, ADD A FESTIVAL button, "got a link?" hint,
    YOU card (only once a person record exists: avatar, name, My-link copy
-   button with its keep-it-to-yourself warning), YOUR CREWS list (empty state
-   if none remembered).
-**Expected:** content vertically centered on tall viewports; type scales up on
-desktop; remembered crews listed as tappable rows, each showing the crew name,
-its festivals by name (custom ones folded into a count), and an avatar cluster
-of its people in their colors.
+   button with its consequence warning), YOUR FESTIVALS list (empty state if
+   none remembered).
+**Expected:** rows are FESTIVALS, not crews — every (crew, fest) pair the
+device knows is one row in festival-index order, fest name in the fest's
+accent + 'YY, the people of that circle as an avatar cluster, "just you — add
+your people inside" when solo. Tapping a row opens THAT fest (never the
+crew's last-open one). Two circles at one fest = two rows (unfused until the
+merged-board arc). An uncached crew (fresh me-link restore) falls back to one
+crew-named "tap to open" row.
 
-## F2 · Create a crew
+## F2 · Add festivals (multi-pick)
 
-1. Landing → ADD A FESTIVAL → **step 1: pick the fest** — upcoming festivals
-   prominent, past festivals available in a visually secondary section.
-2. Pick a fest → **step 1.5: WHO'S THIS WITH?** — only when this device
-   already knows ≥1 crew: rows for each crew (members listed; "already has
-   this fest" when it does) plus "+ A NEW CREW". Fresh devices skip straight
-   to the name step.
-   - Existing crew → festival loads first, then the crew opens on it; the
-     membership write syncs to the whole crew. A crew known but never claimed
-     routes through the join screen.
-3. New crew → **step 2: your name** — chosen-fest chip shown, name input,
-   Create; back returns to step 1.
-4. Create → crew is born, wall opens on that fest, URL carries the `#g=` link.
-**Expected:** distinct steps (name entry never reads as a festival option);
-apostrophes stripped from generated crew names; helper text guides each step.
+1. Landing → ADD A FESTIVAL → **PICK YOUR FESTS** — tap toggles selection
+   (brand ring), the go button counts ("ADD 3 FESTIVALS →"); past festivals
+   folded in a secondary section.
+2. **Name step appears at most once per device** — only when no person record
+   exists yet. After that, the me link knows who you are and go creates
+   boards directly.
+3. Each picked fest becomes its own board (its own single-fest circle, just
+   you). ONE fest picked → straight onto its wall + the share moment. SEVERAL
+   → land on the festival list with all rows present, toast invites adding
+   people per fest. A mid-batch failure reports what made it and what didn't.
+4. Deliberate multi-fest circles (the same people doing another fest) are NOT
+   created here — that lives in Settings → Your festivals → + Add a festival.
+**Expected:** no people questions anywhere in this flow; apostrophes stripped
+from generated crew names; selection survives entering the name step.
+
+## F2b · Add people on a fest (+ Add)
+
+1. Wall → **+ Add** → type a name, or one-tap a chip under "From your other
+   fests" (active people from every other circle this device knows, deduped,
+   minus you and existing members).
+2. Success mints the person's claim link (&me=) — placeholder until opened.
+3. Settings → CREW → tapping a member chip shows their link with a
+   linked-vs-placeholder line (pid = claimed; no pid = waiting for its human).
+**Expected:** recurring people are one tap, never retyped; the two links keep
+their jobs distinct (circle link = joins the cluster; name link = becomes
+that person).
 
 ## F3 · Join via shared link
 

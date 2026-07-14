@@ -439,6 +439,10 @@
                         display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .fest-row .chev { color: var(--text-tertiary); flex: none; }
 
+/* multi-pick create: a selected fest wears the brand ring (never --fest — the
+   fest isn't "ours" yet, it's a candidate) */
+.fest-row.sel-fest { outline: 2px solid rgba(var(--brand), .9); outline-offset: -2px; }
+
 /* landing YOU card (21a + me link) — the fest-row silhouette, brand-tinted */
 .landing-you-card { display: flex; align-items: center; gap: 11px; background: var(--card);
                     border: 1px solid var(--border-card); border-radius: var(--r-settings);

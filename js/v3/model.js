@@ -153,3 +153,62 @@ export function sortWithPins(notes, pinnedIds) {
     return pa - pb || Date.parse(a.ts) - Date.parse(b.ts);
   });
 }
+
+// ---- fests × circles × you (2026-07-14) -------------------------------------------
+// The landing lists FESTIVALS, not crews: every (crew, fest) pair the device
+// knows becomes one row, ordered by the festival index (curated ≈ date
+// order). Two circles at one fest = two rows — honest, unfused until the
+// merged-board arc. A crew whose doc was never cached can't name its fests
+// and falls back to a single crew-named row (fid null).
+
+export function landingPairs(crews, docFor, festIndex) {
+  const order = new Map(festIndex.map((f, i) => [f.id, i]));
+  const pairs = [];
+  for (const c of crews) {
+    const doc = docFor(c.token);
+    const fids = doc ? Object.keys(doc.festivals || {}) : [];
+    const people = doc
+      ? Object.entries(doc.people || {}).filter(([, p]) => p && !p.removed).map(([n, p]) => ({ name: n, p }))
+      : [];
+    if (!fids.length) { pairs.push({ token: c.token, fid: null, crewName: c.name || '', people, ord: Infinity }); continue; }
+    for (const fid of fids) {
+      pairs.push({ token: c.token, fid, crewName: c.name || '', people, ord: order.has(fid) ? order.get(fid) : Infinity });
+    }
+  }
+  return pairs.sort((a, b) => a.ord - b.ord);
+}
+
+// Label a fest id the landing may not have metadata for: catalog fests come
+// from the index; crew-private (AI-added) fests only load inside their crew,
+// so their id prettifies ("amish-acl-2026" -> "Amish Acl 2026") rather than
+// rendering as a slug.
+export function festLabelFor(fid, festIndex) {
+  const meta = festIndex.find((f) => f.id === fid);
+  if (meta) return { name: meta.name, year: meta.year || '', accent: meta.accent || null };
+  const pretty = String(fid).split('-').map((w) => (w ? w[0].toUpperCase() + w.slice(1) : w)).join(' ');
+  return { name: pretty, year: '', accent: null };
+}
+
+// The + Add sheet's one-tap picker: active people from every OTHER crew this
+// device knows — your recurring humans (Drew, Pega, Rosten) one tap away
+// instead of retyped. Deduped case-insensitively; excludes people already
+// active here and yourself. First-seen order.
+export function otherFestPeople(currentToken, crews, docFor, currentPeople, meName) {
+  const here = new Set(Object.entries(currentPeople || {})
+    .filter(([, p]) => p && !p.removed).map(([n]) => n.toLowerCase()));
+  if (meName) here.add(String(meName).toLowerCase());
+  const seen = new Set();
+  const out = [];
+  for (const c of crews) {
+    if (c.token === currentToken) continue;
+    const doc = docFor(c.token);
+    for (const [n, p] of Object.entries((doc && doc.people) || {})) {
+      if (!p || p.removed) continue;
+      const key = n.toLowerCase();
+      if (here.has(key) || seen.has(key)) continue;
+      seen.add(key);
+      out.push({ name: n, fromCrew: c.name || '' });
+    }
+  }
+  return out;
+}
