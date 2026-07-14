@@ -422,6 +422,7 @@ function renderCreate() {
   show('screen-create');
   createFid = null;
   $('create-step-1').style.display = 'flex';
+  $('create-step-crew').style.display = 'none';
   $('create-step-2').style.display = 'none';
   $('create-status').textContent = '';
   const list = $('create-fests');
@@ -441,19 +442,111 @@ function renderCreate() {
   }
 }
 
-function createStepTwo(f) {
-  createFid = f.id;
-  $('create-step-1').style.display = 'none';
-  $('create-step-2').style.display = 'flex';
-  $('create-status').textContent = '';
-  // Chosen-fest chip — fest accent border is the current-fest border rule.
-  const chosen = $('create-chosen');
-  chosen.textContent = '';
+function chosenFestChip(f) {
   const chip = document.createElement('span');
   chip.style.cssText = `display: inline-flex; align-items: baseline; gap: 6px; border: 1.5px solid rgba(${f.accent || '192, 132, 252'}, .55); border-radius: var(--r-pill); padding: 8px 16px; font-family: var(--font-display); letter-spacing: .04em; font-size: 15px; color: rgb(${f.accent || '237, 234, 244'});`;
   chip.textContent = `${f.name.toUpperCase()} ${f.year || ''}`.trim();
-  chosen.appendChild(chip);
+  return chip;
+}
+
+// Step 1.5 (Kevin's pick, 2026-07-13): a fest goes to a crew you're already
+// in, or to a new one — the crew is the people boundary, and this step is
+// where the app finally SAYS that. Fresh devices (no crews) never see it.
+function createStepTwo(f) {
+  if (crew.knownCrews().length) { createStepCrew(f); return; }
+  createStepName(f);
+}
+
+function createStepCrew(f) {
+  createFid = f.id;
+  $('create-step-1').style.display = 'none';
+  $('create-step-2').style.display = 'none';
+  $('create-step-crew').style.display = 'flex';
+  $('create-crew-status').textContent = '';
+  const chosen = $('create-chosen-crew');
+  chosen.textContent = '';
+  chosen.appendChild(chosenFestChip(f));
+  const list = $('create-crews');
+  list.textContent = '';
+  for (const c of crew.knownCrews()) {
+    const doc = state.cachedDoc(c.token);
+    const active = doc ? Object.entries(doc.people || {}).filter(([, p]) => p && !p.removed) : [];
+    const has = doc && doc.festivals && doc.festivals[f.id];
+    const row = document.createElement('button');
+    row.className = 'fest-row';
+    row.style.width = '100%';
+    const left = document.createElement('div');
+    left.style.cssText = 'flex: 1; min-width: 0; text-align: left;';
+    const nm = document.createElement('span');
+    nm.className = 'fest-name';
+    nm.style.cssText = 'font-family: var(--font-display); letter-spacing: .04em; font-size: var(--fs-day); color: var(--text-header);';
+    nm.textContent = c.name || 'Your crew';
+    const sub = document.createElement('div');
+    sub.className = 'fest-dates';
+    sub.textContent = has ? 'already has this fest — tap to open'
+      : (active.length ? active.map(([n]) => n).slice(0, 4).join(', ') + (active.length > 4 ? ` +${active.length - 4}` : '') : 'tap to add it here');
+    left.append(nm, sub);
+    const chev = document.createElement('span');
+    chev.className = 'chev';
+    chev.textContent = '›';
+    row.append(left, chev);
+    row.addEventListener('click', () => addFestToCrew(c, f));
+    list.appendChild(row);
+  }
+  const fresh = document.createElement('button');
+  fresh.className = 'fest-row';
+  fresh.style.width = '100%';
+  const fl = document.createElement('div');
+  fl.style.cssText = 'flex: 1; min-width: 0; text-align: left;';
+  const fn = document.createElement('span');
+  fn.className = 'fest-name';
+  fn.style.cssText = 'font-family: var(--font-display); letter-spacing: .04em; font-size: var(--fs-day); color: var(--brand);';
+  fn.textContent = '+ A NEW CREW';
+  const fs = document.createElement('div');
+  fs.className = 'fest-dates';
+  fs.textContent = 'new people, new link';
+  fl.append(fn, fs);
+  fresh.appendChild(fl);
+  fresh.addEventListener('click', () => createStepName(f));
+  list.appendChild(fresh);
+}
+
+// The fest is chosen and the crew will be NEW — name yourself (old step 2).
+function createStepName(f) {
+  createFid = f.id;
+  $('create-step-1').style.display = 'none';
+  $('create-step-crew').style.display = 'none';
+  $('create-step-2').style.display = 'flex';
+  $('create-status').textContent = '';
+  const chosen = $('create-chosen');
+  chosen.textContent = '';
+  chosen.appendChild(chosenFestChip(f));
   $('create-name-input').focus();
+}
+
+// Add the chosen fest to a crew this device already knows. Load the festival
+// FIRST (CORE-12 — never strand a device pointing at a fest it can't render),
+// then enter the crew; activateCrew's ensureFestivalState queues the
+// membership write for the whole crew (the ghost-festival rule).
+async function addFestToCrew(entry, f) {
+  const stat = $('create-crew-status');
+  stat.textContent = '';
+  stat.appendChild(eqLoader('Opening…'));
+  try { await loadFestival(f.id); }
+  catch { stat.textContent = 'Can’t load that festival offline — it works once you’re back online.'; return; }
+  let doc = null, gone = false;
+  try { doc = await crew.fetchCrew(entry.token); gone = doc === null; }
+  catch { /* offline — cache below */ }
+  if (gone) { stat.textContent = 'That crew doesn’t exist any more.'; return; }
+  if (!doc) doc = state.cachedDoc(entry.token);
+  if (!doc) { stat.textContent = 'Couldn’t reach that crew — check your signal and try again.'; return; }
+  localStorage.setItem(`fn_crew_fest_v3_${entry.token}`, f.id);
+  // A crew this device knows but never claimed a name in (a me-link restore
+  // can register crews without claims) still goes through the join screen —
+  // enterApp with no identity would render a wall you can't pick on.
+  if (!crew.me(entry.token)) { pendingFestHint = f.id; renderJoin(entry.token, doc); return; }
+  await enterApp(entry.token, doc);
+  if (state.hasPending()) sync.scheduleSync();
 }
 
 async function createCrewFlow() {
@@ -891,6 +984,48 @@ async function restoreFromMeLink(token) {
 function renderLanding() {
   show('screen-landing');
   document.title = 'Festival Navigator';
+
+  // YOU card (21a + me link): who this device is, and the one link that
+  // rebuilds everything on a new one. Only renders once a person exists —
+  // a fresh visitor sees the pitch, not plumbing.
+  const youBox = $('landing-you');
+  youBox.textContent = '';
+  const person = crew.myPerson();
+  if (person) {
+    const card = document.createElement('div');
+    card.className = 'landing-you-card';
+    const av = document.createElement('span');
+    av.className = 'avatar lg';
+    av.style.background = 'rgba(192, 132, 252, .28)';
+    av.style.border = '1px solid rgba(192, 132, 252, .6)';
+    av.textContent = (person.name || 'Y').charAt(0).toUpperCase();
+    const mid = document.createElement('div');
+    mid.style.cssText = 'flex: 1; min-width: 0;';
+    const nm = document.createElement('div');
+    nm.style.cssText = 'color: #fff; font-weight: 700; font-size: 14px;';
+    nm.textContent = person.name || 'You';
+    const hint = document.createElement('div');
+    hint.className = 'mini-copy';
+    hint.textContent = 'Open your link on a new phone and everything comes back — every crew, every pick. Sharing it makes someone else you, so don’t.';
+    mid.append(nm, hint);
+    const copyBtn = document.createElement('button');
+    copyBtn.className = 'btn-tonal';
+    copyBtn.style.cssText = 'font-size: 12px; padding: 9px 14px; flex: none;';
+    copyBtn.textContent = 'My link';
+    copyBtn.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(crew.meLink());
+        copyBtn.textContent = 'Copied ✓';
+      } catch {
+        copyBtn.textContent = crew.meLink() ? 'See below' : 'No link yet';
+        if (crew.meLink()) hint.textContent = crew.meLink();
+      }
+      setTimeout(() => { copyBtn.textContent = 'My link'; }, 1800);
+    });
+    card.append(av, mid, copyBtn);
+    youBox.appendChild(card);
+  }
+
   const list = $('landing-fests');
   list.textContent = '';
   const crews = crew.knownCrews();
@@ -904,17 +1039,48 @@ function renderLanding() {
     const nm = document.createElement('span');
     nm.className = 'fest-name';
     nm.style.cssText = 'font-family: var(--font-display); letter-spacing: .04em; font-size: var(--fs-day); color: var(--text-header);';
-    nm.textContent = c.name || 'Your festival';
+    nm.textContent = c.name || 'Your crew';
     left.appendChild(nm);
     const sub = document.createElement('div');
     sub.className = 'fest-dates';
-    const n = doc ? Object.keys(doc.people || {}).length : 0;
-    sub.textContent = n ? `${n} people` : 'tap to open';
+    // The row teaches the model: a crew HOLDS fests. Known fests by name,
+    // crew-private ones folded into the count.
+    const fids = doc ? Object.keys(doc.festivals || {}) : [];
+    const names = fids
+      .map((id) => FESTIVAL_INDEX.find((f) => f.id === id))
+      .filter(Boolean)
+      .map((f) => `${f.name} ${f.year || ''}`.trim());
+    const unknown = fids.length - names.length;
+    const festLine = names.slice(0, 3).join(' · ')
+      + (names.length > 3 ? ` +${names.length - 3}` : '')
+      + (unknown > 0 ? (names.length ? ` +${unknown}` : `${unknown} festival${unknown === 1 ? '' : 's'}`) : '');
+    sub.textContent = festLine || (doc ? 'no fests yet' : 'tap to open');
     left.appendChild(sub);
+    // Avatar cluster (the 21a spec finally built): the crew's people at a
+    // glance, in their own colors.
+    const cluster = document.createElement('span');
+    cluster.className = 'avatar-cluster';
+    const active = doc ? Object.entries(doc.people || {}).filter(([, p]) => p && !p.removed) : [];
+    for (const [name, p] of active.slice(0, 5)) {
+      const a = document.createElement('span');
+      a.className = 'avatar';
+      const ci = colorIndexOf(name, p);
+      a.style.background = hslOf(ci, 0.5);
+      a.style.border = '1px solid ' + strokeOf(ci, false);
+      a.textContent = name.charAt(0).toUpperCase();
+      cluster.appendChild(a);
+    }
+    if (active.length > 5) {
+      const more = document.createElement('span');
+      more.className = 'avatar';
+      more.style.background = 'rgba(255,255,255,.08)';
+      more.textContent = `+${active.length - 5}`;
+      cluster.appendChild(more);
+    }
     const chev = document.createElement('span');
     chev.className = 'chev';
     chev.textContent = '›';
-    row.append(left, chev);
+    row.append(left, cluster, chev);
     row.addEventListener('click', () => { location.hash = `#g=${c.token}`; boot(); });
     list.appendChild(row);
   }
@@ -1340,6 +1506,7 @@ export function init() {
   $('create-go-btn').addEventListener('click', createCrewFlow);
   $('create-back').addEventListener('click', () => { history.replaceState(null, '', '/'); renderLanding(); });
   $('create-back-2').addEventListener('click', () => renderCreate());
+  $('create-back-crew').addEventListener('click', () => renderCreate());
   // Enter submits every entry form (FLOW-13) — the keyboard's Go button on
   // mobile is the same event.
   const enterClicks = (inputId, btnId) => {

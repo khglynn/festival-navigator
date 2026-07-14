@@ -467,6 +467,9 @@ function crewSection(ctx, actions) {
   });
   linkRowEl.append(linkBox, copyBtn);
   card.appendChild(linkRowEl);
+  // Two links, two jobs — say which one this is (me-link build, 2026-07-13).
+  card.appendChild(el('div', 'color: var(--text-tertiary); font-size: 10.5px; font-weight: 600; line-height: 1.45;',
+    'This link brings someone into this crew. The link that brings YOU back on a new phone lives on the front page.'));
   card.appendChild(status);
   wrap.appendChild(card);
 
