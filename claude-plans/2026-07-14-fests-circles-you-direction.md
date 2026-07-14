@@ -1,7 +1,12 @@
 # Fests × Circles × You — the locked model + reshape scope
 
-**Dated 2026-07-14. Status: direction locked with Kevin ("Great aligned!");
-reshape NOT yet built.** Visual map (canonical explainer, shown to and
+**Dated 2026-07-14. Status: SHIPPED same day — decisions 1-4 built, twice
+Codex-gated, staged as v33; Kevin's staging round then added and shipped
+(v34): connect fills EVERY board (badgeEveryKnownCrew), the canonical-host
+hop carries the me link + announces itself, settings lists YOUR boards not
+the catalog, and the landing is date-sorted with "Sep '26" labels
+(index.json `startsOn`, validator-enforced). Decisions 5-7 (join-picker/
+mute + merged board) remain the Phase-B arc.** Visual map (canonical explainer, shown to and
 confirmed by Kevin): claude.ai artifact "Fests × Circles × You"
 (claude.ai/code/artifact/7324eb7c-c3c6-4269-8ebe-e7acaf5119d6).
 

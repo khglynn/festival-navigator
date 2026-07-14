@@ -26,12 +26,15 @@ All doc-derived strings render via textContent/createElement (XSS rule).
    button with its consequence warning), YOUR FESTIVALS list (empty state if
    none remembered).
 **Expected:** rows are FESTIVALS, not crews — every (crew, fest) pair the
-device knows is one row in festival-index order, fest name in the fest's
-accent + 'YY, the people of that circle as an avatar cluster, "just you — add
-your people inside" when solo. Tapping a row opens THAT fest (never the
-crew's last-open one). Two circles at one fest = two rows (unfused until the
-merged-board arc). An uncached crew (fresh me-link restore) falls back to one
-crew-named "tap to open" row.
+device knows is one row, DATE-SORTED by the index's `startsOn` (upcoming
+soonest-first; past fests stay but sink to the bottom, most recent first, at
+reduced opacity). Fest name renders in the fest's accent with "Sep '26"
+beside it — when, at a glance. People of that circle as an avatar cluster;
+"just you — add your people inside" when solo. Tapping a row opens THAT fest
+(never the crew's last-open one; a blocked-storage device is told instead of
+being navigated ambiguously). Two circles at one fest = two rows (unfused
+until the merged-board arc). An uncached crew (fresh me-link restore) falls
+back to one crew-named "tap to open" row.
 
 ## F2 · Add festivals (multi-pick)
 
@@ -147,6 +150,11 @@ are open; refresh at any point restores the same surface or its nearest parent.
 
 1. Gear (or dock fest link) → Settings: YOU door (name, color, your Spotify)
    and CREW door (members, crew name, festivals, share link, danger zone).
+   The festivals block lists YOUR boards (same rows as the landing, date-
+   sorted): same-circle fests switch in place, boards in other circles open
+   like landing rows, "+ Add a festival" goes to the shared multi-pick page,
+   and the AI/custom add keeps its own quiet door (the only path for a fest
+   not in the catalog — it lands on THIS board's circle).
 2. Your festivals: current fest marked; other catalog fests switchable in one
    tap; past/archived fests clearly visible (not a fine-print line); each row
    shows the crew's pick count.
@@ -223,6 +231,13 @@ not a broken page. /api/ never served from cache.
    and the hash is stripped from the URL immediately.
 4. A broken (truncated) me link says so; a deleted/unknown one says "doesn't
    work anymore"; offline says try again online.
+5. The Spotify canonical-host hop is a me link in disguise: it announces
+   itself before navigating, carries `&p=` beside the crew token, and boot
+   absorbs the person QUIETLY (every board registers, names claimed) before
+   continuing into the drill — arriving on the OAuth origin never costs the
+   rest of your map. Both tokens are stripped/kept in one synchronous frame.
+6. After a library scan, EVERY board fills in — the sweep badges each known
+   crew this device holds a claim in, not just the one you connected from.
 **Expected:** identity plumbing never blocks entering a crew — every failure
 is silent-and-retried on the next open. The person token appears nowhere but
 the me link and the device's own storage.

@@ -1029,6 +1029,7 @@ async function runFullSync(ctx, actions, onProgressIn, rerenderDrill, msg) {
     // here (Kevin's model: someone who auths joins the playlist too).
     const notes = [];
     if (others.crews) notes.push(`Filled ${others.crews} other board${others.crews === 1 ? '' : 's'} too.`);
+    if (others.skipped) notes.push(`${others.skipped} board${others.skipped === 1 ? '' : 's'} couldn’t fill yet — each catches up when you open it.`);
     await syncEveryonePlaylists(ctx, actions, (n) => notes.push(n));
     scanning = false;
     scanPill(null);

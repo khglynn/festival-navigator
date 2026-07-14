@@ -1013,9 +1013,11 @@ function openSettings() {
 // unclaimed names, store the person. Never removes anything. Shared by the
 // me-link restore (renders landing after) and the canonical-host hop absorb
 // (falls through into the crew flow instead).
-function absorbPersonDoc(token, fetched) {
+function absorbPersonDoc(token, fetched, { replaceIdentity = true } = {}) {
   const doc = fetched.doc || {};
-  crew.setMyPerson({ token, id: fetched.id, name: doc.name || '', crews: doc.crews || {} });
+  if (replaceIdentity || !crew.myPerson()) {
+    crew.setMyPerson({ token, id: fetched.id, name: doc.name || '', crews: doc.crews || {} });
+  }
   for (const [ct, entry] of Object.entries(doc.crews || {})) {
     const known = crew.knownCrews().find((c) => c.token === ct);
     crew.rememberCrew(ct, (entry && entry.crewName) || (known && known.name) || '');
@@ -1507,15 +1509,32 @@ export async function boot() {
       return;
     }
     if (personToken && !hopCrewToken) { await restoreFromMeLink(personToken, current); return; }
-    if (personToken && hopCrewToken) {
-      // Quiet absorb: register every board the person has, then fall through
-      // into the crew the hop points at — landing here with one crew and
-      // none of the rest is how a whole map "disappeared" (2026-07-14).
-      try {
-        const fetched = await crew.fetchPerson(personToken);
-        if (fetched) absorbPersonDoc(personToken, fetched);
-      } catch { /* offline — the crew flow still works; reopen the me link later */ }
+    // Quiet absorb — from the hop URL, or from a previous boot's absorb that
+    // failed offline (the token waits in sessionStorage: session-scoped
+    // master-key hygiene, dies with the tab, never re-enters a URL). Landing
+    // on the canonical host with one crew and none of the rest is how a
+    // whole map "disappeared" (2026-07-14); a swallowed absorb failure would
+    // re-open that trap wearing an offline costume (Codex round 4, P2).
+    const pendingAbsorb = personToken && hopCrewToken
+      ? personToken
+      : (() => { try { return sessionStorage.getItem('fn_pending_absorb'); } catch { return null; } })();
+    if (pendingAbsorb) {
+      let fetched = null;
+      try { fetched = await crew.fetchPerson(pendingAbsorb); } catch { /* offline — retried next boot */ }
+      // The generation guard comes BEFORE any mutation: a stale response
+      // must not replace the device's identity after a newer boot started
+      // (Codex round 4, P1 — same law as restoreFromMeLink).
       if (!current()) return;
+      if (fetched) {
+        // Quiet absorb unions the boards but never DETHRONES an identity the
+        // destination already holds — replacing is the explicit me-link
+        // restore's job, not a side effect of connecting Spotify.
+        absorbPersonDoc(pendingAbsorb, fetched, { replaceIdentity: false });
+        try { sessionStorage.removeItem('fn_pending_absorb'); } catch { /* fine */ }
+      } else {
+        try { sessionStorage.setItem('fn_pending_absorb', pendingAbsorb); } catch { /* private mode — me link reopens */ }
+        showToast($('toast-root'), 'Couldn’t bring your other boards over yet — they’ll follow once you’re online.', 6000);
+      }
     }
 
     if (location.hash === '#new') { renderCreate(); return; }

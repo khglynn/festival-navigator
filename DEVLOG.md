@@ -2,6 +2,42 @@
 
 Newest first. One entry per meaningful unit of work.
 
+## 2026-07-14 — The identity night: me link → model pivot → fest-first, four gates
+
+- **One overnight session moved the app onto Kevin's real model.** It started
+  as "one link that restores everything" (the me link: persons table,
+  header-auth API, public pid vs secret token, #p= restore), got live-tested
+  by Kevin the same night, and his feedback pivoted the whole IA: **fests ×
+  circles × you** — home lists FESTIVALS, a "crew" is a backstage circle (one
+  cluster, one link, the consent boundary), and every person is the center of
+  their own map (Google+ Circles, remembered right). Direction doc:
+  `claude-plans/2026-07-14-fests-circles-you-direction.md`; the confirmed
+  visual explainer lives as a claude.ai artifact linked from it.
+- **Built and staged in the same session**: fest-first landing (date-sorted
+  via new `startsOn` in index.json, "Sep '26" beside each name, past fests
+  sinking muted), multi-pick create (name asked ONCE per device ever; boards
+  born knowing their fest AND their person), "WHO'S THIS WITH?" deleted the
+  night after it shipped, + Add sheet with the recurring-humans picker,
+  settings listing YOUR boards instead of the catalog, and connect-once →
+  EVERY board badges (badgeEveryKnownCrew sweeps across crews).
+- **The staging→prod Spotify hop trap, found by Kevin live**: OAuth's
+  canonical-host hop moved him to an origin that knew one crew, and his map
+  "disappeared." The hop now announces itself and carries the me link; boot
+  absorbs the person quietly (master key stripped in the same synchronous
+  frame) and continues into the drill. Verified live on a wiped browser.
+- **Four Codex gate rounds, every one earned**: master key in URLs → header
+  auth; a TOCTOU in my own race fix caught by the test the gate demanded; my
+  ownership guard's two open doors (empty-mirror inheritance, rename bypass);
+  re-entrant create minting duplicate circles; batch boards missing the me
+  link; a storage read-back that could throw. NO SHIP verdicts are the
+  system working.
+- Also that night, before all this: the array-eating deepMerge (a sync-
+  blocked device from one "harmless" toast) — both JS twins now replace
+  arrays like the SQL, with a three-way byte-parity test.
+- 175 tests (174 pass, 1 env-gated skip). Staging = v34 across the arc's
+  final state; **prod stays at v31 until Kevin promotes** after his
+  fest-month shakedown. Phase B banked: merged fest board + join-picker/mute.
+
 ## 2026-07-13 — Production promote + Spotify proven live + same-day polish
 
 - The whole v3.1 arc reached production (v14 → v29 in one afternoon, three

@@ -128,6 +128,24 @@ test('mayStampPerson: ownership is checked both ways — claimed and unclaimed c
   assert.equal(crew.mayStampPerson(null, CREW_TOKEN, 'Kevin'), false, 'no record — nothing may stamp');
 });
 
+test('sweepIdentityFor: the person record decides who the sweep writes as — never the picker', async () => {
+  const spotify = await import('../js/spotify.js');
+  const person = { id: 'pid_abc12345', name: 'Kevin', crews: { [CREW_TOKEN]: { name: 'Kevin' } } };
+  const doc = (people) => ({ people });
+  assert.equal(spotify.sweepIdentityFor(person, CREW_TOKEN, doc({ Kevin: { colorIndex: 0 } })), 'Kevin');
+  assert.equal(spotify.sweepIdentityFor(person, CREW_TOKEN, doc({ Kevin: { pid: 'pid_abc12345' } })), 'Kevin',
+    'matching pid confirms the claim');
+  assert.equal(spotify.sweepIdentityFor(person, CREW_TOKEN, doc({ Kevin: { pid: 'pid_someoneelse' } })), null,
+    'a name re-claimed by ANOTHER person record is never written as');
+  assert.equal(spotify.sweepIdentityFor(person, CREW_TOKEN, doc({ Kevin: { removed: true } })), null,
+    'a tombstoned member gets no ghost affinity');
+  assert.equal(spotify.sweepIdentityFor(person, CREW_TOKEN, doc({ Drew: {} })), null,
+    'claimed name absent from the doc — skip, never guess');
+  assert.equal(spotify.sweepIdentityFor(person, 'othercrew_token_0123456789', doc({ Kevin: {} })), null,
+    'no claim in the person record for this crew — the device picker does not count');
+  assert.equal(spotify.sweepIdentityFor(null, CREW_TOKEN, doc({ Kevin: {} })), null);
+});
+
 test('same-tab concurrent ensurePerson calls make exactly ONE create POST', async () => {
   store.clear();
   let posts = 0;

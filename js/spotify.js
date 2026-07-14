@@ -356,29 +356,50 @@ function affinityOf(lib, artistName) {
   return Object.keys(aff).length ? aff : null;
 }
 
+// Who may this sweep write as, in this crew? The answer comes from the PERSON
+// RECORD's own claim — never crewStore.me(), which is the device's mutable
+// picker and can be a switched shared-phone identity (Codex round 4, P1).
+// The fetched doc must agree: the claimed name exists, is active, and — when
+// the entry carries a pid — it is OURS. Ambiguity means skip, never guess.
+export function sweepIdentityFor(person, crewToken, doc) {
+  const claim = person && (person.crews || {})[crewToken];
+  const myName = claim && claim.name;
+  if (!myName) return null;
+  const entry = doc && (doc.people || {})[myName];
+  if (!entry || entry.removed) return null;
+  if (entry.pid && person.id && entry.pid !== person.id) return null; // someone else's name now
+  return myName;
+}
+
 // Fest-first (2026-07-14): every board is its own circle, so "connect once,
 // everything fills in" must reach across CREWS, not just across the active
-// crew's fests. For each known crew where this device holds a claimed name:
-// fetch the doc, compute my affinity for its fests' artists, POST the merge
-// DIRECTLY — state.pendingChanges belongs to the ACTIVE crew only, and a
-// cross-crew write must never ride it (the sync.js wrong-crew rule). The
-// active crew keeps its richer local path (badgeAllCrewFests). Crew-private
-// (AI-added) fests in other crews are skipped — their data only loads inside
-// their crew; the enterApp sweep badges them on first open.
+// crew's fests. For each crew the PERSON RECORD claims a name in: fetch the
+// doc, compute my affinity for its fests' artists, POST ONLY the sparse
+// leaves this sweep discovered — never a re-spray of the fetched map, which
+// would replay stale values over a concurrent scan's newer ones (leaf-level
+// last-write-wins). The POST goes DIRECT: state.pendingChanges belongs to
+// the ACTIVE crew only, and a cross-crew write must never ride it (the
+// sync.js wrong-crew rule). The active crew keeps its richer local path
+// (badgeAllCrewFests). Crew-private (AI-added) fests in other crews are
+// skipped, and every skipped/failed board self-heals via the enterApp
+// per-open sweep — that backstop is the retry mechanism, and the caller's
+// copy says so instead of claiming a clean sweep.
 export async function badgeEveryKnownCrew(onProgress) {
   const lib = libraryMap();
-  if (!lib) return { crews: 0, skipped: 0 };
+  const person = crewStore.myPerson();
+  if (!lib || !person) return { crews: 0, skipped: 0 };
+  const activeToken = state.getCrewToken(); // captured ONCE — a mid-sweep crew switch must not re-scope the loop
   let crews = 0;
   let skipped = 0;
   for (const c of crewStore.knownCrews()) {
-    if (c.token === state.getCrewToken()) continue; // active crew: badgeAllCrewFests owns it
-    const myName = crewStore.me(c.token);
-    if (!myName) { skipped++; continue; } // no claim here — no name to badge under
+    if (c.token === activeToken) continue; // active crew: badgeAllCrewFests owns it
     try {
       const doc = await crewStore.fetchCrew(c.token);
       if (!doc) { skipped++; continue; }
-      const before = (doc.affinity || {})[myName] || {};
-      const merged = { ...before };
+      const myName = sweepIdentityFor(person, c.token, doc);
+      if (!myName) { skipped++; continue; }
+      const existing = (doc.affinity || {})[myName] || {};
+      const out = {};
       for (const fid of Object.keys(doc.festivals || {})) {
         let fest = FESTIVALS[fid];
         if (!fest) {
@@ -388,14 +409,14 @@ export async function badgeEveryKnownCrew(onProgress) {
         }
         for (const name of artistNamesOf(fest)) {
           const aff = affinityOf(lib, name);
-          if (aff) merged[name] = aff;
+          if (aff && JSON.stringify(existing[name]) !== JSON.stringify(aff)) out[name] = aff;
         }
       }
-      if (JSON.stringify(merged) === JSON.stringify(before)) continue; // nothing new — no write
+      if (!Object.keys(out).length) continue; // nothing new — no write, not a failure
       const res = await fetch(`/api/crew?t=${encodeURIComponent(c.token)}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ data: { affinity: { [myName]: merged } }, sv: 4 }),
+        body: JSON.stringify({ data: { affinity: { [myName]: out } }, sv: 4 }),
       });
       if (res.ok) { crews++; if (onProgress) onProgress({ crews, crewName: c.name }); }
       else skipped++;
