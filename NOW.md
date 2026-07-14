@@ -1,4 +1,46 @@
-# NOW — festival-navigator: v3.1 PROMOTED + Spotify polish live (v31)
+# NOW — festival-navigator: me link ON STAGING (v32) · prod at v31
+
+## 2026-07-13/14 — THE ME LINK (Phase 1) — staged, awaiting Kevin's promote
+
+Kevin's frame: "I am me, friends are friends, and we mix and match across
+crews." Plan-mode approved; Kevin picked fest-first→"WHO'S THIS WITH?" for
+the landing CTA and Phase-1-now/bank-Phase-2 for scope.
+
+- **Person record**: `persons` table (id public/"pid" — the only person
+  identifier a crew doc may hold — vs token = master-key credential,
+  DISJOINT length ranges), api/person.js (create/read/atomic merge,
+  X-Person-Token HEADER only — never a query param). Doc: {v, name, crews:
+  {<crewToken>: {name, crewName}}}. LIMITS.personDocBytes 32KB (Phase 2
+  raises for the library summary).
+- **Client**: enterApp stamps identity fire-and-forget (create, join, and
+  old crews backfill one open at a time); renameSelf follows with
+  renameFrom; #p= me link restores a wiped device (union-only, hash
+  stripped before boot's first await). Landing rebuilt: YOU card (avatar,
+  My-link copy, consequence copy), crew rows w/ fest names + avatar
+  cluster (the unbuilt 21a spec). Create step 1.5 lists existing crews.
+- **TWO Codex gate rounds, both earned their keep.** Round 1 (NO SHIP, 4×P1
+  +1×P2): master key in URLs → header auth; restore lacked boot-generation
+  guard; shared-phone stamp conflation; double-create race (and MY first
+  race fix had a TOCTOU the demanded concurrency test caught — the re-check
+  sat before res.json()); PID/TOKEN regex overlap. Round 2 verify: headers/
+  boot-strip/XSS/offline-path PASS, but my ownership guard had two open
+  doors (empty-mirror inheritance, unconditional rename bypass) — both
+  closed; schema.sql now retightens the pid CHECK idempotently on pre-v32
+  DBs (upgrade-path test builds the old schema and proves it).
+- **Accepted for Phase 1, documented in code**: cross-TAB double-create can
+  orphan one unreferenced person row (same-tab collapsed by in-flight
+  memo, tested); server-side ownership conditions + idempotent create =
+  Phase 2 hardening, designed in the plan doc.
+- **Live-verified on vercel dev against real Neon** (throwaway rows deleted
+  after): create → silent person record → pid in crew doc → step 1.5 adds
+  fest to SAME crew → wipe → #p= restores crew+claim+YOU card. 170 tests.
+- **Phase 2 banked** (plan doc): library summary on person record,
+  client-composed via a crew-scoped endpoint — crew GET hot path untouched.
+- **Kevin's moves**: eyeball staging (stage.fest.kevinhg.com, SW v32) →
+  promote to prod (his call, always) → open each of his 4 crews once on his
+  phone (backfills the me link) → copy My link somewhere safe.
+
+# Previous: v3.1 PROMOTED + Spotify polish live (v31)
 
 ## 2026-07-13 (round 3, v31) — merge twins now replace arrays like the SQL
 
