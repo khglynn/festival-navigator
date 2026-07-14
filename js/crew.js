@@ -119,3 +119,81 @@ export async function createCrew(crewName, myName, personObj) {
   }
   return await res.json(); // {token, doc}
 }
+
+// ---- person (the "me link") ---------------------------------------------
+// One person across crews. The device keeps {token, id, name, crews} here;
+// the server doc's crews registry is what a NEW device restores from. The
+// person token is a MASTER KEY — its doc lists every crew token — so it
+// travels only in the me link and this store, never in a crew doc (crew docs
+// carry the public `pid` instead). The local `crews` mirror exists so
+// stamping can skip the network when nothing changed.
+
+const PERSON_KEY = 'fn_person_v1'; // {token, id, name, crews:{<crewToken>:{name,crewName}}}
+
+export function myPerson() { return loadJSON(PERSON_KEY, null); }
+export function setMyPerson(p) { saveLS(PERSON_KEY, JSON.stringify(p)); }
+
+export function meLink() {
+  const p = myPerson();
+  return p ? `${location.origin}/#p=${p.token}` : null;
+}
+
+// The person token riding in the URL hash (#p=...), i.e. an opened me link.
+export function personFromHash() {
+  const m = (location.hash || '').match(/[#&]p=([A-Za-z0-9_-]{20,40})/);
+  return m ? m[1] : null;
+}
+
+// Same contract as hashHasBrokenToken: "there is a me link here and it is
+// broken" is different from "there is no me link here".
+export function hashHasBrokenPersonLink() {
+  const hash = location.hash || '';
+  if (!/[#&]p=/.test(hash)) return false;
+  return personFromHash() === null;
+}
+
+export async function fetchPerson(token) {
+  const res = await fetch(`/api/person?t=${encodeURIComponent(token)}`, { cache: 'no-store' });
+  if (isApiNotFound(res)) return null;
+  if (!res.ok) throw new Error('person fetch failed: ' + res.status);
+  return await res.json(); // {id, doc}
+}
+
+// Create-if-missing, silently. Identity plumbing must never block entering a
+// crew — every failure path returns null and the next crew open retries.
+export async function ensurePerson(name) {
+  const existing = myPerson();
+  if (existing) return existing;
+  try {
+    const res = await fetch('/api/person', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name }),
+    });
+    if (!res.ok) return null;
+    const { token, id, doc } = await res.json();
+    const p = { token, id, name: doc.name, crews: {} };
+    setMyPerson(p);
+    return p;
+  } catch { return null; }
+}
+
+// Record "in this crew I am <name>" on the person doc. Idempotent via the
+// local mirror; offline-tolerant (false = try again next open, nothing lost).
+export async function stampPersonCrew(crewToken, myName, crewName) {
+  const p = myPerson();
+  if (!p) return false;
+  const cur = (p.crews || {})[crewToken];
+  if (cur && cur.name === myName && cur.crewName === crewName) return true;
+  try {
+    const res = await fetch(`/api/person?t=${encodeURIComponent(p.token)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ data: { crews: { [crewToken]: { name: myName, crewName } } } }),
+    });
+    if (!res.ok) return false;
+    const { doc } = await res.json();
+    setMyPerson({ ...p, name: doc.name || p.name, crews: doc.crews || {} });
+    return true;
+  } catch { return false; }
+}

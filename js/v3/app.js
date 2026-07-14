@@ -837,10 +837,15 @@ function openSettings() {
       refreshCtx();
       renderPersonChips();
       renderYou();
+      stampIdentity(state.getCrewToken()); // the person record follows the rename
       showToast($('toast-root'), `You’re ${newName} now — picks came with you.`);
     },
     changeColor: (idx) => {
-      state.recordPerson(ctx.meName, { colorIndex: idx });
+      // Spread the queued entry: recordPerson REPLACES pending.people[name],
+      // and a color change must not eat a not-yet-pushed pid stamp (or vice
+      // versa — stampIdentity spreads for the same reason).
+      const queuedColor = (state.pendingChanges.people || {})[ctx.meName] || {};
+      state.recordPerson(ctx.meName, { ...queuedColor, colorIndex: idx });
       const mine = state.people()[ctx.meName];
       if (mine) mine.colorIndex = idx; // local doc mirror for instant render
       state.persist();
@@ -851,6 +856,36 @@ function openSettings() {
     },
   };
   renderSettings($('settings-root'), ctx, settingsActions);
+}
+
+// Opening a me link on any device: pull the person record, register every
+// crew it lists (union — never removes anything this device already knows),
+// claim the names, land on the landing with the lot. The hash is stripped
+// FIRST, unconditionally: the person token is a master key and must not sit
+// in the address bar, the history, or a screenshot.
+async function restoreFromMeLink(token) {
+  history.replaceState(null, '', '/');
+  let fetched = null, failed = false;
+  try { fetched = await crew.fetchPerson(token); } catch { failed = true; }
+  if (!fetched) {
+    renderLanding();
+    showToast($('toast-root'), failed
+      ? 'Couldn’t reach the server — open your link again once you’re online.'
+      : 'That link doesn’t work anymore.', 6000);
+    return;
+  }
+  const doc = fetched.doc || {};
+  crew.setMyPerson({ token, id: fetched.id, name: doc.name || '', crews: doc.crews || {} });
+  for (const [ct, entry] of Object.entries(doc.crews || {})) {
+    const known = crew.knownCrews().find((c) => c.token === ct);
+    crew.rememberCrew(ct, (entry && entry.crewName) || (known && known.name) || '');
+    if (entry && entry.name && !crew.me(ct)) crew.setMe(ct, entry.name);
+  }
+  renderLanding();
+  const total = Object.keys(doc.crews || {}).length;
+  showToast($('toast-root'), total
+    ? `Welcome back${doc.name ? ', ' + doc.name : ''} — ${total} crew${total === 1 ? '' : 's'} on this device now.`
+    : 'Link saved — crews you join will follow you from here.', 6000);
 }
 
 function renderLanding() {
@@ -997,6 +1032,30 @@ function renderJoin(token, doc) {
 // swapping page-level state under a wall the user can still see and tap —
 // which could attribute a tap on the OLD crew's card to the NEW crew's
 // pendingChanges (Codex P6 gate, finding P1-2).
+// Me link: every crew this device enters stamps itself onto the person
+// record — create, join, and every pre-existing crew alike, so the registry
+// backfills one open at a time with no migration event. Silent and
+// non-blocking: identity plumbing never stands between a person and their
+// wall; a failure here just retries on the next open.
+async function stampIdentity(token, current = () => true) {
+  const name = ctx.meName;
+  if (!name) return;
+  try {
+    const p = await crew.ensurePerson(name);
+    if (!p || !current() || state.getCrewToken() !== token) return;
+    crew.stampPersonCrew(token, name, state.crewName());
+    // The crew doc points back with the PUBLIC id only — never the person
+    // token (crew docs are readable by everyone holding that crew's link).
+    const me = state.people()[name];
+    if (me && !me.removed && me.pid !== p.id) {
+      const queued = (state.pendingChanges.people || {})[name] || {};
+      state.recordPerson(name, { ...queued, pid: p.id });
+      me.pid = p.id; // local doc mirror, recorder convention
+      sync.scheduleSync();
+    }
+  } catch { /* next open retries */ }
+}
+
 async function enterApp(token, doc, current = () => true) {
   crew.setActiveCrew(token);
   crew.rememberCrew(token, (doc.meta && doc.meta.name) || '');
@@ -1073,6 +1132,7 @@ async function enterApp(token, doc, current = () => true) {
       if (changed && current()) { sync.scheduleSync(); refreshCtx(); repaintWall(); }
     }).catch((e) => console.warn('crew badge sweep:', e));
   }
+  stampIdentity(token, current); // me link — fire-and-forget by design
   // A hop from an alias domain mid-Spotify-setup (SPOT-1): reopen the drill
   // so the member lands exactly where they left off.
   if (pendingSpotifyOpen) {
@@ -1156,6 +1216,19 @@ export async function boot() {
   pendingSpotifyOpen = spMatch ? spMatch[1] : false;
   try {
     try { await loadFestivalIndex(); } catch { /* offline with cache: proceed */ }
+
+    // A me link (#p=) restores this device — every crew on the person record
+    // registers here, names already claimed. Routed before crew links, and a
+    // broken one says so (same contract as broken crew links: silence would
+    // mean staring at the wrong screen holding a link you believe in).
+    if (crew.hashHasBrokenPersonLink()) {
+      history.replaceState(null, '', '/');
+      renderLanding();
+      showToast($('toast-root'), 'That link looks cut off — copy it again from your other device.', 6000);
+      return;
+    }
+    const personToken = crew.personFromHash();
+    if (personToken) { await restoreFromMeLink(personToken); return; }
 
     if (location.hash === '#new') { renderCreate(); return; }
     // A crew link that is present but malformed (truncated by a chat app, half
