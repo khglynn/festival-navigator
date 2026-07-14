@@ -436,8 +436,13 @@ function renderCreate() {
   goBtn.style.cssText = 'font-size: 15px; padding: 13px 24px; width: 100%;';
   const paintGo = () => {
     const n = createSel.size;
-    goBtn.disabled = !n;
-    goBtn.textContent = n ? `ADD ${n} FESTIVAL${n === 1 ? '' : 'S'} →` : 'Pick your fests';
+    // The server rate-limits crew creation at 10/hour per IP — a batch it
+    // cannot finish must not start (Codex reshape gate, P2). 8 leaves
+    // headroom for singles in the same hour.
+    goBtn.disabled = !n || n > 8;
+    goBtn.textContent = !n ? 'Pick your fests'
+      : n > 8 ? '8 at a time is the max'
+        : `ADD ${n} FESTIVAL${n === 1 ? '' : 'S'} →`;
   };
   const pick = (f, rowEl) => {
     if (createSel.has(f.id)) createSel.delete(f.id);
@@ -464,7 +469,7 @@ function renderCreate() {
   list.appendChild(goBtn);
   paintGo();
   goBtn.addEventListener('click', () => {
-    if (!createSel.size) return;
+    if (!createSel.size || createInFlight) return;
     // A device that already knows who it is skips the name step forever.
     const p = crew.myPerson();
     if (p && p.name) { batchCreateFlow(p.name); return; }
@@ -498,60 +503,90 @@ function createStepName() {
 // never lands in an existing circle from here; deliberate multi-fest circles
 // use Settings → Your festivals → + Add a festival). Sequential creates so
 // a mid-batch failure reports exactly what made it and what didn't.
+// Re-entrancy: guarded module-wide — a double-tap must never mint duplicate
+// circles (Codex reshape gate, P1). Cross-tab double-creates remain possible
+// (no server idempotency key yet) — accepted at this app's scale, the rate
+// limiter caps the damage.
+let createInFlight = false;
 async function batchCreateFlow(myName) {
+  if (createInFlight) return;
   const status = $('create-status');
   const problem = nameProblem(myName);
   if (problem) { createStepName(); status.textContent = problem; return; }
-  const fids = [...createSel];
-  const made = [];
-  let failed = null;
-  status.textContent = '';
-  status.appendChild(eqLoader('Setting the stage…'));
-  crew.ensurePerson(myName); // fire-and-forget — the YOU card exists on arrival
-  for (const fid of fids) {
-    const meta = FESTIVAL_INDEX.find((f) => f.id === fid);
-    if (!meta) continue;
-    try {
-      // SAFE_NAME_RE bans apostrophes — "'26" becomes "26" in the crew name.
-      const crewName = `${meta.name} ${(meta.year || '').replace(/'/g, '')}`.trim().slice(0, 40);
-      const { token, doc } = await crew.createCrew(crewName, myName, { colorIndex: 0 }, fid);
-      crew.setMe(token, myName);
-      crew.rememberCrew(token, crewName);
-      saveLS(state.LS.fest(token), fid);
-      // Cache the doc so the landing can render this fest's row immediately
-      // (the fest-first landing reads cached docs for its pairs).
-      saveLS(state.LS.doc(token), JSON.stringify(doc));
-      made.push({ token, doc, fid, name: meta.name });
-    } catch (e) {
-      failed = { name: meta.name, err: String(e.message || e) };
-      break; // stop the batch — the same failure would repeat (rate limit, offline)
+  createInFlight = true;
+  const goBtns = ['create-go-multi', 'create-go-btn'].map((id) => $(id)).filter(Boolean);
+  goBtns.forEach((b) => { b.disabled = true; });
+  try {
+    const fids = [...createSel];
+    const made = [];
+    let failed = null;
+    status.textContent = '';
+    status.appendChild(eqLoader('Setting the stage…'));
+    // AWAITED, not fire-and-forget: every board must land on the person
+    // record before we leave this screen, or a My-link restore can't recover
+    // unopened boards (Codex reshape gate, P1). Born linked when possible —
+    // the create body carries the pid.
+    const person = await crew.ensurePerson(myName);
+    for (const fid of fids) {
+      const meta = FESTIVAL_INDEX.find((f) => f.id === fid);
+      if (!meta) continue;
+      try {
+        // SAFE_NAME_RE bans apostrophes — "'26" becomes "26" in the crew name.
+        const crewName = `${meta.name} ${(meta.year || '').replace(/'/g, '')}`.trim().slice(0, 40);
+        const { token, doc } = await crew.createCrew(crewName, myName,
+          { colorIndex: 0, ...(person ? { pid: person.id } : {}) }, fid);
+        crew.setMe(token, myName);
+        crew.rememberCrew(token, crewName);
+        saveLS(state.LS.fest(token), fid);
+        // Cache the doc so the landing can render this fest's row immediately
+        // (the fest-first landing reads cached docs for its pairs).
+        saveLS(state.LS.doc(token), JSON.stringify(doc));
+        if (person) await crew.stampPersonCrew(token, myName, crewName);
+        made.push({ token, doc, fid, name: meta.name });
+      } catch (e) {
+        failed = { name: meta.name, err: String(e.message || e) };
+        break; // stop the batch — the same failure would repeat (rate limit, offline)
+      }
     }
+    if (!made.length) {
+      const raw = failed ? failed.err : 'Nothing was created.';
+      status.textContent = /fetch|network|load/i.test(raw) && !/crew|name|festival/i.test(raw)
+        ? 'Couldn’t reach the crew service — check your connection and try again.'
+        : raw;
+      return;
+    }
+    if (made.length === 1 && !failed) {
+      // Single fest keeps today's arc: straight onto the board, share moment
+      // up. The board EXISTS by now — an activation failure (fest asset
+      // uncached + offline) must not strand the create screen inviting a
+      // duplicate retry (Codex reshape gate, P2): fall back to the landing,
+      // where the new row already is.
+      const { token, doc, fid } = made[0];
+      try {
+        await enterApp(token, doc);
+        state.recordInviteFest(fid); // invites resolve on fresh devices (FLOW-1)
+        sync.scheduleSync();
+        openShareMoment();
+        router.push('sheet:share');
+      } catch {
+        history.replaceState(null, '', '/');
+        renderLanding();
+        showToast($('toast-root'), 'Board created — it couldn’t open just now, but it’s on your list.', 6000);
+      }
+      return;
+    }
+    // Several boards born: land on the festival list where they all are —
+    // "add all the fests I'm going to, then quickly add people to them."
+    history.replaceState(null, '', '/');
+    renderLanding();
+    const note = failed
+      ? `${made.length} ready — ${failed.name} didn’t make it (${failed.err}). It’s still in the picker.`
+      : `${made.length} festivals ready — tap one and add your people.`;
+    showToast($('toast-root'), note, 7000);
+  } finally {
+    createInFlight = false;
+    goBtns.forEach((b) => { b.disabled = false; });
   }
-  if (!made.length) {
-    const raw = failed ? failed.err : 'Nothing was created.';
-    status.textContent = /fetch|network|load/i.test(raw) && !/crew|name|festival/i.test(raw)
-      ? 'Couldn’t reach the crew service — check your connection and try again.'
-      : raw;
-    return;
-  }
-  if (made.length === 1 && !failed) {
-    // Single fest keeps today's arc: straight onto the board, share moment up.
-    const { token, doc, fid } = made[0];
-    await enterApp(token, doc);
-    state.recordInviteFest(fid); // invites resolve on fresh devices (FLOW-1)
-    sync.scheduleSync();
-    openShareMoment();
-    router.push('sheet:share');
-    return;
-  }
-  // Several boards born: land on the festival list where they all are —
-  // "add all the fests I'm going to, then quickly add people to them."
-  history.replaceState(null, '', '/');
-  renderLanding();
-  const note = failed
-    ? `${made.length} ready — ${failed.name} didn’t make it (${failed.err}). It’s still in the picker.`
-    : `${made.length} festivals ready — tap one and add your people.`;
-  showToast($('toast-root'), note, 7000);
 }
 
 
@@ -1082,8 +1117,17 @@ function renderLanding() {
     row.append(left, cluster, chev);
     row.addEventListener('click', () => {
       // Land on THIS fest, not the crew's last-open one — the row's whole
-      // promise is "tap Seismic, get Seismic" (Kevin, 2026-07-14).
-      if (pair.fid) saveLS(state.LS.fest(pair.token), pair.fid);
+      // promise is "tap Seismic, get Seismic" (Kevin, 2026-07-14). The write
+      // is VERIFIED before navigating: with storage full/blocked, booting
+      // anyway would open whatever fest the crew last had — the row lying.
+      // Stop and say so instead (Codex reshape gate, P2).
+      if (pair.fid) {
+        saveLS(state.LS.fest(pair.token), pair.fid);
+        if (localStorage.getItem(state.LS.fest(pair.token)) !== pair.fid) {
+          showToast($('toast-root'), 'This device’s storage is full — couldn’t point the board at that festival.', 6000);
+          return;
+        }
+      }
       location.hash = `#g=${pair.token}`;
       boot();
     });
