@@ -108,6 +108,29 @@ test('the JS merge twins agree with the SQL, arrays included', async () => {
   assert.ok(Array.isArray(sql.spotify.playlists.ef.artists));
 });
 
+test('person merge: the exact production bytes land a crews entry and return id + doc', async () => {
+  const PTOKEN = 'persontest_token_0123456789';
+  const { PERSON_MERGE_SQL } = await import('../api/_lib/crew-sql.mjs');
+  const { newPersonDoc, LIMITS: L } = await import('../api/_lib/crew-shared.mjs');
+  await db.query('DELETE FROM persons WHERE token = $1', [PTOKEN]);
+  await db.query('INSERT INTO persons (id, token, doc) VALUES ($1, $2, $3::jsonb)',
+    ['pid_dbtest_01', PTOKEN, JSON.stringify(newPersonDoc('Kev', '2026-07-13T00:00:00Z'))]);
+  const delta = { crews: { [TOKEN]: { name: 'Kev', crewName: 'DB Test' } } };
+  const r = await db.query(PERSON_MERGE_SQL, [PTOKEN, JSON.stringify(delta), L.personDocBytes]);
+  assert.equal(r.rows[0].id, 'pid_dbtest_01', 'merge returns the public id');
+  assert.deepEqual(r.rows[0].doc.crews[TOKEN], { name: 'Kev', crewName: 'DB Test' });
+  assert.equal(r.rows[0].doc.name, 'Kev', 'existing leaves survive');
+
+  // The size cap is inside the same UPDATE — a merge that would exceed it
+  // updates zero rows (tested by shrinking the cap, not by a giant payload).
+  const refused = await db.query(PERSON_MERGE_SQL, [PTOKEN, JSON.stringify(delta), 10]);
+  assert.equal(refused.rows.length, 0, 'over-cap merge refuses atomically');
+
+  // Unknown token: zero rows, so the API can 404 honestly.
+  const gone = await db.query(PERSON_MERGE_SQL, ['persontest_gone_0123456789', JSON.stringify(delta), L.personDocBytes]);
+  assert.equal(gone.rows.length, 0);
+});
+
 test('deletion is inexpressible — which is why tombstones exist', async () => {
   await seed();
   await merge({ people: { Drew: { colorIndex: 1 } } });

@@ -39,6 +39,18 @@ WHERE token = $1
        WHERE NOT COALESCE((p.value->>'removed')::boolean, false))
 RETURNING doc`;
 
+// The person merge — same atomic inline-merge discipline as crews, fewer
+// invariants (a person doc has no people list to cap or dedupe; only the
+// size guard). Same reason it lives here: tests run these exact bytes.
+// $1 token · $2 delta · $3 max bytes
+export const PERSON_MERGE_SQL = `
+UPDATE persons
+SET doc = jsonb_deep_merge(doc, $2::jsonb),
+    updated_at = now()
+WHERE token = $1
+  AND octet_length(jsonb_deep_merge(doc, $2::jsonb)::text) <= $3
+RETURNING id, doc`;
+
 // Why did the merge refuse? A blanket "would exceed limits" once told someone
 // whose actual problem was a duplicate name to go and delete their picks.
 // $1 token · $2 delta v4 · $3 delta

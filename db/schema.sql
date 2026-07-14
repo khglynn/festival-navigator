@@ -30,6 +30,20 @@ CREATE TABLE IF NOT EXISTS crews (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- One person across crews (the "me link"). Two identifiers by design:
+--   token — the secret credential; holds access to the whole record, which
+--           itself lists every crew token the person is in. Master key.
+--   id    — public, safe to stamp into crew docs as people.<Name>.pid so a
+--           crew can reference a person WITHOUT exposing their credential
+--           (crew docs are readable by anyone holding that crew's link).
+CREATE TABLE IF NOT EXISTS persons (
+  id TEXT PRIMARY KEY CHECK (id ~ '^[A-Za-z0-9_-]{8,24}$'),
+  token TEXT NOT NULL UNIQUE CHECK (token ~ '^[A-Za-z0-9_-]{20,40}$'),
+  doc JSONB NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
 -- Crew-private festivals added via LLM research (api/festival-add.js).
 -- Provenance travels with the value: source_urls from search grounding,
 -- model, who added it, when. The repo's data/festivals/*.json stays canonical

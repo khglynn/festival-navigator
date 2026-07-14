@@ -23,9 +23,14 @@ export const LIMITS = {
   isoTs: 32,
   colorIndexMax: 23,      // the 24-board (js/v3/palette.js)
   spotifyCount: 999999,
+  personDocBytes: 32 * 1024, // Phase 1 (crews registry only); Phase 2 raises it for the library summary
 };
 
 export const TOKEN_RE = /^[A-Za-z0-9_-]{20,40}$/;
+// Public person id — the ONLY person identifier allowed inside a crew doc.
+// The person TOKEN is a master key (its doc lists every crew token) and must
+// never appear where crew members can read it.
+export const PID_RE = /^[A-Za-z0-9_-]{8,24}$/;
 const COLOR_RE = /^\d{1,3}, \d{1,3}, \d{1,3}$/;
 const FESTIVAL_ID_RE = /^[a-z0-9-]{1,64}$/;
 const CLIENT_ID_RE = /^[0-9a-fA-F]{32}$/;
@@ -90,6 +95,7 @@ function validatePeople(people) {
       if (k === 'color') { if (typeof v !== 'string' || !COLOR_RE.test(v)) return fail(`person ${name}: bad color`); }
       else if (k === 'removed') { if (typeof v !== 'boolean') return fail(`person ${name}: removed must be boolean`); }
       else if (k === 'colorIndex') { if (!Number.isInteger(v) || v < 0 || v > LIMITS.colorIndexMax) return fail(`person ${name}: colorIndex must be 0..${LIMITS.colorIndexMax}`); }
+      else if (k === 'pid') { if (typeof v !== 'string' || !PID_RE.test(v)) return fail(`person ${name}: bad pid`); }
       else return fail(`person ${name}: unknown key ${k}`);
     }
   }
@@ -357,5 +363,41 @@ export function validateMergedDoc(doc) {
 
   const bytes = Buffer.byteLength(JSON.stringify(doc), 'utf8');
   if (bytes > LIMITS.docBytes) return fail(`crew document too large (${bytes} bytes, max ${LIMITS.docBytes})`);
+  return OK;
+}
+
+// ---- person records (the "me link") -----------------------------------------
+// One person across crews. The doc is tiny by design: a default name plus a
+// crews registry — { <crewToken>: { name, crewName } } — where `name` is who
+// this person is INSIDE that crew (legacy divergence like Ross/Rosss stays
+// honest) and `crewName` is a display cache so a restore renders the landing
+// before any crew doc has been fetched.
+
+export function newPersonDoc(name, createdAt) {
+  return { v: 1, name, createdAt, crews: {} };
+}
+
+// Validate an incoming person merge overlay. Same philosophy as crews:
+// unknown sections are rejected, v/createdAt are not client-writable.
+export function validatePersonIncoming(data) {
+  if (!isPlainObject(data)) return fail('data must be an object');
+  for (const [section, value] of Object.entries(data)) {
+    if (section === 'name') {
+      if (!validName(value, LIMITS.personName)) return fail('person: invalid name');
+    } else if (section === 'crews') {
+      if (!isPlainObject(value)) return fail('person: crews must be an object');
+      for (const [crewToken, entry] of Object.entries(value)) {
+        if (!TOKEN_RE.test(crewToken)) return fail('person: bad crew token key');
+        if (!isPlainObject(entry)) return fail('person: crew entry must be an object');
+        for (const [k, v] of Object.entries(entry)) {
+          if (k === 'name') { if (!validName(v, LIMITS.personName)) return fail('person: bad crew name claim'); }
+          else if (k === 'crewName') { if (!validName(v, LIMITS.crewName)) return fail('person: bad crewName'); }
+          else return fail(`person: unknown crew entry key ${safeKey(k)}`);
+        }
+      }
+    } else {
+      return fail(`person: unknown section ${safeKey(section)}`);
+    }
+  }
   return OK;
 }
