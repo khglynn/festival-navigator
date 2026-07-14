@@ -86,7 +86,15 @@ Non-inferable facts only (the code answers everything else — read it).
   where every fix read as "not applied" until the SW was unregistered and its
   cache deleted. `curl | md5` says the server is right; the browser is lying.
   Unregister + `caches.delete()` + hard reload before believing a browser check.
-  And bump `CACHE_VERSION` on every asset-changing commit.
+  And bump `CACHE_VERSION` on every asset-changing commit. **Even with the SW
+  gone, hash-only navigations (`#g=…` → `#new`) keep the page's module map —
+  edited JS only reloads on a REAL document load (hop via about:blank), and
+  the ES-module cache also survives `Network.clearBrowserCache`** (burned a
+  test cycle 2026-07-14).
+- **Staging (stage.fest.kevinhg.com preview deploys) shares the PRODUCTION
+  DATABASE_URL** — verified empirically 2026-07-14 (a person row created on
+  staging was deleted through the prod Neon connection). Staging writes are
+  prod writes; test with throwaway crews/persons and delete them after.
 - Styling is hand-written CSS in `assets/v3-tokens.css` (tokens) and
   `assets/v3.css` (components) — no build step, no framework. (Tailwind was
   dropped in v3; there is no `npm run css`.)
