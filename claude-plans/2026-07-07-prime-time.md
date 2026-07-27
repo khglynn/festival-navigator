@@ -37,6 +37,21 @@ The app worked single-crew at Electric Forest 2026 but has **no group concept** 
 
 **P1 — Repo hygiene:** move cruft dirs (`Music files`, `arhived_album-gridv2`, `media player references`, `Tracks not using right now`) → `~/DevKev/_archive/festival-navigator-cruft/` and `spotify-mcp/` → `~/DevKev/personal/spotify-mcp/` (own project; README pointer), then `git rm` (history preserves; no rewrite). New PWA icon (replace 351KB recordOS logo). Delete obsolete BACKEND_SETUP.md. Bump blob SDK. Dependabot + CI skeleton.
 
+> **✅ The spotify-mcp split is DONE — closed out 2026-07-27.** It landed at
+> `~/DevKev/personal/self-hosted-mcps/spotify-bulk-actions-mcp`, not `personal/spotify-mcp`.
+> That clone is healthy, tracks `khglynn/spotify-bulk-actions-mcp`, and is published to PyPI,
+> Glama, and the MCP registry.
+>
+> The copy left behind in this repo was a **stale husk**: a separate one-commit `git init` from
+> 2025-12-12 whose SHA never existed on the remote, with its 15 tracked files deleted from the
+> working tree but the deletion never committed. It was never tracked by *this* repo — it
+> showed as `?? spotify-mcp/` — so the planned `git rm` was moot.
+>
+> Verified before removing it: its `.env` held Spotify credentials byte-identical to the real
+> clone's, nothing in this repo referenced the path, and fest.kevinhg.com's likes/follow sync
+> runs from `js/spotify.js` + `spotify-callback.html`, which were untouched. Husk moved to
+> Trash, so it's recoverable if any of that turns out wrong.
+
 **P2 — Module split (no behavior change):** carve index.html into modules; precompiled Tailwind; vendor html2canvas; tests for extracted pure logic; SW v5. Verify: Playwright parity vs production (grid renders, picks cycle, sync round-trip). **Codex gate.**
 
 **P3 — Crews & storage v3:** api/crew.js, landing (create/join/my-crews), hash routing `#g=<token>`, join = pick/add your name (device remembers), migrate legacy doc → Kevin's crew (print link), retire old endpoint. Verify: two isolated browser contexts create/join/sync; write-validation rejects garbage; offline queue drains. **Codex gate (blocking — everything builds on this).**
