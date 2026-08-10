@@ -1,5 +1,16 @@
 # NOW — festival-navigator: fest-first reshape LIVE ON PROD (v35)
 
+## 2026-08-10 — Ray's fork hit a working checkpoint (awaiting Kevin's review)
+
+Ray Perfetti (`raypp2`) — the contributor who forked us in July — emailed
+Aug 6 with a live demo: Discover feed, artist pages, tri-source player
+(YouTube/SoundCloud/Spotify), reworked pick controls, top menu. His fork is
+77 commits ahead of our main, deployed on HIS Vercel + HIS database (nothing
+of ours touched). No PRs yet; one open issue (#6, Spotify `CANONICAL_HOST`
+hardcoded — he's offering the PR, unanswered since Jul 24). Full notes +
+suggested moves: `claude-plans/2026-08-10-ray-fork-checkpoint.md`. His demo
+link carries a crew token, so it stays in the Gmail thread, not in this repo.
+
 ## 2026-07-14 — PROMOTED TO PRODUCTION (v35)
 
 Kevin's call ("kk promote"). `v31-polish` → `main` fast-forward (f7ad492 →
