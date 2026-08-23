@@ -1,6 +1,17 @@
 // Festival Navigator service worker — offline-first app shell.
 // Bump CACHE_VERSION whenever you change cached static assets.
-const CACHE_VERSION = 'festival-nav-v36'; // v36 = Portola Week afters + Folsom sections; lineup cards learn venue · time sub-labels
+const CACHE_VERSION = 'festival-nav-v37'; // v37 = festival data survives SW updates (persistent data cache) + sync gate fixes
+
+// Festival JSONs live in their OWN cache, outside the version-keyed shell
+// cache — because activate deletes every old version cache wholesale, and
+// per-festival files only ever entered the cache at first fetch. So any SW
+// update (phone updates on camp WiFi, walks into the field) wiped every
+// festival a device had opened, and the first OFFLINE board-open after the
+// update was the fatal screen (gate find, 2026-08-23). Data is content-
+// addressed by URL and revalidated on every fetch — it has no business dying
+// with a shell version.
+const DATA_CACHE = 'festival-nav-data-v1';
+const isFestivalData = (url) => url.pathname.startsWith('/data/festivals/');
 
 // The shell that MUST be complete for offline to be real: if any of these
 // fail, install fails and the old worker keeps serving — a half-cached shell
@@ -64,11 +75,31 @@ self.addEventListener('install', (event) => {
 });
 
 self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE_VERSION).map((k) => caches.delete(k)))
-    ).then(() => self.clients.claim())
-  );
+  event.waitUntil((async () => {
+    const keys = await caches.keys();
+    // Rescue festival data cached under pre-v37 version-keyed caches into the
+    // persistent data cache BEFORE deleting them — an upgrading device keeps
+    // every festival it has ever opened. Best-effort per entry: a rescue
+    // failure must never block activation (the old worker would keep serving
+    // a stale shell forever).
+    try {
+      const data = await caches.open(DATA_CACHE);
+      for (const k of keys) {
+        if (k === CACHE_VERSION || k === DATA_CACHE) continue;
+        const old = await caches.open(k);
+        for (const req of await old.keys()) {
+          try {
+            if (!isFestivalData(new URL(req.url))) continue;
+            if (await data.match(req)) continue; // newer copy already there
+            const hit = await old.match(req);
+            if (hit) await data.put(req, hit);
+          } catch { /* one bad entry must not strand the rest */ }
+        }
+      }
+    } catch { /* no rescue is still better than no activation */ }
+    await Promise.all(keys.filter((k) => k !== CACHE_VERSION && k !== DATA_CACHE).map((k) => caches.delete(k)));
+    await self.clients.claim();
+  })());
 });
 
 self.addEventListener('fetch', (event) => {
@@ -107,12 +138,17 @@ self.addEventListener('fetch', (event) => {
   }
 
   // Static assets: cache-first, then update the cache in the background.
+  // Festival data revalidates into the PERSISTENT data cache (never the
+  // version-keyed shell cache), so it survives every CACHE_VERSION bump;
+  // caches.match() searches both, so first-load-after-install still hits the
+  // precached index.json.
+  const bucket = isFestivalData(url) ? DATA_CACHE : CACHE_VERSION;
   event.respondWith(
     caches.match(request).then((cached) => {
       const network = fetch(request).then((resp) => {
         if (resp && resp.ok) {
           const copy = resp.clone();
-          caches.open(CACHE_VERSION).then((c) => c.put(request, copy)).catch(() => {});
+          caches.open(bucket).then((c) => c.put(request, copy)).catch(() => {});
         }
         return resp;
       }).catch(() => cached);

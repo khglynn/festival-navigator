@@ -3,6 +3,7 @@
 // edits live in state.pendingChanges and always overlay on top of remote.
 import * as state from './state.js';
 import { isApiNotFound } from './crew.js';
+import { timeoutSignal as makeTimeoutSignal } from './util.js';
 
 let syncTimer = null, isSyncing = false, syncQueued = false;
 let pushGen = 0; // bumped when a push APPLIES its merged doc — guards the poll race
@@ -57,10 +58,11 @@ export function setSyncStatus(s) {
 
 // A hung fetch used to jam sync forever — isSyncing never cleared because the
 // promise never settled (PS-4). 20s is generous for a crew-doc round trip.
+// util.timeoutSignal carries the Safari 15.x fallback: AbortSignal.timeout
+// arrived in Safari 16, and "no API" used to mean "no timeout", re-opening
+// PS-4 on exactly the phones most likely to hang (gate find, 2026-08-23).
 const SYNC_TIMEOUT_MS = 20000;
-const timeoutSignal = () => (typeof AbortSignal !== 'undefined' && AbortSignal.timeout
-  ? AbortSignal.timeout(SYNC_TIMEOUT_MS)
-  : undefined);
+const timeoutSignal = () => makeTimeoutSignal(SYNC_TIMEOUT_MS);
 
 export function scheduleSync() {
   if (syncTimer) clearTimeout(syncTimer);
@@ -230,8 +232,19 @@ export async function pollSync() {
       // change to the crew, not a 25s loop.
       clearRefused();
     }
-    setSyncStatus(state.hasPending() ? 'syncing' : 'online');
-    if (state.hasPending()) scheduleSync();
+    if (state.hasPending()) {
+      // An unchanged remote plus unchanged refused bytes is still BLOCKED.
+      // Reporting 'syncing' here and re-arming the push made the dot flip
+      // blocked -> syncing -> blocked every 25s — the UI claiming progress
+      // nothing was making, forever (gate find, 2026-08-23). The two real
+      // exits both already work: a NEW edit changes the payload, and a
+      // CHANGED remote cleared the refusal above.
+      if (isRefused(state.pendingChanges, tokenAtStart)) { setSyncStatus('blocked'); return; }
+      setSyncStatus('syncing');
+      scheduleSync();
+    } else {
+      setSyncStatus('online');
+    }
   } catch (e) {
     if (e instanceof CrewGoneError) { onCrewGone(tokenAtStart); return; }
     setSyncStatus(navigator.onLine ? 'error' : 'offline');

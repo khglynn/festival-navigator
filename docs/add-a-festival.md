@@ -45,6 +45,24 @@ Two files, one command:
 3. **Validate:** `node scripts/validate-festivals.mjs` — errors block CI.
    `scripts/import-festival.mjs` helps convert pasted lineup text.
 
-Picks are keyed by artist name, so keep names stable between the lineup and
-scheduled phases (fixing capitalization is safe — lookups are exact by name,
-so a spelling change orphans existing picks for that artist).
+Picks are keyed by artist name, and lookups are EXACT — case included
+(`picksFor`/`noteCount` do no folding; only the Spotify affinity map is
+case-insensitive). So keep names byte-stable between the lineup and scheduled
+phases: ANY spelling change, capitalization included, orphans existing picks
+and artist notes for that artist. If a name must change, accept the orphaning
+knowingly — there is no migration path in the doc model (additive merge can't
+delete the old key).
+
+Day notes are keyed by day LABEL the same way. When set times drop and you
+flip `lineup` → `scheduled`, keep the `days{}` keys byte-identical to the day
+strings the lineup phase used in `artists[].day` ("Friday", not "Fri" or
+"Friday W1") — renamed day keys silently strand every day note the crew has
+written.
+
+An `artists[]` entry can also be an EVENT (an afterparty, a street-fair
+party): give it the venue in `stage` and the hours in `time` and the lineup
+wall renders them as a card sub-label. A same-name entry on a *different* day
+is a reappearance (a lineup artist playing an afters show) — picks, auras and
+notes unify by exact name on purpose, and the validator only flags same-day or
+day-less duplicates. See `portola-2026.json` (the Afters/Folsom sections) for
+the worked example.

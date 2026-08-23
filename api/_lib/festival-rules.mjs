@@ -2,7 +2,7 @@
 // consumed by BOTH scripts/validate-festivals.mjs (CI) and api/festival-add.js
 // (LLM-researched candidates). If a rule changes, it changes here once.
 import { timeToMinutes } from '../../js/time.js';
-import { safeKey } from './crew-shared.mjs';
+import { safeKey, FORBIDDEN_KEYS } from './crew-shared.mjs';
 
 export const SLUG_RE = /^[a-z0-9-]{1,64}$/;
 export const ACCENT_RE = /^\d{1,3}, \d{1,3}, \d{1,3}$/;
@@ -20,7 +20,10 @@ export function validateFestivalDoc(fest, { filename } = {}) {
   if (!fest || typeof fest !== 'object' || Array.isArray(fest)) {
     return { errors: ['festival must be an object'], warnings };
   }
-  if (!fest.id || !SLUG_RE.test(fest.id)) err(`bad id ${JSON.stringify(fest.id)}`);
+  // FORBIDDEN_KEYS too: 'constructor' is all-lowercase and passes the slug
+  // regex, but a festival id becomes an object key in every crew doc that
+  // picks in it — the one namespace that must never carry a prototype key.
+  if (!fest.id || !SLUG_RE.test(fest.id) || FORBIDDEN_KEYS.has(fest.id)) err(`bad id ${JSON.stringify(fest.id)}`);
   if (filename && filename !== `${fest.id}.json`) err(`filename must match id (${fest.id}.json)`);
   if (!fest.name) err('missing name');
   // Length caps on free-text fields — LLM-researched candidates flow through

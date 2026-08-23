@@ -23,6 +23,35 @@ export function loadJSON(key, fallback) {
   catch { return fallback; }
 }
 
+// Raw-string sibling of loadJSON, same guard: a storage-blocked browser
+// (private mode, "block all cookies") THROWS on getItem itself, and raw reads
+// in the boot path turned that into the fatal screen instead of a from-link,
+// memory-only session (gate find, 2026-08-23).
+export function getLS(key) {
+  try { return localStorage.getItem(key); } catch { return null; }
+}
+
+export function removeLS(key) {
+  try { localStorage.removeItem(key); } catch { /* nothing stored anyway */ }
+}
+
+// A fetch that never settles is worse than one that fails: gating a paint on
+// an untimed network call left a phone on associated-but-dead festival WiFi
+// staring at a blank page for the OS socket timeout — minutes, with the whole
+// doc sitting in cache (gate find, 2026-08-23). AbortSignal.timeout shipped in
+// Safari 16; the controller+timer fallback covers 15.x, where the missing API
+// used to mean NO timeout at all and one hung fetch wedged sync forever. A
+// late abort on a settled fetch is a no-op, so the timer needs no cleanup.
+export function timeoutSignal(ms) {
+  if (typeof AbortSignal !== 'undefined' && AbortSignal.timeout) return AbortSignal.timeout(ms);
+  if (typeof AbortController !== 'undefined') {
+    const c = new AbortController();
+    setTimeout(() => c.abort(), ms);
+    return c.signal;
+  }
+  return undefined;
+}
+
 // Returns true when the value actually reached disk. Callers that are holding
 // the only copy of a user's edit MUST care about the answer.
 export function saveLS(key, value) {

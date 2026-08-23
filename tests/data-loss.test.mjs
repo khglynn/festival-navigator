@@ -314,3 +314,51 @@ test('ordinary distinct names still pass', () => {
   };
   assert.equal(validateMergedDoc(doc).ok, true);
 });
+
+// Gate 2026-08-23: the playlist registry entry is the note trap's twin — the
+// server requires id+url on every entry (validateSpotifyPlaylist), so it too
+// is valid ONLY complete. Record a playlist, then re-record it mid-push with
+// an extended artists ledger (the auto-extend path does exactly this): naive
+// subtraction kept {artists} and dropped id/url — a fragment the server 400s,
+// which the refused-payload guard turns into a permanently blocked device.
+test('a playlist re-recorded mid-push goes back WHOLE — never as an {artists} fragment', async () => {
+  const TOKEN = 'losstoken_platomic_0123';
+  freshCrew(TOKEN);
+
+  const META = {
+    id: 'a'.repeat(22), url: `https://open.spotify.com/playlist/${'a'.repeat(22)}`,
+    mode: 'mine', by: 'Kev', at: '2026-08-23T00:00:00.000Z', artists: ['GRiZ'],
+  };
+  state.recordSpotifyPlaylist('loss-fest', META);
+  const pushed = JSON.parse(JSON.stringify(state.pendingChanges));
+
+  // ...the push is in the air, and auto-extend records the grown ledger.
+  state.recordSpotifyPlaylist('loss-fest', { ...META, artists: ['GRiZ', 'Lane 8'] });
+
+  state.clearPending(pushed);
+
+  const left = state.pendingChanges.spotify?.playlists?.['loss-fest'];
+  assert.ok(left, 'the re-record is still pending');
+  assert.deepEqual(left.artists, ['GRiZ', 'Lane 8']);
+  assert.equal(left.id, META.id, 'id survives — without it the server rejects the entry outright');
+  assert.equal(left.url, META.url, 'and so does url');
+
+  const { validateIncoming } = await import('../api/_lib/crew-shared.mjs');
+  const check = validateIncoming(state.pendingChanges);
+  assert.equal(check.ok, true, `the next push must be a payload the server accepts (got: ${check.error})`);
+});
+
+// Gate 2026-08-23: recordSpotifyClientId used to assign the whole pending
+// spotify subtree, silently dropping a playlist entry recorded seconds
+// earlier in the same drill session.
+test('recording a client id never drops a pending playlist entry', () => {
+  freshCrew('losstoken_clientid_0123');
+  const META = {
+    id: 'b'.repeat(22), url: `https://open.spotify.com/playlist/${'b'.repeat(22)}`,
+    mode: 'mine', by: 'Kev', at: '2026-08-23T00:00:00.000Z', artists: [],
+  };
+  state.recordSpotifyPlaylist('loss-fest', META);
+  state.recordSpotifyClientId('c'.repeat(32));
+  assert.ok(state.pendingChanges.spotify.playlists?.['loss-fest'], 'the playlist entry is still pending');
+  assert.equal(state.pendingChanges.spotify.clientId, 'c'.repeat(32));
+});
