@@ -15,10 +15,12 @@ Three commits on the branch, preview-only. Full story: DEVLOG 2026-08-23.
   tested; ingesting is now a paste job:
 
   ### ⚠️ KEVIN'S 5-MINUTE MOVE
-  Open https://www.aclfestival.com/schedule (or the ACL app), copy each
-  day's grid text (both weekends), and hand it to any session with
-  `docs/add-a-festival.md` — the two-weekend recipe section. Cross-check
-  the evening anchors already recorded in acl-2026.json meta.note.
+  Start a LOCAL session on this branch and point it at
+  `claude-plans/2026-08-23-local-run-handoff.md` — that doc is the full
+  handoff (fetch the ACL grids, ingest, cross-check the anchors, /codex-run,
+  push). Or do it by hand: copy each day from
+  https://www.aclfestival.com/schedule into any session with
+  `docs/add-a-festival.md`'s two-weekend recipe.
 
 - **Hardening gate (18 confirmed finds, all verified in code):** the P1s are
   fixed — playlist pending-subtraction sync-wedge, and SW updates no longer
