@@ -9,7 +9,7 @@ import * as sync from '../sync.js';
 import * as spotify from '../spotify.js';
 import * as model from './model.js';
 import { loadFestivalIndex, loadFestival, loadCustomFestivals, FESTIVAL_INDEX, defaultFestivalId } from '../festivals.js';
-import { renderWall, refreshCard, showUndoToast, showToast, wireScrollspy, colorIndexOf, groupByDay, knownDaysOf } from './wall.js';
+import { renderWall, refreshCard, showUndoToast, showToast, wireScrollspy, colorIndexOf, groupByDay, knownDaysOf, scheduledWeekendOf } from './wall.js';
 import { disclosureFold, eqLoader, festRow } from './tools.js';
 import { openArtistSheet, openDayNotes, openAllNotes, closeSheet, refreshOpenSheet, sheetChrome, dialogize, rememberOpener } from './notes.js';
 import { renderSettings, appSettings, openSubviewByKey } from './settings.js';
@@ -265,6 +265,10 @@ function updateWeekendRow() {
   const fest = state.fest();
   const has = (fest.artists || []).some((a) => a.weekends === 'W1' || a.weekends === 'W2');
   if (!has) { if (existing) existing.remove(); return; }
+  // On a SCHEDULED two-weekend fest the row loses "Both": a clock grid can
+  // only honestly show one weekend at a time (duplicate overlapping cards
+  // otherwise), so a stored 'all' renders as Weekend One (ST-3, extended).
+  const schedWk = scheduledWeekendOf(fest, ctx.weekend);
   let row = existing;
   if (!row) {
     row = document.createElement('div');
@@ -288,7 +292,11 @@ function updateWeekendRow() {
     }
     document.querySelector('#screen-app .toolbar').after(row);
   }
-  row.querySelectorAll('.seg').forEach((b) => b.classList.toggle('active', b.dataset.w === (ctx.weekend || 'all')));
+  const active = schedWk || ctx.weekend || 'all';
+  row.querySelectorAll('.seg').forEach((b) => {
+    if (b.dataset.w === 'all') b.style.display = schedWk ? 'none' : '';
+    b.classList.toggle('active', b.dataset.w === active);
+  });
 }
 
 // First-wall coach mark (CT-1): the pick mechanic and long-press are

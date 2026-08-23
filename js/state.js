@@ -340,10 +340,18 @@ export function applyRemoteDoc(remote) {
 }
 
 // Returns computed artists for a day with startMin/endMin resolved (cached).
-export function getDayArtists(day) {
-  const key = `${activeFestivalId}|${day}`;
+//
+// `weekend` ('W1'|'W2') filters a TWO-WEEKEND scheduled fest (ACL): a set may
+// carry weekend: 'W1'|'W2' — untagged (or 'both') sets play every weekend.
+// Day keys stay the plain weekdays ("Friday", never "Friday W1") on purpose:
+// day NOTES are keyed by day label, and renamed keys silently strand every
+// note a crew has written (gate find, 2026-08-23). No weekend = no filter.
+export function getDayArtists(day, weekend) {
+  const key = `${activeFestivalId}|${day}|${weekend || 'all'}`;
   if (dayCache[key]) return dayCache[key];
-  const computed = computeDayArtists(fest().days[day]);
+  const dayData = fest().days[day];
+  const sets = (dayData.artists || []).filter((a) => !weekend || !a.weekend || a.weekend === 'both' || a.weekend === weekend);
+  const computed = computeDayArtists({ ...dayData, artists: sets });
   dayCache[key] = computed;
   return computed;
 }

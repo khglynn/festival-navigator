@@ -33,6 +33,16 @@ Two files, one command:
      `electric-forest-2026.json` for the full scheduled shape) and flip
      `status` to `scheduled`. Times are `"6:30 PM"` or `"6:30 PM - 7:30 PM"`;
      a missing end is filled from the next set on that stage.
+   - **Two-weekend fests (ACL), scheduled:** keep the SAME three day keys
+     ("Friday"/"Saturday"/"Sunday" — never "Friday W1"; day notes key on the
+     label) and tag each set with `weekend: "W1"|"W2"` — untagged or
+     `"both"` plays every weekend, and an artist whose times differ across
+     weekends is simply two entries. The wall renders one weekend at a time
+     (the weekend picker loses "Both" in scheduled mode; a stored "Both"
+     shows Weekend One). Give each `dayMeta` entry
+     `dates: { "W1": "Oct 2", "W2": "Oct 9" }` so the day rule shows the
+     selected weekend's real date. Keep `weekends` tags on the top-level
+     `artists[]` — they drive the picker's presence and the search extras.
    - Optional `activities{}` for non-stage programming (workshops, silent
      disco) — renders as a time-sorted list under the grid.
 

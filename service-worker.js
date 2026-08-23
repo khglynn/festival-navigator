@@ -1,6 +1,6 @@
 // Festival Navigator service worker — offline-first app shell.
 // Bump CACHE_VERSION whenever you change cached static assets.
-const CACHE_VERSION = 'festival-nav-v37'; // v37 = festival data survives SW updates (persistent data cache) + sync gate fixes
+const CACHE_VERSION = 'festival-nav-v38'; // v38 = two-weekend scheduled support (ACL-ready: weekend-filtered grid, per-weekend day dates)
 
 // Festival JSONs live in their OWN cache, outside the version-keyed shell
 // cache — because activate deletes every old version cache wholesale, and

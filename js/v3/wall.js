@@ -303,9 +303,26 @@ function dayHeader(label, sub, opts = {}) {
 }
 
 // The day rule's subtitle: real dates beat internal numbering (ST-4).
-function dayRuleSub(meta) {
+// A two-weekend scheduled fest carries per-weekend dates in meta.dates
+// ({W1: 'Oct 2', W2: 'Oct 9'}) — the day key is the same "Friday" both
+// weekends, so the sub is where the actual date lives.
+function dayRuleSub(meta, weekend) {
   if (!meta) return '';
-  return [meta.wd, meta.date || (meta.num ? `Day ${meta.num}` : '')].filter(Boolean).join(' · ');
+  const date = (weekend && meta.dates && meta.dates[weekend]) || meta.date;
+  return [meta.wd, date || (meta.num ? `Day ${meta.num}` : '')].filter(Boolean).join(' · ');
+}
+
+// Which weekend a SCHEDULED two-weekend fest should render. Null = this fest
+// has no weekend-tagged sets (single-weekend — the common case, no filter).
+// A stored 'all' maps to W1: a clock grid showing BOTH weekends' Friday would
+// double-book every stage with duplicate cards — "Both" is a lineup-view
+// concept; on a timetable you are looking at one weekend or the other (ST-3).
+export function scheduledWeekendOf(fest, pref) {
+  const days = fest.days || {};
+  const tagged = Object.keys(days).some((d) =>
+    (days[d].artists || []).some((a) => a.weekend === 'W1' || a.weekend === 'W2'));
+  if (!tagged) return null;
+  return pref === 'W2' ? 'W2' : 'W1';
 }
 
 // ---- search / sort / weekend -----------------------------------------------------
@@ -408,12 +425,12 @@ export function wireTimesScrollSync(root) {
   }
 }
 
-function renderScheduledDay(root, day, ctx, layout) {
+function renderScheduledDay(root, day, ctx, layout, weekend) {
   const fest = state.fest();
-  const computed = state.getDayArtists(day);
+  const computed = state.getDayArtists(day, weekend);
   const stages = layout.stages;
   const meta = (fest.dayMeta || {})[day];
-  root.appendChild(dayHeader(day, dayRuleSub(meta), {
+  root.appendChild(dayHeader(day, dayRuleSub(meta, weekend), {
     noteCount: model.noteCount(state.crewDoc, ctx.fid, 'day', day),
     onOpenNotes: ctx.onOpenDayNotes ? () => ctx.onOpenDayNotes(day) : null,
   }));
@@ -605,9 +622,11 @@ function renderWallInner(root, ctx) {
   const scheduled = fest.days && Object.keys(fest.days).length;
 
   if (scheduled && !ctx.query) {
-    const layout = computeTimesLayout(fest, state.getDayArtists);
+    const wk = scheduledWeekendOf(fest, ctx.weekend);
+    const dayArtists = (d) => state.getDayArtists(d, wk);
+    const layout = computeTimesLayout(fest, dayArtists);
     if (layout.stages.length) root.appendChild(renderStageStrip(layout));
-    for (const day of Object.keys(fest.days)) renderScheduledDay(root, day, ctx, layout);
+    for (const day of Object.keys(fest.days)) renderScheduledDay(root, day, ctx, layout, wk);
     wireTimesScrollSync(root);
     if (ctx.onNotesChange) {
       root.appendChild(dayHeader(`NOTES · ${fest.name.toUpperCase()}`, ''));
@@ -620,24 +639,29 @@ function renderWallInner(root, ctx) {
   // matches render per day, chronological, each card carrying stage · time.
   if (scheduled) {
     const q = ctx.query.trim().toLowerCase();
+    // Search respects the selected weekend too — you've declared which grid
+    // you're standing in, and a W2-only answer to a W1 search is a wrong turn.
+    const wk = scheduledWeekendOf(fest, ctx.weekend);
     const scheduledNames = new Set();
     let any = false;
     for (const day of Object.keys(fest.days)) {
-      const computed = state.getDayArtists(day);
+      const computed = state.getDayArtists(day, wk);
       computed.forEach((a) => scheduledNames.add(a.name));
       const matches = computed.filter((a) => a.name.toLowerCase().includes(q))
         .sort((x, y) => x.startMin - y.startMin);
       if (!matches.length) continue;
       any = true;
       const meta = (fest.dayMeta || {})[day];
-      root.appendChild(dayHeader(day, meta ? `${meta.wd || ''} ${meta.num || ''}`.trim() : ''));
+      root.appendChild(dayHeader(day, dayRuleSub(meta, wk) || (meta ? `${meta.wd || ''} ${meta.num || ''}`.trim() : '')));
       const grid = document.createElement('div');
       grid.className = 'wall-grid';
       for (const a of matches) grid.appendChild(renderCard(a.name, ctx, { time: `${a.stage} · ${a.startStr}` }));
       root.appendChild(grid);
     }
-    // Lineup entries with no set time yet still deserve to be findable.
-    const extra = applyFilter((fest.artists || []).filter((a) => !scheduledNames.has(a.name)), ctx.query);
+    // Lineup entries with no set time yet still deserve to be findable —
+    // within the selected weekend: a W2-only act must not resurface here
+    // after the grid correctly filtered it out.
+    const extra = applyFilter(applyWeekend((fest.artists || []).filter((a) => !scheduledNames.has(a.name)), wk), ctx.query);
     if (extra.length) {
       any = true;
       root.appendChild(dayHeader('EVERYTHING ELSE', 'NO SET TIME YET'));

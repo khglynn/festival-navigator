@@ -94,6 +94,10 @@ export function validateFestivalDoc(fest, { filename } = {}) {
       if (!Array.isArray(day.artists) || !day.artists.length) { err(`${label}: missing artists[]`); continue; }
       day.artists.forEach((a, i) => {
         if (!a.name) err(`${label}.artists[${i}]: missing name`);
+        // Two-weekend fests tag sets with the weekend they play; untagged or
+        // 'both' plays every weekend. Day KEYS stay the plain weekdays — day
+        // notes are keyed by day label, and renamed keys strand them.
+        if (a.weekend && !['W1', 'W2', 'both'].includes(a.weekend)) err(`${safeKey(label)}.artists[${i}] (${safeKey(a.name)}): weekend must be W1|W2|both`);
         if (!a.stage) err(`${safeKey(label)}.artists[${i}] (${safeKey(a.name)}): missing stage`);
         else if (!day.stages.includes(a.stage)) err(`${safeKey(label)}.artists[${i}] (${safeKey(a.name)}): stage ${JSON.stringify(safeKey(a.stage))} not in day stages`);
         if (!a.time || !TIME_RE.test(a.time)) err(`${safeKey(label)}.artists[${i}] (${safeKey(a.name)}): bad time ${JSON.stringify(safeKey(a.time))}`);

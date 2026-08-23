@@ -3,7 +3,7 @@
 import * as state from '../state.js';
 import * as model from './model.js';
 import { parseBulkLineV4, LEVEL_LABELS_V4 } from '../parse.js';
-import { renderCard, groupByDay, knownDaysOf } from './wall.js';
+import { renderCard, groupByDay, knownDaysOf, scheduledWeekendOf } from './wall.js';
 
 export const el = (tag, css, text) => {
   const n = document.createElement(tag);
@@ -213,7 +213,12 @@ export function openBulkPaste(host, actions) {
 const dayArtistsFor = (day) => {
   const fest = state.fest();
   if (fest.days && Object.keys(fest.days).length) {
-    return [...state.getDayArtists(day)]
+    // Share images honor the device's weekend the same way the wall does —
+    // a W1 phone must not export a day sheet carrying W2-only sets.
+    let pref = 'all';
+    try { pref = localStorage.getItem(`fn_weekend_v1_${fest.id}`) || 'all'; } catch { /* memory-only */ }
+    const wk = scheduledWeekendOf(fest, pref);
+    return [...state.getDayArtists(day, wk)]
       .sort((x, y) => x.startMin - y.startMin)
       .map((a) => ({ name: a.name, time: `${a.stage} · ${a.startStr}` }));
   }
