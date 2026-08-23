@@ -1,5 +1,42 @@
 # NOW — festival-navigator: fest-first reshape ON STAGING (v35) · prod at v31
 
+## 2026-08-23 — Portola Week + Folsom shipped, ACL drop-ready, hardening gate (branch: claude/festival-lineup-integration-zs0s8l)
+
+Three commits on the branch, preview-only. Full story: DEVLOG 2026-08-23.
+
+- **Portola board grew AFTERS (all 21 official Portola Week shows) and FOLSOM
+  (the fair + its marquee parties) sections.** Horse Meat Disco = Fri Sept 25,
+  Public Works, 9 PM–3 AM (tickets: sickening.events — the circulating Tixr
+  link is the 2024 edition). Friday is conflict-free; the meta.note carries
+  the full conflict map and what has no posted time yet.
+- **ACL: set times ARE officially out (since ~Aug 17) but NOT ingested** —
+  this environment can't reach the JS-rendered schedule and snippets only
+  carry evening headliners. The two-weekend scheduled shape is BUILT and
+  tested; ingesting is now a paste job:
+
+  ### ⚠️ KEVIN'S 5-MINUTE MOVE
+  Open https://www.aclfestival.com/schedule (or the ACL app), copy each
+  day's grid text (both weekends), and hand it to any session with
+  `docs/add-a-festival.md` — the two-weekend recipe section. Cross-check
+  the evening anchors already recorded in acl-2026.json meta.note.
+
+- **Hardening gate (18 confirmed finds, all verified in code):** the P1s are
+  fixed — playlist pending-subtraction sync-wedge, and SW updates no longer
+  wipe offline festival data (persistent data cache + rescue migration).
+  Plus boot timeouts, Safari 15 sync timeout, honest blocked dot, guarded
+  storage reads, prototype-key festival ids. 191 tests, 190 pass.
+- **Deferred, each with a writeup in the DEVLOG entry:** merge-SQL null
+  semantics vs the JS twins, the doc-size cap measuring two different
+  serializations (~11% skew), DIAGNOSE_SQL race misattribution, beacon
+  re-push leaf revert, sync poll not torn down after leaving a crew,
+  offline-first boot from cachedDoc. The merge-SQL ones deserve their own
+  gated session per the house rule (change crew-sql.mjs, tests follow).
+- **Contributor watch:** no human PRs open — only 4 dependabot bumps
+  (checkout@7, setup-node@7, jsdom 30, pglite 0.5.5). Merging any of them
+  deploys prod (main auto-deploys), so they stay your call.
+- No Codex CLI exists in the remote container — the gate ran as independent
+  adversarial agents. A true Codex pass stays available from your machine.
+
 ## 2026-07-14 (session close, v35) — Kevin's staging round + gate rounds 4-5
 
 Kevin live-tested the reshape on staging, found the Spotify canonical-host

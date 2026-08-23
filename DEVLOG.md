@@ -2,6 +2,50 @@
 
 Newest first. One entry per meaningful unit of work.
 
+## 2026-08-23 — Portola Week + Folsom on the board, ACL made drop-ready, a field-hardening gate
+
+- **The Portola board now holds the crew's whole weekend**: the official
+  Portola Week program (21 Goldenvoice shows, Thu Sept 24 – Sun Sept 27,
+  announced Aug 18) as an AFTERS section and Folsom Street Fair weekend
+  (the fair + Horse Meat Disco, Magnitude, PERVERT XXL, DEVIANTS, Real
+  Bad 37, BRUT, Disco Daddy) as a FOLSOM section — on the same board, same
+  picks. Horse Meat Disco (the crew ask): **Fri Sept 25, Public Works,
+  9 PM–3 AM**, verified against multiple listings; a stale 2024 Tixr link
+  circulates, the real tickets are at sickening.events. Mechanism: an
+  afters appearance is its own artists[] entry; a name matching a lineup
+  artist unifies the pick/aura/notes on purpose, and lineup cards learned
+  a venue · time sub-label. Friday is conflict-free — that's HMD night.
+- **ACL set times ARE out** (week of Aug 17, both weekends) — and NOT
+  ingested, on purpose: this cloud session's egress policy can't reach the
+  JS-rendered schedule page, and 14 research agents + a 3-agent snippet-
+  mining round recovered only the evening headline blocks (~6 of ~30
+  sets/day). A 10%-populated grid lies harder than an honest lineup view.
+  Instead the two-weekend scheduled SHAPE shipped end to end (per-set
+  weekend tags, weekday day keys so day notes survive the flip, one
+  weekend on the grid at a time, per-weekend day-rule dates, validator +
+  docs + tests) — **pasting the grids from aclfestival.com/schedule is now
+  a pure data drop**, with verified evening anchors in acl-2026.json's
+  meta.note to cross-check against.
+- **An adversarial gate over the sync/offline/multi-user surface** (three
+  find lenses, every finding independently re-verified in code; 18
+  confirmed, 1 refuted, 36 invariants held). Fixed with regression tests:
+  the playlist-entry pending-subtraction wedge (the note-fragment bug's
+  twin — reproduced, then fixed atomically); festival JSONs moving to a
+  persistent SW cache so a CACHE_VERSION bump no longer wipes every
+  festival an offline device had opened (+ a rescue migration); 8s boot
+  fetch timeouts (dead festival WiFi = blank page, cache had the doc all
+  along); Safari 15.x getting NO sync timeout at all; the blocked-state
+  dot honestly staying blocked through unchanged polls; prototype-shaped
+  festival ids; storage-blocked boot crash; clientId clobbering pending.
+  Deferred with writeups: merge-SQL null semantics, octet_length vs
+  JSON.stringify cap mismatch, DIAGNOSE race misattribution, beacon
+  re-push leaf revert, poll teardown after leaving a crew, offline-first
+  boot.
+- 176 → 191 tests (190 pass, 1 env-gated skip). SW v36→v38. Branch
+  `claude/festival-lineup-integration-zs0s8l`, preview only — promote is
+  Kevin's call. No Codex CLI in the remote container; the gate ran as
+  independent adversarial agents instead.
+
 ## 2026-07-14 — The identity night: me link → model pivot → fest-first, four gates
 
 - **One overnight session moved the app onto Kevin's real model.** It started
