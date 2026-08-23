@@ -51,14 +51,23 @@ export function validateFestivalDoc(fest, { filename } = {}) {
       .map((a) => a && a.day)
       .filter((d) => typeof d === 'string' && !/[&+/]|\s+and\s+/i.test(d)),
   );
-  const artistNames = new Set();
+  // name -> Set of day strings seen. A same-name entry on a DIFFERENT day is
+  // a real reappearance (a lineup artist playing an afters/Folsom show) —
+  // picks/auras/notes unify by exact name on purpose. The warning stays for
+  // true dupes: same day, or no day to tell the two apart.
+  const artistNames = new Map();
   (Array.isArray(fest.artists) ? fest.artists : []).forEach((a, i) => {
     if (!a || !a.name || typeof a.name !== 'string') err(`artists[${i}]: missing name`);
     else if (a.name.length > 100) err(`artists[${i}]: name over 100 chars`);
     else {
       const key = a.name.toUpperCase();
-      if (artistNames.has(key)) warn(`duplicate artist in artists[]: ${a.name}`);
-      artistNames.add(key);
+      const dayStr = typeof a.day === 'string' ? a.day : '';
+      const seen = artistNames.get(key);
+      if (seen && (!dayStr || seen.has(dayStr) || seen.has(''))) {
+        warn(`duplicate artist in artists[]: ${a.name}${dayStr ? ` (day ${JSON.stringify(dayStr)})` : ''}`);
+      }
+      if (seen) seen.add(dayStr);
+      else artistNames.set(key, new Set([dayStr]));
     }
     if (a && a.time && !TIME_RE.test(a.time)) err(`artists[${i}] (${safeKey(a.name)}): unparseable time ${JSON.stringify(safeKey(a.time))}`);
     if (a && a.weekends && !['W1', 'W2', 'both'].includes(a.weekends)) err(`artists[${i}] (${safeKey(a.name)}): weekends must be W1|W2|both`);

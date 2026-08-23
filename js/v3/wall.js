@@ -690,7 +690,11 @@ function renderWallInner(root, ctx) {
     const showTags = !ctx.weekend || ctx.weekend === 'all';
     for (const a of list) {
       const tag = showTags && (a.weekends === 'W1' || a.weekends === 'W2') ? a.weekends : undefined;
-      grid.appendChild(renderCard(a.name, ctx, { tag }));
+      // A lineup entry can be an EVENT (afters, Folsom) — venue rides in
+      // `stage`, hours in `time`; without this sub-label the card would hide
+      // both, and a card that hides where-and-when is a card that lies.
+      const sub = [a.stage, a.time].filter(Boolean).join(' · ');
+      grid.appendChild(renderCard(a.name, ctx, { tag, time: sub || undefined }));
     }
     root.appendChild(grid);
     // Day notes with personal pins live under each real day's cards (21e).

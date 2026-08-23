@@ -2,9 +2,9 @@
   "id": "portola-2026",
   "name": "Portola",
   "year": "'26",
-  "subtitle": "Pier 80",
+  "subtitle": "Pier 80 · with Portola Week afters & Folsom",
   "location": "San Francisco, CA",
-  "dates": "September 26–27, 2026",
+  "dates": "September 26–27, 2026 · Portola Week afters Sept 24–27 · Folsom Street Fair Sun Sept 27",
   "accent": "56, 189, 248",
   "status": "lineup",
   "artists": [
@@ -255,18 +255,306 @@
     {
       "name": "Despacio",
       "day": "Saturday & Sunday"
+    },
+    {
+      "name": "Soulwax",
+      "day": "Afters",
+      "stage": "Thu · Regency Ballroom",
+      "time": "8 PM"
+    },
+    {
+      "name": "Black Rave Culture",
+      "day": "Afters",
+      "stage": "Thu · Club Six",
+      "time": "10 PM"
+    },
+    {
+      "name": "Despacio",
+      "day": "Afters",
+      "stage": "Fri · Pier 80 (loyalty invite)",
+      "time": "5 PM - 11 PM"
+    },
+    {
+      "name": "2manydjs",
+      "day": "Afters",
+      "stage": "Fri · 1015 Folsom",
+      "time": "10 PM - 2 AM"
+    },
+    {
+      "name": "Channel Tres",
+      "day": "Afters",
+      "stage": "Fri · Regency Ballroom",
+      "time": "8 PM"
+    },
+    {
+      "name": "Jyoty",
+      "day": "Afters",
+      "stage": "Fri · Regency Ballroom",
+      "time": "8 PM"
+    },
+    {
+      "name": "Gelli Haha",
+      "day": "Afters",
+      "stage": "Fri · Regency Ballroom",
+      "time": "8 PM"
+    },
+    {
+      "name": "Six Sex",
+      "day": "Afters",
+      "stage": "Fri · Great American Music Hall",
+      "time": "8 PM"
+    },
+    {
+      "name": "Neil Frances",
+      "day": "Afters",
+      "stage": "Fri · 888 Garage",
+      "time": "10 PM"
+    },
+    {
+      "name": "Sam Alfred",
+      "day": "Afters",
+      "stage": "Fri · Monarch",
+      "time": "10 PM"
+    },
+    {
+      "name": "Skiis",
+      "day": "Afters",
+      "stage": "Fri · Monarch",
+      "time": "10 PM"
+    },
+    {
+      "name": "Ranger Trucco",
+      "day": "Afters",
+      "stage": "Fri · The Great Northern",
+      "time": "10 PM - 2 AM"
+    },
+    {
+      "name": "Loods",
+      "day": "Afters",
+      "stage": "Fri · The Great Northern",
+      "time": "10 PM - 2 AM"
+    },
+    {
+      "name": "Horse Meat Disco",
+      "day": "Afters & Folsom",
+      "stage": "Fri · Public Works",
+      "time": "9 PM - 3 AM"
+    },
+    {
+      "name": "Fcukers",
+      "day": "Afters",
+      "stage": "Sat · Public Works"
+    },
+    {
+      "name": "Chloé Caillet",
+      "day": "Afters",
+      "stage": "Sat · Public Works"
+    },
+    {
+      "name": "Parcels",
+      "day": "Afters",
+      "stage": "Sat · Regency Ballroom",
+      "time": "10 PM"
+    },
+    {
+      "name": "Velvet Trip",
+      "day": "Afters",
+      "stage": "Sat · Regency Ballroom",
+      "time": "10 PM"
+    },
+    {
+      "name": "Groove Armada",
+      "day": "Afters",
+      "stage": "Sat · The Great Northern"
+    },
+    {
+      "name": "Max Styler",
+      "day": "Afters",
+      "stage": "Sat · Audio"
+    },
+    {
+      "name": "Airwolf Paradise",
+      "day": "Afters",
+      "stage": "Sat · Audio"
+    },
+    {
+      "name": "Jigitz",
+      "day": "Afters",
+      "stage": "Sat · Monarch",
+      "time": "10 PM - 3 AM"
+    },
+    {
+      "name": "Clearcast",
+      "day": "Afters",
+      "stage": "Sat · Monarch",
+      "time": "10 PM - 3 AM"
+    },
+    {
+      "name": "Overmono",
+      "day": "Afters",
+      "stage": "Sun · Public Works",
+      "time": "10 PM - 2 AM"
+    },
+    {
+      "name": "Ben UFO",
+      "day": "Afters",
+      "stage": "Sun · Public Works",
+      "time": "10 PM - 2 AM"
+    },
+    {
+      "name": "erika b2b sfcowboy",
+      "day": "Afters",
+      "stage": "Sun · Public Works",
+      "time": "10 PM - 2 AM"
+    },
+    {
+      "name": "horsegiirL",
+      "day": "Afters",
+      "stage": "Sun · The Midway",
+      "time": "10 PM"
+    },
+    {
+      "name": "VTSS",
+      "day": "Afters",
+      "stage": "Sun · The Midway",
+      "time": "10 PM"
+    },
+    {
+      "name": "Two Shell",
+      "day": "Afters",
+      "stage": "Sun · The Midway",
+      "time": "10 PM"
+    },
+    {
+      "name": "MGNA Crrrta",
+      "day": "Afters",
+      "stage": "Sun · The Midway",
+      "time": "10 PM"
+    },
+    {
+      "name": "SG Lewis",
+      "day": "Afters",
+      "stage": "Sun · The Great Northern",
+      "time": "10 PM"
+    },
+    {
+      "name": "Puffie",
+      "day": "Afters",
+      "stage": "Sun · The Great Northern",
+      "time": "10 PM"
+    },
+    {
+      "name": "Fatboy Slim",
+      "day": "Afters",
+      "stage": "Sun · 888 Garage",
+      "time": "10 PM"
+    },
+    {
+      "name": "Silva Bumpa",
+      "day": "Afters",
+      "stage": "Sun · Monarch",
+      "time": "10 PM - 3 AM"
+    },
+    {
+      "name": "Dean Turnley",
+      "day": "Afters",
+      "stage": "Sun · Monarch",
+      "time": "10 PM - 3 AM"
+    },
+    {
+      "name": "Azzecca",
+      "day": "Afters",
+      "stage": "Sun · Audio"
+    },
+    {
+      "name": "JT",
+      "day": "Afters",
+      "stage": "Sun · Rickshaw Stop",
+      "time": "10 PM"
+    },
+    {
+      "name": "Naisha",
+      "day": "Afters",
+      "stage": "Sun · Rickshaw Stop",
+      "time": "10 PM"
+    },
+    {
+      "name": "BRUT SF",
+      "day": "Folsom",
+      "stage": "Fri · DNA Lounge",
+      "time": "10 PM - 4 AM"
+    },
+    {
+      "name": "Magnitude",
+      "day": "Folsom",
+      "stage": "Sat · SVN West",
+      "time": "9 PM - 5 AM"
+    },
+    {
+      "name": "PERVERT XXL",
+      "day": "Folsom",
+      "stage": "Sat · The Midway",
+      "time": "10 PM - 6 AM"
+    },
+    {
+      "name": "Folsom Street Fair",
+      "day": "Folsom",
+      "stage": "Sun · Folsom St, 8th-13th",
+      "time": "11 AM - 6 PM"
+    },
+    {
+      "name": "DEVIANTS",
+      "day": "Folsom",
+      "stage": "Sun · SVN West",
+      "time": "7 PM - 2 AM"
+    },
+    {
+      "name": "Real Bad 37",
+      "day": "Folsom",
+      "stage": "Sun · 1015 Folsom",
+      "time": "8 PM - 5 AM"
+    },
+    {
+      "name": "Disco Daddy",
+      "day": "Folsom",
+      "stage": "Sun · SF Eagle",
+      "time": "7 PM - 2 AM"
     }
   ],
   "meta": {
     "announcementStatus": "lineup-with-days",
-    "researchedAt": "2026-07-07",
+    "researchedAt": "2026-08-23",
     "sources": [
       "https://portolamusicfestival.com/",
       "https://aegwebprod.blob.core.windows.net/content/portola/2026/portola-2026-lineup.jpg",
       "https://portolamusicfestival.com/set-times/",
       "https://portolamusicfestival.com/stage-lineups/",
-      "https://abc7news.com/post/portola-2026-lineup-dates-ticket-details-released-san-francisco-music-festival-pier-80/19189548/"
+      "https://abc7news.com/post/portola-2026-lineup-dates-ticket-details-released-san-francisco-music-festival-pier-80/19189548/",
+      "https://portolamusicfestival.com/portola-week/",
+      "https://dothebay.com/portolaweek",
+      "https://gvwire.com/2026/08/18/goldenvoice-announces-return-of-portola-week-with-15-plus-san-francisco-shows/",
+      "https://edmidentity.com/2026/08/18/portola-week-2026-lineup/",
+      "https://sickening.events/e/bearracuda-san-francisco-hmd",
+      "https://thegaycalendar.com/f/folsome-street-fair",
+      "https://www.folsomstreet.org/fs-events-calendar",
+      "https://www.eventbrite.com/e/deviants-adult-arcade-the-folsom-street-fair-afterparty-tickets-1995206717000"
     ],
-    "note": "Complete list — 62 billed acts, transcribed directly from the official 2026 poster art (released 2026-05-28), which prints every act under a \"SATURDAY, SEP 26\" or \"SUNDAY, SEP 27\" header. Not truncated. Despacio (James Murphy/2manydjs' all-vinyl sound installation) is billed separately as \"ALL WEEKEND LONG,\" so it's tagged for both days rather than one."
+    "note": "Portola Week (official Goldenvoice afters program, announced 2026-08-18: 21 shows Thu Sept 24 - Sun Sept 27; presale Aug 20, general Aug 21) added as an \"Afters\" section, and Folsom Street Fair weekend as a \"Folsom\" section, 2026-08-23. Mechanism: an afters/Folsom appearance is its own entry; when the name matches a lineup artist (Overmono, Fatboy Slim, ...) the pick/aura/notes unify by exact name on purpose - one artist, one pick, cards in both sections. Night + venue ride in `stage`, hours in `time`; cards render them as a sub-label. Horse Meat Disco (the crew ask - Bearracuda Folsom Street party, confirmed Fri Sept 25, Public Works, 9 PM-3 AM, 21+, tickets sickening.events; NOTE a stale 2024 Tixr link circulates - IDs are sequential, 114080 is the 2024 edition) is day-tagged \"Afters & Folsom\" so it renders under both. Curation: title-billed artists and lineup artists get cards; supporting-roster DJs noted here instead: Rory Phillips (w/ 2manydjs), Boygirl + Femme Jatale b2b Erika (w/ Six Sex), Kaytree + a program audio loft (Public Works Sun), Kavari (The Midway Sun), Buck Wilson (Monarch Sun), Mateo Segade (HMD upstairs). Sourcing: egress-proxied research - facts come from ticketing-page titles/search listings (AXS/Eventbrite/Tixr/venue calendars) cross-checked in aggregate; HMD, fair date/hours, Magnitude, DEVIANTS, Real Bad 37, and Groove Armada (Sat, The Great Northern) were re-verified individually 2026-08-23. Times not confirmed anywhere yet: Fcukers/Chloé Caillet (Public Works Sat), Groove Armada, Max Styler/Airwolf Paradise + Azzecca (Audio) - cards carry venue only until they post (venue norm ~10 PM). DESPACIO Pier 80 Friday is limited to every-year passholders. No unofficial/renegade afters existed as of 2026-08-23 - they historically appear 2-4 weeks out; re-scan mid-September. Folsom fair stage/DJ talent also unannounced yet (folsomstreet.org posts closer in). Weekend-conflict map for planning: Fri is conflict-free (HMD night); Sat daytime Folsom events run opposite Portola day 1; Magnitude/PERVERT XXL start as day 1 ends; Sun daytime the fair runs opposite Portola day 2; DEVIANTS/Real Bad overlap the Sunday afters."
+  },
+  "dayMeta": {
+    "Saturday": {
+      "wd": "Sat",
+      "date": "Sep 26"
+    },
+    "Sunday": {
+      "wd": "Sun",
+      "date": "Sep 27"
+    },
+    "Afters": {
+      "date": "Sep 24-27"
+    },
+    "Folsom": {
+      "date": "Sep 25-27"
+    }
   }
 }
