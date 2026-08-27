@@ -29,11 +29,15 @@ branch (Portola Week afters + Folsom, ACL two-weekend shape, hardening gate)
   for the walk), and whether the two email addresses in old commits of the
   Ray checkpoint doc (redacted at HEAD) warrant a history rewrite — the
   recommendation is no.
-- **Next in the queue after Portola**: ACL set times (out since ~Aug 17;
-  the two-weekend shape is built — handoff in
-  `claude-plans/2026-08-23-local-run-handoff.md`), Seismic lineup refresh,
-  Lost Lands (Sep 18 — check for set times), then Ray's fork items and the
-  "schedule dropped → PR → Slack approve" watcher (banked as a future build).
+- **Next in the queue after Portola** (scouted 2026-08-27, details in
+  `claude-plans/2026-08-27-next-drops-scout.md`): **ACL** — the six
+  weekend/day grids went live Aug 26 as poster images (same recipe as
+  Portola; the two-weekend shape is built; Kings of Leon replaces Skrillex
+  W2 Friday). **Lost Lands** (Sep 18) — day-level rosters are out, set
+  times not yet; re-check in a week. **Seismic** — still phase one (34
+  names ≈ our 33), set times land in November. Then Ray's fork items and
+  the "schedule dropped → PR → Slack approve" watcher
+  (`claude-plans/2026-08-27-schedule-drop-watcher-future-build.md`).
 
 ## 2026-08-10 — Ray's fork hit a working checkpoint (awaiting Kevin's review)
 
