@@ -1,4 +1,17 @@
-# NOW — festival-navigator: Portola set times STAGED on `portola-set-times` (v39) · prod at v35
+# NOW — festival-navigator: Portola set times LIVE ON PROD (v39)
+
+## 2026-08-27 (later) — PROMOTED: PR #10 merged, v39 on all three domains
+
+Kevin's call ("I'm good to promote"). PR #10 merged to `main` (05b95db);
+`fest` / `festival` / `crew.kevinhg.com` all served `festival-nav-v39` within
+two minutes, prod `portola-2026.json` is `scheduled` with 32 + 32 sets. Also
+on his word: Nhu (19 picks) and Kat (9, Sunday only) were prefilled into the
+Portola 26 crew as placeholder members through the real merge — their claim
+links make the picks theirs; the throwaway preview crew + person row were
+deleted from Neon. Cross-check of iMessage vs app picks: Drew's app picks
+cover every poster highlight; **Ross's app is missing Fatboy Slim** (checked
+in his official-app screenshot) — Kevin's to mention. `main` = production;
+work continues on `portola-set-times`.
 
 ## 2026-08-27 — Portola set times dropped; the branch is ready for Kevin's promote call
 
