@@ -276,6 +276,80 @@ export function groupByDay(artists, knownDays = []) {
   return ordered;
 }
 
+// What a SCHEDULED wall still owes the lineup list: the artists[] entries the
+// grid does not carry. Two kinds, in one ordered map —
+//   - sections keyed to a non-grid day ("Afters", "Folsom"): events with a
+//     venue in `stage` and hours in `time`, rendered as card sections under
+//     the grid exactly as the lineup wall rendered them. A combined day
+//     ("Afters & Folsom") lands in each. A lineup artist's afters show is a
+//     separate artists[] entry, so it lands here even though the SAME name
+//     also sits on the grid — one artist, one pick, cards in both places.
+//   - '' (everything else): a lineup artist with no set on any grid day yet.
+//     Grid-day entries whose name IS on the grid are skipped — that's the
+//     grid's job. Deduped by name.
+// Weekend-filtered like the grid, so a W2-only act stays out of a W1 view.
+export function extraSectionsOf(fest, scheduledNames, weekend) {
+  const gridDays = Object.keys(fest.days || {});
+  const known = knownDaysOf(fest);
+  const groups = new Map();
+  const seenLoose = new Set();
+  const add = (key, a) => {
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(a);
+  };
+  for (const a of applyWeekend(fest.artists || [], weekend)) {
+    const days = splitDays(a.day, known) || [a.day || ''];
+    for (const d of days) {
+      if (gridDays.includes(d)) {
+        if (scheduledNames.has(a.name) || seenLoose.has(a.name)) continue;
+        seenLoose.add(a.name);
+        add('', a);
+      } else if (d) {
+        add(d, a);
+      } else if (!scheduledNames.has(a.name) && !seenLoose.has(a.name)) {
+        seenLoose.add(a.name);
+        add('', a);
+      }
+    }
+  }
+  const ordered = new Map();
+  for (const d of known) if (groups.has(d) && !gridDays.includes(d)) ordered.set(d, groups.get(d));
+  for (const [k, v] of groups) if (k && !ordered.has(k)) ordered.set(k, v);
+  if (groups.has('')) ordered.set('', groups.get(''));
+  return ordered;
+}
+
+// One lineup-style section: a day rule, a card grid, the day's notes. Shared
+// by the lineup wall and by the scheduled wall's extra sections so an afters
+// card looks and behaves the same whichever wall it sits on.
+function renderLineupGroup(root, day, list, ctx, fest, { header, sub } = {}) {
+  const meta = (fest.dayMeta || {})[day];
+  root.appendChild(dayHeader(
+    header || day || 'THE LINEUP',
+    sub !== undefined ? sub : (day ? dayRuleSub(meta) : (ctx.sort === 'billing' ? 'BILLING ORDER' : '')),
+    day && ctx.onOpenDayNotes ? {
+      noteCount: model.noteCount(state.crewDoc, ctx.fid, 'day', day),
+      onOpenNotes: () => ctx.onOpenDayNotes(day),
+    } : {},
+  ));
+  const grid = document.createElement('div');
+  grid.className = 'wall-grid';
+  const showTags = !ctx.weekend || ctx.weekend === 'all';
+  for (const a of list) {
+    const tag = showTags && (a.weekends === 'W1' || a.weekends === 'W2') ? a.weekends : undefined;
+    // A lineup entry can be an EVENT (afters, Folsom) — venue rides in
+    // `stage`, hours in `time`; without this sub-label the card would hide
+    // both, and a card that hides where-and-when is a card that lies.
+    const subLabel = [a.stage, a.time].filter(Boolean).join(' · ');
+    grid.appendChild(renderCard(a.name, ctx, { tag, time: subLabel || undefined }));
+  }
+  root.appendChild(grid);
+  // Day notes with personal pins live under each real day's cards (21e).
+  if (day && ctx.onNotesChange) {
+    root.appendChild(notesSection('day', day, day, ctx, ctx.onNotesChange));
+  }
+}
+
 function dayHeader(label, sub, opts = {}) {
   const rule = document.createElement('div');
   rule.className = 'day-rule';
@@ -628,6 +702,15 @@ function renderWallInner(root, ctx) {
     if (layout.stages.length) root.appendChild(renderStageStrip(layout));
     for (const day of Object.keys(fest.days)) renderScheduledDay(root, day, ctx, layout, wk);
     wireTimesScrollSync(root);
+    // The grid carries the festival days; everything the lineup list still
+    // owns (afters, Folsom, sets not yet timed) follows it as card sections.
+    // Without this, flipping a fest to `scheduled` silently deleted every
+    // afters card the crew had been picking on for weeks.
+    const scheduledNames = new Set();
+    for (const day of Object.keys(fest.days)) for (const a of dayArtists(day)) scheduledNames.add(a.name);
+    for (const [day, list] of extraSectionsOf(fest, scheduledNames, wk)) {
+      renderLineupGroup(root, day, list, ctx, fest, day ? {} : { header: 'EVERYTHING ELSE', sub: 'NO SET TIME YET' });
+    }
     if (ctx.onNotesChange) {
       root.appendChild(dayHeader(`NOTES · ${fest.name.toUpperCase()}`, ''));
       root.appendChild(notesSection('fest', null, '', ctx, ctx.onNotesChange));
@@ -658,17 +741,14 @@ function renderWallInner(root, ctx) {
       for (const a of matches) grid.appendChild(renderCard(a.name, ctx, { time: `${a.stage} · ${a.startStr}` }));
       root.appendChild(grid);
     }
-    // Lineup entries with no set time yet still deserve to be findable —
-    // within the selected weekend: a W2-only act must not resurface here
-    // after the grid correctly filtered it out.
-    const extra = applyFilter(applyWeekend((fest.artists || []).filter((a) => !scheduledNames.has(a.name)), wk), ctx.query);
-    if (extra.length) {
+    // Afters/Folsom cards and lineup entries with no set time yet still
+    // deserve to be findable — within the selected weekend: a W2-only act
+    // must not resurface here after the grid correctly filtered it out.
+    for (const [day, list] of extraSectionsOf(fest, scheduledNames, wk)) {
+      const matches = applyFilter(list, ctx.query);
+      if (!matches.length) continue;
       any = true;
-      root.appendChild(dayHeader('EVERYTHING ELSE', 'NO SET TIME YET'));
-      const grid = document.createElement('div');
-      grid.className = 'wall-grid';
-      for (const a of extra) grid.appendChild(renderCard(a.name, ctx));
-      root.appendChild(grid);
+      renderLineupGroup(root, day, matches, ctx, { ...fest, dayMeta: fest.dayMeta }, day ? {} : { header: 'EVERYTHING ELSE', sub: 'NO SET TIME YET' });
     }
     if (!any) {
       const empty = document.createElement('div');
@@ -699,33 +779,7 @@ function renderWallInner(root, ctx) {
   const grouped = ctx.sort === 'billing' || ctx.sort === 'day'
     ? groupByDay(artists, knownDaysOf(fest))
     : new Map([['', artists]]);
-  for (const [day, list] of grouped) {
-    const meta = (fest.dayMeta || {})[day];
-    root.appendChild(dayHeader(
-      day || 'THE LINEUP',
-      day ? dayRuleSub(meta) : (ctx.sort === 'billing' ? 'BILLING ORDER' : ''),
-      day && ctx.onOpenDayNotes ? {
-        noteCount: model.noteCount(state.crewDoc, ctx.fid, 'day', day),
-        onOpenNotes: () => ctx.onOpenDayNotes(day),
-      } : {},
-    ));
-    const grid = document.createElement('div');
-    grid.className = 'wall-grid';
-    const showTags = !ctx.weekend || ctx.weekend === 'all';
-    for (const a of list) {
-      const tag = showTags && (a.weekends === 'W1' || a.weekends === 'W2') ? a.weekends : undefined;
-      // A lineup entry can be an EVENT (afters, Folsom) — venue rides in
-      // `stage`, hours in `time`; without this sub-label the card would hide
-      // both, and a card that hides where-and-when is a card that lies.
-      const sub = [a.stage, a.time].filter(Boolean).join(' · ');
-      grid.appendChild(renderCard(a.name, ctx, { tag, time: sub || undefined }));
-    }
-    root.appendChild(grid);
-    // Day notes with personal pins live under each real day's cards (21e).
-    if (day && ctx.onNotesChange) {
-      root.appendChild(notesSection('day', day, day, ctx, ctx.onNotesChange));
-    }
-  }
+  for (const [day, list] of grouped) renderLineupGroup(root, day, list, ctx, fest);
 
   // Fest-wide notes close the wall (21c bottom).
   if (ctx.onNotesChange) {

@@ -9,7 +9,7 @@ import * as sync from '../sync.js';
 import * as spotify from '../spotify.js';
 import * as model from './model.js';
 import { loadFestivalIndex, loadFestival, loadCustomFestivals, FESTIVAL_INDEX, defaultFestivalId } from '../festivals.js';
-import { renderWall, refreshCard, showUndoToast, showToast, wireScrollspy, colorIndexOf, groupByDay, knownDaysOf, scheduledWeekendOf } from './wall.js';
+import { renderWall, refreshCard, showUndoToast, showToast, wireScrollspy, colorIndexOf, groupByDay, knownDaysOf, scheduledWeekendOf, extraSectionsOf } from './wall.js';
 import { disclosureFold, eqLoader, festRow } from './tools.js';
 import { openArtistSheet, openDayNotes, openAllNotes, closeSheet, refreshOpenSheet, sheetChrome, dialogize, rememberOpener } from './notes.js';
 import { renderSettings, appSettings, openSubviewByKey } from './settings.js';
@@ -214,9 +214,18 @@ function renderDayNav() {
   rail.textContent = '';
   const fest = state.fest();
   const scheduled = fest.days && Object.keys(fest.days).length;
-  const groups = scheduled
-    ? Object.keys(fest.days)
-    : [...groupByDay(fest.artists || [], knownDaysOf(fest)).keys()].filter(Boolean);
+  // A scheduled fest's tabs are the grid days PLUS the sections the wall
+  // renders under the grid (afters, Folsom) — the tab bar must mirror what
+  // the wall actually shows, or a section exists with no way to jump to it.
+  let groups;
+  if (scheduled) {
+    const wk = scheduledWeekendOf(fest, ctx.weekend);
+    const scheduledNames = new Set();
+    for (const d of Object.keys(fest.days)) for (const a of state.getDayArtists(d, wk)) scheduledNames.add(a.name);
+    groups = [...Object.keys(fest.days), ...[...extraSectionsOf(fest, scheduledNames, wk).keys()].filter(Boolean)];
+  } else {
+    groups = [...groupByDay(fest.artists || [], knownDaysOf(fest)).keys()].filter(Boolean);
+  }
   for (const day of groups) {
     const meta = (fest.dayMeta || {})[day];
     const jump = () => {
