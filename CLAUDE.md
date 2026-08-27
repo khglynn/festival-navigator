@@ -112,3 +112,15 @@ Non-inferable facts only (the code answers everything else — read it).
   Kevin's call, always.
 - Adding a festival: `docs/add-a-festival.md`. Validate with
   `node scripts/validate-festivals.mjs` before committing — CI enforces it.
+- **Artist names in a live festival file are pick keys, and there is no
+  rename path.** `tests/fixtures/live-pick-keys.json` freezes them
+  (`node scripts/freeze-pick-keys.mjs <id>` — run it the day real people
+  start picking in a fest, and before any set-times edit); a name that
+  disappears fails CI. Grid names must match `artists[]` byte for byte —
+  the validator makes a case-only match an ERROR because it would split
+  the crew's picks between two spellings forever (2026-08-27).
+- **Festival JSONs are served network-first by the service worker** (4 s
+  budget, persistent cache as the offline answer). They used to be
+  cache-first in the persistent data cache, which meant a set-times drop
+  reached an online phone one open LATE (found 2026-08-27). If a data drop
+  "isn't showing", the SW is the first suspect — see the stale-SW note above.

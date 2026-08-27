@@ -1,4 +1,32 @@
-# NOW — festival-navigator: fest-first reshape LIVE ON PROD (v35)
+# NOW — festival-navigator: Portola set times STAGED on `portola-set-times` (v39) · prod at v35
+
+## 2026-08-27 — Portola set times dropped; the branch is ready for Kevin's promote call
+
+The official Sat/Sun posters went up this afternoon and the crew chat is
+already trading screenshots. Branch `portola-set-times` = the 08-23 cloud
+branch (Portola Week afters + Folsom, ACL two-weekend shape, hardening gate)
++ the v31-polish docs + today's drop. Full story: DEVLOG 2026-08-27.
+
+- **Data**: `portola-2026.json` is `scheduled` — 64 sets, five columns as
+  printed, Kaytree added, every live pick key byte-stable (tripwire:
+  `tests/live-pick-keys.test.mjs`). Three independent poster readings
+  agreed on every box.
+- **Two gaps the drop exposed in the cloud branch, both fixed + tested**: a
+  scheduled wall used to delete the Afters/Folsom sections (and their tabs);
+  the persistent data cache was cache-first, so a drop reached phones one
+  open late. Now: grid → AFTERS → FOLSOM → EVERYTHING ELSE; festival JSONs
+  network-first (4 s budget) with the cache as the offline answer.
+- **Backups taken first**: Neon branch `backup-2026-08-27-pre-portola-drop`
+  + JSON export of all 36 crews at
+  `~/.claude/plans/festival-navigator-backups/2026-08-27/` (outside the repo).
+- **Promote = Kevin's call**: merge `portola-set-times` → `main` deploys
+  prod; SW v39 force-refreshes every installed client. Then verify all three
+  domains serve `festival-nav-v39` and open the Portola board on a phone.
+- **Next in the queue after Portola**: ACL set times (out since ~Aug 17;
+  the two-weekend shape is built — handoff in
+  `claude-plans/2026-08-23-local-run-handoff.md`), Seismic lineup refresh,
+  Lost Lands (Sep 18 — check for set times), then Ray's fork items and the
+  "schedule dropped → PR → Slack approve" watcher (banked as a future build).
 
 ## 2026-08-10 — Ray's fork hit a working checkpoint (awaiting Kevin's review)
 

@@ -2,6 +2,52 @@
 
 Newest first. One entry per meaningful unit of work.
 
+## 2026-08-27 — Portola set times: the drop, and what the drop exposed
+
+- **Portola's official set-times posters went up** (site + Instagram,
+  Aug 27 afternoon; the crew chat lit up within the hour). Transcribed from
+  the 1080px official JPGs by three readers — two independent model
+  readers in a workflow plus a third pass — and reconciled box by box: all
+  64 sets agreed on stage, start and end; stage membership also matched
+  the four official per-stage lineup images. `portola-2026.json` gained
+  `days{}` (Sat/Sun, five columns as printed incl. Despacio as one block),
+  `status: scheduled`, and one new name (Kaytree, Ship Tent Sun 1:40).
+  Every one of the crew's 49 live pick keys is on the grid under the same
+  bytes; all 62 names that prod served are still present.
+- **The drop exposed two real gaps in the cloud branch it landed on**, both
+  fixed with regression tests that fail on the pre-change code:
+  1. *A scheduled wall deleted the afters.* `renderWall` rendered only
+     `days{}` in scheduled mode — the 38 Afters and 8 Folsom cards the crew
+     had been picking on would have vanished the moment set times shipped,
+     and the tab bar with them. Now the grid renders the festival days, then
+     every remaining `artists[].day` group as card sections (`extraSectionsOf`,
+     shared by browse, search and the day tabs), then anything billed on a
+     grid day but missing from the grid under EVERYTHING ELSE.
+  2. *The persistent data cache was cache-first.* Festival JSONs were moved
+     to a version-proof cache on 08-23 (right) but served cache-first
+     (wrong for data): a set-times drop reached an online phone one open
+     LATE — "app is updated" → open → last week's lineup. Data is now
+     network-first with a 4 s budget, cache as the offline answer, and a
+     first open with nothing cached waits for the network instead of 503ing.
+     Tested against the real `service-worker.js` in a vm sandbox.
+- **Validator grew teeth for grids**: grid names must match `artists[]` byte
+  for byte (a case-only match is an ERROR — it would split picks), no
+  overlapping sets on one stage, no set ending before it starts, and a
+  warning for a lineup artist billed on a grid day with no set there. The
+  rules key on `days{}` presence, like the renderer, not on status.
+- **The pick-key freeze**: `scripts/freeze-pick-keys.mjs` snapshots a live
+  festival's names into `tests/fixtures/live-pick-keys.json`;
+  `tests/live-pick-keys.test.mjs` fails if any later disappears. A rename
+  becomes a visible fixture edit. Portola frozen (81 names). Run it for ACL
+  and Seismic the day real people start picking there.
+- **Backups before touching anything**: Neon branch
+  `backup-2026-08-27-pre-portola-drop` (full DB, point-in-time, no compute)
+  plus a JSON export of all 36 crews and Kevin's crew doc in
+  `~/.claude/plans/festival-navigator-backups/2026-08-27/` (outside the
+  repo — it holds tokens).
+- 191 → 211 tests (210 pass, 1 env-gated skip). SW v38 → v39. Branch
+  `portola-set-times` = cloud branch + v31-polish docs + this.
+
 ## 2026-08-23 — Portola Week + Folsom on the board, ACL made drop-ready, a field-hardening gate
 
 - **The Portola board now holds the crew's whole weekend**: the official
