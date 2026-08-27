@@ -81,23 +81,29 @@ self.addEventListener('activate', (event) => {
     // persistent data cache BEFORE deleting them — an upgrading device keeps
     // every festival it has ever opened. Best-effort per entry: a rescue
     // failure must never block activation (the old worker would keep serving
-    // a stale shell forever).
-    try {
-      const data = await caches.open(DATA_CACHE);
-      for (const k of keys) {
-        if (k === CACHE_VERSION || k === DATA_CACHE) continue;
+    // a stale shell forever) — but it must not delete the fallback either. An
+    // old cache holding a festival copy that could NOT be rescued (quota,
+    // storage trouble) is that device's only offline copy: keep it —
+    // caches.match() searches every cache — and let the next activate retry.
+    let data = null;
+    try { data = await caches.open(DATA_CACHE); } catch { data = null; }
+    for (const k of keys) {
+      if (k === CACHE_VERSION || k === DATA_CACHE) continue;
+      let rescuedAll = true;
+      try {
         const old = await caches.open(k);
         for (const req of await old.keys()) {
           try {
             if (!isFestivalData(new URL(req.url))) continue;
+            if (!data) { rescuedAll = false; continue; }
             if (await data.match(req)) continue; // newer copy already there
             const hit = await old.match(req);
-            if (hit) await data.put(req, hit);
-          } catch { /* one bad entry must not strand the rest */ }
+            if (hit) await data.put(req, hit); else rescuedAll = false;
+          } catch { rescuedAll = false; }
         }
-      }
-    } catch { /* no rescue is still better than no activation */ }
-    await Promise.all(keys.filter((k) => k !== CACHE_VERSION && k !== DATA_CACHE).map((k) => caches.delete(k)));
+      } catch { rescuedAll = false; }
+      if (rescuedAll) { try { await caches.delete(k); } catch { /* next activate */ } }
+    }
     await self.clients.claim();
   })());
 });
@@ -145,42 +151,54 @@ self.addEventListener('fetch', (event) => {
   // open after that. Festival JSONs are small; a bounded wait for the live
   // copy is cheap on a good network and the cache answers on a dead one.
   if (isFestivalData(url)) {
-    event.respondWith(dataNetworkFirst(request));
+    event.respondWith(dataNetworkFirst(event));
     return;
   }
 
   // Static assets: cache-first, then update the cache in the background.
+  // The background write is registered with waitUntil SYNCHRONOUSLY (a late
+  // waitUntil after the response has been handed back is an error, and an
+  // unregistered write can be killed with the worker before it lands).
+  const refresh = fetchAndStore(request, CACHE_VERSION);
+  event.waitUntil(refresh.done);
   event.respondWith(
-    caches.match(request).then((cached) => {
-      const network = fetch(request).then((resp) => {
-        if (resp && resp.ok) {
-          const copy = resp.clone();
-          caches.open(CACHE_VERSION).then((c) => c.put(request, copy)).catch(() => {});
-        }
-        return resp;
-      }).catch(() => cached);
-      return cached || network;
-    })
+    caches.match(request).then((cached) => cached || refresh.response.catch(() => cached))
   );
 });
+
+// fetch() plus a cache write that the caller can register with waitUntil.
+// `response` settles as soon as the network answers (the caller can hand it
+// back without waiting for storage); `done` settles after the write, and
+// never rejects, so it is safe to hand to waitUntil as-is.
+function fetchAndStore(request, bucket) {
+  let stored = Promise.resolve();
+  const response = fetch(request).then((resp) => {
+    if (resp && resp.ok) {
+      const copy = resp.clone();
+      stored = caches.open(bucket).then((c) => c.put(request, copy)).catch(() => {});
+    }
+    return resp;
+  });
+  const done = response.then(() => stored, () => {});
+  return { response, done };
+}
 
 // Live copy if the network answers inside DATA_NETWORK_MS; otherwise the
 // cached copy (any bucket — index.json is also precached in the shell), and
 // if there is no cached copy at all, the network request however long it
-// takes. A late network success still refreshes the data cache, so the next
-// open on a slow network is one step fresher. Never a 503 for data we hold.
+// takes. A late network success still refreshes the data cache — and that
+// write is held open by waitUntil, so a phone that got the cached copy at
+// the 4 s mark and then heard back from the network keeps the fresh copy
+// for its next open even if the browser reaps the worker. Never a 503 for
+// data we hold.
 const DATA_NETWORK_MS = 4000;
-function dataNetworkFirst(request) {
-  const network = fetch(request).then((resp) => {
-    if (resp && resp.ok) {
-      const copy = resp.clone();
-      caches.open(DATA_CACHE).then((c) => c.put(request, copy)).catch(() => {});
-    }
-    return resp;
-  });
+function dataNetworkFirst(event) {
+  const { request } = event;
+  const refresh = fetchAndStore(request, DATA_CACHE);
+  event.waitUntil(refresh.done);
   const timeout = new Promise((resolve) => setTimeout(() => resolve(null), DATA_NETWORK_MS));
-  return Promise.race([network.catch(() => null), timeout]).then((live) => {
+  return Promise.race([refresh.response.catch(() => null), timeout]).then((live) => {
     if (live && live.ok) return live;
-    return caches.match(request).then((cached) => cached || network);
+    return caches.match(request).then((cached) => cached || refresh.response);
   });
 }
