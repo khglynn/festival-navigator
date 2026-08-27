@@ -19,9 +19,16 @@ branch (Portola Week afters + Folsom, ACL two-weekend shape, hardening gate)
 - **Backups taken first**: Neon branch `backup-2026-08-27-pre-portola-drop`
   + JSON export of all 36 crews at
   `~/.claude/plans/festival-navigator-backups/2026-08-27/` (outside the repo).
+- **Gated twice by Codex (SHIP WITH FIXES → all fixed), walked live on the
+  Vercel preview against the real merge.** 227 tests / 226 pass.
 - **Promote = Kevin's call**: merge `portola-set-times` → `main` deploys
   prod; SW v39 force-refreshes every installed client. Then verify all three
   domains serve `festival-nav-v39` and open the Portola board on a phone.
+- **Two small things only Kevin can say yes to**: delete the throwaway
+  preview crew (member `zz-preview-walk`, created 2026-08-27 in the prod DB
+  for the walk), and whether the two email addresses in old commits of the
+  Ray checkpoint doc (redacted at HEAD) warrant a history rewrite — the
+  recommendation is no.
 - **Next in the queue after Portola**: ACL set times (out since ~Aug 17;
   the two-weekend shape is built — handoff in
   `claude-plans/2026-08-23-local-run-handoff.md`), Seismic lineup refresh,

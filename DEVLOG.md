@@ -45,7 +45,37 @@ Newest first. One entry per meaningful unit of work.
   plus a JSON export of all 36 crews and Kevin's crew doc in
   `~/.claude/plans/festival-navigator-backups/2026-08-27/` (outside the
   repo — it holds tokens).
-- 191 → 211 tests (210 pass, 1 env-gated skip). SW v38 → v39. Branch
+- **Two Codex gate rounds over the whole branch diff** (`git diff
+  origin/main...HEAD`, high effort, ~9 min each). Round 1: no P0 — every
+  live pick key intact — but three P1s and six P2s, all fixed the same
+  night: the late-network cache write in the new SW path was fire-and-
+  forget (a reaped worker could discard the fresh copy → held open with a
+  synchronous `waitUntil`, shell and navigation paths too); three raw
+  `localStorage` reads survived the 08-23 hardening and crashed a storage-
+  blocked Safari on crew activation (→ every read in `js/` now goes through
+  the guarded helpers); Day Image lost Afters/Folsom the moment Portola
+  went scheduled (→ it draws from `extraSectionsOf` like the wall); the
+  activate-time rescue could delete a device's only offline copy after a
+  failed migration (→ an old cache is kept until its festival entries are
+  rescued); malformed `days{}` / `stages` could 500 festival-add; TIME_RE
+  accepted 13:00 PM; overlap detection missed point-times and would have
+  flagged archived Lolla's two genuine simultaneous listings (→ judged on
+  renderer-resolved spans, as a WARNING; Portola held to zero); dupe
+  detection compared raw labels instead of rendered days. Round 2 verified
+  #1–#4 and #10 fixed and the rest partial; the partials closed in one more
+  commit (renderer-consistent split, `stages` guard, AM/PM case in
+  `timeToMinutes`, navigation lifetime, explicit error on a cold miss).
+  **Still Kevin's call**: commit `8f4a09d`/`66c4eed` history carries two
+  email addresses in the Ray checkpoint doc (redacted at HEAD; rewriting a
+  public branch's history is a bigger act than the exposure).
+- **Live preview walk** (Playwright, the real Vercel preview, the real
+  Neon merge): SAT / SUN / AFTERS / FOLSOM tabs; 64 grid cells; 38 + 8
+  section cards with venue · hours; tapping Overmono on the grid repainted
+  the Afters Overmono card too and the pick landed in the server doc; SW
+  v39 controlling with the persistent data cache beside it. A throwaway
+  "Portola 26" crew (member `zz-preview-walk`) was created in the prod DB
+  for the walk — delete on Kevin's word.
+- 191 → 227 tests (226 pass, 1 env-gated skip). SW v38 → v39. Branch
   `portola-set-times` = cloud branch + v31-polish docs + this.
 
 ## 2026-08-23 — Portola Week + Folsom on the board, ACL made drop-ready, a field-hardening gate
