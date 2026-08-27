@@ -3,7 +3,7 @@
 import * as state from '../state.js';
 import * as model from './model.js';
 import { parseBulkLineV4, LEVEL_LABELS_V4 } from '../parse.js';
-import { renderCard, groupByDay, knownDaysOf } from './wall.js';
+import { renderCard, groupByDay, knownDaysOf, scheduledWeekendOf, extraSectionsOf } from './wall.js';
 
 export const el = (tag, css, text) => {
   const n = document.createElement(tag);
@@ -210,16 +210,52 @@ export function openBulkPaste(host, actions) {
 // This one builds one day offscreen at a fixed share-friendly width, checks
 // the canvas is real, and says out loud when it can't.
 
-const dayArtistsFor = (day) => {
+// Share images honor the device's weekend the same way the wall does — a W1
+// phone must not export a day sheet carrying W2-only sets.
+function weekendPref(fest) {
+  let pref = 'all';
+  try { pref = localStorage.getItem(`fn_weekend_v1_${fest.id}`) || 'all'; } catch { /* memory-only */ }
+  return scheduledWeekendOf(fest, pref);
+}
+
+// Names on the grid (every grid day, selected weekend) — the set that decides
+// which artists[] entries the wall renders as sections under the grid.
+function gridNames(fest, wk) {
+  const names = new Set();
+  for (const d of Object.keys(fest.days || {})) for (const a of state.getDayArtists(d, wk)) names.add(a.name);
+  return names;
+}
+
+// The days a share image can be built for, in the wall's own order: grid
+// days, then the sections the wall renders under the grid (afters, Folsom),
+// then everything else. Flipping Portola to scheduled used to drop Afters and
+// Folsom from this list while the wall kept showing them (Codex gate,
+// 2026-08-27) — the exporter and the wall now draw from the same source.
+export function dayImageChoices(fest) {
+  if (fest.days && Object.keys(fest.days).length) {
+    const wk = weekendPref(fest);
+    return [...Object.keys(fest.days), ...extraSectionsOf(fest, gridNames(fest, wk), wk).keys()];
+  }
+  return [...groupByDay(fest.artists || [], knownDaysOf(fest)).keys()];
+}
+
+export function dayArtistsFor(day) {
   const fest = state.fest();
   if (fest.days && Object.keys(fest.days).length) {
-    return [...state.getDayArtists(day)]
-      .sort((x, y) => x.startMin - y.startMin)
-      .map((a) => ({ name: a.name, time: `${a.stage} · ${a.startStr}` }));
+    const wk = weekendPref(fest);
+    if (fest.days[day]) {
+      return [...state.getDayArtists(day, wk)]
+        .sort((x, y) => x.startMin - y.startMin)
+        .map((a) => ({ name: a.name, time: `${a.stage} · ${a.startStr}` }));
+    }
+    // A section under the grid: the same cards the wall shows there, venue ·
+    // hours as the sub-label.
+    const section = extraSectionsOf(fest, gridNames(fest, wk), wk).get(day) || [];
+    return section.map((a) => ({ name: a.name, time: [a.stage, a.time].filter(Boolean).join(' · ') || undefined }));
   }
   const groups = groupByDay(fest.artists || [], knownDaysOf(fest));
   return (groups.get(day) || []).map((a) => ({ name: a.name }));
-};
+}
 
 async function buildDayCanvas(day, ctx) {
   if (typeof window.html2canvas !== 'function') throw new Error('html2canvas-missing');
@@ -257,14 +293,12 @@ export function openDayImage(host, ctx, onBack) {
   const status = el('div', 'color: var(--text-tertiary); font-size: 11.5px; font-weight: 600;');
   const fest = state.fest();
   const scheduled = fest.days && Object.keys(fest.days).length;
-  const days = scheduled
-    ? Object.keys(fest.days)
-    : [...groupByDay(fest.artists || [], knownDaysOf(fest)).keys()];
+  const days = dayImageChoices(fest);
   if (!days.length) status.textContent = 'No lineup yet — nothing to export.';
   for (const day of days) {
     const row = el('button', 'width: 100%;');
     row.className = 'fest-row';
-    const label = el('span', 'flex: 1; text-align: left; color: var(--text-primary); font-weight: 700; font-size: 13.5px;', day || 'THE LINEUP');
+    const label = el('span', 'flex: 1; text-align: left; color: var(--text-primary); font-weight: 700; font-size: 13.5px;', day || (scheduled ? 'EVERYTHING ELSE' : 'THE LINEUP'));
     const chev = el('span', '', '›'); chev.className = 'chev';
     row.append(label, chev);
     row.addEventListener('click', async () => {

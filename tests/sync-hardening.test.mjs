@@ -116,3 +116,59 @@ test('two tabs: persistPending merges with disk; clearPending writes true empty'
   state.clearPending();
   assert.equal(localStorage.getItem(key), '{}');
 });
+
+// Gate 2026-08-23: while blocked with unchanged refused bytes, the 25s poll
+// used to flip the dot to 'syncing' and re-arm a doomed push — the UI
+// claiming progress nothing was making, every 25 seconds, forever.
+//
+// The contract has ONE bounded retry in it: the first poll after a refusal
+// sees changed=true (an un-pushed local edit re-serializes through deepMerge,
+// so visible() differs once) and clears the refusal — that is the documented
+// "one attempt per real change" door. From then on, unchanged polls must
+// report blocked and never re-POST.
+test('a poll that changes nothing keeps a blocked device honestly blocked', async () => {
+  freshCrew('hardtoken_blockpoll_0123');
+  const baseDoc = JSON.parse(JSON.stringify(state.crewDoc));
+  state.recordSelection('GRiZ', 'K', 2);
+  sync.initSync({ onSyncBlocked: () => {} });
+
+  let posts = 0;
+  globalThis.fetch = async (_url, opts) => {
+    if (opts && opts.method === 'POST') { posts++; return mkRes(413, { error: 'full' }); }
+    return mkRes(200, baseDoc); // remote unchanged — nobody freed up room
+  };
+  await sync.pushSync();
+  assert.equal(sync.syncState(), 'blocked');
+  assert.equal(posts, 1);
+
+  await sync.pollSync();  // the bounded retry door: serialization-diff reads as changed
+  await sync.pushSync();  // ...and its one retry re-earns the refusal
+  assert.equal(posts, 2);
+  assert.equal(sync.syncState(), 'blocked');
+
+  // Now the steady state the dot lives in at a festival: nothing changed.
+  await sync.pollSync();
+  assert.equal(sync.syncState(), 'blocked', 'an unchanged remote must not repaint blocked as syncing');
+  await sync.pollSync();
+  assert.equal(sync.syncState(), 'blocked');
+  assert.equal(posts, 2, 'and must never re-arm the doomed push');
+});
+
+// Gate 2026-08-23: AbortSignal.timeout shipped in Safari 16 — on 15.x the old
+// helper returned undefined and a hung fetch had NO timeout at all (PS-4
+// reopened on exactly the phones most likely to hang). The fallback builds
+// the same signal from AbortController + a timer.
+test('timeoutSignal falls back to AbortController when AbortSignal.timeout is absent', async () => {
+  const { timeoutSignal } = await import('../js/util.js');
+  const real = AbortSignal.timeout;
+  try {
+    delete AbortSignal.timeout;
+    const sig = timeoutSignal(20);
+    assert.ok(sig, 'a signal is still produced without the modern API');
+    assert.equal(sig.aborted, false);
+    await new Promise((r) => setTimeout(r, 60));
+    assert.equal(sig.aborted, true, 'and it aborts after the deadline');
+  } finally {
+    AbortSignal.timeout = real;
+  }
+});

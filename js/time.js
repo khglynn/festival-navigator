@@ -4,7 +4,9 @@
 // (festivals here start in the afternoon) so it sorts after PM sets.
 export function timeToMinutes(timeStr) {
   const parts = timeStr.trim().split(' ');
-  const period = parts[1];
+  // The validator's TIME_RE is case-insensitive; "9 pm" must not quietly
+  // become 9 AM here (Codex gate, 2026-08-27).
+  const period = (parts[1] || '').toUpperCase();
   let [hours, minutes] = parts[0].split(':').map(Number);
   minutes = minutes || 0;
   if (period === 'PM' && hours !== 12) hours += 12;
@@ -27,7 +29,7 @@ export function absMinToLabel(absMin) {
 export function activityMinutes(timeStr) {
   const parts = timeStr.trim().split(' ');
   let [h, m] = parts[0].split(':').map(Number); m = m || 0;
-  const period = parts[1];
+  const period = (parts[1] || '').toUpperCase();
   if (period === 'PM' && h !== 12) h += 12;
   if (period === 'AM' && h === 12) h = 0;
   let total = h * 60 + m;

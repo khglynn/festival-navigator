@@ -1,0 +1,72 @@
+# Next drops — what ACL, Seismic and Lost Lands have actually published (scouted 2026-08-27)
+
+*A background scout's findings, banked verbatim so the next data session starts from facts, not memory. Portola's recipe (`docs/add-a-festival.md`, "Set-times drop, in order") applies to each poster set below. Re-verify dates and URLs before trusting — festival pages move.*
+
+
+## 1. ACL Music Festival 2026 (Austin, Oct 2-4 & Oct 9-11)
+
+**(a) Set times published, and where.** Yes — live at https://www.aclfestival.com/schedule as of this scout. The page's own image filenames are timestamped `20260826` (posted the day before this scout, Aug 26 2026). Format: **IMAGE ONLY.** The Schedule page is a Webflow site with day-tab buttons (Fri/Sat/Sun x2 weekends) that don't change any DOM text — each tab just reveals one of six pre-baked graphic images (poster-style schedule grids), served as `.webp` (Weekend One, 1080x1350) and `.png` (Weekend Two, ~2160x2701) from `cdn.prod.website-files.com`. firecrawl_scrape (waitFor 5000, markdown+links) returned only nav chrome, sponsor logos, and the six `<img src>` URLs — zero schedule text in the DOM. This is NOT a JS-rendered grid with underlying text/data; it's genuinely a graphic asset, confirmed by fetching + visually reading all four images checked.
+
+Direct image URLs (in case the pipeline wants to build a manual OCR/vision step):
+- W1 Fri: https://cdn.prod.website-files.com/67456b422d0e4219d58ef713/6a905f9da78e00c5b323057d_ACL26-Schedule-Wk1-1002-V2-Fri-20260826-Draft3.webp
+- W1 Sat: https://cdn.prod.website-files.com/67456b422d0e4219d58ef713/6a905f706b21a01de355e35c_ACL26-Schedule-Wk1-1003-V2-Sat-20260826-Draft3.webp
+- W1 Sun: https://cdn.prod.website-files.com/67456b422d0e4219d58ef713/6a905fa4284a50416c202665_ACL26-Schedule-Wk1-1004-V2-Sun-20260826-Draft3.webp
+- W2 Fri: https://cdn.prod.website-files.com/67456b422d0e4219d58ef713/6a907b08dc2908570803c143_ACL26-Schedule-Wk2-1002-V2-Fri-20260826-Draft3.png
+- W2 Sat: https://cdn.prod.website-files.com/67456b422d0e4219d58ef713/6a907b31751443f86fda80c3_ACL26-Schedule-Wk2-1003-V2-Sat-20260826-Draft3.png
+- W2 Sun: https://cdn.prod.website-files.com/67456b422d0e4219d58ef713/6a905f68fd30e82920a65757_ACL26-Schedule-Wk2-1004-V2-Sun-20260826-Draft3.webp
+
+**(b) Text-readable or image-only.** Image-only — no text path via scrape/DOM. I downloaded 4 of the 6 images (W1 Fri, W1 Sat, W2 Fri; W2 Sat pulled but not read) and read them visually (Claude vision, not OCR pipeline) to sanity-check content and pull sample rows — this required manual image reading, NOT something the app's automated pipeline can do today without adding an OCR/vision step. Sample rows (artist / stage / day / start-end), read directly off the graphics:
+
+| Artist | Stage | Day | Start–End |
+|---|---|---|---|
+| Turnstile | T-Mobile | W1 Fri (Oct 2) | 6:15–7:15 PM |
+| Charli xcx | American Express | W1 Fri (Oct 2) | 8:40 PM (no end shown) |
+| Skrillex | T-Mobile | W1 Fri (Oct 2) | 8:15 PM (no end shown) |
+| RÜFÜS DU SOL | American Express | W1 Sat (Oct 3) | 8:30 PM (ASL-interpreted set) |
+| Lorde | T-Mobile | W1 Sat (Oct 3) | 8:15 PM (no end shown) |
+| Kings of Leon | T-Mobile | W2 Fri (Oct 9) | 8:15 PM (no end shown) |
+| Charli xcx | American Express | W2 Fri (Oct 9) | 8:40 PM (no end shown) |
+| Rodrigo y Gabriela | Tito's Handmade Vodka | W1 Sat (Oct 3) | 4:30–5:30 PM |
+| Bleachers | T-Mobile | W1 Sat (Oct 3) | 6:15–7:15 PM |
+
+Note: the closing/headline act each day is shown with a start time only (no end time) — the grid just runs to the printed 10 PM gate-close line. All other sets show start–end.
+
+**(c) Lineup changes since mid-August.** Confirmed one, matching the known anchor: **Kings of Leon now headlines T-Mobile stage Weekend Two Friday (Oct 9) at 8:15 PM, replacing Skrillex** — Skrillex still holds that exact slot on Weekend One Friday (Oct 2), so this is a weekend-2-only swap, not a full lineup pull. I did not do a full 2-image-vs-2-image diff of every slot across both weekends (would need a proper artist-list diff, not visual spot check) — only checked the 4 named anchors, all 4 confirmed correct. No other changes surfaced in the pages/FAQs scraped (no cancellation notices found).
+
+**(d) Doors/first-set and last-set per day.** Gate hours (from the FAQ, matches the grids' 12 PM–10 PM axis) are **12:00 PM–10:00 PM every day, both weekends** (confirmed via https://support.aclfestival.com/hc/en-us/articles/4405461449876). First scheduled sets start as early as **12:45 PM** (small stages, e.g. "The 4411" Tito's W1 Fri, "Almost Heaven" Tito's W2 Fri); main-stage (T-Mobile/AmEx) sets start around 1:00–1:15 PM. Last artist sets start around **8:15–8:40 PM** (headliners), with Silent Disco on the Beatbox stage running latest, 8:00–10:00 PM, right up to gate close.
+
+**Weekend 1 vs Weekend 2 grid distinction:** Same 7 stages/sponsors (T-Mobile, Miller Lite, BMI, Beatbox, Tito's Handmade Vodka, Snapchat, American Express) both weekends, same day-of-week structure (Fri/Sat/Sun), and largely the SAME artist roster playing both weekends (ACL's standard two-weekend-repeat model — e.g., Paris Paloma, Leon Thomas, Turnstile, Amyl and the Sniffers, Faouzia, LP, BUNT., Steve Aoki, Chainsmokers, Charli xcx all appear both Fridays in near-identical slots). The page distinguishes them purely visually: Weekend One grids are yellow/orange background, Weekend Two grids are blue background, plus an explicit "WEEKEND ONE"/"WEEKEND TWO" header line baked into the graphic. There is no separate URL per weekend/day — all six images live on the single `/schedule` URL, gated behind client-side tab clicks that firecrawl couldn't trigger meaningfully (all 6 images are present in the DOM/markdown regardless of which tab is "active").
+
+## 2. Seismic Dance Event 9.0 (Austin, Nov 13-15 2026, The Concourse Project)
+
+**(a) Set times published?** No. Checked https://www.seismicdanceevent.com, /lineup/, /news/, and the "Seismic 9.0 Lineup is Here" post — still labeled explicitly "**phase one lineup**" (published May 22 2026, last modified Jul 20 2026). No phase-2 announcement and no timeslots/schedule page exists yet for 9.0. Historical pattern from the /news archive confirms this is normal timing: for the prior edition (8.0, Nov 14-16 2025) the "8.0 Timeslots Are Now Live" post's asset path is `/wp-content/uploads/2025/11/...` — i.e. set times dropped in **November, right around/just before the event itself**, not months out. SDE9 is Nov 13-15 2026 (77 days out as of this scout per the site's own countdown), so set times are not expected for roughly 10-11 more weeks. No `/time-slots`-style URL exists yet for 9.0 (firecrawl_map only surfaced the 8.0-and-earlier timeslot posts, e.g. `/8-0-timeslots-are-now-live`, `/seismic-7-0-timeslots`).
+
+**(b) Text-readable schedule?** N/A — nothing published yet to read.
+
+**(c) Lineup changes since mid-August?** None found. Lineup is unchanged since the May 22 2026 "phase one" announcement (page `modifiedTime` Jul 20 2026, before the mid-August cutoff). No phase-2 wave has landed — for comparison, 8.0's phase-2 ("PHASE 2 & BY-DAY LINEUPS REVEALED," adding Adam Beyer, ANNA, The Blessed Madonna, Dombresky, etc.) posted in **September** the year before, so a 9.0 phase-2 wave is plausible in the next few weeks but hasn't happened yet.
+
+**Current full artist count:** The `/lineup/` page lists **34 named artist slots** in text form (readable via markdown, not image-only — the artist names are plain HTML links, e.g. `/artists/chris-lorenzo/`): 18 in the top "headliner" tier (Above & Beyond, Brutalismus 3000, Chris Lorenzo, horsegiirl, KI/KI, Layton Giordani, Max Styler, Porter Robinson, Sara Landry, SG Lewis, BOLO, Brunello, Devault, Mestiza, MPH, Notion, Starjunk 95, VTSS) + 16 in a secondary A-Z tier (1TBSP, Adam Sellouk, BENWAL, Cole Knight, Conrad Taylor, Diffrent, Dreya V, FALLON, HILLS, HNTR, Joss Dean, KAMINO, Kyle Starkey, Luke Alessi, Smokey Bubblin' B, WELKER), plus an explicit **"+ MORE TBA"** note confirming the roster isn't final. Per the announcement post's prose, Cole Knight and Dreya V perform as one b2b set ("Cole Knight b2b Dreya V"), so distinct **performance slots ≈ 33** — this lines up almost exactly with the app's current count of 33 (lineup-only, no changes needed there beyond re-verifying the app's list matches these 34 names / 33 sets 1:1, and watching for the still-pending phase-2 wave + "+ MORE TBA").
+
+**(d) Doors/first-set/last-set times.** Not available — no schedule/timeslot data exists yet for 9.0 (see (a)).
+
+## 3. Lost Lands 2026 (Thornville, OH, Sept 18-20; Early Arrival Sept 16-17)
+
+**(a) Set times published?** No. `https://www.lostlandsfestival.com/schedule` returns a genuine **404** (not a redirect, not a stub — confirmed via firecrawl_scrape, statusCode 404). No `/set-times`, `/time-slots`, or similarly-named page exists yet for the 2026 edition (firecrawl_map only turned up historical set-time posts for past editions, e.g. the 2020 "Couch Lands Broadcast Schedule"). The `/news` and `/full-news` feeds are both stale/broken (news index shows 2020-2022 posts; `/full-news` 500-errors on a WordPress fatal). What IS live and recently posted (image dated `/2026/08/`, i.e. this month): a **day-level "Daily Lineups" poster** at `/lineup` (see (b)) — this is one step short of set times. A Reddit thread (`r/LostLandsMusicFest`, "Timing of Daily Lineups, Stage Lineups, & Set Times") confirms the community's expected reveal order is Daily Lineups → Stage Lineups → Set Times, released sequentially in the weeks before the festival — so Daily Lineups landing now (Aug 2026) is consistent with set times still being weeks out, matching the task's "~1-2 weeks out" pattern for a Sept 18-20 event.
+
+**(b) Text-readable or image-only?** Image-only, same pattern as ACL. The `/lineup` page embeds two flyer-style JPEGs (no HTML/DOM text, confirmed via markdown scrape returning only `<img>` tags):
+- Main "Daily Lineups" poster (`Lost-Lands-Daily-Lineups-2026.jpeg`, 2214x2768, uploaded Aug 2026) — full artist rosters broken out by **Wednesday / Thursday / Friday / Saturday / Sunday**, alphabetical within each day, no stage or time info.
+- "Early Arrival Lineup" poster (`Lost_Lands_2026_Weds_Thurs_Lineup4_4x5.jpg`, 2000x2500) — same Wed/Thu rosters again, explicitly dated "Wednesday, Sept 16" / "Thursday, Sept 17," confirming the early-arrival dates match the task's anchor. Notes the Thursday pre-party runs "at The Prehistoric Stage + The Crater" (two named stages) — first stage-name signal found for this event, but still no times.
+
+I read both images directly (Claude vision) since there's no text/DOM path — this is a genuine day-level (not slot-level) breakdown, useful for scoping but not the same as sample "artist/stage/day/start-end" rows the task asked for; **no start–end times exist anywhere yet**, so no sample rows are possible without guessing, which I won't do.
+
+Full day-by-day artist rosters (as posted, no stage/time attached):
+- **Wed Sept 16:** Barely Alive, Calcium b2b Mad Dubz, Caspa, Chassi, Distinct Motive, Emorfik b2b Usaybflow, Gardella, Hairitage, Hershe, Hydraulix, Izzy Vadim, Jaenga, Mile32, Mport, Muerte, Nikita The Wicked, Riot Ten, Smoakland
+- **Thu Sept 17** (+ Mega B2B2B2B2B2B Pre-Party + Label Takeover at The Prehistoric Stage + The Crater): Alienpark, Deadcrow, Dirt Monkey, Funtcase, Machaki, Mindset, Phrva, Rsun, Rzrkt, Super Future, Zen Selekta
+- **Fri Sept 18:** $J, Austeria, Badklaat, Basstripper, Bear Grillz, Benda, Borgore, Canabliss, Casey Club, Crizzly, Dion Timmer, Dirtysnatcha, Doctor P, Dodge & Fuski, Dr. Ushuu, Drinkurwater, Dubscribe, Excision (2 hour set), Future Exit, Hol!, Infekt b2b Samplifire, Ivy Lab, Izadi, Jantsen, JKYL & HYDE, Kliptic, KLO, Lazrus, Levity, Liquid Stranger, Lumasi, Neumonic, NGHTMRE, Nimda, Oliverse, Paper Skies, Pegboard Nerds, Poni, Probcause, Ravenscoon, Reaper, Richard Finger, Riot, Seth David, Shlump, Sigma, Sippy, Subsonic, Sullivan King b2b Ray Volpe, The Resistance, Twopercent, Tynan, Vampa, VKTM, The Widdler, Wiley, Wooli (sunset set), Xotix, Yookie, Zero
+- **Sat Sept 19:** 2DY4, Aeon:Mode b2b Blossom, All The Reason, AU5, Audiofreq, Bella Renee, Big Florida, Bou, Brainrack, Capochino, Chozen, Craze b2b Dieselboy, Crumb Pit, Cyclops, Darksiderz b2b Madgrrl, Delta Heavy, Dirtyphonics, Dr. Fresch, Effin, Flosstradamus, Flux Pavilion, Ganja White Night, Ghengar, Gladde Paling, Green Matter, Hedex, Heyz, HVDES, Illenium, Imanu, Ivory, Jessica Audiffred, Josh Teed, Kai Wachi, Layz, Leotrix, Lil Texas, Lowcation, Mefjus + Daxta MC, Mozey, Myrias, Mythm, Neotek, Noetika, Phaseone, Prosecute, Saint Miller, Seven Lions (sunset set), Slander, Space Wizard, Stoned Level, Subtronics b2b Level Up, Tisoki, Truth, Tokyo Machine, Whales, Whethan, Wraz, Zingara, Zomboy
+- **Sun Sept 20:** Adventure Club (throwback set), Arlo, ARMNHMR, ATLiens, Avello, Boogie T, Champagne Drip, Codd Dubz, Crankdat b2b Alleycvt, Crystal Skies, Distant Matter, Dream Takers, Eptic b2b Lyny, Excision (Detox), Excision b2b Space Laces, Finnuh, Ghastly, Grabbitz, Haliene, Hostage Situation, Hurtbox, Killmatter, Know Good, Kompany, Krewella, Luci, Mad Dubz, Modal Nodes, OG Nixin, Onara, Passport, Pretty Sweet, REMK, ROI*, RYNS, Sisto, Skilah, Sodown, Sportmode, Sqishi, Stumpi, Taiki Nulight, Trivecta, Usaybflow, Virtual Riot, Warlord, Wax Motif, William Black, Wonkywilla, Yetep, YVM3, Zoey808
+
+**(c) Lineup changes since mid-August?** None found. A web search for recent Lost Lands 2026 cancellation/change news turned up nothing artist-specific (only unrelated festivals — Hot August Music Festival cancellation, Outside Lands). The Daily Lineups poster itself is dated this month (Aug 2026 upload) and reads as the current, presumably-final artist roster; I have no earlier snapshot to diff it against, so I can't rule out a silent addition/removal folded into this poster, but no explicit change/cancellation announcement exists in the news feed (which is broken/stale) or on the socials indexed by search.
+
+**(d) Doors/first-set/last-set times.** Not available — no time-of-day schedule exists yet. What IS confirmed from the official Festival Info page (`/info`, live HTML text, not image): **campgrounds open 7:00 PM Tuesday, Sept 15** (Early Entry wristband required to arrive Tue evening/Wed/Thu); **on-site box offices open Tue Sept 15 at 7pm through Sun Sept 20 at 8pm**. No gate/stage doors times published yet for the music days themselves.
+

@@ -7,6 +7,8 @@
 // for the schema (status: lineup | scheduled | archived; artists[] always
 // present; days{}/stages/dayMeta only when a real schedule exists).
 
+import { timeoutSignal } from './util.js';
+
 export const FESTIVALS = {};      // id -> full festival object (loaded so far)
 export let FESTIVAL_INDEX = [];   // [{id, name, year, status, dates, location, accent}]
 
@@ -52,7 +54,13 @@ export async function loadCustomFestivals(token) {
   if (!token) return [];
   let list = [];
   try {
-    const res = await fetch(`/api/festival-add?t=${encodeURIComponent(token)}`, { cache: 'no-store' });
+    // 8s timeout: enterApp awaits this before the wall renders, and a dead
+    // festival network that neither resolves nor rejects held the whole app
+    // at a blank screen — the offline catch below had the cached customs the
+    // entire time (gate find, 2026-08-23).
+    const res = await fetch(`/api/festival-add?t=${encodeURIComponent(token)}`, {
+      cache: 'no-store', signal: timeoutSignal(8000),
+    });
     if (res.ok) {
       list = (await res.json()).festivals || [];
       try { localStorage.setItem(LS_CUSTOM(token), JSON.stringify(list)); } catch { /* quota */ }

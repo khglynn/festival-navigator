@@ -9,11 +9,11 @@ import * as sync from '../sync.js';
 import * as spotify from '../spotify.js';
 import * as model from './model.js';
 import { loadFestivalIndex, loadFestival, loadCustomFestivals, FESTIVAL_INDEX, defaultFestivalId } from '../festivals.js';
-import { renderWall, refreshCard, showUndoToast, showToast, wireScrollspy, colorIndexOf, groupByDay, knownDaysOf } from './wall.js';
+import { renderWall, refreshCard, showUndoToast, showToast, wireScrollspy, colorIndexOf, groupByDay, knownDaysOf, scheduledWeekendOf, extraSectionsOf } from './wall.js';
 import { disclosureFold, eqLoader, festRow } from './tools.js';
 import { openArtistSheet, openDayNotes, openAllNotes, closeSheet, refreshOpenSheet, sheetChrome, dialogize, rememberOpener } from './notes.js';
 import { renderSettings, appSettings, openSubviewByKey } from './settings.js';
-import { onStorageWriteFail, saveLS } from '../util.js';
+import { onStorageWriteFail, saveLS, getLS } from '../util.js';
 import { router } from './router.js';
 import { createSortControl } from './sort-control.js';
 import { nameProblem } from '../name-rules.mjs';
@@ -56,7 +56,7 @@ function refreshCtx() {
   ctx.affinity = state.affinityLookup(ctx.meName);
   // Weekend view is a device-local preference per fest (ST-3): set it once
   // ("I'm going W2") and wrong-weekend picks announce themselves.
-  ctx.weekend = localStorage.getItem(`fn_weekend_v1_${ctx.fid}`) || 'all';
+  ctx.weekend = getLS(`fn_weekend_v1_${ctx.fid}`) || 'all';
 }
 
 // ---- tap cycle -------------------------------------------------------------------
@@ -214,9 +214,18 @@ function renderDayNav() {
   rail.textContent = '';
   const fest = state.fest();
   const scheduled = fest.days && Object.keys(fest.days).length;
-  const groups = scheduled
-    ? Object.keys(fest.days)
-    : [...groupByDay(fest.artists || [], knownDaysOf(fest)).keys()].filter(Boolean);
+  // A scheduled fest's tabs are the grid days PLUS the sections the wall
+  // renders under the grid (afters, Folsom) — the tab bar must mirror what
+  // the wall actually shows, or a section exists with no way to jump to it.
+  let groups;
+  if (scheduled) {
+    const wk = scheduledWeekendOf(fest, ctx.weekend);
+    const scheduledNames = new Set();
+    for (const d of Object.keys(fest.days)) for (const a of state.getDayArtists(d, wk)) scheduledNames.add(a.name);
+    groups = [...Object.keys(fest.days), ...[...extraSectionsOf(fest, scheduledNames, wk).keys()].filter(Boolean)];
+  } else {
+    groups = [...groupByDay(fest.artists || [], knownDaysOf(fest)).keys()].filter(Boolean);
+  }
   for (const day of groups) {
     const meta = (fest.dayMeta || {})[day];
     const jump = () => {
@@ -265,6 +274,10 @@ function updateWeekendRow() {
   const fest = state.fest();
   const has = (fest.artists || []).some((a) => a.weekends === 'W1' || a.weekends === 'W2');
   if (!has) { if (existing) existing.remove(); return; }
+  // On a SCHEDULED two-weekend fest the row loses "Both": a clock grid can
+  // only honestly show one weekend at a time (duplicate overlapping cards
+  // otherwise), so a stored 'all' renders as Weekend One (ST-3, extended).
+  const schedWk = scheduledWeekendOf(fest, ctx.weekend);
   let row = existing;
   if (!row) {
     row = document.createElement('div');
@@ -281,14 +294,18 @@ function updateWeekendRow() {
       b.dataset.w = val;
       b.textContent = label;
       b.addEventListener('click', () => {
-        localStorage.setItem(`fn_weekend_v1_${ctx.fid}`, val);
+        saveLS(`fn_weekend_v1_${ctx.fid}`, val);
         repaintWall();
       });
       row.appendChild(b);
     }
     document.querySelector('#screen-app .toolbar').after(row);
   }
-  row.querySelectorAll('.seg').forEach((b) => b.classList.toggle('active', b.dataset.w === (ctx.weekend || 'all')));
+  const active = schedWk || ctx.weekend || 'all';
+  row.querySelectorAll('.seg').forEach((b) => {
+    if (b.dataset.w === 'all') b.style.display = schedWk ? 'none' : '';
+    b.classList.toggle('active', b.dataset.w === active);
+  });
 }
 
 // First-wall coach mark (CT-1): the pick mechanic and long-press are

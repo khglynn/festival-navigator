@@ -5,7 +5,11 @@
 //   - create / fetch / join API calls
 // Document state (the crew doc itself + pending changes) lives in state.js.
 
-import { loadJSON, saveLS } from './util.js';
+// getLS/removeLS, not raw localStorage: a storage-blocked browser (private
+// mode, "block all cookies") throws on getItem ITSELF, and raw reads on the
+// boot path turned that into the fatal screen instead of a from-link,
+// memory-only session (gate find, 2026-08-23).
+import { loadJSON, saveLS, getLS, removeLS, timeoutSignal } from './util.js';
 
 const K = {
   crews: 'fn_crews_v3',            // [{token, name}]
@@ -23,14 +27,14 @@ export function rememberCrew(token, name) {
 
 export function forgetCrew(token) {
   saveLS(K.crews, JSON.stringify(knownCrews().filter((c) => c.token !== token)));
-  localStorage.removeItem(K.me(token));
-  if (activeCrewToken() === token) localStorage.removeItem(K.active);
+  removeLS(K.me(token));
+  if (activeCrewToken() === token) removeLS(K.active);
 }
 
-export function activeCrewToken() { return localStorage.getItem(K.active) || null; }
+export function activeCrewToken() { return getLS(K.active) || null; }
 export function setActiveCrew(token) { saveLS(K.active, token); }
 
-export function me(token) { return localStorage.getItem(K.me(token)) || null; }
+export function me(token) { return getLS(K.me(token)) || null; }
 export function setMe(token, name) { saveLS(K.me(token), name); }
 
 // The token riding in the URL hash (#g=...), i.e. an opened share link.
@@ -100,8 +104,17 @@ export function isApiNotFound(res) {
   return res.status === 404 && (res.headers.get('content-type') || '').includes('application/json');
 }
 
+// 8s timeout: boot awaits this before the first paint, and an associated-but-
+// dead festival network neither resolves nor rejects — a phone with the whole
+// crew doc in localStorage stared at a blank page for the OS socket timeout.
+// A timed-out fetch throws, boot's catch falls back to the cached doc, and
+// the 25s poll refreshes when the network comes back (gate find, 2026-08-23).
+const BOOT_FETCH_TIMEOUT_MS = 8000;
+
 export async function fetchCrew(token) {
-  const res = await fetch(`/api/crew?t=${encodeURIComponent(token)}`, { cache: 'no-store' });
+  const res = await fetch(`/api/crew?t=${encodeURIComponent(token)}`, {
+    cache: 'no-store', signal: timeoutSignal(BOOT_FETCH_TIMEOUT_MS),
+  });
   if (isApiNotFound(res)) return null;
   if (!res.ok) throw new Error('crew fetch failed: ' + res.status);
   return await res.json();

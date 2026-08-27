@@ -1,4 +1,117 @@
-# NOW — festival-navigator: fest-first reshape ON STAGING (v35) · prod at v31
+# NOW — festival-navigator: Portola set times STAGED on `portola-set-times` (v39) · prod at v35
+
+## 2026-08-27 — Portola set times dropped; the branch is ready for Kevin's promote call
+
+The official Sat/Sun posters went up this afternoon and the crew chat is
+already trading screenshots. Branch `portola-set-times` = the 08-23 cloud
+branch (Portola Week afters + Folsom, ACL two-weekend shape, hardening gate)
++ the v31-polish docs + today's drop. Full story: DEVLOG 2026-08-27.
+
+- **Data**: `portola-2026.json` is `scheduled` — 64 sets, five columns as
+  printed, Kaytree added, every live pick key byte-stable (tripwire:
+  `tests/live-pick-keys.test.mjs`). Three independent poster readings
+  agreed on every box.
+- **Two gaps the drop exposed in the cloud branch, both fixed + tested**: a
+  scheduled wall used to delete the Afters/Folsom sections (and their tabs);
+  the persistent data cache was cache-first, so a drop reached phones one
+  open late. Now: grid → AFTERS → FOLSOM → EVERYTHING ELSE; festival JSONs
+  network-first (4 s budget) with the cache as the offline answer.
+- **Backups taken first**: Neon branch `backup-2026-08-27-pre-portola-drop`
+  + JSON export of all 36 crews at
+  `~/.claude/plans/festival-navigator-backups/2026-08-27/` (outside the repo).
+- **Gated twice by Codex (SHIP WITH FIXES → all fixed), walked live on the
+  Vercel preview against the real merge.** 227 tests / 226 pass.
+- **Promote = Kevin's call**: merge `portola-set-times` → `main` deploys
+  prod; SW v39 force-refreshes every installed client. Then verify all three
+  domains serve `festival-nav-v39` and open the Portola board on a phone.
+- **Two small things only Kevin can say yes to**: delete the throwaway
+  preview crew (member `zz-preview-walk`, created 2026-08-27 in the prod DB
+  for the walk), and whether the two email addresses in old commits of the
+  Ray checkpoint doc (redacted at HEAD) warrant a history rewrite — the
+  recommendation is no.
+- **Next in the queue after Portola** (scouted 2026-08-27, details in
+  `claude-plans/2026-08-27-next-drops-scout.md`): **ACL** — the six
+  weekend/day grids went live Aug 26 as poster images (same recipe as
+  Portola; the two-weekend shape is built; Kings of Leon replaces Skrillex
+  W2 Friday). **Lost Lands** (Sep 18) — day-level rosters are out, set
+  times not yet; re-check in a week. **Seismic** — still phase one (34
+  names ≈ our 33), set times land in November. Then Ray's fork items and
+  the "schedule dropped → PR → Slack approve" watcher
+  (`claude-plans/2026-08-27-schedule-drop-watcher-future-build.md`).
+
+## 2026-08-10 — Ray's fork hit a working checkpoint (awaiting Kevin's review)
+
+Ray Perfetti (`raypp2`) — the contributor who forked us in July — emailed
+Aug 6 with a live demo: Discover feed, artist pages, tri-source player
+(YouTube/SoundCloud/Spotify), reworked pick controls, top menu. His fork is
+77 commits ahead of our main, deployed on HIS Vercel + HIS database (nothing
+of ours touched). No PRs yet; one open issue (#6, Spotify `CANONICAL_HOST`
+hardcoded — he's offering the PR, unanswered since Jul 24). Full notes +
+suggested moves: `claude-plans/2026-08-10-ray-fork-checkpoint.md`. His demo
+link carries a crew token, so it stays in the Gmail thread, not in this repo.
+
+## 2026-07-14 — PROMOTED TO PRODUCTION (v35)
+
+Kevin's call ("kk promote"). `v31-polish` → `main` fast-forward (f7ad492 →
+81a1cfb, 16 commits, 27 files), pushed; Vercel auto-deployed. **All three prod
+domains serve `festival-nav-v35`, root HTTP 200** — verified by served
+CACHE_VERSION on fest / festival / crew.kevinhg.com. The bump from v31 → v35
+force-refreshes every installed client (SW skipWaiting + clients.claim), so
+returning phones pick up the fest-first reshape + me link + the whole
+identity-night arc without a manual reload. `main` now matches production;
+work continues on `v31-polish`.
+
+Still on my post-promote queue (Kevin's word required to start any): the
+**Portola/Seismic crew split** (his own jumbled pair — small, server-side),
+**Phase B** (merged fest board + join-picker/mute), **Phase 2 hardening**
+(server idempotency key / cross-tab double-create), The Crew token +
+screenshotted client-secret rotations, and the round-2 Spotify
+collaborative-playlist live test.
+
+Kevin's own return items (his to do, not mine): re-test Spotify connect on a
+fresh browser now that v35 is live, and — only if he wants staging to OAuth
+without hopping — add `https://stage.fest.kevinhg.com/spotify-callback` in the
+Spotify dashboard. Production's redirect URI (`fest.kevinhg.com/spotify-callback`)
+was already registered and verified live 2026-07-13, so prod Spotify works today.
+
+## 2026-08-23 — Portola Week + Folsom shipped, ACL drop-ready, hardening gate (branch: claude/festival-lineup-integration-zs0s8l)
+
+Three commits on the branch, preview-only. Full story: DEVLOG 2026-08-23.
+
+- **Portola board grew AFTERS (all 21 official Portola Week shows) and FOLSOM
+  (the fair + its marquee parties) sections.** Horse Meat Disco = Fri Sept 25,
+  Public Works, 9 PM–3 AM (tickets: sickening.events — the circulating Tixr
+  link is the 2024 edition). Friday is conflict-free; the meta.note carries
+  the full conflict map and what has no posted time yet.
+- **ACL: set times ARE officially out (since ~Aug 17) but NOT ingested** —
+  this environment can't reach the JS-rendered schedule and snippets only
+  carry evening headliners. The two-weekend scheduled shape is BUILT and
+  tested; ingesting is now a paste job:
+
+  ### ⚠️ KEVIN'S 5-MINUTE MOVE
+  Start a LOCAL session on this branch and point it at
+  `claude-plans/2026-08-23-local-run-handoff.md` — that doc is the full
+  handoff (fetch the ACL grids, ingest, cross-check the anchors, /codex-run,
+  push). Or do it by hand: copy each day from
+  https://www.aclfestival.com/schedule into any session with
+  `docs/add-a-festival.md`'s two-weekend recipe.
+
+- **Hardening gate (18 confirmed finds, all verified in code):** the P1s are
+  fixed — playlist pending-subtraction sync-wedge, and SW updates no longer
+  wipe offline festival data (persistent data cache + rescue migration).
+  Plus boot timeouts, Safari 15 sync timeout, honest blocked dot, guarded
+  storage reads, prototype-key festival ids. 191 tests, 190 pass.
+- **Deferred, each with a writeup in the DEVLOG entry:** merge-SQL null
+  semantics vs the JS twins, the doc-size cap measuring two different
+  serializations (~11% skew), DIAGNOSE_SQL race misattribution, beacon
+  re-push leaf revert, sync poll not torn down after leaving a crew,
+  offline-first boot from cachedDoc. The merge-SQL ones deserve their own
+  gated session per the house rule (change crew-sql.mjs, tests follow).
+- **Contributor watch:** no human PRs open — only 4 dependabot bumps
+  (checkout@7, setup-node@7, jsdom 30, pglite 0.5.5). Merging any of them
+  deploys prod (main auto-deploys), so they stay your call.
+- No Codex CLI exists in the remote container — the gate ran as independent
+  adversarial agents. A true Codex pass stays available from your machine.
 
 ## 2026-07-14 (session close, v35) — Kevin's staging round + gate rounds 4-5
 

@@ -35,6 +35,11 @@ export const TOKEN_RE = /^[A-Za-z0-9_-]{20,40}$/;
 export const PID_RE = /^[A-Za-z0-9_-]{10,16}$/;
 const COLOR_RE = /^\d{1,3}, \d{1,3}, \d{1,3}$/;
 const FESTIVAL_ID_RE = /^[a-z0-9-]{1,64}$/;
+// The regex alone admits 'constructor' — all-lowercase, so it sails through
+// where every other key namespace already rejects FORBIDDEN_KEYS. The JS
+// merge twins skip such keys while the SQL merge stores them: a drift no doc
+// should be able to reach (gate find, 2026-08-23).
+const validFestivalId = (fid) => typeof fid === 'string' && FESTIVAL_ID_RE.test(fid) && !FORBIDDEN_NAME_KEYS.has(fid);
 const CLIENT_ID_RE = /^[0-9a-fA-F]{32}$/;
 
 // Keys that would rebind an object's prototype through the bracket-assign
@@ -193,7 +198,7 @@ function validateNotes(notes, fid) {
 function validateFestivals(festivals) {
   if (!isPlainObject(festivals)) return fail('festivals must be an object');
   for (const [fid, entry] of Object.entries(festivals)) {
-    if (!FESTIVAL_ID_RE.test(fid)) return fail(`invalid festival id: ${fid.slice(0, 60)}`);
+    if (!validFestivalId(fid)) return fail(`invalid festival id: ${fid.slice(0, 60)}`);
     if (!isPlainObject(entry)) return fail(`festivals[${fid}] must be an object`);
     for (const [k, v] of Object.entries(entry)) {
       if (k === 'selections') {
@@ -234,7 +239,7 @@ const SPOTIFY_PLAYLIST_ID_RE = /^[A-Za-z0-9]{10,40}$/;
 const SPOTIFY_PLAYLIST_URL_RE = /^https:\/\/open\.spotify\.com\/playlist\/[A-Za-z0-9]{10,40}(\?[\w=&-]*)?$/;
 
 function validateSpotifyPlaylist(fid, p) {
-  if (typeof fid !== 'string' || !FESTIVAL_ID_RE.test(fid)) return fail('spotify.playlists: bad festival id');
+  if (!validFestivalId(fid)) return fail('spotify.playlists: bad festival id');
   if (!isPlainObject(p)) return fail(`spotify.playlists[${safeKey(fid)}] must be an object`);
   for (const [k, v] of Object.entries(p)) {
     if (k === 'id') {
@@ -282,7 +287,7 @@ function validateMeta(meta) {
     } else if (k === 'inviteFestId') {
       // The festival new joiners should land on (FLOW-1). Recorded when a
       // crew is created and refreshed when an invite is shared.
-      if (typeof v !== 'string' || !FESTIVAL_ID_RE.test(v)) return fail('meta.inviteFestId invalid');
+      if (!validFestivalId(v)) return fail('meta.inviteFestId invalid');
     } else return fail(`meta: only name and inviteFestId may be written (got ${k})`);
   }
   return OK;

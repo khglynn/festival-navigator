@@ -2,6 +2,126 @@
 
 Newest first. One entry per meaningful unit of work.
 
+## 2026-08-27 — Portola set times: the drop, and what the drop exposed
+
+- **Portola's official set-times posters went up** (site + Instagram,
+  Aug 27 afternoon; the crew chat lit up within the hour). Transcribed from
+  the 1080px official JPGs by three readers — two independent model
+  readers in a workflow plus a third pass — and reconciled box by box: all
+  64 sets agreed on stage, start and end; stage membership also matched
+  the four official per-stage lineup images. `portola-2026.json` gained
+  `days{}` (Sat/Sun, five columns as printed incl. Despacio as one block),
+  `status: scheduled`, and one new name (Kaytree, Ship Tent Sun 1:40).
+  Every one of the crew's 49 live pick keys is on the grid under the same
+  bytes; all 62 names that prod served are still present.
+- **The drop exposed two real gaps in the cloud branch it landed on**, both
+  fixed with regression tests that fail on the pre-change code:
+  1. *A scheduled wall deleted the afters.* `renderWall` rendered only
+     `days{}` in scheduled mode — the 38 Afters and 8 Folsom cards the crew
+     had been picking on would have vanished the moment set times shipped,
+     and the tab bar with them. Now the grid renders the festival days, then
+     every remaining `artists[].day` group as card sections (`extraSectionsOf`,
+     shared by browse, search and the day tabs), then anything billed on a
+     grid day but missing from the grid under EVERYTHING ELSE.
+  2. *The persistent data cache was cache-first.* Festival JSONs were moved
+     to a version-proof cache on 08-23 (right) but served cache-first
+     (wrong for data): a set-times drop reached an online phone one open
+     LATE — "app is updated" → open → last week's lineup. Data is now
+     network-first with a 4 s budget, cache as the offline answer, and a
+     first open with nothing cached waits for the network instead of 503ing.
+     Tested against the real `service-worker.js` in a vm sandbox.
+- **Validator grew teeth for grids**: grid names must match `artists[]` byte
+  for byte (a case-only match is an ERROR — it would split picks), no
+  overlapping sets on one stage, no set ending before it starts, and a
+  warning for a lineup artist billed on a grid day with no set there. The
+  rules key on `days{}` presence, like the renderer, not on status.
+- **The pick-key freeze**: `scripts/freeze-pick-keys.mjs` snapshots a live
+  festival's names into `tests/fixtures/live-pick-keys.json`;
+  `tests/live-pick-keys.test.mjs` fails if any later disappears. A rename
+  becomes a visible fixture edit. Portola frozen (81 names). Run it for ACL
+  and Seismic the day real people start picking there.
+- **Backups before touching anything**: Neon branch
+  `backup-2026-08-27-pre-portola-drop` (full DB, point-in-time, no compute)
+  plus a JSON export of all 36 crews and Kevin's crew doc in
+  `~/.claude/plans/festival-navigator-backups/2026-08-27/` (outside the
+  repo — it holds tokens).
+- **Two Codex gate rounds over the whole branch diff** (`git diff
+  origin/main...HEAD`, high effort, ~9 min each). Round 1: no P0 — every
+  live pick key intact — but three P1s and six P2s, all fixed the same
+  night: the late-network cache write in the new SW path was fire-and-
+  forget (a reaped worker could discard the fresh copy → held open with a
+  synchronous `waitUntil`, shell and navigation paths too); three raw
+  `localStorage` reads survived the 08-23 hardening and crashed a storage-
+  blocked Safari on crew activation (→ every read in `js/` now goes through
+  the guarded helpers); Day Image lost Afters/Folsom the moment Portola
+  went scheduled (→ it draws from `extraSectionsOf` like the wall); the
+  activate-time rescue could delete a device's only offline copy after a
+  failed migration (→ an old cache is kept until its festival entries are
+  rescued); malformed `days{}` / `stages` could 500 festival-add; TIME_RE
+  accepted 13:00 PM; overlap detection missed point-times and would have
+  flagged archived Lolla's two genuine simultaneous listings (→ judged on
+  renderer-resolved spans, as a WARNING; Portola held to zero); dupe
+  detection compared raw labels instead of rendered days. Round 2 verified
+  #1–#4 and #10 fixed and the rest partial; the partials closed in one more
+  commit (renderer-consistent split, `stages` guard, AM/PM case in
+  `timeToMinutes`, navigation lifetime, explicit error on a cold miss).
+  **Still Kevin's call**: commit `8f4a09d`/`66c4eed` history carries two
+  email addresses in the Ray checkpoint doc (redacted at HEAD; rewriting a
+  public branch's history is a bigger act than the exposure).
+- **Live preview walk** (Playwright, the real Vercel preview, the real
+  Neon merge): SAT / SUN / AFTERS / FOLSOM tabs; 64 grid cells; 38 + 8
+  section cards with venue · hours; tapping Overmono on the grid repainted
+  the Afters Overmono card too and the pick landed in the server doc; SW
+  v39 controlling with the persistent data cache beside it. A throwaway
+  "Portola 26" crew (member `zz-preview-walk`) was created in the prod DB
+  for the walk — delete on Kevin's word.
+- 191 → 227 tests (226 pass, 1 env-gated skip). SW v38 → v39. Branch
+  `portola-set-times` = cloud branch + v31-polish docs + this.
+
+## 2026-08-23 — Portola Week + Folsom on the board, ACL made drop-ready, a field-hardening gate
+
+- **The Portola board now holds the crew's whole weekend**: the official
+  Portola Week program (21 Goldenvoice shows, Thu Sept 24 – Sun Sept 27,
+  announced Aug 18) as an AFTERS section and Folsom Street Fair weekend
+  (the fair + Horse Meat Disco, Magnitude, PERVERT XXL, DEVIANTS, Real
+  Bad 37, BRUT, Disco Daddy) as a FOLSOM section — on the same board, same
+  picks. Horse Meat Disco (the crew ask): **Fri Sept 25, Public Works,
+  9 PM–3 AM**, verified against multiple listings; a stale 2024 Tixr link
+  circulates, the real tickets are at sickening.events. Mechanism: an
+  afters appearance is its own artists[] entry; a name matching a lineup
+  artist unifies the pick/aura/notes on purpose, and lineup cards learned
+  a venue · time sub-label. Friday is conflict-free — that's HMD night.
+- **ACL set times ARE out** (week of Aug 17, both weekends) — and NOT
+  ingested, on purpose: this cloud session's egress policy can't reach the
+  JS-rendered schedule page, and 14 research agents + a 3-agent snippet-
+  mining round recovered only the evening headline blocks (~6 of ~30
+  sets/day). A 10%-populated grid lies harder than an honest lineup view.
+  Instead the two-weekend scheduled SHAPE shipped end to end (per-set
+  weekend tags, weekday day keys so day notes survive the flip, one
+  weekend on the grid at a time, per-weekend day-rule dates, validator +
+  docs + tests) — **pasting the grids from aclfestival.com/schedule is now
+  a pure data drop**, with verified evening anchors in acl-2026.json's
+  meta.note to cross-check against.
+- **An adversarial gate over the sync/offline/multi-user surface** (three
+  find lenses, every finding independently re-verified in code; 18
+  confirmed, 1 refuted, 36 invariants held). Fixed with regression tests:
+  the playlist-entry pending-subtraction wedge (the note-fragment bug's
+  twin — reproduced, then fixed atomically); festival JSONs moving to a
+  persistent SW cache so a CACHE_VERSION bump no longer wipes every
+  festival an offline device had opened (+ a rescue migration); 8s boot
+  fetch timeouts (dead festival WiFi = blank page, cache had the doc all
+  along); Safari 15.x getting NO sync timeout at all; the blocked-state
+  dot honestly staying blocked through unchanged polls; prototype-shaped
+  festival ids; storage-blocked boot crash; clientId clobbering pending.
+  Deferred with writeups: merge-SQL null semantics, octet_length vs
+  JSON.stringify cap mismatch, DIAGNOSE race misattribution, beacon
+  re-push leaf revert, poll teardown after leaving a crew, offline-first
+  boot.
+- 176 → 191 tests (190 pass, 1 env-gated skip). SW v36→v38. Branch
+  `claude/festival-lineup-integration-zs0s8l`, preview only — promote is
+  Kevin's call. No Codex CLI in the remote container; the gate ran as
+  independent adversarial agents instead.
+
 ## 2026-07-14 — The identity night: me link → model pivot → fest-first, four gates
 
 - **One overnight session moved the app onto Kevin's real model.** It started

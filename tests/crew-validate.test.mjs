@@ -108,3 +108,15 @@ test('prototype-pollution keys rejected everywhere and skipped by merge', () => 
   assert.equal({}.polluted, undefined);
   assert.equal(Object.getPrototypeOf(out), Object.prototype);
 });
+
+// Gate 2026-08-23: 'constructor' is all-lowercase, so it passed FESTIVAL_ID_RE
+// while every other key namespace rejected FORBIDDEN_KEYS — and the JS merge
+// twins SKIP such keys while the SQL merge stores them (twin drift a doc must
+// never be able to reach). Festival ids are object keys in every crew doc.
+test('prototype-shaped festival ids rejected everywhere they can enter', () => {
+  bad({ festivals: { constructor: { selections: {} } } });
+  bad({ festivals: { prototype: { selections: {} } } });
+  bad({ spotify: { playlists: { constructor: { id: 'a'.repeat(20), url: 'https://open.spotify.com/playlist/' + 'a'.repeat(20), mode: 'mine', by: 'K', at: '2026-08-23T00:00:00.000Z', artists: [] } } } });
+  bad({ meta: { inviteFestId: 'constructor' } });
+  ok({ festivals: { 'construct-or-fest': { selections: {} } } }); // hyphenated near-miss stays legal
+});

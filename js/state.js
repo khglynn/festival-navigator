@@ -8,7 +8,7 @@
 //     affinity: {person: {artist: {songs?, followed?}}} }  // crew-wide
 import { deepMerge, subtractLeaves } from './merge.js';
 import { computeDayArtists } from './time.js';
-import { loadJSON, saveLS } from './util.js';
+import { loadJSON, saveLS, getLS, removeLS } from './util.js';
 import { FESTIVALS, FESTIVAL_INDEX, defaultFestivalId } from './festivals.js';
 
 export { FESTIVALS };
@@ -58,7 +58,10 @@ export function activateCrew(token, doc, festHint) {
   if (healPlaylistArtists(pendingChanges)) saveLS(LS.pending(token), JSON.stringify(pendingChanges));
   healPlaylistArtists(crewDoc); // rendered copy; persists via the normal paths
   crewDoc = deepMerge(crewDoc, pendingChanges);
-  const savedFest = localStorage.getItem(LS.fest(token));
+  // Guarded read: a storage-blocked browser THROWS on getItem, and this
+  // runs on every crew activation — a throw here is the fatal screen for a
+  // device that has the whole doc in memory (Codex gate, 2026-08-27).
+  const savedFest = getLS(LS.fest(token));
   const known = (id) => FESTIVAL_INDEX.some((f) => f.id === id);
   const hinted = (festHint && known(festHint)) ? festHint : null;
   activeFestivalId = (savedFest && known(savedFest)) ? savedFest : (hinted || defaultFestivalId());
@@ -207,7 +210,10 @@ export function recordSpotifyClientId(clientId) {
   // state until the next full sync round-trip (CORE-14).
   crewDoc.spotify = crewDoc.spotify || {};
   crewDoc.spotify.clientId = clientId;
-  pendingChanges.spotify = { clientId };
+  // Merge, never replace: a whole-subtree assign silently dropped a pending
+  // playlist entry recorded seconds earlier in the same drill session
+  // (gate find, 2026-08-23).
+  (pendingChanges.spotify = pendingChanges.spotify || {}).clientId = clientId;
   editSeq++; persistPending(); persist();
 }
 
@@ -241,7 +247,8 @@ export function hasPending() { return Object.keys(pendingChanges).length > 0; }
 // `pushed` is the exact payload the server accepted. Omitting it clears
 // everything, which is only correct when there is nothing else to protect
 // (crew switch, forget-crew).
-// A NOTE must travel whole, and it is the only thing in this document that must.
+// Two things in this document are valid ONLY complete and must travel whole:
+// notes, and playlist registry entries.
 //
 // The server requires `author` and `ts` on every note it accepts (validateNote,
 // api/_lib/crew-shared.mjs). Everything else in the crew doc is either a plain
@@ -260,6 +267,18 @@ const NOTE_IS_ATOMIC = (path) => {
   return path[3] === 'fest' ? path.length === 5 : path.length === 6;
 };
 
+// path: spotify.playlists.<fid> — a playlist entry is the same shape of trap:
+// the server requires id and url on every entry it accepts (validateSpotifyPlaylist).
+// Record the playlist, pick once more while the POST is in flight, then hit
+// "Update" (or let the post-connect auto-extend run): the second record differs
+// from the acked one ONLY in artists[], so leaf subtraction kept {artists} and
+// dropped id/url — a fragment the server 400s, which the refused-payload guard
+// turns into a permanently blocked device wearing a reassuring toast
+// (gate find, 2026-08-23 — reproduced against the real modules).
+const PLAYLIST_IS_ATOMIC = (path) => path[0] === 'spotify' && path[1] === 'playlists' && path.length === 3;
+
+const IS_ATOMIC = (path) => NOTE_IS_ATOMIC(path) || PLAYLIST_IS_ATOMIC(path);
+
 export function clearPending(pushed) {
   if (!pushed) {
     pendingChanges = {};
@@ -270,9 +289,9 @@ export function clearPending(pushed) {
   //   memory — an edit made while the push was in flight lives here, and
   //            blanking it would drop the edit from the next push entirely.
   //   disk   — another tab's edit lives here, and blanking it would drop that.
-  pendingChanges = subtractLeaves(pendingChanges, pushed, NOTE_IS_ATOMIC);
+  pendingChanges = subtractLeaves(pendingChanges, pushed, IS_ATOMIC);
   const onDisk = loadJSON(LS.pending(crewToken), {});
-  saveLS(LS.pending(crewToken), JSON.stringify(subtractLeaves(onDisk, pushed, NOTE_IS_ATOMIC)));
+  saveLS(LS.pending(crewToken), JSON.stringify(subtractLeaves(onDisk, pushed, IS_ATOMIC)));
 }
 
 // The pre-v31 deepMerge object-ified arrays ({"0":..,"1":..}) whenever one
@@ -302,7 +321,7 @@ export function cachedPending(token) {
   healPlaylistArtists(p);
   return p;
 }
-export function clearCachedPending(token) { localStorage.removeItem(LS.pending(token)); }
+export function clearCachedPending(token) { removeLS(LS.pending(token)); }
 
 // Rebuild local doc from remote + our pending overlay. Returns true if the
 // visible slice actually changed (so callers repaint only when needed).
@@ -324,10 +343,18 @@ export function applyRemoteDoc(remote) {
 }
 
 // Returns computed artists for a day with startMin/endMin resolved (cached).
-export function getDayArtists(day) {
-  const key = `${activeFestivalId}|${day}`;
+//
+// `weekend` ('W1'|'W2') filters a TWO-WEEKEND scheduled fest (ACL): a set may
+// carry weekend: 'W1'|'W2' — untagged (or 'both') sets play every weekend.
+// Day keys stay the plain weekdays ("Friday", never "Friday W1") on purpose:
+// day NOTES are keyed by day label, and renamed keys silently strand every
+// note a crew has written (gate find, 2026-08-23). No weekend = no filter.
+export function getDayArtists(day, weekend) {
+  const key = `${activeFestivalId}|${day}|${weekend || 'all'}`;
   if (dayCache[key]) return dayCache[key];
-  const computed = computeDayArtists(fest().days[day]);
+  const dayData = fest().days[day];
+  const sets = (dayData.artists || []).filter((a) => !weekend || !a.weekend || a.weekend === 'both' || a.weekend === weekend);
+  const computed = computeDayArtists({ ...dayData, artists: sets });
   dayCache[key] = computed;
   return computed;
 }
