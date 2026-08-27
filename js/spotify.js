@@ -6,7 +6,7 @@
 // UI spells this out.
 import * as state from './state.js';
 import * as crewStore from './crew.js';
-import { loadJSON as loadJSONShared, saveLS } from './util.js';
+import { loadJSON as loadJSONShared, saveLS, removeLS } from './util.js';
 import { loadFestival, FESTIVALS } from './festivals.js';
 
 const LS_AUTH = 'fn_spotify_auth_v1';       // {clientId, access_token, refresh_token, expires_at}
@@ -62,10 +62,10 @@ export function isConnected() {
   return !!(a && a.refresh_token && a.clientId === state.spotifyClientId());
 }
 export function libraryMap() { return loadJSON(LS_LIBMAP); }
-export function disconnect() { localStorage.removeItem(LS_AUTH); localStorage.removeItem(LS_LIBMAP); }
+export function disconnect() { removeLS(LS_AUTH); removeLS(LS_LIBMAP); }
 // Drop the cached library but STAY connected — "read it again" re-runs the whole
 // sweep (read + badge every festival) without making anyone re-authorise.
-export function disconnectLibrary() { localStorage.removeItem(LS_LIBMAP); }
+export function disconnectLibrary() { removeLS(LS_LIBMAP); }
 
 // ---- PKCE connect -----------------------------------------------------------
 const b64url = (bytes) => btoa(String.fromCharCode(...new Uint8Array(bytes)))

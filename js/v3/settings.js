@@ -12,7 +12,7 @@ import { colorIndexOf } from './wall.js';
 import { el, subviewHead, eqLoader, festRow, openExportLikes, openBulkPaste, openDayImage } from './tools.js';
 import { router } from './router.js';
 import { nameProblem, NAME_LIMITS } from '../name-rules.mjs';
-import { loadJSON, saveLS } from '../util.js';
+import { loadJSON, saveLS, getLS, removeLS } from '../util.js';
 
 const LS_SETTINGS = 'fn_settings_v1'; // {lowPower, stayOffline}
 
@@ -722,7 +722,7 @@ async function fetchAccessConfig() {
 // locally so reopening the drill shows where the request stands.
 function requestAccessRow(rerenderDrill) {
   const wrap = el('div', 'display: flex; flex-direction: column; gap: 7px; border-top: 1px solid var(--hairline); padding-top: 10px;');
-  const saved = localStorage.getItem(LS_ACCESS_EMAIL);
+  const saved = getLS(LS_ACCESS_EMAIL);
   const status = el('div', 'color: var(--text-tertiary); font-size: 11px; font-weight: 600; line-height: 1.5;');
   if (saved) {
     wrap.appendChild(el('div', 'color: var(--text-secondary); font-size: 11.5px; font-weight: 600;',
@@ -740,7 +740,7 @@ function requestAccessRow(rerenderDrill) {
           status.textContent = 'Still pending — the owner gets a ping and adds you; usually quick.';
         } else {
           status.textContent = 'No request on file — send it again below.';
-          localStorage.removeItem(LS_ACCESS_EMAIL);
+          removeLS(LS_ACCESS_EMAIL);
           rerenderDrill();
         }
       } catch { status.textContent = 'Couldn’t check right now — try again in a moment.'; }

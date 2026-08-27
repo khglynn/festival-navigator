@@ -294,7 +294,7 @@ function updateWeekendRow() {
       b.dataset.w = val;
       b.textContent = label;
       b.addEventListener('click', () => {
-        localStorage.setItem(`fn_weekend_v1_${ctx.fid}`, val);
+        saveLS(`fn_weekend_v1_${ctx.fid}`, val);
         repaintWall();
       });
       row.appendChild(b);

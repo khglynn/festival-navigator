@@ -51,17 +51,25 @@ function bootWorker({ cached = {}, fetchImpl, putDelay = 0 }) {
 
 // Dispatch one fetch event. `waited` collects every promise the worker hands
 // to waitUntil — the test's proof that a background write is held open.
-async function dispatch(worker, path) {
+async function dispatch(worker, path, init = {}) {
   let responded;
   const waited = [];
+  // Node's Request refuses mode:'navigate'; the worker only reads url/method/
+  // mode off the request, so a plain object stands in for a navigation.
+  const request = init.mode === 'navigate'
+    ? { url: ORIGIN + path, method: 'GET', mode: 'navigate' }
+    : new Request(ORIGIN + path, init);
   worker.handlers.fetch({
-    request: new Request(ORIGIN + path),
+    request,
     respondWith: (p) => { responded = Promise.resolve(p); },
     waitUntil: (p) => { waited.push(p); },
   });
+  // Snapshot BEFORE the first await: a waitUntil that arrives after the
+  // dispatch window is an InvalidStateError in real browsers.
+  const registeredSync = waited.length;
   assert.ok(responded, `worker did not respondWith for ${path}`);
   const resp = await responded;
-  return { body: resp ? await resp.text() : null, waited };
+  return { resp, body: resp && resp.type !== 'error' ? await resp.text() : null, waited, registeredSync };
 }
 
 const delayed = (body, ms) => new Promise((resolve) => setTimeout(() => resolve(new Response(body)), ms));
@@ -106,9 +114,9 @@ test('festival data: a LATE network answer still lands in the cache, and that wr
     fetchImpl: () => delayed('{"status":"scheduled"}', 80),
     putDelay: 40,
   });
-  const { body, waited } = await dispatch(w, '/data/festivals/portola-2026.json');
+  const { body, waited, registeredSync } = await dispatch(w, '/data/festivals/portola-2026.json');
   assert.equal(body, '{"status":"lineup"}', 'the phone got the cached copy at the budget');
-  assert.equal(waited.length, 1, 'exactly one background promise registered, synchronously, at dispatch');
+  assert.equal(registeredSync, 1, 'exactly one background promise registered, synchronously, inside the dispatch window');
   assert.notEqual(w.store.get(`${ORIGIN}/data/festivals/portola-2026.json`), '{"status":"scheduled"}', 'not written yet — the network is still out');
   await Promise.all(waited);
   assert.equal(w.store.get(`${ORIGIN}/data/festivals/portola-2026.json`), '{"status":"scheduled"}', 'settled only after the late write landed');
@@ -135,11 +143,30 @@ test('shell assets stay cache-first, and their background refresh is held open b
     fetchImpl: () => delayed('new', 20),
     putDelay: 20,
   });
-  const { body, waited } = await dispatch(w, '/js/v3/app.js');
+  const { body, waited, registeredSync } = await dispatch(w, '/js/v3/app.js');
   assert.equal(body, 'old');
-  assert.equal(waited.length, 1);
+  assert.equal(registeredSync, 1);
   await Promise.all(waited);
   assert.equal(w.store.get(`${ORIGIN}/js/v3/app.js`), 'new', 'the shell copy refreshed in the background');
+});
+
+test('shell assets: a cold miss with a dead network is an explicit error response, never respondWith(undefined)', async () => {
+  const w = bootWorker({ fetchImpl: async () => { throw new TypeError('Failed to fetch'); } });
+  const { resp } = await dispatch(w, '/js/v3/nowhere.js');
+  assert.ok(resp, 'a Response object came back');
+  assert.equal(resp.type, 'error');
+});
+
+test('navigations: network-first, the cached shell when offline, and the background write held open by waitUntil', async () => {
+  const online = bootWorker({ cached: { '/': 'old shell' }, fetchImpl: () => delayed('new shell', 10), putDelay: 20 });
+  const a = await dispatch(online, '/', { mode: 'navigate' });
+  assert.equal(a.body, 'new shell');
+  assert.equal(a.registeredSync, 1, 'the navigation cache write is registered inside the dispatch window');
+  await Promise.all(a.waited);
+  assert.equal(online.store.get(`${ORIGIN}/`), 'new shell');
+  const offline = bootWorker({ cached: { '/': 'old shell' }, fetchImpl: async () => { throw new TypeError('offline'); } });
+  const b = await dispatch(offline, '/', { mode: 'navigate' });
+  assert.equal(b.body, 'old shell', 'offline falls back to the cached shell');
 });
 
 test('the data cache is a separate, persistent bucket and CACHE_VERSION was bumped for this drop', () => {

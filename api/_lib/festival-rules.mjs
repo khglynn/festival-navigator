@@ -62,6 +62,12 @@ export function validateFestivalDoc(fest, { filename } = {}) {
   // a real reappearance (a lineup artist playing an afters/Folsom show) —
   // picks/auras/notes unify by exact name on purpose. The warning stays for
   // true dupes: same day, or no day to tell the two apart.
+  const knownLower = new Set([...knownDays].map((d) => d.toLowerCase()));
+  const renderedDays = (dayStr) => {
+    if (!dayStr) return [''];
+    const split = dayStr.split(/\s*[&+/]\s*|\s+and\s+/i).map((s) => s.trim().toLowerCase()).filter(Boolean);
+    return split.length > 1 && split.every((p) => knownLower.has(p)) ? split : [dayStr.trim().toLowerCase()];
+  };
   const artistNames = new Map();
   (Array.isArray(fest.artists) ? fest.artists : []).forEach((a, i) => {
     if (!a || !a.name || typeof a.name !== 'string') err(`artists[${i}]: missing name`);
@@ -71,9 +77,11 @@ export function validateFestivalDoc(fest, { filename } = {}) {
       const dayStr = typeof a.day === 'string' ? a.day : '';
       // Compare RENDERED days, not raw labels: "Saturday & Sunday" splits into
       // a card per day, so a second "Saturday" entry for the same name is a
-      // dupe on the Saturday wall even though the strings differ. No day at
-      // all collides with everything.
-      const parts = dayStr ? dayStr.split(/\s*[&+/]\s*|\s+and\s+/i).map((s) => s.trim().toLowerCase()).filter(Boolean) : [''];
+      // dupe on the Saturday wall even though the strings differ. Split
+      // exactly as the renderer does (wall.js splitDays): only when EVERY part
+      // is a known day — otherwise the label stays one literal section. No
+      // day at all collides with everything.
+      const parts = renderedDays(dayStr);
       const seen = artistNames.get(key);
       if (seen && seen.some((prev) => prev.includes('') || parts.includes('') || prev.some((p) => parts.includes(p)))) {
         warn(`duplicate artist in artists[]: ${a.name}${dayStr ? ` (day ${JSON.stringify(dayStr)})` : ''}`);
@@ -122,7 +130,10 @@ export function validateFestivalDoc(fest, { filename } = {}) {
     for (const [label, day] of Object.entries(fest.days)) {
       gridNamesByDay[label] = new Set();
       if (!isPlain(day)) { err(`${safeKey(label)}: must be an object with stages[] and artists[]`); continue; }
-      if (!Array.isArray(day.stages) || !day.stages.length) err(`${safeKey(label)}: missing stages[]`);
+      // stages must be a real array — `{}` or `7` is diagnosed AND must not
+      // reach .includes() below (a throw here is a 500 for an API candidate).
+      const stages = Array.isArray(day.stages) ? day.stages : [];
+      if (!stages.length) err(`${safeKey(label)}: missing stages[]`);
       if (!Array.isArray(day.artists) || !day.artists.length) { err(`${safeKey(label)}: missing artists[]`); continue; }
       day.artists.forEach((a, i) => {
         if (!isPlain(a)) { err(`${safeKey(label)}.artists[${i}]: must be an object`); return; }
@@ -132,7 +143,7 @@ export function validateFestivalDoc(fest, { filename } = {}) {
         // notes are keyed by day label, and renamed keys strand them.
         if (a.weekend && !['W1', 'W2', 'both'].includes(a.weekend)) err(`${safeKey(label)}.artists[${i}] (${safeKey(a.name)}): weekend must be W1|W2|both`);
         if (!a.stage) err(`${safeKey(label)}.artists[${i}] (${safeKey(a.name)}): missing stage`);
-        else if (!(day.stages || []).includes(a.stage)) err(`${safeKey(label)}.artists[${i}] (${safeKey(a.name)}): stage ${JSON.stringify(safeKey(a.stage))} not in day stages`);
+        else if (!stages.includes(a.stage)) err(`${safeKey(label)}.artists[${i}] (${safeKey(a.name)}): stage ${JSON.stringify(safeKey(a.stage))} not in day stages`);
         if (!a.time || !TIME_RE.test(a.time)) err(`${safeKey(label)}.artists[${i}] (${safeKey(a.name)}): bad time ${JSON.stringify(safeKey(a.time))}`);
         else { try { timeToMinutes(a.time.split(' - ')[0]); } catch { err(`${safeKey(label)}.artists[${i}]: time did not parse`); } }
         if (a.name && typeof a.name === 'string') {

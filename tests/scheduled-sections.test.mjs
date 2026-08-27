@@ -180,15 +180,35 @@ test('validator: an ARCHIVED grid with a case-drifted name warns instead of erro
   assert.ok(r.warnings.some((w) => w.includes('headliner') && w.includes('case')), `but a warning: ${r.warnings}`);
 });
 
+test('validator: a malformed stages value is diagnosed without throwing; lowercase "pm" parses as evening in the renderer too', async () => {
+  for (const stages of [{}, 7, 'Main', null]) {
+    let r;
+    assert.doesNotThrow(() => { r = validateFestivalDoc({ ...FEST, days: { Saturday: { stages, artists: [{ name: 'Headliner', stage: 'Main', time: '9:00 PM' }] } } }); }, `stages=${JSON.stringify(stages)}`);
+    assert.ok(r.errors.some((e) => e.includes('missing stages')), `stages=${JSON.stringify(stages)} is an error: ${r.errors}`);
+  }
+  const { timeToMinutes, activityMinutes } = await import('../js/time.js');
+  assert.equal(timeToMinutes('9 pm'), 21 * 60, 'TIME_RE is case-insensitive, so the parser must be too');
+  assert.equal(timeToMinutes('12:30 am'), 24 * 60 + 30);
+  assert.equal(activityMinutes('9 pm'), 21 * 60);
+});
+
 test('validator: duplicate detection compares RENDERED days — "Saturday" vs "Saturday & Sunday" is two cards on one wall', () => {
+  // Both parts must be KNOWN days for the renderer to split the label at all.
   const r = validateFestivalDoc({
     id: 'x', name: 'X', status: 'lineup',
-    artists: [{ name: 'Despacio', day: 'Saturday' }, { name: 'Despacio', day: 'Saturday & Sunday' }],
+    artists: [{ name: 'Other', day: 'Sunday' }, { name: 'Despacio', day: 'Saturday' }, { name: 'Despacio', day: 'Saturday & Sunday' }],
   });
   assert.ok(r.warnings.some((w) => w.includes('duplicate') && w.includes('Despacio')), `combined-day dupe warns: ${r.warnings}`);
   const clean = validateFestivalDoc({
     id: 'x', name: 'X', status: 'lineup',
-    artists: [{ name: 'Despacio', day: 'Saturday & Sunday' }, { name: 'Despacio', day: 'Afters', stage: 'Fri · Pier 80', time: '5 PM' }],
+    artists: [{ name: 'A', day: 'Saturday' }, { name: 'B', day: 'Sunday' }, { name: 'Despacio', day: 'Saturday & Sunday' }, { name: 'Despacio', day: 'Afters', stage: 'Fri · Pier 80', time: '5 PM' }],
   });
   assert.ok(!clean.warnings.some((w) => w.includes('duplicate')), `disjoint days are a reappearance: ${clean.warnings}`);
+  // Split exactly like the renderer: a combination with an UNKNOWN part stays
+  // one literal section, so it does not collide with the plain day.
+  const literal = validateFestivalDoc({
+    id: 'x', name: 'X', status: 'lineup',
+    artists: [{ name: 'Despacio', day: 'Saturday' }, { name: 'Despacio', day: 'Saturday & Mystery' }],
+  });
+  assert.ok(!literal.warnings.some((w) => w.includes('duplicate')), `an unsplittable label is its own section: ${literal.warnings}`);
 });

@@ -131,14 +131,10 @@ self.addEventListener('fetch', (event) => {
   // Navigations: network-first so a stale worker can never pin an old shell
   // on a returning device (PS-2); cache is the offline fallback.
   if (request.mode === 'navigate') {
+    const nav = fetchAndStore(request, CACHE_VERSION);
+    event.waitUntil(nav.done);
     event.respondWith(
-      fetch(request).then((resp) => {
-        if (resp && resp.ok) {
-          const copy = resp.clone();
-          caches.open(CACHE_VERSION).then((c) => c.put(request, copy)).catch(() => {});
-        }
-        return resp;
-      }).catch(() => caches.match(request, { ignoreSearch: true }).then((cached) => cached || caches.match('/')))
+      nav.response.catch(() => caches.match(request, { ignoreSearch: true }).then((cached) => cached || caches.match('/')).then((cached) => cached || Response.error()))
     );
     return;
   }
@@ -161,8 +157,10 @@ self.addEventListener('fetch', (event) => {
   // unregistered write can be killed with the worker before it lands).
   const refresh = fetchAndStore(request, CACHE_VERSION);
   event.waitUntil(refresh.done);
+  // A cold miss with a dead network is an honest network error, never
+  // respondWith(undefined).
   event.respondWith(
-    caches.match(request).then((cached) => cached || refresh.response.catch(() => cached))
+    caches.match(request).then((cached) => cached || refresh.response.catch(() => Response.error()))
   );
 });
 
