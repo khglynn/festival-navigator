@@ -1,4 +1,39 @@
-# NOW — festival-navigator: fest-first reshape ON STAGING (v35) · prod at v31
+# NOW — festival-navigator: fest-first reshape LIVE ON PROD (v35)
+
+## 2026-08-10 — Ray's fork hit a working checkpoint (awaiting Kevin's review)
+
+Ray Perfetti (`raypp2`) — the contributor who forked us in July — emailed
+Aug 6 with a live demo: Discover feed, artist pages, tri-source player
+(YouTube/SoundCloud/Spotify), reworked pick controls, top menu. His fork is
+77 commits ahead of our main, deployed on HIS Vercel + HIS database (nothing
+of ours touched). No PRs yet; one open issue (#6, Spotify `CANONICAL_HOST`
+hardcoded — he's offering the PR, unanswered since Jul 24). Full notes +
+suggested moves: `claude-plans/2026-08-10-ray-fork-checkpoint.md`. His demo
+link carries a crew token, so it stays in the Gmail thread, not in this repo.
+
+## 2026-07-14 — PROMOTED TO PRODUCTION (v35)
+
+Kevin's call ("kk promote"). `v31-polish` → `main` fast-forward (f7ad492 →
+81a1cfb, 16 commits, 27 files), pushed; Vercel auto-deployed. **All three prod
+domains serve `festival-nav-v35`, root HTTP 200** — verified by served
+CACHE_VERSION on fest / festival / crew.kevinhg.com. The bump from v31 → v35
+force-refreshes every installed client (SW skipWaiting + clients.claim), so
+returning phones pick up the fest-first reshape + me link + the whole
+identity-night arc without a manual reload. `main` now matches production;
+work continues on `v31-polish`.
+
+Still on my post-promote queue (Kevin's word required to start any): the
+**Portola/Seismic crew split** (his own jumbled pair — small, server-side),
+**Phase B** (merged fest board + join-picker/mute), **Phase 2 hardening**
+(server idempotency key / cross-tab double-create), The Crew token +
+screenshotted client-secret rotations, and the round-2 Spotify
+collaborative-playlist live test.
+
+Kevin's own return items (his to do, not mine): re-test Spotify connect on a
+fresh browser now that v35 is live, and — only if he wants staging to OAuth
+without hopping — add `https://stage.fest.kevinhg.com/spotify-callback` in the
+Spotify dashboard. Production's redirect URI (`fest.kevinhg.com/spotify-callback`)
+was already registered and verified live 2026-07-13, so prod Spotify works today.
 
 ## 2026-08-23 — Portola Week + Folsom shipped, ACL drop-ready, hardening gate (branch: claude/festival-lineup-integration-zs0s8l)
 
