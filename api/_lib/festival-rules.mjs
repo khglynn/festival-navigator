@@ -1,13 +1,17 @@
 // The festival-document rules, as a pure module — the SINGLE source of truth
 // consumed by BOTH scripts/validate-festivals.mjs (CI) and api/festival-add.js
 // (LLM-researched candidates). If a rule changes, it changes here once.
-import { timeToMinutes } from '../../js/time.js';
+import { timeToMinutes, computeDayArtists } from '../../js/time.js';
 import { safeKey, FORBIDDEN_KEYS } from './crew-shared.mjs';
 
 export const SLUG_RE = /^[a-z0-9-]{1,64}$/;
 export const ACCENT_RE = /^\d{1,3}, \d{1,3}, \d{1,3}$/;
 export const STATUSES = ['lineup', 'scheduled', 'archived'];
-export const TIME_RE = /^\d{1,2}(:\d{2})? (AM|PM)( - (\d{1,2}(:\d{2})? (AM|PM)|Close))?$/i;
+// A clock time: 1–12 hours, 00–59 minutes. "13:00 PM" and "99:59 PM" used to
+// pass the old \d{1,2} shape and parse into nonsense minutes (Codex gate,
+// 2026-08-27).
+const CLOCK = '(1[0-2]|0?[1-9])(:[0-5][0-9])? (AM|PM)';
+export const TIME_RE = new RegExp(`^${CLOCK}( - (${CLOCK}|Close))?$`, 'i');
 
 // Validate one festival document. `filename` is optional (CI passes it to
 // enforce filename-matches-id; API candidates have no file).
@@ -65,12 +69,17 @@ export function validateFestivalDoc(fest, { filename } = {}) {
     else {
       const key = a.name.toUpperCase();
       const dayStr = typeof a.day === 'string' ? a.day : '';
+      // Compare RENDERED days, not raw labels: "Saturday & Sunday" splits into
+      // a card per day, so a second "Saturday" entry for the same name is a
+      // dupe on the Saturday wall even though the strings differ. No day at
+      // all collides with everything.
+      const parts = dayStr ? dayStr.split(/\s*[&+/]\s*|\s+and\s+/i).map((s) => s.trim().toLowerCase()).filter(Boolean) : [''];
       const seen = artistNames.get(key);
-      if (seen && (!dayStr || seen.has(dayStr) || seen.has(''))) {
+      if (seen && seen.some((prev) => prev.includes('') || parts.includes('') || prev.some((p) => parts.includes(p)))) {
         warn(`duplicate artist in artists[]: ${a.name}${dayStr ? ` (day ${JSON.stringify(dayStr)})` : ''}`);
       }
-      if (seen) seen.add(dayStr);
-      else artistNames.set(key, new Set([dayStr]));
+      if (seen) seen.push(parts);
+      else artistNames.set(key, [parts]);
     }
     if (a && a.time && !TIME_RE.test(a.time)) err(`artists[${i}] (${safeKey(a.name)}): unparseable time ${JSON.stringify(safeKey(a.time))}`);
     if (a && a.weekends && !['W1', 'W2', 'both'].includes(a.weekends)) err(`artists[${i}] (${safeKey(a.name)}): weekends must be W1|W2|both`);
@@ -84,14 +93,25 @@ export function validateFestivalDoc(fest, { filename } = {}) {
     }
   });
 
+  const isPlain = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
+  // days{} is an object keyed by day label. An array or a scalar here used to
+  // sail through (nothing iterated), and a null day entry threw — which
+  // api/festival-add.js turned into a 500 instead of a rejection.
+  if (fest.days !== undefined && !isPlain(fest.days)) {
+    err('days must be an object keyed by day label');
+    return { errors, warnings };
+  }
   if (fest.status === 'scheduled' && (!fest.days || Object.keys(fest.days).length === 0)) {
     err('scheduled festival needs days{}');
     return { errors, warnings };
   }
-  // The renderer keys on days{} PRESENCE, not on status — so the grid rules
-  // run for any live fest that carries a grid. Archived fests are memories;
-  // their grids are not re-litigated.
-  if (fest.days && fest.status !== 'archived') {
+  // The renderer keys on days{} PRESENCE, not on status — so the structural
+  // rules run for ANY grid. Archived fests are memories: their grid names are
+  // the keys the crew's picks already live under, so a spelling mismatch
+  // there is reported but never enforced (correcting it would orphan the
+  // picks), and schedule-quality checks skip them.
+  if (fest.days) {
+    const live = fest.status !== 'archived';
     // Exact bytes, on purpose: picks, auras and notes are keyed by the
     // artists[] name and lookups do no case folding (docs/add-a-festival.md).
     // A grid entry that matches the lineup only case-insensitively is the
@@ -101,59 +121,78 @@ export function validateFestivalDoc(fest, { filename } = {}) {
     const gridNamesByDay = {};
     for (const [label, day] of Object.entries(fest.days)) {
       gridNamesByDay[label] = new Set();
-      if (!Array.isArray(day.stages) || !day.stages.length) err(`${label}: missing stages[]`);
-      if (!Array.isArray(day.artists) || !day.artists.length) { err(`${label}: missing artists[]`); continue; }
+      if (!isPlain(day)) { err(`${safeKey(label)}: must be an object with stages[] and artists[]`); continue; }
+      if (!Array.isArray(day.stages) || !day.stages.length) err(`${safeKey(label)}: missing stages[]`);
+      if (!Array.isArray(day.artists) || !day.artists.length) { err(`${safeKey(label)}: missing artists[]`); continue; }
       day.artists.forEach((a, i) => {
-        if (!a.name) err(`${label}.artists[${i}]: missing name`);
+        if (!isPlain(a)) { err(`${safeKey(label)}.artists[${i}]: must be an object`); return; }
+        if (!a.name) err(`${safeKey(label)}.artists[${i}]: missing name`);
         // Two-weekend fests tag sets with the weekend they play; untagged or
         // 'both' plays every weekend. Day KEYS stay the plain weekdays — day
         // notes are keyed by day label, and renamed keys strand them.
         if (a.weekend && !['W1', 'W2', 'both'].includes(a.weekend)) err(`${safeKey(label)}.artists[${i}] (${safeKey(a.name)}): weekend must be W1|W2|both`);
         if (!a.stage) err(`${safeKey(label)}.artists[${i}] (${safeKey(a.name)}): missing stage`);
-        else if (!day.stages.includes(a.stage)) err(`${safeKey(label)}.artists[${i}] (${safeKey(a.name)}): stage ${JSON.stringify(safeKey(a.stage))} not in day stages`);
+        else if (!(day.stages || []).includes(a.stage)) err(`${safeKey(label)}.artists[${i}] (${safeKey(a.name)}): stage ${JSON.stringify(safeKey(a.stage))} not in day stages`);
         if (!a.time || !TIME_RE.test(a.time)) err(`${safeKey(label)}.artists[${i}] (${safeKey(a.name)}): bad time ${JSON.stringify(safeKey(a.time))}`);
-        else { try { timeToMinutes(a.time.split(' - ')[0]); } catch { err(`${label}.artists[${i}]: time did not parse`); } }
-        if (a.name) {
+        else { try { timeToMinutes(a.time.split(' - ')[0]); } catch { err(`${safeKey(label)}.artists[${i}]: time did not parse`); } }
+        if (a.name && typeof a.name === 'string') {
           gridNamesByDay[label].add(a.name);
           if (!lineupExact.has(a.name)) {
-            if (artistNames.has(a.name.toUpperCase())) err(`${safeKey(label)}: ${safeKey(a.name)} differs from its artists[] spelling by case — picks key on exact bytes, so this would split the crew's picks`);
-            else err(`${safeKey(label)}: ${safeKey(a.name)} plays but is missing from artists[]`);
+            const report = live ? err : warn;
+            if (artistNames.has(a.name.toUpperCase())) report(`${safeKey(label)}: ${safeKey(a.name)} differs from its artists[] spelling by case — picks key on exact bytes, so this would split the crew's picks`);
+            else report(`${safeKey(label)}: ${safeKey(a.name)} plays but is missing from artists[]`);
           }
         }
       });
-      // One stage, one act at a time. Two sets with explicit ends that overlap
-      // on the same stage (and a compatible weekend) are a transcription error
-      // — the poster can't print that, so the file mustn't either. Untimed
-      // ends are filled by the renderer and are not judged here.
-      const timed = day.artists
-        .filter((a) => a.name && a.stage && typeof a.time === 'string' && TIME_RE.test(a.time) && a.time.includes(' - ') && !/close$/i.test(a.time))
-        .map((a) => {
+      if (live) {
+        const wellFormed = day.artists.filter((a) => isPlain(a) && a.name && a.stage && typeof a.time === 'string' && TIME_RE.test(a.time));
+        for (const a of wellFormed) {
+          if (!a.time.includes(' - ') || /close$/i.test(a.time)) continue;
           const [s, e] = a.time.split(' - ');
-          return { name: a.name, stage: a.stage, time: a.time, weekend: a.weekend || 'both', start: timeToMinutes(s), end: timeToMinutes(e) };
-        });
-      const sameWeekend = (x, y) => x.weekend === 'both' || y.weekend === 'both' || x.weekend === y.weekend;
-      for (let x = 0; x < timed.length; x++) {
-        const a = timed[x];
-        if (a.end <= a.start) err(`${safeKey(label)}: ${safeKey(a.name)} ends before it starts (${safeKey(a.time)})`);
-        for (let y = x + 1; y < timed.length; y++) {
-          const b = timed[y];
-          if (a.stage !== b.stage || !sameWeekend(a, b)) continue;
-          if (a.start < b.end && b.start < a.end) err(`${safeKey(label)}: ${safeKey(a.name)} and ${safeKey(b.name)} overlap on ${safeKey(a.stage)}`);
+          if (timeToMinutes(e) <= timeToMinutes(s)) err(`${safeKey(label)}: ${safeKey(a.name)} ends before it starts (${safeKey(a.time)})`);
+        }
+        // One stage, one act at a time — judged on the spans the RENDERER
+        // resolves (a missing end is filled from the next set on that stage,
+        // so two point-times on one stage still collide), per weekend so W1
+        // and W2 sets on the same stage are not each other's clash. A warning,
+        // not an error: archived Lollapalooza carries two genuine simultaneous
+        // listings, so the poster CAN print it — but on a fresh transcription
+        // it is nearly always a slipped box, and the Portola test holds that
+        // file to zero warnings.
+        const tags = new Set(wellFormed.map((a) => a.weekend).filter((w) => w === 'W1' || w === 'W2'));
+        const views = tags.size ? [...tags] : [null];
+        const flagged = new Set();
+        for (const wk of views) {
+          const subset = wellFormed.filter((a) => !wk || !a.weekend || a.weekend === 'both' || a.weekend === wk);
+          let resolved;
+          try { resolved = computeDayArtists({ artists: subset }); } catch { continue; }
+          for (let x = 0; x < resolved.length; x++) {
+            for (let y = x + 1; y < resolved.length; y++) {
+              const a = resolved[x], b = resolved[y];
+              if (a.stage !== b.stage || !(a.startMin < b.endMin && b.startMin < a.endMin)) continue;
+              const k = `${a.stage}|${[a.name, b.name].sort().join('|')}`;
+              if (flagged.has(k)) continue;
+              flagged.add(k);
+              warn(`${safeKey(label)}: ${safeKey(a.name)} and ${safeKey(b.name)} overlap on ${safeKey(a.stage)} — two acts on one stage at once is usually a slipped box`);
+            }
+          }
         }
       }
       if (fest.dayMeta && !fest.dayMeta[label]) warn(`dayMeta missing entry for ${label}`);
     }
     // The other direction: a lineup artist billed on a grid day with no set
     // on that grid is invisible on the timetable. Usually a missed box —
-    // warn, don't block (partial drops are real).
-    (Array.isArray(fest.artists) ? fest.artists : []).forEach((a) => {
-      if (!a || !a.name || typeof a.day !== 'string') return;
-      const parts = a.day.split(/\s*[&+/]\s*|\s+and\s+/i).map((s) => s.trim()).filter(Boolean);
-      for (const part of parts) {
-        const dayKey = Object.keys(fest.days).find((d) => d.toLowerCase() === part.toLowerCase());
-        if (dayKey && !gridNamesByDay[dayKey].has(a.name)) warn(`${safeKey(a.name)} is billed on ${safeKey(dayKey)} but has no set on that day's grid`);
-      }
-    });
+    // warn, don't block (partial drops are real). Live fests only.
+    if (live) {
+      (Array.isArray(fest.artists) ? fest.artists : []).forEach((a) => {
+        if (!a || !a.name || typeof a.day !== 'string') return;
+        const parts = a.day.split(/\s*[&+/]\s*|\s+and\s+/i).map((s) => s.trim()).filter(Boolean);
+        for (const part of parts) {
+          const dayKey = Object.keys(fest.days).find((d) => d.toLowerCase() === part.toLowerCase());
+          if (dayKey && gridNamesByDay[dayKey] && !gridNamesByDay[dayKey].has(a.name)) warn(`${safeKey(a.name)} is billed on ${safeKey(dayKey)} but has no set on that day's grid`);
+        }
+      });
+    }
   }
 
   if (fest.activities) {

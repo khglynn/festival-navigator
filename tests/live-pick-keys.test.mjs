@@ -31,10 +31,11 @@ for (const [id, frozen] of Object.entries(fixture.festivals)) {
   });
 }
 
-test('the fixture covers every live (non-archived) festival that has a crew picking in it today', () => {
+test('the fixture covers the festivals KNOWN to have live picks as of 2026-08-27 (a hand-kept list — extend it when a fest goes live)', () => {
   // Festivals a crew has picks in are the ones whose names are load-bearing.
-  // This list is the ground truth from the crew store on 2026-08-27; extend it
-  // when a new festival goes live for real people.
+  // This list is hand-maintained from the crew store (36 crews, 2026-08-27);
+  // it cannot notice a NEW live festival on its own — add the id here and run
+  // scripts/freeze-pick-keys.mjs the day real people start picking there.
   const LIVE = ['portola-2026'];
   for (const id of LIVE) assert.ok(fixture.festivals[id], `${id} has live picks but no frozen names — run scripts/freeze-pick-keys.mjs ${id}`);
 });

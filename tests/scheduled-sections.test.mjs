@@ -128,27 +128,67 @@ test('validator: a grid name that only matches the lineup by case is an ERROR, n
   assert.ok(missing.errors.some((e) => e.includes('Nobody') && e.includes('missing from artists')), `grid-only names are errors: ${missing.errors}`);
 });
 
-test('validator: two sets on one stage cannot overlap; a set cannot end before it starts', () => {
-  const overlap = validateFestivalDoc({
-    ...FEST,
-    days: { Saturday: { stages: ['Main'], artists: [
-      { name: 'Headliner', stage: 'Main', time: '9:00 PM - 10:15 PM' },
-      { name: 'Overmono', stage: 'Main', time: '10:00 PM - 11:00 PM' },
-    ] } },
-  });
-  assert.ok(overlap.errors.some((e) => e.includes('overlap')), `overlap is an error: ${overlap.errors}`);
-  const inverted = validateFestivalDoc({
-    ...FEST,
-    days: { Saturday: { stages: ['Main'], artists: [{ name: 'Headliner', stage: 'Main', time: '10:00 PM - 9:00 PM' }] } },
-  });
+test('validator: two acts on one stage at once WARN (renderer-resolved spans, point-times included); ending before starting is an ERROR', () => {
+  const grid = (artists) => ({ ...FEST, days: { Saturday: { stages: ['Main'], artists } } });
+  const overlap = validateFestivalDoc(grid([
+    { name: 'Headliner', stage: 'Main', time: '9:00 PM - 10:15 PM' },
+    { name: 'Overmono', stage: 'Main', time: '10:00 PM - 11:00 PM' },
+  ]));
+  assert.ok(overlap.warnings.some((w) => w.includes('overlap')), `overlap warns: ${overlap.warnings}`);
+  assert.ok(!overlap.errors.some((e) => e.includes('overlap')), 'archived Lolla has real simultaneous listings — a warning, not a wall');
+  const pointTimes = validateFestivalDoc(grid([
+    { name: 'Headliner', stage: 'Main', time: '9:00 PM' },
+    { name: 'Overmono', stage: 'Main', time: '9:00 PM' },
+  ]));
+  assert.ok(pointTimes.warnings.some((w) => w.includes('overlap')), `two point-times on one stage collide once the renderer fills the ends: ${pointTimes.warnings}`);
+  const inverted = validateFestivalDoc(grid([{ name: 'Headliner', stage: 'Main', time: '10:00 PM - 9:00 PM' }]));
   assert.ok(inverted.errors.some((e) => e.includes('ends before it starts')), `inverted is an error: ${inverted.errors}`);
   // Different weekends on a two-weekend grid are not a clash.
-  const weekends = validateFestivalDoc({
-    ...FEST,
-    days: { Saturday: { stages: ['Main'], artists: [
-      { name: 'Headliner', stage: 'Main', time: '9:00 PM - 10:15 PM', weekend: 'W1' },
-      { name: 'Overmono', stage: 'Main', time: '9:00 PM - 10:15 PM', weekend: 'W2' },
-    ] } },
+  const weekends = validateFestivalDoc(grid([
+    { name: 'Headliner', stage: 'Main', time: '9:00 PM - 10:15 PM', weekend: 'W1' },
+    { name: 'Overmono', stage: 'Main', time: '9:00 PM - 10:15 PM', weekend: 'W2' },
+  ]));
+  assert.ok(!weekends.warnings.some((w) => w.includes('overlap')), `W1 vs W2 is not a clash: ${weekends.warnings}`);
+});
+
+test('validator: a clock time has 1–12 hours and 00–59 minutes', () => {
+  const grid = (time) => ({ ...FEST, days: { Saturday: { stages: ['Main'], artists: [{ name: 'Headliner', stage: 'Main', time }] } } });
+  for (const bad of ['13:00 PM - 14:00 PM', '99:00 PM - 99:59 PM', '0:00 PM - 1:00 PM', '9:60 PM']) {
+    assert.ok(validateFestivalDoc(grid(bad)).errors.some((e) => e.includes('bad time')), `${bad} is rejected`);
+  }
+  for (const good of ['12:00 PM - 12:45 PM', '1:30 PM', '11:00 PM - Close', '12:30 AM']) {
+    assert.ok(!validateFestivalDoc(grid(good)).errors.some((e) => e.includes('bad time')), `${good} is accepted`);
+  }
+});
+
+test('validator: malformed days{} is a rejection, never a throw (festival-add validates LLM candidates through here)', () => {
+  const asArray = validateFestivalDoc({ ...FEST, days: [{ stages: ['Main'], artists: [{ name: 'Headliner', stage: 'Main', time: '9:00 PM' }] }] });
+  assert.ok(asArray.errors.some((e) => e.includes('days must be an object')), `array days rejected: ${asArray.errors}`);
+  let r;
+  assert.doesNotThrow(() => { r = validateFestivalDoc({ ...FEST, days: { Friday: null } }); });
+  assert.ok(r.errors.some((e) => e.includes('Friday') && e.includes('must be an object')), `null day rejected: ${r.errors}`);
+  assert.doesNotThrow(() => { r = validateFestivalDoc({ ...FEST, days: { Friday: { stages: ['Main'], artists: [null, 'x'] } } }); });
+  assert.ok(r.errors.some((e) => e.includes('must be an object')), `non-object set rejected: ${r.errors}`);
+});
+
+test('validator: an ARCHIVED grid with a case-drifted name warns instead of erroring — its picks already live under the grid spelling', () => {
+  const r = validateFestivalDoc({
+    ...FEST, status: 'archived', year: "'25", dates: 'then',
+    days: { Saturday: { stages: ['Main'], artists: [{ name: 'headliner', stage: 'Main', time: '9:00 PM - 10:00 PM' }] } },
   });
-  assert.ok(!weekends.errors.some((e) => e.includes('overlap')), `W1 vs W2 is not a clash: ${weekends.errors}`);
+  assert.ok(!r.errors.some((e) => e.includes('headliner')), `no error: ${r.errors}`);
+  assert.ok(r.warnings.some((w) => w.includes('headliner') && w.includes('case')), `but a warning: ${r.warnings}`);
+});
+
+test('validator: duplicate detection compares RENDERED days — "Saturday" vs "Saturday & Sunday" is two cards on one wall', () => {
+  const r = validateFestivalDoc({
+    id: 'x', name: 'X', status: 'lineup',
+    artists: [{ name: 'Despacio', day: 'Saturday' }, { name: 'Despacio', day: 'Saturday & Sunday' }],
+  });
+  assert.ok(r.warnings.some((w) => w.includes('duplicate') && w.includes('Despacio')), `combined-day dupe warns: ${r.warnings}`);
+  const clean = validateFestivalDoc({
+    id: 'x', name: 'X', status: 'lineup',
+    artists: [{ name: 'Despacio', day: 'Saturday & Sunday' }, { name: 'Despacio', day: 'Afters', stage: 'Fri · Pier 80', time: '5 PM' }],
+  });
+  assert.ok(!clean.warnings.some((w) => w.includes('duplicate')), `disjoint days are a reappearance: ${clean.warnings}`);
 });
