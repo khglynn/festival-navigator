@@ -8,8 +8,11 @@ import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { validateFestivalDoc } from '../api/_lib/festival-rules.mjs';
+import { frozenKeyProblems } from '../api/_lib/pick-keys.mjs';
 
-const DIR = join(dirname(fileURLToPath(import.meta.url)), '..', 'data', 'festivals');
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
+const DIR = join(ROOT, 'data', 'festivals');
+const FIXTURE = join(ROOT, 'tests', 'fixtures', 'live-pick-keys.json');
 
 const errors = [];
 const warnings = [];
@@ -23,6 +26,15 @@ const files = readdirSync(DIR).filter((x) => x.endsWith('.json') && x !== 'index
 const index = JSON.parse(readFileSync(join(DIR, 'index.json'), 'utf8'));
 const indexIds = new Set(index.map((e) => e.id));
 
+// The pick-key freeze (api/_lib/pick-keys.mjs): a live festival's id, artist
+// names and day labels are the strings every crew's picks and notes hang off,
+// and the crew doc cannot rename a key. This is the same check
+// tests/live-pick-keys.test.mjs runs — repeated here so the ONE command every
+// data-editing session is told to run catches a rename without the full suite.
+let frozen = { festivals: {} };
+try { frozen = JSON.parse(readFileSync(FIXTURE, 'utf8')); }
+catch (e) { errors.push(`tests/fixtures/live-pick-keys.json unreadable: ${e.message}`); }
+
 for (const file of files) {
   let fest;
   try { fest = JSON.parse(readFileSync(join(DIR, file), 'utf8')); }
@@ -31,6 +43,15 @@ for (const file of files) {
   errors.push(...r.errors.map((m) => `${file}: ${m}`));
   warnings.push(...r.warnings.map((m) => `${file}: ${m}`));
   if (!indexIds.has(fest.id)) errors.push(`${file}: festival not listed in index.json`);
+  const entry = frozen.festivals && frozen.festivals[fest.id];
+  if (entry) {
+    errors.push(...frozenKeyProblems(fest, entry, { indexIds }).map((m) => `${file}: FROZEN KEY — ${m}`));
+  } else if (fest.status !== 'archived') {
+    errors.push(`${file}: live festival has no pick-key freeze — real people may be picking in it. Run: node scripts/freeze-pick-keys.mjs ${fest.id}`);
+  }
+}
+for (const id of Object.keys((frozen.festivals) || {})) {
+  if (!indexIds.has(id)) errors.push(`tests/fixtures/live-pick-keys.json: ${id} is frozen (live crews pick in it) but is no longer in index.json — ids never change`);
 }
 for (const entry of index) {
   if (!files.includes(`${entry.id}.json`)) errors.push(`index.json: lists ${entry.id} but ${entry.id}.json missing`);

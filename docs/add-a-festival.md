@@ -41,9 +41,12 @@ Two files, one command:
      billed on a grid day has no set there (usually a missed box).
    - **Set-times drop, in order (the Portola recipe, 2026-08-27):**
      1. `node scripts/freeze-pick-keys.mjs <id>` BEFORE editing — it snapshots
-        every artist name into `tests/fixtures/live-pick-keys.json`, and
-        `tests/live-pick-keys.test.mjs` fails if any of them later disappears.
-        Renaming is then a visible fixture edit, never an accident.
+        the festival id, every artist name and every day label into
+        `tests/fixtures/live-pick-keys.json`; the validator AND
+        `tests/live-pick-keys.test.mjs` fail if any of them later disappears,
+        and every non-archived festival must be frozen (`--all-live` does them
+        all). Renaming is then a visible fixture edit, never an accident.
+        Two-minute version for whoever edits data: `data/festivals/README.md`.
      2. Transcribe the official poster into `days{}` using the EXISTING
         `artists[]` spellings; billing extras ("(DJ Set)", "(Live)",
         "(Skrillex + Boys Noize)") go in `meta.note`, never in the name.
