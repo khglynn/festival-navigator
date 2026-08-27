@@ -1,12 +1,12 @@
 # Ray's fork — checkpoint notes (saved 2026-08-10)
 
-**Who:** Raymond "Ray" Perfetti · ray@yoray.com · GitHub `raypp2`.
+**Who:** Raymond "Ray" Perfetti · GitHub `raypp2` (email lives in the Gmail thread, not here — public repo).
 Found festival-navigator while prepping to publish his own single-file
 festival planner (he'd just attended Tomorrowland W1, and had previously
 built a Miami Music Week 2026 dashboard). Rather than publish a fourth
 planner into the world, he forked ours.
 
-**Thread:** "Forked festival-navigator", hello@kevinhg.com ↔ ray@yoray.com,
+**Thread:** "Forked festival-navigator", Kevin's personal Gmail ↔ Ray,
 Jul 24 → Aug 6, 2026. Ball is in Kevin's court (Ray sent the last message).
 
 > ⚠️ Ray's demo link includes a crew token (`#g=…`) for **his** deployment.
