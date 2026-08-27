@@ -13,7 +13,7 @@ import { renderWall, refreshCard, showUndoToast, showToast, wireScrollspy, color
 import { disclosureFold, eqLoader, festRow } from './tools.js';
 import { openArtistSheet, openDayNotes, openAllNotes, closeSheet, refreshOpenSheet, sheetChrome, dialogize, rememberOpener } from './notes.js';
 import { renderSettings, appSettings, openSubviewByKey } from './settings.js';
-import { onStorageWriteFail, saveLS } from '../util.js';
+import { onStorageWriteFail, saveLS, getLS } from '../util.js';
 import { router } from './router.js';
 import { createSortControl } from './sort-control.js';
 import { nameProblem } from '../name-rules.mjs';
@@ -56,7 +56,7 @@ function refreshCtx() {
   ctx.affinity = state.affinityLookup(ctx.meName);
   // Weekend view is a device-local preference per fest (ST-3): set it once
   // ("I'm going W2") and wrong-weekend picks announce themselves.
-  ctx.weekend = localStorage.getItem(`fn_weekend_v1_${ctx.fid}`) || 'all';
+  ctx.weekend = getLS(`fn_weekend_v1_${ctx.fid}`) || 'all';
 }
 
 // ---- tap cycle -------------------------------------------------------------------

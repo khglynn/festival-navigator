@@ -8,7 +8,7 @@
 //     affinity: {person: {artist: {songs?, followed?}}} }  // crew-wide
 import { deepMerge, subtractLeaves } from './merge.js';
 import { computeDayArtists } from './time.js';
-import { loadJSON, saveLS } from './util.js';
+import { loadJSON, saveLS, getLS, removeLS } from './util.js';
 import { FESTIVALS, FESTIVAL_INDEX, defaultFestivalId } from './festivals.js';
 
 export { FESTIVALS };
@@ -58,7 +58,10 @@ export function activateCrew(token, doc, festHint) {
   if (healPlaylistArtists(pendingChanges)) saveLS(LS.pending(token), JSON.stringify(pendingChanges));
   healPlaylistArtists(crewDoc); // rendered copy; persists via the normal paths
   crewDoc = deepMerge(crewDoc, pendingChanges);
-  const savedFest = localStorage.getItem(LS.fest(token));
+  // Guarded read: a storage-blocked browser THROWS on getItem, and this
+  // runs on every crew activation — a throw here is the fatal screen for a
+  // device that has the whole doc in memory (Codex gate, 2026-08-27).
+  const savedFest = getLS(LS.fest(token));
   const known = (id) => FESTIVAL_INDEX.some((f) => f.id === id);
   const hinted = (festHint && known(festHint)) ? festHint : null;
   activeFestivalId = (savedFest && known(savedFest)) ? savedFest : (hinted || defaultFestivalId());
@@ -318,7 +321,7 @@ export function cachedPending(token) {
   healPlaylistArtists(p);
   return p;
 }
-export function clearCachedPending(token) { localStorage.removeItem(LS.pending(token)); }
+export function clearCachedPending(token) { removeLS(LS.pending(token)); }
 
 // Rebuild local doc from remote + our pending overlay. Returns true if the
 // visible slice actually changed (so callers repaint only when needed).
