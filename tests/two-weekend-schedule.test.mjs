@@ -27,6 +27,7 @@ const FEST = {
     { name: 'Shared Head', day: 'Friday', weekends: 'both' },
     { name: 'One Only', day: 'Friday', weekends: 'W1' },
     { name: 'Two Only', day: 'Friday', weekends: 'W2' },
+    { name: 'Beta Both', day: 'Friday', weekends: 'both' },
   ],
   dayMeta: { Friday: { wd: 'Fri', dates: { W1: 'Oct 2', W2: 'Oct 9' } } },
   days: {

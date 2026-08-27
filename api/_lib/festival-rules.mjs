@@ -84,12 +84,23 @@ export function validateFestivalDoc(fest, { filename } = {}) {
     }
   });
 
-  if (fest.status === 'scheduled') {
-    if (!fest.days || Object.keys(fest.days).length === 0) {
-      err('scheduled festival needs days{}');
-      return { errors, warnings };
-    }
+  if (fest.status === 'scheduled' && (!fest.days || Object.keys(fest.days).length === 0)) {
+    err('scheduled festival needs days{}');
+    return { errors, warnings };
+  }
+  // The renderer keys on days{} PRESENCE, not on status — so the grid rules
+  // run for any live fest that carries a grid. Archived fests are memories;
+  // their grids are not re-litigated.
+  if (fest.days && fest.status !== 'archived') {
+    // Exact bytes, on purpose: picks, auras and notes are keyed by the
+    // artists[] name and lookups do no case folding (docs/add-a-festival.md).
+    // A grid entry that matches the lineup only case-insensitively is the
+    // worst kind of typo — the card renders, the tap "works", and the pick
+    // lands on a key nobody else's device shares.
+    const lineupExact = new Set((Array.isArray(fest.artists) ? fest.artists : []).map((a) => a && a.name).filter(Boolean));
+    const gridNamesByDay = {};
     for (const [label, day] of Object.entries(fest.days)) {
+      gridNamesByDay[label] = new Set();
       if (!Array.isArray(day.stages) || !day.stages.length) err(`${label}: missing stages[]`);
       if (!Array.isArray(day.artists) || !day.artists.length) { err(`${label}: missing artists[]`); continue; }
       day.artists.forEach((a, i) => {
@@ -102,10 +113,47 @@ export function validateFestivalDoc(fest, { filename } = {}) {
         else if (!day.stages.includes(a.stage)) err(`${safeKey(label)}.artists[${i}] (${safeKey(a.name)}): stage ${JSON.stringify(safeKey(a.stage))} not in day stages`);
         if (!a.time || !TIME_RE.test(a.time)) err(`${safeKey(label)}.artists[${i}] (${safeKey(a.name)}): bad time ${JSON.stringify(safeKey(a.time))}`);
         else { try { timeToMinutes(a.time.split(' - ')[0]); } catch { err(`${label}.artists[${i}]: time did not parse`); } }
-        if (a.name && !artistNames.has(a.name.toUpperCase())) warn(`${label}: ${a.name} plays but is missing from artists[]`);
+        if (a.name) {
+          gridNamesByDay[label].add(a.name);
+          if (!lineupExact.has(a.name)) {
+            if (artistNames.has(a.name.toUpperCase())) err(`${safeKey(label)}: ${safeKey(a.name)} differs from its artists[] spelling by case — picks key on exact bytes, so this would split the crew's picks`);
+            else err(`${safeKey(label)}: ${safeKey(a.name)} plays but is missing from artists[]`);
+          }
+        }
       });
+      // One stage, one act at a time. Two sets with explicit ends that overlap
+      // on the same stage (and a compatible weekend) are a transcription error
+      // — the poster can't print that, so the file mustn't either. Untimed
+      // ends are filled by the renderer and are not judged here.
+      const timed = day.artists
+        .filter((a) => a.name && a.stage && typeof a.time === 'string' && TIME_RE.test(a.time) && a.time.includes(' - ') && !/close$/i.test(a.time))
+        .map((a) => {
+          const [s, e] = a.time.split(' - ');
+          return { name: a.name, stage: a.stage, time: a.time, weekend: a.weekend || 'both', start: timeToMinutes(s), end: timeToMinutes(e) };
+        });
+      const sameWeekend = (x, y) => x.weekend === 'both' || y.weekend === 'both' || x.weekend === y.weekend;
+      for (let x = 0; x < timed.length; x++) {
+        const a = timed[x];
+        if (a.end <= a.start) err(`${safeKey(label)}: ${safeKey(a.name)} ends before it starts (${safeKey(a.time)})`);
+        for (let y = x + 1; y < timed.length; y++) {
+          const b = timed[y];
+          if (a.stage !== b.stage || !sameWeekend(a, b)) continue;
+          if (a.start < b.end && b.start < a.end) err(`${safeKey(label)}: ${safeKey(a.name)} and ${safeKey(b.name)} overlap on ${safeKey(a.stage)}`);
+        }
+      }
       if (fest.dayMeta && !fest.dayMeta[label]) warn(`dayMeta missing entry for ${label}`);
     }
+    // The other direction: a lineup artist billed on a grid day with no set
+    // on that grid is invisible on the timetable. Usually a missed box —
+    // warn, don't block (partial drops are real).
+    (Array.isArray(fest.artists) ? fest.artists : []).forEach((a) => {
+      if (!a || !a.name || typeof a.day !== 'string') return;
+      const parts = a.day.split(/\s*[&+/]\s*|\s+and\s+/i).map((s) => s.trim()).filter(Boolean);
+      for (const part of parts) {
+        const dayKey = Object.keys(fest.days).find((d) => d.toLowerCase() === part.toLowerCase());
+        if (dayKey && !gridNamesByDay[dayKey].has(a.name)) warn(`${safeKey(a.name)} is billed on ${safeKey(dayKey)} but has no set on that day's grid`);
+      }
+    });
   }
 
   if (fest.activities) {
