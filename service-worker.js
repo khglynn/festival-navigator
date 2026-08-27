@@ -1,6 +1,6 @@
 // Festival Navigator service worker — offline-first app shell.
 // Bump CACHE_VERSION whenever you change cached static assets.
-const CACHE_VERSION = 'festival-nav-v38'; // v38 = two-weekend scheduled support (ACL-ready: weekend-filtered grid, per-weekend day dates)
+const CACHE_VERSION = 'festival-nav-v39'; // v39 = Portola set times + afters/Folsom sections on a scheduled wall + festival data network-first
 
 // Festival JSONs live in their OWN cache, outside the version-keyed shell
 // cache — because activate deletes every old version cache wholesale, and
@@ -137,18 +137,25 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Festival data: NETWORK-FIRST, cache as the offline fallback. The data
+  // cache is persistent on purpose (it survives shell bumps — see DATA_CACHE),
+  // which is exactly why it can't be served cache-first: a set-times drop
+  // would reach every phone one open LATE — the crew reads "app is updated",
+  // opens it, sees last week's lineup, and the fresh grid only lands on the
+  // open after that. Festival JSONs are small; a bounded wait for the live
+  // copy is cheap on a good network and the cache answers on a dead one.
+  if (isFestivalData(url)) {
+    event.respondWith(dataNetworkFirst(request));
+    return;
+  }
+
   // Static assets: cache-first, then update the cache in the background.
-  // Festival data revalidates into the PERSISTENT data cache (never the
-  // version-keyed shell cache), so it survives every CACHE_VERSION bump;
-  // caches.match() searches both, so first-load-after-install still hits the
-  // precached index.json.
-  const bucket = isFestivalData(url) ? DATA_CACHE : CACHE_VERSION;
   event.respondWith(
     caches.match(request).then((cached) => {
       const network = fetch(request).then((resp) => {
         if (resp && resp.ok) {
           const copy = resp.clone();
-          caches.open(bucket).then((c) => c.put(request, copy)).catch(() => {});
+          caches.open(CACHE_VERSION).then((c) => c.put(request, copy)).catch(() => {});
         }
         return resp;
       }).catch(() => cached);
@@ -156,3 +163,24 @@ self.addEventListener('fetch', (event) => {
     })
   );
 });
+
+// Live copy if the network answers inside DATA_NETWORK_MS; otherwise the
+// cached copy (any bucket — index.json is also precached in the shell), and
+// if there is no cached copy at all, the network request however long it
+// takes. A late network success still refreshes the data cache, so the next
+// open on a slow network is one step fresher. Never a 503 for data we hold.
+const DATA_NETWORK_MS = 4000;
+function dataNetworkFirst(request) {
+  const network = fetch(request).then((resp) => {
+    if (resp && resp.ok) {
+      const copy = resp.clone();
+      caches.open(DATA_CACHE).then((c) => c.put(request, copy)).catch(() => {});
+    }
+    return resp;
+  });
+  const timeout = new Promise((resolve) => setTimeout(() => resolve(null), DATA_NETWORK_MS));
+  return Promise.race([network.catch(() => null), timeout]).then((live) => {
+    if (live && live.ok) return live;
+    return caches.match(request).then((cached) => cached || network);
+  });
+}
