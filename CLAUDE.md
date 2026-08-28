@@ -103,6 +103,17 @@ Non-inferable facts only (the code answers everything else — read it).
 - The Write tool has serialized literal control bytes (`\x00`) into files in
   this repo twice when escape sequences were intended — after writing
   regexes/tests with `\xNN`, verify with `python3 -c "open(...,'rb')"`.
+- **Node tests are blind to two browser rules** (both bit on 2026-08-27,
+  three Codex rounds and 256 green tests deep): (1) WebIDL receivers — a DOM
+  global stored on an object or record and called as a method
+  (`hold.clearTimer(id)`) throws "Illegal invocation" in every browser and
+  nothing in Node; store arrow wrappers, never the bare function. (2)
+  Storage GETTERS throw — Chrome with site data blocked raises SecurityError
+  from `window.sessionStorage` itself, and `typeof sessionStorage` does not
+  guard it; every touch of a storage object, the getter included, sits in a
+  try. The suite carries receiver-strict and throwing-getter stubs now, but
+  the defence with teeth is a real-browser walk (a Sonnet teammate, real
+  pointer input, never `element.click()`) before any promote.
 - **This repo is PUBLIC.** A crew token (`#g=…`) IS the credential for that
   crew's data. Never commit one; scan before every commit with `&&` (never `;`,
   which runs the commit even when the scan trips). `.gitignore` denies `*.png`

@@ -2,6 +2,56 @@
 
 Newest first. One entry per meaningful unit of work.
 
+## 2026-08-27 (late) — the browser-only bugs, the festival timezone, gate rounds 4–5
+
+- **What only a real tap could find.** Three Codex rounds and 256 Node
+  tests passed a people filter that did nothing in a browser. `chipGesture`
+  stored the bare `clearTimeout` on its hold record and called it as
+  `hold.clearTimer(...)`; WebIDL wants the window as receiver, so every
+  browser threw "Illegal invocation" on every real tap on another member's
+  chip. Your own chip never wires the pointer handlers — which is exactly
+  why the checker's own-chip checks passed and why the bug survived. Fix:
+  arrow-wrapped timer defaults; the regression test installs a
+  receiver-strict stub so Node refuses the same way a browser does. Two
+  knock-ons closed with it: the filter was saved before the throw and
+  surfaced minutes later on an unrelated repaint; a touch-type tap could arm
+  pick-as with no hold.
+- **The day tab lied after a repaint.** The scrollspy's first claim was
+  "tab 0" — true at load, false on every re-wire, and both new filters
+  re-wire. Now: geometry when scrolled, first tab at scroll 0, and one
+  requestAnimationFrame re-sync because search adds/drops the sticky strip
+  after the wire (`--jump-offset` moves).
+- **The arm is in place now.** Arming used to rebuild the chip row under
+  the finger that armed it; where the release lands as a click after that
+  is browser-specific, and on an armed chip a click is the confirm. The
+  chip updates in place; the row is rebuilt only after the arm expires.
+- **Codex round 4, browser-only failure modes — NO SHIP, four taken.**
+  Time P1: the now line used the phone's clock. Storage P1: `typeof
+  sessionStorage` does not guard a getter that throws (Chrome, site data
+  blocked) — a blocked phone would have hit the fatal screen on enterApp.
+  Scroll P2: the stale offset above. CSS P2: "Warehouse" clipped in a
+  34×44 rail with no hover to recover it. **Round 5 (delta)**: all four
+  FIXED; its one leftover — two rails reading the same — closed: four
+  letters, then initials ("BL" / "BLB"), then a digit ("MS" / "MS2").
+- **The timezone decision, reversed.** The first cut said the phone's clock
+  IS the festival's clock, the person being at the festival. True at Pier
+  80; false for a friend checking from Austin (line two hours late) and for
+  the day-of open near the 5 AM rollover. Festival files carry an IANA
+  `timezone` now, the validator requires it once dayMeta carries dates, the
+  grids carry it as `data-tz` for the ticker, and tests pin instants
+  (`Z` / `-07:00`) so they pass in any zone — including the DST-end hour in
+  America/Chicago that ACL and Seismic will live through. No zone, or an
+  unknown one, still reads the device clock.
+- **Walk notes not acted on, by decision:** How-it-works row 9 names three
+  of five sync states (red covers both error and blocked — the right
+  simplification for that screen); the Vercel preview toolbar occludes a
+  row at 390px on previews only.
+- **A Sonnet walker re-walked the fixed preview with real clicks**: tapping
+  another member's chip filters (64 of 64 dim for a member with no picks,
+  no console error), combining works, everyone ✕ clears. The first walker's
+  Chrome was still holding the Playwright profile an hour after it finished
+  — "Browser is already in use" means kill that `mcp-chrome-*` pid.
+
 ## 2026-08-27 (evening) — wall filters (A + D), the now line, the day-of open
 
 - **Kevin picked A + D from the canvas** and added: on festival day, open

@@ -1,4 +1,42 @@
-# NOW — festival-navigator: Portola set times LIVE ON PROD (v39) · wall filters + now line STAGED on `wall-filters` (v40)
+# NOW — festival-navigator: Portola set times LIVE ON PROD (v39) · wall filters + now line + festival timezone GATED on `wall-filters` (v42), shipping on Kevin's word
+
+## 2026-08-27 (late) — the gate after compaction: what a real browser found, the festival timezone, Codex rounds 4–5
+
+Kevin's post-compaction ask: check the checker's work skeptically, ship if
+good. The Opus walker's report held two real findings and one artifact:
+1. **P0, real** — a real tap on ANOTHER member's chip threw "Illegal
+   invocation" and did nothing: the hold record stored bare `clearTimeout`
+   and called it as a method, which every browser refuses and Node allows.
+   Fixed (arrow-wrapped timer defaults) with a receiver-strict regression
+   test — commit 2caf80e.
+2. **Real** — after any filter repaint while you stood in Sunday, the day
+   tab said Saturday (the scrollspy's first claim was "tab 0"). Fixed:
+   geometry claim whenever scrolled, plus a one-frame re-sync (ee3d0db).
+3. **Artifact** — "a repaint erases the now line": the walker injected a
+   fake festival date; on a real festival day the repaint redraws it.
+
+Then **Codex round 4** (browser-only failure modes; NO SHIP) — four
+findings, all taken: the festival **timezone** (now is read in the fest's
+zone through Intl; `timezone` is validator-required once dayMeta carries
+dates — ACL/Seismic are `America/Chicago`), the sessionStorage GETTER
+guard, the scrollspy re-sync, bounded rail labels. **Round 5** (delta): all
+four FIXED; its one leftover (two rails could read the same) closed by
+6904c11 — four letters, then initials, then a digit. Also landed: the arm
+updates the chip in place (never a row rebuild under a finger), own-chip
+aria-labels say "your picks". 262 tests, 261 pass, 1 env-gated skip; SW
+v42; branch pushed, CI on PR #12.
+
+A **Sonnet walker** (Kevin's rule: walks are a teammate's job, sonnet not
+opus) re-walked the new preview with REAL clicks: A (tap another member's
+chip → filter, no console error) PASS · B (combine) PASS · C/D (hold arms,
+short tap never; day tab after a mid-page repaint) landing as this is
+written. Its crew `zz-walk2` (token in its report) is a prod row to delete.
+
+**Lesson with teeth** (now in CLAUDE.md): a Node/jsdom suite is blind to
+WebIDL receiver rules and to storage getters that throw. Three Codex rounds
+and 256 green tests shipped a filter that did nothing in a browser; the
+defence is a real-browser walk with real pointer input before any promote.
+
 
 ## 2026-08-27 (evening) — wall filters + the now line, built and gated; PR #11 open, filters PR next
 
@@ -23,15 +61,10 @@ Portola got Portola Week + Folsom; "just the big big stuff"). That last
 rule is also on the Pen watcher row.
 
 **Open at hand-off (2026-08-27 ~19:55):**
-1. A `[object Object]` status seen once in the CREATE flow on the
-   branch-alias preview (`festival-navigator-git-wall-filters-…`) — a UI
-   walker teammate (opus, plugin_playwright) is reproducing it and walking
-   the new features; its report lands at
-   `scratchpad/ui-walk-wall-filters.md` in this session's scratchpad and as
-   a task notification. Two suspects: the alias host not in the API's
-   allowed origins (preview-only), and an error OBJECT reaching
-   `status.textContent` in app.js's create flow (a real rendering bug
-   regardless of cause). Not fixed yet — pick it up from the report.
+1. ~~A `[object Object]` status in the CREATE flow~~ — RESOLVED (006df27):
+   Vercel's protection wall answers /api with `{error: {message, code}}`
+   and six sites did `body.error || fallback`; all go through
+   `util.errorText` now. Preview-only trigger, real rendering bug.
 2. PR #11 (pick-key guard + header copy) and PR #12 (filters + now line)
    both wait for Kevin's "promote"; merging #12 carries #11.
 3. Throwaway preview crews: the first walk's (`zz-filters-walk`) is
