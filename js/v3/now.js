@@ -66,7 +66,11 @@ export function clockLabel(minutes) {
 // its place. Memory is the truth for the life of the page; sessionStorage
 // is the copy that survives a reload when the browser allows one.
 const scrolled = new Set();
-const defaultStore = () => (typeof sessionStorage !== 'undefined' ? sessionStorage : null);
+// Reaching for `sessionStorage` at all can throw — Chrome with site data
+// blocked raises a SecurityError from the GETTER, which `typeof` does not
+// guard (it only guards names that don't resolve). Node has no such global,
+// so only a browser could show this; the try is the whole fix.
+const defaultStore = () => { try { return typeof sessionStorage !== 'undefined' ? sessionStorage : null; } catch { return null; } };
 export function scrolledBefore(key, store = defaultStore()) {
   if (scrolled.has(key)) return true;
   let stored = null;

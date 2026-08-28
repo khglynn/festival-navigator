@@ -39,3 +39,24 @@ test('activateCrew on a storage-blocked device boots from the in-memory doc — 
   assert.doesNotThrow(() => state.clearCachedPending('blockedtesttoken_01234567'));
   assert.equal(state.cachedDoc('blockedtesttoken_01234567'), null);
 });
+
+test('now.js: a sessionStorage GETTER that throws (Chrome with site data blocked) never reaches the day-of open', async () => {
+  // Chrome raises SecurityError from window.sessionStorage itself, not from
+  // its methods, so a `typeof sessionStorage` guard is no guard at all.
+  const now = await import('../js/v3/now.js');
+  const prev = Object.getOwnPropertyDescriptor(globalThis, 'sessionStorage');
+  Object.defineProperty(globalThis, 'sessionStorage', {
+    configurable: true,
+    get() { throw new Error('SecurityError: Failed to read the sessionStorage property from Window'); },
+  });
+  try {
+    const key = now.dayOfScrollKey('zz-fest', new Date(2026, 8, 26, 17, 0));
+    assert.equal(now.scrolledBefore(key), false, 'nothing remembered, and no throw');
+    assert.doesNotThrow(() => now.rememberScrolled(key));
+    assert.equal(now.scrolledBefore(key), true, 'memory carries the claim when storage cannot');
+    assert.equal(now.claimScrollOnce(now.dayOfScrollKey('zz-other', new Date(2026, 8, 26, 17, 0))), true);
+  } finally {
+    if (prev) Object.defineProperty(globalThis, 'sessionStorage', prev);
+    else delete globalThis.sessionStorage;
+  }
+});
