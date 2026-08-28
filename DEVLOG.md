@@ -2,6 +2,180 @@
 
 Newest first. One entry per meaningful unit of work.
 
+## 2026-08-27 (late) — the browser-only bugs, the festival timezone, gate rounds 4–5
+
+- **What only a real tap could find.** Three Codex rounds and 256 Node
+  tests passed a people filter that did nothing in a browser. `chipGesture`
+  stored the bare `clearTimeout` on its hold record and called it as
+  `hold.clearTimer(...)`; WebIDL wants the window as receiver, so every
+  browser threw "Illegal invocation" on every real tap on another member's
+  chip. Your own chip never wires the pointer handlers — which is exactly
+  why the checker's own-chip checks passed and why the bug survived. Fix:
+  arrow-wrapped timer defaults; the regression test installs a
+  receiver-strict stub so Node refuses the same way a browser does. Two
+  knock-ons closed with it: the filter was saved before the throw and
+  surfaced minutes later on an unrelated repaint; a touch-type tap could arm
+  pick-as with no hold.
+- **The day tab lied after a repaint.** The scrollspy's first claim was
+  "tab 0" — true at load, false on every re-wire, and both new filters
+  re-wire. Now: geometry when scrolled, first tab at scroll 0, and one
+  requestAnimationFrame re-sync because search adds/drops the sticky strip
+  after the wire (`--jump-offset` moves).
+- **The arm is in place now.** Arming used to rebuild the chip row under
+  the finger that armed it; where the release lands as a click after that
+  is browser-specific, and on an armed chip a click is the confirm. The
+  chip updates in place; the row is rebuilt only after the arm expires.
+- **Codex round 4, browser-only failure modes — NO SHIP, four taken.**
+  Time P1: the now line used the phone's clock. Storage P1: `typeof
+  sessionStorage` does not guard a getter that throws (Chrome, site data
+  blocked) — a blocked phone would have hit the fatal screen on enterApp.
+  Scroll P2: the stale offset above. CSS P2: "Warehouse" clipped in a
+  34×44 rail with no hover to recover it. **Round 5 (delta)**: all four
+  FIXED; its one leftover — two rails reading the same — closed: four
+  letters, then initials ("BL" / "BLB"), then a digit ("MS" / "MS2").
+- **The timezone decision, reversed.** The first cut said the phone's clock
+  IS the festival's clock, the person being at the festival. True at Pier
+  80; false for a friend checking from Austin (line two hours late) and for
+  the day-of open near the 5 AM rollover. Festival files carry an IANA
+  `timezone` now, the validator requires it once dayMeta carries dates, the
+  grids carry it as `data-tz` for the ticker, and tests pin instants
+  (`Z` / `-07:00`) so they pass in any zone — including the DST-end hour in
+  America/Chicago that ACL and Seismic will live through. No zone, or an
+  unknown one, still reads the device clock.
+- **Walk notes not acted on, by decision:** How-it-works row 9 names three
+  of five sync states (red covers both error and blocked — the right
+  simplification for that screen); the Vercel preview toolbar occludes a
+  row at 390px on previews only.
+- **A Sonnet walker re-walked the fixed preview with real clicks**: tapping
+  another member's chip filters (64 of 64 dim for a member with no picks,
+  no console error), combining works, everyone ✕ clears. The first walker's
+  Chrome was still holding the Playwright profile an hour after it finished
+  — "Browser is already in use" means kill that `mcp-chrome-*` pid.
+
+## 2026-08-27 (evening) — wall filters (A + D), the now line, the day-of open
+
+- **Kevin picked A + D from the canvas** and added: on festival day, open
+  on the current time with a now line. Built on branch `wall-filters`.
+- **A · tap a member chip → the wall shows only their picks** (tap more to
+  combine; your own chip = "my picks"; an "everyone ✕" chip returns). On
+  the timetable non-matching cards DIM (the clock keeps its shape, and a
+  dimmed card still takes a tap); on the lists (afters, Folsom, lineup-only
+  fests) they hide, with "No picks here from Kat" where that empties a
+  section. Per-fest, per-tab (sessionStorage) — a filter that survived a
+  reload would read as "where did everyone go?" — and pruned to members
+  still in the crew.
+- **The wrinkle the code had waiting**: member chips already switched
+  identity on tap ("Pick as Drew?" then a second tap, Kevin's 2026-07-12
+  shared-phone flow). Resolved with the app's own grammar — cards tap to
+  pick and hold for notes, so chips **tap to filter and hold to pick-as**;
+  the hold arms the same two-step confirm, Settings keeps the explicit
+  switch for keyboards. Flagged to Kevin as the one call to veto.
+- **D · tap a stage name in the sticky strip → solo that stage**: the
+  column goes wide, the others fold to 34px rails with the name set
+  vertically (tap a rail to move the solo), the pressed head says "✕ all
+  stages". One `columnsTemplate` feeds the strip and every day, so a solo
+  holds top to bottom; a remembered stage that no longer exists is ignored,
+  never a blank wall. Stage heads are real buttons (aria-pressed), opted out
+  of the 44px floor like the other in-row controls, with vertical-only
+  borrowed space so a tap can't land on the neighbour.
+- **The now line**: `js/v3/now.js` is the festival clock — a day runs to
+  5 AM (a phone opened at 12:40 AM Sunday is still living Saturday's grid,
+  matching time.js's after-midnight reading), the phone's local clock IS the
+  festival clock (the person this is for is standing there; files carry no
+  timezone on purpose), and a grid day knows its date from `dayMeta.iso`
+  (`isos: {W1, W2}` for two-weekend fests; validated as real dates; Portola
+  carries them). Today's grid draws a brand-violet line with a "5:42 PM"
+  label on the hour rail; a one-minute ticker (and the tab coming back from
+  the background) moves it without a repaint, and drops it once the day is
+  over. No iso, no line, no guess.
+- **The day-of open**: a fresh open lands the now line a third of the way
+  down the viewport — once per festival-day per tab, so a repaint after a
+  pick never yanks the scroll; a PWA resumed from the background keeps its
+  place; never while searching. Coming back from Settings after a festival
+  switch counts as an open for that fest.
+- Design canvas got the second look's fixes (the phone artboard now scrolls
+  its five columns like the real app instead of clipping three of them;
+  Option B's choices are a popover, as its note promised) and records the
+  decision.
+- **Codex gate round 1: NO SHIP, five P1s — all real.** The v40 worker
+  cached app.js and wall.js but not the two modules they had just grown, so
+  an offline boot after the update would have died on the first import
+  (→ APP_CORE + v41, and `tests/app-shell-complete.test.mjs` walks the
+  static + dynamic import graph from app.js against the atomic core list —
+  and proves it would catch a missing module). Storage-blocked Safari swallowed the
+  filter's write and re-read nothing, so a chip tap did nothing (→ memory
+  is the truth for the life of the page, storage the reload copy; same for
+  the scroll-once flag). Clearing your last pick on a list card under a
+  filter left it dimmed, not hidden (→ filtered taps on list cards repaint);
+  scheduled search ignored the filter (→ it hides like every list). Stage
+  heads had a 32px tap target because overflow:hidden clipped the ::after
+  (→ ellipsis on an inner label, head overflow visible). And the pick-as
+  arm lived in the chip's DOM closure, so a remote repaint mid-confirm
+  turned the confirming tap into a filter toggle (→ `chipGesture` in
+  filters.js is a pure state machine with the arm keyed by name, tested
+  with a fake clock). Plus the P2s: pruned filters written back, dayMeta
+  dates bounded and unique, iso XOR isos, both weekends required, a morning
+  set warns, before-doors day-of open lands on today's header.
+- **Codex round 2 (verify): still NO SHIP — round 1 had left real gaps.**
+  The 32px stage target was still 32px: the borrowed ::after can't escape
+  the strip's own scroll container (→ on touch devices the strip row is a
+  real 44px; desktop keeps 32). A repaint mid-HOLD left the old chip's timer
+  alive, arming a chip nobody could see, so the next plain tap switched
+  identity with no confirm (→ one pending hold for the whole row, cancelled
+  on every rebuild, its orphaned release swallowed; arming rebuilds the row
+  so the armed chip renders from `armedName()`; all driven by a fake clock
+  in tests). The scroll-once used two keys (day header vs now line) so a
+  morning open plus an afternoon Settings close scrolled twice, and an open
+  before the festival spent the claim on nothing (→ one key per fest per
+  festival-day, marked only after a real landing). Under a filter that
+  includes you, picking a card from the grid didn't surface its afters
+  twin (→ a filtered tap by a filtered person repaints). Search extras
+  counted matches before the people filter (→ after). `iso` vs `isos`
+  duplicates across days weren't compared (→ a plain iso claims both
+  weekends). And the copy pass had put a ♪ in the Spotify demo — the one
+  glyph the repo bans (→ the green pill). Accepted, documented: time.js
+  reads every AM set as after-midnight while the clock rolls at 5 AM — no
+  grid has a morning set and the validator warns the day one does; an
+  activities-only day under solo is unreachable from a valid file.
+- **Codex round 3: SHIP WITH FIXES** — two interleavings left in the hold
+  state machine: a deliberate press inside the 800 ms suppression left by a
+  cancelled hold was swallowed, and an older pointer's release on the same
+  chip could clear a newer press's timer. Every press now resets the
+  suppression and carries a token; a release clears only its own hold.
+  Both are fake-clock regression tests (1bf672f). PR #12 opened.
+- **Kevin's copy pass on How it works** (his voice, trimmed): billing/sort
+  gone, rows for tap-a-name / hold-to-pick-as / tap-a-stage / the now line
+  / + Add and the crew link / Spotify in Settings, the dock row says only
+  "green dot = synced", and a "cool stuff in Settings" close. The coach mark
+  carries his line. 234 → 254 tests. SW v39 → v41.
+- **Still open when this entry was written**: a `[object Object]` status
+  seen once in the create flow on the branch-alias preview — under
+  investigation by a UI-walk teammate (see NOW.md).
+
+## 2026-08-27 (after the promote) — the pick-key guard grows teeth for whoever edits data next
+
+- **Kevin's ask**: make it very hard for a future session — a smaller
+  model, a cloud run, the drop-watcher automation — to break existing crew
+  selections. The rule now lives in the tools those sessions are told to
+  run, not in memory: `api/_lib/pick-keys.mjs` freezes a live festival's
+  id, every artist name and every day label (atomic values, combined-label
+  parts, grid keys) into `tests/fixtures/live-pick-keys.json`, and BOTH
+  `scripts/validate-festivals.mjs` (the one command every data edit runs;
+  CI) and `tests/live-pick-keys.test.mjs` fail when a frozen string is
+  gone — with a full-sentence message naming what breaks and the
+  sanctioned fix. Every non-archived festival must be frozen (the
+  validator says which command to run if one isn't); all six are.
+  `scripts/freeze-pick-keys.mjs` only ever adds — dropping a string is a
+  hand edit to the fixture, visible in the diff. `data/festivals/README.md`
+  is the two-minute version, sitting where a data editor will look.
+  Proven by mutation: case-drifting one live name fails the validator.
+- **Header copy** says the fest once: `Pier 80 · September 26–27, 2026 ·
+  doors 1 PM` (the afters/Folsom dates live on their section rules; they
+  were being read twice). Data is network-first, so no SW bump.
+- **Filtering the wall** — four options drafted on the real header as a
+  design canvas (chips-as-filter · stage solo · a Showing menu · search
+  tokens), recommendation A + D. Kevin's pick decides the build.
+
 ## 2026-08-27 — Portola set times: the drop, and what the drop exposed
 
 - **Portola's official set-times posters went up** (site + Instagram,

@@ -41,9 +41,12 @@ Two files, one command:
      billed on a grid day has no set there (usually a missed box).
    - **Set-times drop, in order (the Portola recipe, 2026-08-27):**
      1. `node scripts/freeze-pick-keys.mjs <id>` BEFORE editing — it snapshots
-        every artist name into `tests/fixtures/live-pick-keys.json`, and
-        `tests/live-pick-keys.test.mjs` fails if any of them later disappears.
-        Renaming is then a visible fixture edit, never an accident.
+        the festival id, every artist name and every day label into
+        `tests/fixtures/live-pick-keys.json`; the validator AND
+        `tests/live-pick-keys.test.mjs` fail if any of them later disappears,
+        and every non-archived festival must be frozen (`--all-live` does them
+        all). Renaming is then a visible fixture edit, never an accident.
+        Two-minute version for whoever edits data: `data/festivals/README.md`.
      2. Transcribe the official poster into `days{}` using the EXISTING
         `artists[]` spellings; billing extras ("(DJ Set)", "(Live)",
         "(Skrillex + Boys Noize)") go in `meta.note`, never in the name.
@@ -71,6 +74,18 @@ Two files, one command:
      `artists[]` — they drive the picker's presence and the search extras.
    - Optional `activities{}` for non-stage programming (workshops, silent
      disco) — renders as a time-sorted list under the grid.
+   - **Give each grid day its calendar date** in `dayMeta`: `iso:
+     "2026-09-26"` (two-weekend fests: `isos: { "W1": "2026-10-02", "W2":
+     "2026-10-09" }`). That is what the "now" line and the day-of auto-scroll
+     key on — a phone opened on that date (5 AM to 5 AM, festival time)
+     draws the line at the festival's clock and lands on it once per open.
+     No `iso`, no line, no guess. The validator rejects a date that isn't
+     real.
+   - **Give the file its `timezone`** (IANA, e.g. `"America/Los_Angeles"`,
+     ACL/Seismic: `"America/Chicago"`) — required as soon as `dayMeta`
+     carries dates. "Now" is read in that zone, so a friend checking from
+     another city sees the line where the crew actually is, and the day-of
+     open lands on the right day. The validator rejects an unknown zone.
 
 2. **Add an entry to `data/festivals/index.json`** (keep it ordered by date,
    archived last — the first non-archived entry is the default festival).

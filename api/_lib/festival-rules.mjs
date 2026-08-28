@@ -206,6 +206,68 @@ export function validateFestivalDoc(fest, { filename } = {}) {
     }
   }
 
+  // The festival's clock. A file whose dayMeta carries dates draws a "now"
+  // line and lands the day-of open on it — read in THIS zone, so a phone in
+  // another one (a friend in Austin, a Portola crew before the flight) is not
+  // hours off. IANA name, checked against the runtime's own zone table.
+  const validZone = (z) => { try { new Intl.DateTimeFormat('en-US', { timeZone: z }); return true; } catch { return false; } };
+  const datesPresent = isPlain(fest.dayMeta) && Object.values(fest.dayMeta).some((m) => isPlain(m) && (m.iso !== undefined || m.isos !== undefined));
+  if (fest.timezone !== undefined) {
+    if (typeof fest.timezone !== 'string' || !validZone(fest.timezone)) err('timezone must be an IANA zone name like America/Los_Angeles');
+  } else if (datesPresent) err('timezone is required once dayMeta carries dates — the now line needs the festival\'s clock');
+
+  // dayMeta dates: `iso` (single weekend) or `isos: {W1, W2}` (two weekends)
+  // give a grid day its calendar date — what the "now" line and the day-of
+  // auto-scroll key on. Optional, but when present it must be a real date:
+  // a typo here would put the now line on the wrong day, silently.
+  if (fest.dayMeta !== undefined && !isPlain(fest.dayMeta)) err('dayMeta must be an object keyed by day label');
+  else if (fest.dayMeta) {
+    const realDate = (s) => typeof s === 'string' && /^(19|20|21)\d{2}-\d{2}-\d{2}$/.test(s)
+      && !Number.isNaN(new Date(`${s}T00:00:00Z`).getTime()) && new Date(`${s}T00:00:00Z`).toISOString().slice(0, 10) === s;
+    // Two grid days on one date would draw two now lines — each date is one
+    // day's, per weekend.
+    // A plain `iso` is that day's date on EVERY weekend, so it collides with
+    // the same date under either weekend of an `isos` day, and vice versa.
+    const seen = { W1: new Set(), W2: new Set() };
+    const claim = (wk, date, label) => {
+      const buckets = wk ? [wk] : ['W1', 'W2'];
+      if (buckets.some((b) => seen[b].has(date))) err(`dayMeta.${safeKey(label)}: date ${date} is already another day's${wk ? ` (${wk})` : ''}`);
+      for (const b of buckets) seen[b].add(date);
+    };
+    for (const [label, meta] of Object.entries(fest.dayMeta)) {
+      if (!isPlain(meta)) { err(`dayMeta.${safeKey(label)}: must be an object`); continue; }
+      if (meta.iso !== undefined && meta.isos !== undefined) err(`dayMeta.${safeKey(label)}: iso OR isos, not both`);
+      if (meta.iso !== undefined) {
+        if (!realDate(meta.iso)) err(`dayMeta.${safeKey(label)}.iso must be a real YYYY-MM-DD date`);
+        else claim('', meta.iso, label);
+      }
+      if (meta.isos !== undefined) {
+        if (!isPlain(meta.isos)) err(`dayMeta.${safeKey(label)}.isos must be {W1, W2}`);
+        else {
+          for (const wk of ['W1', 'W2']) if (meta.isos[wk] === undefined) err(`dayMeta.${safeKey(label)}.isos needs both W1 and W2`);
+          for (const [wk, v] of Object.entries(meta.isos)) {
+            if (!['W1', 'W2'].includes(wk)) err(`dayMeta.${safeKey(label)}.isos: unknown weekend ${safeKey(wk)}`);
+            else if (!realDate(v)) err(`dayMeta.${safeKey(label)}.isos.${wk} must be a real YYYY-MM-DD date`);
+            else claim(wk, v, label);
+          }
+        }
+      }
+    }
+  }
+  // Morning sets: time.js reads EVERY AM time as after-midnight (a 9 AM set
+  // lands at 33:00, the next morning), while the now line's clock rolls the
+  // day at 5 AM. No live grid has a set between 5:00 and 11:59 AM; if one
+  // ever does, the two need one axis — say so rather than let the line lie.
+  for (const [label, day] of Object.entries(isPlain(fest.days) ? fest.days : {})) {
+    if (!isPlain(day) || !Array.isArray(day.artists)) continue;
+    for (const a of day.artists) {
+      if (!isPlain(a) || typeof a.time !== 'string' || !TIME_RE.test(a.time)) continue;
+      const start = a.time.split(' - ')[0];
+      const m = start.match(/^(\d{1,2})(?::(\d{2}))? (AM)$/i);
+      if (m && Number(m[1]) >= 5 && Number(m[1]) !== 12) warn(`${safeKey(label)}: ${safeKey(a.name)} starts at ${safeKey(start)} — the schedule axis reads AM as after-midnight, the now line reads 5 AM+ as morning; give them one axis before shipping a morning grid`);
+    }
+  }
+
   if (fest.activities) {
     for (const [label, list] of Object.entries(fest.activities)) {
       if (!Array.isArray(list)) { err(`activities.${label} must be an array`); continue; }

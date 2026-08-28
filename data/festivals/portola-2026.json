@@ -2,11 +2,12 @@
   "id": "portola-2026",
   "name": "Portola",
   "year": "'26",
-  "subtitle": "Pier 80 · with Portola Week afters & Folsom",
+  "subtitle": "Pier 80",
   "location": "San Francisco, CA",
-  "dates": "September 26–27, 2026 · doors 1 PM · Portola Week afters Sept 24–27 · Folsom Street Fair Sun Sept 27",
+  "dates": "September 26–27, 2026 · doors 1 PM",
   "accent": "56, 189, 248",
   "status": "scheduled",
+  "timezone": "America/Los_Angeles",
   "artists": [
     {
       "name": "Robyn",
@@ -554,11 +555,13 @@
   "dayMeta": {
     "Saturday": {
       "wd": "Sat",
-      "date": "Sep 26"
+      "date": "Sep 26",
+      "iso": "2026-09-26"
     },
     "Sunday": {
       "wd": "Sun",
-      "date": "Sep 27"
+      "date": "Sep 27",
+      "iso": "2026-09-27"
     },
     "Afters": {
       "date": "Sep 24-27"

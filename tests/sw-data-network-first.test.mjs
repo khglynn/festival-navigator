@@ -172,7 +172,7 @@ test('navigations: network-first, the cached shell when offline, and the backgro
 test('the data cache is a separate, persistent bucket and CACHE_VERSION was bumped for this drop', () => {
   assert.match(SW_SRC, /const DATA_CACHE = 'festival-nav-data-v1'/);
   const m = SW_SRC.match(/CACHE_VERSION = 'festival-nav-v(\d+)'/);
-  assert.ok(m && Number(m[1]) >= 39, 'CACHE_VERSION >= v39');
+  assert.ok(m && Number(m[1]) >= 41, 'CACHE_VERSION >= v41 (the wall filters + now line shell)');
 });
 
 // ---- activate: the rescue migration must never delete a device's only copy ----
@@ -186,8 +186,12 @@ function bootForActivate({ oldEntries, putFails = false, openDataFails = false }
     match: async (req) => (entries.has(req.url) ? new Response(entries.get(req.url)) : undefined),
     put: async (req, resp) => { if (putFails) throw new Error('QuotaExceededError'); entries.set(req.url, await resp.text()); },
   });
+  // The live shell cache is whatever CACHE_VERSION says today — read it from
+  // the source so a version bump never turns the current cache into an "old"
+  // one in this fixture.
+  const CURRENT = SW_SRC.match(/CACHE_VERSION = '([^']+)'/)[1];
   const caches = {
-    keys: async () => ['festival-nav-v36', 'festival-nav-data-v1', 'festival-nav-v39'],
+    keys: async () => ['festival-nav-v36', 'festival-nav-data-v1', CURRENT],
     open: async (name) => {
       if (name === 'festival-nav-data-v1') { if (openDataFails) throw new Error('storage'); return mkCache(dataStore); }
       if (name === 'festival-nav-v36') return mkCache(oldEntries);

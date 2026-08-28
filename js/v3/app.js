@@ -9,11 +9,13 @@ import * as sync from '../sync.js';
 import * as spotify from '../spotify.js';
 import * as model from './model.js';
 import { loadFestivalIndex, loadFestival, loadCustomFestivals, FESTIVAL_INDEX, defaultFestivalId } from '../festivals.js';
-import { renderWall, refreshCard, showUndoToast, showToast, wireScrollspy, colorIndexOf, groupByDay, knownDaysOf, scheduledWeekendOf, extraSectionsOf } from './wall.js';
+import { renderWall, refreshCard, showUndoToast, showToast, wireScrollspy, colorIndexOf, groupByDay, knownDaysOf, scheduledWeekendOf, extraSectionsOf, positionNowLines, scrollToNowLine } from './wall.js';
+import { loadPeopleFilter, savePeopleFilter, togglePerson, pruneToActive, loadSolo, saveSolo, chipGesture, armedName, cancelHold, ARM_MS } from './filters.js';
+import { scrolledBefore, rememberScrolled, dayOfScrollKey } from './now.js';
 import { disclosureFold, eqLoader, festRow } from './tools.js';
 import { openArtistSheet, openDayNotes, openAllNotes, closeSheet, refreshOpenSheet, sheetChrome, dialogize, rememberOpener } from './notes.js';
 import { renderSettings, appSettings, openSubviewByKey } from './settings.js';
-import { onStorageWriteFail, saveLS, getLS } from '../util.js';
+import { onStorageWriteFail, saveLS, getLS, errorText } from '../util.js';
 import { router } from './router.js';
 import { createSortControl } from './sort-control.js';
 import { nameProblem } from '../name-rules.mjs';
@@ -32,6 +34,16 @@ const ctx = {
   sort: 'billing',
   lowPower: false,
   migrationPending: false,
+  // Wall filters (design options A + D, 2026-08-27): whose picks the wall
+  // shows, and which stage is soloed. Both per-fest, per-tab (filters.js).
+  filterPeople: [],
+  soloStage: null,
+  now: null, // tests pin the clock; null = new Date() at render
+  onSoloStage: (stage) => {
+    saveSolo(ctx.fid, stage);
+    refreshCtx();
+    repaintWall();
+  },
   onTap: handleTap,
   onOpenNotes: (artist) => {
     openArtistSheet(artist, ctx, onNotesChange);
@@ -57,6 +69,14 @@ function refreshCtx() {
   // Weekend view is a device-local preference per fest (ST-3): set it once
   // ("I'm going W2") and wrong-weekend picks announce themselves.
   ctx.weekend = getLS(`fn_weekend_v1_${ctx.fid}`) || 'all';
+  // A remembered filter for someone no longer in the crew would blank the
+  // wall with no chip to explain it — prune to the people who are here.
+  const stored = loadPeopleFilter(ctx.fid);
+  ctx.filterPeople = pruneToActive(stored, state.activePeople().map(([n]) => n));
+  // Write the pruned list back, or a departed member's filter would sit in
+  // storage and silently reactivate the day they rejoin.
+  if (ctx.filterPeople.length !== stored.length) savePeopleFilter(ctx.fid, ctx.filterPeople);
+  ctx.soloStage = loadSolo(ctx.fid);
 }
 
 // ---- tap cycle -------------------------------------------------------------------
@@ -65,6 +85,12 @@ function refreshCtx() {
 function refreshArtistCards(artistName) {
   const els = document.querySelectorAll(`#wall-root .card[data-artist="${CSS.escape(artistName)}"]`);
   if (!els.length) { repaintWall(); return; }
+  // Under a people filter that includes ME, my tap changes the filter's
+  // visible set — a list card (afters, Folsom, search) must appear or
+  // vanish, which a single-card refresh cannot do. A filter on OTHER people
+  // is unaffected by my tap, so the cheap path stays.
+  const filter = ctx.filterPeople || [];
+  if (filter.length && (filter.includes(ctx.meName) || [...els].some((el) => !el.classList.contains('cell')))) { repaintWall(); return; }
   els.forEach((el) => refreshCard(el, artistName, ctx));
 }
 
@@ -115,39 +141,74 @@ function applyFestTheme() {
   startFavicon(fest.accent, { lowPower: ctx.lowPower });
 }
 
-// Chips switch identity through the app's two-tap confirm (FLOW-8 evolved,
-// Kevin 2026-07-12): one stray thumb still can't reassign the device — the
-// first tap only ARMS the chip ("Pick as Drew?"), the second within 3s
-// switches. Shared-phone crews pick for each other without a settings trip.
+// A member chip has two jobs, told apart by the app's own tap/hold grammar
+// (cards: tap picks, hold opens notes):
+//   TAP  = the people filter (design option A, 2026-08-27): the wall shows
+//          only what that person picked; tap more chips to combine; your own
+//          chip is "my picks". A view, so it is cheap to try and cheap to undo
+//          (the "everyone ✕" chip at the end of the row).
+//   HOLD = the identity switch (FLOW-8 evolved, Kevin 2026-07-12), still
+//          behind its two-step confirm: the hold ARMS the chip ("Pick as
+//          Drew?"), a tap within 3s switches. Tap-to-arm was the chip's only
+//          job before the filter; a stray thumb still can't reassign the
+//          device, and Settings keeps the explicit switch for keyboards.
 function renderPersonChips() {
   const row = $('person-chips');
+  // A rebuild mid-hold cancels the hold (the old chip is gone) and swallows
+  // its release; the person holds again if they meant it.
+  cancelHold();
   row.textContent = '';
+  const filter = ctx.filterPeople || [];
   for (const [name, p] of state.activePeople()) {
     const isMe = name === ctx.meName;
-    // You are already you: your own chip is a label, not a switch. `static`
-    // carries that (one mechanism, shared with Settings) instead of an inline
-    // cursor override doing the same job a second way.
-    const chip = document.createElement(isMe ? 'span' : 'button');
-    chip.className = 'person-chip' + (isMe ? ' you static' : '');
+    const chip = document.createElement('button');
+    chip.className = 'person-chip' + (isMe ? ' you' : '');
     const ci = colorIndexOf(name, p);
     chip.style.background = hslOf(ci, 0.5);
     chip.style.border = '1px solid ' + strokeOf(ci, isMe);
     chip.textContent = name;
-    if (!isMe && ctx.meName) {
-      chip.setAttribute('aria-label', `Switch to picking as ${name}`);
-      let armed = false;
-      chip.addEventListener('click', () => {
-        if (!armed) {
-          armed = true;
-          chip.textContent = `Pick as ${name}?`;
-          setTimeout(() => { armed = false; chip.textContent = name; }, 3000);
-          return;
-        }
-        switchIdentity(name);
-        repaintWall();
-      });
+    const selected = filter.includes(name);
+    if (selected) chip.classList.add('selected');
+    else if (filter.length) chip.classList.add('faded');
+    chip.setAttribute('aria-pressed', selected ? 'true' : 'false');
+    const canSwitch = !isMe && !!ctx.meName;
+    const whose = isMe ? 'your' : `${name}'s`;
+    chip.setAttribute('aria-label', selected
+      ? (filter.length > 1 ? `Remove ${name} from the filter` : `Showing only ${whose} picks; tap to show everyone`)
+      : `Show only ${whose} picks${canSwitch ? '; hold to pick as them' : ''}`);
+    // The arm survives a repaint: a chip rebuilt mid-confirm re-renders armed
+    // and its next tap still switches (the arm lives in filters.js, by name).
+    if (canSwitch && armedName() === name) showArmed(chip, name);
+    const g = chipGesture(name, {
+      canSwitch,
+      onFilter: togglePeopleFilter,
+      // Arming updates THIS node in place — never a rebuild: the finger that
+      // armed it is still down, and replacing the chip under it would hand
+      // the release, as a click, to a fresh node whose gesture never saw the
+      // hold (and a click on an armed chip is the confirm). The row is
+      // rebuilt only once the arm has expired, to put the name back.
+      onArmed: () => { showArmed(chip, name); setTimeout(() => { if (armedName() !== name) renderPersonChips(); }, ARM_MS + 50); },
+      onSwitch: (n) => { switchIdentity(n); repaintWall(); },
+    });
+    if (canSwitch) {
+      chip.addEventListener('pointerdown', g.pointerdown);
+      for (const ev of ['pointerup', 'pointercancel', 'pointerleave']) chip.addEventListener(ev, g.pointerend);
+      chip.addEventListener('contextmenu', (e) => e.preventDefault()); // a long press must not open the OS callout
     }
+    chip.addEventListener('click', g.click);
     row.appendChild(chip);
+  }
+  if (filter.length) {
+    const all = document.createElement('button');
+    all.className = 'person-chip everyone';
+    all.setAttribute('aria-label', 'Show everyone’s picks');
+    all.append('everyone');
+    const x = document.createElement('span');
+    x.className = 'x';
+    x.textContent = '✕';
+    all.appendChild(x);
+    all.addEventListener('click', () => setPeopleFilter([]));
+    row.appendChild(all);
   }
   // Add-on-their-behalf lives right where the crew is visible (note 5) —
   // only for claimed devices; a spectator can't grow the crew.
@@ -160,6 +221,49 @@ function renderPersonChips() {
     add.addEventListener('click', () => { openAddMember(); router.push('sheet:add-member'); });
     row.appendChild(add);
   }
+}
+
+// The armed look, in one place: the chip asks the question, and assistive
+// tech hears the question rather than the pre-arm label.
+function showArmed(chip, name) {
+  chip.textContent = `Pick as ${name}?`;
+  chip.setAttribute('aria-label', `Pick as ${name}? Tap again to switch to picking as them`);
+}
+
+function setPeopleFilter(names) {
+  savePeopleFilter(ctx.fid, names);
+  refreshCtx();
+  renderPersonChips();
+  repaintWall();
+}
+function togglePeopleFilter(name) { setPeopleFilter(togglePerson(ctx.filterPeople || [], name)); }
+
+// ---- the now line's clock and the day-of open ------------------------------------
+// One ticker for the app: every minute (and the moment the tab comes back
+// from the background) the now line moves without a repaint. Cheap when no
+// grid is today's — positionNowLines finds nothing to do.
+let clockTimer = null;
+function startClock() {
+  if (clockTimer) return;
+  const tick = () => positionNowLines($('wall-root'), new Date());
+  clockTimer = setInterval(tick, 60 * 1000);
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') tick(); });
+}
+
+// Day-of open: land on the now line, ONCE per festival-day per tab — a
+// re-render after a pick must never yank the scroll, and a phone resumed
+// from the background keeps its place. A fresh open (new tab, a PWA cold
+// start) scrolls again, which is the point. Never while searching.
+function maybeScrollToNow() {
+  if (ctx.query) return;
+  // One claim per festival per festival-day: the morning landing on today's
+  // header and the afternoon landing on the now line are the same open.
+  // Marked only after a real scroll, so an open before the festival week
+  // (nothing to land on) doesn't spend the claim.
+  const tz = state.fest().timezone || null; // the festival's clock, not the phone's
+  const key = dayOfScrollKey(ctx.fid, new Date(), tz);
+  if (scrolledBefore(key)) return;
+  if (scrollToNowLine($('wall-root'), { timeZone: tz })) rememberScrolled(key);
 }
 
 // The explicit identity switch (FLOW-8), called from Settings.
@@ -321,7 +425,7 @@ function maybeShowCoachMark() {
   bar.style.cssText = 'display: flex; align-items: center; gap: 10px; margin-top: 11px; padding: 10px 13px; border: 1px solid var(--notes-chip-stroke); border-radius: var(--r-row); background: rgba(139, 123, 255, .07);';
   const msg = document.createElement('span');
   msg.style.cssText = 'flex: 1; color: var(--text-body); font-size: 12px; font-weight: 600; line-height: 1.45;';
-  msg.append('Tap an artist to pick — brighter each tap, 4th is a must. Hold one for notes. ');
+  msg.append('Tap artists to add your color. 4 taps = MUST SEE. Hold for notes. Tap a name or a stage to see just that. ');
   const how = document.createElement('button');
   how.style.cssText = 'background: none; border: none; padding: 0; cursor: pointer; color: var(--notes-chip-text); font-size: 12px; font-weight: 700; text-decoration: underline; text-underline-offset: 2px;';
   how.textContent = 'How it works';
@@ -832,7 +936,7 @@ function openAddMember() {
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         if (state.getCrewToken() !== tokenAtStart) return; // crew switched mid-flight
-        status.textContent = body.error || 'The crew service hiccuped — give it a second and try again.';
+        status.textContent = errorText(body, 'The crew service hiccuped — give it a second and try again.');
         return;
       }
       const merged = await res.json();
@@ -879,7 +983,9 @@ function applyLowPower(on) {
 // The most recent settings actions object — the router's forward re-open of
 // a settings drill needs it (openSettings rebuilds it on every render).
 let settingsActions = null;
-function closeSettings() { show('screen-app'); repaintWall(); }
+// Coming back from Settings may mean a festival switch — if THAT fest is on
+// today, land on its now line (once per fest-day, like a fresh open).
+function closeSettings() { show('screen-app'); repaintWall(); maybeScrollToNow(); }
 
 function openSettings() {
   closeSheet();
@@ -1288,7 +1394,7 @@ function renderJoin(token, doc) {
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        status.textContent = body.error || 'The crew service hiccuped — give it a second and tap Join again.';
+        status.textContent = errorText(body, 'The crew service hiccuped — give it a second and tap Join again.');
         btn.disabled = false;
         return;
       }
@@ -1408,6 +1514,8 @@ async function enterApp(token, doc, current = () => true) {
   renderPersonChips();
   renderYou();
   repaintWall();
+  maybeScrollToNow();
+  startClock();
   history.replaceState(savedLayers ? { layers: savedLayers } : null, '', `/#g=${token}`);
   sync.pollSync();
   router.reset();

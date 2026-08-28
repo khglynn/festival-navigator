@@ -13,6 +13,8 @@ import { activityMinutes } from '../time.js';
 import { auraBackground, whoCorner, aboutCorner, nameColor, subColor } from './aura.js';
 import { BOARD } from './palette.js';
 import { notesSection } from './notes.js'; // runtime-only cycle with this module (colorIndexOf) — safe
+import { passesPeople, columnsTemplate, railLabels } from './filters.js';
+import { nowOnDay, nowOffsetPx, clockLabel, festivalClock } from './now.js';
 
 // ---- person -> board color ---------------------------------------------------
 // v4 people carry colorIndex. Legacy people carry a "R, G, B" string from the
@@ -56,6 +58,11 @@ export function renderCard(artistName, ctx, opts = {}) {
   const people = cardPeople(artistName, ctx.picks, ctx.meName);
   const el = document.createElement('div');
   el.className = 'card' + (opts.cell ? ' cell' : '') + (opts.time && !opts.cell ? ' timed' : '');
+  // The people filter dims a card nobody selected has picked. Computed here,
+  // from ctx, so refreshCard (a single-card repaint after a tap) reproduces
+  // it without being told — a dimmed card you tap stays dimmed until the
+  // filtered person picks it, which is exactly what the filter means.
+  if (ctx.filterPeople && ctx.filterPeople.length && !passesPeople(ctx.picks, artistName, ctx.filterPeople)) el.classList.add('dim');
   el.dataset.artist = artistName;
   // Keyboard-first card (AX-1): real button semantics, and the accessible
   // name carries what SIGHTED users see — your level, the crew's picks, note
@@ -332,16 +339,27 @@ function renderLineupGroup(root, day, list, ctx, fest, { header, sub } = {}) {
       onOpenNotes: () => ctx.onOpenDayNotes(day),
     } : {},
   ));
+  // On a list (no clock to keep in shape) the people filter HIDES the cards
+  // nobody selected has picked — and says so when that leaves nothing, so an
+  // empty section reads as "no picks here" rather than "the data is gone".
+  const filtering = ctx.filterPeople && ctx.filterPeople.length;
+  const shown = filtering ? list.filter((a) => passesPeople(ctx.picks, a.name, ctx.filterPeople)) : list;
   const grid = document.createElement('div');
   grid.className = 'wall-grid';
   const showTags = !ctx.weekend || ctx.weekend === 'all';
-  for (const a of list) {
+  for (const a of shown) {
     const tag = showTags && (a.weekends === 'W1' || a.weekends === 'W2') ? a.weekends : undefined;
     // A lineup entry can be an EVENT (afters, Folsom) — venue rides in
     // `stage`, hours in `time`; without this sub-label the card would hide
     // both, and a card that hides where-and-when is a card that lies.
     const subLabel = [a.stage, a.time].filter(Boolean).join(' · ');
     grid.appendChild(renderCard(a.name, ctx, { tag, time: subLabel || undefined }));
+  }
+  if (filtering && !shown.length) {
+    const none = document.createElement('div');
+    none.className = 'section-empty';
+    none.textContent = `No picks here from ${ctx.filterPeople.join(' or ')}.`;
+    root.appendChild(none);
   }
   root.appendChild(grid);
   // Day notes with personal pins live under each real day's cards (21e).
@@ -437,30 +455,68 @@ export function applySort(artists, mode, ctx) {
 // column stays on one stage from Thursday to Sunday. The strip lives OUTSIDE
 // the horizontal scrollers because position:sticky can't escape an
 // overflow-x container (the same physics that put the hour rail outside).
-export function computeTimesLayout(fest, getDayArtists) {
+export function computeTimesLayout(fest, getDayArtists, solo = null) {
   const stages = model.canonicalStages(fest);
   const days = Object.keys(fest.days || {});
   // The everything-else column is reserved festival-wide: if ANY day needs
   // it, every day gets it, or the shared template (and the strip) would lie.
   const hasEE = days.some((d) => ((fest.activities || {})[d] || []).length > 0
     || getDayArtists(d).some((a) => !stages.includes(a.stage)));
+  // Stage solo (design option D): one stage wide, the rest folded to rails.
+  // The same template feeds the strip and every day, so a folded column is
+  // folded everywhere — scrolling down a soloed stage stays on it.
+  const cols = columnsTemplate(stages, hasEE, solo);
   return {
     stages,
     hasEE,
-    colsTemplate: `repeat(${stages.length + (hasEE ? 1 : 0)}, minmax(150px, 1fr))`,
+    solo: cols.solo,
+    colsTemplate: cols.template,
+    rails: railLabels(stages), // what each stage's folded rail says
   };
 }
 
-function stageHead(label, { muted = false } = {}) {
-  const h = document.createElement('div');
+// A stage header is a button: tap to solo that stage, tap the soloed one to
+// restore all. Folded stages render as slim rails (still tappable — tapping a
+// rail moves the solo there). The everything-else head never solos; it folds
+// with the others.
+function stageHead(label, { muted = false, layout = null, ctx = null } = {}) {
+  const canSolo = !muted && ctx && typeof ctx.onSoloStage === 'function';
+  const h = document.createElement(canSolo ? 'button' : 'div');
   h.className = 'stage-head';
   if (muted) h.style.color = 'var(--text-secondary)'; // neutral tint — not a stage
-  h.textContent = label;
   h.title = label; // long names ellipsize — hover recovers
+  const solo = layout && layout.solo;
+  // The text sits in an inner label so the ellipsis clips THAT, not the
+  // button — overflow:hidden on the button would also clip the ::after that
+  // gives a 32px-tall head its 44px tap target (Codex gate, 2026-08-27).
+  const text = document.createElement('span');
+  text.className = 'label';
+  h.appendChild(text);
+  if (solo && label !== solo) {
+    h.classList.add('rail');
+    // Bounded to what a rail can show (filters.js railLabels — Codex round
+    // 4, 2026-08-27); the full name stays in title and aria-label.
+    text.textContent = muted ? 'ELSE' : ((layout.rails || {})[label] || label.slice(0, 4));
+    h.setAttribute('aria-label', muted ? 'Everything else (folded)' : `Solo ${label}`);
+  } else {
+    text.textContent = label;
+    if (solo === label) {
+      h.setAttribute('aria-pressed', 'true');
+      h.setAttribute('aria-label', `${label} — showing only this stage; tap for all stages`);
+      const off = document.createElement('span');
+      off.className = 'solo-off';
+      off.textContent = '✕ all stages';
+      text.appendChild(off);
+    } else if (canSolo) {
+      h.setAttribute('aria-pressed', 'false');
+      h.setAttribute('aria-label', `Solo ${label}`);
+    }
+  }
+  if (canSolo) h.addEventListener('click', () => ctx.onSoloStage(solo === label ? null : label));
   return h;
 }
 
-function renderStageStrip(layout) {
+function renderStageStrip(layout, ctx) {
   const strip = document.createElement('div');
   strip.className = 'times-wrap stage-strip';
   const spacer = document.createElement('div');
@@ -471,11 +527,82 @@ function renderStageStrip(layout) {
   grid.className = 'times-grid';
   grid.style.gridTemplateColumns = layout.colsTemplate;
   grid.style.gridTemplateRows = '32px';
-  for (const s of layout.stages) grid.appendChild(stageHead(s));
-  if (layout.hasEE) grid.appendChild(stageHead('EVERYTHING ELSE', { muted: true }));
+  for (const s of layout.stages) grid.appendChild(stageHead(s, { layout, ctx }));
+  if (layout.hasEE) grid.appendChild(stageHead('EVERYTHING ELSE', { muted: true, layout, ctx }));
   scroll.appendChild(grid);
   strip.append(spacer, scroll);
   return strip;
+}
+
+// ---- the now line --------------------------------------------------------------
+// Rows are 15 minutes; a row is ROW_PX tall plus ROW_GAP between rows, so the
+// pitch per row is their sum. Kept here beside the grid that uses them.
+const ROW_PX = 20;
+const ROW_GAP = 4;
+const ROW_PITCH = ROW_PX + ROW_GAP;
+
+// Draw (or move) the now line on every timetable grid whose day is today.
+// Each grid carries its geometry as data attributes, so this can run from
+// a one-minute ticker without a repaint. Removes a line whose day has ended.
+export function positionNowLines(root, date = new Date()) {
+  for (const grid of root.querySelectorAll('.times-grid[data-iso]')) {
+    const clock = festivalClock(date, grid.dataset.tz || null); // the grid knows its festival's zone
+    const rail = grid.parentElement && grid.parentElement.parentElement
+      ? grid.parentElement.parentElement.querySelector('.times-rail') : null;
+    const isToday = grid.dataset.iso === clock.iso;
+    const top = isToday ? nowOffsetPx(clock.minutes, {
+      startRow: Number(grid.dataset.startRow), rows: Number(grid.dataset.rows), pitch: ROW_PITCH,
+    }) : null;
+    let line = grid.querySelector('.now-line');
+    let label = rail ? rail.querySelector('.now-label') : null;
+    if (top == null) {
+      if (line) line.remove();
+      if (label) label.remove();
+      continue;
+    }
+    if (!line) {
+      line = document.createElement('div');
+      line.className = 'now-line';
+      line.setAttribute('aria-hidden', 'true');
+      grid.appendChild(line);
+    }
+    line.style.top = `${top - 1}px`;
+    line.dataset.minutes = String(clock.minutes);
+    if (rail && !label) {
+      label = document.createElement('span');
+      label.className = 'now-label';
+      rail.appendChild(label);
+    }
+    if (label) {
+      label.style.top = `${top}px`;
+      label.textContent = clockLabel(clock.minutes);
+      label.setAttribute('aria-label', `Now, ${clockLabel(clock.minutes)}`);
+    }
+  }
+}
+
+// The day-of open: land the now line about a third of the way down the
+// viewport so the next hour is in view. Before doors on festival day there
+// is no line yet — land on today's day header instead. Returns the target
+// it scrolled to ('now' | 'day') or null when today is not on this wall.
+export function scrollToNowLine(root, { date = new Date(), viewportHeight = window.innerHeight, scrollTo = (y) => window.scrollTo({ top: y, behavior: 'auto' }), timeZone = null } = {}) {
+  const pageY = (el) => el.getBoundingClientRect().top + (window.scrollY || window.pageYOffset || 0);
+  const line = root.querySelector('.now-line');
+  if (line) {
+    scrollTo(Math.max(0, pageY(line) - viewportHeight * 0.33));
+    return 'now';
+  }
+  // "Today" in the festival's zone — the grids carry it; the caller may too.
+  const zoned = root.querySelector('.times-grid[data-tz]');
+  const todayIso = festivalClock(date, timeZone || (zoned ? zoned.dataset.tz : null)).iso;
+  const rule = root.querySelector(`.day-rule[data-iso="${todayIso}"]`);
+  if (!rule) return null;
+  // The day rule's scroll-margin-top is the sticky chrome's height (app.js
+  // measures it into --jump-offset); land below it like a day-tab jump does.
+  const offset = (typeof window !== 'undefined' && window.getComputedStyle)
+    ? parseFloat(window.getComputedStyle(rule).scrollMarginTop) || 0 : 0;
+  scrollTo(Math.max(0, pageY(rule) - offset));
+  return 'day';
 }
 
 // Mirror one horizontal position across the strip and every day's scroller.
@@ -504,10 +631,15 @@ function renderScheduledDay(root, day, ctx, layout, weekend) {
   const computed = state.getDayArtists(day, weekend);
   const stages = layout.stages;
   const meta = (fest.dayMeta || {})[day];
-  root.appendChild(dayHeader(day, dayRuleSub(meta, weekend), {
+  const rule = dayHeader(day, dayRuleSub(meta, weekend), {
     noteCount: model.noteCount(state.crewDoc, ctx.fid, 'day', day),
     onOpenNotes: ctx.onOpenDayNotes ? () => ctx.onOpenDayNotes(day) : null,
-  }));
+  });
+  // The day rule knows its date too: on festival day, before doors, the
+  // day-of open lands here when there is no now line yet to land on.
+  const ruleIso = (meta && (weekend && meta.isos ? meta.isos[weekend] : meta.iso)) || null;
+  if (ruleIso) rule.dataset.iso = ruleIso;
+  root.appendChild(rule);
 
   const acts = (fest.activities || {})[day] || [];
 
@@ -515,7 +647,7 @@ function renderScheduledDay(root, day, ctx, layout, weekend) {
   // is Infinity). Activities-only days render as a quiet list; truly empty
   // days say so instead of rendering nothing.
   if (!computed.length) {
-    if (acts.length) {
+    if (acts.length && !layout.solo) {
       const list = document.createElement('div');
       list.className = 'ee-col';
       for (const a of acts) list.appendChild(eeActivityRow(a));
@@ -581,10 +713,20 @@ function renderScheduledDay(root, day, ctx, layout, weekend) {
   // that EF genuinely has these; js/overlap.js is very much alive). Lanes are
   // computed on the drawn extents above, so display-floored collisions split
   // the column too.
+  // The grid remembers its own geometry so the now line can be placed and
+  // moved by the ticker without a repaint.
+  grid.dataset.startRow = String(startRow);
+  grid.dataset.rows = String(rows);
+  const iso = (meta && (weekend && meta.isos ? meta.isos[weekend] : meta.iso)) || null;
+  if (iso) grid.dataset.iso = iso;
+  if (fest.timezone) grid.dataset.tz = fest.timezone;
+
   const lanes = computeLanes(drawn);
   for (const a of drawn) {
     const col = stages.indexOf(a.stage);
     if (col === -1) continue; // strays render in the everything-else column
+    // A folded (non-solo) column is a 34px rail — its cards don't render.
+    if (layout.solo && a.stage !== layout.solo) continue;
     const cell = renderCard(a.name, ctx, { cell: true, time: a.startStr });
     cell.style.gridColumn = String(col + 1);
     const row = Math.floor(a.startMin / 15) - startRow + 1;
@@ -603,7 +745,7 @@ function renderScheduledDay(root, day, ctx, layout, weekend) {
     grid.appendChild(cell);
   }
 
-  if (dayHasEE) {
+  if (dayHasEE && !layout.solo) {
     const col = document.createElement('div');
     col.className = 'ee-col';
     col.style.gridColumn = String(stages.length + 1);
@@ -624,6 +766,8 @@ function renderScheduledDay(root, day, ctx, layout, weekend) {
   scroll.appendChild(grid);
   wrap.append(rail, scroll);
   root.appendChild(wrap);
+  // Today's grid gets the now line on first paint (the ticker keeps it moving).
+  if (iso && nowOnDay(fest, day, weekend, ctx.now || new Date()) != null) positionNowLines(wrap, ctx.now || new Date());
 
   if (ctx.onNotesChange) root.appendChild(notesSection('day', day, day, ctx, ctx.onNotesChange));
 }
@@ -698,8 +842,8 @@ function renderWallInner(root, ctx) {
   if (scheduled && !ctx.query) {
     const wk = scheduledWeekendOf(fest, ctx.weekend);
     const dayArtists = (d) => state.getDayArtists(d, wk);
-    const layout = computeTimesLayout(fest, dayArtists);
-    if (layout.stages.length) root.appendChild(renderStageStrip(layout));
+    const layout = computeTimesLayout(fest, dayArtists, ctx.soloStage || null);
+    if (layout.stages.length) root.appendChild(renderStageStrip(layout, ctx));
     for (const day of Object.keys(fest.days)) renderScheduledDay(root, day, ctx, layout, wk);
     wireTimesScrollSync(root);
     // The grid carries the festival days; everything the lineup list still
@@ -730,7 +874,10 @@ function renderWallInner(root, ctx) {
     for (const day of Object.keys(fest.days)) {
       const computed = state.getDayArtists(day, wk);
       computed.forEach((a) => scheduledNames.add(a.name));
+      // Search results are a LIST, so the people filter hides here rather
+      // than dims — a filtered search must not resurface someone's non-pick.
       const matches = computed.filter((a) => a.name.toLowerCase().includes(q))
+        .filter((a) => passesPeople(ctx.picks, a.name, ctx.filterPeople))
         .sort((x, y) => x.startMin - y.startMin);
       if (!matches.length) continue;
       any = true;
@@ -745,7 +892,7 @@ function renderWallInner(root, ctx) {
     // deserve to be findable — within the selected weekend: a W2-only act
     // must not resurface here after the grid correctly filtered it out.
     for (const [day, list] of extraSectionsOf(fest, scheduledNames, wk)) {
-      const matches = applyFilter(list, ctx.query);
+      const matches = applyFilter(list, ctx.query).filter((a) => passesPeople(ctx.picks, a.name, ctx.filterPeople));
       if (!matches.length) continue;
       any = true;
       renderLineupGroup(root, day, matches, ctx, { ...fest, dayMeta: fest.dayMeta }, day ? {} : { header: 'EVERYTHING ELSE', sub: 'NO SET TIME YET' });
@@ -842,8 +989,6 @@ export function wireScrollspy(containers, wallRoot) {
       else t.removeAttribute('aria-current');
     });
   };
-  // The first day is on screen at load — say so instead of nothing.
-  setActive(tabs[0].dataset.day);
   const io = new IntersectionObserver((entries) => {
     for (const e of entries) {
       if (!e.isIntersecting) continue;
@@ -876,6 +1021,22 @@ export function wireScrollspy(containers, wallRoot) {
     }
     setActive(current.dataset.day);
   };
+  // The initial claim. At load the first day is on screen — say so instead
+  // of nothing. But this also runs on every re-wire (a people filter or a
+  // stage solo repaints the wall), and there the page may be scrolled deep
+  // into Sunday: claiming "Saturday" was a lie the tab wore until the next
+  // scroll event (UI walk, 2026-08-27). Read the geometry whenever there is
+  // scroll to read; position 0 keeps the first-day shortcut so a fresh load
+  // never depends on layout having settled.
+  let frame = 0;
+  if (window.scrollY > 0) {
+    syncFromGeometry();
+    // …and once more next frame: the caller measures the sticky chrome
+    // (--jump-offset) AFTER wiring, and entering or leaving search adds or
+    // drops the stage strip, so the first read can be against the old
+    // offset (Codex round 4, 2026-08-27).
+    if (typeof requestAnimationFrame === 'function') frame = requestAnimationFrame(syncFromGeometry);
+  } else setActive(tabs[0].dataset.day);
   const onScroll = () => {
     if (ticking) return;
     ticking = true;
@@ -886,5 +1047,6 @@ export function wireScrollspy(containers, wallRoot) {
   return () => {
     io.disconnect();
     window.removeEventListener('scroll', onScroll);
+    if (frame && typeof cancelAnimationFrame === 'function') cancelAnimationFrame(frame);
   };
 }

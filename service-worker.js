@@ -1,6 +1,6 @@
 // Festival Navigator service worker — offline-first app shell.
 // Bump CACHE_VERSION whenever you change cached static assets.
-const CACHE_VERSION = 'festival-nav-v39'; // v39 = Portola set times + afters/Folsom sections on a scheduled wall + festival data network-first
+const CACHE_VERSION = 'festival-nav-v42'; // v42 = wall filters (people chips, stage solo) + the now line + day-of auto-scroll, plus the UI-walk fixes
 
 // Festival JSONs live in their OWN cache, outside the version-keyed shell
 // cache — because activate deletes every old version cache wholesale, and
@@ -46,8 +46,15 @@ const APP_CORE = [
   '/js/v3/favicon.js',
   '/js/v3/router.js',
   '/js/v3/sort-control.js',
+  '/js/v3/filters.js',
+  '/js/v3/now.js',
   '/data/festivals/index.json',
 ];
+// Every module app.js imports (transitively) must be listed above, or an
+// offline boot after an update fails on the first missing import — a v40
+// worker once cached app.js + wall.js without the two modules they had just
+// grown (Codex gate, 2026-08-27). tests/app-shell-complete.test.mjs walks the
+// import graph and fails when this list falls behind.
 
 // Nice-to-have: failures here never block install.
 const APP_EXTRAS = [
