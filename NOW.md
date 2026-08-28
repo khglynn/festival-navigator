@@ -1,15 +1,31 @@
 # NOW — festival-navigator: Portola set times LIVE ON PROD (v39) · wall filters + now line STAGED on `wall-filters` (v40)
 
-## 2026-08-27 (evening) — wall filters + the now line, built; two PRs open
+## 2026-08-27 (evening) — wall filters + the now line, built and gated; PR #11 open, filters PR next
 
 Kevin picked options A + D from the filtering canvas and asked for a
 day-of open on the current time with a now line. All built on
-`wall-filters` (branched from `portola-set-times`): tap a member chip to
-see only their picks (hold = the old pick-as switch), tap a stage name to
-solo it, today's grid draws a moving now line and the app lands on it once
-per open. Story + the one call for Kevin (tap/hold on chips): DEVLOG
-2026-08-27 (evening). **PR #11** (pick-key guard + header copy) is still
-open; the filters PR stacks on it. Both merges = prod deploys, Kevin's call.
+`wall-filters` (branched from `portola-set-times`, HEAD 635a807): tap a
+member chip to see only their picks (hold = the old pick-as switch), tap a
+stage name to solo it, today's grid draws a moving now line and the app
+lands on it once per open. Two Codex rounds (NO SHIP → fixed → NO SHIP →
+fixed; third pass running at hand-off), Kevin's copy pass on How it works
+and the coach mark. Story: DEVLOG 2026-08-27 (evening).
+
+**Kevin's sequence from here (his words, 2026-08-27 19:45):** push these
+updates once Codex is happy → he compacts → one more feature pass
+(**comments improvements**) → then **Seismic + ACL** data — set times where
+out, and for each fest also the AFTERS / big events around it (the way
+Portola got Portola Week + Folsom; "just the big big stuff"). That last
+rule is also on the Pen watcher row.
+
+**Open at hand-off:** (1) a `[object Object]` status seen once in the
+create flow on the branch-alias preview — a UI walker teammate is
+reproducing it (likely the alias host not being an allowed origin, plus an
+error object reaching textContent); (2) PR #11 (pick-key guard + header
+copy) still waits for "promote"; the filters PR stacks on it; (3)
+throwaway preview crews to delete when done (members `zz-filters-walk`,
+`zz-walk-two`, `zz-friend` — tokens in the walker's report). UI walks are
+a teammate's job from here on (Kevin, 19:44), not the main session's.
 
 ## 2026-08-27 (later) — PROMOTED: PR #10 merged, v39 on all three domains
 
