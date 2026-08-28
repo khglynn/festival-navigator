@@ -488,8 +488,11 @@
               color: rgb(var(--fest)); font-size: 12.5px;
               min-width: 0; padding: 0 8px; text-align: center;
               line-height: 32px; height: 32px; box-sizing: border-box;
-              white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+              white-space: nowrap;
               background: var(--card); border-radius: var(--r-card); }
+/* The ellipsis lives on an inner label, not the head: `overflow: hidden` on
+ * the button itself would clip the ::after that gives it a 44px tap target. */
+.stage-head .label { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* The sticky stage strip (one for the whole page): stage names pin below the
  * sticky chrome while every day scrolls under them. Lives outside the
@@ -573,13 +576,13 @@
 .stage-head[aria-pressed="true"] { box-shadow: inset 0 0 0 1px rgba(var(--fest), .6); }
 .stage-head .solo-off { font-family: var(--font-ui); font-size: 9px; letter-spacing: 0; font-weight: 700;
                         color: var(--text-tertiary); margin-left: 6px; }
-.stage-head.rail { padding: 0; font-size: 9px; letter-spacing: .06em; color: var(--text-tertiary);
-                   writing-mode: vertical-rl; transform: rotate(180deg); line-height: 34px; }
+.stage-head.rail { padding: 0; font-size: 9px; letter-spacing: .06em; color: var(--text-tertiary); }
+.stage-head.rail .label { writing-mode: vertical-rl; transform: rotate(180deg); line-height: 34px; height: 32px; overflow: visible; }
 @media (pointer: coarse) {
   /* Opt out of the 44px floor like the other small in-row controls: the strip
    * row is 32px by design. Borrowed space is vertical only — a wide ::after
    * would let one stage swallow the tap meant for its neighbour. */
-  .stage-head { min-height: 0; position: relative; }
+  .stage-head { min-height: 0; position: relative; overflow: visible; }
   .stage-head::after { content: ''; position: absolute; inset: -6px 0; }
 }
 

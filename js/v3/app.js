@@ -10,7 +10,8 @@ import * as spotify from '../spotify.js';
 import * as model from './model.js';
 import { loadFestivalIndex, loadFestival, loadCustomFestivals, FESTIVAL_INDEX, defaultFestivalId } from '../festivals.js';
 import { renderWall, refreshCard, showUndoToast, showToast, wireScrollspy, colorIndexOf, groupByDay, knownDaysOf, scheduledWeekendOf, extraSectionsOf, positionNowLines, scrollToNowLine } from './wall.js';
-import { loadPeopleFilter, savePeopleFilter, togglePerson, pruneToActive, loadSolo, saveSolo } from './filters.js';
+import { loadPeopleFilter, savePeopleFilter, togglePerson, pruneToActive, loadSolo, saveSolo, chipGesture, armedName } from './filters.js';
+import { claimScrollOnce } from './now.js';
 import { disclosureFold, eqLoader, festRow } from './tools.js';
 import { openArtistSheet, openDayNotes, openAllNotes, closeSheet, refreshOpenSheet, sheetChrome, dialogize, rememberOpener } from './notes.js';
 import { renderSettings, appSettings, openSubviewByKey } from './settings.js';
@@ -70,7 +71,11 @@ function refreshCtx() {
   ctx.weekend = getLS(`fn_weekend_v1_${ctx.fid}`) || 'all';
   // A remembered filter for someone no longer in the crew would blank the
   // wall with no chip to explain it — prune to the people who are here.
-  ctx.filterPeople = pruneToActive(loadPeopleFilter(ctx.fid), state.activePeople().map(([n]) => n));
+  const stored = loadPeopleFilter(ctx.fid);
+  ctx.filterPeople = pruneToActive(stored, state.activePeople().map(([n]) => n));
+  // Write the pruned list back, or a departed member's filter would sit in
+  // storage and silently reactivate the day they rejoin.
+  if (ctx.filterPeople.length !== stored.length) savePeopleFilter(ctx.fid, ctx.filterPeople);
   ctx.soloStage = loadSolo(ctx.fid);
 }
 
@@ -80,6 +85,10 @@ function refreshCtx() {
 function refreshArtistCards(artistName) {
   const els = document.querySelectorAll(`#wall-root .card[data-artist="${CSS.escape(artistName)}"]`);
   if (!els.length) { repaintWall(); return; }
+  // Under a people filter a LIST card (afters, Folsom, search) hides when
+  // its last filtered pick clears — a single-card refresh can only dim it.
+  // A grid cell dims in place, so the cheap path stays for pure-grid taps.
+  if ((ctx.filterPeople || []).length && [...els].some((el) => !el.classList.contains('cell'))) { repaintWall(); return; }
   els.forEach((el) => refreshCard(el, artistName, ctx));
 }
 
@@ -159,26 +168,26 @@ function renderPersonChips() {
     chip.setAttribute('aria-pressed', selected ? 'true' : 'false');
     const canSwitch = !isMe && !!ctx.meName;
     chip.setAttribute('aria-label', selected
-      ? `${name} — showing only their picks; tap to show everyone`
+      ? (filter.length > 1 ? `Remove ${name} from the filter` : `${name} — showing only their picks; tap to show everyone`)
       : `Show only ${name}'s picks${canSwitch ? '; hold to pick as them' : ''}`);
-    let armed = false;
-    let held = false;
-    let holdTimer = null;
-    if (canSwitch) {
-      const arm = () => {
-        armed = true;
+    // The arm survives a repaint: a chip rebuilt mid-confirm re-renders armed
+    // and its next tap still switches (the arm lives in filters.js, by name).
+    if (canSwitch && armedName() === name) chip.textContent = `Pick as ${name}?`;
+    const g = chipGesture(name, {
+      canSwitch,
+      onFilter: togglePeopleFilter,
+      onArmed: () => {
         chip.textContent = `Pick as ${name}?`;
-        setTimeout(() => { armed = false; if (chip.isConnected) chip.textContent = name; }, 3000);
-      };
-      chip.addEventListener('pointerdown', () => { held = false; holdTimer = setTimeout(() => { held = true; arm(); }, 500); });
-      for (const ev of ['pointerup', 'pointercancel', 'pointerleave']) chip.addEventListener(ev, () => clearTimeout(holdTimer));
+        setTimeout(() => { if (chip.isConnected && armedName() !== name) chip.textContent = name; }, 3000 + 50);
+      },
+      onSwitch: (n) => { switchIdentity(n); repaintWall(); },
+    });
+    if (canSwitch) {
+      chip.addEventListener('pointerdown', g.pointerdown);
+      for (const ev of ['pointerup', 'pointercancel', 'pointerleave']) chip.addEventListener(ev, g.pointerend);
       chip.addEventListener('contextmenu', (e) => e.preventDefault()); // a long press must not open the OS callout
     }
-    chip.addEventListener('click', () => {
-      if (held) { held = false; return; } // the click that ends a hold is not a tap
-      if (armed) { armed = false; switchIdentity(name); repaintWall(); return; }
-      togglePeopleFilter(name);
-    });
+    chip.addEventListener('click', g.click);
     row.appendChild(chip);
   }
   if (filter.length) {
@@ -234,13 +243,19 @@ function maybeScrollToNow() {
   if (ctx.query) return;
   const root = $('wall-root');
   const line = root.querySelector('.now-line');
-  if (!line) return;
+  if (!line) {
+    // Festival day, but before doors (or after the last set): land on
+    // today's header instead of the top of Saturday. scrollToNowLine finds
+    // today's day rule by its date, or does nothing when today isn't here.
+    const key = `fn_scrolled_day_v1_${ctx.fid}`;
+    if (!claimScrollOnce(key)) return;
+    scrollToNowLine(root);
+    return;
+  }
   const grid = line.closest('.times-grid');
   const key = `fn_scrolled_now_v1_${ctx.fid}_${grid ? grid.dataset.iso : ''}`;
-  try { if (sessionStorage.getItem(key)) return; } catch { /* storage-blocked: scroll every open, harmless */ }
-  if (scrollToNowLine(root)) {
-    try { sessionStorage.setItem(key, '1'); } catch { /* memory-only session */ }
-  }
+  if (!claimScrollOnce(key)) return;
+  scrollToNowLine(root);
 }
 
 // The explicit identity switch (FLOW-8), called from Settings.
@@ -402,7 +417,7 @@ function maybeShowCoachMark() {
   bar.style.cssText = 'display: flex; align-items: center; gap: 10px; margin-top: 11px; padding: 10px 13px; border: 1px solid var(--notes-chip-stroke); border-radius: var(--r-row); background: rgba(139, 123, 255, .07);';
   const msg = document.createElement('span');
   msg.style.cssText = 'flex: 1; color: var(--text-body); font-size: 12px; font-weight: 600; line-height: 1.45;';
-  msg.append('Tap an artist to pick — brighter each tap, 4th is a must. Hold one for notes. Tap a name up top to see just their picks. ');
+  msg.append('Tap a name to see their picks — hold to pick as them. Tap an artist to add your color; 4 taps = I MUST SEE THIS. Hold one for notes. Spotify likes sync in Settings if ya want. Funnnn. ');
   const how = document.createElement('button');
   how.style.cssText = 'background: none; border: none; padding: 0; cursor: pointer; color: var(--notes-chip-text); font-size: 12px; font-weight: 700; text-decoration: underline; text-underline-offset: 2px;';
   how.textContent = 'How it works';

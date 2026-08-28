@@ -99,18 +99,38 @@ test('the ticker moves the line without a repaint, and removes it once the day i
   root.remove();
 });
 
-test('scrollToNowLine lands the line a third of the way down the viewport; no line = no scroll', () => {
+test('scrollToNowLine: the line a third of the way down; before doors on festival day, today’s header; otherwise nothing', () => {
   const root = render(local('2026-09-26T20:00:00'));
   const calls = [];
   const line = root.querySelector('.now-line');
   line.getBoundingClientRect = () => ({ top: 1200 });
-  assert.equal(scrollToNowLine(root, { viewportHeight: 900, scrollTo: (y) => calls.push(y) }), true);
+  assert.equal(scrollToNowLine(root, { date: local('2026-09-26T20:00:00'), viewportHeight: 900, scrollTo: (y) => calls.push(y) }), 'now');
   assert.deepEqual(calls, [1200 - 297]);
   root.remove();
+  // Sunday 10 AM: no line yet (doors at 1 PM) — land on Sunday's header.
+  const morning = render(local('2026-09-27T10:00:00'));
+  assert.equal(morning.querySelectorAll('.now-line').length, 0);
+  const sunRule = morning.querySelector('.day-rule[data-iso="2026-09-27"]');
+  sunRule.getBoundingClientRect = () => ({ top: 3000 });
+  assert.equal(scrollToNowLine(morning, { date: local('2026-09-27T10:00:00'), viewportHeight: 900, scrollTo: (y) => calls.push(y) }), 'day');
+  assert.equal(calls[1], 3000);
+  morning.remove();
   const off = render(local('2026-09-20T20:00:00'));
-  assert.equal(scrollToNowLine(off, { viewportHeight: 900, scrollTo: (y) => calls.push(y) }), false);
-  assert.equal(calls.length, 1);
+  assert.equal(scrollToNowLine(off, { date: local('2026-09-20T20:00:00'), viewportHeight: 900, scrollTo: (y) => calls.push(y) }), null);
+  assert.equal(calls.length, 2);
   off.remove();
+});
+
+test('claimScrollOnce: once per key for the life of the page, remembered across a reload when storage allows, never thrown off by a blocked store', () => {
+  const store = new Map();
+  const fake = { getItem: (k) => store.get(k) || null, setItem: (k, v) => store.set(k, v) };
+  assert.equal(now.claimScrollOnce('k1', fake), true);
+  assert.equal(now.claimScrollOnce('k1', fake), false, 'second open in the same page: no');
+  assert.equal(store.get('k1'), '1', 'remembered for a reload');
+  assert.equal(now.claimScrollOnce('k2', { getItem: () => '1', setItem: () => {} }), false, 'a reload that finds the flag: no');
+  const denied = () => { throw new DOMException('blocked', 'SecurityError'); };
+  assert.equal(now.claimScrollOnce('k3', { getItem: denied, setItem: denied }), true, 'blocked store: memory decides');
+  assert.equal(now.claimScrollOnce('k3', { getItem: denied, setItem: denied }), false, 'and it still does not scroll twice');
 });
 
 test('validator: dayMeta iso / isos must be real dates', () => {
@@ -120,5 +140,19 @@ test('validator: dayMeta iso / isos must be real dates', () => {
   assert.ok(validateFestivalDoc({ ...base, dayMeta: { Friday: { iso: '2026-13-02' } } }).errors.some((e) => e.includes('iso must be a real')));
   assert.ok(validateFestivalDoc({ ...base, dayMeta: { Friday: { isos: { W3: '2026-10-02' } } } }).errors.some((e) => e.includes('unknown weekend')));
   assert.ok(validateFestivalDoc({ ...base, dayMeta: { Friday: null } }).errors.some((e) => e.includes('must be an object')));
+  assert.ok(validateFestivalDoc({ ...base, dayMeta: { Friday: { iso: '0000-10-02' } } }).errors.some((e) => e.includes('real')), 'year 0000 is not a festival');
+  assert.ok(validateFestivalDoc({ ...base, dayMeta: { Friday: { iso: '2026-10-02', isos: { W1: '2026-10-02', W2: '2026-10-09' } } } }).errors.some((e) => e.includes('not both')));
+  assert.ok(validateFestivalDoc({ ...base, dayMeta: { Friday: { isos: { W1: '2026-10-02' } } } }).errors.some((e) => e.includes('both W1 and W2')));
+  const dup = validateFestivalDoc({ ...base, artists: [{ name: 'A', day: 'Friday' }, { name: 'B', day: 'Saturday' }], dayMeta: { Friday: { iso: '2026-10-02' }, Saturday: { iso: '2026-10-02' } } });
+  assert.ok(dup.errors.some((e) => e.includes("already another day's")), 'two days on one date would draw two now lines');
   assert.deepEqual(validateFestivalDoc(portola).errors, [], 'Portola carries real isos');
+});
+
+test('validator: a morning set (5–11 AM) warns — the schedule axis and the now clock would disagree', () => {
+  const r = validateFestivalDoc({
+    id: 'x', name: 'X', status: 'scheduled', artists: [{ name: 'A', day: 'Friday' }, { name: 'B', day: 'Friday' }],
+    days: { Friday: { stages: ['S'], artists: [{ name: 'A', stage: 'S', time: '9:00 AM - 10:00 AM' }, { name: 'B', stage: 'S', time: '12:30 AM - 1:30 AM' }] } },
+  });
+  assert.ok(r.warnings.some((w) => w.includes('9:00 AM') && w.includes('one axis')), `9 AM warns: ${r.warnings}`);
+  assert.ok(!r.warnings.some((w) => w.includes('12:30 AM')), 'an after-midnight set is the normal case');
 });

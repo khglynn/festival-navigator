@@ -15,12 +15,19 @@ const LS_PEOPLE = (fid) => `fn_filter_people_v1_${fid}`;
 const LS_SOLO = (fid) => `fn_solo_stage_v1_${fid}`;
 
 // sessionStorage throws on storage-blocked browsers exactly like localStorage
-// does (Safari private mode) — every read and write is guarded, and a filter
-// that can't persist simply resets on the next reload.
+// does (Safari private mode). A filter is a view, so a blocked store must
+// not make it unusable: every value is ALSO kept in this module's memory,
+// which is the source of truth for the life of the page, and storage is the
+// copy that survives a reload when the browser allows one. (Codex gate,
+// 2026-08-27: the first cut swallowed the failed write and then re-read
+// storage, so a tap on a chip did nothing at all in private mode.)
+const memory = new Map();
 function read(key) {
+  if (memory.has(key)) return memory.get(key);
   try { return sessionStorage.getItem(key); } catch { return null; }
 }
 function write(key, value) {
+  memory.set(key, value);
   try {
     if (value == null) sessionStorage.removeItem(key);
     else sessionStorage.setItem(key, value);
@@ -73,4 +80,52 @@ export function columnsTemplate(stages, hasEE, solo) {
   const cols = stages.map((s) => (active && s !== active ? SOLO_RAIL : 'minmax(150px, 1fr)'));
   if (hasEE) cols.push(active ? SOLO_RAIL : 'minmax(150px, 1fr)');
   return { template: cols.join(' '), solo: active };
+}
+
+// ---- the chip gesture -------------------------------------------------------------
+// A member chip has two jobs, told apart by the app's own tap/hold grammar
+// (cards: tap picks, hold opens notes):
+//   TAP  = the people filter — a view, cheap to try and cheap to undo.
+//   HOLD = the identity switch, behind its two-step confirm: the hold ARMS
+//          the chip ("Pick as Drew?"), a tap within ARM_MS switches.
+// The arm lives HERE, keyed by name, not in the chip's DOM closure — a remote
+// change repaints every chip, and an arm held in a closure died with the old
+// node (a repaint mid-confirm turned the confirming tap into a filter toggle;
+// Codex gate, 2026-08-27). One arm at a time: arming Drew disarms Ross.
+export const HOLD_MS = 500;
+export const ARM_MS = 3000;
+let armed = null; // { name, until }
+
+export function armedName(now = Date.now()) {
+  if (armed && armed.until > now) return armed.name;
+  armed = null;
+  return null;
+}
+export function disarm() { armed = null; }
+
+// Wire one chip. `canSwitch` is false for your own chip and for spectators.
+// Handlers: onFilter(name) · onArmed(name) (repaint the label) · onSwitch(name).
+// Returns the listeners so a test can drive them without a DOM.
+export function chipGesture(name, { canSwitch, onFilter, onArmed, onSwitch, now = Date.now, setTimer = setTimeout, clearTimer = clearTimeout }) {
+  let holdTimer = null;
+  let held = false;
+  const g = {
+    pointerdown() {
+      if (!canSwitch) return;
+      held = false;
+      clearTimer(holdTimer);
+      holdTimer = setTimer(() => {
+        held = true;
+        armed = { name, until: now() + ARM_MS };
+        onArmed(name);
+      }, HOLD_MS);
+    },
+    pointerend() { clearTimer(holdTimer); },
+    click() {
+      if (held) { held = false; return; }          // the click that ends a hold is not a tap
+      if (canSwitch && armedName(now()) === name) { armed = null; onSwitch(name); return; }
+      onFilter(name);
+    },
+  };
+  return g;
 }

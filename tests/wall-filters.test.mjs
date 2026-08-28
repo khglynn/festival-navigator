@@ -57,10 +57,71 @@ test('filters.js: pure helpers — toggle, pass, prune, storage that throws', ()
   assert.equal(filters.passesPeople({ X: { Kat: 0 } }, 'X', ['Kat']), false, 'a tombstoned 0 is not a pick');
   assert.equal(filters.passesPeople(picks, 'underscores', []), true, 'no people = no filter');
   assert.deepEqual(filters.pruneToActive(['Kat', 'Gone'], ['Kat', 'HG']), ['Kat']);
+  // Storage-blocked: the filter still WORKS for the life of the page —
+  // memory is the truth, storage is the copy that survives a reload.
   assert.doesNotThrow(() => filters.savePeopleFilter('portola-2026', ['Kat']));
-  assert.deepEqual(filters.loadPeopleFilter('portola-2026'), [], 'storage-blocked reads answer empty, never throw');
+  assert.deepEqual(filters.loadPeopleFilter('portola-2026'), ['Kat'], 'a blocked store cannot make a chip tap do nothing');
+  filters.savePeopleFilter('portola-2026', []);
+  assert.deepEqual(filters.loadPeopleFilter('portola-2026'), []);
   assert.doesNotThrow(() => filters.saveSolo('portola-2026', 'Warehouse'));
+  assert.equal(filters.loadSolo('portola-2026'), 'Warehouse');
+  filters.saveSolo('portola-2026', null);
   assert.equal(filters.loadSolo('portola-2026'), null);
+});
+
+test('chip gesture: tap filters, hold arms pick-as, a tap while armed switches, the arm survives a chip rebuild, spectators never arm', () => {
+  let clock = 1000;
+  const timers = [];
+  const setTimer = (fn, ms) => { timers.push({ fn, at: clock + ms }); return timers.length; };
+  const clearTimer = (id) => { if (id) timers[id - 1] = null; };
+  const fire = (advance) => { clock += advance; for (const t of timers) if (t && t.at <= clock) { t.at = Infinity; t.fn(); } };
+  const log = [];
+  const wire = (name, canSwitch) => filters.chipGesture(name, {
+    canSwitch, onFilter: (n) => log.push(`filter:${n}`), onArmed: (n) => log.push(`armed:${n}`), onSwitch: (n) => log.push(`switch:${n}`),
+    now: () => clock, setTimer, clearTimer,
+  });
+  filters.disarm();
+  // a plain tap
+  let g = wire('Drew', true);
+  g.pointerdown(); fire(100); g.pointerend(); g.click();
+  assert.deepEqual(log, ['filter:Drew']);
+  // a hold: arms, and the click that ends the hold is swallowed
+  g.pointerdown(); fire(600); g.pointerend(); g.click();
+  assert.deepEqual(log, ['filter:Drew', 'armed:Drew']);
+  assert.equal(filters.armedName(clock), 'Drew');
+  // the chip is rebuilt by a remote repaint mid-confirm — the arm is not in the node
+  g = wire('Drew', true);
+  g.click();
+  assert.deepEqual(log, ['filter:Drew', 'armed:Drew', 'switch:Drew']);
+  assert.equal(filters.armedName(clock), null, 'switching disarms');
+  // an arm that expires falls back to filtering
+  g.pointerdown(); fire(600); g.pointerend(); g.click();
+  fire(3500);
+  g.click();
+  assert.equal(log[log.length - 1], 'filter:Drew');
+  // arming Ross disarms Drew
+  const ross = wire('Ross', true);
+  g.pointerdown(); fire(600); g.pointerend(); g.click();
+  ross.pointerdown(); fire(600); ross.pointerend(); ross.click();
+  assert.equal(filters.armedName(clock), 'Ross');
+  g.click();
+  assert.equal(log[log.length - 1], 'filter:Drew', "Drew's tap filters — his arm was replaced");
+  // a spectator, or your own chip: hold does nothing, tap still filters
+  filters.disarm();
+  const me = wire('HG', false);
+  me.pointerdown(); fire(600); me.pointerend(); me.click();
+  assert.equal(log[log.length - 1], 'filter:HG');
+  assert.equal(filters.armedName(clock), null);
+});
+
+test('scheduled search respects the people filter (a list hides, never dims)', () => {
+  const root = render(mkCtx({ filterPeople: ['Kat'], query: 'robyn' }));
+  assert.equal(root.querySelectorAll('.card').length, 0, "Robyn is not Kat's pick — she does not resurface through search");
+  assert.match(root.textContent, /No artists match/);
+  root.remove();
+  const hit = render(mkCtx({ filterPeople: ['Kat'], query: 'vtss' }));
+  assert.equal(hit.querySelectorAll('.card').length, 2, 'VTSS: the Sunday set and the afters card');
+  hit.remove();
 });
 
 test('columnsTemplate: a soloed stage is wide, everything else (the EE column too) folds to a rail; unknown solo = no solo', () => {

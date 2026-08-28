@@ -485,19 +485,25 @@ function stageHead(label, { muted = false, layout = null, ctx = null } = {}) {
   if (muted) h.style.color = 'var(--text-secondary)'; // neutral tint — not a stage
   h.title = label; // long names ellipsize — hover recovers
   const solo = layout && layout.solo;
+  // The text sits in an inner label so the ellipsis clips THAT, not the
+  // button — overflow:hidden on the button would also clip the ::after that
+  // gives a 32px-tall head its 44px tap target (Codex gate, 2026-08-27).
+  const text = document.createElement('span');
+  text.className = 'label';
+  h.appendChild(text);
   if (solo && label !== solo) {
     h.classList.add('rail');
-    h.textContent = muted ? 'ELSE' : label.split(' ')[0];
+    text.textContent = muted ? 'ELSE' : label.split(' ')[0];
     h.setAttribute('aria-label', muted ? 'Everything else (folded)' : `Solo ${label}`);
   } else {
-    h.textContent = label;
+    text.textContent = label;
     if (solo === label) {
       h.setAttribute('aria-pressed', 'true');
       h.setAttribute('aria-label', `${label} — showing only this stage; tap for all stages`);
       const off = document.createElement('span');
       off.className = 'solo-off';
       off.textContent = '✕ all stages';
-      h.appendChild(off);
+      text.appendChild(off);
     } else if (canSolo) {
       h.setAttribute('aria-pressed', 'false');
       h.setAttribute('aria-label', `Solo ${label}`);
@@ -573,13 +579,25 @@ export function positionNowLines(root, date = new Date()) {
 }
 
 // The day-of open: land the now line about a third of the way down the
-// viewport so the next hour is in view. Returns true when it scrolled.
-export function scrollToNowLine(root, { viewportHeight = window.innerHeight, scrollTo = (y) => window.scrollTo({ top: y, behavior: 'auto' }) } = {}) {
+// viewport so the next hour is in view. Before doors on festival day there
+// is no line yet — land on today's day header instead. Returns the target
+// it scrolled to ('now' | 'day') or null when today is not on this wall.
+export function scrollToNowLine(root, { date = new Date(), viewportHeight = window.innerHeight, scrollTo = (y) => window.scrollTo({ top: y, behavior: 'auto' }) } = {}) {
+  const pageY = (el) => el.getBoundingClientRect().top + (window.scrollY || window.pageYOffset || 0);
   const line = root.querySelector('.now-line');
-  if (!line) return false;
-  const y = line.getBoundingClientRect().top + (window.scrollY || window.pageYOffset || 0);
-  scrollTo(Math.max(0, y - viewportHeight * 0.33));
-  return true;
+  if (line) {
+    scrollTo(Math.max(0, pageY(line) - viewportHeight * 0.33));
+    return 'now';
+  }
+  const todayIso = festivalClock(date).iso;
+  const rule = root.querySelector(`.day-rule[data-iso="${todayIso}"]`);
+  if (!rule) return null;
+  // The day rule's scroll-margin-top is the sticky chrome's height (app.js
+  // measures it into --jump-offset); land below it like a day-tab jump does.
+  const offset = (typeof window !== 'undefined' && window.getComputedStyle)
+    ? parseFloat(window.getComputedStyle(rule).scrollMarginTop) || 0 : 0;
+  scrollTo(Math.max(0, pageY(rule) - offset));
+  return 'day';
 }
 
 // Mirror one horizontal position across the strip and every day's scroller.
@@ -608,10 +626,15 @@ function renderScheduledDay(root, day, ctx, layout, weekend) {
   const computed = state.getDayArtists(day, weekend);
   const stages = layout.stages;
   const meta = (fest.dayMeta || {})[day];
-  root.appendChild(dayHeader(day, dayRuleSub(meta, weekend), {
+  const rule = dayHeader(day, dayRuleSub(meta, weekend), {
     noteCount: model.noteCount(state.crewDoc, ctx.fid, 'day', day),
     onOpenNotes: ctx.onOpenDayNotes ? () => ctx.onOpenDayNotes(day) : null,
-  }));
+  });
+  // The day rule knows its date too: on festival day, before doors, the
+  // day-of open lands here when there is no now line yet to land on.
+  const ruleIso = (meta && (weekend && meta.isos ? meta.isos[weekend] : meta.iso)) || null;
+  if (ruleIso) rule.dataset.iso = ruleIso;
+  root.appendChild(rule);
 
   const acts = (fest.activities || {})[day] || [];
 
@@ -845,7 +868,10 @@ function renderWallInner(root, ctx) {
     for (const day of Object.keys(fest.days)) {
       const computed = state.getDayArtists(day, wk);
       computed.forEach((a) => scheduledNames.add(a.name));
+      // Search results are a LIST, so the people filter hides here rather
+      // than dims — a filtered search must not resurface someone's non-pick.
       const matches = computed.filter((a) => a.name.toLowerCase().includes(q))
+        .filter((a) => passesPeople(ctx.picks, a.name, ctx.filterPeople))
         .sort((x, y) => x.startMin - y.startMin);
       if (!matches.length) continue;
       any = true;
