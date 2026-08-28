@@ -10,7 +10,7 @@ import * as spotify from '../spotify.js';
 import * as model from './model.js';
 import { loadFestivalIndex, loadFestival, loadCustomFestivals, FESTIVAL_INDEX, defaultFestivalId } from '../festivals.js';
 import { renderWall, refreshCard, showUndoToast, showToast, wireScrollspy, colorIndexOf, groupByDay, knownDaysOf, scheduledWeekendOf, extraSectionsOf, positionNowLines, scrollToNowLine } from './wall.js';
-import { loadPeopleFilter, savePeopleFilter, togglePerson, pruneToActive, loadSolo, saveSolo, chipGesture, armedName, cancelHold } from './filters.js';
+import { loadPeopleFilter, savePeopleFilter, togglePerson, pruneToActive, loadSolo, saveSolo, chipGesture, armedName, cancelHold, ARM_MS } from './filters.js';
 import { scrolledBefore, rememberScrolled, dayOfScrollKey } from './now.js';
 import { disclosureFold, eqLoader, festRow } from './tools.js';
 import { openArtistSheet, openDayNotes, openAllNotes, closeSheet, refreshOpenSheet, sheetChrome, dialogize, rememberOpener } from './notes.js';
@@ -172,21 +172,22 @@ function renderPersonChips() {
     else if (filter.length) chip.classList.add('faded');
     chip.setAttribute('aria-pressed', selected ? 'true' : 'false');
     const canSwitch = !isMe && !!ctx.meName;
+    const whose = isMe ? 'your' : `${name}'s`;
     chip.setAttribute('aria-label', selected
-      ? (filter.length > 1 ? `Remove ${name} from the filter` : `${name} — showing only their picks; tap to show everyone`)
-      : `Show only ${name}'s picks${canSwitch ? '; hold to pick as them' : ''}`);
+      ? (filter.length > 1 ? `Remove ${name} from the filter` : `Showing only ${whose} picks; tap to show everyone`)
+      : `Show only ${whose} picks${canSwitch ? '; hold to pick as them' : ''}`);
     // The arm survives a repaint: a chip rebuilt mid-confirm re-renders armed
     // and its next tap still switches (the arm lives in filters.js, by name).
-    if (canSwitch && armedName() === name) {
-      chip.textContent = `Pick as ${name}?`;
-      chip.setAttribute('aria-label', `Pick as ${name}? Tap again to switch to picking as them`);
-    }
+    if (canSwitch && armedName() === name) showArmed(chip, name);
     const g = chipGesture(name, {
       canSwitch,
       onFilter: togglePeopleFilter,
-      // Arming rebuilds the row: the armed chip renders from armedName(), so
-      // it is right even when the node that started the hold is gone.
-      onArmed: () => { renderPersonChips(); setTimeout(() => { if (armedName() !== name) renderPersonChips(); }, 3000 + 50); },
+      // Arming updates THIS node in place — never a rebuild: the finger that
+      // armed it is still down, and replacing the chip under it would hand
+      // the release, as a click, to a fresh node whose gesture never saw the
+      // hold (and a click on an armed chip is the confirm). The row is
+      // rebuilt only once the arm has expired, to put the name back.
+      onArmed: () => { showArmed(chip, name); setTimeout(() => { if (armedName() !== name) renderPersonChips(); }, ARM_MS + 50); },
       onSwitch: (n) => { switchIdentity(n); repaintWall(); },
     });
     if (canSwitch) {
@@ -220,6 +221,13 @@ function renderPersonChips() {
     add.addEventListener('click', () => { openAddMember(); router.push('sheet:add-member'); });
     row.appendChild(add);
   }
+}
+
+// The armed look, in one place: the chip asks the question, and assistive
+// tech hears the question rather than the pre-arm label.
+function showArmed(chip, name) {
+  chip.textContent = `Pick as ${name}?`;
+  chip.setAttribute('aria-label', `Pick as ${name}? Tap again to switch to picking as them`);
 }
 
 function setPeopleFilter(names) {
