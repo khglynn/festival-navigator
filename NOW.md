@@ -7,9 +7,13 @@ day-of open on the current time with a now line. All built on
 `wall-filters` (branched from `portola-set-times`, HEAD 635a807): tap a
 member chip to see only their picks (hold = the old pick-as switch), tap a
 stage name to solo it, today's grid draws a moving now line and the app
-lands on it once per open. Two Codex rounds (NO SHIP → fixed → NO SHIP →
-fixed; third pass running at hand-off), Kevin's copy pass on How it works
-and the coach mark. Story: DEVLOG 2026-08-27 (evening).
+lands on it once per open. Three Codex rounds (NO SHIP → NO SHIP → SHIP
+WITH FIXES → the two hold-race fixes landed as 1bf672f), Kevin's copy pass
+on How it works and the coach mark. **PR #12** is open
+(https://github.com/khglynn/festival-navigator/pull/12), CI green; it
+stacks on **PR #11**. Story: DEVLOG 2026-08-27 (evening). Design canvas
+(the four options, decided A + D):
+https://claude.ai/code/artifact/dbf4b361-1993-4674-bb7d-793b7ddf1c54
 
 **Kevin's sequence from here (his words, 2026-08-27 19:45):** push these
 updates once Codex is happy → he compacts → one more feature pass
@@ -18,14 +22,24 @@ out, and for each fest also the AFTERS / big events around it (the way
 Portola got Portola Week + Folsom; "just the big big stuff"). That last
 rule is also on the Pen watcher row.
 
-**Open at hand-off:** (1) a `[object Object]` status seen once in the
-create flow on the branch-alias preview — a UI walker teammate is
-reproducing it (likely the alias host not being an allowed origin, plus an
-error object reaching textContent); (2) PR #11 (pick-key guard + header
-copy) still waits for "promote"; the filters PR stacks on it; (3)
-throwaway preview crews to delete when done (members `zz-filters-walk`,
-`zz-walk-two`, `zz-friend` — tokens in the walker's report). UI walks are
-a teammate's job from here on (Kevin, 19:44), not the main session's.
+**Open at hand-off (2026-08-27 ~19:55):**
+1. A `[object Object]` status seen once in the CREATE flow on the
+   branch-alias preview (`festival-navigator-git-wall-filters-…`) — a UI
+   walker teammate (opus, plugin_playwright) is reproducing it and walking
+   the new features; its report lands at
+   `scratchpad/ui-walk-wall-filters.md` in this session's scratchpad and as
+   a task notification. Two suspects: the alias host not in the API's
+   allowed origins (preview-only), and an error OBJECT reaching
+   `status.textContent` in app.js's create flow (a real rendering bug
+   regardless of cause). Not fixed yet — pick it up from the report.
+2. PR #11 (pick-key guard + header copy) and PR #12 (filters + now line)
+   both wait for Kevin's "promote"; merging #12 carries #11.
+3. Throwaway preview crews: the first walk's (`zz-filters-walk`) is
+   deleted; any the walker creates (`zz-walk-…`) are listed in its report
+   and are prod rows to delete (Kevin's standing OK for test rows tonight).
+4. UI walks are a teammate's job from here on (Kevin, 19:44), never the
+   main session's — the other Playwright MCP profiles are locked by other
+   sessions; `plugin_playwright` is the one that works.
 
 ## 2026-08-27 (later) — PROMOTED: PR #10 merged, v39 on all three domains
 

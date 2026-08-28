@@ -87,11 +87,20 @@ Newest first. One entry per meaningful unit of work.
   reads every AM set as after-midnight while the clock rolls at 5 AM — no
   grid has a morning set and the validator warns the day one does; an
   activities-only day under solo is unreachable from a valid file.
+- **Codex round 3: SHIP WITH FIXES** — two interleavings left in the hold
+  state machine: a deliberate press inside the 800 ms suppression left by a
+  cancelled hold was swallowed, and an older pointer's release on the same
+  chip could clear a newer press's timer. Every press now resets the
+  suppression and carries a token; a release clears only its own hold.
+  Both are fake-clock regression tests (1bf672f). PR #12 opened.
 - **Kevin's copy pass on How it works** (his voice, trimmed): billing/sort
   gone, rows for tap-a-name / hold-to-pick-as / tap-a-stage / the now line
   / + Add and the crew link / Spotify in Settings, the dock row says only
   "green dot = synced", and a "cool stuff in Settings" close. The coach mark
   carries his line. 234 → 254 tests. SW v39 → v41.
+- **Still open when this entry was written**: a `[object Object]` status
+  seen once in the create flow on the branch-alias preview — under
+  investigation by a UI-walk teammate (see NOW.md).
 
 ## 2026-08-27 (after the promote) — the pick-key guard grows teeth for whoever edits data next
 
