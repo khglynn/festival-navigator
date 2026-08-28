@@ -46,7 +46,31 @@ Newest first. One entry per meaningful unit of work.
 - Design canvas got the second look's fixes (the phone artboard now scrolls
   its five columns like the real app instead of clipping three of them;
   Option B's choices are a popover, as its note promised) and records the
-  decision. 234 → 247 tests. SW v39 → v40.
+  decision.
+- **Codex gate round 1: NO SHIP, five P1s — all real, all fixed the same
+  hour.** The v40 worker cached app.js and wall.js but not the two modules
+  they had just grown, so an offline boot after the update would have died
+  on the first import (→ APP_CORE + v41, and
+  `tests/app-shell-complete.test.mjs` walks the import graph so the list
+  can never fall behind again). Storage-blocked Safari swallowed the
+  filter's write and re-read nothing, so a chip tap did nothing (→ memory
+  is the truth for the life of the page, storage the reload copy; same for
+  the scroll-once flag). Clearing your last pick on a list card under a
+  filter left it dimmed, not hidden (→ filtered taps on list cards repaint);
+  scheduled search ignored the filter (→ it hides like every list). Stage
+  heads had a 32px tap target because overflow:hidden clipped the ::after
+  (→ ellipsis on an inner label, head overflow visible). And the pick-as
+  arm lived in the chip's DOM closure, so a remote repaint mid-confirm
+  turned the confirming tap into a filter toggle (→ `chipGesture` in
+  filters.js is a pure state machine with the arm keyed by name, tested
+  with a fake clock). Plus the P2s: pruned filters written back, dayMeta
+  dates bounded and unique, iso XOR isos, both weekends required, a morning
+  set warns, before-doors day-of open lands on today's header.
+- **Kevin's copy pass on How it works** (his voice, trimmed): billing/sort
+  gone, rows for tap-a-name / hold-to-pick-as / tap-a-stage / the now line
+  / + Add and the crew link / Spotify in Settings, the dock row says only
+  "green dot = synced", and a "cool stuff in Settings" close. The coach mark
+  carries his line. 234 → 252 tests. SW v39 → v41.
 
 ## 2026-08-27 (after the promote) — the pick-key guard grows teeth for whoever edits data next
 
