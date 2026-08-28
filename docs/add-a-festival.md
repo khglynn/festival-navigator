@@ -78,10 +78,14 @@ Two files, one command:
      "2026-09-26"` (two-weekend fests: `isos: { "W1": "2026-10-02", "W2":
      "2026-10-09" }`). That is what the "now" line and the day-of auto-scroll
      key on — a phone opened on that date (5 AM to 5 AM, festival time)
-     draws the line at its own local clock and lands on it once per open.
+     draws the line at the festival's clock and lands on it once per open.
      No `iso`, no line, no guess. The validator rejects a date that isn't
-     real. Festival files carry no timezone on purpose: the person this is
-     for is standing at the festival.
+     real.
+   - **Give the file its `timezone`** (IANA, e.g. `"America/Los_Angeles"`,
+     ACL/Seismic: `"America/Chicago"`) — required as soon as `dayMeta`
+     carries dates. "Now" is read in that zone, so a friend checking from
+     another city sees the line where the crew actually is, and the day-of
+     open lands on the right day. The validator rejects an unknown zone.
 
 2. **Add an entry to `data/festivals/index.json`** (keep it ordered by date,
    archived last — the first non-archived entry is the default festival).

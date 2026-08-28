@@ -478,6 +478,7 @@ export function computeTimesLayout(fest, getDayArtists, solo = null) {
 // restore all. Folded stages render as slim rails (still tappable — tapping a
 // rail moves the solo there). The everything-else head never solos; it folds
 // with the others.
+const railLabel = (label) => label.split(' ')[0].slice(0, 4);
 function stageHead(label, { muted = false, layout = null, ctx = null } = {}) {
   const canSolo = !muted && ctx && typeof ctx.onSoloStage === 'function';
   const h = document.createElement(canSolo ? 'button' : 'div');
@@ -493,7 +494,11 @@ function stageHead(label, { muted = false, layout = null, ctx = null } = {}) {
   h.appendChild(text);
   if (solo && label !== solo) {
     h.classList.add('rail');
-    text.textContent = muted ? 'ELSE' : label.split(' ')[0];
+    // A rail is 34px wide and one strip row tall (32px, 44px on touch), and
+    // its scroller clips both axes — so the label is bounded to what fits,
+    // not the name; the full name stays in title and aria-label, and shows
+    // whole the moment the rail is tapped (Codex round 4, 2026-08-27).
+    text.textContent = muted ? 'ELSE' : railLabel(label);
     h.setAttribute('aria-label', muted ? 'Everything else (folded)' : `Solo ${label}`);
   } else {
     text.textContent = label;
@@ -542,8 +547,8 @@ const ROW_PITCH = ROW_PX + ROW_GAP;
 // Each grid carries its geometry as data attributes, so this can run from
 // a one-minute ticker without a repaint. Removes a line whose day has ended.
 export function positionNowLines(root, date = new Date()) {
-  const clock = festivalClock(date);
   for (const grid of root.querySelectorAll('.times-grid[data-iso]')) {
+    const clock = festivalClock(date, grid.dataset.tz || null); // the grid knows its festival's zone
     const rail = grid.parentElement && grid.parentElement.parentElement
       ? grid.parentElement.parentElement.querySelector('.times-rail') : null;
     const isToday = grid.dataset.iso === clock.iso;
@@ -582,14 +587,16 @@ export function positionNowLines(root, date = new Date()) {
 // viewport so the next hour is in view. Before doors on festival day there
 // is no line yet — land on today's day header instead. Returns the target
 // it scrolled to ('now' | 'day') or null when today is not on this wall.
-export function scrollToNowLine(root, { date = new Date(), viewportHeight = window.innerHeight, scrollTo = (y) => window.scrollTo({ top: y, behavior: 'auto' }) } = {}) {
+export function scrollToNowLine(root, { date = new Date(), viewportHeight = window.innerHeight, scrollTo = (y) => window.scrollTo({ top: y, behavior: 'auto' }), timeZone = null } = {}) {
   const pageY = (el) => el.getBoundingClientRect().top + (window.scrollY || window.pageYOffset || 0);
   const line = root.querySelector('.now-line');
   if (line) {
     scrollTo(Math.max(0, pageY(line) - viewportHeight * 0.33));
     return 'now';
   }
-  const todayIso = festivalClock(date).iso;
+  // "Today" in the festival's zone — the grids carry it; the caller may too.
+  const zoned = root.querySelector('.times-grid[data-tz]');
+  const todayIso = festivalClock(date, timeZone || (zoned ? zoned.dataset.tz : null)).iso;
   const rule = root.querySelector(`.day-rule[data-iso="${todayIso}"]`);
   if (!rule) return null;
   // The day rule's scroll-margin-top is the sticky chrome's height (app.js
@@ -714,6 +721,7 @@ function renderScheduledDay(root, day, ctx, layout, weekend) {
   grid.dataset.rows = String(rows);
   const iso = (meta && (weekend && meta.isos ? meta.isos[weekend] : meta.iso)) || null;
   if (iso) grid.dataset.iso = iso;
+  if (fest.timezone) grid.dataset.tz = fest.timezone;
 
   const lanes = computeLanes(drawn);
   for (const a of drawn) {
@@ -1022,7 +1030,15 @@ export function wireScrollspy(containers, wallRoot) {
   // scroll event (UI walk, 2026-08-27). Read the geometry whenever there is
   // scroll to read; position 0 keeps the first-day shortcut so a fresh load
   // never depends on layout having settled.
-  if (window.scrollY > 0) syncFromGeometry(); else setActive(tabs[0].dataset.day);
+  let frame = 0;
+  if (window.scrollY > 0) {
+    syncFromGeometry();
+    // …and once more next frame: the caller measures the sticky chrome
+    // (--jump-offset) AFTER wiring, and entering or leaving search adds or
+    // drops the stage strip, so the first read can be against the old
+    // offset (Codex round 4, 2026-08-27).
+    if (typeof requestAnimationFrame === 'function') frame = requestAnimationFrame(syncFromGeometry);
+  } else setActive(tabs[0].dataset.day);
   const onScroll = () => {
     if (ticking) return;
     ticking = true;
@@ -1033,5 +1049,6 @@ export function wireScrollspy(containers, wallRoot) {
   return () => {
     io.disconnect();
     window.removeEventListener('scroll', onScroll);
+    if (frame && typeof cancelAnimationFrame === 'function') cancelAnimationFrame(frame);
   };
 }

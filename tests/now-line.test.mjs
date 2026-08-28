@@ -38,7 +38,8 @@ const mkCtx = (date) => ({
   filterPeople: [], soloStage: null, now: date, onTap: () => {}, onOpenNotes: null, onNotesChange: null, onOpenDayNotes: null, onSoloStage: () => {},
 });
 const render = (date) => { const root = document.createElement('div'); document.body.appendChild(root); renderWall(root, mkCtx(date)); return root; };
-const local = (s) => new Date(s); // no Z: local time, the phone's clock
+const local = (s) => new Date(s); // no Z: the phone's own clock (the no-timezone path)
+const pt = (s) => new Date(`${s}-07:00`); // an instant whose Portola (PDT) wall clock reads s, whatever zone runs the tests
 
 test('festivalClock: a festival day runs past midnight — 12:40 AM Sunday is still Saturday at 24:40', () => {
   assert.deepEqual(now.festivalClock(local('2026-09-26T17:42:00')), { iso: '2026-09-26', minutes: 17 * 60 + 42 });
@@ -52,9 +53,9 @@ test('dayIsoOf / nowOnDay: iso for one weekend, isos per weekend, null when the 
   assert.equal(now.dayIsoOf({ iso: '2026-09-26' }), '2026-09-26');
   assert.equal(now.dayIsoOf({ isos: { W1: '2026-10-02', W2: '2026-10-09' } }, 'W2'), '2026-10-09');
   assert.equal(now.dayIsoOf({ date: 'Sep 26' }), null);
-  assert.equal(now.nowOnDay(portola, 'Saturday', null, local('2026-09-26T17:42:00')), 17 * 60 + 42);
-  assert.equal(now.nowOnDay(portola, 'Sunday', null, local('2026-09-26T17:42:00')), null);
-  assert.equal(now.nowOnDay(portola, 'Afters', null, local('2026-09-26T17:42:00')), null, 'a section without an iso never gets a line');
+  assert.equal(now.nowOnDay(portola, 'Saturday', null, pt('2026-09-26T17:42:00')), 17 * 60 + 42);
+  assert.equal(now.nowOnDay(portola, 'Sunday', null, pt('2026-09-26T17:42:00')), null);
+  assert.equal(now.nowOnDay(portola, 'Afters', null, pt('2026-09-26T17:42:00')), null, 'a section without an iso never gets a line');
 });
 
 test('nowOffsetPx: on the grid, a little before doors, never far past the last set', () => {
@@ -67,7 +68,7 @@ test('nowOffsetPx: on the grid, a little before doors, never far past the last s
 });
 
 test('the wall draws the now line on today’s grid only, with a clock label on the rail', () => {
-  const root = render(local('2026-09-27T17:42:00'));
+  const root = render(pt('2026-09-27T17:42:00'));
   const lines = root.querySelectorAll('.now-line');
   assert.equal(lines.length, 1);
   const grid = lines[0].closest('.times-grid');
@@ -78,45 +79,45 @@ test('the wall draws the now line on today’s grid only, with a clock label on 
   const label = root.querySelector('.now-label');
   assert.equal(label.textContent, '5:42 PM');
   root.remove();
-  const off = render(local('2026-09-20T17:42:00'));
+  const off = render(pt('2026-09-20T17:42:00'));
   assert.equal(off.querySelectorAll('.now-line').length, 0, 'a week early: no line anywhere');
   off.remove();
 });
 
 test('the ticker moves the line without a repaint, and removes it once the day is over', () => {
-  const root = render(local('2026-09-26T14:00:00'));
+  const root = render(pt('2026-09-26T14:00:00'));
   const line = root.querySelector('.now-line');
   const before = line.style.top;
-  positionNowLines(root, local('2026-09-26T15:00:00'));
+  positionNowLines(root, pt('2026-09-26T15:00:00'));
   assert.equal(root.querySelector('.now-line'), line, 'same node, moved');
   assert.equal(parseFloat(line.style.top) - parseFloat(before), 96, 'one hour = 96px');
   assert.equal(root.querySelector('.now-label').textContent, '3:00 PM');
-  positionNowLines(root, local('2026-09-27T14:00:00'));
+  positionNowLines(root, pt('2026-09-27T14:00:00'));
   assert.equal(root.querySelector('.times-grid[data-iso="2026-09-26"] .now-line'), null, 'Saturday’s line is gone');
   assert.ok(root.querySelector('.times-grid[data-iso="2026-09-27"] .now-line'), 'Sunday’s appeared');
-  positionNowLines(root, local('2026-09-28T14:00:00'));
+  positionNowLines(root, pt('2026-09-28T14:00:00'));
   assert.equal(root.querySelectorAll('.now-line').length, 0, 'the day after: nothing');
   root.remove();
 });
 
 test('scrollToNowLine: the line a third of the way down; before doors on festival day, today’s header; otherwise nothing', () => {
-  const root = render(local('2026-09-26T20:00:00'));
+  const root = render(pt('2026-09-26T20:00:00'));
   const calls = [];
   const line = root.querySelector('.now-line');
   line.getBoundingClientRect = () => ({ top: 1200 });
-  assert.equal(scrollToNowLine(root, { date: local('2026-09-26T20:00:00'), viewportHeight: 900, scrollTo: (y) => calls.push(y) }), 'now');
+  assert.equal(scrollToNowLine(root, { date: pt('2026-09-26T20:00:00'), viewportHeight: 900, scrollTo: (y) => calls.push(y) }), 'now');
   assert.deepEqual(calls, [1200 - 297]);
   root.remove();
   // Sunday 10 AM: no line yet (doors at 1 PM) — land on Sunday's header.
-  const morning = render(local('2026-09-27T10:00:00'));
+  const morning = render(pt('2026-09-27T10:00:00'));
   assert.equal(morning.querySelectorAll('.now-line').length, 0);
   const sunRule = morning.querySelector('.day-rule[data-iso="2026-09-27"]');
   sunRule.getBoundingClientRect = () => ({ top: 3000 });
-  assert.equal(scrollToNowLine(morning, { date: local('2026-09-27T10:00:00'), viewportHeight: 900, scrollTo: (y) => calls.push(y) }), 'day');
+  assert.equal(scrollToNowLine(morning, { date: pt('2026-09-27T10:00:00'), viewportHeight: 900, scrollTo: (y) => calls.push(y) }), 'day');
   assert.equal(calls[1], 3000);
   morning.remove();
-  const off = render(local('2026-09-20T20:00:00'));
-  assert.equal(scrollToNowLine(off, { date: local('2026-09-20T20:00:00'), viewportHeight: 900, scrollTo: (y) => calls.push(y) }), null);
+  const off = render(pt('2026-09-20T20:00:00'));
+  assert.equal(scrollToNowLine(off, { date: pt('2026-09-20T20:00:00'), viewportHeight: 900, scrollTo: (y) => calls.push(y) }), null);
   assert.equal(calls.length, 2);
   off.remove();
 });
@@ -134,18 +135,18 @@ test('the day-of open: one claim per festival-day, marked only after a real land
     if (target) now.rememberScrolled(key, fake);
     return target;
   };
-  const week = render(local('2026-09-20T20:00:00'));
-  assert.equal(open(week, local('2026-09-20T20:00:00')), null, 'a week early: nothing to land on');
+  const week = render(pt('2026-09-20T20:00:00'));
+  assert.equal(open(week, pt('2026-09-20T20:00:00')), null, 'a week early: nothing to land on');
   assert.equal(store.size, 0, 'and the claim was NOT spent');
   week.remove();
-  const morning = render(local('2026-09-27T10:00:00'));
+  const morning = render(pt('2026-09-27T10:00:00'));
   morning.querySelector('.day-rule[data-iso="2026-09-27"]').getBoundingClientRect = () => ({ top: 3000 });
-  assert.equal(open(morning, local('2026-09-27T10:00:00')), 'day', 'festival morning: today\'s header');
+  assert.equal(open(morning, pt('2026-09-27T10:00:00')), 'day', 'festival morning: today\'s header');
   morning.remove();
-  const afternoon = render(local('2026-09-27T17:42:00'));
-  assert.equal(open(afternoon, local('2026-09-27T17:42:00')), 'skipped', 'closing Settings that afternoon does not scroll again');
-  assert.equal(now.dayOfScrollKey('portola-2026', local('2026-09-28T00:40:00')), now.dayOfScrollKey('portola-2026', local('2026-09-27T17:42:00')), '12:40 AM is still Sunday');
-  assert.notEqual(now.dayOfScrollKey('portola-2026', local('2026-09-26T17:42:00')), now.dayOfScrollKey('portola-2026', local('2026-09-27T17:42:00')), 'Saturday and Sunday each get their one landing');
+  const afternoon = render(pt('2026-09-27T17:42:00'));
+  assert.equal(open(afternoon, pt('2026-09-27T17:42:00')), 'skipped', 'closing Settings that afternoon does not scroll again');
+  assert.equal(now.dayOfScrollKey('portola-2026', pt('2026-09-28T00:40:00')), now.dayOfScrollKey('portola-2026', pt('2026-09-27T17:42:00')), '12:40 AM is still Sunday');
+  assert.notEqual(now.dayOfScrollKey('portola-2026', pt('2026-09-26T17:42:00')), now.dayOfScrollKey('portola-2026', pt('2026-09-27T17:42:00')), 'Saturday and Sunday each get their one landing');
   afternoon.remove();
 });
 
@@ -161,8 +162,31 @@ test('claimScrollOnce: once per key for the life of the page, remembered across 
   assert.equal(now.claimScrollOnce('k3', { getItem: denied, setItem: denied }), false, 'and it still does not scroll twice');
 });
 
-test('validator: dayMeta iso / isos must be real dates', () => {
+test('festivalClock with a timezone: the festival\'s wall clock, whatever zone the phone is in', () => {
+  const LA = 'America/Los_Angeles';
+  assert.deepEqual(now.festivalClock(new Date('2026-09-26T22:00:00Z'), LA), { iso: '2026-09-26', minutes: 15 * 60 }, 'an Austin phone at 5 PM CT sees Portola at 3 PM PT');
+  assert.deepEqual(now.festivalClock(new Date('2026-09-27T07:40:00Z'), LA), { iso: '2026-09-26', minutes: 24 * 60 + 40 }, '12:40 AM PT is still Saturday, at 24:40');
+  assert.deepEqual(now.festivalClock(new Date('2026-09-27T12:00:00Z'), LA), { iso: '2026-09-27', minutes: 5 * 60 }, '5:00 AM PT rolls over to Sunday');
+  assert.deepEqual(now.festivalClock(new Date('2026-11-01T09:30:00Z'), 'America/Chicago'), { iso: '2026-10-31', minutes: 24 * 60 + 3 * 60 + 30 }, 'the hour after DST ends reads 3:30 AM CST, still Saturday');
+  const d = new Date('2026-09-26T22:00:00Z');
+  assert.deepEqual(now.festivalClock(d, 'Not/AZone'), now.festivalClock(d), 'an unknown zone falls back to the device clock');
+  assert.equal(now.dayOfScrollKey('portola-2026', new Date('2026-09-27T07:40:00Z'), LA), 'fn_scrolled_v2_portola-2026_2026-09-26');
+  assert.equal(now.nowOnDay(portola, 'Saturday', null, new Date('2026-09-26T22:00:00Z')), 15 * 60, 'the file\'s zone drives nowOnDay');
+});
+
+test('validator: dayMeta dates need the festival\'s timezone, and it must be a real zone', () => {
   const base = { id: 'x', name: 'X', status: 'lineup', artists: [{ name: 'A', day: 'Friday' }] };
+  assert.deepEqual(validateFestivalDoc(base).errors, [], 'no dates, no zone needed');
+  assert.deepEqual(validateFestivalDoc({ ...base, timezone: 'America/Chicago' }).errors, [], 'a zone without dates is fine');
+  assert.ok(validateFestivalDoc({ ...base, dayMeta: { Friday: { iso: '2026-10-02' } } }).errors.some((e) => e.includes('timezone is required')), 'dates without a zone');
+  assert.ok(validateFestivalDoc({ ...base, dayMeta: { Friday: { isos: { W1: '2026-10-02', W2: '2026-10-09' } } } }).errors.some((e) => e.includes('timezone is required')));
+  assert.ok(validateFestivalDoc({ ...base, timezone: 'Austin' }).errors.some((e) => e.includes('IANA zone')), 'not a zone name');
+  assert.ok(validateFestivalDoc({ ...base, timezone: 7 }).errors.some((e) => e.includes('IANA zone')));
+  assert.equal(portola.timezone, 'America/Los_Angeles', 'Portola is Pacific');
+});
+
+test('validator: dayMeta iso / isos must be real dates', () => {
+  const base = { id: 'x', name: 'X', status: 'lineup', timezone: 'America/Chicago', artists: [{ name: 'A', day: 'Friday' }] };
   assert.deepEqual(validateFestivalDoc({ ...base, dayMeta: { Friday: { iso: '2026-10-02' } } }).errors, []);
   assert.deepEqual(validateFestivalDoc({ ...base, dayMeta: { Friday: { isos: { W1: '2026-10-02', W2: '2026-10-09' } } } }).errors, []);
   assert.ok(validateFestivalDoc({ ...base, dayMeta: { Friday: { iso: '2026-13-02' } } }).errors.some((e) => e.includes('iso must be a real')));

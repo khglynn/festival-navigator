@@ -12,28 +12,48 @@
 //     while time.js would place a 9:00 AM SET at Saturday 33:00. No grid
 //     carries a morning set today; the validator warns if one ever does, and
 //     that is the moment to give both one axis.
-//   - The phone's local clock IS the festival clock. The person this is for
-//     is standing at the festival; a friend checking from another timezone
-//     sees a line at their own local time, which is an honest "no line at
-//     all" the rest of the time (the date won't match a grid day). Festival
-//     files carry no timezone on purpose — one less thing to get wrong.
+//   - The festival's own clock is the clock: a file that carries grid dates
+//     also carries an IANA `timezone` (the validator insists), and "now" is
+//     read in that zone. A phone at the festival agrees with it anyway; a
+//     friend checking from Austin sees the line where the crew actually is,
+//     not two hours off where their own clock says (Codex round 4,
+//     2026-08-27 — the first cut used the device clock). A file with no
+//     zone falls back to the device clock, as does an unknown zone.
 export const DAY_ROLLOVER_HOUR = 5;
 
 const pad = (n) => String(n).padStart(2, '0');
-const isoOf = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+
+// The wall-clock parts of `date` in `timeZone`, via Intl — the one way a
+// browser exposes another zone's clock without a library. Any failure
+// (no Intl, an unknown zone) reads the device clock instead.
+export function wallClock(date, timeZone) {
+  const device = () => ({ y: date.getFullYear(), mo: date.getMonth() + 1, d: date.getDate(), h: date.getHours(), mi: date.getMinutes() });
+  if (!timeZone) return device();
+  try {
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone, hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit',
+    }).formatToParts(date);
+    const num = (type) => Number((parts.find((p) => p.type === type) || {}).value);
+    const out = { y: num('year'), mo: num('month'), d: num('day'), h: num('hour') % 24, mi: num('minute') };
+    return Object.values(out).some(Number.isNaN) ? device() : out;
+  } catch { return device(); }
+}
 
 // {iso, minutes}: the festival calendar day this moment belongs to, and the
 // minutes-since-that-day's-midnight on the timetable's own axis (AM hours
 // after the rollover land at 24h+, matching timeToMinutes).
-export function festivalClock(date = new Date()) {
-  const h = date.getHours();
-  let minutes = h * 60 + date.getMinutes();
-  const d = new Date(date.getTime());
-  if (h < DAY_ROLLOVER_HOUR) {
+export function festivalClock(date = new Date(), timeZone = null) {
+  const p = wallClock(date, timeZone);
+  let minutes = p.h * 60 + p.mi;
+  let { y, mo, d } = p;
+  if (p.h < DAY_ROLLOVER_HOUR) {
     minutes += 24 * 60;
-    d.setDate(d.getDate() - 1);
+    // The previous calendar day in that zone — a UTC round-trip is
+    // zone-agnostic date arithmetic on the parts we already have.
+    const prev = new Date(Date.UTC(y, mo - 1, d) - 24 * 60 * 60 * 1000);
+    y = prev.getUTCFullYear(); mo = prev.getUTCMonth() + 1; d = prev.getUTCDate();
   }
-  return { iso: isoOf(d), minutes };
+  return { iso: `${y}-${pad(mo)}-${pad(d)}`, minutes };
 }
 
 // A grid day's calendar date, from dayMeta: `iso` for a single-weekend fest,
@@ -49,7 +69,7 @@ export function dayIsoOf(meta, weekend) {
 export function nowOnDay(fest, day, weekend, date = new Date()) {
   const iso = dayIsoOf((fest.dayMeta || {})[day], weekend);
   if (!iso) return null;
-  const clock = festivalClock(date);
+  const clock = festivalClock(date, fest.timezone || null);
   return clock.iso === iso ? clock.minutes : null;
 }
 
@@ -87,8 +107,8 @@ export function rememberScrolled(key, store = defaultStore()) {
 }
 // The key: one per festival per festival-day, so the morning header landing
 // and the afternoon now-line landing are the same claim.
-export function dayOfScrollKey(fid, date = new Date()) {
-  return `fn_scrolled_v2_${fid}_${festivalClock(date).iso}`;
+export function dayOfScrollKey(fid, date = new Date(), timeZone = null) {
+  return `fn_scrolled_v2_${fid}_${festivalClock(date, timeZone).iso}`;
 }
 export function claimScrollOnce(key, store = defaultStore()) {
   if (scrolledBefore(key, store)) return false;

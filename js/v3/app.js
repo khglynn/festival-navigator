@@ -260,9 +260,10 @@ function maybeScrollToNow() {
   // header and the afternoon landing on the now line are the same open.
   // Marked only after a real scroll, so an open before the festival week
   // (nothing to land on) doesn't spend the claim.
-  const key = dayOfScrollKey(ctx.fid);
+  const tz = state.fest().timezone || null; // the festival's clock, not the phone's
+  const key = dayOfScrollKey(ctx.fid, new Date(), tz);
   if (scrolledBefore(key)) return;
-  if (scrollToNowLine($('wall-root'))) rememberScrolled(key);
+  if (scrollToNowLine($('wall-root'), { timeZone: tz })) rememberScrolled(key);
 }
 
 // The explicit identity switch (FLOW-8), called from Settings.

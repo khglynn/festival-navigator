@@ -206,6 +206,16 @@ export function validateFestivalDoc(fest, { filename } = {}) {
     }
   }
 
+  // The festival's clock. A file whose dayMeta carries dates draws a "now"
+  // line and lands the day-of open on it — read in THIS zone, so a phone in
+  // another one (a friend in Austin, a Portola crew before the flight) is not
+  // hours off. IANA name, checked against the runtime's own zone table.
+  const validZone = (z) => { try { new Intl.DateTimeFormat('en-US', { timeZone: z }); return true; } catch { return false; } };
+  const datesPresent = isPlain(fest.dayMeta) && Object.values(fest.dayMeta).some((m) => isPlain(m) && (m.iso !== undefined || m.isos !== undefined));
+  if (fest.timezone !== undefined) {
+    if (typeof fest.timezone !== 'string' || !validZone(fest.timezone)) err('timezone must be an IANA zone name like America/Los_Angeles');
+  } else if (datesPresent) err('timezone is required once dayMeta carries dates — the now line needs the festival\'s clock');
+
   // dayMeta dates: `iso` (single weekend) or `isos: {W1, W2}` (two weekends)
   // give a grid day its calendar date — what the "now" line and the day-of
   // auto-scroll key on. Optional, but when present it must be a real date:
