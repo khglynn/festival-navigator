@@ -1,6 +1,6 @@
 // Festival Navigator service worker — offline-first app shell.
 // Bump CACHE_VERSION whenever you change cached static assets.
-const CACHE_VERSION = 'festival-nav-v39'; // v39 = Portola set times + afters/Folsom sections on a scheduled wall + festival data network-first
+const CACHE_VERSION = 'festival-nav-v40'; // v40 = wall filters (people chips, stage solo) + the now line + day-of auto-scroll
 
 // Festival JSONs live in their OWN cache, outside the version-keyed shell
 // cache — because activate deletes every old version cache wholesale, and
