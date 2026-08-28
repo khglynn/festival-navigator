@@ -234,3 +234,70 @@ test('no solo: the everyday template, and computeTimesLayout reports solo null',
   const stale = computeTimesLayout(portola, (d) => state.getDayArtists(d, null), 'Gone Stage');
   assert.equal(stale.solo, null, 'a stale solo is ignored');
 });
+
+test('chip gesture: the default timers survive being called as a method (browsers throw "Illegal invocation" otherwise)', () => {
+  // The hold record stores the clear function and calls it as
+  // `hold.clearTimer(...)`, so its receiver is the record, not the window.
+  // Node's clearTimeout shrugs at that; a browser's throws — and it threw
+  // on every real tap on another member's chip (UI walk, 2026-08-27),
+  // which is why the defaults are arrow wrappers now. This stub is the
+  // browser's strictness: fail unless the receiver is the global.
+  const realSet = globalThis.setTimeout, realClear = globalThis.clearTimeout;
+  const strict = (fn) => function (...args) {
+    if (this !== undefined && this !== globalThis) throw new TypeError('Illegal invocation');
+    return fn.apply(globalThis, args);
+  };
+  globalThis.setTimeout = strict(realSet);
+  globalThis.clearTimeout = strict(realClear);
+  try {
+    filters.disarm();
+    const log = [];
+    const g = filters.chipGesture('Drew', {
+      canSwitch: true, onFilter: (n) => log.push(`filter:${n}`), onArmed: () => log.push('armed'), onSwitch: () => log.push('switch'),
+    });
+    assert.doesNotThrow(() => { g.pointerdown(); g.pointerend(); g.click(); }, 'a plain tap cancels the hold timer through the stored reference');
+    assert.deepEqual(log, ['filter:Drew'], 'and the tap still filters');
+    assert.doesNotThrow(() => { g.pointerdown(); filters.cancelHold(); }, 'a repaint mid-press cancels the same way');
+    assert.doesNotThrow(() => { g.pointerdown(); g.pointerdown(); g.pointerend(); }, 'a second press supersedes the first');
+  } finally {
+    globalThis.setTimeout = realSet;
+    globalThis.clearTimeout = realClear;
+  }
+});
+
+test('scrollspy: a re-wire mid-page claims the day you are actually in, not the first tab', async () => {
+  // Both filters repaint the wall, which re-wires the scrollspy. Its first
+  // claim used to be "tabs[0]" unconditionally — true at load, a lie after
+  // any repaint while scrolled into Sunday, and it stayed wrong until the
+  // next scroll event (UI walk, 2026-08-27).
+  const { wireScrollspy } = await import('../js/v3/wall.js');
+  const hadIO = globalThis.IntersectionObserver;
+  globalThis.IntersectionObserver = class { observe() {} disconnect() {} };
+  const hadGCS = globalThis.getComputedStyle;
+  globalThis.getComputedStyle = window.getComputedStyle.bind(window);
+  const nav = document.createElement('div');
+  nav.innerHTML = '<button class="day-tab" data-day="Saturday"></button><button class="day-tab" data-day="Sunday"></button>';
+  const root = document.createElement('div');
+  root.innerHTML = '<div class="day-rule" data-day="Saturday"></div><div class="day-rule" data-day="Sunday"></div>';
+  const [sat, sun] = root.querySelectorAll('.day-rule');
+  const active = () => [...nav.querySelectorAll('.day-tab')].filter((t) => t.classList.contains('active')).map((t) => t.dataset.day);
+  try {
+    // fresh load: nothing scrolled, the first day is the honest claim
+    let un = wireScrollspy(nav, root);
+    assert.deepEqual(active(), ['Saturday']);
+    assert.equal(nav.querySelector('[aria-current]').dataset.day, 'Saturday');
+    un();
+    // re-wire while standing in Sunday: both headers are above the jump offset
+    Object.defineProperty(window, 'scrollY', { value: 1505, configurable: true });
+    sat.getBoundingClientRect = () => ({ top: -975 });
+    sun.getBoundingClientRect = () => ({ top: -162 });
+    un = wireScrollspy(nav, root);
+    assert.deepEqual(active(), ['Sunday'], 'the claim comes from geometry, not tab order');
+    assert.equal(nav.querySelector('[aria-current]').dataset.day, 'Sunday', 'assistive tech hears the same answer');
+    un();
+  } finally {
+    Object.defineProperty(window, 'scrollY', { value: 0, configurable: true });
+    globalThis.IntersectionObserver = hadIO;
+    globalThis.getComputedStyle = hadGCS;
+  }
+});

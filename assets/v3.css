@@ -578,14 +578,6 @@
                         color: var(--text-tertiary); margin-left: 6px; }
 .stage-head.rail { padding: 0; font-size: 9px; letter-spacing: .06em; color: var(--text-tertiary); }
 .stage-head.rail .label { writing-mode: vertical-rl; transform: rotate(180deg); line-height: 34px; height: 32px; overflow: visible; }
-@media (pointer: coarse) {
-  /* Opt out of the 44px floor like the other small in-row controls: the strip
-   * row is 32px by design. Borrowed space is vertical only — a wide ::after
-   * would let one stage swallow the tap meant for its neighbour. */
-  .stage-head { min-height: 0; position: relative; overflow: visible; }
-  .stage-head::after { content: ''; position: absolute; inset: -6px 0; }
-}
-
 /* The now line: brand violet, not the fest accent — it is app chrome that
  * happens to sit on a timetable. Drawn inside the grid (position: relative
  * on the grid and the rail) so it scrolls with the day; the ticker in app.js
@@ -604,5 +596,4 @@
   .stage-strip .times-grid { grid-template-rows: 44px !important; }
   .stage-head { height: 44px; line-height: 44px; }
   .stage-head.rail .label { height: 44px; line-height: 34px; }
-  .stage-head::after { content: none; }
 }

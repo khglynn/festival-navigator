@@ -983,8 +983,6 @@ export function wireScrollspy(containers, wallRoot) {
       else t.removeAttribute('aria-current');
     });
   };
-  // The first day is on screen at load — say so instead of nothing.
-  setActive(tabs[0].dataset.day);
   const io = new IntersectionObserver((entries) => {
     for (const e of entries) {
       if (!e.isIntersecting) continue;
@@ -1017,6 +1015,14 @@ export function wireScrollspy(containers, wallRoot) {
     }
     setActive(current.dataset.day);
   };
+  // The initial claim. At load the first day is on screen — say so instead
+  // of nothing. But this also runs on every re-wire (a people filter or a
+  // stage solo repaints the wall), and there the page may be scrolled deep
+  // into Sunday: claiming "Saturday" was a lie the tab wore until the next
+  // scroll event (UI walk, 2026-08-27). Read the geometry whenever there is
+  // scroll to read; position 0 keeps the first-day shortcut so a fresh load
+  // never depends on layout having settled.
+  if (window.scrollY > 0) syncFromGeometry(); else setActive(tabs[0].dataset.day);
   const onScroll = () => {
     if (ticking) return;
     ticking = true;

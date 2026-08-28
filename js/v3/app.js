@@ -177,7 +177,10 @@ function renderPersonChips() {
       : `Show only ${name}'s picks${canSwitch ? '; hold to pick as them' : ''}`);
     // The arm survives a repaint: a chip rebuilt mid-confirm re-renders armed
     // and its next tap still switches (the arm lives in filters.js, by name).
-    if (canSwitch && armedName() === name) chip.textContent = `Pick as ${name}?`;
+    if (canSwitch && armedName() === name) {
+      chip.textContent = `Pick as ${name}?`;
+      chip.setAttribute('aria-label', `Pick as ${name}? Tap again to switch to picking as them`);
+    }
     const g = chipGesture(name, {
       canSwitch,
       onFilter: togglePeopleFilter,

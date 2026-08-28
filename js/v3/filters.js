@@ -123,7 +123,13 @@ export function cancelHold(now = Date.now()) {
 // Handlers: onFilter(name) · onArmed(name) (rebuild the row so the armed
 // chip renders from armedName()) · onSwitch(name). Returns the listeners so
 // a test can drive them without a DOM.
-export function chipGesture(name, { canSwitch, onFilter, onArmed, onSwitch, now = Date.now, setTimer = setTimeout, clearTimer = clearTimeout }) {
+// The timer defaults are ARROWS, not the bare globals: the clear function is
+// stored on the `hold` record and called as `hold.clearTimer(...)`, and a
+// browser's clearTimeout invoked with any receiver but the window throws
+// "Illegal invocation". Node never cared, so the tests passed while every
+// real tap on another member's chip threw and did nothing (UI walk,
+// 2026-08-27 — the one finding that only a real browser could see).
+export function chipGesture(name, { canSwitch, onFilter, onArmed, onSwitch, now = Date.now, setTimer = (fn, ms) => setTimeout(fn, ms), clearTimer = (id) => clearTimeout(id) }) {
   let held = false;
   let mine = null; // the token of this gesture's live press
   const g = {
