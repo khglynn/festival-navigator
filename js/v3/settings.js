@@ -346,6 +346,13 @@ function openHowItWorks(actions) {
     const c = el('span', `font-size: 9px; font-weight: 700; padding: 3px 8px; border-radius: 999px; color: #fff; background: ${dashed ? 'transparent' : 'hsla(172,90%,62%,.5)'}; border: 1px solid ${dashed ? 'var(--border-emphasis)' : 'hsla(172,90%,62%,.9)'};${dashed ? ' border-style: dashed; color: var(--text-secondary);' : ''}${ring ? ' box-shadow: 0 0 0 1.5px rgba(255,255,255,.85);' : ''}${faded ? ' opacity: .42;' : ''}`, label);
     return c;
   };
+  // Order (Kevin, 2026-08-27 20:04): the people row leads — tap = their picks,
+  // hold = pick as them, said plainly — then how picking works, then what a
+  // card shows, then the timetable moves, then how people get in, then the
+  // dock's one fact, and a Settings pointer that repeats nothing above it.
+  card.appendChild(lesson((d) => {
+    d.append(chipDemo('Kat', { ring: true }), chipDemo('Drew', { faded: true }));
+  }, 'Tap a name to see their picks.', 'Tap more names to combine. Hold a name to pick as them — for a shared phone.'));
   card.appendChild(lesson((d) => {
     [0.5, 0.75, 1].forEach((a) => {
       d.appendChild(el('span', `flex: 1; height: 30px; border-radius: 6px; border: 1px solid var(--hairline); background: radial-gradient(130% 130% at 20% 120%, hsla(10,90%,62%,${a}) 0%, transparent 78%), #1C1731;`));
@@ -357,12 +364,9 @@ function openHowItWorks(actions) {
   }, 'Everyone’s picks land on the card.', 'Ticks are picks; a letter is a must. White stroke = you.'));
   card.appendChild(lesson((d) => {
     const n = el('span', '', '2'); n.className = 'chip-notes'; n.style.height = '14px';
-    const s = el('span', '', '23'); s.className = 'chip-spotify'; s.style.height = '13px';
+    const s = el('span', '', '23'); s.className = 'chip-spotify'; s.style.height = '13px'; // the green pill, never a music-note glyph
     d.append(n, s);
-  }, 'Hold a card for notes.', 'Violet = crew notes; pin one to keep it on top. Green = it’s in your Spotify.'));
-  card.appendChild(lesson((d) => {
-    d.append(chipDemo('Kat', { ring: true }), chipDemo('Drew', { faded: true }));
-  }, 'Tap a name to see just their picks.', 'Tap more names to combine. Hold a name to pick as them — handy on a shared phone.'));
+  }, 'Hold a card for notes.', 'Violet = crew notes; pin one to keep it on top. Green = it’s in your Spotify (connect in Settings).'));
   card.appendChild(lesson((d) => {
     const head = el('span', 'font-family: var(--font-display); letter-spacing: .05em; font-size: 9px; color: rgb(var(--fest)); background: var(--card); border-radius: 6px; padding: 5px 8px; box-shadow: inset 0 0 0 1px rgba(var(--fest), .6);', 'WAREHOUSE'); // a .stage-head, drawn small — surface 3 of the accent's four
     d.appendChild(head);
@@ -376,20 +380,16 @@ function openHowItWorks(actions) {
   card.appendChild(lesson((d) => {
     d.append(chipDemo('+ Add', { dashed: true }));
   }, 'Add your people with + Add,', 'or share the crew link — anyone who opens it is in, no account needed.'));
-  card.appendChild(lesson((d) => {
-    const s = el('span', '', '38'); s.className = 'chip-spotify'; s.style.height = '14px'; // the green pill, never a music-note glyph
-    d.appendChild(s);
-  }, 'Connect Spotify in Settings', 'and every artist you follow or like gets a green badge, on every fest.'));
   // PORTOLA ’26 is a hardcoded example — goes stale if Portola leaves the catalog (copy pass flag).
   card.appendChild(lesson((d) => {
     d.appendChild(el('span', 'font-family: var(--font-display); letter-spacing: .04em; font-size: 11px; color: rgb(var(--fest));', 'PORTOLA ’26'));
     const dot = el('span'); dot.className = 'sync-dot';
     d.appendChild(dot);
-  }, 'Green dot = synced.', 'Gray = offline (still works); red = something needs you. That’s the whole dock.'));
+  }, 'Green dot = synced.', 'Gray = offline (still works); red = something needs you.'));
   card.appendChild(lesson((d) => {
     const gear = el('span', 'color: var(--text-secondary); font-size: 16px;', '⚙');
     d.appendChild(gear);
-  }, 'Cool stuff in Settings:', 'switch fests, your link, Spotify, a day image to share.'));
+  }, 'Switch fests and more in Settings.', ''));
   col.appendChild(card);
   host.appendChild(col);
 }

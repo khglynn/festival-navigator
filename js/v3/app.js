@@ -413,7 +413,7 @@ function maybeShowCoachMark() {
   bar.style.cssText = 'display: flex; align-items: center; gap: 10px; margin-top: 11px; padding: 10px 13px; border: 1px solid var(--notes-chip-stroke); border-radius: var(--r-row); background: rgba(139, 123, 255, .07);';
   const msg = document.createElement('span');
   msg.style.cssText = 'flex: 1; color: var(--text-body); font-size: 12px; font-weight: 600; line-height: 1.45;';
-  msg.append('Tap a name to see their picks — hold to pick as them. Tap an artist to add your color; 4 taps = I MUST SEE THIS. Hold one for notes. Spotify likes sync in Settings if ya want. Funnnn. ');
+  msg.append('Tap a name to see their picks. Tap an artist to add your color — 4 taps = I MUST SEE THIS. Hold one for notes. Funnnn. ');
   const how = document.createElement('button');
   how.style.cssText = 'background: none; border: none; padding: 0; cursor: pointer; color: var(--notes-chip-text); font-size: 12px; font-weight: 700; text-decoration: underline; text-underline-offset: 2px;';
   how.textContent = 'How it works';
