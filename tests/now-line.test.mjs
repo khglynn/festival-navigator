@@ -127,9 +127,11 @@ test('the day-of open: one claim per festival-day, marked only after a real land
   const fake = { getItem: (k) => store.get(k) || null, setItem: (k, v) => store.set(k, v) };
   const calls = [];
   const opts = (date) => ({ date, viewportHeight: 900, scrollTo: (y) => calls.push(y) });
-  // The app's glue, inlined: scrolledBefore → scrollToNowLine → rememberScrolled.
+  // The app's glue, inlined: scrolledBefore → scrollToNowLine → rememberScrolled,
+  // keyed in the festival's zone like app.js does (CI runs in UTC; a key on
+  // the device date put 12:40 AM PDT on the 28th there — caught 2026-08-27).
   const open = (root, date) => {
-    const key = now.dayOfScrollKey('portola-2026', date);
+    const key = now.dayOfScrollKey('portola-2026', date, portola.timezone);
     if (now.scrolledBefore(key, fake)) return 'skipped';
     const target = scrollToNowLine(root, opts(date));
     if (target) now.rememberScrolled(key, fake);
@@ -145,8 +147,8 @@ test('the day-of open: one claim per festival-day, marked only after a real land
   morning.remove();
   const afternoon = render(pt('2026-09-27T17:42:00'));
   assert.equal(open(afternoon, pt('2026-09-27T17:42:00')), 'skipped', 'closing Settings that afternoon does not scroll again');
-  assert.equal(now.dayOfScrollKey('portola-2026', pt('2026-09-28T00:40:00')), now.dayOfScrollKey('portola-2026', pt('2026-09-27T17:42:00')), '12:40 AM is still Sunday');
-  assert.notEqual(now.dayOfScrollKey('portola-2026', pt('2026-09-26T17:42:00')), now.dayOfScrollKey('portola-2026', pt('2026-09-27T17:42:00')), 'Saturday and Sunday each get their one landing');
+  assert.equal(now.dayOfScrollKey('portola-2026', pt('2026-09-28T00:40:00'), portola.timezone), now.dayOfScrollKey('portola-2026', pt('2026-09-27T17:42:00'), portola.timezone), '12:40 AM is still Sunday');
+  assert.notEqual(now.dayOfScrollKey('portola-2026', pt('2026-09-26T17:42:00'), portola.timezone), now.dayOfScrollKey('portola-2026', pt('2026-09-27T17:42:00'), portola.timezone), 'Saturday and Sunday each get their one landing');
   afternoon.remove();
 });
 

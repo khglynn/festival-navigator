@@ -15,6 +15,10 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm test
+      # A festival app follows its crews across zones, and the runner's UTC
+      # already caught a test that keyed a Portola instant on the device
+      # date (2026-08-27). A far zone makes the suite prove it every time.
+      - run: TZ=Asia/Tokyo npm test
       - run: node scripts/validate-festivals.mjs
       # Production-only, High-threshold: quiet enough to be believed,
       # loud only when a user-reachable dependency is actually at risk.
