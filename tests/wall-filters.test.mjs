@@ -133,6 +133,27 @@ test('chip gesture: tap filters, hold arms pick-as, a tap while armed switches, 
   assert.equal(log[log.length - 1], 'filter:Ross');
   fire(600);
   assert.equal(filters.armedName(clock), null, "Drew's abandoned hold did not arm");
+  // Codex round 3, race 1: a deliberate press inside the 800 ms suppression
+  // window left by a cancelled hold must still count — the press ends it.
+  const n1 = log.length;
+  old.pointerdown(); fire(100);
+  filters.cancelHold(clock);              // a repaint cancels it → suppression armed
+  fire(100);
+  const p = wire('Pegah', true);
+  p.pointerdown(); fire(50); p.pointerend(); p.click();
+  assert.equal(log.length, n1 + 1, 'the fresh press was not swallowed');
+  assert.equal(log[log.length - 1], 'filter:Pegah');
+  // Codex round 3, race 2: an older pointer's release on the same chip must
+  // not clear a newer press's timer — two fingers, or a repaint between
+  // press and release, each get their own token.
+  const first = wire('Drew', true);
+  const second = wire('Drew', true);
+  first.pointerdown(); fire(100);
+  second.pointerdown(); fire(100);        // supersedes first's hold
+  first.pointerend();                     // the OLD release — must not kill the new timer
+  fire(500);
+  assert.equal(filters.armedName(clock), 'Drew', "the newer press's hold still armed");
+  filters.disarm();
 });
 
 test('scheduled search respects the people filter (a list hides, never dims)', () => {

@@ -99,7 +99,8 @@ let armed = null; // { name, until }
 // closure: a remote change repaints every chip mid-hold, and a timer left
 // alive in the old node's closure would arm a chip nobody can see (Codex
 // gate round 2, 2026-08-27). The row cancels it on every rebuild.
-let hold = null; // { name, timer, clearTimer }
+let hold = null; // { name, token, timer, clearTimer }
+let holdSeq = 0;  // every press gets its own token, so a release clears only ITS hold
 // After a cancelled hold, the release still lands as a click on whichever
 // chip is under the finger now — swallow it for a beat rather than let a
 // half-hold become a filter toggle.
@@ -124,20 +125,30 @@ export function cancelHold(now = Date.now()) {
 // a test can drive them without a DOM.
 export function chipGesture(name, { canSwitch, onFilter, onArmed, onSwitch, now = Date.now, setTimer = setTimeout, clearTimer = clearTimeout }) {
   let held = false;
+  let mine = null; // the token of this gesture's live press
   const g = {
     pointerdown() {
+      // A new press is deliberate: it ends any suppression left by a
+      // cancelled hold (even when no hold is pending any more) and never
+      // inherits another chip's pending hold.
+      suppressClicksUntil = 0;
       if (!canSwitch) return;
       held = false;
-      cancelHold(-Infinity); // a new press never inherits another chip's pending hold (and never suppresses its own click)
+      if (hold) { hold.clearTimer(hold.timer); hold = null; }
+      const token = ++holdSeq;
+      mine = token;
       const timer = setTimer(() => {
+        if (!hold || hold.token !== token) return; // superseded before it fired
         hold = null;
         held = true;
         armed = { name, until: now() + ARM_MS };
         onArmed(name);
       }, HOLD_MS);
-      hold = { name, timer, clearTimer };
+      hold = { name, token, timer, clearTimer };
     },
-    pointerend() { if (hold && hold.name === name) { hold.clearTimer(hold.timer); hold = null; } },
+    // A release clears only the hold ITS press started — an older pointer on
+    // the same chip must not kill a newer press's timer.
+    pointerend() { if (hold && hold.token === mine) { hold.clearTimer(hold.timer); hold = null; } },
     click() {
       if (held) { held = false; return; }          // the click that ends a hold is not a tap
       if (now() < suppressClicksUntil) return;     // the release of a hold that a repaint cancelled
