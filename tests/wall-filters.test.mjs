@@ -112,6 +112,27 @@ test('chip gesture: tap filters, hold arms pick-as, a tap while armed switches, 
   me.pointerdown(); fire(600); me.pointerend(); me.click();
   assert.equal(log[log.length - 1], 'filter:HG');
   assert.equal(filters.armedName(clock), null);
+  // A repaint mid-hold (the row is rebuilt) cancels the hold: the old timer
+  // never arms a chip nobody can see, and the release that lands on the
+  // new chip is swallowed instead of becoming a filter toggle.
+  const before = log.length;
+  const old = wire('Drew', true);
+  old.pointerdown(); fire(200);
+  filters.cancelHold(clock);              // what renderPersonChips does on rebuild
+  fire(600);                              // the old timer would have fired here
+  assert.equal(filters.armedName(clock), null, 'nothing armed after a cancelled hold');
+  const fresh = wire('Drew', true);
+  fresh.click();                          // the release of the cancelled hold
+  assert.equal(log.length, before, 'the orphaned release is swallowed');
+  fire(1000);
+  fresh.click();
+  assert.equal(log[log.length - 1], 'filter:Drew', 'a real tap a moment later filters as usual');
+  // A new press cancels another chip's pending hold and never suppresses its own click.
+  old.pointerdown(); fire(100);
+  ross.pointerdown(); fire(100); ross.pointerend(); ross.click();
+  assert.equal(log[log.length - 1], 'filter:Ross');
+  fire(600);
+  assert.equal(filters.armedName(clock), null, "Drew's abandoned hold did not arm");
 });
 
 test('scheduled search respects the people filter (a list hides, never dims)', () => {

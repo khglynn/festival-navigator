@@ -66,13 +66,29 @@ export function clockLabel(minutes) {
 // its place. Memory is the truth for the life of the page; sessionStorage
 // is the copy that survives a reload when the browser allows one.
 const scrolled = new Set();
-export function claimScrollOnce(key, store = typeof sessionStorage !== 'undefined' ? sessionStorage : null) {
-  if (scrolled.has(key)) return false;
+const defaultStore = () => (typeof sessionStorage !== 'undefined' ? sessionStorage : null);
+export function scrolledBefore(key, store = defaultStore()) {
+  if (scrolled.has(key)) return true;
   let stored = null;
   try { stored = store && store.getItem(key); } catch { stored = null; }
-  if (stored) { scrolled.add(key); return false; }
+  if (stored) scrolled.add(key);
+  return !!stored;
+}
+// Mark AFTER a real scroll happened — claiming first would spend the one
+// scroll on an open with nothing to land on (before the festival week) and
+// then refuse the real one on the day.
+export function rememberScrolled(key, store = defaultStore()) {
   scrolled.add(key);
   try { if (store) store.setItem(key, '1'); } catch { /* memory-only session */ }
+}
+// The key: one per festival per festival-day, so the morning header landing
+// and the afternoon now-line landing are the same claim.
+export function dayOfScrollKey(fid, date = new Date()) {
+  return `fn_scrolled_v2_${fid}_${festivalClock(date).iso}`;
+}
+export function claimScrollOnce(key, store = defaultStore()) {
+  if (scrolledBefore(key, store)) return false;
+  rememberScrolled(key, store);
   return true;
 }
 

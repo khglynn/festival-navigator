@@ -377,7 +377,7 @@ function openHowItWorks(actions) {
     d.append(chipDemo('+ Add', { dashed: true }));
   }, 'Add your people with + Add,', 'or share the crew link — anyone who opens it is in, no account needed.'));
   card.appendChild(lesson((d) => {
-    const s = el('span', '', '♪ 38'); s.className = 'chip-spotify'; s.style.height = '14px';
+    const s = el('span', '', '38'); s.className = 'chip-spotify'; s.style.height = '14px'; // the green pill, never a music-note glyph
     d.appendChild(s);
   }, 'Connect Spotify in Settings', 'and every artist you follow or like gets a green badge, on every fest.'));
   // PORTOLA ’26 is a hardcoded example — goes stale if Portola leaves the catalog (copy pass flag).

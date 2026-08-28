@@ -596,3 +596,13 @@
 .now-label { position: absolute; right: 4px; transform: translateY(-50%); background: rgb(var(--brand));
              color: var(--page); font-size: 8px; font-weight: 800; letter-spacing: .08em;
              padding: 1px 5px; border-radius: var(--r-pill); pointer-events: none; z-index: 3; white-space: nowrap; }
+/* On touch devices the stage strip row IS 44px — a borrowed ::after can't
+ * escape the strip's own scroll container, so the target has to be real.
+ * Desktop keeps the designed 32px. The inline row template on the strip
+ * grid is 32px; the !important here is the one deliberate override. */
+@media (pointer: coarse) {
+  .stage-strip .times-grid { grid-template-rows: 44px !important; }
+  .stage-head { height: 44px; line-height: 44px; }
+  .stage-head.rail .label { height: 44px; line-height: 34px; }
+  .stage-head::after { content: none; }
+}

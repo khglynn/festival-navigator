@@ -642,7 +642,7 @@ function renderScheduledDay(root, day, ctx, layout, weekend) {
   // is Infinity). Activities-only days render as a quiet list; truly empty
   // days say so instead of rendering nothing.
   if (!computed.length) {
-    if (acts.length) {
+    if (acts.length && !layout.solo) {
       const list = document.createElement('div');
       list.className = 'ee-col';
       for (const a of acts) list.appendChild(eeActivityRow(a));
@@ -886,7 +886,7 @@ function renderWallInner(root, ctx) {
     // deserve to be findable — within the selected weekend: a W2-only act
     // must not resurface here after the grid correctly filtered it out.
     for (const [day, list] of extraSectionsOf(fest, scheduledNames, wk)) {
-      const matches = applyFilter(list, ctx.query);
+      const matches = applyFilter(list, ctx.query).filter((a) => passesPeople(ctx.picks, a.name, ctx.filterPeople));
       if (!matches.length) continue;
       any = true;
       renderLineupGroup(root, day, matches, ctx, { ...fest, dayMeta: fest.dayMeta }, day ? {} : { header: 'EVERYTHING ELSE', sub: 'NO SET TIME YET' });

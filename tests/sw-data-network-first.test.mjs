@@ -172,7 +172,7 @@ test('navigations: network-first, the cached shell when offline, and the backgro
 test('the data cache is a separate, persistent bucket and CACHE_VERSION was bumped for this drop', () => {
   assert.match(SW_SRC, /const DATA_CACHE = 'festival-nav-data-v1'/);
   const m = SW_SRC.match(/CACHE_VERSION = 'festival-nav-v(\d+)'/);
-  assert.ok(m && Number(m[1]) >= 39, 'CACHE_VERSION >= v39');
+  assert.ok(m && Number(m[1]) >= 41, 'CACHE_VERSION >= v41 (the wall filters + now line shell)');
 });
 
 // ---- activate: the rescue migration must never delete a device's only copy ----

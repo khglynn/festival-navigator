@@ -95,6 +95,15 @@ export function columnsTemplate(stages, hasEE, solo) {
 export const HOLD_MS = 500;
 export const ARM_MS = 3000;
 let armed = null; // { name, until }
+// ONE pending hold for the whole chip row, held here rather than in a chip's
+// closure: a remote change repaints every chip mid-hold, and a timer left
+// alive in the old node's closure would arm a chip nobody can see (Codex
+// gate round 2, 2026-08-27). The row cancels it on every rebuild.
+let hold = null; // { name, timer, clearTimer }
+// After a cancelled hold, the release still lands as a click on whichever
+// chip is under the finger now — swallow it for a beat rather than let a
+// half-hold become a filter toggle.
+let suppressClicksUntil = 0;
 
 export function armedName(now = Date.now()) {
   if (armed && armed.until > now) return armed.name;
@@ -102,27 +111,36 @@ export function armedName(now = Date.now()) {
   return null;
 }
 export function disarm() { armed = null; }
+export function cancelHold(now = Date.now()) {
+  if (!hold) return;
+  hold.clearTimer(hold.timer);
+  hold = null;
+  suppressClicksUntil = now + 800;
+}
 
 // Wire one chip. `canSwitch` is false for your own chip and for spectators.
-// Handlers: onFilter(name) · onArmed(name) (repaint the label) · onSwitch(name).
-// Returns the listeners so a test can drive them without a DOM.
+// Handlers: onFilter(name) · onArmed(name) (rebuild the row so the armed
+// chip renders from armedName()) · onSwitch(name). Returns the listeners so
+// a test can drive them without a DOM.
 export function chipGesture(name, { canSwitch, onFilter, onArmed, onSwitch, now = Date.now, setTimer = setTimeout, clearTimer = clearTimeout }) {
-  let holdTimer = null;
   let held = false;
   const g = {
     pointerdown() {
       if (!canSwitch) return;
       held = false;
-      clearTimer(holdTimer);
-      holdTimer = setTimer(() => {
+      cancelHold(-Infinity); // a new press never inherits another chip's pending hold (and never suppresses its own click)
+      const timer = setTimer(() => {
+        hold = null;
         held = true;
         armed = { name, until: now() + ARM_MS };
         onArmed(name);
       }, HOLD_MS);
+      hold = { name, timer, clearTimer };
     },
-    pointerend() { clearTimer(holdTimer); },
+    pointerend() { if (hold && hold.name === name) { hold.clearTimer(hold.timer); hold = null; } },
     click() {
       if (held) { held = false; return; }          // the click that ends a hold is not a tap
+      if (now() < suppressClicksUntil) return;     // the release of a hold that a repaint cancelled
       if (canSwitch && armedName(now()) === name) { armed = null; onSwitch(name); return; }
       onFilter(name);
     },

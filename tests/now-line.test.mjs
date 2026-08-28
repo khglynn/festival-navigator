@@ -121,6 +121,34 @@ test('scrollToNowLine: the line a third of the way down; before doors on festiva
   off.remove();
 });
 
+test('the day-of open: one claim per festival-day, marked only after a real landing, so a pre-festival open does not spend it and an afternoon Settings close does not repeat it', () => {
+  const store = new Map();
+  const fake = { getItem: (k) => store.get(k) || null, setItem: (k, v) => store.set(k, v) };
+  const calls = [];
+  const opts = (date) => ({ date, viewportHeight: 900, scrollTo: (y) => calls.push(y) });
+  // The app's glue, inlined: scrolledBefore → scrollToNowLine → rememberScrolled.
+  const open = (root, date) => {
+    const key = now.dayOfScrollKey('portola-2026', date);
+    if (now.scrolledBefore(key, fake)) return 'skipped';
+    const target = scrollToNowLine(root, opts(date));
+    if (target) now.rememberScrolled(key, fake);
+    return target;
+  };
+  const week = render(local('2026-09-20T20:00:00'));
+  assert.equal(open(week, local('2026-09-20T20:00:00')), null, 'a week early: nothing to land on');
+  assert.equal(store.size, 0, 'and the claim was NOT spent');
+  week.remove();
+  const morning = render(local('2026-09-27T10:00:00'));
+  morning.querySelector('.day-rule[data-iso="2026-09-27"]').getBoundingClientRect = () => ({ top: 3000 });
+  assert.equal(open(morning, local('2026-09-27T10:00:00')), 'day', 'festival morning: today\'s header');
+  morning.remove();
+  const afternoon = render(local('2026-09-27T17:42:00'));
+  assert.equal(open(afternoon, local('2026-09-27T17:42:00')), 'skipped', 'closing Settings that afternoon does not scroll again');
+  assert.equal(now.dayOfScrollKey('portola-2026', local('2026-09-28T00:40:00')), now.dayOfScrollKey('portola-2026', local('2026-09-27T17:42:00')), '12:40 AM is still Sunday');
+  assert.notEqual(now.dayOfScrollKey('portola-2026', local('2026-09-26T17:42:00')), now.dayOfScrollKey('portola-2026', local('2026-09-27T17:42:00')), 'Saturday and Sunday each get their one landing');
+  afternoon.remove();
+});
+
 test('claimScrollOnce: once per key for the life of the page, remembered across a reload when storage allows, never thrown off by a blocked store', () => {
   const store = new Map();
   const fake = { getItem: (k) => store.get(k) || null, setItem: (k, v) => store.set(k, v) };
@@ -145,6 +173,8 @@ test('validator: dayMeta iso / isos must be real dates', () => {
   assert.ok(validateFestivalDoc({ ...base, dayMeta: { Friday: { isos: { W1: '2026-10-02' } } } }).errors.some((e) => e.includes('both W1 and W2')));
   const dup = validateFestivalDoc({ ...base, artists: [{ name: 'A', day: 'Friday' }, { name: 'B', day: 'Saturday' }], dayMeta: { Friday: { iso: '2026-10-02' }, Saturday: { iso: '2026-10-02' } } });
   assert.ok(dup.errors.some((e) => e.includes("already another day's")), 'two days on one date would draw two now lines');
+  const mixed = validateFestivalDoc({ ...base, artists: [{ name: 'A', day: 'Friday' }, { name: 'B', day: 'Saturday' }], dayMeta: { Friday: { iso: '2026-10-02' }, Saturday: { isos: { W1: '2026-10-02', W2: '2026-10-09' } } } });
+  assert.ok(mixed.errors.some((e) => e.includes("already another day's")), 'a plain iso collides with the same date under a weekend');
   assert.deepEqual(validateFestivalDoc(portola).errors, [], 'Portola carries real isos');
 });
 

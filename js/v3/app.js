@@ -10,8 +10,8 @@ import * as spotify from '../spotify.js';
 import * as model from './model.js';
 import { loadFestivalIndex, loadFestival, loadCustomFestivals, FESTIVAL_INDEX, defaultFestivalId } from '../festivals.js';
 import { renderWall, refreshCard, showUndoToast, showToast, wireScrollspy, colorIndexOf, groupByDay, knownDaysOf, scheduledWeekendOf, extraSectionsOf, positionNowLines, scrollToNowLine } from './wall.js';
-import { loadPeopleFilter, savePeopleFilter, togglePerson, pruneToActive, loadSolo, saveSolo, chipGesture, armedName } from './filters.js';
-import { claimScrollOnce } from './now.js';
+import { loadPeopleFilter, savePeopleFilter, togglePerson, pruneToActive, loadSolo, saveSolo, chipGesture, armedName, cancelHold } from './filters.js';
+import { scrolledBefore, rememberScrolled, dayOfScrollKey } from './now.js';
 import { disclosureFold, eqLoader, festRow } from './tools.js';
 import { openArtistSheet, openDayNotes, openAllNotes, closeSheet, refreshOpenSheet, sheetChrome, dialogize, rememberOpener } from './notes.js';
 import { renderSettings, appSettings, openSubviewByKey } from './settings.js';
@@ -85,10 +85,12 @@ function refreshCtx() {
 function refreshArtistCards(artistName) {
   const els = document.querySelectorAll(`#wall-root .card[data-artist="${CSS.escape(artistName)}"]`);
   if (!els.length) { repaintWall(); return; }
-  // Under a people filter a LIST card (afters, Folsom, search) hides when
-  // its last filtered pick clears — a single-card refresh can only dim it.
-  // A grid cell dims in place, so the cheap path stays for pure-grid taps.
-  if ((ctx.filterPeople || []).length && [...els].some((el) => !el.classList.contains('cell'))) { repaintWall(); return; }
+  // Under a people filter that includes ME, my tap changes the filter's
+  // visible set — a list card (afters, Folsom, search) must appear or
+  // vanish, which a single-card refresh cannot do. A filter on OTHER people
+  // is unaffected by my tap, so the cheap path stays.
+  const filter = ctx.filterPeople || [];
+  if (filter.length && (filter.includes(ctx.meName) || [...els].some((el) => !el.classList.contains('cell')))) { repaintWall(); return; }
   els.forEach((el) => refreshCard(el, artistName, ctx));
 }
 
@@ -152,6 +154,9 @@ function applyFestTheme() {
 //          device, and Settings keeps the explicit switch for keyboards.
 function renderPersonChips() {
   const row = $('person-chips');
+  // A rebuild mid-hold cancels the hold (the old chip is gone) and swallows
+  // its release; the person holds again if they meant it.
+  cancelHold();
   row.textContent = '';
   const filter = ctx.filterPeople || [];
   for (const [name, p] of state.activePeople()) {
@@ -176,10 +181,9 @@ function renderPersonChips() {
     const g = chipGesture(name, {
       canSwitch,
       onFilter: togglePeopleFilter,
-      onArmed: () => {
-        chip.textContent = `Pick as ${name}?`;
-        setTimeout(() => { if (chip.isConnected && armedName() !== name) chip.textContent = name; }, 3000 + 50);
-      },
+      // Arming rebuilds the row: the armed chip renders from armedName(), so
+      // it is right even when the node that started the hold is gone.
+      onArmed: () => { renderPersonChips(); setTimeout(() => { if (armedName() !== name) renderPersonChips(); }, 3000 + 50); },
       onSwitch: (n) => { switchIdentity(n); repaintWall(); },
     });
     if (canSwitch) {
@@ -241,21 +245,13 @@ function startClock() {
 // start) scrolls again, which is the point. Never while searching.
 function maybeScrollToNow() {
   if (ctx.query) return;
-  const root = $('wall-root');
-  const line = root.querySelector('.now-line');
-  if (!line) {
-    // Festival day, but before doors (or after the last set): land on
-    // today's header instead of the top of Saturday. scrollToNowLine finds
-    // today's day rule by its date, or does nothing when today isn't here.
-    const key = `fn_scrolled_day_v1_${ctx.fid}`;
-    if (!claimScrollOnce(key)) return;
-    scrollToNowLine(root);
-    return;
-  }
-  const grid = line.closest('.times-grid');
-  const key = `fn_scrolled_now_v1_${ctx.fid}_${grid ? grid.dataset.iso : ''}`;
-  if (!claimScrollOnce(key)) return;
-  scrollToNowLine(root);
+  // One claim per festival per festival-day: the morning landing on today's
+  // header and the afternoon landing on the now line are the same open.
+  // Marked only after a real scroll, so an open before the festival week
+  // (nothing to land on) doesn't spend the claim.
+  const key = dayOfScrollKey(ctx.fid);
+  if (scrolledBefore(key)) return;
+  if (scrollToNowLine($('wall-root'))) rememberScrolled(key);
 }
 
 // The explicit identity switch (FLOW-8), called from Settings.

@@ -216,10 +216,13 @@ export function validateFestivalDoc(fest, { filename } = {}) {
       && !Number.isNaN(new Date(`${s}T00:00:00Z`).getTime()) && new Date(`${s}T00:00:00Z`).toISOString().slice(0, 10) === s;
     // Two grid days on one date would draw two now lines — each date is one
     // day's, per weekend.
-    const seen = { '': new Set(), W1: new Set(), W2: new Set() };
+    // A plain `iso` is that day's date on EVERY weekend, so it collides with
+    // the same date under either weekend of an `isos` day, and vice versa.
+    const seen = { W1: new Set(), W2: new Set() };
     const claim = (wk, date, label) => {
-      if (seen[wk].has(date)) err(`dayMeta.${safeKey(label)}: date ${date} is already another day's${wk ? ` (${wk})` : ''}`);
-      seen[wk].add(date);
+      const buckets = wk ? [wk] : ['W1', 'W2'];
+      if (buckets.some((b) => seen[b].has(date))) err(`dayMeta.${safeKey(label)}: date ${date} is already another day's${wk ? ` (${wk})` : ''}`);
+      for (const b of buckets) seen[b].add(date);
     };
     for (const [label, meta] of Object.entries(fest.dayMeta)) {
       if (!isPlain(meta)) { err(`dayMeta.${safeKey(label)}: must be an object`); continue; }
