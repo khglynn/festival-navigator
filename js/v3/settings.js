@@ -337,34 +337,59 @@ function openHowItWorks(actions) {
     row.append(demo, text);
     return row;
   };
+  // Copy pass 2026-08-27 (Kevin): keep the spirit, trim the fat — one line
+  // per thing that matters on the wall, then the new filters, then how people
+  // get in, then a pointer at Settings. Sort/billing is gone (it only exists
+  // on lineup walls and nobody asked). Every demo is a real component drawn
+  // small, never a screenshot.
+  const chipDemo = (label, { ring = false, faded = false, dashed = false } = {}) => {
+    const c = el('span', `font-size: 9px; font-weight: 700; padding: 3px 8px; border-radius: 999px; color: #fff; background: ${dashed ? 'transparent' : 'hsla(172,90%,62%,.5)'}; border: 1px solid ${dashed ? 'var(--border-emphasis)' : 'hsla(172,90%,62%,.9)'};${dashed ? ' border-style: dashed; color: var(--text-secondary);' : ''}${ring ? ' box-shadow: 0 0 0 1.5px rgba(255,255,255,.85);' : ''}${faded ? ' opacity: .42;' : ''}`, label);
+    return c;
+  };
   card.appendChild(lesson((d) => {
     [0.5, 0.75, 1].forEach((a) => {
       d.appendChild(el('span', `flex: 1; height: 30px; border-radius: 6px; border: 1px solid var(--hairline); background: radial-gradient(130% 130% at 20% 120%, hsla(10,90%,62%,${a}) 0%, transparent 78%), #1C1731;`));
     });
-  }, 'Tap an artist 1–3×', '— picked, in your color, brighter each tap.'));
+  }, 'Tap an artist to add your color.', 'Brighter each tap. Four taps = I MUST SEE THIS.'));
   card.appendChild(lesson((d) => {
     d.appendChild(el('span', 'width: 4px; height: 12px; border-radius: 99px; background: hsla(150,70%,50%,.5); border: 1px solid hsl(150,70%,82%);'));
     d.appendChild(el('span', 'width: 24px; height: 12px; border-radius: 99px; background: hsla(10,90%,62%,.5); border: 1px solid #fff; color: #fff; font-size: 7.5px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center;', 'K'));
-  }, '4th tap = must.', 'Your pill gets your letter; ticks are picks. White stroke = you.'));
+  }, 'Everyone’s picks land on the card.', 'Ticks are picks; a letter is a must. White stroke = you.'));
   card.appendChild(lesson((d) => {
     const n = el('span', '', '2'); n.className = 'chip-notes'; n.style.height = '14px';
     const s = el('span', '', '23'); s.className = 'chip-spotify'; s.style.height = '13px';
     d.append(n, s);
-  }, 'Bottom-left corner:', 'violet bubble = crew notes (long-press to read or add) · green = your Spotify.'));
+  }, 'Hold a card for notes.', 'Violet = crew notes; pin one to keep it on top. Green = it’s in your Spotify.'));
   card.appendChild(lesson((d) => {
-    const p = el('span', '', 'PINNED'); p.className = 'chip-notes';
-    p.style.cssText += 'height: auto; padding: 3px 8px; letter-spacing: .06em; font-size: 8px;';
-    d.appendChild(p);
-  }, 'Pin a note', 'to keep it on top of its day. Pins are yours — everyone has their own.'));
+    d.append(chipDemo('Kat', { ring: true }), chipDemo('Drew', { faded: true }));
+  }, 'Tap a name to see just their picks.', 'Tap more names to combine. Hold a name to pick as them — handy on a shared phone.'));
   card.appendChild(lesson((d) => {
-    d.appendChild(el('span', 'font-family: var(--font-ui); font-size: 10px; font-weight: 700; color: #E5E7EB; border: 1px solid var(--border-card); border-radius: 999px; padding: 4px 10px;', 'Billing ▾'));
-  }, '“Billing” = poster order.', 'The lineup as the festival ranks it — biggest names first. Sort flips to A→Z, your picks, or what the crew picked most.'));
+    const head = el('span', 'font-family: var(--font-display); letter-spacing: .05em; font-size: 9px; color: rgb(var(--fest)); background: var(--card); border-radius: 6px; padding: 5px 8px; box-shadow: inset 0 0 0 1px rgba(var(--fest), .6);', 'WAREHOUSE'); // a .stage-head, drawn small — surface 3 of the accent's four
+    d.appendChild(head);
+  }, 'Tap a stage to see only that stage.', 'Tap it again for all of them.'));
+  card.appendChild(lesson((d) => {
+    const g = el('span', 'position: relative; width: 84px; height: 30px; border-radius: 6px; border: 1px solid var(--hairline); background: #1C1731; overflow: hidden;');
+    g.appendChild(el('span', 'position: absolute; left: 0; right: 0; top: 13px; height: 2px; background: rgb(var(--brand)); box-shadow: 0 0 6px rgba(var(--brand), .8);'));
+    g.appendChild(el('span', 'position: absolute; right: 3px; top: 9px; font-size: 7px; font-weight: 800; letter-spacing: .08em; color: var(--page); background: rgb(var(--brand)); border-radius: 999px; padding: 0 4px;', '5:42 PM'));
+    d.appendChild(g);
+  }, 'On the day, a line marks now', 'and the app opens right there.'));
+  card.appendChild(lesson((d) => {
+    d.append(chipDemo('+ Add', { dashed: true }));
+  }, 'Add your people with + Add,', 'or share the crew link — anyone who opens it is in, no account needed.'));
+  card.appendChild(lesson((d) => {
+    const s = el('span', '', '♪ 38'); s.className = 'chip-spotify'; s.style.height = '14px';
+    d.appendChild(s);
+  }, 'Connect Spotify in Settings', 'and every artist you follow or like gets a green badge, on every fest.'));
   // PORTOLA ’26 is a hardcoded example — goes stale if Portola leaves the catalog (copy pass flag).
   card.appendChild(lesson((d) => {
     d.appendChild(el('span', 'font-family: var(--font-display); letter-spacing: .04em; font-size: 11px; color: rgb(var(--fest));', 'PORTOLA ’26'));
     const dot = el('span'); dot.className = 'sync-dot';
     d.appendChild(dot);
-  }, 'The dock:', 'your chip jumps to the top, days follow your scroll, the fest name opens Settings. Green dot = synced.'));
+  }, 'Green dot = synced.', 'Gray = offline (still works); red = something needs you. That’s the whole dock.'));
+  card.appendChild(lesson((d) => {
+    const gear = el('span', 'color: var(--text-secondary); font-size: 16px;', '⚙');
+    d.appendChild(gear);
+  }, 'Cool stuff in Settings:', 'switch fests, your link, Spotify, a day image to share.'));
   col.appendChild(card);
   host.appendChild(col);
 }
