@@ -1,4 +1,29 @@
-# NOW — festival-navigator: Portola set times LIVE ON PROD (v39) · wall filters + now line + festival timezone GATED on `wall-filters` (v42), shipping on Kevin's word
+# NOW — festival-navigator: v42 LIVE ON PROD (2026-08-27 21:01 CT) — Portola set times, wall filters, the now line, the festival timezone
+
+## 2026-08-27 21:01 CT — PROMOTED: PR #12 merged (carrying #11), v42 on all three domains
+
+Kevin's word ("check all this work and ship it if we're feeling good about
+it"), after the gate below closed: `wall-filters` → `main` as a merge
+commit (6f7d756, the branch's commit history kept). `fest` / `festival` /
+`crew.kevinhg.com` served `festival-nav-v42` within 90 s; prod
+`portola-2026.json` carries `"timezone": "America/Los_Angeles"`. The
+Sonnet walker's final report: A–E all PASS with real clicks, zero app
+console errors; its crew `zz-walk2` and person row are deleted from Neon.
+Merged branches `wall-filters` and `portola-set-times` deleted (remote +
+local). `main` = production; the next branch starts from here.
+
+**Product note from the walk, Kevin's call:** the member-chip row is not
+sticky — to filter by a person mid-page you scroll to the top first (the
+stage strip and the day tabs ARE sticky). If that bites on festival day, a
+sticky chip row is a small change.
+
+**Next (Kevin's sequence, 2026-08-27):** comments improvements feature pass
+→ Seismic + ACL data (set times where out; the afters / big events around
+each, "just the big big stuff"; `timezone: "America/Chicago"`; freeze pick
+keys the day people start picking) — festival checks by teammates while the
+main session builds. The six ACL poster grids sit in this session's
+scratchpad; re-download from the ACL site if it is gone.
+
 
 ## 2026-08-27 (late) — the gate after compaction: what a real browser found, the festival timezone, Codex rounds 4–5
 
@@ -65,11 +90,9 @@ rule is also on the Pen watcher row.
    Vercel's protection wall answers /api with `{error: {message, code}}`
    and six sites did `body.error || fallback`; all go through
    `util.errorText` now. Preview-only trigger, real rendering bug.
-2. PR #11 (pick-key guard + header copy) and PR #12 (filters + now line)
-   both wait for Kevin's "promote"; merging #12 carries #11.
-3. Throwaway preview crews: the first walk's (`zz-filters-walk`) is
-   deleted; any the walker creates (`zz-walk-…`) are listed in its report
-   and are prod rows to delete (Kevin's standing OK for test rows tonight).
+2. ~~PR #11 + PR #12 wait for "promote"~~ — PROMOTED 21:01 CT (top of file).
+3. ~~Throwaway preview crews~~ — all deleted from Neon (`zz-filters-walk`,
+   the Opus walker's `Portola 26` test crew, the Sonnet walker's `zz-walk2`).
 4. UI walks are a teammate's job from here on (Kevin, 19:44), never the
    main session's — the other Playwright MCP profiles are locked by other
    sessions; `plugin_playwright` is the one that works.

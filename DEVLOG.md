@@ -4,6 +4,11 @@ Newest first. One entry per meaningful unit of work.
 
 ## 2026-08-27 (late) — the browser-only bugs, the festival timezone, gate rounds 4–5
 
+- **Promoted 21:01 CT.** PR #12 (carrying #11) merged to `main` as a
+  merge commit; v42 on all three domains within 90 s; the walker's final
+  report A–E PASS on real clicks; throwaway rows deleted; merged branches
+  deleted. CI now runs the suite twice — UTC and Asia/Tokyo — after the
+  runner's zone caught a test that Austin could not.
 - **What only a real tap could find.** Three Codex rounds and 256 Node
   tests passed a people filter that did nothing in a browser. `chipGesture`
   stored the bare `clearTimeout` on its hold record and called it as
