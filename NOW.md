@@ -1,4 +1,15 @@
-# NOW — festival-navigator: Portola set times LIVE ON PROD (v39)
+# NOW — festival-navigator: Portola set times LIVE ON PROD (v39) · wall filters + now line STAGED on `wall-filters` (v40)
+
+## 2026-08-27 (evening) — wall filters + the now line, built; two PRs open
+
+Kevin picked options A + D from the filtering canvas and asked for a
+day-of open on the current time with a now line. All built on
+`wall-filters` (branched from `portola-set-times`): tap a member chip to
+see only their picks (hold = the old pick-as switch), tap a stage name to
+solo it, today's grid draws a moving now line and the app lands on it once
+per open. Story + the one call for Kevin (tap/hold on chips): DEVLOG
+2026-08-27 (evening). **PR #11** (pick-key guard + header copy) is still
+open; the filters PR stacks on it. Both merges = prod deploys, Kevin's call.
 
 ## 2026-08-27 (later) — PROMOTED: PR #10 merged, v39 on all three domains
 

@@ -2,6 +2,52 @@
 
 Newest first. One entry per meaningful unit of work.
 
+## 2026-08-27 (evening) — wall filters (A + D), the now line, the day-of open
+
+- **Kevin picked A + D from the canvas** and added: on festival day, open
+  on the current time with a now line. Built on branch `wall-filters`.
+- **A · tap a member chip → the wall shows only their picks** (tap more to
+  combine; your own chip = "my picks"; an "everyone ✕" chip returns). On
+  the timetable non-matching cards DIM (the clock keeps its shape, and a
+  dimmed card still takes a tap); on the lists (afters, Folsom, lineup-only
+  fests) they hide, with "No picks here from Kat" where that empties a
+  section. Per-fest, per-tab (sessionStorage) — a filter that survived a
+  reload would read as "where did everyone go?" — and pruned to members
+  still in the crew.
+- **The wrinkle the code had waiting**: member chips already switched
+  identity on tap ("Pick as Drew?" then a second tap, Kevin's 2026-07-12
+  shared-phone flow). Resolved with the app's own grammar — cards tap to
+  pick and hold for notes, so chips **tap to filter and hold to pick-as**;
+  the hold arms the same two-step confirm, Settings keeps the explicit
+  switch for keyboards. Flagged to Kevin as the one call to veto.
+- **D · tap a stage name in the sticky strip → solo that stage**: the
+  column goes wide, the others fold to 34px rails with the name set
+  vertically (tap a rail to move the solo), the pressed head says "✕ all
+  stages". One `columnsTemplate` feeds the strip and every day, so a solo
+  holds top to bottom; a remembered stage that no longer exists is ignored,
+  never a blank wall. Stage heads are real buttons (aria-pressed), opted out
+  of the 44px floor like the other in-row controls, with vertical-only
+  borrowed space so a tap can't land on the neighbour.
+- **The now line**: `js/v3/now.js` is the festival clock — a day runs to
+  5 AM (a phone opened at 12:40 AM Sunday is still living Saturday's grid,
+  matching time.js's after-midnight reading), the phone's local clock IS the
+  festival clock (the person this is for is standing there; files carry no
+  timezone on purpose), and a grid day knows its date from `dayMeta.iso`
+  (`isos: {W1, W2}` for two-weekend fests; validated as real dates; Portola
+  carries them). Today's grid draws a brand-violet line with a "5:42 PM"
+  label on the hour rail; a one-minute ticker (and the tab coming back from
+  the background) moves it without a repaint, and drops it once the day is
+  over. No iso, no line, no guess.
+- **The day-of open**: a fresh open lands the now line a third of the way
+  down the viewport — once per festival-day per tab, so a repaint after a
+  pick never yanks the scroll; a PWA resumed from the background keeps its
+  place; never while searching. Coming back from Settings after a festival
+  switch counts as an open for that fest.
+- Design canvas got the second look's fixes (the phone artboard now scrolls
+  its five columns like the real app instead of clipping three of them;
+  Option B's choices are a popover, as its note promised) and records the
+  decision. 234 → 247 tests. SW v39 → v40.
+
 ## 2026-08-27 (after the promote) — the pick-key guard grows teeth for whoever edits data next
 
 - **Kevin's ask**: make it very hard for a future session — a smaller
