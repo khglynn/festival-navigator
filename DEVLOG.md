@@ -47,12 +47,12 @@ Newest first. One entry per meaningful unit of work.
   its five columns like the real app instead of clipping three of them;
   Option B's choices are a popover, as its note promised) and records the
   decision.
-- **Codex gate round 1: NO SHIP, five P1s — all real, all fixed the same
-  hour.** The v40 worker cached app.js and wall.js but not the two modules
-  they had just grown, so an offline boot after the update would have died
-  on the first import (→ APP_CORE + v41, and
-  `tests/app-shell-complete.test.mjs` walks the import graph so the list
-  can never fall behind again). Storage-blocked Safari swallowed the
+- **Codex gate round 1: NO SHIP, five P1s — all real.** The v40 worker
+  cached app.js and wall.js but not the two modules they had just grown, so
+  an offline boot after the update would have died on the first import
+  (→ APP_CORE + v41, and `tests/app-shell-complete.test.mjs` walks the
+  static + dynamic import graph from app.js against the atomic core list —
+  and proves it would catch a missing module). Storage-blocked Safari swallowed the
   filter's write and re-read nothing, so a chip tap did nothing (→ memory
   is the truth for the life of the page, storage the reload copy; same for
   the scroll-once flag). Clearing your last pick on a list card under a
@@ -66,11 +66,32 @@ Newest first. One entry per meaningful unit of work.
   with a fake clock). Plus the P2s: pruned filters written back, dayMeta
   dates bounded and unique, iso XOR isos, both weekends required, a morning
   set warns, before-doors day-of open lands on today's header.
+- **Codex round 2 (verify): still NO SHIP — round 1 had left real gaps.**
+  The 32px stage target was still 32px: the borrowed ::after can't escape
+  the strip's own scroll container (→ on touch devices the strip row is a
+  real 44px; desktop keeps 32). A repaint mid-HOLD left the old chip's timer
+  alive, arming a chip nobody could see, so the next plain tap switched
+  identity with no confirm (→ one pending hold for the whole row, cancelled
+  on every rebuild, its orphaned release swallowed; arming rebuilds the row
+  so the armed chip renders from `armedName()`; all driven by a fake clock
+  in tests). The scroll-once used two keys (day header vs now line) so a
+  morning open plus an afternoon Settings close scrolled twice, and an open
+  before the festival spent the claim on nothing (→ one key per fest per
+  festival-day, marked only after a real landing). Under a filter that
+  includes you, picking a card from the grid didn't surface its afters
+  twin (→ a filtered tap by a filtered person repaints). Search extras
+  counted matches before the people filter (→ after). `iso` vs `isos`
+  duplicates across days weren't compared (→ a plain iso claims both
+  weekends). And the copy pass had put a ♪ in the Spotify demo — the one
+  glyph the repo bans (→ the green pill). Accepted, documented: time.js
+  reads every AM set as after-midnight while the clock rolls at 5 AM — no
+  grid has a morning set and the validator warns the day one does; an
+  activities-only day under solo is unreachable from a valid file.
 - **Kevin's copy pass on How it works** (his voice, trimmed): billing/sort
   gone, rows for tap-a-name / hold-to-pick-as / tap-a-stage / the now line
   / + Add and the crew link / Spotify in Settings, the dock row says only
   "green dot = synced", and a "cool stuff in Settings" close. The coach mark
-  carries his line. 234 → 252 tests. SW v39 → v41.
+  carries his line. 234 → 254 tests. SW v39 → v41.
 
 ## 2026-08-27 (after the promote) — the pick-key guard grows teeth for whoever edits data next
 
