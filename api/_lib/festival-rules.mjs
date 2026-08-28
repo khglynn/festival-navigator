@@ -206,6 +206,27 @@ export function validateFestivalDoc(fest, { filename } = {}) {
     }
   }
 
+  // dayMeta dates: `iso` (single weekend) or `isos: {W1, W2}` (two weekends)
+  // give a grid day its calendar date — what the "now" line and the day-of
+  // auto-scroll key on. Optional, but when present it must be a real date:
+  // a typo here would put the now line on the wrong day, silently.
+  if (fest.dayMeta !== undefined && !isPlain(fest.dayMeta)) err('dayMeta must be an object keyed by day label');
+  else if (fest.dayMeta) {
+    const realDate = (s) => typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s)
+      && !Number.isNaN(new Date(`${s}T00:00:00Z`).getTime()) && new Date(`${s}T00:00:00Z`).toISOString().slice(0, 10) === s;
+    for (const [label, meta] of Object.entries(fest.dayMeta)) {
+      if (!isPlain(meta)) { err(`dayMeta.${safeKey(label)}: must be an object`); continue; }
+      if (meta.iso !== undefined && !realDate(meta.iso)) err(`dayMeta.${safeKey(label)}.iso must be a real YYYY-MM-DD date`);
+      if (meta.isos !== undefined) {
+        if (!isPlain(meta.isos)) err(`dayMeta.${safeKey(label)}.isos must be {W1, W2}`);
+        else for (const [wk, v] of Object.entries(meta.isos)) {
+          if (!['W1', 'W2'].includes(wk)) err(`dayMeta.${safeKey(label)}.isos: unknown weekend ${safeKey(wk)}`);
+          else if (!realDate(v)) err(`dayMeta.${safeKey(label)}.isos.${wk} must be a real YYYY-MM-DD date`);
+        }
+      }
+    }
+  }
+
   if (fest.activities) {
     for (const [label, list] of Object.entries(fest.activities)) {
       if (!Array.isArray(list)) { err(`activities.${label} must be an array`); continue; }

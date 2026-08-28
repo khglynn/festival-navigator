@@ -135,6 +135,7 @@
 
 /* ---- people ----------------------------------------------------------------- */
 .person-chip { color: #fff; font-size: 11.5px; font-weight: 600; padding: 5px 12px;
+               -webkit-touch-callout: none; user-select: none; /* hold = pick-as, not the OS text callout */
                border-radius: var(--r-pill); border: none; cursor: pointer; }
 .person-chip.you { font-weight: 700; }
 /* A chip's job is to say "this person, in their colour". On the wall and in the
@@ -551,3 +552,44 @@
 .seg { border: 1px solid var(--border-input); color: var(--text-secondary); font-weight: 600;
        font-size: 12px; padding: 7px 13px; border-radius: var(--r-pill); background: none; cursor: pointer; }
 .seg.active { background: rgba(var(--brand), .14); color: #fff; border-color: transparent; font-weight: 700; }
+
+/* ---- wall filters + the now line (2026-08-27) ----------------------------------- */
+/* People filter: selected chips wear a ring, the rest step back. On the
+ * timetable a non-matching card DIMS (the clock keeps its shape); on lineup
+ * lists it hides. Dimmed cards stay tappable — a filter is a view, never a
+ * lock on picking. */
+.person-chip.selected { box-shadow: 0 0 0 1.5px rgba(255, 255, 255, .85); }
+.person-chip.faded { opacity: .42; }
+.person-chip.everyone { background: transparent; border: 1px solid var(--border-emphasis); color: var(--text-body); }
+.person-chip.everyone .x { color: var(--text-tertiary); margin-left: 4px; }
+.card.dim { opacity: .28; }
+.section-empty { color: var(--text-tertiary); font-size: 12px; font-weight: 600; padding: 2px 0 4px; }
+
+/* Stage solo: the stage heads are buttons now. The soloed head carries an
+ * inset ring in the fest accent (it IS a stage header — one of the accent's
+ * four homes) and a quiet "all stages" affix; folded stages become 34px
+ * rails with the name set vertically. */
+.stage-head { cursor: pointer; border: none; font-weight: inherit; }
+.stage-head[aria-pressed="true"] { box-shadow: inset 0 0 0 1px rgba(var(--fest), .6); }
+.stage-head .solo-off { font-family: var(--font-ui); font-size: 9px; letter-spacing: 0; font-weight: 700;
+                        color: var(--text-tertiary); margin-left: 6px; }
+.stage-head.rail { padding: 0; font-size: 9px; letter-spacing: .06em; color: var(--text-tertiary);
+                   writing-mode: vertical-rl; transform: rotate(180deg); line-height: 34px; }
+@media (pointer: coarse) {
+  /* Opt out of the 44px floor like the other small in-row controls: the strip
+   * row is 32px by design. Borrowed space is vertical only — a wide ::after
+   * would let one stage swallow the tap meant for its neighbour. */
+  .stage-head { min-height: 0; position: relative; }
+  .stage-head::after { content: ''; position: absolute; inset: -6px 0; }
+}
+
+/* The now line: brand violet, not the fest accent — it is app chrome that
+ * happens to sit on a timetable. Drawn inside the grid (position: relative
+ * on the grid and the rail) so it scrolls with the day; the ticker in app.js
+ * moves it every minute without a repaint. */
+.times-grid, .times-rail { position: relative; }
+.now-line { position: absolute; left: 0; right: 0; height: 2px; background: rgb(var(--brand));
+            box-shadow: 0 0 6px rgba(var(--brand), .8); pointer-events: none; z-index: 3; }
+.now-label { position: absolute; right: 4px; transform: translateY(-50%); background: rgb(var(--brand));
+             color: var(--page); font-size: 8px; font-weight: 800; letter-spacing: .08em;
+             padding: 1px 5px; border-radius: var(--r-pill); pointer-events: none; z-index: 3; white-space: nowrap; }
