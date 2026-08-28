@@ -42,6 +42,22 @@ export function removeLS(key) {
 // Safari 16; the controller+timer fallback covers 15.x, where the missing API
 // used to mean NO timeout at all and one hung fetch wedged sync forever. A
 // late abort on a settled fetch is a no-op, so the timer needs no cleanup.
+// The human-readable message in an error body, whatever shape it came in.
+// Our own API sends {error: "string"}; Vercel's deployment-protection wall
+// sends {error: {message, code}}; a proxy might send nothing parseable. A
+// non-string `error` used to reach `new Error(body.error)` and render as
+// "[object Object]" under the create form (UI walk, 2026-08-27).
+export function errorText(body, fallback) {
+  const e = body && body.error;
+  if (typeof e === 'string' && e.trim()) return e;
+  if (e && typeof e === 'object') {
+    const msg = typeof e.message === 'string' && e.message.trim() ? e.message : '';
+    const code = e.code != null ? ` (${e.code})` : '';
+    if (msg) return msg + code;
+  }
+  return fallback;
+}
+
 export function timeoutSignal(ms) {
   if (typeof AbortSignal !== 'undefined' && AbortSignal.timeout) return AbortSignal.timeout(ms);
   if (typeof AbortController !== 'undefined') {

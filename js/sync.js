@@ -3,7 +3,7 @@
 // edits live in state.pendingChanges and always overlay on top of remote.
 import * as state from './state.js';
 import { isApiNotFound } from './crew.js';
-import { timeoutSignal as makeTimeoutSignal } from './util.js';
+import { timeoutSignal as makeTimeoutSignal, errorText } from './util.js';
 
 let syncTimer = null, isSyncing = false, syncQueued = false;
 let pushGen = 0; // bumped when a push APPLIES its merged doc — guards the poll race
@@ -126,7 +126,7 @@ export async function pushSync() {
       refusedPayload = sig(payload);
       refusedFor = tokenAtStart;
       setSyncStatus('blocked');
-      onSyncBlocked(body.error || 'These changes can’t sync — the crew may have hit a limit.');
+      onSyncBlocked(errorText(body, 'These changes can’t sync — the crew may have hit a limit.'));
       return;
     }
     if (!res.ok) throw new Error('POST failed: ' + res.status);

@@ -12,7 +12,7 @@ import { colorIndexOf } from './wall.js';
 import { el, subviewHead, eqLoader, festRow, openExportLikes, openBulkPaste, openDayImage } from './tools.js';
 import { router } from './router.js';
 import { nameProblem, NAME_LIMITS } from '../name-rules.mjs';
-import { loadJSON, saveLS, getLS, removeLS } from '../util.js';
+import { loadJSON, saveLS, getLS, removeLS, errorText } from '../util.js';
 
 const LS_SETTINGS = 'fn_settings_v1'; // {lowPower, stayOffline}
 
@@ -240,7 +240,7 @@ function openAddFestival(actions) {
         body: JSON.stringify({ name }),
       });
       const body = await res.json();
-      if (!res.ok) { status.textContent = body.error || 'Research failed.'; return; }
+      if (!res.ok) { status.textContent = errorText(body, 'Research failed.'); return; }
       const c = body.candidate;
       status.textContent = '';
       const card = el('div'); card.className = 'settings-card';
@@ -795,7 +795,7 @@ function requestAccessRow(rerenderDrill) {
         body: JSON.stringify({ email }),
       });
       const body = await res.json();
-      if (!res.ok) { status.textContent = body.error || 'Request failed — try again.'; return; }
+      if (!res.ok) { status.textContent = errorText(body, 'Request failed — try again.'); return; }
       saveLS(LS_ACCESS_EMAIL, email.toLowerCase());
       status.textContent = body.status === 'approved'
         ? 'You’re already approved ✓ — hit Connect above.'

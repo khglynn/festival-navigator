@@ -15,7 +15,7 @@ import { scrolledBefore, rememberScrolled, dayOfScrollKey } from './now.js';
 import { disclosureFold, eqLoader, festRow } from './tools.js';
 import { openArtistSheet, openDayNotes, openAllNotes, closeSheet, refreshOpenSheet, sheetChrome, dialogize, rememberOpener } from './notes.js';
 import { renderSettings, appSettings, openSubviewByKey } from './settings.js';
-import { onStorageWriteFail, saveLS, getLS } from '../util.js';
+import { onStorageWriteFail, saveLS, getLS, errorText } from '../util.js';
 import { router } from './router.js';
 import { createSortControl } from './sort-control.js';
 import { nameProblem } from '../name-rules.mjs';
@@ -924,7 +924,7 @@ function openAddMember() {
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         if (state.getCrewToken() !== tokenAtStart) return; // crew switched mid-flight
-        status.textContent = body.error || 'The crew service hiccuped — give it a second and try again.';
+        status.textContent = errorText(body, 'The crew service hiccuped — give it a second and try again.');
         return;
       }
       const merged = await res.json();
@@ -1382,7 +1382,7 @@ function renderJoin(token, doc) {
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        status.textContent = body.error || 'The crew service hiccuped — give it a second and tap Join again.';
+        status.textContent = errorText(body, 'The crew service hiccuped — give it a second and tap Join again.');
         btn.disabled = false;
         return;
       }

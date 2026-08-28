@@ -9,7 +9,7 @@
 // mode, "block all cookies") throws on getItem ITSELF, and raw reads on the
 // boot path turned that into the fatal screen instead of a from-link,
 // memory-only session (gate find, 2026-08-23).
-import { loadJSON, saveLS, getLS, removeLS, timeoutSignal } from './util.js';
+import { loadJSON, saveLS, getLS, removeLS, timeoutSignal, errorText } from './util.js';
 
 const K = {
   crews: 'fn_crews_v3',            // [{token, name}]
@@ -134,7 +134,7 @@ export async function createCrew(crewName, myName, personObj, festId) {
   });
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
-    throw new Error(body.error || 'create failed: ' + res.status);
+    throw new Error(errorText(body, 'create failed: ' + res.status));
   }
   return await res.json(); // {token, doc}
 }
