@@ -13,7 +13,7 @@ import { activityMinutes } from '../time.js';
 import { auraBackground, whoCorner, aboutCorner, nameColor, subColor } from './aura.js';
 import { BOARD } from './palette.js';
 import { notesSection } from './notes.js'; // runtime-only cycle with this module (colorIndexOf) — safe
-import { passesPeople, columnsTemplate } from './filters.js';
+import { passesPeople, columnsTemplate, railLabels } from './filters.js';
 import { nowOnDay, nowOffsetPx, clockLabel, festivalClock } from './now.js';
 
 // ---- person -> board color ---------------------------------------------------
@@ -471,6 +471,7 @@ export function computeTimesLayout(fest, getDayArtists, solo = null) {
     hasEE,
     solo: cols.solo,
     colsTemplate: cols.template,
+    rails: railLabels(stages), // what each stage's folded rail says
   };
 }
 
@@ -478,7 +479,6 @@ export function computeTimesLayout(fest, getDayArtists, solo = null) {
 // restore all. Folded stages render as slim rails (still tappable — tapping a
 // rail moves the solo there). The everything-else head never solos; it folds
 // with the others.
-const railLabel = (label) => label.split(' ')[0].slice(0, 4);
 function stageHead(label, { muted = false, layout = null, ctx = null } = {}) {
   const canSolo = !muted && ctx && typeof ctx.onSoloStage === 'function';
   const h = document.createElement(canSolo ? 'button' : 'div');
@@ -494,11 +494,9 @@ function stageHead(label, { muted = false, layout = null, ctx = null } = {}) {
   h.appendChild(text);
   if (solo && label !== solo) {
     h.classList.add('rail');
-    // A rail is 34px wide and one strip row tall (32px, 44px on touch), and
-    // its scroller clips both axes — so the label is bounded to what fits,
-    // not the name; the full name stays in title and aria-label, and shows
-    // whole the moment the rail is tapped (Codex round 4, 2026-08-27).
-    text.textContent = muted ? 'ELSE' : railLabel(label);
+    // Bounded to what a rail can show (filters.js railLabels — Codex round
+    // 4, 2026-08-27); the full name stays in title and aria-label.
+    text.textContent = muted ? 'ELSE' : ((layout.rails || {})[label] || label.slice(0, 4));
     h.setAttribute('aria-label', muted ? 'Everything else (folded)' : `Solo ${label}`);
   } else {
     text.textContent = label;

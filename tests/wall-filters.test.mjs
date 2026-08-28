@@ -301,3 +301,11 @@ test('scrollspy: a re-wire mid-page claims the day you are actually in, not the 
     globalThis.getComputedStyle = hadGCS;
   }
 });
+
+test('railLabels: four letters of the first word, initials when two stages would read the same', () => {
+  assert.deepEqual(filters.railLabels(['Pier', 'Crane', 'Ship', 'Warehouse', 'Despacio']), { Pier: 'Pier', Crane: 'Cran', Ship: 'Ship', Warehouse: 'Ware', Despacio: 'Desp' });
+  assert.deepEqual(filters.railLabels(['Bud Light', 'Bud Light Backyard', 'T-Mobile']), { 'Bud Light': 'BL', 'Bud Light Backyard': 'BLB', 'T-Mobile': 'T-Mo' });
+  assert.deepEqual(filters.railLabels([' Main  Stage', '🎪 Tent']), { ' Main  Stage': 'Main', '🎪 Tent': '🎪' }, 'leading space and an emoji do not break it');
+  assert.deepEqual(filters.railLabels(['Bud Light', 'Bud Lite']), { 'Bud Light': 'BL', 'Bud Lite': 'BL2' }, 'initials that still clash get a digit — two rails never read the same');
+  assert.deepEqual(filters.railLabels(['Main Stage', 'Mainstage']), { 'Main Stage': 'MS', Mainstage: 'M' });
+});

@@ -66,6 +66,31 @@ export function pruneToActive(names, activeNames) {
   return (names || []).filter((n) => live.has(n));
 }
 
+// What a folded stage's rail says. A rail is 34px wide and one strip row
+// tall with a scroller that clips both axes, so the label is bounded to
+// four characters of the first word — "Pier", "Cran", "Ware". When two
+// stages share those four ("Bud Light" / "Bud Light Backyard"), initials
+// tell them apart instead ("BL" / "BLB"); if even those clash ("Bud Light"
+// / "Bud Lite"), a digit does ("BL" / "BL2") — two rails never read the
+// same. The full name stays in the head's title and aria-label, and shows
+// whole the moment the rail is tapped.
+export function railLabels(stages) {
+  const words = (s) => String(s).trim().split(/\s+/).filter(Boolean);
+  const first = (s) => (words(s)[0] || '').slice(0, 4);
+  const initials = (s) => words(s).map((w) => Array.from(w)[0]).join('').slice(0, 4).toUpperCase();
+  const counts = {};
+  for (const s of stages) counts[first(s)] = (counts[first(s)] || 0) + 1;
+  const out = {};
+  const used = {};
+  for (const s of stages) {
+    let label = counts[first(s)] > 1 ? initials(s) : first(s);
+    if (used[label]) label = `${label.slice(0, 3)}${used[label] + 1}`;
+    used[label] = (used[label] || 0) + 1;
+    out[s] = label;
+  }
+  return out;
+}
+
 // The rail width for a folded stage column. Wide enough for a vertical
 // stage name at 9px and a tap; narrow enough that four rails plus the wide
 // column fit a 390px phone with the hour rail.
@@ -120,9 +145,10 @@ export function cancelHold(now = Date.now()) {
 }
 
 // Wire one chip. `canSwitch` is false for your own chip and for spectators.
-// Handlers: onFilter(name) · onArmed(name) (rebuild the row so the armed
-// chip renders from armedName()) · onSwitch(name). Returns the listeners so
-// a test can drive them without a DOM.
+// Handlers: onFilter(name) · onArmed(name) (show the armed look on the SAME
+// node — the finger is still down; a rebuild would hand its release to a
+// new chip as a click) · onSwitch(name). Returns the listeners so a test
+// can drive them without a DOM.
 // The timer defaults are ARROWS, not the bare globals: the clear function is
 // stored on the `hold` record and called as `hold.clearTimer(...)`, and a
 // browser's clearTimeout invoked with any receiver but the window throws
