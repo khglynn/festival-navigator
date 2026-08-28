@@ -2,6 +2,30 @@
 
 Newest first. One entry per meaningful unit of work.
 
+## 2026-08-27 (after the promote) — the pick-key guard grows teeth for whoever edits data next
+
+- **Kevin's ask**: make it very hard for a future session — a smaller
+  model, a cloud run, the drop-watcher automation — to break existing crew
+  selections. The rule now lives in the tools those sessions are told to
+  run, not in memory: `api/_lib/pick-keys.mjs` freezes a live festival's
+  id, every artist name and every day label (atomic values, combined-label
+  parts, grid keys) into `tests/fixtures/live-pick-keys.json`, and BOTH
+  `scripts/validate-festivals.mjs` (the one command every data edit runs;
+  CI) and `tests/live-pick-keys.test.mjs` fail when a frozen string is
+  gone — with a full-sentence message naming what breaks and the
+  sanctioned fix. Every non-archived festival must be frozen (the
+  validator says which command to run if one isn't); all six are.
+  `scripts/freeze-pick-keys.mjs` only ever adds — dropping a string is a
+  hand edit to the fixture, visible in the diff. `data/festivals/README.md`
+  is the two-minute version, sitting where a data editor will look.
+  Proven by mutation: case-drifting one live name fails the validator.
+- **Header copy** says the fest once: `Pier 80 · September 26–27, 2026 ·
+  doors 1 PM` (the afters/Folsom dates live on their section rules; they
+  were being read twice). Data is network-first, so no SW bump.
+- **Filtering the wall** — four options drafted on the real header as a
+  design canvas (chips-as-filter · stage solo · a Showing menu · search
+  tokens), recommendation A + D. Kevin's pick decides the build.
+
 ## 2026-08-27 — Portola set times: the drop, and what the drop exposed
 
 - **Portola's official set-times posters went up** (site + Instagram,
