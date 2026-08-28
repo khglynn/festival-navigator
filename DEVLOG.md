@@ -4,6 +4,15 @@ Newest first. One entry per meaningful unit of work.
 
 ## 2026-08-27 (late) — the browser-only bugs, the festival timezone, gate rounds 4–5
 
+- **Round closed at 21:10 with the next brief banked, nothing built.** Kevin's
+  six asks for the notes/desktop round (hover facts, the notes sheet as an
+  expanded card, day notes without the bars, threading, a share-copy pass,
+  the desktop chip grammar) are in NOW.md's NEXT ROUND section with the
+  proposals made in chat. A design canvas for the day-notes paths was
+  rejected ("not up to snuff") — a fresh session redoes it at production
+  fidelity. One race worth remembering: the main session deleted the
+  walker's test crew while the walker was still on a follow-up, and the
+  walker raised it as a P0; the database was fine. Stop the walker first.
 - **Promoted 21:01 CT.** PR #12 (carrying #11) merged to `main` as a
   merge commit; v42 on all three domains within 90 s; the walker's final
   report A–E PASS on real clicks; throwaway rows deleted; merged branches

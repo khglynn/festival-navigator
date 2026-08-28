@@ -17,12 +17,73 @@ sticky — to filter by a person mid-page you scroll to the top first (the
 stage strip and the day tabs ARE sticky). If that bites on festival day, a
 sticky chip row is a small change.
 
-**Next (Kevin's sequence, 2026-08-27):** comments improvements feature pass
-→ Seismic + ACL data (set times where out; the afters / big events around
-each, "just the big big stuff"; `timezone: "America/Chicago"`; freeze pick
-keys the day people start picking) — festival checks by teammates while the
-main session builds. The six ACL poster grids sit in this session's
-scratchpad; re-download from the ACL site if it is gone.
+## NEXT ROUND — for a FRESH session (Kevin, 2026-08-27 21:03–21:10 CT): notes + desktop, then ACL + Seismic
+
+Kevin closed this session at 21:10 ("I need to do this in a fresh session,
+those designs aren't up to snuff") — nothing from this list is built;
+`main` is clean at the v42 promote. His asks, near-verbatim:
+
+1. **Hold a name to pick as them works for mobile. For notes we have better
+   desktop affordances — thoughts on the highlight vs pick paradigm for
+   desktop.** Proposal on the table: one grammar on both surfaces — first
+   job is tap/click (filter), second job is *hold on touch, hover on a
+   mouse* (the cards already do this: long-press for notes, ✎ on hover).
+   So on desktop a chip click highlights and hovering it reveals "Pick as
+   Kat ›"; Settings keeps the explicit switch.
+2. **Hover state shows people, notes, songs / follow in the relevant corners
+   on desktop.** Proposal: pointer-fine only, a floating facts panel —
+   name, stage · set time, who is going at what level (pill brightness =
+   taps, white stroke = must), note count + newest note, the Spotify pill.
+3. **Inside notes: show artist, stage, time, who wants to go and at what
+   level above the notes — a full card expansion; colored border / breathing
+   design as long as it doesn't detract from function.** Proposal: the SAME
+   facts block as (2) becomes the sheet header, with the pickers' aura
+   breathing behind the name (the existing 12 s gradShift; off in low-power
+   and reduced-motion). One component, two homes.
+4. **The share-link copy is too long — do a copy check (/ux-writing).** The
+   long one is the add-member success in app.js (~line 866): "Pick for Kat
+   by switching to them in Settings → You. Or send them their own link —
+   opening it puts your picks in their hands:" → proposed "Send Kat her link
+   — opening it makes the picks hers." Share sheet sub (app.js ~747):
+   "Anyone who opens it lands in Portola 26 — no accounts, no setup." →
+   "Opens straight into Portola 26. No accounts." Titles/buttons stay.
+   Not yet approved by Kevin.
+5. **The notes bars under the days are unnecessary clutter — design a few
+   other paths into / showing day notes; the elegance of the filtering
+   round is the bar.** Today: `notesSection('day', …)` renders rows + a
+   composer under EVERY day (wall.js ~661/772) and `notesSection('fest')`
+   at the wall's end; the day rule already has a ✎ chip → `openDayNotes`,
+   and the toolbar Notes chip → `openAllNotes` (grouped by day/artist).
+   The 2026-08-27 canvas offered A (day name is the door + only YOUR pinned
+   notes stay inline), B (one-line newest-note ticker), C (nothing inline)
+   — https://claude.ai/code/artifact/fea7ff9f-c300-40f3-8924-32c04498deb8
+   — **Kevin: "not up to snuff"; do not build from it.** For the redo:
+   the canvas artboards were generator approximations of the wall (flat
+   cards, no real corners/auras); a higher-fidelity pass wants real
+   production screenshots as the base, or — for a no-build-step app — the
+   real thing on a branch behind the preview, reviewed live.
+6. **Support threading on notes.** Proposal: a reply is a note with one
+   extra key `re: <parent note id>` (server `validateNote` in
+   api/_lib/crew-shared.mjs must allow it; NOTE_ID_RE shape), one level
+   deep, Reply on root notes, replies indented under their root, pins on
+   roots, counts include replies, an orphaned reply renders as a root.
+   Additive and merge-safe; no migration.
+7. **Keep the code clean, lean, clear, solid** — the facts component shared
+   by (2) and (3), `notesSection` retired from the wall, threads inside
+   `noteRow`; gate with Codex + a Sonnet real-click walk like tonight.
+
+Then: **Seismic + ACL data** (set times where out; the afters / big events
+around each, "just the big big stuff"; `timezone: "America/Chicago"`;
+freeze pick keys the day people start picking) — festival checks by
+teammates while the main session builds. The six ACL poster grids sat in
+the 2026-08-27 session's scratchpad; re-download from the ACL site.
+
+**Paste-ready kickoff for the fresh session:** "festival-navigator: read
+NOW.md's NEXT ROUND section and DEVLOG 2026-08-27 (late). Build items 1–7
+as one branch from main (v42), the notes/desktop round. Design first for
+item 5 at production fidelity (the 08-27 canvas was rejected), then build,
+then Codex + a Sonnet real-click walk, then hand me the preview. /hg-partner
+/hg-ground-it"
 
 
 ## 2026-08-27 (late) — the gate after compaction: what a real browser found, the festival timezone, Codex rounds 4–5
