@@ -610,9 +610,9 @@ const r2Css = `
 @media (min-width: 720px) { .r2 .sheet-card { margin: -16px -16px 0; border-radius: 20px 20px 0 0; padding: 20px 20px 22px; } }
 .r2 .f-name { font-size: 19px; }
 .r2 .f-who { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: center; position: relative; margin-top: 2px; }
-.r2 .f-who .w { display: inline-flex; align-items: center; gap: 6px; color: #fff; font-size: 12.5px; font-weight: 600; }
+.r2 .f-who .w { display: inline-flex; align-items: baseline; gap: 6px; color: #fff; font-size: 12.5px; font-weight: 600; }
 .r2 .f-who .w.you { font-weight: 800; }
-.r2 .f-who .w b { font-size: 8px; font-weight: 800; letter-spacing: .1em; opacity: .9; }
+.r2 .f-who .w b { font-size: 8.5px; font-weight: 800; letter-spacing: .1em; opacity: .9; }
 .r2 .f-who .dot { width: 7px; height: 7px; border-radius: 999px; flex: none; }
 .r2 .f-line { color: rgba(255, 255, 255, .78); font-size: 11.5px; font-weight: 600; position: relative; }
 .r2 .f-line b { color: #fff; font-weight: 700; }
@@ -687,7 +687,7 @@ const washOf = (name, a) => hsl(PEOPLE[name].colorIndex, a);
 const whoOf = (name) => (name === ME ? '#fff' : stroke(PEOPLE[name].colorIndex, false));
 
 function r2Header(f) {
-  const who = f.people.map((p) => `<span class="w${p.isYou ? ' you' : ''}" style="--wash: ${washOf(p.name, .38)}; --who: ${whoOf(p.name)};"><i class="dot" style="background: ${hsl(p.colorIndex)};"></i>${p.isYou ? 'you' : esc(p.name)}${p.level === 4 ? '<b>MUST</b>' : ''}</span>`).join('');
+  const who = f.people.map((p) => `<span class="w${p.isYou ? ' you' : ''}" style="--wash: ${washOf(p.name, .38)}; --who: ${whoOf(p.name)};"><i class="dot" style="background: ${hsl(p.colorIndex)};"></i>${p.isYou ? 'You' : esc(p.name)}${p.level === 4 ? '<b>MUST</b>' : ''}</span>`).join('');
   const sub = [f.day, f.stage, timeRange(f.time)].filter(Boolean).join(' · ');
   const bits = [];
   if (f.noteCount) bits.push(`<b>${f.noteCount} notes</b>`);
@@ -820,7 +820,7 @@ ${r2Css}
 
 const LVL_ALPHA = { 1: 0.16, 2: 0.3, 3: 0.5, 4: 0.85 };
 function a3Header(f) {
-  const who = f.people.map((p) => `<span class="w${p.isYou ? ' you' : ''}${p.level === 4 ? ' must' : ''}" style="--wash: ${washOf(p.name, .38)}; --washlvl: ${washOf(p.name, LVL_ALPHA[p.level])}; --ring: ${stroke(p.colorIndex, p.isYou)};">${p.isYou ? 'you' : esc(p.name)}${p.level === 4 ? '<b>MUST</b>' : ''}</span>`).join('');
+  const who = f.people.map((p) => `<span class="w${p.isYou ? ' you' : ''}${p.level === 4 ? ' must' : ''}" style="--wash: ${washOf(p.name, .42)}; --washlvl: ${washOf(p.name, LVL_ALPHA[p.level])}; --ring: ${stroke(p.colorIndex, p.isYou)};">${p.isYou ? 'You' : esc(p.name)}${p.level === 4 ? '<b>MUST</b>' : ''}</span>`).join('');
   const sub = [f.day, f.stage, timeRange(f.time)].filter(Boolean).join(' · ');
   const bits = [];
   if (f.noteCount) bits.push(`<b>${f.noteCount} notes</b>`);
@@ -1029,6 +1029,11 @@ ${a3Css}
 .a4 .n-note { border-radius: var(--note-radius, 12px); }
 .a4 .sheet-card { margin: 0; border-radius: var(--header-radius, 12px); padding: 16px 16px 17px; align-items: center; text-align: center; }
 .a4 .sheet-card .f-who { justify-content: center; }
+.a4 .f-who .w { background: var(--wash); }
+.a4 .f-chips { display: flex; justify-content: center; align-items: center; gap: 6px; position: relative; }
+.a4 .f-chips .chip { display: inline-flex; align-items: center; height: 17px; padding: 0 8px; font-size: 10px; font-weight: 800; color: #fff; border-radius: 999px; line-height: 1; }
+.a4 .f-chips .chip.notes { border-radius: var(--r-bubble); background: rgba(108, 91, 212, .62); }
+.a4 .f-chips .chip.spot { background: rgba(18, 138, 62, .6); }
 .a4 .sheet-card .f-line, .a4 .sheet-card .f-sub { text-align: center; }
 @media (min-width: 720px) { .a4 .sheet-card { margin: 0; border-radius: var(--header-radius, 12px); padding: 18px 18px 19px; } }
 .a4 .sheet-card .sheet-close { top: 12px; right: 12px; }
@@ -1043,31 +1048,34 @@ ${a3Css}
 .morph .m-time { left: 8px; right: 8px; top: calc(50% + 7px); text-align: center; color: rgba(255,255,255,.75); font-size: 9px; font-weight: 600; }
 .morph .m-sub { left: 8px; right: 8px; top: 37px; text-align: center; opacity: 0; color: rgba(255,255,255,.78); font-size: 11px; font-weight: 600; white-space: nowrap; overflow: hidden; transition: opacity calc(var(--ms) * .7) var(--ease) calc(var(--ms) * .3); }
 .morph .m-who { right: 4px; bottom: 3px; display: flex; align-items: center; gap: 3px; }
-.morph .pill { position: relative; display: inline-flex; align-items: center; justify-content: center; height: 12px; border-radius: 999px; color: #fff;
-  font-size: 7.5px; font-weight: 800; overflow: hidden; white-space: nowrap; transition: all var(--ms) var(--ease); }
+.morph .pill { position: relative; display: inline-flex; align-items: baseline; justify-content: center; height: 12px; border-radius: 999px; color: #fff;
+  font-size: 7.5px; font-weight: 800; overflow: hidden; white-space: nowrap; background: var(--prest); border: 1px solid var(--stroke); transition: all var(--ms) var(--ease); }
+.morph .pill .ini { align-self: center; }
 .morph .pill.must { width: 24px; }
 .morph .pill.tick { width: 4px; }
-.morph .pill .full { position: absolute; left: 10px; opacity: 0; font-size: 11px; font-weight: 600; transition: opacity calc(var(--ms) * .6) var(--ease); display: inline-flex; gap: 5px; align-items: center; }
-.morph .pill .full b { font-size: 7.5px; font-weight: 800; letter-spacing: .06em; }
+.morph .pill .full { position: absolute; left: 10px; opacity: 0; font-size: 11px; font-weight: 600; transition: opacity calc(var(--ms) * .6) var(--ease); display: inline-flex; gap: 5px; align-items: baseline; }
+.morph .pill .full b { font-size: 8.5px; font-weight: 800; letter-spacing: .1em; opacity: .9; }
 .morph .m-about { left: 5px; bottom: 3px; display: flex; align-items: center; gap: 3px; }
 .morph .chip { display: inline-flex; align-items: center; gap: 3px; height: 12px; padding: 0 5px; font-size: 8px; font-weight: 800; color: #fff; white-space: nowrap; overflow: hidden; line-height: 1; transition: all var(--ms) var(--ease); }
 .morph .chip.notes { border-radius: var(--r-bubble); background: var(--notes-fill); border: 1px solid var(--notes-stroke); }
 .morph .chip.spot { border-radius: 999px; background: var(--spotify-fill); border: 1px solid var(--spotify-stroke); }
 .morph .chip .more { max-width: 0; opacity: 0; overflow: hidden; transition: all var(--ms) var(--ease); }
 /* hovered / frozen */
-.morph.is-hover, .morph:hover { width: var(--expand-w, 340px); margin-left: calc((var(--expand-w, 340px) - 100%) / -2); min-height: var(--expand-h, 132px) !important; z-index: 30; overflow: visible; box-shadow: 0 18px 50px rgba(0, 0, 0, .55); }
+.morph.is-hover, .morph:hover { width: var(--ew, 340px); margin-left: var(--shift, 0px); min-height: var(--expand-h, 132px) !important; z-index: 30; overflow: visible; box-shadow: 0 18px 50px rgba(0, 0, 0, .55); }
 .morph.is-hover .m-name, .morph:hover .m-name { top: 13px; transform: none; font-size: 15px; }
 .morph.is-hover .m-time, .morph:hover .m-time { opacity: 0; }
 .morph.is-hover .m-sub, .morph:hover .m-sub { opacity: 1; }
 .morph { transition: width var(--ms) var(--ease), margin-left var(--ms) var(--ease), min-height var(--ms) var(--ease), box-shadow var(--ms) var(--ease); }
 .morph.is-hover .m-who, .morph:hover .m-who { left: 8px; right: 8px; bottom: 34px; justify-content: center; gap: 4px; }
-.morph.is-hover .pill, .morph:hover .pill { height: 22px; width: auto; min-width: 0; padding: 0 10px; }
+.morph.is-hover .pill, .morph:hover .pill { height: 22px; width: auto; min-width: 0; padding: 0 10px; background: var(--pwash); border-color: transparent; }
 .morph.is-hover .pill.must, .morph:hover .pill.must { width: auto; }
 .morph.is-hover .pill.tick, .morph:hover .pill.tick { width: auto; }
 .morph.is-hover .pill .ini, .morph:hover .pill .ini { opacity: 0; }
 .morph.is-hover .pill .full, .morph:hover .pill .full { position: static; opacity: 1; }
 .morph.is-hover .m-about, .morph:hover .m-about { left: 8px; right: 8px; bottom: 10px; justify-content: center; gap: 6px; }
-.morph.is-hover .chip, .morph:hover .chip { height: 16px; padding: 0 7px; font-size: 9.5px; }
+.morph.is-hover .chip, .morph:hover .chip { height: 16px; padding: 0 7px; font-size: 9.5px; border-color: transparent; }
+.morph.is-hover .chip.notes, .morph:hover .chip.notes { background: rgba(108, 91, 212, .62); }
+.morph.is-hover .chip.spot, .morph:hover .chip.spot { background: rgba(18, 138, 62, .6); }
 .morph.is-hover .chip .more, .morph:hover .chip .more { max-width: 200px; opacity: 1; }
 @media (hover: none) { .morph:hover { width: auto; min-height: 0 !important; box-shadow: none; } }
 
@@ -1091,11 +1099,11 @@ function a4Spot(f) {
   return bits.join(' · ');
 }
 function a4Header(f) {
-  const who = f.people.map((p) => `<span class="w${p.isYou ? ' you' : ''}${p.level === 4 ? ' must' : ''}" style="--wash: ${washOf(p.name, .38)}; --washlvl: ${washOf(p.name, LVL_ALPHA[p.level])}; --ring: ${stroke(p.colorIndex, p.isYou)};">${p.isYou ? 'you' : esc(p.name)}${p.level === 4 ? '<b>MUST</b>' : ''}</span>`).join('');
-  const bits = [];
-  if (f.noteCount) bits.push(`<b>${f.noteCount} notes</b>`);
-  const sp = a4Spot(f); if (sp) bits.push(sp);
-  return `<div class="f-name">${esc(f.name)}</div><div class="f-sub">${esc(a4Sub(f))}</div><div class="f-who">${who}</div>${bits.length ? `<div class="f-line">${bits.join(' · ')}</div>` : ''}`;
+  const who = f.people.map((p) => `<span class="w${p.isYou ? ' you' : ''}${p.level === 4 ? ' must' : ''}" style="--wash: ${washOf(p.name, .42)}; --washlvl: ${washOf(p.name, LVL_ALPHA[p.level])}; --ring: ${stroke(p.colorIndex, p.isYou)};">${p.isYou ? 'You' : esc(p.name)}${p.level === 4 ? '<b>MUST</b>' : ''}</span>`).join('');
+  const chips = [];
+  if (f.noteCount) chips.push(`<span class="chip notes">${f.noteCount}&nbsp;notes</span>`);
+  const sp = a4Spot(f); if (sp) chips.push(`<span class="chip spot">${esc(sp)}${f.spotify && f.spotify.followed ? '&nbsp;' + bookmarkSvg : ''}</span>`);
+  return `<div class="f-name">${esc(f.name)}</div><div class="f-sub">${esc(a4Sub(f))}</div><div class="f-who">${who}</div>${chips.length ? `<div class="f-chips">${chips.join('')}</div>` : ''}`;
 }
 function a4Card(f, { close = true } = {}) {
   return `<div class="sheet-card${f.animated ? ' animated' : ''}" style="background: ${f.background};"><span class="card-grain"></span>${close ? '<button class="sheet-close" aria-label="Close">✕</button>' : ''}${a4Header(f)}</div>`;
@@ -1110,11 +1118,25 @@ function morphCell(cardEl) {
   const pills = f.people.slice(0, 4).map((p) => {
     const must = p.level === 4;
     const mark = marks.find((m) => m.kind !== 'ghost' && m.label === R.lib.aura.initialFor(p, f.people)) || {};
-    return `<span class="pill ${must ? 'must' : 'tick'}" style="background: ${hsl(p.colorIndex, must ? .5 : .5)}; border: 1px solid ${stroke(p.colorIndex, p.isYou)};"><span class="ini">${must ? esc(R.lib.aura.initialFor(p, f.people)) : ''}</span><span class="full">${p.isYou ? 'you' : esc(p.name)}${must ? '<b>MUST</b>' : ''}</span></span>`;
+    return `<span class="pill ${must ? 'must' : 'tick'}" style="--prest: ${hsl(p.colorIndex, .5)}; --pwash: ${washOf(p.name, .42)}; --stroke: ${stroke(p.colorIndex, p.isYou)};"><span class="ini">${must ? esc(R.lib.aura.initialFor(p, f.people)) : ''}</span><span class="full">${p.isYou ? 'You' : esc(p.name)}${must ? '<b>MUST</b>' : ''}</span></span>`;
   }).join('');
   const chips = [];
   if (f.noteCount) chips.push(`<span class="chip notes">${f.noteCount}<span class="more">&nbsp;notes</span></span>`);
   if (f.spotify && (f.spotify.songs || f.spotify.followed)) chips.push(`<span class="chip spot">${f.spotify.songs || ''}<span class="more">&nbsp;liked song${f.spotify.songs === 1 ? '' : 's'}${f.spotify.followed ? ' · following' : ''}</span>${f.spotify.followed ? bookmarkSvg : ''}</span>`);
+  // content-hugging width: the widest of the four centred rows, clamped, plus an edge
+  // clamp so column 1 grows rightward and the last column leftward (tooltip physics).
+  const sub = a4Sub(f);
+  const pillsW = f.people.slice(0, 4).reduce((w, p) => w + (p.isYou ? 3 : p.name.length) * 6.1 + 20 + (p.level === 4 ? 34 : 0) + 4, 0);
+  const chipsW = (f.noteCount ? String(f.noteCount).length * 5.2 + 40 : 0) + (f.spotify && (f.spotify.songs || f.spotify.followed) ? 34 * 5.2 + 30 : 0);
+  const ew = Math.round(Math.min(360, Math.max(216, Math.max(name.length * 8.4 + 40, sub.length * 5.7 + 28, pillsW + 20, chipsW + 20))));
+  const CELL = 197, GAP = 4;
+  const growth = Math.max(0, ew - CELL);
+  const col = parseInt(cardEl.style.gridColumn, 10) || 1;
+  let shift = -growth / 2;
+  if (col <= 1) shift = -GAP;
+  if (col >= 5) shift = -(growth - GAP);
+  cardEl.style.setProperty('--ew', `${ew}px`);
+  cardEl.style.setProperty('--shift', `${Math.round(shift)}px`);
   // keep the production node (aura, grain, placement, classes); swap its children for the morph anatomy
   const keep = [...cardEl.children].filter((c) => c.classList.contains('card-grain')).map((c) => c.outerHTML).join('');
   cardEl.classList.add('morph');
@@ -1192,7 +1214,6 @@ ${logic}
   // The morph, live, with dials.
   const morphProps = {
     morphMs: { editor: 'int', default: 320, min: 80, max: 1200, unit: 'ms', section: 'Morph' },
-    expandW: { editor: 'int', default: 340, min: 220, max: 440, unit: 'px', section: 'Morph' },
     expandH: { editor: 'int', default: 132, min: 110, max: 220, unit: 'px', section: 'Morph' },
   };
   const wrapM = (body, size) => {
@@ -1200,7 +1221,7 @@ ${logic}
     const logic = `class Component extends DCLogic {
   renderVals() {
     const p = this.props;
-    return { ms: (p.morphMs ?? 320) + 'ms', ew: (p.expandW ?? 340) + 'px', eh: (p.expandH ?? 132) + 'px' };
+    return { ms: (p.morphMs ?? 320) + 'ms', eh: (p.expandH ?? 132) + 'px' };
   }
 }`;
     return `<!doctype html>
@@ -1221,7 +1242,7 @@ ${canvasCss}
 ${a4Css}
   </style>
 </helmet>
-<div class="vp" style="width: ${size.w}px; height: ${size.h}px; --fest: ${ACCENT}; --morph-ms: {{ms}}; --expand-w: {{ew}}; --expand-h: {{eh}};">
+<div class="vp" style="width: ${size.w}px; height: ${size.h}px; --fest: ${ACCENT}; --morph-ms: {{ms}}; --expand-h: {{eh}};">
 ${body}
 </div>
 </x-dc>
@@ -1253,7 +1274,7 @@ ${logic}
     const rest = cell.cloneNode(true);
     rest.style.gridColumn = ''; rest.style.gridRow = ''; rest.style.width = '196px'; rest.style.height = '120px'; rest.style.minHeight = '0';
     const hov = cell.cloneNode(true); morphCell(hov); hov.classList.add('is-hover');
-    hov.style.gridColumn = ''; hov.style.gridRow = ''; hov.style.width = '340px'; hov.style.height = '132px'; hov.style.minHeight = '0'; hov.style.marginLeft = '0'; hov.style.transition = 'none';
+    hov.style.gridColumn = ''; hov.style.gridRow = ''; hov.style.height = '132px'; hov.style.minHeight = '0'; hov.style.width = hov.style.getPropertyValue('--ew'); hov.style.setProperty('--shift', '0px'); hov.style.transition = 'none';
     const restM = cell.cloneNode(true); morphCell(restM);
     restM.style.gridColumn = ''; restM.style.gridRow = ''; restM.style.width = '196px'; restM.style.height = '120px'; restM.style.minHeight = '0';
     const open = `<div style="width: 420px;">${a4Card(f)}</div>`;
