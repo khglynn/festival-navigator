@@ -1027,7 +1027,9 @@ ${a3Css}
 .a4 .n-replies { gap: var(--note-gap, 6px); }
 .a4 .n-thread + .n-thread { margin-top: var(--thread-gap, 16px); }
 .a4 .n-note { border-radius: var(--note-radius, 12px); }
-.a4 .sheet-card { margin: 0; border-radius: var(--header-radius, 12px); padding: 16px 16px 17px; }
+.a4 .sheet-card { margin: 0; border-radius: var(--header-radius, 12px); padding: 16px 16px 17px; align-items: center; text-align: center; }
+.a4 .sheet-card .f-who { justify-content: center; }
+.a4 .sheet-card .f-line, .a4 .sheet-card .f-sub { text-align: center; }
 @media (min-width: 720px) { .a4 .sheet-card { margin: 0; border-radius: var(--header-radius, 12px); padding: 18px 18px 19px; } }
 .a4 .sheet-card .sheet-close { top: 12px; right: 12px; }
 .a4 .sheet { gap: 0; }
@@ -1039,7 +1041,7 @@ ${a3Css}
 .morph .m { position: absolute; transition: all var(--ms) var(--ease); }
 .morph .m-name { left: 8px; right: 8px; top: 50%; transform: translateY(-62%); text-align: center; color: #fff; font-weight: 700; font-size: 12px; line-height: 1.15; }
 .morph .m-time { left: 8px; right: 8px; top: calc(50% + 7px); text-align: center; color: rgba(255,255,255,.75); font-size: 9px; font-weight: 600; }
-.morph .m-sub { left: 11px; top: 36px; opacity: 0; color: rgba(255,255,255,.78); font-size: 11px; font-weight: 600; white-space: nowrap; transition: opacity calc(var(--ms) * .7) var(--ease) calc(var(--ms) * .3); }
+.morph .m-sub { left: 8px; right: 8px; top: 37px; text-align: center; opacity: 0; color: rgba(255,255,255,.78); font-size: 11px; font-weight: 600; white-space: nowrap; overflow: hidden; transition: opacity calc(var(--ms) * .7) var(--ease) calc(var(--ms) * .3); }
 .morph .m-who { right: 4px; bottom: 3px; display: flex; align-items: center; gap: 3px; }
 .morph .pill { position: relative; display: inline-flex; align-items: center; justify-content: center; height: 12px; border-radius: 999px; color: #fff;
   font-size: 7.5px; font-weight: 800; overflow: hidden; white-space: nowrap; transition: all var(--ms) var(--ease); }
@@ -1053,17 +1055,18 @@ ${a3Css}
 .morph .chip.spot { border-radius: 999px; background: var(--spotify-fill); border: 1px solid var(--spotify-stroke); }
 .morph .chip .more { max-width: 0; opacity: 0; overflow: hidden; transition: all var(--ms) var(--ease); }
 /* hovered / frozen */
-.morph.is-hover, .morph:hover { width: var(--expand-w, 320px); min-height: var(--expand-h, 152px) !important; z-index: 30; overflow: visible; box-shadow: 0 18px 50px rgba(0, 0, 0, .55); }
-.morph.is-hover .m-name, .morph:hover .m-name { left: 11px; right: auto; top: 11px; transform: none; text-align: left; font-size: 15px; }
+.morph.is-hover, .morph:hover { width: var(--expand-w, 340px); margin-left: calc((var(--expand-w, 340px) - 100%) / -2); min-height: var(--expand-h, 132px) !important; z-index: 30; overflow: visible; box-shadow: 0 18px 50px rgba(0, 0, 0, .55); }
+.morph.is-hover .m-name, .morph:hover .m-name { top: 13px; transform: none; font-size: 15px; }
 .morph.is-hover .m-time, .morph:hover .m-time { opacity: 0; }
 .morph.is-hover .m-sub, .morph:hover .m-sub { opacity: 1; }
-.morph.is-hover .m-who, .morph:hover .m-who { right: auto; left: 11px; bottom: auto; top: 58px; gap: 4px; }
+.morph { transition: width var(--ms) var(--ease), margin-left var(--ms) var(--ease), min-height var(--ms) var(--ease), box-shadow var(--ms) var(--ease); }
+.morph.is-hover .m-who, .morph:hover .m-who { left: 8px; right: 8px; bottom: 34px; justify-content: center; gap: 4px; }
 .morph.is-hover .pill, .morph:hover .pill { height: 22px; width: auto; min-width: 0; padding: 0 10px; }
 .morph.is-hover .pill.must, .morph:hover .pill.must { width: auto; }
 .morph.is-hover .pill.tick, .morph:hover .pill.tick { width: auto; }
 .morph.is-hover .pill .ini, .morph:hover .pill .ini { opacity: 0; }
 .morph.is-hover .pill .full, .morph:hover .pill .full { position: static; opacity: 1; }
-.morph.is-hover .m-about, .morph:hover .m-about { left: 11px; bottom: 12px; gap: 6px; }
+.morph.is-hover .m-about, .morph:hover .m-about { left: 8px; right: 8px; bottom: 10px; justify-content: center; gap: 6px; }
 .morph.is-hover .chip, .morph:hover .chip { height: 16px; padding: 0 7px; font-size: 9.5px; }
 .morph.is-hover .chip .more, .morph:hover .chip .more { max-width: 200px; opacity: 1; }
 @media (hover: none) { .morph:hover { width: auto; min-height: 0 !important; box-shadow: none; } }
@@ -1189,15 +1192,15 @@ ${logic}
   // The morph, live, with dials.
   const morphProps = {
     morphMs: { editor: 'int', default: 320, min: 80, max: 1200, unit: 'ms', section: 'Morph' },
-    expandW: { editor: 'int', default: 320, min: 220, max: 420, unit: 'px', section: 'Morph' },
-    expandH: { editor: 'int', default: 152, min: 120, max: 240, unit: 'px', section: 'Morph' },
+    expandW: { editor: 'int', default: 340, min: 220, max: 440, unit: 'px', section: 'Morph' },
+    expandH: { editor: 'int', default: 132, min: 110, max: 220, unit: 'px', section: 'Morph' },
   };
   const wrapM = (body, size) => {
     const propsJson = JSON.stringify(morphProps).replace(/&/g, '&amp;').replace(/'/g, '&#39;');
     const logic = `class Component extends DCLogic {
   renderVals() {
     const p = this.props;
-    return { ms: (p.morphMs ?? 320) + 'ms', ew: (p.expandW ?? 320) + 'px', eh: (p.expandH ?? 152) + 'px' };
+    return { ms: (p.morphMs ?? 320) + 'ms', ew: (p.expandW ?? 340) + 'px', eh: (p.expandH ?? 132) + 'px' };
   }
 }`;
     return `<!doctype html>
@@ -1239,7 +1242,7 @@ ${logic}
     board('HoverMorph.dc.html', wrapM(`<div class="a4 a3 r2" style="position:absolute;inset:0;"><div class="shell" style="padding-top: 0;">${railHtml('Saturday')}${parts.strip.outerHTML}
 <div class="wall-wrap" style="margin-top: 8px;">${clipGrid(grid, { rowsVisible: 18, extraBottom: 220 })}</div></div></div>`, hs), hs, { x: 0, y: 844 + 160 }, 'Hover — the card becomes the card (live)');
   }
-  note('v4-morph', DESK + 80, 844 + 160, 560, 'HOW THE MORPH WORKS\nNothing new appears — every piece on the resting card is already there and grows. The name slides from centre to the top-left and gains 3 px. The time line under the name becomes the sub line (time · day · place). The corner marks (lettered pills for must, ticks for picks) widen into named pills in the same colours, in the same order. The notes and Spotify chips keep their shape and grow their words. The card itself widens to the right and down over its neighbours, keeping its aura. Hover → open: in the build, the open sheet’s header is this same element carried across with the View Transitions API, so it keeps travelling instead of being replaced.');
+  note('v4-morph', DESK + 80, 844 + 160, 560, 'HOW THE MORPH WORKS\nThe hovered card is a small version of the open header — one continuous journey. The card grows around its own centre; the name never leaves the middle, with time · day · place centred beneath it. The corner marks travel into a centred who-row, widening into named pills in the same colours and order; the notes and Spotify chips grow their words into a centred line beneath. Rest → hover → open is the same stack at three sizes, so the sheet’s header (View Transitions) is the same element still travelling. At the grid’s edges the growth clamps instead of centring, like any tooltip.');
 
   // Three states of one card, side by side.
   {
@@ -1250,7 +1253,7 @@ ${logic}
     const rest = cell.cloneNode(true);
     rest.style.gridColumn = ''; rest.style.gridRow = ''; rest.style.width = '196px'; rest.style.height = '120px'; rest.style.minHeight = '0';
     const hov = cell.cloneNode(true); morphCell(hov); hov.classList.add('is-hover');
-    hov.style.gridColumn = ''; hov.style.gridRow = ''; hov.style.width = '320px'; hov.style.height = '152px'; hov.style.minHeight = '0'; hov.style.transition = 'none';
+    hov.style.gridColumn = ''; hov.style.gridRow = ''; hov.style.width = '340px'; hov.style.height = '132px'; hov.style.minHeight = '0'; hov.style.marginLeft = '0'; hov.style.transition = 'none';
     const restM = cell.cloneNode(true); morphCell(restM);
     restM.style.gridColumn = ''; restM.style.gridRow = ''; restM.style.width = '196px'; restM.style.height = '120px'; restM.style.minHeight = '0';
     const open = `<div style="width: 420px;">${a4Card(f)}</div>`;
