@@ -19,6 +19,22 @@ sticky chip row is a small change.
 
 ## NEXT ROUND — for a FRESH session (Kevin, 2026-08-27 21:03–21:10 CT): notes + desktop, then ACL + Seismic
 
+**2026-08-29 — the design canvas is up, at production fidelity:**
+https://claude.ai/code/artifact/5e9504d4-ea25-4ab7-bc6f-a32bf8b3b635 — 17
+artboards: today's bars vs the three day-notes directions (A pins at the
+door / B the whisper, recommended / C door only) on desktop and phone; the
+two hover options (tooltip vs the card expanding); the notes sheet with the
+expanded-card header and threads (phone, desktop dialog, a day sheet
+mid-reply); a thread edge-case board (each case marked Decided or Your
+call); the desktop chip grammar in four states; the two share sheets with
+the new copy. Every wall is rendered by production code through jsdom (the
+rig: `claude-plans/2026-08-29-notes-desktop-canvas/`), which is what the
+08-27 canvas lacked. Kevin's answers on 2026-08-28 that shaped it: the
+08-27 rejection was fidelity, not the directions; show both hover options;
+copy approved with "No accounts needed"; threads yes, and a pinned root
+shows a reply count, never its thread; one artifact, no rush. Open for
+Kevin on the canvas: A/B/C, tooltip vs expand, the deleted-root stub.
+
 Kevin closed this session at 21:10 ("I need to do this in a fresh session,
 those designs aren't up to snuff") — nothing from this list is built;
 `main` is clean at the v42 promote. His asks, near-verbatim:

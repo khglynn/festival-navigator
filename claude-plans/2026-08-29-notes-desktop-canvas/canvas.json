@@ -1,0 +1,222 @@
+{
+  "artboards": [
+    {
+      "file": "Today.dc.html",
+      "x": 0,
+      "y": 0,
+      "w": 1180,
+      "h": 760,
+      "title": "Today (production) — the bars"
+    },
+    {
+      "file": "TodayPhone.dc.html",
+      "x": 0,
+      "y": 900,
+      "w": 390,
+      "h": 844,
+      "title": "Today (production) — the bars · phone"
+    },
+    {
+      "file": "DayNotesA.dc.html",
+      "x": 1280,
+      "y": 0,
+      "w": 1180,
+      "h": 760,
+      "title": "A — pins at the door"
+    },
+    {
+      "file": "DayNotesAPhone.dc.html",
+      "x": 1280,
+      "y": 900,
+      "w": 390,
+      "h": 844,
+      "title": "A — pins at the door · phone"
+    },
+    {
+      "file": "Main.dc.html",
+      "x": 2560,
+      "y": 0,
+      "w": 1180,
+      "h": 760,
+      "title": "B — the whisper (recommended)"
+    },
+    {
+      "file": "DayNotesBPhone.dc.html",
+      "x": 2560,
+      "y": 900,
+      "w": 390,
+      "h": 844,
+      "title": "B — the whisper (recommended) · phone"
+    },
+    {
+      "file": "DayNotesC.dc.html",
+      "x": 3840,
+      "y": 0,
+      "w": 1180,
+      "h": 760,
+      "title": "C — door only"
+    },
+    {
+      "file": "DayNotesCPhone.dc.html",
+      "x": 3840,
+      "y": 900,
+      "w": 390,
+      "h": 844,
+      "title": "C — door only · phone"
+    },
+    {
+      "file": "HoverTooltip.dc.html",
+      "x": 0,
+      "y": 1964,
+      "w": 1180,
+      "h": 600,
+      "title": "Hover option 1 — tooltip"
+    },
+    {
+      "file": "HoverExpand.dc.html",
+      "x": 1280,
+      "y": 1964,
+      "w": 1180,
+      "h": 600,
+      "title": "Hover option 2 — the card expands"
+    },
+    {
+      "file": "SheetPhone.dc.html",
+      "x": 0,
+      "y": 2824,
+      "w": 390,
+      "h": 844,
+      "title": "Artist notes · phone"
+    },
+    {
+      "file": "SheetDesktop.dc.html",
+      "x": 490,
+      "y": 2824,
+      "w": 1180,
+      "h": 820,
+      "title": "Artist notes · desktop dialog"
+    },
+    {
+      "file": "SheetDayPhone.dc.html",
+      "x": 1770,
+      "y": 2824,
+      "w": 390,
+      "h": 844,
+      "title": "Day notes · phone, mid-reply"
+    },
+    {
+      "file": "ThreadCases.dc.html",
+      "x": 0,
+      "y": 3888,
+      "w": 1180,
+      "h": 1300,
+      "title": "Thread edge cases"
+    },
+    {
+      "file": "ChipsDesktop.dc.html",
+      "x": 0,
+      "y": 5408,
+      "w": 1180,
+      "h": 480,
+      "title": "People chips on desktop — four states"
+    },
+    {
+      "file": "CopyShare.dc.html",
+      "x": 0,
+      "y": 6108,
+      "w": 390,
+      "h": 700,
+      "title": "Share sheet — new copy"
+    },
+    {
+      "file": "CopyAdded.dc.html",
+      "x": 490,
+      "y": 6108,
+      "w": 390,
+      "h": 700,
+      "title": "Added someone — new copy"
+    }
+  ],
+  "annotations": [
+    {
+      "id": "r1-title",
+      "x": 0,
+      "y": -150,
+      "w": 1180,
+      "text": "DAY NOTES — where they live without the bars\nToday: every day renders all its notes plus a composer under its grid (the \"bars\"). The three directions below keep the ✎ count chip on the day rule as the door and change what sits inline. Same rule applies to the festival notes at the wall’s end. Desktop on top, phone underneath — every wall here is rendered by production code (real auras, corners, chips), only the notes treatment differs."
+    },
+    {
+      "id": "r1-a",
+      "x": 1280,
+      "y": -110,
+      "w": 520,
+      "text": "A — PINS AT THE DOOR\nOnly notes YOU pinned stay on the wall, right under the day name; everything else lives in the sheet. Why: the wall shows what you chose to keep in view. Tradeoff: a day with no pins shows nothing, so new notes from others are invisible until you open the sheet."
+    },
+    {
+      "id": "r1-b",
+      "x": 2560,
+      "y": -110,
+      "w": 520,
+      "text": "B — THE WHISPER (recommended)\nOne line under the day name: who said the newest thing, and how many notes there are. Tap it to open the day’s notes. Why: ambient awareness with no chrome — the same move the filters made (things already on screen gain a job). Tradeoff: one line can only carry one note."
+    },
+    {
+      "id": "r1-c",
+      "x": 3840,
+      "y": -110,
+      "w": 520,
+      "text": "C — DOOR ONLY\nNothing inline. The ✎ chip on the rule (with its count) and the toolbar Notes chip are the doors. Why: the cleanest wall. Tradeoff: you have to open a sheet to learn anything was said."
+    },
+    {
+      "id": "r2-title",
+      "x": 0,
+      "y": 1814,
+      "w": 1180,
+      "text": "HOVER FACTS — the card says more when a pointer rests on it (desktop only)\nBoth options carry the same facts: name, day · stage · set time, who is going and at what level (pill brightness = taps, white stroke = you, MUST tag), notes count + newest note, Spotify liked / following. Move your mouse over any card in these two frames — the hover is live. Dog Blood is frozen in its hover state so it also exports."
+    },
+    {
+      "id": "r2-t",
+      "x": 0,
+      "y": 2584,
+      "w": 560,
+      "text": "OPTION 1 — TOOLTIP\nA panel below the card, in the app’s popover chrome (the sort menu’s). Why: familiar, never covers the card you are reading, cheap. Tradeoff: one more surface; the facts feel attached to the pointer, not the card."
+    },
+    {
+      "id": "r2-x",
+      "x": 1280,
+      "y": 2584,
+      "w": 560,
+      "text": "OPTION 2 — THE CARD EXPANDS\nThe card itself grows over its neighbours, keeping its aura (breathing) and its corner language. Why: one object, more room — and this exact block is the notes sheet’s header below, so hover and sheet read as the same thing. Tradeoff: it covers neighbouring cards while open; needs a ~250 ms delay so scanning the grid doesn’t flicker."
+    },
+    {
+      "id": "r3-title",
+      "x": 0,
+      "y": 2674,
+      "w": 1180,
+      "text": "INSIDE NOTES — the sheet opens with the card, then the conversation\nThe header is the expanded card (aura breathing behind the name — off under reduced-motion and low-power, as everywhere). Below: threads. A reply is a note with one extra key (re: <root id>), one level deep; replies indent under their root; Reply lives in the root’s meta line; counts include replies. Pinned roots show a reply COUNT, not the thread (your call)."
+    },
+    {
+      "id": "r4-title",
+      "x": 0,
+      "y": 3738,
+      "w": 1180,
+      "text": "THREADS — the edge cases, each with a call\n\"Decided\" = follows from the model and needs no answer. \"Your call\" = a taste decision; the default shown is my recommendation."
+    },
+    {
+      "id": "r5-title",
+      "x": 0,
+      "y": 5258,
+      "w": 1180,
+      "text": "DESKTOP CHIPS — one grammar on both surfaces\nClick = filter (as on a phone: tap). Hold = pick as them — a mouse press-and-hold already arms the chip today, the code never checks pointer type. New: on a pointer-fine device, hovering a chip reveals the door to that second job, so nobody has to know the hold. Click the door to arm; the armed chip asks “Pick as Ben?”; a click confirms, 3 s later it relaxes."
+    },
+    {
+      "id": "r6-title",
+      "x": 0,
+      "y": 5958,
+      "w": 900,
+      "text": "SHARE COPY — shorter, still friendly\nShare sheet: “Anyone who opens it lands in Portola 26 — no accounts, no setup.” → “Opens straight into Portola 26. No accounts needed.”\nAdd-member success: “Pick for Kat by switching to them in Settings → You. Or send them their own link — opening it puts your picks in their hands:” → “Send Eli this link. Opening it makes the picks theirs.” (the Settings sentence goes — hold-to-pick-as is the taught path now; “their”, never a guessed pronoun). Titles and buttons unchanged."
+    }
+  ],
+  "launch": {
+    "view": "canvas"
+  }
+}
