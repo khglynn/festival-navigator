@@ -63,10 +63,14 @@ const canvasCss = `
 /* Hover facts — the card says more when a pointer rests on it. */
 .card .facts { display: none; position: absolute; z-index: 30; text-align: left; box-sizing: border-box;
   flex-direction: column; gap: 7px; color: var(--text-body); cursor: default; }
-.card:hover, .card.is-hover { overflow: visible; z-index: 20; }
-.card:hover .facts, .card.is-hover .facts { display: flex; }
-.card:hover .note-affordance, .card.is-hover .note-affordance { opacity: 1; }
-.card.is-hover .note-affordance { display: inline-flex; }
+.card.is-hover { overflow: visible; z-index: 20; }
+.card.is-hover .facts { display: flex; }
+.card.is-hover .note-affordance { display: inline-flex; opacity: 1; }
+/* Pointer-fine only: a finger never opens this (touch has the long-press). */
+@media (hover: hover) and (pointer: fine) {
+  .card:hover { overflow: visible; z-index: 20; }
+  .card:hover .facts { display: flex; }
+}
 .f-name { color: #fff; font-weight: 700; font-size: 15px; line-height: 1.2; position: relative; }
 .f-sub { color: rgba(255,255,255,.75); font-size: 11px; font-weight: 600; position: relative; margin-top: -3px; }
 .f-people { display: flex; flex-wrap: wrap; gap: 4px; position: relative; }
@@ -88,15 +92,16 @@ const canvasCss = `
 .mode-tooltip .f-sub { color: var(--text-secondary); }
 /* Option X — the card itself grows: same aura, same corners' language, more room. */
 .mode-expand .card .facts { top: -1px; left: -1px; width: 320px; min-height: calc(100% + 2px); padding: 9px 11px 11px;
-  border: 1px solid var(--hairline); border-radius: var(--r-card); box-shadow: 0 18px 50px rgba(0, 0, 0, .55);
-  background-size: 180% 180%; animation: gradShift 12s ease-in-out infinite; overflow: hidden; }
+  border: 1px solid var(--hairline); border-radius: var(--r-card); box-shadow: 0 18px 50px rgba(0, 0, 0, .55); overflow: hidden; }
+/* Breathes only when the card would (.animated, from aura.js) — reduced-motion and low-power switch it off as everywhere. */
+.mode-expand .card .facts.animated { background-size: 180% 180%; animation: gradShift 12s ease-in-out infinite; }
 .mode-expand .card .facts .card-grain { z-index: 0; }
 .mode-expand .card .facts > * { z-index: 1; }
 
 /* The expanded card as the notes sheet's header — one component, two homes. */
 .sheet-card { position: relative; overflow: hidden; flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 7px;
-  padding: 11px 13px 12px; border: 1px solid var(--hairline); border-radius: var(--r-card);
-  background-size: 180% 180%; animation: gradShift 12s ease-in-out infinite; }
+  padding: 11px 13px 12px; border: 1px solid var(--hairline); border-radius: var(--r-card); }
+.sheet-card.animated { background-size: 180% 180%; animation: gradShift 12s ease-in-out infinite; }
 .sheet-card .card-grain { z-index: 0; }
 .sheet-card > * { z-index: 1; }
 .sheet-card .f-name { font-size: 17px; }
@@ -428,7 +433,7 @@ function renderSeam(variant, { mobile }) {
 
 // ---- Row 0 + Row 1: today and the three day-notes directions ---------------------------
 const ROW1_Y = 0;
-note('r1-title', 0, -150, 1180, 'DAY NOTES — where they live without the bars\nToday: every day renders all its notes plus a composer under its grid (the "bars"). The three directions below keep the ✎ count chip on the day rule as the door and change what sits inline. Same rule applies to the festival notes at the wall’s end. Desktop on top, phone underneath — every wall here is rendered by production code (real auras, corners, chips), only the notes treatment differs.');
+note('r1-title', 0, -150, 1180, 'DAY NOTES — where they live without the bars\nToday: every day renders all its notes plus a composer under its grid (the "bars"). The three directions below keep the ✎ count chip on the day rule as the door and change what sits inline. The festival notes at the wall’s end get the same treatment (not sliced here). Desktop on top, phone underneath — every wall here is rendered by production code (real auras, corners, chips), only the notes treatment differs.');
 {
   const size = { w: DESK, h: 760 };
   const variants = [
@@ -517,7 +522,7 @@ note('r4-title', 0, ROW4_Y - 150, 1180, 'THREADS — the edge cases, each with a
     ['Pinned root', 'call', `${noteRowHtml(root, { pinned: true, collapsedReplies: 2 })}${noteRowHtml(root2)}`,
       'A pinned root sorts to the top and shows “2 replies”, never the thread (your rule). Tapping the count expands it in place. Pins stay device-local; a reply never changes pin state.'],
     ['Root deleted, replies alive', 'call', `<div class="thread"><div class="note-row"><span class="avatar" style="width:22px;height:22px;font-size:9px;background:var(--card);border:1px dashed var(--border-emphasis);"></span><div class="bubble"><span class="stub">Cleo removed this note</span></div></div>${noteRowHtml(r1, { reply: true })}${noteRowHtml(r2, { reply: true })}</div>`,
-      'Replies stay, under a quiet stub, so “yes — coming from Warehouse” keeps its context. Alternative: promote them to roots — cheaper, but they read as non-sequiturs.'],
+      'Replies stay, under a quiet stub, so “yes — coming straight from Warehouse” keeps its context. Alternative: promote them to roots — cheaper, but they read as non-sequiturs.'],
     ['Reply lands before its root', 'decided', `<div class="thread"><div class="note-row"><span class="avatar" style="width:22px;height:22px;font-size:9px;background:var(--card);border:1px dashed var(--border-emphasis);"></span><div class="bubble"><span class="stub">…</span></div></div>${noteRowHtml(r2, { reply: true })}</div>`,
       'Sync can deliver a reply a beat before its root. Same stub treatment; the next paint slots it under the root. No data is wrong at any moment.'],
     ['Your own reply', 'decided', `<div class="thread">${noteRowHtml(root)}${noteRowHtml(r1, { reply: true })}</div>`,
@@ -526,7 +531,7 @@ note('r4-title', 0, ROW4_Y - 150, 1180, 'THREADS — the edge cases, each with a
       'Every count includes replies: 4 on the Dog Blood card (2 roots + 2 replies), 8 in the toolbar. A reply is a note; the number answers “how much is being said here”.'],
     ['All notes (the home)', 'decided', `<div class="micro-label">Dog Blood</div><div class="thread">${noteRowHtml(root, { pin: false })}${noteRowHtml(r1, { reply: true })}</div>`,
       'The toolbar’s Notes sheet groups by festival / day / artist as today; threads render intact under their roots inside each group.'],
-    ['Reply on day and festival notes', 'decided', `<div class="thread">${noteRowHtml(model.notesFor(state.crewDoc, R.FID, 'day', 'Sunday')[0])}${noteRowHtml(model.notesFor(state.crewDoc, R.FID, 'day', 'Sunday')[1], { reply: true })}</div>`,
+    ['Reply on day and festival notes', 'decided', `<div class="micro-label">Sunday</div><div class="thread">${noteRowHtml(model.notesFor(state.crewDoc, R.FID, 'day', 'Sunday')[0])}${noteRowHtml(model.notesFor(state.crewDoc, R.FID, 'day', 'Sunday')[1], { reply: true })}</div><div class="micro-label">This festival</div><div class="thread">${noteRowHtml(model.notesFor(state.crewDoc, R.FID, 'fest', null)[0])}${noteRowHtml(model.notesFor(state.crewDoc, R.FID, 'fest', null)[1], { reply: true })}</div>`,
       'Same component at every scope. Nothing about a thread knows whether it hangs off an artist, a day, or the festival.'],
     ['The whisper and threads', 'decided', whisperHtml('day', 'Sunday', 'Sunday'),
       'The whisper shows the NEWEST note — root or reply. Above: Cleo’s reply is the latest thing said on Sunday, so it is the line.'],

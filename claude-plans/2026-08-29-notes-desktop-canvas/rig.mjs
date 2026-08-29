@@ -89,6 +89,7 @@ const satRoot = mk('Ava', T(26), 'Leaving right after Dog Blood — who’s in f
 const sunRoot = mk('Ben', T(240), 'Lunch at the Pier 80 gate at 1? Doors are 1 PM', 'bbbbba');
 const sunR1 = mk('Cleo', T(222), '1 works. I’m bringing the flags', 'bbbbbb', { re: sunRoot[0] });
 const festRoot = mk('Dev', T(1500), 'Uber pickup is on Cesar Chavez, not the pier road', 'dddddd');
+const festR1 = mk('Ava', T(1440), 'good call — the pier road was a parking lot last year', 'dddddd', { re: festRoot[0] });
 
 export const NOTES = {
   artist: {
@@ -98,9 +99,9 @@ export const NOTES = {
     Saturday: Object.fromEntries([satRoot]),
     Sunday: Object.fromEntries([sunRoot, sunR1]),
   },
-  fest: Object.fromEntries([festRoot]),
+  fest: Object.fromEntries([festRoot, festR1]),
 };
-export const IDS = { dbRoot: dbRoot[0], dbR1: dbR1[0], dbR2: dbR2[0], dbRoot2: dbRoot2[0], satRoot: satRoot[0], sunRoot: sunRoot[0], sunR1: sunR1[0], festRoot: festRoot[0] };
+export const IDS = { dbRoot: dbRoot[0], dbR1: dbR1[0], dbR2: dbR2[0], dbRoot2: dbRoot2[0], satRoot: satRoot[0], sunRoot: sunRoot[0], sunR1: sunR1[0], festRoot: festRoot[0], festR1: festR1[0] };
 
 // Spotify affinity for ME (lowercased artist -> {songs, followed}).
 export const AFFINITY = {
