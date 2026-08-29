@@ -1006,7 +1006,285 @@ function injectFactsAura(gridEl, mode, hoverName) {
   board('AuraThreadCases.dc.html', W(`<div class="a3 r2" style="position:absolute;inset:0;padding: 24px 28px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; box-sizing: border-box; overflow: hidden;">${cells}</div>`, ts), ts, { x: 0, y: Y3 }, 'Thread cases · aura');
 }
 
-const canvas = { pages: [{ id: 'round-3', name: 'Round 3 — Aura, everywhere' }, { id: 'round-2', name: 'Round 2 — three vibes' }, { id: 'round-1', name: 'Round 1 — all six asks' }], artboards: layout, annotations, launch: { view: 'canvas', page: 'round-3' } };
+
+// =====================================================================================
+// ROUND 4 — Kevin's notes on round 3 (2026-08-29 18:16–18:22):
+//  · hover: in-place wins, but the card must BECOME the bigger card — name stays put,
+//    the corner marks unfold into names, notes/Spotify grow into words — and then that
+//    card becomes the sheet header (the selected state). Live morph, tweakable.
+//  · threads: less indent, a little more air between notes; tweak chips so he can dial it.
+//  · header card: rounded corners like the other cards; sub line = time · short day · place;
+//    "12 liked songs · following" (12 likes read as 12 people).
+//  · afters cards on the wall: day/time on one line, venue on the next.
+// =====================================================================================
+PAGE = 'round-4';
+
+const a4Css = `
+${a3Css}
+/* dials (tweak chips set these on the frame) */
+.a4 .n-replies { margin-left: var(--indent, 22px); }
+.a4 .n-thread { gap: var(--note-gap, 6px); }
+.a4 .n-replies { gap: var(--note-gap, 6px); }
+.a4 .n-thread + .n-thread { margin-top: var(--thread-gap, 16px); }
+.a4 .n-note { border-radius: var(--note-radius, 12px); }
+.a4 .sheet-card { margin: 0; border-radius: var(--header-radius, 12px); padding: 16px 16px 17px; }
+@media (min-width: 720px) { .a4 .sheet-card { margin: 0; border-radius: var(--header-radius, 12px); padding: 18px 18px 19px; } }
+.a4 .sheet-card .sheet-close { top: 12px; right: 12px; }
+.a4 .sheet { gap: 0; }
+.a4 .grabber { margin-bottom: 10px; }
+.a4 .n-list { padding-top: var(--thread-gap, 16px); }
+
+/* the morph: everything on the resting card grows into its expanded form on hover */
+.morph { --ms: var(--morph-ms, 320ms); --ease: cubic-bezier(.2, .7, .2, 1); }
+.morph .m { position: absolute; transition: all var(--ms) var(--ease); }
+.morph .m-name { left: 8px; right: 8px; top: 50%; transform: translateY(-62%); text-align: center; color: #fff; font-weight: 700; font-size: 12px; line-height: 1.15; }
+.morph .m-time { left: 8px; right: 8px; top: calc(50% + 7px); text-align: center; color: rgba(255,255,255,.75); font-size: 9px; font-weight: 600; }
+.morph .m-sub { left: 11px; top: 36px; opacity: 0; color: rgba(255,255,255,.78); font-size: 11px; font-weight: 600; white-space: nowrap; transition: opacity calc(var(--ms) * .7) var(--ease) calc(var(--ms) * .3); }
+.morph .m-who { right: 4px; bottom: 3px; display: flex; align-items: center; gap: 3px; }
+.morph .pill { position: relative; display: inline-flex; align-items: center; justify-content: center; height: 12px; border-radius: 999px; color: #fff;
+  font-size: 7.5px; font-weight: 800; overflow: hidden; white-space: nowrap; transition: all var(--ms) var(--ease); }
+.morph .pill.must { width: 24px; }
+.morph .pill.tick { width: 4px; }
+.morph .pill .full { position: absolute; left: 10px; opacity: 0; font-size: 11px; font-weight: 600; transition: opacity calc(var(--ms) * .6) var(--ease); display: inline-flex; gap: 5px; align-items: center; }
+.morph .pill .full b { font-size: 7.5px; font-weight: 800; letter-spacing: .06em; }
+.morph .m-about { left: 5px; bottom: 3px; display: flex; align-items: center; gap: 3px; }
+.morph .chip { display: inline-flex; align-items: center; gap: 3px; height: 12px; padding: 0 5px; font-size: 8px; font-weight: 800; color: #fff; white-space: nowrap; overflow: hidden; line-height: 1; transition: all var(--ms) var(--ease); }
+.morph .chip.notes { border-radius: var(--r-bubble); background: var(--notes-fill); border: 1px solid var(--notes-stroke); }
+.morph .chip.spot { border-radius: 999px; background: var(--spotify-fill); border: 1px solid var(--spotify-stroke); }
+.morph .chip .more { max-width: 0; opacity: 0; overflow: hidden; transition: all var(--ms) var(--ease); }
+/* hovered / frozen */
+.morph.is-hover, .morph:hover { width: var(--expand-w, 320px); min-height: var(--expand-h, 152px) !important; z-index: 30; overflow: visible; box-shadow: 0 18px 50px rgba(0, 0, 0, .55); }
+.morph.is-hover .m-name, .morph:hover .m-name { left: 11px; right: auto; top: 11px; transform: none; text-align: left; font-size: 15px; }
+.morph.is-hover .m-time, .morph:hover .m-time { opacity: 0; }
+.morph.is-hover .m-sub, .morph:hover .m-sub { opacity: 1; }
+.morph.is-hover .m-who, .morph:hover .m-who { right: auto; left: 11px; bottom: auto; top: 58px; gap: 4px; }
+.morph.is-hover .pill, .morph:hover .pill { height: 22px; width: auto; min-width: 0; padding: 0 10px; }
+.morph.is-hover .pill.must, .morph:hover .pill.must { width: auto; }
+.morph.is-hover .pill.tick, .morph:hover .pill.tick { width: auto; }
+.morph.is-hover .pill .ini, .morph:hover .pill .ini { opacity: 0; }
+.morph.is-hover .pill .full, .morph:hover .pill .full { position: static; opacity: 1; }
+.morph.is-hover .m-about, .morph:hover .m-about { left: 11px; bottom: 12px; gap: 6px; }
+.morph.is-hover .chip, .morph:hover .chip { height: 16px; padding: 0 7px; font-size: 9.5px; }
+.morph.is-hover .chip .more, .morph:hover .chip .more { max-width: 200px; opacity: 1; }
+@media (hover: none) { .morph:hover { width: auto; min-height: 0 !important; box-shadow: none; } }
+
+/* afters cards: day · time, then the venue */
+.a4 .card.timed .time { display: flex; flex-direction: column; gap: 1px; }
+.a4 .card.timed .time .venue { font-weight: 600; opacity: .85; }
+
+/* three states of one card, side by side */
+.a4.states, .a4 .states { display: flex; align-items: flex-start; gap: 34px; padding: 26px 28px; }
+.a4.states .st, .a4 .states .st { display: flex; flex-direction: column; gap: 10px; }
+.a4.states .arrow, .a4 .states .arrow { align-self: center; color: var(--text-tertiary); font-size: 22px; padding-top: 30px; }
+`;
+
+const shortDay = (d) => (FEST.dayMeta[d] && FEST.dayMeta[d].wd) || d;
+function a4Sub(f) { return [timeRange(f.time), shortDay(f.day), f.stage].filter(Boolean).join(' · '); }
+function a4Spot(f) {
+  if (!f.spotify || (!f.spotify.songs && !f.spotify.followed)) return '';
+  const bits = [];
+  if (f.spotify.songs) bits.push(`${f.spotify.songs} liked song${f.spotify.songs === 1 ? '' : 's'}`);
+  if (f.spotify.followed) bits.push('following');
+  return bits.join(' · ');
+}
+function a4Header(f) {
+  const who = f.people.map((p) => `<span class="w${p.isYou ? ' you' : ''}${p.level === 4 ? ' must' : ''}" style="--wash: ${washOf(p.name, .38)}; --washlvl: ${washOf(p.name, LVL_ALPHA[p.level])}; --ring: ${stroke(p.colorIndex, p.isYou)};">${p.isYou ? 'you' : esc(p.name)}${p.level === 4 ? '<b>MUST</b>' : ''}</span>`).join('');
+  const bits = [];
+  if (f.noteCount) bits.push(`<b>${f.noteCount} notes</b>`);
+  const sp = a4Spot(f); if (sp) bits.push(sp);
+  return `<div class="f-name">${esc(f.name)}</div><div class="f-sub">${esc(a4Sub(f))}</div><div class="f-who">${who}</div>${bits.length ? `<div class="f-line">${bits.join(' · ')}</div>` : ''}`;
+}
+function a4Card(f, { close = true } = {}) {
+  return `<div class="sheet-card${f.animated ? ' animated' : ''}" style="background: ${f.background};"><span class="card-grain"></span>${close ? '<button class="sheet-close" aria-label="Close">✕</button>' : ''}${a4Header(f)}</div>`;
+}
+
+// A production cell, rebuilt so every piece can grow: the name, the corner marks, the chips.
+function morphCell(cardEl) {
+  const name = cardEl.dataset.artist;
+  const f = R.factsFor(name);
+  const marks = R.lib.aura.whoCorner(f.people.map((p) => ({ ...p })));
+  const time = cardEl.querySelector('.time') ? cardEl.querySelector('.time').textContent : '';
+  const pills = f.people.slice(0, 4).map((p) => {
+    const must = p.level === 4;
+    const mark = marks.find((m) => m.kind !== 'ghost' && m.label === R.lib.aura.initialFor(p, f.people)) || {};
+    return `<span class="pill ${must ? 'must' : 'tick'}" style="background: ${hsl(p.colorIndex, must ? .5 : .5)}; border: 1px solid ${stroke(p.colorIndex, p.isYou)};"><span class="ini">${must ? esc(R.lib.aura.initialFor(p, f.people)) : ''}</span><span class="full">${p.isYou ? 'you' : esc(p.name)}${must ? '<b>MUST</b>' : ''}</span></span>`;
+  }).join('');
+  const chips = [];
+  if (f.noteCount) chips.push(`<span class="chip notes">${f.noteCount}<span class="more">&nbsp;notes</span></span>`);
+  if (f.spotify && (f.spotify.songs || f.spotify.followed)) chips.push(`<span class="chip spot">${f.spotify.songs || ''}<span class="more">&nbsp;liked song${f.spotify.songs === 1 ? '' : 's'}${f.spotify.followed ? ' · following' : ''}</span>${f.spotify.followed ? bookmarkSvg : ''}</span>`);
+  // keep the production node (aura, grain, placement, classes); swap its children for the morph anatomy
+  const keep = [...cardEl.children].filter((c) => c.classList.contains('card-grain')).map((c) => c.outerHTML).join('');
+  cardEl.classList.add('morph');
+  cardEl.innerHTML = `${keep}<span class="m m-name">${esc(name)}</span><span class="m m-time">${esc(time)}</span><span class="m m-sub">${esc(a4Sub(f))}</span><span class="m m-who">${pills}</span><span class="m m-about">${chips.join('')}</span>`;
+}
+
+{
+  const list = model.notesFor(state.crewDoc, R.FID, 'artist', NAMES.dogBlood);
+  const f = R.factsFor(NAMES.dogBlood);
+  const backWall = (mobile) => {
+    const root = R.renderWallEl();
+    const parts = applyVariantAura(root, 'B');
+    const grid = parts.days.Saturday.body.find((e) => e.classList.contains('times-wrap'));
+    return `<div class="shell" style="padding-top: 0;">${mobile ? '' : railHtml('Saturday')}${parts.strip.outerHTML}
+<div class="wall-wrap" style="margin-top: 8px;">${clipGrid(grid, { rowsVisible: mobile ? 30 : 28 })}</div></div>${mobile ? dockHtml('Saturday') : ''}`;
+  };
+  const sheet = (mobile) => `<div class="sheet-backdrop"></div><div class="sheet" role="dialog" aria-label="Dog Blood">${mobile ? '<div class="grabber"></div>' : ''}${a4Card(f)}<div class="n-list">${a3Threads(list)}</div>${a3Composer()}</div>`;
+
+  // Tweak chips: the dials Kevin asked for. Section groups them in the panel.
+  const threadProps = {
+    indent: { editor: 'int', default: 22, min: 0, max: 48, unit: 'px', section: 'Threads' },
+    noteGap: { editor: 'int', default: 6, min: 0, max: 20, unit: 'px', section: 'Threads' },
+    threadGap: { editor: 'int', default: 16, min: 4, max: 40, unit: 'px', section: 'Threads' },
+    noteRadius: { editor: 'int', default: 12, min: 0, max: 24, unit: 'px', section: 'Threads' },
+    headerRadius: { editor: 'int', default: 12, min: 0, max: 24, unit: 'px', section: 'Header' },
+  };
+  const threadVars = { 'indent': 'v_indent + "px"', 'note-gap': 'v_noteGap + "px"', 'thread-gap': 'v_threadGap + "px"', 'note-radius': 'v_noteRadius + "px"', 'header-radius': 'v_headerRadius + "px"' };
+  // the {{holes}} above bind to renderVals keys named after the expressions; simpler: name the keys directly
+  const threadVarsSimple = { 'indent': 'indentPx', 'note-gap': 'noteGapPx', 'thread-gap': 'threadGapPx', 'note-radius': 'noteRadiusPx', 'header-radius': 'headerRadiusPx' };
+  const wrapT = (body, size) => {
+    const propsJson = JSON.stringify(threadProps).replace(/&/g, '&amp;').replace(/'/g, '&#39;');
+    const varStyle = Object.entries(threadVarsSimple).map(([k, v]) => `--${k}: {{${v}}};`).join(' ');
+    const logic = `class Component extends DCLogic {
+  renderVals() {
+    const p = this.props;
+    const px = (k, d) => (p[k] ?? d) + 'px';
+    return { indentPx: px('indent', 22), noteGapPx: px('noteGap', 6), threadGapPx: px('threadGap', 16), noteRadiusPx: px('noteRadius', 12), headerRadiusPx: px('headerRadius', 12) };
+  }
+}`;
+    return `<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+${fontCss}
+${tokensCss}
+${v3Css}
+${shellCss}
+${canvasCss}
+${a4Css}
+  </style>
+</helmet>
+<div class="vp" style="width: ${size.w}px; height: ${size.h}px; --fest: ${ACCENT}; ${varStyle}">
+${body}
+</div>
+</x-dc>
+<script data-dc-script data-props='${propsJson}'>
+${logic}
+</script>
+</body>
+</html>
+`;
+  };
+
+  note('v4-title', 0, -190, 1180, 'ROUND 4 — YOUR NOTES\nThreads: less indent, more air — and the dials are yours now: the chips above each sheet set reply indent, the gap inside a thread, the gap between threads, note corners, header corners. Header: rounded like the other cards; time first, then the short day, then the place; “12 liked songs · following”. Hover: the card BECOMES the bigger card — the name stays, the corner marks unfold into names, the chips grow into words — then that same card is the sheet header. Move your mouse over the grid; the morph is live and its speed and size are dials too.');
+  const m = { w: MOB, h: 844 }, d = { w: DESK, h: 820 };
+  board('TweakPhone.dc.html', wrapT(`<div class="a4 a3 must-tag r2 d-aura" style="position:absolute;inset:0;">${backWall(true)}${sheet(true)}</div>`, m), m, { x: 0, y: 0 }, 'Sheet · phone (dials)');
+  board('TweakDesktop.dc.html', wrapT(`<div class="a4 a3 must-tag r2 d-aura" style="position:absolute;inset:0;">${backWall(false)}${sheet(false)}</div>`, d), d, { x: MOB + 100, y: 0 }, 'Sheet · desktop (dials)');
+
+  // The morph, live, with dials.
+  const morphProps = {
+    morphMs: { editor: 'int', default: 320, min: 80, max: 1200, unit: 'ms', section: 'Morph' },
+    expandW: { editor: 'int', default: 320, min: 220, max: 420, unit: 'px', section: 'Morph' },
+    expandH: { editor: 'int', default: 152, min: 120, max: 240, unit: 'px', section: 'Morph' },
+  };
+  const wrapM = (body, size) => {
+    const propsJson = JSON.stringify(morphProps).replace(/&/g, '&amp;').replace(/'/g, '&#39;');
+    const logic = `class Component extends DCLogic {
+  renderVals() {
+    const p = this.props;
+    return { ms: (p.morphMs ?? 320) + 'ms', ew: (p.expandW ?? 320) + 'px', eh: (p.expandH ?? 152) + 'px' };
+  }
+}`;
+    return `<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+${fontCss}
+${tokensCss}
+${v3Css}
+${shellCss}
+${canvasCss}
+${a4Css}
+  </style>
+</helmet>
+<div class="vp" style="width: ${size.w}px; height: ${size.h}px; --fest: ${ACCENT}; --morph-ms: {{ms}}; --expand-w: {{ew}}; --expand-h: {{eh}};">
+${body}
+</div>
+</x-dc>
+<script data-dc-script data-props='${propsJson}'>
+${logic}
+</script>
+</body>
+</html>
+`;
+  };
+  {
+    const root = R.renderWallEl();
+    const parts = applyVariantAura(root, 'B');
+    const grid = parts.days.Saturday.body.find((e) => e.classList.contains('times-wrap'));
+    for (const card of grid.querySelectorAll('.card.cell')) morphCell(card);
+    grid.querySelector(`.card[data-artist="${NAMES.dogBlood}"]`).classList.add('is-hover');
+    const hs = { w: DESK, h: 600 };
+    board('HoverMorph.dc.html', wrapM(`<div class="a4 a3 r2" style="position:absolute;inset:0;"><div class="shell" style="padding-top: 0;">${railHtml('Saturday')}${parts.strip.outerHTML}
+<div class="wall-wrap" style="margin-top: 8px;">${clipGrid(grid, { rowsVisible: 18, extraBottom: 220 })}</div></div></div>`, hs), hs, { x: 0, y: 844 + 160 }, 'Hover — the card becomes the card (live)');
+  }
+  note('v4-morph', DESK + 80, 844 + 160, 560, 'HOW THE MORPH WORKS\nNothing new appears — every piece on the resting card is already there and grows. The name slides from centre to the top-left and gains 3 px. The time line under the name becomes the sub line (time · day · place). The corner marks (lettered pills for must, ticks for picks) widen into named pills in the same colours, in the same order. The notes and Spotify chips keep their shape and grow their words. The card itself widens to the right and down over its neighbours, keeping its aura. Hover → open: in the build, the open sheet’s header is this same element carried across with the View Transitions API, so it keeps travelling instead of being replaced.');
+
+  // Three states of one card, side by side.
+  {
+    const root = R.renderWallEl();
+    const parts = applyVariantAura(root, 'B');
+    const grid = parts.days.Saturday.body.find((e) => e.classList.contains('times-wrap'));
+    const cell = grid.querySelector(`.card[data-artist="${NAMES.dogBlood}"]`);
+    const rest = cell.cloneNode(true);
+    rest.style.gridColumn = ''; rest.style.gridRow = ''; rest.style.width = '196px'; rest.style.height = '120px'; rest.style.minHeight = '0';
+    const hov = cell.cloneNode(true); morphCell(hov); hov.classList.add('is-hover');
+    hov.style.gridColumn = ''; hov.style.gridRow = ''; hov.style.width = '320px'; hov.style.height = '152px'; hov.style.minHeight = '0'; hov.style.transition = 'none';
+    const restM = cell.cloneNode(true); morphCell(restM);
+    restM.style.gridColumn = ''; restM.style.gridRow = ''; restM.style.width = '196px'; restM.style.height = '120px'; restM.style.minHeight = '0';
+    const open = `<div style="width: 420px;">${a4Card(f)}</div>`;
+    const st = (label, html, cap) => `<div class="st"><div class="cv-label">${esc(label)}</div>${html}<div class="cv-cap" style="max-width: 300px;">${esc(cap)}</div></div>`;
+    const body = `<div class="a4 a3 must-tag r2 states" style="position:absolute;inset:0;">
+      ${st('Rest — production', rest.outerHTML, 'The card as it is today: name centred, time under it, marks and chips in the corners.')}
+      <div class="arrow">→</div>
+      ${st('Rest — morph anatomy', restM.outerHTML, 'The same card rebuilt so each piece can grow. Pixel-identical at rest; hover it.')}
+      <div class="arrow">→</div>
+      ${st('Hover', hov.outerHTML, 'Wider and taller over its neighbours; every piece grown into its long form. Frozen here; live on the grid frame.')}
+      <div class="arrow">→</div>
+      ${st('Open — the sheet header', open, 'The selected state: the same card, larger, pills as washes. Hover → open carries the element across (View Transitions).')}
+    </div>`;
+    const ss = { w: 1180 + 420, h: 330 };
+    board('MorphStates.dc.html', wrap(body, { ...ss, extraCss: a4Css }), ss, { x: 0, y: 844 + 160 + 600 + 140 }, 'Rest → hover → open');
+  }
+
+  // Afters cards on the wall: day · time, then the venue.
+  {
+    const root = R.renderWallEl();
+    const parts = applyVariantAura(root, 'B');
+    const aft = parts.days.Afters;
+    for (const t of aft.rule.parentNode.querySelectorAll('.card.timed .time')) {
+      const bits = t.textContent.split(' · ');
+      if (bits.length >= 3) { const time = bits.pop(); const day = bits.shift(); t.innerHTML = `<span>${esc(`${day} · ${time}`)}</span><span class="venue">${esc(bits.join(' · '))}</span>`; }
+      else if (bits.length === 2) { t.innerHTML = `<span>${esc(bits[1])}</span><span class="venue">${esc(bits[0])}</span>`; }
+    }
+    const gridHtml = aft.body.map((e) => e.outerHTML).join('');
+    const as = { w: DESK, h: 420 };
+    board('AftersCards.dc.html', wrap(`<div class="a4 a3 r2" style="position:absolute;inset:0;"><div class="shell" style="padding-top: 0;">${railHtml('Afters')}<div class="wall-wrap" style="margin-top: 8px;">${aft.rule.outerHTML}${gridHtml}</div></div></div>`, { ...as, extraCss: a4Css }), as, { x: 0, y: 844 + 160 + 600 + 140 + 330 + 140 }, 'Afters cards — two-line sub-label');
+  }
+}
+
+const canvas = { pages: [{ id: 'round-4', name: 'Round 4 — your notes' }, { id: 'round-3', name: 'Round 3 — Aura, everywhere' }, { id: 'round-2', name: 'Round 2 — three vibes' }, { id: 'round-1', name: 'Round 1 — all six asks' }], artboards: layout, annotations, launch: { view: 'canvas', page: 'round-4' } };
 writeFileSync(`${OUT}/canvas.json`, JSON.stringify(canvas, null, 2));
 console.log('artboards:', layout.map((l) => `${l.file} ${l.w}x${l.h} @${l.x},${l.y}`).join('\n'));
 console.log('annotations:', annotations.length);
