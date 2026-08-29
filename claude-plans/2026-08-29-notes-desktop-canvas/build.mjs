@@ -370,12 +370,13 @@ function sheetCardHtml(f) {
 const boards = [];
 const layout = [];
 const annotations = [];
+let PAGE = 'round-1';
 function board(file, html, size, pos, title) {
   writeFileSync(`${OUT}/${file}`, html);
   boards.push(file);
-  layout.push({ file, x: pos.x, y: pos.y, w: size.w, h: size.h, title });
+  layout.push({ file, x: pos.x, y: pos.y, w: size.w, h: size.h, title, page: PAGE });
 }
-function note(id, x, y, w, text) { annotations.push({ id, x, y, w, text }); }
+function note(id, x, y, w, text) { annotations.push({ id, x, y, w, text, page: PAGE }); }
 
 const DESK = 1180, MOB = 390;
 
@@ -527,8 +528,8 @@ note('r4-title', 0, ROW4_Y - 150, 1180, 'THREADS — the edge cases, each with a
       'Sync can deliver a reply a beat before its root. Same stub treatment; the next paint slots it under the root. No data is wrong at any moment.'],
     ['Your own reply', 'decided', `<div class="thread">${noteRowHtml(root)}${noteRowHtml(r1, { reply: true })}</div>`,
       'Edit and Delete work exactly as on a root (same id rule: only your own). No Reply on a reply.'],
-    ['Counts', 'decided', `<div style="display:flex;gap:10px;align-items:center;"><span class="chip-notes" style="height:16px;padding:0 8px;font-size:10px;">4</span><span class="cv-cap">card corner</span><span class="notes-chip" style="padding:5px 10px;">Notes <span class="count">8</span></span><span class="cv-cap">toolbar</span></div>`,
-      'Every count includes replies: 4 on the Dog Blood card (2 roots + 2 replies), 8 in the toolbar. A reply is a note; the number answers “how much is being said here”.'],
+    ['Counts', 'decided', `<div style="display:flex;gap:10px;align-items:center;"><span class="chip-notes" style="height:16px;padding:0 8px;font-size:10px;">${L.length}</span><span class="cv-cap">card corner</span><span class="notes-chip" style="padding:5px 10px;">Notes <span class="count">${model.totalNoteCount(state.crewDoc, R.FID)}</span></span><span class="cv-cap">toolbar</span></div>`,
+      `Every count includes replies: ${L.length} on the Dog Blood card (${L.filter((n) => !n.re).length} roots + ${L.filter((n) => n.re).length} replies), ${model.totalNoteCount(state.crewDoc, R.FID)} in the toolbar. A reply is a note; the number answers “how much is being said here”.`],
     ['All notes (the home)', 'decided', `<div class="micro-label">Dog Blood</div><div class="thread">${noteRowHtml(root, { pin: false })}${noteRowHtml(r1, { reply: true })}</div>`,
       'The toolbar’s Notes sheet groups by festival / day / artist as today; threads render intact under their roots inside each group.'],
     ['Reply on day and festival notes', 'decided', `<div class="micro-label">Sunday</div><div class="thread">${noteRowHtml(model.notesFor(state.crewDoc, R.FID, 'day', 'Sunday')[0])}${noteRowHtml(model.notesFor(state.crewDoc, R.FID, 'day', 'Sunday')[1], { reply: true })}</div><div class="micro-label">This festival</div><div class="thread">${noteRowHtml(model.notesFor(state.crewDoc, R.FID, 'fest', null)[0])}${noteRowHtml(model.notesFor(state.crewDoc, R.FID, 'fest', null)[1], { reply: true })}</div>`,
@@ -583,7 +584,180 @@ note('r6-title', 0, ROW6_Y - 150, 900, 'SHARE COPY — shorter, still friendly\n
   board('CopyAdded.dc.html', wrap(`${backWall()}<div class="sheet-backdrop"></div><div class="sheet" role="dialog" aria-label="Eli is in">${added}</div>`, m), m, { x: MOB + 100, y: ROW6_Y }, 'Added someone — new copy');
 }
 
-const canvas = { artboards: layout, annotations, launch: { view: 'canvas' } };
+
+// =====================================================================================
+// ROUND 2 — the notes surface, three vibes. Kevin (2026-08-29): the ideas hold, the
+// execution is boxy — too many stacked shapes and colors, threads chopped into bubbles
+// with gaps, a close button bolted on. Keep flow, mix, motion. So: no boxes, the ✕
+// lives in the card, the header is four lines of type, threads flow, and every sheet
+// animates on open. Three genuinely different axes: INK (typography and a thread
+// rail), AURA (each voice as a colour wash), SCRIPT (the site's display face as a
+// transcript).
+// =====================================================================================
+PAGE = 'round-2';
+
+const r2Css = `
+@keyframes rise { from { opacity: 0; transform: translateY(6px); } }
+@keyframes draw { from { clip-path: inset(0 0 100% 0); } to { clip-path: inset(0); } }
+@keyframes drift { from { background-position: 0% 50%; } to { background-position: 100% 50%; } }
+
+/* Shared by all three: the card is the header, full-bleed, the ✕ in its corner. */
+.r2 .sheet { gap: 0; }
+.r2 .sheet-card { margin: 0 -16px; padding: 18px 16px 20px; border: none; border-radius: 0; gap: 6px; }
+.r2 .sheet-card .sheet-close { position: absolute; top: 10px; right: 12px; z-index: 2; width: 26px; height: 26px; font-size: 11px;
+  background: rgba(10, 8, 18, .55); border: 1px solid rgba(255, 255, 255, .22); color: #fff; }
+.r2 .grabber { margin-bottom: 8px; }
+@media (min-width: 720px) { .r2 .sheet-card { margin: -16px -16px 0; border-radius: 20px 20px 0 0; padding: 20px 20px 22px; } }
+.r2 .f-name { font-size: 19px; }
+.r2 .f-who { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: center; position: relative; margin-top: 2px; }
+.r2 .f-who .w { display: inline-flex; align-items: center; gap: 6px; color: #fff; font-size: 12.5px; font-weight: 600; }
+.r2 .f-who .w.you { font-weight: 800; }
+.r2 .f-who .w b { font-size: 8px; font-weight: 800; letter-spacing: .1em; opacity: .9; }
+.r2 .f-who .dot { width: 7px; height: 7px; border-radius: 999px; flex: none; }
+.r2 .f-line { color: rgba(255, 255, 255, .78); font-size: 11.5px; font-weight: 600; position: relative; }
+.r2 .f-line b { color: #fff; font-weight: 700; }
+.r2 .n-list { display: flex; flex-direction: column; padding-top: 14px; }
+.r2 .n-note { animation: rise .45s cubic-bezier(.2, .7, .2, 1) both; animation-delay: calc(var(--i) * 55ms); }
+.r2 .n-text { color: var(--text-primary); font-size: 13.5px; line-height: 1.45; overflow-wrap: anywhere; }
+.r2 .n-meta { color: var(--text-tertiary); font-size: 10.5px; font-weight: 600; }
+.r2 .n-meta .act { color: var(--text-secondary); font-weight: 700; }
+.r2 .composer { margin-top: 16px; align-items: center; }
+.r2 .composer .me { width: 18px; height: 18px; font-size: 8px; flex: none; }
+
+/* INK — words on the dark, a thread rail in the root's colour. */
+.d-ink .sheet-card { mask-image: linear-gradient(#000 80%, transparent); -webkit-mask-image: linear-gradient(#000 80%, transparent); padding-bottom: 40px; }
+.d-ink .n-who, .d-ink .n-time { display: none; }
+.d-ink .n-list { gap: 0; margin-top: -8px; }
+.d-ink .n-thread { display: flex; flex-direction: column; gap: 7px; }
+.d-ink .n-thread + .n-thread { margin-top: 16px; }
+.d-ink .n-note { display: grid; grid-template-columns: 14px 1fr; column-gap: 8px; align-items: start; }
+.d-ink .n-dot { width: 8px; height: 8px; border-radius: 999px; justify-self: center; margin-top: 6px; font-size: 0; color: transparent; }
+.d-ink .n-reply .n-dot { width: 6px; height: 6px; margin-top: 7px; }
+.d-ink .n-meta { margin-top: 2px; }
+.d-ink .n-replies { margin-left: 6px; padding-left: 15px; border-left: 1px solid var(--rail); display: flex; flex-direction: column; gap: 7px;
+  animation: draw .55s ease both; animation-delay: .2s; }
+.d-ink .composer { gap: 10px; border-bottom: 1px solid var(--border-input); padding-bottom: 8px; }
+.d-ink .composer input { background: none; border: none; border-radius: 0; padding: 8px 0; font-size: 13.5px; }
+.d-ink .composer .btn-tonal { background: none; color: var(--tonal-text); padding: 0 2px; font-size: 12.5px; }
+
+/* AURA — every voice is a colour; a thread is a braid of washes. */
+.d-aura .n-list { gap: 0; }
+.d-aura .n-time, .d-aura .n-meta .m-who { display: none; }
+.d-aura .n-note > .n-who { display: none; }
+.d-aura .n-body .n-who { color: #fff; font-weight: 700; font-size: 13.5px; margin-right: 6px; }
+.d-aura .n-body { flex: 1; min-width: 0; }
+.d-aura .n-text { display: inline; }
+.d-aura .n-thread { display: flex; flex-direction: column; gap: 2px; }
+.d-aura .n-thread + .n-thread { margin-top: 10px; }
+.d-aura .n-note { display: flex; gap: 9px; align-items: flex-start; padding: 8px 12px 7px 10px; border-radius: 12px;
+  background: radial-gradient(140% 180% at 0% 50%, var(--wash) 0%, transparent 70%); background-size: 160% 100%;
+  animation: rise .45s cubic-bezier(.2, .7, .2, 1) both, drift 9s ease-in-out infinite alternate; animation-delay: calc(var(--i) * 55ms), 0s; }
+.d-aura .n-reply { margin-left: 26px; padding: 6px 12px 6px 10px; }
+.d-aura .n-dot { width: 18px; height: 18px; border-radius: 999px; flex: none; display: inline-flex; align-items: center; justify-content: center;
+  color: #fff; font-size: 8px; font-weight: 800; margin-top: 1px; }
+.d-aura .n-reply .n-dot { width: 14px; height: 14px; font-size: 7px; margin-top: 2px; }
+.d-aura .n-meta { margin-top: 1px; color: var(--text-secondary); }
+.d-aura .f-who .w { background: var(--wash); padding: 3px 10px 3px 8px; border-radius: 999px; }
+.d-aura .f-who .dot { display: none; }
+.d-aura .composer { gap: 10px; }
+.d-aura .composer input { border: none; background: radial-gradient(140% 180% at 0% 50%, var(--mywash) 0%, var(--card) 70%); border-radius: 12px; }
+
+/* SCRIPT — the site's display face runs the conversation like a transcript. */
+.d-script .f-name { font-family: var(--font-display); font-weight: 400; font-size: 26px; letter-spacing: .04em; text-transform: uppercase; line-height: 1; }
+.d-script .f-who .w { font-family: var(--font-display); font-weight: 400; font-size: 11.5px; letter-spacing: .09em; text-transform: uppercase; color: var(--who); }
+.d-script .f-who .w b { color: #fff; }
+.d-script .f-who .dot { display: none; }
+.d-script .n-list { gap: 0; }
+.d-script .n-thread { display: flex; flex-direction: column; gap: 5px; padding: 11px 0; border-top: 1px solid var(--hairline); }
+.d-script .n-thread:first-child { border-top: none; padding-top: 2px; }
+.d-script .n-note { display: grid; grid-template-columns: 58px 1fr auto; column-gap: 10px; align-items: baseline; }
+.d-script .n-who { font-family: var(--font-display); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--who); text-align: right; white-space: nowrap; }
+.d-script .n-reply .n-who { font-size: 10px; opacity: .8; }
+.d-script .n-reply .n-text { border-left: 1px solid var(--rail); padding-left: 10px; }
+.d-script .n-time { color: var(--text-tertiary); font-size: 10px; font-weight: 600; white-space: nowrap; }
+.d-script .n-time .act { color: var(--text-secondary); font-weight: 700; }
+.d-script .n-meta, .d-script .n-dot, .d-script .n-body .n-who { display: none; }
+.d-script .composer { gap: 10px; }
+.d-script .composer input { background: none; border: none; border-bottom: 1px solid var(--border-input); border-radius: 0; padding: 8px 0; font-size: 13.5px; }
+.d-script .composer .btn-tonal { background: none; color: var(--tonal-text); font-family: var(--font-display); font-weight: 400; letter-spacing: .08em; text-transform: uppercase; font-size: 11.5px; padding: 0 2px; }
+`;
+
+const hueOf = (name) => R.lib.palette.BOARD[PEOPLE[name].colorIndex];
+const washOf = (name, a) => hsl(PEOPLE[name].colorIndex, a);
+const whoOf = (name) => (name === ME ? '#fff' : stroke(PEOPLE[name].colorIndex, false));
+
+function r2Header(f) {
+  const who = f.people.map((p) => `<span class="w${p.isYou ? ' you' : ''}" style="--wash: ${washOf(p.name, .38)}; --who: ${whoOf(p.name)};"><i class="dot" style="background: ${hsl(p.colorIndex)};"></i>${p.isYou ? 'you' : esc(p.name)}${p.level === 4 ? '<b>MUST</b>' : ''}</span>`).join('');
+  const sub = [f.day, f.stage, timeRange(f.time)].filter(Boolean).join(' · ');
+  const bits = [];
+  if (f.noteCount) bits.push(`<b>${f.noteCount} notes</b>`);
+  if (f.spotify) { if (f.spotify.songs) bits.push(`${f.spotify.songs} liked`); if (f.spotify.followed) bits.push('following'); }
+  return `<div class="sheet-card${f.animated ? ' animated' : ''}" style="background: ${f.background};"><span class="card-grain"></span>
+  <button class="sheet-close" aria-label="Close">✕</button>
+  <div class="f-name">${esc(f.name)}</div><div class="f-sub">${esc(sub)}</div>
+  <div class="f-who">${who}</div>
+  ${bits.length ? `<div class="f-line">${bits.join(' · ')}</div>` : ''}</div>`;
+}
+
+let r2i = 0;
+function r2Note(n, { reply = false } = {}) {
+  const mine = n.author === ME;
+  const who = mine ? 'you' : esc(n.author);
+  const acts = [];
+  if (mine) acts.push('<span class="act">Edit</span>');
+  if (!reply) acts.push('<span class="act">Reply</span>');
+  const meta = `<span class="m-who">${who} · </span>${relTime(n.ts).replace(' ago', '')}${acts.map((a) => ' · ' + a).join('')}`;
+  const time = `${relTime(n.ts).replace(' ago', '')}${acts.map((a) => ' · ' + a).join('')}`;
+  return `<div class="n-note${reply ? ' n-reply' : ''}" style="--i: ${r2i++}; --wash: ${washOf(n.author, .24)}; --who: ${whoOf(n.author)};">
+    <span class="n-dot" style="background: ${hsl(PEOPLE[n.author].colorIndex, .9)};">${esc(n.author.charAt(0))}</span>
+    <span class="n-who">${who}</span>
+    <div class="n-body"><span class="n-who">${who}</span><div class="n-text">${esc(n.text)}</div><div class="n-meta">${meta}</div></div>
+    <span class="n-time">${time}</span>
+  </div>`;
+}
+function r2Threads(list) {
+  r2i = 0;
+  const roots = list.filter((n) => !n.re);
+  const byRoot = new Map(roots.map((r) => [r.id, list.filter((n) => n.re === r.id)]));
+  return roots.map((r) => {
+    const replies = byRoot.get(r.id);
+    return `<div class="n-thread" style="--rail: ${washOf(r.author, .45)};">${r2Note(r)}${replies.length ? `<div class="n-replies">${replies.map((x) => r2Note(x, { reply: true })).join('')}</div>` : ''}</div>`;
+  }).join('');
+}
+function r2Composer(dir) {
+  const me = `<span class="avatar me" style="background: ${hsl(PEOPLE[ME].colorIndex, .5)}; border: 1px solid #fff;">${ME.charAt(0)}</span>`;
+  return `<div class="composer" style="--mywash: ${washOf(ME, .22)};">${dir === 'aura' ? '' : me}<input maxlength="500" placeholder="Add a note…" aria-label="Add a note"><button class="btn-tonal" style="font-size: 12px; padding: 9px 15px; flex: none;">Save</button></div>`;
+}
+
+{
+  const list = model.notesFor(state.crewDoc, R.FID, 'artist', NAMES.dogBlood);
+  const f = R.factsFor(NAMES.dogBlood);
+  const dirs = [
+    ['Ink', 'ink', 'INK — words on the dark\nNo bubbles. A note is text with a coloured dot; a thread is a rail in the root’s colour that draws itself when the sheet opens. The card fades into the conversation. Why: the wall’s own typography, nothing added. Tradeoff: the quietest of the three — a busy thread leans on the rails alone.'],
+    ['Aura', 'aura', 'AURA — every voice is a colour\nEach note sits on a wash of its author’s hue, no border, and the washes drift like the cards do; a thread reads as a braid. Why: the aura language carried from the wall into the words. Tradeoff: colour does a lot of work — a five-person thread gets loud.'],
+    ['Script', 'script', 'SCRIPT — the site’s display face runs the conversation\nNames set in Anton in each person’s tint, the words beside them, a hairline between threads, replies hung off a thin rule. The card title goes full display. Why: the same voice as the day rules and the stage heads. Tradeoff: reads more like a transcript than a chat — less cosy, more Portola poster.'],
+  ];
+  const sheetInner = (dir, mobile) => `${mobile ? '<div class="grabber"></div>' : ''}${r2Header(f)}<div class="n-list">${r2Threads(list)}</div>${r2Composer(dir)}`;
+  const backWall = (mobile) => {
+    const root = R.renderWallEl();
+    const parts = applyVariant(root, 'B');
+    const sat = parts.days.Saturday;
+    const grid = sat.body.find((e) => e.classList.contains('times-wrap'));
+    return `<div class="shell" style="padding-top: 0;">${mobile ? '' : railHtml('Saturday')}${parts.strip.outerHTML}
+<div class="wall-wrap" style="margin-top: 8px;">${clipGrid(grid, { rowsVisible: mobile ? 30 : 28 })}</div></div>${mobile ? dockHtml('Saturday') : ''}`;
+  };
+  note('v2-title', 0, -190, 1180, 'ROUND 2 — the notes surface, three vibes\nSame ideas as round 1 (the card as the header, threads one level deep, Reply in the meta line), redone for feel: no boxes, the ✕ lives in the card’s corner, the header is four lines of type instead of three rows of pills, and every sheet animates on open — reload a frame to see the notes rise in. Phone on top, the desktop dialog beneath. The hover panel on the wall takes the same header treatment as whichever you pick.');
+  dirs.forEach(([name, dir, text], i) => {
+    const x = i * 1280;
+    const m = { w: MOB, h: 844 };
+    board(`Notes${name}Phone.dc.html`, wrap(`<div class="r2 d-${dir}" style="position:absolute;inset:0;">${backWall(true)}<div class="sheet-backdrop"></div><div class="sheet" role="dialog" aria-label="Dog Blood">${sheetInner(dir, true)}</div></div>`, { ...m, extraCss: r2Css }), m, { x, y: 0 }, `${name} · phone`);
+    const d = { w: DESK, h: 820 };
+    board(`Notes${name}Desktop.dc.html`, wrap(`<div class="r2 d-${dir}" style="position:absolute;inset:0;">${backWall(false)}<div class="sheet-backdrop"></div><div class="sheet" role="dialog" aria-label="Dog Blood">${sheetInner(dir, false)}</div></div>`, { ...d, extraCss: r2Css }), d, { x, y: 844 + 140 }, `${name} · desktop dialog`);
+    note(`v2-${dir}`, x + MOB + 60, 0, 640, text);
+  });
+}
+
+const canvas = { pages: [{ id: 'round-2', name: 'Notes — three vibes (round 2)' }, { id: 'round-1', name: 'Round 1 — all six asks' }], artboards: layout, annotations, launch: { view: 'canvas', page: 'round-2' } };
 writeFileSync(`${OUT}/canvas.json`, JSON.stringify(canvas, null, 2));
 console.log('artboards:', layout.map((l) => `${l.file} ${l.w}x${l.h} @${l.x},${l.y}`).join('\n'));
 console.log('annotations:', annotations.length);
