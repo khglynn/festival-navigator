@@ -254,9 +254,9 @@ function clipGrid(timesWrap, { rowsVisible, fromStart = null, fromEnd = 0, extra
 }
 
 // ---- the round's pieces --------------------------------------------------------------
-function avatarHtml(name, size = 22, font = 9) {
+function avatarHtml(name, size = 22, font = 9, { border = true } = {}) {
   const ci = PEOPLE[name].colorIndex;
-  return `<span class="avatar" style="width: ${size}px; height: ${size}px; font-size: ${font}px; background: ${hsl(ci, 0.5)}; border: 1px solid ${stroke(ci, false)};">${esc(name.charAt(0).toUpperCase())}</span>`;
+  return `<span class="avatar" style="width: ${size}px; height: ${size}px; font-size: ${font}px; background: ${hsl(ci, 0.5)};${border ? ` border: 1px solid ${stroke(ci, false)};` : ''}">${esc(name.charAt(0).toUpperCase())}</span>`;
 }
 
 function relTime(ts) {
@@ -784,13 +784,15 @@ ${r2Css}
 .a3 .n-thread { display: flex; flex-direction: column; gap: 3px; }
 .a3 .n-thread + .n-thread { margin-top: 12px; }
 .a3 .n-replies { display: flex; flex-direction: column; gap: 3px; margin-left: 30px; }
-.a3 .n-reply { padding: 7px 12px 7px 10px; grid-template-columns: 16px 1fr; }
+.a3 .n-reply { margin-left: 0; padding: 7px 12px 7px 10px; grid-template-columns: 16px 1fr; }
 .a3 .n-reply .n-dot { width: 16px; height: 16px; font-size: 7.5px; margin-top: 2px; }
-.a3 .n-note.pinned { box-shadow: inset 0 0 0 1px rgba(196, 189, 238, .35); }
+.a3 .n-note.pinned { --wash: var(--washpin); }
 .a3 .n-note.stub { background: var(--card); }
 .a3 .n-note.stub .n-dot { background: none; border: 1px dashed var(--border-emphasis); }
 .a3 .n-note.stub .n-text { color: var(--text-tertiary); font-style: italic; font-size: 12px; }
 .a3 .n-list { padding-top: 12px; }
+.a3 .sheet-card .sheet-close { top: 16px; right: 16px; }
+@media (min-width: 720px) { .a3 .sheet-card .sheet-close { top: 20px; right: 20px; } }
 .a3 .composer { gap: 10px; margin-top: 14px; }
 .a3 .composer input { border: none; background: radial-gradient(150% 200% at 0% 50%, var(--mywash) 0%, var(--card) 70%); border-radius: 12px; }
 /* header: pills are washes; four ways to say MUST (the artboard beside the sheet shows them) */
@@ -799,12 +801,12 @@ ${r2Css}
 .a3 .f-who .dot { display: none; }
 .a3.must-tag .f-who .w b { display: inline; }
 .a3.must-ring .f-who .w b, .a3.must-bright .f-who .w b, .a3.must-both .f-who .w b { display: none; }
-.a3.must-ring .f-who .w.must, .a3.must-both .f-who .w.must { box-shadow: 0 0 0 1px #fff; }
+.a3.must-ring .f-who .w.must, .a3.must-both .f-who .w.must { box-shadow: 0 0 0 1px var(--ring); }
 .a3.must-bright .f-who .w, .a3.must-both .f-who .w { background: var(--washlvl); }
 /* day notes in aura: the whisper is a wash; pins are aura notes */
 .a3 .day-whisper { margin: -4px 0 2px; padding: 7px 12px 7px 10px; border-radius: 12px; gap: 9px;
   background: radial-gradient(150% 200% at 0% 50%, var(--wash) 0%, transparent 68%); }
-.a3 .day-whisper .avatar { width: 18px; height: 18px; font-size: 8px; border: none; }
+.a3 .day-whisper .avatar { width: 18px; height: 18px; font-size: 8px; }
 .a3 .day-whisper .who { color: #fff; }
 .a3 .day-whisper .text { color: var(--text-body); }
 .a3 .pins-inline { gap: 3px; margin: -4px 0 4px; }
@@ -818,7 +820,7 @@ ${r2Css}
 
 const LVL_ALPHA = { 1: 0.16, 2: 0.3, 3: 0.5, 4: 0.85 };
 function a3Header(f) {
-  const who = f.people.map((p) => `<span class="w${p.isYou ? ' you' : ''}${p.level === 4 ? ' must' : ''}" style="--wash: ${washOf(p.name, .38)}; --washlvl: ${washOf(p.name, LVL_ALPHA[p.level])};">${p.isYou ? 'you' : esc(p.name)}${p.level === 4 ? '<b>MUST</b>' : ''}</span>`).join('');
+  const who = f.people.map((p) => `<span class="w${p.isYou ? ' you' : ''}${p.level === 4 ? ' must' : ''}" style="--wash: ${washOf(p.name, .38)}; --washlvl: ${washOf(p.name, LVL_ALPHA[p.level])}; --ring: ${stroke(p.colorIndex, p.isYou)};">${p.isYou ? 'you' : esc(p.name)}${p.level === 4 ? '<b>MUST</b>' : ''}</span>`).join('');
   const sub = [f.day, f.stage, timeRange(f.time)].filter(Boolean).join(' · ');
   const bits = [];
   if (f.noteCount) bits.push(`<b>${f.noteCount} notes</b>`);
@@ -836,7 +838,7 @@ function a3Note(n, { reply = false, pinned = false, collapsedReplies = 0, stub =
   if (mine && actions) acts.push('<span class="act">Edit</span>');
   if (!reply && actions) acts.push(collapsedReplies ? `<span class="act on">${collapsedReplies} repl${collapsedReplies === 1 ? 'y' : 'ies'}</span>` : '<span class="act">Reply</span>');
   if (pinned) acts.push('<span class="act on">Pinned</span>');
-  return `<div class="n-note${reply ? ' n-reply' : ''}${pinned ? ' pinned' : ''}" style="--i: ${a3i++}; --wash: ${washOf(n.author, reply ? .2 : .26)};">
+  return `<div class="n-note${reply ? ' n-reply' : ''}${pinned ? ' pinned' : ''}" style="--i: ${a3i++}; --wash: ${washOf(n.author, reply ? .2 : .26)}; --washpin: ${washOf(n.author, .46)};">
     <span class="n-dot" style="background: ${hsl(PEOPLE[n.author].colorIndex, .9)};">${esc(n.author.charAt(0))}</span>
     <div class="n-body"><div class="n-head"><span class="n-who">${mine ? 'you' : esc(n.author)}</span><span>${relTime(n.ts).replace(' ago', '')}</span>${acts.map((a) => `<span>·</span>${a}`).join('')}</div><div class="n-text">${esc(n.text)}</div></div>
   </div>`;
@@ -864,7 +866,7 @@ function a3Whisper(scope, target, label) {
   const newest = list[list.length - 1];
   const n = list.length;
   return `<button class="day-whisper" style="--wash: ${washOf(newest.author, .26)};" aria-label="Notes for ${esc(label)}: ${n} note${n === 1 ? '' : 's'}, newest from ${esc(newest.author)}">
-  ${avatarHtml(newest.author, 18, 8)}<span class="who">${newest.author === ME ? 'you' : esc(newest.author)}</span><span class="text">${esc(newest.text)}</span><span class="more">${n} note${n === 1 ? '' : 's'} ›</span></button>`;
+  ${avatarHtml(newest.author, 18, 8, { border: false })}<span class="who">${newest.author === ME ? 'you' : esc(newest.author)}</span><span class="text">${esc(newest.text)}</span><span class="more">${n} note${n === 1 ? '' : 's'} ›</span></button>`;
 }
 function a3Pins(list) {
   a3i = 0;
@@ -949,7 +951,7 @@ function injectFactsAura(gridEl, mode, hoverName) {
   board('AuraDesktop.dc.html', W(`<div class="a3 must-tag r2 d-aura" style="position:absolute;inset:0;">${backWall(false)}${sheet(false)}</div>`, d), d, { x: MOB + 100, y: 0 }, 'Aura · desktop dialog');
   const mustOpts = [
     ['must-tag', 'A — the word', 'A small MUST after the name. Says it outright; adds a second thing to read.'],
-    ['must-ring', 'B — the ring', 'A white ring on the pill — the wall’s own must stroke, no extra word. Quiet; you have to know the language.'],
+    ['must-ring', 'B — the ring', 'A ring on the pill in the wall’s corner-pill stroke: your tint, white only when it is you (white already means you everywhere). No extra word. Quiet; you have to know the language.'],
     ['must-bright', 'C — brightness', 'Pills get brighter with taps and MUST is the brightest — exactly how the auras work. Nothing to read; relative, so one person alone is hard to place.'],
     ['must-both', 'D — ring + brightness', 'Brightness for taps, the ring for must. Two signals that never fight.'],
   ];
@@ -995,7 +997,7 @@ function injectFactsAura(gridEl, mode, hoverName) {
     ['Your own reply', 'decided', T(() => `<div class="n-thread">${a3Note(root)}<div class="n-replies">${a3Note(r1, { reply: true })}</div></div>`), 'Edit works exactly as on a root (only your own). No Reply on a reply.'],
     ['Counts', 'decided', `<div style="display:flex;gap:10px;align-items:center;"><span class="chip-notes" style="height:16px;padding:0 8px;font-size:10px;">${L.length}</span><span class="cv-cap">card corner</span><span class="notes-chip" style="padding:5px 10px;">Notes <span class="count">${model.totalNoteCount(state.crewDoc, R.FID)}</span></span><span class="cv-cap">toolbar</span></div>`, `Every count includes replies: ${L.length} on the Dog Blood card, ${model.totalNoteCount(state.crewDoc, R.FID)} in the toolbar. A reply is a note.`],
     ['All notes (the home)', 'decided', T(() => `<div class="micro-label">Dog Blood</div><div class="n-thread">${a3Note(root)}<div class="n-replies">${a3Note(r1, { reply: true })}</div></div>`), 'The toolbar’s Notes sheet groups by festival / day / artist as today; threads render intact inside each group.'],
-    ['Reply on day and festival notes', 'decided', T(() => `<div class="micro-label">Sunday</div><div class="n-thread">${a3Note(model.notesFor(state.crewDoc, R.FID, 'day', 'Sunday')[0])}<div class="n-replies">${a3Note(model.notesFor(state.crewDoc, R.FID, 'day', 'Sunday')[1], { reply: true })}</div></div>`), 'Same component at every scope; nothing about a thread knows what it hangs off.'],
+    ['Reply on day and festival notes', 'decided', T(() => `<div class="micro-label">Sunday</div><div class="n-thread">${a3Note(model.notesFor(state.crewDoc, R.FID, 'day', 'Sunday')[0])}<div class="n-replies">${a3Note(model.notesFor(state.crewDoc, R.FID, 'day', 'Sunday')[1], { reply: true })}</div></div><div class="micro-label">This festival</div><div class="n-thread">${a3Note(model.notesFor(state.crewDoc, R.FID, 'fest', null)[0])}<div class="n-replies">${a3Note(model.notesFor(state.crewDoc, R.FID, 'fest', null)[1], { reply: true })}</div></div>`), 'Same component at every scope; nothing about a thread knows what it hangs off.'],
     ['The whisper and threads', 'decided', a3Whisper('day', 'Sunday', 'Sunday'), 'The whisper shows the NEWEST note, root or reply — Cleo’s reply is the latest thing said on Sunday, so it is the line.'],
     ['Offline / conflict', 'decided', `<div class="cv-cap">No new state: a reply is one more leaf in the notes map and the merge handles it like any note. Two people replying at once both land.</div>`, 'Additive and merge-safe; old clients ignore the re key and show replies as plain notes in time order.'],
   ];
