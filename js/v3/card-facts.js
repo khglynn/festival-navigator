@@ -255,7 +255,9 @@ export function zoomCard(el, artistName, ctx, { onOpenNotes = null, source = 'mo
   el.appendChild(grown);
   el.classList.add('zoom');
   el.style.width = `${target}px`;
-  el.style.marginLeft = `${Math.round(Math.min(0, shift))}px`;
+  // A card already half-clipped at the scrollport's left edge needs a
+  // POSITIVE shift to come back in — never discard it (Codex gate, 2026-08-29).
+  el.style.marginLeft = `${Math.round(shift)}px`;
   el.style.minHeight = '132px';
   el.style.zIndex = '30';
 
@@ -296,7 +298,10 @@ export function wireCardZoom(el, artistName, ctx, { onOpenNotes = null, occ = nu
     if (inT) { clearTimeout(inT); inT = null; }
     if (zoomed && zoomed.el === el) {
       if (outT) clearTimeout(outT);
-      outT = setTimeout(() => { outT = null; if (zoomed && zoomed.el === el) unzoom(); }, ZOOM_OUT_MS);
+      // Generation-exact: this timer closes the zoom it saw leave, never a
+      // newer keyboard/touch zoom on the same card (Codex gate, 2026-08-29).
+      const rec = zoomed;
+      outT = setTimeout(() => { outT = null; if (zoomed === rec) unzoom(); }, ZOOM_OUT_MS);
     }
   });
 }

@@ -57,3 +57,13 @@ test('the walker would catch a module that is imported but not cached', () => {
   const missing = [...walk(ENTRY)].filter((f) => !without.has(f));
   assert.deepEqual(missing, ['/js/v3/now.js']);
 });
+
+// Changing a cached asset without bumping CACHE_VERSION ships bytes existing
+// installs never fetch (Codex gate, 2026-08-29). The stamp is a hash of every
+// APP_CORE file; scripts/sw-stamp.mjs writes it and bumps the version in one
+// go, so this failing means: run that script.
+test('the service worker stamp matches the cached assets (run node scripts/sw-stamp.mjs after changing any)', async () => {
+  const { assetStamp, readStamp } = await import('../scripts/sw-stamp.mjs');
+  const sw = readFileSync(join(ROOT, 'service-worker.js'), 'utf8');
+  assert.equal(readStamp(sw), assetStamp(sw), 'cached assets changed — node scripts/sw-stamp.mjs bumps CACHE_VERSION and re-stamps');
+});

@@ -49,7 +49,10 @@ const ctx = {
   onOpenNotes: (artist, occ = null) => {
     unzoom(); // the sheet replaces the preview — never leave it under the modal
     openArtistSheet(artist, ctx, onNotesChange, occ);
-    router.push(`sheet:notes:${artist}`);
+    // The occurrence rides in the route key (a newline can never be in a
+    // name — name-rules forbids control characters), so back, forward and a
+    // refresh reopen THIS set for an artist who plays twice.
+    router.push(`sheet:notes:${artist}${occ ? '\n' + JSON.stringify(occ) : ''}`);
   },
   onOpenDayNotes: (day) => {
     openDayNotes(day, ctx, onNotesChange);
@@ -1815,7 +1818,12 @@ export function init() {
     else if (key === 'sheet:add-member') openAddMember();
     else if (key === 'sheet:fest') openFestNotes(ctx, onNotesChange);
     else if (key.startsWith('sheet:day:')) openDayNotes(key.slice('sheet:day:'.length), ctx, onNotesChange);
-    else if (key.startsWith('sheet:notes:')) openArtistSheet(key.slice('sheet:notes:'.length), ctx, onNotesChange);
+    else if (key.startsWith('sheet:notes:')) {
+      const [artist, occJson] = key.slice('sheet:notes:'.length).split('\n');
+      let occ = null;
+      try { occ = occJson ? JSON.parse(occJson) : null; } catch { occ = null; }
+      openArtistSheet(artist, ctx, onNotesChange, occ);
+    }
   }, () => closeSheet());
   window.addEventListener('popstate', (e) => router.onPopState(e.state));
   $('search-input').addEventListener('input', (e) => {

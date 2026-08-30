@@ -85,6 +85,10 @@ export function renderCard(artistName, ctx, opts = {}) {
   el.setAttribute('aria-label', labelParts.join(', '));
   el.title = artistName; // lane-split cells truncate hard — hover recovers (audit 9.2)
   el.addEventListener('keydown', (e) => {
+    // Only the CARD's own focus picks: Enter on the notes button nested in the
+    // grown block bubbles here too, and the browser then activates the button
+    // — a pick and an open from one keypress (Codex gate, 2026-08-29).
+    if (e.target !== el) return;
     if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); ctx.onTap(artistName, el); }
   });
   // Stash render opts on the node so refreshCard can reproduce this exact
@@ -145,7 +149,7 @@ export function renderCard(artistName, ctx, opts = {}) {
     if (clickable) {
       c.style.cursor = 'pointer';
       c.setAttribute('aria-label', `${chip.label} note${chip.label === '1' ? '' : 's'} for ${artistName}`);
-      c.addEventListener('click', (e) => { e.stopPropagation(); ctx.onOpenNotes(artistName); });
+      c.addEventListener('click', (e) => { e.stopPropagation(); ctx.onOpenNotes(artistName, opts.occ || null); });
     }
     about.appendChild(c);
   }
@@ -371,7 +375,7 @@ function renderLineupGroup(root, day, list, ctx, fest, { header, sub } = {}) {
         ? `${bits[0]} · ${a.time}\n${bits.slice(1).join(' · ')}`
         : `${a.time}\n${a.stage}`;
     }
-    grid.appendChild(renderCard(a.name, ctx, { tag, time: subLabel || undefined, occ: { day: a.day || day || null, stage: a.stage || null, time: a.time || null } }));
+    grid.appendChild(renderCard(a.name, ctx, { tag, time: subLabel || undefined, occ: { day: a.day || day || null, stage: a.stage || null, time: a.time || null, weekend: a.weekends || null } }));
   }
   if (filtering && !shown.length) {
     const none = document.createElement('div');
@@ -746,7 +750,7 @@ function renderScheduledDay(root, day, ctx, layout, weekend) {
     if (col === -1) continue; // strays render in the everything-else column
     // A folded (non-solo) column is a 34px rail — its cards don't render.
     if (layout.solo && a.stage !== layout.solo) continue;
-    const cell = renderCard(a.name, ctx, { cell: true, time: a.startStr, occ: { day, stage: a.stage || null, time: a.time || null } });
+    const cell = renderCard(a.name, ctx, { cell: true, time: a.startStr, occ: { day, stage: a.stage || null, time: a.time || null, weekend: a.weekend || null } });
     cell.style.gridColumn = String(col + 1);
     const row = Math.floor(a.startMin / 15) - startRow + 1;
     // endMin here IS the display extent — minimum 2 rows (44px), below which
@@ -775,7 +779,7 @@ function renderScheduledDay(root, day, ctx, layout, weekend) {
     ].sort((x, y) => x.min - y.min);
     for (const e of entries) {
       if (e.artist) {
-        col.appendChild(renderCard(e.artist.name, ctx, { cell: true, time: e.artist.startStr, occ: { day, stage: e.artist.stage || null, time: e.artist.time || null } }));
+        col.appendChild(renderCard(e.artist.name, ctx, { cell: true, time: e.artist.startStr, occ: { day, stage: e.artist.stage || null, time: e.artist.time || null, weekend: e.artist.weekend || null } }));
       } else {
         col.appendChild(eeActivityRow(e.act));
       }
@@ -899,7 +903,7 @@ function renderWallInner(root, ctx) {
       root.appendChild(dayHeader(day, dayRuleSub(meta, wk) || (meta ? `${meta.wd || ''} ${meta.num || ''}`.trim() : '')));
       const grid = document.createElement('div');
       grid.className = 'wall-grid';
-      for (const a of matches) grid.appendChild(renderCard(a.name, ctx, { time: `${a.stage} · ${a.startStr}`, occ: { day, stage: a.stage || null, time: a.time || null } }));
+      for (const a of matches) grid.appendChild(renderCard(a.name, ctx, { time: `${a.stage} · ${a.startStr}`, occ: { day, stage: a.stage || null, time: a.time || null, weekend: a.weekend || null } }));
       root.appendChild(grid);
     }
     // Afters/Folsom cards and lineup entries with no set time yet still

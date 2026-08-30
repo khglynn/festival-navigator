@@ -132,10 +132,9 @@ function noteRow(note, ctx, opts = {}) {
     input.addEventListener('keydown', (e) => { if (e.key === 'Enter') doSave(); });
     editor.append(input, save);
     text.replaceChildren(editor);
-    if (draft.focus) {
-      input.focus();
-      input.setSelectionRange(input.value.length, input.value.length);
-    }
+    input.dataset.editing = note.id;
+    // Focus is restored by renderThreads once the row is CONNECTED — a
+    // focus() on a detached node is a no-op (Codex gate, 2026-08-29).
   };
   if (note.author === ctx.meName && opts.onEdit && editing) {
     if (editing.has(note.id)) mountEditor();
@@ -143,6 +142,8 @@ function noteRow(note, ctx, opts = {}) {
     edit.addEventListener('click', () => {
       editing.set(note.id, { value: note.text, focus: true });
       mountEditor();
+      const input = text.querySelector('input[data-editing]');
+      if (input) { input.focus(); input.setSelectionRange(input.value.length, input.value.length); }
     });
     dot(); head.append(edit);
   }
@@ -207,6 +208,22 @@ function renderThreads(host, scope, target, ctx, { onChange, onReply, expandedPi
   const pins = loadPins();
   const pinnedIds = new Set(pins[ctx.fid] || []);
   const threads = model.threadsFor(state.crewDoc, ctx.fid, scope, target, [...pinnedIds]);
+  // A draft for a note a remote sync just tombstoned has nowhere to land.
+  if (editing && editing.size) {
+    const live = new Set(model.notesFor(state.crewDoc, ctx.fid, scope, target).map((n) => n.id));
+    for (const id of [...editing.keys()]) if (!live.has(id)) editing.delete(id);
+  }
+  const restoreEditFocus = () => {
+    if (!editing) return;
+    for (const input of host.querySelectorAll('input[data-editing]')) {
+      const draft = editing.get(input.dataset.editing);
+      if (draft && draft.focus) {
+        input.focus();
+        input.setSelectionRange(input.value.length, input.value.length);
+        return;
+      }
+    }
+  };
   if (!threads.length) {
     const empty = document.createElement('div');
     empty.className = 'n-empty';
@@ -249,6 +266,7 @@ function renderThreads(host, scope, target, ctx, { onChange, onReply, expandedPi
     }
     host.appendChild(block);
   }
+  restoreEditFocus();
 }
 
 // The composer, with a reply state: replying keeps whatever was typed and

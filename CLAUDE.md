@@ -91,6 +91,10 @@ Non-inferable facts only (the code answers everything else — read it).
   edited JS only reloads on a REAL document load (hop via about:blank), and
   the ES-module cache also survives `Network.clearBrowserCache`** (burned a
   test cycle 2026-07-14).
+  **After any cached-asset change run `node scripts/sw-stamp.mjs`** — it bumps
+  `CACHE_VERSION` and writes `ASSET_STAMP` (a hash of every APP_CORE file);
+  `tests/app-shell-complete.test.mjs` recomputes it, so a stale stamp is a red
+  build (the gate-round fixes once shipped under an unbumped v43, 2026-08-29).
 - **Staging (stage.fest.kevinhg.com preview deploys) shares the PRODUCTION
   DATABASE_URL** — verified empirically 2026-07-14 (a person row created on
   staging was deleted through the prod Neon connection). Staging writes are
