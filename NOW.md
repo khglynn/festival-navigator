@@ -2,8 +2,9 @@
 
 ## 2026-08-29 — the notes/desktop round: designed in four canvas rounds, built, gated three times by Codex, walked
 
-**Where it lives:** branch `notes-desktop-round` (PR to open once the walk
-is in; per the 2026-08-29 workspace rule agents open PRs and Kevin merges).
+**Where it lives:** branch `notes-desktop-round` — **PR #13**
+(https://github.com/khglynn/festival-navigator/pull/13); per the
+2026-08-29 workspace rule agents open PRs and Kevin merges.
 Preview: `festival-navigator-git-notes-desktop-round-kevinhg.vercel.app`
 (protection-gated — mint a `_vercel_share` link with the Vercel MCP AFTER
 the last push; a push replaces the alias target and kills the link).
@@ -51,8 +52,8 @@ research brief: `claude-plans/2026-08-29-notes-desktop-canvas/interaction-resear
 race, occurrence identity, edit drafts, a11y/touch of the grown door, zoom
 teardown generations, scrollport clamp, route-key collisions, Settings
 repaint, lane-card snap, SW stamp) — every one verified in code before it was
-fixed; a Sonnet walker with real pointer input on the preview (report in the
-DEVLOG entry once in). Kevin's own look at the preview drove the last design
+fixed; a Sonnet walker with real pointer input on the preview: 9/11 clean, two
+real findings fixed (DEVLOG 2026-08-29). Kevin's own look at the preview drove the last design
 turn (the morph recomposed around the centre, then rebuilt as a real
 shared-element transition).
 

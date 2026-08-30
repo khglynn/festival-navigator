@@ -46,8 +46,16 @@ Newest first. One entry per meaningful unit of work.
   clicks for picks despite the brief and reported two "bugs" the crew's own
   document disproved — real input for everything is now the standing brief.
   A second walker died in a usage pause with nothing banked (bank-as-you-go
-  is why that cost nothing). The gate walk on the final preview: see the
-  next entry.
+  is why that cost nothing). The gate walk on the final preview (real mouse,
+  real touch via CDP, real keys): 9 of 11 clean — hover intent, threads,
+  whisper, chips, keyboard, mobile, two-line event cards, zero app console
+  errors. Its two findings were real: resting pieces ghosted mid-morph (the
+  hop started from an identity transform, not from where the flipped layout
+  had moved the piece), and a hover zoom grew back under a resting pointer
+  after Escape or a pick (a dismissed zoom now waits for the pointer to
+  leave; a pick keeps the zoom and re-grows the fresh card at once). It also
+  found a tracked accessibility-tree dump a walker had committed — removed.
+- **PR #13** carries the round; Kevin merges (the 2026-08-29 workspace rule).
 
 ## 2026-08-27 (late) — the browser-only bugs, the festival timezone, gate rounds 4–5
 
