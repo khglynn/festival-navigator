@@ -100,22 +100,32 @@ viewport (no vast dead space on desktop).
 full-bleed (headings stay at reading width) and scrolls horizontally with
 scroll-snap on mobile; desktop shows as many columns as fit the window.
 
-## F6 · Notes — artist scope
+## F6 · Notes — artist scope (via the zoom, 2026-08-29)
 
-1. Mobile: long-press a card (~500ms) → artist sheet. Desktop: hover reveals a
-   note affordance on the card; click opens the same surface.
-2. Sheet shows the artist's notes (author-attributed, pinnable per-device) +
-   composer.
-3. Save → note syncs to the crew; note counts update everywhere.
+1. Mobile: hold a card (~500ms) → the card ZOOMS in place (who's going at
+   what level, set details, note + Spotify chips). Tap its notes chip →
+   artist sheet; tap anywhere else puts the zoom away. The corner note-count
+   chip on a resting card stays a one-tap door.
+2. Desktop: hovering a card (after a real intent delay) grows the same zoom;
+   click still picks — the zoom's notes chip is the click that opens.
+3. The sheet opens with the card itself as its header (grown once more, ✕ in
+   its corner), then the conversation: threads one level deep — Reply lives
+   in a root's head line; replies indent one gutter under their root; a
+   deleted root leaves a quiet stub so its replies keep their context.
+4. Save → note syncs to the crew; note counts (replies included) update
+   everywhere.
 **Expected:** mobile = bottom sheet; desktop = centered dialog (never a
 full-width strip pinned to the bottom of a wide viewport). Only your own notes
-can be deleted (tombstone).
+can be deleted (tombstone). A pinned root sorts to the top and shows a reply
+count, never its thread, until tapped open.
 
 ## F7 · Notes — day scope
 
 1. Each day header carries a notes affordance (with count) → opens that day's
    notes surface (same sheet/dialog pattern).
-2. An in-flow composer also lives under each day's grid.
+2. The WHISPER (2026-08-29): nothing sits inline until someone writes; then
+   the newest note (root or reply) rides as one soft line at the day's door,
+   and tapping it opens the day's notes. Composing happens in the sheet.
 **Expected:** both paths write the same day-scoped notes; day notes visible
 from the day header, not only by scrolling past the whole day.
 
@@ -123,10 +133,11 @@ from the day header, not only by scrolling past the whole day.
 
 1. Notes chip (top of wall, with total count) → ALL NOTES view: festival-note
    composer at top, then sections — This festival / each day / each artist.
-2. Wall bottom also has the NOTES · <FEST> section with composer.
+2. Wall bottom carries NOTES · <FEST> as a whisper once festival notes exist
+   (on a lineup-less fest, a quiet "+ Add a note" keeps the invitation).
 **Expected:** the all-notes view is the notes HOME: you can always ADD a
 festival note right there (including from the empty state); scope sections are
-legible (D3); empty state may hint at long-press but never as the only path.
+legible (D3); empty state may hint at the hold but never as the only path.
 
 ## F9 · Day navigation
 
