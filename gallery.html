@@ -74,39 +74,57 @@
 </section>
 
 <section>
-  <div class="g-label">Day header · note rows (pinned + plain) · composer</div>
+  <div class="g-label">Day header · the whisper · aura notes (pinned + thread)</div>
   <div class="col">
     <div class="day-rule"><span class="day">SATURDAY</span><span class="date">SEP 26</span><span class="line"></span></div>
-    <div class="micro-label">Pinned by you</div>
-    <div class="note-row">
-      <span class="avatar" style="background: hsl(221,90%,62%)">M</span>
-      <div class="bubble pinned">Leaving after Robyn — early flight.<span class="meta">Maya · 2h ago</span></div>
-      <button class="pin-btn active">Unpin</button>
-    </div>
-    <div class="note-row">
-      <span class="avatar" style="background: hsl(10,90%,62%)">K</span>
-      <div class="bubble">Lockers by the Warehouse entrance.<span class="meta">you · just now</span></div>
-      <button class="pin-btn">Pin</button>
-    </div>
-    <div class="composer">
-      <input placeholder="Add a note for Saturday…">
-      <button class="btn-tonal" style="font-size: 12px; padding: 9px 15px;">Save</button>
-    </div>
+    <button class="day-whisper" style="--wash: hsla(221,90%,62%,.26);">
+      <span class="avatar" style="width: 18px; height: 18px; font-size: 8px; background: hsla(221,90%,62%,.5); border: 1px solid hsl(221,85%,82%);">M</span>
+      <span class="who">Maya</span><span class="text">Leaving after Robyn — early flight.</span><span class="more">2 notes ›</span>
+    </button>
+    <div class="n-list"><div class="n-thread">
+      <div class="n-note pinned" style="--wash: hsla(221,90%,62%,.46);">
+        <span class="avatar" style="width: 20px; height: 20px; font-size: 8.5px; background: hsla(221,90%,62%,.5); border: 1px solid hsl(221,85%,82%);">M</span>
+        <div class="n-body">
+          <div class="n-head"><span class="n-who">Maya</span>2h · <button class="note-action">Reply</button> · <button class="note-action on">Unpin</button></div>
+          <div class="n-text">Leaving after Robyn — early flight.</div>
+        </div>
+      </div>
+      <div class="n-replies">
+        <div class="n-note n-reply" style="--wash: hsla(10,90%,62%,.2);">
+          <span class="avatar" style="width: 16px; height: 16px; font-size: 7.5px; background: hsla(10,90%,62%,.5); border: 1px solid hsl(10,85%,82%);">K</span>
+          <div class="n-body">
+            <div class="n-head"><span class="n-who">you</span>just now · <button class="note-action">Edit</button></div>
+            <div class="n-text">Lockers by the Warehouse entrance.</div>
+          </div>
+        </div>
+      </div>
+    </div></div>
   </div>
 </section>
 
 <section class="demo-sheet">
-  <div class="g-label">Artist notes bottom sheet (atlas 21g)</div>
+  <div class="g-label">Artist notes sheet — the card is the header (2026-08-29)</div>
   <div class="sheet">
     <div class="grabber"></div>
-    <div style="display: flex; align-items: baseline; gap: 9px;">
-      <span class="sheet-title">ROBYN</span>
-      <span style="color: var(--text-tertiary); font-size: 11px; font-weight: 600;">Sat · Pier</span>
+    <div class="sheet-card" style="background: radial-gradient(130% 130% at 20% 120%, hsla(10,90%,62%,1) 0%, hsla(10,90%,62%,.5) 45%, transparent 78%), radial-gradient(130% 130% at 85% -20%, hsla(221,90%,62%,.75) 0%, hsla(221,90%,62%,.375) 45%, transparent 78%), #1C1731;">
+      <button class="sheet-close" aria-label="Close">✕</button>
+      <div class="f-name">Robyn</div>
+      <div class="f-sub">7:10 – 8:20 PM · Sat · Pier Stage</div>
+      <div class="f-who">
+        <span class="f-pill you" style="background: hsla(10,90%,62%,.42);">You<b>MUST</b></span>
+        <span class="f-pill" style="background: hsla(221,90%,62%,.42);">Maya</span>
+      </div>
+      <div class="f-chips"><span class="f-chip notes">1 note</span><span class="f-chip spot">4 liked songs</span></div>
     </div>
-    <div class="note-row">
-      <span class="avatar" style="background: hsl(221,90%,62%)">M</span>
-      <div class="bubble">Front left is the move — the pit floods from the right gate.<span class="meta">2h ago</span></div>
-    </div>
+    <div class="n-list"><div class="n-thread">
+      <div class="n-note" style="--wash: hsla(221,90%,62%,.26);">
+        <span class="avatar" style="width: 20px; height: 20px; font-size: 8.5px; background: hsla(221,90%,62%,.5); border: 1px solid hsl(221,85%,82%);">M</span>
+        <div class="n-body">
+          <div class="n-head"><span class="n-who">Maya</span>2h · <button class="note-action">Reply</button></div>
+          <div class="n-text">Front left is the move — the pit floods from the right gate.</div>
+        </div>
+      </div>
+    </div></div>
     <div class="composer">
       <input placeholder="Add a note…">
       <button class="btn-tonal" style="font-size: 12px; padding: 9px 15px;">Save</button>

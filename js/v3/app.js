@@ -17,7 +17,7 @@ import { openArtistSheet, openDayNotes, openAllNotes, openFestNotes, closeSheet,
 import { renderSettings, appSettings, openSubviewByKey } from './settings.js';
 import { onStorageWriteFail, saveLS, getLS, errorText } from '../util.js';
 import { router } from './router.js';
-import { wireCardZoom, zoomCard, unzoom, zoomedCard, zoomSource } from './card-facts.js';
+import { wireCardZoom, wireCardFocusZoom, zoomCard, unzoom, zoomedCard, zoomSource } from './card-facts.js';
 import { createSortControl } from './sort-control.js';
 import { nameProblem } from '../name-rules.mjs';
 import { startFavicon, stopFavicon } from './favicon.js';
@@ -46,8 +46,9 @@ const ctx = {
     repaintWall();
   },
   onTap: handleTap,
-  onOpenNotes: (artist) => {
-    openArtistSheet(artist, ctx, onNotesChange);
+  onOpenNotes: (artist, occ = null) => {
+    unzoom(); // the sheet replaces the preview — never leave it under the modal
+    openArtistSheet(artist, ctx, onNotesChange, occ);
     router.push(`sheet:notes:${artist}`);
   },
   onOpenDayNotes: (day) => {
@@ -61,8 +62,12 @@ const ctx = {
   onNotesChange: () => onNotesChange(),
   // ---- the zoom (2026-08-29): hover with intent on a mouse, hold on touch ----
   // wall.js hands every card here; card-facts.js owns the timing and the grow.
-  wireZoom: (el, artist) => wireCardZoom(el, artist, ctx, { onOpenNotes: ctx.onOpenNotes }),
-  onPeek: (artist, el) => zoomCard(el, artist, ctx, { onOpenNotes: ctx.onOpenNotes, source: 'touch' }),
+  wireZoom: (el, artist, occ) => {
+    const opts = { onOpenNotes: (a) => ctx.onOpenNotes(a, occ), occ };
+    wireCardZoom(el, artist, ctx, opts);
+    wireCardFocusZoom(el, artist, ctx, opts);
+  },
+  onPeek: (artist, el, occ) => zoomCard(el, artist, ctx, { onOpenNotes: (a) => ctx.onOpenNotes(a, occ), source: 'touch', occ }),
   // A touch-born zoom is a preview: tapping its body puts it away rather than
   // picking (the resting card is where a tap means pick). A mouse zoom is
   // just hover — clicking still picks.
@@ -79,7 +84,11 @@ document.addEventListener('pointerdown', (e) => {
   const z = zoomedCard();
   if (z && !z.contains(e.target)) unzoom();
 }, true);
-document.addEventListener('keydown', (e) => { if (e.key === 'Escape') unzoom(); });
+// Escape closes ONE layer: a live zoom eats the press before any sheet or
+// router handler sees it (capture phase) — never both in one keypress.
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && zoomedCard()) { unzoom(); e.stopImmediatePropagation(); e.preventDefault(); }
+}, true);
 
 function onNotesChange() {
   sync.scheduleSync();
@@ -109,6 +118,10 @@ function refreshCtx() {
 // sibling, or the others go stale and invite double-cycling (CORE-15).
 function refreshArtistCards(artistName) {
   const els = document.querySelectorAll(`#wall-root .card[data-artist="${CSS.escape(artistName)}"]`);
+  // A single-card refresh replaces the node — a zoom on it would be orphaned
+  // with the singleton pointing at a detached card (Codex gate, 2026-08-29).
+  const z = zoomedCard();
+  if (z && [...els].includes(z)) unzoom();
   if (!els.length) { repaintWall(); return; }
   // Under a people filter that includes ME, my tap changes the filter's
   // visible set — a list card (afters, Folsom, search) must appear or

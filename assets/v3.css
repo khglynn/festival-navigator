@@ -225,15 +225,8 @@
 }
 
 /* ---- notes ------------------------------------------------------------------- */
-.note-row { display: flex; gap: 9px; }
-.note-row .avatar { width: 22px; height: 22px; font-size: 9px; }
-.bubble { color: var(--text-body); font-size: var(--fs-body); line-height: 1.5; background: var(--card);
-          border: 1px solid var(--hairline); border-radius: var(--r-bubble); padding: 9px 11px; flex: 1; }
-.bubble.pinned { border-color: var(--notes-stroke); }
-.bubble .meta { display: block; color: var(--text-tertiary); font-size: 10px; font-weight: 600; margin-top: 3px; }
-.pin-btn { color: var(--text-tertiary); font-size: 11px; font-weight: 700; flex: none;
-           align-self: center; background: none; border: none; cursor: pointer; }
-.pin-btn.active { color: var(--tonal-text); }
+/* (The boxed note-row/bubble anatomy retired 2026-08-29 — the aura notes in
+ * the threads section further down are the one note language now.) */
 .composer { display: flex; gap: 8px; align-items: center; }
 .composer input {
   flex: 1; background: var(--card); border: 1px solid var(--border-input); border-radius: var(--r-card);
@@ -344,7 +337,7 @@
   /* --- the opt-outs: small controls that take borrowed space instead ------ */
   .person-chip, .notes-chip, .chip-notes, .note-action, .f-chip,
   .dock .day-tab, .day-rail .day-tab,
-  .back-btn, .gear-btn, .pin-btn, .fest-link, .sheet-close,
+  .back-btn, .gear-btn, .fest-link, .sheet-close,
   button.avatar,
   .toggle,      /* a 40x24 switch; stretching its track to 44 breaks it, and the
                  * whole row is the tap target anyway */
@@ -353,7 +346,7 @@
   }
   .person-chip, .notes-chip, .chip-notes, .note-action, .f-chip,
   .dock .day-tab, .day-rail .day-tab,
-  .back-btn, .gear-btn, .pin-btn, .fest-link, .sheet-close,
+  .back-btn, .gear-btn, .fest-link, .sheet-close,
   button.avatar {
     position: relative;
   }
@@ -369,10 +362,17 @@
    * miss — and they are isolated, so they can take the horizontal room.
    * `button.avatar` on purpose: the avatars inside cards are spans, and giving
    * THEM a hit area would steal taps from the pick underneath. */
-  .back-btn::after, .gear-btn::after, .pin-btn::after, .fest-link::after,
+  .back-btn::after, .gear-btn::after, .fest-link::after,
   .sheet-close::after, .chip-notes::after, button.avatar::after {
     content: ''; position: absolute; inset: -14px -12px;
   }
+
+  /* The ZOOMED card is a deliberate preview with room — its chips get real
+   * height and their own borrowed space (outranks the card-wide ::after
+   * cancel below by specificity). The sheet header's chips grow the same way. */
+  .card.zoom .f-chip { height: 30px; padding: 0 13px; font-size: 11px; position: relative; min-height: 0; }
+  .card.zoom .f-chip::after { content: ''; position: absolute; inset: -7px; }
+  .sheet-card .f-chip { height: 28px; padding: 0 13px; font-size: 11px; }
 
   /* Controls INSIDE a card get neither: the card IS the tap target, and an
    * expanded edit-note button would steal taps meant for the pick underneath it,

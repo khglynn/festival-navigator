@@ -72,7 +72,11 @@ function deleteNote(ctx, scope, target, note) {
 
 // ---- one note, the aura way ---------------------------------------------------------
 // opts: { reply, pinned, collapsedReplies, onToggleReplies, onPinToggle,
-//         onReply, onEdit(note, text), onDelete(note) }
+//         onReply, onEdit(note, text), onDelete(note), editing }
+// `editing` is the sheet's per-open draft map (id -> {value, focus}): the
+// inline editor lives INSIDE the repainted list, so a remote sync used to
+// eat a half-typed edit (Codex gate, 2026-08-29). The draft persists here
+// and the editor re-renders from it, caret at the end.
 function noteRow(note, ctx, opts = {}) {
   const row = document.createElement('div');
   row.className = 'n-note' + (opts.reply ? ' n-reply' : '') + (opts.pinned ? ' pinned' : '');
@@ -102,29 +106,43 @@ function noteRow(note, ctx, opts = {}) {
   text.textContent = note.text;
 
   // Your notes stay yours to change (NT-3) — quiet actions in the head line.
-  if (note.author === ctx.meName && opts.onEdit) {
+  const editing = opts.editing;
+  const mountEditor = () => {
+    const draft = editing.get(note.id);
+    const editor = document.createElement('div');
+    editor.className = 'composer';
+    const input = document.createElement('input');
+    input.maxLength = 500;
+    input.value = draft.value;
+    input.setAttribute('aria-label', 'Edit your note');
+    input.addEventListener('input', () => { draft.value = input.value; });
+    input.addEventListener('focus', () => { draft.focus = true; });
+    input.addEventListener('blur', () => { draft.focus = false; });
+    const save = document.createElement('button');
+    save.className = 'btn-tonal';
+    save.style.cssText = 'font-size: 11.5px; padding: 8px 13px; flex: none;';
+    save.textContent = 'Save';
+    const doSave = () => {
+      const v = input.value.trim();
+      if (!v) return;
+      editing.delete(note.id);
+      opts.onEdit(note, v);
+    };
+    save.addEventListener('click', doSave);
+    input.addEventListener('keydown', (e) => { if (e.key === 'Enter') doSave(); });
+    editor.append(input, save);
+    text.replaceChildren(editor);
+    if (draft.focus) {
+      input.focus();
+      input.setSelectionRange(input.value.length, input.value.length);
+    }
+  };
+  if (note.author === ctx.meName && opts.onEdit && editing) {
+    if (editing.has(note.id)) mountEditor();
     const edit = mkAction('Edit');
     edit.addEventListener('click', () => {
-      const editor = document.createElement('div');
-      editor.className = 'composer';
-      const input = document.createElement('input');
-      input.maxLength = 500;
-      input.value = note.text;
-      input.setAttribute('aria-label', 'Edit your note');
-      const save = document.createElement('button');
-      save.className = 'btn-tonal';
-      save.style.cssText = 'font-size: 11.5px; padding: 8px 13px; flex: none;';
-      save.textContent = 'Save';
-      const doSave = () => {
-        const v = input.value.trim();
-        if (!v) return;
-        opts.onEdit(note, v);
-      };
-      save.addEventListener('click', doSave);
-      input.addEventListener('keydown', (e) => { if (e.key === 'Enter') doSave(); });
-      editor.append(input, save);
-      text.replaceChildren(editor);
-      input.focus();
+      editing.set(note.id, { value: note.text, focus: true });
+      mountEditor();
     });
     dot(); head.append(edit);
   }
@@ -184,7 +202,7 @@ function stubRow(author) {
 // ---- threads, rendered --------------------------------------------------------------
 // A pinned root sorts to the top and shows a reply COUNT, never its thread
 // (Kevin's rule, 2026-08-28); the count expands it in place for this open.
-function renderThreads(host, scope, target, ctx, { onChange, onReply, expandedPinned }) {
+function renderThreads(host, scope, target, ctx, { onChange, onReply, expandedPinned, editing }) {
   host.textContent = '';
   const pins = loadPins();
   const pinnedIds = new Set(pins[ctx.fid] || []);
@@ -204,6 +222,7 @@ function renderThreads(host, scope, target, ctx, { onChange, onReply, expandedPi
       const collapsed = pinned && t.replies.length && !expandedPinned.has(t.root.id);
       block.appendChild(noteRow(t.root, ctx, {
         pinned,
+        editing,
         collapsedReplies: collapsed ? t.replies.length : 0,
         onToggleReplies: () => { expandedPinned.add(t.root.id); onChange({ localOnly: true }); },
         onPinToggle: () => { savePins(model.togglePin(loadPins(), ctx.fid, t.root.id)); onChange({ localOnly: true }); },
@@ -221,6 +240,7 @@ function renderThreads(host, scope, target, ctx, { onChange, onReply, expandedPi
       for (const n of t.replies) {
         replies.appendChild(noteRow(n, ctx, {
           reply: true,
+          editing,
           onEdit: (note, text) => { editNote(ctx, scope, target, note, text); onChange(); },
           onDelete: (note) => { deleteNote(ctx, scope, target, note); onChange(); },
         }));
@@ -381,7 +401,7 @@ export function dialogize(sheet, label) {
 }
 
 // ---- scope sheet (artist or day) — one surface, two scopes (21g / NT-2) -------------
-function openScopeSheet(scope, target, ctx, onChange) {
+function openScopeSheet(scope, target, ctx, onChange, occ = null) {
   rememberOpener();  // no-op on a re-render — the original opener is kept
   teardownSheet();   // NOT closeSheet(): a re-render must not restore focus
   const backdrop = document.createElement('div');
@@ -394,6 +414,7 @@ function openScopeSheet(scope, target, ctx, onChange) {
 
   // Per-open UI state that must survive live repaints (never synced).
   const expandedPinned = new Set();
+  const editing = new Map(); // note id -> { value, focus } — inline edit drafts
 
   let paintHeader = () => {};
   if (scope === 'artist') {
@@ -402,7 +423,7 @@ function openScopeSheet(scope, target, ctx, onChange) {
     const headerHost = document.createElement('div');
     sheet.appendChild(headerHost);
     paintHeader = () => {
-      headerHost.replaceChildren(sheetCard(factsFor(target, ctx), { onClose: requestSheetClose }));
+      headerHost.replaceChildren(sheetCard(factsFor(target, ctx, occ), { onClose: requestSheetClose }));
     };
     paintHeader();
   } else {
@@ -435,6 +456,7 @@ function openScopeSheet(scope, target, ctx, onChange) {
       onChange: (o = {}) => { paint(); if (!o.localOnly) onChange(); },
       onReply: box ? (root) => box.setReply(root) : null,
       expandedPinned,
+      editing,
     });
   };
   paint();
@@ -444,8 +466,8 @@ function openScopeSheet(scope, target, ctx, onChange) {
   activeSheetRepaint = paint;
 }
 
-export function openArtistSheet(artistName, ctx, onChange) {
-  openScopeSheet('artist', artistName, ctx, onChange);
+export function openArtistSheet(artistName, ctx, onChange, occ = null) {
+  openScopeSheet('artist', artistName, ctx, onChange, occ);
 }
 
 export function openDayNotes(day, ctx, onChange) {
@@ -486,6 +508,7 @@ export function openAllNotes(ctx) {
   sheetChrome(sheet, 'ALL NOTES');
 
   const expandedPinned = new Set();
+  const editing = new Map(); // note id -> { value, focus } — inline edit drafts
 
   // The composer lives OUTSIDE paint() — a remote sync repainting the list
   // must never eat a half-typed festival note (audit 1.2, same discipline as
@@ -517,6 +540,7 @@ export function openAllNotes(ctx) {
         onChange: (o = {}) => { paint(); if (!o.localOnly) ctx.onNotesChange(); },
         onReply: box && scope === 'fest' ? (root) => box.setReply(root) : null,
         expandedPinned,
+        editing,
       });
       body.appendChild(host);
     };
@@ -555,7 +579,7 @@ export function dayWhisper(scope, target, ctx, onOpen) {
   const ci = colorIndexOf(newest.author, state.people()[newest.author]);
   btn.style.setProperty('--wash', hslOf(ci, 0.26));
   btn.setAttribute('aria-label',
-    `Notes${target ? ` for ${target}` : ''}: ${list.length} note${list.length === 1 ? '' : 's'}, newest from ${newest.author}`);
+    `Notes${target ? ` for ${target}` : ''}: ${list.length} note${list.length === 1 ? '' : 's'}. Newest — ${newest.author}: ${newest.text.slice(0, 80)}`);
   btn.appendChild(avatarFor(newest.author, 18, 8));
   const who = document.createElement('span');
   who.className = 'who';

@@ -309,3 +309,43 @@ test('railLabels: four letters of the first word, initials when two stages would
   assert.deepEqual(filters.railLabels(['Bud Light', 'Bud Lite']), { 'Bud Light': 'BL', 'Bud Lite': 'BL2' }, 'initials that still clash get a digit — two rails never read the same');
   assert.deepEqual(filters.railLabels(['Main Stage', 'Mainstage']), { 'Main Stage': 'MS', Mainstage: 'M' });
 });
+
+test('a repaint AFTER the hold armed must not turn the release into a switch (Codex gate, 2026-08-29)', () => {
+  let switched = 0, filtered = 0, armedSeen = 0;
+  let t = 1000;
+  const now = () => t;
+  const timers = [];
+  const { chipGesture, cancelHold, disarm } = filters;
+  const g1 = chipGesture('Drew', {
+    canSwitch: true,
+    onFilter: () => { filtered++; },
+    onArmed: () => { armedSeen++; },
+    onSwitch: () => { switched++; },
+    now,
+    setTimer: (fn) => { timers.push(fn); return timers.length; },
+    clearTimer: () => {},
+  });
+  g1.pointerdown();          // finger down
+  timers[0]();               // HOLD_MS elapses — the chip arms; finger STILL down
+  assert.equal(armedSeen, 1);
+  cancelHold(now());         // a remote repaint rebuilds the row mid-press
+  // The release lands as a click on the FRESH armed chip (new gesture instance).
+  const g2 = chipGesture('Drew', {
+    canSwitch: true,
+    onFilter: () => { filtered++; },
+    onArmed: () => {},
+    onSwitch: () => { switched++; },
+    now,
+    setTimer: () => 1,
+    clearTimer: () => {},
+  });
+  t += 100;
+  g2.click();
+  assert.equal(switched, 0, 'the stolen release never confirms the switch');
+  assert.equal(filtered, 0, 'nor does it toggle the filter');
+  // The arm survived: a fresh, deliberate tap after the suppression window confirms.
+  t += 900;
+  g2.click();
+  assert.equal(switched, 1, 'a real tap still switches while armed');
+  disarm();
+});

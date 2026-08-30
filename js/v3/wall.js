@@ -55,6 +55,10 @@ function svgBookmark() {
 }
 
 export function renderCard(artistName, ctx, opts = {}) {
+  // opts.occ = { day, stage, time }: the occurrence THIS card is (an artist
+  // can appear twice — a grid set and an afters event, or two EF days). The
+  // zoom, the peek, and the sheet all tell this card's story, never the
+  // first match's (Codex gate, 2026-08-29).
   const people = cardPeople(artistName, ctx.picks, ctx.meName);
   const el = document.createElement('div');
   el.className = 'card' + (opts.cell ? ' cell' : '') + (opts.time && !opts.cell ? ' timed' : '');
@@ -87,6 +91,7 @@ export function renderCard(artistName, ctx, opts = {}) {
   // render — a single-card refresh must preserve every invariant the full
   // render established (CORE-1/CORE-3).
   if (opts.time) el.dataset.time = opts.time;
+  if (opts.occ) el.dataset.occ = JSON.stringify(opts.occ);
   if (opts.tag) {
     el.dataset.tag = opts.tag;
     const tag = document.createElement('span');
@@ -167,7 +172,7 @@ export function renderCard(artistName, ctx, opts = {}) {
         // pop over Settings or the landing after the fact.
         if (!el.isConnected || el.offsetParent === null) return;
         longPressed = true;
-        if (ctx.onPeek) ctx.onPeek(artistName, el); else ctx.onOpenNotes(artistName);
+        if (ctx.onPeek) ctx.onPeek(artistName, el, opts.occ || null); else ctx.onOpenNotes(artistName);
       }, 500);
     });
     const cancel = () => clearTimeout(pressTimer);
@@ -206,7 +211,7 @@ export function renderCard(artistName, ctx, opts = {}) {
     if (ctx.onZoomTap && ctx.onZoomTap(el)) return;
     ctx.onTap(artistName, el);
   });
-  if (ctx.wireZoom) ctx.wireZoom(el, artistName);
+  if (ctx.wireZoom) ctx.wireZoom(el, artistName, opts.occ || null);
   return el;
 }
 
@@ -220,6 +225,7 @@ export function refreshCard(el, artistName, ctx) {
     cell: el.classList.contains('cell'),
     time: el.dataset.time || undefined,
     tag: el.dataset.tag || undefined,
+    occ: el.dataset.occ ? JSON.parse(el.dataset.occ) : undefined,
   });
   for (const prop of PLACEMENT_PROPS) {
     const v = el.style.getPropertyValue(prop);
@@ -365,7 +371,7 @@ function renderLineupGroup(root, day, list, ctx, fest, { header, sub } = {}) {
         ? `${bits[0]} · ${a.time}\n${bits.slice(1).join(' · ')}`
         : `${a.time}\n${a.stage}`;
     }
-    grid.appendChild(renderCard(a.name, ctx, { tag, time: subLabel || undefined }));
+    grid.appendChild(renderCard(a.name, ctx, { tag, time: subLabel || undefined, occ: { day: a.day || day || null, stage: a.stage || null, time: a.time || null } }));
   }
   if (filtering && !shown.length) {
     const none = document.createElement('div');
@@ -740,7 +746,7 @@ function renderScheduledDay(root, day, ctx, layout, weekend) {
     if (col === -1) continue; // strays render in the everything-else column
     // A folded (non-solo) column is a 34px rail — its cards don't render.
     if (layout.solo && a.stage !== layout.solo) continue;
-    const cell = renderCard(a.name, ctx, { cell: true, time: a.startStr });
+    const cell = renderCard(a.name, ctx, { cell: true, time: a.startStr, occ: { day, stage: a.stage || null, time: a.time || null } });
     cell.style.gridColumn = String(col + 1);
     const row = Math.floor(a.startMin / 15) - startRow + 1;
     // endMin here IS the display extent — minimum 2 rows (44px), below which
@@ -769,7 +775,7 @@ function renderScheduledDay(root, day, ctx, layout, weekend) {
     ].sort((x, y) => x.min - y.min);
     for (const e of entries) {
       if (e.artist) {
-        col.appendChild(renderCard(e.artist.name, ctx, { cell: true, time: e.artist.startStr }));
+        col.appendChild(renderCard(e.artist.name, ctx, { cell: true, time: e.artist.startStr, occ: { day, stage: e.artist.stage || null, time: e.artist.time || null } }));
       } else {
         col.appendChild(eeActivityRow(e.act));
       }
@@ -893,7 +899,7 @@ function renderWallInner(root, ctx) {
       root.appendChild(dayHeader(day, dayRuleSub(meta, wk) || (meta ? `${meta.wd || ''} ${meta.num || ''}`.trim() : '')));
       const grid = document.createElement('div');
       grid.className = 'wall-grid';
-      for (const a of matches) grid.appendChild(renderCard(a.name, ctx, { time: `${a.stage} · ${a.startStr}` }));
+      for (const a of matches) grid.appendChild(renderCard(a.name, ctx, { time: `${a.stage} · ${a.startStr}`, occ: { day, stage: a.stage || null, time: a.time || null } }));
       root.appendChild(grid);
     }
     // Afters/Folsom cards and lineup entries with no set time yet still

@@ -126,6 +126,12 @@ let armed = null; // { name, until }
 // gate round 2, 2026-08-27). The row cancels it on every rebuild.
 let hold = null; // { name, token, timer, clearTimer }
 let holdSeq = 0;  // every press gets its own token, so a release clears only ITS hold
+// The finger that is down RIGHT NOW — kept even after its hold fires. A hold
+// that has already armed clears `hold`, so a repaint between arm and release
+// used to sail past cancelHold, and the release landed as a CLICK on the
+// fresh armed chip — an identity switch nobody asked for (Codex gate,
+// 2026-08-29). Any rebuild while a press is live suppresses that release.
+let pressed = null; // { token }
 // After a cancelled hold, the release still lands as a click on whichever
 // chip is under the finger now — swallow it for a beat rather than let a
 // half-hold become a filter toggle.
@@ -141,10 +147,19 @@ export function disarm() { armed = null; }
 // arming is never the switch — the next tap is.
 export function armFor(name, now = Date.now()) { armed = { name, until: now + ARM_MS }; }
 export function cancelHold(now = Date.now()) {
-  if (!hold) return;
-  hold.clearTimer(hold.timer);
-  hold = null;
-  suppressClicksUntil = now + 800;
+  if (hold) {
+    hold.clearTimer(hold.timer);
+    hold = null;
+    suppressClicksUntil = now + 800;
+  }
+  if (pressed) {
+    // A press outlives its hold: the rebuild happened under a finger that is
+    // still down, so its release must not be read as a tap on whatever chip
+    // stands there now. The arm (if any) survives — the person confirms with
+    // a fresh, deliberate tap.
+    pressed = null;
+    suppressClicksUntil = now + 800;
+  }
 }
 
 // Wire one chip. `canSwitch` is false for your own chip and for spectators.
@@ -172,6 +187,7 @@ export function chipGesture(name, { canSwitch, onFilter, onArmed, onSwitch, now 
       if (hold) { hold.clearTimer(hold.timer); hold = null; }
       const token = ++holdSeq;
       mine = token;
+      pressed = { token };
       const timer = setTimer(() => {
         if (!hold || hold.token !== token) return; // superseded before it fired
         hold = null;
@@ -183,7 +199,10 @@ export function chipGesture(name, { canSwitch, onFilter, onArmed, onSwitch, now 
     },
     // A release clears only the hold ITS press started — an older pointer on
     // the same chip must not kill a newer press's timer.
-    pointerend() { if (hold && hold.token === mine) { hold.clearTimer(hold.timer); hold = null; } },
+    pointerend() {
+      if (hold && hold.token === mine) { hold.clearTimer(hold.timer); hold = null; }
+      if (pressed && pressed.token === mine) pressed = null;
+    },
     click() {
       if (held) { held = false; return; }          // the click that ends a hold is not a tap
       if (now() < suppressClicksUntil) return;     // the release of a hold that a repaint cancelled

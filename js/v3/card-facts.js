@@ -25,16 +25,25 @@ export function timeRange(t) {
 const shortDay = (fest, day) => (fest.dayMeta && fest.dayMeta[day] && fest.dayMeta[day].wd) || day;
 
 // Everything the grown card says, computed once from ctx (never the DOM).
-export function factsFor(artistName, ctx) {
+// `occ` is the occurrence the CARD represents ({day, stage, time}) — an
+// artist can play twice (a grid set AND an afters event, two grid days at
+// EF), and the first match is the wrong story for every card but the first
+// (Codex gate, 2026-08-29). Without one, the first scheduled/listed
+// occurrence stands in.
+export function factsFor(artistName, ctx, occ = null) {
   const fest = state.fest();
-  let day = null, stage = null, time = null;
-  for (const d of Object.keys(fest.days || {})) {
-    const hit = (fest.days[d].artists || []).find((a) => a.name === artistName);
-    if (hit) { day = d; stage = hit.stage || null; time = hit.time || null; break; }
-  }
-  if (!time) {
-    const a = (fest.artists || []).find((x) => x.name === artistName);
-    if (a) { day = a.day || day; stage = a.stage || stage; time = a.time || time; }
+  let day = occ ? occ.day || null : null;
+  let stage = occ ? occ.stage || null : null;
+  let time = occ ? occ.time || null : null;
+  if (!occ) {
+    for (const d of Object.keys(fest.days || {})) {
+      const hit = (fest.days[d].artists || []).find((a) => a.name === artistName);
+      if (hit) { day = d; stage = hit.stage || null; time = hit.time || null; break; }
+    }
+    if (!time) {
+      const a = (fest.artists || []).find((x) => x.name === artistName);
+      if (a) { day = a.day || day; stage = a.stage || stage; time = a.time || time; }
+    }
   }
   const picksMap = ctx.picks[artistName] || {};
   const peopleObj = state.people();
@@ -44,9 +53,16 @@ export function factsFor(artistName, ctx) {
   const { background, animated } = auraBackground(people);
   const aff = ctx.affinity ? ctx.affinity[artistName.toLowerCase()] : null;
   const spotify = aff && (aff.songs > 0 || aff.followed) ? { songs: aff.songs || 0, followed: !!aff.followed } : null;
+  // An EVENT's stage carries "Thu · Venue" — say when, then where, once.
+  let sub;
+  if (stage && stage.includes(' · ')) {
+    const bits = stage.split(' · ');
+    sub = [bits[0], timeRange(time), bits.slice(1).join(' · ')].filter(Boolean).join(' · ');
+  } else {
+    sub = [timeRange(time), day ? shortDay(fest, day) : null, stage].filter(Boolean).join(' · ');
+  }
   return {
-    name: artistName, day, stage, time,
-    sub: [timeRange(time), day ? shortDay(fest, day) : null, stage].filter(Boolean).join(' · '),
+    name: artistName, day, stage, time, sub,
     people, background, animated,
     noteCount: model.noteCount(state.crewDoc, ctx.fid, 'artist', artistName),
     spotify,
@@ -165,27 +181,32 @@ export function zoomSource() { return zoomed ? zoomed.source : null; }
 
 export function unzoom() {
   if (!zoomed) return;
-  const { el, prev } = zoomed;
+  const { el, prev, grown } = zoomed;
   zoomed = null;
-  if (!el.isConnected) return;
+  // The record owns ITS grown node — never a querySelector at teardown time:
+  // a re-zoom before the drop fired used to stack a second block, and the
+  // last one leaked (Codex gate, 2026-08-29). This node goes, whatever the
+  // card is doing by then.
+  if (grown) setTimeout(() => { if (grown.isConnected) grown.remove(); }, 340);
+  if (!el.isConnected) { if (grown && grown.isConnected) grown.remove(); return; }
   el.classList.remove('zoom');
   el.style.width = prev.width;
   el.style.marginLeft = prev.marginLeft;
   el.style.minHeight = prev.minHeight;
-  const grown = el.querySelector('.facts-grown');
-  const drop = () => { if (grown && grown.isConnected && !el.classList.contains('zoom')) grown.remove(); };
-  // Let the shrink play before the grown block leaves the DOM.
-  (typeof el.animate === 'function' ? setTimeout(drop, 340) : drop());
   el.style.zIndex = prev.zIndex;
 }
 
-export function zoomCard(el, artistName, ctx, { onOpenNotes = null, source = 'mouse' } = {}) {
+export function zoomCard(el, artistName, ctx, { onOpenNotes = null, source = 'mouse', occ = null } = {}) {
   if (zoomed && zoomed.el === el) return;
   unzoom();
-  const facts = factsFor(artistName, ctx);
+  // A grown block from an unfinished teardown must never stack under a new one.
+  for (const g of el.querySelectorAll('.facts-grown')) g.remove();
+  const facts = factsFor(artistName, ctx, occ);
   const grown = document.createElement('div');
   grown.className = 'facts-grown';
-  grown.setAttribute('aria-hidden', 'true');
+  // NOT aria-hidden: the grown block holds a real button (the notes chip).
+  // Interactive content inside aria-hidden is unreachable-but-visible — the
+  // exact trap. AT users also keep the resting corner chip either way.
   if (facts.sub) {
     const sub = document.createElement('div');
     sub.className = 'f-sub';
@@ -210,7 +231,17 @@ export function zoomCard(el, artistName, ctx, { onOpenNotes = null, source = 'mo
 
   const rect = el.getBoundingClientRect();
   const grid = el.closest('.times-grid, .wall-grid');
-  const gridRect = grid ? grid.getBoundingClientRect() : rect;
+  let gridRect = grid ? grid.getBoundingClientRect() : rect;
+  // The timetable grid scrolls inside .times-scroll: clamp to what a person
+  // can SEE, not to content hidden off-screen (Codex gate, 2026-08-29).
+  const scroller = el.closest('.times-scroll');
+  if (scroller) {
+    const sr = scroller.getBoundingClientRect();
+    gridRect = {
+      left: Math.max(gridRect.left, sr.left),
+      right: Math.min(gridRect.right, sr.right),
+    };
+  }
   const growth = Math.max(0, target - rect.width);
   let shift = -growth / 2;
   shift = Math.max(shift, gridRect.left - rect.left - 4);            // never past the left edge
@@ -220,7 +251,7 @@ export function zoomCard(el, artistName, ctx, { onOpenNotes = null, source = 'mo
   const nameEl = el.querySelector('.name');
   const before = nameEl ? nameEl.getBoundingClientRect() : null;
 
-  zoomed = { el, artist: artistName, source, prev: { width: el.style.width, marginLeft: el.style.marginLeft, minHeight: el.style.minHeight, zIndex: el.style.zIndex } };
+  zoomed = { el, artist: artistName, source, grown, prev: { width: el.style.width, marginLeft: el.style.marginLeft, minHeight: el.style.minHeight, zIndex: el.style.zIndex } };
   el.appendChild(grown);
   el.classList.add('zoom');
   el.style.width = `${target}px`;
@@ -248,7 +279,7 @@ export function zoomCard(el, artistName, ctx, { onOpenNotes = null, source = 'mo
 
 // Hover wiring for one card (pointer-fine by EVENT, never by media query).
 // Kevin's rule (2026-08-29): a real intent delay, or cards pop like crazy.
-export function wireCardZoom(el, artistName, ctx, { onOpenNotes = null } = {}) {
+export function wireCardZoom(el, artistName, ctx, { onOpenNotes = null, occ = null } = {}) {
   let inT = null, outT = null;
   el.addEventListener('pointerenter', (e) => {
     if (e.pointerType !== 'mouse') return;
@@ -257,7 +288,7 @@ export function wireCardZoom(el, artistName, ctx, { onOpenNotes = null } = {}) {
     if (inT) clearTimeout(inT);
     inT = setTimeout(() => {
       inT = null;
-      if (el.isConnected) zoomCard(el, artistName, ctx, { onOpenNotes, source: 'mouse' });
+      if (el.isConnected) zoomCard(el, artistName, ctx, { onOpenNotes, source: 'mouse', occ });
     }, ZOOM_IN_MS);
   });
   el.addEventListener('pointerleave', (e) => {
@@ -267,5 +298,18 @@ export function wireCardZoom(el, artistName, ctx, { onOpenNotes = null } = {}) {
       if (outT) clearTimeout(outT);
       outT = setTimeout(() => { outT = null; if (zoomed && zoomed.el === el) unzoom(); }, ZOOM_OUT_MS);
     }
+  });
+}
+
+// Keyboard route (2026-08-29): focusing a card grows it too, so Tab reaches
+// the notes chip inside — the door to a FIRST note needs no pointer at all.
+// focusout only unzooms when focus truly left the card (the chip is inside).
+export function wireCardFocusZoom(el, artistName, ctx, { onOpenNotes = null, occ = null } = {}) {
+  el.addEventListener('focusin', () => {
+    if (zoomed && zoomed.el === el) return;
+    zoomCard(el, artistName, ctx, { onOpenNotes, source: 'keyboard', occ });
+  });
+  el.addEventListener('focusout', (e) => {
+    if (zoomed && zoomed.el === el && !(e.relatedTarget && el.contains(e.relatedTarget))) unzoom();
   });
 }
