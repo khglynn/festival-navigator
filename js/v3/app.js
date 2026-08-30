@@ -16,7 +16,7 @@ import { disclosureFold, eqLoader, festRow } from './tools.js';
 import { openArtistSheet, openDayNotes, openAllNotes, openFestNotes, closeSheet, refreshOpenSheet, sheetChrome, dialogize, rememberOpener } from './notes.js';
 import { renderSettings, appSettings, openSubviewByKey } from './settings.js';
 import { onStorageWriteFail, saveLS, getLS, errorText } from '../util.js';
-import { router } from './router.js';
+import { router, encodeNotesKey, decodeNotesKey } from './router.js';
 import { wireCardZoom, wireCardFocusZoom, zoomCard, unzoom, zoomedCard, zoomSource } from './card-facts.js';
 import { createSortControl } from './sort-control.js';
 import { nameProblem } from '../name-rules.mjs';
@@ -49,11 +49,10 @@ const ctx = {
   onOpenNotes: (artist, occ = null) => {
     unzoom(); // the sheet replaces the preview — never leave it under the modal
     openArtistSheet(artist, ctx, onNotesChange, occ);
-    // The occurrence rides in the route key as one JSON payload — no assumed
-    // delimiter (an artist name may legally hold any character the festival
-    // file allows) — so back, forward and a refresh reopen THIS set for an
-    // artist who plays twice. Plain legacy keys (sheet:notes:<name>) restore too.
-    router.push(`sheet:notes:${occ ? JSON.stringify({ artist, occ }) : artist}`);
+    // The occurrence rides in the route key (router.encodeNotesKey — a tagged
+    // payload no name can imitate), so back, forward and a refresh reopen
+    // THIS set for an artist who plays twice.
+    router.push(encodeNotesKey(artist, occ));
   },
   onOpenDayNotes: (day) => {
     openDayNotes(day, ctx, onNotesChange);
@@ -276,8 +275,10 @@ function maybeScrollToNow() {
 // The explicit identity switch (FLOW-8), called from Settings.
 function switchIdentity(name) {
   crew.setMe(state.getCrewToken(), name);
-  refreshCtx();
-  renderPersonChips();
+  // The wall is painted per identity (your level in every label, the white
+  // stroke on your marks) — Settings → You is the ONLY switch now, so the
+  // repaint lives here, not in a caller (Codex gate, 2026-08-29).
+  repaintWall();
   renderYou();
   showToast($('toast-root'), `You’re ${name} on this device now.`);
 }
@@ -1751,12 +1752,8 @@ export function init() {
     else if (key === 'sheet:fest') openFestNotes(ctx, onNotesChange);
     else if (key.startsWith('sheet:day:')) openDayNotes(key.slice('sheet:day:'.length), ctx, onNotesChange);
     else if (key.startsWith('sheet:notes:')) {
-      const rest = key.slice('sheet:notes:'.length);
-      let artist = rest, occ = null;
-      if (rest.startsWith('{')) {
-        try { const p = JSON.parse(rest); if (p && typeof p.artist === 'string') { artist = p.artist; occ = p.occ || null; } } catch { /* a legacy plain name that happens to start with a brace */ }
-      }
-      openArtistSheet(artist, ctx, onNotesChange, occ);
+      const d = decodeNotesKey(key);
+      if (d) openArtistSheet(d.artist, ctx, onNotesChange, d.occ);
     }
   }, () => closeSheet());
   window.addEventListener('popstate', (e) => router.onPopState(e.state));

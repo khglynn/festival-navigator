@@ -119,7 +119,7 @@
 
 /* ---- people ----------------------------------------------------------------- */
 .person-chip { color: #fff; font-size: 11.5px; font-weight: 600; padding: 5px 12px;
-               -webkit-touch-callout: none; user-select: none; /* hold = pick-as, not the OS text callout */
+               -webkit-touch-callout: none; user-select: none; /* a long press must never raise the OS text callout */
                border-radius: var(--r-pill); border: none; cursor: pointer; }
 .person-chip.you { font-weight: 700; }
 /* A chip's job is to say "this person, in their colour". On the wall and in the

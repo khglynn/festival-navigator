@@ -232,6 +232,8 @@ function grownPieces(grown) {
   };
 }
 
+const exits = new WeakMap(); // el -> running exit animations (a re-entry cancels them)
+
 export function unzoom() {
   if (!zoomed) return;
   const { el, prev, grown, anims, rest } = zoomed;
@@ -248,35 +250,51 @@ export function unzoom() {
   el.style.minHeight = prev.minHeight;
   el.style.zIndex = prev.zIndex;
   if (!grown || !canAnimate(el)) { if (grown && grown.isConnected) grown.remove(); finishRest(); return; }
-  // The way out: the box shrinks back (a layout animation, around the same
-  // centre), the grown block dissolves quickly, the name hops home, and the
-  // resting pieces fade in over the last half. Shorter than the way in.
+  // The way out: the box shrinks back in PIXELS measured from both states
+  // (a lane-split card's resting margin is a percentage — animating '50%' to
+  // '50%' snapped; Codex gate, 2026-08-29), the grown block dissolves
+  // quickly, the name hops home, and the resting pieces fade in over the
+  // last half. Shorter than the way in. A re-entry cancels all of it.
   const r1 = rect(el);
+  const restMargin = parseFloat(getComputedStyle(el).marginLeft) || 0;
   const ms = 260;
-  el.animate(
-    [{ width: `${r0.width}px`, minHeight: `${r0.height}px`, marginLeft: prev.marginLeft ? prev.marginLeft : `${r0.left - r1.left}px` },
-     { width: `${r1.width}px`, minHeight: `${r1.height}px`, marginLeft: prev.marginLeft || '0px' }],
+  const out = [];
+  out.push(el.animate(
+    [{ width: `${r0.width}px`, minHeight: `${r0.height}px`, marginLeft: `${restMargin + (r0.left - r1.left)}px` },
+     { width: `${r1.width}px`, minHeight: `${r1.height}px`, marginLeft: `${restMargin}px` }],
     { duration: ms, easing: EASE },
-  );
-  grown.animate([{ opacity: 1 }, { opacity: 0 }], { duration: ms * 0.45, easing: 'ease-out', fill: 'forwards' })
-    .onfinish = () => { if (grown.isConnected) grown.remove(); };
+  ));
+  const fade = grown.animate([{ opacity: 1 }, { opacity: 0 }], { duration: ms * 0.45, easing: 'ease-out', fill: 'forwards' });
+  fade.onfinish = () => { if (grown.isConnected) grown.remove(); };
+  out.push(fade);
   if (nameEl && nameBefore) {
     const after = rect(nameEl);
     const a = mid(nameBefore), b = mid(after);
-    nameEl.animate(
+    out.push(nameEl.animate(
       [{ transform: `translate(${a.x - b.x}px, ${a.y - b.y}px) scale(${nameBefore.height / (after.height || 1)})` }, { transform: 'none' }],
       { duration: ms, easing: EASE },
-    );
+    ));
   }
   for (const p of rest) {
-    p.animate([{ opacity: 0 }, { opacity: 0, offset: 0.4 }, { opacity: 1 }], { duration: ms, easing: EASE })
-      .onfinish = () => { p.style.opacity = ''; };
+    const a = p.animate([{ opacity: 0 }, { opacity: 0, offset: 0.4 }, { opacity: 1 }], { duration: ms, easing: EASE });
+    a.onfinish = () => { p.style.opacity = ''; };
+    out.push(a);
   }
+  exits.set(el, { out, grown, rest });
 }
 
 export function zoomCard(el, artistName, ctx, { onOpenNotes = null, source = 'mouse', occ = null } = {}) {
   if (zoomed && zoomed.el === el) return;
   unzoom();
+  // An unfinished exit on this card (keyboard re-entry mid-shrink) ends now:
+  // its animations cancel, its grown block goes, its resting pieces reset.
+  const exit = exits.get(el);
+  if (exit) {
+    for (const a of exit.out) { try { a.cancel(); } catch { /* finished */ } }
+    if (exit.grown && exit.grown.isConnected) exit.grown.remove();
+    for (const p of exit.rest) p.style.opacity = '';
+    exits.delete(el);
+  }
   // A grown block from an unfinished teardown must never stack under a new one.
   for (const g of el.querySelectorAll('.facts-grown')) g.remove();
   const facts = factsFor(artistName, ctx, occ);

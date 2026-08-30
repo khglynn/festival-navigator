@@ -159,8 +159,10 @@ are open; refresh at any point restores the same surface or its nearest parent.
 
 ## F11 · Settings — one page, two doors
 
-1. Gear (or dock fest link) → Settings: YOU door (name, color, your Spotify)
-   and CREW door (members, crew name, festivals, share link, danger zone).
+1. Gear (or dock fest link) → Settings: YOU door (name, color, your Spotify —
+   and, since 2026-08-29, the ONLY place to switch who this device picks as:
+   the wall repaints for the new identity) and CREW door (members, crew name,
+   festivals, share link, danger zone).
    The festivals block lists YOUR boards (same rows as the landing, date-
    sorted): same-circle fests switch in place, boards in other circles open
    like landing rows, "+ Add a festival" goes to the shared multi-pick page,

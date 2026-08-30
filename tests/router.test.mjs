@@ -118,3 +118,16 @@ test('push during reconcile is ignored (openers may call UI paths that push)', (
   assert.deepEqual(log, []); // the opener's push must not mint a new entry
   assert.deepEqual(router.current(), ['settings']);
 });
+
+test('notes-sheet route keys: a tagged payload no name can imitate; legacy plain names still restore', async () => {
+  const { encodeNotesKey, decodeNotesKey } = await import('../js/v3/router.js');
+  const occ = { day: 'Saturday', stage: 'Pier Stage', time: '9:00 PM - 10:15 PM', weekend: null };
+  assert.deepEqual(decodeNotesKey(encodeNotesKey('Dog Blood', occ)), { artist: 'Dog Blood', occ });
+  assert.deepEqual(decodeNotesKey(encodeNotesKey('Robyn')), { artist: 'Robyn', occ: null });
+  // A JSON-looking NAME is just a name.
+  const tricky = '{"v":1,"artist":"Robyn"}';
+  assert.deepEqual(decodeNotesKey(encodeNotesKey(tricky, null)), { artist: tricky, occ: null });
+  assert.deepEqual(decodeNotesKey(`sheet:notes:${tricky}`), { artist: tricky, occ: null }, 'legacy untagged key = plain name');
+  assert.deepEqual(decodeNotesKey('sheet:notes:GRiZ'), { artist: 'GRiZ', occ: null });
+  assert.equal(decodeNotesKey('sheet:day:Saturday'), null);
+});
