@@ -10,9 +10,10 @@ import * as model from './model.js';
 import { LEVEL_LABELS_V4 } from '../parse.js';
 import { computeLanes } from '../overlap.js';
 import { activityMinutes, dayLabelParts } from '../time.js';
-import { auraBackground, whoCorner, aboutCorner, nameColor, subColor } from './aura.js';
+import { whoCorner, aboutCorner } from './aura.js';
 import { BOARD } from './palette.js';
 import { dayWhisper } from './notes.js'; // runtime-only cycle with this module (colorIndexOf) — safe
+import { factsFor } from './card-facts.js'; // same runtime-only cycle: the card's ONE model
 import { passesPeople, columnsTemplate, railLabels } from './filters.js';
 import { nowOnDay, nowOffsetPx, clockLabel, festivalClock } from './now.js';
 
@@ -28,19 +29,6 @@ export function colorIndexOf(name, personObj) {
   let h = 0;
   for (const ch of String(name)) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
   return h % BOARD.length;
-}
-
-// ---- card data ----------------------------------------------------------------
-function cardPeople(artist, picks, meName) {
-  const byPerson = picks[artist] || {};
-  const peopleObj = state.people();
-  const out = [];
-  for (const [person, level] of Object.entries(byPerson)) {
-    const p = peopleObj[person];
-    if (!state.isActivePerson(p)) continue;
-    out.push({ name: person, colorIndex: colorIndexOf(person, p), isYou: person === meName, level });
-  }
-  return out;
 }
 
 const BOOKMARK_PATH = 'M1 1h8v11l-4-3-4 3z';
@@ -59,7 +47,10 @@ export function renderCard(artistName, ctx, opts = {}) {
   // can appear twice — a grid set and an afters event, or two EF days). The
   // zoom, the peek, and the sheet all tell this card's story, never the
   // first match's (Codex gate, 2026-08-29).
-  const people = cardPeople(artistName, ctx.picks, ctx.meName);
+  // ONE model for the resting card, the zoom and the sheet header
+  // (card-facts.js factsFor) — a detail cannot exist in one and not another.
+  const facts = factsFor(artistName, ctx, opts.occ || null);
+  const people = facts.people;
   const el = document.createElement('div');
   el.className = 'card' + (opts.cell ? ' cell' : '') + (opts.time && !opts.cell ? ' timed' : '');
   // The people filter dims a card nobody selected has picked. Computed here,
@@ -76,12 +67,10 @@ export function renderCard(artistName, ctx, opts = {}) {
   el.tabIndex = 0;
   const myLevel = (ctx.picks[artistName] || {})[ctx.meName] || 0;
   const crewCount = people.filter((p) => !p.isYou).length;
-  const noteCountForLabel = model.noteCount(state.crewDoc, ctx.fid, 'artist', artistName);
-  const affForLabel = ctx.affinity ? ctx.affinity[artistName.toLowerCase()] : null;
   const labelParts = [`${artistName} — ${myLevel === 4 ? 'must' : (LEVEL_LABELS_V4[myLevel] || 'not picked').toLowerCase()}`];
   if (crewCount) labelParts.push(`picked by ${crewCount} other${crewCount === 1 ? '' : 's'}`);
-  if (noteCountForLabel) labelParts.push(`${noteCountForLabel} note${noteCountForLabel === 1 ? '' : 's'}`);
-  if (affForLabel) labelParts.push('in your Spotify');
+  if (facts.noteCount) labelParts.push(`${facts.noteCount} note${facts.noteCount === 1 ? '' : 's'}`);
+  if (facts.spotify) labelParts.push('in your Spotify');
   el.setAttribute('aria-label', labelParts.join(', '));
   el.title = artistName; // lane-split cells truncate hard — hover recovers (audit 9.2)
   el.addEventListener('keydown', (e) => {
@@ -103,9 +92,8 @@ export function renderCard(artistName, ctx, opts = {}) {
     tag.textContent = opts.tag;
     el.appendChild(tag);
   }
-  const { background, animated } = auraBackground(people);
-  el.style.background = background;
-  if (animated && !ctx.lowPower) {
+  el.style.background = facts.background;
+  if (facts.animated && !ctx.lowPower) {
     el.classList.add('animated');
     const grain = document.createElement('span');
     grain.className = 'card-grain';
@@ -113,22 +101,20 @@ export function renderCard(artistName, ctx, opts = {}) {
   }
   const nm = document.createElement('span');
   nm.className = 'name';
-  nm.style.color = nameColor(people);
+  nm.style.color = facts.nameColor;
   nm.textContent = artistName;
   el.appendChild(nm);
   if (opts.time) {
     const t = document.createElement('span');
     t.className = 'time';
-    t.style.color = subColor(people);
+    t.style.color = facts.subColor;
     t.textContent = opts.time;
     el.appendChild(t);
   }
 
   const about = document.createElement('span');
   about.className = 'corner-about';
-  const noteN = model.noteCount(state.crewDoc, ctx.fid, 'artist', artistName);
-  const aff = ctx.affinity ? ctx.affinity[artistName.toLowerCase()] : null;
-  for (const chip of aboutCorner({ noteCount: noteN, spotify: aff ? { songs: aff.songs || 0, followed: !!aff.followed } : null })) {
+  for (const chip of aboutCorner({ noteCount: facts.noteCount, spotify: facts.spotify })) {
     // The clickable note-count chip is a real button (audit 4.4); the Spotify
     // chip stays a passive span.
     const clickable = chip.kind === 'notes' && ctx.onOpenNotes;

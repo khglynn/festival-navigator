@@ -10,7 +10,7 @@
 // colorIndexOf) is the same safe shape notes.js already uses.
 import * as state from '../state.js';
 import * as model from './model.js';
-import { ordered, auraBackground } from './aura.js';
+import { ordered, auraBackground, nameColor, subColor } from './aura.js';
 import { hslOf } from './palette.js';
 import { colorIndexOf } from './wall.js';
 
@@ -25,17 +25,22 @@ export function timeRange(t) {
 
 const shortDay = (fest, day) => (fest.dayMeta && fest.dayMeta[day] && fest.dayMeta[day].wd) || day;
 
-// Everything the grown card says, computed once from ctx (never the DOM).
-// `occ` is the occurrence the CARD represents ({day, stage, time}) — an
-// artist can play twice (a grid set AND an afters event, two grid days at
-// EF), and the first match is the wrong story for every card but the first
-// (Codex gate, 2026-08-29). Without one, the first scheduled/listed
+// THE card model — everything a card says, resting or grown, computed once
+// from ctx (never the DOM). wall.js renderCard and the zoom/sheet header both
+// render from this object, so a detail the resting card carries cannot go
+// missing from the grown one (Kevin, 2026-08-30: two rounds dropped details
+// because two renderers derived them separately).
+// `occ` is the occurrence the CARD represents ({day, stage, time, weekend})
+// — an artist can play twice (a grid set AND an afters event, two grid days
+// at EF), and the first match is the wrong story for every card but the
+// first (Codex gate, 2026-08-29). Without one, the first scheduled/listed
 // occurrence stands in.
 export function factsFor(artistName, ctx, occ = null) {
-  const fest = state.fest();
+  const fest = state.fest() || {}; // a card can render before its fest file is known (tests, a stale index)
   let day = occ ? occ.day || null : null;
   let stage = occ ? occ.stage || null : null;
   let time = occ ? occ.time || null : null;
+  const weekend = occ && (occ.weekend === 'W1' || occ.weekend === 'W2') ? occ.weekend : null;
   if (!occ) {
     for (const d of Object.keys(fest.days || {})) {
       const hit = (fest.days[d].artists || []).find((a) => a.name === artistName);
@@ -53,8 +58,11 @@ export function factsFor(artistName, ctx, occ = null) {
     .map(([n, lvl]) => ({ name: n, level: lvl, colorIndex: colorIndexOf(n, peopleObj[n]), isYou: n === ctx.meName })));
   const { background, animated } = auraBackground(people);
   const aff = ctx.affinity ? ctx.affinity[artistName.toLowerCase()] : null;
-  const spotify = aff && (aff.songs > 0 || aff.followed) ? { songs: aff.songs || 0, followed: !!aff.followed } : null;
-  // An EVENT's stage carries "Thu · Venue" — say when, then where, once.
+  const spotify = aff && (aff.songs > 0 || aff.followed)
+    ? { songs: aff.songs || 0, followed: !!aff.followed, hot: !!aff.followed && (aff.songs || 0) >= 5 }
+    : null;
+  // The long form: when · day · where · which weekend. An EVENT's stage
+  // carries "Thu · Venue" — say when, then where, once.
   let sub;
   if (stage && stage.includes(' · ')) {
     const bits = stage.split(' · ');
@@ -62,9 +70,10 @@ export function factsFor(artistName, ctx, occ = null) {
   } else {
     sub = [timeRange(time), day ? shortDay(fest, day) : null, stage].filter(Boolean).join(' · ');
   }
+  if (weekend) sub = [sub, `Weekend ${weekend.slice(1)}`].filter(Boolean).join(' · ');
   return {
-    name: artistName, day, stage, time, sub,
-    people, background, animated,
+    name: artistName, day, stage, time, weekend, sub,
+    people, background, animated, nameColor: nameColor(people), subColor: subColor(people),
     noteCount: model.noteCount(state.crewDoc, ctx.fid, 'artist', artistName),
     spotify,
   };
@@ -131,13 +140,14 @@ export function factChips(facts, { onOpenNotes = null } = {}) {
 
 // One builder, two homes: the name on the wash, then the grown lines (sub,
 // who-row, chips) in one block so the zoom can fade them as a group. The
-// zoomed card sits OVER the resting card, whose wash is translucent, so it
-// paints the page colour under its aura (`opaque`); the sheet header keeps
-// the sheet showing through.
-function factsCard(facts, { className, onClose = null, onOpenNotes = null, opaque = false }) {
+// aura string already ends in the opaque card base, so the same background
+// covers whatever sits under the grown card. (Appending a second colour
+// layer made the shorthand invalid and every zoomed card went black —
+// caught on the 2026-08-30 preview.)
+function factsCard(facts, { className, onClose = null, onOpenNotes = null }) {
   const card = document.createElement('div');
   card.className = className + (facts.animated ? ' animated' : '');
-  card.style.background = opaque ? `${facts.background}, var(--page)` : facts.background;
+  card.style.background = facts.background;
   const grain = document.createElement('span');
   grain.className = 'card-grain';
   card.appendChild(grain);
@@ -269,7 +279,7 @@ function place(slot, el) {
 }
 
 function buildCard(z, facts) {
-  const card = factsCard(facts, { className: 'zoom-card', onOpenNotes: z.onOpenNotes, opaque: true });
+  const card = factsCard(facts, { className: 'zoom-card', onOpenNotes: z.onOpenNotes });
   card.setAttribute('role', 'group');
   card.setAttribute('aria-label', `${facts.name} details`);
   return card;
@@ -281,6 +291,70 @@ function sizeSlot(slot, r0) {
   slot.style.maxWidth = `${Math.max(MAX_W, Math.ceil(r0.width))}px`;
   slot.style.minHeight = `${Math.max(MIN_H, Math.ceil(r0.height))}px`;
 }
+
+// The resting pieces the morph carries: each becomes its grown twin. Read
+// (rects, computed fonts) before any write — one layout, not a thrash.
+function restingPieces(el) {
+  return {
+    name: el.querySelector('.name'),
+    time: el.querySelector('.time'),
+    tag: el.querySelector('.chip-weekend'),
+    marks: [...el.querySelectorAll('.corner-who .mark:not(.ghost)')],
+    ghosts: [...el.querySelectorAll('.corner-who .mark.ghost')],
+    notes: el.querySelector('.corner-about .chip-notes'),
+    spot: el.querySelector('.corner-about .chip-spotify'),
+  };
+}
+const FONT_PROPS = ['font-size', 'font-weight', 'font-family', 'line-height', 'letter-spacing', 'color', 'white-space', 'text-align'];
+function measure(piece) {
+  if (!piece) return null;
+  const cs = getComputedStyle(piece);
+  return { el: piece, rect: rect(piece), font: FONT_PROPS.map((k) => [k, cs.getPropertyValue(k)]) };
+}
+// A copy of a resting piece, pinned inside the overlay exactly where the
+// piece sits on the wall (the overlay's padding box starts inside its 1px
+// border). It rides the hop and dissolves; pointer-blind.
+function cloneAt(m, r1) {
+  const c = m.el.cloneNode(true);
+  c.removeAttribute('id');
+  c.style.cssText = m.el.style.cssText;
+  for (const [k, v] of m.font) c.style.setProperty(k, v);
+  c.style.position = 'absolute';
+  c.style.left = `${m.rect.left - r1.left - 1}px`;
+  c.style.top = `${m.rect.top - r1.top - 1}px`;
+  c.style.width = `${m.rect.width}px`;
+  c.style.height = `${m.rect.height}px`;
+  c.style.margin = '0';
+  c.style.boxSizing = 'border-box';
+  c.style.pointerEvents = 'none';
+  return c;
+}
+// A shared-element hop: `to` is laid out at its final place and starts where
+// the piece was (translate + scale), settling into place; the clone rides
+// the same path and dissolves over the last two thirds. Transform and
+// opacity only — the compositor's work, never layout's.
+function hop(toEl, fromRect, toRect, cloneEl) {
+  if (!toRect.width || !toRect.height || !fromRect.width || !fromRect.height) return [];
+  const a = mid(fromRect), b = mid(toRect);
+  const sx = fromRect.width / toRect.width, sy = fromRect.height / toRect.height;
+  const anims = [toEl.animate(
+    [{ transform: `translate(${a.x - b.x}px, ${a.y - b.y}px) scale(${sx}, ${sy})`, opacity: 0 },
+     { opacity: 1, offset: 0.55 },
+     { transform: 'none', opacity: 1 }],
+    { duration: MORPH_MS, easing: EASE, fill: 'both' },
+  )];
+  if (cloneEl) {
+    anims.push(cloneEl.animate(
+      [{ transform: 'none', opacity: 1 },
+       { opacity: 1, offset: 0.3 },
+       { transform: `translate(${b.x - a.x}px, ${b.y - a.y}px) scale(${1 / sx}, ${1 / sy})`, opacity: 0 }],
+      { duration: MORPH_MS, easing: EASE, fill: 'both' },
+    ));
+  }
+  return anims;
+}
+const dissolve = (el) => el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: MORPH_MS * 0.4, easing: EASE, fill: 'forwards' });
+const appear = (el) => el.animate([{ opacity: 0, transform: 'scale(.7)' }, { opacity: 0, offset: 0.4 }, { opacity: 1, transform: 'none' }], { duration: MORPH_MS, easing: EASE });
 
 export function zoomCard(el, artistName, ctx, { onOpenNotes = null, source = 'mouse', occ = null, instant = false } = {}) {
   if (zoomed && zoomed.el === el) return null;
@@ -297,35 +371,75 @@ export function zoomCard(el, artistName, ctx, { onOpenNotes = null, source = 'mo
   z.card = buildCard(z, facts);
   slot.appendChild(z.card);
 
-  // READS first (resting card, its name), then the writes.
+  // READS first: the resting card and every piece the morph will carry.
+  const animate = !instant && canAnimate(z.card, ctx);
   const r0 = rect(el);
-  const restName = el.querySelector('.name');
-  const nameFrom = restName ? rect(restName) : null;
+  const R = restingPieces(el);
+  const M = animate ? {
+    name: measure(R.name), time: measure(R.time), tag: measure(R.tag),
+    marks: R.marks.map(measure), ghosts: R.ghosts.map(measure),
+    notes: measure(R.notes), spot: measure(R.spot),
+  } : null;
+  // WRITES: the overlay in place, the resting card stepping back.
   sizeSlot(slot, r0);
   zoomLayer().appendChild(slot);
   const { r1 } = place(slot, el);
   el.classList.add('zoom-source');
   zoomed = z;
   wireSlot(z);
+  if (!animate) { slot.classList.add('shown'); return facts; }
 
-  if (instant || !canAnimate(z.card, ctx)) { slot.classList.add('shown'); return facts; }
-
-  const nameEl = z.card.querySelector('.f-name');
-  const nameTo = nameEl ? rect(nameEl) : null;
+  // The morph: the overlay is revealed from the resting rect by a clip while
+  // every resting piece — carried in as a clone at its exact spot — slides
+  // and scales into its grown twin, and the name glides to the top. Nothing
+  // appears from nowhere, nothing vanishes in place (Kevin, 2026-08-29).
+  const rest = document.createElement('div');
+  rest.className = 'z-rest';
+  const clones = {
+    time: M.time ? cloneAt(M.time, r1) : null,
+    tag: M.tag ? cloneAt(M.tag, r1) : null,
+    marks: M.marks.map((m) => cloneAt(m, r1)),
+    ghosts: M.ghosts.map((m) => cloneAt(m, r1)),
+    notes: M.notes ? cloneAt(M.notes, r1) : null,
+    spot: M.spot ? cloneAt(M.spot, r1) : null,
+  };
+  rest.append(...[clones.time, clones.tag, ...clones.marks, ...clones.ghosts, clones.notes, clones.spot].filter(Boolean));
+  z.card.appendChild(rest);
+  const G = {
+    name: z.card.querySelector('.f-name'),
+    sub: z.card.querySelector('.f-sub'),
+    pills: [...z.card.querySelectorAll('.f-pill')],
+    notes: z.card.querySelector('.f-chip.notes'),
+    spot: z.card.querySelector('.f-chip.spot'),
+  };
   const anims = [];
   anims.push(z.card.animate(
     [{ clipPath: insetFor(r0, r1) }, { clipPath: `inset(0px round ${RADIUS}px)` }],
     { duration: MORPH_MS, easing: EASE },
   ));
-  if (nameEl && nameFrom && nameTo && nameFrom.height && nameTo.height) {
-    const a = mid(nameFrom), b = mid(nameTo);
-    anims.push(nameEl.animate(
-      [{ transform: `translate(${a.x - b.x}px, ${a.y - b.y}px) scale(${nameFrom.height / nameTo.height})` }, { transform: 'none' }],
-      { duration: MORPH_MS, easing: EASE },
-    ));
+  if (G.name && M.name && M.name.rect.height) {
+    const to = rect(G.name);
+    if (to.height) {
+      const a = mid(M.name.rect), b = mid(to);
+      anims.push(G.name.animate(
+        [{ transform: `translate(${a.x - b.x}px, ${a.y - b.y}px) scale(${M.name.rect.height / to.height})` }, { transform: 'none' }],
+        { duration: MORPH_MS, easing: EASE },
+      ));
+    }
   }
-  const grown = z.card.querySelector('.f-grown');
-  if (grown) anims.push(grown.animate([{ opacity: 0 }, { opacity: 0, offset: 0.35 }, { opacity: 1 }], { duration: MORPH_MS, easing: EASE }));
+  if (G.sub) anims.push(...(M.time ? hop(G.sub, M.time.rect, rect(G.sub), clones.time) : [appear(G.sub)]));
+  G.pills.forEach((pill, i) => {
+    anims.push(...(M.marks[i] ? hop(pill, M.marks[i].rect, rect(pill), clones.marks[i]) : [appear(pill)]));
+  });
+  for (const extra of [...clones.marks.slice(G.pills.length), ...clones.ghosts, clones.tag].filter(Boolean)) anims.push(dissolve(extra));
+  if (G.notes) anims.push(...(M.notes ? hop(G.notes, M.notes.rect, rect(G.notes), clones.notes) : [appear(G.notes)]));
+  else if (clones.notes) anims.push(dissolve(clones.notes));
+  if (G.spot) anims.push(...(M.spot ? hop(G.spot, M.spot.rect, rect(G.spot), clones.spot) : [appear(G.spot)]));
+  else if (clones.spot) anims.push(dissolve(clones.spot));
+  // Once everything has landed the clones go — their twins took over.
+  const last = anims[anims.length - 1];
+  const settle = () => { if (rest.isConnected) rest.remove(); };
+  if (last) { last.onfinish = settle; last.oncancel = settle; } else settle();
   slot.classList.add('shown'); // the shadow eases in through CSS
   z.anims = anims;
   return facts;

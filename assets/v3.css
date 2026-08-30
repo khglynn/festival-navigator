@@ -637,6 +637,9 @@ button.f-chip.notes { cursor: pointer; }
 .zoom-card.animated { background-size: 180% 180%; animation: gradShift 12s ease-in-out infinite; }
 .zoom-card > * { position: relative; }
 .zoom-card .f-name { font-size: 15px; font-weight: 700; line-height: 1.2; color: var(--text-primary); }
+/* The resting pieces ride the morph as clones pinned where they sat on the
+ * wall, then dissolve into their grown twins; removed once everything lands. */
+.zoom-card .z-rest { position: absolute; inset: 0; pointer-events: none; z-index: 2; }
 .card.zoom-source { opacity: 0; }
 
 /* Afters/event cards: the day and time on one line, the venue on the next. */
