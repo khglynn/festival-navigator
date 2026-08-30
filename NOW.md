@@ -1,4 +1,73 @@
-# NOW — festival-navigator: v42 LIVE ON PROD (2026-08-27 21:01 CT) — Portola set times, wall filters, the now line, the festival timezone
+# NOW — festival-navigator: v42 LIVE ON PROD · the notes/desktop round is BUILT on `notes-desktop-round` (2026-08-29), waiting on Kevin's promote
+
+## 2026-08-29 — the notes/desktop round: designed in four canvas rounds, built, gated three times by Codex, walked
+
+**Where it lives:** branch `notes-desktop-round` (PR to open once the walk
+is in; per the 2026-08-29 workspace rule agents open PRs and Kevin merges).
+Preview: `festival-navigator-git-notes-desktop-round-kevinhg.vercel.app`
+(protection-gated — mint a `_vercel_share` link with the Vercel MCP AFTER
+the last push; a push replaces the alias target and kills the link).
+Design canvas (four pages, newest first):
+https://claude.ai/code/artifact/5e9504d4-ea25-4ab7-bc6f-a32bf8b3b635 —
+rendered by production code through the jsdom rig in
+`claude-plans/2026-08-29-notes-desktop-canvas/` (the 08-27 canvas was
+rejected for flat cards; this one landed).
+
+**What Kevin decided (all 2026-08-29):** the Aura vibe for notes (no boxes —
+a note is text on a wash of its author's hue, name above the words, one
+gutter, replies one gutter in); day notes = the WHISPER (nothing until
+someone writes, then the newest note as one line at the day's door; the
+rule's ✎ chip stays the add door); the hover/hold ZOOM is the card itself
+growing around its centre into a small version of the sheet's header (the
+name never leaves the middle; strokes dissolve as it grows; hover and open
+are one look); the existing notes button is the one door to comments and
+rides along in the zoom; a real hover-intent delay on desktop; "12 liked
+songs · following" with the flag left of the word; time · short day · place;
+"You" capitalised, MUST on the baseline; pick-as lives in Settings → You
+ONLY (the chip hold, the arm and the hover door are gone — people rarely
+switch); the share copy ("Opens straight into Portola 26. No accounts
+needed." / "Send Eli this link. Opening it makes the picks theirs."); threads
+one level deep with a pinned root folding to a reply count. Not picked by
+Kevin (defaults shown on the canvas, easy to swap): MUST option A (the word)
+and the deleted-root stub.
+
+**What is on the branch (`git log main..notes-desktop-round`):** server `re`
+key + `model.threadsFor`; `js/v3/card-facts.js` (facts, the sheet header,
+the zoom as a shared-element morph via the Web Animations API — clip reveal
++ FLIP hops, one ease, 350 ms in / 300 ms out, keyed off the event's pointer
+type, keyboard route via :focus-visible); `notes.js` rewritten (threads,
+reply composer state, inline edits that survive live syncs, pinned folds,
+stubs for deleted/unsynced roots, the whisper); `wall.js` (whisper at the
+door, fest whisper foot, zoom hooks, occurrence on every card, two-line
+event sub-labels, "picked by N others" labels, the ✎ hover button retired);
+`app.js` (zoom/peek wiring, one-layer Escape, tagged notes route keys with
+the occurrence, chips tap-to-filter only, Settings switch repaints the
+wall); `scripts/sw-stamp.mjs` + `ASSET_STAMP` (the suite fails when cached
+assets change without the ritual — the gate-round fixes once shipped under
+an unbumped version); SW v44. Suite 274 pass / 1 env skip. Interaction
+research brief: `claude-plans/2026-08-29-notes-desktop-canvas/interaction-research.json`.
+
+**Gates:** Codex NO SHIP ×3 → 19 findings taken (the press-outlives-its-hold
+race, occurrence identity, edit drafts, a11y/touch of the grown door, zoom
+teardown generations, scrollport clamp, route-key collisions, Settings
+repaint, lane-card snap, SW stamp) — every one verified in code before it was
+fixed; a Sonnet walker with real pointer input on the preview (report in the
+DEVLOG entry once in). Kevin's own look at the preview drove the last design
+turn (the morph recomposed around the centre, then rebuilt as a real
+shared-element transition).
+
+**Open, Kevin's calls:** promote (merge the PR); "clean up" for the walker's
+three throwaway Neon rows (`zz-design`, the stray Ava-only "Lost Lands 26"
+crew, person `0og6LjR50a2D`) — still there, intentionally; the coach mark's
+"Hold for notes." (his line — hold now zooms, notes one tap further; leave
+or reword); the duplicate person rows for Nhu/Pegah/HG in the live Portola
+crew (the deferred idempotent-claim hardening — harmless to picks; backlog
+unless he wants it in this branch).
+
+**Then:** Seismic + ACL data on the Portola pattern (set times where out,
+the afters / big events, `America/Chicago`, freeze pick keys the day people
+start picking), festival checks by teammates while the main session builds.
+
 
 ## 2026-08-27 21:01 CT — PROMOTED: PR #12 merged (carrying #11), v42 on all three domains
 
@@ -17,7 +86,7 @@ sticky — to filter by a person mid-page you scroll to the top first (the
 stage strip and the day tabs ARE sticky). If that bites on festival day, a
 sticky chip row is a small change.
 
-## NEXT ROUND — for a FRESH session (Kevin, 2026-08-27 21:03–21:10 CT): notes + desktop, then ACL + Seismic
+## NEXT ROUND — for a FRESH session (Kevin, 2026-08-27 21:03–21:10 CT): notes + desktop, then ACL + Seismic — DECIDED AND BUILT 2026-08-29 (see the top of this file; the proposals below are history)
 
 **2026-08-29 — the design canvas is up, at production fidelity:**
 https://claude.ai/code/artifact/5e9504d4-ea25-4ab7-bc6f-a32bf8b3b635 — 17

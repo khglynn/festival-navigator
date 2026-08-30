@@ -2,6 +2,53 @@
 
 Newest first. One entry per meaningful unit of work.
 
+## 2026-08-29 — the notes/desktop round: four design rounds, one build, three Codex gates
+
+- **Design that landed.** The 08-27 canvas failed on fidelity, so the rig
+  in `claude-plans/2026-08-29-notes-desktop-canvas/` renders every artboard
+  through production code (jsdom + state.js/wall.js/notes.js). Round 1
+  covered all six asks and Kevin's verdict was "no elegance" — boxes and
+  stacked pills. Round 2 offered three vibes (ink / aura / script); he chose
+  Aura. Round 3 refined it and carried it into the open decisions. Round 4
+  answered his notes: dials, a rounded header, the live morph. Then his own
+  look at the preview drove two more turns: recompose the morph around the
+  centre (the name never leaves the middle; hover becomes a small open
+  header), and rebuild the transition as a real shared-element morph —
+  things slide and scale into place, nothing fades-then-reappears.
+- **Two things got simpler by his call.** Pick-as moved to Settings → You
+  only (the chip hold, the arm, the hover door and their tests are gone —
+  people rarely switch); the existing notes button stays the one door to
+  comments and rides along in the zoom.
+- **The build** (branch `notes-desktop-round`, SW v44): threads (`re`),
+  card-facts.js (one component: the zoom and the sheet header), the aura
+  sheet, the whisper replacing the inline bars, occurrence identity on every
+  card, tagged route keys, the approved share copy, two-line event cards,
+  "picked by N others" labels, and `scripts/sw-stamp.mjs` — an asset stamp
+  the suite enforces, born from shipping gate fixes under an unbumped
+  version.
+- **Codex, three rounds, NO SHIP each time, 19 findings taken** — the
+  lesson class again: a repaint between a hold arming and its release could
+  confirm an identity switch (a press record now outlives its hold); a
+  duplicate performance zoomed into the first match's set (the occurrence
+  rides the card, the route key, the sheet); a live sync ate an in-flight
+  edit (drafts live outside the painted list); an unfinished teardown
+  stacked grown blocks (the record owns its node); the clamp used content
+  bounds not the scrollport; a JSON-looking artist name could collide with
+  the route key (a tagged payload no name can hold); Settings → You left the
+  wall stale once the chip path was gone; lane cards snapped on the way out.
+  Every finding was re-read in the file before the fix.
+- **Research for the interaction grammar** (five Sonnet studies, brief
+  banked): tap = primary with zero delay; hover-in 300–500 ms and always
+  slower than hover-out; hold 500 ms / 10 px (the OS constants production
+  already used); gestures keyed off the event's pointer type, never a media
+  query; actions inside a preview need stopPropagation AND a target guard.
+- **Walkers.** The first (production reference screenshots) used scripted
+  clicks for picks despite the brief and reported two "bugs" the crew's own
+  document disproved — real input for everything is now the standing brief.
+  A second walker died in a usage pause with nothing banked (bank-as-you-go
+  is why that cost nothing). The gate walk on the final preview: see the
+  next entry.
+
 ## 2026-08-27 (late) — the browser-only bugs, the festival timezone, gate rounds 4–5
 
 - **Round closed at 21:10 with the next brief banked, nothing built.** Kevin's
