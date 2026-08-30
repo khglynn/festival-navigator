@@ -638,11 +638,13 @@ button.f-chip.notes { cursor: pointer; }
              -webkit-touch-callout: none; user-select: none; color: inherit; font-family: inherit; }
 .zoom-card .z-surface { position: absolute; inset: 0; overflow: hidden; border: 1px solid var(--hairline); border-radius: var(--r-card); }
 .zoom-card .z-surface.animated { background-size: 180% 180%; animation: gradShift 12s ease-in-out infinite; }
-.zoom-card > :not(.z-surface) { position: relative; }
-.zoom-card .f-name { font-size: 15px; font-weight: 700; line-height: 1.2; color: var(--text-primary); }
+.zoom-card > :not(.z-surface) { position: relative; z-index: 2; } /* content over both surfaces */
+.zoom-card .f-name { font-size: 18px; font-weight: 700; line-height: 1.2; color: var(--text-primary); } /* the zoom's hero: the name grows (13.5–15px at rest) */
+/* After a pick the old wash lingers over the new one and thins away. */
+.zoom-card .z-surface-old { pointer-events: none; z-index: 1; }
 /* The resting pieces ride the morph as clones pinned where they sat on the
  * wall, then dissolve into their grown twins; removed once everything lands. */
-.zoom-card .z-rest { position: absolute; inset: 0; pointer-events: none; z-index: 2; }
+.zoom-card .z-rest { position: absolute; inset: 0; pointer-events: none; z-index: 3; }
 .card.zoom-source { opacity: 0; }
 
 /* Afters/event cards: the day and time on one line, the venue on the next. */

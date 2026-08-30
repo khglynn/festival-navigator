@@ -474,8 +474,30 @@ export function zoomCard(el, artistName, ctx, { onOpenNotes = null, source = 'mo
 
 // A pick while zoomed keeps the zoom: the person is resting on the card,
 // cycling to MUST while watching the pills. The fresh resting node takes the
-// overlay's place underneath and the overlay's parts are rebuilt in place —
-// no intent delay, no morph replay.
+// overlay's place underneath and the overlay's parts are rebuilt — and the
+// rebuild is itself a small event (Kevin, 2026-08-30: "it should again
+// animate in and slide things around"): the new wash fades in under the old,
+// the box re-centres, every piece that stayed slides to its new spot, a pill
+// that arrived grows in with a little overshoot, a MUST badge fades on.
+// Transform and opacity only, inside the overlay.
+const REFRESH_MS = 300;
+function partKey(el) {
+  if (el.classList.contains('f-name')) return 'name';
+  if (el.classList.contains('f-sub')) return 'sub';
+  if (el.classList.contains('f-pill')) return `pill:${el.firstChild ? el.firstChild.textContent : ''}`;
+  if (el.classList.contains('notes')) return 'notes';
+  if (el.classList.contains('spot')) return 'spot';
+  return null;
+}
+function snapshotParts(card) {
+  const out = new Map();
+  for (const el of card.querySelectorAll('.f-name, .f-sub, .f-pill, .f-chip.notes, .f-chip.spot')) {
+    const k = partKey(el);
+    if (k) out.set(k, { rect: rect(el), must: !!el.querySelector('b') });
+  }
+  return out;
+}
+
 export function refreshZoom(fresh, ctx) {
   if (!zoomed || !fresh) return;
   const z = zoomed;
@@ -489,9 +511,67 @@ export function refreshZoom(fresh, ctx) {
   fresh.classList.add('zoom-source');
   const facts = factsFor(z.artist, ctx, z.occ);
   z.card.setAttribute('aria-label', `${facts.name} details`);
+
+  const animate = canAnimate(z.card, ctx);
+  // READS: where everything was.
+  const before = animate ? snapshotParts(z.card) : null;
+  const slotBefore = animate ? rect(z.slot) : null;
+  const oldSurface = z.card.querySelector('.z-surface');
+  // WRITES: the new parts, the box re-centred.
   z.card.replaceChildren(...buildParts(z, facts));
   sizeSlot(z.slot, rect(fresh));
-  place(z.slot, fresh); // more pills may have widened it — stay centred
+  place(z.slot, fresh);
+  if (!animate) return;
+
+  // READS again (one layout): where everything is now.
+  const slotAfter = rect(z.slot);
+  const surface = z.card.querySelector('.z-surface');
+  const anims = [];
+  // The old wash lingers over the new one and thins away; the box's growth
+  // is revealed by the new surface unclipping from the old box.
+  if (oldSurface) {
+    oldSurface.classList.add('z-surface-old');
+    oldSurface.style.left = `${slotBefore.left - slotAfter.left}px`;
+    oldSurface.style.top = `${slotBefore.top - slotAfter.top}px`;
+    oldSurface.style.width = `${slotBefore.width}px`;
+    oldSurface.style.height = `${slotBefore.height}px`;
+    z.card.appendChild(oldSurface);
+    const fade = oldSurface.animate([{ opacity: 1 }, { opacity: 0 }], { duration: REFRESH_MS * 0.8, easing: EASE_SURFACE, fill: 'forwards' });
+    fade.onfinish = () => oldSurface.remove();
+    fade.oncancel = () => oldSurface.remove();
+    anims.push(fade);
+  }
+  const moved = Math.abs(slotBefore.width - slotAfter.width) > 1 || Math.abs(slotBefore.height - slotAfter.height) > 1
+    || Math.abs(slotBefore.left - slotAfter.left) > 1 || Math.abs(slotBefore.top - slotAfter.top) > 1;
+  if (moved) {
+    anims.push(surface.animate(
+      [{ clipPath: insetFor(slotBefore, slotAfter) }, { clipPath: `inset(0px round ${RADIUS}px)` }],
+      { duration: REFRESH_MS, easing: EASE_SURFACE },
+    ));
+  }
+  // Every piece: the ones that stayed slide from where they were; the ones
+  // that arrived grow in a beat later; a badge that appeared fades on.
+  let arrivals = 0;
+  for (const el of z.card.querySelectorAll('.f-name, .f-sub, .f-pill, .f-chip.notes, .f-chip.spot')) {
+    const k = partKey(el);
+    const was = k ? before.get(k) : null;
+    const now = rect(el);
+    if (was && now.width && now.height) {
+      const a = mid(was.rect), b = mid(now);
+      if (Math.abs(a.x - b.x) > 0.5 || Math.abs(a.y - b.y) > 0.5) {
+        anims.push(el.animate([{ transform: `translate(${a.x - b.x}px, ${a.y - b.y}px)` }, { transform: 'none' }], { duration: REFRESH_MS, easing: EASE_ARRIVE }));
+      }
+      const badge = el.querySelector('b');
+      if (badge && !was.must) anims.push(badge.animate([{ opacity: 0, transform: 'translateY(3px)' }, { opacity: 1, transform: 'translateY(1px)' }], { duration: REFRESH_MS, delay: 60, easing: EASE_ARRIVE, fill: 'both' }));
+    } else if (!was) {
+      anims.push(el.animate(
+        [{ transform: 'scale(.55)', opacity: 0 }, { opacity: 1, offset: 0.45 }, { transform: 'none', opacity: 1 }],
+        { duration: REFRESH_MS + 60, delay: 50 + arrivals * STAGGER_MS * 0.6, easing: EASE_ARRIVE, fill: 'both' },
+      ));
+      arrivals += 1;
+    }
+  }
+  z.anims = anims;
 }
 
 export function unzoom({ instant = false } = {}) {
