@@ -145,6 +145,13 @@ function validateNote(note, where) {
       if (typeof v !== 'string' || v.length > LIMITS.noteText || /[\x00-\x08\x0b-\x1f]/.test(v)) return fail(`${where}: bad text`);
     } else if (k === 'deleted') {
       if (v !== true) return fail(`${where}: deleted may only be true`);
+    } else if (k === 're') {
+      // A reply: `re` names its root note's id. Existence is deliberately NOT
+      // required — sync can deliver a reply a beat before its root, and a
+      // root may be tombstoned while replies stay. One-level depth is a
+      // client rule (the composer always passes the root's id); the server
+      // guarantees only the shape.
+      if (typeof v !== 'string' || !NOTE_ID_RE.test(v)) return fail(`${where}: bad re`);
     } else return fail(`${where}: unknown key ${k}`);
   }
   if (typeof note.text !== 'string') return fail(`${where}: text required`);
@@ -172,6 +179,7 @@ function validateNoteMap(map, where) {
     if (!r.ok) return r;
     const prefix = `${sanitizeAuthorForId(note.author)}.`;
     if (!noteId.startsWith(prefix)) return fail(`${where}: note id must begin with its author (${prefix}...)`);
+    if (note.re === noteId) return fail(`${where}: a note cannot reply to itself`);
   }
   return OK;
 }
