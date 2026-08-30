@@ -1,9 +1,10 @@
 // The notes/desktop round's UI against the real modules in jsdom: the day
 // whisper (nothing until someone writes, then the newest note), the sheet
-// whose header is the card, and — since the Direction A redesign of
-// 2026-08-30 — the cue line, the inline reply composer, editing in place with
-// Cancel, Delete living only inside editing, Pin riding the same line, and a
-// folded pinned thread opening when you reply into it.
+// whose header is the card, and — since Kevin picked "the open door" on
+// 2026-08-30 — the always-visible Reply row that ends every thread, the two
+// quiet actions revealed at the head line (Pin for anyone, Edit on your own),
+// editing in place with Save · Cancel and Delete kept apart inside it, and a
+// folded pinned root that shows a count and no door until it is opened.
 //
 // Two of this surface's rules are invisible to Node (CLAUDE.md's standing
 // lesson): the hover / focus-within reveal is CSS, and Element.animate does
@@ -53,10 +54,17 @@ const ctx = {
 
 const sheet = () => document.getElementById('artist-sheet');
 const click = (el) => el.dispatchEvent(new dom.window.Event('click'));
-// The cue line's words, for one note or for the whole sheet.
-const cues = (root = sheet()) => [...root.querySelectorAll('.n-cue .note-action')];
-const cue = (label, root = sheet()) => cues(root).find((b) => b.textContent === label);
+// The two quiet words at a note's head line, for one note or the whole sheet.
+const acts = (root = sheet()) => [...root.querySelectorAll('.n-head .n-acts button')];
+const act = (label, root = sheet()) => acts(root).find((b) => b.textContent === label);
 const rows = () => [...sheet().querySelectorAll('.n-note')];
+const mine = () => rows().find((r) => r.querySelector('.n-who')?.textContent === 'you');
+// The door, and the composer it becomes.
+const doors = (root = sheet()) => [...root.querySelectorAll('.n-door')];
+const send = (box, text) => {
+  box.querySelector('textarea').value = text;
+  click([...box.querySelectorAll('.n-fieldbar button')].find((b) => b.textContent === 'Save'));
+};
 
 test('the whisper: nothing until someone writes, then the newest note and the count', () => {
   assert.equal(notes.dayWhisper('day', 'Saturday', ctx, () => {}), null, 'no notes, no whisper');
@@ -74,7 +82,7 @@ test('the whisper: nothing until someone writes, then the newest note and the co
   assert.ok(opened, 'tapping the whisper opens the day notes');
 });
 
-test('at rest a note is a name, a time and words — and Reply opens a composer in the thread', () => {
+test('every thread ends with an open door, and no note carries a Reply', () => {
   const t1 = '2026-09-26T21:00:00.000Z';
   const rootId = model.makeNoteId('Drew', t1, 'cccccc');
   state.recordNote(FID, 'artist', 'GRiZ', rootId, { author: 'Drew', ts: t1, text: 'rail crew assemble' });
@@ -83,70 +91,84 @@ test('at rest a note is a name, a time and words — and Reply opens a composer 
   assert.equal(sheet().querySelector('.sheet-card .f-name').textContent, 'GRiZ');
   assert.equal(sheet().querySelectorAll('.f-pill').length, 2, 'both pickers as pills');
   assert.ok([...sheet().querySelectorAll('.f-pill')].some((p) => p.textContent.startsWith('You')), 'You, capitalised');
-  assert.ok(sheet().querySelector('.sheet-card .sheet-close'), 'the close lives in the card');
 
-  // The head line is the thing Kevin called crowded. It carries no actions now.
-  assert.equal(sheet().querySelector('.n-head .note-action'), null, 'nothing but who and when above the words');
-  assert.deepEqual(cues().map((b) => b.textContent), ['Reply', 'Pin'], "someone else's note: two plain words");
+  // Kevin's law, held structurally: there is nowhere to ask for a nested reply.
+  assert.equal(acts().find((b) => b.textContent === 'Reply'), undefined, 'no note carries a Reply');
+  assert.equal(doors().length, 1, 'a root with no replies carries the door directly beneath it');
+  const door = doors()[0];
+  assert.equal(door.querySelector('.n-door-label').textContent, 'Reply…');
+  assert.ok(door.querySelector('.avatar'), 'wearing your own avatar');
+  assert.match(door.getAttribute('aria-label'), /reply/i);
 
-  click(cue('Reply'));
+  click(door);
   const box = sheet().querySelector('.n-inline');
-  assert.ok(box, 'the composer opened inside the thread, not at the sheet foot');
-  assert.equal(sheet().querySelector('.composer-wrap .n-field').value, '', 'the bottom composer is untouched — it writes new notes only');
-  assert.equal(sheet().querySelector('.reply-to'), null, 'and its old "Replying to…" state is gone');
+  assert.ok(box, 'the door became the composer, in place');
+  assert.equal(doors().length, 0, 'and stopped being a door while it is one');
+  assert.equal(box.querySelector('textarea').value, '', 'no @Name to pre-fill — the door already says which thread');
+  assert.equal(sheet().querySelector('.composer-wrap .n-field').value, '',
+    'the bottom composer is untouched — it writes new notes only');
 
-  box.querySelector('textarea').value = 'ten minutes early';
-  click([...box.querySelectorAll('.note-action')].find((b) => b.textContent === 'Reply'));
-
+  send(box, 'ten minutes early');
   const map = state.crewDoc.festivals[FID].notes.artist.GRiZ;
-  const mine = Object.values(map).find((n) => n.author === 'Kevin' && n.text === 'ten minutes early');
-  assert.ok(mine, 'the reply landed in the doc');
-  assert.equal(mine.re, rootId, 'as a reply to the root');
+  const landed = Object.values(map).find((n) => n.author === 'Kevin' && n.text === 'ten minutes early');
+  assert.ok(landed, 'the reply landed in the doc');
+  assert.equal(landed.re, rootId, 'as a reply to the root');
   assert.ok(sheet().querySelector('.n-replies .n-note'), 'and renders one gutter in');
-  assert.equal(sheet().querySelector('.n-inline'), null, 'the composer closes once the words are sent');
+  assert.equal(doors().length, 1, 'the door comes back below it, ready for the next voice');
   const v = validateIncoming(state.pendingChanges);
   assert.equal(v.ok, true, v.error);
   notes.closeSheet();
 });
 
-test('your own note offers Edit, and editing owns Cancel and the only door to Delete', () => {
+test('the head line reveals two quiet words: Pin for anyone, Edit on your own', () => {
   notes.openArtistSheet('GRiZ', ctx, () => {});
-  const mine = rows().find((r) => r.querySelector('.n-who').textContent === 'you');
-  assert.ok(mine, 'the reply written above is mine');
-  assert.deepEqual(cues(mine).map((b) => b.textContent), ['Edit', 'Reply'],
-    'my own reply: Edit and Reply — and NO Delete anywhere at rest');
+  const root = rows()[0];
+  assert.deepEqual(acts(root).map((b) => b.textContent), ['Pin'], "someone else's root: Pin, and nothing else");
+  assert.deepEqual(acts(mine()).map((b) => b.textContent), ['Edit'], 'my own reply: Edit — a reply has no Pin, pins fold by root');
+  // At rest the actions live in the head row, so nothing below them can move.
+  assert.ok(root.querySelector('.n-head .n-acts'), 'they sit at the head line, not under the words');
+  assert.equal(root.querySelector('.n-cue'), null, 'the cue line under the words is gone');
+  notes.closeSheet();
+});
 
-  click(cue('Edit', mine));
+test('editing happens in place: Save and Cancel at the head, Delete kept apart below', () => {
+  notes.openArtistSheet('GRiZ', ctx, () => {});
+  click(act('Edit', mine()));
   const editor = sheet().querySelector('textarea[data-editing]');
   assert.ok(editor, 'the words became a field in place');
   assert.equal(editor.value, 'ten minutes early', 'pre-filled with what is there');
+
   const editing = rows().find((r) => r.querySelector('textarea[data-editing]'));
-  assert.deepEqual(cues(editing).map((b) => b.textContent), ['Save', 'Cancel', 'Delete'],
-    'the same line becomes the edit line — Delete exists only because you are editing');
-  assert.equal(cues(editing)[2].getAttribute('aria-live'), 'polite', 'the label changes meaning under focus, so it announces');
+  assert.deepEqual(acts(editing).map((b) => b.textContent), ['Save', 'Cancel'],
+    'the head line holds the two safe actions');
+  const bar = editing.querySelector('.n-fieldbar');
+  assert.deepEqual([...bar.querySelectorAll('button')].map((b) => b.textContent), ['Delete'],
+    'and Delete waits in the opposite corner — never a neighbour of Save');
+  assert.equal(bar.querySelector('button').getAttribute('aria-live'), 'polite',
+    'the label changes meaning under focus, so it announces');
 
   // Cancel discards the draft and leaves the note exactly as it was.
   editor.value = 'scrapped';
-  click(cue('Cancel', editing));
+  click(act('Cancel', rows().find((r) => r.querySelector('textarea[data-editing]'))));
   assert.equal(sheet().querySelector('textarea[data-editing]'), null, 'the editor is gone');
   assert.equal(model.notesFor(state.crewDoc, FID, 'artist', 'GRiZ').find((n) => n.author === 'Kevin').text,
     'ten minutes early', 'and nothing was written');
 
   // Edit again, and save for real.
-  click(cue('Edit', rows().find((r) => r.querySelector('.n-who').textContent === 'you')));
+  click(act('Edit', mine()));
   sheet().querySelector('textarea[data-editing]').value = 'fifteen minutes early';
-  click(cue('Save', rows().find((r) => r.querySelector('textarea[data-editing]'))));
+  click(act('Save', rows().find((r) => r.querySelector('textarea[data-editing]'))));
   const after = model.notesFor(state.crewDoc, FID, 'artist', 'GRiZ').filter((n) => n.author === 'Kevin');
   assert.equal(after.length, 1, 'an edit never mints a second note');
   assert.equal(after[0].text, 'fifteen minutes early');
   notes.closeSheet();
 });
 
-test('Delete inside editing keeps its two-tap arm, and the arm survives a repaint', () => {
+test('Delete lives only inside editing, keeps its two-tap arm, and the arm survives a repaint', () => {
   notes.openArtistSheet('GRiZ', ctx, () => {});
-  click(cue('Edit', rows().find((r) => r.querySelector('.n-who').textContent === 'you')));
-  const armRow = () => rows().find((r) => r.querySelector('textarea[data-editing]'));
-  const del = () => cues(armRow()).find((b) => /Delete|Sure\?/.test(b.textContent));
+  assert.equal(sheet().querySelector('.n-fieldbar'), null, 'no Delete anywhere until you are editing');
+  click(act('Edit', mine()));
+  const del = () => rows().find((r) => r.querySelector('textarea[data-editing]')).querySelector('.n-fieldbar button');
 
   click(del());
   assert.equal(del().textContent, 'Sure?', 'one tap arms, it does not delete');
@@ -165,33 +187,32 @@ test('Delete inside editing keeps its two-tap arm, and the arm survives a repain
   notes.closeSheet();
 });
 
-test('Pin rides the cue line, and a folded pinned thread opens when you reply into it', () => {
-  // Rebuild a thread: Drew's root plus one reply, so pinning folds something.
+test('a folded pinned root shows a count and NO door until it is opened', () => {
+  // Rebuild a thread so pinning folds something.
   const tr = '2026-09-26T21:20:00.000Z';
-  const rId = model.makeNoteId('Drew', tr, 'dddddd');
-  state.recordNote(FID, 'artist', 'GRiZ', rId, { author: 'Drew', ts: tr, text: 'bring the flag', re: model.makeNoteId('Drew', '2026-09-26T21:00:00.000Z', 'cccccc') });
+  state.recordNote(FID, 'artist', 'GRiZ', model.makeNoteId('Drew', tr, 'dddddd'),
+    { author: 'Drew', ts: tr, text: 'bring the flag', re: model.makeNoteId('Drew', '2026-09-26T21:00:00.000Z', 'cccccc') });
   notes.openArtistSheet('GRiZ', ctx, () => {});
 
-  click(cue('Pin'));
+  click(act('Pin'));
   assert.equal(sheet().querySelector('.n-replies'), null, 'pinned: the thread folds to a count');
-  const count = sheet().querySelector('.n-cue .n-count');
-  assert.ok(count, 'the count sits in the cue line at rest — it is information, not an action');
+  assert.equal(doors().length, 0, 'and the door folds away with it — the count is the one way in');
+  const count = sheet().querySelector('.n-head .n-count');
+  assert.ok(count, 'the count sits with the name and the time — a fact, not an action');
   assert.equal(count.textContent, '1 reply');
 
-  // Reply into the folded thread: it opens so you can see where the words land.
-  click(cue('Reply'));
-  const box = sheet().querySelector('.n-inline');
-  assert.ok(box, 'the composer is there');
-  assert.ok(sheet().querySelector('.n-replies .n-note'), 'and the thread unfolded around it');
-  box.querySelector('textarea').value = 'got it';
-  click([...box.querySelectorAll('.note-action')].find((b) => b.textContent === 'Reply'));
-  assert.equal(sheet().querySelectorAll('.n-replies .n-note').length, 2, 'still open after the save');
-  assert.ok(cue('Unpin'), 'and Pin became Unpin on the same line');
+  click(count);
+  assert.ok(sheet().querySelector('.n-replies .n-note'), 'tapped open in place');
+  assert.equal(doors().length, 1, 'and the door is back at the foot of the thread');
+  click(doors()[0]);
+  send(sheet().querySelector('.n-inline'), 'got it');
+  assert.equal(sheet().querySelectorAll('.n-replies .n-note').length, 2, 'the reply landed, thread still open');
+  assert.ok(act('Unpin'), 'and Pin became Unpin on the same head line');
   notes.closeSheet();
   localStorage.setItem('fn_pins_v1', '{}');
 });
 
-test('a deleted root leaves a stub that still says "you", and its thread stays open for replies', () => {
+test('a deleted root leaves a stub, and its thread keeps its door', () => {
   const t1 = '2026-09-26T21:00:00.000Z';
   const rootId = model.makeNoteId('Drew', t1, 'cccccc');
   // Drew tombstones the root (only the author can — enforced server-side).
@@ -201,15 +222,14 @@ test('a deleted root leaves a stub that still says "you", and its thread stays o
   assert.ok(stub, 'the stub renders');
   assert.equal(stub.textContent, 'Drew removed this note');
   assert.ok(sheet().querySelector('.n-replies .n-note'), 'the replies are still there');
+  assert.equal(stub.closest('.n-note').querySelector('.n-acts'), null, 'the stub carries no actions of its own');
 
   // A conversation does not end because someone removed the first thing said.
-  click(cue('Reply', sheet().querySelector('.n-note.stub')));
-  const box = sheet().querySelector('.n-inline');
-  assert.ok(box, 'the stub thread can still be answered');
-  box.querySelector('textarea').value = 'still on for this';
-  click([...box.querySelectorAll('.note-action')].find((b) => b.textContent === 'Reply'));
-  const mine = model.notesFor(state.crewDoc, FID, 'artist', 'GRiZ').find((n) => n.text === 'still on for this');
-  assert.equal(mine.re, rootId, 'it lands under the same (gone) root, one level, no orphan');
+  assert.equal(doors().length, 1, 'the thread keeps its door');
+  click(doors()[0]);
+  send(sheet().querySelector('.n-inline'), 'still on for this');
+  const landed = model.notesFor(state.crewDoc, FID, 'artist', 'GRiZ').find((n) => n.text === 'still on for this');
+  assert.equal(landed.re, rootId, 'it lands under the same (gone) root, one level, no orphan');
   notes.closeSheet();
 });
 
@@ -221,31 +241,31 @@ test('the stub says "you" when the note you removed was your own', () => {
   state.recordNote(FID, 'day', 'Saturday', model.makeNoteId('Drew', rt, 'ffffff'), { author: 'Drew', ts: rt, text: 'ok', re: mineId });
   state.recordNote(FID, 'day', 'Saturday', mineId, { author: 'Kevin', ts: t, text: '', deleted: true });
   notes.openDayNotes('Saturday', ctx, () => {});
-  const stub = [...sheet().querySelectorAll('.n-note.stub .n-text')].map((n) => n.textContent);
-  assert.ok(stub.includes('you removed this note'), `the file's own "you" convention, got ${JSON.stringify(stub)}`);
+  const stubs = [...sheet().querySelectorAll('.n-note.stub .n-text')].map((n) => n.textContent);
+  assert.ok(stubs.includes('you removed this note'), `the file's own "you" convention, got ${JSON.stringify(stubs)}`);
   notes.closeSheet();
 });
 
 test('a live repaint leaves the caret in the field you were typing in', () => {
-  // You can be editing one note while a reply composer is open on another
-  // thread. A restore that simply focused the first live draft would yank the
-  // caret out of whichever field you were actually in, mid-word.
+  // You can be editing one note while a door is open on another thread. A
+  // restore that simply focused the first live edit draft would yank the caret
+  // out of whichever field you were actually in, mid-word.
   const t = '2026-09-26T23:00:00.000Z';
-  const rootId = model.makeNoteId('Drew', t, 'gggggg');
-  state.recordNote(FID, 'artist', 'GRiZ', rootId, { author: 'Drew', ts: t, text: 'one more thing' });
+  state.recordNote(FID, 'artist', 'GRiZ', model.makeNoteId('Drew', t, 'gggggg'),
+    { author: 'Drew', ts: t, text: 'one more thing' });
   const mineTs = '2026-09-26T23:05:00.000Z';
   state.recordNote(FID, 'artist', 'GRiZ', model.makeNoteId('Kevin', mineTs, 'hhhhhh'),
     { author: 'Kevin', ts: mineTs, text: 'noted' });
   notes.openArtistSheet('GRiZ', ctx, () => {});
 
-  // Open an editor on my note, then open a reply composer on Drew's thread.
-  click(cue('Edit', rows().find((r) => r.querySelector('.n-who').textContent === 'you')));
-  const drew = rows().find((r) => r.querySelector('.n-text')?.textContent === 'one more thing');
-  click(cue('Reply', drew));
+  click(act('Edit', mine()));
+  const drewThread = [...sheet().querySelectorAll('.n-thread')]
+    .find((b) => b.querySelector('.n-text')?.textContent === 'one more thing');
+  click(drewThread.querySelector('.n-door'));
 
   const box = sheet().querySelector('.n-inline textarea');
   assert.ok(box, 'both fields are open at once');
-  assert.equal(document.activeElement, box, 'the caret went to the field you just opened');
+  assert.equal(document.activeElement, box, 'the caret went to the door you just opened');
 
   box.value = 'half a sen';
   box.dispatchEvent(new dom.window.Event('input'));
@@ -257,26 +277,19 @@ test('a live repaint leaves the caret in the field you were typing in', () => {
   notes.closeSheet();
 });
 
-test('the all-notes home can reply into a day thread and an artist thread, not just the festival', () => {
+test('the all-notes home carries a door for every scope, not just the festival', () => {
   notes.openAllNotes(ctx);
   const sections = [...sheet().querySelectorAll('.n-list.grouped')];
   assert.ok(sections.length >= 2, 'day and artist sections are both present');
-  for (const host of sections) {
-    assert.ok(cue('Reply', host), 'every scope offers Reply here now, not fest only');
-  }
-  // Drive one of them end to end: the day thread.
-  const dayHost = sections.find((h) => [...h.querySelectorAll('.n-text')].some((t) => t.textContent === 'works for me'));
+  for (const host of sections) assert.ok(doors(host).length, 'every scope can be replied to here now');
+
+  const dayHost = sections.find((h) => [...h.querySelectorAll('.n-text')].some((t) => t.textContent === 'ok'));
   assert.ok(dayHost, 'found the Saturday thread');
-  click(cue('Reply', dayHost));
-  // The home repaints every section, so the live host is a fresh node.
-  const boxes = [...sheet().querySelectorAll('.n-list.grouped')]
-    .filter((h) => h.querySelector('.n-inline'));
-  assert.equal(boxes.length, 1, 'exactly the section you pressed in opens a composer');
-  const box = boxes[0].querySelector('.n-inline');
-  assert.ok([...boxes[0].querySelectorAll('.n-text')].some((t) => t.textContent === 'works for me'),
-    'and it is the Saturday thread, not the festival one');
-  box.querySelector('textarea').value = 'see you at the gate';
-  click([...box.querySelectorAll('.note-action')].find((b) => b.textContent === 'Reply'));
+  click(doors(dayHost)[0]);
+  // The home repaints every section, so the live hosts are fresh nodes.
+  const opened = [...sheet().querySelectorAll('.n-list.grouped')].filter((h) => h.querySelector('.n-inline'));
+  assert.equal(opened.length, 1, 'exactly the section whose door you tapped opens a composer');
+  send(opened[0].querySelector('.n-inline'), 'see you at the gate');
   const landed = model.notesFor(state.crewDoc, FID, 'day', 'Saturday').find((n) => n.text === 'see you at the gate');
   assert.ok(landed, 'it landed in the DAY scope, from the all-notes home');
   assert.ok(landed.re, 'as a reply');

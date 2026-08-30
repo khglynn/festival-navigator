@@ -564,10 +564,10 @@
 .n-list.grouped .n-thread + .n-thread { margin-top: 10px; }
 .n-replies { display: flex; flex-direction: column; gap: 6px; margin-left: 22px; }
 .n-note { display: grid; grid-template-columns: 20px 1fr; column-gap: 10px; align-items: start;
-          padding: 9px 12px 5px 10px; border-radius: 12px;
+          padding: 9px 12px 9px 10px; border-radius: 12px;
           background: radial-gradient(150% 200% at 0% 40%, var(--wash) 0%, transparent 68%); }
 .n-note .avatar { margin-top: 1px; }
-.n-reply { grid-template-columns: 16px 1fr; padding: 7px 12px 4px 10px; }
+.n-reply { grid-template-columns: 16px 1fr; padding: 7px 12px 7px 10px; }
 .n-body { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .n-head { display: flex; align-items: baseline; gap: 7px; flex-wrap: wrap;
           color: var(--text-secondary); font-size: 10.5px; font-weight: 600; }
@@ -579,42 +579,63 @@
 .n-note.stub .n-text { color: var(--text-tertiary); font-style: italic; font-size: 12px; }
 .n-empty { color: var(--text-tertiary); font-size: 12px; font-weight: 600; text-align: center; padding: 10px 0; }
 
-/* The cue line (Direction A, 2026-08-30). At rest a note is a name, a time and
- * words; hover, a press-and-hold, or keyboard focus fades in one line of plain
- * words under them. The ROW is always here and only `.n-acts` fades — a line
- * that appeared would push every note below it down each time the cursor
- * crossed a note, and the list would shove itself under your mouse. The reply
- * count is information rather than an action, so it never hides. */
-.n-cue { display: flex; align-items: baseline; gap: 6px; min-height: 15px; margin-top: 2px;
-         color: var(--text-tertiary); font-size: 10.5px; font-weight: 600; }
-.n-cue .note-action { text-decoration: none; font-size: 10.5px; }
-.n-cue .note-action.on { color: var(--tonal-text); }
-.n-cue .n-del { color: var(--danger); }
-.n-acts { display: inline-flex; align-items: baseline; gap: 6px;
+/* Actions live at the HEAD line's trailing edge (Kevin, 2026-08-30) and are
+ * revealed by hover, a press-and-hold, or keyboard focus — two quiet words at
+ * most: Pin on any root, plus Edit on your own. The head row already spans the
+ * note, so revealing reserves nothing and moves nothing; an earlier build put
+ * this line UNDER the words and had to hold 15px open on every note forever to
+ * stop the list shoving itself around under the cursor. */
+.n-head .note-action { text-decoration: none; font-size: 10.5px; }
+.n-head .note-action.on { color: var(--tonal-text); }
+/* The reply count is a FACT about the note, sitting with the name and the time
+ * — brighter than an action, never hidden, and still the way into the fold. */
+.n-head .n-count { color: var(--text-secondary); font-weight: 700; }
+.n-acts { margin-left: auto; display: inline-flex; align-items: baseline; gap: 6px;
           opacity: 0; transform: translateY(-2px); pointer-events: none;
           transition: opacity .14s cubic-bezier(.4, 0, .2, 1),
                       transform .14s cubic-bezier(.2, 1.15, .35, 1); }
-/* Three doors to the same line, so nobody is locked out: the mouse hovers, a
- * finger holds (notes.js sets .revealed), a keyboard simply arrives — the
- * focus fallback is required, not optional. `.open` is for editing and the
- * inline composer, where the line is a MODE, not a hover state. */
-.n-note.revealed > .n-body > .n-cue > .n-acts,
-.n-note:focus-within > .n-body > .n-cue > .n-acts,
+/* Three doors to the same two words, so nobody is locked out: the mouse hovers,
+ * a finger holds (notes.js sets .revealed), a keyboard simply arrives — the
+ * focus fallback is required, not optional. `.open` is for editing, where the
+ * line is a MODE and not a hover state. */
+.n-note.revealed > .n-body > .n-head > .n-acts,
+.n-note:focus-within > .n-body > .n-head > .n-acts,
 .n-acts.open { opacity: 1; transform: none; pointer-events: auto; }
 @media (hover: hover) and (pointer: fine) {
-  .n-note:hover > .n-body > .n-cue > .n-acts { opacity: 1; transform: none; pointer-events: auto; }
+  .n-note:hover > .n-body > .n-head > .n-acts { opacity: 1; transform: none; pointer-events: auto; }
 }
-/* How many characters are left, and only once that is news. */
+
+/* THE OPEN DOOR: every thread ends with this row, always visible, in the
+ * current viewer's own colour at a whisper. It is the whole reply affordance —
+ * no note carries a Reply, so "reply to a reply" cannot be asked for and one
+ * level deep holds structurally. 44px on both platforms: this is a primary
+ * target, not a text link, so it takes real height rather than borrowed space. */
+.n-door { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 44px;
+          padding: 0 12px 0 10px; border: none; border-radius: 12px; cursor: pointer;
+          text-align: left; font-family: var(--font-ui);
+          background: radial-gradient(150% 200% at 0% 50%, var(--wash) 0%, transparent 68%);
+          transition: background-color .14s cubic-bezier(.4, 0, .2, 1); }
+.n-door .avatar { opacity: .75; }
+.n-door-label { color: var(--text-tertiary); font-size: 12.5px; font-weight: 600; }
+@media (hover: hover) and (pointer: fine) {
+  .n-door:hover { background-color: rgba(255, 255, 255, .035); }
+  .n-door:hover .avatar { opacity: 1; }
+  .n-door:hover .n-door-label { color: var(--text-secondary); }
+}
+/* The composer the door became, and the bar under any field: the safe actions
+ * lead, and in an editor Delete sits at the far end away from Save — never its
+ * neighbour. The counter closes the line, once it is news. */
+.n-inline { display: grid; grid-template-columns: 16px 1fr; column-gap: 10px;
+            align-items: start; padding: 4px 12px 2px 10px; overflow: hidden; }
+.n-inline-body { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.n-fieldbar { display: flex; align-items: baseline; gap: 6px; min-height: 15px;
+              color: var(--text-tertiary); font-size: 10.5px; font-weight: 600; }
+.n-fieldbar .note-action { text-decoration: none; font-size: 10.5px; }
+.n-fieldbar .note-action.on { color: var(--tonal-text); }
+.n-fieldbar .n-del { color: var(--danger); }
 .n-left { margin-left: auto; color: var(--text-tertiary); font-size: 10px; font-weight: 700;
           font-variant-numeric: tabular-nums; }
 .n-left.at-cap { color: var(--danger); }
-/* The reply composer opens at the foot of the thread you pressed into — where
- * the words will actually land — and unfolds there (notes.js measures it). */
-.n-inline { display: flex; flex-direction: column; gap: 2px; overflow: hidden;
-            padding: 2px 0 0 10px; }
-/* Editing in place: the words become a field where the words were, and a
-   bordered box needs a touch more air under the name than plain text did. */
-.n-text > .n-field { margin-top: 3px; }
 
 /* The sheet's header is the card, grown once more — centred, breathing only
  * when the card would (.animated; reduced-motion and low-power still win). */

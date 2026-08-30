@@ -1,4 +1,12 @@
-# Phase 2 — the comment thread, Direction A (2026-08-30)
+# Phase 2 — the comment thread (2026-08-30)
+
+> **REBUILT 2026-08-30, later the same day.** Kevin picked Direction A off the design
+> canvas — *the open door* — with one modification: "I love direction A. with pin still
+> showing on hover in the top row. only one level comments deep allowed." That supersedes
+> the cue-line build recorded below; the older sections are kept because the reasoning
+> behind them still explains the parts that survived. **What changed and why is the
+> "The open door" section at the end of this file.** Read that first.
+
 
 Banked before the first edit, per the brief. Branch `notes-desktop-round`, no commits
 from this seat. Owned files: `js/v3/notes.js`, `js/v3/model.js` (thread helpers only),
@@ -187,3 +195,89 @@ on a reply would be a word that does nothing. And **the sheet re-centres** when 
 composer opens: at desktop widths it is a centred dialog, so growing it moves the whole
 surface. That is existing sheet behaviour on any content change (`.sheet` is shared with
 Settings and not this round's file), but it is the one place the surface still "pops."
+
+
+---
+
+# The open door — Kevin's pick, built 2026-08-30
+
+Kevin, on the design canvas: *"I love direction A. with pin still showing on hover in
+the top row. only one level comments deep allowed."*
+
+## The shape
+
+Every thread ends with an always-visible full-width **door**: the current viewer's own
+colour at a whisper (wash .08), their avatar, the word "Reply…", 44px tall on phone and
+desktop alike. Tapping it turns that row into the composer in place. There is **no Reply
+control on any note**. Actions live at the head line's trailing edge, revealed on hover /
+press-and-hold / focus: `Pin` (or `Unpin`) on a root for anyone, `Edit` on your own.
+
+```
+[av]  Drew · 40m                              Pin   ← revealed at the head line
+      Rail crew assemble — I want to be barricade…
+   [av]  Nhu · 35m
+         works for me
+   [av]  you · 31m                          Edit
+         ten minutes early then
+   [•]   Reply…                                     ← the door, always there
+```
+
+## Why this is better than what I built first, in one line each
+
+- **One level deep stops being a rule and becomes a fact.** The old build put a Reply on
+  every row and then had to explain — with an `@Name` the composer typed for you — that
+  your words would land somewhere other than where you pressed. One door per thread, at
+  the place the note actually appears, says the same thing structurally, and says it
+  *before* you type instead of apologising after. The UI can no longer ask for a nested
+  reply, so the flattening rule has nothing left to catch. `re = replyTo.re || replyTo.id`
+  and the server's nested-`re` refusal both stand as the belt to that braces.
+- **Nothing has to be reserved.** Kevin's "pin in the top row" quietly solves the problem
+  the old cue line spent 15px per note on: the head row already spans the note with empty
+  space at its trailing edge, so revealing there moves nothing and costs nothing. Notes
+  went back to their original density (`padding-bottom` 9px, replies 7px).
+- **The reply target is visible before you commit.** A door under a specific thread is a
+  promise you can see. The old "which thread am I in" question was answered by a label.
+- **Delete got genuinely farther from Save.** Editing now puts `Save · Cancel` at the head
+  line and `Delete` alone at the bottom-left, with the counter at the bottom-right —
+  opposite corners, not neighbours in one list.
+
+## Decisions inside Kevin's brief
+
+- **The door BECOMES the composer.** Your avatar holds its exact x-position (measured:
+  352 → 352) and the field opens where the word "Reply…" stood, so it reads as one row
+  transforming rather than one row swapped for another. The unfold animates from the
+  door's own 44px, not from zero.
+- **The composer's send button says "Save"**, matching the sheet's bottom composer and
+  Kevin's wording — not "Reply", even though the door says "Reply…".
+- **The reply count is a fact, not an action**: it sits inline with the name and the time
+  (`you · 31m · 3 replies`), never hides, and is still the way into a fold. A folded
+  pinned root shows the count and **no door** — opening the fold brings the door back.
+- **A reply carries no Pin**, only `Edit` when it is yours. Pins fold a thread by its
+  root, so a Pin on a reply would be a word that does nothing.
+- **The stub carries nothing of its own.** A deleted root's thread keeps its door like any
+  other thread, which is a cleaner answer to "a removed root can never be replied to" than
+  the special-cased Reply I had put on the stub.
+
+## The walk (Chromium, real pointer input)
+
+Screenshots: `notes-1-resting.png` (two threads, two doors), `notes-2-hover-pin.png`
+(Pin at the head line, **every other pixel identical to the resting frame**),
+`notes-3-composing.png` (the door became the composer, avatar in place),
+`notes-4-editing.png` (Save · Cancel up top, Delete alone in red below),
+`notes-5-phone.png` (390px).
+
+Verified live, not in Node: doors are 44px on a fine pointer too and are real `<button>`s
+in the tab order; keyboard focus reveals the head actions (`opacity: 1`,
+`pointer-events: auto`); press-and-hold reveals on touch, a drag past the slop does not,
+a mouse never arms it, only one note is ever revealed; the door unfolds into the composer
+from exactly 44px over 220ms and a sent note rises in over 260ms with the overshoot; Low
+Power makes every transition `0s` (vs `0.14s`) and every `Element.animate` a no-op while
+the note still lands.
+
+**One measurement lesson, banked because this repo already has the rule.** A reply I sent
+in the walk sorted *above* its siblings and looked like a sort bug. It was not: the walk
+rig seeded notes dated 2026-09-26 — the future — so anything written today sorted first.
+Worse, my first fix appeared not to work, and the reason was that the browser had served
+a **cached copy of the rig page**, so the edit was never running. Checking the actual
+stored timestamps took one call and found both; theorising about `threadsFor` would have
+cost the round. Suspect the measurement first, exactly as CLAUDE.md says.

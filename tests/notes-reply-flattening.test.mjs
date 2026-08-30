@@ -3,11 +3,13 @@
 // on the ROOT, above the whole reply list, so a reply to a REPLY had never
 // been driven through the real save path (survey P1, 2026-08-30 ledger).
 //
-// Since the Direction A redesign every note carries Reply on its cue line, so
-// this now walks the journey Kevin called "so strange": press Reply under an
-// existing reply, get a composer right there in the thread with `@Name`
-// already typed, send it, and watch it land FLAT under the root — one level,
-// no third tier, no stray stub thread.
+// Since Kevin picked "the open door" the UI cannot even ASK for a nested
+// reply: no note carries a Reply, and a thread's one always-visible door sits
+// below its replies. This walks that journey — open a thread that already has
+// a reply, tap ITS door, send — and holds the same two assertions the original
+// baseline did: the new note's `re` names the ROOT, and threadsFor shows
+// everything flat beneath it. The rule is now structural in the UI and
+// enforced server-side (tests/notes-threads.test.mjs); this is the client half.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { JSDOM } from 'jsdom';
@@ -50,7 +52,7 @@ const ctx = {
 
 const sheet = () => document.getElementById('artist-sheet');
 
-test('replying to a reply flattens to the root — the one-level rule holds', () => {
+test('a reply sent from a thread with replies still lands flat under the root', () => {
   const rootTs = '2026-09-26T21:00:00.000Z';
   const rootId = model.makeNoteId('Drew', rootTs, 'root001');
   state.recordNote(FID, 'artist', 'GRiZ', rootId, { author: 'Drew', ts: rootTs, text: 'meet at the rail' });
@@ -72,43 +74,34 @@ test('replying to a reply flattens to the root — the one-level rule holds', ()
   const replyRow = sheet().querySelector('.n-replies .n-note');
   assert.ok(replyRow, 'precondition: Nhu\'s reply is on screen');
   assert.equal(replyRow.querySelector('.n-text').textContent, 'works for me');
+  assert.equal(replyRow.querySelector('.n-acts button[data-reply]'), null);
+  assert.equal([...sheet().querySelectorAll('.n-head .n-acts button')].find((b) => b.textContent === 'Reply'), undefined,
+    'no note offers a Reply — the nested case cannot be requested');
 
-  // Press Reply on the REPLY — the affordance that did not exist before.
-  const trigger = [...replyRow.querySelectorAll('.n-cue .note-action')].find((b) => b.textContent === 'Reply');
-  assert.ok(trigger, 'a reply carries its own Reply now — this was the bug');
-  trigger.dispatchEvent(new dom.window.Event('click'));
+  // The thread's one door sits BELOW the existing reply: answering the
+  // conversation and answering its last voice are the same gesture.
+  const doors = [...sheet().querySelectorAll('.n-door')];
+  assert.equal(doors.length, 1, 'one door for the whole thread');
+  assert.ok(replyRow.compareDocumentPosition(doors[0]) & dom.window.Node.DOCUMENT_POSITION_FOLLOWING,
+    'and it comes after the reply, where the words will appear');
+  doors[0].dispatchEvent(new dom.window.Event('click'));
 
   const box = sheet().querySelector('.n-inline');
-  assert.ok(box, 'the composer opened in the thread, never at the sheet foot');
-  const ta = box.querySelector('textarea');
-  assert.equal(ta.value, '@Nhu ', 'pre-filled with who you are answering — the words carry it, not the indentation');
+  assert.ok(box, 'the door became the composer in place');
+  assert.equal(box.querySelector('textarea').value, '', 'nothing to pre-fill — position carries the context');
 
-  ta.value = '@Nhu agreed, see you there';
-  [...box.querySelectorAll('.note-action')].find((b) => b.textContent === 'Reply')
+  box.querySelector('textarea').value = 'agreed, see you there';
+  [...box.querySelectorAll('.n-fieldbar button')].find((b) => b.textContent === 'Save')
     .dispatchEvent(new dom.window.Event('click'));
 
   const map = state.crewDoc.festivals[FID].notes.artist.GRiZ;
-  const mine = Object.values(map).find((n) => n.author === 'Kevin' && /agreed, see you there/.test(n.text));
+  const mine = Object.values(map).find((n) => n.author === 'Kevin' && n.text === 'agreed, see you there');
   assert.ok(mine, 'the new note landed in the doc');
   assert.equal(mine.re, rootId, 'flattened to the ROOT — the one-level rule\'s enforcer');
-  assert.notEqual(mine.re, replyId, 'never points at the reply directly, even though that is what was pressed');
+  assert.notEqual(mine.re, replyId, 'never points at the reply directly, even though it was answering it');
 
   const after = model.threadsFor(state.crewDoc, FID, 'artist', 'GRiZ');
   assert.equal(after.length, 1, 'still one thread — a misrouted re would create a stray stub thread (the server-side false-tombstone shape)');
   assert.equal(after[0].replies.length, 2, 'both replies sit flat under the same root');
-  notes.closeSheet();
-});
-
-test('you are never made to @ yourself', () => {
-  const map = state.crewDoc.festivals[FID].notes.artist.GRiZ;
-  const mineId = Object.keys(map).find((id) => map[id].author === 'Kevin');
-  notes.openArtistSheet('GRiZ', ctx, () => {});
-  const ownReply = [...sheet().querySelectorAll('.n-replies .n-note')]
-    .find((r) => r.dataset.note === mineId);
-  assert.ok(ownReply, 'my own reply is on screen');
-  [...ownReply.querySelectorAll('.n-cue .note-action')].find((b) => b.textContent === 'Reply')
-    .dispatchEvent(new dom.window.Event('click'));
-  assert.equal(sheet().querySelector('.n-inline textarea').value, '',
-    'no @mention when the reply you pressed is your own');
   notes.closeSheet();
 });

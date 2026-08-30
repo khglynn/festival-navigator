@@ -40,6 +40,7 @@ const COUNTER_FROM = 60;   // the counter stays out of the way until the cap is 
 const HOLD_MS = 350;       // press-and-hold to reveal, on touch
 const HOLD_SLOP = 8;       // px of travel that still counts as a press, not a scroll
 const ARM_MS = 3000;       // "Sure?" stays armed this long
+const DOOR_H = 44;         // the open door's height — also the touch floor
 
 // Motion, the way the rest of the app moves: transforms and opacity, a beat of
 // overshoot on the way in, quick and plain on the way out. Low Power and
@@ -133,13 +134,15 @@ function thinOut(el, ctx, done) {
   setTimeout(go, LEAVE_MS + 60);  // a cancelled animation must never strand the write
 }
 
-// The composer unfolds where it is asked for, and its neighbours make room.
-function unfold(el, ctx) {
+// The door unfolds INTO the composer: it grows from exactly the height the door
+// was standing at, so the composer arrives from where the door already was
+// rather than appearing over it.
+function unfold(el, ctx, from = DOOR_H) {
   if (!canAnimate(el, ctx)) return;
   const h = el.getBoundingClientRect().height;
-  if (!h) return;
+  if (!h || h <= from) return;
   el.animate(
-    [{ height: '0px', opacity: 0, transform: 'translateY(-4px)' }, { height: `${h}px`, opacity: 1, transform: 'none' }],
+    [{ height: `${from}px`, opacity: .6 }, { height: `${h}px`, opacity: 1 }],
     { duration: UNFOLD_MS, easing: EASE_ARRIVE },
   );
 }
@@ -182,13 +185,17 @@ const caretToEnd = (el) => {
 
 // ---- one note, the aura way ---------------------------------------------------------
 // opts: { reply, pinned, collapsedReplies, onToggleReplies, onPinToggle,
-//         onReply, onEdit(note, text), onDelete(note, row), editing, ui }
+//         onEdit(note, text), onDelete(note, row), onBeginEdit, onCancelEdit,
+//         editing, ui }
 // `editing` is the sheet's per-open draft map (id -> {value, focus, armed}):
 // the inline editor lives INSIDE the repainted list, so a remote sync used to
 // eat a half-typed edit (Codex gate, 2026-08-29). The draft persists here and
 // the editor re-renders from it, caret at the end — and since 2026-08-30 the
 // Delete arm ("Sure?") rides in the same map, so a repaint landing inside its
 // three seconds no longer silently disarms it.
+//
+// There is no Reply here, on purpose (Kevin, 2026-08-30). Replying happens at
+// the thread's open door — see doorRow.
 function noteRow(note, ctx, opts = {}) {
   const ui = opts.ui;
   const row = document.createElement('div');
@@ -211,33 +218,37 @@ function noteRow(note, ctx, opts = {}) {
   text.className = 'n-text';
   text.textContent = note.text;
 
-  // The cue line: a permanent row whose CONTENTS fade in. `.n-count` is not an
-  // action and never hides; `.n-acts` is the revealed group.
-  const cue = document.createElement('div');
-  cue.className = 'n-cue';
-  const acts = document.createElement('span');
-  acts.className = 'n-acts';
   const mkAction = (label, cls = '') => {
     const b = document.createElement('button');
     b.className = 'note-action' + (cls ? ` ${cls}` : '');
     b.textContent = label;
     return b;
   };
-  const addAct = (btn) => { if (acts.childNodes.length) acts.append(' · '); acts.append(btn); };
 
+  // The reply count is a FACT about the note, not an action — it sits with the
+  // name and the time and never hides. It is also the door to the fold.
   if (opts.collapsedReplies) {
     const n = opts.collapsedReplies;
-    const open = mkAction(`${n} repl${n === 1 ? 'y' : 'ies'}`, 'on n-count');
+    const open = mkAction(`${n} repl${n === 1 ? 'y' : 'ies'}`, 'n-count');
     open.addEventListener('click', opts.onToggleReplies);
-    cue.append(open);
+    head.append(' · ', open);
   }
+
+  // Actions live at the head line's trailing edge and are revealed by hover, a
+  // press-and-hold, or keyboard focus — two quiet words at most (Kevin,
+  // 2026-08-30). The head row already spans the note, so nothing has to be
+  // reserved and nothing below ever moves.
+  const acts = document.createElement('span');
+  acts.className = 'n-acts';
+  const addAct = (btn) => { if (acts.childNodes.length) acts.append(' · '); acts.append(btn); };
 
   const editing = opts.editing;
   const isEditing = !!(editing && editing.has(note.id));
 
   if (isEditing) {
-    // Editing is a mode: the words become a field in place, and this same line
-    // becomes Save · Cancel · Delete. Delete has no other door (Kevin's ask).
+    // Editing is a MODE: the words become a field in place, the head line holds
+    // the two safe actions, and Delete waits in the opposite corner below —
+    // never a neighbour of Save.
     const draft = editing.get(note.id);
     const doSave = () => {
       const v = field.ta.value.trim();
@@ -251,7 +262,7 @@ function noteRow(note, ctx, opts = {}) {
     });
     const { ta, counter } = field;
     ta.dataset.editing = note.id;
-    ta.addEventListener('focus', () => { draft.focus = true; ui.focusOwner = `edit:${note.id}`; });
+    ta.addEventListener('focus', () => { draft.focus = true; if (ui) ui.focusOwner = `edit:${note.id}`; });
     ta.addEventListener('blur', () => { draft.focus = false; });
     text.replaceChildren(ta);
     // Focus is restored by renderThreads once the row is CONNECTED — a
@@ -260,11 +271,14 @@ function noteRow(note, ctx, opts = {}) {
     const save = mkAction('Save', 'on');
     save.addEventListener('click', doSave);
     addAct(save);
-
     const cancel = mkAction('Cancel');
     cancel.addEventListener('click', () => { editing.delete(note.id); opts.onCancelEdit(); });
     addAct(cancel);
+    acts.classList.add('open');   // a mode is not a hover state
+    head.append(acts);
 
+    const bar = document.createElement('div');
+    bar.className = 'n-fieldbar';
     if (opts.onDelete) {
       const del = mkAction(draft.armed ? 'Sure?' : 'Delete', 'n-del');
       // The label changes meaning under a screen-reader user's focus, so say so.
@@ -283,40 +297,62 @@ function noteRow(note, ctx, opts = {}) {
         editing.delete(note.id);
         opts.onDelete(note, row);
       });
-      addAct(del);
+      bar.append(del);
     }
-    acts.classList.add('open');   // a mode is not a hover state
-    cue.append(acts, counter);    // the counter waits at the line's far end
-  } else {
-    if (note.author === ctx.meName && opts.onEdit && editing) {
-      const edit = mkAction('Edit');
-      edit.addEventListener('click', () => {
-        editing.set(note.id, { value: note.text, focus: true, armed: false });
-        if (ui) ui.focusOwner = `edit:${note.id}`;
-        opts.onBeginEdit();
-      });
-      addAct(edit);
-    }
-    if (opts.onReply) {
-      const reply = mkAction('Reply');
-      reply.addEventListener('click', () => opts.onReply(note));
-      addAct(reply);
-    }
-    if (opts.onPinToggle) {
-      const pin = mkAction(opts.pinned ? 'Unpin' : 'Pin', opts.pinned ? 'on' : '');
-      pin.addEventListener('click', opts.onPinToggle);
-      addAct(pin);
-    }
-    if (acts.childNodes.length) {
-      if (cue.childNodes.length) acts.prepend(' · ');
-      cue.append(acts);
-      wireReveal(row, note.id, ui);
-    }
+    bar.append(counter);
+    body.append(head, text, bar);
+    row.appendChild(body);
+    return row;
   }
 
-  body.append(head, text, cue);
+  if (note.author === ctx.meName && opts.onEdit && editing) {
+    const edit = mkAction('Edit');
+    edit.addEventListener('click', () => {
+      editing.set(note.id, { value: note.text, focus: true, armed: false });
+      if (ui) ui.focusOwner = `edit:${note.id}`;
+      opts.onBeginEdit();
+    });
+    addAct(edit);
+  }
+  if (opts.onPinToggle) {
+    const pin = mkAction(opts.pinned ? 'Unpin' : 'Pin', opts.pinned ? 'on' : '');
+    pin.addEventListener('click', opts.onPinToggle);
+    addAct(pin);
+  }
+  if (acts.childNodes.length) {
+    head.append(acts);
+    wireReveal(row, note.id, ui);
+  }
+
+  body.append(head, text);
   row.appendChild(body);
   return row;
+}
+
+// ---- the open door (Kevin's pick, 2026-08-30) ----------------------------------------
+// Every thread ends with this: a quiet, ALWAYS-VISIBLE full-width row in the
+// current viewer's own colour at a whisper, with their avatar and the word
+// "Reply…". It is the whole reply affordance — there is no Reply on any note.
+//
+// That is what makes "reply to a reply" a non-question. The old design put a
+// Reply on every row and then had to explain, with an @mention, that your words
+// would land somewhere other than where you pressed. One door per thread, at the
+// place the note will actually appear, says the same thing structurally and says
+// it before you type instead of after. One level deep stays law, and now the UI
+// cannot even ask for anything else.
+function doorRow(ctx, onOpen) {
+  const b = document.createElement('button');
+  b.className = 'n-door';
+  const ci = colorIndexOf(ctx.meName, state.people()[ctx.meName]);
+  b.style.setProperty('--wash', hslOf(ci, 0.08));
+  b.appendChild(avatarFor(ctx.meName, 16, 7.5));
+  const label = document.createElement('span');
+  label.className = 'n-door-label';
+  label.textContent = 'Reply…';
+  b.append(label);
+  b.setAttribute('aria-label', 'Reply to this thread');
+  b.addEventListener('click', onOpen);
+  return b;
 }
 
 // Hover is the mouse's trigger and lives in CSS; focus-within is the keyboard's
@@ -355,9 +391,10 @@ function wireReveal(row, noteId, ui) {
 }
 
 // A root that is gone (tombstoned, or not yet synced) — its replies keep their
-// context under this quiet stub, and the conversation stays open: a thread does
-// not end because someone removed the first thing said in it.
-function stubRow(author, ctx, opts = {}) {
+// context under this quiet stub. It carries no control of its own: the thread's
+// open door sits below the replies and answers it like any other thread, so a
+// conversation does not end because someone removed the first thing said in it.
+function stubRow(author, ctx) {
   const row = document.createElement('div');
   row.className = 'n-note stub';
   const av = document.createElement('span');
@@ -369,20 +406,6 @@ function stubRow(author, ctx, opts = {}) {
   const who = author === ctx.meName ? 'you' : author;
   text.textContent = who ? `${who} removed this note` : '…';
   body.appendChild(text);
-  if (opts.onReply) {
-    const cue = document.createElement('div');
-    cue.className = 'n-cue';
-    const acts = document.createElement('span');
-    acts.className = 'n-acts';
-    const reply = document.createElement('button');
-    reply.className = 'note-action';
-    reply.textContent = 'Reply';
-    reply.addEventListener('click', opts.onReply);
-    acts.append(reply);
-    cue.append(acts);
-    body.appendChild(cue);
-    wireReveal(row, `stub:${opts.threadKey}`, opts.ui);
-  }
   row.append(av, body);
   return row;
 }
@@ -440,14 +463,12 @@ function renderThreads(host, scope, target, ctx, { onChange, expandedPinned, edi
     onBeginEdit: () => onChange({ localOnly: true }),
     onCancelEdit: () => onChange({ localOnly: true }),
   };
-  // Replying targets the thread, and a reply to a reply pre-fills @Name — the
-  // words carry who you are answering, never the indentation (one level).
-  const beginReply = (threadKey, pressed) => {
-    const mention = pressed && pressed.re && pressed.author !== ctx.meName ? `@${pressed.author} ` : '';
-    ui.reply = { scope, target, threadKey, draft: mention };
+  // Opening a door: the row you tapped becomes the composer, in place. No
+  // @Name to pre-fill — the door already sits under the thread it answers.
+  const openDoor = (threadKey) => {
+    ui.reply = { scope, target, threadKey, draft: '' };
     ui.focusOwner = 'reply';
     ui.replyFocused = true;
-    expandedPinned.add(threadKey);   // a folded thread opens to show you where it lands
     ui.unfold = true;
     onChange({ localOnly: true });
   };
@@ -468,29 +489,22 @@ function renderThreads(host, scope, target, ctx, { onChange, expandedPinned, edi
         collapsedReplies: collapsed ? t.replies.length : 0,
         onToggleReplies: () => { expandedPinned.add(t.root.id); onChange({ localOnly: true }); },
         onPinToggle: () => { savePins(model.togglePin(loadPins(), ctx.fid, t.root.id)); onChange({ localOnly: true }); },
-        onReply: canWrite ? (pressed) => beginReply(threadKey, pressed) : null,
       }));
-      if (collapsed && !replying) { host.appendChild(block); continue; }
+      // A folded pinned root shows its count and nothing else — no door until
+      // the fold is open, so the count stays the one way in.
+      if (collapsed) { host.appendChild(block); continue; }
     } else {
-      block.appendChild(stubRow(t.stubAuthor, ctx, {
-        ui,
-        threadKey,
-        onReply: canWrite ? () => beginReply(threadKey, null) : null,
-      }));
+      block.appendChild(stubRow(t.stubAuthor, ctx));
     }
-    if (t.replies.length || replying) {
+    if (t.replies.length || canWrite) {
       const replies = document.createElement('div');
       replies.className = 'n-replies';
       for (const n of t.replies) {
-        replies.appendChild(noteRow(n, ctx, {
-          ...noteOps,
-          ui,
-          reply: true,
-          editing,
-          onReply: canWrite ? (pressed) => beginReply(threadKey, pressed) : null,
-        }));
+        replies.appendChild(noteRow(n, ctx, { ...noteOps, ui, reply: true, editing }));
       }
+      // The door, or the composer it became.
       if (replying) replies.appendChild(inlineComposer(scope, target, threadKey, ctx, ui, onChange));
+      else if (canWrite) replies.appendChild(doorRow(ctx, () => openDoor(threadKey)));
       block.appendChild(replies);
     }
     host.appendChild(block);
@@ -513,6 +527,12 @@ function renderThreads(host, scope, target, ctx, { onChange, expandedPinned, edi
 function inlineComposer(scope, target, threadKey, ctx, ui, onChange) {
   const wrap = document.createElement('div');
   wrap.className = 'n-inline';
+  // Your avatar stays exactly where the door's was, and the field opens where
+  // the word "Reply…" stood: the door BECOMES the composer rather than being
+  // replaced by one.
+  wrap.appendChild(avatarFor(ctx.meName, 16, 7.5));
+  const inner = document.createElement('div');
+  inner.className = 'n-inline-body';
   const send = () => {
     const text = field.ta.value.trim();
     if (!text) return;
@@ -528,21 +548,19 @@ function inlineComposer(scope, target, threadKey, ctx, ui, onChange) {
   field.ta.placeholder = 'Reply…';
   field.ta.addEventListener('focus', () => { ui.focusOwner = 'reply'; ui.replyFocused = true; });
   field.ta.addEventListener('blur', () => { ui.replyFocused = false; });
-  const cue = document.createElement('div');
-  cue.className = 'n-cue';
-  const acts = document.createElement('span');
-  acts.className = 'n-acts open';
+  const bar = document.createElement('div');
+  bar.className = 'n-fieldbar';
   const post = document.createElement('button');
   post.className = 'note-action on';
-  post.textContent = 'Reply';
+  post.textContent = 'Save';
   post.addEventListener('click', send);
   const cancel = document.createElement('button');
   cancel.className = 'note-action';
   cancel.textContent = 'Cancel';
   cancel.addEventListener('click', () => { ui.reply = null; onChange({ localOnly: true }); });
-  acts.append(post, ' · ', cancel);
-  cue.append(acts, field.counter);
-  wrap.append(field.ta, cue);
+  bar.append(post, ' · ', cancel, field.counter);
+  inner.append(field.ta, bar);
+  wrap.appendChild(inner);
   return wrap;
 }
 
