@@ -1,11 +1,24 @@
 // Per-festival link previews.
 //
-// A crew link carries its festival in the QUERY as well as the hash
-// (js/crew.js crewLink) — `https://fest.kevinhg.com/?f=portola-2026#g=<token>…`
-// — because a link-preview crawler and a Vercel rewrite can both read a query
-// and neither can read a fragment. vercel.json rewrites `/` to this function
-// only when a query `f` is present, so every other request goes straight to
-// the static index.html and this code never runs.
+// A fest-scoped crew link looks like
+// `https://fest.kevinhg.com/f/portola-2026#g=<token>&f=portola-2026`. The
+// festival rides in the PATH (and again in the hash) because a link-preview
+// crawler and a Vercel rewrite can both read a path and neither can read a
+// fragment — and because a human scanning a chat message reads the festival
+// name before the token noise starts. vercel.json rewrites `/f/:id` here,
+// handing the segment over as `?f=<id>`.
+//
+// It is /f/<id> and NOT `/` with a query, and that is not a style choice. Vercel
+// gives the filesystem precedence over rewrites — "The `source` property
+// should NOT be a file because precedence is given to the filesystem prior to
+// rewrites being applied" (vercel.json reference). A first cut rewrote `/`
+// when a query `f` was present; on a live preview the CDN served index.html
+// straight from cache (`x-vercel-cache: HIT`, default OG block) and this
+// function was never invoked. Nothing sits at /f. Dropping the `has` matcher
+// was a bonus: `has` also does not work under `vercel dev`.
+//
+// Every request that is not under /f goes to the static index.html and its
+// default tags; this code never runs for them.
 //
 // What it does: serve index.html with the <!-- OG:BEGIN --> … <!-- OG:END -->
 // block swapped for that festival's tags. Nothing renders at request time —
@@ -27,6 +40,10 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const ORIGIN = 'https://fest.kevinhg.com';
+// Must stay in step with js/crew.js crewLink and the vercel.json rewrite;
+// tests/brand-assets.test.mjs asserts all three agree and that no static file
+// shadows this path.
+const SHARE_PATH = '/f';
 // Same shape js/crew.js and the festival validator enforce.
 const FEST_ID_RE = /^[a-z0-9-]{1,64}$/;
 const PROMISE = 'Pick artists with your people. Works with no signal.';
@@ -85,7 +102,7 @@ export function festivalFor(query, list) {
 export function tagsFor(fest) {
   const title = fest ? `${fest.name} ${fest.year || ''}`.trim() : 'Festival Navigator';
   const image = `${ORIGIN}/assets/og/${fest ? fest.id : 'default'}.jpg`;
-  const url = fest ? `${ORIGIN}/?f=${fest.id}` : `${ORIGIN}/`;
+  const url = fest ? `${ORIGIN}${SHARE_PATH}/${fest.id}` : `${ORIGIN}/`;
   // Where and when, then the promise. The short date is derived from the
   // validated `startsOn`, NOT from `dates` — that field is prose written for
   // someone reading the board (one festival's runs to two clauses about a
@@ -127,10 +144,24 @@ export default function handler(req, res) {
     res.status(405).end();
     return;
   }
-  const html = shell();
-  const page = html && inject(html, festivalFor(req.query && req.query.f, festivals()));
+  // /f exists to say something about ONE festival. With no festival to name —
+  // an unknown id, junk, a bare /f — there is nothing to say, so send the
+  // person to the app. A browser carries the fragment across a redirect whose
+  // target has none, so the `#g=` crew token and the `&f=` hint both survive
+  // and the app opens exactly where the link meant to put them; a crawler
+  // follows the redirect and reads the static default tags at `/`.
+  // The rewrite hands the path segment over as `?f=:id`. Vercel ALSO appends
+  // any path param the destination does not consume, so `id` is read as a
+  // fallback — belt and braces on the one thing that cannot be tested outside
+  // a real deploy, and harmless either way since both go through the same
+  // exact-id match below.
+  const q = req.query || {};
+  const fest = festivalFor(q.f !== undefined ? q.f : q.id, festivals());
+  const html = fest ? shell() : null;
+  const page = html && inject(html, fest);
   if (!page) {
-    // No shell, or the markers are gone: hand the person the real app.
+    // Also the safety net for a shell that cannot be read or has lost its
+    // markers: a broken invite link is far worse than a generic preview.
     res.setHeader('Location', '/');
     res.status(302).end();
     return;

@@ -34,7 +34,7 @@ test('crewLink carries the festival context in the hash', () => {
   assert.equal(crew.crewLink(TOKEN), `https://fest.kevinhg.com/#g=${TOKEN}`);
   assert.equal(
     crew.crewLink(TOKEN, 'electric-forest-2026'),
-    `https://fest.kevinhg.com/?f=electric-forest-2026#g=${TOKEN}&f=electric-forest-2026`,
+    `https://fest.kevinhg.com/f/electric-forest-2026#g=${TOKEN}&f=electric-forest-2026`,
   );
   // An id that fails the festival-id charset never rides the link.
   assert.equal(crew.crewLink(TOKEN, 'Bad Fest!'), `https://fest.kevinhg.com/#g=${TOKEN}`);

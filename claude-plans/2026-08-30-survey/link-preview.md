@@ -158,30 +158,95 @@ display face.
   wordmark read as a stray swatch. Everything else sits on the fest
   cards' exact baselines, so all twelve are one family.
 
-### 5. The fest id rides in the QUERY, the crew token never does
+### 5. The festival is IN THE PATH at /f/<id>, and the crew token never is
 
-`crewLink()` gains `?f=<id>` **before** the hash, and keeps the existing
-`&f=` inside it. The `#g=` token stays hash-only — CLAUDE.md, with
-teeth: a query param lands in platform access logs, and that token is
-the credential.
+A fest-scoped link is `https://fest.kevinhg.com/f/portola-2026#g=<token>&f=portola-2026`.
+A crew-wide link with no festival keeps the plain `/#g=<token>` shape.
 
-Emitting the id twice is deliberate. The query is the only half a
-crawler and a Vercel rewrite can see; the hash is the half the running
-app already reads (`crew.festFromHash()`), and leaving it alone means
-this change touches no boot code at all. Fourteen extra characters in a
-link nobody reads (they see the preview card) buys a zero-risk boot path.
+**The festival is in the path because a person reads it there.** Kevin's
+complaint was about how links look in chats, and the eye stops at the
+first `#`: `fest.kevinhg.com/f/lost-lands-2026` says what the link opens
+before the token noise begins. A query (`/s?f=…`) routes identically and
+reads like machinery.
+
+**The `/s` is load-bearing, and the first cut got it wrong.** That cut
+rewrote `/` to the function when a query `f` was present. It passed a
+local harness and shipped; on a live preview `GET /?f=portola-2026`
+returned 200 with `x-vercel-cache: HIT` and the DEFAULT OG block — the
+CDN answered from index.html and the function was never invoked. Vercel
+says so plainly in its own `vercel.json` reference:
+
+> The `source` property should **NOT** be a file because precedence is
+> given to the filesystem prior to rewrites being applied. Instead, you
+> should rename your static file or Vercel Function.
+
+The filesystem is consulted BEFORE rewrites, so a rewrite on `/` can
+never fire while an index.html exists. Nothing sits at `/f`, so the
+rewrite owns it — and **nothing may ever be created there**: an `f`
+file or an `f/` directory would silently take every `/f/<anything>` back
+from the function. The shadow test checks the static prefix for exactly
+that, and fails with `/f/:id <- f`.
+
+Moving off `/` also let the `has: [{query: f}]` matcher go, which is a
+second quiet landmine — the same page notes that `has` "does not yet
+work locally while using `vercel dev`, but does work when deployed",
+i.e. it fails in the opposite direction from this bug.
+
+Two rewrites, not one: `/f/:id` → `/api/share?f=:id` carries the
+festival (the `:param` syntax and the destination interpolation are both
+in the reference — `/resize/:width/:height`, `/proxy/:match*` →
+`https://example.com/:match*`), and a bare `/f` → `/api/share` catches a
+link a chat app truncated, so it redirects home instead of dead-ending
+on a 404. `trailingSlash: false` folds `/f/` into `/f` with a 308 before
+routing, so that shape is covered too.
+
+*The lesson worth keeping past this branch: a harness that mimics one
+routing RULE without mimicking the routing ORDER will pass a config that
+can never work. The harness now checks the filesystem first and
+reproduces the live failure exactly, and two tests encode the rule (see
+below) — the general one fails with `/ <- index.html`.*
+
+The id ALSO stays in the hash, and that copy is load-bearing rather than
+decorative. An unknown or truncated `/f/<id>` redirects to `/`, and the
+fragment is then the only thing left naming the festival — so dropping
+the hash copy for a tidier URL would quietly break the fallback it is
+there to serve. It is also what the running app reads
+(`crew.festFromHash()`), so the boot path is untouched by any of this.
+
+The `#g=` token stays hash-only. CLAUDE.md, with teeth: a query param
+lands in platform access logs and referrer headers, and that token IS
+the crew's data. A festival id is public catalogue information.
 
 `api/share.js` serves `index.html` with per-fest tags injected between
-`<!-- OG:BEGIN -->` / `<!-- OG:END -->` markers, wired by a `vercel.json`
-rewrite on `/` that only fires when a query `f` is present. It trusts
-nothing from the query: `?f=` selects a festival by exact id match
-against `data/festivals/index.json` and is never echoed into the
-response. Unknown id, junk, injection attempt → the default tags. Every
-interpolated value is HTML-escaped anyway. `og:url` is built from a
-hardcoded `https://fest.kevinhg.com`, never the request's Host header.
+`<!-- OG:BEGIN -->` / `<!-- OG:END -->` markers. It trusts nothing from
+the request: `?f=` selects a festival by exact id match against
+`data/festivals/index.json` and is never echoed into the response.
+Unknown id, junk, injection attempt, or a bare `/f` → **302 to `/`** —
+`/f` exists to say something about one festival, and with none to name
+the person belongs in the app. A browser carries the fragment across a
+redirect whose target has none, so `#g=` and `&f=` both survive; a
+crawler follows it and reads the static default tags. Every interpolated
+value is HTML-escaped anyway, and `og:url` is built from a hardcoded
+origin, never the request's Host header.
 
-`og:image` points at the pre-rendered static PNG. Nothing renders at
+`og:image` points at the pre-rendered static file. Nothing renders at
 request time.
+
+**Service worker: checked, and nothing needs changing** — measured in a
+real browser, including with the server dead, rather than reasoned
+about. The worker registers from `/service-worker.js`, so its scope is
+`/` and covers `/f/<id>`; the page is controlled. Navigations are
+already network-first, so an online open always gets live tags.
+
+The nested path is the part worth proving, because a relative asset URL
+would resolve under `/f/` and 404: every stylesheet, icon and manifest
+href in index.html is absolute, checked in the DOM. And with the harness
+killed, a **cold `/f/lost-lands-2026` that had never been opened** still
+booted the whole app from cache — landing screen, modules, tokens,
+Anton — falling through to the precached `/`. The `/f/<id>` entries live
+in the version-keyed shell cache that `activate` wipes wholesale, so
+there is no cross-version staleness; worst case is about twelve 17 KB
+entries.
 
 ## Mechanics worth writing down (each one cost a probe)
 
@@ -239,8 +304,8 @@ request time.
 | `icon-maskable-512.png` | new |
 | `index.html` | OG/Twitter meta between markers · **APP_CORE file — SW stamp goes stale** |
 | `api/share.js` | new — per-fest tag injection |
-| `vercel.json` | rewrite + `includeFiles` |
-| `js/crew.js` | `crewLink` gains `?f=` |
+| `vercel.json` | rewrites on `/f/:id` and `/f` + `includeFiles` |
+| `js/crew.js` | `crewLink` serves fest links from `/f/<id>` · **APP_CORE file** |
 | `manifest.json` | maskable icon + real description |
 | `.gitignore` | allow-list the new PNGs |
 | `package.json` | `@resvg/resvg-js`, `wawoff2`, `jpeg-js`, `npm run brand` |
@@ -273,3 +338,52 @@ request time.
   test harness serving `.mjs` as `application/octet-stream`, not the app —
   worth remembering that a local harness can manufacture a bug that looks
   like yours.)
+
+
+## Round two (2026-08-30, same day)
+
+*(Two passes, same day: first the routing fix, then the link shape. Both
+are folded into decision 5 above; this is the record of how it went.)*
+
+The first version shipped to a preview and the rewrite never fired — the
+lead caught it with `x-vercel-cache: HIT` and a default OG block on
+`/?f=portola-2026`. Diagnosis confirmed against Vercel's own reference
+before touching anything (quoted in decision 5). Fix: share links moved
+from `/?f=` to `/s?f=`, the `has` matcher dropped, `og:url` follows, and
+an unknown or absent `f` now 302s to `/` instead of serving default tags
+from a path that has no reason to exist.
+
+Two new tests encode the routing rule rather than trusting it, and both
+were checked against the broken config to confirm they go red:
+
+- *no rewrite source is shadowed by a file the filesystem would serve
+  first* — the general rule. Fails with `/ <- index.html`. Its own first
+  draft passed on the broken config, because `new URL('/index.html',
+  root)` resolves against the filesystem root, not the repo; that bug is
+  now called out in a comment beside the fix.
+- *a fest-scoped share link points at the path the rewrite owns* — ties
+  `crewLink`, `vercel.json` and `api/share.js` together, so the three can
+  never drift apart silently again.
+
+The first fix moved links to `/s?f=<id>`. The lead then made the right
+call to spend the extra pass on the shape itself rather than bank it as
+a follow-up: the complaint was about how links READ, and `/s?f=` is
+machinery. Final shape is `/f/<fest-id>`.
+
+Verified after both passes: the corrected harness — which now compiles
+`:param` sources the way Vercel does — reproduces the live failure on
+the old shape (`x-harness-served: filesystem`, zero per-fest markers)
+and serves per-fest tags on `/f/lost-lands-2026`, `/f/portola-2026` and
+`/f/acl-2026`. The junk battery (`/f/not-a-fest`, an encoded
+`"><script>alert(1)</script>`, an encoded `../../etc/passwd`, a bare
+`/f`, an over-long id, a wrong-case id, a trailing-space id) all 302 to
+`/` with nothing echoed; a raw `../../etc/passwd` and `/f/<id>/extra`
+404, which is right. POST is 405. And a real browser boots the app at
+`/f/portola-2026` — styles applied, modules loaded, every asset href
+absolute, SW controlling the page, per-fest tags live in the DOM — then
+boots it again, cold and fully offline, with the server killed.
+
+Both routing tests were re-checked against two broken configs, not just
+trusted: reverting to `source: "/"` fails them with `/ <- index.html`,
+and dropping an `f/index.html` into the repo fails the shadow test with
+`/f/:id <- f`.

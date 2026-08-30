@@ -346,18 +346,26 @@ function cloneAt(m, r1) {
 function hop(toEl, fromRect, toRect, cloneEl, delay = 0) {
   if (!toRect.width || !toRect.height || !fromRect.width || !fromRect.height) return [];
   const a = mid(fromRect), b = mid(toRect);
-  const sx = fromRect.width / toRect.width, sy = fromRect.height / toRect.height;
+  // UNIFORM scale, by height. A piece's grown twin usually says more than its
+  // small self ("9:15 PM" becomes "9:15 PM · Sat · Pier Stage"), so a
+  // width-fitted scale squashed the text into a smear that read as
+  // disappear-then-reappear (Kevin, 2026-08-30: "wonky and off"). Scaling
+  // both axes by the height ratio keeps the glyphs true — it reads as the
+  // piece growing — and the width difference is carried by the crossfade:
+  // the clone holds full opacity past the midpoint, the twin arrives under
+  // it, and for a beat both say their shared prefix in the same place.
+  const k = fromRect.height / toRect.height;
   const anims = [toEl.animate(
-    [{ transform: `translate(${a.x - b.x}px, ${a.y - b.y}px) scale(${sx}, ${sy})`, opacity: cloneEl ? 0 : 0.2 },
-     { opacity: 1, offset: 0.5 },
+    [{ transform: `translate(${a.x - b.x}px, ${a.y - b.y}px) scale(${k})`, opacity: cloneEl ? 0 : 0.2 },
+     { opacity: 1, offset: 0.55 },
      { transform: 'none', opacity: 1 }],
     { duration: MORPH_MS, delay, easing: EASE_ARRIVE, fill: 'both' },
   )];
   if (cloneEl) {
     anims.push(cloneEl.animate(
       [{ transform: 'none', opacity: 1 },
-       { opacity: 1, offset: 0.3 },
-       { transform: `translate(${b.x - a.x}px, ${b.y - a.y}px) scale(${1 / sx}, ${1 / sy})`, opacity: 0 }],
+       { opacity: 1, offset: 0.45 },
+       { transform: `translate(${b.x - a.x}px, ${b.y - a.y}px) scale(${1 / k})`, opacity: 0 }],
       { duration: MORPH_MS, delay, easing: EASE_ARRIVE, fill: 'both' },
     ));
   }

@@ -4,8 +4,11 @@
   "cleanUrls": true,
   "rewrites": [
     {
-      "source": "/",
-      "has": [{ "type": "query", "key": "f" }],
+      "source": "/f/:id",
+      "destination": "/api/share?f=:id"
+    },
+    {
+      "source": "/f",
       "destination": "/api/share"
     }
   ],

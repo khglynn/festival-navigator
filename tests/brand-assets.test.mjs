@@ -14,6 +14,12 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, existsSync, statSync } from 'node:fs';
 
+// crew.js is a browser module; these are the two globals it touches at import.
+globalThis.location = { origin: 'https://fest.kevinhg.com', hash: '' };
+globalThis.localStorage = {
+  getItem: () => null, setItem: () => {}, removeItem: () => {}, clear: () => {},
+};
+
 const root = new URL('../', import.meta.url);
 const path = (p) => new URL(p, root);
 const read = (p) => readFileSync(path(p));
@@ -188,4 +194,97 @@ test('.gitignore still names every raster that ships', () => {
       `.gitignore is missing \`${line}\` — a shipped raster would be silently untracked, or a stray one committed`,
     );
   }
+});
+
+// ---- the routing rule, which is where this first shipped broken ------------------
+//
+// The first cut rewrote `/` to api/share.js when a query `f` was present. On a
+// live Vercel preview that rewrite never fired: `GET /?f=portola-2026` came
+// back 200 with `x-vercel-cache: HIT` and the DEFAULT OG block — the CDN
+// answered from index.html and the function was never invoked. Vercel says so
+// in its own reference: "The `source` property should NOT be a file because
+// precedence is given to the filesystem prior to rewrites being applied."
+//
+// A local harness that mimics a rewrite without mimicking Vercel's ROUTING
+// ORDER passes happily through that bug, which is exactly what happened. So
+// the rule gets asserted here instead of trusted: a rewrite source that the
+// filesystem would serve is dead config, and a share link pointed at one is a
+// preview nobody ever sees.
+test('no rewrite source is shadowed by a file the filesystem would serve first', () => {
+  const config = JSON.parse(read('vercel.json').toString('utf8'));
+  const shadowed = [];
+  for (const rule of config.rewrites || []) {
+    // What the static filesystem would answer for this path, cleanUrls
+    // included. `/` is the case that actually bit us: it is served by the
+    // root index.html, so it can never be a rewrite source. (Note the paths
+    // stay repo-RELATIVE — a leading slash in `new URL(p, root)` resolves
+    // against the filesystem root instead, which is how the first version of
+    // this very test passed on the broken config.)
+    //
+    // For a pattern like `/f/:id`, what matters is the STATIC PREFIX: if
+    // `f/` ever became a real directory (or `f.html` a real file), every
+    // `/f/<anything>` would be served by the filesystem and the previews
+    // would silently go back to the default card. So the prefix is what gets
+    // checked, and that is the rule to keep: nothing may be created at `f`.
+    const bare = rule.source.replace(/^\//, '').replace(/\/$/, '');
+    const prefix = bare.split('/').filter((seg) => !seg.startsWith(':')).join('/');
+    const candidates = prefix === ''
+      ? ['index.html']
+      : [prefix, `${prefix}.html`, `${prefix}/index.html`];
+    for (const candidate of candidates) {
+      if (existsSync(path(candidate))) shadowed.push(`${rule.source} <- ${candidate}`);
+    }
+    const dest = rule.destination.split('?')[0].replace(/^\//, '');
+    assert.ok(
+      existsSync(path(dest)) || existsSync(path(`${dest}.js`)),
+      `vercel.json rewrites ${rule.source} to ${rule.destination}, which does not exist`,
+    );
+  }
+  assert.deepEqual(
+    shadowed, [],
+    `these rewrites can never fire — the filesystem wins: ${shadowed.join(', ')}`,
+  );
+});
+
+test('a fest-scoped share link points at a path some rewrite owns', async () => {
+  const crew = await import('../js/crew.js');
+  const config = JSON.parse(read('vercel.json').toString('utf8'));
+  // A vercel.json `source` is a path pattern: `:name` is one segment,
+  // `:name*` is any number. Turn it into a matcher so the test asks the real
+  // question — "would this link reach the function?" — rather than comparing
+  // strings and passing on a pattern it does not understand.
+  const matches = (source, pathname) => new RegExp(
+    `^${source.replace(/:[A-Za-z0-9_]+\*/g, '.*').replace(/:[A-Za-z0-9_]+/g, '[^/]+')}$`,
+  ).test(pathname);
+
+  const link = crew.crewLink('sharepathtoken_0123456789012', 'portola-2026');
+  const { pathname } = new URL(link.split('#')[0]);
+  assert.equal(pathname, '/f/portola-2026', 'the festival should be readable in the link itself');
+  assert.ok(
+    (config.rewrites || []).some((r) => matches(r.source, pathname)),
+    `crewLink serves fest links from ${pathname}, which no vercel.json rewrite claims — `
+    + 'the preview would be the default card',
+  );
+
+  // And the app still gets its own copy where it reads it. This one is not
+  // decorative: an unknown or truncated /f/<id> redirects to `/`, and the
+  // fragment is then the only thing left naming the festival.
+  assert.match(link, /#g=[^&]+&f=portola-2026$/, 'the hash must still carry the fest id');
+
+  // A crew-wide link (no festival) has nothing per-fest to say and stays on /.
+  assert.equal(new URL(crew.crewLink('sharepathtoken_0123456789012').split('#')[0]).pathname, '/');
+
+  // The token never reaches the path — it is the crew's credential, and a
+  // path lands in access logs and referrer headers exactly like a query.
+  assert.ok(!pathname.includes('sharepathtoken'), 'token leaked into the path');
+});
+
+test('the static default block and api/share.js agree on the default card', async () => {
+  // index.html serves the default tags; share.js owns them for every other
+  // path. If the two ever name different images, half the links preview with
+  // an image that was quietly replaced.
+  const share = await import('../api/share.js');
+  const html = read('index.html').toString('utf8');
+  const pick = (src) => /<meta property="og:image" content="([^"]+)"/.exec(src)[1];
+  assert.equal(pick(share.tagsFor(null)), pick(html), 'default og:image differs between index.html and share.js');
 });

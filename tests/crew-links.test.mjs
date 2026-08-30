@@ -13,14 +13,17 @@ const TOKEN = 'linktesttoken_0123456789012';
 
 test('crewLink: crew-wide, fest-scoped, and personal variants', () => {
   assert.equal(crew.crewLink(TOKEN), `https://fest.kevinhg.com/#g=${TOKEN}`);
-  // The fest id rides in the QUERY (what a link-preview crawler and the
-  // vercel.json rewrite can read) as well as the hash (what the app reads).
+  // A fest-scoped link puts the festival in the PATH, under /f — so a human
+  // reads it in a chat, and so the rewrite can fire at all (Vercel gives the
+  // filesystem precedence over rewrites, and `/` is index.html). The hash
+  // keeps its own copy: it is what the app reads, and it is what survives
+  // when an unknown id redirects to `/`.
   assert.equal(crew.crewLink(TOKEN, 'lollapalooza-2025'),
-    `https://fest.kevinhg.com/?f=lollapalooza-2025#g=${TOKEN}&f=lollapalooza-2025`);
+    `https://fest.kevinhg.com/f/lollapalooza-2025#g=${TOKEN}&f=lollapalooza-2025`);
   // Personal link URL-encodes the name (spaces, unicode) and rides after &f=.
   assert.equal(crew.crewLink(TOKEN, 'lollapalooza-2025', 'Drew B'),
-    `https://fest.kevinhg.com/?f=lollapalooza-2025#g=${TOKEN}&f=lollapalooza-2025&me=Drew%20B`);
-  // A bad fest id drops BOTH copies but keeps the personal part.
+    `https://fest.kevinhg.com/f/lollapalooza-2025#g=${TOKEN}&f=lollapalooza-2025&me=Drew%20B`);
+  // A bad fest id drops BOTH copies, stays on `/`, keeps the personal part.
   assert.equal(crew.crewLink(TOKEN, 'NOT VALID!', 'Drew'),
     `https://fest.kevinhg.com/#g=${TOKEN}&me=Drew`);
 });
@@ -33,9 +36,9 @@ test('the crew token never leaves the hash', () => {
     crew.crewLink(TOKEN, 'lollapalooza-2025'),
     crew.crewLink(TOKEN, 'lollapalooza-2025', 'Drew B'),
   ]) {
-    const query = link.slice(0, link.indexOf('#') === -1 ? link.length : link.indexOf('#'));
-    assert.ok(!query.includes(TOKEN), `token leaked into the query: ${link}`);
-    assert.ok(!/[?&](g|me)=/.test(query), `token or member name in the query: ${link}`);
+    const beforeHash = link.slice(0, link.indexOf('#') === -1 ? link.length : link.indexOf('#'));
+    assert.ok(!beforeHash.includes(TOKEN), `token leaked out of the hash: ${link}`);
+    assert.ok(!/[?&](g|me)=/.test(beforeHash), `token or member name in the query: ${link}`);
   }
 });
 
