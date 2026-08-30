@@ -181,6 +181,14 @@ export const MORPH_MS = 320;
 const EASE = 'cubic-bezier(.45, 0, .2, 1)';
 
 export function zoomedCard() { return zoomed ? zoomed.el : null; }
+
+// A zoom put away on purpose (Escape, a tap outside) must not grow back
+// under a pointer that never left the card — it waits for the pointer to
+// leave and come back (real-browser walk, 2026-08-29).
+let dismissedEl = null;
+export function dismissZoom() {
+  if (zoomed) { dismissedEl = zoomed.el; unzoom(); }
+}
 export function zoomSource() { return zoomed ? zoomed.source : null; }
 
 const canAnimate = (el) => typeof el.animate === 'function'
@@ -421,6 +429,7 @@ export function wireCardZoom(el, artistName, ctx, { onOpenNotes = null, occ = nu
     if (e.pointerType !== 'mouse') return;
     if (outT) { clearTimeout(outT); outT = null; }
     if (zoomed && zoomed.el === el) return;
+    if (dismissedEl === el) return; // put away on purpose; a leave clears it
     if (inT) clearTimeout(inT);
     inT = setTimeout(() => {
       inT = null;
@@ -429,6 +438,7 @@ export function wireCardZoom(el, artistName, ctx, { onOpenNotes = null, occ = nu
   });
   el.addEventListener('pointerleave', (e) => {
     if (e.pointerType !== 'mouse') return;
+    if (dismissedEl === el) dismissedEl = null;
     if (inT) { clearTimeout(inT); inT = null; }
     if (zoomed && zoomed.el === el) {
       if (outT) clearTimeout(outT);

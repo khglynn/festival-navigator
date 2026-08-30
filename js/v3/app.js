@@ -17,7 +17,7 @@ import { openArtistSheet, openDayNotes, openAllNotes, openFestNotes, closeSheet,
 import { renderSettings, appSettings, openSubviewByKey } from './settings.js';
 import { onStorageWriteFail, saveLS, getLS, errorText } from '../util.js';
 import { router, encodeNotesKey, decodeNotesKey } from './router.js';
-import { wireCardZoom, wireCardFocusZoom, zoomCard, unzoom, zoomedCard, zoomSource } from './card-facts.js';
+import { wireCardZoom, wireCardFocusZoom, zoomCard, unzoom, dismissZoom, zoomedCard, zoomSource } from './card-facts.js';
 import { createSortControl } from './sort-control.js';
 import { nameProblem } from '../name-rules.mjs';
 import { startFavicon, stopFavicon } from './favicon.js';
@@ -75,7 +75,7 @@ const ctx = {
   // picking (the resting card is where a tap means pick). A mouse zoom is
   // just hover — clicking still picks.
   onZoomTap: (el) => {
-    if (zoomedCard() === el && zoomSource() === 'touch') { unzoom(); return true; }
+    if (zoomedCard() === el && zoomSource() === 'touch') { dismissZoom(); return true; }
     return false;
   },
 };
@@ -85,12 +85,12 @@ const ctx = {
 // tap it is judging.
 document.addEventListener('pointerdown', (e) => {
   const z = zoomedCard();
-  if (z && !z.contains(e.target)) unzoom();
+  if (z && !z.contains(e.target)) dismissZoom();
 }, true);
 // Escape closes ONE layer: a live zoom eats the press before any sheet or
 // router handler sees it (capture phase) — never both in one keypress.
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape' && zoomedCard()) { unzoom(); e.stopImmediatePropagation(); e.preventDefault(); }
+  if (e.key === 'Escape' && zoomedCard()) { dismissZoom(); e.stopImmediatePropagation(); e.preventDefault(); }
 }, true);
 
 function onNotesChange() {
