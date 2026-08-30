@@ -1102,7 +1102,7 @@ function a4Header(f) {
   const who = f.people.map((p) => `<span class="w${p.isYou ? ' you' : ''}${p.level === 4 ? ' must' : ''}" style="--wash: ${washOf(p.name, .42)}; --washlvl: ${washOf(p.name, LVL_ALPHA[p.level])}; --ring: ${stroke(p.colorIndex, p.isYou)};">${p.isYou ? 'You' : esc(p.name)}${p.level === 4 ? '<b>MUST</b>' : ''}</span>`).join('');
   const chips = [];
   if (f.noteCount) chips.push(`<span class="chip notes">${f.noteCount}&nbsp;notes</span>`);
-  const sp = a4Spot(f); if (sp) chips.push(`<span class="chip spot">${esc(sp)}${f.spotify && f.spotify.followed ? '&nbsp;' + bookmarkSvg : ''}</span>`);
+  const sp = a4Spot(f); if (sp) chips.push(`<span class="chip spot">${f.spotify && f.spotify.songs ? `${f.spotify.songs} liked song${f.spotify.songs === 1 ? '' : 's'}` : ''}${f.spotify && f.spotify.songs && f.spotify.followed ? ' · ' : ''}${f.spotify && f.spotify.followed ? bookmarkSvg + ' following' : ''}</span>`);
   return `<div class="f-name">${esc(f.name)}</div><div class="f-sub">${esc(a4Sub(f))}</div><div class="f-who">${who}</div>${chips.length ? `<div class="f-chips">${chips.join('')}</div>` : ''}`;
 }
 function a4Card(f, { close = true } = {}) {
@@ -1122,7 +1122,7 @@ function morphCell(cardEl) {
   }).join('');
   const chips = [];
   if (f.noteCount) chips.push(`<span class="chip notes">${f.noteCount}<span class="more">&nbsp;notes</span></span>`);
-  if (f.spotify && (f.spotify.songs || f.spotify.followed)) chips.push(`<span class="chip spot">${f.spotify.songs || ''}<span class="more">&nbsp;liked song${f.spotify.songs === 1 ? '' : 's'}${f.spotify.followed ? ' · following' : ''}</span>${f.spotify.followed ? bookmarkSvg : ''}</span>`);
+  if (f.spotify && (f.spotify.songs || f.spotify.followed)) chips.push(`<span class="chip spot">${f.spotify.songs || ''}<span class="more">&nbsp;liked song${f.spotify.songs === 1 ? '' : 's'}${f.spotify.followed ? ' ·&nbsp;' : ''}</span>${f.spotify.followed ? bookmarkSvg : ''}${f.spotify.followed ? '<span class="more">&nbsp;following</span>' : ''}</span>`);
   // content-hugging width: the widest of the four centred rows, clamped, plus an edge
   // clamp so column 1 grows rightward and the last column leftward (tooltip physics).
   const sub = a4Sub(f);
