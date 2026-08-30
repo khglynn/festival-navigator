@@ -1,14 +1,18 @@
-// Notes surfaces (atlas 21e/21g): scope sheets (artist + day), the all-notes
-// HOME, and the day/fest sections with personal pins. Pins are device-local
-// (fn_pins_v1), never synced. Notes are edited/deleted through the tombstone
-// model — an edit overwrites the same note id (author + ts unchanged, order
-// stable); a delete writes {deleted:true} — and the server's id-prefix rule
-// means you can only ever touch your own (NT-3).
+// Notes surfaces (reshaped 2026-08-29): scope sheets (artist + day), the
+// all-notes HOME, and the day whisper on the wall. The sheet opens with the
+// card (card-facts.js) and reads as a conversation — no boxes, a note is text
+// on a wash of its author's hue, replies indent one gutter under their root.
+// Pins are device-local (fn_pins_v1), never synced. Notes are edited/deleted
+// through the tombstone model — an edit overwrites the same note id (author +
+// ts unchanged, order stable); a delete writes {deleted:true} — and the
+// server's id-prefix rule means you can only ever touch your own (NT-3).
+// A reply is a note with one extra key: re = its root's id (threadsFor).
 // All doc-derived text renders via textContent (gate rule).
 import * as state from '../state.js';
 import * as model from './model.js';
 import { hslOf, strokeOf } from './palette.js';
 import { colorIndexOf } from './wall.js';
+import { factsFor, sheetCard } from './card-facts.js';
 import { router } from './router.js';
 import { loadJSON, saveLS } from '../util.js';
 
@@ -23,20 +27,20 @@ const savePins = (pins) => saveLS(LS_PINS, JSON.stringify(pins));
 
 function relTime(ts) {
   const ms = Date.now() - Date.parse(ts);
-  if (!Number.isFinite(ms) || ms < 0) return '';
+  if (!Number.isFinite(ms) || ms < 0) return 'just now';
   const m = Math.floor(ms / 60000);
   if (m < 1) return 'just now';
-  if (m < 60) return `${m}m ago`;
+  if (m < 60) return `${m}m`;
   const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h ago`;
-  return `${Math.floor(h / 24)}d ago`;
+  if (h < 24) return `${h}h`;
+  return `${Math.floor(h / 24)}d`;
 }
 
-function avatarFor(name) {
+function avatarFor(name, size = 20, font = 8.5) {
   const p = state.people()[name];
   const av = document.createElement('span');
   av.className = 'avatar';
-  av.style.width = '22px'; av.style.height = '22px'; av.style.fontSize = '9px';
+  av.style.width = `${size}px`; av.style.height = `${size}px`; av.style.fontSize = `${font}px`;
   const ci = colorIndexOf(name, p);
   av.style.background = hslOf(ci, 0.5);
   av.style.border = '1px solid ' + strokeOf(ci, false);
@@ -45,104 +49,198 @@ function avatarFor(name) {
 }
 
 // ---- write helpers (the tombstone model, NT-3) --------------------------------------
-function addNote(ctx, scope, target, text) {
+function addNote(ctx, scope, target, text, re = null) {
   if (!ctx.meName) return;
   const ts = new Date().toISOString();
-  const note = { author: ctx.meName, ts, text };
+  const note = re ? { author: ctx.meName, ts, text, re } : { author: ctx.meName, ts, text };
   const id = model.makeNoteId(ctx.meName, ts);
   state.recordNote(ctx.fid, scope, target, id, note);
 }
 
 function editNote(ctx, scope, target, note, newText) {
-  // Same id, same author, same ts — order stays; only the words change.
-  state.recordNote(ctx.fid, scope, target, note.id, { author: note.author, ts: note.ts, text: newText });
+  // Same id, same author, same ts (and same re) — order stays; only the words change.
+  const next = { author: note.author, ts: note.ts, text: newText };
+  if (note.re) next.re = note.re;
+  state.recordNote(ctx.fid, scope, target, note.id, next);
 }
 
 function deleteNote(ctx, scope, target, note) {
-  state.recordNote(ctx.fid, scope, target, note.id, { author: note.author, ts: note.ts, text: '', deleted: true });
+  const gone = { author: note.author, ts: note.ts, text: '', deleted: true };
+  if (note.re) gone.re = note.re;
+  state.recordNote(ctx.fid, scope, target, note.id, gone);
 }
 
-// ---- note row ------------------------------------------------------------------------
-// opts: { pinned, onPinToggle, onEdit(note, text), onDelete(note) }
+// ---- one note, the aura way ---------------------------------------------------------
+// opts: { reply, pinned, collapsedReplies, onToggleReplies, onPinToggle,
+//         onReply, onEdit(note, text), onDelete(note) }
 function noteRow(note, ctx, opts = {}) {
   const row = document.createElement('div');
-  row.className = 'note-row';
-  row.appendChild(avatarFor(note.author));
-  const bubble = document.createElement('div');
-  bubble.className = 'bubble' + (opts.pinned ? ' pinned' : '');
-  const text = document.createElement('span');
+  row.className = 'n-note' + (opts.reply ? ' n-reply' : '') + (opts.pinned ? ' pinned' : '');
+  const ci = colorIndexOf(note.author, state.people()[note.author]);
+  row.style.setProperty('--wash', hslOf(ci, opts.pinned ? 0.46 : (opts.reply ? 0.2 : 0.26)));
+  row.appendChild(avatarFor(note.author, opts.reply ? 16 : 20, opts.reply ? 7.5 : 8.5));
+
+  const body = document.createElement('div');
+  body.className = 'n-body';
+  const head = document.createElement('div');
+  head.className = 'n-head';
+  const who = document.createElement('span');
+  who.className = 'n-who';
+  who.textContent = note.author === ctx.meName ? 'you' : note.author;
+  head.append(who, relTime(note.ts));
+
+  const mkAction = (label, cls = '') => {
+    const b = document.createElement('button');
+    b.className = 'note-action' + (cls ? ` ${cls}` : '');
+    b.textContent = label;
+    return b;
+  };
+  const dot = () => head.append(' · ');
+
+  const text = document.createElement('div');
+  text.className = 'n-text';
   text.textContent = note.text;
-  bubble.appendChild(text);
-  const meta = document.createElement('span');
-  meta.className = 'meta';
-  meta.textContent = `${note.author === ctx.meName ? 'you' : note.author} · ${relTime(note.ts)}`;
-  bubble.appendChild(meta);
 
-  // Your notes stay yours to change (NT-3) — quiet actions in the meta line.
-  if (note.author === ctx.meName && (opts.onEdit || opts.onDelete)) {
-    const mkAction = (label) => {
-      const b = document.createElement('button');
-      b.className = 'note-action';
-      b.textContent = label;
-      return b;
-    };
-    if (opts.onEdit) {
-      const edit = mkAction('Edit');
-      edit.addEventListener('click', () => {
-        bubble.textContent = '';
-        const editor = document.createElement('div');
-        editor.className = 'composer';
-        const input = document.createElement('input');
-        input.maxLength = 500;
-        input.value = note.text;
-        input.setAttribute('aria-label', 'Edit your note');
-        const save = document.createElement('button');
-        save.className = 'btn-tonal';
-        save.style.cssText = 'font-size: 11.5px; padding: 8px 13px; flex: none;';
-        save.textContent = 'Save';
-        const doSave = () => {
-          const v = input.value.trim();
-          if (!v) return;
-          opts.onEdit(note, v);
-        };
-        save.addEventListener('click', doSave);
-        input.addEventListener('keydown', (e) => { if (e.key === 'Enter') doSave(); });
-        editor.append(input, save);
-        bubble.appendChild(editor);
-        input.focus();
-      });
-      meta.append(' · ', edit);
-    }
-    if (opts.onDelete) {
-      const del = mkAction('Delete');
-      let armed = false;
-      del.addEventListener('click', () => {
-        if (!armed) {
-          armed = true;
-          del.textContent = 'Sure?';
-          setTimeout(() => { armed = false; del.textContent = 'Delete'; }, 3000);
-          return;
-        }
-        opts.onDelete(note);
-      });
-      meta.append(' · ', del);
-    }
+  // Your notes stay yours to change (NT-3) — quiet actions in the head line.
+  if (note.author === ctx.meName && opts.onEdit) {
+    const edit = mkAction('Edit');
+    edit.addEventListener('click', () => {
+      const editor = document.createElement('div');
+      editor.className = 'composer';
+      const input = document.createElement('input');
+      input.maxLength = 500;
+      input.value = note.text;
+      input.setAttribute('aria-label', 'Edit your note');
+      const save = document.createElement('button');
+      save.className = 'btn-tonal';
+      save.style.cssText = 'font-size: 11.5px; padding: 8px 13px; flex: none;';
+      save.textContent = 'Save';
+      const doSave = () => {
+        const v = input.value.trim();
+        if (!v) return;
+        opts.onEdit(note, v);
+      };
+      save.addEventListener('click', doSave);
+      input.addEventListener('keydown', (e) => { if (e.key === 'Enter') doSave(); });
+      editor.append(input, save);
+      text.replaceChildren(editor);
+      input.focus();
+    });
+    dot(); head.append(edit);
   }
-
-  row.appendChild(bubble);
+  if (note.author === ctx.meName && opts.onDelete) {
+    const del = mkAction('Delete');
+    let armed = false;
+    del.addEventListener('click', () => {
+      if (!armed) {
+        armed = true;
+        del.textContent = 'Sure?';
+        setTimeout(() => { armed = false; del.textContent = 'Delete'; }, 3000);
+        return;
+      }
+      opts.onDelete(note);
+    });
+    dot(); head.append(del);
+  }
+  if (opts.onReply) {
+    const reply = mkAction('Reply');
+    reply.addEventListener('click', () => opts.onReply(note));
+    dot(); head.append(reply);
+  }
+  if (opts.collapsedReplies) {
+    const n = opts.collapsedReplies;
+    const open = mkAction(`${n} repl${n === 1 ? 'y' : 'ies'}`, 'on');
+    open.addEventListener('click', opts.onToggleReplies);
+    dot(); head.append(open);
+  }
   if (opts.onPinToggle) {
-    const pin = document.createElement('button');
-    pin.className = 'pin-btn' + (opts.pinned ? ' active' : '');
-    pin.textContent = opts.pinned ? 'Unpin' : 'Pin';
+    const pin = mkAction(opts.pinned ? 'Unpin' : 'Pin', opts.pinned ? 'on' : '');
     pin.addEventListener('click', opts.onPinToggle);
-    row.appendChild(pin);
+    dot(); head.append(pin);
   }
+
+  body.append(head, text);
+  row.appendChild(body);
   return row;
 }
 
+// A root that is gone (tombstoned, or not yet synced) — its replies keep
+// their context under this quiet stub.
+function stubRow(author) {
+  const row = document.createElement('div');
+  row.className = 'n-note stub';
+  const av = document.createElement('span');
+  av.className = 'avatar stub-avatar';
+  const body = document.createElement('div');
+  body.className = 'n-body';
+  const text = document.createElement('div');
+  text.className = 'n-text';
+  text.textContent = author ? `${author} removed this note` : '…';
+  body.appendChild(text);
+  row.append(av, body);
+  return row;
+}
+
+// ---- threads, rendered --------------------------------------------------------------
+// A pinned root sorts to the top and shows a reply COUNT, never its thread
+// (Kevin's rule, 2026-08-28); the count expands it in place for this open.
+function renderThreads(host, scope, target, ctx, { onChange, onReply, expandedPinned }) {
+  host.textContent = '';
+  const pins = loadPins();
+  const pinnedIds = new Set(pins[ctx.fid] || []);
+  const threads = model.threadsFor(state.crewDoc, ctx.fid, scope, target, [...pinnedIds]);
+  if (!threads.length) {
+    const empty = document.createElement('div');
+    empty.className = 'n-empty';
+    empty.textContent = ctx.meName ? 'No notes yet — say the first thing.' : 'No notes yet.';
+    host.appendChild(empty);
+    return;
+  }
+  for (const t of threads) {
+    const block = document.createElement('div');
+    block.className = 'n-thread';
+    if (t.root) {
+      const pinned = pinnedIds.has(t.root.id);
+      const collapsed = pinned && t.replies.length && !expandedPinned.has(t.root.id);
+      block.appendChild(noteRow(t.root, ctx, {
+        pinned,
+        collapsedReplies: collapsed ? t.replies.length : 0,
+        onToggleReplies: () => { expandedPinned.add(t.root.id); onChange({ localOnly: true }); },
+        onPinToggle: () => { savePins(model.togglePin(loadPins(), ctx.fid, t.root.id)); onChange({ localOnly: true }); },
+        onReply: onReply ? () => onReply(t.root) : null,
+        onEdit: (note, text) => { editNote(ctx, scope, target, note, text); onChange(); },
+        onDelete: (note) => { deleteNote(ctx, scope, target, note); onChange(); },
+      }));
+      if (collapsed) { host.appendChild(block); continue; }
+    } else {
+      block.appendChild(stubRow(t.stubAuthor));
+    }
+    if (t.replies.length) {
+      const replies = document.createElement('div');
+      replies.className = 'n-replies';
+      for (const n of t.replies) {
+        replies.appendChild(noteRow(n, ctx, {
+          reply: true,
+          onEdit: (note, text) => { editNote(ctx, scope, target, note, text); onChange(); },
+          onDelete: (note) => { deleteNote(ctx, scope, target, note); onChange(); },
+        }));
+      }
+      block.appendChild(replies);
+    }
+    host.appendChild(block);
+  }
+}
+
+// The composer, with a reply state: replying keeps whatever was typed and
+// only changes where it will land; ✕ returns to a plain note.
 function composer(placeholder, onSave, draftKey) {
   const wrap = document.createElement('div');
-  wrap.className = 'composer';
+  wrap.className = 'composer-wrap';
+  const replyLabel = document.createElement('div');
+  replyLabel.className = 'reply-to';
+  replyLabel.hidden = true;
+  const row = document.createElement('div');
+  row.className = 'composer';
   const input = document.createElement('input');
   input.maxLength = 500;
   input.placeholder = placeholder;
@@ -150,6 +248,24 @@ function composer(placeholder, onSave, draftKey) {
   // Keyed composers survive the wall repaint: renderWall harvests drafts by
   // this key before teardown and restores value/focus/caret after (audit 1.2).
   if (draftKey) input.dataset.draftKey = draftKey;
+  let replyTo = null;
+  const cancel = document.createElement('button');
+  cancel.className = 'cancel';
+  cancel.textContent = '✕';
+  cancel.setAttribute('aria-label', 'Cancel reply');
+  cancel.hidden = true;
+  const setReply = (note) => {
+    replyTo = note;
+    replyLabel.hidden = !note;
+    cancel.hidden = !note;
+    input.placeholder = note ? 'Reply…' : placeholder;
+    input.setAttribute('aria-label', note ? `Reply to ${note.author === undefined ? '' : note.author}` : placeholder);
+    if (note) {
+      replyLabel.textContent = `Replying to ${note.author}`;
+      input.focus();
+    }
+  };
+  cancel.addEventListener('click', () => setReply(null));
   const btn = document.createElement('button');
   btn.className = 'btn-tonal';
   btn.style.cssText = 'font-size: 12px; padding: 9px 15px; flex: none;';
@@ -158,18 +274,18 @@ function composer(placeholder, onSave, draftKey) {
     const text = input.value.trim();
     if (!text) return;
     input.value = '';
-    onSave(text);
+    const to = replyTo;
+    setReply(null);
+    onSave(text, to);
   };
   btn.addEventListener('click', save);
   input.addEventListener('keydown', (e) => { if (e.key === 'Enter') save(); });
-  wrap.append(input, btn);
+  row.append(input, cancel, btn);
+  wrap.append(replyLabel, row);
+  wrap.setReply = setReply;
   return wrap;
 }
 
-// ---- sheet chrome: grabber (with a real swipe), title, a real close (NT-5) ----------
-// Exported so app.js's share + add-member sheets use THIS one instead of
-// hand-copying the markup — which is how they ended up without a close button,
-// without role=dialog, and without focus restore, while looking identical.
 export function sheetChrome(sheet, titleText) {
   const grabber = document.createElement('div');
   grabber.className = 'grabber';
@@ -205,6 +321,15 @@ export function sheetChrome(sheet, titleText) {
   head.append(title, close);
   sheet.append(grabber, head);
   return head;
+}
+
+// A bare grabber for sheets whose header is the card itself (the ✕ lives in
+// the card's corner there — Kevin's alignment note, 2026-08-29).
+function grabberOnly(sheet) {
+  const probe = document.createElement('div');
+  sheetChrome(probe, '');
+  const grabber = probe.querySelector('.grabber');
+  sheet.appendChild(grabber);
 }
 
 // The open sheet's repaint hook: remote syncs call refreshOpenSheet() so a
@@ -256,7 +381,7 @@ export function dialogize(sheet, label) {
 }
 
 // ---- scope sheet (artist or day) — one surface, two scopes (21g / NT-2) -------------
-function openScopeSheet(scope, target, titleText, ctx, onChange) {
+function openScopeSheet(scope, target, ctx, onChange) {
   rememberOpener();  // no-op on a re-render — the original opener is kept
   teardownSheet();   // NOT closeSheet(): a re-render must not restore focus
   const backdrop = document.createElement('div');
@@ -266,51 +391,69 @@ function openScopeSheet(scope, target, titleText, ctx, onChange) {
   const sheet = document.createElement('div');
   sheet.className = 'sheet';
   sheet.id = 'artist-sheet';
-  sheetChrome(sheet, titleText);
+
+  // Per-open UI state that must survive live repaints (never synced).
+  const expandedPinned = new Set();
+
+  let paintHeader = () => {};
+  if (scope === 'artist') {
+    // The header IS the card, grown once more; the ✕ lives in its corner.
+    grabberOnly(sheet);
+    const headerHost = document.createElement('div');
+    sheet.appendChild(headerHost);
+    paintHeader = () => {
+      headerHost.replaceChildren(sheetCard(factsFor(target, ctx), { onClose: requestSheetClose }));
+    };
+    paintHeader();
+  } else {
+    const head = sheetChrome(sheet, scope === 'fest' ? state.fest().name.toUpperCase() : target.toUpperCase());
+    const meta = (state.fest().dayMeta || {})[target];
+    if (scope === 'day' && meta) {
+      const sub = document.createElement('div');
+      sub.className = 'f-sub day-sub';
+      sub.textContent = [meta.wd, meta.date].filter(Boolean).join(' · ');
+      head.insertAdjacentElement('afterend', sub);
+    }
+  }
 
   const list = document.createElement('div');
-  list.style.cssText = 'display: flex; flex-direction: column; gap: 8px;';
+  list.className = 'n-list';
+  sheet.appendChild(list);
+
+  // The composer lives OUTSIDE paint() — a remote sync repainting the list
+  // must never eat a half-typed note (audit 1.2). localOnly changes (a pin,
+  // expanding a pinned thread) repaint without pushing anything.
+  const box = ctx.meName ? composer('Add a note…', (text, replyTo) => {
+    addNote(ctx, scope, target, text, replyTo ? (replyTo.re || replyTo.id) : null);
+    paint();
+    onChange();
+  }) : null;
+
   const paint = () => {
-    list.textContent = '';
-    const pins = loadPins();
-    const pinnedIds = new Set(pins[ctx.fid] || []);
-    const notes = model.sortWithPins(model.notesFor(state.crewDoc, ctx.fid, scope, target), [...pinnedIds]);
-    if (!notes.length) {
-      const empty = document.createElement('div');
-      empty.style.cssText = 'color: var(--text-tertiary); font-size: 12px; font-weight: 600; text-align: center; padding: 10px 0;';
-      empty.textContent = ctx.meName ? 'No notes yet — say the first thing.' : 'No notes yet.';
-      list.appendChild(empty);
-      return;
-    }
-    for (const n of notes) {
-      list.appendChild(noteRow(n, ctx, {
-        pinned: pinnedIds.has(n.id),
-        onPinToggle: () => { savePins(model.togglePin(loadPins(), ctx.fid, n.id)); paint(); },
-        onEdit: (note, text) => { editNote(ctx, scope, target, note, text); paint(); onChange(); },
-        onDelete: (note) => { deleteNote(ctx, scope, target, note); paint(); onChange(); },
-      }));
-    }
+    paintHeader();
+    renderThreads(list, scope, target, ctx, {
+      onChange: (o = {}) => { paint(); if (!o.localOnly) onChange(); },
+      onReply: box ? (root) => box.setReply(root) : null,
+      expandedPinned,
+    });
   };
   paint();
-  sheet.appendChild(list);
-  if (ctx.meName) {
-    sheet.appendChild(composer('Add a note…', (text) => {
-      addNote(ctx, scope, target, text);
-      paint();
-      onChange();
-    }));
-  }
+  if (box) sheet.appendChild(box);
   document.body.append(backdrop, sheet);
-  dialogize(sheet, titleText);
+  dialogize(sheet, scope === 'artist' ? target : `${target || state.fest().name} notes`);
   activeSheetRepaint = paint;
 }
 
 export function openArtistSheet(artistName, ctx, onChange) {
-  openScopeSheet('artist', artistName, artistName.toUpperCase(), ctx, onChange);
+  openScopeSheet('artist', artistName, ctx, onChange);
 }
 
 export function openDayNotes(day, ctx, onChange) {
-  openScopeSheet('day', day, day.toUpperCase(), ctx, onChange);
+  openScopeSheet('day', day, ctx, onChange);
+}
+
+export function openFestNotes(ctx, onChange) {
+  openScopeSheet('fest', null, ctx, onChange);
 }
 
 export function closeSheet() {
@@ -342,56 +485,53 @@ export function openAllNotes(ctx) {
   sheet.id = 'artist-sheet';
   sheetChrome(sheet, 'ALL NOTES');
 
+  const expandedPinned = new Set();
+
   // The composer lives OUTSIDE paint() — a remote sync repainting the list
   // must never eat a half-typed festival note (audit 1.2, same discipline as
   // the scope sheet).
-  const paint = () => paintBody();
-  if (ctx.meName) {
-    sheet.appendChild(composer('Add a festival note…', (text) => {
-      addNote(ctx, 'fest', null, text);
-      paint();
-      ctx.onNotesChange();
-    }));
-  }
+  const box = ctx.meName ? composer('Add a festival note…', (text, replyTo) => {
+    addNote(ctx, 'fest', null, text, replyTo ? (replyTo.re || replyTo.id) : null);
+    paint();
+    ctx.onNotesChange();
+  }) : null;
+  if (box) sheet.appendChild(box);
   const body = document.createElement('div');
   body.style.cssText = 'display: flex; flex-direction: column; gap: 10px;';
   sheet.appendChild(body);
 
-  const paintBody = () => {
+  const paint = () => {
     body.textContent = '';
-    const pins = loadPins();
-    const pinnedIds = new Set(pins[ctx.fid] || []);
     const notes = state.crewDoc?.festivals?.[ctx.fid]?.notes || {};
     let any = false;
     const section = (label, scope, target) => {
-      const list = model.sortWithPins(model.notesFor(state.crewDoc, ctx.fid, scope, target), [...pinnedIds]);
-      if (!list.length) return;
+      if (!model.noteCount(state.crewDoc, ctx.fid, scope, target)) return;
       any = true;
       const lbl = document.createElement('div');
       lbl.className = 'micro-label';
       lbl.textContent = label;
       body.appendChild(lbl);
-      for (const n of list) {
-        body.appendChild(noteRow(n, ctx, {
-          pinned: pinnedIds.has(n.id),
-          onPinToggle: () => { savePins(model.togglePin(loadPins(), ctx.fid, n.id)); paint(); },
-          onEdit: (note, text) => { editNote(ctx, scope, target, note, text); paint(); ctx.onNotesChange(); },
-          onDelete: (note) => { deleteNote(ctx, scope, target, note); paint(); ctx.onNotesChange(); },
-        }));
-      }
+      const host = document.createElement('div');
+      host.className = 'n-list grouped';
+      renderThreads(host, scope, target, ctx, {
+        onChange: (o = {}) => { paint(); if (!o.localOnly) ctx.onNotesChange(); },
+        onReply: box && scope === 'fest' ? (root) => box.setReply(root) : null,
+        expandedPinned,
+      });
+      body.appendChild(host);
     };
     section('This festival', 'fest', null);
     for (const day of Object.keys(notes.day || {})) section(day, 'day', day);
     for (const artist of Object.keys(notes.artist || {})) section(artist, 'artist', artist);
     if (!any) {
       const empty = document.createElement('div');
-      empty.style.cssText = 'color: var(--text-tertiary); font-size: 12px; font-weight: 600; text-align: center; padding: 12px 0;';
-      // The gesture hint matches the device (audit 11.2): long-press is the
-      // touch idiom; pointer-fine users get the hover ✎.
+      empty.className = 'n-empty';
+      // The gesture hint matches the device (audit 11.2): hold is the touch
+      // idiom; pointer-fine users get the hover zoom's note chip.
       const fine = typeof window.matchMedia === 'function'
         && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
       empty.textContent = ctx.meName
-        ? `No notes yet — add the first above, or ${fine ? 'use the ✎ on any artist' : 'long-press any artist'}.`
+        ? `No notes yet — add the first above, or ${fine ? 'hover any artist and tap its note chip' : 'hold any artist'}.`
         : 'No notes yet.';
       body.appendChild(empty);
     }
@@ -402,40 +542,31 @@ export function openAllNotes(ctx) {
   activeSheetRepaint = paint;
 }
 
-// ---- day + fest note sections (21e) ----------------------------------------------
-// Renders under a day's cards (scope 'day') or at the wall's end (scope 'fest').
-export function notesSection(scope, target, label, ctx, onChange) {
-  const wrap = document.createElement('div');
-  wrap.style.cssText = 'display: flex; flex-direction: column; gap: 8px; margin: 2px 0 6px;';
-  const pins = loadPins();
-  const pinnedIds = new Set(pins[ctx.fid] || []);
-  const notes = model.sortWithPins(
-    model.notesFor(state.crewDoc, ctx.fid, scope, target), [...pinnedIds]);
-  if (!notes.length && !ctx.meName) return wrap;
-
-  if (notes.some((n) => pinnedIds.has(n.id))) {
-    const lbl = document.createElement('div');
-    lbl.className = 'micro-label';
-    lbl.textContent = 'Pinned by you';
-    wrap.appendChild(lbl);
-  }
-  for (const n of notes) {
-    const pinned = pinnedIds.has(n.id);
-    wrap.appendChild(noteRow(n, ctx, {
-      pinned,
-      onPinToggle: () => {
-        savePins(model.togglePin(loadPins(), ctx.fid, n.id));
-        onChange();
-      },
-      onEdit: (note, text) => { editNote(ctx, scope, target, note, text); onChange(); },
-      onDelete: (note) => { deleteNote(ctx, scope, target, note); onChange(); },
-    }));
-  }
-  if (ctx.meName) {
-    wrap.appendChild(composer(`Add a note${label ? ` for ${label}` : ''}…`, (text) => {
-      addNote(ctx, scope, target, text);
-      onChange();
-    }, `${scope}|${target || ''}`));
-  }
-  return wrap;
+// ---- the day whisper (2026-08-29, replaces the inline bars) --------------------------
+// Nothing until someone writes; then the NEWEST note (root or reply) as one
+// soft wash under the day's rule — Kevin's call, 2026-08-29. Tapping it opens
+// the day's notes; the ✎ chip on the rule stays the add door and the count.
+export function dayWhisper(scope, target, ctx, onOpen) {
+  const list = model.notesFor(state.crewDoc, ctx.fid, scope, target);
+  if (!list.length) return null;
+  const newest = list[list.length - 1];
+  const btn = document.createElement('button');
+  btn.className = 'day-whisper';
+  const ci = colorIndexOf(newest.author, state.people()[newest.author]);
+  btn.style.setProperty('--wash', hslOf(ci, 0.26));
+  btn.setAttribute('aria-label',
+    `Notes${target ? ` for ${target}` : ''}: ${list.length} note${list.length === 1 ? '' : 's'}, newest from ${newest.author}`);
+  btn.appendChild(avatarFor(newest.author, 18, 8));
+  const who = document.createElement('span');
+  who.className = 'who';
+  who.textContent = newest.author === ctx.meName ? 'you' : newest.author;
+  const text = document.createElement('span');
+  text.className = 'text';
+  text.textContent = newest.text;
+  const more = document.createElement('span');
+  more.className = 'more';
+  more.textContent = `${list.length} note${list.length === 1 ? '' : 's'} ›`;
+  btn.append(who, text, more);
+  btn.addEventListener('click', onOpen);
+  return btn;
 }

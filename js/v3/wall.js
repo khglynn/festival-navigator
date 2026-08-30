@@ -12,7 +12,7 @@ import { computeLanes } from '../overlap.js';
 import { activityMinutes } from '../time.js';
 import { auraBackground, whoCorner, aboutCorner, nameColor, subColor } from './aura.js';
 import { BOARD } from './palette.js';
-import { notesSection } from './notes.js'; // runtime-only cycle with this module (colorIndexOf) — safe
+import { dayWhisper } from './notes.js'; // runtime-only cycle with this module (colorIndexOf) — safe
 import { passesPeople, columnsTemplate, railLabels } from './filters.js';
 import { nowOnDay, nowOffsetPx, clockLabel, festivalClock } from './now.js';
 
@@ -75,7 +75,7 @@ export function renderCard(artistName, ctx, opts = {}) {
   const noteCountForLabel = model.noteCount(state.crewDoc, ctx.fid, 'artist', artistName);
   const affForLabel = ctx.affinity ? ctx.affinity[artistName.toLowerCase()] : null;
   const labelParts = [`${artistName} — ${myLevel === 4 ? 'must' : (LEVEL_LABELS_V4[myLevel] || 'not picked').toLowerCase()}`];
-  if (crewCount) labelParts.push(`${crewCount} crew`);
+  if (crewCount) labelParts.push(`picked by ${crewCount} other${crewCount === 1 ? '' : 's'}`);
   if (noteCountForLabel) labelParts.push(`${noteCountForLabel} note${noteCountForLabel === 1 ? '' : 's'}`);
   if (affForLabel) labelParts.push('in your Spotify');
   el.setAttribute('aria-label', labelParts.join(', '));
@@ -146,18 +146,9 @@ export function renderCard(artistName, ctx, opts = {}) {
   }
   el.appendChild(about);
 
-  // Pointer-fine hover affordance (DT-6): notes are reachable without knowing
-  // the long-press. ✎, never a music note — that glyph belongs to Spotify.
-  if (ctx.onOpenNotes) {
-    const pen = document.createElement('button');
-    pen.className = 'note-affordance';
-    pen.textContent = '✎';
-    pen.setAttribute('aria-label', `Notes for ${artistName}`);
-    pen.addEventListener('click', (e) => { e.stopPropagation(); ctx.onOpenNotes(artistName); });
-    el.appendChild(pen);
-  }
-
-  // Long-press (mobile) opens the artist notes sheet (~500ms, atlas 21g).
+  // Long-press (touch) ZOOMS the card (~500ms, 10px slop — the OS constants;
+  // 2026-08-29 round): the grown card carries the notes chip, so the sheet
+  // stays one tap away. Falls back to opening notes where no peek is wired.
   // Digitizer jitter fires pointermove even on a still finger, so cancel only
   // past a real movement threshold (10px) — a genuine scroll-drag cancels,
   // a held finger does not (Codex P3 trail, finding 1).
@@ -176,7 +167,7 @@ export function renderCard(artistName, ctx, opts = {}) {
         // pop over Settings or the landing after the fact.
         if (!el.isConnected || el.offsetParent === null) return;
         longPressed = true;
-        ctx.onOpenNotes(artistName);
+        if (ctx.onPeek) ctx.onPeek(artistName, el); else ctx.onOpenNotes(artistName);
       }, 500);
     });
     const cancel = () => clearTimeout(pressTimer);
@@ -205,7 +196,17 @@ export function renderCard(artistName, ctx, opts = {}) {
   }
   el.appendChild(who);
 
-  el.addEventListener('click', () => ctx.onTap(artistName, el));
+  el.addEventListener('click', (e) => {
+    // Belt over the chips' own stopPropagation (the research's Ant Design
+    // lesson): anything inside the grown block or the corner chips is its own
+    // control, never a pick.
+    if (e.target !== el && e.target.closest && e.target.closest('.facts-grown, .chip-notes, .chip-spotify')) return;
+    // A touch-born zoom is a preview: tapping its body puts it away — the
+    // resting card is where a tap means pick.
+    if (ctx.onZoomTap && ctx.onZoomTap(el)) return;
+    ctx.onTap(artistName, el);
+  });
+  if (ctx.wireZoom) ctx.wireZoom(el, artistName);
   return el;
 }
 
@@ -342,6 +343,10 @@ function renderLineupGroup(root, day, list, ctx, fest, { header, sub } = {}) {
   // On a list (no clock to keep in shape) the people filter HIDES the cards
   // nobody selected has picked — and says so when that leaves nothing, so an
   // empty section reads as "no picks here" rather than "the data is gone".
+  if (day && ctx.onOpenDayNotes) {
+    const w = dayWhisper('day', day, ctx, () => ctx.onOpenDayNotes(day));
+    if (w) root.appendChild(w);
+  }
   const filtering = ctx.filterPeople && ctx.filterPeople.length;
   const shown = filtering ? list.filter((a) => passesPeople(ctx.picks, a.name, ctx.filterPeople)) : list;
   const grid = document.createElement('div');
@@ -350,9 +355,16 @@ function renderLineupGroup(root, day, list, ctx, fest, { header, sub } = {}) {
   for (const a of shown) {
     const tag = showTags && (a.weekends === 'W1' || a.weekends === 'W2') ? a.weekends : undefined;
     // A lineup entry can be an EVENT (afters, Folsom) — venue rides in
-    // `stage`, hours in `time`; without this sub-label the card would hide
-    // both, and a card that hides where-and-when is a card that lies.
-    const subLabel = [a.stage, a.time].filter(Boolean).join(' · ');
+    // `stage`, hours in `time`. Day and time share the first line; the venue
+    // takes its own (one crammed line hid both — Kevin, 2026-08-29). The
+    // .time element renders pre-line, so the newline is the break.
+    let subLabel = [a.stage, a.time].filter(Boolean).join(' · ');
+    if (a.stage && a.time) {
+      const bits = a.stage.split(' · ');
+      subLabel = bits.length > 1
+        ? `${bits[0]} · ${a.time}\n${bits.slice(1).join(' · ')}`
+        : `${a.time}\n${a.stage}`;
+    }
     grid.appendChild(renderCard(a.name, ctx, { tag, time: subLabel || undefined }));
   }
   if (filtering && !shown.length) {
@@ -362,10 +374,6 @@ function renderLineupGroup(root, day, list, ctx, fest, { header, sub } = {}) {
     root.appendChild(none);
   }
   root.appendChild(grid);
-  // Day notes with personal pins live under each real day's cards (21e).
-  if (day && ctx.onNotesChange) {
-    root.appendChild(notesSection('day', day, day, ctx, ctx.onNotesChange));
-  }
 }
 
 function dayHeader(label, sub, opts = {}) {
@@ -640,6 +648,12 @@ function renderScheduledDay(root, day, ctx, layout, weekend) {
   const ruleIso = (meta && (weekend && meta.isos ? meta.isos[weekend] : meta.iso)) || null;
   if (ruleIso) rule.dataset.iso = ruleIso;
   root.appendChild(rule);
+  // The whisper (2026-08-29): nothing until someone writes, then the newest
+  // note at the day's door. The rule's ✎ chip stays the add door + count.
+  if (ctx.onOpenDayNotes) {
+    const w = dayWhisper('day', day, ctx, () => ctx.onOpenDayNotes(day));
+    if (w) root.appendChild(w);
+  }
 
   const acts = (fest.activities || {})[day] || [];
 
@@ -658,7 +672,6 @@ function renderScheduledDay(root, day, ctx, layout, weekend) {
       empty.textContent = 'No set times for this day yet.';
       root.appendChild(empty);
     }
-    if (ctx.onNotesChange) root.appendChild(notesSection('day', day, day, ctx, ctx.onNotesChange));
     return;
   }
 
@@ -768,8 +781,6 @@ function renderScheduledDay(root, day, ctx, layout, weekend) {
   root.appendChild(wrap);
   // Today's grid gets the now line on first paint (the ticker keeps it moving).
   if (iso && nowOnDay(fest, day, weekend, ctx.now || new Date()) != null) positionNowLines(wrap, ctx.now || new Date());
-
-  if (ctx.onNotesChange) root.appendChild(notesSection('day', day, day, ctx, ctx.onNotesChange));
 }
 
 // One quiet row in the everything-else column (also the whole body of an
@@ -855,10 +866,7 @@ function renderWallInner(root, ctx) {
     for (const [day, list] of extraSectionsOf(fest, scheduledNames, wk)) {
       renderLineupGroup(root, day, list, ctx, fest, day ? {} : { header: 'EVERYTHING ELSE', sub: 'NO SET TIME YET' });
     }
-    if (ctx.onNotesChange) {
-      root.appendChild(dayHeader(`NOTES · ${fest.name.toUpperCase()}`, ''));
-      root.appendChild(notesSection('fest', null, '', ctx, ctx.onNotesChange));
-    }
+    festNotesFoot(root, ctx, fest);
     return;
   }
 
@@ -911,15 +919,10 @@ function renderWallInner(root, ctx) {
   if (!artists.length) {
     const empty = document.createElement('div');
     empty.style.cssText = 'color: var(--text-tertiary); font-size: 12px; font-weight: 600; text-align: center; padding: 30px 0;';
-    empty.textContent = ctx.query ? 'No artists match — try fewer letters.' : 'Lineup coming soon — notes work now. Leave the first one below.';
+    empty.textContent = ctx.query ? 'No artists match — try fewer letters.' : 'Lineup coming soon — notes work now.';
     root.appendChild(empty);
     if (ctx.query) return;
-    // An empty lineup is when planning notes matter MOST (CORE-10) — the
-    // festival composer stays.
-    if (ctx.onNotesChange) {
-      root.appendChild(dayHeader(`NOTES · ${fest.name.toUpperCase()}`, ''));
-      root.appendChild(notesSection('fest', null, '', ctx, ctx.onNotesChange));
-    }
+    festNotesFoot(root, ctx, fest, { invite: true });
     return;
   }
 
@@ -928,11 +931,25 @@ function renderWallInner(root, ctx) {
     : new Map([['', artists]]);
   for (const [day, list] of grouped) renderLineupGroup(root, day, list, ctx, fest);
 
-  // Fest-wide notes close the wall (21c bottom).
-  if (ctx.onNotesChange) {
-    root.appendChild(dayHeader(`NOTES · ${fest.name.toUpperCase()}`, ''));
-    root.appendChild(notesSection('fest', null, '', ctx, ctx.onNotesChange));
-  }
+  festNotesFoot(root, ctx, fest);
+}
+
+// Fest-wide notes close the wall (21c bottom) — as the whisper once anyone
+// has written. On a lineup-less fest (when planning notes matter MOST,
+// CORE-10) a quiet add-first door keeps the invitation alive.
+function festNotesFoot(root, ctx, fest, { invite = false } = {}) {
+  if (!ctx.onOpenFestNotes) return;
+  const has = model.noteCount(state.crewDoc, ctx.fid, 'fest', null) > 0;
+  if (!has && !invite) return;
+  root.appendChild(dayHeader(`NOTES · ${fest.name.toUpperCase()}`, ''));
+  const w = dayWhisper('fest', null, ctx, () => ctx.onOpenFestNotes());
+  if (w) { root.appendChild(w); return; }
+  const add = document.createElement('button');
+  add.className = 'btn-ghost add-first-note';
+  add.style.cssText = 'font-size: 12px; padding: 9px 14px;';
+  add.textContent = '+ Add a note';
+  add.addEventListener('click', () => ctx.onOpenFestNotes());
+  root.appendChild(add);
 }
 
 let toastTimer = null;

@@ -10,13 +10,14 @@ import * as spotify from '../spotify.js';
 import * as model from './model.js';
 import { loadFestivalIndex, loadFestival, loadCustomFestivals, FESTIVAL_INDEX, defaultFestivalId } from '../festivals.js';
 import { renderWall, refreshCard, showUndoToast, showToast, wireScrollspy, colorIndexOf, groupByDay, knownDaysOf, scheduledWeekendOf, extraSectionsOf, positionNowLines, scrollToNowLine } from './wall.js';
-import { loadPeopleFilter, savePeopleFilter, togglePerson, pruneToActive, loadSolo, saveSolo, chipGesture, armedName, cancelHold, ARM_MS } from './filters.js';
+import { loadPeopleFilter, savePeopleFilter, togglePerson, pruneToActive, loadSolo, saveSolo, chipGesture, armedName, armFor, cancelHold, ARM_MS } from './filters.js';
 import { scrolledBefore, rememberScrolled, dayOfScrollKey } from './now.js';
 import { disclosureFold, eqLoader, festRow } from './tools.js';
-import { openArtistSheet, openDayNotes, openAllNotes, closeSheet, refreshOpenSheet, sheetChrome, dialogize, rememberOpener } from './notes.js';
+import { openArtistSheet, openDayNotes, openAllNotes, openFestNotes, closeSheet, refreshOpenSheet, sheetChrome, dialogize, rememberOpener } from './notes.js';
 import { renderSettings, appSettings, openSubviewByKey } from './settings.js';
 import { onStorageWriteFail, saveLS, getLS, errorText } from '../util.js';
 import { router } from './router.js';
+import { wireCardZoom, zoomCard, unzoom, zoomedCard, zoomSource } from './card-facts.js';
 import { createSortControl } from './sort-control.js';
 import { nameProblem } from '../name-rules.mjs';
 import { startFavicon, stopFavicon } from './favicon.js';
@@ -53,8 +54,32 @@ const ctx = {
     openDayNotes(day, ctx, onNotesChange);
     router.push(`sheet:day:${day}`);
   },
+  onOpenFestNotes: () => {
+    openFestNotes(ctx, onNotesChange);
+    router.push('sheet:fest');
+  },
   onNotesChange: () => onNotesChange(),
+  // ---- the zoom (2026-08-29): hover with intent on a mouse, hold on touch ----
+  // wall.js hands every card here; card-facts.js owns the timing and the grow.
+  wireZoom: (el, artist) => wireCardZoom(el, artist, ctx, { onOpenNotes: ctx.onOpenNotes }),
+  onPeek: (artist, el) => zoomCard(el, artist, ctx, { onOpenNotes: ctx.onOpenNotes, source: 'touch' }),
+  // A touch-born zoom is a preview: tapping its body puts it away rather than
+  // picking (the resting card is where a tap means pick). A mouse zoom is
+  // just hover — clicking still picks.
+  onZoomTap: (el) => {
+    if (zoomedCard() === el && zoomSource() === 'touch') { unzoom(); return true; }
+    return false;
+  },
 };
+
+// One zoom at a time, dismissed the way previews are everywhere: a tap or
+// press anywhere outside it, or Escape. Capture-phase so it runs before the
+// tap it is judging.
+document.addEventListener('pointerdown', (e) => {
+  const z = zoomedCard();
+  if (z && !z.contains(e.target)) unzoom();
+}, true);
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') unzoom(); });
 
 function onNotesChange() {
   sync.scheduleSync();
@@ -196,7 +221,41 @@ function renderPersonChips() {
       chip.addEventListener('contextmenu', (e) => e.preventDefault()); // a long press must not open the OS callout
     }
     chip.addEventListener('click', g.click);
-    row.appendChild(chip);
+    if (!canSwitch) { row.appendChild(chip); continue; }
+    // The door (2026-08-29): hovering the chip reveals "Pick as N ›" for
+    // people who would never guess the hold. Clicking it ARMS the same
+    // two-step confirm the hold uses — the next tap on the chip switches.
+    // Keyed off the event's pointer type, never a media query.
+    const wrap = document.createElement('span');
+    wrap.className = 'chip-wrap';
+    wrap.appendChild(chip);
+    const door = document.createElement('button');
+    door.className = 'chip-door';
+    door.textContent = `Pick as ${name}`;
+    const chev = document.createElement('span');
+    chev.className = 'chev';
+    chev.textContent = '›';
+    door.appendChild(chev);
+    door.addEventListener('click', (e) => {
+      e.stopPropagation();
+      wrap.classList.remove('door-open');
+      armFor(name);
+      showArmed(chip, name);
+      setTimeout(() => { if (armedName() !== name) renderPersonChips(); }, ARM_MS + 50);
+    });
+    wrap.appendChild(door);
+    let doorT = null;
+    wrap.addEventListener('pointerenter', (e) => {
+      if (e.pointerType !== 'mouse') return;
+      if (doorT) clearTimeout(doorT);
+      doorT = setTimeout(() => { doorT = null; if (armedName() !== name) wrap.classList.add('door-open'); }, 300);
+    });
+    wrap.addEventListener('pointerleave', (e) => {
+      if (e.pointerType !== 'mouse') return;
+      if (doorT) { clearTimeout(doorT); doorT = null; }
+      wrap.classList.remove('door-open');
+    });
+    row.appendChild(wrap);
   }
   if (filter.length) {
     const all = document.createElement('button');
@@ -355,6 +414,7 @@ function renderDayNav() {
 }
 
 function repaintWall() {
+  unzoom();
   refreshCtx();
   renderWall($('wall-root'), ctx);
   renderDayNav();
@@ -743,7 +803,7 @@ function openShareMoment() {
   sheetChrome(sheet, 'ONE LINK MAKES IT A CREW');
   const sub = document.createElement('div');
   sub.style.cssText = 'color: var(--text-secondary); font-size: 12.5px; line-height: 1.55;';
-  sub.textContent = `Anyone who opens it lands in ${state.crewName()} — no accounts, no setup.`;
+  sub.textContent = `Opens straight into ${state.crewName()}. No accounts needed.`;
   const link = crew.crewLink(state.getCrewToken(), state.activeFestivalId);
   if ((state.crewDoc.meta || {}).inviteFestId !== state.activeFestivalId) {
     state.recordInviteFest(state.activeFestivalId);
@@ -863,7 +923,7 @@ function openAddMember() {
     sheetChrome(sheet, `${canonical.toUpperCase()} IS IN`);
     const explain = document.createElement('div');
     explain.style.cssText = 'color: var(--text-secondary); font-size: 12.5px; line-height: 1.55;';
-    explain.textContent = `Pick for ${canonical} by switching to them in Settings → You. Or send them their own link — opening it puts your picks in their hands:`;
+    explain.textContent = `Send ${canonical} this link. Opening it makes the picks theirs.`;
     const link = crew.crewLink(state.getCrewToken(), state.activeFestivalId, canonical);
     const linkRowEl = document.createElement('div');
     linkRowEl.style.cssText = 'display: flex; gap: 8px; align-items: center;';
@@ -1740,6 +1800,7 @@ export function init() {
     if (key === 'sheet:all') openAllNotes(ctx);
     else if (key === 'sheet:share') openShareMoment();
     else if (key === 'sheet:add-member') openAddMember();
+    else if (key === 'sheet:fest') openFestNotes(ctx, onNotesChange);
     else if (key.startsWith('sheet:day:')) openDayNotes(key.slice('sheet:day:'.length), ctx, onNotesChange);
     else if (key.startsWith('sheet:notes:')) openArtistSheet(key.slice('sheet:notes:'.length), ctx, onNotesChange);
   }, () => closeSheet());

@@ -1,0 +1,168 @@
+{
+  "summary": "Research how the best products handle preview vs select vs open across mouse and touch",
+  "agentCount": 6,
+  "logs": [],
+  "result": {
+    "brief": "MECHANICS BRIEF — tap / preview / open grammar\n\n(1) THE GRAMMAR\nTap/click = primary action, carries no other meaning, ever. Proof: Linear (plain click opens the issue outright; peek lives ONLY on the Space key, never on hover or click — so click never has to arbitrate two jobs). Google Calendar (click opens the popover with zero delay — click is never gated by timing). Gmail (row click always opens the thread; long-press is a completely separate gesture reserved for multi-select on mobile).\n\nHold (touch) / hover (mouse) = preview, gated by a real delay, never sharing the primary surface. Proof: iOS Haptic Touch/3D Touch peek (hold shows it, release evaporates it, no state change) — Instagram cloned this exact mechanic on Android years before pressure-sensitive screens existed, proving it's a duration trigger, not a hardware one. Netflix hovers a thumbnail to grow it in place, pushing neighbors, before autoplaying a clip after a further delay — the closest literal precedent for \"card grows.\" Wikipedia Page Previews and GitHub/Figma hovercards all fire on hover alone, no click required.\n\nDoor-to-open = a separate, deliberate second gesture, not an inferred second tap on the preview body. Proof: Apple's own UIContextMenuInteraction treats a tap ON the focused preview as the canonical \"open\" shortcut (willPerformPreviewActionForMenuWith) — the one place tap-on-preview is allowed to mean something. Notion promotes peek→full page via a dedicated ⤡ icon inside the peek panel, never a second click anywhere on the card. 3D Touch's quick actions live behind a swipe-up while still holding — a second gesture layered on the peek, not the peek's own tap target.\n\n(2) THE NUMBERS\nHover-in delay: 300–500ms (NN/g's published figure; Figma/shadcn hover-card and reference libraries converge here — Zag.js 300ms). Wikipedia deliberately went higher, ~500–650ms, specifically to filter people who hover-read text sentence by sentence.\nHover-out grace: ~500ms after the cursor leaves (NN/g, to survive moving diagonally toward the card). Every library keeps close < open: Radix 300ms close/700ms open, Zag 150/300, Mantine 150/0 — asymmetry is universal, never symmetric.\nLong-press threshold: 500ms, the OS constant on both platforms — iOS UILongPressGestureRecognizer.minimumPressDuration = 0.5s, Android ViewConfiguration.getLongPressTimeout() = 500ms — and React Aria's useLongPress defaults to matching it rather than inventing its own. Note Apple tunes its OWN context-menu trigger shorter than this default (~0.25s measured vs ~1.0s generic), so 500ms is a floor, not gospel.\nMovement-cancel threshold: iOS allowableMovement = 10pt; Android getScaledTouchSlop() plays the same role, density-scaled. Any drift past it during the hold fails the gesture back to scroll/drag.\n\n(3) TAPPABLE INSIDE THE PREVIEW WITHOUT STEALING THE TAP\nApple's own admission: the preview is a rendered snapshot — nothing in it is tappable by default. The real fix everywhere is a separate sibling control laid over/beside the snapshot (UITargetedPreview's accessory-view trick, the iMessage tapback bar), never the snapshot itself made interactive. The propagation mechanic: the inner control's handler calls stopPropagation() before the card's own click handler sees the event (the convention behind Google Calendar's popover icons and Gmail's hover-reveal icons) — but Ant Design's own bug tracker shows stopPropagation alone isn't airtight in every framework, so pair it with an explicit target-check guard in the outer handler. WCAG 1.4.13 makes \"pointer can move onto the popup's own buttons without it vanishing\" a hard requirement for any hover-triggered content — this is the spec reason the hover-out grace period in (2) has to exist at all.\n\n(4) THE TRAPS\nFlicker from skipping the intent delay: Baymard found 60% of e-commerce hover menus skip it and draw flicker complaints — the entire 300–500ms convention exists to engineer around exactly this.\nPremature close from crossing empty space: solved by a safe-triangle hit-region (Kamens' jQuery-menu-aim / Amazon's mega-dropdown) or simply close-delay > open-delay — never symmetric, per every library surveyed.\nFaking hover where there's no hover event: Gmail mobile and Netflix mobile don't approximate hover with a timer — they swap to a genuinely different state machine (long-press-to-select, tap-straight-to-full-page). Related: `(hover:none)/(pointer:coarse)` can misfire on a touchscreen laptop actively using a real mouse (Smashing Magazine), so hover-only with no fallback silently strands that user.\nInteractive-content-inside-preview is the most breakage-prone piece even for its inventor: Apple's own accessory-view buttons regressed in an iOS 26 beta (filed FB18644353, tap just closed the menu) — budget for this as the part most likely to break on any platform update, not a one-time build cost.",
+    "studies": [
+      {
+        "product": "iOS Context Menus / Peek-and-Pop / Haptic Touch (+ Instagram & Apple Maps precedents)",
+        "lesson": "For the festival card grid: keep tap instant with zero delay (it's the core mechanic, must never compete with anything). Trigger the grow-in-place PREVIEW off a ~500ms hold with a small (~10pt) movement tolerance — below that threshold any drift should cancel into a normal drag/scroll, exactly like iOS's allowableMovement and Android's touch-slop both enforce. Render the grown card as a true snapshot-in-place (match its real rounded shape/position, à la UITargetedPreview) rather than a centered modal, but don't expect taps to land inside that snapshot — if you want a Spotify button or an RSVP toggle reachable from the preview, bolt it on as a separate small interactive strip pinned to the preview's edge (the iMessage tapback-bar trick), not as content baked into the card copy itself; treat that as the harder, more fragile part of the build (even Apple's own version of this regressed in an iOS 26 beta). Dismiss the preview on background-tap or on release-without-committing; treat a tap ON the grown preview itself as the 'open' action (the notes sheet) — that's the one-gesture-away-from-OPEN shortcut Apple's own model uses. On mouse/desktop, don't try to imitate the 500ms timing at all — right-click (or its web equivalent) should open the equivalent view/menu instantly, and reserve hover purely for a lift/highlight cue, never as a trigger, so desktop and touch each get the input signal that's actually unambiguous for them. For the person chips, do NOT model 'hold = act as' on the peek/preview pattern at all — a peek's whole contract is 'evaporates harmlessly on release,' which is the wrong metaphor for switching identity. Model it on Apple Maps' pin-drop instead: a hold should commit immediately to the state change with a confirming haptic and a persistent, obvious affordance to exit act-as mode, precisely because it is not read-only and must not feel reversible-by-accident."
+      },
+      {
+        "product": "Hover cards on the web — X/Twitter, Wikipedia Page Previews, GitHub, Facebook",
+        "lesson": "Across every real product studied (Wikipedia, GitHub, Twitter/X, Facebook) and every underlying algorithm/spec (NN/g, WCAG 1.4.13, safe-triangle, hoverIntent, the new native Interest Invoker API), the sequencing logic is the same three-layer stack, and it maps cleanly onto your card's three jobs. Layer 1, the primary action (tap/click to cycle pick level), gets ZERO artificial delay — every source agrees a deliberate click/tap is unambiguous intent and must respond within ~0.1s, so pick-cycling should never be gated behind a hover timer of any kind. Layer 2, the preview (card grows in place), is what all the delay engineering exists for: fire it only after the cursor/finger genuinely PAUSES for ~300–650ms (mouse) or ~400–500ms (a long-press's threshold on touch, per Android/iOS conventions) — the pause, not the entry, is the intent signal — and once it's open, it must survive the pointer moving onto the card's own buttons (WCAG 1.4.13's \"hoverable\" rule) via either a safe-triangle hit-region or simply making the close delay (~150–500ms) meaningfully longer than the open delay, exactly like every library surveyed. Layer 3, open (the notes sheet), should require a SEPARATE, deliberate gesture layered on top of the preview rather than being reachable by hover alone — iOS's Peek→swipe-up-for-actions→Pop and the person-chip's tap-vs-hold split both model this: preview is what hover/short-hold shows you, open is what an explicit second action (click on the card, or a longer/harder hold) commits to. On touch, since there's no hover at all, long-press is the honest substitute for the preview trigger (with tap staying reserved for the primary action), and holding past the preview's threshold into a distinct second state (GitHub, Wikipedia, and the browser's own new Interest Invoker spec all keep click/commandfor and hover/interestfor as two different attributes on the same element) is precisely the mechanic your chip's tap-vs-hold already wants."
+      },
+      {
+        "product": "Google Calendar event-popover + Gmail hover-actions: sourced, concrete mechanics for how a \"click opens a popover with actions\" pattern sequences preview vs. primary-click vs. full-open across mouse and touch — gathered to inform the festival card grid's tap-cycle / preview / notes-sheet sequencing and the person-chip tap-vs-hold mechanic.",
+        "lesson": "The pattern both products converge on is: never let one gesture carry two meanings, and never let touch fake a desktop-only signal (hover) — give touch its own real state instead.\n\nApplied to the festival card grid: tap/click is the app's most primary-primary gesture (pick-cycle) — by this pattern, tap should NEVER also be the trigger for preview or open, the same way Calendar's click never also means \"delete\" and Gmail's row-click never also means \"select-mode.\" So:\n\n1. Preview should trigger on a gesture that is not the plain tap — press-and-hold (~500ms, the Android/iOS platform default, not a bespoke number) is the natural fit, mirroring Gmail mobile's long-press-to-select and Calendar's click→popover-first staging. Give a visible \"charging\" cue within ~100ms of touch-down (NN/g's cue-before-commit finding) so a slightly-too-long tap doesn't feel like it silently misfired into something else.\n\n2. Everything the grown preview card reveals (Spotify link, who's going, notes glyph) must be a real tappable target whose own handler stops the event from bubbling to the card's outer tap-cycle handler — this is the exact stopPropagation convention both Calendar's popover icons and Gmail's hover icons rely on, and it's the mechanical answer to \"how are actions inside a preview made tappable without accidentally cycling the pick.\"\n\n3. OPEN (the notes sheet) should be its own deliberate icon-tap inside the revealed preview, never inferred from a second tap on the card itself — same \"actions live behind icons inside a surface, never stacked onto the primary gesture\" rule Calendar's popover follows.\n\n4. Dismiss the preview on: tap outside (light-dismiss, Radix/ARIA convention), Escape if a keyboard is present, and probably a repeat of the SAME gesture that opened it (hold-to-open, tap-elsewhere-or-brief-tap-to-close) — but keep that dismiss gesture distinct from plain tap so it can never be confused with advancing the pick level.\n\n5. For the person-chip row (tap=filter, hold=act-as), this is structurally identical to Gmail mobile's tap-opens/long-press-selects split — reuse the same ~500ms platform default rather than inventing a new threshold, and add the same up-front \"charging\" visual cue so a held tap that was meant to be quick doesn't silently become an accidental act-as.\n\n6. If a hover-only affordance is ever added for mouse/trackpad users (e.g., revealing a small icon on desktop hover), gate it with `(hover: hover) and (pointer: fine)`, add the NN/g 300–500ms dwell delay to avoid flicker, and always keep a persistent fallback (never hover-only) — because `hover:none`/`pointer:coarse` correctly flags touch-primary devices but can still misdetect a touchscreen laptop actively being used with a real mouse.\n\nCaveat on sourcing: exact internal numbers for Google Calendar's own click/drag pixel threshold and its popover positioning logic are not publicly documented — Google doesn't publish them, and the community-thread evidence only shows the boundary shifts over time. The platform-level numbers (500ms long-press, 300–500ms hover dwell, ~5px drag threshold) are real, sourced, and industry-convergent; they're the values worth anchoring the festival app's own thresholds to, not literal reverse-engineered Google internals."
+      },
+      {
+        "product": "Linear, Notion, Figma, Airtable — peek/preview vs. click-to-open vs. expand-record mechanics (+ Netflix, Gmail, iOS/Android long-press as supporting analogs)",
+        "lesson": "Because TAP/CLICK is locked to cycling pick level across the whole card, none of the four products would ever also hang PREVIEW or OPEN off that same gesture+surface — they'd separate by gesture (mouse) and by gesture-plus-hit-zone (touch), never overload the click. Concretely, mapped onto your three-job card and two-job chip:\n\n1. Card PREVIEW (grows in place):\n   a. Desktop — trigger on true HOVER, not click, with a 300-500ms dwell delay before it starts growing (NN/g + Baymard's number — this is what stops a mouse just passing over the grid from popping every card it crosses). Collapse on mouseleave, but give it a short ~150-300ms grace period so moving the cursor from the card edge into the now-larger preview (to reach a Spotify link or notes icon inside it) doesn't collapse it mid-transit — Netflix's growing card does exactly this, and it's the direct analog to what you're building.\n   b. Touch — there is no hover state, so borrow the platform-standard LONG-PRESS instead: ~500ms hold, cancelled if the finger moves past a small tolerance (both iOS's and Android's own default), the same physical gesture Haptic Touch uses to escalate from tap to peek. This keeps it physically distinct from the tap that cycles pick, and from a drag/scroll.\n\n2. Notes sheet OPEN: give it its own small, dedicated tap target that only exists once the card is already in PREVIEW state — e.g., a notes icon that appears inside the grown card, mirroring Notion's ⤡ expand-icon-inside-the-peek and Airtable's corner expand button. That icon's own handler needs stopPropagation AND a guard check in the card's outer click handler (Ant Design's own bug report shows stopPropagation alone isn't always trustworthy) so tapping it never also fires a pick-cycle or collapses the preview out from under the tap.\n\n3. Person-chip row (tap = highlight/filter, hold = act-as): this is already the textbook long-press escalation pattern — keep tap as the full-chip, zero-delay, common action, and gate 'act-as' behind the same ~500ms movement-cancelled hold used industry-wide for elevated/destructive actions on touch. Consider mirroring it on desktop as a keyboard-modifier-plus-click (Linear's Space-key precedent) rather than a mouse hold, since holding a mouse button down doesn't have the same felt affordance as a touch long-press.\n\nThe one number worth hard-coding everywhere you add a hover- or hold-triggered reveal: 300-500ms delay before it appears (mouse) / 500ms hold with move-cancellation (touch) — that band is what every source above converges on, and skipping it is Baymard's #1 named cause of hover-menu flicker complaints."
+      },
+      {
+        "product": "placeholder",
+        "lesson": "placeholder"
+      }
+    ]
+  },
+  "workflowProgress": [
+    {
+      "type": "workflow_phase",
+      "index": 1,
+      "title": "Research"
+    },
+    {
+      "type": "workflow_phase",
+      "index": 2,
+      "title": "Synthesize"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 1,
+      "label": "study:0",
+      "phaseIndex": 1,
+      "phaseTitle": "Research",
+      "agentId": "a72620889610399ac",
+      "model": "claude-sonnet-5",
+      "state": "done",
+      "startedAt": 1788048418180,
+      "queuedAt": 1788048416555,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "lastToolSummary": "iOS Context Menus / Peek-and-Pop / Haptic Touch (+ Instagra…",
+      "promptPreview": "You are researching interaction mechanics for a festival-planning web app. Its grid of artist cards has three jobs: TAP/CLICK cycles your pick level (the core mechanic, must stay), a PREVIEW state (a card that grows in place showing who is going, notes, Spotify), and an OPEN state (a notes sheet). A row of person chips has two jobs: tap = highlight/filter that person, hold = act-as that person. Th…",
+      "lastProgressAt": 1788048724425,
+      "tokens": 135157,
+      "toolCalls": 37,
+      "durationMs": 306244,
+      "resultPreview": "{\"product\":\"iOS Context Menus / Peek-and-Pop / Haptic Touch (+ Instagram & Apple Maps precedents)\",\"mechanics\":[{\"pattern\":\"Tap-vs-hold disambiguation timing\",\"detail\":\"UILongPressGestureRecognizer.minimumPressDuration defaults to 0.5s. During that hold, allowableMovement (default 10 points) caps how far the finger can drift before the gesture FAILS and control reverts to scroll/drag — this is the…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 2,
+      "label": "study:1",
+      "phaseIndex": 1,
+      "phaseTitle": "Research",
+      "agentId": "af78687419f4046be",
+      "model": "claude-sonnet-5",
+      "state": "done",
+      "startedAt": 1788048418402,
+      "queuedAt": 1788048416556,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "lastToolSummary": "Hover cards on the web — X/Twitter, Wikipedia Page Previews…",
+      "promptPreview": "You are researching interaction mechanics for a festival-planning web app. Its grid of artist cards has three jobs: TAP/CLICK cycles your pick level (the core mechanic, must stay), a PREVIEW state (a card that grows in place showing who is going, notes, Spotify), and an OPEN state (a notes sheet). A row of person chips has two jobs: tap = highlight/filter that person, hold = act-as that person. Th…",
+      "lastProgressAt": 1788048771531,
+      "tokens": 140674,
+      "toolCalls": 41,
+      "durationMs": 351368,
+      "resultPreview": "{\"product\":\"Hover cards on the web — X/Twitter, Wikipedia Page Previews, GitHub, Facebook\",\"mechanics\":[{\"pattern\":\"Wikipedia Page Previews — open delay is a deliberate, tuned artificial delay, not a UX afterthought\",\"detail\":\"Wikimedia's own design writeup says they built in an artificial ~650ms delay before the preview card appears, specifically because usability research found some people read …"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 3,
+      "label": "study:2",
+      "phaseIndex": 1,
+      "phaseTitle": "Research",
+      "agentId": "a03046d06dae1af7a",
+      "model": "claude-sonnet-5",
+      "state": "done",
+      "startedAt": 1788048418954,
+      "queuedAt": 1788048416556,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "lastToolSummary": "Google Calendar event-popover + Gmail hover-actions: source…",
+      "promptPreview": "You are researching interaction mechanics for a festival-planning web app. Its grid of artist cards has three jobs: TAP/CLICK cycles your pick level (the core mechanic, must stay), a PREVIEW state (a card that grows in place showing who is going, notes, Spotify), and an OPEN state (a notes sheet). A row of person chips has two jobs: tap = highlight/filter that person, hold = act-as that person. Th…",
+      "lastProgressAt": 1788048638355,
+      "tokens": 117027,
+      "toolCalls": 21,
+      "durationMs": 218192,
+      "resultPreview": "{\"product\":\"Google Calendar event-popover + Gmail hover-actions: sourced, concrete mechanics for how a \\\"click opens a popover with actions\\\" pattern sequences preview vs. primary-click vs. full-open across mouse and touch — gathered to inform the festival card grid's tap-cycle / preview / notes-sheet sequencing and the person-chip tap-vs-hold mechanic.\",\"mechanics\":[{\"pattern\":\"Two-stage disclosu…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 4,
+      "label": "study:3",
+      "phaseIndex": 1,
+      "phaseTitle": "Research",
+      "agentId": "af549df4a3a30ab75",
+      "model": "claude-sonnet-5",
+      "state": "done",
+      "startedAt": 1788048419978,
+      "queuedAt": 1788048416556,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "lastToolSummary": "Linear, Notion, Figma, Airtable — peek/preview vs. click-to…",
+      "promptPreview": "You are researching interaction mechanics for a festival-planning web app. Its grid of artist cards has three jobs: TAP/CLICK cycles your pick level (the core mechanic, must stay), a PREVIEW state (a card that grows in place showing who is going, notes, Spotify), and an OPEN state (a notes sheet). A row of person chips has two jobs: tap = highlight/filter that person, hold = act-as that person. Th…",
+      "lastProgressAt": 1788048633612,
+      "tokens": 118183,
+      "toolCalls": 20,
+      "durationMs": 213448,
+      "resultPreview": "{\"product\":\"Linear, Notion, Figma, Airtable — peek/preview vs. click-to-open vs. expand-record mechanics (+ Netflix, Gmail, iOS/Android long-press as supporting analogs)\",\"mechanics\":[{\"pattern\":\"Linear: peek is keyboard-only, never hover, so plain click stays unambiguous\",\"detail\":\"Peek is triggered ONLY by the Space bar — tap Space to toggle it open/closed, or hold Space down for a temporary pre…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 5,
+      "label": "study:4",
+      "phaseIndex": 1,
+      "phaseTitle": "Research",
+      "agentId": "a507f0a24c9d649b6",
+      "model": "claude-sonnet-5",
+      "state": "done",
+      "startedAt": 1788048418232,
+      "queuedAt": 1788048416556,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "lastToolSummary": "placeholder",
+      "promptPreview": "You are researching interaction mechanics for a festival-planning web app. Its grid of artist cards has three jobs: TAP/CLICK cycles your pick level (the core mechanic, must stay), a PREVIEW state (a card that grows in place showing who is going, notes, Spotify), and an OPEN state (a notes sheet). A row of person chips has two jobs: tap = highlight/filter that person, hold = act-as that person. Th…",
+      "lastProgressAt": 1788048656059,
+      "tokens": 133693,
+      "toolCalls": 38,
+      "durationMs": 235897,
+      "resultPreview": "{\"product\":\"placeholder\",\"mechanics\":[],\"lesson\":\"placeholder\"}"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 6,
+      "label": "synthesize",
+      "phaseIndex": 2,
+      "phaseTitle": "Synthesize",
+      "agentId": "a672e428bed0aa86e",
+      "model": "claude-sonnet-5",
+      "state": "done",
+      "startedAt": 1788048776374,
+      "queuedAt": 1788048772820,
+      "attempt": 1,
+      "promptPreview": "You are synthesizing interaction research for the lead designer. Here are five precedent studies (JSON): [{\"product\":\"iOS Context Menus / Peek-and-Pop / Haptic Touch (+ Instagram & Apple Maps precedents)\",\"mechanics\":[{\"pattern\":\"Tap-vs-hold disambiguation timing\",\"detail\":\"UILongPressGestureRecognizer.minimumPressDuration defaults to 0.5s. During that hold, allowableMovement (default 10 points) c…",
+      "lastProgressAt": 1788048827378,
+      "tokens": 102882,
+      "toolCalls": 0,
+      "durationMs": 51002,
+      "resultPreview": "MECHANICS BRIEF — tap / preview / open grammar\n\n(1) THE GRAMMAR\nTap/click = primary action, carries no other meaning, ever. Proof: Linear (plain click opens the issue outright; peek lives ONLY on the Space key, never on hover or click — so click never has to arbitrate two jobs). Google Calendar (click opens the popover with zero delay — click is never gated by timing). Gmail (row click always open…"
+    }
+  ],
+  "totalTokens": 747616,
+  "totalToolCalls": 157
+}

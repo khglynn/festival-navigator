@@ -137,6 +137,9 @@ export function armedName(now = Date.now()) {
   return null;
 }
 export function disarm() { armed = null; }
+// The chip door (desktop hover) arms the same two-step confirm the hold does:
+// arming is never the switch — the next tap is.
+export function armFor(name, now = Date.now()) { armed = { name, until: now + ARM_MS }; }
 export function cancelHold(now = Date.now()) {
   if (!hold) return;
   hold.clearTimer(hold.timer);

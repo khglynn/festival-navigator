@@ -98,6 +98,6 @@ test('portola-2026: the wall renders both grid days, then AFTERS and FOLSOM — 
   assert.equal(cells, 64, 'every timed set is a grid cell');
   const hmd = [...root.querySelectorAll('.card')].filter((c) => c.dataset.artist === 'Horse Meat Disco');
   assert.equal(hmd.length, 2, 'Horse Meat Disco under Afters AND Folsom');
-  assert.equal(hmd[0].dataset.time, 'Fri · Public Works · 9 PM - 3 AM');
+  assert.equal(hmd[0].dataset.time, 'Fri · 9 PM - 3 AM\nPublic Works');
   root.remove();
 });

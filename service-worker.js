@@ -1,6 +1,6 @@
 // Festival Navigator service worker — offline-first app shell.
 // Bump CACHE_VERSION whenever you change cached static assets.
-const CACHE_VERSION = 'festival-nav-v42'; // v42 = wall filters (people chips, stage solo) + the now line + day-of auto-scroll, plus the UI-walk fixes
+const CACHE_VERSION = 'festival-nav-v43'; // v43 = the notes/desktop round: threads, the zoom, the day whisper, aura sheets, the chip door
 
 // Festival JSONs live in their OWN cache, outside the version-keyed shell
 // cache — because activate deletes every old version cache wholesale, and
@@ -37,6 +37,7 @@ const APP_CORE = [
   '/js/name-rules.mjs',
   '/js/v3/app.js',
   '/js/v3/wall.js',
+  '/js/v3/card-facts.js',
   '/js/v3/notes.js',
   '/js/v3/settings.js',
   '/js/v3/tools.js',
