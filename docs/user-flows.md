@@ -79,8 +79,8 @@ returning member on a new device recognizes themselves in one glance.
    sections (or THE LINEUP when days are unknown), artist card grid.
 2. Tap a card → pick cycle 0→1→2→3→must→0; card aura + who-corner update
    instantly; tap-out-of-must shows the undo toast.
-3. Search filters across all days; sort (Billing / A→Z / My picks / Crew
-   favorites) reorders; both work together.
+3. Search filters across all days; sort (Billing / A→Z / My picks / Most
+   picked) reorders; both work together.
 **Expected:** sort control is a styled menu (not a native select), keyboard
 accessible; an artist billed on multiple days appears under EACH of those days
 (never a combined "Day X & Day Y" section); grid density and type scale to the
@@ -100,24 +100,38 @@ viewport (no vast dead space on desktop).
 full-bleed (headings stay at reading width) and scrolls horizontally with
 scroll-snap on mobile; desktop shows as many columns as fit the window.
 
-## F6 · Notes — artist scope (via the zoom, 2026-08-29)
+## F6 · Notes — artist scope (via the zoom, one grammar across mouse and touch — 2026-08-30)
 
-1. Mobile: hold a card (~500ms) → the card ZOOMS in place (who's going at
-   what level, set details, note + Spotify chips). Tap its notes chip →
-   artist sheet; tap anywhere else puts the zoom away. The corner note-count
-   chip on a resting card stays a one-tap door.
-2. Desktop: hovering a card (after a real intent delay) grows the same zoom;
-   click still picks — the zoom's notes chip is the click that opens.
-3. The sheet opens with the card itself as its header (grown once more, ✕ in
-   its corner), then the conversation: threads one level deep — Reply lives
-   in a root's head line; replies indent one gutter under their root; a
-   deleted root leaves a quiet stub so its replies keep their context.
-4. Save → note syncs to the crew; note counts (replies included) update
+1. Hover with intent (mouse, after a real delay) or hold (touch, ~500ms)
+   shows the zoom: the card grows into an overlay centered on it — the wall
+   never reflows or moves underneath.
+2. A tap or click ON THE ZOOMED CARD picks: the level cycles, the pills
+   update live, and the zoom stays put, so repeated taps preview the next
+   level without re-opening anything. The notes chip inside the zoom is the
+   one control that doesn't pick — it's the door to the artist sheet. The
+   corner note-count chip on a resting (unzoomed) card is also always a
+   one-tap door to the sheet.
+3. Tapping outside the zoom, Escape, or scrolling puts the zoom away.
+4. The sheet opens with the card itself as its header (grown once more, ✕ in
+   its corner), then the conversation: threads one level deep. At rest a note
+   is a name, a time and words. Hover (mouse), press-and-hold (touch) or
+   keyboard focus fades in one line of plain words under them — `Reply · Pin`,
+   or `Edit · Reply · Pin` on your own. Replies indent one gutter under their
+   root; a deleted root leaves a quiet stub so its replies keep their context,
+   and that stub can still be replied to.
+5. Reply opens a composer inline, at the foot of the thread you pressed — where
+   the note will actually land. Replying to a reply pre-fills `@Name` and still
+   posts flat, one level. The sheet's bottom composer writes NEW notes only.
+6. Edit turns the note's own words into a field in place, and the cue line
+   becomes `Save · Cancel · Delete` — delete has no other door, and keeps its
+   two-tap "Sure?" arm.
+7. Save → note syncs to the crew; note counts (replies included) update
    everywhere.
 **Expected:** mobile = bottom sheet; desktop = centered dialog (never a
 full-width strip pinned to the bottom of a wide viewport). Only your own notes
-can be deleted (tombstone). A pinned root sorts to the top and shows a reply
-count, never its thread, until tapped open.
+can be edited or deleted (tombstone). A pinned root sorts to the top and shows
+a reply count, never its thread, until tapped open — and replying into a folded
+thread opens it, so you can see where the words land.
 
 ## F7 · Notes — day scope
 

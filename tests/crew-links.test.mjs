@@ -13,14 +13,30 @@ const TOKEN = 'linktesttoken_0123456789012';
 
 test('crewLink: crew-wide, fest-scoped, and personal variants', () => {
   assert.equal(crew.crewLink(TOKEN), `https://fest.kevinhg.com/#g=${TOKEN}`);
+  // The fest id rides in the QUERY (what a link-preview crawler and the
+  // vercel.json rewrite can read) as well as the hash (what the app reads).
   assert.equal(crew.crewLink(TOKEN, 'lollapalooza-2025'),
-    `https://fest.kevinhg.com/#g=${TOKEN}&f=lollapalooza-2025`);
+    `https://fest.kevinhg.com/?f=lollapalooza-2025#g=${TOKEN}&f=lollapalooza-2025`);
   // Personal link URL-encodes the name (spaces, unicode) and rides after &f=.
   assert.equal(crew.crewLink(TOKEN, 'lollapalooza-2025', 'Drew B'),
-    `https://fest.kevinhg.com/#g=${TOKEN}&f=lollapalooza-2025&me=Drew%20B`);
-  // A bad fest id drops the &f= but keeps the personal part.
+    `https://fest.kevinhg.com/?f=lollapalooza-2025#g=${TOKEN}&f=lollapalooza-2025&me=Drew%20B`);
+  // A bad fest id drops BOTH copies but keeps the personal part.
   assert.equal(crew.crewLink(TOKEN, 'NOT VALID!', 'Drew'),
     `https://fest.kevinhg.com/#g=${TOKEN}&me=Drew`);
+});
+
+test('the crew token never leaves the hash', () => {
+  // A query param lands in platform access logs and referrer headers, and the
+  // token IS the crew's data. Only the public festival id may ride there.
+  for (const link of [
+    crew.crewLink(TOKEN),
+    crew.crewLink(TOKEN, 'lollapalooza-2025'),
+    crew.crewLink(TOKEN, 'lollapalooza-2025', 'Drew B'),
+  ]) {
+    const query = link.slice(0, link.indexOf('#') === -1 ? link.length : link.indexOf('#'));
+    assert.ok(!query.includes(TOKEN), `token leaked into the query: ${link}`);
+    assert.ok(!/[?&](g|me)=/.test(query), `token or member name in the query: ${link}`);
+  }
 });
 
 test('meFromHash: parses, decodes, and tolerates junk', () => {

@@ -635,11 +635,24 @@ function wireSlot(z) {
   // (wall.js) handles the click the release synthesises.
   if (z.source === 'touch') {
     card.style.pointerEvents = 'none';
-    const arm = () => { card.style.pointerEvents = ''; };
-    document.addEventListener('pointerup', arm, { once: true, capture: true });
+    let armT = null;
+    const arm = () => { if (armT) { clearTimeout(armT); armT = null; } card.style.pointerEvents = ''; };
+    // Arm AFTER the lift's synthetic click has come and gone — arming on
+    // pointerup was one event too early: the click that follows the lift
+    // landed on the freshly-armed overlay and recorded a pick nobody made
+    // (real-phone walk, 2026-08-30). The timer is the belt for a lift that
+    // synthesises no click (the finger slid); pointercancel for a cancelled
+    // gesture.
+    const afterLift = () => {
+      document.addEventListener('click', arm, { once: true, capture: true });
+      armT = setTimeout(arm, 350);
+    };
+    document.addEventListener('pointerup', afterLift, { once: true, capture: true });
     document.addEventListener('pointercancel', arm, { once: true, capture: true });
     z.cleanup.push(() => {
-      document.removeEventListener('pointerup', arm, true);
+      if (armT) clearTimeout(armT);
+      document.removeEventListener('pointerup', afterLift, true);
+      document.removeEventListener('click', arm, true);
       document.removeEventListener('pointercancel', arm, true);
     });
   }
@@ -752,7 +765,10 @@ export function wireCardZoom(el, artistName, ctx, { onOpenNotes = null, occ = nu
 export function wireCardFocusZoom(el, artistName, ctx, { onOpenNotes = null, occ = null } = {}) {
   el.addEventListener('focusin', () => {
     if (zoomed && zoomed.el === el) return;
-    if (dismissedEl === el) return; // Escape put it away; re-focusing must not bring it back
+    // dismissedEl is a POINTER rule (a mouse resting on a card it dismissed);
+    // deliberately not checked here — Tab is fresh intent, and gating it made
+    // keyboard growth look off-by-one-card (real-browser walk, 2026-08-30).
+    if (dismissedEl === el) dismissedEl = null;
     // KEYBOARD focus only: a mouse click and a finger tap also focus the
     // card, and zooming there would bypass the hover-intent delay and grow
     // the card under every pick. :focus-visible is the browsers' own

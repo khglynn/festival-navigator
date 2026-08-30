@@ -140,16 +140,21 @@ test('taps while zoomed cycle 1 → 2 → 3 → 4 → 0 and the pills follow', (
   assert.equal(zoom.zoomedCard(), document.querySelector('#wall-root .card'), 'the zoom never left');
 });
 
-test('a hold on touch: the overlay hears nothing until the finger lifts', () => {
+test('a hold on touch: the lift and its own click cannot pick; the NEXT tap does', () => {
   const ctx = makeCtx();
   const card = mountCard(ctx);
   zoom.zoomCard(card, 'GRiZ', ctx, { onOpenNotes: ctx.onOpenNotes, source: 'touch' });
   const grown = document.querySelector('#zoom-layer .zoom-card');
   assert.equal(grown.style.pointerEvents, 'none', 'deaf while the holding finger is down');
   document.dispatchEvent(new dom.window.Event('pointerup', { bubbles: true }));
-  assert.equal(grown.style.pointerEvents, '', 'the next tap is the first it takes');
+  assert.equal(grown.style.pointerEvents, 'none', 'still deaf through the lift — arming on pointerup let the lift\'s own click pick (phone walk, 2026-08-30)');
+  // The lift's synthetic click (it passes through the deaf overlay to the
+  // resting card, whose longPressed swallow eats it in production).
+  document.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
+  assert.equal(ctx.taps.length, 0, 'the lift picked nothing');
+  assert.equal(grown.style.pointerEvents, '', 'armed after the lift click has passed');
   click(grown);
-  assert.deepEqual(ctx.taps, ['GRiZ'], 'and that tap picks — one grammar on both surfaces');
+  assert.deepEqual(ctx.taps, ['GRiZ'], 'the next tap picks — one grammar on both surfaces');
 });
 
 test('unzoom removes the overlay and restores the card; the snapshot survives a repaint', () => {

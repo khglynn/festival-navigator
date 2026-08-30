@@ -120,3 +120,21 @@ test('prototype-shaped festival ids rejected everywhere they can enter', () => {
   bad({ meta: { inviteFestId: 'constructor' } });
   ok({ festivals: { 'construct-or-fest': { selections: {} } } }); // hyphenated near-miss stays legal
 });
+
+test('a Spotify disconnect clears crew-wide: zeroed entries pass, merge zeroes, null is refused and ignored by design', () => {
+  // The payload the disconnect sends (settings.js, 2026-08-30).
+  ok({ affinity: { Kevin: { GRiZ: { songs: 0, followed: false } } } });
+  // Zeroes really land: object-over-object merges key by key.
+  const merged = deepMerge(
+    { affinity: { Kevin: { GRiZ: { songs: 12, followed: true } } } },
+    { affinity: { Kevin: { GRiZ: { songs: 0, followed: false } } } },
+  );
+  assert.deepEqual(merged.affinity.Kevin.GRiZ, { songs: 0, followed: false });
+  // A null map would be refused by validation AND ignored by the merge —
+  // both on purpose; this line is the tombstone over that dead end.
+  bad({ affinity: { Kevin: null } });
+  assert.deepEqual(
+    deepMerge({ affinity: { Kevin: { GRiZ: { songs: 12, followed: true } } } }, { affinity: { Kevin: null } }).affinity.Kevin.GRiZ,
+    { songs: 12, followed: true },
+  );
+});

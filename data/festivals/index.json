@@ -5,7 +5,7 @@
     "year": "'26",
     "startsOn": "2026-09-18",
     "status": "lineup",
-    "dates": "September 18–20, 2026 (main festival, Fri–Sun); a separately-billed \"Early Arrival\" pre-party runs Wednesday Sept 16 and Thursday Sept 17",
+    "dates": "September 18–20, 2026 · Fri–Sun",
     "location": "Thornville, Ohio",
     "accent": "74, 222, 128"
   },
@@ -35,7 +35,7 @@
     "year": "'26",
     "startsOn": "2026-11-06",
     "status": "lineup",
-    "dates": "November 6-8, 2026 (Friday-Sunday)",
+    "dates": "November 6–8, 2026 (Friday–Sunday)",
     "location": "Orlando, FL",
     "accent": "244, 114, 182"
   },
@@ -45,7 +45,7 @@
     "year": "'26",
     "startsOn": "2026-11-13",
     "status": "lineup",
-    "dates": "November 13-15, 2026 (Friday-Sunday)",
+    "dates": "November 13–15, 2026 (Friday–Sunday)",
     "location": "Austin, TX",
     "accent": "167, 139, 250"
   },
@@ -75,7 +75,7 @@
     "year": "'26",
     "startsOn": "2026-04-24",
     "status": "archived",
-    "dates": "April 24-25, 2026",
+    "dates": "April 24–25, 2026",
     "location": "Fort Worth, TX",
     "accent": "34, 211, 238"
   },
@@ -85,7 +85,7 @@
     "year": "'25",
     "startsOn": "2025-10-25",
     "status": "archived",
-    "dates": "October 25-26, 2025",
+    "dates": "October 25–26, 2025",
     "location": "Austin, TX",
     "accent": "251, 146, 60"
   },
@@ -95,7 +95,7 @@
     "year": "'25",
     "startsOn": "2025-10-03",
     "status": "archived",
-    "dates": "October 3-5 and October 10-12, 2025",
+    "dates": "October 3–5 and October 10–12, 2025",
     "location": "Austin, TX",
     "accent": "250, 204, 21"
   },

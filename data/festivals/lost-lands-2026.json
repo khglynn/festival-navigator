@@ -4,9 +4,10 @@
   "year": "'26",
   "subtitle": "Legend Valley",
   "location": "Thornville, Ohio",
-  "dates": "September 18–20, 2026 (main festival, Fri–Sun); a separately-billed \"Early Arrival\" pre-party runs Wednesday Sept 16 and Thursday Sept 17",
+  "dates": "September 18–20, 2026 · Fri–Sun",
   "accent": "74, 222, 128",
   "status": "lineup",
+  "timezone": "America/New_York",
   "artists": [
     {
       "name": "Adventure Club"
@@ -383,14 +384,22 @@
   ],
   "meta": {
     "announcementStatus": "lineup-with-days",
-    "researchedAt": "2026-07-07",
+    "researchedAt": "2026-08-30",
     "sources": [
       "https://www.lostlandsfestival.com/",
       "https://www.lostlandsfestival.com/lineup/",
       "https://www.lostlandsfestival.com/wp-content/uploads/2026/05/Lost_Lands_2026_Lineup_4x5.jpg",
       "https://www.lostlandsfestival.com/wp-content/uploads/2026/05/Lost_Lands_2026_Weds_Thurs_Lineup4_4x5.jpg",
-      "https://www.lostlandsfestival.com/know-before-you-go/"
+      "https://www.lostlandsfestival.com/know-before-you-go/",
+      "https://www.jambase.com/festival/lost-lands-2026"
     ],
-    "note": "Returned list = the 96 names/credited-sets on the official poster's \"main bill\" tier (94 unique acts — Excision is billed 3 times: a 2-hour set, a Detox set, and a B2B with his Space Laces alias). The same official poster has a second, larger tier below it with 114 more acts (mostly support/up-and-coming), which I did not include in the array to respect the ~120 cap — festival press describes the combined bill as \"210 artists\" total. Both tiers are alphabetized on the poster, not ranked by prominence/font size (aside from Excision's header billing), so \"billing order\" here effectively means alphabetical-within-tier rather than headliner-first. Happy to supply the full 114-name second tier on request — I have it transcribed. Full second tier (alphabetical): $J, 2DY4, AlienPark, All The Reason, Arlo, Au5, Austeria, Avello, BadKlaat, Basstripper, Bella Renee, Big Florida, Brainrack, Capochino, Casey Club, Champagne Drip, Chassi, Chozen, Codd Dubz, Crizzly, Crumb Pit, Crystal Skies, Darksiderz, Deadcrow, DirtySnatcha, Distant Matter, Dodge & Fuski, Dr. Ushūu, Dream Takers, Dubscribe, Finnuh, Future Exit, Gardella, Green Matter, HALIENE, HerShe, Hostage Situation, HURTBOX, HVDES, Hydraulix, Imanu, Ivory, Izadi, Izzy Vadim, Jaenga, Josh Teed, Killmatter, Kliptic, Klo, Lazrus, Leotrix, Lowcation, Luci, Lumasi, Machaki, Mad Dubz, MADGRRL, Mile32, Mindset, Modal Nodes, Mozey, Mport, Muerte, Myrias, MYTHM, Neotek, Neumonic, Nikita The Wicked, Nimda, Noetika, OG Nixin, Onara, Paper Skies, Pegboard Nerds, Phrva, Poni, Pretty Sweet, ProbCause, Prosecute, RemK, Richard Finger, Riot, Roi*, rSUN, Ryns, RZRKT, Saint Miller, Seth David, Shlump, SISTO, Skilah, Space Wizard, SPORTMODE, SQISHI, Stoned Level, Subsonic, Super Future, Tisoki, Tokyo Machine, Twopercent, TYNAN, Usaybflow, VAMPA, VKTM, Warlord, Whales, Wiley, Wraz, Xotix, yetep, yvm3, Zen Selekta, Zero, Zoey808."
+    "note": "Returned list = the 96 names/credited-sets on the official poster's \"main bill\" tier (94 unique acts — Excision is billed 3 times: a 2-hour set, a Detox set, and a B2B with his Space Laces alias). The same official poster has a second, larger tier below it with 114 more acts (mostly support/up-and-coming), which I did not include in the array to respect the ~120 cap — festival press describes the combined bill as \"210 artists\" total. Both tiers are alphabetized on the poster, not ranked by prominence/font size (aside from Excision's header billing), so \"billing order\" here effectively means alphabetical-within-tier rather than headliner-first. Happy to supply the full 114-name second tier on request — I have it transcribed. Full second tier (alphabetical): $J, 2DY4, AlienPark, All The Reason, Arlo, Au5, Austeria, Avello, BadKlaat, Basstripper, Bella Renee, Big Florida, Brainrack, Capochino, Casey Club, Champagne Drip, Chassi, Chozen, Codd Dubz, Crizzly, Crumb Pit, Crystal Skies, Darksiderz, Deadcrow, DirtySnatcha, Distant Matter, Dodge & Fuski, Dr. Ushūu, Dream Takers, Dubscribe, Finnuh, Future Exit, Gardella, Green Matter, HALIENE, HerShe, Hostage Situation, HURTBOX, HVDES, Hydraulix, Imanu, Ivory, Izadi, Izzy Vadim, Jaenga, Josh Teed, Killmatter, Kliptic, Klo, Lazrus, Leotrix, Lowcation, Luci, Lumasi, Machaki, Mad Dubz, MADGRRL, Mile32, Mindset, Modal Nodes, Mozey, Mport, Muerte, Myrias, MYTHM, Neotek, Neumonic, Nikita The Wicked, Nimda, Noetika, OG Nixin, Onara, Paper Skies, Pegboard Nerds, Phrva, Poni, Pretty Sweet, ProbCause, Prosecute, RemK, Richard Finger, Riot, Roi*, rSUN, Ryns, RZRKT, Saint Miller, Seth David, Shlump, SISTO, Skilah, Space Wizard, SPORTMODE, SQISHI, Stoned Level, Subsonic, Super Future, Tisoki, Tokyo Machine, Twopercent, TYNAN, Usaybflow, VAMPA, VKTM, Warlord, Whales, Wiley, Wraz, Xotix, yetep, yvm3, Zen Selekta, Zero, Zoey808. UPDATE 2026-08-30: day-by-day splits for the main bill (Fri Sept 18 ~68 artists, Sat Sept 19 ~62, Sun Sept 20 ~48) were revealed 2026-08-21 via the official poster and independently corroborated by JamBase's per-day grouping plus a press wave (EDM Sauce, EDM.com) — real, sourced, and the one clearly actionable lineup improvement available today, but deliberately NOT ingested this pass: JamBase's page only groups artists, giving headline names rather than a full transcribable roster, and a proper ingest needs the full ~96-artist breakdown cross-checked against the official poster, not just headliners. Status stays lineup. Full time-of-day set times are still unpublished anywhere for 2026; 2025's precedent (times landed ~4 days out) puts the expected drop around Sept 14-16, 2026. Early Arrival pre-party: went and directly read the official Weds/Thurs poster image (fetched + visually read, not just search snippets) — it reconfirms the exact 21 names and Wed/Thu split already in this file, and confirms no individual artist gets a stage or time anywhere on it; do NOT invent one. The poster does name two pre-party stages, \"The Prehistoric Stage\" and \"The Crater\", but only as the venue for a collective \"Mega B2B2B2B2B2B\" Thursday pre-party set, not attributable to any one artist, so those stay off individual entries. The same poster also shows 8 artists already carried above in the untagged main-bill artists[] — Barely Alive, Calcium, Caspa, Distinct Motive, Emorfik, Hairitage, Riot Ten, Smoakland — ALSO billed on the Wednesday pre-party: a real Portola-style reappearance (same artist, second entry, different day), not yet added as a second artists[] entry for each because their main-bill entries are still day-less and the schema's duplicate check treats any day-less entry as colliding with everything — add these 8 alongside the Fri/Sat/Sun day-tag ingest so every entry lands with a real day. Timezone added: America/New_York (Legend Valley, Thornville OH is Eastern)."
+  },
+  "dayMeta": {
+    "Friday": { "wd": "Fri", "date": "Sep 18" },
+    "Saturday": { "wd": "Sat", "date": "Sep 19" },
+    "Sunday": { "wd": "Sun", "date": "Sep 20" },
+    "Wednesday, Sept 16 (Early Arrival Pre-Party)": { "wd": "Wed", "date": "Sep 16" },
+    "Thursday, Sept 17 (Early Arrival Pre-Party)": { "wd": "Thu", "date": "Sep 17" }
   }
 }

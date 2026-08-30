@@ -1,5 +1,6 @@
 // Settings (atlas 21h) — ONE page, two doors (header gear + dock fest link).
-// Order: YOUR FESTIVALS -> YOU -> APP. Desktop is the same 560px column.
+// Order: YOUR FESTIVALS -> YOU -> CREW -> APP (the Spotify glance card and
+// the App-labeled list below it are both "APP"). Desktop is the same 560px column.
 // How-it-works (21i) renders as a sub-view. All doc strings via textContent.
 import * as state from '../state.js';
 import * as crew from '../crew.js';
@@ -357,7 +358,7 @@ function openHowItWorks(actions) {
     [0.5, 0.75, 1].forEach((a) => {
       d.appendChild(el('span', `flex: 1; height: 30px; border-radius: 6px; border: 1px solid var(--hairline); background: radial-gradient(130% 130% at 20% 120%, hsla(10,90%,62%,${a}) 0%, transparent 78%), #1C1731;`));
     });
-  }, 'Tap an artist to add your color.', 'Brighter each tap. Four taps = I MUST SEE THIS.'));
+  }, 'Tap an artist to add your color.', 'Brighter each tap. 4 taps = MUST SEE.'));
   card.appendChild(lesson((d) => {
     d.appendChild(el('span', 'width: 4px; height: 12px; border-radius: 99px; background: hsla(150,70%,50%,.5); border: 1px solid hsl(150,70%,82%);'));
     d.appendChild(el('span', 'width: 24px; height: 12px; border-radius: 99px; background: hsla(10,90%,62%,.5); border: 1px solid #fff; color: #fff; font-size: 7.5px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center;', 'K'));
@@ -366,7 +367,7 @@ function openHowItWorks(actions) {
     const n = el('span', '', '2'); n.className = 'chip-notes'; n.style.height = '14px';
     const s = el('span', '', '23'); s.className = 'chip-spotify'; s.style.height = '13px'; // the green pill, never a music-note glyph
     d.append(n, s);
-  }, 'Hold a card for notes.', 'Violet = crew notes; pin one to keep it on top. Green = it’s in your Spotify (connect in Settings).'));
+  }, 'Hold for details.', 'Violet = crew notes; pin one to keep it on top. Green = it’s in your Spotify (connect in Settings).'));
   card.appendChild(lesson((d) => {
     const head = el('span', 'font-family: var(--font-display); letter-spacing: .05em; font-size: 9px; color: rgb(var(--fest)); background: var(--card); border-radius: 6px; padding: 5px 8px; box-shadow: inset 0 0 0 1px rgba(var(--fest), .6);', 'WAREHOUSE'); // a .stage-head, drawn small — surface 3 of the accent's four
     d.appendChild(head);
@@ -613,8 +614,17 @@ function youSection(ctx, actions) {
       if (problem) { status.textContent = problem; return; }
       // Removed names stay blocked too: deep-merge can't delete, so a vacated
       // key still carries removed:true and history — reusing it would tangle
-      // identities (Codex ship gate).
-      if (state.people()[v]) { status.textContent = 'That name has been used in this crew — pick a different one.'; return; }
+      // identities (Codex ship gate). Case-insensitive against the FULL
+      // people map (tombstones included, not activePeople() — that would
+      // silently drop the removed-name check above): two active names
+      // differing only by case are one person to a human and two forever to
+      // the document (CLAUDE.md), and the server refuses that merge for
+      // good — a bare-lookup here let the rename toast "succeed" and then
+      // desync permanently. Your OWN current key is excluded so a pure case
+      // fix ("kev" -> "Kev") doesn't collide with yourself.
+      const vLower = v.toLowerCase();
+      const taken = Object.keys(state.people()).some((n) => n !== ctx.meName && n.toLowerCase() === vLower);
+      if (taken) { status.textContent = 'That name has been used in this crew — pick a different one.'; return; }
       actions.renameSelf(v);
       actions.rerender();
     };
@@ -664,8 +674,8 @@ export function renderSettings(root, ctx, actions) {
   main.appendChild(head);
 
   main.appendChild(festivalsSection(ctx, actions));
-  main.appendChild(crewSection(ctx, actions));
   main.appendChild(youSection(ctx, actions));
+  main.appendChild(crewSection(ctx, actions));
 
   // Spotify glance (state only; the drill page holds every action — 21f rule)
   const sp = el('button'); sp.className = 'settings-card';
@@ -1417,7 +1427,29 @@ function openSpotifyDrill(ctx, actions) {
 
     const dis = el('button', 'font-size: 12px; padding: 8px 14px; align-self: flex-start;', 'Disconnect');
     dis.className = 'btn-ghost';
-    dis.addEventListener('click', () => { spotify.disconnect(); rerenderDrill(); });
+    dis.addEventListener('click', () => {
+      spotify.disconnect();
+      // The copy below promises "only the badges disappear" — but badges
+      // live in crewDoc.affinity, a synced, crew-visible field every card
+      // reads (app.js ctx.affinity / card-facts.js), and disconnect() only
+      // touches this device's localStorage. Clear this person's entry too,
+      // the same recorder + persist + scheduleSync trio renameSelf uses, so
+      // the badges actually disappear here and for the rest of the crew.
+      const mine = state.affinityFor(ctx.meName);
+      if (mine) {
+        // Deep-merge cannot delete and IGNORES null (deepMerge/jsonb twin:
+        // null overlay keeps the base), so "cleared" is written as zeros —
+        // object over object merges key by key, and every badge reader shows
+        // nothing for songs 0 + followed false. A null here looked cleared
+        // locally and came back on the next pull (caught 2026-08-30).
+        const zeroed = {};
+        for (const artist of Object.keys(mine)) zeroed[artist] = { songs: 0, followed: false };
+        state.recordAffinity(ctx.meName, zeroed);
+        state.persist();
+        sync.scheduleSync();
+      }
+      rerenderDrill();
+    });
     col.append(dis, el('div', 'color: var(--text-tertiary); font-size: 10.5px; font-weight: 600; line-height: 1.55;',
       'Disconnect keeps picks and notes — only the badges disappear.'));
     // The which-app plumbing lives behind Advanced here too — a connected member

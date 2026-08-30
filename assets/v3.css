@@ -227,12 +227,25 @@
 /* ---- notes ------------------------------------------------------------------- */
 /* (The boxed note-row/bubble anatomy retired 2026-08-29 — the aura notes in
  * the threads section further down are the one note language now.) */
-.composer { display: flex; gap: 8px; align-items: center; }
-.composer input {
-  flex: 1; background: var(--card); border: 1px solid var(--border-input); border-radius: var(--r-card);
-  padding: 10px 12px; color: var(--text-primary); font-size: 12.5px; font-family: var(--font-ui); outline: none;
+/* One text field everywhere words are written — the sheet's bottom composer,
+ * an inline reply, an edit in place. It grows with what you type (notes.js
+ * measures) instead of hiding 500 characters in one scrolling line. */
+.composer { display: flex; gap: 8px; align-items: flex-end; }
+.n-field {
+  /* border-box because this file has no global one: a content-box field with
+     12px of side padding overflows its column by 26px, and `.n-inline` clips
+     the overflow so the right border simply vanishes (caught in the walk). */
+  box-sizing: border-box; width: 100%; min-width: 0; background: var(--card);
+  border: 1px solid var(--border-input); border-radius: var(--r-card);
+  padding: 10px 12px; color: var(--text-primary); font-size: 12.5px; line-height: 1.4;
+  font-family: var(--font-ui); outline: none; resize: none; overflow-y: auto;
 }
-.composer input::placeholder { color: var(--text-tertiary); }
+.n-field::placeholder { color: var(--text-tertiary); }
+/* Only the bottom composer is a ROW, where the field takes the free space. In
+   the column layouts (an inline reply, an edit in place) `flex: 1` would
+   stretch the field's HEIGHT and fight the auto-grow. */
+.composer .n-field { flex: 1; }
+.n-field:focus-visible { border-color: var(--border-emphasis); }
 
 /* ---- bottom sheet / desktop dialog (DT-2) --------------------------------------- */
 .sheet-backdrop { position: fixed; inset: 0; background: rgba(0, 0, 0, .45); z-index: 40; }
@@ -551,22 +564,57 @@
 .n-list.grouped .n-thread + .n-thread { margin-top: 10px; }
 .n-replies { display: flex; flex-direction: column; gap: 6px; margin-left: 22px; }
 .n-note { display: grid; grid-template-columns: 20px 1fr; column-gap: 10px; align-items: start;
-          padding: 9px 12px 9px 10px; border-radius: 12px;
+          padding: 9px 12px 5px 10px; border-radius: 12px;
           background: radial-gradient(150% 200% at 0% 40%, var(--wash) 0%, transparent 68%); }
 .n-note .avatar { margin-top: 1px; }
-.n-reply { grid-template-columns: 16px 1fr; padding: 7px 12px 7px 10px; }
+.n-reply { grid-template-columns: 16px 1fr; padding: 7px 12px 4px 10px; }
 .n-body { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .n-head { display: flex; align-items: baseline; gap: 7px; flex-wrap: wrap;
           color: var(--text-secondary); font-size: 10.5px; font-weight: 600; }
 .n-head .n-who { color: var(--text-primary); font-weight: 700; font-size: 12.5px; }
-.n-head .note-action { text-decoration: none; font-size: 10.5px; }
-.n-head .note-action.on { color: var(--tonal-text); }
 .n-text { color: var(--text-primary); font-size: 13.5px; line-height: 1.42; overflow-wrap: anywhere; }
 .n-note.stub { background: var(--card); }
 .n-note.stub .stub-avatar { width: 20px; height: 20px; border-radius: var(--r-pill);
                             border: 1px dashed var(--border-emphasis); }
 .n-note.stub .n-text { color: var(--text-tertiary); font-style: italic; font-size: 12px; }
 .n-empty { color: var(--text-tertiary); font-size: 12px; font-weight: 600; text-align: center; padding: 10px 0; }
+
+/* The cue line (Direction A, 2026-08-30). At rest a note is a name, a time and
+ * words; hover, a press-and-hold, or keyboard focus fades in one line of plain
+ * words under them. The ROW is always here and only `.n-acts` fades — a line
+ * that appeared would push every note below it down each time the cursor
+ * crossed a note, and the list would shove itself under your mouse. The reply
+ * count is information rather than an action, so it never hides. */
+.n-cue { display: flex; align-items: baseline; gap: 6px; min-height: 15px; margin-top: 2px;
+         color: var(--text-tertiary); font-size: 10.5px; font-weight: 600; }
+.n-cue .note-action { text-decoration: none; font-size: 10.5px; }
+.n-cue .note-action.on { color: var(--tonal-text); }
+.n-cue .n-del { color: var(--danger); }
+.n-acts { display: inline-flex; align-items: baseline; gap: 6px;
+          opacity: 0; transform: translateY(-2px); pointer-events: none;
+          transition: opacity .14s cubic-bezier(.4, 0, .2, 1),
+                      transform .14s cubic-bezier(.2, 1.15, .35, 1); }
+/* Three doors to the same line, so nobody is locked out: the mouse hovers, a
+ * finger holds (notes.js sets .revealed), a keyboard simply arrives — the
+ * focus fallback is required, not optional. `.open` is for editing and the
+ * inline composer, where the line is a MODE, not a hover state. */
+.n-note.revealed > .n-body > .n-cue > .n-acts,
+.n-note:focus-within > .n-body > .n-cue > .n-acts,
+.n-acts.open { opacity: 1; transform: none; pointer-events: auto; }
+@media (hover: hover) and (pointer: fine) {
+  .n-note:hover > .n-body > .n-cue > .n-acts { opacity: 1; transform: none; pointer-events: auto; }
+}
+/* How many characters are left, and only once that is news. */
+.n-left { margin-left: auto; color: var(--text-tertiary); font-size: 10px; font-weight: 700;
+          font-variant-numeric: tabular-nums; }
+.n-left.at-cap { color: var(--danger); }
+/* The reply composer opens at the foot of the thread you pressed into — where
+ * the words will actually land — and unfolds there (notes.js measures it). */
+.n-inline { display: flex; flex-direction: column; gap: 2px; overflow: hidden;
+            padding: 2px 0 0 10px; }
+/* Editing in place: the words become a field where the words were, and a
+   bordered box needs a touch more air under the name than plain text did. */
+.n-text > .n-field { margin-top: 3px; }
 
 /* The sheet's header is the card, grown once more — centred, breathing only
  * when the card would (.animated; reduced-motion and low-power still win). */
@@ -597,13 +645,10 @@
 button.f-chip.notes { cursor: pointer; }
 .f-chip.spot { background: rgba(18, 138, 62, .6); }
 
-/* The composer's reply state: replying changes where the words land, never
- * the words themselves; ✕ returns to a plain note. */
-.composer-wrap { display: flex; flex-direction: column; gap: 6px; }
-.reply-to { color: var(--text-tertiary); font-size: 10.5px; font-weight: 700; margin-left: 2px; }
-.composer .cancel { background: none; border: 1px solid var(--border-input); color: var(--text-secondary);
-                    font-size: 11px; font-weight: 700; border-radius: var(--r-pill); padding: 8px 11px;
-                    cursor: pointer; flex: none; }
+/* The sheet's bottom composer writes NEW notes, and only those — its reply
+ * state retired 2026-08-30 when replying moved inline, to the thread you
+ * pressed. It can no longer re-aim a typed draft at a root you scrolled past. */
+.composer-wrap { display: flex; flex-direction: column; gap: 4px; }
 
 /* The day whisper: nothing until someone writes, then the newest note as one
  * soft wash at the day's door; the rule's ✎ chip stays the add door. */

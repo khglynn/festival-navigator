@@ -1,13 +1,30 @@
 // Notes surfaces (reshaped 2026-08-29): scope sheets (artist + day), the
-// all-notes HOME, and the day whisper on the wall. The sheet opens with the
-// card (card-facts.js) and reads as a conversation — no boxes, a note is text
-// on a wash of its author's hue, replies indent one gutter under their root.
+// all-notes HOME, and the newest-note whisper on the wall (used for a day rule
+// AND for the festival — scope-neutral despite the name; wall.js imports it).
+// The sheet opens with the card (card-facts.js) and reads as a conversation —
+// no boxes, a note is text on a wash of its author's hue, replies indent one
+// gutter under their root.
 // Pins are device-local (fn_pins_v1), never synced. Notes are edited/deleted
 // through the tombstone model — an edit overwrites the same note id (author +
 // ts unchanged, order stable); a delete writes {deleted:true} — and the
 // server's id-prefix rule means you can only ever touch your own (NT-3).
 // A reply is a note with one extra key: re = its root's id (threadsFor).
 // All doc-derived text renders via textContent (gate rule).
+//
+// Direction A (2026-08-30, comment-thread redesign). At rest a note is a name,
+// a time and words — nothing else. Hover (mouse), press-and-hold (touch) or
+// keyboard focus fades in ONE line of plain words under the words:
+// `Reply · Pin`, or `Edit · Reply · Pin` on your own. Reply opens a composer
+// INLINE at the foot of that thread; replying to a reply pre-fills `@Name` and
+// still posts flat (one level, `re = replyTo.re || replyTo.id`). Edit turns the
+// words editable in place and the same line becomes `Save · Cancel · Delete` —
+// delete has no other door. The sheet's bottom composer is for NEW roots only.
+//
+// The cue line RESERVES its height and only its contents fade. A line that
+// appeared would push every note below it down each time the cursor crossed a
+// note — the list would shove itself under your mouse. The row earns its keep
+// on threaded roots, where the reply count (information, not an action) lives
+// in it at rest.
 import * as state from '../state.js';
 import { dayLabelParts } from '../time.js';
 import * as model from './model.js';
@@ -18,6 +35,24 @@ import { router } from './router.js';
 import { loadJSON, saveLS } from '../util.js';
 
 const LS_PINS = 'fn_pins_v1';
+const NOTE_MAX = 500;
+const COUNTER_FROM = 60;   // the counter stays out of the way until the cap is near
+const HOLD_MS = 350;       // press-and-hold to reveal, on touch
+const HOLD_SLOP = 8;       // px of travel that still counts as a press, not a scroll
+const ARM_MS = 3000;       // "Sure?" stays armed this long
+
+// Motion, the way the rest of the app moves: transforms and opacity, a beat of
+// overshoot on the way in, quick and plain on the way out. Low Power and
+// reduced-motion make every one of these instant, never broken.
+const ARRIVE_MS = 260, UNFOLD_MS = 220, LEAVE_MS = 180;
+const EASE_ARRIVE = 'cubic-bezier(.2, 1.15, .35, 1)';
+const EASE_LEAVE = 'cubic-bezier(.4, 0, 1, 1)';
+const reduced = () => typeof window !== 'undefined' && !!window.matchMedia
+  && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+// A deliberate twin of card-facts.js's gate — that module does not export it,
+// and it is not this round's file to change. If a third copy is ever wanted,
+// that is the moment to lift both into a shared motion module instead.
+const canAnimate = (node, ctx) => typeof node.animate === 'function' && !reduced() && !(ctx && ctx.lowPower);
 
 // Sheet dismissals go through history (FLOW-2) so browser back and the
 // backdrop agree; the direct close stays as the desync-proof fallback.
@@ -50,12 +85,15 @@ function avatarFor(name, size = 20, font = 8.5) {
 }
 
 // ---- write helpers (the tombstone model, NT-3) --------------------------------------
+// Returns the new note's id so the caller can let it arrive (grow in) rather
+// than simply be there on the next repaint.
 function addNote(ctx, scope, target, text, re = null) {
-  if (!ctx.meName) return;
+  if (!ctx.meName) return null;
   const ts = new Date().toISOString();
   const note = re ? { author: ctx.meName, ts, text, re } : { author: ctx.meName, ts, text };
   const id = model.makeNoteId(ctx.meName, ts);
   state.recordNote(ctx.fid, scope, target, id, note);
+  return id;
 }
 
 function editNote(ctx, scope, target, note, newText) {
@@ -71,16 +109,91 @@ function deleteNote(ctx, scope, target, note) {
   state.recordNote(ctx.fid, scope, target, note.id, gone);
 }
 
+// ---- the small motion vocabulary ----------------------------------------------------
+// Things grow from where they are and travel to where they are going.
+function arriveIn(el, ctx) {
+  if (!canAnimate(el, ctx)) return;
+  el.animate(
+    [{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }],
+    { duration: ARRIVE_MS, easing: EASE_ARRIVE },
+  );
+}
+
+// The way out is quick and plain: the row thins, then the write lands.
+function thinOut(el, ctx, done) {
+  if (!el || !el.isConnected || !canAnimate(el, ctx)) { done(); return; }
+  const h = el.getBoundingClientRect().height;
+  const a = el.animate(
+    [{ opacity: 1, maxHeight: `${h}px` }, { opacity: 0, maxHeight: '0px' }],
+    { duration: LEAVE_MS, easing: EASE_LEAVE, fill: 'forwards' },
+  );
+  let fired = false;
+  const go = () => { if (!fired) { fired = true; done(); } };
+  a.addEventListener('finish', go);
+  setTimeout(go, LEAVE_MS + 60);  // a cancelled animation must never strand the write
+}
+
+// The composer unfolds where it is asked for, and its neighbours make room.
+function unfold(el, ctx) {
+  if (!canAnimate(el, ctx)) return;
+  const h = el.getBoundingClientRect().height;
+  if (!h) return;
+  el.animate(
+    [{ height: '0px', opacity: 0, transform: 'translateY(-4px)' }, { height: `${h}px`, opacity: 1, transform: 'none' }],
+    { duration: UNFOLD_MS, easing: EASE_ARRIVE },
+  );
+}
+
+// ---- shared text field: one auto-growing textarea, one quiet counter -----------------
+// 500 characters used to go into a single-line <input> with no wrap, no counter
+// and no cue when the browser stopped accepting them (survey, 2026-08-30).
+function growingField(value, label, { onInput, onEnter }) {
+  const ta = document.createElement('textarea');
+  ta.className = 'n-field';
+  ta.rows = 1;
+  ta.maxLength = NOTE_MAX;
+  ta.value = value;
+  ta.setAttribute('aria-label', label);
+  const counter = document.createElement('span');
+  counter.className = 'n-left';
+  const grow = () => {
+    // jsdom has no layout: scrollHeight is 0 there, and writing that back would
+    // collapse the field. Only ever grow from a real measurement.
+    ta.style.height = 'auto';
+    const h = ta.scrollHeight;
+    if (h) ta.style.height = `${Math.min(h, 132)}px`;
+    const left = NOTE_MAX - ta.value.length;
+    counter.textContent = left <= COUNTER_FROM ? `${left} left` : '';
+    counter.classList.toggle('at-cap', left <= 0);
+  };
+  ta.addEventListener('input', () => { grow(); if (onInput) onInput(ta.value); });
+  ta.addEventListener('keydown', (e) => {
+    // Enter sends, Shift+Enter is a new line — the grammar every chat field has.
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (onEnter) onEnter(); }
+  });
+  grow();
+  return { ta, counter, grow };
+}
+
+const caretToEnd = (el) => {
+  el.focus();
+  try { el.setSelectionRange(el.value.length, el.value.length); } catch { /* type quirks */ }
+};
+
 // ---- one note, the aura way ---------------------------------------------------------
 // opts: { reply, pinned, collapsedReplies, onToggleReplies, onPinToggle,
-//         onReply, onEdit(note, text), onDelete(note), editing }
-// `editing` is the sheet's per-open draft map (id -> {value, focus}): the
-// inline editor lives INSIDE the repainted list, so a remote sync used to
-// eat a half-typed edit (Codex gate, 2026-08-29). The draft persists here
-// and the editor re-renders from it, caret at the end.
+//         onReply, onEdit(note, text), onDelete(note, row), editing, ui }
+// `editing` is the sheet's per-open draft map (id -> {value, focus, armed}):
+// the inline editor lives INSIDE the repainted list, so a remote sync used to
+// eat a half-typed edit (Codex gate, 2026-08-29). The draft persists here and
+// the editor re-renders from it, caret at the end — and since 2026-08-30 the
+// Delete arm ("Sure?") rides in the same map, so a repaint landing inside its
+// three seconds no longer silently disarms it.
 function noteRow(note, ctx, opts = {}) {
+  const ui = opts.ui;
   const row = document.createElement('div');
-  row.className = 'n-note' + (opts.reply ? ' n-reply' : '') + (opts.pinned ? ' pinned' : '');
+  row.className = 'n-note' + (opts.reply ? ' n-reply' : '');
+  row.dataset.note = note.id;
   const ci = colorIndexOf(note.author, state.people()[note.author]);
   row.style.setProperty('--wash', hslOf(ci, opts.pinned ? 0.46 : (opts.reply ? 0.2 : 0.26)));
   row.appendChild(avatarFor(note.author, opts.reply ? 16 : 20, opts.reply ? 7.5 : 8.5));
@@ -94,99 +207,157 @@ function noteRow(note, ctx, opts = {}) {
   who.textContent = note.author === ctx.meName ? 'you' : note.author;
   head.append(who, relTime(note.ts));
 
+  const text = document.createElement('div');
+  text.className = 'n-text';
+  text.textContent = note.text;
+
+  // The cue line: a permanent row whose CONTENTS fade in. `.n-count` is not an
+  // action and never hides; `.n-acts` is the revealed group.
+  const cue = document.createElement('div');
+  cue.className = 'n-cue';
+  const acts = document.createElement('span');
+  acts.className = 'n-acts';
   const mkAction = (label, cls = '') => {
     const b = document.createElement('button');
     b.className = 'note-action' + (cls ? ` ${cls}` : '');
     b.textContent = label;
     return b;
   };
-  const dot = () => head.append(' · ');
+  const addAct = (btn) => { if (acts.childNodes.length) acts.append(' · '); acts.append(btn); };
 
-  const text = document.createElement('div');
-  text.className = 'n-text';
-  text.textContent = note.text;
+  if (opts.collapsedReplies) {
+    const n = opts.collapsedReplies;
+    const open = mkAction(`${n} repl${n === 1 ? 'y' : 'ies'}`, 'on n-count');
+    open.addEventListener('click', opts.onToggleReplies);
+    cue.append(open);
+  }
 
-  // Your notes stay yours to change (NT-3) — quiet actions in the head line.
   const editing = opts.editing;
-  const mountEditor = () => {
+  const isEditing = !!(editing && editing.has(note.id));
+
+  if (isEditing) {
+    // Editing is a mode: the words become a field in place, and this same line
+    // becomes Save · Cancel · Delete. Delete has no other door (Kevin's ask).
     const draft = editing.get(note.id);
-    const editor = document.createElement('div');
-    editor.className = 'composer';
-    const input = document.createElement('input');
-    input.maxLength = 500;
-    input.value = draft.value;
-    input.setAttribute('aria-label', 'Edit your note');
-    input.addEventListener('input', () => { draft.value = input.value; });
-    input.addEventListener('focus', () => { draft.focus = true; });
-    input.addEventListener('blur', () => { draft.focus = false; });
-    const save = document.createElement('button');
-    save.className = 'btn-tonal';
-    save.style.cssText = 'font-size: 11.5px; padding: 8px 13px; flex: none;';
-    save.textContent = 'Save';
     const doSave = () => {
-      const v = input.value.trim();
+      const v = field.ta.value.trim();
       if (!v) return;
       editing.delete(note.id);
       opts.onEdit(note, v);
     };
-    save.addEventListener('click', doSave);
-    input.addEventListener('keydown', (e) => { if (e.key === 'Enter') doSave(); });
-    editor.append(input, save);
-    text.replaceChildren(editor);
-    input.dataset.editing = note.id;
+    const field = growingField(draft.value, 'Edit your note', {
+      onInput: (v) => { draft.value = v; },
+      onEnter: doSave,
+    });
+    const { ta, counter } = field;
+    ta.dataset.editing = note.id;
+    ta.addEventListener('focus', () => { draft.focus = true; ui.focusOwner = `edit:${note.id}`; });
+    ta.addEventListener('blur', () => { draft.focus = false; });
+    text.replaceChildren(ta);
     // Focus is restored by renderThreads once the row is CONNECTED — a
     // focus() on a detached node is a no-op (Codex gate, 2026-08-29).
-  };
-  if (note.author === ctx.meName && opts.onEdit && editing) {
-    if (editing.has(note.id)) mountEditor();
-    const edit = mkAction('Edit');
-    edit.addEventListener('click', () => {
-      editing.set(note.id, { value: note.text, focus: true });
-      mountEditor();
-      const input = text.querySelector('input[data-editing]');
-      if (input) { input.focus(); input.setSelectionRange(input.value.length, input.value.length); }
-    });
-    dot(); head.append(edit);
-  }
-  if (note.author === ctx.meName && opts.onDelete) {
-    const del = mkAction('Delete');
-    let armed = false;
-    del.addEventListener('click', () => {
-      if (!armed) {
-        armed = true;
-        del.textContent = 'Sure?';
-        setTimeout(() => { armed = false; del.textContent = 'Delete'; }, 3000);
-        return;
-      }
-      opts.onDelete(note);
-    });
-    dot(); head.append(del);
-  }
-  if (opts.onReply) {
-    const reply = mkAction('Reply');
-    reply.addEventListener('click', () => opts.onReply(note));
-    dot(); head.append(reply);
-  }
-  if (opts.collapsedReplies) {
-    const n = opts.collapsedReplies;
-    const open = mkAction(`${n} repl${n === 1 ? 'y' : 'ies'}`, 'on');
-    open.addEventListener('click', opts.onToggleReplies);
-    dot(); head.append(open);
-  }
-  if (opts.onPinToggle) {
-    const pin = mkAction(opts.pinned ? 'Unpin' : 'Pin', opts.pinned ? 'on' : '');
-    pin.addEventListener('click', opts.onPinToggle);
-    dot(); head.append(pin);
+
+    const save = mkAction('Save', 'on');
+    save.addEventListener('click', doSave);
+    addAct(save);
+
+    const cancel = mkAction('Cancel');
+    cancel.addEventListener('click', () => { editing.delete(note.id); opts.onCancelEdit(); });
+    addAct(cancel);
+
+    if (opts.onDelete) {
+      const del = mkAction(draft.armed ? 'Sure?' : 'Delete', 'n-del');
+      // The label changes meaning under a screen-reader user's focus, so say so.
+      del.setAttribute('aria-live', 'polite');
+      del.addEventListener('click', () => {
+        if (!draft.armed) {
+          draft.armed = true;
+          del.textContent = 'Sure?';
+          setTimeout(() => {
+            if (!editing.has(note.id)) return;
+            draft.armed = false;
+            if (del.isConnected) del.textContent = 'Delete';
+          }, ARM_MS);
+          return;
+        }
+        editing.delete(note.id);
+        opts.onDelete(note, row);
+      });
+      addAct(del);
+    }
+    acts.classList.add('open');   // a mode is not a hover state
+    cue.append(acts, counter);    // the counter waits at the line's far end
+  } else {
+    if (note.author === ctx.meName && opts.onEdit && editing) {
+      const edit = mkAction('Edit');
+      edit.addEventListener('click', () => {
+        editing.set(note.id, { value: note.text, focus: true, armed: false });
+        if (ui) ui.focusOwner = `edit:${note.id}`;
+        opts.onBeginEdit();
+      });
+      addAct(edit);
+    }
+    if (opts.onReply) {
+      const reply = mkAction('Reply');
+      reply.addEventListener('click', () => opts.onReply(note));
+      addAct(reply);
+    }
+    if (opts.onPinToggle) {
+      const pin = mkAction(opts.pinned ? 'Unpin' : 'Pin', opts.pinned ? 'on' : '');
+      pin.addEventListener('click', opts.onPinToggle);
+      addAct(pin);
+    }
+    if (acts.childNodes.length) {
+      if (cue.childNodes.length) acts.prepend(' · ');
+      cue.append(acts);
+      wireReveal(row, note.id, ui);
+    }
   }
 
-  body.append(head, text);
+  body.append(head, text, cue);
   row.appendChild(body);
   return row;
 }
 
-// A root that is gone (tombstoned, or not yet synced) — its replies keep
-// their context under this quiet stub.
-function stubRow(author) {
+// Hover is the mouse's trigger and lives in CSS; focus-within is the keyboard's
+// and lives in CSS too. Touch has neither, so a press-and-hold marks ONE note
+// revealed at a time (kept in per-open UI state so a repaint does not lose it).
+// The hold is timing-only — it never calls preventDefault, so the browser's own
+// press-to-select-text gesture still works; at worst both happen, which is
+// harmless. Verified with real pointer input before promoting.
+function wireReveal(row, noteId, ui) {
+  if (!ui) return;
+  if (ui.revealed === noteId) row.classList.add('revealed');
+  let timer = null, from = null;
+  const clear = () => { if (timer) { clearTimeout(timer); timer = null; } from = null; };
+  row.addEventListener('pointerdown', (e) => {
+    if (e.pointerType === 'mouse') return;   // the mouse has hover
+    from = { x: e.clientX, y: e.clientY };
+    timer = setTimeout(() => {
+      timer = null;
+      // A repaint can tear this row out mid-press. A detached row's closest()
+      // finds no sheet, and clearing `.revealed` from the LIVE list to mark a
+      // row nobody can see would take the reveal off the note under the finger.
+      if (!row.isConnected) return;
+      ui.revealed = noteId;
+      // One note revealed at a time — the sheet is never noisy.
+      const scope = row.closest('.sheet') || row.ownerDocument;
+      for (const other of scope.querySelectorAll('.n-note.revealed')) other.classList.remove('revealed');
+      row.classList.add('revealed');
+    }, HOLD_MS);
+  });
+  row.addEventListener('pointermove', (e) => {
+    if (!from) return;
+    if (Math.abs(e.clientX - from.x) > HOLD_SLOP || Math.abs(e.clientY - from.y) > HOLD_SLOP) clear();
+  });
+  row.addEventListener('pointerup', clear);
+  row.addEventListener('pointercancel', clear);
+}
+
+// A root that is gone (tombstoned, or not yet synced) — its replies keep their
+// context under this quiet stub, and the conversation stays open: a thread does
+// not end because someone removed the first thing said in it.
+function stubRow(author, ctx, opts = {}) {
   const row = document.createElement('div');
   row.className = 'n-note stub';
   const av = document.createElement('span');
@@ -195,8 +366,23 @@ function stubRow(author) {
   body.className = 'n-body';
   const text = document.createElement('div');
   text.className = 'n-text';
-  text.textContent = author ? `${author} removed this note` : '…';
+  const who = author === ctx.meName ? 'you' : author;
+  text.textContent = who ? `${who} removed this note` : '…';
   body.appendChild(text);
+  if (opts.onReply) {
+    const cue = document.createElement('div');
+    cue.className = 'n-cue';
+    const acts = document.createElement('span');
+    acts.className = 'n-acts';
+    const reply = document.createElement('button');
+    reply.className = 'note-action';
+    reply.textContent = 'Reply';
+    reply.addEventListener('click', opts.onReply);
+    acts.append(reply);
+    cue.append(acts);
+    body.appendChild(cue);
+    wireReveal(row, `stub:${opts.threadKey}`, opts.ui);
+  }
   row.append(av, body);
   return row;
 }
@@ -204,7 +390,13 @@ function stubRow(author) {
 // ---- threads, rendered --------------------------------------------------------------
 // A pinned root sorts to the top and shows a reply COUNT, never its thread
 // (Kevin's rule, 2026-08-28); the count expands it in place for this open.
-function renderThreads(host, scope, target, ctx, { onChange, onReply, expandedPinned, editing }) {
+// `ui` is the sheet's per-open, never-synced state — see openScopeSheet.
+// The inline composer for a thread renders at that thread's FOOT, which is
+// where the note will actually land: a note always appends at the end of its
+// thread, so a field opened above three existing replies would promise a place
+// it cannot keep. For a root with no replies the foot IS directly under the
+// note you pressed, which is the common case.
+function renderThreads(host, scope, target, ctx, { onChange, expandedPinned, editing, ui }) {
   host.textContent = '';
   const pins = loadPins();
   const pinnedIds = new Set(pins[ctx.fid] || []);
@@ -214,15 +406,20 @@ function renderThreads(host, scope, target, ctx, { onChange, onReply, expandedPi
     const live = new Set(model.notesFor(state.crewDoc, ctx.fid, scope, target).map((n) => n.id));
     for (const id of [...editing.keys()]) if (!live.has(id)) editing.delete(id);
   }
-  const restoreEditFocus = () => {
+  // Exactly ONE field may claim the caret after a repaint. You can be editing
+  // note A while a reply composer is open on thread B, and a restore that
+  // simply focused the first live draft would yank the caret out of whichever
+  // one you were actually typing in. `ui.focusOwner` records the last field
+  // you touched; its own focus flag records whether you are still in it.
+  const restoreFocus = () => {
+    if (ui.focusOwner === 'reply') {
+      const ta = ui.replyFocused && host.querySelector('.n-inline textarea');
+      if (ta) { caretToEnd(ta); return; }
+    }
     if (!editing) return;
-    for (const input of host.querySelectorAll('input[data-editing]')) {
-      const draft = editing.get(input.dataset.editing);
-      if (draft && draft.focus) {
-        input.focus();
-        input.setSelectionRange(input.value.length, input.value.length);
-        return;
-      }
+    for (const field of host.querySelectorAll('textarea[data-editing]')) {
+      const draft = editing.get(field.dataset.editing);
+      if (draft && draft.focus) { caretToEnd(field); return; }
     }
   };
   if (!threads.length) {
@@ -232,96 +429,148 @@ function renderThreads(host, scope, target, ctx, { onChange, onReply, expandedPi
     host.appendChild(empty);
     return;
   }
+
+  const sameScope = (r) => r && r.scope === scope && r.target === target;
+  const canWrite = !!ctx.meName;
+  const noteOps = {
+    onEdit: (note, text) => { editNote(ctx, scope, target, note, text); onChange(); },
+    onDelete: (note, row) => {
+      thinOut(row, ctx, () => { deleteNote(ctx, scope, target, note); onChange(); });
+    },
+    onBeginEdit: () => onChange({ localOnly: true }),
+    onCancelEdit: () => onChange({ localOnly: true }),
+  };
+  // Replying targets the thread, and a reply to a reply pre-fills @Name — the
+  // words carry who you are answering, never the indentation (one level).
+  const beginReply = (threadKey, pressed) => {
+    const mention = pressed && pressed.re && pressed.author !== ctx.meName ? `@${pressed.author} ` : '';
+    ui.reply = { scope, target, threadKey, draft: mention };
+    ui.focusOwner = 'reply';
+    ui.replyFocused = true;
+    expandedPinned.add(threadKey);   // a folded thread opens to show you where it lands
+    ui.unfold = true;
+    onChange({ localOnly: true });
+  };
+
   for (const t of threads) {
+    const threadKey = t.root ? t.root.id : (t.replies[0] && t.replies[0].re);
     const block = document.createElement('div');
     block.className = 'n-thread';
+    const replying = canWrite && sameScope(ui.reply) && ui.reply.threadKey === threadKey;
     if (t.root) {
       const pinned = pinnedIds.has(t.root.id);
       const collapsed = pinned && t.replies.length && !expandedPinned.has(t.root.id);
       block.appendChild(noteRow(t.root, ctx, {
+        ...noteOps,
+        ui,
         pinned,
         editing,
         collapsedReplies: collapsed ? t.replies.length : 0,
         onToggleReplies: () => { expandedPinned.add(t.root.id); onChange({ localOnly: true }); },
         onPinToggle: () => { savePins(model.togglePin(loadPins(), ctx.fid, t.root.id)); onChange({ localOnly: true }); },
-        onReply: onReply ? () => onReply(t.root) : null,
-        onEdit: (note, text) => { editNote(ctx, scope, target, note, text); onChange(); },
-        onDelete: (note) => { deleteNote(ctx, scope, target, note); onChange(); },
+        onReply: canWrite ? (pressed) => beginReply(threadKey, pressed) : null,
       }));
-      if (collapsed) { host.appendChild(block); continue; }
+      if (collapsed && !replying) { host.appendChild(block); continue; }
     } else {
-      block.appendChild(stubRow(t.stubAuthor));
+      block.appendChild(stubRow(t.stubAuthor, ctx, {
+        ui,
+        threadKey,
+        onReply: canWrite ? () => beginReply(threadKey, null) : null,
+      }));
     }
-    if (t.replies.length) {
+    if (t.replies.length || replying) {
       const replies = document.createElement('div');
       replies.className = 'n-replies';
       for (const n of t.replies) {
         replies.appendChild(noteRow(n, ctx, {
+          ...noteOps,
+          ui,
           reply: true,
           editing,
-          onEdit: (note, text) => { editNote(ctx, scope, target, note, text); onChange(); },
-          onDelete: (note) => { deleteNote(ctx, scope, target, note); onChange(); },
+          onReply: canWrite ? (pressed) => beginReply(threadKey, pressed) : null,
         }));
       }
+      if (replying) replies.appendChild(inlineComposer(scope, target, threadKey, ctx, ui, onChange));
       block.appendChild(replies);
     }
     host.appendChild(block);
   }
-  restoreEditFocus();
+  restoreFocus();
+  if (ui.justAdded) {
+    // Not a selector: a note id may hold `.` and `|`, and CSS.escape is not
+    // everywhere jsdom goes.
+    const fresh = [...host.querySelectorAll('.n-note')].find((n) => n.dataset.note === ui.justAdded);
+    if (fresh) { arriveIn(fresh, ctx); ui.justAdded = null; }
+  }
+  if (ui.unfold && ui.reply && sameScope(ui.reply)) {
+    const box = host.querySelector('.n-inline');
+    if (box) { unfold(box, ctx); ui.unfold = false; }
+  }
 }
 
-// The composer, with a reply state: replying keeps whatever was typed and
-// only changes where it will land; ✕ returns to a plain note.
-function composer(placeholder, onSave, draftKey) {
+// The composer that opens where you pressed. Its draft lives in `ui`, not in
+// the DOM, so a remote repaint mid-sentence cannot eat it (audit 1.2).
+function inlineComposer(scope, target, threadKey, ctx, ui, onChange) {
+  const wrap = document.createElement('div');
+  wrap.className = 'n-inline';
+  const send = () => {
+    const text = field.ta.value.trim();
+    if (!text) return;
+    const id = addNote(ctx, scope, target, text, threadKey);
+    ui.reply = null;
+    ui.justAdded = id;
+    onChange();
+  };
+  const field = growingField(ui.reply.draft, 'Write a reply', {
+    onInput: (v) => { if (ui.reply) ui.reply.draft = v; },
+    onEnter: send,
+  });
+  field.ta.placeholder = 'Reply…';
+  field.ta.addEventListener('focus', () => { ui.focusOwner = 'reply'; ui.replyFocused = true; });
+  field.ta.addEventListener('blur', () => { ui.replyFocused = false; });
+  const cue = document.createElement('div');
+  cue.className = 'n-cue';
+  const acts = document.createElement('span');
+  acts.className = 'n-acts open';
+  const post = document.createElement('button');
+  post.className = 'note-action on';
+  post.textContent = 'Reply';
+  post.addEventListener('click', send);
+  const cancel = document.createElement('button');
+  cancel.className = 'note-action';
+  cancel.textContent = 'Cancel';
+  cancel.addEventListener('click', () => { ui.reply = null; onChange({ localOnly: true }); });
+  acts.append(post, ' · ', cancel);
+  cue.append(acts, field.counter);
+  wrap.append(field.ta, cue);
+  return wrap;
+}
+
+// The sheet's bottom composer writes NEW ROOT notes, and only those. Its reply
+// state retired 2026-08-30 — replying now happens inline, at the thread you
+// pressed, so this box can no longer silently re-aim an already-typed draft at
+// a root you have scrolled away from.
+function composer(placeholder, onSave) {
   const wrap = document.createElement('div');
   wrap.className = 'composer-wrap';
-  const replyLabel = document.createElement('div');
-  replyLabel.className = 'reply-to';
-  replyLabel.hidden = true;
   const row = document.createElement('div');
   row.className = 'composer';
-  const input = document.createElement('input');
-  input.maxLength = 500;
-  input.placeholder = placeholder;
-  input.setAttribute('aria-label', placeholder);
-  // Keyed composers survive the wall repaint: renderWall harvests drafts by
-  // this key before teardown and restores value/focus/caret after (audit 1.2).
-  if (draftKey) input.dataset.draftKey = draftKey;
-  let replyTo = null;
-  const cancel = document.createElement('button');
-  cancel.className = 'cancel';
-  cancel.textContent = '✕';
-  cancel.setAttribute('aria-label', 'Cancel reply');
-  cancel.hidden = true;
-  const setReply = (note) => {
-    replyTo = note;
-    replyLabel.hidden = !note;
-    cancel.hidden = !note;
-    input.placeholder = note ? 'Reply…' : placeholder;
-    input.setAttribute('aria-label', note ? `Reply to ${note.author === undefined ? '' : note.author}` : placeholder);
-    if (note) {
-      replyLabel.textContent = `Replying to ${note.author}`;
-      input.focus();
-    }
+  const save = () => {
+    const text = field.ta.value.trim();
+    if (!text) return;
+    field.ta.value = '';
+    field.grow();
+    onSave(text);
   };
-  cancel.addEventListener('click', () => setReply(null));
+  const field = growingField('', placeholder, { onEnter: save });
+  field.ta.placeholder = placeholder;
   const btn = document.createElement('button');
   btn.className = 'btn-tonal';
   btn.style.cssText = 'font-size: 12px; padding: 9px 15px; flex: none;';
   btn.textContent = 'Save';
-  const save = () => {
-    const text = input.value.trim();
-    if (!text) return;
-    input.value = '';
-    const to = replyTo;
-    setReply(null);
-    onSave(text, to);
-  };
   btn.addEventListener('click', save);
-  input.addEventListener('keydown', (e) => { if (e.key === 'Enter') save(); });
-  row.append(input, cancel, btn);
-  wrap.append(replyLabel, row);
-  wrap.setReply = setReply;
+  row.append(field.ta, btn);
+  wrap.append(row, field.counter);
   return wrap;
 }
 
@@ -433,7 +682,10 @@ function openScopeSheet(scope, target, ctx, onChange, occ = null) {
 
   // Per-open UI state that must survive live repaints (never synced).
   const expandedPinned = new Set();
-  const editing = new Map(); // note id -> { value, focus } — inline edit drafts
+  const editing = new Map(); // note id -> { value, focus, armed } — inline edit drafts
+  // revealed: the held note's id (touch only — hover and focus live in CSS).
+  // reply:    where the inline composer sits, and its draft, kept OUT of the DOM.
+  const ui = { revealed: null, reply: null, justAdded: null, unfold: false, focusOwner: null, replyFocused: false };
 
   let paintHeader = () => {};
   if (scope === 'artist') {
@@ -466,8 +718,8 @@ function openScopeSheet(scope, target, ctx, onChange, occ = null) {
   // The composer lives OUTSIDE paint() — a remote sync repainting the list
   // must never eat a half-typed note (audit 1.2). localOnly changes (a pin,
   // expanding a pinned thread) repaint without pushing anything.
-  const box = ctx.meName ? composer('Add a note…', (text, replyTo) => {
-    addNote(ctx, scope, target, text, replyTo ? (replyTo.re || replyTo.id) : null);
+  const box = ctx.meName ? composer('Add a note…', (text) => {
+    ui.justAdded = addNote(ctx, scope, target, text);
     paint();
     onChange();
   }) : null;
@@ -476,9 +728,9 @@ function openScopeSheet(scope, target, ctx, onChange, occ = null) {
     paintHeader();
     renderThreads(list, scope, target, ctx, {
       onChange: (o = {}) => { paint(); if (!o.localOnly) onChange(); },
-      onReply: box ? (root) => box.setReply(root) : null,
       expandedPinned,
       editing,
+      ui,
     });
   };
   paint();
@@ -530,13 +782,17 @@ export function openAllNotes(ctx) {
   sheetChrome(sheet, 'ALL NOTES');
 
   const expandedPinned = new Set();
-  const editing = new Map(); // note id -> { value, focus } — inline edit drafts
+  const editing = new Map(); // note id -> { value, focus, armed } — inline edit drafts
+  // One `ui` across every section: the inline composer names its own scope +
+  // target, so replying works here for artist and day threads too — it used to
+  // be fest-only because the one shared composer could only aim at one scope.
+  const ui = { revealed: null, reply: null, justAdded: null, unfold: false, focusOwner: null, replyFocused: false };
 
   // The composer lives OUTSIDE paint() — a remote sync repainting the list
   // must never eat a half-typed festival note (audit 1.2, same discipline as
   // the scope sheet).
-  const box = ctx.meName ? composer('Add a festival note…', (text, replyTo) => {
-    addNote(ctx, 'fest', null, text, replyTo ? (replyTo.re || replyTo.id) : null);
+  const box = ctx.meName ? composer('Add a festival note…', (text) => {
+    ui.justAdded = addNote(ctx, 'fest', null, text);
     paint();
     ctx.onNotesChange();
   }) : null;
@@ -560,9 +816,9 @@ export function openAllNotes(ctx) {
       host.className = 'n-list grouped';
       renderThreads(host, scope, target, ctx, {
         onChange: (o = {}) => { paint(); if (!o.localOnly) ctx.onNotesChange(); },
-        onReply: box && scope === 'fest' ? (root) => box.setReply(root) : null,
         expandedPinned,
         editing,
+        ui,
       });
       body.appendChild(host);
     };

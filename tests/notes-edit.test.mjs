@@ -58,8 +58,10 @@ test('the all-notes home offers a composer even with zero notes (NT-1)', () => {
   openAllNotes(ctx);
   const sheet = document.getElementById('artist-sheet');
   assert.ok(sheet, 'sheet opened');
-  const composerInput = sheet.querySelector('.composer input');
+  const composerInput = sheet.querySelector('.composer .n-field');
   assert.ok(composerInput, 'composer present in empty state');
+  assert.equal(composerInput.tagName, 'TEXTAREA', 'a growing field, not a 500-char single line');
+  assert.equal(composerInput.maxLength, 500);
   assert.match(composerInput.getAttribute('aria-label'), /festival note/i);
   closeSheet();
 });

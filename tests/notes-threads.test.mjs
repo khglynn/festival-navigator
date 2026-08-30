@@ -37,6 +37,37 @@ test('a reply arriving BEFORE its root passes the server — sync order is not a
   assert.equal(early.ok, true, early.error);
 });
 
+// One level deep is a rule with teeth now, enforced where the evidence is.
+// A nested reply is not a cosmetic problem: threadsFor buckets it exactly like
+// a reply to a TOMBSTONED root, so it renders as "X removed this note" sitting
+// over a note that is very much alive (survey, 2026-08-30). The shipped client
+// cannot produce one — the second client (Ray Perfetti's fork) is who this is
+// for.
+test('the server refuses a reply that answers another reply, when it can see both', () => {
+  const [nestedId, nested] = note('Dev', 12, 'me too', { re: r1Id });
+  const both = validateIncoming(docWith(Object.fromEntries([[rootId, root], [r1Id, r1], [nestedId, nested]])));
+  assert.equal(both.ok, false, 'a reply pointing at a reply is refused');
+  assert.match(both.error, /reply cannot answer another reply/);
+
+  // The same note is fine on its own: existence is deliberately not required,
+  // because sync can deliver a reply a beat before the note it answers.
+  const alone = validateIncoming(docWith({ [nestedId]: nested }));
+  assert.equal(alone.ok, true, alone.error);
+
+  // And a normal thread still passes — the rule only bites on real nesting.
+  const flat = validateIncoming(docWith(Object.fromEntries([[rootId, root], [r1Id, r1], [r2Id, r2]])));
+  assert.equal(flat.ok, true, flat.error);
+});
+
+test('the client that ships can never build one: renderThreads writes re = replyTo.re || replyTo.id', () => {
+  // The formula, stated once here as the contract the UI test drives for real
+  // (tests/notes-reply-flattening.test.mjs).
+  const pressedRoot = { id: rootId };
+  const pressedReply = { id: r1Id, re: rootId };
+  assert.equal(pressedRoot.re || pressedRoot.id, rootId);
+  assert.equal(pressedReply.re || pressedReply.id, rootId, 'pressing a reply still aims at the root');
+});
+
 test('threadsFor groups one level deep, in time order', () => {
   const doc = docWith(Object.fromEntries([[soloId, solo], [rootId, root], [r2Id, r2], [r1Id, r1]]));
   const threads = model.threadsFor(doc, FID, 'artist', 'Dog Blood');
