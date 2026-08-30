@@ -346,13 +346,13 @@ function openHowItWorks(actions) {
     const c = el('span', `font-size: 9px; font-weight: 700; padding: 3px 8px; border-radius: 999px; color: #fff; background: ${dashed ? 'transparent' : 'hsla(172,90%,62%,.5)'}; border: 1px solid ${dashed ? 'var(--border-emphasis)' : 'hsla(172,90%,62%,.9)'};${dashed ? ' border-style: dashed; color: var(--text-secondary);' : ''}${ring ? ' box-shadow: 0 0 0 1.5px rgba(255,255,255,.85);' : ''}${faded ? ' opacity: .42;' : ''}`, label);
     return c;
   };
-  // Order (Kevin, 2026-08-27 20:04): the people row leads — tap = their picks,
-  // hold = pick as them, said plainly — then how picking works, then what a
+  // Order (Kevin, 2026-08-27 20:04): the people row leads — tap = their picks
+  // (pick-as moved to Settings → You, 2026-08-29) — then how picking works, then what a
   // card shows, then the timetable moves, then how people get in, then the
   // dock's one fact, and a Settings pointer that repeats nothing above it.
   card.appendChild(lesson((d) => {
     d.append(chipDemo('Kat', { ring: true }), chipDemo('Drew', { faded: true }));
-  }, 'Tap a name to see their picks.', 'Tap more names to combine. Hold a name to pick as them — for a shared phone.'));
+  }, 'Tap a name to see their picks.', 'Tap more names to combine. Picking for someone else? Switch who you are in Settings → You.'));
   card.appendChild(lesson((d) => {
     [0.5, 0.75, 1].forEach((a) => {
       d.appendChild(el('span', `flex: 1; height: 30px; border-radius: 6px; border: 1px solid var(--hairline); background: radial-gradient(130% 130% at 20% 120%, hsla(10,90%,62%,${a}) 0%, transparent 78%), #1C1731;`));

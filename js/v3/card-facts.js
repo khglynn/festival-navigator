@@ -161,39 +161,117 @@ export function sheetCard(facts, { onClose, onOpenNotes = null } = {}) {
 }
 
 // ---- the zoom (one at a time) ------------------------------------------------------
-// The grown state is an AUGMENTATION of the production card: the resting
-// pieces (name centred, time, corner marks) fade as the grown block fades in,
-// while the card's own box animates width/height around its centre — with a
-// FLIP hop for the name so it travels instead of jumping. Width hugs the
-// grown content (measured, never guessed); at the grid's edges the growth
-// clamps inward like any tooltip.
-let zoomed = null; // { el, artist, source, prev: {width, marginLeft, minHeight, zIndex} }
+// The grown state is the SAME card. On the way in the box is set to its final
+// size at once and REVEALED by an animated clip (no stretching aura), while
+// every piece that exists at rest travels to its grown twin as a shared
+// element — translate + scale, one ease-in-out, the resting piece riding
+// along and dissolving over the last third. Nothing appears from nowhere and
+// nothing vanishes in place (Kevin, 2026-08-29: "things aren't sliding into
+// their new positions gracefully"). Width hugs the grown content (measured);
+// at the scrollport's edges the growth clamps inward like any tooltip.
+let zoomed = null; // { el, artist, source, grown, prev, anims, rest }
 
 // The intent numbers (research round, 2026-08-29): open slower than you
-// close never symmetric (NN/g 300-500ms in; Radix/Zag agree), and gestures
+// close, never symmetric (NN/g 300-500ms in; Radix/Zag agree), and gestures
 // key off the EVENT's pointer type, never a media query — (hover:none) lies
 // on a touchscreen laptop that is using a real mouse.
 export const ZOOM_IN_MS = 350;
 export const ZOOM_OUT_MS = 300;
+export const MORPH_MS = 320;
+const EASE = 'cubic-bezier(.45, 0, .2, 1)';
 
 export function zoomedCard() { return zoomed ? zoomed.el : null; }
 export function zoomSource() { return zoomed ? zoomed.source : null; }
 
+const canAnimate = (el) => typeof el.animate === 'function'
+  && !(typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+const rect = (el) => el.getBoundingClientRect();
+const mid = (r) => ({ x: r.left + r.width / 2, y: r.top + r.height / 2 });
+
+// A shared-element hop: `to` is laid out at its final place; it starts where
+// `from` was (translate + scale) and settles; `from` rides the same path and
+// dissolves. Both rects were measured in the same frame.
+function hop(toEl, fromRect, toRect, fromEl = null, ms = MORPH_MS) {
+  if (!toRect.width || !toRect.height || !fromRect.width || !fromRect.height) return [];
+  const a = mid(fromRect), b = mid(toRect);
+  const sx = fromRect.width / toRect.width, sy = fromRect.height / toRect.height;
+  const anims = [toEl.animate(
+    [{ transform: `translate(${a.x - b.x}px, ${a.y - b.y}px) scale(${sx}, ${sy})`, opacity: 0 },
+     { opacity: 1, offset: 0.55 },
+     { transform: 'none', opacity: 1 }],
+    { duration: ms, easing: EASE, fill: 'both' },
+  )];
+  if (fromEl) {
+    anims.push(fromEl.animate(
+      [{ transform: 'none', opacity: 1 },
+       { opacity: 1, offset: 0.3 },
+       { transform: `translate(${b.x - a.x}px, ${b.y - a.y}px) scale(${1 / sx}, ${1 / sy})`, opacity: 0 }],
+      { duration: ms, easing: EASE, fill: 'both' },
+    ));
+  }
+  return anims;
+}
+
+// The resting pieces and their grown twins, in pairing order.
+function restingPieces(el) {
+  return {
+    name: el.querySelector('.name'),
+    time: el.querySelector('.time'),
+    marks: [...el.querySelectorAll('.corner-who .mark:not(.ghost)')],
+    ghosts: [...el.querySelectorAll('.corner-who .mark.ghost, .chip-weekend, .spot-glow')],
+    notes: el.querySelector('.corner-about .chip-notes'),
+    spot: el.querySelector('.corner-about .chip-spotify'),
+  };
+}
+function grownPieces(grown) {
+  return {
+    sub: grown.querySelector('.f-sub'),
+    pills: [...grown.querySelectorAll('.f-pill')],
+    notes: grown.querySelector('.f-chip.notes'),
+    spot: grown.querySelector('.f-chip.spot'),
+  };
+}
+
 export function unzoom() {
   if (!zoomed) return;
-  const { el, prev, grown } = zoomed;
+  const { el, prev, grown, anims, rest } = zoomed;
   zoomed = null;
-  // The record owns ITS grown node — never a querySelector at teardown time:
-  // a re-zoom before the drop fired used to stack a second block, and the
-  // last one leaked (Codex gate, 2026-08-29). This node goes, whatever the
-  // card is doing by then.
-  if (grown) setTimeout(() => { if (grown.isConnected) grown.remove(); }, 340);
-  if (!el.isConnected) { if (grown && grown.isConnected) grown.remove(); return; }
+  for (const a of anims || []) { try { a.cancel(); } catch { /* finished */ } }
+  const finishRest = () => { for (const p of rest) p.style.opacity = ''; };
+  if (!el.isConnected) { if (grown && grown.isConnected) grown.remove(); finishRest(); return; }
+  const r0 = rect(el);
+  const nameEl = el.querySelector('.name');
+  const nameBefore = nameEl ? rect(nameEl) : null;
   el.classList.remove('zoom');
   el.style.width = prev.width;
   el.style.marginLeft = prev.marginLeft;
   el.style.minHeight = prev.minHeight;
   el.style.zIndex = prev.zIndex;
+  if (!grown || !canAnimate(el)) { if (grown && grown.isConnected) grown.remove(); finishRest(); return; }
+  // The way out: the box shrinks back (a layout animation, around the same
+  // centre), the grown block dissolves quickly, the name hops home, and the
+  // resting pieces fade in over the last half. Shorter than the way in.
+  const r1 = rect(el);
+  const ms = 260;
+  el.animate(
+    [{ width: `${r0.width}px`, minHeight: `${r0.height}px`, marginLeft: prev.marginLeft ? prev.marginLeft : `${r0.left - r1.left}px` },
+     { width: `${r1.width}px`, minHeight: `${r1.height}px`, marginLeft: prev.marginLeft || '0px' }],
+    { duration: ms, easing: EASE },
+  );
+  grown.animate([{ opacity: 1 }, { opacity: 0 }], { duration: ms * 0.45, easing: 'ease-out', fill: 'forwards' })
+    .onfinish = () => { if (grown.isConnected) grown.remove(); };
+  if (nameEl && nameBefore) {
+    const after = rect(nameEl);
+    const a = mid(nameBefore), b = mid(after);
+    nameEl.animate(
+      [{ transform: `translate(${a.x - b.x}px, ${a.y - b.y}px) scale(${nameBefore.height / (after.height || 1)})` }, { transform: 'none' }],
+      { duration: ms, easing: EASE },
+    );
+  }
+  for (const p of rest) {
+    p.animate([{ opacity: 0 }, { opacity: 0, offset: 0.4 }, { opacity: 1 }], { duration: ms, easing: EASE })
+      .onfinish = () => { p.style.opacity = ''; };
+  }
 }
 
 export function zoomCard(el, artistName, ctx, { onOpenNotes = null, source = 'mouse', occ = null } = {}) {
@@ -229,29 +307,36 @@ export function zoomCard(el, artistName, ctx, { onOpenNotes = null, source = 'mo
   const target = Math.min(360, Math.max(216, Math.ceil(probe.getBoundingClientRect().width) + 26, nameW));
   probe.remove();
 
-  const rect = el.getBoundingClientRect();
+  const r0 = rect(el);
   const grid = el.closest('.times-grid, .wall-grid');
-  let gridRect = grid ? grid.getBoundingClientRect() : rect;
+  let gridRect = grid ? rect(grid) : r0;
   // The timetable grid scrolls inside .times-scroll: clamp to what a person
   // can SEE, not to content hidden off-screen (Codex gate, 2026-08-29).
   const scroller = el.closest('.times-scroll');
   if (scroller) {
-    const sr = scroller.getBoundingClientRect();
-    gridRect = {
-      left: Math.max(gridRect.left, sr.left),
-      right: Math.min(gridRect.right, sr.right),
-    };
+    const sr = rect(scroller);
+    gridRect = { left: Math.max(gridRect.left, sr.left), right: Math.min(gridRect.right, sr.right) };
   }
-  const growth = Math.max(0, target - rect.width);
+  const growth = Math.max(0, target - r0.width);
   let shift = -growth / 2;
-  shift = Math.max(shift, gridRect.left - rect.left - 4);            // never past the left edge
-  shift = Math.min(shift, (gridRect.right - rect.right) - growth + 4); // nor the right
+  shift = Math.max(shift, gridRect.left - r0.left - 4);            // never past the left edge
+  shift = Math.min(shift, (gridRect.right - r0.right) - growth + 4); // nor the right
   if (!Number.isFinite(shift)) shift = 0;
 
-  const nameEl = el.querySelector('.name');
-  const before = nameEl ? nameEl.getBoundingClientRect() : null;
+  // FIRST: where every resting piece is.
+  const R = restingPieces(el);
+  const before = {
+    name: R.name ? rect(R.name) : null,
+    time: R.time ? rect(R.time) : null,
+    marks: R.marks.map(rect),
+    notes: R.notes ? rect(R.notes) : null,
+    spot: R.spot ? rect(R.spot) : null,
+  };
+  const rest = [R.time, ...R.marks, ...R.ghosts, R.notes, R.spot].filter(Boolean);
 
-  zoomed = { el, artist: artistName, source, grown, prev: { width: el.style.width, marginLeft: el.style.marginLeft, minHeight: el.style.minHeight, zIndex: el.style.zIndex } };
+  // LAST: the final layout, applied at once.
+  zoomed = { el, artist: artistName, source, grown, anims: [], rest,
+    prev: { width: el.style.width, marginLeft: el.style.marginLeft, minHeight: el.style.minHeight, zIndex: el.style.zIndex } };
   el.appendChild(grown);
   el.classList.add('zoom');
   el.style.width = `${target}px`;
@@ -261,21 +346,46 @@ export function zoomCard(el, artistName, ctx, { onOpenNotes = null, source = 'mo
   el.style.minHeight = '132px';
   el.style.zIndex = '30';
 
-  // FLIP the name: from its centred resting spot to the grown top slot, as a
-  // transform — the font never changes size mid-flight (scale carries it).
-  if (nameEl && before && typeof nameEl.animate === 'function') {
-    requestAnimationFrame(() => {
-      const after = nameEl.getBoundingClientRect();
-      if (!after.width) return;
-      const dx = before.left + before.width / 2 - (after.left + after.width / 2);
-      const dy = before.top + before.height / 2 - (after.top + after.height / 2);
-      const ds = before.height / after.height || 1;
-      nameEl.animate(
-        [{ transform: `translate(${dx}px, ${dy}px) scale(${ds})` }, { transform: 'none' }],
-        { duration: 300, easing: 'cubic-bezier(.2,.7,.2,1)' },
-      );
-    });
+  if (!canAnimate(el)) { for (const p of rest) p.style.opacity = '0'; return facts; }
+
+  // INVERT + PLAY: the box is revealed by a clip from the resting rect; every
+  // piece hops to its twin. One duration, one ease.
+  const r1 = rect(el);
+  const G = grownPieces(grown);
+  const anims = [];
+  anims.push(el.animate(
+    [{ clipPath: `inset(0px ${Math.max(0, r1.right - r0.right)}px ${Math.max(0, r1.bottom - r0.bottom)}px ${Math.max(0, r0.left - r1.left)}px round 8px)` },
+     { clipPath: 'inset(0px 0px 0px 0px round 8px)' }],
+    { duration: MORPH_MS, easing: EASE },
+  ));
+  if (R.name && before.name) {
+    const after = rect(R.name);
+    const a = mid(before.name), b = mid(after);
+    anims.push(R.name.animate(
+      [{ transform: `translate(${a.x - b.x}px, ${a.y - b.y}px) scale(${before.name.height / (after.height || 1)})` }, { transform: 'none' }],
+      { duration: MORPH_MS, easing: EASE },
+    ));
   }
+  if (G.sub && before.time) anims.push(...hop(G.sub, before.time, rect(G.sub), R.time));
+  else if (G.sub) anims.push(G.sub.animate([{ opacity: 0 }, { opacity: 1 }], { duration: MORPH_MS, easing: EASE }));
+  G.pills.forEach((pill, i) => {
+    const from = before.marks[i], fromEl = R.marks[i];
+    if (from) anims.push(...hop(pill, from, rect(pill), fromEl));
+    else anims.push(pill.animate([{ opacity: 0, transform: 'scale(.7)' }, { opacity: 0, offset: .4 }, { opacity: 1, transform: 'none' }], { duration: MORPH_MS, easing: EASE }));
+  });
+  // Marks beyond the pills shown (never, in practice) and the ghosts dissolve.
+  for (const extra of [...R.marks.slice(G.pills.length), ...R.ghosts]) {
+    anims.push(extra.animate([{ opacity: 1 }, { opacity: 0 }], { duration: MORPH_MS * 0.5, easing: EASE, fill: 'forwards' }));
+  }
+  if (G.notes) anims.push(...(before.notes ? hop(G.notes, before.notes, rect(G.notes), R.notes)
+    : [G.notes.animate([{ opacity: 0 }, { opacity: 0, offset: .4 }, { opacity: 1 }], { duration: MORPH_MS, easing: EASE })]));
+  if (G.spot) anims.push(...(before.spot ? hop(G.spot, before.spot, rect(G.spot), R.spot)
+    : [G.spot.animate([{ opacity: 0 }, { opacity: 0, offset: .4 }, { opacity: 1 }], { duration: MORPH_MS, easing: EASE })]));
+  // Once the hops land, the resting pieces stay away (their twins took over).
+  const settle = () => { if (zoomed && zoomed.el === el) for (const p of rest) p.style.opacity = '0'; };
+  const last = anims[anims.length - 1];
+  if (last) last.onfinish = settle; else settle();
+  zoomed.anims = anims;
   return facts;
 }
 

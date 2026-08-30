@@ -581,10 +581,11 @@
 .f-sub { color: rgba(255, 255, 255, .78); font-size: 11.5px; font-weight: 600; }
 .day-sub { color: var(--text-tertiary); margin-top: -6px; }
 .f-who { display: flex; flex-wrap: wrap; justify-content: center; gap: 5px 6px; }
-.f-pill { display: inline-flex; align-items: baseline; gap: 6px; color: #fff; font-size: 12.5px;
-          font-weight: 600; padding: 4px 11px; border-radius: var(--r-pill); line-height: 1.2; }
+.f-pill { display: inline-flex; align-items: center; gap: 6px; color: #fff; font-size: 12.5px;
+          font-weight: 600; padding: 0 11px; height: 26px; border-radius: var(--r-pill); line-height: 1; }
 .f-pill.you { font-weight: 800; }
-.f-pill b { font-size: 8.5px; font-weight: 800; letter-spacing: .1em; opacity: .9; }
+.f-pill b { font-size: 8.5px; font-weight: 800; letter-spacing: .1em; opacity: .9; line-height: 1;
+            transform: translateY(1px); /* optical: small caps sit on the name's baseline */ }
 .f-chips { display: flex; justify-content: center; align-items: center; gap: 6px; flex-wrap: wrap; }
 .f-chip { display: inline-flex; align-items: center; gap: 4px; height: 17px; padding: 0 9px;
           font-size: 10px; font-weight: 800; color: #fff; border-radius: var(--r-pill); border: none;
@@ -612,35 +613,20 @@ button.f-chip.notes { cursor: pointer; }
 .day-whisper .more { color: var(--text-tertiary); font-size: 10.5px; font-weight: 700; flex: none; white-space: nowrap; }
 .add-first-note { align-self: flex-start; }
 
-/* The zoom: the card grows around its centre (hover with intent on a mouse,
- * hold on touch — card-facts.js owns the timing); resting pieces fade as the
- * grown block fades in; strokes never survive the growth. Width and shift are
- * measured and inline; these rules carry the motion. */
-.card { transition: width .3s cubic-bezier(.2, .7, .2, 1), margin-left .3s cubic-bezier(.2, .7, .2, 1),
-                    min-height .3s cubic-bezier(.2, .7, .2, 1), box-shadow .3s ease; }
-.card .time, .corner-who, .corner-about, .chip-weekend, .spot-glow { transition: opacity .18s ease; }
+/* The zoom: the SAME card at its grown size — card-facts.js sets the final
+ * box at once and animates the reveal and every piece's hop with the Web
+ * Animations API (one ease, no CSS transitions, so nothing stretches or
+ * fades in place). These rules are the two static states. */
 .card.zoom { overflow: visible; z-index: 30; box-shadow: 0 18px 50px rgba(0, 0, 0, .55); }
 .card.zoom .time, .card.zoom .corner-who, .card.zoom .corner-about,
-.card.zoom .chip-weekend, .card.zoom .spot-glow { opacity: 0; pointer-events: none; }
-.card.zoom .name { position: absolute; left: 8px; right: 8px; top: 13px; font-size: 15px; }
+.card.zoom .chip-weekend, .card.zoom .spot-glow { pointer-events: none; }
+.card.zoom .name { position: absolute; left: 8px; right: 8px; top: 13px; font-size: 15px; z-index: 2; }
 .facts-grown { position: absolute; left: 8px; right: 8px; top: 38px; bottom: 10px; z-index: 1;
-               display: flex; flex-direction: column; gap: 7px; text-align: center;
-               opacity: 0; animation: factsIn .25s ease .1s forwards; }
+               display: flex; flex-direction: column; gap: 7px; text-align: center; }
 .facts-grown .f-spring { flex: 1; }
-@keyframes factsIn { to { opacity: 1; } }
 
 /* Afters/event cards: the day and time on one line, the venue on the next. */
 .card.timed .time { white-space: pre-line; }
-
-/* The chip door (pointer-fine): hovering a person chip reveals the way to the
- * second job, for people who would never guess the hold. */
-.chip-wrap { position: relative; display: inline-flex; }
-.chip-door { position: absolute; top: calc(100% + 5px); left: 0; z-index: 35; display: none;
-             white-space: nowrap; background: #141021; border: 1px solid var(--border-card);
-             border-radius: 8px; padding: 6px 10px; color: var(--text-body); font-size: 11.5px;
-             font-weight: 700; box-shadow: 0 12px 34px rgba(0, 0, 0, .5); cursor: pointer; font-family: inherit; }
-.chip-wrap.door-open .chip-door { display: inline-flex; }
-.chip-door .chev { color: var(--text-tertiary); margin-left: 4px; }
 
 /* ---- wall filters + the now line (2026-08-27) ----------------------------------- */
 /* People filter: selected chips wear a ring, the rest step back. On the

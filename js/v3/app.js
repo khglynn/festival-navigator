@@ -10,7 +10,7 @@ import * as spotify from '../spotify.js';
 import * as model from './model.js';
 import { loadFestivalIndex, loadFestival, loadCustomFestivals, FESTIVAL_INDEX, defaultFestivalId } from '../festivals.js';
 import { renderWall, refreshCard, showUndoToast, showToast, wireScrollspy, colorIndexOf, groupByDay, knownDaysOf, scheduledWeekendOf, extraSectionsOf, positionNowLines, scrollToNowLine } from './wall.js';
-import { loadPeopleFilter, savePeopleFilter, togglePerson, pruneToActive, loadSolo, saveSolo, chipGesture, armedName, armFor, cancelHold, ARM_MS } from './filters.js';
+import { loadPeopleFilter, savePeopleFilter, togglePerson, pruneToActive, loadSolo, saveSolo } from './filters.js';
 import { scrolledBefore, rememberScrolled, dayOfScrollKey } from './now.js';
 import { disclosureFold, eqLoader, festRow } from './tools.js';
 import { openArtistSheet, openDayNotes, openAllNotes, openFestNotes, closeSheet, refreshOpenSheet, sheetChrome, dialogize, rememberOpener } from './notes.js';
@@ -183,22 +183,14 @@ function applyFestTheme() {
   startFavicon(fest.accent, { lowPower: ctx.lowPower });
 }
 
-// A member chip has two jobs, told apart by the app's own tap/hold grammar
-// (cards: tap picks, hold opens notes):
-//   TAP  = the people filter (design option A, 2026-08-27): the wall shows
-//          only what that person picked; tap more chips to combine; your own
-//          chip is "my picks". A view, so it is cheap to try and cheap to undo
-//          (the "everyone ✕" chip at the end of the row).
-//   HOLD = the identity switch (FLOW-8 evolved, Kevin 2026-07-12), still
-//          behind its two-step confirm: the hold ARMS the chip ("Pick as
-//          Drew?"), a tap within 3s switches. Tap-to-arm was the chip's only
-//          job before the filter; a stray thumb still can't reassign the
-//          device, and Settings keeps the explicit switch for keyboards.
+// A member chip has ONE job (2026-08-29): TAP = the people filter (design
+// option A, 2026-08-27) — the wall shows only what that person picked; tap
+// more chips to combine; your own chip is "my picks". A view, so it is cheap
+// to try and cheap to undo (the "everyone ✕" chip at the end of the row).
+// Picking AS someone else lives in Settings → You: people rarely switch, and
+// a hold-arm-confirm dance on the wall was machinery for a rare act (Kevin).
 function renderPersonChips() {
   const row = $('person-chips');
-  // A rebuild mid-hold cancels the hold (the old chip is gone) and swallows
-  // its release; the person holds again if they meant it.
-  cancelHold();
   row.textContent = '';
   const filter = ctx.filterPeople || [];
   for (const [name, p] of state.activePeople()) {
@@ -213,66 +205,12 @@ function renderPersonChips() {
     if (selected) chip.classList.add('selected');
     else if (filter.length) chip.classList.add('faded');
     chip.setAttribute('aria-pressed', selected ? 'true' : 'false');
-    const canSwitch = !isMe && !!ctx.meName;
     const whose = isMe ? 'your' : `${name}'s`;
     chip.setAttribute('aria-label', selected
       ? (filter.length > 1 ? `Remove ${name} from the filter` : `Showing only ${whose} picks; tap to show everyone`)
-      : `Show only ${whose} picks${canSwitch ? '; hold to pick as them' : ''}`);
-    // The arm survives a repaint: a chip rebuilt mid-confirm re-renders armed
-    // and its next tap still switches (the arm lives in filters.js, by name).
-    if (canSwitch && armedName() === name) showArmed(chip, name);
-    const g = chipGesture(name, {
-      canSwitch,
-      onFilter: togglePeopleFilter,
-      // Arming updates THIS node in place — never a rebuild: the finger that
-      // armed it is still down, and replacing the chip under it would hand
-      // the release, as a click, to a fresh node whose gesture never saw the
-      // hold (and a click on an armed chip is the confirm). The row is
-      // rebuilt only once the arm has expired, to put the name back.
-      onArmed: () => { showArmed(chip, name); setTimeout(() => { if (armedName() !== name) renderPersonChips(); }, ARM_MS + 50); },
-      onSwitch: (n) => { switchIdentity(n); repaintWall(); },
-    });
-    if (canSwitch) {
-      chip.addEventListener('pointerdown', g.pointerdown);
-      for (const ev of ['pointerup', 'pointercancel', 'pointerleave']) chip.addEventListener(ev, g.pointerend);
-      chip.addEventListener('contextmenu', (e) => e.preventDefault()); // a long press must not open the OS callout
-    }
-    chip.addEventListener('click', g.click);
-    if (!canSwitch) { row.appendChild(chip); continue; }
-    // The door (2026-08-29): hovering the chip reveals "Pick as N ›" for
-    // people who would never guess the hold. Clicking it ARMS the same
-    // two-step confirm the hold uses — the next tap on the chip switches.
-    // Keyed off the event's pointer type, never a media query.
-    const wrap = document.createElement('span');
-    wrap.className = 'chip-wrap';
-    wrap.appendChild(chip);
-    const door = document.createElement('button');
-    door.className = 'chip-door';
-    door.textContent = `Pick as ${name}`;
-    const chev = document.createElement('span');
-    chev.className = 'chev';
-    chev.textContent = '›';
-    door.appendChild(chev);
-    door.addEventListener('click', (e) => {
-      e.stopPropagation();
-      wrap.classList.remove('door-open');
-      armFor(name);
-      showArmed(chip, name);
-      setTimeout(() => { if (armedName() !== name) renderPersonChips(); }, ARM_MS + 50);
-    });
-    wrap.appendChild(door);
-    let doorT = null;
-    wrap.addEventListener('pointerenter', (e) => {
-      if (e.pointerType !== 'mouse') return;
-      if (doorT) clearTimeout(doorT);
-      doorT = setTimeout(() => { doorT = null; if (armedName() !== name) wrap.classList.add('door-open'); }, 300);
-    });
-    wrap.addEventListener('pointerleave', (e) => {
-      if (e.pointerType !== 'mouse') return;
-      if (doorT) { clearTimeout(doorT); doorT = null; }
-      wrap.classList.remove('door-open');
-    });
-    row.appendChild(wrap);
+      : `Show only ${whose} picks`);
+    chip.addEventListener('click', () => togglePeopleFilter(name));
+    row.appendChild(chip);
   }
   if (filter.length) {
     const all = document.createElement('button');
@@ -297,13 +235,6 @@ function renderPersonChips() {
     add.addEventListener('click', () => { openAddMember(); router.push('sheet:add-member'); });
     row.appendChild(add);
   }
-}
-
-// The armed look, in one place: the chip asks the question, and assistive
-// tech hears the question rather than the pre-arm label.
-function showArmed(chip, name) {
-  chip.textContent = `Pick as ${name}?`;
-  chip.setAttribute('aria-label', `Pick as ${name}? Tap again to switch to picking as them`);
 }
 
 function setPeopleFilter(names) {
