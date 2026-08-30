@@ -5,6 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Festival Navigator</title>
     <meta name="theme-color" content="#0C0A14">
+    <!-- A fork sets ITS host here, once — js/spotify.js and js/v3/settings.js
+         derive the Spotify OAuth hop and every on-screen string that names the
+         host from this tag (Ray Perfetti's issue #6: the value used to live in
+         shipped source, so a fork's users were handed to OUR domain with their
+         tokens in the hash). docs/fork-setup.md is the fork runbook. -->
+    <meta name="fn-canonical-host" content="fest.kevinhg.com">
     <link rel="manifest" href="/manifest.json">
     <link rel="icon" type="image/png" href="/favicon.png">
     <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
