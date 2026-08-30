@@ -307,6 +307,11 @@ export function wireCardZoom(el, artistName, ctx, { onOpenNotes = null, occ = nu
 export function wireCardFocusZoom(el, artistName, ctx, { onOpenNotes = null, occ = null } = {}) {
   el.addEventListener('focusin', () => {
     if (zoomed && zoomed.el === el) return;
+    // KEYBOARD focus only: a mouse click and a finger tap also focus the
+    // card, and zooming there would bypass the hover-intent delay and grow
+    // the card under every pick. :focus-visible is the browsers' own
+    // keyboard-vs-pointer call; engines without it just skip this route.
+    try { if (!el.matches(':focus-visible')) return; } catch { return; }
     zoomCard(el, artistName, ctx, { onOpenNotes, source: 'keyboard', occ });
   });
   el.addEventListener('focusout', (e) => {
