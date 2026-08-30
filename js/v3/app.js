@@ -49,10 +49,11 @@ const ctx = {
   onOpenNotes: (artist, occ = null) => {
     unzoom(); // the sheet replaces the preview — never leave it under the modal
     openArtistSheet(artist, ctx, onNotesChange, occ);
-    // The occurrence rides in the route key (a newline can never be in a
-    // name — name-rules forbids control characters), so back, forward and a
-    // refresh reopen THIS set for an artist who plays twice.
-    router.push(`sheet:notes:${artist}${occ ? '\n' + JSON.stringify(occ) : ''}`);
+    // The occurrence rides in the route key as one JSON payload — no assumed
+    // delimiter (an artist name may legally hold any character the festival
+    // file allows) — so back, forward and a refresh reopen THIS set for an
+    // artist who plays twice. Plain legacy keys (sheet:notes:<name>) restore too.
+    router.push(`sheet:notes:${occ ? JSON.stringify({ artist, occ }) : artist}`);
   },
   onOpenDayNotes: (day) => {
     openDayNotes(day, ctx, onNotesChange);
@@ -1819,9 +1820,11 @@ export function init() {
     else if (key === 'sheet:fest') openFestNotes(ctx, onNotesChange);
     else if (key.startsWith('sheet:day:')) openDayNotes(key.slice('sheet:day:'.length), ctx, onNotesChange);
     else if (key.startsWith('sheet:notes:')) {
-      const [artist, occJson] = key.slice('sheet:notes:'.length).split('\n');
-      let occ = null;
-      try { occ = occJson ? JSON.parse(occJson) : null; } catch { occ = null; }
+      const rest = key.slice('sheet:notes:'.length);
+      let artist = rest, occ = null;
+      if (rest.startsWith('{')) {
+        try { const p = JSON.parse(rest); if (p && typeof p.artist === 'string') { artist = p.artist; occ = p.occ || null; } } catch { /* a legacy plain name that happens to start with a brace */ }
+      }
       openArtistSheet(artist, ctx, onNotesChange, occ);
     }
   }, () => closeSheet());
