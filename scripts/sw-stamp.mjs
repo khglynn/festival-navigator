@@ -26,11 +26,18 @@ export function appCoreFiles(sw) {
   return [...block[1].matchAll(/'(\/[^']+)'/g)].map((m) => m[1]).filter((f) => f !== '/service-worker.js');
 }
 
+const TEXT_RE = /\.(?:js|mjs|css|html|json|svg|txt|md)$/i;
+
 export function assetStamp(sw) {
   const h = createHash('sha1');
   for (const f of appCoreFiles(sw)) {
     h.update(f);
-    h.update(readFileSync(join(ROOT, f)));
+    // Text files are CRLF-normalised: a Windows checkout (autocrlf) must
+    // stamp the same as the LF one, or the suite goes red on one machine only.
+    // Binaries (the woff2 fonts) hash as bytes — decoding them as text
+    // mangles invalid UTF-8 and the stamp drifts for no change at all.
+    const bytes = readFileSync(join(ROOT, f));
+    h.update(TEXT_RE.test(f) ? bytes.toString('utf8').replace(/\r\n/g, '\n') : bytes);
   }
   return h.digest('hex').slice(0, 8);
 }
