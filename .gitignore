@@ -32,8 +32,17 @@ screenshots/
 1440/
 offline/
 
-# Deny every image by default; name the three that actually ship.
+# Deny every image by default; name the ones that actually ship. The deny
+# covers jpg/jpeg too — walker screenshots are PNG today, but a rule that only
+# knows one extension is one `--save-as` away from being wrong, and the whole
+# point is that a careless `git add -A` cannot leak a crew token in a picture.
+# Every raster below is generated: `npm run brand` (scripts/brand-assets.mjs).
 *.png
+*.jpg
+*.jpeg
 !favicon.png
 !icon-192.png
 !icon-512.png
+!icon-maskable-512.png
+!apple-touch-icon.png
+!assets/og/*.jpg

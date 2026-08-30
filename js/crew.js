@@ -73,9 +73,20 @@ const FEST_ID_RE = /^[a-z0-9-]{1,64}$/;
 // member's phone opens their link and lands on their own circle, picks
 // already theirs (Kevin note 5, 2026-07-12).
 export function crewLink(token, festId, meName) {
-  const f = festId && FEST_ID_RE.test(festId) ? `&f=${festId}` : '';
+  const ok = Boolean(festId) && FEST_ID_RE.test(festId);
+  // The fest id rides in the QUERY as well as the hash. A link-preview crawler
+  // (iMessage, Slack) and a Vercel rewrite can both read a query and neither
+  // can read a fragment — that query is what api/share.js keys the per-festival
+  // preview card on. The hash copy stays because it is what the running app
+  // reads (festFromHash), so the boot path is untouched by the addition.
+  //
+  // The TOKEN never joins it. A query param lands in platform access logs and
+  // referrer headers, and a crew token IS that crew's data (CLAUDE.md, with
+  // teeth) — a festival id is public catalogue information, a token is not.
+  const q = ok ? `?f=${festId}` : '';
+  const f = ok ? `&f=${festId}` : '';
   const m = meName ? `&me=${encodeURIComponent(meName)}` : '';
-  return `${location.origin}/#g=${token}${f}${m}`;
+  return `${location.origin}/${q}#g=${token}${f}${m}`;
 }
 
 // The member a personal invite link is for (#g=<token>&me=<name>). Read at

@@ -8,10 +8,31 @@
     <link rel="manifest" href="/manifest.json">
     <link rel="icon" type="image/png" href="/favicon.png">
     <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
-    <link rel="apple-touch-icon" href="/icon-192.png">
+    <!-- Full-bleed on purpose: iOS rounds an apple-touch-icon itself, and the
+         rounded icons' transparent corners composite to black on a home screen. -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+    <!-- OG:BEGIN — the link preview. api/share.js REPLACES this whole block with
+         per-festival tags when a link carries ?f=<fest-id>; the markers are how
+         it finds the block, so keep them, and keep the block contiguous.
+         Images are pre-rendered by `npm run brand` — nothing renders at request
+         time. Copy here is the landing screen's, verbatim. -->
+    <meta name="description" content="Pick artists with your people. Works with no signal.">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Festival Navigator">
+    <meta property="og:title" content="Festival Navigator">
+    <meta property="og:description" content="Pick artists with your people. Works with no signal.">
+    <meta property="og:url" content="https://fest.kevinhg.com/">
+    <meta property="og:image" content="https://fest.kevinhg.com/assets/og/default.jpg">
+    <meta property="og:image:type" content="image/jpeg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Festival Navigator — pick artists with your people.">
+    <meta name="twitter:card" content="summary_large_image">
+    <!-- OG:END -->
     <link rel="stylesheet" href="/assets/fonts/fonts.css">
     <link rel="stylesheet" href="/assets/v3-tokens.css">
     <link rel="stylesheet" href="/assets/v3.css">

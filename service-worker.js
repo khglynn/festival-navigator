@@ -2,7 +2,7 @@
 // Bump CACHE_VERSION whenever you change cached static assets — `node
 // scripts/sw-stamp.mjs` does the bump and re-stamps; the suite fails when the
 // stamp is stale, so a silent asset change can never ship under an old version.
-const CACHE_VERSION = 'festival-nav-v49'; // v44 = the notes/desktop round: threads, the zoom morph, the day whisper, aura sheets; pick-as moved to Settings (v43 was its first cut)
+const CACHE_VERSION = 'festival-nav-v50'; // v44 = the notes/desktop round: threads, the zoom morph, the day whisper, aura sheets; pick-as moved to Settings (v43 was its first cut)
 const ASSET_STAMP = 'f4fd851d'; // sha1 of APP_CORE — node scripts/sw-stamp.mjs after any cached-asset change (the suite checks it)
 
 // Festival JSONs live in their OWN cache, outside the version-keyed shell

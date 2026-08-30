@@ -26,6 +26,10 @@ it lives. Adding one: [`docs/add-a-festival.md`](docs/add-a-festival.md).
   the crew gets a color, and overlapping picks blend on the wall so you can see
   at a glance where the crew is converging.
 - **Notes** attach to an artist, a day, or the festival itself.
+- **A link looks like the festival it opens.** Paste one into iMessage or Slack
+  and it unfurls as that fest's own card — its name in the display face, on a
+  wash of its accent. The images are rendered ahead of time by `npm run brand`;
+  nothing is generated when someone clicks.
 - **Offline-first.** Picks land in `localStorage` instantly and sync when signal
   returns. The server merges every write atomically, so two people picking at
   once can never clobber each other.
@@ -70,8 +74,12 @@ api/_lib/                     validation + guards shared by client and server
 db/schema.sql                 Neon Postgres schema incl. the atomic jsonb_deep_merge()
 assets/v3-tokens.css          design tokens — look values up here, never invent them
 assets/v3.css                 components; hand-written, no framework, no build step
+assets/mark.svg               the mark — one vector source for every icon and preview
+assets/og/                    pre-rendered link previews, one per festival
+api/share.js                  per-festival link previews: index.html with its OG tags swapped
 data/festivals/index.json     the festival list (single source of truth)
 scripts/validate-festivals.mjs  run before committing festival data; CI enforces it
+scripts/brand-assets.mjs      npm run brand — regenerates the icons and every link preview
 tests/                        node --test suites (npm test)
 docs/user-flows.md            what every screen is supposed to do
 docs/add-a-festival.md        how to add a festival
