@@ -2,6 +2,53 @@
 
 Newest first. One entry per meaningful unit of work.
 
+## 2026-08-30 — the clean round: a survey with skeptics, nine teammates, and the zoom rebuilt three times in daylight
+
+- **The survey came first** (ultracode): ten Sonnet readers over every
+  subsystem, a skeptic re-reading every finding at its file:line, two web
+  researchers (comment-UI patterns across 15 products; what ACL/Seismic/Lost
+  Lands have actually published), one Opus synthesis. 55 findings, 0 refuted,
+  1 P0 — the zoomed card swallowed every click after the first, four readers
+  reaching the same line independently. The P0 and the row-reflow were
+  exactly Kevin's two complaints, now with mechanisms attached.
+- **The zoom was rebuilt live against Kevin's eyes, three times** — overlay
+  (no reflow), then colour/one-model (an appended background layer had made
+  the CSS shorthand invalid: every grown card went black; the deeper fix
+  made `factsFor` the ONE card model both renderers draw from), then
+  personality (cross-fade frame 0, corner-origin arrivals, stagger +
+  overshoot, uniform-scale hops after the time line smeared). Codex reviewed
+  the architecture before a line was written and its four corrections all
+  proved load-bearing.
+- **A usage pause silently starved nine teammates for an hour** — alive in
+  the pane list, zero bank files, queued wake-ups never draining. TaskStop
+  ×9, respawn with the same briefs plus one new law: create the bank file
+  BEFORE the first edit. The relaunched set delivered everything; the law is
+  now in hg-save-it's agent-brief pattern.
+- **Verification kept earning its keep**: the settings agent's disconnect
+  fix would have bricked sync (null is refused by `validateAffinity` and
+  IGNORED by the merge — zeroed writes are the mechanic); the link-preview
+  agent's local harness missed that Vercel serves the filesystem before
+  rewrites (caught by reading the live preview's served bytes; the fix moved
+  links to `/f/<fest-id>`, docs-confirmed, with tests proven red against two
+  broken configs — and its own first shadow test had passed on the broken
+  config); the walker's 8 FAILs split into 3 real zoom bugs (hold-lift
+  picked: armed one event early; keyboard growth gated by the pointer's
+  dismissed rule; scroll-dismiss unreproducible under a scripted real
+  scroll — flagged for a real-wheel re-check) and 5 items that were just
+  v48 walking ahead of uncommitted work.
+- **Design flowed through a canvas Kevin could argue with**: mechanics
+  directions (A/B/C), then arrangement paradigms on his "root in use cases"
+  note, then his pick — A, pin on hover in the top row — built by the same
+  Opus teammate that owned notes.js all day. His motion standard is now the
+  project CLAUDE.md's "How this app moves"; GIFs became watchable via
+  ffmpeg contact sheets.
+- **Shipped beyond the app**: the Tecovas Fable fan-out guard (SessionStart
+  rules + a PreToolUse ask on Workflow/Agent, transcript-sniffed, fails
+  open) to the whole-workforce marketplace; the latitude-scales-with-model
+  rule to both global CLAUDE.mds; the agent-brief pattern to hg-save-it;
+  Ray's issue #6 closed in code with a fork runbook; per-fest link previews
+  with the mark replacing the last of the old green grid.
+
 ## 2026-08-29 — the notes/desktop round: four design rounds, one build, three Codex gates
 
 - **Design that landed.** The 08-27 canvas failed on fidelity, so the rig

@@ -1,4 +1,81 @@
-# NOW — festival-navigator: v42 LIVE ON PROD · the notes/desktop round is BUILT on `notes-desktop-round` (2026-08-29), waiting on Kevin's promote
+# NOW — festival-navigator: the CLEAN ROUND is on `notes-desktop-round` (PR #13), preview-verified, waiting on Kevin's promote · v42 still on prod
+
+**last-updated: 2026-08-30 · mode: live**
+
+## 2026-08-30 — the clean round: survey → fix → redesign, nine teammates, everything named shipped
+
+Kevin opened unable to merge PR #13 in good faith ("rough from a working
+relationship and quality standpoint"). A 23-agent survey (10 readers, a
+skeptic each, 2 researchers, 1 synthesis — `claude-plans/2026-08-30-survey/LEDGER.md`,
+55 findings, 0 refuted) confirmed his three animation complaints at the code
+level, then the day rebuilt the round. All of it is ON THE BRANCH, suite
+305/306 green (1 env skip), SW v53:
+
+- **The zoom is an overlay, never a reflow** (`js/v3/card-facts.js` rebuilt
+  three times to Kevin's live notes): grows anchored on the card's centre
+  (only screen sides nudge it), tappable from frame 0 (hit target over a
+  separately clipped surface), a cross-fade so frame 0 IS the resting card,
+  pieces arrive from their corners a beat apart with a 4% overshoot, hops
+  scale uniformly by height (no text smear), name 18px, a pick while zoomed
+  FLIPs the pills/wash instead of jumping, hold-lift can't pick (armed after
+  the lift's click), Low Power = instant. `renderCard` and the zoom render
+  from ONE model (`factsFor`) so details can't drop between them — the root
+  cause of two rough sessions. `tests/zoom-overlay.test.mjs` pins it all;
+  `gallery.html` opens with "THE ZOOM — every state, live" (16 states, slow-mo
+  and low-power toggles) — Kevin's design-pass surface.
+- **Comments are the OPEN DOOR** (Kevin's pick from the design canvas
+  https://claude.ai/code/artifact/ce03d473-c9d8-47eb-9057-0bb96867e704):
+  every thread ends with an always-there "Reply…" row that unfolds into the
+  composer in place; no Reply control on any note, no @ prefill — one level
+  deep is structure, and the server refuses a nested `re` (Ray's fork is
+  client two). Pin on hover/hold/focus in the TOP row, Edit joins it on your
+  own notes, Delete only inside Edit (two-tap arm, aria-live), textarea +
+  counter, drafts survive live syncs. His flagged watch-item: the door
+  repeats per thread — look at a busy sheet before promote.
+- **Crew links unfurl as the fest's poster**: `fest.kevinhg.com/f/<fest-id>#g=…`
+  (human-readable; the token stays hash-only, tested), `api/share.js` serves
+  per-fest OG tags (rewrite verified against real Vercel — the first cut's
+  `source:"/"` could never fire; filesystem beats rewrites, now pinned by
+  tests verified red against broken configs), per-fest 1200×630 JPEGs +
+  the new mark (`assets/mark.svg`, `scripts/brand-assets.mjs` regenerates
+  everything; old green-grid icons retired). Full unfurl proof needs prod.
+- **Settings**: You above Crew; case-insensitive self-rename (vs the FULL
+  people map); Spotify disconnect writes ZEROED affinity crew-wide (null is
+  refused by validation AND ignored by the merge — caught in lead review).
+- **Lost Lands**: short dates, timezone, dayMeta; day labels derive via
+  `js/time.js dayLabelParts` (wall rule, tab, day sheet); pre-party poster
+  read — no per-artist times exist; 8 main-bill artists also play Wednesday
+  (in meta.note, lands with the day-tag ingest). ACL: timezone + corrected
+  note (set times ARE live as six images). `docs/fest-update-runbook.md` is
+  the small-agent path for the ingests.
+- **Forks set their host in ONE tag** (issue #6): `fn-canonical-host` meta in
+  index.html; strings derive; `docs/fork-setup.md`. Drafts for Ray (issue
+  reply + email) await Kevin's yes: `claude-plans/2026-08-30-ray-drafts.md`.
+- **Harness (Kevin as Tecovas admin)**: both global CLAUDE.mds open Agents-
+  and-model-economics with two rules (never Fable in a workflow/fan-out
+  without explicit permission; latitude scales with the model);
+  `tecovas-max-kit` SHIPPED with a SessionStart rules hook + a PreToolUse
+  Fable fan-out guard (marketplace 8ff919e); the agent-brief pattern is in
+  hg-save-it (`references/agent-brief-pattern.md`, 9e5ebc2). Project
+  CLAUDE.md gained "How this app moves" (the motion vibe — read it before
+  touching any surface).
+
+**Open — Kevin's calls:** promote PR #13 (then post the issue-#6 reply and
+send the Ray email from the drafts); the door density on a busy sheet; the
+link-preview trio (JPEG previews · the mark's coral whisper · fest accent in
+the OG wash — all argued in `claude-plans/2026-08-30-survey/link-preview.md`);
+4 Dependabot PRs vs main (merging = prod deploys — after the promote);
+Neon cleanup: walker crew `zz-walk-0830` (token in the walk report, not in
+files), its accidental duplicate Lost Lands board, person `rx3PPUEYYkgf`,
+plus the 08-29 leftovers NOW already lists. Real finding riding that: Settings
+"+ Add a festival" always creates a NEW board, even for a fest you already
+have.
+
+**Then:** ACL set-times ingest (six images, before Oct 2 — the lead session
+can transcribe), Lost Lands day tags (droppable now), Seismic ~Sept 18; a
+final real-wheel scroll-dismiss re-check rides the next walk; backlog in the
+LEDGER's build-order tail (viewport-gating card auras, `backdrop-filter` in
+low-power, Spotify b2b splitting, user-flows in the CI doc gate…).
 
 ## 2026-08-29 — the notes/desktop round: designed in four canvas rounds, built, gated three times by Codex, walked
 
