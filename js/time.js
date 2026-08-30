@@ -68,3 +68,18 @@ export function computeDayArtists(dayData) {
   });
   return raw;
 }
+
+// A day KEY is frozen pick data (artists[].day) and can be verbose —
+// "Wednesday, Sept 16 (Early Arrival Pre-Party)". Every place that shows a
+// day (the wall's day rule, the day tab, the day sheet) derives its label
+// here, once: the weekday leads, the aside in parentheses becomes a sub
+// line, and a comma-clause (a date spelled into the key) yields to dayMeta's
+// date. Keys are never rewritten — a rename orphans picks.
+export function dayLabelParts(day) {
+  const s = String(day || '').trim();
+  const m = /^(.*?)\s*\((.*)\)\s*$/.exec(s);
+  const base = (m ? m[1] : s).trim();
+  const aside = m ? m[2].trim() : '';
+  const head = (base.split(',')[0] || base).trim() || base;
+  return { head, aside };
+}

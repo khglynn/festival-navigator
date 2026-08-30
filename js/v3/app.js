@@ -17,7 +17,8 @@ import { openArtistSheet, openDayNotes, openAllNotes, openFestNotes, closeSheet,
 import { renderSettings, appSettings, openSubviewByKey } from './settings.js';
 import { onStorageWriteFail, saveLS, getLS, errorText } from '../util.js';
 import { router, encodeNotesKey, decodeNotesKey } from './router.js';
-import { wireCardZoom, wireCardFocusZoom, zoomCard, unzoom, dismissZoom, zoomedCard, zoomSource } from './card-facts.js';
+import { wireCardZoom, wireCardFocusZoom, zoomCard, unzoom, dismissZoom, zoomedCard, zoomContains, zoomSnapshot, refreshZoom } from './card-facts.js';
+import { dayLabelParts } from '../time.js';
 import { createSortControl } from './sort-control.js';
 import { nameProblem } from '../name-rules.mjs';
 import { startFavicon, stopFavicon } from './favicon.js';
@@ -70,22 +71,17 @@ const ctx = {
     wireCardZoom(el, artist, ctx, opts);
     wireCardFocusZoom(el, artist, ctx, opts);
   },
+  // A hold on touch grows the card the same way a hover does; a tap on the
+  // grown card then PICKS, like a tap on the resting one (Kevin, 2026-08-30 —
+  // one grammar on both surfaces). Tap outside, Escape or a scroll put it away.
   onPeek: (artist, el, occ) => zoomCard(el, artist, ctx, { onOpenNotes: (a) => ctx.onOpenNotes(a, occ), source: 'touch', occ }),
-  // A touch-born zoom is a preview: tapping its body puts it away rather than
-  // picking (the resting card is where a tap means pick). A mouse zoom is
-  // just hover — clicking still picks.
-  onZoomTap: (el) => {
-    if (zoomedCard() === el && zoomSource() === 'touch') { dismissZoom(); return true; }
-    return false;
-  },
 };
 
 // One zoom at a time, dismissed the way previews are everywhere: a tap or
-// press anywhere outside it, or Escape. Capture-phase so it runs before the
-// tap it is judging.
+// press anywhere outside it (the resting card AND its overlay), or Escape.
+// Capture-phase so it runs before the tap it is judging.
 document.addEventListener('pointerdown', (e) => {
-  const z = zoomedCard();
-  if (z && !z.contains(e.target)) dismissZoom();
+  if (zoomedCard() && !zoomContains(e.target)) dismissZoom();
 }, true);
 // Escape closes ONE layer: a live zoom eats the press before any sheet or
 // router handler sees it (capture phase) — never both in one keypress.
@@ -120,27 +116,21 @@ function refreshCtx() {
 // A multi-day artist has one card under EACH day — a pick must repaint every
 // sibling, or the others go stale and invite double-cycling (CORE-15).
 function refreshArtistCards(artistName) {
-  const els = document.querySelectorAll(`#wall-root .card[data-artist="${CSS.escape(artistName)}"]`);
-  // A single-card refresh replaces the node — a zoom on it would be orphaned
-  // with the singleton pointing at a detached card (Codex gate, 2026-08-29).
-  // A pick while zoomed keeps the zoom: the person is still resting on the
-  // card (cycling to MUST while watching the pills). The fresh node re-grows
-  // at once — no intent delay, no morph replay (real-browser walk, 2026-08-29).
-  const z = zoomedCard();
-  const keepZoom = z && [...els].includes(z) ? { source: zoomSource(), occ: z.dataset.occ ? JSON.parse(z.dataset.occ) : null } : null;
-  if (keepZoom) unzoom();
+  const els = [...document.querySelectorAll(`#wall-root .card[data-artist="${CSS.escape(artistName)}"]`)];
   if (!els.length) { repaintWall(); return; }
   // Under a people filter that includes ME, my tap changes the filter's
   // visible set — a list card (afters, Folsom, search) must appear or
   // vanish, which a single-card refresh cannot do. A filter on OTHER people
   // is unaffected by my tap, so the cheap path stays.
   const filter = ctx.filterPeople || [];
-  if (filter.length && (filter.includes(ctx.meName) || [...els].some((el) => !el.classList.contains('cell')))) { repaintWall(); return; }
-  const fresh = [...els].map((el) => refreshCard(el, artistName, ctx));
-  if (keepZoom && fresh[0] && fresh[0].isConnected) {
-    const target = fresh.find((el) => el.matches(':hover')) || fresh[0];
-    zoomCard(target, artistName, ctx, { onOpenNotes: (a) => ctx.onOpenNotes(a, keepZoom.occ), source: keepZoom.source, occ: keepZoom.occ, instant: true });
-  }
+  if (filter.length && (filter.includes(ctx.meName) || els.some((el) => !el.classList.contains('cell')))) { repaintWall(); return; }
+  // A pick while zoomed keeps the zoom: the person is still resting on the
+  // card, cycling to MUST while watching the pills. The refreshed node of THE
+  // zoomed occurrence (an artist can play twice) slides under the overlay
+  // and the overlay's lines are rebuilt in place — no intent delay, no morph.
+  const zi = els.indexOf(zoomedCard());
+  const fresh = els.map((el) => refreshCard(el, artistName, ctx));
+  if (zi >= 0 && fresh[zi] && fresh[zi].isConnected) refreshZoom(fresh[zi], ctx);
 }
 
 function handleTap(artistName) {
@@ -361,9 +351,10 @@ function renderDayNav() {
       return tab;
     };
     dock.appendChild(mkTab((meta?.wd || day).slice(0, 3).toUpperCase()));
-    // Rail tabs stay compact: drop parenthetical asides from verbose day keys
-    // ("Wednesday, Sept 16 (Early Arrival pre-party)" -> "WEDNESDAY, SEPT 16").
-    const railLabel = meta?.wd ? `${meta.wd} ${meta.num || ''}`.trim() : day.replace(/\s*\(.*\)\s*$/, '');
+    // Rail tabs stay compact: a verbose day key ("Wednesday, Sept 16 (Early
+    // Arrival Pre-Party)") shows its weekday only — the same split the wall's
+    // day rule and the day sheet use (time.js dayLabelParts).
+    const railLabel = meta?.wd ? `${meta.wd} ${meta.num || ''}`.trim() : dayLabelParts(day).head;
     rail.appendChild(mkTab(railLabel.toUpperCase()));
   }
   unspy();
@@ -371,9 +362,20 @@ function renderDayNav() {
 }
 
 function repaintWall() {
-  unzoom();
+  // A full repaint replaces every card. A zoom that was standing comes back
+  // on the fresh card at once (a crew-mate's pick arriving on the 25 s poll
+  // must not eat the card you are resting on); a card that is gone — a
+  // filter hid it, a fest switch — takes its zoom with it.
+  const keep = zoomSnapshot();
+  unzoom({ instant: !!keep });
   refreshCtx();
   renderWall($('wall-root'), ctx);
+  if (keep) {
+    const occ = keep.occ ? JSON.stringify(keep.occ) : '';
+    const again = [...document.querySelectorAll(`#wall-root .card[data-artist="${CSS.escape(keep.artist)}"]`)]
+      .find((el) => (el.dataset.occ || '') === occ);
+    if (again) zoomCard(again, keep.artist, ctx, { ...keep, instant: true });
+  }
   renderDayNav();
   $('notes-count').textContent = String(model.totalNoteCount(state.crewDoc, ctx.fid));
   // A timetable has one true order — a sort control there would be a lie
@@ -442,7 +444,7 @@ function maybeShowCoachMark() {
   bar.style.cssText = 'display: flex; align-items: center; gap: 10px; margin-top: 11px; padding: 10px 13px; border: 1px solid var(--notes-chip-stroke); border-radius: var(--r-row); background: rgba(139, 123, 255, .07);';
   const msg = document.createElement('span');
   msg.style.cssText = 'flex: 1; color: var(--text-body); font-size: 12px; font-weight: 600; line-height: 1.45;';
-  msg.append('Tap artists to add your color. 4 taps = MUST SEE. Hold for notes. Tap a name or a stage to see just that. ');
+  msg.append('Tap artists to add your color. 4 taps = MUST SEE. Hold for details. Tap a name or a stage to see just that. ');
   const how = document.createElement('button');
   how.style.cssText = 'background: none; border: none; padding: 0; cursor: pointer; color: var(--notes-chip-text); font-size: 12px; font-weight: 700; text-decoration: underline; text-underline-offset: 2px;';
   how.textContent = 'How it works';
@@ -1767,6 +1769,7 @@ export function init() {
   window.addEventListener('popstate', (e) => router.onPopState(e.state));
   $('search-input').addEventListener('input', (e) => {
     ctx.query = e.target.value;
+    unzoom({ instant: true }); // the wall is about to be replaced under any zoom
     renderWall($('wall-root'), ctx);
     renderDayNav(); // scrollspy re-wires against the filtered day rules (gate F8)
     measureStickyChrome(); // search mode drops the stage strip — jump offset shrinks

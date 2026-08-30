@@ -1,7 +1,8 @@
-// The card's facts — one component, three homes (2026-08-29 round):
-//   · the ZOOMED card on the wall (hover with intent delay on a pointer,
-//     hold on touch) — the card grows around its centre and every resting
-//     piece becomes its long form; nothing new appears,
+// The card's facts — one component, three homes (2026-08-29 round, rebuilt
+// 2026-08-30):
+//   · the ZOOMED card on the wall (hover with intent on a mouse, hold on
+//     touch, focus on a keyboard) — an OVERLAY that grows around the resting
+//     card's centre; the wall never reflows,
 //   · the notes sheet's HEADER — the same card, larger, still centred,
 //   · the compact sub lines the day/fest sheets carry.
 // Pure data + DOM builders. aura.js owns the gradient math; this file never
@@ -128,12 +129,15 @@ export function factChips(facts, { onOpenNotes = null } = {}) {
   return row;
 }
 
-// The sheet header: the grown card once more, larger, breathing only when the
-// card would (.animated — reduced-motion and low-power still win globally).
-export function sheetCard(facts, { onClose, onOpenNotes = null } = {}) {
+// One builder, two homes: the name on the wash, then the grown lines (sub,
+// who-row, chips) in one block so the zoom can fade them as a group. The
+// zoomed card sits OVER the resting card, whose wash is translucent, so it
+// paints the page colour under its aura (`opaque`); the sheet header keeps
+// the sheet showing through.
+function factsCard(facts, { className, onClose = null, onOpenNotes = null, opaque = false }) {
   const card = document.createElement('div');
-  card.className = 'sheet-card' + (facts.animated ? ' animated' : '');
-  card.style.background = facts.background;
+  card.className = className + (facts.animated ? ' animated' : '');
+  card.style.background = opaque ? `${facts.background}, var(--page)` : facts.background;
   const grain = document.createElement('span');
   grain.className = 'card-grain';
   card.appendChild(grain);
@@ -149,285 +153,358 @@ export function sheetCard(facts, { onClose, onOpenNotes = null } = {}) {
   name.className = 'f-name';
   name.textContent = facts.name;
   card.appendChild(name);
-  if (facts.sub) {
-    const sub = document.createElement('div');
-    sub.className = 'f-sub';
-    sub.textContent = facts.sub;
-    card.appendChild(sub);
-  }
-  if (facts.people.length) card.appendChild(whoPills(facts));
-  card.appendChild(factChips(facts, { onOpenNotes }));
-  return card;
-}
-
-// ---- the zoom (one at a time) ------------------------------------------------------
-// The grown state is the SAME card. On the way in the box is set to its final
-// size at once and REVEALED by an animated clip (no stretching aura), while
-// every piece that exists at rest travels to its grown twin as a shared
-// element — translate + scale, one ease-in-out, the resting piece riding
-// along and dissolving over the last third. Nothing appears from nowhere and
-// nothing vanishes in place (Kevin, 2026-08-29: "things aren't sliding into
-// their new positions gracefully"). Width hugs the grown content (measured);
-// at the scrollport's edges the growth clamps inward like any tooltip.
-let zoomed = null; // { el, artist, source, grown, prev, anims, rest }
-
-// The intent numbers (research round, 2026-08-29): open slower than you
-// close, never symmetric (NN/g 300-500ms in; Radix/Zag agree), and gestures
-// key off the EVENT's pointer type, never a media query — (hover:none) lies
-// on a touchscreen laptop that is using a real mouse.
-export const ZOOM_IN_MS = 350;
-export const ZOOM_OUT_MS = 300;
-export const MORPH_MS = 320;
-const EASE = 'cubic-bezier(.45, 0, .2, 1)';
-
-export function zoomedCard() { return zoomed ? zoomed.el : null; }
-
-// A zoom put away on purpose (Escape, a tap outside) must not grow back
-// under a pointer that never left the card — it waits for the pointer to
-// leave and come back (real-browser walk, 2026-08-29).
-let dismissedEl = null;
-export function dismissZoom() {
-  if (zoomed) { dismissedEl = zoomed.el; unzoom(); }
-}
-export function zoomSource() { return zoomed ? zoomed.source : null; }
-
-const canAnimate = (el) => typeof el.animate === 'function'
-  && !(typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
-const rect = (el) => el.getBoundingClientRect();
-const mid = (r) => ({ x: r.left + r.width / 2, y: r.top + r.height / 2 });
-
-// A shared-element hop: `to` is laid out at its final place; it starts where
-// `from` was (translate + scale) and settles; `from` rides the same path and
-// dissolves. Both rects were measured in the same frame.
-function hop(toEl, fromRect, toRect, fromEl = null, ms = MORPH_MS) {
-  if (!toRect.width || !toRect.height || !fromRect.width || !fromRect.height) return [];
-  const a = mid(fromRect), b = mid(toRect);
-  const sx = fromRect.width / toRect.width, sy = fromRect.height / toRect.height;
-  const anims = [toEl.animate(
-    [{ transform: `translate(${a.x - b.x}px, ${a.y - b.y}px) scale(${sx}, ${sy})`, opacity: 0 },
-     { opacity: 1, offset: 0.55 },
-     { transform: 'none', opacity: 1 }],
-    { duration: ms, easing: EASE, fill: 'both' },
-  )];
-  if (fromEl) {
-    // The grown layout has already MOVED the resting piece (a bigger card puts
-    // its corners elsewhere); its hop starts from where it was (a) and ends at
-    // its twin (b), both expressed against where it sits now (c). Animating
-    // from `none` left it ghosting at its new spot (real-browser walk,
-    // 2026-08-29).
-    const c = mid(rect(fromEl));
-    anims.push(fromEl.animate(
-      [{ transform: `translate(${a.x - c.x}px, ${a.y - c.y}px)`, opacity: 1 },
-       { opacity: 1, offset: 0.3 },
-       { transform: `translate(${b.x - c.x}px, ${b.y - c.y}px) scale(${1 / sx}, ${1 / sy})`, opacity: 0 }],
-      { duration: ms, easing: EASE, fill: 'both' },
-    ));
-  }
-  return anims;
-}
-
-// The resting pieces and their grown twins, in pairing order.
-function restingPieces(el) {
-  return {
-    name: el.querySelector('.name'),
-    time: el.querySelector('.time'),
-    marks: [...el.querySelectorAll('.corner-who .mark:not(.ghost)')],
-    ghosts: [...el.querySelectorAll('.corner-who .mark.ghost, .chip-weekend, .spot-glow')],
-    notes: el.querySelector('.corner-about .chip-notes'),
-    spot: el.querySelector('.corner-about .chip-spotify'),
-  };
-}
-function grownPieces(grown) {
-  return {
-    sub: grown.querySelector('.f-sub'),
-    pills: [...grown.querySelectorAll('.f-pill')],
-    notes: grown.querySelector('.f-chip.notes'),
-    spot: grown.querySelector('.f-chip.spot'),
-  };
-}
-
-const exits = new WeakMap(); // el -> running exit animations (a re-entry cancels them)
-
-export function unzoom() {
-  if (!zoomed) return;
-  const { el, prev, grown, anims, rest } = zoomed;
-  zoomed = null;
-  for (const a of anims || []) { try { a.cancel(); } catch { /* finished */ } }
-  const finishRest = () => { for (const p of rest) p.style.opacity = ''; };
-  if (!el.isConnected) { if (grown && grown.isConnected) grown.remove(); finishRest(); return; }
-  const r0 = rect(el);
-  const nameEl = el.querySelector('.name');
-  const nameBefore = nameEl ? rect(nameEl) : null;
-  el.classList.remove('zoom');
-  el.style.width = prev.width;
-  el.style.marginLeft = prev.marginLeft;
-  el.style.minHeight = prev.minHeight;
-  el.style.zIndex = prev.zIndex;
-  if (!grown || !canAnimate(el)) { if (grown && grown.isConnected) grown.remove(); finishRest(); return; }
-  // The way out: the box shrinks back in PIXELS measured from both states
-  // (a lane-split card's resting margin is a percentage — animating '50%' to
-  // '50%' snapped; Codex gate, 2026-08-29), the grown block dissolves
-  // quickly, the name hops home, and the resting pieces fade in over the
-  // last half. Shorter than the way in. A re-entry cancels all of it.
-  const r1 = rect(el);
-  const restMargin = parseFloat(getComputedStyle(el).marginLeft) || 0;
-  const ms = 260;
-  const out = [];
-  out.push(el.animate(
-    [{ width: `${r0.width}px`, minHeight: `${r0.height}px`, marginLeft: `${restMargin + (r0.left - r1.left)}px` },
-     { width: `${r1.width}px`, minHeight: `${r1.height}px`, marginLeft: `${restMargin}px` }],
-    { duration: ms, easing: EASE },
-  ));
-  const fade = grown.animate([{ opacity: 1 }, { opacity: 0 }], { duration: ms * 0.45, easing: 'ease-out', fill: 'forwards' });
-  fade.onfinish = () => { if (grown.isConnected) grown.remove(); };
-  out.push(fade);
-  if (nameEl && nameBefore) {
-    const after = rect(nameEl);
-    const a = mid(nameBefore), b = mid(after);
-    out.push(nameEl.animate(
-      [{ transform: `translate(${a.x - b.x}px, ${a.y - b.y}px) scale(${nameBefore.height / (after.height || 1)})` }, { transform: 'none' }],
-      { duration: ms, easing: EASE },
-    ));
-  }
-  for (const p of rest) {
-    const a = p.animate([{ opacity: 0 }, { opacity: 0, offset: 0.4 }, { opacity: 1 }], { duration: ms, easing: EASE });
-    a.onfinish = () => { p.style.opacity = ''; };
-    out.push(a);
-  }
-  exits.set(el, { out, grown, rest });
-}
-
-export function zoomCard(el, artistName, ctx, { onOpenNotes = null, source = 'mouse', occ = null, instant = false } = {}) {
-  if (zoomed && zoomed.el === el) return;
-  unzoom();
-  // An unfinished exit on this card (keyboard re-entry mid-shrink) ends now:
-  // its animations cancel, its grown block goes, its resting pieces reset.
-  const exit = exits.get(el);
-  if (exit) {
-    for (const a of exit.out) { try { a.cancel(); } catch { /* finished */ } }
-    if (exit.grown && exit.grown.isConnected) exit.grown.remove();
-    for (const p of exit.rest) p.style.opacity = '';
-    exits.delete(el);
-  }
-  // A grown block from an unfinished teardown must never stack under a new one.
-  for (const g of el.querySelectorAll('.facts-grown')) g.remove();
-  const facts = factsFor(artistName, ctx, occ);
   const grown = document.createElement('div');
-  grown.className = 'facts-grown';
-  // NOT aria-hidden: the grown block holds a real button (the notes chip).
-  // Interactive content inside aria-hidden is unreachable-but-visible — the
-  // exact trap. AT users also keep the resting corner chip either way.
+  grown.className = 'f-grown';
   if (facts.sub) {
     const sub = document.createElement('div');
     sub.className = 'f-sub';
     sub.textContent = facts.sub;
     grown.appendChild(sub);
   }
-  const spring = document.createElement('div');
-  spring.className = 'f-spring';
-  grown.appendChild(spring);
   if (facts.people.length) grown.appendChild(whoPills(facts));
   grown.appendChild(factChips(facts, { onOpenNotes }));
+  card.appendChild(grown);
+  return card;
+}
 
-  // Measure the grown content off-screen so the card hugs it.
-  const probe = document.createElement('div');
-  probe.className = 'facts-grown zoom-probe';
-  probe.style.cssText = 'position: absolute; visibility: hidden; left: -9999px; top: 0; width: max-content;';
-  probe.append(...[...grown.children].map((c) => c.cloneNode(true)));
-  document.body.appendChild(probe);
-  const nameW = Math.ceil(facts.name.length * 8.4) + 40;
-  const target = Math.min(360, Math.max(216, Math.ceil(probe.getBoundingClientRect().width) + 26, nameW));
-  probe.remove();
+// The sheet header: the grown card once more, larger, breathing only when the
+// card would (.animated — reduced-motion and low-power still win globally).
+export function sheetCard(facts, { onClose, onOpenNotes = null } = {}) {
+  return factsCard(facts, { className: 'sheet-card', onClose, onOpenNotes });
+}
 
+// ---- the zoom: an overlay, never a reflow (2026-08-30) ---------------------------
+// The grown card is drawn in its own fixed layer, centred on the resting
+// card's centre and clamped to what a person can see; the resting card goes
+// transparent underneath (never visibility:hidden — it keeps focus and its
+// accessible name). The wall's layout is untouched, so siblings never move
+// and nothing reflows: three compositor-friendly animations carry the morph
+// (a clip reveal of the grown card, the name's glide, one fade for the grown
+// lines). A tap or click on the grown card PICKS, exactly like the resting
+// one, and the pills update in place; the notes chip inside is the door to
+// the sheet. The previous version (2026-08-29) grew the card in flow —
+// Kevin: "the whole row animates and resizes… like it's just punching out…
+// too heavy" — and its grown block swallowed every click after the first.
+
+// The intent numbers (research round, 2026-08-29): open slower than you
+// close, never symmetric (NN/g 300–500 ms in; Radix/Zag agree), and gestures
+// key off the EVENT's pointer type, never a media query — (hover:none) lies
+// on a touchscreen laptop that is using a real mouse.
+export const ZOOM_IN_MS = 350;
+export const ZOOM_OUT_MS = 300;
+export const MORPH_MS = 320;
+const MORPH_OUT_MS = 220;
+const EASE = 'cubic-bezier(.45, 0, .2, 1)';
+const RADIUS = 8; // --r-card
+const MIN_W = 216, MAX_W = 360, MIN_H = 132;
+
+let zoomed = null;      // { el, artist, ctx, occ, source, onOpenNotes, slot, card, anims, cleanup }
+let dismissedEl = null; // a zoom put away on purpose waits for the pointer to leave the card
+let layer = null;
+const exits = new WeakMap(); // resting card -> its overlay still shrinking away
+
+const reduced = () => typeof window !== 'undefined' && !!window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+// Low Power promises "no animation" and CSS cannot reach Element.animate() —
+// the gate lives here (survey, 2026-08-30).
+const canAnimate = (node, ctx) => typeof node.animate === 'function' && !reduced() && !(ctx && ctx.lowPower);
+const rect = (n) => n.getBoundingClientRect();
+const mid = (r) => ({ x: r.left + r.width / 2, y: r.top + r.height / 2 });
+
+function zoomLayer() {
+  if (layer && layer.isConnected) return layer;
+  layer = document.getElementById('zoom-layer');
+  if (!layer) {
+    layer = document.createElement('div');
+    layer.id = 'zoom-layer';
+    document.body.appendChild(layer);
+  }
+  return layer;
+}
+
+export function zoomedCard() { return zoomed ? zoomed.el : null; }
+// The zoom is two nodes — the resting card and its overlay. "Outside" means
+// outside both (a tap on the overlay is a pick, never a dismiss).
+export function zoomContains(node) {
+  return !!(zoomed && node && (zoomed.el.contains(node) || zoomed.slot.contains(node)));
+}
+// What a full-wall repaint needs to bring the same zoom back on the fresh
+// card — a crew-mate's pick must not eat the card you are resting on.
+export function zoomSnapshot() {
+  return zoomed ? { artist: zoomed.artist, occ: zoomed.occ, source: zoomed.source, onOpenNotes: zoomed.onOpenNotes } : null;
+}
+export function dismissZoom() {
+  if (zoomed) { dismissedEl = zoomed.el; unzoom(); }
+}
+
+// The clip that shows exactly the resting card's rect out of the overlay's.
+function insetFor(r0, r1) {
+  const t = Math.max(0, r0.top - r1.top), l = Math.max(0, r0.left - r1.left);
+  const b = Math.max(0, r1.bottom - r0.bottom), r = Math.max(0, r1.right - r0.right);
+  return `inset(${t}px ${r}px ${b}px ${l}px round ${RADIUS}px)`;
+}
+
+// Centre the overlay on the resting card, then clamp: the viewport, and in
+// the timetable the visible part of `.times-scroll` (content hidden off to
+// the side is not somewhere a card can grow into). One read of each rect.
+function place(slot, el) {
   const r0 = rect(el);
-  const grid = el.closest('.times-grid, .wall-grid');
-  let gridRect = grid ? rect(grid) : r0;
-  // The timetable grid scrolls inside .times-scroll: clamp to what a person
-  // can SEE, not to content hidden off-screen (Codex gate, 2026-08-29).
+  const box = rect(slot);
+  const vw = window.innerWidth, vh = window.innerHeight;
+  let minX = 8, maxX = vw - 8;
   const scroller = el.closest('.times-scroll');
   if (scroller) {
-    const sr = rect(scroller);
-    gridRect = { left: Math.max(gridRect.left, sr.left), right: Math.min(gridRect.right, sr.right) };
+    const s = rect(scroller);
+    minX = Math.max(minX, s.left + 4);
+    maxX = Math.min(maxX, s.right - 4);
   }
-  const growth = Math.max(0, target - r0.width);
-  let shift = -growth / 2;
-  shift = Math.max(shift, gridRect.left - r0.left - 4);            // never past the left edge
-  shift = Math.min(shift, (gridRect.right - r0.right) - growth + 4); // nor the right
-  if (!Number.isFinite(shift)) shift = 0;
+  let left = Math.round(r0.left + r0.width / 2 - box.width / 2);
+  let top = Math.round(r0.top + r0.height / 2 - box.height / 2);
+  left = Math.max(minX, Math.min(left, maxX - box.width));
+  top = Math.max(8, Math.min(top, vh - 8 - box.height));
+  if (!Number.isFinite(left)) left = r0.left;
+  if (!Number.isFinite(top)) top = r0.top;
+  slot.style.left = `${left}px`;
+  slot.style.top = `${top}px`;
+  return { r0, r1: { left, top, width: box.width, height: box.height, right: left + box.width, bottom: top + box.height } };
+}
 
-  // FIRST: where every resting piece is.
-  const R = restingPieces(el);
-  const before = {
-    name: R.name ? rect(R.name) : null,
-    time: R.time ? rect(R.time) : null,
-    marks: R.marks.map(rect),
-    notes: R.notes ? rect(R.notes) : null,
-    spot: R.spot ? rect(R.spot) : null,
-  };
-  const rest = [R.time, ...R.marks, ...R.ghosts, R.notes, R.spot].filter(Boolean);
+function buildCard(z, facts) {
+  const card = factsCard(facts, { className: 'zoom-card', onOpenNotes: z.onOpenNotes, opaque: true });
+  card.setAttribute('role', 'group');
+  card.setAttribute('aria-label', `${facts.name} details`);
+  return card;
+}
 
-  // LAST: the final layout, applied at once.
-  zoomed = { el, artist: artistName, source, grown, anims: [], rest,
-    prev: { width: el.style.width, marginLeft: el.style.marginLeft, minHeight: el.style.minHeight, zIndex: el.style.zIndex } };
-  el.appendChild(grown);
-  el.classList.add('zoom');
-  el.style.width = `${target}px`;
-  // A card already half-clipped at the scrollport's left edge needs a
-  // POSITIVE shift to come back in — never discard it (Codex gate, 2026-08-29).
-  el.style.marginLeft = `${Math.round(shift)}px`;
-  el.style.minHeight = '132px';
-  el.style.zIndex = '30';
+// The overlay never grows smaller than the card it grows out of.
+function sizeSlot(slot, r0) {
+  slot.style.minWidth = `${Math.max(MIN_W, Math.ceil(r0.width))}px`;
+  slot.style.maxWidth = `${Math.max(MAX_W, Math.ceil(r0.width))}px`;
+  slot.style.minHeight = `${Math.max(MIN_H, Math.ceil(r0.height))}px`;
+}
 
-  if (instant || !canAnimate(el)) { for (const p of rest) p.style.opacity = '0'; return facts; }
+export function zoomCard(el, artistName, ctx, { onOpenNotes = null, source = 'mouse', occ = null, instant = false } = {}) {
+  if (zoomed && zoomed.el === el) return null;
+  unzoom({ instant: true });
+  // This card's own overlay may still be shrinking away (a quick re-entry) —
+  // it ends now, or two overlays would stack.
+  const exiting = exits.get(el);
+  if (exiting) { exiting.remove(); exits.delete(el); }
 
-  // INVERT + PLAY: the box is revealed by a clip from the resting rect; every
-  // piece hops to its twin. One duration, one ease.
-  const r1 = rect(el);
-  const G = grownPieces(grown);
+  const facts = factsFor(artistName, ctx, occ);
+  const slot = document.createElement('div');
+  slot.className = 'zoom-slot';
+  const z = { el, artist: artistName, ctx, occ, source, onOpenNotes, slot, card: null, anims: [], cleanup: [], unwireSource: () => {} };
+  z.card = buildCard(z, facts);
+  slot.appendChild(z.card);
+
+  // READS first (resting card, its name), then the writes.
+  const r0 = rect(el);
+  const restName = el.querySelector('.name');
+  const nameFrom = restName ? rect(restName) : null;
+  sizeSlot(slot, r0);
+  zoomLayer().appendChild(slot);
+  const { r1 } = place(slot, el);
+  el.classList.add('zoom-source');
+  zoomed = z;
+  wireSlot(z);
+
+  if (instant || !canAnimate(z.card, ctx)) { slot.classList.add('shown'); return facts; }
+
+  const nameEl = z.card.querySelector('.f-name');
+  const nameTo = nameEl ? rect(nameEl) : null;
   const anims = [];
-  anims.push(el.animate(
-    [{ clipPath: `inset(0px ${Math.max(0, r1.right - r0.right)}px ${Math.max(0, r1.bottom - r0.bottom)}px ${Math.max(0, r0.left - r1.left)}px round 8px)` },
-     { clipPath: 'inset(0px 0px 0px 0px round 8px)' }],
+  anims.push(z.card.animate(
+    [{ clipPath: insetFor(r0, r1) }, { clipPath: `inset(0px round ${RADIUS}px)` }],
     { duration: MORPH_MS, easing: EASE },
   ));
-  if (R.name && before.name) {
-    const after = rect(R.name);
-    const a = mid(before.name), b = mid(after);
-    anims.push(R.name.animate(
-      [{ transform: `translate(${a.x - b.x}px, ${a.y - b.y}px) scale(${before.name.height / (after.height || 1)})` }, { transform: 'none' }],
+  if (nameEl && nameFrom && nameTo && nameFrom.height && nameTo.height) {
+    const a = mid(nameFrom), b = mid(nameTo);
+    anims.push(nameEl.animate(
+      [{ transform: `translate(${a.x - b.x}px, ${a.y - b.y}px) scale(${nameFrom.height / nameTo.height})` }, { transform: 'none' }],
       { duration: MORPH_MS, easing: EASE },
     ));
   }
-  if (G.sub && before.time) anims.push(...hop(G.sub, before.time, rect(G.sub), R.time));
-  else if (G.sub) anims.push(G.sub.animate([{ opacity: 0 }, { opacity: 1 }], { duration: MORPH_MS, easing: EASE }));
-  G.pills.forEach((pill, i) => {
-    const from = before.marks[i], fromEl = R.marks[i];
-    if (from) anims.push(...hop(pill, from, rect(pill), fromEl));
-    else anims.push(pill.animate([{ opacity: 0, transform: 'scale(.7)' }, { opacity: 0, offset: .4 }, { opacity: 1, transform: 'none' }], { duration: MORPH_MS, easing: EASE }));
-  });
-  // Marks beyond the pills shown (never, in practice) and the ghosts dissolve.
-  for (const extra of [...R.marks.slice(G.pills.length), ...R.ghosts]) {
-    anims.push(extra.animate([{ opacity: 1 }, { opacity: 0 }], { duration: MORPH_MS * 0.4, easing: EASE, fill: 'forwards' }));
-  }
-  if (G.notes) anims.push(...(before.notes ? hop(G.notes, before.notes, rect(G.notes), R.notes)
-    : [G.notes.animate([{ opacity: 0 }, { opacity: 0, offset: .4 }, { opacity: 1 }], { duration: MORPH_MS, easing: EASE })]));
-  if (G.spot) anims.push(...(before.spot ? hop(G.spot, before.spot, rect(G.spot), R.spot)
-    : [G.spot.animate([{ opacity: 0 }, { opacity: 0, offset: .4 }, { opacity: 1 }], { duration: MORPH_MS, easing: EASE })]));
-  // Once the hops land, the resting pieces stay away (their twins took over).
-  const settle = () => { if (zoomed && zoomed.el === el) for (const p of rest) p.style.opacity = '0'; };
-  const last = anims[anims.length - 1];
-  if (last) last.onfinish = settle; else settle();
-  zoomed.anims = anims;
+  const grown = z.card.querySelector('.f-grown');
+  if (grown) anims.push(grown.animate([{ opacity: 0 }, { opacity: 0, offset: 0.35 }, { opacity: 1 }], { duration: MORPH_MS, easing: EASE }));
+  slot.classList.add('shown'); // the shadow eases in through CSS
+  z.anims = anims;
   return facts;
+}
+
+// A pick while zoomed keeps the zoom: the person is resting on the card,
+// cycling to MUST while watching the pills. The fresh resting node takes the
+// overlay's place underneath and the overlay's lines are rebuilt in place —
+// no intent delay, no morph replay.
+export function refreshZoom(fresh, ctx) {
+  if (!zoomed || !fresh) return;
+  const z = zoomed;
+  z.el.classList.remove('zoom-source');
+  z.unwireSource();
+  z.el = fresh;
+  z.ctx = ctx;
+  z.unwireSource = wireSource(z, fresh);
+  fresh.classList.add('zoom-source');
+  const facts = factsFor(z.artist, ctx, z.occ);
+  const next = buildCard(z, facts);
+  z.card.className = next.className;
+  z.card.style.background = next.style.background;
+  z.card.replaceChildren(...next.childNodes);
+  sizeSlot(z.slot, rect(fresh));
+  place(z.slot, fresh); // more pills may have widened it — stay centred
+}
+
+export function unzoom({ instant = false } = {}) {
+  if (!zoomed) return;
+  const z = zoomed;
+  zoomed = null;
+  for (const a of z.anims) { try { a.cancel(); } catch { /* finished */ } }
+  for (const off of z.cleanup) off();
+  z.el.classList.remove('zoom-source');
+  if (instant || !z.el.isConnected || !canAnimate(z.card, z.ctx)) { z.slot.remove(); return; }
+  // The way out: the overlay clips back to the resting rect while the name
+  // glides home and the grown lines fade; the resting card is already back
+  // underneath, so the shrink reveals it. Shorter than the way in.
+  const r0 = rect(z.el), r1 = rect(z.slot);
+  const nameEl = z.card.querySelector('.f-name');
+  const restName = z.el.querySelector('.name');
+  z.card.style.pointerEvents = 'none';
+  z.slot.classList.remove('shown');
+  const out = z.card.animate(
+    [{ clipPath: `inset(0px round ${RADIUS}px)` }, { clipPath: insetFor(r0, r1) }],
+    { duration: MORPH_OUT_MS, easing: EASE, fill: 'forwards' },
+  );
+  if (nameEl && restName) {
+    const from = rect(restName), to = rect(nameEl);
+    if (from.height && to.height) {
+      const a = mid(from), b = mid(to);
+      nameEl.animate(
+        [{ transform: 'none' }, { transform: `translate(${a.x - b.x}px, ${a.y - b.y}px) scale(${from.height / to.height})` }],
+        { duration: MORPH_OUT_MS, easing: EASE, fill: 'forwards' },
+      );
+    }
+  }
+  const grown = z.card.querySelector('.f-grown');
+  if (grown) grown.animate([{ opacity: 1 }, { opacity: 0 }], { duration: MORPH_OUT_MS * 0.5, easing: 'ease-out', fill: 'forwards' });
+  exits.set(z.el, z.slot);
+  let done = false;
+  const finish = () => {
+    if (done) return;
+    done = true;
+    z.slot.remove();
+    if (exits.get(z.el) === z.slot) exits.delete(z.el);
+  };
+  out.onfinish = finish;
+  out.oncancel = finish;
+  // An animation that never finishes (a backgrounded tab) must not leave a ghost.
+  setTimeout(finish, MORPH_OUT_MS + 80);
+}
+
+// Everything the overlay listens for while it stands. `cleanup` undoes it.
+// Always `z.el`, never a captured node: a pick swaps the resting card for a
+// fresh one under the same overlay (refreshZoom), and a listener holding the
+// old node would see it as gone.
+function wireSlot(z) {
+  const { slot, card } = z;
+
+  // A hold's release must never pick: while the finger that grew the card is
+  // still down, the overlay hears nothing; the NEXT tap is the first it takes
+  // (Codex review, 2026-08-30). The resting card's own capture-phase swallow
+  // (wall.js) handles the click the release synthesises.
+  if (z.source === 'touch') {
+    card.style.pointerEvents = 'none';
+    const arm = () => { card.style.pointerEvents = ''; };
+    document.addEventListener('pointerup', arm, { once: true, capture: true });
+    document.addEventListener('pointercancel', arm, { once: true, capture: true });
+    z.cleanup.push(() => {
+      document.removeEventListener('pointerup', arm, true);
+      document.removeEventListener('pointercancel', arm, true);
+    });
+  }
+
+  // A tap or click on the grown card is a pick — the same thing it means on
+  // the resting card. Its one button (the notes chip) is its own control.
+  card.addEventListener('click', (e) => {
+    if (zoomed !== z) return;
+    if (e.target !== card && e.target.closest('button')) return;
+    if (!z.el.isConnected) { unzoom({ instant: true }); return; }
+    z.ctx.onTap(z.artist, z.el);
+  });
+
+  // Hover bookkeeping: the pointer lands on the overlay the instant it
+  // appears (the card underneath gets a pointerleave for it — ignored in
+  // wireCardZoom). Leaving the OVERLAY closes after the grace period; coming
+  // back cancels it. Keyboard and touch zooms do not close on hover-out.
+  let outT = null;
+  card.addEventListener('pointerenter', (e) => {
+    if (e.pointerType === 'mouse' && outT) { clearTimeout(outT); outT = null; }
+  });
+  card.addEventListener('pointerleave', (e) => {
+    if (e.pointerType !== 'mouse' || zoomed !== z || z.source !== 'mouse') return;
+    if (e.relatedTarget && z.el.contains(e.relatedTarget)) return;
+    if (outT) clearTimeout(outT);
+    outT = setTimeout(() => { outT = null; if (zoomed === z) unzoom(); }, ZOOM_OUT_MS);
+  });
+  z.cleanup.push(() => { if (outT) { clearTimeout(outT); outT = null; } });
+
+  // Scrolling anywhere (the page, the timetable) moves the card out from
+  // under its overlay — put it away, like every tooltip. Capture phase so an
+  // inner scroller's scroll (which does not bubble) is heard too.
+  const onScroll = () => { if (zoomed === z) dismissZoom(); };
+  window.addEventListener('scroll', onScroll, { passive: true, capture: true });
+  window.addEventListener('resize', onScroll);
+  z.cleanup.push(() => {
+    window.removeEventListener('scroll', onScroll, true);
+    window.removeEventListener('resize', onScroll);
+  });
+
+  // Keyboard: Tab from the zoomed card reaches the notes chip inside the
+  // overlay (the door to a FIRST note needs no pointer); Tab again continues
+  // after the card, Shift+Tab returns to it. Delegated on the overlay, so a
+  // refreshZoom that rebuilds the chip keeps working; re-wired on the fresh
+  // resting card by refreshZoom.
+  z.unwireSource = wireSource(z, z.el);
+  z.cleanup.push(() => z.unwireSource());
+  card.addEventListener('keydown', (e) => {
+    if (e.key !== 'Tab' || zoomed !== z || !e.target.matches('button.f-chip.notes')) return;
+    e.preventDefault();
+    if (e.shiftKey) { z.el.focus(); return; }
+    const next = nextFocusableAfter(z.el);
+    unzoom();
+    if (next) next.focus();
+  });
+  card.addEventListener('focusout', (e) => {
+    if (zoomed !== z) return;
+    const to = e.relatedTarget;
+    if (to && (to === z.el || z.el.contains(to) || slot.contains(to))) return;
+    unzoom();
+  });
+}
+
+function wireSource(z, el) {
+  const onCardKey = (e) => {
+    if (e.key !== 'Tab' || e.shiftKey || zoomed !== z || e.target !== el) return;
+    const chip = z.card.querySelector('button.f-chip.notes');
+    if (!chip) return;
+    e.preventDefault();
+    chip.focus();
+  };
+  el.addEventListener('keydown', onCardKey);
+  return () => el.removeEventListener('keydown', onCardKey);
+}
+
+const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+function nextFocusableAfter(el) {
+  const all = [...document.querySelectorAll(FOCUSABLE)].filter((n) => !n.closest('#zoom-layer') && n.offsetParent !== null);
+  const i = all.indexOf(el);
+  return i >= 0 ? all[i + 1] || null : null;
 }
 
 // Hover wiring for one card (pointer-fine by EVENT, never by media query).
 // Kevin's rule (2026-08-29): a real intent delay, or cards pop like crazy.
 export function wireCardZoom(el, artistName, ctx, { onOpenNotes = null, occ = null } = {}) {
-  let inT = null, outT = null;
+  let inT = null;
   el.addEventListener('pointerenter', (e) => {
     if (e.pointerType !== 'mouse') return;
-    if (outT) { clearTimeout(outT); outT = null; }
     if (zoomed && zoomed.el === el) return;
     if (dismissedEl === el) return; // put away on purpose; a leave clears it
     if (inT) clearTimeout(inT);
@@ -438,24 +515,21 @@ export function wireCardZoom(el, artistName, ctx, { onOpenNotes = null, occ = nu
   });
   el.addEventListener('pointerleave', (e) => {
     if (e.pointerType !== 'mouse') return;
-    if (dismissedEl === el) dismissedEl = null;
     if (inT) { clearTimeout(inT); inT = null; }
-    if (zoomed && zoomed.el === el) {
-      if (outT) clearTimeout(outT);
-      // Generation-exact: this timer closes the zoom it saw leave, never a
-      // newer keyboard/touch zoom on the same card (Codex gate, 2026-08-29).
-      const rec = zoomed;
-      outT = setTimeout(() => { outT = null; if (zoomed === rec) unzoom(); }, ZOOM_OUT_MS);
-    }
+    // The overlay appearing over the card IS a leave to the browser — not to
+    // the person. The overlay's own leave handles the close.
+    if (zoomed && zoomed.el === el && e.relatedTarget && zoomed.slot.contains(e.relatedTarget)) return;
+    if (dismissedEl === el) dismissedEl = null;
   });
 }
 
 // Keyboard route (2026-08-29): focusing a card grows it too, so Tab reaches
 // the notes chip inside — the door to a FIRST note needs no pointer at all.
-// focusout only unzooms when focus truly left the card (the chip is inside).
+// focusout only unzooms when focus truly left the card and its overlay.
 export function wireCardFocusZoom(el, artistName, ctx, { onOpenNotes = null, occ = null } = {}) {
   el.addEventListener('focusin', () => {
     if (zoomed && zoomed.el === el) return;
+    if (dismissedEl === el) return; // Escape put it away; re-focusing must not bring it back
     // KEYBOARD focus only: a mouse click and a finger tap also focus the
     // card, and zooming there would bypass the hover-intent delay and grow
     // the card under every pick. :focus-visible is the browsers' own
@@ -464,6 +538,10 @@ export function wireCardFocusZoom(el, artistName, ctx, { onOpenNotes = null, occ
     zoomCard(el, artistName, ctx, { onOpenNotes, source: 'keyboard', occ });
   });
   el.addEventListener('focusout', (e) => {
-    if (zoomed && zoomed.el === el && !(e.relatedTarget && el.contains(e.relatedTarget))) unzoom();
+    if (dismissedEl === el) dismissedEl = null;
+    if (!zoomed || zoomed.el !== el) return;
+    const to = e.relatedTarget;
+    if (to && (el.contains(to) || zoomed.slot.contains(to))) return;
+    unzoom();
   });
 }

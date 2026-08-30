@@ -370,8 +370,8 @@
   /* The ZOOMED card is a deliberate preview with room — its chips get real
    * height and their own borrowed space (outranks the card-wide ::after
    * cancel below by specificity). The sheet header's chips grow the same way. */
-  .card.zoom .f-chip { height: 30px; padding: 0 13px; font-size: 11px; position: relative; min-height: 0; }
-  .card.zoom .f-chip::after { content: ''; position: absolute; inset: -7px; }
+  .zoom-card .f-chip { height: 30px; padding: 0 13px; font-size: 11px; position: relative; min-height: 0; }
+  .zoom-card .f-chip::after { content: ''; position: absolute; inset: -7px; }
   .sheet-card .f-chip { height: 28px; padding: 0 13px; font-size: 11px; }
 
   /* Controls INSIDE a card get neither: the card IS the tap target, and an
@@ -578,6 +578,9 @@
 .sheet-card .sheet-close { position: absolute; top: 12px; right: 12px;
                            background: rgba(10, 8, 18, .55); border-color: rgba(255, 255, 255, .22); color: #fff; }
 .sheet-card .f-name { font-size: 19px; font-weight: 700; color: var(--text-primary); line-height: 1.2; }
+/* The grown lines (sub · who · chips) travel as one block so the zoom can
+ * fade them together; the sheet header lays them out the same way. */
+.f-grown { display: flex; flex-direction: column; align-items: center; gap: 7px; min-width: 0; }
 .f-sub { color: rgba(255, 255, 255, .78); font-size: 11.5px; font-weight: 600; }
 .day-sub { color: var(--text-tertiary); margin-top: -6px; }
 .f-who { display: flex; flex-wrap: wrap; justify-content: center; gap: 5px 6px; }
@@ -613,17 +616,28 @@ button.f-chip.notes { cursor: pointer; }
 .day-whisper .more { color: var(--text-tertiary); font-size: 10.5px; font-weight: 700; flex: none; white-space: nowrap; }
 .add-first-note { align-self: flex-start; }
 
-/* The zoom: the SAME card at its grown size — card-facts.js sets the final
- * box at once and animates the reveal and every piece's hop with the Web
- * Animations API (one ease, no CSS transitions, so nothing stretches or
- * fades in place). These rules are the two static states. */
-.card.zoom { overflow: visible; z-index: 30; box-shadow: 0 18px 50px rgba(0, 0, 0, .55); }
-.card.zoom .time, .card.zoom .corner-who, .card.zoom .corner-about,
-.card.zoom .chip-weekend, .card.zoom .spot-glow { pointer-events: none; }
-.card.zoom .name { position: absolute; left: 8px; right: 8px; top: 13px; font-size: 15px; z-index: 2; }
-.facts-grown { position: absolute; left: 8px; right: 8px; top: 38px; bottom: 10px; z-index: 1;
-               display: flex; flex-direction: column; gap: 7px; text-align: center; }
-.facts-grown .f-spring { flex: 1; }
+/* The zoom (2026-08-30): an OVERLAY, never a reflow. card-facts.js draws the
+ * grown card in this fixed layer, centred on the resting card and clamped to
+ * the viewport; the resting card goes transparent underneath (opacity, not
+ * visibility — it keeps focus and its accessible name). Nothing on the wall
+ * changes size, so siblings never move. The reveal, the name's glide and the
+ * grown lines' fade run through the Web Animations API; the shadow eases in
+ * here. z-index 36: above the day rail (25) and the dock (30), below sheets
+ * (40) and toasts (50). */
+#zoom-layer { position: fixed; inset: 0; z-index: 36; pointer-events: none; }
+.zoom-slot { position: absolute; width: max-content; pointer-events: none; }
+.zoom-slot::before { content: ''; position: absolute; inset: 0; border-radius: var(--r-card);
+                     box-shadow: 0 18px 50px rgba(0, 0, 0, .55); opacity: 0; transition: opacity .32s ease; }
+.zoom-slot.shown::before { opacity: 1; }
+.zoom-card { position: relative; box-sizing: border-box; min-height: inherit; pointer-events: auto;
+             display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 7px;
+             padding: 12px 14px 12px; text-align: center; overflow: hidden; cursor: pointer;
+             border: 1px solid var(--hairline); border-radius: var(--r-card);
+             -webkit-touch-callout: none; user-select: none; color: inherit; font-family: inherit; }
+.zoom-card.animated { background-size: 180% 180%; animation: gradShift 12s ease-in-out infinite; }
+.zoom-card > * { position: relative; }
+.zoom-card .f-name { font-size: 15px; font-weight: 700; line-height: 1.2; color: var(--text-primary); }
+.card.zoom-source { opacity: 0; }
 
 /* Afters/event cards: the day and time on one line, the venue on the next. */
 .card.timed .time { white-space: pre-line; }

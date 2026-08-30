@@ -9,6 +9,7 @@
 // A reply is a note with one extra key: re = its root's id (threadsFor).
 // All doc-derived text renders via textContent (gate rule).
 import * as state from '../state.js';
+import { dayLabelParts } from '../time.js';
 import * as model from './model.js';
 import { hslOf, strokeOf } from './palette.js';
 import { colorIndexOf } from './wall.js';
@@ -445,12 +446,15 @@ function openScopeSheet(scope, target, ctx, onChange, occ = null) {
     };
     paintHeader();
   } else {
-    const head = sheetChrome(sheet, scope === 'fest' ? state.fest().name.toUpperCase() : target.toUpperCase());
+    // A day key can be verbose; the sheet shows its weekday and moves the
+    // aside to the sub line, like the wall's day rule (time.js dayLabelParts).
+    const parts = scope === 'day' ? dayLabelParts(target) : null;
+    const head = sheetChrome(sheet, scope === 'fest' ? state.fest().name.toUpperCase() : (parts ? parts.head : target).toUpperCase());
     const meta = (state.fest().dayMeta || {})[target];
-    if (scope === 'day' && meta) {
+    if (scope === 'day' && (meta || parts.aside)) {
       const sub = document.createElement('div');
       sub.className = 'f-sub day-sub';
-      sub.textContent = [meta.wd, meta.date].filter(Boolean).join(' · ');
+      sub.textContent = [meta && meta.wd, meta && meta.date, parts.aside].filter(Boolean).join(' · ');
       head.insertAdjacentElement('afterend', sub);
     }
   }

@@ -9,7 +9,7 @@ import * as state from '../state.js';
 import * as model from './model.js';
 import { LEVEL_LABELS_V4 } from '../parse.js';
 import { computeLanes } from '../overlap.js';
-import { activityMinutes } from '../time.js';
+import { activityMinutes, dayLabelParts } from '../time.js';
 import { auraBackground, whoCorner, aboutCorner, nameColor, subColor } from './aura.js';
 import { BOARD } from './palette.js';
 import { dayWhisper } from './notes.js'; // runtime-only cycle with this module (colorIndexOf) — safe
@@ -207,12 +207,12 @@ export function renderCard(artistName, ctx, opts = {}) {
 
   el.addEventListener('click', (e) => {
     // Belt over the chips' own stopPropagation (the research's Ant Design
-    // lesson): anything inside the grown block or the corner chips is its own
-    // control, never a pick.
-    if (e.target !== el && e.target.closest && e.target.closest('.facts-grown, .chip-notes, .chip-spotify')) return;
-    // A touch-born zoom is a preview: tapping its body puts it away — the
-    // resting card is where a tap means pick.
-    if (ctx.onZoomTap && ctx.onZoomTap(el)) return;
+    // lesson): a real button inside the card (the notes chip) is its own
+    // control, never a pick. Everything else on the face — the name, the
+    // time, the marks, the Spotify badge — is the card, and a tap on the card
+    // means pick. (The 2026-08-29 version excluded a whole grown block here,
+    // which is how a zoomed card stopped taking picks.)
+    if (e.target !== el && e.target.closest && e.target.closest('button')) return;
     ctx.onTap(artistName, el);
   });
   if (ctx.wireZoom) ctx.wireZoom(el, artistName, opts.occ || null);
@@ -342,9 +342,13 @@ export function extraSectionsOf(fest, scheduledNames, weekend) {
 // card looks and behaves the same whichever wall it sits on.
 function renderLineupGroup(root, day, list, ctx, fest, { header, sub } = {}) {
   const meta = (fest.dayMeta || {})[day];
+  // A day KEY is frozen pick data and can be verbose ("Wednesday, Sept 16
+  // (Early Arrival Pre-Party)"); the rule shows the weekday and moves the
+  // aside to its sub line — the same split the day tab and the day sheet use.
+  const parts = day ? dayLabelParts(day) : null;
   root.appendChild(dayHeader(
-    header || day || 'THE LINEUP',
-    sub !== undefined ? sub : (day ? dayRuleSub(meta) : (ctx.sort === 'billing' ? 'BILLING ORDER' : '')),
+    header || (parts && parts.head) || 'THE LINEUP',
+    sub !== undefined ? sub : (day ? [dayRuleSub(meta), parts.aside].filter(Boolean).join(' · ') : (ctx.sort === 'billing' ? 'BILLING ORDER' : '')),
     day && ctx.onOpenDayNotes ? {
       noteCount: model.noteCount(state.crewDoc, ctx.fid, 'day', day),
       onOpenNotes: () => ctx.onOpenDayNotes(day),
