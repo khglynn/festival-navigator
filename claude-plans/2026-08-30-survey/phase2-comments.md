@@ -281,3 +281,29 @@ Worse, my first fix appeared not to work, and the reason was that the browser ha
 a **cached copy of the rig page**, so the edit was never running. Checking the actual
 stored timestamps took one call and found both; theorising about `threadsFor` would have
 cost the round. Suspect the measurement first, exactly as CLAUDE.md says.
+
+## Closed on a re-verification pass (the brief arrived twice; I checked instead of asserting)
+
+**The head-line actions were under the touch floor, and the floor's own comment predicted
+it.** `.note-action` takes the TIGHT borrowed box (`-14px -2px`) because it used to sit in
+a run of four tokens — `Edit · Delete · Reply · Pin` — where a generous horizontal grab
+would let one swallow the tap meant for its neighbour. Moving to the head line ended that:
+there are at most two now, alone at the trailing edge with nothing to their right.
+Measured in the browser, a `Pin` button is **16.3 x 12px**, which the tight box grew to
+**40 x 20** — under 44 in BOTH directions.
+
+That is exactly the case the floor block's own comment describes ("Narrow glyph controls
+are 17-28px WIDE, so a tall-but-thin target is still a miss — and they are isolated, so
+they can take the horizontal room"), and its rule is that the list only ever upgrades. So
+the head-line actions now take `inset: -16px -14px` → **44.3 x 44**, verified by reading
+the authored rule back out of the stylesheet rather than trusting the typing. It lives in
+the NOTES region, not the floor block, so the notes' selectors stay together and this
+round stays in its lane; a comment in each place points at the other.
+
+Nothing can collide with the grown box: a note carries at most two actions, only ONE note
+is ever revealed at a time, and an unrevealed note's actions are `pointer-events: none`,
+so it can only overlap dead space.
+
+**Also captured what the screenshot set was missing:** `notes-2b-hover-edit.png` — hover
+revealing `Edit` on your own reply, shot at 390px so it doubles as proof the head-line
+reveal works at phone width.

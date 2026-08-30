@@ -605,6 +605,25 @@
   .n-note:hover > .n-body > .n-head > .n-acts { opacity: 1; transform: none; pointer-events: auto; }
 }
 
+/* The head-line actions have graduated into the floor's isolated-glyph case.
+ * `.note-action` takes the TIGHT borrowed box (-14px -2px, up at the 44px floor
+ * block) because it used to sit in a RUN of four tokens — Edit · Delete · Reply
+ * · Pin — where a generous horizontal grab would let one swallow the tap meant
+ * for its neighbour. That reason is gone: there are at most two now, alone at
+ * the note's trailing edge with nothing to their right, and measured at
+ * 16.3 x 12px the tight box left them 40 x 20 — under the floor in BOTH
+ * directions. This is the "isolated, so they can take the horizontal room"
+ * upgrade the floor's own comment describes, and per its rule the list only
+ * ever upgrades. It lives here rather than in the floor block so the notes'
+ * selectors stay together; the floor block is the place to look for the others.
+ *
+ * Nothing to collide with: a note carries at most two actions, only ONE note is
+ * ever revealed at a time (notes.js), and an unrevealed note's actions are
+ * `pointer-events: none` — so the grown box can only ever overlap dead space. */
+@media (pointer: coarse) {
+  .n-head .n-acts .note-action::after { content: ''; position: absolute; inset: -16px -14px; }
+}
+
 /* THE OPEN DOOR: every thread ends with this row, always visible, in the
  * current viewer's own colour at a whisper. It is the whole reply affordance —
  * no note carries a Reply, so "reply to a reply" cannot be asked for and one
