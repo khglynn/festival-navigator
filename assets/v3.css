@@ -627,15 +627,18 @@ button.f-chip.notes { cursor: pointer; }
 #zoom-layer { position: fixed; inset: 0; z-index: 36; pointer-events: none; }
 .zoom-slot { position: absolute; width: max-content; pointer-events: none; }
 .zoom-slot::before { content: ''; position: absolute; inset: 0; border-radius: var(--r-card);
-                     box-shadow: 0 18px 50px rgba(0, 0, 0, .55); opacity: 0; transition: opacity .32s ease; }
+                     box-shadow: 0 18px 50px rgba(0, 0, 0, .55); opacity: 0; transition: opacity .38s ease; }
 .zoom-slot.shown::before { opacity: 1; }
+/* The hit target is the whole grown box from the first frame; the SURFACE
+ * under it carries the wash, the border and the clip that unfolds on the way
+ * in — so a tap lands while the card is still opening. */
 .zoom-card { position: relative; box-sizing: border-box; min-height: inherit; pointer-events: auto;
              display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 7px;
-             padding: 12px 14px 12px; text-align: center; overflow: hidden; cursor: pointer;
-             border: 1px solid var(--hairline); border-radius: var(--r-card);
+             padding: 12px 14px 12px; text-align: center; cursor: pointer;
              -webkit-touch-callout: none; user-select: none; color: inherit; font-family: inherit; }
-.zoom-card.animated { background-size: 180% 180%; animation: gradShift 12s ease-in-out infinite; }
-.zoom-card > * { position: relative; }
+.zoom-card .z-surface { position: absolute; inset: 0; overflow: hidden; border: 1px solid var(--hairline); border-radius: var(--r-card); }
+.zoom-card .z-surface.animated { background-size: 180% 180%; animation: gradShift 12s ease-in-out infinite; }
+.zoom-card > :not(.z-surface) { position: relative; }
 .zoom-card .f-name { font-size: 15px; font-weight: 700; line-height: 1.2; color: var(--text-primary); }
 /* The resting pieces ride the morph as clones pinned where they sat on the
  * wall, then dissolve into their grown twins; removed once everything lands. */

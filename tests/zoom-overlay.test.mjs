@@ -193,8 +193,9 @@ test('the grown card and the resting card render from ONE model: same aura, ever
   wall.appendChild(card);
   const facts = zoom.zoomCard(card, 'GRiZ', ctx, { occ: { day: 'Saturday', stage: 'Pier Stage', time: '9:00 PM - 10:15 PM', weekend: 'W2' } });
   const grown = document.querySelector('#zoom-layer .zoom-card');
-  assert.equal(grown.style.background, card.style.background, 'the zoom wears the card\'s aura (a second colour layer once made this invalid and black)');
-  assert.ok(grown.style.background.includes('radial-gradient'), 'and the aura is really there');
+  const surface = grown.querySelector('.z-surface');
+  assert.equal(surface.style.background, card.style.background, 'the zoom wears the card\'s aura (a second colour layer once made this invalid and black)');
+  assert.ok(surface.style.background.includes('radial-gradient'), 'and the aura is really there');
   assert.equal(facts.sub, '9:00 – 10:15 PM · Saturday · Pier Stage · Weekend 2', 'the details view shows the details, weekend included');
   assert.equal(grown.querySelector('.f-sub').textContent, facts.sub);
   assert.equal(grown.querySelectorAll('.f-pill').length, facts.people.length);
