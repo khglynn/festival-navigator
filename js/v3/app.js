@@ -123,8 +123,12 @@ function refreshArtistCards(artistName) {
   const els = document.querySelectorAll(`#wall-root .card[data-artist="${CSS.escape(artistName)}"]`);
   // A single-card refresh replaces the node — a zoom on it would be orphaned
   // with the singleton pointing at a detached card (Codex gate, 2026-08-29).
+  // A pick while zoomed keeps the zoom: the person is still resting on the
+  // card (cycling to MUST while watching the pills). The fresh node re-grows
+  // at once — no intent delay, no morph replay (real-browser walk, 2026-08-29).
   const z = zoomedCard();
-  if (z && [...els].includes(z)) unzoom();
+  const keepZoom = z && [...els].includes(z) ? { source: zoomSource(), occ: z.dataset.occ ? JSON.parse(z.dataset.occ) : null } : null;
+  if (keepZoom) unzoom();
   if (!els.length) { repaintWall(); return; }
   // Under a people filter that includes ME, my tap changes the filter's
   // visible set — a list card (afters, Folsom, search) must appear or
@@ -132,7 +136,11 @@ function refreshArtistCards(artistName) {
   // is unaffected by my tap, so the cheap path stays.
   const filter = ctx.filterPeople || [];
   if (filter.length && (filter.includes(ctx.meName) || [...els].some((el) => !el.classList.contains('cell')))) { repaintWall(); return; }
-  els.forEach((el) => refreshCard(el, artistName, ctx));
+  const fresh = [...els].map((el) => refreshCard(el, artistName, ctx));
+  if (keepZoom && fresh[0] && fresh[0].isConnected) {
+    const target = fresh.find((el) => el.matches(':hover')) || fresh[0];
+    zoomCard(target, artistName, ctx, { onOpenNotes: (a) => ctx.onOpenNotes(a, keepZoom.occ), source: keepZoom.source, occ: keepZoom.occ, instant: true });
+  }
 }
 
 function handleTap(artistName) {

@@ -202,10 +202,16 @@ function hop(toEl, fromRect, toRect, fromEl = null, ms = MORPH_MS) {
     { duration: ms, easing: EASE, fill: 'both' },
   )];
   if (fromEl) {
+    // The grown layout has already MOVED the resting piece (a bigger card puts
+    // its corners elsewhere); its hop starts from where it was (a) and ends at
+    // its twin (b), both expressed against where it sits now (c). Animating
+    // from `none` left it ghosting at its new spot (real-browser walk,
+    // 2026-08-29).
+    const c = mid(rect(fromEl));
     anims.push(fromEl.animate(
-      [{ transform: 'none', opacity: 1 },
+      [{ transform: `translate(${a.x - c.x}px, ${a.y - c.y}px)`, opacity: 1 },
        { opacity: 1, offset: 0.3 },
-       { transform: `translate(${b.x - a.x}px, ${b.y - a.y}px) scale(${1 / sx}, ${1 / sy})`, opacity: 0 }],
+       { transform: `translate(${b.x - c.x}px, ${b.y - c.y}px) scale(${1 / sx}, ${1 / sy})`, opacity: 0 }],
       { duration: ms, easing: EASE, fill: 'both' },
     ));
   }
@@ -283,7 +289,7 @@ export function unzoom() {
   exits.set(el, { out, grown, rest });
 }
 
-export function zoomCard(el, artistName, ctx, { onOpenNotes = null, source = 'mouse', occ = null } = {}) {
+export function zoomCard(el, artistName, ctx, { onOpenNotes = null, source = 'mouse', occ = null, instant = false } = {}) {
   if (zoomed && zoomed.el === el) return;
   unzoom();
   // An unfinished exit on this card (keyboard re-entry mid-shrink) ends now:
@@ -364,7 +370,7 @@ export function zoomCard(el, artistName, ctx, { onOpenNotes = null, source = 'mo
   el.style.minHeight = '132px';
   el.style.zIndex = '30';
 
-  if (!canAnimate(el)) { for (const p of rest) p.style.opacity = '0'; return facts; }
+  if (instant || !canAnimate(el)) { for (const p of rest) p.style.opacity = '0'; return facts; }
 
   // INVERT + PLAY: the box is revealed by a clip from the resting rect; every
   // piece hops to its twin. One duration, one ease.
@@ -393,7 +399,7 @@ export function zoomCard(el, artistName, ctx, { onOpenNotes = null, source = 'mo
   });
   // Marks beyond the pills shown (never, in practice) and the ghosts dissolve.
   for (const extra of [...R.marks.slice(G.pills.length), ...R.ghosts]) {
-    anims.push(extra.animate([{ opacity: 1 }, { opacity: 0 }], { duration: MORPH_MS * 0.5, easing: EASE, fill: 'forwards' }));
+    anims.push(extra.animate([{ opacity: 1 }, { opacity: 0 }], { duration: MORPH_MS * 0.4, easing: EASE, fill: 'forwards' }));
   }
   if (G.notes) anims.push(...(before.notes ? hop(G.notes, before.notes, rect(G.notes), R.notes)
     : [G.notes.animate([{ opacity: 0 }, { opacity: 0, offset: .4 }, { opacity: 1 }], { duration: MORPH_MS, easing: EASE })]));
