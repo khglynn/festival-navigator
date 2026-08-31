@@ -4,6 +4,7 @@
   "year": "'26",
   "subtitle": "Pier 80",
   "location": "San Francisco, CA",
+  "locationUrl": "https://maps.google.com/?q=Pier+80,+401+Cesar+Chavez+St,+San+Francisco",
   "dates": "September 26–27, 2026 · doors 1 PM",
   "accent": "56, 189, 248",
   "status": "scheduled",
@@ -576,7 +577,17 @@
     "The Midway": "https://maps.google.com/?q=The+Midway,+900+Marin+St,+San+Francisco",
     "Folsom St, 8th-13th": "https://maps.google.com/?q=Folsom+Street+Fair,+Folsom+St+%26+9th+St,+San+Francisco",
     "1015 Folsom": "https://maps.google.com/?q=1015+Folsom,+San+Francisco",
-    "SF Eagle": "https://maps.google.com/?q=SF+Eagle,+398+12th+St,+San+Francisco"
+    "SF Eagle": "https://maps.google.com/?q=SF+Eagle,+398+12th+St,+San+Francisco",
+    "888 Garage": "https://maps.google.com/?q=888+Garage,+888+Marin+St,+San+Francisco",
+    "Audio": "https://maps.google.com/?q=Audio,+316+11th+St,+San+Francisco",
+    "Club Six": "https://maps.google.com/?q=Club+Six,+60+6th+St,+San+Francisco",
+    "Great American Music Hall": "https://maps.google.com/?q=Great+American+Music+Hall,+859+O'Farrell+St,+San+Francisco",
+    "Monarch": "https://maps.google.com/?q=Monarch,+101+6th+St,+San+Francisco",
+    "Pier 80 (loyalty invite)": "https://maps.google.com/?q=Pier+80,+401+Cesar+Chavez+St,+San+Francisco",
+    "Public Works": "https://maps.google.com/?q=Public+Works,+161+Erie+St,+San+Francisco",
+    "Regency Ballroom": "https://maps.google.com/?q=Regency+Ballroom,+1300+Van+Ness+Ave,+San+Francisco",
+    "Rickshaw Stop": "https://maps.google.com/?q=Rickshaw+Stop,+155+Fell+St,+San+Francisco",
+    "The Great Northern": "https://maps.google.com/?q=The+Great+Northern,+119+Utah+St,+San+Francisco"
   },
   "days": {
     "Saturday": {

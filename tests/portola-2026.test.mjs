@@ -122,13 +122,17 @@ test('portola-2026: a set of three hours or more is a TALL cell — name at the 
 test('the fest place line: the venue is a door when the file knows the address, the aside and dates stay text', async () => {
   const { festPlaceLine } = await import('../js/v3/card-facts.js');
   const text = (frag) => { const d = document.createElement('div'); d.appendChild(frag); return d; };
-  const plain = text(festPlaceLine(portola));
+  // The no-address case on a CLONE — the real file carries Pier 80's address
+  // (venue round, 2026-08-31), and a test that assumed it didn't blocked the
+  // data from landing.
+  const plain = text(festPlaceLine({ ...portola, locationUrl: undefined }));
   assert.equal(plain.textContent, 'Pier 80 · September 26–27, 2026 · doors 1 PM');
   assert.equal(plain.querySelector('a'), null, 'no address, no door');
   assert.equal(plain.querySelector('span.fest-place').textContent, 'Pier 80');
-  const linked = text(festPlaceLine({ ...portola, locationUrl: 'https://maps.google.com/?q=Pier+80,+San+Francisco' }));
+  assert.match(portola.locationUrl, /^https:\/\/maps\.google\.com\/\?q=Pier\+80/, 'the shipped file knows where Pier 80 is');
+  const linked = text(festPlaceLine(portola));
   const door = linked.querySelector('a.fest-place');
-  assert.equal(door.getAttribute('href'), 'https://maps.google.com/?q=Pier+80,+San+Francisco');
+  assert.equal(door.getAttribute('href'), portola.locationUrl);
   assert.equal(door.textContent, 'Pier 80');
   assert.equal(door.getAttribute('target'), '_blank');
   assert.equal(linked.textContent, 'Pier 80 · September 26–27, 2026 · doors 1 PM');

@@ -287,6 +287,14 @@ let zoomed = null;      // { el, artist, ctx, occ, source, onOpenNotes, slot, ca
 let dismissedEl = null; // a zoom put away on purpose waits for the pointer to leave the card
 let layer = null;
 const exitingSlots = new Set(); // overlays still shrinking away — a NEW zoom clears them ALL
+// Where the mouse last was — the only way to judge a zoom restored under a
+// hand that is not moving. One passive listener for the module's lifetime.
+let lastMouse = null;
+if (typeof document !== 'undefined') {
+  document.addEventListener('pointermove', (e) => {
+    if (e.pointerType === 'mouse') lastMouse = { x: e.clientX, y: e.clientY };
+  }, { passive: true, capture: true });
+}
 
 const reduced = () => typeof window !== 'undefined' && !!window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 // Low Power promises "no animation" and CSS cannot reach Element.animate() —
@@ -409,7 +417,21 @@ export function zoomCard(el, artistName, ctx, { onOpenNotes = null, source = 'mo
   zoomed = z;
   wireSlot(z);
   slot.classList.add('shown'); // the shadow eases in through CSS
-  if (!animate) return facts;
+  if (!animate) {
+    // An instant restore (a wall repaint under a mouse zoom) can land after
+    // the hand has already moved elsewhere, and a still hand sends no
+    // pointermove for the belt to hear — ask the browser what is under the
+    // last known mouse position and put the overlay away if that is neither
+    // the card nor the overlay (Codex gate, 2026-08-31).
+    if (instant && source === 'mouse' && lastMouse && typeof document.elementFromPoint === 'function') {
+      requestAnimationFrame(() => {
+        if (zoomed !== z) return;
+        const under = document.elementFromPoint(lastMouse.x, lastMouse.y);
+        if (under && !slot.contains(under) && !z.el.contains(under)) unzoom({ instant: true });
+      });
+    }
+    return facts;
+  }
 
   // The bloom: materialise fast while growing k→1 from the resting centre.
   // At the start the overlay is resting-card-sized in the resting card's
@@ -648,6 +670,19 @@ function wireSlot(z) {
     });
   }
 
+  // The overlay never steals focus. A click on the RESTING card focuses it
+  // (role=button), and refreshCard hands that focus to the fresh node on
+  // purpose (keyboard users keep their place). The next click, on this
+  // overlay — a plain div — would blur that card; wireCardFocusZoom reads
+  // the blur as "focus left the card" and CLOSES the zoom before the click
+  // arrives, and the pick is lost. Kevin (2026-08-31): "hover and click, it
+  // closes." Cancelling mousedown's default keeps focus where it was; the
+  // notes chip and the maps door keep their own defaults.
+  card.addEventListener('mousedown', (e) => {
+    if (e.target.closest && e.target.closest('button, a')) return;
+    e.preventDefault();
+  });
+
   // A tap or click on the grown card is a pick — the same thing it means on
   // the resting card. Its one button (the notes chip) is its own control.
   card.addEventListener('click', (e) => {
@@ -767,8 +802,7 @@ function nextFocusableAfter(el) {
 // Kevin's rule (2026-08-29): a real intent delay, or cards pop like crazy.
 export function wireCardZoom(el, artistName, ctx, { onOpenNotes = null, occ = null } = {}) {
   let inT = null;
-  el.addEventListener('pointerenter', (e) => {
-    if (e.pointerType !== 'mouse') return;
+  const arm = () => {
     if (zoomed && zoomed.el === el) return;
     if (dismissedEl === el) return; // put away on purpose; a leave clears it
     if (inT) clearTimeout(inT);
@@ -776,6 +810,20 @@ export function wireCardZoom(el, artistName, ctx, { onOpenNotes = null, occ = nu
       inT = null;
       if (el.isConnected) zoomCard(el, artistName, ctx, { onOpenNotes, source: 'mouse', occ });
     }, ZOOM_IN_MS);
+  };
+  el.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse') arm(); });
+  // A card born UNDER a resting pointer never hears pointerenter — the wall
+  // repaints on every sync echo (~5 s after a pick) and refreshCard swaps
+  // the node under a pick, and the browser fires boundary events only on
+  // the next movement. The old node's intent timer dies with it, so hover
+  // did nothing until the hand moved off and back (Kevin, 2026-08-31: "then
+  // it's stuck"). :hover is the browser's own record of what the pointer is
+  // over — a fresh card that already matches it arms its intent. One frame
+  // late on purpose: renderCard wires the card BEFORE inserting it, and a
+  // detached node can never be hovered (Codex gate, 2026-08-31).
+  requestAnimationFrame(() => {
+    if (!el.isConnected) return;
+    try { if (el.matches(':hover')) arm(); } catch { /* engines without :hover matching just wait for the pointer */ }
   });
   el.addEventListener('pointerleave', (e) => {
     if (e.pointerType !== 'mouse') return;

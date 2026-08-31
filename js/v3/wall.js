@@ -113,6 +113,8 @@ export function renderCard(artistName, ctx, opts = {}) {
   }
   if (opts.tall) {
     el.classList.add('tall');
+    el.dataset.tall = '1'; // refreshCard replays this exact render (a pick must not un-tall Despacio)
+    if (opts.until) el.dataset.until = opts.until;
     if (opts.until) {
       const u = document.createElement('span');
       u.className = 'until';
@@ -225,6 +227,8 @@ export function refreshCard(el, artistName, ctx) {
     cell: el.classList.contains('cell'),
     time: el.dataset.time || undefined,
     tag: el.dataset.tag || undefined,
+    tall: el.dataset.tall === '1',
+    until: el.dataset.until || null,
     occ: el.dataset.occ ? JSON.parse(el.dataset.occ) : undefined,
   });
   for (const prop of PLACEMENT_PROPS) {

@@ -312,3 +312,63 @@ test('an orphaned mouse zoom closes on the next outside movement (a repaint can 
   await new Promise((r) => setTimeout(r, 320));
   assert.equal(document.querySelector('.zoom-slot'), null, 'outside movement closes the orphan');
 });
+
+test('the overlay never steals focus: a click on its body picks even when the resting card holds focus (the 2026-08-31 "hover and click, it closes")', () => {
+  const ctx = makeCtx();
+  const card = mountCard(ctx);
+  // Production wiring: the keyboard route's focusout closes the zoom when
+  // focus truly leaves the card. A click on the RESTING card focuses it
+  // (role=button), and refreshCard hands that focus to the fresh node.
+  zoom.wireCardFocusZoom(card, 'GRiZ', ctx, { occ: { day: 'Saturday', stage: null, time: null } });
+  card.focus();
+  assert.equal(document.activeElement, card);
+  zoom.zoomCard(card, 'GRiZ', ctx, { occ: { day: 'Saturday', stage: null, time: null }, instant: true, onOpenNotes: ctx.onOpenNotes });
+  const overlay = document.querySelector('.zoom-slot .zoom-card');
+  // The real click: mousedown's default action would move focus off the card
+  // (blur → focusout → unzoom, before the click arrives). Cancelling it is the
+  // fix; jsdom performs no focus default, so the assertion IS the pin.
+  const down = new dom.window.MouseEvent('mousedown', { bubbles: true, cancelable: true });
+  overlay.querySelector('.f-name').dispatchEvent(down);
+  assert.equal(down.defaultPrevented, true, 'mousedown on the overlay body is cancelled — focus stays on the card');
+  assert.equal(document.activeElement, card, 'no focusout, so no close');
+  // The controls keep their own defaults.
+  const onChip = new dom.window.MouseEvent('mousedown', { bubbles: true, cancelable: true });
+  document.querySelector('.zoom-slot button.f-chip.notes').dispatchEvent(onChip);
+  assert.equal(onChip.defaultPrevented, false, 'the notes chip keeps its mousedown default');
+  // The failure the fix prevents, spelled out on the live handler: were focus
+  // to leave the card anyway (an unprevented mousedown in a real browser),
+  // the keyboard route's focusout closes the zoom before any click arrives.
+  card.blur();
+  assert.equal(document.querySelector('.zoom-slot'), null, 'a real blur closes the zoom — which is exactly why the overlay must not cause one');
+  // Focus kept, the click is a pick and the zoom stays.
+  card.focus();
+  zoom.zoomCard(card, 'GRiZ', ctx, { occ: { day: 'Saturday', stage: null, time: null }, instant: true, onOpenNotes: ctx.onOpenNotes });
+  click(document.querySelector('.zoom-slot .f-name'));
+  assert.deepEqual(ctx.taps, ['GRiZ'], 'the click is a pick');
+  assert.ok(document.querySelector('.zoom-slot'), 'and the zoom is still up');
+});
+
+test('a card rendered under a resting pointer arms its hover intent one frame after insertion (a repaint under a still hand)', async () => {
+  const ctx = makeCtx();
+  // Production shape: renderCard wires the card BEFORE inserting it, so the
+  // :hover check must wait a frame. jsdom has no :hover; stand in for the
+  // browser's record on exactly this node, and give rAF real (async) timing.
+  const syncRaf = globalThis.requestAnimationFrame;
+  globalThis.requestAnimationFrame = (fn) => setTimeout(fn, 0);
+  try {
+    const wall = document.getElementById('wall-root');
+    wall.replaceChildren();
+    const card = renderCard('GRiZ', ctx, { occ: { day: 'Saturday', stage: null, time: null } });
+    const realMatches = card.matches.bind(card);
+    card.matches = (sel) => (sel === ':hover' ? true : realMatches(sel));
+    zoom.wireCardZoom(card, 'GRiZ', ctx, { occ: { day: 'Saturday', stage: null, time: null } }); // still detached
+    wall.appendChild(card);
+    await new Promise((r) => setTimeout(r, 20));
+    assert.equal(document.querySelector('.zoom-slot'), null, 'not before the intent delay');
+    await new Promise((r) => setTimeout(r, zoom.ZOOM_IN_MS + 40));
+    assert.ok(document.querySelector('.zoom-slot'), 'grown without any pointerenter');
+    assert.equal(zoom.zoomedCard(), card);
+  } finally {
+    globalThis.requestAnimationFrame = syncRaf;
+  }
+});

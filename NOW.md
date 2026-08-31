@@ -42,10 +42,25 @@ stage f'd", plus new asks (below). What the day found and shipped (commits
   build — the likeliest story behind "still broken" on a build where real
   pointer input passed end to end (log: hover → grow → click picked → move
   away → closed → next card grew).
-- **Could not reproduce "click breaks hover" on v62 with a real pointer** in
-  a clean profile. If Kevin still sees it on a fresh-origin link, the next
-  session needs his exact gesture (mouse vs trackpad; does the pointer stay
-  put after the click?).
+- **"Hover and click, it closes… then stuck" — ROOT-CAUSED (Codex + a real-
+  input event log agreed):** a click on the RESTING card focuses it
+  (role=button) and `refreshCard` hands that focus to the fresh node on
+  purpose (keyboard users keep their place); the next click lands on the
+  overlay — a plain div — whose mousedown default BLURS the card;
+  `wireCardFocusZoom`'s focusout reads that as "focus left" and closes the
+  zoom before the click arrives; the click's down/up targets now differ and
+  it lands on `body`. Fix: the overlay cancels mousedown's default (its
+  button/link controls keep theirs). The "stuck": after EVERY pick the sync
+  echo repainted the whole wall — Postgres returns jsonb keys length-then-
+  alphabet while a local pick appends its key, so `applyRemoteDoc`'s plain
+  stringify compare called every own-edit echo a change (measured live: full
+  repaint 2.0 s after a pick). Compare is order-insensitive now (pinned:
+  `tests/apply-remote-order.test.mjs`). Also: a card rendered under a resting
+  pointer arms its hover intent a frame after insertion (:hover), an outside
+  press is a plain close (no `dismissedEl` poison — Codex), an instant
+  restore checks `elementFromPoint` under the last mouse position,
+  `refreshCard` replays tall/until. Venue round landed: `locationUrl` on all
+  11 fests + 16 Portola afters venues (bank: `2026-08-31-venue-links.md`).
 
 **Asks banked, awaiting Kevin:** the structured events model for
 Afters/Folsom (nights + venues + sort; proposal with two decisions in

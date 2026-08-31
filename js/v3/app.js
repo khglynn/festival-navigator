@@ -79,9 +79,14 @@ const ctx = {
 
 // One zoom at a time, dismissed the way previews are everywhere: a tap or
 // press anywhere outside it (the resting card AND its overlay), or Escape.
-// Capture-phase so it runs before the tap it is judging.
+// Capture-phase so it runs before the tap it is judging. A press OUTSIDE is
+// a plain close, never a "stay away" — the pointer is by definition not on
+// the card, so nothing would re-grow it, and marking the card dismissed
+// poisoned its next hover: leave the overlay, click elsewhere before the
+// grace close fires, and the first re-entry did nothing (Codex gate,
+// 2026-08-31). Escape keeps the mark — the hand is still on the card there.
 document.addEventListener('pointerdown', (e) => {
-  if (zoomedCard() && !zoomContains(e.target)) dismissZoom();
+  if (zoomedCard() && !zoomContains(e.target)) unzoom();
 }, true);
 // Escape closes ONE layer: a live zoom eats the press before any sheet or
 // router handler sees it (capture phase) — never both in one keypress.
