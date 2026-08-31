@@ -62,6 +62,26 @@ stage f'd", plus new asks (below). What the day found and shipped (commits
   `refreshCard` replays tall/until. Venue round landed: `locationUrl` on all
   11 fests + 16 Portola afters venues (bank: `2026-08-31-venue-links.md`).
 
+**End-of-day state (2026-08-31 evening) — READ FIRST IN A FRESH THREAD:**
+Kevin plans to wrap this thread and start the events BUILD fresh. Open
+loops: (1) his "every click closes the hover" — unreproducible by scripted
+real input in his own Chrome engine on his exact build, journal EMPTY (no
+throw); v71 ships the discriminator: every zoom close names its cause, and
+a close within 1 s of an overlay press writes `zoom-close-after-click` to
+the crash journal — his next Diagnostics paste (Settings → App) names the
+culprit path outright. (2) Design round 3 APPROVED in direction (day-first,
+adaptive rule, BUCKET filter — his correction: buckets like Portola/Afters/
+Folsom, never venues — the deck for stacked slots): canvas at
+https://claude.ai/code/artifact/1e27ce79-0813-4283-b83c-52cf64be107d, rule
++ sizing in `claude-plans/2026-08-31-events-canvas/MODEL-V3.md`; Kevin
+wants to "suggest a path" against the RAW crammed frame before the deck is
+final. Clean-tiles law from him: resting cards show name + time only;
+venue/map/TBA live in the zoom. (3) Background teammates were starving
+platform-wide all day (spawn → few tool calls → freeze; main loop fine) —
+work in-band or via background shells until a restart proves otherwise.
+(4) A stray "zz test" note by Ava sits in zz-design's Groove Armada thread
+(battery cleanup miss) — sweep with the promote-time Neon cleanup.
+
 **Asks banked, awaiting Kevin:** the structured events model for
 Afters/Folsom (nights + venues + sort; proposal with two decisions in
 `claude-plans/2026-08-31-events-model.md` — "big one in the 11th hour", his
