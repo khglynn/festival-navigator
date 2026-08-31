@@ -2,6 +2,43 @@
 
 Newest first. One entry per meaningful unit of work.
 
+## 2026-08-31 — Kevin's review of the bloom: what synthetic tests can't see, a regression of mine, and the click that closed the zoom
+
+- **Three bugs the frame-stepping could not see, all real-input only:** a 1px
+  trackpad scroll dismissed AND poisoned the zoom (now it follows its card);
+  an overlay restored by a repaint under a moved-away hand never heard a
+  boundary event (any outside movement now closes it); and the one Kevin kept
+  hitting — "hover and click, it closes… then stuck" — which Codex and a live
+  event log root-caused together: a click on the resting card focuses it,
+  `refreshCard` restores that focus to the fresh node (right, for keyboard
+  users), and the next click on the overlay (a plain div) blurs the card, so
+  the keyboard route's `focusout` closes the zoom before the click can land.
+  The overlay cancels mousedown's default now.
+- **The "stuck" half was a full-wall repaint after every pick.** Postgres
+  hands back jsonb keys length-then-alphabet; a local pick appends its key;
+  `applyRemoteDoc`'s stringify compare called the own-edit echo a remote
+  change — measured live at 2.0 s after a pick, 110 cards rebuilt, zoom torn
+  down, focus dumped, hover intents killed. The compare is order-insensitive.
+- **My 08-30 "full-bleed strip" broke the timetable at any window wider than
+  the shell** — the strip already had the grids' geometry via its `times-wrap`
+  class; my override made it narrower, drifting every stage head 35px per
+  column and letting cards scroll out beside the rail. Reverted to <720 only;
+  the rail took the same full-viewport geometry. Tall sets (Despacio, 7h) now
+  read like a printed grid: name at the top edge, "until 9:45 PM" at the
+  bottom.
+- **Stale-worker trap closed:** the first open after every deploy ran the
+  previous build (cache-first shell). index.html reloads once when a new
+  worker claims the page in its first 20 s. Every "still broken" of the day
+  is suspect in hindsight.
+- **A fest's place is a door** — `placeDoor()`/`festPlaceLine()` serve the
+  zoom's WHERE, the wall header and the Settings card; a Sonnet teammate
+  sourced `locationUrl` for all 11 fests and 16 Portola afters venues, and
+  caught my test fixture that assumed Portola had no address.
+- **Lessons banked:** a real-pointer walk before every push (the memory
+  already said so; it was skipped twice); a venue teammate starved for 45 min
+  with no bank file — TaskStop + respawn with bank-first as the literal first
+  tool call worked in 20 min.
+
 ## 2026-08-30 (late) — the bloom: the zoom's motion rebuilt once, from a storyboard
 
 - Kevin's verdict on the evening's v58: "it's worse... there HAS to be
