@@ -744,13 +744,11 @@ button.f-chip.notes { cursor: pointer; }
 .zoom-card .f-name { font-size: 18px; font-weight: 700; line-height: 1.2; color: var(--text-primary); } /* the zoom's hero: the name grows (13.5–15px at rest) */
 /* After a pick the old wash lingers over the new one and thins away. */
 .zoom-card .z-surface-old { pointer-events: none; z-index: 1; }
-/* The grown rows keep their corners: notes + Spotify are the lower-LEFT
- * corner said fully, the people the lower-RIGHT (Kevin, 2026-08-30) —
- * so they align to their own sides in the zoom (the sheet stays centred). */
-.zoom-card .f-grown { align-items: stretch; }
-.zoom-card .f-grown .f-sub, .zoom-card .f-grown .f-where { justify-content: center; }
-.zoom-card .f-who { justify-content: flex-end; }
-.zoom-card .f-chips { justify-content: flex-start; }
+/* Every grown row is centred, same as the sheet card. (The 2026-08-30
+ * "corner-true" experiment pushed people right and chips left; with one
+ * pill and one chip it read as two strays flung to the edges — Kevin,
+ * 2026-08-31. The corner CONNECTION lives in the slide-in directions,
+ * not in resting alignment.) */
 /* While zoomed, the resting card's CONTENT steps back but its wash stays —
  * the wall keeps its colour under the bloom and there is never a hole.
  * (Hiding the whole card was why a frame-0 twin had to repaint it inside

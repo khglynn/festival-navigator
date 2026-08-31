@@ -645,15 +645,52 @@ function wireSlot(z) {
     if (outT) clearTimeout(outT);
     outT = setTimeout(() => { outT = null; if (zoomed === z) unzoom(); }, ZOOM_OUT_MS);
   });
-  z.cleanup.push(() => { if (outT) { clearTimeout(outT); outT = null; } });
+  // The belt under the boundary events: an overlay can be BORN with the
+  // pointer already elsewhere — a sync echo repaints the wall and restores
+  // the zoom instantly after the hand moved on — and a card that never saw
+  // the pointer enter never hears it leave, so the zoom stood until the
+  // next click (Kevin, 2026-08-31: "after click, it doesn't un-hover").
+  // Any mouse movement outside the zoom starts the same grace close the
+  // leave would have; movement back inside cancels it.
+  const onMove = (e) => {
+    if ((e.pointerType && e.pointerType !== 'mouse') || zoomed !== z || z.source !== 'mouse') return;
+    if (slot.contains(e.target) || z.el.contains(e.target)) {
+      if (outT) { clearTimeout(outT); outT = null; }
+      return;
+    }
+    if (!outT) outT = setTimeout(() => { outT = null; if (zoomed === z) unzoom(); }, ZOOM_OUT_MS);
+  };
+  document.addEventListener('pointermove', onMove, { passive: true, capture: true });
+  z.cleanup.push(() => {
+    document.removeEventListener('pointermove', onMove, true);
+    if (outT) { clearTimeout(outT); outT = null; }
+  });
 
-  // Scrolling anywhere (the page, the timetable) moves the card out from
-  // under its overlay — put it away, like every tooltip. Capture phase so an
-  // inner scroller's scroll (which does not bubble) is heard too.
-  const onScroll = () => { if (zoomed === z) dismissZoom(); };
+  // Scrolling never kills the zoom — the overlay is ANCHORED to its card
+  // and follows it. Dismissing on any scroll event read as "hover is fully
+  // broken" on a trackpad, where micro-deltas fire constantly while the
+  // hand rests: the card grew, vanished on a 1px jiggle, and the dismissal
+  // poisoned it via dismissedEl (found on the 2026-08-31 review round).
+  // The overlay closes only when its card has actually left the viewport.
+  // Capture phase so an inner scroller's scroll (which does not bubble) is
+  // heard too; rAF-throttled, one re-place per frame.
+  let followRaf = 0;
+  const follow = () => {
+    followRaf = 0;
+    if (zoomed !== z) return;
+    if (!z.el.isConnected) { unzoom({ instant: true }); return; }
+    const r = rect(z.el);
+    if (r.bottom < 0 || r.top > window.innerHeight || r.right < 0 || r.left > window.innerWidth) {
+      unzoom({ instant: true });
+      return;
+    }
+    place(z.slot, z.el);
+  };
+  const onScroll = () => { if (!followRaf) followRaf = requestAnimationFrame(follow); };
   window.addEventListener('scroll', onScroll, { passive: true, capture: true });
   window.addEventListener('resize', onScroll);
   z.cleanup.push(() => {
+    if (followRaf) cancelAnimationFrame(followRaf);
     window.removeEventListener('scroll', onScroll, true);
     window.removeEventListener('resize', onScroll);
   });

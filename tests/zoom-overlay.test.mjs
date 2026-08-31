@@ -284,3 +284,31 @@ test('the bloom keeps its laws: compositor-only, WHEN waits out the content fade
     delete proto.animate;
   }
 });
+
+test('a scroll never kills the zoom — the overlay follows its card (trackpads jiggle)', () => {
+  const ctx = makeCtx();
+  const card = mountCard(ctx);
+  zoom.zoomCard(card, 'GRiZ', ctx, { occ: { day: 'Saturday', stage: null, time: null } });
+  assert.ok(document.querySelector('.zoom-slot'), 'grown');
+  window.dispatchEvent(new dom.window.Event('scroll'));
+  assert.ok(document.querySelector('.zoom-slot'), 'a scroll repositions the overlay instead of dismissing it');
+  // and the card is NOT poisoned: hovering it again is still allowed
+  zoom.unzoom({ instant: true });
+  const again = zoom.zoomCard(card, 'GRiZ', ctx, { occ: { day: 'Saturday', stage: null, time: null } });
+  assert.ok(again, 'the card re-grows after a scroll (no dismissedEl poisoning)');
+});
+
+test('an orphaned mouse zoom closes on the next outside movement (a repaint can restore a zoom after the hand moved on)', async () => {
+  const ctx = makeCtx();
+  const card = mountCard(ctx);
+  zoom.zoomCard(card, 'GRiZ', ctx, { occ: { day: 'Saturday', stage: null, time: null }, instant: true });
+  assert.ok(document.querySelector('.zoom-slot'), 'grown');
+  // moving INSIDE the zoom keeps it
+  document.querySelector('.zoom-card').dispatchEvent(new dom.window.MouseEvent('pointermove', { bubbles: true }));
+  await new Promise((r) => setTimeout(r, 320));
+  assert.ok(document.querySelector('.zoom-slot'), 'movement inside never closes it');
+  // moving OUTSIDE starts the grace close — no boundary event needed
+  document.body.dispatchEvent(new dom.window.MouseEvent('pointermove', { bubbles: true }));
+  await new Promise((r) => setTimeout(r, 320));
+  assert.equal(document.querySelector('.zoom-slot'), null, 'outside movement closes the orphan');
+});

@@ -446,10 +446,15 @@ function renderThreads(host, scope, target, ctx, { onChange, expandedPinned, edi
     }
   };
   if (!threads.length) {
-    const empty = document.createElement('div');
-    empty.className = 'n-empty';
-    empty.textContent = ctx.meName ? 'No notes yet — say the first thing.' : 'No notes yet.';
-    host.appendChild(empty);
+    // A person who can write sees the composer right there — the emptiness
+    // needs no caption (Kevin, 2026-08-31). Only a nameless viewer, who has
+    // no composer, is told the quiet is real.
+    if (!ctx.meName) {
+      const empty = document.createElement('div');
+      empty.className = 'n-empty';
+      empty.textContent = 'No notes yet.';
+      host.appendChild(empty);
+    }
     return;
   }
 
