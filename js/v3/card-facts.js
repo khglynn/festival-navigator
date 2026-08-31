@@ -247,7 +247,7 @@ const MIN_W = 216, MAX_W = 360, MIN_H = 132;
 let zoomed = null;      // { el, artist, ctx, occ, source, onOpenNotes, slot, card, anims, cleanup }
 let dismissedEl = null; // a zoom put away on purpose waits for the pointer to leave the card
 let layer = null;
-const exits = new WeakMap(); // resting card -> its overlay still shrinking away
+const exitingSlots = new Set(); // overlays still shrinking away — a NEW zoom clears them ALL
 
 const reduced = () => typeof window !== 'undefined' && !!window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 // Low Power promises "no animation" and CSS cannot reach Element.animate() —
@@ -411,9 +411,14 @@ function hop(toEl, fromRect, toRect, cloneEl, delay = 0) {
     { duration: MORPH_MS, delay, easing: EASE_ARRIVE, fill: 'both' },
   )];
   if (cloneEl) {
+    // Complementary to the twin's fade-in: the clone is on its way OUT by
+    // the time the twin is readable, so two centred lines of different
+    // widths never sit exposed on top of each other (the "2:45 –3:45 PM"
+    // double print in Kevin's GIF, 2026-08-30).
     anims.push(cloneEl.animate(
       [{ transform: 'none', opacity: 1 },
-       { opacity: 1, offset: 0.45 },
+       { opacity: 0.55, offset: 0.3 },
+       { transform: `translate(${b.x - a.x}px, ${b.y - a.y}px) scale(${1 / k})`, opacity: 0, offset: 0.6 },
        { transform: `translate(${b.x - a.x}px, ${b.y - a.y}px) scale(${1 / k})`, opacity: 0 }],
       { duration: MORPH_MS, delay, easing: EASE_ARRIVE, fill: 'both' },
     ));
@@ -425,10 +430,12 @@ const dissolve = (el, delay = 0) => el.animate([{ opacity: 1 }, { opacity: 0 }],
 export function zoomCard(el, artistName, ctx, { onOpenNotes = null, source = 'mouse', occ = null, instant = false } = {}) {
   if (zoomed && zoomed.el === el) return null;
   unzoom({ instant: true });
-  // This card's own overlay may still be shrinking away (a quick re-entry) —
-  // it ends now, or two overlays would stack.
-  const exiting = exits.get(el);
-  if (exiting) { exiting.remove(); exits.delete(el); }
+  // EVERY overlay still shrinking away ends now — not just this card's.
+  // Skimming across cards queued a ghost per leave, and clearing only the
+  // re-entered card's ghost let two or three grown surfaces overlap while a
+  // fourth grew (Kevin's GIF, 2026-08-30). New attention clears the stage.
+  for (const g of exitingSlots) g.remove();
+  exitingSlots.clear();
 
   const facts = factsFor(artistName, ctx, occ);
   const slot = document.createElement('div');
@@ -699,13 +706,13 @@ export function unzoom({ instant = false } = {}) {
   }
   const grown = z.card.querySelector('.f-grown');
   if (grown) grown.animate([{ opacity: 1 }, { opacity: 0 }], { duration: MORPH_OUT_MS * 0.5, easing: EASE_LEAVE, fill: 'forwards' });
-  exits.set(z.el, z.slot);
+  exitingSlots.add(z.slot);
   let done = false;
   const finish = () => {
     if (done) return;
     done = true;
     z.slot.remove();
-    if (exits.get(z.el) === z.slot) exits.delete(z.el);
+    exitingSlots.delete(z.slot);
   };
   out.onfinish = finish;
   out.oncancel = finish;
