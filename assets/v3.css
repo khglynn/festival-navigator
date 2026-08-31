@@ -728,7 +728,7 @@ button.f-chip.notes { cursor: pointer; }
 #zoom-layer { position: fixed; inset: 0; z-index: 36; pointer-events: none; }
 .zoom-slot { position: absolute; width: max-content; pointer-events: none; }
 .zoom-slot::before { content: ''; position: absolute; inset: 0; border-radius: var(--r-card);
-                     box-shadow: 0 18px 50px rgba(0, 0, 0, .55); opacity: 0; transition: opacity .38s ease; }
+                     box-shadow: 0 10px 28px rgba(0, 0, 0, .38); opacity: 0; transition: opacity .38s ease; } /* softened 2026-08-30 — 18/50/.55 read as a second card stacked behind a bright aura */
 .zoom-slot.shown::before { opacity: 1; }
 /* The hit target is the whole grown box from the first frame; the SURFACE
  * under it carries the wash, the border and the clip that unfolds on the way
@@ -746,6 +746,13 @@ button.f-chip.notes { cursor: pointer; }
 /* The resting pieces ride the morph as clones pinned where they sat on the
  * wall, then dissolve into their grown twins; removed once everything lands. */
 .zoom-card .z-rest { position: absolute; inset: 0; pointer-events: none; z-index: 3; }
+/* The grown rows keep their corners: notes + Spotify are the lower-LEFT
+ * corner said fully, the people the lower-RIGHT (Kevin, 2026-08-30) —
+ * so they align to their own sides in the zoom (the sheet stays centred). */
+.zoom-card .f-grown { align-items: stretch; }
+.zoom-card .f-grown .f-sub, .zoom-card .f-grown .f-where { justify-content: center; }
+.zoom-card .f-who { justify-content: flex-end; }
+.zoom-card .f-chips { justify-content: flex-start; }
 .card.zoom-source { opacity: 0; }
 
 /* Afters/event cards: the day and time on one line, the venue on the next. */

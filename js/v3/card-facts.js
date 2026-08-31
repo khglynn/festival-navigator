@@ -524,27 +524,17 @@ export function zoomCard(el, artistName, ctx, { onOpenNotes = null, source = 'mo
   }
   // 3. Then, a beat apart, the pieces.
   let beat = STAGGER_MS;
-  // The hop only makes sense one-line-to-one-line. An EVENT card's resting
-  // time element is a TWO-line block ("Fri · 9 PM – 3 AM\nPublic Works"), and
-  // hopping the one-line WHEN out of a two-line rect started it at double
-  // height and shrank it — Kevin's "verrry strange zoom stutter"
-  // (2026-08-30). A multi-line source fades its clone in place and WHEN
-  // rises in like WHERE does.
-  const timeOneLine = M.time && M.time.rect.height < 20;
-  if (G.sub && timeOneLine) { anims.push(...hop(G.sub, M.time.rect, rect(G.sub), clones.time, beat)); beat += STAGGER_MS; }
-  else if (G.sub) {
-    anims.push(G.sub.animate(
-      [{ transform: 'translateY(7px)', opacity: 0 }, { opacity: 1, offset: 0.5 }, { transform: 'none', opacity: 1 }],
-      { duration: MORPH_MS - 60, delay: beat, easing: EASE_ARRIVE, fill: 'both' },
-    ));
-    if (clones.time) anims.push(dissolve(clones.time, STAGGER_MS));
-    beat += STAGGER_MS;
-  }
-  else if (clones.time) anims.push(dissolve(clones.time));
-  if (G.where) { anims.push(G.where.animate(
+  // WHEN and WHERE move as one family — the same rise, a beat apart. The
+  // hop tried to morph the resting time line into WHEN and read as a
+  // stutter twice (Kevin, 2026-08-30: "just match them cleanly"); the
+  // resting line simply dissolves where it sits.
+  const rise = (el, delay) => el.animate(
     [{ transform: 'translateY(7px)', opacity: 0 }, { opacity: 1, offset: 0.5 }, { transform: 'none', opacity: 1 }],
-    { duration: MORPH_MS - 60, delay: beat, easing: EASE_ARRIVE, fill: 'both' },
-  )); beat += STAGGER_MS * 0.7; }
+    { duration: MORPH_MS - 60, delay, easing: EASE_ARRIVE, fill: 'both' },
+  );
+  if (G.sub) { anims.push(rise(G.sub, beat)); beat += STAGGER_MS; }
+  if (clones.time) anims.push(dissolve(clones.time, STAGGER_MS));
+  if (G.where) { anims.push(rise(G.where, beat)); beat += STAGGER_MS * 0.7; }
   G.pills.forEach((pill) => {
     anims.push(slideIn(pill, 22, beat));
     beat += STAGGER_MS * 0.5;
@@ -629,7 +619,11 @@ export function refreshZoom(fresh, ctx) {
     oldSurface.style.width = `${slotBefore.width}px`;
     oldSurface.style.height = `${slotBefore.height}px`;
     z.card.appendChild(oldSurface);
-    const fade = oldSurface.animate([{ opacity: 1 }, { opacity: 0 }], { duration: REFRESH_MS * 0.8, easing: EASE_SURFACE, fill: 'forwards' });
+    const fade = oldSurface.animate(
+      [{ opacity: 1, clipPath: 'inset(0px round 8px)' },
+       { opacity: 0, clipPath: insetFor(slotAfter, slotBefore) }],
+      { duration: REFRESH_MS * 0.5, easing: EASE_SURFACE, fill: 'forwards' },
+    );
     fade.onfinish = () => oldSurface.remove();
     fade.oncancel = () => oldSurface.remove();
     anims.push(fade);
