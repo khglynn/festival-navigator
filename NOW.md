@@ -1,6 +1,60 @@
 # NOW — festival-navigator: the CLEAN ROUND is on `notes-desktop-round` (PR #13), preview-verified, waiting on Kevin's promote · v42 still on prod
 
-**last-updated: 2026-08-30 · mode: live**
+**last-updated: 2026-08-31 · mode: live**
+
+## 2026-08-31 — Kevin's review round on the bloom: three real-input bugs, a CSS regression of mine, and two asks banked
+
+Kevin reviewed the bloom (v59–v61) and reported: hover "fully broken",
+"if you click it breaks hover", pills/chips flung to the edges, the header
+narrower than the timetable with cards peeking beside it, "the despacito
+stage f'd", plus new asks (below). What the day found and shipped (commits
+9a4b0d3 → 2679392, SW v63, suite 311/312):
+
+- **Real-input bugs the frame-stepping could not see** (lesson: synthetic
+  `dispatchEvent` never fires scroll or the browser's own hover-boundary
+  recomputation — a real-pointer walk before every push, as the memory
+  already said): a 1px scroll killed the zoom AND poisoned the card via
+  `dismissedEl` (trackpads micro-scroll constantly) — the overlay now
+  FOLLOWS its card and closes only when the card leaves the viewport; an
+  overlay restored by a repaint after the hand moved on never heard a
+  boundary event and stood until the next click — any outside mouse
+  movement now starts the grace close. Both pinned in
+  `tests/zoom-overlay.test.mjs` (11 tests). Grown rows centred again (the
+  corner-true experiment is dead).
+- **The header/strip regression was MINE (08-30's "full-bleed strip")**: the
+  strip carries `times-wrap`, so the ≥720 rule already gave it the grids'
+  exact full-viewport geometry; my shell-box override replaced it. Measured
+  live at 1482px: strip 173→1655, stage heads drifting 35px/column (the
+  Despacio head over the wrong column), cards peeking beside the rail. Now
+  the override is <720 only and the day rail takes the same 100vw geometry
+  — rail, strip, grid all 0→1482, every head on its column.
+- **Tall cells** (≥3h; Despacio runs 7): name at the top edge, `until 9:45
+  PM` at the bottom — centred content had put the name three screens down.
+  `computeDayArtists` now returns `endStr`.
+- **A fest's place is a door**: `placeDoor()` / `festPlaceLine()` in
+  card-facts.js — ONE builder for the zoom's WHERE, the wall header's venue
+  and the Settings fest card's top line; a map link once `fest.locationUrl`
+  exists (the venue-links teammate is adding those + every Afters venue to
+  `venues` — bank: `claude-plans/2026-08-31-venue-links.md`).
+- **The stale-worker trap is closed**: index.html reloads once when a new
+  service worker claims an already-controlled page in its first 20s. The
+  shell is cache-first, so every first open after a deploy ran the PREVIOUS
+  build — the likeliest story behind "still broken" on a build where real
+  pointer input passed end to end (log: hover → grow → click picked → move
+  away → closed → next card grew).
+- **Could not reproduce "click breaks hover" on v62 with a real pointer** in
+  a clean profile. If Kevin still sees it on a fresh-origin link, the next
+  session needs his exact gesture (mouse vs trackpad; does the pointer stay
+  put after the click?).
+
+**Asks banked, awaiting Kevin:** the structured events model for
+Afters/Folsom (nights + venues + sort; proposal with two decisions in
+`claude-plans/2026-08-31-events-model.md` — "big one in the 11th hour", his
+words; NOT built); link previews are the static per-fest OG cards (see
+`claude-plans/2026-08-30-survey/link-preview.md`) — real unfurls need prod;
+per-crew dynamic previews are impossible by design (the token never reaches
+the server), per-fest dynamic (countdown, "set times live") is possible via
+an OG image function and is a follow-up if he wants it.
 
 ## 2026-08-30 — the clean round: survey → fix → redesign, nine teammates, everything named shipped
 
