@@ -358,7 +358,7 @@ function openHowItWorks(actions) {
     [0.5, 0.75, 1].forEach((a) => {
       d.appendChild(el('span', `flex: 1; height: 30px; border-radius: 6px; border: 1px solid var(--hairline); background: radial-gradient(130% 130% at 20% 120%, hsla(10,90%,62%,${a}) 0%, transparent 78%), #1C1731;`));
     });
-  }, 'Tap an artist to add your color.', 'Brighter each tap. 4 taps = MUST SEE.'));
+  }, 'Tap an artist to add your color.', 'Brighter each tap. 4 taps = must see.'));
   card.appendChild(lesson((d) => {
     d.appendChild(el('span', 'width: 4px; height: 12px; border-radius: 99px; background: hsla(150,70%,50%,.5); border: 1px solid hsl(150,70%,82%);'));
     d.appendChild(el('span', 'width: 24px; height: 12px; border-radius: 99px; background: hsla(10,90%,62%,.5); border: 1px solid #fff; color: #fff; font-size: 7.5px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center;', 'K'));

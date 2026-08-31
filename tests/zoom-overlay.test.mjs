@@ -201,8 +201,30 @@ test('the grown card and the resting card render from ONE model: same aura, ever
   const surface = grown.querySelector('.z-surface');
   assert.equal(surface.style.background, card.style.background, 'the zoom wears the card\'s aura (a second colour layer once made this invalid and black)');
   assert.ok(surface.style.background.includes('radial-gradient'), 'and the aura is really there');
-  assert.equal(facts.sub, '9:00 – 10:15 PM · Saturday · Pier Stage · Weekend 2', 'the details view shows the details, weekend included');
-  assert.equal(grown.querySelector('.f-sub').textContent, facts.sub);
+  assert.equal(facts.when, '9:00 – 10:15 PM · Saturday', 'WHEN is its own row');
+  assert.equal(facts.where, 'Pier Stage', 'WHERE is its own row');
+  assert.equal(grown.querySelector('.f-sub').textContent, facts.when + 'W2', 'the weekend rides WHEN as the resting card\'s own quiet tag');
+  assert.equal(grown.querySelector('.f-wtag').textContent, 'W2');
+  assert.equal(grown.querySelector('.f-where').textContent, 'Pier Stage');
   assert.equal(grown.querySelectorAll('.f-pill').length, facts.people.length);
   assert.equal(card.querySelectorAll('.corner-who .mark:not(.ghost)').length, Math.min(facts.people.length, 4));
+});
+
+test('a venue the festival maps becomes a door to the map — and never a pick', () => {
+  FESTIVALS[FID].venues = { 'The Midway': 'https://maps.google.com/?q=The+Midway' };
+  FESTIVALS[FID].artists.push({ name: 'Late Night', day: 'Folsom', stage: 'Sat · The Midway', time: '10 PM - 6 AM' });
+  const ctx = makeCtx();
+  const wall = document.getElementById('wall-root');
+  wall.replaceChildren();
+  const card = renderCard('Late Night', ctx, { occ: { day: 'Folsom', stage: 'Sat · The Midway', time: '10 PM - 6 AM' } });
+  wall.appendChild(card);
+  const facts = zoom.zoomCard(card, 'Late Night', ctx, { occ: { day: 'Folsom', stage: 'Sat · The Midway', time: '10 PM - 6 AM' } });
+  assert.equal(facts.when, 'Sat · 10 PM – 6 AM'); // different meridiems keep both — timeRange only merges a shared one
+  assert.equal(facts.where, 'The Midway');
+  const link = document.querySelector('#zoom-layer a.f-where');
+  assert.ok(link, 'the where row is a link');
+  assert.ok(link.href.includes('maps.google.com'));
+  assert.equal(link.target, '_blank');
+  click(link);
+  assert.equal(ctx.taps.length, 0, 'opening the map is never a pick');
 });

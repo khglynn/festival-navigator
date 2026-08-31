@@ -570,6 +570,14 @@
       "date": "Sep 25-27"
     }
   },
+  "venues": {
+    "DNA Lounge": "https://maps.google.com/?q=DNA+Lounge,+375+11th+St,+San+Francisco",
+    "SVN West": "https://maps.google.com/?q=SVN+West,+10+South+Van+Ness+Ave,+San+Francisco",
+    "The Midway": "https://maps.google.com/?q=The+Midway,+900+Marin+St,+San+Francisco",
+    "Folsom St, 8th-13th": "https://maps.google.com/?q=Folsom+Street+Fair,+Folsom+St+%26+9th+St,+San+Francisco",
+    "1015 Folsom": "https://maps.google.com/?q=1015+Folsom,+San+Francisco",
+    "SF Eagle": "https://maps.google.com/?q=SF+Eagle,+398+12th+St,+San+Francisco"
+  },
   "days": {
     "Saturday": {
       "stages": [

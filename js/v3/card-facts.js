@@ -63,16 +63,18 @@ export function factsFor(artistName, ctx, occ = null) {
     : null;
   // The long form: when · day · where · which weekend. An EVENT's stage
   // carries "Thu · Venue" — say when, then where, once.
-  let sub;
+  let when, where;
   if (stage && stage.includes(' · ')) {
     const bits = stage.split(' · ');
-    sub = [bits[0], timeRange(time), bits.slice(1).join(' · ')].filter(Boolean).join(' · ');
+    when = [bits[0], timeRange(time)].filter(Boolean).join(' · ');
+    where = bits.slice(1).join(' · ');
   } else {
-    sub = [timeRange(time), day ? shortDay(fest, day) : null, stage].filter(Boolean).join(' · ');
+    when = [timeRange(time), day ? shortDay(fest, day) : null].filter(Boolean).join(' · ');
+    where = stage || '';
   }
-  if (weekend) sub = [sub, `Weekend ${weekend.slice(1)}`].filter(Boolean).join(' · ');
+  const mapUrl = (where && fest.venues && fest.venues[where]) || null;
   return {
-    name: artistName, day, stage, time, weekend, sub,
+    name: artistName, day, stage, time, weekend, when, where, mapUrl,
     people, background, animated, nameColor: nameColor(people), subColor: subColor(people),
     noteCount: model.noteCount(state.crewDoc, ctx.fid, 'artist', artistName),
     spotify,
@@ -138,6 +140,51 @@ export function factChips(facts, { onOpenNotes = null } = {}) {
   return row;
 }
 
+// The grown lines — WHEN (with the weekend's quiet tag) · WHERE (a door to
+// the map when the festival names the venue) · the who-row · the chips — in
+// ONE builder, because the sheet header and the zoomed card must never
+// drift apart again (the two-renderers disease, 2026-08-30).
+function grownBlock(facts, { onOpenNotes = null } = {}) {
+  const grown = document.createElement('div');
+  grown.className = 'f-grown';
+  if (facts.when || facts.weekend) {
+    const sub = document.createElement('div');
+    sub.className = 'f-sub';
+    if (facts.when) sub.append(facts.when);
+    if (facts.weekend) {
+      const t = document.createElement('span');
+      t.className = 'f-wtag';
+      t.textContent = facts.weekend;
+      sub.appendChild(t);
+    }
+    grown.appendChild(sub);
+  }
+  if (facts.where) {
+    const w = document.createElement(facts.mapUrl ? 'a' : 'div');
+    w.className = 'f-where';
+    if (facts.mapUrl) {
+      w.href = facts.mapUrl;
+      w.target = '_blank';
+      w.rel = 'noopener';
+      w.setAttribute('aria-label', `${facts.where} — open the map`);
+      // A door, never a pick — same discipline as the notes chip.
+      w.addEventListener('click', (e) => e.stopPropagation());
+      const pin = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      pin.setAttribute('class', 'pin'); pin.setAttribute('width', '9'); pin.setAttribute('height', '12'); pin.setAttribute('viewBox', '0 0 10 14');
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute('d', 'M5 0C2.2 0 0 2.2 0 5c0 3.7 5 9 5 9s5-5.3 5-9c0-2.8-2.2-5-5-5zm0 7a2 2 0 1 1 0-4 2 2 0 0 1 0 4z');
+      path.setAttribute('fill', 'currentColor');
+      pin.appendChild(path);
+      w.appendChild(pin);
+    }
+    w.append(facts.where);
+    grown.appendChild(w);
+  }
+  if (facts.people.length) grown.appendChild(whoPills(facts));
+  grown.appendChild(factChips(facts, { onOpenNotes }));
+  return grown;
+}
+
 // One builder, two homes: the name on the wash, then the grown lines (sub,
 // who-row, chips) in one block so the zoom can fade them as a group. The
 // aura string already ends in the opaque card base, so the same background
@@ -163,16 +210,7 @@ function factsCard(facts, { className, onClose = null, onOpenNotes = null }) {
   name.className = 'f-name';
   name.textContent = facts.name;
   card.appendChild(name);
-  const grown = document.createElement('div');
-  grown.className = 'f-grown';
-  if (facts.sub) {
-    const sub = document.createElement('div');
-    sub.className = 'f-sub';
-    sub.textContent = facts.sub;
-    grown.appendChild(sub);
-  }
-  if (facts.people.length) grown.appendChild(whoPills(facts));
-  grown.appendChild(factChips(facts, { onOpenNotes }));
+  const grown = grownBlock(facts, { onOpenNotes });
   card.appendChild(grown);
   return card;
 }
@@ -283,16 +321,7 @@ function buildParts(z, facts) {
   const name = document.createElement('div');
   name.className = 'f-name';
   name.textContent = facts.name;
-  const grown = document.createElement('div');
-  grown.className = 'f-grown';
-  if (facts.sub) {
-    const sub = document.createElement('div');
-    sub.className = 'f-sub';
-    sub.textContent = facts.sub;
-    grown.appendChild(sub);
-  }
-  if (facts.people.length) grown.appendChild(whoPills(facts));
-  grown.appendChild(factChips(facts, { onOpenNotes: z.onOpenNotes }));
+  const grown = grownBlock(facts, { onOpenNotes: z.onOpenNotes });
   return [surface, name, grown];
 }
 
@@ -429,17 +458,21 @@ export function zoomCard(el, artistName, ctx, { onOpenNotes = null, source = 'mo
     surface: card.querySelector('.z-surface'),
     name: card.querySelector('.f-name'),
     sub: card.querySelector('.f-sub'),
+    where: card.querySelector('.f-where'),
     pills: [...card.querySelectorAll('.f-pill')],
     notes: card.querySelector('.f-chip.notes'),
     spot: card.querySelector('.f-chip.spot'),
   };
   const nameFrom = M.name ? M.name.rect : box(r0.left + 8, r0.top + r0.height / 2 - 8, r0.width - 16, 16);
-  const origins = {
-    sub: box(nameFrom.left, nameFrom.bottom + 2, nameFrom.width, 10),
-    mark: (i) => box(r0.right - 5 - 12 - i * 7, r0.bottom - 4 - 12, 12, 12),
-    notes: box(r0.left + 6, r0.bottom - 4 - 13, 14, 13),
-    spot: box(r0.left + 6 + 18, r0.bottom - 4 - 12, 14, 12),
-  };
+  // A quiet directional slide (Kevin, 2026-08-30: "tone down… fade and slide
+  // in from the left and right"): the who-pills arrive from the RIGHT, where
+  // the resting colour marks live; notes and Spotify from the LEFT, where
+  // their small numbers sit. The direction IS the message — each grown line
+  // is its corner of the card, said fully.
+  const slideIn = (el, dx, delay) => el.animate(
+    [{ transform: `translateX(${dx}px)`, opacity: 0 }, { opacity: 1, offset: 0.55 }, { transform: 'none', opacity: 1 }],
+    { duration: MORPH_MS - 60, delay, easing: EASE_ARRIVE, fill: 'both' },
+  );
   const anims = [];
   // 1. The resting card fades under the unfolding wash (a cross-fade, so
   //    frame 0 IS the resting card and nothing pops).
@@ -459,17 +492,21 @@ export function zoomCard(el, artistName, ctx, { onOpenNotes = null, source = 'mo
   }
   // 3. Then, a beat apart, the pieces.
   let beat = STAGGER_MS;
-  if (G.sub) { anims.push(...hop(G.sub, M.time ? M.time.rect : origins.sub, rect(G.sub), clones.time, beat)); beat += STAGGER_MS; }
+  if (G.sub) { anims.push(...hop(G.sub, M.time ? M.time.rect : box(nameFrom.left, nameFrom.bottom + 2, nameFrom.width, 10), rect(G.sub), clones.time, beat)); beat += STAGGER_MS; }
   else if (clones.time) anims.push(dissolve(clones.time));
-  G.pills.forEach((pill, i) => {
-    anims.push(...hop(pill, M.marks[i] ? M.marks[i].rect : origins.mark(i), rect(pill), clones.marks[i] || null, beat));
-    beat += STAGGER_MS * 0.7;
+  if (G.where) { anims.push(G.where.animate(
+    [{ transform: 'translateY(7px)', opacity: 0 }, { opacity: 1, offset: 0.5 }, { transform: 'none', opacity: 1 }],
+    { duration: MORPH_MS - 60, delay: beat, easing: EASE_ARRIVE, fill: 'both' },
+  )); beat += STAGGER_MS * 0.7; }
+  G.pills.forEach((pill) => {
+    anims.push(slideIn(pill, 22, beat));
+    beat += STAGGER_MS * 0.5;
   });
-  for (const extra of [...clones.marks.slice(G.pills.length), ...clones.ghosts, clones.tag].filter(Boolean)) anims.push(dissolve(extra));
-  if (G.notes) { anims.push(...hop(G.notes, M.notes ? M.notes.rect : origins.notes, rect(G.notes), clones.notes, beat)); beat += STAGGER_MS; }
-  else if (clones.notes) anims.push(dissolve(clones.notes));
-  if (G.spot) anims.push(...hop(G.spot, M.spot ? M.spot.rect : origins.spot, rect(G.spot), clones.spot, beat));
-  else if (clones.spot) anims.push(dissolve(clones.spot));
+  for (const extra of [...clones.marks, ...clones.ghosts, clones.tag].filter(Boolean)) anims.push(dissolve(extra, STAGGER_MS));
+  if (G.notes) anims.push(slideIn(G.notes, -22, beat));
+  if (clones.notes) anims.push(dissolve(clones.notes, STAGGER_MS));
+  if (G.spot) anims.push(slideIn(G.spot, -22, beat + STAGGER_MS * 0.5));
+  if (clones.spot) anims.push(dissolve(clones.spot, STAGGER_MS));
   // Once everything has landed the clones go — their twins took over.
   const settle = () => { if (rest.isConnected) rest.remove(); };
   const longest = anims.reduce((m, x) => (x.effect.getTiming().delay + x.effect.getTiming().duration > m.effect.getTiming().delay + m.effect.getTiming().duration ? x : m), anims[0]);
@@ -492,6 +529,7 @@ const REFRESH_MS = 300;
 function partKey(el) {
   if (el.classList.contains('f-name')) return 'name';
   if (el.classList.contains('f-sub')) return 'sub';
+  if (el.classList.contains('f-where')) return 'where';
   if (el.classList.contains('f-pill')) return `pill:${el.firstChild ? el.firstChild.textContent : ''}`;
   if (el.classList.contains('notes')) return 'notes';
   if (el.classList.contains('spot')) return 'spot';
@@ -499,7 +537,7 @@ function partKey(el) {
 }
 function snapshotParts(card) {
   const out = new Map();
-  for (const el of card.querySelectorAll('.f-name, .f-sub, .f-pill, .f-chip.notes, .f-chip.spot')) {
+  for (const el of card.querySelectorAll('.f-name, .f-sub, .f-where, .f-pill, .f-chip.notes, .f-chip.spot')) {
     const k = partKey(el);
     if (k) out.set(k, { rect: rect(el), must: !!el.querySelector('b') });
   }
@@ -560,7 +598,7 @@ export function refreshZoom(fresh, ctx) {
   // Every piece: the ones that stayed slide from where they were; the ones
   // that arrived grow in a beat later; a badge that appeared fades on.
   let arrivals = 0;
-  for (const el of z.card.querySelectorAll('.f-name, .f-sub, .f-pill, .f-chip.notes, .f-chip.spot')) {
+  for (const el of z.card.querySelectorAll('.f-name, .f-sub, .f-where, .f-pill, .f-chip.notes, .f-chip.spot')) {
     const k = partKey(el);
     const was = k ? before.get(k) : null;
     const now = rect(el);
