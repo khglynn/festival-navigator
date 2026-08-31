@@ -740,6 +740,9 @@ function wireSlot(z) {
     followRaf = 0;
     if (zoomed !== z) return;
     if (!z.el.isConnected) { unzoom({ instant: true }); return; }
+    // A zero-size viewport is a transient (a DevTools metrics override mid-
+    // screenshot, a backgrounded window), not a card that scrolled away.
+    if (!window.innerWidth || !window.innerHeight) return;
     const r = rect(z.el);
     if (r.bottom < 0 || r.top > window.innerHeight || r.right < 0 || r.left > window.innerWidth) {
       unzoom({ instant: true });
