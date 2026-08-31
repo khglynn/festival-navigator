@@ -49,7 +49,7 @@ export function computeDayArtists(dayData) {
     let endMin = endStr ? timeToMinutes(endStr) : null;
     // The raw `time` and `weekend` ride along: the card's occurrence (the zoom,
     // the sheet header, the route key) is built from them (2026-08-29).
-    return { name: a.name, stage: a.stage, startStr: startStr.trim(), startMin, endMin, time: a.time, weekend: a.weekend || null };
+    return { name: a.name, stage: a.stage, startStr: startStr.trim(), endStr: endStr ? endStr.trim() : null, startMin, endMin, time: a.time, weekend: a.weekend || null };
   });
   const byStage = {};
   raw.forEach((a) => { (byStage[a.stage] = byStage[a.stage] || []).push(a); });

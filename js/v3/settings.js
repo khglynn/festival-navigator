@@ -10,6 +10,7 @@ import * as model from './model.js';
 import { FESTIVAL_INDEX, FESTIVALS } from '../festivals.js';
 import { BOARD, hslOf, strokeOf } from './palette.js';
 import { colorIndexOf } from './wall.js';
+import { festPlaceLine } from './card-facts.js'; // the fest's place line, shared with the wall header
 import { el, subviewHead, eqLoader, festRow, openExportLikes, openBulkPaste, openDayImage } from './tools.js';
 import { router } from './router.js';
 import { nameProblem, NAME_LIMITS } from '../name-rules.mjs';
@@ -80,7 +81,11 @@ function currentFestCard(ctx, actions) {
   // string says so; clipping it to "October 2-4, 20..." with a title= tooltip
   // meant a phone — where title= does nothing at all — could never show the
   // second weekend. The dates are the whole point of the card.
-  const dates = el('span', 'color: var(--text-tertiary); font-size: 11px; font-weight: 600; flex: 1; min-width: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;', fest.dates || '');
+  const dates = el('span', 'color: var(--text-tertiary); font-size: 11px; font-weight: 600; flex: 1; min-width: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;');
+  // The venue leads the line and opens the map when the fest file knows the
+  // address (Kevin, 2026-08-31: the main-stage address, in Settings, for
+  // every fest) — the same line the wall header wears.
+  dates.appendChild(festPlaceLine(fest));
   // The ONE sync state (PS-5): same source as the dot — a "synced" label
   // computed from hasPending alone lied whenever the network was down.
   const LABELS = {

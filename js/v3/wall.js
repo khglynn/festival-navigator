@@ -111,6 +111,16 @@ export function renderCard(artistName, ctx, opts = {}) {
     t.textContent = opts.time;
     el.appendChild(t);
   }
+  if (opts.tall) {
+    el.classList.add('tall');
+    if (opts.until) {
+      const u = document.createElement('span');
+      u.className = 'until';
+      u.style.color = facts.subColor;
+      u.textContent = `until ${opts.until}`;
+      el.appendChild(u);
+    }
+  }
 
   const about = document.createElement('span');
   about.className = 'corner-about';
@@ -740,12 +750,17 @@ function renderScheduledDay(root, day, ctx, layout, weekend) {
     if (col === -1) continue; // strays render in the everything-else column
     // A folded (non-solo) column is a 34px rail — its cards don't render.
     if (layout.solo && a.stage !== layout.solo) continue;
-    const cell = renderCard(a.name, ctx, { cell: true, time: a.startStr, occ: { day, stage: a.stage || null, time: a.time || null, weekend: a.weekend || null } });
-    cell.style.gridColumn = String(col + 1);
     const row = Math.floor(a.startMin / 15) - startRow + 1;
     // endMin here IS the display extent — minimum 2 rows (44px), below which
     // the name + time can't fit (Kevin's screenshot, 2026-07-12).
     const span = Math.max(1, Math.ceil((a.endMin - a.startMin) / 15));
+    // A set three hours or longer (Despacio runs seven) is a TALL cell: its
+    // name sits at the top edge like a printed grid and the bottom edge says
+    // when it ends — centred content put the name three screens down and the
+    // column read as an empty slab (Kevin's screenshot, 2026-08-31).
+    const tall = span >= 12;
+    const cell = renderCard(a.name, ctx, { cell: true, tall, until: tall ? a.endStr || null : null, time: a.startStr, occ: { day, stage: a.stage || null, time: a.time || null, weekend: a.weekend || null } });
+    cell.style.gridColumn = String(col + 1);
     cell.style.gridRow = `${row} / span ${span}`;
     cell.style.minHeight = '0';
     const lane = lanes.get(a);

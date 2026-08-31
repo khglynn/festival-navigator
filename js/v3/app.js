@@ -17,7 +17,7 @@ import { openArtistSheet, openDayNotes, openAllNotes, openFestNotes, closeSheet,
 import { renderSettings, appSettings, openSubviewByKey } from './settings.js';
 import { onStorageWriteFail, saveLS, getLS, errorText } from '../util.js';
 import { router, encodeNotesKey, decodeNotesKey } from './router.js';
-import { wireCardZoom, wireCardFocusZoom, zoomCard, unzoom, dismissZoom, zoomedCard, zoomContains, zoomSnapshot, refreshZoom } from './card-facts.js';
+import { wireCardZoom, wireCardFocusZoom, zoomCard, unzoom, dismissZoom, zoomedCard, zoomContains, zoomSnapshot, refreshZoom, festPlaceLine } from './card-facts.js';
 import { dayLabelParts } from '../time.js';
 import { createSortControl } from './sort-control.js';
 import { nameProblem } from '../name-rules.mjs';
@@ -171,7 +171,7 @@ function applyFestTheme() {
   document.body.style.setProperty('--fest', fest.accent || '192, 132, 252');
   $('fest-name').textContent = fest.name.toUpperCase();
   $('fest-year').textContent = fest.year || '';
-  $('fest-sub').textContent = [fest.subtitle, fest.dates].filter(Boolean).join(' · ');
+  $('fest-sub').replaceChildren(festPlaceLine(fest)); // the venue is a door to the map when the fest file knows where it is
   // Dock (mobile bottom) and day rail (desktop top) carry the same fest
   // name + sync dot — one component vocabulary, two positions (note 1.1).
   $('dock-fest-name').textContent = `${fest.name.toUpperCase()} ${fest.year || ''}`.trim();

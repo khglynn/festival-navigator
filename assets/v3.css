@@ -52,6 +52,13 @@
    * at the bottom instead, never the name. */
   flex: none; }
 .card.cell .time { flex: none; }
+/* A tall cell (a set of three hours or more) reads like a printed grid: the
+ * name at the top edge where the set starts, the end time at the bottom edge
+ * — centring put the name mid-column, off-screen, and the column read as an
+ * empty slab (Despacio, Kevin's screenshot, 2026-08-31). */
+.card.cell.tall { justify-content: flex-start; padding-top: 9px; }
+.card.cell.tall .until { position: absolute; left: 0; right: 0; bottom: 6px; text-align: center;
+                         font-size: 9px; font-weight: 600; opacity: .85; }
 .card.cell .corner-about { bottom: 3px; left: 5px; }
 .card.cell .corner-who { bottom: 3px; right: 4px; }
 .card.cell .chip-notes { height: 12px; padding: 0 5px; font-size: 8px; }
@@ -200,8 +207,14 @@
   .day-rail {
     display: flex; align-items: center; gap: 18px;
     position: sticky; top: 0; z-index: 25;
-    margin: 4px calc(-1 * var(--sp-gutter)) 0;
-    padding: 9px var(--sp-gutter);
+    /* Full-VIEWPORT, like the timetable it sits over: the grids run to the
+     * window's edges (the .times-wrap rule), so a rail only as wide as the
+     * shell box left cards showing beside it on any wider window (Kevin's
+     * screenshots, 2026-08-31). Symmetric padding keeps the rail's own
+     * content aligned with the shell's edges. */
+    width: 100vw; box-sizing: border-box;
+    margin: 4px calc(50% - 50vw) 0;
+    padding: 9px max(var(--sp-gutter), calc(50vw - var(--shell-max) / 2));
     /* Near-opaque: at .78 the header's subtitle text ghosted through
      * mid-scroll and read as broken overlap (Kevin, 2026-07-12). */
     background: rgba(12, 10, 20, .94);
@@ -501,13 +514,18 @@
   background: rgba(12, 10, 20, .94);
   backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
   padding-bottom: 4px;
-  /* Full-bleed like the day rail: the strip's near-opaque background must
-   * reach the screen edges, or a wide stage set scrolls its columns out
-   * into the bare page gutter beside the strip (Kevin's screenshot,
-   * 2026-08-30 — the "gap" right of the fest bar). Same negative-margin +
-   * padding pair the rail uses, so the columns still align underneath. */
-  margin-inline: calc(-1 * var(--sp-gutter));
-  padding-inline: var(--sp-gutter);
+}
+/* The strip's GEOMETRY is the day grids' geometry, full stop: it carries the
+ * `times-wrap` class so the ≥720 full-viewport rule above sizes it exactly
+ * like every day grid — same width, same asymmetric padding — and its
+ * columns land over theirs. The 2026-08-30 "full-bleed" override here
+ * (shell-box margins) broke that on any window wider than the shell: the
+ * strip went narrower than the grids, its columns shrank out of alignment
+ * (a stage head over the wrong column), and cards scrolled out beside it
+ * (Kevin's screenshots, 2026-08-31). Below 720 the wrap has no special
+ * geometry, so the strip bleeds to the shell box on its own. */
+@media (max-width: 719.98px) {
+  .stage-strip { margin-inline: calc(-1 * var(--sp-gutter)); padding-inline: var(--sp-gutter); }
 }
 .stage-strip .strip-rail { width: 40px; flex: none; } /* aligns with .times-rail */
 .stage-strip .times-scroll { scrollbar-width: none; }
@@ -684,6 +702,12 @@
 a.f-where { color: #fff; text-decoration: none; border-bottom: 1px solid rgba(255,255,255,.35); padding-bottom: 1px; }
 a.f-where:hover { border-bottom-color: rgba(255,255,255,.75); }
 .f-where .pin { flex: none; opacity: .85; }
+/* The same door in the wall header and the Settings fest card: inherits the
+ * line's colour and size, underlined only when it actually opens a map. */
+.fest-place { display: inline-flex; align-items: center; gap: 3px; color: inherit; }
+a.fest-place { text-decoration: none; border-bottom: 1px solid currentColor; padding-bottom: 1px; opacity: .92; }
+a.fest-place:hover { opacity: 1; }
+.fest-place .pin { flex: none; opacity: .8; }
 .day-sub { color: var(--text-tertiary); margin-top: -6px; }
 .f-who { display: flex; flex-wrap: wrap; justify-content: center; gap: 5px 6px; }
 /* Quieter than the words around them — a crew can be eight people

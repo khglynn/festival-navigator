@@ -143,6 +143,52 @@ export function factChips(facts, { onOpenNotes = null } = {}) {
   return row;
 }
 
+// A place, said once: a pin and a name that open the map when the festival
+// file knows where the place is (`venues[name]`, or the fest's own
+// `locationUrl`), plain text when it doesn't. ONE builder for every home a
+// place has — the zoomed card's WHERE line, the wall header's venue, the
+// Settings fest card (Kevin, 2026-08-31: "main stage addresses in settings
+// across all fests… a clickable location link"). A door, never a pick — the
+// click stops here, same discipline as the notes chip.
+export function placeDoor(text, url, className) {
+  const w = document.createElement(url ? 'a' : 'span');
+  w.className = className;
+  if (url) {
+    w.href = url;
+    w.target = '_blank';
+    w.rel = 'noopener';
+    w.setAttribute('aria-label', `${text} — open the map`);
+    w.addEventListener('click', (e) => e.stopPropagation());
+    const pin = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    pin.setAttribute('class', 'pin'); pin.setAttribute('width', '9'); pin.setAttribute('height', '12'); pin.setAttribute('viewBox', '0 0 10 14');
+    pin.setAttribute('aria-hidden', 'true');
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', 'M5 0C2.2 0 0 2.2 0 5c0 3.7 5 9 5 9s5-5.3 5-9c0-2.8-2.2-5-5-5zm0 7a2 2 0 1 1 0-4 2 2 0 0 1 0 4z');
+    path.setAttribute('fill', 'currentColor');
+    pin.appendChild(path);
+    w.appendChild(pin);
+  }
+  w.append(text);
+  return w;
+}
+
+// The fest's own place line — "Pier 80 · September 26–27, 2026 · doors 1 PM"
+// — with the venue as a door when `locationUrl` is known. A subtitle can
+// carry an aside after the venue ("Zilker Park · both weekends"); only the
+// venue is the door, the aside stays text. ONE builder for the wall header
+// and the Settings fest card, so they can never say different things.
+export function festPlaceLine(fest, className = 'fest-place') {
+  const frag = document.createDocumentFragment();
+  const bits = [];
+  const [venue, ...aside] = (fest.subtitle || '').split(' · ');
+  const place = venue || fest.location || '';
+  if (place) bits.push(placeDoor(place, fest.locationUrl || null, className));
+  for (const a of aside) if (a) bits.push(a);
+  if (fest.dates) bits.push(fest.dates);
+  bits.forEach((b, i) => { if (i) frag.append(' · '); frag.append(b); });
+  return frag;
+}
+
 // The grown lines — WHEN (with the weekend's quiet tag) · WHERE (a door to
 // the map when the festival names the venue) · the who-row · the chips — in
 // ONE builder, because the sheet header and the zoomed card must never
@@ -156,27 +202,7 @@ function grownBlock(facts, { onOpenNotes = null } = {}) {
     sub.textContent = facts.when;
     grown.appendChild(sub);
   }
-  if (facts.where) {
-    const w = document.createElement(facts.mapUrl ? 'a' : 'div');
-    w.className = 'f-where';
-    if (facts.mapUrl) {
-      w.href = facts.mapUrl;
-      w.target = '_blank';
-      w.rel = 'noopener';
-      w.setAttribute('aria-label', `${facts.where} — open the map`);
-      // A door, never a pick — same discipline as the notes chip.
-      w.addEventListener('click', (e) => e.stopPropagation());
-      const pin = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-      pin.setAttribute('class', 'pin'); pin.setAttribute('width', '9'); pin.setAttribute('height', '12'); pin.setAttribute('viewBox', '0 0 10 14');
-      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-      path.setAttribute('d', 'M5 0C2.2 0 0 2.2 0 5c0 3.7 5 9 5 9s5-5.3 5-9c0-2.8-2.2-5-5-5zm0 7a2 2 0 1 1 0-4 2 2 0 0 1 0 4z');
-      path.setAttribute('fill', 'currentColor');
-      pin.appendChild(path);
-      w.appendChild(pin);
-    }
-    w.append(facts.where);
-    grown.appendChild(w);
-  }
+  if (facts.where) grown.appendChild(placeDoor(facts.where, facts.mapUrl, 'f-where'));
   if (facts.people.length) grown.appendChild(whoPills(facts));
   grown.appendChild(factChips(facts, { onOpenNotes }));
   return grown;
