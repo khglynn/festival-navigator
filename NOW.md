@@ -75,6 +75,26 @@ zz-Ben in the walk crew carries seeded affinity (SHM/Jamie xx/Dog Blood/
 Overmono/Robyn) — Kevin's eval still pending, plus his read on
 "connectedness" with the pops gone.
 
+**⚠️ MOTION STATE AS OF v58 (commit 71a1e25): KEVIN SAYS WORSE — READ THIS
+FIRST AFTER COMPACTION.** The zoom's feel degraded across the evening's
+incremental patches. His arc: v54 ("I dig that") → v55–57 fixed real bugs
+(pop, ghosts, double-print) but each pass was tuned blind against an async
+preview → v58 (WHEN-rises + corner-true rows + softer shadow + retract)
+= "it's worse." THE LESSON, learned twice today: motion cannot be patched
+incrementally over chat round-trips. The next pass must be ONE designed
+timeline — write the full morph storyboard (what moves, from where, when,
+each easing), implement it once in js/v3/card-facts.js (the zoom is fully
+contained there + ~40 lines of v3.css), then WATCH it on the local gallery
+(gallery.html, python3 -m http.server; Slow-motion ×4 toggle) frame by
+frame until it is right, and only then push ONE build for Kevin. Consider
+diffing v54 (f55663e^ region) vs v58 to decide what to keep: the frame-0
+twin (real fix), the exit-ghost set (real fix), the complementary
+crossfade (real fix) — versus the arrival choreography (rises/slides/
+corner alignment), which is where the feel lives and where Kevin is
+unhappy. His stated targets: butter-smooth, no pops, corners feel
+CONNECTED to the grown lines, WHEN and WHERE moving as one family, quiet
+not theatrical.
+
 **Open — Kevin's calls:** promote PR #13 (then post the issue-#6 reply and
 send the Ray email from the drafts); the door density on a busy sheet; the
 link-preview trio (JPEG previews · the mark's coral whisper · fest accent in
