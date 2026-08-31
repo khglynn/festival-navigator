@@ -60,6 +60,21 @@ level, then the day rebuilt the round. All of it is ON THE BRANCH, suite
   CLAUDE.md gained "How this app moves" (the motion vibe — read it before
   touching any surface).
 
+**The evening refinement rounds (post-save, commits f55663e→71a1e25, SW v58)
+— all Kevin-driven, each verified on the gallery/preview before push:** the
+stage strip goes full-bleed (the wide-stage gap); WHEN/WHERE are two rows,
+WHERE with a maps door (Portola's six Folsom venues, `fest.venues` — one
+line per venue to add more); weekend as plain text in WHEN; people pills
+11px/20px; chips hug the grown card's LEFT and pills its RIGHT (corner
+mapping); WHEN rises exactly like WHERE (the hop is dead — it stuttered
+twice); a frame-0 twin makes the growth opaque every frame (no pops);
+exit ghosts all clear on a new zoom (the overlapping-cards skim); the
+hop crossfade is complementary (no double-printed times); shadow softened
+(read as a stacked card); a shrink retracts the old wash. Spotify demo:
+zz-Ben in the walk crew carries seeded affinity (SHM/Jamie xx/Dog Blood/
+Overmono/Robyn) — Kevin's eval still pending, plus his read on
+"connectedness" with the pops gone.
+
 **Open — Kevin's calls:** promote PR #13 (then post the issue-#6 reply and
 send the Ray email from the drafts); the door density on a busy sheet; the
 link-preview trio (JPEG previews · the mark's coral whisper · fest accent in
