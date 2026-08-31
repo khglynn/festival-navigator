@@ -7,7 +7,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { AFTERS, FOLSOM, NIGHT_DATE, card, parseTime, hourLabel, esc, PIN, hasDoor, fest } from './build.mjs';
+import { AFTERS, FOLSOM, NIGHT_DATE, card, parseTime, hourLabel, esc, fest } from './build.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(HERE, '../..');
@@ -79,7 +79,8 @@ function deckCell(group, col, row, span) {
     <span class="deck-ghost g2"></span><span class="deck-ghost g1"></span>
     ${card(top.name, { cell: true, time: top.t.startStr, style: 'position:relative;min-height:0;height:100%;' })}${pill}</div>`;
 }
-function columns(list, { deckAt = 3 } = {}) {
+function columns(list, { deckAt = 3, timeFmt = null } = {}) {
+  const fmt = (e, s) => (timeFmt ? timeFmt(e, s) : s);
   const timed = list.filter((e) => e.time).map((e) => ({ ...e, t: parseTime(e.time) }));
   const tba = list.filter((e) => !e.time);
   const venues = [];
@@ -113,7 +114,7 @@ function columns(list, { deckAt = 3 } = {}) {
           const row = Math.floor(e.t.start / 15) - startRow + 1;
           const span = Math.max(1, Math.ceil((e.endMin - e.t.start) / 15));
           const lane = g.length > 1 ? `width:calc(${(100 / g.length).toFixed(3)}% - 2px);margin-left:${((i * 100) / g.length).toFixed(3)}%;` : '';
-          cells.push(card(e.name, { cell: true, tall: span >= 12, until: span >= 12 ? e.t.endStr : null, time: e.t.startStr, style: `grid-column:${col};grid-row:${row} / span ${span};min-height:0;${lane}` }));
+          cells.push(card(e.name, { cell: true, tall: span >= 12, until: span >= 12 ? e.t.endStr : null, time: fmt(e, e.t.startStr), style: `grid-column:${col};grid-row:${row} / span ${span};min-height:0;${lane}` }));
         });
       }
     }
@@ -209,6 +210,51 @@ ${sectionHead('GROWN', 'A TAP GROWS THE DECK IN PLACE — THE ZOOM’S OWN GESTU
 </div>`;
 };
 
+// Round 4 — Kevin's re-read of the source (portolamusicfestival.com/
+// portola-week, 2026-08-31): the Midway's "four 10 PM shows" are ONE night,
+// back to back — the poster gives DOORS, not set times. Order from the
+// poster's own hierarchy: the headliner (the name in the buy-tickets text
+// under the image) closes; the other large-print act plays before it; small
+// print opens. Times are GUESSED from doors + roughly hour-long sets, and the
+// design says so once, quietly — never per card, never shouting. Cards stay
+// separate and tappable: artist separation is law (combining them would eat
+// the crew's picks).
+const MIDWAY_SEQ = [
+  { name: 'MGNA Crrrta', at: '10 PM' },  // small print — opens
+  { name: 'horsegiirL', at: '11 PM' },   // small print
+  { name: 'VTSS', at: '12 AM' },         // large print, not the ticket text
+  { name: 'Two Shell', at: '1 AM' },     // the buy-tickets name — closes
+];
+const sunSeq = () => A('Sun').map((e) => {
+  const i = MIDWAY_SEQ.findIndex((m) => m.name === e.name);
+  return i < 0 ? e : { ...e, time: MIDWAY_SEQ[i].at, approx: true, seq: i };
+});
+const midwayRun = () => MIDWAY_SEQ.map((m, i) => ({ name: m.name, venue: 'The Midway', night: 'Sun', time: m.at, approx: true, seq: i }));
+const approxTilde = (e, s) => (e.approx ? `~${s}` : s);
+const approxWord = (e, s) => (e.approx ? `${s.replace(/\s*(AM|PM)$/i, '')}-ish` : s);
+const ORD = ['1st', '2nd', '3rd', '4th'];
+
+const backtobackFrame = () => `
+${dayTabs(TABS, 'SUN')}
+<div class="day-rule"><span class="day">SUNDAY</span><span class="date">${NIGHT_DATE.Sun} · THE PILE, RE-READ — ONE ROOM, BACK TO BACK</span><span class="line"></span></div>
+${sectionHead('AFTERS', 'MIDWAY ORDER FROM THE POSTER · ~ TIMES ARE OUR GUESS')}
+${columns(sunSeq(), { timeFmt: approxTilde })}
+<div class="whisper-hidden">~ marks a guessed set time — the order is the plan. Doors 10 PM; exact times live with the venue.</div>`;
+
+// The comparison shows CARD STACKS, not mini timetables — the question is how
+// the label reads at rest, and the timetable context already lives in the
+// re-read frame. (columns() markup carries the app's full-viewport rules and
+// cannot sit three-up in a flex row — found on the first screenshot.)
+const runStack = (fmtTime) => `<div class="wall-grid" style="grid-template-columns:1fr;gap:7px">${midwayRun().map((e) => card(e.name, { time: fmtTime(e), style: 'min-height:64px;' })).join('')}</div>`;
+const approxFrame = () => `
+${dayTabs(TABS, 'SUN')}
+<div class="day-rule"><span class="day">SUNDAY</span><span class="date">${NIGHT_DATE.Sun} · HOW A GUESSED TIME READS — THREE WAYS</span><span class="line"></span></div>
+<div class="approx-row">
+  <div class="approx-demo"><div class="approx-head">A · THE TILDE<span>~11 PM — stays on the clock, marks the guess</span></div>${runStack((e) => approxTilde(e, e.time))}</div>
+  <div class="approx-demo"><div class="approx-head">B · THE WORD<span>11-ish — warmer, a touch wordier</span></div>${runStack((e) => approxWord(e, e.time))}</div>
+  <div class="approx-demo"><div class="approx-head">C · THE RUNNING ORDER<span>no clock claimed — and it leaves the timetable</span></div>${runStack((e) => `${ORD[e.seq]} of 4 · doors 10 PM`)}</div>
+</div>`;
+
 // Generalization: Lost Lands' pre-party Wednesday — one venue, no times.
 const llFrame = () => {
   const wedKey = 'Wednesday, Sept 16 (Early Arrival Pre-Party)';
@@ -258,6 +304,11 @@ const V3_CSS = `
   .deck-close { color: var(--text-tertiary); font-size: 11px; }
   .deck-panel-grid { display: grid; grid-template-columns: repeat(2, 180px); gap: 7px; }
   @media (max-width: 719.98px) { .deck-panel-grid { grid-template-columns: repeat(2, 140px); } }
+  /* the guessed-times comparison row */
+  .approx-row { display: flex; gap: 26px; align-items: flex-start; flex-wrap: wrap; margin-top: 6px; }
+  .approx-demo { flex: 1 1 300px; min-width: 280px; max-width: 420px; }
+  .approx-head { font-family: var(--font-display); letter-spacing: .06em; font-size: 12px; color: var(--text-header); margin: 10px 0 6px; }
+  .approx-head span { display: block; font-family: var(--font-ui); font-size: 9.5px; color: var(--text-tertiary); font-weight: 700; letter-spacing: .07em; margin-top: 3px; }
 `;
 function frameDoc(body) {
   return `<!doctype html><html lang="en"><head><meta charset="utf-8">
@@ -288,8 +339,14 @@ addFrame('crammed', 'THE EDGE CASE, RAW — what colliding sets do without a dec
   'The source state, unretouched: The Midway hosts four 10 PM shows and lane-splitting gives each ~37px — names crush to two letters. This is the frame to suggest a path against.',
   crammedFrame());
 addFrame('deck', 'THE DECK — the 10 PM pile at rest and grown', 1440,
-  'Sunday’s Midway pile: 3+ simultaneous sets stack as one deck with a count pill instead of two-letter slivers. A tap grows it in place — the zoom’s own gesture — into full, pickable cards.',
+  'Sunday’s Midway pile: 3+ simultaneous sets stack as one deck with a count pill instead of two-letter slivers. A tap grows it in place — the zoom’s own gesture — into full, pickable cards. (Kept for data that is TRULY simultaneous — this exact pile turned out not to be; see the next two frames.)',
   deckFrame());
+addFrame('backtoback', 'THE RE-READ — one room, back to back, times guessed', 1440,
+  'Your read of the source: the Midway’s “four 10 PM shows” are one night played in sequence — the poster gives doors, not set times. Order from the poster’s own hierarchy (buy-tickets name closes, the other large-print act before it, small print opens), times guessed at ~an hour each. The column becomes a plain vertical run — no lanes, no deck — every card its own tappable artist, and the guess marked with a tilde plus one whisper. Public Works still wears its deck on purpose: its pile hasn’t been re-read, and the deck stays the honest default until a poster gives us an order.',
+  backtobackFrame());
+addFrame('approx', 'GUESSED TIMES — three ways to wear one on a card', 1440,
+  'The same four-set run, three treatments. A keeps the set on the clock and marks the guess (~1 AM) — my pick: the afters stay plannable against everything else that night. B says it in a word (1-ish) — warmer, slightly wordier. C claims no clock at all, just the running order — honest, but the run falls out of the timetable, so you can’t see it against the rest of the night.',
+  approxFrame());
 addFrame('lostlands', 'LOST LANDS · WEDNESDAY — the rule generalizes', 1440,
   'A pre-party day at a single venue with no set times: the heuristic’s floor. One section, tiles, time TBA — no venue columns, no snowflake code. Every fest file lands somewhere sane.',
   llFrame());
@@ -327,8 +384,8 @@ ${HEAD_ASSETS}
   <h1>DAY-FIRST</h1>
   <p class="lede">Round 3, from your notes on round 2: one FRIDAY holds Portola, afters and Folsom; the layout inside each section is chosen by the DATA (your columns where venues repeat, tiles where they don’t); venues filter and stay filtered; and the 10 PM pile becomes a deck. Real Portola + Lost Lands data throughout.</p>
   <div class="calls">
-    <div class="call"><b>THE RULE</b><span>Per day, per section: <strong>venue columns on a clock</strong> only when the clock pays — 5+ timed shows, venues repeating (≥ 1.5 shows per venue), most shows timed. Otherwise <strong>time-sorted tiles</strong>. Files never declare layouts; the numbers decide (each section header shows its math).</span></div>
-    <div class="call"><b>YOUR CALLS</b><span>1 — Does day-first read right on the mixed days? 2 — The deck for the stacked slot: yes/no? 3 — Venue filter placement and the saved-on-device behavior: as drawn?</span></div>
+    <div class="call"><b>THE RULE</b><span>Per section: <strong>venue columns on a clock</strong> only when the clock pays — 5+ timed shows, venues repeating (≥ 1.5 shows per venue), most shows timed. Otherwise <strong>time-sorted tiles</strong>. Files never declare layouts; the numbers decide. <strong>And the mode is decided once per fest</strong> (your call, 2026-08-31): if any day of a section earns columns, every day of that section renders columns — no Friday-columns / Saturday-tiles whiplash. The COLUMN SET stays each day’s own venues, which is also the answer when stages differ day to day: the mode holds steady, the heads change with the day.</span></div>
+    <div class="call"><b>YOUR CALLS</b><span>1 — Guessed times: the tilde (A), the word (B), or the running order (C)? 2 — The ordering read (buy-tickets name closes, other large print before it, small print opens): good enough to ship as the default guess? 3 — Mode-per-fest consistency as stated above: locked?</span></div>
   </div>
   <nav class="jump">${FRAMES.map((f) => `<a href="#${f.id}">${esc(f.title.split(' — ')[0])}${f.w === 390 ? ' · phone' : ''}</a>`).join('')}</nav>
 </header>

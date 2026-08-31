@@ -62,25 +62,36 @@ stage f'd", plus new asks (below). What the day found and shipped (commits
   `refreshCard` replays tall/until. Venue round landed: `locationUrl` on all
   11 fests + 16 Portola afters venues (bank: `2026-08-31-venue-links.md`).
 
-**End-of-day state (2026-08-31 evening) — READ FIRST IN A FRESH THREAD:**
-Kevin plans to wrap this thread and start the events BUILD fresh. Open
-loops: (1) his "every click closes the hover" — unreproducible by scripted
-real input in his own Chrome engine on his exact build, journal EMPTY (no
-throw); v71 ships the discriminator: every zoom close names its cause, and
-a close within 1 s of an overlay press writes `zoom-close-after-click` to
-the crash journal — his next Diagnostics paste (Settings → App) names the
-culprit path outright. (2) Design round 3 APPROVED in direction (day-first,
-adaptive rule, BUCKET filter — his correction: buckets like Portola/Afters/
-Folsom, never venues — the deck for stacked slots): canvas at
-https://claude.ai/code/artifact/1e27ce79-0813-4283-b83c-52cf64be107d, rule
-+ sizing in `claude-plans/2026-08-31-events-canvas/MODEL-V3.md`; Kevin
-wants to "suggest a path" against the RAW crammed frame before the deck is
-final. Clean-tiles law from him: resting cards show name + time only;
-venue/map/TBA live in the zoom. (3) Background teammates were starving
-platform-wide all day (spawn → few tool calls → freeze; main loop fine) —
-work in-band or via background shells until a restart proves otherwise.
+**End-of-day state (2026-08-31, post-review) — READ FIRST IN A FRESH THREAD:**
+(1) **THE HOVER IS FIXED — Kevin confirmed** ("You fixed the hover!") on the
+v71 build: the overlay-mousedown focus fix + the order-insensitive remote
+compare were the cure; the close-cause discriminator stays (every zoom close
+names its cause in the crash journal — cheap forensics if anything ever
+sticks again). (2) **Design rounds 3+4 stand at
+https://claude.ai/code/artifact/1e27ce79-0813-4283-b83c-52cf64be107d** (10
+frames; rules in `claude-plans/2026-08-31-events-canvas/MODEL-V3.md`).
+Round 4 = his re-read of the portola-week source: the Midway "pile" is one
+room played BACK TO BACK — doors, not set times. Model §5: guessed times
+(`approx: true`, ~an hour a set), order from the poster hierarchy
+(buy-tickets name closes, other large print before it, small print opens),
+stacked in the time bands — never lanes, never combined cards. Mode
+consistency is law (§2): if any day of a section earns columns, all days
+render columns; the venue heads stay each day's own. The deck narrows to
+truly-simultaneous data. **His three OPEN calls (canvas header asks them):**
+guessed-time treatment A tilde / B word / C running-order (canvas
+recommends A); the ordering heuristic as default guess; consistency rule
+locked. (3) **Teammate starvation explained enough to act on**: Kevin's
+mid-flow account switches at usage limits freeze background teammates
+(main loop survives; artifact watches stop with "the signed-in account
+changed"). No revive path — respawn on the new account; note banked in
+`helper/guides/agents-teammates-workflows-2026-06-21.md`. All of this
+thread's teammates died with his exit/resume; the board is clear.
 (4) A stray "zz test" note by Ava sits in zz-design's Groove Armada thread
 (battery cleanup miss) — sweep with the promote-time Neon cleanup.
+(5) Zoom code audited post-fix at Kevin's ask: one architecture (the
+bloom) + dated, tested robustness layers; no TODOs/dead code; verdict
+"dense but not duct tape" — the risk is density, so read the why-comments
+before touching card-facts.js.
 
 **Asks banked, awaiting Kevin:** the structured events model for
 Afters/Folsom (nights + venues + sort; proposal with two decisions in
