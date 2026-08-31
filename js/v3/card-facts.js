@@ -517,7 +517,22 @@ export function zoomCard(el, artistName, ctx, { onOpenNotes = null, source = 'mo
   }
   // 3. Then, a beat apart, the pieces.
   let beat = STAGGER_MS;
-  if (G.sub) { anims.push(...hop(G.sub, M.time ? M.time.rect : box(nameFrom.left, nameFrom.bottom + 2, nameFrom.width, 10), rect(G.sub), clones.time, beat)); beat += STAGGER_MS; }
+  // The hop only makes sense one-line-to-one-line. An EVENT card's resting
+  // time element is a TWO-line block ("Fri · 9 PM – 3 AM\nPublic Works"), and
+  // hopping the one-line WHEN out of a two-line rect started it at double
+  // height and shrank it — Kevin's "verrry strange zoom stutter"
+  // (2026-08-30). A multi-line source fades its clone in place and WHEN
+  // rises in like WHERE does.
+  const timeOneLine = M.time && M.time.rect.height < 20;
+  if (G.sub && timeOneLine) { anims.push(...hop(G.sub, M.time.rect, rect(G.sub), clones.time, beat)); beat += STAGGER_MS; }
+  else if (G.sub) {
+    anims.push(G.sub.animate(
+      [{ transform: 'translateY(7px)', opacity: 0 }, { opacity: 1, offset: 0.5 }, { transform: 'none', opacity: 1 }],
+      { duration: MORPH_MS - 60, delay: beat, easing: EASE_ARRIVE, fill: 'both' },
+    ));
+    if (clones.time) anims.push(dissolve(clones.time, STAGGER_MS));
+    beat += STAGGER_MS;
+  }
   else if (clones.time) anims.push(dissolve(clones.time));
   if (G.where) { anims.push(G.where.animate(
     [{ transform: 'translateY(7px)', opacity: 0 }, { opacity: 1, offset: 0.5 }, { transform: 'none', opacity: 1 }],
