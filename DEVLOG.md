@@ -2,6 +2,33 @@
 
 Newest first. One entry per meaningful unit of work.
 
+## 2026-08-30 (late) — the bloom: the zoom's motion rebuilt once, from a storyboard
+
+- Kevin's verdict on the evening's v58: "it's worse... there HAS to be
+  something rotten under the hood." There was, and it was architectural:
+  the zoom ran a shared-element morph between two DOM trees — resting
+  pieces measured (rects + eight font properties each), CLONED into the
+  overlay, crossfaded against their grown twins, with a frame-0 twin and an
+  exit-ghost set papering over the seams. Two renderings of one fact in
+  flight is why "4:45 PM" and "4:45 – 6:00 PM · Sat" printed together, why
+  lines mis-registered, and why every patch (v55–58) moved the problem
+  instead of closing it.
+- The rebuild follows the banked lesson (storyboard → build once → watch
+  slow-mo → ONE push): `claude-plans/2026-08-30-zoom-storyboard.md` first,
+  then ~180 lines of seam-hiding deleted from card-facts.js. New law in the
+  file header: ONE rendering of every fact, ever — the overlay measures
+  only the resting card's box. The bloom: scale k→1 from the resting centre
+  (true transform-origin at viewport edges too) + 90ms materialise, the
+  same aura wash carrying the "same card" read; resting CONTENT steps back
+  via CSS while its wash stays (`zoom-source` hides children now, not the
+  card — no hole, no twin); grown lines cascade from their corners relative
+  to the CARD. The way out recedes from wherever the bloom has got to
+  (live-value read before the exit, so a fast skim never pops).
+- Watched frame-by-frame before pushing: DevTools `currentTime` stepping at
+  0/45/95/160/230/330ms on the gallery's richest state, plus skim (≤1
+  overlay), pick-while-zoomed (zoom holds, pill FLIPs in), low-power (zero
+  animations), Escape, console — all clean. Suite 306/307 green.
+
 ## 2026-08-30 — the clean round: a survey with skeptics, nine teammates, and the zoom rebuilt three times in daylight
 
 - **The survey came first** (ultracode): ten Sonnet readers over every

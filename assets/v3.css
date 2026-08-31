@@ -719,10 +719,11 @@ button.f-chip.notes { cursor: pointer; }
 
 /* The zoom (2026-08-30): an OVERLAY, never a reflow. card-facts.js draws the
  * grown card in this fixed layer, centred on the resting card and clamped to
- * the viewport; the resting card goes transparent underneath (opacity, not
- * visibility — it keeps focus and its accessible name). Nothing on the wall
- * changes size, so siblings never move. The reveal, the name's glide and the
- * grown lines' fade run through the Web Animations API; the shadow eases in
+ * the viewport; the resting card's CONTENT steps back underneath while its
+ * wash stays (opacity on children, not visibility — the card keeps focus and
+ * its accessible name). Nothing on the wall changes size, so siblings never
+ * move. The bloom (scale + fade) and the grown lines' cascade run through
+ * the Web Animations API; the shadow eases in
  * here. z-index 36: above the day rail (25) and the dock (30), below sheets
  * (40) and toasts (50). */
 #zoom-layer { position: fixed; inset: 0; z-index: 36; pointer-events: none; }
@@ -731,8 +732,8 @@ button.f-chip.notes { cursor: pointer; }
                      box-shadow: 0 10px 28px rgba(0, 0, 0, .38); opacity: 0; transition: opacity .38s ease; } /* softened 2026-08-30 — 18/50/.55 read as a second card stacked behind a bright aura */
 .zoom-slot.shown::before { opacity: 1; }
 /* The hit target is the whole grown box from the first frame; the SURFACE
- * under it carries the wash, the border and the clip that unfolds on the way
- * in — so a tap lands while the card is still opening. */
+ * under it carries the wash and the border — so a tap lands while the card
+ * is still blooming. */
 .zoom-card { position: relative; box-sizing: border-box; min-height: inherit; pointer-events: auto;
              display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 7px;
              padding: 12px 14px 12px; text-align: center; cursor: pointer;
@@ -743,9 +744,6 @@ button.f-chip.notes { cursor: pointer; }
 .zoom-card .f-name { font-size: 18px; font-weight: 700; line-height: 1.2; color: var(--text-primary); } /* the zoom's hero: the name grows (13.5–15px at rest) */
 /* After a pick the old wash lingers over the new one and thins away. */
 .zoom-card .z-surface-old { pointer-events: none; z-index: 1; }
-/* The resting pieces ride the morph as clones pinned where they sat on the
- * wall, then dissolve into their grown twins; removed once everything lands. */
-.zoom-card .z-rest { position: absolute; inset: 0; pointer-events: none; z-index: 3; }
 /* The grown rows keep their corners: notes + Spotify are the lower-LEFT
  * corner said fully, the people the lower-RIGHT (Kevin, 2026-08-30) —
  * so they align to their own sides in the zoom (the sheet stays centred). */
@@ -753,7 +751,13 @@ button.f-chip.notes { cursor: pointer; }
 .zoom-card .f-grown .f-sub, .zoom-card .f-grown .f-where { justify-content: center; }
 .zoom-card .f-who { justify-content: flex-end; }
 .zoom-card .f-chips { justify-content: flex-start; }
-.card.zoom-source { opacity: 0; }
+/* While zoomed, the resting card's CONTENT steps back but its wash stays —
+ * the wall keeps its colour under the bloom and there is never a hole.
+ * (Hiding the whole card was why a frame-0 twin had to repaint it inside
+ * the overlay — one rendering of everything now.) Low Power's global
+ * transition kill already covers this fade; reduced-motion gets its own. */
+.card.zoom-source > * { opacity: 0; transition: opacity .09s ease; }
+@media (prefers-reduced-motion: reduce) { .card.zoom-source > * { transition: none; } }
 
 /* Afters/event cards: the day and time on one line, the venue on the next. */
 .card.timed .time { white-space: pre-line; }

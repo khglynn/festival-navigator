@@ -75,25 +75,29 @@ zz-Ben in the walk crew carries seeded affinity (SHM/Jamie xx/Dog Blood/
 Overmono/Robyn) — Kevin's eval still pending, plus his read on
 "connectedness" with the pops gone.
 
-**⚠️ MOTION STATE AS OF v58 (commit 71a1e25): KEVIN SAYS WORSE — READ THIS
-FIRST AFTER COMPACTION.** The zoom's feel degraded across the evening's
-incremental patches. His arc: v54 ("I dig that") → v55–57 fixed real bugs
-(pop, ghosts, double-print) but each pass was tuned blind against an async
-preview → v58 (WHEN-rises + corner-true rows + softer shadow + retract)
-= "it's worse." THE LESSON, learned twice today: motion cannot be patched
-incrementally over chat round-trips. The next pass must be ONE designed
-timeline — write the full morph storyboard (what moves, from where, when,
-each easing), implement it once in js/v3/card-facts.js (the zoom is fully
-contained there + ~40 lines of v3.css), then WATCH it on the local gallery
-(gallery.html, python3 -m http.server; Slow-motion ×4 toggle) frame by
-frame until it is right, and only then push ONE build for Kevin. Consider
-diffing v54 (f55663e^ region) vs v58 to decide what to keep: the frame-0
-twin (real fix), the exit-ghost set (real fix), the complementary
-crossfade (real fix) — versus the arrival choreography (rises/slides/
-corner alignment), which is where the feel lives and where Kevin is
-unhappy. His stated targets: butter-smooth, no pops, corners feel
-CONNECTED to the grown lines, WHEN and WHERE moving as one family, quiet
-not theatrical.
+**THE ZOOM WAS REBUILT AS "THE BLOOM" (2026-08-30, post-compaction —
+storyboard: `claude-plans/2026-08-30-zoom-storyboard.md`).** Kevin's verdict
+on v58 was "it's worse", and the post-compaction diagnosis found the rot:
+the zoom ran a shared-element morph between two DOM trees — resting pieces
+measured, CLONED into the overlay, and crossfaded against their grown twins
+— so two renderings of one fact were in flight at once (his screenshot:
+"4:45 PM" and "4:45 – 6:00 PM · Sat" both printed). Every double-print,
+misregistration and stutter lived there, and no patch could close it. The
+rebuild's law: ONE rendering of every fact, ever — the overlay measures
+only the resting card's box; the card blooms from the resting centre
+(scale k→1 + fast materialise, true transform-origin even at viewport
+edges) wearing the same aura wash, the resting card's CONTENT steps back
+via CSS while its wash stays, and the grown lines cascade from their
+corners (WHEN/WHERE rise, people from the right, notes/Spotify from the
+left) relative to the CARD, never to wall coordinates. Deleted: frame-0
+twin, clones, hop/dissolve, out-twin, `z-rest` (~180 lines). Kept:
+refreshZoom's pill FLIP (measures only inside the overlay), all
+interaction wiring, the exit-slot sweep, Low Power/reduced-motion instant.
+Verified frame-by-frame on the gallery via DevTools currentTime stepping
+(sheets in `screenshots/bloom-*.png`, gitignored): no double text, opaque
+growth, skim holds ≤1 overlay, pick-while-zoomed keeps the zoom, low power
+zero animations, console clean. Suite 306/307 (env skip). Kevin has NOT
+yet judged the feel — that is the open question.
 
 **Open — Kevin's calls:** promote PR #13 (then post the issue-#6 reply and
 send the Ray email from the drafts); the door density on a busy sheet; the

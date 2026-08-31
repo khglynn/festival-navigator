@@ -218,29 +218,42 @@ export function sheetCard(facts, { onClose, onOpenNotes = null } = {}) {
   return factsCard(facts, { className: 'sheet-card', onClose, onOpenNotes });
 }
 
-// ---- the zoom: an overlay, never a reflow (2026-08-30) ---------------------------
+// ---- the zoom: the bloom (2026-08-30 rebuild — the storyboard lives in
+// claude-plans/2026-08-30-zoom-storyboard.md) --------------------------------
 // The grown card is drawn in its own fixed layer, centred on the resting
-// card's centre — anchored there, never nudged away by the viewport's top or
-// bottom (Kevin: "it should just stay anchored to where it was"); only the
-// screen's left and right edges push it inward. The resting card fades out
-// underneath (opacity, never visibility:hidden — it keeps focus and its
-// accessible name). The wall's layout is untouched, so siblings never move.
-// The morph is an orchestrated moment on the compositor's budget: the wash
-// unfolds from the resting rect, the name glides to the top, and every
-// piece arrives from where its small self lives on the card — the time
-// line from under the name, the pickers from the bottom-right corner, notes
-// and Spotify from the bottom-left — whether or not a small self exists,
-// each a beat after the last, on a curve with a little overshoot. A tap or
-// click on the grown card PICKS from the first frame (the hit target is the
-// whole grown box, never the clip); its notes chip is the one other control.
+// card's centre; only the screen's left and right edges push the BOX inward,
+// and even then it still GROWS from the resting centre (true
+// transform-origin). The wall's layout is untouched, so siblings never move.
+//
+// The law with teeth: ONE rendering of every fact, ever. The overlay
+// measures exactly one thing about the resting card — its box. Nothing
+// inside it is measured, cloned or crossfaded. (The v53–v58 morph did all
+// three — resting pieces cloned into the overlay and crossfaded against
+// their grown twins — and every double-printed time, mis-registered line
+// and stutter came from keeping two renderings of one fact in flight.)
+// What carries the "same card growing" illusion instead: the overlay wears
+// the SAME aura background and blooms from the same centre — colour and
+// origin are what the eye reads, never glyph registration.
+//
+// The bloom: the overlay materialises fast (opacity) while it grows k→1
+// (scale, a touch of overshoot); underneath, the resting card's CONTENT
+// steps back through CSS while its wash stays (no hole in the wall).
+// Inside, the grown lines cascade a beat apart, each from its own corner —
+// WHEN and WHERE rise, the people slide in from the right where the colour
+// marks live, notes and Spotify from the left where their numbers live.
+// The way out is quick and plain. Transform and opacity only; one easing
+// in, one easing out. A tap on the grown card PICKS from the first frame;
+// its notes chip and the maps door are the only other controls.
 export const ZOOM_IN_MS = 300;   // hover intent — open slower than you close
 export const ZOOM_OUT_MS = 260;  // hover-out grace before the close
-export const MORPH_MS = 380;
-const MORPH_OUT_MS = 200;
-const STAGGER_MS = 40;
-const EASE_SURFACE = 'cubic-bezier(.4, 0, .2, 1)';       // the wash: crisp, no bounce
-const EASE_ARRIVE = 'cubic-bezier(.2, 1.15, .35, 1)';    // the pieces: a 4% overshoot, then settle
-const EASE_LEAVE = 'cubic-bezier(.4, 0, 1, 1)';          // the way out: quick, no flourish
+const GROW_MS = 240;             // the box, k→1
+const MATERIALIZE_MS = 90;       // the overlay's fade-in (the CSS content fade matches)
+const OUT_MS = 130;              // the way out: quick and plain
+const CASCADE_MS = 170;          // each grown line's arrival
+const STAGGER_MS = 30;           // the beat between arrivals
+const EASE_ARRIVE = 'cubic-bezier(.2, 1.15, .35, 1)';    // in: a 4% overshoot, then settle
+const EASE_LEAVE = 'cubic-bezier(.4, 0, 1, 1)';          // out: quick, no flourish
+const EASE_SURFACE = 'cubic-bezier(.4, 0, .2, 1)';       // refresh crossfades: crisp, no bounce
 const RADIUS = 8; // --r-card
 const MIN_W = 216, MAX_W = 360, MIN_H = 132;
 
@@ -305,32 +318,9 @@ function place(slot, el) {
   return { r0, r1: box(left, top, b.width, b.height) };
 }
 
-// The grown card's parts: a SURFACE (the wash, the border, the clip on the
-// way in) under an unclipped hit target, so the whole grown box takes a tap
-// from the first frame while the wash is still unfolding.
-// The resting card's exact look — background, border, radius — painted
-// INSIDE the overlay's surface at the resting rect. At frame 0 the clipped
-// overlay therefore shows pixel-identical content to the card it covers;
-// the twin crossfades against the always-opaque grown surface, so the
-// expanding ring is never translucent and nothing ever pops (Kevin's
-// frame-by-frame GIF, 2026-08-30: the growth was invisible while the
-// surface faded in, then arrived all at once).
-function frame0Twin(el, r0, r1) {
-  const t = document.createElement('div');
-  t.className = 'z-frame0';
-  t.style.background = el.style.background;
-  t.style.position = 'absolute';
-  t.style.left = `${r0.left - r1.left - 1}px`;
-  t.style.top = `${r0.top - r1.top - 1}px`;
-  t.style.width = `${r0.width}px`;
-  t.style.height = `${r0.height}px`;
-  t.style.border = '1px solid var(--hairline)';
-  t.style.borderRadius = 'var(--r-card)';
-  t.style.boxSizing = 'border-box';
-  t.style.pointerEvents = 'none';
-  return t;
-}
-
+// The grown card's parts: a SURFACE (the wash and the border) under an
+// unclipped hit target, so the whole grown box takes a tap from the first
+// frame while the card is still blooming.
 function buildParts(z, facts) {
   const surface = document.createElement('div');
   surface.className = 'z-surface' + (facts.animated ? ' animated' : '');
@@ -352,88 +342,23 @@ function sizeSlot(slot, r0) {
   slot.style.minHeight = `${Math.max(MIN_H, Math.ceil(r0.height))}px`;
 }
 
-// The resting pieces the morph carries: each becomes its grown twin. Read
-// (rects, computed fonts) before any write — one layout, not a thrash.
-function restingPieces(el) {
-  return {
-    name: el.querySelector('.name'),
-    time: el.querySelector('.time'),
-    tag: el.querySelector('.chip-weekend'),
-    marks: [...el.querySelectorAll('.corner-who .mark:not(.ghost)')],
-    ghosts: [...el.querySelectorAll('.corner-who .mark.ghost')],
-    notes: el.querySelector('.corner-about .chip-notes'),
-    spot: el.querySelector('.corner-about .chip-spotify'),
-  };
+// Where the resting card's centre sits inside the overlay's box — the
+// bloom's transform-origin, so the card grows from (and recedes toward) the
+// spot it lives on the wall, even when a viewport edge nudged the box.
+function originFor(slot, r0, r1) {
+  slot.style.transformOrigin = `${r0.left + r0.width / 2 - r1.left}px ${r0.top + r0.height / 2 - r1.top}px`;
 }
-const FONT_PROPS = ['font-size', 'font-weight', 'font-family', 'line-height', 'letter-spacing', 'color', 'white-space', 'text-align'];
-function measure(piece) {
-  if (!piece) return null;
-  const cs = getComputedStyle(piece);
-  return { el: piece, rect: rect(piece), font: FONT_PROPS.map((k) => [k, cs.getPropertyValue(k)]) };
-}
-// A copy of a resting piece, pinned inside the overlay exactly where the
-// piece sits on the wall. It rides the hop and dissolves; pointer-blind.
-function cloneAt(m, r1) {
-  const c = m.el.cloneNode(true);
-  c.removeAttribute('id');
-  c.style.cssText = m.el.style.cssText;
-  for (const [k, v] of m.font) c.style.setProperty(k, v);
-  c.style.position = 'absolute';
-  c.style.left = `${m.rect.left - r1.left}px`;
-  c.style.top = `${m.rect.top - r1.top}px`;
-  c.style.width = `${m.rect.width}px`;
-  c.style.height = `${m.rect.height}px`;
-  c.style.margin = '0';
-  c.style.boxSizing = 'border-box';
-  c.style.pointerEvents = 'none';
-  return c;
-}
-// A shared-element hop: `to` is laid out at its final place and starts where
-// the piece was (translate + scale), arriving a beat after `delay` on the
-// overshoot curve; a clone, if there is one, rides the same path and
-// dissolves over the last two thirds. Transform and opacity only.
-function hop(toEl, fromRect, toRect, cloneEl, delay = 0) {
-  if (!toRect.width || !toRect.height || !fromRect.width || !fromRect.height) return [];
-  const a = mid(fromRect), b = mid(toRect);
-  // UNIFORM scale, by height. A piece's grown twin usually says more than its
-  // small self ("9:15 PM" becomes "9:15 PM · Sat · Pier Stage"), so a
-  // width-fitted scale squashed the text into a smear that read as
-  // disappear-then-reappear (Kevin, 2026-08-30: "wonky and off"). Scaling
-  // both axes by the height ratio keeps the glyphs true — it reads as the
-  // piece growing — and the width difference is carried by the crossfade:
-  // the clone holds full opacity past the midpoint, the twin arrives under
-  // it, and for a beat both say their shared prefix in the same place.
-  const k = fromRect.height / toRect.height;
-  const anims = [toEl.animate(
-    [{ transform: `translate(${a.x - b.x}px, ${a.y - b.y}px) scale(${k})`, opacity: cloneEl ? 0 : 0.2 },
-     { opacity: 1, offset: 0.55 },
-     { transform: 'none', opacity: 1 }],
-    { duration: MORPH_MS, delay, easing: EASE_ARRIVE, fill: 'both' },
-  )];
-  if (cloneEl) {
-    // Complementary to the twin's fade-in: the clone is on its way OUT by
-    // the time the twin is readable, so two centred lines of different
-    // widths never sit exposed on top of each other (the "2:45 –3:45 PM"
-    // double print in Kevin's GIF, 2026-08-30).
-    anims.push(cloneEl.animate(
-      [{ transform: 'none', opacity: 1 },
-       { opacity: 0.55, offset: 0.3 },
-       { transform: `translate(${b.x - a.x}px, ${b.y - a.y}px) scale(${1 / k})`, opacity: 0, offset: 0.6 },
-       { transform: `translate(${b.x - a.x}px, ${b.y - a.y}px) scale(${1 / k})`, opacity: 0 }],
-      { duration: MORPH_MS, delay, easing: EASE_ARRIVE, fill: 'both' },
-    ));
-  }
-  return anims;
-}
-const dissolve = (el, delay = 0) => el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: MORPH_MS * 0.4, delay, easing: EASE_SURFACE, fill: 'both' });
+// The bloom's starting scale: resting height over grown height, clamped so
+// the materialise never reads as tiny text blowing up.
+const scaleFor = (r0, r1) => Math.min(0.95, Math.max(0.7, r0.height / r1.height));
 
 export function zoomCard(el, artistName, ctx, { onOpenNotes = null, source = 'mouse', occ = null, instant = false } = {}) {
   if (zoomed && zoomed.el === el) return null;
   unzoom({ instant: true });
   // EVERY overlay still shrinking away ends now — not just this card's.
   // Skimming across cards queued a ghost per leave, and clearing only the
-  // re-entered card's ghost let two or three grown surfaces overlap while a
-  // fourth grew (Kevin's GIF, 2026-08-30). New attention clears the stage.
+  // re-entered card's ghost let grown surfaces overlap while a fresh one
+  // grew (Kevin's GIF, 2026-08-30). New attention clears the stage.
   for (const g of exitingSlots) g.remove();
   exitingSlots.clear();
 
@@ -448,108 +373,42 @@ export function zoomCard(el, artistName, ctx, { onOpenNotes = null, source = 'mo
   const z = { el, artist: artistName, ctx, occ, source, onOpenNotes, slot, card, anims: [], cleanup: [], unwireSource: () => {} };
   card.append(...buildParts(z, facts));
 
-  // READS first: the resting card and every piece the morph will carry.
+  // The ONE read of the resting card: its box. Then the writes.
   const animate = !instant && canAnimate(card, ctx);
   const r0 = rect(el);
-  const R = restingPieces(el);
-  const M = animate ? {
-    name: measure(R.name), time: measure(R.time), tag: measure(R.tag),
-    marks: R.marks.map(measure), ghosts: R.ghosts.map(measure),
-    notes: measure(R.notes), spot: measure(R.spot),
-  } : null;
-  // WRITES: the overlay in place, the resting card stepping back.
   sizeSlot(slot, r0);
   zoomLayer().appendChild(slot);
   const { r1 } = place(slot, el);
-  el.classList.add('zoom-source');
+  el.classList.add('zoom-source'); // the resting CONTENT steps back; its wash stays
   zoomed = z;
   wireSlot(z);
-  if (!animate) { slot.classList.add('shown'); return facts; }
-
-  // The morph. Where a piece has no small self, it still arrives from that
-  // corner of the resting card: the time line from under the name, the
-  // pickers from the bottom-right, notes and Spotify from the bottom-left.
-  const rest = document.createElement('div');
-  rest.className = 'z-rest';
-  const clones = {
-    time: M.time ? cloneAt(M.time, r1) : null,
-    tag: M.tag ? cloneAt(M.tag, r1) : null,
-    marks: M.marks.map((m) => cloneAt(m, r1)),
-    ghosts: M.ghosts.map((m) => cloneAt(m, r1)),
-    notes: M.notes ? cloneAt(M.notes, r1) : null,
-    spot: M.spot ? cloneAt(M.spot, r1) : null,
-  };
-  rest.append(...[clones.time, clones.tag, ...clones.marks, ...clones.ghosts, clones.notes, clones.spot].filter(Boolean));
-  card.appendChild(rest);
-  const G = {
-    surface: card.querySelector('.z-surface'),
-    name: card.querySelector('.f-name'),
-    sub: card.querySelector('.f-sub'),
-    where: card.querySelector('.f-where'),
-    pills: [...card.querySelectorAll('.f-pill')],
-    notes: card.querySelector('.f-chip.notes'),
-    spot: card.querySelector('.f-chip.spot'),
-  };
-  const nameFrom = M.name ? M.name.rect : box(r0.left + 8, r0.top + r0.height / 2 - 8, r0.width - 16, 16);
-  // A quiet directional slide (Kevin, 2026-08-30: "tone down… fade and slide
-  // in from the left and right"): the who-pills arrive from the RIGHT, where
-  // the resting colour marks live; notes and Spotify from the LEFT, where
-  // their small numbers sit. The direction IS the message — each grown line
-  // is its corner of the card, said fully.
-  const slideIn = (el, dx, delay) => el.animate(
-    [{ transform: `translateX(${dx}px)`, opacity: 0 }, { opacity: 1, offset: 0.55 }, { transform: 'none', opacity: 1 }],
-    { duration: MORPH_MS - 60, delay, easing: EASE_ARRIVE, fill: 'both' },
-  );
-  const anims = [];
-  // 1. The surface is OPAQUE from the first frame; a twin of the resting
-  //    card's exact pixels sits inside it at the resting rect and thins away
-  //    as the clip unfolds. Frame 0 is indistinguishable from rest, the
-  //    expanding ring is always solid, and the resting card itself is simply
-  //    covered (its opacity drops via the class in the same frame).
-  const twin = frame0Twin(el, r0, r1);
-  G.surface.appendChild(twin);
-  anims.push(twin.animate([{ opacity: 1 }, { opacity: 0 }], { duration: MORPH_MS * 0.5, easing: EASE_SURFACE, fill: 'forwards' }));
-  anims.push(G.surface.animate(
-    [{ clipPath: insetFor(r0, r1) }, { clipPath: `inset(0px round ${RADIUS}px)` }],
-    { duration: MORPH_MS, easing: EASE_SURFACE },
-  ));
-  // 2. The name glides to the top.
-  const nameTo = rect(G.name);
-  if (nameTo.height && nameFrom.height) {
-    const a = mid(nameFrom), b = mid(nameTo);
-    anims.push(G.name.animate(
-      [{ transform: `translate(${a.x - b.x}px, ${a.y - b.y}px) scale(${nameFrom.height / nameTo.height})` }, { transform: 'none' }],
-      { duration: MORPH_MS, easing: EASE_ARRIVE },
-    ));
-  }
-  // 3. Then, a beat apart, the pieces.
-  let beat = STAGGER_MS;
-  // WHEN and WHERE move as one family — the same rise, a beat apart. The
-  // hop tried to morph the resting time line into WHEN and read as a
-  // stutter twice (Kevin, 2026-08-30: "just match them cleanly"); the
-  // resting line simply dissolves where it sits.
-  const rise = (el, delay) => el.animate(
-    [{ transform: 'translateY(7px)', opacity: 0 }, { opacity: 1, offset: 0.5 }, { transform: 'none', opacity: 1 }],
-    { duration: MORPH_MS - 60, delay, easing: EASE_ARRIVE, fill: 'both' },
-  );
-  if (G.sub) { anims.push(rise(G.sub, beat)); beat += STAGGER_MS; }
-  if (clones.time) anims.push(dissolve(clones.time, STAGGER_MS));
-  if (G.where) { anims.push(rise(G.where, beat)); beat += STAGGER_MS * 0.7; }
-  G.pills.forEach((pill) => {
-    anims.push(slideIn(pill, 22, beat));
-    beat += STAGGER_MS * 0.5;
-  });
-  for (const extra of [...clones.marks, ...clones.ghosts, clones.tag].filter(Boolean)) anims.push(dissolve(extra, STAGGER_MS));
-  if (G.notes) anims.push(slideIn(G.notes, -22, beat));
-  if (clones.notes) anims.push(dissolve(clones.notes, STAGGER_MS));
-  if (G.spot) anims.push(slideIn(G.spot, -22, beat + STAGGER_MS * 0.5));
-  if (clones.spot) anims.push(dissolve(clones.spot, STAGGER_MS));
-  // Once everything has landed the clones and the frame-0 twin go.
-  const settle = () => { if (rest.isConnected) rest.remove(); if (twin.isConnected) twin.remove(); };
-  const longest = anims.reduce((m, x) => (x.effect.getTiming().delay + x.effect.getTiming().duration > m.effect.getTiming().delay + m.effect.getTiming().duration ? x : m), anims[0]);
-  longest.onfinish = settle;
-  longest.oncancel = settle;
   slot.classList.add('shown'); // the shadow eases in through CSS
+  if (!animate) return facts;
+
+  // The bloom: materialise fast while growing k→1 from the resting centre.
+  // At the start the overlay is resting-card-sized in the resting card's
+  // place, wearing the same wash — the crossfade is two card-shaped washes
+  // of one gradient in one spot, which is all the connection the eye needs.
+  originFor(slot, r0, r1);
+  const anims = [
+    slot.animate([{ transform: `scale(${scaleFor(r0, r1)})` }, { transform: 'scale(1)' }], { duration: GROW_MS, easing: EASE_ARRIVE }),
+    slot.animate([{ opacity: 0 }, { opacity: 1 }], { duration: MATERIALIZE_MS, easing: 'ease-out' }),
+  ];
+  // The cascade: each grown line a beat apart, each from its own corner —
+  // WHEN and WHERE rise, the people from the RIGHT where the colour marks
+  // live, notes and Spotify from the LEFT where their numbers sit. All
+  // relative to the CARD; wall coordinates are never consulted. The name
+  // has no animation of its own — it IS the card and rides the scale.
+  const arrive = (piece, x, y, delay) => anims.push(piece.animate(
+    [{ transform: `translate(${x}px, ${y}px)`, opacity: 0 }, { opacity: 1, offset: 0.5 }, { transform: 'none', opacity: 1 }],
+    { duration: CASCADE_MS, delay, easing: EASE_ARRIVE, fill: 'both' },
+  ));
+  const sub = card.querySelector('.f-sub');
+  const where = card.querySelector('.f-where');
+  if (sub) arrive(sub, 0, 6, 50);
+  if (where) arrive(where, 0, 6, 85);
+  [...card.querySelectorAll('.f-pill')].forEach((p, i) => arrive(p, 14, 0, 120 + i * (STAGGER_MS - 2)));
+  [...card.querySelectorAll('.f-chip')].forEach((c, i) => arrive(c, -14, 0, 120 + i * STAGGER_MS));
   z.anims = anims;
   return facts;
 }
@@ -665,41 +524,43 @@ export function unzoom({ instant = false } = {}) {
   if (!zoomed) return;
   const z = zoomed;
   zoomed = null;
-  for (const a of z.anims) { try { a.cancel(); } catch { /* finished */ } }
+  const animate = !instant && z.el.isConnected && canAnimate(z.card, z.ctx);
+  // A dismissal mid-bloom leaves from wherever the bloom has got to — read
+  // the live values BEFORE anything else, or a fast skim pops the card to
+  // full size for one frame on its way out.
+  let fromT = 'scale(1)', fromO = 1;
+  if (animate) {
+    const cs = getComputedStyle(z.slot);
+    if (cs.transform && cs.transform !== 'none') fromT = cs.transform;
+    fromO = parseFloat(cs.opacity) || 1;
+  }
   for (const off of z.cleanup) off();
   z.el.classList.remove('zoom-source');
-  if (instant || !z.el.isConnected || !canAnimate(z.card, z.ctx)) { z.slot.remove(); return; }
-  // The way out is quick and plain: the wash folds back to the resting rect
-  // and thins while the resting card returns underneath, the name glides
-  // home, the pieces fade. No overshoot on the way out.
-  const r0 = rect(z.el), r1 = rect(z.slot);
-  const surface = z.card.querySelector('.z-surface');
-  const nameEl = z.card.querySelector('.f-name');
-  const restName = z.el.querySelector('.name');
+  if (!animate) {
+    for (const a of z.anims) { try { a.cancel(); } catch { /* finished */ } }
+    z.slot.remove();
+    return;
+  }
+  // The way out is quick and plain: the card recedes toward its resting
+  // centre and dissolves while the resting content returns through the same
+  // CSS fade underneath. No overshoot. The in-flight anims are left running
+  // on purpose: the slot-level out below overrides the slot's own (newest
+  // animation wins), an interior cascade simply keeps playing as the card
+  // recedes, and everything dies with the slot's removal — cancelling here
+  // instead snapped half-arrived lines to full opacity for a frame.
+  // offset* not rect(): with the in-flight scale still running, rects are
+  // the TRANSFORMED box, and the recede's origin would drift mid-skim.
+  const r0 = rect(z.el);
+  const r1 = box(z.slot.offsetLeft, z.slot.offsetTop, z.slot.offsetWidth, z.slot.offsetHeight);
   z.card.style.pointerEvents = 'none';
   z.slot.classList.remove('shown');
-  // The twin fades IN on the way out, so the instant the overlay is removed
-  // the pixels underneath already match the resting card — no scale pop at
-  // the hand-back either.
-  const outTwin = frame0Twin(z.el, r0, r1);
-  surface.appendChild(outTwin);
-  outTwin.animate([{ opacity: 0 }, { opacity: 0, offset: 0.35 }, { opacity: 1 }], { duration: MORPH_OUT_MS, easing: EASE_LEAVE, fill: 'forwards' });
-  const out = surface.animate(
-    [{ clipPath: `inset(0px round ${RADIUS}px)` }, { clipPath: insetFor(r0, r1) }],
-    { duration: MORPH_OUT_MS, easing: EASE_LEAVE, fill: 'forwards' },
+  originFor(z.slot, r0, r1);
+  const kOut = scaleFor(r0, r1);
+  const out = z.slot.animate(
+    // Partway home, not all the way — receding, already gone before it lands.
+    [{ transform: fromT, opacity: fromO }, { transform: `scale(${kOut + (1 - kOut) * 0.4})`, opacity: 0 }],
+    { duration: OUT_MS, easing: EASE_LEAVE, fill: 'forwards' },
   );
-  if (nameEl && restName) {
-    const from = rect(restName), to = rect(nameEl);
-    if (from.height && to.height) {
-      const a = mid(from), b = mid(to);
-      nameEl.animate(
-        [{ transform: 'none', opacity: 1 }, { transform: `translate(${a.x - b.x}px, ${a.y - b.y}px) scale(${from.height / to.height})`, opacity: 0 }],
-        { duration: MORPH_OUT_MS, easing: EASE_LEAVE, fill: 'forwards' },
-      );
-    }
-  }
-  const grown = z.card.querySelector('.f-grown');
-  if (grown) grown.animate([{ opacity: 1 }, { opacity: 0 }], { duration: MORPH_OUT_MS * 0.5, easing: EASE_LEAVE, fill: 'forwards' });
   exitingSlots.add(z.slot);
   let done = false;
   const finish = () => {
@@ -711,7 +572,7 @@ export function unzoom({ instant = false } = {}) {
   out.onfinish = finish;
   out.oncancel = finish;
   // An animation that never finishes (a backgrounded tab) must not leave a ghost.
-  setTimeout(finish, MORPH_OUT_MS + 80);
+  setTimeout(finish, OUT_MS + 80);
 }
 
 // Everything the overlay listens for while it stands. `cleanup` undoes it.
