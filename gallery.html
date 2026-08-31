@@ -519,21 +519,20 @@ document.getElementById('zoom-lowpower').addEventListener('change', (e) => {
   ctx.lowPower = e.target.checked;
   document.body.classList.toggle('low-power', ctx.lowPower);
 });
-// Slow motion ×4: watch #zoom-layer for a new .zoom-slot (one appears per
-// zoomCard call) and slow every animation running at that moment.
+// Slow motion ×4: watch #zoom-layer for any zoom activity — a new .zoom-slot
+// (the bloom in) OR a class change on one (the exit drops 'shown' in the same
+// tick its animations are created; childList alone never slowed the way out)
+// — and slow every animation running at that moment.
 const slowMo = document.getElementById('zoom-slowmo');
 (function watchZoomLayerForSlowMo() {
   const attach = (layerEl) => {
     new MutationObserver((muts) => {
       if (!slowMo.checked) return;
-      for (const m of muts) {
-        for (const n of m.addedNodes) {
-          if (n.nodeType === 1 && n.classList && n.classList.contains('zoom-slot')) {
-            document.getAnimations().forEach((a) => { a.playbackRate = 0.25; });
-          }
-        }
-      }
-    }).observe(layerEl, { childList: true });
+      const zoomActivity = muts.some((m) =>
+        (m.type === 'attributes' && m.target.classList && m.target.classList.contains('zoom-slot'))
+        || [...m.addedNodes].some((n) => n.nodeType === 1 && n.classList && n.classList.contains('zoom-slot')));
+      if (zoomActivity) document.getAnimations().forEach((a) => { a.playbackRate = 0.25; });
+    }).observe(layerEl, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
   };
   const existing = document.getElementById('zoom-layer');
   if (existing) { attach(existing); return; }

@@ -11,18 +11,17 @@ skeptic each, 2 researchers, 1 synthesis — `claude-plans/2026-08-30-survey/LED
 level, then the day rebuilt the round. All of it is ON THE BRANCH, suite
 305/306 green (1 env skip), SW v53:
 
-- **The zoom is an overlay, never a reflow** (`js/v3/card-facts.js` rebuilt
-  three times to Kevin's live notes): grows anchored on the card's centre
-  (only screen sides nudge it), tappable from frame 0 (hit target over a
-  separately clipped surface), a cross-fade so frame 0 IS the resting card,
-  pieces arrive from their corners a beat apart with a 4% overshoot, hops
-  scale uniformly by height (no text smear), name 18px, a pick while zoomed
-  FLIPs the pills/wash instead of jumping, hold-lift can't pick (armed after
-  the lift's click), Low Power = instant. `renderCard` and the zoom render
-  from ONE model (`factsFor`) so details can't drop between them — the root
-  cause of two rough sessions. `tests/zoom-overlay.test.mjs` pins it all;
-  `gallery.html` opens with "THE ZOOM — every state, live" (16 states, slow-mo
-  and low-power toggles) — Kevin's design-pass surface.
+- **The zoom is an overlay, never a reflow** (`js/v3/card-facts.js`): grows
+  anchored on the card's centre (only screen sides nudge the box), tappable
+  from frame 0, name 18px, a pick while zoomed FLIPs the pills/wash instead
+  of jumping, hold-lift can't pick (armed after the lift's click), Low Power
+  = instant. `renderCard` and the zoom render from ONE model (`factsFor`) so
+  details can't drop between them — the root cause of two rough sessions.
+  *The day's MOTION (clone-hops, crossfades, frame-0 twin) was judged worse
+  by Kevin and replaced wholesale by the bloom — see the rebuild block
+  below; this bullet's mechanics survived it.* `tests/zoom-overlay.test.mjs`
+  pins it all; `gallery.html` opens with "THE ZOOM — every state, live"
+  (16 states, slow-mo and low-power toggles) — Kevin's design-pass surface.
 - **Comments are the OPEN DOOR** (Kevin's pick from the design canvas
   https://claude.ai/code/artifact/ce03d473-c9d8-47eb-9057-0bb96867e704):
   every thread ends with an always-there "Reply…" row that unfolds into the

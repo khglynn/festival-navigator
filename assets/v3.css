@@ -754,10 +754,15 @@ button.f-chip.notes { cursor: pointer; }
 /* While zoomed, the resting card's CONTENT steps back but its wash stays —
  * the wall keeps its colour under the bloom and there is never a hole.
  * (Hiding the whole card was why a frame-0 twin had to repaint it inside
- * the overlay — one rendering of everything now.) Low Power's global
- * transition kill already covers this fade; reduced-motion gets its own. */
-.card.zoom-source > * { opacity: 0; transition: opacity .09s ease; }
-@media (prefers-reduced-motion: reduce) { .card.zoom-source > * { transition: none; } }
+ * the overlay — one rendering of everything now.) The transition lives on
+ * the BASE state, not on .zoom-source: a state-only transition dies with
+ * the class, so the restore snapped to full opacity under the still-fading
+ * overlay — a double print on the way out (Codex gate, 2026-08-30). The
+ * .09s matches card-facts.js MATERIALIZE_MS. Low Power's global transition
+ * kill already covers this; reduced-motion gets its own. */
+.card > * { transition: opacity .09s ease; }
+.card.zoom-source > * { opacity: 0; }
+@media (prefers-reduced-motion: reduce) { .card > * { transition: none; } }
 
 /* Afters/event cards: the day and time on one line, the venue on the next. */
 .card.timed .time { white-space: pre-line; }

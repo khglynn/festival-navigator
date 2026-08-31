@@ -257,7 +257,7 @@ const EASE_SURFACE = 'cubic-bezier(.4, 0, .2, 1)';       // refresh crossfades: 
 const RADIUS = 8; // --r-card
 const MIN_W = 216, MAX_W = 360, MIN_H = 132;
 
-let zoomed = null;      // { el, artist, ctx, occ, source, onOpenNotes, slot, card, anims, cleanup }
+let zoomed = null;      // { el, artist, ctx, occ, source, onOpenNotes, slot, card, anims, cleanup, unwireSource }
 let dismissedEl = null; // a zoom put away on purpose waits for the pointer to leave the card
 let layer = null;
 const exitingSlots = new Set(); // overlays still shrinking away — a NEW zoom clears them ALL
@@ -403,12 +403,16 @@ export function zoomCard(el, artistName, ctx, { onOpenNotes = null, source = 'mo
     [{ transform: `translate(${x}px, ${y}px)`, opacity: 0 }, { opacity: 1, offset: 0.5 }, { transform: 'none', opacity: 1 }],
     { duration: CASCADE_MS, delay, easing: EASE_ARRIVE, fill: 'both' },
   ));
+  // WHEN waits out the content fade: the resting time line and the grown
+  // one are the same fact, and the law says never two renderings at once —
+  // the resting text is gone (MATERIALIZE_MS) before its grown self begins
+  // (Codex gate, 2026-08-30). WHERE and the rest follow in family order.
   const sub = card.querySelector('.f-sub');
   const where = card.querySelector('.f-where');
-  if (sub) arrive(sub, 0, 6, 50);
-  if (where) arrive(where, 0, 6, 85);
-  [...card.querySelectorAll('.f-pill')].forEach((p, i) => arrive(p, 14, 0, 120 + i * (STAGGER_MS - 2)));
-  [...card.querySelectorAll('.f-chip')].forEach((c, i) => arrive(c, -14, 0, 120 + i * STAGGER_MS));
+  if (sub) arrive(sub, 0, 6, MATERIALIZE_MS + 5);
+  if (where) arrive(where, 0, 6, MATERIALIZE_MS + 35);
+  [...card.querySelectorAll('.f-pill')].forEach((p, i) => arrive(p, 14, 0, MATERIALIZE_MS + 55 + i * (STAGGER_MS - 2)));
+  [...card.querySelectorAll('.f-chip')].forEach((c, i) => arrive(c, -14, 0, MATERIALIZE_MS + 55 + i * STAGGER_MS));
   z.anims = anims;
   return facts;
 }
@@ -530,9 +534,13 @@ export function unzoom({ instant = false } = {}) {
   // full size for one frame on its way out.
   let fromT = 'scale(1)', fromO = 1;
   if (animate) {
-    const cs = getComputedStyle(z.slot);
+    const cs = window.getComputedStyle(z.slot);
     if (cs.transform && cs.transform !== 'none') fromT = cs.transform;
-    fromO = parseFloat(cs.opacity) || 1;
+    // Number.isFinite, not `|| 1`: a dismissal on the bloom's very first
+    // frame reads opacity 0, and `|| 1` would flash the overlay fully
+    // opaque on its way out (Codex gate, 2026-08-30).
+    const o = Number.parseFloat(cs.opacity);
+    if (Number.isFinite(o)) fromO = o;
   }
   for (const off of z.cleanup) off();
   z.el.classList.remove('zoom-source');
@@ -571,8 +579,12 @@ export function unzoom({ instant = false } = {}) {
   };
   out.onfinish = finish;
   out.oncancel = finish;
-  // An animation that never finishes (a backgrounded tab) must not leave a ghost.
-  setTimeout(finish, OUT_MS + 80);
+  // An animation that never finishes (a backgrounded tab) must not leave a
+  // ghost. Generous on purpose: the gallery watches exits at ×4 slow motion,
+  // and a tight belt amputated the way out there; a stuck ghost living
+  // ~600ms instead of ~200ms costs nothing (pointer-blind, and a new zoom
+  // sweeps it instantly).
+  setTimeout(finish, OUT_MS * 4 + 80);
 }
 
 // Everything the overlay listens for while it stands. `cleanup` undoes it.

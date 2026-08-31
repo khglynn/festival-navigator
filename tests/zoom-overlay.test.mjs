@@ -227,3 +227,60 @@ test('a venue the festival maps becomes a door to the map — and never a pick',
   click(link);
   assert.equal(ctx.taps.length, 0, 'opening the map is never a pick');
 });
+
+// ---- the animated path, pinned (Codex gate, 2026-08-30) --------------------
+// jsdom has no Element.animate, so every test above takes the instant path —
+// which let three motion defects sail through green. A recording stub opens
+// the animated path just far enough to pin the bloom's contracts; the FEEL
+// stays a real-browser walk's job.
+test('the bloom keeps its laws: compositor-only, WHEN waits out the content fade, exit from live opacity, exit slots swept', () => {
+  const calls = [];
+  const proto = dom.window.Element.prototype;
+  proto.animate = function animate(keyframes, options) {
+    calls.push({ target: this, keyframes, options });
+    return { cancel() {}, play() {}, pause() {}, onfinish: null, oncancel: null };
+  };
+  try {
+    const ctx = makeCtx();
+    const card = mountCard(ctx);
+    zoom.zoomCard(card, 'GRiZ', ctx, { occ: { day: 'Saturday', stage: null, time: null } });
+
+    // One easing vocabulary, one budget: every keyframe animates transform
+    // and opacity only — a layout property here is a wall reflow waiting.
+    for (const c of calls) {
+      for (const kf of c.keyframes) {
+        for (const k of Object.keys(kf)) {
+          assert.ok(['transform', 'opacity', 'offset', 'easing'].includes(k),
+            `compositor-only: unexpected keyframe property "${k}"`);
+        }
+      }
+    }
+
+    // ONE rendering of every fact: the grown WHEN line must not begin until
+    // the resting content's CSS fade (90ms, v3.css .card > *) has finished —
+    // the resting time and the grown time are the same fact.
+    const sub = calls.find((c) => c.target.classList && c.target.classList.contains('f-sub'));
+    assert.ok(sub, 'the WHEN line animates in');
+    assert.ok(sub.options.delay >= 90, `WHEN waits out the content fade (delay ${sub.options.delay} < 90)`);
+
+    // A dismissal on the bloom's first frame leaves from opacity 0 — the
+    // `|| 1` bug flashed the overlay fully opaque on its way out.
+    const slot = document.querySelector('.zoom-slot');
+    slot.style.opacity = '0';
+    calls.length = 0;
+    zoom.unzoom();
+    const out = calls.find((c) => c.target === slot);
+    assert.ok(out, 'the exit animates the slot');
+    assert.equal(out.keyframes[0].opacity, 0, 'the exit starts from the live opacity, not 1');
+
+    // The animated exit parks the slot until its animation finishes (the
+    // stub never finishes it) — and a NEW zoom must sweep every parked slot.
+    assert.ok(slot.isConnected, 'the exiting slot lingers for its animation');
+    const card2 = mountCard(ctx, 'Rezz');
+    zoom.zoomCard(card2, 'Rezz', ctx, { occ: { day: 'Saturday', stage: null, time: null } });
+    assert.ok(!slot.isConnected, 'a new zoom sweeps the exiting slot');
+    assert.equal(document.querySelectorAll('.zoom-slot').length, 1, 'one overlay on stage');
+  } finally {
+    delete proto.animate;
+  }
+});
