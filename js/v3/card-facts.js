@@ -13,6 +13,7 @@ import * as model from './model.js';
 import { ordered, auraBackground, nameColor, subColor } from './aura.js';
 import { hslOf } from './palette.js';
 import { colorIndexOf } from './wall.js';
+import { record } from '../errlog.js';
 
 // "9:00 PM - 10:15 PM" -> "9:00 – 10:15 PM" (the shared meridiem said once).
 export function timeRange(t) {
@@ -386,7 +387,7 @@ function originFor(slot, r0, r1) {
 // the materialise never reads as tiny text blowing up.
 const scaleFor = (r0, r1) => Math.min(0.95, Math.max(0.7, r0.height / r1.height));
 
-export function zoomCard(el, artistName, ctx, { onOpenNotes = null, source = 'mouse', occ = null, instant = false } = {}) {
+function zoomCardInner(el, artistName, ctx, { onOpenNotes = null, source = 'mouse', occ = null, instant = false } = {}) {
   if (zoomed && zoomed.el === el) return null;
   unzoom({ instant: true });
   // EVERY overlay still shrinking away ends now — not just this card's.
@@ -492,7 +493,7 @@ function snapshotParts(card) {
   return out;
 }
 
-export function refreshZoom(fresh, ctx) {
+function refreshZoomInner(fresh, ctx) {
   if (!zoomed || !fresh) return;
   const z = zoomed;
   for (const a of z.anims) { try { a.cancel(); } catch { /* finished */ } }
@@ -572,7 +573,7 @@ export function refreshZoom(fresh, ctx) {
   z.anims = anims;
 }
 
-export function unzoom({ instant = false } = {}) {
+function unzoomInner({ instant = false } = {}) {
   if (!zoomed) return;
   const z = zoomed;
   zoomed = null;
@@ -633,6 +634,40 @@ export function unzoom({ instant = false } = {}) {
   // ~600ms instead of ~200ms costs nothing (pointer-blind, and a new zoom
   // sweeps it instantly).
   setTimeout(finish, OUT_MS * 4 + 80);
+}
+
+// The airbag (2026-08-31). Kevin's Safari recording showed two stranded
+// states — a resting card left content-invisible with no overlay, and a slot
+// stuck unplaced at the viewport's top — the wreckage of an exception thrown
+// MIDWAY through a zoom: the class was on, the slot was in the DOM, and the
+// throw skipped everything after. The suite was green and no tool saw it.
+// So the three entry points never strand the page: any throw is recorded in
+// the crash journal and the stage is swept clean — every slot out, every
+// zoom-source off, state zeroed. A missed zoom is a non-event; a stranded
+// wall is a broken app.
+function zoomBail(where, e) {
+  record(`zoom:${where}`, e);
+  const z = zoomed;
+  zoomed = null;
+  if (z) {
+    for (const off of z.cleanup) { try { off(); } catch { /* half-wired */ } }
+    try { z.slot.remove(); } catch { /* never attached */ }
+    try { z.el.classList.remove('zoom-source'); } catch { /* detached */ }
+  }
+  for (const g of exitingSlots) { try { g.remove(); } catch { /* gone */ } }
+  exitingSlots.clear();
+  const layerEl = document.getElementById('zoom-layer');
+  if (layerEl) for (const s of [...layerEl.querySelectorAll('.zoom-slot')]) s.remove();
+  for (const c of [...document.querySelectorAll('.card.zoom-source')]) c.classList.remove('zoom-source');
+}
+export function zoomCard(...args) {
+  try { return zoomCardInner(...args); } catch (e) { zoomBail('grow', e); return null; }
+}
+export function refreshZoom(...args) {
+  try { return refreshZoomInner(...args); } catch (e) { zoomBail('refresh', e); }
+}
+export function unzoom(...args) {
+  try { return unzoomInner(...args); } catch (e) { zoomBail('shrink', e); }
 }
 
 // Everything the overlay listens for while it stands. `cleanup` undoes it.
@@ -816,17 +851,18 @@ export function wireCardZoom(el, artistName, ctx, { onOpenNotes = null, occ = nu
   };
   el.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse') arm(); });
   // A card born UNDER a resting pointer never hears pointerenter — the wall
-  // repaints on every sync echo (~5 s after a pick) and refreshCard swaps
-  // the node under a pick, and the browser fires boundary events only on
-  // the next movement. The old node's intent timer dies with it, so hover
-  // did nothing until the hand moved off and back (Kevin, 2026-08-31: "then
-  // it's stuck"). :hover is the browser's own record of what the pointer is
-  // over — a fresh card that already matches it arms its intent. One frame
-  // late on purpose: renderCard wires the card BEFORE inserting it, and a
-  // detached node can never be hovered (Codex gate, 2026-08-31).
+  // repaints on every sync echo and refreshCard swaps the node under a pick,
+  // and the browser fires boundary events only on the next movement. The old
+  // node's intent timer dies with it, so hover did nothing until the hand
+  // moved off and back (Kevin, 2026-08-31: "then it's stuck"). One frame
+  // late on purpose: renderCard wires the card BEFORE inserting it. The
+  // check asks elementFromPoint under the LAST KNOWN mouse position, never
+  // :hover — Safari is notorious for stale :hover chains after DOM swaps,
+  // and a stale match here would grow cards the pointer is nowhere near.
   requestAnimationFrame(() => {
-    if (!el.isConnected) return;
-    try { if (el.matches(':hover')) arm(); } catch { /* engines without :hover matching just wait for the pointer */ }
+    if (!el.isConnected || !lastMouse || typeof document.elementFromPoint !== 'function') return;
+    const under = document.elementFromPoint(lastMouse.x, lastMouse.y);
+    if (under && el.contains(under)) arm();
   });
   el.addEventListener('pointerleave', (e) => {
     if (e.pointerType !== 'mouse') return;

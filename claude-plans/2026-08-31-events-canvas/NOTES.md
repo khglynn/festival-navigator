@@ -10,3 +10,5 @@ started 2026-08-31T12:01:31Z — building
 - 12:09:29Z — jump nav added; verified in Chrome: A-desktop renders auras, lane splits, tall Despacio, accent stage heads
 - 12:10:12Z — sort chip stretch fixed (open popover in flow was stretching the wrap)
 - 12:11:22Z — README.md written (frame-by-frame + recommendation: B as the shape, venue view as a SORT, same control on Afters and Folsom)
+round 3 started 2026-08-31T17:06:39Z
+- 17:07:18Z — read round-1 model, round-2 README+build.mjs, portola/lost-lands/acl/seismic/tomorrowland data, wall.js, sort-control.js, filters.js. Frame of the ask forming: day-first wall, adaptive section rule, venue filter w/ persistence, stacked-slot treatment.

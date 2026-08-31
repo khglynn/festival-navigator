@@ -355,12 +355,18 @@ test('a card rendered under a resting pointer arms its hover intent one frame af
   // browser's record on exactly this node, and give rAF real (async) timing.
   const syncRaf = globalThis.requestAnimationFrame;
   globalThis.requestAnimationFrame = (fn) => setTimeout(fn, 0);
+  // Feed the module's last-known mouse position, and answer elementFromPoint
+  // with this card — the browser-truth the re-arm asks for (it never trusts
+  // :hover: Safari's stale hover chains after DOM swaps grew far-away cards).
+  const move = new dom.window.MouseEvent('pointermove', { bubbles: true, clientX: 40, clientY: 40 });
+  Object.defineProperty(move, 'pointerType', { value: 'mouse' });
+  document.dispatchEvent(move);
+  const realEFP = document.elementFromPoint;
   try {
     const wall = document.getElementById('wall-root');
     wall.replaceChildren();
     const card = renderCard('GRiZ', ctx, { occ: { day: 'Saturday', stage: null, time: null } });
-    const realMatches = card.matches.bind(card);
-    card.matches = (sel) => (sel === ':hover' ? true : realMatches(sel));
+    document.elementFromPoint = () => card;
     zoom.wireCardZoom(card, 'GRiZ', ctx, { occ: { day: 'Saturday', stage: null, time: null } }); // still detached
     wall.appendChild(card);
     await new Promise((r) => setTimeout(r, 20));
@@ -370,5 +376,30 @@ test('a card rendered under a resting pointer arms its hover intent one frame af
     assert.equal(zoom.zoomedCard(), card);
   } finally {
     globalThis.requestAnimationFrame = syncRaf;
+    document.elementFromPoint = realEFP;
+  }
+});
+
+test('the airbag: a throw mid-zoom is recorded and sweeps the stage — no stranded slot, no invisible card (the Safari recording, 2026-08-31)', async () => {
+  const ctx = makeCtx();
+  const card = mountCard(ctx);
+  const proto = dom.window.Element.prototype;
+  proto.animate = function animate() { throw new Error('WAAPI said no (test)'); };
+  try {
+    const out = zoom.zoomCard(card, 'GRiZ', ctx, { occ: { day: 'Saturday', stage: null, time: null } });
+    assert.equal(out, null, 'a failed zoom reports nothing');
+    assert.equal(document.querySelectorAll('.zoom-slot').length, 0, 'no stranded overlay');
+    assert.equal(document.querySelectorAll('.card.zoom-source').length, 0, 'no invisible card left behind');
+    assert.equal(zoom.zoomedCard(), null, 'state is zeroed');
+    const { recent } = await import('../js/errlog.js');
+    const last = recent().at(-1);
+    assert.equal(last.kind, 'zoom:grow', 'the crash journal has the witness');
+    assert.match(last.msg, /WAAPI said no/);
+    // And the card still works afterwards: the instant path zooms fine.
+    delete proto.animate;
+    zoom.zoomCard(card, 'GRiZ', ctx, { occ: { day: 'Saturday', stage: null, time: null }, instant: true });
+    assert.ok(document.querySelector('.zoom-slot'), 'life goes on');
+  } finally {
+    delete proto.animate;
   }
 });

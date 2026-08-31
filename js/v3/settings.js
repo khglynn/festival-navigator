@@ -11,6 +11,7 @@ import { FESTIVAL_INDEX, FESTIVALS } from '../festivals.js';
 import { BOARD, hslOf, strokeOf } from './palette.js';
 import { colorIndexOf } from './wall.js';
 import { festPlaceLine } from './card-facts.js'; // the fest's place line, shared with the wall header
+import { recent as recentErrors, diagnostics } from '../errlog.js';
 import { el, subviewHead, eqLoader, festRow, openExportLikes, openBulkPaste, openDayImage } from './tools.js';
 import { router } from './router.js';
 import { nameProblem, NAME_LIMITS } from '../name-rules.mjs';
@@ -377,12 +378,8 @@ function openHowItWorks(actions) {
     const head = el('span', 'font-family: var(--font-display); letter-spacing: .05em; font-size: 9px; color: rgb(var(--fest)); background: var(--card); border-radius: 6px; padding: 5px 8px; box-shadow: inset 0 0 0 1px rgba(var(--fest), .6);', 'WAREHOUSE'); // a .stage-head, drawn small — surface 3 of the accent's four
     d.appendChild(head);
   }, 'Tap a stage to see only that stage.', 'Tap it again for all of them.'));
-  card.appendChild(lesson((d) => {
-    const g = el('span', 'position: relative; width: 84px; height: 30px; border-radius: 6px; border: 1px solid var(--hairline); background: #1C1731; overflow: hidden;');
-    g.appendChild(el('span', 'position: absolute; left: 0; right: 0; top: 13px; height: 2px; background: rgb(var(--brand)); box-shadow: 0 0 6px rgba(var(--brand), .8);'));
-    g.appendChild(el('span', 'position: absolute; right: 3px; top: 9px; font-size: 7px; font-weight: 800; letter-spacing: .08em; color: var(--page); background: rgb(var(--brand)); border-radius: 999px; padding: 0 4px;', '5:42 PM'));
-    d.appendChild(g);
-  }, 'On the day, a line marks now', 'and the app opens right there.'));
+  // The now-line explains itself on the day (Kevin, 2026-08-31: "I don't
+  // think that'll confuse anyone") — its lesson row is gone.
   card.appendChild(lesson((d) => {
     d.append(chipDemo('+ Add', { dashed: true }));
   }, 'Add your people with + Add,', 'or share the crew link — anyone who opens it is in, no account needed.'));
@@ -713,6 +710,21 @@ export function renderSettings(root, ctx, actions) {
   list.appendChild(linkRow('Bulk paste picks', () => openSub('sub:bulk')));
   list.appendChild(linkRow('Export picks', () => openSub('sub:export')));
   list.appendChild(linkRow('Day image', () => openSub('sub:day-image')));
+  // The crash journal's one door (2026-08-31): a tap copies a shareable dump
+  // (build, device, the last 20 recorded errors — never anything private).
+  // Exists so "it broke on my phone" can travel as text instead of a video.
+  const errCount = recentErrors().length;
+  const diagRow = linkRow(errCount ? `Diagnostics · ${errCount} recent error${errCount === 1 ? '' : 's'}` : 'Diagnostics', async () => {
+    const t = diagRow.querySelector('.row-title');
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(await diagnostics(), null, 2));
+      t.textContent = 'Copied ✓ — paste it to whoever is debugging';
+    } catch {
+      t.textContent = 'Couldn’t copy — screenshot this instead';
+    }
+    setTimeout(() => { t.textContent = errCount ? `Diagnostics · ${errCount} recent errors` : 'Diagnostics'; }, 2200);
+  });
+  list.appendChild(diagRow);
   main.appendChild(list);
 
   root.append(sub, main);
