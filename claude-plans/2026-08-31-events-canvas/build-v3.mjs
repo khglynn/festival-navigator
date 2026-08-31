@@ -180,6 +180,16 @@ ${gridSlice('Saturday', 19, 23)}
 ${section('AFTERS', A('Sat'))}
 <div class="whisper-hidden">Folsom is hidden — tap its chip to bring it back.</div>`;
 
+// The RAW edge case first (Kevin: "show me the source for this edge case") —
+// Sunday's afters with NO deck: pure lane-splitting, exactly what the app's
+// grid does today when sets collide. The Midway's four 10 PM shows each get
+// a quarter of a 150px column.
+const crammedFrame = () => `
+${dayTabs(TABS, 'SUN')}
+<div class="day-rule"><span class="day">SUNDAY</span><span class="date">${NIGHT_DATE.Sun} · RAW — TODAY'S LANE SPLIT, NO DECK</span><span class="line"></span></div>
+${sectionHead('AFTERS — LANES ONLY', 'FOUR SIMULTANEOUS SETS AT THE MIDWAY: EACH LANE IS ~37PX WIDE')}
+${columns(A('Sun'), { deckAt: 99 })}`;
+
 // The deck: Sunday's Midway pile at rest, and grown into its panel.
 const deckFrame = () => {
   const sun = A('Sun');
@@ -274,6 +284,9 @@ addFrame('sat-phone', 'PORTOLA · SATURDAY — phone', 390,
 addFrame('filter', 'THE BUCKET FILTER — Folsom toggled off', 1440,
   'One chip per room the fest has — Portola, Afters, Folsom. Toggle a bucket off and it disappears from every day, saved on this device per fest. The whisper is the way back.',
   filterFrame());
+addFrame('crammed', 'THE EDGE CASE, RAW — what colliding sets do without a deck', 1440,
+  'The source state, unretouched: The Midway hosts four 10 PM shows and lane-splitting gives each ~37px — names crush to two letters. This is the frame to suggest a path against.',
+  crammedFrame());
 addFrame('deck', 'THE DECK — the 10 PM pile at rest and grown', 1440,
   'Sunday’s Midway pile: 3+ simultaneous sets stack as one deck with a count pill instead of two-letter slivers. A tap grows it in place — the zoom’s own gesture — into full, pickable cards.',
   deckFrame());

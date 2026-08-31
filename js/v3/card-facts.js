@@ -328,7 +328,7 @@ export function zoomSnapshot() {
   return zoomed ? { artist: zoomed.artist, occ: zoomed.occ, source: zoomed.source, onOpenNotes: zoomed.onOpenNotes } : null;
 }
 export function dismissZoom() {
-  if (zoomed) { dismissedEl = zoomed.el; unzoom(); }
+  if (zoomed) { dismissedEl = zoomed.el; unzoom({ why: 'dismissed (Escape or tap-away)' }); }
 }
 
 // The clip that shows exactly the resting card's rect out of the overlay's.
@@ -389,7 +389,7 @@ const scaleFor = (r0, r1) => Math.min(0.95, Math.max(0.7, r0.height / r1.height)
 
 function zoomCardInner(el, artistName, ctx, { onOpenNotes = null, source = 'mouse', occ = null, instant = false } = {}) {
   if (zoomed && zoomed.el === el) return null;
-  unzoom({ instant: true });
+  unzoom({ instant: true, why: 'a new zoom took the stage' });
   // EVERY overlay still shrinking away ends now — not just this card's.
   // Skimming across cards queued a ghost per leave, and clearing only the
   // re-entered card's ghost let grown surfaces overlap while a fresh one
@@ -428,7 +428,7 @@ function zoomCardInner(el, artistName, ctx, { onOpenNotes = null, source = 'mous
       requestAnimationFrame(() => {
         if (zoomed !== z) return;
         const under = document.elementFromPoint(lastMouse.x, lastMouse.y);
-        if (under && !slot.contains(under) && !z.el.contains(under)) unzoom({ instant: true });
+        if (under && !slot.contains(under) && !z.el.contains(under)) unzoom({ instant: true, why: 'restored under a moved-away mouse' });
       });
     }
     return facts;
@@ -573,8 +573,14 @@ function refreshZoomInner(fresh, ctx) {
   z.anims = anims;
 }
 
-function unzoomInner({ instant = false } = {}) {
+let lastOverlayPress = 0; // a close right after an overlay press is the suspicious pattern — journal its cause
+function unzoomInner({ instant = false, why = 'unspecified' } = {}) {
   if (!zoomed) return;
+  // Kevin's "every click closes the hover" journaled itself as NOTHING —
+  // no throw, so one of these legitimate close paths fires wrongly on his
+  // machine. Every close names its cause; only the click-adjacent ones are
+  // worth the journal's 20 slots (2026-08-31).
+  if (Date.now() - lastOverlayPress < 1000) record('zoom-close-after-click', why);
   const z = zoomed;
   zoomed = null;
   const animate = !instant && z.el.isConnected && canAnimate(z.card, z.ctx);
@@ -714,6 +720,7 @@ function wireSlot(z) {
   // closes." Cancelling mousedown's default keeps focus where it was; the
   // notes chip and the maps door keep their own defaults.
   card.addEventListener('mousedown', (e) => {
+    lastOverlayPress = Date.now();
     if (e.target.closest && e.target.closest('button, a')) return;
     e.preventDefault();
   });
@@ -723,7 +730,7 @@ function wireSlot(z) {
   card.addEventListener('click', (e) => {
     if (zoomed !== z) return;
     if (e.target !== card && e.target.closest('button')) return;
-    if (!z.el.isConnected) { unzoom({ instant: true }); return; }
+    if (!z.el.isConnected) { unzoom({ instant: true, why: 'clicked a card that left the DOM' }); return; }
     z.ctx.onTap(z.artist, z.el);
   });
 
@@ -739,7 +746,7 @@ function wireSlot(z) {
     if (e.pointerType !== 'mouse' || zoomed !== z || z.source !== 'mouse') return;
     if (e.relatedTarget && z.el.contains(e.relatedTarget)) return;
     if (outT) clearTimeout(outT);
-    outT = setTimeout(() => { outT = null; if (zoomed === z) unzoom(); }, ZOOM_OUT_MS);
+    outT = setTimeout(() => { outT = null; if (zoomed === z) unzoom({ why: 'pointer left the overlay' }); }, ZOOM_OUT_MS);
   });
   // The belt under the boundary events: an overlay can be BORN with the
   // pointer already elsewhere — a sync echo repaints the wall and restores
@@ -754,7 +761,7 @@ function wireSlot(z) {
       if (outT) { clearTimeout(outT); outT = null; }
       return;
     }
-    if (!outT) outT = setTimeout(() => { outT = null; if (zoomed === z) unzoom(); }, ZOOM_OUT_MS);
+    if (!outT) outT = setTimeout(() => { outT = null; if (zoomed === z) unzoom({ why: 'mouse moved outside (belt)' }); }, ZOOM_OUT_MS);
   };
   document.addEventListener('pointermove', onMove, { passive: true, capture: true });
   z.cleanup.push(() => {
@@ -774,13 +781,13 @@ function wireSlot(z) {
   const follow = () => {
     followRaf = 0;
     if (zoomed !== z) return;
-    if (!z.el.isConnected) { unzoom({ instant: true }); return; }
+    if (!z.el.isConnected) { unzoom({ instant: true, why: 'card left the DOM (scroll)' }); return; }
     // A zero-size viewport is a transient (a DevTools metrics override mid-
     // screenshot, a backgrounded window), not a card that scrolled away.
     if (!window.innerWidth || !window.innerHeight) return;
     const r = rect(z.el);
     if (r.bottom < 0 || r.top > window.innerHeight || r.right < 0 || r.left > window.innerWidth) {
-      unzoom({ instant: true });
+      unzoom({ instant: true, why: 'card scrolled off screen' });
       return;
     }
     place(z.slot, z.el);
@@ -806,14 +813,14 @@ function wireSlot(z) {
     e.preventDefault();
     if (e.shiftKey) { z.el.focus(); return; }
     const next = nextFocusableAfter(z.el);
-    unzoom();
+    unzoom({ why: 'Tab moved on' });
     if (next) next.focus();
   });
   card.addEventListener('focusout', (e) => {
     if (zoomed !== z) return;
     const to = e.relatedTarget;
     if (to && (to === z.el || z.el.contains(to) || slot.contains(to))) return;
-    unzoom();
+    unzoom({ why: 'focus left the zoom' });
   });
 }
 
@@ -896,6 +903,6 @@ export function wireCardFocusZoom(el, artistName, ctx, { onOpenNotes = null, occ
     if (!zoomed || zoomed.el !== el) return;
     const to = e.relatedTarget;
     if (to && (el.contains(to) || zoomed.slot.contains(to))) return;
-    unzoom();
+    unzoom({ why: 'focus left the card' });
   });
 }

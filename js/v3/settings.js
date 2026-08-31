@@ -663,8 +663,10 @@ function youSection(ctx, actions) {
 // ---- the settings screen --------------------------------------------------------------
 export function renderSettings(root, ctx, actions) {
   root.textContent = '';
-  const sub = el('div'); sub.id = 'settings-subview';
-  const main = el('div', 'display: flex; flex-direction: column; gap: 10px;');
+  // margin-block auto = vertical centering that degrades to normal scroll
+  // when content is taller than the window (the entry screens' own pattern).
+  const sub = el('div', 'margin-block: auto;'); sub.id = 'settings-subview';
+  const main = el('div', 'display: flex; flex-direction: column; gap: 10px; margin-block: auto; width: 100%;');
   main.id = 'settings-main';
 
   const head = el('div', 'display: flex; align-items: center; gap: 10px;');

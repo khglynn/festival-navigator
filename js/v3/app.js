@@ -52,7 +52,7 @@ const ctx = {
   },
   onTap: handleTap,
   onOpenNotes: (artist, occ = null) => {
-    unzoom(); // the sheet replaces the preview — never leave it under the modal
+    unzoom({ why: 'notes sheet opened' });
     openArtistSheet(artist, ctx, onNotesChange, occ);
     // The occurrence rides in the route key (router.encodeNotesKey — a tagged
     // payload no name can imitate), so back, forward and a refresh reopen
@@ -90,7 +90,7 @@ const ctx = {
 // grace close fires, and the first re-entry did nothing (Codex gate,
 // 2026-08-31). Escape keeps the mark — the hand is still on the card there.
 document.addEventListener('pointerdown', (e) => {
-  if (zoomedCard() && !zoomContains(e.target)) unzoom();
+  if (zoomedCard() && !zoomContains(e.target)) unzoom({ why: 'press outside the zoom' });
 }, true);
 // Escape closes ONE layer: a live zoom eats the press before any sheet or
 // router handler sees it (capture phase) — never both in one keypress.
@@ -376,7 +376,7 @@ function repaintWall() {
   // must not eat the card you are resting on); a card that is gone — a
   // filter hid it, a fest switch — takes its zoom with it.
   const keep = zoomSnapshot();
-  unzoom({ instant: !!keep });
+  unzoom({ instant: !!keep, why: 'wall repaint' });
   refreshCtx();
   renderWall($('wall-root'), ctx);
   if (keep) {
@@ -1778,7 +1778,7 @@ export function init() {
   window.addEventListener('popstate', (e) => router.onPopState(e.state));
   $('search-input').addEventListener('input', (e) => {
     ctx.query = e.target.value;
-    unzoom({ instant: true }); // the wall is about to be replaced under any zoom
+    unzoom({ instant: true, why: 'wall switched' });
     renderWall($('wall-root'), ctx);
     renderDayNav(); // scrollspy re-wires against the filtered day rules (gate F8)
     measureStickyChrome(); // search mode drops the stage strip — jump offset shrinks
