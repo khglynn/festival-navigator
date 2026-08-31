@@ -201,10 +201,9 @@ test('the grown card and the resting card render from ONE model: same aura, ever
   const surface = grown.querySelector('.z-surface');
   assert.equal(surface.style.background, card.style.background, 'the zoom wears the card\'s aura (a second colour layer once made this invalid and black)');
   assert.ok(surface.style.background.includes('radial-gradient'), 'and the aura is really there');
-  assert.equal(facts.when, '9:00 – 10:15 PM · Saturday', 'WHEN is its own row');
+  assert.equal(facts.when, '9:00 – 10:15 PM · Saturday · W2', 'WHEN carries the weekend as plain words — a tag flipped sides (Kevin, 2026-08-30)');
   assert.equal(facts.where, 'Pier Stage', 'WHERE is its own row');
-  assert.equal(grown.querySelector('.f-sub').textContent, facts.when + 'W2', 'the weekend rides WHEN as the resting card\'s own quiet tag');
-  assert.equal(grown.querySelector('.f-wtag').textContent, 'W2');
+  assert.equal(grown.querySelector('.f-sub').textContent, facts.when);
   assert.equal(grown.querySelector('.f-where').textContent, 'Pier Stage');
   assert.equal(grown.querySelectorAll('.f-pill').length, facts.people.length);
   assert.equal(card.querySelectorAll('.corner-who .mark:not(.ghost)').length, Math.min(facts.people.length, 4));

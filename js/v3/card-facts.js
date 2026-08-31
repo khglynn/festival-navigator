@@ -72,6 +72,9 @@ export function factsFor(artistName, ctx, occ = null) {
     when = [timeRange(time), day ? shortDay(fest, day) : null].filter(Boolean).join(' · ');
     where = stage || '';
   }
+  // The weekend rides WHEN as plain text — a tag at the row's end read as the
+  // resting chip flipping sides (Kevin, 2026-08-30); words don't flip.
+  if (weekend) when = [when, weekend].filter(Boolean).join(' · ');
   const mapUrl = (where && fest.venues && fest.venues[where]) || null;
   return {
     name: artistName, day, stage, time, weekend, when, where, mapUrl,
@@ -147,16 +150,10 @@ export function factChips(facts, { onOpenNotes = null } = {}) {
 function grownBlock(facts, { onOpenNotes = null } = {}) {
   const grown = document.createElement('div');
   grown.className = 'f-grown';
-  if (facts.when || facts.weekend) {
+  if (facts.when) {
     const sub = document.createElement('div');
     sub.className = 'f-sub';
-    if (facts.when) sub.append(facts.when);
-    if (facts.weekend) {
-      const t = document.createElement('span');
-      t.className = 'f-wtag';
-      t.textContent = facts.weekend;
-      sub.appendChild(t);
-    }
+    sub.textContent = facts.when;
     grown.appendChild(sub);
   }
   if (facts.where) {
@@ -311,6 +308,29 @@ function place(slot, el) {
 // The grown card's parts: a SURFACE (the wash, the border, the clip on the
 // way in) under an unclipped hit target, so the whole grown box takes a tap
 // from the first frame while the wash is still unfolding.
+// The resting card's exact look — background, border, radius — painted
+// INSIDE the overlay's surface at the resting rect. At frame 0 the clipped
+// overlay therefore shows pixel-identical content to the card it covers;
+// the twin crossfades against the always-opaque grown surface, so the
+// expanding ring is never translucent and nothing ever pops (Kevin's
+// frame-by-frame GIF, 2026-08-30: the growth was invisible while the
+// surface faded in, then arrived all at once).
+function frame0Twin(el, r0, r1) {
+  const t = document.createElement('div');
+  t.className = 'z-frame0';
+  t.style.background = el.style.background;
+  t.style.position = 'absolute';
+  t.style.left = `${r0.left - r1.left - 1}px`;
+  t.style.top = `${r0.top - r1.top - 1}px`;
+  t.style.width = `${r0.width}px`;
+  t.style.height = `${r0.height}px`;
+  t.style.border = '1px solid var(--hairline)';
+  t.style.borderRadius = 'var(--r-card)';
+  t.style.boxSizing = 'border-box';
+  t.style.pointerEvents = 'none';
+  return t;
+}
+
 function buildParts(z, facts) {
   const surface = document.createElement('div');
   surface.className = 'z-surface' + (facts.animated ? ' animated' : '');
@@ -474,11 +494,16 @@ export function zoomCard(el, artistName, ctx, { onOpenNotes = null, source = 'mo
     { duration: MORPH_MS - 60, delay, easing: EASE_ARRIVE, fill: 'both' },
   );
   const anims = [];
-  // 1. The resting card fades under the unfolding wash (a cross-fade, so
-  //    frame 0 IS the resting card and nothing pops).
-  anims.push(el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 170, easing: EASE_SURFACE, fill: 'forwards' }));
+  // 1. The surface is OPAQUE from the first frame; a twin of the resting
+  //    card's exact pixels sits inside it at the resting rect and thins away
+  //    as the clip unfolds. Frame 0 is indistinguishable from rest, the
+  //    expanding ring is always solid, and the resting card itself is simply
+  //    covered (its opacity drops via the class in the same frame).
+  const twin = frame0Twin(el, r0, r1);
+  G.surface.appendChild(twin);
+  anims.push(twin.animate([{ opacity: 1 }, { opacity: 0 }], { duration: MORPH_MS * 0.5, easing: EASE_SURFACE, fill: 'forwards' }));
   anims.push(G.surface.animate(
-    [{ clipPath: insetFor(r0, r1), opacity: 0 }, { opacity: 1, offset: 0.35 }, { clipPath: `inset(0px round ${RADIUS}px)`, opacity: 1 }],
+    [{ clipPath: insetFor(r0, r1) }, { clipPath: `inset(0px round ${RADIUS}px)` }],
     { duration: MORPH_MS, easing: EASE_SURFACE },
   ));
   // 2. The name glides to the top.
@@ -507,8 +532,8 @@ export function zoomCard(el, artistName, ctx, { onOpenNotes = null, source = 'mo
   if (clones.notes) anims.push(dissolve(clones.notes, STAGGER_MS));
   if (G.spot) anims.push(slideIn(G.spot, -22, beat + STAGGER_MS * 0.5));
   if (clones.spot) anims.push(dissolve(clones.spot, STAGGER_MS));
-  // Once everything has landed the clones go — their twins took over.
-  const settle = () => { if (rest.isConnected) rest.remove(); };
+  // Once everything has landed the clones and the frame-0 twin go.
+  const settle = () => { if (rest.isConnected) rest.remove(); if (twin.isConnected) twin.remove(); };
   const longest = anims.reduce((m, x) => (x.effect.getTiming().delay + x.effect.getTiming().duration > m.effect.getTiming().delay + m.effect.getTiming().duration ? x : m), anims[0]);
   longest.onfinish = settle;
   longest.oncancel = settle;
@@ -637,9 +662,14 @@ export function unzoom({ instant = false } = {}) {
   const restName = z.el.querySelector('.name');
   z.card.style.pointerEvents = 'none';
   z.slot.classList.remove('shown');
-  z.el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: MORPH_OUT_MS * 0.7, easing: EASE_SURFACE });
+  // The twin fades IN on the way out, so the instant the overlay is removed
+  // the pixels underneath already match the resting card — no scale pop at
+  // the hand-back either.
+  const outTwin = frame0Twin(z.el, r0, r1);
+  surface.appendChild(outTwin);
+  outTwin.animate([{ opacity: 0 }, { opacity: 0, offset: 0.35 }, { opacity: 1 }], { duration: MORPH_OUT_MS, easing: EASE_LEAVE, fill: 'forwards' });
   const out = surface.animate(
-    [{ clipPath: `inset(0px round ${RADIUS}px)`, opacity: 1 }, { opacity: 1, offset: 0.5 }, { clipPath: insetFor(r0, r1), opacity: 0 }],
+    [{ clipPath: `inset(0px round ${RADIUS}px)` }, { clipPath: insetFor(r0, r1) }],
     { duration: MORPH_OUT_MS, easing: EASE_LEAVE, fill: 'forwards' },
   );
   if (nameEl && restName) {
