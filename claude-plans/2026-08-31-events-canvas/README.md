@@ -116,3 +116,20 @@ canvas. If it ever wants a route or a map of the street, that's a new section
 `night` + `venue` instead of the smashed `"Thu · Venue"` string), and add the
 timetable as a **view toggle on nights that earn it**. Sunday, with seven venues
 and fifteen shows, is a real grid. Thursday never will be.
+
+## Round 3 (2026-08-31, after Kevin's notes on round 2)
+
+`canvas-v3.html` + `MODEL-V3.md`. Kevin picked A (venue columns) but pushed
+past the section tabs: day-first ("friday: portola, afters, folsom"),
+venue filters that persist, an answer for the stacked slot, and a rule
+that adapts instead of a snowflake. Round 3 delivers exactly that: the
+day is the unit; inside a day each section computes its own layout
+(HIS columns where venues repeat and the clock pays; tiles where they
+don't — his Folsom observation, formalized); a Venues chip filters with
+device-local persistence; and 3+ simultaneous sets stack as a DECK that
+grows in place into full pickable cards. Rejected along the way: merging
+afters+folsom into one "around town" pool (they are culturally distinct
+and their notes live on separate keys), a per-night layout override in
+festival files (files declaring layouts is the snowflake trap), and
+lane-splitting past two (the two-letter slivers in Kevin's screenshot are
+the proof it fails).

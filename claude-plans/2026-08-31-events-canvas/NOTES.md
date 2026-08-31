@@ -12,3 +12,4 @@ started 2026-08-31T12:01:31Z — building
 - 12:11:22Z — README.md written (frame-by-frame + recommendation: B as the shape, venue view as a SORT, same control on Afters and Folsom)
 round 3 started 2026-08-31T17:06:39Z
 - 17:07:18Z — read round-1 model, round-2 README+build.mjs, portola/lost-lands/acl/seismic/tomorrowland data, wall.js, sort-control.js, filters.js. Frame of the ask forming: day-first wall, adaptive section rule, venue filter w/ persistence, stacked-slot treatment.
+- round 3 rebuilt IN-BAND by the lead (19:02Z) — teammate starvation; canvas-v3.html (7 frames, 179KB) + MODEL-V3.md + README round-3 verified in Chrome
