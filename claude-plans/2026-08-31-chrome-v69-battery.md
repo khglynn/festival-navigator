@@ -1,0 +1,52 @@
+# Chrome battery vs v69 (95awpi093) — Mon Aug 31 14:49:22 CDT 2026
+- 19:49:22Z SCRIPT RUN (in-band, backgrounded shell) — webkit launching
+- 19:49:25Z console.error: Failed to load resource: the server responded with a status of 404 ()
+- 19:49:25Z console.error: Refused to execute script from 'https://festival-navigator-95awpi093-kevinhg.vercel.app/_vercel/insights/script.js' because its MIME type ('text/html') is not executable, and strict MIME type checking is enabled.
+- 19:49:30Z joined as Ava
+- 19:49:32Z wall up; cards=110; SW=festival-nav-v69,festival-nav-data-v1
+- 19:49:34Z a1 hover grid: slots=1 shown=1 unplaced=0 zoomSources=1
+- 19:49:34Z a2 click1: slots=1 shown=1 unplaced=0 zoomSources=1
+- 19:49:34Z zoom after click1: 1
+- 19:49:35Z a3 click2: slots=1 shown=1 unplaced=0 zoomSources=1
+- 19:49:35Z zoom after click2: 1
+- 19:49:35Z a4 away: slots=0 shown=0 unplaced=0 zoomSources=0
+- 19:49:37Z b1 hover afters GA: slots=1 shown=1 unplaced=0 zoomSources=1
+- 19:49:37Z b2 notes chip clicked
+- 19:49:38Z b3 note submitted
+- 19:49:40Z b4 sheet closed: slots=0 shown=0 unplaced=0 zoomSources=0
+- 19:49:41Z c r0 Gelli Haha: slots=1 shown=1 unplaced=0 zoomSources=1
+- 19:49:42Z c r0 Oskar Med K: slots=1 shown=1 unplaced=0 zoomSources=1
+- 19:49:42Z c r0 Fcukers: slots=1 shown=1 unplaced=0 zoomSources=1
+- 19:49:43Z c r0 Tricky: slots=1 shown=1 unplaced=0 zoomSources=1
+- 19:49:44Z c r0 Nimino: slots=1 shown=1 unplaced=0 zoomSources=1
+- 19:49:45Z c r0 Sam Alfred: slots=1 shown=1 unplaced=0 zoomSources=1
+- 19:49:46Z c r0 Felly Fell: slots=1 shown=1 unplaced=0 zoomSources=1
+- 19:49:47Z c r0 Six Sex: slots=1 shown=1 unplaced=0 zoomSources=1
+- 19:49:47Z c r1 Gelli Haha: slots=0 shown=0 unplaced=0 zoomSources=0
+- 19:49:48Z c r1 Oskar Med K: slots=0 shown=0 unplaced=0 zoomSources=0
+- 19:49:48Z c r1 Fcukers: slots=0 shown=0 unplaced=0 zoomSources=0
+- 19:49:48Z c r1 Tricky: slots=0 shown=0 unplaced=0 zoomSources=0
+- 19:49:48Z c r1 Nimino: slots=0 shown=0 unplaced=0 zoomSources=0
+- 19:49:49Z c r1 Sam Alfred: slots=0 shown=0 unplaced=0 zoomSources=0
+- 19:49:49Z c r1 Felly Fell: slots=0 shown=0 unplaced=0 zoomSources=0
+- 19:49:49Z c r1 Six Sex: slots=0 shown=0 unplaced=0 zoomSources=0
+- 19:49:50Z c r2 Gelli Haha: slots=1 shown=1 unplaced=0 zoomSources=1
+- 19:49:51Z c r2 Oskar Med K: slots=1 shown=1 unplaced=0 zoomSources=1
+- 19:49:52Z c r2 Fcukers: slots=1 shown=1 unplaced=0 zoomSources=1
+- 19:49:53Z c r2 Tricky: slots=1 shown=1 unplaced=0 zoomSources=1
+- 19:49:54Z c r2 Nimino: slots=1 shown=1 unplaced=0 zoomSources=1
+- 19:49:54Z c r2 Sam Alfred: slots=1 shown=1 unplaced=0 zoomSources=1
+- 19:49:55Z c r2 Felly Fell: slots=1 shown=1 unplaced=0 zoomSources=1
+- 19:49:56Z c r2 Six Sex: slots=1 shown=1 unplaced=0 zoomSources=1
+- 19:49:57Z c r3 Gelli Haha: slots=0 shown=0 unplaced=0 zoomSources=0
+- 19:49:57Z c r3 Oskar Med K: slots=0 shown=0 unplaced=0 zoomSources=0
+- 19:49:57Z c r3 Fcukers: slots=0 shown=0 unplaced=0 zoomSources=0
+- 19:49:58Z c r3 Tricky: slots=0 shown=0 unplaced=0 zoomSources=0
+- 19:49:58Z c r3 Nimino: slots=0 shown=0 unplaced=0 zoomSources=0
+- 19:49:58Z c r3 Sam Alfred: slots=0 shown=0 unplaced=0 zoomSources=0
+- 19:49:58Z c r3 Felly Fell: slots=0 shown=0 unplaced=0 zoomSources=0
+- 19:49:59Z c r3 Six Sex: slots=0 shown=0 unplaced=0 zoomSources=0
+- 19:50:05Z cleanup pick: Airwolf Paradise — not picked
+- 19:50:08Z cleanup note: delete armed+confirmed
+- 19:50:09Z cleanup note visible after delete: true
+- 19:50:09Z DONE — total pageerrors: 0

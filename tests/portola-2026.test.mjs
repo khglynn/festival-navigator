@@ -126,7 +126,7 @@ test('the fest place line: the venue is a door when the file knows the address, 
   // (venue round, 2026-08-31), and a test that assumed it didn't blocked the
   // data from landing.
   const plain = text(festPlaceLine({ ...portola, locationUrl: undefined }));
-  assert.equal(plain.textContent, 'Pier 80 · September 26–27, 2026 · doors 1 PM');
+  assert.equal(plain.textContent, 'Pier 80 · September 26–27, 2026 · Doors 1 PM');
   assert.equal(plain.querySelector('a'), null, 'no address, no door');
   assert.equal(plain.querySelector('span.fest-place').textContent, 'Pier 80');
   assert.match(portola.locationUrl, /^https:\/\/maps\.google\.com\/\?q=Pier\+80/, 'the shipped file knows where Pier 80 is');
@@ -135,7 +135,7 @@ test('the fest place line: the venue is a door when the file knows the address, 
   assert.equal(door.getAttribute('href'), portola.locationUrl);
   assert.equal(door.textContent, 'Pier 80');
   assert.equal(door.getAttribute('target'), '_blank');
-  assert.equal(linked.textContent, 'Pier 80 · September 26–27, 2026 · doors 1 PM');
+  assert.equal(linked.textContent, 'Pier 80 · September 26–27, 2026 · Doors 1 PM');
   // A subtitle with an aside: only the venue is the door.
   const acl = text(festPlaceLine({ subtitle: 'Zilker Park · both weekends', dates: 'Oct 2–4', locationUrl: 'https://maps.google.com/?q=Zilker+Park' }));
   assert.equal(acl.querySelector('a.fest-place').textContent, 'Zilker Park');

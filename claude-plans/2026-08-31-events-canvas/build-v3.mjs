@@ -13,6 +13,22 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(HERE, '../..');
 const lostlands = JSON.parse(readFileSync(resolve(ROOT, 'data/festivals/lost-lands-2026.json'), 'utf8'));
 
+// INLINE=1: embed the app's CSS + fonts so the page is self-contained (for
+// publishing as an artifact — the deploy never serves claude-plans/, found
+// the hard way 2026-08-31). OUT overrides the output path.
+const INLINE = process.env.INLINE === '1';
+let INLINED_CSS = '';
+if (INLINE) {
+  const b64 = (path) => readFileSync(resolve(ROOT, path)).toString('base64');
+  let fontsCss = readFileSync(resolve(ROOT, 'assets/fonts/fonts.css'), 'utf8')
+    .replace(/url\(['"]?([^'")]+\.woff2)['"]?\)/g, (_, f) => { const rel = f.replace(/^\//, '').replace(/^\.\//, ''); return `url(data:font/woff2;base64,${b64(rel.startsWith('assets/') ? rel : 'assets/fonts/' + rel)})`; });
+  INLINED_CSS = fontsCss + '\n' + readFileSync(resolve(ROOT, 'assets/v3-tokens.css'), 'utf8') + '\n' + readFileSync(resolve(ROOT, 'assets/v3.css'), 'utf8');
+}
+const HEAD_ASSETS = INLINE
+  ? `<style>${INLINED_CSS}</style>`
+  : `<link rel="stylesheet" href="../../assets/fonts/fonts.css">\n<link rel="stylesheet" href="../../assets/v3-tokens.css">\n<link rel="stylesheet" href="../../assets/v3.css">`;
+
+
 // ---- THE RULE (MODEL-V3.md states it; this computes it) --------------------
 // Per day, per section: venue COLUMNS on a clock only where the clock pays —
 // enough timed shows (E>=5), venues that repeat (E/V>=1.5), and most shows
@@ -36,7 +52,7 @@ const dayTabs = (days, active) => `<div class="v3-tabs">${days.map((d) => `<span
 function sectionHead(label, sub, { chip = null } = {}) {
   return `<div class="sec-head"><span class="sec-label">${esc(label)}</span><span class="sec-sub">${esc(sub || '')}</span><span class="sec-line"></span>${chip || ''}</div>`;
 }
-const venuesChip = (hidden = 0, open = false) => `<button class="venues-chip${open ? ' open' : ''}">${PIN}<span>Venues${hidden ? ` · ${hidden} hidden` : ''}</span><span class="caret">▾</span></button>`;
+
 
 // ---- tiles: time-sorted event cards (timeless sink to the end) ------------
 const byTime = (a, b) => {
@@ -44,7 +60,10 @@ const byTime = (a, b) => {
   const tb = b.time ? parseTime(b.time).start : Infinity;
   return ta - tb || a.name.localeCompare(b.name);
 };
-const eventCard = (e, extra = '') => card(e.name, { time: e.time || 'time TBA', venue: e.venue, style: extra });
+// Resting tiles stay CLEAN (Kevin, 2026-08-31): name + time when there is
+// one, nothing else — the venue, its map door and any TBA talk live in the
+// hold/hover zoom, exactly like the wall's cards.
+const eventCard = (e, extra = '') => card(e.name, { time: e.time || null, style: extra });
 const tiles = (list) => `<div class="wall-grid">${[...list].sort(byTime).map((e) => eventCard(e)).join('')}</div>`;
 
 // ---- columns: the round-2 night timetable + THE DECK ----------------------
@@ -132,7 +151,7 @@ const TABS = ['THU', 'FRI', 'SAT', 'SUN'];
 const fridayFrame = () => `
 ${dayTabs(TABS, 'FRI')}
 <div class="day-rule"><span class="day">FRIDAY</span><span class="date">${NIGHT_DATE.Fri} · NO MAIN STAGES TODAY — PORTOLA WEEK RUNS ALL OVER TOWN</span><span class="line"></span><button class="chip-notes" style="height:17px;flex:none">+ ✎</button></div>
-${section('AFTERS', A('Fri'), { chip: venuesChip() })}
+${section('AFTERS', A('Fri'))}
 <div class="gap"></div>
 ${section('FOLSOM', F('Fri'))}`;
 
@@ -142,29 +161,24 @@ ${dayTabs(TABS, 'SAT')}
 ${sectionHead('PORTOLA — PIER 80', 'THE MAIN GRID (7–11 PM SLICE SHOWN)')}
 ${gridSlice('Saturday', 19, 23)}
 <div class="gap"></div>
-${section('AFTERS', A('Sat'), { chip: venuesChip() })}
+${section('AFTERS', A('Sat'))}
 <div class="gap"></div>
 ${section('FOLSOM', F('Sat'))}`;
 
-// Venue filter drawn OPEN over Friday, with SF Eagle unchecked.
-const VENUE_LIST = [...new Set([...AFTERS, ...FOLSOM].map((e) => e.venue))].sort((a, b) => a.localeCompare(b));
-const filterFrame = () => {
-  const hidden = new Set(['SF Eagle']);
-  const keep = (e) => !hidden.has(e.venue);
-  return `
-${dayTabs(TABS, 'FRI')}
-<div class="day-rule"><span class="day">FRIDAY</span><span class="date">${NIGHT_DATE.Fri}</span><span class="line"></span></div>
-<div class="filter-row">${venuesChip(1, true)}
-<div class="venue-pop">
-  <div class="vp-head"><span>Show venues</span><button class="vp-all">all</button></div>
-  ${VENUE_LIST.map((v) => `<label class="vp-row${hidden.has(v) ? ' off' : ''}"><span class="vp-check">${hidden.has(v) ? '' : '✓'}</span><span class="vp-name">${esc(v)}</span>${hasDoor(v) ? `<span class="vp-pin">${PIN}</span>` : ''}</label>`).join('')}
-  <div class="vp-foot">Saved on this device — unchecked venues stay hidden next time.</div>
-</div></div>
-${section('AFTERS', A('Fri').filter(keep))}
+// The BUCKET filter (round-3 correction — Kevin: "hide or focus on big
+// buckets when we have them like 'afters' 'folsom' or 'portola'"). One chip
+// per room the fest has; toggling off hides that room across every day,
+// saved per fest on this device. Venue-level filtering was my overreach.
+const bucketChip = (label, on) => `<button class="bucket-chip${on ? ' on' : ''}"><span class="bc-check">${on ? '✓' : ''}</span>${esc(label)}</button>`;
+const filterFrame = () => `
+${dayTabs(TABS, 'SAT')}
+<div class="day-rule"><span class="day">SATURDAY</span><span class="date">${NIGHT_DATE.Sat}</span><span class="line"></span></div>
+<div class="bucket-row">${bucketChip('PORTOLA', true)}${bucketChip('AFTERS', true)}${bucketChip('FOLSOM', false)}<span class="bucket-note">saved on this device, per fest</span></div>
+${sectionHead('PORTOLA — PIER 80', 'THE MAIN GRID (7–11 PM SLICE SHOWN)')}
+${gridSlice('Saturday', 19, 23)}
 <div class="gap"></div>
-${section('FOLSOM', F('Fri').filter(keep))}
-<div class="whisper-hidden">1 venue hidden (SF Eagle) — <u>Venues ›</u></div>`;
-};
+${section('AFTERS', A('Sat'))}
+<div class="whisper-hidden">Folsom is hidden — tap its chip to bring it back.</div>`;
 
 // The deck: Sunday's Midway pile at rest, and grown into its panel.
 const deckFrame = () => {
@@ -214,21 +228,12 @@ const V3_CSS = `
   .sec-label { font-family: var(--font-display); letter-spacing: .07em; font-size: 12.5px; color: var(--text-header); }
   .sec-sub { color: var(--text-tertiary); font-size: 9.5px; font-weight: 700; letter-spacing: .08em; }
   .sec-line { flex: 1; height: 1px; background: var(--hairline); }
-  /* the venues chip + popover */
-  .venues-chip { display: inline-flex; align-items: center; gap: 5px; height: 24px; padding: 0 10px; border-radius: var(--r-pill); background: var(--card); border: 1px solid var(--border-card); color: var(--text-secondary); font: inherit; font-size: 10.5px; font-weight: 700; cursor: pointer; flex: none; }
-  .venues-chip.open { border-color: var(--border-emphasis); color: #fff; }
-  .venues-chip .caret { font-size: 8px; opacity: .7; }
-  .filter-row { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; margin: 6px 0 10px; }
-  .venue-pop { width: 280px; background: var(--card); border: 1px solid var(--border-emphasis); border-radius: var(--r-settings); padding: 10px 12px; box-shadow: 0 12px 32px rgba(0,0,0,.42); }
-  .vp-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 6px; }
-  .vp-head span { color: #fff; font-size: 11.5px; font-weight: 800; }
-  .vp-all { background: none; border: none; color: rgb(var(--brand)); font: inherit; font-size: 10.5px; font-weight: 700; cursor: pointer; }
-  .vp-row { display: flex; align-items: center; gap: 8px; padding: 6px 2px; border-bottom: 1px solid var(--hairline); font-size: 12px; color: var(--text-body); cursor: pointer; }
-  .vp-row.off .vp-name { color: var(--text-tertiary); text-decoration: line-through; }
-  .vp-check { width: 14px; height: 14px; border: 1px solid var(--border-emphasis); border-radius: 4px; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; color: rgb(var(--brand)); flex: none; }
-  .vp-name { flex: 1; }
-  .vp-pin { color: var(--text-tertiary); }
-  .vp-foot { color: var(--text-tertiary); font-size: 10px; padding-top: 8px; line-height: 1.5; }
+  /* the bucket filter — one chip per room, the people-chip vocabulary */
+  .bucket-row { display: flex; align-items: center; gap: 7px; margin: 4px 0 12px; }
+  .bucket-chip { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 12px; border-radius: var(--r-pill); font: inherit; font-size: 10.5px; font-weight: 800; letter-spacing: .05em; cursor: pointer; background: rgba(var(--fest), .14); border: 1px solid rgba(var(--fest), .55); color: #fff; }
+  .bucket-chip .bc-check { font-size: 9px; color: rgb(var(--fest)); }
+  .bucket-chip:not(.on) { background: transparent; border-style: dashed; border-color: var(--border-emphasis); color: var(--text-tertiary); }
+  .bucket-note { color: var(--text-tertiary); font-size: 10px; font-weight: 600; margin-left: 4px; }
   .whisper-hidden { margin-top: 14px; color: var(--text-tertiary); font-size: 11px; font-weight: 600; }
   /* the deck */
   .deck { position: relative; }
@@ -246,9 +251,7 @@ const V3_CSS = `
 `;
 function frameDoc(body) {
   return `<!doctype html><html lang="en"><head><meta charset="utf-8">
-<link rel="stylesheet" href="../../assets/fonts/fonts.css">
-<link rel="stylesheet" href="../../assets/v3-tokens.css">
-<link rel="stylesheet" href="../../assets/v3.css">
+${HEAD_ASSETS}
 <style>:root { --fest: ${fest.accent}; }${V3_CSS}</style></head>
 <body><div class="sh">${body}</div></body></html>`;
 }
@@ -257,7 +260,7 @@ const FRAMES = [];
 const addFrame = (id, title, w, caption, body) => FRAMES.push({ id, title, w, caption, body });
 
 addFrame('fri-desktop', 'PORTOLA · FRIDAY — a day holds everything (desktop)', 1440,
-  'Day-first: no more fri-sat-sun three times over. Friday has no main stages, so the day is AFTERS then FOLSOM, each laid out by the rule — Friday’s afters earn columns (12 shows, 8 venues), Folsom’s two shows land on tiles.',
+  'Day-first: no more fri-sat-sun three times over. Friday has no main stages, so the day is AFTERS then FOLSOM, each laid out by the rule — Friday’s afters earn columns, Folsom lands on tiles. Resting cards stay clean: venue and map door live in the hold/hover zoom, and a missing time simply doesn’t show.',
   fridayFrame());
 addFrame('fri-phone', 'PORTOLA · FRIDAY — phone', 390,
   'The same day at 390px: the columns keep the grid’s sideways swipe, the tiles stay vertical. Sections keep their names.',
@@ -268,8 +271,8 @@ addFrame('sat-desktop', 'PORTOLA · SATURDAY — grid day + around town (desktop
 addFrame('sat-phone', 'PORTOLA · SATURDAY — phone', 390,
   'The grid keeps its sideways swipe (stages are 200 m apart); the around-town sections below it stay vertical.',
   saturdayFrame());
-addFrame('filter', 'THE VENUE FILTER — open, one venue unchecked', 1440,
-  'Show all, uncheck what you don’t care about, saved on this device per fest (like the weekend view). The chip says what’s hidden; the whisper at the foot is the way back.',
+addFrame('filter', 'THE BUCKET FILTER — Folsom toggled off', 1440,
+  'One chip per room the fest has — Portola, Afters, Folsom. Toggle a bucket off and it disappears from every day, saved on this device per fest. The whisper is the way back.',
   filterFrame());
 addFrame('deck', 'THE DECK — the 10 PM pile at rest and grown', 1440,
   'Sunday’s Midway pile: 3+ simultaneous sets stack as one deck with a count pill instead of two-letter slivers. A tap grows it in place — the zoom’s own gesture — into full, pickable cards.',
@@ -303,10 +306,8 @@ const PAGE_CSS = `
 const html = `<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Day-first — events round 3 (2026-08-31)</title>
-<link rel="stylesheet" href="../../assets/fonts/fonts.css">
-<link rel="stylesheet" href="../../assets/v3-tokens.css">
-<link rel="stylesheet" href="../../assets/v3.css">
+<title>Day-First</title>
+${HEAD_ASSETS}
 <style>:root { --fest: ${fest.accent}; }${PAGE_CSS}</style></head>
 <body>
 <header>
@@ -331,5 +332,5 @@ ${FRAMES.map((f) => `<section id="${f.id}">
 </script>
 </body></html>
 `;
-writeFileSync(resolve(HERE, 'canvas-v3.html'), html);
+writeFileSync(process.env.OUT || resolve(HERE, 'canvas-v3.html'), html);
 console.log('canvas-v3.html', (html.length / 1024).toFixed(1) + ' KB', FRAMES.length, 'frames');
