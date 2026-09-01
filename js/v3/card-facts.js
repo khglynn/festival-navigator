@@ -284,7 +284,7 @@ const EASE_SURFACE = 'cubic-bezier(.4, 0, .2, 1)';       // refresh crossfades: 
 const RADIUS = 8; // --r-card
 const MIN_W = 216, MAX_W = 360, MIN_H = 132;
 
-let zoomed = null;      // { el, artist, ctx, occ, source, onOpenNotes, slot, card, anims, cleanup, unwireSource }
+let zoomed = null;      // { el, artist, ctx, occ, source, onOpenNotes, slot, card, anims, cleanup }
 let dismissedEl = null; // a zoom put away on purpose waits for the pointer to leave the card
 let layer = null;
 const exitingSlots = new Set(); // overlays still shrinking away — a NEW zoom clears them ALL
@@ -419,7 +419,7 @@ function zoomCardInner(el, artistName, ctx, { onOpenNotes = null, source = 'mous
   card.setAttribute('role', 'group');
   card.setAttribute('aria-label', `${facts.name} details`);
   slot.appendChild(card);
-  const z = { el, artist: artistName, ctx, occ, source, onOpenNotes, slot, card, anims: [], cleanup: [], unwireSource: () => {} };
+  const z = { el, artist: artistName, ctx, occ, source, onOpenNotes, slot, card, anims: [], cleanup: [] };
   card.append(...buildParts(z, facts));
 
   // The ONE read of the resting card: its box. Then the writes.
@@ -525,10 +525,8 @@ function refreshZoomInner(fresh, ctx) {
   for (const a of z.anims) { try { a.cancel(); } catch { /* finished */ } }
   z.anims = [];
   z.el.classList.remove('zoom-source');
-  z.unwireSource();
   z.el = fresh;
   z.ctx = ctx;
-  z.unwireSource = wireSource(z, fresh);
   fresh.classList.add('zoom-source');
   const facts = factsFor(z.artist, ctx, z.occ);
   z.card.setAttribute('aria-label', `${facts.name} details`);
@@ -829,37 +827,38 @@ function wireSlot(z) {
 
   // Keyboard: Tab from the zoomed card reaches the notes chip inside the
   // overlay (the door to a FIRST note needs no pointer); Tab again continues
-  // after the card, Shift+Tab returns to it. Delegated on the overlay, so a
-  // refreshZoom that rebuilds the chip keeps working; re-wired on the fresh
-  // resting card by refreshZoom.
-  z.unwireSource = wireSource(z, z.el);
-  z.cleanup.push(() => z.unwireSource());
-  card.addEventListener('keydown', (e) => {
-    if (e.key !== 'Tab' || zoomed !== z || !e.target.matches('button.f-chip.notes')) return;
+  // after the card, Shift+Tab returns to it. ONE delegated handler that reads
+  // z.el and re-queries the chip on every press, so a refreshZoom may rebuild
+  // EITHER side underneath it. It used to be two listeners on two nodes, and
+  // because a pick replaces the resting card (refreshCard -> el.replaceWith),
+  // the resting one needed a whole re-wiring lifecycle to stay current — the
+  // exact shape the rule above ("always z.el, never a captured node") exists to
+  // avoid, and the same fix already applied to the click, leave, belt and
+  // follow handlers.
+  // Capture phase, so the zoom sees Tab before anything else in the app can:
+  // nothing else claims Tab today (notes.js's is scoped to a sheet, and a sheet
+  // and a zoom cannot coexist), but a future global keyboard layer would lose
+  // Tab to a standing zoom and should know that from here.
+  const onTabKey = (e) => {
+    if (e.key !== 'Tab' || zoomed !== z) return;
+    const chip = card.querySelector('button.f-chip.notes');
+    if (!chip) return; // no onOpenNotes: the chip is a span, and both routes go inert
+    if (e.target === z.el && !e.shiftKey) { e.preventDefault(); chip.focus(); return; }
+    if (e.target !== chip) return;
     e.preventDefault();
     if (e.shiftKey) { z.el.focus(); return; }
     const next = nextFocusableAfter(z.el);
     unzoom({ why: 'Tab moved on' });
     if (next) next.focus();
-  });
+  };
+  document.addEventListener('keydown', onTabKey, true);
+  z.cleanup.push(() => document.removeEventListener('keydown', onTabKey, true));
   card.addEventListener('focusout', (e) => {
     if (zoomed !== z) return;
     const to = e.relatedTarget;
     if (to && (to === z.el || z.el.contains(to) || slot.contains(to))) return;
     unzoom({ why: 'focus left the zoom' });
   });
-}
-
-function wireSource(z, el) {
-  const onCardKey = (e) => {
-    if (e.key !== 'Tab' || e.shiftKey || zoomed !== z || e.target !== el) return;
-    const chip = z.card.querySelector('button.f-chip.notes');
-    if (!chip) return;
-    e.preventDefault();
-    chip.focus();
-  };
-  el.addEventListener('keydown', onCardKey);
-  return () => el.removeEventListener('keydown', onCardKey);
 }
 
 const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
