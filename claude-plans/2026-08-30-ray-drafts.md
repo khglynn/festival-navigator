@@ -28,6 +28,7 @@ his.)*
 > - Notes have threads: one reply row per thread, one level deep. The server now refuses a reply-to-a-reply outright, and that rule exists because your client is the second one writing notes, so it's worth a pull.
 > - For your citywide/MMW case: fests can mix a stage grid with around-town events now (Portola Week runs both), and venues have location links. Next up, the layout picks itself: stage columns where venues repeat, a time-sorted list where they don't.
 > - Crew links unfurl as per-festival poster cards (fest.kevinhg.com/f/<fest-id>#g=…).
+> - Pulled your GEMINI_MODEL fix upstream, credited. Google retires the pinned model for everyone Oct 16, so your catch saved the add-a-festival flow here too, not just forks. If the rest of your add pipeline is still fighting you, send the error my way.
 >
 > Discover: I like it a lot and I'll probably pull it in after ACL. A bunch of my friends are on the app for that one and I'm not touching the floor under them until it's done (mid October). Keep the checkpoints coming.
 >
