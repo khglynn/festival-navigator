@@ -17,7 +17,7 @@ import { factsFor, timeRange } from './card-facts.js'; // same runtime-only cycl
 import { passesPeople, columnsTemplate, railLabels } from './filters.js';
 import { nowOnDay, nowOffsetPx, clockLabel, festivalClock } from './now.js';
 import { eventModelOf, timetableOf, sortForTiles, bucketsOf, occOf, hourLabelOf, approxMark, parseEventTime, FEST_BUCKET } from './events.js';
-import { renderDeck, faceCtxFor, decorateFace, panelTime } from './deck.js'; // runtime-only cycle (deck renders cards)
+import { renderDeck, faceCtxFor, decorateFace, panelTime, closeDeck } from './deck.js'; // runtime-only cycle (deck renders cards)
 
 // ---- person -> board color ---------------------------------------------------
 // v4 people carry colorIndex. Legacy people carry a "R, G, B" string from the
@@ -1265,6 +1265,11 @@ export function renderWall(root, ctx) {
 }
 
 function renderWallInner(root, ctx) {
+  // Clearing the root takes any open deck panel with it — tell the deck so
+  // its state goes too (repaintWall snapshots BEFORE this and restores after;
+  // a search render simply loses it, as it loses the zoom). Without this a
+  // stale snapshot could re-open a deck minutes later on a sync echo.
+  closeDeck({ instant: true });
   root.textContent = '';
   delete root.dataset.deckHost;
   const fest = state.fest();

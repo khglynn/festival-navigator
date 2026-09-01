@@ -305,6 +305,8 @@ test('an open deck survives a repaint through its snapshot, and its cards can be
   assert.deepEqual(snap, { key: 'Afters|Friday|Regency Ballroom|1200', fromKeyboard: false });
   renderWall(root, ctx);
   assert.equal(root.querySelector('.deck-panel'), null, 'a repaint takes the panel');
+  assert.equal(deck.openDeckEl(), null, 'and the deck knows it — a render that does not restore (a search) leaves no stale open deck for a later repaint to resurrect');
+  assert.equal(deck.deckSnapshot(), null);
   deck.restoreDeck(root, snap);
   assert.equal(deck.openDeckEl(), fridayDeck(root), 'and the snapshot brings it back on the fresh deck');
   const card = root.querySelector('.deck-panel-grid .card[data-artist="Jyoty"]');
