@@ -297,6 +297,20 @@ if (typeof document !== 'undefined') {
   }, { passive: true, capture: true });
 }
 
+// What the BROWSER says is under the last known mouse position. Never
+// `:hover`: Safari leaves stale hover chains after a DOM swap, and a stale
+// match grew cards the pointer was nowhere near. This extracts the LOOKUP, not
+// the rule — `null` means only "we cannot know" (no mouse movement yet, or no
+// elementFromPoint), and what to do about that belongs to the caller: one site
+// closes on a miss, the other declines to grow, and those are opposite
+// policies. `lastMouse` is tested FIRST so a device that never moves a mouse
+// never pays for a layout-forcing hit test. And elementFromPoint stays a
+// member expression on `document`: a detached receiver throws "Illegal
+// invocation" in every browser and nothing in Node (project rule, 2026-08-27).
+const underMouse = () => (lastMouse && typeof document.elementFromPoint === 'function'
+  ? document.elementFromPoint(lastMouse.x, lastMouse.y)
+  : null);
+
 const reduced = () => typeof window !== 'undefined' && !!window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 // Low Power promises "no animation" and CSS cannot reach Element.animate() —
 // the gate lives here (survey, 2026-08-30).
@@ -424,10 +438,10 @@ function zoomCardInner(el, artistName, ctx, { onOpenNotes = null, source = 'mous
     // pointermove for the belt to hear — ask the browser what is under the
     // last known mouse position and put the overlay away if that is neither
     // the card nor the overlay (Codex gate, 2026-08-31).
-    if (instant && source === 'mouse' && lastMouse && typeof document.elementFromPoint === 'function') {
+    if (instant && source === 'mouse' && lastMouse) {
       requestAnimationFrame(() => {
         if (zoomed !== z) return;
-        const under = document.elementFromPoint(lastMouse.x, lastMouse.y);
+        const under = underMouse();
         if (under && !slot.contains(under) && !z.el.contains(under)) unzoom({ instant: true, why: 'restored under a moved-away mouse' });
       });
     }
@@ -867,8 +881,8 @@ export function wireCardZoom(el, artistName, ctx, { onOpenNotes = null, occ = nu
   // :hover — Safari is notorious for stale :hover chains after DOM swaps,
   // and a stale match here would grow cards the pointer is nowhere near.
   requestAnimationFrame(() => {
-    if (!el.isConnected || !lastMouse || typeof document.elementFromPoint !== 'function') return;
-    const under = document.elementFromPoint(lastMouse.x, lastMouse.y);
+    if (!el.isConnected) return;
+    const under = underMouse();
     if (under && el.contains(under)) arm();
   });
   el.addEventListener('pointerleave', (e) => {
