@@ -1,4 +1,4 @@
-# Drafts for Ray — Kevin's yes required before either goes out (v2, 2026-09-01)
+# Drafts for Ray — email APPROVED v3 (2026-09-01); both go out after the promote
 
 v1 (2026-08-30) was written before Kevin's direction; v2 carries it: say
 what shipped, what folds in his work, that Kevin likes the Discover tab
@@ -12,20 +12,27 @@ main. Email: Kevin sends from hello@kevinhg.com in the "Forked
 festival-navigator" thread (last message is Ray's Aug 6 checkpoint). Issue
 comment: posts from Kevin's GitHub account (gh, sandbox off).
 
-## 1 · Email reply (thread "Forked festival-navigator")
+## 1 · Email reply (thread "Forked festival-navigator") — v3, Kevin's edits 2026-09-01
 
-> Ray! Finally got a real sit-down with everything, the checkpoint, the issue, the fork. Discover is my favorite thing in there, and the player keeping a set alive across an artist swipe is wild (the playhead trick is smart ha).
+*(His calls: cut the Discover/player compliment opener, tighten the issue
+bullet, add the venue-shape bullet aimed at his citywide/MMW case using his
+own July words ("~200 events across a whole city"), close "Fun stuff! /
+Kevin + Kevin's Claude" — he likes acknowledging when the words aren't all
+his.)*
+
+> Ray! Finally got a real sit-down with everything, the checkpoint, the issue, the fork.
 >
 > What shipped on my side this week, all on main now:
 >
-> - Your issue is closed the way you suggested. The host lives in one fn-canonical-host meta tag in index.html and everything derives from it, so a fork sets its domain once and git pull upstream stays clean. docs/fork-setup.md points forks at it, and owes a lot to yours.
+> - Your issue is closed the way you suggested: one fn-canonical-host meta tag in index.html, everything derives from it, and git pull upstream stays clean. docs/fork-setup.md owes a lot to yours.
 > - Notes have threads: one reply row per thread, one level deep. The server now refuses a reply-to-a-reply outright, and that rule exists because your client is the second one writing notes, so it's worth a pull.
-> - Crew links unfurl as per-festival poster cards (fest.kevinhg.com/f/<fest-id>#g=…), every venue is a door to its map, and the card hover got rebuilt from a storyboard.
+> - Festivals got flexible about venue shape. A fest can be a grounds with stages, an around-town run of venues (Portola Week's afters render beside the main grid now), or both, and every venue is a door to its map. Next round the layout picks itself: stage columns where venues repeat, a clean time-sorted list where they don't. That one's aimed at your citywide case: ~200 events across a whole city should land without snowflake code.
+> - Crew links unfurl as per-festival poster cards (fest.kevinhg.com/f/<fest-id>#g=…).
 >
 > Discover: I like it a lot and I'll probably pull it in after ACL. A bunch of my friends are on the app for that one and I'm not touching the floor under them until it's done (mid October). Keep the checkpoints coming.
 >
-> Appreciate you,
-> Kevin
+> Fun stuff!
+> Kevin + Kevin's Claude
 
 ## 2 · Issue #6 closer (GitHub comment)
 
