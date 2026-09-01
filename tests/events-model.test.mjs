@@ -307,3 +307,48 @@ test('hidden buckets persist per fest in localStorage, toggle cleanly, and survi
     assert.deepEqual(filters.loadHiddenBuckets('f4'), ['Afters'], 'a blocked store cannot make a chip tap do nothing');
   } finally { globalThis.localStorage = real; console.warn = warn; }
 });
+
+// ---- the review round (2026-09-01): the model -------------------------------------------
+
+test('a transitive overlap chain is lanes, not a deck — the deck needs PEAK concurrency of three', () => {
+  const V = (name, time) => ({ name, night: 'Fri', venue: 'V', time });
+  // One long set bridging two shorter ones that never overlap each other.
+  const bridge = ev.timetableOf([V('Long', '8 PM - 11 PM'), V('Early', '8 PM - 9 PM'), V('Late', '10 PM - 11 PM')]);
+  assert.equal(bridge.cells.filter((c) => c.kind === 'deck').length, 0, 'never simultaneous three-deep');
+  assert.ok(bridge.cells.every((c) => c.lane && c.lane.lanes === 2), 'two lanes, the long set in one');
+  // Three at once, with a fourth chained onto the pile: a deck of four.
+  const pile = ev.timetableOf([V('A', '8 PM - 10 PM'), V('B', '8 PM - 9 PM'), V('C', '8 PM - 9 PM'), V('D', '9:30 PM - 10:30 PM')]);
+  const decks = pile.cells.filter((c) => c.kind === 'deck');
+  assert.equal(decks.length, 1);
+  assert.deepEqual(decks[0].items.map((i) => i.e.name), ['A', 'B', 'C', 'D']);
+  // Three open-ended at one hour still deck (the shipping case).
+  assert.equal(ev.timetableOf([V('A', '8 PM'), V('B', '8 PM'), V('C', '8 PM')]).cells.filter((c) => c.kind === 'deck').length, 1);
+});
+
+test('a partly-entered run: only the closer runs to the close; a member whose successor is missing draws the hour', () => {
+  const src = 'https://example.test/poster';
+  const M = (name, time, seq, of) => ({ name, night: 'Sun', venue: 'V', time, approx: true, doors: '10 PM', close: '2 AM', order: { seq, of, source: src, confirmed: false } });
+  const three = ev.timetableOf([M('One', '10 PM', 1, 4), M('Three', '12 AM', 3, 4), M('Four', '1 AM', 4, 4)]);
+  const at = (name) => three.cells.find((c) => c.entry && c.entry.e.name === name).entry;
+  assert.equal(at('One').endMin, at('One').startMin + 60, 'its successor (2 of 4) is not entered — one hour, not the night');
+  assert.equal(at('Three').endMin, at('Four').startMin, 'its successor is present — ends when it begins');
+  assert.equal(at('Four').endMin, ev.parseEventTime('2 AM').startMin, 'the closer runs to the close');
+  assert.equal(at('Four').endStr, '2 AM');
+  const noCloser = ev.timetableOf([M('One', '10 PM', 1, 3), M('Two', '11 PM', 2, 3)]);
+  const two = noCloser.cells.find((c) => c.entry && c.entry.e.name === 'Two').entry;
+  assert.equal(two.endMin, two.startMin + 60, 'the last KNOWN member is not the closer — it does not claim the room to 2 AM');
+  assert.equal(two.endStr, null);
+});
+
+test('an event with a time but no venue keeps its time: it is loose, never timeless', () => {
+  const tt = ev.timetableOf([
+    { name: 'Roomed', night: 'Fri', venue: 'V', time: '10 PM' },
+    { name: 'Roomless', night: 'Fri', time: '9 PM' },
+    { name: 'Timeless', night: 'Fri', venue: 'V' },
+  ]);
+  assert.deepEqual(tt.loose.map((e) => e.name), ['Roomless']);
+  assert.deepEqual(tt.tba.map((e) => e.name), ['Timeless']);
+  assert.deepEqual(tt.cells.map((c) => c.entry.e.name), ['Roomed']);
+  const none = ev.timetableOf([{ name: 'Roomless', night: 'Fri', time: '9 PM' }]);
+  assert.deepEqual([none.venues, none.loose.map((e) => e.name), none.tba], [[], ['Roomless'], []]);
+});

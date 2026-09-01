@@ -271,22 +271,39 @@ export function findEventEntry(fest, name, occ) {
 // that overlap on display form a cluster:
 //   · a cluster holding a RUN member renders as a plain vertical run —
 //     never lanes, never a deck (§5; artist separation is law),
-//   · three or more otherwise become ONE deck (§4),
+//   · a cluster whose PEAK concurrency is three or more becomes ONE deck
+//     (§4) — a long set bridging two shorter ones that never overlap each
+//     other is two lanes, not a pile (review round, 2026-09-01),
 //   · two split into lanes, exactly as the main grid does.
 // Venues read left to right by their earliest set; ties keep file order.
+// An entry with a time but no venue is never filed as timeless: it comes
+// back in `loose`, time intact, for the wall to tile beside the clock.
+function peakConcurrency(cluster) {
+  const marks = [];
+  for (const t of cluster) marks.push([t.startMin, 1], [t.dispEnd, -1]);
+  marks.sort((a, b) => a[0] - b[0] || a[1] - b[1]); // an end before a start at the same minute
+  let now = 0;
+  let peak = 0;
+  for (const [, d] of marks) { now += d; if (now > peak) peak = now; }
+  return peak;
+}
 export function timetableOf(entries) {
   const timed = [];
   const tba = [];
+  const loose = [];
   entries.forEach((e, i) => {
     const t = parseEventTime(e.time);
     const venue = venueOf(e);
     if (t && venue) timed.push({ e, i, venue, ...t, run: isRunMember(e) });
+    else if (t) loose.push(e);
     else tba.push(e);
   });
-  if (!timed.length) return { venues: [], cells: [], tba, startRow: 0, rows: 0 };
+  if (!timed.length) return { venues: [], cells: [], tba, loose, startRow: 0, rows: 0 };
 
-  // A run member's end is the next member's start; the last one's is the
-  // room's close. Everything else open-ended draws one hour.
+  // A run member ends when its SUCCESSOR begins — the member numbered next,
+  // when it is entered; only the closer (seq === of) runs to the room's
+  // close. A member whose successor is not in the file yet draws the hour
+  // like any open-ended set, so a half-entered run never claims the night.
   const runs = new Map();
   for (const t of timed) if (t.run) { if (!runs.has(t.venue)) runs.set(t.venue, []); runs.get(t.venue).push(t); }
   for (const members of runs.values()) {
@@ -294,7 +311,8 @@ export function timetableOf(entries) {
     members.forEach((m, k) => {
       if (m.endMin != null) return;
       const next = members[k + 1];
-      if (next && next.startMin > m.startMin) { m.endMin = next.startMin; return; }
+      if (next && next.e.order.seq === m.e.order.seq + 1 && next.startMin > m.startMin) { m.endMin = next.startMin; return; }
+      if (m.e.order.seq !== m.e.order.of) return;
       const close = typeof m.e.close === 'string' ? parseEventTime(m.e.close) : null;
       if (close && close.startMin > m.startMin) { m.endMin = close.startMin; m.endStr = m.e.close; }
     });
@@ -329,7 +347,7 @@ export function timetableOf(entries) {
     if (cur.length) clusters.push(cur);
     for (const c of clusters) {
       const hasRun = c.some((t) => t.run);
-      if (!hasRun && c.length >= 3) {
+      if (!hasRun && peakConcurrency(c) >= 3) {
         const s = Math.min(...c.map((t) => t.startMin));
         const en = Math.max(...c.map((t) => t.dispEnd));
         cells.push({ kind: 'deck', venue: v, col, row: rowOf(s), span: Math.max(2, Math.ceil(en / 15) - Math.floor(s / 15)), startMin: s, items: c });
@@ -351,7 +369,7 @@ export function timetableOf(entries) {
       }
     }
   });
-  return { venues, cells, tba, startRow, rows };
+  return { venues, cells, tba, loose, startRow, rows };
 }
 
 // Tiles: time-sorted, ties in file order, the timeless at the end.
