@@ -47,7 +47,9 @@ export function computeDayArtists(dayData) {
     if (endStr && endStr.toLowerCase().trim() === 'close') endStr = null;
     const startMin = timeToMinutes(startStr);
     let endMin = endStr ? timeToMinutes(endStr) : null;
-    return { name: a.name, stage: a.stage, startStr: startStr.trim(), startMin, endMin };
+    // The raw `time` and `weekend` ride along: the card's occurrence (the zoom,
+    // the sheet header, the route key) is built from them (2026-08-29).
+    return { name: a.name, stage: a.stage, startStr: startStr.trim(), endStr: endStr ? endStr.trim() : null, startMin, endMin, time: a.time, weekend: a.weekend || null };
   });
   const byStage = {};
   raw.forEach((a) => { (byStage[a.stage] = byStage[a.stage] || []).push(a); });
@@ -65,4 +67,19 @@ export function computeDayArtists(dayData) {
     });
   });
   return raw;
+}
+
+// A day KEY is frozen pick data (artists[].day) and can be verbose —
+// "Wednesday, Sept 16 (Early Arrival Pre-Party)". Every place that shows a
+// day (the wall's day rule, the day tab, the day sheet) derives its label
+// here, once: the weekday leads, the aside in parentheses becomes a sub
+// line, and a comma-clause (a date spelled into the key) yields to dayMeta's
+// date. Keys are never rewritten — a rename orphans picks.
+export function dayLabelParts(day) {
+  const s = String(day || '').trim();
+  const m = /^(.*?)\s*\((.*)\)\s*$/.exec(s);
+  const base = (m ? m[1] : s).trim();
+  const aside = m ? m[2].trim() : '';
+  const head = (base.split(',')[0] || base).trim() || base;
+  return { head, aside };
 }

@@ -9,10 +9,11 @@ import * as state from '../state.js';
 import * as model from './model.js';
 import { LEVEL_LABELS_V4 } from '../parse.js';
 import { computeLanes } from '../overlap.js';
-import { activityMinutes } from '../time.js';
-import { auraBackground, whoCorner, aboutCorner, nameColor, subColor } from './aura.js';
+import { activityMinutes, dayLabelParts } from '../time.js';
+import { whoCorner, aboutCorner } from './aura.js';
 import { BOARD } from './palette.js';
-import { notesSection } from './notes.js'; // runtime-only cycle with this module (colorIndexOf) — safe
+import { dayWhisper } from './notes.js'; // runtime-only cycle with this module (colorIndexOf) — safe
+import { factsFor } from './card-facts.js'; // same runtime-only cycle: the card's ONE model
 import { passesPeople, columnsTemplate, railLabels } from './filters.js';
 import { nowOnDay, nowOffsetPx, clockLabel, festivalClock } from './now.js';
 
@@ -30,19 +31,6 @@ export function colorIndexOf(name, personObj) {
   return h % BOARD.length;
 }
 
-// ---- card data ----------------------------------------------------------------
-function cardPeople(artist, picks, meName) {
-  const byPerson = picks[artist] || {};
-  const peopleObj = state.people();
-  const out = [];
-  for (const [person, level] of Object.entries(byPerson)) {
-    const p = peopleObj[person];
-    if (!state.isActivePerson(p)) continue;
-    out.push({ name: person, colorIndex: colorIndexOf(person, p), isYou: person === meName, level });
-  }
-  return out;
-}
-
 const BOOKMARK_PATH = 'M1 1h8v11l-4-3-4 3z';
 
 function svgBookmark() {
@@ -55,7 +43,14 @@ function svgBookmark() {
 }
 
 export function renderCard(artistName, ctx, opts = {}) {
-  const people = cardPeople(artistName, ctx.picks, ctx.meName);
+  // opts.occ = { day, stage, time }: the occurrence THIS card is (an artist
+  // can appear twice — a grid set and an afters event, or two EF days). The
+  // zoom, the peek, and the sheet all tell this card's story, never the
+  // first match's (Codex gate, 2026-08-29).
+  // ONE model for the resting card, the zoom and the sheet header
+  // (card-facts.js factsFor) — a detail cannot exist in one and not another.
+  const facts = factsFor(artistName, ctx, opts.occ || null);
+  const people = facts.people;
   const el = document.createElement('div');
   el.className = 'card' + (opts.cell ? ' cell' : '') + (opts.time && !opts.cell ? ' timed' : '');
   // The people filter dims a card nobody selected has picked. Computed here,
@@ -72,21 +67,24 @@ export function renderCard(artistName, ctx, opts = {}) {
   el.tabIndex = 0;
   const myLevel = (ctx.picks[artistName] || {})[ctx.meName] || 0;
   const crewCount = people.filter((p) => !p.isYou).length;
-  const noteCountForLabel = model.noteCount(state.crewDoc, ctx.fid, 'artist', artistName);
-  const affForLabel = ctx.affinity ? ctx.affinity[artistName.toLowerCase()] : null;
   const labelParts = [`${artistName} — ${myLevel === 4 ? 'must' : (LEVEL_LABELS_V4[myLevel] || 'not picked').toLowerCase()}`];
-  if (crewCount) labelParts.push(`${crewCount} crew`);
-  if (noteCountForLabel) labelParts.push(`${noteCountForLabel} note${noteCountForLabel === 1 ? '' : 's'}`);
-  if (affForLabel) labelParts.push('in your Spotify');
+  if (crewCount) labelParts.push(`picked by ${crewCount} other${crewCount === 1 ? '' : 's'}`);
+  if (facts.noteCount) labelParts.push(`${facts.noteCount} note${facts.noteCount === 1 ? '' : 's'}`);
+  if (facts.spotify) labelParts.push('in your Spotify');
   el.setAttribute('aria-label', labelParts.join(', '));
   el.title = artistName; // lane-split cells truncate hard — hover recovers (audit 9.2)
   el.addEventListener('keydown', (e) => {
+    // Only the CARD's own focus picks: Enter on the notes button nested in the
+    // grown block bubbles here too, and the browser then activates the button
+    // — a pick and an open from one keypress (Codex gate, 2026-08-29).
+    if (e.target !== el) return;
     if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); ctx.onTap(artistName, el); }
   });
   // Stash render opts on the node so refreshCard can reproduce this exact
   // render — a single-card refresh must preserve every invariant the full
   // render established (CORE-1/CORE-3).
   if (opts.time) el.dataset.time = opts.time;
+  if (opts.occ) el.dataset.occ = JSON.stringify(opts.occ);
   if (opts.tag) {
     el.dataset.tag = opts.tag;
     const tag = document.createElement('span');
@@ -94,9 +92,8 @@ export function renderCard(artistName, ctx, opts = {}) {
     tag.textContent = opts.tag;
     el.appendChild(tag);
   }
-  const { background, animated } = auraBackground(people);
-  el.style.background = background;
-  if (animated && !ctx.lowPower) {
+  el.style.background = facts.background;
+  if (facts.animated && !ctx.lowPower) {
     el.classList.add('animated');
     const grain = document.createElement('span');
     grain.className = 'card-grain';
@@ -104,22 +101,32 @@ export function renderCard(artistName, ctx, opts = {}) {
   }
   const nm = document.createElement('span');
   nm.className = 'name';
-  nm.style.color = nameColor(people);
+  nm.style.color = facts.nameColor;
   nm.textContent = artistName;
   el.appendChild(nm);
   if (opts.time) {
     const t = document.createElement('span');
     t.className = 'time';
-    t.style.color = subColor(people);
+    t.style.color = facts.subColor;
     t.textContent = opts.time;
     el.appendChild(t);
+  }
+  if (opts.tall) {
+    el.classList.add('tall');
+    el.dataset.tall = '1'; // refreshCard replays this exact render (a pick must not un-tall Despacio)
+    if (opts.until) el.dataset.until = opts.until;
+    if (opts.until) {
+      const u = document.createElement('span');
+      u.className = 'until';
+      u.style.color = facts.subColor;
+      u.textContent = `until ${opts.until}`;
+      el.appendChild(u);
+    }
   }
 
   const about = document.createElement('span');
   about.className = 'corner-about';
-  const noteN = model.noteCount(state.crewDoc, ctx.fid, 'artist', artistName);
-  const aff = ctx.affinity ? ctx.affinity[artistName.toLowerCase()] : null;
-  for (const chip of aboutCorner({ noteCount: noteN, spotify: aff ? { songs: aff.songs || 0, followed: !!aff.followed } : null })) {
+  for (const chip of aboutCorner({ noteCount: facts.noteCount, spotify: facts.spotify })) {
     // The clickable note-count chip is a real button (audit 4.4); the Spotify
     // chip stays a passive span.
     const clickable = chip.kind === 'notes' && ctx.onOpenNotes;
@@ -140,24 +147,15 @@ export function renderCard(artistName, ctx, opts = {}) {
     if (clickable) {
       c.style.cursor = 'pointer';
       c.setAttribute('aria-label', `${chip.label} note${chip.label === '1' ? '' : 's'} for ${artistName}`);
-      c.addEventListener('click', (e) => { e.stopPropagation(); ctx.onOpenNotes(artistName); });
+      c.addEventListener('click', (e) => { e.stopPropagation(); ctx.onOpenNotes(artistName, opts.occ || null); });
     }
     about.appendChild(c);
   }
   el.appendChild(about);
 
-  // Pointer-fine hover affordance (DT-6): notes are reachable without knowing
-  // the long-press. ✎, never a music note — that glyph belongs to Spotify.
-  if (ctx.onOpenNotes) {
-    const pen = document.createElement('button');
-    pen.className = 'note-affordance';
-    pen.textContent = '✎';
-    pen.setAttribute('aria-label', `Notes for ${artistName}`);
-    pen.addEventListener('click', (e) => { e.stopPropagation(); ctx.onOpenNotes(artistName); });
-    el.appendChild(pen);
-  }
-
-  // Long-press (mobile) opens the artist notes sheet (~500ms, atlas 21g).
+  // Long-press (touch) ZOOMS the card (~500ms, 10px slop — the OS constants;
+  // 2026-08-29 round): the grown card carries the notes chip, so the sheet
+  // stays one tap away. Falls back to opening notes where no peek is wired.
   // Digitizer jitter fires pointermove even on a still finger, so cancel only
   // past a real movement threshold (10px) — a genuine scroll-drag cancels,
   // a held finger does not (Codex P3 trail, finding 1).
@@ -176,7 +174,7 @@ export function renderCard(artistName, ctx, opts = {}) {
         // pop over Settings or the landing after the fact.
         if (!el.isConnected || el.offsetParent === null) return;
         longPressed = true;
-        ctx.onOpenNotes(artistName);
+        if (ctx.onPeek) ctx.onPeek(artistName, el, opts.occ || null); else ctx.onOpenNotes(artistName);
       }, 500);
     });
     const cancel = () => clearTimeout(pressTimer);
@@ -205,7 +203,17 @@ export function renderCard(artistName, ctx, opts = {}) {
   }
   el.appendChild(who);
 
-  el.addEventListener('click', () => ctx.onTap(artistName, el));
+  el.addEventListener('click', (e) => {
+    // Belt over the chips' own stopPropagation (the research's Ant Design
+    // lesson): a real button inside the card (the notes chip) is its own
+    // control, never a pick. Everything else on the face — the name, the
+    // time, the marks, the Spotify badge — is the card, and a tap on the card
+    // means pick. (The 2026-08-29 version excluded a whole grown block here,
+    // which is how a zoomed card stopped taking picks.)
+    if (e.target !== el && e.target.closest && e.target.closest('button')) return;
+    ctx.onTap(artistName, el);
+  });
+  if (ctx.wireZoom) ctx.wireZoom(el, artistName, opts.occ || null);
   return el;
 }
 
@@ -219,6 +227,9 @@ export function refreshCard(el, artistName, ctx) {
     cell: el.classList.contains('cell'),
     time: el.dataset.time || undefined,
     tag: el.dataset.tag || undefined,
+    tall: el.dataset.tall === '1',
+    until: el.dataset.until || null,
+    occ: el.dataset.occ ? JSON.parse(el.dataset.occ) : undefined,
   });
   for (const prop of PLACEMENT_PROPS) {
     const v = el.style.getPropertyValue(prop);
@@ -331,9 +342,13 @@ export function extraSectionsOf(fest, scheduledNames, weekend) {
 // card looks and behaves the same whichever wall it sits on.
 function renderLineupGroup(root, day, list, ctx, fest, { header, sub } = {}) {
   const meta = (fest.dayMeta || {})[day];
+  // A day KEY is frozen pick data and can be verbose ("Wednesday, Sept 16
+  // (Early Arrival Pre-Party)"); the rule shows the weekday and moves the
+  // aside to its sub line — the same split the day tab and the day sheet use.
+  const parts = day ? dayLabelParts(day) : null;
   root.appendChild(dayHeader(
-    header || day || 'THE LINEUP',
-    sub !== undefined ? sub : (day ? dayRuleSub(meta) : (ctx.sort === 'billing' ? 'BILLING ORDER' : '')),
+    header || (parts && parts.head) || 'THE LINEUP',
+    sub !== undefined ? sub : (day ? [dayRuleSub(meta), parts.aside].filter(Boolean).join(' · ') : (ctx.sort === 'billing' ? 'BILLING ORDER' : '')),
     day && ctx.onOpenDayNotes ? {
       noteCount: model.noteCount(state.crewDoc, ctx.fid, 'day', day),
       onOpenNotes: () => ctx.onOpenDayNotes(day),
@@ -342,6 +357,10 @@ function renderLineupGroup(root, day, list, ctx, fest, { header, sub } = {}) {
   // On a list (no clock to keep in shape) the people filter HIDES the cards
   // nobody selected has picked — and says so when that leaves nothing, so an
   // empty section reads as "no picks here" rather than "the data is gone".
+  if (day && ctx.onOpenDayNotes) {
+    const w = dayWhisper('day', day, ctx, () => ctx.onOpenDayNotes(day));
+    if (w) root.appendChild(w);
+  }
   const filtering = ctx.filterPeople && ctx.filterPeople.length;
   const shown = filtering ? list.filter((a) => passesPeople(ctx.picks, a.name, ctx.filterPeople)) : list;
   const grid = document.createElement('div');
@@ -350,10 +369,17 @@ function renderLineupGroup(root, day, list, ctx, fest, { header, sub } = {}) {
   for (const a of shown) {
     const tag = showTags && (a.weekends === 'W1' || a.weekends === 'W2') ? a.weekends : undefined;
     // A lineup entry can be an EVENT (afters, Folsom) — venue rides in
-    // `stage`, hours in `time`; without this sub-label the card would hide
-    // both, and a card that hides where-and-when is a card that lies.
-    const subLabel = [a.stage, a.time].filter(Boolean).join(' · ');
-    grid.appendChild(renderCard(a.name, ctx, { tag, time: subLabel || undefined }));
+    // `stage`, hours in `time`. Day and time share the first line; the venue
+    // takes its own (one crammed line hid both — Kevin, 2026-08-29). The
+    // .time element renders pre-line, so the newline is the break.
+    let subLabel = [a.stage, a.time].filter(Boolean).join(' · ');
+    if (a.stage && a.time) {
+      const bits = a.stage.split(' · ');
+      subLabel = bits.length > 1
+        ? `${bits[0]} · ${a.time}\n${bits.slice(1).join(' · ')}`
+        : `${a.time}\n${a.stage}`;
+    }
+    grid.appendChild(renderCard(a.name, ctx, { tag, time: subLabel || undefined, occ: { day: a.day || day || null, stage: a.stage || null, time: a.time || null, weekend: a.weekends || null } }));
   }
   if (filtering && !shown.length) {
     const none = document.createElement('div');
@@ -362,10 +388,6 @@ function renderLineupGroup(root, day, list, ctx, fest, { header, sub } = {}) {
     root.appendChild(none);
   }
   root.appendChild(grid);
-  // Day notes with personal pins live under each real day's cards (21e).
-  if (day && ctx.onNotesChange) {
-    root.appendChild(notesSection('day', day, day, ctx, ctx.onNotesChange));
-  }
 }
 
 function dayHeader(label, sub, opts = {}) {
@@ -640,6 +662,12 @@ function renderScheduledDay(root, day, ctx, layout, weekend) {
   const ruleIso = (meta && (weekend && meta.isos ? meta.isos[weekend] : meta.iso)) || null;
   if (ruleIso) rule.dataset.iso = ruleIso;
   root.appendChild(rule);
+  // The whisper (2026-08-29): nothing until someone writes, then the newest
+  // note at the day's door. The rule's ✎ chip stays the add door + count.
+  if (ctx.onOpenDayNotes) {
+    const w = dayWhisper('day', day, ctx, () => ctx.onOpenDayNotes(day));
+    if (w) root.appendChild(w);
+  }
 
   const acts = (fest.activities || {})[day] || [];
 
@@ -658,7 +686,6 @@ function renderScheduledDay(root, day, ctx, layout, weekend) {
       empty.textContent = 'No set times for this day yet.';
       root.appendChild(empty);
     }
-    if (ctx.onNotesChange) root.appendChild(notesSection('day', day, day, ctx, ctx.onNotesChange));
     return;
   }
 
@@ -727,12 +754,17 @@ function renderScheduledDay(root, day, ctx, layout, weekend) {
     if (col === -1) continue; // strays render in the everything-else column
     // A folded (non-solo) column is a 34px rail — its cards don't render.
     if (layout.solo && a.stage !== layout.solo) continue;
-    const cell = renderCard(a.name, ctx, { cell: true, time: a.startStr });
-    cell.style.gridColumn = String(col + 1);
     const row = Math.floor(a.startMin / 15) - startRow + 1;
     // endMin here IS the display extent — minimum 2 rows (44px), below which
     // the name + time can't fit (Kevin's screenshot, 2026-07-12).
     const span = Math.max(1, Math.ceil((a.endMin - a.startMin) / 15));
+    // A set three hours or longer (Despacio runs seven) is a TALL cell: its
+    // name sits at the top edge like a printed grid and the bottom edge says
+    // when it ends — centred content put the name three screens down and the
+    // column read as an empty slab (Kevin's screenshot, 2026-08-31).
+    const tall = span >= 12;
+    const cell = renderCard(a.name, ctx, { cell: true, tall, until: tall ? a.endStr || null : null, time: a.startStr, occ: { day, stage: a.stage || null, time: a.time || null, weekend: a.weekend || null } });
+    cell.style.gridColumn = String(col + 1);
     cell.style.gridRow = `${row} / span ${span}`;
     cell.style.minHeight = '0';
     const lane = lanes.get(a);
@@ -756,7 +788,7 @@ function renderScheduledDay(root, day, ctx, layout, weekend) {
     ].sort((x, y) => x.min - y.min);
     for (const e of entries) {
       if (e.artist) {
-        col.appendChild(renderCard(e.artist.name, ctx, { cell: true, time: e.artist.startStr }));
+        col.appendChild(renderCard(e.artist.name, ctx, { cell: true, time: e.artist.startStr, occ: { day, stage: e.artist.stage || null, time: e.artist.time || null, weekend: e.artist.weekend || null } }));
       } else {
         col.appendChild(eeActivityRow(e.act));
       }
@@ -768,8 +800,6 @@ function renderScheduledDay(root, day, ctx, layout, weekend) {
   root.appendChild(wrap);
   // Today's grid gets the now line on first paint (the ticker keeps it moving).
   if (iso && nowOnDay(fest, day, weekend, ctx.now || new Date()) != null) positionNowLines(wrap, ctx.now || new Date());
-
-  if (ctx.onNotesChange) root.appendChild(notesSection('day', day, day, ctx, ctx.onNotesChange));
 }
 
 // One quiet row in the everything-else column (also the whole body of an
@@ -855,10 +885,7 @@ function renderWallInner(root, ctx) {
     for (const [day, list] of extraSectionsOf(fest, scheduledNames, wk)) {
       renderLineupGroup(root, day, list, ctx, fest, day ? {} : { header: 'EVERYTHING ELSE', sub: 'NO SET TIME YET' });
     }
-    if (ctx.onNotesChange) {
-      root.appendChild(dayHeader(`NOTES · ${fest.name.toUpperCase()}`, ''));
-      root.appendChild(notesSection('fest', null, '', ctx, ctx.onNotesChange));
-    }
+    festNotesFoot(root, ctx, fest);
     return;
   }
 
@@ -885,7 +912,7 @@ function renderWallInner(root, ctx) {
       root.appendChild(dayHeader(day, dayRuleSub(meta, wk) || (meta ? `${meta.wd || ''} ${meta.num || ''}`.trim() : '')));
       const grid = document.createElement('div');
       grid.className = 'wall-grid';
-      for (const a of matches) grid.appendChild(renderCard(a.name, ctx, { time: `${a.stage} · ${a.startStr}` }));
+      for (const a of matches) grid.appendChild(renderCard(a.name, ctx, { time: `${a.stage} · ${a.startStr}`, occ: { day, stage: a.stage || null, time: a.time || null, weekend: a.weekend || null } }));
       root.appendChild(grid);
     }
     // Afters/Folsom cards and lineup entries with no set time yet still
@@ -911,15 +938,10 @@ function renderWallInner(root, ctx) {
   if (!artists.length) {
     const empty = document.createElement('div');
     empty.style.cssText = 'color: var(--text-tertiary); font-size: 12px; font-weight: 600; text-align: center; padding: 30px 0;';
-    empty.textContent = ctx.query ? 'No artists match — try fewer letters.' : 'Lineup coming soon — notes work now. Leave the first one below.';
+    empty.textContent = ctx.query ? 'No artists match — try fewer letters.' : 'Lineup coming soon — notes work now.';
     root.appendChild(empty);
     if (ctx.query) return;
-    // An empty lineup is when planning notes matter MOST (CORE-10) — the
-    // festival composer stays.
-    if (ctx.onNotesChange) {
-      root.appendChild(dayHeader(`NOTES · ${fest.name.toUpperCase()}`, ''));
-      root.appendChild(notesSection('fest', null, '', ctx, ctx.onNotesChange));
-    }
+    festNotesFoot(root, ctx, fest, { invite: true });
     return;
   }
 
@@ -928,11 +950,25 @@ function renderWallInner(root, ctx) {
     : new Map([['', artists]]);
   for (const [day, list] of grouped) renderLineupGroup(root, day, list, ctx, fest);
 
-  // Fest-wide notes close the wall (21c bottom).
-  if (ctx.onNotesChange) {
-    root.appendChild(dayHeader(`NOTES · ${fest.name.toUpperCase()}`, ''));
-    root.appendChild(notesSection('fest', null, '', ctx, ctx.onNotesChange));
-  }
+  festNotesFoot(root, ctx, fest);
+}
+
+// Fest-wide notes close the wall (21c bottom) — as the whisper once anyone
+// has written. On a lineup-less fest (when planning notes matter MOST,
+// CORE-10) a quiet add-first door keeps the invitation alive.
+function festNotesFoot(root, ctx, fest, { invite = false } = {}) {
+  if (!ctx.onOpenFestNotes) return;
+  const has = model.noteCount(state.crewDoc, ctx.fid, 'fest', null) > 0;
+  if (!has && !invite) return;
+  root.appendChild(dayHeader(`NOTES · ${fest.name.toUpperCase()}`, ''));
+  const w = dayWhisper('fest', null, ctx, () => ctx.onOpenFestNotes());
+  if (w) { root.appendChild(w); return; }
+  const add = document.createElement('button');
+  add.className = 'btn-ghost add-first-note';
+  add.style.cssText = 'font-size: 12px; padding: 9px 14px;';
+  add.textContent = '+ Add a note';
+  add.addEventListener('click', () => ctx.onOpenFestNotes());
+  root.appendChild(add);
 }
 
 let toastTimer = null;

@@ -72,6 +72,9 @@ export function validateFestivalDoc(fest, { filename } = {}) {
   (Array.isArray(fest.artists) ? fest.artists : []).forEach((a, i) => {
     if (!a || !a.name || typeof a.name !== 'string') err(`artists[${i}]: missing name`);
     else if (a.name.length > 100) err(`artists[${i}]: name over 100 chars`);
+    // A name is a pick key, a note key and a route key — control characters
+    // (a newline, a tab, NUL) have no place in one (Codex gate, 2026-08-29).
+    else if (/[\x00-\x1f\x7f]/.test(a.name)) err(`artists[${i}]: name holds a control character`);
     else {
       const key = a.name.toUpperCase();
       const dayStr = typeof a.day === 'string' ? a.day : '';

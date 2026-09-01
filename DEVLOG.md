@@ -2,6 +2,172 @@
 
 Newest first. One entry per meaningful unit of work.
 
+## 2026-08-31 — Kevin's review of the bloom: what synthetic tests can't see, a regression of mine, and the click that closed the zoom
+
+- **Three bugs the frame-stepping could not see, all real-input only:** a 1px
+  trackpad scroll dismissed AND poisoned the zoom (now it follows its card);
+  an overlay restored by a repaint under a moved-away hand never heard a
+  boundary event (any outside movement now closes it); and the one Kevin kept
+  hitting — "hover and click, it closes… then stuck" — which Codex and a live
+  event log root-caused together: a click on the resting card focuses it,
+  `refreshCard` restores that focus to the fresh node (right, for keyboard
+  users), and the next click on the overlay (a plain div) blurs the card, so
+  the keyboard route's `focusout` closes the zoom before the click can land.
+  The overlay cancels mousedown's default now.
+- **The "stuck" half was a full-wall repaint after every pick.** Postgres
+  hands back jsonb keys length-then-alphabet; a local pick appends its key;
+  `applyRemoteDoc`'s stringify compare called the own-edit echo a remote
+  change — measured live at 2.0 s after a pick, 110 cards rebuilt, zoom torn
+  down, focus dumped, hover intents killed. The compare is order-insensitive.
+- **My 08-30 "full-bleed strip" broke the timetable at any window wider than
+  the shell** — the strip already had the grids' geometry via its `times-wrap`
+  class; my override made it narrower, drifting every stage head 35px per
+  column and letting cards scroll out beside the rail. Reverted to <720 only;
+  the rail took the same full-viewport geometry. Tall sets (Despacio, 7h) now
+  read like a printed grid: name at the top edge, "until 9:45 PM" at the
+  bottom.
+- **Stale-worker trap closed:** the first open after every deploy ran the
+  previous build (cache-first shell). index.html reloads once when a new
+  worker claims the page in its first 20 s. Every "still broken" of the day
+  is suspect in hindsight.
+- **A fest's place is a door** — `placeDoor()`/`festPlaceLine()` serve the
+  zoom's WHERE, the wall header and the Settings card; a Sonnet teammate
+  sourced `locationUrl` for all 11 fests and 16 Portola afters venues, and
+  caught my test fixture that assumed Portola had no address.
+- **Lessons banked:** a real-pointer walk before every push (the memory
+  already said so; it was skipped twice); a venue teammate starved for 45 min
+  with no bank file — TaskStop + respawn with bank-first as the literal first
+  tool call worked in 20 min.
+
+## 2026-08-30 (late) — the bloom: the zoom's motion rebuilt once, from a storyboard
+
+- Kevin's verdict on the evening's v58: "it's worse... there HAS to be
+  something rotten under the hood." There was, and it was architectural:
+  the zoom ran a shared-element morph between two DOM trees — resting
+  pieces measured (rects + eight font properties each), CLONED into the
+  overlay, crossfaded against their grown twins, with a frame-0 twin and an
+  exit-ghost set papering over the seams. Two renderings of one fact in
+  flight is why "4:45 PM" and "4:45 – 6:00 PM · Sat" printed together, why
+  lines mis-registered, and why every patch (v55–58) moved the problem
+  instead of closing it.
+- The rebuild follows the banked lesson (storyboard → build once → watch
+  slow-mo → ONE push): `claude-plans/2026-08-30-zoom-storyboard.md` first,
+  then ~180 lines of seam-hiding deleted from card-facts.js. New law in the
+  file header: ONE rendering of every fact, ever — the overlay measures
+  only the resting card's box. The bloom: scale k→1 from the resting centre
+  (true transform-origin at viewport edges too) + 90ms materialise, the
+  same aura wash carrying the "same card" read; resting CONTENT steps back
+  via CSS while its wash stays (`zoom-source` hides children now, not the
+  card — no hole, no twin); grown lines cascade from their corners relative
+  to the CARD. The way out recedes from wherever the bloom has got to
+  (live-value read before the exit, so a fast skim never pops).
+- Watched frame-by-frame before pushing: DevTools `currentTime` stepping at
+  0/45/95/160/230/330ms on the gallery's richest state, plus skim (≤1
+  overlay), pick-while-zoomed (zoom holds, pill FLIPs in), low-power (zero
+  animations), Escape, console — all clean. Suite 306/307 green.
+
+## 2026-08-30 — the clean round: a survey with skeptics, nine teammates, and the zoom rebuilt three times in daylight
+
+- **The survey came first** (ultracode): ten Sonnet readers over every
+  subsystem, a skeptic re-reading every finding at its file:line, two web
+  researchers (comment-UI patterns across 15 products; what ACL/Seismic/Lost
+  Lands have actually published), one Opus synthesis. 55 findings, 0 refuted,
+  1 P0 — the zoomed card swallowed every click after the first, four readers
+  reaching the same line independently. The P0 and the row-reflow were
+  exactly Kevin's two complaints, now with mechanisms attached.
+- **The zoom was rebuilt live against Kevin's eyes, three times** — overlay
+  (no reflow), then colour/one-model (an appended background layer had made
+  the CSS shorthand invalid: every grown card went black; the deeper fix
+  made `factsFor` the ONE card model both renderers draw from), then
+  personality (cross-fade frame 0, corner-origin arrivals, stagger +
+  overshoot, uniform-scale hops after the time line smeared). Codex reviewed
+  the architecture before a line was written and its four corrections all
+  proved load-bearing.
+- **A usage pause silently starved nine teammates for an hour** — alive in
+  the pane list, zero bank files, queued wake-ups never draining. TaskStop
+  ×9, respawn with the same briefs plus one new law: create the bank file
+  BEFORE the first edit. The relaunched set delivered everything; the law is
+  now in hg-save-it's agent-brief pattern.
+- **Verification kept earning its keep**: the settings agent's disconnect
+  fix would have bricked sync (null is refused by `validateAffinity` and
+  IGNORED by the merge — zeroed writes are the mechanic); the link-preview
+  agent's local harness missed that Vercel serves the filesystem before
+  rewrites (caught by reading the live preview's served bytes; the fix moved
+  links to `/f/<fest-id>`, docs-confirmed, with tests proven red against two
+  broken configs — and its own first shadow test had passed on the broken
+  config); the walker's 8 FAILs split into 3 real zoom bugs (hold-lift
+  picked: armed one event early; keyboard growth gated by the pointer's
+  dismissed rule; scroll-dismiss unreproducible under a scripted real
+  scroll — flagged for a real-wheel re-check) and 5 items that were just
+  v48 walking ahead of uncommitted work.
+- **Design flowed through a canvas Kevin could argue with**: mechanics
+  directions (A/B/C), then arrangement paradigms on his "root in use cases"
+  note, then his pick — A, pin on hover in the top row — built by the same
+  Opus teammate that owned notes.js all day. His motion standard is now the
+  project CLAUDE.md's "How this app moves"; GIFs became watchable via
+  ffmpeg contact sheets.
+- **Shipped beyond the app**: the Tecovas Fable fan-out guard (SessionStart
+  rules + a PreToolUse ask on Workflow/Agent, transcript-sniffed, fails
+  open) to the whole-workforce marketplace; the latitude-scales-with-model
+  rule to both global CLAUDE.mds; the agent-brief pattern to hg-save-it;
+  Ray's issue #6 closed in code with a fork runbook; per-fest link previews
+  with the mark replacing the last of the old green grid.
+
+## 2026-08-29 — the notes/desktop round: four design rounds, one build, three Codex gates
+
+- **Design that landed.** The 08-27 canvas failed on fidelity, so the rig
+  in `claude-plans/2026-08-29-notes-desktop-canvas/` renders every artboard
+  through production code (jsdom + state.js/wall.js/notes.js). Round 1
+  covered all six asks and Kevin's verdict was "no elegance" — boxes and
+  stacked pills. Round 2 offered three vibes (ink / aura / script); he chose
+  Aura. Round 3 refined it and carried it into the open decisions. Round 4
+  answered his notes: dials, a rounded header, the live morph. Then his own
+  look at the preview drove two more turns: recompose the morph around the
+  centre (the name never leaves the middle; hover becomes a small open
+  header), and rebuild the transition as a real shared-element morph —
+  things slide and scale into place, nothing fades-then-reappears.
+- **Two things got simpler by his call.** Pick-as moved to Settings → You
+  only (the chip hold, the arm, the hover door and their tests are gone —
+  people rarely switch); the existing notes button stays the one door to
+  comments and rides along in the zoom.
+- **The build** (branch `notes-desktop-round`, SW v44): threads (`re`),
+  card-facts.js (one component: the zoom and the sheet header), the aura
+  sheet, the whisper replacing the inline bars, occurrence identity on every
+  card, tagged route keys, the approved share copy, two-line event cards,
+  "picked by N others" labels, and `scripts/sw-stamp.mjs` — an asset stamp
+  the suite enforces, born from shipping gate fixes under an unbumped
+  version.
+- **Codex, three rounds, NO SHIP each time, 19 findings taken** — the
+  lesson class again: a repaint between a hold arming and its release could
+  confirm an identity switch (a press record now outlives its hold); a
+  duplicate performance zoomed into the first match's set (the occurrence
+  rides the card, the route key, the sheet); a live sync ate an in-flight
+  edit (drafts live outside the painted list); an unfinished teardown
+  stacked grown blocks (the record owns its node); the clamp used content
+  bounds not the scrollport; a JSON-looking artist name could collide with
+  the route key (a tagged payload no name can hold); Settings → You left the
+  wall stale once the chip path was gone; lane cards snapped on the way out.
+  Every finding was re-read in the file before the fix.
+- **Research for the interaction grammar** (five Sonnet studies, brief
+  banked): tap = primary with zero delay; hover-in 300–500 ms and always
+  slower than hover-out; hold 500 ms / 10 px (the OS constants production
+  already used); gestures keyed off the event's pointer type, never a media
+  query; actions inside a preview need stopPropagation AND a target guard.
+- **Walkers.** The first (production reference screenshots) used scripted
+  clicks for picks despite the brief and reported two "bugs" the crew's own
+  document disproved — real input for everything is now the standing brief.
+  A second walker died in a usage pause with nothing banked (bank-as-you-go
+  is why that cost nothing). The gate walk on the final preview (real mouse,
+  real touch via CDP, real keys): 9 of 11 clean — hover intent, threads,
+  whisper, chips, keyboard, mobile, two-line event cards, zero app console
+  errors. Its two findings were real: resting pieces ghosted mid-morph (the
+  hop started from an identity transform, not from where the flipped layout
+  had moved the piece), and a hover zoom grew back under a resting pointer
+  after Escape or a pick (a dismissed zoom now waits for the pointer to
+  leave; a pick keeps the zoom and re-grows the fresh card at once). It also
+  found a tracked accessibility-tree dump a walker had committed — removed.
+- **PR #13** carries the round; Kevin merges (the 2026-08-29 workspace rule).
+
 ## 2026-08-27 (late) — the browser-only bugs, the festival timezone, gate rounds 4–5
 
 - **Round closed at 21:10 with the next brief banked, nothing built.** Kevin's

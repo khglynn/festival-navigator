@@ -24,9 +24,49 @@
   .demo-dock .dock { width: 358px; }
   .demo-sheet .sheet { width: 358px; box-shadow: 0 8px 30px rgba(0,0,0,.5); border-radius: 20px; }
   .col { display: flex; flex-direction: column; gap: 8px; max-width: 420px; }
+
+  /* ---- THE ZOOM gallery (2026-08-30) --------------------------------------- */
+  .zoom-title { font-family: var(--font-display); letter-spacing: var(--track-display); color: var(--text-header); font-size: 22px; margin: 0 0 4px; }
+  .zoom-toolbar { display: flex; align-items: center; gap: 18px; margin: 14px 0 20px; flex-wrap: wrap; }
+  .zoom-toolbar label { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: var(--text-secondary); cursor: pointer; }
+  .zoom-status { font-size: 11px; color: var(--text-tertiary); font-weight: 600; }
+  .zoom-row { display: flex; flex-wrap: wrap; gap: 18px; align-items: flex-start; margin-bottom: 4px; }
+  .zoom-edge-row { display: flex; justify-content: space-between; width: 100%; align-items: flex-start; }
+  .zoom-state { display: flex; flex-direction: column; gap: 6px; width: 176px; flex: none; }
+  .zoom-state-cap { font-size: 9.5px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: var(--text-tertiary); line-height: 1.3; min-height: 24px; }
+  #zoom-bottom-probe { margin-top: 30px; }
+  #zoom-gallery { border-bottom: 1px solid var(--hairline); padding-bottom: 26px; margin-bottom: 30px; }
 </style>
 </head>
 <body style="--fest: 56, 189, 248">
+<div id="zoom-top-probe"></div>
+
+<section id="zoom-gallery">
+  <div class="zoom-title">THE ZOOM — every state, live</div>
+  <div class="hint">real <code>renderCard</code> + real <code>zoomCard</code> / <code>dismissZoom</code> / <code>refreshZoom</code> wiring, straight from app.js — no mockups. Hover with intent (mouse), hold (touch), or Tab to a card to grow it; click the grown card to cycle the pick and watch the pills animate; click outside or press Escape to put it away.</div>
+  <div class="zoom-toolbar">
+    <label><input type="checkbox" id="zoom-lowpower"> Low power (instant)</label>
+    <label><input type="checkbox" id="zoom-slowmo"> Slow motion ×4</label>
+    <span id="zoom-status" class="zoom-status"></span>
+  </div>
+  <div id="zoom-groups">
+    <div class="g-label">1–9 · the pick ladder, richness, and the weekend tag</div>
+    <div class="zoom-row" id="zoom-row-ladder"></div>
+
+    <div class="g-label" style="margin-top: 20px;">10–11 · timetable cells — short set, tall set</div>
+    <div class="zoom-row" id="zoom-row-cells"></div>
+
+    <div class="g-label" style="margin-top: 20px;">12 · an afters / event card</div>
+    <div class="zoom-row" id="zoom-row-event"></div>
+
+    <div class="g-label" style="margin-top: 20px;">13–14 · name edge cases — two lines, one syllable</div>
+    <div class="zoom-row" id="zoom-row-names"></div>
+
+    <div class="g-label" style="margin-top: 20px;">15 · far left and far right of the viewport</div>
+    <div class="zoom-edge-row" id="zoom-row-edges"></div>
+  </div>
+</section>
+
 <h1>V3 GALLERY</h1>
 <div class="hint">every component in every state · data mirrors the design atlas (turn 21) for 1:1 comparison · fest accent set to Portola blue · styles come from assets/v3.css (production)</div>
 
@@ -74,39 +114,57 @@
 </section>
 
 <section>
-  <div class="g-label">Day header · note rows (pinned + plain) · composer</div>
+  <div class="g-label">Day header · the whisper · aura notes (pinned + thread)</div>
   <div class="col">
     <div class="day-rule"><span class="day">SATURDAY</span><span class="date">SEP 26</span><span class="line"></span></div>
-    <div class="micro-label">Pinned by you</div>
-    <div class="note-row">
-      <span class="avatar" style="background: hsl(221,90%,62%)">M</span>
-      <div class="bubble pinned">Leaving after Robyn — early flight.<span class="meta">Maya · 2h ago</span></div>
-      <button class="pin-btn active">Unpin</button>
-    </div>
-    <div class="note-row">
-      <span class="avatar" style="background: hsl(10,90%,62%)">K</span>
-      <div class="bubble">Lockers by the Warehouse entrance.<span class="meta">you · just now</span></div>
-      <button class="pin-btn">Pin</button>
-    </div>
-    <div class="composer">
-      <input placeholder="Add a note for Saturday…">
-      <button class="btn-tonal" style="font-size: 12px; padding: 9px 15px;">Save</button>
-    </div>
+    <button class="day-whisper" style="--wash: hsla(221,90%,62%,.26);">
+      <span class="avatar" style="width: 18px; height: 18px; font-size: 8px; background: hsla(221,90%,62%,.5); border: 1px solid hsl(221,85%,82%);">M</span>
+      <span class="who">Maya</span><span class="text">Leaving after Robyn — early flight.</span><span class="more">2 notes ›</span>
+    </button>
+    <div class="n-list"><div class="n-thread">
+      <div class="n-note pinned" style="--wash: hsla(221,90%,62%,.46);">
+        <span class="avatar" style="width: 20px; height: 20px; font-size: 8.5px; background: hsla(221,90%,62%,.5); border: 1px solid hsl(221,85%,82%);">M</span>
+        <div class="n-body">
+          <div class="n-head"><span class="n-who">Maya</span>2h · <button class="note-action">Reply</button> · <button class="note-action on">Unpin</button></div>
+          <div class="n-text">Leaving after Robyn — early flight.</div>
+        </div>
+      </div>
+      <div class="n-replies">
+        <div class="n-note n-reply" style="--wash: hsla(10,90%,62%,.2);">
+          <span class="avatar" style="width: 16px; height: 16px; font-size: 7.5px; background: hsla(10,90%,62%,.5); border: 1px solid hsl(10,85%,82%);">K</span>
+          <div class="n-body">
+            <div class="n-head"><span class="n-who">you</span>just now · <button class="note-action">Edit</button></div>
+            <div class="n-text">Lockers by the Warehouse entrance.</div>
+          </div>
+        </div>
+      </div>
+    </div></div>
   </div>
 </section>
 
 <section class="demo-sheet">
-  <div class="g-label">Artist notes bottom sheet (atlas 21g)</div>
+  <div class="g-label">Artist notes sheet — the card is the header (2026-08-29)</div>
   <div class="sheet">
     <div class="grabber"></div>
-    <div style="display: flex; align-items: baseline; gap: 9px;">
-      <span class="sheet-title">ROBYN</span>
-      <span style="color: var(--text-tertiary); font-size: 11px; font-weight: 600;">Sat · Pier</span>
+    <div class="sheet-card" style="background: radial-gradient(130% 130% at 20% 120%, hsla(10,90%,62%,1) 0%, hsla(10,90%,62%,.5) 45%, transparent 78%), radial-gradient(130% 130% at 85% -20%, hsla(221,90%,62%,.75) 0%, hsla(221,90%,62%,.375) 45%, transparent 78%), #1C1731;">
+      <button class="sheet-close" aria-label="Close">✕</button>
+      <div class="f-name">Robyn</div>
+      <div class="f-sub">7:10 – 8:20 PM · Sat · Pier Stage</div>
+      <div class="f-who">
+        <span class="f-pill you" style="background: hsla(10,90%,62%,.42);">You<b>MUST</b></span>
+        <span class="f-pill" style="background: hsla(221,90%,62%,.42);">Maya</span>
+      </div>
+      <div class="f-chips"><span class="f-chip notes">1 note</span><span class="f-chip spot">4 liked songs</span></div>
     </div>
-    <div class="note-row">
-      <span class="avatar" style="background: hsl(221,90%,62%)">M</span>
-      <div class="bubble">Front left is the move — the pit floods from the right gate.<span class="meta">2h ago</span></div>
-    </div>
+    <div class="n-list"><div class="n-thread">
+      <div class="n-note" style="--wash: hsla(221,90%,62%,.26);">
+        <span class="avatar" style="width: 20px; height: 20px; font-size: 8.5px; background: hsla(221,90%,62%,.5); border: 1px solid hsl(221,85%,82%);">M</span>
+        <div class="n-body">
+          <div class="n-head"><span class="n-who">Maya</span>2h · <button class="note-action">Reply</button></div>
+          <div class="n-text">Front left is the move — the pit floods from the right gate.</div>
+        </div>
+      </div>
+    </div></div>
     <div class="composer">
       <input placeholder="Add a note…">
       <button class="btn-tonal" style="font-size: 12px; padding: 9px 15px;">Save</button>
@@ -295,6 +353,259 @@ for (const person of [K, S]) {
   cluster.appendChild(a);
 }
 document.getElementById('dock-you').style.background = hslOf(0, 0.5);
+</script>
+
+<div id="zoom-bottom-probe"></div>
+
+<script type="module">
+// ---- THE ZOOM — every state, live (2026-08-30) ------------------------------
+// Real production modules, real renderCard, real zoom wiring — the same
+// pieces app.js wires (js/v3/app.js L1-140), against a fake fest + crew doc
+// seeded the way tests/zoom-overlay.test.mjs and tests/notes-round.test.mjs
+// seed theirs (no crew, no network). This script is deliberately separate
+// from the gallery's first script — different module graph, own variable
+// names, nothing shared.
+import * as state from '/js/state.js';
+import * as model from '/js/v3/model.js';
+import { FESTIVALS, FESTIVAL_INDEX } from '/js/festivals.js';
+import { renderCard, refreshCard } from '/js/v3/wall.js';
+import { wireCardZoom, wireCardFocusZoom, zoomCard, dismissZoom, zoomedCard, zoomContains, refreshZoom } from '/js/v3/card-facts.js';
+
+const GFID = 'gallery-zoom-fest';
+FESTIVAL_INDEX.push({ id: GFID, status: 'scheduled' });
+FESTIVALS[GFID] = {
+  id: GFID, name: 'Gallery Fest', year: '’26', accent: '56, 189, 248', status: 'scheduled',
+  timezone: 'America/Los_Angeles',
+  dayMeta: {
+    Saturday: { wd: 'Sat', date: 'Sep 26', iso: '2026-09-26' },
+    Sunday: { wd: 'Sun', date: 'Sep 27', iso: '2026-09-27' },
+  },
+  days: {
+    Saturday: { stages: ['Pier Stage', 'Crane Stage'], artists: [
+      { name: 'Quick Set', stage: 'Pier Stage', time: '7:00 PM - 7:30 PM' },
+      { name: 'Long Set', stage: 'Crane Stage', time: '9:00 PM - 10:30 PM' },
+    ] },
+    Sunday: { stages: ['Pier Stage', 'Crane Stage'], artists: [] },
+  },
+  artists: [],
+};
+
+// Picks arranged per state (Kevin = You, colorIndex 0; Kevin/Kat share a
+// first initial on purpose — exercises aura.js's two-letter disambiguation).
+const SELECTIONS = {
+  'Neutral Slate': {},
+  'First Pick': { Kevin: 1 },
+  'Certified Must': { Kevin: 4 },
+  "Drew's Must": { Drew: 4 },
+  'Packed House': { Kevin: 4, Drew: 4, Kat: 3, Nhu: 2, Pegah: 1 },
+  'Notes Only': { Kevin: 2 },
+  'Spotify Favorite': { Drew: 3 },
+  'Everything At Once': { Kevin: 4, Drew: 4, Kat: 3, Nhu: 2, Pegah: 1 },
+  'Weekend Two Set': { Kevin: 3 },
+  'Quick Set': { Drew: 2 },
+  'Long Set': { Kat: 4 },
+  'Midnight Afters': { Nhu: 3 },
+  'Boiler Room B2B2B2B: The Never-Ending Sunrise Set': { Pegah: 2 },
+  Nu: { Kevin: 1 },
+  'Left Edge Artist': { Drew: 1 },
+  'Right Edge Artist': { Kat: 1 },
+  'Top Of Page Probe': { Kevin: 2 },
+  'Bottom Of Page Probe': { Nhu: 2 },
+};
+
+// A fixed token, wiped on every load so the gallery renders the SAME states
+// every time — without this, a tap made while poking at the gallery would
+// persist into localStorage and drift the demo from its labels on reload.
+const TOKEN = 'gallerytesttoken_0123456789';
+try {
+  localStorage.removeItem(state.LS.doc(TOKEN));
+  localStorage.removeItem(state.LS.pending(TOKEN));
+  localStorage.removeItem(state.LS.fest(TOKEN));
+} catch { /* storage blocked */ }
+
+state.activateCrew(TOKEN, {
+  v: 4, meta: {}, spotify: {},
+  people: { Kevin: { colorIndex: 0 }, Drew: { colorIndex: 1 }, Kat: { colorIndex: 2 }, Nhu: { colorIndex: 3 }, Pegah: { colorIndex: 4 } },
+  festivals: { [GFID]: { selections: SELECTIONS } },
+  affinity: {},
+}, GFID);
+
+// Three notes on one card (the "3 notes" chip, no Spotify chip); two on the
+// everything-at-once card. Fixed ids (fixed ts + nonce) so a reload rewrites
+// the same notes rather than piling up duplicates.
+[
+  ['Notes Only', 'Kevin', 'Gate opens at 6 — worth the wait in line early.'],
+  ['Notes Only', 'Drew', 'Bring earplugs, this stage runs loud.'],
+  ['Notes Only', 'Kat', "Let's meet at the merch tent after."],
+  ['Everything At Once', 'Kevin', 'Front left for sightlines.'],
+  ['Everything At Once', 'Pegah', 'Overlaps the afters bus — leave by 11.'],
+].forEach(([artist, author, text], i) => {
+  const ts = new Date(Date.UTC(2026, 8, 26, 20, i * 7)).toISOString();
+  state.recordNote(GFID, 'artist', artist, model.makeNoteId(author, ts, `n${i}`), { author, ts, text });
+});
+
+// Kevin's own Spotify affinity — independent of who picked what.
+state.recordAffinity('Kevin', {
+  'Spotify Favorite': { songs: 12, followed: true },
+  'Everything At Once': { songs: 8, followed: true },
+});
+
+const ctx = {
+  fid: GFID, meName: 'Kevin', picks: {}, affinity: null,
+  lowPower: false, filterPeople: [], soloStage: null, now: null,
+  onSoloStage: () => {},
+  onOpenNotes: (artist) => zoomStatus(`+ notes tapped for "${artist}" — the notes sheet lives in its own gallery section below, not wired here`),
+  onOpenDayNotes: () => {},
+  onOpenFestNotes: () => {},
+  onNotesChange: () => {},
+  onTap: handleTap,
+  // The exact shape ctx.wireZoom takes in app.js: card-facts.js owns the
+  // timing and the grow, wall.js just hands every card here.
+  wireZoom: (el, artist, occ) => {
+    const opts = { onOpenNotes: (a) => ctx.onOpenNotes(a, occ), occ };
+    wireCardZoom(el, artist, ctx, opts);
+    wireCardFocusZoom(el, artist, ctx, opts);
+  },
+  // A hold on touch grows the card the same way a hover does.
+  onPeek: (artist, el, occ) => zoomCard(el, artist, ctx, { onOpenNotes: (a) => ctx.onOpenNotes(a, occ), source: 'touch', occ }),
+};
+
+function refreshPicks() {
+  ctx.picks = model.picksFor(state.crewDoc, GFID);
+  ctx.affinity = state.affinityLookup(ctx.meName);
+}
+refreshPicks();
+
+function zoomStatus(msg) {
+  const el = document.getElementById('zoom-status');
+  if (el) el.textContent = msg;
+}
+
+// The real tap cycle (app.js handleTap, minus sync/migration-gate): advance
+// my level, mirror it into the doc, refresh every card carrying this
+// artist's name, and keep the zoom on the fresh node if it was zoomed
+// (app.js refreshArtistCards). state.recordSelection ONLY queues into
+// pendingChanges — app.js's applyLocalPick is what mirrors the pick into
+// crewDoc itself so picksFor sees it immediately; skip that mirror and
+// every tap silently no-ops against a stale doc (caught live in this
+// gallery, 2026-08-30 — a click never moved the pill until this landed).
+function handleTap(artistName) {
+  const cur = (ctx.picks[artistName] || {})[ctx.meName] || 0;
+  const next = model.nextTapLevel(cur);
+  state.recordSelection(artistName, ctx.meName, next);
+  const sels = state.crewDoc.festivals[GFID].selections;
+  (sels[artistName] = sels[artistName] || {})[ctx.meName] = next;
+  refreshPicks();
+  const els = [...document.querySelectorAll(`.card[data-artist="${CSS.escape(artistName)}"]`)];
+  const zi = els.indexOf(zoomedCard());
+  const fresh = els.map((el) => refreshCard(el, artistName, ctx));
+  if (zi >= 0 && fresh[zi] && fresh[zi].isConnected) refreshZoom(fresh[zi], ctx);
+}
+
+// The exact two document-level handlers app.js wires: a press outside the
+// zoom (the resting card AND its overlay) dismisses it; Escape eats the
+// keypress before any other handler sees it (capture phase).
+document.addEventListener('pointerdown', (e) => {
+  if (zoomedCard() && !zoomContains(e.target)) dismissZoom();
+}, true);
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && zoomedCard()) { dismissZoom(); e.stopImmediatePropagation(); e.preventDefault(); }
+}, true);
+
+// ---- toolbar -----------------------------------------------------------------
+// Low power flips ctx.lowPower — the real gate (card-facts.js canAnimate)
+// that every zoom/refresh animation checks before it runs.
+document.getElementById('zoom-lowpower').addEventListener('change', (e) => {
+  ctx.lowPower = e.target.checked;
+  document.body.classList.toggle('low-power', ctx.lowPower);
+});
+// Slow motion ×4: watch #zoom-layer for any zoom activity — a new .zoom-slot
+// (the bloom in) OR a class change on one (the exit drops 'shown' in the same
+// tick its animations are created; childList alone never slowed the way out)
+// — and slow every animation running at that moment.
+const slowMo = document.getElementById('zoom-slowmo');
+(function watchZoomLayerForSlowMo() {
+  const attach = (layerEl) => {
+    new MutationObserver((muts) => {
+      if (!slowMo.checked) return;
+      const zoomActivity = muts.some((m) =>
+        (m.type === 'attributes' && m.target.classList && m.target.classList.contains('zoom-slot'))
+        || [...m.addedNodes].some((n) => n.nodeType === 1 && n.classList && n.classList.contains('zoom-slot')));
+      if (zoomActivity) document.getAnimations().forEach((a) => { a.playbackRate = 0.25; });
+    }).observe(layerEl, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
+  };
+  const existing = document.getElementById('zoom-layer');
+  if (existing) { attach(existing); return; }
+  // #zoom-layer is created lazily on the first zoomCard call — watch <body>
+  // for its arrival, then switch to watching it directly.
+  const bodyObs = new MutationObserver((muts) => {
+    for (const m of muts) {
+      for (const n of m.addedNodes) {
+        if (n.nodeType === 1 && n.id === 'zoom-layer') { attach(n); bodyObs.disconnect(); }
+      }
+    }
+  });
+  bodyObs.observe(document.body, { childList: true });
+}());
+
+// ---- the 16 states -------------------------------------------------------------
+function stateCard(label, artist, opts = {}) {
+  const wrap = document.createElement('div');
+  wrap.className = 'zoom-state';
+  const cap = document.createElement('div');
+  cap.className = 'zoom-state-cap';
+  cap.textContent = label;
+  wrap.appendChild(cap);
+  wrap.appendChild(renderCard(artist, ctx, opts));
+  return wrap;
+}
+const day = { day: 'Saturday', stage: null, time: null, weekend: null };
+
+const ladderRow = document.getElementById('zoom-row-ladder');
+[
+  ['1 · neutral — nobody, nothing', 'Neutral Slate', { occ: day }],
+  ['2 · you, level 1', 'First Pick', { occ: day }],
+  ['3 · you, MUST', 'Certified Must', { occ: day }],
+  ['4 · one other person at MUST', "Drew's Must", { occ: day }],
+  ['5 · four mixed + a +n ghost (5 pickers)', 'Packed House', { occ: day }],
+  ['6 · notes (3), no Spotify', 'Notes Only', { occ: day }],
+  ['7 · Spotify (12, following, the glow), no notes', 'Spotify Favorite', { occ: day }],
+  ['8 · everything at once', 'Everything At Once', { occ: day }],
+  ['9 · weekend tag', 'Weekend Two Set', { tag: 'W2', occ: { ...day, weekend: 'W2' } }],
+].forEach(([label, artist, opts]) => ladderRow.appendChild(stateCard(label, artist, opts)));
+
+const cellsRow = document.getElementById('zoom-row-cells');
+cellsRow.appendChild(stateCard('10 · a timetable cell, short set', 'Quick Set', {
+  cell: true, time: '7:00 PM',
+  occ: { day: 'Saturday', stage: 'Pier Stage', time: '7:00 PM - 7:30 PM', weekend: null },
+}));
+const tall = stateCard('11 · a tall cell — 90-minute set', 'Long Set', {
+  cell: true, time: '9:00 PM',
+  occ: { day: 'Saturday', stage: 'Crane Stage', time: '9:00 PM - 10:30 PM', weekend: null },
+});
+tall.querySelector('.card').style.minHeight = '148px'; // ~90 min at the real grid's row pitch
+cellsRow.appendChild(tall);
+
+const eventRow = document.getElementById('zoom-row-event');
+eventRow.appendChild(stateCard('12 · Thursday night, no grid day', 'Midnight Afters', {
+  time: 'Thu · 10:00 PM - 2:00 AM\nThe Midway',
+  occ: { day: null, stage: 'Thu · The Midway', time: '10:00 PM - 2:00 AM', weekend: null },
+}));
+
+const namesRow = document.getElementById('zoom-row-names');
+namesRow.appendChild(stateCard('13 · a two-line long name', 'Boiler Room B2B2B2B: The Never-Ending Sunrise Set', { occ: day }));
+namesRow.appendChild(stateCard('14 · a very short name', 'Nu', { occ: day }));
+
+const edgesRow = document.getElementById('zoom-row-edges');
+edgesRow.appendChild(stateCard('15a · far LEFT edge of the viewport', 'Left Edge Artist', { occ: day }));
+edgesRow.appendChild(stateCard('15b · far RIGHT edge of the viewport', 'Right Edge Artist', { occ: day }));
+
+// 16 · one card at the very top of the page, one at the very bottom — the
+// zoom's placement rule only ever nudges left/right off-screen, top and
+// bottom never move it (card-facts.js `place`), so these two are the real
+// test of that rule at the extremes.
+document.getElementById('zoom-top-probe').appendChild(stateCard('16a · very top of the page', 'Top Of Page Probe', { occ: day }));
+document.getElementById('zoom-bottom-probe').appendChild(stateCard('16b · very bottom of the page', 'Bottom Of Page Probe', { occ: day }));
 </script>
 </body>
 </html>

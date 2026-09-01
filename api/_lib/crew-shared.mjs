@@ -145,6 +145,13 @@ function validateNote(note, where) {
       if (typeof v !== 'string' || v.length > LIMITS.noteText || /[\x00-\x08\x0b-\x1f]/.test(v)) return fail(`${where}: bad text`);
     } else if (k === 'deleted') {
       if (v !== true) return fail(`${where}: deleted may only be true`);
+    } else if (k === 're') {
+      // A reply: `re` names its root note's id. Existence is deliberately NOT
+      // required — sync can deliver a reply a beat before its root, and a
+      // root may be tombstoned while replies stay. One-level depth is a
+      // client rule (the composer always passes the root's id); the server
+      // guarantees only the shape.
+      if (typeof v !== 'string' || !NOTE_ID_RE.test(v)) return fail(`${where}: bad re`);
     } else return fail(`${where}: unknown key ${k}`);
   }
   if (typeof note.text !== 'string') return fail(`${where}: text required`);
@@ -172,6 +179,26 @@ function validateNoteMap(map, where) {
     if (!r.ok) return r;
     const prefix = `${sanitizeAuthorForId(note.author)}.`;
     if (!noteId.startsWith(prefix)) return fail(`${where}: note id must begin with its author (${prefix}...)`);
+    if (note.re === noteId) return fail(`${where}: a note cannot reply to itself`);
+  }
+  // One level deep, enforced where the evidence actually is. Threads are root +
+  // replies, never a reply to a reply: `threadsFor` buckets a nested reply the
+  // same way it buckets a reply to a TOMBSTONED root, so such a note renders as
+  // "X removed this note" sitting over a note that is very much alive (survey,
+  // 2026-08-30). The shipped client cannot produce one — it always writes
+  // `replyTo.re || replyTo.id` — but this file is the contract for every
+  // client, and there is a second one now (Ray Perfetti's fork).
+  //
+  // Existence stays deliberately unrequired, as `validateNote` says: sync can
+  // deliver a reply a beat before its root, so a payload holding only the reply
+  // still passes. The rule bites when both notes are in the SAME map, which is
+  // the only place this validator can see the truth.
+  for (const [noteId, note] of Object.entries(map)) {
+    if (typeof note.re !== 'string') continue;
+    const parent = map[note.re];
+    if (parent && isPlainObject(parent) && typeof parent.re === 'string') {
+      return fail(`${where}[${noteId.slice(0, 20)}]: a reply cannot answer another reply`);
+    }
   }
   return OK;
 }

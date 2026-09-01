@@ -328,13 +328,22 @@ export function clearCachedPending(token) { removeLS(LS.pending(token)); }
 export function applyRemoteDoc(remote) {
   // The "visible slice" must cover everything the wall renders — notes and
   // meta included, or a note-only remote change never repaints (CORE-6).
+  // Order-insensitive on purpose. Postgres returns jsonb keys in ITS order
+  // (length, then alphabet), while a local pick appends its key wherever it
+  // lands — so a plain stringify called every own-edit echo a "change", and
+  // the whole wall repainted 2–6 s after every pick: 110 cards rebuilt, the
+  // zoom torn down and restored, focus dumped, hover intents killed (found
+  // chasing "hover and click, it closes… then stuck", 2026-08-31).
+  const sorted = (_, v) => (v && typeof v === 'object' && !Array.isArray(v))
+    ? Object.fromEntries(Object.keys(v).sort().map((kk) => [kk, v[kk]]))
+    : v;
   const visible = () => JSON.stringify({
     p: crewDoc.people,
     s: (crewDoc.festivals[activeFestivalId] || {}).selections || {},
     n: (crewDoc.festivals[activeFestivalId] || {}).notes || {},
     a: crewDoc.affinity || {},
     m: crewDoc.meta || {},
-  });
+  }, sorted);
   const before = visible();
   crewDoc = deepMerge(remote || {}, pendingChanges);
   ensureFestivalState(activeFestivalId);

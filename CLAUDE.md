@@ -91,6 +91,10 @@ Non-inferable facts only (the code answers everything else — read it).
   edited JS only reloads on a REAL document load (hop via about:blank), and
   the ES-module cache also survives `Network.clearBrowserCache`** (burned a
   test cycle 2026-07-14).
+  **After any cached-asset change run `node scripts/sw-stamp.mjs`** — it bumps
+  `CACHE_VERSION` and writes `ASSET_STAMP` (a hash of every APP_CORE file);
+  `tests/app-shell-complete.test.mjs` recomputes it, so a stale stamp is a red
+  build (the gate-round fixes once shipped under an unbumped v43, 2026-08-29).
 - **Staging (stage.fest.kevinhg.com preview deploys) shares the PRODUCTION
   DATABASE_URL** — verified empirically 2026-07-14 (a person row created on
   staging was deleted through the prod Neon connection). Staging writes are
@@ -135,3 +139,19 @@ Non-inferable facts only (the code answers everything else — read it).
   cache-first in the persistent data cache, which meant a set-times drop
   reached an online phone one open LATE (found 2026-08-27). If a data drop
   "isn't showing", the SW is the first suspect — see the stale-SW note above.
+
+- **How this app moves (Kevin, 2026-08-30 — the vibe, not the mechanics; the
+  code carries those).** This is a designer's passion project, and the bar is
+  delight: taste, flow, and the little things. Things grow from where they
+  already are and every piece travels to where it is going — nothing pops,
+  nothing appears from nowhere, nothing vanishes in place. A state change
+  is a small event: a pill arriving after a tap slides in and its neighbours
+  make room; the way in has a little life (a beat between arrivals, a curve
+  with a touch of overshoot), the way out is quick and plain. Motion is
+  light — transforms and opacity, never a layout the whole wall has to
+  redo — and Low Power or reduced-motion makes it instant, never broken.
+  Edge cases are part of the design, not afterthoughts: the card at the
+  screen's edge, the two-line name, the tall set, the card with nothing on
+  it yet. A session that treats these as nits will have a rough time here;
+  a session that walks the states in a real browser before showing Kevin
+  will not. The zoom gallery in `gallery.html` is where every state lives.

@@ -1,4 +1,306 @@
-# NOW — festival-navigator: v42 LIVE ON PROD (2026-08-27 21:01 CT) — Portola set times, wall filters, the now line, the festival timezone
+# NOW — festival-navigator: the CLEAN ROUND is on `notes-desktop-round` (PR #13), preview-verified, waiting on Kevin's promote · v42 still on prod
+
+**last-updated: 2026-09-01 · mode: live**
+
+## 2026-08-31 — Kevin's review round on the bloom: three real-input bugs, a CSS regression of mine, and two asks banked
+
+Kevin reviewed the bloom (v59–v61) and reported: hover "fully broken",
+"if you click it breaks hover", pills/chips flung to the edges, the header
+narrower than the timetable with cards peeking beside it, "the despacito
+stage f'd", plus new asks (below). What the day found and shipped (commits
+9a4b0d3 → 2679392, SW v63, suite 311/312):
+
+- **Real-input bugs the frame-stepping could not see** (lesson: synthetic
+  `dispatchEvent` never fires scroll or the browser's own hover-boundary
+  recomputation — a real-pointer walk before every push, as the memory
+  already said): a 1px scroll killed the zoom AND poisoned the card via
+  `dismissedEl` (trackpads micro-scroll constantly) — the overlay now
+  FOLLOWS its card and closes only when the card leaves the viewport; an
+  overlay restored by a repaint after the hand moved on never heard a
+  boundary event and stood until the next click — any outside mouse
+  movement now starts the grace close. Both pinned in
+  `tests/zoom-overlay.test.mjs` (11 tests). Grown rows centred again (the
+  corner-true experiment is dead).
+- **The header/strip regression was MINE (08-30's "full-bleed strip")**: the
+  strip carries `times-wrap`, so the ≥720 rule already gave it the grids'
+  exact full-viewport geometry; my shell-box override replaced it. Measured
+  live at 1482px: strip 173→1655, stage heads drifting 35px/column (the
+  Despacio head over the wrong column), cards peeking beside the rail. Now
+  the override is <720 only and the day rail takes the same 100vw geometry
+  — rail, strip, grid all 0→1482, every head on its column.
+- **Tall cells** (≥3h; Despacio runs 7): name at the top edge, `until 9:45
+  PM` at the bottom — centred content had put the name three screens down.
+  `computeDayArtists` now returns `endStr`.
+- **A fest's place is a door**: `placeDoor()` / `festPlaceLine()` in
+  card-facts.js — ONE builder for the zoom's WHERE, the wall header's venue
+  and the Settings fest card's top line; a map link once `fest.locationUrl`
+  exists (the venue-links teammate is adding those + every Afters venue to
+  `venues` — bank: `claude-plans/2026-08-31-venue-links.md`).
+- **The stale-worker trap is closed**: index.html reloads once when a new
+  service worker claims an already-controlled page in its first 20s. The
+  shell is cache-first, so every first open after a deploy ran the PREVIOUS
+  build — the likeliest story behind "still broken" on a build where real
+  pointer input passed end to end (log: hover → grow → click picked → move
+  away → closed → next card grew).
+- **"Hover and click, it closes… then stuck" — ROOT-CAUSED (Codex + a real-
+  input event log agreed):** a click on the RESTING card focuses it
+  (role=button) and `refreshCard` hands that focus to the fresh node on
+  purpose (keyboard users keep their place); the next click lands on the
+  overlay — a plain div — whose mousedown default BLURS the card;
+  `wireCardFocusZoom`'s focusout reads that as "focus left" and closes the
+  zoom before the click arrives; the click's down/up targets now differ and
+  it lands on `body`. Fix: the overlay cancels mousedown's default (its
+  button/link controls keep theirs). The "stuck": after EVERY pick the sync
+  echo repainted the whole wall — Postgres returns jsonb keys length-then-
+  alphabet while a local pick appends its key, so `applyRemoteDoc`'s plain
+  stringify compare called every own-edit echo a change (measured live: full
+  repaint 2.0 s after a pick). Compare is order-insensitive now (pinned:
+  `tests/apply-remote-order.test.mjs`). Also: a card rendered under a resting
+  pointer arms its hover intent a frame after insertion (:hover), an outside
+  press is a plain close (no `dismissedEl` poison — Codex), an instant
+  restore checks `elementFromPoint` under the last mouse position,
+  `refreshCard` replays tall/until. Venue round landed: `locationUrl` on all
+  11 fests + 16 Portola afters venues (bank: `2026-08-31-venue-links.md`).
+
+**End-of-day state (2026-08-31, post-review) — READ FIRST IN A FRESH THREAD:**
+(1) **THE HOVER IS FIXED — Kevin confirmed** ("You fixed the hover!") on the
+v71 build: the overlay-mousedown focus fix + the order-insensitive remote
+compare were the cure; the close-cause discriminator stays (every zoom close
+names its cause in the crash journal — cheap forensics if anything ever
+sticks again). (2) **Design rounds 3+4 stand at
+https://claude.ai/code/artifact/1e27ce79-0813-4283-b83c-52cf64be107d** (10
+frames; rules in `claude-plans/2026-08-31-events-canvas/MODEL-V3.md`).
+Round 4 = his re-read of the portola-week source: the Midway "pile" is one
+room played BACK TO BACK — doors, not set times. Model §5: guessed times
+(`approx: true`, ~an hour a set), order from the poster hierarchy
+(buy-tickets name closes, other large print before it, small print opens),
+stacked in the time bands — never lanes, never combined cards. Mode
+consistency is law (§2): if any day of a section earns columns, all days
+render columns; the venue heads stay each day's own. The deck narrows to
+truly-simultaneous data. **Copy LOCKED (Kevin, 2026-09-01):** resting card `~12 AM`; the zoom's
+two lines `Sun · Runs 10 PM – 2 AM` / `Guessing they're 3rd of 4` (a door
+to the poster; the word goes once a venue posts the order) — MODEL-V3 §5,
+canvas frame `hover`. Still implicitly open: the ordering heuristic as the
+default guess, and the mode-per-fest consistency rule (he has not said no). (3) **Teammate starvation explained enough to act on**: Kevin's
+mid-flow account switches at usage limits freeze background teammates
+(main loop survives; artifact watches stop with "the signed-in account
+changed"). No revive path — respawn on the new account; note banked in
+`helper/guides/agents-teammates-workflows-2026-06-21.md`. All of this
+thread's teammates died with his exit/resume; the board is clear.
+(4) A stray "zz test" note by Ava sits in zz-design's Groove Armada thread
+(battery cleanup miss) — sweep with the promote-time Neon cleanup.
+(5) Zoom code REVIEWED for simplification (11 Opus agents + Codex,
+2026-09-01): dense but sound; ~20 lines of safe tidying survived the
+skeptics; 19 of 40 robustness layers have no test and 17 of those are
+ordinary jsdom tests nobody wrote. Doc with the surviving/refuted list and
+the 40-layer coverage table: `claude-plans/2026-09-01-zoom-simplification-
+review.md`. Not applied — Kevin's call; tests-first if he says go.
+(6) Link previews lost their who-corner ticks (Kevin's call); the two
+stray root screenshots went to the Trash.
+
+**Banked 2026-09-01 — the import pipeline Kevin wants next (not built):**
+a couple-agent-pass "add a festival" import that reads posters (vision) and
+the web (grounding), routed to whatever model is current and cheap, judged
+by an EVAL against the festival files we already have — regenerate Portola,
+ACL, Lost Lands from their public sources and diff against the shipped JSON,
+with the fuzzy cases (Portola Week's doors-only posters, billing-order
+guesses) as the hard tests. Gemini 3.x does vision + grounding on the free
+tier, so the provider question is closed for now; the eval harness is the
+durable asset and is provider-agnostic. Ray's July "AI festival authoring
+via import" item is the same idea from his side. Natural home: after the
+events UI (phase 2) lands, since afters need the §5 data shape to grade.
+
+**Asks banked, awaiting Kevin:** the structured events model for
+Afters/Folsom (nights + venues + sort; proposal with two decisions in
+`claude-plans/2026-08-31-events-model.md` — "big one in the 11th hour", his
+words; NOT built); link previews are the static per-fest OG cards (see
+`claude-plans/2026-08-30-survey/link-preview.md`) — real unfurls need prod;
+per-crew dynamic previews are impossible by design (the token never reaches
+the server), per-fest dynamic (countdown, "set times live") is possible via
+an OG image function and is a follow-up if he wants it.
+
+## 2026-08-30 — the clean round: survey → fix → redesign, nine teammates, everything named shipped
+
+Kevin opened unable to merge PR #13 in good faith ("rough from a working
+relationship and quality standpoint"). A 23-agent survey (10 readers, a
+skeptic each, 2 researchers, 1 synthesis — `claude-plans/2026-08-30-survey/LEDGER.md`,
+55 findings, 0 refuted) confirmed his three animation complaints at the code
+level, then the day rebuilt the round. All of it is ON THE BRANCH, suite
+305/306 green (1 env skip), SW v53:
+
+- **The zoom is an overlay, never a reflow** (`js/v3/card-facts.js`): grows
+  anchored on the card's centre (only screen sides nudge the box), tappable
+  from frame 0, name 18px, a pick while zoomed FLIPs the pills/wash instead
+  of jumping, hold-lift can't pick (armed after the lift's click), Low Power
+  = instant. `renderCard` and the zoom render from ONE model (`factsFor`) so
+  details can't drop between them — the root cause of two rough sessions.
+  *The day's MOTION (clone-hops, crossfades, frame-0 twin) was judged worse
+  by Kevin and replaced wholesale by the bloom — see the rebuild block
+  below; this bullet's mechanics survived it.* `tests/zoom-overlay.test.mjs`
+  pins it all; `gallery.html` opens with "THE ZOOM — every state, live"
+  (16 states, slow-mo and low-power toggles) — Kevin's design-pass surface.
+- **Comments are the OPEN DOOR** (Kevin's pick from the design canvas
+  https://claude.ai/code/artifact/ce03d473-c9d8-47eb-9057-0bb96867e704):
+  every thread ends with an always-there "Reply…" row that unfolds into the
+  composer in place; no Reply control on any note, no @ prefill — one level
+  deep is structure, and the server refuses a nested `re` (Ray's fork is
+  client two). Pin on hover/hold/focus in the TOP row, Edit joins it on your
+  own notes, Delete only inside Edit (two-tap arm, aria-live), textarea +
+  counter, drafts survive live syncs. His flagged watch-item: the door
+  repeats per thread — look at a busy sheet before promote.
+- **Crew links unfurl as the fest's poster**: `fest.kevinhg.com/f/<fest-id>#g=…`
+  (human-readable; the token stays hash-only, tested), `api/share.js` serves
+  per-fest OG tags (rewrite verified against real Vercel — the first cut's
+  `source:"/"` could never fire; filesystem beats rewrites, now pinned by
+  tests verified red against broken configs), per-fest 1200×630 JPEGs +
+  the new mark (`assets/mark.svg`, `scripts/brand-assets.mjs` regenerates
+  everything; old green-grid icons retired). Full unfurl proof needs prod.
+- **Settings**: You above Crew; case-insensitive self-rename (vs the FULL
+  people map); Spotify disconnect writes ZEROED affinity crew-wide (null is
+  refused by validation AND ignored by the merge — caught in lead review).
+- **Lost Lands**: short dates, timezone, dayMeta; day labels derive via
+  `js/time.js dayLabelParts` (wall rule, tab, day sheet); pre-party poster
+  read — no per-artist times exist; 8 main-bill artists also play Wednesday
+  (in meta.note, lands with the day-tag ingest). ACL: timezone + corrected
+  note (set times ARE live as six images). `docs/fest-update-runbook.md` is
+  the small-agent path for the ingests.
+- **Forks set their host in ONE tag** (issue #6): `fn-canonical-host` meta in
+  index.html; strings derive; `docs/fork-setup.md`. Drafts for Ray (issue
+  reply + email) await Kevin's yes: `claude-plans/2026-08-30-ray-drafts.md`.
+- **Harness (Kevin as Tecovas admin)**: both global CLAUDE.mds open Agents-
+  and-model-economics with two rules (never Fable in a workflow/fan-out
+  without explicit permission; latitude scales with the model);
+  `tecovas-max-kit` SHIPPED with a SessionStart rules hook + a PreToolUse
+  Fable fan-out guard (marketplace 8ff919e); the agent-brief pattern is in
+  hg-save-it (`references/agent-brief-pattern.md`, 9e5ebc2). Project
+  CLAUDE.md gained "How this app moves" (the motion vibe — read it before
+  touching any surface).
+
+**The evening refinement rounds (post-save, commits f55663e→71a1e25, SW v58)
+— all Kevin-driven, each verified on the gallery/preview before push:** the
+stage strip goes full-bleed (the wide-stage gap); WHEN/WHERE are two rows,
+WHERE with a maps door (Portola's six Folsom venues, `fest.venues` — one
+line per venue to add more); weekend as plain text in WHEN; people pills
+11px/20px; chips hug the grown card's LEFT and pills its RIGHT (corner
+mapping); WHEN rises exactly like WHERE (the hop is dead — it stuttered
+twice); a frame-0 twin makes the growth opaque every frame (no pops);
+exit ghosts all clear on a new zoom (the overlapping-cards skim); the
+hop crossfade is complementary (no double-printed times); shadow softened
+(read as a stacked card); a shrink retracts the old wash. Spotify demo:
+zz-Ben in the walk crew carries seeded affinity (SHM/Jamie xx/Dog Blood/
+Overmono/Robyn) — Kevin's eval still pending, plus his read on
+"connectedness" with the pops gone.
+
+**THE ZOOM WAS REBUILT AS "THE BLOOM" (2026-08-30, post-compaction —
+storyboard: `claude-plans/2026-08-30-zoom-storyboard.md`).** Kevin's verdict
+on v58 was "it's worse", and the post-compaction diagnosis found the rot:
+the zoom ran a shared-element morph between two DOM trees — resting pieces
+measured, CLONED into the overlay, and crossfaded against their grown twins
+— so two renderings of one fact were in flight at once (his screenshot:
+"4:45 PM" and "4:45 – 6:00 PM · Sat" both printed). Every double-print,
+misregistration and stutter lived there, and no patch could close it. The
+rebuild's law: ONE rendering of every fact, ever — the overlay measures
+only the resting card's box; the card blooms from the resting centre
+(scale k→1 + fast materialise, true transform-origin even at viewport
+edges) wearing the same aura wash, the resting card's CONTENT steps back
+via CSS while its wash stays, and the grown lines cascade from their
+corners (WHEN/WHERE rise, people from the right, notes/Spotify from the
+left) relative to the CARD, never to wall coordinates. Deleted: frame-0
+twin, clones, hop/dissolve, out-twin, `z-rest` (~180 lines). Kept:
+refreshZoom's pill FLIP (measures only inside the overlay), all
+interaction wiring, the exit-slot sweep, Low Power/reduced-motion instant.
+Verified frame-by-frame on the gallery via DevTools currentTime stepping
+(sheets in `screenshots/bloom-*.png`, gitignored): no double text, opaque
+growth, skim holds ≤1 overlay, pick-while-zoomed keeps the zoom, low power
+zero animations, console clean. Suite 306/307 (env skip). Kevin has NOT
+yet judged the feel — that is the open question.
+
+**Open — Kevin's calls:** promote PR #13 (then post the issue-#6 reply and
+send the Ray email from the drafts); the door density on a busy sheet; the
+link-preview trio (JPEG previews · the mark's coral whisper · fest accent in
+the OG wash — all argued in `claude-plans/2026-08-30-survey/link-preview.md`);
+4 Dependabot PRs vs main (merging = prod deploys — after the promote);
+Neon cleanup: walker crew `zz-walk-0830` (token in the walk report, not in
+files), its accidental duplicate Lost Lands board, person `rx3PPUEYYkgf`,
+plus the 08-29 leftovers NOW already lists. Real finding riding that: Settings
+"+ Add a festival" always creates a NEW board, even for a fest you already
+have.
+
+**Then:** ACL set-times ingest (six images, before Oct 2 — the lead session
+can transcribe), Lost Lands day tags (droppable now), Seismic ~Sept 18; a
+final real-wheel scroll-dismiss re-check rides the next walk; backlog in the
+LEDGER's build-order tail (viewport-gating card auras, `backdrop-filter` in
+low-power, Spotify b2b splitting, user-flows in the CI doc gate…).
+
+## 2026-08-29 — the notes/desktop round: designed in four canvas rounds, built, gated three times by Codex, walked
+
+**Where it lives:** branch `notes-desktop-round` — **PR #13**
+(https://github.com/khglynn/festival-navigator/pull/13); per the
+2026-08-29 workspace rule agents open PRs and Kevin merges.
+Preview: `festival-navigator-git-notes-desktop-round-kevinhg.vercel.app`
+(protection-gated — mint a `_vercel_share` link with the Vercel MCP AFTER
+the last push; a push replaces the alias target and kills the link).
+Design canvas (four pages, newest first):
+https://claude.ai/code/artifact/5e9504d4-ea25-4ab7-bc6f-a32bf8b3b635 —
+rendered by production code through the jsdom rig in
+`claude-plans/2026-08-29-notes-desktop-canvas/` (the 08-27 canvas was
+rejected for flat cards; this one landed).
+
+**What Kevin decided (all 2026-08-29):** the Aura vibe for notes (no boxes —
+a note is text on a wash of its author's hue, name above the words, one
+gutter, replies one gutter in); day notes = the WHISPER (nothing until
+someone writes, then the newest note as one line at the day's door; the
+rule's ✎ chip stays the add door); the hover/hold ZOOM is the card itself
+growing around its centre into a small version of the sheet's header (the
+name never leaves the middle; strokes dissolve as it grows; hover and open
+are one look); the existing notes button is the one door to comments and
+rides along in the zoom; a real hover-intent delay on desktop; "12 liked
+songs · following" with the flag left of the word; time · short day · place;
+"You" capitalised, MUST on the baseline; pick-as lives in Settings → You
+ONLY (the chip hold, the arm and the hover door are gone — people rarely
+switch); the share copy ("Opens straight into Portola 26. No accounts
+needed." / "Send Eli this link. Opening it makes the picks theirs."); threads
+one level deep with a pinned root folding to a reply count. Not picked by
+Kevin (defaults shown on the canvas, easy to swap): MUST option A (the word)
+and the deleted-root stub.
+
+**What is on the branch (`git log main..notes-desktop-round`):** server `re`
+key + `model.threadsFor`; `js/v3/card-facts.js` (facts, the sheet header,
+the zoom as a shared-element morph via the Web Animations API — clip reveal
++ FLIP hops, one ease, 350 ms in / 300 ms out, keyed off the event's pointer
+type, keyboard route via :focus-visible); `notes.js` rewritten (threads,
+reply composer state, inline edits that survive live syncs, pinned folds,
+stubs for deleted/unsynced roots, the whisper); `wall.js` (whisper at the
+door, fest whisper foot, zoom hooks, occurrence on every card, two-line
+event sub-labels, "picked by N others" labels, the ✎ hover button retired);
+`app.js` (zoom/peek wiring, one-layer Escape, tagged notes route keys with
+the occurrence, chips tap-to-filter only, Settings switch repaints the
+wall); `scripts/sw-stamp.mjs` + `ASSET_STAMP` (the suite fails when cached
+assets change without the ritual — the gate-round fixes once shipped under
+an unbumped version); SW v44. Suite 274 pass / 1 env skip. Interaction
+research brief: `claude-plans/2026-08-29-notes-desktop-canvas/interaction-research.json`.
+
+**Gates:** Codex NO SHIP ×3 → 19 findings taken (the press-outlives-its-hold
+race, occurrence identity, edit drafts, a11y/touch of the grown door, zoom
+teardown generations, scrollport clamp, route-key collisions, Settings
+repaint, lane-card snap, SW stamp) — every one verified in code before it was
+fixed; a Sonnet walker with real pointer input on the preview: 9/11 clean, two
+real findings fixed (DEVLOG 2026-08-29). Kevin's own look at the preview drove the last design
+turn (the morph recomposed around the centre, then rebuilt as a real
+shared-element transition).
+
+**Open, Kevin's calls:** promote (merge the PR); "clean up" for the walker's
+three throwaway Neon rows (`zz-design`, the stray Ava-only "Lost Lands 26"
+crew, person `0og6LjR50a2D`) — still there, intentionally; the coach mark's
+"Hold for notes." (his line — hold now zooms, notes one tap further; leave
+or reword); the duplicate person rows for Nhu/Pegah/HG in the live Portola
+crew (the deferred idempotent-claim hardening — harmless to picks; backlog
+unless he wants it in this branch).
+
+**Then:** Seismic + ACL data on the Portola pattern (set times where out,
+the afters / big events, `America/Chicago`, freeze pick keys the day people
+start picking), festival checks by teammates while the main session builds.
+
 
 ## 2026-08-27 21:01 CT — PROMOTED: PR #12 merged (carrying #11), v42 on all three domains
 
@@ -17,7 +319,7 @@ sticky — to filter by a person mid-page you scroll to the top first (the
 stage strip and the day tabs ARE sticky). If that bites on festival day, a
 sticky chip row is a small change.
 
-## NEXT ROUND — for a FRESH session (Kevin, 2026-08-27 21:03–21:10 CT): notes + desktop, then ACL + Seismic
+## NEXT ROUND — for a FRESH session (Kevin, 2026-08-27 21:03–21:10 CT): notes + desktop, then ACL + Seismic — DECIDED AND BUILT 2026-08-29 (see the top of this file; the proposals below are history)
 
 **2026-08-29 — the design canvas is up, at production fidelity:**
 https://claude.ai/code/artifact/5e9504d4-ea25-4ab7-bc6f-a32bf8b3b635 — 17

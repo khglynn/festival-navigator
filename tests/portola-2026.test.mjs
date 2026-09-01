@@ -98,6 +98,48 @@ test('portola-2026: the wall renders both grid days, then AFTERS and FOLSOM — 
   assert.equal(cells, 64, 'every timed set is a grid cell');
   const hmd = [...root.querySelectorAll('.card')].filter((c) => c.dataset.artist === 'Horse Meat Disco');
   assert.equal(hmd.length, 2, 'Horse Meat Disco under Afters AND Folsom');
-  assert.equal(hmd[0].dataset.time, 'Fri · Public Works · 9 PM - 3 AM');
+  assert.equal(hmd[0].dataset.time, 'Fri · 9 PM - 3 AM\nPublic Works');
   root.remove();
+});
+
+test('portola-2026: a set of three hours or more is a TALL cell — name at the top edge, "until" at the bottom (Despacio, 2026-08-31)', () => {
+  const root = document.createElement('div');
+  document.body.appendChild(root);
+  renderWall(root, {
+    fid: 'portola-2026', meName: 'Kevin', picks: {}, affinity: null, lowPower: true,
+    sort: 'day', query: '', weekend: 'all', onTap: () => {}, onOpenNotes: null, onNotesChange: null, onOpenDayNotes: null,
+  });
+  const despacio = [...root.querySelectorAll('.card.cell')].filter((c) => c.dataset.artist === 'Despacio');
+  assert.equal(despacio.length, 2, 'one Despacio block per grid day');
+  assert.deepEqual(despacio.map((c) => c.classList.contains('tall')), [true, true]);
+  assert.deepEqual(despacio.map((c) => c.querySelector('.until').textContent), ['until 9:45 PM', 'until 10:30 PM']);
+  const dogBlood = [...root.querySelectorAll('.card.cell')].find((c) => c.dataset.artist === 'Dog Blood');
+  assert.ok(!dogBlood.classList.contains('tall'), 'a 75-minute set is not tall');
+  assert.equal(dogBlood.querySelector('.until'), null);
+  root.remove();
+});
+
+test('the fest place line: the venue is a door when the file knows the address, the aside and dates stay text', async () => {
+  const { festPlaceLine } = await import('../js/v3/card-facts.js');
+  const text = (frag) => { const d = document.createElement('div'); d.appendChild(frag); return d; };
+  // The no-address case on a CLONE — the real file carries Pier 80's address
+  // (venue round, 2026-08-31), and a test that assumed it didn't blocked the
+  // data from landing.
+  const plain = text(festPlaceLine({ ...portola, locationUrl: undefined }));
+  assert.equal(plain.textContent, 'Pier 80 · September 26–27, 2026 · Doors 1 PM');
+  assert.equal(plain.querySelector('a'), null, 'no address, no door');
+  assert.equal(plain.querySelector('span.fest-place').textContent, 'Pier 80');
+  assert.match(portola.locationUrl, /^https:\/\/maps\.google\.com\/\?q=Pier\+80/, 'the shipped file knows where Pier 80 is');
+  const linked = text(festPlaceLine(portola));
+  const door = linked.querySelector('a.fest-place');
+  assert.equal(door.getAttribute('href'), portola.locationUrl);
+  assert.equal(door.textContent, 'Pier 80');
+  assert.equal(door.getAttribute('target'), '_blank');
+  assert.equal(linked.textContent, 'Pier 80 · September 26–27, 2026 · Doors 1 PM');
+  // A subtitle with an aside: only the venue is the door.
+  const acl = text(festPlaceLine({ subtitle: 'Zilker Park · both weekends', dates: 'Oct 2–4', locationUrl: 'https://maps.google.com/?q=Zilker+Park' }));
+  assert.equal(acl.querySelector('a.fest-place').textContent, 'Zilker Park');
+  assert.equal(acl.textContent, 'Zilker Park · both weekends · Oct 2–4');
+  // No subtitle at all: the location stands in, as text.
+  assert.equal(text(festPlaceLine({ location: 'Rothbury, MI', dates: 'Jun 25–28' })).textContent, 'Rothbury, MI · Jun 25–28');
 });

@@ -135,6 +135,40 @@ export function noteOverlay(fid, scope, target, note, id) {
   return { festivals: { [fid]: { notes: { [scope]: scoped } } } };
 }
 
+// ---- threads (2026-08-29) ----------------------------------------------------------
+// A reply is a note with one extra key: re = its root note's id. One level
+// deep by construction: the reply composer always passes the ROOT's id, so
+// replying to a reply attaches to the root. Returns render-ready threads:
+// roots oldest-first (pinned first when pinnedIds is given), each with its
+// live replies oldest-first. A reply whose root is missing or tombstoned
+// keeps its context under a stub thread (root: null; stubAuthor names the
+// deleted root's author when the tombstone is still readable).
+export function threadsFor(doc, fid, scope, target, pinnedIds = []) {
+  const live = notesFor(doc, fid, scope, target);
+  const raw = doc?.festivals?.[fid]?.notes?.[scope];
+  const map = (scope === 'fest' ? raw : raw?.[target]) || {};
+  const pinned = new Set(pinnedIds);
+  const roots = live.filter((n) => !n.re);
+  const rootIds = new Set(roots.map((r) => r.id));
+  const threads = roots
+    .sort((a, b) => (pinned.has(a.id) ? 0 : 1) - (pinned.has(b.id) ? 0 : 1) || Date.parse(a.ts) - Date.parse(b.ts))
+    .map((root) => ({ root, stubAuthor: null, replies: [] }));
+  const byRoot = new Map(threads.map((t) => [t.root.id, t]));
+  const stubs = new Map();
+  for (const n of live) {
+    if (!n.re) continue;
+    if (rootIds.has(n.re)) { byRoot.get(n.re).replies.push(n); continue; }
+    if (!stubs.has(n.re)) {
+      const gone = map[n.re];
+      const t = { root: null, stubAuthor: (gone && gone.author) || null, replies: [] };
+      stubs.set(n.re, t); threads.push(t);
+    }
+    stubs.get(n.re).replies.push(n);
+  }
+  for (const t of threads) t.replies.sort((a, b) => Date.parse(a.ts) - Date.parse(b.ts));
+  return threads;
+}
+
 // ---- pins (device-local, never synced) -------------------------------------------
 // pins[fid] = [noteId, ...] in localStorage key fn_pins_v1.
 

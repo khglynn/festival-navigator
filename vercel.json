@@ -2,6 +2,21 @@
   "buildCommand": "echo 'No build needed'",
   "outputDirectory": ".",
   "cleanUrls": true,
+  "rewrites": [
+    {
+      "source": "/f/:id",
+      "destination": "/api/share?f=:id"
+    },
+    {
+      "source": "/f",
+      "destination": "/api/share"
+    }
+  ],
+  "functions": {
+    "api/share.js": {
+      "includeFiles": "{index.html,data/festivals/index.json}"
+    }
+  },
   "trailingSlash": false,
   "headers": [
     {

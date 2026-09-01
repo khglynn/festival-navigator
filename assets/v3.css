@@ -27,22 +27,6 @@
 .card .time { position: relative; font-size: 9px; font-weight: 600; }
 .card.timed { flex-direction: column; gap: 2px; } /* search results carry stage · time */
 
-/* Hover note affordance for pointer users (DT-6): the ✎ chip appears on
- * hover/focus, never on touch (long-press owns that path). Never a music
- * note — the glyph is reserved for Spotify. */
-.card .note-affordance {
-  position: absolute; top: 4px; right: 4px; width: 24px; height: 24px;
-  display: none; align-items: center; justify-content: center;
-  background: rgba(10, 8, 18, .72); border: 1px solid var(--border-card);
-  border-radius: var(--r-pill); color: var(--notes-chip-text); font-size: 11px;
-  cursor: pointer; opacity: 0; transition: opacity .12s ease; padding: 0;
-}
-@media (hover: hover) and (pointer: fine) {
-  .card .note-affordance { display: inline-flex; }
-  .card:hover .note-affordance, .card:focus-within .note-affordance,
-  .card:focus-visible .note-affordance { opacity: 1; }
-}
-
 /* Set-times grid cell variant: same card, tighter corners, time line.
  * Content is TOP-aligned: a short set's card clips at the bottom padding,
  * never mid-name — centered content shaved the top off the artist name
@@ -68,6 +52,13 @@
    * at the bottom instead, never the name. */
   flex: none; }
 .card.cell .time { flex: none; }
+/* A tall cell (a set of three hours or more) reads like a printed grid: the
+ * name at the top edge where the set starts, the end time at the bottom edge
+ * — centring put the name mid-column, off-screen, and the column read as an
+ * empty slab (Despacio, Kevin's screenshot, 2026-08-31). */
+.card.cell.tall { justify-content: flex-start; padding-top: 9px; }
+.card.cell.tall .until { position: absolute; left: 0; right: 0; bottom: 6px; text-align: center;
+                         font-size: 9px; font-weight: 600; opacity: .85; }
 .card.cell .corner-about { bottom: 3px; left: 5px; }
 .card.cell .corner-who { bottom: 3px; right: 4px; }
 .card.cell .chip-notes { height: 12px; padding: 0 5px; font-size: 8px; }
@@ -135,7 +126,7 @@
 
 /* ---- people ----------------------------------------------------------------- */
 .person-chip { color: #fff; font-size: 11.5px; font-weight: 600; padding: 5px 12px;
-               -webkit-touch-callout: none; user-select: none; /* hold = pick-as, not the OS text callout */
+               -webkit-touch-callout: none; user-select: none; /* a long press must never raise the OS text callout */
                border-radius: var(--r-pill); border: none; cursor: pointer; }
 .person-chip.you { font-weight: 700; }
 /* A chip's job is to say "this person, in their colour". On the wall and in the
@@ -216,8 +207,14 @@
   .day-rail {
     display: flex; align-items: center; gap: 18px;
     position: sticky; top: 0; z-index: 25;
-    margin: 4px calc(-1 * var(--sp-gutter)) 0;
-    padding: 9px var(--sp-gutter);
+    /* Full-VIEWPORT, like the timetable it sits over: the grids run to the
+     * window's edges (the .times-wrap rule), so a rail only as wide as the
+     * shell box left cards showing beside it on any wider window (Kevin's
+     * screenshots, 2026-08-31). Symmetric padding keeps the rail's own
+     * content aligned with the shell's edges. */
+    width: 100vw; box-sizing: border-box;
+    margin: 4px calc(50% - 50vw) 0;
+    padding: 9px max(var(--sp-gutter), calc(50vw - var(--shell-max) / 2));
     /* Near-opaque: at .78 the header's subtitle text ghosted through
      * mid-scroll and read as broken overlap (Kevin, 2026-07-12). */
     background: rgba(12, 10, 20, .94);
@@ -241,21 +238,27 @@
 }
 
 /* ---- notes ------------------------------------------------------------------- */
-.note-row { display: flex; gap: 9px; }
-.note-row .avatar { width: 22px; height: 22px; font-size: 9px; }
-.bubble { color: var(--text-body); font-size: var(--fs-body); line-height: 1.5; background: var(--card);
-          border: 1px solid var(--hairline); border-radius: var(--r-bubble); padding: 9px 11px; flex: 1; }
-.bubble.pinned { border-color: var(--notes-stroke); }
-.bubble .meta { display: block; color: var(--text-tertiary); font-size: 10px; font-weight: 600; margin-top: 3px; }
-.pin-btn { color: var(--text-tertiary); font-size: 11px; font-weight: 700; flex: none;
-           align-self: center; background: none; border: none; cursor: pointer; }
-.pin-btn.active { color: var(--tonal-text); }
-.composer { display: flex; gap: 8px; align-items: center; }
-.composer input {
-  flex: 1; background: var(--card); border: 1px solid var(--border-input); border-radius: var(--r-card);
-  padding: 10px 12px; color: var(--text-primary); font-size: 12.5px; font-family: var(--font-ui); outline: none;
+/* (The boxed note-row/bubble anatomy retired 2026-08-29 — the aura notes in
+ * the threads section further down are the one note language now.) */
+/* One text field everywhere words are written — the sheet's bottom composer,
+ * an inline reply, an edit in place. It grows with what you type (notes.js
+ * measures) instead of hiding 500 characters in one scrolling line. */
+.composer { display: flex; gap: 8px; align-items: flex-end; }
+.n-field {
+  /* border-box because this file has no global one: a content-box field with
+     12px of side padding overflows its column by 26px, and `.n-inline` clips
+     the overflow so the right border simply vanishes (caught in the walk). */
+  box-sizing: border-box; width: 100%; min-width: 0; background: var(--card);
+  border: 1px solid var(--border-input); border-radius: var(--r-card);
+  padding: 10px 12px; color: var(--text-primary); font-size: 12.5px; line-height: 1.4;
+  font-family: var(--font-ui); outline: none; resize: none; overflow-y: auto;
 }
-.composer input::placeholder { color: var(--text-tertiary); }
+.n-field::placeholder { color: var(--text-tertiary); }
+/* Only the bottom composer is a ROW, where the field takes the free space. In
+   the column layouts (an inline reply, an edit in place) `flex: 1` would
+   stretch the field's HEIGHT and fight the auto-grow. */
+.composer .n-field { flex: 1; }
+.n-field:focus-visible { border-color: var(--border-emphasis); }
 
 /* ---- bottom sheet / desktop dialog (DT-2) --------------------------------------- */
 .sheet-backdrop { position: fixed; inset: 0; background: rgba(0, 0, 0, .45); z-index: 40; }
@@ -358,18 +361,18 @@
   .list-row { min-height: 44px; }
 
   /* --- the opt-outs: small controls that take borrowed space instead ------ */
-  .person-chip, .notes-chip, .chip-notes,
+  .person-chip, .notes-chip, .chip-notes, .note-action, .f-chip,
   .dock .day-tab, .day-rail .day-tab,
-  .back-btn, .gear-btn, .pin-btn, .fest-link, .sheet-close,
+  .back-btn, .gear-btn, .fest-link, .sheet-close,
   button.avatar,
   .toggle,      /* a 40x24 switch; stretching its track to 44 breaks it, and the
                  * whole row is the tap target anyway */
   .card button {
     min-height: 0;
   }
-  .person-chip, .notes-chip, .chip-notes,
+  .person-chip, .notes-chip, .chip-notes, .note-action, .f-chip,
   .dock .day-tab, .day-rail .day-tab,
-  .back-btn, .gear-btn, .pin-btn, .fest-link, .sheet-close,
+  .back-btn, .gear-btn, .fest-link, .sheet-close,
   button.avatar {
     position: relative;
   }
@@ -377,7 +380,7 @@
    * unusable (17-28px); horizontal stays at -2px so one chip cannot swallow the
    * tap meant for its neighbour — in a crowd, that is a pick recorded under the
    * wrong person's name. */
-  .person-chip::after, .notes-chip::after,
+  .person-chip::after, .notes-chip::after, .note-action::after, .f-chip::after,
   .dock .day-tab::after, .day-rail .day-tab::after {
     content: ''; position: absolute; inset: -14px -2px;
   }
@@ -385,10 +388,17 @@
    * miss — and they are isolated, so they can take the horizontal room.
    * `button.avatar` on purpose: the avatars inside cards are spans, and giving
    * THEM a hit area would steal taps from the pick underneath. */
-  .back-btn::after, .gear-btn::after, .pin-btn::after, .fest-link::after,
+  .back-btn::after, .gear-btn::after, .fest-link::after,
   .sheet-close::after, .chip-notes::after, button.avatar::after {
     content: ''; position: absolute; inset: -14px -12px;
   }
+
+  /* The ZOOMED card is a deliberate preview with room — its chips get real
+   * height and their own borrowed space (outranks the card-wide ::after
+   * cancel below by specificity). The sheet header's chips grow the same way. */
+  .zoom-card .f-chip { height: 30px; padding: 0 13px; font-size: 11px; position: relative; min-height: 0; }
+  .zoom-card .f-chip::after { content: ''; position: absolute; inset: -7px; }
+  .sheet-card .f-chip { height: 28px; padding: 0 13px; font-size: 11px; }
 
   /* Controls INSIDE a card get neither: the card IS the tap target, and an
    * expanded edit-note button would steal taps meant for the pick underneath it,
@@ -505,6 +515,18 @@
   backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
   padding-bottom: 4px;
 }
+/* The strip's GEOMETRY is the day grids' geometry, full stop: it carries the
+ * `times-wrap` class so the ≥720 full-viewport rule above sizes it exactly
+ * like every day grid — same width, same asymmetric padding — and its
+ * columns land over theirs. The 2026-08-30 "full-bleed" override here
+ * (shell-box margins) broke that on any window wider than the shell: the
+ * strip went narrower than the grids, its columns shrank out of alignment
+ * (a stage head over the wrong column), and cards scrolled out beside it
+ * (Kevin's screenshots, 2026-08-31). Below 720 the wrap has no special
+ * geometry, so the strip bleeds to the shell box on its own. */
+@media (max-width: 719.98px) {
+  .stage-strip { margin-inline: calc(-1 * var(--sp-gutter)); padding-inline: var(--sp-gutter); }
+}
 .stage-strip .strip-rail { width: 40px; flex: none; } /* aligns with .times-rail */
 .stage-strip .times-scroll { scrollbar-width: none; }
 .stage-strip .times-scroll::-webkit-scrollbar { display: none; }
@@ -555,6 +577,217 @@
 .seg { border: 1px solid var(--border-input); color: var(--text-secondary); font-weight: 600;
        font-size: 12px; padding: 7px 13px; border-radius: var(--r-pill); background: none; cursor: pointer; }
 .seg.active { background: rgba(var(--brand), .14); color: #fff; border-color: transparent; font-weight: 700; }
+
+
+/* ---- threads + the grown card (2026-08-29 round) --------------------------------- */
+/* Aura notes: no boxes — a note is text on a wash of its author's hue (set as
+ * --wash per note by notes.js), name above the words, one left gutter, replies
+ * one gutter in. Pinned = a stronger wash, never a stroke. */
+.n-list { display: flex; flex-direction: column; }
+.n-thread { display: flex; flex-direction: column; gap: 6px; }
+.n-thread + .n-thread { margin-top: 14px; }
+.n-list.grouped .n-thread + .n-thread { margin-top: 10px; }
+.n-replies { display: flex; flex-direction: column; gap: 6px; margin-left: 22px; }
+.n-note { display: grid; grid-template-columns: 20px 1fr; column-gap: 10px; align-items: start;
+          padding: 9px 12px 9px 10px; border-radius: 12px;
+          background: radial-gradient(150% 200% at 0% 40%, var(--wash) 0%, transparent 68%); }
+.n-note .avatar { margin-top: 1px; }
+.n-reply { grid-template-columns: 16px 1fr; padding: 7px 12px 7px 10px; }
+.n-body { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.n-head { display: flex; align-items: baseline; gap: 7px; flex-wrap: wrap;
+          color: var(--text-secondary); font-size: 10.5px; font-weight: 600; }
+.n-head .n-who { color: var(--text-primary); font-weight: 700; font-size: 12.5px; }
+.n-text { color: var(--text-primary); font-size: 13.5px; line-height: 1.42; overflow-wrap: anywhere; }
+.n-note.stub { background: var(--card); }
+.n-note.stub .stub-avatar { width: 20px; height: 20px; border-radius: var(--r-pill);
+                            border: 1px dashed var(--border-emphasis); }
+.n-note.stub .n-text { color: var(--text-tertiary); font-style: italic; font-size: 12px; }
+.n-empty { color: var(--text-tertiary); font-size: 12px; font-weight: 600; text-align: center; padding: 10px 0; }
+
+/* Actions live at the HEAD line's trailing edge (Kevin, 2026-08-30) and are
+ * revealed by hover, a press-and-hold, or keyboard focus — two quiet words at
+ * most: Pin on any root, plus Edit on your own. The head row already spans the
+ * note, so revealing reserves nothing and moves nothing; an earlier build put
+ * this line UNDER the words and had to hold 15px open on every note forever to
+ * stop the list shoving itself around under the cursor. */
+.n-head .note-action { text-decoration: none; font-size: 10.5px; }
+.n-head .note-action.on { color: var(--tonal-text); }
+/* The reply count is a FACT about the note, sitting with the name and the time
+ * — brighter than an action, never hidden, and still the way into the fold. */
+.n-head .n-count { color: var(--text-secondary); font-weight: 700; }
+.n-acts { margin-left: auto; display: inline-flex; align-items: baseline; gap: 6px;
+          opacity: 0; transform: translateY(-2px); pointer-events: none;
+          transition: opacity .14s cubic-bezier(.4, 0, .2, 1),
+                      transform .14s cubic-bezier(.2, 1.15, .35, 1); }
+/* Three doors to the same two words, so nobody is locked out: the mouse hovers,
+ * a finger holds (notes.js sets .revealed), a keyboard simply arrives — the
+ * focus fallback is required, not optional. `.open` is for editing, where the
+ * line is a MODE and not a hover state. */
+.n-note.revealed > .n-body > .n-head > .n-acts,
+.n-note:focus-within > .n-body > .n-head > .n-acts,
+.n-acts.open { opacity: 1; transform: none; pointer-events: auto; }
+@media (hover: hover) and (pointer: fine) {
+  .n-note:hover > .n-body > .n-head > .n-acts { opacity: 1; transform: none; pointer-events: auto; }
+}
+
+/* The head-line actions have graduated into the floor's isolated-glyph case.
+ * `.note-action` takes the TIGHT borrowed box (-14px -2px, up at the 44px floor
+ * block) because it used to sit in a RUN of four tokens — Edit · Delete · Reply
+ * · Pin — where a generous horizontal grab would let one swallow the tap meant
+ * for its neighbour. That reason is gone: there are at most two now, alone at
+ * the note's trailing edge with nothing to their right, and measured at
+ * 16.3 x 12px the tight box left them 40 x 20 — under the floor in BOTH
+ * directions. This is the "isolated, so they can take the horizontal room"
+ * upgrade the floor's own comment describes, and per its rule the list only
+ * ever upgrades. It lives here rather than in the floor block so the notes'
+ * selectors stay together; the floor block is the place to look for the others.
+ *
+ * Nothing to collide with: a note carries at most two actions, only ONE note is
+ * ever revealed at a time (notes.js), and an unrevealed note's actions are
+ * `pointer-events: none` — so the grown box can only ever overlap dead space. */
+@media (pointer: coarse) {
+  .n-head .n-acts .note-action::after { content: ''; position: absolute; inset: -16px -14px; }
+}
+
+/* THE OPEN DOOR: every thread ends with this row, always visible, in the
+ * current viewer's own colour at a whisper. It is the whole reply affordance —
+ * no note carries a Reply, so "reply to a reply" cannot be asked for and one
+ * level deep holds structurally. 44px on both platforms: this is a primary
+ * target, not a text link, so it takes real height rather than borrowed space. */
+.n-door { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 44px;
+          padding: 0 12px 0 10px; border: none; border-radius: 12px; cursor: pointer;
+          text-align: left; font-family: var(--font-ui);
+          background: radial-gradient(150% 200% at 0% 50%, var(--wash) 0%, transparent 68%);
+          transition: background-color .14s cubic-bezier(.4, 0, .2, 1); }
+.n-door .avatar { opacity: .75; }
+.n-door-label { color: var(--text-tertiary); font-size: 12.5px; font-weight: 600; }
+@media (hover: hover) and (pointer: fine) {
+  .n-door:hover { background-color: rgba(255, 255, 255, .035); }
+  .n-door:hover .avatar { opacity: 1; }
+  .n-door:hover .n-door-label { color: var(--text-secondary); }
+}
+/* The composer the door became, and the bar under any field: the safe actions
+ * lead, and in an editor Delete sits at the far end away from Save — never its
+ * neighbour. The counter closes the line, once it is news. */
+.n-inline { display: grid; grid-template-columns: 16px 1fr; column-gap: 10px;
+            align-items: start; padding: 4px 12px 2px 10px; overflow: hidden; }
+.n-inline-body { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.n-fieldbar { display: flex; align-items: baseline; gap: 6px; min-height: 15px;
+              color: var(--text-tertiary); font-size: 10.5px; font-weight: 600; }
+.n-fieldbar .note-action { text-decoration: none; font-size: 10.5px; }
+.n-fieldbar .note-action.on { color: var(--tonal-text); }
+.n-fieldbar .n-del { color: var(--danger); }
+.n-left { margin-left: auto; color: var(--text-tertiary); font-size: 10px; font-weight: 700;
+          font-variant-numeric: tabular-nums; }
+.n-left.at-cap { color: var(--danger); }
+
+/* The sheet's header is the card, grown once more — centred, breathing only
+ * when the card would (.animated; reduced-motion and low-power still win). */
+.sheet-card { position: relative; overflow: hidden; display: flex; flex-direction: column; gap: 7px;
+              align-items: center; text-align: center; padding: 16px 16px 17px;
+              border: 1px solid var(--hairline); border-radius: 12px; }
+.sheet-card.animated { background-size: 180% 180%; animation: gradShift 12s ease-in-out infinite; }
+.sheet-card > * { position: relative; }
+.sheet-card .sheet-close { position: absolute; top: 12px; right: 12px;
+                           background: rgba(10, 8, 18, .55); border-color: rgba(255, 255, 255, .22); color: #fff; }
+.sheet-card .f-name { font-size: 19px; font-weight: 700; color: var(--text-primary); line-height: 1.2; }
+/* The grown lines (sub · who · chips) travel as one block so the zoom can
+ * fade them together; the sheet header lays them out the same way. */
+.f-grown { display: flex; flex-direction: column; align-items: center; gap: 7px; min-width: 0; }
+.f-sub { color: rgba(255, 255, 255, .78); font-size: 11.5px; font-weight: 600;
+         display: inline-flex; align-items: center; gap: 6px; }
+/* WHERE gets its own row under WHEN; a venue with a maps entry is a door. */
+.f-where { color: rgba(255, 255, 255, .85); font-size: 11.5px; font-weight: 600;
+           display: inline-flex; align-items: center; gap: 5px; }
+a.f-where { color: #fff; text-decoration: none; border-bottom: 1px solid rgba(255,255,255,.35); padding-bottom: 1px; }
+a.f-where:hover { border-bottom-color: rgba(255,255,255,.75); }
+.f-where .pin { flex: none; opacity: .85; }
+/* The same door in the wall header and the Settings fest card: inherits the
+ * line's colour and size, underlined only when it actually opens a map. */
+.fest-place { display: inline-flex; align-items: center; gap: 3px; color: inherit; }
+a.fest-place { text-decoration: none; border-bottom: 1px solid currentColor; padding-bottom: 1px; opacity: .92; }
+a.fest-place:hover { opacity: 1; }
+.fest-place .pin { flex: none; opacity: .8; }
+.day-sub { color: var(--text-tertiary); margin-top: -6px; }
+.f-who { display: flex; flex-wrap: wrap; justify-content: center; gap: 5px 6px; }
+/* Quieter than the words around them — a crew can be eight people
+ * (Kevin, 2026-08-30: "not worth making them way bigger than the note text"). */
+.f-pill { display: inline-flex; align-items: center; gap: 5px; color: #fff; font-size: 11px;
+          font-weight: 600; padding: 0 9px; height: 20px; border-radius: var(--r-pill); line-height: 1; }
+.f-pill.you { font-weight: 800; }
+.f-pill b { font-size: 7.5px; font-weight: 800; letter-spacing: .1em; opacity: .9; line-height: 1;
+            transform: translateY(1px); /* optical: small caps sit on the name's baseline */ }
+.f-chips { display: flex; justify-content: center; align-items: center; gap: 6px; flex-wrap: wrap; }
+.f-chip { display: inline-flex; align-items: center; gap: 4px; height: 17px; padding: 0 9px;
+          font-size: 10px; font-weight: 800; color: #fff; border-radius: var(--r-pill); border: none;
+          line-height: 1; font-family: inherit; }
+.f-chip.notes { border-radius: var(--r-bubble); background: rgba(108, 91, 212, .62); }
+button.f-chip.notes { cursor: pointer; }
+.f-chip.spot { background: rgba(18, 138, 62, .6); }
+
+/* The sheet's bottom composer writes NEW notes, and only those — its reply
+ * state retired 2026-08-30 when replying moved inline, to the thread you
+ * pressed. It can no longer re-aim a typed draft at a root you scrolled past. */
+.composer-wrap { display: flex; flex-direction: column; gap: 4px; }
+
+/* The day whisper: nothing until someone writes, then the newest note as one
+ * soft wash at the day's door; the rule's ✎ chip stays the add door. */
+.day-whisper { display: flex; align-items: center; gap: 9px; width: 100%; min-width: 0; border: none;
+               cursor: pointer; text-align: left; color: var(--text-body); font-family: var(--font-ui);
+               font-size: 12px; line-height: 1.35; margin: -4px 0 2px; padding: 7px 12px 7px 10px;
+               border-radius: 12px; background: radial-gradient(150% 200% at 0% 50%, var(--wash) 0%, transparent 68%); }
+.day-whisper .who { color: var(--text-primary); font-weight: 700; flex: none; }
+.day-whisper .text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.day-whisper .more { color: var(--text-tertiary); font-size: 10.5px; font-weight: 700; flex: none; white-space: nowrap; }
+.add-first-note { align-self: flex-start; }
+
+/* The zoom (2026-08-30): an OVERLAY, never a reflow. card-facts.js draws the
+ * grown card in this fixed layer, centred on the resting card and clamped to
+ * the viewport; the resting card's CONTENT steps back underneath while its
+ * wash stays (opacity on children, not visibility — the card keeps focus and
+ * its accessible name). Nothing on the wall changes size, so siblings never
+ * move. The bloom (scale + fade) and the grown lines' cascade run through
+ * the Web Animations API; the shadow eases in
+ * here. z-index 36: above the day rail (25) and the dock (30), below sheets
+ * (40) and toasts (50). */
+#zoom-layer { position: fixed; inset: 0; z-index: 36; pointer-events: none; }
+.zoom-slot { position: absolute; width: max-content; pointer-events: none; }
+.zoom-slot::before { content: ''; position: absolute; inset: 0; border-radius: var(--r-card);
+                     box-shadow: 0 10px 28px rgba(0, 0, 0, .38); opacity: 0; transition: opacity .38s ease; } /* softened 2026-08-30 — 18/50/.55 read as a second card stacked behind a bright aura */
+.zoom-slot.shown::before { opacity: 1; }
+/* The hit target is the whole grown box from the first frame; the SURFACE
+ * under it carries the wash and the border — so a tap lands while the card
+ * is still blooming. */
+.zoom-card { position: relative; box-sizing: border-box; min-height: inherit; pointer-events: auto;
+             display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 7px;
+             padding: 12px 14px 12px; text-align: center; cursor: pointer;
+             -webkit-touch-callout: none; user-select: none; color: inherit; font-family: inherit; }
+.zoom-card .z-surface { position: absolute; inset: 0; overflow: hidden; border: 1px solid var(--hairline); border-radius: var(--r-card); }
+.zoom-card .z-surface.animated { background-size: 180% 180%; animation: gradShift 12s ease-in-out infinite; }
+.zoom-card > :not(.z-surface) { position: relative; z-index: 2; } /* content over both surfaces */
+.zoom-card .f-name { font-size: 18px; font-weight: 700; line-height: 1.2; color: var(--text-primary); } /* the zoom's hero: the name grows (13.5–15px at rest) */
+/* After a pick the old wash lingers over the new one and thins away. */
+.zoom-card .z-surface-old { pointer-events: none; z-index: 1; }
+/* Every grown row is centred, same as the sheet card. (The 2026-08-30
+ * "corner-true" experiment pushed people right and chips left; with one
+ * pill and one chip it read as two strays flung to the edges — Kevin,
+ * 2026-08-31. The corner CONNECTION lives in the slide-in directions,
+ * not in resting alignment.) */
+/* While zoomed, the resting card's CONTENT steps back but its wash stays —
+ * the wall keeps its colour under the bloom and there is never a hole.
+ * (Hiding the whole card was why a frame-0 twin had to repaint it inside
+ * the overlay — one rendering of everything now.) The transition lives on
+ * the BASE state, not on .zoom-source: a state-only transition dies with
+ * the class, so the restore snapped to full opacity under the still-fading
+ * overlay — a double print on the way out (Codex gate, 2026-08-30). The
+ * .09s matches card-facts.js MATERIALIZE_MS. Low Power's global transition
+ * kill already covers this; reduced-motion gets its own. */
+.card > * { transition: opacity .09s ease; }
+.card.zoom-source > * { opacity: 0; }
+@media (prefers-reduced-motion: reduce) { .card > * { transition: none; } }
+
+/* Afters/event cards: the day and time on one line, the venue on the next. */
+.card.timed .time { white-space: pre-line; }
 
 /* ---- wall filters + the now line (2026-08-27) ----------------------------------- */
 /* People filter: selected chips wear a ring, the rest step back. On the

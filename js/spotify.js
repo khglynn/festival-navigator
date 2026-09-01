@@ -23,7 +23,14 @@ const redirectUri = () => `${location.origin}/spotify-callback`;
 // known aliases, which silently broke OAuth on any new domain: staging sent
 // Spotify a stage.fest redirect URI and got "redirect_uri: Not matching
 // configuration" (Kevin, 2026-07-12). Localhost stays in place for dev.
-const CANONICAL_HOST = 'fest.kevinhg.com';
+// The value lives in index.html's fn-canonical-host meta (ONE place a fork
+// edits — issue #6, Ray Perfetti, 2026-07-24; shipped 2026-08-30). The
+// architecture is unchanged and deliberate: Spotify only accepts
+// pre-registered exact-match redirect URIs, so every non-canonical host hops.
+// The literal is the fallback for Node tests and a stripped <head>.
+const CANONICAL_HOST = (typeof document !== 'undefined'
+  && document.querySelector('meta[name="fn-canonical-host"]')?.content) || 'fest.kevinhg.com';
+export { CANONICAL_HOST };
 const LOCAL_HOSTS = ['localhost', '127.0.0.1'];
 
 // `sp=connect` means "the person already pressed Connect — just keep going".

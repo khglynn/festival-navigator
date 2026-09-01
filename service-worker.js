@@ -1,6 +1,9 @@
 // Festival Navigator service worker — offline-first app shell.
-// Bump CACHE_VERSION whenever you change cached static assets.
-const CACHE_VERSION = 'festival-nav-v42'; // v42 = wall filters (people chips, stage solo) + the now line + day-of auto-scroll, plus the UI-walk fixes
+// Bump CACHE_VERSION whenever you change cached static assets — `node
+// scripts/sw-stamp.mjs` does the bump and re-stamps; the suite fails when the
+// stamp is stale, so a silent asset change can never ship under an old version.
+const CACHE_VERSION = 'festival-nav-v71'; // v44 = the notes/desktop round: threads, the zoom morph, the day whisper, aura sheets; pick-as moved to Settings (v43 was its first cut)
+const ASSET_STAMP = 'd8990cf6'; // sha1 of APP_CORE — node scripts/sw-stamp.mjs after any cached-asset change (the suite checks it)
 
 // Festival JSONs live in their OWN cache, outside the version-keyed shell
 // cache — because activate deletes every old version cache wholesale, and
@@ -33,10 +36,12 @@ const APP_CORE = [
   '/js/overlap.js',
   '/js/parse.js',
   '/js/util.js',
+  '/js/errlog.js',
   '/js/spotify.js',
   '/js/name-rules.mjs',
   '/js/v3/app.js',
   '/js/v3/wall.js',
+  '/js/v3/card-facts.js',
   '/js/v3/notes.js',
   '/js/v3/settings.js',
   '/js/v3/tools.js',

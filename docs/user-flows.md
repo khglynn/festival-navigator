@@ -79,8 +79,8 @@ returning member on a new device recognizes themselves in one glance.
    sections (or THE LINEUP when days are unknown), artist card grid.
 2. Tap a card → pick cycle 0→1→2→3→must→0; card aura + who-corner update
    instantly; tap-out-of-must shows the undo toast.
-3. Search filters across all days; sort (Billing / A→Z / My picks / Crew
-   favorites) reorders; both work together.
+3. Search filters across all days; sort (Billing / A→Z / My picks / Most
+   picked) reorders; both work together.
 **Expected:** sort control is a styled menu (not a native select), keyboard
 accessible; an artist billed on multiple days appears under EACH of those days
 (never a combined "Day X & Day Y" section); grid density and type scale to the
@@ -100,22 +100,46 @@ viewport (no vast dead space on desktop).
 full-bleed (headings stay at reading width) and scrolls horizontally with
 scroll-snap on mobile; desktop shows as many columns as fit the window.
 
-## F6 · Notes — artist scope
+## F6 · Notes — artist scope (via the zoom, one grammar across mouse and touch — 2026-08-30)
 
-1. Mobile: long-press a card (~500ms) → artist sheet. Desktop: hover reveals a
-   note affordance on the card; click opens the same surface.
-2. Sheet shows the artist's notes (author-attributed, pinnable per-device) +
-   composer.
-3. Save → note syncs to the crew; note counts update everywhere.
+1. Hover with intent (mouse, after a real delay) or hold (touch, ~500ms)
+   shows the zoom: the card grows into an overlay centered on it — the wall
+   never reflows or moves underneath.
+2. A tap or click ON THE ZOOMED CARD picks: the level cycles, the pills
+   update live, and the zoom stays put, so repeated taps preview the next
+   level without re-opening anything. The notes chip inside the zoom is the
+   one control that doesn't pick — it's the door to the artist sheet. The
+   corner note-count chip on a resting (unzoomed) card is also always a
+   one-tap door to the sheet.
+3. Tapping outside the zoom, Escape, or scrolling puts the zoom away.
+4. The sheet opens with the card itself as its header (grown once more, ✕ in
+   its corner), then the conversation: threads one level deep. At rest a note
+   is a name, a time and words. Hover (mouse), press-and-hold (touch) or
+   keyboard focus fades in one line of plain words under them — `Reply · Pin`,
+   or `Edit · Reply · Pin` on your own. Replies indent one gutter under their
+   root; a deleted root leaves a quiet stub so its replies keep their context,
+   and that stub can still be replied to.
+5. Reply opens a composer inline, at the foot of the thread you pressed — where
+   the note will actually land. Replying to a reply pre-fills `@Name` and still
+   posts flat, one level. The sheet's bottom composer writes NEW notes only.
+6. Edit turns the note's own words into a field in place, and the cue line
+   becomes `Save · Cancel · Delete` — delete has no other door, and keeps its
+   two-tap "Sure?" arm.
+7. Save → note syncs to the crew; note counts (replies included) update
+   everywhere.
 **Expected:** mobile = bottom sheet; desktop = centered dialog (never a
 full-width strip pinned to the bottom of a wide viewport). Only your own notes
-can be deleted (tombstone).
+can be edited or deleted (tombstone). A pinned root sorts to the top and shows
+a reply count, never its thread, until tapped open — and replying into a folded
+thread opens it, so you can see where the words land.
 
 ## F7 · Notes — day scope
 
 1. Each day header carries a notes affordance (with count) → opens that day's
    notes surface (same sheet/dialog pattern).
-2. An in-flow composer also lives under each day's grid.
+2. The WHISPER (2026-08-29): nothing sits inline until someone writes; then
+   the newest note (root or reply) rides as one soft line at the day's door,
+   and tapping it opens the day's notes. Composing happens in the sheet.
 **Expected:** both paths write the same day-scoped notes; day notes visible
 from the day header, not only by scrolling past the whole day.
 
@@ -123,10 +147,11 @@ from the day header, not only by scrolling past the whole day.
 
 1. Notes chip (top of wall, with total count) → ALL NOTES view: festival-note
    composer at top, then sections — This festival / each day / each artist.
-2. Wall bottom also has the NOTES · <FEST> section with composer.
+2. Wall bottom carries NOTES · <FEST> as a whisper once festival notes exist
+   (on a lineup-less fest, a quiet "+ Add a note" keeps the invitation).
 **Expected:** the all-notes view is the notes HOME: you can always ADD a
 festival note right there (including from the empty state); scope sections are
-legible (D3); empty state may hint at long-press but never as the only path.
+legible (D3); empty state may hint at the hold but never as the only path.
 
 ## F9 · Day navigation
 
@@ -148,8 +173,10 @@ are open; refresh at any point restores the same surface or its nearest parent.
 
 ## F11 · Settings — one page, two doors
 
-1. Gear (or dock fest link) → Settings: YOU door (name, color, your Spotify)
-   and CREW door (members, crew name, festivals, share link, danger zone).
+1. Gear (or dock fest link) → Settings: YOU door (name, color, your Spotify —
+   and, since 2026-08-29, the ONLY place to switch who this device picks as:
+   the wall repaints for the new identity) and CREW door (members, crew name,
+   festivals, share link, danger zone).
    The festivals block lists YOUR boards (same rows as the landing, date-
    sorted): same-circle fests switch in place, boards in other circles open
    like landing rows, "+ Add a festival" goes to the shared multi-pick page,

@@ -2,9 +2,10 @@
   "id": "acl-2025",
   "name": "ACL Music Festival",
   "year": "'25",
-  "subtitle": "Zilker Park · both weekends",
+  "subtitle": "Zilker Park",
   "location": "Austin, TX",
-  "dates": "October 3-5 and October 10-12, 2025",
+  "locationUrl": "https://maps.google.com/?q=Zilker+Park,+2100+Barton+Springs+Rd,+Austin",
+  "dates": "Oct 3–5 & 10–12, 2025",
   "accent": "250, 204, 21",
   "status": "archived",
   "artists": [

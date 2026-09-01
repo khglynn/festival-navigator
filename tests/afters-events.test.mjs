@@ -114,13 +114,13 @@ test('lineup wall: event entries carry a venue · time sub-label; plain entries 
 
   const overmonos = cards.filter((c) => c.dataset.artist === 'Overmono');
   assert.equal(overmonos.length, 2, 'one card per appearance, same pick identity');
-  assert.deepEqual(overmonos.map(subOf).sort(), ['', 'Sun · Public Works · 10 PM - 2 AM'],
-    'fest card stays bare; the afters card says where and when');
+  assert.deepEqual(overmonos.map(subOf).sort(), ['', 'Sun · 10 PM - 2 AM\nPublic Works'],
+    'fest card stays bare; the afters card says when, then where (two lines, 2026-08-29)');
 
   const hmds = cards.filter((c) => c.dataset.artist === 'Horse Meat Disco');
   assert.equal(hmds.length, 2, 'combined "Afters & Folsom" splits into both sections');
   for (const c of hmds) {
-    assert.equal(subOf(c), 'Fri · Public Works · 9 PM - 3 AM');
+    assert.equal(subOf(c), 'Fri · 9 PM - 3 AM\nPublic Works');
     assert.ok(c.classList.contains('timed'), 'sub-label cards get the stacked layout');
   }
 

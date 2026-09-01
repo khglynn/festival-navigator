@@ -73,10 +73,39 @@ const FEST_ID_RE = /^[a-z0-9-]{1,64}$/;
 // member's phone opens their link and lands on their own circle, picks
 // already theirs (Kevin note 5, 2026-07-12).
 export function crewLink(token, festId, meName) {
-  const f = festId && FEST_ID_RE.test(festId) ? `&f=${festId}` : '';
+  const ok = Boolean(festId) && FEST_ID_RE.test(festId);
+  // A fest-scoped share link puts the festival in the PATH:
+  //   https://fest.kevinhg.com/f/lost-lands-2026#g=<token>&f=lost-lands-2026
+  // A human glancing at that in a chat reads the festival before the noise
+  // starts, which is the whole reason this work exists.
+  //
+  // It is a path under /f and NOT `/` with a query, and that is not a style
+  // choice. Vercel gives the filesystem precedence over `rewrites` — its own
+  // words: "The `source` property should NOT be a file because precedence is
+  // given to the filesystem prior to rewrites being applied." So a rewrite on
+  // `/` can never fire while index.html exists: the CDN answers first
+  // (measured on a live preview 2026-08-30 — `x-vercel-cache: HIT`, default
+  // OG block, function never invoked). Nothing sits at /f, so the rewrite
+  // owns it and api/share.js can serve the shell with this festival's preview
+  // tags. tests/brand-assets.test.mjs asserts that path stays file-free.
+  //
+  // The id ALSO stays in the hash, and that copy is load-bearing rather than
+  // decorative: a truncated or unknown /f/<id> redirects to `/`, the browser
+  // carries the fragment across, and the hash copy is the only thing left
+  // telling the app which festival the link meant. It is also what the
+  // running app reads (festFromHash), so the boot path never changed.
+  //
+  // The TOKEN never joins any of it. A path or query lands in platform access
+  // logs and referrer headers, and a crew token IS that crew's data
+  // (CLAUDE.md, with teeth). A festival id is public catalogue information; a
+  // token is not. A crew-wide link with no festival keeps the plain `/#g=`.
+  const base = ok ? `${location.origin}/f/${festId}` : `${location.origin}/`;
+  const f = ok ? `&f=${festId}` : '';
   const m = meName ? `&me=${encodeURIComponent(meName)}` : '';
-  return `${location.origin}/#g=${token}${f}${m}`;
+  return `${base}#g=${token}${f}${m}`;
 }
+
+
 
 // The member a personal invite link is for (#g=<token>&me=<name>). Read at
 // boot, BEFORE enterApp's replaceState strips the hash down to #g=.

@@ -10,13 +10,19 @@ import * as spotify from '../spotify.js';
 import * as model from './model.js';
 import { loadFestivalIndex, loadFestival, loadCustomFestivals, FESTIVAL_INDEX, defaultFestivalId } from '../festivals.js';
 import { renderWall, refreshCard, showUndoToast, showToast, wireScrollspy, colorIndexOf, groupByDay, knownDaysOf, scheduledWeekendOf, extraSectionsOf, positionNowLines, scrollToNowLine } from './wall.js';
-import { loadPeopleFilter, savePeopleFilter, togglePerson, pruneToActive, loadSolo, saveSolo, chipGesture, armedName, cancelHold, ARM_MS } from './filters.js';
+import { loadPeopleFilter, savePeopleFilter, togglePerson, pruneToActive, loadSolo, saveSolo } from './filters.js';
 import { scrolledBefore, rememberScrolled, dayOfScrollKey } from './now.js';
 import { disclosureFold, eqLoader, festRow } from './tools.js';
-import { openArtistSheet, openDayNotes, openAllNotes, closeSheet, refreshOpenSheet, sheetChrome, dialogize, rememberOpener } from './notes.js';
+import { openArtistSheet, openDayNotes, openAllNotes, openFestNotes, closeSheet, refreshOpenSheet, sheetChrome, dialogize, rememberOpener } from './notes.js';
 import { renderSettings, appSettings, openSubviewByKey } from './settings.js';
 import { onStorageWriteFail, saveLS, getLS, errorText } from '../util.js';
-import { router } from './router.js';
+import { router, encodeNotesKey, decodeNotesKey } from './router.js';
+import { wireCardZoom, wireCardFocusZoom, zoomCard, unzoom, dismissZoom, zoomedCard, zoomContains, zoomSnapshot, refreshZoom, festPlaceLine } from './card-facts.js';
+import { hookGlobalErrors } from '../errlog.js';
+// The crash journal listens from the first module tick — an error during
+// boot is exactly the kind nobody can describe later (2026-08-31).
+hookGlobalErrors();
+import { dayLabelParts } from '../time.js';
 import { createSortControl } from './sort-control.js';
 import { nameProblem } from '../name-rules.mjs';
 import { startFavicon, stopFavicon } from './favicon.js';
@@ -45,16 +51,52 @@ const ctx = {
     repaintWall();
   },
   onTap: handleTap,
-  onOpenNotes: (artist) => {
-    openArtistSheet(artist, ctx, onNotesChange);
-    router.push(`sheet:notes:${artist}`);
+  onOpenNotes: (artist, occ = null) => {
+    unzoom({ why: 'notes sheet opened' });
+    openArtistSheet(artist, ctx, onNotesChange, occ);
+    // The occurrence rides in the route key (router.encodeNotesKey — a tagged
+    // payload no name can imitate), so back, forward and a refresh reopen
+    // THIS set for an artist who plays twice.
+    router.push(encodeNotesKey(artist, occ));
   },
   onOpenDayNotes: (day) => {
     openDayNotes(day, ctx, onNotesChange);
     router.push(`sheet:day:${day}`);
   },
+  onOpenFestNotes: () => {
+    openFestNotes(ctx, onNotesChange);
+    router.push('sheet:fest');
+  },
   onNotesChange: () => onNotesChange(),
+  // ---- the zoom (2026-08-29): hover with intent on a mouse, hold on touch ----
+  // wall.js hands every card here; card-facts.js owns the timing and the grow.
+  wireZoom: (el, artist, occ) => {
+    const opts = { onOpenNotes: (a) => ctx.onOpenNotes(a, occ), occ };
+    wireCardZoom(el, artist, ctx, opts);
+    wireCardFocusZoom(el, artist, ctx, opts);
+  },
+  // A hold on touch grows the card the same way a hover does; a tap on the
+  // grown card then PICKS, like a tap on the resting one (Kevin, 2026-08-30 —
+  // one grammar on both surfaces). Tap outside, Escape or a scroll put it away.
+  onPeek: (artist, el, occ) => zoomCard(el, artist, ctx, { onOpenNotes: (a) => ctx.onOpenNotes(a, occ), source: 'touch', occ }),
 };
+
+// One zoom at a time, dismissed the way previews are everywhere: a tap or
+// press anywhere outside it (the resting card AND its overlay), or Escape.
+// Capture-phase so it runs before the tap it is judging. A press OUTSIDE is
+// a plain close, never a "stay away" — the pointer is by definition not on
+// the card, so nothing would re-grow it, and marking the card dismissed
+// poisoned its next hover: leave the overlay, click elsewhere before the
+// grace close fires, and the first re-entry did nothing (Codex gate,
+// 2026-08-31). Escape keeps the mark — the hand is still on the card there.
+document.addEventListener('pointerdown', (e) => {
+  if (zoomedCard() && !zoomContains(e.target)) unzoom({ why: 'press outside the zoom' });
+}, true);
+// Escape closes ONE layer: a live zoom eats the press before any sheet or
+// router handler sees it (capture phase) — never both in one keypress.
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && zoomedCard()) { dismissZoom(); e.stopImmediatePropagation(); e.preventDefault(); }
+}, true);
 
 function onNotesChange() {
   sync.scheduleSync();
@@ -83,15 +125,21 @@ function refreshCtx() {
 // A multi-day artist has one card under EACH day — a pick must repaint every
 // sibling, or the others go stale and invite double-cycling (CORE-15).
 function refreshArtistCards(artistName) {
-  const els = document.querySelectorAll(`#wall-root .card[data-artist="${CSS.escape(artistName)}"]`);
+  const els = [...document.querySelectorAll(`#wall-root .card[data-artist="${CSS.escape(artistName)}"]`)];
   if (!els.length) { repaintWall(); return; }
   // Under a people filter that includes ME, my tap changes the filter's
   // visible set — a list card (afters, Folsom, search) must appear or
   // vanish, which a single-card refresh cannot do. A filter on OTHER people
   // is unaffected by my tap, so the cheap path stays.
   const filter = ctx.filterPeople || [];
-  if (filter.length && (filter.includes(ctx.meName) || [...els].some((el) => !el.classList.contains('cell')))) { repaintWall(); return; }
-  els.forEach((el) => refreshCard(el, artistName, ctx));
+  if (filter.length && (filter.includes(ctx.meName) || els.some((el) => !el.classList.contains('cell')))) { repaintWall(); return; }
+  // A pick while zoomed keeps the zoom: the person is still resting on the
+  // card, cycling to MUST while watching the pills. The refreshed node of THE
+  // zoomed occurrence (an artist can play twice) slides under the overlay
+  // and the overlay's lines are rebuilt in place — no intent delay, no morph.
+  const zi = els.indexOf(zoomedCard());
+  const fresh = els.map((el) => refreshCard(el, artistName, ctx));
+  if (zi >= 0 && fresh[zi] && fresh[zi].isConnected) refreshZoom(fresh[zi], ctx);
 }
 
 function handleTap(artistName) {
@@ -132,7 +180,7 @@ function applyFestTheme() {
   document.body.style.setProperty('--fest', fest.accent || '192, 132, 252');
   $('fest-name').textContent = fest.name.toUpperCase();
   $('fest-year').textContent = fest.year || '';
-  $('fest-sub').textContent = [fest.subtitle, fest.dates].filter(Boolean).join(' · ');
+  $('fest-sub').replaceChildren(festPlaceLine(fest)); // the venue is a door to the map when the fest file knows where it is
   // Dock (mobile bottom) and day rail (desktop top) carry the same fest
   // name + sync dot — one component vocabulary, two positions (note 1.1).
   $('dock-fest-name').textContent = `${fest.name.toUpperCase()} ${fest.year || ''}`.trim();
@@ -141,22 +189,14 @@ function applyFestTheme() {
   startFavicon(fest.accent, { lowPower: ctx.lowPower });
 }
 
-// A member chip has two jobs, told apart by the app's own tap/hold grammar
-// (cards: tap picks, hold opens notes):
-//   TAP  = the people filter (design option A, 2026-08-27): the wall shows
-//          only what that person picked; tap more chips to combine; your own
-//          chip is "my picks". A view, so it is cheap to try and cheap to undo
-//          (the "everyone ✕" chip at the end of the row).
-//   HOLD = the identity switch (FLOW-8 evolved, Kevin 2026-07-12), still
-//          behind its two-step confirm: the hold ARMS the chip ("Pick as
-//          Drew?"), a tap within 3s switches. Tap-to-arm was the chip's only
-//          job before the filter; a stray thumb still can't reassign the
-//          device, and Settings keeps the explicit switch for keyboards.
+// A member chip has ONE job (2026-08-29): TAP = the people filter (design
+// option A, 2026-08-27) — the wall shows only what that person picked; tap
+// more chips to combine; your own chip is "my picks". A view, so it is cheap
+// to try and cheap to undo (the "everyone ✕" chip at the end of the row).
+// Picking AS someone else lives in Settings → You: people rarely switch, and
+// a hold-arm-confirm dance on the wall was machinery for a rare act (Kevin).
 function renderPersonChips() {
   const row = $('person-chips');
-  // A rebuild mid-hold cancels the hold (the old chip is gone) and swallows
-  // its release; the person holds again if they meant it.
-  cancelHold();
   row.textContent = '';
   const filter = ctx.filterPeople || [];
   for (const [name, p] of state.activePeople()) {
@@ -171,31 +211,11 @@ function renderPersonChips() {
     if (selected) chip.classList.add('selected');
     else if (filter.length) chip.classList.add('faded');
     chip.setAttribute('aria-pressed', selected ? 'true' : 'false');
-    const canSwitch = !isMe && !!ctx.meName;
     const whose = isMe ? 'your' : `${name}'s`;
     chip.setAttribute('aria-label', selected
       ? (filter.length > 1 ? `Remove ${name} from the filter` : `Showing only ${whose} picks; tap to show everyone`)
-      : `Show only ${whose} picks${canSwitch ? '; hold to pick as them' : ''}`);
-    // The arm survives a repaint: a chip rebuilt mid-confirm re-renders armed
-    // and its next tap still switches (the arm lives in filters.js, by name).
-    if (canSwitch && armedName() === name) showArmed(chip, name);
-    const g = chipGesture(name, {
-      canSwitch,
-      onFilter: togglePeopleFilter,
-      // Arming updates THIS node in place — never a rebuild: the finger that
-      // armed it is still down, and replacing the chip under it would hand
-      // the release, as a click, to a fresh node whose gesture never saw the
-      // hold (and a click on an armed chip is the confirm). The row is
-      // rebuilt only once the arm has expired, to put the name back.
-      onArmed: () => { showArmed(chip, name); setTimeout(() => { if (armedName() !== name) renderPersonChips(); }, ARM_MS + 50); },
-      onSwitch: (n) => { switchIdentity(n); repaintWall(); },
-    });
-    if (canSwitch) {
-      chip.addEventListener('pointerdown', g.pointerdown);
-      for (const ev of ['pointerup', 'pointercancel', 'pointerleave']) chip.addEventListener(ev, g.pointerend);
-      chip.addEventListener('contextmenu', (e) => e.preventDefault()); // a long press must not open the OS callout
-    }
-    chip.addEventListener('click', g.click);
+      : `Show only ${whose} picks`);
+    chip.addEventListener('click', () => togglePeopleFilter(name));
     row.appendChild(chip);
   }
   if (filter.length) {
@@ -221,13 +241,6 @@ function renderPersonChips() {
     add.addEventListener('click', () => { openAddMember(); router.push('sheet:add-member'); });
     row.appendChild(add);
   }
-}
-
-// The armed look, in one place: the chip asks the question, and assistive
-// tech hears the question rather than the pre-arm label.
-function showArmed(chip, name) {
-  chip.textContent = `Pick as ${name}?`;
-  chip.setAttribute('aria-label', `Pick as ${name}? Tap again to switch to picking as them`);
 }
 
 function setPeopleFilter(names) {
@@ -269,8 +282,10 @@ function maybeScrollToNow() {
 // The explicit identity switch (FLOW-8), called from Settings.
 function switchIdentity(name) {
   crew.setMe(state.getCrewToken(), name);
-  refreshCtx();
-  renderPersonChips();
+  // The wall is painted per identity (your level in every label, the white
+  // stroke on your marks) — Settings → You is the ONLY switch now, so the
+  // repaint lives here, not in a caller (Codex gate, 2026-08-29).
+  repaintWall();
   renderYou();
   showToast($('toast-root'), `You’re ${name} on this device now.`);
 }
@@ -345,9 +360,10 @@ function renderDayNav() {
       return tab;
     };
     dock.appendChild(mkTab((meta?.wd || day).slice(0, 3).toUpperCase()));
-    // Rail tabs stay compact: drop parenthetical asides from verbose day keys
-    // ("Wednesday, Sept 16 (Early Arrival pre-party)" -> "WEDNESDAY, SEPT 16").
-    const railLabel = meta?.wd ? `${meta.wd} ${meta.num || ''}`.trim() : day.replace(/\s*\(.*\)\s*$/, '');
+    // Rail tabs stay compact: a verbose day key ("Wednesday, Sept 16 (Early
+    // Arrival Pre-Party)") shows its weekday only — the same split the wall's
+    // day rule and the day sheet use (time.js dayLabelParts).
+    const railLabel = meta?.wd ? `${meta.wd} ${meta.num || ''}`.trim() : dayLabelParts(day).head;
     rail.appendChild(mkTab(railLabel.toUpperCase()));
   }
   unspy();
@@ -355,8 +371,20 @@ function renderDayNav() {
 }
 
 function repaintWall() {
+  // A full repaint replaces every card. A zoom that was standing comes back
+  // on the fresh card at once (a crew-mate's pick arriving on the 25 s poll
+  // must not eat the card you are resting on); a card that is gone — a
+  // filter hid it, a fest switch — takes its zoom with it.
+  const keep = zoomSnapshot();
+  unzoom({ instant: !!keep, why: 'wall repaint' });
   refreshCtx();
   renderWall($('wall-root'), ctx);
+  if (keep) {
+    const occ = keep.occ ? JSON.stringify(keep.occ) : '';
+    const again = [...document.querySelectorAll(`#wall-root .card[data-artist="${CSS.escape(keep.artist)}"]`)]
+      .find((el) => (el.dataset.occ || '') === occ);
+    if (again) zoomCard(again, keep.artist, ctx, { ...keep, instant: true });
+  }
   renderDayNav();
   $('notes-count').textContent = String(model.totalNoteCount(state.crewDoc, ctx.fid));
   // A timetable has one true order — a sort control there would be a lie
@@ -425,7 +453,7 @@ function maybeShowCoachMark() {
   bar.style.cssText = 'display: flex; align-items: center; gap: 10px; margin-top: 11px; padding: 10px 13px; border: 1px solid var(--notes-chip-stroke); border-radius: var(--r-row); background: rgba(139, 123, 255, .07);';
   const msg = document.createElement('span');
   msg.style.cssText = 'flex: 1; color: var(--text-body); font-size: 12px; font-weight: 600; line-height: 1.45;';
-  msg.append('Tap artists to add your color. 4 taps = MUST SEE. Hold for notes. Tap a name or a stage to see just that. ');
+  msg.append('Tap artists to add your color. 4 taps = must see. Hold for details. Tap a name or a stage to see just that. ');
   const how = document.createElement('button');
   how.style.cssText = 'background: none; border: none; padding: 0; cursor: pointer; color: var(--notes-chip-text); font-size: 12px; font-weight: 700; text-decoration: underline; text-underline-offset: 2px;';
   how.textContent = 'How it works';
@@ -743,7 +771,7 @@ function openShareMoment() {
   sheetChrome(sheet, 'ONE LINK MAKES IT A CREW');
   const sub = document.createElement('div');
   sub.style.cssText = 'color: var(--text-secondary); font-size: 12.5px; line-height: 1.55;';
-  sub.textContent = `Anyone who opens it lands in ${state.crewName()} — no accounts, no setup.`;
+  sub.textContent = `Opens straight into ${state.crewName()}. No accounts needed.`;
   const link = crew.crewLink(state.getCrewToken(), state.activeFestivalId);
   if ((state.crewDoc.meta || {}).inviteFestId !== state.activeFestivalId) {
     state.recordInviteFest(state.activeFestivalId);
@@ -863,7 +891,7 @@ function openAddMember() {
     sheetChrome(sheet, `${canonical.toUpperCase()} IS IN`);
     const explain = document.createElement('div');
     explain.style.cssText = 'color: var(--text-secondary); font-size: 12.5px; line-height: 1.55;';
-    explain.textContent = `Pick for ${canonical} by switching to them in Settings → You. Or send them their own link — opening it puts your picks in their hands:`;
+    explain.textContent = `Send ${canonical} this link. Opening it makes the picks theirs.`;
     const link = crew.crewLink(state.getCrewToken(), state.activeFestivalId, canonical);
     const linkRowEl = document.createElement('div');
     linkRowEl.style.cssText = 'display: flex; gap: 8px; align-items: center;';
@@ -1740,12 +1768,17 @@ export function init() {
     if (key === 'sheet:all') openAllNotes(ctx);
     else if (key === 'sheet:share') openShareMoment();
     else if (key === 'sheet:add-member') openAddMember();
+    else if (key === 'sheet:fest') openFestNotes(ctx, onNotesChange);
     else if (key.startsWith('sheet:day:')) openDayNotes(key.slice('sheet:day:'.length), ctx, onNotesChange);
-    else if (key.startsWith('sheet:notes:')) openArtistSheet(key.slice('sheet:notes:'.length), ctx, onNotesChange);
+    else if (key.startsWith('sheet:notes:')) {
+      const d = decodeNotesKey(key);
+      if (d) openArtistSheet(d.artist, ctx, onNotesChange, d.occ);
+    }
   }, () => closeSheet());
   window.addEventListener('popstate', (e) => router.onPopState(e.state));
   $('search-input').addEventListener('input', (e) => {
     ctx.query = e.target.value;
+    unzoom({ instant: true, why: 'wall switched' });
     renderWall($('wall-root'), ctx);
     renderDayNav(); // scrollspy re-wires against the filtered day rules (gate F8)
     measureStickyChrome(); // search mode drops the stage strip — jump offset shrinks

@@ -96,6 +96,14 @@ Two files, one command:
 3. **Validate:** `node scripts/validate-festivals.mjs` — errors block CI.
    `scripts/import-festival.mjs` helps convert pasted lineup text.
 
+4. **Render its link preview:** `npm run brand`. It writes
+   `assets/og/<id>.jpg` — the card people see when the crew link is pasted into
+   iMessage or Slack — from the name, accent, location and `startsOn` you just
+   added, and regenerates the app icons from `assets/mark.svg` while it is
+   there. Commit the new `.jpg`. Skip this and the festival's link unfurls as a
+   blank grey card with no error anywhere; `tests/brand-assets.test.mjs` fails
+   the build instead, which is the only reason anyone would ever find out.
+
 Picks are keyed by artist name, and lookups are EXACT — case included
 (`picksFor`/`noteCount` do no folding; only the Spotify affinity map is
 case-insensitive). So keep names byte-stable between the lineup and scheduled

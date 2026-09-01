@@ -69,93 +69,6 @@ test('filters.js: pure helpers — toggle, pass, prune, storage that throws', ()
   assert.equal(filters.loadSolo('portola-2026'), null);
 });
 
-test('chip gesture: tap filters, hold arms pick-as, a tap while armed switches, the arm survives a chip rebuild, spectators never arm', () => {
-  let clock = 1000;
-  const timers = [];
-  const setTimer = (fn, ms) => { timers.push({ fn, at: clock + ms }); return timers.length; };
-  const clearTimer = (id) => { if (id) timers[id - 1] = null; };
-  const fire = (advance) => { clock += advance; for (const t of timers) if (t && t.at <= clock) { t.at = Infinity; t.fn(); } };
-  const log = [];
-  const wire = (name, canSwitch) => filters.chipGesture(name, {
-    canSwitch, onFilter: (n) => log.push(`filter:${n}`), onArmed: (n) => log.push(`armed:${n}`), onSwitch: (n) => log.push(`switch:${n}`),
-    now: () => clock, setTimer, clearTimer,
-  });
-  filters.disarm();
-  // a plain tap
-  let g = wire('Drew', true);
-  g.pointerdown(); fire(100); g.pointerend(); g.click();
-  assert.deepEqual(log, ['filter:Drew']);
-  // a hold: arms, and the click that ends the hold is swallowed
-  g.pointerdown(); fire(600); g.pointerend(); g.click();
-  assert.deepEqual(log, ['filter:Drew', 'armed:Drew']);
-  assert.equal(filters.armedName(clock), 'Drew');
-  // the chip is rebuilt by a remote repaint mid-confirm — the arm is not in the node
-  g = wire('Drew', true);
-  g.click();
-  assert.deepEqual(log, ['filter:Drew', 'armed:Drew', 'switch:Drew']);
-  assert.equal(filters.armedName(clock), null, 'switching disarms');
-  // an arm that expires falls back to filtering
-  g.pointerdown(); fire(600); g.pointerend(); g.click();
-  fire(3500);
-  g.click();
-  assert.equal(log[log.length - 1], 'filter:Drew');
-  // arming Ross disarms Drew
-  const ross = wire('Ross', true);
-  g.pointerdown(); fire(600); g.pointerend(); g.click();
-  ross.pointerdown(); fire(600); ross.pointerend(); ross.click();
-  assert.equal(filters.armedName(clock), 'Ross');
-  g.click();
-  assert.equal(log[log.length - 1], 'filter:Drew', "Drew's tap filters — his arm was replaced");
-  // a spectator, or your own chip: hold does nothing, tap still filters
-  filters.disarm();
-  const me = wire('HG', false);
-  me.pointerdown(); fire(600); me.pointerend(); me.click();
-  assert.equal(log[log.length - 1], 'filter:HG');
-  assert.equal(filters.armedName(clock), null);
-  // A repaint mid-hold (the row is rebuilt) cancels the hold: the old timer
-  // never arms a chip nobody can see, and the release that lands on the
-  // new chip is swallowed instead of becoming a filter toggle.
-  const before = log.length;
-  const old = wire('Drew', true);
-  old.pointerdown(); fire(200);
-  filters.cancelHold(clock);              // what renderPersonChips does on rebuild
-  fire(600);                              // the old timer would have fired here
-  assert.equal(filters.armedName(clock), null, 'nothing armed after a cancelled hold');
-  const fresh = wire('Drew', true);
-  fresh.click();                          // the release of the cancelled hold
-  assert.equal(log.length, before, 'the orphaned release is swallowed');
-  fire(1000);
-  fresh.click();
-  assert.equal(log[log.length - 1], 'filter:Drew', 'a real tap a moment later filters as usual');
-  // A new press cancels another chip's pending hold and never suppresses its own click.
-  old.pointerdown(); fire(100);
-  ross.pointerdown(); fire(100); ross.pointerend(); ross.click();
-  assert.equal(log[log.length - 1], 'filter:Ross');
-  fire(600);
-  assert.equal(filters.armedName(clock), null, "Drew's abandoned hold did not arm");
-  // Codex round 3, race 1: a deliberate press inside the 800 ms suppression
-  // window left by a cancelled hold must still count — the press ends it.
-  const n1 = log.length;
-  old.pointerdown(); fire(100);
-  filters.cancelHold(clock);              // a repaint cancels it → suppression armed
-  fire(100);
-  const p = wire('Pegah', true);
-  p.pointerdown(); fire(50); p.pointerend(); p.click();
-  assert.equal(log.length, n1 + 1, 'the fresh press was not swallowed');
-  assert.equal(log[log.length - 1], 'filter:Pegah');
-  // Codex round 3, race 2: an older pointer's release on the same chip must
-  // not clear a newer press's timer — two fingers, or a repaint between
-  // press and release, each get their own token.
-  const first = wire('Drew', true);
-  const second = wire('Drew', true);
-  first.pointerdown(); fire(100);
-  second.pointerdown(); fire(100);        // supersedes first's hold
-  first.pointerend();                     // the OLD release — must not kill the new timer
-  fire(500);
-  assert.equal(filters.armedName(clock), 'Drew', "the newer press's hold still armed");
-  filters.disarm();
-});
-
 test('scheduled search respects the people filter (a list hides, never dims)', () => {
   const root = render(mkCtx({ filterPeople: ['Kat'], query: 'robyn' }));
   assert.equal(root.querySelectorAll('.card').length, 0, "Robyn is not Kat's pick — she does not resurface through search");
@@ -233,36 +146,6 @@ test('no solo: the everyday template, and computeTimesLayout reports solo null',
   assert.equal(layout.colsTemplate, 'minmax(150px, 1fr) minmax(150px, 1fr) minmax(150px, 1fr) minmax(150px, 1fr) minmax(150px, 1fr)');
   const stale = computeTimesLayout(portola, (d) => state.getDayArtists(d, null), 'Gone Stage');
   assert.equal(stale.solo, null, 'a stale solo is ignored');
-});
-
-test('chip gesture: the default timers survive being called as a method (browsers throw "Illegal invocation" otherwise)', () => {
-  // The hold record stores the clear function and calls it as
-  // `hold.clearTimer(...)`, so its receiver is the record, not the window.
-  // Node's clearTimeout shrugs at that; a browser's throws — and it threw
-  // on every real tap on another member's chip (UI walk, 2026-08-27),
-  // which is why the defaults are arrow wrappers now. This stub is the
-  // browser's strictness: fail unless the receiver is the global.
-  const realSet = globalThis.setTimeout, realClear = globalThis.clearTimeout;
-  const strict = (fn) => function (...args) {
-    if (this !== undefined && this !== globalThis) throw new TypeError('Illegal invocation');
-    return fn.apply(globalThis, args);
-  };
-  globalThis.setTimeout = strict(realSet);
-  globalThis.clearTimeout = strict(realClear);
-  try {
-    filters.disarm();
-    const log = [];
-    const g = filters.chipGesture('Drew', {
-      canSwitch: true, onFilter: (n) => log.push(`filter:${n}`), onArmed: () => log.push('armed'), onSwitch: () => log.push('switch'),
-    });
-    assert.doesNotThrow(() => { g.pointerdown(); g.pointerend(); g.click(); }, 'a plain tap cancels the hold timer through the stored reference');
-    assert.deepEqual(log, ['filter:Drew'], 'and the tap still filters');
-    assert.doesNotThrow(() => { g.pointerdown(); filters.cancelHold(); }, 'a repaint mid-press cancels the same way');
-    assert.doesNotThrow(() => { g.pointerdown(); g.pointerdown(); g.pointerend(); }, 'a second press supersedes the first');
-  } finally {
-    globalThis.setTimeout = realSet;
-    globalThis.clearTimeout = realClear;
-  }
 });
 
 test('scrollspy: a re-wire mid-page claims the day you are actually in, not the first tab', async () => {

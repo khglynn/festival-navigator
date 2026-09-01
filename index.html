@@ -5,13 +5,40 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Festival Navigator</title>
     <meta name="theme-color" content="#0C0A14">
+    <!-- A fork sets ITS host here, once — js/spotify.js and js/v3/settings.js
+         derive the Spotify OAuth hop and every on-screen string that names the
+         host from this tag (Ray Perfetti's issue #6: the value used to live in
+         shipped source, so a fork's users were handed to OUR domain with their
+         tokens in the hash). docs/fork-setup.md is the fork runbook. -->
+    <meta name="fn-canonical-host" content="fest.kevinhg.com">
     <link rel="manifest" href="/manifest.json">
     <link rel="icon" type="image/png" href="/favicon.png">
     <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
-    <link rel="apple-touch-icon" href="/icon-192.png">
+    <!-- Full-bleed on purpose: iOS rounds an apple-touch-icon itself, and the
+         rounded icons' transparent corners composite to black on a home screen. -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+    <!-- OG:BEGIN — the link preview. api/share.js REPLACES this whole block with
+         per-festival tags when a link carries ?f=<fest-id>; the markers are how
+         it finds the block, so keep them, and keep the block contiguous.
+         Images are pre-rendered by `npm run brand` — nothing renders at request
+         time. Copy here is the landing screen's, verbatim. -->
+    <meta name="description" content="Pick artists with your people. Works with no signal.">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Festival Navigator">
+    <meta property="og:title" content="Festival Navigator">
+    <meta property="og:description" content="Pick artists with your people. Works with no signal.">
+    <meta property="og:url" content="https://fest.kevinhg.com/">
+    <meta property="og:image" content="https://fest.kevinhg.com/assets/og/default.jpg">
+    <meta property="og:image:type" content="image/jpeg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Festival Navigator — pick artists with your people.">
+    <meta name="twitter:card" content="summary_large_image">
+    <!-- OG:END -->
     <link rel="stylesheet" href="/assets/fonts/fonts.css">
     <link rel="stylesheet" href="/assets/v3-tokens.css">
     <link rel="stylesheet" href="/assets/v3.css">
@@ -97,7 +124,9 @@
             <div class="screen-headline">NOW YOU</div>
             <div style="color: var(--text-secondary); font-size: 13px; margin-top: 8px;">Once — the name your people know you by. It follows you to every fest after this.</div>
           </div>
-          <div id="create-chosen" style="align-self: center;"></div>
+          <!-- The chosen-fest chips WRAP on narrow screens — the container owns the
+               breathing room in both axes (Kevin, 2026-08-31: stacked chips touched). -->
+          <div id="create-chosen" style="align-self: center; display: flex; flex-wrap: wrap; gap: 9px; justify-content: center;"></div>
           <div style="display: flex; gap: 8px; align-items: center;">
             <input id="create-name-input" maxlength="24" placeholder="Your name" aria-label="Your name"
                    style="flex: 1; min-width: 0; background: var(--page); border: 1px solid var(--border-input); border-radius: 9px; padding: 12px 13px; color: #fff; font-size: 14px; font-family: var(--font-ui);">
@@ -178,7 +207,13 @@
 
     <!-- Settings (atlas 21h) — one page, two doors -->
     <div id="screen-settings" style="display:none">
-      <div style="max-width: 560px; margin: 0 auto; padding: 18px 16px calc(40px + env(safe-area-inset-bottom));" id="settings-root"></div>
+      <!-- min-height + auto block margins on the children (settings.js): a SHORT
+           page (How it works, Export) sits in the middle of a desktop window; a
+           long one starts at the top and scrolls, because auto margins collapse
+           to zero when content overflows. (`justify-content: safe center` was
+           the first cut and silently did nothing — Chrome drops the declaration,
+           which is why the entry screens and .card.cell never used it alone.) -->
+      <div style="max-width: 560px; margin: 0 auto; padding: 18px 16px calc(40px + env(safe-area-inset-bottom)); box-sizing: border-box; min-height: 100svh; display: flex; flex-direction: column;" id="settings-root"></div>
     </div>
 
     <!-- Lost states (spec F16): a link that didn't resolve, and the boot error boundary -->
@@ -213,7 +248,24 @@
     <script src="/vendor/html2canvas.min.js" defer></script>
     <script type="module" src="/js/v3/app.js"></script>
     <script>
-      if ('serviceWorker' in navigator) navigator.serviceWorker.register('/service-worker.js').catch(function () {});
+      if ('serviceWorker' in navigator) {
+        // The shell is cache-first, so the first open after a deploy runs the
+        // PREVIOUS build while the new worker installs and claims the page —
+        // and a hash-only navigation keeps that stale module map alive. Every
+        // preview read as "the fix didn't land" until a hard reload
+        // (2026-08-31). When a NEW worker takes over an already-controlled
+        // page in its first seconds, reload once so what runs is what was
+        // shipped. Guards: never on the very first install (no prior
+        // controller), never twice, never after the person has settled in.
+        var hadController = !!navigator.serviceWorker.controller;
+        var reloaded = false;
+        navigator.serviceWorker.addEventListener('controllerchange', function () {
+          if (!hadController || reloaded || performance.now() > 20000) return;
+          reloaded = true;
+          location.reload();
+        });
+        navigator.serviceWorker.register('/service-worker.js').catch(function () {});
+      }
     </script>
     <script defer src="/_vercel/insights/script.js"></script>
 </body>

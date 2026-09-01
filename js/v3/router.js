@@ -11,6 +11,27 @@
 
 // Deepest-shared-prefix diff: which layers close (top first) and open
 // (bottom first) to get from one stack to another.
+// The artist-notes sheet key carries the OCCURRENCE (which set an artist
+// who plays twice you opened). The payload is tagged with \u0001 — a control
+// character no artist name can hold (the festival validator rejects them) —
+// so a name that happens to look like JSON can never be mistaken for one.
+// Untagged keys are legacy plain names and still restore (2026-08-29).
+const NOTES_KEY = 'sheet:notes:';
+const TAG = '\u0001';
+export function encodeNotesKey(artist, occ = null) {
+  return `${NOTES_KEY}${TAG}${JSON.stringify({ v: 1, artist, occ: occ || null })}`;
+}
+export function decodeNotesKey(key) {
+  if (!key.startsWith(NOTES_KEY)) return null;
+  const rest = key.slice(NOTES_KEY.length);
+  if (!rest.startsWith(TAG)) return { artist: rest, occ: null };
+  try {
+    const p = JSON.parse(rest.slice(TAG.length));
+    if (p && p.v === 1 && typeof p.artist === 'string') return { artist: p.artist, occ: p.occ || null };
+  } catch { /* fall through */ }
+  return null;
+}
+
 export function diffStacks(from, to) {
   let i = 0;
   while (i < from.length && i < to.length && from[i] === to[i]) i++;

@@ -88,7 +88,7 @@ test('scheduled wall: the grid, then AFTERS, FOLSOM and EVERYTHING ELSE — the 
   assert.deepEqual(rulesOf(root), ['SATURDAY', 'AFTERS', 'FOLSOM', 'EVERYTHING ELSE']);
   const afters = cardsUnder(root, 'AFTERS');
   assert.deepEqual(afters.map((a) => a.name), ['Overmono', 'Only Afters', 'Horse Meat Disco']);
-  assert.equal(afters[0].time, 'Sat · Public Works · 10 PM - 2 AM', 'venue · hours ride on the card');
+  assert.equal(afters[0].time, 'Sat · 10 PM - 2 AM\nPublic Works', 'day · hours, then the venue on its own line (2026-08-29)');
   assert.deepEqual(cardsUnder(root, 'FOLSOM').map((a) => a.name), ['Horse Meat Disco', 'The Fair']);
   assert.deepEqual(cardsUnder(root, 'EVERYTHING ELSE').map((a) => a.name), ['Late Add']);
   const overmonoCards = [...root.querySelectorAll('.card')].filter((c) => c.dataset.artist === 'Overmono');
@@ -103,7 +103,7 @@ test('searching a scheduled wall finds the afters card too, under its own sectio
   renderWall(root, mkCtx('overmono'));
   assert.deepEqual(rulesOf(root), ['SATURDAY', 'AFTERS']);
   assert.deepEqual(cardsUnder(root, 'SATURDAY').map((a) => a.time), ['Warehouse · 8:20 PM']);
-  assert.deepEqual(cardsUnder(root, 'AFTERS').map((a) => a.time), ['Sat · Public Works · 10 PM - 2 AM']);
+  assert.deepEqual(cardsUnder(root, 'AFTERS').map((a) => a.time), ['Sat · 10 PM - 2 AM\nPublic Works']);
   renderWall(root, mkCtx('late'));
   assert.deepEqual(rulesOf(root), ['EVERYTHING ELSE'], 'an untimed lineup act is still findable');
   root.remove();
