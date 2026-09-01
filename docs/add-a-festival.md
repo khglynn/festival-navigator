@@ -129,7 +129,15 @@ the worked example.
 
 ### Event fields (added 2026-09-01)
 
-Alongside `stage`, an event entry may carry the same facts as data:
+Alongside `stage`, an event entry may carry the same facts as data — and
+they are what makes a fest **day-first** (`js/v3/events.js`, 2026-09-01):
+once a section's entries say their night, the wall's tabs become the union
+of the grid days and those nights, each day holds its grid and that night's
+sections, and each section wears one layout all week — venue columns on a
+clock where any night has 5+ timed shows over repeating venues (≥ 1.5 per
+venue, ≥ 60% timed), time-sorted tiles otherwise. Files never declare a
+layout; the numbers decide. A section whose entries carry no night renders
+as it always has, after the days.
 
 | Field | What |
 |---|---|
