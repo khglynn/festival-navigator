@@ -89,3 +89,76 @@ scenario (removing the LAYER sweep turns two tests red, so nothing is vacuous).
 One pin is deliberately indirect: `insetFor` is module-private, so it is
 observed through the clipPath keyframes of its only caller rather than by
 exporting it.
+
+## Phase 2 — the four extractions the review cleared
+
+Applied in order, each its own commit, with every behavioural test green
+between. The service-worker stamp gate was knowingly red across all four and
+cleared in its own final commit (card-facts.js is APP_CORE; stamping four times
+would churn CACHE_VERSION and force four full app-shell re-downloads for one
+pass).
+
+| # | Commit | What |
+|---|---|---|
+| a | `d42be6b` | `underMouse()` for the two elementFromPoint probes |
+| b | `d5d8a52` | `REFRESH_PART_SEL` for the selector written twice |
+| c | `0588481` | the Tab handoff folds into one delegated keydown; `unwireSource` deleted |
+| d | `885b24f` | Codex's `isInsideZoom(z, node)` and `isOwnControl(target)` |
+| — | `f8f97e9` | `node scripts/sw-stamp.mjs` on a clean tree — v71 to v72 |
+
+Every condition the review's skeptics attached was honoured:
+
+- `document.elementFromPoint(...)` stays a **member expression**. The detached
+  receiver variant is 14/14 green in Node and throws "Illegal invocation" in
+  every browser, and that throw lands in an rAF the airbag does not wrap.
+- `lastMouse` is tested first inside `underMouse`, so a touch device never pays
+  for a layout-forcing hit test once per card per repaint.
+- The constant is named **`REFRESH_PART_SEL`**, not `PART_SEL`, and its comment
+  says the bloom's set is deliberately different — a general name next to the
+  cascade invites "fixing" it, which would translate `.f-name` against a stated
+  design law with the bloom test staying green.
+- The Tab fold keeps the capture phase and documents the one cost: a future
+  global keyboard layer would lose Tab to a standing zoom.
+- Every dated why-comment travelled with its code. Counted: 27 dated references
+  before, 28 after (the new one is the WebIDL-receiver rule, 2026-08-27).
+
+Each extraction was re-mutated AFTER it landed, against the new shape: 7 for
+the Tab fold, 9 for the predicates. All bite. One of the nine found a hole in
+my own coverage rather than in the code — nothing asserted that the movement
+belt counts the RESTING CARD as inside, only the overlay — and that test was
+added before the commit landed.
+
+### Deliberately NOT touched
+
+Everything on the review's refuted list and its "looks duplicated but is not"
+list, verified by reading the final diff: the grace timer (leave clears-then-sets,
+the belt sets-if-idle — merging them re-labels the one-day-old close journal),
+the touch arm block's three lift paths, BOTH focusout handlers (still two
+per-node listeners; only the predicate inside them is shared), the pointermove
+belt, and the wrapper trio `zoomCard`/`refreshZoom`/`unzoom` with their three
+separate try/catches.
+
+## Final state
+
+- **Suite: 376 tests, 375 pass, 0 fail, 1 env skip.** Green under `TZ=Asia/Tokyo`
+  too, which is what CI runs second. `node scripts/validate-festivals.mjs`:
+  0 errors, 1 pre-existing warning (an announced festival with no lineup yet).
+- Net production change: 4 files' worth of behaviour unchanged, roughly 25
+  lines lighter, one lifecycle gone.
+
+## The gate that is still open
+
+**A real-browser walk has NOT been run and this branch must not be promoted
+without one.** It is a separate teammate's job (Sonnet, real pointer input,
+never `element.click()`), and three things specifically need it:
+
+1. **The Tab route in Chrome AND Safari.** Everything here is synthetic
+   `dispatchEvent`, the exact evidence class CLAUDE.md distrusts, and the fold
+   to a capture-phase document listener is a real ordering change.
+2. **Where Tab-moves-on lands.** `nextFocusableAfter` is unpinnable in Node.
+   A pre-existing wart to look at while there: it lands on the resting card's
+   own `button.chip-notes`, which is `opacity: 0` while `.zoom-source` is on
+   (assets/v3.css:786) — invisible in jsdom because `offsetParent` is always null.
+3. **The `:focus-visible` gate** — Tab to a card grows it, clicking one does not.
+   jsdom answers false, so that route is dead code in the entire suite.
+- **2026-09-01** — Phase 2 complete; stamp committed; suite green. Remaining gate: the real-browser walk.
