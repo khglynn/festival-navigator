@@ -151,6 +151,9 @@ display face.
   crew-palette colours, bottom-right, where they live. Abstract if you've
   never used the app; unmistakable if you have. No letters — lettered
   pills would mean inventing people.
+  *(Retired 2026-09-01 at Kevin's call — on a 1200×630 preview the ticks
+  read as stray coloured chips, not as a crew. The previews now end on the
+  promise line; `brand-assets.mjs` no longer draws them.)*
 - **`default.jpg`** mirrors the landing screen instead: FESTIVAL /
   NAVIGATOR stacked, NAVIGATOR in the pulse gradient, on a violet/pink
   aura. Same object, no festival. It drops the small corner mark the fest

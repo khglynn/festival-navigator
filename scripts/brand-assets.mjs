@@ -276,22 +276,6 @@ function fitDisplay(text, { max, min, budget, trackingEm = 0.05 }, files) {
   return { size: min, lines: [text] };
 }
 
-// The who-corner, lifted from aura.js: a crew's marks in the card's
-// bottom-right. Four ticks, the canonical first four member colours — no
-// lettered must-pills, because a letter would mean inventing a person.
-function whoCornerMarks(x, y) {
-  const w = 12;
-  const h = 42;
-  const gap = 10;
-  const n = 4;
-  const left = x - (n * w + (n - 1) * gap);
-  return Array.from({ length: n }, (_, i) => {
-    const cx = left + i * (w + gap);
-    return `<rect x="${cx}" y="${y - h}" width="${w}" height="${h}" rx="${w / 2}"`
-      + ` fill="${hslOf(i, 0.5)}" stroke="${strokeOf(i)}" stroke-width="1.5" stroke-opacity="0.55"/>`;
-  }).join('');
-}
-
 // A micro-label: Inter, uppercase, wide tracking. The 800 weight the app uses
 // cannot render (variable-font default instance), so a hairline stroke in the
 // fill colour carries the weight instead.
@@ -363,8 +347,7 @@ function festOg(fest, files) {
   ${body}
   ${microLabel(subLine(fest), { x: PAD, y: 456 })}
   <text x="${PAD}" y="558" font-family="Inter" font-size="26" fill="${T.textBody}"
-        fill-opacity="0.9">${xml(PROMISE)}</text>
-  ${whoCornerMarks(OG_W - PAD, 560)}`, { accent });
+        fill-opacity="0.9">${xml(PROMISE)}</text>`, { accent });
 }
 
 // No festival: the landing screen's own lockup, NAVIGATOR in the pulse. The
@@ -383,8 +366,7 @@ function defaultOg(files) {
         letter-spacing="${(size * 0.05).toFixed(2)}" fill="url(#pulse)">NAVIGATOR</text>
   ${microLabel('EVERY GROUP GETS ITS OWN LINK', { x: PAD, y: 456 })}
   <text x="${PAD}" y="558" font-family="Inter" font-size="26" fill="${T.textBody}"
-        fill-opacity="0.9">${xml(PROMISE)}</text>
-  ${whoCornerMarks(OG_W - PAD, 560)}`, { accent: T.brand });
+        fill-opacity="0.9">${xml(PROMISE)}</text>`, { accent: T.brand });
 }
 
 // ---- main --------------------------------------------------------------------------
