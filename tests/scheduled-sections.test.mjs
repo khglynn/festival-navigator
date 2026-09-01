@@ -71,6 +71,22 @@ const cardsUnder = (root, dayLabel) => {
   const grid = rule.nextElementSibling;
   return [...grid.querySelectorAll('.card')].map((c) => ({ name: c.dataset.artist, time: c.dataset.time }));
 };
+// Day-first: the rooms between a day's rule and the next day's, by bucket.
+const roomsUnder = (root, dayKey) => {
+  const rule = [...root.querySelectorAll('.day-rule')].find((r) => r.dataset.day === dayKey);
+  assert.ok(rule, `no day rule ${dayKey}`);
+  const out = [];
+  for (let n = rule.nextElementSibling; n && !n.classList.contains('day-rule'); n = n.nextElementSibling) {
+    if (n.classList.contains('room')) {
+      out.push({
+        bucket: n.dataset.bucket,
+        label: n.querySelector('.sec-label').textContent,
+        cards: [...n.querySelectorAll('.card')].map((c) => ({ name: c.dataset.artist, time: c.dataset.time })),
+      });
+    }
+  }
+  return out;
+};
 
 test('extraSectionsOf: non-grid days become sections in known-day order, leftovers last, deduped', () => {
   const scheduledNames = new Set(['Headliner', 'Overmono']);
@@ -81,19 +97,31 @@ test('extraSectionsOf: non-grid days become sections in known-day order, leftove
   assert.deepEqual(sections.get('').map((a) => a.name), ['Late Add'], 'billed on a grid day, not on the grid = everything else');
 });
 
-test('scheduled wall: the grid, then AFTERS, FOLSOM and EVERYTHING ELSE — the afters card keeps its venue sub-label', () => {
+// Day-first (MODEL-V3, 2026-09-01): the sections say which NIGHT each show
+// is on, so the wall composes by day — FRIDAY (afters + Folsom), SATURDAY
+// (the grid, the billed-but-untimed, that night's afters), SUNDAY (Folsom).
+// The afters entries never lost their venue: it rides the occurrence into
+// the zoom, and the tile itself says only the time.
+test('scheduled wall, day-first: each day holds its grid, its everything-else and its sections; an afters card keeps its pick and its venue', () => {
   const root = document.createElement('div');
   document.body.appendChild(root);
   renderWall(root, mkCtx());
-  assert.deepEqual(rulesOf(root), ['SATURDAY', 'AFTERS', 'FOLSOM', 'EVERYTHING ELSE']);
-  const afters = cardsUnder(root, 'AFTERS');
-  assert.deepEqual(afters.map((a) => a.name), ['Overmono', 'Only Afters', 'Horse Meat Disco']);
-  assert.equal(afters[0].time, 'Sat · 10 PM - 2 AM\nPublic Works', 'day · hours, then the venue on its own line (2026-08-29)');
-  assert.deepEqual(cardsUnder(root, 'FOLSOM').map((a) => a.name), ['Horse Meat Disco', 'The Fair']);
-  assert.deepEqual(cardsUnder(root, 'EVERYTHING ELSE').map((a) => a.name), ['Late Add']);
+  assert.deepEqual(rulesOf(root), ['FRIDAY', 'SATURDAY', 'SUNDAY']);
+  const fri = roomsUnder(root, 'Friday');
+  assert.deepEqual(fri.map((r) => [r.bucket, r.label]), [['Afters', 'AFTERS'], ['Folsom', 'FOLSOM']]);
+  assert.deepEqual(fri[0].cards, [{ name: 'Horse Meat Disco', time: '9 PM – 3 AM' }]);
+  const sat = roomsUnder(root, 'Saturday');
+  assert.deepEqual(sat.map((r) => [r.bucket, r.label]), [[':fest', 'SECTIONS FEST'], [':fest', 'EVERYTHING ELSE'], ['Afters', 'AFTERS']]);
+  assert.deepEqual(sat[0].cards.map((c) => c.name).sort(), ['Headliner', 'Overmono'], 'the grid is Saturday\'s first room');
+  assert.deepEqual(sat[1].cards, [{ name: 'Late Add', time: undefined }], 'billed on Saturday, not on Saturday\'s grid: still Saturday\'s');
+  assert.deepEqual(sat[2].cards, [{ name: 'Overmono', time: '10 PM – 2 AM' }, { name: 'Only Afters', time: '10 PM' }], 'tiles say the time only, time-sorted');
+  const sun = roomsUnder(root, 'Sunday');
+  assert.deepEqual(sun.map((r) => r.bucket), ['Folsom']);
+  assert.deepEqual(sun[0].cards, [{ name: 'The Fair', time: '11 AM – 6 PM' }]);
   const overmonoCards = [...root.querySelectorAll('.card')].filter((c) => c.dataset.artist === 'Overmono');
   assert.equal(overmonoCards.length, 2, 'one on the grid, one under Afters — same pick key');
   assert.ok(overmonoCards.every((c) => c.getAttribute('aria-label').includes('must')), 'both cards wear the same pick');
+  assert.equal(JSON.parse(overmonoCards[1].dataset.occ).stage, 'Sat · Public Works', 'the afters card\'s occurrence carries the venue for the zoom');
   root.remove();
 });
 

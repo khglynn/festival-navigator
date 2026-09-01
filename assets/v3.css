@@ -361,7 +361,7 @@
   .list-row { min-height: 44px; }
 
   /* --- the opt-outs: small controls that take borrowed space instead ------ */
-  .person-chip, .notes-chip, .chip-notes, .note-action, .f-chip,
+  .person-chip, .notes-chip, .chip-notes, .note-action, .f-chip, .bucket-chip,
   .dock .day-tab, .day-rail .day-tab,
   .back-btn, .gear-btn, .fest-link, .sheet-close,
   button.avatar,
@@ -370,7 +370,7 @@
   .card button {
     min-height: 0;
   }
-  .person-chip, .notes-chip, .chip-notes, .note-action, .f-chip,
+  .person-chip, .notes-chip, .chip-notes, .note-action, .f-chip, .bucket-chip,
   .dock .day-tab, .day-rail .day-tab,
   .back-btn, .gear-btn, .fest-link, .sheet-close,
   button.avatar {
@@ -380,7 +380,7 @@
    * unusable (17-28px); horizontal stays at -2px so one chip cannot swallow the
    * tap meant for its neighbour — in a crowd, that is a pick recorded under the
    * wrong person's name. */
-  .person-chip::after, .notes-chip::after, .note-action::after, .f-chip::after,
+  .person-chip::after, .notes-chip::after, .note-action::after, .f-chip::after, .bucket-chip::after,
   .dock .day-tab::after, .day-rail .day-tab::after {
     content: ''; position: absolute; inset: -14px -2px;
   }
@@ -830,3 +830,76 @@ button.f-chip.notes { cursor: pointer; }
   .stage-head { height: 44px; line-height: 44px; }
   .stage-head.rail .label { height: 44px; line-height: 34px; }
 }
+
+/* ---- events: day-first, the layout rule, buckets, the deck, runs (2026-09-01) ---- */
+/* MODEL-V3 (claude-plans/2026-08-31-events-canvas/MODEL-V3.md). A day is the
+ * unit; inside it, rooms — the festival's own grid, then each events section
+ * that night — under a sub-rule that is the day-rule's quieter sibling. */
+.room { display: flex; flex-direction: column; gap: 9px; }
+.sec-head { display: flex; align-items: baseline; gap: 9px; }
+.sec-label { font-family: var(--font-display); letter-spacing: .07em; font-size: 12.5px; color: var(--text-header); }
+.sec-sub { color: var(--text-tertiary); font-size: 9.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.sec-line { flex: 1; height: 1px; background: var(--hairline); }
+/* One sticky strip PER timetable: position:sticky is bounded by its parent,
+ * so a strip inside this block pins while the block is on screen and leaves
+ * with it — a grid day's stage heads never sit over an afters timetable. */
+.tt-block { display: flex; flex-direction: column; }
+.stage-head.venue { cursor: default; } /* a venue head is a stage header, never a solo button */
+/* TIME TBA: the quiet row the timeless land in. Section micro-label vocabulary. */
+.tba { padding-top: 10px; border-top: 1px dashed var(--hairline); }
+.tba-label { color: var(--text-tertiary); font-size: 10px; font-weight: 800; letter-spacing: var(--track-label); margin-bottom: 8px; }
+/* ONE section-level whisper for guessed times; the foot-whisper for hidden buckets. */
+.sec-whisper, .wall-whisper { color: var(--text-tertiary); font-size: 11px; font-weight: 600; line-height: 1.4; }
+
+/* The bucket filter — one chip per room, the people-chip vocabulary. On = the
+ * app's brand tint (never --fest: the accent has exactly four homes); off = a
+ * dashed outline, like the + Add chip. */
+.bucket-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.bucket-chip { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 12px;
+               border-radius: var(--r-pill); font-family: inherit; font-size: 10.5px; font-weight: 800;
+               letter-spacing: .05em; cursor: pointer; color: #fff;
+               background: rgba(var(--brand), .14); border: 1px solid rgba(var(--brand), .45);
+               -webkit-touch-callout: none; user-select: none; }
+.bucket-chip .bc-check { font-size: 9px; color: rgb(var(--brand)); }
+.bucket-chip .bc-check:empty { display: none; }
+.bucket-chip[aria-pressed="false"] { background: transparent; border: 1.5px dashed var(--border-emphasis); color: var(--text-tertiary); }
+
+/* The deck (MODEL-V3 §4): the earliest card on top, two ghost edges behind, a
+ * count pill. The face is a real card rendered inert; the whole deck is the
+ * button. Opening tucks the ghosts away (transform + opacity only). */
+.deck { position: relative; cursor: pointer; border-radius: var(--r-card); }
+.deck .card { position: relative; box-shadow: 0 1px 0 rgba(0, 0, 0, .3); }
+.deck-ghost { position: absolute; inset: 0; border-radius: var(--r-card); background: var(--card);
+              border: 1px solid var(--hairline); pointer-events: none;
+              transition: transform .14s cubic-bezier(.4, 0, .2, 1), opacity .14s cubic-bezier(.4, 0, .2, 1); }
+.deck-ghost.g1 { transform: translate(3px, 3px); }
+.deck-ghost.g2 { transform: translate(6px, 6px); opacity: .7; }
+.deck.open .deck-ghost { transform: none; opacity: 0; }
+.deck-pill { position: absolute; right: 6px; top: 6px; z-index: 2; pointer-events: none;
+             background: rgba(var(--brand), .9); color: var(--page); font-size: 8.5px; font-weight: 800;
+             letter-spacing: .04em; border-radius: var(--r-pill); padding: 2px 7px; white-space: nowrap; }
+/* The grown deck: a panel in a fixed layer, centred on the deck (the
+ * viewport's edges push it inward on both axes), holding full wall cards.
+ * z-index 35: above the day rail (25) and the dock (30), below the zoom (36)
+ * so a card inside can still grow, below sheets (40) and toasts (50). */
+.deck-layer { position: fixed; inset: 0; z-index: 35; pointer-events: none; }
+.deck-slot { position: absolute; width: max-content; max-width: calc(100vw - 16px); pointer-events: none; }
+.deck-slot::before { content: ''; position: absolute; inset: 0; border-radius: var(--r-card);
+                     box-shadow: 0 10px 28px rgba(0, 0, 0, .38); opacity: 0; transition: opacity .38s ease; }
+.deck-slot.shown::before { opacity: 1; }
+.deck-panel { position: relative; pointer-events: auto; box-sizing: border-box;
+              background: var(--card); border: 1px solid var(--border-emphasis); border-radius: var(--r-card);
+              padding: 10px 12px 12px; max-height: calc(100vh - 16px); overflow: auto; }
+.deck-panel-head { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 9px; }
+.deck-panel-title { font-family: var(--font-display); letter-spacing: .06em; font-size: 11.5px;
+                    color: var(--text-header); text-transform: uppercase; }
+.deck-panel .deck-close { width: 24px; height: 24px; font-size: 10px; }
+.deck-panel-grid { display: grid; grid-template-columns: repeat(2, 176px); gap: 7px; }
+.deck-panel-grid .card { min-height: 72px; }
+@media (max-width: 719.98px) { .deck-panel-grid { grid-template-columns: repeat(2, 150px); } }
+
+/* The zoom's WHEN for a back-to-back run (MODEL-V3 §5): two lines in one
+ * piece — the venue's window, then the order as a door to the poster. */
+.f-sub.f-stack { flex-direction: column; gap: 3px; }
+a.f-order { color: #fff; text-decoration: none; border-bottom: 1px solid rgba(255, 255, 255, .35); padding-bottom: 1px; }
+a.f-order:hover { border-bottom-color: rgba(255, 255, 255, .75); }

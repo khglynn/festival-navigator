@@ -328,17 +328,37 @@ test('the wall still renders every event card, now saying the guessed time', () 
     fid: 'portola-2026', meName: 'Kevin', picks: {}, affinity: null, lowPower: true,
     sort: 'day', query: '', weekend: 'all', onTap: () => {}, onOpenNotes: null, onNotesChange: null, onOpenDayNotes: null,
   });
+  // Phase 2 (day-first) is in: the days are THU FRI SAT SUN, and the run
+  // renders as a plain vertical column on Sunday's afters clock, every set
+  // wearing its guessed time with the tilde. Data-driven on purpose — the
+  // order and the times are the file's, never this test's.
   const rules = [...root.querySelectorAll('.day-rule')].map((r) => r.querySelector('.day').textContent);
-  assert.deepEqual(rules, ['SATURDAY', 'SUNDAY', 'AFTERS', 'FOLSOM'], 'phase 1 changes no section: the day-first rebuild is phase 2');
-  const sub = (name) => [...root.querySelectorAll('.card')]
-    .filter((c) => c.dataset.artist === name && !c.classList.contains('cell'))
-    .map((c) => c.querySelector('.time')?.textContent);
-  // The renderer still reads `stage`, which is why night/venue could be added
-  // without touching it — and the four now read as a run instead of a pile.
-  assert.deepEqual(sub('MGNA Crrrta'), ['Sun · 10 PM\nThe Midway']);
-  assert.deepEqual(sub('VTSS'), ['Sun · 11 PM\nThe Midway']);
-  assert.deepEqual(sub('Two Shell'), ['Sun · 12 AM\nThe Midway']);
-  assert.deepEqual(sub('horsegiirL'), ['Sun · 1 AM\nThe Midway']);
-  assert.deepEqual(sub('Horse Meat Disco'), ['Fri · 9 PM - 3 AM\nPublic Works', 'Fri · 9 PM - 3 AM\nPublic Works']);
+  assert.deepEqual(rules, ['THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY']);
+  const sunday = [...root.querySelectorAll('.day-rule')].find((r) => r.dataset.day === 'Sunday');
+  let afters = sunday.nextElementSibling;
+  while (afters && !(afters.classList.contains('room') && afters.dataset.bucket === 'Afters')) afters = afters.nextElementSibling;
+  assert.ok(afters, 'Sunday has an AFTERS room');
+  const cellOf = (name) => [...afters.querySelectorAll('.times-grid .card.cell')].find((c) => c.dataset.artist === name);
+  const bySeq = [...midway].sort((x, y) => x.order.seq - y.order.seq);
+  let prevRow = -1;
+  let column = null;
+  for (const a of bySeq) {
+    const cell = cellOf(a.name);
+    assert.ok(cell, `${a.name} is a cell on Sunday's afters clock`);
+    assert.equal(cell.dataset.time, `~${a.time}`, 'the resting card wears the guessed time with a tilde');
+    assert.equal(cell.style.width, '', 'a run never lane-splits');
+    assert.equal(cell.closest('.deck'), null, 'a run never becomes a deck');
+    const row = Number(cell.style.gridRow.split(' / ')[0]);
+    assert.ok(row > prevRow, `${a.name} sits below the set before it`);
+    prevRow = row;
+    if (column === null) column = cell.style.gridColumn;
+    assert.equal(cell.style.gridColumn, column, 'one venue, one column');
+  }
+  assert.equal(afters.querySelectorAll('.sec-whisper').length, 1, 'ONE section-level whisper for the guessed times');
+  assert.match(afters.querySelector('.sec-whisper').textContent, /^~ marks a guessed set time — the order is the plan\.$/);
+  const hmd = [...root.querySelectorAll('.card')].filter((c) => c.dataset.artist === 'Horse Meat Disco');
+  assert.deepEqual(hmd.map((c) => [c.closest('.room').dataset.bucket, c.classList.contains('cell'), c.querySelector('.time')?.textContent]),
+    [['Afters', true, '9 PM'], ['Folsom', false, '9 PM – 3 AM']],
+    'Friday: a cell on the afters clock (start time, the end at the cell\'s foot), and a Folsom tile that says the range');
   root.remove();
 });

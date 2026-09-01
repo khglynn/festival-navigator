@@ -78,7 +78,10 @@ test('portola-2026: the crew\'s live pick keys (as of 2026-08-27) all sit on the
   for (const n of PICKED) assert.ok(onGrid.has(n), `${n} has live picks and must be on the grid under that exact name`);
 });
 
-test('portola-2026: the wall renders both grid days, then AFTERS and FOLSOM — nothing lands in EVERYTHING ELSE', () => {
+// Day-first (MODEL-V3, 2026-09-01): the days are THU FRI SAT SUN — the union
+// of the two grid days and Portola Week's four nights — and each day holds
+// the Pier 80 grid (Sat, Sun) then that night's AFTERS and FOLSOM.
+test('portola-2026: the wall is day-first — THU FRI SAT SUN, the grid inside its day, AFTERS and FOLSOM under it, nothing in EVERYTHING ELSE', () => {
   FESTIVAL_INDEX.push({ id: 'portola-2026', status: 'scheduled' });
   state.activateCrew('portolatesttoken_01234567', {
     v: 4, meta: {}, spotify: {}, people: { Kevin: { colorIndex: 3 } },
@@ -93,12 +96,15 @@ test('portola-2026: the wall renders both grid days, then AFTERS and FOLSOM — 
     sort: 'day', query: '', weekend: 'all', onTap: () => {}, onOpenNotes: null, onNotesChange: null, onOpenDayNotes: null,
   });
   const rules = [...root.querySelectorAll('.day-rule')].map((r) => r.querySelector('.day').textContent);
-  assert.deepEqual(rules, ['SATURDAY', 'SUNDAY', 'AFTERS', 'FOLSOM']);
-  const cells = root.querySelectorAll('.card.cell').length;
-  assert.equal(cells, 64, 'every timed set is a grid cell');
+  assert.deepEqual(rules, ['THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY']);
+  const gridCells = root.querySelectorAll('.room[data-bucket=":fest"] .card.cell').length;
+  assert.equal(gridCells, 64, 'every timed set is a grid cell, inside the festival\'s own room');
+  assert.equal(root.querySelectorAll('.room[data-bucket=":fest"] .stage-strip').length, 2, 'each grid day carries its own sticky strip');
+  assert.equal([...root.querySelectorAll('.sec-label')].filter((l) => l.textContent === 'EVERYTHING ELSE').length, 0);
   const hmd = [...root.querySelectorAll('.card')].filter((c) => c.dataset.artist === 'Horse Meat Disco');
-  assert.equal(hmd.length, 2, 'Horse Meat Disco under Afters AND Folsom');
-  assert.equal(hmd[0].dataset.time, 'Fri · 9 PM - 3 AM\nPublic Works');
+  assert.equal(hmd.length, 2, 'Horse Meat Disco under Friday\'s Afters AND Friday\'s Folsom');
+  assert.deepEqual(hmd.map((c) => c.closest('.room').dataset.bucket), ['Afters', 'Folsom']);
+  assert.equal(hmd[1].dataset.time, '9 PM – 3 AM', 'a Folsom tile says the time only — the venue lives in the zoom');
   root.remove();
 });
 
@@ -109,13 +115,19 @@ test('portola-2026: a set of three hours or more is a TALL cell — name at the 
     fid: 'portola-2026', meName: 'Kevin', picks: {}, affinity: null, lowPower: true,
     sort: 'day', query: '', weekend: 'all', onTap: () => {}, onOpenNotes: null, onNotesChange: null, onOpenDayNotes: null,
   });
-  const despacio = [...root.querySelectorAll('.card.cell')].filter((c) => c.dataset.artist === 'Despacio');
+  const gridCells = [...root.querySelectorAll('.room[data-bucket=":fest"] .card.cell')];
+  const despacio = gridCells.filter((c) => c.dataset.artist === 'Despacio');
   assert.equal(despacio.length, 2, 'one Despacio block per grid day');
   assert.deepEqual(despacio.map((c) => c.classList.contains('tall')), [true, true]);
   assert.deepEqual(despacio.map((c) => c.querySelector('.until').textContent), ['until 9:45 PM', 'until 10:30 PM']);
-  const dogBlood = [...root.querySelectorAll('.card.cell')].find((c) => c.dataset.artist === 'Dog Blood');
+  const dogBlood = gridCells.find((c) => c.dataset.artist === 'Dog Blood');
   assert.ok(!dogBlood.classList.contains('tall'), 'a 75-minute set is not tall');
   assert.equal(dogBlood.querySelector('.until'), null);
+  // The rule holds on an events timetable too: Friday's Despacio at Pier 80
+  // runs 5–11 PM, six hours on the afters clock.
+  const friday = [...root.querySelectorAll('.room[data-bucket="Afters"] .card.cell')].find((c) => c.dataset.artist === 'Despacio');
+  assert.ok(friday && friday.classList.contains('tall'), 'the Friday afters Despacio is a tall cell');
+  assert.equal(friday.querySelector('.until').textContent, 'until 11 PM');
   root.remove();
 });
 

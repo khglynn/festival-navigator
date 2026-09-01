@@ -9,8 +9,10 @@ import * as sync from '../sync.js';
 import * as spotify from '../spotify.js';
 import * as model from './model.js';
 import { loadFestivalIndex, loadFestival, loadCustomFestivals, FESTIVAL_INDEX, defaultFestivalId } from '../festivals.js';
-import { renderWall, refreshCard, showUndoToast, showToast, wireScrollspy, colorIndexOf, groupByDay, knownDaysOf, scheduledWeekendOf, extraSectionsOf, positionNowLines, scrollToNowLine } from './wall.js';
-import { loadPeopleFilter, savePeopleFilter, togglePerson, pruneToActive, loadSolo, saveSolo } from './filters.js';
+import { renderWall, refreshCard, showUndoToast, showToast, wireScrollspy, colorIndexOf, scheduledWeekendOf, positionNowLines, scrollToNowLine, dayNavOf } from './wall.js';
+import { loadPeopleFilter, savePeopleFilter, togglePerson, pruneToActive, loadSolo, saveSolo, loadHiddenBuckets, saveHiddenBuckets, toggleBucket } from './filters.js';
+import { deckSnapshot, restoreDeck } from './deck.js';
+import { OUT_MS, CASCADE_MS, STAGGER_MS, EASE_ARRIVE, EASE_LEAVE, canAnimate } from './motion.js';
 import { scrolledBefore, rememberScrolled, dayOfScrollKey } from './now.js';
 import { disclosureFold, eqLoader, festRow } from './tools.js';
 import { openArtistSheet, openDayNotes, openAllNotes, openFestNotes, closeSheet, refreshOpenSheet, sheetChrome, dialogize, rememberOpener } from './notes.js';
@@ -22,7 +24,6 @@ import { hookGlobalErrors } from '../errlog.js';
 // The crash journal listens from the first module tick — an error during
 // boot is exactly the kind nobody can describe later (2026-08-31).
 hookGlobalErrors();
-import { dayLabelParts } from '../time.js';
 import { createSortControl } from './sort-control.js';
 import { nameProblem } from '../name-rules.mjs';
 import { startFavicon, stopFavicon } from './favicon.js';
@@ -44,12 +45,17 @@ const ctx = {
   // shows, and which stage is soloed. Both per-fest, per-tab (filters.js).
   filterPeople: [],
   soloStage: null,
+  // The bucket filter (MODEL-V3 §3, 2026-09-01): which of the fest's rooms
+  // (the festival itself, Afters, Folsom …) are hidden on every day.
+  // Device-local, persisted per fest (filters.js) — never in the crew doc.
+  bucketsOff: [],
   now: null, // tests pin the clock; null = new Date() at render
   onSoloStage: (stage) => {
     saveSolo(ctx.fid, stage);
     refreshCtx();
     repaintWall();
   },
+  onToggleBucket: (key) => toggleBucketFlow(key),
   onTap: handleTap,
   onOpenNotes: (artist, occ = null) => {
     unzoom({ why: 'notes sheet opened' });
@@ -119,6 +125,42 @@ function refreshCtx() {
   // storage and silently reactivate the day they rejoin.
   if (ctx.filterPeople.length !== stored.length) savePeopleFilter(ctx.fid, ctx.filterPeople);
   ctx.soloStage = loadSolo(ctx.fid);
+  ctx.bucketsOff = loadHiddenBuckets(ctx.fid);
+}
+
+// A bucket toggle is a small event (Kevin, 2026-08-30: nothing vanishes in
+// place, nothing pops): hiding fades the room out before the repaint; showing
+// lets the room arrive after it. Transforms and opacity only; instant under
+// Low Power and reduced motion.
+function roomsOf(key) {
+  return [...document.querySelectorAll(`#wall-root .room[data-bucket="${CSS.escape(key)}"]`)];
+}
+function toggleBucketFlow(key) {
+  const hiding = !(ctx.bucketsOff || []).includes(key);
+  const next = toggleBucket(ctx.bucketsOff || [], key);
+  const finish = () => {
+    saveHiddenBuckets(ctx.fid, next);
+    repaintWall();
+    if (!hiding) {
+      roomsOf(key).forEach((room, i) => {
+        if (!canAnimate(room, ctx)) return;
+        room.animate([{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }],
+          { duration: CASCADE_MS, delay: i * STAGGER_MS, easing: EASE_ARRIVE, fill: 'backwards' });
+      });
+    }
+  };
+  const leaving = hiding ? roomsOf(key).filter((room) => canAnimate(room, ctx)) : [];
+  if (!leaving.length) { finish(); return; }
+  let pending = leaving.length;
+  let done = false;
+  const settle = () => { if (done) return; pending -= 1; if (pending <= 0) { done = true; finish(); } };
+  for (const room of leaving) {
+    const a = room.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateY(-4px)' }],
+      { duration: OUT_MS, easing: EASE_LEAVE, fill: 'forwards' });
+    a.onfinish = settle;
+    a.oncancel = settle;
+  }
+  setTimeout(() => { if (!done) { done = true; finish(); } }, OUT_MS * 3 + 50); // a backgrounded tab must not hang the toggle
 }
 
 // ---- tap cycle -------------------------------------------------------------------
@@ -319,7 +361,11 @@ function measureStickyChrome() {
   const rail = $('day-rail');
   const railH = rail && rail.offsetHeight ? rail.offsetHeight : 0;
   const strip = document.querySelector('.stage-strip');
-  const stripH = strip ? strip.offsetHeight : 0;
+  // On a day-first wall every strip is scoped to its own timetable block
+  // (`.tt-block`), so no strip ever sits above a day rule — a jump lands
+  // against the rail alone.
+  const scoped = !!document.querySelector('#wall-root .tt-block');
+  const stripH = strip && !scoped ? strip.offsetHeight : 0;
   const rootStyle = document.documentElement.style;
   rootStyle.setProperty('--rail-h', `${railH}px`);
   rootStyle.setProperty('--jump-offset', `${railH + stripH + 6}px`);
@@ -335,22 +381,10 @@ function renderDayNav() {
   const rail = $('rail-days');
   dock.textContent = '';
   rail.textContent = '';
-  const fest = state.fest();
-  const scheduled = fest.days && Object.keys(fest.days).length;
-  // A scheduled fest's tabs are the grid days PLUS the sections the wall
-  // renders under the grid (afters, Folsom) — the tab bar must mirror what
-  // the wall actually shows, or a section exists with no way to jump to it.
-  let groups;
-  if (scheduled) {
-    const wk = scheduledWeekendOf(fest, ctx.weekend);
-    const scheduledNames = new Set();
-    for (const d of Object.keys(fest.days)) for (const a of state.getDayArtists(d, wk)) scheduledNames.add(a.name);
-    groups = [...Object.keys(fest.days), ...[...extraSectionsOf(fest, scheduledNames, wk).keys()].filter(Boolean)];
-  } else {
-    groups = [...groupByDay(fest.artists || [], knownDaysOf(fest)).keys()].filter(Boolean);
-  }
-  for (const day of groups) {
-    const meta = (fest.dayMeta || {})[day];
+  // The tab bar mirrors what the wall shows — wall.js decides the days (a
+  // day-first fest: THU FRI SAT SUN; otherwise grid days plus the sections
+  // under the grid, or a lineup's day groups) so the two can never disagree.
+  for (const { key: day, short, long } of dayNavOf(state.fest(), ctx)) {
     const jump = () => {
       const target = document.querySelector(`.day-rule[data-day="${CSS.escape(day)}"]`);
       if (target) target.scrollIntoView({ behavior: ctx.lowPower ? 'auto' : 'smooth', block: 'start' });
@@ -363,12 +397,8 @@ function renderDayNav() {
       tab.addEventListener('click', jump);
       return tab;
     };
-    dock.appendChild(mkTab((meta?.wd || day).slice(0, 3).toUpperCase()));
-    // Rail tabs stay compact: a verbose day key ("Wednesday, Sept 16 (Early
-    // Arrival Pre-Party)") shows its weekday only — the same split the wall's
-    // day rule and the day sheet use (time.js dayLabelParts).
-    const railLabel = meta?.wd ? `${meta.wd} ${meta.num || ''}`.trim() : dayLabelParts(day).head;
-    rail.appendChild(mkTab(railLabel.toUpperCase()));
+    dock.appendChild(mkTab(short));
+    rail.appendChild(mkTab(long));
   }
   unspy();
   unspy = wireScrollspy([dock, rail], $('wall-root'));
@@ -380,9 +410,13 @@ function repaintWall() {
   // must not eat the card you are resting on); a card that is gone — a
   // filter hid it, a fest switch — takes its zoom with it.
   const keep = zoomSnapshot();
+  const deck = deckSnapshot(); // an open deck panel comes back the same way
   unzoom({ instant: !!keep, why: 'wall repaint' });
   refreshCtx();
   renderWall($('wall-root'), ctx);
+  // The deck first: a zoom standing on one of the panel's cards can only be
+  // restored once the panel is back.
+  if (deck) restoreDeck($('wall-root'), deck);
   if (keep) {
     const occ = keep.occ ? JSON.stringify(keep.occ) : '';
     const again = [...document.querySelectorAll(`#wall-root .card[data-artist="${CSS.escape(keep.artist)}"]`)]
