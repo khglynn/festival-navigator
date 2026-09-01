@@ -695,23 +695,16 @@ FESTIVALS[EFID] = {
   ],
 };
 
-const ETOKEN = 'galleryeventstoken_01234567';
-try {
-  localStorage.removeItem(state.LS.doc(ETOKEN));
-  localStorage.removeItem(state.LS.pending(ETOKEN));
-  localStorage.removeItem(state.LS.fest(ETOKEN));
-} catch { /* storage blocked */ }
+// One crew for the whole page: the zoom gallery above activated it (Kevin,
+// Drew, Kat, Nhu, Pegah); this fest joins that doc rather than replacing it,
+// so the zoom gallery's own taps keep landing in its fest.
 const ESEL = {
-  'Channel Tres': { Kevin: 4, Nhu: 3 }, Jyoty: { Kat: 1 }, 'Gelli Haha': {}, 'Sam Alfred': { Kevin: 2 }, Despacio: { Kevin: 3, Nhu: 2 },
+  'Channel Tres': { Kevin: 4, Nhu: 3 }, Jyoty: { Kat: 1 }, 'Sam Alfred': { Kevin: 2 }, Despacio: { Kevin: 3, Nhu: 2 },
   VTSS: { Kevin: 4, Nhu: 1 }, horsegiirL: { Nhu: 2 }, 'Fatboy Slim': { Kevin: 4, Nhu: 4, Kat: 1 },
   'Folsom Street Fair': { Kevin: 4, Nhu: 4, Kat: 4 }, Magnitude: { Kevin: 1 }, Headliner: { Kat: 4 }, 'Long Set': { Nhu: 3 },
 };
-state.activateCrew(ETOKEN, {
-  v: 4, meta: {}, spotify: {},
-  people: { Kevin: { colorIndex: 0 }, Nhu: { colorIndex: 1 }, Kat: { colorIndex: 2 } },
-  festivals: { [EFID]: { selections: ESEL } },
-  affinity: {},
-}, EFID);
+state.ensureFestivalState(EFID);
+Object.assign(state.crewDoc.festivals[EFID].selections, ESEL);
 state.recordNote(EFID, 'day', 'Afters', model.makeNoteId('Nhu', '2026-09-20T20:00:00.000Z', 'e1'), { author: 'Nhu', ts: '2026-09-20T20:00:00.000Z', text: 'Meet at The Ballroom before 8 — the line wraps the block.' });
 
 let hidden = []; // the bucket filter, held here the way filters.js holds it per fest
