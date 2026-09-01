@@ -86,21 +86,29 @@ test('columnsTemplate: a soloed stage is wide, everything else (the EE column to
   assert.equal(filters.columnsTemplate(stages, false, 'Renamed Stage').solo, null, 'a remembered stage that no longer exists cannot blank the wall');
 });
 
-test('people filter on the timetable: non-matching cards DIM but stay in place; sections HIDE non-matches and say so when empty', () => {
+test('people filter on the timetable: non-matching cards DIM but stay in place; tile sections HIDE non-matches and say so when empty', () => {
   const root = render(mkCtx({ filterPeople: ['Kat'] }));
-  const cell = (name) => root.querySelector(`.card.cell[data-artist="${name}"]`);
-  assert.ok(!cell('VTSS').classList.contains('dim'), "Kat's pick is lit");
-  assert.ok(cell('underscores').classList.contains('dim'), 'a card Kat did not pick is dimmed');
-  assert.equal(root.querySelectorAll('.card.cell').length, 64, 'the clock keeps its shape: every set still renders');
-  assert.equal(cell('underscores').getAttribute('role'), 'button', 'a dimmed card is still a tap target');
-  // Afters: of Kat's picks, Overmono, Despacio and VTSS have afters entries — only those cards render there.
-  const aftersRule = [...root.querySelectorAll('.day-rule')].find((r) => r.querySelector('.day').textContent === 'AFTERS');
-  const aftersCards = [...aftersRule.nextElementSibling.querySelectorAll('.card')].map((c) => c.dataset.artist);
-  assert.deepEqual(aftersCards.sort(), ['Despacio', 'Overmono', 'VTSS']);
-  // Folsom: Kat picked nothing there — the section says so instead of vanishing.
-  const folsomRule = [...root.querySelectorAll('.day-rule')].find((r) => r.querySelector('.day').textContent === 'FOLSOM');
-  assert.equal(folsomRule.nextElementSibling.className, 'section-empty');
-  assert.match(folsomRule.nextElementSibling.textContent, /No picks here from Kat/);
+  const grid = (name) => root.querySelector(`.room[data-bucket=":fest"] .card.cell[data-artist="${name}"]`);
+  assert.ok(!grid('VTSS').classList.contains('dim'), "Kat's pick is lit");
+  assert.ok(grid('underscores').classList.contains('dim'), 'a card Kat did not pick is dimmed');
+  assert.equal(root.querySelectorAll('.room[data-bucket=":fest"] .card.cell').length, 64, 'the clock keeps its shape: every set still renders');
+  assert.equal(grid('underscores').getAttribute('role'), 'button', 'a dimmed card is still a tap target');
+  // Afters is COLUMNS all week (the consistency law) — a clock, so it dims
+  // like the grid: Friday's Despacio is lit, 2manydjs beside it is not, and
+  // the night keeps its shape.
+  const afters = [...root.querySelectorAll('.room[data-bucket="Afters"] .card.cell')];
+  const friDespacio = afters.find((c) => c.dataset.artist === 'Despacio');
+  const twomany = afters.find((c) => c.dataset.artist === '2manydjs');
+  assert.ok(friDespacio && !friDespacio.classList.contains('dim'), "Kat's afters pick is lit");
+  assert.ok(twomany && twomany.classList.contains('dim'), 'an afters set Kat did not pick dims, it does not vanish');
+  // Folsom is TILES — a list, so it hides non-matches and says so on every
+  // day it appears rather than vanishing.
+  const folsom = [...root.querySelectorAll('.room[data-bucket="Folsom"]')];
+  assert.ok(folsom.length >= 1);
+  for (const room of folsom) {
+    assert.equal(room.querySelectorAll('.card').length, 0);
+    assert.match(room.querySelector('.section-empty').textContent, /No picks here from Kat/);
+  }
   root.remove();
 });
 
@@ -113,27 +121,38 @@ test('people filter combines: Kat OR Drew lights either’s picks', () => {
   root.remove();
 });
 
-test('stage solo: the strip and every grid share the folded template, folded columns render no cards, the head says how to get back', () => {
+test('stage solo: the grid strips and every grid share the folded template, folded columns render no cards, the head says how to get back — and venue heads never solo', () => {
   const root = render(mkCtx({ soloStage: 'Warehouse' }));
-  const strip = root.querySelector('.stage-strip .times-grid');
-  assert.equal(strip.style.gridTemplateColumns, '34px 34px minmax(150px, 1fr) 34px 34px');
-  const heads = [...strip.querySelectorAll('.stage-head')];
-  assert.equal(heads.length, 5);
-  assert.equal(heads.filter((h) => h.classList.contains('rail')).length, 4, 'four stages fold to rails');
-  const solo = heads.find((h) => h.getAttribute('aria-pressed') === 'true');
-  assert.ok(solo && solo.textContent.startsWith('Warehouse'), 'the soloed head is pressed');
-  assert.match(solo.textContent, /all stages/, 'and says how to restore');
-  assert.equal(heads.every((h) => h.tagName === 'BUTTON'), true, 'stage heads are real buttons');
-  for (const grid of root.querySelectorAll('.times-scroll[data-day] .times-grid')) {
-    assert.equal(grid.style.gridTemplateColumns, strip.style.gridTemplateColumns, 'day grids mirror the strip');
+  // Day-first: each grid day carries its own strip; both wear the solo.
+  const strips = [...root.querySelectorAll('.room[data-bucket=":fest"] .stage-strip .times-grid')];
+  assert.equal(strips.length, 2, 'one strip per grid day (Saturday, Sunday)');
+  for (const strip of strips) {
+    assert.equal(strip.style.gridTemplateColumns, '34px 34px minmax(150px, 1fr) 34px 34px');
+    const heads = [...strip.querySelectorAll('.stage-head')];
+    assert.equal(heads.length, 5);
+    assert.equal(heads.filter((h) => h.classList.contains('rail')).length, 4, 'four stages fold to rails');
+    const solo = heads.find((h) => h.getAttribute('aria-pressed') === 'true');
+    assert.ok(solo && solo.textContent.startsWith('Warehouse'), 'the soloed head is pressed');
+    assert.match(solo.textContent, /all stages/, 'and says how to restore');
+    assert.equal(heads.every((h) => h.tagName === 'BUTTON'), true, 'stage heads are real buttons');
   }
-  const names = [...root.querySelectorAll('.card.cell')].map((c) => c.dataset.artist);
+  for (const grid of root.querySelectorAll('.times-scroll[data-sync="grid"][data-day] .times-grid')) {
+    assert.equal(grid.style.gridTemplateColumns, strips[0].style.gridTemplateColumns, 'day grids mirror the strip');
+  }
+  const names = [...root.querySelectorAll('.room[data-bucket=":fest"] .card.cell')].map((c) => c.dataset.artist);
   assert.equal(names.length, 16, 'only the Warehouse sets render (8 + 8)');
   assert.ok(names.includes('Four Tet') && !names.includes('Robyn'));
+  // The solo governs the main grid only (MODEL-V3 §3): an events timetable's
+  // venue heads are stage headers in look, never solo buttons, and its
+  // columns are untouched by the solo.
+  const venueHeads = [...root.querySelectorAll('.room[data-bucket="Afters"] .stage-strip .stage-head')];
+  assert.ok(venueHeads.length > 0);
+  assert.ok(venueHeads.every((h) => h.tagName === 'DIV' && h.classList.contains('venue') && !h.hasAttribute('aria-pressed')));
+  assert.ok([...root.querySelectorAll('.room[data-bucket="Afters"] .times-grid')].every((g) => !g.style.gridTemplateColumns.includes('34px')));
   // Tapping the pressed head asks for null (restore all); tapping a rail asks for that stage.
   const asked = [];
   const root2 = render(mkCtx({ soloStage: 'Warehouse', onSoloStage: (s) => asked.push(s) }));
-  const heads2 = [...root2.querySelectorAll('.stage-strip .stage-head')];
+  const heads2 = [...root2.querySelectorAll('.room[data-bucket=":fest"] .stage-strip .stage-head')];
   heads2.find((h) => h.getAttribute('aria-pressed') === 'true').click();
   heads2.find((h) => h.classList.contains('rail')).click();
   assert.deepEqual(asked, [null, 'Pier Stage']);

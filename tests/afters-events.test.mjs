@@ -93,39 +93,64 @@ const ctx = {
   onTap: () => {}, onOpenNotes: null, onNotesChange: null, onOpenDayNotes: null,
 };
 
-test('lineup wall: event entries carry a venue · time sub-label; plain entries stay bare', () => {
-  state.FESTIVALS['afters-fest'] = {
-    id: 'afters-fest', name: 'Afters Fest', status: 'lineup',
-    dayMeta: { Sunday: { wd: 'Sun', date: 'Sep 27' }, Afters: { date: 'Sep 24-27' }, Folsom: { date: 'Sep 25-27' } },
-    artists: [
-      { name: 'Overmono', day: 'Sunday' },
-      { name: 'Overmono', day: 'Afters', stage: 'Sun · Public Works', time: '10 PM - 2 AM' },
-      { name: 'Horse Meat Disco', day: 'Afters & Folsom', stage: 'Fri · Public Works', time: '9 PM - 3 AM' },
-      { name: 'Groove Armada', day: 'Afters', stage: 'Sat · The Great Northern' },
-    ],
-  };
+// Day-first (MODEL-V3, 2026-09-01): a lineup fest whose sections say which
+// NIGHT each show is on composes by day — FRIDAY, SATURDAY, SUNDAY, each
+// holding that night's billing and sections. Inside a day the tile is CLEAN
+// (name + time; the venue lives in the zoom), because the day is the day.
+// The old two-line "night · time / venue" label survives where no day
+// implies the night: the flat sorts (A → Z, my picks, most picked).
+const AFTERS_FEST = {
+  id: 'afters-fest', name: 'Afters Fest', status: 'lineup',
+  dayMeta: { Sunday: { wd: 'Sun', date: 'Sep 27' }, Afters: { date: 'Sep 24-27' }, Folsom: { date: 'Sep 25-27' } },
+  artists: [
+    { name: 'Overmono', day: 'Sunday' },
+    { name: 'Overmono', day: 'Afters', stage: 'Sun · Public Works', time: '10 PM - 2 AM' },
+    { name: 'Horse Meat Disco', day: 'Afters & Folsom', stage: 'Fri · Public Works', time: '9 PM - 3 AM' },
+    { name: 'Groove Armada', day: 'Afters', stage: 'Sat · The Great Northern' },
+  ],
+};
+
+test('lineup wall, day-first: one day holds its billing and its sections; tiles say the time only; a timeless show shows no clock', () => {
+  state.FESTIVALS['afters-fest'] = AFTERS_FEST;
   state.setActiveFestivalId('afters-fest');
   const root = document.createElement('div');
   document.body.appendChild(root);
   renderWall(root, ctx);
+
+  const rules = [...root.querySelectorAll('.day-rule')].map((r) => r.querySelector('.day').textContent);
+  assert.deepEqual(rules, ['FRIDAY', 'SATURDAY', 'SUNDAY'], 'the days are the union of the billing day and the event nights, in week order');
 
   const cards = [...root.querySelectorAll('.card')];
   const subOf = (el) => el.querySelector('.time')?.textContent || '';
 
   const overmonos = cards.filter((c) => c.dataset.artist === 'Overmono');
   assert.equal(overmonos.length, 2, 'one card per appearance, same pick identity');
-  assert.deepEqual(overmonos.map(subOf).sort(), ['', 'Sun · 10 PM - 2 AM\nPublic Works'],
-    'fest card stays bare; the afters card says when, then where (two lines, 2026-08-29)');
+  assert.deepEqual(overmonos.map(subOf).sort(), ['', '10 PM – 2 AM'],
+    'the billing card stays bare; the afters tile says the time only — the venue is in the zoom');
 
   const hmds = cards.filter((c) => c.dataset.artist === 'Horse Meat Disco');
   assert.equal(hmds.length, 2, 'combined "Afters & Folsom" splits into both sections');
   for (const c of hmds) {
-    assert.equal(subOf(c), 'Fri · 9 PM - 3 AM\nPublic Works');
+    assert.equal(subOf(c), '9 PM – 3 AM');
     assert.ok(c.classList.contains('timed'), 'sub-label cards get the stacked layout');
+    assert.equal(JSON.parse(c.dataset.occ).stage, 'Fri · Public Works', 'the occurrence still knows the night and the venue');
   }
 
   const ga = cards.find((c) => c.dataset.artist === 'Groove Armada');
-  assert.equal(subOf(ga), 'Sat · The Great Northern', 'a venue with no confirmed time shows venue only');
+  assert.equal(subOf(ga), '', 'a show with no confirmed time wears no clock — the zoom says where');
+  assert.equal(ga.closest('.room').dataset.bucket, 'Afters');
 
+  root.remove();
+});
+
+test('lineup wall, a flat sort: one list, and the event card carries night · time then venue (no day implies the night)', () => {
+  state.FESTIVALS['afters-fest'] = AFTERS_FEST;
+  state.setActiveFestivalId('afters-fest');
+  const root = document.createElement('div');
+  document.body.appendChild(root);
+  renderWall(root, { ...ctx, sort: 'az' });
+  assert.deepEqual([...root.querySelectorAll('.day-rule')].map((r) => r.querySelector('.day').textContent), ['THE LINEUP']);
+  const hmd = [...root.querySelectorAll('.card')].find((c) => c.dataset.artist === 'Horse Meat Disco');
+  assert.equal(hmd.querySelector('.time').textContent, 'Fri · 9 PM - 3 AM\nPublic Works', 'the two-line label (2026-08-29) is the list form');
   root.remove();
 });
