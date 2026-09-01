@@ -9,7 +9,7 @@ import * as sync from '../sync.js';
 import * as spotify from '../spotify.js';
 import * as model from './model.js';
 import { loadFestivalIndex, loadFestival, loadCustomFestivals, FESTIVAL_INDEX, defaultFestivalId } from '../festivals.js';
-import { renderWall, refreshCard, showUndoToast, showToast, wireScrollspy, colorIndexOf, scheduledWeekendOf, positionNowLines, scrollToNowLine, dayNavOf } from './wall.js';
+import { renderWall, refreshCard, showUndoToast, showToast, wireScrollspy, colorIndexOf, scheduledWeekendOf, positionNowLines, scrollToNowLine, dayNavOf, cardFor } from './wall.js';
 import { loadPeopleFilter, savePeopleFilter, togglePerson, pruneToActive, loadSolo, saveSolo, loadHiddenBuckets, saveHiddenBuckets, toggleBucket } from './filters.js';
 import { deckSnapshot, restoreDeck } from './deck.js';
 import { OUT_MS, CASCADE_MS, STAGGER_MS, EASE_ARRIVE, EASE_LEAVE, canAnimate } from './motion.js';
@@ -418,9 +418,9 @@ function repaintWall() {
   // restored once the panel is back.
   if (deck) restoreDeck($('wall-root'), deck);
   if (keep) {
-    const occ = keep.occ ? JSON.stringify(keep.occ) : '';
-    const again = [...document.querySelectorAll(`#wall-root .card[data-artist="${CSS.escape(keep.artist)}"]`)]
-      .find((el) => (el.dataset.occ || '') === occ);
+    // Never a deck's face (wall.js cardFor): it wears the panel's top card's
+    // artist and occurrence, and a zoom restored onto it could not pick.
+    const again = cardFor($('wall-root'), keep.artist, keep.occ);
     if (again) zoomCard(again, keep.artist, ctx, { ...keep, instant: true });
   }
   renderDayNav();

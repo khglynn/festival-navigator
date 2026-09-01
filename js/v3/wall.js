@@ -17,7 +17,7 @@ import { factsFor, timeRange } from './card-facts.js'; // same runtime-only cycl
 import { passesPeople, columnsTemplate, railLabels } from './filters.js';
 import { nowOnDay, nowOffsetPx, clockLabel, festivalClock } from './now.js';
 import { eventModelOf, timetableOf, sortForTiles, bucketsOf, occOf, hourLabelOf, approxMark, parseEventTime, FEST_BUCKET } from './events.js';
-import { renderDeck, faceCtxFor, decorateFace, panelTime, closeDeck } from './deck.js'; // runtime-only cycle (deck renders cards)
+import { renderDeck, faceCtxFor, decorateFace, panelTime, closeDeck, refreshDeckState } from './deck.js'; // runtime-only cycle (deck renders cards)
 
 // ---- person -> board color ---------------------------------------------------
 // v4 people carry colorIndex. Legacy people carry a "R, G, B" string from the
@@ -257,7 +257,21 @@ export function refreshCard(el, artistName, ctx, { onSwap = null } = {}) {
   if (onSwap) onSwap(fresh);
   el.remove();
   if (hadFocus) fresh.focus();
+  // A pick landing on a deck's face is a pick landing in the pile — the deck
+  // answers the people filter as one object, so its dim and its name follow.
+  if (face) { const deck = fresh.closest('.deck'); if (deck) refreshDeckState(deck, ctx); }
   return fresh;
+}
+
+// The card a zoom should be restored onto after a repaint: the one carrying
+// this artist AND this occurrence — and never a deck's inert face, which
+// wears the same two facts as the panel's top card and comes first in
+// document order. A zoom restored onto the face has a no-op onTap: every
+// further tap on the grown card did nothing (review round, 2026-09-01).
+export function cardFor(root, artist, occ) {
+  const want = occ ? JSON.stringify(occ) : '';
+  return [...root.querySelectorAll('.card[data-artist]')]
+    .find((el) => el.dataset.artist === artist && el.dataset.deckFace !== '1' && (el.dataset.occ || '') === want) || null;
 }
 
 // ---- day grouping (lineup mode) -----------------------------------------------

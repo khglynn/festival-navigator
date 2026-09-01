@@ -30,7 +30,7 @@ dom.window.matchMedia = () => ({ matches: false, addEventListener() {}, removeEv
 const state = await import('../js/state.js');
 const model = await import('../js/v3/model.js');
 const { FESTIVALS, FESTIVAL_INDEX } = await import('../js/festivals.js');
-const { renderWall, refreshCard, dayNavOf } = await import('../js/v3/wall.js');
+const { renderWall, refreshCard, dayNavOf, cardFor } = await import('../js/v3/wall.js');
 const deck = await import('../js/v3/deck.js');
 const facts = await import('../js/v3/card-facts.js');
 
@@ -39,7 +39,7 @@ const portola = JSON.parse(readFileSync(join(ROOT, 'data/festivals/portola-2026.
 const lostlands = JSON.parse(readFileSync(join(ROOT, 'data/festivals/lost-lands-2026.json'), 'utf8'));
 
 const TOKEN = 'eventswalltoken_0123456789';
-FESTIVAL_INDEX.push({ id: 'portola-2026', status: 'scheduled' }, { id: 'lost-lands-2026', status: 'lineup' }, { id: 'grid-only', status: 'scheduled' }, { id: 'tiles-run', status: 'lineup' });
+FESTIVAL_INDEX.push({ id: 'portola-2026', status: 'scheduled' }, { id: 'lost-lands-2026', status: 'lineup' }, { id: 'grid-only', status: 'scheduled' }, { id: 'tiles-run', status: 'lineup' }, { id: 'approx-deck', status: 'lineup' });
 state.activateCrew(TOKEN, {
   v: 4, meta: {}, spotify: {},
   people: { Kevin: { colorIndex: 0 }, Nhu: { colorIndex: 1 } },
@@ -64,6 +64,22 @@ FESTIVALS['tiles-run'] = {
     { name: 'Opener', day: 'Afters', stage: 'Sat · The Room', night: 'Sat', venue: 'The Room', time: '10 PM', approx: true, doors: '10 PM', close: '1 AM', order: { seq: 1, of: 2, source: SRC, confirmed: true } },
     { name: 'Closer', day: 'Afters', stage: 'Sat · The Room', night: 'Sat', venue: 'The Room', time: '11 PM', approx: true, doors: '10 PM', close: '1 AM', order: { seq: 2, of: 2, source: SRC, confirmed: true } },
     { name: 'Nowhere Yet', day: 'Afters', stage: 'Sat · Elsewhere', night: 'Sat', venue: 'Elsewhere' },
+  ],
+};
+
+// A lineup fest whose Afters EARN columns (6 timed over 3 venues) and whose
+// pile of three at V1 is GUESSED (approx, no order — a pile nobody re-read).
+FESTIVALS['approx-deck'] = {
+  id: 'approx-deck', name: 'Approx Deck', status: 'lineup',
+  dayMeta: { Saturday: { wd: 'Sat', date: 'Oct 3' }, Afters: { date: 'Oct 3' } },
+  artists: [
+    { name: 'Headliner', day: 'Saturday' },
+    { name: 'P1', day: 'Afters', night: 'Sat', venue: 'V1', time: '10 PM', approx: true },
+    { name: 'P2', day: 'Afters', night: 'Sat', venue: 'V1', time: '10 PM', approx: true },
+    { name: 'P3', day: 'Afters', night: 'Sat', venue: 'V1', time: '10 PM', approx: true },
+    { name: 'L1', day: 'Afters', night: 'Sat', venue: 'V2', time: '11 PM' },
+    { name: 'L2', day: 'Afters', night: 'Sat', venue: 'V2', time: '11 PM' },
+    { name: 'S1', day: 'Afters', night: 'Sat', venue: 'V3', time: '9 PM' },
   ],
 };
 
@@ -235,7 +251,7 @@ test('the deck at rest: one button, the earliest card as an inert face, two ghos
   assert.equal(d.getAttribute('role'), 'button');
   assert.equal(d.tabIndex, 0);
   assert.equal(d.getAttribute('aria-expanded'), 'false');
-  assert.equal(d.getAttribute('aria-label'), '3 sets at Regency Ballroom from 8 PM — open to see them all');
+  assert.equal(d.getAttribute('aria-label'), '3 sets at Regency Ballroom from 8 PM — 1 picked — open to see them all', 'Nhu picked Channel Tres: the pile says so');
   assert.equal(d.querySelector('.deck-pill').textContent, '3 · 8 PM');
   assert.equal(d.querySelectorAll('.deck-ghost').length, 2);
   const face = d.querySelector('.card');
@@ -302,7 +318,7 @@ test('an open deck survives a repaint through its snapshot, and its cards can be
   const { root, ctx } = render('portola-2026');
   click(fridayDeck(root));
   const snap = deck.deckSnapshot();
-  assert.deepEqual(snap, { key: 'Afters|Friday|Regency Ballroom|1200', fromKeyboard: false });
+  assert.deepEqual(snap, { key: 'Afters|Friday|Regency Ballroom|1200', fromKeyboard: false, focus: null });
   renderWall(root, ctx);
   assert.equal(root.querySelector('.deck-panel'), null, 'a repaint takes the panel');
   assert.equal(deck.openDeckEl(), null, 'and the deck knows it — a render that does not restore (a search) leaves no stale open deck for a later repaint to resurrect');
@@ -388,4 +404,166 @@ test('a run inside a TILES section: the tile wears the tilde and the range, one 
     [['Opener', '~10 PM'], ['Closer', '~11 PM'], ['Nowhere Yet', undefined]]);
   assert.ok(afters.querySelector('.tba .card[data-artist="Nowhere Yet"]'), 'the timeless one sits under TIME TBA');
   assert.equal(afters.querySelectorAll('.sec-whisper').length, 1);
+});
+
+// ---- the review round (2026-09-01): the deck's P1s ---------------------------------------
+
+test('the deck answers the people filter as ONE object: lit when the filtered person picked anything in the pile, dimmed whole otherwise, never a lone dimmed face', () => {
+  // Nhu's only Friday pick is Jyoty — the deck's SECOND card, behind the face.
+  const { root } = render('portola-2026', { picks: { Jyoty: { Nhu: 4 } }, filterPeople: ['Nhu'] });
+  const d = fridayDeck(root);
+  assert.ok(!d.classList.contains('dim'), 'the pile holds her pick — lit');
+  assert.ok(!d.querySelector('.card').classList.contains('dim'), 'the face never dims on its own');
+  assert.match(d.getAttribute('aria-label'), /^3 sets at Regency Ballroom from 8 PM — 1 picked by Nhu — open/);
+  // Kevin picked nothing in the pile.
+  const { root: r2 } = render('portola-2026', { picks: { Jyoty: { Nhu: 4 } }, filterPeople: ['Kevin'] });
+  const d2 = fridayDeck(r2);
+  assert.ok(d2.classList.contains('dim'), 'nobody selected picked here — the whole deck dims');
+  assert.ok(!d2.querySelector('.card').classList.contains('dim'), 'no double dim');
+  assert.match(d2.getAttribute('aria-label'), /— none picked by Kevin —/);
+  // No filter: anyone's picks ride the name; a refresh of the face re-reads the pile.
+  const { root: r3, ctx: c3 } = render('portola-2026', { picks: { Jyoty: { Nhu: 4 }, 'Channel Tres': { Kevin: 1 } } });
+  const d3 = fridayDeck(r3);
+  assert.match(d3.getAttribute('aria-label'), /— 2 picked —/);
+  c3.picks = {};
+  refreshCard(d3.querySelector('.card'), 'Channel Tres', c3);
+  assert.ok(!d3.getAttribute('aria-label').includes('picked'), 'the picks went — the name follows');
+  // …and under a filter the same refresh re-evaluates the dim.
+  const { root: r4, ctx: c4 } = render('portola-2026', { picks: { Jyoty: { Nhu: 4 } }, filterPeople: ['Nhu'] });
+  const d4 = fridayDeck(r4);
+  assert.ok(!d4.classList.contains('dim'));
+  c4.picks = {};
+  refreshCard(d4.querySelector('.card'), 'Channel Tres', c4);
+  assert.ok(d4.classList.contains('dim'), 'her pick left the pile — the deck dims');
+  assert.ok(!d4.querySelector('.card').classList.contains('dim'));
+});
+
+test('a repaint restores a standing zoom onto the PANEL card, never the deck\'s inert face — and the grown card still picks', () => {
+  const { root, ctx } = render('portola-2026');
+  click(fridayDeck(root));
+  const panelTop = root.querySelector('.deck-panel-grid .card[data-artist="Channel Tres"]');
+  const face = fridayDeck(root).querySelector('.card');
+  assert.equal(face.dataset.artist, 'Channel Tres');
+  assert.equal(face.dataset.occ, panelTop.dataset.occ, 'the face and the panel\'s top card are two renderings of one occurrence');
+  facts.zoomCard(panelTop, 'Channel Tres', ctx, { occ: JSON.parse(panelTop.dataset.occ), onOpenNotes: ctx.onOpenNotes });
+  const keep = facts.zoomSnapshot();
+  const snap = deck.deckSnapshot();
+  facts.unzoom({ instant: true });
+  renderWall(root, ctx); // the sync echo
+  deck.restoreDeck(root, snap);
+  const naive = [...root.querySelectorAll('.card[data-artist="Channel Tres"]')].find((el) => (el.dataset.occ || '') === JSON.stringify(keep.occ));
+  assert.equal(naive.dataset.deckFace, '1', 'document order puts the face first — the trap cardFor exists for');
+  const again = cardFor(root, keep.artist, keep.occ);
+  assert.ok(again && again.closest('.deck-panel'), 'cardFor picks the panel card');
+  assert.notEqual(again.dataset.deckFace, '1');
+  facts.zoomCard(again, keep.artist, ctx, { ...keep, instant: true });
+  assert.equal(facts.zoomedCard(), again);
+  click(document.querySelector('#zoom-layer .zoom-card'));
+  assert.deepEqual(ctx.taps, ['Channel Tres'], 'a tap on the grown card picks — the face\'s no-op onTap is not in the loop');
+  facts.unzoom({ instant: true });
+});
+
+test('Escape belongs to the topmost layer: a notes sheet above the panel keeps the panel; without one, Escape closes it', () => {
+  const { root } = render('portola-2026');
+  const d = fridayDeck(root);
+  click(d);
+  const sheet = document.createElement('div');
+  sheet.id = 'artist-sheet';
+  document.body.appendChild(sheet);
+  try {
+    key('Escape');
+    assert.equal(deck.openDeckEl(), d, 'the sheet above takes Escape');
+  } finally { sheet.remove(); }
+  key('Escape');
+  assert.equal(deck.openDeckEl(), null);
+});
+
+test('focus goes home to the deck only for Escape / the ✕ / a second tap — never for a press outside, a scroll-away or a repaint — and always without scrolling', () => {
+  const { root, ctx } = render('portola-2026');
+  const d = fridayDeck(root);
+  const focusCalls = [];
+  const realFocus = d.focus.bind(d);
+  d.focus = (opts) => { focusCalls.push(opts); realFocus(opts); };
+  const enter = () => d.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+  enter();
+  assert.equal(deck.openDeckEl(), d);
+  key('Escape');
+  assert.deepEqual(focusCalls, [{ preventScroll: true }], 'Escape: home, without a scroll');
+  assert.equal(document.activeElement, d);
+  enter();
+  pressAt(root.querySelector('.day-rule'));
+  assert.equal(deck.openDeckEl(), null);
+  assert.equal(focusCalls.length, 1, 'an outside press does not pull focus to the deck');
+  enter();
+  const realRect = d.getBoundingClientRect;
+  d.getBoundingClientRect = () => ({ top: -500, bottom: -400, left: 0, right: 150, width: 150, height: 100 });
+  try {
+    window.dispatchEvent(new dom.window.Event('scroll'));
+    assert.equal(deck.openDeckEl(), null, 'the deck left the viewport — the panel closed');
+    assert.equal(focusCalls.length, 1, 'and nothing pulled the page back to it');
+  } finally { d.getBoundingClientRect = realRect; }
+  enter();
+  click(root.querySelector('.deck-panel .deck-close'));
+  assert.equal(focusCalls.length, 2, 'the ✕: home');
+  assert.equal(document.activeElement, d);
+  enter();
+  renderWall(root, ctx);
+  assert.equal(focusCalls.length, 2, 'a repaint never refocuses the old deck');
+});
+
+test('a repaint keeps a keyboard user\'s place inside the panel — the card they were on, not the first card', () => {
+  const { root, ctx } = render('portola-2026');
+  const d = fridayDeck(root);
+  d.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+  const cards = [...root.querySelectorAll('.deck-panel-grid .card')];
+  assert.equal(document.activeElement, cards[0], 'a keyboard open lands on the first card');
+  cards[1].focus();
+  const snap = deck.deckSnapshot();
+  assert.deepEqual(snap, { key: 'Afters|Friday|Regency Ballroom|1200', fromKeyboard: true, focus: 'Jyoty' });
+  renderWall(root, ctx);
+  deck.restoreDeck(root, snap);
+  assert.equal(document.activeElement.dataset.artist, 'Jyoty');
+  assert.ok(document.activeElement.closest('.deck-panel'));
+  renderWall(root, ctx);
+  assert.equal(document.activeElement, document.body);
+  deck.restoreDeck(root, { ...snap, focus: null });
+  assert.equal(deck.openDeckEl(), fridayDeck(root));
+  assert.equal(document.activeElement, document.body, 'no focus inside before the repaint: none moved after it');
+});
+
+test('place() reads the panel\'s LAYOUT box, not a mid-bloom bounding rect', () => {
+  const { root } = render('portola-2026');
+  const d = fridayDeck(root);
+  click(d);
+  const slot = root.querySelector('.deck-slot');
+  const iw = Object.getOwnPropertyDescriptor(window, 'innerWidth');
+  const ih = Object.getOwnPropertyDescriptor(window, 'innerHeight');
+  Object.defineProperty(slot, 'offsetWidth', { value: 200, configurable: true });
+  Object.defineProperty(slot, 'offsetHeight', { value: 100, configurable: true });
+  slot.getBoundingClientRect = () => ({ left: 0, top: 0, width: 150, height: 75, right: 150, bottom: 75 }); // the box at scale(.75), mid-bloom
+  d.getBoundingClientRect = () => ({ left: 450, top: 350, width: 100, height: 100, right: 550, bottom: 450 });
+  Object.defineProperty(window, 'innerWidth', { value: 1200, configurable: true });
+  Object.defineProperty(window, 'innerHeight', { value: 900, configurable: true });
+  try {
+    window.dispatchEvent(new dom.window.Event('scroll')); // follow → place
+    assert.equal(slot.style.left, '400px', '500 − 200/2: the layout width, not the transformed 150');
+    assert.equal(slot.style.top, '350px', '400 − 100/2');
+  } finally {
+    if (iw) Object.defineProperty(window, 'innerWidth', iw);
+    if (ih) Object.defineProperty(window, 'innerHeight', ih);
+  }
+});
+
+test('the deck\'s pill, accessible name and panel title carry the tilde when the top card\'s time is a guess', () => {
+  const { root } = render('approx-deck');
+  const d = root.querySelector('.deck');
+  assert.ok(d, 'three guessed 10 PM sets at V1 are a deck');
+  assert.equal(d.querySelector('.deck-pill').textContent, '3 · ~10 PM');
+  assert.match(d.getAttribute('aria-label'), /^3 sets at V1 from ~10 PM/);
+  assert.equal(d.querySelector('.card').dataset.time, '~10 PM');
+  click(d);
+  assert.equal(root.querySelector('.deck-panel-title').textContent, 'V1 · ~10 PM');
+  assert.equal(root.querySelector('.deck-panel').getAttribute('aria-label'), 'V1 · ~10 PM');
+  assert.deepEqual([...root.querySelectorAll('.deck-panel-grid .card')].map((c) => c.dataset.time), ['~10 PM', '~10 PM', '~10 PM']);
+  assert.equal(root.querySelectorAll('.room[data-bucket="Afters"] .sec-whisper').length, 1);
 });

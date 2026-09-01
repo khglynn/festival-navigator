@@ -875,6 +875,9 @@ button.f-chip.notes { cursor: pointer; }
 .deck-ghost.g1 { transform: translate(3px, 3px); }
 .deck-ghost.g2 { transform: translate(6px, 6px); opacity: .7; }
 .deck.open .deck-ghost { transform: none; opacity: 0; }
+/* The people filter dims the DECK as one object — the pile nobody selected
+ * picked in — never a lone face under lit ghosts. */
+.deck.dim { opacity: .28; }
 .deck-pill { position: absolute; right: 6px; top: 6px; z-index: 2; pointer-events: none;
              background: rgba(var(--brand), .9); color: var(--page); font-size: 8.5px; font-weight: 800;
              letter-spacing: .04em; border-radius: var(--r-pill); padding: 2px 7px; white-space: nowrap; }
