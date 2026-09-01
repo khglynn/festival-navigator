@@ -1,6 +1,6 @@
 # NOW — festival-navigator: the CLEAN ROUND is on `notes-desktop-round` (PR #13), preview-verified, waiting on Kevin's promote · v42 still on prod
 
-**last-updated: 2026-08-31 · mode: live**
+**last-updated: 2026-09-01 · mode: live**
 
 ## 2026-08-31 — Kevin's review round on the bloom: three real-input bugs, a CSS regression of mine, and two asks banked
 
@@ -77,10 +77,11 @@ room played BACK TO BACK — doors, not set times. Model §5: guessed times
 stacked in the time bands — never lanes, never combined cards. Mode
 consistency is law (§2): if any day of a section earns columns, all days
 render columns; the venue heads stay each day's own. The deck narrows to
-truly-simultaneous data. **His three OPEN calls (canvas header asks them):**
-guessed-time treatment A tilde / B word / C running-order (canvas
-recommends A); the ordering heuristic as default guess; consistency rule
-locked. (3) **Teammate starvation explained enough to act on**: Kevin's
+truly-simultaneous data. **Copy LOCKED (Kevin, 2026-09-01):** resting card `~12 AM`; the zoom's
+two lines `Sun · Runs 10 PM – 2 AM` / `Guessing they're 3rd of 4` (a door
+to the poster; the word goes once a venue posts the order) — MODEL-V3 §5,
+canvas frame `hover`. Still implicitly open: the ordering heuristic as the
+default guess, and the mode-per-fest consistency rule (he has not said no). (3) **Teammate starvation explained enough to act on**: Kevin's
 mid-flow account switches at usage limits freeze background teammates
 (main loop survives; artifact watches stop with "the signed-in account
 changed"). No revive path — respawn on the new account; note banked in
@@ -88,10 +89,14 @@ changed"). No revive path — respawn on the new account; note banked in
 thread's teammates died with his exit/resume; the board is clear.
 (4) A stray "zz test" note by Ava sits in zz-design's Groove Armada thread
 (battery cleanup miss) — sweep with the promote-time Neon cleanup.
-(5) Zoom code audited post-fix at Kevin's ask: one architecture (the
-bloom) + dated, tested robustness layers; no TODOs/dead code; verdict
-"dense but not duct tape" — the risk is density, so read the why-comments
-before touching card-facts.js.
+(5) Zoom code REVIEWED for simplification (11 Opus agents + Codex,
+2026-09-01): dense but sound; ~20 lines of safe tidying survived the
+skeptics; 19 of 40 robustness layers have no test and 17 of those are
+ordinary jsdom tests nobody wrote. Doc with the surviving/refuted list and
+the 40-layer coverage table: `claude-plans/2026-09-01-zoom-simplification-
+review.md`. Not applied — Kevin's call; tests-first if he says go.
+(6) Link previews lost their who-corner ticks (Kevin's call); the two
+stray root screenshots went to the Trash.
 
 **Asks banked, awaiting Kevin:** the structured events model for
 Afters/Folsom (nights + venues + sort; proposal with two decisions in

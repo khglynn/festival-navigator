@@ -157,7 +157,7 @@ const hasDoor = (venue) => Boolean((fest.venues || {})[venue]);
 function hasDoorLate(v) { return Boolean((fest.venues || {})[v]); }
 const dayRule = (head, sub, noteCount = null) => `<div class="day-rule"><span class="day">${esc(head)}</span><span class="date">${esc(sub || '')}</span><span class="line"></span>${noteCount === null ? '' : `<button class="chip-notes" style="height:17px;cursor:pointer;flex:none">${noteCount ? `${noteCount} ✎` : '+ ✎'}</button>`}</div>`;
 
-export { events, AFTERS, FOLSOM, NIGHTS, NIGHT_DATE, NIGHT_LONG, card, dayRule, parseTime, hourLabel, esc, PIN, hasDoor, fest };
+export { events, AFTERS, FOLSOM, NIGHTS, NIGHT_DATE, NIGHT_LONG, card, dayRule, parseTime, hourLabel, esc, PIN, hasDoor, fest, peopleFor, auraBackground, hslOf };
 
 // ---- FRAME A — venue columns, one timetable per night ---------------------
 // The exact grammar of the Sat/Sun grid: sticky stage strip, 15-minute rows

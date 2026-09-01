@@ -99,12 +99,18 @@ not set times. The model:
   in the time bands, never side-by-side lanes, never a deck, never a
   combined card. Artist separation is law: every set stays its own
   tappable card (a combined card would eat the crew's picks).
-- **The mark:** a guessed time renders with a tilde (`~1 AM`) plus ONE
-  section-level whisper ("~ marks a guessed set time — the order is the
-  plan"). Never per-card explanations. Canvas frames `backtoback` and
-  `approx` show the pick and the two runners-up (the word `1-ish`; the
-  running order `3rd of 4`, which is honest but falls off the clock).
-  Kevin's treatment call is open as of 2026-08-31.
+- **The mark (LOCKED, Kevin 2026-09-01):** the resting card renders the
+  guessed time with a tilde (`~12 AM`) plus ONE section-level whisper
+  ("~ marks a guessed set time — the order is the plan"). Never per-card
+  explanations. The zoom tells the whole truth in two `f-sub` lines —
+  `Sun · Runs 10 PM – 2 AM` (the venue's real window, so no invented
+  clock in the zoom) then `Guessing they're 3rd of 4` as a DOOR to the
+  poster or ticket page, the way a venue is a door to its map. Once the
+  venue posts the order the word goes and the door stays: `3rd of 4`.
+  Data this implies per event: `doors`, `close`, `order: { seq, of,
+  source (url), confirmed }`. Canvas frame `hover` shows all three
+  states; `approx` keeps the runners-up (the word `1-ish`; running order
+  on the resting card, which falls off the clock).
 
 ## 6 · Build sizing (honest)
 

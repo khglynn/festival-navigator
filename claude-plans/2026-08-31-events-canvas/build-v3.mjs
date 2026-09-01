@@ -7,7 +7,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { AFTERS, FOLSOM, NIGHT_DATE, card, parseTime, hourLabel, esc, fest } from './build.mjs';
+import { AFTERS, FOLSOM, NIGHT_DATE, card, parseTime, hourLabel, esc, fest, peopleFor, auraBackground, hslOf, PIN } from './build.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(HERE, '../..');
@@ -255,6 +255,42 @@ ${dayTabs(TABS, 'SUN')}
   <div class="approx-demo"><div class="approx-head">C · THE RUNNING ORDER<span>no clock claimed — and it leaves the timetable</span></div>${runStack((e) => `${ORD[e.seq]} of 4 · doors 10 PM`)}</div>
 </div>`;
 
+// Round 4b — the HOVER for a guessed set, in the zoom's own markup and copy
+// vocabulary. Kevin's line (2026-09-01): "Runs 10pm-2am · Guessing they're
+// 3rd of 4", the guess linked to the poster; once the venue posts the order
+// the word "Guessing" goes and the link stays. The resting card keeps its
+// tilde time; the zoom tells the whole truth — the venue's real window plus
+// the order and how sure we are — and the order is a DOOR to the source,
+// the way a venue is a door to its map.
+function grownMock(name, subLines, { where = 'The Midway', chips = ['+ note'] } = {}) {
+  const people = peopleFor(name);
+  const { background, animated } = auraBackground(people);
+  const pills = people.map((p) => `<span class="f-pill${p.isYou ? ' you' : ''}" style="background:${hslOf(p.colorIndex, 0.42)}">${p.isYou ? 'You' : esc(p.name)}${p.level === 4 ? '<b>MUST</b>' : ''}</span>`).join('');
+  return `<div class="zoom-slot shown" style="position:relative;min-width:216px;max-width:360px;min-height:132px;pointer-events:auto">
+  <div class="zoom-card"><div class="z-surface${animated ? ' animated' : ''}" style="background:${background}"><span class="card-grain"></span></div>
+    <div class="f-name">${esc(name)}</div>
+    <div class="f-grown">${subLines.map((l) => `<div class="f-sub">${l}</div>`).join('')}
+      <a class="f-where fest-place" href="#">${PIN}${esc(where)}</a>
+      ${people.length ? `<div class="f-who">${pills}</div>` : ''}
+      <div class="f-chips">${chips.map((c) => `<span class="f-chip notes">${esc(c)}</span>`).join('')}</div>
+    </div></div></div>`;
+}
+const orderDoor = (text) => `<a class="f-order" href="#">${esc(text)}</a>`;
+const hoverFrame = () => `
+${dayTabs(TABS, 'SUN')}
+<div class="day-rule"><span class="day">SUNDAY</span><span class="date">${NIGHT_DATE.Sun} · THE HOVER — ORDER, DOORS, CLOSE, AND HOW SURE WE ARE</span><span class="line"></span></div>
+<div class="hover-row">
+  <div class="hover-demo"><div class="approx-head">AT REST<span>the card keeps its guessed time</span></div>
+    <div class="wall-grid" style="grid-template-columns:150px">${card('VTSS', { time: '~12 AM', style: 'min-height:64px;' })}</div></div>
+  <div class="hover-demo"><div class="approx-head">GROWN · YOUR LINE<span>Guessing, linked to the poster</span></div>
+    ${grownMock('VTSS', [`Sun · Runs 10 PM – 2 AM · ${orderDoor("Guessing they're 3rd of 4")}`])}</div>
+  <div class="hover-demo"><div class="approx-head">GROWN · SPLIT — THE PICK<span>Kevin, 2026-09-01: the window, then the guess on its own line</span></div>
+    ${grownMock('VTSS', ['Sun · Runs 10 PM – 2 AM', orderDoor("Guessing they're 3rd of 4")])}</div>
+  <div class="hover-demo"><div class="approx-head">GROWN · CONFIRMED<span>the venue posted the order — the word goes, the door stays</span></div>
+    ${grownMock('VTSS', [`Sun · Runs 10 PM – 2 AM · ${orderDoor('3rd of 4')}`])}</div>
+</div>
+<div class="whisper-hidden">The order is a door to the poster or ticket page, the way a venue is a door to its map. Tap anywhere else on the grown card and it is a pick, as always.</div>`;
+
 // Generalization: Lost Lands' pre-party Wednesday — one venue, no times.
 const llFrame = () => {
   const wedKey = 'Wednesday, Sept 16 (Early Arrival Pre-Party)';
@@ -308,6 +344,11 @@ const V3_CSS = `
   .approx-row { display: flex; gap: 26px; align-items: flex-start; flex-wrap: wrap; margin-top: 6px; }
   .approx-demo { flex: 1 1 300px; min-width: 280px; max-width: 420px; }
   .approx-head { font-family: var(--font-display); letter-spacing: .06em; font-size: 12px; color: var(--text-header); margin: 10px 0 6px; }
+  .hover-row { display: flex; gap: 26px; align-items: flex-start; flex-wrap: wrap; margin-top: 6px; }
+  .hover-demo { flex: 0 1 auto; min-width: 150px; }
+  .hover-demo .zoom-slot { margin-top: 2px; }
+  a.f-order { color: #fff; text-decoration: none; border-bottom: 1px solid rgba(255,255,255,.35); padding-bottom: 1px; }
+  a.f-order:hover { border-bottom-color: rgba(255,255,255,.75); }
   .approx-head span { display: block; font-family: var(--font-ui); font-size: 9.5px; color: var(--text-tertiary); font-weight: 700; letter-spacing: .07em; margin-top: 3px; }
 `;
 function frameDoc(body) {
@@ -347,6 +388,9 @@ addFrame('backtoback', 'THE RE-READ — one room, back to back, times guessed', 
 addFrame('approx', 'GUESSED TIMES — three ways to wear one on a card', 1440,
   'The same four-set run, three treatments. A keeps the set on the clock and marks the guess (~1 AM) — my pick: the afters stay plannable against everything else that night. B says it in a word (1-ish) — warmer, slightly wordier. C claims no clock at all, just the running order — honest, but the run falls out of the timetable, so you can’t see it against the rest of the night.',
   approxFrame());
+addFrame('hover', 'THE HOVER — your line, in the zoom’s own type', 1440,
+  'Grid keeps the tilde (~12 AM). The grown card says the whole truth in your words: the venue’s real window, then the order and how sure we are — “Guessing they’re 3rd of 4” as a door to the poster. Three cuts: your one-liner as written, the same split onto two lines — YOUR PICK — and the confirmed state once a venue posts the order (the word goes, the door stays). Everything else on the card is exactly today’s zoom — venue door, who-pills, notes chip.',
+  hoverFrame());
 addFrame('lostlands', 'LOST LANDS · WEDNESDAY — the rule generalizes', 1440,
   'A pre-party day at a single venue with no set times: the heuristic’s floor. One section, tiles, time TBA — no venue columns, no snowflake code. Every fest file lands somewhere sane.',
   llFrame());

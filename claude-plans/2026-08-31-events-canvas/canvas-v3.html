@@ -35,7 +35,7 @@
     <div class="call"><b>THE RULE</b><span>Per section: <strong>venue columns on a clock</strong> only when the clock pays — 5+ timed shows, venues repeating (≥ 1.5 shows per venue), most shows timed. Otherwise <strong>time-sorted tiles</strong>. Files never declare layouts; the numbers decide. <strong>And the mode is decided once per fest</strong> (your call, 2026-08-31): if any day of a section earns columns, every day of that section renders columns — no Friday-columns / Saturday-tiles whiplash. The COLUMN SET stays each day’s own venues, which is also the answer when stages differ day to day: the mode holds steady, the heads change with the day.</span></div>
     <div class="call"><b>YOUR CALLS</b><span>1 — Guessed times: the tilde (A), the word (B), or the running order (C)? 2 — The ordering read (buy-tickets name closes, other large print before it, small print opens): good enough to ship as the default guess? 3 — Mode-per-fest consistency as stated above: locked?</span></div>
   </div>
-  <nav class="jump"><a href="#fri-desktop">PORTOLA · FRIDAY</a><a href="#fri-phone">PORTOLA · FRIDAY · phone</a><a href="#sat-desktop">PORTOLA · SATURDAY</a><a href="#sat-phone">PORTOLA · SATURDAY · phone</a><a href="#filter">THE BUCKET FILTER</a><a href="#crammed">THE EDGE CASE, RAW</a><a href="#deck">THE DECK</a><a href="#backtoback">THE RE-READ</a><a href="#approx">GUESSED TIMES</a><a href="#lostlands">LOST LANDS · WEDNESDAY</a></nav>
+  <nav class="jump"><a href="#fri-desktop">PORTOLA · FRIDAY</a><a href="#fri-phone">PORTOLA · FRIDAY · phone</a><a href="#sat-desktop">PORTOLA · SATURDAY</a><a href="#sat-phone">PORTOLA · SATURDAY · phone</a><a href="#filter">THE BUCKET FILTER</a><a href="#crammed">THE EDGE CASE, RAW</a><a href="#deck">THE DECK</a><a href="#backtoback">THE RE-READ</a><a href="#approx">GUESSED TIMES</a><a href="#hover">THE HOVER</a><a href="#lostlands">LOST LANDS · WEDNESDAY</a></nav>
 </header>
 <section id="fri-desktop">
   <div class="fh"><h2>PORTOLA · FRIDAY — a day holds everything (desktop)</h2><p><span class="w">1440px</span> · Day-first: no more fri-sat-sun three times over. Friday has no main stages, so the day is AFTERS then FOLSOM, each laid out by the rule — Friday’s afters earn columns, Folsom lands on tiles. Resting cards stay clean: venue and map door live in the hold/hover zoom, and a missing time simply doesn’t show.</p></div>
@@ -85,6 +85,11 @@
   .approx-row { display: flex; gap: 26px; align-items: flex-start; flex-wrap: wrap; margin-top: 6px; }
   .approx-demo { flex: 1 1 300px; min-width: 280px; max-width: 420px; }
   .approx-head { font-family: var(--font-display); letter-spacing: .06em; font-size: 12px; color: var(--text-header); margin: 10px 0 6px; }
+  .hover-row { display: flex; gap: 26px; align-items: flex-start; flex-wrap: wrap; margin-top: 6px; }
+  .hover-demo { flex: 0 1 auto; min-width: 150px; }
+  .hover-demo .zoom-slot { margin-top: 2px; }
+  a.f-order { color: #fff; text-decoration: none; border-bottom: 1px solid rgba(255,255,255,.35); padding-bottom: 1px; }
+  a.f-order:hover { border-bottom-color: rgba(255,255,255,.75); }
   .approx-head span { display: block; font-family: var(--font-ui); font-size: 9.5px; color: var(--text-tertiary); font-weight: 700; letter-spacing: .07em; margin-top: 3px; }
 &lt;/style&gt;&lt;/head&gt;
 &lt;body&gt;&lt;div class=&quot;sh&quot;&gt;
@@ -147,6 +152,11 @@
   .approx-row { display: flex; gap: 26px; align-items: flex-start; flex-wrap: wrap; margin-top: 6px; }
   .approx-demo { flex: 1 1 300px; min-width: 280px; max-width: 420px; }
   .approx-head { font-family: var(--font-display); letter-spacing: .06em; font-size: 12px; color: var(--text-header); margin: 10px 0 6px; }
+  .hover-row { display: flex; gap: 26px; align-items: flex-start; flex-wrap: wrap; margin-top: 6px; }
+  .hover-demo { flex: 0 1 auto; min-width: 150px; }
+  .hover-demo .zoom-slot { margin-top: 2px; }
+  a.f-order { color: #fff; text-decoration: none; border-bottom: 1px solid rgba(255,255,255,.35); padding-bottom: 1px; }
+  a.f-order:hover { border-bottom-color: rgba(255,255,255,.75); }
   .approx-head span { display: block; font-family: var(--font-ui); font-size: 9.5px; color: var(--text-tertiary); font-weight: 700; letter-spacing: .07em; margin-top: 3px; }
 &lt;/style&gt;&lt;/head&gt;
 &lt;body&gt;&lt;div class=&quot;sh&quot;&gt;
@@ -209,6 +219,11 @@
   .approx-row { display: flex; gap: 26px; align-items: flex-start; flex-wrap: wrap; margin-top: 6px; }
   .approx-demo { flex: 1 1 300px; min-width: 280px; max-width: 420px; }
   .approx-head { font-family: var(--font-display); letter-spacing: .06em; font-size: 12px; color: var(--text-header); margin: 10px 0 6px; }
+  .hover-row { display: flex; gap: 26px; align-items: flex-start; flex-wrap: wrap; margin-top: 6px; }
+  .hover-demo { flex: 0 1 auto; min-width: 150px; }
+  .hover-demo .zoom-slot { margin-top: 2px; }
+  a.f-order { color: #fff; text-decoration: none; border-bottom: 1px solid rgba(255,255,255,.35); padding-bottom: 1px; }
+  a.f-order:hover { border-bottom-color: rgba(255,255,255,.75); }
   .approx-head span { display: block; font-family: var(--font-ui); font-size: 9.5px; color: var(--text-tertiary); font-weight: 700; letter-spacing: .07em; margin-top: 3px; }
 &lt;/style&gt;&lt;/head&gt;
 &lt;body&gt;&lt;div class=&quot;sh&quot;&gt;
@@ -272,6 +287,11 @@
   .approx-row { display: flex; gap: 26px; align-items: flex-start; flex-wrap: wrap; margin-top: 6px; }
   .approx-demo { flex: 1 1 300px; min-width: 280px; max-width: 420px; }
   .approx-head { font-family: var(--font-display); letter-spacing: .06em; font-size: 12px; color: var(--text-header); margin: 10px 0 6px; }
+  .hover-row { display: flex; gap: 26px; align-items: flex-start; flex-wrap: wrap; margin-top: 6px; }
+  .hover-demo { flex: 0 1 auto; min-width: 150px; }
+  .hover-demo .zoom-slot { margin-top: 2px; }
+  a.f-order { color: #fff; text-decoration: none; border-bottom: 1px solid rgba(255,255,255,.35); padding-bottom: 1px; }
+  a.f-order:hover { border-bottom-color: rgba(255,255,255,.75); }
   .approx-head span { display: block; font-family: var(--font-ui); font-size: 9.5px; color: var(--text-tertiary); font-weight: 700; letter-spacing: .07em; margin-top: 3px; }
 &lt;/style&gt;&lt;/head&gt;
 &lt;body&gt;&lt;div class=&quot;sh&quot;&gt;
@@ -335,6 +355,11 @@
   .approx-row { display: flex; gap: 26px; align-items: flex-start; flex-wrap: wrap; margin-top: 6px; }
   .approx-demo { flex: 1 1 300px; min-width: 280px; max-width: 420px; }
   .approx-head { font-family: var(--font-display); letter-spacing: .06em; font-size: 12px; color: var(--text-header); margin: 10px 0 6px; }
+  .hover-row { display: flex; gap: 26px; align-items: flex-start; flex-wrap: wrap; margin-top: 6px; }
+  .hover-demo { flex: 0 1 auto; min-width: 150px; }
+  .hover-demo .zoom-slot { margin-top: 2px; }
+  a.f-order { color: #fff; text-decoration: none; border-bottom: 1px solid rgba(255,255,255,.35); padding-bottom: 1px; }
+  a.f-order:hover { border-bottom-color: rgba(255,255,255,.75); }
   .approx-head span { display: block; font-family: var(--font-ui); font-size: 9.5px; color: var(--text-tertiary); font-weight: 700; letter-spacing: .07em; margin-top: 3px; }
 &lt;/style&gt;&lt;/head&gt;
 &lt;body&gt;&lt;div class=&quot;sh&quot;&gt;
@@ -397,6 +422,11 @@
   .approx-row { display: flex; gap: 26px; align-items: flex-start; flex-wrap: wrap; margin-top: 6px; }
   .approx-demo { flex: 1 1 300px; min-width: 280px; max-width: 420px; }
   .approx-head { font-family: var(--font-display); letter-spacing: .06em; font-size: 12px; color: var(--text-header); margin: 10px 0 6px; }
+  .hover-row { display: flex; gap: 26px; align-items: flex-start; flex-wrap: wrap; margin-top: 6px; }
+  .hover-demo { flex: 0 1 auto; min-width: 150px; }
+  .hover-demo .zoom-slot { margin-top: 2px; }
+  a.f-order { color: #fff; text-decoration: none; border-bottom: 1px solid rgba(255,255,255,.35); padding-bottom: 1px; }
+  a.f-order:hover { border-bottom-color: rgba(255,255,255,.75); }
   .approx-head span { display: block; font-family: var(--font-ui); font-size: 9.5px; color: var(--text-tertiary); font-weight: 700; letter-spacing: .07em; margin-top: 3px; }
 &lt;/style&gt;&lt;/head&gt;
 &lt;body&gt;&lt;div class=&quot;sh&quot;&gt;
@@ -455,6 +485,11 @@
   .approx-row { display: flex; gap: 26px; align-items: flex-start; flex-wrap: wrap; margin-top: 6px; }
   .approx-demo { flex: 1 1 300px; min-width: 280px; max-width: 420px; }
   .approx-head { font-family: var(--font-display); letter-spacing: .06em; font-size: 12px; color: var(--text-header); margin: 10px 0 6px; }
+  .hover-row { display: flex; gap: 26px; align-items: flex-start; flex-wrap: wrap; margin-top: 6px; }
+  .hover-demo { flex: 0 1 auto; min-width: 150px; }
+  .hover-demo .zoom-slot { margin-top: 2px; }
+  a.f-order { color: #fff; text-decoration: none; border-bottom: 1px solid rgba(255,255,255,.35); padding-bottom: 1px; }
+  a.f-order:hover { border-bottom-color: rgba(255,255,255,.75); }
   .approx-head span { display: block; font-family: var(--font-ui); font-size: 9.5px; color: var(--text-tertiary); font-weight: 700; letter-spacing: .07em; margin-top: 3px; }
 &lt;/style&gt;&lt;/head&gt;
 &lt;body&gt;&lt;div class=&quot;sh&quot;&gt;
@@ -525,6 +560,11 @@
   .approx-row { display: flex; gap: 26px; align-items: flex-start; flex-wrap: wrap; margin-top: 6px; }
   .approx-demo { flex: 1 1 300px; min-width: 280px; max-width: 420px; }
   .approx-head { font-family: var(--font-display); letter-spacing: .06em; font-size: 12px; color: var(--text-header); margin: 10px 0 6px; }
+  .hover-row { display: flex; gap: 26px; align-items: flex-start; flex-wrap: wrap; margin-top: 6px; }
+  .hover-demo { flex: 0 1 auto; min-width: 150px; }
+  .hover-demo .zoom-slot { margin-top: 2px; }
+  a.f-order { color: #fff; text-decoration: none; border-bottom: 1px solid rgba(255,255,255,.35); padding-bottom: 1px; }
+  a.f-order:hover { border-bottom-color: rgba(255,255,255,.75); }
   .approx-head span { display: block; font-family: var(--font-ui); font-size: 9.5px; color: var(--text-tertiary); font-weight: 700; letter-spacing: .07em; margin-top: 3px; }
 &lt;/style&gt;&lt;/head&gt;
 &lt;body&gt;&lt;div class=&quot;sh&quot;&gt;
@@ -586,6 +626,11 @@
   .approx-row { display: flex; gap: 26px; align-items: flex-start; flex-wrap: wrap; margin-top: 6px; }
   .approx-demo { flex: 1 1 300px; min-width: 280px; max-width: 420px; }
   .approx-head { font-family: var(--font-display); letter-spacing: .06em; font-size: 12px; color: var(--text-header); margin: 10px 0 6px; }
+  .hover-row { display: flex; gap: 26px; align-items: flex-start; flex-wrap: wrap; margin-top: 6px; }
+  .hover-demo { flex: 0 1 auto; min-width: 150px; }
+  .hover-demo .zoom-slot { margin-top: 2px; }
+  a.f-order { color: #fff; text-decoration: none; border-bottom: 1px solid rgba(255,255,255,.35); padding-bottom: 1px; }
+  a.f-order:hover { border-bottom-color: rgba(255,255,255,.75); }
   .approx-head span { display: block; font-family: var(--font-ui); font-size: 9.5px; color: var(--text-tertiary); font-weight: 700; letter-spacing: .07em; margin-top: 3px; }
 &lt;/style&gt;&lt;/head&gt;
 &lt;body&gt;&lt;div class=&quot;sh&quot;&gt;
@@ -596,6 +641,97 @@
   &lt;div class=&quot;approx-demo&quot;&gt;&lt;div class=&quot;approx-head&quot;&gt;B · THE WORD&lt;span&gt;11-ish — warmer, a touch wordier&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;wall-grid&quot; style=&quot;grid-template-columns:1fr;gap:7px&quot;&gt;&lt;div class=&quot;card timed&quot; style=&quot;min-height:64px;background:#1C1731&quot; role=&quot;button&quot; tabindex=&quot;0&quot;&gt;&lt;span class=&quot;name&quot; style=&quot;color:#B9B3CC&quot;&gt;MGNA Crrrta&lt;/span&gt;&lt;span class=&quot;time&quot; style=&quot;color:#877FA4&quot;&gt;10-ish&lt;/span&gt;&lt;span class=&quot;corner-about&quot;&gt;&lt;/span&gt;&lt;span class=&quot;corner-who&quot;&gt;&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;card timed&quot; style=&quot;min-height:64px;background:radial-gradient(130% 130% at 20% 120%, hsla(221,90%,62%,0.75) 0%, hsla(221,90%,62%,0.375) 45%, transparent 78%), #1C1731&quot; role=&quot;button&quot; tabindex=&quot;0&quot;&gt;&lt;span class=&quot;card-grain&quot;&gt;&lt;/span&gt;&lt;span class=&quot;name&quot; style=&quot;color:#fff&quot;&gt;horsegiirL&lt;/span&gt;&lt;span class=&quot;time&quot; style=&quot;color:rgba(255,255,255,.75)&quot;&gt;11-ish&lt;/span&gt;&lt;span class=&quot;corner-about&quot;&gt;&lt;/span&gt;&lt;span class=&quot;corner-who&quot;&gt;&lt;span class=&quot;mark&quot; style=&quot;width:4px;background:hsla(221,90%,62%,0.5);border:1px solid hsl(221,85%,82%);font-size:0px&quot;&gt;&lt;/span&gt;&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;card timed&quot; style=&quot;min-height:64px;background:radial-gradient(130% 130% at 20% 120%, hsla(10,90%,62%,0.75) 0%, hsla(10,90%,62%,0.375) 45%, transparent 78%), radial-gradient(130% 130% at 85% -20%, hsla(221,90%,62%,0.5) 0%, hsla(221,90%,62%,0.25) 45%, transparent 78%), #1C1731&quot; role=&quot;button&quot; tabindex=&quot;0&quot;&gt;&lt;span class=&quot;card-grain&quot;&gt;&lt;/span&gt;&lt;span class=&quot;name&quot; style=&quot;color:#fff&quot;&gt;VTSS&lt;/span&gt;&lt;span class=&quot;time&quot; style=&quot;color:rgba(255,255,255,.75)&quot;&gt;12-ish&lt;/span&gt;&lt;span class=&quot;corner-about&quot;&gt;&lt;/span&gt;&lt;span class=&quot;corner-who&quot;&gt;&lt;span class=&quot;mark&quot; style=&quot;width:4px;background:hsla(10,90%,62%,0.5);border:1px solid #fff;font-size:0px&quot;&gt;&lt;/span&gt;&lt;span class=&quot;mark&quot; style=&quot;width:4px;background:hsla(221,90%,62%,0.5);border:1px solid hsl(221,85%,82%);font-size:0px&quot;&gt;&lt;/span&gt;&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;card timed&quot; style=&quot;min-height:64px;background:radial-gradient(130% 130% at 20% 120%, hsla(221,90%,62%,1) 0%, hsla(221,90%,62%,0.5) 45%, transparent 78%), radial-gradient(130% 130% at 85% -20%, hsla(150,70%,50%,1) 0%, hsla(150,70%,50%,0.5) 45%, transparent 78%), #1C1731&quot; role=&quot;button&quot; tabindex=&quot;0&quot;&gt;&lt;span class=&quot;card-grain&quot;&gt;&lt;/span&gt;&lt;span class=&quot;name&quot; style=&quot;color:#fff&quot;&gt;Two Shell&lt;/span&gt;&lt;span class=&quot;time&quot; style=&quot;color:rgba(255,255,255,.75)&quot;&gt;1-ish&lt;/span&gt;&lt;span class=&quot;corner-about&quot;&gt;&lt;/span&gt;&lt;span class=&quot;corner-who&quot;&gt;&lt;span class=&quot;mark&quot; style=&quot;width:4px;background:hsla(221,90%,62%,0.5);border:1px solid hsl(221,85%,82%);font-size:0px&quot;&gt;&lt;/span&gt;&lt;span class=&quot;mark&quot; style=&quot;width:4px;background:hsla(150,70%,50%,0.5);border:1px solid hsl(150,70%,82%);font-size:0px&quot;&gt;&lt;/span&gt;&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;
   &lt;div class=&quot;approx-demo&quot;&gt;&lt;div class=&quot;approx-head&quot;&gt;C · THE RUNNING ORDER&lt;span&gt;no clock claimed — and it leaves the timetable&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;wall-grid&quot; style=&quot;grid-template-columns:1fr;gap:7px&quot;&gt;&lt;div class=&quot;card timed&quot; style=&quot;min-height:64px;background:#1C1731&quot; role=&quot;button&quot; tabindex=&quot;0&quot;&gt;&lt;span class=&quot;name&quot; style=&quot;color:#B9B3CC&quot;&gt;MGNA Crrrta&lt;/span&gt;&lt;span class=&quot;time&quot; style=&quot;color:#877FA4&quot;&gt;1st of 4 · doors 10 PM&lt;/span&gt;&lt;span class=&quot;corner-about&quot;&gt;&lt;/span&gt;&lt;span class=&quot;corner-who&quot;&gt;&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;card timed&quot; style=&quot;min-height:64px;background:radial-gradient(130% 130% at 20% 120%, hsla(221,90%,62%,0.75) 0%, hsla(221,90%,62%,0.375) 45%, transparent 78%), #1C1731&quot; role=&quot;button&quot; tabindex=&quot;0&quot;&gt;&lt;span class=&quot;card-grain&quot;&gt;&lt;/span&gt;&lt;span class=&quot;name&quot; style=&quot;color:#fff&quot;&gt;horsegiirL&lt;/span&gt;&lt;span class=&quot;time&quot; style=&quot;color:rgba(255,255,255,.75)&quot;&gt;2nd of 4 · doors 10 PM&lt;/span&gt;&lt;span class=&quot;corner-about&quot;&gt;&lt;/span&gt;&lt;span class=&quot;corner-who&quot;&gt;&lt;span class=&quot;mark&quot; style=&quot;width:4px;background:hsla(221,90%,62%,0.5);border:1px solid hsl(221,85%,82%);font-size:0px&quot;&gt;&lt;/span&gt;&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;card timed&quot; style=&quot;min-height:64px;background:radial-gradient(130% 130% at 20% 120%, hsla(10,90%,62%,0.75) 0%, hsla(10,90%,62%,0.375) 45%, transparent 78%), radial-gradient(130% 130% at 85% -20%, hsla(221,90%,62%,0.5) 0%, hsla(221,90%,62%,0.25) 45%, transparent 78%), #1C1731&quot; role=&quot;button&quot; tabindex=&quot;0&quot;&gt;&lt;span class=&quot;card-grain&quot;&gt;&lt;/span&gt;&lt;span class=&quot;name&quot; style=&quot;color:#fff&quot;&gt;VTSS&lt;/span&gt;&lt;span class=&quot;time&quot; style=&quot;color:rgba(255,255,255,.75)&quot;&gt;3rd of 4 · doors 10 PM&lt;/span&gt;&lt;span class=&quot;corner-about&quot;&gt;&lt;/span&gt;&lt;span class=&quot;corner-who&quot;&gt;&lt;span class=&quot;mark&quot; style=&quot;width:4px;background:hsla(10,90%,62%,0.5);border:1px solid #fff;font-size:0px&quot;&gt;&lt;/span&gt;&lt;span class=&quot;mark&quot; style=&quot;width:4px;background:hsla(221,90%,62%,0.5);border:1px solid hsl(221,85%,82%);font-size:0px&quot;&gt;&lt;/span&gt;&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;card timed&quot; style=&quot;min-height:64px;background:radial-gradient(130% 130% at 20% 120%, hsla(221,90%,62%,1) 0%, hsla(221,90%,62%,0.5) 45%, transparent 78%), radial-gradient(130% 130% at 85% -20%, hsla(150,70%,50%,1) 0%, hsla(150,70%,50%,0.5) 45%, transparent 78%), #1C1731&quot; role=&quot;button&quot; tabindex=&quot;0&quot;&gt;&lt;span class=&quot;card-grain&quot;&gt;&lt;/span&gt;&lt;span class=&quot;name&quot; style=&quot;color:#fff&quot;&gt;Two Shell&lt;/span&gt;&lt;span class=&quot;time&quot; style=&quot;color:rgba(255,255,255,.75)&quot;&gt;4th of 4 · doors 10 PM&lt;/span&gt;&lt;span class=&quot;corner-about&quot;&gt;&lt;/span&gt;&lt;span class=&quot;corner-who&quot;&gt;&lt;span class=&quot;mark&quot; style=&quot;width:4px;background:hsla(221,90%,62%,0.5);border:1px solid hsl(221,85%,82%);font-size:0px&quot;&gt;&lt;/span&gt;&lt;span class=&quot;mark&quot; style=&quot;width:4px;background:hsla(150,70%,50%,0.5);border:1px solid hsl(150,70%,82%);font-size:0px&quot;&gt;&lt;/span&gt;&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;
 &lt;/div&gt;&lt;/div&gt;&lt;/body&gt;&lt;/html&gt;"></iframe></div>
+</section>
+<section id="hover">
+  <div class="fh"><h2>THE HOVER — your line, in the zoom’s own type</h2><p><span class="w">1440px</span> · Grid keeps the tilde (~12 AM). The grown card says the whole truth in your words: the venue’s real window, then the order and how sure we are — “Guessing they’re 3rd of 4” as a door to the poster. Three cuts: your one-liner as written, the same split onto two lines — YOUR PICK — and the confirmed state once a venue posts the order (the word goes, the door stays). Everything else on the card is exactly today’s zoom — venue door, who-pills, notes chip.</p></div>
+  <div class="hold"><iframe title="THE HOVER — your line, in the zoom’s own type" width="1440" height="900" srcdoc="&lt;!doctype html&gt;&lt;html lang=&quot;en&quot;&gt;&lt;head&gt;&lt;meta charset=&quot;utf-8&quot;&gt;
+&lt;link rel=&quot;stylesheet&quot; href=&quot;../../assets/fonts/fonts.css&quot;&gt;
+&lt;link rel=&quot;stylesheet&quot; href=&quot;../../assets/v3-tokens.css&quot;&gt;
+&lt;link rel=&quot;stylesheet&quot; href=&quot;../../assets/v3.css&quot;&gt;
+&lt;style&gt;:root { --fest: 56, 189, 248; }
+  body { margin: 0; background: var(--page); color: var(--text-body); font-family: var(--font-ui); -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+  .sh { max-width: var(--shell-max); margin: 0 auto; padding: 16px var(--sp-gutter) 34px; }
+  .day-rule { margin: 18px 0 10px; }
+  .gap { height: 16px; }
+  .tba { margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--hairline); }
+  .tba-label { color: var(--text-tertiary); font-size: 11px; font-weight: 800; letter-spacing: var(--track-label); margin-bottom: 8px; }
+  /* day tabs — the rail's vocabulary, drawn as canvas chrome */
+  .v3-tabs { display: flex; align-items: center; gap: 20px; padding: 8px 0 12px; border-bottom: 1px solid var(--hairline); margin-bottom: 4px; }
+  .v3-tab { font-family: var(--font-display); letter-spacing: .06em; font-size: 13px; color: var(--text-tertiary); }
+  .v3-tab.on { color: rgb(var(--fest)); box-shadow: 0 2px 0 rgb(var(--fest)); padding-bottom: 3px; }
+  .v3-tab-fest { margin-left: auto; font-family: var(--font-display); letter-spacing: .04em; font-size: 12px; color: rgb(var(--fest)); }
+  .v3-tab-fest i { display: inline-block; width: 6px; height: 6px; border-radius: 99px; background: var(--sync-ok); }
+  /* section heads — the day-rule's quieter sibling */
+  .sec-head { display: flex; align-items: baseline; gap: 9px; margin: 14px 0 8px; }
+  .sec-label { font-family: var(--font-display); letter-spacing: .07em; font-size: 12.5px; color: var(--text-header); }
+  .sec-sub { color: var(--text-tertiary); font-size: 9.5px; font-weight: 700; letter-spacing: .08em; }
+  .sec-line { flex: 1; height: 1px; background: var(--hairline); }
+  /* the bucket filter — one chip per room, the people-chip vocabulary */
+  .bucket-row { display: flex; align-items: center; gap: 7px; margin: 4px 0 12px; }
+  .bucket-chip { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 12px; border-radius: var(--r-pill); font: inherit; font-size: 10.5px; font-weight: 800; letter-spacing: .05em; cursor: pointer; background: rgba(var(--fest), .14); border: 1px solid rgba(var(--fest), .55); color: #fff; }
+  .bucket-chip .bc-check { font-size: 9px; color: rgb(var(--fest)); }
+  .bucket-chip:not(.on) { background: transparent; border-style: dashed; border-color: var(--border-emphasis); color: var(--text-tertiary); }
+  .bucket-note { color: var(--text-tertiary); font-size: 10px; font-weight: 600; margin-left: 4px; }
+  .whisper-hidden { margin-top: 14px; color: var(--text-tertiary); font-size: 11px; font-weight: 600; }
+  /* the deck */
+  .deck { position: relative; }
+  .deck .card { box-shadow: 0 1px 0 rgba(0,0,0,.3); }
+  .deck-ghost { position: absolute; inset: 0; border-radius: var(--r-card); background: var(--card); border: 1px solid var(--hairline); }
+  .deck-ghost.g1 { transform: translate(3px, 3px); }
+  .deck-ghost.g2 { transform: translate(6px, 6px); opacity: .7; }
+  .deck-pill { position: absolute; right: 6px; top: 6px; z-index: 2; background: rgba(var(--brand), .9); color: var(--page); font-size: 8.5px; font-weight: 800; letter-spacing: .04em; border-radius: 999px; padding: 2px 7px; }
+  .deck-open-demo { display: flex; justify-content: center; padding: 8px 0 4px; }
+  .deck-panel { background: var(--card); border: 1px solid var(--border-emphasis); border-radius: var(--r-card); padding: 10px 12px 12px; box-shadow: 0 10px 28px rgba(0,0,0,.38); }
+  .deck-panel-head { display: flex; align-items: center; gap: 14px; justify-content: space-between; font-family: var(--font-display); letter-spacing: .06em; font-size: 11.5px; color: rgb(var(--fest)); margin-bottom: 9px; }
+  .deck-close { color: var(--text-tertiary); font-size: 11px; }
+  .deck-panel-grid { display: grid; grid-template-columns: repeat(2, 180px); gap: 7px; }
+  @media (max-width: 719.98px) { .deck-panel-grid { grid-template-columns: repeat(2, 140px); } }
+  /* the guessed-times comparison row */
+  .approx-row { display: flex; gap: 26px; align-items: flex-start; flex-wrap: wrap; margin-top: 6px; }
+  .approx-demo { flex: 1 1 300px; min-width: 280px; max-width: 420px; }
+  .approx-head { font-family: var(--font-display); letter-spacing: .06em; font-size: 12px; color: var(--text-header); margin: 10px 0 6px; }
+  .hover-row { display: flex; gap: 26px; align-items: flex-start; flex-wrap: wrap; margin-top: 6px; }
+  .hover-demo { flex: 0 1 auto; min-width: 150px; }
+  .hover-demo .zoom-slot { margin-top: 2px; }
+  a.f-order { color: #fff; text-decoration: none; border-bottom: 1px solid rgba(255,255,255,.35); padding-bottom: 1px; }
+  a.f-order:hover { border-bottom-color: rgba(255,255,255,.75); }
+  .approx-head span { display: block; font-family: var(--font-ui); font-size: 9.5px; color: var(--text-tertiary); font-weight: 700; letter-spacing: .07em; margin-top: 3px; }
+&lt;/style&gt;&lt;/head&gt;
+&lt;body&gt;&lt;div class=&quot;sh&quot;&gt;
+&lt;div class=&quot;v3-tabs&quot;&gt;&lt;span class=&quot;v3-tab&quot;&gt;THU&lt;/span&gt;&lt;span class=&quot;v3-tab&quot;&gt;FRI&lt;/span&gt;&lt;span class=&quot;v3-tab&quot;&gt;SAT&lt;/span&gt;&lt;span class=&quot;v3-tab on&quot;&gt;SUN&lt;/span&gt;&lt;span class=&quot;v3-tab-fest&quot;&gt;PORTOLA '26 &lt;i&gt;&lt;/i&gt;&lt;/span&gt;&lt;/div&gt;
+&lt;div class=&quot;day-rule&quot;&gt;&lt;span class=&quot;day&quot;&gt;SUNDAY&lt;/span&gt;&lt;span class=&quot;date&quot;&gt;SEP 27 · THE HOVER — ORDER, DOORS, CLOSE, AND HOW SURE WE ARE&lt;/span&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&lt;/div&gt;
+&lt;div class=&quot;hover-row&quot;&gt;
+  &lt;div class=&quot;hover-demo&quot;&gt;&lt;div class=&quot;approx-head&quot;&gt;AT REST&lt;span&gt;the card keeps its guessed time&lt;/span&gt;&lt;/div&gt;
+    &lt;div class=&quot;wall-grid&quot; style=&quot;grid-template-columns:150px&quot;&gt;&lt;div class=&quot;card timed&quot; style=&quot;min-height:64px;background:radial-gradient(130% 130% at 20% 120%, hsla(10,90%,62%,0.75) 0%, hsla(10,90%,62%,0.375) 45%, transparent 78%), radial-gradient(130% 130% at 85% -20%, hsla(221,90%,62%,0.5) 0%, hsla(221,90%,62%,0.25) 45%, transparent 78%), #1C1731&quot; role=&quot;button&quot; tabindex=&quot;0&quot;&gt;&lt;span class=&quot;card-grain&quot;&gt;&lt;/span&gt;&lt;span class=&quot;name&quot; style=&quot;color:#fff&quot;&gt;VTSS&lt;/span&gt;&lt;span class=&quot;time&quot; style=&quot;color:rgba(255,255,255,.75)&quot;&gt;~12 AM&lt;/span&gt;&lt;span class=&quot;corner-about&quot;&gt;&lt;/span&gt;&lt;span class=&quot;corner-who&quot;&gt;&lt;span class=&quot;mark&quot; style=&quot;width:4px;background:hsla(10,90%,62%,0.5);border:1px solid #fff;font-size:0px&quot;&gt;&lt;/span&gt;&lt;span class=&quot;mark&quot; style=&quot;width:4px;background:hsla(221,90%,62%,0.5);border:1px solid hsl(221,85%,82%);font-size:0px&quot;&gt;&lt;/span&gt;&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;
+  &lt;div class=&quot;hover-demo&quot;&gt;&lt;div class=&quot;approx-head&quot;&gt;GROWN · YOUR LINE&lt;span&gt;Guessing, linked to the poster&lt;/span&gt;&lt;/div&gt;
+    &lt;div class=&quot;zoom-slot shown&quot; style=&quot;position:relative;min-width:216px;max-width:360px;min-height:132px;pointer-events:auto&quot;&gt;
+  &lt;div class=&quot;zoom-card&quot;&gt;&lt;div class=&quot;z-surface animated&quot; style=&quot;background:radial-gradient(130% 130% at 20% 120%, hsla(10,90%,62%,0.75) 0%, hsla(10,90%,62%,0.375) 45%, transparent 78%), radial-gradient(130% 130% at 85% -20%, hsla(221,90%,62%,0.5) 0%, hsla(221,90%,62%,0.25) 45%, transparent 78%), #1C1731&quot;&gt;&lt;span class=&quot;card-grain&quot;&gt;&lt;/span&gt;&lt;/div&gt;
+    &lt;div class=&quot;f-name&quot;&gt;VTSS&lt;/div&gt;
+    &lt;div class=&quot;f-grown&quot;&gt;&lt;div class=&quot;f-sub&quot;&gt;Sun · Runs 10 PM – 2 AM · &lt;a class=&quot;f-order&quot; href=&quot;#&quot;&gt;Guessing they're 3rd of 4&lt;/a&gt;&lt;/div&gt;
+      &lt;a class=&quot;f-where fest-place&quot; href=&quot;#&quot;&gt;&lt;svg class=&quot;pin&quot; width=&quot;9&quot; height=&quot;9&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;2.4&quot; aria-hidden=&quot;true&quot;&gt;&lt;path d=&quot;M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11z&quot;/&gt;&lt;circle cx=&quot;12&quot; cy=&quot;10&quot; r=&quot;2.4&quot;/&gt;&lt;/svg&gt;The Midway&lt;/a&gt;
+      &lt;div class=&quot;f-who&quot;&gt;&lt;span class=&quot;f-pill you&quot; style=&quot;background:hsla(10,90%,62%,0.42)&quot;&gt;You&lt;/span&gt;&lt;span class=&quot;f-pill&quot; style=&quot;background:hsla(221,90%,62%,0.42)&quot;&gt;Nhu&lt;/span&gt;&lt;/div&gt;
+      &lt;div class=&quot;f-chips&quot;&gt;&lt;span class=&quot;f-chip notes&quot;&gt;+ note&lt;/span&gt;&lt;/div&gt;
+    &lt;/div&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;
+  &lt;div class=&quot;hover-demo&quot;&gt;&lt;div class=&quot;approx-head&quot;&gt;GROWN · SPLIT — THE PICK&lt;span&gt;Kevin, 2026-09-01: the window, then the guess on its own line&lt;/span&gt;&lt;/div&gt;
+    &lt;div class=&quot;zoom-slot shown&quot; style=&quot;position:relative;min-width:216px;max-width:360px;min-height:132px;pointer-events:auto&quot;&gt;
+  &lt;div class=&quot;zoom-card&quot;&gt;&lt;div class=&quot;z-surface animated&quot; style=&quot;background:radial-gradient(130% 130% at 20% 120%, hsla(10,90%,62%,0.75) 0%, hsla(10,90%,62%,0.375) 45%, transparent 78%), radial-gradient(130% 130% at 85% -20%, hsla(221,90%,62%,0.5) 0%, hsla(221,90%,62%,0.25) 45%, transparent 78%), #1C1731&quot;&gt;&lt;span class=&quot;card-grain&quot;&gt;&lt;/span&gt;&lt;/div&gt;
+    &lt;div class=&quot;f-name&quot;&gt;VTSS&lt;/div&gt;
+    &lt;div class=&quot;f-grown&quot;&gt;&lt;div class=&quot;f-sub&quot;&gt;Sun · Runs 10 PM – 2 AM&lt;/div&gt;&lt;div class=&quot;f-sub&quot;&gt;&lt;a class=&quot;f-order&quot; href=&quot;#&quot;&gt;Guessing they're 3rd of 4&lt;/a&gt;&lt;/div&gt;
+      &lt;a class=&quot;f-where fest-place&quot; href=&quot;#&quot;&gt;&lt;svg class=&quot;pin&quot; width=&quot;9&quot; height=&quot;9&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;2.4&quot; aria-hidden=&quot;true&quot;&gt;&lt;path d=&quot;M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11z&quot;/&gt;&lt;circle cx=&quot;12&quot; cy=&quot;10&quot; r=&quot;2.4&quot;/&gt;&lt;/svg&gt;The Midway&lt;/a&gt;
+      &lt;div class=&quot;f-who&quot;&gt;&lt;span class=&quot;f-pill you&quot; style=&quot;background:hsla(10,90%,62%,0.42)&quot;&gt;You&lt;/span&gt;&lt;span class=&quot;f-pill&quot; style=&quot;background:hsla(221,90%,62%,0.42)&quot;&gt;Nhu&lt;/span&gt;&lt;/div&gt;
+      &lt;div class=&quot;f-chips&quot;&gt;&lt;span class=&quot;f-chip notes&quot;&gt;+ note&lt;/span&gt;&lt;/div&gt;
+    &lt;/div&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;
+  &lt;div class=&quot;hover-demo&quot;&gt;&lt;div class=&quot;approx-head&quot;&gt;GROWN · CONFIRMED&lt;span&gt;the venue posted the order — the word goes, the door stays&lt;/span&gt;&lt;/div&gt;
+    &lt;div class=&quot;zoom-slot shown&quot; style=&quot;position:relative;min-width:216px;max-width:360px;min-height:132px;pointer-events:auto&quot;&gt;
+  &lt;div class=&quot;zoom-card&quot;&gt;&lt;div class=&quot;z-surface animated&quot; style=&quot;background:radial-gradient(130% 130% at 20% 120%, hsla(10,90%,62%,0.75) 0%, hsla(10,90%,62%,0.375) 45%, transparent 78%), radial-gradient(130% 130% at 85% -20%, hsla(221,90%,62%,0.5) 0%, hsla(221,90%,62%,0.25) 45%, transparent 78%), #1C1731&quot;&gt;&lt;span class=&quot;card-grain&quot;&gt;&lt;/span&gt;&lt;/div&gt;
+    &lt;div class=&quot;f-name&quot;&gt;VTSS&lt;/div&gt;
+    &lt;div class=&quot;f-grown&quot;&gt;&lt;div class=&quot;f-sub&quot;&gt;Sun · Runs 10 PM – 2 AM · &lt;a class=&quot;f-order&quot; href=&quot;#&quot;&gt;3rd of 4&lt;/a&gt;&lt;/div&gt;
+      &lt;a class=&quot;f-where fest-place&quot; href=&quot;#&quot;&gt;&lt;svg class=&quot;pin&quot; width=&quot;9&quot; height=&quot;9&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;2.4&quot; aria-hidden=&quot;true&quot;&gt;&lt;path d=&quot;M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11z&quot;/&gt;&lt;circle cx=&quot;12&quot; cy=&quot;10&quot; r=&quot;2.4&quot;/&gt;&lt;/svg&gt;The Midway&lt;/a&gt;
+      &lt;div class=&quot;f-who&quot;&gt;&lt;span class=&quot;f-pill you&quot; style=&quot;background:hsla(10,90%,62%,0.42)&quot;&gt;You&lt;/span&gt;&lt;span class=&quot;f-pill&quot; style=&quot;background:hsla(221,90%,62%,0.42)&quot;&gt;Nhu&lt;/span&gt;&lt;/div&gt;
+      &lt;div class=&quot;f-chips&quot;&gt;&lt;span class=&quot;f-chip notes&quot;&gt;+ note&lt;/span&gt;&lt;/div&gt;
+    &lt;/div&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class=&quot;whisper-hidden&quot;&gt;The order is a door to the poster or ticket page, the way a venue is a door to its map. Tap anywhere else on the grown card and it is a pick, as always.&lt;/div&gt;&lt;/div&gt;&lt;/body&gt;&lt;/html&gt;"></iframe></div>
 </section>
 <section id="lostlands">
   <div class="fh"><h2>LOST LANDS · WEDNESDAY — the rule generalizes</h2><p><span class="w">1440px</span> · A pre-party day at a single venue with no set times: the heuristic’s floor. One section, tiles, time TBA — no venue columns, no snowflake code. Every fest file lands somewhere sane.</p></div>
@@ -645,6 +781,11 @@
   .approx-row { display: flex; gap: 26px; align-items: flex-start; flex-wrap: wrap; margin-top: 6px; }
   .approx-demo { flex: 1 1 300px; min-width: 280px; max-width: 420px; }
   .approx-head { font-family: var(--font-display); letter-spacing: .06em; font-size: 12px; color: var(--text-header); margin: 10px 0 6px; }
+  .hover-row { display: flex; gap: 26px; align-items: flex-start; flex-wrap: wrap; margin-top: 6px; }
+  .hover-demo { flex: 0 1 auto; min-width: 150px; }
+  .hover-demo .zoom-slot { margin-top: 2px; }
+  a.f-order { color: #fff; text-decoration: none; border-bottom: 1px solid rgba(255,255,255,.35); padding-bottom: 1px; }
+  a.f-order:hover { border-bottom-color: rgba(255,255,255,.75); }
   .approx-head span { display: block; font-family: var(--font-ui); font-size: 9.5px; color: var(--text-tertiary); font-weight: 700; letter-spacing: .07em; margin-top: 3px; }
 &lt;/style&gt;&lt;/head&gt;
 &lt;body&gt;&lt;div class=&quot;sh&quot;&gt;
