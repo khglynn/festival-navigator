@@ -53,11 +53,17 @@ const P = (ok) => (ok ? 'PASS' : 'FAIL');
   };
   // the day block that holds a given day label (the rule's text)
   const dayInfo = (day) => ev((day) => {
-    const rule = [...document.querySelectorAll('.day-rule .day')].find((d) => (d.textContent || '').trim().toUpperCase().startsWith(day.toUpperCase()));
+    // Days are not wrapped: a .day-rule[data-day] is followed by its content as
+    // siblings under #wall-root until the next .day-rule.
+    const rules = [...document.querySelectorAll('#wall-root .day-rule')];
+    const rule = rules.find((r) => ((r.querySelector('.day') || r).textContent || '').trim().toUpperCase().startsWith(day.toUpperCase()));
     if (!rule) return null;
-    const block = rule.closest('[data-day]') || rule.closest('section') || rule.parentElement.parentElement;
-    const q = (s) => block.querySelectorAll(s).length;
-    return { labels: [...block.querySelectorAll('.sec-label')].map((e) => e.textContent.trim()), ttBlocks: q('.tt-block'), strips: q('.tt-block .stage-strip'), decks: q('.deck'), cards: q('.card'), tilde: [...block.querySelectorAll('.card .time')].filter((t) => /^~/.test(t.textContent.trim())).length, whisper: (block.querySelector('.sec-whisper') || {}).textContent || null, tba: [...block.querySelectorAll('.tba-label, .tba')].length };
+    const block = document.createElement('div');
+    let e = rule.nextElementSibling;
+    const nodes = [];
+    while (e && !e.classList.contains('day-rule')) { nodes.push(e); e = e.nextElementSibling; }
+    const qa = (s) => nodes.flatMap((n) => [...(n.matches(s) ? [n] : []), ...n.querySelectorAll(s)]);
+    return { labels: qa('.sec-label').map((x) => x.textContent.trim()), ttBlocks: qa('.tt-block').length, strips: qa('.tt-block .stage-strip').length, decks: qa('.deck').length, cards: qa('.card').length, tilde: qa('.card .time').filter((t) => /~/.test(t.textContent)).length, whisper: (qa('.sec-whisper')[0] || {}).textContent || null, tba: qa('.tba-label, .tba').length };
   }, day);
   const away = async () => { await page.mouse.move(1420, 40); await page.mouse.move(1430, 30); };
 
@@ -91,7 +97,7 @@ const P = (ok) => (ok ? 'PASS' : 'FAIL');
     await ev(() => document.querySelector('.deck').scrollIntoView({ block: 'center' })); await sleep(400);
     deckBox = await boxOf('.deck');
     await page.mouse.click(deckBox.x, deckBox.y); await sleep(700);
-    const open = await ev(() => ({ open: !!document.querySelector('.deck.open'), shown: document.querySelectorAll('.deck-layer .zoom-slot.shown').length, cards: [...document.querySelectorAll('.deck-layer .card .name')].map((n) => n.textContent.trim()), title: (document.querySelector('.deck-layer .deck-panel-head, .deck-layer [class*=head]') || {}).textContent || '' }));
+    const open = await ev(() => ({ open: !!document.querySelector('.deck.open'), shown: document.querySelectorAll('.deck-layer .deck-slot.shown, .deck-layer .zoom-slot.shown').length, cards: [...document.querySelectorAll('.deck-layer .card .name')].map((n) => n.textContent.trim()), title: (document.querySelector('.deck-layer .deck-panel-head, .deck-layer [class*=head]') || {}).textContent || '' }));
     // hover + click a panel card (the second one)
     const pc = await boxOf('.deck-layer .card', 1);
     let picked = null, zoomLine = null, cleared = -1;
@@ -105,14 +111,14 @@ const P = (ok) => (ok ? 'PASS' : 'FAIL');
       for (let k = 0; k < 6; k++) { if (!(await ev(() => !!document.querySelector('#zoom-layer .zoom-card .f-who .f-pill.you')))) { cleared = k; break; } await page.mouse.click(target.x, target.y); await sleep(450); }
     }
     await page.mouse.click(1420, 40); await sleep(600);
-    const afterOutside = await ev(() => ({ open: !!document.querySelector('.deck.open'), shown: document.querySelectorAll('.deck-layer .zoom-slot.shown').length }));
+    const afterOutside = await ev(() => ({ open: !!document.querySelector('.deck.open'), shown: document.querySelectorAll('.deck-layer .deck-slot.shown, .deck-layer .zoom-slot.shown').length }));
     await page.mouse.click(deckBox.x, deckBox.y); await sleep(600);
     await page.keyboard.press('Escape'); await sleep(500);
-    const afterEsc = await ev(() => ({ open: !!document.querySelector('.deck.open'), shown: document.querySelectorAll('.deck-layer .zoom-slot.shown').length }));
+    const afterEsc = await ev(() => ({ open: !!document.querySelector('.deck.open'), shown: document.querySelectorAll('.deck-layer .deck-slot.shown, .deck-layer .zoom-slot.shown').length }));
     await page.mouse.click(deckBox.x, deckBox.y); await sleep(600);
-    const b0 = await boxOf('.deck-layer .zoom-slot.shown');
+    const b0 = await boxOf('.deck-layer .deck-slot.shown, .deck-layer .zoom-slot.shown');
     await page.mouse.move(deckBox.x, deckBox.y); await page.mouse.wheel(0, 100); await sleep(500);
-    const b1 = await boxOf('.deck-layer .zoom-slot.shown');
+    const b1 = await boxOf('.deck-layer .deck-slot.shown, .deck-layer .zoom-slot.shown');
     const followed = b0 && b1 ? (b1.top - b0.top) : null;
     await page.keyboard.press('Escape'); await sleep(500); await page.mouse.wheel(0, -100); await sleep(300);
     bank(`4. deck: opened=${open.open} slot=${open.shown} cards=[${open.cards.join(', ')}] title="${open.title.trim().slice(0, 40)}"; panel-card zoom WHEN="${zoomLine}" picked=${picked} cycled back in ${cleared}; outside→closed=${!afterOutside.open && afterOutside.shown === 0}; Escape→closed=${!afterEsc.open && afterEsc.shown === 0}; wheel 100 → panel moved ${followed === null ? 'n/a' : followed.toFixed(0)}px (open=${!!b1}) → ${P(open.open && open.shown === 1 && open.cards.length === 3 && picked && cleared >= 0 && !afterOutside.open && !afterEsc.open && b1 && Math.abs(followed + 100) < 40)}`);
@@ -170,7 +176,7 @@ const P = (ok) => (ok ? 'PASS' : 'FAIL');
 
   // 9 — phone: tabs in the dock, deck fits, Midway hold shows the two-line WHEN
   try {
-    const mctx = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+    const { devices } = require('playwright'); const mctx = await browser.newContext({ ...devices['iPhone 13'], viewport: { width: 390, height: 844 } });
     const mp = await mctx.newPage();
     await mp.goto(boardUrl, { waitUntil: 'load' }); await joinIfNeeded(mp); await sleep(2000);
     const tabs = await mp.evaluate(() => [...document.querySelectorAll('#dock-days button.day-tab')].filter((t) => t.getBoundingClientRect().width > 0).map((t) => t.textContent.trim()));

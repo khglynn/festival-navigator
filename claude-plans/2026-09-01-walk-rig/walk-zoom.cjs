@@ -184,7 +184,7 @@ async function joinIfNeeded(pg, who = 'Ava') {
 
   // 10 — phone: long press grows, the lift does not pick, the next tap does
   try {
-    const mctx = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+    const { devices } = require('playwright'); const mctx = await browser.newContext({ ...devices['iPhone 13'], viewport: { width: 390, height: 844 } });
     const mp = await mctx.newPage();
     await mp.goto(`${origin}/#g=${TOKEN}&f=portola-2026&me=Ava`, { waitUntil: 'load' });
     await joinIfNeeded(mp); await sleep(2000);
