@@ -10,7 +10,7 @@ import * as spotify from '../spotify.js';
 import * as model from './model.js';
 import { loadFestivalIndex, loadFestival, loadCustomFestivals, FESTIVAL_INDEX, defaultFestivalId } from '../festivals.js';
 import { renderWall, refreshCard, showUndoToast, showToast, wireScrollspy, colorIndexOf, scheduledWeekendOf, positionNowLines, scrollToNowLine, dayNavOf, cardFor } from './wall.js';
-import { loadPeopleFilter, savePeopleFilter, togglePerson, pruneToActive, loadSolo, saveSolo, loadHiddenBuckets, saveHiddenBuckets, toggleBucket } from './filters.js';
+import { loadPeopleFilter, savePeopleFilter, togglePerson, pruneToActive, loadSolo, saveSolo, loadHiddenBuckets, applyBucketToggle } from './filters.js';
 import { deckSnapshot, restoreDeck } from './deck.js';
 import { OUT_MS, CASCADE_MS, STAGGER_MS, EASE_ARRIVE, EASE_LEAVE, canAnimate } from './motion.js';
 import { scrolledBefore, rememberScrolled, dayOfScrollKey } from './now.js';
@@ -136,10 +136,14 @@ function roomsOf(key) {
   return [...document.querySelectorAll(`#wall-root .room[data-bucket="${CSS.escape(key)}"]`)];
 }
 function toggleBucketFlow(key) {
-  const hiding = !(ctx.bucketsOff || []).includes(key);
-  const next = toggleBucket(ctx.bucketsOff || [], key);
+  // The setting lands NOW — memory, storage and ctx — and the chip answers
+  // at once; only the room's leaving is deferred. A second tap during the
+  // fade reads this one, never the state before it.
+  const { next, hiding } = applyBucketToggle(ctx.fid, ctx.bucketsOff || [], key);
+  ctx.bucketsOff = next;
+  const chip = document.querySelector(`#wall-root .bucket-chip[data-bucket="${CSS.escape(key)}"]`);
+  if (chip) chip.setAttribute('aria-pressed', hiding ? 'false' : 'true');
   const finish = () => {
-    saveHiddenBuckets(ctx.fid, next);
     repaintWall();
     if (!hiding) {
       roomsOf(key).forEach((room, i) => {

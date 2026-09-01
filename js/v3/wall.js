@@ -964,8 +964,11 @@ const dedupeByName = (list) => {
 
 function renderDayFirst(root, ctx, fest, { model: plan, scheduled, wk, gridDays }) {
   root.dataset.deckHost = '1'; // the deck panel's layer hangs off this root
-  const hidden = new Set(ctx.bucketsOff || []);
   const buckets = bucketsOf(fest, plan);
+  // A stored key the fest no longer offers (a section renamed, a fest that
+  // lost one) is nobody's: ignored here, and never named in the whisper.
+  const known = new Set(buckets.map((b) => b.key));
+  const hidden = new Set((ctx.bucketsOff || []).filter((k) => known.has(k)));
   if (buckets.length > 1) root.appendChild(bucketRow(buckets, hidden, ctx));
   const festOn = !hidden.has(FEST_BUCKET);
   const now = ctx.now || new Date();
@@ -1048,7 +1051,8 @@ function renderDayFirst(root, ctx, fest, { model: plan, scheduled, wk, gridDays 
     const loose = dedupeByName(plan.looseNoDay.filter((a) => !anyGridName.has(a.name)));
     if (loose.length) renderLineupGroup(root, '', loose, ctx, fest, { header: 'EVERYTHING ELSE', sub: 'NO SET TIME YET' });
   }
-  if (hidden.size) root.appendChild(hiddenWhisper(buckets, hidden));
+  const whisper = hidden.size ? hiddenWhisper(buckets, hidden) : null;
+  if (whisper) root.appendChild(whisper);
   festNotesFoot(root, ctx, fest);
   wireTimesScrollSync(root);
 }
@@ -1110,6 +1114,7 @@ function bucketRow(buckets, hidden, ctx) {
 // The foot-whisper that keeps the way back visible.
 function hiddenWhisper(buckets, hidden) {
   const names = buckets.filter((b) => hidden.has(b.key)).map((b) => b.label);
+  if (!names.length) return null;
   const one = names.length === 1;
   const list = one ? names[0] : `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
   return mk('div', 'wall-whisper', `${list} ${one ? 'is' : 'are'} hidden — tap ${one ? 'its chip' : 'their chips'} to bring ${one ? 'it' : 'them'} back.`);
