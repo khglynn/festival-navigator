@@ -50,3 +50,42 @@ the browser is the only witness.
 - **2026-09-01** — Phase 1 file 4: `tests/zoom-motion.test.mjs`, **8 tests**, green. The animated paths CI had never entered: the bloom cascade's order and corners, the clamped starting scale and true transform-origin, the canAnimate gate (Low Power + reduced motion), the whole animated refresh block (old-wash unclip, FLIP survivors, arrivals, the MUST badge fade), the compositor budget with clipPath confined to the surfaces, and the deliberate asymmetry where an ANIMATED exit leaves the interior cascade running while an instant one cancels it. Needed a fake layout as well as a recording `Element.animate`: with jsdom's all-zero rects a survivor hits neither branch of the refresh loop, so the FLIP half is unreachable. Fifteen mutations, fifteen red (two only after I tightened assertions that could run on an empty group — the first pass had a vacuous stagger check and a scenario with no survivor to slide).
 - **2026-09-01** — Phase 1 file 5: `tests/zoom-geometry.test.mjs`, **10 tests**, green. The clamp arithmetic, the NaN fallback and the size floors were all inert in Node (all-zero rects); now stubbed and pinned, including the design law that only the LEFT/RIGHT edges push the box and the top may go negative. Plus the four unpinned inner guards of the scroll-follow (off-screen close, zero-size viewport transient, card-left-the-DOM, resize) and the capture phase that hears an inner scroller. Twelve mutations, twelve red — the capture-phase one only after adding a scroll dispatched on an inner element with `bubbles:false`; a scroll dispatched on `window` reaches bubble listeners too and proved nothing.
 - **2026-09-01** — Phase 1 file 6: `tests/zoom-app-glue.test.mjs`, **6 tests**, green. Runs the REAL `js/v3/app.js` against the real `index.html` rather than re-implementing its glue in a ctx stub, which is what every other zoom test does. Pins the capture-phase outside-press (and that it does NOT poison the card — the Codex gate of 2026-08-31), Escape closing exactly one layer and eating the keypress, Escape DOES mark the card, and the occurrence-matched restore. Eight mutations, eight red (three only after fixes: two assertions fired before the intent dwell, and the capture-phase claim needed a `stopPropagation` shield to mean anything).
+
+### Phase 1 complete
+
+| File | Tests | Layers it closes |
+|---|---|---|
+| `tests/zoom-keyboard.test.mjs` | 10 | Tab route (both nodes), refreshZoom's re-wire, overlay focusout, listener leak |
+| `tests/zoom-hover-grace.test.mjs` | 13 | overlay enter/leave grace, hover intent, dismissedEl, the 2026-08-31 instant-restore gate |
+| `tests/zoom-airbag.test.mjs` | 11 | airbag on refresh + shrink, close journal, layer rebuild, same-card return, ghost belt |
+| `tests/zoom-motion.test.mjs` | 8 | cascade shape, canAnimate gate, animated refresh block, in-flight cancel vs leave-running |
+| `tests/zoom-geometry.test.mjs` | 10 | place/sizeSlot/originFor/scaleFor/insetFor, the four follow guards |
+| `tests/zoom-app-glue.test.mjs` | 6 | app.js's real pointerdown + Escape handlers, occ-matched restore |
+
+**58 new tests. Suite 317 -> 375 (374 pass, 0 fail, 1 env skip).** Not one
+production byte changed in Phase 1 — `git diff` over `js/`, `assets/` and
+`index.html` was empty at the end of it.
+
+Every file was mutation-checked, not merely watched to pass: 61 mutations
+applied to `js/v3/card-facts.js` and `js/v3/app.js` one at a time, each
+reverted from a pristine copy. Eight initially failed to turn anything red and
+every one of them was a defect in MY test, fixed and re-run:
+
+- three assertions fired before the 300 ms hover-intent dwell could arm, so
+  both branches looked identical;
+- a stagger assertion looped over a group with one member;
+- a compositor-budget check ran a scenario with no survivor to slide;
+- a capture-phase claim dispatched its event on `window`, where a bubble
+  listener hears it too;
+- likewise for `scroll`, until it came from an inner element with
+  `bubbles: false`;
+- and the outside-press "does not poison" case re-grew the card with a direct
+  `zoomCard`, which never consults the dismissed mark.
+
+Two mutations still pass and that is honest, not a hole: `zoomBail`'s
+`exitingSlots` sweep is genuinely redundant with its layer sweep for the ghost
+scenario (removing the LAYER sweep turns two tests red, so nothing is vacuous).
+
+One pin is deliberately indirect: `insetFor` is module-private, so it is
+observed through the clipPath keyframes of its only caller rather than by
+exporting it.
