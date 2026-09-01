@@ -15,12 +15,19 @@
 // (`#wall-root .card[data-artist]`) reaches the panel's cards, and a full
 // repaint takes the panel with it — repaintWall restores it from a snapshot,
 // the way it restores a zoom.
+//
+// The deck answers the people filter as ONE object (review round,
+// 2026-09-01): a pile in which the filtered person picked anything is lit,
+// a pile in which they picked nothing dims as a whole. The face never dims
+// on its own — a lone dimmed face under lit ghosts read as "nothing picked
+// here" while the person's only pick of the night sat behind it.
 import { renderCard } from './wall.js';
 import { timeRange, zoomContains, zoomedCard, unzoom } from './card-facts.js';
+import { passesPeople } from './filters.js';
 import { GROW_MS, MATERIALIZE_MS, OUT_MS, CASCADE_MS, STAGGER_MS, EASE_ARRIVE, EASE_LEAVE, canAnimate } from './motion.js';
 
 let open = null;               // { deck, slot, panel, ctx, key, anims, cleanup, fromKeyboard }
-const decks = new WeakMap();   // deck element -> { items, ctx, venue, startStr, key, occOf, timeOf }
+const decks = new WeakMap();   // deck element -> { items, ctx, venue, startLabel, key, occOf, timeOf }
 
 const rect = (n) => n.getBoundingClientRect();
 const box = (left, top, width, height) => ({ left, top, width, height, right: left + width, bottom: top + height });
@@ -31,11 +38,12 @@ const el = (tag, className, text) => {
   return n;
 };
 
-// The face never picks, never zooms, never long-presses: the whole deck is
-// the button. refreshCard (wall.js) re-renders a face through this too, so a
-// crew-mate's pick landing on the top card cannot quietly arm it.
+// The face never picks, never zooms, never long-presses, and never dims by
+// itself (the deck dims as a whole): the whole deck is the button.
+// refreshCard (wall.js) re-renders a face through this too, so a crew-mate's
+// pick landing on the top card cannot quietly arm it.
 export function faceCtxFor(ctx) {
-  return { ...ctx, onTap: () => {}, wireZoom: null, onPeek: null, onOpenNotes: null };
+  return { ...ctx, filterPeople: [], onTap: () => {}, wireZoom: null, onPeek: null, onOpenNotes: null };
 }
 export function decorateFace(card) {
   card.tabIndex = -1;
@@ -47,28 +55,57 @@ export function decorateFace(card) {
   return card;
 }
 
+// What the pile's picks say, for the accessible name: under a people filter,
+// how many of the pile that person picked (the visual is the whole deck
+// lit or dimmed); otherwise how many anyone picked.
+function pickNote(items, ctx) {
+  const filter = ctx.filterPeople || [];
+  const picks = ctx.picks || {};
+  if (filter.length) {
+    const n = items.filter((it) => passesPeople(picks, it.e.name, filter)).length;
+    return ` — ${n || 'none'} picked by ${filter.join(' or ')}`;
+  }
+  const n = items.filter((it) => Object.values(picks[it.e.name] || {}).some((l) => l > 0)).length;
+  return n ? ` — ${n} picked` : '';
+}
+function deckPasses(items, ctx) {
+  const filter = ctx.filterPeople || [];
+  return !filter.length || items.some((it) => passesPeople(ctx.picks, it.e.name, filter));
+}
+// The deck's own state from the crew's picks and the filter: the dim, the
+// accessible name. Re-run when a card inside it is refreshed (wall.js
+// refreshCard), so a pick landing in the pile updates the pile.
+export function refreshDeckState(deck, ctx) {
+  const st = decks.get(deck);
+  if (!st) return;
+  st.ctx = ctx;
+  deck.classList.toggle('dim', !deckPasses(st.items, ctx));
+  deck.setAttribute('aria-label', `${st.items.length} sets at ${st.venue} from ${st.startLabel}${pickNote(st.items, ctx)} — open to see them all`);
+}
+
 // One deck cell. `items` are the timetable's timed entries ({ e, startStr,
 // endStr, … }) in the order they sit in the cluster (earliest first).
 export function renderDeck(items, ctx, { key, venue, col, row, span, occOf, timeOf }) {
   const top = items[0];
+  const startLabel = timeOf(top); // the tilde travels with `approx` everywhere a time prints
   const deck = el('div', 'deck');
   deck.dataset.deck = key;
   deck.setAttribute('role', 'button');
   deck.tabIndex = 0;
   deck.setAttribute('aria-expanded', 'false');
-  deck.setAttribute('aria-label', `${items.length} sets at ${venue} from ${top.startStr} — open to see them all`);
   deck.title = items.map((it) => it.e.name).join(' · ');
   deck.style.gridColumn = String(col);
   deck.style.gridRow = `${row} / span ${span}`;
   deck.style.minHeight = '0';
   const tall = span >= 12;
   const face = decorateFace(renderCard(top.e.name, faceCtxFor(ctx), {
-    cell: true, tall, until: tall ? top.endStr || null : null, time: timeOf(top), occ: occOf(top.e),
+    cell: true, tall, until: tall ? top.endStr || null : null, time: startLabel, occ: occOf(top.e),
   }));
-  const pill = el('span', 'deck-pill', `${items.length} · ${top.startStr}`);
+  const pill = el('span', 'deck-pill', `${items.length} · ${startLabel}`);
   pill.setAttribute('aria-hidden', 'true');
   deck.append(el('span', 'deck-ghost g2'), el('span', 'deck-ghost g1'), face, pill);
-  decks.set(deck, { items, ctx, venue, startStr: top.startStr, key, occOf, timeOf });
+  decks.set(deck, { items, ctx, venue, startLabel, key, occOf, timeOf });
+  refreshDeckState(deck, ctx);
   // The face's own click (renderCard) is a no-op through the inert ctx and
   // bubbles here; one handler, one toggle. Keyboard opens arrive through
   // keydown below, so a click is a pointer's.
@@ -81,15 +118,33 @@ export function renderDeck(items, ctx, { key, venue, col, row, span, occOf, time
 }
 
 export function openDeckEl() { return open ? open.deck : null; }
-export function deckSnapshot() { return open ? { key: open.key, fromKeyboard: open.fromKeyboard } : null; }
+// What a repaint needs to bring the same panel back: which deck, whether the
+// keyboard opened it, and which card inside it held focus (keyboard users
+// keep their place — never sent back to the first card).
+export function deckSnapshot() {
+  if (!open) return null;
+  const active = document.activeElement;
+  const focused = active && open.slot.contains(active) ? active : null;
+  return {
+    key: open.key,
+    fromKeyboard: open.fromKeyboard,
+    focus: focused ? (focused.classList.contains('deck-close') ? 'close' : focused.dataset.artist || null) : null,
+  };
+}
 export function restoreDeck(root, snap) {
   if (!snap || !root) return;
   const deck = [...root.querySelectorAll('.deck')].find((d) => d.dataset.deck === snap.key);
-  if (deck) openDeck(deck, { instant: true, fromKeyboard: snap.fromKeyboard });
+  if (!deck) return;
+  openDeck(deck, { instant: true, fromKeyboard: snap.fromKeyboard, focusFirst: false });
+  if (!open || !snap.focus) return;
+  const target = snap.focus === 'close'
+    ? open.panel.querySelector('.deck-close')
+    : [...open.panel.querySelectorAll('.card')].find((c) => c.dataset.artist === snap.focus);
+  if (target) target.focus({ preventScroll: true });
 }
 
 function toggleDeck(deck, opts) {
-  if (open && open.deck === deck) closeDeck();
+  if (open && open.deck === deck) closeDeck({ reason: 'toggle' });
   else openDeck(deck, opts);
 }
 
@@ -108,39 +163,43 @@ function layerFor(deck) {
 
 // Centre the panel on the deck; the viewport's edges push it inward on both
 // axes (a panel must be readable whole, unlike the zoom which only yields
-// left and right — a deck can hold a screen's worth of cards).
+// left and right — a deck can hold a screen's worth of cards). The panel's
+// size is read from its LAYOUT box (offsetWidth/Height): a bounding rect
+// mid-bloom is the transformed box, and placing by it walks the panel
+// across the screen as the scale runs (the zoom's lesson, re-learned here).
 function place(slot, deck) {
   const r0 = rect(deck);
-  const b = rect(slot);
+  const w = slot.offsetWidth;
+  const h = slot.offsetHeight;
   const vw = window.innerWidth;
   const vh = window.innerHeight;
-  let left = Math.round(r0.left + r0.width / 2 - b.width / 2);
-  let top = Math.round(r0.top + r0.height / 2 - b.height / 2);
-  left = Math.max(8, Math.min(left, vw - 8 - b.width));
-  top = Math.max(8, Math.min(top, vh - 8 - b.height));
+  let left = Math.round(r0.left + r0.width / 2 - w / 2);
+  let top = Math.round(r0.top + r0.height / 2 - h / 2);
+  left = Math.max(8, Math.min(left, vw - 8 - w));
+  top = Math.max(8, Math.min(top, vh - 8 - h));
   slot.style.left = `${Number.isFinite(left) ? left : r0.left}px`;
   slot.style.top = `${Number.isFinite(top) ? top : r0.top}px`;
-  return { r0, r1: box(left, top, b.width, b.height) };
+  return { r0, r1: box(left, top, w, h) };
 }
 function originFor(slot, r0, r1) {
   slot.style.transformOrigin = `${r0.left + r0.width / 2 - r1.left}px ${r0.top + r0.height / 2 - r1.top}px`;
 }
 const scaleFor = (r0, r1) => Math.min(0.95, Math.max(0.5, r1.height ? r0.height / r1.height : 0.7));
 
-export function openDeck(deck, { instant = false, fromKeyboard = false } = {}) {
+export function openDeck(deck, { instant = false, fromKeyboard = false, focusFirst = fromKeyboard } = {}) {
   const st = decks.get(deck);
   if (!st || !deck.isConnected) return;
-  closeDeck({ instant: true });
+  closeDeck({ instant: true, reason: 'reopen' });
   const { ctx } = st;
   const slot = el('div', 'deck-slot');
   const panel = el('div', 'deck-panel');
   panel.setAttribute('role', 'dialog');
-  panel.setAttribute('aria-label', `${st.venue} · ${st.startStr}`);
+  panel.setAttribute('aria-label', `${st.venue} · ${st.startLabel}`);
   const head = el('div', 'deck-panel-head');
-  const title = el('span', 'deck-panel-title', `${st.venue} · ${st.startStr}`);
+  const title = el('span', 'deck-panel-title', `${st.venue} · ${st.startLabel}`);
   const close = el('button', 'sheet-close deck-close', '✕');
   close.setAttribute('aria-label', 'Close');
-  close.addEventListener('click', (e) => { e.stopPropagation(); closeDeck(); });
+  close.addEventListener('click', (e) => { e.stopPropagation(); closeDeck({ reason: 'button' }); });
   head.append(title, close);
   const grid = el('div', 'deck-panel-grid');
   for (const it of st.items) grid.appendChild(renderCard(it.e.name, ctx, { time: st.timeOf(it, { range: true }), occ: st.occOf(it.e) }));
@@ -155,7 +214,9 @@ export function openDeck(deck, { instant = false, fromKeyboard = false } = {}) {
   const { r1 } = place(slot, deck);
   wire(z);
   slot.classList.add('shown');
-  if (fromKeyboard) { const first = grid.querySelector('.card'); if (first) first.focus(); }
+  // A keyboard open lands on the first card; a restore never re-lands there
+  // (restoreDeck puts focus back where it was).
+  if (focusFirst) { const first = grid.querySelector('.card'); if (first) first.focus({ preventScroll: true }); }
   if (instant || !canAnimate(slot, ctx)) return;
   // The bloom: materialise fast while growing k→1 from the deck's centre;
   // inside, the cards arrive a beat apart.
@@ -168,6 +229,10 @@ export function openDeck(deck, { instant = false, fromKeyboard = false } = {}) {
   )));
 }
 
+// Is something stacked ABOVE the panel — a notes sheet, the share moment,
+// the add-member sheet? Then Escape is theirs: the topmost layer takes it.
+const sheetAbove = () => !!document.querySelector('#artist-sheet, .sheet-backdrop');
+
 function wire(z) {
   const { slot, deck } = z;
   // A press outside the deck and its panel closes it. A press on a card's
@@ -176,15 +241,16 @@ function wire(z) {
     if (open !== z) return;
     const t = e.target;
     if (slot.contains(t) || deck.contains(t) || zoomContains(t)) return;
-    closeDeck();
+    closeDeck({ reason: 'outside' });
   };
   document.addEventListener('pointerdown', onDown, true);
-  // Escape closes ONE layer: the zoom's own capture handler (registered
-  // first, in app.js) eats the key while a zoom stands; otherwise this one
-  // does, before any sheet or router handler.
+  // Escape closes ONE layer, the topmost: the zoom's own capture handler
+  // (registered first, in app.js) eats the key while a zoom stands; a sheet
+  // above the panel keeps it (the router / closeSheet answer); otherwise
+  // this one does, before any router handler.
   const onKey = (e) => {
-    if (e.key !== 'Escape' || open !== z) return;
-    closeDeck();
+    if (e.key !== 'Escape' || open !== z || sheetAbove()) return;
+    closeDeck({ reason: 'escape' });
     e.stopImmediatePropagation();
     e.preventDefault();
   };
@@ -196,10 +262,10 @@ function wire(z) {
   const follow = () => {
     raf = 0;
     if (open !== z) return;
-    if (!deck.isConnected) { closeDeck({ instant: true }); return; }
+    if (!deck.isConnected) { closeDeck({ instant: true, reason: 'gone' }); return; }
     if (!window.innerWidth || !window.innerHeight) return;
     const r = rect(deck);
-    if (r.bottom < 0 || r.top > window.innerHeight || r.right < 0 || r.left > window.innerWidth) { closeDeck({ instant: true }); return; }
+    if (r.bottom < 0 || r.top > window.innerHeight || r.right < 0 || r.left > window.innerWidth) { closeDeck({ instant: true, reason: 'scroll' }); return; }
     place(slot, deck);
   };
   const onScroll = () => { if (!raf) raf = requestAnimationFrame(follow); };
@@ -214,7 +280,14 @@ function wire(z) {
   });
 }
 
-export function closeDeck({ instant = false } = {}) {
+// Which closes hand focus back to the deck: the ones a keyboard or a
+// deliberate tap made (Escape, the ✕, a second tap on the deck) when the
+// keyboard opened it or focus was inside the panel. A press elsewhere, a
+// scroll-away, a repaint: never — pulling focus there yanked the page back
+// to the deck (the scroll-away close, confirmed in a real browser).
+const REFOCUS_ON = new Set(['escape', 'button', 'toggle']);
+
+export function closeDeck({ instant = false, reason = 'programmatic' } = {}) {
   if (!open) return;
   const z = open;
   open = null;
@@ -224,9 +297,9 @@ export function closeDeck({ instant = false } = {}) {
   // A zoom standing on one of the panel's cards leaves with the panel.
   const zc = zoomedCard();
   if (zc && z.slot.contains(zc)) unzoom({ instant: true, why: 'deck closed under the zoom' });
-  // Focus goes home to the deck when it was inside the panel.
   const active = document.activeElement;
-  if (z.deck.isConnected && ((active && z.slot.contains(active)) || z.fromKeyboard)) z.deck.focus();
+  const focusInside = !!(active && z.slot.contains(active));
+  if (REFOCUS_ON.has(reason) && z.deck.isConnected && (focusInside || z.fromKeyboard)) z.deck.focus({ preventScroll: true });
   const animate = !instant && z.deck.isConnected && z.slot.isConnected && canAnimate(z.slot, z.ctx);
   if (!animate) {
     for (const a of z.anims) { try { a.cancel(); } catch { /* finished */ } }

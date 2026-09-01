@@ -647,7 +647,7 @@ document.getElementById('zoom-bottom-probe').appendChild(stateCard('16b · very 
 import * as state from '/js/state.js';
 import * as model from '/js/v3/model.js';
 import { FESTIVALS, FESTIVAL_INDEX } from '/js/festivals.js';
-import { renderWall, refreshCard } from '/js/v3/wall.js';
+import { renderWall, refreshCard, cardFor } from '/js/v3/wall.js';
 import { wireCardZoom, wireCardFocusZoom, zoomCard, zoomedCard, refreshZoom, zoomSnapshot, unzoom } from '/js/v3/card-facts.js';
 import { deckSnapshot, restoreDeck } from '/js/v3/deck.js';
 import { toggleBucket } from '/js/v3/filters.js';
@@ -738,8 +738,7 @@ function repaint() {
   renderWall(root, ectx);
   if (deck) restoreDeck(root, deck);
   if (keep) {
-    const occ = keep.occ ? JSON.stringify(keep.occ) : '';
-    const again = [...root.querySelectorAll(`.card[data-artist="${CSS.escape(keep.artist)}"]`)].find((el) => (el.dataset.occ || '') === occ);
+    const again = cardFor(root, keep.artist, keep.occ); // never a deck's inert face
     if (again) zoomCard(again, keep.artist, ectx, { ...keep, instant: true });
   }
 }
