@@ -567,3 +567,15 @@ test('the deck\'s pill, accessible name and panel title carry the tilde when the
   assert.deepEqual([...root.querySelectorAll('.deck-panel-grid .card')].map((c) => c.dataset.time), ['~10 PM', '~10 PM', '~10 PM']);
   assert.equal(root.querySelectorAll('.room[data-bucket="Afters"] .sec-whisper').length, 1);
 });
+
+// ---- the review round (2026-09-01): the buckets ----------------------------------------
+
+test('a stored bucket key the fest no longer offers is ignored — no ghost whisper, no empty day', () => {
+  const stale = render('portola-2026', { bucketsOff: ['Gone Section'] }).root;
+  assert.equal(stale.querySelector('.wall-whisper'), null, 'nothing real is hidden, so nothing is said');
+  assert.equal(stale.querySelectorAll('.section-empty').length, 0);
+  assert.equal(stale.querySelectorAll('.room[data-bucket="Afters"]').length, 4);
+  const mixed = render('portola-2026', { bucketsOff: ['Gone Section', 'Folsom'] }).root;
+  assert.equal(mixed.querySelector('.wall-whisper').textContent, 'Folsom is hidden — tap its chip to bring it back.', 'only the real room is named');
+  assert.equal(mixed.querySelectorAll('.room[data-bucket="Folsom"]').length, 0);
+});

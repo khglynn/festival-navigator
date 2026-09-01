@@ -126,9 +126,14 @@ import { getLS, saveLS, removeLS } from '../util.js';
 
 const LS_BUCKETS = (fid) => `fn_buckets_v1_${fid}`;
 const bucketMemory = new Map();
+// Fests whose last write did not land (storage full, a blocked store): the
+// stored value is OLDER than memory there, so memory wins until a write
+// lands again — or a reload would quietly resurrect the previous setting.
+const memoryWins = new Set();
 const cleanKeys = (v) => (Array.isArray(v) ? v.filter((k) => typeof k === 'string' && k) : []);
 
 export function loadHiddenBuckets(fid) {
+  if (memoryWins.has(fid) && bucketMemory.has(fid)) return bucketMemory.get(fid);
   const raw = getLS(LS_BUCKETS(fid));
   if (raw != null) {
     let keys = [];
@@ -141,10 +146,21 @@ export function loadHiddenBuckets(fid) {
 export function saveHiddenBuckets(fid, keys) {
   const clean = cleanKeys(keys);
   bucketMemory.set(fid, clean);
-  if (clean.length) saveLS(LS_BUCKETS(fid), JSON.stringify(clean));
-  else removeLS(LS_BUCKETS(fid));
+  let landed;
+  if (clean.length) landed = saveLS(LS_BUCKETS(fid), JSON.stringify(clean)) !== false;
+  else { removeLS(LS_BUCKETS(fid)); landed = getLS(LS_BUCKETS(fid)) == null; }
+  if (landed) memoryWins.delete(fid); else memoryWins.add(fid);
 }
 export function toggleBucket(keys, key) {
   const list = cleanKeys(keys);
   return list.includes(key) ? list.filter((k) => k !== key) : [...list, key];
+}
+// One tap, applied at once: the setting lands in memory and storage BEFORE
+// anything animates, so a second tap inside the first one's fade reads the
+// first (two chips tapped in 130 ms used to lose the first — review round,
+// 2026-09-01). Returns what changed so the caller can move the room.
+export function applyBucketToggle(fid, current, key) {
+  const next = toggleBucket(current, key);
+  saveHiddenBuckets(fid, next);
+  return { next, hiding: !cleanKeys(current).includes(key) };
 }
