@@ -393,6 +393,10 @@ function renderLineupGroup(root, day, list, ctx, fest, { header, sub } = {}) {
     if (w) root.appendChild(w);
   }
   renderCardGrid(root, list, ctx, { day, subLabelOf: lineupSubLabel });
+  // A guessed time wears its tilde on every surface it prints on, and the
+  // ONE whisper that explains it follows it here too (a search result, a
+  // flat sort) — never a tilde with nothing to say what it means.
+  if (list.some((a) => a.approx === true)) root.appendChild(approxWhisper());
 }
 
 // A lineup entry can be an EVENT (afters, Folsom) — venue rides in `stage`,
@@ -402,12 +406,13 @@ function renderLineupGroup(root, day, list, ctx, fest, { header, sub } = {}) {
 // newline is the break. Inside a day-first day the tile says only the time
 // (the day is the day, the venue lives in the zoom) — see eventTileSubLabel.
 function lineupSubLabel(a) {
-  let subLabel = [a.stage, a.time].filter(Boolean).join(' · ');
-  if (a.stage && a.time) {
+  const time = a.time ? approxMark(a, a.time) : ''; // the tilde travels with `approx`
+  let subLabel = [a.stage, time].filter(Boolean).join(' · ');
+  if (a.stage && time) {
     const bits = a.stage.split(' · ');
     subLabel = bits.length > 1
-      ? `${bits[0]} · ${a.time}\n${bits.slice(1).join(' · ')}`
-      : `${a.time}\n${a.stage}`;
+      ? `${bits[0]} · ${time}\n${bits.slice(1).join(' · ')}`
+      : `${time}\n${a.stage}`;
   }
   return subLabel || undefined;
 }
@@ -435,10 +440,14 @@ function renderCardGrid(root, list, ctx, { day = null, subLabelOf = lineupSubLab
   return shown;
 }
 
+// `opts.dayKey` is the jump / scrollspy key when the visible label is not
+// the key itself — a day-first rule shows a verbose key's weekday head
+// ("Wednesday, Sept 16 (Early Arrival Pre-Party)" → WEDNESDAY) the way
+// every other path does, while the tabs still find it by its key.
 function dayHeader(label, sub, opts = {}) {
   const rule = document.createElement('div');
   rule.className = 'day-rule';
-  rule.dataset.day = label;
+  rule.dataset.day = opts.dayKey || label;
   const d = document.createElement('span');
   d.className = 'day';
   d.textContent = label.toUpperCase();
@@ -983,7 +992,8 @@ function renderDayFirst(root, ctx, fest, { model: plan, scheduled, wk, gridDays 
 
   const whispered = new Set();
   for (const day of plan.days) {
-    const rule = dayHeader(day.key, day.sub, {
+    const rule = dayHeader(dayLabelParts(day.key).head, day.sub, {
+      dayKey: day.key,
       noteCount: model.noteCount(state.crewDoc, ctx.fid, 'day', day.key),
       onOpenNotes: ctx.onOpenDayNotes ? () => ctx.onOpenDayNotes(day.key) : null,
     });
@@ -1137,7 +1147,8 @@ function tbaBlock(list, ctx, day, { label = 'TIME TBA', subLabelOf = bare } = {}
   renderCardGrid(block, shown, ctx, { day: day.key, subLabelOf });
   return block;
 }
-const approxWhisper = () => mk('div', 'sec-whisper', '~ marks a guessed set time — the order is the plan.');
+// The LOCKED copy (MODEL-V3 §5): no terminal period.
+const approxWhisper = () => mk('div', 'sec-whisper', '~ marks a guessed set time — the order is the plan');
 
 // Tiles: time-sorted, the timeless at the end. Resting tiles stay CLEAN
 // (Kevin, 2026-08-31): name + time when there is one, nothing else — the

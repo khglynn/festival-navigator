@@ -39,7 +39,7 @@ const portola = JSON.parse(readFileSync(join(ROOT, 'data/festivals/portola-2026.
 const lostlands = JSON.parse(readFileSync(join(ROOT, 'data/festivals/lost-lands-2026.json'), 'utf8'));
 
 const TOKEN = 'eventswalltoken_0123456789';
-FESTIVAL_INDEX.push({ id: 'portola-2026', status: 'scheduled' }, { id: 'lost-lands-2026', status: 'lineup' }, { id: 'grid-only', status: 'scheduled' }, { id: 'tiles-run', status: 'lineup' }, { id: 'approx-deck', status: 'lineup' }, { id: 'model-edges', status: 'lineup' });
+FESTIVAL_INDEX.push({ id: 'portola-2026', status: 'scheduled' }, { id: 'lost-lands-2026', status: 'lineup' }, { id: 'grid-only', status: 'scheduled' }, { id: 'tiles-run', status: 'lineup' }, { id: 'approx-deck', status: 'lineup' }, { id: 'model-edges', status: 'lineup' }, { id: 'verbose-day', status: 'lineup' });
 state.activateCrew(TOKEN, {
   v: 4, meta: {}, spotify: {},
   people: { Kevin: { colorIndex: 0 }, Nhu: { colorIndex: 1 } },
@@ -99,6 +99,16 @@ FESTIVALS['model-edges'] = {
     { name: 'Roomless', day: 'Afters', night: 'Fri', time: '8 PM' },
     { name: 'S1', day: 'Afters', night: 'Sat', venue: 'V1' },
     { name: 'S2', day: 'Afters', night: 'Sat', venue: 'V2' },
+  ],
+};
+
+// A verbose day key (Lost Lands' shape) on a fest that is day-first.
+const WED_KEY = 'Wednesday, Sept 16 (Early Arrival Pre-Party)';
+FESTIVALS['verbose-day'] = {
+  id: 'verbose-day', name: 'Verbose Day', status: 'lineup',
+  artists: [
+    { name: 'Chassi', day: WED_KEY },
+    { name: 'Late Night', day: 'Afters', night: 'Wed', venue: 'The Barn', time: '11 PM' },
   ],
 };
 
@@ -614,4 +624,37 @@ test('a night with nothing for the clock renders as tiles, and a timed show with
   assert.equal(sat.querySelector('.tt-block'), null, 'no clock for a night of timeless shows');
   assert.equal(sat.querySelector('.tba-label'), null, 'and no bare TIME TBA heading over nothing');
   assert.deepEqual([...sat.querySelectorAll('.wall-grid .card')].map((c) => c.dataset.artist), ['S1', 'S2'], 'plain tiles');
+});
+
+// ---- the review round (2026-09-01): copy and labels -----------------------------------------
+
+test('a guessed time keeps its tilde outside the day-first wall — a search result, a flat sort — and the whisper follows it', () => {
+  const member = portola.artists.find((a) => a.night === 'Sun' && a.venue === 'The Midway' && a.order.seq === 2);
+  const { root } = render('portola-2026', { query: member.name.toLowerCase() });
+  // The search shows the grid set too (a name can be two entries) — the afters card is the one under AFTERS.
+  const card = [...root.querySelectorAll('.card')].find((c) => c.dataset.artist === member.name && JSON.parse(c.dataset.occ).stage === member.stage);
+  assert.equal(card.querySelector('.time').textContent, `Sun · ~${member.time}\nThe Midway`, 'the list form wears the tilde');
+  assert.equal(root.querySelectorAll('.sec-whisper').length, 1, 'and says once what it means');
+  const flat = render('tiles-run', { sort: 'az' }).root;
+  const opener = [...flat.querySelectorAll('.card')].find((c) => c.dataset.artist === 'Opener');
+  assert.equal(opener.querySelector('.time').textContent, 'Sat · ~10 PM\nThe Room');
+  assert.equal(flat.querySelectorAll('.sec-whisper').length, 1);
+  const plain = render('portola-2026', { query: 'fatboy' }).root;
+  assert.equal(plain.querySelectorAll('.sec-whisper').length, 0, 'no guess, no whisper');
+});
+
+test('the whisper is the LOCKED copy, no terminal period', () => {
+  const { root } = render('tiles-run');
+  assert.equal(root.querySelector('.sec-whisper').textContent, '~ marks a guessed set time — the order is the plan');
+});
+
+test('a verbose day key shows its weekday head in the day-first rule, the aside in the sub, and keeps the key for the tabs', () => {
+  const { root, ctx } = render('verbose-day');
+  const rule = root.querySelector('.day-rule');
+  assert.equal(rule.querySelector('.day').textContent, 'WEDNESDAY');
+  assert.equal(rule.querySelector('.date').textContent, 'Early Arrival Pre-Party');
+  assert.equal(rule.dataset.day, WED_KEY, 'the jump / scrollspy key is the key');
+  assert.equal(rule.querySelector('.chip-notes').getAttribute('aria-label'), 'Notes for Wednesday');
+  assert.deepEqual(dayNavOf(FESTIVALS['verbose-day'], ctx), [{ key: WED_KEY, short: 'WED', long: 'WEDNESDAY' }]);
+  assert.deepEqual(roomsUnder(root, WED_KEY).map((r) => r.dataset.bucket), [':fest', 'Afters']);
 });

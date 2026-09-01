@@ -355,7 +355,7 @@ test('the wall still renders every event card, now saying the guessed time', () 
     assert.equal(cell.style.gridColumn, column, 'one venue, one column');
   }
   assert.equal(afters.querySelectorAll('.sec-whisper').length, 1, 'ONE section-level whisper for the guessed times');
-  assert.match(afters.querySelector('.sec-whisper').textContent, /^~ marks a guessed set time — the order is the plan\.$/);
+  assert.equal(afters.querySelector('.sec-whisper').textContent, '~ marks a guessed set time — the order is the plan', 'the LOCKED copy, no terminal period');
   const hmd = [...root.querySelectorAll('.card')].filter((c) => c.dataset.artist === 'Horse Meat Disco');
   assert.deepEqual(hmd.map((c) => [c.closest('.room').dataset.bucket, c.classList.contains('cell'), c.querySelector('.time')?.textContent]),
     [['Afters', true, '9 PM'], ['Folsom', false, '9 PM – 3 AM']],
