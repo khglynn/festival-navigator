@@ -1,49 +1,43 @@
-# Drafts for Ray — Kevin's yes required before either goes out (2026-08-30)
+# Drafts for Ray — Kevin's yes required before either goes out (v2, 2026-09-01)
 
-## 1 · Reply on issue #6 (posts from Kevin's GitHub account)
+v1 (2026-08-30) was written before Kevin's direction; v2 carries it: say
+what shipped, what folds in his work, that Kevin likes the Discover tab
+(the suggestions feed) and will probably pull it in after ACL because
+friends are on the app for that one. Facts checked 2026-09-01 against the
+branch: `fn-canonical-host` meta in index.html (line 13) with js/spotify.js
+deriving from it; docs/fork-setup.md credits raypp2; threads + the
+reply-to-reply refusal in api/_lib/crew-shared.mjs; per-fest previews via
+api/share.js. **Send both AFTER PR #13 promotes** so every link points at
+main. Email: Kevin sends from hello@kevinhg.com in the "Forked
+festival-navigator" thread (last message is Ray's Aug 6 checkpoint). Issue
+comment: posts from Kevin's GitHub account (gh, sandbox off).
 
-> Shipped — and you were right on every count. The host now lives in one
-> `fn-canonical-host` meta tag in index.html; js/spotify.js and every
-> on-screen string that names the host derive from it, so a fork sets its
-> domain once and `git pull upstream` stays clean. Your `HOST_ALLOW` note
-> landed as documentation: docs/fork-setup.md (which owes a lot to the one
-> in your fork) points forks at `PUBLIC_BASE_URL`.
+## 1 · Email reply (thread "Forked festival-navigator")
+
+> Ray! Finally got a real sit-down with everything, the checkpoint, the issue, the fork. Discover is my favorite thing in there, and the player keeping a set alive across an artist swipe is wild (the playhead trick is smart ha).
 >
-> Worth saying plainly: your framing of the security half — a fork left on
-> the upstream value hands its users' fragment tokens to my domain — is
-> what moved this from "nicety" to "shipped today." Thank you for the
-> clearest issue this repo has had.
-
-## 2 · Email reply to Ray (thread "Forked festival-navigator" — Kevin sends)
-
-Subject: (reply in thread)
-
-> Ray! Finally sat down with everything — the checkpoint demo, the issue,
-> the fork. The probe-driven player work is wild (Spotify pretending it can
-> carry, adjudicated by playhead shape — chef's kiss) and the discovery
-> deck's core ideas are genuinely neat. I did hit scroll jank around the
-> deck on my machine, and my instinct for the mainline stays what I said in
-> July: keep the wall's tap-to-pick grammar sacred. If we ever do an artist
-> page here, I'd want the pick easy to change ON the page without replacing
-> the wall's grammar, and I'd fold your recommendation ideas into the
-> Spotify likes-and-follows machinery we already run.
+> What shipped on my side this week, all on main now:
 >
-> Concrete stuff from this week you'll care about:
-> - Issue #6 is closed properly — one meta tag, strings derive, and there's
->   a real docs/fork-setup.md now (it credits yours).
-> - Crew links unfurl as per-festival cards now (fest.kevinhg.com/f/…), and
->   the notes got threads with a redesign I'm happy with.
-> - The server now refuses a reply-to-a-reply outright — worth a pull into
->   your fork since your client is the second one writing notes.
+> - Your issue is closed the way you suggested. The host lives in one fn-canonical-host meta tag in index.html and everything derives from it, so a fork sets its domain once and git pull upstream stays clean. docs/fork-setup.md points forks at it, and owes a lot to yours.
+> - Notes have threads: one reply row per thread, one level deep. The server now refuses a reply-to-a-reply outright, and that rule exists because your client is the second one writing notes, so it's worth a pull.
+> - Crew links unfurl as per-festival poster cards (fest.kevinhg.com/f/<fest-id>#g=…), every venue is a door to its map, and the card hover got rebuilt from a storyboard.
 >
-> Your roadmap items 3–6 are parked on my board for a dedicated round —
-> when I get there I'd love your eyes on it. Keep the checkpoints coming.
+> Discover: I like it a lot and I'll probably pull it in after ACL. A bunch of my friends are on the app for that one and I'm not touching the floor under them until it's done (mid October). Keep the checkpoints coming.
 >
-> — Kevin
+> Appreciate you,
+> Kevin
+
+## 2 · Issue #6 closer (GitHub comment)
+
+> Shipped on main: the host lives in one `fn-canonical-host` meta tag in index.html, and js/spotify.js plus every on-screen string that names the host derive from it, so a fork sets its domain once and `git pull upstream` stays clean. Your `HOST_ALLOW` note became docs/fork-setup.md (which owes a lot to the one in your fork).
+>
+> Your framing of the security half, a fork left on the upstream value handing its users' fragment tokens to my domain, is what moved this from nicety to shipped. Clearest issue this repo has had. Thank you.
 
 ## Context for the wrap
 - Issue: https://github.com/khglynn/festival-navigator/issues/6 (open since
-  Jul 24; the fix is commit c17763e on notes-desktop-round — post the reply
-  AFTER PR #13 merges so the linked code is on main).
-- The email thread's last message is Ray's Aug 6 checkpoint; ball has been
-  in Kevin's court since.
+  Jul 24; the fix is commit c17763e on notes-desktop-round).
+- Kevin's read of "his page of suggestions/ideas (whatever he calls that
+  tab)" = the fork's **Discover** tab (Wall · Discover · My Day). If he meant
+  Ray's planned-features list from the Jul 24 email instead, swap the
+  Discover paragraph for: "Your build list from July is still the one I'd
+  point at, and I'll probably start pulling from it after ACL."
