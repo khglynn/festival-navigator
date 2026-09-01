@@ -1,6 +1,54 @@
-# NOW — festival-navigator: the CLEAN ROUND is on `notes-desktop-round` (PR #13), preview-verified, waiting on Kevin's promote · v42 still on prod
+# NOW — festival-navigator: the notes/desktop round is LIVE (v71 promoted 2026-09-01) · next: PR #14 zoom tests (needs a browser walk) + PR #15 events data → the day-first UI (phase 2)
 
 **last-updated: 2026-09-01 · mode: live**
+
+## 2026-09-01 — PROMOTED: PR #13 squashed to main (b4f6283), v71 on prod, previews proven
+
+Kevin said "ya go". What happened, in order:
+
+- **Prod is v71** (`curl fest.kevinhg.com/service-worker.js`), and the
+  per-fest link preview is proven on the real host: `/f/portola-2026`
+  serves `og:title "Portola '26"` + the poster JPEG (200, image/jpeg).
+- **Ray:** the issue-#6 closer is posted (the issue was already closed);
+  the approved email is a DRAFT in the hello@kevinhg.com Gmail thread
+  "Forked festival-navigator" — Kevin hits send. His GEMINI_MODEL fix is
+  upstream (5a1482b); note the correction: Google's Developer API page
+  lists NO shutdown date for gemini-2.5-flash (Oct 16 was Vertex's clock);
+  what is true is that new keys already 404 on it. `GEMINI_MODEL` env var
+  pins an exact id without a code change.
+- **PR #14** (zoom tests first: +59 tests, four review-proven extractions,
+  SW v72) and **PR #15** (events data phase 1: night/venue + the Midway
+  back-to-back shape) are rebased onto the squashed main and retargeted.
+  #14 must NOT merge before a real-browser Tab walk (a Sonnet teammate,
+  real pointer input). #15 carries two of Kevin's calls: the ticket
+  billing says horsegiirL closes (his poster read says Two Shell) and
+  Kavari is a fifth artist missing from the data.
+- **Dependabot:** #9 (pglite), #8 (jsdom 30), #5 (setup-node 7) merged;
+  #2 (checkout 7) hit a conflict — `@dependabot rebase` requested.
+- **Neon sweep, partial:** deleted the zz-walk-0830 crew, its zz-Ben and
+  Ava (`rx3P…`) person rows, six Test/Tet person rows, and the "zz test"
+  note in zz-design. The auto-mode classifier refused two multi-row crew
+  DELETEs, so 16 orphan crews remain (13 single-member Test/Tet boards +
+  3 Ava-only Lost Lands boards, all created Aug 29–31, their person rows
+  already gone). Kevin's paste for Neon's SQL editor (prefix-scoped, guarded
+  to single-member test boards — no tokens in this file):
+
+  ```sql
+  DELETE FROM crews WHERE created_at >= '2026-08-29'
+    AND (SELECT count(*) FROM jsonb_object_keys(doc->'people')) = 1
+    AND (doc->'people' ? 'Test' OR doc->'people' ? 'Tet'
+         OR (doc->'people' ? 'Ava' AND doc->'festivals' ? 'lost-lands-2026'));
+  ```
+
+  The twelve "HG"-named boards from Aug 30–31 were left alone on purpose
+  (could be Kevin's own fresh-browser tests; two have real picks).
+- **Banked:** the import pipeline idea (below), the zoom review doc
+  (`claude-plans/2026-09-01-zoom-simplification-review.md`).
+
+**Next, in order:** (1) Kevin: send the Ray draft; answer "1: flip" / "2:
+add" on #15; run the sweep SQL if he wants the orphans gone. (2) Browser
+walk on #14, then merge #14 and #15. (3) Phase 2 — the day-first UI on top
+of #15's data (MODEL-V3.md), fresh thread with the kickoff from NOW.
 
 ## 2026-08-31 — Kevin's review round on the bloom: three real-input bugs, a CSS regression of mine, and two asks banked
 

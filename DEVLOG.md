@@ -2,6 +2,35 @@
 
 Newest first. One entry per meaningful unit of work.
 
+## 2026-09-01 — Promoted: the notes/desktop round is live, and the two follow-ups are queued
+
+- **PR #13 squashed to main (b4f6283) on Kevin's "ya go"; prod is v71.**
+  Threads, the bloom, per-fest link previews, the focus-blur click fix he
+  confirmed, venue map doors, the crash journal + Diagnostics. The preview
+  card is proven on the real host (`/f/portola-2026` → poster JPEG).
+- **Ray's fork paid us back:** his `guard.mjs` floated the Gemini model and
+  made the error name WHICH failure (404 model / 429 quota / key). Ported,
+  credited. I first wrote that Google retires the pinned model for everyone
+  on Oct 16 — wrong; that date is Vertex AI's lifecycle, and the Developer
+  API page lists no date. What is true: new keys already 404 on it.
+  `GEMINI_MODEL` now reads the environment first.
+- **Two review-driven PRs from background Opus agents, both rebased onto
+  the squash:** #14 (zoom: 59 tests written against the current code, then
+  the four extractions an adversarial review proved safe; SW v72; gated on a
+  real-browser Tab walk) and #15 (events data phase 1: `night`/`venue`,
+  the Midway back-to-back shape with guessed times and an order-with-source,
+  validator teeth, frozen-key proof).
+- **Provider question answered with sources, not memory:** Gemini stays for
+  the add-a-festival research call (grounded citations, free at our volume,
+  now Gemini 3.5 Flash via the alias); Claude + web search is the quality
+  upgrade if lineups come back wrong; OpenRouter's search path is deprecated
+  in favour of a beta tool and adds a hop. Kevin's larger idea — a
+  multi-pass, vision + grounding import graded against the fests we already
+  ship — is banked in NOW.
+- **Cleanup:** link previews lost their who-corner ticks; Dependabot #9, #8,
+  #5 merged; the Neon test-row sweep is partial (two multi-row deletes were
+  refused by the auto-mode classifier — SQL for Kevin in NOW).
+
 ## 2026-08-31 — Kevin's review of the bloom: what synthetic tests can't see, a regression of mine, and the click that closed the zoom
 
 - **Three bugs the frame-stepping could not see, all real-input only:** a 1px
