@@ -112,6 +112,22 @@ not set times. The model:
   states; `approx` keeps the runners-up (the word `1-ish`; running order
   on the resting card, which falls off the clock).
 
+**Build notes (2026-09-01, PR #16 review round — the spec matches the build):**
+
+- The whisper is exactly `~ marks a guessed set time — the order is the plan`
+  — no terminal period.
+- When the CLOSE is our guess too (`closeApprox: true` — Portola's Midway
+  prints doors, not an end), the window line wears the tilde on the close:
+  `Sun · Runs 10 PM – ~2 AM`. A sourced close reads `Runs 10 PM – 2 AM`.
+- The apostrophe in `Guessing they’re 3rd of 4` is typographic (’), like
+  the app's other copy.
+- §4's deck decides on PEAK concurrency (three sets on the clock at one
+  moment), not on how many sets an overlap chain touches — a long set
+  bridging two shorter ones that never overlap each other is two lanes.
+- The tilde travels with `approx` on every surface a time prints on — the
+  tile, the cell, the deck's pill and title, a search result, a flat sort —
+  and the whisper follows it to each.
+
 ## 6 · Build sizing (honest)
 
 M+, one PR after data migration: restructure Portola's 45 events to
