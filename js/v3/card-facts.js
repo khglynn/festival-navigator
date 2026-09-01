@@ -489,6 +489,18 @@ function zoomCardInner(el, artistName, ctx, { onOpenNotes = null, source = 'mous
 // that arrived grows in with a little overshoot, a MUST badge fades on.
 // Transform and opacity only, inside the overlay.
 const REFRESH_MS = 300;
+// WHICH parts move on a refresh; partKey below says HOW each is matched across
+// the rebuild. Add a row to grownBlock — a genre line, a conflict warning — and
+// you touch both: miss this selector and the row either animates as an arrival
+// on every single pick or never moves at all, with no error and no failing test
+// to say so.
+// It is NOT the bloom's set, and the difference is deliberate. The cascade at
+// the end of zoomCardInner animates `.f-chip` whole and no `.f-name` at all,
+// because the name has no animation of its own — it IS the card and rides the
+// scale. Using this constant there to "fix the inconsistency" would translate
+// the name on every zoom, against a stated design law, and the bloom test would
+// stay green while it happened.
+const REFRESH_PART_SEL = '.f-name, .f-sub, .f-where, .f-pill, .f-chip.notes, .f-chip.spot';
 function partKey(el) {
   if (el.classList.contains('f-name')) return 'name';
   if (el.classList.contains('f-sub')) return 'sub';
@@ -500,7 +512,7 @@ function partKey(el) {
 }
 function snapshotParts(card) {
   const out = new Map();
-  for (const el of card.querySelectorAll('.f-name, .f-sub, .f-where, .f-pill, .f-chip.notes, .f-chip.spot')) {
+  for (const el of card.querySelectorAll(REFRESH_PART_SEL)) {
     const k = partKey(el);
     if (k) out.set(k, { rect: rect(el), must: !!el.querySelector('b') });
   }
@@ -565,7 +577,7 @@ function refreshZoomInner(fresh, ctx) {
   // Every piece: the ones that stayed slide from where they were; the ones
   // that arrived grow in a beat later; a badge that appeared fades on.
   let arrivals = 0;
-  for (const el of z.card.querySelectorAll('.f-name, .f-sub, .f-where, .f-pill, .f-chip.notes, .f-chip.spot')) {
+  for (const el of z.card.querySelectorAll(REFRESH_PART_SEL)) {
     const k = partKey(el);
     const was = k ? before.get(k) : null;
     const now = rect(el);
