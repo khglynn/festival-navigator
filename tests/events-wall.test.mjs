@@ -39,7 +39,7 @@ const portola = JSON.parse(readFileSync(join(ROOT, 'data/festivals/portola-2026.
 const lostlands = JSON.parse(readFileSync(join(ROOT, 'data/festivals/lost-lands-2026.json'), 'utf8'));
 
 const TOKEN = 'eventswalltoken_0123456789';
-FESTIVAL_INDEX.push({ id: 'portola-2026', status: 'scheduled' }, { id: 'lost-lands-2026', status: 'lineup' }, { id: 'grid-only', status: 'scheduled' }, { id: 'tiles-run', status: 'lineup' }, { id: 'approx-deck', status: 'lineup' });
+FESTIVAL_INDEX.push({ id: 'portola-2026', status: 'scheduled' }, { id: 'lost-lands-2026', status: 'lineup' }, { id: 'grid-only', status: 'scheduled' }, { id: 'tiles-run', status: 'lineup' }, { id: 'approx-deck', status: 'lineup' }, { id: 'model-edges', status: 'lineup' });
 state.activateCrew(TOKEN, {
   v: 4, meta: {}, spotify: {},
   people: { Kevin: { colorIndex: 0 }, Nhu: { colorIndex: 1 } },
@@ -80,6 +80,25 @@ FESTIVALS['approx-deck'] = {
     { name: 'L1', day: 'Afters', night: 'Sat', venue: 'V2', time: '11 PM' },
     { name: 'L2', day: 'Afters', night: 'Sat', venue: 'V2', time: '11 PM' },
     { name: 'S1', day: 'Afters', night: 'Sat', venue: 'V3', time: '9 PM' },
+  ],
+};
+
+// Afters earns columns on Friday; Saturday's afters are all timeless, and one
+// Friday show has a time but no room yet.
+FESTIVALS['model-edges'] = {
+  id: 'model-edges', name: 'Model Edges', status: 'lineup',
+  dayMeta: { Friday: { wd: 'Fri', date: 'Oct 2' }, Afters: { date: 'Oct 2-3' } },
+  artists: [
+    { name: 'Headliner', day: 'Friday' },
+    { name: 'A1', day: 'Afters', night: 'Fri', venue: 'V1', time: '9 PM' },
+    { name: 'A2', day: 'Afters', night: 'Fri', venue: 'V1', time: '11 PM' },
+    { name: 'B1', day: 'Afters', night: 'Fri', venue: 'V2', time: '10 PM' },
+    { name: 'B2', day: 'Afters', night: 'Fri', venue: 'V2', time: '11 PM' },
+    { name: 'C1', day: 'Afters', night: 'Fri', venue: 'V3', time: '10 PM' },
+    { name: 'C2', day: 'Afters', night: 'Fri', venue: 'V3', time: '12 AM' },
+    { name: 'Roomless', day: 'Afters', night: 'Fri', time: '8 PM' },
+    { name: 'S1', day: 'Afters', night: 'Sat', venue: 'V1' },
+    { name: 'S2', day: 'Afters', night: 'Sat', venue: 'V2' },
   ],
 };
 
@@ -578,4 +597,21 @@ test('a stored bucket key the fest no longer offers is ignored — no ghost whis
   const mixed = render('portola-2026', { bucketsOff: ['Gone Section', 'Folsom'] }).root;
   assert.equal(mixed.querySelector('.wall-whisper').textContent, 'Folsom is hidden — tap its chip to bring it back.', 'only the real room is named');
   assert.equal(mixed.querySelectorAll('.room[data-bucket="Folsom"]').length, 0);
+});
+
+// ---- the review round (2026-09-01): the model's wall shapes --------------------------------
+
+test('a night with nothing for the clock renders as tiles, and a timed show with no room keeps its time under VENUE TBA', () => {
+  const { root } = render('model-edges');
+  assert.deepEqual(rulesOf(root), ['FRIDAY', 'SATURDAY']);
+  const fri = roomsUnder(root, 'Friday').find((r) => r.dataset.bucket === 'Afters');
+  assert.ok(fri.querySelector('.tt-block'), 'Friday earns its clock');
+  const venueTba = [...fri.querySelectorAll('.tba')].find((b) => b.querySelector('.tba-label').textContent === 'VENUE TBA');
+  assert.ok(venueTba, 'the roomless show has its own quiet row');
+  assert.deepEqual([...venueTba.querySelectorAll('.card')].map((c) => [c.dataset.artist, c.dataset.time]), [['Roomless', '8 PM']], 'its time is kept');
+  assert.equal([...fri.querySelectorAll('.tba-label')].filter((l) => l.textContent === 'TIME TBA').length, 0);
+  const sat = roomsUnder(root, 'Saturday').find((r) => r.dataset.bucket === 'Afters');
+  assert.equal(sat.querySelector('.tt-block'), null, 'no clock for a night of timeless shows');
+  assert.equal(sat.querySelector('.tba-label'), null, 'and no bare TIME TBA heading over nothing');
+  assert.deepEqual([...sat.querySelectorAll('.wall-grid .card')].map((c) => c.dataset.artist), ['S1', 'S2'], 'plain tiles');
 });

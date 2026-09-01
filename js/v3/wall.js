@@ -1124,15 +1124,17 @@ const tileSubLabel = (e) => (parseEventTime(e.time) ? approxMark(e, timeRange(e.
 const bare = () => undefined;
 
 // TIME TBA: the quiet row the timeless land in, under a section that has a
-// clock (or timed tiles) above it. The people filter hides here; when it
-// hides everything, the row goes too — the shape above already says the day.
-function tbaBlock(list, ctx, day) {
+// clock (or timed tiles) above it — and VENUE TBA, its sibling for a set
+// that has a time but no room yet (the time stays; a real time is never
+// hidden). The people filter hides here; when it hides everything, the row
+// goes too — the shape above already says the day.
+function tbaBlock(list, ctx, day, { label = 'TIME TBA', subLabelOf = bare } = {}) {
   const filtering = ctx.filterPeople && ctx.filterPeople.length;
   const shown = filtering ? list.filter((a) => passesPeople(ctx.picks, a.name, ctx.filterPeople)) : list;
   if (!shown.length) return null;
   const block = mk('div', 'tba');
-  block.appendChild(mk('div', 'tba-label', 'TIME TBA'));
-  renderCardGrid(block, shown, ctx, { day: day.key, subLabelOf: bare });
+  block.appendChild(mk('div', 'tba-label', label));
+  renderCardGrid(block, shown, ctx, { day: day.key, subLabelOf });
   return block;
 }
 const approxWhisper = () => mk('div', 'sec-whisper', '~ marks a guessed set time — the order is the plan.');
@@ -1164,7 +1166,11 @@ function renderEventTiles(room, list, ctx, { day }) {
 // for a venue whose sets carry an order (events.js timetableOf decides).
 function renderEventsTimetable(room, list, ctx, { fest, section, day, now }) {
   const tt = timetableOf(list);
-  if (tt.venues.length) {
+  // A night with nothing to put on a clock (no timed set with a room) is
+  // tiles for the night — never a bare TIME TBA heading over an empty grid.
+  // The section keeps its columns on the nights that earn them.
+  if (!tt.venues.length) { renderEventTiles(room, list, ctx, { day }); return; }
+  {
     const syncKey = `${section.key}|${day.key}`;
     // Capped columns: a two-venue Thursday must not become two 600px cards.
     const colsTemplate = `repeat(${tt.venues.length}, minmax(150px, 240px))`;
@@ -1228,6 +1234,10 @@ function renderEventsTimetable(room, list, ctx, { fest, section, day, now }) {
     block.append(strip, wrap);
     room.appendChild(block);
     if (day.iso) positionNowLines(wrap, now);
+  }
+  if (tt.loose.length) {
+    const block = tbaBlock(sortForTiles(tt.loose), ctx, day, { label: 'VENUE TBA', subLabelOf: tileSubLabel });
+    if (block) room.appendChild(block);
   }
   if (tt.tba.length) {
     const block = tbaBlock(tt.tba, ctx, day);
