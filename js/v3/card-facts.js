@@ -331,10 +331,18 @@ function zoomLayer() {
 }
 
 export function zoomedCard() { return zoomed ? zoomed.el : null; }
-// The zoom is two nodes — the resting card and its overlay. "Outside" means
-// outside both (a tap on the overlay is a pick, never a dismiss).
+// The zoom is two nodes — the resting card and its overlay — and "outside"
+// means outside BOTH. A tap on the overlay is a pick, never a dismiss; focus or
+// a pointer crossing between the two halves has not left anything. Five places
+// asked this question and four of them spelled it out by hand; the one thing
+// they must never disagree about is what counts as inside.
+// (`contains` counts a node as containing itself, so the explicit `to === z.el`
+// these sites used to carry is folded in, not lost.)
+function isInsideZoom(z, node) {
+  return !!(z && node && (z.el.contains(node) || z.slot.contains(node)));
+}
 export function zoomContains(node) {
-  return !!(zoomed && node && (zoomed.el.contains(node) || zoomed.slot.contains(node)));
+  return isInsideZoom(zoomed, node);
 }
 // What a full-wall repaint needs to bring the same zoom back on the fresh
 // card — a crew-mate's pick must not eat the card you are resting on.
@@ -442,7 +450,7 @@ function zoomCardInner(el, artistName, ctx, { onOpenNotes = null, source = 'mous
       requestAnimationFrame(() => {
         if (zoomed !== z) return;
         const under = underMouse();
-        if (under && !slot.contains(under) && !z.el.contains(under)) unzoom({ instant: true, why: 'restored under a moved-away mouse' });
+        if (under && !isInsideZoom(z, under)) unzoom({ instant: true, why: 'restored under a moved-away mouse' });
       });
     }
     return facts;
@@ -705,7 +713,10 @@ export function unzoom(...args) {
 // fresh one under the same overlay (refreshZoom), and a listener holding the
 // old node would see it as gone.
 function wireSlot(z) {
-  const { slot, card } = z;
+  // `card` only: z.card is stable across a pick (refreshZoom replaces its
+  // CHILDREN, never the node), while every read of the resting card goes
+  // through z.el at event time — see the rule above.
+  const { card } = z;
 
   // A hold's release must never pick: while the finger that grew the card is
   // still down, the overlay hears nothing; the NEXT tap is the first it takes
@@ -735,6 +746,12 @@ function wireSlot(z) {
     });
   }
 
+  // The grown card's own controls: the notes chip and the maps door. Everything
+  // else on the face IS the card, and a press on the card means pick. Both press
+  // handlers below have to agree on that line, and they used to draw it in two
+  // slightly different inks.
+  const isOwnControl = (target) => target !== card && !!target.closest?.('button, a');
+
   // The overlay never steals focus. A click on the RESTING card focuses it
   // (role=button), and refreshCard hands that focus to the fresh node on
   // purpose (keyboard users keep their place). The next click, on this
@@ -745,7 +762,7 @@ function wireSlot(z) {
   // notes chip and the maps door keep their own defaults.
   card.addEventListener('mousedown', (e) => {
     lastOverlayPress = Date.now();
-    if (e.target.closest && e.target.closest('button, a')) return;
+    if (isOwnControl(e.target)) return;
     e.preventDefault();
   });
 
@@ -753,7 +770,7 @@ function wireSlot(z) {
   // the resting card. Its one button (the notes chip) is its own control.
   card.addEventListener('click', (e) => {
     if (zoomed !== z) return;
-    if (e.target !== card && e.target.closest('button')) return;
+    if (isOwnControl(e.target)) return;
     if (!z.el.isConnected) { unzoom({ instant: true, why: 'clicked a card that left the DOM' }); return; }
     z.ctx.onTap(z.artist, z.el);
   });
@@ -781,7 +798,7 @@ function wireSlot(z) {
   // leave would have; movement back inside cancels it.
   const onMove = (e) => {
     if ((e.pointerType && e.pointerType !== 'mouse') || zoomed !== z || z.source !== 'mouse') return;
-    if (slot.contains(e.target) || z.el.contains(e.target)) {
+    if (isInsideZoom(z, e.target)) {
       if (outT) { clearTimeout(outT); outT = null; }
       return;
     }
@@ -855,8 +872,7 @@ function wireSlot(z) {
   z.cleanup.push(() => document.removeEventListener('keydown', onTabKey, true));
   card.addEventListener('focusout', (e) => {
     if (zoomed !== z) return;
-    const to = e.relatedTarget;
-    if (to && (to === z.el || z.el.contains(to) || slot.contains(to))) return;
+    if (isInsideZoom(z, e.relatedTarget)) return;
     unzoom({ why: 'focus left the zoom' });
   });
 }
@@ -926,8 +942,7 @@ export function wireCardFocusZoom(el, artistName, ctx, { onOpenNotes = null, occ
   el.addEventListener('focusout', (e) => {
     if (dismissedEl === el) dismissedEl = null;
     if (!zoomed || zoomed.el !== el) return;
-    const to = e.relatedTarget;
-    if (to && (el.contains(to) || zoomed.slot.contains(to))) return;
+    if (isInsideZoom(zoomed, e.relatedTarget)) return;
     unzoom({ why: 'focus left the card' });
   });
 }

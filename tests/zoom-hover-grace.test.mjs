@@ -79,6 +79,19 @@ test('a non-mouse leave, and a leave from a zoom nobody hovered, are both ignore
   assert.ok(slot(), 'a keyboard zoom does not close on hover-out');
 });
 
+test('a mouse over the RESTING CARD is inside the zoom, not outside it', async () => {
+  // The belt judges every mouse movement in the document. The zoom is two
+  // nodes, and the resting card is the other one: a viewport-clamped overlay
+  // can leave part of its card uncovered, and movement there is a hand still
+  // on the thing it is looking at.
+  const ctx = makeCtx();
+  const card = mountCard(ctx);
+  zoom.zoomCard(card, 'GRiZ', ctx, { occ: OCC });
+  card.dispatchEvent(pointerEvent('pointermove', { bubbles: true }));
+  await wait(GRACE + 80);
+  assert.ok(slot(), 'movement over either half is movement inside');
+});
+
 test('the leave close and the belt close name themselves differently in the crash journal', async () => {
   // The journal only fires within 1s of an overlay press, which is the
   // suspicious pattern it was added for (2026-08-31). Both close paths are
