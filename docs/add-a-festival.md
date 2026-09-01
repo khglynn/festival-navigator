@@ -126,3 +126,36 @@ is a reappearance (a lineup artist playing an afters show) — picks, auras and
 notes unify by exact name on purpose, and the validator only flags same-day or
 day-less duplicates. See `portola-2026.json` (the Afters/Folsom sections) for
 the worked example.
+
+### Event fields (added 2026-09-01)
+
+Alongside `stage`, an event entry may carry the same facts as data:
+
+| Field | What |
+|---|---|
+| `night` | `Mon`…`Sun` — the night it plays. Must equal the part of `stage` before ` · `. |
+| `venue` | The room. Must equal the part of `stage` after ` · `, and should have an entry in `venues{}` so the card gets a map door. |
+
+`stage` stays and stays authoritative: it is what the renderer reads today, so
+`night`/`venue` are a denormalization of it, and the validator makes a
+disagreement an ERROR. Adding them is optional per festival; adding one that
+contradicts `stage` is not allowed.
+
+When a venue prints DOORS rather than set times and the sets are known to run
+back to back, the run can be recorded as data instead of guessed at render
+time (MODEL-V3 §5):
+
+| Field | What |
+|---|---|
+| `time` | The guessed start for this set. |
+| `approx` | `true` when that time is our guess, not the venue's. |
+| `doors` / `close` | The room's window, each a single clock time (`"10 PM"`, never a range). |
+| `closeApprox` | `true` when the CLOSE is our guess — `approx` scopes to `time` only, and the two are separate because a poster usually prints doors and not an end. |
+| `order` | `{ seq, of, source, confirmed }` — position in the run (1…`of`), an `https` link to where the order came from, and whether the venue has posted it or it is still our read. |
+
+The validator holds a run together: every set sharing a day + night + venue
+must agree on `of`, `doors` and `close`, claim a distinct `seq`, sit inside
+the window, and run in the same direction on the clock as in the numbering.
+Portola's Sunday Midway four are the worked example. Never merge the sets into
+one card — artist separation is law, because a combined card eats the crew's
+picks.
