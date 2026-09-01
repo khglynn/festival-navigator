@@ -98,6 +98,18 @@ review.md`. Not applied — Kevin's call; tests-first if he says go.
 (6) Link previews lost their who-corner ticks (Kevin's call); the two
 stray root screenshots went to the Trash.
 
+**Banked 2026-09-01 — the import pipeline Kevin wants next (not built):**
+a couple-agent-pass "add a festival" import that reads posters (vision) and
+the web (grounding), routed to whatever model is current and cheap, judged
+by an EVAL against the festival files we already have — regenerate Portola,
+ACL, Lost Lands from their public sources and diff against the shipped JSON,
+with the fuzzy cases (Portola Week's doors-only posters, billing-order
+guesses) as the hard tests. Gemini 3.x does vision + grounding on the free
+tier, so the provider question is closed for now; the eval harness is the
+durable asset and is provider-agnostic. Ray's July "AI festival authoring
+via import" item is the same idea from his side. Natural home: after the
+events UI (phase 2) lands, since afters need the §5 data shape to grade.
+
 **Asks banked, awaiting Kevin:** the structured events model for
 Afters/Folsom (nights + venues + sort; proposal with two decisions in
 `claude-plans/2026-08-31-events-model.md` — "big one in the 11th hour", his
