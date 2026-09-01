@@ -13,6 +13,135 @@ export const STATUSES = ['lineup', 'scheduled', 'archived'];
 const CLOCK = '(1[0-2]|0?[1-9])(:[0-5][0-9])? (AM|PM)';
 export const TIME_RE = new RegExp(`^${CLOCK}( - (${CLOCK}|Close))?$`, 'i');
 
+// ---------------------------------------------------------------------------
+// Structured event fields (MODEL-V3 §1 and §5, added 2026-09-01).
+//
+// An artists[] EVENT entry (an afters or Folsom show) has always carried its
+// room as a single string: `stage: "Sun · The Midway"`, which js/v3/wall.js
+// splits on ' · ' to draw the card's sub-label. Phase 1 of the events build
+// adds the split out as data — `night` + `venue` — so the day-first renderer
+// can group by night and column by venue without re-parsing prose.
+//
+// That makes the pair a DENORMALIZATION, and the rule with teeth is therefore
+// not "are they well-formed" but "do they still agree with `stage`". While
+// both exist, drift is the whole risk: `stage` is what ships today, the pair
+// is what phase 2 reads, and a file where they disagree renders one thing and
+// plans another. Disagreement is an ERROR.
+//
+// `night` is checked against the weekday vocabulary, not against the fest's
+// own days: a fest's event nights routinely fall OUTSIDE its grid (Portola
+// plays Sat–Sun and its afters run Thu–Sun), and the only machine-readable
+// day set — dayMeta — covers grid days only. A section's dates live in free
+// text ("Sep 24-27"), which is not something to parse into a rule. The
+// vocabulary check still catches what matters: phase 2 derives the day tabs
+// from the union of grid days and event nights, so "Sunday" or "sun" where
+// "Sun" belongs would mint a phantom tab.
+const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+// doors/close are a single point on the clock, never a range.
+const CLOCK_RE = new RegExp(`^${CLOCK}$`, 'i');
+const startOf = (t) => String(t).split(' - ')[0];
+
+function checkEventFields(fest, err, warn) {
+  const plain = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
+  const artists = Array.isArray(fest.artists) ? fest.artists : [];
+  const venueMap = plain(fest.venues) ? fest.venues : null;
+  // Runs are grouped by the room they happen in: one day, one night, one
+  // venue. Nothing in the file declares a run — the grouping IS the run.
+  const runs = new Map();
+
+  artists.forEach((a, i) => {
+    if (!plain(a)) return;
+    const at = `artists[${i}] (${safeKey(a.name)})`;
+    const bits = typeof a.stage === 'string' && a.stage.includes(' · ') ? a.stage.split(' · ') : null;
+
+    if (a.night !== undefined) {
+      if (!WEEKDAYS.includes(a.night)) err(`${at}: night must be one of ${WEEKDAYS.join('|')} (got ${JSON.stringify(safeKey(a.night))})`);
+      else if (bits && bits[0].trim() !== a.night) err(`${at}: night ${JSON.stringify(a.night)} disagrees with stage ${JSON.stringify(safeKey(a.stage))} — the renderer still reads stage, so the two must say the same thing`);
+    }
+    if (a.venue !== undefined) {
+      if (typeof a.venue !== 'string' || !a.venue.trim()) err(`${at}: venue must be a non-empty string`);
+      else if (a.venue.length > 80) err(`${at}: venue over 80 chars`);
+      else {
+        if (bits && bits.slice(1).join(' · ').trim() !== a.venue) err(`${at}: venue ${JSON.stringify(safeKey(a.venue))} disagrees with stage ${JSON.stringify(safeKey(a.stage))} — the renderer still reads stage, so the two must say the same thing`);
+        // A venue in venues{} is a door to its map (the zoom's place line).
+        // Missing means no door, not a broken card — so this is a warning,
+        // the same weight as a lineup artist with no set yet.
+        if (venueMap && !Object.prototype.hasOwnProperty.call(venueMap, a.venue)) warn(`${at}: venue ${JSON.stringify(safeKey(a.venue))} has no entry in venues{} — the card loses its map door`);
+      }
+    }
+
+    for (const k of ['approx', 'closeApprox']) {
+      if (a[k] !== undefined && typeof a[k] !== 'boolean') err(`${at}: ${k} must be true or false`);
+    }
+    // `approx` says THIS SET'S TIME is our guess, so it needs a time to
+    // qualify; `closeApprox` says the CLOSE is (they are separate because
+    // Portola's doors are sourced and its close is not).
+    if (a.approx === true && !a.time) err(`${at}: approx marks a guessed set time but the entry has no time`);
+    if (a.closeApprox !== undefined && a.close === undefined) err(`${at}: closeApprox qualifies close, which is missing`);
+
+    let doorsMin = null;
+    let closeMin = null;
+    for (const [k, set] of [['doors', (v) => { doorsMin = v; }], ['close', (v) => { closeMin = v; }]]) {
+      if (a[k] === undefined) continue;
+      if (typeof a[k] !== 'string' || !CLOCK_RE.test(a[k])) { err(`${at}: ${k} must be a single clock time like "10 PM" (got ${JSON.stringify(safeKey(a[k]))})`); continue; }
+      try { set(timeToMinutes(a[k])); } catch { err(`${at}: ${k} did not parse`); }
+    }
+    if (doorsMin !== null && closeMin !== null && closeMin <= doorsMin) err(`${at}: close ${JSON.stringify(a.close)} is not after doors ${JSON.stringify(a.doors)}`);
+    // A set outside the room's own window is a data-entry slip, and a guessed
+    // time landing there is the slip this shape exists to prevent.
+    if (doorsMin !== null && closeMin !== null && typeof a.time === 'string' && TIME_RE.test(a.time)) {
+      let t = null;
+      try { t = timeToMinutes(startOf(a.time)); } catch { /* reported above */ }
+      if (t !== null && (t < doorsMin || t > closeMin)) err(`${at}: set time ${JSON.stringify(safeKey(a.time))} falls outside doors ${JSON.stringify(a.doors)} – close ${JSON.stringify(a.close)}`);
+    }
+
+    if (a.order !== undefined) {
+      const o = a.order;
+      if (!plain(o)) { err(`${at}: order must be an object { seq, of, source, confirmed }`); return; }
+      const int = (v) => Number.isInteger(v);
+      if (!int(o.of) || o.of < 2) err(`${at}: order.of must be a whole number of 2 or more (a run of one is not a run)`);
+      if (!int(o.seq) || o.seq < 1 || (int(o.of) && o.seq > o.of)) err(`${at}: order.seq must be a whole number from 1 to ${int(o.of) ? o.of : 'of'} (got ${JSON.stringify(safeKey(o.seq))})`);
+      // The order is a DOOR the zoom opens — it has to go somewhere real, and
+      // over https, since the app is served over it.
+      if (typeof o.source !== 'string' || !/^https:\/\/[^\s]+$/.test(o.source)) err(`${at}: order.source must be an https URL — the order line is a door to where the order came from`);
+      if (typeof o.confirmed !== 'boolean') err(`${at}: order.confirmed must be true or false — whether the venue has posted this order, or it is still our read`);
+      if (int(o.seq) && int(o.of) && a.night !== undefined && a.venue !== undefined) {
+        const key = `${a.day || ''}|${a.night}|${a.venue}`;
+        if (!runs.has(key)) runs.set(key, []);
+        runs.get(key).push({ a, o, at });
+      }
+    }
+  });
+
+  // One room, one night: the sets that share it must tell one story.
+  for (const [key, members] of runs) {
+    const where = safeKey(key.replace(/\|/g, ' · '));
+    const ofs = new Set(members.map((m) => m.o.of));
+    if (ofs.size > 1) err(`${where}: the sets disagree on how many are in the run (${[...ofs].sort().join(', ')})`);
+    const seqs = members.map((m) => m.o.seq);
+    const dupes = seqs.filter((s, i) => seqs.indexOf(s) !== i);
+    if (dupes.length) err(`${where}: two sets both claim position ${[...new Set(dupes)].join(', ')} in the run`);
+    for (const k of ['doors', 'close']) {
+      const vals = new Set(members.map((m) => m.a[k]));
+      if (vals.size > 1) err(`${where}: the sets disagree on ${k} (${[...vals].map((v) => (v === undefined ? '(none)' : JSON.stringify(safeKey(v)))).join(', ')}) — one room, one window`);
+    }
+    const of = members[0].o.of;
+    if (ofs.size === 1 && members.length !== of) {
+      warn(`${where}: ${members.length} of ${of} sets in the run carry an order — the rest of the run is missing or unnumbered`);
+    }
+    // A run is a sequence in TIME. If the clock disagrees with the numbering,
+    // one of the two is wrong and no renderer can tell which.
+    const timed = members
+      .filter((m) => typeof m.a.time === 'string' && TIME_RE.test(m.a.time))
+      .map((m) => { try { return { seq: m.o.seq, t: timeToMinutes(startOf(m.a.time)), at: m.at }; } catch { return null; } })
+      .filter(Boolean)
+      .sort((x, y) => x.seq - y.seq);
+    for (let i = 1; i < timed.length; i++) {
+      if (timed[i].t <= timed[i - 1].t) err(`${where}: ${timed[i].at} is ${timed[i].seq} of ${of} but starts no later than the set before it — the running order and the clock disagree`);
+    }
+  }
+}
+
 // Validate one festival document. `filename` is optional (CI passes it to
 // enforce filename-matches-id; API candidates have no file).
 export function validateFestivalDoc(fest, { filename } = {}) {
@@ -103,6 +232,10 @@ export function validateFestivalDoc(fest, { filename } = {}) {
       }
     }
   });
+
+  // The structured event fields (night/venue/approx/doors/close/order) —
+  // artists[] only, since a grid set's room is its `stage` column.
+  checkEventFields(fest, err, warn);
 
   const isPlain = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
   // days{} is an object keyed by day label. An array or a scalar here used to
