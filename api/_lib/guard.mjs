@@ -25,15 +25,21 @@ export function crossSite(req) {
   try { return new URL(origin).host !== req.headers.host; } catch { return true; }
 }
 
-// Pinned models rot: this file pinned `gemini-2.5-flash`, which Google is
-// retiring — generateContent already 404s for NEW keys while ListModels still
-// shows the name (listing is not access), and the changelog shuts it down for
-// everyone on 2026-10-16. A floating alias cannot decay the same way, and this
-// caller is safe for one: nothing it returns is saved without a human
-// confirming it on screen. The catch, the alias and the error surfacing below
-// are lifted from Ray Perfetti's fork (raypp2/festival-navigator) — he paid
-// for this knowledge with a long debug session.
-export const GEMINI_MODEL = 'gemini-flash-latest';
+// Pinned models rot: this file pinned `gemini-2.5-flash`. Google's Developer
+// API deprecations page lists NO shutdown date for it (read 2026-09-01), yet
+// generateContent already answers 404 "no longer available to new users" for
+// keys created after some point in 2026 while ListModels still shows the name
+// — listing is not access. (An earlier note here said "retired for everyone
+// 2026-10-16"; that date is Vertex AI's separate lifecycle clock, not this
+// API's. Corrected 2026-09-01.) A floating alias cannot decay that way, and
+// this caller is safe for one: nothing it returns is saved without a human
+// confirming it on screen. The alias moves with two weeks' notice (it pointed
+// at gemini-3-flash-preview in January and gemini-3.5-flash since May), so an
+// env override lets a deploy pin an exact id without a code change. The
+// catch, the alias and the error surfacing below are lifted from Ray
+// Perfetti's fork (raypp2/festival-navigator) — he paid for this knowledge
+// with a long debug session.
+export const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-flash-latest';
 
 export async function callGemini(promptText, { grounded = false } = {}) {
   const KEY = process.env.GEMINI_API_KEY;
