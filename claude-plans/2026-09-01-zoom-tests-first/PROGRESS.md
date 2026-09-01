@@ -44,3 +44,5 @@ the browser is the only witness.
 
 ## Log
 - **2026-09-01** — branch `zoom-tests-first` cut from `notes-desktop-round`; baseline 317/316/0/1 recorded; PROGRESS opened. No code touched.
+- **2026-09-01** — Phase 1 file 1: `tests/zoom-keyboard.test.mjs`, **10 tests**, green on current code. Rig extracted to `tests/helpers/zoom-rig.mjs`. Mutation-checked: silencing wireSource → 4 red; dropping the overlay Shift+Tab branch → 1; dropping its focusout relatedTarget guard → 2; the skeptic's early-bound-cleanup leak trap → 1 (that one was 14/14 green against the old suite). Commit 4a9cd79.
+- **2026-09-01** — Phase 1 file 2: `tests/zoom-hover-grace.test.mjs`, **13 tests**, green. Covers the overlay grace (leave/enter/relatedTarget/pointerType/source), hover intent and its cancel, the dismissed mark, the overlay-over-the-card guard, and the 2026-08-31 Codex gate (instant restore under a moved-away mouse) — which had never once EXECUTED in Node. Seven mutations, seven red, including the refuted leave+belt merge (it flips the close journal's label, exactly as the review predicted).
