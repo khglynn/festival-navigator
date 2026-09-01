@@ -36,6 +36,15 @@
   .zoom-state-cap { font-size: 9.5px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: var(--text-tertiary); line-height: 1.3; min-height: 24px; }
   #zoom-bottom-probe { margin-top: 30px; }
   #zoom-gallery { border-bottom: 1px solid var(--hairline); padding-bottom: 26px; margin-bottom: 30px; }
+
+  /* ---- THE EVENTS gallery (2026-09-01) ------------------------------------ */
+  #events-gallery { border-bottom: 1px solid var(--hairline); padding-bottom: 26px; margin-bottom: 30px; }
+  /* The wall renders exactly as in the app: a shell-width column, the
+     timetables full-bleed ≥720 (v3.css .times-wrap), the rooms stacked. */
+  #events-wall { max-width: var(--shell-max); margin: 0 auto; display: flex; flex-direction: column; gap: 13px; }
+  .events-states { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 6px 18px; margin: 0 0 16px; padding: 0; list-style: none; }
+  .events-states li { color: var(--text-secondary); font-size: 11.5px; line-height: 1.45; }
+  .events-states b { color: var(--text-header); font-weight: 800; }
 </style>
 </head>
 <body style="--fest: 56, 189, 248">
@@ -65,6 +74,25 @@
     <div class="g-label" style="margin-top: 20px;">15 · far left and far right of the viewport</div>
     <div class="zoom-edge-row" id="zoom-row-edges"></div>
   </div>
+</section>
+
+<section id="events-gallery">
+  <div class="zoom-title">THE EVENTS — day-first, live</div>
+  <div class="hint">the real <code>renderWall</code> on a small fest with every events state (MODEL-V3, 2026-09-01) — tiles, columns, the deck at rest and grown, a back-to-back run, the bucket chips. Tap a deck to grow it; hover / hold / Tab to a card to zoom it (the ~ cards show the two-line WHEN with the order door); tap a chip to hide a room and again to bring it back; tap any card to pick.</div>
+  <div class="zoom-toolbar">
+    <label><input type="checkbox" id="events-lowpower"> Low power (instant)</label>
+    <span id="events-status" class="zoom-status"></span>
+  </div>
+  <ul class="events-states">
+    <li><b>FRIDAY · AFTERS</b> — columns (the rule: 6 timed shows over 3 venues): a <b>deck</b> of three at The Ballroom 8 PM, <b>lanes</b> for two at The Basement, a <b>tall</b> set, TIME TBA under the clock.</li>
+    <li><b>FRIDAY · FOLSOM</b> — tiles, one show.</li>
+    <li><b>SATURDAY · GALLERY FEST</b> — the grid, its own sticky strip, inside the day.</li>
+    <li><b>SATURDAY · AFTERS</b> — columns by the consistency law though thin: a <b>back-to-back run</b> at The Room (~ times, one whisper), one plain set beside it.</li>
+    <li><b>SATURDAY · FOLSOM</b> — tiles: two timed, one timeless (TIME TBA).</li>
+    <li><b>SUNDAY · FOLSOM</b> — tiles: an 11 AM street fair sorts first.</li>
+    <li><b>THE BUCKETS</b> — GALLERY FEST · AFTERS · FOLSOM; off = dashed, the foot-whisper is the way back.</li>
+  </ul>
+  <div id="events-wall"></div>
 </section>
 
 <h1>V3 GALLERY</h1>
@@ -606,6 +634,143 @@ edgesRow.appendChild(stateCard('15b · far RIGHT edge of the viewport', 'Right E
 // test of that rule at the extremes.
 document.getElementById('zoom-top-probe').appendChild(stateCard('16a · very top of the page', 'Top Of Page Probe', { occ: day }));
 document.getElementById('zoom-bottom-probe').appendChild(stateCard('16b · very bottom of the page', 'Bottom Of Page Probe', { occ: day }));
+</script>
+
+<script type="module">
+// ---- THE EVENTS — day-first, live (2026-09-01) -------------------------------
+// The real renderWall on a small fest built to hold every events state
+// (MODEL-V3): a grid day, an Afters section that EARNS columns on Friday (and
+// so wears them all week), a Folsom section that never does, a deck, lanes, a
+// tall set, a back-to-back run with guessed times, and the bucket chips.
+// Same wiring shape as app.js; a separate module graph from the sections
+// above, its own crew token and fest id.
+import * as state from '/js/state.js';
+import * as model from '/js/v3/model.js';
+import { FESTIVALS, FESTIVAL_INDEX } from '/js/festivals.js';
+import { renderWall, refreshCard } from '/js/v3/wall.js';
+import { wireCardZoom, wireCardFocusZoom, zoomCard, zoomedCard, refreshZoom, zoomSnapshot, unzoom } from '/js/v3/card-facts.js';
+import { deckSnapshot, restoreDeck } from '/js/v3/deck.js';
+import { toggleBucket } from '/js/v3/filters.js';
+
+const EFID = 'gallery-events-fest';
+const POSTER = 'https://example.test/the-poster';
+const room = (night, venue, extra = {}) => ({ day: 'Afters', stage: `${night} · ${venue}`, night, venue, ...extra });
+const folsom = (night, venue, extra = {}) => ({ day: 'Folsom', stage: `${night} · ${venue}`, night, venue, ...extra });
+const run = { doors: '10 PM', close: '2 AM', closeApprox: true };
+FESTIVAL_INDEX.push({ id: EFID, status: 'scheduled' });
+FESTIVALS[EFID] = {
+  id: EFID, name: 'Gallery Fest', year: '’26', accent: '56, 189, 248', status: 'scheduled',
+  subtitle: 'The Pier · Doors 1 PM', timezone: 'America/Los_Angeles',
+  dayMeta: { Saturday: { wd: 'Sat', date: 'Sep 26', iso: '2026-09-26' }, Afters: { date: 'Sep 25-27' }, Folsom: { date: 'Sep 25-27' } },
+  venues: { 'The Ballroom': 'https://maps.google.com/?q=The+Ballroom', 'The Basement': 'https://maps.google.com/?q=The+Basement', 'The Room': 'https://maps.google.com/?q=The+Room', 'The Street': 'https://maps.google.com/?q=The+Street' },
+  days: {
+    Saturday: { stages: ['Pier Stage', 'Crane Stage'], artists: [
+      { name: 'Quick Set', stage: 'Pier Stage', time: '7:00 PM - 7:30 PM' },
+      { name: 'Long Set', stage: 'Crane Stage', time: '9:00 PM - 10:30 PM' },
+      { name: 'Headliner', stage: 'Pier Stage', time: '8:00 PM - 9:15 PM' },
+    ] },
+  },
+  artists: [
+    { name: 'Quick Set', day: 'Saturday' }, { name: 'Long Set', day: 'Saturday' }, { name: 'Headliner', day: 'Saturday' },
+    // Friday afters: the deck (three at 8 PM), the lanes (two at 10 PM), a tall set, a timeless one.
+    { name: 'Channel Tres', ...room('Fri', 'The Ballroom', { time: '8 PM' }) },
+    { name: 'Jyoty', ...room('Fri', 'The Ballroom', { time: '8 PM' }) },
+    { name: 'Gelli Haha', ...room('Fri', 'The Ballroom', { time: '8 PM' }) },
+    { name: 'Sam Alfred', ...room('Fri', 'The Basement', { time: '10 PM' }) },
+    { name: 'Skiis', ...room('Fri', 'The Basement', { time: '10 PM' }) },
+    { name: 'Despacio', ...room('Fri', 'The Pier (loyalty invite)', { time: '5 PM - 11 PM' }) },
+    { name: 'Airwolf Paradise', ...room('Fri', 'The Basement') },
+    // Saturday afters: a back-to-back run (guessed times, unconfirmed order) and one plain set.
+    { name: 'MGNA Crrrta', ...room('Sat', 'The Room', { time: '10 PM', approx: true, ...run, order: { seq: 1, of: 3, source: POSTER, confirmed: false } }) },
+    { name: 'VTSS', ...room('Sat', 'The Room', { time: '11 PM', approx: true, ...run, order: { seq: 2, of: 3, source: POSTER, confirmed: false } }) },
+    { name: 'horsegiirL', ...room('Sat', 'The Room', { time: '12 AM', approx: true, ...run, order: { seq: 3, of: 3, source: POSTER, confirmed: false } }) },
+    { name: 'Fatboy Slim', ...room('Sat', 'The Basement', { time: '10 PM' }) },
+    // Folsom: tiles all week.
+    { name: 'BRUT SF', ...folsom('Fri', 'The Basement', { time: '10 PM - 4 AM' }) },
+    { name: 'Magnitude', ...folsom('Sat', 'The Ballroom', { time: '9 PM - 5 AM' }) },
+    { name: 'PERVERT XXL', ...folsom('Sat', 'The Room', { time: '10 PM - 6 AM' }) },
+    { name: 'DEVIANTS', ...folsom('Sat', 'The Street') },
+    { name: 'Folsom Street Fair', ...folsom('Sun', 'The Street', { time: '11 AM - 6 PM' }) },
+    { name: 'Real Bad 37', ...folsom('Sun', 'The Basement', { time: '8 PM - 5 AM' }) },
+  ],
+};
+
+const ETOKEN = 'galleryeventstoken_01234567';
+try {
+  localStorage.removeItem(state.LS.doc(ETOKEN));
+  localStorage.removeItem(state.LS.pending(ETOKEN));
+  localStorage.removeItem(state.LS.fest(ETOKEN));
+} catch { /* storage blocked */ }
+const ESEL = {
+  'Channel Tres': { Kevin: 4, Nhu: 3 }, Jyoty: { Kat: 1 }, 'Gelli Haha': {}, 'Sam Alfred': { Kevin: 2 }, Despacio: { Kevin: 3, Nhu: 2 },
+  VTSS: { Kevin: 4, Nhu: 1 }, horsegiirL: { Nhu: 2 }, 'Fatboy Slim': { Kevin: 4, Nhu: 4, Kat: 1 },
+  'Folsom Street Fair': { Kevin: 4, Nhu: 4, Kat: 4 }, Magnitude: { Kevin: 1 }, Headliner: { Kat: 4 }, 'Long Set': { Nhu: 3 },
+};
+state.activateCrew(ETOKEN, {
+  v: 4, meta: {}, spotify: {},
+  people: { Kevin: { colorIndex: 0 }, Nhu: { colorIndex: 1 }, Kat: { colorIndex: 2 } },
+  festivals: { [EFID]: { selections: ESEL } },
+  affinity: {},
+}, EFID);
+state.recordNote(EFID, 'day', 'Afters', model.makeNoteId('Nhu', '2026-09-20T20:00:00.000Z', 'e1'), { author: 'Nhu', ts: '2026-09-20T20:00:00.000Z', text: 'Meet at The Ballroom before 8 — the line wraps the block.' });
+
+let hidden = []; // the bucket filter, held here the way filters.js holds it per fest
+const ectx = {
+  fid: EFID, meName: 'Kevin', picks: {}, affinity: null, lowPower: false,
+  sort: 'day', query: '', weekend: 'all', filterPeople: [], soloStage: null, bucketsOff: [], now: null,
+  onSoloStage: () => {},
+  onOpenNotes: (artist) => eventsStatus(`+ notes tapped for "${artist}" — the sheet is not wired in the gallery`),
+  onOpenDayNotes: (day) => eventsStatus(`notes tapped for "${day}"`),
+  onOpenFestNotes: () => {},
+  onNotesChange: () => {},
+  onTap: eventsTap,
+  onToggleBucket: (key) => { hidden = toggleBucket(hidden, key); eventsStatus(`${key} ${hidden.includes(key) ? 'hidden' : 'shown'} — saved on this device in the app (fn_buckets_v1_<fid>)`); repaint(); },
+  wireZoom: (el, artist, occ) => {
+    const opts = { onOpenNotes: (a) => ectx.onOpenNotes(a, occ), occ };
+    wireCardZoom(el, artist, ectx, opts);
+    wireCardFocusZoom(el, artist, ectx, opts);
+  },
+  onPeek: (artist, el, occ) => zoomCard(el, artist, ectx, { onOpenNotes: (a) => ectx.onOpenNotes(a, occ), source: 'touch', occ }),
+};
+function eventsStatus(msg) { const el = document.getElementById('events-status'); if (el) el.textContent = msg; }
+function refreshEventsPicks() { ectx.picks = model.picksFor(state.crewDoc, EFID); ectx.bucketsOff = hidden; }
+// app.js repaintWall, minus sync: a standing zoom and an open deck both survive.
+function repaint() {
+  const root = document.getElementById('events-wall');
+  const keep = zoomSnapshot();
+  const deck = deckSnapshot();
+  unzoom({ instant: !!keep, why: 'gallery repaint' });
+  refreshEventsPicks();
+  state.setActiveFestivalId(EFID);
+  renderWall(root, ectx);
+  if (deck) restoreDeck(root, deck);
+  if (keep) {
+    const occ = keep.occ ? JSON.stringify(keep.occ) : '';
+    const again = [...root.querySelectorAll(`.card[data-artist="${CSS.escape(keep.artist)}"]`)].find((el) => (el.dataset.occ || '') === occ);
+    if (again) zoomCard(again, keep.artist, ectx, { ...keep, instant: true });
+  }
+}
+function eventsTap(artistName) {
+  const cur = (ectx.picks[artistName] || {})[ectx.meName] || 0;
+  const next = model.nextTapLevel(cur);
+  state.recordSelection(artistName, ectx.meName, next);
+  const sels = state.crewDoc.festivals[EFID].selections;
+  (sels[artistName] = sels[artistName] || {})[ectx.meName] = next;
+  refreshEventsPicks();
+  const els = [...document.querySelectorAll(`#events-wall .card[data-artist="${CSS.escape(artistName)}"]`)];
+  const zi = els.indexOf(zoomedCard());
+  const fresh = els.map((el) => refreshCard(el, artistName, ectx));
+  if (zi >= 0 && fresh[zi] && fresh[zi].isConnected) refreshZoom(fresh[zi], ectx);
+}
+document.getElementById('events-lowpower').addEventListener('change', (e) => {
+  ectx.lowPower = e.target.checked;
+  document.body.classList.toggle('low-power', ectx.lowPower);
+});
+// The zoom gallery above already owns the document-level Escape / press-outside
+// handlers for the zoom; the deck wires its own per open (deck.js).
+// Both galleries share one state module: point it at THIS fest to render, and
+// leave it there — the zoom gallery rendered first and holds its own nodes.
+repaint();
 </script>
 </body>
 </html>

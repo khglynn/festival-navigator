@@ -51,7 +51,10 @@ still exists, so this block cannot quietly rot.
 index.html                    app shell — all screens live here
 service-worker.js             offline shell; bump CACHE_VERSION on any asset change
 js/v3/app.js                  boot, wiring, screen assembly, sheets
-js/v3/wall.js                 the wall: timetable + lineup, lanes, sticky stage strip
+js/v3/wall.js                 the wall: timetable + lineup, lanes, sticky stage strip, the day-first composition
+js/v3/events.js               the events model: day-first, the layout rule, a night's timetable, the run's copy
+js/v3/deck.js                 the deck: three or more sets in one slot, grown in place into pickable cards
+js/v3/motion.js               how this app moves — the shared motion constants
 js/v3/settings.js             settings and its drills (Spotify, export, bulk paste)
 js/v3/notes.js                notes at artist / day / fest scope
 js/v3/model.js                the read model over a crew doc + festival data
