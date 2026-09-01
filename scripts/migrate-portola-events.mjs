@@ -45,18 +45,16 @@ export const MIDWAY_TICKETS = 'https://www.axs.com/events/1575408/horsegiirl-tic
 // Provenance goes in the FILE, not only in a plan doc — a phase-2 session
 // reading portola-2026.json must be able to tell the sourced facts from our
 // guesses without leaving the data.
-export const META_NOTE = 'BACK-TO-BACK RUN (2026-09-01, MODEL-V3 §5): the four Sunday Midway sets were transcribed as four 10 PM shows; they are ONE night played in sequence. 10 PM is DOORS - AXS event 1575408 prints "Doors Open - Sun Sep 27, 2026, 10:00 PM" - so it moved to `doors`, and each set carries a GUESSED start (`approx: true`) spaced roughly an hour, with `order: {seq, of, source, confirmed:false}` recording the running order and where it came from. Order is Kevin\'s read of the portola-week poster hierarchy (small print opens, the buy-tickets name closes): MGNA Crrrta, horsegiirL, VTSS, Two Shell. NOTE THE CONFLICT: AXS bills the show as horsegiirL "with VTSS, MGNA Crrrta (DJ Set), Two Shell", where the title act would normally close - hence `confirmed: false`. `close: "2 AM"` is OURS: no source prints an end time, which is what `closeApprox: true` records. Every other event entry gained only `night` + `venue`, parsed out of `stage` (which stays, and stays authoritative - the validator errors if the two disagree).';
+export const META_NOTE = 'BACK-TO-BACK RUN (2026-09-01, MODEL-V3 §5): the four Sunday Midway sets were transcribed as four 10 PM shows; they are ONE night played in sequence. 10 PM is DOORS - AXS event 1575408 prints "Doors Open - Sun Sep 27, 2026, 10:00 PM" - so it moved to `doors`, and each set carries a GUESSED start (`approx: true`) spaced roughly an hour, with `order: {seq, of, source, confirmed:false}` recording the running order and where it came from. ORDER RESOLVED (Kevin, 2026-09-01): both ticket vendors, AXS and Tixr, bill this show as horsegiirL "with VTSS, MGNA Crrrta, Two Shell" - by Kevin\'s own rule the billed headliner closes, so horsegiirL now closes (seq 4, 1 AM); MGNA Crrrta still opens on small print (seq 1, 10 PM), and VTSS/Two Shell hold the poster\'s middle order (seq 2, 3). `order.confirmed` stays false - a data-entry read of two ticket pages, not a venue-issued time. A "Kavari" name turned up in a stale Tixr URL slug for this show but is NOT on the live bill (verified 2026-09-01) and was not added - four sets stays four sets. `close: "2 AM"` is OURS: no source prints an end time, which is what `closeApprox: true` records. Every other event entry gained only `night` + `venue`, parsed out of `stage` (which stays, and stays authoritative - the validator errors if the two disagree).';
 
 // ---------------------------------------------------------------------------
 // The Midway, Sunday Sept 27 — the pile, re-read.
 //
 // Kevin's re-read of the source (2026-08-31): the four "10 PM shows" are ONE
-// night played in sequence — the poster prints DOORS, not set times. Order
-// from the poster's own hierarchy: the headliner (the name in the buy-tickets
-// text under the image) closes; the other large-print act plays right before
-// it; small print opens. The times below are spaced from doors at roughly an
-// hour a set. This is data-entry judgment, recorded per event and marked
-// unconfirmed — never inferred at render time.
+// night played in sequence — the poster prints DOORS, not set times. The
+// times below are spaced from doors at roughly an hour a set. This is
+// data-entry judgment, recorded per event and marked unconfirmed — never
+// inferred at render time.
 //
 // SOURCED (AXS event 1575408, re-checked 2026-09-01): "Doors Open — Sun Sep
 // 27, 2026, 10:00 PM". That is where `doors` comes from, and it is why all
@@ -67,13 +65,16 @@ export const META_NOTE = 'BACK-TO-BACK RUN (2026-09-01, MODEL-V3 §5): the four 
 // night on 10 PM doors in a California last-call city, and it is marked
 // `closeApprox: true` so the data never claims otherwise.
 //
-// UNSETTLED, worth Kevin's eyes: AXS bills this show as **horsegiirL** "with
-// VTSS, MGNA Crrrta (DJ Set), Two Shell", and its poster image is filed
-// horsegiirl-vtss-mgna-crrrta-two-shell. On a "with" billing the title act
-// usually closes, which would put horsegiirL last, not second. The order
-// below is Kevin's poster read, entered as given and flagged
-// `confirmed: false` — which is exactly what that flag is for. Change the
-// seqs here (and re-run) if the ticket billing wins.
+// ORDER, RESOLVED (Kevin, 2026-09-01): first entered from the poster's own
+// hierarchy (small print opens, the buy-tickets name closes) — which put
+// horsegiirL second and Two Shell last. AXS bills this show as **horsegiirL**
+// "with VTSS, MGNA Crrrta, Two Shell", Tixr agrees, and by Kevin's own rule
+// the billed headliner closes. So horsegiirL moved to close (seq 4, 1 AM);
+// the other three keep the poster's read (MGNA Crrrta opens on small print,
+// VTSS and Two Shell hold the middle). `confirmed: false` stays — this is
+// still a data-entry read of two ticket pages, not a venue-issued time. A
+// "Kavari" name turned up in a stale Tixr URL slug for this show but is NOT
+// on the live bill (checked 2026-09-01) — four sets stays four sets.
 export const MIDWAY_RUN = {
   night: 'Sun',
   venue: 'The Midway',
@@ -83,10 +84,10 @@ export const MIDWAY_RUN = {
   source: PORTOLA_WEEK,
   confirmed: false,
   sets: [
-    { name: 'MGNA Crrrta', time: '10 PM' },  // small print — opens
-    { name: 'horsegiirL', time: '11 PM' },   // small print
-    { name: 'VTSS', time: '12 AM' },         // large print, not the ticket text
-    { name: 'Two Shell', time: '1 AM' },     // the buy-tickets name — closes
+    { name: 'MGNA Crrrta', time: '10 PM' },  // small print — opens (poster read, unmoved by the flip)
+    { name: 'VTSS', time: '11 PM' },         // poster read — position unmoved by the flip
+    { name: 'Two Shell', time: '12 AM' },    // poster read — position unmoved by the flip
+    { name: 'horsegiirL', time: '1 AM' },    // AXS/Tixr billed headliner — closes (Kevin, 2026-09-01)
   ],
 };
 

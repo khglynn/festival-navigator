@@ -471,6 +471,24 @@
       "stage": "Sun · The Midway",
       "night": "Sun",
       "venue": "The Midway",
+      "time": "1 AM",
+      "approx": true,
+      "doors": "10 PM",
+      "close": "2 AM",
+      "closeApprox": true,
+      "order": {
+        "seq": 4,
+        "of": 4,
+        "source": "https://portolamusicfestival.com/portola-week/",
+        "confirmed": false
+      }
+    },
+    {
+      "name": "VTSS",
+      "day": "Afters",
+      "stage": "Sun · The Midway",
+      "night": "Sun",
+      "venue": "The Midway",
       "time": "11 PM",
       "approx": true,
       "doors": "10 PM",
@@ -484,7 +502,7 @@
       }
     },
     {
-      "name": "VTSS",
+      "name": "Two Shell",
       "day": "Afters",
       "stage": "Sun · The Midway",
       "night": "Sun",
@@ -496,24 +514,6 @@
       "closeApprox": true,
       "order": {
         "seq": 3,
-        "of": 4,
-        "source": "https://portolamusicfestival.com/portola-week/",
-        "confirmed": false
-      }
-    },
-    {
-      "name": "Two Shell",
-      "day": "Afters",
-      "stage": "Sun · The Midway",
-      "night": "Sun",
-      "venue": "The Midway",
-      "time": "1 AM",
-      "approx": true,
-      "doors": "10 PM",
-      "close": "2 AM",
-      "closeApprox": true,
-      "order": {
-        "seq": 4,
         "of": 4,
         "source": "https://portolamusicfestival.com/portola-week/",
         "confirmed": false
@@ -682,7 +682,7 @@
       "https://aegwebprod.blob.core.windows.net/content/portola/2026/ship-tent-26.jpg",
       "https://www.axs.com/events/1575408/horsegiirl-tickets"
     ],
-    "note": "SET TIMES (2026-08-27): the official Saturday/Sunday posters went up on portolamusicfestival.com/set-times (and Portola's Instagram the same afternoon). Transcribed from the 1080px official JPGs by three independent readers (two model readers + a third pass) and reconciled box-by-box; stage membership cross-checked against the four official per-stage lineup images. Doors 1 PM both days, 21+. Five columns as printed: Pier Stage, Crane Stage, Warehouse, Ship Tent, Despacio (Despacio is one continuous block: Sat 2:45-9:45 PM, Sun 3:30-10:30 PM). Kaytree (Ship Tent, Sun 1:40-2:55) was on the poster but not the earlier lineup graphic and was added to artists[] here. Poster billing that is NOT part of the pick key: Dog Blood is billed \"(Skrillex + Boys Noize)\", DJ Shadow \"celebrates 30 years of Endtroducing\", Melanie C is a DJ set, SG Lewis is live. Artist names are byte-identical to the lineup phase on purpose - picks are keyed by exact name (tests/live-pick-keys.test.mjs freezes the names the crew had already picked). Portola Week (official Goldenvoice afters program, announced 2026-08-18: 21 shows Thu Sept 24 - Sun Sept 27; presale Aug 20, general Aug 21) added as an \"Afters\" section, and Folsom Street Fair weekend as a \"Folsom\" section, 2026-08-23. Mechanism: an afters/Folsom appearance is its own entry; when the name matches a lineup artist (Overmono, Fatboy Slim, ...) the pick/aura/notes unify by exact name on purpose - one artist, one pick, cards in both sections. Night + venue ride in `stage`, hours in `time`; cards render them as a sub-label. Horse Meat Disco (the crew ask - Bearracuda Folsom Street party, confirmed Fri Sept 25, Public Works, 9 PM-3 AM, 21+, tickets sickening.events; NOTE a stale 2024 Tixr link circulates - IDs are sequential, 114080 is the 2024 edition) is day-tagged \"Afters & Folsom\" so it renders under both. Curation: title-billed artists and lineup artists get cards; supporting-roster DJs noted here instead: Rory Phillips (w/ 2manydjs), Boygirl + Femme Jatale b2b Erika (w/ Six Sex), Kaytree + a program audio loft (Public Works Sun), Kavari (The Midway Sun), Buck Wilson (Monarch Sun), Mateo Segade (HMD upstairs). Sourcing: egress-proxied research - facts come from ticketing-page titles/search listings (AXS/Eventbrite/Tixr/venue calendars) cross-checked in aggregate; HMD, fair date/hours, Magnitude, DEVIANTS, Real Bad 37, and Groove Armada (Sat, The Great Northern) were re-verified individually 2026-08-23. Times not confirmed anywhere yet: Fcukers/Chloé Caillet (Public Works Sat), Groove Armada, Max Styler/Airwolf Paradise + Azzecca (Audio) - cards carry venue only until they post (venue norm ~10 PM). DESPACIO Pier 80 Friday is limited to every-year passholders. No unofficial/renegade afters existed as of 2026-08-23 - they historically appear 2-4 weeks out; re-scan mid-September. Folsom fair stage/DJ talent also unannounced yet (folsomstreet.org posts closer in). Weekend-conflict map for planning: Fri is conflict-free (HMD night); Sat daytime Folsom events run opposite Portola day 1; Magnitude/PERVERT XXL start as day 1 ends; Sun daytime the fair runs opposite Portola day 2; DEVIANTS/Real Bad overlap the Sunday afters. BACK-TO-BACK RUN (2026-09-01, MODEL-V3 §5): the four Sunday Midway sets were transcribed as four 10 PM shows; they are ONE night played in sequence. 10 PM is DOORS - AXS event 1575408 prints \"Doors Open - Sun Sep 27, 2026, 10:00 PM\" - so it moved to `doors`, and each set carries a GUESSED start (`approx: true`) spaced roughly an hour, with `order: {seq, of, source, confirmed:false}` recording the running order and where it came from. Order is Kevin's read of the portola-week poster hierarchy (small print opens, the buy-tickets name closes): MGNA Crrrta, horsegiirL, VTSS, Two Shell. NOTE THE CONFLICT: AXS bills the show as horsegiirL \"with VTSS, MGNA Crrrta (DJ Set), Two Shell\", where the title act would normally close - hence `confirmed: false`. `close: \"2 AM\"` is OURS: no source prints an end time, which is what `closeApprox: true` records. Every other event entry gained only `night` + `venue`, parsed out of `stage` (which stays, and stays authoritative - the validator errors if the two disagree)."
+    "note": "SET TIMES (2026-08-27): the official Saturday/Sunday posters went up on portolamusicfestival.com/set-times (and Portola's Instagram the same afternoon). Transcribed from the 1080px official JPGs by three independent readers (two model readers + a third pass) and reconciled box-by-box; stage membership cross-checked against the four official per-stage lineup images. Doors 1 PM both days, 21+. Five columns as printed: Pier Stage, Crane Stage, Warehouse, Ship Tent, Despacio (Despacio is one continuous block: Sat 2:45-9:45 PM, Sun 3:30-10:30 PM). Kaytree (Ship Tent, Sun 1:40-2:55) was on the poster but not the earlier lineup graphic and was added to artists[] here. Poster billing that is NOT part of the pick key: Dog Blood is billed \"(Skrillex + Boys Noize)\", DJ Shadow \"celebrates 30 years of Endtroducing\", Melanie C is a DJ set, SG Lewis is live. Artist names are byte-identical to the lineup phase on purpose - picks are keyed by exact name (tests/live-pick-keys.test.mjs freezes the names the crew had already picked). Portola Week (official Goldenvoice afters program, announced 2026-08-18: 21 shows Thu Sept 24 - Sun Sept 27; presale Aug 20, general Aug 21) added as an \"Afters\" section, and Folsom Street Fair weekend as a \"Folsom\" section, 2026-08-23. Mechanism: an afters/Folsom appearance is its own entry; when the name matches a lineup artist (Overmono, Fatboy Slim, ...) the pick/aura/notes unify by exact name on purpose - one artist, one pick, cards in both sections. Night + venue ride in `stage`, hours in `time`; cards render them as a sub-label. Horse Meat Disco (the crew ask - Bearracuda Folsom Street party, confirmed Fri Sept 25, Public Works, 9 PM-3 AM, 21+, tickets sickening.events; NOTE a stale 2024 Tixr link circulates - IDs are sequential, 114080 is the 2024 edition) is day-tagged \"Afters & Folsom\" so it renders under both. Curation: title-billed artists and lineup artists get cards; supporting-roster DJs noted here instead: Rory Phillips (w/ 2manydjs), Boygirl + Femme Jatale b2b Erika (w/ Six Sex), Kaytree + a program audio loft (Public Works Sun), Kavari (The Midway Sun), Buck Wilson (Monarch Sun), Mateo Segade (HMD upstairs). Sourcing: egress-proxied research - facts come from ticketing-page titles/search listings (AXS/Eventbrite/Tixr/venue calendars) cross-checked in aggregate; HMD, fair date/hours, Magnitude, DEVIANTS, Real Bad 37, and Groove Armada (Sat, The Great Northern) were re-verified individually 2026-08-23. Times not confirmed anywhere yet: Fcukers/Chloé Caillet (Public Works Sat), Groove Armada, Max Styler/Airwolf Paradise + Azzecca (Audio) - cards carry venue only until they post (venue norm ~10 PM). DESPACIO Pier 80 Friday is limited to every-year passholders. No unofficial/renegade afters existed as of 2026-08-23 - they historically appear 2-4 weeks out; re-scan mid-September. Folsom fair stage/DJ talent also unannounced yet (folsomstreet.org posts closer in). Weekend-conflict map for planning: Fri is conflict-free (HMD night); Sat daytime Folsom events run opposite Portola day 1; Magnitude/PERVERT XXL start as day 1 ends; Sun daytime the fair runs opposite Portola day 2; DEVIANTS/Real Bad overlap the Sunday afters. BACK-TO-BACK RUN (2026-09-01, MODEL-V3 §5): the four Sunday Midway sets were transcribed as four 10 PM shows; they are ONE night played in sequence. 10 PM is DOORS - AXS event 1575408 prints \"Doors Open - Sun Sep 27, 2026, 10:00 PM\" - so it moved to `doors`, and each set carries a GUESSED start (`approx: true`) spaced roughly an hour, with `order: {seq, of, source, confirmed:false}` recording the running order and where it came from. ORDER RESOLVED (Kevin, 2026-09-01): both ticket vendors, AXS and Tixr, bill this show as horsegiirL \"with VTSS, MGNA Crrrta, Two Shell\" - by Kevin's own rule the billed headliner closes, so horsegiirL now closes (seq 4, 1 AM); MGNA Crrrta still opens on small print (seq 1, 10 PM), and VTSS/Two Shell hold the poster's middle order (seq 2, 3). `order.confirmed` stays false - a data-entry read of two ticket pages, not a venue-issued time. A \"Kavari\" name turned up in a stale Tixr URL slug for this show but is NOT on the live bill (verified 2026-09-01) and was not added - four sets stays four sets. `close: \"2 AM\"` is OURS: no source prints an end time, which is what `closeApprox: true` records. Every other event entry gained only `night` + `venue`, parsed out of `stage` (which stays, and stays authoritative - the validator errors if the two disagree)."
   },
   "dayMeta": {
     "Saturday": {

@@ -167,10 +167,10 @@ test('the Midway four are ONE night played in sequence, not four shows at 10 PM'
   const bySeq = [...midway].sort((x, y) => x.order.seq - y.order.seq);
   assert.deepEqual(bySeq.map((a) => [a.order.seq, a.name, a.time]), [
     [1, 'MGNA Crrrta', '10 PM'],
-    [2, 'horsegiirL', '11 PM'],
-    [3, 'VTSS', '12 AM'],
-    [4, 'Two Shell', '1 AM'],
-  ], 'order from the poster hierarchy: small print opens, the buy-tickets name closes');
+    [2, 'VTSS', '11 PM'],
+    [3, 'Two Shell', '12 AM'],
+    [4, 'horsegiirL', '1 AM'],
+  ], 'the ticket billing decides the closer (horsegiirL, AXS/Tixr headliner); the other three keep the poster read');
   for (const a of midway) {
     assert.equal(a.day, 'Afters', 'the section key is untouched — notes written on "Afters" stay there');
     assert.equal(a.approx, true, 'the set time is our guess and says so');
@@ -336,9 +336,9 @@ test('the wall still renders every event card, now saying the guessed time', () 
   // The renderer still reads `stage`, which is why night/venue could be added
   // without touching it — and the four now read as a run instead of a pile.
   assert.deepEqual(sub('MGNA Crrrta'), ['Sun · 10 PM\nThe Midway']);
-  assert.deepEqual(sub('horsegiirL'), ['Sun · 11 PM\nThe Midway']);
-  assert.deepEqual(sub('VTSS'), ['Sun · 12 AM\nThe Midway']);
-  assert.deepEqual(sub('Two Shell'), ['Sun · 1 AM\nThe Midway']);
+  assert.deepEqual(sub('VTSS'), ['Sun · 11 PM\nThe Midway']);
+  assert.deepEqual(sub('Two Shell'), ['Sun · 12 AM\nThe Midway']);
+  assert.deepEqual(sub('horsegiirL'), ['Sun · 1 AM\nThe Midway']);
   assert.deepEqual(sub('Horse Meat Disco'), ['Fri · 9 PM - 3 AM\nPublic Works', 'Fri · 9 PM - 3 AM\nPublic Works']);
   root.remove();
 });
