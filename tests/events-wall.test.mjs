@@ -394,6 +394,21 @@ test('a run inside a TILES section: the tile wears the tilde and the range, one 
   assert.equal(afters.querySelectorAll('.sec-whisper').length, 1);
 });
 
+test('the tilde whisper appears once per NIGHT that carries a guess — three nights on Portola, never on Thursday and never on Folsom', () => {
+  const { root } = render('portola-2026');
+  const per = {};
+  for (const rule of root.querySelectorAll('.day-rule')) {
+    let n = 0;
+    for (let el = rule.nextElementSibling; el && !el.classList.contains('day-rule'); el = el.nextElementSibling) {
+      if (el.classList && el.classList.contains('room')) n += el.querySelectorAll('.sec-whisper').length;
+    }
+    per[rule.dataset.day] = n;
+  }
+  assert.deepEqual(per, { Thursday: 0, Friday: 1, Saturday: 1, Sunday: 1 },
+    'Thursday has no guessed set; Fri/Sat/Sun each say it once, not once per card and not once per section');
+  assert.equal(root.querySelectorAll('.room[data-bucket="Folsom"] .sec-whisper').length, 0, 'nothing in Folsom is a guess');
+});
+
 // ---- the zoom's restore target (2026-09-01) ---------------------------------------------
 
 test('a combined-day show is ONE occurrence in TWO rooms — the zoom comes back in the room it was in, not whichever card is first', () => {
