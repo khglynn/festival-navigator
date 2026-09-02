@@ -906,3 +906,12 @@ button.f-chip.notes { cursor: pointer; }
 .f-sub.f-stack { flex-direction: column; gap: 3px; }
 a.f-order { color: #fff; text-decoration: none; border-bottom: 1px solid rgba(255, 255, 255, .35); padding-bottom: 1px; }
 a.f-order:hover { border-bottom-color: rgba(255, 255, 255, .75); }
+
+/* The grown card's rows never move under a resting hand (round-2 walk,
+ * 2026-09-01): the who-row is always rendered (card-facts.js grownBlock) and
+ * the ZOOM reserves it at pill height while it is empty, so the first pick
+ * adds pills into a row that already exists instead of re-centring every
+ * row — which used to slide the venue's map door under the cursor. The
+ * sheet header hides the empty row and keeps its look. */
+.zoom-card .f-who:empty { min-height: 20px; }
+.sheet-card .f-who:empty { display: none; }
