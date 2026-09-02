@@ -284,7 +284,7 @@ const EASE_SURFACE = 'cubic-bezier(.4, 0, .2, 1)';       // refresh crossfades: 
 const RADIUS = 8; // --r-card
 const MIN_W = 216, MAX_W = 360, MIN_H = 132;
 
-let zoomed = null;      // { el, artist, ctx, occ, source, onOpenNotes, slot, card, anims, cleanup, unwireSource }
+let zoomed = null;      // { el, artist, ctx, occ, source, onOpenNotes, slot, card, anims, cleanup }
 let dismissedEl = null; // a zoom put away on purpose waits for the pointer to leave the card
 let layer = null;
 const exitingSlots = new Set(); // overlays still shrinking away — a NEW zoom clears them ALL
@@ -296,6 +296,20 @@ if (typeof document !== 'undefined') {
     if (e.pointerType === 'mouse') lastMouse = { x: e.clientX, y: e.clientY };
   }, { passive: true, capture: true });
 }
+
+// What the BROWSER says is under the last known mouse position. Never
+// `:hover`: Safari leaves stale hover chains after a DOM swap, and a stale
+// match grew cards the pointer was nowhere near. This extracts the LOOKUP, not
+// the rule — `null` means only "we cannot know" (no mouse movement yet, or no
+// elementFromPoint), and what to do about that belongs to the caller: one site
+// closes on a miss, the other declines to grow, and those are opposite
+// policies. `lastMouse` is tested FIRST so a device that never moves a mouse
+// never pays for a layout-forcing hit test. And elementFromPoint stays a
+// member expression on `document`: a detached receiver throws "Illegal
+// invocation" in every browser and nothing in Node (project rule, 2026-08-27).
+const underMouse = () => (lastMouse && typeof document.elementFromPoint === 'function'
+  ? document.elementFromPoint(lastMouse.x, lastMouse.y)
+  : null);
 
 const reduced = () => typeof window !== 'undefined' && !!window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 // Low Power promises "no animation" and CSS cannot reach Element.animate() —
@@ -317,10 +331,18 @@ function zoomLayer() {
 }
 
 export function zoomedCard() { return zoomed ? zoomed.el : null; }
-// The zoom is two nodes — the resting card and its overlay. "Outside" means
-// outside both (a tap on the overlay is a pick, never a dismiss).
+// The zoom is two nodes — the resting card and its overlay — and "outside"
+// means outside BOTH. A tap on the overlay is a pick, never a dismiss; focus or
+// a pointer crossing between the two halves has not left anything. Five places
+// asked this question and four of them spelled it out by hand; the one thing
+// they must never disagree about is what counts as inside.
+// (`contains` counts a node as containing itself, so the explicit `to === z.el`
+// these sites used to carry is folded in, not lost.)
+function isInsideZoom(z, node) {
+  return !!(z && node && (z.el.contains(node) || z.slot.contains(node)));
+}
 export function zoomContains(node) {
-  return !!(zoomed && node && (zoomed.el.contains(node) || zoomed.slot.contains(node)));
+  return isInsideZoom(zoomed, node);
 }
 // What a full-wall repaint needs to bring the same zoom back on the fresh
 // card — a crew-mate's pick must not eat the card you are resting on.
@@ -405,7 +427,7 @@ function zoomCardInner(el, artistName, ctx, { onOpenNotes = null, source = 'mous
   card.setAttribute('role', 'group');
   card.setAttribute('aria-label', `${facts.name} details`);
   slot.appendChild(card);
-  const z = { el, artist: artistName, ctx, occ, source, onOpenNotes, slot, card, anims: [], cleanup: [], unwireSource: () => {} };
+  const z = { el, artist: artistName, ctx, occ, source, onOpenNotes, slot, card, anims: [], cleanup: [] };
   card.append(...buildParts(z, facts));
 
   // The ONE read of the resting card: its box. Then the writes.
@@ -424,11 +446,11 @@ function zoomCardInner(el, artistName, ctx, { onOpenNotes = null, source = 'mous
     // pointermove for the belt to hear — ask the browser what is under the
     // last known mouse position and put the overlay away if that is neither
     // the card nor the overlay (Codex gate, 2026-08-31).
-    if (instant && source === 'mouse' && lastMouse && typeof document.elementFromPoint === 'function') {
+    if (instant && source === 'mouse' && lastMouse) {
       requestAnimationFrame(() => {
         if (zoomed !== z) return;
-        const under = document.elementFromPoint(lastMouse.x, lastMouse.y);
-        if (under && !slot.contains(under) && !z.el.contains(under)) unzoom({ instant: true, why: 'restored under a moved-away mouse' });
+        const under = underMouse();
+        if (under && !isInsideZoom(z, under)) unzoom({ instant: true, why: 'restored under a moved-away mouse' });
       });
     }
     return facts;
@@ -475,6 +497,18 @@ function zoomCardInner(el, artistName, ctx, { onOpenNotes = null, source = 'mous
 // that arrived grows in with a little overshoot, a MUST badge fades on.
 // Transform and opacity only, inside the overlay.
 const REFRESH_MS = 300;
+// WHICH parts move on a refresh; partKey below says HOW each is matched across
+// the rebuild. Add a row to grownBlock — a genre line, a conflict warning — and
+// you touch both: miss this selector and the row either animates as an arrival
+// on every single pick or never moves at all, with no error and no failing test
+// to say so.
+// It is NOT the bloom's set, and the difference is deliberate. The cascade at
+// the end of zoomCardInner animates `.f-chip` whole and no `.f-name` at all,
+// because the name has no animation of its own — it IS the card and rides the
+// scale. Using this constant there to "fix the inconsistency" would translate
+// the name on every zoom, against a stated design law, and the bloom test would
+// stay green while it happened.
+const REFRESH_PART_SEL = '.f-name, .f-sub, .f-where, .f-pill, .f-chip.notes, .f-chip.spot';
 function partKey(el) {
   if (el.classList.contains('f-name')) return 'name';
   if (el.classList.contains('f-sub')) return 'sub';
@@ -486,7 +520,7 @@ function partKey(el) {
 }
 function snapshotParts(card) {
   const out = new Map();
-  for (const el of card.querySelectorAll('.f-name, .f-sub, .f-where, .f-pill, .f-chip.notes, .f-chip.spot')) {
+  for (const el of card.querySelectorAll(REFRESH_PART_SEL)) {
     const k = partKey(el);
     if (k) out.set(k, { rect: rect(el), must: !!el.querySelector('b') });
   }
@@ -499,10 +533,8 @@ function refreshZoomInner(fresh, ctx) {
   for (const a of z.anims) { try { a.cancel(); } catch { /* finished */ } }
   z.anims = [];
   z.el.classList.remove('zoom-source');
-  z.unwireSource();
   z.el = fresh;
   z.ctx = ctx;
-  z.unwireSource = wireSource(z, fresh);
   fresh.classList.add('zoom-source');
   const facts = factsFor(z.artist, ctx, z.occ);
   z.card.setAttribute('aria-label', `${facts.name} details`);
@@ -551,7 +583,7 @@ function refreshZoomInner(fresh, ctx) {
   // Every piece: the ones that stayed slide from where they were; the ones
   // that arrived grow in a beat later; a badge that appeared fades on.
   let arrivals = 0;
-  for (const el of z.card.querySelectorAll('.f-name, .f-sub, .f-where, .f-pill, .f-chip.notes, .f-chip.spot')) {
+  for (const el of z.card.querySelectorAll(REFRESH_PART_SEL)) {
     const k = partKey(el);
     const was = k ? before.get(k) : null;
     const now = rect(el);
@@ -681,7 +713,10 @@ export function unzoom(...args) {
 // fresh one under the same overlay (refreshZoom), and a listener holding the
 // old node would see it as gone.
 function wireSlot(z) {
-  const { slot, card } = z;
+  // `card` only: z.card is stable across a pick (refreshZoom replaces its
+  // CHILDREN, never the node), while every read of the resting card goes
+  // through z.el at event time — see the rule above.
+  const { card } = z;
 
   // A hold's release must never pick: while the finger that grew the card is
   // still down, the overlay hears nothing; the NEXT tap is the first it takes
@@ -711,6 +746,12 @@ function wireSlot(z) {
     });
   }
 
+  // The grown card's own controls: the notes chip and the maps door. Everything
+  // else on the face IS the card, and a press on the card means pick. Both press
+  // handlers below have to agree on that line, and they used to draw it in two
+  // slightly different inks.
+  const isOwnControl = (target) => target !== card && !!target.closest?.('button, a');
+
   // The overlay never steals focus. A click on the RESTING card focuses it
   // (role=button), and refreshCard hands that focus to the fresh node on
   // purpose (keyboard users keep their place). The next click, on this
@@ -721,7 +762,7 @@ function wireSlot(z) {
   // notes chip and the maps door keep their own defaults.
   card.addEventListener('mousedown', (e) => {
     lastOverlayPress = Date.now();
-    if (e.target.closest && e.target.closest('button, a')) return;
+    if (isOwnControl(e.target)) return;
     e.preventDefault();
   });
 
@@ -729,7 +770,7 @@ function wireSlot(z) {
   // the resting card. Its one button (the notes chip) is its own control.
   card.addEventListener('click', (e) => {
     if (zoomed !== z) return;
-    if (e.target !== card && e.target.closest('button')) return;
+    if (isOwnControl(e.target)) return;
     if (!z.el.isConnected) { unzoom({ instant: true, why: 'clicked a card that left the DOM' }); return; }
     z.ctx.onTap(z.artist, z.el);
   });
@@ -757,7 +798,7 @@ function wireSlot(z) {
   // leave would have; movement back inside cancels it.
   const onMove = (e) => {
     if ((e.pointerType && e.pointerType !== 'mouse') || zoomed !== z || z.source !== 'mouse') return;
-    if (slot.contains(e.target) || z.el.contains(e.target)) {
+    if (isInsideZoom(z, e.target)) {
       if (outT) { clearTimeout(outT); outT = null; }
       return;
     }
@@ -803,37 +844,37 @@ function wireSlot(z) {
 
   // Keyboard: Tab from the zoomed card reaches the notes chip inside the
   // overlay (the door to a FIRST note needs no pointer); Tab again continues
-  // after the card, Shift+Tab returns to it. Delegated on the overlay, so a
-  // refreshZoom that rebuilds the chip keeps working; re-wired on the fresh
-  // resting card by refreshZoom.
-  z.unwireSource = wireSource(z, z.el);
-  z.cleanup.push(() => z.unwireSource());
-  card.addEventListener('keydown', (e) => {
-    if (e.key !== 'Tab' || zoomed !== z || !e.target.matches('button.f-chip.notes')) return;
+  // after the card, Shift+Tab returns to it. ONE delegated handler that reads
+  // z.el and re-queries the chip on every press, so a refreshZoom may rebuild
+  // EITHER side underneath it. It used to be two listeners on two nodes, and
+  // because a pick replaces the resting card (refreshCard -> el.replaceWith),
+  // the resting one needed a whole re-wiring lifecycle to stay current — the
+  // exact shape the rule above ("always z.el, never a captured node") exists to
+  // avoid, and the same fix already applied to the click, leave, belt and
+  // follow handlers.
+  // Capture phase, so the zoom sees Tab before anything else in the app can:
+  // nothing else claims Tab today (notes.js's is scoped to a sheet, and a sheet
+  // and a zoom cannot coexist), but a future global keyboard layer would lose
+  // Tab to a standing zoom and should know that from here.
+  const onTabKey = (e) => {
+    if (e.key !== 'Tab' || zoomed !== z) return;
+    const chip = card.querySelector('button.f-chip.notes');
+    if (!chip) return; // no onOpenNotes: the chip is a span, and both routes go inert
+    if (e.target === z.el && !e.shiftKey) { e.preventDefault(); chip.focus(); return; }
+    if (e.target !== chip) return;
     e.preventDefault();
     if (e.shiftKey) { z.el.focus(); return; }
     const next = nextFocusableAfter(z.el);
     unzoom({ why: 'Tab moved on' });
     if (next) next.focus();
-  });
+  };
+  document.addEventListener('keydown', onTabKey, true);
+  z.cleanup.push(() => document.removeEventListener('keydown', onTabKey, true));
   card.addEventListener('focusout', (e) => {
     if (zoomed !== z) return;
-    const to = e.relatedTarget;
-    if (to && (to === z.el || z.el.contains(to) || slot.contains(to))) return;
+    if (isInsideZoom(z, e.relatedTarget)) return;
     unzoom({ why: 'focus left the zoom' });
   });
-}
-
-function wireSource(z, el) {
-  const onCardKey = (e) => {
-    if (e.key !== 'Tab' || e.shiftKey || zoomed !== z || e.target !== el) return;
-    const chip = z.card.querySelector('button.f-chip.notes');
-    if (!chip) return;
-    e.preventDefault();
-    chip.focus();
-  };
-  el.addEventListener('keydown', onCardKey);
-  return () => el.removeEventListener('keydown', onCardKey);
 }
 
 const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
@@ -867,8 +908,8 @@ export function wireCardZoom(el, artistName, ctx, { onOpenNotes = null, occ = nu
   // :hover — Safari is notorious for stale :hover chains after DOM swaps,
   // and a stale match here would grow cards the pointer is nowhere near.
   requestAnimationFrame(() => {
-    if (!el.isConnected || !lastMouse || typeof document.elementFromPoint !== 'function') return;
-    const under = document.elementFromPoint(lastMouse.x, lastMouse.y);
+    if (!el.isConnected) return;
+    const under = underMouse();
     if (under && el.contains(under)) arm();
   });
   el.addEventListener('pointerleave', (e) => {
@@ -901,8 +942,7 @@ export function wireCardFocusZoom(el, artistName, ctx, { onOpenNotes = null, occ
   el.addEventListener('focusout', (e) => {
     if (dismissedEl === el) dismissedEl = null;
     if (!zoomed || zoomed.el !== el) return;
-    const to = e.relatedTarget;
-    if (to && (el.contains(to) || zoomed.slot.contains(to))) return;
+    if (isInsideZoom(zoomed, e.relatedTarget)) return;
     unzoom({ why: 'focus left the card' });
   });
 }

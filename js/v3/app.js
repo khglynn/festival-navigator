@@ -138,8 +138,12 @@ function refreshArtistCards(artistName) {
   // zoomed occurrence (an artist can play twice) slides under the overlay
   // and the overlay's lines are rebuilt in place — no intent delay, no morph.
   const zi = els.indexOf(zoomedCard());
-  const fresh = els.map((el) => refreshCard(el, artistName, ctx));
-  if (zi >= 0 && fresh[zi] && fresh[zi].isConnected) refreshZoom(fresh[zi], ctx);
+  els.forEach((el, i) => refreshCard(el, artistName, ctx, {
+    // The zoom takes the fresh node while the old one is still in the DOM —
+    // see refreshCard: the old node's removal blur must find a zoom that has
+    // already moved on.
+    onSwap: i === zi ? (fresh) => refreshZoom(fresh, ctx) : null,
+  }));
 }
 
 function handleTap(artistName) {
