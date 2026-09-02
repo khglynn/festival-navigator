@@ -784,8 +784,12 @@ function eventsTap(artistName) {
   refreshEventsPicks();
   const els = [...document.querySelectorAll(`#events-wall .card[data-artist="${CSS.escape(artistName)}"]`)];
   const zi = els.indexOf(zoomedCard());
-  const fresh = els.map((el) => refreshCard(el, artistName, ectx));
-  if (zi >= 0 && fresh[zi] && fresh[zi].isConnected) refreshZoom(fresh[zi], ectx);
+  // app.js refreshArtistCards, exactly: the zoom is handed the fresh node
+  // through onSwap BEFORE the old one is removed, or the old node's removal
+  // blur closes the zoom and every pick on a focused card blinks (#14).
+  els.forEach((el, i) => refreshCard(el, artistName, ectx, {
+    onSwap: i === zi ? (fresh) => refreshZoom(fresh, ectx) : null,
+  }));
 }
 document.getElementById('events-lowpower').addEventListener('change', (e) => {
   ectx.lowPower = e.target.checked;

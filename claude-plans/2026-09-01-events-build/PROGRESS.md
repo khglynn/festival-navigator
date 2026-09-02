@@ -191,3 +191,30 @@ builder's worktree; pushes go to `origin/events-ui` with `HEAD:events-ui`).*
   tree). `node scripts/validate-festivals.mjs` = 11 files, 0 errors, 1
   pre-existing warning (Tomorrowland). `js/v3` went 8910 → 8551 lines across
   17 → 16 files — a net deletion of 359 lines even after the model rewrite.
+- 2026-09-01 — REBASED onto `origin/main` (`056a983`, which carries PR #14's
+  squash `66c3454`). Two content conflicts, both in `js/v3/wall.js`'s
+  `refreshCard`, and both resolved in favour of BOTH sides:
+  1. In the replayed phase-2 commit `75daba4`: #14's `{ onSwap }` signature and
+     its insert-before-remove ordering, plus the deck's inert-face branch and
+     the `height` placement prop (the deck still exists at that commit).
+  2. In this round's own commit: #14's `{ onSwap }` + ordering kept, the deck
+     branch dropped, and `height` removed from `PLACEMENT_PROPS` — it was
+     added only for the deck face's `height: 100%`, and nothing else in the
+     app sets an inline height on a card (grepped).
+  FOUR intermediate SW-stamp commits (`f5a80b7` v71→v72, `0b25a35` v72→v73,
+  `07fc37c` v73→v74, `bfe5779` v74→v75) were SKIPPED rather than resolved:
+  main is already v73 and every one of them stamps a tree the rebase changed,
+  so resolving them would have written four stamps that are wrong the moment
+  they land. One fresh stamp goes on last, on a clean tree — which is what the
+  phase-2 log already predicted ("whichever merges second re-runs sw-stamp").
+  `npm test` after the rebase = 459 tests, 457 pass, 1 skipped, 1 fail = the
+  stamp. Validator: 11 files, 0 errors, 1 pre-existing warning.
+- 2026-09-01 — ALIGNED the EVENTS gallery's `eventsTap` with app.js's
+  `refreshArtistCards` (the `onSwap` hand-off before the old node is removed).
+  **FLAG for PR #14's owner, not touched here:** `gallery.html`'s ZOOM gallery
+  (its own module, ~line 563) still does `refreshCard(...)` then
+  `refreshZoom(fresh[zi])` afterwards — the pre-#14 ordering. The gallery
+  claims to mirror app.js, so a session testing the zoom there will still see
+  the blink production no longer has, and may "fix" the wrong file. One line,
+  identical to the change app.js already carries; left alone because that
+  module is #14's territory.
