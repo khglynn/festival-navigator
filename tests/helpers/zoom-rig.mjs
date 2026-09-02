@@ -68,9 +68,12 @@ export async function makeRig({ fid = 'zoom-fest' } = {}) {
       const sels = state.crewDoc.festivals[fid].selections;
       (sels[artist] = sels[artist] || {})[ctx.meName] = next;
       ctx.picks = model.picksFor(state.crewDoc, fid);
-      const fresh = refreshCard(el, artist, ctx);
-      if (zoom.zoomedCard() === el) zoom.refreshZoom(fresh, ctx);
-      return fresh;
+      // Mirrors app.js refreshArtistCards: the zoom takes the fresh node
+      // BEFORE the old one is removed (its removal blur must find a zoom that
+      // has already moved on — see refreshCard).
+      return refreshCard(el, artist, ctx, {
+        onSwap: zoom.zoomedCard() === el ? (fresh) => zoom.refreshZoom(fresh, ctx) : null,
+      });
     };
     return ctx;
   }

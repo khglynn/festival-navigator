@@ -222,7 +222,7 @@ export function renderCard(artistName, ctx, opts = {}) {
 // (cell variant, time line) AND the placement the full render computed —
 // grid position and lane split live as inline styles on the node (CORE-1).
 const PLACEMENT_PROPS = ['grid-column', 'grid-row', 'width', 'margin-left', 'min-height'];
-export function refreshCard(el, artistName, ctx) {
+export function refreshCard(el, artistName, ctx, { onSwap = null } = {}) {
   const fresh = renderCard(artistName, ctx, {
     cell: el.classList.contains('cell'),
     time: el.dataset.time || undefined,
@@ -238,7 +238,18 @@ export function refreshCard(el, artistName, ctx) {
   // Keyboard users keep their place: replacing a focused node silently dumps
   // focus to <body>, forcing a full re-Tab per pick tap (audit 4.1).
   const hadFocus = document.activeElement === el;
-  el.replaceWith(fresh);
+  // The fresh node lands FIRST and any standing zoom is handed to it BEFORE
+  // the old node goes. Chrome fires the old node's blur from inside the
+  // removal steps (node still attached, relatedTarget null), and while the
+  // zoom still pointed at the old node its focusout guard read that blur as
+  // "focus left the card" and closed the zoom — then the hover intent re-grew
+  // it a beat later. Every pick made on a focused card blinked, on
+  // production too (Kevin's journal, 2026-09-01: "focus left the card" ×2
+  // within a second of each overlay press). Once the zoom already owns the
+  // fresh node, the old node's blur is a stale node's blur and is ignored.
+  el.before(fresh);
+  if (onSwap) onSwap(fresh);
+  el.remove();
   if (hadFocus) fresh.focus();
   return fresh;
 }

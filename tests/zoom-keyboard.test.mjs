@@ -134,6 +134,37 @@ test('a pick while zoomed carries the Tab handoff to the FRESH resting card, and
   assert.equal(zoom.zoomedCard(), fresh, 'still one zoom, on the fresh card');
 });
 
+test('a pick made on a FOCUSED resting card keeps the zoom — the swap is not focus leaving', () => {
+  // Kevin's sequence (journal, 2026-09-01): click the resting card (it takes
+  // focus, role=button), let the hover grow, click the grown card to pick.
+  // refreshCard swaps the node and hands focus to the fresh one. Chrome fires
+  // the OLD node's blur from inside its removal — relatedTarget null, node
+  // still attached — and jsdom does not, so the removal blur is replayed
+  // here exactly as Chrome does it, on the node about to go.
+  const ctx = makeCtx();
+  // Production wiring: every rendered card carries the keyboard route, so the
+  // FRESH node after a pick has the focusout guard too (app.js wires it
+  // through ctx.wireZoom; the rig leaves that to the test).
+  ctx.wireZoom = (el, name, occ) => zoom.wireCardFocusZoom(el, name, ctx, { occ, onOpenNotes: ctx.onOpenNotes });
+  const card = mountCard(ctx);
+  card.focus();
+  assert.equal(document.activeElement, card);
+  zoom.zoomCard(card, 'GRiZ', ctx, { onOpenNotes: ctx.onOpenNotes, occ: { day: 'Saturday', stage: null, time: null } });
+  const origRemove = card.remove;
+  card.remove = function () {
+    if (document.activeElement === this) this.dispatchEvent(new window.FocusEvent('focusout', { bubbles: true, relatedTarget: null }));
+    return origRemove.call(this);
+  };
+  click(document.querySelector('#zoom-layer .zoom-card'));
+  const fresh = restingCard();
+  assert.notEqual(fresh, card, 'the resting card really was replaced');
+  assert.equal(zoom.zoomedCard(), fresh, 'the zoom followed the swap instead of closing on the old node\'s removal blur');
+  assert.equal(document.activeElement, fresh, 'and focus went with it');
+  // A real departure still closes: focus leaving the fresh card for nowhere.
+  fresh.blur();
+  assert.equal(zoom.zoomedCard(), null, 'a real blur of the resting card closes the zoom');
+});
+
 test('the overlay focusout closes only when focus truly left both nodes', () => {
   // A venue the festival maps gives the overlay a SECOND focusable (the map
   // door), so "focus moved inside the overlay" can be exercised as a real
