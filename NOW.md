@@ -1,6 +1,80 @@
-# NOW — festival-navigator: v73 is LIVE (PR #14 merged 2026-09-01 evening — the zoom tests + the focused-card blink fix) · PR #15 data green · PR #16 (the day-first events UI) being rebuilt to ONE rule: every club night stacks
+# NOW — festival-navigator: v73 is LIVE · PR #16 (day-first events UI) now carries the 2026-09-02 hover hardening, the strip follow, the venue registry and Kevin's phone notes — waiting on his one look
 
-**last-updated: 2026-09-01 · mode: live**
+**last-updated: 2026-09-02 · mode: live**
+
+## 2026-09-02 — the hover was never broken on the branch; the shell was. Hardened anyway, contract in CI, phone notes shipped
+
+- **What tonight's "hover broken again" was:** Kevin's tab ran build v75
+  (his Diagnostics paste says so) on the branch alias while the branch
+  served v76 — the browser never asked for a new worker and the reload-once
+  guard covered only a page's first 20 s. His exact sequences with real
+  input in Chrome 152 pass on v76 and reproduce his journal on v75.
+  **Rule now in CLAUDE.md:** read the build line in the paste before
+  believing any report; walk the unique deployment URL, never the alias.
+- **Shipped on `events-ui` (PR #16), all walked with real input:**
+  the shell now asks for a new worker on focus and every ten minutes,
+  reloads when quiet, toasts otherwise · the keyboard zoom route opens on the
+  module's own last-input (Chrome flips `:focus-visible` after ANY key, so
+  click·Escape·click grew a keyboard zoom that ignored hover-out) · a held
+  mouse never opens a touch zoom · intent 200 ms · `-webkit-user-select`
+  (iOS raised the Copy callout on hold) · the stage strip follows its grid
+  on the grid's scroll timeline (Kevin's stutter) · "Buy Kevin a coffee ☕"
+  in Settings → App · the everything-else COLUMN on Electric Forest became a
+  card section under each day (Kevin: "more standard").
+- **The hover contract runs in a real browser in CI** (`npm run
+  test:browser`, job `browser`): Kevin's sequences through Playwright's
+  input layer against gallery.html. Plus the prior rig's sweep: 112 Portola
+  cards across four days, 0 misbehave. Offline walked clean (precache,
+  offline reload, offline pick syncs back).
+- **Venue norms → run guesses.** 28 agents profiled every Portola Week room
+  (`claude-plans/2026-09-02-venue-profiles/venue-profiles.md`); the durable
+  registry is `data/venues/index.json`; `scripts/guess-run-times.mjs` turns
+  doors + registry into set-time guesses as a diff (`--write` records them;
+  a printed close is never overwritten). Data, per Kevin's calls: The Midway
+  Sun close is now an evidenced ~3 AM (19hz, tilde kept); Regency Sat doors
+  9 PM per AXS's Doors field. KAVARI was NOT added — the Midway's own Tixr
+  page and AXS bill four names today; 19hz is stale.
+- **Banked, not built:** add-a-show (`claude-plans/2026-09-02-add-a-show.md`,
+  three calls for Kevin).
+- **Next:** Kevin's one look at the #16 preview (the UNIQUE deployment URL
+  in the PR's latest comment), then merge #16 (close #15 as folded).
+
+## 2026-09-02 (night) — PR #16 rebuilt on the one rule, billed, and walked clean
+
+- **`events-ui` @ 887db5e** (15 commits over main; the deck deleted, −462/+128 in
+  js/v3; suite 463/462 green; validator clean; SW v76). Every one of Portola's
+  12 multi-artist venue-nights is a run with tilde times; the order matches
+  the ticket billing in every room (read from DoTheBay's Goldenvoice listing
+  — `claude-plans/2026-09-01-events-build/afters-billing.md`); two names
+  the bill had and the file lacked were added (Buck Wilson opens Sun · Monarch,
+  Kaytree plays 2nd at Sun · Public Works); Sat · Audio and Sat · Public Works
+  gained their printed 10 PM doors and became runs. Sources per room,
+  confidence per room, `confirmed: false` everywhere. A second "random
+  card" cause fixed: Horse Meat Disco's two Friday rooms shared one identity
+  and `cardFor` picked document order (now tie-broken by room). The gallery's
+  zoom module moved to #14's refresh ordering. The deck's panel is in the back
+  pocket: MODEL-V3 §4 names commit `c740388` and the gallery keeps a picture.
+- **Walked clean on real input** (PR comment): all three days stacked, zero
+  decks, zero lanes in events columns; the run zoom's two lines + poster door;
+  Kevin's click-the-card sequence with an empty journal; chips across a
+  reload; 110/110 hoverable cards on the sweep; phone Sunday stacked.
+- **The "hover still broken" after the rebuild — closed by a peer session
+  ("welp hover not fixed", 2026-09-02):** v76 was not broken. Kevin's tab was
+  an hour old on the BRANCH ALIAS, still running v75 (his paste's `build`
+  line); the alias's stale service worker kept it, and index.html's
+  controllerchange auto-reload only fires in a page's first 20 s. Real-input
+  walks of his exact sequences in Chrome 152 pass on v76 and reproduce his
+  journal on v75. That session also found and fixed two latent hazards on a
+  `zoom-hardening` branch (off `events-ui`): Chrome flips `:focus-visible`
+  on after ANY keypress, so click · Escape · click opened a keyboard zoom
+  that ignores hover-out (card-facts.js now tracks the last input itself),
+  and the long-press timer armed on mouse; plus a real-browser hover
+  contract in CI. Hover questions → that session.
+- **Next:** Kevin's one look at
+  https://festival-navigator-hdkv9x9f9-kevinhg.vercel.app (the unique
+  deployment — the branch alias keeps a stale service worker). Then merge
+  #16 (it contains #15's data; close #15 as folded), then `zoom-hardening`
+  behind it; re-stamp if main moved.
 
 ## 2026-09-01 (late) — Kevin's verdict on #16, the blink that was on prod all along, #14 merged (v73)
 
@@ -191,8 +265,8 @@ room played BACK TO BACK — doors, not set times. Model §5: guessed times
 (buy-tickets name closes, other large print before it, small print opens),
 stacked in the time bands — never lanes, never combined cards. Mode
 consistency is law (§2): if any day of a section earns columns, all days
-render columns; the venue heads stay each day's own. The deck narrows to
-truly-simultaneous data. **Copy LOCKED (Kevin, 2026-09-01):** resting card `~12 AM`; the zoom's
+render columns; the venue heads stay each day's own. The deck is GONE
+(2026-09-01 late: every club night is a stack — see the block above). **Copy LOCKED (Kevin, 2026-09-01):** resting card `~12 AM`; the zoom's
 two lines `Sun · Runs 10 PM – 2 AM` / `Guessing they're 3rd of 4` (a door
 to the poster; the word goes once a venue posts the order) — MODEL-V3 §5,
 canvas frame `hover`. Still implicitly open: the ordering heuristic as the
