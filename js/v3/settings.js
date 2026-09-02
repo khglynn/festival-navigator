@@ -18,6 +18,7 @@ import { nameProblem, NAME_LIMITS } from '../name-rules.mjs';
 import { loadJSON, saveLS, getLS, removeLS, errorText } from '../util.js';
 
 const LS_SETTINGS = 'fn_settings_v1'; // {lowPower, stayOffline}
+export const SUPPORT_URL = 'https://buymeacoffee.com/kevinhg'; // Kevin's page (also list-maker's), 2026-09-02
 
 export function appSettings() { return loadJSON(LS_SETTINGS, {}); }
 export function saveAppSettings(s) { saveLS(LS_SETTINGS, JSON.stringify(s)); }
@@ -57,6 +58,19 @@ function toggleRow(title, sub, checked, onFlip) {
   return row;
 }
 
+// A row that leaves the app: a real link (a new tab, no opener), dressed as a
+// list row so it reads like its neighbours and stays keyboard-reachable.
+function externalRow(title, url, aria) {
+  const row = el('a');
+  row.className = 'list-row';
+  row.href = url; row.target = '_blank'; row.rel = 'noopener';
+  if (aria) row.setAttribute('aria-label', aria);
+  row.style.cssText = 'cursor: pointer; width: 100%; box-sizing: border-box; background: none; border: none; border-bottom: 1px solid var(--hairline); font: inherit; text-align: left; color: inherit; text-decoration: none;';
+  const t = el('span', 'flex: 1;', title); t.className = 'row-title';
+  const chev = el('span', '', '↗'); chev.className = 'chev';
+  row.append(t, chev);
+  return row;
+}
 function linkRow(title, onOpen) {
   // A real button (AX-7): keyboard-reachable, announced as interactive.
   const row = el('button');
@@ -727,6 +741,9 @@ export function renderSettings(root, ctx, actions) {
     setTimeout(() => { t.textContent = errCount ? `Diagnostics · ${errCount} recent errors` : 'Diagnostics'; }, 2200);
   });
   list.appendChild(diagRow);
+  // The one ask this free app makes, at the foot of its own list (Kevin,
+  // 2026-09-02): a coffee, never a paywall, never in the way of a pick.
+  list.appendChild(externalRow('Buy Kevin a coffee ☕', SUPPORT_URL, 'Buy Kevin a coffee — opens buymeacoffee.com in a new tab'));
   main.appendChild(list);
 
   root.append(sub, main);
