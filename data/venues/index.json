@@ -1,0 +1,518 @@
+{
+  "$schema": "venues-v1",
+  "researchedAt": "2026-09-02",
+  "venues": {
+    "Regency Ballroom": {
+      "city": "San Francisco",
+      "kind": "hall",
+      "site": "https://www.theregencyballroom.com/",
+      "close": {
+        "default": null,
+        "late": null,
+        "confidence": "unknown",
+        "sources": [
+          {
+            "url": "https://aeglive-theregencyballroom.s3.amazonaws.com/doc/regency_ballroom_tech_april2014.pdf",
+            "quote": "The Regency Ballroom has a DAYTIME SOUND CURFEW OF 5:00PM (weekdays only)."
+          },
+          {
+            "url": "https://19hz.info/eventlisting_BayArea.php",
+            "quote": "Friday, September 25 at 8pm — Channel Tres, Jyoty, Gella Haha — No closing time listed"
+          },
+          {
+            "url": "https://www.theregencyballroom.com/faq/",
+            "quote": "The doors typically open one hour prior to show time; although this may vary by concert."
+          }
+        ]
+      },
+      "doorsToFirstActMin": 60,
+      "headlinerSetMin": null,
+      "supportSetMin": null,
+      "setSources": [
+        {
+          "url": "https://www.theregencyballroom.com/faq/",
+          "quote": "The doors typically open one hour prior to show time; although this may vary by concert."
+        },
+        {
+          "url": "https://ra.co/events/2404745",
+          "quote": "SAT, 13 JUN 2026 at 08:00PM PDT ... Doors Open: 07:00PM"
+        }
+      ],
+      "notes": "No published close anywhere — not the venue FAQ, not its tech rider (a DAYTIME 5 PM weekday sound curfew only), not 15+ listings. Doors open one hour before showtime per the venue's own FAQ. The guesser falls back to the hall default (12 AM) and marks it."
+    },
+    "Monarch": {
+      "city": "San Francisco",
+      "kind": "club",
+      "site": "https://www.monarchsf.com/",
+      "close": {
+        "default": "2 AM",
+        "byWeekday": {
+          "Fri": "2:30 AM",
+          "Sat": "2:30 AM"
+        },
+        "late": "3 AM",
+        "confidence": "medium",
+        "sources": [
+          {
+            "url": "https://www.sfstation.com/monarch-sf-b38362712",
+            "quote": "Sunday (9pm - 2am) , Monday (Closed) , Tuesday - Friday (5:30pm - 2am) , Saturday (9pm - 2am)"
+          },
+          {
+            "url": "https://discotech.me/san-francisco/monarch/",
+            "quote": "Monarch is open from 5:30pm – 2am Tuesdays to Fridays , 9:00pm – 2:00am Saturdays and Sundays."
+          },
+          {
+            "url": "https://m.yelp.com/biz/monarch-san-francisco",
+            "quote": "Monarch closes at 2:30 AM (Next day) on Friday and Saturday. Mon-Tue Closed Wed-Thu, Sun 9:00 PM - 2:00 AM (Next day) Fri-Sat 9:00 PM - 2:30 AM (Next day)"
+          },
+          {
+            "url": "https://19hz.info/eventlisting_BayArea.php",
+            "quote": "Fri: Sep 11 (9pm-3am) \"Hear + There X Locator: Mungo Sound Machine...\" | \"$25-38 | 21+\""
+          }
+        ]
+      },
+      "doorsToFirstActMin": null,
+      "headlinerSetMin": null,
+      "supportSetMin": null,
+      "setSources": [],
+      "notes": "Wed/Thu/Sun close 2 AM (SF Station, Discotech — the latter stale). Fri/Sat is contested: Yelp (updated Aug 2026) posts 2:30 AM and 19hz/DoTheBay event ends spread 1–3 AM. Bigger nights print 3 AM (our file has two)."
+    },
+    "The Great Northern": {
+      "city": "San Francisco",
+      "kind": "club",
+      "site": "https://www.thegreatnorthernsf.com/",
+      "close": {
+        "default": "2 AM",
+        "late": null,
+        "confidence": "medium",
+        "sources": [
+          {
+            "url": "https://www.sfstation.com/the-great-northern-b2336",
+            "quote": "Ranger Trucco - Portola Week 2026 ... 10pm - 2am at The Great Northern"
+          },
+          {
+            "url": "https://maps.apple.com/place?place-id=I7D603B949C8BA0FB",
+            "quote": "aria-label=\"Friday to Saturday, 9:00 PM to 4:00 AM\" ... aria-label=\"Thursday, 9:00 PM to 2:00 AM\" (raw page data attributes this to vendorId \"com.yelp\")"
+          },
+          {
+            "url": "https://discotech.me/san-francisco/great-northern/",
+            "quote": "The open and close times vary depending on the show. Some shows start at 9, some at 10. Some shows will end at 3, some at 4."
+          }
+        ]
+      },
+      "doorsToFirstActMin": null,
+      "headlinerSetMin": null,
+      "supportSetMin": null,
+      "setSources": [],
+      "notes": "2 AM is the most common printed close on recent listings; the licence allows later and specific nights vary. Fri Portola Week prints 2 AM on its own page."
+    },
+    "Audio": {
+      "city": "San Francisco",
+      "kind": "club",
+      "site": "https://audiosf.com/",
+      "close": {
+        "default": "2 AM",
+        "late": null,
+        "confidence": "high",
+        "sources": [
+          {
+            "url": "https://discotech.me/san-francisco/audio/",
+            "quote": "10 PM – 2 AM Fridays and Saturdays"
+          },
+          {
+            "url": "https://www.eventbrite.com/e/azzecca-at-audio-sf-portola-week-tickets-1999001301705",
+            "quote": "Sunday, September 27-Monday, September 28 • 9:30 PM-2 AM"
+          },
+          {
+            "url": "https://www.eventbrite.com/e/kungs-tickets-1988813707336",
+            "quote": "Friday, May 8-Saturday, May 9 • 9:30 PM-2 AM"
+          },
+          {
+            "url": "https://19hz.info/eventlisting_BayArea.php",
+            "quote": "Fri: Sep 4 (9:30pm-2am) — D A N N Y, Cat Liu [tech house]; Sat: Sep 5 (9:30pm-2am) — Borgeous [big room/progressive/electro house]; Sun: Sep 6 (9pm-2am) — Daft Disko [disco/french touch/funky house]; Sat: Oct 10 (9:30pm-2am) — Kyle Watson, Jlittle [tech house] — all listed at venue 'Audio', San Francisco"
+          }
+        ]
+      },
+      "doorsToFirstActMin": null,
+      "headlinerSetMin": null,
+      "supportSetMin": null,
+      "setSources": [],
+      "notes": "Standard 2 AM close, consistent across listings."
+    },
+    "Public Works": {
+      "city": "San Francisco",
+      "kind": "club",
+      "site": "https://publicsf.com",
+      "close": {
+        "default": "2 AM",
+        "late": "3 AM",
+        "confidence": "high",
+        "sources": [
+          {
+            "url": "https://19hz.info/eventlisting_BayArea.php",
+            "quote": "Function 500 ... 9pm-2am ... Entranas ... 9pm-3am ... Ame, Rodriguez Jr Hybrid Live ... 9pm-3am ... 2manydjs, Rory Phillips ... 10pm-2am ... Monster's Ball ... 8pm-2:30am"
+          },
+          {
+            "url": "https://ra.co/events/1975248",
+            "quote": "Friday, September 13th 10pm - 3am / Main Room / 21+ / Limited Capacity"
+          },
+          {
+            "url": "https://ra.co/events/2166028",
+            "quote": "Thursday, July 10th, 9pm - 2am / Loft / 21+ / Limited Capacity"
+          },
+          {
+            "url": "https://www.reddit.com/r/aves/comments/17md7cl/set_times_at_public_works_sf/",
+            "quote": "public works usually runs until like 3-4am. I would guess the headliner goes on some time between 12-1am."
+          }
+        ]
+      },
+      "doorsToFirstActMin": null,
+      "headlinerSetMin": 120,
+      "supportSetMin": null,
+      "setSources": [
+        {
+          "url": "https://ra.co/events/2166028",
+          "quote": "so you know he's bringing a deep bag for his 2-hour debut set. On support are local selectors wufu, Milana, and Alex Edward"
+        }
+      ],
+      "notes": "Mostly 2 AM or 3 AM, an occasional 2:30. A two-hour closing set is documented on at least one published set-times post."
+    },
+    "Rickshaw Stop": {
+      "city": "San Francisco",
+      "kind": "club",
+      "site": "https://rickshawstop.com/",
+      "close": {
+        "default": "2 AM",
+        "late": null,
+        "confidence": "high",
+        "sources": [
+          {
+            "url": "https://dothebay.com/venues/rickshaw-stop",
+            "quote": "Mon - Sat: 7:00 pm - 2:00 am Sun: 7:00 pm - 11:00 pm"
+          },
+          {
+            "url": "https://m.yelp.com/biz/rickshaw-stop-san-francisco?start=80",
+            "quote": "Never have I heard of a venue playing 2 shows in the same night. After... 2 am."
+          }
+        ]
+      },
+      "doorsToFirstActMin": 60,
+      "headlinerSetMin": null,
+      "supportSetMin": null,
+      "setSources": [
+        {
+          "url": "https://rickshawstop.com/calendar/",
+          "quote": "Show at 9:00PM / Doors at 8:00PM"
+        }
+      ],
+      "notes": "2 AM close; doors typically an hour before the first act."
+    },
+    "The Midway": {
+      "city": "San Francisco",
+      "kind": "club",
+      "site": "https://themidwaysf.com/",
+      "close": {
+        "default": "2 AM",
+        "late": "4 AM",
+        "confidence": "high",
+        "sources": [
+          {
+            "url": "https://19hz.info/eventlisting_BayArea.php",
+            "quote": "Fri: Sep 4 (10pm-2am) Costa, iiifirst, Hiraeth @ The Midway (San Francisco)"
+          },
+          {
+            "url": "https://ra.co/events/2391628",
+            "quote": "\"name\":\"The Midway\",\"startDate\":\"2026-04-03T21:00:00.000\",\"endDate\":\"2026-04-04T04:00:00.000\",\"eventStatus\":\"https://schema.org/EventScheduled\",\"performer\":[{\"@type\":\"MusicGroup\",\"name\":\"Maddix\"}]"
+          }
+        ]
+      },
+      "doorsToFirstActMin": null,
+      "headlinerSetMin": null,
+      "supportSetMin": null,
+      "setSources": [],
+      "notes": "26 of 34 current 19hz rows close at 2 AM. Bigger and permitted nights run to 3–4 AM (observed; 6 AM is only the city's Extended Hours ceiling, never seen here). 19hz prints Portola Week Sunday as 10pm–3am."
+    },
+    "1015 Folsom": {
+      "city": "San Francisco",
+      "kind": "club",
+      "site": "https://1015.com/",
+      "close": {
+        "default": "3 AM",
+        "late": "5 AM",
+        "confidence": "low",
+        "sources": [
+          {
+            "url": "https://discotech.me/san-francisco/1015-folsom/",
+            "quote": "1015 Folsom is open from 10 PM – 3 AM generally on Fridays and Saturdays."
+          },
+          {
+            "url": "https://www.timeout.com/san-francisco/music-nightlife/1015-folsom",
+            "quote": "With operating hours until 4am, it's one of the few true late-night spots left in the city"
+          },
+          {
+            "url": "https://www.eventbrite.com/e/real-bad-37-tickets-1992798188025",
+            "quote": "Sunday, September 27-Monday, September 28  •  8 PM-5 AM"
+          },
+          {
+            "url": "https://ra.co/events/2511931",
+            "quote": "X CLUB . Venue. 1015 Folsom. 1015 Folsom Street; San Francisco, CA 94103; United States . Date. Thu, 22 Oct 2026. 21:00 - 02:00 . Promoter. 1015 Folsom"
+          }
+        ]
+      },
+      "doorsToFirstActMin": 0,
+      "headlinerSetMin": null,
+      "supportSetMin": null,
+      "setSources": [
+        {
+          "url": "https://www.eventbrite.com/e/real-bad-37-tickets-1992798188025",
+          "quote": "Main Room (8–12 AM): Conner Curnick (Washington DC) / Main Room (12 AM–5 AM): Blacklow (Los Angeles)"
+        },
+        {
+          "url": "https://ra.co/events/2519020",
+          "quote": "2manydjs Rory Phillips 10pm • 21+ Only"
+        },
+        {
+          "url": "https://ra.co/events/2067350",
+          "quote": "14 Years of Soulection 10pm • 21+ Only"
+        }
+      ],
+      "notes": "Routine weekend nights end 2–3 AM on RA; an active SF Extended Hours permit and real 8 PM–5 AM marquee nights (Real Bad 37 on our Sunday) push the ceiling to 5 AM. The DJ starts at doors here. Set lengths in the research were marathon-night figures, not routine ones — left null."
+    },
+    "888 Garage": {
+      "city": "San Francisco",
+      "kind": "club",
+      "site": "https://themidwaysf.com/venue/888-garage/",
+      "close": {
+        "default": "2 AM",
+        "late": "4 AM",
+        "confidence": "medium",
+        "sources": [
+          {
+            "url": "https://www.sfstation.com/the-midway-b38984166",
+            "quote": "10:30pm - 2am\" (BOOFOWEEN, Oct 31 2026 — same event RA lists as booked at 888 Garage)"
+          },
+          {
+            "url": "https://ra.co/clubs/255486",
+            "quote": "888 Garage is a new warehouse space next to and run by The Midway that serves as a venue space and is also the location for the San Francisco Gallery. ... 888 Garage (The Midway) 888 Marin St, San Francisco, CA 94124, USA"
+          },
+          {
+            "url": "https://19hz.info/eventlisting_BayArea.php",
+            "quote": "Sat: Oct 31 (10:30pm-3am) | [Boofoween: Only Fire, DJ Sexstasy, Queenie, Andyland](https://ra.co/events/2484351) @ 888 Garage (San Francisco) | latin club, techno"
+          }
+        ]
+      },
+      "doorsToFirstActMin": 15,
+      "headlinerSetMin": null,
+      "supportSetMin": null,
+      "setSources": [
+        {
+          "url": "https://ra.co/events/2426212",
+          "quote": "Doors @ 10:15 PM / 10:30 PM - 3 AM (Spencer Brown, Simon Vuarambon, Late Night Shri — 3 acts over 4.5 hrs, no per-act breakdown published)"
+        }
+      ],
+      "notes": "2 AM is the mode for house/pop bookings (4–5 of 7 confirmed), but 3–4 AM recurs for harder or bigger nights; the clearest single data point (Spencer Brown) closed at 3 AM."
+    },
+    "DNA Lounge": {
+      "city": "San Francisco",
+      "kind": "club",
+      "site": "https://www.dnalounge.com/",
+      "close": {
+        "default": "2 AM",
+        "late": "3 AM",
+        "confidence": "high",
+        "sources": [
+          {
+            "url": "https://www.dnalounge.com/calendar/2026/09-25.html",
+            "quote": "9pm - 3am."
+          },
+          {
+            "url": "https://dothebay.com/events/2026/9/25/brut-sf-folsom-friday-tickets",
+            "quote": "9:00PM - 3:00AM"
+          },
+          {
+            "url": "https://www.dnalounge.com/calendar/2026/09-26.html",
+            "quote": "9:30pm - 2:30am."
+          },
+          {
+            "url": "https://www.dnalounge.com/backstage/log/2024/04/16.html",
+            "quote": "even a few flyers advertising \"DJ dancing every night until 4am.\" Yes, that was a thing that used to happen! ... even on a busy DJ night, the club has already begun emptying out well before 2, and we're always closed by 2:30."
+          }
+        ]
+      },
+      "doorsToFirstActMin": 15,
+      "headlinerSetMin": 105,
+      "supportSetMin": 65,
+      "setSources": [
+        {
+          "url": "https://www.setlist.fm/setlist/underscores/2026/dna-lounge-san-francisco-ca-1b49c940.html",
+          "quote": "Start time: 10:20 PM 1h 20m after doors ... End: 12:05 AM 1h 45m long"
+        },
+        {
+          "url": "http://www.deathguild.com/",
+          "quote": "2 Dance Floors · 4 Bars · 5 DJs"
+        }
+      ],
+      "notes": "Baseline 2–2:30 AM; ticketed circuit nights like Brüt push to 3 AM. A 4 AM close is 1980s history per the owner's own blog."
+    },
+    "Great American Music Hall": {
+      "city": "San Francisco",
+      "kind": "hall",
+      "site": "https://gamh.com/",
+      "close": {
+        "default": null,
+        "late": null,
+        "confidence": "unknown",
+        "sources": [
+          {
+            "url": "https://gamh.com/faqs/",
+            "quote": "The GAMH box office is open on Fridays from 12pm – 5pm, as well as every night we have a show, starting 2 hours before the listed Door time. The 1000 Van Ness Garage is typically open until 11pm Sunday through Thursday / 12am on Friday and Saturday, but will in most cases stay open later when we have shows at the Great American Music Hall."
+          },
+          {
+            "url": "https://gamh.com/calendar/",
+            "quote": "Event Doortime: 7:00PM / Event Showtime: 8:00PM (Necrot); Event Doortime: 6:00PM / Event Showtime: 6:30PM (TR/ST, Buzz Kull); Event Doortime: 6:30PM / Event Showtime: 7:30PM (Igorrr)"
+          }
+        ]
+      },
+      "doorsToFirstActMin": 60,
+      "headlinerSetMin": null,
+      "supportSetMin": null,
+      "setSources": [
+        {
+          "url": "https://gamh.com/tag/great-american-music-hall/",
+          "quote": "Doors: 8:00PM / Show: 9:00PM — Six Sex with B0yg1rl, Femme Jatale, b2b Erika, Fri Sept 25"
+        },
+        {
+          "url": "https://www.shazam.com/event/7e1972bd-e159-4d09-8911-204b5ebf7f02",
+          "quote": "Six Sex concert - San Francisco, Great American Music Hall, Sep 25, 2026, 9:00 PM"
+        },
+        {
+          "url": "https://gamh.com/shows-jerry-week/",
+          "quote": "Doors: 7:30PM / Show: 8:00PM"
+        }
+      ],
+      "notes": "A concert hall: no club-night close is published. Doors an hour before the show is the venue's pattern. Hall default (12 AM) applies, marked."
+    },
+    "SVN West": {
+      "city": "San Francisco",
+      "kind": "club",
+      "site": "https://svnwest.com/",
+      "close": {
+        "default": "2 AM",
+        "late": "5 AM",
+        "confidence": "medium",
+        "sources": [
+          {
+            "url": "https://www.eventbrite.com/e/deviants-adult-arcade-the-folsom-street-fair-afterparty-tickets-1995206717000",
+            "quote": "Sunday, September 27-Monday, September 28 • 7 PM-2 AM"
+          },
+          {
+            "url": "https://www.eventbrite.com/e/deviants-adult-arcade-the-folsom-street-fair-afterparty-tickets-1550136703609",
+            "quote": "Sunday, September 28-Monday, September 29, 2025 • 7 PM-2 AM"
+          },
+          {
+            "url": "https://dothebay.com/events/2026/9/26/magnitude-the-saturday-night-main-event-of-folsom-street-fair-tickets",
+            "quote": "9:00PM - 4:00AM (data-datetime 2026-09-26 21:00:00 to 2026-09-27 04:00:00)"
+          },
+          {
+            "url": "https://www.sfstation.com/clubs/calendar/mission/san-francisco/11-14-2025",
+            "quote": "9pm - 2am. FRI. 14. FRI. 14. Afrojack. at SVN West https://www.sfstation.com/svn-west-b38996379 (9pm - 2am) 10 S Van Ness Avenue San Francisco, CA Buy Tickets."
+          }
+        ]
+      },
+      "doorsToFirstActMin": 60,
+      "headlinerSetMin": 70,
+      "supportSetMin": 50,
+      "setSources": [
+        {
+          "url": "https://www.setlist.fm/setlist/tove-lo/2024/svn-west-san-francisco-ca-5b55d360.html",
+          "quote": "Start time: 12:30 AM 4h 30m after doors / End: 1:40 AM 1h 10m long"
+        },
+        {
+          "url": "https://www.setlist.fm/venue/svn-west-san-francisco-ca-usa-3d3f9fb.html",
+          "quote": "Fcukers 9:25 PM · JPEGMAFIA 10:50 PM · Peaches 11:40 PM · Tove Lo 12:30 AM · Snow Strippers 1:40 AM"
+        },
+        {
+          "url": "https://dothebay.com/events/2023/9/8/j-worra-tickets",
+          "quote": "SVN West Warehouse  Doors 8:30pm | Show 9pm"
+        }
+      ],
+      "notes": "No single policy: recurring club nights close 2 AM; circuit parties and festival-scale events run to 4–6 AM (our Saturday Magnitude prints 9 PM–5 AM). Which applies depends on the event, not the room."
+    },
+    "SF Eagle": {
+      "city": "San Francisco",
+      "kind": "bar",
+      "site": "https://sf-eagle.com",
+      "close": {
+        "default": "2 AM",
+        "late": null,
+        "confidence": "high",
+        "sources": [
+          {
+            "url": "https://sf-eagle.com/events/disco-daddy-folsom/",
+            "quote": "\"startDate\":\"2026-09-27T19:00:00-07:00\",\"endDate\":\"2026-09-28T02:00:00-07:00\""
+          },
+          {
+            "url": "https://sf-eagle.com/visit/",
+            "quote": "Fri – Sat 2PM – 2AM"
+          },
+          {
+            "url": "https://ra.co/events/2443693",
+            "quote": "Lineup: - Bar Code 9PM - 10PM - Fusker 10PM - 12AM - Fawks 12AM - 2AM"
+          }
+        ]
+      },
+      "doorsToFirstActMin": 0,
+      "headlinerSetMin": null,
+      "supportSetMin": null,
+      "setSources": [
+        {
+          "url": "https://ra.co/events/2303239",
+          "quote": "9pm till Close DJ Jim Hopkins (S.F. Disco Preservation Society) DJ Jimmy DePre (Go Bang!)"
+        },
+        {
+          "url": "https://sf-eagle.com/events/disco-daddy-folsom/",
+          "quote": "Time 7 PM - 2 AM"
+        }
+      ],
+      "notes": "2 AM is the Fri/Sat and ticketed-DJ-night close (the venue's own hours data); other nights close at midnight and comedy or live bills wrap far earlier. A printed event window (Disco Daddy 7 PM–2 AM) always wins."
+    },
+    "Club Six": {
+      "city": "San Francisco",
+      "kind": "club",
+      "site": null,
+      "close": {
+        "default": "4 AM",
+        "late": null,
+        "confidence": "high",
+        "sources": [
+          {
+            "url": "https://ra.co/events/2515377",
+            "quote": "\"startDate\":\"2026-09-24T22:00:00.000\" ... \"endDate\":\"2026-09-25T04:00:00.000\" (RA's embedded event schema, not shown on the page itself)"
+          },
+          {
+            "url": "https://19hz.info/eventlisting_BayArea.php",
+            "quote": "Thu: Sep 24 (10pm-4am) | Program Audio: Black Rave Culture... @ Club Six (San Francisco)"
+          },
+          {
+            "url": "https://www.instagram.com/p/DcMrSHgSSYO/",
+            "quote": "thurs 09.24 club six 10pm-4am 21+"
+          }
+        ]
+      },
+      "doorsToFirstActMin": null,
+      "headlinerSetMin": null,
+      "supportSetMin": null,
+      "setSources": [
+        {
+          "url": "https://ra.co/events/2515377",
+          "quote": "Lineup: Black Rave Culture, bastiengoat, DJs Who Kiss (Discnogirl b2b Buck Wilson), Rau b2b Rivs — 4 acts/b2b slots, no times given"
+        },
+        {
+          "url": "https://ra.co/events/2117547",
+          "quote": "\"startDate\":\"2025-04-11T22:00:00.000\"...\"endDate\":\"2025-04-12T03:00:00.000\" — 5-hour block, 8 names on the bill, no per-act times"
+        }
+      ],
+      "notes": "A 4 AM close, consistently listed."
+    }
+  }
+}

@@ -224,7 +224,7 @@ test('a night\'s timetable: hour rail from the first set to the last close, toni
   // room nobody has timed at all is the only TBA tile left.
   const sat = roomsUnder(root, 'Saturday')[1];
   assert.deepEqual([...sat.querySelectorAll('.stage-strip .stage-head')].map((h) => h.textContent),
-    ['Public Works', 'Regency Ballroom', 'Audio', 'Monarch'], 'left to right by first set, ties in file order');
+    ['Regency Ballroom', 'Public Works', 'Audio', 'Monarch'], 'left to right by first set, ties in file order (Regency: doors 9 PM per AXS, first act ~10 PM — 2026-09-02)');
   assert.deepEqual([...sat.querySelectorAll('.tba .card')].map((c) => c.dataset.artist), ['Groove Armada']);
 });
 
@@ -319,14 +319,20 @@ test('every venue-night on the Portola wall is a vertical run: nothing lanes, no
   const fri = columnsOf(blocks[1]);
   const regency = [...fri.values()].find((l) => l.length === 3 && l[0].name === 'Gelli Haha');
   assert.ok(regency, 'the Regency three are one column');
-  assert.deepEqual(regency.map((c) => [c.name, c.time]), [['Gelli Haha', '~8 PM'], ['Jyoty', '~9 PM'], ['Channel Tres', '~10 PM']]);
+  // The clocks are the guesser's (scripts/guess-run-times.mjs, from the venue
+  // registry) and are read from the file, not retyped: the pin is the ORDER
+  // and the tilde, not a particular quarter hour.
+  const guess = (name) => `~${portola.artists.find((a) => a.name === name && a.order).time}`;
+  const withGuess = (names) => names.map((n) => [n, guess(n)]);
+  assert.deepEqual(regency.map((c) => [c.name, c.time]), withGuess(['Gelli Haha', 'Jyoty', 'Channel Tres']));
+  assert.ok(regency.every((c) => /^~/.test(c.time)), 'every run card wears the tilde');
   assert.ok(regency.every((c) => c.el.getAttribute('role') === 'button'), 'every set stays its own tappable card');
   // Sunday's Public Works — the other deck — and the Midway four.
   const sun = columnsOf(blocks[3]);
   const columnLed = (map, first) => [...map.values()].find((l) => l[0].name === first);
   const pw = columnLed(sun, 'erika b2b sfcowboy');
   assert.deepEqual(pw.map((c) => [c.name, c.time]),
-    [['erika b2b sfcowboy', '~10 PM'], ['Kaytree', '~11 PM'], ['Ben UFO', '~12 AM'], ['Overmono', '~1 AM']],
+    withGuess(['erika b2b sfcowboy', 'Kaytree', 'Ben UFO', 'Overmono']),
     'Kaytree came off the bill and is a card like any other in the room');
   const midway = columnLed(sun, 'MGNA Crrrta');
   assert.deepEqual(midway.map((c) => c.name), ['MGNA Crrrta', 'VTSS', 'Two Shell', 'horsegiirL']);
@@ -334,8 +340,8 @@ test('every venue-night on the Portola wall is a vertical run: nothing lanes, no
   assert.deepEqual(columnLed(sun, 'Buck Wilson').map((c) => c.name), ['Buck Wilson', 'Dean Turnley', 'Silva Bumpa']);
   // Saturday's two formerly timeless rooms are runs on the clock now.
   const sat = columnsOf(blocks[2]);
-  assert.deepEqual(columnLed(sat, 'Airwolf Paradise').map((c) => [c.name, c.time]), [['Airwolf Paradise', '~10 PM'], ['Max Styler', '~11 PM']]);
-  assert.deepEqual(columnLed(sat, 'Chloé Caillet').map((c) => [c.name, c.time]), [['Chloé Caillet', '~10 PM'], ['Fcukers', '~11 PM']]);
+  assert.deepEqual(columnLed(sat, 'Airwolf Paradise').map((c) => [c.name, c.time]), withGuess(['Airwolf Paradise', 'Max Styler']));
+  assert.deepEqual(columnLed(sat, 'Chloé Caillet').map((c) => [c.name, c.time]), withGuess(['Chloé Caillet', 'Fcukers']));
 });
 
 test('a room nobody has re-read — three sets, one venue, one time, no order — stacks on the wall instead of piling', () => {

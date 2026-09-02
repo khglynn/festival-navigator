@@ -27,7 +27,8 @@ test('a printed close is kept as printed; the venue\'s headliner length sets the
   const plan = planRun({ night: 'Sun', doors: '10 PM', close: '2 AM', closeApprox: false, members: members('erika b2b sfcowboy', 'Kaytree', 'Ben UFO', 'Overmono'), profile: { kind: 'club', close: { default: '2 AM' }, doorsToFirstActMin: null, headlinerSetMin: 120, supportSetMin: null } });
   assert.equal(plan.close, '2 AM');
   assert.equal(plan.closeApprox, false, 'printed stays printed');
-  assert.deepEqual(plan.times.map((t) => t.time), ['10:30 PM', '11 PM', '11:30 PM', '12 AM']);
+  // Fair share: the two-hour closer shrinks so no support gets under 45 min.
+  assert.deepEqual(plan.times.map((t) => t.time), ['10:30 PM', '11:15 PM', '12 AM', '12:45 AM']);
 });
 
 test('a weekday-specific close beats the default, and a registry source is cited', () => {

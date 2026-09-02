@@ -48,12 +48,20 @@ const q = (m) => Math.round(m / 15) * 15;
 
 function closeFor(night, profile, kind) {
   const c = profile && profile.close ? profile.close : null;
-  if (c && c.byWeekday && c.byWeekday[night]) return { close: c.byWeekday[night], source: sourceOf(c), why: `venue's ${night} close` };
-  if (c && c.default) return { close: c.default, source: sourceOf(c), why: "venue's routine close" };
+  if (c && c.byWeekday && c.byWeekday[night]) return { close: c.byWeekday[night], source: sourceOf(c, c.byWeekday[night]), why: `venue's ${night} close` };
+  if (c && c.default) return { close: c.default, source: sourceOf(c, c.default), why: "venue's routine close" };
   const d = KIND_DEFAULTS[kind] || KIND_DEFAULTS.club;
   return { close: d.close, source: null, why: `kind default (${kind})` };
 }
-const sourceOf = (c) => (c && Array.isArray(c.sources) && c.sources[0] && c.sources[0].url) || null;
+// The source to cite for a chosen close: the first whose quote names that
+// clock ("2:30"), else the first there is.
+const sourceOf = (c, clock = null) => {
+  const list = c && Array.isArray(c.sources) ? c.sources.filter((x) => x && x.url) : [];
+  if (!list.length) return null;
+  const digits = clock ? String(clock).replace(/\s*(AM|PM)$/i, '') : null;
+  const hit = digits && list.find((x) => typeof x.quote === 'string' && x.quote.includes(digits));
+  return (hit || list[0]).url;
+};
 const pick = (v, fallback) => (Number.isFinite(v) ? v : fallback);
 
 // One run. `members` sorted by seq. Returns null when nothing can be planned.
@@ -88,7 +96,11 @@ export function planRun({ night, doors, close, closeApprox = false, closeSource 
   const first = D + gap;
   let starts;
   if (Number.isFinite(C)) {
-    const last = C - H;
+    // A fair share: the closer's set shrinks (never below an hour) before
+    // any support is squeezed under 45 minutes — a two-hour closing set on
+    // a four-act bill was leaving three half-hour openers.
+    const fairH = Math.max(60, Math.min(H, (C - first) - (n - 1) * 45));
+    const last = C - fairH;
     if (n === 1) starts = [first];
     else if (last - first >= (n - 1) * MIN_SET) starts = members.map((_, i) => first + ((last - first) * i) / (n - 1));
     else {
