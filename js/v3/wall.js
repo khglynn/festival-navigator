@@ -1440,8 +1440,10 @@ export function showToast(container, message, ms = 4000) {
   toastTimer = setTimeout(() => { container.textContent = ''; }, ms);
 }
 
-// ---- undo toast (design open question 1: tap-5 clears via undo window) ---------
-export function showUndoToast(container, message, onUndo) {
+// ---- action toast: a line and one button ---------------------------------------
+// The undo toast (design open question 1: tap-5 clears via undo window) and
+// the new-build toast are the same shape with a different verb.
+export function showActionToast(container, message, label, onAction, ms = 5000) {
   container.textContent = '';
   const toast = document.createElement('div');
   toast.className = 'undo-toast';
@@ -1449,12 +1451,15 @@ export function showUndoToast(container, message, onUndo) {
   msg.textContent = message;
   const btn = document.createElement('button');
   btn.className = 'undo-btn';
-  btn.textContent = 'Undo';
-  btn.addEventListener('click', () => { clearTimeout(toastTimer); container.textContent = ''; onUndo(); });
+  btn.textContent = label;
+  btn.addEventListener('click', () => { clearTimeout(toastTimer); container.textContent = ''; onAction(); });
   toast.append(msg, btn);
   container.appendChild(toast);
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => { container.textContent = ''; }, 5000);
+  if (ms) toastTimer = setTimeout(() => { container.textContent = ''; }, ms);
+}
+export function showUndoToast(container, message, onUndo) {
+  showActionToast(container, message, 'Undo', onUndo, 5000);
 }
 
 // ---- day-nav scrollspy ------------------------------------------------------------

@@ -257,14 +257,35 @@
         // page in its first seconds, reload once so what runs is what was
         // shipped. Guards: never on the very first install (no prior
         // controller), never twice, never after the person has settled in.
+        // And a tab left open never asked again: the browser only checks
+        // for a new worker on navigation, so a preview open for an hour
+        // kept running the build it was born with — every "still broken"
+        // on 2026-09-01 was a v75 shell judging v76 code. Now the page asks
+        // whenever it comes back into view (and every ten minutes), and a
+        // new worker taking over LATER reloads too when nothing is in
+        // progress; mid-note, mid-zoom, or with a sheet open it says so
+        // instead (app.js listens for fn:new-build) and leaves the reload
+        // to the person.
         var hadController = !!navigator.serviceWorker.controller;
         var reloaded = false;
+        var quiet = function () {
+          var a = document.activeElement, tag = a && a.tagName;
+          if (tag === 'INPUT' || tag === 'TEXTAREA' || (a && a.isContentEditable)) return false;
+          if (document.getElementById('sheet-backdrop')) return false;
+          if (document.querySelector('#zoom-layer .zoom-slot')) return false;
+          return true;
+        };
         navigator.serviceWorker.addEventListener('controllerchange', function () {
-          if (!hadController || reloaded || performance.now() > 20000) return;
+          if (!hadController || reloaded) return;
           reloaded = true;
-          location.reload();
+          if (performance.now() < 20000 || document.visibilityState !== 'visible' || quiet()) { location.reload(); return; }
+          window.dispatchEvent(new CustomEvent('fn:new-build'));
         });
-        navigator.serviceWorker.register('/service-worker.js').catch(function () {});
+        navigator.serviceWorker.register('/service-worker.js').then(function (reg) {
+          var ask = function () { reg.update().catch(function () {}); };
+          document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') ask(); });
+          setInterval(ask, 10 * 60 * 1000);
+        }).catch(function () {});
       }
     </script>
     <script defer src="/_vercel/insights/script.js"></script>

@@ -9,7 +9,7 @@ import * as sync from '../sync.js';
 import * as spotify from '../spotify.js';
 import * as model from './model.js';
 import { loadFestivalIndex, loadFestival, loadCustomFestivals, FESTIVAL_INDEX, defaultFestivalId } from '../festivals.js';
-import { renderWall, refreshCard, showUndoToast, showToast, wireScrollspy, colorIndexOf, scheduledWeekendOf, positionNowLines, scrollToNowLine, dayNavOf, cardFor, roomOf } from './wall.js';
+import { renderWall, refreshCard, showUndoToast, showActionToast, showToast, wireScrollspy, colorIndexOf, scheduledWeekendOf, positionNowLines, scrollToNowLine, dayNavOf, cardFor, roomOf } from './wall.js';
 import { loadPeopleFilter, savePeopleFilter, togglePerson, pruneToActive, loadSolo, saveSolo, loadHiddenBuckets, applyBucketToggle } from './filters.js';
 import { OUT_MS, CASCADE_MS, STAGGER_MS, EASE_ARRIVE, EASE_LEAVE, canAnimate } from './motion.js';
 import { scrolledBefore, rememberScrolled, dayOfScrollKey } from './now.js';
@@ -1794,6 +1794,14 @@ export function init() {
   // trace: the edit is in memory, the push is 1.2s away, and the on-disk copy
   // that would survive a reload never happened. It used to console.warn. Now
   // the person holding the phone finds out.
+  // A new build took over this tab while something was in progress (a note
+  // half-typed, a sheet open, a card grown) — index.html's worker glue
+  // reloads on its own only when the page is quiet, and says so here
+  // otherwise. The toast stays until the person acts: a build they cannot
+  // see is exactly what made every preview read as "still broken".
+  window.addEventListener('fn:new-build', () => {
+    showActionToast($('toast-root'), 'Updated behind the scenes — refresh to run the latest.', 'Refresh', () => location.reload(), 0);
+  });
   onStorageWriteFail(() => {
     showToast($('toast-root'), 'This phone’s storage is full, so picks can’t be saved offline. They still sync while you have signal.', 9000);
   });
