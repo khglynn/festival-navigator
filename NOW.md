@@ -1,6 +1,30 @@
-# NOW — festival-navigator: v73 is LIVE (PR #14 merged 2026-09-01 evening — the zoom tests + the focused-card blink fix) · PR #15 data green · PR #16 (the day-first events UI) being rebuilt to ONE rule: every club night stacks
+# NOW — festival-navigator: v73 is LIVE (PR #14 merged 2026-09-01) · PR #16 (day-first events UI, ONE rule: every club night stacks) rebuilt, billed, walked clean — waiting on Kevin's one look · PR #15 folds into it
 
 **last-updated: 2026-09-01 · mode: live**
+
+## 2026-09-02 (night) — PR #16 rebuilt on the one rule, billed, and walked clean
+
+- **`events-ui` @ 887db5e** (15 commits over main; the deck deleted, −462/+128 in
+  js/v3; suite 463/462 green; validator clean; SW v76). Every one of Portola's
+  12 multi-artist venue-nights is a run with tilde times; the order matches
+  the ticket billing in every room (read from DoTheBay's Goldenvoice listing
+  — `claude-plans/2026-09-01-events-build/afters-billing.md`); two names
+  the bill had and the file lacked were added (Buck Wilson opens Sun · Monarch,
+  Kaytree plays 2nd at Sun · Public Works); Sat · Audio and Sat · Public Works
+  gained their printed 10 PM doors and became runs. Sources per room,
+  confidence per room, `confirmed: false` everywhere. A second "random
+  card" cause fixed: Horse Meat Disco's two Friday rooms shared one identity
+  and `cardFor` picked document order (now tie-broken by room). The gallery's
+  zoom module moved to #14's refresh ordering. The deck's panel is in the back
+  pocket: MODEL-V3 §4 names commit `c740388` and the gallery keeps a picture.
+- **Walked clean on real input** (PR comment): all three days stacked, zero
+  decks, zero lanes in events columns; the run zoom's two lines + poster door;
+  Kevin's click-the-card sequence with an empty journal; chips across a
+  reload; 110/110 hoverable cards on the sweep; phone Sunday stacked.
+- **Next:** Kevin's one look at
+  https://festival-navigator-hdkv9x9f9-kevinhg.vercel.app (the unique
+  deployment — the branch alias keeps a stale service worker). Then merge
+  #16 (it contains #15's data; close #15 as folded) and re-stamp if main moved.
 
 ## 2026-09-01 (late) — Kevin's verdict on #16, the blink that was on prod all along, #14 merged (v73)
 
