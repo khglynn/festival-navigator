@@ -218,3 +218,38 @@ builder's worktree; pushes go to `origin/events-ui` with `HEAD:events-ui`).*
   the blink production no longer has, and may "fix" the wrong file. One line,
   identical to the change app.js already carries; left alone because that
   module is #14's territory.
+- 2026-09-01 — HOVER, FOR THE RECORD (step 7 of the brief). What I checked in
+  the day-first paths, and what I found:
+  1. **`cardFor` can return the wrong card, and there is exactly one case.**
+     I rendered EVERY shipped festival in jsdom under all five sorts and
+     listed every pair of cards sharing one `(data-artist, data-occ)`
+     identity. Across 11 files × 5 sorts there is exactly ONE: Portola's
+     **Horse Meat Disco**, day `"Afters & Folsom"`, which renders as a cell on
+     Friday's afters clock AND as a Folsom tile, both carrying byte-identical
+     `data-occ` (`{"day":"Afters & Folsom","stage":"Fri · Public Works",
+     "time":"9 PM - 3 AM","weekend":null}`). That sameness is deliberate — one
+     show, one pick key (review round finding 19) — but it means `cardFor`
+     returned document order, so a zoom standing on the FOLSOM tile came back
+     on the AFTERS cell after any repaint: the overlay jumps to another room,
+     on another part of the page. That is a live mechanism for "hover shows
+     some other random looking card", and it is on the current preview.
+     FIXED here, small and outside the zoom module: `cardFor` takes an
+     optional `{ room }` tie-break and `repaintWall` reads the zoomed card's
+     room BEFORE the teardown. One match behaves exactly as before, a room
+     that is no longer on the wall degrades to the old lookup rather than
+     losing the zoom, and the grid billing of the same name is still a
+     different occurrence. Test in events-wall.
+  2. **A card replaced under a standing overlay** — that is `refreshCard`, and
+     PR #14 now hands the zoom the fresh node through `onSwap` BEFORE removing
+     the old one. Kept intact through the rebase; the events gallery was
+     brought onto the same ordering (the zoom gallery still is not — flagged
+     above).
+  3. **The deck was the other candidate and it is gone**: its face cards were
+     the only cards with no hover wiring, and its panel was the only surface
+     whose cards could vanish from under a standing zoom. Nothing in the app
+     renders a `.deck*` node now, and a test asserts that on the DOM.
+  4. **Not reproduced, not fixed:** "hover sticks". Nothing I found in
+     wall.js's day-first paths holds the hover open — the intent timers and
+     the focusout guard all live in card-facts.js, which this round did not
+     touch. If it survives this build it is #14's territory and needs a real
+     browser, not the rig (the rig walked all 104 hoverable cards clean).

@@ -9,7 +9,7 @@ import * as sync from '../sync.js';
 import * as spotify from '../spotify.js';
 import * as model from './model.js';
 import { loadFestivalIndex, loadFestival, loadCustomFestivals, FESTIVAL_INDEX, defaultFestivalId } from '../festivals.js';
-import { renderWall, refreshCard, showUndoToast, showToast, wireScrollspy, colorIndexOf, scheduledWeekendOf, positionNowLines, scrollToNowLine, dayNavOf, cardFor } from './wall.js';
+import { renderWall, refreshCard, showUndoToast, showToast, wireScrollspy, colorIndexOf, scheduledWeekendOf, positionNowLines, scrollToNowLine, dayNavOf, cardFor, roomOf } from './wall.js';
 import { loadPeopleFilter, savePeopleFilter, togglePerson, pruneToActive, loadSolo, saveSolo, loadHiddenBuckets, applyBucketToggle } from './filters.js';
 import { OUT_MS, CASCADE_MS, STAGGER_MS, EASE_ARRIVE, EASE_LEAVE, canAnimate } from './motion.js';
 import { scrolledBefore, rememberScrolled, dayOfScrollKey } from './now.js';
@@ -413,11 +413,15 @@ function repaintWall() {
   // must not eat the card you are resting on); a card that is gone — a
   // filter hid it, a fest switch — takes its zoom with it.
   const keep = zoomSnapshot();
+  // Which room the zoom was standing in, read BEFORE the wall is torn down —
+  // a combined-day show is one occurrence rendered in two rooms, so the room
+  // is what tells its two identical cards apart (wall.js cardFor).
+  const keepRoom = keep ? roomOf(zoomedCard()) : null;
   unzoom({ instant: !!keep, why: 'wall repaint' });
   refreshCtx();
   renderWall($('wall-root'), ctx);
   if (keep) {
-    const again = cardFor($('wall-root'), keep.artist, keep.occ);
+    const again = cardFor($('wall-root'), keep.artist, keep.occ, { room: keepRoom });
     if (again) zoomCard(again, keep.artist, ctx, { ...keep, instant: true });
   }
   renderDayNav();

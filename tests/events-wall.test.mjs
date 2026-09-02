@@ -31,7 +31,7 @@ dom.window.matchMedia = () => ({ matches: false, addEventListener() {}, removeEv
 const state = await import('../js/state.js');
 const model = await import('../js/v3/model.js');
 const { FESTIVALS, FESTIVAL_INDEX } = await import('../js/festivals.js');
-const { renderWall, refreshCard, dayNavOf, cardFor } = await import('../js/v3/wall.js');
+const { renderWall, refreshCard, dayNavOf, cardFor, roomOf } = await import('../js/v3/wall.js');
 const facts = await import('../js/v3/card-facts.js');
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -392,6 +392,37 @@ test('a run inside a TILES section: the tile wears the tilde and the range, one 
     [['Opener', '~10 PM'], ['Closer', '~11 PM'], ['Nowhere Yet', undefined]]);
   assert.ok(afters.querySelector('.tba .card[data-artist="Nowhere Yet"]'), 'the timeless one sits under TIME TBA');
   assert.equal(afters.querySelectorAll('.sec-whisper').length, 1);
+});
+
+// ---- the zoom's restore target (2026-09-01) ---------------------------------------------
+
+test('a combined-day show is ONE occurrence in TWO rooms — the zoom comes back in the room it was in, not whichever card is first', () => {
+  // Horse Meat Disco is day "Afters & Folsom": one show, one pick key, drawn
+  // on Friday's afters clock AND as a Folsom tile. Both cards carry the same
+  // artist and the same occ by design, so identity alone cannot separate them
+  // and cardFor without a room returns document order — which put a zoom
+  // standing on the Folsom tile back on the Afters cell, in another room, on
+  // another part of the page.
+  const { root } = render('portola-2026');
+  const both = [...root.querySelectorAll('.card[data-artist="Horse Meat Disco"]')];
+  assert.equal(both.length, 2, 'one show, two rooms');
+  assert.equal(both[0].dataset.occ, both[1].dataset.occ, 'and one occurrence — the identity really is shared');
+  assert.deepEqual(both.map(roomOf), ['Afters', 'Folsom']);
+  const occ = JSON.parse(both[0].dataset.occ);
+  assert.equal(cardFor(root, 'Horse Meat Disco', occ), both[0], 'no room: document order, as before');
+  assert.equal(cardFor(root, 'Horse Meat Disco', occ, { room: 'Folsom' }), both[1], 'the Folsom tile comes back as the Folsom tile');
+  assert.equal(cardFor(root, 'Horse Meat Disco', occ, { room: 'Afters' }), both[0]);
+  // A room that is no longer on the wall (a bucket just went off) degrades to
+  // the plain lookup rather than losing the zoom.
+  assert.equal(cardFor(root, 'Horse Meat Disco', occ, { room: 'Nowhere' }), both[0]);
+  // And the ordinary case is untouched: one match, room or no room.
+  const midway = portola.artists.find((a) => a.venue === 'The Midway' && a.order && a.order.seq === 1);
+  const mOcc = { day: midway.day, stage: midway.stage, time: midway.time, weekend: null };
+  const only = cardFor(root, midway.name, mOcc);
+  assert.ok(only);
+  assert.equal(cardFor(root, midway.name, mOcc, { room: 'Folsom' }), only, 'a wrong room never loses the only match');
+  // The grid billing of the same name is a DIFFERENT occurrence and stays so.
+  assert.notEqual(cardFor(root, midway.name, { day: 'Sunday', stage: null, time: null, weekend: null }), only);
 });
 
 // ---- the review round (2026-09-01): the buckets ----------------------------------------

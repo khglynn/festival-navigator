@@ -259,10 +259,31 @@ export function refreshCard(el, artistName, ctx, { onSwap = null } = {}) {
 // this artist AND this occurrence. Both facts are needed — in Portola one
 // name can be two cards (a grid billing and an event), and the wrong one is
 // the wrong story.
-export function cardFor(root, artist, occ) {
+//
+// `room` breaks the one remaining tie. A combined-day show (Portola's Horse
+// Meat Disco, day "Afters & Folsom") is ONE occurrence rendered in TWO rooms
+// — that is deliberate, one show and one pick key (review round finding 19) —
+// so its two cards carry byte-identical `data-occ` and the plain lookup
+// returns whichever comes first in document order. A zoom standing on the
+// Folsom tile then came back on the Afters cell: the overlay jumped rooms,
+// which is one way "hover shows some other random looking card" happens.
+// Passing the room the zoom was in keeps it where the person left it, and
+// costs nothing when there is only one match.
+export function cardFor(root, artist, occ, { room = null } = {}) {
   const want = occ ? JSON.stringify(occ) : '';
-  return [...root.querySelectorAll('.card[data-artist]')]
-    .find((el) => el.dataset.artist === artist && (el.dataset.occ || '') === want) || null;
+  const all = [...root.querySelectorAll('.card[data-artist]')]
+    .filter((el) => el.dataset.artist === artist && (el.dataset.occ || '') === want);
+  if (all.length > 1 && room) {
+    const here = all.find((el) => roomOf(el) === room);
+    if (here) return here;
+  }
+  return all[0] || null;
+}
+// Which room a card is in, for the tie-break above: the bucket of the room
+// block it sits in, or the wall itself.
+export function roomOf(el) {
+  const room = el && el.closest ? el.closest('.room') : null;
+  return (room && room.dataset.bucket) || null;
 }
 
 // ---- day grouping (lineup mode) -----------------------------------------------
