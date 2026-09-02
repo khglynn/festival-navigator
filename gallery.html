@@ -560,8 +560,16 @@ function handleTap(artistName) {
   refreshPicks();
   const els = [...document.querySelectorAll(`.card[data-artist="${CSS.escape(artistName)}"]`)];
   const zi = els.indexOf(zoomedCard());
-  const fresh = els.map((el) => refreshCard(el, artistName, ctx));
-  if (zi >= 0 && fresh[zi] && fresh[zi].isConnected) refreshZoom(fresh[zi], ctx);
+  // app.js refreshArtistCards, exactly: the zoom is handed the fresh node
+  // through onSwap BEFORE the old one is removed. Chrome fires the old node's
+  // blur from inside the removal steps, and a zoom still pointing at the old
+  // node read that as "focus left the card" and closed — every pick on a
+  // focused card blinked, on production too (#14, 2026-09-01). A gallery that
+  // mirrors app.js has to mirror this, or the next session debugging the zoom
+  // here chases a blink production no longer has.
+  els.forEach((el, i) => refreshCard(el, artistName, ctx, {
+    onSwap: i === zi ? (node) => refreshZoom(node, ctx) : null,
+  }));
 }
 
 // The exact two document-level handlers app.js wires: a press outside the

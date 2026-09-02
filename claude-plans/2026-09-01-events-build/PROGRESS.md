@@ -367,3 +367,10 @@ File: `…/3de364de-…/scratchpad/afters-billing.md`.*
   0 errors, 1 pre-existing warning. Migration: 31 entries changed, 2 added,
   110 pre-existing names / 6 day labels / 29 stages byte-identical, idempotent
   on a second run.
+- 2026-09-01 — THE FLAGGED LINE IS FIXED. `gallery.html`'s ZOOM gallery module
+  (`handleTap`) now uses PR #14's ordering too — `refreshCard(el, name, ctx,
+  { onSwap })` with the hand-off on the zoomed index, exactly as app.js's
+  `refreshArtistCards` does. Both gallery modules and the app now agree, so a
+  session debugging the zoom in the gallery cannot chase a blink production no
+  longer has. `gallery.html` is not in APP_CORE, so no stamp; all three module
+  blocks syntax-check and `npm test` = 463 tests, 462 pass, 1 skipped, 0 fail.
