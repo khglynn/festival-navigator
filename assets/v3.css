@@ -276,10 +276,15 @@
                   touch-action: none; cursor: grab; padding: 6px 30px; background-clip: content-box; }
 .sheet .sheet-title { font-family: var(--font-display); letter-spacing: .04em;
                       font-size: 19px; color: var(--text-header); }
-.sheet .sheet-close { width: 30px; height: 30px; flex: none; border-radius: var(--r-pill);
-                      background: var(--card); border: 1px solid var(--border-card);
-                      color: var(--text-secondary); font-size: 12px; cursor: pointer;
-                      display: inline-flex; align-items: center; justify-content: center; }
+/* The close ✕ is a component, not a sheet detail — scoping its base look to
+ * .sheet meant it could not be reused anywhere else (the gallery's back-pocket
+ * panel wanted exactly this button and got a bare browser one). Unscoped now;
+ * .sheet-card below still overrides its placement and colour. Every existing
+ * .sheet-close sits inside a .sheet, so nothing in the app renders differently. */
+.sheet-close { width: 30px; height: 30px; flex: none; border-radius: var(--r-pill);
+               background: var(--card); border: 1px solid var(--border-card);
+               color: var(--text-secondary); font-size: 12px; cursor: pointer;
+               display: inline-flex; align-items: center; justify-content: center; }
 .note-action { background: none; border: none; padding: 0; cursor: pointer;
                color: var(--text-tertiary); font-size: 10px; font-weight: 700;
                text-decoration: underline; text-underline-offset: 2px; }

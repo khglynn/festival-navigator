@@ -278,3 +278,16 @@ builder's worktree; pushes go to `origin/events-ui` with `HEAD:events-ui`).*
   afters, and what I chose where the brief was silent. CI green in ~53 s
   (checks ×2, three Vercel deploys). Gallery module blocks syntax-checked
   (3/3) and its section tags balance.
+- 2026-09-01 — SELF-REVIEW CAUGHT ONE BEFORE THE END: the back-pocket ✕ was
+  not actually styled. `.sheet-close`'s base look (30px pill, card fill,
+  hairline border, centred glyph) was scoped as `.sheet .sheet-close`, and the
+  back-pocket panel is not inside a `.sheet` — so Kevin's "better styled ✕"
+  would have rendered as a bare browser button, the exact thing he asked
+  against. Fixed by UNSCOPING the base rule to `.sheet-close` in
+  `assets/v3.css`, with the reason in a comment: the close is a component, and
+  scoping its base to one container is why it could not be reused.
+  `.sheet-card .sheet-close` still overrides placement and colour, and every
+  `.sheet-close` the app renders (card-facts `sheetCard`, notes.js's sheet
+  head, the gallery's notes-sheet demo) sits inside a `.sheet`, so nothing in
+  the app looks different. What a jsdom suite CANNOT check is how it looks —
+  that is one line on the walker's list (step 12: the gallery's BACK POCKET).
