@@ -165,6 +165,10 @@ export function renderCard(artistName, ctx, opts = {}) {
     let longPressed = false;
     let startX = 0, startY = 0;
     el.addEventListener('pointerdown', (e) => {
+      // A finger (or a pen) holds; a mouse hovers. A held mouse button used
+      // to arm this too and open a touch-style zoom — one that ignores
+      // hover-out and swallows its next click (found 2026-09-02).
+      if (e.pointerType === 'mouse') return;
       longPressed = false;
       startX = e.clientX; startY = e.clientY;
       // If a poll repaint detached this node mid-press, the new node owns the

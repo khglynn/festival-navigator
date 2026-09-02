@@ -318,7 +318,7 @@ export function sheetCard(facts, { onClose, onOpenNotes = null } = {}) {
 // The way out is quick and plain. Transform and opacity only; one easing
 // in, one easing out. A tap on the grown card PICKS from the first frame;
 // its notes chip and the maps door are the only other controls.
-export const ZOOM_IN_MS = 300;   // hover intent — open slower than you close
+export const ZOOM_IN_MS = 200;   // hover intent — open slower than you close (300 read as a beat too long, Kevin 2026-09-01)
 export const ZOOM_OUT_MS = 260;  // hover-out grace before the close
 const GROW_MS = 240;             // the box, k→1
 const MATERIALIZE_MS = 90;       // the overlay's fade-in (the CSS content fade matches)
@@ -338,9 +338,27 @@ const exitingSlots = new Set(); // overlays still shrinking away — a NEW zoom 
 // Where the mouse last was — the only way to judge a zoom restored under a
 // hand that is not moving. One passive listener for the module's lifetime.
 let lastMouse = null;
+// Which input the person used LAST — a key or a pointer. The keyboard route
+// (wireCardFocusZoom) opens on this, never on `:focus-visible`: measured in
+// Chrome 152 with real input (2026-09-02), a click focuses a card without the
+// pseudo-class, but any later keypress — Escape to put a zoom away counts —
+// flips the still-focused card to :focus-visible, and the script `focus()`
+// every pick makes (refreshCard hands focus to the fresh node) INHERITS it.
+// So click · Escape · click on one card grew a KEYBOARD zoom, which by design
+// ignores hover-out: "it won't close until I click out". WebKit reads script
+// focus more liberally still, and jsdom cannot evaluate the selector at all.
+// One rule the module owns, every engine agrees on, the suite can drive.
+// Capture phase, so a handler that stops propagation cannot blind it; a lone
+// modifier (Cmd-Tab back into the window) says nothing and is ignored.
+let lastInput = 'pointer';
+const MODIFIER_KEYS = new Set(['Shift', 'Control', 'Alt', 'Meta', 'CapsLock', 'Fn', 'AltGraph', 'OS', 'Hyper', 'Super', 'Symbol', 'NumLock', 'ScrollLock']);
 if (typeof document !== 'undefined') {
   document.addEventListener('pointermove', (e) => {
     if (e.pointerType === 'mouse') lastMouse = { x: e.clientX, y: e.clientY };
+  }, { passive: true, capture: true });
+  document.addEventListener('pointerdown', () => { lastInput = 'pointer'; }, { passive: true, capture: true });
+  document.addEventListener('keydown', (e) => {
+    if (typeof e.key === 'string' && e.key && !MODIFIER_KEYS.has(e.key)) lastInput = 'keyboard';
   }, { passive: true, capture: true });
 }
 
@@ -981,9 +999,11 @@ export function wireCardFocusZoom(el, artistName, ctx, { onOpenNotes = null, occ
     if (dismissedEl === el) dismissedEl = null;
     // KEYBOARD focus only: a mouse click and a finger tap also focus the
     // card, and zooming there would bypass the hover-intent delay and grow
-    // the card under every pick. :focus-visible is the browsers' own
-    // keyboard-vs-pointer call; engines without it just skip this route.
-    try { if (!el.matches(':focus-visible')) return; } catch { return; }
+    // the card under every pick — and a script focus that follows a click
+    // (refreshCard, after every pick) is that click's focus, not a key's.
+    // The module's own last-input tracker decides (see `lastInput`), never
+    // `:focus-visible`, which Chrome flips on a focused card after ANY key.
+    if (lastInput !== 'keyboard') return;
     zoomCard(el, artistName, ctx, { onOpenNotes, source: 'keyboard', occ });
   });
   el.addEventListener('focusout', (e) => {
