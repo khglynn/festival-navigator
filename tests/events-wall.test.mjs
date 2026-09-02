@@ -668,9 +668,11 @@ test('a verbose day key shows its weekday head in the day-first rule, the aside 
 //
 // What the walk actually hit was geometry, not the deck: its one fixed click
 // point was the overlay's centre, which sat in a gap before the first pick
-// and on the venue's map DOOR after it (the who-row's arrival re-centred every
-// row). So this also pins the shape: the rows exist from the first frame and
-// never move, and the door is a door.
+// and on the venue's map DOOR after it (the who-row's arrival re-centres the
+// rows — the designed event: a pill arriving slides in and its neighbours
+// make room). The rig aims at the name now, as a person does. So this also
+// pins the shape: the who-row appears only when there are people, and the
+// door is a door.
 function appMirror(fid) {
   const root = document.getElementById('wall-root');
   const ctx = ctxFor(fid);
@@ -723,7 +725,7 @@ const hoverEnter = (node) => node.dispatchEvent(new dom.window.PointerEvent('poi
 const overlay = () => document.querySelector('#zoom-layer .zoom-card');
 const rowsOf = (card) => [...card.querySelector('.f-grown').children].map((c) => c.className.split(' ')[0]);
 
-test('picks on a panel card keep cycling across the sync-echo repaint, and the grown card\'s rows never move under the hand', async () => {
+test('picks on a panel card keep cycling across the sync-echo repaint; the who-row appears only when there are people; the venue door never picks', async () => {
   delete state.crewDoc.festivals['portola-2026'].selections['Gelli Haha'];
   const { root, ctx, repaintWall, level } = appMirror('portola-2026');
   click(fridayDeck(root));
@@ -731,23 +733,21 @@ test('picks on a panel card keep cycling across the sync-echo repaint, and the g
   hoverEnter(panelCard); // the hover's own intent timer (wireCardZoom)
   await new Promise((r) => setTimeout(r, facts.ZOOM_IN_MS + 40));
   assert.equal(facts.zoomedCard(), panelCard, 'the hover grew the panel card');
-  const before = rowsOf(overlay());
-  assert.deepEqual(before, ['f-sub', 'f-where', 'f-who', 'f-chips'], 'the who-row is there BEFORE the first pick');
-  assert.equal(overlay().querySelector('.f-who').children.length, 0, 'empty, reserved');
-  assert.equal(overlay().querySelector('a.f-where').textContent, 'Regency Ballroom', 'and the venue is a map door');
+  assert.deepEqual(rowsOf(overlay()), ['f-sub', 'f-where', 'f-chips'], 'unpicked: no who-row, no hole');
+  assert.equal(overlay().querySelector('a.f-where').textContent, 'Regency Ballroom', 'the venue is a map door');
   click(overlay().querySelector('.f-name'));
   assert.equal(level('Gelli Haha'), 1, 'click 1 picks');
-  assert.deepEqual(rowsOf(overlay()), before, 'the pick added a pill into the row that already existed — no row moved');
+  assert.deepEqual(rowsOf(overlay()), ['f-sub', 'f-where', 'f-who', 'f-chips'], 'the pill arrived and its neighbours made room');
   assert.equal(overlay().querySelector('.f-who .f-pill.you').textContent, 'You');
   repaintWall(); // the sync echo
   assert.ok(facts.zoomedCard() && facts.zoomedCard().closest('.deck-panel') && facts.zoomedCard().dataset.deckFace !== '1', 'restored onto the panel card');
-  assert.deepEqual(rowsOf(overlay()), before, 'same rows after the restore');
+  assert.deepEqual(rowsOf(overlay()), ['f-sub', 'f-where', 'f-who', 'f-chips'], 'the restore rebuilt the same rows');
   for (const want of [2, 3, 4, 0]) {
     click(overlay().querySelector('.f-name'));
     assert.equal(level('Gelli Haha'), want, `the next click on the overlay took the pick to ${want}`);
     assert.ok(facts.zoomedCard() && facts.zoomedCard().isConnected && facts.zoomedCard().closest('.deck-panel'), 'the zoom rode the refreshed panel card');
-    assert.deepEqual(rowsOf(overlay()), before, 'rows still where they were');
   }
+  assert.deepEqual(rowsOf(overlay()), ['f-sub', 'f-where', 'f-chips'], 'cleared: the who-row is gone again and the rows close up');
   assert.deepEqual(ctx.taps, ['Gelli Haha', 'Gelli Haha', 'Gelli Haha', 'Gelli Haha', 'Gelli Haha']);
   // Both occurrences follow the pick (the Saturday grid cell too).
   const gridCell = root.querySelector('.room[data-bucket=":fest"] .card.cell[data-artist="Gelli Haha"]');
@@ -757,14 +757,4 @@ test('picks on a panel card keep cycling across the sync-echo repaint, and the g
   assert.equal(level('Gelli Haha'), 0, 'the map door does not pick');
   assert.equal(ctx.taps.length, 5);
   facts.unzoom({ instant: true });
-});
-
-test('the sheet header hides the empty who-row; the zoom keeps it (the CSS the geometry rests on is declared)', () => {
-  const css = readFileSync(join(ROOT, 'assets/v3.css'), 'utf8');
-  assert.match(css, /\.zoom-card \.f-who:empty \{ min-height: 20px; \}/);
-  assert.match(css, /\.sheet-card \.f-who:empty \{ display: none; \}/);
-  const { ctx } = render('portola-2026');
-  const plain = facts.sheetCard(facts.factsFor('Fatboy Slim', ctx, { day: 'Afters', stage: 'Sun · 888 Garage', time: '10 PM', weekend: null }), {});
-  assert.ok(plain.querySelector('.f-who'), 'the row exists in every home');
-  assert.equal(plain.querySelector('.f-who').children.length, 0);
 });
