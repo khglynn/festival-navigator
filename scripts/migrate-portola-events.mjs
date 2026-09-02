@@ -40,6 +40,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { activityMinutes } from '../js/time.js';
+import { planRun, loadRegistry } from './guess-run-times.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 export const PORTOLA = join(ROOT, 'data', 'festivals', 'portola-2026.json');
@@ -56,23 +57,17 @@ export const DOTHEBAY_INDEX = 'https://dothebay.com/portolaweek';
 export const MIDWAY_TICKETS = 'https://www.axs.com/events/1575408/horsegiirl-tickets';
 
 // ---------------------------------------------------------------------------
-// GUESSED SET TIMES (MODEL-V3 §5).
+// GUESSED SET TIMES (MODEL-V3 §5) — since 2026-09-02, the venue registry's.
 //
 // A room prints doors, sometimes a close, and a bill. It does not print set
-// times. So we lay the bill across the window: where the CLOSE is known the
-// sets spread evenly across it; where it is not, they go an hour apart from
-// doors (§5's original rule, and what an hour-a-set club night looks like).
-//
-// The even step rounds to the nearest half hour on purpose — a plan reads
-// "11:30 PM", never "11:20 PM" — and shrinks rather than pushing the last set
-// past the close. All times land on the festival-day axis (time.js), so a
-// 2 AM close is after a 10 PM door, not sixteen hours before it.
-//
-// The rule reproduces the Midway's shipped times exactly (4 sets, 10 PM
-// doors, 2 AM close -> 10, 11, 12, 1), which is why that room can be pinned
-// AND derived: tests/portola-events.test.mjs asserts the two agree.
-const HALF_HOUR = 30;
-const HOUR = 60;
+// times. The clocks come from scripts/guess-run-times.mjs: doors from the
+// row below, a PRINTED close kept as printed, an EVIDENCED guess (a close
+// with a tilde and a source URL) kept next, otherwise the room's routine
+// close from data/venues/index.json (by weekday, then default, then a
+// per-kind fallback) — every non-printed close marked `closeApprox` with its
+// `closeSource`. First act at doors + the venue's gap, the closer ending at
+// the close, the rest spread evenly on the quarter hour. One rule, one
+// place; this file only decides the ORDER and the doors.
 export function clockLabel(mins) {
   const m = ((mins % 1440) + 1440) % 1440;
   const h24 = Math.floor(m / 60);
@@ -80,18 +75,20 @@ export function clockLabel(mins) {
   const h = h24 % 12 === 0 ? 12 : h24 % 12;
   return `${h}${min ? `:${String(min).padStart(2, '0')}` : ''} ${h24 < 12 ? 'AM' : 'PM'}`;
 }
-export function runTimes({ doors, close = null, count }) {
-  const start = activityMinutes(doors);
-  let step = HOUR;
-  if (close && count > 1) {
-    const win = activityMinutes(close) - start;
-    if (win > 0) {
-      step = Math.max(HALF_HOUR, Math.round(win / count / HALF_HOUR) * HALF_HOUR);
-      // Never so wide that the closer would start at or after the close.
-      while (step > HALF_HOUR && (count - 1) * step >= win) step -= HALF_HOUR;
-    }
-  }
-  return Array.from({ length: count }, (_, k) => clockLabel(start + k * step));
+let registry = null;
+export function runPlan(run) {
+  registry = registry || loadRegistry();
+  const plan = planRun({
+    night: run.night, doors: run.doors,
+    close: run.close || null, closeApprox: !!run.closeApprox, closeSource: run.closeSource || null,
+    members: run.order.map((name, i) => ({ name, seq: i + 1 })),
+    profile: registry.venues[run.venue] || null,
+  });
+  if (!plan) throw new Error(`run ${run.night} · ${run.venue}: no doors — nothing to plan`);
+  return plan;
+}
+export function runTimes(run) {
+  return runPlan(run).times.map((t) => t.time);
 }
 
 // ---------------------------------------------------------------------------
@@ -178,11 +175,11 @@ export const RUNS = [
   },
   {
     day: 'Afters', night: 'Sat', venue: 'Regency Ballroom',
-    doors: '10 PM', close: null, wasTime: '10 PM',
+    doors: '9 PM', close: null, wasTime: '10 PM',
     order: ['Velvet Trip', 'Parcels'],
-    source: 'https://dothebay.com/events/2026/9/26/parcels-tickets',
+    source: 'https://www.axs.com/events/1573671',
     confidence: 'high',
-    note: 'Billed "Parcels with Velvet Trip". No page prints an end time.',
+    note: 'Billed "Parcels with Velvet Trip". No page prints an end time. Doors 9 PM is AXS\'s dedicated "Doors Open" field (its banner and DoTheBay say 10 — Kevin, 2026-09-02: take the field, link the source), so the door points at AXS.',
   },
   {
     day: 'Afters', night: 'Sun', venue: 'Public Works',
@@ -195,8 +192,11 @@ export const RUNS = [
   },
   {
     day: 'Afters', night: 'Sun', venue: 'The Midway',
-    doors: '10 PM', close: '2 AM', closeApprox: true, wasTime: '10 PM',
-    times: ['10 PM', '11 PM', '12 AM', '1 AM'], // PINNED: Kevin settled this room on 2026-09-01
+    doors: '10 PM', close: '3 AM', closeApprox: true, closeSource: 'https://19hz.info/eventlisting_BayArea.php', wasTime: '10 PM',
+    // Kevin settled this room's ORDER on 2026-09-01; the clocks are the
+    // guesser's like every other room. The close is an EVIDENCED guess:
+    // 19hz prints the night as 10pm–3am, the venue's own Tixr page prints
+    // no end (2026-09-02).
     order: ['MGNA Crrrta', 'VTSS', 'Two Shell', 'horsegiirL'],
     source: MIDWAY_TICKETS, confidence: 'medium',
     note: 'Doors 10 PM is SOURCED (AXS event 1575408: "Doors Open — Sun Sep 27, 2026, 10:00 PM"). The 2 AM close is OURS (closeApprox) — no page prints an end for this one. Order settled with Kevin: AXS and Tixr both bill "horsegiirL with VTSS, MGNA Crrrta, Two Shell", so horsegiirL closes; MGNA Crrrta opens on small print. A "Kavari" name in a stale Tixr URL slug is NOT on the live bill — four sets stays four sets.',
@@ -274,7 +274,7 @@ function rebuild(a, extra = {}) {
   out.night = night;
   out.venue = venue;
   const rest = { ...a, ...extra };
-  for (const k of ['time', 'approx', 'doors', 'close', 'closeApprox', 'order']) {
+  for (const k of ['time', 'approx', 'doors', 'close', 'closeApprox', 'closeSource', 'order']) {
     if (rest[k] !== undefined) out[k] = rest[k];
   }
   // Anything else the entry carried (weekends, …) survives, order-last.
@@ -330,22 +330,22 @@ export function migrateEvents(fest, { runs = RUNS } = {}) {
   const inRun = new Map();
   for (const run of runs) {
     if (!('wasTime' in run)) throw new Error(`run ${run.night} · ${run.venue}: no wasTime — every row must record what the file said before, so a hand edit trips`);
-    const times = run.times || runTimes({ doors: run.doors, close: run.close, count: run.order.length });
-    if (times.length !== run.order.length) throw new Error(`run ${run.night} · ${run.venue}: ${times.length} times for ${run.order.length} sets`);
+    const plan = runPlan(run);
+    if (plan.times.length !== run.order.length) throw new Error(`run ${run.night} · ${run.venue}: ${plan.times.length} times for ${run.order.length} sets`);
     run.order.forEach((name, k) => {
-      inRun.set(`${run.day}|${run.night}|${run.venue}|${name}`, { run, seq: k + 1, time: times[k] });
+      inRun.set(`${run.day}|${run.night}|${run.venue}|${name}`, { run, plan, seq: k + 1, time: plan.times[k].time });
     });
   }
   const seen = new Set();
   // The run fields one set carries, in one place: the mapped entries and the
   // created ones must be identical in shape or a new name would render as a
   // different kind of card from its neighbours.
-  const runFieldsFor = (run, seq, time) => ({
+  const runFieldsFor = (run, plan, seq, time) => ({
     time,
     approx: true,
     doors: run.doors,
-    ...(run.close ? { close: run.close } : {}),
-    ...(run.close && run.closeApprox ? { closeApprox: true } : {}),
+    ...(plan.close ? { close: plan.close } : {}),
+    ...(plan.close && plan.closeApprox ? { closeApprox: true, closeSource: plan.closeSource } : {}),
     order: { seq, of: run.order.length, source: run.source, confirmed: false },
   });
 
@@ -359,14 +359,14 @@ export function migrateEvents(fest, { runs = RUNS } = {}) {
       return next;
     }
     seen.add(`${a.day}|${night}|${venue}|${a.name}`);
-    const { run, seq, time } = hit;
+    const { run, plan, seq, time } = hit;
     // Not yet migrated? Then the file must still say what the run row says it
     // said — otherwise somebody edited the time by hand and the guess below
     // would be built on sand. `null` is a room the file had no time for.
     if (a.order === undefined && (a.time ?? null) !== (run.wasTime ?? null)) {
       throw new Error(`${a.name} (${a.stage}): the file says time ${JSON.stringify(a.time ?? null)} but the run row expects ${JSON.stringify(run.wasTime ?? null)} — re-read the room before re-running`);
     }
-    const next = rebuild(a, runFieldsFor(run, seq, time));
+    const next = rebuild(a, runFieldsFor(run, plan, seq, time));
     if (JSON.stringify(next) !== JSON.stringify(a)) {
       changes.push(`${a.name} (${a.stage}): + night/venue, time ${JSON.stringify(a.time)} -> ${JSON.stringify(time)} (approx), doors${run.close ? '/close' : ''}, order ${seq} of ${run.order.length}`);
     }
@@ -383,7 +383,7 @@ export function migrateEvents(fest, { runs = RUNS } = {}) {
       const hit = inRun.get(key);
       if (!hit) throw new Error(`${name}: declared in adds for ${run.night} · ${run.venue} but not in that run's order`);
       const stage = `${run.night} · ${run.venue}`;
-      const born = rebuild({ name, day: run.day, stage }, runFieldsFor(run, hit.seq, hit.time));
+      const born = rebuild({ name, day: run.day, stage }, runFieldsFor(run, hit.plan, hit.seq, hit.time));
       const roomIdx = artists.map((a, i) => [a, i]).filter(([a]) => a && a.day === run.day && a.stage === stage).map(([, i]) => i);
       const at = roomIdx.length ? roomIdx[roomIdx.length - 1] + 1 : artists.length;
       artists.splice(at, 0, born);

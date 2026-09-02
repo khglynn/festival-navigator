@@ -39,7 +39,7 @@ const { validateFestivalDoc } = await import('../api/_lib/festival-rules.mjs');
 const { frozenKeyProblems } = await import('../api/_lib/pick-keys.mjs');
 const { timeToMinutes } = await import('../js/time.js');
 const {
-  migrateEvents, frozenKeys, additionsOnly, isEventEntry, splitStage, runTimes, clockLabel,
+  migrateEvents, frozenKeys, additionsOnly, isEventEntry, splitStage, runPlan, clockLabel,
   RUNS, TIMELESS_ROOMS, PORTOLA_WEEK, DOTHEBAY_INDEX, MIDWAY_TICKETS, META_NOTE,
 } = await import('../scripts/migrate-portola-events.mjs');
 
@@ -74,7 +74,7 @@ function unmigrate(fest) {
   out.artists = out.artists.map((a) => {
     if (!isEventEntry(fest, a)) return a;
     const bare = { ...a };
-    for (const k of ['night', 'venue', 'approx', 'doors', 'close', 'closeApprox', 'order']) delete bare[k];
+    for (const k of ['night', 'venue', 'approx', 'doors', 'close', 'closeApprox', 'closeSource', 'order']) delete bare[k];
     const run = RUNS.find((r) => r.day === a.day && r.night === a.night && r.venue === a.venue && r.order.includes(a.name));
     if (run) bare.time = run.wasTime;
     return bare;
@@ -207,10 +207,10 @@ test('the two names that were on the bill and missing from the file are cards no
   const at = (name, stage) => portola.artists.find((a) => a.name === name && a.stage === stage);
   const buck = at('Buck Wilson', 'Sun · Monarch');
   const kaytree = at('Kaytree', 'Sun · Public Works');
-  for (const [who, seq, of, time] of [[buck, 1, 3, '10 PM'], [kaytree, 2, 4, '11 PM']]) {
+  for (const [who, seq, of] of [[buck, 1, 3], [kaytree, 2, 4]]) {
     assert.ok(who, 'the entry exists');
     assert.equal(who.day, 'Afters', 'the section key is the one notes are written on');
-    assert.equal(who.time, time);
+    assert.match(who.time, /^\d{1,2}(:\d{2})? [AP]M$/, 'a guessed clock from the venue registry (scripts/guess-run-times.mjs)');
     assert.equal(who.approx, true, 'a created set is a guess like every other set in its room');
     assert.equal(who.doors, '10 PM');
     assert.equal(who.order.seq, seq);
@@ -260,24 +260,30 @@ test('a single-act venue-night is never given a run — the shape is not sprayed
   }
 });
 
-test('the guessed times are DERIVED, not typed: runTimes() reproduces every room from its doors and close', () => {
+test('the guessed times are DERIVED, not typed: the guesser reproduces every room from its doors, the registry and the billed order', () => {
   for (const run of RUNS) {
-    const derived = runTimes({ doors: run.doors, close: run.close, count: run.order.length });
-    const shipped = run.order.map((name) => portola.artists.find((a) => a.name === name && a.night === run.night && a.venue === run.venue).time);
-    assert.deepEqual(shipped, run.times || derived, `${run.night} · ${run.venue}`);
-    if (run.times) assert.deepEqual(run.times, derived, `${run.night} · ${run.venue}: the pinned times and the rule agree`);
-    assert.equal(derived[0], run.doors, 'the opener starts at doors');
-    if (run.close) {
-      const end = timeToMinutes(run.close);
+    const plan = runPlan(run);
+    const derived = plan.times.map((t) => t.time);
+    const shipped = run.order.map((name) => portola.artists.find((a) => a.name === name && a.night === run.night && a.venue === run.venue));
+    assert.deepEqual(shipped.map((a) => a.time), derived, `${run.night} · ${run.venue}`);
+    assert.ok(timeToMinutes(derived[0]) >= timeToMinutes(run.doors), 'the opener never goes on before doors');
+    // The close on every member is the plan's — printed, evidenced, or the
+    // registry's routine close marked as a guess with its source.
+    for (const a of shipped) {
+      assert.equal(a.close, plan.close || undefined, `${a.name}: the room's close`);
+      assert.equal(a.closeApprox, plan.closeApprox ? true : undefined, `${a.name}: a guessed close says so`);
+      assert.equal(a.closeSource, plan.closeApprox ? plan.closeSource : undefined, `${a.name}: and says where the guess came from`);
+      if (plan.closeApprox) assert.ok(/^https:\/\//.test(a.closeSource) || /^(kind default|venue's)/.test(a.closeSource), `${a.name}: a URL or the rule that stood in`);
+    }
+    if (plan.close) {
+      const end = timeToMinutes(plan.close);
       assert.ok(timeToMinutes(derived[derived.length - 1]) < end, `${run.night} · ${run.venue}: the closer starts before the close`);
     }
   }
-  // The rule itself, at its edges.
-  assert.deepEqual(runTimes({ doors: '10 PM', close: '2 AM', count: 4 }), ['10 PM', '11 PM', '12 AM', '1 AM'], 'the Midway');
-  assert.deepEqual(runTimes({ doors: '10 PM', close: '2 AM', count: 3 }), ['10 PM', '11:30 PM', '1 AM'], 'rounded to the half hour, never 11:20');
-  assert.deepEqual(runTimes({ doors: '10 PM', count: 3 }), ['10 PM', '11 PM', '12 AM'], 'no close: an hour apart');
-  assert.deepEqual(runTimes({ doors: '10 PM', close: '11 PM', count: 4 }), ['10 PM', '10:30 PM', '11 PM', '11:30 PM'],
-    'a window too short for the floor: the step never goes below 30 minutes');
+  // A printed close is never overwritten by the registry.
+  const gn = runOf('Fri', 'The Great Northern');
+  assert.equal(gn.close, '2 AM');
+  assert.equal(runPlan(gn).closeApprox, false, 'printed stays printed');
   assert.equal(clockLabel(0), '12 AM');
   assert.equal(clockLabel(12 * 60), '12 PM');
 });
@@ -285,19 +291,21 @@ test('the guessed times are DERIVED, not typed: runTimes() reproduces every room
 test('The Midway is untouched — Kevin settled that room, and re-running the migration may never move it', () => {
   assert.equal(midway.length, 4);
   const bySeq = [...midway].sort((x, y) => x.order.seq - y.order.seq);
-  assert.deepEqual(bySeq.map((a) => [a.order.seq, a.name, a.time]), [
-    [1, 'MGNA Crrrta', '10 PM'],
-    [2, 'VTSS', '11 PM'],
-    [3, 'Two Shell', '12 AM'],
-    [4, 'horsegiirL', '1 AM'],
+  assert.deepEqual(bySeq.map((a) => [a.order.seq, a.name]), [
+    [1, 'MGNA Crrrta'],
+    [2, 'VTSS'],
+    [3, 'Two Shell'],
+    [4, 'horsegiirL'],
   ], 'the ticket billing decides the closer (horsegiirL, AXS/Tixr headliner); the other three keep the poster read');
+  assert.deepEqual(bySeq.map((a) => a.time), runPlan(runOf('Sun', 'The Midway')).times.map((t) => t.time), 'the clocks are the guesser\'s, like every other room');
   assert.deepEqual(runOf('Sun', 'The Midway').order, ['MGNA Crrrta', 'VTSS', 'Two Shell', 'horsegiirL'], 'and the run table says the same');
   for (const a of midway) {
     assert.equal(a.day, 'Afters', 'the section key is untouched — notes written on "Afters" stay there');
     assert.equal(a.approx, true, 'the set time is our guess and says so');
     assert.equal(a.doors, '10 PM', 'sourced: AXS event 1575408 prints "Doors Open — Sun Sep 27, 2026, 10:00 PM"');
-    assert.equal(a.close, '2 AM');
-    assert.equal(a.closeApprox, true, 'NO source states an end time — the close is ours, and the data says so');
+    assert.equal(a.close, '3 AM', '19hz prints the night as 10pm–3am (2026-09-02)');
+    assert.equal(a.closeApprox, true, 'the venue\'s own page prints no end — the close is an evidenced guess, and the data says so');
+    assert.equal(a.closeSource, 'https://19hz.info/eventlisting_BayArea.php');
     assert.deepEqual(a.order, {
       seq: a.order.seq, of: 4, source: MIDWAY_TICKETS, confirmed: false,
     });

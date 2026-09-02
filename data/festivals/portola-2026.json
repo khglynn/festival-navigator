@@ -303,15 +303,15 @@
       "time": "10:30 PM",
       "approx": true,
       "doors": "8 PM",
+      "close": "12 AM",
+      "closeApprox": true,
+      "closeSource": "kind default (hall)",
       "order": {
         "seq": 3,
         "of": 3,
         "source": "https://dothebay.com/events/2026/9/25/channel-tres-jyoty-gelli-haha-tickets",
         "confirmed": false
-      },
-      "close": "12 AM",
-      "closeApprox": true,
-      "closeSource": "kind default (hall)"
+      }
     },
     {
       "name": "Jyoty",
@@ -322,15 +322,15 @@
       "time": "9:45 PM",
       "approx": true,
       "doors": "8 PM",
+      "close": "12 AM",
+      "closeApprox": true,
+      "closeSource": "kind default (hall)",
       "order": {
         "seq": 2,
         "of": 3,
         "source": "https://dothebay.com/events/2026/9/25/channel-tres-jyoty-gelli-haha-tickets",
         "confirmed": false
-      },
-      "close": "12 AM",
-      "closeApprox": true,
-      "closeSource": "kind default (hall)"
+      }
     },
     {
       "name": "Gelli Haha",
@@ -341,15 +341,15 @@
       "time": "9 PM",
       "approx": true,
       "doors": "8 PM",
+      "close": "12 AM",
+      "closeApprox": true,
+      "closeSource": "kind default (hall)",
       "order": {
         "seq": 1,
         "of": 3,
         "source": "https://dothebay.com/events/2026/9/25/channel-tres-jyoty-gelli-haha-tickets",
         "confirmed": false
-      },
-      "close": "12 AM",
-      "closeApprox": true,
-      "closeSource": "kind default (hall)"
+      }
     },
     {
       "name": "Six Sex",
@@ -376,15 +376,15 @@
       "time": "1 AM",
       "approx": true,
       "doors": "10 PM",
+      "close": "2:30 AM",
+      "closeApprox": true,
+      "closeSource": "https://m.yelp.com/biz/monarch-san-francisco",
       "order": {
         "seq": 2,
         "of": 2,
         "source": "https://dothebay.com/events/2026/9/25/sam-alfred-tickets",
         "confirmed": false
-      },
-      "close": "2:30 AM",
-      "closeApprox": true,
-      "closeSource": "https://m.yelp.com/biz/monarch-san-francisco"
+      }
     },
     {
       "name": "Skiis",
@@ -395,15 +395,15 @@
       "time": "10:30 PM",
       "approx": true,
       "doors": "10 PM",
+      "close": "2:30 AM",
+      "closeApprox": true,
+      "closeSource": "https://m.yelp.com/biz/monarch-san-francisco",
       "order": {
         "seq": 1,
         "of": 2,
         "source": "https://dothebay.com/events/2026/9/25/sam-alfred-tickets",
         "confirmed": false
-      },
-      "close": "2:30 AM",
-      "closeApprox": true,
-      "closeSource": "https://m.yelp.com/biz/monarch-san-francisco"
+      }
     },
     {
       "name": "Ranger Trucco",
@@ -456,15 +456,15 @@
       "time": "12 AM",
       "approx": true,
       "doors": "10 PM",
+      "close": "2 AM",
+      "closeApprox": true,
+      "closeSource": "https://19hz.info/eventlisting_BayArea.php",
       "order": {
         "seq": 2,
         "of": 2,
         "source": "https://dothebay.com/events/2026/9/26/fcukers-dj-set-chloe-caillet-presented-by-goldenvoice-tickets",
         "confirmed": false
-      },
-      "close": "2 AM",
-      "closeApprox": true,
-      "closeSource": "https://19hz.info/eventlisting_BayArea.php"
+      }
     },
     {
       "name": "Chloé Caillet",
@@ -475,15 +475,15 @@
       "time": "10:30 PM",
       "approx": true,
       "doors": "10 PM",
+      "close": "2 AM",
+      "closeApprox": true,
+      "closeSource": "https://19hz.info/eventlisting_BayArea.php",
       "order": {
         "seq": 1,
         "of": 2,
         "source": "https://dothebay.com/events/2026/9/26/fcukers-dj-set-chloe-caillet-presented-by-goldenvoice-tickets",
         "confirmed": false
-      },
-      "close": "2 AM",
-      "closeApprox": true,
-      "closeSource": "https://19hz.info/eventlisting_BayArea.php"
+      }
     },
     {
       "name": "Parcels",
@@ -494,15 +494,15 @@
       "time": "10:45 PM",
       "approx": true,
       "doors": "9 PM",
+      "close": "12 AM",
+      "closeApprox": true,
+      "closeSource": "kind default (hall)",
       "order": {
         "seq": 2,
         "of": 2,
         "source": "https://www.axs.com/events/1573671",
         "confirmed": false
-      },
-      "close": "12 AM",
-      "closeApprox": true,
-      "closeSource": "kind default (hall)"
+      }
     },
     {
       "name": "Velvet Trip",
@@ -513,15 +513,15 @@
       "time": "10 PM",
       "approx": true,
       "doors": "9 PM",
+      "close": "12 AM",
+      "closeApprox": true,
+      "closeSource": "kind default (hall)",
       "order": {
         "seq": 1,
         "of": 2,
         "source": "https://www.axs.com/events/1573671",
         "confirmed": false
-      },
-      "close": "12 AM",
-      "closeApprox": true,
-      "closeSource": "kind default (hall)"
+      }
     },
     {
       "name": "Groove Armada",
@@ -539,15 +539,15 @@
       "time": "12:30 AM",
       "approx": true,
       "doors": "10 PM",
+      "close": "2 AM",
+      "closeApprox": true,
+      "closeSource": "https://discotech.me/san-francisco/audio/",
       "order": {
         "seq": 2,
         "of": 2,
         "source": "https://dothebay.com/events/2026/9/26/max-styler-tickets",
         "confirmed": false
-      },
-      "close": "2 AM",
-      "closeApprox": true,
-      "closeSource": "https://discotech.me/san-francisco/audio/"
+      }
     },
     {
       "name": "Airwolf Paradise",
@@ -558,15 +558,15 @@
       "time": "10:30 PM",
       "approx": true,
       "doors": "10 PM",
+      "close": "2 AM",
+      "closeApprox": true,
+      "closeSource": "https://discotech.me/san-francisco/audio/",
       "order": {
         "seq": 1,
         "of": 2,
         "source": "https://dothebay.com/events/2026/9/26/max-styler-tickets",
         "confirmed": false
-      },
-      "close": "2 AM",
-      "closeApprox": true,
-      "closeSource": "https://discotech.me/san-francisco/audio/"
+      }
     },
     {
       "name": "Jigitz",
@@ -681,13 +681,13 @@
       "doors": "10 PM",
       "close": "3 AM",
       "closeApprox": true,
+      "closeSource": "https://19hz.info/eventlisting_BayArea.php",
       "order": {
         "seq": 4,
         "of": 4,
         "source": "https://www.axs.com/events/1575408/horsegiirl-tickets",
         "confirmed": false
-      },
-      "closeSource": "https://19hz.info/eventlisting_BayArea.php"
+      }
     },
     {
       "name": "VTSS",
@@ -700,13 +700,13 @@
       "doors": "10 PM",
       "close": "3 AM",
       "closeApprox": true,
+      "closeSource": "https://19hz.info/eventlisting_BayArea.php",
       "order": {
         "seq": 2,
         "of": 4,
         "source": "https://www.axs.com/events/1575408/horsegiirl-tickets",
         "confirmed": false
-      },
-      "closeSource": "https://19hz.info/eventlisting_BayArea.php"
+      }
     },
     {
       "name": "Two Shell",
@@ -719,13 +719,13 @@
       "doors": "10 PM",
       "close": "3 AM",
       "closeApprox": true,
+      "closeSource": "https://19hz.info/eventlisting_BayArea.php",
       "order": {
         "seq": 3,
         "of": 4,
         "source": "https://www.axs.com/events/1575408/horsegiirl-tickets",
         "confirmed": false
-      },
-      "closeSource": "https://19hz.info/eventlisting_BayArea.php"
+      }
     },
     {
       "name": "MGNA Crrrta",
@@ -738,13 +738,13 @@
       "doors": "10 PM",
       "close": "3 AM",
       "closeApprox": true,
+      "closeSource": "https://19hz.info/eventlisting_BayArea.php",
       "order": {
         "seq": 1,
         "of": 4,
         "source": "https://www.axs.com/events/1575408/horsegiirl-tickets",
         "confirmed": false
-      },
-      "closeSource": "https://19hz.info/eventlisting_BayArea.php"
+      }
     },
     {
       "name": "SG Lewis",
@@ -755,15 +755,15 @@
       "time": "12:30 AM",
       "approx": true,
       "doors": "10 PM",
+      "close": "2 AM",
+      "closeApprox": true,
+      "closeSource": "https://www.sfstation.com/the-great-northern-b2336",
       "order": {
         "seq": 2,
         "of": 2,
         "source": "https://dothebay.com/events/2026/9/27/sg-lewis-dj-set-tickets",
         "confirmed": false
-      },
-      "close": "2 AM",
-      "closeApprox": true,
-      "closeSource": "https://www.sfstation.com/the-great-northern-b2336"
+      }
     },
     {
       "name": "Puffie",
@@ -774,15 +774,15 @@
       "time": "10:30 PM",
       "approx": true,
       "doors": "10 PM",
+      "close": "2 AM",
+      "closeApprox": true,
+      "closeSource": "https://www.sfstation.com/the-great-northern-b2336",
       "order": {
         "seq": 1,
         "of": 2,
         "source": "https://dothebay.com/events/2026/9/27/sg-lewis-dj-set-tickets",
         "confirmed": false
-      },
-      "close": "2 AM",
-      "closeApprox": true,
-      "closeSource": "https://www.sfstation.com/the-great-northern-b2336"
+      }
     },
     {
       "name": "Fatboy Slim",
@@ -859,15 +859,15 @@
       "time": "12:30 AM",
       "approx": true,
       "doors": "10 PM",
+      "close": "2 AM",
+      "closeApprox": true,
+      "closeSource": "https://dothebay.com/venues/rickshaw-stop",
       "order": {
         "seq": 2,
         "of": 2,
         "source": "https://dothebay.com/events/2026/9/27/jt-tickets",
         "confirmed": false
-      },
-      "close": "2 AM",
-      "closeApprox": true,
-      "closeSource": "https://dothebay.com/venues/rickshaw-stop"
+      }
     },
     {
       "name": "Naisha",
@@ -878,15 +878,15 @@
       "time": "11 PM",
       "approx": true,
       "doors": "10 PM",
+      "close": "2 AM",
+      "closeApprox": true,
+      "closeSource": "https://dothebay.com/venues/rickshaw-stop",
       "order": {
         "seq": 1,
         "of": 2,
         "source": "https://dothebay.com/events/2026/9/27/jt-tickets",
         "confirmed": false
-      },
-      "close": "2 AM",
-      "closeApprox": true,
-      "closeSource": "https://dothebay.com/venues/rickshaw-stop"
+      }
     },
     {
       "name": "BRUT SF",

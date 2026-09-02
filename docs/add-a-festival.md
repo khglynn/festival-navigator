@@ -186,7 +186,14 @@ combined card eats the crew's picks.
 - A venue-night with NO time at all is not a run. Leave it timeless; the wall
   tiles it under TIME TBA.
 
-Portola's ten runs are the worked example, and they are generated rather than
-typed: `scripts/migrate-portola-events.mjs` holds the `RUNS` table (one row per
-room: doors, close, the billed order, and what the file used to say) and the
-`runTimes()` rule that lays the sets across the window.
+Portola's twelve runs are the worked example, and they are generated rather
+than typed: `scripts/migrate-portola-events.mjs` holds the `RUNS` table (one
+row per room: doors, a printed close, the billed order, the source, and what
+the file used to say), and the clocks come from `scripts/guess-run-times.mjs`
+— the venue registry (`data/venues/index.json`: each room's routine close by
+weekday, its doors-to-first-act gap, its set lengths, every value with a
+source) says when a room usually ends, and the guesser lays the bill across
+that window. Any fest can run `node scripts/guess-run-times.mjs <id>` for a
+dry-run diff of its runs, and `--write` to record them; a printed close is
+never overwritten, and every guessed close carries `closeApprox` + its
+`closeSource`.

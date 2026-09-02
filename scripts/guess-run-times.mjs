@@ -129,7 +129,7 @@ export function planRun({ night, doors, close, closeApprox = false, closeSource 
 }
 
 // ---- the file ------------------------------------------------------------------
-function loadRegistry() {
+export function loadRegistry() {
   const p = path.join(ROOT, 'data/venues/index.json');
   if (!fs.existsSync(p)) return { venues: {} };
   return JSON.parse(fs.readFileSync(p, 'utf8'));
