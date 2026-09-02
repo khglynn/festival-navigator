@@ -26,7 +26,7 @@ const P = (ok) => (ok ? 'PASS' : 'FAIL');
   const deckBox = async () => { await ev(() => document.querySelector('.deck').scrollIntoView({ block: 'center', behavior: 'instant' })); await sleep(500); return ev(() => { const r = document.querySelector('.deck').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; }); };
   const panelCard = (name) => ev((name) => { const c = [...document.querySelectorAll('.deck-layer .card')].find((c) => (c.querySelector('.name') || {}).textContent === name); if (!c) return null; const r = c.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; }, name);
   const marksOf = (name) => ev((name) => { const c = [...document.querySelectorAll('.deck-layer .card')].find((c) => (c.querySelector('.name') || {}).textContent === name); return c ? c.querySelectorAll('.corner-who .mark').length : null; }, name);
-  const overlay = () => ev(() => { const el = document.querySelector('#zoom-layer .zoom-slot.shown .zoom-card'); if (!el) return null; const r = el.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });
+  const overlay = () => ev(() => { const el = document.querySelector('#zoom-layer .zoom-slot.shown .zoom-card .f-name') || document.querySelector('#zoom-layer .zoom-slot.shown .zoom-card'); if (!el) return null; const r = el.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });
   const deckState = () => ev(() => ({ open: !!document.querySelector('.deck.open'), panel: document.querySelectorAll('.deck-layer .card').length, sheet: !!document.querySelector('.sheet-card') }));
   const away = async () => { await page.mouse.move(1420, 40); await page.mouse.move(1430, 30); };
 
@@ -37,7 +37,7 @@ const P = (ok) => (ok ? 'PASS' : 'FAIL');
     const seq = [await marksOf(name)];
     for (let k = 0; k < 5; k++) { const z = await overlay(); if (!z) { seq.push('no-overlay'); break; } await page.mouse.click(z.x, z.y); await sleep(k === 0 ? 3500 : 600); seq.push(await marksOf(name)); }
     const changes = seq.slice(1).filter((v, i) => v !== seq[i]).length;
-    bank(`A. panel pick cycle (${name}) marks per click: ${seq.join(' → ')}; changed on ${changes}/${seq.length - 1} clicks; reached 0=${seq.includes(0)} → ${P(changes >= 4 && seq.slice(1).includes(0))}`);
+    bank(`A. panel pick cycle (${name}) marks per click: ${seq.join(' → ')} (one mark for levels 1–4, none at 0); reached 0 within 4 clicks=${seq.slice(1, 5).includes(0)} → ${P(seq.slice(1, 5).includes(0))}`);
     // put it back to 0 if needed
     for (let k = 0; k < 4 && (await marksOf(name)) > 0; k++) { const z = await overlay(); if (!z) break; await page.mouse.click(z.x, z.y); await sleep(600); }
     await page.keyboard.press('Escape'); await sleep(500); await away();

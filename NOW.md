@@ -1,6 +1,44 @@
-# NOW — festival-navigator: the notes/desktop round is LIVE (v71 promoted 2026-09-01) · next: PR #14 zoom tests (needs a browser walk) + PR #15 events data → the day-first UI (phase 2)
+# NOW — festival-navigator: v71 is LIVE (promoted 2026-09-01) · PR #14 walked clean, PR #15 green, PR #16 (the day-first events UI) reviewed and walked — all three wait on Kevin's "merge" / one look
 
 **last-updated: 2026-09-01 · mode: live**
+
+## 2026-09-01 (evening) — phase 2 built, reviewed three ways, walked; #14 walked clean
+
+- **PR #16 — the day-first events UI — is built** (a Fable teammate on
+  Kevin's offer; branch `events-ui` on top of `events-data`; 27 files,
+  ~4,000 lines, suite 355 → 405). Day tabs THU·FRI·SAT·SUN; the rule
+  decided once per fest; venue columns with their own sticky strips; the
+  deck (3+ truly simultaneous → a face + ghosts + pill, grows in place into a
+  panel of pickable cards); the Midway run as a vertical column with tilde
+  times, one whisper, and the two-line zoom with the poster door; bucket
+  chips saved per device; the gallery's THE EVENTS section; the Day Image
+  exporter follows the tabs. PR body = Kevin's ten-step walk list.
+- **Reviewed before Kevin looks — three independent passes**: Codex (4
+  findings), an Opus workflow of 4 lenses + skeptics (22 confirmed, 2
+  refuted; evidence with repros in `claude-plans/2026-09-01-events-build/
+  REVIEW-ROUND-1.md`), and a real-input browser walk of the preview. One
+  consolidated 19-item round went to the builder; 17 fixed with tests, 2
+  declined with reasons. Round-2 walk: everything holds (deck × people
+  filter lit/dim as one, scroll-away without a jump, chips tapped fast both
+  land, the tilde in search, Escape layering sheet → zoom → panel). The
+  "panel picks stop after the first tap" scare was the rig clicking the
+  overlay's centre and hitting the venue's map door after the first pick
+  moved content; the rig now clicks the NAME. The builder's reservation
+  fix for that (an empty who-row at pill height) left a hole on every
+  unpicked card — reverting as of this write; the follow-up idea (anchor
+  the overlay's top after placement) is a zoom-mechanics change for after
+  #14.
+- **PR #14 walked clean vs production** (same script both sides; results as
+  a PR comment): no regression. Ready to merge on Kevin's word.
+- **The walk rig** (`claude-plans/2026-09-01-walk-rig/`): detached Node +
+  Playwright driving headless system Chrome with real input, survives
+  Kevin's profile switches (teammates, workflows and the MCP profile do
+  not — the first walker sat 57 min with an empty bank). Its README lists
+  the traps (no `setsid` on macOS, the join screen, share-link-first, the
+  `::after` touch floor, CDP can't long-press).
+- **Merge order when Kevin says go:** #14 (re-stamp not needed), then #15,
+  then #16 — #16 was stamped v74 on top of #15; whichever of #14/#16 lands
+  second re-runs `node scripts/sw-stamp.mjs` on a clean tree.
 
 ## 2026-09-01 — PROMOTED: PR #13 squashed to main (b4f6283), v71 on prod, previews proven
 

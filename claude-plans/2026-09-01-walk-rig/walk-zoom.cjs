@@ -17,7 +17,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 // enters the app. Fallback: type the name and press Join.
 async function joinIfNeeded(pg, who = 'Ava') {
   const sleepMs = (ms) => new Promise((r) => setTimeout(r, ms));
-  await sleepMs(1500);
+  await sleepMs(3000);
   const onJoin = () => pg.evaluate(() => { const s = document.getElementById('screen-join'); return !!(s && s.getBoundingClientRect().height > 0); });
   if (await onJoin()) {
     const row = await pg.evaluate((who) => { const e = [...document.querySelectorAll('#screen-join button.fest-row')].find((b) => (b.textContent || '').includes(who)); if (!e) return null; const r = e.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; }, who);

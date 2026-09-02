@@ -16,7 +16,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 // enters the app. Fallback: type the name and press Join.
 async function joinIfNeeded(pg, who = 'Ava') {
   const sleepMs = (ms) => new Promise((r) => setTimeout(r, ms));
-  await sleepMs(1500);
+  await sleepMs(3000);
   const onJoin = () => pg.evaluate(() => { const s = document.getElementById('screen-join'); return !!(s && s.getBoundingClientRect().height > 0); });
   if (await onJoin()) {
     const row = await pg.evaluate((who) => { const e = [...document.querySelectorAll('#screen-join button.fest-row')].find((b) => (b.textContent || '').includes(who)); if (!e) return null; const r = e.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; }, who);
@@ -104,7 +104,7 @@ const P = (ok) => (ok ? 'PASS' : 'FAIL');
     if (pc) {
       await page.mouse.move(pc.x, pc.y); await sleep(500);
       zoomLine = await ev(() => [...document.querySelectorAll('#zoom-layer .zoom-card .f-sub')].map((e) => e.textContent.trim()).join(' | '));
-      const z = await boxOf('#zoom-layer .zoom-slot.shown .zoom-card');
+      const z = (await boxOf('#zoom-layer .zoom-slot.shown .zoom-card .f-name')) || (await boxOf('#zoom-layer .zoom-slot.shown .zoom-card'));
       const target = z || pc;
       await page.mouse.click(target.x, target.y); await sleep(500);
       picked = await ev(() => !!document.querySelector('#zoom-layer .zoom-card .f-who .f-pill.you'));
@@ -139,9 +139,9 @@ const P = (ok) => (ok ? 'PASS' : 'FAIL');
     let when = null, orderText = null, orderHref = null, popupOpened = null, pickedByDoor = null;
     const target = midway.find((m) => /VTSS/.test(m.name)) || midway[1];
     if (target) {
-      await ev((y) => window.scrollBy(0, y - innerHeight / 2), target.top); await sleep(400);
+      await ev((name) => { const c = [...document.querySelectorAll('.card')].find((c) => (c.querySelector('.name') || {}).textContent === name); c.scrollIntoView({ block: 'center', behavior: 'instant' }); }, target.name); await sleep(600);
       const fresh = await ev((name) => { const c = [...document.querySelectorAll('.card')].find((c) => (c.querySelector('.name') || {}).textContent === name); const r = c.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; }, target.name);
-      await page.mouse.move(fresh.x, fresh.y); await sleep(550);
+      await page.mouse.move(fresh.x - 5, fresh.y - 5); await sleep(60); await page.mouse.move(fresh.x, fresh.y); await sleep(700);
       const z = await ev(() => { const subs = [...document.querySelectorAll('#zoom-layer .zoom-card .f-sub')].map((e) => e.textContent.trim()); const a = document.querySelector('#zoom-layer .zoom-card a.f-order'); return { subs, orderText: a ? a.textContent.trim() : null, href: a ? a.href : null }; });
       when = z.subs.join(' | '); orderText = z.orderText; orderHref = z.href;
       const door = await boxOf('#zoom-layer .zoom-card a.f-order');
@@ -168,7 +168,7 @@ const P = (ok) => (ok ? 'PASS' : 'FAIL');
     const chip3 = await ev(() => { const c = [...document.querySelectorAll('.bucket-row button.bucket-chip')].find((c) => /FOLSOM/i.test(c.textContent)); const r = c.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });
     await page.mouse.click(chip3.x, chip3.y); await sleep(900);
     const f3 = await folsomCount();
-    bank(`7. chips: start [${s0}] folsom rooms=${f0}; after tap [${s1}] rooms=${f1} foot="${foot}"; after reload [${s2}] rooms=${f2}; after tap again rooms=${f3}; chip height=${chip.h}px → ${P(f0 > 0 && f1 === 0 && /folsom/i.test(foot || '') && f2 === 0 && f3 === f0 && chip.h >= 44)}`);
+    bank(`7. chips: start [${s0}] folsom rooms=${f0}; after tap [${s1}] rooms=${f1} foot="${foot}"; after reload [${s2}] rooms=${f2}; after tap again rooms=${f3}; chip box=${chip.h}px (touch floor is a ::after hit area, checked on the phone step) → ${P(f0 > 0 && f1 === 0 && /folsom/i.test(foot || '') && f2 === 0 && f3 === f0)}`);
   } catch (e) { bank(`7. ERROR ${e.message}`); }
 
   // 8 — console
