@@ -140,6 +140,42 @@ Non-inferable facts only (the code answers everything else — read it).
   reached an online phone one open LATE (found 2026-08-27). If a data drop
   "isn't showing", the SW is the first suspect — see the stale-SW note above.
 
+- **A hover report is only as good as the shell that made it (2026-09-02).**
+  Kevin's "hover is broken again" on 2026-09-01 was a v75 shell judging v76
+  code: his Diagnostics paste names the build, the branch alias keeps an
+  open tab on the build it was born with, and the reload-once guard covered
+  only a page's first 20 s. index.html now asks for a new worker on
+  visibilitychange and every ten minutes, reloads when nothing is in
+  progress, and raises a refresh toast otherwise (`fn:new-build`). Before
+  believing any "still broken": read the build line in the paste, and walk
+  the unique deployment URL, not the alias.
+- **The zoom's keyboard route opens on the module's own last-input, never
+  `:focus-visible`.** Chrome 152 flips a focused card to `:focus-visible`
+  after ANY keypress (Escape included), and the script `focus()` every pick
+  makes inherits it — click · Escape · click grew a keyboard zoom that no
+  hover-out could close. card-facts.js tracks the last keydown/pointerdown
+  at the document (capture); `tests/zoom-modality.test.mjs` pins it and the
+  real-browser contract (`npm run test:browser`, CI job `browser`) drives
+  Kevin's sequences with real input against gallery.html. The long-press
+  ignores mouse pointers for the same reason (a held button is a slow click).
+- **The stage strip is a follower, not a scroller.** Its row rides the lead
+  grid's scroll timeline (CSS scroll-driven animation; `--strip-max` is the
+  measured maximum scroll) or a transform from the lead's scroll event where
+  the engine lacks `ScrollTimeline` or motion is reduced. Never set a
+  strip's scrollLeft; anything that mirrors or restores scroll positions
+  skips `isStripScroller`. Two traps: jsdom's `CSS.supports` says yes to
+  everything (detect with `typeof window.ScrollTimeline`), and the tokens
+  file's reduced-motion rule kills every animation, the follow included.
+- **WebKit only honours `-webkit-user-select`** — an unprefixed
+  `user-select: none` did nothing on iOS and a long-press selected the time
+  label and raised the Copy/Search callout over the zoom (2026-09-02). Every
+  `user-select: none` in v3.css carries the prefix; keep it that way.
+- **Run guesses come from `scripts/guess-run-times.mjs`, never render
+  time** (MODEL-V3 §5): the venue registry `data/venues/index.json`
+  (routine close by weekday, doors-to-first-act, set lengths, with sources)
+  feeds a dry-run diff; `--write` records `time`, `close`, `closeApprox`,
+  `closeSource` on every run member. A printed close is never overwritten.
+
 - **How this app moves (Kevin, 2026-08-30 — the vibe, not the mechanics; the
   code carries those).** This is a designer's passion project, and the bar is
   delight: taste, flow, and the little things. Things grow from where they
