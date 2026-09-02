@@ -1,6 +1,39 @@
-# NOW — festival-navigator: v71 is LIVE (promoted 2026-09-01) · PR #14 walked clean, PR #15 green, PR #16 (the day-first events UI) reviewed and walked — all three wait on Kevin's "merge" / one look
+# NOW — festival-navigator: v73 is LIVE (PR #14 merged 2026-09-01 evening — the zoom tests + the focused-card blink fix) · PR #15 data green · PR #16 (the day-first events UI) being rebuilt to ONE rule: every club night stacks
 
 **last-updated: 2026-09-01 · mode: live**
+
+## 2026-09-01 (late) — Kevin's verdict on #16, the blink that was on prod all along, #14 merged (v73)
+
+- **Kevin on the #16 preview:** "hover is broken in all kinds of new ways…
+  and our implementation of concurrent shows isn't our clean stacking idea.
+  it's a mix of all 3 ideas scattered around." Both true.
+- **The hover:** his Diagnostics paste had every close tagged "focus left the
+  card". Reproduced with his sequence — click the RESTING card (it takes
+  focus), let the hover grow, click the grown card — on the #16 preview, on
+  PR #14, AND on production v71: every overlay click closed the zoom and the
+  hover re-grew it. Cause: `refreshCard` swapped the node with `replaceWith`;
+  Chrome fires the old node's blur from inside removal (node still attached,
+  relatedTarget null); the zoom still pointed at the old node and read it as
+  focus leaving. Fix on #14 (263262f): the fresh node is inserted and handed
+  to the zoom (`onSwap`) BEFORE the old one is removed; the test replays
+  Chrome's removal blur and is red on the old order. **#14 merged (66c3454),
+  prod serves v73, his sequence on prod: journal empty, zoom alive through
+  five picks.** No walk before today had clicked the resting card first.
+- **The stacks:** every one of Portola's 12 multi-artist venue-nights lists
+  its artists at the same time — the doors time. One room, one bill, played
+  in sequence: they are ALL the Midway. The deck and the afters lanes were
+  the main grid's overlap handling carried where it does not belong. New
+  rule (replaces MODEL-V3 §4, generalises §5): in an events section a venue
+  night renders as a vertical run, no lanes, no deck; the Pier 80 grid keeps
+  its lanes. An Opus builder is applying it on `events-ui` as a subtraction;
+  a Sonnet agent is reading the 11 other ticket pages for the billing order
+  (`scratchpad/afters-billing.md` this session). **Back pocket (Kevin):** he
+  likes the deck's grown PANEL for tight vertical runs — the last commit with
+  the full deck is `c740388` on events-ui; the gallery keeps a static picture
+  with a properly styled ✕; MODEL-V3 §4 records it.
+- **Merge order now:** #15 (data) then the rebuilt #16 (rebased on main, a
+  fresh stamp above v73). Kevin looks once at #16 after his sequence is
+  re-run on it.
 
 ## 2026-09-01 (evening) — phase 2 built, reviewed three ways, walked; #14 walked clean
 

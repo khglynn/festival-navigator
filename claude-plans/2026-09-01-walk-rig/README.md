@@ -47,3 +47,14 @@ The report lands beside the script as `report-<kind>-<label>.md`; `FINISHED` or
 - **Expectations that were wrong in the first draft:** after Tab, Tab from the
   notes chip, focus lands on the NEXT card, which grows — the zoom is not
   "closed", it moved; and a 120px wheel only scrolls as far as the page can.
+
+## The lesson of 2026-09-01 evening
+
+Every "walked clean" run before the fix in PR #14 hovered a card and clicked
+its grown overlay. None clicked the RESTING card first. A real person does —
+it is the most common way to pick — and it focuses the card, which is what
+made every later overlay click close and re-grow the zoom (the crash
+journal's "focus left the card", twice a second). Walk the sequences people
+use, not the ones that are convenient to script; and when Kevin's error
+messages rhyme, that rhyme is the bug's fingerprint — read the journal
+before the code.

@@ -91,6 +91,23 @@ async function joinIfNeeded(pg, who = 'Ava') {
     bank(`2. click-on-overlay: youPill before=${before} after=${picked}; zoom open after click=${stillOpen} after 2nd=${open2}; cycled back in ${cleared} clicks; closed after leave: slots=${await slots()} → ${stillOpen === 1 && picked && open2 === 1 && cleared >= 0 ? 'PASS' : 'FAIL'}`);
   } catch (e) { bank(`2. ERROR ${e.message}`); }
 
+  // 2b — Kevin's sequence (2026-09-01): click the RESTING card first (it takes
+  // focus, role=button), let the hover grow, then pick on the grown card five
+  // times. Before the fix every overlay press closed the zoom ("focus left the
+  // card") and the hover re-grew it — a blink no walk saw because none had
+  // clicked the resting card first. The crash journal is the witness.
+  try {
+    await page.evaluate(() => { try { localStorage.removeItem('fn_errlog_v1'); } catch {} });
+    const c = await pickCard();
+    await page.mouse.move(c.x - 6, c.y - 6); await sleep(60); await page.mouse.move(c.x, c.y); await page.mouse.down(); await page.mouse.up(); await sleep(900);
+    const alive = [];
+    for (let k = 0; k < 5; k++) { const z = await center('#zoom-layer .zoom-slot.shown .zoom-card .f-name'); if (!z) { alive.push('none'); break; } await page.mouse.click(z.x, z.y); await sleep(120); alive.push(await shown()); await sleep(600); }
+    const journal = await page.evaluate(() => { try { return JSON.parse(localStorage.getItem('fn_errlog_v1') || '[]').map((e) => e.kind + ' · ' + e.msg); } catch { return ['(unreadable)']; } });
+    await cycleClear(...Object.values(await center('#zoom-layer .zoom-slot.shown .zoom-card .f-name') || { x: c.x, y: c.y }));
+    await away(); await sleep(600);
+    bank(`2b. resting-card click, then 5 picks on the grown card: zoom alive after each=${alive.join(',')}; journal=${JSON.stringify(journal)} → ${alive.every((a) => a === 1) && journal.length === 0 ? 'PASS' : 'FAIL'}`);
+  } catch (e) { bank(`2b. ERROR ${e.message}`); }
+
   // 3 — wheel scroll follows
   try {
     const c = await pickCard();

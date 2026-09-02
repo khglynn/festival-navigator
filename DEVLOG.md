@@ -2,6 +2,26 @@
 
 Newest first. One entry per meaningful unit of work.
 
+## 2026-09-01 (late) — the blink under every pick, and one rule for club nights
+
+- **A pick on a focused card blinked the zoom, on production, since the
+  bloom shipped.** Kevin's Diagnostics journal read "focus left the card"
+  twice a second; the real-input trace showed why: click a resting card (it
+  focuses), the next click on the grown card picks, `refreshCard` swaps the
+  node, and Chrome fires the OLD node's blur from inside the removal steps —
+  still attached, relatedTarget null. The zoom still pointed at the old node
+  and closed; the hover intent re-grew it a beat later. Fixed in #14 by
+  handing the fresh node to the zoom before the old one is removed (an
+  `onSwap` on `refreshCard`; the rig mirrors it). The test replays Chrome's
+  removal blur, red on the old order. Merged; prod v73; his sequence leaves
+  the journal empty. Lesson banked in the walk rig: walk the sequences people
+  use — nobody's walk had clicked the resting card first.
+- **Every multi-artist venue-night in Portola's afters is a doors-time
+  bill, not simultaneous sets.** Kevin: "it's a mix of all 3 ideas scattered
+  around." The deck and the afters lanes go; a venue night is a vertical
+  run; the main grid keeps lanes. Rebuild in progress on #16; the deck's
+  panel stays in the back pocket (gallery picture + the commit that has it).
+
 ## 2026-09-01 — Promoted: the notes/desktop round is live, and the two follow-ups are queued
 
 - **PR #13 squashed to main (b4f6283) on Kevin's "ya go"; prod is v71.**
