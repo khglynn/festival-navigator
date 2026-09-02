@@ -19,7 +19,7 @@
   border: 1px solid var(--hairline); border-radius: var(--r-card);
   display: flex; align-items: center; justify-content: center;
   padding: 9px 11px 20px; text-align: center; overflow: hidden;
-  cursor: pointer; -webkit-touch-callout: none; user-select: none;
+  cursor: pointer; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none;
   font-family: inherit; color: inherit; /* role=button div, keyboard-first (AX-1) */
 }
 .card.animated { background-size: 180% 180%; animation: gradShift 12s ease-in-out infinite; }
@@ -126,7 +126,7 @@
 
 /* ---- people ----------------------------------------------------------------- */
 .person-chip { color: #fff; font-size: 11.5px; font-weight: 600; padding: 5px 12px;
-               -webkit-touch-callout: none; user-select: none; /* a long press must never raise the OS text callout */
+               -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; /* a long press must never raise the OS text callout */
                border-radius: var(--r-pill); border: none; cursor: pointer; }
 .person-chip.you { font-weight: 700; }
 /* A chip's job is to say "this person, in their colour". On the wall and in the
@@ -766,7 +766,7 @@ button.f-chip.notes { cursor: pointer; }
 .zoom-card { position: relative; box-sizing: border-box; min-height: inherit; pointer-events: auto;
              display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 7px;
              padding: 12px 14px 12px; text-align: center; cursor: pointer;
-             -webkit-touch-callout: none; user-select: none; color: inherit; font-family: inherit; }
+             -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; color: inherit; font-family: inherit; }
 .zoom-card .z-surface { position: absolute; inset: 0; overflow: hidden; border: 1px solid var(--hairline); border-radius: var(--r-card); }
 .zoom-card .z-surface.animated { background-size: 180% 180%; animation: gradShift 12s ease-in-out infinite; }
 .zoom-card > :not(.z-surface) { position: relative; z-index: 2; } /* content over both surfaces */
@@ -864,7 +864,7 @@ button.f-chip.notes { cursor: pointer; }
                border-radius: var(--r-pill); font-family: inherit; font-size: 10.5px; font-weight: 800;
                letter-spacing: .05em; cursor: pointer; color: #fff;
                background: rgba(var(--brand), .14); border: 1px solid rgba(var(--brand), .45);
-               -webkit-touch-callout: none; user-select: none; }
+               -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
 .bucket-chip .bc-check { font-size: 9px; color: rgb(var(--brand)); }
 .bucket-chip .bc-check:empty { display: none; }
 .bucket-chip[aria-pressed="false"] { background: transparent; border: 1.5px dashed var(--border-emphasis); color: var(--text-tertiary); }
