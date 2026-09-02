@@ -3,7 +3,9 @@
 import * as state from '../state.js';
 import * as model from './model.js';
 import { parseBulkLineV4, LEVEL_LABELS_V4 } from '../parse.js';
-import { renderCard, groupByDay, knownDaysOf, scheduledWeekendOf, extraSectionsOf } from './wall.js';
+import { renderCard, groupByDay, knownDaysOf, scheduledWeekendOf, extraSectionsOf, dayFirstModelFor } from './wall.js';
+import { venueOf, approxMark, sortForTiles } from './events.js';
+import { dayLabelParts } from '../time.js';
 
 export const el = (tag, css, text) => {
   const n = document.createElement(tag);
@@ -212,10 +214,18 @@ export function openBulkPaste(host, actions) {
 
 // Share images honor the device's weekend the same way the wall does — a W1
 // phone must not export a day sheet carrying W2-only sets.
-function weekendPref(fest) {
+function weekendPrefRaw(fest) {
   let pref = 'all';
   try { pref = localStorage.getItem(`fn_weekend_v1_${fest.id}`) || 'all'; } catch { /* memory-only */ }
-  return scheduledWeekendOf(fest, pref);
+  return pref;
+}
+function weekendPref(fest) {
+  return scheduledWeekendOf(fest, weekendPrefRaw(fest));
+}
+// The wall's day-first plan for this fest at the device's weekend, or null
+// when the fest is not day-first — the exporter offers what the tabs show.
+function dayFirstPlan(fest) {
+  return dayFirstModelFor(fest, { sort: 'day', query: '', weekend: weekendPrefRaw(fest) });
 }
 
 // Names on the grid (every grid day, selected weekend) — the set that decides
@@ -226,12 +236,16 @@ function gridNames(fest, wk) {
   return names;
 }
 
-// The days a share image can be built for, in the wall's own order: grid
-// days, then the sections the wall renders under the grid (afters, Folsom),
-// then everything else. Flipping Portola to scheduled used to drop Afters and
-// Folsom from this list while the wall kept showing them (Codex gate,
-// 2026-08-27) — the exporter and the wall now draw from the same source.
+// The days a share image can be built for, in the wall's own order. A
+// day-first fest (its sections say their nights): the same THU FRI SAT SUN
+// the tabs show, each image holding that day's whole content. Otherwise:
+// grid days, then the sections the wall renders under the grid (afters,
+// Folsom), then everything else. Flipping Portola to scheduled used to drop
+// Afters and Folsom from this list while the wall kept showing them (Codex
+// gate, 2026-08-27) — the exporter and the wall draw from the same source.
 export function dayImageChoices(fest) {
+  const plan = dayFirstPlan(fest);
+  if (plan) return plan.model.days.map((d) => d.key);
   if (fest.days && Object.keys(fest.days).length) {
     const wk = weekendPref(fest);
     return [...Object.keys(fest.days), ...extraSectionsOf(fest, gridNames(fest, wk), wk).keys()];
@@ -241,6 +255,32 @@ export function dayImageChoices(fest) {
 
 export function dayArtistsFor(day) {
   const fest = state.fest();
+  const plan = dayFirstPlan(fest);
+  if (plan) {
+    // A day-first day, in the wall's order: the grid (or a lineup day's
+    // billing), the billed-but-untimed, then each section's shows that
+    // night as `section · venue · time` — the tilde riding a guessed time.
+    const d = plan.model.days.find((x) => x.key === day);
+    if (!d) return [];
+    const wk = plan.wk;
+    const out = [];
+    if (d.grid) {
+      const onGrid = new Set();
+      for (const a of [...state.getDayArtists(day, wk)].sort((x, y) => x.startMin - y.startMin)) {
+        onGrid.add(a.name);
+        out.push({ name: a.name, time: `${a.stage} · ${a.startStr}` });
+      }
+      for (const a of d.billing || []) if (!onGrid.has(a.name) && !out.some((o) => o.name === a.name)) out.push({ name: a.name });
+    } else {
+      for (const a of d.billing || []) out.push({ name: a.name });
+    }
+    for (const sec of plan.model.sections) {
+      for (const a of sortForTiles(sec.byDay.get(day) || [])) {
+        out.push({ name: a.name, time: [sec.label, venueOf(a), a.time ? approxMark(a, a.time) : null].filter(Boolean).join(' · ') });
+      }
+    }
+    return out;
+  }
   if (fest.days && Object.keys(fest.days).length) {
     const wk = weekendPref(fest);
     if (fest.days[day]) {
@@ -265,7 +305,7 @@ async function buildDayCanvas(day, ctx) {
   const node = el('div', 'position: absolute; left: -10000px; top: 0; width: 1080px; background: #0C0A14; padding: 36px 40px 28px; box-sizing: border-box; font-family: var(--font-ui);');
   const head = el('div', 'display: flex; align-items: baseline; gap: 14px; margin-bottom: 20px;');
   head.appendChild(el('span', `font-family: var(--font-display); letter-spacing: .05em; font-size: 40px; color: rgb(${fest.accent || '192, 132, 252'});`, fest.name.toUpperCase()));
-  head.appendChild(el('span', 'color: #8E86A8; font-size: 16px; font-weight: 700;', (day || 'THE LINEUP').toUpperCase()));
+  head.appendChild(el('span', 'color: #8E86A8; font-size: 16px; font-weight: 700;', (day ? dayLabelParts(day).head : 'THE LINEUP').toUpperCase()));
   node.appendChild(head);
   const grid = el('div', 'display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;');
   // lowPower ctx: grain + animation lean on mix-blend / keyframes that

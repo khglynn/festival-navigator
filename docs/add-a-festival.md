@@ -126,3 +126,67 @@ is a reappearance (a lineup artist playing an afters show) — picks, auras and
 notes unify by exact name on purpose, and the validator only flags same-day or
 day-less duplicates. See `portola-2026.json` (the Afters/Folsom sections) for
 the worked example.
+
+### Event fields (added 2026-09-01)
+
+Alongside `stage`, an event entry may carry the same facts as data — and
+they are what makes a fest **day-first** (`js/v3/events.js`, 2026-09-01):
+once a section's entries say their night, the wall's tabs become the union
+of the grid days and those nights, each day holds its grid and that night's
+sections, and each section wears one layout all week — venue columns on a
+clock where any night has 5+ timed shows over repeating venues (≥ 1.5 per
+venue, ≥ 60% timed), time-sorted tiles otherwise. Files never declare a
+layout; the numbers decide. A section whose entries carry no night renders
+as it always has, after the days.
+
+| Field | What |
+|---|---|
+| `night` | `Mon`…`Sun` — the night it plays. Must equal the part of `stage` before ` · `. |
+| `venue` | The room. Must equal the part of `stage` after ` · `, and should have an entry in `venues{}` so the card gets a map door. |
+
+`stage` stays and stays authoritative: it is what the renderer reads today, so
+`night`/`venue` are a denormalization of it, and the validator makes a
+disagreement an ERROR. Adding them is optional per festival; adding one that
+contradicts `stage` is not allowed.
+
+**A venue-night is ONE ROOM, and its artists play IN SEQUENCE** (Kevin,
+2026-09-01). The wall draws every room as a vertical run — stacked in the time
+bands, each set its own tappable card, never side by side. So a room with two
+or more shows needs to say who is on when; if it does not, the validator warns
+(and names the shared start, because a time repeated on every act is a DOORS
+time somebody transcribed into the set-time field). The run is recorded as
+data, never guessed at render time (MODEL-V3 §5):
+
+| Field | What |
+|---|---|
+| `time` | The guessed start for this set. |
+| `approx` | `true` when that time is our guess, not the venue's. |
+| `doors` / `close` | The room's window, each a single clock time (`"10 PM"`, never a range). |
+| `closeApprox` | `true` when the CLOSE is our guess — `approx` scopes to `time` only, and the two are separate because a poster usually prints doors and not an end. |
+| `order` | `{ seq, of, source, confirmed }` — position in the run (1…`of`), an `https` link to where the order came from, and whether the venue has posted it or it is still our read. |
+
+The validator holds a run together: every set sharing a day + night + venue
+must agree on `of`, `doors` and `close`, claim a distinct `seq`, sit inside
+the window, and run in the same direction on the clock as in the numbering.
+Never merge the sets into one card — artist separation is law, because a
+combined card eats the crew's picks.
+
+**Guessing the times and the order**, when the page prints neither:
+
+- Times spread evenly from `doors` to `close` where the close is known, and go
+  an hour apart from doors where it is not — rounded to the half hour, so the
+  plan reads `11:30 PM` and never `11:20 PM`.
+- The order follows the billing: the billed headliner CLOSES and the rest run
+  in descending print, so a bill read top to bottom is the run read bottom to
+  top.
+- Mark every guessed set `approx: true` and every unposted order
+  `confirmed: false`. If no page prints an end, leave `close` out rather than
+  inventing one — the zoom then says `Doors 10 PM` instead of a window nobody
+  published.
+- A venue-night with NO time at all is not a run. Leave it timeless; the wall
+  tiles it under TIME TBA.
+
+Portola's ten runs are the worked example, and they are generated rather than
+typed: `scripts/migrate-portola-events.mjs` holds the `RUNS` table (one row per
+room: doors, close, the billed order, and what the file used to say) and the
+`runTimes()` rule that lays the sets across the window.

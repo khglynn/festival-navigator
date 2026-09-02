@@ -14,6 +14,7 @@ import { ordered, auraBackground, nameColor, subColor } from './aura.js';
 import { hslOf } from './palette.js';
 import { colorIndexOf } from './wall.js';
 import { record } from '../errlog.js';
+import { runFactsOf, findEventEntry } from './events.js';
 
 // "9:00 PM - 10:15 PM" -> "9:00 – 10:15 PM" (the shared meridiem said once).
 export function timeRange(t) {
@@ -62,12 +63,21 @@ export function factsFor(artistName, ctx, occ = null) {
   const spotify = aff && (aff.songs > 0 || aff.followed)
     ? { songs: aff.songs || 0, followed: !!aff.followed, hot: !!aff.followed && (aff.songs || 0) >= 5 }
     : null;
+  // A back-to-back run (MODEL-V3 §5): the entry this occurrence came from —
+  // looked up by day + stage + time, never by name alone, because in Portola
+  // a name can be a grid billing AND an event — says whether its time is a
+  // guess, the room's real window, and where it sits in the order.
+  const run = occ ? runFactsOf(findEventEntry(fest, artistName, occ)) : null;
   // The long form: when · day · where · which weekend. An EVENT's stage
-  // carries "Thu · Venue" — say when, then where, once.
+  // carries "Thu · Venue" — say when, then where, once. For a run member the
+  // clock in WHEN is the venue's window, not the guessed slot (LOCKED copy,
+  // Kevin 2026-09-01: "Sun · Runs 10 PM – 2 AM", then the order on its own
+  // line as a door to the poster); a guess with no window keeps the tilde.
   let when, where;
   if (stage && stage.includes(' · ')) {
     const bits = stage.split(' · ');
-    when = [bits[0], timeRange(time)].filter(Boolean).join(' · ');
+    const clock = run && run.window ? run.window : `${run && run.approx ? '~' : ''}${timeRange(time)}`;
+    when = [bits[0], clock].filter(Boolean).join(' · ');
     where = bits.slice(1).join(' · ');
   } else {
     when = [timeRange(time), day ? shortDay(fest, day) : null].filter(Boolean).join(' · ');
@@ -79,6 +89,8 @@ export function factsFor(artistName, ctx, occ = null) {
   const mapUrl = (where && fest.venues && fest.venues[where]) || null;
   return {
     name: artistName, day, stage, time, weekend, when, where, mapUrl,
+    approx: !!(run && run.approx),
+    order: run && run.orderText ? { text: run.orderText, url: run.orderUrl, confirmed: run.confirmed } : null,
     people, background, animated, nameColor: nameColor(people), subColor: subColor(people),
     noteCount: model.noteCount(state.crewDoc, ctx.fid, 'artist', artistName),
     spotify,
@@ -194,16 +206,51 @@ export function festPlaceLine(fest, className = 'fest-place') {
 // the map when the festival names the venue) · the who-row · the chips — in
 // ONE builder, because the sheet header and the zoomed card must never
 // drift apart again (the two-renderers disease, 2026-08-30).
+// The order line of a back-to-back run — "Guessing they’re 3rd of 4" — is a
+// DOOR to the poster or ticket page the order came from, the way a venue is
+// a door to its map (same discipline: the click stops here, never a pick).
+// Once the venue posts the order the word goes and the door stays.
+function orderDoor(order) {
+  const w = document.createElement(order.url ? 'a' : 'span');
+  w.className = 'f-order';
+  if (order.url) {
+    w.href = order.url;
+    w.target = '_blank';
+    w.rel = 'noopener';
+    w.setAttribute('aria-label', `${order.text} — open where the order came from`);
+    w.addEventListener('click', (e) => e.stopPropagation());
+  }
+  w.textContent = order.text;
+  return w;
+}
+
 function grownBlock(facts, { onOpenNotes = null } = {}) {
   const grown = document.createElement('div');
   grown.className = 'f-grown';
   if (facts.when) {
     const sub = document.createElement('div');
     sub.className = 'f-sub';
-    sub.textContent = facts.when;
+    if (facts.order) {
+      // Two lines in ONE .f-sub (the window, then the order): the bloom's
+      // cascade and the refresh bookkeeping below both key on a single
+      // WHEN element, so the pair travels as one piece.
+      sub.classList.add('f-stack');
+      const line = document.createElement('span');
+      line.className = 'f-when';
+      line.textContent = facts.when;
+      sub.append(line, orderDoor(facts.order));
+    } else {
+      sub.textContent = facts.when;
+    }
     grown.appendChild(sub);
   }
   if (facts.where) grown.appendChild(placeDoor(facts.where, facts.mapUrl, 'f-where'));
+  // The who-row only when there are people: a pill arriving after a tap
+  // slides in and its neighbours make room (the designed event). A reserved
+  // empty row was tried on 2026-09-01 to keep the venue door from sliding
+  // under a resting cursor after the first pick, and it left a ~34px hole on
+  // every UNPICKED grown card — the common view. Reverted; the still-hand
+  // answer belongs to the zoom's placement (PROGRESS, round-2 follow-up).
   if (facts.people.length) grown.appendChild(whoPills(facts));
   grown.appendChild(factChips(facts, { onOpenNotes }));
   return grown;

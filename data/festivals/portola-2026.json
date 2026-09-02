@@ -266,264 +266,633 @@
       "name": "Soulwax",
       "day": "Afters",
       "stage": "Thu · Regency Ballroom",
+      "night": "Thu",
+      "venue": "Regency Ballroom",
       "time": "8 PM"
     },
     {
       "name": "Black Rave Culture",
       "day": "Afters",
       "stage": "Thu · Club Six",
+      "night": "Thu",
+      "venue": "Club Six",
       "time": "10 PM"
     },
     {
       "name": "Despacio",
       "day": "Afters",
       "stage": "Fri · Pier 80 (loyalty invite)",
+      "night": "Fri",
+      "venue": "Pier 80 (loyalty invite)",
       "time": "5 PM - 11 PM"
     },
     {
       "name": "2manydjs",
       "day": "Afters",
       "stage": "Fri · 1015 Folsom",
+      "night": "Fri",
+      "venue": "1015 Folsom",
       "time": "10 PM - 2 AM"
     },
     {
       "name": "Channel Tres",
       "day": "Afters",
       "stage": "Fri · Regency Ballroom",
-      "time": "8 PM"
+      "night": "Fri",
+      "venue": "Regency Ballroom",
+      "time": "10 PM",
+      "approx": true,
+      "doors": "8 PM",
+      "order": {
+        "seq": 3,
+        "of": 3,
+        "source": "https://dothebay.com/events/2026/9/25/channel-tres-jyoty-gelli-haha-tickets",
+        "confirmed": false
+      }
     },
     {
       "name": "Jyoty",
       "day": "Afters",
       "stage": "Fri · Regency Ballroom",
-      "time": "8 PM"
+      "night": "Fri",
+      "venue": "Regency Ballroom",
+      "time": "9 PM",
+      "approx": true,
+      "doors": "8 PM",
+      "order": {
+        "seq": 2,
+        "of": 3,
+        "source": "https://dothebay.com/events/2026/9/25/channel-tres-jyoty-gelli-haha-tickets",
+        "confirmed": false
+      }
     },
     {
       "name": "Gelli Haha",
       "day": "Afters",
       "stage": "Fri · Regency Ballroom",
-      "time": "8 PM"
+      "night": "Fri",
+      "venue": "Regency Ballroom",
+      "time": "8 PM",
+      "approx": true,
+      "doors": "8 PM",
+      "order": {
+        "seq": 1,
+        "of": 3,
+        "source": "https://dothebay.com/events/2026/9/25/channel-tres-jyoty-gelli-haha-tickets",
+        "confirmed": false
+      }
     },
     {
       "name": "Six Sex",
       "day": "Afters",
       "stage": "Fri · Great American Music Hall",
+      "night": "Fri",
+      "venue": "Great American Music Hall",
       "time": "8 PM"
     },
     {
       "name": "Neil Frances",
       "day": "Afters",
       "stage": "Fri · 888 Garage",
+      "night": "Fri",
+      "venue": "888 Garage",
       "time": "10 PM"
     },
     {
       "name": "Sam Alfred",
       "day": "Afters",
       "stage": "Fri · Monarch",
-      "time": "10 PM"
+      "night": "Fri",
+      "venue": "Monarch",
+      "time": "11 PM",
+      "approx": true,
+      "doors": "10 PM",
+      "order": {
+        "seq": 2,
+        "of": 2,
+        "source": "https://dothebay.com/events/2026/9/25/sam-alfred-tickets",
+        "confirmed": false
+      }
     },
     {
       "name": "Skiis",
       "day": "Afters",
       "stage": "Fri · Monarch",
-      "time": "10 PM"
+      "night": "Fri",
+      "venue": "Monarch",
+      "time": "10 PM",
+      "approx": true,
+      "doors": "10 PM",
+      "order": {
+        "seq": 1,
+        "of": 2,
+        "source": "https://dothebay.com/events/2026/9/25/sam-alfred-tickets",
+        "confirmed": false
+      }
     },
     {
       "name": "Ranger Trucco",
       "day": "Afters",
       "stage": "Fri · The Great Northern",
-      "time": "10 PM - 2 AM"
+      "night": "Fri",
+      "venue": "The Great Northern",
+      "time": "12 AM",
+      "approx": true,
+      "doors": "10 PM",
+      "close": "2 AM",
+      "order": {
+        "seq": 2,
+        "of": 2,
+        "source": "https://dothebay.com/events/2026/9/25/ranger-trucco-tickets",
+        "confirmed": false
+      }
     },
     {
       "name": "Loods",
       "day": "Afters",
       "stage": "Fri · The Great Northern",
-      "time": "10 PM - 2 AM"
+      "night": "Fri",
+      "venue": "The Great Northern",
+      "time": "10 PM",
+      "approx": true,
+      "doors": "10 PM",
+      "close": "2 AM",
+      "order": {
+        "seq": 1,
+        "of": 2,
+        "source": "https://dothebay.com/events/2026/9/25/ranger-trucco-tickets",
+        "confirmed": false
+      }
     },
     {
       "name": "Horse Meat Disco",
       "day": "Afters & Folsom",
       "stage": "Fri · Public Works",
+      "night": "Fri",
+      "venue": "Public Works",
       "time": "9 PM - 3 AM"
     },
     {
       "name": "Fcukers",
       "day": "Afters",
-      "stage": "Sat · Public Works"
+      "stage": "Sat · Public Works",
+      "night": "Sat",
+      "venue": "Public Works",
+      "time": "11 PM",
+      "approx": true,
+      "doors": "10 PM",
+      "order": {
+        "seq": 2,
+        "of": 2,
+        "source": "https://dothebay.com/events/2026/9/26/fcukers-dj-set-chloe-caillet-presented-by-goldenvoice-tickets",
+        "confirmed": false
+      }
     },
     {
       "name": "Chloé Caillet",
       "day": "Afters",
-      "stage": "Sat · Public Works"
+      "stage": "Sat · Public Works",
+      "night": "Sat",
+      "venue": "Public Works",
+      "time": "10 PM",
+      "approx": true,
+      "doors": "10 PM",
+      "order": {
+        "seq": 1,
+        "of": 2,
+        "source": "https://dothebay.com/events/2026/9/26/fcukers-dj-set-chloe-caillet-presented-by-goldenvoice-tickets",
+        "confirmed": false
+      }
     },
     {
       "name": "Parcels",
       "day": "Afters",
       "stage": "Sat · Regency Ballroom",
-      "time": "10 PM"
+      "night": "Sat",
+      "venue": "Regency Ballroom",
+      "time": "11 PM",
+      "approx": true,
+      "doors": "10 PM",
+      "order": {
+        "seq": 2,
+        "of": 2,
+        "source": "https://dothebay.com/events/2026/9/26/parcels-tickets",
+        "confirmed": false
+      }
     },
     {
       "name": "Velvet Trip",
       "day": "Afters",
       "stage": "Sat · Regency Ballroom",
-      "time": "10 PM"
+      "night": "Sat",
+      "venue": "Regency Ballroom",
+      "time": "10 PM",
+      "approx": true,
+      "doors": "10 PM",
+      "order": {
+        "seq": 1,
+        "of": 2,
+        "source": "https://dothebay.com/events/2026/9/26/parcels-tickets",
+        "confirmed": false
+      }
     },
     {
       "name": "Groove Armada",
       "day": "Afters",
-      "stage": "Sat · The Great Northern"
+      "stage": "Sat · The Great Northern",
+      "night": "Sat",
+      "venue": "The Great Northern"
     },
     {
       "name": "Max Styler",
       "day": "Afters",
-      "stage": "Sat · Audio"
+      "stage": "Sat · Audio",
+      "night": "Sat",
+      "venue": "Audio",
+      "time": "11 PM",
+      "approx": true,
+      "doors": "10 PM",
+      "order": {
+        "seq": 2,
+        "of": 2,
+        "source": "https://dothebay.com/events/2026/9/26/max-styler-tickets",
+        "confirmed": false
+      }
     },
     {
       "name": "Airwolf Paradise",
       "day": "Afters",
-      "stage": "Sat · Audio"
+      "stage": "Sat · Audio",
+      "night": "Sat",
+      "venue": "Audio",
+      "time": "10 PM",
+      "approx": true,
+      "doors": "10 PM",
+      "order": {
+        "seq": 1,
+        "of": 2,
+        "source": "https://dothebay.com/events/2026/9/26/max-styler-tickets",
+        "confirmed": false
+      }
     },
     {
       "name": "Jigitz",
       "day": "Afters",
       "stage": "Sat · Monarch",
-      "time": "10 PM - 3 AM"
+      "night": "Sat",
+      "venue": "Monarch",
+      "time": "12:30 AM",
+      "approx": true,
+      "doors": "10 PM",
+      "close": "3 AM",
+      "order": {
+        "seq": 2,
+        "of": 2,
+        "source": "https://dothebay.com/events/2026/9/26/jigitz-tickets",
+        "confirmed": false
+      }
     },
     {
       "name": "Clearcast",
       "day": "Afters",
       "stage": "Sat · Monarch",
-      "time": "10 PM - 3 AM"
+      "night": "Sat",
+      "venue": "Monarch",
+      "time": "10 PM",
+      "approx": true,
+      "doors": "10 PM",
+      "close": "3 AM",
+      "order": {
+        "seq": 1,
+        "of": 2,
+        "source": "https://dothebay.com/events/2026/9/26/jigitz-tickets",
+        "confirmed": false
+      }
     },
     {
       "name": "Overmono",
       "day": "Afters",
       "stage": "Sun · Public Works",
-      "time": "10 PM - 2 AM"
+      "night": "Sun",
+      "venue": "Public Works",
+      "time": "1 AM",
+      "approx": true,
+      "doors": "10 PM",
+      "close": "2 AM",
+      "order": {
+        "seq": 4,
+        "of": 4,
+        "source": "https://dothebay.com/events/2026/9/27/overmono-dj-set-ben-ufo-tickets",
+        "confirmed": false
+      }
     },
     {
       "name": "Ben UFO",
       "day": "Afters",
       "stage": "Sun · Public Works",
-      "time": "10 PM - 2 AM"
+      "night": "Sun",
+      "venue": "Public Works",
+      "time": "12 AM",
+      "approx": true,
+      "doors": "10 PM",
+      "close": "2 AM",
+      "order": {
+        "seq": 3,
+        "of": 4,
+        "source": "https://dothebay.com/events/2026/9/27/overmono-dj-set-ben-ufo-tickets",
+        "confirmed": false
+      }
     },
     {
       "name": "erika b2b sfcowboy",
       "day": "Afters",
       "stage": "Sun · Public Works",
-      "time": "10 PM - 2 AM"
+      "night": "Sun",
+      "venue": "Public Works",
+      "time": "10 PM",
+      "approx": true,
+      "doors": "10 PM",
+      "close": "2 AM",
+      "order": {
+        "seq": 1,
+        "of": 4,
+        "source": "https://dothebay.com/events/2026/9/27/overmono-dj-set-ben-ufo-tickets",
+        "confirmed": false
+      }
+    },
+    {
+      "name": "Kaytree",
+      "day": "Afters",
+      "stage": "Sun · Public Works",
+      "night": "Sun",
+      "venue": "Public Works",
+      "time": "11 PM",
+      "approx": true,
+      "doors": "10 PM",
+      "close": "2 AM",
+      "order": {
+        "seq": 2,
+        "of": 4,
+        "source": "https://dothebay.com/events/2026/9/27/overmono-dj-set-ben-ufo-tickets",
+        "confirmed": false
+      }
     },
     {
       "name": "horsegiirL",
       "day": "Afters",
       "stage": "Sun · The Midway",
-      "time": "10 PM"
+      "night": "Sun",
+      "venue": "The Midway",
+      "time": "1 AM",
+      "approx": true,
+      "doors": "10 PM",
+      "close": "2 AM",
+      "closeApprox": true,
+      "order": {
+        "seq": 4,
+        "of": 4,
+        "source": "https://www.axs.com/events/1575408/horsegiirl-tickets",
+        "confirmed": false
+      }
     },
     {
       "name": "VTSS",
       "day": "Afters",
       "stage": "Sun · The Midway",
-      "time": "10 PM"
+      "night": "Sun",
+      "venue": "The Midway",
+      "time": "11 PM",
+      "approx": true,
+      "doors": "10 PM",
+      "close": "2 AM",
+      "closeApprox": true,
+      "order": {
+        "seq": 2,
+        "of": 4,
+        "source": "https://www.axs.com/events/1575408/horsegiirl-tickets",
+        "confirmed": false
+      }
     },
     {
       "name": "Two Shell",
       "day": "Afters",
       "stage": "Sun · The Midway",
-      "time": "10 PM"
+      "night": "Sun",
+      "venue": "The Midway",
+      "time": "12 AM",
+      "approx": true,
+      "doors": "10 PM",
+      "close": "2 AM",
+      "closeApprox": true,
+      "order": {
+        "seq": 3,
+        "of": 4,
+        "source": "https://www.axs.com/events/1575408/horsegiirl-tickets",
+        "confirmed": false
+      }
     },
     {
       "name": "MGNA Crrrta",
       "day": "Afters",
       "stage": "Sun · The Midway",
-      "time": "10 PM"
+      "night": "Sun",
+      "venue": "The Midway",
+      "time": "10 PM",
+      "approx": true,
+      "doors": "10 PM",
+      "close": "2 AM",
+      "closeApprox": true,
+      "order": {
+        "seq": 1,
+        "of": 4,
+        "source": "https://www.axs.com/events/1575408/horsegiirl-tickets",
+        "confirmed": false
+      }
     },
     {
       "name": "SG Lewis",
       "day": "Afters",
       "stage": "Sun · The Great Northern",
-      "time": "10 PM"
+      "night": "Sun",
+      "venue": "The Great Northern",
+      "time": "11 PM",
+      "approx": true,
+      "doors": "10 PM",
+      "order": {
+        "seq": 2,
+        "of": 2,
+        "source": "https://dothebay.com/events/2026/9/27/sg-lewis-dj-set-tickets",
+        "confirmed": false
+      }
     },
     {
       "name": "Puffie",
       "day": "Afters",
       "stage": "Sun · The Great Northern",
-      "time": "10 PM"
+      "night": "Sun",
+      "venue": "The Great Northern",
+      "time": "10 PM",
+      "approx": true,
+      "doors": "10 PM",
+      "order": {
+        "seq": 1,
+        "of": 2,
+        "source": "https://dothebay.com/events/2026/9/27/sg-lewis-dj-set-tickets",
+        "confirmed": false
+      }
     },
     {
       "name": "Fatboy Slim",
       "day": "Afters",
       "stage": "Sun · 888 Garage",
+      "night": "Sun",
+      "venue": "888 Garage",
       "time": "10 PM"
     },
     {
       "name": "Silva Bumpa",
       "day": "Afters",
       "stage": "Sun · Monarch",
-      "time": "10 PM - 3 AM"
+      "night": "Sun",
+      "venue": "Monarch",
+      "time": "1 AM",
+      "approx": true,
+      "doors": "10 PM",
+      "close": "3 AM",
+      "order": {
+        "seq": 3,
+        "of": 3,
+        "source": "https://dothebay.com/events/2026/9/27/silva-bumpa-tickets",
+        "confirmed": false
+      }
     },
     {
       "name": "Dean Turnley",
       "day": "Afters",
       "stage": "Sun · Monarch",
-      "time": "10 PM - 3 AM"
+      "night": "Sun",
+      "venue": "Monarch",
+      "time": "11:30 PM",
+      "approx": true,
+      "doors": "10 PM",
+      "close": "3 AM",
+      "order": {
+        "seq": 2,
+        "of": 3,
+        "source": "https://dothebay.com/events/2026/9/27/silva-bumpa-tickets",
+        "confirmed": false
+      }
+    },
+    {
+      "name": "Buck Wilson",
+      "day": "Afters",
+      "stage": "Sun · Monarch",
+      "night": "Sun",
+      "venue": "Monarch",
+      "time": "10 PM",
+      "approx": true,
+      "doors": "10 PM",
+      "close": "3 AM",
+      "order": {
+        "seq": 1,
+        "of": 3,
+        "source": "https://dothebay.com/events/2026/9/27/silva-bumpa-tickets",
+        "confirmed": false
+      }
     },
     {
       "name": "Azzecca",
       "day": "Afters",
-      "stage": "Sun · Audio"
+      "stage": "Sun · Audio",
+      "night": "Sun",
+      "venue": "Audio"
     },
     {
       "name": "JT",
       "day": "Afters",
       "stage": "Sun · Rickshaw Stop",
-      "time": "10 PM"
+      "night": "Sun",
+      "venue": "Rickshaw Stop",
+      "time": "11 PM",
+      "approx": true,
+      "doors": "10 PM",
+      "order": {
+        "seq": 2,
+        "of": 2,
+        "source": "https://dothebay.com/events/2026/9/27/jt-tickets",
+        "confirmed": false
+      }
     },
     {
       "name": "Naisha",
       "day": "Afters",
       "stage": "Sun · Rickshaw Stop",
-      "time": "10 PM"
+      "night": "Sun",
+      "venue": "Rickshaw Stop",
+      "time": "10 PM",
+      "approx": true,
+      "doors": "10 PM",
+      "order": {
+        "seq": 1,
+        "of": 2,
+        "source": "https://dothebay.com/events/2026/9/27/jt-tickets",
+        "confirmed": false
+      }
     },
     {
       "name": "BRUT SF",
       "day": "Folsom",
       "stage": "Fri · DNA Lounge",
+      "night": "Fri",
+      "venue": "DNA Lounge",
       "time": "10 PM - 4 AM"
     },
     {
       "name": "Magnitude",
       "day": "Folsom",
       "stage": "Sat · SVN West",
+      "night": "Sat",
+      "venue": "SVN West",
       "time": "9 PM - 5 AM"
     },
     {
       "name": "PERVERT XXL",
       "day": "Folsom",
       "stage": "Sat · The Midway",
+      "night": "Sat",
+      "venue": "The Midway",
       "time": "10 PM - 6 AM"
     },
     {
       "name": "Folsom Street Fair",
       "day": "Folsom",
       "stage": "Sun · Folsom St, 8th-13th",
+      "night": "Sun",
+      "venue": "Folsom St, 8th-13th",
       "time": "11 AM - 6 PM"
     },
     {
       "name": "DEVIANTS",
       "day": "Folsom",
       "stage": "Sun · SVN West",
+      "night": "Sun",
+      "venue": "SVN West",
       "time": "7 PM - 2 AM"
     },
     {
       "name": "Real Bad 37",
       "day": "Folsom",
       "stage": "Sun · 1015 Folsom",
+      "night": "Sun",
+      "venue": "1015 Folsom",
       "time": "8 PM - 5 AM"
     },
     {
       "name": "Disco Daddy",
       "day": "Folsom",
       "stage": "Sun · SF Eagle",
+      "night": "Sun",
+      "venue": "SF Eagle",
       "time": "7 PM - 2 AM"
     }
   ],
@@ -549,9 +918,10 @@
       "https://aegwebprod.blob.core.windows.net/content/portola/2026/pier-stage-26.jpg",
       "https://aegwebprod.blob.core.windows.net/content/portola/2026/crane-stage-26.jpg",
       "https://aegwebprod.blob.core.windows.net/content/portola/2026/warehouse-26.jpg",
-      "https://aegwebprod.blob.core.windows.net/content/portola/2026/ship-tent-26.jpg"
+      "https://aegwebprod.blob.core.windows.net/content/portola/2026/ship-tent-26.jpg",
+      "https://www.axs.com/events/1575408/horsegiirl-tickets"
     ],
-    "note": "SET TIMES (2026-08-27): the official Saturday/Sunday posters went up on portolamusicfestival.com/set-times (and Portola's Instagram the same afternoon). Transcribed from the 1080px official JPGs by three independent readers (two model readers + a third pass) and reconciled box-by-box; stage membership cross-checked against the four official per-stage lineup images. Doors 1 PM both days, 21+. Five columns as printed: Pier Stage, Crane Stage, Warehouse, Ship Tent, Despacio (Despacio is one continuous block: Sat 2:45-9:45 PM, Sun 3:30-10:30 PM). Kaytree (Ship Tent, Sun 1:40-2:55) was on the poster but not the earlier lineup graphic and was added to artists[] here. Poster billing that is NOT part of the pick key: Dog Blood is billed \"(Skrillex + Boys Noize)\", DJ Shadow \"celebrates 30 years of Endtroducing\", Melanie C is a DJ set, SG Lewis is live. Artist names are byte-identical to the lineup phase on purpose - picks are keyed by exact name (tests/live-pick-keys.test.mjs freezes the names the crew had already picked). Portola Week (official Goldenvoice afters program, announced 2026-08-18: 21 shows Thu Sept 24 - Sun Sept 27; presale Aug 20, general Aug 21) added as an \"Afters\" section, and Folsom Street Fair weekend as a \"Folsom\" section, 2026-08-23. Mechanism: an afters/Folsom appearance is its own entry; when the name matches a lineup artist (Overmono, Fatboy Slim, ...) the pick/aura/notes unify by exact name on purpose - one artist, one pick, cards in both sections. Night + venue ride in `stage`, hours in `time`; cards render them as a sub-label. Horse Meat Disco (the crew ask - Bearracuda Folsom Street party, confirmed Fri Sept 25, Public Works, 9 PM-3 AM, 21+, tickets sickening.events; NOTE a stale 2024 Tixr link circulates - IDs are sequential, 114080 is the 2024 edition) is day-tagged \"Afters & Folsom\" so it renders under both. Curation: title-billed artists and lineup artists get cards; supporting-roster DJs noted here instead: Rory Phillips (w/ 2manydjs), Boygirl + Femme Jatale b2b Erika (w/ Six Sex), Kaytree + a program audio loft (Public Works Sun), Kavari (The Midway Sun), Buck Wilson (Monarch Sun), Mateo Segade (HMD upstairs). Sourcing: egress-proxied research - facts come from ticketing-page titles/search listings (AXS/Eventbrite/Tixr/venue calendars) cross-checked in aggregate; HMD, fair date/hours, Magnitude, DEVIANTS, Real Bad 37, and Groove Armada (Sat, The Great Northern) were re-verified individually 2026-08-23. Times not confirmed anywhere yet: Fcukers/Chloé Caillet (Public Works Sat), Groove Armada, Max Styler/Airwolf Paradise + Azzecca (Audio) - cards carry venue only until they post (venue norm ~10 PM). DESPACIO Pier 80 Friday is limited to every-year passholders. No unofficial/renegade afters existed as of 2026-08-23 - they historically appear 2-4 weeks out; re-scan mid-September. Folsom fair stage/DJ talent also unannounced yet (folsomstreet.org posts closer in). Weekend-conflict map for planning: Fri is conflict-free (HMD night); Sat daytime Folsom events run opposite Portola day 1; Magnitude/PERVERT XXL start as day 1 ends; Sun daytime the fair runs opposite Portola day 2; DEVIANTS/Real Bad overlap the Sunday afters."
+    "note": "SET TIMES (2026-08-27): the official Saturday/Sunday posters went up on portolamusicfestival.com/set-times (and Portola's Instagram the same afternoon). Transcribed from the 1080px official JPGs by three independent readers (two model readers + a third pass) and reconciled box-by-box; stage membership cross-checked against the four official per-stage lineup images. Doors 1 PM both days, 21+. Five columns as printed: Pier Stage, Crane Stage, Warehouse, Ship Tent, Despacio (Despacio is one continuous block: Sat 2:45-9:45 PM, Sun 3:30-10:30 PM). Kaytree (Ship Tent, Sun 1:40-2:55) was on the poster but not the earlier lineup graphic and was added to artists[] here. Poster billing that is NOT part of the pick key: Dog Blood is billed \"(Skrillex + Boys Noize)\", DJ Shadow \"celebrates 30 years of Endtroducing\", Melanie C is a DJ set, SG Lewis is live. Artist names are byte-identical to the lineup phase on purpose - picks are keyed by exact name (tests/live-pick-keys.test.mjs freezes the names the crew had already picked). Portola Week (official Goldenvoice afters program, announced 2026-08-18: 21 shows Thu Sept 24 - Sun Sept 27; presale Aug 20, general Aug 21) added as an \"Afters\" section, and Folsom Street Fair weekend as a \"Folsom\" section, 2026-08-23. Mechanism: an afters/Folsom appearance is its own entry; when the name matches a lineup artist (Overmono, Fatboy Slim, ...) the pick/aura/notes unify by exact name on purpose - one artist, one pick, cards in both sections. Night + venue ride in `stage`, hours in `time`; cards render them as a sub-label. Horse Meat Disco (the crew ask - Bearracuda Folsom Street party, confirmed Fri Sept 25, Public Works, 9 PM-3 AM, 21+, tickets sickening.events; NOTE a stale 2024 Tixr link circulates - IDs are sequential, 114080 is the 2024 edition) is day-tagged \"Afters & Folsom\" so it renders under both. Curation: title-billed artists and lineup artists get cards; supporting-roster DJs noted here instead: Rory Phillips (w/ 2manydjs), Boygirl + Femme Jatale b2b Erika (w/ Six Sex), Kaytree + a program audio loft (Public Works Sun), Kavari (The Midway Sun), Buck Wilson (Monarch Sun), Mateo Segade (HMD upstairs). Sourcing: egress-proxied research - facts come from ticketing-page titles/search listings (AXS/Eventbrite/Tixr/venue calendars) cross-checked in aggregate; HMD, fair date/hours, Magnitude, DEVIANTS, Real Bad 37, and Groove Armada (Sat, The Great Northern) were re-verified individually 2026-08-23. Times not confirmed anywhere yet: Fcukers/Chloé Caillet (Public Works Sat), Groove Armada, Max Styler/Airwolf Paradise + Azzecca (Audio) - cards carry venue only until they post (venue norm ~10 PM). DESPACIO Pier 80 Friday is limited to every-year passholders. No unofficial/renegade afters existed as of 2026-08-23 - they historically appear 2-4 weeks out; re-scan mid-September. Folsom fair stage/DJ talent also unannounced yet (folsomstreet.org posts closer in). Weekend-conflict map for planning: Fri is conflict-free (HMD night); Sat daytime Folsom events run opposite Portola day 1; Magnitude/PERVERT XXL start as day 1 ends; Sun daytime the fair runs opposite Portola day 2; DEVIANTS/Real Bad overlap the Sunday afters. BACK-TO-BACK RUNS (2026-09-01, MODEL-V3 §5): a venue-night is ONE ROOM and its artists play IN SEQUENCE. Every multi-artist venue-night in this file had all of its artists stamped with the SAME time - that is the DOORS time off the show page, not a set time - and two rooms had no time at all. So each of those twelve rooms now carries `doors` (and `close` where a page prints one), and every set in it carries a GUESSED start (`approx: true`) plus `order: {seq, of, source, confirmed:false}` recording the running order and the show page it came from. SOURCES (read 2026-09-01): DoTheBay carries Goldenvoice's official Portola Week listing, one server-rendered page per show with the billing and the doors time, and each room's `order.source` is its own page there; portolamusicfestival.com/portola-week renders its list client-side (static HTML is just an image) so it is the programme of record, not a citable door; The Midway keeps AXS event 1575408. SET TIMES are laid across the window: evenly from doors to close where the close is known, an hour apart from doors where it is not, rounded to the half hour. RUNNING ORDER follows the billing - the billed headliner closes and the rest run in descending print, so \"X with A, B\" puts B first and X last, and \"X + Y\" is a co-bill where X closes. TWO NAMES WERE ON THE BILL AND MISSING FROM THIS SECTION and were added: Buck Wilson (Sun Monarch, opens - he was only mentioned in this note's supporting-roster list before) and Kaytree (Sun Public Works, second - she already had a Sunday grid billing, and picks unify by exact name across both, the same shape VTSS and Overmono already had). The lowercase spelling \"erika b2b sfcowboy\" is KEPT against DoTheBay's \"Erika b2b SFCowboy\": it is a pick key. CLOSES: Fri The Great Northern's 2 AM is printed on its show page; the 3 AM and 2 AM on Sat Monarch, Sun Monarch and Sun Public Works come from our own 2026-08-23 research pass, which DoTheBay does not repeat; The Midway's 2 AM is OURS (`closeApprox: true`); the remaining rooms print no end at all and carry no `close`, so the zoom says \"Doors 10 PM\" rather than inventing a window. `order.confirmed` is false everywhere - a bill is not a set-time sheet. Every other event entry gained only `night` + `venue`, parsed out of `stage` (which stays, and stays authoritative - the validator errors if the two disagree)."
   },
   "dayMeta": {
     "Saturday": {

@@ -112,3 +112,55 @@ export function columnsTemplate(stages, hasEE, solo) {
 // who they pick as; a hold + arm + confirm dance on the wall, and a hover door
 // on desktop, was machinery for a rare act). The gesture code that lived here
 // (HOLD_MS, ARM_MS, chipGesture, armFor, cancelHold) is gone with it.
+
+// ---- the bucket filter (MODEL-V3 §3, 2026-09-01) ---------------------------------
+// One chip per room the fest has — the festival itself (':fest'), then each
+// events section (keyed by its own day label: "Afters", "Folsom"). Toggling
+// a bucket off hides that room on EVERY day. Unlike the two filters above
+// this one PERSISTS, device-local like the weekend view (`fn_weekend_v1_`)
+// — a filter you would set once ("I'm not doing Folsom") and expect to hold
+// — and it is never written to the crew doc (a view is viewer-side; law).
+// Memory is the truth for the life of the page; localStorage is the copy
+// that survives a reload when the browser allows one.
+import { getLS, saveLS, removeLS } from '../util.js';
+
+const LS_BUCKETS = (fid) => `fn_buckets_v1_${fid}`;
+const bucketMemory = new Map();
+// Fests whose last write did not land (storage full, a blocked store): the
+// stored value is OLDER than memory there, so memory wins until a write
+// lands again — or a reload would quietly resurrect the previous setting.
+const memoryWins = new Set();
+const cleanKeys = (v) => (Array.isArray(v) ? v.filter((k) => typeof k === 'string' && k) : []);
+
+export function loadHiddenBuckets(fid) {
+  if (memoryWins.has(fid) && bucketMemory.has(fid)) return bucketMemory.get(fid);
+  const raw = getLS(LS_BUCKETS(fid));
+  if (raw != null) {
+    let keys = [];
+    try { keys = cleanKeys(JSON.parse(raw)); } catch { keys = []; }
+    bucketMemory.set(fid, keys);
+    return keys;
+  }
+  return bucketMemory.get(fid) || [];
+}
+export function saveHiddenBuckets(fid, keys) {
+  const clean = cleanKeys(keys);
+  bucketMemory.set(fid, clean);
+  let landed;
+  if (clean.length) landed = saveLS(LS_BUCKETS(fid), JSON.stringify(clean)) !== false;
+  else { removeLS(LS_BUCKETS(fid)); landed = getLS(LS_BUCKETS(fid)) == null; }
+  if (landed) memoryWins.delete(fid); else memoryWins.add(fid);
+}
+export function toggleBucket(keys, key) {
+  const list = cleanKeys(keys);
+  return list.includes(key) ? list.filter((k) => k !== key) : [...list, key];
+}
+// One tap, applied at once: the setting lands in memory and storage BEFORE
+// anything animates, so a second tap inside the first one's fade reads the
+// first (two chips tapped in 130 ms used to lose the first — review round,
+// 2026-09-01). Returns what changed so the caller can move the room.
+export function applyBucketToggle(fid, current, key) {
+  const next = toggleBucket(current, key);
+  saveHiddenBuckets(fid, next);
+  return { next, hiding: !cleanKeys(current).includes(key) };
+}

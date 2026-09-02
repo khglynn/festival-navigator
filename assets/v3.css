@@ -276,10 +276,15 @@
                   touch-action: none; cursor: grab; padding: 6px 30px; background-clip: content-box; }
 .sheet .sheet-title { font-family: var(--font-display); letter-spacing: .04em;
                       font-size: 19px; color: var(--text-header); }
-.sheet .sheet-close { width: 30px; height: 30px; flex: none; border-radius: var(--r-pill);
-                      background: var(--card); border: 1px solid var(--border-card);
-                      color: var(--text-secondary); font-size: 12px; cursor: pointer;
-                      display: inline-flex; align-items: center; justify-content: center; }
+/* The close ✕ is a component, not a sheet detail — scoping its base look to
+ * .sheet meant it could not be reused anywhere else (the gallery's back-pocket
+ * panel wanted exactly this button and got a bare browser one). Unscoped now;
+ * .sheet-card below still overrides its placement and colour. Every existing
+ * .sheet-close sits inside a .sheet, so nothing in the app renders differently. */
+.sheet-close { width: 30px; height: 30px; flex: none; border-radius: var(--r-pill);
+               background: var(--card); border: 1px solid var(--border-card);
+               color: var(--text-secondary); font-size: 12px; cursor: pointer;
+               display: inline-flex; align-items: center; justify-content: center; }
 .note-action { background: none; border: none; padding: 0; cursor: pointer;
                color: var(--text-tertiary); font-size: 10px; font-weight: 700;
                text-decoration: underline; text-underline-offset: 2px; }
@@ -361,7 +366,7 @@
   .list-row { min-height: 44px; }
 
   /* --- the opt-outs: small controls that take borrowed space instead ------ */
-  .person-chip, .notes-chip, .chip-notes, .note-action, .f-chip,
+  .person-chip, .notes-chip, .chip-notes, .note-action, .f-chip, .bucket-chip,
   .dock .day-tab, .day-rail .day-tab,
   .back-btn, .gear-btn, .fest-link, .sheet-close,
   button.avatar,
@@ -370,7 +375,7 @@
   .card button {
     min-height: 0;
   }
-  .person-chip, .notes-chip, .chip-notes, .note-action, .f-chip,
+  .person-chip, .notes-chip, .chip-notes, .note-action, .f-chip, .bucket-chip,
   .dock .day-tab, .day-rail .day-tab,
   .back-btn, .gear-btn, .fest-link, .sheet-close,
   button.avatar {
@@ -380,7 +385,7 @@
    * unusable (17-28px); horizontal stays at -2px so one chip cannot swallow the
    * tap meant for its neighbour — in a crowd, that is a pick recorded under the
    * wrong person's name. */
-  .person-chip::after, .notes-chip::after, .note-action::after, .f-chip::after,
+  .person-chip::after, .notes-chip::after, .note-action::after, .f-chip::after, .bucket-chip::after,
   .dock .day-tab::after, .day-rail .day-tab::after {
     content: ''; position: absolute; inset: -14px -2px;
   }
@@ -830,3 +835,42 @@ button.f-chip.notes { cursor: pointer; }
   .stage-head { height: 44px; line-height: 44px; }
   .stage-head.rail .label { height: 44px; line-height: 34px; }
 }
+
+/* ---- events: day-first, the layout rule, buckets, runs (2026-09-01) ---- */
+/* MODEL-V3 (claude-plans/2026-08-31-events-canvas/MODEL-V3.md). A day is the
+ * unit; inside it, rooms — the festival's own grid, then each events section
+ * that night — under a sub-rule that is the day-rule's quieter sibling. */
+.room { display: flex; flex-direction: column; gap: 9px; }
+.sec-head { display: flex; align-items: baseline; gap: 9px; }
+.sec-label { font-family: var(--font-display); letter-spacing: .07em; font-size: 12.5px; color: var(--text-header); }
+.sec-sub { color: var(--text-tertiary); font-size: 9.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.sec-line { flex: 1; height: 1px; background: var(--hairline); }
+/* One sticky strip PER timetable: position:sticky is bounded by its parent,
+ * so a strip inside this block pins while the block is on screen and leaves
+ * with it — a grid day's stage heads never sit over an afters timetable. */
+.tt-block { display: flex; flex-direction: column; }
+.stage-head.venue { cursor: default; } /* a venue head is a stage header, never a solo button */
+/* TIME TBA: the quiet row the timeless land in. Section micro-label vocabulary. */
+.tba { padding-top: 10px; border-top: 1px dashed var(--hairline); }
+.tba-label { color: var(--text-tertiary); font-size: 10px; font-weight: 800; letter-spacing: var(--track-label); margin-bottom: 8px; }
+/* ONE section-level whisper for guessed times; the foot-whisper for hidden buckets. */
+.sec-whisper, .wall-whisper { color: var(--text-tertiary); font-size: 11px; font-weight: 600; line-height: 1.4; }
+
+/* The bucket filter — one chip per room, the people-chip vocabulary. On = the
+ * app's brand tint (never --fest: the accent has exactly four homes); off = a
+ * dashed outline, like the + Add chip. */
+.bucket-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.bucket-chip { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 12px;
+               border-radius: var(--r-pill); font-family: inherit; font-size: 10.5px; font-weight: 800;
+               letter-spacing: .05em; cursor: pointer; color: #fff;
+               background: rgba(var(--brand), .14); border: 1px solid rgba(var(--brand), .45);
+               -webkit-touch-callout: none; user-select: none; }
+.bucket-chip .bc-check { font-size: 9px; color: rgb(var(--brand)); }
+.bucket-chip .bc-check:empty { display: none; }
+.bucket-chip[aria-pressed="false"] { background: transparent; border: 1.5px dashed var(--border-emphasis); color: var(--text-tertiary); }
+
+/* The zoom's WHEN for a back-to-back run (MODEL-V3 §5): two lines in one
+ * piece — the venue's window, then the order as a door to the poster. */
+.f-sub.f-stack { flex-direction: column; gap: 3px; }
+a.f-order { color: #fff; text-decoration: none; border-bottom: 1px solid rgba(255, 255, 255, .35); padding-bottom: 1px; }
+a.f-order:hover { border-bottom-color: rgba(255, 255, 255, .75); }

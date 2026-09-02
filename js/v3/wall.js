@@ -13,9 +13,10 @@ import { activityMinutes, dayLabelParts } from '../time.js';
 import { whoCorner, aboutCorner } from './aura.js';
 import { BOARD } from './palette.js';
 import { dayWhisper } from './notes.js'; // runtime-only cycle with this module (colorIndexOf) — safe
-import { factsFor } from './card-facts.js'; // same runtime-only cycle: the card's ONE model
+import { factsFor, timeRange } from './card-facts.js'; // same runtime-only cycle: the card's ONE model
 import { passesPeople, columnsTemplate, railLabels } from './filters.js';
 import { nowOnDay, nowOffsetPx, clockLabel, festivalClock } from './now.js';
+import { eventModelOf, timetableOf, sortForTiles, bucketsOf, occOf, hourLabelOf, approxMark, parseEventTime, FEST_BUCKET } from './events.js';
 
 // ---- person -> board color ---------------------------------------------------
 // v4 people carry colorIndex. Legacy people carry a "R, G, B" string from the
@@ -254,6 +255,37 @@ export function refreshCard(el, artistName, ctx, { onSwap = null } = {}) {
   return fresh;
 }
 
+// The card a zoom should be restored onto after a repaint: the one carrying
+// this artist AND this occurrence. Both facts are needed — in Portola one
+// name can be two cards (a grid billing and an event), and the wrong one is
+// the wrong story.
+//
+// `room` breaks the one remaining tie. A combined-day show (Portola's Horse
+// Meat Disco, day "Afters & Folsom") is ONE occurrence rendered in TWO rooms
+// — that is deliberate, one show and one pick key (review round finding 19) —
+// so its two cards carry byte-identical `data-occ` and the plain lookup
+// returns whichever comes first in document order. A zoom standing on the
+// Folsom tile then came back on the Afters cell: the overlay jumped rooms,
+// which is one way "hover shows some other random looking card" happens.
+// Passing the room the zoom was in keeps it where the person left it, and
+// costs nothing when there is only one match.
+export function cardFor(root, artist, occ, { room = null } = {}) {
+  const want = occ ? JSON.stringify(occ) : '';
+  const all = [...root.querySelectorAll('.card[data-artist]')]
+    .filter((el) => el.dataset.artist === artist && (el.dataset.occ || '') === want);
+  if (all.length > 1 && room) {
+    const here = all.find((el) => roomOf(el) === room);
+    if (here) return here;
+  }
+  return all[0] || null;
+}
+// Which room a card is in, for the tie-break above: the bucket of the room
+// block it sits in, or the wall itself.
+export function roomOf(el) {
+  const room = el && el.closest ? el.closest('.room') : null;
+  return (room && room.dataset.bucket) || null;
+}
+
 // ---- day grouping (lineup mode) -----------------------------------------------
 // Split a combined day string ("Saturday & Sunday") into real days. Returns
 // null unless EVERY part matches a known day name — an unrecognized part means
@@ -372,25 +404,43 @@ function renderLineupGroup(root, day, list, ctx, fest, { header, sub } = {}) {
     const w = dayWhisper('day', day, ctx, () => ctx.onOpenDayNotes(day));
     if (w) root.appendChild(w);
   }
+  renderCardGrid(root, list, ctx, { day, subLabelOf: lineupSubLabel });
+  // A guessed time wears its tilde on every surface it prints on, and the
+  // ONE whisper that explains it follows it here too (a search result, a
+  // flat sort) — never a tilde with nothing to say what it means.
+  if (list.some((a) => a.approx === true)) root.appendChild(approxWhisper());
+}
+
+// A lineup entry can be an EVENT (afters, Folsom) — venue rides in `stage`,
+// hours in `time`. In a LIST (a lineup group, a flat sort, search) day and
+// time share the first line and the venue takes its own (one crammed line
+// hid both — Kevin, 2026-08-29); the .time element renders pre-line, so the
+// newline is the break. Inside a day-first day the tile says only the time
+// (the day is the day, the venue lives in the zoom) — see eventTileSubLabel.
+function lineupSubLabel(a) {
+  const time = a.time ? approxMark(a, a.time) : ''; // the tilde travels with `approx`
+  let subLabel = [a.stage, time].filter(Boolean).join(' · ');
+  if (a.stage && time) {
+    const bits = a.stage.split(' · ');
+    subLabel = bits.length > 1
+      ? `${bits[0]} · ${time}\n${bits.slice(1).join(' · ')}`
+      : `${time}\n${a.stage}`;
+  }
+  return subLabel || undefined;
+}
+
+// The card grid every list section shares: the people filter HIDES here (no
+// clock to keep in shape) and says so when that leaves nothing, so an empty
+// section reads as "no picks here" rather than "the data is gone".
+function renderCardGrid(root, list, ctx, { day = null, subLabelOf = lineupSubLabel, className = 'wall-grid' } = {}) {
   const filtering = ctx.filterPeople && ctx.filterPeople.length;
   const shown = filtering ? list.filter((a) => passesPeople(ctx.picks, a.name, ctx.filterPeople)) : list;
   const grid = document.createElement('div');
-  grid.className = 'wall-grid';
+  grid.className = className;
   const showTags = !ctx.weekend || ctx.weekend === 'all';
   for (const a of shown) {
     const tag = showTags && (a.weekends === 'W1' || a.weekends === 'W2') ? a.weekends : undefined;
-    // A lineup entry can be an EVENT (afters, Folsom) — venue rides in
-    // `stage`, hours in `time`. Day and time share the first line; the venue
-    // takes its own (one crammed line hid both — Kevin, 2026-08-29). The
-    // .time element renders pre-line, so the newline is the break.
-    let subLabel = [a.stage, a.time].filter(Boolean).join(' · ');
-    if (a.stage && a.time) {
-      const bits = a.stage.split(' · ');
-      subLabel = bits.length > 1
-        ? `${bits[0]} · ${a.time}\n${bits.slice(1).join(' · ')}`
-        : `${a.time}\n${a.stage}`;
-    }
-    grid.appendChild(renderCard(a.name, ctx, { tag, time: subLabel || undefined, occ: { day: a.day || day || null, stage: a.stage || null, time: a.time || null, weekend: a.weekends || null } }));
+    grid.appendChild(renderCard(a.name, ctx, { tag, time: subLabelOf(a), occ: { day: a.day || day || null, stage: a.stage || null, time: a.time || null, weekend: a.weekends || null } }));
   }
   if (filtering && !shown.length) {
     const none = document.createElement('div');
@@ -399,12 +449,17 @@ function renderLineupGroup(root, day, list, ctx, fest, { header, sub } = {}) {
     root.appendChild(none);
   }
   root.appendChild(grid);
+  return shown;
 }
 
+// `opts.dayKey` is the jump / scrollspy key when the visible label is not
+// the key itself — a day-first rule shows a verbose key's weekday head
+// ("Wednesday, Sept 16 (Early Arrival Pre-Party)" → WEDNESDAY) the way
+// every other path does, while the tabs still find it by its key.
 function dayHeader(label, sub, opts = {}) {
   const rule = document.createElement('div');
   rule.className = 'day-rule';
-  rule.dataset.day = label;
+  rule.dataset.day = opts.dayKey || label;
   const d = document.createElement('span');
   d.className = 'day';
   d.textContent = label.toUpperCase();
@@ -642,27 +697,36 @@ export function scrollToNowLine(root, { date = new Date(), viewportHeight = wind
 // Setting scrollLeft programmatically fires a scroll event on the target; the
 // lastSet map recognizes that echo (same element, same value) and drops it
 // instead of ping-ponging.
+// Scrollers mirror within their GROUP (`data-sync`): the main grid's strip
+// and days are one group; on a day-first wall every events timetable is its
+// own (its venues are not the grid's stages, so its position is its own).
+// Scrollers with no group — the grid-only wall — are one group, as before.
 export function wireTimesScrollSync(root) {
-  const scrollers = [...root.querySelectorAll('.times-scroll')];
-  if (scrollers.length < 2) return;
-  const lastSet = new Map();
-  for (const s of scrollers) {
-    s.addEventListener('scroll', () => {
-      if (lastSet.get(s) === s.scrollLeft) { lastSet.delete(s); return; }
-      for (const o of scrollers) {
-        if (o !== s && o.scrollLeft !== s.scrollLeft) {
-          lastSet.set(o, s.scrollLeft);
-          o.scrollLeft = s.scrollLeft;
+  const groups = new Map();
+  for (const s of root.querySelectorAll('.times-scroll')) {
+    const key = s.dataset.sync || '*';
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(s);
+  }
+  for (const scrollers of groups.values()) {
+    if (scrollers.length < 2) continue;
+    const lastSet = new Map();
+    for (const s of scrollers) {
+      s.addEventListener('scroll', () => {
+        if (lastSet.get(s) === s.scrollLeft) { lastSet.delete(s); return; }
+        for (const o of scrollers) {
+          if (o !== s && o.scrollLeft !== s.scrollLeft) {
+            lastSet.set(o, s.scrollLeft);
+            o.scrollLeft = s.scrollLeft;
+          }
         }
-      }
-    }, { passive: true });
+      }, { passive: true });
+    }
   }
 }
 
 function renderScheduledDay(root, day, ctx, layout, weekend) {
   const fest = state.fest();
-  const computed = state.getDayArtists(day, weekend);
-  const stages = layout.stages;
   const meta = (fest.dayMeta || {})[day];
   const rule = dayHeader(day, dayRuleSub(meta, weekend), {
     noteCount: model.noteCount(state.crewDoc, ctx.fid, 'day', day),
@@ -679,6 +743,18 @@ function renderScheduledDay(root, day, ctx, layout, weekend) {
     const w = dayWhisper('day', day, ctx, () => ctx.onOpenDayNotes(day));
     if (w) root.appendChild(w);
   }
+  renderScheduledDayBody(root, day, ctx, layout, weekend);
+}
+
+// The day's clock: rail + grid. With `strip`, the day carries its OWN sticky
+// stage strip inside a `.tt-block` (a day-first wall, where events
+// timetables sit between grid days and one page-wide strip would name the
+// wrong columns); without it, the wall's single strip above serves every day.
+function renderScheduledDayBody(root, day, ctx, layout, weekend, { strip = false } = {}) {
+  const fest = state.fest();
+  const computed = state.getDayArtists(day, weekend);
+  const stages = layout.stages;
+  const meta = (fest.dayMeta || {})[day];
 
   const acts = (fest.activities || {})[day] || [];
 
@@ -808,7 +884,17 @@ function renderScheduledDay(root, day, ctx, layout, weekend) {
   }
   scroll.appendChild(grid);
   wrap.append(rail, scroll);
-  root.appendChild(wrap);
+  if (strip) {
+    const block = document.createElement('div');
+    block.className = 'tt-block';
+    const stripEl = renderStageStrip(layout, ctx);
+    stripEl.querySelector('.times-scroll').dataset.sync = 'grid';
+    scroll.dataset.sync = 'grid';
+    block.append(stripEl, wrap);
+    root.appendChild(block);
+  } else {
+    root.appendChild(wrap);
+  }
   // Today's grid gets the now line on first paint (the ticker keeps it moving).
   if (iso && nowOnDay(fest, day, weekend, ctx.now || new Date()) != null) positionNowLines(wrap, ctx.now || new Date());
 }
@@ -831,15 +917,359 @@ function eeActivityRow(act) {
   return rowEl;
 }
 
+// ---- day-first (MODEL-V3, 2026-09-01) --------------------------------------------
+// The day tabs are THE days — the union of grid days and event nights — and
+// one day renders its rooms in order: the festival's own (the grid, or a
+// lineup day's billing), then one section per events section active that
+// night, each laid out by the rule events.js computes ONCE per fest.
+//
+// Whether a fest is day-first at all is the events model's call (a section
+// entry must carry a night, and every day key must own one weekday); null
+// here means "render exactly as before". Shared with the day nav so the tab
+// bar and the wall can never disagree about what the days are.
+export function dayFirstModelFor(fest, ctx) {
+  const scheduled = !!(fest.days && Object.keys(fest.days).length);
+  // A lineup wall's flat sorts (A → Z, my picks, most picked) are one list,
+  // not days — only the grouped sorts compose by day.
+  if (!scheduled && !(ctx.sort === 'billing' || ctx.sort === 'day')) return null;
+  const wk = scheduled ? scheduledWeekendOf(fest, ctx.weekend) : null;
+  const artists = applyWeekend(fest.artists || [], scheduled ? wk : ctx.weekend);
+  const gridDays = scheduled ? Object.keys(fest.days) : [];
+  const model = eventModelOf(fest, groupByDay(artists, knownDaysOf(fest)), { gridDays, weekend: wk });
+  if (!model.dayFirst) return null;
+  return { model, scheduled, wk, gridDays };
+}
+
+// What the day tabs (dock + rail) should list, in the wall's own order.
+export function dayNavOf(fest, ctx) {
+  const scheduled = !!(fest.days && Object.keys(fest.days).length);
+  if (!ctx.query) {
+    const plan = dayFirstModelFor(fest, ctx);
+    if (plan) return plan.model.days.map((d) => ({ key: d.key, short: d.short, long: d.long }));
+  }
+  // Grid days plus the sections the wall renders under the grid (afters,
+  // Folsom) — the tab bar mirrors what the wall shows, or a section exists
+  // with no way to jump to it. Lineup fests: the same split-aware grouping
+  // the wall renders, so a "Saturday & Sunday" artist never mints a tab.
+  let groups;
+  if (scheduled) {
+    const wk = scheduledWeekendOf(fest, ctx.weekend);
+    const scheduledNames = new Set();
+    for (const d of Object.keys(fest.days)) for (const a of state.getDayArtists(d, wk)) scheduledNames.add(a.name);
+    groups = [...Object.keys(fest.days), ...[...extraSectionsOf(fest, scheduledNames, wk).keys()].filter(Boolean)];
+  } else {
+    groups = [...groupByDay(fest.artists || [], knownDaysOf(fest)).keys()].filter(Boolean);
+  }
+  return groups.map((day) => {
+    const meta = (fest.dayMeta || {})[day];
+    return {
+      key: day,
+      short: (meta?.wd || day).slice(0, 3).toUpperCase(),
+      // Rail tabs stay compact: a verbose day key shows its weekday only —
+      // the same split the day rule and the day sheet use.
+      long: (meta?.wd ? `${meta.wd} ${meta.num || ''}`.trim() : dayLabelParts(day).head).toUpperCase(),
+    };
+  });
+}
+
+const mk = (tag, className, text) => {
+  const n = document.createElement(tag);
+  if (className) n.className = className;
+  if (text != null) n.textContent = text;
+  return n;
+};
+const dedupeByName = (list) => {
+  const seen = new Set();
+  return list.filter((a) => (seen.has(a.name) ? false : (seen.add(a.name), true)));
+};
+
+function renderDayFirst(root, ctx, fest, { model: plan, scheduled, wk, gridDays }) {
+  const buckets = bucketsOf(fest, plan);
+  // A stored key the fest no longer offers (a section renamed, a fest that
+  // lost one) is nobody's: ignored here, and never named in the whisper.
+  const known = new Set(buckets.map((b) => b.key));
+  const hidden = new Set((ctx.bucketsOff || []).filter((k) => known.has(k)));
+  if (buckets.length > 1) root.appendChild(bucketRow(buckets, hidden, ctx));
+  const festOn = !hidden.has(FEST_BUCKET);
+  const now = ctx.now || new Date();
+  const dayArtists = (d) => state.getDayArtists(d, wk);
+  const layout = scheduled ? computeTimesLayout(fest, dayArtists, ctx.soloStage || null) : null;
+  const gridNames = new Map();
+  if (scheduled) for (const d of gridDays) gridNames.set(d, new Set(dayArtists(d).map((a) => a.name)));
+  const anyGridName = new Set([...gridNames.values()].flatMap((s) => [...s]));
+
+  // A lineup wall's day-less block (THE LINEUP) leads, as it always has.
+  if (!scheduled && festOn && plan.looseNoDay.length) renderLineupGroup(root, '', plan.looseNoDay, ctx, fest);
+
+  const whispered = new Set();
+  for (const day of plan.days) {
+    const rule = dayHeader(dayLabelParts(day.key).head, day.sub, {
+      dayKey: day.key,
+      noteCount: model.noteCount(state.crewDoc, ctx.fid, 'day', day.key),
+      onOpenNotes: ctx.onOpenDayNotes ? () => ctx.onOpenDayNotes(day.key) : null,
+    });
+    if (day.iso) rule.dataset.iso = day.iso; // the day-of open lands here before doors
+    root.appendChild(rule);
+    if (ctx.onOpenDayNotes) {
+      const w = dayWhisper('day', day.key, ctx, () => ctx.onOpenDayNotes(day.key));
+      if (w) root.appendChild(w);
+    }
+    let rooms = 0;
+    if (festOn && day.grid) {
+      rooms += 1;
+      const room = roomBlock(FEST_BUCKET);
+      room.appendChild(sectionHeader(fest.name, festRoomSub(fest), { key: FEST_BUCKET }));
+      renderScheduledDayBody(room, day.key, ctx, layout, wk, { strip: true });
+      root.appendChild(room);
+      // Billed on this day, not on this day's grid: still this day's, not
+      // an orphan at the foot of the page.
+      const loose = dedupeByName((day.billing || []).filter((a) => !gridNames.get(day.key).has(a.name)));
+      if (loose.length) {
+        rooms += 1;
+        const more = roomBlock(FEST_BUCKET);
+        more.appendChild(sectionHeader('Everything else', 'No set time yet', { key: FEST_BUCKET }));
+        renderCardGrid(more, loose, ctx, { day: day.key });
+        root.appendChild(more);
+      }
+    } else if (festOn && day.billing) {
+      rooms += 1;
+      const room = roomBlock(FEST_BUCKET);
+      room.appendChild(sectionHeader(fest.name, '', { key: FEST_BUCKET }));
+      renderCardGrid(room, day.billing, ctx, { day: day.key });
+      root.appendChild(room);
+    }
+    for (const sec of plan.sections) {
+      if (hidden.has(sec.key)) continue;
+      const list = sec.byDay.get(day.key);
+      if (!list) continue;
+      rooms += 1;
+      const room = roomBlock(sec.key);
+      // The section's notes keep their key (frozen-key law): the ✎ chip on
+      // every day's sub-rule opens the same "Afters" thread.
+      room.appendChild(sectionHeader(sec.label, '', {
+        key: sec.key,
+        noteCount: model.noteCount(state.crewDoc, ctx.fid, 'day', sec.key),
+        onOpenNotes: ctx.onOpenDayNotes ? () => ctx.onOpenDayNotes(sec.key) : null,
+      }));
+      // The newest-note whisper once per scroll, at the section's first door.
+      if (!whispered.has(sec.key) && ctx.onOpenDayNotes) {
+        const w = dayWhisper('day', sec.key, ctx, () => ctx.onOpenDayNotes(sec.key));
+        if (w) { room.appendChild(w); whispered.add(sec.key); }
+      }
+      if (sec.mode === 'columns') renderEventsTimetable(room, list, ctx, { fest, section: sec, day, now });
+      else renderEventTiles(room, list, ctx, { day });
+      root.appendChild(room);
+    }
+    if (!rooms) {
+      root.appendChild(mk('div', 'section-empty', `Everything on ${dayLabelParts(day.key).head} is hidden — tap a chip at the top to bring it back.`));
+    }
+  }
+  // Section entries that never said which night render the old way, after
+  // the days — partial data degrades to yesterday's wall, never to nothing.
+  for (const sec of plan.sections) if (!hidden.has(sec.key) && sec.loose.length) renderLineupGroup(root, sec.key, sec.loose, ctx, fest);
+  // A scheduled fest's day-less names that sit on no grid: everything else.
+  if (scheduled && festOn) {
+    const loose = dedupeByName(plan.looseNoDay.filter((a) => !anyGridName.has(a.name)));
+    if (loose.length) renderLineupGroup(root, '', loose, ctx, fest, { header: 'EVERYTHING ELSE', sub: 'NO SET TIME YET' });
+  }
+  const whisper = hidden.size ? hiddenWhisper(buckets, hidden) : null;
+  if (whisper) root.appendChild(whisper);
+  festNotesFoot(root, ctx, fest);
+  wireTimesScrollSync(root);
+}
+
+// One room on a day: the sub-rule and its body travel together, tagged with
+// the bucket that can hide them (app.js animates the room out and in).
+function roomBlock(bucket) {
+  const room = mk('div', 'room');
+  room.dataset.bucket = bucket;
+  return room;
+}
+
+// The festival's own room says where it is: "PORTOLA · PIER 80" — the venue
+// festPlaceLine leads with, as text (the header above already has the door).
+function festRoomSub(fest) {
+  const venue = (fest.subtitle || '').split(' · ')[0].trim();
+  return venue || fest.location || '';
+}
+
+// The section sub-rule — the day-rule's quieter sibling. A ✎ chip when the
+// section has a notes key of its own.
+function sectionHeader(label, sub, { key = null, noteCount = 0, onOpenNotes = null } = {}) {
+  const h = mk('div', 'sec-head');
+  if (key) h.dataset.section = key;
+  h.append(mk('span', 'sec-label', String(label).toUpperCase()), mk('span', 'sec-sub', sub || ''), mk('span', 'sec-line'));
+  if (onOpenNotes) {
+    const chip = mk('button', 'chip-notes', noteCount ? `${noteCount} ✎` : '+ ✎');
+    chip.style.cssText = 'height: 17px; cursor: pointer; flex: none;';
+    chip.setAttribute('aria-label', `Notes for ${label}`);
+    chip.addEventListener('click', onOpenNotes);
+    h.appendChild(chip);
+  }
+  return h;
+}
+
+// The bucket filter (MODEL-V3 §3): one chip per room the fest has. Off = a
+// dashed outline in the people-chip vocabulary; on = the app's own brand
+// tint — never the festival accent, which has exactly four homes.
+function bucketRow(buckets, hidden, ctx) {
+  const row = mk('div', 'bucket-row');
+  row.setAttribute('role', 'group');
+  row.setAttribute('aria-label', 'Show or hide parts of the festival');
+  for (const b of buckets) {
+    const on = !hidden.has(b.key);
+    const chip = mk('button', 'bucket-chip');
+    chip.type = 'button';
+    chip.dataset.bucket = b.key;
+    chip.setAttribute('aria-pressed', on ? 'true' : 'false');
+    chip.setAttribute('aria-label', `${on ? 'Hide' : 'Show'} ${b.label}`);
+    const check = mk('span', 'bc-check', on ? '✓' : '');
+    check.setAttribute('aria-hidden', 'true');
+    chip.append(check, mk('span', 'bc-label', String(b.label).toUpperCase()));
+    if (ctx.onToggleBucket) chip.addEventListener('click', () => ctx.onToggleBucket(b.key));
+    row.appendChild(chip);
+  }
+  return row;
+}
+
+// The foot-whisper that keeps the way back visible.
+function hiddenWhisper(buckets, hidden) {
+  const names = buckets.filter((b) => hidden.has(b.key)).map((b) => b.label);
+  if (!names.length) return null;
+  const one = names.length === 1;
+  const list = one ? names[0] : `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
+  return mk('div', 'wall-whisper', `${list} ${one ? 'is' : 'are'} hidden — tap ${one ? 'its chip' : 'their chips'} to bring ${one ? 'it' : 'them'} back.`);
+}
+
+const tileSubLabel = (e) => (parseEventTime(e.time) ? approxMark(e, timeRange(e.time)) : undefined);
+const bare = () => undefined;
+
+// TIME TBA: the quiet row the timeless land in, under a section that has a
+// clock (or timed tiles) above it — and VENUE TBA, its sibling for a set
+// that has a time but no room yet (the time stays; a real time is never
+// hidden). The people filter hides here; when it hides everything, the row
+// goes too — the shape above already says the day.
+function tbaBlock(list, ctx, day, { label = 'TIME TBA', subLabelOf = bare } = {}) {
+  const filtering = ctx.filterPeople && ctx.filterPeople.length;
+  const shown = filtering ? list.filter((a) => passesPeople(ctx.picks, a.name, ctx.filterPeople)) : list;
+  if (!shown.length) return null;
+  const block = mk('div', 'tba');
+  block.appendChild(mk('div', 'tba-label', label));
+  renderCardGrid(block, shown, ctx, { day: day.key, subLabelOf });
+  return block;
+}
+// The LOCKED copy (MODEL-V3 §5): no terminal period.
+const approxWhisper = () => mk('div', 'sec-whisper', '~ marks a guessed set time — the order is the plan');
+
+// Tiles: time-sorted, the timeless at the end. Resting tiles stay CLEAN
+// (Kevin, 2026-08-31): name + time when there is one, nothing else — the
+// venue, its map door and any TBA talk live in the zoom.
+function renderEventTiles(room, list, ctx, { day }) {
+  const filtering = ctx.filterPeople && ctx.filterPeople.length;
+  const sorted = sortForTiles(list);
+  const visible = filtering ? sorted.filter((a) => passesPeople(ctx.picks, a.name, ctx.filterPeople)) : sorted;
+  if (!visible.length) {
+    room.appendChild(mk('div', 'section-empty', `No picks here from ${ctx.filterPeople.join(' or ')}.`));
+    return;
+  }
+  const timed = visible.filter((e) => parseEventTime(e.time));
+  const untimed = visible.filter((e) => !parseEventTime(e.time));
+  if (timed.length) renderCardGrid(room, timed, ctx, { day: day.key, subLabelOf: tileSubLabel });
+  if (untimed.length) {
+    if (timed.length) room.appendChild(tbaBlock(untimed, ctx, day));
+    else renderCardGrid(room, untimed, ctx, { day: day.key, subLabelOf: bare });
+  }
+  if (list.some((e) => e.approx === true)) room.appendChild(approxWhisper());
+}
+
+// Columns: the main grid's grammar with venues as stages — a sticky venue
+// strip scoped to THIS timetable, 15-minute rows, the hour rail outside the
+// scroller. Every venue's night is ONE vertical run, stacked top to bottom in
+// play order — never lanes, never a deck (events.js timetableOf decides).
+function renderEventsTimetable(room, list, ctx, { fest, section, day, now }) {
+  const tt = timetableOf(list);
+  // A night with nothing to put on a clock (no timed set with a room) is
+  // tiles for the night — never a bare TIME TBA heading over an empty grid.
+  // The section keeps its columns on the nights that earn them.
+  if (!tt.venues.length) { renderEventTiles(room, list, ctx, { day }); return; }
+  {
+    const syncKey = `${section.key}|${day.key}`;
+    // Capped columns: a two-venue Thursday must not become two 600px cards.
+    const colsTemplate = `repeat(${tt.venues.length}, minmax(150px, 240px))`;
+    const block = mk('div', 'tt-block');
+    const strip = mk('div', 'times-wrap stage-strip');
+    const sscroll = mk('div', 'times-scroll');
+    sscroll.dataset.sync = syncKey;
+    const sgrid = mk('div', 'times-grid');
+    sgrid.style.gridTemplateColumns = colsTemplate;
+    sgrid.style.gridTemplateRows = '32px';
+    for (const v of tt.venues) {
+      const head = stageHead(v); // a venue head is a stage header (the accent's home) — but never a solo button
+      head.classList.add('venue');
+      sgrid.appendChild(head);
+    }
+    sscroll.appendChild(sgrid);
+    strip.append(mk('div', 'strip-rail'), sscroll);
+
+    const rowsTemplate = `repeat(${tt.rows}, 20px)`;
+    const wrap = mk('div', 'times-wrap');
+    const rail = mk('div', 'times-rail');
+    rail.style.gridTemplateRows = rowsTemplate;
+    const scroll = mk('div', 'times-scroll');
+    scroll.dataset.sync = syncKey;
+    scroll.dataset.day = day.key;
+    scroll.dataset.section = section.key;
+    const grid = mk('div', 'times-grid');
+    grid.style.gridTemplateRows = rowsTemplate;
+    grid.style.gridTemplateColumns = colsTemplate;
+    grid.dataset.startRow = String(tt.startRow);
+    grid.dataset.rows = String(tt.rows);
+    if (day.iso) grid.dataset.iso = day.iso; // the now line finds tonight's timetable too
+    if (fest.timezone) grid.dataset.tz = fest.timezone;
+    for (let r = tt.startRow; r < tt.startRow + tt.rows; r++) {
+      if (r % 4 !== 0) continue;
+      const label = mk('div', 'hour-label', hourLabelOf(r * 15));
+      label.style.gridRow = String(r - tt.startRow + 1);
+      rail.appendChild(label);
+    }
+    for (const c of tt.cells) {
+      const t = c.entry;
+      const tall = c.span >= 12;
+      const cell = renderCard(t.e.name, ctx, { cell: true, tall, until: tall ? t.endStr || null : null, time: approxMark(t.e, t.startStr), occ: occOf(t.e) });
+      cell.style.gridColumn = String(c.col);
+      cell.style.gridRow = `${c.row} / span ${c.span}`;
+      cell.style.minHeight = '0';
+      grid.appendChild(cell);
+    }
+    scroll.appendChild(grid);
+    wrap.append(rail, scroll);
+    block.append(strip, wrap);
+    room.appendChild(block);
+    if (day.iso) positionNowLines(wrap, now);
+  }
+  if (tt.loose.length) {
+    const block = tbaBlock(sortForTiles(tt.loose), ctx, day, { label: 'VENUE TBA', subLabelOf: tileSubLabel });
+    if (block) room.appendChild(block);
+  }
+  if (tt.tba.length) {
+    const block = tbaBlock(tt.tba, ctx, day);
+    if (block) room.appendChild(block);
+  }
+  if (list.some((e) => e.approx === true)) room.appendChild(approxWhisper());
+}
+
 // ---- the wall ------------------------------------------------------------------
 // The repaint boundary preserves ephemeral client state (audit Class 1): a
 // remote sync tearing down #wall-root must never cost the user their scroll
 // position or a half-typed note. Harvest before teardown, restore after.
 function harvestEphemera(root) {
   const scrolls = new Map();
-  // Every timetable scroller mirrors one shared position now — harvest it once.
-  const anyScroller = root.querySelector('.times-scroll');
-  if (anyScroller && anyScroller.scrollLeft) scrolls.set('*', anyScroller.scrollLeft);
+  // Every timetable scroller mirrors one shared position within its sync
+  // group (the grid-only wall is one group) — harvest one per group.
+  for (const s of root.querySelectorAll('.times-scroll')) {
+    const key = s.dataset.sync || '*';
+    if (!scrolls.has(key) && s.scrollLeft) scrolls.set(key, s.scrollLeft);
+  }
   const drafts = new Map();
   for (const input of root.querySelectorAll('.composer input[data-draft-key]')) {
     if (input.value) {
@@ -854,9 +1284,9 @@ function harvestEphemera(root) {
 }
 
 function restoreEphemera(root, { scrolls, drafts }) {
-  const left = scrolls.get('*');
-  if (left) {
-    for (const s of root.querySelectorAll('.times-scroll')) s.scrollLeft = left;
+  for (const s of root.querySelectorAll('.times-scroll')) {
+    const left = scrolls.get(s.dataset.sync || '*');
+    if (left) s.scrollLeft = left;
   }
   for (const input of root.querySelectorAll('.composer input[data-draft-key]')) {
     const d = drafts.get(input.dataset.draftKey);
@@ -879,6 +1309,14 @@ function renderWallInner(root, ctx) {
   root.textContent = '';
   const fest = state.fest();
   const scheduled = fest.days && Object.keys(fest.days).length;
+
+  // Day-first (MODEL-V3, 2026-09-01): a fest whose sections say which NIGHT
+  // each show is on renders one day at a time — the grid, then that night's
+  // sections. Every other fest takes the paths below, untouched.
+  if (!ctx.query) {
+    const plan = dayFirstModelFor(fest, ctx);
+    if (plan) { renderDayFirst(root, ctx, fest, plan); return; }
+  }
 
   if (scheduled && !ctx.query) {
     const wk = scheduledWeekendOf(fest, ctx.weekend);
