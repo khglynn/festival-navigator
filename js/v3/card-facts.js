@@ -245,14 +245,13 @@ function grownBlock(facts, { onOpenNotes = null } = {}) {
     grown.appendChild(sub);
   }
   if (facts.where) grown.appendChild(placeDoor(facts.where, facts.mapUrl, 'f-where'));
-  // The who-row is ALWAYS there, empty or not. The zoom reserves its height
-  // (v3.css .zoom-card .f-who:empty), so the first pick never shifts the rows
-  // above it: a grown card whose rows re-centred after a pick slid the venue's
-  // map DOOR under a resting cursor, and the next click opened the map instead
-  // of picking (round-2 walk, 2026-09-01 — read as "picks stop after the first
-  // tap"). What was under your hand stays under your hand. The sheet header
-  // hides the empty row (display: none) and keeps its look.
-  grown.appendChild(whoPills(facts));
+  // The who-row only when there are people: a pill arriving after a tap
+  // slides in and its neighbours make room (the designed event). A reserved
+  // empty row was tried on 2026-09-01 to keep the venue door from sliding
+  // under a resting cursor after the first pick, and it left a ~34px hole on
+  // every UNPICKED grown card — the common view. Reverted; the still-hand
+  // answer belongs to the zoom's placement (PROGRESS, round-2 follow-up).
+  if (facts.people.length) grown.appendChild(whoPills(facts));
   grown.appendChild(factChips(facts, { onOpenNotes }));
   return grown;
 }
