@@ -44,9 +44,14 @@ import { activityMinutes } from '../js/time.js';
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 export const PORTOLA = join(ROOT, 'data', 'festivals', 'portola-2026.json');
 
-// The programme page every Portola Week show is billed on — the door the
-// zoom's order line opens when a show has no page of its own (MODEL-V3 §5).
+// Goldenvoice's own Portola Week programme page. It stays in meta.sources as
+// the programme of record, but it is NOT a citable door: the page renders its
+// show list client-side, so its static HTML is just an image (checked
+// 2026-09-01). The per-show pages below are what the zoom's order line opens.
 export const PORTOLA_WEEK = 'https://portolamusicfestival.com/portola-week/';
+// DoTheBay carries Goldenvoice's official Portola Week listing — one page per
+// show, with the billing and the doors time, server-rendered and citable.
+export const DOTHEBAY_INDEX = 'https://dothebay.com/portolaweek';
 // The Midway's ticket page, where its doors time is printed.
 export const MIDWAY_TICKETS = 'https://www.axs.com/events/1575408/horsegiirl-tickets';
 
@@ -92,132 +97,155 @@ export function runTimes({ doors, close = null, count }) {
 // ---------------------------------------------------------------------------
 // THE RUNS — one row per multi-artist venue-night that has a time.
 //
-// `order` is the running order, OPENER FIRST, closer last. Where a ticket or
-// programme page bills the room, the billing decides it: the billed headliner
-// closes, and the rest of the bill runs in descending print — so a bill read
-// top to bottom is the run read bottom to top (MODEL-V3 §5). That is exactly
-// how the Midway was settled with Kevin on 2026-09-01, and it is the fallback
-// for a room whose page we could not re-read: the first-listed name in
-// artists[] closes and the rest reverse ahead of it, entered at LOW
-// confidence and pointed at the programme page.
+// `order` is the running order, OPENER FIRST, closer last. The billing decides
+// it: the billed headliner closes, and the rest of the bill runs in descending
+// print — so a bill read top to bottom is the run read bottom to top
+// (MODEL-V3 §5). That is how the Midway was settled with Kevin on 2026-09-01,
+// and every other room was then read off its own show page (DoTheBay's
+// Goldenvoice-fed Portola Week listing, 2026-09-01). A title of "X with A, B"
+// makes X the closer and B the opener; "X + Y" is a co-bill where the
+// first-named closes.
 //
-// `doors`/`close` are SOURCED where the file already carried a range (those
-// ranges came off the programme page in the 2026-08-23 research pass) and
-// where a ticket page prints them. Where no page prints an end, the room
-// simply has no `close` — the zoom then says "Doors 10 PM" instead of
-// inventing a window, which is §5's own promise ("the venue's real window, so
-// no invented clock in the zoom"). We do not manufacture nine closing times
-// to make the columns tidy.
+// `adds` names the artists this migration is allowed to CREATE — a name on the
+// bill that our file was missing. Everything else in `order` must already
+// exist, or the transform refuses to run rather than inventing a card.
+//
+// `doors` are printed on the show pages. `close` is SOURCED outright in one
+// room (Fri Great Northern prints 2 AM); the 3 AM and 2 AM closes on the two
+// Monarchs and Sunday's Public Works come from our own 2026-08-23 research
+// pass, which DoTheBay does not repeat — they are sourced, just not here.
+// Where no page prints an end at all the room simply has no `close`, and the
+// zoom says "Doors 10 PM" instead of inventing a window, which is §5's own
+// promise. We do not manufacture closing times to make columns tidy.
 //
 // `wasTime` is what EVERY set in the room said before this migration — the
-// doors time, or (in five rooms) the room's whole window — copied onto each
-// act. It is not decoration: the transform refuses to run on an un-migrated
-// entry whose time is not that string, so a hand edit to the JSON trips here
-// instead of quietly re-guessing from data that moved.
+// doors time, the room's whole window copied onto each act, or `null` for the
+// two rooms our file had no time for at all. It is not decoration: the
+// transform refuses to run on an un-migrated entry whose time is not that
+// value, so a hand edit to the JSON trips here instead of quietly re-guessing
+// from data that moved.
 //
 // `confirmed` is false on every row: none of this is a venue-issued set time.
 // `confidence` is ours, for the log and the PR body — it never ships.
 export const RUNS = [
   {
     day: 'Afters', night: 'Fri', venue: 'Regency Ballroom',
-    doors: '8 PM', close: null,
+    doors: '8 PM', close: null, wasTime: '8 PM',
     order: ['Gelli Haha', 'Jyoty', 'Channel Tres'],
-    wasTime: '8 PM',
-    source: PORTOLA_WEEK, confidence: 'low',
-    note: 'Bill reads Channel Tres · Jyoty · Gelli Haha; no page prints an end time.',
+    source: 'https://dothebay.com/events/2026/9/25/channel-tres-jyoty-gelli-haha-tickets',
+    confidence: 'medium',
+    note: 'Billed "Channel Tres, JYOTY, Gelli Haha" — a flat comma list, so the order is the read of a bill rather than a stated one. No page prints an end time.',
   },
   {
     day: 'Afters', night: 'Fri', venue: 'Monarch',
-    doors: '10 PM', close: null,
+    doors: '10 PM', close: null, wasTime: '10 PM',
     order: ['Skiis', 'Sam Alfred'],
-    wasTime: '10 PM',
-    source: PORTOLA_WEEK, confidence: 'low',
-    note: 'Bill reads Sam Alfred · Skiis; no page prints an end time.',
+    source: 'https://dothebay.com/events/2026/9/25/sam-alfred-tickets',
+    confidence: 'medium',
+    note: 'Titled "Sam Alfred"; Skiis is support per our own file, not the DoTheBay title. No page prints an end time.',
   },
   {
     day: 'Afters', night: 'Fri', venue: 'The Great Northern',
-    doors: '10 PM', close: '2 AM',
+    doors: '10 PM', close: '2 AM', wasTime: '10 PM - 2 AM',
     order: ['Loods', 'Ranger Trucco'],
-    wasTime: '10 PM - 2 AM',
-    source: PORTOLA_WEEK, confidence: 'low',
-    note: 'The file already carried "10 PM - 2 AM" for both sets — that is the ROOM\'s window off the programme page, not a set time. Bill reads Ranger Trucco · Loods.',
+    source: 'https://dothebay.com/events/2026/9/25/ranger-trucco-tickets',
+    confidence: 'medium',
+    note: 'Titled "Ranger Trucco"; Loods is support per our own file. The 2 AM close is PRINTED on the show page — the one room whose end time is sourced outright.',
   },
   {
-    day: 'Afters', night: 'Sat', venue: 'Regency Ballroom',
-    doors: '10 PM', close: null,
-    order: ['Velvet Trip', 'Parcels'],
-    wasTime: '10 PM',
-    source: PORTOLA_WEEK, confidence: 'low',
-    note: 'Bill reads Parcels · Velvet Trip; no page prints an end time.',
+    day: 'Afters', night: 'Sat', venue: 'Audio',
+    doors: '10 PM', close: null, wasTime: null,
+    order: ['Airwolf Paradise', 'Max Styler'],
+    source: 'https://dothebay.com/events/2026/9/26/max-styler-tickets',
+    confidence: 'high',
+    note: 'Billed "Max Styler with Airwolf Paradise". Our file had NO time for this room at all and rendered it as TIME TBA; the show page prints doors 10 PM, so it is a run now.',
   },
   {
     day: 'Afters', night: 'Sat', venue: 'Monarch',
-    doors: '10 PM', close: '3 AM',
+    doors: '10 PM', close: '3 AM', wasTime: '10 PM - 3 AM',
     order: ['Clearcast', 'Jigitz'],
-    wasTime: '10 PM - 3 AM',
-    source: PORTOLA_WEEK, confidence: 'low',
-    note: 'The file already carried "10 PM - 3 AM" for both sets — the room\'s window. Bill reads Jigitz · Clearcast.',
+    source: 'https://dothebay.com/events/2026/9/26/jigitz-tickets',
+    confidence: 'high',
+    note: 'Billed "jigitz with Clearcast". The 3 AM close comes from our own 2026-08-23 research pass, not from this page.',
+  },
+  {
+    day: 'Afters', night: 'Sat', venue: 'Public Works',
+    doors: '10 PM', close: null, wasTime: null,
+    order: ['Chloé Caillet', 'Fcukers'],
+    source: 'https://dothebay.com/events/2026/9/26/fcukers-dj-set-chloe-caillet-presented-by-goldenvoice-tickets',
+    confidence: 'medium',
+    note: 'Billed "Fcukers (DJ Set) + Chloé Caillet" — a co-bill, so the first-named closes. Our file had NO time for this room and rendered it as TIME TBA; the show page prints doors 10 PM.',
+  },
+  {
+    day: 'Afters', night: 'Sat', venue: 'Regency Ballroom',
+    doors: '10 PM', close: null, wasTime: '10 PM',
+    order: ['Velvet Trip', 'Parcels'],
+    source: 'https://dothebay.com/events/2026/9/26/parcels-tickets',
+    confidence: 'high',
+    note: 'Billed "Parcels with Velvet Trip". No page prints an end time.',
   },
   {
     day: 'Afters', night: 'Sun', venue: 'Public Works',
-    doors: '10 PM', close: '2 AM',
-    order: ['erika b2b sfcowboy', 'Ben UFO', 'Overmono'],
-    wasTime: '10 PM - 2 AM',
-    source: PORTOLA_WEEK, confidence: 'low',
-    note: 'The file already carried "10 PM - 2 AM" for all three — the room\'s window. Bill reads Overmono · Ben UFO · erika b2b sfcowboy.',
+    doors: '10 PM', close: '2 AM', wasTime: '10 PM - 2 AM',
+    order: ['erika b2b sfcowboy', 'Kaytree', 'Ben UFO', 'Overmono'],
+    adds: ['Kaytree'],
+    source: 'https://dothebay.com/events/2026/9/27/overmono-dj-set-ben-ufo-tickets',
+    confidence: 'medium',
+    note: 'Billed "Overmono (DJ Set) + Ben UFO, with Kaytree, Erika b2b SFCowboy". KAYTREE was on the bill and missing from this section — added. She already has a Sunday grid billing (Ship Tent), and picks unify by exact name across both, which is the same shape VTSS and Overmono already had. Our lowercase "erika b2b sfcowboy" is KEPT: it is a pick key. The 2 AM close comes from our own 2026-08-23 pass, not from this page.',
   },
   {
     day: 'Afters', night: 'Sun', venue: 'The Midway',
-    doors: '10 PM', close: '2 AM', closeApprox: true,
+    doors: '10 PM', close: '2 AM', closeApprox: true, wasTime: '10 PM',
     times: ['10 PM', '11 PM', '12 AM', '1 AM'], // PINNED: Kevin settled this room on 2026-09-01
     order: ['MGNA Crrrta', 'VTSS', 'Two Shell', 'horsegiirL'],
-    wasTime: '10 PM',
-    source: PORTOLA_WEEK, confidence: 'medium',
-    note: 'Doors 10 PM is SOURCED (AXS event 1575408: "Doors Open — Sun Sep 27, 2026, 10:00 PM"). The 2 AM close is OURS (closeApprox). Order settled with Kevin: AXS and Tixr both bill "horsegiirL with VTSS, MGNA Crrrta, Two Shell", so horsegiirL closes; MGNA Crrrta opens on small print. A "Kavari" name in a stale Tixr URL slug is NOT on the live bill — four sets stays four sets.',
+    source: MIDWAY_TICKETS, confidence: 'medium',
+    note: 'Doors 10 PM is SOURCED (AXS event 1575408: "Doors Open — Sun Sep 27, 2026, 10:00 PM"). The 2 AM close is OURS (closeApprox) — no page prints an end for this one. Order settled with Kevin: AXS and Tixr both bill "horsegiirL with VTSS, MGNA Crrrta, Two Shell", so horsegiirL closes; MGNA Crrrta opens on small print. A "Kavari" name in a stale Tixr URL slug is NOT on the live bill — four sets stays four sets.',
   },
   {
     day: 'Afters', night: 'Sun', venue: 'The Great Northern',
-    doors: '10 PM', close: null,
+    doors: '10 PM', close: null, wasTime: '10 PM',
     order: ['Puffie', 'SG Lewis'],
-    wasTime: '10 PM',
-    source: PORTOLA_WEEK, confidence: 'low',
-    note: 'Bill reads SG Lewis · Puffie; no page prints an end time.',
+    source: 'https://dothebay.com/events/2026/9/27/sg-lewis-dj-set-tickets',
+    confidence: 'high',
+    note: 'Billed "SG Lewis (DJ Set) with Puffie". No page prints an end time.',
   },
   {
     day: 'Afters', night: 'Sun', venue: 'Monarch',
-    doors: '10 PM', close: '3 AM',
-    order: ['Dean Turnley', 'Silva Bumpa'],
-    wasTime: '10 PM - 3 AM',
-    source: PORTOLA_WEEK, confidence: 'low',
-    note: 'The file already carried "10 PM - 3 AM" for both — the room\'s window. Bill reads Silva Bumpa · Dean Turnley.',
+    doors: '10 PM', close: '3 AM', wasTime: '10 PM - 3 AM',
+    order: ['Buck Wilson', 'Dean Turnley', 'Silva Bumpa'],
+    adds: ['Buck Wilson'],
+    source: 'https://dothebay.com/events/2026/9/27/silva-bumpa-tickets',
+    confidence: 'high',
+    note: 'Billed "Silva Bumpa with Dean Turnley, Buck Wilson". BUCK WILSON was on the bill and missing from the file entirely (he was noted in meta as supporting roster) — added, and he opens on last-named support. The 3 AM close comes from our own 2026-08-23 pass, not from this page.',
   },
   {
     day: 'Afters', night: 'Sun', venue: 'Rickshaw Stop',
-    doors: '10 PM', close: null,
+    doors: '10 PM', close: null, wasTime: '10 PM',
     order: ['Naisha', 'JT'],
-    wasTime: '10 PM',
-    source: PORTOLA_WEEK, confidence: 'low',
-    note: 'Bill reads JT · Naisha; no page prints an end time.',
+    source: 'https://dothebay.com/events/2026/9/27/jt-tickets',
+    confidence: 'medium',
+    note: 'Titled "JT"; Naisha appears in the show description. No page prints an end time.',
   },
 ];
 
-// The two venue-nights that are NOT runs: nobody has printed a time for them
-// at all, so they stay timeless and the wall tiles them under TIME TBA. A run
-// with no clock would be pure invention.
-export const TIMELESS_ROOMS = [
-  { day: 'Afters', night: 'Sat', venue: 'Public Works', names: ['Fcukers', 'Chloé Caillet'] },
-  { day: 'Afters', night: 'Sat', venue: 'Audio', names: ['Max Styler', 'Airwolf Paradise'] },
-];
+// Venue-nights that are NOT runs: rooms nobody has printed a time for at all.
+// They stay timeless and the wall tiles them under TIME TBA, because a run
+// with no clock would be pure invention. Portola has NONE left — Sat Audio and
+// Sat Public Works were the last two, and the DoTheBay show pages print doors
+// 10 PM for both (read 2026-09-01), so they became runs. The list stays because
+// the next festival's data drop will have some.
+export const TIMELESS_ROOMS = [];
 
 // Provenance goes in the FILE, not only in a plan doc — a session reading
 // portola-2026.json must be able to tell the sourced facts from our guesses
 // without leaving the data.
-export const META_NOTE = 'BACK-TO-BACK RUNS (2026-09-01, MODEL-V3 §5): a venue-night is ONE ROOM and its artists play IN SEQUENCE. Every multi-artist venue-night in this file had all of its artists stamped with the SAME time - that is the DOORS time off the programme/ticket page, not a set time. So each of those rooms now carries `doors` (and `close` where a page prints one), and every set in it carries a GUESSED start (`approx: true`) plus `order: {seq, of, source, confirmed:false}` recording the running order and where it came from. Set times are laid across the window: evenly from doors to close where the close is known, an hour apart from doors where it is not, rounded to the half hour. Running order follows the billing - the billed headliner closes and the rest run in descending print - which for rooms we could not re-read means the first-listed name in artists[] closes and the rest reverse ahead of it (LOW confidence, pointed at the Portola Week programme page). THE MIDWAY (Sun) is the one room settled with Kevin directly: doors 10 PM is sourced from AXS event 1575408, the 2 AM close is OURS (`closeApprox: true`), and horsegiirL closes because both ticket vendors bill the show "horsegiirL with VTSS, MGNA Crrrta, Two Shell". Sat Public Works and Sat Audio print NO time at all and are deliberately left timeless (TIME TBA) rather than given an invented clock. `order.confirmed` is false everywhere - none of this is a venue-issued set time. Every other event entry gained only `night` + `venue`, parsed out of `stage` (which stays, and stays authoritative - the validator errors if the two disagree).';
+export const META_NOTE = 'BACK-TO-BACK RUNS (2026-09-01, MODEL-V3 §5): a venue-night is ONE ROOM and its artists play IN SEQUENCE. Every multi-artist venue-night in this file had all of its artists stamped with the SAME time - that is the DOORS time off the show page, not a set time - and two rooms had no time at all. So each of those twelve rooms now carries `doors` (and `close` where a page prints one), and every set in it carries a GUESSED start (`approx: true`) plus `order: {seq, of, source, confirmed:false}` recording the running order and the show page it came from. SOURCES (read 2026-09-01): DoTheBay carries Goldenvoice\'s official Portola Week listing, one server-rendered page per show with the billing and the doors time, and each room\'s `order.source` is its own page there; portolamusicfestival.com/portola-week renders its list client-side (static HTML is just an image) so it is the programme of record, not a citable door; The Midway keeps AXS event 1575408. SET TIMES are laid across the window: evenly from doors to close where the close is known, an hour apart from doors where it is not, rounded to the half hour. RUNNING ORDER follows the billing - the billed headliner closes and the rest run in descending print, so "X with A, B" puts B first and X last, and "X + Y" is a co-bill where X closes. TWO NAMES WERE ON THE BILL AND MISSING FROM THIS SECTION and were added: Buck Wilson (Sun Monarch, opens - he was only mentioned in this note\'s supporting-roster list before) and Kaytree (Sun Public Works, second - she already had a Sunday grid billing, and picks unify by exact name across both, the same shape VTSS and Overmono already had). The lowercase spelling "erika b2b sfcowboy" is KEPT against DoTheBay\'s "Erika b2b SFCowboy": it is a pick key. CLOSES: Fri The Great Northern\'s 2 AM is printed on its show page; the 3 AM and 2 AM on Sat Monarch, Sun Monarch and Sun Public Works come from our own 2026-08-23 research pass, which DoTheBay does not repeat; The Midway\'s 2 AM is OURS (`closeApprox: true`); the remaining rooms print no end at all and carry no `close`, so the zoom says "Doors 10 PM" rather than inventing a window. `order.confirmed` is false everywhere - a bill is not a set-time sheet. Every other event entry gained only `night` + `venue`, parsed out of `stage` (which stays, and stays authoritative - the validator errors if the two disagree).';
 
 // Earlier provenance paragraphs this script wrote, stripped before the current
 // one is appended so a re-run never stacks two versions of the same story.
 export const LEGACY_META_NOTES = [
-  'BACK-TO-BACK RUN (2026-09-01, MODEL-V3 §5): the four Sunday Midway sets were transcribed as four 10 PM shows; they are ONE night played in sequence. 10 PM is DOORS - AXS event 1575408 prints "Doors Open - Sun Sep 27, 2026, 10:00 PM" - so it moved to `doors`, and each set carries a GUESSED start (`approx: true`) spaced roughly an hour, with `order: {seq, of, source, confirmed:false}` recording the running order and where it came from. ORDER RESOLVED (Kevin, 2026-09-01): both ticket vendors, AXS and Tixr, bill this show as horsegiirL "with VTSS, MGNA Crrrta, Two Shell" - by Kevin\'s own rule the billed headliner closes, so horsegiirL now closes (seq 4, 1 AM); MGNA Crrrta still opens on small print (seq 1, 10 PM), and VTSS/Two Shell hold the poster\'s middle order (seq 2, 3). `order.confirmed` stays false - a data-entry read of two ticket pages, not a venue-issued time. A "Kavari" name turned up in a stale Tixr URL slug for this show but is NOT on the live bill (verified 2026-09-01) and was not added - four sets stays four sets. `close: "2 AM"` is OURS: no source prints an end time, which is what `closeApprox: true` records. Every other event entry gained only `night` + `venue`, parsed out of `stage` (which stays, and stays authoritative - the validator errors if the two disagree).',
+  'BACK-TO-BACK RUN (2026-09-01, MODEL-V3 §5): the four Sunday Midway sets were transcribed as four 10 PM shows; they are ONE night played in sequence. 10 PM is DOORS - AXS event 1575408 prints "Doors Open - Sun Sep 27, 2026, 10:00 PM" - so it moved to `doors`, and each set carries a GUESSED start (`approx: true`) spaced roughly an hour, with `order: {seq, of, source, confirmed:false}` recording the running order and where it came from. ORDER RESOLVED (Kevin, 2026-09-01): both ticket vendors, AXS and Tixr, bill this show as horsegiirL "with VTSS, MGNA Crrrta, Two Shell" - by Kevin\'s own rule the billed headliner closes, so horsegiirL now closes (seq 4, 1 AM); MGNA Crrrta still opens on small print (seq 1, 10 PM), and VTSS/Two Shell hold the poster\'s middle order (seq 2, 3). `order.confirmed` stays false - a data-entry read of two ticket pages, not a venue-issued time. A "Kavari" name turned up in a stale Tixr URL slug for this show but is NOT on the live bill (verified 2026-09-01) and was not added - four sets stays four sets. `close: "2 AM"` is OURS: no source prints an end time, which is what `closeApprox: true` records. Every other event entry gained only `night` + `venue`, parsed out of `stage` (which stays, and stays authoritative - the validator errors if the two disagree).',,
+  'BACK-TO-BACK RUNS (2026-09-01, MODEL-V3 §5): a venue-night is ONE ROOM and its artists play IN SEQUENCE. Every multi-artist venue-night in this file had all of its artists stamped with the SAME time - that is the DOORS time off the programme/ticket page, not a set time. So each of those rooms now carries `doors` (and `close` where a page prints one), and every set in it carries a GUESSED start (`approx: true`) plus `order: {seq, of, source, confirmed:false}` recording the running order and where it came from. Set times are laid across the window: evenly from doors to close where the close is known, an hour apart from doors where it is not, rounded to the half hour. Running order follows the billing - the billed headliner closes and the rest run in descending print - which for rooms we could not re-read means the first-listed name in artists[] closes and the rest reverse ahead of it (LOW confidence, pointed at the Portola Week programme page). THE MIDWAY (Sun) is the one room settled with Kevin directly: doors 10 PM is sourced from AXS event 1575408, the 2 AM close is OURS (`closeApprox: true`), and horsegiirL closes because both ticket vendors bill the show "horsegiirL with VTSS, MGNA Crrrta, Two Shell". Sat Public Works and Sat Audio print NO time at all and are deliberately left timeless (TIME TBA) rather than given an invented clock. `order.confirmed` is false everywhere - none of this is a venue-issued set time. Every other event entry gained only `night` + `venue`, parsed out of `stage` (which stays, and stays authoritative - the validator errors if the two disagree).',
 ];
 
 // ---------------------------------------------------------------------------
@@ -267,6 +295,29 @@ export function frozenKeys(fest) {
     stages: (fest.artists || []).map((a) => (a && a.stage) || null),
   };
 }
+const keyOf = (a) => `${a && a.name}|${a && a.day}|${(a && a.stage) || ''}`;
+
+// The migration may ADD an artists[] row — a name that was on the bill and
+// missing from the file — but it may never move, rename or drop one that was
+// already there. So the check is not positional equality: it walks the new
+// list and consumes the old one IN ORDER. Every pre-existing row must be met,
+// in sequence, byte-identical; whatever is left over is the additions, which
+// the caller then matches against what the RUNS table declared it would add.
+// Returns { additions } or throws with the row that moved.
+export function additionsOnly(before, after) {
+  const old = (before.artists || []).map(keyOf);
+  const additions = [];
+  let i = 0;
+  for (const a of after.artists || []) {
+    const k = keyOf(a);
+    if (i < old.length && old[i] === k) { i += 1; continue; }
+    additions.push(a);
+  }
+  if (i !== old.length) {
+    throw new Error(`a pre-existing artists[] row moved or changed: expected ${JSON.stringify(old[i])} and did not find it — names, day labels and stages are pick/notes keys with no rename path`);
+  }
+  return { additions };
+}
 
 // The transform. Pure: takes a document, returns a NEW one plus the list of
 // what it changed. Never mutates its input, never touches `name`, `day` or
@@ -278,6 +329,7 @@ export function migrateEvents(fest, { runs = RUNS } = {}) {
   // is never enough (phase-1 lesson, 2026-09-01).
   const inRun = new Map();
   for (const run of runs) {
+    if (!('wasTime' in run)) throw new Error(`run ${run.night} · ${run.venue}: no wasTime — every row must record what the file said before, so a hand edit trips`);
     const times = run.times || runTimes({ doors: run.doors, close: run.close, count: run.order.length });
     if (times.length !== run.order.length) throw new Error(`run ${run.night} · ${run.venue}: ${times.length} times for ${run.order.length} sets`);
     run.order.forEach((name, k) => {
@@ -285,6 +337,17 @@ export function migrateEvents(fest, { runs = RUNS } = {}) {
     });
   }
   const seen = new Set();
+  // The run fields one set carries, in one place: the mapped entries and the
+  // created ones must be identical in shape or a new name would render as a
+  // different kind of card from its neighbours.
+  const runFieldsFor = (run, seq, time) => ({
+    time,
+    approx: true,
+    doors: run.doors,
+    ...(run.close ? { close: run.close } : {}),
+    ...(run.close && run.closeApprox ? { closeApprox: true } : {}),
+    order: { seq, of: run.order.length, source: run.source, confirmed: false },
+  });
 
   const artists = (fest.artists || []).map((a) => {
     if (!isEventEntry(fest, a)) return a;
@@ -299,28 +362,41 @@ export function migrateEvents(fest, { runs = RUNS } = {}) {
     const { run, seq, time } = hit;
     // Not yet migrated? Then the file must still say what the run row says it
     // said — otherwise somebody edited the time by hand and the guess below
-    // would be built on sand.
-    if (a.order === undefined && run.wasTime !== undefined && a.time !== run.wasTime) {
-      throw new Error(`${a.name} (${a.stage}): the file says time ${JSON.stringify(a.time)} but the run row expects ${JSON.stringify(run.wasTime)} — re-read the room before re-running`);
+    // would be built on sand. `null` is a room the file had no time for.
+    if (a.order === undefined && (a.time ?? null) !== (run.wasTime ?? null)) {
+      throw new Error(`${a.name} (${a.stage}): the file says time ${JSON.stringify(a.time ?? null)} but the run row expects ${JSON.stringify(run.wasTime ?? null)} — re-read the room before re-running`);
     }
-    const next = rebuild(a, {
-      time,
-      approx: true,
-      doors: run.doors,
-      ...(run.close ? { close: run.close } : {}),
-      ...(run.close && run.closeApprox ? { closeApprox: true } : {}),
-      order: { seq, of: run.order.length, source: run.source, confirmed: false },
-    });
+    const next = rebuild(a, runFieldsFor(run, seq, time));
     if (JSON.stringify(next) !== JSON.stringify(a)) {
       changes.push(`${a.name} (${a.stage}): + night/venue, time ${JSON.stringify(a.time)} -> ${JSON.stringify(time)} (approx), doors${run.close ? '/close' : ''}, order ${seq} of ${run.order.length}`);
     }
     return next;
   });
 
-  // Every name in every run must have been found — a typo here would silently
-  // ship a room half on the old doors time.
+  // A name the RUNS table DECLARED it would add gets created, in the file's own
+  // entry shape, directly after the last existing set of its room — so the
+  // diff stays local and artists[] keeps reading room by room.
+  for (const run of runs) {
+    for (const name of run.adds || []) {
+      const key = `${run.day}|${run.night}|${run.venue}|${name}`;
+      if (seen.has(key)) continue; // already added by an earlier run of this script
+      const hit = inRun.get(key);
+      if (!hit) throw new Error(`${name}: declared in adds for ${run.night} · ${run.venue} but not in that run's order`);
+      const stage = `${run.night} · ${run.venue}`;
+      const born = rebuild({ name, day: run.day, stage }, runFieldsFor(run, hit.seq, hit.time));
+      const roomIdx = artists.map((a, i) => [a, i]).filter(([a]) => a && a.day === run.day && a.stage === stage).map(([, i]) => i);
+      const at = roomIdx.length ? roomIdx[roomIdx.length - 1] + 1 : artists.length;
+      artists.splice(at, 0, born);
+      seen.add(key);
+      changes.push(`${name} (${stage}): NEW entry — on the bill, missing from the file; ${hit.time} (approx), order ${hit.seq} of ${run.order.length}`);
+    }
+  }
+
+  // Every name in every run must now exist — a typo would silently ship a room
+  // half on the old doors time, and an undeclared missing name must never be
+  // conjured into a card.
   const missing = [...inRun.keys()].filter((k) => !seen.has(k));
-  if (missing.length) throw new Error(`run incomplete: no artists[] entry for ${missing.join(', ')} — check the names, nights and venues against the file`);
+  if (missing.length) throw new Error(`run incomplete: no artists[] entry for ${missing.join(', ')} — check the names, nights and venues against the file, or declare the name in that run's \`adds\``);
 
   // …and every multi-artist venue-night that HAS a time must be in a run, or
   // the wall would draw a stack the data never explained. The two deliberately
@@ -349,10 +425,12 @@ export function migrateEvents(fest, { runs = RUNS } = {}) {
     let nextNote = note;
     for (const legacy of LEGACY_META_NOTES) nextNote = nextNote.replace(legacy, '').replace(/ {2,}/g, ' ').trim();
     if (!nextNote.includes(META_NOTE)) nextNote = `${nextNote}${nextNote ? ' ' : ''}${META_NOTE}`;
-    const nextSources = sources.includes(MIDWAY_TICKETS) ? sources : [...sources, MIDWAY_TICKETS];
-    if (nextNote !== note || nextSources !== sources) {
+    const want = [MIDWAY_TICKETS, DOTHEBAY_INDEX];
+    const add = want.filter((u) => !sources.includes(u));
+    const nextSources = add.length ? [...sources, ...add] : sources;
+    if (nextNote !== note || add.length) {
       if (nextNote !== note) changes.push('meta.note: the back-to-back-run provenance (what is sourced, what is ours)');
-      if (!sources.includes(MIDWAY_TICKETS)) changes.push(`meta.sources: + ${MIDWAY_TICKETS}`);
+      for (const u of add) changes.push(`meta.sources: + ${u}`);
       meta = { ...meta, note: nextNote, sources: nextSources };
     }
   }
@@ -369,19 +447,25 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
 
   const { fest: next, changes } = migrateEvents(fest);
 
-  // The frozen-key law, proved before anything is written: every name, every
-  // day label and every stage byte-identical, in the same order (MODEL-V3 §1).
-  const keysAfter = frozenKeys(next);
-  for (const k of ['names', 'days', 'stages']) {
-    if (JSON.stringify(keysAfter[k]) !== JSON.stringify(keysBefore[k])) {
-      throw new Error(`REFUSING TO WRITE: an artists[] ${k.slice(0, -1)} moved — these are pick/notes keys with no rename path`);
-    }
+  // The frozen-key law, proved before anything is written (MODEL-V3 §1): every
+  // pre-existing name, day label and stage byte-identical and in the same
+  // order. Additions are allowed — and must be exactly the ones the RUNS table
+  // declared, so a stray new card can never appear by accident.
+  const { additions } = additionsOnly(fest, next);
+  // Declared, minus the ones a previous run already landed — so a re-run's
+  // "no additions" is correct rather than a refusal.
+  const declared = RUNS.flatMap((r) => (r.adds || [])
+    .map((n) => `${n}|${r.day}|${r.night} · ${r.venue}`)
+    .filter((k) => !(fest.artists || []).some((a) => a && `${a.name}|${a.day}|${a.stage || ''}` === k)));
+  const got = additions.map((a) => `${a.name}|${a.day}|${a.stage}`);
+  if (JSON.stringify([...got].sort()) !== JSON.stringify([...declared].sort())) {
+    throw new Error(`REFUSING TO WRITE: the additions are not the declared ones.\n  got:      ${got.join(', ') || '(none)'}\n  declared: ${declared.join(', ') || '(none)'}`);
   }
 
   const after = JSON.stringify(next, null, 2);
   changes.forEach((c) => console.log(`  ${c}`));
-  console.log(`\n${changes.length} entr(ies) changed; ${keysBefore.names.length} names, ${new Set(keysBefore.days).size} day labels and ${new Set(keysBefore.stages.filter(Boolean)).size} stages untouched.`);
-  console.log(`${RUNS.length} runs: ${RUNS.map((r) => `${r.night} ${r.venue} (${r.order.length})`).join(', ')}`);
+  console.log(`\n${changes.length} entr(ies) changed; ${keysBefore.names.length} pre-existing names, ${new Set(keysBefore.days).size} day labels and ${new Set(keysBefore.stages.filter(Boolean)).size} stages untouched; ${additions.length} added.`);
+  console.log(`${RUNS.length} runs: ${RUNS.map((r) => `${r.night} ${r.venue} (${r.order.length}, ${r.confidence})`).join(', ')}`);
   if (after === before) { console.log('Already migrated — nothing to write.'); process.exit(0); }
   if (check) { console.log('--check: not writing.'); process.exit(0); }
   writeFileSync(PORTOLA, after);

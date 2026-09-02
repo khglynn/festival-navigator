@@ -212,10 +212,13 @@ test('a night\'s timetable: hour rail from the first set to the last close, toni
   assert.ok(tba);
   assert.equal(tba.querySelector('.tba-label').textContent, 'TIME TBA');
   assert.deepEqual([...tba.querySelectorAll('.card')].map((c) => [c.dataset.artist, c.dataset.time]), [['Azzecca', undefined]]);
-  // Saturday's afters are columns by the consistency law though thin: two venues, five TBA tiles.
+  // Saturday's afters: four venue columns (Audio and Public Works joined the
+  // clock on 2026-09-01 — their show pages print doors 10 PM), and the one
+  // room nobody has timed at all is the only TBA tile left.
   const sat = roomsUnder(root, 'Saturday')[1];
-  assert.deepEqual([...sat.querySelectorAll('.stage-strip .stage-head')].map((h) => h.textContent), ['Regency Ballroom', 'Monarch']);
-  assert.equal(sat.querySelectorAll('.tba .card').length, 5);
+  assert.deepEqual([...sat.querySelectorAll('.stage-strip .stage-head')].map((h) => h.textContent),
+    ['Public Works', 'Regency Ballroom', 'Audio', 'Monarch'], 'left to right by first set, ties in file order');
+  assert.deepEqual([...sat.querySelectorAll('.tba .card')].map((c) => c.dataset.artist), ['Groove Armada']);
 });
 
 test('the untouched paths: a grid-only fest renders one page-wide strip and no rooms; Lost Lands stays a lineup wall (WED is a wall-grid — tiles)', () => {
@@ -313,10 +316,19 @@ test('every venue-night on the Portola wall is a vertical run: nothing lanes, no
   assert.ok(regency.every((c) => c.el.getAttribute('role') === 'button'), 'every set stays its own tappable card');
   // Sunday's Public Works — the other deck — and the Midway four.
   const sun = columnsOf(blocks[3]);
-  const pw = [...sun.values()].find((l) => l.length === 3 && l[0].name === 'erika b2b sfcowboy');
-  assert.deepEqual(pw.map((c) => c.time), ['~10 PM', '~11:30 PM', '~1 AM']);
-  const midway = [...sun.values()].find((l) => l.length === 4);
+  const columnLed = (map, first) => [...map.values()].find((l) => l[0].name === first);
+  const pw = columnLed(sun, 'erika b2b sfcowboy');
+  assert.deepEqual(pw.map((c) => [c.name, c.time]),
+    [['erika b2b sfcowboy', '~10 PM'], ['Kaytree', '~11 PM'], ['Ben UFO', '~12 AM'], ['Overmono', '~1 AM']],
+    'Kaytree came off the bill and is a card like any other in the room');
+  const midway = columnLed(sun, 'MGNA Crrrta');
   assert.deepEqual(midway.map((c) => c.name), ['MGNA Crrrta', 'VTSS', 'Two Shell', 'horsegiirL']);
+  // Buck Wilson likewise opens Sunday's Monarch.
+  assert.deepEqual(columnLed(sun, 'Buck Wilson').map((c) => c.name), ['Buck Wilson', 'Dean Turnley', 'Silva Bumpa']);
+  // Saturday's two formerly timeless rooms are runs on the clock now.
+  const sat = columnsOf(blocks[2]);
+  assert.deepEqual(columnLed(sat, 'Airwolf Paradise').map((c) => [c.name, c.time]), [['Airwolf Paradise', '~10 PM'], ['Max Styler', '~11 PM']]);
+  assert.deepEqual(columnLed(sat, 'Chloé Caillet').map((c) => [c.name, c.time]), [['Chloé Caillet', '~10 PM'], ['Fcukers', '~11 PM']]);
 });
 
 test('a room nobody has re-read — three sets, one venue, one time, no order — stacks on the wall instead of piling', () => {

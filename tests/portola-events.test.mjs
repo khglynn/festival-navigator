@@ -39,8 +39,8 @@ const { validateFestivalDoc } = await import('../api/_lib/festival-rules.mjs');
 const { frozenKeyProblems } = await import('../api/_lib/pick-keys.mjs');
 const { timeToMinutes } = await import('../js/time.js');
 const {
-  migrateEvents, frozenKeys, isEventEntry, splitStage, runTimes, clockLabel,
-  RUNS, TIMELESS_ROOMS, PORTOLA_WEEK, MIDWAY_TICKETS, META_NOTE,
+  migrateEvents, frozenKeys, additionsOnly, isEventEntry, splitStage, runTimes, clockLabel,
+  RUNS, TIMELESS_ROOMS, PORTOLA_WEEK, DOTHEBAY_INDEX, MIDWAY_TICKETS, META_NOTE,
 } = await import('../scripts/migrate-portola-events.mjs');
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -155,7 +155,7 @@ test('a day label cannot move either — the notes chip on a section points at i
 // ---- night + venue: a denormalization that must not drift -------------------
 
 test('every event entry carries night + venue, and they agree with the stage string', () => {
-  assert.equal(events.length, 45, 'Portola Week + Folsom weekend, as shipped');
+  assert.equal(events.length, 47, 'Portola Week + Folsom weekend, plus Buck Wilson and Kaytree off the bill (2026-09-01)');
   for (const a of events) {
     const { night, venue } = splitStage(a.stage);
     assert.equal(a.night, night, `${a.name}: night parsed from ${a.stage}`);
@@ -197,9 +197,54 @@ test('EVERY multi-artist venue-night with a time is a run — no pile is left in
     assert.ok(list.every((a) => a.approx === true && a.order.confirmed === false), `${key}: it is our read, and it says so`);
     assert.ok(list.every((a) => a.doors), `${key}: a run needs the room's doors`);
   }
-  // …and the two rooms that print no time at all are exactly the two we know.
-  assert.deepEqual([...multi].filter(([k]) => timeless.has(k)).map(([k]) => k).sort(),
-    ['Afters|Sat|Audio', 'Afters|Sat|Public Works']);
+  // …and Portola has NO timeless multi-artist room left: Sat Audio and Sat
+  // Public Works were the last two, and their show pages print doors 10 PM.
+  assert.deepEqual([...multi].filter(([k]) => timeless.has(k)).map(([k]) => k), []);
+  assert.deepEqual(TIMELESS_ROOMS, []);
+});
+
+test('the two names that were on the bill and missing from the file are cards now, in shape with their neighbours', () => {
+  const at = (name, stage) => portola.artists.find((a) => a.name === name && a.stage === stage);
+  const buck = at('Buck Wilson', 'Sun · Monarch');
+  const kaytree = at('Kaytree', 'Sun · Public Works');
+  for (const [who, seq, of, time] of [[buck, 1, 3, '10 PM'], [kaytree, 2, 4, '11 PM']]) {
+    assert.ok(who, 'the entry exists');
+    assert.equal(who.day, 'Afters', 'the section key is the one notes are written on');
+    assert.equal(who.time, time);
+    assert.equal(who.approx, true, 'a created set is a guess like every other set in its room');
+    assert.equal(who.doors, '10 PM');
+    assert.equal(who.order.seq, seq);
+    assert.equal(who.order.of, of);
+    assert.equal(who.order.confirmed, false);
+    assert.match(who.order.source, /^https:\/\/dothebay\.com\//, 'the door opens the show page the bill was read from');
+    // Byte-for-byte the same key set as an entry that was already there.
+    const neighbour = portola.artists.find((a) => a.stage === who.stage && a.name !== who.name);
+    assert.deepEqual(Object.keys(who), Object.keys(neighbour), 'a created entry is not a different shape from its room-mates');
+  }
+  // Kaytree already had a Sunday grid billing; picks unify by exact name
+  // across both, which is the shape VTSS and Overmono already had.
+  assert.equal(portola.artists.filter((a) => a.name === 'Kaytree').length, 2);
+  assert.ok(portola.artists.some((a) => a.name === 'Kaytree' && a.day === 'Sunday' && !a.stage));
+  assert.equal(portola.artists.filter((a) => a.name === 'Buck Wilson').length, 1, 'Buck Wilson was nowhere in the file before');
+  // The lowercase pick key survived DoTheBay's "Erika b2b SFCowboy".
+  assert.ok(portola.artists.some((a) => a.name === 'erika b2b sfcowboy'));
+  assert.ok(!portola.artists.some((a) => /^Erika b2b/.test(a.name)));
+});
+
+test('every run points its order line at the page the bill was read from', () => {
+  for (const run of RUNS) {
+    for (const name of run.order) {
+      const a = portola.artists.find((x) => x.name === name && x.stage === `${run.night} · ${run.venue}`);
+      assert.equal(a.order.source, run.source, `${name}: the door opens ${run.venue}'s own show page`);
+    }
+    assert.match(run.source, /^https:\/\/(dothebay\.com|www\.axs\.com)\//, `${run.venue}: a citable, server-rendered page`);
+    assert.ok(['medium', 'high'].includes(run.confidence), `${run.venue}: confidence is recorded`);
+  }
+  // The programme page is the programme of record, not a door: its list is
+  // client-side, so nothing cites it as a source any more.
+  assert.ok(!portola.artists.some((a) => a.order && a.order.source === PORTOLA_WEEK));
+  assert.ok(portola.meta.sources.includes(PORTOLA_WEEK), 'it stays in meta.sources');
+  assert.ok(portola.meta.sources.includes(DOTHEBAY_INDEX), 'and the listing that replaced it is there too');
 });
 
 test('a single-act venue-night is never given a run — the shape is not sprayed across the file', () => {
@@ -254,7 +299,7 @@ test('The Midway is untouched — Kevin settled that room, and re-running the mi
     assert.equal(a.close, '2 AM');
     assert.equal(a.closeApprox, true, 'NO source states an end time — the close is ours, and the data says so');
     assert.deepEqual(a.order, {
-      seq: a.order.seq, of: 4, source: PORTOLA_WEEK, confirmed: false,
+      seq: a.order.seq, of: 4, source: MIDWAY_TICKETS, confirmed: false,
     });
     assert.match(a.order.source, /^https:\/\//, 'the order line is a door, so it needs somewhere to go');
   }
@@ -283,8 +328,9 @@ test('the file itself says which facts are sourced and which are ours', () => {
   // read of a bill.
   assert.ok(portola.meta.note.includes(META_NOTE));
   assert.match(portola.meta.note, /that is the DOORS time/);
-  assert.match(portola.meta.note, /the 2 AM close is OURS/);
-  assert.match(portola.meta.note, /deliberately left timeless/);
+  assert.match(portola.meta.note, /The Midway.s 2 AM is OURS/);
+  assert.match(portola.meta.note, /TWO NAMES WERE ON THE BILL AND MISSING/);
+  assert.match(portola.meta.note, /is KEPT against DoTheBay/, 'the pick key we did not "fix"');
   assert.equal(portola.meta.note.split('BACK-TO-BACK RUN').length, 2, 'one provenance paragraph, not one per re-run');
   assert.ok(portola.meta.sources.includes(MIDWAY_TICKETS), 'the doors time is one click away');
   assert.ok(portola.meta.sources.includes(PORTOLA_WEEK), 'and so is the programme the orders came from');

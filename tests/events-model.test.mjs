@@ -64,13 +64,18 @@ test('parseEventTime runs on the festival-day axis: AM after midnight, but a lat
 
 // ---- the layout rule against the real files ----------------------------------------
 
-test('the rule on Portola: Friday and Sunday afters EARN columns, Thursday and Saturday do not; Folsom never does', () => {
+test('the rule on Portola: every afters night but Thursday EARNS columns; Folsom never does', () => {
   const m = modelOf(portola);
   assert.ok(m.dayFirst);
   const afters = m.sections.find((s) => s.key === 'Afters');
   const folsom = m.sections.find((s) => s.key === 'Folsom');
   const earns = (s, n) => ev.earnsColumns(s.byNight.get(n) || []).earns;
-  assert.deepEqual(['Thu', 'Fri', 'Sat', 'Sun'].map((n) => earns(afters, n)), [false, true, false, true]);
+  // Saturday joined Friday and Sunday on 2026-09-01: the DoTheBay show pages
+  // print doors 10 PM for Audio and Public Works, so its two timeless rooms
+  // became timed and the night now clears the rule on its own. Nothing moved
+  // on screen — the consistency law already gave Saturday columns.
+  assert.deepEqual(['Thu', 'Fri', 'Sat', 'Sun'].map((n) => earns(afters, n)), [false, true, true, true]);
+  assert.equal(earns(afters, 'Thu'), false, 'two shows is not a clock');
   const fri = ev.earnsColumns(afters.byNight.get('Fri'));
   assert.ok(fri.E >= 5 && fri.R >= 1.5 && fri.T >= 0.6, `Friday: ${fri.E} timed shows over ${fri.V} venues, ${Math.round(fri.T * 100)}% timed`);
   assert.deepEqual(['Fri', 'Sat', 'Sun'].map((n) => earns(folsom, n)), [false, false, false], 'Folsom: roughly one show per venue');
@@ -114,7 +119,8 @@ test('eventModelOf on Portola: THU FRI SAT SUN, the grid days keep their keys, t
   assert.deepEqual(m.sections.map((s) => [s.key, s.label, s.mode]), [['Afters', 'Afters', 'columns'], ['Folsom', 'Folsom', 'tiles']], 'known-day order');
   const afters = m.sections[0];
   assert.deepEqual([...afters.byDay.keys()], ['Thursday', 'Friday', 'Saturday', 'Sunday']);
-  assert.deepEqual([...afters.byDay.values()].map((l) => l.length), [2, 12, 9, 15], 'Friday: eleven Afters entries plus Horse Meat Disco (Afters & Folsom)');
+  assert.deepEqual([...afters.byDay.values()].map((l) => l.length), [2, 12, 9, 17],
+    'Friday: eleven Afters entries plus Horse Meat Disco (Afters & Folsom); Sunday gained Kaytree and Buck Wilson off the bill');
   assert.deepEqual([...m.sections[1].byDay].map(([k, l]) => [k, l.length]), [['Friday', 2], ['Saturday', 2], ['Sunday', 4]]);
   assert.deepEqual(afters.loose, [], 'every Portola event says its night');
   assert.deepEqual(ev.bucketsOf(portola, m).map((b) => [b.key, b.label]), [[':fest', 'Portola'], ['Afters', 'Afters'], ['Folsom', 'Folsom']]);
@@ -190,7 +196,7 @@ test('timetableOf, Portola Friday: venues left to right by first set, and every 
   assert.equal(despacio.span, 24, '5–11 PM, the one set with a printed end');
 });
 
-test('timetableOf, Portola Sunday: every room stacks — the Midway four, Public Works three, and the closer runs to the close', () => {
+test('timetableOf, Portola Sunday: every room stacks — the Midway four, Public Works four, and the closer runs to the close', () => {
   const tt = ev.timetableOf(aftersOn('Sun'));
   noLanesNoDecks(tt);
   const roomOf = (v) => tt.cells.filter((c) => c.venue === v).sort((a, b) => a.row - b.row);
@@ -207,7 +213,9 @@ test('timetableOf, Portola Sunday: every room stacks — the Midway four, Public
   // Public Works was the deck in the rejected build; it is a run like every
   // other room now, and its three sets are spread across the same window.
   const pw = roomOf('Public Works');
-  assert.deepEqual(pw.map((c) => c.entry.startStr), ['10 PM', '11:30 PM', '1 AM']);
+  assert.deepEqual(pw.map((c) => [c.entry.e.name, c.entry.startStr]),
+    [['erika b2b sfcowboy', '10 PM'], ['Kaytree', '11 PM'], ['Ben UFO', '12 AM'], ['Overmono', '1 AM']],
+    'Kaytree was on the bill and missing from the file — four sets share the room\'s four hours');
   assert.deepEqual(tt.tba.map((a) => a.name), ['Azzecca']);
 });
 

@@ -25,6 +25,7 @@ globalThis.location = { origin: 'https://fest.kevinhg.com', hash: '' };
 const state = await import('../js/state.js');
 const { FESTIVAL_INDEX } = await import('../js/festivals.js');
 const { dayImageChoices, dayArtistsFor } = await import('../js/v3/tools.js');
+const { timeToMinutes } = await import('../js/time.js');
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const portola = JSON.parse(readFileSync(join(ROOT, 'data/festivals/portola-2026.json'), 'utf8'));
@@ -45,10 +46,14 @@ test('a day exports its whole content in the wall\'s order: the grid in clock or
   const sat = dayArtistsFor('Saturday');
   assert.equal(sat.length, 32 + 9 + 2, 'the grid, Saturday\'s afters, Saturday\'s Folsom');
   assert.deepEqual(sat[0], { name: 'Airwolf Paradise', time: 'Pier Stage · 1:30 PM' });
-  // Saturday's afters open with the Regency's OPENER — the room is a run, so
-  // the first card is whoever plays first, not whoever is billed first.
-  const satOpener = portola.artists.find((a) => a.night === 'Sat' && a.venue === 'Regency Ballroom' && a.order.seq === 1);
-  assert.deepEqual(sat[32], { name: satOpener.name, time: `Afters · Regency Ballroom · ~${satOpener.time}` }, 'the first afters show after the grid, time-sorted, wearing its tilde');
+  // Saturday's afters open with whoever plays FIRST — every room is a run, so
+  // the export leads with the earliest set, not the biggest name. Derived from
+  // the file so a re-read of the bills moves this test with the data.
+  const satFirst = portola.artists
+    .filter((a) => a.day === 'Afters' && a.night === 'Sat' && a.time)
+    .reduce((best, a) => (best && timeToMinutes(best.time) <= timeToMinutes(a.time) ? best : a), null);
+  assert.deepEqual(sat[32], { name: satFirst.name, time: `Afters · ${satFirst.venue} · ~${satFirst.time}` },
+    'the first afters show after the grid, time-sorted, wearing its tilde');
   assert.deepEqual(sat[sat.length - 1], { name: 'PERVERT XXL', time: 'Folsom · The Midway · 10 PM - 6 AM' });
   const thu = dayArtistsFor('Thursday');
   assert.deepEqual(thu, [{ name: 'Soulwax', time: 'Afters · Regency Ballroom · 8 PM' }, { name: 'Black Rave Culture', time: 'Afters · Club Six · 10 PM' }]);

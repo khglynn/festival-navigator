@@ -299,3 +299,71 @@ builder's worktree; pushes go to `origin/events-ui` with `HEAD:events-ui`).*
   still carry their real auras and pills, which is the point of the picture.
   `gallery.html` is not in APP_CORE, so no re-stamp. `npm test` = 460 tests,
   459 pass, 1 skipped, 0 fail.
+
+### Round 3b — the billing, read (2026-09-01)
+
+*The research landed after all: the coordinator read the eleven DoTheBay event
+pages himself (DoTheBay carries Goldenvoice's official Portola Week listing).
+File: `…/3de364de-…/scratchpad/afters-billing.md`.*
+
+- 2026-09-01 — THE ORDER HELD. Every one of the ten rooms I had entered on the
+  full-reverse fallback matches the billing on its own show page — including
+  both three-act rooms, which is where my reading and the brief's literal
+  wording disagreed. Nothing about who plays when had to move.
+- 2026-09-01 — SOURCES ARE PER ROOM NOW. `order.source` was one programme URL
+  for nine rooms; it is each room's own DoTheBay show page. The reason is worth
+  keeping: portolamusicfestival.com/portola-week renders its show list
+  client-side, so its static HTML is an image — it is the programme of record
+  but not a citable door. It stays in `meta.sources`; `dothebay.com/portolaweek`
+  joins it. The Midway keeps AXS 1575408. Confidence per room is now recorded
+  from the research (6 medium / 5 high + the Midway's medium) and printed by
+  the CLI on every run.
+- 2026-09-01 — TWO NAMES CAME OFF THE BILL AND INTO THE FILE. **Buck Wilson**
+  (Sun · Monarch, opens — he existed only as a line in `meta.note`'s
+  supporting-roster list) and **Kaytree** (Sun · Public Works, second — she
+  already had a Sunday grid billing, so this is the VTSS/Overmono shape: one
+  name, two entries, picks unify). DoTheBay spells the fourth Public Works act
+  "Erika b2b SFCowboy"; our lowercase `erika b2b sfcowboy` is KEPT, because it
+  is a pick key and there is no rename path.
+- 2026-09-01 — THE MIGRATION CAN CREATE A ROW NOW, and only a declared one.
+  A run row carries `adds: [...]`; anything else in `order` must already exist
+  or the transform throws rather than inventing a card. New rows are built
+  through the same `runFieldsFor()` the mapped ones use (a test asserts a
+  created entry has byte-identical keys to its room-mates) and are spliced
+  directly after the last existing set of their room, so the diff stays local.
+- 2026-09-01 — THE FROZEN-KEY GUARD IS ADDITION-AWARE. Positional equality
+  cannot survive an insert, so `additionsOnly(before, after)` walks the new
+  list and consumes the old one IN ORDER: every pre-existing name/day/stage
+  must be met in sequence, byte-identical, and the leftovers are the additions
+  — which the CLI then matches against exactly what `RUNS` declared, minus any
+  a previous run already landed (that last clause is what keeps a re-run a
+  no-op). A moved row throws with the row it expected.
+- 2026-09-01 — TWO ROOMS STOPPED BEING TIME TBA. Sat · Audio (Airwolf
+  Paradise → Max Styler) and Sat · Public Works (Chloé Caillet → Fcukers) print
+  doors 10 PM on their show pages; our file had no time for either. They are
+  runs now, `TIMELESS_ROOMS` is empty, and Portola has no timeless multi-artist
+  room left — only two single-act rooms with no time (Groove Armada, Azzecca).
+  Knock-on: **Saturday's afters now EARN columns on their own** (4 timed
+  venues), where before they only had them by the consistency law. Nothing
+  moved on screen; the test that pinned `[false, true, false, true]` now pins
+  `[false, true, true, true]` with the reason.
+- 2026-09-01 — CLOSES, LEFT ALONE ON PURPOSE. The research flags
+  `closeSource: false` for Sat Monarch, Sun Monarch and Sun Public Works —
+  DoTheBay does not print their end times. Those closes came from our own
+  2026-08-23 research pass, so they are SOURCED, just not there; marking them
+  `closeApprox` would put a tilde on the zoom's window line that overstates our
+  doubt. Left as they are, with the distinction written into `meta.note` and
+  the run rows' notes. **Flag for Kevin: if he wants only DoTheBay-printed
+  closes to count as sourced, three rooms gain a tilde and it is a one-line
+  change per row.** Fri · The Great Northern's 2 AM IS printed on its page.
+- 2026-09-01 — NO SW STAMP THIS ROUND, deliberately. Nothing in APP_CORE
+  changed (scripts, data and tests only), festival JSONs are served
+  network-first so a data drop reaches an online phone on the next open, and
+  `sw-stamp.mjs` bumps `CACHE_VERSION` unconditionally — running it would
+  invalidate every install's shell cache for zero new bytes.
+  `tests/app-shell-complete.test.mjs` is green, which is the check that decides.
+- 2026-09-01 — GREEN: `npm test` = 463 tests, 462 pass, 1 skipped
+  (pre-existing), 0 fail. `node scripts/validate-festivals.mjs` = 11 files,
+  0 errors, 1 pre-existing warning. Migration: 31 entries changed, 2 added,
+  110 pre-existing names / 6 day labels / 29 stages byte-identical, idempotent
+  on a second run.

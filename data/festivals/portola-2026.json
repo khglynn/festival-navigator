@@ -306,7 +306,7 @@
       "order": {
         "seq": 3,
         "of": 3,
-        "source": "https://portolamusicfestival.com/portola-week/",
+        "source": "https://dothebay.com/events/2026/9/25/channel-tres-jyoty-gelli-haha-tickets",
         "confirmed": false
       }
     },
@@ -322,7 +322,7 @@
       "order": {
         "seq": 2,
         "of": 3,
-        "source": "https://portolamusicfestival.com/portola-week/",
+        "source": "https://dothebay.com/events/2026/9/25/channel-tres-jyoty-gelli-haha-tickets",
         "confirmed": false
       }
     },
@@ -338,7 +338,7 @@
       "order": {
         "seq": 1,
         "of": 3,
-        "source": "https://portolamusicfestival.com/portola-week/",
+        "source": "https://dothebay.com/events/2026/9/25/channel-tres-jyoty-gelli-haha-tickets",
         "confirmed": false
       }
     },
@@ -370,7 +370,7 @@
       "order": {
         "seq": 2,
         "of": 2,
-        "source": "https://portolamusicfestival.com/portola-week/",
+        "source": "https://dothebay.com/events/2026/9/25/sam-alfred-tickets",
         "confirmed": false
       }
     },
@@ -386,7 +386,7 @@
       "order": {
         "seq": 1,
         "of": 2,
-        "source": "https://portolamusicfestival.com/portola-week/",
+        "source": "https://dothebay.com/events/2026/9/25/sam-alfred-tickets",
         "confirmed": false
       }
     },
@@ -403,7 +403,7 @@
       "order": {
         "seq": 2,
         "of": 2,
-        "source": "https://portolamusicfestival.com/portola-week/",
+        "source": "https://dothebay.com/events/2026/9/25/ranger-trucco-tickets",
         "confirmed": false
       }
     },
@@ -420,7 +420,7 @@
       "order": {
         "seq": 1,
         "of": 2,
-        "source": "https://portolamusicfestival.com/portola-week/",
+        "source": "https://dothebay.com/events/2026/9/25/ranger-trucco-tickets",
         "confirmed": false
       }
     },
@@ -437,14 +437,32 @@
       "day": "Afters",
       "stage": "Sat · Public Works",
       "night": "Sat",
-      "venue": "Public Works"
+      "venue": "Public Works",
+      "time": "11 PM",
+      "approx": true,
+      "doors": "10 PM",
+      "order": {
+        "seq": 2,
+        "of": 2,
+        "source": "https://dothebay.com/events/2026/9/26/fcukers-dj-set-chloe-caillet-presented-by-goldenvoice-tickets",
+        "confirmed": false
+      }
     },
     {
       "name": "Chloé Caillet",
       "day": "Afters",
       "stage": "Sat · Public Works",
       "night": "Sat",
-      "venue": "Public Works"
+      "venue": "Public Works",
+      "time": "10 PM",
+      "approx": true,
+      "doors": "10 PM",
+      "order": {
+        "seq": 1,
+        "of": 2,
+        "source": "https://dothebay.com/events/2026/9/26/fcukers-dj-set-chloe-caillet-presented-by-goldenvoice-tickets",
+        "confirmed": false
+      }
     },
     {
       "name": "Parcels",
@@ -458,7 +476,7 @@
       "order": {
         "seq": 2,
         "of": 2,
-        "source": "https://portolamusicfestival.com/portola-week/",
+        "source": "https://dothebay.com/events/2026/9/26/parcels-tickets",
         "confirmed": false
       }
     },
@@ -474,7 +492,7 @@
       "order": {
         "seq": 1,
         "of": 2,
-        "source": "https://portolamusicfestival.com/portola-week/",
+        "source": "https://dothebay.com/events/2026/9/26/parcels-tickets",
         "confirmed": false
       }
     },
@@ -490,14 +508,32 @@
       "day": "Afters",
       "stage": "Sat · Audio",
       "night": "Sat",
-      "venue": "Audio"
+      "venue": "Audio",
+      "time": "11 PM",
+      "approx": true,
+      "doors": "10 PM",
+      "order": {
+        "seq": 2,
+        "of": 2,
+        "source": "https://dothebay.com/events/2026/9/26/max-styler-tickets",
+        "confirmed": false
+      }
     },
     {
       "name": "Airwolf Paradise",
       "day": "Afters",
       "stage": "Sat · Audio",
       "night": "Sat",
-      "venue": "Audio"
+      "venue": "Audio",
+      "time": "10 PM",
+      "approx": true,
+      "doors": "10 PM",
+      "order": {
+        "seq": 1,
+        "of": 2,
+        "source": "https://dothebay.com/events/2026/9/26/max-styler-tickets",
+        "confirmed": false
+      }
     },
     {
       "name": "Jigitz",
@@ -512,7 +548,7 @@
       "order": {
         "seq": 2,
         "of": 2,
-        "source": "https://portolamusicfestival.com/portola-week/",
+        "source": "https://dothebay.com/events/2026/9/26/jigitz-tickets",
         "confirmed": false
       }
     },
@@ -529,7 +565,7 @@
       "order": {
         "seq": 1,
         "of": 2,
-        "source": "https://portolamusicfestival.com/portola-week/",
+        "source": "https://dothebay.com/events/2026/9/26/jigitz-tickets",
         "confirmed": false
       }
     },
@@ -544,9 +580,9 @@
       "doors": "10 PM",
       "close": "2 AM",
       "order": {
-        "seq": 3,
-        "of": 3,
-        "source": "https://portolamusicfestival.com/portola-week/",
+        "seq": 4,
+        "of": 4,
+        "source": "https://dothebay.com/events/2026/9/27/overmono-dj-set-ben-ufo-tickets",
         "confirmed": false
       }
     },
@@ -556,14 +592,14 @@
       "stage": "Sun · Public Works",
       "night": "Sun",
       "venue": "Public Works",
-      "time": "11:30 PM",
+      "time": "12 AM",
       "approx": true,
       "doors": "10 PM",
       "close": "2 AM",
       "order": {
-        "seq": 2,
-        "of": 3,
-        "source": "https://portolamusicfestival.com/portola-week/",
+        "seq": 3,
+        "of": 4,
+        "source": "https://dothebay.com/events/2026/9/27/overmono-dj-set-ben-ufo-tickets",
         "confirmed": false
       }
     },
@@ -579,8 +615,25 @@
       "close": "2 AM",
       "order": {
         "seq": 1,
-        "of": 3,
-        "source": "https://portolamusicfestival.com/portola-week/",
+        "of": 4,
+        "source": "https://dothebay.com/events/2026/9/27/overmono-dj-set-ben-ufo-tickets",
+        "confirmed": false
+      }
+    },
+    {
+      "name": "Kaytree",
+      "day": "Afters",
+      "stage": "Sun · Public Works",
+      "night": "Sun",
+      "venue": "Public Works",
+      "time": "11 PM",
+      "approx": true,
+      "doors": "10 PM",
+      "close": "2 AM",
+      "order": {
+        "seq": 2,
+        "of": 4,
+        "source": "https://dothebay.com/events/2026/9/27/overmono-dj-set-ben-ufo-tickets",
         "confirmed": false
       }
     },
@@ -598,7 +651,7 @@
       "order": {
         "seq": 4,
         "of": 4,
-        "source": "https://portolamusicfestival.com/portola-week/",
+        "source": "https://www.axs.com/events/1575408/horsegiirl-tickets",
         "confirmed": false
       }
     },
@@ -616,7 +669,7 @@
       "order": {
         "seq": 2,
         "of": 4,
-        "source": "https://portolamusicfestival.com/portola-week/",
+        "source": "https://www.axs.com/events/1575408/horsegiirl-tickets",
         "confirmed": false
       }
     },
@@ -634,7 +687,7 @@
       "order": {
         "seq": 3,
         "of": 4,
-        "source": "https://portolamusicfestival.com/portola-week/",
+        "source": "https://www.axs.com/events/1575408/horsegiirl-tickets",
         "confirmed": false
       }
     },
@@ -652,7 +705,7 @@
       "order": {
         "seq": 1,
         "of": 4,
-        "source": "https://portolamusicfestival.com/portola-week/",
+        "source": "https://www.axs.com/events/1575408/horsegiirl-tickets",
         "confirmed": false
       }
     },
@@ -668,7 +721,7 @@
       "order": {
         "seq": 2,
         "of": 2,
-        "source": "https://portolamusicfestival.com/portola-week/",
+        "source": "https://dothebay.com/events/2026/9/27/sg-lewis-dj-set-tickets",
         "confirmed": false
       }
     },
@@ -684,7 +737,7 @@
       "order": {
         "seq": 1,
         "of": 2,
-        "source": "https://portolamusicfestival.com/portola-week/",
+        "source": "https://dothebay.com/events/2026/9/27/sg-lewis-dj-set-tickets",
         "confirmed": false
       }
     },
@@ -702,19 +755,36 @@
       "stage": "Sun · Monarch",
       "night": "Sun",
       "venue": "Monarch",
-      "time": "12:30 AM",
+      "time": "1 AM",
       "approx": true,
       "doors": "10 PM",
       "close": "3 AM",
       "order": {
-        "seq": 2,
-        "of": 2,
-        "source": "https://portolamusicfestival.com/portola-week/",
+        "seq": 3,
+        "of": 3,
+        "source": "https://dothebay.com/events/2026/9/27/silva-bumpa-tickets",
         "confirmed": false
       }
     },
     {
       "name": "Dean Turnley",
+      "day": "Afters",
+      "stage": "Sun · Monarch",
+      "night": "Sun",
+      "venue": "Monarch",
+      "time": "11:30 PM",
+      "approx": true,
+      "doors": "10 PM",
+      "close": "3 AM",
+      "order": {
+        "seq": 2,
+        "of": 3,
+        "source": "https://dothebay.com/events/2026/9/27/silva-bumpa-tickets",
+        "confirmed": false
+      }
+    },
+    {
+      "name": "Buck Wilson",
       "day": "Afters",
       "stage": "Sun · Monarch",
       "night": "Sun",
@@ -725,8 +795,8 @@
       "close": "3 AM",
       "order": {
         "seq": 1,
-        "of": 2,
-        "source": "https://portolamusicfestival.com/portola-week/",
+        "of": 3,
+        "source": "https://dothebay.com/events/2026/9/27/silva-bumpa-tickets",
         "confirmed": false
       }
     },
@@ -749,7 +819,7 @@
       "order": {
         "seq": 2,
         "of": 2,
-        "source": "https://portolamusicfestival.com/portola-week/",
+        "source": "https://dothebay.com/events/2026/9/27/jt-tickets",
         "confirmed": false
       }
     },
@@ -765,7 +835,7 @@
       "order": {
         "seq": 1,
         "of": 2,
-        "source": "https://portolamusicfestival.com/portola-week/",
+        "source": "https://dothebay.com/events/2026/9/27/jt-tickets",
         "confirmed": false
       }
     },
@@ -851,7 +921,7 @@
       "https://aegwebprod.blob.core.windows.net/content/portola/2026/ship-tent-26.jpg",
       "https://www.axs.com/events/1575408/horsegiirl-tickets"
     ],
-    "note": "SET TIMES (2026-08-27): the official Saturday/Sunday posters went up on portolamusicfestival.com/set-times (and Portola's Instagram the same afternoon). Transcribed from the 1080px official JPGs by three independent readers (two model readers + a third pass) and reconciled box-by-box; stage membership cross-checked against the four official per-stage lineup images. Doors 1 PM both days, 21+. Five columns as printed: Pier Stage, Crane Stage, Warehouse, Ship Tent, Despacio (Despacio is one continuous block: Sat 2:45-9:45 PM, Sun 3:30-10:30 PM). Kaytree (Ship Tent, Sun 1:40-2:55) was on the poster but not the earlier lineup graphic and was added to artists[] here. Poster billing that is NOT part of the pick key: Dog Blood is billed \"(Skrillex + Boys Noize)\", DJ Shadow \"celebrates 30 years of Endtroducing\", Melanie C is a DJ set, SG Lewis is live. Artist names are byte-identical to the lineup phase on purpose - picks are keyed by exact name (tests/live-pick-keys.test.mjs freezes the names the crew had already picked). Portola Week (official Goldenvoice afters program, announced 2026-08-18: 21 shows Thu Sept 24 - Sun Sept 27; presale Aug 20, general Aug 21) added as an \"Afters\" section, and Folsom Street Fair weekend as a \"Folsom\" section, 2026-08-23. Mechanism: an afters/Folsom appearance is its own entry; when the name matches a lineup artist (Overmono, Fatboy Slim, ...) the pick/aura/notes unify by exact name on purpose - one artist, one pick, cards in both sections. Night + venue ride in `stage`, hours in `time`; cards render them as a sub-label. Horse Meat Disco (the crew ask - Bearracuda Folsom Street party, confirmed Fri Sept 25, Public Works, 9 PM-3 AM, 21+, tickets sickening.events; NOTE a stale 2024 Tixr link circulates - IDs are sequential, 114080 is the 2024 edition) is day-tagged \"Afters & Folsom\" so it renders under both. Curation: title-billed artists and lineup artists get cards; supporting-roster DJs noted here instead: Rory Phillips (w/ 2manydjs), Boygirl + Femme Jatale b2b Erika (w/ Six Sex), Kaytree + a program audio loft (Public Works Sun), Kavari (The Midway Sun), Buck Wilson (Monarch Sun), Mateo Segade (HMD upstairs). Sourcing: egress-proxied research - facts come from ticketing-page titles/search listings (AXS/Eventbrite/Tixr/venue calendars) cross-checked in aggregate; HMD, fair date/hours, Magnitude, DEVIANTS, Real Bad 37, and Groove Armada (Sat, The Great Northern) were re-verified individually 2026-08-23. Times not confirmed anywhere yet: Fcukers/Chloé Caillet (Public Works Sat), Groove Armada, Max Styler/Airwolf Paradise + Azzecca (Audio) - cards carry venue only until they post (venue norm ~10 PM). DESPACIO Pier 80 Friday is limited to every-year passholders. No unofficial/renegade afters existed as of 2026-08-23 - they historically appear 2-4 weeks out; re-scan mid-September. Folsom fair stage/DJ talent also unannounced yet (folsomstreet.org posts closer in). Weekend-conflict map for planning: Fri is conflict-free (HMD night); Sat daytime Folsom events run opposite Portola day 1; Magnitude/PERVERT XXL start as day 1 ends; Sun daytime the fair runs opposite Portola day 2; DEVIANTS/Real Bad overlap the Sunday afters. BACK-TO-BACK RUNS (2026-09-01, MODEL-V3 §5): a venue-night is ONE ROOM and its artists play IN SEQUENCE. Every multi-artist venue-night in this file had all of its artists stamped with the SAME time - that is the DOORS time off the programme/ticket page, not a set time. So each of those rooms now carries `doors` (and `close` where a page prints one), and every set in it carries a GUESSED start (`approx: true`) plus `order: {seq, of, source, confirmed:false}` recording the running order and where it came from. Set times are laid across the window: evenly from doors to close where the close is known, an hour apart from doors where it is not, rounded to the half hour. Running order follows the billing - the billed headliner closes and the rest run in descending print - which for rooms we could not re-read means the first-listed name in artists[] closes and the rest reverse ahead of it (LOW confidence, pointed at the Portola Week programme page). THE MIDWAY (Sun) is the one room settled with Kevin directly: doors 10 PM is sourced from AXS event 1575408, the 2 AM close is OURS (`closeApprox: true`), and horsegiirL closes because both ticket vendors bill the show \"horsegiirL with VTSS, MGNA Crrrta, Two Shell\". Sat Public Works and Sat Audio print NO time at all and are deliberately left timeless (TIME TBA) rather than given an invented clock. `order.confirmed` is false everywhere - none of this is a venue-issued set time. Every other event entry gained only `night` + `venue`, parsed out of `stage` (which stays, and stays authoritative - the validator errors if the two disagree)."
+    "note": "SET TIMES (2026-08-27): the official Saturday/Sunday posters went up on portolamusicfestival.com/set-times (and Portola's Instagram the same afternoon). Transcribed from the 1080px official JPGs by three independent readers (two model readers + a third pass) and reconciled box-by-box; stage membership cross-checked against the four official per-stage lineup images. Doors 1 PM both days, 21+. Five columns as printed: Pier Stage, Crane Stage, Warehouse, Ship Tent, Despacio (Despacio is one continuous block: Sat 2:45-9:45 PM, Sun 3:30-10:30 PM). Kaytree (Ship Tent, Sun 1:40-2:55) was on the poster but not the earlier lineup graphic and was added to artists[] here. Poster billing that is NOT part of the pick key: Dog Blood is billed \"(Skrillex + Boys Noize)\", DJ Shadow \"celebrates 30 years of Endtroducing\", Melanie C is a DJ set, SG Lewis is live. Artist names are byte-identical to the lineup phase on purpose - picks are keyed by exact name (tests/live-pick-keys.test.mjs freezes the names the crew had already picked). Portola Week (official Goldenvoice afters program, announced 2026-08-18: 21 shows Thu Sept 24 - Sun Sept 27; presale Aug 20, general Aug 21) added as an \"Afters\" section, and Folsom Street Fair weekend as a \"Folsom\" section, 2026-08-23. Mechanism: an afters/Folsom appearance is its own entry; when the name matches a lineup artist (Overmono, Fatboy Slim, ...) the pick/aura/notes unify by exact name on purpose - one artist, one pick, cards in both sections. Night + venue ride in `stage`, hours in `time`; cards render them as a sub-label. Horse Meat Disco (the crew ask - Bearracuda Folsom Street party, confirmed Fri Sept 25, Public Works, 9 PM-3 AM, 21+, tickets sickening.events; NOTE a stale 2024 Tixr link circulates - IDs are sequential, 114080 is the 2024 edition) is day-tagged \"Afters & Folsom\" so it renders under both. Curation: title-billed artists and lineup artists get cards; supporting-roster DJs noted here instead: Rory Phillips (w/ 2manydjs), Boygirl + Femme Jatale b2b Erika (w/ Six Sex), Kaytree + a program audio loft (Public Works Sun), Kavari (The Midway Sun), Buck Wilson (Monarch Sun), Mateo Segade (HMD upstairs). Sourcing: egress-proxied research - facts come from ticketing-page titles/search listings (AXS/Eventbrite/Tixr/venue calendars) cross-checked in aggregate; HMD, fair date/hours, Magnitude, DEVIANTS, Real Bad 37, and Groove Armada (Sat, The Great Northern) were re-verified individually 2026-08-23. Times not confirmed anywhere yet: Fcukers/Chloé Caillet (Public Works Sat), Groove Armada, Max Styler/Airwolf Paradise + Azzecca (Audio) - cards carry venue only until they post (venue norm ~10 PM). DESPACIO Pier 80 Friday is limited to every-year passholders. No unofficial/renegade afters existed as of 2026-08-23 - they historically appear 2-4 weeks out; re-scan mid-September. Folsom fair stage/DJ talent also unannounced yet (folsomstreet.org posts closer in). Weekend-conflict map for planning: Fri is conflict-free (HMD night); Sat daytime Folsom events run opposite Portola day 1; Magnitude/PERVERT XXL start as day 1 ends; Sun daytime the fair runs opposite Portola day 2; DEVIANTS/Real Bad overlap the Sunday afters. BACK-TO-BACK RUNS (2026-09-01, MODEL-V3 §5): a venue-night is ONE ROOM and its artists play IN SEQUENCE. Every multi-artist venue-night in this file had all of its artists stamped with the SAME time - that is the DOORS time off the show page, not a set time - and two rooms had no time at all. So each of those twelve rooms now carries `doors` (and `close` where a page prints one), and every set in it carries a GUESSED start (`approx: true`) plus `order: {seq, of, source, confirmed:false}` recording the running order and the show page it came from. SOURCES (read 2026-09-01): DoTheBay carries Goldenvoice's official Portola Week listing, one server-rendered page per show with the billing and the doors time, and each room's `order.source` is its own page there; portolamusicfestival.com/portola-week renders its list client-side (static HTML is just an image) so it is the programme of record, not a citable door; The Midway keeps AXS event 1575408. SET TIMES are laid across the window: evenly from doors to close where the close is known, an hour apart from doors where it is not, rounded to the half hour. RUNNING ORDER follows the billing - the billed headliner closes and the rest run in descending print, so \"X with A, B\" puts B first and X last, and \"X + Y\" is a co-bill where X closes. TWO NAMES WERE ON THE BILL AND MISSING FROM THIS SECTION and were added: Buck Wilson (Sun Monarch, opens - he was only mentioned in this note's supporting-roster list before) and Kaytree (Sun Public Works, second - she already had a Sunday grid billing, and picks unify by exact name across both, the same shape VTSS and Overmono already had). The lowercase spelling \"erika b2b sfcowboy\" is KEPT against DoTheBay's \"Erika b2b SFCowboy\": it is a pick key. CLOSES: Fri The Great Northern's 2 AM is printed on its show page; the 3 AM and 2 AM on Sat Monarch, Sun Monarch and Sun Public Works come from our own 2026-08-23 research pass, which DoTheBay does not repeat; The Midway's 2 AM is OURS (`closeApprox: true`); the remaining rooms print no end at all and carry no `close`, so the zoom says \"Doors 10 PM\" rather than inventing a window. `order.confirmed` is false everywhere - a bill is not a set-time sheet. Every other event entry gained only `night` + `venue`, parsed out of `stage` (which stays, and stays authoritative - the validator errors if the two disagree)."
   },
   "dayMeta": {
     "Saturday": {
