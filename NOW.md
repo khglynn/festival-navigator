@@ -21,10 +21,23 @@
   decks, zero lanes in events columns; the run zoom's two lines + poster door;
   Kevin's click-the-card sequence with an empty journal; chips across a
   reload; 110/110 hoverable cards on the sweep; phone Sunday stacked.
+- **The "hover still broken" after the rebuild — closed by a peer session
+  ("welp hover not fixed", 2026-09-02):** v76 was not broken. Kevin's tab was
+  an hour old on the BRANCH ALIAS, still running v75 (his paste's `build`
+  line); the alias's stale service worker kept it, and index.html's
+  controllerchange auto-reload only fires in a page's first 20 s. Real-input
+  walks of his exact sequences in Chrome 152 pass on v76 and reproduce his
+  journal on v75. That session also found and fixed two latent hazards on a
+  `zoom-hardening` branch (off `events-ui`): Chrome flips `:focus-visible`
+  on after ANY keypress, so click · Escape · click opened a keyboard zoom
+  that ignores hover-out (card-facts.js now tracks the last input itself),
+  and the long-press timer armed on mouse; plus a real-browser hover
+  contract in CI. Hover questions → that session.
 - **Next:** Kevin's one look at
   https://festival-navigator-hdkv9x9f9-kevinhg.vercel.app (the unique
   deployment — the branch alias keeps a stale service worker). Then merge
-  #16 (it contains #15's data; close #15 as folded) and re-stamp if main moved.
+  #16 (it contains #15's data; close #15 as folded), then `zoom-hardening`
+  behind it; re-stamp if main moved.
 
 ## 2026-09-01 (late) — Kevin's verdict on #16, the blink that was on prod all along, #14 merged (v73)
 
