@@ -57,7 +57,7 @@ const sourceOf = (c) => (c && Array.isArray(c.sources) && c.sources[0] && c.sour
 const pick = (v, fallback) => (Number.isFinite(v) ? v : fallback);
 
 // One run. `members` sorted by seq. Returns null when nothing can be planned.
-export function planRun({ night, doors, close, closeApprox = false, members, profile }) {
+export function planRun({ night, doors, close, closeApprox = false, closeSource = null, members, profile }) {
   if (!doors || !members || !members.length) return null;
   const D = activityMinutes(doors);
   if (!Number.isFinite(D)) return null;
@@ -69,7 +69,13 @@ export function planRun({ night, doors, close, closeApprox = false, members, pro
 
   let outClose = null, outApprox = false, outSource = null;
   if (close && !closeApprox) { outClose = close; outApprox = false; outSource = 'printed'; }
-  else {
+  else if (close && closeApprox && /^https:\/\//.test(closeSource || '')) {
+    // An EVIDENCED guess — a listing printed an end for this very night
+    // (19hz's "10pm-3am") though the ticket page did not — keeps its tilde
+    // and beats the venue's routine close. Kevin (2026-09-02): link the
+    // source, keep the guess note.
+    outClose = close; outApprox = true; outSource = closeSource;
+  } else {
     const c = closeFor(night, profile, kind);
     outClose = c.close; outApprox = !!c.close; outSource = c.close ? (c.source ? c.source : c.why) : null;
     if (c.close && c.source) outSource = c.source;
@@ -136,7 +142,13 @@ export function planFestival(fest, registry) {
     const profile = registry.venues[run.venue] || null;
     const doors = run.members.find((m) => m.doors)?.doors || null;
     const printed = run.members.find((m) => m.close && m.closeApprox !== true);
-    const plan = planRun({ night: run.night, doors, close: printed ? printed.close : null, closeApprox: !printed, members: run.members.map((m) => ({ name: m.name, seq: m.order.seq, time: m.time || null })), profile });
+    const evidenced = !printed && run.members.find((m) => m.close && m.closeApprox === true && /^https:\/\//.test(m.closeSource || ''));
+    const known = printed || evidenced || null;
+    const plan = planRun({
+      night: run.night, doors,
+      close: known ? known.close : null, closeApprox: !printed, closeSource: evidenced ? evidenced.closeSource : null,
+      members: run.members.map((m) => ({ name: m.name, seq: m.order.seq, time: m.time || null })), profile,
+    });
     out.push({ ...run, doors, profile: !!profile, plan });
   }
   return out;

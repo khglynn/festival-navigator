@@ -359,7 +359,7 @@ test('factsFor a run member: WHEN is the room\'s window, the order is a door; th
   const { ctx } = render('portola-2026');
   const member = portola.artists.find((a) => a.night === 'Sun' && a.venue === 'The Midway' && a.order.seq === 3);
   const f = facts.factsFor(member.name, ctx, { day: member.day, stage: member.stage, time: member.time, weekend: null });
-  assert.equal(f.when, 'Sun · Runs 10 PM – ~2 AM', 'the window, with the tilde on the guessed close');
+  assert.equal(f.when, 'Sun · Runs 10 PM – ~3 AM', 'the window, with the tilde on the guessed close (19hz printed 3 AM; the ticket page did not — an evidenced guess, 2026-09-02)');
   assert.equal(f.where, 'The Midway');
   assert.equal(f.approx, true);
   assert.deepEqual(f.order, { text: 'Guessing they’re 3rd of 4', url: member.order.source, confirmed: false });
@@ -379,7 +379,7 @@ test('the grown card: two lines in one WHEN piece — the window, then the door 
   const sub = card.querySelector('.f-sub');
   assert.ok(sub.classList.contains('f-stack'));
   assert.equal(card.querySelectorAll('.f-sub').length, 1, 'ONE .f-sub — the zoom\'s cascade and refresh key on it');
-  assert.equal(sub.querySelector('.f-when').textContent, 'Sun · Runs 10 PM – ~2 AM');
+  assert.equal(sub.querySelector('.f-when').textContent, 'Sun · Runs 10 PM – ~3 AM');
   const door = sub.querySelector('a.f-order');
   assert.equal(door.textContent, 'Guessing they’re 3rd of 4');
   assert.equal(door.getAttribute('href'), member.order.source);

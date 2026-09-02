@@ -472,11 +472,11 @@
       "venue": "Regency Ballroom",
       "time": "11 PM",
       "approx": true,
-      "doors": "10 PM",
+      "doors": "9 PM",
       "order": {
         "seq": 2,
         "of": 2,
-        "source": "https://dothebay.com/events/2026/9/26/parcels-tickets",
+        "source": "https://www.axs.com/events/1573671",
         "confirmed": false
       }
     },
@@ -488,11 +488,11 @@
       "venue": "Regency Ballroom",
       "time": "10 PM",
       "approx": true,
-      "doors": "10 PM",
+      "doors": "9 PM",
       "order": {
         "seq": 1,
         "of": 2,
-        "source": "https://dothebay.com/events/2026/9/26/parcels-tickets",
+        "source": "https://www.axs.com/events/1573671",
         "confirmed": false
       }
     },
@@ -646,14 +646,15 @@
       "time": "1 AM",
       "approx": true,
       "doors": "10 PM",
-      "close": "2 AM",
+      "close": "3 AM",
       "closeApprox": true,
       "order": {
         "seq": 4,
         "of": 4,
         "source": "https://www.axs.com/events/1575408/horsegiirl-tickets",
         "confirmed": false
-      }
+      },
+      "closeSource": "https://19hz.info/eventlisting_BayArea.php"
     },
     {
       "name": "VTSS",
@@ -664,14 +665,15 @@
       "time": "11 PM",
       "approx": true,
       "doors": "10 PM",
-      "close": "2 AM",
+      "close": "3 AM",
       "closeApprox": true,
       "order": {
         "seq": 2,
         "of": 4,
         "source": "https://www.axs.com/events/1575408/horsegiirl-tickets",
         "confirmed": false
-      }
+      },
+      "closeSource": "https://19hz.info/eventlisting_BayArea.php"
     },
     {
       "name": "Two Shell",
@@ -682,14 +684,15 @@
       "time": "12 AM",
       "approx": true,
       "doors": "10 PM",
-      "close": "2 AM",
+      "close": "3 AM",
       "closeApprox": true,
       "order": {
         "seq": 3,
         "of": 4,
         "source": "https://www.axs.com/events/1575408/horsegiirl-tickets",
         "confirmed": false
-      }
+      },
+      "closeSource": "https://19hz.info/eventlisting_BayArea.php"
     },
     {
       "name": "MGNA Crrrta",
@@ -700,14 +703,15 @@
       "time": "10 PM",
       "approx": true,
       "doors": "10 PM",
-      "close": "2 AM",
+      "close": "3 AM",
       "closeApprox": true,
       "order": {
         "seq": 1,
         "of": 4,
         "source": "https://www.axs.com/events/1575408/horsegiirl-tickets",
         "confirmed": false
-      }
+      },
+      "closeSource": "https://19hz.info/eventlisting_BayArea.php"
     },
     {
       "name": "SG Lewis",

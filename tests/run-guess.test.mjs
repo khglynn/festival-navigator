@@ -67,3 +67,14 @@ test('a guess already in the file that matches is reported as unchanged, not rew
   const plan = planRun({ night: 'Sun', doors: '10 PM', close: '2 AM', closeApprox: false, members: [{ name: 'a', seq: 1, time: '10:30 PM' }, { name: 'b', seq: 2, time: '12 AM' }], profile: { kind: 'club', close: { default: '2 AM' }, doorsToFirstActMin: 30, headlinerSetMin: 120, supportSetMin: null } });
   assert.deepEqual(plan.times.map((t) => [t.time, t.changed]), [['10:30 PM', false], ['12 AM', false]]);
 });
+
+test('an evidenced guess — a listing printed an end the ticket page did not — keeps its tilde and beats the venue default', () => {
+  const plan = planRun({ night: 'Sun', doors: '10 PM', close: '3 AM', closeApprox: true, closeSource: 'https://19hz.info/eventlisting_BayArea.php', members: members('a', 'b', 'c', 'd'), profile: { kind: 'club', close: { default: '2 AM' }, doorsToFirstActMin: 30, headlinerSetMin: 90, supportSetMin: null } });
+  assert.equal(plan.close, '3 AM');
+  assert.equal(plan.closeApprox, true, 'still a guess');
+  assert.equal(plan.closeSource, 'https://19hz.info/eventlisting_BayArea.php');
+  assert.equal(plan.times.at(-1).time, '1:30 AM', 'the closer ends at the evidenced close');
+  // Without a URL the same fields are just a stale guess and the registry wins.
+  const stale = planRun({ night: 'Sun', doors: '10 PM', close: '3 AM', closeApprox: true, closeSource: 'kind default (club)', members: members('a', 'b'), profile: { kind: 'club', close: { default: '2 AM' }, doorsToFirstActMin: 30, headlinerSetMin: 90, supportSetMin: null } });
+  assert.equal(stale.close, '2 AM');
+});

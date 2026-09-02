@@ -52,10 +52,14 @@ Newest first. One entry per meaningful unit of work.
   `claude-plans/2026-09-02-venue-profiles/`); `data/venues/index.json` is the
   durable registry; `scripts/guess-run-times.mjs` turns doors + registry into
   set-time guesses as a reviewable diff, never at render time. Findings a
-  data editor should act on: The Midway Sun prints 10pm–3am on 19hz (our
-  ~2 AM is early) with KAVARI on the bill (Kevin's "2: add" call still
-  open); AXS says Regency Sat doors 9 PM, not 10; the halls (Regency, GAMH)
-  publish no close anywhere.
+  data editor acted on (Kevin's calls): The Midway Sun prints 10pm–3am on
+  19hz — recorded as an EVIDENCED guess (`close: 3 AM`, tilde kept, the
+  listing as `closeSource`; the guesser honours it over the venue default);
+  AXS's dedicated Doors field says Regency Sat 9 PM, not 10 — taken, the
+  order door now points at AXS. NOT added: KAVARI. 19hz still lists them,
+  but the Midway's own Tixr page and AXS both bill four names today (the
+  Tixr slug still carries "kavari"; the canonical URL dropped it) — off the
+  bill. The halls (Regency, GAMH) publish no close anywhere.
 
 ## 2026-09-01 (late) — the blink under every pick, and one rule for club nights
 
