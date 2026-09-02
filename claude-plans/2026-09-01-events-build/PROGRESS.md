@@ -79,3 +79,115 @@ session dies, this file is the resume.*
 - 2026-09-01 — STAMPED v73 → v74 (7038bac3), its own last commit. `npm test` = 405 tests, 404 pass, 1 skipped (pre-existing), 0 fail.
 - 2026-09-01 — REVERTED the reservation in `d8e9600` (stamp v74 → v75 in `bfe5779`). The coordinator's screenshot of the preview: every UNPICKED grown card carried a hole — on "Black Rave Culture" (Thu · 10 PM · Club Six) ~34 px of nothing between the venue door and "+ note" (the reserved pill height plus the two flex gaps around it). Most cards are unpicked, so that was the common view, and it read as broken space. The designed event is the pre-reservation one (CLAUDE.md: a pill arriving after a tap slides in and its neighbours make room), the state Kevin confirmed fixed on v71. The who-row renders only when there are people again; the `.f-who:empty` rules are gone; the test keeps the walk's real sequence and now pins the designed shape (no who-row while unpicked → the row arrives with the first pick → gone again when cleared). The rig aims at `.f-name` now. `npm test` = 404 tests, 403 pass, 1 skipped, 0 fail.
 - 2026-09-01 — FOLLOW-UP for PR #14's territory (below the bloom banner in card-facts.js — not touched here): keep a resting hand's target still after the first pick WITHOUT a hole. Today `refreshZoomInner` re-runs `place()` after rebuilding the parts, and `place()` centres the overlay's box on the resting card, so when the who-row arrives every row above it shifts up by half the row's height and whatever sat under the cursor (the venue door, on an afters card) moves. The fix that respects both laws: on a REFRESH, anchor the overlay's TOP edge where the first `place()` put it (remember `slot.style.top` from the initial place, or the name's rect) and let growth run downward — `sizeSlot` still grows the box, the WHEN/WHERE/name rows stay put, the pills arrive below them and the chips slide down (the "neighbours make room" event, but only the neighbours below). Only a fresh zoom (a new card) centres. Clamp to the viewport's bottom edge as `place()` does. One paragraph of change in `refreshZoomInner` plus a jsdom test that pins `.f-name`'s and `.f-where`'s rects unchanged across a pick (stub rects) — and the walk's centre-click would then keep picking too.
+
+### Round 3 — the one rule: a venue-night is one room (2026-09-01)
+
+*Kevin on the preview: "our implementation of concurrent shows isn't our clean
+stacking idea. it's a mix of all 3 ideas scattered around. wtf :(" — Sunday's
+afters showed Public Works as a DECK, The Midway as a vertical RUN, The Great
+Northern and Monarch as side-by-side LANES. Three treatments on one screen.
+The fix is a subtraction. New builder, worktree `agent-a3056518a9eee6a70`,
+branch `events-ui-runs` (the local name `events-ui` is held by the dead
+builder's worktree; pushes go to `origin/events-ui` with `HEAD:events-ui`).*
+
+- 2026-09-01 — GROUND TRUTH read before touching anything: MODEL-V3.md, the
+  full phase-1 + phase-2 PROGRESS, `js/v3/events.js`, `renderEventsTimetable`
+  in wall.js, motion.js and its users. Confirmed the 12 multi-artist
+  venue-nights in `data/festivals/portola-2026.json` (29 venue-nights total,
+  45 events): Fri Monarch 2, Fri Regency 3, Fri Great Northern 2, Sat Audio 2
+  (no time), Sat Monarch 2, Sat Public Works 2 (no time), Sat Regency 2, Sun
+  Monarch 2, Sun Public Works 3, Sun Rickshaw Stop 2, Sun Great Northern 2,
+  Sun Midway 4 (already migrated). Every timed one lists all its artists at
+  ONE time — the doors time, exactly as the Midway did. `js/v3/motion.js`
+  STAYS: app.js's bucket toggle imports it too, so it is not deck-only.
+- 2026-09-01 — THE DECK DELETED, live code only. `js/v3/deck.js` trashed;
+  `renderDeck`/`faceCtxFor`/`decorateFace`/`panelTime`/`closeDeck`/
+  `refreshDeckState` gone from wall.js (with the face branch in `refreshCard`,
+  the `deckFace` filter in `cardFor`, `root.dataset.deckHost`, and the
+  `closeDeck` in `renderWallInner`); `deckSnapshot`/`restoreDeck` gone from
+  app.js's `repaintWall`; `.deck*` gone from `assets/v3.css`; the APP_CORE
+  line gone from `service-worker.js`; the README structure line gone.
+  `js/v3/motion.js` KEPT — app.js's bucket toggle imports it, so it was never
+  deck-only, and `tests/motion-shared.test.mjs` still pins that the zoom's
+  constants agree with it.
+- 2026-09-01 — AMENDMENT from Kevin mid-flight: he likes the deck's grown
+  PANEL and wants it in the back pocket "with a better styled ✕", in case a
+  four-set run in a two-hour window gets tight. **The full deck lives in
+  `c740388` on `origin/events-ui`** (face + ghosts + count pill + the grown
+  panel + `deck.js` + its CSS + its tests) — that is the commit to revive it
+  from. The picture stays visible in `gallery.html`'s new "THE BACK POCKET"
+  section: a STATIC panel (real `renderCard` cards, no deck code) with the
+  title row and a ✕ built from the app's own `.sheet-close`. Recorded in
+  MODEL-V3 §4.
+- 2026-09-01 — `timetableOf` REWRITTEN to the one rule. `peakConcurrency`,
+  the `kind: 'deck'` cell and the `computeLanes` import are gone; there is now
+  exactly one cell shape (`{venue, col, row, span, entry}`). A venue-night is
+  one room: its sets sort by `order.seq` when EVERY set in the room carries
+  one, else by start time then file order; a set ends where the next in the
+  room begins, the last at the room's `close` when a file prints one (with the
+  tilde when `closeApprox`), else an hour. Placement then walks DOWN the
+  column — each card starts at its own time or where the one above it ended,
+  whichever is later, and is at least 30 minutes tall. That cursor is what
+  carries a room nobody has re-read yet: four sets all stamped with the doors
+  time stack four-high instead of landing on top of each other. CHOSEN WHERE
+  THE BRIEF WAS SILENT: when `order.seq` and the clock disagree the seq leads
+  (the brief's words) and the cursor keeps the column readable; a HALF-numbered
+  room falls back to the clock, because there is no run to read.
+- 2026-09-01 — THE DATA. `scripts/migrate-portola-events.mjs` generalised from
+  one `MIDWAY_RUN` to a `RUNS` table of 10 rooms + a `TIMELESS_ROOMS` list of
+  2, with the guessed times DERIVED by an exported `runTimes()` rule rather
+  than typed: spread evenly from doors to close where the close is known,
+  an hour apart from doors where it is not, rounded to the half hour, never so
+  wide that the closer starts at/after the close. The rule reproduces Kevin's
+  Midway (10/11/12/1) exactly, so that room is both pinned and derived and a
+  test asserts the two agree. Re-ran: 21 entries changed, 108 names + 6 day
+  labels + 29 stages byte-identical, idempotent on a second run, validator
+  11 files / 0 errors / 1 pre-existing warning. The script now also REFUSES to
+  write if a multi-artist venue-night with any time is missing from both lists.
+- 2026-09-01 — THE VALIDATOR gained the warning the brief asked for, in
+  `checkEventFields`: an events venue-night with 2+ TIMED sets where not every
+  set carries an `order`. It names the actual symptom — when every set says one
+  time it reads "all N sets say "10 PM" — that reads as the room's DOORS time,
+  not N set times", otherwise "N timed sets in one room and no running order".
+  Probed all three shapes by hand (shared start, distinct starts, half
+  numbered — the last double-warns with the existing partial-run rule, which is
+  right, both are true). Fires ZERO times across the 11 shipped files.
+- 2026-09-01 — ONE MODEL RULE I ADDED that the brief did not name, because the
+  fallback looked bad without it: **when every set in a room prints the SAME
+  time string, that string is the room's WINDOW, not a set time** — a doors
+  time (or the room's hours) copied onto every act, which is exactly what all
+  twelve Portola rooms looked like. Those sets divide the window equally.
+  Without it a pre-migration room drew one hour-tall card and a row of 30-minute
+  slivers (the "Overmono 4h then two slivers" shape); with it the column is N
+  even slots. It never fires on migrated data (every room has distinct times).
+- 2026-09-01 — ONE GUARD I KEPT against the brief's letter: the brief says
+  "the last at the room's `close` when known". A half-entered numbered run
+  (3 of 4 in the file) must NOT let its last-known set claim the end of the
+  night — that was a reviewed decision this round (P2 12) and the cost of
+  keeping it is one short card. So only a genuine closer (`seq === of`, or an
+  unnumbered room's last set) runs to the close. The OTHER half of that old
+  guard I dropped: a set now ends where the next set in the room begins even
+  when a numbered successor is missing, because a hole in the column reads as
+  broken and the room really is running.
+- 2026-09-01 — TESTS. Deleted: every deck test (rest, grow, snapshot/restore,
+  keyboard, place(), the people filter, the panel-card zoom restore, Escape
+  layering, focus-home) and the deck branches in events-model. Added, all
+  data-driven: `noLanesNoDecks()` in events-model and `assertRuns()` in
+  events-wall assert the SHAPE — in one venue column no two cards share a row
+  band, no card carries a lane width or offset, every card clears the 30-minute
+  floor, and no `.deck*` node exists anywhere; every Portola venue-night on the
+  wall passes them; the un-read fallback (three sets, one venue, one time, no
+  order) stacks; the half-numbered room falls back to the clock; all 12
+  venue-nights carry the run shape or are one of the two known timeless rooms;
+  a single-act room never gets the shape; `runTimes()` reproduces every shipped
+  room from its doors and close (and the Midway both pinned AND derived); the
+  `wasTime` tripwire and the unrun-room guard both throw. The round-2 walk
+  regression (picks cycling across a sync echo, the who-row arriving, the
+  venue door never picking) moved from a panel card to a plain run card — the
+  card a person actually meets now. `tests/motion-shared.test.mjs` kept and
+  retitled (the zoom + the bucket toggle, not the deck).
+- 2026-09-01 — GREEN before the rebase: `npm test` = 399 tests, 397 pass,
+  1 skipped (pre-existing), 1 fail = the SW stamp (stamped last, on a clean
+  tree). `node scripts/validate-festivals.mjs` = 11 files, 0 errors, 1
+  pre-existing warning (Tomorrowland). `js/v3` went 8910 → 8551 lines across
+  17 → 16 files — a net deletion of 359 lines even after the model rewrite.

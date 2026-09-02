@@ -149,9 +149,13 @@ as it always has, after the days.
 disagreement an ERROR. Adding them is optional per festival; adding one that
 contradicts `stage` is not allowed.
 
-When a venue prints DOORS rather than set times and the sets are known to run
-back to back, the run can be recorded as data instead of guessed at render
-time (MODEL-V3 §5):
+**A venue-night is ONE ROOM, and its artists play IN SEQUENCE** (Kevin,
+2026-09-01). The wall draws every room as a vertical run — stacked in the time
+bands, each set its own tappable card, never side by side. So a room with two
+or more shows needs to say who is on when; if it does not, the validator warns
+(and names the shared start, because a time repeated on every act is a DOORS
+time somebody transcribed into the set-time field). The run is recorded as
+data, never guessed at render time (MODEL-V3 §5):
 
 | Field | What |
 |---|---|
@@ -164,6 +168,25 @@ time (MODEL-V3 §5):
 The validator holds a run together: every set sharing a day + night + venue
 must agree on `of`, `doors` and `close`, claim a distinct `seq`, sit inside
 the window, and run in the same direction on the clock as in the numbering.
-Portola's Sunday Midway four are the worked example. Never merge the sets into
-one card — artist separation is law, because a combined card eats the crew's
-picks.
+Never merge the sets into one card — artist separation is law, because a
+combined card eats the crew's picks.
+
+**Guessing the times and the order**, when the page prints neither:
+
+- Times spread evenly from `doors` to `close` where the close is known, and go
+  an hour apart from doors where it is not — rounded to the half hour, so the
+  plan reads `11:30 PM` and never `11:20 PM`.
+- The order follows the billing: the billed headliner CLOSES and the rest run
+  in descending print, so a bill read top to bottom is the run read bottom to
+  top.
+- Mark every guessed set `approx: true` and every unposted order
+  `confirmed: false`. If no page prints an end, leave `close` out rather than
+  inventing one — the zoom then says `Doors 10 PM` instead of a window nobody
+  published.
+- A venue-night with NO time at all is not a run. Leave it timeless; the wall
+  tiles it under TIME TBA.
+
+Portola's ten runs are the worked example, and they are generated rather than
+typed: `scripts/migrate-portola-events.mjs` holds the `RUNS` table (one row per
+room: doors, close, the billed order, and what the file used to say) and the
+`runTimes()` rule that lays the sets across the window.

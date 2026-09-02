@@ -45,6 +45,25 @@
   .events-states { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 6px 18px; margin: 0 0 16px; padding: 0; list-style: none; }
   .events-states li { color: var(--text-secondary); font-size: 11.5px; line-height: 1.45; }
   .events-states b { color: var(--text-header); font-weight: 800; }
+
+  /* ---- THE BACK POCKET (2026-09-01) --------------------------------------
+     The deck's grown panel, kept as a PICTURE after the deck came out of the
+     live app (MODEL-V3 §4). Static: real cards from renderCard, no deck code,
+     nothing to open. These rules live here and not in v3.css on purpose — the
+     app does not ship them, and a stylesheet that carries a component nobody
+     renders is how dead CSS starts. Reviving it means reviving c740388's
+     `.deck*` block too. */
+  #back-pocket { border-bottom: 1px solid var(--hairline); padding-bottom: 26px; margin-bottom: 30px; }
+  .bp-panel { width: max-content; box-sizing: border-box;
+              background: var(--card); border: 1px solid var(--border-emphasis);
+              border-radius: var(--r-card); padding: 10px 12px 12px;
+              box-shadow: 0 10px 28px rgba(0, 0, 0, .38); }
+  .bp-head { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 9px; }
+  .bp-title { font-family: var(--font-display); letter-spacing: .06em; font-size: 11.5px;
+              color: var(--text-header); text-transform: uppercase; }
+  .bp-grid { display: grid; grid-template-columns: repeat(2, 176px); gap: 7px; }
+  .bp-grid .card { min-height: 72px; }
+  @media (max-width: 719.98px) { .bp-grid { grid-template-columns: repeat(2, 150px); } }
 </style>
 </head>
 <body style="--fest: 56, 189, 248">
@@ -78,21 +97,36 @@
 
 <section id="events-gallery">
   <div class="zoom-title">THE EVENTS — day-first, live</div>
-  <div class="hint">the real <code>renderWall</code> on a small fest with every events state (MODEL-V3, 2026-09-01) — tiles, columns, the deck at rest and grown, a back-to-back run, the bucket chips. Tap a deck to grow it; hover / hold / Tab to a card to zoom it (the ~ cards show the two-line WHEN with the order door); tap a chip to hide a room and again to bring it back; tap any card to pick.</div>
+  <div class="hint">the real <code>renderWall</code> on a small fest with every events state (MODEL-V3, 2026-09-01) — tiles, columns, a numbered back-to-back run, an un-numbered room that stacks anyway, the bucket chips. Hover / hold / Tab to a card to zoom it (the ~ cards show the two-line WHEN with the order door); tap a chip to hide a room and again to bring it back; tap any card to pick.</div>
   <div class="zoom-toolbar">
     <label><input type="checkbox" id="events-lowpower"> Low power (instant)</label>
     <span id="events-status" class="zoom-status"></span>
   </div>
   <ul class="events-states">
-    <li><b>FRIDAY · AFTERS</b> — columns (the rule: 6 timed shows over 3 venues): a <b>deck</b> of three at The Ballroom 8 PM, <b>lanes</b> for two at The Basement, a <b>tall</b> set, TIME TBA under the clock.</li>
+    <li><b>FRIDAY · AFTERS</b> — columns (the rule: 6 timed shows over 3 venues): three <b>un-numbered</b> sets all stamped 8 PM at The Ballroom and two at The Basement — every room stacks, nothing lanes — plus a <b>tall</b> set and TIME TBA under the clock.</li>
     <li><b>FRIDAY · FOLSOM</b> — tiles, one show.</li>
     <li><b>SATURDAY · GALLERY FEST</b> — the grid, its own sticky strip, inside the day.</li>
-    <li><b>SATURDAY · AFTERS</b> — columns by the consistency law though thin: a <b>back-to-back run</b> at The Room (~ times, one whisper), one plain set beside it.</li>
+    <li><b>SATURDAY · AFTERS</b> — columns by the consistency law though thin: a <b>numbered back-to-back run</b> at The Room (~ times, one whisper), one plain set beside it.</li>
     <li><b>SATURDAY · FOLSOM</b> — tiles: two timed, one timeless (TIME TBA).</li>
     <li><b>SUNDAY · FOLSOM</b> — tiles: an 11 AM street fair sorts first.</li>
     <li><b>THE BUCKETS</b> — GALLERY FEST · AFTERS · FOLSOM; off = dashed, the foot-whisper is the way back.</li>
   </ul>
   <div id="events-wall"></div>
+</section>
+
+<section id="back-pocket">
+  <div class="zoom-title">THE BACK POCKET — the deck's grown panel</div>
+  <div class="hint">
+    NOT IN THE APP. The deck came out on 2026-09-01 — a venue-night is one room and its
+    artists play in sequence, so every room is a vertical run (MODEL-V3 §4–§5). Kevin
+    likes this panel and wants it available <b>"with a better styled ✕"</b> if a run ever
+    gets too tight to read (four sets in a two-hour window make short cards), so the
+    picture stays here. The live code is in commit <code>c740388</code> on
+    <code>events-ui</code>; this is a static fixture — real <code>renderCard</code>
+    cards, no deck module, nothing to open. The ✕ is the app's own
+    <code>.sheet-close</code>, which is the "better styled" one.
+  </div>
+  <div id="back-pocket-panel"></div>
 </section>
 
 <h1>V3 GALLERY</h1>
@@ -640,16 +674,17 @@ document.getElementById('zoom-bottom-probe').appendChild(stateCard('16b · very 
 // ---- THE EVENTS — day-first, live (2026-09-01) -------------------------------
 // The real renderWall on a small fest built to hold every events state
 // (MODEL-V3): a grid day, an Afters section that EARNS columns on Friday (and
-// so wears them all week), a Folsom section that never does, a deck, lanes, a
-// tall set, a back-to-back run with guessed times, and the bucket chips.
+// so wears them all week), a Folsom section that never does, a tall set, a
+// NUMBERED back-to-back run with guessed times, two UN-numbered rooms whose
+// sets all wear one doors time (they stack anyway — the one rule), and the
+// bucket chips.
 // Same wiring shape as app.js; a separate module graph from the sections
 // above, its own crew token and fest id.
 import * as state from '/js/state.js';
 import * as model from '/js/v3/model.js';
 import { FESTIVALS, FESTIVAL_INDEX } from '/js/festivals.js';
-import { renderWall, refreshCard, cardFor } from '/js/v3/wall.js';
+import { renderWall, renderCard, refreshCard, cardFor } from '/js/v3/wall.js';
 import { wireCardZoom, wireCardFocusZoom, zoomCard, zoomedCard, refreshZoom, zoomSnapshot, unzoom } from '/js/v3/card-facts.js';
-import { deckSnapshot, restoreDeck } from '/js/v3/deck.js';
 import { toggleBucket } from '/js/v3/filters.js';
 
 const EFID = 'gallery-events-fest';
@@ -672,7 +707,7 @@ FESTIVALS[EFID] = {
   },
   artists: [
     { name: 'Quick Set', day: 'Saturday' }, { name: 'Long Set', day: 'Saturday' }, { name: 'Headliner', day: 'Saturday' },
-    // Friday afters: the deck (three at 8 PM), the lanes (two at 10 PM), a tall set, a timeless one.
+    // Friday afters: two un-numbered rooms (three at 8 PM, two at 10 PM — the pre-research state), a tall set, a timeless one.
     { name: 'Channel Tres', ...room('Fri', 'The Ballroom', { time: '8 PM' }) },
     { name: 'Jyoty', ...room('Fri', 'The Ballroom', { time: '8 PM' }) },
     { name: 'Gelli Haha', ...room('Fri', 'The Ballroom', { time: '8 PM' }) },
@@ -727,18 +762,16 @@ const ectx = {
 };
 function eventsStatus(msg) { const el = document.getElementById('events-status'); if (el) el.textContent = msg; }
 function refreshEventsPicks() { ectx.picks = model.picksFor(state.crewDoc, EFID); ectx.bucketsOff = hidden; }
-// app.js repaintWall, minus sync: a standing zoom and an open deck both survive.
+// app.js repaintWall, minus sync: a standing zoom survives.
 function repaint() {
   const root = document.getElementById('events-wall');
   const keep = zoomSnapshot();
-  const deck = deckSnapshot();
   unzoom({ instant: !!keep, why: 'gallery repaint' });
   refreshEventsPicks();
   state.setActiveFestivalId(EFID);
   renderWall(root, ectx);
-  if (deck) restoreDeck(root, deck);
   if (keep) {
-    const again = cardFor(root, keep.artist, keep.occ); // never a deck's inert face
+    const again = cardFor(root, keep.artist, keep.occ);
     if (again) zoomCard(again, keep.artist, ectx, { ...keep, instant: true });
   }
 }
@@ -759,10 +792,41 @@ document.getElementById('events-lowpower').addEventListener('change', (e) => {
   document.body.classList.toggle('low-power', ectx.lowPower);
 });
 // The zoom gallery above already owns the document-level Escape / press-outside
-// handlers for the zoom; the deck wires its own per open (deck.js).
+// handlers for the zoom.
 // Both galleries share one state module: point it at THIS fest to render, and
 // leave it there — the zoom gallery rendered first and holds its own nodes.
 repaint();
+
+// ---- THE BACK POCKET: the deck's grown panel, as a picture -------------------
+// Static by design (MODEL-V3 §4). It borrows this module's ctx so the cards are
+// real — auras, pills, notes chips, the lot — but there is no deck, no layer, no
+// open/close: it is a design record, not a second live path.
+(function backPocket() {
+  const host = document.getElementById('back-pocket-panel');
+  if (!host) return;
+  const panel = document.createElement('div');
+  panel.className = 'bp-panel';
+  const head = document.createElement('div');
+  head.className = 'bp-head';
+  const title = document.createElement('div');
+  title.className = 'bp-title';
+  title.textContent = 'Regency Ballroom · 8 PM';
+  const close = document.createElement('button');
+  close.className = 'sheet-close';   // the app's own close, not a bare box
+  close.type = 'button';
+  close.textContent = '✕';
+  close.setAttribute('aria-label', 'Close (inert — this is a picture)');
+  close.disabled = true;
+  head.append(title, close);
+  const grid = document.createElement('div');
+  grid.className = 'bp-grid';
+  const at = (venue, time) => ({ day: 'Afters', stage: `Fri · ${venue}`, time, weekend: null });
+  for (const name of ['Channel Tres', 'Jyoty', 'Gelli Haha']) {
+    grid.appendChild(renderCard(name, ectx, { occ: at('The Ballroom', '8 PM'), time: '8 PM' }));
+  }
+  panel.append(head, grid);
+  host.appendChild(panel);
+}());
 </script>
 </body>
 </html>
