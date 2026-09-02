@@ -291,3 +291,11 @@ builder's worktree; pushes go to `origin/events-ui` with `HEAD:events-ui`).*
   head, the gallery's notes-sheet demo) sits inside a `.sheet`, so nothing in
   the app looks different. What a jsdom suite CANNOT check is how it looks —
   that is one line on the walker's list (step 12: the gallery's BACK POCKET).
+- 2026-09-01 — AND ONE MORE: the back-pocket cards were LIVE (renderCard wires
+  `ctx.onTap` and `ctx.wireZoom`), so a tap on the picture would have recorded
+  a real pick that never visibly cycled — a picture has no refresh loop, and
+  half-working is worse than not working. They render through an inert ctx
+  now (`onTap` a no-op, `wireZoom` null); the ✕ was already disabled. Cards
+  still carry their real auras and pills, which is the point of the picture.
+  `gallery.html` is not in APP_CORE, so no re-stamp. `npm test` = 460 tests,
+  459 pass, 1 skipped, 0 fail.

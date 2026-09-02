@@ -825,8 +825,12 @@ repaint();
   const grid = document.createElement('div');
   grid.className = 'bp-grid';
   const at = (venue, time) => ({ day: 'Afters', stage: `Fri · ${venue}`, time, weekend: null });
+  // Real cards with real auras, but INERT: no tap, no zoom. A pick here would
+  // land in the crew doc and never visibly cycle, because a picture has no
+  // refresh loop — and half-working is worse than not working.
+  const inert = { ...ectx, onTap: () => {}, wireZoom: null };
   for (const name of ['Channel Tres', 'Jyoty', 'Gelli Haha']) {
-    grid.appendChild(renderCard(name, ectx, { occ: at('The Ballroom', '8 PM'), time: '8 PM' }));
+    grid.appendChild(renderCard(name, inert, { occ: at('The Ballroom', '8 PM'), time: '8 PM' }));
   }
   panel.append(head, grid);
   host.appendChild(panel);
