@@ -54,7 +54,6 @@ const APP_CORE = [
   '/js/v3/filters.js',
   '/js/v3/now.js',
   '/js/v3/events.js',
-  '/js/v3/deck.js',
   '/js/v3/motion.js',
   '/data/festivals/index.json',
 ];

@@ -1,8 +1,11 @@
-// Phase 1 of the events build (claude-plans/2026-08-31-events-canvas/MODEL-V3.md):
+// The events data (claude-plans/2026-08-31-events-canvas/MODEL-V3.md):
 // Portola's Afters/Folsom entries carry STRUCTURED fields — `night` + `venue`
-// parsed out of the `stage` string, and for The Midway's Sunday four the
-// back-to-back-run shape of §5 (guessed time + `approx`, `doors`/`close`, and
-// an `order` that says how sure we are and links the source).
+// parsed out of the `stage` string — and every multi-artist VENUE-NIGHT that
+// has a time carries the back-to-back-run shape of §5 (guessed time +
+// `approx`, `doors`/`close`, and an `order` that says how sure we are and
+// links the source). The one rule, Kevin 2026-09-01: a venue-night is one
+// room and its artists play in sequence, so there is no such thing as a
+// "pile" left in this file.
 //
 // A sibling of portola-2026.test.mjs rather than an extension of it: that file
 // is the POSTER's invariants (five columns, doors-to-close, spot-checked set
@@ -36,8 +39,8 @@ const { validateFestivalDoc } = await import('../api/_lib/festival-rules.mjs');
 const { frozenKeyProblems } = await import('../api/_lib/pick-keys.mjs');
 const { timeToMinutes } = await import('../js/time.js');
 const {
-  migrateEvents, namesAndDays, isEventEntry, splitStage,
-  MIDWAY_RUN, PORTOLA_WEEK, MIDWAY_TICKETS, META_NOTE,
+  migrateEvents, frozenKeys, isEventEntry, splitStage, runTimes, clockLabel,
+  RUNS, TIMELESS_ROOMS, PORTOLA_WEEK, MIDWAY_TICKETS, META_NOTE,
 } = await import('../scripts/migrate-portola-events.mjs');
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -47,20 +50,33 @@ const frozen = JSON.parse(readFileSync(join(ROOT, 'tests/fixtures/live-pick-keys
 const events = portola.artists.filter((a) => isEventEntry(portola, a));
 const midway = portola.artists.filter((a) => a.night === 'Sun' && a.venue === 'The Midway');
 const clone = (x) => JSON.parse(JSON.stringify(x));
+const runOf = (night, venue) => RUNS.find((r) => r.night === night && r.venue === venue);
+const inAnyRun = (a) => RUNS.some((r) => r.day === a.day && r.night === a.night && r.venue === a.venue && r.order.includes(a.name));
+// Every venue-night in the file, however many acts are in it.
+const roomsOf = (fest) => {
+  const rooms = new Map();
+  for (const a of fest.artists) {
+    if (!isEventEntry(fest, a)) continue;
+    const { night, venue } = splitStage(a.stage);
+    const k = `${a.day}|${night}|${venue}`;
+    if (!rooms.has(k)) rooms.set(k, []);
+    rooms.get(k).push(a);
+  }
+  return rooms;
+};
 
 // The document as it stood BEFORE the migration, derived by removing exactly
-// what the migration adds. The four Midway sets all read "10 PM" then — the
-// poster's DOORS time, transcribed into the set-time field, which is the
-// misreading §5 exists to correct.
+// what the migration adds. Every set in a run read its room's `wasTime` then —
+// the DOORS time (or, in five rooms, the room's whole window) transcribed into
+// the set-time field, which is the misreading §5 exists to correct.
 function unmigrate(fest) {
   const out = clone(fest);
   out.artists = out.artists.map((a) => {
     if (!isEventEntry(fest, a)) return a;
     const bare = { ...a };
     for (const k of ['night', 'venue', 'approx', 'doors', 'close', 'closeApprox', 'order']) delete bare[k];
-    if (a.night === MIDWAY_RUN.night && a.venue === MIDWAY_RUN.venue && MIDWAY_RUN.sets.some((s) => s.name === a.name)) {
-      bare.time = MIDWAY_RUN.doors;
-    }
+    const run = RUNS.find((r) => r.day === a.day && r.night === a.night && r.venue === a.venue && r.order.includes(a.name));
+    if (run) bare.time = run.wasTime;
     return bare;
   });
   out.meta = { ...out.meta };
@@ -71,12 +87,12 @@ function unmigrate(fest) {
 
 // ---- the frozen-key law (MODEL-V3 §1) ---------------------------------------
 
-test('the migration moves NO pick key: names and day labels are byte-identical, in order', () => {
+test('the migration moves NO pick key: names, day labels and stages are byte-identical, in order', () => {
   const before = unmigrate(portola);
   const after = migrateEvents(before).fest;
-  assert.deepEqual(namesAndDays(after), namesAndDays(before),
-    'artists[].name and artists[].day are pick/notes keys — the doc model has no rename path');
-  assert.deepEqual(namesAndDays(portola), namesAndDays(before),
+  assert.deepEqual(frozenKeys(after), frozenKeys(before),
+    'artists[].name, .day and .stage are pick/notes/render keys — the doc model has no rename path');
+  assert.deepEqual(frozenKeys(portola), frozenKeys(before),
     'and the SHIPPED file still carries the same keys the pre-migration file did');
 });
 
@@ -111,7 +127,7 @@ test('this test has teeth: a renamed artist IS caught, by the same guard CI runs
 
   const doctored = clone(portola);
   for (const a of doctored.artists) if (a.name === 'VTSS') a.name = 'Vtss';
-  assert.notDeepEqual(namesAndDays(doctored), namesAndDays(portola), 'the key comparison notices');
+  assert.notDeepEqual(frozenKeys(doctored), frozenKeys(portola), 'the key comparison notices');
   const problems = freezeOf(doctored);
   assert.equal(problems.length, 1);
   assert.match(problems[0], /^artist "VTSS" is now spelled "Vtss"/);
@@ -162,7 +178,66 @@ test('grid entries are left alone — night/venue belong to events, not to the t
 
 // ---- §5, the back-to-back run ----------------------------------------------
 
-test('the Midway four are ONE night played in sequence, not four shows at 10 PM', () => {
+test('EVERY multi-artist venue-night with a time is a run — no pile is left in the file', () => {
+  const rooms = roomsOf(portola);
+  const multi = [...rooms].filter(([, l]) => l.length > 1);
+  assert.equal(multi.length, 12, 'twelve venue-nights hold more than one act');
+  const timeless = new Set(TIMELESS_ROOMS.map((r) => `${r.day}|${r.night}|${r.venue}`));
+  for (const [key, list] of multi) {
+    if (timeless.has(key)) {
+      assert.ok(list.every((a) => a.time === undefined), `${key}: no page prints a time — it stays timeless, never given an invented clock`);
+      assert.ok(list.every((a) => a.order === undefined), `${key}: a timeless room is not a run`);
+      continue;
+    }
+    assert.ok(list.every((a) => a.order), `${key}: every set carries its position in the room's run`);
+    assert.equal(new Set(list.map((a) => a.order.seq)).size, list.length, `${key}: no two sets claim one position`);
+    assert.equal(new Set(list.map((a) => a.order.of)).size, 1, `${key}: one room, one run length`);
+    assert.equal(list[0].order.of, list.length);
+    assert.equal(new Set(list.map((a) => a.time)).size, list.length, `${key}: the doors time is no longer stamped on every act`);
+    assert.ok(list.every((a) => a.approx === true && a.order.confirmed === false), `${key}: it is our read, and it says so`);
+    assert.ok(list.every((a) => a.doors), `${key}: a run needs the room's doors`);
+  }
+  // …and the two rooms that print no time at all are exactly the two we know.
+  assert.deepEqual([...multi].filter(([k]) => timeless.has(k)).map(([k]) => k).sort(),
+    ['Afters|Sat|Audio', 'Afters|Sat|Public Works']);
+});
+
+test('a single-act venue-night is never given a run — the shape is not sprayed across the file', () => {
+  for (const [key, list] of roomsOf(portola)) {
+    if (list.length > 1) continue;
+    for (const k of ['approx', 'doors', 'close', 'closeApprox', 'order']) {
+      assert.equal(list[0][k], undefined, `${key}: one act, nothing to sequence, no ${k}`);
+    }
+  }
+  for (const a of events) {
+    if (inAnyRun(a)) continue;
+    assert.equal(a.order, undefined, `${a.name} (${a.stage}) is not in a run and carries no order`);
+  }
+});
+
+test('the guessed times are DERIVED, not typed: runTimes() reproduces every room from its doors and close', () => {
+  for (const run of RUNS) {
+    const derived = runTimes({ doors: run.doors, close: run.close, count: run.order.length });
+    const shipped = run.order.map((name) => portola.artists.find((a) => a.name === name && a.night === run.night && a.venue === run.venue).time);
+    assert.deepEqual(shipped, run.times || derived, `${run.night} · ${run.venue}`);
+    if (run.times) assert.deepEqual(run.times, derived, `${run.night} · ${run.venue}: the pinned times and the rule agree`);
+    assert.equal(derived[0], run.doors, 'the opener starts at doors');
+    if (run.close) {
+      const end = timeToMinutes(run.close);
+      assert.ok(timeToMinutes(derived[derived.length - 1]) < end, `${run.night} · ${run.venue}: the closer starts before the close`);
+    }
+  }
+  // The rule itself, at its edges.
+  assert.deepEqual(runTimes({ doors: '10 PM', close: '2 AM', count: 4 }), ['10 PM', '11 PM', '12 AM', '1 AM'], 'the Midway');
+  assert.deepEqual(runTimes({ doors: '10 PM', close: '2 AM', count: 3 }), ['10 PM', '11:30 PM', '1 AM'], 'rounded to the half hour, never 11:20');
+  assert.deepEqual(runTimes({ doors: '10 PM', count: 3 }), ['10 PM', '11 PM', '12 AM'], 'no close: an hour apart');
+  assert.deepEqual(runTimes({ doors: '10 PM', close: '11 PM', count: 4 }), ['10 PM', '10:30 PM', '11 PM', '11:30 PM'],
+    'a window too short for the floor: the step never goes below 30 minutes');
+  assert.equal(clockLabel(0), '12 AM');
+  assert.equal(clockLabel(12 * 60), '12 PM');
+});
+
+test('The Midway is untouched — Kevin settled that room, and re-running the migration may never move it', () => {
   assert.equal(midway.length, 4);
   const bySeq = [...midway].sort((x, y) => x.order.seq - y.order.seq);
   assert.deepEqual(bySeq.map((a) => [a.order.seq, a.name, a.time]), [
@@ -171,6 +246,7 @@ test('the Midway four are ONE night played in sequence, not four shows at 10 PM'
     [3, 'Two Shell', '12 AM'],
     [4, 'horsegiirL', '1 AM'],
   ], 'the ticket billing decides the closer (horsegiirL, AXS/Tixr headliner); the other three keep the poster read');
+  assert.deepEqual(runOf('Sun', 'The Midway').order, ['MGNA Crrrta', 'VTSS', 'Two Shell', 'horsegiirL'], 'and the run table says the same');
   for (const a of midway) {
     assert.equal(a.day, 'Afters', 'the section key is untouched — notes written on "Afters" stay there');
     assert.equal(a.approx, true, 'the set time is our guess and says so');
@@ -202,22 +278,31 @@ test('the run sits inside its own window and the clock agrees with the numbering
 });
 
 test('the file itself says which facts are sourced and which are ours', () => {
-  // A phase-2 session reading the JSON must not have to find a plan doc to
-  // learn that the doors are sourced and the close is a guess.
+  // A session reading the JSON must not have to find a plan doc to learn that
+  // the doors are sourced, the close is sometimes a guess, and the order is a
+  // read of a bill.
   assert.ok(portola.meta.note.includes(META_NOTE));
-  assert.match(portola.meta.note, /10 PM is DOORS/);
-  assert.match(portola.meta.note, /`close: "2 AM"` is OURS/);
+  assert.match(portola.meta.note, /that is the DOORS time/);
+  assert.match(portola.meta.note, /the 2 AM close is OURS/);
+  assert.match(portola.meta.note, /deliberately left timeless/);
+  assert.equal(portola.meta.note.split('BACK-TO-BACK RUN').length, 2, 'one provenance paragraph, not one per re-run');
   assert.ok(portola.meta.sources.includes(MIDWAY_TICKETS), 'the doors time is one click away');
-  assert.ok(portola.meta.sources.includes(PORTOLA_WEEK), 'and so is the poster the order came from');
+  assert.ok(portola.meta.sources.includes(PORTOLA_WEEK), 'and so is the programme the orders came from');
 });
 
-test('the other event entries stayed plain — the run shape is not sprayed across the file', () => {
-  for (const a of events) {
-    if (midway.includes(a)) continue;
-    for (const k of ['approx', 'doors', 'close', 'closeApprox', 'order']) {
-      assert.equal(a[k], undefined, `${a.name} (${a.stage}) has no ${k} — nobody has re-read that pile yet`);
-    }
-  }
+test('a room that no longer says what the run table remembers it said stops the migration', () => {
+  // wasTime is a tripwire, not decoration: a hand edit to a time the transform
+  // is about to overwrite must be noticed, not silently re-guessed.
+  const before = unmigrate(portola);
+  before.artists.find((a) => a.name === 'Naisha' && a.stage === 'Sun · Rickshaw Stop').time = '9 PM';
+  assert.throws(() => migrateEvents(before), /the file says time "9 PM" but the run row expects "10 PM"/);
+});
+
+test('a multi-artist room that is in neither list stops the migration — a new data drop cannot slip through unread', () => {
+  const before = unmigrate(portola);
+  // Give Thursday's Club Six a second act at the same time: a new pile.
+  before.artists.push({ name: 'Somebody New', day: 'Afters', stage: 'Thu · Club Six', time: '10 PM' });
+  assert.throws(() => migrateEvents(before), /unrun room: Afters\|Thu\|Club Six/);
 });
 
 // ---- the validator ----------------------------------------------------------

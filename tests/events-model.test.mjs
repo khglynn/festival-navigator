@@ -1,8 +1,9 @@
 // The events model (js/v3/events.js — MODEL-V3, 2026-09-01), pure: how an
 // entry says its night and venue, the clock events run on, the layout rule
 // and the consistency law against the REAL festival files, the day axis
-// (grid days ∪ nights), a night's timetable (lanes, the deck, the run), the
-// run's locked copy, and the bucket filter's persistence.
+// (grid days ∪ nights), a night's timetable (one vertical run per room —
+// MODEL-V3 §5's one rule, no lanes and no deck anywhere), the run's locked
+// copy, and the bucket filter's persistence.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -156,60 +157,85 @@ test('eventModelOf: a two-weekend fest borrows the CHOSEN weekend\'s date, and a
 
 const aftersOn = (night) => portola.artists.filter((a) => a.day === 'Afters' || a.day === 'Afters & Folsom').filter((a) => a.night === night);
 
-test('timetableOf, Portola Friday: venues left to right by first set, a DECK for the Regency three, lanes for Monarch\'s two', () => {
+// THE ONE RULE (Kevin, 2026-09-01): a venue-night is one room and its artists
+// play in sequence. Every cell is a plain card in a vertical run; the words
+// "lane" and "deck" no longer exist in the model, and these tests say so by
+// looking for them by shape, not by name.
+const noLanesNoDecks = (tt) => {
+  assert.ok(tt.cells.every((c) => c.kind === undefined && c.lane === undefined && c.items === undefined),
+    'a cell is { venue, col, row, span, entry } — nothing else lays out an events night');
+  // Two cards in one column may never share a row band: that IS the stack.
+  for (const col of new Set(tt.cells.map((c) => c.col))) {
+    const mine = tt.cells.filter((c) => c.col === col).sort((a, b) => a.row - b.row);
+    for (let i = 1; i < mine.length; i++) {
+      assert.ok(mine[i].row >= mine[i - 1].row + mine[i - 1].span,
+        `${mine[i].venue}: "${mine[i].entry.e.name}" overlaps the card above it`);
+    }
+    assert.ok(mine.every((c) => c.span >= 2), 'every card clears the 30-minute display floor');
+  }
+};
+
+test('timetableOf, Portola Friday: venues left to right by first set, and every room is a vertical run', () => {
   const tt = ev.timetableOf(aftersOn('Fri'));
   assert.equal(tt.venues[0], 'Pier 80 (loyalty invite)', 'Despacio at 5 PM opens the night');
   assert.equal(tt.venues[1], 'Regency Ballroom');
   assert.deepEqual(tt.tba, []);
-  const decks = tt.cells.filter((c) => c.kind === 'deck');
-  assert.equal(decks.length, 1);
-  assert.equal(decks[0].venue, 'Regency Ballroom');
-  assert.deepEqual(decks[0].items.map((i) => i.e.name), ['Channel Tres', 'Jyoty', 'Gelli Haha'], 'earliest first, ties in file order');
-  assert.equal(decks[0].span, 4, 'three open-ended 8 PM shows: one hour, four rows');
-  const monarch = tt.cells.filter((c) => c.kind === 'card' && c.venue === 'Monarch');
-  assert.equal(monarch.length, 2);
-  assert.ok(monarch.every((c) => c.lane && c.lane.lanes === 2), 'two simultaneous sets still lane-split');
-  const despacio = tt.cells.find((c) => c.kind === 'card' && c.entry.e.name === 'Despacio');
-  assert.equal(despacio.span, 24, '5–11 PM');
-  assert.equal(despacio.lane, null);
+  noLanesNoDecks(tt);
+  // The Regency's three: one after another, in the run's order, not a pile.
+  const regency = tt.cells.filter((c) => c.venue === 'Regency Ballroom').sort((a, b) => a.row - b.row);
+  assert.deepEqual(regency.map((c) => c.entry.e.name), ['Gelli Haha', 'Jyoty', 'Channel Tres'], 'small print opens, the billed headliner closes');
+  assert.deepEqual(regency.map((c) => c.entry.e.order.seq), [1, 2, 3]);
+  assert.ok(regency.every((c) => c.span === 4), 'an hour apart, an hour each — this room prints no close');
+  const despacio = tt.cells.find((c) => c.entry.e.name === 'Despacio');
+  assert.equal(despacio.span, 24, '5–11 PM, the one set with a printed end');
 });
 
-test('timetableOf, Portola Sunday: the Midway run is a plain vertical column — no lanes, no deck, the last set ends at the close; Public Works is a deck', () => {
+test('timetableOf, Portola Sunday: every room stacks — the Midway four, Public Works three, and the closer runs to the close', () => {
   const tt = ev.timetableOf(aftersOn('Sun'));
-  const run = tt.cells.filter((c) => c.kind === 'card' && c.venue === 'The Midway');
-  const members = portola.artists.filter((a) => a.night === 'Sun' && a.venue === 'The Midway');
-  assert.equal(run.length, members.length, 'every run member is its own cell');
-  assert.ok(run.every((c) => c.lane === null), 'never lanes');
-  assert.ok(!tt.cells.some((c) => c.kind === 'deck' && c.venue === 'The Midway'), 'never a deck');
-  const bySeq = [...run].sort((a, b) => a.entry.e.order.seq - b.entry.e.order.seq);
-  for (let i = 1; i < bySeq.length; i++) {
-    assert.equal(bySeq[i - 1].entry.endMin, bySeq[i].entry.startMin, 'a member ends when the next begins');
-    assert.ok(bySeq[i].row > bySeq[i - 1].row);
+  noLanesNoDecks(tt);
+  const roomOf = (v) => tt.cells.filter((c) => c.venue === v).sort((a, b) => a.row - b.row);
+  const midway = roomOf('The Midway');
+  assert.equal(midway.length, portola.artists.filter((a) => a.night === 'Sun' && a.venue === 'The Midway').length,
+    'every set is its own tappable card — a combined card would eat the crew\'s picks');
+  assert.deepEqual(midway.map((c) => c.entry.e.name), ['MGNA Crrrta', 'VTSS', 'Two Shell', 'horsegiirL']);
+  for (let i = 1; i < midway.length; i++) {
+    assert.equal(midway[i - 1].entry.endMin, midway[i].entry.startMin, 'a set ends when the next in the room begins');
   }
-  const last = bySeq[bySeq.length - 1].entry;
+  const last = midway[midway.length - 1].entry;
   assert.equal(last.endMin, ev.parseEventTime(last.e.close).startMin, 'the closer ends at the room\'s close');
-  assert.equal(last.endStr, last.e.close);
-  const pw = tt.cells.find((c) => c.kind === 'deck' && c.venue === 'Public Works');
-  assert.ok(pw, 'three 10 PM – 2 AM sets at Public Works are a deck');
-  assert.equal(pw.span, 16);
+  assert.equal(last.endStr, `~${last.e.close}`, 'a GUESSED close keeps its tilde wherever it prints');
+  // Public Works was the deck in the rejected build; it is a run like every
+  // other room now, and its three sets are spread across the same window.
+  const pw = roomOf('Public Works');
+  assert.deepEqual(pw.map((c) => c.entry.startStr), ['10 PM', '11:30 PM', '1 AM']);
   assert.deepEqual(tt.tba.map((a) => a.name), ['Azzecca']);
 });
 
-test('timetableOf: a pile that holds a run member never decks or lanes — even three deep', () => {
+test('the fallback: a room nobody has re-read — every set stamped with the doors time — still stacks, never piles', () => {
+  // This is what a fresh data drop looks like before anyone reads the bill:
+  // three shows, one venue, one time, no order. The old model called this a
+  // deck; the rule says it is a room, so it stacks by the display floor.
+  const V = (name, time) => ({ name, night: 'Fri', venue: 'V', time });
+  const raw = ev.timetableOf([V('A', '10 PM'), V('B', '10 PM'), V('C', '10 PM')]);
+  noLanesNoDecks(raw);
+  assert.deepEqual(raw.cells.map((c) => c.entry.e.name), ['A', 'B', 'C'], 'file order, because nothing else says otherwise');
+  assert.deepEqual(raw.cells.map((c) => c.row), [1, 3, 5], 'each starts where the one above it ended');
+  // Two full-window sets ("10 PM - 2 AM" twice — the room's hours copied onto
+  // both) are the same story: one WINDOW, not two four-hour sets, so they
+  // halve it. And neither may claim the window's end as its own.
+  const win = ev.timetableOf([V('A', '10 PM - 2 AM'), V('B', '10 PM - 2 AM')]);
+  noLanesNoDecks(win);
+  assert.deepEqual(win.cells.map((c) => c.row), [1, 9]);
+  assert.deepEqual(win.cells.map((c) => c.span), [8, 8], 'two even halves of the room\'s four hours');
+  assert.ok(win.cells.every((c) => c.entry.endStr === null), 'no card prints "until 2 AM" — none of them can prove it');
+  // A HALF-numbered room has no run to read, so the clock leads.
   const src = 'https://example.test/poster';
-  const list = [
-    { name: 'A', night: 'Sun', venue: 'V', time: '10 PM', order: { seq: 1, of: 2, source: src, confirmed: false } },
-    { name: 'B', night: 'Sun', venue: 'V', time: '10:10 PM', order: { seq: 2, of: 2, source: src, confirmed: false } },
-    { name: 'C', night: 'Sun', venue: 'V', time: '10 PM' },
-  ];
-  const tt = ev.timetableOf(list);
-  assert.equal(tt.cells.filter((c) => c.kind === 'deck').length, 0);
-  assert.ok(tt.cells.every((c) => c.lane === null));
-  // …and a plain pile of three still decks, a pile of two still lanes.
-  const three = ev.timetableOf(list.map(({ order, ...rest }) => rest));
-  assert.equal(three.cells.filter((c) => c.kind === 'deck').length, 1);
-  const two = ev.timetableOf(list.slice(1).map(({ order, ...rest }) => rest));
-  assert.ok(two.cells.every((c) => c.lane && c.lane.lanes === 2));
+  const half = ev.timetableOf([
+    { ...V('Late', '11 PM'), order: { seq: 1, of: 2, source: src, confirmed: false } },
+    V('Early', '10 PM'),
+  ]);
+  noLanesNoDecks(half);
+  assert.deepEqual(half.cells.map((c) => c.entry.e.name), ['Early', 'Late']);
 });
 
 test('sortForTiles: time first, the timeless at the end, ties in file order — the Street Fair opens Sunday', () => {
@@ -310,27 +336,27 @@ test('hidden buckets persist per fest in localStorage, toggle cleanly, and survi
 
 // ---- the review round (2026-09-01): the model -------------------------------------------
 
-test('a transitive overlap chain is lanes, not a deck — the deck needs PEAK concurrency of three', () => {
+test('printed set times that genuinely overlap still stack — the rule has no concurrency branch left', () => {
   const V = (name, time) => ({ name, night: 'Fri', venue: 'V', time });
-  // One long set bridging two shorter ones that never overlap each other.
+  // The shapes that used to pick a treatment: a bridge chain (was lanes) and
+  // a four-deep pile (was a deck). One room, one answer.
   const bridge = ev.timetableOf([V('Long', '8 PM - 11 PM'), V('Early', '8 PM - 9 PM'), V('Late', '10 PM - 11 PM')]);
-  assert.equal(bridge.cells.filter((c) => c.kind === 'deck').length, 0, 'never simultaneous three-deep');
-  assert.ok(bridge.cells.every((c) => c.lane && c.lane.lanes === 2), 'two lanes, the long set in one');
-  // Three at once, with a fourth chained onto the pile: a deck of four.
+  noLanesNoDecks(bridge);
+  assert.deepEqual(bridge.cells.map((c) => c.entry.e.name), ['Long', 'Early', 'Late'], 'the clock leads, file order breaks the tie');
   const pile = ev.timetableOf([V('A', '8 PM - 10 PM'), V('B', '8 PM - 9 PM'), V('C', '8 PM - 9 PM'), V('D', '9:30 PM - 10:30 PM')]);
-  const decks = pile.cells.filter((c) => c.kind === 'deck');
-  assert.equal(decks.length, 1);
-  assert.deepEqual(decks[0].items.map((i) => i.e.name), ['A', 'B', 'C', 'D']);
-  // Three open-ended at one hour still deck (the shipping case).
-  assert.equal(ev.timetableOf([V('A', '8 PM'), V('B', '8 PM'), V('C', '8 PM')]).cells.filter((c) => c.kind === 'deck').length, 1);
+  noLanesNoDecks(pile);
+  assert.equal(pile.cells.length, 4, 'four sets, four cards — nothing is folded into a pile');
 });
 
-test('a partly-entered run: only the closer runs to the close; a member whose successor is missing draws the hour', () => {
+test('a partly-entered run: the column stays continuous, but only a genuine closer runs to the room\'s close', () => {
   const src = 'https://example.test/poster';
   const M = (name, time, seq, of) => ({ name, night: 'Sun', venue: 'V', time, approx: true, doors: '10 PM', close: '2 AM', order: { seq, of, source: src, confirmed: false } });
   const three = ev.timetableOf([M('One', '10 PM', 1, 4), M('Three', '12 AM', 3, 4), M('Four', '1 AM', 4, 4)]);
   const at = (name) => three.cells.find((c) => c.entry && c.entry.e.name === name).entry;
-  assert.equal(at('One').endMin, at('One').startMin + 60, 'its successor (2 of 4) is not entered — one hour, not the night');
+  // The room runs continuously: a hole where the missing 2-of-4 would sit
+  // reads as broken, so the set before it holds the floor until the next
+  // known one starts. What it must NOT do is claim the end of the night.
+  assert.equal(at('One').endMin, at('Three').startMin, 'ends where the next set in the room begins, gap or no gap');
   assert.equal(at('Three').endMin, at('Four').startMin, 'its successor is present — ends when it begins');
   assert.equal(at('Four').endMin, ev.parseEventTime('2 AM').startMin, 'the closer runs to the close');
   assert.equal(at('Four').endStr, '2 AM');

@@ -1,9 +1,10 @@
 // The day-first wall (MODEL-V3, 2026-09-01), rendered by the real modules in
 // jsdom: the composition on Portola, the strips scoped per timetable, the
-// bucket filter's chips and whisper, the deck at rest and grown, the run's
-// two-line WHEN in the grown card, and the untouched paths — a grid-only
-// fest and Lost Lands render exactly as before. jsdom has no animate(), so
-// every motion path here is the instant one; the motion is the walker's job.
+// bucket filter's chips and whisper, EVERY venue-night as one vertical run
+// (§5's one rule — no lanes, no deck), the run's two-line WHEN in the grown
+// card, and the untouched paths — a grid-only fest and Lost Lands render
+// exactly as before. jsdom has no animate(), so every motion path here is
+// the instant one; the motion is the walker's job.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -31,7 +32,6 @@ const state = await import('../js/state.js');
 const model = await import('../js/v3/model.js');
 const { FESTIVALS, FESTIVAL_INDEX } = await import('../js/festivals.js');
 const { renderWall, refreshCard, dayNavOf, cardFor } = await import('../js/v3/wall.js');
-const deck = await import('../js/v3/deck.js');
 const facts = await import('../js/v3/card-facts.js');
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -39,7 +39,7 @@ const portola = JSON.parse(readFileSync(join(ROOT, 'data/festivals/portola-2026.
 const lostlands = JSON.parse(readFileSync(join(ROOT, 'data/festivals/lost-lands-2026.json'), 'utf8'));
 
 const TOKEN = 'eventswalltoken_0123456789';
-FESTIVAL_INDEX.push({ id: 'portola-2026', status: 'scheduled' }, { id: 'lost-lands-2026', status: 'lineup' }, { id: 'grid-only', status: 'scheduled' }, { id: 'tiles-run', status: 'lineup' }, { id: 'approx-deck', status: 'lineup' }, { id: 'model-edges', status: 'lineup' }, { id: 'verbose-day', status: 'lineup' });
+FESTIVAL_INDEX.push({ id: 'portola-2026', status: 'scheduled' }, { id: 'lost-lands-2026', status: 'lineup' }, { id: 'grid-only', status: 'scheduled' }, { id: 'tiles-run', status: 'lineup' }, { id: 'approx-run', status: 'lineup' }, { id: 'model-edges', status: 'lineup' }, { id: 'verbose-day', status: 'lineup' });
 state.activateCrew(TOKEN, {
   v: 4, meta: {}, spotify: {},
   people: { Kevin: { colorIndex: 0 }, Nhu: { colorIndex: 1 } },
@@ -68,9 +68,11 @@ FESTIVALS['tiles-run'] = {
 };
 
 // A lineup fest whose Afters EARN columns (6 timed over 3 venues) and whose
-// pile of three at V1 is GUESSED (approx, no order — a pile nobody re-read).
-FESTIVALS['approx-deck'] = {
-  id: 'approx-deck', name: 'Approx Deck', status: 'lineup',
+// three sets at V1 are GUESSED and all stamped 10 PM, with no order — the
+// room nobody has re-read yet, which is what every Portola room looked like
+// before the migration.
+FESTIVALS['approx-run'] = {
+  id: 'approx-run', name: 'Approx Run', status: 'lineup',
   dayMeta: { Saturday: { wd: 'Sat', date: 'Oct 3' }, Afters: { date: 'Oct 3' } },
   artists: [
     { name: 'Headliner', day: 'Saturday' },
@@ -144,8 +146,6 @@ const click = (node) => node.dispatchEvent(new dom.window.MouseEvent('click', { 
 const pressAt = (node) => node.dispatchEvent(new dom.window.PointerEvent('pointerdown', { bubbles: true, cancelable: true }));
 const key = (k) => document.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true }));
 
-test.afterEach(() => deck.closeDeck({ instant: true }));
-
 // ---- the composition ---------------------------------------------------------------
 
 test('Portola is day-first: THU FRI SAT SUN, each day its rooms in order, the tabs the same list', () => {
@@ -164,7 +164,6 @@ test('Portola is day-first: THU FRI SAT SUN, each day its rooms in order, the ta
     { key: 'Thursday', short: 'THU', long: 'THU' }, { key: 'Friday', short: 'FRI', long: 'FRI' },
     { key: 'Saturday', short: 'SAT', long: 'SAT' }, { key: 'Sunday', short: 'SUN', long: 'SUN' }]);
   assert.deepEqual(dayNavOf(portola, { ...ctx, query: 'x' }).map((d) => d.key), ['Saturday', 'Sunday', 'Afters', 'Folsom'], 'searching keeps the search view\'s own headers');
-  assert.equal(root.dataset.deckHost, '1');
 });
 
 test('every timetable carries its OWN sticky strip and scroll group — a grid day\'s stage heads never sit over an afters clock', () => {
@@ -225,7 +224,6 @@ test('the untouched paths: a grid-only fest renders one page-wide strip and no r
   assert.equal(grid.querySelector('.stage-strip').parentElement, grid, 'the strip sits at the root, above every day');
   assert.equal(grid.querySelectorAll('.room, .bucket-row, .tt-block, .sec-head').length, 0);
   assert.ok([...grid.querySelectorAll('.times-scroll')].every((s) => !s.dataset.sync));
-  assert.equal(grid.dataset.deckHost, undefined);
   const ll = render('lost-lands-2026').root;
   assert.equal(ll.querySelectorAll('.room, .bucket-row').length, 0);
   const rules = rulesOf(ll);
@@ -266,113 +264,74 @@ test('a hidden bucket is gone from EVERY day, its chip reads off, and the foot-w
   assert.equal(noGrid.querySelector('.wall-whisper').textContent, 'Portola is hidden — tap its chip to bring it back.');
 });
 
-// ---- the deck --------------------------------------------------------------------------
+// ---- every room is a vertical run (MODEL-V3 §5, the one rule) ---------------------------
 
-const fridayDeck = (root) => {
-  const d = root.querySelector('.room[data-bucket="Afters"] .deck');
-  assert.ok(d, 'Friday\'s Regency pile is a deck');
-  return d;
+// The shape the whole round is about, asserted on the DOM the way a person
+// reads it: in one venue column, cards stack and never share a band. This is
+// deliberately a geometry check and not a "no .deck exists" check — a class
+// name can be renamed back in, a column of overlapping cards cannot hide.
+const columnsOf = (block) => {
+  const grid = block.querySelector('.times-scroll[data-day] .times-grid');
+  const cols = new Map();
+  for (const cell of grid.querySelectorAll('.card')) {
+    const col = Number(cell.style.gridColumn);
+    const [row, span] = cell.style.gridRow.split(' / span ').map(Number);
+    if (!cols.has(col)) cols.set(col, []);
+    cols.get(col).push({ name: cell.dataset.artist, time: cell.dataset.time, row, span, el: cell });
+  }
+  for (const list of cols.values()) list.sort((a, b) => a.row - b.row);
+  return cols;
+};
+const assertRuns = (block, where) => {
+  for (const [col, list] of columnsOf(block)) {
+    for (const c of list) {
+      assert.equal(c.el.style.width, '', `${where} col ${col}: "${c.name}" is lane-split — an events room never lanes`);
+      assert.equal(c.el.style.marginLeft, '', `${where} col ${col}: "${c.name}" is lane-offset`);
+      assert.ok(c.span >= 2, `${where} col ${col}: "${c.name}" is under the 30-minute floor`);
+    }
+    for (let i = 1; i < list.length; i++) {
+      assert.ok(list[i].row >= list[i - 1].row + list[i - 1].span,
+        `${where} col ${col}: "${list[i].name}" sits on top of "${list[i - 1].name}"`);
+    }
+  }
+  assert.equal(block.querySelectorAll('.deck, .deck-ghost, .deck-pill, .deck-panel, .deck-layer').length, 0,
+    `${where}: no deck survives anywhere in the DOM`);
 };
 
-test('the deck at rest: one button, the earliest card as an inert face, two ghosts, a count pill', () => {
-  const { root, ctx } = render('portola-2026');
-  const d = fridayDeck(root);
-  assert.equal(d.getAttribute('role'), 'button');
-  assert.equal(d.tabIndex, 0);
-  assert.equal(d.getAttribute('aria-expanded'), 'false');
-  assert.equal(d.getAttribute('aria-label'), '3 sets at Regency Ballroom from 8 PM — 1 picked — open to see them all', 'Nhu picked Channel Tres: the pile says so');
-  assert.equal(d.querySelector('.deck-pill').textContent, '3 · 8 PM');
-  assert.equal(d.querySelectorAll('.deck-ghost').length, 2);
-  const face = d.querySelector('.card');
-  assert.equal(face.dataset.artist, 'Channel Tres');
-  assert.equal(face.dataset.deckFace, '1');
-  assert.equal(face.tabIndex, -1);
-  assert.equal(face.getAttribute('aria-hidden'), 'true');
-  assert.equal(face.getAttribute('role'), null, 'the deck is the button, not the face');
-  assert.ok(face.classList.contains('cell'));
-  assert.equal(face.dataset.time, '8 PM');
-  assert.equal(d.style.gridRow, '13 / span 4');
-  // The face wears the crew's picks (Nhu's aura) but never takes one.
-  assert.ok(face.getAttribute('aria-label').includes('picked by 1 other'));
-  const fresh = refreshCard(face, 'Channel Tres', ctx);
-  assert.equal(fresh.dataset.deckFace, '1');
-  assert.equal(fresh.getAttribute('aria-hidden'), 'true');
-  assert.equal(fresh.style.height, '100%');
-});
-
-test('a tap grows the deck into a panel of full, pickable cards inside the wall root; Escape, a press outside, or a second tap put it away', () => {
-  const { root, ctx } = render('portola-2026');
-  const d = fridayDeck(root);
-  click(d.querySelector('.card'));
-  assert.deepEqual(ctx.taps, [], 'a tap on the face is never a pick');
-  assert.equal(deck.openDeckEl(), d);
-  assert.equal(d.getAttribute('aria-expanded'), 'true');
-  assert.ok(d.classList.contains('open'));
-  const layer = root.querySelector('.deck-layer');
-  assert.ok(layer && layer.parentElement === root, 'the panel\'s layer hangs off the wall root');
-  const panel = layer.querySelector('.deck-panel');
-  assert.equal(panel.getAttribute('role'), 'dialog');
-  assert.equal(panel.querySelector('.deck-panel-title').textContent, 'Regency Ballroom · 8 PM');
-  const cards = [...panel.querySelectorAll('.deck-panel-grid .card')];
-  assert.deepEqual(cards.map((c) => [c.dataset.artist, c.dataset.time]), [['Channel Tres', '8 PM'], ['Jyoty', '8 PM'], ['Gelli Haha', '8 PM']]);
-  assert.ok(cards.every((c) => c.getAttribute('role') === 'button' && c.tabIndex === 0 && !c.classList.contains('cell')), 'full wall cards');
-  assert.deepEqual(JSON.parse(cards[1].dataset.occ), { day: 'Afters', stage: 'Fri · Regency Ballroom', time: '8 PM', weekend: null });
-  click(cards[1]);
-  assert.deepEqual(ctx.taps, ['Jyoty'], 'a card in the panel is a pick');
-  assert.equal(deck.openDeckEl(), d, 'and the panel stays');
-  // Jyoty also plays the Saturday grid — app.js refreshes every card under
-  // the wall root by name, and the panel's card is one of them.
-  const jyotys = [...document.querySelectorAll('#wall-root .card[data-artist="Jyoty"]')];
-  assert.equal(jyotys.length, 2, 'the Saturday grid cell and the panel card');
-  assert.ok(jyotys.some((c) => c.closest('.deck-panel')), 'the refreshed panel card is still found under the wall root (app.js refreshArtistCards)');
-  key('Escape');
-  assert.equal(deck.openDeckEl(), null, 'Escape closes');
-  assert.equal(root.querySelector('.deck-panel'), null);
-  assert.equal(d.getAttribute('aria-expanded'), 'false');
-  click(d);
-  assert.equal(deck.openDeckEl(), d);
-  pressAt(root.querySelector('.day-rule'));
-  assert.equal(deck.openDeckEl(), null, 'a press outside closes');
-  click(d);
-  pressAt(root.querySelector('.deck-panel-grid .card'));
-  assert.equal(deck.openDeckEl(), d, 'a press inside does not');
-  click(d);
-  assert.equal(deck.openDeckEl(), null, 'a second tap on the deck toggles it away');
-  click(d);
-  click(root.querySelector('.deck-panel .deck-close'));
-  assert.equal(deck.openDeckEl(), null, 'the ✕ closes');
-});
-
-test('an open deck survives a repaint through its snapshot, and its cards can be zoomed like any card', () => {
-  const { root, ctx } = render('portola-2026');
-  click(fridayDeck(root));
-  const snap = deck.deckSnapshot();
-  assert.deepEqual(snap, { key: 'Afters|Friday|Regency Ballroom|1200', fromKeyboard: false, focus: null });
-  renderWall(root, ctx);
-  assert.equal(root.querySelector('.deck-panel'), null, 'a repaint takes the panel');
-  assert.equal(deck.openDeckEl(), null, 'and the deck knows it — a render that does not restore (a search) leaves no stale open deck for a later repaint to resurrect');
-  assert.equal(deck.deckSnapshot(), null);
-  deck.restoreDeck(root, snap);
-  assert.equal(deck.openDeckEl(), fridayDeck(root), 'and the snapshot brings it back on the fresh deck');
-  const card = root.querySelector('.deck-panel-grid .card[data-artist="Jyoty"]');
-  const f = facts.zoomCard(card, 'Jyoty', ctx, { occ: JSON.parse(card.dataset.occ) });
-  assert.equal(f.where, 'Regency Ballroom');
-  assert.equal(f.when, 'Fri · 8 PM');
-  assert.ok(facts.zoomedCard() === card);
-  deck.closeDeck({ instant: true });
-  assert.equal(facts.zoomedCard(), null, 'the zoom leaves with the panel');
-});
-
-test('keyboard: Enter on the deck opens it and focuses the first card; Escape returns focus to the deck', () => {
+test('every venue-night on the Portola wall is a vertical run: nothing lanes, nothing decks, nothing overlaps', () => {
   const { root } = render('portola-2026');
-  const d = fridayDeck(root);
-  d.focus();
-  d.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
-  assert.equal(deck.openDeckEl(), d);
-  assert.equal(document.activeElement, root.querySelector('.deck-panel-grid .card'));
-  key('Escape');
-  assert.equal(deck.openDeckEl(), null);
-  assert.equal(document.activeElement, d);
+  const blocks = [...root.querySelectorAll('.room[data-bucket="Afters"] .tt-block')];
+  assert.equal(blocks.length, 4, 'Thu/Fri/Sat/Sun afters');
+  blocks.forEach((b, i) => assertRuns(b, `afters ${i}`));
+  assert.equal(root.querySelectorAll('.deck, .deck-layer').length, 0, 'the deck is gone from the app');
+  // Friday's Regency — the pile that used to be a deck — reads top to bottom
+  // in the run's order, each set its own tappable card.
+  const fri = columnsOf(blocks[1]);
+  const regency = [...fri.values()].find((l) => l.length === 3 && l[0].name === 'Gelli Haha');
+  assert.ok(regency, 'the Regency three are one column');
+  assert.deepEqual(regency.map((c) => [c.name, c.time]), [['Gelli Haha', '~8 PM'], ['Jyoty', '~9 PM'], ['Channel Tres', '~10 PM']]);
+  assert.ok(regency.every((c) => c.el.getAttribute('role') === 'button'), 'every set stays its own tappable card');
+  // Sunday's Public Works — the other deck — and the Midway four.
+  const sun = columnsOf(blocks[3]);
+  const pw = [...sun.values()].find((l) => l.length === 3 && l[0].name === 'erika b2b sfcowboy');
+  assert.deepEqual(pw.map((c) => c.time), ['~10 PM', '~11:30 PM', '~1 AM']);
+  const midway = [...sun.values()].find((l) => l.length === 4);
+  assert.deepEqual(midway.map((c) => c.name), ['MGNA Crrrta', 'VTSS', 'Two Shell', 'horsegiirL']);
+});
+
+test('a room nobody has re-read — three sets, one venue, one time, no order — stacks on the wall instead of piling', () => {
+  const { root } = render('approx-run');
+  const block = root.querySelector('.room[data-bucket="Afters"] .tt-block');
+  assertRuns(block, 'approx-run');
+  const cols = columnsOf(block);
+  const v1 = [...cols.values()].find((l) => l.length === 3);
+  assert.deepEqual(v1.map((c) => [c.name, c.time, c.row, c.span]),
+    [['P1', '~10 PM', 5, 2], ['P2', '~10 PM', 7, 2], ['P3', '~10 PM', 9, 2]], // the night opens at 9 PM (S1), so 10 PM is row 5
+    'one shared time is the room\'s window, shared out — never one card behind another');
+  // The tilde travels, and the whisper follows it exactly once.
+  assert.equal(root.querySelectorAll('.room[data-bucket="Afters"] .sec-whisper').length, 1);
+  const v2 = [...cols.values()].find((l) => l.length === 2);
+  assert.deepEqual(v2.map((c) => [c.name, c.time]), [['L1', '11 PM'], ['L2', '11 PM']], 'no tilde where nothing is guessed');
 });
 
 // ---- the run in the zoom (the LOCKED copy) ---------------------------------------------------
@@ -433,168 +392,6 @@ test('a run inside a TILES section: the tile wears the tilde and the range, one 
     [['Opener', '~10 PM'], ['Closer', '~11 PM'], ['Nowhere Yet', undefined]]);
   assert.ok(afters.querySelector('.tba .card[data-artist="Nowhere Yet"]'), 'the timeless one sits under TIME TBA');
   assert.equal(afters.querySelectorAll('.sec-whisper').length, 1);
-});
-
-// ---- the review round (2026-09-01): the deck's P1s ---------------------------------------
-
-test('the deck answers the people filter as ONE object: lit when the filtered person picked anything in the pile, dimmed whole otherwise, never a lone dimmed face', () => {
-  // Nhu's only Friday pick is Jyoty — the deck's SECOND card, behind the face.
-  const { root } = render('portola-2026', { picks: { Jyoty: { Nhu: 4 } }, filterPeople: ['Nhu'] });
-  const d = fridayDeck(root);
-  assert.ok(!d.classList.contains('dim'), 'the pile holds her pick — lit');
-  assert.ok(!d.querySelector('.card').classList.contains('dim'), 'the face never dims on its own');
-  assert.match(d.getAttribute('aria-label'), /^3 sets at Regency Ballroom from 8 PM — 1 picked by Nhu — open/);
-  // Kevin picked nothing in the pile.
-  const { root: r2 } = render('portola-2026', { picks: { Jyoty: { Nhu: 4 } }, filterPeople: ['Kevin'] });
-  const d2 = fridayDeck(r2);
-  assert.ok(d2.classList.contains('dim'), 'nobody selected picked here — the whole deck dims');
-  assert.ok(!d2.querySelector('.card').classList.contains('dim'), 'no double dim');
-  assert.match(d2.getAttribute('aria-label'), /— none picked by Kevin —/);
-  // No filter: anyone's picks ride the name; a refresh of the face re-reads the pile.
-  const { root: r3, ctx: c3 } = render('portola-2026', { picks: { Jyoty: { Nhu: 4 }, 'Channel Tres': { Kevin: 1 } } });
-  const d3 = fridayDeck(r3);
-  assert.match(d3.getAttribute('aria-label'), /— 2 picked —/);
-  c3.picks = {};
-  refreshCard(d3.querySelector('.card'), 'Channel Tres', c3);
-  assert.ok(!d3.getAttribute('aria-label').includes('picked'), 'the picks went — the name follows');
-  // …and under a filter the same refresh re-evaluates the dim.
-  const { root: r4, ctx: c4 } = render('portola-2026', { picks: { Jyoty: { Nhu: 4 } }, filterPeople: ['Nhu'] });
-  const d4 = fridayDeck(r4);
-  assert.ok(!d4.classList.contains('dim'));
-  c4.picks = {};
-  refreshCard(d4.querySelector('.card'), 'Channel Tres', c4);
-  assert.ok(d4.classList.contains('dim'), 'her pick left the pile — the deck dims');
-  assert.ok(!d4.querySelector('.card').classList.contains('dim'));
-});
-
-test('a repaint restores a standing zoom onto the PANEL card, never the deck\'s inert face — and the grown card still picks', () => {
-  const { root, ctx } = render('portola-2026');
-  click(fridayDeck(root));
-  const panelTop = root.querySelector('.deck-panel-grid .card[data-artist="Channel Tres"]');
-  const face = fridayDeck(root).querySelector('.card');
-  assert.equal(face.dataset.artist, 'Channel Tres');
-  assert.equal(face.dataset.occ, panelTop.dataset.occ, 'the face and the panel\'s top card are two renderings of one occurrence');
-  facts.zoomCard(panelTop, 'Channel Tres', ctx, { occ: JSON.parse(panelTop.dataset.occ), onOpenNotes: ctx.onOpenNotes });
-  const keep = facts.zoomSnapshot();
-  const snap = deck.deckSnapshot();
-  facts.unzoom({ instant: true });
-  renderWall(root, ctx); // the sync echo
-  deck.restoreDeck(root, snap);
-  const naive = [...root.querySelectorAll('.card[data-artist="Channel Tres"]')].find((el) => (el.dataset.occ || '') === JSON.stringify(keep.occ));
-  assert.equal(naive.dataset.deckFace, '1', 'document order puts the face first — the trap cardFor exists for');
-  const again = cardFor(root, keep.artist, keep.occ);
-  assert.ok(again && again.closest('.deck-panel'), 'cardFor picks the panel card');
-  assert.notEqual(again.dataset.deckFace, '1');
-  facts.zoomCard(again, keep.artist, ctx, { ...keep, instant: true });
-  assert.equal(facts.zoomedCard(), again);
-  click(document.querySelector('#zoom-layer .zoom-card'));
-  assert.deepEqual(ctx.taps, ['Channel Tres'], 'a tap on the grown card picks — the face\'s no-op onTap is not in the loop');
-  facts.unzoom({ instant: true });
-});
-
-test('Escape belongs to the topmost layer: a notes sheet above the panel keeps the panel; without one, Escape closes it', () => {
-  const { root } = render('portola-2026');
-  const d = fridayDeck(root);
-  click(d);
-  const sheet = document.createElement('div');
-  sheet.id = 'artist-sheet';
-  document.body.appendChild(sheet);
-  try {
-    key('Escape');
-    assert.equal(deck.openDeckEl(), d, 'the sheet above takes Escape');
-  } finally { sheet.remove(); }
-  key('Escape');
-  assert.equal(deck.openDeckEl(), null);
-});
-
-test('focus goes home to the deck only for Escape / the ✕ / a second tap — never for a press outside, a scroll-away or a repaint — and always without scrolling', () => {
-  const { root, ctx } = render('portola-2026');
-  const d = fridayDeck(root);
-  const focusCalls = [];
-  const realFocus = d.focus.bind(d);
-  d.focus = (opts) => { focusCalls.push(opts); realFocus(opts); };
-  const enter = () => d.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
-  enter();
-  assert.equal(deck.openDeckEl(), d);
-  key('Escape');
-  assert.deepEqual(focusCalls, [{ preventScroll: true }], 'Escape: home, without a scroll');
-  assert.equal(document.activeElement, d);
-  enter();
-  pressAt(root.querySelector('.day-rule'));
-  assert.equal(deck.openDeckEl(), null);
-  assert.equal(focusCalls.length, 1, 'an outside press does not pull focus to the deck');
-  enter();
-  const realRect = d.getBoundingClientRect;
-  d.getBoundingClientRect = () => ({ top: -500, bottom: -400, left: 0, right: 150, width: 150, height: 100 });
-  try {
-    window.dispatchEvent(new dom.window.Event('scroll'));
-    assert.equal(deck.openDeckEl(), null, 'the deck left the viewport — the panel closed');
-    assert.equal(focusCalls.length, 1, 'and nothing pulled the page back to it');
-  } finally { d.getBoundingClientRect = realRect; }
-  enter();
-  click(root.querySelector('.deck-panel .deck-close'));
-  assert.equal(focusCalls.length, 2, 'the ✕: home');
-  assert.equal(document.activeElement, d);
-  enter();
-  renderWall(root, ctx);
-  assert.equal(focusCalls.length, 2, 'a repaint never refocuses the old deck');
-});
-
-test('a repaint keeps a keyboard user\'s place inside the panel — the card they were on, not the first card', () => {
-  const { root, ctx } = render('portola-2026');
-  const d = fridayDeck(root);
-  d.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
-  const cards = [...root.querySelectorAll('.deck-panel-grid .card')];
-  assert.equal(document.activeElement, cards[0], 'a keyboard open lands on the first card');
-  cards[1].focus();
-  const snap = deck.deckSnapshot();
-  assert.deepEqual(snap, { key: 'Afters|Friday|Regency Ballroom|1200', fromKeyboard: true, focus: 'Jyoty' });
-  renderWall(root, ctx);
-  deck.restoreDeck(root, snap);
-  assert.equal(document.activeElement.dataset.artist, 'Jyoty');
-  assert.ok(document.activeElement.closest('.deck-panel'));
-  renderWall(root, ctx);
-  assert.equal(document.activeElement, document.body);
-  deck.restoreDeck(root, { ...snap, focus: null });
-  assert.equal(deck.openDeckEl(), fridayDeck(root));
-  assert.equal(document.activeElement, document.body, 'no focus inside before the repaint: none moved after it');
-});
-
-test('place() reads the panel\'s LAYOUT box, not a mid-bloom bounding rect', () => {
-  const { root } = render('portola-2026');
-  const d = fridayDeck(root);
-  click(d);
-  const slot = root.querySelector('.deck-slot');
-  const iw = Object.getOwnPropertyDescriptor(window, 'innerWidth');
-  const ih = Object.getOwnPropertyDescriptor(window, 'innerHeight');
-  Object.defineProperty(slot, 'offsetWidth', { value: 200, configurable: true });
-  Object.defineProperty(slot, 'offsetHeight', { value: 100, configurable: true });
-  slot.getBoundingClientRect = () => ({ left: 0, top: 0, width: 150, height: 75, right: 150, bottom: 75 }); // the box at scale(.75), mid-bloom
-  d.getBoundingClientRect = () => ({ left: 450, top: 350, width: 100, height: 100, right: 550, bottom: 450 });
-  Object.defineProperty(window, 'innerWidth', { value: 1200, configurable: true });
-  Object.defineProperty(window, 'innerHeight', { value: 900, configurable: true });
-  try {
-    window.dispatchEvent(new dom.window.Event('scroll')); // follow → place
-    assert.equal(slot.style.left, '400px', '500 − 200/2: the layout width, not the transformed 150');
-    assert.equal(slot.style.top, '350px', '400 − 100/2');
-  } finally {
-    if (iw) Object.defineProperty(window, 'innerWidth', iw);
-    if (ih) Object.defineProperty(window, 'innerHeight', ih);
-  }
-});
-
-test('the deck\'s pill, accessible name and panel title carry the tilde when the top card\'s time is a guess', () => {
-  const { root } = render('approx-deck');
-  const d = root.querySelector('.deck');
-  assert.ok(d, 'three guessed 10 PM sets at V1 are a deck');
-  assert.equal(d.querySelector('.deck-pill').textContent, '3 · ~10 PM');
-  assert.match(d.getAttribute('aria-label'), /^3 sets at V1 from ~10 PM/);
-  assert.equal(d.querySelector('.card').dataset.time, '~10 PM');
-  click(d);
-  assert.equal(root.querySelector('.deck-panel-title').textContent, 'V1 · ~10 PM');
-  assert.equal(root.querySelector('.deck-panel').getAttribute('aria-label'), 'V1 · ~10 PM');
-  assert.deepEqual([...root.querySelectorAll('.deck-panel-grid .card')].map((c) => c.dataset.time), ['~10 PM', '~10 PM', '~10 PM']);
-  assert.equal(root.querySelectorAll('.room[data-bucket="Afters"] .sec-whisper').length, 1);
 });
 
 // ---- the review round (2026-09-01): the buckets ----------------------------------------
@@ -659,20 +456,21 @@ test('a verbose day key shows its weekday head in the day-first rule, the aside 
   assert.deepEqual(roomsUnder(root, WED_KEY).map((r) => r.dataset.bucket), [':fest', 'Afters']);
 });
 
-// ---- the round-2 walk (2026-09-01): picks inside the open panel, across the sync echo -----------
+// ---- the round-2 walk (2026-09-01): picks on a grown card, across the sync echo -----------
 // The real sequence, with app.js's handleTap / applyLocalPick / refreshCtx /
-// refreshArtistCards / repaintWall mirrored: renderWall → open the deck →
-// the hover grows a panel card (wireCardZoom's own intent timer) → a click on
-// the OVERLAY picks → the sync echo repaints (snapshot / restore) → clicks on
-// the overlay keep cycling 2 → 3 → 4 → 0.
+// refreshArtistCards / repaintWall mirrored: renderWall → the hover grows a
+// card (wireCardZoom's own intent timer) → a click on the OVERLAY picks →
+// the sync echo repaints (snapshot / restore) → clicks on the overlay keep
+// cycling 2 → 3 → 4 → 0.
 //
-// What the walk actually hit was geometry, not the deck: its one fixed click
-// point was the overlay's centre, which sat in a gap before the first pick
-// and on the venue's map DOOR after it (the who-row's arrival re-centres the
-// rows — the designed event: a pill arriving slides in and its neighbours
-// make room). The rig aims at the name now, as a person does. So this also
-// pins the shape: the who-row appears only when there are people, and the
-// door is a door.
+// What the walk hit was geometry, never the deck (which is gone now): its one
+// fixed click point was the overlay's centre, which sat in a gap before the
+// first pick and on the venue's map DOOR after it (the who-row's arrival
+// re-centres the rows — the designed event: a pill arriving slides in and its
+// neighbours make room). The rig aims at the name now, as a person does. So
+// this also pins the shape: the who-row appears only when there are people,
+// and the door is a door. The card it runs on is a run member in a venue
+// column — the exact card the walk was on.
 function appMirror(fid) {
   const root = document.getElementById('wall-root');
   const ctx = ctxFor(fid);
@@ -705,12 +503,10 @@ function appMirror(fid) {
   };
   const repaintWall = () => {
     const keep = facts.zoomSnapshot();
-    const dk = deck.deckSnapshot();
     facts.unzoom({ instant: !!keep, why: 'wall repaint' });
     refreshCtxLike();
     state.setActiveFestivalId(fid);
     renderWall(root, ctx);
-    if (dk) deck.restoreDeck(root, dk);
     if (keep) {
       const again = cardFor(root, keep.artist, keep.occ);
       if (again) facts.zoomCard(again, keep.artist, ctx, { ...keep, instant: true });
@@ -725,14 +521,16 @@ const hoverEnter = (node) => node.dispatchEvent(new dom.window.PointerEvent('poi
 const overlay = () => document.querySelector('#zoom-layer .zoom-card');
 const rowsOf = (card) => [...card.querySelector('.f-grown').children].map((c) => c.className.split(' ')[0]);
 
-test('picks on a panel card keep cycling across the sync-echo repaint; the who-row appears only when there are people; the venue door never picks', async () => {
+test('picks on a run card keep cycling across the sync-echo repaint; the who-row appears only when there are people; the venue door never picks', async () => {
   delete state.crewDoc.festivals['portola-2026'].selections['Gelli Haha'];
   const { root, ctx, repaintWall, level } = appMirror('portola-2026');
-  click(fridayDeck(root));
-  const panelCard = root.querySelector('.deck-panel-grid .card[data-artist="Gelli Haha"]');
-  hoverEnter(panelCard); // the hover's own intent timer (wireCardZoom)
+  // Gelli Haha opens the Regency's Friday run — a card in a venue column,
+  // which is what every events card is now.
+  const runCard = root.querySelector('.room[data-bucket="Afters"] .card.cell[data-artist="Gelli Haha"]');
+  assert.ok(runCard, 'the run member is a plain wall card');
+  hoverEnter(runCard); // the hover's own intent timer (wireCardZoom)
   await new Promise((r) => setTimeout(r, facts.ZOOM_IN_MS + 40));
-  assert.equal(facts.zoomedCard(), panelCard, 'the hover grew the panel card');
+  assert.equal(facts.zoomedCard(), runCard, 'the hover grew the run card');
   assert.deepEqual(rowsOf(overlay()), ['f-sub', 'f-where', 'f-chips'], 'unpicked: no who-row, no hole');
   assert.equal(overlay().querySelector('a.f-where').textContent, 'Regency Ballroom', 'the venue is a map door');
   click(overlay().querySelector('.f-name'));
@@ -740,12 +538,14 @@ test('picks on a panel card keep cycling across the sync-echo repaint; the who-r
   assert.deepEqual(rowsOf(overlay()), ['f-sub', 'f-where', 'f-who', 'f-chips'], 'the pill arrived and its neighbours made room');
   assert.equal(overlay().querySelector('.f-who .f-pill.you').textContent, 'You');
   repaintWall(); // the sync echo
-  assert.ok(facts.zoomedCard() && facts.zoomedCard().closest('.deck-panel') && facts.zoomedCard().dataset.deckFace !== '1', 'restored onto the panel card');
+  const back = facts.zoomedCard();
+  assert.ok(back && back.isConnected && back.dataset.artist === 'Gelli Haha' && back.classList.contains('cell'),
+    'restored onto the fresh run card, not the Saturday grid billing of the same name');
   assert.deepEqual(rowsOf(overlay()), ['f-sub', 'f-where', 'f-who', 'f-chips'], 'the restore rebuilt the same rows');
   for (const want of [2, 3, 4, 0]) {
     click(overlay().querySelector('.f-name'));
     assert.equal(level('Gelli Haha'), want, `the next click on the overlay took the pick to ${want}`);
-    assert.ok(facts.zoomedCard() && facts.zoomedCard().isConnected && facts.zoomedCard().closest('.deck-panel'), 'the zoom rode the refreshed panel card');
+    assert.ok(facts.zoomedCard() && facts.zoomedCard().isConnected, 'the zoom rode the refreshed run card');
   }
   assert.deepEqual(rowsOf(overlay()), ['f-sub', 'f-where', 'f-chips'], 'cleared: the who-row is gone again and the rows close up');
   assert.deepEqual(ctx.taps, ['Gelli Haha', 'Gelli Haha', 'Gelli Haha', 'Gelli Haha', 'Gelli Haha']);

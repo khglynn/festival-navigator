@@ -45,7 +45,10 @@ test('a day exports its whole content in the wall\'s order: the grid in clock or
   const sat = dayArtistsFor('Saturday');
   assert.equal(sat.length, 32 + 9 + 2, 'the grid, Saturday\'s afters, Saturday\'s Folsom');
   assert.deepEqual(sat[0], { name: 'Airwolf Paradise', time: 'Pier Stage · 1:30 PM' });
-  assert.deepEqual(sat[32], { name: 'Parcels', time: 'Afters · Regency Ballroom · 10 PM' }, 'the first afters show after the grid, time-sorted');
+  // Saturday's afters open with the Regency's OPENER — the room is a run, so
+  // the first card is whoever plays first, not whoever is billed first.
+  const satOpener = portola.artists.find((a) => a.night === 'Sat' && a.venue === 'Regency Ballroom' && a.order.seq === 1);
+  assert.deepEqual(sat[32], { name: satOpener.name, time: `Afters · Regency Ballroom · ~${satOpener.time}` }, 'the first afters show after the grid, time-sorted, wearing its tilde');
   assert.deepEqual(sat[sat.length - 1], { name: 'PERVERT XXL', time: 'Folsom · The Midway · 10 PM - 6 AM' });
   const thu = dayArtistsFor('Thursday');
   assert.deepEqual(thu, [{ name: 'Soulwax', time: 'Afters · Regency Ballroom · 8 PM' }, { name: 'Black Rave Culture', time: 'Afters · Club Six · 10 PM' }]);

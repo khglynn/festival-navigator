@@ -11,7 +11,6 @@ import * as model from './model.js';
 import { loadFestivalIndex, loadFestival, loadCustomFestivals, FESTIVAL_INDEX, defaultFestivalId } from '../festivals.js';
 import { renderWall, refreshCard, showUndoToast, showToast, wireScrollspy, colorIndexOf, scheduledWeekendOf, positionNowLines, scrollToNowLine, dayNavOf, cardFor } from './wall.js';
 import { loadPeopleFilter, savePeopleFilter, togglePerson, pruneToActive, loadSolo, saveSolo, loadHiddenBuckets, applyBucketToggle } from './filters.js';
-import { deckSnapshot, restoreDeck } from './deck.js';
 import { OUT_MS, CASCADE_MS, STAGGER_MS, EASE_ARRIVE, EASE_LEAVE, canAnimate } from './motion.js';
 import { scrolledBefore, rememberScrolled, dayOfScrollKey } from './now.js';
 import { disclosureFold, eqLoader, festRow } from './tools.js';
@@ -414,16 +413,10 @@ function repaintWall() {
   // must not eat the card you are resting on); a card that is gone — a
   // filter hid it, a fest switch — takes its zoom with it.
   const keep = zoomSnapshot();
-  const deck = deckSnapshot(); // an open deck panel comes back the same way
   unzoom({ instant: !!keep, why: 'wall repaint' });
   refreshCtx();
   renderWall($('wall-root'), ctx);
-  // The deck first: a zoom standing on one of the panel's cards can only be
-  // restored once the panel is back.
-  if (deck) restoreDeck($('wall-root'), deck);
   if (keep) {
-    // Never a deck's face (wall.js cardFor): it wears the panel's top card's
-    // artist and occurrence, and a zoom restored onto it could not pick.
     const again = cardFor($('wall-root'), keep.artist, keep.occ);
     if (again) zoomCard(again, keep.artist, ctx, { ...keep, instant: true });
   }

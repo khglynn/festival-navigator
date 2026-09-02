@@ -17,7 +17,6 @@ import { factsFor, timeRange } from './card-facts.js'; // same runtime-only cycl
 import { passesPeople, columnsTemplate, railLabels } from './filters.js';
 import { nowOnDay, nowOffsetPx, clockLabel, festivalClock } from './now.js';
 import { eventModelOf, timetableOf, sortForTiles, bucketsOf, occOf, hourLabelOf, approxMark, parseEventTime, FEST_BUCKET } from './events.js';
-import { renderDeck, faceCtxFor, decorateFace, panelTime, closeDeck, refreshDeckState } from './deck.js'; // runtime-only cycle (deck renders cards)
 
 // ---- person -> board color ---------------------------------------------------
 // v4 people carry colorIndex. Legacy people carry a "R, G, B" string from the
@@ -223,12 +222,9 @@ export function renderCard(artistName, ctx, opts = {}) {
 // The fresh card must land exactly where the old one was: same render opts
 // (cell variant, time line) AND the placement the full render computed —
 // grid position and lane split live as inline styles on the node (CORE-1).
-const PLACEMENT_PROPS = ['grid-column', 'grid-row', 'width', 'margin-left', 'min-height', 'height'];
+const PLACEMENT_PROPS = ['grid-column', 'grid-row', 'width', 'margin-left', 'min-height'];
 export function refreshCard(el, artistName, ctx, { onSwap = null } = {}) {
-  // A deck's face card stays inert through a refresh (deck.js): a crew-mate's
-  // pick landing on the top card must not quietly arm it as a pick target.
-  const face = el.dataset.deckFace === '1';
-  const fresh = renderCard(artistName, face ? faceCtxFor(ctx) : ctx, {
+  const fresh = renderCard(artistName, ctx, {
     cell: el.classList.contains('cell'),
     time: el.dataset.time || undefined,
     tag: el.dataset.tag || undefined,
@@ -236,7 +232,6 @@ export function refreshCard(el, artistName, ctx, { onSwap = null } = {}) {
     until: el.dataset.until || null,
     occ: el.dataset.occ ? JSON.parse(el.dataset.occ) : undefined,
   });
-  if (face) decorateFace(fresh);
   for (const prop of PLACEMENT_PROPS) {
     const v = el.style.getPropertyValue(prop);
     if (v) fresh.style.setProperty(prop, v);
@@ -257,21 +252,17 @@ export function refreshCard(el, artistName, ctx, { onSwap = null } = {}) {
   if (onSwap) onSwap(fresh);
   el.remove();
   if (hadFocus) fresh.focus();
-  // A pick landing on a deck's face is a pick landing in the pile — the deck
-  // answers the people filter as one object, so its dim and its name follow.
-  if (face) { const deck = fresh.closest('.deck'); if (deck) refreshDeckState(deck, ctx); }
   return fresh;
 }
 
 // The card a zoom should be restored onto after a repaint: the one carrying
-// this artist AND this occurrence — and never a deck's inert face, which
-// wears the same two facts as the panel's top card and comes first in
-// document order. A zoom restored onto the face has a no-op onTap: every
-// further tap on the grown card did nothing (review round, 2026-09-01).
+// this artist AND this occurrence. Both facts are needed — in Portola one
+// name can be two cards (a grid billing and an event), and the wrong one is
+// the wrong story.
 export function cardFor(root, artist, occ) {
   const want = occ ? JSON.stringify(occ) : '';
   return [...root.querySelectorAll('.card[data-artist]')]
-    .find((el) => el.dataset.artist === artist && el.dataset.deckFace !== '1' && (el.dataset.occ || '') === want) || null;
+    .find((el) => el.dataset.artist === artist && (el.dataset.occ || '') === want) || null;
 }
 
 // ---- day grouping (lineup mode) -----------------------------------------------
@@ -972,7 +963,6 @@ const dedupeByName = (list) => {
 };
 
 function renderDayFirst(root, ctx, fest, { model: plan, scheduled, wk, gridDays }) {
-  root.dataset.deckHost = '1'; // the deck panel's layer hangs off this root
   const buckets = bucketsOf(fest, plan);
   // A stored key the fest no longer offers (a section renamed, a fest that
   // lost one) is nobody's: ignored here, and never named in the whisper.
@@ -1173,8 +1163,8 @@ function renderEventTiles(room, list, ctx, { day }) {
 
 // Columns: the main grid's grammar with venues as stages — a sticky venue
 // strip scoped to THIS timetable, 15-minute rows, the hour rail outside the
-// scroller. Lanes for two, the deck for three or more, a plain vertical run
-// for a venue whose sets carry an order (events.js timetableOf decides).
+// scroller. Every venue's night is ONE vertical run, stacked top to bottom in
+// play order — never lanes, never a deck (events.js timetableOf decides).
 function renderEventsTimetable(room, list, ctx, { fest, section, day, now }) {
   const tt = timetableOf(list);
   // A night with nothing to put on a clock (no timed set with a room) is
@@ -1222,22 +1212,12 @@ function renderEventsTimetable(room, list, ctx, { fest, section, day, now }) {
       rail.appendChild(label);
     }
     for (const c of tt.cells) {
-      if (c.kind === 'deck') {
-        grid.appendChild(renderDeck(c.items, ctx, {
-          key: `${syncKey}|${c.venue}|${c.startMin}`, venue: c.venue, col: c.col, row: c.row, span: c.span, occOf, timeOf: panelTime,
-        }));
-        continue;
-      }
       const t = c.entry;
       const tall = c.span >= 12;
       const cell = renderCard(t.e.name, ctx, { cell: true, tall, until: tall ? t.endStr || null : null, time: approxMark(t.e, t.startStr), occ: occOf(t.e) });
       cell.style.gridColumn = String(c.col);
       cell.style.gridRow = `${c.row} / span ${c.span}`;
       cell.style.minHeight = '0';
-      if (c.lane) {
-        cell.style.width = `calc(${(100 / c.lane.lanes).toFixed(3)}% - 2px)`;
-        cell.style.marginLeft = `${((c.lane.lane * 100) / c.lane.lanes).toFixed(3)}%`;
-      }
       grid.appendChild(cell);
     }
     scroll.appendChild(grid);
@@ -1305,13 +1285,7 @@ export function renderWall(root, ctx) {
 }
 
 function renderWallInner(root, ctx) {
-  // Clearing the root takes any open deck panel with it — tell the deck so
-  // its state goes too (repaintWall snapshots BEFORE this and restores after;
-  // a search render simply loses it, as it loses the zoom). Without this a
-  // stale snapshot could re-open a deck minutes later on a sync echo.
-  closeDeck({ instant: true });
   root.textContent = '';
-  delete root.dataset.deckHost;
   const fest = state.fest();
   const scheduled = fest.days && Object.keys(fest.days).length;
 

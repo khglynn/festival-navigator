@@ -5,11 +5,10 @@
 // render, returns what the wall lays out — the days (the union of grid days
 // and event nights, in festival order), the sections active on each, the
 // mode each section wears ALL WEEK (the consistency law), and, for a
-// columns section, where every card, lane, deck and run sits on the clock.
+// columns section, where every set sits on the clock.
 // No DOM, no state: the wall, the day tabs, the zoom's facts and the tests
 // all read the same answers from here.
 import { activityMinutes, dayLabelParts } from '../time.js';
-import { computeLanes } from '../overlap.js';
 import { dayIsoOf } from './now.js';
 
 export const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -265,28 +264,36 @@ export function findEventEntry(fest, name, occ) {
     && (occOf(a).stage || '') === want) || null;
 }
 
-// ---- a night's timetable (MODEL-V3 §4 + §5) -----------------------------------------
-// Rows are 15 minutes. Every timed entry gets a display extent of at least
-// 30 minutes (the name + time floor the main grid uses). Per venue, sets
-// that overlap on display form a cluster:
-//   · a cluster holding a RUN member renders as a plain vertical run —
-//     never lanes, never a deck (§5; artist separation is law),
-//   · a cluster whose PEAK concurrency is three or more becomes ONE deck
-//     (§4) — a long set bridging two shorter ones that never overlap each
-//     other is two lanes, not a pile (review round, 2026-09-01),
-//   · two split into lanes, exactly as the main grid does.
-// Venues read left to right by their earliest set; ties keep file order.
-// An entry with a time but no venue is never filed as timeless: it comes
-// back in `loose`, time intact, for the wall to tile beside the clock.
-function peakConcurrency(cluster) {
-  const marks = [];
-  for (const t of cluster) marks.push([t.startMin, 1], [t.dispEnd, -1]);
-  marks.sort((a, b) => a[0] - b[0] || a[1] - b[1]); // an end before a start at the same minute
-  let now = 0;
-  let peak = 0;
-  for (const [, d] of marks) { now += d; if (now > peak) peak = now; }
-  return peak;
-}
+// ---- a night's timetable (MODEL-V3 §5, the ONE RULE) --------------------------------
+// Rows are 15 minutes. THE RULE (Kevin, 2026-09-01): a venue-night is ONE
+// ROOM, and artists at one room play IN SEQUENCE. So a room's sets are a
+// plain vertical run — stacked top to bottom in play order, each its own
+// tappable card. Never side-by-side lanes, never a deck, never a combined
+// card. (The main festival grid keeps its lanes: real stages with real set
+// times genuinely overlap. An events venue is a club with one booth.)
+//
+// Play order is the numbering when the room's sets carry one (`order.seq`,
+// MODEL-V3 §5), else the clock, else file order. A set ends where the next
+// one in the room begins; the CLOSER ends at the room's `close` when the file
+// prints one, else an hour after it starts (the open-ended default). A set
+// whose file prints its own end keeps it.
+//
+// The placement then walks DOWN the column: each card starts at its own time
+// or where the one above it ended, whichever is later, and is at least 30
+// minutes tall (the name + time floor).
+//
+// ONE NAMED EXCEPTION, for the room nobody has re-read yet: when every set in
+// a room carries the SAME time string, that string is not a set time — it is
+// the room's WINDOW, a doors time (or the room's hours) copied onto every act
+// by whoever transcribed the bill. That is exactly the misreading MODEL-V3 §5
+// exists to correct, and it is what all twelve of Portola's multi-artist
+// rooms looked like before the migration. In that case the sets divide the
+// window equally, so the column reads as N even slots instead of one long
+// card and a row of slivers.
+//
+// Venues read left to right by their earliest set; ties keep file order. An
+// entry with a time but no venue is never filed as timeless: it comes back in
+// `loose`, time intact, for the wall to tile beside the clock.
 export function timetableOf(entries) {
   const timed = [];
   const tba = [];
@@ -300,27 +307,54 @@ export function timetableOf(entries) {
   });
   if (!timed.length) return { venues: [], cells: [], tba, loose, startRow: 0, rows: 0 };
 
-  // A run member ends when its SUCCESSOR begins — the member numbered next,
-  // when it is entered; only the closer (seq === of) runs to the room's
-  // close. A member whose successor is not in the file yet draws the hour
-  // like any open-ended set, so a half-entered run never claims the night.
-  const runs = new Map();
-  for (const t of timed) if (t.run) { if (!runs.has(t.venue)) runs.set(t.venue, []); runs.get(t.venue).push(t); }
-  for (const members of runs.values()) {
-    members.sort((a, b) => a.e.order.seq - b.e.order.seq || a.startMin - b.startMin);
-    members.forEach((m, k) => {
-      if (m.endMin != null) return;
-      const next = members[k + 1];
-      if (next && next.e.order.seq === m.e.order.seq + 1 && next.startMin > m.startMin) { m.endMin = next.startMin; return; }
-      if (m.e.order.seq !== m.e.order.of) return;
-      const close = typeof m.e.close === 'string' ? parseEventTime(m.e.close) : null;
-      if (close && close.startMin > m.startMin) { m.endMin = close.startMin; m.endStr = m.e.close; }
+  const rooms = new Map();
+  for (const t of timed) {
+    if (!rooms.has(t.venue)) rooms.set(t.venue, []);
+    rooms.get(t.venue).push(t);
+  }
+  for (const sets of rooms.values()) {
+    // The numbering leads only when EVERY set in the room carries one — a
+    // half-numbered room has no run to read, so the clock leads instead.
+    const numbered = sets.length > 1 && sets.every((t) => t.run);
+    sets.sort(numbered
+      ? (a, b) => a.e.order.seq - b.e.order.seq || a.startMin - b.startMin || a.i - b.i
+      : (a, b) => a.startMin - b.startMin || a.i - b.i);
+    // The room's close: the validator makes every set in a room agree on it,
+    // so the first one that states it speaks for the room.
+    const closeStr = (sets.find((t) => typeof t.e.close === 'string') || { e: {} }).e.close || null;
+    const closeApprox = sets.some((t) => t.e.closeApprox === true);
+    const close = closeStr ? parseEventTime(closeStr) : null;
+    sets.forEach((m, k) => {
+      if (m.endMin != null) return; // the file printed this set's own end
+      const next = sets[k + 1];
+      if (next && next.startMin > m.startMin) { m.endMin = next.startMin; return; }
+      // Only a genuine CLOSER runs to the room's close. A numbered run that
+      // is half entered (3 of 4 in the file) must not let its last-known set
+      // claim the night — the missing one is still coming (review round P2 12,
+      // 2026-09-01).
+      if (!next && close && close.startMin > m.startMin && (!m.run || m.e.order.seq === m.e.order.of)) {
+        m.endMin = close.startMin;
+        m.endStr = closeApprox ? `~${closeStr}` : closeStr; // a guessed close keeps its tilde
+        return;
+      }
+      m.endMin = m.startMin + 60;
     });
   }
-  for (const t of timed) {
-    if (t.endMin == null) t.endMin = t.startMin + 60;
-    t.dispEnd = Math.max(t.endMin, t.startMin + 30);
+  for (const t of timed) t.dispEnd = Math.max(t.endMin, t.startMin + 30);
+
+  // The room whose sets all print one time: that time is the window (above).
+  function windowSlice(sets, topRow, endRow) {
+    if (sets.length < 2) return null;
+    const t0 = sets[0].e.time;
+    if (!t0 || !sets.every((t) => t.e.time === t0)) return null;
+    const w = parseEventTime(t0);
+    const top = topRow(w.startMin);
+    // A window with no end of its own reads as one hour of "we do not know",
+    // which the 30-minute floor then shares out.
+    const bottom = endRow(w.endMin != null ? w.endMin : w.startMin + 60);
+    return { top, rows: Math.max(2, Math.floor((bottom - top) / sets.length)) };
   }
+
   const firstAt = new Map();
   for (const t of timed) {
     const f = firstAt.get(t.venue);
@@ -328,47 +362,26 @@ export function timetableOf(entries) {
   }
   const venues = [...firstAt.entries()].sort((a, b) => a[1].startMin - b[1].startMin || a[1].i - b[1].i).map(([v]) => v);
   const startRow = Math.floor(Math.min(...timed.map((t) => t.startMin)) / 15);
-  const rows = Math.ceil(Math.max(...timed.map((t) => t.dispEnd)) / 15) - startRow;
-  const rowOf = (min) => Math.floor(min / 15) - startRow + 1;
+  const topRow = (min) => Math.floor(min / 15) - startRow + 1;
+  const endRow = (min) => Math.ceil(min / 15) - startRow + 1; // exclusive
 
   const cells = [];
   venues.forEach((v, vi) => {
     const col = vi + 1;
-    const mine = timed.filter((t) => t.venue === v)
-      .sort((a, b) => a.startMin - b.startMin || ((a.run && b.run) ? a.e.order.seq - b.e.order.seq : 0) || a.i - b.i);
-    const clusters = [];
-    let cur = [];
-    let curEnd = -Infinity;
-    for (const t of mine) {
-      if (cur.length && t.startMin >= curEnd) { clusters.push(cur); cur = []; curEnd = -Infinity; }
-      cur.push(t);
-      curEnd = Math.max(curEnd, t.dispEnd);
-    }
-    if (cur.length) clusters.push(cur);
-    for (const c of clusters) {
-      const hasRun = c.some((t) => t.run);
-      if (!hasRun && peakConcurrency(c) >= 3) {
-        const s = Math.min(...c.map((t) => t.startMin));
-        const en = Math.max(...c.map((t) => t.dispEnd));
-        cells.push({ kind: 'deck', venue: v, col, row: rowOf(s), span: Math.max(2, Math.ceil(en / 15) - Math.floor(s / 15)), startMin: s, items: c });
-        continue;
-      }
-      let lanes = null;
-      if (!hasRun && c.length > 1) {
-        const wrapped = c.map((t) => ({ t, stage: v, startMin: t.startMin, endMin: t.dispEnd }));
-        const laneMap = computeLanes(wrapped);
-        lanes = new Map(wrapped.map((w) => [w.t, laneMap.get(w)]));
-      }
-      for (const t of c) {
-        const lane = lanes ? lanes.get(t) : null;
-        cells.push({
-          kind: 'card', venue: v, col, row: rowOf(t.startMin),
-          span: Math.max(1, Math.ceil((t.dispEnd - t.startMin) / 15)),
-          lane: lane && lane.lanes > 1 ? lane : null, entry: t,
-        });
-      }
-    }
+    const sets = rooms.get(v);
+    const slice = windowSlice(sets, topRow, endRow);
+    let cursor = 1;
+    sets.forEach((t, k) => {
+      const row = slice ? slice.top + k * slice.rows : Math.max(topRow(t.startMin), cursor);
+      const span = slice ? slice.rows : Math.max(2, endRow(t.dispEnd) - row); // the 30-minute display floor
+      // A sliced set does not end where the window does — only the last one
+      // might, and none of them can prove it. The "until" line goes.
+      if (slice) t.endStr = null;
+      cells.push({ venue: v, col, row, span, entry: t });
+      cursor = row + span;
+    });
   });
+  const rows = Math.max(...cells.map((c) => c.row + c.span)) - 1;
   return { venues, cells, tba, loose, startRow, rows };
 }
 

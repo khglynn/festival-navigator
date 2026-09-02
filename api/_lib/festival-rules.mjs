@@ -48,6 +48,17 @@ function checkEventFields(fest, err, warn) {
   // Runs are grouped by the room they happen in: one day, one night, one
   // venue. Nothing in the file declares a run — the grouping IS the run.
   const runs = new Map();
+  // …and EVERY event set in a room, numbered or not, so a room that has more
+  // than one show and no running order can be told about it (below).
+  const rooms = new Map();
+  const roomKey = (a) => {
+    const bits = typeof a.stage === 'string' && a.stage.includes(' · ') ? a.stage.split(' · ') : null;
+    const night = WEEKDAYS.includes(a.night) ? a.night
+      : bits && WEEKDAYS.includes(bits[0].trim()) ? bits[0].trim() : null;
+    const venue = typeof a.venue === 'string' && a.venue.trim() ? a.venue.trim()
+      : bits ? bits.slice(1).join(' · ').trim() : '';
+    return night && venue ? `${a.day || ''}|${night}|${venue}` : null;
+  };
 
   artists.forEach((a, i) => {
     if (!plain(a)) return;
@@ -95,6 +106,14 @@ function checkEventFields(fest, err, warn) {
       if (t !== null && (t < doorsMin || t > closeMin)) err(`${at}: set time ${JSON.stringify(safeKey(a.time))} falls outside doors ${JSON.stringify(a.doors)} – close ${JSON.stringify(a.close)}`);
     }
 
+    if (typeof a.time === 'string' && TIME_RE.test(a.time)) {
+      const rk = roomKey(a);
+      if (rk) {
+        if (!rooms.has(rk)) rooms.set(rk, []);
+        rooms.get(rk).push(a);
+      }
+    }
+
     if (a.order !== undefined) {
       const o = a.order;
       if (!plain(o)) { err(`${at}: order must be an object { seq, of, source, confirmed }`); return; }
@@ -112,6 +131,22 @@ function checkEventFields(fest, err, warn) {
       }
     }
   });
+
+  // A venue-night is ONE ROOM and its artists play IN SEQUENCE (the one rule,
+  // Kevin 2026-09-01), so the wall stacks every room as a vertical run. Two or
+  // more timed sets with no running order leave it stacking by the clock
+  // alone — and when they all carry the same time, that time is a DOORS time
+  // somebody transcribed into the set-time field, which is the exact misread
+  // MODEL-V3 §5 exists to correct. A warning, not an error: the wall still
+  // renders it, it just cannot tell anyone who is on when.
+  for (const [key, sets] of rooms) {
+    if (sets.length < 2 || sets.every((a) => a.order !== undefined)) continue;
+    const where = safeKey(key.replace(/\|/g, ' · '));
+    const starts = new Set(sets.map((a) => startOf(a.time)));
+    warn(starts.size === 1
+      ? `${where}: all ${sets.length} sets say ${JSON.stringify([...starts][0])} — that reads as the room's DOORS time, not ${sets.length} set times; add the run shape (doors/close, approx, order {seq, of, source, confirmed})`
+      : `${where}: ${sets.length} timed sets in one room and no running order — add the run shape (doors/close, approx, order {seq, of, source, confirmed}) so the stack says who is on when`);
+  }
 
   // One room, one night: the sets that share it must tell one story.
   for (const [key, members] of runs) {
