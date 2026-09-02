@@ -191,8 +191,8 @@ room played BACK TO BACK — doors, not set times. Model §5: guessed times
 (buy-tickets name closes, other large print before it, small print opens),
 stacked in the time bands — never lanes, never combined cards. Mode
 consistency is law (§2): if any day of a section earns columns, all days
-render columns; the venue heads stay each day's own. The deck narrows to
-truly-simultaneous data. **Copy LOCKED (Kevin, 2026-09-01):** resting card `~12 AM`; the zoom's
+render columns; the venue heads stay each day's own. The deck is GONE
+(2026-09-01 late: every club night is a stack — see the block above). **Copy LOCKED (Kevin, 2026-09-01):** resting card `~12 AM`; the zoom's
 two lines `Sun · Runs 10 PM – 2 AM` / `Guessing they're 3rd of 4` (a door
 to the poster; the word goes once a venue posts the order) — MODEL-V3 §5,
 canvas frame `hover`. Still implicitly open: the ordering heuristic as the
