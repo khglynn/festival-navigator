@@ -139,3 +139,18 @@ test('the modality tracker is not fooled by a synthetic keydown with no key', ()
   card.focus();
   assert.equal(slot(), null, 'an empty key is not a person typing');
 });
+
+test('Escape on a KEYBOARD zoom leaves no stay-away mark: the next hover grows the card at once', async () => {
+  const ctx = makeCtx();
+  const card = mountCard(ctx);
+  wire(card, ctx);
+  zoom.wireCardZoom(card, 'GRiZ', ctx, { onOpenNotes: ctx.onOpenNotes, occ: OCC });
+  keydown(document.body, 'Tab');
+  card.focus();
+  assert.ok(slot(), 'the keyboard route grew it');
+  zoom.dismissZoom(); // Escape
+  assert.equal(slot(), null);
+  card.dispatchEvent(pointerEvent('pointerenter'));
+  await wait(zoom.ZOOM_IN_MS + 120);
+  assert.ok(slot(), 'no pointer was on the card when it was put away, so nothing waits for a leave');
+});

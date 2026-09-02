@@ -415,7 +415,15 @@ export function zoomSnapshot() {
   return zoomed ? { artist: zoomed.artist, occ: zoomed.occ, source: zoomed.source, onOpenNotes: zoomed.onOpenNotes } : null;
 }
 export function dismissZoom() {
-  if (zoomed) { dismissedEl = zoomed.el; unzoom({ why: 'dismissed (Escape or tap-away)' }); }
+  if (!zoomed) return;
+  // The "stay away" mark is a POINTER rule: a mouse resting on the card it
+  // just put away must not re-grow it, and the mark clears when the pointer
+  // leaves. A keyboard or touch zoom has no pointer on the card, so a mark
+  // there would wait for a leave that never comes — Tab to a card, Escape,
+  // and its first hover later did nothing (the browser contract's random
+  // walk, 2026-09-02).
+  if (zoomed.source === 'mouse') dismissedEl = zoomed.el;
+  unzoom({ why: 'dismissed (Escape or tap-away)' });
 }
 
 // The clip that shows exactly the resting card's rect out of the overlay's.
