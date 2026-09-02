@@ -2,6 +2,61 @@
 
 Newest first. One entry per meaningful unit of work.
 
+## 2026-09-02 — the hover was fine; the shell was old. Then the two hazards under it, a contract that runs in a browser, and Kevin's phone notes
+
+- **"Hover broken again" was a v75 shell judging v76 code.** Kevin's
+  Diagnostics paste named the build (v75) and the branch alias; his tab had
+  been open long enough that the browser never asked for a new worker, and
+  the reload-once guard only covered a page's first 20 s. Real-input walks in
+  his Chrome 152 of his exact sequences (hover, fast click on a resting card,
+  a pick on the grown card, click·Escape·click, a held mouse, the Afters
+  columns, a 24-card random walk) pass on v76 and reproduce his journal on
+  v75. Fixed the delivery: index.html asks for a new worker on
+  visibilitychange and every ten minutes, reloads when nothing is in
+  progress, and raises a refresh toast otherwise. Lesson in CLAUDE.md: read
+  the build line before believing a report.
+- **Two latent hazards found while tracing, both real, both fixed.** (1)
+  Chrome flips a focused card to `:focus-visible` after ANY keypress, Escape
+  included, and the script `focus()` every pick makes inherits it — so
+  click·Escape·click on one card grew a KEYBOARD zoom, which by design never
+  closes on hover-out. card-facts.js now tracks the last input the document
+  saw (a real key, or a press) and the focus route opens only after a key.
+  (2) The long-press timer armed on a mouse: a slow click opened a
+  touch-style zoom with the same stuck behaviour. Both pinned in jsdom
+  (`zoom-modality`, `long-press`); intent 300 → 200 ms (Kevin: a beat long).
+- **The hover contract runs in a real browser now, in CI.**
+  `tests/browser/hover-contract.test.mjs` drives Playwright's input layer
+  through Kevin's sequences against gallery.html (no network); `npm run
+  test:browser`, a separate CI job with Chromium. Every "walked clean"
+  before this was a script somebody ran by hand; the jsdom suite cannot see
+  boundary events, removal blurs or focus heuristics, which is exactly where
+  the zoom kept breaking with a green suite. Also swept every card on all
+  four Portola days with the prior session's rig: 112 hoverable cards, 0
+  misbehave.
+- **Kevin's phone notes, in order.** The stage strip stuttered a frame
+  behind the grid on his iPhone: it was a second scroller mirrored from
+  scroll events; now it follows the lead grid by a CSS scroll-driven
+  animation (WebKit 26 and Chromium 152 verified with real wheel input) or a
+  transform where the engine lacks ScrollTimeline or motion is reduced. iOS
+  raised the text callout on hold: WebKit only honours
+  `-webkit-user-select`, now beside every `user-select: none`. Offline
+  walked clean (worker precaches, offline reload shows the wall, an offline
+  pick syncs when the network returns). "Buy Kevin a coffee ☕" sits at the
+  foot of Settings → App. The Electric Forest "EVERYTHING ELSE" column is
+  becoming a card section (an Opus agent, branch `ee-section-2`). Add-a-show
+  is a proposal (`claude-plans/2026-09-02-add-a-show.md`) waiting on three
+  calls.
+- **Venue norms feed the run guesses.** 14 Sonnet researchers + 14
+  refuters profiled every Portola Week room (routine close, late ceiling,
+  doors-to-first-act, set lengths, sources; banked under
+  `claude-plans/2026-09-02-venue-profiles/`); `data/venues/index.json` is the
+  durable registry; `scripts/guess-run-times.mjs` turns doors + registry into
+  set-time guesses as a reviewable diff, never at render time. Findings a
+  data editor should act on: The Midway Sun prints 10pm–3am on 19hz (our
+  ~2 AM is early) with KAVARI on the bill (Kevin's "2: add" call still
+  open); AXS says Regency Sat doors 9 PM, not 10; the halls (Regency, GAMH)
+  publish no close anywhere.
+
 ## 2026-09-01 (late) — the blink under every pick, and one rule for club nights
 
 - **A pick on a focused card blinked the zoom, on production, since the
