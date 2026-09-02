@@ -23,3 +23,20 @@ jobs:
       # Production-only, High-threshold: quiet enough to be believed,
       # loud only when a user-reachable dependency is actually at risk.
       - run: npm audit --omit=dev --audit-level=high
+
+  # The hover contract in a real browser (tests/browser/): real pointer and
+  # keyboard input through Playwright against gallery.html, no network. The
+  # jsdom suite cannot see boundary events, removal blurs or focus heuristics,
+  # and that is where the card zoom kept breaking with a green suite
+  # (2026-08-29 → 09-01). A separate job so the offline suite stays fast.
+  browser:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:browser
