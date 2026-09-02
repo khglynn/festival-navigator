@@ -535,6 +535,17 @@
 .stage-strip .strip-rail { width: 40px; flex: none; } /* aligns with .times-rail */
 .stage-strip .times-scroll { scrollbar-width: none; }
 .stage-strip .times-scroll::-webkit-scrollbar { display: none; }
+/* The strip FOLLOWS its grid (wall.js followStrip, 2026-09-02): it is not a
+ * scroller of its own any more. Its row rides the grid's scroll timeline —
+ * the far keyframe is the grid's maximum scroll in px (--strip-max, measured
+ * by followStrip; the row's tracks overflow its box, so no percentage of the
+ * row could say it) — or, where scroll timelines are missing or motion is
+ * reduced, a transform set from the grid's scroll event. Either way the row
+ * moves as one piece; no second scroll position exists to lag behind.
+ * pan-y: a finger on the strip still scrolls the page. */
+.stage-strip .times-scroll.follows { overflow: hidden; touch-action: pan-y; }
+.stage-strip .times-scroll.follows .times-grid { will-change: transform; }
+@keyframes strip-follow { from { transform: translateX(0); } to { transform: translateX(calc(-1 * var(--strip-max, 0px))); } }
 .hour-label { text-align: right; padding-right: 6px; font-size: 9.5px;
               color: var(--text-tertiary); font-weight: 600; position: relative; top: -7px; }
 /* Everything-else column (ST-2): activities + stage-less sets, chronological.

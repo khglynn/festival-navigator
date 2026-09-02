@@ -705,6 +705,65 @@ export function scrollToNowLine(root, { date = new Date(), viewportHeight = wind
 // and days are one group; on a day-first wall every events timetable is its
 // own (its venues are not the grid's stages, so its position is its own).
 // Scrollers with no group — the grid-only wall — are one group, as before.
+//
+// The STRIP is not a scroller any more (2026-09-02). Mirroring it with
+// scrollLeft from scroll events put it a frame behind the grid on every
+// event — on a phone, where the grid scrolls on the compositor and the
+// event lands on the main thread afterwards, that read as a stuttering,
+// delayed slide of the stage names above a butter-smooth grid (Kevin's
+// iPhone, 2026-09-02). Now the strip's own row FOLLOWS the group's lead
+// grid: where the browser has scroll-driven animations the follow is a
+// CSS animation on the grid's scroll timeline — the compositor moves both
+// in the same frame and no script runs — and elsewhere a transform set
+// from the lead's scroll event (still one frame late, but a transform, not
+// a second scroll). Day scrollers keep mirroring each other as before.
+export const isStripScroller = (s) => !!(s.closest && s.closest('.stage-strip'));
+// Feature-gated once: scroll timelines (the CSSOM must know the properties —
+// jsdom's CSS.supports says yes to anything), and NOT reduced motion — the
+// tokens file kills every animation under prefers-reduced-motion, which
+// would freeze a CSS follow at zero.
+const NATIVE_FOLLOW = (() => {
+  try {
+    if (typeof CSS === 'undefined' || typeof CSS.supports !== 'function' || typeof window === 'undefined') return false;
+    // The engine exposes the timeline as an object too; a DOM shim never does.
+    if (typeof window.ScrollTimeline !== 'function') return false;
+    if (!CSS.supports('animation-timeline: scroll()') || !CSS.supports('timeline-scope: --a')) return false;
+    return !(typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  } catch { return false; }
+})();
+let timelineSeq = 0;
+function followStrip(strip, lead, root) {
+  const row = strip.querySelector('.times-grid');
+  if (!row) return;
+  strip.classList.add('follows');
+  if (NATIVE_FOLLOW) {
+    // The timeline is named on the lead and scoped on the nearest ancestor
+    // both share (a day's .tt-block, or the wall for the one-strip page).
+    // The far keyframe is the lead's maximum scroll in px (--strip-max): the
+    // row's own box is only as wide as the strip, its tracks overflow it,
+    // so a percentage of the row would be a percentage of the wrong thing.
+    // Re-measured whenever the lead or its grid changes size.
+    const name = `--tt-${(timelineSeq += 1)}`;
+    const setMax = () => row.style.setProperty('--strip-max', `${Math.max(0, lead.scrollWidth - lead.clientWidth)}px`);
+    setMax();
+    if (typeof ResizeObserver === 'function') {
+      const ro = new ResizeObserver(setMax);
+      ro.observe(lead);
+      if (lead.firstElementChild) ro.observe(lead.firstElementChild);
+    }
+    lead.style.scrollTimeline = `${name} x`;
+    row.style.animation = 'strip-follow linear both';
+    row.style.animationTimeline = name;
+    const scope = strip.closest('.tt-block') || root;
+    scope.style.timelineScope = [scope.style.timelineScope, name].filter(Boolean).join(', ');
+    return;
+  }
+  // Set on the spot: scroll events already arrive at most once a frame, and
+  // a transform write is a compositor update, not a layout.
+  const follow = () => { row.style.transform = `translateX(${-lead.scrollLeft}px)`; };
+  lead.addEventListener('scroll', follow, { passive: true });
+  follow();
+}
 export function wireTimesScrollSync(root) {
   const groups = new Map();
   for (const s of root.querySelectorAll('.times-scroll')) {
@@ -712,7 +771,10 @@ export function wireTimesScrollSync(root) {
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key).push(s);
   }
-  for (const scrollers of groups.values()) {
+  for (const all of groups.values()) {
+    const scrollers = all.filter((s) => !isStripScroller(s));
+    if (!scrollers.length) continue;
+    for (const strip of all) if (isStripScroller(strip)) followStrip(strip, scrollers[0], root);
     if (scrollers.length < 2) continue;
     const lastSet = new Map();
     for (const s of scrollers) {
@@ -1289,6 +1351,7 @@ function harvestEphemera(root) {
 
 function restoreEphemera(root, { scrolls, drafts }) {
   for (const s of root.querySelectorAll('.times-scroll')) {
+    if (isStripScroller(s)) continue; // the strip follows its grid; it is never scrolled itself
     const left = scrolls.get(s.dataset.sync || '*');
     if (left) s.scrollLeft = left;
   }

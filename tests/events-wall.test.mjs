@@ -181,14 +181,21 @@ test('every timetable carries its OWN sticky strip and scroll group — a grid d
   // Mirroring stays inside a group: the two grid days follow each other; an afters scroller does not drag the grid.
   const gridScrollers = [...root.querySelectorAll('.times-scroll[data-sync="grid"]')];
   assert.equal(gridScrollers.length, 4, 'two strips + two days');
-  gridScrollers[1].scrollLeft = 120;
-  gridScrollers[1].dispatchEvent(new dom.window.Event('scroll'));
-  assert.ok(gridScrollers.every((s) => s.scrollLeft === 120));
+  const gridDays = gridScrollers.filter((s) => s.hasAttribute('data-day'));
+  const gridStrips = gridScrollers.filter((s) => !s.hasAttribute('data-day'));
+  assert.equal(gridDays.length, 2);
+  gridDays[0].scrollLeft = 120;
+  gridDays[0].dispatchEvent(new dom.window.Event('scroll'));
+  assert.ok(gridDays.every((s) => s.scrollLeft === 120), 'the two grid days mirror each other');
+  // Strips are followers, not scrollers: each day's strip row rides the
+  // group's lead day by transform (a CSS scroll timeline in browsers).
+  assert.ok(gridStrips.every((s) => s.classList.contains('follows') && s.scrollLeft === 0));
+  assert.ok(gridStrips.every((s) => s.querySelector('.times-grid').style.transform === 'translateX(-120px)'), 'both strip rows followed');
   const fri = root.querySelector('.times-scroll[data-sync="Afters|Friday"][data-day]');
   fri.scrollLeft = 300;
   fri.dispatchEvent(new dom.window.Event('scroll'));
-  assert.equal(gridScrollers[0].scrollLeft, 120, 'the grid did not move');
-  assert.equal(root.querySelector('.times-scroll[data-sync="Afters|Friday"]').scrollLeft, 300, 'its own strip did');
+  assert.equal(gridDays[0].scrollLeft, 120, 'the grid did not move');
+  assert.equal(root.querySelector('.times-scroll[data-sync="Afters|Friday"]:not([data-day]) .times-grid').style.transform, 'translateX(-300px)', 'its own strip row did');
   // Event columns are capped; the grid's are not.
   assert.equal(root.querySelector('.times-scroll[data-sync="Afters|Thursday"][data-day] .times-grid').style.gridTemplateColumns, 'repeat(2, minmax(150px, 240px))');
   assert.ok(root.querySelector('.times-scroll[data-sync="grid"][data-day] .times-grid').style.gridTemplateColumns.includes('1fr'));

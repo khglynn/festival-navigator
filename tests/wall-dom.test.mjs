@@ -133,12 +133,17 @@ test('scheduled wall: one strip, canonical columns, mirrored scroll, guarded edg
   assert.ok(!root.innerHTML.includes('NaN') && !root.innerHTML.includes('Infinity'));
   assert.ok(root.textContent.includes('No set times for this day yet.'));
 
-  // Scroll mirroring: scrolling any one scroller moves all of them.
+  // Scroll mirroring: scrolling any one DAY moves the sibling days; the
+  // strip is not a scroller — its row follows the lead day by transform
+  // (in a browser with scroll timelines, by a CSS animation on the lead's
+  // timeline; here, the transform path).
   const scrollers = [...root.querySelectorAll('.times-scroll')];
   assert.equal(scrollers.length, 3, 'strip + Friday + Saturday (empty Sunday has none)');
+  assert.ok(scrollers[0].classList.contains('follows'), 'the strip is marked as a follower');
   scrollers[1].scrollLeft = 120;
   scrollers[1].dispatchEvent(new dom.window.Event('scroll'));
-  assert.equal(scrollers[0].scrollLeft, 120, 'strip follows the day scroller');
+  assert.equal(scrollers[0].querySelector('.times-grid').style.transform, 'translateX(-120px)', 'the strip row follows the day scroller');
+  assert.equal(scrollers[0].scrollLeft, 0, 'and the strip itself never scrolls');
   assert.equal(scrollers[2].scrollLeft, 120, 'sibling day follows too');
 
   root.remove();
