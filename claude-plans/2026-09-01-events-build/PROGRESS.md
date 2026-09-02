@@ -253,3 +253,28 @@ builder's worktree; pushes go to `origin/events-ui` with `HEAD:events-ui`).*
      the focusout guard all live in card-facts.js, which this round did not
      touch. If it survives this build it is #14's territory and needs a real
      browser, not the rig (the rig walked all 104 hoverable cards clean).
+- 2026-09-01 — THE RESEARCH FILE NEVER ARRIVED. `…/3de364de-…/scratchpad/
+  afters-billing.md` was still absent at the end of this round (checked five
+  times across the build). So all nine non-Midway rooms use the brief's
+  fallback: `confidence: 'low'`, `order.confirmed: false`, and
+  `source: https://portolamusicfestival.com/portola-week/`. **One deliberate
+  deviation from the brief's letter**, recorded here because it is the only
+  place a reviewer would disagree: the brief said "file order with the FIRST-
+  listed artist as the headliner who closes", which for a three-act bill
+  [A, B, C] reads as B, C, A. I used the FULL REVERSE — C, B, A — because
+  MODEL-V3 §5's own hierarchy rule is "the headliner closes, the other large-
+  print act plays right before it, small print opens", and a bill is printed
+  in descending size. The two readings differ only for the two three-act rooms
+  (Fri Regency, Sun Public Works); for the eight two-act rooms they are
+  identical. If the research lands, the fix is editing `order` in the RUNS
+  table and re-running the script — the times follow automatically from
+  doors/close.
+- 2026-09-01 — PUSHED. `git push --force-with-lease origin HEAD:events-ui`
+  (c740388 → 2d256ac, forced because of the rebase). PR #16 retitled and its
+  body rewritten in Kevin's terms: the round-3 story with his words, the table
+  of all ten runs with doors/close/order and their confidence, the two
+  deliberately timeless rooms, how the guesses are made, the validator's new
+  warning, the Horse Meat Disco find, a walk list whose step 5 IS Sunday's
+  afters, and what I chose where the brief was silent. CI green in ~53 s
+  (checks ×2, three Vercel deploys). Gallery module blocks syntax-checked
+  (3/3) and its section tags balance.
