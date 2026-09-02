@@ -184,14 +184,15 @@ const noLanesNoDecks = (tt) => {
 test('timetableOf, Portola Friday: venues left to right by first set, and every room is a vertical run', () => {
   const tt = ev.timetableOf(aftersOn('Fri'));
   assert.equal(tt.venues[0], 'Pier 80 (loyalty invite)', 'Despacio at 5 PM opens the night');
-  assert.equal(tt.venues[1], 'Regency Ballroom');
+  assert.equal(tt.venues[1], 'Great American Music Hall', 'Six Sex at 8 PM; the Regency opener goes on an hour after its 8 PM doors now (the venue registry, 2026-09-02)');
   assert.deepEqual(tt.tba, []);
   noLanesNoDecks(tt);
   // The Regency's three: one after another, in the run's order, not a pile.
   const regency = tt.cells.filter((c) => c.venue === 'Regency Ballroom').sort((a, b) => a.row - b.row);
   assert.deepEqual(regency.map((c) => c.entry.e.name), ['Gelli Haha', 'Jyoty', 'Channel Tres'], 'small print opens, the billed headliner closes');
   assert.deepEqual(regency.map((c) => c.entry.e.order.seq), [1, 2, 3]);
-  assert.ok(regency.every((c) => c.span === 4), 'an hour apart, an hour each — this room prints no close');
+  for (let i = 1; i < regency.length; i++) assert.equal(regency[i].row, regency[i - 1].row + regency[i - 1].span, 'each set ends where the next begins');
+  assert.equal(regency[regency.length - 1].entry.endStr, `~${regency[0].entry.e.close}`, 'this room prints no close: the closer runs to the hall default, marked as a guess');
   const despacio = tt.cells.find((c) => c.entry.e.name === 'Despacio');
   assert.equal(despacio.span, 24, '5–11 PM, the one set with a printed end');
 });
@@ -213,9 +214,10 @@ test('timetableOf, Portola Sunday: every room stacks — the Midway four, Public
   // Public Works was the deck in the rejected build; it is a run like every
   // other room now, and its three sets are spread across the same window.
   const pw = roomOf('Public Works');
-  assert.deepEqual(pw.map((c) => [c.entry.e.name, c.entry.startStr]),
-    [['erika b2b sfcowboy', '10 PM'], ['Kaytree', '11 PM'], ['Ben UFO', '12 AM'], ['Overmono', '1 AM']],
-    'Kaytree was on the bill and missing from the file — four sets share the room\'s four hours');
+  const pwFile = portola.artists.filter((a) => a.night === 'Sun' && a.venue === 'Public Works').sort((a, b) => a.order.seq - b.order.seq);
+  assert.deepEqual(pw.map((c) => [c.entry.e.name, c.entry.startStr]), pwFile.map((a) => [a.name, a.time]),
+    'Kaytree was on the bill and missing from the file — four sets share the room\'s window, in the file\'s guessed clocks');
+  assert.deepEqual(pw.map((c) => c.entry.e.name), ['erika b2b sfcowboy', 'Kaytree', 'Ben UFO', 'Overmono']);
   assert.deepEqual(tt.tba.map((a) => a.name), ['Azzecca']);
 });
 

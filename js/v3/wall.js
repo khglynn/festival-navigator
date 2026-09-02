@@ -549,18 +549,18 @@ export function applySort(artists, mode, ctx) {
 // overflow-x container (the same physics that put the hour rail outside).
 export function computeTimesLayout(fest, getDayArtists, solo = null) {
   const stages = model.canonicalStages(fest);
-  const days = Object.keys(fest.days || {});
-  // The everything-else column is reserved festival-wide: if ANY day needs
-  // it, every day gets it, or the shared template (and the strip) would lie.
-  const hasEE = days.some((d) => ((fest.activities || {})[d] || []).length > 0
-    || getDayArtists(d).some((a) => !stages.includes(a.stage)));
+  // The columns are the festival's stages and nothing else. Anything that
+  // is not a stage set on the clock — activities, a set whose stage is not
+  // a column — renders in the day's "Everything else" section under the
+  // grid (renderOffClock), never in a reserved column: a 9:30 AM yoga row
+  // beside 5 PM sets was a column on a clock its items were not on (Kevin,
+  // Electric Forest, 2026-09-02: "a cards section with our header").
   // Stage solo (design option D): one stage wide, the rest folded to rails.
   // The same template feeds the strip and every day, so a folded column is
   // folded everywhere — scrolling down a soloed stage stays on it.
-  const cols = columnsTemplate(stages, hasEE, solo);
+  const cols = columnsTemplate(stages, false, solo);
   return {
     stages,
-    hasEE,
     solo: cols.solo,
     colsTemplate: cols.template,
     rails: railLabels(stages), // what each stage's folded rail says
@@ -569,7 +569,7 @@ export function computeTimesLayout(fest, getDayArtists, solo = null) {
 
 // A stage header is a button: tap to solo that stage, tap the soloed one to
 // restore all. Folded stages render as slim rails (still tappable — tapping a
-// rail moves the solo there). The everything-else head never solos; it folds
+// rail moves the solo there). A muted head never solos; it folds
 // with the others.
 function stageHead(label, { muted = false, layout = null, ctx = null } = {}) {
   const canSolo = !muted && ctx && typeof ctx.onSoloStage === 'function';
@@ -620,7 +620,6 @@ function renderStageStrip(layout, ctx) {
   grid.style.gridTemplateColumns = layout.colsTemplate;
   grid.style.gridTemplateRows = '32px';
   for (const s of layout.stages) grid.appendChild(stageHead(s, { layout, ctx }));
-  if (layout.hasEE) grid.appendChild(stageHead('EVERYTHING ELSE', { muted: true, layout, ctx }));
   scroll.appendChild(grid);
   strip.append(spacer, scroll);
   return strip;
@@ -810,6 +809,7 @@ function renderScheduledDay(root, day, ctx, layout, weekend) {
     if (w) root.appendChild(w);
   }
   renderScheduledDayBody(root, day, ctx, layout, weekend);
+  if (!layout.solo) renderOffClock(root, day, ctx, offClockOf(fest, day, weekend, layout.stages));
 }
 
 // The day's clock: rail + grid. With `strip`, the day carries its OWN sticky
@@ -822,18 +822,12 @@ function renderScheduledDayBody(root, day, ctx, layout, weekend, { strip = false
   const stages = layout.stages;
   const meta = (fest.dayMeta || {})[day];
 
-  const acts = (fest.activities || {})[day] || [];
-
   // A day with no timed sets must not mint a NaN grid (Math.min of nothing
-  // is Infinity). Activities-only days render as a quiet list; truly empty
-  // days say so instead of rendering nothing.
+  // is Infinity). An activities-only day gets its Everything else section
+  // from the caller (renderOffClock); a truly empty day says so instead of
+  // rendering nothing.
   if (!computed.length) {
-    if (acts.length && !layout.solo) {
-      const list = document.createElement('div');
-      list.className = 'ee-col';
-      for (const a of acts) list.appendChild(eeActivityRow(a));
-      root.appendChild(list);
-    } else {
+    if (!((fest.activities || {})[day] || []).length) {
       const empty = document.createElement('div');
       empty.style.cssText = 'color: var(--text-tertiary); font-size: 12px; font-weight: 600; padding: 6px 0 2px;';
       empty.textContent = 'No set times for this day yet.';
@@ -882,12 +876,6 @@ function renderScheduledDayBody(root, day, ctx, layout, weekend, { strip = false
     label.textContent = `${hr % 12 === 0 ? 12 : hr % 12} ${hr < 12 ? 'AM' : 'PM'}`;
     rail.appendChild(label);
   }
-  // Everything that isn't a stage set lives in ONE far-right column (ST-2):
-  // activities (workshops, ceremonies) and any set whose stage isn't a known
-  // column. Anything with stage+time stays on the clock.
-  const strays = drawn.filter((a) => stages.indexOf(a.stage) === -1);
-  const dayHasEE = acts.length > 0 || strays.length > 0;
-
   // Same-stage overlaps split their column into side-by-side lanes (the old
   // grid's fix, dropped in the first v3 pass — the Codex P6 sweep surfaced
   // that EF genuinely has these; js/overlap.js is very much alive). Lanes are
@@ -904,7 +892,7 @@ function renderScheduledDayBody(root, day, ctx, layout, weekend, { strip = false
   const lanes = computeLanes(drawn);
   for (const a of drawn) {
     const col = stages.indexOf(a.stage);
-    if (col === -1) continue; // strays render in the everything-else column
+    if (col === -1) continue; // not a column: the day's Everything else section carries it (offClockOf)
     // A folded (non-solo) column is a 34px rail — its cards don't render.
     if (layout.solo && a.stage !== layout.solo) continue;
     const row = Math.floor(a.startMin / 15) - startRow + 1;
@@ -930,24 +918,6 @@ function renderScheduledDayBody(root, day, ctx, layout, weekend, { strip = false
     grid.appendChild(cell);
   }
 
-  if (dayHasEE && !layout.solo) {
-    const col = document.createElement('div');
-    col.className = 'ee-col';
-    col.style.gridColumn = String(stages.length + 1);
-    col.style.gridRow = `1 / span ${rows}`;
-    const entries = [
-      ...strays.map((a) => ({ min: a.startMin, artist: a })),
-      ...acts.map((a) => ({ min: activityMinutes((a.time || '').split(' - ')[0] || '12:00 PM'), act: a })),
-    ].sort((x, y) => x.min - y.min);
-    for (const e of entries) {
-      if (e.artist) {
-        col.appendChild(renderCard(e.artist.name, ctx, { cell: true, time: e.artist.startStr, occ: { day, stage: e.artist.stage || null, time: e.artist.time || null, weekend: e.artist.weekend || null } }));
-      } else {
-        col.appendChild(eeActivityRow(e.act));
-      }
-    }
-    grid.appendChild(col);
-  }
   scroll.appendChild(grid);
   wrap.append(rail, scroll);
   if (strip) {
@@ -965,8 +935,50 @@ function renderScheduledDayBody(root, day, ctx, layout, weekend, { strip = false
   if (iso && nowOnDay(fest, day, weekend, ctx.now || new Date()) != null) positionNowLines(wrap, ctx.now || new Date());
 }
 
-// One quiet row in the everything-else column (also the whole body of an
-// activities-only day).
+// What a day has OFF the clock: sets whose stage is not one of the grid's
+// columns (strays) and the festival's activities (yoga, workshops, a silent
+// disco — timed, at named places, never pickable). Read from the same day
+// artists the grid draws, so the two can never disagree about a set.
+export function offClockOf(fest, day, weekend, stages) {
+  const strays = state.getDayArtists(day, weekend).filter((a) => stages.indexOf(a.stage) === -1);
+  // Activities sort on a day that turns over at 6 AM, not on the festival-day
+  // axis (9 AM): a 6:30 AM sunrise ceremony is the morning OF the day, before
+  // the 9 AM yoga, while a 2 AM crafter hour is the tail of the night before
+  // and lands last — activityMinutes would put the sunrise a day late, the
+  // plain clock would put the crafters first.
+  const clock = (t) => {
+    const m = /^(1[0-2]|0?[1-9])(?::([0-5]\d))?\s*(AM|PM)$/i.exec(String(t || '').split(' - ')[0].trim());
+    if (!m) return 12 * 60;
+    let h = Number(m[1]) % 12; if (m[3].toUpperCase() === 'PM') h += 12;
+    return (h < 6 ? h + 24 : h) * 60 + Number(m[2] || 0);
+  };
+  const acts = ((fest.activities || {})[day] || []).slice().sort((x, y) => clock(x.time) - clock(y.time));
+  return { strays, acts };
+}
+// The day's Everything else section: the section header the wall uses
+// everywhere, then CARDS for sets (billed-but-untimed first, then strays in
+// clock order — each a pick key with its full occurrence for the zoom, the
+// place in the zoom's WHERE line, the face clean: name + time), then the
+// activities as quiet rows. One shape on the classic wall and the day-first
+// wall; hidden under a stage solo (the solo promises "just that stage").
+const offClockSub = (a) => (a.time ? timeRange(a.time) : undefined);
+export function renderOffClock(root, day, ctx, { strays = [], acts = [], loose = [] } = {}) {
+  const sets = [...loose, ...strays.slice().sort((x, y) => x.startMin - y.startMin)];
+  if (!sets.length && !acts.length) return false;
+  const sub = strays.length || acts.length ? 'Off the clock' : 'No set time yet';
+  root.appendChild(sectionHeader('Everything else', sub, { key: FEST_BUCKET }));
+  if (sets.length) renderCardGrid(root, sets, ctx, { day, subLabelOf: offClockSub });
+  if (acts.length) {
+    const list = document.createElement('div');
+    list.className = 'ee-col';
+    for (const a of acts) list.appendChild(eeActivityRow(a));
+    root.appendChild(list);
+  }
+  return true;
+}
+
+// One quiet row in a day's Everything else section (an activity is not a
+// pick: no card, no key).
 function eeActivityRow(act) {
   const rowEl = document.createElement('div');
   rowEl.className = 'ee-item';
@@ -1090,11 +1102,11 @@ function renderDayFirst(root, ctx, fest, { model: plan, scheduled, wk, gridDays 
       // Billed on this day, not on this day's grid: still this day's, not
       // an orphan at the foot of the page.
       const loose = dedupeByName((day.billing || []).filter((a) => !gridNames.get(day.key).has(a.name)));
-      if (loose.length) {
+      const off = layout.solo ? { strays: [], acts: [] } : offClockOf(fest, day.key, wk, layout.stages);
+      if (loose.length || off.strays.length || off.acts.length) {
         rooms += 1;
         const more = roomBlock(FEST_BUCKET);
-        more.appendChild(sectionHeader('Everything else', 'No set time yet', { key: FEST_BUCKET }));
-        renderCardGrid(more, loose, ctx, { day: day.key });
+        renderOffClock(more, day.key, ctx, { ...off, loose });
         root.appendChild(more);
       }
     } else if (festOn && day.billing) {
