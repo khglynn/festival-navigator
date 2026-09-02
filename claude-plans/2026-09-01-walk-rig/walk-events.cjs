@@ -139,8 +139,8 @@ const P = (ok) => (ok ? 'PASS' : 'FAIL');
     let when = null, orderText = null, orderHref = null, popupOpened = null, pickedByDoor = null;
     const target = midway.find((m) => /VTSS/.test(m.name)) || midway[1];
     if (target) {
-      await ev((name) => { const c = [...document.querySelectorAll('.card')].find((c) => (c.querySelector('.name') || {}).textContent === name); c.scrollIntoView({ block: 'center', behavior: 'instant' }); }, target.name); await sleep(600);
-      const fresh = await ev((name) => { const c = [...document.querySelectorAll('.card')].find((c) => (c.querySelector('.name') || {}).textContent === name); const r = c.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; }, target.name);
+      await ev((name) => { const c = [...document.querySelectorAll('.card')].find((c) => (c.querySelector('.name') || {}).textContent === name && /~/.test((c.querySelector('.time') || {}).textContent || '')); c.scrollIntoView({ block: 'center', behavior: 'instant' }); }, target.name); await sleep(600);
+      const fresh = await ev((name) => { const c = [...document.querySelectorAll('.card')].find((c) => (c.querySelector('.name') || {}).textContent === name && /~/.test((c.querySelector('.time') || {}).textContent || '')); const r = c.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; }, target.name);
       await page.mouse.move(fresh.x - 5, fresh.y - 5); await sleep(60); await page.mouse.move(fresh.x, fresh.y); await sleep(700);
       const z = await ev(() => { const subs = [...document.querySelectorAll('#zoom-layer .zoom-card .f-sub')].map((e) => e.textContent.trim()); const a = document.querySelector('#zoom-layer .zoom-card a.f-order'); return { subs, orderText: a ? a.textContent.trim() : null, href: a ? a.href : null }; });
       when = z.subs.join(' | '); orderText = z.orderText; orderHref = z.href;

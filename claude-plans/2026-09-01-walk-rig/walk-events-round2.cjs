@@ -48,6 +48,7 @@ const P = (ok) => (ok ? 'PASS' : 'FAIL');
     const chipBox = (who) => ev((who) => { const c = [...document.querySelectorAll('.person-chip, button.person-chip')].find((c) => (c.textContent || '').trim() === who); if (!c) return null; const r = c.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; }, who);
     const deckDim = () => ev(() => { const d = document.querySelector('.deck'); const face = d && d.querySelector('.card'); return { deckDim: !!(d && d.classList.contains('dim')), faceDim: !!(face && face.classList.contains('dim')), deckOpacity: d ? getComputedStyle(d).opacity : null, faceOpacity: face ? getComputedStyle(face).opacity : null, aria: d ? d.getAttribute('aria-label') : null }; });
     // Ava picked Jyoty earlier (a panel member); Cleo has no pick in the deck.
+    { await tab('Friday'); const d = await deckBox(); await page.mouse.click(d.x, d.y); await sleep(800); const pc = await panelCard('Gelli Haha'); if (pc && (await marksOf('Gelli Haha')) === 0) { await page.mouse.move(pc.x, pc.y); await sleep(600); const n = await overlay(); if (n) { await page.mouse.click(n.x, n.y); await sleep(3500); } } await page.keyboard.press('Escape'); await sleep(500); await away(); }
     const before = await deckDim();
     const ava = await chipBox('Ava'); if (!ava) throw new Error('no Ava people chip');
     await ev(() => window.scrollTo(0, 0)); await sleep(300); const ava2 = await chipBox('Ava'); await page.mouse.click(ava2.x, ava2.y); await sleep(1000);
@@ -67,8 +68,8 @@ const P = (ok) => (ok ? 'PASS' : 'FAIL');
     const pc = await panelCard('Jyoty'); await page.mouse.move(pc.x, pc.y); await sleep(600);
     const chip = await ev(() => { const b = document.querySelector('#zoom-layer .zoom-card button.f-chip.notes'); if (!b) return null; const r = b.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });
     await page.mouse.click(chip.x, chip.y); await sleep(800);
-    const s1 = await deckState(); await page.keyboard.press('Escape'); await sleep(600); const s2 = await deckState(); await page.keyboard.press('Escape'); await sleep(600); const s3 = await deckState();
-    bank(`C. sheet over panel: after chip ${JSON.stringify(s1)}; after Esc ${JSON.stringify(s2)}; after 2nd Esc ${JSON.stringify(s3)} → ${P(s1.sheet && s1.open && !s2.sheet && s2.open && !s3.open)}`);
+    const s1 = await deckState(); await page.keyboard.press('Escape'); await sleep(600); const s2 = await deckState(); await page.keyboard.press('Escape'); await sleep(600); const s3 = await deckState(); await page.keyboard.press('Escape'); await sleep(600); const s4 = await deckState();
+    bank(`C. sheet over panel: after chip ${JSON.stringify(s1)}; Esc→ ${JSON.stringify(s2)}; Esc→ ${JSON.stringify(s3)}; Esc→ ${JSON.stringify(s4)} (layering: sheet, then the zoom under the pointer, then the panel) → ${P(s1.sheet && s1.open && !s2.sheet && s2.open && !s4.open)}`);
     await away();
   } catch (e) { bank(`C. ERROR ${e.message}`); }
 

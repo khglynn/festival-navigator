@@ -25,9 +25,11 @@
   overlay's centre and hitting the venue's map door after the first pick
   moved content; the rig now clicks the NAME. The builder's reservation
   fix for that (an empty who-row at pill height) left a hole on every
-  unpicked card — reverting as of this write; the follow-up idea (anchor
-  the overlay's top after placement) is a zoom-mechanics change for after
-  #14.
+  unpicked card — reverted (v75, c740388; the final walk is clean on desktop
+  and on a 390px phone context: dock tabs, the deck panel fits, the Midway
+  hold shows the two lines). The follow-up (anchor the overlay's top after
+  placement so a first pick grows downward) is written into PROGRESS for
+  the zoom's own territory, after #14.
 - **PR #14 walked clean vs production** (same script both sides; results as
   a PR comment): no regression. Ready to merge on Kevin's word.
 - **The walk rig** (`claude-plans/2026-09-01-walk-rig/`): detached Node +
