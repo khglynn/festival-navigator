@@ -74,8 +74,14 @@ holding one `.venue-group` per venue:
   as tall as its content — no rows, no floors, no air.
 - **No explanatory line on the wall.** The `~ marks a guessed set time —
   the order is the plan` whisper is deleted (Kevin, 2026-09-17: "weird
-  inline"); the tilde is explained once in Settings → How it works, as a
-  lesson row (copy drafted by Codex, Kevin picks).
+  inline"); the tilde is explained once in Settings → How it works.
+  **The How it works copy is Kevin's (2026-09-17), verbatim:**
+  - `~ a guessed start time and artist order, based on limited intel`
+  - `Tap a name to highlight their picks.` with the sub `Switch who you are
+    picking as in Settings.` (replaces today's "Tap a name to see their picks.")
+  - `Tap the fest name to filter out events.` with the sub `Like hiding the
+    afters.`
+  - No lesson for the now mark ("don't need to explain now").
 - **The now mark.** A stack has no clock to draw a line on, so the card of
   whoever is playing right now carries `.card.now`: a 1.5px ring in `--brand`
   with the soft glow the now line uses, and a small `NOW` label (the
@@ -168,8 +174,10 @@ the newest note as one line), and the toolbar `Notes` sheet. The `+ ✎` /
   Unchanged.
 - *A day (or a section like Afters — a section IS a day label):* the
   `Notes` chip in the toolbar opens the all-notes sheet; every day and
-  section there ends with the open-door row the threads already use (`.n-door`,
-  "Add a note for Saturday"), so the first note is two taps. Once a day has a
+  section there ends with the open-door row the threads already use (`.n-door`
+  with the viewer's avatar, label `Add a note for Saturday…` — the same shape
+  as the thread's `Reply…` door), so the first note is two taps. Drawn on the
+  canvas's Notes board. Once a day has a
   note, its whisper on the wall opens the same thread. The all-notes sheet
   must offer that door per day and per section — it lists sections today
   but ends only with the festival composer; add the per-day doors there,
@@ -234,7 +242,7 @@ Codex round, real-browser walk (Chromium + WebKit iPhone), Kevin's look on a
 unique preview URL, merge #16, promote. Target: Sun 2026-09-20 / Mon 09-21.
 
 1. **model + list** (`events.js`, `wall.js`, `v3.css`, their tests, `gallery.html`) — the venue groups, the composed day, the dated section, the deletions.
-2. **shell** (`app.js`, `filters.js`, `index.html`, `settings.js` for the How it works rows) — day nav for dated sections and six-tab weekends, the default-day rule, the fold state and the show menu on the fest link, the now-mark ticker, the three How it works lesson rows (tilde, show menu, now), the per-day doors in the all-notes sheet (`notes.js`), the deletions.
+2. **shell** (`app.js`, `filters.js`, `index.html`, `settings.js` for the How it works rows, `notes.js` for the doors) — day nav for dated sections and six-tab weekends, the default-day rule, the fold state and the show menu on the fest link, the now-mark ticker, the How it works rows in Kevin's words (§1.2: tilde, people filter, show menu; none for now), the per-day and per-section doors in the all-notes sheet, the deletions.
 3. **data + validator** (`api/_lib/festival-rules.mjs`, `scripts/`, `data/festivals/acl-2026.json`, the freeze, docs) — `night` xor `date`, the Fest Nights entries, MODEL-V3 supersede notes, user-flows, CLAUDE.md, README.
 4. **zoom** (`card-facts.js`, `tests/browser/`) — opaque from frame one, the contract case.
 
