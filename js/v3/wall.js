@@ -728,6 +728,14 @@ const SCROLL_TIMELINES = (() => {
     return CSS.supports('animation-timeline: scroll()') && CSS.supports('timeline-scope: --a');
   } catch { return false; }
 })();
+// What a wall render wires beyond its own nodes — size observers, timeline
+// names on a scope that outlives the render — undone by renderWall before the
+// next render replaces it.
+const teardowns = new WeakMap();
+const undoOnRepaint = (root, undo) => {
+  if (!teardowns.has(root)) teardowns.set(root, []);
+  teardowns.get(root).push(undo);
+};
 let timelineSeq = 0;
 function followStrip(strip, lead, root) {
   const row = strip.querySelector('.times-grid');
@@ -747,8 +755,8 @@ function followStrip(strip, lead, root) {
     const name = `--tt-${(timelineSeq += 1)}`;
     const setMax = () => row.style.setProperty('--strip-max', `${Math.max(0, lead.scrollWidth - lead.clientWidth)}px`);
     setMax();
-    if (typeof ResizeObserver === 'function') {
-      const ro = new ResizeObserver(setMax);
+    const ro = typeof ResizeObserver === 'function' ? new ResizeObserver(setMax) : null;
+    if (ro) {
       ro.observe(lead);
       if (lead.firstElementChild) ro.observe(lead.firstElementChild);
     }
@@ -757,6 +765,10 @@ function followStrip(strip, lead, root) {
     row.style.animationTimeline = name;
     const scope = strip.closest('.tt-block') || root;
     scope.style.timelineScope = [scope.style.timelineScope, name].filter(Boolean).join(', ');
+    undoOnRepaint(root, () => {
+      if (ro) ro.disconnect();
+      scope.style.timelineScope = '';
+    });
     return;
   }
   // Set on the spot: scroll events already arrive at most once a frame, and
@@ -1382,6 +1394,8 @@ function restoreEphemera(root, { scrolls, drafts }) {
 
 export function renderWall(root, ctx) {
   const ephemera = harvestEphemera(root);
+  for (const undo of teardowns.get(root) || []) undo();
+  teardowns.delete(root);
   renderWallInner(root, ctx);
   restoreEphemera(root, ephemera);
 }

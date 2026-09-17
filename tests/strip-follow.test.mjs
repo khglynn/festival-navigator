@@ -1,10 +1,14 @@
 // The stage strip follows its grid (wall.js followStrip). Where the engine has
 // scroll timelines it rides the grid's timeline as a CSS animation; everywhere
-// else a transform follows the grid's scroll event. The rule here:
+// else a transform follows the grid's scroll event. Two rules live here:
 //   · the CSS follow is chosen only where CSS animations RUN. Low Power's
 //     `.low-power * { animation: none !important }` kills it, and the venue
 //     names froze above sliding columns (review, 2026-09-16). The choice is
 //     made per render, and leaving Settings repaints the wall.
+//   · a render owns what it wires beyond its own nodes — the size observers
+//     and the timeline names on the scope — and the next render undoes them.
+//     They used to pile up: one more observer and one more name on #wall-root
+//     per repaint of a classic scheduled wall.
 // jsdom has no ScrollTimeline, so the engine is declared here before wall.js
 // loads (it decides once whether the engine has timelines). Whether the
 // follow actually MOVES under Low Power is the browser contract's job
@@ -86,4 +90,13 @@ test('under Low Power the strip follows by transform — the CSS follow would be
   assert.equal(row.style.transform, 'translateX(-120px)', 'the stage names move with the columns');
   paint(false);
   assert.match(stripRow().style.animationTimeline, /^--tt-\d+$/, 'and Low Power off takes the timeline again on the next render');
+});
+
+test('each render undoes the last one\'s wiring: one observer and one timeline name, however many repaints', () => {
+  for (let i = 0; i < 6; i++) paint(false);
+  assert.equal(observing.size, 1, 'the replaced walls\' size observers are disconnected');
+  assert.deepEqual(names(root), [stripRow().style.animationTimeline], 'the wall carries only the live strip\'s timeline');
+  paint(true);
+  assert.equal(observing.size, 0, 'a transform follow observes nothing, and nothing is left from before');
+  assert.deepEqual(names(root), [], 'nor any timeline name');
 });
