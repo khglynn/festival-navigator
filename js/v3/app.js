@@ -173,9 +173,41 @@ export function nameDates(entries) {
 // The show menu on the fest name is the ONE door: unchecking a room hides it on
 // every day, and a hidden room renders nothing (2026-09-17) — so the room
 // blocks the wall stamps with the key (`.room[data-room]`) are what leaves,
-// and what arrives when it comes back.
+// and what arrives when it comes back — with any day that goes with them
+// (foldBlocksOf).
 function roomBlocksOf(key) {
   return [...document.querySelectorAll(`#wall-root .room[data-room="${CSS.escape(key)}"]`)];
+}
+// The days the plan gives the wall right now, by key — read before and after
+// a fold, so the days a fold takes or gives back are the difference of two
+// plans and never a guess read off the DOM (a lineup wall's THE LINEUP rule
+// carries no day key and must never be swept). A dated section is a tab,
+// not a day: it moves as a room, by its own key.
+function planDayKeys() {
+  return new Set(dayNavOf(state.fest(), ctx).filter((t) => !t.dated).map((t) => t.key));
+}
+// The named days as they stand on the wall: each rule and every sibling
+// under it — its whisper, its rooms — up to the next tab anchor (the next
+// rule, or a dated section's room, which is a tab of its own).
+function dayBlocksOf(keys) {
+  const out = [];
+  let taking = false;
+  for (const el of $('wall-root').children) {
+    if (el.classList.contains('day-rule')) taking = keys.has(el.dataset.day);
+    else if (el.classList.contains('room') && el.querySelector('.sec-head[data-day]')) taking = false;
+    if (taking) out.push(el);
+  }
+  return out;
+}
+// What a fold moves, in the wall's order: the room blocks stamped with the
+// key, and every day that goes with them. A weekend has no room of its own —
+// it leaves and returns as its three days; a Portola Thursday whose only
+// room was hidden leaves with that room instead of vanishing on the repaint
+// (Kevin, 2026-08-30: nothing vanishes in place, nothing pops).
+function foldBlocksOf(key, dayKeys) {
+  const rooms = new Set(roomBlocksOf(key));
+  const days = new Set(dayBlocksOf(dayKeys));
+  return [...$('wall-root').children].filter((el) => rooms.has(el) || days.has(el));
 }
 // The rooms of the festival week the menu offers, hidden or not, in the
 // wall's order (wall.js roomsOf reads the fest through the wall's own plan).
@@ -194,21 +226,27 @@ function toggleFoldFlow(key) {
   // is deferred. A second tap during the fade reads this one, never the
   // state before it.
   const { next, folding } = applyFoldToggle(ctx.fid, ctx.folded || [], key);
+  // The days before and after, from the plan: what the fold takes with it
+  // (a day whose last visible room went; a weekend's three days) and what it
+  // gives back.
+  const daysBefore = planDayKeys();
   ctx.folded = next;
+  const daysAfter = planDayKeys();
+  const diff = (a, b) => new Set([...a].filter((k) => !b.has(k)));
   // Where the person is standing, read before the wall is rebuilt.
   const standing = (document.querySelector('.day-tab.active') || {}).dataset?.day || null;
   const finish = () => {
     repaintWall();
     landAfterFold(standing);
     if (!folding) {
-      roomBlocksOf(key).forEach((room, i) => {
-        if (!canAnimate(room, ctx)) return;
-        room.animate([{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }],
+      foldBlocksOf(key, diff(daysAfter, daysBefore)).forEach((block, i) => {
+        if (!canAnimate(block, ctx)) return;
+        block.animate([{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }],
           { duration: CASCADE_MS, delay: i * STAGGER_MS, easing: EASE_ARRIVE, fill: 'backwards' });
       });
     }
   };
-  const leaving = folding ? roomBlocksOf(key).filter((room) => canAnimate(room, ctx)) : [];
+  const leaving = folding ? foldBlocksOf(key, diff(daysBefore, daysAfter)).filter((block) => canAnimate(block, ctx)) : [];
   if (!leaving.length) { finish(); return; }
   let pending = leaving.length;
   let done = false;

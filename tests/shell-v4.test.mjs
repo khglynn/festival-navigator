@@ -212,6 +212,58 @@ test('unchecking a room hides it on every day — the show menu is the one door'
   assert.deepEqual(tabs(), ['Thursday', 'Friday', 'Saturday', 'Sunday'], 'and Thursday is back');
 });
 
+test('a fold moves the days that go with it: a room and the day it emptied leave together, and come back together', async () => {
+  // jsdom has no Element.animate(), which is why every other test here is the
+  // instant path. A recording stub stands in and finishes on the next tick the
+  // way a real animation would, so this is the path a phone takes. Portola's
+  // Thursday is an afters-only night: hide Afters and Thursday goes with it —
+  // it must LEAVE with the room, not vanish on the repaint (CLAUDE.md: nothing
+  // vanishes in place, nothing pops). A weekend has no room of its own and
+  // moves as its days; the same rule, exercised on ACL in the browser walk.
+  const Proto = dom.window.Element.prototype;
+  const moved = [];
+  Proto.animate = function animate(frames) {
+    const a = { onfinish: null, oncancel: null };
+    moved.push({ el: this, out: frames[0].opacity === 1 });
+    setTimeout(() => { if (a.onfinish) a.onfinish(); }, 0);
+    return a;
+  };
+  const row = (key) => [...menu('dock').querySelectorAll('[data-room]')].find((r) => r.dataset.room === key);
+  const tabs = () => [...$('dock-days').querySelectorAll('.day-tab')].map((t) => t.dataset.day);
+  const name = (m) => (m.el.classList.contains('day-rule') ? `rule:${m.el.dataset.day}` : m.el.classList.contains('room') ? `room:${m.el.dataset.room}` : m.el.className);
+  // The wall's blocks only: the menu's own close is a motion too, and not this one.
+  const take = (out) => { const got = moved.filter((m) => m.out === out && m.el.parentElement === $('wall-root')).map(name); moved.length = 0; return got; };
+  try {
+    click($('dock-fest-link'));
+    click(row('Afters'));
+    assert.deepEqual(take(true), ['rule:Thursday', 'room:Afters', 'room:Afters', 'room:Afters', 'room:Afters'], 'Thursday leaves with its only room; the other nights keep their rule');
+    assert.deepEqual(tabs(), ['Thursday', 'Friday', 'Saturday', 'Sunday'], 'the repaint waits for the leave');
+    await settle(30);
+    assert.deepEqual(tabs(), ['Friday', 'Saturday', 'Sunday'], 'and then Thursday is gone');
+
+    click($('dock-fest-link'));
+    click(row('Folsom'));
+    assert.deepEqual(take(true), ['rule:Friday', 'room:Folsom', 'room:Folsom', 'room:Folsom'], 'now Friday goes with Folsom');
+    await settle(30);
+    assert.deepEqual(tabs(), ['Saturday', 'Sunday']);
+
+    click($('dock-fest-link'));
+    click(row('Afters'));
+    await settle(30);
+    assert.deepEqual(take(false), ['rule:Thursday', 'room:Afters', 'rule:Friday', 'room:Afters', 'room:Afters', 'room:Afters'], 'Thursday and Friday arrive with Afters, in the wall\'s order');
+    assert.deepEqual(tabs(), ['Thursday', 'Friday', 'Saturday', 'Sunday']);
+
+    click($('dock-fest-link'));
+    click(row('Folsom'));
+    await settle(30);
+    assert.deepEqual(take(false), ['room:Folsom', 'room:Folsom', 'room:Folsom'], 'a room whose nights were all still there arrives alone');
+    assert.equal(globalThis.localStorage.getItem(`fn_fold_v1_${FID}`), null);
+  } finally {
+    delete Proto.animate;
+    filters.saveFolded(FID, []);
+  }
+});
+
 test('a room with a verbose key is billed in the menu the way the wall bills it', async () => {
   // A room key is frozen pick data, so it can carry a comma and a parenthetical
   // ("Wednesday, Sept 16 (Early Arrival Pre-Party)"). Portola's keys are one
