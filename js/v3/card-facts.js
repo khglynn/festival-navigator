@@ -15,6 +15,7 @@ import { hslOf } from './palette.js';
 import { colorIndexOf } from './wall.js';
 import { record } from '../errlog.js';
 import { runFactsOf, findEventEntry } from './events.js';
+import { GROW_MS, MATERIALIZE_MS, OUT_MS, CASCADE_MS, STAGGER_MS, REFRESH_MS, EASE_ARRIVE, EASE_LEAVE, EASE_SURFACE, canAnimate } from './motion.js';
 
 // "9:00 PM - 10:15 PM" -> "9:00 – 10:15 PM" (the shared meridiem said once).
 export function timeRange(t) {
@@ -320,14 +321,6 @@ export function sheetCard(facts, { onClose, onOpenNotes = null } = {}) {
 // its notes chip and the maps door are the only other controls.
 export const ZOOM_IN_MS = 200;   // hover intent — open slower than you close (300 read as a beat too long, Kevin 2026-09-01)
 export const ZOOM_OUT_MS = 260;  // hover-out grace before the close
-const GROW_MS = 240;             // the box, k→1
-const MATERIALIZE_MS = 90;       // the overlay's fade-in (the CSS content fade matches)
-const OUT_MS = 130;              // the way out: quick and plain
-const CASCADE_MS = 170;          // each grown line's arrival
-const STAGGER_MS = 30;           // the beat between arrivals
-const EASE_ARRIVE = 'cubic-bezier(.2, 1.15, .35, 1)';    // in: a 4% overshoot, then settle
-const EASE_LEAVE = 'cubic-bezier(.4, 0, 1, 1)';          // out: quick, no flourish
-const EASE_SURFACE = 'cubic-bezier(.4, 0, .2, 1)';       // refresh crossfades: crisp, no bounce
 const RADIUS = 8; // --r-card
 const MIN_W = 216, MAX_W = 360, MIN_H = 132;
 
@@ -376,10 +369,6 @@ const underMouse = () => (lastMouse && typeof document.elementFromPoint === 'fun
   ? document.elementFromPoint(lastMouse.x, lastMouse.y)
   : null);
 
-const reduced = () => typeof window !== 'undefined' && !!window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-// Low Power promises "no animation" and CSS cannot reach Element.animate() —
-// the gate lives here (survey, 2026-08-30).
-const canAnimate = (node, ctx) => typeof node.animate === 'function' && !reduced() && !(ctx && ctx.lowPower);
 const rect = (n) => n.getBoundingClientRect();
 const mid = (r) => ({ x: r.left + r.width / 2, y: r.top + r.height / 2 });
 const box = (left, top, width, height) => ({ left, top, width, height, right: left + width, bottom: top + height });
@@ -569,7 +558,7 @@ function zoomCardInner(el, artistName, ctx, { onOpenNotes = null, source = 'mous
 // the box re-centres, every piece that stayed slides to its new spot, a pill
 // that arrived grows in with a little overshoot, a MUST badge fades on.
 // Transform and opacity only, inside the overlay.
-const REFRESH_MS = 300;
+//
 // WHICH parts move on a refresh; partKey below says HOW each is matched across
 // the rebuild. Add a row to grownBlock — a genre line, a conflict warning — and
 // you touch both: miss this selector and the row either animates as an arrival

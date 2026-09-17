@@ -1,13 +1,7 @@
 // How this app moves, as numbers (Kevin, 2026-08-30: "things grow from where
 // they already are … the way in has a little life, the way out is quick and
-// plain"). ONE home for the constants every grown surface shares — the deck
-// panel (deck.js) and the bucket toggle (app.js) read them from here.
-//
-// The zoom (card-facts.js, below its "the bloom" banner) still declares its
-// own copies: that half of the file is being reworked on PR #14 in parallel
-// (2026-09-01), so it was not touched. tests/motion-shared.test.mjs pins that
-// the two declarations agree; once #14 lands, the follow-up is one import
-// line there and the copies go.
+// plain"). ONE home for the constants every grown surface shares — the zoom
+// (card-facts.js) and the bucket toggle (app.js) read them from here.
 export const GROW_MS = 240;        // the box, k→1
 export const MATERIALIZE_MS = 90;  // the overlay's fade-in (the CSS content fade matches)
 export const OUT_MS = 130;         // the way out: quick and plain
