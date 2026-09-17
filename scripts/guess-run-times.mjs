@@ -8,16 +8,22 @@
 // the guess is data-entry judgment recorded per event — never inferred at
 // render time — and this is the data-entry tool: deterministic, reviewable
 // as a diff, re-runnable when the registry learns more. Inputs, in order:
-//   · the event's own doors (required) and a PRINTED close (kept as printed),
+//   · the event's own doors (required) and a close — kept when a page
+//     printed it (no `closeApprox`) or printed it for THIS night (a
+//     `closeApprox` whose `closeSource` is an https link: 19hz's "10pm-3am"),
 //   · data/venues/index.json — the venue's routine close (by weekday, then
 //     default), its doors-to-first-act gap, its headliner/support set lengths,
-//   · a per-kind fallback (KIND_DEFAULTS) when the registry has nothing —
-//     and every fallback is marked: closeApprox: true, closeSource says why.
+//   · a per-kind fallback (KIND_DEFAULTS) when the registry has nothing.
+// A close from the registry or the fallback is written with `closeApprox:
+// true` and a `closeSource` that names the rule, never a URL — so the next
+// run re-reads the registry instead of mistaking its own guess for a page.
 // Shape of a run: first act = doors + gap; the closer ends at the close;
 // the acts between are spread evenly; everything on the quarter hour, and
-// nobody gets less than thirty minutes. Written back as each member's
-// `time` (with `approx: true`), and `close` / `closeApprox` / `closeSource`
-// on every member, which is where events.js runFactsOf reads them.
+// nobody gets less than thirty minutes. Written back as each guessed set's
+// `time` (with `approx: true`), and the close on every member of the room.
+// A set with a time and no `approx` is POSTED: its time is never touched,
+// and a room where every set is posted is skipped. (`closeSource` is
+// provenance for whoever reads the file; nothing in js/ renders it.)
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -46,25 +52,20 @@ export function clockOf(mins) {
 }
 const q = (m) => Math.round(m / 15) * 15;
 
+// The registry's close for a night, and the rule that gave it. The registry
+// keeps its own sources (data/venues/index.json); copying one of its URLs
+// onto the event is what made a routine close read as per-night proof.
 function closeFor(night, profile, kind) {
   const c = profile && profile.close ? profile.close : null;
-  if (c && c.byWeekday && c.byWeekday[night]) return { close: c.byWeekday[night], source: sourceOf(c, c.byWeekday[night]), why: `venue's ${night} close` };
-  if (c && c.default) return { close: c.default, source: sourceOf(c, c.default), why: "venue's routine close" };
+  if (c && c.byWeekday && c.byWeekday[night]) return { close: c.byWeekday[night], why: `venue's ${night} close` };
+  if (c && c.default) return { close: c.default, why: "venue's routine close" };
   const d = KIND_DEFAULTS[kind] || KIND_DEFAULTS.club;
-  return { close: d.close, source: null, why: `kind default (${kind})` };
+  return { close: d.close, why: `kind default (${kind})` };
 }
-// The source to cite for a chosen close: the first whose quote names that
-// clock ("2:30"), else the first there is.
-const sourceOf = (c, clock = null) => {
-  const list = c && Array.isArray(c.sources) ? c.sources.filter((x) => x && x.url) : [];
-  if (!list.length) return null;
-  const digits = clock ? String(clock).replace(/\s*(AM|PM)$/i, '') : null;
-  const hit = digits && list.find((x) => typeof x.quote === 'string' && x.quote.includes(digits));
-  return (hit || list[0]).url;
-};
 const pick = (v, fallback) => (Number.isFinite(v) ? v : fallback);
 
-// One run. `members` sorted by seq. Returns null when nothing can be planned.
+// One run. `members` sorted by seq; a member with `posted: true` keeps its
+// own time. Returns null when nothing can be planned.
 export function planRun({ night, doors, close, closeApprox = false, closeSource = null, members, profile }) {
   if (!doors || !members || !members.length) return null;
   const D = activityMinutes(doors);
@@ -85,9 +86,7 @@ export function planRun({ night, doors, close, closeApprox = false, closeSource 
     outClose = close; outApprox = true; outSource = closeSource;
   } else {
     const c = closeFor(night, profile, kind);
-    outClose = c.close; outApprox = !!c.close; outSource = c.close ? (c.source ? c.source : c.why) : null;
-    if (c.close && c.source) outSource = c.source;
-    if (c.close && !c.source) outSource = c.why;
+    outClose = c.close; outApprox = !!c.close; outSource = c.close ? c.why : null;
   }
   let C = outClose ? activityMinutes(outClose) : null;
   if (Number.isFinite(C) && C <= D) C += 24 * 60; // a close "past midnight" on the same axis
@@ -122,8 +121,8 @@ export function planRun({ night, doors, close, closeApprox = false, closeSource 
     rounded.push(m);
   }
   const times = members.map((mem, i) => {
-    const time = clockOf(rounded[i]);
-    return { name: mem.name, seq: mem.seq, min: rounded[i], time, was: mem.time || null, changed: (mem.time || null) !== time };
+    const time = mem.posted ? mem.time : clockOf(rounded[i]);
+    return { name: mem.name, seq: mem.seq, min: rounded[i], time, was: mem.time || null, changed: (mem.time || null) !== time, posted: !!mem.posted };
   });
   return { close: outClose, closeApprox: outApprox, closeSource: outSource, kind, gap, H, S, times };
 }
@@ -148,31 +147,36 @@ export function runsOf(fest) {
   for (const g of groups.values()) g.members.sort((x, y) => x.order.seq - y.order.seq);
   return [...groups.values()];
 }
+// A set with a time the venue gave us, not one we guessed.
+const isPosted = (m) => !!m.time && m.approx !== true;
 export function planFestival(fest, registry) {
   const out = [];
   for (const run of runsOf(fest)) {
     const profile = registry.venues[run.venue] || null;
     const doors = run.members.find((m) => m.doors)?.doors || null;
+    if (run.members.every(isPosted)) { out.push({ ...run, doors, profile: !!profile, plan: null, allPosted: true }); continue; }
     const printed = run.members.find((m) => m.close && m.closeApprox !== true);
     const evidenced = !printed && run.members.find((m) => m.close && m.closeApprox === true && /^https:\/\//.test(m.closeSource || ''));
     const known = printed || evidenced || null;
     const plan = planRun({
       night: run.night, doors,
       close: known ? known.close : null, closeApprox: !printed, closeSource: evidenced ? evidenced.closeSource : null,
-      members: run.members.map((m) => ({ name: m.name, seq: m.order.seq, time: m.time || null })), profile,
+      members: run.members.map((m) => ({ name: m.name, seq: m.order.seq, time: m.time || null, posted: isPosted(m) })), profile,
     });
     out.push({ ...run, doors, profile: !!profile, plan });
   }
   return out;
 }
-function apply(plans) {
+export function applyPlans(plans) {
   let changed = 0;
   for (const { members, plan } of plans) {
     if (!plan) continue;
     for (const t of plan.times) {
       const m = members.find((x) => x.name === t.name);
-      if (m.time !== t.time) { m.time = t.time; changed += 1; }
-      m.approx = true;
+      if (!t.posted) {
+        if (m.time !== t.time) { m.time = t.time; changed += 1; }
+        m.approx = true;
+      }
       if (plan.close) {
         if (m.close !== plan.close || (m.closeApprox === true) !== plan.closeApprox) changed += 1;
         m.close = plan.close;
@@ -190,13 +194,13 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   const fest = JSON.parse(fs.readFileSync(file, 'utf8'));
   const plans = planFestival(fest, loadRegistry());
   for (const p of plans) {
-    if (!p.plan) { console.log(`\n${p.night} · ${p.venue}: no doors — nothing to plan`); continue; }
+    if (!p.plan) { console.log(`\n${p.night} · ${p.venue}: ${p.allPosted ? 'every set is posted — left alone' : 'no doors — nothing to plan'}`); continue; }
     const { plan } = p;
     console.log(`\n${p.night} · ${p.venue}  doors ${p.doors} → close ${plan.close || '?'}${plan.closeApprox ? ' (guess: ' + plan.closeSource + ')' : ' (printed)'}  [${plan.kind}${p.profile ? '' : ', no registry entry'}; gap ${plan.gap}m, headliner ${plan.H}m]`);
-    for (const t of plan.times) console.log(`   ${String(t.seq).padStart(2)}. ${t.name.padEnd(24)} ${t.was ? t.was.padEnd(9) : '—'.padEnd(9)} → ${t.time}${t.changed ? '' : '  (same)'}`);
+    for (const t of plan.times) console.log(`   ${String(t.seq).padStart(2)}. ${t.name.padEnd(24)} ${t.was ? t.was.padEnd(9) : '—'.padEnd(9)} → ${t.time}${t.posted ? '  (posted)' : t.changed ? '' : '  (same)'}`);
   }
   if (flag === '--write') {
-    const n = apply(plans);
+    const n = applyPlans(plans);
     fs.writeFileSync(file, `${JSON.stringify(fest, null, 2)}\n`);
     console.log(`\nwrote ${n} change(s) to ${path.relative(ROOT, file)}`);
   } else {
