@@ -142,7 +142,8 @@ hides in a stack.
    one-tap door to the sheet.
 3. Tapping outside the zoom, Escape, or scrolling puts the zoom away.
 4. The sheet opens with the card itself as its header (grown once more, ✕ in
-   its corner), then the conversation: threads one level deep. At rest a note
+   its corner) — with no notes chip on it, because the sheet IS the thread;
+   the Spotify chip stays — then the conversation: threads one level deep. At rest a note
    is a name, a time and words. Hover (mouse), press-and-hold (touch) or
    keyboard focus fades in one line of plain words under them — `Reply · Pin`,
    or `Edit · Reply · Pin` on your own. Replies indent one gutter under their
