@@ -2,7 +2,7 @@
 // Bump CACHE_VERSION whenever you change cached static assets — `node
 // scripts/sw-stamp.mjs` does the bump and re-stamps; the suite fails when the
 // stamp is stale, so a silent asset change can never ship under an old version.
-const CACHE_VERSION = 'festival-nav-v73'; // v44 = the notes/desktop round: threads, the zoom morph, the day whisper, aura sheets; pick-as moved to Settings (v43 was its first cut)
+const CACHE_VERSION = 'festival-nav-v80'; // v44 = the notes/desktop round: threads, the zoom morph, the day whisper, aura sheets; pick-as moved to Settings (v43 was its first cut)
 const ASSET_STAMP = '69fbe68e'; // sha1 of APP_CORE — node scripts/sw-stamp.mjs after any cached-asset change (the suite checks it)
 
 // Festival JSONs live in their OWN cache, outside the version-keyed shell
@@ -126,10 +126,12 @@ self.addEventListener('fetch', (event) => {
 
   const url = new URL(request.url);
 
-  // Cross-origin (api.spotify.com, accounts.spotify.com, analytics): never
-  // ours to cache — a cache-first Spotify API response made every re-scan
-  // one scan stale, silently (SPOT-4). Let the browser handle it untouched.
-  if (url.origin !== location.origin) return;
+  // Cross-origin (api.spotify.com, accounts.spotify.com) and the platform's
+  // own scripts (/_vercel/insights): never ours to cache — a cache-first
+  // Spotify API response made every re-scan one scan stale, silently
+  // (SPOT-4), and a shell hit is never refreshed, so a cached analytics
+  // script would freeze until the next bump. Let the browser handle them.
+  if (url.origin !== location.origin || url.pathname.startsWith('/_vercel/')) return;
 
   // API calls: always go to the network (sync needs fresh data). If offline,
   // the app already has localStorage, so a failed fetch is handled client-side.
@@ -141,13 +143,14 @@ self.addEventListener('fetch', (event) => {
   }
 
   // Navigations: network-first so a stale worker can never pin an old shell
-  // on a returning device (PS-2); cache is the offline fallback.
+  // on a returning device (PS-2) — but only for as long as a person will
+  // stare at a white screen. A network that hangs, fails or errors gets this
+  // worker's OWN precached shell: the one page that matches the JS it serves.
+  // Navigations are never stored — a live page written into this cache would
+  // be the next build's HTML over this build's modules on the next offline
+  // open.
   if (request.mode === 'navigate') {
-    const nav = fetchAndStore(request, CACHE_VERSION);
-    event.waitUntil(nav.done);
-    event.respondWith(
-      nav.response.catch(() => caches.match(request, { ignoreSearch: true }).then((cached) => cached || caches.match('/')).then((cached) => cached || Response.error()))
-    );
+    event.respondWith(navigationNetworkFirst(request));
     return;
   }
 
@@ -163,16 +166,26 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Static assets: cache-first, then update the cache in the background.
-  // The background write is registered with waitUntil SYNCHRONOUSLY (a late
-  // waitUntil after the response has been handed back is an error, and an
-  // unregistered write can be killed with the worker before it lands).
-  const refresh = fetchAndStore(request, CACHE_VERSION);
-  event.waitUntil(refresh.done);
-  // A cold miss with a dead network is an honest network error, never
+  // Static assets: this worker's install snapshot, and nothing else. A hit is
+  // served with no network call and no write — every cached-asset change
+  // bumps CACHE_VERSION (the stamp test), so fresh bytes arrive with a new
+  // worker, whole, never trickled into this build's cache one file at a time
+  // (a background refresh did exactly that, and a failed install then left
+  // half of two builds' modules to boot offline). Only this worker's own
+  // cache answers: caches.match() would search an older version first. A
+  // miss (an asset outside the install lists) is fetched and kept, and the
+  // write lands before the response is handed back, so nothing needs a late
+  // waitUntil. A miss with a dead network is an honest network error, never
   // respondWith(undefined).
   event.respondWith(
-    caches.match(request).then((cached) => cached || refresh.response.catch(() => Response.error()))
+    caches.open(CACHE_VERSION)
+      .then((cache) => cache.match(request))
+      .then((hit) => {
+        if (hit) return hit;
+        const miss = fetchAndStore(request, CACHE_VERSION);
+        return miss.response.then((resp) => miss.done.then(() => resp));
+      })
+      .catch(() => Response.error())
   );
 });
 
@@ -193,22 +206,40 @@ function fetchAndStore(request, bucket) {
   return { response, done };
 }
 
-// Live copy if the network answers inside DATA_NETWORK_MS; otherwise the
-// cached copy (any bucket — index.json is also precached in the shell), and
-// if there is no cached copy at all, the network request however long it
-// takes. A late network success still refreshes the data cache — and that
-// write is held open by waitUntil, so a phone that got the cached copy at
-// the 4 s mark and then heard back from the network keeps the fresh copy
-// for its next open even if the browser reaps the worker. Never a 503 for
-// data we hold.
-const DATA_NETWORK_MS = 4000;
+// The network's answer if it arrives inside NETWORK_MS, otherwise null — the
+// one budget both network-first strategies spend before the cache answers.
+const NETWORK_MS = 4000;
+function inTime(response) {
+  const timeout = new Promise((resolve) => setTimeout(() => resolve(null), NETWORK_MS));
+  return Promise.race([response.catch(() => null), timeout]);
+}
+
+// Live copy if the network answers in time; otherwise the cached copy (any
+// bucket — index.json is also precached in the shell), and if there is no
+// cached copy at all, the network request however long it takes. A late
+// network success still refreshes the data cache — and that write is held
+// open by waitUntil, so a phone that got the cached copy at the 4 s mark and
+// then heard back from the network keeps the fresh copy for its next open
+// even if the browser reaps the worker. Never a 503 for data we hold.
 function dataNetworkFirst(event) {
   const { request } = event;
   const refresh = fetchAndStore(request, DATA_CACHE);
   event.waitUntil(refresh.done);
-  const timeout = new Promise((resolve) => setTimeout(() => resolve(null), DATA_NETWORK_MS));
-  return Promise.race([refresh.response.catch(() => null), timeout]).then((live) => {
+  return inTime(refresh.response).then((live) => {
     if (live && live.ok) return live;
     return caches.match(request).then((cached) => cached || refresh.response);
+  });
+}
+
+// The live page unless the server errored (5xx) or the network failed or ran
+// out of time. Everything else is the server's real answer and passes through
+// untouched: a navigation fetch runs redirect:manual, so a 302 or cleanUrls'
+// 308 arrives as an opaqueredirect with status 0 and ok=false, and the WYA
+// page is a deliberate 404. With no shell cached, the network however long.
+function navigationNetworkFirst(request) {
+  const live = fetch(request);
+  return inTime(live).then((resp) => {
+    if (resp && resp.status < 500) return resp;
+    return caches.open(CACHE_VERSION).then((cache) => cache.match('/')).then((shell) => shell || live);
   });
 }
