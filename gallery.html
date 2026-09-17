@@ -109,6 +109,7 @@
     <li><b>SATURDAY · AFTERS</b> — a <b>numbered back-to-back run</b> at The Room (~ times, the doors line above it), one plain set beside it, and the <b>now mark</b> on whoever is playing at 11:30 PM.</li>
     <li><b>SATURDAY · FOLSOM</b> — three groups, one of them with no time yet (Venue TBA sorts last).</li>
     <li><b>SUNDAY · FOLSOM</b> — an 11 AM street fair opens the day.</li>
+    <li><b>LATE NIGHTS</b> — a <b>dated</b> section: its own tab off the end of the week, a date rule per date, venue groups under each.</li>
     <li><b>THE FOLD</b> — every room's header is a button: tap it and the body goes, the header stays, and its sub says how many shows are under it.</li>
   </ul>
   <div id="events-wall"></div>
@@ -698,12 +699,18 @@ const EFID = 'gallery-events-fest';
 const POSTER = 'https://example.test/the-poster';
 const room = (night, venue, extra = {}) => ({ day: 'Afters', stage: `${night} · ${venue}`, night, venue, ...extra });
 const folsom = (night, venue, extra = {}) => ({ day: 'Folsom', stage: `${night} · ${venue}`, night, venue, ...extra });
+// A dated section: entries that carry a date instead of a night, so the
+// section is its own tab off the end of the week with a rule per date.
+const late = (date, venue, extra = {}) => ({ day: 'Late nights', date, venue, ...extra });
 const run = { doors: '10 PM', close: '2 AM', closeApprox: true };
 FESTIVAL_INDEX.push({ id: EFID, status: 'scheduled' });
 FESTIVALS[EFID] = {
   id: EFID, name: 'Gallery Fest', year: '’26', accent: '56, 189, 248', status: 'scheduled',
   subtitle: 'The Pier · Doors 1 PM', timezone: 'America/Los_Angeles',
-  dayMeta: { Saturday: { wd: 'Sat', date: 'Sep 26', iso: '2026-09-26' }, Afters: { date: 'Sep 25-27' }, Folsom: { date: 'Sep 25-27' } },
+  dayMeta: {
+    Saturday: { wd: 'Sat', date: 'Sep 26', iso: '2026-09-26' }, Afters: { date: 'Sep 25-27' }, Folsom: { date: 'Sep 25-27' },
+    'Late nights': { date: 'Sep 29 – Oct 1', sub: 'around the city' },
+  },
   venues: { 'The Ballroom': 'https://maps.google.com/?q=The+Ballroom', 'The Basement': 'https://maps.google.com/?q=The+Basement', 'The Room': 'https://maps.google.com/?q=The+Room', 'The Street': 'https://maps.google.com/?q=The+Street' },
   days: {
     // Five stages so the grid overflows a phone — the sticky strip and its
@@ -741,6 +748,10 @@ FESTIVALS[EFID] = {
     { name: 'DEVIANTS', ...folsom('Sat', 'The Street') },
     { name: 'Folsom Street Fair', ...folsom('Sun', 'The Street', { time: '11 AM - 6 PM' }) },
     { name: 'Real Bad 37', ...folsom('Sun', 'The Basement', { time: '8 PM - 5 AM' }) },
+    // Late nights: dated, not nightly — its own tab, a rule per date.
+    { name: 'Overmono', ...late('2026-09-29', 'The Room', { doors: '9 PM' }) },
+    { name: 'Anz', ...late('2026-09-29', 'The Ballroom', { doors: '10 PM', time: '11 PM', approx: true }) },
+    { name: 'Two Shell', ...late('2026-10-01', 'The Basement', { doors: '10 PM' }) },
   ],
 };
 
@@ -754,7 +765,9 @@ const ESEL = {
 };
 state.ensureFestivalState(EFID);
 Object.assign(state.crewDoc.festivals[EFID].selections, ESEL);
-state.recordNote(EFID, 'day', 'Afters', model.makeNoteId('Nhu', '2026-09-20T20:00:00.000Z', 'e1'), { author: 'Nhu', ts: '2026-09-20T20:00:00.000Z', text: 'Meet at The Ballroom before 8 — the line wraps the block.' });
+// A day note is keyed by the DATE (MODEL-V4 §4), so this one is Saturday's
+// and the whisper rides under Saturday's rule.
+state.recordNote(EFID, 'day', '2026-09-26', model.makeNoteId('Nhu', '2026-09-20T20:00:00.000Z', 'e1'), { author: 'Nhu', ts: '2026-09-20T20:00:00.000Z', text: 'Meet at The Ballroom before 8 — the line wraps the block.' });
 
 // The fold, held here the way app.js holds it per fest (fn_fold_v1_<fid>).
 let folded = [];
@@ -767,7 +780,7 @@ const ectx = {
   sort: 'day', query: '', weekend: 'all', filterPeople: [], soloStage: null, folded: [], now: NOW,
   onSoloStage: () => {},
   onOpenNotes: (artist) => eventsStatus(`+ notes tapped for "${artist}" — the sheet is not wired in the gallery`),
-  onOpenDayNotes: (day) => eventsStatus(`notes tapped for "${day}"`),
+  onOpenDayNotes: (date) => eventsStatus(`day notes tapped for ${date} — the sheet is not wired in the gallery`),
   onOpenFestNotes: () => {},
   onNotesChange: () => {},
   onTap: eventsTap,
