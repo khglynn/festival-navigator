@@ -694,7 +694,7 @@ import * as model from '/js/v3/model.js';
 import { FESTIVALS, FESTIVAL_INDEX } from '/js/festivals.js';
 import { renderWall, renderCard, refreshCard, cardFor, roomOf } from '/js/v3/wall.js';
 import { wireCardZoom, wireCardFocusZoom, zoomCard, zoomedCard, refreshZoom, zoomSnapshot, unzoom } from '/js/v3/card-facts.js';
-import { toggleBucket } from '/js/v3/filters.js';
+import { toggleFold } from '/js/v3/filters.js';
 
 const EFID = 'gallery-events-fest';
 const POSTER = 'https://example.test/the-poster';
@@ -751,17 +751,17 @@ state.ensureFestivalState(EFID);
 Object.assign(state.crewDoc.festivals[EFID].selections, ESEL);
 state.recordNote(EFID, 'day', 'Afters', model.makeNoteId('Nhu', '2026-09-20T20:00:00.000Z', 'e1'), { author: 'Nhu', ts: '2026-09-20T20:00:00.000Z', text: 'Meet at The Ballroom before 8 — the line wraps the block.' });
 
-let hidden = []; // the bucket filter, held here the way filters.js holds it per fest
+let folded = []; // the fold, held here the way filters.js holds it per fest
 const ectx = {
   fid: EFID, meName: 'Kevin', picks: {}, affinity: null, lowPower: false,
-  sort: 'day', query: '', weekend: 'all', filterPeople: [], soloStage: null, bucketsOff: [], now: null,
+  sort: 'day', query: '', weekend: 'all', filterPeople: [], soloStage: null, folded: [], now: null,
   onSoloStage: () => {},
   onOpenNotes: (artist) => eventsStatus(`+ notes tapped for "${artist}" — the sheet is not wired in the gallery`),
   onOpenDayNotes: (day) => eventsStatus(`notes tapped for "${day}"`),
   onOpenFestNotes: () => {},
   onNotesChange: () => {},
   onTap: eventsTap,
-  onToggleBucket: (key) => { hidden = toggleBucket(hidden, key); eventsStatus(`${key} ${hidden.includes(key) ? 'hidden' : 'shown'} — saved on this device in the app (fn_buckets_v1_<fid>)`); repaint(); },
+  onToggleFold: (key) => { folded = toggleFold(folded, key); eventsStatus(`${key} ${folded.includes(key) ? 'folded' : 'open'} — saved on this device in the app (fn_fold_v1_<fid>)`); repaint(); },
   wireZoom: (el, artist, occ) => {
     const opts = { onOpenNotes: (a) => ectx.onOpenNotes(a, occ), occ };
     wireCardZoom(el, artist, ectx, opts);
@@ -770,7 +770,7 @@ const ectx = {
   onPeek: (artist, el, occ) => zoomCard(el, artist, ectx, { onOpenNotes: (a) => ectx.onOpenNotes(a, occ), source: 'touch', occ }),
 };
 function eventsStatus(msg) { const el = document.getElementById('events-status'); if (el) el.textContent = msg; }
-function refreshEventsPicks() { ectx.picks = model.picksFor(state.crewDoc, EFID); ectx.bucketsOff = hidden; }
+function refreshEventsPicks() { ectx.picks = model.picksFor(state.crewDoc, EFID); ectx.folded = folded; }
 // app.js repaintWall, minus sync: a standing zoom survives, in the room it
 // was in (a combined-day show is one occurrence rendered in two rooms).
 function repaint() {
