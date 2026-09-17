@@ -161,28 +161,34 @@ one room has no menu: the tap goes straight to Settings, as today. Escape,
 a tap outside and a row tap all close it; the way in has the beat, the way
 out is quick.
 
-## 4. Notes keep three doors
+## 4. Notes: artist, fest, dates (Kevin, 2026-09-17 — "a defensible MVP")
 
-The card's corner chip, the day whisper (nothing until someone writes, then
-the newest note as one line), and the toolbar `Notes` sheet. The `+ ✎` /
-`n ✎` chips on the day rule and on every section header are removed
-(`dayHeader` and `sectionHeader` lose their `onOpenNotes` option).
+Three scopes, three doors. The `+ ✎` / `n ✎` chips on the day rule and on
+every section header are removed (`dayHeader` and `sectionHeader` lose their
+`onOpenNotes` option). **Section notes are gone:** no door, no whisper, no
+sheet section for `Afters` / `Folsom` / `Late nights` as targets.
 
-**How a note gets added, by kind:**
 - *An artist:* hold (touch) or hover (mouse) the card → `+ note` on the
   grown card; a card that already has notes also opens from its corner chip.
-  Unchanged.
-- *A day (or a section like Afters — a section IS a day label):* the
-  `Notes` chip in the toolbar opens the all-notes sheet; every day and
-  section there ends with the open-door row the threads already use (`.n-door`
-  with the viewer's avatar, label `Add a note for Saturday…` — the same shape
-  as the thread's `Reply…` door), so the first note is two taps. Drawn on the
-  canvas's Notes board. Once a day has a
-  note, its whisper on the wall opens the same thread. The all-notes sheet
-  must offer that door per day and per section — it lists sections today
-  but ends only with the festival composer; add the per-day doors there,
-  never a chip on the wall.
+  Unchanged; one thread per artist wherever they play.
+- *A date:* day notes are keyed by the **ISO date** (`notes.day["2026-09-26"]`),
+  a new, additive key. The wall's day rule (a real date under V4 — a grid
+  day, an afters night, an ACL tab, a Late nights date-rule) carries the
+  whisper once someone writes; the all-notes sheet lists each date with the
+  open-door row the threads already use (`.n-door`, the viewer's avatar,
+  `+ Add a note for Sat · Sep 26…`, quieter than a thread's `Reply…` and set
+  apart at the section's foot), so the first note is two taps. Two Fridays
+  are two dates: solved.
+  **Legacy keys, read-time only, no migration:** a note stored under a
+  weekday label (`"Saturday"`) renders under the date that label maps to
+  through `dayMeta` (a two-weekend fest maps it to both dates, as it always
+  did); a note stored under a section label (`"Afters"`) stays readable in
+  the sheet under that label with no door. Nothing is renamed; the freeze is
+  untouched.
 - *The festival:* the composer at the top of the all-notes sheet, as today.
+
+Door and section labels always use the day's short form (weekday · date),
+never a raw key.
 
 ## 5. The zoom: opaque from the first frame
 
