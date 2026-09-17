@@ -69,14 +69,14 @@ Non-inferable facts only (the code answers everything else — read it).
   server understood us and said no — a deterministic rejection, so re-sending the
   same bytes is pointless; sync.js remembers the refused payload and waits for a
   NEW edit rather than re-POSTing forever.
-- **Docs cannot lie any more, and that is enforced**: `tests/docs-truth.test.mjs`
-  asserts the README's structure block points at files that exist, that no doc
-  tells anyone to run an npm script that does not exist, that no doc presents
-  Tailwind or Blob as part of the stack, and that the README's festival count
-  matches `data/festivals/index.json` (the only list). It also holds NOW.md
-  under 12 KB and fails on any repo path NOW.md or this file cites in
-  backticks that does not exist. History files (DEVLOG, claude-plans) are
-  exempt — they are supposed to talk about what we dropped.
+- **Docs cannot lie any more, and that is enforced**: the present-tense docs
+  (README, this file) are asserted against the code they describe by
+  `tests/docs-truth.test.mjs` — read it for the current list rather than a
+  copy here, which is the drift this bullet keeps inviting. Two of its rules
+  bind whoever writes THIS file: NOW.md stays a one-screen cursor (the test
+  holds the cap), and every repo path NOW.md or CLAUDE.md cites in backticks
+  must exist. History files (DEVLOG, claude-plans) are exempt — they are
+  supposed to talk about what we dropped.
 - `vercel dev` does not serve files created after it starts, and can serve
   STALE copies of edited files too (measured 2026-07-12: an edited app.js
   served an old version until restart) — when in doubt, restart it, and
@@ -126,9 +126,8 @@ Non-inferable facts only (the code answers everything else — read it).
 - **This repo is PUBLIC.** A crew token (`#g=…`) IS the credential for that
   crew's data. Never commit one; scan before every commit with `&&` (never `;`,
   which runs the commit even when the scan trips). `.gitignore` denies images
-  (`*.png`, `*.jpg`, `*.jpeg`) by default and allowlists only the generated
-  icons and link previews that ship, because an audit run once dumped 50
-  screenshots into the repo root.
+  by default and allowlists only what actually ships — read the file for the
+  list — because an audit run once dumped 50 screenshots into the repo root.
 - Deploy is gated: branch pushes = preview only; production promote is
   Kevin's call, always.
 - Adding a festival: `docs/add-a-festival.md`. Validate with
@@ -148,13 +147,15 @@ Non-inferable facts only (the code answers everything else — read it).
 
 - **A hover report is only as good as the shell that made it (2026-09-02).**
   Kevin's "hover is broken again" on 2026-09-01 was a v75 shell judging v76
-  code: his Diagnostics paste names the build, the branch alias keeps an
-  open tab on the build it was born with, and the reload-once guard covered
-  only a page's first 20 s. index.html now asks for a new worker on
-  visibilitychange and every ten minutes, reloads when nothing is in
-  progress, and raises a refresh toast otherwise (`fn:new-build`). Before
-  believing any "still broken": read the build line in the paste, and walk
-  the unique deployment URL, not the alias.
+  code: his Diagnostics paste names the build, and the branch alias keeps an
+  open tab on the build it was born with. One rule now governs an open tab
+  (`index.html`): a new build reloads it only when nothing is in progress —
+  no timer and no hidden tab earns an exception — and until then the notice
+  is a persistent strip, never a toast, because a toast fades before the
+  person looks at it. Anything a reload would destroy must mark itself busy
+  while it runs; a flow that forgets gets reloaded out from under its user.
+  Before believing any "still broken": read the build line in the paste, and
+  walk the unique deployment URL, not the alias.
 - **The zoom's keyboard route opens on the module's own last-input, never
   `:focus-visible`.** Chrome 152 flips a focused card to `:focus-visible`
   after ANY keypress (Escape included), and the script `focus()` every pick
@@ -169,19 +170,28 @@ Non-inferable facts only (the code answers everything else — read it).
   measured maximum scroll) or a transform from the lead's scroll event where
   the engine lacks `ScrollTimeline` or motion is reduced. Never set a
   strip's scrollLeft; anything that mirrors or restores scroll positions
-  skips `isStripScroller`. Two traps: jsdom's `CSS.supports` says yes to
-  everything (detect with `typeof window.ScrollTimeline`), and the tokens
-  file's reduced-motion rule kills every animation, the follow included.
+  skips `isStripScroller`. Three traps kill the timeline: jsdom's
+  `CSS.supports` says yes to everything (detect with
+  `typeof window.ScrollTimeline`), the tokens file's reduced-motion rule
+  kills every animation, and so does Low Power. Which route a strip takes is
+  therefore decided per RENDER, never once at load — a phone can drop into
+  Low Power with the wall already up — and each render undoes the last
+  render's wiring.
 - **WebKit only honours `-webkit-user-select`** — an unprefixed
   `user-select: none` did nothing on iOS and a long-press selected the time
   label and raised the Copy/Search callout over the zoom (2026-09-02). Every
   `user-select: none` in v3.css carries the prefix; keep it that way.
 - **Run guesses come from `scripts/guess-run-times.mjs`, never render
-  time** (§5 of `claude-plans/2026-08-31-events-canvas/MODEL-V3.md`): the
-  venue registry `data/venues/index.json` (routine close by weekday,
-  doors-to-first-act, set lengths, with sources) feeds a dry-run diff;
-  `--write` records `time`, `close`, `closeApprox`, `closeSource` on every
-  run member. A printed close is never overwritten.
+  time** (the model doc is
+  `claude-plans/2026-08-31-events-canvas/MODEL-V3.md`): a guess is
+  data-entry judgment, recorded per event and reviewable as a diff, fed by
+  the venue registry `data/venues/index.json`. Two things the script must
+  never overwrite: a POSTED time (a time carrying no `approx`) and a printed
+  close. And a close says where it came from: an https `closeSource` means a
+  page printed THAT NIGHT's end, so it stands; anything else names the rule
+  that produced it, so a re-run re-reads the registry instead of mistaking
+  its own guess for evidence. Copying a registry URL onto an event is what
+  broke that once.
 
 - **How this app moves (Kevin, 2026-08-30 — the vibe, not the mechanics; the
   code carries those).** This is a designer's passion project, and the bar is
