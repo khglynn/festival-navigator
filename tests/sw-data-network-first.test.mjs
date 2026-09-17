@@ -209,6 +209,20 @@ test('shell assets: a miss goes to the network and is kept in this worker\'s cac
   assert.deepEqual(w.puts, [`${CURRENT} ${ORIGIN}/icon-maskable-512.png`]);
 });
 
+test('the platform\'s own scripts (/_vercel/) are never ours to cache — the browser fetches them untouched', async () => {
+  // With no refresh on a hit, a cached copy of Vercel's analytics script would
+  // be frozen until the next shell bump; like cross-origin, it is left alone.
+  const w = bootWorker({ fetchImpl: () => delayed('insights', 5) });
+  let responded = false;
+  w.handlers.fetch({
+    request: new Request(`${ORIGIN}/_vercel/insights/script.js`),
+    respondWith: () => { responded = true; },
+    waitUntil: () => {},
+  });
+  assert.equal(responded, false);
+  assert.equal(w.fetches, 0);
+});
+
 test('shell assets: a cold miss with a dead network is an explicit error response, never respondWith(undefined)', async () => {
   const w = bootWorker({ fetchImpl: async () => { throw new TypeError('Failed to fetch'); } });
   const { resp } = await dispatch(w, '/js/v3/nowhere.js');
