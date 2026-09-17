@@ -40,9 +40,9 @@ FESTIVAL_INDEX.push({ id: 'electric-forest-2026', status: 'archived' }, { id: 's
 FESTIVALS['electric-forest-2026'] = ef;
 // A set on a stage that is not a column, and a day with nothing off the clock.
 FESTIVALS['stray-fest'] = {
-  id: 'stray-fest', name: 'Stray Fest', status: 'scheduled', timezone: 'America/Chicago',
+  id: 'stray-fest', name: 'Stray Fest', status: 'scheduled', subtitle: 'The Field', timezone: 'America/Chicago',
   dayMeta: { Friday: { wd: 'Fri', date: 'Oct 2', iso: '2026-10-02' }, Saturday: { wd: 'Sat', date: 'Oct 3', iso: '2026-10-03' } },
-  artists: [{ name: 'One', day: 'Friday' }, { name: 'Secret Set', day: 'Friday' }, { name: 'Two', day: 'Saturday' }],
+  artists: [{ name: 'One', day: 'Friday' }, { name: 'Secret Set', day: 'Friday' }, { name: 'Not Yet', day: 'Friday' }, { name: 'Two', day: 'Saturday' }],
   days: {
     Friday: { stages: ['A', 'B'], artists: [{ name: 'One', stage: 'A', time: '8:00 PM - 9:00 PM' }, { name: 'Secret Set', stage: 'Secret Stage', time: '9:30 PM - 10:30 PM' }] },
     Saturday: { stages: ['A', 'B'], artists: [{ name: 'Two', stage: 'B', time: '9:00 PM - 10:00 PM' }] },
@@ -115,10 +115,18 @@ test('Electric Forest: every day\'s activities are venue groups under that day\'
 test('a set on a stage that is not a column is a card under that stage — its occurrence carries the stage for the zoom, its face the time', () => {
   const root = render('stray-fest');
   const rooms = festRooms(root);
-  assert.deepEqual(rooms[0].groups, [{
-    venue: 'Secret Stage',
-    cards: [{ name: 'Secret Set', time: '9:30 – 10:30 PM', occ: { day: 'Friday', stage: 'Secret Stage', time: '9:30 PM - 10:30 PM', weekend: null } }],
-  }]);
+  assert.deepEqual(rooms[0].groups, [
+    {
+      venue: 'Secret Stage',
+      cards: [{ name: 'Secret Set', time: '9:30 – 10:30 PM', occ: { day: 'Friday', stage: 'Secret Stage', time: '9:30 PM - 10:30 PM', weekend: null } }],
+    },
+    // Billed for the day with no set time yet: the place IS the festival's
+    // site — it is not a show with nowhere to be, so it is never Venue TBA.
+    {
+      venue: 'The Field',
+      cards: [{ name: 'Not Yet', time: undefined, occ: { day: 'Friday', stage: null, time: null, weekend: null } }],
+    },
+  ]);
   assert.equal(root.querySelectorAll('.card[data-artist="Secret Set"]').length, 1, 'the stray renders once — under its place, not on the grid');
   // Saturday's activities, one group per place, each stack on the festival's
   // own clock: 9 AM opens the day, so a 2 AM crafter hour and a 6:30 AM

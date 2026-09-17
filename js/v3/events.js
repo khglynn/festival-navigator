@@ -142,6 +142,9 @@ const dayOfMonth = (iso) => String(Number(String(iso).slice(8, 10)) || '');
 //   groups first at the same doors time so a row of stacks holds less air.
 //   Groups with no known time last.
 //
+// `fallbackVenue` is what a venue-less entry groups under; without one it is
+// Venue TBA, and a group nothing is known about sorts last either way.
+//
 // The sub line invents nothing: "Doors 10 PM · ~3 AM" from any member's
 // `doors` and `close`, the tilde when the close is a guess; a group with
 // neither shows no sub line at all.
@@ -153,10 +156,13 @@ const dayOfMonth = (iso) => String(Number(String(iso).slice(8, 10)) || '');
 // whole room for that window — the only honest answer when nothing is timed.
 export const VENUE_TBA = 'Venue TBA';
 
-export function venueGroupsOf(entries) {
+export function venueGroupsOf(entries, { fallbackVenue = null } = {}) {
   const rooms = new Map();
   (entries || []).forEach((e, i) => {
-    const venue = venueOf(e) || VENUE_TBA;
+    // In the festival's own room the place IS the festival's site: a name
+    // billed for the day with no set time yet is at Zilker Park, we just do
+    // not know when. Only a SECTION show with nowhere to be is Venue TBA.
+    const venue = venueOf(e) || fallbackVenue || VENUE_TBA;
     if (!rooms.has(venue)) rooms.set(venue, []);
     rooms.get(venue).push({ e, i, t: parseEventTime(e.time) });
   });

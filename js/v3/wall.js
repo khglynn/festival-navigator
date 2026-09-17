@@ -1010,13 +1010,13 @@ const stackTime = (m) => {
 // stage header, its doors/close line, then the night's cards stacked top to
 // bottom in play order. The people filter HIDES in a stack (there is no
 // clock to keep in shape), so a group everyone filtered out goes with it.
-export function venueGroups(root, entries, ctx, { day = null, fest = null } = {}) {
+export function venueGroups(root, entries, ctx, { day = null, fest = null, fallbackVenue = null } = {}) {
   const filtering = ctx.filterPeople && ctx.filterPeople.length;
   const grid = mk('div', 'venue-grid');
   if (day && day.iso) grid.dataset.iso = day.iso;
   if (fest && fest.timezone) grid.dataset.tz = fest.timezone;
   let shown = 0;
-  for (const g of venueGroupsOf(entries)) {
+  for (const g of venueGroupsOf(entries, { fallbackVenue })) {
     const members = filtering ? g.members.filter((m) => passesPeople(ctx.picks, m.e.name, ctx.filterPeople)) : g.members;
     if (!members.length) continue;
     const group = mk('div', 'venue-group');
@@ -1171,7 +1171,7 @@ function renderComposed(root, ctx, fest, { model: plan, scheduled }) {
       }));
       if (!isFolded) {
         renderScheduledDayBody(room, day.dayKey, ctx, layout, day.weekend, { strip: true });
-        if (extras.length) venueGroups(room, extras, ctx, { day, fest });
+        if (extras.length) venueGroups(room, extras, ctx, { day, fest, fallbackVenue: festRoomSub(fest) });
       }
       root.appendChild(room);
     } else if (day.billing) {
