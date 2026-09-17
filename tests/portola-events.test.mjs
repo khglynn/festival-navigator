@@ -264,6 +264,17 @@ test('validator rejects an order on a single-act room — one act has nothing to
   assert.ok(r.errors.some((e) => /Afters · Sun · The Midway: one act in the room carries an order/.test(e)), r.errors.join('\n'));
 });
 
+test('validator reads a run on the festival-day clock the wall draws — a daytime room (doors 11 AM, close 6 PM) is not after midnight', () => {
+  const day = runFest(
+    { time: '2 PM', doors: '11 AM', close: '6 PM' },
+    { time: '11:30 AM', doors: '11 AM', close: '6 PM' },
+  );
+  assert.deepEqual(validateFestivalDoc(day).errors, []);
+  // The same clock still catches a set that is really outside the window.
+  assert.ok(errsOf(runFest({ time: '7 PM', doors: '11 AM', close: '6 PM' }, { time: '11:30 AM', doors: '11 AM', close: '6 PM' }))
+    .some((e) => /set time "7 PM" falls outside doors "11 AM" – close "6 PM"/.test(e)));
+});
+
 test('validator warns when only part of a run is numbered', () => {
   const fest = runFest();
   delete fest.artists[0].order;

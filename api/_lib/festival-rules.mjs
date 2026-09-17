@@ -2,6 +2,7 @@
 // consumed by BOTH scripts/validate-festivals.mjs (CI) and api/festival-add.js
 // (LLM-researched candidates). If a rule changes, it changes here once.
 import { timeToMinutes, computeDayArtists } from '../../js/time.js';
+import { parseEventTime } from '../../js/v3/events.js';
 import { safeKey, FORBIDDEN_KEYS } from './crew-shared.mjs';
 
 export const SLUG_RE = /^[a-z0-9-]{1,64}$/;
@@ -40,6 +41,10 @@ const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 // doors/close are a single point on the clock, never a range.
 const CLOCK_RE = new RegExp(`^${CLOCK}$`, 'i');
 const startOf = (t) => String(t).split(' - ')[0];
+// An event runs on the festival-day clock the wall draws it on (events.js:
+// 9 AM starts the day, anything earlier is after midnight) — so a daytime
+// room reads as daytime, and 2 AM still reads as later than 10 PM.
+const eventMin = (t) => parseEventTime(t).startMin;
 
 function checkEventFields(fest, err, warn) {
   const plain = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
@@ -99,15 +104,14 @@ function checkEventFields(fest, err, warn) {
     for (const [k, set] of [['doors', (v) => { doorsMin = v; }], ['close', (v) => { closeMin = v; }]]) {
       if (a[k] === undefined) continue;
       if (typeof a[k] !== 'string' || !CLOCK_RE.test(a[k])) { err(`${at}: ${k} must be a single clock time like "10 PM" (got ${JSON.stringify(safeKey(a[k]))})`); continue; }
-      try { set(timeToMinutes(a[k])); } catch { err(`${at}: ${k} did not parse`); }
+      set(eventMin(a[k]));
     }
     if (doorsMin !== null && closeMin !== null && closeMin <= doorsMin) err(`${at}: close ${JSON.stringify(a.close)} is not after doors ${JSON.stringify(a.doors)}`);
     // A set outside the room's own window is a data-entry slip, and a guessed
     // time landing there is the slip this shape exists to prevent.
     if (doorsMin !== null && closeMin !== null && typeof a.time === 'string' && TIME_RE.test(a.time)) {
-      let t = null;
-      try { t = timeToMinutes(startOf(a.time)); } catch { /* reported above */ }
-      if (t !== null && (t < doorsMin || t > closeMin)) err(`${at}: set time ${JSON.stringify(safeKey(a.time))} falls outside doors ${JSON.stringify(a.doors)} – close ${JSON.stringify(a.close)}`);
+      const t = eventMin(a.time);
+      if (t < doorsMin || t > closeMin) err(`${at}: set time ${JSON.stringify(safeKey(a.time))} falls outside doors ${JSON.stringify(a.doors)} – close ${JSON.stringify(a.close)}`);
     }
 
     if (typeof a.time === 'string' && TIME_RE.test(a.time)) {
@@ -173,8 +177,7 @@ function checkEventFields(fest, err, warn) {
     // one of the two is wrong and no renderer can tell which.
     const timed = members
       .filter((m) => typeof m.a.time === 'string' && TIME_RE.test(m.a.time))
-      .map((m) => { try { return { seq: m.o.seq, t: timeToMinutes(startOf(m.a.time)), at: m.at }; } catch { return null; } })
-      .filter(Boolean)
+      .map((m) => ({ seq: m.o.seq, t: eventMin(m.a.time), at: m.at }))
       .sort((x, y) => x.seq - y.seq);
     for (let i = 1; i < timed.length; i++) {
       if (timed[i].t <= timed[i - 1].t) err(`${where}: ${timed[i].at} is ${timed[i].seq} of ${of} but starts no later than the set before it — the running order and the clock disagree`);
