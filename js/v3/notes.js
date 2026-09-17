@@ -636,11 +636,12 @@ function renderThreads(host, scope, target, ctx, { onChange, expandedPinned, edi
   }
 }
 
-// The composer that opens where you pressed. Its draft lives in `ui`, not in
-// the DOM, so a remote repaint mid-sentence cannot eat it (audit 1.2).
-// `threadKey` null means a NEW ROOT — the date door at the foot of an
-// all-notes section opens the same composer with nothing to reply to.
-function inlineComposer(scope, target, threadKey, ctx, ui, onChange, opts = {}) {
+// The composer that opens where you pressed — always at the foot of a thread,
+// which is why it says "Reply…" and nothing else now. Its draft lives in `ui`,
+// not in the DOM, so a remote repaint mid-sentence cannot eat it (audit 1.2).
+// It took a label and a placeholder until 2026-09-17, for the date door at the
+// foot of an all-notes section; that door is gone (§3a.3) and so are they.
+function inlineComposer(scope, target, threadKey, ctx, ui, onChange) {
   const wrap = document.createElement('div');
   wrap.className = 'n-inline';
   wrap.dataset.target = target == null ? '' : target;
@@ -659,11 +660,11 @@ function inlineComposer(scope, target, threadKey, ctx, ui, onChange, opts = {}) 
     ui.justAdded = id;
     onChange();
   };
-  const field = growingField(ui.reply.draft, opts.label || 'Write a reply', {
+  const field = growingField(ui.reply.draft, 'Write a reply', {
     onInput: (v) => { if (ui.reply) ui.reply.draft = v; },
     onEnter: send,
   });
-  field.ta.placeholder = opts.placeholder || 'Reply…';
+  field.ta.placeholder = 'Reply…';
   field.ta.addEventListener('focus', () => { ui.focusOwner = 'reply'; ui.replyFocused = true; });
   field.ta.addEventListener('blur', () => { ui.replyFocused = false; });
   const bar = document.createElement('div');
