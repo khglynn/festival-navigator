@@ -59,7 +59,7 @@ state.activateCrew('stripfesttoken_0123456789', { v: 4, meta: {}, spotify: {}, p
 const root = document.getElementById('wall-root');
 const ctx = (lowPower) => ({
   fid: FID, meName: 'Kevin', affinity: null, lowPower, sort: 'day', query: '', weekend: 'all',
-  filterPeople: [], soloStage: null, bucketsOff: [], now: new Date('2026-01-01T12:00:00'),
+  filterPeople: [], soloStage: null, folded: [], now: new Date('2026-01-01T12:00:00'),
   picks: {}, onOpenNotes: null, onNotesChange: null, onOpenDayNotes: null, onSoloStage: () => {}, onTap: () => {},
 });
 // What app.js applyLowPower does, then the repaint leaving Settings does.
@@ -69,7 +69,11 @@ const paint = (lowPower = false) => {
 };
 const stripRow = () => root.querySelector('.stage-strip .times-grid');
 const lead = () => [...root.querySelectorAll('.times-scroll')].find((s) => !s.closest('.stage-strip'));
-const names = (el) => (el.style.timelineScope || '').split(',').map((s) => s.trim()).filter(Boolean);
+const names = (el) => ((el && el.style.timelineScope) || '').split(',').map((s) => s.trim()).filter(Boolean);
+// The timeline is scoped on the nearest ancestor the strip and its grid
+// share. Every day is its own `.tt-block` now (MODEL-V4 §1.3), so that is
+// the block, not the wall.
+const scope = () => root.querySelector('.tt-block');
 
 test('where animations run, the strip rides its grid\'s scroll timeline', () => {
   paint(false);
@@ -77,7 +81,7 @@ test('where animations run, the strip rides its grid\'s scroll timeline', () => 
   assert.ok(row, 'a classic scheduled wall has one stage strip');
   assert.match(row.style.animationTimeline, /^--tt-\d+$/, 'the row is on a named timeline');
   assert.equal(lead().style.scrollTimeline, `${row.style.animationTimeline} x`, 'named on the grid it follows');
-  assert.deepEqual(names(root), [row.style.animationTimeline], 'and scoped where both can see it');
+  assert.deepEqual(names(scope()), [row.style.animationTimeline], 'and scoped where both can see it');
 });
 
 test('under Low Power the strip follows by transform — the CSS follow would be frozen', () => {
@@ -95,8 +99,8 @@ test('under Low Power the strip follows by transform — the CSS follow would be
 test('each render undoes the last one\'s wiring: one observer and one timeline name, however many repaints', () => {
   for (let i = 0; i < 6; i++) paint(false);
   assert.equal(observing.size, 1, 'the replaced walls\' size observers are disconnected');
-  assert.deepEqual(names(root), [stripRow().style.animationTimeline], 'the wall carries only the live strip\'s timeline');
+  assert.deepEqual(names(scope()), [stripRow().style.animationTimeline], 'the day carries only the live strip\'s timeline');
   paint(true);
   assert.equal(observing.size, 0, 'a transform follow observes nothing, and nothing is left from before');
-  assert.deepEqual(names(root), [], 'nor any timeline name');
+  assert.deepEqual(names(scope()), [], 'nor any timeline name');
 });

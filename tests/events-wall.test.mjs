@@ -1,10 +1,9 @@
-// The day-first wall (MODEL-V3, 2026-09-01), rendered by the real modules in
-// jsdom: the composition on Portola, the strips scoped per timetable, the
-// bucket filter's chips and whisper, EVERY venue-night as one vertical run
-// (§5's one rule — no lanes, no deck), the run's two-line WHEN in the grown
-// card, and the untouched paths — a grid-only fest and a lineup-only fest
-// render exactly as before. jsdom has no animate(), so every motion path here is
-// the instant one; the motion is the walker's job.
+// The composed wall (MODEL-V4, 2026-09-16), rendered by the real modules in
+// jsdom: a day holds its rooms, a grid day keeps its timetable and every
+// other night is a stack of cards under the place it happens, each room folds
+// on its header, a dated section is its own tab, and the run's two-line WHEN
+// still reads the same in the grown card. jsdom has no animate(), so every
+// motion path here is the instant one; the motion is the walker's job.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -31,9 +30,9 @@ dom.window.matchMedia = () => ({ matches: false, addEventListener() {}, removeEv
 const state = await import('../js/state.js');
 const model = await import('../js/v3/model.js');
 const { FESTIVALS, FESTIVAL_INDEX } = await import('../js/festivals.js');
-const { renderWall, refreshCard, dayNavOf, cardFor, roomOf } = await import('../js/v3/wall.js');
+const { renderWall, refreshCard, dayNavOf, cardFor, roomOf, positionNowMarks, roomsOf } = await import('../js/v3/wall.js');
 const facts = await import('../js/v3/card-facts.js');
-const { parseEventTime, hourLabelOf } = await import('../js/v3/events.js');
+const { parseEventTime, venueGroupsOf } = await import('../js/v3/events.js');
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const portola = JSON.parse(readFileSync(join(ROOT, 'data/festivals/portola-2026.json'), 'utf8'));
@@ -41,13 +40,10 @@ const portola = JSON.parse(readFileSync(join(ROOT, 'data/festivals/portola-2026.
 // timeless shows move as venues post, so the wall tests read them from here
 // rather than pinning a night that the next data drop rewrites.
 const afters = (wd) => portola.artists.filter((a) => a.night === wd && /Afters/.test(a.day));
-const venuesByFirstSet = (wd) => [...new Set(afters(wd)
-  .filter((a) => parseEventTime(a.time))
-  .sort((x, y) => parseEventTime(x.time).startMin - parseEventTime(y.time).startMin) // stable: ties keep file order
-  .map((a) => a.venue))];
+const groupsOn = (wd) => venueGroupsOf(afters(wd));
 
 const TOKEN = 'eventswalltoken_0123456789';
-FESTIVAL_INDEX.push({ id: 'portola-2026', status: 'scheduled' }, { id: 'lineup-only', status: 'lineup' }, { id: 'grid-only', status: 'scheduled' }, { id: 'tiles-run', status: 'lineup' }, { id: 'approx-run', status: 'lineup' }, { id: 'model-edges', status: 'lineup' }, { id: 'verbose-day', status: 'lineup' });
+FESTIVAL_INDEX.push({ id: 'portola-2026', status: 'scheduled' }, { id: 'lineup-only', status: 'lineup' }, { id: 'grid-only', status: 'scheduled' }, { id: 'tiles-run', status: 'lineup' }, { id: 'dated', status: 'scheduled' }, { id: 'two-dated', status: 'scheduled' }, { id: 'verbose-day', status: 'lineup' });
 state.activateCrew(TOKEN, {
   v: 4, meta: {}, spotify: {},
   people: { Kevin: { colorIndex: 0 }, Nhu: { colorIndex: 1 } },
@@ -61,7 +57,8 @@ FESTIVALS['grid-only'] = {
   artists: [{ name: 'One', day: 'Friday' }, { name: 'Two', day: 'Friday' }],
   days: { Friday: { stages: ['A', 'B'], artists: [{ name: 'One', stage: 'A', time: '8:00 PM - 9:00 PM' }, { name: 'Two', stage: 'B', time: '9:00 PM - 10:00 PM' }] } },
 };
-// A lineup fest whose only section is small enough to be TILES, holding a run.
+// A lineup fest whose one section holds a numbered run, a doors-only show and
+// a show with neither.
 const SRC = 'https://example.test/poster';
 FESTIVALS['tiles-run'] = {
   id: 'tiles-run', name: 'Tiles Run', status: 'lineup',
@@ -73,45 +70,39 @@ FESTIVALS['tiles-run'] = {
     { name: 'Nowhere Yet', day: 'Afters', stage: 'Sat · Elsewhere', night: 'Sat', venue: 'Elsewhere' },
   ],
 };
-
-// A lineup fest whose Afters EARN columns (6 timed over 3 venues) and whose
-// three sets at V1 are GUESSED and all stamped 10 PM, with no order — the
-// room nobody has re-read yet, which is what every Portola room looked like
-// before the migration.
-FESTIVALS['approx-run'] = {
-  id: 'approx-run', name: 'Approx Run', status: 'lineup',
-  dayMeta: { Saturday: { wd: 'Sat', date: 'Oct 3' }, Afters: { date: 'Oct 3' } },
+// A scheduled fest with a DATED section — ACL's Late nights shape.
+FESTIVALS.dated = {
+  id: 'dated', name: 'Dated', status: 'scheduled', timezone: 'America/Chicago',
+  dayMeta: {
+    Friday: { wd: 'Fri', date: 'Oct 2', iso: '2026-10-02' },
+    'Late nights': { date: 'Sep 29 – Oct 10', sub: 'around Austin' },
+  },
   artists: [
-    { name: 'Headliner', day: 'Saturday' },
-    { name: 'P1', day: 'Afters', night: 'Sat', venue: 'V1', time: '10 PM', approx: true },
-    { name: 'P2', day: 'Afters', night: 'Sat', venue: 'V1', time: '10 PM', approx: true },
-    { name: 'P3', day: 'Afters', night: 'Sat', venue: 'V1', time: '10 PM', approx: true },
-    { name: 'L1', day: 'Afters', night: 'Sat', venue: 'V2', time: '11 PM' },
-    { name: 'L2', day: 'Afters', night: 'Sat', venue: 'V2', time: '11 PM' },
-    { name: 'S1', day: 'Afters', night: 'Sat', venue: 'V3', time: '9 PM' },
+    { name: 'Billed', day: 'Friday' },
+    { name: 'Later', day: 'Late nights', date: '2026-10-01', venue: 'Stubb’s', doors: '8 PM' },
+    { name: 'First', day: 'Late nights', date: '2026-09-29', venue: 'Mohawk Austin', doors: '7 PM' },
+    { name: 'Also First', day: 'Late nights', date: '2026-09-29', venue: 'Mohawk Austin', doors: '7 PM', time: '10 PM', approx: true },
   ],
+  days: { Friday: { stages: ['A'], artists: [{ name: 'Billed', stage: 'A', time: '8:00 PM - 9:00 PM' }] } },
 };
 
-// Afters earns columns on Friday; Saturday's afters are all timeless, and one
-// Friday show has a time but no room yet.
-FESTIVALS['model-edges'] = {
-  id: 'model-edges', name: 'Model Edges', status: 'lineup',
-  dayMeta: { Friday: { wd: 'Fri', date: 'Oct 2' }, Afters: { date: 'Oct 2-3' } },
-  artists: [
-    { name: 'Headliner', day: 'Friday' },
-    { name: 'A1', day: 'Afters', night: 'Fri', venue: 'V1', time: '9 PM' },
-    { name: 'A2', day: 'Afters', night: 'Fri', venue: 'V1', time: '11 PM' },
-    { name: 'B1', day: 'Afters', night: 'Fri', venue: 'V2', time: '10 PM' },
-    { name: 'B2', day: 'Afters', night: 'Fri', venue: 'V2', time: '11 PM' },
-    { name: 'C1', day: 'Afters', night: 'Fri', venue: 'V3', time: '10 PM' },
-    { name: 'C2', day: 'Afters', night: 'Fri', venue: 'V3', time: '12 AM' },
-    { name: 'Roomless', day: 'Afters', night: 'Fri', time: '8 PM' },
-    { name: 'S1', day: 'Afters', night: 'Sat', venue: 'V1' },
-    { name: 'S2', day: 'Afters', night: 'Sat', venue: 'V2' },
-  ],
+// A two-weekend scheduled fest that carries both of its dates (ACL's shape).
+FESTIVALS['two-dated'] = {
+  id: 'two-dated', name: 'Two Dated', status: 'scheduled', timezone: 'America/Chicago',
+  dayMeta: { Friday: { wd: 'Fri', dates: { W1: 'Oct 2', W2: 'Oct 9' }, isos: { W1: '2026-10-02', W2: '2026-10-09' } } },
+  artists: [{ name: 'Both Weekends', day: 'Friday' }, { name: 'One Only', day: 'Friday', weekends: 'W1' }],
+  days: {
+    Friday: {
+      stages: ['A'],
+      artists: [
+        { name: 'Both Weekends', stage: 'A', time: '8:00 PM - 9:00 PM' },
+        { name: 'One Only', stage: 'A', time: '9:00 PM - 10:00 PM', weekend: 'W1' },
+      ],
+    },
+  },
 };
 
-// A verbose day key (an early-arrival pre-party's shape) on a fest that is day-first.
+// A verbose day key (an early-arrival pre-party's shape) on a fest with a section.
 const WED_KEY = 'Wednesday, Sept 16 (Early Arrival Pre-Party)';
 FESTIVALS['verbose-day'] = {
   id: 'verbose-day', name: 'Verbose Day', status: 'lineup',
@@ -129,11 +120,11 @@ FESTIVALS['lineup-only'] = {
 const ctxFor = (fid, over = {}) => {
   const ctx = {
     fid, meName: 'Kevin', affinity: null, lowPower: true, sort: 'day', query: '', weekend: 'all',
-    filterPeople: [], soloStage: null, bucketsOff: [], now: new Date('2026-01-01T12:00:00'),
+    filterPeople: [], soloStage: null, folded: [], now: new Date('2026-01-01T12:00:00'),
     taps: [], toggled: [], opened: [],
     picks: model.picksFor(state.crewDoc, fid),
     onOpenNotes: (a) => ctx.opened.push(a), onNotesChange: null, onOpenDayNotes: () => {}, onSoloStage: () => {},
-    onToggleBucket: (k) => ctx.toggled.push(k),
+    onToggleFold: (k) => ctx.toggled.push(k),
     ...over,
   };
   ctx.onTap = over.onTap || ((artist, el) => { ctx.taps.push(artist); return refreshCard(el, artist, ctx); });
@@ -154,229 +145,295 @@ const roomsUnder = (root, dayKey) => {
   for (let n = rule.nextElementSibling; n && !n.classList.contains('day-rule'); n = n.nextElementSibling) if (n.classList.contains('room')) out.push(n);
   return out;
 };
+// What a room's list reads as, top to bottom: [venue, sub, [[name, time], …]].
+const listOf = (room) => [...room.querySelectorAll('.venue-group')].map((g) => [
+  g.querySelector('.stage-head.venue .label').textContent,
+  (g.querySelector('.venue-sub') || { textContent: '' }).textContent,
+  [...g.querySelectorAll('.stack > .card')].map((c) => [c.dataset.artist, (c.querySelector('.time') || {}).textContent]),
+]);
 const click = (node) => node.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true, cancelable: true }));
-const pressAt = (node) => node.dispatchEvent(new dom.window.PointerEvent('pointerdown', { bubbles: true, cancelable: true }));
-const key = (k) => document.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true }));
 
 // ---- the composition ---------------------------------------------------------------
 
-test('Portola is day-first: THU FRI SAT SUN, each day its rooms in order, the tabs the same list', () => {
+test('Portola is composed: THU FRI SAT SUN, each day its rooms in order, the tabs the same list', () => {
   const { root, ctx } = render('portola-2026');
   assert.deepEqual(rulesOf(root), ['THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY']);
   assert.deepEqual([...root.querySelectorAll('.day-rule')].map((r) => [r.dataset.day, r.querySelector('.date').textContent, r.dataset.iso]),
     [['Thursday', 'Thu · Sep 24', '2026-09-24'], ['Friday', 'Fri · Sep 25', '2026-09-25'], ['Saturday', 'Sat · Sep 26', '2026-09-26'], ['Sunday', 'Sun · Sep 27', '2026-09-27']]);
-  assert.deepEqual(roomsUnder(root, 'Thursday').map((r) => r.dataset.bucket), ['Afters']);
-  assert.deepEqual(roomsUnder(root, 'Friday').map((r) => r.dataset.bucket), ['Afters', 'Folsom']);
-  assert.deepEqual(roomsUnder(root, 'Saturday').map((r) => r.dataset.bucket), [':fest', 'Afters', 'Folsom']);
-  assert.deepEqual(roomsUnder(root, 'Sunday').map((r) => r.dataset.bucket), [':fest', 'Afters', 'Folsom']);
+  assert.deepEqual(roomsUnder(root, 'Thursday').map((r) => r.dataset.room), ['Afters']);
+  assert.deepEqual(roomsUnder(root, 'Friday').map((r) => r.dataset.room), ['Afters', 'Folsom']);
+  assert.deepEqual(roomsUnder(root, 'Saturday').map((r) => r.dataset.room), [':fest', 'Afters', 'Folsom']);
+  assert.deepEqual(roomsUnder(root, 'Sunday').map((r) => r.dataset.room), [':fest', 'Afters', 'Folsom']);
   assert.deepEqual([...root.querySelectorAll('.sec-label')].map((l) => l.textContent),
     ['AFTERS', 'AFTERS', 'FOLSOM', 'PORTOLA', 'AFTERS', 'FOLSOM', 'PORTOLA', 'AFTERS', 'FOLSOM']);
   assert.equal(roomsUnder(root, 'Saturday')[0].querySelector('.sec-sub').textContent, 'Pier 80', 'the festival\'s room says where it is');
-  assert.deepEqual(dayNavOf(portola, ctx), [
-    { key: 'Thursday', short: 'THU', long: 'THU' }, { key: 'Friday', short: 'FRI', long: 'FRI' },
-    { key: 'Saturday', short: 'SAT', long: 'SAT' }, { key: 'Sunday', short: 'SUN', long: 'SUN' }]);
+  assert.deepEqual(dayNavOf(portola, ctx).map((d) => [d.key, d.short, d.long, d.dated]), [
+    ['Thursday', 'THU', 'THU', false], ['Friday', 'FRI', 'FRI', false],
+    ['Saturday', 'SAT', 'SAT', false], ['Sunday', 'SUN', 'SUN', false]]);
   assert.deepEqual(dayNavOf(portola, { ...ctx, query: 'x' }).map((d) => d.key), ['Saturday', 'Sunday', 'Afters', 'Folsom'], 'searching keeps the search view\'s own headers');
+  // Nothing of the old view controls survives.
+  assert.equal(root.querySelectorAll('.bucket-row, .bucket-chip, .tba, .tba-label, .wall-whisper, .sec-whisper').length, 0);
+  // The rooms the show menu offers are the rooms the wall renders.
+  assert.deepEqual(roomsOf(portola, ctx).map((r) => [r.key, r.label]),
+    [[':fest', 'Portola'], ['Afters', 'Afters'], ['Folsom', 'Folsom']]);
+  assert.deepEqual(roomsOf(FESTIVALS['grid-only'], ctx).map((r) => r.key), [':fest'], 'one room, no menu');
 });
 
-test('every timetable carries its OWN sticky strip and scroll group — a grid day\'s stage heads never sit over an afters clock', () => {
+test('a night is venue groups: the venue\'s own stage header, its doors line, its cards stacked in play order', () => {
+  const { root } = render('portola-2026');
+  const sat = roomsUnder(root, 'Saturday').find((r) => r.dataset.room === 'Afters');
+  const want = groupsOn('Sat').map((g) => [
+    g.venue, g.sub,
+    g.members.map((m) => [m.e.name, m.endStr ? undefined : (m.startStr ? `${m.approx ? '~' : ''}${m.startStr}` : undefined)]),
+  ]);
+  assert.deepEqual(listOf(sat).map(([v, sub, cards]) => [v, sub, cards.map(([n, t]) => [n, t])]), want,
+    'the DOM is the model, venue for venue and card for card');
+  assert.ok(want.length > 1 && want.some(([, sub]) => sub), 'Saturday really has several rooms and a doors line — this is not vacuous');
+  // The venue head IS a stage header (the festival accent's third home), and
+  // it is never a solo button.
+  const heads = [...sat.querySelectorAll('.venue-group .stage-head')];
+  assert.ok(heads.length && heads.every((h) => h.tagName === 'DIV' && h.classList.contains('venue')));
+  // A ranged show prints its range; a show with no clock prints none.
+  const fri = roomsUnder(root, 'Friday').find((r) => r.dataset.room === 'Afters');
+  const despacio = fri.querySelector('.card[data-artist="Despacio"]');
+  assert.equal(despacio.querySelector('.time').textContent, '5 – 11 PM', 'the one printed window of the night');
+  const noClock = [...sat.querySelectorAll('.card')].find((c) => c.dataset.artist === 'Groove Armada');
+  assert.equal(noClock.querySelector('.time'), null, 'doors and no start: a card without a clock, never an invented one');
+  assert.equal(root.querySelectorAll('.deck, .deck-layer, .ee-col, .ee-item').length, 0);
+});
+
+test('one room, one stack: every venue-night reads top to bottom and nothing overlaps or lanes', () => {
+  const { root } = render('portola-2026');
+  for (const room of root.querySelectorAll('.room[data-room="Afters"], .room[data-room="Folsom"]')) {
+    for (const stack of room.querySelectorAll('.stack')) {
+      const cards = [...stack.children];
+      assert.ok(cards.every((c) => c.classList.contains('card')), 'a stack holds cards and nothing else');
+      assert.ok(cards.every((c) => !c.style.gridColumn && !c.style.width && !c.style.marginLeft), 'no lane math survives in a stack');
+    }
+  }
+  // Friday's Regency — the pile that used to be a deck — is one stack in the
+  // run's order, each set its own tappable card.
+  const fri = roomsUnder(root, 'Friday').find((r) => r.dataset.room === 'Afters');
+  const regency = listOf(fri).find(([v]) => v === 'Regency Ballroom');
+  const file = afters('Fri').filter((a) => a.venue === 'Regency Ballroom').sort((a, b) => a.order.seq - b.order.seq);
+  assert.deepEqual(regency[2].map(([n]) => n), file.map((a) => a.name));
+  assert.deepEqual(regency[2].map(([, t]) => t), file.map((a) => `${a.approx ? '~' : ''}${a.time}`));
+  assert.equal(regency[1], `Doors ${file[0].doors} · ~${file[0].close}`);
+  assert.ok([...fri.querySelectorAll('.card')].every((c) => c.getAttribute('role') === 'button'));
+});
+
+test('a grid day keeps its timetable, its own sticky strip and its own scroll group', () => {
   const { root } = render('portola-2026');
   const blocks = [...root.querySelectorAll('.tt-block')];
-  assert.equal(blocks.length, 6, 'Thu/Fri/Sat/Sun afters + Sat/Sun grid');
+  assert.equal(blocks.length, 2, 'Saturday and Sunday — the only two grids Portola publishes');
   for (const b of blocks) {
     assert.equal(b.querySelectorAll('.stage-strip').length, 1, 'one strip inside its block');
     const [strip, grid] = [...b.querySelectorAll('.times-scroll')];
     assert.equal(strip.dataset.sync, grid.dataset.sync, 'the strip and its grid share one sync group');
     assert.equal(b.querySelector('.stage-strip .times-grid').style.gridTemplateColumns, b.querySelector('.times-scroll[data-day] .times-grid').style.gridTemplateColumns, 'same column template — heads over their columns');
   }
-  const groups = new Set([...root.querySelectorAll('.times-scroll')].map((s) => s.dataset.sync));
-  assert.deepEqual([...groups].sort(), ['Afters|Friday', 'Afters|Saturday', 'Afters|Sunday', 'Afters|Thursday', 'grid']);
-  // Mirroring stays inside a group: the two grid days follow each other; an afters scroller does not drag the grid.
   const gridScrollers = [...root.querySelectorAll('.times-scroll[data-sync="grid"]')];
   assert.equal(gridScrollers.length, 4, 'two strips + two days');
   const gridDays = gridScrollers.filter((s) => s.hasAttribute('data-day'));
-  const gridStrips = gridScrollers.filter((s) => !s.hasAttribute('data-day'));
-  assert.equal(gridDays.length, 2);
   gridDays[0].scrollLeft = 120;
   gridDays[0].dispatchEvent(new dom.window.Event('scroll'));
   assert.ok(gridDays.every((s) => s.scrollLeft === 120), 'the two grid days mirror each other');
-  // Strips are followers, not scrollers: each day's strip row rides the
-  // group's lead day by transform (a CSS scroll timeline in browsers).
-  assert.ok(gridStrips.every((s) => s.classList.contains('follows') && s.scrollLeft === 0));
-  assert.ok(gridStrips.every((s) => s.querySelector('.times-grid').style.transform === 'translateX(-120px)'), 'both strip rows followed');
-  const fri = root.querySelector('.times-scroll[data-sync="Afters|Friday"][data-day]');
-  fri.scrollLeft = 300;
-  fri.dispatchEvent(new dom.window.Event('scroll'));
-  assert.equal(gridDays[0].scrollLeft, 120, 'the grid did not move');
-  assert.equal(root.querySelector('.times-scroll[data-sync="Afters|Friday"]:not([data-day]) .times-grid').style.transform, 'translateX(-300px)', 'its own strip row did');
-  // Event columns are capped; the grid's are not.
-  assert.equal(root.querySelector('.times-scroll[data-sync="Afters|Thursday"][data-day] .times-grid').style.gridTemplateColumns, `repeat(${venuesByFirstSet('Thu').length}, minmax(150px, 240px))`);
-  assert.ok(root.querySelector('.times-scroll[data-sync="grid"][data-day] .times-grid').style.gridTemplateColumns.includes('1fr'));
-  // The venue heads wear the stage-header look but are not solo buttons.
-  const heads = [...root.querySelectorAll('.tt-block .stage-head.venue')];
-  assert.ok(heads.length > 0);
-  assert.ok(heads.every((h) => h.tagName === 'DIV'));
-  assert.deepEqual([...root.querySelectorAll('.times-scroll[data-sync="Afters|Thursday"] .stage-head')].map((h) => h.textContent), venuesByFirstSet('Thu'));
-});
-
-test('a night\'s timetable: hour rail from the first set to the last close, tonight\'s iso on the grid so the now line can find it, TIME TBA under it', () => {
-  const { root } = render('portola-2026');
-  const sun = roomsUnder(root, 'Sunday')[1];
-  const grid = sun.querySelector('.times-scroll[data-day] .times-grid');
+  const strips = gridScrollers.filter((s) => !s.hasAttribute('data-day'));
+  assert.ok(strips.every((s) => s.classList.contains('follows') && s.scrollLeft === 0));
+  assert.ok(strips.every((s) => s.querySelector('.times-grid').style.transform === 'translateX(-120px)'), 'both strip rows followed');
+  // The grid spans whole hours of the festival day, so the now line always has
+  // a home (MODEL-V4 §1.1).
+  const grid = root.querySelector('.times-scroll[data-day="Sunday"] .times-grid');
   assert.equal(grid.dataset.iso, '2026-09-27');
   assert.equal(grid.dataset.tz, 'America/Los_Angeles');
-  const sunday = afters('Sun');
-  const firstSet = Math.min(...sunday.filter((a) => parseEventTime(a.time)).map((a) => parseEventTime(a.time).startMin));
-  const lastClose = Math.max(...sunday.filter((a) => a.time && a.close).map((a) => parseEventTime(a.close).startMin));
-  const start = Number(grid.dataset.startRow);
-  const rows = Number(grid.dataset.rows);
-  assert.equal(start, Math.floor(firstSet / 15), 'the rail opens on the night\'s first set');
-  assert.equal(start + rows, Math.ceil(lastClose / 15), 'and runs to the latest close');
-  const hours = [];
-  for (let r = Math.ceil(start / 4) * 4; r < start + rows; r += 4) hours.push(hourLabelOf(r * 15));
-  assert.deepEqual([...sun.querySelectorAll('.hour-label')].map((h) => h.textContent), hours, 'a label on every hour inside it');
-  const tba = sun.querySelector('.tba');
-  assert.ok(tba);
-  assert.equal(tba.querySelector('.tba-label').textContent, 'TIME TBA');
-  assert.deepEqual([...tba.querySelectorAll('.card')].map((c) => [c.dataset.artist, c.dataset.time]),
-    sunday.filter((a) => !a.time).map((a) => [a.name, undefined]), 'every show with no time yet, and nothing else');
-  // Saturday's afters: venue columns left to right by first set, ties in file
-  // order; the rooms nobody has timed are the TBA tiles.
-  const sat = roomsUnder(root, 'Saturday')[1];
-  assert.deepEqual([...sat.querySelectorAll('.stage-strip .stage-head')].map((h) => h.textContent), venuesByFirstSet('Sat'));
-  assert.deepEqual([...sat.querySelectorAll('.tba .card')].map((c) => c.dataset.artist), afters('Sat').filter((a) => !a.time).map((a) => a.name));
+  assert.equal(Number(grid.dataset.startRow) % 4, 0, 'the grid opens on an hour');
+  assert.equal((Number(grid.dataset.startRow) + Number(grid.dataset.rows)) % 4, 0, 'and closes on one');
+  const sets = state.getDayArtists('Sunday', null);
+  assert.ok(Number(grid.dataset.startRow) <= Math.floor(Math.min(...sets.map((a) => a.startMin)) / 15), 'nothing is cut off the top');
 });
 
-test('the untouched paths: a grid-only fest renders one page-wide strip and no rooms; a lineup fest with no events stays a lineup wall (WED is a wall-grid — tiles)', () => {
-  const grid = render('grid-only').root;
-  assert.equal(grid.querySelectorAll('.stage-strip').length, 1);
-  assert.equal(grid.querySelector('.stage-strip').parentElement, grid, 'the strip sits at the root, above every day');
-  assert.equal(grid.querySelectorAll('.room, .bucket-row, .tt-block, .sec-head').length, 0);
-  assert.ok([...grid.querySelectorAll('.times-scroll')].every((s) => !s.dataset.sync));
-  const ll = render('lineup-only').root;
-  assert.equal(ll.querySelectorAll('.room, .bucket-row').length, 0);
-  const rules = rulesOf(ll);
-  assert.ok(rules.includes('WEDNESDAY'));
-  const wedRule = [...ll.querySelectorAll('.day-rule')].find((r) => r.querySelector('.day').textContent === 'WEDNESDAY');
-  assert.ok(wedRule.nextElementSibling.classList.contains('wall-grid'), 'a day rule then a card grid — tiles');
-});
+// ---- the fold (MODEL-V4 §3) -----------------------------------------------------------
 
-// ---- the bucket filter ----------------------------------------------------------------
-
-test('bucket chips: one per room, pressed when on; a tap asks app.js to toggle that key', () => {
+test('a room folds on its header: aria-expanded, the chevron, and the sub becomes "<n> shows"', () => {
   const { root, ctx } = render('portola-2026');
-  const chips = [...root.querySelectorAll('.bucket-row .bucket-chip')];
-  assert.deepEqual(chips.map((c) => [c.dataset.bucket, c.querySelector('.bc-label').textContent, c.getAttribute('aria-pressed')]),
-    [[':fest', 'PORTOLA', 'true'], ['Afters', 'AFTERS', 'true'], ['Folsom', 'FOLSOM', 'true']]);
-  assert.equal(root.firstElementChild.className, 'bucket-row', 'the chips lead the wall');
-  assert.equal(root.querySelector('.wall-whisper'), null, 'nothing hidden, no whisper');
-  click(chips[2]);
-  assert.deepEqual(ctx.toggled, ['Folsom']);
-});
+  const head = roomsUnder(root, 'Friday').find((r) => r.dataset.room === 'Folsom').querySelector('.sec-head');
+  assert.equal(head.tagName, 'BUTTON');
+  assert.equal(head.getAttribute('aria-expanded'), 'true');
+  assert.equal(head.getAttribute('aria-label'), 'Hide Folsom');
+  assert.ok(head.querySelector('svg.chev'), 'the chevron is the affordance');
+  click(head);
+  assert.deepEqual(ctx.toggled, ['Folsom'], 'the wall asks; the shell owns the state');
 
-test('a hidden bucket is gone from EVERY day, its chip reads off, and the foot-whisper is the way back', () => {
-  const { root } = render('portola-2026', { bucketsOff: ['Folsom'] });
-  assert.equal(root.querySelectorAll('.room[data-bucket="Folsom"]').length, 0);
-  assert.equal(root.querySelectorAll('.room[data-bucket="Afters"]').length, 4);
-  assert.equal(root.querySelector('.bucket-chip[data-bucket="Folsom"]').getAttribute('aria-pressed'), 'false');
-  assert.equal(root.querySelector('.bucket-chip[data-bucket="Folsom"] .bc-check').textContent, '');
-  assert.equal(root.querySelector('.wall-whisper').textContent, 'Folsom is hidden — tap its chip to bring it back.');
-  const two = render('portola-2026', { bucketsOff: ['Afters', 'Folsom'] }).root;
-  assert.equal(two.querySelector('.wall-whisper').textContent, 'Afters and Folsom are hidden — tap their chips to bring them back.');
-  assert.deepEqual(rulesOf(two), ['THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'], 'the days stay: a filter is a view of the week, not a new week');
-  const thu = [...two.querySelectorAll('.day-rule')][0].nextElementSibling;
-  assert.equal(thu.className, 'section-empty');
-  assert.equal(thu.textContent, 'Everything on Thursday is hidden — tap a chip at the top to bring it back.');
-  const noGrid = render('portola-2026', { bucketsOff: [':fest'] }).root;
-  assert.equal(noGrid.querySelectorAll('.room[data-bucket=":fest"]').length, 0);
-  assert.equal(noGrid.querySelectorAll('.room[data-bucket="Afters"]').length, 4, 'the people and stage filters are untouched by it — the sections still render');
-  assert.equal(noGrid.querySelector('.wall-whisper').textContent, 'Portola is hidden — tap its chip to bring it back.');
-});
-
-// ---- every room is a vertical run (MODEL-V3 §5, the one rule) ---------------------------
-
-// The shape the whole round is about, asserted on the DOM the way a person
-// reads it: in one venue column, cards stack and never share a band. This is
-// deliberately a geometry check and not a "no .deck exists" check — a class
-// name can be renamed back in, a column of overlapping cards cannot hide.
-const columnsOf = (block) => {
-  const grid = block.querySelector('.times-scroll[data-day] .times-grid');
-  const cols = new Map();
-  for (const cell of grid.querySelectorAll('.card')) {
-    const col = Number(cell.style.gridColumn);
-    const [row, span] = cell.style.gridRow.split(' / span ').map(Number);
-    if (!cols.has(col)) cols.set(col, []);
-    cols.get(col).push({ name: cell.dataset.artist, time: cell.dataset.time, row, span, el: cell });
+  const folded = render('portola-2026', { folded: ['Folsom'] }).root;
+  for (const room of folded.querySelectorAll('.room[data-room="Folsom"]')) {
+    const h = room.querySelector('.sec-head');
+    assert.equal(h.getAttribute('aria-expanded'), 'false');
+    assert.ok(h.classList.contains('folded'));
+    assert.equal(room.querySelectorAll('.venue-grid, .tt-block').length, 0, 'the body is gone, the header stays');
   }
-  for (const list of cols.values()) list.sort((a, b) => a.row - b.row);
-  return cols;
-};
-const assertRuns = (block, where) => {
-  for (const [col, list] of columnsOf(block)) {
-    for (const c of list) {
-      assert.equal(c.el.style.width, '', `${where} col ${col}: "${c.name}" is lane-split — an events room never lanes`);
-      assert.equal(c.el.style.marginLeft, '', `${where} col ${col}: "${c.name}" is lane-offset`);
-      assert.ok(c.span >= 2, `${where} col ${col}: "${c.name}" is under the 30-minute floor`);
-    }
-    for (let i = 1; i < list.length; i++) {
-      assert.ok(list[i].row >= list[i - 1].row + list[i - 1].span,
-        `${where} col ${col}: "${list[i].name}" sits on top of "${list[i - 1].name}"`);
-    }
+  for (const [day, wd] of [['Friday', 'Fri'], ['Saturday', 'Sat'], ['Sunday', 'Sun']]) {
+    const room = roomsUnder(folded, day).find((r) => r.dataset.room === 'Folsom');
+    const n = portola.artists.filter((a) => a.night === wd && /Folsom/.test(a.day)).length;
+    assert.ok(n > 0, `${day} really has Folsom shows`);
+    assert.equal(room.querySelector('.sec-sub').textContent, `${n} show${n === 1 ? '' : 's'}`, 'each folded room counts its own night');
   }
-  assert.equal(block.querySelectorAll('.deck, .deck-ghost, .deck-pill, .deck-panel, .deck-layer').length, 0,
-    `${where}: no deck survives anywhere in the DOM`);
-};
-
-test('every venue-night on the Portola wall is a vertical run: nothing lanes, nothing decks, nothing overlaps', () => {
-  const { root } = render('portola-2026');
-  const blocks = [...root.querySelectorAll('.room[data-bucket="Afters"] .tt-block')];
-  assert.equal(blocks.length, 4, 'Thu/Fri/Sat/Sun afters');
-  blocks.forEach((b, i) => assertRuns(b, `afters ${i}`));
-  assert.equal(root.querySelectorAll('.deck, .deck-layer').length, 0, 'the deck is gone from the app');
-  // Friday's Regency — the pile that used to be a deck — reads top to bottom
-  // in the run's order, each set its own tappable card.
-  const fri = columnsOf(blocks[1]);
-  const regency = [...fri.values()].find((l) => l.length === 3 && l[0].name === 'Gelli Haha');
-  assert.ok(regency, 'the Regency three are one column');
-  // The clocks are read from the file, not retyped: the pin is the ORDER, and
-  // a tilde exactly where the file says the time is a guess (`approx`) — a
-  // time the venue posted wears none.
-  const shown = (name) => {
-    const a = portola.artists.find((x) => x.name === name && x.order);
-    return a.approx === true ? `~${a.time}` : a.time;
-  };
-  const withGuess = (names) => names.map((n) => [n, shown(n)]);
-  assert.deepEqual(regency.map((c) => [c.name, c.time]), withGuess(['Gelli Haha', 'Jyoty', 'Channel Tres']));
-  assert.ok(regency.every((c) => c.el.getAttribute('role') === 'button'), 'every set stays its own tappable card');
-  // Sunday's Public Works — the other deck — and the Midway four.
-  const sun = columnsOf(blocks[3]);
-  const columnLed = (map, first) => [...map.values()].find((l) => l[0].name === first);
-  const pw = columnLed(sun, 'erika b2b sfcowboy');
-  assert.deepEqual(pw.map((c) => [c.name, c.time]),
-    withGuess(['erika b2b sfcowboy', 'Kaytree', 'Ben UFO', 'Overmono']),
-    'Kaytree came off the bill and is a card like any other in the room');
-  const midway = columnLed(sun, 'MGNA Crrrta');
-  assert.deepEqual(midway.map((c) => c.name), ['MGNA Crrrta', 'VTSS', 'Two Shell', 'horsegiirL']);
-  // Buck Wilson likewise opens Sunday's Monarch.
-  assert.deepEqual(columnLed(sun, 'Buck Wilson').map((c) => c.name), ['Buck Wilson', 'Dean Turnley', 'Silva Bumpa']);
-  // Saturday's two formerly timeless rooms are runs on the clock now.
-  const sat = columnsOf(blocks[2]);
-  assert.deepEqual(columnLed(sat, 'Airwolf Paradise').map((c) => [c.name, c.time]), withGuess(['Airwolf Paradise', 'Max Styler']));
-  assert.deepEqual(columnLed(sat, 'Chloé Caillet').map((c) => [c.name, c.time]), withGuess(['Chloé Caillet', 'Fcukers']));
+  assert.deepEqual(rulesOf(folded), ['THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'], 'the days stay: a fold is a view of a room, not a new week');
+  // The festival's own room folds too, and takes its timetable with it.
+  const noFest = render('portola-2026', { folded: [':fest'] }).root;
+  assert.equal(noFest.querySelectorAll('.tt-block').length, 0);
+  assert.equal(noFest.querySelectorAll('.room[data-room="Afters"] .venue-grid').length, 4, 'the sections are untouched');
+  assert.equal(noFest.querySelector('.room[data-room=":fest"] .sec-sub').textContent,
+    `${state.getDayArtists('Saturday', null).length} shows`);
+  // One show reads as one show.
+  const one = render('tiles-run', { folded: [':fest'] }).root;
+  assert.equal(one.querySelector('.room[data-room=":fest"] .sec-sub').textContent, '1 show');
 });
 
-test('a room nobody has re-read — three sets, one venue, one time, no order — stacks on the wall instead of piling', () => {
-  const { root } = render('approx-run');
-  const block = root.querySelector('.room[data-bucket="Afters"] .tt-block');
-  assertRuns(block, 'approx-run');
-  const cols = columnsOf(block);
-  const v1 = [...cols.values()].find((l) => l.length === 3);
-  assert.deepEqual(v1.map((c) => [c.name, c.time, c.row, c.span]),
-    [['P1', '~10 PM', 5, 2], ['P2', '~10 PM', 7, 2], ['P3', '~10 PM', 9, 2]], // the night opens at 9 PM (S1), so 10 PM is row 5
-    'one shared time is the room\'s window, shared out — never one card behind another');
-  // The tilde travels, and the whisper follows it exactly once.
-  assert.equal(root.querySelectorAll('.room[data-bucket="Afters"] .sec-whisper').length, 1);
-  const v2 = [...cols.values()].find((l) => l.length === 2);
-  assert.deepEqual(v2.map((c) => [c.name, c.time]), [['L1', '11 PM'], ['L2', '11 PM']], 'no tilde where nothing is guessed');
+// ---- the now mark (MODEL-V4 §1.2) ------------------------------------------------------
+
+test('the now mark: the card of whoever is playing carries the ring and the label; the ticker moves it without a repaint', () => {
+  // Sunday the 27th, 11:30 PM in San Francisco — the middle of the Midway run.
+  const now = new Date('2026-09-28T06:30:00Z');
+  const { root } = render('portola-2026', { now });
+  const marked = [...root.querySelectorAll('.card.now')];
+  assert.ok(marked.length, 'something is on');
+  for (const card of marked) {
+    assert.equal(card.querySelector('.now-label').textContent, 'NOW');
+    const from = Number(card.dataset.nowFrom);
+    const to = Number(card.dataset.nowTo);
+    assert.ok(from <= 23.5 * 60 && 23.5 * 60 < to, `${card.dataset.artist} is really on at 11:30 PM`);
+  }
+  assert.ok(marked.some((c) => c.dataset.artist === 'VTSS'), 'the Midway\'s second set is the one playing');
+  assert.ok([...root.querySelectorAll('.room[data-room="Afters"] .card')].filter((c) => !c.classList.contains('now')).length, 'and the rest are not');
+  // An hour later the ticker moves it — no repaint, same nodes.
+  positionNowMarks(root, new Date('2026-09-28T07:30:00Z'));
+  const later = [...root.querySelectorAll('.card.now')].map((c) => c.dataset.artist);
+  assert.notDeepEqual(later, marked.map((c) => c.dataset.artist));
+  assert.ok(!root.querySelector('.card[data-artist="VTSS"].now'), 'VTSS handed the room over');
+  assert.equal(root.querySelectorAll('.now-label.in-card').length, later.length, 'a label lives and dies with its mark');
+  // Another day entirely: nothing is on.
+  positionNowMarks(root, new Date('2026-06-01T06:30:00Z'));
+  assert.equal(root.querySelectorAll('.card.now, .now-label.in-card').length, 0);
+});
+
+// ---- the tabs off the end (MODEL-V4 §2) ------------------------------------------------
+
+test('a dated section is its own tab after the days: a date rule per date, venue groups under each', () => {
+  const { root, ctx } = render('dated');
+  assert.deepEqual(rulesOf(root), ['FRIDAY', 'LATE NIGHTS']);
+  assert.deepEqual(dayNavOf(FESTIVALS.dated, ctx).map((d) => [d.key, d.short, d.long, d.dated]),
+    [['Friday', 'FRI', 'FRI', false], ['Late nights', 'LATE', 'LATE NIGHTS', true]]);
+  const rule = [...root.querySelectorAll('.day-rule')].find((r) => r.dataset.day === 'Late nights');
+  assert.equal(rule.querySelector('.date').textContent, 'Sep 29 – Oct 10 · around Austin');
+  const dateRules = [...root.querySelectorAll('.date-rule')];
+  assert.deepEqual(dateRules.map((r) => [r.dataset.iso, r.querySelector('.d').textContent]),
+    [['2026-09-29', 'TUE · SEP 29'], ['2026-10-01', 'THU · OCT 1']]);
+  const firstGrid = dateRules[0].nextElementSibling;
+  assert.ok(firstGrid.classList.contains('venue-grid'));
+  assert.deepEqual([...firstGrid.querySelectorAll('.stack > .card')].map((c) => c.dataset.artist), ['Also First', 'First'],
+    'the timed show leads its room; the doors-only one follows');
+  assert.equal(firstGrid.dataset.iso, '2026-09-29', 'the date carries the now mark too');
+  // Its cards pick like any other.
+  assert.ok([...firstGrid.querySelectorAll('.card')].every((c) => c.getAttribute('role') === 'button'));
+});
+
+// ---- the note door is a date (MODEL-V4 §4) ---------------------------------------------
+// The wall chooses the key a day note is written to and read from, so the
+// choice is pinned here: it is the DATE. A weekday label was the key before
+// V4 and those notes are still the same conversation — mapping them onto the
+// date is the notes layer's (js/v3/model.js legacyDayKeysFor). What this file
+// owns is that the wall never opens a day note on anything but a date.
+const whisperAfter = (rule) => {
+  const n = rule && rule.nextElementSibling;
+  return n && n.classList.contains('day-whisper') ? n : null;
+};
+const noteOn = (fid, target, text, ts, salt) =>
+  state.recordNote(fid, 'day', target, model.makeNoteId('Kevin', ts, salt), { author: 'Kevin', ts, text });
+
+test('a day’s note door opens on the day’s date, not on its label', () => {
+  noteOn('portola-2026', '2026-09-26', 'gate B at 4', '2026-09-20T18:00:00.000Z', 'aaaaaa');
+  const asked = [];
+  const { root } = render('portola-2026', { onOpenDayNotes: (k) => asked.push(k) });
+  const rule = [...root.querySelectorAll('.day-rule')].find((r) => r.dataset.day === 'Saturday');
+  assert.equal(rule.dataset.iso, '2026-09-26');
+  const w = whisperAfter(rule);
+  assert.ok(w, 'the whisper sits under the rule that named the date');
+  assert.equal(w.querySelector('.text').textContent, 'gate B at 4');
+  click(w);
+  assert.deepEqual(asked, ['2026-09-26'], 'and the door opens that date’s conversation');
+  assert.equal(whisperAfter([...root.querySelectorAll('.day-rule')].find((r) => r.dataset.day === 'Sunday')), null,
+    'Sunday is a different date and has nothing to say');
+});
+
+test('two weekends, two Fridays, two conversations', () => {
+  noteOn('two-dated', '2026-10-09', 'second Friday only', '2026-09-20T18:10:00.000Z', 'bbbbbb');
+  const asked = [];
+  const { root } = render('two-dated', { onOpenDayNotes: (k) => asked.push(k) });
+  const ruleFor = (tab) => [...root.querySelectorAll('.day-rule')].find((r) => r.dataset.day === tab);
+  assert.equal(whisperAfter(ruleFor('Friday|W1')), null, 'the first Friday never held this note');
+  const w = whisperAfter(ruleFor('Friday|W2'));
+  assert.ok(w, 'the second one does');
+  click(w);
+  assert.deepEqual(asked, ['2026-10-09']);
+});
+
+test('a dated section: the section rule has no note door, each of its dates has one', () => {
+  noteOn('dated', '2026-09-29', 'meet at the Mohawk', '2026-09-20T18:20:00.000Z', 'cccccc');
+  const asked = [];
+  const { root } = render('dated', { onOpenDayNotes: (k) => asked.push(k) });
+  const tab = [...root.querySelectorAll('.day-rule')].find((r) => r.dataset.day === 'Late nights');
+  assert.equal(whisperAfter(tab), null, 'a section label is not a note target any more');
+  const dateRule = [...root.querySelectorAll('.date-rule')].find((r) => r.dataset.iso === '2026-09-29');
+  const w = whisperAfter(dateRule);
+  assert.ok(w, 'the date under it is');
+  click(w);
+  assert.deepEqual(asked, ['2026-09-29']);
+});
+
+test('a day the file gives no date has no note door', () => {
+  // Not a loss of anything written: the note is still in the crew doc and
+  // still listed in the all-notes sheet under the key it was stored on.
+  noteOn('tiles-run', 'Saturday', 'old key, no date', '2026-09-20T18:30:00.000Z', 'dddddd');
+  const { root } = render('tiles-run');
+  const rule = [...root.querySelectorAll('.day-rule')].find((r) => r.dataset.day === 'Saturday');
+  assert.equal(rule.dataset.iso, undefined, 'the fest never said which Saturday');
+  assert.equal(whisperAfter(rule), null);
+});
+
+// ---- the paths that did not change -----------------------------------------------------
+
+test('a grid-only fest is one room a day; a lineup fest with no events keeps its card grid', () => {
+  const grid = render('grid-only').root;
+  assert.deepEqual(rulesOf(grid), ['FRIDAY']);
+  assert.deepEqual([...grid.querySelectorAll('.room')].map((r) => r.dataset.room), [':fest']);
+  assert.equal(grid.querySelectorAll('.tt-block').length, 1);
+  assert.equal(grid.querySelectorAll('.venue-grid').length, 0, 'everything it has is on the grid');
+  const ll = render('lineup-only').root;
+  assert.ok(rulesOf(ll).includes('WEDNESDAY'));
+  const wedRoom = roomsUnder(ll, WED_KEY)[0];
+  assert.equal(wedRoom.dataset.room, ':fest');
+  assert.ok(wedRoom.querySelector('.wall-grid .card[data-artist="Chassi"]'), 'a billing with no venue and no clock is a card grid, as it always was');
+});
+
+test('a verbose day key shows its weekday head in the rule, the aside in the sub, and keeps the key for the tabs', () => {
+  const { root, ctx } = render('verbose-day');
+  const rule = root.querySelector('.day-rule');
+  assert.equal(rule.querySelector('.day').textContent, 'WEDNESDAY');
+  assert.equal(rule.querySelector('.date').textContent, 'Early Arrival Pre-Party');
+  assert.equal(rule.dataset.day, WED_KEY, 'the jump / scrollspy key is the key');
+  assert.equal(rule.querySelector('.chip-notes'), null, 'the day rule has no note door any more (MODEL-V4 §4)');
+  assert.deepEqual(dayNavOf(FESTIVALS['verbose-day'], ctx).map((d) => [d.key, d.short, d.long]), [[WED_KEY, 'WED', 'WEDNESDAY']]);
+  assert.deepEqual(roomsUnder(root, WED_KEY).map((r) => r.dataset.room), [':fest', 'Afters']);
+});
+
+test('the people filter hides in a stack, and says so when it leaves a room empty', () => {
+  const { root } = render('portola-2026', { filterPeople: ['Nhu'] });
+  const fri = roomsUnder(root, 'Friday').find((r) => r.dataset.room === 'Afters');
+  assert.deepEqual([...fri.querySelectorAll('.stack > .card')].map((c) => c.dataset.artist), ['Channel Tres'],
+    'only what Nhu picked, and the rooms nobody picked in went with their cards');
+  const folsom = roomsUnder(root, 'Friday').find((r) => r.dataset.room === 'Folsom');
+  assert.equal(folsom.querySelector('.venue-grid'), null);
+  assert.equal(folsom.querySelector('.section-empty').textContent, 'No picks here from Nhu.');
 });
 
 // ---- the run in the zoom (the LOCKED copy) ---------------------------------------------------
@@ -385,7 +442,7 @@ test('factsFor a run member: WHEN is the room\'s window, the order is a door; th
   const { ctx } = render('portola-2026');
   const member = portola.artists.find((a) => a.night === 'Sun' && a.venue === 'The Midway' && a.order.seq === 3);
   const f = facts.factsFor(member.name, ctx, { day: member.day, stage: member.stage, time: member.time, weekend: null });
-  assert.equal(f.when, 'Sun · Runs 10 PM – ~3 AM', 'the window, with the tilde on the guessed close (19hz printed 3 AM; the ticket page did not — an evidenced guess, 2026-09-02)');
+  assert.equal(f.when, 'Sun · Runs 10 PM – ~3 AM', 'the window, with the tilde on the guessed close');
   assert.equal(f.where, 'The Midway');
   assert.equal(f.approx, true);
   assert.deepEqual(f.order, { text: 'Guessing they’re 3rd of 4', url: member.order.source, confirmed: false });
@@ -416,60 +473,16 @@ test('the grown card: two lines in one WHEN piece — the window, then the door 
   click(door);
   assert.equal(picked, 0, 'the door stops the click — a door, never a pick');
   assert.equal(card.querySelector('a.f-where').textContent, 'The Midway', 'the venue door is still there under it');
-  // Confirmed: the word goes, the door stays.
   const sure = { ...f, order: { text: '3rd of 4', url: f.order.url, confirmed: true } };
   assert.equal(facts.sheetCard(sure, {}).querySelector('a.f-order').textContent, '3rd of 4');
-  // A card that is not a run renders WHEN as plain text, as before.
   const plain = facts.sheetCard(facts.factsFor('Fatboy Slim', ctx, { day: 'Afters', stage: 'Sun · 888 Garage', time: '10 PM', weekend: null }), {});
   assert.equal(plain.querySelector('.f-sub').textContent, 'Sun · 10 PM');
   assert.equal(plain.querySelector('.f-order'), null);
 });
 
-test('a run inside a TILES section: the tile wears the tilde and the range, one whisper, and a timeless card lands in TIME TBA', () => {
-  const { root } = render('tiles-run');
-  assert.deepEqual(rulesOf(root), ['SATURDAY']);
-  const rooms = roomsUnder(root, 'Saturday');
-  assert.deepEqual(rooms.map((r) => r.dataset.bucket), [':fest', 'Afters']);
-  assert.deepEqual([...rooms[0].querySelectorAll('.card')].map((c) => c.dataset.artist), ['Headliner']);
-  const afters = rooms[1];
-  assert.equal(afters.querySelector('.tt-block'), null, 'two shows never earn columns');
-  assert.deepEqual([...afters.querySelectorAll('.wall-grid .card')].map((c) => [c.dataset.artist, c.dataset.time]),
-    [['Opener', '~10 PM'], ['Closer', '~11 PM'], ['Nowhere Yet', undefined]]);
-  assert.ok(afters.querySelector('.tba .card[data-artist="Nowhere Yet"]'), 'the timeless one sits under TIME TBA');
-  assert.equal(afters.querySelectorAll('.sec-whisper').length, 1);
-});
-
-test('the tilde whisper appears once per room that carries a guess — never once per card, never on a night or in a section with nothing guessed', () => {
-  const { root } = render('portola-2026');
-  const per = {};
-  for (const rule of root.querySelectorAll('.day-rule')) {
-    let n = 0;
-    for (let el = rule.nextElementSibling; el && !el.classList.contains('day-rule'); el = el.nextElementSibling) {
-      if (el.classList && el.classList.contains('room')) n += el.querySelectorAll('.sec-whisper').length;
-    }
-    per[rule.dataset.day] = n;
-  }
-  // A room is a section on a night; "Afters & Folsom" stands in both.
-  const guessingRooms = (wd, only = null) => new Set(portola.artists
-    .filter((a) => a.night === wd && a.approx === true)
-    .flatMap((a) => a.day.split(' & '))
-    .filter((label) => !only || label === only)).size;
-  const want = { Thursday: guessingRooms('Thu'), Friday: guessingRooms('Fri'), Saturday: guessingRooms('Sat'), Sunday: guessingRooms('Sun') };
-  assert.ok(Object.values(want).some(Boolean), 'Portola carries guesses, so this is not vacuous');
-  assert.deepEqual(per, want, 'each room with a guessed set says it once, not once per card');
-  assert.equal(root.querySelectorAll('.room[data-bucket="Folsom"] .sec-whisper').length,
-    ['Thu', 'Fri', 'Sat', 'Sun'].reduce((n, wd) => n + guessingRooms(wd, 'Folsom'), 0), 'Folsom whispers only if something in it is a guess');
-});
-
-// ---- the zoom's restore target (2026-09-01) ---------------------------------------------
+// ---- the zoom's restore target -----------------------------------------------------------
 
 test('a combined-day show is ONE occurrence in TWO rooms — the zoom comes back in the room it was in, not whichever card is first', () => {
-  // Horse Meat Disco is day "Afters & Folsom": one show, one pick key, drawn
-  // on Friday's afters clock AND as a Folsom tile. Both cards carry the same
-  // artist and the same occ by design, so identity alone cannot separate them
-  // and cardFor without a room returns document order — which put a zoom
-  // standing on the Folsom tile back on the Afters cell, in another room, on
-  // another part of the page.
   const { root } = render('portola-2026');
   const both = [...root.querySelectorAll('.card[data-artist="Horse Meat Disco"]')];
   assert.equal(both.length, 2, 'one show, two rooms');
@@ -477,98 +490,23 @@ test('a combined-day show is ONE occurrence in TWO rooms — the zoom comes back
   assert.deepEqual(both.map(roomOf), ['Afters', 'Folsom']);
   const occ = JSON.parse(both[0].dataset.occ);
   assert.equal(cardFor(root, 'Horse Meat Disco', occ), both[0], 'no room: document order, as before');
-  assert.equal(cardFor(root, 'Horse Meat Disco', occ, { room: 'Folsom' }), both[1], 'the Folsom tile comes back as the Folsom tile');
+  assert.equal(cardFor(root, 'Horse Meat Disco', occ, { room: 'Folsom' }), both[1], 'the Folsom card comes back as the Folsom card');
   assert.equal(cardFor(root, 'Horse Meat Disco', occ, { room: 'Afters' }), both[0]);
-  // A room that is no longer on the wall (a bucket just went off) degrades to
-  // the plain lookup rather than losing the zoom.
-  assert.equal(cardFor(root, 'Horse Meat Disco', occ, { room: 'Nowhere' }), both[0]);
-  // And the ordinary case is untouched: one match, room or no room.
+  assert.equal(cardFor(root, 'Horse Meat Disco', occ, { room: 'Nowhere' }), both[0], 'a room no longer on the wall degrades to the plain lookup');
   const midway = portola.artists.find((a) => a.venue === 'The Midway' && a.order && a.order.seq === 1);
   const mOcc = { day: midway.day, stage: midway.stage, time: midway.time, weekend: null };
   const only = cardFor(root, midway.name, mOcc);
   assert.ok(only);
   assert.equal(cardFor(root, midway.name, mOcc, { room: 'Folsom' }), only, 'a wrong room never loses the only match');
-  // The grid billing of the same name is a DIFFERENT occurrence and stays so.
   assert.notEqual(cardFor(root, midway.name, { day: 'Sunday', stage: null, time: null, weekend: null }), only);
 });
 
-// ---- the review round (2026-09-01): the buckets ----------------------------------------
-
-test('a stored bucket key the fest no longer offers is ignored — no ghost whisper, no empty day', () => {
-  const stale = render('portola-2026', { bucketsOff: ['Gone Section'] }).root;
-  assert.equal(stale.querySelector('.wall-whisper'), null, 'nothing real is hidden, so nothing is said');
-  assert.equal(stale.querySelectorAll('.section-empty').length, 0);
-  assert.equal(stale.querySelectorAll('.room[data-bucket="Afters"]').length, 4);
-  const mixed = render('portola-2026', { bucketsOff: ['Gone Section', 'Folsom'] }).root;
-  assert.equal(mixed.querySelector('.wall-whisper').textContent, 'Folsom is hidden — tap its chip to bring it back.', 'only the real room is named');
-  assert.equal(mixed.querySelectorAll('.room[data-bucket="Folsom"]').length, 0);
-});
-
-// ---- the review round (2026-09-01): the model's wall shapes --------------------------------
-
-test('a night with nothing for the clock renders as tiles, and a timed show with no room keeps its time under VENUE TBA', () => {
-  const { root } = render('model-edges');
-  assert.deepEqual(rulesOf(root), ['FRIDAY', 'SATURDAY']);
-  const fri = roomsUnder(root, 'Friday').find((r) => r.dataset.bucket === 'Afters');
-  assert.ok(fri.querySelector('.tt-block'), 'Friday earns its clock');
-  const venueTba = [...fri.querySelectorAll('.tba')].find((b) => b.querySelector('.tba-label').textContent === 'VENUE TBA');
-  assert.ok(venueTba, 'the roomless show has its own quiet row');
-  assert.deepEqual([...venueTba.querySelectorAll('.card')].map((c) => [c.dataset.artist, c.dataset.time]), [['Roomless', '8 PM']], 'its time is kept');
-  assert.equal([...fri.querySelectorAll('.tba-label')].filter((l) => l.textContent === 'TIME TBA').length, 0);
-  const sat = roomsUnder(root, 'Saturday').find((r) => r.dataset.bucket === 'Afters');
-  assert.equal(sat.querySelector('.tt-block'), null, 'no clock for a night of timeless shows');
-  assert.equal(sat.querySelector('.tba-label'), null, 'and no bare TIME TBA heading over nothing');
-  assert.deepEqual([...sat.querySelectorAll('.wall-grid .card')].map((c) => c.dataset.artist), ['S1', 'S2'], 'plain tiles');
-});
-
-// ---- the review round (2026-09-01): copy and labels -----------------------------------------
-
-test('a guessed time keeps its tilde outside the day-first wall — a search result, a flat sort — and the whisper follows it', () => {
-  const member = portola.artists.find((a) => a.night === 'Sun' && a.venue === 'The Midway' && a.order.seq === 2);
-  const { root } = render('portola-2026', { query: member.name.toLowerCase() });
-  // The search shows the grid set too (a name can be two entries) — the afters card is the one under AFTERS.
-  const card = [...root.querySelectorAll('.card')].find((c) => c.dataset.artist === member.name && JSON.parse(c.dataset.occ).stage === member.stage);
-  assert.equal(card.querySelector('.time').textContent, `Sun · ~${member.time}\nThe Midway`, 'the list form wears the tilde');
-  assert.equal(root.querySelectorAll('.sec-whisper').length, 1, 'and says once what it means');
-  const flat = render('tiles-run', { sort: 'az' }).root;
-  const opener = [...flat.querySelectorAll('.card')].find((c) => c.dataset.artist === 'Opener');
-  assert.equal(opener.querySelector('.time').textContent, 'Sat · ~10 PM\nThe Room');
-  assert.equal(flat.querySelectorAll('.sec-whisper').length, 1);
-  const plain = render('portola-2026', { query: 'fatboy' }).root;
-  assert.equal(plain.querySelectorAll('.sec-whisper').length, 0, 'no guess, no whisper');
-});
-
-test('the whisper is the LOCKED copy, no terminal period', () => {
-  const { root } = render('tiles-run');
-  assert.equal(root.querySelector('.sec-whisper').textContent, '~ marks a guessed set time — the order is the plan');
-});
-
-test('a verbose day key shows its weekday head in the day-first rule, the aside in the sub, and keeps the key for the tabs', () => {
-  const { root, ctx } = render('verbose-day');
-  const rule = root.querySelector('.day-rule');
-  assert.equal(rule.querySelector('.day').textContent, 'WEDNESDAY');
-  assert.equal(rule.querySelector('.date').textContent, 'Early Arrival Pre-Party');
-  assert.equal(rule.dataset.day, WED_KEY, 'the jump / scrollspy key is the key');
-  assert.equal(rule.querySelector('.chip-notes').getAttribute('aria-label'), 'Notes for Wednesday');
-  assert.deepEqual(dayNavOf(FESTIVALS['verbose-day'], ctx), [{ key: WED_KEY, short: 'WED', long: 'WEDNESDAY' }]);
-  assert.deepEqual(roomsUnder(root, WED_KEY).map((r) => r.dataset.bucket), [':fest', 'Afters']);
-});
-
-// ---- the round-2 walk (2026-09-01): picks on a grown card, across the sync echo -----------
+// ---- the round-2 walk: picks on a grown card, across the sync echo ------------------------
 // The real sequence, with app.js's handleTap / applyLocalPick / refreshCtx /
 // refreshArtistCards / repaintWall mirrored: renderWall → the hover grows a
-// card (wireCardZoom's own intent timer) → a click on the OVERLAY picks →
-// the sync echo repaints (snapshot / restore) → clicks on the overlay keep
-// cycling 2 → 3 → 4 → 0.
-//
-// What the walk hit was geometry, never the deck (which is gone now): its one
-// fixed click point was the overlay's centre, which sat in a gap before the
-// first pick and on the venue's map DOOR after it (the who-row's arrival
-// re-centres the rows — the designed event: a pill arriving slides in and its
-// neighbours make room). The rig aims at the name now, as a person does. So
-// this also pins the shape: the who-row appears only when there are people,
-// and the door is a door. The card it runs on is a run member in a venue
-// column — the exact card the walk was on.
+// card → a click on the OVERLAY picks → the sync echo repaints → clicks on the
+// overlay keep cycling 2 → 3 → 4 → 0. The card it runs on is a run member in a
+// venue stack — the exact card the walk was on.
 function appMirror(fid) {
   const root = document.getElementById('wall-root');
   const ctx = ctxFor(fid);
@@ -619,14 +557,14 @@ const hoverEnter = (node) => node.dispatchEvent(new dom.window.PointerEvent('poi
 const overlay = () => document.querySelector('#zoom-layer .zoom-card');
 const rowsOf = (card) => [...card.querySelector('.f-grown').children].map((c) => c.className.split(' ')[0]);
 
-test('picks on a run card keep cycling across the sync-echo repaint; the who-row appears only when there are people; the venue door never picks', async () => {
+test('picks on a stack card keep cycling across the sync-echo repaint; the who-row appears only when there are people; the venue door never picks', async () => {
   delete state.crewDoc.festivals['portola-2026'].selections['Gelli Haha'];
   const { root, ctx, repaintWall, level } = appMirror('portola-2026');
-  // Gelli Haha opens the Regency's Friday run — a card in a venue column,
+  // Gelli Haha opens the Regency's Friday run — a card in a venue stack,
   // which is what every events card is now.
-  const runCard = root.querySelector('.room[data-bucket="Afters"] .card.cell[data-artist="Gelli Haha"]');
+  const runCard = root.querySelector('.room[data-room="Afters"] .stack .card[data-artist="Gelli Haha"]');
   assert.ok(runCard, 'the run member is a plain wall card');
-  hoverEnter(runCard); // the hover's own intent timer (wireCardZoom)
+  hoverEnter(runCard);
   await new Promise((r) => setTimeout(r, facts.ZOOM_IN_MS + 40));
   assert.equal(facts.zoomedCard(), runCard, 'the hover grew the run card');
   assert.deepEqual(rowsOf(overlay()), ['f-sub', 'f-where', 'f-chips'], 'unpicked: no who-row, no hole');
@@ -635,9 +573,9 @@ test('picks on a run card keep cycling across the sync-echo repaint; the who-row
   assert.equal(level('Gelli Haha'), 1, 'click 1 picks');
   assert.deepEqual(rowsOf(overlay()), ['f-sub', 'f-where', 'f-who', 'f-chips'], 'the pill arrived and its neighbours made room');
   assert.equal(overlay().querySelector('.f-who .f-pill.you').textContent, 'You');
-  repaintWall(); // the sync echo
+  repaintWall();
   const back = facts.zoomedCard();
-  assert.ok(back && back.isConnected && back.dataset.artist === 'Gelli Haha' && back.classList.contains('cell'),
+  assert.ok(back && back.isConnected && back.dataset.artist === 'Gelli Haha' && back.closest('.stack'),
     'restored onto the fresh run card, not the Saturday grid billing of the same name');
   assert.deepEqual(rowsOf(overlay()), ['f-sub', 'f-where', 'f-who', 'f-chips'], 'the restore rebuilt the same rows');
   for (const want of [2, 3, 4, 0]) {
@@ -647,10 +585,8 @@ test('picks on a run card keep cycling across the sync-echo repaint; the who-row
   }
   assert.deepEqual(rowsOf(overlay()), ['f-sub', 'f-where', 'f-chips'], 'cleared: the who-row is gone again and the rows close up');
   assert.deepEqual(ctx.taps, ['Gelli Haha', 'Gelli Haha', 'Gelli Haha', 'Gelli Haha', 'Gelli Haha']);
-  // Both occurrences follow the pick (the Saturday grid cell too).
-  const gridCell = root.querySelector('.room[data-bucket=":fest"] .card.cell[data-artist="Gelli Haha"]');
+  const gridCell = root.querySelector('.room[data-room=":fest"] .card.cell[data-artist="Gelli Haha"]');
   assert.ok(gridCell.getAttribute('aria-label').startsWith('Gelli Haha — not picked'));
-  // The door is a door: a click on the venue line opens the map and never picks (by design, 2026-08-31).
   click(overlay().querySelector('a.f-where'));
   assert.equal(level('Gelli Haha'), 0, 'the map door does not pick');
   assert.equal(ctx.taps.length, 5);

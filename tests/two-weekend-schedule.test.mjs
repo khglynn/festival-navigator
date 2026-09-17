@@ -1,8 +1,10 @@
 // Two-weekend scheduled fests (ACL, 2026-08-23): day keys stay the plain
-// weekdays (day notes key on the label — renamed keys strand them), each set
-// carries weekend: 'W1'|'W2' (untagged/'both' = every weekend), and the wall
-// renders ONE weekend at a time — a clock grid showing both weekends' Friday
-// would double-book every stage. A stored 'all' renders as Weekend One.
+// weekdays — they are frozen pick data and a rename would strand every pick —
+// each set carries weekend: 'W1'|'W2' (untagged/'both' = every weekend), and
+// each weekend's Friday is its own tab, because a clock grid showing both at
+// once would double-book every stage. A stored 'all' opens on Weekend One.
+// Day NOTES key on the date instead of the label since V4 (MODEL-V4 §4), so
+// the two Fridays hold two conversations; events-wall covers that.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { JSDOM } from 'jsdom';
@@ -18,7 +20,7 @@ globalThis.location = { origin: 'https://fest.kevinhg.com', hash: '' };
 
 const state = await import('../js/state.js');
 const { FESTIVAL_INDEX } = await import('../js/festivals.js');
-const { renderWall, scheduledWeekendOf } = await import('../js/v3/wall.js');
+const { renderWall, scheduledWeekendOf, dayNavOf } = await import('../js/v3/wall.js');
 const { validateFestivalDoc } = await import('../api/_lib/festival-rules.mjs');
 
 const FEST = {
@@ -74,21 +76,34 @@ test('getDayArtists filters by weekend; untagged and both play every weekend', (
   assert.equal(all.length, 4, 'no weekend = no filter (single-weekend fests)');
 });
 
-test('the wall renders the selected weekend only, and the day rule wears its date', () => {
+test('both weekends are on the wall, each as its own day: two Fridays, each with its own date and its own sets (MODEL-V4 §2)', () => {
   const root = document.createElement('div');
   document.body.appendChild(root);
+  renderWall(root, mkCtx('all'));
 
-  renderWall(root, mkCtx('all')); // a device that never chose = Weekend One
-  let names = [...root.querySelectorAll('.card')].map((c) => c.dataset.artist);
-  assert.ok(names.includes('One Only'), 'W1-only set renders');
-  assert.ok(!names.includes('Two Only'), 'W2-only set does NOT render on the W1 grid');
-  assert.equal(root.querySelector('.day-rule .date').textContent, 'Fri · Oct 2');
-
-  renderWall(root, mkCtx('W2'));
-  names = [...root.querySelectorAll('.card')].map((c) => c.dataset.artist);
-  assert.ok(names.includes('Two Only'));
-  assert.ok(!names.includes('One Only'));
-  assert.equal(root.querySelector('.day-rule .date').textContent, 'Fri · Oct 9');
+  const rules = [...root.querySelectorAll('.day-rule')];
+  assert.deepEqual(rules.map((r) => [r.dataset.day, r.querySelector('.date').textContent]),
+    [['Friday|W1', 'Fri · Oct 2 · Weekend 1'], ['Friday|W2', 'Fri · Oct 9 · Weekend 2']],
+    'the weekend is which day you are looking at, not a filter over one');
+  // The tab's number is the day of the month, and it comes from the iso —
+  // this fixture prints dates and no isos, so the tabs read FRI and FRI and
+  // the rule below them is what tells the two apart. (acl-2026 carries isos;
+  // events-model covers that shape.)
+  assert.deepEqual(dayNavOf(FEST, mkCtx('all')).map((d) => [d.key, d.short, d.num]),
+    [['Friday|W1', 'FRI', null], ['Friday|W2', 'FRI', null]]);
+  const namesOn = (tab) => {
+    const rule = rules.find((r) => r.dataset.day === tab);
+    const out = [];
+    for (let n = rule.nextElementSibling; n && !n.classList.contains('day-rule'); n = n.nextElementSibling) {
+      out.push(...[...n.querySelectorAll('.card')].map((c) => c.dataset.artist));
+    }
+    return out.sort();
+  };
+  assert.deepEqual(namesOn('Friday|W1'), ['Beta Both', 'One Only', 'Shared Head']);
+  assert.deepEqual(namesOn('Friday|W2'), ['Beta Both', 'Shared Head', 'Two Only']);
+  // The frozen day key never moved: the pick data on both tabs is Friday's.
+  const occs = [...root.querySelectorAll('.card')].map((c) => JSON.parse(c.dataset.occ).day);
+  assert.ok(occs.every((d) => d === 'Friday'), 'the tab id is a view; the day key is storage');
 
   root.remove();
 });

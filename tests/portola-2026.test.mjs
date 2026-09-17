@@ -97,14 +97,14 @@ test('portola-2026: the wall is day-first — THU FRI SAT SUN, the grid inside i
   });
   const rules = [...root.querySelectorAll('.day-rule')].map((r) => r.querySelector('.day').textContent);
   assert.deepEqual(rules, ['THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY']);
-  const gridCells = root.querySelectorAll('.room[data-bucket=":fest"] .card.cell').length;
+  const gridCells = root.querySelectorAll('.room[data-room=":fest"] .card.cell').length;
   assert.equal(gridCells, 64, 'every timed set is a grid cell, inside the festival\'s own room');
-  assert.equal(root.querySelectorAll('.room[data-bucket=":fest"] .stage-strip').length, 2, 'each grid day carries its own sticky strip');
+  assert.equal(root.querySelectorAll('.room[data-room=":fest"] .stage-strip').length, 2, 'each grid day carries its own sticky strip');
   assert.equal([...root.querySelectorAll('.sec-label')].filter((l) => l.textContent === 'EVERYTHING ELSE').length, 0);
   const hmd = [...root.querySelectorAll('.card')].filter((c) => c.dataset.artist === 'Horse Meat Disco');
   assert.equal(hmd.length, 2, 'Horse Meat Disco under Friday\'s Afters AND Friday\'s Folsom');
-  assert.deepEqual(hmd.map((c) => c.closest('.room').dataset.bucket), ['Afters', 'Folsom']);
-  assert.equal(hmd[1].dataset.time, '9 PM – 3 AM', 'a Folsom tile says the time only — the venue lives in the zoom');
+  assert.deepEqual(hmd.map((c) => c.closest('.room').dataset.room), ['Afters', 'Folsom']);
+  assert.equal(hmd[1].dataset.time, '9 PM – 3 AM', 'a Folsom card says the time only — the venue heads its group');
   root.remove();
 });
 
@@ -115,7 +115,7 @@ test('portola-2026: a set of three hours or more is a TALL cell — name at the 
     fid: 'portola-2026', meName: 'Kevin', picks: {}, affinity: null, lowPower: true,
     sort: 'day', query: '', weekend: 'all', onTap: () => {}, onOpenNotes: null, onNotesChange: null, onOpenDayNotes: null,
   });
-  const gridCells = [...root.querySelectorAll('.room[data-bucket=":fest"] .card.cell')];
+  const gridCells = [...root.querySelectorAll('.room[data-room=":fest"] .card.cell')];
   const despacio = gridCells.filter((c) => c.dataset.artist === 'Despacio');
   assert.equal(despacio.length, 2, 'one Despacio block per grid day');
   assert.deepEqual(despacio.map((c) => c.classList.contains('tall')), [true, true]);
@@ -123,11 +123,11 @@ test('portola-2026: a set of three hours or more is a TALL cell — name at the 
   const dogBlood = gridCells.find((c) => c.dataset.artist === 'Dog Blood');
   assert.ok(!dogBlood.classList.contains('tall'), 'a 75-minute set is not tall');
   assert.equal(dogBlood.querySelector('.until'), null);
-  // The rule holds on an events timetable too: Friday's Despacio at Pier 80
-  // runs 5–11 PM, six hours on the afters clock.
-  const friday = [...root.querySelectorAll('.room[data-bucket="Afters"] .card.cell')].find((c) => c.dataset.artist === 'Despacio');
-  assert.ok(friday && friday.classList.contains('tall'), 'the Friday afters Despacio is a tall cell');
-  assert.equal(friday.querySelector('.until').textContent, 'until 11 PM');
+  // A stack has no clock to be tall on: Friday's Despacio at Pier 80 is a
+  // card like any other, and its printed window is its time line.
+  const friday = [...root.querySelectorAll('.room[data-room="Afters"] .stack > .card')].find((c) => c.dataset.artist === 'Despacio');
+  assert.ok(friday && !friday.classList.contains('tall') && !friday.classList.contains('cell'));
+  assert.equal(friday.querySelector('.time').textContent, '5 – 11 PM');
   root.remove();
 });
 

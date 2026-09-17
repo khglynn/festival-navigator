@@ -3,9 +3,8 @@
 import * as state from '../state.js';
 import * as model from './model.js';
 import { parseBulkLineV4, LEVEL_LABELS_V4 } from '../parse.js';
-import { renderCard, groupByDay, knownDaysOf, scheduledWeekendOf, extraSectionsOf, dayFirstModelFor } from './wall.js';
-import { venueOf, approxMark, sortForTiles } from './events.js';
-import { dayLabelParts } from '../time.js';
+import { renderCard, applyWeekend, wallPlanFor } from './wall.js';
+import { approxMark, venueGroupsOf } from './events.js';
 
 export const el = (tag, css, text) => {
   const n = document.createElement(tag);
@@ -213,91 +212,95 @@ export function openBulkPaste(host, actions) {
 // the canvas is real, and says out loud when it can't.
 
 // Share images honor the device's weekend the same way the wall does — a W1
-// phone must not export a day sheet carrying W2-only sets.
+// phone must not export a day sheet carrying W2-only sets. (A two-weekend
+// SCHEDULED fest has no preference to honor any more: each weekend is its
+// own tab, so both are offered.)
 function weekendPrefRaw(fest) {
   let pref = 'all';
   try { pref = localStorage.getItem(`fn_weekend_v1_${fest.id}`) || 'all'; } catch { /* memory-only */ }
   return pref;
 }
-function weekendPref(fest) {
-  return scheduledWeekendOf(fest, weekendPrefRaw(fest));
-}
-// The wall's day-first plan for this fest at the device's weekend, or null
-// when the fest is not day-first — the exporter offers what the tabs show.
-function dayFirstPlan(fest) {
-  return dayFirstModelFor(fest, { sort: 'day', query: '', weekend: weekendPrefRaw(fest) });
+// The wall's own plan for this fest — the exporter offers what the tabs show.
+function planFor(fest) {
+  return wallPlanFor(fest, { sort: 'day', query: '', weekend: weekendPrefRaw(fest) });
 }
 
-// Names on the grid (every grid day, selected weekend) — the set that decides
-// which artists[] entries the wall renders as sections under the grid.
-function gridNames(fest, wk) {
-  const names = new Set();
-  for (const d of Object.keys(fest.days || {})) for (const a of state.getDayArtists(d, wk)) names.add(a.name);
-  return names;
-}
-
-// The days a share image can be built for, in the wall's own order. A
-// day-first fest (its sections say their nights): the same THU FRI SAT SUN
-// the tabs show, each image holding that day's whole content. Otherwise:
-// grid days, then the sections the wall renders under the grid (afters,
-// Folsom), then everything else. Flipping Portola to scheduled used to drop
+// The days a share image can be built for, in the wall's own order, each with
+// the label the rail gives it. Flipping Portola to scheduled used to drop
 // Afters and Folsom from this list while the wall kept showing them (Codex
-// gate, 2026-08-27) — the exporter and the wall draw from the same source.
+// gate, 2026-08-27) — the exporter and the wall draw from one source.
 export function dayImageChoices(fest) {
-  const plan = dayFirstPlan(fest);
-  if (plan) return plan.model.days.map((d) => d.key);
-  if (fest.days && Object.keys(fest.days).length) {
-    const wk = weekendPref(fest);
-    return [...Object.keys(fest.days), ...extraSectionsOf(fest, gridNames(fest, wk), wk).keys()];
+  const plan = planFor(fest);
+  if (!plan) return [];
+  const out = [];
+  if (looseOf(plan).length) out.push({ key: '', label: plan.scheduled ? 'EVERYTHING ELSE' : 'THE LINEUP' });
+  for (const d of plan.model.days) out.push({ key: d.key, label: d.sub || d.long });
+  for (const e of plan.model.extras) out.push({ key: e.key, label: e.long });
+  return out;
+}
+
+// The day-less names a scheduled fest still owes the list (a lineup entry
+// with no set on any grid); on a lineup fest, THE LINEUP block.
+function looseOf(plan) {
+  if (!plan.scheduled) return plan.model.looseNoDay;
+  const onGrid = new Set();
+  for (const d of plan.model.days) if (d.grid) for (const a of state.getDayArtists(d.dayKey, d.weekend)) onGrid.add(a.name);
+  return plan.model.looseNoDay.filter((a) => !onGrid.has(a.name));
+}
+
+// One row per card the wall would draw, in the wall's order: the grid in
+// clock order with stage · start, the billed-but-untimed, then each section's
+// shows as section · venue · time — the tilde riding a guessed time.
+function sectionRows(plan, dayKey, out) {
+  for (const sec of plan.model.sections) {
+    for (const g of venueGroupsOf(sec.byDay.get(dayKey) || [])) {
+      for (const m of g.members) {
+        out.push({ name: m.e.name, time: [sec.label, g.venue, m.e.time ? approxMark(m.e, m.e.time) : null].filter(Boolean).join(' · ') });
+      }
+    }
   }
-  return [...groupByDay(fest.artists || [], knownDaysOf(fest)).keys()];
 }
 
 export function dayArtistsFor(day) {
   const fest = state.fest();
-  const plan = dayFirstPlan(fest);
-  if (plan) {
-    // A day-first day, in the wall's order: the grid (or a lineup day's
-    // billing), the billed-but-untimed, then each section's shows that
-    // night as `section · venue · time` — the tilde riding a guessed time.
-    const d = plan.model.days.find((x) => x.key === day);
-    if (!d) return [];
-    const wk = plan.wk;
+  const plan = planFor(fest);
+  if (!plan) return [];
+  const d = plan.model.days.find((x) => x.key === day);
+  if (d) {
     const out = [];
     if (d.grid) {
       const onGrid = new Set();
-      for (const a of [...state.getDayArtists(day, wk)].sort((x, y) => x.startMin - y.startMin)) {
+      for (const a of [...state.getDayArtists(d.dayKey, d.weekend)].sort((x, y) => x.startMin - y.startMin)) {
         onGrid.add(a.name);
         out.push({ name: a.name, time: `${a.stage} · ${a.startStr}` });
       }
-      for (const a of d.billing || []) if (!onGrid.has(a.name) && !out.some((o) => o.name === a.name)) out.push({ name: a.name });
+      for (const a of applyWeekend(d.billing || [], d.weekend)) {
+        if (!onGrid.has(a.name) && !out.some((o) => o.name === a.name)) out.push({ name: a.name });
+      }
     } else {
       for (const a of d.billing || []) out.push({ name: a.name });
     }
-    for (const sec of plan.model.sections) {
-      for (const a of sortForTiles(sec.byDay.get(day) || [])) {
-        out.push({ name: a.name, time: [sec.label, venueOf(a), a.time ? approxMark(a, a.time) : null].filter(Boolean).join(' · ') });
+    sectionRows(plan, d.key, out);
+    return out;
+  }
+  const extra = plan.model.extras.find((x) => x.key === day);
+  if (extra) {
+    const lists = extra.byDate ? [...extra.byDate.values()] : [extra.entries || []];
+    const out = [];
+    for (const list of lists) {
+      for (const g of venueGroupsOf(list)) {
+        for (const m of g.members) {
+          out.push({ name: m.e.name, time: [g.venue, m.e.time ? approxMark(m.e, m.e.time) : null].filter(Boolean).join(' · ') });
+        }
       }
     }
     return out;
   }
-  if (fest.days && Object.keys(fest.days).length) {
-    const wk = weekendPref(fest);
-    if (fest.days[day]) {
-      return [...state.getDayArtists(day, wk)]
-        .sort((x, y) => x.startMin - y.startMin)
-        .map((a) => ({ name: a.name, time: `${a.stage} · ${a.startStr}` }));
-    }
-    // A section under the grid: the same cards the wall shows there, venue ·
-    // hours as the sub-label.
-    const section = extraSectionsOf(fest, gridNames(fest, wk), wk).get(day) || [];
-    return section.map((a) => ({ name: a.name, time: [a.stage, a.time].filter(Boolean).join(' · ') || undefined }));
-  }
-  const groups = groupByDay(fest.artists || [], knownDaysOf(fest));
-  return (groups.get(day) || []).map((a) => ({ name: a.name }));
+  if (!day) return looseOf(plan).map((a) => ({ name: a.name }));
+  return [];
 }
 
-async function buildDayCanvas(day, ctx) {
+async function buildDayCanvas(day, ctx, dayLabel) {
   if (typeof window.html2canvas !== 'function') throw new Error('html2canvas-missing');
   const fest = state.fest();
   // Offscreen but laid out (html2canvas can't capture display:none), fixed
@@ -305,7 +308,7 @@ async function buildDayCanvas(day, ctx) {
   const node = el('div', 'position: absolute; left: -10000px; top: 0; width: 1080px; background: #0C0A14; padding: 36px 40px 28px; box-sizing: border-box; font-family: var(--font-ui);');
   const head = el('div', 'display: flex; align-items: baseline; gap: 14px; margin-bottom: 20px;');
   head.appendChild(el('span', `font-family: var(--font-display); letter-spacing: .05em; font-size: 40px; color: rgb(${fest.accent || '192, 132, 252'});`, fest.name.toUpperCase()));
-  head.appendChild(el('span', 'color: #8E86A8; font-size: 16px; font-weight: 700;', (day ? dayLabelParts(day).head : 'THE LINEUP').toUpperCase()));
+  head.appendChild(el('span', 'color: #8E86A8; font-size: 16px; font-weight: 700;', String(dayLabel || 'THE LINEUP').toUpperCase()));
   node.appendChild(head);
   const grid = el('div', 'display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;');
   // lowPower ctx: grain + animation lean on mix-blend / keyframes that
@@ -332,23 +335,22 @@ export function openDayImage(host, ctx, onBack) {
     'Pick a day — you get a PNG of its wall with everyone’s picks, sized for a group chat.'));
   const status = el('div', 'color: var(--text-tertiary); font-size: 11.5px; font-weight: 600;');
   const fest = state.fest();
-  const scheduled = fest.days && Object.keys(fest.days).length;
   const days = dayImageChoices(fest);
   if (!days.length) status.textContent = 'No lineup yet — nothing to export.';
-  for (const day of days) {
+  for (const { key: day, label: dayLabel } of days) {
     const row = el('button', 'width: 100%;');
     row.className = 'fest-row';
-    const label = el('span', 'flex: 1; text-align: left; color: var(--text-primary); font-weight: 700; font-size: 13.5px;', day || (scheduled ? 'EVERYTHING ELSE' : 'THE LINEUP'));
+    const label = el('span', 'flex: 1; text-align: left; color: var(--text-primary); font-weight: 700; font-size: 13.5px;', dayLabel);
     const chev = el('span', '', '›'); chev.className = 'chev';
     row.append(label, chev);
     row.addEventListener('click', async () => {
       row.disabled = true;
       status.textContent = 'Framing your wall…';
       try {
-        const canvas = await buildDayCanvas(day, ctx);
+        const canvas = await buildDayCanvas(day, ctx, dayLabel);
         const a = document.createElement('a');
         const slug = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-        a.download = `${slug(fest.name)}${day ? `-${slug(day)}` : ''}.png`;
+        a.download = `${slug(fest.name)}${day ? `-${slug(dayLabel)}` : ''}.png`;
         a.href = canvas.toDataURL('image/png');
         a.click();
         status.textContent = 'Saved — check your downloads or share sheet.';

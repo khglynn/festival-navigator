@@ -1,11 +1,10 @@
-// The Day Image exporter offers the days the WALL shows. A day-first fest
-// (MODEL-V3, 2026-09-01) shows THU FRI SAT SUN, so a day's image holds that
-// day's whole content — the grid, then each section's shows that night. A
-// fest that is not day-first keeps the older list: grid days, then the
-// sections rendered under the grid (afters, Folsom). Flipping Portola to
-// scheduled once shrank the choices to Saturday/Sunday while the wall kept
-// rendering 46 afters/Folsom cards (Codex gate, 2026-08-27); the review
-// round of 2026-09-01 found the same drift again after day-first.
+// The Day Image exporter offers the days the WALL shows, with the label the
+// rail gives them. Portola shows THU FRI SAT SUN, so a day's image holds that
+// day's whole content — the grid, then each section's shows that night, venue
+// group by venue group. Flipping Portola to scheduled once shrank the choices
+// to Saturday/Sunday while the wall kept rendering 46 afters/Folsom cards
+// (Codex gate, 2026-08-27); the review round of 2026-09-01 found the same
+// drift again, so the exporter reads the wall's own plan and nothing else.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -38,8 +37,10 @@ state.activateCrew('dayimagetesttoken_0123456', {
 state.FESTIVALS['portola-2026'] = portola;
 state.setActiveFestivalId('portola-2026');
 
-test('day image choices mirror the day-first wall: THU FRI SAT SUN', () => {
-  assert.deepEqual(dayImageChoices(portola), ['Thursday', 'Friday', 'Saturday', 'Sunday']);
+test('day image choices mirror the wall: THU FRI SAT SUN, each labelled as the rail labels it', () => {
+  assert.deepEqual(dayImageChoices(portola), [
+    { key: 'Thursday', label: 'Thu · Sep 24' }, { key: 'Friday', label: 'Fri · Sep 25' },
+    { key: 'Saturday', label: 'Sat · Sep 26' }, { key: 'Sunday', label: 'Sun · Sep 27' }]);
 });
 
 test('a day exports its whole content in the wall\'s order: the grid in clock order with stage · start, then each section\'s shows as section · venue · time', () => {
@@ -83,7 +84,7 @@ test('a lineup-only fest still exports by billing group', () => {
   FESTIVAL_INDEX.push({ id: 'lineup-only', status: 'lineup' });
   state.FESTIVALS['lineup-only'] = { id: 'lineup-only', name: 'L', status: 'lineup', artists: [{ name: 'A', day: 'Friday' }, { name: 'B' }] };
   state.setActiveFestivalId('lineup-only');
-  assert.deepEqual(dayImageChoices(state.fest()), ['', 'Friday']);
+  assert.deepEqual(dayImageChoices(state.fest()), [{ key: '', label: 'THE LINEUP' }, { key: 'Friday', label: 'FRIDAY' }]);
   assert.deepEqual(dayArtistsFor('Friday'), [{ name: 'A' }]);
   state.setActiveFestivalId('portola-2026');
 });

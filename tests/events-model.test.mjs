@@ -1,9 +1,9 @@
-// The events model (js/v3/events.js — MODEL-V3, 2026-09-01), pure: how an
-// entry says its night and venue, the clock events run on, the layout rule
-// and the consistency law against the REAL festival files, the day axis
-// (grid days ∪ nights), a night's timetable (one vertical run per room —
-// MODEL-V3 §5's one rule, no lanes and no deck anywhere), the run's locked
-// copy, and the bucket filter's persistence.
+// The events model (js/v3/events.js — MODEL-V4, 2026-09-16), pure: how an
+// entry says its night, its date and its venue, the clock events run on, the
+// venue groups a night divides into (the ONE list renderer's model — order
+// inside a group, order of groups, the doors line, the now window), the day
+// axis (grid days ∪ nights, and six dated tabs for a two-weekend fest), the
+// tabs that hang off the end, and the run's locked copy.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -26,23 +26,24 @@ globalThis.location = { origin: 'https://fest.kevinhg.com', hash: '' };
 
 const ev = await import('../js/v3/events.js');
 const { groupByDay, knownDaysOf } = await import('../js/v3/wall.js');
-const filters = await import('../js/v3/filters.js');
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const load = (id) => JSON.parse(readFileSync(join(ROOT, `data/festivals/${id}.json`), 'utf8'));
 const portola = load('portola-2026');
-const edc = load('edc-orlando-2026');
 const groupsOf = (fest) => groupByDay(fest.artists || [], knownDaysOf(fest));
-const modelOf = (fest) => ev.eventModelOf(fest, groupsOf(fest), { gridDays: Object.keys(fest.days || {}) });
+const modelOf = (fest, over = {}) => ev.eventModelOf(fest, groupsOf(fest), { gridDays: Object.keys(fest.days || {}), ...over });
 
 // ---- reading an entry -----------------------------------------------------------
 
-test('nightOf / venueOf: the structured pair wins, the stage string is the fallback, and the vocabulary is strict', () => {
+test('nightOf / dateOf / venueOf: the structured pair wins, the stage string is the fallback, and the vocabulary is strict', () => {
   assert.equal(ev.nightOf({ night: 'Sun', stage: 'Sat · X' }), 'Sun', 'data beats the string');
   assert.equal(ev.nightOf({ stage: 'Thu · Regency Ballroom' }), 'Thu');
   assert.equal(ev.nightOf({ stage: 'Thursday · Regency Ballroom' }), null, 'the validator vocabulary is Mon…Sun');
   assert.equal(ev.nightOf({ stage: 'Pier Stage' }), null);
   assert.equal(ev.nightOf({ night: 'sun' }), null);
+  assert.equal(ev.dateOf({ date: '2026-09-29' }), '2026-09-29');
+  assert.equal(ev.dateOf({ date: 'Sep 29' }), null, 'a dated section entry carries an ISO date, not a label');
+  assert.equal(ev.dateOf({}), null);
   assert.equal(ev.venueOf({ venue: 'The Midway', stage: 'Sun · Elsewhere' }), 'The Midway');
   assert.equal(ev.venueOf({ stage: 'Sun · The Midway · Room 2' }), 'The Midway · Room 2');
   assert.equal(ev.venueOf({}), null);
@@ -60,40 +61,96 @@ test('parseEventTime runs on the festival-day axis: AM after midnight, but a lat
   assert.equal(ev.parseEventTime(undefined), null);
   assert.equal(ev.hourLabelOf(26 * 60), '2 AM');
   assert.equal(ev.hourLabelOf(12 * 60), '12 PM');
+  assert.equal(ev.dateRuleLabel('2026-09-29'), 'TUE · SEP 29');
+  assert.equal(ev.dateRuleLabel('nope'), 'NOPE');
 });
 
-// ---- the layout rule against the real files ----------------------------------------
+// ---- the list: venue groups (MODEL-V4 §1.2) ---------------------------------------
 
-test('the rule on Portola: every afters night but Thursday EARNS columns; Folsom never does', () => {
-  const m = modelOf(portola);
-  assert.ok(m.dayFirst);
-  const afters = m.sections.find((s) => s.key === 'Afters');
-  const folsom = m.sections.find((s) => s.key === 'Folsom');
-  const earns = (s, n) => ev.earnsColumns(s.byNight.get(n) || []).earns;
-  // Saturday joined Friday and Sunday on 2026-09-01: the DoTheBay show pages
-  // print doors 10 PM for Audio and Public Works, so its two timeless rooms
-  // became timed and the night now clears the rule on its own. Nothing moved
-  // on screen — the consistency law already gave Saturday columns.
-  assert.deepEqual(['Thu', 'Fri', 'Sat', 'Sun'].map((n) => earns(afters, n)), [false, true, true, true]);
-  assert.equal(earns(afters, 'Thu'), false, 'two shows is not a clock');
-  const fri = ev.earnsColumns(afters.byNight.get('Fri'));
-  assert.ok(fri.E >= 5 && fri.R >= 1.5 && fri.T >= 0.6, `Friday: ${fri.E} timed shows over ${fri.V} venues, ${Math.round(fri.T * 100)}% timed`);
-  assert.deepEqual(['Fri', 'Sat', 'Sun'].map((n) => earns(folsom, n)), [false, false, false], 'Folsom: roughly one show per venue');
+const V = (name, over = {}) => ({ name, night: 'Fri', venue: 'V', ...over });
+
+test('venueGroupsOf, order INSIDE a group: the numbering leads when every member carries one, else the clock, else file order', () => {
+  const src = 'https://example.test/poster';
+  const run = ev.venueGroupsOf([
+    V('Closer', { time: '12 AM', order: { seq: 3, of: 3, source: src, confirmed: false } }),
+    V('Opener', { time: '10 PM', order: { seq: 1, of: 3, source: src, confirmed: false } }),
+    V('Middle', { time: '11 PM', order: { seq: 2, of: 3, source: src, confirmed: false } }),
+  ]);
+  assert.deepEqual(run[0].members.map((m) => m.e.name), ['Opener', 'Middle', 'Closer'], 'a run reads top to bottom as the night plays');
+  // A HALF-numbered room has no run to read, so the clock leads.
+  const half = ev.venueGroupsOf([
+    V('Late', { time: '11 PM', order: { seq: 1, of: 2, source: src, confirmed: false } }),
+    V('Early', { time: '10 PM' }),
+  ]);
+  assert.deepEqual(half[0].members.map((m) => m.e.name), ['Early', 'Late']);
+  // No clock anywhere: file order, because nothing else says otherwise.
+  const bare = ev.venueGroupsOf([V('B'), V('A')]);
+  assert.deepEqual(bare[0].members.map((m) => m.e.name), ['B', 'A']);
+  // A timeless member in a timed room goes last.
+  const mixed = ev.venueGroupsOf([V('None'), V('Late', { time: '11 PM' }), V('Early', { time: '9 PM' })]);
+  assert.deepEqual(mixed[0].members.map((m) => m.e.name), ['Early', 'Late', 'None']);
 });
 
-test('the consistency law: AFTERS is columns ALL WEEK (Thursday and Saturday included), FOLSOM is tiles all week', () => {
-  const m = modelOf(portola);
-  assert.equal(m.sections.find((s) => s.key === 'Afters').mode, 'columns');
-  assert.equal(m.sections.find((s) => s.key === 'Folsom').mode, 'tiles');
-  assert.equal(ev.sectionModeOf(new Map([['Thu', portola.artists.filter((a) => a.night === 'Thu')]])), 'tiles', 'Thursday alone would be tiles — the law is what makes it columns');
+test('venueGroupsOf, order OF groups: doors first, the bigger stack leads a tie, the timeless last', () => {
+  const g = ev.venueGroupsOf([
+    { name: 'Nowhere', night: 'Fri', venue: 'No clock' },
+    { name: 'Late1', night: 'Fri', venue: 'Ten', doors: '10 PM' },
+    { name: 'Late2', night: 'Fri', venue: 'Ten', doors: '10 PM' },
+    { name: 'AlsoTen', night: 'Fri', venue: 'Ten too', doors: '10 PM' },
+    { name: 'Early', night: 'Fri', venue: 'Nine', time: '9 PM' },
+  ]);
+  assert.deepEqual(g.map((x) => x.venue), ['Nine', 'Ten', 'Ten too', 'No clock']);
+  assert.equal(g[3].at, null, 'a group nothing knows a time for sorts last and says so');
+  // A show with a time and no room yet keeps its time, under Venue TBA — and
+  // takes its place on the clock like every other group. There is no quiet row
+  // under the night any more, so there is no special case either.
+  const tba = ev.venueGroupsOf([{ name: 'Roomless', night: 'Fri', time: '8 PM' }, V('Roomed', { time: '10 PM' })]);
+  assert.deepEqual(tba.map((x) => [x.venue, x.tba]), [[ev.VENUE_TBA, true], ['V', false]]);
+  // With no time either, it is a group nothing is known about: last.
+  const both = ev.venueGroupsOf([{ name: 'Nothing', night: 'Fri' }, V('Roomed', { time: '10 PM' })]);
+  assert.deepEqual(both.map((x) => x.venue), ['V', ev.VENUE_TBA]);
 });
 
-test('EDC Orlando, a lineup-only fest: no nights, no venues, no times — the rule\'s floor is tiles, and the fest is not day-first at all (no section carries a night)', () => {
-  assert.ok(edc.artists.length > 0);
-  assert.deepEqual(ev.earnsColumns(edc.artists), { earns: false, E: 0, V: 0, R: 0, T: 0 });
-  const m = modelOf(edc);
-  assert.equal(m.dayFirst, false);
-  assert.match(m.why, /no section entry carries a night/);
+test('venueGroupsOf, the sub line: doors and close from any member, the tilde on a guess, nothing invented', () => {
+  const doorsAndClose = ev.venueGroupsOf([V('A', { doors: '10 PM' }), V('B', { close: '3 AM', closeApprox: true })]);
+  assert.equal(doorsAndClose[0].sub, 'Doors 10 PM · ~3 AM');
+  assert.equal(ev.venueGroupsOf([V('A', { doors: '10 PM', close: '2 AM' })])[0].sub, 'Doors 10 PM · 2 AM', 'a posted close wears no tilde');
+  assert.equal(ev.venueGroupsOf([V('A', { doors: '9 PM' })])[0].sub, 'Doors 9 PM');
+  assert.equal(ev.venueGroupsOf([V('A', { time: '10 PM' })])[0].sub, '', 'neither doors nor close, no sub line');
+});
+
+test('venueGroupsOf, the now window: a member runs until the next starts, else to its own end, else the room\'s close', () => {
+  const src = 'https://example.test/poster';
+  const run = ev.venueGroupsOf([
+    V('One', { time: '10 PM', close: '2 AM', order: { seq: 1, of: 2, source: src, confirmed: false } }),
+    V('Two', { time: '12 AM', close: '2 AM', order: { seq: 2, of: 2, source: src, confirmed: false } }),
+  ])[0];
+  assert.deepEqual(run.members.map((m) => [m.nowFrom, m.nowTo]), [[22 * 60, 24 * 60], [24 * 60, 26 * 60]],
+    'the opener runs until the closer starts; the closer runs to the room\'s close');
+  const ranged = ev.venueGroupsOf([V('Solo', { time: '9 PM - 3 AM' })])[0];
+  assert.deepEqual(ranged.members.map((m) => [m.nowFrom, m.nowTo]), [[21 * 60, 27 * 60]]);
+  const open = ev.venueGroupsOf([V('Solo', { time: '9 PM' })])[0];
+  assert.deepEqual(open.members[0].nowTo, 22 * 60, 'an open-ended set is an hour');
+  const doorsOnly = ev.venueGroupsOf([V('Solo', { doors: '10 PM', close: '4 AM' })])[0];
+  assert.deepEqual([doorsOnly.members[0].nowFrom, doorsOnly.members[0].nowTo], [22 * 60, 28 * 60],
+    'nothing is timed, so the room itself is what is on');
+  assert.equal(ev.venueGroupsOf([V('Solo')])[0].members[0].nowFrom, null, 'nothing known, nothing marked');
+});
+
+test('venueGroupsOf on Portola Friday: the real bill, read off the file so a re-read of any venue moves this', () => {
+  const fri = portola.artists.filter((a) => /Afters/.test(a.day) && a.night === 'Fri');
+  const groups = ev.venueGroupsOf(fri);
+  assert.deepEqual([...groups].map((g) => g.members.length).reduce((a, b) => a + b, 0), fri.length, 'every show is in exactly one group');
+  // The first column is whichever room opens earliest — Despacio's printed
+  // 5 PM set on Friday, unless a re-read moves it.
+  const opensAt = (g) => g.at;
+  assert.deepEqual(groups.map(opensAt), [...groups.map(opensAt)].sort((a, b) => (a == null ? 1 : b == null ? -1 : a - b)),
+    'groups are in opening order');
+  const regency = groups.find((g) => g.venue === 'Regency Ballroom');
+  const file = fri.filter((a) => a.venue === 'Regency Ballroom').sort((a, b) => a.order.seq - b.order.seq);
+  assert.deepEqual(regency.members.map((m) => m.e.name), file.map((a) => a.name), 'the Regency run, in its numbered order');
+  assert.equal(regency.sub, `Doors ${file[0].doors} · ~${file[0].close}`, 'its window, the tilde on the guessed close');
+  assert.ok(regency.members.every((m) => m.approx), 'every Regency clock is a guess, so every card wears the tilde');
 });
 
 // ---- the day axis ------------------------------------------------------------------
@@ -109,40 +166,81 @@ test('day order: up to three days before the anchor read as before, the rest fol
 test('eventModelOf on Portola: THU FRI SAT SUN, the grid days keep their keys, the nights mint new ones with borrowed dates', () => {
   const m = modelOf(portola);
   assert.deepEqual(m.days.map((d) => d.key), ['Thursday', 'Friday', 'Saturday', 'Sunday']);
+  assert.deepEqual(m.days.map((d) => d.dayKey), ['Thursday', 'Friday', 'Saturday', 'Sunday'], 'the tab id IS the frozen day key on a one-weekend fest');
   assert.deepEqual(m.days.map((d) => d.wd), ['Thu', 'Fri', 'Sat', 'Sun']);
   assert.deepEqual(m.days.map((d) => d.grid), [false, false, true, true]);
   assert.deepEqual(m.days.map((d) => d.synthetic), [true, true, false, false]);
   assert.deepEqual(m.days.map((d) => d.iso), ['2026-09-24', '2026-09-25', '2026-09-26', '2026-09-27'], 'Thursday borrows its date from Saturday\'s iso');
   assert.deepEqual(m.days.map((d) => d.sub), ['Thu · Sep 24', 'Fri · Sep 25', 'Sat · Sep 26', 'Sun · Sep 27']);
-  assert.deepEqual(m.days.map((d) => [d.short, d.long]), [['THU', 'THU'], ['FRI', 'FRI'], ['SAT', 'SAT'], ['SUN', 'SUN']]);
-  assert.deepEqual(m.sections.map((s) => [s.key, s.label, s.mode]), [['Afters', 'Afters', 'columns'], ['Folsom', 'Folsom', 'tiles']], 'known-day order');
+  assert.deepEqual(m.days.map((d) => [d.short, d.long, d.num]), [['THU', 'THU', null], ['FRI', 'FRI', null], ['SAT', 'SAT', null], ['SUN', 'SUN', null]]);
+  assert.deepEqual(m.sections.map((s) => [s.key, s.label]), [['Afters', 'Afters'], ['Folsom', 'Folsom']], 'known-day order');
+  assert.deepEqual(m.extras, [], 'every Portola event says its night, so nothing hangs off the end');
   const afters = m.sections[0];
   assert.deepEqual([...afters.byDay.keys()], ['Thursday', 'Friday', 'Saturday', 'Sunday']);
   assert.deepEqual([...afters.byDay.values()].map((l) => l.length), [2, 12, 9, 17],
     'Friday: eleven Afters entries plus Horse Meat Disco (Afters & Folsom); Sunday gained Kaytree and Buck Wilson off the bill');
   assert.deepEqual([...m.sections[1].byDay].map(([k, l]) => [k, l.length]), [['Friday', 2], ['Saturday', 2], ['Sunday', 4]]);
   assert.deepEqual(afters.loose, [], 'every Portola event says its night');
-  assert.deepEqual(ev.bucketsOf(portola, m).map((b) => [b.key, b.label]), [[':fest', 'Portola'], ['Afters', 'Afters'], ['Folsom', 'Folsom']]);
 });
 
-test('eventModelOf refuses politely when the days have no common axis, and says why', () => {
-  const sec = { name: 'X', day: 'Afters', stage: 'Fri · V', time: '10 PM' };
-  const noAxis = ev.eventModelOf({ artists: [{ name: 'A', day: 'Day 1' }, sec] }, groupByDay([{ name: 'A', day: 'Day 1' }, sec], ['Day 1', 'Afters']), { gridDays: [] });
-  assert.equal(noAxis.dayFirst, false);
-  assert.match(noAxis.why, /"Day 1" does not name a weekday/);
-  const twoFridays = [{ name: 'A', day: 'Friday' }, { name: 'B', day: 'Friday, Oct 3 (pre-party)' }, sec];
-  const clash = ev.eventModelOf({ artists: twoFridays }, groupByDay(twoFridays, ['Friday', 'Friday, Oct 3 (pre-party)', 'Afters']), { gridDays: [] });
-  assert.equal(clash.dayFirst, false);
-  assert.match(clash.why, /share Fri/);
-  // A section whose entries never say a night is not a section at all — a
-  // plain day group — so a lineup fest with only those stays as it is.
-  const plain = [{ name: 'A', day: 'Friday' }, { name: 'B', day: 'Afters', stage: 'The Club', time: '10 PM' }];
-  assert.equal(ev.eventModelOf({ artists: plain }, groupByDay(plain, ['Friday', 'Afters']), { gridDays: [] }).dayFirst, false);
-});
-
-test('eventModelOf: a two-weekend fest borrows the CHOSEN weekend\'s date, and a night-less section entry falls to the section\'s loose list', () => {
+test('a dated section is its own tab, never a day: one entry per date, in date order', () => {
   const fest = {
-    dayMeta: { Friday: { wd: 'Fri', isos: { W1: '2026-10-02', W2: '2026-10-09' } } },
+    name: 'Dated', dayMeta: { Friday: { wd: 'Fri', date: 'Oct 2', iso: '2026-10-02' }, 'Late nights': { date: 'Sep 29 – Oct 10', sub: 'around Austin' } },
+    days: { Friday: { stages: ['A'], artists: [] } },
+    artists: [
+      { name: 'Billed', day: 'Friday' },
+      { name: 'Later', day: 'Late nights', date: '2026-10-01', venue: 'Stubb\'s', doors: '7 PM' },
+      { name: 'First', day: 'Late nights', date: '2026-09-29', venue: 'Mohawk Austin', doors: '7 PM' },
+    ],
+  };
+  const m = ev.eventModelOf(fest, groupByDay(fest.artists, ['Friday', 'Late nights']), { gridDays: ['Friday'] });
+  assert.deepEqual(m.days.map((d) => d.key), ['Friday'], 'the dated section never joins the day axis');
+  assert.deepEqual(m.sections, []);
+  assert.deepEqual(m.extras.map((e) => [e.key, e.short, e.long, e.sub]),
+    [['Late nights', 'LATE', 'LATE NIGHTS', 'Sep 29 – Oct 10 · around Austin']]);
+  assert.deepEqual([...m.extras[0].byDate.keys()], ['2026-09-29', '2026-10-01'], 'in date order, never split');
+  assert.deepEqual([...m.extras[0].byDate.values()].map((l) => l.map((a) => a.name)), [['First'], ['Later']]);
+});
+
+test('a two-weekend scheduled fest is six dated tabs: each renders its own weekend, and the rule says which', () => {
+  const fest = load('acl-2026');
+  const m = modelOf(fest, { weekends: ['W1', 'W2'] });
+  assert.deepEqual(m.days.map((d) => d.key),
+    ['Friday|W1', 'Saturday|W1', 'Sunday|W1', 'Friday|W2', 'Saturday|W2', 'Sunday|W2']);
+  assert.deepEqual(m.days.map((d) => d.dayKey), ['Friday', 'Saturday', 'Sunday', 'Friday', 'Saturday', 'Sunday'],
+    'the frozen day key is untouched — pick data and the freeze never move');
+  assert.deepEqual(m.days.map((d) => [d.short, d.num]),
+    [['FRI', '2'], ['SAT', '3'], ['SUN', '4'], ['FRI', '9'], ['SAT', '10'], ['SUN', '11']]);
+  assert.deepEqual(m.days.map((d) => d.iso),
+    ['2026-10-02', '2026-10-03', '2026-10-04', '2026-10-09', '2026-10-10', '2026-10-11']);
+  assert.deepEqual(m.days.map((d) => d.weekend), ['W1', 'W1', 'W1', 'W2', 'W2', 'W2']);
+  assert.equal(m.days[0].sub, 'Fri · Oct 2 · Weekend 1');
+  assert.equal(m.days[3].sub, 'Fri · Oct 9 · Weekend 2');
+});
+
+test('a fest whose days name no weekday keeps its own day order, and its sections become tabs off the end', () => {
+  // Electric Forest's "Day 1" is not a weekday, so a night has nothing to land
+  // on. The days stay in the file's order; a section, if there ever were one,
+  // hangs off the end rather than guessing a night onto a day.
+  const ef = load('electric-forest-2026');
+  const m = modelOf(ef);
+  assert.deepEqual(m.days.map((d) => d.key), ['Day 1', 'Day 2', 'Day 3', 'Day 4']);
+  assert.deepEqual(m.days.map((d) => d.grid), [true, true, true, true]);
+  assert.deepEqual(m.extras, []);
+  const fest = {
+    name: 'No axis',
+    artists: [{ name: 'A', day: 'Day 1' }, { name: 'X', day: 'Afters', stage: 'Fri · V', time: '10 PM' }],
+  };
+  const m2 = ev.eventModelOf(fest, groupByDay(fest.artists, ['Day 1', 'Afters']), { gridDays: [] });
+  assert.deepEqual(m2.days.map((d) => d.key), ['Day 1']);
+  assert.deepEqual(m2.sections, []);
+  assert.deepEqual(m2.extras.map((e) => [e.key, e.entries.map((a) => a.name)]), [['Afters', ['X']]]);
+});
+
+test('a section entry that never says when is loose — the section still renders, that show waits below', () => {
+  const fest = {
+    name: 'Loose',
+    dayMeta: { Friday: { wd: 'Fri', iso: '2026-10-02' } },
     days: { Friday: { stages: ['A'], artists: [] } },
     artists: [
       { name: 'A', day: 'Friday' },
@@ -150,131 +248,9 @@ test('eventModelOf: a two-weekend fest borrows the CHOSEN weekend\'s date, and a
       { name: 'Lost', day: 'Afters', stage: 'V', time: '10 PM' },
     ],
   };
-  const groups = groupByDay(fest.artists, ['Friday', 'Afters']);
-  const w2 = ev.eventModelOf(fest, groups, { gridDays: ['Friday'], weekend: 'W2' });
-  assert.deepEqual(w2.days.map((d) => [d.key, d.iso]), [['Thursday', '2026-10-08'], ['Friday', '2026-10-09']]);
-  assert.deepEqual(w2.sections[0].loose.map((a) => a.name), ['Lost']);
-  const w1 = ev.eventModelOf(fest, groups, { gridDays: ['Friday'], weekend: 'W1' });
-  assert.equal(w1.days[0].iso, '2026-10-01');
-});
-
-// ---- a night's timetable ----------------------------------------------------------------
-
-const aftersOn = (night) => portola.artists.filter((a) => a.day === 'Afters' || a.day === 'Afters & Folsom').filter((a) => a.night === night);
-
-// THE ONE RULE (Kevin, 2026-09-01): a venue-night is one room and its artists
-// play in sequence. Every cell is a plain card in a vertical run; the words
-// "lane" and "deck" no longer exist in the model, and these tests say so by
-// looking for them by shape, not by name.
-const noLanesNoDecks = (tt) => {
-  assert.ok(tt.cells.every((c) => c.kind === undefined && c.lane === undefined && c.items === undefined),
-    'a cell is { venue, col, row, span, entry } — nothing else lays out an events night');
-  // Two cards in one column may never share a row band: that IS the stack.
-  for (const col of new Set(tt.cells.map((c) => c.col))) {
-    const mine = tt.cells.filter((c) => c.col === col).sort((a, b) => a.row - b.row);
-    for (let i = 1; i < mine.length; i++) {
-      assert.ok(mine[i].row >= mine[i - 1].row + mine[i - 1].span,
-        `${mine[i].venue}: "${mine[i].entry.e.name}" overlaps the card above it`);
-    }
-    assert.ok(mine.every((c) => c.span >= 2), 'every card clears the 30-minute display floor');
-  }
-};
-
-test('timetableOf, Portola Friday: venues left to right by first set, and every room is a vertical run', () => {
-  const tt = ev.timetableOf(aftersOn('Fri'));
-  assert.equal(tt.venues[0], 'Pier 80 (loyalty invite)', 'Despacio 5-11 PM, the one printed set of the night, opens it');
-  // The rest of the columns are ordered by each room's first set, and most of
-  // those clocks are GUESSES off posted doors (the Regency 7 PM, the Great
-  // American 8 PM — each venue's own feed, read 2026-09-16). So the order is
-  // re-derived from the file rather than remembered: whichever room opens
-  // earliest is the next column, and a re-read of any bill moves this test.
-  const friRooms = [...new Set(aftersOn('Fri').filter((a) => a.venue && a.time).map((a) => a.venue))];
-  const opensAt = (venue) => Math.min(...aftersOn('Fri')
-    .filter((a) => a.venue === venue && a.time)
-    .map((a) => ev.parseEventTime(a.time).startMin));
-  assert.deepEqual(tt.venues, friRooms.sort((a, b) => opensAt(a) - opensAt(b)),
-    'columns left to right by the first set in each room');
-  // Friday's one doors-only show: Neil Frances at 888 Garage prints doors and
-  // no start (the Goldenvoice feed, 2026-09-16), so it gets no column and
-  // waits below the grid rather than being given a clock nobody published.
-  const friDoorsOnly = aftersOn('Fri').filter((a) => a.venue && !a.time);
-  assert.ok(friDoorsOnly.every((a) => a.doors), 'a TBA show still knows when the room opens');
-  assert.deepEqual(tt.tba.map((a) => a.name), friDoorsOnly.map((a) => a.name));
-  assert.deepEqual(tt.tba.map((a) => a.name), ['Neil Frances']);
-  noLanesNoDecks(tt);
-  // The Regency's three: one after another, in the run's order, not a pile.
-  const regency = tt.cells.filter((c) => c.venue === 'Regency Ballroom').sort((a, b) => a.row - b.row);
-  assert.deepEqual(regency.map((c) => c.entry.e.name), ['Gelli Haha', 'Jyoty', 'Channel Tres'], 'small print opens, the billed headliner closes');
-  assert.deepEqual(regency.map((c) => c.entry.e.order.seq), [1, 2, 3]);
-  for (let i = 1; i < regency.length; i++) assert.equal(regency[i].row, regency[i - 1].row + regency[i - 1].span, 'each set ends where the next begins');
-  assert.equal(regency[regency.length - 1].entry.endStr, `~${regency[0].entry.e.close}`, 'this room prints no close: the closer runs to the hall default, marked as a guess');
-  const despacio = tt.cells.find((c) => c.entry.e.name === 'Despacio');
-  assert.equal(despacio.span, 24, '5–11 PM, the one set with a printed end');
-});
-
-test('timetableOf, Portola Sunday: every room stacks — the Midway four, Public Works four, and the closer runs to the close', () => {
-  const tt = ev.timetableOf(aftersOn('Sun'));
-  noLanesNoDecks(tt);
-  const roomOf = (v) => tt.cells.filter((c) => c.venue === v).sort((a, b) => a.row - b.row);
-  const midway = roomOf('The Midway');
-  assert.equal(midway.length, portola.artists.filter((a) => a.night === 'Sun' && a.venue === 'The Midway').length,
-    'every set is its own tappable card — a combined card would eat the crew\'s picks');
-  assert.deepEqual(midway.map((c) => c.entry.e.name), ['MGNA Crrrta', 'VTSS', 'Two Shell', 'horsegiirL']);
-  for (let i = 1; i < midway.length; i++) {
-    assert.equal(midway[i - 1].entry.endMin, midway[i].entry.startMin, 'a set ends when the next in the room begins');
-  }
-  const last = midway[midway.length - 1].entry;
-  assert.equal(last.endMin, ev.parseEventTime(last.e.close).startMin, 'the closer ends at the room\'s close');
-  assert.equal(last.endStr, `~${last.e.close}`, 'a GUESSED close keeps its tilde wherever it prints');
-  // Public Works was the deck in the rejected build; it is a run like every
-  // other room now, and its three sets are spread across the same window.
-  const pw = roomOf('Public Works');
-  const pwFile = portola.artists.filter((a) => a.night === 'Sun' && a.venue === 'Public Works').sort((a, b) => a.order.seq - b.order.seq);
-  assert.deepEqual(pw.map((c) => [c.entry.e.name, c.entry.startStr]), pwFile.map((a) => [a.name, a.time]),
-    'Kaytree was on the bill and missing from the file — four sets share the room\'s window, in the file\'s guessed clocks');
-  assert.deepEqual(pw.map((c) => c.entry.e.name), ['erika b2b sfcowboy', 'Kaytree', 'Ben UFO', 'Overmono']);
-  // Time-TBA is the file's own shape, not a gap: a show whose start nobody
-  // published carries `doors` and no `time`, and the wall must leave it below
-  // the grid rather than invent a clock for it. Sunday has two — Fatboy Slim
-  // at 888 Garage and Azzecca at Audio, both doors-only as of 2026-09-16.
-  const doorsOnly = portola.artists.filter((a) => a.night === 'Sun' && a.venue && !a.time);
-  assert.ok(doorsOnly.every((a) => a.doors), 'a TBA show still knows when the room opens');
-  assert.deepEqual(tt.tba.map((a) => a.name).sort(), doorsOnly.map((a) => a.name).sort());
-  assert.deepEqual(tt.tba.map((a) => a.name).sort(), ['Azzecca', 'Fatboy Slim']);
-});
-
-test('the fallback: a room nobody has re-read — every set stamped with the doors time — still stacks, never piles', () => {
-  // This is what a fresh data drop looks like before anyone reads the bill:
-  // three shows, one venue, one time, no order. The old model called this a
-  // deck; the rule says it is a room, so it stacks by the display floor.
-  const V = (name, time) => ({ name, night: 'Fri', venue: 'V', time });
-  const raw = ev.timetableOf([V('A', '10 PM'), V('B', '10 PM'), V('C', '10 PM')]);
-  noLanesNoDecks(raw);
-  assert.deepEqual(raw.cells.map((c) => c.entry.e.name), ['A', 'B', 'C'], 'file order, because nothing else says otherwise');
-  assert.deepEqual(raw.cells.map((c) => c.row), [1, 3, 5], 'each starts where the one above it ended');
-  // Two full-window sets ("10 PM - 2 AM" twice — the room's hours copied onto
-  // both) are the same story: one WINDOW, not two four-hour sets, so they
-  // halve it. And neither may claim the window's end as its own.
-  const win = ev.timetableOf([V('A', '10 PM - 2 AM'), V('B', '10 PM - 2 AM')]);
-  noLanesNoDecks(win);
-  assert.deepEqual(win.cells.map((c) => c.row), [1, 9]);
-  assert.deepEqual(win.cells.map((c) => c.span), [8, 8], 'two even halves of the room\'s four hours');
-  assert.ok(win.cells.every((c) => c.entry.endStr === null), 'no card prints "until 2 AM" — none of them can prove it');
-  // A HALF-numbered room has no run to read, so the clock leads.
-  const src = 'https://example.test/poster';
-  const half = ev.timetableOf([
-    { ...V('Late', '11 PM'), order: { seq: 1, of: 2, source: src, confirmed: false } },
-    V('Early', '10 PM'),
-  ]);
-  noLanesNoDecks(half);
-  assert.deepEqual(half.cells.map((c) => c.entry.e.name), ['Early', 'Late']);
-});
-
-test('sortForTiles: time first, the timeless at the end, ties in file order — the Street Fair opens Sunday', () => {
-  const sun = portola.artists.filter((a) => a.day === 'Folsom' && a.night === 'Sun');
-  assert.equal(ev.sortForTiles(sun)[0].name, 'Folsom Street Fair');
-  const mixed = [{ name: 'Late', time: '11 PM' }, { name: 'None' }, { name: 'Early', time: '8 PM' }, { name: 'None2' }];
-  assert.deepEqual(ev.sortForTiles(mixed).map((e) => e.name), ['Early', 'Late', 'None', 'None2']);
+  const m = ev.eventModelOf(fest, groupByDay(fest.artists, ['Friday', 'Afters']), { gridDays: ['Friday'] });
+  assert.deepEqual(m.days.map((d) => [d.key, d.iso]), [['Thursday', '2026-10-01'], ['Friday', '2026-10-02']]);
+  assert.deepEqual(m.sections[0].loose.map((a) => a.name), ['Lost']);
 });
 
 // ---- the run's copy (LOCKED, Kevin 2026-09-01) ----------------------------------------------
@@ -311,102 +287,4 @@ test('findEventEntry: by day + stage + time, never by name alone — VTSS is a g
   assert.equal(ev.findEventEntry(portola, 'VTSS', { day: 'Sunday', stage: null, time: null }), billing);
   assert.equal(ev.findEventEntry(portola, 'VTSS', null), null);
   assert.equal(ev.findEventEntry(portola, 'Nobody', ev.occOf(afters)), null);
-});
-
-// ---- the bucket filter's persistence --------------------------------------------------------
-
-test('hidden buckets persist per fest in localStorage, toggle cleanly, and survive a blocked store in memory', () => {
-  store.clear();
-  assert.deepEqual(filters.loadHiddenBuckets('f1'), []);
-  filters.saveHiddenBuckets('f1', ['Folsom']);
-  assert.equal(store.get('fn_buckets_v1_f1'), '["Folsom"]', 'device-local, keyed per fest — never the crew doc');
-  assert.deepEqual(filters.loadHiddenBuckets('f1'), ['Folsom']);
-  assert.deepEqual(filters.loadHiddenBuckets('f2'), [], 'another fest is untouched');
-  assert.deepEqual(filters.toggleBucket(['Folsom'], ':fest'), ['Folsom', ':fest']);
-  assert.deepEqual(filters.toggleBucket(['Folsom', ':fest'], 'Folsom'), [':fest']);
-  filters.saveHiddenBuckets('f1', []);
-  assert.equal(store.has('fn_buckets_v1_f1'), false, 'nothing hidden = nothing stored');
-  store.set('fn_buckets_v1_f3', '{"not":"a list"}');
-  assert.deepEqual(filters.loadHiddenBuckets('f3'), [], 'garbage reads as nothing hidden');
-  // A write that fails against a store that still READS (storage full):
-  // memory wins until a write lands — the old stored value must not come
-  // back on the next read (Codex, review round 2026-09-01).
-  store.set('fn_buckets_v1_f5', '["Folsom"]');
-  assert.deepEqual(filters.loadHiddenBuckets('f5'), ['Folsom']);
-  const fullSet = globalThis.localStorage.setItem;
-  const quiet = console.warn;
-  console.warn = () => {};
-  globalThis.localStorage.setItem = () => { throw new DOMException('QuotaExceededError', 'QuotaExceededError'); };
-  try {
-    filters.saveHiddenBuckets('f5', ['Folsom', 'Afters']);
-    assert.deepEqual(filters.loadHiddenBuckets('f5'), ['Folsom', 'Afters'], 'the write failed — memory is newer than storage and wins');
-  } finally { globalThis.localStorage.setItem = fullSet; console.warn = quiet; }
-  filters.saveHiddenBuckets('f5', ['Afters']);
-  assert.equal(store.get('fn_buckets_v1_f5'), '["Afters"]', 'a write that lands re-arms storage');
-  store.set('fn_buckets_v1_f5', '["Folsom"]');
-  assert.deepEqual(filters.loadHiddenBuckets('f5'), ['Folsom'], 'and storage is read again');
-  // Two taps in a row apply at once — the second reads the first.
-  store.clear();
-  const t1 = filters.applyBucketToggle('f6', filters.loadHiddenBuckets('f6'), 'Folsom');
-  assert.deepEqual(t1, { next: ['Folsom'], hiding: true });
-  const t2 = filters.applyBucketToggle('f6', filters.loadHiddenBuckets('f6'), 'Afters');
-  assert.deepEqual(t2, { next: ['Folsom', 'Afters'], hiding: true });
-  assert.equal(store.get('fn_buckets_v1_f6'), '["Folsom","Afters"]', 'nothing was lost between the taps');
-  assert.deepEqual(filters.applyBucketToggle('f6', filters.loadHiddenBuckets('f6'), 'Folsom'), { next: ['Afters'], hiding: false });
-  // Blocked store: memory is the truth for the life of the page. (util.saveLS
-  // warns on a failed write — expected here, kept out of the test output.)
-  const real = globalThis.localStorage;
-  const warn = console.warn;
-  const denied = () => { throw new DOMException('The operation is insecure.', 'SecurityError'); };
-  globalThis.localStorage = { getItem: denied, setItem: denied, removeItem: denied };
-  console.warn = () => {};
-  try {
-    assert.doesNotThrow(() => filters.saveHiddenBuckets('f4', ['Afters']));
-    assert.deepEqual(filters.loadHiddenBuckets('f4'), ['Afters'], 'a blocked store cannot make a chip tap do nothing');
-  } finally { globalThis.localStorage = real; console.warn = warn; }
-});
-
-// ---- the review round (2026-09-01): the model -------------------------------------------
-
-test('printed set times that genuinely overlap still stack — the rule has no concurrency branch left', () => {
-  const V = (name, time) => ({ name, night: 'Fri', venue: 'V', time });
-  // The shapes that used to pick a treatment: a bridge chain (was lanes) and
-  // a four-deep pile (was a deck). One room, one answer.
-  const bridge = ev.timetableOf([V('Long', '8 PM - 11 PM'), V('Early', '8 PM - 9 PM'), V('Late', '10 PM - 11 PM')]);
-  noLanesNoDecks(bridge);
-  assert.deepEqual(bridge.cells.map((c) => c.entry.e.name), ['Long', 'Early', 'Late'], 'the clock leads, file order breaks the tie');
-  const pile = ev.timetableOf([V('A', '8 PM - 10 PM'), V('B', '8 PM - 9 PM'), V('C', '8 PM - 9 PM'), V('D', '9:30 PM - 10:30 PM')]);
-  noLanesNoDecks(pile);
-  assert.equal(pile.cells.length, 4, 'four sets, four cards — nothing is folded into a pile');
-});
-
-test('a partly-entered run: the column stays continuous, but only a genuine closer runs to the room\'s close', () => {
-  const src = 'https://example.test/poster';
-  const M = (name, time, seq, of) => ({ name, night: 'Sun', venue: 'V', time, approx: true, doors: '10 PM', close: '2 AM', order: { seq, of, source: src, confirmed: false } });
-  const three = ev.timetableOf([M('One', '10 PM', 1, 4), M('Three', '12 AM', 3, 4), M('Four', '1 AM', 4, 4)]);
-  const at = (name) => three.cells.find((c) => c.entry && c.entry.e.name === name).entry;
-  // The room runs continuously: a hole where the missing 2-of-4 would sit
-  // reads as broken, so the set before it holds the floor until the next
-  // known one starts. What it must NOT do is claim the end of the night.
-  assert.equal(at('One').endMin, at('Three').startMin, 'ends where the next set in the room begins, gap or no gap');
-  assert.equal(at('Three').endMin, at('Four').startMin, 'its successor is present — ends when it begins');
-  assert.equal(at('Four').endMin, ev.parseEventTime('2 AM').startMin, 'the closer runs to the close');
-  assert.equal(at('Four').endStr, '2 AM');
-  const noCloser = ev.timetableOf([M('One', '10 PM', 1, 3), M('Two', '11 PM', 2, 3)]);
-  const two = noCloser.cells.find((c) => c.entry && c.entry.e.name === 'Two').entry;
-  assert.equal(two.endMin, two.startMin + 60, 'the last KNOWN member is not the closer — it does not claim the room to 2 AM');
-  assert.equal(two.endStr, null);
-});
-
-test('an event with a time but no venue keeps its time: it is loose, never timeless', () => {
-  const tt = ev.timetableOf([
-    { name: 'Roomed', night: 'Fri', venue: 'V', time: '10 PM' },
-    { name: 'Roomless', night: 'Fri', time: '9 PM' },
-    { name: 'Timeless', night: 'Fri', venue: 'V' },
-  ]);
-  assert.deepEqual(tt.loose.map((e) => e.name), ['Roomless']);
-  assert.deepEqual(tt.tba.map((e) => e.name), ['Timeless']);
-  assert.deepEqual(tt.cells.map((c) => c.entry.e.name), ['Roomed']);
-  const none = ev.timetableOf([{ name: 'Roomless', night: 'Fri', time: '9 PM' }]);
-  assert.deepEqual([none.venues, none.loose.map((e) => e.name), none.tba], [[], ['Roomless'], []]);
 });
