@@ -900,7 +900,15 @@ export function wallPlanFor(fest, ctx) {
   // (an empty week), so the flat lineup never leaks through in its place.
   if (!whole.days.length && !whole.extras.length && !whole.looseNoDay.length) return null;
   const hidden = new Set(ctx.folded || []);
-  const festRoom = !hidden.has(FEST_ROOM);
+  // A key the show menu does not offer is inert here, or a stored setting
+  // could hide something with nothing on the screen to bring it back. On a
+  // two-weekend fest the weekend rows ARE the festival room (roomsOf offers
+  // them in its place), so `:fest` means nothing there — a stale one from
+  // before the file gained its weekend tags would otherwise blank both
+  // weekends with both rows reading ✓ (skeptic, 2026-09-17). The mirror holds
+  // by construction: a one-weekend fest's days carry no weekend, so a
+  // `weekend:` key never matches one.
+  const festRoom = weekends.length > 1 || !hidden.has(FEST_ROOM);
   const sections = whole.sections.filter((s) => !hidden.has(s.key));
   const extras = whole.extras.filter((e) => !hidden.has(e.key));
   // A hidden weekend takes its dated days whole (a set tagged for both

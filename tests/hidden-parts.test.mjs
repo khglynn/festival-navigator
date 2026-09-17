@@ -171,6 +171,22 @@ test('ACL with Weekend 1 hidden: FRI 9 · SAT 10 · SUN 11 · Late nights — an
   assert.deepEqual(dayNavOf(acl, w2.ctx).map((t) => t.long), ['FRI 2', 'SAT 3', 'SUN 4', 'LATE NIGHTS']);
 });
 
+test('a fold key the menu does not offer is inert: a stale ":fest" on ACL hides nothing, a "weekend:" key on Portola hides nothing', () => {
+  // The v84 preview's menu offered ACL an ACL row, so a phone can hold
+  // `[":fest"]` for acl-2026 — and the branch's menu offers Weekend 1 /
+  // Weekend 2 in its place, with no row that could ever clear it.
+  const { root, ctx } = render('acl-2026', { folded: [':fest'] });
+  assert.equal(wallPlanFor(acl, ctx).festRoom, true, 'the weekend rows are the festival room on a two-weekend fest');
+  assert.equal(dayNavOf(acl, ctx).length, 7, 'seven tabs, nothing blanked');
+  assert.deepEqual(rulesOf(root), ['Friday|W1', 'Saturday|W1', 'Sunday|W1', 'Friday|W2', 'Saturday|W2', 'Sunday|W2']);
+  assert.ok(root.querySelectorAll('.card.cell').length > 0, 'the grids render');
+  assert.deepEqual(roomsOf(acl, ctx).map((r) => r.key), ['weekend:W1', 'weekend:W2', 'Late nights'], 'and the menu is unchanged');
+  // The mirror: a weekend key on a one-weekend fest.
+  const p = render('portola-2026', { folded: ['weekend:W1', 'weekend:W2'] });
+  assert.deepEqual(rulesOf(p.root), ['Thursday', 'Friday', 'Saturday', 'Sunday']);
+  assert.ok(p.root.querySelector('.room[data-room=":fest"] .tt-block'), 'the grid is untouched');
+});
+
 test('the show menu on a two-weekend fest: Weekend 1, Weekend 2, Late nights — the festival-room row is replaced, not joined', () => {
   assert.deepEqual(roomsOf(acl, ctxFor('acl-2026')).map((r) => [r.key, r.label]),
     [['weekend:W1', 'Weekend 1'], ['weekend:W2', 'Weekend 2'], ['Late nights', 'Late nights']]);
