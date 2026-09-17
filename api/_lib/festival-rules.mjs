@@ -134,10 +134,11 @@ function checkEventFields(fest, err, warn) {
       else if (a.venue.length > 80) err(`${at}: venue over 80 chars`);
       else {
         if (bits && bits.slice(1).join(' · ').trim() !== a.venue) err(`${at}: venue ${JSON.stringify(safeKey(a.venue))} disagrees with stage ${JSON.stringify(safeKey(a.stage))} — the renderer still reads stage, so the two must say the same thing`);
-        // A venue in venues{} is a door to its map (the zoom's place line).
-        // Missing means no door, not a broken card — so this is a warning,
-        // the same weight as a lineup artist with no set yet.
-        if (venueMap && !Object.prototype.hasOwnProperty.call(venueMap, a.venue)) warn(`${at}: venue ${JSON.stringify(safeKey(a.venue))} has no entry in venues{} — the card loses its map door`);
+        // venues{} holds a map link per room, and the zoom's place line opens
+        // it. A room that is missing simply has nothing to tap — the card is
+        // fine — so this is a warning, the same weight as a lineup artist
+        // with no set yet.
+        if (venueMap && !Object.prototype.hasOwnProperty.call(venueMap, a.venue)) warn(`${at}: venue ${JSON.stringify(safeKey(a.venue))} has no entry in venues{} — its place line will not open a map`);
       }
     }
 
