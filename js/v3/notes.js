@@ -437,17 +437,17 @@ function noteRow(note, ctx, opts = {}) {
 // place the note will actually appear, says the same thing structurally and says
 // it before you type instead of after. One level deep stays law, and now the UI
 // cannot even ask for anything else.
-function doorRow(ctx, onOpen, opts = {}) {
+function doorRow(ctx, onOpen) {
   const b = document.createElement('button');
-  b.className = opts.cls ? `n-door ${opts.cls}` : 'n-door';
+  b.className = 'n-door';
   const ci = colorIndexOf(ctx.meName, state.people()[ctx.meName]);
   b.style.setProperty('--wash', hslOf(ci, 0.08));
   b.appendChild(avatarFor(ctx.meName, 16, 7.5));
   const label = document.createElement('span');
   label.className = 'n-door-label';
-  label.textContent = opts.label || 'Reply…';
+  label.textContent = 'Reply…';
   b.append(label);
-  b.setAttribute('aria-label', opts.aria || 'Reply to this thread');
+  b.setAttribute('aria-label', 'Reply to this thread');
   b.addEventListener('click', onOpen);
   return b;
 }
