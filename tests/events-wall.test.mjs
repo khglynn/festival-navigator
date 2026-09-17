@@ -318,14 +318,23 @@ test('the now mark: the card of whoever is playing carries the ring and the labe
 
 // ---- the tabs off the end (MODEL-V4 §2) ------------------------------------------------
 
-test('a dated section is its own tab after the days: a date rule per date, venue groups under each', () => {
+// A dated section is a tab AND a room: one header, which is the room header
+// every other room uses — so it folds on a tap, the show menu can name it, and
+// the tab lands on it. It used to be drawn by hand, outside the room component,
+// which cost it both controls.
+test('a dated section is its own tab after the days, and a room: one foldable header, a date rule per date', () => {
   const { root, ctx } = render('dated');
-  assert.deepEqual(rulesOf(root), ['FRIDAY', 'LATE NIGHTS']);
+  assert.deepEqual(rulesOf(root), ['FRIDAY'], 'the days are the days; a dated section is a room of its own');
   assert.deepEqual(dayNavOf(FESTIVALS.dated, ctx).map((d) => [d.key, d.short, d.long, d.dated]),
     [['Friday', 'FRI', 'FRI', false], ['Late nights', 'LATE', 'LATE NIGHTS', true]]);
-  const rule = [...root.querySelectorAll('.day-rule')].find((r) => r.dataset.day === 'Late nights');
-  assert.equal(rule.querySelector('.date').textContent, 'Sep 29 – Oct 10 · around Austin');
-  const dateRules = [...root.querySelectorAll('.date-rule')];
+  const room = root.querySelector('.room[data-room="Late nights"]');
+  assert.ok(room, 'the same room component as Afters and Folsom');
+  const head = room.querySelector('.sec-head');
+  assert.equal(head.tagName, 'BUTTON');
+  assert.equal(head.dataset.day, 'Late nights', 'and it is what the tab lands on');
+  assert.equal(head.querySelector('.sec-label').textContent, 'LATE NIGHTS');
+  assert.equal(head.querySelector('.sec-sub').textContent, 'Sep 29 – Oct 10 · around Austin');
+  const dateRules = [...room.querySelectorAll('.date-rule')];
   assert.deepEqual(dateRules.map((r) => [r.dataset.iso, r.querySelector('.d').textContent]),
     [['2026-09-29', 'TUE · SEP 29'], ['2026-10-01', 'THU · OCT 1']]);
   const firstGrid = dateRules[0].nextElementSibling;
@@ -335,6 +344,19 @@ test('a dated section is its own tab after the days: a date rule per date, venue
   assert.equal(firstGrid.dataset.iso, '2026-09-29', 'the date carries the now mark too');
   // Its cards pick like any other.
   assert.ok([...firstGrid.querySelectorAll('.card')].every((c) => c.getAttribute('role') === 'button'));
+});
+
+test('a dated section folds on its header, through the one fold state', () => {
+  const { root, ctx } = render('dated');
+  click(root.querySelector('.room[data-room="Late nights"] .sec-head'));
+  assert.deepEqual(ctx.toggled, ['Late nights'], 'the wall asks; the shell owns the state');
+
+  const folded = render('dated', { folded: ['Late nights'] }).root;
+  const room = folded.querySelector('.room[data-room="Late nights"]');
+  assert.equal(room.querySelector('.sec-head').getAttribute('aria-expanded'), 'false');
+  assert.equal(room.querySelector('.sec-sub').textContent, '3 shows', 'the section counts its whole run');
+  assert.equal(room.querySelectorAll('.date-rule, .venue-grid, .day-whisper').length, 0, 'the header only');
+  assert.deepEqual(rulesOf(folded), ['FRIDAY'], 'and the week above it is untouched');
 });
 
 // ---- the note door is a date (MODEL-V4 §4) ---------------------------------------------
@@ -381,7 +403,7 @@ test('a dated section: the section rule has no note door, each of its dates has 
   noteOn('dated', '2026-09-29', 'meet at the Mohawk', '2026-09-20T18:20:00.000Z', 'cccccc');
   const asked = [];
   const { root } = render('dated', { onOpenDayNotes: (k) => asked.push(k) });
-  const tab = [...root.querySelectorAll('.day-rule')].find((r) => r.dataset.day === 'Late nights');
+  const tab = root.querySelector('.sec-head[data-day="Late nights"]');
   assert.equal(whisperAfter(tab), null, 'a section label is not a note target any more');
   const dateRule = [...root.querySelectorAll('.date-rule')].find((r) => r.dataset.iso === '2026-09-29');
   const w = whisperAfter(dateRule);

@@ -419,7 +419,7 @@ function maybeOpenOnDay() {
   // Before it and after it: the first grid day.
   const day = defaultDayOf(dayNavOf(state.fest(), ctx), state.fest());
   if (!day) return;
-  const rule = document.querySelector(`#wall-root .day-rule[data-day="${CSS.escape(day.anchor || day.key)}"]`);
+  const rule = document.querySelector(`#wall-root [data-day="${CSS.escape(day.anchor || day.key)}"]`);
   if (!rule) return;
   landOnRule(rule);
   rememberScrolled(key);
@@ -506,7 +506,8 @@ function renderDayNav() {
   for (const day of dayNavOf(state.fest(), ctx)) {
     const at = day.anchor || day.key;
     const jump = () => {
-      const target = document.querySelector(`.day-rule[data-day="${CSS.escape(at)}"]`);
+      // Scoped to the wall: the tabs themselves carry data-day too.
+      const target = document.querySelector(`#wall-root [data-day="${CSS.escape(at)}"]`);
       if (target) target.scrollIntoView({ behavior: ctx.lowPower ? 'auto' : 'smooth', block: 'start' });
     };
     for (const [host, tab] of [[dock, dayTab(day, day.short, { withNum: true })], [rail, dayTab(day, day.long)]]) {

@@ -886,6 +886,11 @@ button.sec-head { cursor: pointer; }
                   transition: transform .2s cubic-bezier(.2, 1.15, .35, 1); }
 .sec-head.folded .chev { transform: rotate(-90deg); }
 .sec-head.folded .sec-label { color: var(--text-secondary); }
+/* A dated section (ACL's Late nights) is a room AND a tab of its own, so its
+ * header is both the fold control and where the tab lands — at the day rule's
+ * weight, and clearing the sticky chrome the same way. */
+.sec-head.tab { scroll-margin-top: var(--jump-offset, 8px); }
+.sec-head.tab .sec-label { font-size: var(--fs-day); letter-spacing: var(--track-display); }
 /* The header is a button, so the touch floor gives it 44px of real height —
  * at which point a baseline row would sit at the top of an empty box. This
  * is the floor's consequence, not a new opt-out list. */

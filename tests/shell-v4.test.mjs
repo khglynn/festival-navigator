@@ -342,6 +342,36 @@ test('after the last set, nobody — and a wall with nothing playing costs nothi
   });
 });
 
+// The show menu names what the wall SHOWS — roomsOnWall() reads the room
+// headers standing in #wall-root, so a room the wall draws by hand instead of
+// through the room component is a room the menu cannot offer. ACL's Late
+// nights was exactly that. Runs last: it stands ACL's wall up in place of
+// Portola's, and puts Portola back.
+test('the show menu names every room the wall shows — ACL\'s dated section included', async () => {
+  const state = await import('../js/state.js');
+  const { renderWall } = await import('../js/v3/wall.js');
+  const { FESTIVALS, FESTIVAL_INDEX } = await import('../js/festivals.js');
+  const ACL = JSON.parse(readFileSync(join(ROOT, 'data/festivals/acl-2026.json'), 'utf8'));
+  FESTIVAL_INDEX.push({ id: 'acl-2026', status: 'scheduled' });
+  FESTIVALS['acl-2026'] = ACL;
+  const wall = $('wall-root');
+  const portolaWall = [...wall.childNodes];
+  state.setActiveFestivalId('acl-2026');
+  try {
+    renderWall(wall, {
+      fid: 'acl-2026', meName: 'Kevin', picks: {}, affinity: null, lowPower: true,
+      sort: 'day', query: '', weekend: 'all', filterPeople: [], soloStage: null, folded: [],
+      onTap: () => {}, onToggleFold: () => {}, onOpenDayNotes: () => {}, onNotesChange: null,
+    });
+    assert.deepEqual(app.roomsOnWall().map((r) => [r.key, r.label]),
+      [[':fest', 'ACL Music Festival'], ['Late nights', 'Late nights']],
+      'the festival\'s own room, then the dated section — two rooms, so there IS a menu');
+  } finally {
+    state.setActiveFestivalId(FID);
+    wall.replaceChildren(...portolaWall);
+  }
+});
+
 // ---- the stylesheet answers for what this shell draws ---------------------------------
 // Node sees classes toggled, never pixels: `.card.now` and the show menu's rows
 // both passed every test above while having no rule in the stylesheet at all,

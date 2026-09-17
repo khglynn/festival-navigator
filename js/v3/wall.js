@@ -1131,9 +1131,14 @@ function chevron() {
 // The room's header, and the one control that folds it (MODEL-V4 §3): a tap
 // folds the body away and the sub becomes "<n> shows". The shell owns the
 // state; this says what it is and asks for the change.
-export function sectionHeader(label, sub, { key = null, folded = false, count = 0, onToggle = null } = {}) {
-  const h = mk(onToggle ? 'button' : 'div', `sec-head${folded ? ' folded' : ''}`);
+// `dayKey` is for the one room that is also a TAB — a dated section, which is
+// a room and a day axis entry at once. It stamps the jump/scrollspy anchor and
+// gives the header the day rule's weight, so the tab lands on something that
+// looks like every other tab's landing.
+export function sectionHeader(label, sub, { key = null, dayKey = null, folded = false, count = 0, onToggle = null } = {}) {
+  const h = mk(onToggle ? 'button' : 'div', `sec-head${dayKey ? ' tab' : ''}${folded ? ' folded' : ''}`);
   if (key) h.dataset.section = key;
+  if (dayKey) h.dataset.day = dayKey;
   h.append(
     mk('span', 'sec-label', String(label).toUpperCase()),
     mk('span', 'sec-sub', folded ? `${count} show${count === 1 ? '' : 's'}` : (sub || '')),
@@ -1220,7 +1225,7 @@ function renderComposed(root, ctx, fest, { model: plan, scheduled }) {
 
   // The tabs that hang off the end: a dated section (ACL's Late nights), and
   // any section whose entries never said which night.
-  for (const extra of plan.extras) renderExtra(root, ctx, fest, extra);
+  for (const extra of plan.extras) renderExtra(root, ctx, fest, extra, { folded, onToggle });
 
   // A scheduled fest's day-less names that sit on no grid.
   if (scheduled && plan.looseNoDay.length) {
@@ -1264,21 +1269,29 @@ function sectionSub(fest, sec) {
   return meta.sub || '';
 }
 
-// A tab off the end of the week (MODEL-V4 §2): the section's own rule, then
-// either a `.date-rule` per date with its venue groups under it, or — for a
-// section whose entries never said when — one set of venue groups. The
-// section's rule carries no note door; each date's does.
-export function renderExtra(root, ctx, fest, extra) {
-  const rule = dayHeader(extra.label, extra.sub || '', { dayKey: extra.key });
-  root.appendChild(rule);
-  if (!extra.byDate) { venueGroups(root, extra.entries || [], ctx, { fest }); return; }
+// A tab off the end of the week (MODEL-V4 §2), and a ROOM like any other: one
+// foldable header — so a tap folds it, the show menu can name it and the tab
+// lands on it — holding either a `.date-rule` per date with its venue groups
+// under it, or, for a section whose entries never said when, one set of venue
+// groups. The header carries no note door; each date inside it does.
+function renderExtra(root, ctx, fest, extra, { folded, onToggle }) {
+  const room = roomBlock(extra.key);
+  const lists = extra.byDate ? [...extra.byDate.values()] : [extra.entries || []];
+  const isFolded = folded.has(extra.key);
+  room.appendChild(sectionHeader(extra.label, extra.sub || '', {
+    key: extra.key, dayKey: extra.key, folded: isFolded, onToggle,
+    count: lists.reduce((n, l) => n + l.length, 0),
+  }));
+  root.appendChild(room);
+  if (isFolded) return;
+  if (!extra.byDate) { venueGroups(room, extra.entries || [], ctx, { fest }); return; }
   for (const [iso, list] of extra.byDate) {
     const dateRule = mk('div', 'date-rule');
     dateRule.dataset.iso = iso;
     dateRule.append(mk('span', 'd', dateRuleLabel(iso)), mk('span', 'line'));
-    root.appendChild(dateRule);
-    dayNoteDoor(root, iso, ctx);
-    venueGroups(root, list, ctx, { day: { iso }, fest });
+    room.appendChild(dateRule);
+    dayNoteDoor(room, iso, ctx);
+    venueGroups(room, list, ctx, { day: { iso }, fest });
   }
 }
 
@@ -1476,8 +1489,9 @@ export function wireScrollspy(containers, wallRoot) {
   const tabDays = new Set(tabs.map((t) => t.dataset.day));
   // Observe ONLY headers that correspond to a tab — the NOTES/EVERYTHING-ELSE
   // pseudo-headers share dayHeader() anatomy and used to de-highlight every
-  // tab when they scrolled into the band (audit 1.3).
-  const headers = [...wallRoot.querySelectorAll('.day-rule[data-day]')]
+  // tab when they scrolled into the band (audit 1.3). A tab's landing is a day
+  // rule, or the room header of a dated section, which is a room AND a tab.
+  const headers = [...wallRoot.querySelectorAll('[data-day]')]
     .filter((h) => tabDays.has(h.dataset.day));
   const setActive = (day) => {
     tabs.forEach((t) => {
