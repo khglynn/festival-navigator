@@ -160,13 +160,40 @@ export function isosOfDayMeta(meta) {
   return out;
 }
 
+// The weekday a date falls on, in the long form the wall used as a day key.
+// Read in UTC: an ISO date is a calendar day, not an instant, and reading it
+// locally moves it a day west of the date line.
+const WEEKDAYS_LONG = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+function weekdayNameOf(iso) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso));
+  if (!m) return null;
+  const d = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])));
+  return Number.isNaN(d.getTime()) ? null : WEEKDAYS_LONG[d.getUTCDay()];
+}
+
 // The legacy weekday-keyed day notes that render under `iso`. On a two-weekend
 // fest "Friday" maps to BOTH Fridays — which is what a note written against
 // the label always meant, since there was only ever one of it.
+//
+// Two ways in, because the wall had two ways of naming a day. A GRID day took
+// its name from the file, so dayMeta is what says which dates "Saturday"
+// stood for. A SECTION's night was never in dayMeta at all — the wall
+// synthesised it from the entries' `night` and keyed its notes by the long
+// weekday (events.js, LONG[wd]) — so Portola's afters, half its wall, would
+// have no way back to their notes if dayMeta were the only door. A weekday
+// label is therefore a legacy key for any date whose weekday it names,
+// whether or not the file lists that date.
 export function legacyDayKeysFor(fest, iso) {
   if (!ISO_DATE_RE.test(String(iso))) return [];
   const meta = (fest && fest.dayMeta) || {};
-  return Object.keys(meta).filter((k) => !ISO_DATE_RE.test(k) && isosOfDayMeta(meta[k]).includes(iso));
+  const out = [];
+  const wd = weekdayNameOf(iso);
+  if (wd) out.push(wd);
+  for (const k of Object.keys(meta)) {
+    if (ISO_DATE_RE.test(k) || out.includes(k)) continue;
+    if (isosOfDayMeta(meta[k]).includes(iso)) out.push(k);
+  }
+  return out;
 }
 
 // The keys one date's conversation reads from, oldest convention first. The

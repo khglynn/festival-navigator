@@ -160,6 +160,31 @@ test('a legacy note and a new one share one date’s conversation', () => {
   notes.closeSheet();
 });
 
+test('a synthetic night keeps its legacy notes: "Thursday" reads under Thu \u00b7 Sep 24', () => {
+  // Portola's afters play Thursday and Friday. Neither night is in dayMeta —
+  // the wall derives the date from the section's `night` — so a note written
+  // under "Thursday" before V4 had no dayMeta entry to map through, and its
+  // door vanished off a wall where afters are half the week.
+  const ts = '2026-09-19T18:00:00.000Z';
+  state.recordNote(ONE, 'day', 'Thursday', model.makeNoteId('Drew', ts, 'cccccc'),
+    { author: 'Drew', ts, text: 'warehouse line is round the back' });
+
+  openOne();
+  assert.deepEqual(textsUnder('Thu \u00b7 Sep 24'), ['warehouse line is round the back'],
+    'the afters note reads under its date');
+  assert.equal(labels().includes('Thursday'), false, 'and the raw weekday is nowhere on screen');
+
+  const day = state.crewDoc.festivals[ONE].notes.day;
+  assert.ok(day.Thursday, 'still stored under "Thursday" \u2014 read-time only, no migration');
+  assert.equal(day['2026-09-24'], undefined, 'no date key was minted to hold it');
+
+  // And it is no longer stranded in the read-only section list.
+  const stranded = model.sectionNoteKeys(state.crewDoc, ONE, FESTIVALS[ONE],
+    ['2026-09-24', '2026-09-25', '2026-09-26', '2026-09-27']);
+  assert.equal(stranded.includes('Thursday'), false, 'a date claimed it, so it is not a section any more');
+  notes.closeSheet();
+});
+
 test('the whisper is keyed by the date, and counts both keys', () => {
   const ctx = { fid: ONE, meName: 'Kevin', affinity: null, lowPower: true };
   assert.equal(notes.dayWhisper('2026-09-25', 'Fri · Sep 25', ctx, () => {}), null, 'a quiet date, no whisper');
@@ -285,8 +310,14 @@ test('the key mapping itself, without a DOM', () => {
   const one = FESTIVALS[ONE];
   assert.deepEqual(model.dayNoteKeysFor(one, '2026-09-26'), ['Saturday', '2026-09-26'],
     'oldest convention first; the date is the write target');
-  assert.deepEqual(model.dayNoteKeysFor(one, '2026-09-24'), ['2026-09-24'],
-    'a date no label claims reads only itself');
+  // Sep 24 is an AFTERS night: dayMeta never names it, and the pre-V4 wall
+  // keyed its notes by the long weekday it synthesised. So the weekday is a
+  // legacy key for the date whether or not the file lists it — otherwise half
+  // of Portola's wall loses its door.
+  assert.deepEqual(model.dayNoteKeysFor(one, '2026-09-24'), ['Thursday', '2026-09-24'],
+    'a synthetic night\u2019s weekday still reaches its date');
+  assert.deepEqual(model.legacyDayKeysFor(one, '2026-09-26'), ['Saturday'],
+    'a grid day names its weekday once, not twice');
 
   const two = FESTIVALS[TWO];
   assert.deepEqual(model.legacyDayKeysFor(two, '2026-10-02'), ['Friday']);
