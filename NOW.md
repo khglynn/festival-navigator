@@ -36,13 +36,26 @@ how we got here belongs in DEVLOG.md.
   from newer official bills), Lost Lands removed (Kevin's call), SW v79,
   527 tests green. `sw-first` off `main` carries only the offline-cache fix
   (v80) so it can ship a day ahead. **Nothing is pushed.**
-- **The wall redesign is drawn, awaiting Kevin's pick:** MODEL-V4
-  (`claude-plans/2026-09-16-wall-v4/MODEL-V4.md`), canvas
-  https://claude.ai/artifact/NELYG7pzVaS5dUKznoCSUD. One rule: stage
-  columns only where a festival publishes a grid; venue stacks in play order
-  everywhere else; days are the days; sections fold; three note doors.
-- A WebKit iPhone walk of the integrated build is running (the venue link
-  inside a long-pressed card, Low Power, the new-build strip, cold boot).
+- **The wall redesign is building (from 2026-09-16 late):** MODEL-V4
+  (`claude-plans/2026-09-16-wall-v4/MODEL-V4.md`) is the contract; the
+  canvas is https://claude.ai/artifact/NELYG7pzVaS5dUKznoCSUD. Kevin took
+  direction A and set notes to artist, fest and dates. Five lanes on
+  `v4/list`, `v4/shell`, `v4/data`, `v4/zoom`, `v4/notes` off
+  `integration-0916`, each reviewed, then integrated here.
+- The WebKit iPhone walk of the integrated build passed on real WebKit
+  (Low Power strip, the new-build strip, cold boot); the venue-link tap
+  after a long press passed with real touch in Chromium — Kevin's phone on
+  the preview is the last word. Previews: integration
+  festival-navigator-eoot3b6fp-kevinhg.vercel.app · sw-first
+  festival-navigator-o4kfu0igq-kevinhg.vercel.app (both CI green).
+
+**Resume from here (if the session that ran this dies):** the worktrees live
+under the session scratchpad (`wt-int` = this branch, `wt-v4-*` = the
+lanes, `nm-events-ui/node_modules` = packages matching the branch lockfile);
+a fresh session re-creates them with `git worktree add` from the branches
+above. The lane reports bank to `<scratchpad>/build/<lane>.md`. Kevin's
+words and the reviews behind the spec are in the read-back page below and
+in this file's history.
 
 ## Next, in order
 
