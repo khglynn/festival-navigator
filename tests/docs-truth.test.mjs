@@ -129,3 +129,36 @@ test('package.json describes the app that exists, not one festival', () => {
     `package.json names specific festivals (${named.join(', ')}) in its description/keywords — it will rot; describe the app instead`,
   );
 });
+
+// NOW.md is the one-screen cursor every session (and every compaction) reads
+// first. By 2026-09-16 it had grown to 76 KB of newest-first history that
+// contradicted itself, and the compaction hook fed it back into every
+// resumed session. History belongs in DEVLOG.md; NOW stays small enough to
+// read in one go.
+const NOW_MAX_BYTES = 12 * 1024;
+
+test('NOW.md stays a one-screen cursor', () => {
+  const bytes = Buffer.byteLength(read('NOW.md'));
+  assert.ok(
+    bytes <= NOW_MAX_BYTES,
+    `NOW.md is ${bytes} bytes (limit ${NOW_MAX_BYTES}) — replace stale lines in place and move history to DEVLOG.md`,
+  );
+});
+
+test('every repo path NOW.md and CLAUDE.md cite in backticks exists', () => {
+  // Only words that look like repo files: relative, at least one slash, and
+  // either a file extension or a trailing slash. Branch names (origin/main,
+  // fix/docs), URLs and bare hostnames, globs and CSS/JS identifiers do not match.
+  const looksLikePath = /^\.?[\w-]+(\/[\w.-]+)*\/([\w-][\w.-]*\.[a-z0-9]+|)$/i;
+  const missing = [];
+  for (const doc of ['NOW.md', 'CLAUDE.md']) {
+    for (const [, span] of read(doc).matchAll(/`([^`]+)`/g)) {
+      for (const word of span.split(/\s+/)) {
+        const path = word.replace(/:\d+(-\d+)?$/, '');
+        if (!looksLikePath.test(path)) continue;
+        if (!existsSync(new URL(path.replace(/\/$/, ''), root))) missing.push(`${doc}: ${path}`);
+      }
+    }
+  }
+  assert.deepEqual(missing, [], `docs cite paths that do not exist: ${missing.join(', ')}`);
+});

@@ -13,7 +13,7 @@ Each frame is an **iframe**, so the app's 720px / 1100px breakpoints see the
 `data/festivals/portola-2026.json`; nothing here is hand-transcribed.
 
 **Nothing here is built.** It's a picture of the two calls in
-`claude-plans/2026-08-31-events-model.md`.
+`claude-plans/archive/2026/2026-08-31-events-model.md`.
 
 ---
 

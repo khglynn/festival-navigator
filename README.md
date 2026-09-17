@@ -49,9 +49,11 @@ still exists, so this block cannot quietly rot.
 
 ```
 index.html                    app shell — all screens live here
+gallery.html                  every card, wall and zoom state on one page; the browser tests run against it
 service-worker.js             offline shell; bump CACHE_VERSION on any asset change
 js/v3/app.js                  boot, wiring, screen assembly, sheets
 js/v3/wall.js                 the wall: timetable + lineup, lanes, sticky stage strip, the day-first composition
+js/v3/card-facts.js           the zoom: a card grows in place into its facts (hover, hold, keyboard)
 js/v3/events.js               the events model: day-first, the layout rule, a night's timetable as one run per room
 js/v3/motion.js               how this app moves — the shared motion constants
 js/v3/settings.js             settings and its drills (Spotify, export, bulk paste)
@@ -80,11 +82,16 @@ assets/mark.svg               the mark — one vector source for every icon and 
 assets/og/                    pre-rendered link previews, one per festival
 api/share.js                  per-festival link previews: index.html with its OG tags swapped
 data/festivals/index.json     the festival list (single source of truth)
+data/venues/index.json        the venue registry: each room's usual doors, close and set lengths, with sources
 scripts/validate-festivals.mjs  run before committing festival data; CI enforces it
+scripts/guess-run-times.mjs   a club night's set-time guesses from the venue registry, as a reviewable diff
 scripts/brand-assets.mjs      npm run brand — regenerates the icons and every link preview
 tests/                        node --test suites (npm test)
+tests/browser/                the hover contract in a real browser, against gallery.html (npm run test:browser)
 docs/user-flows.md            what every screen is supposed to do
 docs/add-a-festival.md        how to add a festival
+docs/fest-update-runbook.md   bringing one festival's data up to date without orphaning a pick
+docs/fork-setup.md            forking and self-hosting, and the traps a real fork hit
 ```
 
 ## 🔄 Sync model
