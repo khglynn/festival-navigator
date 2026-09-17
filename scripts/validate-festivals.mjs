@@ -25,6 +25,7 @@ if (!existsSync(DIR)) {
 const files = readdirSync(DIR).filter((x) => x.endsWith('.json') && x !== 'index.json');
 const index = JSON.parse(readFileSync(join(DIR, 'index.json'), 'utf8'));
 const indexIds = new Set(index.map((e) => e.id));
+const indexed = new Map(index.map((e) => [e.id, e]));
 
 // The pick-key freeze (api/_lib/pick-keys.mjs): a live festival's id, artist
 // names and day labels are the strings every crew's picks and notes hang off,
@@ -42,7 +43,18 @@ for (const file of files) {
   const r = validateFestivalDoc(fest, { filename: file });
   errors.push(...r.errors.map((m) => `${file}: ${m}`));
   warnings.push(...r.warnings.map((m) => `${file}: ${m}`));
-  if (!indexIds.has(fest.id)) errors.push(`${file}: festival not listed in index.json`);
+  const listed = indexed.get(fest.id);
+  if (!listed) errors.push(`${file}: festival not listed in index.json`);
+  // index.json repeats a few of the file's fields for the landing. Status is
+  // behaviour there (ordering, the default festival, muting), so a drift is an
+  // error; name and accent are only looks. The display `dates` are free text
+  // that already differ in punctuation, and nothing reads them as data.
+  else {
+    if (listed.status !== fest.status) errors.push(`${file}: status ${JSON.stringify(fest.status)} but index.json says ${JSON.stringify(listed.status)} — the landing reads index.json; change both`);
+    for (const k of ['name', 'accent']) {
+      if (listed[k] !== fest[k]) warnings.push(`${file}: ${k} ${JSON.stringify(fest[k])} but index.json says ${JSON.stringify(listed[k])}`);
+    }
+  }
   const entry = frozen.festivals && frozen.festivals[fest.id];
   if (entry) {
     errors.push(...frozenKeyProblems(fest, entry, { indexIds }).map((m) => `${file}: FROZEN KEY — ${m}`));

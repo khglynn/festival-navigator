@@ -6,7 +6,8 @@
 //   · a display date typed next to its ISO date and disagreeing with it (the
 //     day rule shows one date, the now line keys on the other);
 //   · a name crews can already pick that the pick-key freeze does not hold,
-//     so a later rename would pass CI (Buck Wilson, 2026-09-01).
+//     so a later rename would pass CI (Buck Wilson, 2026-09-01);
+//   · index.json's copy of a festival's status drifting from the file's.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
@@ -75,7 +76,7 @@ test('a display date that disagrees with its ISO date warns — the day rule and
   assert.deepEqual(validateFestivalDoc(range).warnings, []);
 });
 
-// ---- the CI command: freeze completeness -------------------------------
+// ---- the CI command: freeze completeness and index.json ----------------------------
 
 // A throwaway copy of the tree with one extra festival in it, run through the
 // same command CI runs.
@@ -102,7 +103,7 @@ const guardFest = () => ({
 });
 const lines = (out, re) => out.split('\n').filter((l) => l.includes('guard-fest') && re.test(l));
 
-test('the CI command passes the guard festival when the freeze holds every key', () => {
+test('the CI command passes the guard festival when the freeze holds every key and index.json agrees (display dates may differ)', () => {
   const r = validateWith(guardFest());
   assert.ok(r.ok, r.out);
   assert.deepEqual(lines(r.out, /./), []);
@@ -119,4 +120,20 @@ test('a name or day label a crew can pick that the freeze does not hold fails CI
   assert.match(line, /"Fresh"/);
   assert.match(line, /"Saturday"/);
   assert.match(line, /run node scripts\/freeze-pick-keys\.mjs guard-fest/);
+});
+
+test('index.json\'s status must match the file; a drifted name or accent only warns', () => {
+  const g = guardFest();
+  g.index.status = 'scheduled';
+  const r = validateWith(g);
+  assert.equal(r.ok, false);
+  assert.ok(lines(r.out, /❌.*status "lineup" but index\.json says "scheduled"/).length, r.out);
+
+  const h = guardFest();
+  h.index.name = 'Guard Festival';
+  h.index.accent = '9, 9, 9';
+  const s = validateWith(h);
+  assert.ok(s.ok, s.out);
+  assert.ok(lines(s.out, /⚠️.*name "Guard Fest" but index\.json says "Guard Festival"/).length, s.out);
+  assert.ok(lines(s.out, /⚠️.*accent "1, 2, 3" but index\.json says "9, 9, 9"/).length, s.out);
 });
