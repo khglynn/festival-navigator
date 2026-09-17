@@ -9,7 +9,7 @@ import * as state from '../state.js';
 import * as model from './model.js';
 import { LEVEL_LABELS_V4 } from '../parse.js';
 import { computeLanes } from '../overlap.js';
-import { activityMinutes, dayLabelParts } from '../time.js';
+import { dayLabelParts } from '../time.js';
 import { whoCorner, aboutCorner } from './aura.js';
 import { BOARD } from './palette.js';
 import { dayWhisper } from './notes.js'; // runtime-only cycle with this module (colorIndexOf) — safe
@@ -840,12 +840,10 @@ function renderScheduledDayBody(root, day, ctx, layout, weekend, { strip = false
 
   for (let r = startRow; r < startRow + rows; r++) {
     if (r % 4 !== 0) continue; // hour marks only
-    const mins = r * 15;
-    const hr = Math.floor(mins / 60) % 24;
     const label = document.createElement('div');
     label.className = 'hour-label';
     label.style.gridRow = String(r - startRow + 1);
-    label.textContent = `${hr % 12 === 0 ? 12 : hr % 12} ${hr < 12 ? 'AM' : 'PM'}`;
+    label.textContent = hourLabelOf(r * 15);
     rail.appendChild(label);
   }
   // Same-stage overlaps split their column into side-by-side lanes (the old
@@ -986,6 +984,17 @@ export function dayNavOf(fest, ctx) {
       dated: false,
     };
   });
+}
+
+// The rooms of the festival week, for the show menu (MODEL-V4 §3.1) and for
+// anything else that needs to name them: the festival's own, then each
+// section. A fest with one room has no menu — the tap goes to Settings.
+export function roomsOf(fest, ctx) {
+  const plan = wallPlanFor(fest, ctx);
+  if (!plan) return [];
+  const rooms = plan.model.days.some((d) => d.grid || d.billing) ? [{ key: FEST_ROOM, label: fest.name }] : [];
+  for (const s of plan.model.sections) rooms.push({ key: s.key, label: s.label });
+  return rooms;
 }
 
 const mk = (tag, className, text) => {
@@ -1161,28 +1170,23 @@ function renderComposed(root, ctx, fest, { model: plan, scheduled }) {
 
   for (const day of plan.days) {
     root.appendChild(dayRuleFor(day, ctx));
-    // 1. the festival's own room.
-    if (day.grid) {
-      const extras = festRoomExtras(fest, day, layout);
+    // 1. the festival's own room: its timetable on a grid day, then anything
+    //    of the festival's that is not on that grid; a lineup day's billing
+    //    has no venue and no clock, so it stays the day's card grid.
+    if (day.grid || day.billing) {
+      const extras = day.grid ? festRoomExtras(fest, day, layout) : [];
       const room = roomBlock(FEST_ROOM);
       const isFolded = folded.has(FEST_ROOM);
       room.appendChild(sectionHeader(fest.name, festRoomSub(fest), {
-        key: FEST_ROOM, folded: isFolded, onToggle, count: state.getDayArtists(day.dayKey, day.weekend).length + extras.length,
+        key: FEST_ROOM, folded: isFolded, onToggle,
+        count: day.grid ? state.getDayArtists(day.dayKey, day.weekend).length + extras.length : day.billing.length,
       }));
-      if (!isFolded) {
+      if (!isFolded && day.grid) {
         renderScheduledDayBody(room, day.dayKey, ctx, layout, day.weekend, { strip: true });
         if (extras.length) venueGroups(room, extras, ctx, { day, fest, fallbackVenue: festRoomSub(fest) });
+      } else if (!isFolded) {
+        renderCardGrid(room, day.billing, ctx, { day: day.dayKey });
       }
-      root.appendChild(room);
-    } else if (day.billing) {
-      const room = roomBlock(FEST_ROOM);
-      const isFolded = folded.has(FEST_ROOM);
-      room.appendChild(sectionHeader(fest.name, festRoomSub(fest), {
-        key: FEST_ROOM, folded: isFolded, onToggle, count: day.billing.length,
-      }));
-      // A lineup day's billing has no venue and no clock — it is the day's
-      // card grid, as it has always been.
-      if (!isFolded) renderCardGrid(room, day.billing, ctx, { day: day.dayKey });
       root.appendChild(room);
     }
     // 2. each section that plays that night.
