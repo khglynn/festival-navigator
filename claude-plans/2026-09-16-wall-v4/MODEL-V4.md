@@ -199,11 +199,62 @@ opens **the show menu**: the sort popover component reused (`.sort-wrap` +
 festival week (`Portola`, `Afters`, `Folsom`) with a check, then a divider
 and `Settings ›` — because that tap opens Settings today and nothing may
 be lost. Unchecking a room folds it on every day; it is the SAME state as
-§3's fold (`fn_fold_v1_<fid>`), read by both doors. On the phone the popover
+§3's fold (`fn_fold_v1_<fid>`), the menu's one door. On the phone the popover
 opens upward above the dock; on desktop it hangs under the rail. A fest with
 one room has no menu: the tap goes straight to Settings, as today. Escape,
 a tap outside and a row tap all close it; the way in has the beat, the way
 out is quick.
+
+**Since the ship round (2026-09-17):**
+- **A hidden part renders nothing.** No header, no quiet label, no whisper,
+  no note door: the plan (`wallPlanFor`) applies the fold, so a hidden
+  section is absent from every day it played, a hidden extra (Late nights) is
+  absent, and the festival's own room takes its grid, its billed names and
+  its day-less names with it. A search never resurfaces a hidden part. The
+  sheet still lists a note already written on a hidden date (§3a.3).
+- **A day with nothing visible has no tab.** A day whose visible rooms are
+  all empty is dropped from the plan's days: no rule, no tab in the dock or
+  rail, not a scrollspy anchor, never the open — the open is the first
+  VISIBLE grid day; during the fest, today if visible, else the next visible
+  day. Kevin: "if all events for a day are hidden, don't show that day at all
+  — not empty shells." Portola with Afters and Folsom hidden is SAT · SUN.
+- **The menu reads the fest, not the wall** (`roomsOf`: the same plan with
+  nothing folded), so every room is offered whether or not it is hidden —
+  that is where the state is visible. Hiding repaints the wall and the tabs
+  through the ordinary repaint path and lands where you were standing, or on
+  the first visible day if that day went.
+- **Weekend rows.** On a fest with two weekends (`weekendsOf(fest).length >
+  1`, ACL) the festival-room row is replaced by `Weekend 1` and `Weekend 2`
+  (keys `weekend:W1` / `weekend:W2`, in the same folded list, label-only rows
+  like every other). Hiding a weekend drops its three dated tabs; both hidden
+  leaves Late nights alone; a set tagged for both weekends keeps playing on
+  the other. Row order: Weekend 1, Weekend 2, Late nights, Settings. A
+  one-weekend fest is untouched.
+
+## 3b. The ship notes, 2026-09-17
+
+Kevin looked at the v84 preview: "if you're feeling good about it we can
+ship it." Five things stood between the preview and production, in his
+words:
+
+1. **Stage solo is deleted.** "Tap a stage to see only that stage. Tap it
+   again for all of them — this is no longer a thing, remove it." Feature,
+   copy, CSS, tests: all of it (§1.1). A stage head is a plain header.
+2. **Highlighting picks dims, never filters.** "Right now we hide
+   non-timeline events the person hasn't tagged and just dim the ones they're
+   not doing in timeline views. Let's use just dim everywhere. Deciding to
+   highlight user(s) picks shouldn't work as a filter." One rule, one class
+   (`.card.dim`), on the clock, in a stack, in a list, in a search; the "No
+   picks here from …" block is gone.
+3. **A hidden part renders nothing; a day with nothing visible has no tab.**
+   "If all events for a day are hidden, don't show that day at all — not
+   empty shells." (§3.1)
+4. **ACL: Weekend 1 / Weekend 2 in the show menu.** "ACL needs options in the
+   show/hide menu to hide weekend 1 or weekend 2." (§3.1)
+5. **How it works.** One coded-in fest name (`ACL '26` — "easiest fix: code
+   in one fest name, probs ACL"), the picture in brand rather than the
+   accent, "red = something's wrong" ("just say something's wrong"), eight
+   rows. (§3a.4)
 
 ## 4. Notes: artist, fest, dates (Kevin, 2026-09-17 — "a defensible MVP")
 
