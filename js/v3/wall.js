@@ -534,7 +534,7 @@ export function computeTimesLayout(fest, solo = null) {
   // Stage solo (design option D): one stage wide, the rest folded to rails.
   // The same template feeds the strip and every day, so a folded column is
   // folded everywhere — scrolling down a soloed stage stays on it.
-  const cols = columnsTemplate(stages, false, solo);
+  const cols = columnsTemplate(stages, solo);
   return {
     stages,
     solo: cols.solo,

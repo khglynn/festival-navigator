@@ -79,11 +79,11 @@ test('scheduled search respects the people filter (a list hides, never dims)', (
   hit.remove();
 });
 
-test('columnsTemplate: a soloed stage is wide, everything else (the EE column too) folds to a rail; unknown solo = no solo', () => {
+test('columnsTemplate: a soloed stage is wide, every other stage folds to a rail; unknown solo = no solo', () => {
   const stages = ['Pier Stage', 'Crane Stage', 'Warehouse'];
-  assert.deepEqual(filters.columnsTemplate(stages, false, null), { template: 'minmax(150px, 1fr) minmax(150px, 1fr) minmax(150px, 1fr)', solo: null });
-  assert.deepEqual(filters.columnsTemplate(stages, true, 'Warehouse'), { template: '34px 34px minmax(150px, 1fr) 34px', solo: 'Warehouse' });
-  assert.equal(filters.columnsTemplate(stages, false, 'Renamed Stage').solo, null, 'a remembered stage that no longer exists cannot blank the wall');
+  assert.deepEqual(filters.columnsTemplate(stages, null), { template: 'minmax(150px, 1fr) minmax(150px, 1fr) minmax(150px, 1fr)', solo: null });
+  assert.deepEqual(filters.columnsTemplate(stages, 'Warehouse'), { template: '34px 34px minmax(150px, 1fr)', solo: 'Warehouse' });
+  assert.equal(filters.columnsTemplate(stages, 'Renamed Stage').solo, null, 'a remembered stage that no longer exists cannot blank the wall');
 });
 
 test('the people filter dims on the clock and hides in a stack — and says so when a room is left empty', () => {

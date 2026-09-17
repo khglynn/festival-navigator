@@ -97,13 +97,14 @@ export function railLabels(stages) {
 export const SOLO_RAIL = '34px';
 
 // The timetable's column template, with a soloed stage wide and every other
-// column (stages AND the everything-else column) folded to a rail. No solo =
-// the everyday template. Unknown solo (a stage that no longer exists) = no
-// solo, so a remembered stage name from a renamed grid can't blank the wall.
-export function columnsTemplate(stages, hasEE, solo) {
+// stage folded to a rail. No solo = the everyday template. Unknown solo (a
+// stage that no longer exists) = no solo, so a remembered stage name from a
+// renamed grid can't blank the wall. The columns are the festival's stages
+// and nothing else: under MODEL-V4 §1.3 anything off the grid is a venue
+// group below it, so there is no everything-else column to reserve.
+export function columnsTemplate(stages, solo) {
   const active = solo && stages.includes(solo) ? solo : null;
   const cols = stages.map((s) => (active && s !== active ? SOLO_RAIL : 'minmax(150px, 1fr)'));
-  if (hasEE) cols.push(active ? SOLO_RAIL : 'minmax(150px, 1fr)');
   return { template: cols.join(' '), solo: active };
 }
 
