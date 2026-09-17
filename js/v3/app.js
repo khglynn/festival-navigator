@@ -606,6 +606,16 @@ function showMenuRow(label, { key = null, on = null, settings = false } = {}) {
   return li;
 }
 
+// FOLLOW-UP, known and deliberate (integration, 2026-09-16): these rows are
+// pointer-only. The fest name is a <button>, so a keyboard opens the menu and
+// Escape closes it, but the rows carry no tabindex and no arrow handling — the
+// popover here reuses sort-control.js's LOOK (.sort-wrap + .sort-pop, listbox
+// semantics), not its keyboard, which has full parity (arrows, Enter,
+// typeahead, kb-active). Not a dead end: §3 makes every room header a
+// <button aria-expanded>, so a keyboard folds a room at the wall itself; this
+// is the second door to a reachable thing. Fixing it means lifting the roving
+// activeIdx out of sort-control.js so both popovers share it, which is more
+// than this round should move.
 function buildShowMenu(rooms, folded) {
   const pop = document.createElement('ul');
   pop.className = 'sort-pop';
