@@ -29,47 +29,57 @@ how we got here belongs in DEVLOG.md.
 
 ## Happening now
 
-- **The pre-Portola fix round (2026-09-16).** A Codex review and a team of
-  reviewers found real defects in #16. Four builders fix them on local
-  branches cut from `events-ui`: fix/shell, fix/wall, fix/data-tooling,
-  fix/docs. A festival-data refresh runs beside them on data-refresh-0916.
-  **Nothing is pushed.**
+- **The pre-Portola fix round is integrated (2026-09-16, local).** Branch
+  `integration-0916` off `events-ui`: the four fix lanes (shell, wall,
+  data-tooling, docs), the festival-data refresh (Portola afters re-timed
+  from venue pages, ACL set times for both weekends, four ACL names dropped
+  from newer official bills), Lost Lands removed (Kevin's call), SW v79,
+  527 tests green. `sw-first` off `main` carries only the offline-cache fix
+  (v80) so it can ship a day ahead. **Nothing is pushed.**
+- **The wall redesign is drawn, awaiting Kevin's pick:** MODEL-V4
+  (`claude-plans/2026-09-16-wall-v4/MODEL-V4.md`), canvas
+  https://claude.ai/artifact/NELYG7pzVaS5dUKznoCSUD. One rule: stage
+  columns only where a festival publishes a grid; venue stacks in play order
+  everywhere else; days are the days; sections fold; three note doors.
+- A WebKit iPhone walk of the integrated build is running (the venue link
+  inside a long-pressed card, Low Power, the new-build strip, cold boot).
 
 ## Next, in order
 
-1. Merge the fix branches into `events-ui`; run `scripts/sw-stamp.mjs` once.
-2. Codex re-reviews the result.
-3. A real-browser walk with real pointer input, at desktop and phone sizes.
-4. Kevin's one look, on a fresh unique preview URL (never the branch alias,
+1. Kevin picks a direction on the canvas; MODEL-V4 builds in four lanes off
+   `integration-0916` (Thu–Fri), then integrate, stamp once, Codex round.
+2. A real-browser walk (Chromium + WebKit iPhone) with real pointer input.
+3. Kevin's one look, on a fresh unique preview URL (never the branch alias,
    which keeps a stale service worker).
-5. On Kevin's yes: merge #16 (that is the production promote), close #15.
-   Target Sep 20–21, before Portola Week afters start Thu Sep 24.
-6. ACL set times go in as data-only updates.
-7. After Oct 11, the simplification arc: one pointer-position close rule for
-   the zoom, one timetable builder, one event-format reader, app.js and
-   settings.js split, then add-a-show with a design pass first
-   (`claude-plans/2026-09-02-add-a-show.md`).
+4. On Kevin's yes: ship `sw-first` to main first, then merge the release
+   (that is the production promote), close #15. Target Sep 20–21, before
+   Portola Week afters start Thu Sep 24.
+5. ACL Fest Nights and set-time drops go in as data-only updates.
+6. After Oct 11, the simplification arc: one pointer-position close rule for
+   the zoom, app.js and settings.js split, then add-a-show with a design
+   pass first (`claude-plans/2026-09-02-add-a-show.md`).
 
 Calendar: Portola Sep 26–27, afters
 from Sep 24 · ACL Oct 2–4 and 9–11 · EDC Orlando Nov 6–8 · Seismic Nov 13–15.
 
 ## Waiting on Kevin
 
-- Ship the service-worker fix a day ahead of the rest?
-- A standing OK for data-only pushes (festival JSON, no app code)?
-- Delete 18 stale branches and 6 worktrees? Two old `origin/claude/…`
-  branches hold unique December 2025 docs; glance before deleting.
-- July loose ends, never closed:
-  - the crew token that leaked into this public repo on 2026-07-09: rotate?
-  - a client secret seen in a screenshot: rotate?
-  - an unused Vercel Blob write token: delete? (A July 13 note says it was
-    removed; check Vercel.)
-  - stage.fest.kevinhg.com still serves v35: the festival-navigator-staging
-    Vercel project has cancelled every build since 2026-08-10 through the
-    Ignored Build Step in its project settings, not vercel.json (checked
-    live 2026-09-16). It shares the production database: fix it or retire it?
-- Smaller: was the Ray email draft sent (Gmail thread "Forked
-  festival-navigator")?
+- The direction pick on the canvas (A = MODEL-V4, B = today's build, C = a
+  flat list), and his notes.
+- stage.fest.kevinhg.com: the festival-navigator-staging Vercel project has
+  cancelled every build since 2026-08-10 through the Ignored Build Step in
+  its project settings (checked live 2026-09-16) and shares the production
+  database. Proposed: point it at the release branch and remove the cancel,
+  so it becomes the stable phone-test URL. Fix or retire?
+- The Ray email: an unsent draft sits in the "Forked festival-navigator"
+  thread (hello@kevinhg.com, dated 2026-09-01); the GitHub issue comment did
+  go out. Refresh the wording and send?
+
+Decided 2026-09-16: data-only pushes have a standing OK (validator + freeze
++ tests first) · 18 stale branches and 6 worktrees deleted (the deck commit
+is tagged `back-pocket/deck-panel`) · crew tokens are not sensitive to Kevin
+· the unused Vercel Blob token can go when we're next in Vercel · Lost Lands
+dropped · the offline-cache fix ships first, after the mobile walk.
 
 ## Banked, not built
 
