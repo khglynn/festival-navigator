@@ -37,7 +37,13 @@ const { validateIncoming } = await import('../api/_lib/crew-shared.mjs');
 
 const FID = 'round-fest';
 FESTIVAL_INDEX.push({ id: FID, status: 'lineup' });
-FESTIVALS[FID] = { id: FID, name: 'Round', artists: [{ name: 'GRiZ', day: 'Saturday' }] };
+// A day note is keyed by its DATE since V4; the legacy 'Saturday' key this
+// file writes maps to Sep 26 through dayMeta, read-time only.
+FESTIVALS[FID] = {
+  id: FID, name: 'Round',
+  dayMeta: { Saturday: { wd: 'Sat', date: 'Sep 26', iso: '2026-09-26' } },
+  artists: [{ name: 'GRiZ', day: 'Saturday' }],
+};
 const TOKEN = 'roundtesttoken_012345678';
 state.activateCrew(TOKEN, {
   v: 4, meta: {}, spotify: {},
@@ -67,13 +73,13 @@ const send = (box, text) => {
 };
 
 test('the whisper: nothing until someone writes, then the newest note and the count', () => {
-  assert.equal(notes.dayWhisper('day', 'Saturday', ctx, () => {}), null, 'no notes, no whisper');
+  assert.equal(notes.dayWhisper('2026-09-26', 'Sat · Sep 26', ctx, () => {}), null, 'no notes, no whisper');
   const t1 = '2026-09-26T20:00:00.000Z';
   state.recordNote(FID, 'day', 'Saturday', model.makeNoteId('Kevin', t1, 'aaaaaa'), { author: 'Kevin', ts: t1, text: 'gate at 1' });
   const t2 = '2026-09-26T20:10:00.000Z';
   state.recordNote(FID, 'day', 'Saturday', model.makeNoteId('Drew', t2, 'bbbbbb'), { author: 'Drew', ts: t2, text: 'works for me', re: model.makeNoteId('Kevin', t1, 'aaaaaa') });
   let opened = false;
-  const w = notes.dayWhisper('day', 'Saturday', ctx, () => { opened = true; });
+  const w = notes.dayWhisper('2026-09-26', 'Sat · Sep 26', ctx, () => { opened = true; });
   assert.ok(w, 'notes exist, the whisper renders');
   assert.equal(w.querySelector('.who').textContent, 'Drew', 'the NEWEST voice — a reply counts');
   assert.equal(w.querySelector('.text').textContent, 'works for me');
@@ -240,7 +246,7 @@ test('the stub says "you" when the note you removed was your own', () => {
   const rt = '2026-09-26T22:05:00.000Z';
   state.recordNote(FID, 'day', 'Saturday', model.makeNoteId('Drew', rt, 'ffffff'), { author: 'Drew', ts: rt, text: 'ok', re: mineId });
   state.recordNote(FID, 'day', 'Saturday', mineId, { author: 'Kevin', ts: t, text: '', deleted: true });
-  notes.openDayNotes('Saturday', ctx, () => {});
+  notes.openDayNotes('2026-09-26', 'Sat · Sep 26', ctx, () => {});
   const stubs = [...sheet().querySelectorAll('.n-note.stub .n-text')].map((n) => n.textContent);
   assert.ok(stubs.includes('you removed this note'), `the file's own "you" convention, got ${JSON.stringify(stubs)}`);
   notes.closeSheet();

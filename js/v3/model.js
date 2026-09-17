@@ -135,6 +135,57 @@ export function noteOverlay(fid, scope, target, note, id) {
   return { festivals: { [fid]: { notes: { [scope]: scoped } } } };
 }
 
+// ---- day notes are keyed by the date (MODEL-V4 §4) ----------------------------------
+// A day note used to be keyed by the day LABEL the file happens to use
+// ("Saturday", "Day 3"). A two-weekend festival has two Saturdays, so one
+// thread served both — and a section label ("Afters") was a note target of its
+// own. Both go: a day note is keyed by its ISO date, and sections have no
+// notes at all.
+//
+// Nothing is renamed and nothing is migrated. The old keys are still read,
+// mapped to dates at READ time through dayMeta, and the pick-key freeze is
+// untouched. New notes only ever land on a date.
+
+export const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+// Every date one dayMeta entry stands for: one for a single-weekend fest
+// (`iso`), both for a two-weekend one (`isos: {W1, W2}`).
+export function isosOfDayMeta(meta) {
+  const out = [];
+  if (!meta) return out;
+  if (typeof meta.iso === 'string' && ISO_DATE_RE.test(meta.iso)) out.push(meta.iso);
+  for (const v of Object.values(meta.isos || {})) {
+    if (typeof v === 'string' && ISO_DATE_RE.test(v) && !out.includes(v)) out.push(v);
+  }
+  return out;
+}
+
+// The legacy weekday-keyed day notes that render under `iso`. On a two-weekend
+// fest "Friday" maps to BOTH Fridays — which is what a note written against
+// the label always meant, since there was only ever one of it.
+export function legacyDayKeysFor(fest, iso) {
+  if (!ISO_DATE_RE.test(String(iso))) return [];
+  const meta = (fest && fest.dayMeta) || {};
+  return Object.keys(meta).filter((k) => !ISO_DATE_RE.test(k) && isosOfDayMeta(meta[k]).includes(iso));
+}
+
+// The keys one date's conversation reads from, oldest convention first. The
+// LAST one is the date itself, and it is the only key anything new is written
+// to — so `dayNoteKeysFor(...).at(-1)` is always the write target.
+export function dayNoteKeysFor(fest, iso) {
+  return [...legacyDayKeysFor(fest, iso), iso];
+}
+
+// What is left in notes.day once every date has taken its own key and the
+// weekday labels those dates claim: the section labels ("Afters", "Folsom"),
+// plus any date the festival no longer has. Readable, never written to again.
+export function sectionNoteKeys(doc, fid, fest, dates) {
+  const isos = [...new Set(dates || [])];
+  const claimed = new Set(isos);
+  for (const iso of isos) for (const k of legacyDayKeysFor(fest, iso)) claimed.add(k);
+  return Object.keys(doc?.festivals?.[fid]?.notes?.day || {}).filter((k) => !claimed.has(k));
+}
+
 // ---- threads (2026-08-29) ----------------------------------------------------------
 // A reply is a note with one extra key: re = its root note's id. One level
 // deep by construction: the reply composer always passes the ROOT's id, so
