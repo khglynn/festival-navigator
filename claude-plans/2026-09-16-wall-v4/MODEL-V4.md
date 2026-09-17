@@ -132,7 +132,51 @@ section says its own sub from `dayMeta[<label>].sub` if present, else nothing.
 - A lineup-only two-weekend fest (ACL 2025, archived) keeps the `W1`/`W2`
   card tags and shows both weekends; it never had a grid to split.
 
-## 3. Sections fold on a tap of their header
+## 3a. Kevin's look, 2026-09-17 — four changes (supersede the lines below where they conflict)
+
+1. **One column width everywhere.** The stage grid's columns and the venue
+   stacks' columns are the same track: a token `--col-w` (under 720px: two
+   columns across the shell, `calc((100% - 6px) / 2)` of the scroller or
+   grid; at ≥720px: a fixed width the stacks already resolve to, ~176px),
+   used by `computeTimesLayout`'s template (`repeat(n, var(--col-w))`), the
+   stage strip (same template), and `.venue-grid` (`repeat(auto-fill,
+   var(--col-w))`, `justify-content: start`). The grid no longer stretches to
+   fill a wide window; a Portola set card and an afters card are the same
+   width on every screen. Lane-split cells still divide their column.
+2. **No header fold.** Section headers are not buttons and carry no chevron;
+   the fold state (`fn_fold_v1_<fid>`) is driven only by the show menu on the
+   fest name (§3.1), which stays. Delete the header's fold wiring, the
+   `folded` sub-copy on the header, and their tests; keep the menu's.
+3. **Notes: written where you are** (replaces §4's per-date doors).
+   The Notes sheet holds the festival composer and *only the targets that
+   have notes* — no empty date rows. A day's rule on the wall is the door to
+   that date's notes (label `Friday`); a section header on a day is the door
+   to that section-on-that-date's notes (label `Folsom · Friday`, key
+   `<iso>|<section label>` — a new, additive key); a card's zoom is the door
+   to the artist's (unchanged). Each thread appears in the sheet only once
+   someone writes, labelled as above, and its whisper is pinned under the
+   rule or header that opens it. Nothing rolls up: a `Folsom · Friday` note
+   does not appear under `Friday`. Legacy weekday-keyed notes still render
+   under their date; legacy section-keyed (`Afters`, `Folsom`) notes stay
+   readable in the sheet under that label with no door. The rule and header
+   taps replace the fold taps — no new control appears.
+4. **How it works** is grouped the way the screen reads. Rows, in order,
+   each drawn with the REAL component (never a re-drawn lookalike):
+   1. people chips — `Tap a name to highlight their picks.` / `Switch who you are picking as in Settings.`
+   2. `+ Add` — `Add your people with + Add,` / `or share the crew link — anyone who opens it is in, no account needed.`
+   3. three cards — `Tap an artist to add your color.` / `Brighter each tap. 4 taps = must see.`
+   4. the who-corner marks — `Everyone's picks land on the card.` / `Ticks are picks; a letter is a must. White stroke = you.`
+   5. the about-corner chips — `Hold for details.` / `Violet = crew notes; pin one to keep it on top. Green = it's in your Spotify (connect in Settings).`
+   6. a run card (`Gelli Haha · ~10:30 PM`) — `**~ a guessed start time and artist order.** Based on limited intel.`
+   7. a stage head — `Tap a stage to see only that stage.` / `Tap it again for all of them.`
+   8. the dock's fest link (`.fest-link`: Anton, the fest accent, the sync dot — ONE row, the real component) — `Tap the fest name to show or hide parts of the week.` / `Green dot = synced. Gray = offline (still works); red = something needs you.`
+   9. the gear — `Switch fests and more in Settings.`
+   Kevin, 2026-09-17: the fest name and its dot were drawn twice, differently, five rows apart ("PORTOLA '26 ▾" in the body face and "PORTOLA '26 ●"); once, together, as the component.
+5. Sort options inside the show menu for every fest: banked in hg-pen, not
+   built (Kevin: "unless it's easy to knock out" — it is not: the old sort
+   applies to the lineup-only wall; stacks and grids need their own think).
+
+## 3. Sections fold on a tap of their header (superseded by 3a.2 — the menu alone folds)
 
 - `.sec-head` is a `<button aria-expanded>` with a chevron at its end. A tap
   folds the room's body; the header stays and its sub becomes `<n> shows`.
