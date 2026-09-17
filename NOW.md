@@ -64,9 +64,10 @@ from Sep 24 · ACL Oct 2–4 and 9–11 · EDC Orlando Nov 6–8 · Seismic Nov 
   - a client secret seen in a screenshot: rotate?
   - an unused Vercel Blob write token: delete? (A July 13 note says it was
     removed; check Vercel.)
-  - stage.fest.kevinhg.com is stuck on v35 (every build since 2026-08-10 is
-    cancelled by its Ignored Build Step) and shares the production
-    database: fix it or retire it?
+  - stage.fest.kevinhg.com still serves v35: the festival-navigator-staging
+    Vercel project has cancelled every build since 2026-08-10 through the
+    Ignored Build Step in its project settings, not vercel.json (checked
+    live 2026-09-16). It shares the production database: fix it or retire it?
 - Smaller: was the Ray email draft sent (Gmail thread "Forked
   festival-navigator")?
 
