@@ -222,7 +222,18 @@ out is quick.
   nothing folded), so every room is offered whether or not it is hidden —
   that is where the state is visible. Hiding repaints the wall and the tabs
   through the ordinary repaint path and lands where you were standing, or on
-  the first visible day if that day went.
+  the first visible day if that day went. What leaves is the room, and any
+  day that goes with it (its rule and everything under it); what comes back
+  arrives with the usual beat — a weekend leaves as its three days.
+- **A share image is the wall you see.** The Settings day-image exporter
+  reads the same plan with the fold applied (`tools.js planFor`), so a hidden
+  room is not in a day's image and a day the fold emptied is not offered.
+  The fold is viewer-side, and so is the image: it is what you would have
+  screenshotted.
+- **A key the menu does not offer is inert** (`wallPlanFor`): on a
+  two-weekend fest `:fest` means nothing, because the weekend rows are the
+  festival room there and no row could ever clear it. A stale `:fest` from
+  before a file gained its weekend tags hides nothing.
 - **Weekend rows.** On a fest with two weekends (`weekendsOf(fest).length >
   1`, ACL) the festival-room row is replaced by `Weekend 1` and `Weekend 2`
   (keys `weekend:W1` / `weekend:W2`, in the same folded list, label-only rows
