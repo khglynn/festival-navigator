@@ -59,8 +59,8 @@ state.activateCrew('stripfesttoken_0123456789', { v: 4, meta: {}, spotify: {}, p
 const root = document.getElementById('wall-root');
 const ctx = (lowPower) => ({
   fid: FID, meName: 'Kevin', affinity: null, lowPower, sort: 'day', query: '', weekend: 'all',
-  filterPeople: [], soloStage: null, folded: [], now: new Date('2026-01-01T12:00:00'),
-  picks: {}, onOpenNotes: null, onNotesChange: null, onOpenDayNotes: null, onSoloStage: () => {}, onTap: () => {},
+  filterPeople: [], folded: [], now: new Date('2026-01-01T12:00:00'),
+  picks: {}, onOpenNotes: null, onNotesChange: null, onOpenDayNotes: null, onTap: () => {},
 });
 // What app.js applyLowPower does, then the repaint leaving Settings does.
 const paint = (lowPower = false) => {

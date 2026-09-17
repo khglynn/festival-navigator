@@ -60,8 +60,8 @@ state.activateCrew(TOKEN, { v: 4, meta: {}, spotify: {}, people: { Kevin: { colo
 
 const ctxFor = (fid, over = {}) => ({
   fid, meName: 'Kevin', affinity: null, lowPower: true, sort: 'day', query: '', weekend: 'all',
-  filterPeople: [], soloStage: null, folded: [], now: new Date('2026-01-01T12:00:00'),
-  picks: model.picksFor(state.crewDoc, fid), onOpenNotes: () => {}, onNotesChange: null, onOpenDayNotes: () => {}, onSoloStage: () => {}, onTap: () => {},
+  filterPeople: [], folded: [], now: new Date('2026-01-01T12:00:00'),
+  picks: model.picksFor(state.crewDoc, fid), onOpenNotes: () => {}, onNotesChange: null, onOpenDayNotes: () => {}, onTap: () => {},
   ...over,
 });
 const render = (fid, over = {}) => {
@@ -143,18 +143,18 @@ test('a set on a stage that is not a column is a card under that stage — its o
   ]);
 });
 
-test('a day with nothing off its grid has no groups; a stage solo hides them', () => {
-  let root = render('plain-fest');
+test('a day with nothing off its grid has no groups', () => {
+  const root = render('plain-fest');
   assert.deepEqual(festRooms(root).map((r) => r.groups.length), [0]);
-  root = render('stray-fest', { soloStage: 'A' });
-  assert.deepEqual(festRooms(root).map((r) => r.groups.length), [0, 0], 'solo promises just that stage');
 });
 
-test('the people filter reaches the festival room\'s groups like any stack', () => {
+test('the people filter reaches the festival room\'s groups like any stack: it dims, and never empties a room', () => {
   state.crewDoc.festivals['stray-fest'] = { selections: { 'Secret Set': { Kevin: 3 } } };
-  let rooms = festRooms(render('stray-fest', { filterPeople: ['Kevin'], picks: model.picksFor(state.crewDoc, 'stray-fest') }));
-  assert.deepEqual(rooms[0].groups.flatMap((g) => g.cards.map((c) => c.name)), ['Secret Set'], 'a picked stray passes the filter');
-  rooms = festRooms(render('stray-fest', { filterPeople: ['Nobody'], picks: model.picksFor(state.crewDoc, 'stray-fest') }));
-  assert.deepEqual(rooms[0].groups, [], 'an unpicked stray is filtered out');
-  assert.match(rooms[0].empty, /No picks here from Nobody/, 'and the room says so');
+  const lit = (root) => [...root.querySelectorAll('.room[data-room=":fest"] .venue-group .card')].map((c) => [c.dataset.artist, !c.classList.contains('dim')]);
+  let root = render('stray-fest', { filterPeople: ['Kevin'], picks: model.picksFor(state.crewDoc, 'stray-fest') });
+  assert.deepEqual(lit(root).slice(0, 2), [['Secret Set', true], ['Not Yet', false]], 'a picked stray is lit, an unpicked one dimmed');
+  root = render('stray-fest', { filterPeople: ['Nobody'], picks: model.picksFor(state.crewDoc, 'stray-fest') });
+  assert.deepEqual(festRooms(root)[0].groups.map((g) => g.cards.length), [1, 1], 'every group keeps its cards');
+  assert.ok(lit(root).every(([, on]) => !on), 'all dimmed');
+  assert.equal(festRooms(root)[0].empty, null, 'and nothing says the room is empty');
 });

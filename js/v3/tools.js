@@ -4,6 +4,7 @@ import * as state from '../state.js';
 import * as model from './model.js';
 import { parseBulkLineV4, LEVEL_LABELS_V4 } from '../parse.js';
 import { renderCard, applyWeekend, wallPlanFor } from './wall.js';
+import { loadFolded } from './filters.js';
 import { approxMark, venueGroupsOf, shortDateLabel } from './events.js';
 
 export const el = (tag, css, text) => {
@@ -217,8 +218,12 @@ export function openBulkPaste(host, actions) {
 // a lineup-only one shows both, so the strip that used to store a choice in
 // `fn_weekend_v1_<fid>` went with the weekend row. This read outlived the
 // write and could only ever answer 'all'.
+// The fold too (2026-09-17): a share image is the wall you see. A hidden room
+// renders nothing on the wall, so it is not in a day's image either, and a
+// day the fold emptied is not offered — the one rule, on the one surface it
+// had missed (skeptic, ship round).
 function planFor(fest) {
-  return wallPlanFor(fest, { sort: 'day', query: '', weekend: 'all' });
+  return wallPlanFor(fest, { sort: 'day', query: '', weekend: 'all', folded: loadFolded(fest.id) });
 }
 
 // The days a share image can be built for, in the wall's own order, each with

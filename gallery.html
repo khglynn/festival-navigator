@@ -518,8 +518,7 @@ state.recordAffinity('Kevin', {
 
 const ctx = {
   fid: GFID, meName: 'Kevin', picks: {}, affinity: null,
-  lowPower: false, filterPeople: [], soloStage: null, now: null,
-  onSoloStage: () => {},
+  lowPower: false, filterPeople: [], now: null,
   onOpenNotes: (artist) => zoomStatus(`+ notes tapped for "${artist}" — the notes sheet lives in its own gallery section below, not wired here`),
   onOpenDayNotes: () => {},
   onOpenFestNotes: () => {},
@@ -795,8 +794,7 @@ let folded = [];
 const NOW = new Date('2026-09-27T06:30:00Z');
 const ectx = {
   fid: EFID, meName: 'Kevin', picks: {}, affinity: null, lowPower: false,
-  sort: 'day', query: '', weekend: 'all', filterPeople: [], soloStage: null, folded: [], now: NOW,
-  onSoloStage: () => {},
+  sort: 'day', query: '', weekend: 'all', filterPeople: [], folded: [], now: NOW,
   onOpenNotes: (artist) => eventsStatus(`+ notes tapped for "${artist}" — the sheet is not wired in the gallery`),
   onOpenDayNotes: (target, label) => eventsStatus(`notes tapped for ${label} (${target}) — the sheet is not wired in the gallery`),
   onOpenFestNotes: () => {},
@@ -851,9 +849,8 @@ document.getElementById('events-lowpower').addEventListener('change', (e) => {
 });
 // Hiding a room: in the app this is the show menu on the fest name (MODEL-V4
 // §3.1), which lives in the shell and not in renderWall — so the gallery gives
-// it the same state through checkboxes. The header is not a control any more
-// (§3a.2), so a hidden room here is what the menu leaves: the header, quiet,
-// with nothing under it.
+// it the same state through checkboxes. A hidden room renders nothing, and a
+// day with nothing visible has no rule and no tab (2026-09-17).
 const ROOMS = [[':fest', 'Gallery Fest'], ['Afters', 'Afters'], ['Folsom', 'Folsom'], ['Late nights', 'Late nights']];
 (function wireRoomToggles() {
   const host = document.getElementById('events-rooms');

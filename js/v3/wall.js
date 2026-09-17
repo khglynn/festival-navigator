@@ -14,7 +14,7 @@ import { whoCorner, aboutCorner } from './aura.js';
 import { BOARD } from './palette.js';
 import { dayWhisper, festWhisper, dayTargetLabel } from './notes.js'; // runtime-only cycle with this module (colorIndexOf) — safe
 import { factsFor, timeRange } from './card-facts.js'; // same runtime-only cycle: the card's ONE model
-import { passesPeople, columnsTemplate, railLabels, FEST_ROOM } from './filters.js';
+import { passesPeople, COL, FEST_ROOM } from './filters.js';
 import { nowOnDay, nowOffsetPx, clockLabel, festivalClock } from './now.js';
 import { eventModelOf, venueGroupsOf, dateRuleLabel, occOf, hourLabelOf, approxMark, parseEventTime } from './events.js';
 import { reduced } from './motion.js';
@@ -387,16 +387,15 @@ function lineupSubLabel(a) {
   return subLabel || undefined;
 }
 
-// The card grid every list section shares: the people filter HIDES here (no
-// clock to keep in shape) and says so when that leaves nothing, so an empty
-// section reads as "no picks here" rather than "the data is gone".
+// The card grid every list section shares. The people filter never hides a
+// card here or anywhere (Kevin, 2026-09-17: highlighting picks "shouldn't
+// work as a filter"): every entry renders, and renderCard dims the ones the
+// selected people did not pick.
 function renderCardGrid(root, list, ctx, { day = null, subLabelOf = lineupSubLabel, className = 'wall-grid' } = {}) {
-  const filtering = ctx.filterPeople && ctx.filterPeople.length;
-  const shown = filtering ? list.filter((a) => passesPeople(ctx.picks, a.name, ctx.filterPeople)) : list;
   const grid = document.createElement('div');
   grid.className = className;
   const showTags = !ctx.weekend || ctx.weekend === 'all';
-  for (const a of shown) {
+  for (const a of list) {
     const tag = showTags && (a.weekends === 'W1' || a.weekends === 'W2') ? a.weekends : undefined;
     // The occurrence comes from the model (events.js occOf), so a card found
     // in a search is the SAME card as the one on the wall — a dated show's
@@ -404,14 +403,8 @@ function renderCardGrid(root, list, ctx, { day = null, subLabelOf = lineupSubLab
     // list whose entries carry none.
     grid.appendChild(renderCard(a.name, ctx, { tag, time: subLabelOf(a), occ: { ...occOf(a), day: a.day || day || null } }));
   }
-  if (filtering && !shown.length) {
-    const none = document.createElement('div');
-    none.className = 'section-empty';
-    none.textContent = `No picks here from ${ctx.filterPeople.join(' or ')}.`;
-    root.appendChild(none);
-  }
   root.appendChild(grid);
-  return shown;
+  return list;
 }
 
 // `opts.dayKey` is the jump / scrollspy key when the visible label is not
@@ -488,68 +481,37 @@ export function applySort(artists, mode, ctx) {
 // column stays on one stage from Thursday to Sunday. The strip lives OUTSIDE
 // the horizontal scrollers because position:sticky can't escape an
 // overflow-x container (the same physics that put the hour rail outside).
-export function computeTimesLayout(fest, solo = null) {
+export function computeTimesLayout(fest) {
   const stages = model.canonicalStages(fest);
-  // The columns are the festival's stages and nothing else. Anything that
-  // is not a stage set on the clock — activities, a set whose stage is not
-  // a column — renders as a venue group under the grid, in the festival's
-  // own room (MODEL-V4 §1.3), never in a reserved column: a 9:30 AM yoga row
-  // beside 5 PM sets was a column on a clock its items were not on (Kevin,
-  // Electric Forest, 2026-09-02: "a cards section with our header").
-  // Stage solo (design option D): one stage wide, the rest folded to rails.
-  // The same template feeds the strip and every day, so a folded column is
-  // folded everywhere — scrolling down a soloed stage stays on it.
-  const cols = columnsTemplate(stages, solo);
-  return {
-    stages,
-    solo: cols.solo,
-    colsTemplate: cols.template,
-    rails: railLabels(stages), // what each stage's folded rail says
-  };
+  // The columns are the festival's stages and nothing else, every one at the
+  // ONE card column (filters.js COL). Anything that is not a stage set on
+  // the clock — activities, a set whose stage is not a column — renders as
+  // a venue group under the grid, in the festival's own room (MODEL-V4
+  // §1.3), never in a reserved column: a 9:30 AM yoga row beside 5 PM sets
+  // was a column on a clock its items were not on (Kevin, Electric Forest,
+  // 2026-09-02: "a cards section with our header"). The same template feeds
+  // the strip and every day, so a column is the same column all the way
+  // down.
+  return { stages, colsTemplate: stages.map(() => COL).join(' ') };
 }
 
-// A stage header is a button: tap to solo that stage, tap the soloed one to
-// restore all. Folded stages render as slim rails (still tappable — tapping a
-// rail moves the solo there). A muted head never solos; it folds
-// with the others.
-function stageHead(label, { muted = false, layout = null, ctx = null } = {}) {
-  const canSolo = !muted && ctx && typeof ctx.onSoloStage === 'function';
-  const h = document.createElement(canSolo ? 'button' : 'div');
+// A stage header names its column and takes no tap (ship round, 2026-09-17:
+// the tap-to-see-only-this-stage it used to carry was cut whole — a feature
+// nobody could find from the screen). The same component heads a venue's
+// stack (venueGroups). The text sits in an inner label so the ellipsis clips
+// THAT, not the head.
+function stageHead(label) {
+  const h = document.createElement('div');
   h.className = 'stage-head';
-  if (muted) h.style.color = 'var(--text-secondary)'; // neutral tint — not a stage
   h.title = label; // long names ellipsize — hover recovers
-  const solo = layout && layout.solo;
-  // The text sits in an inner label so the ellipsis clips THAT, not the
-  // button — overflow:hidden on the button would also clip the ::after that
-  // gives a 32px-tall head its 44px tap target (Codex gate, 2026-08-27).
   const text = document.createElement('span');
   text.className = 'label';
+  text.textContent = label;
   h.appendChild(text);
-  if (solo && label !== solo) {
-    h.classList.add('rail');
-    // Bounded to what a rail can show (filters.js railLabels — Codex round
-    // 4, 2026-08-27); the full name stays in title and aria-label.
-    text.textContent = muted ? 'ELSE' : ((layout.rails || {})[label] || label.slice(0, 4));
-    h.setAttribute('aria-label', muted ? 'Everything else (folded)' : `Solo ${label}`);
-  } else {
-    text.textContent = label;
-    if (solo === label) {
-      h.setAttribute('aria-pressed', 'true');
-      h.setAttribute('aria-label', `${label} — showing only this stage; tap for all stages`);
-      const off = document.createElement('span');
-      off.className = 'solo-off';
-      off.textContent = '✕ all stages';
-      text.appendChild(off);
-    } else if (canSolo) {
-      h.setAttribute('aria-pressed', 'false');
-      h.setAttribute('aria-label', `Solo ${label}`);
-    }
-  }
-  if (canSolo) h.addEventListener('click', () => ctx.onSoloStage(solo === label ? null : label));
   return h;
 }
 
-function renderStageStrip(layout, ctx) {
+function renderStageStrip(layout) {
   const strip = document.createElement('div');
   strip.className = 'times-wrap stage-strip';
   const spacer = document.createElement('div');
@@ -560,7 +522,7 @@ function renderStageStrip(layout, ctx) {
   grid.className = 'times-grid';
   grid.style.gridTemplateColumns = layout.colsTemplate;
   grid.style.gridTemplateRows = '32px';
-  for (const s of layout.stages) grid.appendChild(stageHead(s, { layout, ctx }));
+  for (const s of layout.stages) grid.appendChild(stageHead(s));
   scroll.appendChild(grid);
   strip.append(spacer, scroll);
   return strip;
@@ -845,8 +807,6 @@ function renderScheduledDayBody(root, day, ctx, layout, weekend, { strip = false
   for (const a of drawn) {
     const col = stages.indexOf(a.stage);
     if (col === -1) continue; // not a column: the festival room's venue groups under this grid carry it (festRoomExtras)
-    // A folded (non-solo) column is a 34px rail — its cards don't render.
-    if (layout.solo && a.stage !== layout.solo) continue;
     const row = Math.floor(a.startMin / 15) - startRow + 1;
     // endMin here IS the display extent — minimum 2 rows (44px), below which
     // the name + time can't fit (Kevin's screenshot, 2026-07-12).
@@ -875,7 +835,7 @@ function renderScheduledDayBody(root, day, ctx, layout, weekend, { strip = false
   if (strip) {
     const block = document.createElement('div');
     block.className = 'tt-block';
-    const stripEl = renderStageStrip(layout, ctx);
+    const stripEl = renderStageStrip(layout);
     stripEl.querySelector('.times-scroll').dataset.sync = 'grid';
     scroll.dataset.sync = 'grid';
     block.append(stripEl, wrap);
@@ -909,9 +869,22 @@ export function weekendsOf(fest) {
     (days[d].artists || []).some((a) => a.weekend === 'W1' || a.weekend === 'W2'));
   return tagged ? ['W1', 'W2'] : [null];
 }
+// A weekend's key in the folded list (Kevin, 2026-09-17: "ACL needs options in
+// the show/hide menu to hide weekend 1 or weekend 2"). The colon keeps it out
+// of the space a data file's day labels live in, like FEST_ROOM.
+export const weekendRoom = (w) => `weekend:${w}`;
 
 // The whole wall's plan. Null only where the wall is not a week at all — a
 // flat sort or a search, which are lists of answers.
+//
+// The plan applies the fold (ship round, 2026-09-17). A hidden room
+// contributes nothing: a hidden section is absent from every day it played,
+// a hidden extra (Late nights) is absent, the festival's own room takes its
+// grid, its billed names and its day-less names with it — and a day whose
+// visible rooms are all empty is not a day: no rule, no tab, never the open
+// (Kevin: "if all events for a day are hidden, don't show that day at all —
+// not empty shells"). The show menu reads the same plan with nothing folded
+// (roomsOf), which is where the hidden state stays visible.
 export function wallPlanFor(fest, ctx) {
   const scheduled = !!(fest.days && Object.keys(fest.days).length);
   if (!scheduled && !(ctx.sort === 'billing' || ctx.sort === 'day')) return null;
@@ -920,12 +893,54 @@ export function wallPlanFor(fest, ctx) {
   // fest still filters the whole list.
   const artists = applyWeekend(fest.artists || [], scheduled ? null : ctx.weekend);
   const gridDays = scheduled ? Object.keys(fest.days) : [];
-  const plan = eventModelOf(fest, groupByDay(artists, knownDaysOf(fest)), { gridDays, weekends });
+  const whole = eventModelOf(fest, groupByDay(artists, knownDaysOf(fest)), { gridDays, weekends });
   // A whole lineup with no day on it (EDC Orlando) is still a lineup — the
   // wall draws it as THE LINEUP and the exporter offers it. Only a fest with
-  // nothing at all has no plan.
-  if (!plan.days.length && !plan.extras.length && !plan.looseNoDay.length) return null;
-  return { model: plan, scheduled, weekends, gridDays };
+  // nothing at all has no plan; a fest with everything hidden still has one
+  // (an empty week), so the flat lineup never leaks through in its place.
+  if (!whole.days.length && !whole.extras.length && !whole.looseNoDay.length) return null;
+  const hidden = new Set(ctx.folded || []);
+  // A key the show menu does not offer is inert here, or a stored setting
+  // could hide something with nothing on the screen to bring it back. On a
+  // two-weekend fest the weekend rows ARE the festival room (roomsOf offers
+  // them in its place), so `:fest` means nothing there — a stale one from
+  // before the file gained its weekend tags would otherwise blank both
+  // weekends with both rows reading ✓ (skeptic, 2026-09-17). The mirror holds
+  // by construction: a one-weekend fest's days carry no weekend, so a
+  // `weekend:` key never matches one.
+  const festRoom = weekends.length > 1 || !hidden.has(FEST_ROOM);
+  const sections = whole.sections.filter((s) => !hidden.has(s.key));
+  const extras = whole.extras.filter((e) => !hidden.has(e.key));
+  // A hidden weekend takes its dated days whole (a set tagged for both
+  // weekends keeps playing on the other); the days that stay are the ones
+  // with something visible on them.
+  const days = whole.days
+    .filter((d) => !(d.weekend && hidden.has(weekendRoom(d.weekend))))
+    .filter((d) => (festRoom && (d.grid || d.billing)) || sections.some((s) => s.byDay.has(d.key)));
+  const looseNoDay = festRoom ? whole.looseNoDay : [];
+  return { model: { ...whole, days, sections, extras, looseNoDay }, festRoom, scheduled, weekends, gridDays };
+}
+
+// The rooms of the festival week, in the wall's order and whether or not
+// they are hidden — the show menu's list. Read off the FEST through the same
+// plan with nothing folded, never off the wall: a hidden room renders
+// nothing, and the menu still has to offer it back. The festival's own room
+// leads wherever it first appears (Portola's Thursday and Friday are other
+// people's warehouses), then each section, then the tabs off the end.
+export function roomsOf(fest, ctx) {
+  const plan = fest ? wallPlanFor(fest, { ...ctx, query: '', folded: [] }) : null;
+  if (!plan) return [];
+  const { days, sections, extras, looseNoDay } = plan.model;
+  const rooms = [];
+  if (days.some((d) => d.grid || d.billing) || looseNoDay.length) {
+    // A two-weekend fest offers a row per weekend in place of its own room:
+    // hiding a weekend is the thing a person wants to do there.
+    if (plan.weekends.length > 1) plan.weekends.forEach((w, i) => rooms.push({ key: weekendRoom(w), label: `Weekend ${i + 1}` }));
+    else rooms.push({ key: FEST_ROOM, label: fest.name });
+  }
+  for (const s of sections) rooms.push({ key: s.key, label: s.label });
+  for (const e of extras) rooms.push({ key: e.key, label: e.label });
+  return rooms;
 }
 
 // What the day tabs (dock + rail) should list, in the wall's own order: the
@@ -934,7 +949,9 @@ export function wallPlanFor(fest, ctx) {
 // `dayKey` is the day WITHOUT its weekend suffix ("Friday", not "Friday|W1"):
 // the key the file wrote and the rule bills. The suffix is an axis detail, so
 // anything naming the day for a person reads this, not `key`.
-const dayTab = (d) => ({ key: d.key, dayKey: d.dayKey || d.key, short: d.short, num: d.num, long: d.long, iso: d.iso, dates: d.iso ? [d.iso] : [], dated: false });
+// `grid` says the day has a timetable, so the shell can pick the first VISIBLE
+// grid day as the open without asking the fest (a hidden grid day is not here).
+const dayTab = (d) => ({ key: d.key, dayKey: d.dayKey || d.key, short: d.short, num: d.num, long: d.long, iso: d.iso, dates: d.iso ? [d.iso] : [], dated: false, grid: !!d.grid });
 // A group header a search draws for a section, or a lineup fest's own day.
 const groupTab = (fest) => (day) => {
   const meta = (fest.dayMeta || {})[day];
@@ -1014,22 +1031,19 @@ const stackTime = (m) => {
 
 // THE LIST (MODEL-V4 §1.2). One `.venue-group` per venue: the venue's own
 // stage header, its doors/close line, then the night's cards stacked top to
-// bottom in play order. The people filter HIDES in a stack (there is no
-// clock to keep in shape), so a group everyone filtered out goes with it.
+// bottom in play order. The people filter dims here exactly as it does on
+// the clock — renderCard's one rule — and never takes a card or a group away.
 export function venueGroups(root, entries, ctx, { day = null, fest = null, fallbackVenue = null } = {}) {
-  const filtering = ctx.filterPeople && ctx.filterPeople.length;
   const grid = mk('div', 'venue-grid');
   if (day && day.iso) grid.dataset.iso = day.iso;
   if (fest && fest.timezone) grid.dataset.tz = fest.timezone;
   let shown = 0;
-  const groups = venueGroupsOf(entries, { fallbackVenue })
-    .map((g) => ({ g, members: filtering ? g.members.filter((m) => passesPeople(ctx.picks, m.e.name, ctx.filterPeople)) : g.members }))
-    .filter((x) => x.members.length);
+  const groups = venueGroupsOf(entries, { fallbackVenue });
   // Where one room published its doors, the line holds its place across the
   // whole grid — otherwise the stacks in a row start on different lines and
   // the row reads ragged.
-  const anySub = groups.some((x) => x.g.sub);
-  for (const { g, members } of groups) {
+  const anySub = groups.some((g) => g.sub);
+  for (const g of groups) {
     const group = mk('div', 'venue-group');
     // A venue head IS a stage header — the festival accent's third home.
     const head = stageHead(g.venue);
@@ -1037,7 +1051,7 @@ export function venueGroups(root, entries, ctx, { day = null, fest = null, fallb
     group.appendChild(head);
     if (anySub) group.appendChild(mk('div', 'venue-sub', g.sub || ''));
     const stack = mk('div', 'stack');
-    for (const m of members) {
+    for (const m of g.members) {
       const card = renderCard(m.e.name, ctx, { time: stackTime(m), occ: occOf(m.e) });
       // A stack has no clock to draw a line on, so the card of whoever is
       // playing carries the mark instead. The window is the model's
@@ -1052,10 +1066,7 @@ export function venueGroups(root, entries, ctx, { day = null, fest = null, fallb
     group.appendChild(stack);
     grid.appendChild(group);
   }
-  if (!shown) {
-    if (filtering) root.appendChild(mk('div', 'section-empty', `No picks here from ${ctx.filterPeople.join(' or ')}.`));
-    return 0;
-  }
+  if (!shown) return 0;
   root.appendChild(grid);
   return shown;
 }
@@ -1104,10 +1115,9 @@ function festRoomSub(fest) {
 // a room and a day axis entry at once. It stamps the jump/scrollspy anchor and
 // gives the header the day rule's weight, so the tab lands on something that
 // looks like every other tab's landing.
-// `folded` is the menu's state made visible (the label goes quiet), which is
-// all that is left of it here.
-export function sectionHeader(label, sub, { key = null, dayKey = null, folded = false, onOpen = null, aria = null } = {}) {
-  const h = mk(onOpen ? 'button' : 'div', `sec-head${dayKey ? ' tab' : ''}${folded ? ' folded' : ''}`);
+// A hidden room never gets here: it renders nothing (wallPlanFor).
+export function sectionHeader(label, sub, { key = null, dayKey = null, onOpen = null, aria = null } = {}) {
+  const h = mk(onOpen ? 'button' : 'div', `sec-head${dayKey ? ' tab' : ''}`);
   if (key) h.dataset.section = key;
   if (dayKey) h.dataset.day = dayKey;
   h.append(
@@ -1143,15 +1153,15 @@ function activitiesOf(fest, day) {
 
 // Everything of the festival's that is not on this day's grid.
 function festRoomExtras(fest, day, layout) {
-  if (layout.solo) return []; // the solo promises "just that stage"
   const onGrid = new Set(state.getDayArtists(day.dayKey, day.weekend).map((a) => a.name));
   const billed = dedupeByCard(applyWeekend(day.billing || [], day.weekend)).filter((a) => !onGrid.has(a.name));
   return [...straysOf(fest, day.dayKey, day.weekend, layout.stages), ...billed, ...activitiesOf(fest, day.dayKey)];
 }
 
-function renderComposed(root, ctx, fest, { model: plan, scheduled }) {
-  const folded = new Set(ctx.folded || []);
-  const layout = scheduled ? computeTimesLayout(fest, ctx.soloStage || null) : null;
+// The plan already holds only what is visible (wallPlanFor applies the fold):
+// every day here has something to show, every section and extra here is on.
+function renderComposed(root, ctx, fest, { model: plan, scheduled, festRoom }) {
+  const layout = scheduled ? computeTimesLayout(fest) : null;
 
   // A lineup wall's day-less block (THE LINEUP) leads, as it always has.
   if (!scheduled && plan.looseNoDay.length) renderLineupGroup(root, '', plan.looseNoDay, ctx, fest);
@@ -1161,15 +1171,14 @@ function renderComposed(root, ctx, fest, { model: plan, scheduled }) {
     // 1. the festival's own room: its timetable on a grid day, then anything
     //    of the festival's that is not on that grid; a lineup day's billing
     //    has no venue and no clock, so it stays the day's card grid.
-    if (day.grid || day.billing) {
-      const extras = day.grid ? festRoomExtras(fest, day, layout) : [];
+    if (festRoom && (day.grid || day.billing)) {
       const room = roomBlock(FEST_ROOM);
-      const isFolded = folded.has(FEST_ROOM);
-      room.appendChild(sectionHeader(fest.name, festRoomSub(fest), { key: FEST_ROOM, folded: isFolded }));
-      if (!isFolded && day.grid) {
+      room.appendChild(sectionHeader(fest.name, festRoomSub(fest), { key: FEST_ROOM }));
+      if (day.grid) {
+        const extras = festRoomExtras(fest, day, layout);
         renderScheduledDayBody(room, day.dayKey, ctx, layout, day.weekend, { strip: true });
         if (extras.length) venueGroups(room, extras, ctx, { day, fest, fallbackVenue: festRoomSub(fest) });
-      } else if (!isFolded) {
+      } else {
         renderCardGrid(room, day.billing, ctx, { day: day.dayKey });
       }
       root.appendChild(room);
@@ -1179,29 +1188,24 @@ function renderComposed(root, ctx, fest, { model: plan, scheduled }) {
       const list = sec.byDay.get(day.key);
       if (!list) continue;
       const room = roomBlock(sec.key);
-      const isFolded = folded.has(sec.key);
       // The section's header on THIS day is the door to that night's thread
-      // (§3a.3): Folsom on Friday, not Folsom, and not Friday. A hidden room
-      // has nothing under its header, so it is not a door either.
-      const target = !isFolded && day.iso && ctx.onOpenDayNotes ? model.sectionDateKey(day.iso, sec.key) : null;
+      // (§3a.3): Folsom on Friday, not Folsom, and not Friday.
+      const target = day.iso && ctx.onOpenDayNotes ? model.sectionDateKey(day.iso, sec.key) : null;
       const label = target ? dayTargetLabel(ctx, target, dayLabelParts(day.dayKey).head) : null;
       room.appendChild(sectionHeader(sec.label, sectionSub(fest, sec), {
         key: sec.key,
-        folded: isFolded,
         onOpen: target ? () => ctx.onOpenDayNotes(target, label) : null,
         aria: label,
       }));
-      if (!isFolded) {
-        if (target) dayNoteWhisper(room, target, label, ctx);
-        venueGroups(room, list, ctx, { day, fest });
-      }
+      if (target) dayNoteWhisper(room, target, label, ctx);
+      venueGroups(room, list, ctx, { day, fest });
       root.appendChild(room);
     }
   }
 
   // The tabs that hang off the end: a dated section (ACL's Late nights), and
   // any section whose entries never said which night.
-  for (const extra of plan.extras) renderExtra(root, ctx, fest, extra, { folded });
+  for (const extra of plan.extras) renderExtra(root, ctx, fest, extra);
 
   // A scheduled fest's day-less names that sit on no grid.
   if (scheduled && plan.looseNoDay.length) {
@@ -1256,14 +1260,10 @@ function sectionSub(fest, sec) {
 // either a `.date-rule` per date with its venue groups under it, or, for a
 // section whose entries never said when, one set of venue groups. The header
 // carries no note door; each date inside it does.
-function renderExtra(root, ctx, fest, extra, { folded }) {
+function renderExtra(root, ctx, fest, extra) {
   const room = roomBlock(extra.key);
-  const isFolded = folded.has(extra.key);
-  room.appendChild(sectionHeader(extra.label, extra.sub || '', {
-    key: extra.key, dayKey: extra.key, folded: isFolded,
-  }));
+  room.appendChild(sectionHeader(extra.label, extra.sub || '', { key: extra.key, dayKey: extra.key }));
   root.appendChild(room);
-  if (isFolded) return;
   if (!extra.byDate) { venueGroups(room, extra.entries || [], ctx, { fest }); return; }
   for (const [iso, list] of extra.byDate) {
     // A date rule inside a dated section is that tab's day rule, so it is the
@@ -1357,9 +1357,9 @@ function renderWallInner(root, ctx) {
   // is not a place any more (MODEL-V4 §2).
   if (scheduled) {
     const q = ctx.query.trim().toLowerCase();
-    // Results are a LIST, so the people filter hides here rather than dims —
-    // a filtered search must not resurface someone's non-pick.
-    const wanted = (name) => name.toLowerCase().includes(q) && passesPeople(ctx.picks, name, ctx.filterPeople);
+    // Every name that matches answers; the people filter dims the answers
+    // the selected people did not pick (renderCard), the same as on the wall.
+    const wanted = (name) => name.toLowerCase().includes(q);
     const plan = wallPlanFor(fest, ctx);
     const answers = (cards, label, sub, opts) => {
       if (!cards.length) return false;
@@ -1370,10 +1370,12 @@ function renderWallInner(root, ctx) {
       return true;
     };
     let any = false;
+    // The plan is the visible week (wallPlanFor applies the fold), so a
+    // hidden part never answers a search either.
     for (const day of (plan ? plan.model.days : [])) {
       const cards = [];
       const onGrid = new Set();
-      if (day.grid) {
+      if (day.grid && plan.festRoom) {
         const computed = state.getDayArtists(day.dayKey, day.weekend);
         computed.forEach((a) => onGrid.add(a.name));
         for (const a of computed.filter((a) => wanted(a.name)).sort((x, y) => x.startMin - y.startMin)) {
@@ -1385,7 +1387,7 @@ function renderWallInner(root, ctx) {
       // One pass over both, deduped by the occurrence the card will carry: a
       // combined-day show is one entry reached through two rooms and answers
       // once, while two rooms on one night are two shows and answer twice.
-      const billed = applyWeekend(day.billing || [], day.weekend).filter((a) => !onGrid.has(a.name));
+      const billed = plan.festRoom ? applyWeekend(day.billing || [], day.weekend).filter((a) => !onGrid.has(a.name)) : [];
       const rooms = plan.model.sections.flatMap((s) => s.byDay.get(day.key) || []);
       const occHere = (a) => ({ ...occOf(a), day: a.day || day.dayKey });
       for (const a of dedupeByCard([...billed, ...rooms].filter((a) => wanted(a.name)), occHere)) {
@@ -1593,8 +1595,8 @@ export function wireScrollspy(containers, wallRoot) {
     setActive(current.dataset.day);
   };
   // The initial claim. At load the first day is on screen — say so instead
-  // of nothing. But this also runs on every re-wire (a people filter or a
-  // stage solo repaints the wall), and there the page may be scrolled deep
+  // of nothing. But this also runs on every re-wire (a people filter or the
+  // show menu repaints the wall), and there the page may be scrolled deep
   // into Sunday: claiming "Saturday" was a lie the tab wore until the next
   // scroll event (UI walk, 2026-08-27). Read the geometry whenever there is
   // scroll to read; position 0 keeps the first-day shortcut so a fresh load

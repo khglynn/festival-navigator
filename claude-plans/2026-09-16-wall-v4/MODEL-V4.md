@@ -33,8 +33,12 @@ shape (a grid is a grid), never by a threshold.
 
 ### 1.1 The timetable (one change)
 `renderScheduledDayBody` as today: hour rail, sticky stage strip, 15-minute
-rows, lanes for same-stage overlaps, stage solo, the now line. Only a grid
-day renders it. `computeTimesLayout` loses its dead `hasEE` parameter.
+rows, lanes for same-stage overlaps, the now line. Only a grid day renders
+it. `computeTimesLayout` loses its dead `hasEE` parameter. **Stage solo is
+not in this list any more** (deleted 2026-09-17, Kevin: "Tap a stage to see
+only that stage. Tap it again for all of them — this is no longer a thing,
+remove it"): a stage head is a plain header, the timetable is every stage at
+`--col-w`, and nothing folds to a rail.
 **The grid spans the whole day** — from the festival's doors to its close
 (`dayMeta[day].doors` / `close` when present, else the first set's hour to
 the last set's end) — so the now line always has a home (Kevin, 2026-09-17:
@@ -165,10 +169,9 @@ section says its own sub from `dayMeta[<label>].sub` if present, else nothing.
    4. the who-corner marks — `Everyone's picks land on the card.` / `Ticks are picks; a letter is a must. White stroke = you.`
    5. the about-corner chips — `Hold for details.` / `Violet = crew notes; pin one to keep it on top. Green = it's in your Spotify (connect in Settings).`
    6. a run card (`Gelli Haha · ~10:30 PM`) — `**~ a guessed start time and artist order.** Based on limited intel.`
-   7. a stage head — `Tap a stage to see only that stage.` / `Tap it again for all of them.`
-   8. the dock's fest link (`.fest-link`: Anton, the fest accent, the sync dot — ONE row, the real component) — `Tap the fest name to show or hide parts of the week.` / `Green dot = synced. Gray = offline (still works); red = something needs you.`
-   9. the gear — `Switch fests and more in Settings.`
-   Kevin, 2026-09-17: the fest name and its dot were drawn twice, differently, five rows apart ("PORTOLA '26 ▾" in the body face and "PORTOLA '26 ●"); once, together, as the component.
+   7. the dock's fest link (`.fest-link`: Anton, the sync dot — ONE row, the real component; its label is the fixed string `ACL '26`, never the current fest's name, and inside the drill it wears `--brand`, because the fest accent's four homes do not include How it works) — `Tap the fest name to show or hide parts of the week.` / `Green dot = synced. Gray = offline (still works); red = something's wrong.`
+   8. the gear — `Switch fests and more in Settings.`
+   Kevin, 2026-09-17: the fest name and its dot were drawn twice, differently, five rows apart ("PORTOLA '26 ▾" in the body face and "PORTOLA '26 ●"); once, together, as the component. Eight rows since the ship round (the stage row went with stage solo); red means something needs Kevin, not the reader — "just say something's wrong"; and every picture's cell is `min-width: 0; overflow: hidden`, so no label can escape at 390.
 5. Sort options inside the show menu for every fest: banked in hg-pen, not
    built (Kevin: "unless it's easy to knock out" — it is not: the old sort
    applies to the lineup-only wall; stacks and grids need their own think).
@@ -196,11 +199,73 @@ opens **the show menu**: the sort popover component reused (`.sort-wrap` +
 festival week (`Portola`, `Afters`, `Folsom`) with a check, then a divider
 and `Settings ›` — because that tap opens Settings today and nothing may
 be lost. Unchecking a room folds it on every day; it is the SAME state as
-§3's fold (`fn_fold_v1_<fid>`), read by both doors. On the phone the popover
+§3's fold (`fn_fold_v1_<fid>`), the menu's one door. On the phone the popover
 opens upward above the dock; on desktop it hangs under the rail. A fest with
 one room has no menu: the tap goes straight to Settings, as today. Escape,
 a tap outside and a row tap all close it; the way in has the beat, the way
 out is quick.
+
+**Since the ship round (2026-09-17):**
+- **A hidden part renders nothing.** No header, no quiet label, no whisper,
+  no note door: the plan (`wallPlanFor`) applies the fold, so a hidden
+  section is absent from every day it played, a hidden extra (Late nights) is
+  absent, and the festival's own room takes its grid, its billed names and
+  its day-less names with it. A search never resurfaces a hidden part. The
+  sheet still lists a note already written on a hidden date (§3a.3).
+- **A day with nothing visible has no tab.** A day whose visible rooms are
+  all empty is dropped from the plan's days: no rule, no tab in the dock or
+  rail, not a scrollspy anchor, never the open — the open is the first
+  VISIBLE grid day; during the fest, today if visible, else the next visible
+  day. Kevin: "if all events for a day are hidden, don't show that day at all
+  — not empty shells." Portola with Afters and Folsom hidden is SAT · SUN.
+- **The menu reads the fest, not the wall** (`roomsOf`: the same plan with
+  nothing folded), so every room is offered whether or not it is hidden —
+  that is where the state is visible. Hiding repaints the wall and the tabs
+  through the ordinary repaint path and lands where you were standing, or on
+  the first visible day if that day went. What leaves is the room, and any
+  day that goes with it (its rule and everything under it); what comes back
+  arrives with the usual beat — a weekend leaves as its three days.
+- **A share image is the wall you see.** The Settings day-image exporter
+  reads the same plan with the fold applied (`tools.js planFor`), so a hidden
+  room is not in a day's image and a day the fold emptied is not offered.
+  The fold is viewer-side, and so is the image: it is what you would have
+  screenshotted.
+- **A key the menu does not offer is inert** (`wallPlanFor`): on a
+  two-weekend fest `:fest` means nothing, because the weekend rows are the
+  festival room there and no row could ever clear it. A stale `:fest` from
+  before a file gained its weekend tags hides nothing.
+- **Weekend rows.** On a fest with two weekends (`weekendsOf(fest).length >
+  1`, ACL) the festival-room row is replaced by `Weekend 1` and `Weekend 2`
+  (keys `weekend:W1` / `weekend:W2`, in the same folded list, label-only rows
+  like every other). Hiding a weekend drops its three dated tabs; both hidden
+  leaves Late nights alone; a set tagged for both weekends keeps playing on
+  the other. Row order: Weekend 1, Weekend 2, Late nights, Settings. A
+  one-weekend fest is untouched.
+
+## 3b. The ship notes, 2026-09-17
+
+Kevin looked at the v84 preview: "if you're feeling good about it we can
+ship it." Five things stood between the preview and production, in his
+words:
+
+1. **Stage solo is deleted.** "Tap a stage to see only that stage. Tap it
+   again for all of them — this is no longer a thing, remove it." Feature,
+   copy, CSS, tests: all of it (§1.1). A stage head is a plain header.
+2. **Highlighting picks dims, never filters.** "Right now we hide
+   non-timeline events the person hasn't tagged and just dim the ones they're
+   not doing in timeline views. Let's use just dim everywhere. Deciding to
+   highlight user(s) picks shouldn't work as a filter." One rule, one class
+   (`.card.dim`), on the clock, in a stack, in a list, in a search; the "No
+   picks here from …" block is gone.
+3. **A hidden part renders nothing; a day with nothing visible has no tab.**
+   "If all events for a day are hidden, don't show that day at all — not
+   empty shells." (§3.1)
+4. **ACL: Weekend 1 / Weekend 2 in the show menu.** "ACL needs options in the
+   show/hide menu to hide weekend 1 or weekend 2." (§3.1)
+5. **How it works.** One coded-in fest name (`ACL '26` — "easiest fix: code
+   in one fest name, probs ACL"), the picture in brand rather than the
+   accent, "red = something's wrong" ("just say something's wrong"), eight
+   rows. (§3a.4)
 
 ## 4. Notes: artist, fest, dates (Kevin, 2026-09-17 — "a defensible MVP")
 
@@ -282,12 +347,13 @@ for after ACL.
 | tests | `events-model` (columns/threshold/timetable cases → venue-group cases), `events-wall` (columns, buckets, hidden → groups, fold, default day), `wall-filters` (bucket cases out), `off-clock.test.mjs` (→ the festival room's non-grid groups), `scheduled-sections`, `afters-events`, `portola-events` (tilde-iff-approx stays), `day-image-sections` (a day's export includes its groups); browser contract gains the zoom opacity case and a fold case |
 | docs | this file is the spec; MODEL-V3 §2–§4 marked superseded at their heads; `docs/user-flows.md` gains the wall flow; CLAUDE.md carries the one rule in one bullet; README's structure block |
 
-Kept, untouched: the card, `factsFor`, the auras, the people filter (dims on a
-timetable, hides in a list — now the only list is venue groups, so the rule
-reads "dims on the clock, hides in a stack"), stage solo, search, the sort
-chip on lineup-only walls, the notes sheets, the sync layer, the service
-worker, `cardFor`'s room tie-break (an artist can still be one occurrence in
-two rooms).
+Kept, untouched: the card, `factsFor`, the auras, the people filter (it dimmed
+on a timetable and hid in a list when this was written — since the ship round
+it dims everywhere and never filters, §3b.2), search, the sort chip on
+lineup-only walls, the notes sheets, the sync layer, the service worker,
+`cardFor`'s room tie-break (an artist can still be one occurrence in two
+rooms). Stage solo was on this list until 2026-09-17, when Kevin deleted it
+(§1.1, §3b.1).
 
 ## 8. Build plan
 

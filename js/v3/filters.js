@@ -1,18 +1,15 @@
-// Wall filters — pure state + helpers. Two filters, both "tap the thing that
-// is already on screen" (design canvas 2026-08-27, options A + D):
-//   people  — tap a member chip: the wall shows only what they picked (tap
-//             more chips to combine). It DIMS on the clock and HIDES in a
-//             stack: a timetable keeps its shape, a venue group has no shape
-//             to keep.
-//   solo    — tap a stage name in the sticky strip: that column goes wide and
-//             the others fold to slim rails (the phone case, where five
-//             columns never fit). Tap the head again to restore.
-// Both are per-festival, per-tab, and die with the tab (sessionStorage):
-// a filter that survived a reload would read as "where did everyone's picks
-// go?" — and the chips make the state visible anyway.
+// Wall filters — pure state + helpers. One filter, "tap the thing that is
+// already on screen" (design canvas 2026-08-27, option A):
+//   people  — tap a member chip: the wall highlights what they picked (tap
+//             more chips to combine). It DIMS everything else, everywhere —
+//             on the clock and in a stack alike. It never hides a card
+//             (Kevin, 2026-09-17: "highlighting picks shouldn't work as a
+//             filter"); a dimmed card still takes a tap.
+// Per-festival, per-tab, dies with the tab (sessionStorage): a filter that
+// survived a reload would read as "where did everyone's picks go?" — and the
+// chips make the state visible anyway.
 
 const LS_PEOPLE = (fid) => `fn_filter_people_v1_${fid}`;
-const LS_SOLO = (fid) => `fn_solo_stage_v1_${fid}`;
 
 // sessionStorage throws on storage-blocked browsers exactly like localStorage
 // does (Safari private mode). A filter is a view, so a blocked store must
@@ -47,9 +44,6 @@ export function togglePerson(names, name) {
   return names.includes(name) ? names.filter((n) => n !== name) : [...names, name];
 }
 
-export function loadSolo(fid) { return read(LS_SOLO(fid)) || null; }
-export function saveSolo(fid, stage) { write(LS_SOLO(fid), stage || null); }
-
 // A card passes the people filter when ANY selected person has a live pick
 // on it (level > 0 — a tombstoned 0 is "unpicked", not "picked at 0").
 // No selected people = no filter = everything passes.
@@ -66,53 +60,14 @@ export function pruneToActive(names, activeNames) {
   return (names || []).filter((n) => live.has(n));
 }
 
-// What a folded stage's rail says. A rail is 34px wide and one strip row
-// tall with a scroller that clips both axes, so the label is bounded to
-// four characters of the first word — "Pier", "Cran", "Ware". When two
-// stages share those four ("Bud Light" / "Bud Light Backyard"), initials
-// tell them apart instead ("BL" / "BLB"); if even those clash ("Bud Light"
-// / "Bud Lite"), a digit does ("BL" / "BL2") — two rails never read the
-// same. The full name stays in the head's title and aria-label, and shows
-// whole the moment the rail is tapped.
-export function railLabels(stages) {
-  const words = (s) => String(s).trim().split(/\s+/).filter(Boolean);
-  const first = (s) => (words(s)[0] || '').slice(0, 4);
-  const initials = (s) => words(s).map((w) => Array.from(w)[0]).join('').slice(0, 4).toUpperCase();
-  const counts = {};
-  for (const s of stages) counts[first(s)] = (counts[first(s)] || 0) + 1;
-  const out = {};
-  const used = {};
-  for (const s of stages) {
-    let label = counts[first(s)] > 1 ? initials(s) : first(s);
-    if (used[label]) label = `${label.slice(0, 3)}${used[label] + 1}`;
-    used[label] = (used[label] || 0) + 1;
-    out[s] = label;
-  }
-  return out;
-}
-
-// The rail width for a folded stage column. Wide enough for a vertical
-// stage name at 9px and a tap; narrow enough that four rails plus the wide
-// column fit a 390px phone with the hour rail.
-export const SOLO_RAIL = '34px';
-
-// The timetable's column template, with a soloed stage wide and every other
-// stage folded to a rail. No solo = the everyday template. Unknown solo (a
-// stage that no longer exists) = no solo, so a remembered stage name from a
-// renamed grid can't blank the wall. The columns are the festival's stages
-// and nothing else: under MODEL-V4 §1.3 anything off the grid is a venue
-// group below it, so there is no everything-else column to reserve.
-//
 // A stage column is `--col-w` — the ONE card column (§3a.1), the same track the
 // venue stacks ride, declared once in v3-tokens.css. It is a fixed width, not a
 // fraction, so the grid stops stretching to fill a wide window: it stays a
-// horizontal scroller, and a set card is the width of an afters card.
+// horizontal scroller, and a set card is the width of an afters card. The
+// columns are the festival's stages and nothing else: under MODEL-V4 §1.3
+// anything off the grid is a venue group below it, so there is no
+// everything-else column to reserve.
 export const COL = 'var(--col-w)';
-export function columnsTemplate(stages, solo) {
-  const active = solo && stages.includes(solo) ? solo : null;
-  const cols = stages.map((s) => (active && s !== active ? SOLO_RAIL : COL));
-  return { template: cols.join(' '), solo: active };
-}
 
 // The people chips have ONE job: tap to filter. "Pick as" — acting for someone
 // else — moved to Settings → You on 2026-08-29 (Kevin: people rarely switch

@@ -180,12 +180,17 @@ test('unchecking a room hides it on every day — the show menu is the one door'
   const stored = () => globalThis.localStorage.getItem(`fn_fold_v1_${FID}`);
   const row = (key) => [...menu('dock').querySelectorAll('[data-room]')].find((r) => r.dataset.room === key);
 
+  const tabs = () => [...$('dock-days').querySelectorAll('.day-tab')].map((t) => t.dataset.day);
+  const wall = () => [...new Set([...$('wall-root').querySelectorAll('.room')].map((r) => r.dataset.room))];
+
   click($('dock-fest-link'));
   click(row('Folsom'));
   assert.equal(stored(), '["Folsom"]', 'device-local, per fest — never the crew doc');
   assert.equal(menu('dock').style.display, 'none', 'a row tap closes the menu');
   assert.deepEqual(rows('dock').map((r) => r[2]), ['true', 'true', 'false'], 'and the menu says so');
   assert.deepEqual(rows('rail').map((r) => r[2]), ['true', 'true', 'false'], 'in both doors');
+  assert.deepEqual(wall(), ['Afters', ':fest'], 'the wall repainted: Folsom renders nothing');
+  assert.deepEqual(tabs(), ['Thursday', 'Friday', 'Saturday', 'Sunday'], 'the afters still play every night');
 
   // A second room: each tap applies before the next reads, so nothing is lost
   // between two taps in a row.
@@ -193,6 +198,9 @@ test('unchecking a room hides it on every day — the show menu is the one door'
   click(row('Afters'));
   assert.equal(stored(), '["Folsom","Afters"]');
   assert.deepEqual(rows('dock').map((r) => r[2]), ['true', 'false', 'false']);
+  assert.deepEqual(wall(), [':fest'], 'only the festival is left on the wall');
+  assert.deepEqual(tabs(), ['Saturday', 'Sunday'], 'Thursday and Friday have nothing visible, so they have no tab (Kevin: "not empty shells")');
+  assert.deepEqual(rows('dock').map((r) => r[0]), [':fest', 'Afters', 'Folsom'], 'the menu still offers every room — that is where the state is visible');
 
   // And back — tapping a folded room's row unfolds it.
   click($('dock-fest-link'));
@@ -201,24 +209,84 @@ test('unchecking a room hides it on every day — the show menu is the one door'
   click(row('Folsom'));
   assert.equal(stored(), null, 'nothing folded = nothing stored');
   assert.deepEqual(rows('dock').map((r) => r[2]), ['true', 'true', 'true']);
+  assert.deepEqual(tabs(), ['Thursday', 'Friday', 'Saturday', 'Sunday'], 'and Thursday is back');
 });
 
-test('a room with a verbose key is billed in the menu the way the wall bills it', () => {
+test('a fold moves the days that go with it: a room and the day it emptied leave together, and come back together', async () => {
+  // jsdom has no Element.animate(), which is why every other test here is the
+  // instant path. A recording stub stands in and finishes on the next tick the
+  // way a real animation would, so this is the path a phone takes. Portola's
+  // Thursday is an afters-only night: hide Afters and Thursday goes with it —
+  // it must LEAVE with the room, not vanish on the repaint (CLAUDE.md: nothing
+  // vanishes in place, nothing pops). A weekend has no room of its own and
+  // moves as its days; the same rule, exercised on ACL in the browser walk.
+  const Proto = dom.window.Element.prototype;
+  const moved = [];
+  Proto.animate = function animate(frames) {
+    const a = { onfinish: null, oncancel: null };
+    moved.push({ el: this, out: frames[0].opacity === 1 });
+    setTimeout(() => { if (a.onfinish) a.onfinish(); }, 0);
+    return a;
+  };
+  const row = (key) => [...menu('dock').querySelectorAll('[data-room]')].find((r) => r.dataset.room === key);
+  const tabs = () => [...$('dock-days').querySelectorAll('.day-tab')].map((t) => t.dataset.day);
+  const name = (m) => (m.el.classList.contains('day-rule') ? `rule:${m.el.dataset.day}` : m.el.classList.contains('room') ? `room:${m.el.dataset.room}` : m.el.className);
+  // The wall's blocks only: the menu's own close is a motion too, and not this one.
+  const take = (out) => { const got = moved.filter((m) => m.out === out && m.el.parentElement === $('wall-root')).map(name); moved.length = 0; return got; };
+  try {
+    click($('dock-fest-link'));
+    click(row('Afters'));
+    assert.deepEqual(take(true), ['rule:Thursday', 'room:Afters', 'room:Afters', 'room:Afters', 'room:Afters'], 'Thursday leaves with its only room; the other nights keep their rule');
+    assert.deepEqual(tabs(), ['Thursday', 'Friday', 'Saturday', 'Sunday'], 'the repaint waits for the leave');
+    await settle(30);
+    assert.deepEqual(tabs(), ['Friday', 'Saturday', 'Sunday'], 'and then Thursday is gone');
+
+    click($('dock-fest-link'));
+    click(row('Folsom'));
+    assert.deepEqual(take(true), ['rule:Friday', 'room:Folsom', 'room:Folsom', 'room:Folsom'], 'now Friday goes with Folsom');
+    await settle(30);
+    assert.deepEqual(tabs(), ['Saturday', 'Sunday']);
+
+    click($('dock-fest-link'));
+    click(row('Afters'));
+    await settle(30);
+    assert.deepEqual(take(false), ['rule:Thursday', 'room:Afters', 'rule:Friday', 'room:Afters', 'room:Afters', 'room:Afters'], 'Thursday and Friday arrive with Afters, in the wall\'s order');
+    assert.deepEqual(tabs(), ['Thursday', 'Friday', 'Saturday', 'Sunday']);
+
+    click($('dock-fest-link'));
+    click(row('Folsom'));
+    await settle(30);
+    assert.deepEqual(take(false), ['room:Folsom', 'room:Folsom', 'room:Folsom'], 'a room whose nights were all still there arrives alone');
+    assert.equal(globalThis.localStorage.getItem(`fn_fold_v1_${FID}`), null);
+  } finally {
+    delete Proto.animate;
+    filters.saveFolded(FID, []);
+  }
+});
+
+test('a room with a verbose key is billed in the menu the way the wall bills it', async () => {
   // A room key is frozen pick data, so it can carry a comma and a parenthetical
   // ("Wednesday, Sept 16 (Early Arrival Pre-Party)"). Portola's keys are one
   // clean word, which is exactly why this case has to be made rather than
   // waited for: the wall runs every section label through dayLabelParts, and
-  // the menu naming the same room must say the same words.
-  const head = dom.window.document.createElement('div');
-  head.className = 'sec-head';
-  head.dataset.section = 'Wednesday, Sept 16 (Early Arrival Pre-Party)';
-  $('wall-root').appendChild(head);
+  // the menu naming the same room must say the same words. The menu reads
+  // the FEST (wall.js roomsOf), never the wall — a hidden room renders
+  // nothing, and the menu still has to offer it.
+  const state = await import('../js/state.js');
+  const { FESTIVALS, FESTIVAL_INDEX } = await import('../js/festivals.js');
+  const WED = 'Wednesday, Sept 16 (Early Arrival Pre-Party)';
+  FESTIVAL_INDEX.push({ id: 'verbose', status: 'lineup' });
+  FESTIVALS.verbose = {
+    id: 'verbose', name: 'Verbose', status: 'lineup',
+    artists: [{ name: 'Chassi', day: WED }, { name: 'Late Night', day: 'Afters', night: 'Wed', venue: 'The Barn', time: '11 PM' }],
+  };
+  state.setActiveFestivalId('verbose');
   try {
     const labels = new Map(app.roomsOnWall().map((r) => [r.key, r.label]));
-    assert.equal(labels.get('Wednesday, Sept 16 (Early Arrival Pre-Party)'), 'Wednesday',
-      'the head of the label, never the raw key');
-    assert.equal(labels.get(':fest'), 'Portola', 'and the festival is still its own name');
-  } finally { head.remove(); }
+    assert.equal(labels.get('Afters'), 'Afters');
+    assert.equal(labels.get(':fest'), 'Verbose', 'and the festival is still its own name');
+    assert.deepEqual([...labels.keys()], [':fest', 'Afters'], 'the festival leads, then the rooms in the wall\'s order');
+  } finally { state.setActiveFestivalId(FID); }
 });
 
 // ---- the day axis (MODEL-V4 §2) ------------------------------------------------------
@@ -257,21 +325,38 @@ test('an axis entry\'s anchor and num reach the tab (a two-weekend fest\'s six, 
 // ---- the day the wall opens on (MODEL-V4 §2) -----------------------------------------
 
 test('the wall opens on the festival\'s first GRID day, not on the first thing that plays', () => {
+  // The axis says which of its days carry a grid (dayNavOf's `grid`); the
+  // picker never asks the fest, because a hidden grid day is not on the axis
+  // and must not be the open (2026-09-17).
   const axis = [
-    { key: 'Thursday' }, { key: 'Friday' }, { key: 'Saturday' }, { key: 'Sunday' }, { key: 'Late nights' },
+    { key: 'Thursday' }, { key: 'Friday' }, { key: 'Saturday', grid: true }, { key: 'Sunday', grid: true }, { key: 'Late nights' },
   ];
-  assert.equal(app.defaultDayOf(axis, FEST).key, 'Saturday',
+  assert.equal(app.defaultDayOf(axis).key, 'Saturday',
     'Portola: Thursday and Friday are other people\'s warehouses');
-  assert.equal(app.defaultDayOf(axis, { days: {} }).key, 'Thursday',
+  assert.equal(app.defaultDayOf([{ key: 'Thursday' }, { key: 'Friday' }]).key, 'Thursday',
     'a lineup fest has no grid — it opens on the first day it has');
-  assert.equal(app.defaultDayOf([], FEST), null, 'and a wall with no days has nowhere to land');
-  // A two-weekend fest: the first entry whose key is a grid day is the first
+  assert.equal(app.defaultDayOf([]), null, 'and a wall with no days has nowhere to land');
+  // A two-weekend fest: the first grid day on the axis is the first
   // weekend's, because the axis is in order.
   const acl = [
-    { key: 'Friday', anchor: 'Friday@W1' }, { key: 'Saturday', anchor: 'Saturday@W1' },
-    { key: 'Friday', anchor: 'Friday@W2' }, { key: 'Late nights' },
+    { key: 'Friday', anchor: 'Friday@W1', grid: true }, { key: 'Saturday', anchor: 'Saturday@W1', grid: true },
+    { key: 'Friday', anchor: 'Friday@W2', grid: true }, { key: 'Late nights' },
   ];
-  assert.equal(app.defaultDayOf(acl, { days: { Friday: {}, Saturday: {} } }).anchor, 'Friday@W1');
+  assert.equal(app.defaultDayOf(acl).anchor, 'Friday@W1');
+  // Hidden parts: the first VISIBLE grid day. Portola with its grid hidden
+  // has no grid day on the axis at all, and the first visible day is the open.
+  assert.equal(app.defaultDayOf([{ key: 'Thursday' }, { key: 'Friday' }]).key, 'Thursday');
+});
+
+// During the festival with today's part hidden, the open is the next visible
+// day — never a day that is not on the wall, never the first thing that plays.
+test('the day-of open with today hidden lands on the next visible day; before the fest there is no "next"', () => {
+  const axis = [{ key: 'Saturday', iso: '2026-09-26', grid: true }, { key: 'Sunday', iso: '2026-09-27', grid: true }];
+  assert.equal(app.nextVisibleDay(axis, '2026-09-25'), null, 'the night before: nothing has begun, the first grid day opens');
+  assert.equal(app.nextVisibleDay([{ key: 'Thursday', iso: '2026-09-24' }, ...axis], '2026-09-25').key, 'Saturday', 'Friday hidden mid-fest: Saturday is next');
+  assert.equal(app.nextVisibleDay([{ key: 'Thursday', iso: '2026-09-24' }, ...axis], '2026-09-27').key, 'Sunday');
+  assert.equal(app.nextVisibleDay(axis, '2026-09-28'), null, 'after the last day: nothing is next');
+  assert.equal(app.nextVisibleDay([{ key: 'Late nights', dated: true, dates: ['2026-09-29'] }, ...axis], '2026-09-26').key, 'Saturday', 'a dated section is not a day');
 });
 
 // A date is called what the wall's day rule calls it (MODEL-V4 §3a.3) — except
@@ -314,7 +399,7 @@ test('ACL as shipped: the Late nights tab starts Sep 29 and the wall still opens
   assert.deepEqual(axis.filter((d) => !d.dated).map((d) => d.long),
     ['FRI 2', 'SAT 3', 'SUN 4', 'FRI 9', 'SAT 10', 'SUN 11'], 'six dated tabs, both weekends');
 
-  const open = app.defaultDayOf(axis, ACL);
+  const open = app.defaultDayOf(axis);
   assert.equal(open.iso, '2026-10-02', 'the wall opens on the first grid day, not on Sep 29');
   assert.equal(open.key, 'Friday|W1');
 });
@@ -386,11 +471,11 @@ test('after the last set, nobody — and a wall with nothing playing costs nothi
   });
 });
 
-// The show menu names what the wall SHOWS — roomsOnWall() reads the room
-// headers standing in #wall-root, so a room the wall draws by hand instead of
-// through the room component is a room the menu cannot offer. ACL's Late
-// nights was exactly that. Runs last: it stands ACL's wall up in place of
-// Portola's, and puts Portola back.
+// The show menu names every room of the WEEK — roomsOnWall() reads the fest
+// through the wall's own plan with nothing folded, so a hidden room (which
+// renders nothing) is still offered, and a room the wall draws is a room the
+// menu offers. Runs last: it stands ACL's wall up in place of Portola's, and
+// puts Portola back.
 test('the show menu names every room the wall shows — ACL\'s dated section included', async () => {
   const state = await import('../js/state.js');
   const { renderWall } = await import('../js/v3/wall.js');
@@ -411,21 +496,49 @@ test('the show menu names every room the wall shows — ACL\'s dated section inc
     state.setActiveFestivalId(fid);
     renderWall(wall, {
       fid, meName: 'Kevin', picks: {}, affinity: null, lowPower: true,
-      sort: 'day', query: '', weekend: 'all', filterPeople: [], soloStage: null, folded: [],
+      sort: 'day', query: '', weekend: 'all', filterPeople: [], folded: [],
       onTap: () => {}, onOpenDayNotes: () => {}, onNotesChange: null,
     });
     return app.roomsOnWall();
   };
   try {
     assert.deepEqual(stand('acl-2026').map((r) => [r.key, r.label]),
-      [[':fest', 'ACL Music Festival'], ['Late nights', 'Late nights']],
-      'the festival\'s own room, then the dated section — two rooms, so there IS a menu');
+      [['weekend:W1', 'Weekend 1'], ['weekend:W2', 'Weekend 2'], ['Late nights', 'Late nights']],
+      'a weekend row each in place of the festival\'s own room, then the dated section — so there IS a menu');
     assert.deepEqual(stand('one-room').map((r) => r.key), [':fest'],
       'one room: below two the shell drops the menu and the fest name goes to Settings, as it always did');
   } finally {
     state.setActiveFestivalId(FID);
     wall.replaceChildren(...portolaWall);
   }
+});
+
+// ---- How it works (MODEL-V4 §3a.4, ship round 2026-09-17) -----------------------------
+// Rendered by the real Settings on the real shell, with Portola open — so the
+// fixed label is proven fixed against a fest that is not ACL.
+test('How it works: eight rows, the fest link says ACL \'26 whatever fest is open, wears brand not the accent, and no picture can leave its cell', () => {
+  click($('gear-btn'));
+  const how = [...$('screen-settings').querySelectorAll('button')].find((b) => (b.querySelector('.row-title') || {}).textContent === 'How it works');
+  assert.ok(how, 'the row that opens the drill');
+  click(how);
+  const sub = $('settings-subview');
+  const rows = [...sub.querySelectorAll('.settings-card > div')];
+  assert.equal(rows.length, 8, 'eight rows — the stage row went with stage solo');
+  const link = sub.querySelector('.fest-link');
+  assert.ok(link && link.tagName === 'SPAN', 'the real component, as a picture');
+  assert.equal(link.querySelector('.fest-name').textContent, "ACL '26", 'the one coded-in name, with Portola open');
+  assert.ok(link.querySelector('.sync-dot'), 'and the dot beside it');
+  assert.equal(link.style.getPropertyValue('--fest'), 'var(--brand)', 'the accent re-scoped to brand on the picture — the drill is not one of the accent\'s four homes');
+  for (const row of rows) {
+    const cell = row.firstElementChild;
+    assert.equal(cell.style.minWidth, '0px', 'a picture\'s cell can shrink');
+    assert.equal(cell.style.overflow, 'hidden', 'and clips what does not fit');
+  }
+  assert.match(sub.textContent, /red = something’s wrong\./, 'red means something is wrong, not that the reader is needed');
+  assert.doesNotMatch(sub.textContent, /Tap a stage/, 'no stage lesson');
+  // Back out, so the tests after this one find the wall.
+  dom.window.history.back();
+  dom.window.history.back();
 });
 
 // ---- the stylesheet answers for what this shell draws ---------------------------------

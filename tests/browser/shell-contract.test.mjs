@@ -150,10 +150,16 @@ test('the show menu\'s rows are worked by a keyboard, and clear the 44px floor o
 
     await row.focus();
     assert.equal(await page.evaluate(() => document.activeElement.dataset.room), 'Folsom', 'and the keyboard can stand on it');
+    const roomsBefore = await page.evaluate(() => document.querySelectorAll('#wall-root .room[data-room="Folsom"]').length);
+    assert.ok(roomsBefore > 0, 'Folsom is on the wall before the tap');
     await page.keyboard.press('Space');
     assert.equal(await page.evaluate(() => localStorage.getItem('fn_fold_v1_portola-2026')), '["Folsom"]',
       'Space works the row — no second keyboard controller needed');
-    await page.waitForSelector('#wall-root .room[data-room="Folsom"] .sec-head.folded');
+    // A hidden room renders nothing (2026-09-17): the room leaves whole, and
+    // the days stay because the afters still play every one of them.
+    await page.waitForSelector('#wall-root .room[data-room="Folsom"]', { state: 'detached' });
+    assert.deepEqual(await page.evaluate(() => [...document.querySelectorAll('#dock-days .day-tab')].map((t) => t.dataset.day)),
+      ['Thursday', 'Friday', 'Saturday', 'Sunday']);
 
     // And Escape puts the menu away without touching anything under it.
     await page.focus('#dock-fest-link');
