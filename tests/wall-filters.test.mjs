@@ -267,6 +267,105 @@ test('scrollspy: the day you are in is brought into the middle of its row, on op
   }
 });
 
+// Geometry is the ONLY authority (2026-09-17). An IntersectionObserver used to
+// sit beside it, selecting any header that entered a band at 10–20% of the
+// viewport — and it spoke last, so it won. A probe watched geometry choose
+// Saturday and the observer then choose Sunday with the page standing still,
+// and since the dock now scrolls itself to the active tab, that disagreement
+// moves the row as well as the highlight. The band was there first; the
+// geometry rule was added under it precisely because a fling clears the band
+// in one frame. One of them had to go, and it is not the one that is always
+// right.
+test('scrollspy: an observer band cannot overrule the geometry — there is no observer left to speak', async () => {
+  const { wireScrollspy } = await import('../js/v3/wall.js');
+  const hadIO = globalThis.IntersectionObserver;
+  let observed = 0;
+  let fire = null;
+  globalThis.IntersectionObserver = class {
+    constructor(cb) { fire = cb; }
+    observe() { observed += 1; }
+    disconnect() {}
+  };
+  const hadGCS = globalThis.getComputedStyle;
+  globalThis.getComputedStyle = window.getComputedStyle.bind(window);
+  const nav = document.createElement('div');
+  nav.innerHTML = '<button class="day-tab" data-day="Saturday"></button><button class="day-tab" data-day="Sunday"></button>';
+  const root = document.createElement('div');
+  root.innerHTML = '<div class="day-rule" data-day="Saturday"></div><div class="day-rule" data-day="Sunday"></div>';
+  const [sat, sun] = root.querySelectorAll('.day-rule');
+  const active = () => [...nav.querySelectorAll('.day-tab')].filter((t) => t.classList.contains('active')).map((t) => t.dataset.day);
+  try {
+    sat.getBoundingClientRect = () => ({ top: -900 });
+    sun.getBoundingClientRect = () => ({ top: 600 }); // still well below the fold
+    Object.defineProperty(window, 'scrollY', { value: 900, configurable: true });
+    const un = wireScrollspy(nav, root);
+    assert.deepEqual(active(), ['Saturday'], 'the day filling the screen');
+    assert.equal(observed, 0, 'nothing is observed — the band is gone, not merely quiet');
+    if (fire) fire([{ isIntersecting: true, target: sun }]);
+    assert.deepEqual(active(), ['Saturday'], 'and no second rule can move the tab while the page has not moved');
+    un();
+  } finally {
+    Object.defineProperty(window, 'scrollY', { value: 0, configurable: true });
+    globalThis.IntersectionObserver = hadIO;
+    globalThis.getComputedStyle = hadGCS;
+  }
+});
+
+// The fling is why geometry exists: one scroll event that clears several days
+// at once. Nothing has to drift back through anything for the tab to catch up.
+test('scrollspy: a fling past two days in one step lands on the day you are in, and a resize re-reads it', async () => {
+  const { wireScrollspy } = await import('../js/v3/wall.js');
+  const hadIO = globalThis.IntersectionObserver;
+  globalThis.IntersectionObserver = class { observe() {} disconnect() {} };
+  const hadGCS = globalThis.getComputedStyle;
+  globalThis.getComputedStyle = window.getComputedStyle.bind(window);
+  const hadRAF = globalThis.requestAnimationFrame;
+  globalThis.requestAnimationFrame = (fn) => { fn(); return 1; };
+  const nav = document.createElement('div');
+  nav.innerHTML = ['Thursday', 'Friday', 'Saturday', 'Sunday']
+    .map((d) => `<button class="day-tab" data-day="${d}"></button>`).join('');
+  const root = document.createElement('div');
+  root.innerHTML = ['Thursday', 'Friday', 'Saturday', 'Sunday']
+    .map((d) => `<div class="day-rule" data-day="${d}"></div>`).join('');
+  const rules = [...root.querySelectorAll('.day-rule')];
+  const active = () => [...nav.querySelectorAll('.day-tab')].filter((t) => t.classList.contains('active')).map((t) => t.dataset.day);
+  // Where each rule sits on the page. A scroll moves them all together, which
+  // is the one thing a fling does that a slow drag does not do in steps.
+  const tops = [0, 2000, 4000, 6000];
+  let y = 0;
+  const place = () => rules.forEach((r, i) => { r.getBoundingClientRect = () => ({ top: tops[i] - y }); });
+  const flingTo = (to) => {
+    y = to;
+    place();
+    Object.defineProperty(window, 'scrollY', { value: y, configurable: true });
+    window.dispatchEvent(new window.Event('scroll'));
+  };
+  try {
+    place();
+    const un = wireScrollspy(nav, root);
+    assert.deepEqual(active(), ['Thursday']);
+    // One event, from the top of Thursday to deep inside Sunday — the band an
+    // observer watches is three days behind by the time this is delivered.
+    flingTo(6200);
+    assert.deepEqual(active(), ['Sunday'], 'the last rule you have scrolled past, however fast you got there');
+    flingTo(0);
+    assert.deepEqual(active(), ['Thursday'], 'and back the same way');
+    // A resize re-reads the same rule: the URL bar sliding away must not leave
+    // the row naming a day three screens back.
+    y = 4100;
+    place();
+    Object.defineProperty(window, 'scrollY', { value: y, configurable: true });
+    window.dispatchEvent(new window.Event('resize'));
+    assert.deepEqual(active(), ['Saturday']);
+    un();
+  } finally {
+    Object.defineProperty(window, 'scrollY', { value: 0, configurable: true });
+    globalThis.IntersectionObserver = hadIO;
+    globalThis.getComputedStyle = hadGCS;
+    globalThis.requestAnimationFrame = hadRAF;
+  }
+});
+
 test('railLabels: four letters of the first word, initials when two stages would read the same', () => {
   assert.deepEqual(filters.railLabels(['Pier', 'Crane', 'Ship', 'Warehouse', 'Despacio']), { Pier: 'Pier', Crane: 'Cran', Ship: 'Ship', Warehouse: 'Ware', Despacio: 'Desp' });
   assert.deepEqual(filters.railLabels(['Bud Light', 'Bud Light Backyard', 'T-Mobile']), { 'Bud Light': 'BL', 'Bud Light Backyard': 'BLB', 'T-Mobile': 'T-Mo' });

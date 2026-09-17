@@ -1495,16 +1495,16 @@ export const DAY_ANCHOR = '.day-rule[data-day], .sec-head[data-day]';
 // standing in. A jump lands its rule AT the offset on Chromium and about 24px
 // below it on WebKit; both are the same arrival.
 const LANDED_WITHIN = 32;
-// One observer drives every tab container (mobile dock + desktop rail): the
+// One rule drives every tab container (mobile dock + desktop rail): the
 // active day is a single fact rendered in two places.
 export function wireScrollspy(containers, wallRoot) {
   const list = Array.isArray(containers) ? containers : [containers];
   const tabs = list.flatMap((c) => [...c.querySelectorAll('.day-tab')]);
   if (!tabs.length) return () => {};
   const tabDays = new Set(tabs.map((t) => t.dataset.day));
-  // Observe ONLY headers that correspond to a tab — the NOTES/EVERYTHING-ELSE
+  // Read ONLY headers that correspond to a tab — the NOTES/EVERYTHING-ELSE
   // pseudo-headers share dayHeader() anatomy and used to de-highlight every
-  // tab when they scrolled into the band (audit 1.3). A tab's landing is a day
+  // tab when they scrolled past (audit 1.3). A tab's landing is a day
   // rule, or the room header of a dated section, which is a room AND a tab —
   // and NOT a grid scroller, which carries data-day for its own reasons.
   const headers = [...wallRoot.querySelectorAll(DAY_ANCHOR)]
@@ -1541,27 +1541,24 @@ export function wireScrollspy(containers, wallRoot) {
     }
   };
   markOverflow();
-  const onResize = () => markOverflow();
-  window.addEventListener('resize', onResize);
   for (const c of list) c.addEventListener('scroll', markOverflow, { passive: true });
-  const io = new IntersectionObserver((entries) => {
-    for (const e of entries) {
-      if (!e.isIntersecting) continue;
-      setActive(e.target.dataset.day);
-    }
-  }, { rootMargin: '-10% 0px -80% 0px' });
-  headers.forEach((h) => io.observe(h));
 
-  // The observer only speaks when a header crosses a thin band at 10–20% of the
-  // viewport. Any scroll big enough to clear that band in one go — a scrollbar
-  // drag, End, Page-Down, a hard fling on a 6,000px page — never trips it, so
-  // the day tab kept pointing at Thursday while you stood in Sunday's grid, and
-  // stayed wrong until a header happened to drift back through the band. A nav
-  // indicator that lies about where you are is worse than no indicator.
+  // ONE authority, and it is geometry: the active day is the last day-rule you
+  // have scrolled past. rAF-throttled, and it reads the same --jump-offset the
+  // day-tab jump lands against, so the two agree.
   //
-  // So geometry gets the last word: after every scroll, the active day is simply
-  // the last day-rule you have scrolled past. rAF-throttled, and it reads the
-  // same --jump-offset the day-tab jump lands against, so the two agree.
+  // There used to be an IntersectionObserver beside this, selecting any header
+  // that entered a band at 10–20% of the viewport. It came first, and the
+  // geometry rule was added under it because the band is the thing a fling
+  // clears in one frame: a scrollbar drag, End, Page-Down or a hard flick on a
+  // 6,000px page never tripped the observer, so the tab pointed at Thursday
+  // while you stood in Sunday's grid until a header happened to drift back
+  // through. Two rules over one fact means the second one to speak wins, and
+  // they do not agree — a probe watched geometry choose Saturday and the
+  // observer then choose Sunday without the page moving at all. Since the dock
+  // now scrolls itself to the active tab, a disagreement moves the row too.
+  // The band answers nothing geometry does not, so it is gone rather than
+  // taught to defer.
   let ticking = false;
   const syncFromGeometry = () => {
     ticking = false;
@@ -1603,9 +1600,14 @@ export function wireScrollspy(containers, wallRoot) {
     requestAnimationFrame(syncFromGeometry);
   };
   window.addEventListener('scroll', onScroll, { passive: true });
+  // A resize moves both facts this row shows: which tabs fit it, and where the
+  // day rules sit under a --jump-offset the sticky chrome has just remeasured.
+  // A phone's URL bar sliding away is a resize, and it must not leave the row
+  // naming a day you scrolled past three screens ago.
+  const onResize = () => { markOverflow(); syncFromGeometry(); };
+  window.addEventListener('resize', onResize);
 
   return () => {
-    io.disconnect();
     window.removeEventListener('scroll', onScroll);
     window.removeEventListener('resize', onResize);
     for (const c of list) c.removeEventListener('scroll', markOverflow);
