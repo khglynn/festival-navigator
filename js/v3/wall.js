@@ -157,11 +157,11 @@ export function renderCard(artistName, ctx, opts = {}) {
 
   // Long-press (touch) ZOOMS the card (~500ms, 10px slop — the OS constants;
   // 2026-08-29 round): the grown card carries the notes chip, so the sheet
-  // stays one tap away. Falls back to opening notes where no peek is wired.
+  // stays one tap away.
   // Digitizer jitter fires pointermove even on a still finger, so cancel only
   // past a real movement threshold (10px) — a genuine scroll-drag cancels,
   // a held finger does not (Codex P3 trail, finding 1).
-  if (ctx.onOpenNotes) {
+  if (ctx.onPeek) {
     let pressTimer = null;
     let longPressed = false;
     let startX = 0, startY = 0;
@@ -173,14 +173,14 @@ export function renderCard(artistName, ctx, opts = {}) {
       longPressed = false;
       startX = e.clientX; startY = e.clientY;
       // If a poll repaint detached this node mid-press, the new node owns the
-      // gesture — a fire from the orphan would open the sheet uninvited.
+      // gesture — a fire from the orphan would zoom a card that is gone.
       pressTimer = setTimeout(() => {
         // isConnected covers repaint detachment; offsetParent covers a screen
-        // change hiding the wall mid-press (audit 10.2) — a sheet must never
+        // change hiding the wall mid-press (audit 10.2) — a zoom must never
         // pop over Settings or the landing after the fact.
         if (!el.isConnected || el.offsetParent === null) return;
         longPressed = true;
-        if (ctx.onPeek) ctx.onPeek(artistName, el, opts.occ || null); else ctx.onOpenNotes(artistName);
+        ctx.onPeek(artistName, el, opts.occ || null);
       }, 500);
     });
     const cancel = () => clearTimeout(pressTimer);

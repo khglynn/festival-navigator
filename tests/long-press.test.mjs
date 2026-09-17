@@ -65,3 +65,11 @@ test('a lift inside the hold cancels it', async () => {
   await wait(HOLD);
   assert.deepEqual(peeks, []);
 });
+
+test('with no peek wired a hold does nothing — it never falls back to the notes sheet', async () => {
+  const ctx = makeCtx(); // onOpenNotes is wired, onPeek is not
+  const card = mount(ctx);
+  card.dispatchEvent(pointerEvent('pointerdown', { pointerType: 'touch', bubbles: true }));
+  await wait(HOLD);
+  assert.deepEqual(ctx.opened, [], 'the hold is the zoom gesture and nothing else');
+});
