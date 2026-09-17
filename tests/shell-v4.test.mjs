@@ -252,6 +252,29 @@ test('the wall opens on the festival\'s first GRID day, not on the first thing t
   assert.equal(app.defaultDayOf(acl, { days: { Friday: {}, Saturday: {} } }).anchor, 'Friday@W1');
 });
 
+test('ACL as shipped: the Late nights tab starts Sep 29 and the wall still opens on Oct 2', async () => {
+  // The cases above hand defaultDayOf an axis by hand, so they prove the
+  // PICKER and take the axis order on trust. This one reads the real file and
+  // builds the real axis, because the thing that could go wrong is the order:
+  // ACL's Late nights run Sep 29 – Oct 10, and the earliest of them is three
+  // days before the festival's first grid day. A wall that opened on the
+  // earliest thing that plays would open ACL on a Tuesday in a bar.
+  const { dayNavOf } = await import('../js/v3/wall.js');
+  const ACL = JSON.parse(readFileSync(join(ROOT, 'data/festivals/acl-2026.json'), 'utf8'));
+  const axis = dayNavOf(ACL, { query: '', sort: 'day', weekend: 'all', filterPeople: [], folded: [] });
+
+  const late = axis.find((d) => d.key === 'Late nights');
+  assert.ok(late && late.dated, 'the dated section is a tab of its own');
+  assert.equal(late.dates[0], '2026-09-29', 'and it really does start before the fest');
+  assert.equal(axis.at(-1).key, 'Late nights', 'it hangs off the END of the axis, after the days (§2)');
+  assert.deepEqual(axis.filter((d) => !d.dated).map((d) => d.long),
+    ['FRI 2', 'SAT 3', 'SUN 4', 'FRI 9', 'SAT 10', 'SUN 11'], 'six dated tabs, both weekends');
+
+  const open = app.defaultDayOf(axis, ACL);
+  assert.equal(open.iso, '2026-10-02', 'the wall opens on the first grid day, not on Sep 29');
+  assert.equal(open.key, 'Friday|W1');
+});
+
 // ---- the now mark (MODEL-V4 §1.2) ----------------------------------------------------
 
 // A stack card, stamped by the wall with the window it is playing in.
