@@ -191,6 +191,21 @@ test('a section note stays readable and has no door', () => {
   notes.closeSheet();
 });
 
+test('a day sheet opened on anything but a date takes nothing new', () => {
+  // The section headers lose their note chips under V4, so nothing should get
+  // here — but the law is worth holding structurally rather than by nobody
+  // calling it: a day note is written to a DATE.
+  const ctx = { fid: ONE, meName: 'Kevin', affinity: null, lowPower: true, onTap: () => {}, onOpenNotes: () => {}, onNotesChange: () => {} };
+  notes.openDayNotes('Afters', null, ctx, () => {});
+  assert.equal(sheet().querySelector('.sheet-title').textContent, 'AFTERS', 'it says its own label');
+  assert.deepEqual([...sheet().querySelectorAll('.n-text')].map((t) => t.textContent), ['Halcyon is the one'], 'and still reads');
+  assert.equal(sheet().querySelector('.composer'), null, 'no composer');
+  assert.equal(sheet().querySelector('.n-door'), null, 'and no reply door');
+  notes.closeSheet();
+
+  assert.equal(notes.dayWhisper('Afters', null, ctx, () => {}), null, 'and no whisper — only a date has a day’s notes');
+});
+
 test('the day sheet opens on a date, reads both keys, and writes to the date', () => {
   const ctx = {
     fid: ONE, meName: 'Kevin', picks: {}, affinity: null, lowPower: true,

@@ -84,6 +84,11 @@ export function shortDayLabel(iso) {
   return `${WEEKDAYS_SHORT[d.getUTCDay()]} · ${MONTHS_SHORT[Number(m[2]) - 1]} ${Number(m[3])}`;
 }
 
+// The one law under all of this: a day note is written to a DATE. A target
+// that is not one is something the festival used to call a day — a weekday
+// label, a section — and it is read, never added to.
+const isDate = (target) => model.ISO_DATE_RE.test(String(target));
+
 // The keys one date's conversation reads from. The last is the date itself and
 // the only one anything new is written to; the others are legacy weekday keys
 // that still hold notes.
@@ -819,6 +824,9 @@ function openScopeSheet(scope, target, ctx, onChange, opts = {}) {
     sheetChrome(sheet, String(title).toUpperCase());
   }
 
+  // A day sheet on anything but a date is history: a section label, or a day
+  // whose festival file never carried one. It reads and takes nothing new.
+  const readOnly = scope === 'day' && !isDate(target);
   const keys = scope === 'day' ? dayReadKeys(ctx, target) : [target];
   const wrap = document.createElement('div');
   // The same 14px a thread keeps from its neighbour, so two keys read as one
@@ -837,7 +845,7 @@ function openScopeSheet(scope, target, ctx, onChange, opts = {}) {
   // expanding a pinned thread) repaint without pushing anything. It writes to
   // the LAST key, which for a date is the date itself.
   const writeTo = keys[keys.length - 1];
-  const box = ctx.meName ? composer('Add a note…', (text) => {
+  const box = ctx.meName && !readOnly ? composer('Add a note…', (text) => {
     ui.justAdded = addNote(ctx, scope, writeTo, text);
     paint();
     onChange();
@@ -852,6 +860,7 @@ function openScopeSheet(scope, target, ctx, onChange, opts = {}) {
         editing,
         ui,
         quiet: true,
+        readOnly,
       });
     }
     // The caption belongs to the scope, not to each key it reads from — and
@@ -1071,6 +1080,7 @@ function whisperRow(list, ctx, onOpen, aria) {
 // interface. The count spans every key the date reads from, so a legacy
 // weekday note is part of the same conversation.
 export function dayWhisper(iso, label, ctx, onOpen) {
+  if (!isDate(iso)) return null;   // only a date has a day's notes
   return whisperRow(dayNotesOn(ctx, iso), ctx, onOpen, `Notes for ${label || shortDayLabel(iso)}`);
 }
 
