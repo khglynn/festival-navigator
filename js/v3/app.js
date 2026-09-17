@@ -314,14 +314,45 @@ function togglePeopleFilter(name) { setPeopleFilter(togglePerson(ctx.filterPeopl
 
 // ---- the now line's clock and the day-of open ------------------------------------
 // One ticker for the app: every minute (and the moment the tab comes back
-// from the background) the now line moves without a repaint. Cheap when no
-// grid is today's — positionNowLines finds nothing to do.
+// from the background) the now line moves and the now mark hops to whoever is
+// playing — both without a repaint. Cheap when nothing is today's:
+// positionNowLines and markNowCards find nothing to do.
 let clockTimer = null;
 function startClock() {
   if (clockTimer) return;
-  const tick = () => positionNowLines($('wall-root'), new Date());
-  clockTimer = setInterval(tick, 60 * 1000);
-  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') tick(); });
+  clockTimer = setInterval(tickClock, 60 * 1000);
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') tickClock(); });
+}
+function tickClock(date = new Date()) {
+  positionNowLines($('wall-root'), date);
+  markNowCards($('wall-root'), date);
+}
+
+// The now mark (MODEL-V4 §1.2). A stack has no clock to draw a line on, so
+// the card of whoever is playing right now carries the ring and a small NOW
+// label — the same violet, the same ticker, one idea in two places. The
+// window a card is playing in is stamped on it by the wall
+// (data-now-from / data-now-to, minutes on the festival-day axis, under
+// data-now-iso in data-tz's zone); the shell only reads the clock.
+export function markNowCards(root, date = new Date()) {
+  if (!root) return;
+  for (const card of root.querySelectorAll('.card[data-now-from]')) {
+    const from = Number(card.dataset.nowFrom);
+    const to = Number(card.dataset.nowTo);
+    const clock = festivalClock(date, card.dataset.tz || null);
+    const playing = card.dataset.nowIso === clock.iso
+      && Number.isFinite(from) && Number.isFinite(to)
+      && clock.minutes >= from && clock.minutes < to;
+    card.classList.toggle('now', playing);
+    let label = card.querySelector('.now-label');
+    if (playing && !label) {
+      label = document.createElement('span');
+      label.className = 'now-label in-card';
+      label.textContent = 'NOW';
+      label.setAttribute('aria-label', 'Playing now');
+      card.appendChild(label);
+    } else if (!playing && label) label.remove();
+  }
 }
 
 // Which day the wall opens on (MODEL-V4 §2): the festival's first grid day.
@@ -475,6 +506,7 @@ function repaintWall() {
     if (again) zoomCard(again, keep.artist, ctx, { ...keep, instant: true });
   }
   renderDayNav();
+  markNowCards($('wall-root'), ctx.now || new Date());
   $('notes-count').textContent = String(model.totalNoteCount(state.crewDoc, ctx.fid));
   // A timetable has one true order — a sort control there would be a lie
   // (CORE-5). Searching a scheduled fest sorts chronologically by design.
