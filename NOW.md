@@ -63,16 +63,29 @@ in this file's history.
 
 ## Next, in order
 
-1. Kevin picks a direction on the canvas; MODEL-V4 builds in four lanes off
-   `integration-0916` (Thu–Fri), then integrate, stamp once, Codex round.
-2. A real-browser walk (Chromium + WebKit iPhone) with real pointer input.
-3. Kevin's one look, on a fresh unique preview URL (never the branch alias,
-   which keeps a stale service worker).
-4. On Kevin's yes: ship `sw-first` to main first, then merge the release
-   (that is the production promote), close #15. Target Sep 20–21, before
-   Portola Week afters start Thu Sep 24.
-5. ACL Fest Nights and set-time drops go in as data-only updates.
-6. After Oct 11, the simplification arc: one pointer-position close rule for
+1. **Kevin's round** (his notes on the v83 preview, spec §3a): one column
+   width everywhere, no header fold (the show menu alone hides a part),
+   notes written where you are (tap a day rule or a section header), How
+   it works grouped like the screen. Building on `polish/kevin-look`; then
+   merge, stamp once, gates, push, a fresh preview for his last look.
+2. **Ship, on Kevin's yes in chat, in two steps** (the repo's ruleset wants
+   a PR + green CI; no approving review exists for a one-person repo):
+   a. `sw-first` → `main` (the offline-cache fix alone, SW v80): open the
+      PR, CI green, merge with a merge commit; confirm
+      `curl -s https://fest.kevinhg.com/service-worker.js | grep CACHE_VERSION`
+      says v80. Phones pick it up on their next focus.
+   b. `integration-0916` → `main` (the release): open the PR, CI green,
+      merge; confirm production serves the release's CACHE_VERSION; then
+      close PR #16 and PR #15 as superseded, with a comment naming the PR
+      that shipped. Target Sep 20–21, before Portola Week afters (Thu Sep 24).
+3. After the promote: Kevin walks production on his phone once; posted
+   afters set times and any ACL drop go in as data-only pushes (validator +
+   freeze + tests first).
+4. Loose ends with their own calls: the staging site (fix or retire), the
+   Ray draft, sort options in the show menu (hg-pen), the show-menu
+   keyboard follow-up, a masonry-style stack layout so a short stack beside
+   a tall one leaves less air.
+5. After Oct 11, the simplification arc: one pointer-position close rule for
    the zoom, app.js and settings.js split, then add-a-show with a design
    pass first (`claude-plans/2026-09-02-add-a-show.md`).
 
