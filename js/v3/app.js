@@ -46,9 +46,9 @@ const ctx = {
   filterPeople: [],
   soloStage: null,
   // The fold (MODEL-V4 §3, 2026-09-16): which of the fest's rooms (the
-  // festival itself, Afters, Folsom …) are folded on every day. Device-local,
-  // persisted per fest (filters.js) — never in the crew doc. Two doors write
-  // it: a tap on a room's header, and the show menu on the fest name.
+  // festival itself, Afters, Folsom …) are hidden on every day. Device-local,
+  // persisted per fest (filters.js) — never in the crew doc. One door writes
+  // it: the show menu on the fest name (§3a.2, Kevin 2026-09-17).
   folded: [],
   now: null, // tests pin the clock; null = new Date() at render
   onSoloStage: (stage) => {
@@ -56,7 +56,6 @@ const ctx = {
     refreshCtx();
     repaintWall();
   },
-  onToggleFold: (key) => toggleFoldFlow(key),
   onTap: handleTap,
   onOpenNotes: (artist, occ = null) => {
     unzoom({ why: 'notes sheet opened' });
@@ -149,12 +148,11 @@ function festDatesOf() {
   return out;
 }
 
-// ---- the fold (MODEL-V4 §3) ------------------------------------------------------
-// A room's header is the door: tapping it folds the room's body on every day,
-// and the show menu on the fest name is the same state through a second door.
-// The header is the anchor for both — it carries the room's key already
-// (`.sec-head[data-section]`), so nothing here needs to know how the wall
-// builds a room.
+// ---- the fold (MODEL-V4 §3, §3a.2) -----------------------------------------------
+// The show menu on the fest name is the ONE door: unchecking a room hides it on
+// every day. A room's header is no longer a control — but it is still the
+// anchor, because it carries the room's key (`.sec-head[data-section]`), so
+// nothing here needs to know how the wall builds a room.
 function roomHeads(key) {
   return [...document.querySelectorAll(`#wall-root .sec-head[data-section="${CSS.escape(key)}"]`)];
 }
@@ -189,20 +187,17 @@ export function roomsOnWall() {
   return rooms;
 }
 
-// A fold is a small event (Kevin, 2026-08-30: nothing vanishes in place,
+// Hiding a room is a small event (Kevin, 2026-08-30: nothing vanishes in place,
 // nothing pops): the body leaves quick and plain before the repaint; on the
 // way back it arrives with the usual beat. Transforms and opacity only;
 // instant under Low Power and reduced motion.
 function toggleFoldFlow(key) {
-  // The setting lands NOW — memory, storage and ctx — and the header answers
-  // at once; only the body's leaving is deferred. A second tap during the
-  // fade reads this one, never the state before it.
+  // The setting lands NOW — memory, storage and ctx — and the header goes
+  // quiet at once; only the body's leaving is deferred. A second tap during
+  // the fade reads this one, never the state before it.
   const { next, folding } = applyFoldToggle(ctx.fid, ctx.folded || [], key);
   ctx.folded = next;
-  for (const head of roomHeads(key)) {
-    head.setAttribute('aria-expanded', folding ? 'false' : 'true');
-    head.classList.toggle('folded', folding);
-  }
+  for (const head of roomHeads(key)) head.classList.toggle('folded', folding);
   const finish = () => {
     repaintWall();
     if (!folding) {
@@ -616,7 +611,7 @@ function buildShowMenu(rooms, folded) {
     const row = showMenuRow(room.label, { key: room.key, on: !folded.has(room.key) });
     // A row tap closes the menu and moves the room — the fold flow owns the
     // motion from there, on every day at once.
-    row.addEventListener('click', () => { closeShowMenu(); ctx.onToggleFold(room.key); });
+    row.addEventListener('click', () => { closeShowMenu(); toggleFoldFlow(room.key); });
     pop.appendChild(row.parentElement);
   }
   const divider = document.createElement('li');

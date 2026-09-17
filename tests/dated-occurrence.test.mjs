@@ -64,7 +64,6 @@ const ctxFor = (fid, over = {}) => {
     taps: [], opened: [],
     picks: model.picksFor(state.crewDoc, fid),
     onOpenNotes: (a) => ctx.opened.push(a), onNotesChange: null, onOpenDayNotes: () => {}, onSoloStage: () => {},
-    onToggleFold: () => {},
     ...over,
   };
   ctx.onTap = over.onTap || ((artist, el) => { ctx.taps.push(artist); return refreshCard(el, artist, ctx); });

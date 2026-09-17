@@ -1,4 +1,4 @@
-// The shell under MODEL-V4 (2026-09-16): the fold's state and its two doors,
+// The shell under MODEL-V4 (2026-09-16): the hidden-room state and its one door,
 // the day tabs the axis asks for, the day the wall opens on, and the now mark
 // on a stack card. The real index.html and the real app.js, booted the way a
 // phone boots them, against Portola — a festival with a grid (Saturday,
@@ -176,7 +176,7 @@ test('a tap opens it, Escape closes it, and a tap outside closes it', () => {
   assert.equal(link.getAttribute('aria-expanded'), 'false', 'and the fest name toggles it');
 });
 
-test('unchecking a room folds it on every day — the state a header tap writes', () => {
+test('unchecking a room hides it on every day — the show menu is the one door', () => {
   const stored = () => globalThis.localStorage.getItem(`fn_fold_v1_${FID}`);
   const row = (key) => [...menu('dock').querySelectorAll('[data-room]')].find((r) => r.dataset.room === key);
 
@@ -390,7 +390,7 @@ test('the show menu names every room the wall shows — ACL\'s dated section inc
     renderWall(wall, {
       fid, meName: 'Kevin', picks: {}, affinity: null, lowPower: true,
       sort: 'day', query: '', weekend: 'all', filterPeople: [], soloStage: null, folded: [],
-      onTap: () => {}, onToggleFold: () => {}, onOpenDayNotes: () => {}, onNotesChange: null,
+      onTap: () => {}, onOpenDayNotes: () => {}, onNotesChange: null,
     });
     return app.roomsOnWall();
   };

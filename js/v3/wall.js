@@ -1083,49 +1083,26 @@ function festRoomSub(fest) {
   return venue || fest.location || '';
 }
 
-// The chevron at the end of a room's header: down when the room is open, a
-// quarter turn when it is folded.
-function chevron() {
-  const NS = 'http://www.w3.org/2000/svg';
-  const svg = document.createElementNS(NS, 'svg');
-  // SVG className is a read-only SVGAnimatedString — the attribute is the way.
-  svg.setAttribute('class', 'chev');
-  svg.setAttribute('viewBox', '0 0 24 24');
-  svg.setAttribute('fill', 'none');
-  svg.setAttribute('stroke', 'currentColor');
-  svg.setAttribute('stroke-width', '2.6');
-  svg.setAttribute('stroke-linecap', 'round');
-  svg.setAttribute('stroke-linejoin', 'round');
-  svg.setAttribute('aria-hidden', 'true');
-  const path = document.createElementNS(NS, 'path');
-  path.setAttribute('d', 'M6 9l6 6 6-6');
-  svg.appendChild(path);
-  return svg;
-}
-
-// The room's header, and the one control that folds it (MODEL-V4 §3): a tap
-// folds the body away and the sub becomes "<n> shows". The shell owns the
-// state; this says what it is and asks for the change.
+// The room's header. It says what the room is; it does NOT fold it (MODEL-V4
+// §3a.2, Kevin 2026-09-17). The show menu on the fest name is the one way to
+// hide a part of the week, so the header carries no chevron, no aria-expanded
+// and no "<n> shows" — a header that answered a tap it no longer takes was
+// two affordances for one state.
 // `dayKey` is for the one room that is also a TAB — a dated section, which is
 // a room and a day axis entry at once. It stamps the jump/scrollspy anchor and
 // gives the header the day rule's weight, so the tab lands on something that
 // looks like every other tab's landing.
-export function sectionHeader(label, sub, { key = null, dayKey = null, folded = false, count = 0, onToggle = null } = {}) {
-  const h = mk(onToggle ? 'button' : 'div', `sec-head${dayKey ? ' tab' : ''}${folded ? ' folded' : ''}`);
+// `folded` is the menu's state made visible (the label goes quiet), which is
+// all that is left of it here.
+export function sectionHeader(label, sub, { key = null, dayKey = null, folded = false } = {}) {
+  const h = mk('div', `sec-head${dayKey ? ' tab' : ''}${folded ? ' folded' : ''}`);
   if (key) h.dataset.section = key;
   if (dayKey) h.dataset.day = dayKey;
   h.append(
     mk('span', 'sec-label', String(label).toUpperCase()),
-    mk('span', 'sec-sub', folded ? `${count} show${count === 1 ? '' : 's'}` : (sub || '')),
+    mk('span', 'sec-sub', sub || ''),
     mk('span', 'sec-line'),
   );
-  if (onToggle) {
-    h.type = 'button';
-    h.setAttribute('aria-expanded', folded ? 'false' : 'true');
-    h.setAttribute('aria-label', `${folded ? 'Show' : 'Hide'} ${label}`);
-    h.appendChild(chevron());
-    h.addEventListener('click', () => onToggle(key));
-  }
   return h;
 }
 
@@ -1157,7 +1134,6 @@ function festRoomExtras(fest, day, layout) {
 
 function renderComposed(root, ctx, fest, { model: plan, scheduled }) {
   const folded = new Set(ctx.folded || []);
-  const onToggle = ctx.onToggleFold || null;
   const layout = scheduled ? computeTimesLayout(fest, ctx.soloStage || null) : null;
 
   // A lineup wall's day-less block (THE LINEUP) leads, as it always has.
@@ -1172,10 +1148,7 @@ function renderComposed(root, ctx, fest, { model: plan, scheduled }) {
       const extras = day.grid ? festRoomExtras(fest, day, layout) : [];
       const room = roomBlock(FEST_ROOM);
       const isFolded = folded.has(FEST_ROOM);
-      room.appendChild(sectionHeader(fest.name, festRoomSub(fest), {
-        key: FEST_ROOM, folded: isFolded, onToggle,
-        count: day.grid ? state.getDayArtists(day.dayKey, day.weekend).length + extras.length : day.billing.length,
-      }));
+      room.appendChild(sectionHeader(fest.name, festRoomSub(fest), { key: FEST_ROOM, folded: isFolded }));
       if (!isFolded && day.grid) {
         renderScheduledDayBody(room, day.dayKey, ctx, layout, day.weekend, { strip: true });
         if (extras.length) venueGroups(room, extras, ctx, { day, fest, fallbackVenue: festRoomSub(fest) });
@@ -1190,9 +1163,7 @@ function renderComposed(root, ctx, fest, { model: plan, scheduled }) {
       if (!list) continue;
       const room = roomBlock(sec.key);
       const isFolded = folded.has(sec.key);
-      room.appendChild(sectionHeader(sec.label, sectionSub(fest, sec), {
-        key: sec.key, folded: isFolded, onToggle, count: list.length,
-      }));
+      room.appendChild(sectionHeader(sec.label, sectionSub(fest, sec), { key: sec.key, folded: isFolded }));
       if (!isFolded) venueGroups(room, list, ctx, { day, fest });
       root.appendChild(room);
     }
@@ -1200,7 +1171,7 @@ function renderComposed(root, ctx, fest, { model: plan, scheduled }) {
 
   // The tabs that hang off the end: a dated section (ACL's Late nights), and
   // any section whose entries never said which night.
-  for (const extra of plan.extras) renderExtra(root, ctx, fest, extra, { folded, onToggle });
+  for (const extra of plan.extras) renderExtra(root, ctx, fest, extra, { folded });
 
   // A scheduled fest's day-less names that sit on no grid.
   if (scheduled && plan.looseNoDay.length) {
@@ -1245,17 +1216,15 @@ function sectionSub(fest, sec) {
 }
 
 // A tab off the end of the week (MODEL-V4 §2), and a ROOM like any other: one
-// foldable header — so a tap folds it, the show menu can name it and the tab
-// lands on it — holding either a `.date-rule` per date with its venue groups
-// under it, or, for a section whose entries never said when, one set of venue
-// groups. The header carries no note door; each date inside it does.
-function renderExtra(root, ctx, fest, extra, { folded, onToggle }) {
+// header — so the show menu can name it and the tab lands on it — holding
+// either a `.date-rule` per date with its venue groups under it, or, for a
+// section whose entries never said when, one set of venue groups. The header
+// carries no note door; each date inside it does.
+function renderExtra(root, ctx, fest, extra, { folded }) {
   const room = roomBlock(extra.key);
-  const lists = extra.byDate ? [...extra.byDate.values()] : [extra.entries || []];
   const isFolded = folded.has(extra.key);
   room.appendChild(sectionHeader(extra.label, extra.sub || '', {
-    key: extra.key, dayKey: extra.key, folded: isFolded, onToggle,
-    count: lists.reduce((n, l) => n + l.length, 0),
+    key: extra.key, dayKey: extra.key, folded: isFolded,
   }));
   root.appendChild(room);
   if (isFolded) return;

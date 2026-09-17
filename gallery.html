@@ -97,9 +97,11 @@
 
 <section id="events-gallery">
   <div class="zoom-title">THE EVENTS — the composed day, live</div>
-  <div class="hint">the real <code>renderWall</code> on a small fest holding every state of the list (MODEL-V4, 2026-09-16) — a grid day's timetable, venue groups everywhere else, a numbered back-to-back run, an un-numbered room that stacks anyway, a room with no clock, and the now mark. Hover / hold / Tab to a card to zoom it (the ~ cards show the two-line WHEN with the order door); tap a room's header to fold it and again to bring it back; tap any card to pick.</div>
+  <div class="hint">the real <code>renderWall</code> on a small fest holding every state of the list (MODEL-V4, 2026-09-16) — a grid day's timetable, venue groups everywhere else, a numbered back-to-back run, an un-numbered room that stacks anyway, a room with no clock, and the now mark. Hover / hold / Tab to a card to zoom it (the ~ cards show the two-line WHEN with the order door); tap any card to pick. A room's header is not a control (MODEL-V4 §3a.2) — the show menu on the fest name hides a room, and the checkboxes below stand in for it here.</div>
   <div class="zoom-toolbar">
     <label><input type="checkbox" id="events-lowpower"> Low power (instant)</label>
+    <span class="zoom-status">Show:</span>
+    <span id="events-rooms" class="row" style="gap: 12px;"></span>
     <span id="events-status" class="zoom-status"></span>
   </div>
   <ul class="events-states">
@@ -797,7 +799,6 @@ const ectx = {
   onOpenFestNotes: () => {},
   onNotesChange: () => {},
   onTap: eventsTap,
-  onToggleFold: (key) => { folded = toggleFold(folded, key); eventsStatus(`${key} ${folded.includes(key) ? 'folded' : 'open'} — saved on this device in the app (fn_fold_v1_<fid>)`); repaint(); },
   wireZoom: (el, artist, occ) => {
     const opts = { onOpenNotes: (a) => ectx.onOpenNotes(a, occ), occ };
     wireCardZoom(el, artist, ectx, opts);
@@ -845,6 +846,28 @@ document.getElementById('events-lowpower').addEventListener('change', (e) => {
   document.body.classList.toggle('low-power', ectx.lowPower);
   repaint();
 });
+// Hiding a room: in the app this is the show menu on the fest name (MODEL-V4
+// §3.1), which lives in the shell and not in renderWall — so the gallery gives
+// it the same state through checkboxes. The header is not a control any more
+// (§3a.2), so a hidden room here is what the menu leaves: the header, quiet,
+// with nothing under it.
+const ROOMS = [[':fest', 'Gallery Fest'], ['Afters', 'Afters'], ['Folsom', 'Folsom'], ['Late nights', 'Late nights']];
+(function wireRoomToggles() {
+  const host = document.getElementById('events-rooms');
+  for (const [key, label] of ROOMS) {
+    const wrap = document.createElement('label');
+    const box = document.createElement('input');
+    box.type = 'checkbox';
+    box.checked = true;
+    box.addEventListener('change', () => {
+      folded = toggleFold(folded, key);
+      eventsStatus(`${label} ${folded.includes(key) ? 'hidden' : 'shown'} — saved on this device in the app (fn_fold_v1_<fid>)`);
+      repaint();
+    });
+    wrap.append(box, document.createTextNode(` ${label}`));
+    host.appendChild(wrap);
+  }
+})();
 // The zoom gallery above already owns the document-level Escape / press-outside
 // handlers for the zoom.
 // Both galleries share one state module: point it at THIS fest to render, and

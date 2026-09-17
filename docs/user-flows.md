@@ -112,11 +112,13 @@ viewport (no vast dead space on desktop).
    night's artists as cards top to bottom in play order. Whoever is on right
    now wears the now mark. A card with no time shows no time line.
 5. Tapping a card cycles the pick **without the card moving or vanishing**.
-6. **Tapping a room's header folds it** — the header stays and its sub
-   becomes "<n> shows". Remembered per fest, on this device only.
+6. **A room's header names the room** and takes no tap of its own — no
+   chevron, no fold (MODEL-V4 §3a.2).
 7. **The fest name** (bottom dock on mobile, day rail on desktop) opens the
    show menu: one row per room of the festival week with a check, then
-   Settings. Unchecking a room folds it on every day — the same state as (6).
+   Settings. Unchecking a room hides it on every day — its header stays,
+   quiet, with nothing under it. Remembered per fest, on this device only,
+   and it is the ONE way to hide a part of the week.
    A fest with one room goes straight to Settings, as it always did.
 8. **A dated section is its own tab** after the days (LATE NIGHTS), ruled by
    date (TUE · SEP 29) with its venue groups under each rule. Its cards pick
