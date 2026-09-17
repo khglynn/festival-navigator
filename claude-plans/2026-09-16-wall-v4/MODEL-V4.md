@@ -127,8 +127,8 @@ section says its own sub from `dayMeta[<label>].sub` if present, else nothing.
   weekend's grid (`weekend` W1 for the first three, W2 for the rest; a set
   with no `weekend` tag plays both). The day rule reads `FRIDAY · Fri · Oct 2
   · Weekend 1`. The weekend strip (`updateWeekendRow`, `fn_weekend_v1`,
-  `scheduledWeekendOf`) is deleted. Day note keys are unchanged: both Fridays
-  share the `Friday` thread, exactly as the picker left them.
+  `scheduledWeekendOf`) is deleted. Day notes are per date (§4), so each
+  Friday has its own thread; a legacy `Friday` note shows on both.
 - A lineup-only two-weekend fest (ACL 2025, archived) keeps the `W1`/`W2`
   card tags and shows both weekends; it never had a grid to split.
 
