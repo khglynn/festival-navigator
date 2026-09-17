@@ -1,5 +1,8 @@
 # festival-navigator — agent notes
 
+**Start here:** NOW.md says where things stand (one screen); then the laws
+below. Specs and plans are indexed in `claude-plans/README.md`.
+
 Non-inferable facts only (the code answers everything else — read it).
 
 - **v3 design system**: static tokens in `assets/v3-tokens.css`, screen map +
@@ -69,9 +72,11 @@ Non-inferable facts only (the code answers everything else — read it).
 - **Docs cannot lie any more, and that is enforced**: `tests/docs-truth.test.mjs`
   asserts the README's structure block points at files that exist, that no doc
   tells anyone to run an npm script that does not exist, that no doc presents
-  Tailwind or Blob as part of the stack, and that the festival list lives ONLY in
-  `data/festivals/index.json`. History files (DEVLOG, claude-plans) are exempt —
-  they are supposed to talk about what we dropped.
+  Tailwind or Blob as part of the stack, and that the README's festival count
+  matches `data/festivals/index.json` (the only list). It also holds NOW.md
+  under 12 KB and fails on any repo path NOW.md or this file cites in
+  backticks that does not exist. History files (DEVLOG, claude-plans) are
+  exempt — they are supposed to talk about what we dropped.
 - `vercel dev` does not serve files created after it starts, and can serve
   STALE copies of edited files too (measured 2026-07-12: an edited app.js
   served an old version until restart) — when in doubt, restart it, and
@@ -120,9 +125,10 @@ Non-inferable facts only (the code answers everything else — read it).
   pointer input, never `element.click()`) before any promote.
 - **This repo is PUBLIC.** A crew token (`#g=…`) IS the credential for that
   crew's data. Never commit one; scan before every commit with `&&` (never `;`,
-  which runs the commit even when the scan trips). `.gitignore` denies `*.png`
-  by default and allowlists the three icons that ship, because an audit run once
-  dumped 50 screenshots into the repo root.
+  which runs the commit even when the scan trips). `.gitignore` denies images
+  (`*.png`, `*.jpg`, `*.jpeg`) by default and allowlists only the generated
+  icons and link previews that ship, because an audit run once dumped 50
+  screenshots into the repo root.
 - Deploy is gated: branch pushes = preview only; production promote is
   Kevin's call, always.
 - Adding a festival: `docs/add-a-festival.md`. Validate with
@@ -171,10 +177,11 @@ Non-inferable facts only (the code answers everything else — read it).
   label and raised the Copy/Search callout over the zoom (2026-09-02). Every
   `user-select: none` in v3.css carries the prefix; keep it that way.
 - **Run guesses come from `scripts/guess-run-times.mjs`, never render
-  time** (MODEL-V3 §5): the venue registry `data/venues/index.json`
-  (routine close by weekday, doors-to-first-act, set lengths, with sources)
-  feeds a dry-run diff; `--write` records `time`, `close`, `closeApprox`,
-  `closeSource` on every run member. A printed close is never overwritten.
+  time** (§5 of `claude-plans/2026-08-31-events-canvas/MODEL-V3.md`): the
+  venue registry `data/venues/index.json` (routine close by weekday,
+  doors-to-first-act, set lengths, with sources) feeds a dry-run diff;
+  `--write` records `time`, `close`, `closeApprox`, `closeSource` on every
+  run member. A printed close is never overwritten.
 
 - **How this app moves (Kevin, 2026-08-30 — the vibe, not the mechanics; the
   code carries those).** This is a designer's passion project, and the bar is
