@@ -9,14 +9,14 @@ import * as sync from '../sync.js';
 import * as spotify from '../spotify.js';
 import * as model from './model.js';
 import { loadFestivalIndex, loadFestival, fetchCustomFestivals, mergeCustoms, FESTIVAL_INDEX, defaultFestivalId } from '../festivals.js';
-import { renderWall, refreshCard, showUndoToast, showToast, wireScrollspy, colorIndexOf, scheduledWeekendOf, positionNowLines, scrollToNowLine, dayNavOf, cardFor, roomOf, isStripScroller } from './wall.js';
+import { renderWall, refreshCard, showUndoToast, showToast, wireScrollspy, colorIndexOf, positionNowLines, scrollToNowLine, dayNavOf, cardFor, roomOf, isStripScroller } from './wall.js';
 import { loadPeopleFilter, savePeopleFilter, togglePerson, pruneToActive, loadSolo, saveSolo, loadFolded, applyFoldToggle } from './filters.js';
 import { OUT_MS, CASCADE_MS, STAGGER_MS, EASE_ARRIVE, EASE_LEAVE, EASE_SURFACE, canAnimate } from './motion.js';
 import { scrolledBefore, rememberScrolled, dayOfScrollKey } from './now.js';
 import { disclosureFold, eqLoader, festRow } from './tools.js';
 import { openArtistSheet, openDayNotes, openAllNotes, openFestNotes, closeSheet, refreshOpenSheet, sheetChrome, dialogize, rememberOpener } from './notes.js';
 import { renderSettings, appSettings, openSubviewByKey } from './settings.js';
-import { onStorageWriteFail, saveLS, getLS, errorText } from '../util.js';
+import { onStorageWriteFail, saveLS, errorText } from '../util.js';
 import { router, encodeNotesKey, decodeNotesKey } from './router.js';
 import { wireCardZoom, wireCardFocusZoom, zoomCard, unzoom, dismissZoom, zoomedCard, zoomContains, zoomSnapshot, refreshZoom, festPlaceLine } from './card-facts.js';
 import { hookGlobalErrors } from '../errlog.js';
@@ -113,9 +113,6 @@ function refreshCtx() {
   ctx.meName = crew.me(state.getCrewToken());
   ctx.picks = model.picksFor(state.crewDoc, ctx.fid);
   ctx.affinity = state.affinityLookup(ctx.meName);
-  // Weekend view is a device-local preference per fest (ST-3): set it once
-  // ("I'm going W2") and wrong-weekend picks announce themselves.
-  ctx.weekend = getLS(`fn_weekend_v1_${ctx.fid}`) || 'all';
   // A remembered filter for someone no longer in the crew would blank the
   // wall with no chip to explain it — prune to the people who are here.
   const stored = loadPeopleFilter(ctx.fid);
@@ -446,52 +443,9 @@ function repaintWall() {
   const scheduled = !!(state.fest().days && Object.keys(state.fest().days).length);
   $('sort-control').style.display = scheduled ? 'none' : '';
   updateMigrationBanner();
-  updateWeekendRow();
   updateArchiveNote();
   maybeShowCoachMark();
   measureStickyChrome();
-}
-
-// Multi-weekend fests (ACL) get a weekend view (ST-3): pick yours once and
-// the wall shows who's actually playing it; W1/W2-only artists carry a tag
-// in the Both view so a wrong-weekend must can't sneak in.
-function updateWeekendRow() {
-  const existing = document.getElementById('weekend-row');
-  const fest = state.fest();
-  const has = (fest.artists || []).some((a) => a.weekends === 'W1' || a.weekends === 'W2');
-  if (!has) { if (existing) existing.remove(); return; }
-  // On a SCHEDULED two-weekend fest the row loses "Both": a clock grid can
-  // only honestly show one weekend at a time (duplicate overlapping cards
-  // otherwise), so a stored 'all' renders as Weekend One (ST-3, extended).
-  const schedWk = scheduledWeekendOf(fest, ctx.weekend);
-  let row = existing;
-  if (!row) {
-    row = document.createElement('div');
-    row.id = 'weekend-row';
-    row.style.cssText = 'display: flex; align-items: center; gap: 6px; margin-top: 11px;';
-    const lbl = document.createElement('span');
-    lbl.className = 'micro-label';
-    lbl.style.marginRight = '4px';
-    lbl.textContent = 'Weekend';
-    row.appendChild(lbl);
-    for (const [val, label] of [['all', 'Both'], ['W1', 'One'], ['W2', 'Two']]) {
-      const b = document.createElement('button');
-      b.className = 'seg';
-      b.dataset.w = val;
-      b.textContent = label;
-      b.addEventListener('click', () => {
-        saveLS(`fn_weekend_v1_${ctx.fid}`, val);
-        repaintWall();
-      });
-      row.appendChild(b);
-    }
-    document.querySelector('#screen-app .toolbar').after(row);
-  }
-  const active = schedWk || ctx.weekend || 'all';
-  row.querySelectorAll('.seg').forEach((b) => {
-    if (b.dataset.w === 'all') b.style.display = schedWk ? 'none' : '';
-    b.classList.toggle('active', b.dataset.w === active);
-  });
 }
 
 // First-wall coach mark (CT-1): the pick mechanic and long-press are
