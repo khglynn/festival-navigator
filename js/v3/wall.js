@@ -17,6 +17,7 @@ import { factsFor, timeRange } from './card-facts.js'; // same runtime-only cycl
 import { passesPeople, columnsTemplate, railLabels } from './filters.js';
 import { nowOnDay, nowOffsetPx, clockLabel, festivalClock } from './now.js';
 import { eventModelOf, timetableOf, sortForTiles, bucketsOf, occOf, hourLabelOf, approxMark, parseEventTime, FEST_BUCKET } from './events.js';
+import { reduced } from './motion.js';
 
 // ---- person -> board color ---------------------------------------------------
 // v4 people carry colorIndex. Legacy people carry a "R, G, B" string from the
@@ -717,17 +718,14 @@ export function scrollToNowLine(root, { date = new Date(), viewportHeight = wind
 // from the lead's scroll event (still one frame late, but a transform, not
 // a second scroll). Day scrollers keep mirroring each other as before.
 export const isStripScroller = (s) => !!(s.closest && s.closest('.stage-strip'));
-// Feature-gated once: scroll timelines (the CSSOM must know the properties —
-// jsdom's CSS.supports says yes to anything), and NOT reduced motion — the
-// tokens file kills every animation under prefers-reduced-motion, which
-// would freeze a CSS follow at zero.
-const NATIVE_FOLLOW = (() => {
+// Whether the engine has scroll timelines, asked once (the CSSOM must know the
+// properties — jsdom's CSS.supports says yes to anything).
+const SCROLL_TIMELINES = (() => {
   try {
     if (typeof CSS === 'undefined' || typeof CSS.supports !== 'function' || typeof window === 'undefined') return false;
     // The engine exposes the timeline as an object too; a DOM shim never does.
     if (typeof window.ScrollTimeline !== 'function') return false;
-    if (!CSS.supports('animation-timeline: scroll()') || !CSS.supports('timeline-scope: --a')) return false;
-    return !(typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    return CSS.supports('animation-timeline: scroll()') && CSS.supports('timeline-scope: --a');
   } catch { return false; }
 })();
 let timelineSeq = 0;
@@ -735,7 +733,11 @@ function followStrip(strip, lead, root) {
   const row = strip.querySelector('.times-grid');
   if (!row) return;
   strip.classList.add('follows');
-  if (NATIVE_FOLLOW) {
+  // The CSS follow only where CSS animations run: the tokens file kills every
+  // animation under reduced motion and under Low Power, and a killed follow
+  // leaves the stage names frozen over sliding columns. Decided per render —
+  // leaving Settings repaints the wall.
+  if (SCROLL_TIMELINES && !reduced() && !document.body.classList.contains('low-power')) {
     // The timeline is named on the lead and scoped on the nearest ancestor
     // both share (a day's .tt-block, or the wall for the one-strip page).
     // The far keyframe is the lead's maximum scroll in px (--strip-max): the

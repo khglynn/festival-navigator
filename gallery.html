@@ -799,9 +799,12 @@ function eventsTap(artistName) {
     onSwap: i === zi ? (fresh) => refreshZoom(fresh, ectx) : null,
   }));
 }
+// Low Power the way the app applies it: the setting flips, and the wall
+// repaints when Settings closes (app.js closeSettings).
 document.getElementById('events-lowpower').addEventListener('change', (e) => {
   ectx.lowPower = e.target.checked;
   document.body.classList.toggle('low-power', ectx.lowPower);
+  repaint();
 });
 // The zoom gallery above already owns the document-level Escape / press-outside
 // handlers for the zoom.

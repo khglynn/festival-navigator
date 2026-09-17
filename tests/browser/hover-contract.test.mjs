@@ -19,28 +19,18 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { serveStatic } from '../helpers/static-server.mjs';
+import { launchBrowser, NO_BROWSER } from '../helpers/browser.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
-const REQUIRED = !!process.env.BROWSER_TEST_REQUIRED; // CI: a missing browser is a failure, not a skip
 const OPEN_MS = 650;   // ZOOM_IN_MS (200) + the bloom, with slack
 const CLOSE_MS = 650;  // ZOOM_OUT_MS (260) + the way out, with slack
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-async function launch() {
-  const { chromium } = await import('playwright');
-  try { return await chromium.launch({ headless: true }); } catch (e) {
-    try { return await chromium.launch({ channel: 'chrome', headless: true }); } catch (e2) {
-      if (REQUIRED) throw e;
-      return null;
-    }
-  }
-}
-
 const server = await serveStatic(ROOT);
-const browser = await launch();
+const browser = await launchBrowser();
 test.after(async () => { if (browser) await browser.close(); await server.close(); });
 
-const skip = browser ? false : 'no browser available (npx playwright install chromium, or install Chrome)';
+const skip = browser ? false : NO_BROWSER;
 
 // One page per test file: the gallery renders the same states every load.
 let page;
