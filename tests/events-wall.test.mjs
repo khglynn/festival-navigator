@@ -33,6 +33,7 @@ const { FESTIVALS, FESTIVAL_INDEX } = await import('../js/festivals.js');
 const { renderWall, refreshCard, dayNavOf, cardFor, roomOf, positionNowMarks } = await import('../js/v3/wall.js');
 const facts = await import('../js/v3/card-facts.js');
 const { parseEventTime, venueGroupsOf, occOf } = await import('../js/v3/events.js');
+const { validateFestivalDoc } = await import('../api/_lib/festival-rules.mjs');
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const portola = JSON.parse(readFileSync(join(ROOT, 'data/festivals/portola-2026.json'), 'utf8'));
@@ -43,7 +44,7 @@ const afters = (wd) => portola.artists.filter((a) => a.night === wd && /Afters/.
 const groupsOn = (wd) => venueGroupsOf(afters(wd));
 
 const TOKEN = 'eventswalltoken_0123456789';
-FESTIVAL_INDEX.push({ id: 'portola-2026', status: 'scheduled' }, { id: 'lineup-only', status: 'lineup' }, { id: 'grid-only', status: 'scheduled' }, { id: 'tiles-run', status: 'lineup' }, { id: 'dated', status: 'scheduled' }, { id: 'two-dated', status: 'scheduled' }, { id: 'verbose-day', status: 'lineup' });
+FESTIVAL_INDEX.push({ id: 'portola-2026', status: 'scheduled' }, { id: 'lineup-only', status: 'lineup' }, { id: 'grid-only', status: 'scheduled' }, { id: 'tiles-run', status: 'lineup' }, { id: 'dated', status: 'scheduled' }, { id: 'two-dated', status: 'scheduled' }, { id: 'verbose-day', status: 'lineup' }, { id: 'two-rooms', status: 'scheduled' });
 state.activateCrew(TOKEN, {
   v: 4, meta: {}, spotify: {},
   people: { Kevin: { colorIndex: 0 }, Nhu: { colorIndex: 1 } },
@@ -100,6 +101,24 @@ FESTIVALS['two-dated'] = {
       ],
     },
   },
+};
+
+// One artist, one night, two rooms — a set at Room A and a later one at Room
+// B, each in its own section, which is the same structural place Portola's
+// Horse Meat Disco sits in (one entry, two rooms). Two entries, so two shows.
+FESTIVALS['two-rooms'] = {
+  id: 'two-rooms', name: 'Two Rooms', status: 'scheduled', timezone: 'America/Los_Angeles',
+  dayMeta: {
+    Sunday: { wd: 'Sun', date: 'Sep 27', iso: '2026-09-27' },
+    Afters: { sub: 'around town' },
+    Folsom: { sub: 'the street' },
+  },
+  artists: [
+    { name: 'Billed', day: 'Sunday' },
+    { name: 'Two Times', day: 'Afters', stage: 'Fri · Room A', night: 'Fri', venue: 'Room A', time: '9 PM' },
+    { name: 'Two Times', day: 'Folsom', stage: 'Fri · Room B', night: 'Fri', venue: 'Room B', time: '1 AM' },
+  ],
+  days: { Sunday: { stages: ['A'], artists: [{ name: 'Billed', stage: 'A', time: '2:00 PM - 3:00 PM' }] } },
 };
 
 // A verbose day key (an early-arrival pre-party's shape) on a fest with a section.
@@ -533,6 +552,33 @@ test('a combined-day show is ONE occurrence in TWO rooms — the zoom comes back
   assert.ok(only);
   assert.equal(cardFor(root, midway.name, mOcc, { room: 'Folsom' }), only, 'a wrong room never loses the only match');
   assert.notEqual(cardFor(root, midway.name, { day: 'Sunday', stage: null, time: null, weekend: null }), only);
+});
+
+// ---- a search answer is an occurrence, not a name -----------------------------------------
+// A search used to fold a night's rooms by NAME, so an artist with a set at
+// Room A and a later one at Room B answered once and the second show was
+// unreachable from search (Codex re-check finding 1, 2026-09-17). The rule is
+// the one the rest of the app already runs on: two cards are the same answer
+// only when they are the same occurrence.
+
+test('a search answers per SHOW: two rooms on one night are two answers, and a combined-day show stays one', () => {
+  const { errors } = validateFestivalDoc(FESTIVALS['two-rooms'], { filename: 'two-rooms.json' });
+  assert.deepEqual(errors, [], 'the fixture is data the validator accepts, not a shape we invented');
+
+  const { root } = render('two-rooms', { query: 'two times' });
+  const cards = [...root.querySelectorAll('.card[data-artist="Two Times"]')];
+  assert.equal(cards.length, 2, 'Room A at 9 and Room B at 1 AM are two shows — both findable');
+  assert.deepEqual(cards.map((c) => JSON.parse(c.dataset.occ).venue), ['Room A', 'Room B']);
+  assert.notEqual(cards[0].dataset.occ, cards[1].dataset.occ, 'two occurrences, so the zoom tells each its own story');
+  assert.deepEqual([...root.querySelectorAll('.day-rule')].map((r) => r.dataset.day), ['Friday'],
+    'both answers under the one night they play');
+
+  // …and the one shape that really is a single show reached twice: Portola's
+  // Horse Meat Disco, day "Afters & Folsom" — one entry, one occurrence.
+  const { root: p } = render('portola-2026', { query: 'horse meat' });
+  const hmd = [...p.querySelectorAll('.card[data-artist="Horse Meat Disco"]')];
+  assert.equal(hmd.length, 1, 'one show in two rooms is one answer');
+  assert.equal(JSON.parse(hmd[0].dataset.occ).day, 'Afters & Folsom');
 });
 
 // ---- the round-2 walk: picks on a grown card, across the sync echo ------------------------

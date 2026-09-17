@@ -963,9 +963,22 @@ const mk = (tag, className, text) => {
   if (text != null) n.textContent = text;
   return n;
 };
-const dedupeByName = (list) => {
+// The same card twice is the same ARTIST in the same OCCURRENCE — the pair
+// `cardFor` restores a zoom by, name plus the day/date/venue/stage/time
+// identity `occOf` builds. A name alone is not it: an artist who plays Room A
+// at 9 and Room B at 1 AM is two shows on one night, and folding them into one
+// answer loses the second outright. An occurrence alone is not it either —
+// every name billed on a day with no set yet shares one (day, no stage, no
+// time). The one thing that IS a single show reached twice is a combined-day
+// entry — Portola's Horse Meat Disco, day "Afters & Folsom", the same object
+// handed to two rooms — and it comes back as the same pair, so it stays one,
+// the same tie `cardFor` breaks with the room.
+const dedupeByCard = (list, occFor = occOf) => {
   const seen = new Set();
-  return list.filter((a) => (seen.has(a.name) ? false : (seen.add(a.name), true)));
+  return list.filter((a) => {
+    const key = JSON.stringify([a.name, occFor(a)]);
+    return seen.has(key) ? false : (seen.add(key), true);
+  });
 };
 
 // The card's time label in a stack: the range the venue posted, else the
@@ -1126,7 +1139,7 @@ function activitiesOf(fest, day) {
 function festRoomExtras(fest, day, layout) {
   if (layout.solo) return []; // the solo promises "just that stage"
   const onGrid = new Set(state.getDayArtists(day.dayKey, day.weekend).map((a) => a.name));
-  const billed = dedupeByName(applyWeekend(day.billing || [], day.weekend)).filter((a) => !onGrid.has(a.name));
+  const billed = dedupeByCard(applyWeekend(day.billing || [], day.weekend)).filter((a) => !onGrid.has(a.name));
   return [...straysOf(fest, day.dayKey, day.weekend, layout.stages), ...billed, ...activitiesOf(fest, day.dayKey)];
 }
 
@@ -1181,7 +1194,7 @@ function renderComposed(root, ctx, fest, { model: plan, scheduled }) {
   if (scheduled && plan.looseNoDay.length) {
     const onAnyGrid = new Set();
     for (const d of plan.days) if (d.grid) for (const a of state.getDayArtists(d.dayKey, d.weekend)) onAnyGrid.add(a.name);
-    const loose = dedupeByName(plan.looseNoDay.filter((a) => !onAnyGrid.has(a.name)));
+    const loose = dedupeByCard(plan.looseNoDay.filter((a) => !onAnyGrid.has(a.name)));
     if (loose.length) renderLineupGroup(root, '', loose, ctx, fest, { header: 'EVERYTHING ELSE', sub: 'NO SET TIME YET' });
   }
   festNotesFoot(root, ctx, fest);
@@ -1343,11 +1356,14 @@ function renderWallInner(root, ctx) {
       }
       // Then everything else of that night's, in the wall's order: the names
       // billed on the day with no set on its grid, then each room that plays.
-      // A combined-day show is one entry in two rooms — one answer here.
-      const billed = dedupeByName(applyWeekend(day.billing || [], day.weekend)).filter((a) => !onGrid.has(a.name));
-      const rooms = dedupeByName(plan.model.sections.flatMap((s) => s.byDay.get(day.key) || []));
-      for (const a of [...billed, ...rooms].filter((a) => wanted(a.name))) {
-        cards.push(renderCard(a.name, ctx, { time: lineupSubLabel(a), occ: { ...occOf(a), day: a.day || day.dayKey } }));
+      // One pass over both, deduped by the occurrence the card will carry: a
+      // combined-day show is one entry reached through two rooms and answers
+      // once, while two rooms on one night are two shows and answer twice.
+      const billed = applyWeekend(day.billing || [], day.weekend).filter((a) => !onGrid.has(a.name));
+      const rooms = plan.model.sections.flatMap((s) => s.byDay.get(day.key) || []);
+      const occHere = (a) => ({ ...occOf(a), day: a.day || day.dayKey });
+      for (const a of dedupeByCard([...billed, ...rooms].filter((a) => wanted(a.name)), occHere)) {
+        cards.push(renderCard(a.name, ctx, { time: lineupSubLabel(a), occ: occHere(a) }));
       }
       any = answers(cards, dayLabelParts(day.dayKey).head, day.sub, { dayKey: day.key }) || any;
     }
@@ -1367,7 +1383,7 @@ function renderWallInner(root, ctx) {
     if (plan) {
       const onAnyGrid = new Set();
       for (const d of plan.model.days) if (d.grid) for (const a of state.getDayArtists(d.dayKey, d.weekend)) onAnyGrid.add(a.name);
-      const loose = dedupeByName(plan.model.looseNoDay.filter((a) => !onAnyGrid.has(a.name) && wanted(a.name)));
+      const loose = dedupeByCard(plan.model.looseNoDay.filter((a) => !onAnyGrid.has(a.name) && wanted(a.name)));
       any = answers(loose.map((a) => renderCard(a.name, ctx, { time: lineupSubLabel(a), occ: occOf(a) })),
         'EVERYTHING ELSE', 'NO SET TIME YET', {}) || any;
     }
