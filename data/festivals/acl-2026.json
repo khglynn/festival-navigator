@@ -1230,6 +1230,20 @@
       "sub": "around Austin"
     }
   },
+  "venues": {
+    "Zilker Park": "https://maps.google.com/?q=Zilker+Park,+2100+Barton+Springs+Rd,+Austin",
+    "3TEN": "https://maps.google.com/?q=3TEN+ACL+Live,+310+Willie+Nelson+Blvd,+Austin",
+    "Antone's": "https://maps.google.com/?q=Antone's+Nightclub,+305+E+5th+St,+Austin",
+    "Brushy Street Commons": "https://maps.google.com/?q=Brushy+Street+Commons,+502+Brushy+St,+Austin",
+    "Devil May Care": "https://maps.google.com/?q=Devil+May+Care,+500+W+6th+St,+Austin",
+    "Emo's": "https://maps.google.com/?q=Emo's+Austin,+2015+E+Riverside+Dr,+Austin",
+    "Fair Market": "https://maps.google.com/?q=Fair+Market,+1100+E+5th+St,+Austin",
+    "Historic Scoot Inn": "https://maps.google.com/?q=Historic+Scoot+Inn,+1308+E+4th+St,+Austin",
+    "Mohawk Austin": "https://maps.google.com/?q=Mohawk+Austin,+912+Red+River+St,+Austin",
+    "Stubb's": "https://maps.google.com/?q=Stubb's+Waller+Creek+Amphitheater,+801+Red+River+St,+Austin",
+    "The Concourse Project": "https://maps.google.com/?q=The+Concourse+Project,+8509+Burleson+Rd,+Austin",
+    "The Continental Club": "https://maps.google.com/?q=The+Continental+Club,+1315+S+Congress+Ave,+Austin"
+  },
   "days": {
     "Friday": {
       "stages": [
