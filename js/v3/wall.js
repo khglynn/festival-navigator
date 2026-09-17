@@ -12,7 +12,7 @@ import { computeLanes } from '../overlap.js';
 import { dayLabelParts } from '../time.js';
 import { whoCorner, aboutCorner } from './aura.js';
 import { BOARD } from './palette.js';
-import { dayWhisper } from './notes.js'; // runtime-only cycle with this module (colorIndexOf) — safe
+import { dayWhisper, festWhisper, shortDayLabel } from './notes.js'; // runtime-only cycle with this module (colorIndexOf) — safe
 import { factsFor, timeRange } from './card-facts.js'; // same runtime-only cycle: the card's ONE model
 import { passesPeople, columnsTemplate, railLabels } from './filters.js';
 import { nowOnDay, nowOffsetPx, clockLabel, festivalClock } from './now.js';
@@ -954,8 +954,10 @@ export function dayNavOf(fest, ctx) {
     const plan = wallPlanFor(fest, ctx);
     if (plan) {
       return [
-        ...plan.model.days.map((d) => ({ key: d.key, short: d.short, num: d.num, long: d.long, iso: d.iso, dated: false })),
-        ...plan.model.extras.map((e) => ({ key: e.key, short: e.short, num: null, long: e.long, iso: null, dated: true })),
+        ...plan.model.days.map((d) => ({ key: d.key, short: d.short, num: d.num, long: d.long, iso: d.iso, dates: d.iso ? [d.iso] : [], dated: false })),
+        // A dated section is one tab over many dates, and each of those dates
+        // is its own note thread (§4) — so the tab carries them all.
+        ...plan.model.extras.map((e) => ({ key: e.key, short: e.short, num: null, long: e.long, iso: null, dates: [...(e.byDate || new Map()).keys()], dated: true })),
       ];
     }
   }
@@ -977,6 +979,7 @@ export function dayNavOf(fest, ctx) {
       key: day,
       short: (meta?.wd || day).slice(0, 3).toUpperCase(),
       num: null,
+      dates: [],
       // Rail tabs stay compact: a verbose day key shows its weekday only —
       // the same split the day rule and the day sheet use.
       long: (meta?.wd ? `${meta.wd} ${meta.num || ''}`.trim() : dayLabelParts(day).head).toUpperCase(),
@@ -1231,7 +1234,8 @@ function renderComposed(root, ctx, fest, { model: plan, scheduled }) {
 // on the way in is the notes layer's job (notes.js, model.js).
 function dayNoteDoor(root, iso, ctx) {
   if (!ctx.onOpenDayNotes) return;
-  const w = dayWhisper('day', iso, ctx, () => ctx.onOpenDayNotes(iso));
+  const label = shortDayLabel(iso);
+  const w = dayWhisper(iso, label, ctx, () => ctx.onOpenDayNotes(iso, label));
   if (w) root.appendChild(w);
 }
 
@@ -1406,7 +1410,7 @@ function festNotesFoot(root, ctx, fest, { invite = false } = {}) {
   const has = model.noteCount(state.crewDoc, ctx.fid, 'fest', null) > 0;
   if (!has && !invite) return;
   root.appendChild(dayHeader(`NOTES · ${fest.name.toUpperCase()}`, ''));
-  const w = dayWhisper('fest', null, ctx, () => ctx.onOpenFestNotes());
+  const w = festWhisper(ctx, () => ctx.onOpenFestNotes());
   if (w) { root.appendChild(w); return; }
   const add = document.createElement('button');
   add.className = 'btn-ghost add-first-note';

@@ -15,7 +15,7 @@ import { OUT_MS, CASCADE_MS, STAGGER_MS, EASE_ARRIVE, EASE_LEAVE, EASE_SURFACE, 
 import { scrolledBefore, rememberScrolled, dayOfScrollKey, festivalClock } from './now.js';
 import { dayLabelParts } from '../time.js';
 import { disclosureFold, eqLoader, festRow } from './tools.js';
-import { openArtistSheet, openDayNotes, openAllNotes, openFestNotes, closeSheet, refreshOpenSheet, sheetChrome, dialogize, rememberOpener } from './notes.js';
+import { openArtistSheet, openDayNotes, openAllNotes, openFestNotes, closeSheet, refreshOpenSheet, sheetChrome, dialogize, rememberOpener, shortDayLabel } from './notes.js';
 import { renderSettings, appSettings, openSubviewByKey } from './settings.js';
 import { onStorageWriteFail, saveLS, errorText } from '../util.js';
 import { router, encodeNotesKey, decodeNotesKey } from './router.js';
@@ -66,9 +66,9 @@ const ctx = {
     // THIS set for an artist who plays twice.
     router.push(encodeNotesKey(artist, occ));
   },
-  onOpenDayNotes: (day) => {
-    openDayNotes(day, ctx, onNotesChange);
-    router.push(`sheet:day:${day}`);
+  onOpenDayNotes: (iso, label = null) => {
+    openDayNotes(iso, label, ctx, onNotesChange);
+    router.push(`sheet:day:${iso}`);
   },
   onOpenFestNotes: () => {
     openFestNotes(ctx, onNotesChange);
@@ -124,6 +124,29 @@ function refreshCtx() {
   if (ctx.filterPeople.length !== stored.length) savePeopleFilter(ctx.fid, ctx.filterPeople);
   ctx.soloStage = loadSolo(ctx.fid);
   ctx.folded = loadFolded(ctx.fid);
+  ctx.festDates = festDatesOf();
+}
+
+// Every date on the day axis, in the wall's order — the grid days (both
+// weekends), the nights of a weekday-keyed section, and each date of a dated
+// section. This is the list the all-notes sheet opens a door on (MODEL-V4
+// §4), so it reads the axis the tabs read rather than dayMeta directly: a
+// Portola afters night has a date the wall derives and dayMeta never names.
+// The query is stripped deliberately — searching narrows the wall, never the
+// dates a crew has notes on.
+function festDatesOf() {
+  const fest = state.fest();
+  if (!fest) return [];
+  const out = [];
+  const seen = new Set();
+  for (const day of dayNavOf(fest, { ...ctx, query: '' })) {
+    for (const iso of day.dates || []) {
+      if (!model.ISO_DATE_RE.test(String(iso)) || seen.has(iso)) continue;
+      seen.add(iso);
+      out.push({ iso, label: shortDayLabel(iso) });
+    }
+  }
+  return out;
 }
 
 // ---- the fold (MODEL-V4 §3) ------------------------------------------------------
@@ -2086,7 +2109,7 @@ export function init() {
     else if (key === 'sheet:share') openShareMoment();
     else if (key === 'sheet:add-member') openAddMember();
     else if (key === 'sheet:fest') openFestNotes(ctx, onNotesChange);
-    else if (key.startsWith('sheet:day:')) openDayNotes(key.slice('sheet:day:'.length), ctx, onNotesChange);
+    else if (key.startsWith('sheet:day:')) openDayNotes(key.slice('sheet:day:'.length), null, ctx, onNotesChange);
     else if (key.startsWith('sheet:notes:')) {
       const d = decodeNotesKey(key);
       if (d) openArtistSheet(d.artist, ctx, onNotesChange, d.occ);
