@@ -1,6 +1,6 @@
 # NOW — festival-navigator
 
-**last-updated: 2026-09-16 · mode: live**
+**last-updated: 2026-09-17 · mode: live**
 
 Where things stand, on one screen. Change stale lines in place; the story of
 how we got here belongs in DEVLOG.md.
@@ -29,29 +29,28 @@ how we got here belongs in DEVLOG.md.
 
 ## Happening now
 
-- **The pre-Portola fix round is integrated (2026-09-16, local).** Branch
-  `integration-0916` off `events-ui`: the four fix lanes (shell, wall,
-  data-tooling, docs), the festival-data refresh (Portola afters re-timed
-  from venue pages, ACL set times for both weekends, four ACL names dropped
-  from newer official bills), Lost Lands removed (Kevin's call), SW v79,
-  527 tests green. `sw-first` off `main` carries only the offline-cache fix
-  (v80) so it can ship a day ahead. **Nothing is pushed.**
-- **The wall redesign is built and integrated here (2026-09-17, early):**
-  MODEL-V4 (`claude-plans/2026-09-16-wall-v4/MODEL-V4.md`) is the contract;
-  the canvas is https://claude.ai/artifact/NELYG7pzVaS5dUKznoCSUD. Five
-  lanes (list, shell, data, zoom, notes), each reviewed, merged; then a
-  dated-occurrence pass so a late-night card carries its date and venue
-  (an artist who plays two late nights is two cards). SW v82, 573 tests
-  green, browser suite 14/14. Pushed; CI and a preview are building. A
-  Codex ship-readiness round and a real-browser walk (Chromium + WebKit,
-  20 checks at phone and desktop) are running against 8fea4ae; their
-  findings become the polish pass before Kevin's look.
-- The WebKit iPhone walk of the integrated build passed on real WebKit
-  (Low Power strip, the new-build strip, cold boot); the venue-link tap
-  after a long press passed with real touch in Chromium — Kevin's phone on
-  the preview is the last word. Previews: integration
-  festival-navigator-eoot3b6fp-kevinhg.vercel.app · sw-first
-  festival-navigator-o4kfu0igq-kevinhg.vercel.app (both CI green).
+- **The release is built and waiting for Kevin's last look (2026-09-17, late).**
+  Branch `integration-0916` (head 06639eb, SW v84) carries everything since
+  v73: the pre-Portola fix round (shell, wall, data tooling, docs), the
+  festival-data refresh (Portola afters re-timed from venue pages, ACL set
+  times for both weekends, four ACL names dropped from newer official bills,
+  ACL Fest Nights as its own tab, Lost Lands removed), the wall redesign
+  (MODEL-V4: stage columns only where a festival publishes a grid, venue
+  stacks in play order everywhere else, days are the days, the show menu on
+  the fest name, NOW marks on stacks), a Codex ship-readiness round, two
+  real-browser walks (Chromium + WebKit), the polish pass, and Kevin's own
+  round (§3a: one column width, no header fold, notes written where you
+  are, How it works grouped like the screen). 600 tests green, browser
+  suite 19/19, validator clean. Pushed; the preview and CI are building.
+- `sw-first` off `main` carries only the offline-cache fix (SW v80) so it
+  can ship a day ahead; its preview
+  festival-navigator-o4kfu0igq-kevinhg.vercel.app is CI green.
+- Open taste calls for Kevin's look, none blocking: at phone width the
+  grid now shows just under two columns (the second card clips at the
+  edge — the price of one width, and it says "scroll"); on desktop the
+  grid no longer fills the window (~300px of air on the right); a Sunday
+  night carries a NOW ring per room; the festival's own room header and a
+  hidden room's header are not note doors (the day rule above is).
 
 **Resume from here (if the session that ran this dies):** the worktrees live
 under the session scratchpad (`wt-int` = this branch, `wt-v4-*` = the
@@ -63,11 +62,10 @@ in this file's history.
 
 ## Next, in order
 
-1. **Kevin's round** (his notes on the v83 preview, spec §3a): one column
-   width everywhere, no header fold (the show menu alone hides a part),
-   notes written where you are (tap a day rule or a section header), How
-   it works grouped like the screen. Building on `polish/kevin-look`; then
-   merge, stamp once, gates, push, a fresh preview for his last look.
+1. **Kevin's last look** at the v84 preview (phone first: the venue-link
+   tap after a long press, a note written from a day rule and from a
+   section header, the show menu, How it works). His round is integrated;
+   anything he flags is a small follow-up on this branch, not a new lane.
 2. **Ship, on Kevin's yes in chat, in two steps** (the repo's ruleset wants
    a PR + green CI; no approving review exists for a one-person repo):
    a. `sw-first` → `main` (the offline-cache fix alone, SW v80): open the
@@ -94,8 +92,7 @@ from Sep 24 · ACL Oct 2–4 and 9–11 · EDC Orlando Nov 6–8 · Seismic Nov 
 
 ## Waiting on Kevin
 
-- The direction pick on the canvas (A = MODEL-V4, B = today's build, C = a
-  flat list), and his notes.
+- The yes to ship (step 2 above), after his look at the v84 preview.
 - stage.fest.kevinhg.com: the festival-navigator-staging Vercel project has
   cancelled every build since 2026-08-10 through the Ignored Build Step in
   its project settings (checked live 2026-09-16) and shares the production
