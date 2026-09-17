@@ -10,7 +10,7 @@
 //
 // Each `node --test` file is its own process, so a rig built here is private
 // to the file that built it — module state (`zoomed`, `lastMouse`,
-// `dismissedEl`) never crosses files. INSIDE a file it is sticky: `lastMouse`
+// `dismissedKey`) never crosses files. INSIDE a file it is sticky: `lastMouse`
 // is never reset once a mouse pointermove has been seen, and a stubbed
 // `document.elementFromPoint` outlives the test that installed it unless a
 // try/finally puts it back. Both are load-bearing — see `feedMouse` below.

@@ -178,9 +178,9 @@ test('Escape marks the card dismissed — the hand is still on it, so it stays a
   // dwell is what makes this bite — the mark is read when the intent ARMS.
   card.dispatchEvent(new dom.window.PointerEvent('pointerenter', { pointerType: 'mouse' }));
   await new Promise((r) => setTimeout(r, zoom.ZOOM_IN_MS + 120));
-  assert.equal(slot(), null, 'the mark holds until the pointer leaves');
+  assert.equal(slot(), null, 'the mark holds until the mouse is elsewhere');
 
-  card.dispatchEvent(new dom.window.PointerEvent('pointerleave', { pointerType: 'mouse' }));
+  document.body.dispatchEvent(new dom.window.PointerEvent('pointermove', { pointerType: 'mouse', bubbles: true, clientX: 400, clientY: 400 }));
   card.dispatchEvent(new dom.window.PointerEvent('pointerenter', { pointerType: 'mouse' }));
   await new Promise((r) => setTimeout(r, zoom.ZOOM_IN_MS + 120));
   assert.ok(slot(), 'and lifts the moment it does');

@@ -814,6 +814,14 @@ document.getElementById('events-lowpower').addEventListener('change', (e) => {
 // Both galleries share one state module: point it at THIS fest to render, and
 // leave it there — the zoom gallery rendered first and holds its own nodes.
 repaint();
+// A crew-mate's pick arriving on the poll: the doc changes and the wall
+// repaints with no input from the person looking at it (app.js
+// onRemoteChange). The browser contract drives it from the console.
+window.galleryCrewPick = (artist, person, level) => {
+  const sels = state.crewDoc.festivals[EFID].selections;
+  (sels[artist] = sels[artist] || {})[person] = level;
+  repaint();
+};
 
 // ---- THE BACK POCKET: the deck's grown panel, as a picture -------------------
 // Static by design (MODEL-V3 §4). It borrows this module's ctx so the cards are

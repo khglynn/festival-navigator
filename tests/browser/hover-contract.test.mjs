@@ -231,3 +231,33 @@ test('a random real-input walk: every dwell grows the right card, every leave cl
   }
   assert.deepEqual(bad, [], 'every step of the walk held');
 });
+
+test("Escape puts a hovered zoom away, and a crew-mate's pick repainting the wall under the still hand does not regrow it", { skip }, async () => {
+  // The stay-away mark used to be the card NODE. A repaint replaces every
+  // node, and the fresh card born under the resting pointer grew the zoom
+  // right back (review, 2026-09-16). Runs on the events wall, the production
+  // renderWall, so it goes last: it scrolls the page away from the ladder.
+  const c = await page.evaluate(() => {
+    const el = document.querySelector('#events-wall .card[data-artist="Channel Tres"]');
+    el.scrollIntoView({ block: 'center' });
+    const r = el.getBoundingClientRect();
+    return { x: Math.round(r.left + r.width / 2), y: Math.round(r.top + r.height / 2) };
+  });
+  await sleep(300);
+  const sp = await empty();
+  await move(sp.x, sp.y); await sleep(200);
+  await move(c.x, c.y); await sleep(OPEN_MS);
+  let s = await state();
+  assert.ok(s.shown === 1 && s.zoom && s.zoom.startsWith('Channel Tres'), `grown: ${JSON.stringify(s)}`);
+  await page.keyboard.press('Escape'); await sleep(300);
+  assert.equal((await state()).shown, 0, 'Escape put it away');
+  await page.evaluate(() => window.galleryCrewPick('Channel Tres', 'Kat', 2));
+  await sleep(OPEN_MS);
+  s = await state();
+  assert.equal(s.shown, 0, `the repaint under the still hand did not regrow it: ${JSON.stringify(s)}`);
+  await move(sp.x, sp.y); await sleep(200);
+  await move(c.x, c.y); await sleep(OPEN_MS);
+  s = await state();
+  assert.ok(s.shown === 1 && s.zoom && s.zoom.startsWith('Channel Tres'), `leave and return regrows it: ${JSON.stringify(s)}`);
+  await move(sp.x, sp.y); await sleep(CLOSE_MS);
+});

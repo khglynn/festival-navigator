@@ -1,7 +1,7 @@
 // The long-press is a FINGER gesture. It used to arm on any pointerdown, so a
 // mouse held on a resting card for half a second opened a touch-style zoom —
 // one that ignores hover-out and swallows its next click — and on a card the
-// hover intent had put away (dismissedEl) that was the only zoom a mouse
+// hover intent had put away (the stay-away mark) that was the only zoom a mouse
 // could get. Found while tracing the 2026-09-02 hover report; the hover
 // intent usually won the race and hid it.
 import test from 'node:test';
