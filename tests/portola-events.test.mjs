@@ -243,9 +243,25 @@ rejects('approx with nothing to qualify', { approx: true, time: undefined }, /ap
 rejects('closeApprox with no close', { close: undefined, closeApprox: true }, /closeApprox qualifies close, which is missing/);
 
 test('validator WARNS (never blocks) on a venue with no map entry — it only costs the door', () => {
-  const r = validateFestivalDoc(runFest({ stage: 'Sun · Audio', night: 'Sun', venue: 'Audio' }));
+  const audio = { stage: 'Sun · Audio', night: 'Sun', venue: 'Audio' };
+  const r = validateFestivalDoc(runFest(audio, audio));
   assert.deepEqual(r.errors, []);
   assert.ok(r.warnings.some((w) => /venue "Audio" has no entry in venues\{\}/.test(w)));
+});
+
+test('validator accepts a single-act room that carries doors, a close and a guessed time — a show page prints doors, not a set', () => {
+  const one = { id: 'x', name: 'X', status: 'lineup', venues: { 'GAMH': 'https://maps.google.com/?q=GAMH' }, artists: [
+    { name: 'Six Sex', day: 'Afters', stage: 'Fri · GAMH', night: 'Fri', venue: 'GAMH', time: '9 PM', approx: true, doors: '8 PM', close: '2 AM', closeApprox: true, closeSource: 'https://example.test/listing' },
+    { name: 'Neil Frances', day: 'Afters', stage: 'Sat · GAMH', night: 'Sat', venue: 'GAMH', doors: '10 PM' },
+  ] };
+  assert.deepEqual(validateFestivalDoc(one), { errors: [], warnings: [] });
+});
+
+test('validator rejects an order on a single-act room — one act has nothing to sequence', () => {
+  const fest = runFest();
+  fest.artists.pop();
+  const r = validateFestivalDoc(fest);
+  assert.ok(r.errors.some((e) => /Afters · Sun · The Midway: one act in the room carries an order/.test(e)), r.errors.join('\n'));
 });
 
 test('validator warns when only part of a run is numbered', () => {

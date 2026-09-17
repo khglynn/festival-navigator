@@ -48,9 +48,11 @@ function checkEventFields(fest, err, warn) {
   // Runs are grouped by the room they happen in: one day, one night, one
   // venue. Nothing in the file declares a run — the grouping IS the run.
   const runs = new Map();
-  // …and EVERY event set in a room, numbered or not, so a room that has more
-  // than one show and no running order can be told about it (below).
+  // …and EVERY timed event set in a room, numbered or not, so a room that has
+  // more than one show and no running order can be told about it (below).
   const rooms = new Map();
+  // How many shows each room holds at all, timed or not.
+  const acts = new Map();
   const roomKey = (a) => {
     const bits = typeof a.stage === 'string' && a.stage.includes(' · ') ? a.stage.split(' · ') : null;
     const night = WEEKDAYS.includes(a.night) ? a.night
@@ -64,6 +66,8 @@ function checkEventFields(fest, err, warn) {
     if (!plain(a)) return;
     const at = `artists[${i}] (${safeKey(a.name)})`;
     const bits = typeof a.stage === 'string' && a.stage.includes(' · ') ? a.stage.split(' · ') : null;
+    const rk = roomKey(a);
+    if (rk) acts.set(rk, (acts.get(rk) || 0) + 1);
 
     if (a.night !== undefined) {
       if (!WEEKDAYS.includes(a.night)) err(`${at}: night must be one of ${WEEKDAYS.join('|')} (got ${JSON.stringify(safeKey(a.night))})`);
@@ -107,7 +111,6 @@ function checkEventFields(fest, err, warn) {
     }
 
     if (typeof a.time === 'string' && TIME_RE.test(a.time)) {
-      const rk = roomKey(a);
       if (rk) {
         if (!rooms.has(rk)) rooms.set(rk, []);
         rooms.get(rk).push(a);
@@ -124,10 +127,9 @@ function checkEventFields(fest, err, warn) {
       // over https, since the app is served over it.
       if (typeof o.source !== 'string' || !/^https:\/\/[^\s]+$/.test(o.source)) err(`${at}: order.source must be an https URL — the order line is a door to where the order came from`);
       if (typeof o.confirmed !== 'boolean') err(`${at}: order.confirmed must be true or false — whether the venue has posted this order, or it is still our read`);
-      if (int(o.seq) && int(o.of) && a.night !== undefined && a.venue !== undefined) {
-        const key = `${a.day || ''}|${a.night}|${a.venue}`;
-        if (!runs.has(key)) runs.set(key, []);
-        runs.get(key).push({ a, o, at });
+      if (int(o.seq) && int(o.of) && rk) {
+        if (!runs.has(rk)) runs.set(rk, []);
+        runs.get(rk).push({ a, o, at });
       }
     }
   });
@@ -151,6 +153,9 @@ function checkEventFields(fest, err, warn) {
   // One room, one night: the sets that share it must tell one story.
   for (const [key, members] of runs) {
     const where = safeKey(key.replace(/\|/g, ' · '));
+    // A single-act room may say its doors, its close and a guessed start —
+    // a show page prints doors, not a set — but it has nothing to sequence.
+    if (acts.get(key) === 1) { err(`${where}: one act in the room carries an order — there is nothing to sequence; drop \`order\` (doors, close and an approx time are fine)`); continue; }
     const ofs = new Set(members.map((m) => m.o.of));
     if (ofs.size > 1) err(`${where}: the sets disagree on how many are in the run (${[...ofs].sort().join(', ')})`);
     const seqs = members.map((m) => m.o.seq);
