@@ -267,6 +267,43 @@ test('a reply to a legacy thread lands under the legacy key, where its root live
   notes.closeSheet();
 });
 
+// A sheet that reads two keys renders two thread hosts and hands them ONE
+// editing map. Pruning that map inside a host, against that host's own notes,
+// makes each host throw the other's drafts away: tapping Edit on the date-keyed
+// note opened no editor at all (the legacy host swept it on the very repaint the
+// tap asked for), and a repaint closed an open legacy edit. The map belongs to
+// the sheet, so the sheet prunes it — once, against every note it displays.
+test('one editing state across a date’s two keys: an edit on either survives a repaint', () => {
+  const ctx = { fid: ONE, meName: 'Kevin', affinity: null, lowPower: true, onTap: () => {}, onOpenNotes: () => {}, onNotesChange: () => {} };
+  notes.openDayNotes('2026-09-26', 'Sat · Sep 26', ctx, () => {});
+
+  const rowFor = (text) => [...sheet().querySelectorAll('.n-note')]
+    .find((n) => n.querySelector('.n-text')?.textContent === text);
+  const editOn = (row) => [...row.querySelectorAll('.n-acts button')].find((b) => b.textContent === 'Edit');
+  const open = () => [...sheet().querySelectorAll('textarea[data-editing]')].map((t) => t.dataset.editing).sort();
+
+  const isoId = rowFor('gate opens at 1').dataset.note;      // stored under 2026-09-26
+  const legacyId = rowFor('crane it is').dataset.note;       // stored under "Saturday"
+  assert.notEqual(isoId, legacyId);
+
+  click(editOn(rowFor('gate opens at 1')));
+  assert.deepEqual(open(), [isoId], 'tapping Edit on the date-keyed note opens its editor');
+
+  click(editOn(rowFor('crane it is')));
+  assert.deepEqual(open(), [isoId, legacyId].sort(), 'and the legacy note opens beside it — both drafts live');
+
+  notes.refreshOpenSheet(); // a crew-mate's note lands on the 25 s poll
+  assert.deepEqual(open(), [isoId, legacyId].sort(), 'a repaint keeps both open');
+
+  // The prune still does its job: a draft whose note a remote sync tombstoned
+  // has nowhere to land, and goes.
+  state.recordNote(ONE, 'day', '2026-09-26', isoId,
+    { author: 'Kevin', ts: '2026-09-21T18:00:00.000Z', text: '', deleted: true });
+  notes.refreshOpenSheet();
+  assert.deepEqual(open(), [legacyId], 'the tombstoned note’s draft is swept; the other is not');
+  notes.closeSheet();
+});
+
 test('two weekends: one legacy Friday note shows on BOTH Fridays, a new note on one', () => {
   state.activateCrew('datestesttoken_9876543210', {
     v: 4, meta: {}, spotify: {},

@@ -492,6 +492,18 @@ function stubRow(author, ctx) {
   return row;
 }
 
+// A draft for a note a remote sync just tombstoned has nowhere to land, so it
+// goes. The editing map belongs to the SHEET, and a sheet paints as many thread
+// hosts as it has keys — a date reads a weekday label and its ISO, the all-notes
+// home reads every date, every section and every artist — so the sweep runs ONCE
+// against every note the sheet displayed. Inside a host it ran against that
+// host's own key, which made each host throw away the others' drafts: Edit on a
+// date-keyed note opened no editor at all (Codex, 2026-09-17).
+function pruneEditing(editing, live) {
+  if (!editing || !editing.size) return;
+  for (const id of [...editing.keys()]) if (!live.has(id)) editing.delete(id);
+}
+
 // ---- threads, rendered --------------------------------------------------------------
 // A pinned root sorts to the top and shows a reply COUNT, never its thread
 // (Kevin's rule, 2026-08-28); the count expands it in place for this open.
@@ -506,16 +518,14 @@ function stubRow(author, ctx) {
 // keys, and the caption belongs to the DATE, not to each key it happens to be
 // stored under. `readOnly` takes the reply door away — a legacy section thread
 // stays readable and stays exactly as long as it is.
-function renderThreads(host, scope, target, ctx, { onChange, expandedPinned, editing, ui, quiet = false, readOnly = false }) {
+function renderThreads(host, scope, target, ctx, { onChange, expandedPinned, editing, ui, quiet = false, readOnly = false, live = null }) {
   host.textContent = '';
   const pins = loadPins();
   const pinnedIds = new Set(pins[ctx.fid] || []);
   const threads = model.threadsFor(state.crewDoc, ctx.fid, scope, target, [...pinnedIds]);
-  // A draft for a note a remote sync just tombstoned has nowhere to land.
-  if (editing && editing.size) {
-    const live = new Set(model.notesFor(state.crewDoc, ctx.fid, scope, target).map((n) => n.id));
-    for (const id of [...editing.keys()]) if (!live.has(id)) editing.delete(id);
-  }
+  // What this key still has, for the sheet's own prune (see pruneEditing): one
+  // host knows one key, and one key is never the whole sheet.
+  if (live) for (const n of model.notesFor(state.crewDoc, ctx.fid, scope, target)) live.add(n.id);
   // Exactly ONE field may claim the caret after a repaint. You can be editing
   // note A while a reply composer is open on thread B, and a restore that
   // simply focused the first live draft would yank the caret out of whichever
@@ -854,6 +864,7 @@ function openScopeSheet(scope, target, ctx, onChange, opts = {}) {
 
   const paint = () => {
     paintHeader();
+    const live = new Set();
     for (const { key, host } of hosts) {
       renderThreads(host, scope, key, ctx, {
         onChange: (o = {}) => { paint(); if (!o.localOnly) onChange(); },
@@ -862,8 +873,10 @@ function openScopeSheet(scope, target, ctx, onChange, opts = {}) {
         ui,
         quiet: true,
         readOnly,
+        live,
       });
     }
+    pruneEditing(editing, live);
     // The caption belongs to the scope, not to each key it reads from — and
     // only a nameless viewer, who has no composer, needs telling.
     if (!ctx.meName && !hosts.some(({ key }) => model.noteCount(state.crewDoc, ctx.fid, scope, key))) {
@@ -954,6 +967,7 @@ export function openAllNotes(ctx) {
     const fest = state.fest();
     const notes = doc?.festivals?.[ctx.fid]?.notes || {};
     const dates = festDates(ctx);
+    const live = new Set();
     let any = false;
 
     const labelRow = (text) => {
@@ -967,7 +981,7 @@ export function openAllNotes(ctx) {
       host.className = 'n-list grouped';
       parent.appendChild(host);
       renderThreads(host, scope, target, ctx, {
-        onChange: repaint, expandedPinned, editing, ui, quiet: true, ...extra,
+        onChange: repaint, expandedPinned, editing, ui, quiet: true, live, ...extra,
       });
       return host;
     };
@@ -1016,6 +1030,8 @@ export function openAllNotes(ctx) {
     }
 
     for (const artist of Object.keys(notes.artist || {})) section(artist, 'artist', artist);
+
+    pruneEditing(editing, live);
 
     // The date door the viewer just opened is outside every thread host, so it
     // does its own unfold and its own caret restore.
