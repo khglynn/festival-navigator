@@ -50,7 +50,7 @@ how we got here belongs in DEVLOG.md.
    settings.js split, then add-a-show with a design pass first
    (`claude-plans/2026-09-02-add-a-show.md`).
 
-Calendar: Lost Lands Sep 18–20 (lineup only) · Portola Sep 26–27, afters
+Calendar: Portola Sep 26–27, afters
 from Sep 24 · ACL Oct 2–4 and 9–11 · EDC Orlando Nov 6–8 · Seismic Nov 13–15.
 
 ## Waiting on Kevin

@@ -6,7 +6,7 @@ everyone's picks sync live, whether the lineup just dropped or the set times
 are already out. Works offline once loaded, because the place you actually
 need it is a field with one bar of signal.
 
-**Festivals loaded:** 11 — the list lives in
+**Festivals loaded:** 10 — the list lives in
 [`data/festivals/index.json`](data/festivals/index.json), which is the only place
 it lives. Adding one: [`docs/add-a-festival.md`](docs/add-a-festival.md).
 
