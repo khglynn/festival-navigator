@@ -34,6 +34,9 @@ export async function bootShell({ url = 'https://fest.kevinhg.com/', storage = {
   globalThis.fetch = fetch || (async () => { throw new Error('no network in this test'); });
   dom.window.fetch = globalThis.fetch;
   dom.window.matchMedia = () => ({ matches: false, addEventListener() {}, removeEventListener() {} });
+  // jsdom has no canvas; the living favicon draws on one once a wall opens.
+  dom.window.HTMLCanvasElement.prototype.getContext = () => new Proxy({}, { get: () => () => ({ addColorStop() {} }) });
+  dom.window.HTMLCanvasElement.prototype.toDataURL = () => 'data:image/png;base64,';
 
   const intervals = new Set();
   const realSetInterval = globalThis.setInterval;

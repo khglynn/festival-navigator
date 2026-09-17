@@ -8,10 +8,10 @@ import * as crew from '../crew.js';
 import * as sync from '../sync.js';
 import * as spotify from '../spotify.js';
 import * as model from './model.js';
-import { loadFestivalIndex, loadFestival, loadCustomFestivals, FESTIVAL_INDEX, defaultFestivalId } from '../festivals.js';
+import { loadFestivalIndex, loadFestival, fetchCustomFestivals, mergeCustoms, FESTIVAL_INDEX, defaultFestivalId } from '../festivals.js';
 import { renderWall, refreshCard, showUndoToast, showToast, wireScrollspy, colorIndexOf, scheduledWeekendOf, positionNowLines, scrollToNowLine, dayNavOf, cardFor, roomOf, isStripScroller } from './wall.js';
 import { loadPeopleFilter, savePeopleFilter, togglePerson, pruneToActive, loadSolo, saveSolo, loadHiddenBuckets, applyBucketToggle } from './filters.js';
-import { OUT_MS, CASCADE_MS, STAGGER_MS, EASE_ARRIVE, EASE_LEAVE, canAnimate } from './motion.js';
+import { OUT_MS, CASCADE_MS, STAGGER_MS, EASE_ARRIVE, EASE_LEAVE, EASE_SURFACE, canAnimate } from './motion.js';
 import { scrolledBefore, rememberScrolled, dayOfScrollKey } from './now.js';
 import { disclosureFold, eqLoader, festRow } from './tools.js';
 import { openArtistSheet, openDayNotes, openAllNotes, openFestNotes, closeSheet, refreshOpenSheet, sheetChrome, dialogize, rememberOpener } from './notes.js';
@@ -612,11 +612,33 @@ function showNewBuildStrip() {
 // ---- screens ----------------------------------------------------------------------
 const SCREENS = ['screen-landing', 'screen-join', 'screen-create', 'screen-app', 'screen-settings', 'screen-badlink', 'screen-error'];
 function show(screen) {
+  $('screen-boot')?.remove(); // the cold-open loader's job ends with the first screen
   for (const id of SCREENS) {
     $(id).style.display = id === screen ? '' : 'none';
   }
 }
 const anyScreenVisible = () => SCREENS.some((id) => $(id).style.display !== 'none');
+
+// A cold open waits on the network before it knows which screen is right —
+// on one bar that is seconds, and every screen starts display:none. The page
+// shows the app's loader meanwhile, never black. It arrives after a beat, so a
+// quick boot goes straight to its screen without a flash. Built here rather
+// than in index.html: a new page over an old worker's cached app.js would
+// otherwise carry a loader no show() of that build knows to remove.
+function showBootLoader() {
+  const screen = document.createElement('div');
+  screen.id = 'screen-boot';
+  screen.className = 'entry-screen';
+  const col = document.createElement('div');
+  col.className = 'center-col';
+  col.style.alignItems = 'center';
+  col.appendChild(eqLoader('Loading your festivals…'));
+  screen.appendChild(col);
+  document.body.prepend(screen);
+  if (canAnimate(screen, ctx)) {
+    screen.animate([{ opacity: 0 }, { opacity: 1 }], { duration: CASCADE_MS, delay: 400, easing: EASE_SURFACE, fill: 'backwards' });
+  }
+}
 
 // ---- create (spec F2, reshaped 2026-07-14): multi-pick fests, name once ------------
 
@@ -1550,10 +1572,12 @@ async function stampIdentity(token, current = () => true, { renameFrom = null } 
   } catch { /* next open retries */ }
 }
 
-async function enterApp(token, doc, current = () => true) {
+// `customs` is the crew's custom-festival fetch — boot starts it beside the
+// catalog; any other entry starts it here. Merged only now, catalog in hand.
+async function enterApp(token, doc, current = () => true, customs = fetchCustomFestivals(token)) {
   crew.setActiveCrew(token);
   crew.rememberCrew(token, (doc.meta && doc.meta.name) || '');
-  await loadCustomFestivals(token); // crew-private fests join the catalog first
+  mergeCustoms(await customs); // crew-private fests join the catalog first
   if (!current()) return;
   // Invite festival context (FLOW-1): the link's &f= wins (freshest), then the
   // doc's stamp. Consumed once — only fills the void on a fest-less device.
@@ -1723,15 +1747,19 @@ export async function boot() {
     history.replaceState(null, '', hopCrewToken ? `/#g=${hopCrewToken}` : '/');
   }
   try {
-    try { await loadFestivalIndex(); } catch { /* offline with cache: proceed */ }
+    // The catalog leaves now and nothing waits on it alone: a crew boot sends
+    // its own two requests beside it (below). Each branch that renders from
+    // the catalog awaits it first.
+    const catalog = loadFestivalIndex().catch(() => { /* offline with cache: proceed */ });
 
     if (personLinkBroken) {
+      await catalog;
       if (!current()) return;
       renderLanding();
       showToast($('toast-root'), 'That link looks cut off — copy it again from your other device.', 6000);
       return;
     }
-    if (personToken && !hopCrewToken) { await restoreFromMeLink(personToken, current); return; }
+    if (personToken && !hopCrewToken) { await catalog; await restoreFromMeLink(personToken, current); return; }
     // Quiet absorb — from the hop URL, or from a previous boot's absorb that
     // failed offline (the token waits in sessionStorage: session-scoped
     // master-key hygiene, dies with the tab, never re-enters a URL). Landing
@@ -1769,20 +1797,22 @@ export async function boot() {
       }
     }
 
-    if (location.hash === '#new') { renderCreate(); return; }
+    if (location.hash === '#new') { await catalog; renderCreate(); return; }
     // A crew link that is present but malformed (truncated by a chat app, half
     // pasted) must say so. Falling through to the landing page told the person
     // nothing at all — the app quietly acting as if they had never clicked.
     if (crew.hashHasBrokenToken()) { renderBadLink('', { gone: false, malformed: true }); return; }
     const token = crew.bootTokenFor(crew.tokenFromHash(), crew.activeCrewToken(), isFirst);
-    if (!token) { renderLanding(); return; }
+    if (!token) { await catalog; renderLanding(); return; }
 
+    // The crew doc and the crew's own festivals leave beside the catalog, so
+    // a network that hangs costs the slowest wait (8 s), never the sum of
+    // three. The customs merge later, in enterApp, once the catalog is in.
+    const customs = fetchCustomFestivals(token);
     let doc = null;
     let gone = false;
-    try {
-      doc = await crew.fetchCrew(token);
-      gone = doc === null;
-    } catch { /* network failure — try the cache below */ }
+    const fetched = crew.fetchCrew(token).then((d) => { doc = d; gone = d === null; }, () => { /* network failure — try the cache below */ });
+    await Promise.all([catalog, fetched]);
     if (!current()) return;
     // A deleted crew is deleted NOW — don't re-enter the app on a stale
     // cached doc just to bounce out one sync later (Codex trailing review).
@@ -1790,7 +1820,7 @@ export async function boot() {
     if (!doc) doc = state.cachedDoc(token);
     if (!doc) { renderBadLink(token, { gone }); return; }
     if (!crew.me(token)) { renderJoin(token, doc); return; }
-    await enterApp(token, doc, current);
+    await enterApp(token, doc, current, customs);
   } catch (e) {
     console.error('boot failed', e);
     if (current()) renderFatal();
@@ -1945,6 +1975,7 @@ export function init() {
   // hiccup must never nuke a working wall.
   window.addEventListener('error', () => { if (!anyScreenVisible()) renderFatal(); });
   window.addEventListener('unhandledrejection', () => { if (!anyScreenVisible()) renderFatal(); });
+  showBootLoader();
   boot();
 }
 

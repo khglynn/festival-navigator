@@ -31,9 +31,12 @@ export async function loadFestival(id) {
 // Crew-private festivals added via LLM research (api/festival-add.js).
 // Fetched once the crew token is known, merged into the catalog, and cached
 // per-crew in localStorage so they survive offline (the SW never caches /api/).
+// Two halves on purpose: boot starts the fetch beside the catalog's, but may
+// only MERGE once the catalog is in — the merge checks canonical ids against
+// FESTIVAL_INDEX, and loadFestivalIndex replaces that list wholesale.
 const LS_CUSTOM = (t) => `fn_custom_fests_v1_${t}`;
 
-function mergeCustoms(list) {
+export function mergeCustoms(list) {
   for (const fest of list) {
     if (!fest || !fest.id) continue;
     // A custom may never shadow a canonical catalog fest (CORE-9): whatever
@@ -50,14 +53,16 @@ function mergeCustoms(list) {
   }
 }
 
-export async function loadCustomFestivals(token) {
+// The crew's customs, fresh or (offline, endpoint down) the last-known copy.
+// Never rejects.
+export async function fetchCustomFestivals(token) {
   if (!token) return [];
   let list = [];
   try {
-    // 8s timeout: enterApp awaits this before the wall renders, and a dead
-    // festival network that neither resolves nor rejects held the whole app
-    // at a blank screen — the offline catch below had the cached customs the
-    // entire time (gate find, 2026-08-23).
+    // 8s timeout: the wall waits on this, and a dead festival network that
+    // neither resolves nor rejects held the whole app at a blank screen — the
+    // offline catch below had the cached customs the entire time (gate find,
+    // 2026-08-23).
     const res = await fetch(`/api/festival-add?t=${encodeURIComponent(token)}`, {
       cache: 'no-store', signal: timeoutSignal(8000),
     });
@@ -71,6 +76,11 @@ export async function loadCustomFestivals(token) {
     // offline or endpoint down: serve the last-known customs from cache
     try { list = JSON.parse(localStorage.getItem(LS_CUSTOM(token))) || []; } catch { list = []; }
   }
+  return list;
+}
+
+export async function loadCustomFestivals(token) {
+  const list = await fetchCustomFestivals(token);
   mergeCustoms(list);
   return list;
 }
