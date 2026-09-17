@@ -1623,6 +1623,15 @@ async function enterApp(token, doc, current = () => true, customs = fetchCustomF
     await loadFestival(fallback);
     showToast($('toast-root'), `Couldn’t load ${wantedName} offline — it opens once you’re back online.`, 6000);
   }
+  // A festival this device was pointed at and the catalog has since dropped.
+  // We opened a real one instead; say which, and say the picks survived —
+  // otherwise the board just changes underneath the person and the landing
+  // row that promised "tap this fest, get this fest" has quietly lied.
+  if (state.missingFestivalId) {
+    const gone = model.festLabelFor(state.missingFestivalId, FESTIVAL_INDEX).name;
+    const here = model.festLabelFor(state.activeFestivalId, FESTIVAL_INDEX).name;
+    showToast($('toast-root'), `${gone} isn’t in the lineup any more — opened ${here} instead. Its picks are still saved.`, 6000);
+  }
   if (!current()) return;
   // Captured before replaceState rewrites the entry: which layers were open
   // when the page was refreshed (spec F10 — refresh restores the same
