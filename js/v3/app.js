@@ -224,9 +224,12 @@ function toggleFoldFlow(key) {
 
 // Where the page stands after the wall changed shape under it. The day you
 // were in is still there: land on its rule again (the days above it may have
-// gone, and an untouched scroll offset would be looking at somewhere else).
-// It is gone: land on the first visible day, which is what the open would
-// choose. At the top of the page nothing moves — there is nothing to keep.
+// gone, and an untouched scroll offset would be looking at somewhere else) —
+// unless you were at the top of the page, where there is nothing to keep and
+// nothing moves. The day you were in is gone: land on the first visible day,
+// which is what the open would choose, wherever you were standing (at the
+// top that is a short hop from the fest header to the first rule, and it is
+// the day the dock now lights).
 function landAfterFold(standing) {
   const tabs = dayNavOf(state.fest(), ctx, $('wall-root'));
   const still = standing ? tabs.find((t) => (t.anchor || t.key) === standing) : null;
