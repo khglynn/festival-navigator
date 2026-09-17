@@ -1025,15 +1025,20 @@ export function venueGroups(root, entries, ctx, { day = null, fest = null, fallb
   if (day && day.iso) grid.dataset.iso = day.iso;
   if (fest && fest.timezone) grid.dataset.tz = fest.timezone;
   let shown = 0;
-  for (const g of venueGroupsOf(entries, { fallbackVenue })) {
-    const members = filtering ? g.members.filter((m) => passesPeople(ctx.picks, m.e.name, ctx.filterPeople)) : g.members;
-    if (!members.length) continue;
+  const groups = venueGroupsOf(entries, { fallbackVenue })
+    .map((g) => ({ g, members: filtering ? g.members.filter((m) => passesPeople(ctx.picks, m.e.name, ctx.filterPeople)) : g.members }))
+    .filter((x) => x.members.length);
+  // Where one room published its doors, the line holds its place across the
+  // whole grid — otherwise the stacks in a row start on different lines and
+  // the row reads ragged.
+  const anySub = groups.some((x) => x.g.sub);
+  for (const { g, members } of groups) {
     const group = mk('div', 'venue-group');
     // A venue head IS a stage header — the festival accent's third home.
     const head = stageHead(g.venue);
     head.classList.add('venue');
     group.appendChild(head);
-    if (g.sub) group.appendChild(mk('div', 'venue-sub', g.sub));
+    if (anySub) group.appendChild(mk('div', 'venue-sub', g.sub || ''));
     const stack = mk('div', 'stack');
     for (const m of members) {
       const card = renderCard(m.e.name, ctx, { time: stackTime(m), occ: occOf(m.e) });
