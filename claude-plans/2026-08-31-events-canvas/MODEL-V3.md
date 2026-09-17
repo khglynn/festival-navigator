@@ -2,7 +2,8 @@
 
 *canvas-v3.html is the picture that started it. BUILT on PR #16 — this doc is
 now the spec of record, not a proposal. Supersedes the section-tab structure
-of `2026-08-31-events-model.md`; keeps its structured data change.*
+of `claude-plans/archive/2026/2026-08-31-events-model.md`; keeps its
+structured data change.*
 
 *Changed 2026-09-01: §4's deck is removed from the live app (it survives in
 commit `c740388` and as a static picture in `gallery.html`), and §5 is
