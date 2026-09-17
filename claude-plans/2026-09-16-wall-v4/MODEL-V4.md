@@ -169,9 +169,9 @@ section says its own sub from `dayMeta[<label>].sub` if present, else nothing.
    4. the who-corner marks — `Everyone's picks land on the card.` / `Ticks are picks; a letter is a must. White stroke = you.`
    5. the about-corner chips — `Hold for details.` / `Violet = crew notes; pin one to keep it on top. Green = it's in your Spotify (connect in Settings).`
    6. a run card (`Gelli Haha · ~10:30 PM`) — `**~ a guessed start time and artist order.** Based on limited intel.`
-   7. the dock's fest link (`.fest-link`: Anton, the fest accent, the sync dot — ONE row, the real component) — `Tap the fest name to show or hide parts of the week.` / `Green dot = synced. Gray = offline (still works); red = something needs you.`
+   7. the dock's fest link (`.fest-link`: Anton, the sync dot — ONE row, the real component; its label is the fixed string `ACL '26`, never the current fest's name, and inside the drill it wears `--brand`, because the fest accent's four homes do not include How it works) — `Tap the fest name to show or hide parts of the week.` / `Green dot = synced. Gray = offline (still works); red = something's wrong.`
    8. the gear — `Switch fests and more in Settings.`
-   Kevin, 2026-09-17: the fest name and its dot were drawn twice, differently, five rows apart ("PORTOLA '26 ▾" in the body face and "PORTOLA '26 ●"); once, together, as the component.
+   Kevin, 2026-09-17: the fest name and its dot were drawn twice, differently, five rows apart ("PORTOLA '26 ▾" in the body face and "PORTOLA '26 ●"); once, together, as the component. Eight rows since the ship round (the stage row went with stage solo); red means something needs Kevin, not the reader — "just say something's wrong"; and every picture's cell is `min-width: 0; overflow: hidden`, so no label can escape at 390.
 5. Sort options inside the show menu for every fest: banked in hg-pen, not
    built (Kevin: "unless it's easy to knock out" — it is not: the old sort
    applies to the lineup-only wall; stacks and grids need their own think).

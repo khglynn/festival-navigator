@@ -461,6 +461,34 @@ test('the show menu names every room the wall shows — ACL\'s dated section inc
   }
 });
 
+// ---- How it works (MODEL-V4 §3a.4, ship round 2026-09-17) -----------------------------
+// Rendered by the real Settings on the real shell, with Portola open — so the
+// fixed label is proven fixed against a fest that is not ACL.
+test('How it works: eight rows, the fest link says ACL \'26 whatever fest is open, wears brand not the accent, and no picture can leave its cell', () => {
+  click($('gear-btn'));
+  const how = [...$('screen-settings').querySelectorAll('button')].find((b) => (b.querySelector('.row-title') || {}).textContent === 'How it works');
+  assert.ok(how, 'the row that opens the drill');
+  click(how);
+  const sub = $('settings-subview');
+  const rows = [...sub.querySelectorAll('.settings-card > div')];
+  assert.equal(rows.length, 8, 'eight rows — the stage row went with stage solo');
+  const link = sub.querySelector('.fest-link');
+  assert.ok(link && link.tagName === 'SPAN', 'the real component, as a picture');
+  assert.equal(link.querySelector('.fest-name').textContent, "ACL '26", 'the one coded-in name, with Portola open');
+  assert.ok(link.querySelector('.sync-dot'), 'and the dot beside it');
+  assert.equal(link.style.getPropertyValue('--fest'), 'var(--brand)', 'the accent re-scoped to brand on the picture — the drill is not one of the accent\'s four homes');
+  for (const row of rows) {
+    const cell = row.firstElementChild;
+    assert.equal(cell.style.minWidth, '0px', 'a picture\'s cell can shrink');
+    assert.equal(cell.style.overflow, 'hidden', 'and clips what does not fit');
+  }
+  assert.match(sub.textContent, /red = something’s wrong\./, 'red means something is wrong, not that the reader is needed');
+  assert.doesNotMatch(sub.textContent, /Tap a stage/, 'no stage lesson');
+  // Back out, so the tests after this one find the wall.
+  dom.window.history.back();
+  dom.window.history.back();
+});
+
 // ---- the stylesheet answers for what this shell draws ---------------------------------
 // Node sees classes toggled, never pixels: `.card.now` and the show menu's rows
 // both passed every test above while having no rule in the stylesheet at all,

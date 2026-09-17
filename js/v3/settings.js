@@ -341,22 +341,26 @@ function openAddFestival(actions) {
 
 // ---- HOW IT WORKS (21i) -------------------------------------------------------------
 // The dock's fest link, the way the person reading this sees it — the WHOLE
-// component (`.fest-link`: the name in Anton at the festival's accent, and the
-// sync dot beside it), not a redrawing of part of it. It used to be the literal
-// "PORTOLA ’26", which would have gone quietly wrong the day Portola left the
-// catalog; then it was the name alone in one row and the name-plus-dot in
-// another, five rows apart and in two different faces (Kevin, 2026-09-17). One
-// row, one component, both facts. It is a span, not a button: this is a picture
+// component (`.fest-link`: the name in Anton, and the sync dot beside it), not
+// a redrawing of part of it. It was the name alone in one row and the
+// name-plus-dot in another, five rows apart and in two different faces
+// (Kevin, 2026-09-17); one row, one component, both facts. The label is the
+// fixed string `ACL '26` — never the current fest's name: "SEISMIC DANCE
+// EVENT 9.0 '26" broke out of its box at 390 (Kevin: "easiest fix: code in
+// one fest name, probs ACL"). It is a span, not a button: this is a picture
 // of the door, and the door is at the bottom of the screen.
+//
+// THE ACCENT LAW (CLAUDE.md): `--fest` appears in exactly four places, and
+// this drill is not one of them — but the component's own rule paints its
+// name in `--fest`, and `--fest` is set on <body> per fest, so the picture
+// wore the current fest's colour. The token is re-scoped to brand on the
+// picture itself: the component is untouched, and inside the drill it reads
+// as "ours", not as any festival's.
 function festLinkDemo() {
-  let label = 'YOUR FEST';
-  try {
-    const f = state.fest() || {};
-    label = `${(f.name || 'Your fest').toUpperCase()} ${f.year || ''}`.trim();
-  } catch { /* no fest open — the generic label reads fine */ }
   const link = el('span');
   link.className = 'fest-link';
-  const n = el('span', 'font-size: 11px;', label);
+  link.style.setProperty('--fest', 'var(--brand)');
+  const n = el('span', 'font-size: 11px;', "ACL '26");
   n.className = 'fest-name';
   const dot = el('span');
   dot.className = 'sync-dot';
@@ -374,7 +378,9 @@ function openHowItWorks(actions) {
   card.style.cssText += 'display: flex; flex-direction: column; gap: 12px;';
   const lesson = (demoBuilder, strong, rest) => {
     const row = el('div', 'display: flex; align-items: center; gap: 12px;');
-    const demo = el('div', 'width: 104px; flex: none; display: flex; align-items: center; justify-content: center; gap: 3px;');
+    // min-width: 0 + overflow: hidden — a picture stays in its cell; no
+    // future label can break out of the row at 390 (2026-09-17).
+    const demo = el('div', 'width: 104px; flex: none; min-width: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; gap: 3px;');
     demoBuilder(demo);
     const text = el('span', 'color: var(--text-secondary); font-size: 11.5px; font-weight: 600; line-height: 1.45; flex: 1;');
     const s = el('strong', 'color: #fff;', strong);
@@ -441,7 +447,7 @@ function openHowItWorks(actions) {
   // dot — one component, so one row, with both facts), and the gear.
   card.appendChild(lesson((d) => {
     d.appendChild(festLinkDemo());
-  }, 'Tap the fest name to show or hide parts of the week.', 'Green dot = synced. Gray = offline (still works); red = something needs you.'));
+  }, 'Tap the fest name to show or hide parts of the week.', 'Green dot = synced. Gray = offline (still works); red = something’s wrong.'));
   card.appendChild(lesson((d) => {
     const gear = el('span', 'color: var(--text-secondary); font-size: 16px;', '⚙');
     d.appendChild(gear);

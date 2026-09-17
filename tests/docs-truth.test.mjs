@@ -180,7 +180,7 @@ test('Settings → How it works says Kevin\u2019s eight rows, word for word and 
     ['Everyone\u2019s picks land on the card.', 'Ticks are picks; a letter is a must. White stroke = you.'],
     ['Hold for details.', 'Violet = crew notes; pin one to keep it on top. Green = it\u2019s in your Spotify (connect in Settings).'],
     ['~ a guessed start time and artist order.', 'Based on limited intel.'],
-    ['Tap the fest name to show or hide parts of the week.', 'Green dot = synced. Gray = offline (still works); red = something needs you.'],
+    ['Tap the fest name to show or hide parts of the week.', 'Green dot = synced. Gray = offline (still works); red = something\u2019s wrong.'],
     ['Switch fests and more in Settings.', ''],
   ];
   let at = -1;
@@ -196,6 +196,16 @@ test('Settings → How it works says Kevin\u2019s eight rows, word for word and 
   // 2026-09-17: it was drawn twice, differently, five rows apart).
   assert.equal((settings.match(/festLinkDemo\(\)/g) || []).length, 2, 'defined once, used once');
   assert.equal(settings.includes('festNameDemo'), false, 'and the half-component that drifted is gone');
+  // Its label is the fixed `ACL '26`, never the current fest's name (a long
+  // name broke out of the box at 390 — ship round, 2026-09-17), and the
+  // picture wears brand, not the fest accent: the accent has four homes and
+  // this drill is not one of them (CLAUDE.md).
+  const demo = /function festLinkDemo\(\) \{([\s\S]*?)\n\}/.exec(settings)[1];
+  assert.ok(demo.includes(`"ACL '26"`), 'the one fest name, coded in');
+  assert.equal(/state\.fest\(/.test(demo), false, 'the current fest is never asked');
+  assert.ok(demo.includes(`setProperty('--fest', 'var(--brand)')`), 'the accent is re-scoped to brand on the picture');
+  const drill = /function openHowItWorks\(actions\) \{([\s\S]*?)\n\}/.exec(settings)[1];
+  assert.equal(/var\(--fest\)/.test(demo + drill), false, 'and no picture in the drill paints the accent by hand');
   // "don't need to explain now" — the now mark gets no lesson row.
   assert.equal(/lesson\(\([^)]*\)\s*=>[\s\S]{0,400}?'[^']*\bnow\b[^']*',/i.test(settings), false,
     'the now mark explains itself on the day; it gets no row');
