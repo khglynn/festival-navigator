@@ -211,18 +211,14 @@ export function openBulkPaste(host, actions) {
 // This one builds one day offscreen at a fixed share-friendly width, checks
 // the canvas is real, and says out loud when it can't.
 
-// Share images honor the device's weekend the same way the wall does — a W1
-// phone must not export a day sheet carrying W2-only sets. (A two-weekend
-// SCHEDULED fest has no preference to honor any more: each weekend is its
-// own tab, so both are offered.)
-function weekendPrefRaw(fest) {
-  let pref = 'all';
-  try { pref = localStorage.getItem(`fn_weekend_v1_${fest.id}`) || 'all'; } catch { /* memory-only */ }
-  return pref;
-}
 // The wall's own plan for this fest — the exporter offers what the tabs show.
+// Every weekend, always: there is no weekend preference left to honour. A
+// two-weekend SCHEDULED fest gives each weekend its own tab (MODEL-V4 §2), and
+// a lineup-only one shows both, so the strip that used to store a choice in
+// `fn_weekend_v1_<fid>` went with the weekend row. This read outlived the
+// write and could only ever answer 'all'.
 function planFor(fest) {
-  return wallPlanFor(fest, { sort: 'day', query: '', weekend: weekendPrefRaw(fest) });
+  return wallPlanFor(fest, { sort: 'day', query: '', weekend: 'all' });
 }
 
 // The days a share image can be built for, in the wall's own order, each with
