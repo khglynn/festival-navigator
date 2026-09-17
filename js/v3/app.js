@@ -487,6 +487,7 @@ export function dayTab({ key, num = null, anchor = null }, label, { withNum = fa
     n.className = 'num';
     n.textContent = String(num);
     tab.appendChild(n);
+    tab.setAttribute('aria-label', `${label} ${num}`); // read as "FRI 2", not "FRI2"
   }
   return tab;
 }
@@ -609,6 +610,9 @@ function buildShowMenu(rooms, folded) {
 }
 
 function paintShowMenus() {
+  // A search wall has no rooms, and the fest name must not change what it
+  // does while someone is typing — the festival's rooms are the same rooms.
+  if (ctx.query) return;
   const rooms = roomsOnWall();
   const folded = new Set(ctx.folded || []);
   const signature = rooms.map((r) => r.key).join('|');
@@ -1292,8 +1296,9 @@ function applyLowPower(on) {
 // The most recent settings actions object — the router's forward re-open of
 // a settings drill needs it (openSettings rebuilds it on every render).
 let settingsActions = null;
-// Coming back from Settings may mean a festival switch — if THAT fest is on
-// today, land on its now line (once per fest-day, like a fresh open).
+// Coming back from Settings may mean a festival switch — land on the new
+// fest's own day (its now line if it is on today), once per fest-day, like a
+// fresh open.
 function closeSettings() { show('screen-app'); repaintWall(); maybeOpenOnDay(); }
 
 function openSettings() {
