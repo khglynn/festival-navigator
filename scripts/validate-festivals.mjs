@@ -8,7 +8,7 @@ import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { validateFestivalDoc } from '../api/_lib/festival-rules.mjs';
-import { frozenKeyProblems } from '../api/_lib/pick-keys.mjs';
+import { frozenKeyProblems, artistNamesOf, dayLabelsOf } from '../api/_lib/pick-keys.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const DIR = join(ROOT, 'data', 'festivals');
@@ -46,6 +46,13 @@ for (const file of files) {
   const entry = frozen.festivals && frozen.festivals[fest.id];
   if (entry) {
     errors.push(...frozenKeyProblems(fest, entry, { indexIds }).map((m) => `${file}: FROZEN KEY — ${m}`));
+    // …and the freeze must hold every key the file exposes. A name added
+    // without a re-freeze is pickable at once, and nothing would notice it
+    // being renamed (Buck Wilson, added 2026-09-01 and never frozen).
+    const names = new Set(entry.names || []);
+    const days = new Set(entry.days || []);
+    const fresh = [...artistNamesOf(fest).filter((n) => !names.has(n)), ...dayLabelsOf(fest).filter((d) => !days.has(d))];
+    if (fresh.length) errors.push(`${file}: not frozen yet: ${fresh.map((k) => JSON.stringify(k)).join(', ')} — crews can pick ${fresh.length === 1 ? 'it' : 'them'} now, so a rename would go unnoticed; run node scripts/freeze-pick-keys.mjs ${fest.id}`);
   } else if (fest.status !== 'archived') {
     errors.push(`${file}: live festival has no pick-key freeze — real people may be picking in it. Run: node scripts/freeze-pick-keys.mjs ${fest.id}`);
   }

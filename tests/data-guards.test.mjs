@@ -4,10 +4,19 @@
 //     `weekend`. Crossed, nothing reads the tag, and the timetable shows both
 //     weekends at once — every stage double-booked (ST-3);
 //   · a display date typed next to its ISO date and disagreeing with it (the
-//     day rule shows one date, the now line keys on the other).
+//     day rule shows one date, the now line keys on the other);
+//   · a name crews can already pick that the pick-key freeze does not hold,
+//     so a later rename would pass CI (Buck Wilson, 2026-09-01).
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
+import { cpSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { validateFestivalDoc } from '../api/_lib/festival-rules.mjs';
+
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 
 // ---- weekends ----------------------------------------------------------------------
 
@@ -64,4 +73,50 @@ test('a display date that disagrees with its ISO date warns — the day rule and
   // A section's free-text range with no ISO beside it ("Sep 24-27") is not checked.
   const range = { ...fest, dayMeta: { ...twoWeekends().dayMeta, Afters: { date: 'Sep 24-27' } } };
   assert.deepEqual(validateFestivalDoc(range).warnings, []);
+});
+
+// ---- the CI command: freeze completeness -------------------------------
+
+// A throwaway copy of the tree with one extra festival in it, run through the
+// same command CI runs.
+function validateWith({ file, index, frozen }) {
+  const dir = mkdtempSync(join(tmpdir(), 'fest-guards-'));
+  for (const d of ['data', 'scripts', 'api', 'js']) cpSync(join(ROOT, d), join(dir, d), { recursive: true });
+  cpSync(join(ROOT, 'tests', 'fixtures'), join(dir, 'tests', 'fixtures'), { recursive: true });
+  writeFileSync(join(dir, 'data/festivals/guard-fest.json'), JSON.stringify(file));
+  const idx = JSON.parse(readFileSync(join(dir, 'data/festivals/index.json'), 'utf8'));
+  writeFileSync(join(dir, 'data/festivals/index.json'), JSON.stringify([...idx, index]));
+  const fixture = JSON.parse(readFileSync(join(dir, 'tests/fixtures/live-pick-keys.json'), 'utf8'));
+  fixture.festivals['guard-fest'] = frozen;
+  writeFileSync(join(dir, 'tests/fixtures/live-pick-keys.json'), JSON.stringify(fixture));
+  try {
+    return { ok: true, out: execFileSync(process.execPath, [join(dir, 'scripts/validate-festivals.mjs')], { encoding: 'utf8' }) };
+  } catch (e) {
+    return { ok: false, out: e.stdout || '' };
+  }
+}
+const guardFest = () => ({
+  file: { id: 'guard-fest', name: 'Guard Fest', status: 'lineup', accent: '1, 2, 3', dates: 'Jan 1-2, 2027', artists: [{ name: 'Frozen', day: 'Friday' }, { name: 'Fresh', day: 'Saturday' }] },
+  index: { id: 'guard-fest', name: 'Guard Fest', status: 'lineup', accent: '1, 2, 3', dates: 'Jan 1–2, 2027', startsOn: '2027-01-01' },
+  frozen: { frozenAt: '2027-01-01', id: 'guard-fest', names: ['Fresh', 'Frozen'], days: ['Friday', 'Saturday'] },
+});
+const lines = (out, re) => out.split('\n').filter((l) => l.includes('guard-fest') && re.test(l));
+
+test('the CI command passes the guard festival when the freeze holds every key', () => {
+  const r = validateWith(guardFest());
+  assert.ok(r.ok, r.out);
+  assert.deepEqual(lines(r.out, /./), []);
+});
+
+test('a name or day label a crew can pick that the freeze does not hold fails CI, and says which command fixes it', () => {
+  const g = guardFest();
+  g.frozen.names = ['Frozen'];
+  g.frozen.days = ['Friday'];
+  const r = validateWith(g);
+  assert.equal(r.ok, false);
+  const [line] = lines(r.out, /not frozen/);
+  assert.ok(line, r.out);
+  assert.match(line, /"Fresh"/);
+  assert.match(line, /"Saturday"/);
+  assert.match(line, /run node scripts\/freeze-pick-keys\.mjs guard-fest/);
 });
