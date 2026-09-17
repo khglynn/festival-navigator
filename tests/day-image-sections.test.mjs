@@ -55,8 +55,21 @@ test('a day exports its whole content in the wall\'s order: the grid in clock or
   assert.deepEqual(sat[32], { name: satFirst.name, time: `Afters · ${satFirst.venue} · ~${satFirst.time}` },
     'the first afters show after the grid, time-sorted, wearing its tilde');
   assert.deepEqual(sat[sat.length - 1], { name: 'PERVERT XXL', time: 'Folsom · The Midway · 10 PM - 6 AM' });
+  // Thursday is two single-act rooms, and they print different things. The
+  // Regency's own feed gives Soulwax doors AND a show time, so the export
+  // carries the start wearing its tilde; Club Six prints doors only, so
+  // Black Rave Culture carries NO clock rather than an invented one. Read
+  // from the file, so a re-read of either bill moves this with the data.
   const thu = dayArtistsFor('Thursday');
-  assert.deepEqual(thu, [{ name: 'Soulwax', time: 'Afters · Regency Ballroom · 8 PM' }, { name: 'Black Rave Culture', time: 'Afters · Club Six · 10 PM' }]);
+  const thuFile = (name) => portola.artists.find((a) => a.night === 'Thu' && a.name === name);
+  const soulwax = thuFile('Soulwax');
+  const brc = thuFile('Black Rave Culture');
+  assert.ok(soulwax.time && soulwax.approx && soulwax.doors, 'Soulwax: doors and a guessed start');
+  assert.ok(!brc.time && brc.doors, 'Black Rave Culture: doors and no start anybody published');
+  assert.deepEqual(thu, [
+    { name: 'Soulwax', time: `Afters · ${soulwax.venue} · ~${soulwax.time}` },
+    { name: 'Black Rave Culture', time: `Afters · ${brc.venue}` },
+  ]);
   const fri = dayArtistsFor('Friday');
   assert.deepEqual(fri.filter((a) => a.name === 'Horse Meat Disco').map((a) => a.time),
     ['Afters · Public Works · 9 PM - 3 AM', 'Folsom · Public Works · 9 PM - 3 AM'], 'a combined-day show appears under each of its sections');

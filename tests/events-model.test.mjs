@@ -182,9 +182,25 @@ const noLanesNoDecks = (tt) => {
 
 test('timetableOf, Portola Friday: venues left to right by first set, and every room is a vertical run', () => {
   const tt = ev.timetableOf(aftersOn('Fri'));
-  assert.equal(tt.venues[0], 'Pier 80 (loyalty invite)', 'Despacio at 5 PM opens the night');
-  assert.equal(tt.venues[1], 'Great American Music Hall', 'Six Sex at 8 PM; the Regency opener goes on an hour after its 8 PM doors now (the venue registry, 2026-09-02)');
-  assert.deepEqual(tt.tba, []);
+  assert.equal(tt.venues[0], 'Pier 80 (loyalty invite)', 'Despacio 5-11 PM, the one printed set of the night, opens it');
+  // The rest of the columns are ordered by each room's first set, and most of
+  // those clocks are GUESSES off posted doors (the Regency 7 PM, the Great
+  // American 8 PM — each venue's own feed, read 2026-09-16). So the order is
+  // re-derived from the file rather than remembered: whichever room opens
+  // earliest is the next column, and a re-read of any bill moves this test.
+  const friRooms = [...new Set(aftersOn('Fri').filter((a) => a.venue && a.time).map((a) => a.venue))];
+  const opensAt = (venue) => Math.min(...aftersOn('Fri')
+    .filter((a) => a.venue === venue && a.time)
+    .map((a) => ev.parseEventTime(a.time).startMin));
+  assert.deepEqual(tt.venues, friRooms.sort((a, b) => opensAt(a) - opensAt(b)),
+    'columns left to right by the first set in each room');
+  // Friday's one doors-only show: Neil Frances at 888 Garage prints doors and
+  // no start (the Goldenvoice feed, 2026-09-16), so it gets no column and
+  // waits below the grid rather than being given a clock nobody published.
+  const friDoorsOnly = aftersOn('Fri').filter((a) => a.venue && !a.time);
+  assert.ok(friDoorsOnly.every((a) => a.doors), 'a TBA show still knows when the room opens');
+  assert.deepEqual(tt.tba.map((a) => a.name), friDoorsOnly.map((a) => a.name));
+  assert.deepEqual(tt.tba.map((a) => a.name), ['Neil Frances']);
   noLanesNoDecks(tt);
   // The Regency's three: one after another, in the run's order, not a pile.
   const regency = tt.cells.filter((c) => c.venue === 'Regency Ballroom').sort((a, b) => a.row - b.row);
@@ -217,7 +233,14 @@ test('timetableOf, Portola Sunday: every room stacks — the Midway four, Public
   assert.deepEqual(pw.map((c) => [c.entry.e.name, c.entry.startStr]), pwFile.map((a) => [a.name, a.time]),
     'Kaytree was on the bill and missing from the file — four sets share the room\'s window, in the file\'s guessed clocks');
   assert.deepEqual(pw.map((c) => c.entry.e.name), ['erika b2b sfcowboy', 'Kaytree', 'Ben UFO', 'Overmono']);
-  assert.deepEqual(tt.tba.map((a) => a.name), ['Azzecca']);
+  // Time-TBA is the file's own shape, not a gap: a show whose start nobody
+  // published carries `doors` and no `time`, and the wall must leave it below
+  // the grid rather than invent a clock for it. Sunday has two — Fatboy Slim
+  // at 888 Garage and Azzecca at Audio, both doors-only as of 2026-09-16.
+  const doorsOnly = portola.artists.filter((a) => a.night === 'Sun' && a.venue && !a.time);
+  assert.ok(doorsOnly.every((a) => a.doors), 'a TBA show still knows when the room opens');
+  assert.deepEqual(tt.tba.map((a) => a.name).sort(), doorsOnly.map((a) => a.name).sort());
+  assert.deepEqual(tt.tba.map((a) => a.name).sort(), ['Azzecca', 'Fatboy Slim']);
 });
 
 test('the fallback: a room nobody has re-read — every set stamped with the doors time — still stacks, never piles', () => {
