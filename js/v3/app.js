@@ -9,10 +9,10 @@ import * as sync from '../sync.js';
 import * as spotify from '../spotify.js';
 import * as model from './model.js';
 import { loadFestivalIndex, loadFestival, fetchCustomFestivals, mergeCustoms, FESTIVAL_INDEX, defaultFestivalId } from '../festivals.js';
-import { renderWall, refreshCard, showUndoToast, showToast, wireScrollspy, colorIndexOf, positionNowLines, positionNowMarks, scrollToNowLine, dayNavOf, cardFor, roomOf, isStripScroller, DAY_ANCHOR } from './wall.js';
-import { loadPeopleFilter, savePeopleFilter, togglePerson, pruneToActive, loadFolded, applyFoldToggle, FEST_ROOM } from './filters.js';
+import { renderWall, refreshCard, showUndoToast, showToast, wireScrollspy, colorIndexOf, positionNowLines, positionNowMarks, scrollToNowLine, dayNavOf, roomsOf, cardFor, roomOf, isStripScroller, DAY_ANCHOR } from './wall.js';
+import { loadPeopleFilter, savePeopleFilter, togglePerson, pruneToActive, loadFolded, applyFoldToggle } from './filters.js';
 import { OUT_MS, CASCADE_MS, STAGGER_MS, EASE_ARRIVE, EASE_LEAVE, EASE_SURFACE, canAnimate } from './motion.js';
-import { scrolledBefore, rememberScrolled, dayOfScrollKey } from './now.js';
+import { scrolledBefore, rememberScrolled, dayOfScrollKey, festivalClock } from './now.js';
 import { dayLabelParts } from '../time.js';
 import { disclosureFold, eqLoader, festRow } from './tools.js';
 import { openArtistSheet, openDayNotes, openAllNotes, openFestNotes, closeSheet, refreshOpenSheet, sheetChrome, dialogize, rememberOpener, shortDayLabel } from './notes.js';
@@ -143,7 +143,10 @@ function festDatesOf() {
   if (!fest) return [];
   const out = [];
   const seen = new Set();
-  for (const day of dayNavOf(fest, { ...ctx, query: '' })) {
+  // The fold is stripped too: a hidden day renders nothing on the wall, but a
+  // note already written on it is still a conversation the sheet lists, and
+  // it is called what its rule would call it.
+  for (const day of dayNavOf(fest, { ...ctx, query: '', folded: [] })) {
     for (const iso of day.dates || []) {
       if (!model.ISO_DATE_RE.test(String(iso)) || seen.has(iso)) continue;
       seen.add(iso);
@@ -168,76 +171,70 @@ export function nameDates(entries) {
 
 // ---- the fold (MODEL-V4 §3, §3a.2) -----------------------------------------------
 // The show menu on the fest name is the ONE door: unchecking a room hides it on
-// every day. A room's header is no longer a control — but it is still the
-// anchor, because it carries the room's key (`.sec-head[data-section]`), so
-// nothing here needs to know how the wall builds a room.
-function roomHeads(key) {
-  return [...document.querySelectorAll(`#wall-root .sec-head[data-section="${CSS.escape(key)}"]`)];
+// every day, and a hidden room renders nothing (2026-09-17) — so the room
+// blocks the wall stamps with the key (`.room[data-room]`) are what leaves,
+// and what arrives when it comes back.
+function roomBlocksOf(key) {
+  return [...document.querySelectorAll(`#wall-root .room[data-room="${CSS.escape(key)}"]`)];
 }
-// A room's body: everything in the room except the header, which stays.
-function roomBodiesOf(key) {
-  return roomHeads(key).flatMap((head) => {
-    const room = head.closest('.room') || head.parentElement;
-    return room ? [...room.children].filter((n) => n !== head) : [];
-  });
-}
-// The rooms the wall is showing, in the order it shows them — the festival's
-// own room, then each section. Read off the wall rather than recomputed, so
-// the show menu can never name a room the wall does not have.
+// The rooms of the festival week the menu offers, hidden or not, in the
+// wall's order (wall.js roomsOf reads the fest through the wall's own plan).
 export function roomsOnWall() {
-  const rooms = [];
-  const seen = new Set();
-  for (const head of document.querySelectorAll('#wall-root .sec-head[data-section]')) {
-    const key = head.dataset.section;
-    if (!key || seen.has(key)) continue;
-    seen.add(key);
-    // A room key is frozen pick data and can be verbose — "Wednesday, Sept 16
-    // (Early Arrival Pre-Party)". The wall bills a section through
-    // dayLabelParts, and the menu naming the same room must say the same
-    // words, not the raw key.
-    rooms.push({ key, label: key === FEST_ROOM ? state.fest().name : dayLabelParts(key).head });
-  }
-  // The festival's own room leads wherever it first appears: Portola's
-  // Thursday and Friday are other people's warehouses, so document order
-  // would open the menu on the afters. Sorting is stable, so the sections
-  // keep the order the wall bills them in.
-  rooms.sort((a, b) => (b.key === FEST_ROOM) - (a.key === FEST_ROOM));
-  return rooms;
+  return roomsOf(state.fest(), ctx);
 }
 
 // Hiding a room is a small event (Kevin, 2026-08-30: nothing vanishes in place,
-// nothing pops): the body leaves quick and plain before the repaint; on the
+// nothing pops): the room leaves quick and plain before the repaint; on the
 // way back it arrives with the usual beat. Transforms and opacity only;
-// instant under Low Power and reduced motion.
+// instant under Low Power and reduced motion. The repaint is the wall's own
+// path — the days and their tabs are re-read from the plan, so a day with
+// nothing visible left goes with its rooms.
 function toggleFoldFlow(key) {
-  // The setting lands NOW — memory, storage and ctx — and the header goes
-  // quiet at once; only the body's leaving is deferred. A second tap during
-  // the fade reads this one, never the state before it.
+  // The setting lands NOW — memory, storage and ctx; only the room's leaving
+  // is deferred. A second tap during the fade reads this one, never the
+  // state before it.
   const { next, folding } = applyFoldToggle(ctx.fid, ctx.folded || [], key);
   ctx.folded = next;
-  for (const head of roomHeads(key)) head.classList.toggle('folded', folding);
+  // Where the person is standing, read before the wall is rebuilt.
+  const standing = (document.querySelector('.day-tab.active') || {}).dataset?.day || null;
   const finish = () => {
     repaintWall();
+    landAfterFold(standing);
     if (!folding) {
-      roomBodiesOf(key).forEach((body, i) => {
-        if (!canAnimate(body, ctx)) return;
-        body.animate([{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }],
+      roomBlocksOf(key).forEach((room, i) => {
+        if (!canAnimate(room, ctx)) return;
+        room.animate([{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }],
           { duration: CASCADE_MS, delay: i * STAGGER_MS, easing: EASE_ARRIVE, fill: 'backwards' });
       });
     }
   };
-  const leaving = folding ? roomBodiesOf(key).filter((body) => canAnimate(body, ctx)) : [];
+  const leaving = folding ? roomBlocksOf(key).filter((room) => canAnimate(room, ctx)) : [];
   if (!leaving.length) { finish(); return; }
   let pending = leaving.length;
   let done = false;
   const settle = () => { if (done) return; pending -= 1; if (pending <= 0) { done = true; finish(); } };
-  for (const body of leaving) {
-    const a = body.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateY(-4px)' }],
+  for (const room of leaving) {
+    const a = room.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateY(-4px)' }],
       { duration: OUT_MS, easing: EASE_LEAVE, fill: 'forwards' });
     a.onfinish = settle;
     a.oncancel = settle;
   }
   setTimeout(() => { if (!done) { done = true; finish(); } }, OUT_MS * 3 + 50); // a backgrounded tab must not hang the fold
+}
+
+// Where the page stands after the wall changed shape under it. The day you
+// were in is still there: land on its rule again (the days above it may have
+// gone, and an untouched scroll offset would be looking at somewhere else).
+// It is gone: land on the first visible day, which is what the open would
+// choose. At the top of the page nothing moves — there is nothing to keep.
+function landAfterFold(standing) {
+  const tabs = dayNavOf(state.fest(), ctx, $('wall-root'));
+  const still = standing ? tabs.find((t) => (t.anchor || t.key) === standing) : null;
+  if (still && !(window.scrollY > 0)) return;
+  const day = still || defaultDayOf(tabs);
+  if (!day) return;
+  const rule = document.querySelector(anchorFor(day.anchor || day.key));
+  if (rule) landOnRule(rule);
 }
 
 // ---- tap cycle -------------------------------------------------------------------
@@ -399,14 +396,25 @@ const anchorFor = (key) => DAY_ANCHOR.split(', ')
   .map((sel) => `#wall-root ${sel.replace('[data-day]', `[data-day="${CSS.escape(key)}"]`)}`)
   .join(', ');
 
-// Which day the wall opens on (MODEL-V4 §2): the festival's first grid day.
-// The day axis leads with whatever plays first — Portola's Thursday afters —
-// and opening a festival on somebody else's warehouse party is the wrong
-// answer. During the festival the day-of rule below wins instead.
-export function defaultDayOf(days, fest) {
+// Which day the wall opens on (MODEL-V4 §2): the festival's first VISIBLE grid
+// day. The day axis leads with whatever plays first — Portola's Thursday
+// afters — and opening a festival on somebody else's warehouse party is the
+// wrong answer. The axis is the visible week (a hidden day is not on it) and
+// each tab says whether it carries a grid, so the fest is never asked. During
+// the festival the day-of rule below wins instead.
+export function defaultDayOf(days) {
   if (!days || !days.length) return null;
-  const grid = (fest && fest.days) || {};
-  return days.find((d) => grid[d.key]) || days[0];
+  return days.find((d) => d.grid) || days[0];
+}
+
+// During the festival, with today's part hidden (the day-of scroll found no
+// rule for today): the next visible day. Before the festival nothing has
+// begun and there is no "next" — the first grid day is the open; after it,
+// likewise. A dated section is a tab, not a day.
+export function nextVisibleDay(days, todayIso) {
+  const dated = (days || []).filter((d) => !d.dated && d.iso);
+  if (!dated.some((d) => d.iso <= todayIso)) return null;
+  return dated.find((d) => d.iso >= todayIso) || null;
 }
 
 // Land a day rule where a day-tab jump lands it: below the sticky chrome
@@ -433,8 +441,10 @@ function maybeOpenOnDay() {
   if (scrolledBefore(key)) return;
   // During the festival: the now line, or today's rule before doors.
   if (scrollToNowLine($('wall-root'), { timeZone: tz })) { rememberScrolled(key); return; }
-  // Before it and after it: the first grid day.
-  const day = defaultDayOf(dayNavOf(state.fest(), ctx), state.fest());
+  // During it with today hidden: the next visible day. Before it and after
+  // it: the first visible grid day.
+  const tabs = dayNavOf(state.fest(), ctx);
+  const day = nextVisibleDay(tabs, festivalClock(new Date(), tz).iso) || defaultDayOf(tabs);
   if (!day) return;
   const rule = document.querySelector(anchorFor(day.anchor || day.key));
   if (!rule) return;

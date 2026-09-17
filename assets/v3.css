@@ -889,15 +889,14 @@ button.f-chip.notes { cursor: pointer; }
  * each under a header that is the day-rule's quieter sibling. The header does
  * not fold the room any more (§3a.2): the show menu on the fest name is the
  * one way to hide a part of the week, so there is no chevron to draw. A room
- * the menu has hidden keeps its header with its label gone quiet — the only
- * place the menu's state is visible on the wall. */
+ * the menu has hidden renders nothing at all, and a day with nothing visible
+ * has no rule (2026-09-17) — the menu is where that state is visible. */
 .room { display: flex; flex-direction: column; gap: 9px; }
 .sec-head { display: flex; align-items: baseline; gap: 9px; width: 100%; text-align: left;
             background: none; border: 0; padding: 0; font: inherit; color: inherit; }
 .sec-label { font-family: var(--font-display); letter-spacing: .07em; font-size: 12.5px; color: var(--text-header); }
 .sec-sub { color: var(--text-tertiary); font-size: 9.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
 .sec-line { flex: 1; height: 1px; background: var(--hairline); }
-.sec-head.folded .sec-label { color: var(--text-secondary); }
 /* A dated section (ACL's Late nights) is a room AND a tab of its own, so its
  * header is where the tab lands — at the day rule's weight, and clearing the
  * sticky chrome the same way. */

@@ -116,9 +116,11 @@ viewport (no vast dead space on desktop).
    chevron, no fold (MODEL-V4 §3a.2).
 7. **The fest name** (bottom dock on mobile, day rail on desktop) opens the
    show menu: one row per room of the festival week with a check, then
-   Settings. Unchecking a room hides it on every day — its header stays,
-   quiet, with nothing under it. Remembered per fest, on this device only,
-   and it is the ONE way to hide a part of the week.
+   Settings. Unchecking a room hides it on every day — it renders nothing,
+   and a day with nothing visible left on it has no rule and no tab (never
+   an empty shell). Remembered per fest, on this device only, and it is the
+   ONE way to hide a part of the week; the menu still lists every room, which
+   is where the state is visible.
    A fest with one room goes straight to Settings, as it always did.
 8. **A dated section is its own tab** after the days (LATE NIGHTS), ruled by
    date (TUE · SEP 29) with its venue groups under each rule. Its cards pick

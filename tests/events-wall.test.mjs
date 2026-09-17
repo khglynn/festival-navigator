@@ -291,21 +291,16 @@ test('a room header does not fold: no chevron, no aria-expanded, no "<n> shows" 
   }
   assert.equal(root.querySelector('.room[data-room=":fest"] .sec-head').tagName, 'DIV',
     'the festival\'s own room on a day IS that day — the rule above it is the door, so its header takes no tap');
-  // What the show menu leaves: the body gone, the header still naming the room
-  // with its label gone quiet, and the week unchanged.
+  // What the show menu leaves: nothing — no body, no header, no quiet label
+  // (ship round 2026-09-17: "not empty shells"). The days stay while something
+  // visible still plays them.
   const folded = render('portola-2026', { folded: ['Folsom'] }).root;
-  for (const room of folded.querySelectorAll('.room[data-room="Folsom"]')) {
-    const h = room.querySelector('.sec-head');
-    assert.ok(h.classList.contains('folded'), 'the menu\'s state is visible on the header');
-    assert.equal(h.querySelector('.sec-sub').textContent, '', 'and it does not count what it is not showing');
-    assert.equal(room.querySelectorAll('.venue-grid, .tt-block').length, 0, 'the body is gone, the header stays');
-  }
-  assert.deepEqual(rulesOf(folded), ['THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'], 'the days stay: hiding a room is a view of a room, not a new week');
+  assert.equal(folded.querySelector('.room[data-room="Folsom"]'), null, 'a hidden room renders nothing');
+  assert.deepEqual(rulesOf(folded), ['THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'], 'the days stay: the afters still play every one of them');
   // The festival's own room hides too, and takes its timetable with it.
   const noFest = render('portola-2026', { folded: [':fest'] }).root;
-  assert.equal(noFest.querySelectorAll('.tt-block').length, 0);
+  assert.equal(noFest.querySelectorAll('.tt-block, .room[data-room=":fest"]').length, 0);
   assert.equal(noFest.querySelectorAll('.room[data-room="Afters"] .venue-grid').length, 4, 'the sections are untouched');
-  assert.ok(noFest.querySelector('.room[data-room=":fest"] .sec-head').classList.contains('folded'));
 });
 
 // ---- the now mark (MODEL-V4 §1.2) ------------------------------------------------------
@@ -364,12 +359,11 @@ test('a dated section is its own tab after the days, and a room: one header, a d
   assert.ok([...firstGrid.querySelectorAll('.card')].every((c) => c.getAttribute('role') === 'button'));
 });
 
-test('the menu hides a dated section whole — the header, and nothing under it', () => {
-  const folded = render('dated', { folded: ['Late nights'] }).root;
-  const room = folded.querySelector('.room[data-room="Late nights"]');
-  assert.ok(room.querySelector('.sec-head').classList.contains('folded'));
-  assert.equal(room.querySelectorAll('.date-rule, .venue-grid, .day-whisper').length, 0, 'the header only');
-  assert.deepEqual(rulesOf(folded), ['FRIDAY'], 'and the week above it is untouched');
+test('the menu hides a dated section whole — no header, no tab, nothing under it', () => {
+  const { root, ctx } = render('dated', { folded: ['Late nights'] });
+  assert.equal(root.querySelector('.room[data-room="Late nights"], .date-rule, .sec-head[data-day]'), null, 'gone whole');
+  assert.deepEqual(rulesOf(root), ['FRIDAY'], 'and the week above it is untouched');
+  assert.deepEqual(dayNavOf(FESTIVALS.dated, ctx).map((d) => d.key), ['Friday'], 'no tab for a room that is not there');
 });
 
 // ---- the note door is where you are standing (MODEL-V4 §4, §3a.3) ----------------------
@@ -467,10 +461,9 @@ test('a section header on a day opens THAT night\u2019s section notes — and no
   assert.equal(dayW.querySelector('.more').textContent, '1 note \u203a', 'the section note is not counted under the day');
 });
 
-test('a hidden room is not a door either — and the festival\u2019s own room never was', () => {
+test('a hidden room is not a door either — it is not there — and the festival\u2019s own room never was', () => {
   const { root } = render('portola-2026', { folded: ['Folsom'] });
-  const head = roomsUnder(root, 'Friday').find((r) => r.dataset.room === 'Folsom').querySelector('.sec-head');
-  assert.equal(head.tagName, 'DIV', 'nothing under it, so nothing to write on');
+  assert.equal(roomsUnder(root, 'Friday').find((r) => r.dataset.room === 'Folsom'), undefined, 'nothing to write on, because nothing is there');
   assert.equal(root.querySelector('.room[data-room=":fest"] .sec-head').tagName, 'DIV',
     'the festival\u2019s room on a day IS that day; its rule is the door');
 });

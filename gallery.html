@@ -849,9 +849,8 @@ document.getElementById('events-lowpower').addEventListener('change', (e) => {
 });
 // Hiding a room: in the app this is the show menu on the fest name (MODEL-V4
 // §3.1), which lives in the shell and not in renderWall — so the gallery gives
-// it the same state through checkboxes. The header is not a control any more
-// (§3a.2), so a hidden room here is what the menu leaves: the header, quiet,
-// with nothing under it.
+// it the same state through checkboxes. A hidden room renders nothing, and a
+// day with nothing visible has no rule and no tab (2026-09-17).
 const ROOMS = [[':fest', 'Gallery Fest'], ['Afters', 'Afters'], ['Folsom', 'Folsom'], ['Late nights', 'Late nights']];
 (function wireRoomToggles() {
   const host = document.getElementById('events-rooms');
