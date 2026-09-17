@@ -165,28 +165,34 @@ can be edited or deleted (tombstone). A pinned root sorts to the top and shows
 a reply count, never its thread, until tapped open — and replying into a folded
 thread opens it, so you can see where the words land.
 
-## F7 · Notes — a date
+## F7 · Notes — a date, and a section on a date
 
-1. Day notes are keyed by the **ISO date**, so the two Fridays of a
-   two-weekend fest are two threads and an afters night is its own. A note
-   written under an older weekday label still renders under the date that
-   label maps to.
-2. The WHISPER (2026-08-29): nothing sits inline until someone writes; then
-   the newest note (root or reply) rides as one soft line at the day rule,
-   and tapping it opens that date's notes. Composing happens in the sheet.
-3. The all-notes sheet lists each date with an open-door row — the viewer's
-   avatar and `+ Add a note for Sat · Sep 26…`, quieter than a thread's
-   Reply and set apart at the foot of the section — so the first note on a
-   date is two taps.
-**Expected:** notes have three scopes and no more — an artist, a date, the
-festival; sections (Afters, Folsom, Late nights) have no notes of their own
-and no door; every label names its day in short form (weekday · date), never
-a raw key.
+1. **A note is written where you are standing** (MODEL-V4 §3a.3). Tapping a
+   day's rule opens that date's notes; tapping a section's header on a day
+   opens that section-on-that-date's (`Folsom · Friday`); a card's zoom opens
+   the artist's. The rule and the header ARE the doors — real buttons, nothing
+   added to them but the hit.
+2. Day notes are keyed by the **ISO date**, so the two Fridays of a
+   two-weekend fest are two threads and an afters night is its own. A section
+   on a date is keyed `<iso>|<section>`, additive. Nothing rolls up: a
+   `Folsom · Friday` note never appears under `Friday`. A note written under an
+   older weekday label still renders under the date that label maps to; a note
+   written under a bare section label stays readable in the sheet, with no door.
+3. The WHISPER (2026-08-29): nothing sits inline until someone writes; then
+   the newest note (root or reply) rides as one soft line under the door it
+   belongs to — a date's under its rule, a section-on-a-date's under that
+   header on that day, never under another day. Composing happens in the sheet.
+**Expected:** a date reads the way the wall's rule reads it (`Friday`) — unless
+two dates would answer to the same name, when every date takes the dated form
+(`Fri · Oct 2`); a storage key never reaches the screen.
 
 ## F8 · Notes — festival scope + the all-notes view
 
 1. Notes chip (top of wall, with total count) → ALL NOTES view: festival-note
-   composer at top, then sections — This festival / each date / each artist.
+   composer at top, then ONLY the targets somebody has written on, in wall
+   order — This festival / a date / a section on that date / each artist. No
+   empty date rows and no "+ Add a note for…" doors: you write from where you
+   are standing, and the sheet is the list of what came of it.
 2. Wall bottom carries NOTES · <FEST> as a whisper once festival notes exist
    (on a lineup-less fest, a quiet "+ Add a note" keeps the invitation).
 **Expected:** the all-notes view is the notes HOME: you can always ADD a

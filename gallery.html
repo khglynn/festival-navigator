@@ -97,7 +97,7 @@
 
 <section id="events-gallery">
   <div class="zoom-title">THE EVENTS — the composed day, live</div>
-  <div class="hint">the real <code>renderWall</code> on a small fest holding every state of the list (MODEL-V4, 2026-09-16) — a grid day's timetable, venue groups everywhere else, a numbered back-to-back run, an un-numbered room that stacks anyway, a room with no clock, and the now mark. Hover / hold / Tab to a card to zoom it (the ~ cards show the two-line WHEN with the order door); tap any card to pick. A room's header is not a control (MODEL-V4 §3a.2) — the show menu on the fest name hides a room, and the checkboxes below stand in for it here.</div>
+  <div class="hint">the real <code>renderWall</code> on a small fest holding every state of the list (MODEL-V4, 2026-09-16) — a grid day's timetable, venue groups everywhere else, a numbered back-to-back run, an un-numbered room that stacks anyway, a room with no clock, and the now mark. Hover / hold / Tab to a card to zoom it (the ~ cards show the two-line WHEN with the order door); tap any card to pick. A day's rule and a section's header are the notes doors (§3a.3) — Saturday has a date note and an Afters-on-Saturday note, each whispering under its own door. A room's header is not a control (MODEL-V4 §3a.2) — the show menu on the fest name hides a room, and the checkboxes below stand in for it here.</div>
   <div class="zoom-toolbar">
     <label><input type="checkbox" id="events-lowpower"> Low power (instant)</label>
     <span class="zoom-status">Show:</span>
@@ -783,6 +783,9 @@ Object.assign(state.crewDoc.festivals[EFID].selections, ESEL);
 // A day note is keyed by the DATE (MODEL-V4 §4), so this one is Saturday's
 // and the whisper rides under Saturday's rule.
 state.recordNote(EFID, 'day', '2026-09-26', model.makeNoteId('Nhu', '2026-09-20T20:00:00.000Z', 'e1'), { author: 'Nhu', ts: '2026-09-20T20:00:00.000Z', text: 'Meet at The Ballroom before 8 — the line wraps the block.' });
+// And one written standing on a SECTION on a day (MODEL-V4 §3a.3): its whisper
+// rides under that section's header on that day only, never under the rule.
+state.recordNote(EFID, 'day', '2026-09-26|Afters', model.makeNoteId('Nhu', '2026-09-20T20:05:00.000Z', 'e2'), { author: 'Nhu', ts: '2026-09-20T20:05:00.000Z', text: 'Afters: The Room first, Halcyon after 2.' });
 
 // The fold, held here the way app.js holds it per fest (fn_fold_v1_<fid>).
 let folded = [];
@@ -795,7 +798,7 @@ const ectx = {
   sort: 'day', query: '', weekend: 'all', filterPeople: [], soloStage: null, folded: [], now: NOW,
   onSoloStage: () => {},
   onOpenNotes: (artist) => eventsStatus(`+ notes tapped for "${artist}" — the sheet is not wired in the gallery`),
-  onOpenDayNotes: (date) => eventsStatus(`day notes tapped for ${date} — the sheet is not wired in the gallery`),
+  onOpenDayNotes: (target, label) => eventsStatus(`notes tapped for ${label} (${target}) — the sheet is not wired in the gallery`),
   onOpenFestNotes: () => {},
   onNotesChange: () => {},
   onTap: eventsTap,

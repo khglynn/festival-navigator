@@ -282,13 +282,15 @@ test('a grid day keeps its timetable, its own sticky strip and its own scroll gr
 
 // ---- hiding a room (MODEL-V4 §3, §3a.2) ------------------------------------------------
 
-test('a room header is not a control: no chevron, no aria-expanded, no "<n> shows" — the menu is the one door', () => {
+test('a room header does not fold: no chevron, no aria-expanded, no "<n> shows" — the menu is the one door', () => {
   const { root } = render('portola-2026');
   for (const head of root.querySelectorAll('.sec-head')) {
-    assert.equal(head.tagName, 'DIV', 'a header says what the room is; it does not take a tap');
-    assert.equal(head.hasAttribute('aria-expanded'), false);
+    assert.equal(head.hasAttribute('aria-expanded'), false, 'a header does not fold, so it never claims to');
     assert.equal(head.querySelector('svg.chev'), null, 'no chevron to promise a fold');
+    assert.equal(head.querySelector('.sec-sub').textContent.includes('show'), false, 'and it does not count a room it is showing');
   }
+  assert.equal(root.querySelector('.room[data-room=":fest"] .sec-head').tagName, 'DIV',
+    'the festival\'s own room on a day IS that day — the rule above it is the door, so its header takes no tap');
   // What the show menu leaves: the body gone, the header still naming the room
   // with its label gone quiet, and the week unchanged.
   const folded = render('portola-2026', { folded: ['Folsom'] }).root;
@@ -370,12 +372,13 @@ test('the menu hides a dated section whole — the header, and nothing under it'
   assert.deepEqual(rulesOf(folded), ['FRIDAY'], 'and the week above it is untouched');
 });
 
-// ---- the note door is a date (MODEL-V4 §4) ---------------------------------------------
+// ---- the note door is where you are standing (MODEL-V4 §4, §3a.3) ----------------------
 // The wall chooses the key a day note is written to and read from, so the
-// choice is pinned here: it is the DATE. A weekday label was the key before
-// V4 and those notes are still the same conversation — mapping them onto the
-// date is the notes layer's (js/v3/model.js legacyDayKeysFor). What this file
-// owns is that the wall never opens a day note on anything but a date.
+// choice is pinned here: the DATE under a day's rule, `<iso>|<section>` under a
+// section's header on that day. A weekday label was the key before V4 and those
+// notes are still the same conversation — mapping them onto the date is the
+// notes layer's (js/v3/model.js legacyDayKeysFor). What this file owns is that
+// the wall never opens a day note on anything but one of those two.
 const whisperAfter = (rule) => {
   const n = rule && rule.nextElementSibling;
   return n && n.classList.contains('day-whisper') ? n : null;
@@ -421,6 +424,55 @@ test('a dated section: the section rule has no note door, each of its dates has 
   assert.ok(w, 'the date under it is');
   click(w);
   assert.deepEqual(asked, ['2026-09-29']);
+});
+
+test('a day\u2019s rule IS the door: a real button, wearing the day it opens', () => {
+  const asked = [];
+  const { root } = render('portola-2026', { onOpenDayNotes: (k, label) => asked.push([k, label]) });
+  const rule = [...root.querySelectorAll('.day-rule')].find((r) => r.dataset.day === 'Sunday');
+  assert.equal(rule.tagName, 'BUTTON', 'the tap the fold used to take');
+  assert.equal(rule.getAttribute('aria-label'), 'Notes for Sunday');
+  assert.equal(rule.querySelectorAll('.day, .date, .line').length, 3, 'and nothing was added to it');
+  click(rule);
+  assert.deepEqual(asked, [['2026-09-27', 'Sunday']]);
+});
+
+test('a section header on a day opens THAT night\u2019s section notes — and nothing rolls up', () => {
+  // Written standing on Friday's Folsom.
+  noteOn('portola-2026', '2026-09-25|Folsom', 'Folsom line is round the corner', '2026-09-20T18:40:00.000Z', 'eeeeee');
+  noteOn('portola-2026', '2026-09-25', 'Friday is a late one', '2026-09-20T18:41:00.000Z', 'ffffff');
+  const asked = [];
+  const { root } = render('portola-2026', { onOpenDayNotes: (k, label) => asked.push([k, label]) });
+  const friday = roomsUnder(root, 'Friday');
+  const folsom = friday.find((r) => r.dataset.room === 'Folsom');
+  const head = folsom.querySelector('.sec-head');
+  assert.equal(head.tagName, 'BUTTON');
+  assert.equal(head.getAttribute('aria-label'), 'Notes for Folsom · Friday');
+  click(head);
+  assert.deepEqual(asked, [['2026-09-25|Folsom', 'Folsom · Friday']], 'the date AND the section, together');
+
+  // The whisper sits under that header, on that day, and nowhere else.
+  const w = whisperAfter(head);
+  assert.ok(w, 'the newest note on Folsom-on-Friday rides under Folsom\u2019s header');
+  assert.equal(w.querySelector('.text').textContent, 'Folsom line is round the corner');
+  const saturdayFolsom = roomsUnder(root, 'Saturday').find((r) => r.dataset.room === 'Folsom');
+  assert.equal(whisperAfter(saturdayFolsom.querySelector('.sec-head')), null, 'Saturday\u2019s Folsom is another night');
+  assert.equal(whisperAfter(friday.find((r) => r.dataset.room === 'Afters').querySelector('.sec-head')), null,
+    'and Friday\u2019s afters are another room');
+
+  // Nothing rolls up: the day rule shows the DAY's note, not the section's.
+  const rule = [...root.querySelectorAll('.day-rule')].find((r) => r.dataset.day === 'Friday');
+  const dayW = whisperAfter(rule);
+  assert.equal(dayW.querySelector('.text').textContent, 'Friday is a late one');
+  assert.equal(dayW.querySelector('.more').textContent, '1 note \u203a', 'the section note is not counted under the day');
+});
+
+test('a hidden room is not a door either — and the festival\u2019s own room never was', () => {
+  const { root } = render('portola-2026', { folded: ['Folsom'] });
+  const head = roomsUnder(root, 'Friday').find((r) => r.dataset.room === 'Folsom').querySelector('.sec-head');
+  assert.equal(head.tagName, 'DIV', 'nothing under it, so nothing to write on');
+  assert.equal(root.querySelector('.room[data-room=":fest"] .sec-head').tagName, 'DIV',
+    'the festival\u2019s room on a day IS that day; its rule is the door');
 });
 
 test('a day the file gives no date has no note door', () => {

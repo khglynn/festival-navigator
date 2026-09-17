@@ -212,7 +212,15 @@
 /* ---- day header rule --------------------------------------------------------- */
 /* Jumping to a day (tab tap) must land the header BELOW the sticky chrome,
  * not under it — app.js measures the rail + stage strip into --jump-offset. */
-.day-rule { display: flex; align-items: baseline; gap: 10px; scroll-margin-top: var(--jump-offset, 8px); }
+/* The rule is a BUTTON where the day has a date: it is the door to that date's
+ * notes (MODEL-V4 §3a.3), the tap the fold used to take. Nothing is added to
+ * it — same words, same hairline — so the rule resets button chrome, and its
+ * 44px floor comes from being a button, which is the only way this app gets a
+ * touch target. */
+.day-rule { display: flex; align-items: baseline; gap: 10px; scroll-margin-top: var(--jump-offset, 8px);
+            width: 100%; text-align: left; background: none; border: 0; padding: 0;
+            font: inherit; color: inherit; }
+button.day-rule, button.date-rule, button.sec-head { cursor: pointer; }
 .day-rule .day { font-family: var(--font-display); letter-spacing: var(--track-display);
                  font-size: var(--fs-day); color: var(--text-header); }
 .day-rule .date { color: var(--text-tertiary); font-size: 10px; font-weight: 700; }
@@ -712,9 +720,6 @@
           transition: background-color .14s cubic-bezier(.4, 0, .2, 1); }
 .n-door .avatar { opacity: .75; }
 .n-door-label { color: var(--text-tertiary); font-size: 12.5px; font-weight: 600; }
-/* The ADD door (no thread yet) speaks a step louder than a Reply door: it is
- * an invitation, and it is the only thing under a quiet date. */
-.n-door.new .n-door-label { color: var(--text-secondary); }
 @media (hover: hover) and (pointer: fine) {
   .n-door:hover { background-color: rgba(255, 255, 255, .035); }
   .n-door:hover .avatar { opacity: 1; }
@@ -918,6 +923,18 @@ button.f-chip.notes { cursor: pointer; }
  * sticky chrome the same way. */
 .sec-head.tab { scroll-margin-top: var(--jump-offset, 8px); }
 .sec-head.tab .sec-label { font-size: var(--fs-day); letter-spacing: var(--track-display); }
+/* A rule and a header that open notes are buttons, so the touch floor gives
+ * them 44px of real height — at which point a baseline row would sit at the top
+ * of an empty box. This is the floor's consequence, not a new opt-out list, and
+ * borrowed space is the wrong answer here: a day rule's hit area would reach
+ * into the section header right under it, and the two open DIFFERENT threads.
+ * The min-height is repeated for the rules and headers that are NOT doors (the
+ * festival's own room on a day; a day the file gave no date), because a room
+ * header is one component and two of them at different heights on one day is a
+ * component with two looks. */
+@media (pointer: coarse) {
+  .day-rule, .date-rule, .sec-head { align-items: center; min-height: 44px; }
+}
 /* One sticky strip PER timetable: position:sticky is bounded by its parent,
  * so a strip inside this block pins while the block is on screen and leaves
  * with it — a grid day's stage heads never sit over another day's. */
@@ -942,7 +959,9 @@ button.f-chip.notes { cursor: pointer; }
 
 /* One date inside a dated section (ACL's Late nights): quieter than a day
  * rule, because the day rule above already named the section. */
-.date-rule { display: flex; align-items: baseline; gap: 8px; margin-top: 4px; }
+.date-rule { display: flex; align-items: baseline; gap: 8px; margin-top: 4px;
+             width: 100%; text-align: left; background: none; border: 0; padding: 0;
+             font: inherit; color: inherit; }
 .date-rule .d { font-family: var(--font-display); letter-spacing: .06em; font-size: 12px; color: var(--text-secondary); }
 .date-rule .line { flex: 1; height: 1px; background: var(--hairline); }
 

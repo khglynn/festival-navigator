@@ -419,7 +419,15 @@ function renderCardGrid(root, list, ctx, { day = null, subLabelOf = lineupSubLab
 // ("Wednesday, Sept 16 (Early Arrival Pre-Party)" → WEDNESDAY) the way
 // every other path does, while the tabs still find it by its key.
 function dayHeader(label, sub, opts = {}) {
-  const rule = document.createElement('div');
+  // The rule IS the door to that date's notes (MODEL-V4 §3a.3) — the tap the
+  // fold used to take. Nothing is added to it: same words, same hairline, a
+  // button instead of a div, which is also where its 44px floor comes from.
+  const rule = document.createElement(opts.onOpen ? 'button' : 'div');
+  if (opts.onOpen) {
+    rule.type = 'button';
+    rule.setAttribute('aria-label', `Notes for ${opts.aria || label}`);
+    rule.addEventListener('click', opts.onOpen);
+  }
   rule.className = 'day-rule';
   rule.dataset.day = opts.dayKey || label;
   const d = document.createElement('span');
@@ -1094,8 +1102,8 @@ function festRoomSub(fest) {
 // looks like every other tab's landing.
 // `folded` is the menu's state made visible (the label goes quiet), which is
 // all that is left of it here.
-export function sectionHeader(label, sub, { key = null, dayKey = null, folded = false } = {}) {
-  const h = mk('div', `sec-head${dayKey ? ' tab' : ''}${folded ? ' folded' : ''}`);
+export function sectionHeader(label, sub, { key = null, dayKey = null, folded = false, onOpen = null, aria = null } = {}) {
+  const h = mk(onOpen ? 'button' : 'div', `sec-head${dayKey ? ' tab' : ''}${folded ? ' folded' : ''}`);
   if (key) h.dataset.section = key;
   if (dayKey) h.dataset.day = dayKey;
   h.append(
@@ -1103,6 +1111,11 @@ export function sectionHeader(label, sub, { key = null, dayKey = null, folded = 
     mk('span', 'sec-sub', sub || ''),
     mk('span', 'sec-line'),
   );
+  if (onOpen) {
+    h.type = 'button';
+    h.setAttribute('aria-label', `Notes for ${aria || label}`);
+    h.addEventListener('click', onOpen);
+  }
   return h;
 }
 
@@ -1163,8 +1176,21 @@ function renderComposed(root, ctx, fest, { model: plan, scheduled }) {
       if (!list) continue;
       const room = roomBlock(sec.key);
       const isFolded = folded.has(sec.key);
-      room.appendChild(sectionHeader(sec.label, sectionSub(fest, sec), { key: sec.key, folded: isFolded }));
-      if (!isFolded) venueGroups(room, list, ctx, { day, fest });
+      // The section's header on THIS day is the door to that night's thread
+      // (§3a.3): Folsom on Friday, not Folsom, and not Friday. A hidden room
+      // has nothing under its header, so it is not a door either.
+      const target = !isFolded && day.iso && ctx.onOpenDayNotes ? model.sectionDateKey(day.iso, sec.key) : null;
+      const label = target ? `${sec.label} · ${dayLabelParts(day.dayKey).head}` : null;
+      room.appendChild(sectionHeader(sec.label, sectionSub(fest, sec), {
+        key: sec.key,
+        folded: isFolded,
+        onOpen: target ? () => ctx.onOpenDayNotes(target, label) : null,
+        aria: label,
+      }));
+      if (!isFolded) {
+        if (target) dayNoteWhisper(room, target, label, ctx);
+        venueGroups(room, list, ctx, { day, fest });
+      }
       root.appendChild(room);
     }
   }
@@ -1185,27 +1211,28 @@ function renderComposed(root, ctx, fest, { model: plan, scheduled }) {
   positionNowMarks(root, ctx.now || new Date());
 }
 
-// The date's newest note, under the rule that named that date. Every day
-// note the wall opens is keyed by the DATE (MODEL-V4 §4) — two Fridays are
-// two dates — so this is the one place the key is chosen. A note written
-// under the old weekday label still belongs to this conversation; mapping it
-// on the way in is the notes layer's job (notes.js, model.js).
-function dayNoteDoor(root, iso, ctx) {
+// The newest note on a day target, under the thing that named it. Every day
+// note the wall opens is keyed by where you were standing (MODEL-V4 §4, §3a.3)
+// — the DATE under a day's rule, `<iso>|<section>` under a section's header on
+// that day — so this is the one place a key is chosen. A note written under the
+// old weekday label still belongs to the date's conversation; mapping it on the
+// way in is the notes layer's job (notes.js, model.js).
+function dayNoteWhisper(root, target, label, ctx) {
   if (!ctx.onOpenDayNotes) return;
-  const label = shortDayLabel(iso);
-  const w = dayWhisper(iso, label, ctx, () => ctx.onOpenDayNotes(iso, label));
+  const w = dayWhisper(target, label, ctx, () => ctx.onOpenDayNotes(target, label));
   if (w) root.appendChild(w);
 }
 
-// A day's rule, and the newest note at its door. A day the file gives no
-// date has no door — a label is not a date, and a section label
-// ("Afters", "Late nights") is not a note target at all any more (§4).
+// A day's rule — the door to that date's notes — and the newest note under it.
+// A day the file gives no date has no door: a label is not a date.
 function dayRuleFor(day, ctx) {
-  const rule = dayHeader(dayLabelParts(day.dayKey).head, day.sub, { dayKey: day.key });
+  const label = dayLabelParts(day.dayKey).head;
+  const open = day.iso && ctx.onOpenDayNotes ? () => ctx.onOpenDayNotes(day.iso, label) : null;
+  const rule = dayHeader(label, day.sub, { dayKey: day.key, onOpen: open, aria: label });
   if (day.iso) rule.dataset.iso = day.iso; // the day-of open lands here before doors
   const frag = document.createDocumentFragment();
   frag.appendChild(rule);
-  if (day.iso) dayNoteDoor(frag, day.iso, ctx);
+  if (day.iso) dayNoteWhisper(frag, day.iso, label, ctx);
   return frag;
 }
 
@@ -1230,11 +1257,20 @@ function renderExtra(root, ctx, fest, extra, { folded }) {
   if (isFolded) return;
   if (!extra.byDate) { venueGroups(room, extra.entries || [], ctx, { fest }); return; }
   for (const [iso, list] of extra.byDate) {
-    const dateRule = mk('div', 'date-rule');
+    // A date rule inside a dated section is that tab's day rule, so it is the
+    // same door: tap it, and you are writing on that date.
+    const label = shortDayLabel(iso);
+    const open = ctx.onOpenDayNotes ? () => ctx.onOpenDayNotes(iso, label) : null;
+    const dateRule = mk(open ? 'button' : 'div', 'date-rule');
+    if (open) {
+      dateRule.type = 'button';
+      dateRule.setAttribute('aria-label', `Notes for ${label}`);
+      dateRule.addEventListener('click', open);
+    }
     dateRule.dataset.iso = iso;
     dateRule.append(mk('span', 'd', dateRuleLabel(iso)), mk('span', 'line'));
     room.appendChild(dateRule);
-    dayNoteDoor(room, iso, ctx);
+    dayNoteWhisper(room, iso, label, ctx);
     venueGroups(room, list, ctx, { day: { iso }, fest });
   }
 }

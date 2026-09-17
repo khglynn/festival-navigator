@@ -274,6 +274,28 @@ test('the wall opens on the festival\'s first GRID day, not on the first thing t
   assert.equal(app.defaultDayOf(acl, { days: { Friday: {}, Saturday: {} } }).anchor, 'Friday@W1');
 });
 
+// A date is called what the wall's day rule calls it (MODEL-V4 §3a.3) — except
+// where that name would answer for two dates, which is the ambiguity date-keyed
+// day notes exist to end.
+test('the notes axis names a date the way the wall does, and dates a name that would answer twice', () => {
+  assert.deepEqual(app.nameDates([
+    { iso: '2026-09-25', label: 'Friday' },
+    { iso: '2026-09-26', label: 'Saturday' },
+  ]).map((d) => d.label), ['Friday', 'Saturday'], 'one of each: the friendly name stands');
+
+  assert.deepEqual(app.nameDates([
+    { iso: '2026-10-02', label: 'Friday' },
+    { iso: '2026-10-03', label: 'Saturday' },
+    { iso: '2026-10-09', label: 'Friday' },
+    { iso: '2026-10-10', label: 'Saturday' },
+  ]).map((d) => d.label), ['Fri \u00b7 Oct 2', 'Sat \u00b7 Oct 3', 'Fri \u00b7 Oct 9', 'Sat \u00b7 Oct 10'],
+  'two weekends: every colliding name takes the date, never half of them');
+
+  const two = [{ iso: '2026-10-02', label: 'Friday' }, { iso: '2026-10-09', label: 'Friday' }];
+  app.nameDates(two);
+  assert.deepEqual(two.map((d) => d.label), ['Friday', 'Friday'], 'pure — the caller\'s entries are not rewritten under it');
+});
+
 test('ACL as shipped: the Late nights tab starts Sep 29 and the wall still opens on Oct 2', async () => {
   // The cases above hand defaultDayOf an axis by hand, so they prove the
   // PICKER and take the axis order on trust. This one reads the real file and

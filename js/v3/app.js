@@ -65,9 +65,13 @@ const ctx = {
     // THIS set for an artist who plays twice.
     router.push(encodeNotesKey(artist, occ));
   },
-  onOpenDayNotes: (iso, label = null) => {
-    openDayNotes(iso, label, ctx, onNotesChange);
-    router.push(`sheet:day:${iso}`);
+  // `target` is a date or a section-on-a-date key (`2026-09-25|Folsom`). The
+  // route carries the key itself, so back, forward and a refresh reopen the
+  // same thread — the label is only what the door was wearing, and the sheet
+  // finds it again off the axis.
+  onOpenDayNotes: (target, label = null) => {
+    openDayNotes(target, label, ctx, onNotesChange);
+    router.push(`sheet:day:${target}`);
   },
   onOpenFestNotes: () => {
     openFestNotes(ctx, onNotesChange);
@@ -133,6 +137,14 @@ function refreshCtx() {
 // Portola afters night has a date the wall derives and dayMeta never names.
 // The query is stripped deliberately — searching narrows the wall, never the
 // dates a crew has notes on.
+// A date is CALLED what the wall's day rule calls it — "Friday" — because that
+// is the door you wrote through, and the sheet has to agree with the door
+// (MODEL-V4 §3a.3). The exception is the one that made §4 date-key day notes in
+// the first place: a two-weekend fest has two Fridays, and two rows both saying
+// "Friday" in a list with no wall under them is the ambiguity the dates were
+// meant to end — so where a name would answer for more than one date, EVERY
+// date takes the dated form ("Fri · Oct 2"). Decided once, here, where the whole
+// axis is visible; notes.js reads the answer and never re-derives it.
 function festDatesOf() {
   const fest = state.fest();
   if (!fest) return [];
@@ -142,10 +154,23 @@ function festDatesOf() {
     for (const iso of day.dates || []) {
       if (!model.ISO_DATE_RE.test(String(iso)) || seen.has(iso)) continue;
       seen.add(iso);
-      out.push({ iso, label: shortDayLabel(iso) });
+      // A dated section's tab covers many dates, so its own name cannot stand
+      // for any one of them; each date says itself.
+      out.push({ iso, label: day.dated ? shortDayLabel(iso) : dayLabelParts(day.key).head });
     }
   }
-  return out;
+  return nameDates(out);
+}
+
+// The collision pass, on its own so it can be held to account: a name that
+// answers for more than one date is no name at all, so every date takes the
+// dated form instead. Pure, order-preserving, and it never half-renames — one
+// Friday saying "Friday" beside another saying "Fri · Oct 9" would be worse
+// than either.
+export function nameDates(entries) {
+  const taken = new Map();
+  for (const d of entries) taken.set(d.label, (taken.get(d.label) || 0) + 1);
+  return entries.map((d) => (taken.get(d.label) > 1 ? { ...d, label: shortDayLabel(d.iso) } : d));
 }
 
 // ---- the fold (MODEL-V4 §3, §3a.2) -----------------------------------------------

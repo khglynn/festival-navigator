@@ -90,10 +90,10 @@ function openOne(ctxOverrides = {}) {
     // The day axis the shell composes — grid days plus the nights the sections
     // play. Sep 24 and Sep 25 are afters nights; no dayMeta entry names them.
     festDates: [
-      { iso: '2026-09-24', label: 'Thu · Sep 24' },
-      { iso: '2026-09-25', label: 'Fri · Sep 25' },
-      { iso: '2026-09-26', label: 'Sat · Sep 26' },
-      { iso: '2026-09-27', label: 'Sun · Sep 27' },
+      { iso: '2026-09-24', label: 'Thursday' },
+      { iso: '2026-09-25', label: 'Friday' },
+      { iso: '2026-09-26', label: 'Saturday' },
+      { iso: '2026-09-27', label: 'Sunday' },
     ],
     onTap: () => {}, onOpenNotes: () => {}, onNotesChange: () => {},
     ...ctxOverrides,
@@ -118,9 +118,10 @@ test('a legacy weekday note renders under its date — and is still stored under
     { author: 'Drew', ts, text: 'meet at Crane by 4' });
 
   openOne();
-  assert.ok(labels().includes('Sat · Sep 26'), `the date heads the section, never the raw key — got ${JSON.stringify(labels())}`);
-  assert.equal(labels().includes('Saturday'), false, 'and the raw key is nowhere on screen');
-  assert.deepEqual(textsUnder('Sat · Sep 26'), ['meet at Crane by 4'], 'the legacy note reads under the date');
+  assert.ok(labels().includes('Saturday'), `the date's row is headed the way the wall heads it — got ${JSON.stringify(labels())}`);
+  assert.equal(labels().filter((l) => l === 'Saturday').length, 1,
+    'one row, headed the way the wall heads that day — not one for the key and one for the date');
+  assert.deepEqual(textsUnder('Saturday'), ['meet at Crane by 4'], 'the legacy note reads under the date');
 
   // Read-time only: nothing was renamed, nothing was migrated.
   const day = state.crewDoc.festivals[ONE].notes.day;
@@ -129,24 +130,25 @@ test('a legacy weekday note renders under its date — and is still stored under
   notes.closeSheet();
 });
 
-test('the open door under a date writes a NEW note to the ISO date', () => {
+test('a quiet date has no row in the sheet — you write from where you are standing (§3a.3)', () => {
   const ctx = openOne();
-  const door = doorsUnder('Sun · Sep 27').find((d) => d.classList.contains('new'));
-  assert.ok(door, 'a date with no notes still offers its door — the first note is two taps');
-  assert.equal(door.querySelector('.n-door-label').textContent, '+ Add a note for Sun · Sep 27…');
-  assert.ok(door.querySelector('.avatar'), 'wearing the viewer’s own avatar');
+  assert.equal(labels().includes('Sunday'), false, 'nobody has written on Sunday, so Sunday is not a row');
+  assert.equal(sheet().querySelectorAll('.n-door.new').length, 0, 'and there is no "+ Add a note for…" door anywhere');
 
-  click(door);
-  const box = sheet().querySelector('.n-inline');
-  assert.ok(box, 'the door became the composer, in place');
-  send(box, 'sunday plan: start at the pier');
-
+  // The wall's day rule is the door; the sheet lists what came of it.
+  notes.openDayNotes('2026-09-27', 'Sun · Sep 27', ctx, () => {});
+  const composer = sheet().querySelector('.composer .n-field');
+  composer.value = 'sunday plan: start at the pier';
+  click(sheet().querySelector('.composer .btn-tonal'));
   const day = state.crewDoc.festivals[ONE].notes.day;
   const landed = Object.values(day['2026-09-27'] || {}).find((n) => n.text === 'sunday plan: start at the pier');
   assert.ok(landed, 'it landed under the ISO date');
   assert.equal(landed.re, undefined, 'as a root, not a reply');
   assert.equal(validateIncoming(state.pendingChanges).ok, true, 'and the server accepts a date key');
-  assert.equal(ctx.fid, ONE);
+  notes.closeSheet();
+
+  openOne();
+  assert.ok(labels().includes('Sunday'), 'and now the date IS a row');
   notes.closeSheet();
 });
 
@@ -155,12 +157,12 @@ test('a legacy note and a new one share one date’s conversation', () => {
   state.recordNote(ONE, 'day', '2026-09-26', model.makeNoteId('Kevin', ts, 'bbbbbb'),
     { author: 'Kevin', ts, text: 'gate opens at 1' });
   openOne();
-  assert.deepEqual(textsUnder('Sat · Sep 26').sort(), ['gate opens at 1', 'meet at Crane by 4'],
+  assert.deepEqual(textsUnder('Saturday').sort(), ['gate opens at 1', 'meet at Crane by 4'],
     'both keys read as one date');
   notes.closeSheet();
 });
 
-test('a synthetic night keeps its legacy notes: "Thursday" reads under Thu \u00b7 Sep 24', () => {
+test('a synthetic night keeps its legacy notes: "Thursday" reads under the Thursday row', () => {
   // Portola's afters play Thursday and Friday. Neither night is in dayMeta —
   // the wall derives the date from the section's `night` — so a note written
   // under "Thursday" before V4 had no dayMeta entry to map through, and its
@@ -170,9 +172,9 @@ test('a synthetic night keeps its legacy notes: "Thursday" reads under Thu \u00b
     { author: 'Drew', ts, text: 'warehouse line is round the back' });
 
   openOne();
-  assert.deepEqual(textsUnder('Thu \u00b7 Sep 24'), ['warehouse line is round the back'],
+  assert.deepEqual(textsUnder('Thursday'), ['warehouse line is round the back'],
     'the afters note reads under its date');
-  assert.equal(labels().includes('Thursday'), false, 'and the raw weekday is nowhere on screen');
+  assert.equal(labels().filter((l) => l === 'Thursday').length, 1, 'one row, not a second for the raw weekday key');
 
   const day = state.crewDoc.festivals[ONE].notes.day;
   assert.ok(day.Thursday, 'still stored under "Thursday" \u2014 read-time only, no migration');
@@ -200,6 +202,54 @@ test('the whisper is keyed by the date, and counts both keys', () => {
   assert.ok(opened);
 });
 
+test('a section on a date is its own thread: written from the header, listed once, rolled up nowhere', () => {
+  const ctx = openOne();
+  notes.closeSheet();
+  // The wall's Folsom header on Friday hands this key down.
+  notes.openDayNotes('2026-09-25|Folsom', 'Folsom · Friday', ctx, () => {});
+  assert.equal(sheet().querySelector('.sheet-title').textContent, 'FOLSOM · FRIDAY', 'it says where you are standing');
+  sheet().querySelector('.composer .n-field').value = 'Folsom line is round the corner';
+  click(sheet().querySelector('.composer .btn-tonal'));
+  const day = state.crewDoc.festivals[ONE].notes.day;
+  assert.ok(Object.values(day['2026-09-25|Folsom'] || {}).some((n) => n.text === 'Folsom line is round the corner'),
+    'stored under <iso>|<section>, additive — nothing else reads that key');
+  assert.equal(day['2026-09-25'], undefined, 'and the date itself is untouched');
+  assert.equal(validateIncoming(state.pendingChanges).ok, true, 'the server accepts the key');
+  notes.closeSheet();
+
+  openOne();
+  assert.equal(labels().filter((l) => l === 'Folsom · Friday').length, 1, 'listed once, under the section and the day');
+  assert.deepEqual(textsUnder('Folsom · Friday'), ['Folsom line is round the corner']);
+  assert.equal(labels().includes('Friday'), false, 'Friday itself is still quiet — nothing rolls up');
+  assert.equal(textsUnder('Friday').includes('Folsom line is round the corner'), false);
+  assert.equal(labels().includes('2026-09-25|Folsom'), false, 'and a storage key never reaches the screen');
+
+  // A Friday note is a different conversation, and the sheet keeps them apart.
+  notes.closeSheet();
+  notes.openDayNotes('2026-09-25', 'Friday', ctx, () => {});
+  sheet().querySelector('.composer .n-field').value = 'Friday is a late one';
+  click(sheet().querySelector('.composer .btn-tonal'));
+  notes.closeSheet();
+
+  openOne();
+  assert.deepEqual(textsUnder('Friday'), ['Friday is a late one']);
+  assert.deepEqual(textsUnder('Folsom · Friday'), ['Folsom line is round the corner']);
+  assert.ok(labels().indexOf('Friday') < labels().indexOf('Folsom · Friday'), 'the day, then its rooms — wall order');
+  notes.closeSheet();
+});
+
+test('a section-on-a-date is never mistaken for a stranded section key', () => {
+  const dates = ['2026-09-24', '2026-09-25', '2026-09-26', '2026-09-27'];
+  const stranded = model.sectionNoteKeys(state.crewDoc, ONE, FESTIVALS[ONE], dates);
+  assert.equal(stranded.includes('2026-09-25|Folsom'), false, 'it has a date and a door; it is not history');
+  assert.deepEqual(model.sectionDateKeysOn(state.crewDoc, ONE, '2026-09-25'), [{ key: '2026-09-25|Folsom', section: 'Folsom' }]);
+  assert.deepEqual(model.sectionDateKeysOn(state.crewDoc, ONE, '2026-09-26'), [], 'another night, another list');
+  assert.deepEqual(model.dayNoteKeysFor(FESTIVALS[ONE], '2026-09-25|Folsom'), ['2026-09-25|Folsom'],
+    'a new key has no older convention to read');
+  assert.equal(model.parseSectionDateKey('2026-09-25'), null, 'a bare date is not one');
+  assert.equal(model.parseSectionDateKey('Folsom'), null, 'nor is a bare section');
+});
+
 test('a section note stays readable and has no door', () => {
   const ts = '2026-09-19T18:00:00.000Z';
   state.recordNote(ONE, 'day', 'Afters', model.makeNoteId('Drew', ts, 'cccccc'),
@@ -210,7 +260,7 @@ test('a section note stays readable and has no door', () => {
   assert.equal(doorsUnder('Afters').length, 0, 'but there is no way to add to it — sections are not a note target');
 
   // And no date section quietly absorbed it either.
-  for (const d of ['Thu · Sep 24', 'Fri · Sep 25', 'Sat · Sep 26', 'Sun · Sep 27']) {
+  for (const d of ['Thursday', 'Friday', 'Saturday', 'Sunday']) {
     assert.equal(textsUnder(d).includes('Halcyon is the one'), false, `${d} did not absorb the section note`);
   }
   notes.closeSheet();
@@ -331,8 +381,10 @@ test('two weekends: one legacy Friday note shows on BOTH Fridays, a new note on 
   assert.deepEqual(textsUnder('Sat · Oct 3'), [], 'and Saturday does not');
 
   // Now a note on one Friday only. Two Fridays are two dates: solved.
-  click(doorsUnder('Fri · Oct 9').find((d) => d.classList.contains('new')));
-  send(sheet().querySelector('.n-inline'), 'second weekend only');
+  notes.closeSheet();
+  notes.openDayNotes('2026-10-09', 'Fri · Oct 9', ctx, () => {});
+  sheet().querySelector('.composer .n-field').value = 'second weekend only';
+  click(sheet().querySelector('.composer .btn-tonal'));
   const day = state.crewDoc.festivals[TWO].notes.day;
   assert.ok(Object.values(day['2026-10-09']).some((n) => n.text === 'second weekend only'));
   assert.equal(day['2026-10-02'], undefined, 'the other Friday is untouched');
@@ -340,6 +392,31 @@ test('two weekends: one legacy Friday note shows on BOTH Fridays, a new note on 
   notes.openAllNotes(ctx);
   assert.deepEqual(textsUnder('Fri · Oct 9').sort(), ['ride share from Rainey', 'second weekend only']);
   assert.deepEqual(textsUnder('Fri · Oct 2'), ['ride share from Rainey'], 'weekend one still shows only the shared one');
+  notes.closeSheet();
+});
+
+test('a fest nobody has written on: the sheet is the composer and nothing else', () => {
+  const QUIET = 'dates-quiet';
+  FESTIVAL_INDEX.push({ id: QUIET, status: 'lineup' });
+  FESTIVALS[QUIET] = {
+    id: QUIET,
+    name: 'Quietfest',
+    dayMeta: { Saturday: { wd: 'Sat', date: 'Oct 17', iso: '2026-10-17' } },
+    artists: [{ name: 'Nobody', day: 'Saturday' }],
+  };
+  state.activateCrew('datestesttoken_5555555555', {
+    v: 4, meta: {}, spotify: {}, people: { Kevin: { colorIndex: 0 } },
+    festivals: { [QUIET]: { selections: {} } }, affinity: {},
+  }, QUIET);
+  notes.openAllNotes({
+    fid: QUIET, meName: 'Kevin', picks: {}, affinity: null, lowPower: true,
+    festDates: [{ iso: '2026-10-17', label: 'Saturday' }],
+    onTap: () => {}, onOpenNotes: () => {}, onNotesChange: () => {},
+  });
+  assert.ok(sheet().querySelector('.composer'), 'the festival composer is always there');
+  assert.deepEqual(labels(), [], 'no date rows for dates nobody has written on');
+  assert.equal(sheet().querySelectorAll('.n-door').length, 0, 'and no doors at all');
+  assert.ok(sheet().querySelector('.n-empty'), 'just the line that says so');
   notes.closeSheet();
 });
 
