@@ -14,7 +14,7 @@ import { whoCorner, aboutCorner } from './aura.js';
 import { BOARD } from './palette.js';
 import { dayWhisper, festWhisper, shortDayLabel } from './notes.js'; // runtime-only cycle with this module (colorIndexOf) — safe
 import { factsFor, timeRange } from './card-facts.js'; // same runtime-only cycle: the card's ONE model
-import { passesPeople, columnsTemplate, railLabels } from './filters.js';
+import { passesPeople, columnsTemplate, railLabels, FEST_ROOM } from './filters.js';
 import { nowOnDay, nowOffsetPx, clockLabel, festivalClock } from './now.js';
 import { eventModelOf, venueGroupsOf, dateRuleLabel, occOf, hourLabelOf, approxMark, parseEventTime } from './events.js';
 import { reduced } from './motion.js';
@@ -527,8 +527,8 @@ export function computeTimesLayout(fest, solo = null) {
   const stages = model.canonicalStages(fest);
   // The columns are the festival's stages and nothing else. Anything that
   // is not a stage set on the clock — activities, a set whose stage is not
-  // a column — renders in the day's "Everything else" section under the
-  // grid (renderOffClock), never in a reserved column: a 9:30 AM yoga row
+  // a column — renders as a venue group under the grid, in the festival's
+  // own room (MODEL-V4 §1.3), never in a reserved column: a 9:30 AM yoga row
   // beside 5 PM sets was a column on a clock its items were not on (Kevin,
   // Electric Forest, 2026-09-02: "a cards section with our header").
   // Stage solo (design option D): one stage wide, the rest folded to rails.
@@ -862,7 +862,7 @@ function renderScheduledDayBody(root, day, ctx, layout, weekend, { strip = false
   const lanes = computeLanes(drawn);
   for (const a of drawn) {
     const col = stages.indexOf(a.stage);
-    if (col === -1) continue; // not a column: the day's Everything else section carries it (offClockOf)
+    if (col === -1) continue; // not a column: the festival room's venue groups under this grid carry it (festRoomExtras)
     // A folded (non-solo) column is a 34px rail — its cards don't render.
     if (layout.solo && a.stage !== layout.solo) continue;
     const row = Math.floor(a.startMin / 15) - startRow + 1;
@@ -917,9 +917,6 @@ function renderScheduledDayBody(root, day, ctx, layout, weekend, { strip = false
 // plays that night. Every room folds on a tap of its header; the shell owns
 // which are folded.
 
-// The festival's own room. A leading colon keeps the key out of the space a
-// data file's day labels live in, so it can never collide with a section's.
-export const FEST_ROOM = ':fest';
 
 // Which weekends a scheduled fest renders. A two-weekend one (ACL) gets six
 // dated tabs — a weekend is not a filter any more, it is which day you are

@@ -419,11 +419,3 @@ export function findEventEntry(fest, name, occ) {
     && (occOf(a).stage || '') === want) || null;
 }
 
-// Tiles: time-sorted, ties in file order, the timeless at the end. The day
-// image export flattens a day this way (tools.js).
-export function sortForTiles(entries) {
-  const at = (e) => { const t = parseEventTime(e.time); return t ? t.startMin : Infinity; };
-  return entries.map((e, i) => ({ e, i, at: at(e) }))
-    .sort((a, b) => a.at - b.at || a.i - b.i)
-    .map((x) => x.e);
-}
