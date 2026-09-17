@@ -4,7 +4,7 @@ import * as state from '../state.js';
 import * as model from './model.js';
 import { parseBulkLineV4, LEVEL_LABELS_V4 } from '../parse.js';
 import { renderCard, applyWeekend, wallPlanFor } from './wall.js';
-import { approxMark, venueGroupsOf } from './events.js';
+import { approxMark, venueGroupsOf, shortDateLabel } from './events.js';
 
 export const el = (tag, css, text) => {
   const n = document.createElement(tag);
@@ -281,12 +281,20 @@ export function dayArtistsFor(day) {
   }
   const extra = plan.model.extras.find((x) => x.key === day);
   if (extra) {
-    const lists = extra.byDate ? [...extra.byDate.values()] : [extra.entries || []];
+    // A dated section's image is its WHOLE run — ACL's Late nights span twelve
+    // days — so every row says which night, in the date rule's own words. One
+    // artist can play two of them a week apart, and a list that dropped the
+    // dates could not tell the crew which door to walk through.
+    const dated = extra.byDate ? [...extra.byDate] : [[null, extra.entries || []]];
     const out = [];
-    for (const list of lists) {
+    for (const [iso, list] of dated) {
       for (const g of venueGroupsOf(list)) {
         for (const m of g.members) {
-          out.push({ name: m.e.name, time: [g.venue, m.e.time ? approxMark(m.e, m.e.time) : null].filter(Boolean).join(' · ') });
+          out.push({
+            name: m.e.name,
+            time: [iso && shortDateLabel(iso), g.venue, m.e.time ? approxMark(m.e, m.e.time) : null]
+              .filter(Boolean).join(' · '),
+          });
         }
       }
     }

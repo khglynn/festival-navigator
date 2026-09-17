@@ -108,3 +108,31 @@ test('a fest with no days at all still exports: the shipped EDC Orlando file', (
     state.setActiveFestivalId('portola-2026');
   }
 });
+
+// A dated section's image is its whole run, so every row has to say WHICH
+// NIGHT. Export used to take byDate's values and drop its keys, which turned
+// ACL's 63 late-night shows into one undated list — Jess Williamson's two rows
+// read "Stubb's" and "The Continental Club" a week apart with no date on
+// either, and a screenshot in the group chat could not say which door to use.
+test('a dated section exports with its dates: ACL Late nights, as shipped', () => {
+  const acl = JSON.parse(readFileSync(join(ROOT, 'data/festivals/acl-2026.json'), 'utf8'));
+  FESTIVAL_INDEX.push({ id: acl.id, status: 'scheduled' });
+  state.FESTIVALS[acl.id] = acl;
+  state.setActiveFestivalId(acl.id);
+  try {
+    assert.ok(dayImageChoices(acl).some((c) => c.key === 'Late nights'), 'the tab is a choice');
+    const rows = dayArtistsFor('Late nights');
+    const late = acl.artists.filter((a) => a.day === 'Late nights');
+    assert.equal(rows.length, late.length, 'every late-night show is in the image');
+
+    const jess = late.filter((a) => a.name === 'Jess Williamson');
+    assert.equal(jess.length, 2, 'she really does play two of them, a week apart');
+    // Read from the file: the venues are the file's bytes, apostrophe and all.
+    assert.deepEqual(rows.filter((r) => r.name === 'Jess Williamson').map((r) => r.time),
+      [`Thu · Oct 1 · ${jess[0].venue}`, `Thu · Oct 8 · ${jess[1].venue}`],
+      'each row names its own night, then the room');
+    assert.ok(rows.every((r) => /^[A-Z][a-z]{2} · [A-Z][a-z]{2} \d+ · /.test(r.time)), 'every row leads with its date');
+  } finally {
+    state.setActiveFestivalId('portola-2026');
+  }
+});
