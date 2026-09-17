@@ -575,7 +575,7 @@ function showMenuRow(label, { key = null, on = null, settings = false } = {}) {
   li.append(check, text);
   if (settings) {
     const chev = document.createElement('span');
-    chev.className = 'chev-r';
+    chev.className = 'chev';
     chev.textContent = '›';
     chev.setAttribute('aria-hidden', 'true');
     li.appendChild(chev);

@@ -308,3 +308,26 @@ test('a card with no window stamped on it is never marked, and an unstamped wall
   assert.equal(broken.classList.contains('now'), false, 'a window that is not a number is not a window');
   assert.doesNotThrow(() => app.markNowCards(null, at(22, 30)));
 });
+
+// ---- the stylesheet answers for what this shell draws ---------------------------------
+// Node sees classes toggled, never pixels: `.card.now` and the show menu's rows
+// both passed every test above while having no rule in the stylesheet at all,
+// and shipped invisible. The gap was found by a human reading the diff. This
+// case is the teeth — a selector the shell's JS writes and the stylesheet does
+// not answer for is a red build, not a review finding.
+test('every class this shell writes for visual effect has a rule in v3.css', () => {
+  const css = readFileSync(join(ROOT, 'assets/v3.css'), 'utf8');
+  for (const sel of [
+    '.sort-pop .pop-head',   // the show menu's "Show"
+    '.sort-pop .pop-div',    // the divider before Settings
+    '.sort-pop .chev',       // the › on the Settings row
+    '.card.now',             // the now mark's ring
+    '.now-label.in-card',    // and its label, parked in the card's corner
+  ]) assert.ok(css.includes(sel), `${sel} is drawn by the shell and styled by nothing`);
+  // The dock is fixed to the bottom of the phone. A popover that opens
+  // downward from it opens off the screen — the show menu's own surface.
+  const dockPop = /\.dock \.sort-pop\s*\{([^}]*)\}/.exec(css);
+  assert.ok(dockPop, 'the dock\'s popover needs a rule of its own');
+  assert.match(dockPop[1], /bottom:\s*calc\(100%/, 'it opens upward, above the dock');
+  assert.match(dockPop[1], /top:\s*auto/, 'and lets go of the downward default');
+});
