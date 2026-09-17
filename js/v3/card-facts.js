@@ -554,9 +554,10 @@ function zoomCardInner(el, artistName, ctx, { onOpenNotes = null, source = 'mous
   // WHEN waits out the resting content's fade: the resting time line and the
   // grown one are the same fact, and the law says never two renderings at
   // once — the resting text is gone (CONTENT_FADE_MS) before its grown self
-  // begins (Codex gate, 2026-08-30). The overlay no longer fades in, but a
-  // resting card wider than the bloom's first frame still shows its own edges
-  // underneath, so the wait stands. WHERE and the rest follow in family order.
+  // begins (Codex gate, 2026-08-30). The overlay no longer fades in, but the
+  // clamp lets a tall resting card stand a little proud of the bloom's first
+  // frame, so its own edges show underneath and the wait stands. WHERE and
+  // the rest follow in family order.
   const sub = card.querySelector('.f-sub');
   const where = card.querySelector('.f-where');
   if (sub) arrive(sub, 0, 6, CONTENT_FADE_MS + 5);
