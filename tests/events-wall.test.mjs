@@ -170,7 +170,8 @@ test('Portola is composed: THU FRI SAT SUN, each day its rooms in order, the tab
   assert.deepEqual(dayNavOf(portola, ctx).map((d) => [d.key, d.short, d.long, d.dated]), [
     ['Thursday', 'THU', 'THU', false], ['Friday', 'FRI', 'FRI', false],
     ['Saturday', 'SAT', 'SAT', false], ['Sunday', 'SUN', 'SUN', false]]);
-  assert.deepEqual(dayNavOf(portola, { ...ctx, query: 'x' }).map((d) => d.key), ['Saturday', 'Sunday', 'Afters', 'Folsom'], 'searching keeps the search view\'s own headers');
+  assert.deepEqual(dayNavOf(portola, { ...ctx, query: 'x' }).map((d) => d.key), ['Thursday', 'Friday', 'Saturday', 'Sunday'],
+    'a search is the same week with the misses taken out — the same tabs, never a section\'s name as a place');
   // Nothing of the old view controls survives.
   assert.equal(root.querySelectorAll('.bucket-row, .bucket-chip, .tba, .tba-label, .wall-whisper, .sec-whisper').length, 0);
   // What the show menu offers is asked of the WALL, by the shell that opens it

@@ -349,49 +349,6 @@ export function groupByDay(artists, knownDays = []) {
   return ordered;
 }
 
-// What a SCHEDULED wall still owes the lineup list: the artists[] entries the
-// grid does not carry. Two kinds, in one ordered map —
-//   - sections keyed to a non-grid day ("Afters", "Folsom"): events with a
-//     venue in `stage` and hours in `time`, rendered as card sections under
-//     the grid exactly as the lineup wall rendered them. A combined day
-//     ("Afters & Folsom") lands in each. A lineup artist's afters show is a
-//     separate artists[] entry, so it lands here even though the SAME name
-//     also sits on the grid — one artist, one pick, cards in both places.
-//   - '' (everything else): a lineup artist with no set on any grid day yet.
-//     Grid-day entries whose name IS on the grid are skipped — that's the
-//     grid's job. Deduped by name.
-// Every weekend, always: a weekend is which DAY you are looking at now
-// (MODEL-V4 §2), so there is no view left for a W2-only act to stay out of.
-export function extraSectionsOf(fest, scheduledNames) {
-  const gridDays = Object.keys(fest.days || {});
-  const known = knownDaysOf(fest);
-  const groups = new Map();
-  const seenLoose = new Set();
-  const add = (key, a) => {
-    if (!groups.has(key)) groups.set(key, []);
-    groups.get(key).push(a);
-  };
-  for (const a of fest.artists || []) {
-    const days = splitDays(a.day, known) || [a.day || ''];
-    for (const d of days) {
-      if (gridDays.includes(d)) {
-        if (scheduledNames.has(a.name) || seenLoose.has(a.name)) continue;
-        seenLoose.add(a.name);
-        add('', a);
-      } else if (d) {
-        add(d, a);
-      } else if (!scheduledNames.has(a.name) && !seenLoose.has(a.name)) {
-        seenLoose.add(a.name);
-        add('', a);
-      }
-    }
-  }
-  const ordered = new Map();
-  for (const d of known) if (groups.has(d) && !gridDays.includes(d)) ordered.set(d, groups.get(d));
-  for (const [k, v] of groups) if (k && !ordered.has(k)) ordered.set(k, v);
-  if (groups.has('')) ordered.set('', groups.get(''));
-  return ordered;
-}
 
 // One lineup-style section: a day rule and a card grid. This is the SEARCH
 // and flat-sort shape — a list of answers, not a night. The composed wall
@@ -417,12 +374,15 @@ function renderLineupGroup(root, day, list, ctx, fest, { header, sub } = {}) {
 // (the day is the day, the venue lives in the zoom) — see eventTileSubLabel.
 function lineupSubLabel(a) {
   const time = a.time ? approxMark(a, a.time) : ''; // the tilde travels with `approx`
-  let subLabel = [a.stage, time].filter(Boolean).join(' · ');
-  if (a.stage && time) {
-    const bits = a.stage.split(' · ');
+  // A dated show says where in `venue`; the legacy afters shape says it in
+  // `stage` ("Sun · The Midway"). Either way the answer names its room.
+  const where = a.stage || a.venue || '';
+  let subLabel = [where, time].filter(Boolean).join(' · ');
+  if (where && time) {
+    const bits = where.split(' · ');
     subLabel = bits.length > 1
       ? `${bits[0]} · ${time}\n${bits.slice(1).join(' · ')}`
-      : `${time}\n${a.stage}`;
+      : `${time}\n${where}`;
   }
   return subLabel || undefined;
 }
@@ -960,14 +920,6 @@ export function wallPlanFor(fest, ctx) {
   return { model: plan, scheduled, weekends, gridDays };
 }
 
-// The clock days of a scheduled fest, as the day axis has them: one per
-// weekend under MODEL-V4 §2. The one source both the wall and a search read,
-// so a name can never be on the wall and missing from its own search.
-function gridDaysOf(fest, ctx) {
-  const plan = wallPlanFor(fest, ctx);
-  return plan ? plan.model.days.filter((d) => d.grid) : [];
-}
-
 // What the day tabs (dock + rail) should list, in the wall's own order: the
 // days, then the tabs that hang off the end (a dated section like ACL's Late
 // nights). `key` is the jump id the wall stamps on its rule.
@@ -989,28 +941,17 @@ const groupTab = (fest) => (day) => {
 };
 
 export function dayNavOf(fest, ctx) {
-  if (!ctx.query) {
-    const plan = wallPlanFor(fest, ctx);
-    if (plan) {
-      return [
-        ...plan.model.days.map(dayTab),
-        // A dated section is one tab over many dates, and each of those dates
-        // is its own note thread (§4) — so the tab carries them all.
-        ...plan.model.extras.map((e) => ({ key: e.key, short: e.short, num: null, long: e.long, iso: null, dates: [...(e.byDate || new Map()).keys()], dated: true })),
-      ];
-    }
-  }
-  // Searching keeps the search view's own headers — and they are the SAME
-  // dated days the wall bills (a two-weekend fest's six), then the sections
-  // its results land under. The keys have to match what the search stamps on
-  // its rules, or a tab jumps to nothing.
-  if (fest.days && Object.keys(fest.days).length) {
-    const days = gridDaysOf(fest, ctx);
-    const scheduledNames = new Set();
-    for (const d of days) for (const a of state.getDayArtists(d.dayKey, d.weekend)) scheduledNames.add(a.name);
+  const plan = wallPlanFor(fest, ctx);
+  // A scheduled fest's SEARCH is its own week with the misses taken out, so
+  // the tabs are the same axis either way — one list, and the keys match what
+  // the wall stamps on its rules, or a tab jumps to nothing. Only a lineup
+  // fest's flat search keeps its own group headers.
+  if (plan && (!ctx.query || plan.scheduled)) {
     return [
-      ...days.map(dayTab),
-      ...[...extraSectionsOf(fest, scheduledNames).keys()].filter(Boolean).map(groupTab(fest)),
+      ...plan.model.days.map(dayTab),
+      // A dated section is one tab over many dates, and each of those dates
+      // is its own note thread (§4) — so the tab carries them all.
+      ...plan.model.extras.map((e) => ({ key: e.key, short: e.short, num: null, long: e.long, iso: null, dates: [...(e.byDate || new Map()).keys()], dated: true })),
     ];
   }
   return [...groupByDay(fest.artists || [], knownDaysOf(fest)).keys()].filter(Boolean).map(groupTab(fest));
@@ -1367,39 +1308,68 @@ function renderWallInner(root, ctx) {
     if (plan) { renderComposed(root, ctx, fest, plan); return; }
   }
 
-  // Searching a scheduled fest must still answer "where and when" (CORE-4):
-  // matches render per day, chronological, each card carrying stage · time.
+  // Searching a scheduled fest must still answer "where and when" (CORE-4) —
+  // and WHICH NIGHT, so a search is the wall's own week with everything that
+  // does not match taken out. The same dated day axis the wall and the tabs
+  // walk: a two-weekend fest is six days, so a Weekend 2 headliner answers
+  // under the Friday they play (it used to ask a weekend preference that had
+  // no selector left, default to W1, and say "No artists match"), and a room's
+  // show answers under its night rather than under its section's name, which
+  // is not a place any more (MODEL-V4 §2).
   if (scheduled) {
     const q = ctx.query.trim().toLowerCase();
-    // Search walks the SAME dated day axis the wall and the tabs walk: a
-    // two-weekend fest is six days, so a Weekend 2 headliner answers under the
-    // Friday they play. Searching used to ask a weekend preference that no
-    // longer had a selector, defaulted to W1, and said "No artists match".
-    const scheduledNames = new Set();
-    let any = false;
-    for (const day of gridDaysOf(fest, ctx)) {
-      const computed = state.getDayArtists(day.dayKey, day.weekend);
-      computed.forEach((a) => scheduledNames.add(a.name));
-      // Search results are a LIST, so the people filter hides here rather
-      // than dims — a filtered search must not resurface someone's non-pick.
-      const matches = computed.filter((a) => a.name.toLowerCase().includes(q))
-        .filter((a) => passesPeople(ctx.picks, a.name, ctx.filterPeople))
-        .sort((x, y) => x.startMin - y.startMin);
-      if (!matches.length) continue;
-      any = true;
-      root.appendChild(dayHeader(dayLabelParts(day.dayKey).head, day.sub, { dayKey: day.key }));
-      const grid = document.createElement('div');
-      grid.className = 'wall-grid';
-      for (const a of matches) grid.appendChild(renderCard(a.name, ctx, { time: `${a.stage} · ${a.startStr}`, occ: { day: day.dayKey, stage: a.stage || null, time: a.time || null, weekend: a.weekend || null } }));
+    // Results are a LIST, so the people filter hides here rather than dims —
+    // a filtered search must not resurface someone's non-pick.
+    const wanted = (name) => name.toLowerCase().includes(q) && passesPeople(ctx.picks, name, ctx.filterPeople);
+    const plan = wallPlanFor(fest, ctx);
+    const answers = (cards, label, sub, opts) => {
+      if (!cards.length) return false;
+      root.appendChild(dayHeader(label, sub, opts));
+      const grid = mk('div', 'wall-grid');
+      for (const c of cards) grid.appendChild(c);
       root.appendChild(grid);
+      return true;
+    };
+    let any = false;
+    for (const day of (plan ? plan.model.days : [])) {
+      const cards = [];
+      const onGrid = new Set();
+      if (day.grid) {
+        const computed = state.getDayArtists(day.dayKey, day.weekend);
+        computed.forEach((a) => onGrid.add(a.name));
+        for (const a of computed.filter((a) => wanted(a.name)).sort((x, y) => x.startMin - y.startMin)) {
+          cards.push(renderCard(a.name, ctx, { time: `${a.stage} · ${a.startStr}`, occ: { day: day.dayKey, stage: a.stage || null, time: a.time || null, weekend: a.weekend || null } }));
+        }
+      }
+      // Then everything else of that night's, in the wall's order: the names
+      // billed on the day with no set on its grid, then each room that plays.
+      // A combined-day show is one entry in two rooms — one answer here.
+      const billed = dedupeByName(applyWeekend(day.billing || [], day.weekend)).filter((a) => !onGrid.has(a.name));
+      const rooms = dedupeByName(plan.model.sections.flatMap((s) => s.byDay.get(day.key) || []));
+      for (const a of [...billed, ...rooms].filter((a) => wanted(a.name))) {
+        cards.push(renderCard(a.name, ctx, { time: lineupSubLabel(a), occ: { ...occOf(a), day: a.day || day.dayKey } }));
+      }
+      any = answers(cards, dayLabelParts(day.dayKey).head, day.sub, { dayKey: day.key }) || any;
     }
-    // Afters/Folsom cards and lineup entries with no set time yet still
-    // deserve to be findable.
-    for (const [day, list] of extraSectionsOf(fest, scheduledNames)) {
-      const matches = applyFilter(list, ctx.query).filter((a) => passesPeople(ctx.picks, a.name, ctx.filterPeople));
-      if (!matches.length) continue;
-      any = true;
-      renderLineupGroup(root, day, matches, ctx, { ...fest, dayMeta: fest.dayMeta }, day ? {} : { header: 'EVERYTHING ELSE', sub: 'NO SET TIME YET' });
+    // A dated section's answers sit under their dates too — the date leads and
+    // the section is the aside, because days are the days. Every one of them
+    // carries the section's key: they are all the one tab, and a jump lands on
+    // the first that answered.
+    for (const extra of (plan ? plan.model.extras : [])) {
+      for (const [iso, list] of (extra.byDate || new Map([[null, extra.entries || []]]))) {
+        const cards = list.filter((a) => wanted(a.name))
+          .map((a) => renderCard(a.name, ctx, { time: lineupSubLabel(a), occ: occOf(a) }));
+        any = answers(cards, iso ? dateRuleLabel(iso) : extra.label,
+          iso ? extra.label.toUpperCase() : (extra.sub || ''), { dayKey: extra.key }) || any;
+      }
+    }
+    // Names the festival bills on no day at all.
+    if (plan) {
+      const onAnyGrid = new Set();
+      for (const d of plan.model.days) if (d.grid) for (const a of state.getDayArtists(d.dayKey, d.weekend)) onAnyGrid.add(a.name);
+      const loose = dedupeByName(plan.model.looseNoDay.filter((a) => !onAnyGrid.has(a.name) && wanted(a.name)));
+      any = answers(loose.map((a) => renderCard(a.name, ctx, { time: lineupSubLabel(a), occ: occOf(a) })),
+        'EVERYTHING ELSE', 'NO SET TIME YET', {}) || any;
     }
     if (!any) {
       const empty = document.createElement('div');

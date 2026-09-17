@@ -152,6 +152,23 @@ test('ACL as shipped: searching finds a Weekend 2 headliner, under the date they
   assert.equal(JSON.parse(cards[0].dataset.occ).weekend, 'W2', 'the card carries the weekend, so the zoom tells the right night');
   root.remove();
 
+  // A dated section's answers sit under their DATES, and each names its room:
+  // "AFTERS · Sep 24-27" was the label of a section, which is not a place
+  // (MODEL-V4 §2) and cannot say which night you would be going out.
+  const root2 = document.createElement('div');
+  document.body.appendChild(root2);
+  renderWall(root2, { ...mkCtx('all', 'jess williamson'), fid: 'acl-2026' });
+  const rules = [...root2.querySelectorAll('.day-rule')].map((r) => [r.dataset.day, r.querySelector('.day').textContent, r.querySelector('.date').textContent]);
+  assert.deepEqual(rules, [
+    ['Sunday|W1', 'SUNDAY', 'Sun · Oct 4 · Weekend 1'],
+    ['Late nights', 'THU · OCT 1', 'LATE NIGHTS'],
+    ['Late nights', 'THU · OCT 8', 'LATE NIGHTS'],
+  ], 'the Zilker set under its day, each late night under its own date, both dates on the one tab');
+  const late = ACL.artists.filter((a) => a.name === 'Jess Williamson' && a.day === 'Late nights');
+  assert.deepEqual([...root2.querySelectorAll('.card')].map((c) => c.dataset.time),
+    ['Miller Lite · 2:00 PM', late[0].venue, late[1].venue], 'and every answer says where it is');
+  root2.remove();
+
   state.setActiveFestivalId('two-wk-fest');
 });
 

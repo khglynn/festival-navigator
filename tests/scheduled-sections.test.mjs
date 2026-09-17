@@ -20,7 +20,7 @@ globalThis.location = { origin: 'https://fest.kevinhg.com', hash: '' };
 
 const state = await import('../js/state.js');
 const { FESTIVAL_INDEX } = await import('../js/festivals.js');
-const { renderWall, extraSectionsOf } = await import('../js/v3/wall.js');
+const { renderWall } = await import('../js/v3/wall.js');
 const { validateFestivalDoc } = await import('../api/_lib/festival-rules.mjs');
 
 const FEST = {
@@ -88,15 +88,6 @@ const roomsUnder = (root, dayKey) => {
   return out;
 };
 
-test('extraSectionsOf: non-grid days become sections in known-day order, leftovers last, deduped', () => {
-  const scheduledNames = new Set(['Headliner', 'Overmono']);
-  const sections = extraSectionsOf(FEST, scheduledNames);
-  assert.deepEqual([...sections.keys()], ['Afters', 'Folsom', '']);
-  assert.deepEqual(sections.get('Afters').map((a) => a.name), ['Overmono', 'Only Afters', 'Horse Meat Disco']);
-  assert.deepEqual(sections.get('Folsom').map((a) => a.name), ['Horse Meat Disco', 'The Fair'], 'a combined day lands in each');
-  assert.deepEqual(sections.get('').map((a) => a.name), ['Late Add'], 'billed on a grid day, not on the grid = everything else');
-});
-
 // The composed wall (MODEL-V4, 2026-09-16): the sections say which NIGHT each
 // show is on, so the wall composes by day — FRIDAY (afters + Folsom),
 // SATURDAY (the festival's own room, holding its grid AND the name billed on
@@ -127,15 +118,31 @@ test('scheduled wall, composed: each day holds its grid and its sections; an aft
   root.remove();
 });
 
-test('searching a scheduled wall finds the afters card too, under its own section', () => {
+// A search is the same week, filtered — so an answer sits under the DAY it
+// plays, like everything else on the wall. Results used to be headed by the
+// SECTION a show belongs to ("AFTERS · Sep 24-27"), which is the one label V4
+// stopped using as a place (MODEL-V4 §2, days are the days) and which cannot
+// say which night you would be going out.
+test('searching a scheduled wall answers under the DAY each show plays', () => {
   const root = document.createElement('div');
   document.body.appendChild(root);
   renderWall(root, mkCtx('overmono'));
-  assert.deepEqual(rulesOf(root), ['SATURDAY', 'AFTERS']);
-  assert.deepEqual(cardsUnder(root, 'SATURDAY').map((a) => a.time), ['Warehouse · 8:20 PM']);
-  assert.deepEqual(cardsUnder(root, 'AFTERS').map((a) => a.time), ['Sat · 10 PM - 2 AM\nPublic Works']);
+  assert.deepEqual(rulesOf(root), ['SATURDAY'], 'one day, not one day and a section');
+  assert.deepEqual(cardsUnder(root, 'SATURDAY'),
+    [{ name: 'Overmono', time: 'Warehouse · 8:20 PM' }, { name: 'Overmono', time: 'Sat · 10 PM - 2 AM\nPublic Works' }],
+    'the set on the grid and the afters show that night, in the wall\'s order');
+
+  // A combined-day show is one entry in two rooms; a list of answers shows it
+  // once, under its night.
+  renderWall(root, mkCtx('horse'));
+  assert.deepEqual(rulesOf(root), ['FRIDAY']);
+  assert.deepEqual(cardsUnder(root, 'FRIDAY').map((a) => a.name), ['Horse Meat Disco']);
+
+  // Billed on Saturday with no set on Saturday's grid: still Saturday, the
+  // same room the wall puts it in.
   renderWall(root, mkCtx('late'));
-  assert.deepEqual(rulesOf(root), ['EVERYTHING ELSE'], 'an untimed lineup act is still findable');
+  assert.deepEqual(rulesOf(root), ['SATURDAY'], 'an untimed lineup act is still findable, under its day');
+  assert.deepEqual(cardsUnder(root, 'SATURDAY').map((a) => a.name), ['Late Add']);
   root.remove();
 });
 
