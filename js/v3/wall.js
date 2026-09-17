@@ -17,6 +17,7 @@ import { factsFor, timeRange } from './card-facts.js'; // same runtime-only cycl
 import { passesPeople, columnsTemplate, railLabels } from './filters.js';
 import { nowOnDay, nowOffsetPx, clockLabel, festivalClock } from './now.js';
 import { eventModelOf, timetableOf, sortForTiles, bucketsOf, occOf, hourLabelOf, approxMark, parseEventTime, FEST_BUCKET } from './events.js';
+import { reduced } from './motion.js';
 
 // ---- person -> board color ---------------------------------------------------
 // v4 people carry colorIndex. Legacy people carry a "R, G, B" string from the
@@ -156,11 +157,11 @@ export function renderCard(artistName, ctx, opts = {}) {
 
   // Long-press (touch) ZOOMS the card (~500ms, 10px slop — the OS constants;
   // 2026-08-29 round): the grown card carries the notes chip, so the sheet
-  // stays one tap away. Falls back to opening notes where no peek is wired.
+  // stays one tap away.
   // Digitizer jitter fires pointermove even on a still finger, so cancel only
   // past a real movement threshold (10px) — a genuine scroll-drag cancels,
   // a held finger does not (Codex P3 trail, finding 1).
-  if (ctx.onOpenNotes) {
+  if (ctx.onPeek) {
     let pressTimer = null;
     let longPressed = false;
     let startX = 0, startY = 0;
@@ -172,14 +173,14 @@ export function renderCard(artistName, ctx, opts = {}) {
       longPressed = false;
       startX = e.clientX; startY = e.clientY;
       // If a poll repaint detached this node mid-press, the new node owns the
-      // gesture — a fire from the orphan would open the sheet uninvited.
+      // gesture — a fire from the orphan would zoom a card that is gone.
       pressTimer = setTimeout(() => {
         // isConnected covers repaint detachment; offsetParent covers a screen
-        // change hiding the wall mid-press (audit 10.2) — a sheet must never
+        // change hiding the wall mid-press (audit 10.2) — a zoom must never
         // pop over Settings or the landing after the fact.
         if (!el.isConnected || el.offsetParent === null) return;
         longPressed = true;
-        if (ctx.onPeek) ctx.onPeek(artistName, el, opts.occ || null); else ctx.onOpenNotes(artistName);
+        ctx.onPeek(artistName, el, opts.occ || null);
       }, 500);
     });
     const cancel = () => clearTimeout(pressTimer);
@@ -717,25 +718,34 @@ export function scrollToNowLine(root, { date = new Date(), viewportHeight = wind
 // from the lead's scroll event (still one frame late, but a transform, not
 // a second scroll). Day scrollers keep mirroring each other as before.
 export const isStripScroller = (s) => !!(s.closest && s.closest('.stage-strip'));
-// Feature-gated once: scroll timelines (the CSSOM must know the properties —
-// jsdom's CSS.supports says yes to anything), and NOT reduced motion — the
-// tokens file kills every animation under prefers-reduced-motion, which
-// would freeze a CSS follow at zero.
-const NATIVE_FOLLOW = (() => {
+// Whether the engine has scroll timelines, asked once (the CSSOM must know the
+// properties — jsdom's CSS.supports says yes to anything).
+const SCROLL_TIMELINES = (() => {
   try {
     if (typeof CSS === 'undefined' || typeof CSS.supports !== 'function' || typeof window === 'undefined') return false;
     // The engine exposes the timeline as an object too; a DOM shim never does.
     if (typeof window.ScrollTimeline !== 'function') return false;
-    if (!CSS.supports('animation-timeline: scroll()') || !CSS.supports('timeline-scope: --a')) return false;
-    return !(typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    return CSS.supports('animation-timeline: scroll()') && CSS.supports('timeline-scope: --a');
   } catch { return false; }
 })();
+// What a wall render wires beyond its own nodes — size observers, timeline
+// names on a scope that outlives the render — undone by renderWall before the
+// next render replaces it.
+const teardowns = new WeakMap();
+const undoOnRepaint = (root, undo) => {
+  if (!teardowns.has(root)) teardowns.set(root, []);
+  teardowns.get(root).push(undo);
+};
 let timelineSeq = 0;
 function followStrip(strip, lead, root) {
   const row = strip.querySelector('.times-grid');
   if (!row) return;
   strip.classList.add('follows');
-  if (NATIVE_FOLLOW) {
+  // The CSS follow only where CSS animations run: the tokens file kills every
+  // animation under reduced motion and under Low Power, and a killed follow
+  // leaves the stage names frozen over sliding columns. Decided per render —
+  // leaving Settings repaints the wall.
+  if (SCROLL_TIMELINES && !reduced() && !document.body.classList.contains('low-power')) {
     // The timeline is named on the lead and scoped on the nearest ancestor
     // both share (a day's .tt-block, or the wall for the one-strip page).
     // The far keyframe is the lead's maximum scroll in px (--strip-max): the
@@ -745,8 +755,8 @@ function followStrip(strip, lead, root) {
     const name = `--tt-${(timelineSeq += 1)}`;
     const setMax = () => row.style.setProperty('--strip-max', `${Math.max(0, lead.scrollWidth - lead.clientWidth)}px`);
     setMax();
-    if (typeof ResizeObserver === 'function') {
-      const ro = new ResizeObserver(setMax);
+    const ro = typeof ResizeObserver === 'function' ? new ResizeObserver(setMax) : null;
+    if (ro) {
       ro.observe(lead);
       if (lead.firstElementChild) ro.observe(lead.firstElementChild);
     }
@@ -755,6 +765,10 @@ function followStrip(strip, lead, root) {
     row.style.animationTimeline = name;
     const scope = strip.closest('.tt-block') || root;
     scope.style.timelineScope = [scope.style.timelineScope, name].filter(Boolean).join(', ');
+    undoOnRepaint(root, () => {
+      if (ro) ro.disconnect();
+      scope.style.timelineScope = '';
+    });
     return;
   }
   // Set on the spot: scroll events already arrive at most once a frame, and
@@ -1380,6 +1394,8 @@ function restoreEphemera(root, { scrolls, drafts }) {
 
 export function renderWall(root, ctx) {
   const ephemera = harvestEphemera(root);
+  for (const undo of teardowns.get(root) || []) undo();
+  teardowns.delete(root);
   renderWallInner(root, ctx);
   restoreEphemera(root, ephemera);
 }

@@ -19,28 +19,18 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { serveStatic } from '../helpers/static-server.mjs';
+import { launchBrowser, NO_BROWSER } from '../helpers/browser.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
-const REQUIRED = !!process.env.BROWSER_TEST_REQUIRED; // CI: a missing browser is a failure, not a skip
 const OPEN_MS = 650;   // ZOOM_IN_MS (200) + the bloom, with slack
 const CLOSE_MS = 650;  // ZOOM_OUT_MS (260) + the way out, with slack
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-async function launch() {
-  const { chromium } = await import('playwright');
-  try { return await chromium.launch({ headless: true }); } catch (e) {
-    try { return await chromium.launch({ channel: 'chrome', headless: true }); } catch (e2) {
-      if (REQUIRED) throw e;
-      return null;
-    }
-  }
-}
-
 const server = await serveStatic(ROOT);
-const browser = await launch();
+const browser = await launchBrowser();
 test.after(async () => { if (browser) await browser.close(); await server.close(); });
 
-const skip = browser ? false : 'no browser available (npx playwright install chromium, or install Chrome)';
+const skip = browser ? false : NO_BROWSER;
 
 // One page per test file: the gallery renders the same states every load.
 let page;
@@ -164,6 +154,27 @@ test('Escape puts a hovered zoom away and the mark clears on leave: coming back 
   await move(sp.x, sp.y); await sleep(CLOSE_MS);
 });
 
+test('a press outside is a plain close: come straight back and the card grows again', { skip }, async () => {
+  // app.js's rule. A press outside never marks the card put away — the hand is
+  // by definition elsewhere, and a mark there poisoned the next hover (Codex
+  // gate, 2026-08-31). The gallery once ran dismissZoom here instead, so this
+  // contract was testing a rule production does not have.
+  const [c] = await cards();
+  const sp = await empty();
+  await move(c.x, c.y); await sleep(OPEN_MS);
+  let s = await state();
+  assert.equal(s.shown, 1, `grown: ${JSON.stringify(s)}`);
+  await move(sp.x, sp.y);
+  await page.mouse.click(sp.x, sp.y);           // inside the hover-out grace
+  await sleep(300);
+  s = await state();
+  assert.equal(s.shown, 0, `the press put it away: ${JSON.stringify(s)}`);
+  await move(c.x, c.y); await sleep(OPEN_MS);
+  s = await state();
+  assert.equal(s.shown, 1, `coming straight back grows it again: ${JSON.stringify(s)}`);
+  await move(sp.x, sp.y); await sleep(CLOSE_MS);
+});
+
 test('a mouse button held on a resting card is a slow click, never a touch-style zoom that ignores the mouse', { skip }, async () => {
   const list = await cards();
   const c = list[5];
@@ -219,4 +230,34 @@ test('a random real-input walk: every dwell grows the right card, every leave cl
     if (s.shown !== 0) bad.push(`close ${c.artist}: ${JSON.stringify(s)}`);
   }
   assert.deepEqual(bad, [], 'every step of the walk held');
+});
+
+test("Escape puts a hovered zoom away, and a crew-mate's pick repainting the wall under the still hand does not regrow it", { skip }, async () => {
+  // The stay-away mark used to be the card NODE. A repaint replaces every
+  // node, and the fresh card born under the resting pointer grew the zoom
+  // right back (review, 2026-09-16). Runs on the events wall, the production
+  // renderWall, so it goes last: it scrolls the page away from the ladder.
+  const c = await page.evaluate(() => {
+    const el = document.querySelector('#events-wall .card[data-artist="Channel Tres"]');
+    el.scrollIntoView({ block: 'center' });
+    const r = el.getBoundingClientRect();
+    return { x: Math.round(r.left + r.width / 2), y: Math.round(r.top + r.height / 2) };
+  });
+  await sleep(300);
+  const sp = await empty();
+  await move(sp.x, sp.y); await sleep(200);
+  await move(c.x, c.y); await sleep(OPEN_MS);
+  let s = await state();
+  assert.ok(s.shown === 1 && s.zoom && s.zoom.startsWith('Channel Tres'), `grown: ${JSON.stringify(s)}`);
+  await page.keyboard.press('Escape'); await sleep(300);
+  assert.equal((await state()).shown, 0, 'Escape put it away');
+  await page.evaluate(() => window.galleryCrewPick('Channel Tres', 'Kat', 2));
+  await sleep(OPEN_MS);
+  s = await state();
+  assert.equal(s.shown, 0, `the repaint under the still hand did not regrow it: ${JSON.stringify(s)}`);
+  await move(sp.x, sp.y); await sleep(200);
+  await move(c.x, c.y); await sleep(OPEN_MS);
+  s = await state();
+  assert.ok(s.shown === 1 && s.zoom && s.zoom.startsWith('Channel Tres'), `leave and return regrows it: ${JSON.stringify(s)}`);
+  await move(sp.x, sp.y); await sleep(CLOSE_MS);
 });

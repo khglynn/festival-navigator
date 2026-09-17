@@ -431,7 +431,7 @@ import * as state from '/js/state.js';
 import * as model from '/js/v3/model.js';
 import { FESTIVALS, FESTIVAL_INDEX } from '/js/festivals.js';
 import { renderCard, refreshCard } from '/js/v3/wall.js';
-import { wireCardZoom, wireCardFocusZoom, zoomCard, dismissZoom, zoomedCard, zoomContains, refreshZoom } from '/js/v3/card-facts.js';
+import { wireCardZoom, wireCardFocusZoom, zoomCard, dismissZoom, unzoom, zoomedCard, zoomContains, refreshZoom } from '/js/v3/card-facts.js';
 
 const GFID = 'gallery-zoom-fest';
 FESTIVAL_INDEX.push({ id: GFID, status: 'scheduled' });
@@ -573,10 +573,11 @@ function handleTap(artistName) {
 }
 
 // The exact two document-level handlers app.js wires: a press outside the
-// zoom (the resting card AND its overlay) dismisses it; Escape eats the
-// keypress before any other handler sees it (capture phase).
+// zoom (the resting card AND its overlay) is a plain close, never a stay-away
+// mark; Escape puts it away and eats the keypress before any other handler
+// sees it (capture phase).
 document.addEventListener('pointerdown', (e) => {
-  if (zoomedCard() && !zoomContains(e.target)) dismissZoom();
+  if (zoomedCard() && !zoomContains(e.target)) unzoom({ why: 'press outside the zoom' });
 }, true);
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && zoomedCard()) { dismissZoom(); e.stopImmediatePropagation(); e.preventDefault(); }
@@ -691,7 +692,7 @@ document.getElementById('zoom-bottom-probe').appendChild(stateCard('16b · very 
 import * as state from '/js/state.js';
 import * as model from '/js/v3/model.js';
 import { FESTIVALS, FESTIVAL_INDEX } from '/js/festivals.js';
-import { renderWall, renderCard, refreshCard, cardFor } from '/js/v3/wall.js';
+import { renderWall, renderCard, refreshCard, cardFor, roomOf } from '/js/v3/wall.js';
 import { wireCardZoom, wireCardFocusZoom, zoomCard, zoomedCard, refreshZoom, zoomSnapshot, unzoom } from '/js/v3/card-facts.js';
 import { toggleBucket } from '/js/v3/filters.js';
 
@@ -770,16 +771,18 @@ const ectx = {
 };
 function eventsStatus(msg) { const el = document.getElementById('events-status'); if (el) el.textContent = msg; }
 function refreshEventsPicks() { ectx.picks = model.picksFor(state.crewDoc, EFID); ectx.bucketsOff = hidden; }
-// app.js repaintWall, minus sync: a standing zoom survives.
+// app.js repaintWall, minus sync: a standing zoom survives, in the room it
+// was in (a combined-day show is one occurrence rendered in two rooms).
 function repaint() {
   const root = document.getElementById('events-wall');
   const keep = zoomSnapshot();
+  const keepRoom = keep ? roomOf(zoomedCard()) : null;
   unzoom({ instant: !!keep, why: 'gallery repaint' });
   refreshEventsPicks();
   state.setActiveFestivalId(EFID);
   renderWall(root, ectx);
   if (keep) {
-    const again = cardFor(root, keep.artist, keep.occ);
+    const again = cardFor(root, keep.artist, keep.occ, { room: keepRoom });
     if (again) zoomCard(again, keep.artist, ectx, { ...keep, instant: true });
   }
 }
@@ -799,15 +802,26 @@ function eventsTap(artistName) {
     onSwap: i === zi ? (fresh) => refreshZoom(fresh, ectx) : null,
   }));
 }
+// Low Power the way the app applies it: the setting flips, and the wall
+// repaints when Settings closes (app.js closeSettings).
 document.getElementById('events-lowpower').addEventListener('change', (e) => {
   ectx.lowPower = e.target.checked;
   document.body.classList.toggle('low-power', ectx.lowPower);
+  repaint();
 });
 // The zoom gallery above already owns the document-level Escape / press-outside
 // handlers for the zoom.
 // Both galleries share one state module: point it at THIS fest to render, and
 // leave it there — the zoom gallery rendered first and holds its own nodes.
 repaint();
+// A crew-mate's pick arriving on the poll: the doc changes and the wall
+// repaints with no input from the person looking at it (app.js
+// onRemoteChange). The browser contract drives it from the console.
+window.galleryCrewPick = (artist, person, level) => {
+  const sels = state.crewDoc.festivals[EFID].selections;
+  (sels[artist] = sels[artist] || {})[person] = level;
+  repaint();
+};
 
 // ---- THE BACK POCKET: the deck's grown panel, as a picture -------------------
 // Static by design (MODEL-V3 §4). It borrows this module's ctx so the cards are

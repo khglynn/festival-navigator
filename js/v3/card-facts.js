@@ -7,14 +7,15 @@
 //   · the compact sub lines the day/fest sheets carry.
 // Pure data + DOM builders. aura.js owns the gradient math; this file never
 // invents a colour. The runtime-only import cycle with wall.js (for
-// colorIndexOf) is the same safe shape notes.js already uses.
+// colorIndexOf and roomOf) is the same safe shape notes.js already uses.
 import * as state from '../state.js';
 import * as model from './model.js';
 import { ordered, auraBackground, nameColor, subColor } from './aura.js';
 import { hslOf } from './palette.js';
-import { colorIndexOf } from './wall.js';
+import { colorIndexOf, roomOf } from './wall.js';
 import { record } from '../errlog.js';
 import { runFactsOf, findEventEntry } from './events.js';
+import { GROW_MS, MATERIALIZE_MS, OUT_MS, CASCADE_MS, STAGGER_MS, REFRESH_MS, EASE_ARRIVE, EASE_LEAVE, EASE_SURFACE, canAnimate } from './motion.js';
 
 // "9:00 PM - 10:15 PM" -> "9:00 – 10:15 PM" (the shared meridiem said once).
 export function timeRange(t) {
@@ -320,19 +321,11 @@ export function sheetCard(facts, { onClose, onOpenNotes = null } = {}) {
 // its notes chip and the maps door are the only other controls.
 export const ZOOM_IN_MS = 200;   // hover intent — open slower than you close (300 read as a beat too long, Kevin 2026-09-01)
 export const ZOOM_OUT_MS = 260;  // hover-out grace before the close
-const GROW_MS = 240;             // the box, k→1
-const MATERIALIZE_MS = 90;       // the overlay's fade-in (the CSS content fade matches)
-const OUT_MS = 130;              // the way out: quick and plain
-const CASCADE_MS = 170;          // each grown line's arrival
-const STAGGER_MS = 30;           // the beat between arrivals
-const EASE_ARRIVE = 'cubic-bezier(.2, 1.15, .35, 1)';    // in: a 4% overshoot, then settle
-const EASE_LEAVE = 'cubic-bezier(.4, 0, 1, 1)';          // out: quick, no flourish
-const EASE_SURFACE = 'cubic-bezier(.4, 0, .2, 1)';       // refresh crossfades: crisp, no bounce
 const RADIUS = 8; // --r-card
 const MIN_W = 216, MAX_W = 360, MIN_H = 132;
 
 let zoomed = null;      // { el, artist, ctx, occ, source, onOpenNotes, slot, card, anims, cleanup }
-let dismissedEl = null; // a zoom put away on purpose waits for the pointer to leave the card
+let dismissedKey = null; // a zoom put away on purpose: its card's identity, until the mouse is elsewhere
 let layer = null;
 const exitingSlots = new Set(); // overlays still shrinking away — a NEW zoom clears them ALL
 // Where the mouse last was — the only way to judge a zoom restored under a
@@ -354,7 +347,15 @@ let lastInput = 'pointer';
 const MODIFIER_KEYS = new Set(['Shift', 'Control', 'Alt', 'Meta', 'CapsLock', 'Fn', 'AltGraph', 'OS', 'Hyper', 'Super', 'Symbol', 'NumLock', 'ScrollLock']);
 if (typeof document !== 'undefined') {
   document.addEventListener('pointermove', (e) => {
-    if (e.pointerType === 'mouse') lastMouse = { x: e.clientX, y: e.clientY };
+    if (e.pointerType !== 'mouse') return;
+    lastMouse = { x: e.clientX, y: e.clientY };
+    // The stay-away mark lifts the moment the mouse is over anything but the
+    // card it put away — that card's node, the fresh node a repaint put in its
+    // place, or a zoom standing on it.
+    if (dismissedKey) {
+      const over = isInsideZoom(zoomed, e.target) ? zoomed.el : e.target.closest?.('.card[data-artist]');
+      if (cardKey(over) !== dismissedKey) dismissedKey = null;
+    }
   }, { passive: true, capture: true });
   document.addEventListener('pointerdown', () => { lastInput = 'pointer'; }, { passive: true, capture: true });
   document.addEventListener('keydown', (e) => {
@@ -376,10 +377,10 @@ const underMouse = () => (lastMouse && typeof document.elementFromPoint === 'fun
   ? document.elementFromPoint(lastMouse.x, lastMouse.y)
   : null);
 
-const reduced = () => typeof window !== 'undefined' && !!window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-// Low Power promises "no animation" and CSS cannot reach Element.animate() —
-// the gate lives here (survey, 2026-08-30).
-const canAnimate = (node, ctx) => typeof node.animate === 'function' && !reduced() && !(ctx && ctx.lowPower);
+// A card's identity across repaints, which replace every node: the artist, the
+// occurrence and the room — the triple wall.js cardFor restores a zoom by.
+const cardKey = (el) => (el ? JSON.stringify([el.dataset.artist, el.dataset.occ || '', roomOf(el)]) : null);
+
 const rect = (n) => n.getBoundingClientRect();
 const mid = (r) => ({ x: r.left + r.width / 2, y: r.top + r.height / 2 });
 const box = (left, top, width, height) => ({ left, top, width, height, right: left + width, bottom: top + height });
@@ -416,14 +417,14 @@ export function zoomSnapshot() {
 }
 export function dismissZoom() {
   if (!zoomed) return;
-  // The "stay away" mark is a POINTER rule: a mouse resting on the card it
-  // just put away must not re-grow it, and the mark clears when the pointer
-  // leaves. A keyboard or touch zoom has no pointer on the card, so a mark
-  // there would wait for a leave that never comes — Tab to a card, Escape,
-  // and its first hover later did nothing (the browser contract's random
-  // walk, 2026-09-02).
-  if (zoomed.source === 'mouse') dismissedEl = zoomed.el;
-  unzoom({ why: 'dismissed (Escape or tap-away)' });
+  // The "stay away" mark is a MOUSE rule: a mouse resting on the card it just
+  // put away must not re-grow it — not even on the fresh node a repaint puts
+  // under it — and the mark lifts when the mouse is elsewhere. A keyboard or
+  // touch zoom has no mouse on the card, so a mark there would wait for a
+  // leave that never comes — Tab to a card, Escape, and its first hover later
+  // did nothing (the browser contract's random walk, 2026-09-02).
+  if (zoomed.source === 'mouse') dismissedKey = cardKey(zoomed.el);
+  unzoom({ why: 'dismissed (Escape)' });
 }
 
 // The clip that shows exactly the resting card's rect out of the overlay's.
@@ -569,7 +570,7 @@ function zoomCardInner(el, artistName, ctx, { onOpenNotes = null, source = 'mous
 // the box re-centres, every piece that stayed slides to its new spot, a pill
 // that arrived grows in with a little overshoot, a MUST badge fades on.
 // Transform and opacity only, inside the overlay.
-const REFRESH_MS = 300;
+//
 // WHICH parts move on a refresh; partKey below says HOW each is matched across
 // the rebuild. Add a row to grownBlock — a genre line, a conflict warning — and
 // you touch both: miss this selector and the row either animates as an arrival
@@ -887,7 +888,7 @@ function wireSlot(z) {
   // and follows it. Dismissing on any scroll event read as "hover is fully
   // broken" on a trackpad, where micro-deltas fire constantly while the
   // hand rests: the card grew, vanished on a 1px jiggle, and the dismissal
-  // poisoned it via dismissedEl (found on the 2026-08-31 review round).
+  // poisoned it with the stay-away mark (found on the 2026-08-31 review round).
   // The overlay closes only when its card has actually left the viewport.
   // Capture phase so an inner scroller's scroll (which does not bubble) is
   // heard too; rAF-throttled, one re-place per frame.
@@ -963,7 +964,7 @@ export function wireCardZoom(el, artistName, ctx, { onOpenNotes = null, occ = nu
   let inT = null;
   const arm = () => {
     if (zoomed && zoomed.el === el) return;
-    if (dismissedEl === el) return; // put away on purpose; a leave clears it
+    if (dismissedKey === cardKey(el)) return; // put away on purpose; the mouse leaving lifts it
     if (inT) clearTimeout(inT);
     inT = setTimeout(() => {
       inT = null;
@@ -986,12 +987,7 @@ export function wireCardZoom(el, artistName, ctx, { onOpenNotes = null, occ = nu
     if (under && el.contains(under)) arm();
   });
   el.addEventListener('pointerleave', (e) => {
-    if (e.pointerType !== 'mouse') return;
-    if (inT) { clearTimeout(inT); inT = null; }
-    // The overlay appearing over the card IS a leave to the browser — not to
-    // the person. The overlay's own leave handles the close.
-    if (zoomed && zoomed.el === el && e.relatedTarget && zoomed.slot.contains(e.relatedTarget)) return;
-    if (dismissedEl === el) dismissedEl = null;
+    if (e.pointerType === 'mouse' && inT) { clearTimeout(inT); inT = null; }
   });
 }
 
@@ -1001,10 +997,9 @@ export function wireCardZoom(el, artistName, ctx, { onOpenNotes = null, occ = nu
 export function wireCardFocusZoom(el, artistName, ctx, { onOpenNotes = null, occ = null } = {}) {
   el.addEventListener('focusin', () => {
     if (zoomed && zoomed.el === el) return;
-    // dismissedEl is a POINTER rule (a mouse resting on a card it dismissed);
-    // deliberately not checked here — Tab is fresh intent, and gating it made
-    // keyboard growth look off-by-one-card (real-browser walk, 2026-08-30).
-    if (dismissedEl === el) dismissedEl = null;
+    // The stay-away mark is a MOUSE rule and deliberately not read here — Tab
+    // is fresh intent, and gating it made keyboard growth look off-by-one-card
+    // (real-browser walk, 2026-08-30).
     // KEYBOARD focus only: a mouse click and a finger tap also focus the
     // card, and zooming there would bypass the hover-intent delay and grow
     // the card under every pick — and a script focus that follows a click
@@ -1015,7 +1010,6 @@ export function wireCardFocusZoom(el, artistName, ctx, { onOpenNotes = null, occ
     zoomCard(el, artistName, ctx, { onOpenNotes, source: 'keyboard', occ });
   });
   el.addEventListener('focusout', (e) => {
-    if (dismissedEl === el) dismissedEl = null;
     if (!zoomed || zoomed.el !== el) return;
     if (isInsideZoom(zoomed, e.relatedTarget)) return;
     unzoom({ why: 'focus left the card' });

@@ -295,7 +295,7 @@ test('a scroll never kills the zoom — the overlay follows its card (trackpads 
   // and the card is NOT poisoned: hovering it again is still allowed
   zoom.unzoom({ instant: true });
   const again = zoom.zoomCard(card, 'GRiZ', ctx, { occ: { day: 'Saturday', stage: null, time: null } });
-  assert.ok(again, 'the card re-grows after a scroll (no dismissedEl poisoning)');
+  assert.ok(again, 'the card re-grows after a scroll (no stay-away mark poisoning)');
 });
 
 test('an orphaned mouse zoom closes on the next outside movement (a repaint can restore a zoom after the hand moved on)', async () => {

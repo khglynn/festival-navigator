@@ -1,6 +1,6 @@
 // The hover boundary handlers, which rested on Kevin's browser alone until now
 // (2026-09-01 review, coverage rows "Overlay hover bookkeeping", "Hover
-// intent", "wireCardZoom's pointerleave", "dismissedEl" and "Instant restore
+// intent", "wireCardZoom's pointerleave", the stay-away mark and "Instant restore
 // under a moved-away mouse"). The existing suite drives only the document-level
 // pointermove BELT; the enter/leave pair under it, the intent timer, the
 // dismissed mark and the born-under-a-moved-away-hand close had no assertions.
@@ -9,8 +9,10 @@
 // the payload of the zoom-close-after-click journal added 2026-08-31 while
 // Kevin's "every click closes the hover" was still open — a merge of the leave
 // and the belt would silently re-label it, which is exactly the evidence that
-// would identify the culprit. And the dismissed mark is a POINTER rule: it is
-// cleared by a leave and deliberately not consulted on the keyboard route.
+// would identify the culprit. And the dismissed mark is a MOUSE rule: it lifts
+// when the mouse is over anything but that card, and it is deliberately not
+// consulted on the keyboard route (tests/zoom-stay-away.test.mjs has its
+// repaint half).
 //
 // jsdom has no elementFromPoint, so any test that stubs it MUST restore it in a
 // finally: `lastMouse` is never cleared once fed, and a live stub plus a set
@@ -163,31 +165,33 @@ test('a zoom put away on purpose stays away until the pointer leaves the card', 
   await wait(zoom.ZOOM_IN_MS + 120);
   assert.equal(slot(), null, 'and a pointer that never left cannot re-grow it');
 
+  // Leaving is the mouse arriving somewhere else: its move lands there first.
+  feedMouse(400, 400, document.body);
   card.dispatchEvent(pointerEvent('pointerleave'));
   card.dispatchEvent(pointerEvent('pointerenter'));
   await wait(zoom.ZOOM_IN_MS + 120);
   assert.ok(slot(), 'leaving clears the mark, so the next dwell grows it again');
 });
 
-test('the overlay appearing over the card is not the pointer leaving it — the mark survives', async () => {
+test('a mouse on a zoom standing over the put-away card is still on that card — the mark survives', async () => {
   const ctx = makeCtx();
   const card = mountCard(ctx);
   zoom.wireCardZoom(card, 'GRiZ', ctx, { onOpenNotes: ctx.onOpenNotes, occ: OCC });
   zoom.zoomCard(card, 'GRiZ', ctx, { occ: OCC });
   zoom.dismissZoom();
-  zoom.zoomCard(card, 'GRiZ', ctx, { occ: OCC }); // the mark outlives a fresh grow
-  const inside = document.querySelector('#zoom-layer .f-name');
-
-  // The browser reports the overlay covering the card as a pointerleave. It is
-  // not one: the person never moved. Were it treated as one, the mark would be
-  // cleared by the app's own overlay.
-  card.dispatchEvent(pointerEvent('pointerleave', { relatedTarget: inside }));
+  // Tab grows it again (the keyboard route does not read the mark) while the
+  // mouse still rests there — and now the overlay covers the card, so the
+  // mouse's moves land on the overlay. That is the same card: were it
+  // "elsewhere", the app's own overlay would lift the mark.
+  zoom.zoomCard(card, 'GRiZ', ctx, { occ: OCC, source: 'keyboard' });
+  feedMouse(40, 40, document.querySelector('#zoom-layer .f-name'));
   zoom.unzoom({ instant: true });
   card.dispatchEvent(pointerEvent('pointerenter'));
   // Waiting out the full dwell is what makes this bite: the mark is read when
   // the intent ARMS, so an assertion on the same tick passes either way.
   await wait(zoom.ZOOM_IN_MS + 120);
   assert.equal(slot(), null, 'the dismissed mark survived — the overlay did not clear it on the card\'s behalf');
+  feedMouse(400, 400, document.body); // and leaves, so the mark ends with this test
 });
 
 // ---- the Codex gate of 2026-08-31, which has never once executed in Node ----

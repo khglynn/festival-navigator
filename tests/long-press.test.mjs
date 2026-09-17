@@ -1,7 +1,7 @@
 // The long-press is a FINGER gesture. It used to arm on any pointerdown, so a
 // mouse held on a resting card for half a second opened a touch-style zoom —
 // one that ignores hover-out and swallows its next click — and on a card the
-// hover intent had put away (dismissedEl) that was the only zoom a mouse
+// hover intent had put away (the stay-away mark) that was the only zoom a mouse
 // could get. Found while tracing the 2026-09-02 hover report; the hover
 // intent usually won the race and hid it.
 import test from 'node:test';
@@ -64,4 +64,12 @@ test('a lift inside the hold cancels it', async () => {
   card.dispatchEvent(pointerEvent('pointerup', { pointerType: 'touch', bubbles: true }));
   await wait(HOLD);
   assert.deepEqual(peeks, []);
+});
+
+test('with no peek wired a hold does nothing — it never falls back to the notes sheet', async () => {
+  const ctx = makeCtx(); // onOpenNotes is wired, onPeek is not
+  const card = mount(ctx);
+  card.dispatchEvent(pointerEvent('pointerdown', { pointerType: 'touch', bubbles: true }));
+  await wait(HOLD);
+  assert.deepEqual(ctx.opened, [], 'the hold is the zoom gesture and nothing else');
 });
