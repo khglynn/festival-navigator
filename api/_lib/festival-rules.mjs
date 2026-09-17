@@ -40,6 +40,15 @@ export const TIME_RE = new RegExp(`^${CLOCK}( - (${CLOCK}|Close))?$`, 'i');
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 // doors/close are a single point on the clock, never a range.
 const CLOCK_RE = new RegExp(`^${CLOCK}$`, 'i');
+// A real calendar date, not just the shape of one: 2026-13-01 and 2026-09-31
+// both pass a regex and name no day. Used by a section entry's `date` and by
+// dayMeta's iso/isos.
+const realDate = (s) => typeof s === 'string' && /^(19|20|21)\d{2}-\d{2}-\d{2}$/.test(s)
+  && !Number.isNaN(new Date(`${s}T00:00:00Z`).getTime())
+  && new Date(`${s}T00:00:00Z`).toISOString().slice(0, 10) === s;
+// How a day label splits into the days it renders as ("Afters & Folsom").
+const SPLIT_DAY = /\s*[&+/]\s*|\s+and\s+/i;
+const dayParts = (day) => String(day).split(SPLIT_DAY).map((s) => s.trim()).filter(Boolean);
 const startOf = (t) => String(t).split(' - ')[0];
 // An event runs on the festival-day clock the wall draws it on (events.js:
 // 9 AM starts the day, anything earlier is after midnight) — so a daytime
@@ -67,12 +76,54 @@ function checkEventFields(fest, err, warn) {
     return night && venue ? `${a.day || ''}|${night}|${venue}` : null;
   };
 
+  // MODEL-V4 §6 — where a section's cards go.
+  //
+  // A SECTION is an artists[].day label that is not one of the grid's days:
+  // Portola's AFTERS and FOLSOM, ACL's LATE NIGHTS. A section sits in one of
+  // two places, and its entries say which with exactly one field:
+  //   `night`  a weekday — the section plays that night and joins the day tabs
+  //   `date`   an ISO date — the section becomes its own tab, ruled by date
+  // Both is two answers to one question. Neither is none, and a card with no
+  // day is a card the wall drops without saying so. `venue` on top of that:
+  // the section renders as a stack under the room it happens in.
+  //
+  // The pre-V4 `stage: "Thu · Regency Ballroom"` string answers both questions
+  // on its own and still does — files written before the pair existed are
+  // still files. The structured fields win where both are present, and the
+  // drift check below keeps the two from ever saying different things.
+  //
+  // A festival with no grid has no sections: every day label on a lineup wall
+  // is a lineup day, and none of this applies.
+  const gridDays = new Set(Object.keys(plain(fest.days) ? fest.days : {}).map((d) => d.toLowerCase()));
+  const isSectionEntry = (a) => gridDays.size > 0
+    && typeof a.day === 'string' && a.day.trim()
+    && !dayParts(a.day).some((p) => gridDays.has(p.toLowerCase()));
+  // section label -> the axes its entries claim. A section that sits on the
+  // day tabs AND on its own tab is half a wall in each place.
+  const sectionAxis = new Map();
+
   artists.forEach((a, i) => {
     if (!plain(a)) return;
     const at = `artists[${i}] (${safeKey(a.name)})`;
     const bits = typeof a.stage === 'string' && a.stage.includes(' · ') ? a.stage.split(' · ') : null;
     const rk = roomKey(a);
     if (rk) acts.set(rk, (acts.get(rk) || 0) + 1);
+
+    if (a.date !== undefined && !realDate(a.date)) err(`${at}: date must be a real YYYY-MM-DD date (got ${JSON.stringify(safeKey(a.date))})`);
+    if (isSectionEntry(a)) {
+      const onANight = a.night !== undefined || !!(bits && WEEKDAYS.includes(bits[0].trim()));
+      const onADate = a.date !== undefined;
+      if (onANight && onADate) err(`${at}: night and date — a section entry says one or the other: night puts it on that day's tab, date gives its section a tab of its own`);
+      else if (!onANight && !onADate) err(`${at}: a section entry needs night (${WEEKDAYS.join('|')}) or date (YYYY-MM-DD) — without one there is no day to put the card on`);
+      const room = typeof a.venue === 'string' && a.venue.trim() ? a.venue.trim()
+        : bits ? bits.slice(1).join(' · ').trim() : '';
+      if (!room) err(`${at}: a section entry needs venue — the wall stacks its cards under the room they happen in`);
+      const axis = onADate ? 'date' : onANight ? 'night' : null;
+      if (axis) for (const part of dayParts(a.day)) {
+        if (!sectionAxis.has(part)) sectionAxis.set(part, new Set());
+        sectionAxis.get(part).add(axis);
+      }
+    }
 
     if (a.night !== undefined) {
       if (!WEEKDAYS.includes(a.night)) err(`${at}: night must be one of ${WEEKDAYS.join('|')} (got ${JSON.stringify(safeKey(a.night))})`);
@@ -137,6 +188,10 @@ function checkEventFields(fest, err, warn) {
       }
     }
   });
+
+  for (const [label, axes] of sectionAxis) {
+    if (axes.size > 1) err(`${safeKey(label)}: some entries say night and some say date — one section sits in one place: on the day tabs (night) or on a tab of its own (date)`);
+  }
 
   // A venue-night is ONE ROOM and its artists play IN SEQUENCE (the one rule,
   // Kevin 2026-09-01), so the wall stacks every room as a vertical run. Two or
@@ -412,8 +467,6 @@ export function validateFestivalDoc(fest, { filename } = {}) {
   // a typo here would put the now line on the wrong day, silently.
   if (fest.dayMeta !== undefined && !isPlain(fest.dayMeta)) err('dayMeta must be an object keyed by day label');
   else if (fest.dayMeta) {
-    const realDate = (s) => typeof s === 'string' && /^(19|20|21)\d{2}-\d{2}-\d{2}$/.test(s)
-      && !Number.isNaN(new Date(`${s}T00:00:00Z`).getTime()) && new Date(`${s}T00:00:00Z`).toISOString().slice(0, 10) === s;
     // Two grid days on one date would draw two now lines — each date is one
     // day's, per weekend.
     // A plain `iso` is that day's date on EVERY weekend, so it collides with
