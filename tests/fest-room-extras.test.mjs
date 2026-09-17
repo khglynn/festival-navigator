@@ -80,7 +80,6 @@ const festRooms = (root) => [...root.querySelectorAll('.room[data-room=":fest"]'
       occ: c.dataset.occ ? JSON.parse(c.dataset.occ) : null,
     })),
   })),
-  empty: room.querySelector('.section-empty')?.textContent || null,
 }));
 
 test('Electric Forest: every day\'s activities are venue groups under that day\'s grid, and each one is a card you can pick', () => {
