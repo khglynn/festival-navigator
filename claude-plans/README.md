@@ -10,8 +10,11 @@ live in `archive/`.
   token values).
 - `2026-07-14-fests-circles-you-direction.md`: the fests × circles × you
   model.
+- `2026-09-16-wall-v4/MODEL-V4.md`: the wall, simplified — one rule for
+  stage columns vs venue stacks, days are the days, sections fold. Proposed
+  2026-09-16; supersedes MODEL-V3 §2–§4 once Kevin picks it.
 - `2026-08-31-events-canvas/MODEL-V3.md`: the events model (day-first, the
-  layout rule, back-to-back runs). Spec of record for PR #16.
+  layout rule, back-to-back runs). Spec of record for PR #16 as built.
 - `2026-08-30-zoom-storyboard.md`: how the zoom moves ("the bloom").
 - `2026-07-12-taste-rubric.md`: the judgment calls a surface is checked
   against before it counts as finished (draft).
