@@ -43,7 +43,7 @@ const afters = (wd) => portola.artists.filter((a) => a.night === wd && /Afters/.
 const groupsOn = (wd) => venueGroupsOf(afters(wd));
 
 const TOKEN = 'eventswalltoken_0123456789';
-FESTIVAL_INDEX.push({ id: 'portola-2026', status: 'scheduled' }, { id: 'lineup-only', status: 'lineup' }, { id: 'grid-only', status: 'scheduled' }, { id: 'tiles-run', status: 'lineup' }, { id: 'dated', status: 'scheduled' }, { id: 'verbose-day', status: 'lineup' });
+FESTIVAL_INDEX.push({ id: 'portola-2026', status: 'scheduled' }, { id: 'lineup-only', status: 'lineup' }, { id: 'grid-only', status: 'scheduled' }, { id: 'tiles-run', status: 'lineup' }, { id: 'dated', status: 'scheduled' }, { id: 'two-dated', status: 'scheduled' }, { id: 'verbose-day', status: 'lineup' });
 state.activateCrew(TOKEN, {
   v: 4, meta: {}, spotify: {},
   people: { Kevin: { colorIndex: 0 }, Nhu: { colorIndex: 1 } },
@@ -84,6 +84,22 @@ FESTIVALS.dated = {
     { name: 'Also First', day: 'Late nights', date: '2026-09-29', venue: 'Mohawk Austin', doors: '7 PM', time: '10 PM', approx: true },
   ],
   days: { Friday: { stages: ['A'], artists: [{ name: 'Billed', stage: 'A', time: '8:00 PM - 9:00 PM' }] } },
+};
+
+// A two-weekend scheduled fest that carries both of its dates (ACL's shape).
+FESTIVALS['two-dated'] = {
+  id: 'two-dated', name: 'Two Dated', status: 'scheduled', timezone: 'America/Chicago',
+  dayMeta: { Friday: { wd: 'Fri', dates: { W1: 'Oct 2', W2: 'Oct 9' }, isos: { W1: '2026-10-02', W2: '2026-10-09' } } },
+  artists: [{ name: 'Both Weekends', day: 'Friday' }, { name: 'One Only', day: 'Friday', weekends: 'W1' }],
+  days: {
+    Friday: {
+      stages: ['A'],
+      artists: [
+        { name: 'Both Weekends', stage: 'A', time: '8:00 PM - 9:00 PM' },
+        { name: 'One Only', stage: 'A', time: '9:00 PM - 10:00 PM', weekend: 'W1' },
+      ],
+    },
+  },
 };
 
 // A verbose day key (an early-arrival pre-party's shape) on a fest with a section.
@@ -319,6 +335,69 @@ test('a dated section is its own tab after the days: a date rule per date, venue
   assert.equal(firstGrid.dataset.iso, '2026-09-29', 'the date carries the now mark too');
   // Its cards pick like any other.
   assert.ok([...firstGrid.querySelectorAll('.card')].every((c) => c.getAttribute('role') === 'button'));
+});
+
+// ---- the note door is a date (MODEL-V4 §4) ---------------------------------------------
+// The wall chooses the key a day note is written to and read from, so the
+// choice is pinned here: it is the DATE. A weekday label was the key before
+// V4 and those notes are still the same conversation — mapping them onto the
+// date is the notes layer's (js/v3/model.js legacyDayKeysFor). What this file
+// owns is that the wall never opens a day note on anything but a date.
+const whisperAfter = (rule) => {
+  const n = rule && rule.nextElementSibling;
+  return n && n.classList.contains('day-whisper') ? n : null;
+};
+const noteOn = (fid, target, text, ts, salt) =>
+  state.recordNote(fid, 'day', target, model.makeNoteId('Kevin', ts, salt), { author: 'Kevin', ts, text });
+
+test('a day’s note door opens on the day’s date, not on its label', () => {
+  noteOn('portola-2026', '2026-09-26', 'gate B at 4', '2026-09-20T18:00:00.000Z', 'aaaaaa');
+  const asked = [];
+  const { root } = render('portola-2026', { onOpenDayNotes: (k) => asked.push(k) });
+  const rule = [...root.querySelectorAll('.day-rule')].find((r) => r.dataset.day === 'Saturday');
+  assert.equal(rule.dataset.iso, '2026-09-26');
+  const w = whisperAfter(rule);
+  assert.ok(w, 'the whisper sits under the rule that named the date');
+  assert.equal(w.querySelector('.text').textContent, 'gate B at 4');
+  click(w);
+  assert.deepEqual(asked, ['2026-09-26'], 'and the door opens that date’s conversation');
+  assert.equal(whisperAfter([...root.querySelectorAll('.day-rule')].find((r) => r.dataset.day === 'Sunday')), null,
+    'Sunday is a different date and has nothing to say');
+});
+
+test('two weekends, two Fridays, two conversations', () => {
+  noteOn('two-dated', '2026-10-09', 'second Friday only', '2026-09-20T18:10:00.000Z', 'bbbbbb');
+  const asked = [];
+  const { root } = render('two-dated', { onOpenDayNotes: (k) => asked.push(k) });
+  const ruleFor = (tab) => [...root.querySelectorAll('.day-rule')].find((r) => r.dataset.day === tab);
+  assert.equal(whisperAfter(ruleFor('Friday|W1')), null, 'the first Friday never held this note');
+  const w = whisperAfter(ruleFor('Friday|W2'));
+  assert.ok(w, 'the second one does');
+  click(w);
+  assert.deepEqual(asked, ['2026-10-09']);
+});
+
+test('a dated section: the section rule has no note door, each of its dates has one', () => {
+  noteOn('dated', '2026-09-29', 'meet at the Mohawk', '2026-09-20T18:20:00.000Z', 'cccccc');
+  const asked = [];
+  const { root } = render('dated', { onOpenDayNotes: (k) => asked.push(k) });
+  const tab = [...root.querySelectorAll('.day-rule')].find((r) => r.dataset.day === 'Late nights');
+  assert.equal(whisperAfter(tab), null, 'a section label is not a note target any more');
+  const dateRule = [...root.querySelectorAll('.date-rule')].find((r) => r.dataset.iso === '2026-09-29');
+  const w = whisperAfter(dateRule);
+  assert.ok(w, 'the date under it is');
+  click(w);
+  assert.deepEqual(asked, ['2026-09-29']);
+});
+
+test('a day the file gives no date has no note door', () => {
+  // Not a loss of anything written: the note is still in the crew doc and
+  // still listed in the all-notes sheet under the key it was stored on.
+  noteOn('tiles-run', 'Saturday', 'old key, no date', '2026-09-20T18:30:00.000Z', 'dddddd');
+  const { root } = render('tiles-run');
+  const rule = [...root.querySelectorAll('.day-rule')].find((r) => r.dataset.day === 'Saturday');
+  assert.equal(rule.dataset.iso, undefined, 'the fest never said which Saturday');
+  assert.equal(whisperAfter(rule), null);
 });
 
 // ---- the paths that did not change -----------------------------------------------------

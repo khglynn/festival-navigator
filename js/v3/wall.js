@@ -1224,18 +1224,26 @@ function renderComposed(root, ctx, fest, { model: plan, scheduled }) {
   positionNowMarks(root, ctx.now || new Date());
 }
 
-// A day's rule, and the newest note at its door. Day notes are keyed by the
-// day's ISO date (MODEL-V4 §4) — two Fridays are two dates.
+// The date's newest note, under the rule that named that date. Every day
+// note the wall opens is keyed by the DATE (MODEL-V4 §4) — two Fridays are
+// two dates — so this is the one place the key is chosen. A note written
+// under the old weekday label still belongs to this conversation; mapping it
+// on the way in is the notes layer's job (notes.js, model.js).
+function dayNoteDoor(root, iso, ctx) {
+  if (!ctx.onOpenDayNotes) return;
+  const w = dayWhisper('day', iso, ctx, () => ctx.onOpenDayNotes(iso));
+  if (w) root.appendChild(w);
+}
+
+// A day's rule, and the newest note at its door. A day the file gives no
+// date has no door — a label is not a date, and a section label
+// ("Afters", "Late nights") is not a note target at all any more (§4).
 function dayRuleFor(day, ctx) {
   const rule = dayHeader(dayLabelParts(day.dayKey).head, day.sub, { dayKey: day.key });
   if (day.iso) rule.dataset.iso = day.iso; // the day-of open lands here before doors
   const frag = document.createDocumentFragment();
   frag.appendChild(rule);
-  if (ctx.onOpenDayNotes) {
-    const noteKey = day.iso || day.dayKey;
-    const w = dayWhisper('day', noteKey, ctx, () => ctx.onOpenDayNotes(noteKey));
-    if (w) frag.appendChild(w);
-  }
+  if (day.iso) dayNoteDoor(frag, day.iso, ctx);
   return frag;
 }
 
@@ -1247,20 +1255,18 @@ function sectionSub(fest, sec) {
 
 // A tab off the end of the week (MODEL-V4 §2): the section's own rule, then
 // either a `.date-rule` per date with its venue groups under it, or — for a
-// section whose entries never said when — one set of venue groups.
+// section whose entries never said when — one set of venue groups. The
+// section's rule carries no note door; each date's does.
 export function renderExtra(root, ctx, fest, extra) {
   const rule = dayHeader(extra.label, extra.sub || '', { dayKey: extra.key });
   root.appendChild(rule);
-  if (ctx.onOpenDayNotes) {
-    const w = dayWhisper('day', extra.key, ctx, () => ctx.onOpenDayNotes(extra.key));
-    if (w) root.appendChild(w);
-  }
   if (!extra.byDate) { venueGroups(root, extra.entries || [], ctx, { fest }); return; }
   for (const [iso, list] of extra.byDate) {
     const dateRule = mk('div', 'date-rule');
     dateRule.dataset.iso = iso;
     dateRule.append(mk('span', 'd', dateRuleLabel(iso)), mk('span', 'line'));
     root.appendChild(dateRule);
+    dayNoteDoor(root, iso, ctx);
     venueGroups(root, list, ctx, { day: { iso }, fest });
   }
 }

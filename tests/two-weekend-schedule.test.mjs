@@ -1,8 +1,10 @@
 // Two-weekend scheduled fests (ACL, 2026-08-23): day keys stay the plain
-// weekdays (day notes key on the label — renamed keys strand them), each set
-// carries weekend: 'W1'|'W2' (untagged/'both' = every weekend), and the wall
-// renders ONE weekend at a time — a clock grid showing both weekends' Friday
-// would double-book every stage. A stored 'all' renders as Weekend One.
+// weekdays — they are frozen pick data and a rename would strand every pick —
+// each set carries weekend: 'W1'|'W2' (untagged/'both' = every weekend), and
+// each weekend's Friday is its own tab, because a clock grid showing both at
+// once would double-book every stage. A stored 'all' opens on Weekend One.
+// Day NOTES key on the date instead of the label since V4 (MODEL-V4 §4), so
+// the two Fridays hold two conversations; events-wall covers that.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { JSDOM } from 'jsdom';
