@@ -196,6 +196,28 @@ test('scrollspy: a re-wire mid-page claims the day you are actually in, not the 
     assert.deepEqual(active(), ['Sunday'], 'the claim comes from geometry, not tab order');
     assert.equal(nav.querySelector('[aria-current]').dataset.day, 'Sunday', 'assistive tech hears the same answer');
     un();
+
+    // WebKit parks the opening jump a couple of dozen pixels short of where it
+    // aimed: Saturday's rule sat 24px below --jump-offset while Saturday
+    // filled the screen, and a geometry rule that wanted the rule at-or-above
+    // the offset lit FRIDAY on the iPhone (real-browser walk, 2026-09-17).
+    // Chromium lands exactly, which is why no desktop ever showed it. One
+    // tolerance, not a WebKit branch. Three days here, so "the first tab" is
+    // never the right answer by accident.
+    nav.innerHTML = '<button class="day-tab" data-day="Friday"></button><button class="day-tab" data-day="Saturday"></button><button class="day-tab" data-day="Sunday"></button>';
+    root.innerHTML = '<div class="day-rule" data-day="Friday"></div><div class="day-rule" data-day="Saturday"></div><div class="day-rule" data-day="Sunday"></div>';
+    const [fri3, sat3, sun3] = root.querySelectorAll('.day-rule');
+    fri3.getBoundingClientRect = () => ({ top: -800 });   // scrolled well past
+    sat3.getBoundingClientRect = () => ({ top: 8 + 24 }); // the iPhone's landing (--jump-offset is unset in jsdom, so 8)
+    sun3.getBoundingClientRect = () => ({ top: 900 });
+    un = wireScrollspy(nav, root);
+    assert.deepEqual(active(), ['Saturday'], 'the day you are looking at, even when the jump parked it a hair low');
+    un();
+    // A rule genuinely still below the fold is not the day you are standing in.
+    sat3.getBoundingClientRect = () => ({ top: 8 + 200 });
+    un = wireScrollspy(nav, root);
+    assert.deepEqual(active(), ['Friday'], 'the next day has to be nearly here before it counts');
+    un();
   } finally {
     Object.defineProperty(window, 'scrollY', { value: 0, configurable: true });
     globalThis.IntersectionObserver = hadIO;

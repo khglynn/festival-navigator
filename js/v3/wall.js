@@ -1489,6 +1489,10 @@ export function showUndoToast(container, message, onUndo) {
 }
 
 // ---- day-nav scrollspy ------------------------------------------------------------
+// How far below --jump-offset a day rule may sit and still be the day you are
+// standing in. A jump lands its rule AT the offset on Chromium and about 24px
+// below it on WebKit; both are the same arrival.
+const LANDED_WITHIN = 32;
 // One observer drives every tab container (mobile dock + desktop rail): the
 // active day is a single fact rendered in two places.
 export function wireScrollspy(containers, wallRoot) {
@@ -1535,9 +1539,14 @@ export function wireScrollspy(containers, wallRoot) {
     const offset = parseFloat(
       getComputedStyle(document.documentElement).getPropertyValue('--jump-offset'),
     ) || 8;
+    // The tolerance is not slop: a jump parks its rule NEAR the offset, and
+    // WebKit parks it ~24px below where Chromium lands it exactly — so an
+    // at-or-above test lit the day ABOVE the one filling the screen, on the
+    // iPhone only (real-browser walk, 2026-09-17). A rule this close is the
+    // day you are in, on every engine.
     let current = headers[0];
     for (const h of headers) {
-      if (h.getBoundingClientRect().top <= offset + 1) current = h;
+      if (h.getBoundingClientRect().top <= offset + LANDED_WITHIN) current = h;
       else break; // headers are in document order
     }
     setActive(current.dataset.day);
