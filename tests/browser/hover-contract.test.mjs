@@ -85,6 +85,61 @@ test('hover with intent grows the card; leaving it closes the zoom', { skip }, a
   assert.equal(s.shown, 0, `closed after leaving: ${JSON.stringify(s)}`);
 });
 
+test('the zoom is opaque from its first frame — only the box grows', { skip }, async () => {
+  // Kevin, 2026-08-31 and again 2026-09-16: the grown card "tucks behind its
+  // neighbours". The bloom used to fade the whole slot 0 → 1 while it grew, so
+  // for ~90 ms a translucent card sat over opaque ones. MODEL-V4 §5: the slot
+  // and its surface are opaque, bordered and shadowed at frame 0; only the
+  // scale and the grown rows' cascade animate. Nothing in Node can see this —
+  // jsdom has no compositor and no computed opacity to read — so the assertion
+  // lives here, on the first frame the bloom is really running.
+  const list = await cards();
+  const c = list[6] || list[0];
+  const sp = await empty();
+  await move(sp.x, sp.y); await sleep(200);
+  await page.evaluate(() => {
+    delete window.__frame0;
+    const capture = (slot) => {
+      let frame = 0;
+      const step = () => {
+        const cs = getComputedStyle(slot);
+        const surface = slot.querySelector('.z-surface');
+        const ss = surface ? getComputedStyle(surface) : null;
+        // The first frame whose transform says the growth has begun; two
+        // frames of slack in case the animation is still pending on the first.
+        if ((cs.transform && cs.transform !== 'none') || frame >= 2) {
+          window.__frame0 = {
+            frame, opacity: cs.opacity, transform: cs.transform,
+            surfaceOpacity: ss ? ss.opacity : null, surfaceBorder: ss ? ss.borderTopWidth : null,
+          };
+          return;
+        }
+        frame += 1;
+        requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
+    };
+    const obs = new MutationObserver((muts) => {
+      for (const m of muts) {
+        for (const n of m.addedNodes) {
+          if (n.nodeType === 1 && n.classList && n.classList.contains('zoom-slot')) { obs.disconnect(); capture(n); return; }
+        }
+      }
+    });
+    obs.observe(document.body, { childList: true, subtree: true });
+  });
+  await move(c.x, c.y); await sleep(OPEN_MS);
+  const f = await page.evaluate(() => window.__frame0);
+  assert.ok(f, 'the bloom was caught on a frame');
+  assert.equal(f.opacity, '1', `the slot is opaque from frame one: ${JSON.stringify(f)}`);
+  assert.equal(f.surfaceOpacity, '1', `and so is its surface: ${JSON.stringify(f)}`);
+  assert.equal(f.surfaceBorder, '1px', `and the surface is bordered from frame one: ${JSON.stringify(f)}`);
+  // Not a vacuous read: the box really is still growing on the frame we read.
+  const k = Number((String(f.transform).match(/^matrix\(([\d.-]+)/) || [])[1]);
+  assert.ok(k > 0 && k < 1, `caught mid-growth (scale ${k}): ${JSON.stringify(f)}`);
+  await move(sp.x, sp.y); await sleep(CLOSE_MS);
+});
+
 test('a fast click on a resting card picks it, the hover then grows it, and leaving still closes it', { skip }, async () => {
   const list = await cards();
   const c = list[1];
