@@ -36,12 +36,16 @@ how we got here belongs in DEVLOG.md.
   from newer official bills), Lost Lands removed (Kevin's call), SW v79,
   527 tests green. `sw-first` off `main` carries only the offline-cache fix
   (v80) so it can ship a day ahead. **Nothing is pushed.**
-- **The wall redesign is building (from 2026-09-16 late):** MODEL-V4
-  (`claude-plans/2026-09-16-wall-v4/MODEL-V4.md`) is the contract; the
-  canvas is https://claude.ai/artifact/NELYG7pzVaS5dUKznoCSUD. Kevin took
-  direction A and set notes to artist, fest and dates. Five lanes on
-  `v4/list`, `v4/shell`, `v4/data`, `v4/zoom`, `v4/notes` off
-  `integration-0916`, each reviewed, then integrated here.
+- **The wall redesign is built and integrated here (2026-09-17, early):**
+  MODEL-V4 (`claude-plans/2026-09-16-wall-v4/MODEL-V4.md`) is the contract;
+  the canvas is https://claude.ai/artifact/NELYG7pzVaS5dUKznoCSUD. Five
+  lanes (list, shell, data, zoom, notes), each reviewed, merged; then a
+  dated-occurrence pass so a late-night card carries its date and venue
+  (an artist who plays two late nights is two cards). SW v82, 573 tests
+  green, browser suite 14/14. Pushed; CI and a preview are building. A
+  Codex ship-readiness round and a real-browser walk (Chromium + WebKit,
+  20 checks at phone and desktop) are running against 8fea4ae; their
+  findings become the polish pass before Kevin's look.
 - The WebKit iPhone walk of the integrated build passed on real WebKit
   (Low Power strip, the new-build strip, cold boot); the venue-link tap
   after a long press passed with real touch in Chromium — Kevin's phone on
