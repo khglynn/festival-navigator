@@ -153,6 +153,11 @@ function roomsOnWall() {
     seen.add(key);
     rooms.push({ key, label: key === FEST_ROOM ? state.fest().name : key });
   }
+  // The festival's own room leads wherever it first appears: Portola's
+  // Thursday and Friday are other people's warehouses, so document order
+  // would open the menu on the afters. Sorting is stable, so the sections
+  // keep the order the wall bills them in.
+  rooms.sort((a, b) => (b.key === FEST_ROOM) - (a.key === FEST_ROOM));
   return rooms;
 }
 
@@ -472,33 +477,35 @@ let unspy = () => {};
 // and `num` is the date the dock tab wears to tell those two apart
 // (FRI 2 · SAT 3 · SUN 4 · FRI 9 · SAT 10 · SUN 11). The rail's long label
 // carries its own date, so it never needs the num.
+export function dayTab({ key, num = null, anchor = null }, label, { withNum = false } = {}) {
+  const tab = document.createElement('button');
+  tab.className = 'day-tab';
+  tab.dataset.day = anchor || key;
+  tab.textContent = label;
+  if (withNum && num) {
+    const n = document.createElement('span');
+    n.className = 'num';
+    n.textContent = String(num);
+    tab.appendChild(n);
+  }
+  return tab;
+}
+
 function renderDayNav() {
   const dock = $('dock-days');
   const rail = $('rail-days');
   dock.textContent = '';
   rail.textContent = '';
-  for (const { key, short, long, num = null, anchor = null } of dayNavOf(state.fest(), ctx)) {
-    const at = anchor || key;
+  for (const day of dayNavOf(state.fest(), ctx)) {
+    const at = day.anchor || day.key;
     const jump = () => {
       const target = document.querySelector(`.day-rule[data-day="${CSS.escape(at)}"]`);
       if (target) target.scrollIntoView({ behavior: ctx.lowPower ? 'auto' : 'smooth', block: 'start' });
     };
-    const mkTab = (label, withNum) => {
-      const tab = document.createElement('button');
-      tab.className = 'day-tab';
-      tab.dataset.day = at;
-      tab.textContent = label;
-      if (withNum && num) {
-        const n = document.createElement('span');
-        n.className = 'num';
-        n.textContent = String(num);
-        tab.appendChild(n);
-      }
+    for (const [host, tab] of [[dock, dayTab(day, day.short, { withNum: true })], [rail, dayTab(day, day.long)]]) {
       tab.addEventListener('click', jump);
-      return tab;
-    };
-    dock.appendChild(mkTab(short, true));
-    rail.appendChild(mkTab(long, false));
+      host.appendChild(tab);
+    }
   }
   unspy();
   unspy = wireScrollspy([dock, rail], $('wall-root'));
