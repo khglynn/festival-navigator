@@ -94,3 +94,28 @@ test('the strip follows its columns — and still does under Low Power', { skip 
   f = await wheel(-120);
   assert.ok(Math.abs(f.strip - f.grid) <= 1, `Low Power off, the timeline follow is back: ${JSON.stringify(f)}`);
 });
+
+// The first hour label straddles the top of its rail — every other one has a
+// grid row above it, and that one has the sticky strip, which is opaque. It
+// sat half under the stage names on every grid at every width (2026-09-17).
+// The clearance belongs to the strip, so no grid ever needs its own patch.
+test('the first hour label clears the sticky stage strip, at 390 and at 1440', { skip }, async () => {
+  for (const width of [390, 1440]) {
+    const ctx = await browser.newContext({ viewport: { width, height: 900 } });
+    const p = await ctx.newPage();
+    p.on('pageerror', (e) => { throw e; });
+    try {
+      await p.goto(`${server.origin}/gallery.html`, { waitUntil: 'load' });
+      await p.waitForSelector('#events-wall .tt-block .times-rail .hour-label', { timeout: 15000 });
+      const covered = await p.evaluate(() => [...document.querySelectorAll('#events-wall .tt-block')].map((b) => {
+        const strip = b.querySelector('.stage-strip').getBoundingClientRect();
+        const label = b.querySelector('.times-rail .hour-label').getBoundingClientRect();
+        return Math.round(strip.bottom - label.top);
+      }));
+      assert.ok(covered.length, 'a grid to measure');
+      assert.ok(covered.every((n) => n <= 0), `${width}px: the strip covers ${covered.join(', ')} px of the first hour label`);
+    } finally {
+      await ctx.close();
+    }
+  }
+});

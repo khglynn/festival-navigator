@@ -539,6 +539,15 @@
   backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
   padding-bottom: 4px;
 }
+/* A grid under the strip starts 7px lower, because its FIRST hour label
+ * straddles its own top edge — every other label has a grid row above it to
+ * straddle into, and that one had the strip, which is opaque, so "6 PM" sat
+ * half under the stage names at every width (2026-09-17). Said as the sibling
+ * rule it is: one rule, every grid that has a strip, no page-level patch — and
+ * padding on the WRAP moves the rail and the columns together, so the hours
+ * still line up with the cards. (Padding the strip's bottom instead moves the
+ * grid down with it and changes nothing.) */
+.stage-strip + .times-wrap { padding-top: 7px; }
 /* The strip's GEOMETRY is the day grids' geometry, full stop: it carries the
  * `times-wrap` class so the ≥720 full-viewport rule above sizes it exactly
  * like every day grid — same width, same asymmetric padding — and its
