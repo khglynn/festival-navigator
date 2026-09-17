@@ -118,13 +118,14 @@ test('a set on a stage that is not a column is a card under that stage — its o
   assert.deepEqual(rooms[0].groups, [
     {
       venue: 'Secret Stage',
-      cards: [{ name: 'Secret Set', time: '9:30 – 10:30 PM', occ: { day: 'Friday', stage: 'Secret Stage', time: '9:30 PM - 10:30 PM', weekend: null } }],
+      cards: [{ name: 'Secret Set', time: '9:30 – 10:30 PM', occ: { day: 'Friday', stage: 'Secret Stage', time: '9:30 PM - 10:30 PM', weekend: null, date: null, venue: 'Secret Stage' } }],
     },
     // Billed for the day with no set time yet: the place IS the festival's
     // site — it is not a show with nowhere to be, so it is never Venue TBA.
+    // Its occurrence says so honestly: no room of its own, no date.
     {
       venue: 'The Field',
-      cards: [{ name: 'Not Yet', time: undefined, occ: { day: 'Friday', stage: null, time: null, weekend: null } }],
+      cards: [{ name: 'Not Yet', time: undefined, occ: { day: 'Friday', stage: null, time: null, weekend: null, date: null, venue: null } }],
     },
   ]);
   assert.equal(root.querySelectorAll('.card[data-artist="Secret Set"]').length, 1, 'the stray renders once — under its place, not on the grid');
@@ -133,11 +134,11 @@ test('a set on a stage that is not a column is a card under that stage — its o
   // sunrise both belong to the tail of that night. One clock, every card.
   assert.deepEqual(rooms[1].groups, [
     { venue: 'The Lawn', cards: [
-      { name: 'Morning Yoga', time: '9:00 – 10:00 AM', occ: { day: 'Saturday', stage: null, time: '9:00 AM - 10:00 AM', weekend: null } },
-      { name: 'Sunrise Ceremony', time: '6:30 – 7:00 AM', occ: { day: 'Saturday', stage: null, time: '6:30 AM - 7:00 AM', weekend: null } },
+      { name: 'Morning Yoga', time: '9:00 – 10:00 AM', occ: { day: 'Saturday', stage: null, time: '9:00 AM - 10:00 AM', weekend: null, date: null, venue: 'The Lawn' } },
+      { name: 'Sunrise Ceremony', time: '6:30 – 7:00 AM', occ: { day: 'Saturday', stage: null, time: '6:30 AM - 7:00 AM', weekend: null, date: null, venue: 'The Lawn' } },
     ] },
     { venue: 'The Brainery', cards: [
-      { name: 'Late Crafters', time: '2:00 – 5:00 AM', occ: { day: 'Saturday', stage: null, time: '2:00 AM - 5:00 AM', weekend: null } },
+      { name: 'Late Crafters', time: '2:00 – 5:00 AM', occ: { day: 'Saturday', stage: null, time: '2:00 AM - 5:00 AM', weekend: null, date: null, venue: 'The Brainery' } },
     ] },
   ]);
 });

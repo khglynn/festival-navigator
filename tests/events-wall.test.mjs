@@ -32,7 +32,7 @@ const model = await import('../js/v3/model.js');
 const { FESTIVALS, FESTIVAL_INDEX } = await import('../js/festivals.js');
 const { renderWall, refreshCard, dayNavOf, cardFor, roomOf, positionNowMarks, roomsOf } = await import('../js/v3/wall.js');
 const facts = await import('../js/v3/card-facts.js');
-const { parseEventTime, venueGroupsOf } = await import('../js/v3/events.js');
+const { parseEventTime, venueGroupsOf, occOf } = await import('../js/v3/events.js');
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const portola = JSON.parse(readFileSync(join(ROOT, 'data/festivals/portola-2026.json'), 'utf8'));
@@ -494,7 +494,9 @@ test('a combined-day show is ONE occurrence in TWO rooms — the zoom comes back
   assert.equal(cardFor(root, 'Horse Meat Disco', occ, { room: 'Afters' }), both[0]);
   assert.equal(cardFor(root, 'Horse Meat Disco', occ, { room: 'Nowhere' }), both[0], 'a room no longer on the wall degrades to the plain lookup');
   const midway = portola.artists.find((a) => a.venue === 'The Midway' && a.order && a.order.seq === 1);
-  const mOcc = { day: midway.day, stage: midway.stage, time: midway.time, weekend: null };
+  // Built by the model, not by hand: the occurrence IS occOf's answer, and a
+  // test that retypes its shape stops testing the thing it restores by.
+  const mOcc = occOf(midway);
   const only = cardFor(root, midway.name, mOcc);
   assert.ok(only);
   assert.equal(cardFor(root, midway.name, mOcc, { room: 'Folsom' }), only, 'a wrong room never loses the only match');

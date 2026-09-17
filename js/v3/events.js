@@ -53,9 +53,19 @@ export function venueOf(entry) {
   return null;
 }
 // The occurrence a card for this entry represents — what the zoom, the
-// notes sheet and the route key carry. `stage` keeps the "Night · Venue"
-// shape factsFor already reads, synthesized when a file carries only the
-// structured pair.
+// notes sheet and the route key carry, and what tells one card from another
+// (wall.js writes it into `data-occ`).
+//
+// THE WHOLE IDENTITY, not a summary of it. A dated show has no night and no
+// stage string, so day + stage + time was the SAME object for both of an
+// artist's late nights — Jess Williamson plays Oct 1 at Stubb's and Oct 8 at
+// The Continental Club, and the zoom on either card could only tell the
+// first one's story. The date and the venue ride along, so two nights are
+// two occurrences.
+//
+// `stage` keeps the "Night · Venue" shape the legacy files carry,
+// synthesized when a file gives only the structured pair — a dated entry has
+// neither and leaves it null.
 export function occOf(entry) {
   const night = nightOf(entry);
   const venue = venueOf(entry);
@@ -64,6 +74,8 @@ export function occOf(entry) {
     stage: entry.stage || (night && venue ? `${night} · ${venue}` : null),
     time: entry.time || null,
     weekend: entry.weekends || null,
+    date: dateOf(entry),
+    venue,
   };
 }
 // A day KEY maps to a weekday through dayMeta.wd, else through the label's
@@ -122,11 +134,17 @@ export function shortDate(iso) {
   const [, m, d] = String(iso).split('-').map(Number);
   return MONTHS[m - 1] ? `${MONTHS[m - 1]} ${d}` : '';
 }
+// "Thu · Oct 1" — a date that speaks for itself, because a dated show has no
+// weekday label to borrow one from. One builder: the rule over a date inside
+// a dated section shouts it, the zoom says it.
+export function shortDateLabel(iso) {
+  const d = new Date(`${iso}T00:00:00Z`);
+  if (Number.isNaN(d.getTime())) return String(iso);
+  return `${WEEKDAYS[(d.getUTCDay() + 6) % 7]} · ${shortDate(iso)}`;
+}
 // "TUE · SEP 29" — the rule over one date inside a dated section.
 export function dateRuleLabel(iso) {
-  const d = new Date(`${iso}T00:00:00Z`);
-  if (Number.isNaN(d.getTime())) return String(iso).toUpperCase();
-  return `${WEEKDAYS[(d.getUTCDay() + 6) % 7]} · ${shortDate(iso)}`.toUpperCase();
+  return shortDateLabel(iso).toUpperCase();
 }
 const dayOfMonth = (iso) => String(Number(String(iso).slice(8, 10)) || '');
 
@@ -409,13 +427,23 @@ export function runFactsOf(entry) {
 }
 // The artists[] entry a card's occurrence came from. Never by name alone: in
 // Portola a name can be TWO entries (a grid billing and an event), and the
-// first match is the wrong story for every card but the first.
+// first match is the wrong story for every card but the first. Two dated
+// shows are the same all the way down to the date and the room, so those are
+// asked about too.
+//
+// A field the occurrence does not carry AT ALL is not asked about — an
+// occurrence from an old route key, or one a caller wrote by hand, still
+// matches the way it always did. `null` is an answer ("this show has no
+// date"), `undefined` is silence.
+const sameField = (a, b) => (a || null) === (b || null);
 export function findEventEntry(fest, name, occ) {
   if (!occ || !fest) return null;
   const want = occ.stage || '';
   return (fest.artists || []).find((a) => a && a.name === name
-    && (a.day || null) === (occ.day || null)
-    && (a.time || null) === (occ.time || null)
+    && sameField(a.day, occ.day)
+    && sameField(a.time, occ.time)
+    && (occ.date === undefined || sameField(dateOf(a), occ.date))
+    && (occ.venue === undefined || sameField(venueOf(a), occ.venue))
     && (occOf(a).stage || '') === want) || null;
 }
 

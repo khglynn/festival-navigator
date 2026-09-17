@@ -48,7 +48,11 @@ test('nightOf / dateOf / venueOf: the structured pair wins, the stage string is 
   assert.equal(ev.venueOf({ stage: 'Sun · The Midway · Room 2' }), 'The Midway · Room 2');
   assert.equal(ev.venueOf({}), null);
   assert.deepEqual(ev.occOf({ name: 'A', day: 'Afters', night: 'Sun', venue: 'V', time: '10 PM' }),
-    { day: 'Afters', stage: 'Sun · V', time: '10 PM', weekend: null }, 'a file with only the pair still yields the stage shape the zoom reads');
+    { day: 'Afters', stage: 'Sun · V', time: '10 PM', weekend: null, date: null, venue: 'V' },
+    'a file with only the pair still yields the stage shape the zoom reads, and the pair rides along');
+  assert.deepEqual(ev.occOf({ name: 'A', day: 'Late nights', date: '2026-10-01', venue: 'Stubb’s' }),
+    { day: 'Late nights', stage: null, time: null, weekend: null, date: '2026-10-01', venue: 'Stubb’s' },
+    'a dated show has no stage string at all — the date and the room ARE its identity');
 });
 
 test('parseEventTime runs on the festival-day axis: AM after midnight, but a late morning is a morning', () => {
