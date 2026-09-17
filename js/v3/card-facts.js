@@ -517,7 +517,7 @@ function zoomCardInner(el, artistName, ctx, { onOpenNotes = null, source = 'mous
   el.classList.add('zoom-source'); // the resting CONTENT steps back; its wash stays
   zoomed = z;
   wireSlot(z);
-  slot.classList.add('shown'); // the standing zoom: the shadow, and what tells it from the ghosts still shrinking away
+  slot.classList.add('shown'); // what tells the standing zoom from the ghosts still shrinking away (the browser rig and the gallery's slow-mo both read it; the shadow is static now)
   if (!animate) {
     // An instant restore (a wall repaint under a mouse zoom) can land after
     // the hand has already moved elsewhere, and a still hand sends no

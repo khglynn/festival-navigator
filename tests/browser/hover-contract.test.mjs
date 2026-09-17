@@ -108,9 +108,11 @@ test('the zoom is opaque from its first frame — only the box grows', { skip },
         // The first frame whose transform says the growth has begun; two
         // frames of slack in case the animation is still pending on the first.
         if ((cs.transform && cs.transform !== 'none') || frame >= 2) {
+          const before = getComputedStyle(slot, '::before');
           window.__frame0 = {
             frame, opacity: cs.opacity, transform: cs.transform,
             surfaceOpacity: ss ? ss.opacity : null, surfaceBorder: ss ? ss.borderTopWidth : null,
+            shadow: before.boxShadow, shadowOpacity: before.opacity,
           };
           return;
         }
@@ -134,6 +136,11 @@ test('the zoom is opaque from its first frame — only the box grows', { skip },
   assert.equal(f.opacity, '1', `the slot is opaque from frame one: ${JSON.stringify(f)}`);
   assert.equal(f.surfaceOpacity, '1', `and so is its surface: ${JSON.stringify(f)}`);
   assert.equal(f.surfaceBorder, '1px', `and the surface is bordered from frame one: ${JSON.stringify(f)}`);
+  // The third word of §5's line, and the last to be true: the shadow used to
+  // ease in over .38s — longer than the whole growth — so the blooming card
+  // cast nothing. It is static now, and this is what stops it easing again.
+  assert.equal(f.shadowOpacity, '1', `and its shadow is at full from frame one: ${JSON.stringify(f)}`);
+  assert.match(f.shadow, /rgba\(0, 0, 0, 0\.38\)/, `a real shadow, not 'none': ${JSON.stringify(f)}`);
   // Not a vacuous read: the box really is still growing on the frame we read.
   const k = Number((String(f.transform).match(/^matrix\(([\d.-]+)/) || [])[1]);
   assert.ok(k > 0 && k < 1, `caught mid-growth (scale ${k}): ${JSON.stringify(f)}`);
