@@ -167,6 +167,68 @@ test('the show menu\'s rows are worked by a keyboard, and clear the 44px floor o
   }
 });
 
+// The sort chip's popover (DT-7) — the same touch-floor miss the show menu's
+// rows just fixed (a click-only <li role="option"> at 32px), fixed the same
+// way: native <button role="option">. A search wall hides the control
+// entirely (CORE-5: a timetable has one true order), so this needs an
+// UNSCHEDULED fest — seismic-9, already used above for the cold-open case.
+test('the sort popover\'s rows clear the 44px floor on a phone, and the chip\'s own keyboard still drives them', { skip }, async () => {
+  const { ctx, page } = await phone();
+  const TOKEN = 'sortmenucontract_0123456789'; // a made-up crew
+  const FID = 'seismic-9';                     // no `days` — the sort control stays on screen
+  try {
+    await ctx.addInitScript(([t, f]) => {
+      localStorage.setItem('fn_crews_v3', JSON.stringify([{ token: t, name: 'Contract' }]));
+      localStorage.setItem(`fn_me_v3_${t}`, 'Kevin');
+      localStorage.setItem(`fn_crew_fest_v3_${t}`, f);
+      localStorage.setItem('fn_coach_v1', '1'); // the coach mark is not what this is about
+    }, [TOKEN, FID]);
+    const doc = { v: 4, meta: { name: 'Contract', inviteFestId: FID }, spotify: {}, affinity: {}, people: { Kevin: { colorIndex: 0 } }, festivals: { [FID]: { selections: {} } } };
+    await ctx.route('**/api/crew**', (route) => route.fulfill({ contentType: 'application/json', body: JSON.stringify(doc) }));
+    await ctx.route('**/api/festival-add**', (route) => route.fulfill({ contentType: 'application/json', body: '{"festivals":[]}' }));
+    await ctx.route('**/api/person**', (route) => route.fulfill({ status: 503, contentType: 'application/json', body: '{}' }));
+
+    await page.goto(`${server.origin}/#g=${TOKEN}`, { waitUntil: 'load' });
+    await page.waitForSelector('#screen-app', { state: 'visible', timeout: 10000 });
+    await page.waitForSelector('#sort-control .sort-pop', { state: 'attached', timeout: 10000 });
+    assert.ok(await page.isVisible('#sort-control .sort-chip'), 'an unscheduled fest keeps the sort control on screen');
+
+    // Open it the way a keyboard opens it: the chip is a button — Enter fires
+    // its native click, same as the show menu's link above.
+    await page.focus('#sort-control .sort-chip');
+    await page.keyboard.press('Enter');
+    const row = page.locator('#sort-control .sort-pop [role="option"]').nth(1); // "A → Z"
+    await row.waitFor({ state: 'visible' });
+    const box = await row.boundingBox();
+    assert.ok(box.height >= 44, `a sort row is ${box.height}px tall on a phone; the floor is 44`);
+
+    // Arrow-key roving stays the chip's own — a row is a tap target, not a
+    // second place the keyboard has to visit (tabIndex -1, so Tab and the
+    // browser's own focus-on-click both skip it). The popover opened already
+    // highlighting the current choice (billing, index 0); one ArrowDown
+    // moves the highlight to "A → Z" without moving DOM focus off the chip.
+    await page.keyboard.press('ArrowDown');
+    assert.ok(await page.evaluate(() => document.activeElement.classList.contains('sort-chip')),
+      'the keyboard never lands on a row');
+    assert.equal(await page.getAttribute('#sort-control .sort-pop', 'aria-activedescendant'), 'sort-opt-az');
+
+    // Enter selects the highlighted row, closes the popover, and the chip's
+    // own label carries the pick — no second controller needed.
+    await page.keyboard.press('Enter');
+    assert.equal(await page.getAttribute('#sort-control .sort-chip', 'aria-expanded'), 'false');
+    assert.match(await page.locator('#sort-control .sort-chip').innerText(), /A → Z/);
+
+    // And Escape puts the popover away without changing the pick.
+    await page.keyboard.press('ArrowDown');
+    assert.equal(await page.getAttribute('#sort-control .sort-chip', 'aria-expanded'), 'true');
+    await page.keyboard.press('Escape');
+    assert.equal(await page.getAttribute('#sort-control .sort-chip', 'aria-expanded'), 'false');
+    assert.match(await page.locator('#sort-control .sort-chip').innerText(), /A → Z/, 'unchanged');
+  } finally {
+    await ctx.close();
+  }
+});
+
 // ACL has seven tabs and a phone dock has ~152px between the avatar and the
 // fest name. The row already scrolled, with no affordance and no idea where
 // you were standing: on open it showed FRI 2 / SAT 3 with a cut-off "SU", and
