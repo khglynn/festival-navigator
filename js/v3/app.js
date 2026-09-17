@@ -9,7 +9,7 @@ import * as sync from '../sync.js';
 import * as spotify from '../spotify.js';
 import * as model from './model.js';
 import { loadFestivalIndex, loadFestival, loadCustomFestivals, FESTIVAL_INDEX, defaultFestivalId } from '../festivals.js';
-import { renderWall, refreshCard, showUndoToast, showActionToast, showToast, wireScrollspy, colorIndexOf, scheduledWeekendOf, positionNowLines, scrollToNowLine, dayNavOf, cardFor, roomOf, isStripScroller } from './wall.js';
+import { renderWall, refreshCard, showUndoToast, showToast, wireScrollspy, colorIndexOf, scheduledWeekendOf, positionNowLines, scrollToNowLine, dayNavOf, cardFor, roomOf, isStripScroller } from './wall.js';
 import { loadPeopleFilter, savePeopleFilter, togglePerson, pruneToActive, loadSolo, saveSolo, loadHiddenBuckets, applyBucketToggle } from './filters.js';
 import { OUT_MS, CASCADE_MS, STAGGER_MS, EASE_ARRIVE, EASE_LEAVE, canAnimate } from './motion.js';
 import { scrolledBefore, rememberScrolled, dayOfScrollKey } from './now.js';
@@ -587,6 +587,28 @@ function updateMigrationBanner() {
     : 'You’re offline — picks unlock after one online update. Notes and reading work now.';
 }
 
+// A new build took over this tab while something was in progress (a note
+// half-typed, a sheet open, a card grown). index.html's worker glue reloads by
+// itself the moment the page is quiet; until then this strip says so, and it
+// stays until the reload — a strip, not a toast, because the next toast of any
+// kind cleared the shared slot and left the tab on the old build for good.
+function showNewBuildStrip() {
+  if (document.getElementById('new-build-strip')) return;
+  const bar = document.createElement('div');
+  bar.id = 'new-build-strip';
+  bar.style.cssText = 'display: flex; align-items: center; gap: 10px; margin-top: 11px; padding: 10px 13px; border: 1px solid var(--border-emphasis); border-radius: var(--r-row); background: var(--card);';
+  const msg = document.createElement('span');
+  msg.style.cssText = 'flex: 1; color: var(--text-body); font-size: 12px; font-weight: 600; line-height: 1.45;';
+  msg.textContent = 'Updated behind the scenes — refresh to run the latest.';
+  const refresh = document.createElement('button');
+  refresh.className = 'btn-tonal';
+  refresh.style.cssText = 'font-size: 11.5px; padding: 7px 13px; flex: none;';
+  refresh.textContent = 'Refresh';
+  refresh.addEventListener('click', () => location.reload());
+  bar.append(msg, refresh);
+  insertStrip(bar);
+}
+
 // ---- screens ----------------------------------------------------------------------
 const SCREENS = ['screen-landing', 'screen-join', 'screen-create', 'screen-app', 'screen-settings', 'screen-badlink', 'screen-error'];
 function show(screen) {
@@ -702,6 +724,9 @@ async function batchCreateFlow(myName) {
   const problem = nameProblem(myName);
   if (problem) { createStepName(); status.textContent = problem; return; }
   createInFlight = true;
+  // Busy (index.html's quiet()): a new build's reload waits for the batch —
+  // a reload mid-loop strands boards that exist but never reached this device.
+  document.body.dataset.busy = 'create';
   const goBtns = ['create-go-multi', 'create-go-btn'].map((id) => $(id)).filter(Boolean);
   goBtns.forEach((b) => { b.disabled = true; });
   try {
@@ -785,6 +810,7 @@ async function batchCreateFlow(myName) {
     showToast($('toast-root'), note, 8000);
   } finally {
     createInFlight = false;
+    delete document.body.dataset.busy;
     goBtns.forEach((b) => { b.disabled = false; });
   }
 }
@@ -1224,7 +1250,10 @@ function absorbPersonDoc(token, fetched, { replaceIdentity = true } = {}) {
 // must not write a word (the sync.js tokenAtStart convention).
 async function restoreFromMeLink(token, current = () => true) {
   let fetched = null, failed = false;
-  try { fetched = await crew.fetchPerson(token); } catch { failed = true; }
+  // Busy: the link is already out of the address bar, so a new build's
+  // reload mid-fetch would lose it with nothing on screen to say so.
+  document.body.dataset.busy = 'me-link';
+  try { fetched = await crew.fetchPerson(token); } catch { failed = true; } finally { delete document.body.dataset.busy; }
   if (!current()) return;
   if (!fetched) {
     renderLanding();
@@ -1450,6 +1479,7 @@ function renderJoin(token, doc) {
     // capability — rejoining resurrects.
     const person = { colorIndex: nextColorIndex(taken), removed: false };
     const festHint = pendingFestHint || (doc.meta && doc.meta.inviteFestId) || null;
+    document.body.dataset.busy = 'join'; // a new build's reload waits for the answer
     try {
       // The first write happens BEFORE entry (FLOW-5): if the server says no
       // (people cap, doc size), the joiner hears it here — not as a forever-
@@ -1476,6 +1506,7 @@ function renderJoin(token, doc) {
       enterApp(token, state.crewDoc);
       sync.scheduleSync();
     } finally {
+      delete document.body.dataset.busy;
       btn.disabled = false;
     }
   };
@@ -1790,18 +1821,11 @@ export function init() {
     },
   });
 
+  window.addEventListener('fn:new-build', showNewBuildStrip);
   // A localStorage write that fails is the one way a pick can vanish without a
   // trace: the edit is in memory, the push is 1.2s away, and the on-disk copy
   // that would survive a reload never happened. It used to console.warn. Now
   // the person holding the phone finds out.
-  // A new build took over this tab while something was in progress (a note
-  // half-typed, a sheet open, a card grown) — index.html's worker glue
-  // reloads on its own only when the page is quiet, and says so here
-  // otherwise. The toast stays until the person acts: a build they cannot
-  // see is exactly what made every preview read as "still broken".
-  window.addEventListener('fn:new-build', () => {
-    showActionToast($('toast-root'), 'Updated behind the scenes — refresh to run the latest.', 'Refresh', () => location.reload(), 0);
-  });
   onStorageWriteFail(() => {
     showToast($('toast-root'), 'This phone’s storage is full, so picks can’t be saved offline. They still sync while you have signal.', 9000);
   });
