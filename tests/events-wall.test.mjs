@@ -30,7 +30,7 @@ dom.window.matchMedia = () => ({ matches: false, addEventListener() {}, removeEv
 const state = await import('../js/state.js');
 const model = await import('../js/v3/model.js');
 const { FESTIVALS, FESTIVAL_INDEX } = await import('../js/festivals.js');
-const { renderWall, refreshCard, dayNavOf, cardFor, roomOf, positionNowMarks, roomsOf } = await import('../js/v3/wall.js');
+const { renderWall, refreshCard, dayNavOf, cardFor, roomOf, positionNowMarks } = await import('../js/v3/wall.js');
 const facts = await import('../js/v3/card-facts.js');
 const { parseEventTime, venueGroupsOf, occOf } = await import('../js/v3/events.js');
 
@@ -173,10 +173,9 @@ test('Portola is composed: THU FRI SAT SUN, each day its rooms in order, the tab
   assert.deepEqual(dayNavOf(portola, { ...ctx, query: 'x' }).map((d) => d.key), ['Saturday', 'Sunday', 'Afters', 'Folsom'], 'searching keeps the search view\'s own headers');
   // Nothing of the old view controls survives.
   assert.equal(root.querySelectorAll('.bucket-row, .bucket-chip, .tba, .tba-label, .wall-whisper, .sec-whisper').length, 0);
-  // The rooms the show menu offers are the rooms the wall renders.
-  assert.deepEqual(roomsOf(portola, ctx).map((r) => [r.key, r.label]),
-    [[':fest', 'Portola'], ['Afters', 'Afters'], ['Folsom', 'Folsom']]);
-  assert.deepEqual(roomsOf(FESTIVALS['grid-only'], ctx).map((r) => r.key), [':fest'], 'one room, no menu');
+  // What the show menu offers is asked of the WALL, by the shell that opens it
+  // (app.js roomsOnWall, covered in tests/shell-v4.test.mjs) — there is no
+  // second inventory here to drift from it.
 });
 
 test('a night is venue groups: the venue\'s own stage header, its doors line, its cards stacked in play order', () => {

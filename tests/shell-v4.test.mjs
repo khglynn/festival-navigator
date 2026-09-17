@@ -374,20 +374,32 @@ test('the show menu names every room the wall shows — ACL\'s dated section inc
   const { renderWall } = await import('../js/v3/wall.js');
   const { FESTIVALS, FESTIVAL_INDEX } = await import('../js/festivals.js');
   const ACL = JSON.parse(readFileSync(join(ROOT, 'data/festivals/acl-2026.json'), 'utf8'));
-  FESTIVAL_INDEX.push({ id: 'acl-2026', status: 'scheduled' });
+  const ONE_ROOM = {
+    id: 'one-room', name: 'One Room', status: 'scheduled',
+    dayMeta: { Friday: { wd: 'Fri', date: 'Oct 2', iso: '2026-10-02' } },
+    artists: [{ name: 'Solo', day: 'Friday' }],
+    days: { Friday: { stages: ['A'], artists: [{ name: 'Solo', stage: 'A', time: '8:00 PM - 9:00 PM' }] } },
+  };
+  FESTIVAL_INDEX.push({ id: 'acl-2026', status: 'scheduled' }, { id: 'one-room', status: 'scheduled' });
   FESTIVALS['acl-2026'] = ACL;
+  FESTIVALS['one-room'] = ONE_ROOM;
   const wall = $('wall-root');
   const portolaWall = [...wall.childNodes];
-  state.setActiveFestivalId('acl-2026');
-  try {
+  const stand = (fid) => {
+    state.setActiveFestivalId(fid);
     renderWall(wall, {
-      fid: 'acl-2026', meName: 'Kevin', picks: {}, affinity: null, lowPower: true,
+      fid, meName: 'Kevin', picks: {}, affinity: null, lowPower: true,
       sort: 'day', query: '', weekend: 'all', filterPeople: [], soloStage: null, folded: [],
       onTap: () => {}, onToggleFold: () => {}, onOpenDayNotes: () => {}, onNotesChange: null,
     });
-    assert.deepEqual(app.roomsOnWall().map((r) => [r.key, r.label]),
+    return app.roomsOnWall();
+  };
+  try {
+    assert.deepEqual(stand('acl-2026').map((r) => [r.key, r.label]),
       [[':fest', 'ACL Music Festival'], ['Late nights', 'Late nights']],
       'the festival\'s own room, then the dated section — two rooms, so there IS a menu');
+    assert.deepEqual(stand('one-room').map((r) => r.key), [':fest'],
+      'one room: below two the shell drops the menu and the fest name goes to Settings, as it always did');
   } finally {
     state.setActiveFestivalId(FID);
     wall.replaceChildren(...portolaWall);

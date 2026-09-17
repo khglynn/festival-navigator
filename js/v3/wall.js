@@ -999,17 +999,6 @@ export function dayNavOf(fest, ctx) {
   return [...groupByDay(fest.artists || [], knownDaysOf(fest)).keys()].filter(Boolean).map(groupTab(fest));
 }
 
-// The rooms of the festival week, for the show menu (MODEL-V4 §3.1) and for
-// anything else that needs to name them: the festival's own, then each
-// section. A fest with one room has no menu — the tap goes to Settings.
-export function roomsOf(fest, ctx) {
-  const plan = wallPlanFor(fest, ctx);
-  if (!plan) return [];
-  const rooms = plan.model.days.some((d) => d.grid || d.billing) ? [{ key: FEST_ROOM, label: fest.name }] : [];
-  for (const s of plan.model.sections) rooms.push({ key: s.key, label: s.label });
-  return rooms;
-}
-
 const mk = (tag, className, text) => {
   const n = document.createElement(tag);
   if (className) n.className = className;
