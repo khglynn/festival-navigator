@@ -340,9 +340,14 @@
  * it really overflows (wall.js marks it), or a row of four would be dimmed at
  * its ends for nothing. -webkit- first: WebKit still wants the prefix. */
 .dock .days.overflowing, .day-rail .rail-days.overflowing {
-  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 18px, #000 calc(100% - 18px), transparent 100%);
-  mask-image: linear-gradient(to right, transparent 0, #000 18px, #000 calc(100% - 18px), transparent 100%);
+  --fade-l: 0px; --fade-r: 0px;
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 var(--fade-l), #000 calc(100% - var(--fade-r)), transparent 100%);
+  mask-image: linear-gradient(to right, transparent 0, #000 var(--fade-l), #000 calc(100% - var(--fade-r)), transparent 100%);
 }
+/* Each edge fades only while there is something past it, so the last tab —
+ * often the one you are standing in — is never the dim one. */
+.dock .days.more-left, .day-rail .rail-days.more-left { --fade-l: 18px; }
+.dock .days.more-right, .day-rail .rail-days.more-right { --fade-r: 18px; }
 .dock .day-tab { font-weight: 700; font-size: 12px; padding-bottom: 3px;
                  border-bottom: 2px solid transparent; color: var(--text-tertiary);
                  background: none; border-top: none; border-left: none; border-right: none;

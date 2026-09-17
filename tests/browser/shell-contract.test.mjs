@@ -201,6 +201,7 @@ test('seven tabs on a phone: the day you are in is in the row, and the clipped e
         day: tab.dataset.day, tabs: row.querySelectorAll('.day-tab').length,
         inside: t.left >= r.left - 1 && t.right <= r.right + 1,
         overflowing: row.classList.contains('overflowing'),
+        more: [row.classList.contains('more-left'), row.classList.contains('more-right')],
         masked: getComputedStyle(row).maskImage !== 'none' || getComputedStyle(row).webkitMaskImage !== 'none',
       };
     });
@@ -210,6 +211,7 @@ test('seven tabs on a phone: the day you are in is in the row, and the clipped e
     assert.equal(open.day, 'Friday|W1', 'the wall opens on Oct 2');
     assert.ok(open.inside, `the opening day sits inside its row — ${JSON.stringify(open)}`);
     assert.ok(open.overflowing && open.masked, `the clipped edges fade — ${JSON.stringify(open)}`);
+    assert.deepEqual(open.more, [false, true], 'at the start of the row, only the right edge has more past it');
 
     // Jump to the tab at the far end; the row has to bring it back. 7,000px of
     // smooth scrolling takes a moment, so wait for the wall to say it arrived.
@@ -219,6 +221,7 @@ test('seven tabs on a phone: the day you are in is in the row, and the clipped e
     const late = await read();
     assert.equal(late.day, 'Late nights', 'the wall says you are in LATE NIGHTS');
     assert.ok(late.inside, `and so does the dock — ${JSON.stringify(late)}`);
+    assert.deepEqual(late.more, [true, false], 'at the end of the row the tab you are on is not the dim one');
   } finally {
     await ctx.close();
   }

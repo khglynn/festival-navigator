@@ -1500,14 +1500,22 @@ export function wireScrollspy(containers, wallRoot) {
       if (on && t.scrollIntoView) t.scrollIntoView({ block: 'nearest', inline: 'center', behavior: glide ? 'smooth' : 'auto' });
     });
   };
-  // …and the eye is told there is more: the row's clipped edges fade, only
-  // while it actually overflows, so a row of four is not dimmed at its ends.
+  // …and the eye is told there is more, on the side there is more ON: a row
+  // that fits is never dimmed, and the end of the row is never dimmed once you
+  // are at it — which matters, because the tab you are standing in is often
+  // the last one.
   const markOverflow = () => {
-    for (const c of list) c.classList.toggle('overflowing', c.scrollWidth - c.clientWidth > 1);
+    for (const c of list) {
+      const over = c.scrollWidth - c.clientWidth > 1;
+      c.classList.toggle('overflowing', over);
+      c.classList.toggle('more-left', over && c.scrollLeft > 1);
+      c.classList.toggle('more-right', over && c.scrollLeft < c.scrollWidth - c.clientWidth - 1);
+    }
   };
   markOverflow();
   const onResize = () => markOverflow();
   window.addEventListener('resize', onResize);
+  for (const c of list) c.addEventListener('scroll', markOverflow, { passive: true });
   const io = new IntersectionObserver((entries) => {
     for (const e of entries) {
       if (!e.isIntersecting) continue;
@@ -1572,6 +1580,7 @@ export function wireScrollspy(containers, wallRoot) {
     io.disconnect();
     window.removeEventListener('scroll', onScroll);
     window.removeEventListener('resize', onResize);
+    for (const c of list) c.removeEventListener('scroll', markOverflow);
     if (frame && typeof cancelAnimationFrame === 'function') cancelAnimationFrame(frame);
   };
 }
