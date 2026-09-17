@@ -1,0 +1,333 @@
+// The shell under MODEL-V4 (2026-09-16): the fold's state and its two doors,
+// the day tabs the axis asks for, the day the wall opens on, and the now mark
+// on a stack card. The real index.html and the real app.js, booted the way a
+// phone boots them, against Portola — a festival with a grid (Saturday,
+// Sunday) and two rooms of its own (Afters, Folsom), which is exactly the
+// shape every rule here exists for.
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { bootShell, settle } from './helpers/shell-rig.mjs';
+
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
+const TOKEN = 'shellv4testtoken_0123456789'; // a made-up crew, never a real link
+const FID = 'portola-2026';
+const INDEX = JSON.parse(readFileSync(join(ROOT, 'data/festivals/index.json'), 'utf8'));
+const FEST = JSON.parse(readFileSync(join(ROOT, `data/festivals/${FID}.json`), 'utf8'));
+
+const json = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
+const DOC = {
+  v: 4, meta: { name: 'The Crew', inviteFestId: FID }, spotify: {}, affinity: {},
+  people: { Kevin: { colorIndex: 0 } },
+  festivals: { [FID]: { selections: {} } },
+};
+
+async function network(url) {
+  const u = String(url);
+  if (u === '/data/festivals/index.json') return json(INDEX);
+  if (u === `/data/festivals/${FID}.json`) return json(FEST);
+  if (u.startsWith('/api/crew?')) return json(DOC);
+  if (u.startsWith('/api/festival-add?')) return json({ festivals: [] });
+  return json({ error: 'not in this test' }, 503);
+}
+
+const shell = await bootShell({
+  url: `https://fest.kevinhg.com/#g=${TOKEN}`,
+  storage: {
+    fn_crews_v3: JSON.stringify([{ token: TOKEN, name: 'The Crew' }]),
+    [`fn_me_v3_${TOKEN}`]: 'Kevin',
+    [`fn_crew_fest_v3_${TOKEN}`]: FID,
+    fn_coach_v1: '1', // the coach mark is not what this file is about
+  },
+  fetch: network,
+});
+test.after(() => shell.close());
+const { $, dom } = shell;
+for (let i = 0; i < 100 && $('screen-app').style.display === 'none'; i += 1) await settle(20);
+
+const app = await import('../js/v3/app.js'); // the SAME instance the page booted
+const filters = await import('../js/v3/filters.js');
+
+const click = (el) => el.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
+const menu = (which) => $(`${which}-fest-wrap`).querySelector('.sort-pop');
+const rows = (which) => [...menu(which).querySelectorAll('li[data-room]')]
+  .map((li) => [li.dataset.room, li.textContent, li.getAttribute('aria-selected')]);
+
+test('the wall is up on Portola, with its three rooms', () => {
+  assert.equal($('screen-app').style.display, '', 'the wall');
+  const keys = [...new Set([...$('wall-root').querySelectorAll('.sec-head[data-section]')].map((h) => h.dataset.section))];
+  // Thursday and Friday are afters nights, so the festival's own room does not
+  // appear until Saturday — which is why the show menu sorts it to the front
+  // rather than taking the wall's order as read.
+  assert.deepEqual(keys, ['Afters', 'Folsom', ':fest']);
+});
+
+// ---- the fold's state (MODEL-V4 §3) --------------------------------------------------
+
+test('a fold persists per fest in localStorage, toggles cleanly, and survives a blocked store in memory', () => {
+  const store = globalThis.localStorage;
+  assert.deepEqual(filters.loadFolded('f1'), []);
+  filters.saveFolded('f1', ['Folsom']);
+  assert.equal(store.getItem('fn_fold_v1_f1'), '["Folsom"]', 'device-local, keyed per fest — never the crew doc');
+  assert.deepEqual(filters.loadFolded('f1'), ['Folsom']);
+  assert.deepEqual(filters.loadFolded('f2'), [], 'another fest is untouched');
+  assert.deepEqual(filters.toggleFold(['Folsom'], filters.FEST_ROOM), ['Folsom', ':fest']);
+  assert.deepEqual(filters.toggleFold(['Folsom', ':fest'], 'Folsom'), [':fest']);
+  filters.saveFolded('f1', []);
+  assert.equal(store.getItem('fn_fold_v1_f1'), null, 'nothing folded = nothing stored');
+  store.setItem('fn_fold_v1_f3', '{"not":"a list"}');
+  assert.deepEqual(filters.loadFolded('f3'), [], 'garbage reads as nothing folded');
+  // A write that fails against a store that still READS (storage full):
+  // memory wins until a write lands — the old stored value must not come
+  // back on the next read (Codex, review round 2026-09-01).
+  store.setItem('fn_fold_v1_f5', '["Folsom"]');
+  assert.deepEqual(filters.loadFolded('f5'), ['Folsom']);
+  const realSet = store.setItem;
+  const quiet = console.warn;
+  console.warn = () => {};
+  store.setItem = () => { throw new DOMException('QuotaExceededError', 'QuotaExceededError'); };
+  try {
+    filters.saveFolded('f5', ['Folsom', 'Afters']);
+    assert.deepEqual(filters.loadFolded('f5'), ['Folsom', 'Afters'], 'the write failed — memory is newer than storage and wins');
+  } finally { store.setItem = realSet; console.warn = quiet; }
+  filters.saveFolded('f5', ['Afters']);
+  assert.equal(store.getItem('fn_fold_v1_f5'), '["Afters"]', 'a write that lands re-arms storage');
+  store.setItem('fn_fold_v1_f5', '["Folsom"]');
+  assert.deepEqual(filters.loadFolded('f5'), ['Folsom'], 'and storage is read again');
+  // Two taps in a row apply at once — the second reads the first.
+  const t1 = filters.applyFoldToggle('f6', filters.loadFolded('f6'), 'Folsom');
+  assert.deepEqual(t1, { next: ['Folsom'], folding: true });
+  const t2 = filters.applyFoldToggle('f6', filters.loadFolded('f6'), 'Afters');
+  assert.deepEqual(t2, { next: ['Folsom', 'Afters'], folding: true });
+  assert.equal(store.getItem('fn_fold_v1_f6'), '["Folsom","Afters"]', 'nothing was lost between the taps');
+  assert.deepEqual(filters.applyFoldToggle('f6', filters.loadFolded('f6'), 'Folsom'), { next: ['Afters'], folding: false });
+  // Blocked store: memory is the truth for the life of the page. (util.saveLS
+  // warns on a failed write — expected here, kept out of the test output.)
+  const warn = console.warn;
+  const denied = () => { throw new DOMException('The operation is insecure.', 'SecurityError'); };
+  globalThis.localStorage = { getItem: denied, setItem: denied, removeItem: denied };
+  console.warn = () => {};
+  try {
+    assert.doesNotThrow(() => filters.saveFolded('f4', ['Afters']));
+    assert.deepEqual(filters.loadFolded('f4'), ['Afters'], 'a blocked store cannot make a tap do nothing');
+  } finally { globalThis.localStorage = store; console.warn = warn; }
+});
+
+// ---- the show menu (MODEL-V4 §3.1) ---------------------------------------------------
+
+test('the fest name opens the show menu: Show, a row per room, then Settings', () => {
+  for (const which of ['dock', 'rail']) {
+    const pop = menu(which);
+    assert.ok(pop, `${which}: the popover is hung in the wrap`);
+    assert.equal(pop.style.display, 'none', 'closed until it is asked for');
+    assert.equal(pop.querySelector('.pop-head').textContent, 'Show');
+    assert.deepEqual(rows(which), [
+      [':fest', '✓Portola', 'true'],
+      ['Afters', '✓Afters', 'true'],
+      ['Folsom', '✓Folsom', 'true'],
+    ], 'the festival by name, then its rooms by theirs — every one checked');
+    assert.ok(pop.querySelector('.pop-div'), 'a divider');
+    assert.match(pop.querySelector('.settings').textContent, /Settings/, 'and the door that tap used to be');
+    assert.equal($(`${which}-fest-link`).getAttribute('aria-haspopup'), 'listbox');
+  }
+});
+
+test('a tap opens it, Escape closes it, and a tap outside closes it', () => {
+  const link = $('dock-fest-link');
+  const pop = menu('dock');
+  click(link);
+  assert.equal(pop.style.display, '', 'open');
+  assert.equal(link.getAttribute('aria-expanded'), 'true');
+  dom.window.document.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+  assert.equal(link.getAttribute('aria-expanded'), 'false', 'Escape takes the popover, not a history layer');
+  assert.equal($('screen-app').style.display, '', 'and nothing under it moved');
+
+  click(link);
+  assert.equal(link.getAttribute('aria-expanded'), 'true');
+  click($('wall-root'));
+  assert.equal(link.getAttribute('aria-expanded'), 'false', 'a tap outside closes it');
+
+  click(link);
+  click(link);
+  assert.equal(link.getAttribute('aria-expanded'), 'false', 'and the fest name toggles it');
+});
+
+test('unchecking a room folds it on every day — the state a header tap writes', () => {
+  const stored = () => globalThis.localStorage.getItem(`fn_fold_v1_${FID}`);
+  const row = (key) => [...menu('dock').querySelectorAll('li[data-room]')].find((li) => li.dataset.room === key);
+
+  click($('dock-fest-link'));
+  click(row('Folsom'));
+  assert.equal(stored(), '["Folsom"]', 'device-local, per fest — never the crew doc');
+  assert.equal(menu('dock').style.display, 'none', 'a row tap closes the menu');
+  assert.deepEqual(rows('dock').map((r) => r[2]), ['true', 'true', 'false'], 'and the menu says so');
+  assert.deepEqual(rows('rail').map((r) => r[2]), ['true', 'true', 'false'], 'in both doors');
+
+  // A second room: each tap applies before the next reads, so nothing is lost
+  // between two taps in a row.
+  click($('dock-fest-link'));
+  click(row('Afters'));
+  assert.equal(stored(), '["Folsom","Afters"]');
+  assert.deepEqual(rows('dock').map((r) => r[2]), ['true', 'false', 'false']);
+
+  // And back — tapping a folded room's row unfolds it.
+  click($('dock-fest-link'));
+  click(row('Afters'));
+  click($('dock-fest-link'));
+  click(row('Folsom'));
+  assert.equal(stored(), null, 'nothing folded = nothing stored');
+  assert.deepEqual(rows('dock').map((r) => r[2]), ['true', 'true', 'true']);
+});
+
+test('a room with a verbose key is billed in the menu the way the wall bills it', () => {
+  // A room key is frozen pick data, so it can carry a comma and a parenthetical
+  // ("Wednesday, Sept 16 (Early Arrival Pre-Party)"). Portola's keys are one
+  // clean word, which is exactly why this case has to be made rather than
+  // waited for: the wall runs every section label through dayLabelParts, and
+  // the menu naming the same room must say the same words.
+  const head = dom.window.document.createElement('div');
+  head.className = 'sec-head';
+  head.dataset.section = 'Wednesday, Sept 16 (Early Arrival Pre-Party)';
+  $('wall-root').appendChild(head);
+  try {
+    const labels = new Map(app.roomsOnWall().map((r) => [r.key, r.label]));
+    assert.equal(labels.get('Wednesday, Sept 16 (Early Arrival Pre-Party)'), 'Wednesday',
+      'the head of the label, never the raw key');
+    assert.equal(labels.get(':fest'), 'Portola', 'and the festival is still its own name');
+  } finally { head.remove(); }
+});
+
+// ---- the day axis (MODEL-V4 §2) ------------------------------------------------------
+
+test('the day tabs are the wall\'s own axis, in both navigations', () => {
+  const dock = [...$('dock-days').querySelectorAll('.day-tab')];
+  const rail = [...$('rail-days').querySelectorAll('.day-tab')];
+  assert.deepEqual(dock.map((t) => t.dataset.day), ['Thursday', 'Friday', 'Saturday', 'Sunday'],
+    'Portola: two afters nights, then the two grid days');
+  assert.deepEqual(dock.map((t) => t.dataset.day), rail.map((t) => t.dataset.day),
+    'one fact, two places — the dock and the rail can never disagree');
+  assert.deepEqual(dock.map((t) => t.textContent), ['THU', 'FRI', 'SAT', 'SUN']);
+  assert.equal(dock.every((t) => !t.querySelector('.num')), true, 'one weekend: no tab needs a date to tell it apart');
+});
+
+test('an axis entry\'s anchor and num reach the tab (a two-weekend fest\'s six, a dated section\'s one)', () => {
+  const axis = [
+    { key: 'Friday', short: 'FRI', long: 'FRIDAY · OCT 2', num: '2', anchor: 'Friday@W1' },
+    { key: 'Friday', short: 'FRI', long: 'FRIDAY · OCT 9', num: '9', anchor: 'Friday@W2' },
+    { key: 'Late nights', short: 'LATE', long: 'LATE NIGHTS' },
+  ];
+  const dock = axis.map((d) => app.dayTab(d, d.short, { withNum: true }));
+  assert.deepEqual(dock.map((t) => t.dataset.day), ['Friday@W1', 'Friday@W2', 'Late nights'],
+    'the anchor addresses the rule, because one key cannot address two Fridays');
+  assert.deepEqual(dock.map((t) => t.textContent), ['FRI2', 'FRI9', 'LATE'], 'the date tells them apart');
+  assert.deepEqual(dock.map((t) => (t.querySelector('.num') || {}).textContent), ['2', '9', undefined],
+    'as the dock\'s small num, not part of the word');
+  const rail = axis.map((d) => app.dayTab(d, d.long));
+  assert.deepEqual(rail.map((t) => t.textContent), ['FRIDAY · OCT 2', 'FRIDAY · OCT 9', 'LATE NIGHTS'],
+    'the rail\'s long label carries its own date, so it never needs the num');
+  assert.equal(rail.every((t) => !t.querySelector('.num')), true);
+  assert.deepEqual(rail.map((t) => t.dataset.day), ['Friday@W1', 'Friday@W2', 'Late nights'],
+    'and both navigations jump to the same rule');
+});
+
+// ---- the day the wall opens on (MODEL-V4 §2) -----------------------------------------
+
+test('the wall opens on the festival\'s first GRID day, not on the first thing that plays', () => {
+  const axis = [
+    { key: 'Thursday' }, { key: 'Friday' }, { key: 'Saturday' }, { key: 'Sunday' }, { key: 'Late nights' },
+  ];
+  assert.equal(app.defaultDayOf(axis, FEST).key, 'Saturday',
+    'Portola: Thursday and Friday are other people\'s warehouses');
+  assert.equal(app.defaultDayOf(axis, { days: {} }).key, 'Thursday',
+    'a lineup fest has no grid — it opens on the first day it has');
+  assert.equal(app.defaultDayOf([], FEST), null, 'and a wall with no days has nowhere to land');
+  // A two-weekend fest: the first entry whose key is a grid day is the first
+  // weekend's, because the axis is in order.
+  const acl = [
+    { key: 'Friday', anchor: 'Friday@W1' }, { key: 'Saturday', anchor: 'Saturday@W1' },
+    { key: 'Friday', anchor: 'Friday@W2' }, { key: 'Late nights' },
+  ];
+  assert.equal(app.defaultDayOf(acl, { days: { Friday: {}, Saturday: {} } }).anchor, 'Friday@W1');
+});
+
+// ---- the now mark (MODEL-V4 §1.2) ----------------------------------------------------
+
+// A stack card, stamped by the wall with the window it is playing in.
+function stackCard(root, { from, to, iso = '2026-09-24', tz = 'America/Los_Angeles' }) {
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.dataset.nowIso = iso;
+  card.dataset.nowFrom = String(from);
+  card.dataset.nowTo = String(to);
+  card.dataset.tz = tz;
+  root.appendChild(card);
+  return card;
+}
+// 10:30 PM Pacific on Thursday 2026-09-24 — 22:30 on the festival-day axis.
+const at = (h, m = 0) => new Date(Date.UTC(2026, 8, 24, h + 7, m)); // PDT is UTC-7
+
+test('the now mark lands on whoever is playing, and only while they are', () => {
+  const root = document.createElement('div');
+  const early = stackCard(root, { from: 22 * 60, to: 23 * 60 });        // 10 – 11 PM
+  const late = stackCard(root, { from: 23 * 60, to: 26 * 60 });          // 11 PM – 2 AM
+  const other = stackCard(root, { from: 22 * 60, to: 23 * 60, iso: '2026-09-25' }); // the next night
+
+  app.markNowCards(root, at(22, 30));
+  assert.equal(early.classList.contains('now'), true, '10:30 is inside the first set');
+  assert.equal(early.querySelector('.now-label').textContent, 'NOW');
+  assert.equal(early.querySelector('.now-label').className, 'now-label in-card');
+  assert.equal(late.classList.contains('now'), false);
+  assert.equal(other.classList.contains('now'), false, 'the same clock, a different night');
+
+  // The ticker moves the mark without a repaint — the label travels with it.
+  app.markNowCards(root, at(23, 1));
+  assert.equal(early.classList.contains('now'), false, 'the set ended: the ring and the label go');
+  assert.equal(early.querySelector('.now-label'), null);
+  assert.equal(late.classList.contains('now'), true);
+  assert.equal(late.querySelector('.now-label').textContent, 'NOW');
+
+  // A set's end is exclusive, so two cards can never both wear the mark.
+  app.markNowCards(root, at(23, 0));
+  assert.deepEqual([early, late, other].map((c) => c.classList.contains('now')), [false, true, false]);
+
+  // After the last set, nobody.
+  app.markNowCards(root, at(26, 0));
+  assert.deepEqual([early, late, other].map((c) => c.classList.contains('now')), [false, false, false]);
+});
+
+test('a card with no window stamped on it is never marked, and an unstamped wall costs nothing', () => {
+  const root = document.createElement('div');
+  const plain = document.createElement('div');
+  plain.className = 'card';
+  root.appendChild(plain);
+  const broken = stackCard(root, { from: 'soon', to: 'later' });
+  assert.doesNotThrow(() => app.markNowCards(root, at(22, 30)));
+  assert.equal(plain.classList.contains('now'), false);
+  assert.equal(broken.classList.contains('now'), false, 'a window that is not a number is not a window');
+  assert.doesNotThrow(() => app.markNowCards(null, at(22, 30)));
+});
+
+// ---- the stylesheet answers for what this shell draws ---------------------------------
+// Node sees classes toggled, never pixels: `.card.now` and the show menu's rows
+// both passed every test above while having no rule in the stylesheet at all,
+// and shipped invisible. The gap was found by a human reading the diff. This
+// case is the teeth — a selector the shell's JS writes and the stylesheet does
+// not answer for is a red build, not a review finding.
+test('every class this shell writes for visual effect has a rule in v3.css', () => {
+  const css = readFileSync(join(ROOT, 'assets/v3.css'), 'utf8');
+  for (const sel of [
+    '.sort-pop .pop-head',   // the show menu's "Show"
+    '.sort-pop .pop-div',    // the divider before Settings
+    '.sort-pop .chev',       // the › on the Settings row
+    '.card.now',             // the now mark's ring
+    '.now-label.in-card',    // and its label, parked in the card's corner
+  ]) assert.ok(css.includes(sel), `${sel} is drawn by the shell and styled by nothing`);
+  // The dock is fixed to the bottom of the phone. A popover that opens
+  // downward from it opens off the screen — the show menu's own surface.
+  const dockPop = /\.dock \.sort-pop\s*\{([^}]*)\}/.exec(css);
+  assert.ok(dockPop, 'the dock\'s popover needs a rule of its own');
+  assert.match(dockPop[1], /bottom:\s*calc\(100%/, 'it opens upward, above the dock');
+  assert.match(dockPop[1], /top:\s*auto/, 'and lets go of the downward default');
+});

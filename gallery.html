@@ -694,6 +694,7 @@ import * as model from '/js/v3/model.js';
 import { FESTIVALS, FESTIVAL_INDEX } from '/js/festivals.js';
 import { renderWall, renderCard, refreshCard, cardFor, roomOf } from '/js/v3/wall.js';
 import { wireCardZoom, wireCardFocusZoom, zoomCard, zoomedCard, refreshZoom, zoomSnapshot, unzoom } from '/js/v3/card-facts.js';
+import { toggleFold } from '/js/v3/filters.js';
 
 const EFID = 'gallery-events-fest';
 const POSTER = 'https://example.test/the-poster';
@@ -784,11 +785,7 @@ const ectx = {
   onOpenFestNotes: () => {},
   onNotesChange: () => {},
   onTap: eventsTap,
-  onToggleFold: (key) => {
-    folded = folded.includes(key) ? folded.filter((k) => k !== key) : [...folded, key];
-    eventsStatus(`${key} ${folded.includes(key) ? 'folded' : 'open'} — saved on this device in the app (fn_fold_v1_<fid>)`);
-    repaint();
-  },
+  onToggleFold: (key) => { folded = toggleFold(folded, key); eventsStatus(`${key} ${folded.includes(key) ? 'folded' : 'open'} — saved on this device in the app (fn_fold_v1_<fid>)`); repaint(); },
   wireZoom: (el, artist, occ) => {
     const opts = { onOpenNotes: (a) => ectx.onOpenNotes(a, occ), occ };
     wireCardZoom(el, artist, ectx, opts);

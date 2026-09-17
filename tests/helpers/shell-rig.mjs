@@ -31,6 +31,14 @@ export async function bootShell({ url = 'https://fest.kevinhg.com/', storage = {
   Object.defineProperty(globalThis, 'location', { value: dom.window.location, configurable: true });
   globalThis.requestAnimationFrame = (fn) => setTimeout(fn, 0);
   globalThis.cancelAnimationFrame = (h) => clearTimeout(h);
+  // jsdom has no IntersectionObserver, and the day-tab scrollspy asks for one
+  // the moment a wall has days — so without this every shell test that opens
+  // a real festival dies inside renderDayNav. It only has to exist: what the
+  // scrollspy actually decides comes from its geometry pass, which reads
+  // layout jsdom does not have either.
+  globalThis.IntersectionObserver = class {
+    observe() {} unobserve() {} disconnect() {} takeRecords() { return []; }
+  };
   globalThis.fetch = fetch || (async () => { throw new Error('no network in this test'); });
   dom.window.fetch = globalThis.fetch;
   dom.window.matchMedia = () => ({ matches: false, addEventListener() {}, removeEventListener() {} });

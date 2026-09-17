@@ -9,14 +9,15 @@ import * as sync from '../sync.js';
 import * as spotify from '../spotify.js';
 import * as model from './model.js';
 import { loadFestivalIndex, loadFestival, fetchCustomFestivals, mergeCustoms, FESTIVAL_INDEX, defaultFestivalId } from '../festivals.js';
-import { renderWall, refreshCard, showUndoToast, showToast, wireScrollspy, colorIndexOf, scheduledWeekendOf, positionNowLines, scrollToNowLine, dayNavOf, cardFor, roomOf, isStripScroller } from './wall.js';
-import { loadPeopleFilter, savePeopleFilter, togglePerson, pruneToActive, loadSolo, saveSolo, loadHiddenBuckets, applyBucketToggle } from './filters.js';
+import { renderWall, refreshCard, showUndoToast, showToast, wireScrollspy, colorIndexOf, positionNowLines, scrollToNowLine, dayNavOf, cardFor, roomOf, isStripScroller } from './wall.js';
+import { loadPeopleFilter, savePeopleFilter, togglePerson, pruneToActive, loadSolo, saveSolo, loadFolded, applyFoldToggle, FEST_ROOM } from './filters.js';
 import { OUT_MS, CASCADE_MS, STAGGER_MS, EASE_ARRIVE, EASE_LEAVE, EASE_SURFACE, canAnimate } from './motion.js';
-import { scrolledBefore, rememberScrolled, dayOfScrollKey } from './now.js';
+import { scrolledBefore, rememberScrolled, dayOfScrollKey, festivalClock } from './now.js';
+import { dayLabelParts } from '../time.js';
 import { disclosureFold, eqLoader, festRow } from './tools.js';
 import { openArtistSheet, openDayNotes, openAllNotes, openFestNotes, closeSheet, refreshOpenSheet, sheetChrome, dialogize, rememberOpener } from './notes.js';
 import { renderSettings, appSettings, openSubviewByKey } from './settings.js';
-import { onStorageWriteFail, saveLS, getLS, errorText } from '../util.js';
+import { onStorageWriteFail, saveLS, errorText } from '../util.js';
 import { router, encodeNotesKey, decodeNotesKey } from './router.js';
 import { wireCardZoom, wireCardFocusZoom, zoomCard, unzoom, dismissZoom, zoomedCard, zoomContains, zoomSnapshot, refreshZoom, festPlaceLine } from './card-facts.js';
 import { hookGlobalErrors } from '../errlog.js';
@@ -44,17 +45,18 @@ const ctx = {
   // shows, and which stage is soloed. Both per-fest, per-tab (filters.js).
   filterPeople: [],
   soloStage: null,
-  // The bucket filter (MODEL-V3 §3, 2026-09-01): which of the fest's rooms
-  // (the festival itself, Afters, Folsom …) are hidden on every day.
-  // Device-local, persisted per fest (filters.js) — never in the crew doc.
-  bucketsOff: [],
+  // The fold (MODEL-V4 §3, 2026-09-16): which of the fest's rooms (the
+  // festival itself, Afters, Folsom …) are folded on every day. Device-local,
+  // persisted per fest (filters.js) — never in the crew doc. Two doors write
+  // it: a tap on a room's header, and the show menu on the fest name.
+  folded: [],
   now: null, // tests pin the clock; null = new Date() at render
   onSoloStage: (stage) => {
     saveSolo(ctx.fid, stage);
     refreshCtx();
     repaintWall();
   },
-  onToggleBucket: (key) => toggleBucketFlow(key),
+  onToggleFold: (key) => toggleFoldFlow(key),
   onTap: handleTap,
   onOpenNotes: (artist, occ = null) => {
     unzoom({ why: 'notes sheet opened' });
@@ -113,9 +115,6 @@ function refreshCtx() {
   ctx.meName = crew.me(state.getCrewToken());
   ctx.picks = model.picksFor(state.crewDoc, ctx.fid);
   ctx.affinity = state.affinityLookup(ctx.meName);
-  // Weekend view is a device-local preference per fest (ST-3): set it once
-  // ("I'm going W2") and wrong-weekend picks announce themselves.
-  ctx.weekend = getLS(`fn_weekend_v1_${ctx.fid}`) || 'all';
   // A remembered filter for someone no longer in the crew would blank the
   // wall with no chip to explain it — prune to the people who are here.
   const stored = loadPeopleFilter(ctx.fid);
@@ -124,46 +123,85 @@ function refreshCtx() {
   // storage and silently reactivate the day they rejoin.
   if (ctx.filterPeople.length !== stored.length) savePeopleFilter(ctx.fid, ctx.filterPeople);
   ctx.soloStage = loadSolo(ctx.fid);
-  ctx.bucketsOff = loadHiddenBuckets(ctx.fid);
+  ctx.folded = loadFolded(ctx.fid);
 }
 
-// A bucket toggle is a small event (Kevin, 2026-08-30: nothing vanishes in
-// place, nothing pops): hiding fades the room out before the repaint; showing
-// lets the room arrive after it. Transforms and opacity only; instant under
-// Low Power and reduced motion.
-function roomsOf(key) {
-  return [...document.querySelectorAll(`#wall-root .room[data-bucket="${CSS.escape(key)}"]`)];
+// ---- the fold (MODEL-V4 §3) ------------------------------------------------------
+// A room's header is the door: tapping it folds the room's body on every day,
+// and the show menu on the fest name is the same state through a second door.
+// The header is the anchor for both — it carries the room's key already
+// (`.sec-head[data-section]`), so nothing here needs to know how the wall
+// builds a room.
+function roomHeads(key) {
+  return [...document.querySelectorAll(`#wall-root .sec-head[data-section="${CSS.escape(key)}"]`)];
 }
-function toggleBucketFlow(key) {
-  // The setting lands NOW — memory, storage and ctx — and the chip answers
-  // at once; only the room's leaving is deferred. A second tap during the
+// A room's body: everything in the room except the header, which stays.
+function roomBodiesOf(key) {
+  return roomHeads(key).flatMap((head) => {
+    const room = head.closest('.room') || head.parentElement;
+    return room ? [...room.children].filter((n) => n !== head) : [];
+  });
+}
+// The rooms the wall is showing, in the order it shows them — the festival's
+// own room, then each section. Read off the wall rather than recomputed, so
+// the show menu can never name a room the wall does not have.
+export function roomsOnWall() {
+  const rooms = [];
+  const seen = new Set();
+  for (const head of document.querySelectorAll('#wall-root .sec-head[data-section]')) {
+    const key = head.dataset.section;
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    // A room key is frozen pick data and can be verbose — "Wednesday, Sept 16
+    // (Early Arrival Pre-Party)". The wall bills a section through
+    // dayLabelParts, and the menu naming the same room must say the same
+    // words, not the raw key.
+    rooms.push({ key, label: key === FEST_ROOM ? state.fest().name : dayLabelParts(key).head });
+  }
+  // The festival's own room leads wherever it first appears: Portola's
+  // Thursday and Friday are other people's warehouses, so document order
+  // would open the menu on the afters. Sorting is stable, so the sections
+  // keep the order the wall bills them in.
+  rooms.sort((a, b) => (b.key === FEST_ROOM) - (a.key === FEST_ROOM));
+  return rooms;
+}
+
+// A fold is a small event (Kevin, 2026-08-30: nothing vanishes in place,
+// nothing pops): the body leaves quick and plain before the repaint; on the
+// way back it arrives with the usual beat. Transforms and opacity only;
+// instant under Low Power and reduced motion.
+function toggleFoldFlow(key) {
+  // The setting lands NOW — memory, storage and ctx — and the header answers
+  // at once; only the body's leaving is deferred. A second tap during the
   // fade reads this one, never the state before it.
-  const { next, hiding } = applyBucketToggle(ctx.fid, ctx.bucketsOff || [], key);
-  ctx.bucketsOff = next;
-  const chip = document.querySelector(`#wall-root .bucket-chip[data-bucket="${CSS.escape(key)}"]`);
-  if (chip) chip.setAttribute('aria-pressed', hiding ? 'false' : 'true');
+  const { next, folding } = applyFoldToggle(ctx.fid, ctx.folded || [], key);
+  ctx.folded = next;
+  for (const head of roomHeads(key)) {
+    head.setAttribute('aria-expanded', folding ? 'false' : 'true');
+    head.classList.toggle('folded', folding);
+  }
   const finish = () => {
     repaintWall();
-    if (!hiding) {
-      roomsOf(key).forEach((room, i) => {
-        if (!canAnimate(room, ctx)) return;
-        room.animate([{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }],
+    if (!folding) {
+      roomBodiesOf(key).forEach((body, i) => {
+        if (!canAnimate(body, ctx)) return;
+        body.animate([{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }],
           { duration: CASCADE_MS, delay: i * STAGGER_MS, easing: EASE_ARRIVE, fill: 'backwards' });
       });
     }
   };
-  const leaving = hiding ? roomsOf(key).filter((room) => canAnimate(room, ctx)) : [];
+  const leaving = folding ? roomBodiesOf(key).filter((body) => canAnimate(body, ctx)) : [];
   if (!leaving.length) { finish(); return; }
   let pending = leaving.length;
   let done = false;
   const settle = () => { if (done) return; pending -= 1; if (pending <= 0) { done = true; finish(); } };
-  for (const room of leaving) {
-    const a = room.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateY(-4px)' }],
+  for (const body of leaving) {
+    const a = body.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateY(-4px)' }],
       { duration: OUT_MS, easing: EASE_LEAVE, fill: 'forwards' });
     a.onfinish = settle;
     a.oncancel = settle;
   }
-  setTimeout(() => { if (!done) { done = true; finish(); } }, OUT_MS * 3 + 50); // a backgrounded tab must not hang the toggle
+  setTimeout(() => { if (!done) { done = true; finish(); } }, OUT_MS * 3 + 50); // a backgrounded tab must not hang the fold
 }
 
 // ---- tap cycle -------------------------------------------------------------------
@@ -189,6 +227,9 @@ function refreshArtistCards(artistName) {
     // already moved on.
     onSwap: i === zi ? (fresh) => refreshZoom(fresh, ctx) : null,
   }));
+  // A refreshed card can be a NEW node, and the now mark rides the node: pick
+  // the artist who is playing and the ring would go out until the next tick.
+  markNowCards($('wall-root'), ctx.now || new Date());
 }
 
 function handleTap(artistName) {
@@ -302,30 +343,88 @@ function togglePeopleFilter(name) { setPeopleFilter(togglePerson(ctx.filterPeopl
 
 // ---- the now line's clock and the day-of open ------------------------------------
 // One ticker for the app: every minute (and the moment the tab comes back
-// from the background) the now line moves without a repaint. Cheap when no
-// grid is today's — positionNowLines finds nothing to do.
+// from the background) the now line moves and the now mark hops to whoever is
+// playing — both without a repaint. Cheap when nothing is today's:
+// positionNowLines and markNowCards find nothing to do.
 let clockTimer = null;
 function startClock() {
   if (clockTimer) return;
-  const tick = () => positionNowLines($('wall-root'), new Date());
-  clockTimer = setInterval(tick, 60 * 1000);
-  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') tick(); });
+  clockTimer = setInterval(tickClock, 60 * 1000);
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') tickClock(); });
+}
+function tickClock(date = new Date()) {
+  positionNowLines($('wall-root'), date);
+  markNowCards($('wall-root'), date);
 }
 
-// Day-of open: land on the now line, ONCE per festival-day per tab — a
-// re-render after a pick must never yank the scroll, and a phone resumed
-// from the background keeps its place. A fresh open (new tab, a PWA cold
-// start) scrolls again, which is the point. Never while searching.
-function maybeScrollToNow() {
+// The now mark (MODEL-V4 §1.2). A stack has no clock to draw a line on, so
+// the card of whoever is playing right now carries the ring and a small NOW
+// label — the same violet, the same ticker, one idea in two places. The
+// window a card is playing in is stamped on it by the wall
+// (data-now-from / data-now-to, minutes on the festival-day axis, under
+// data-now-iso in data-tz's zone); the shell only reads the clock.
+export function markNowCards(root, date = new Date()) {
+  if (!root) return;
+  for (const card of root.querySelectorAll('.card[data-now-from]')) {
+    const from = Number(card.dataset.nowFrom);
+    const to = Number(card.dataset.nowTo);
+    const clock = festivalClock(date, card.dataset.tz || null);
+    const playing = card.dataset.nowIso === clock.iso
+      && Number.isFinite(from) && Number.isFinite(to)
+      && clock.minutes >= from && clock.minutes < to;
+    card.classList.toggle('now', playing);
+    let label = card.querySelector('.now-label');
+    if (playing && !label) {
+      label = document.createElement('span');
+      label.className = 'now-label in-card';
+      label.textContent = 'NOW';
+      label.setAttribute('aria-label', 'Playing now');
+      card.appendChild(label);
+    } else if (!playing && label) label.remove();
+  }
+}
+
+// Which day the wall opens on (MODEL-V4 §2): the festival's first grid day.
+// The day axis leads with whatever plays first — Portola's Thursday afters —
+// and opening a festival on somebody else's warehouse party is the wrong
+// answer. During the festival the day-of rule below wins instead.
+export function defaultDayOf(days, fest) {
+  if (!days || !days.length) return null;
+  const grid = (fest && fest.days) || {};
+  return days.find((d) => grid[d.key]) || days[0];
+}
+
+// Land a day rule where a day-tab jump lands it: below the sticky chrome
+// (--jump-offset, measured into every rule's scroll-margin-top).
+function landOnRule(rule) {
+  const pageY = rule.getBoundingClientRect().top + (window.scrollY || window.pageYOffset || 0);
+  const offset = (typeof window.getComputedStyle === 'function')
+    ? parseFloat(window.getComputedStyle(rule).scrollMarginTop) || 0 : 0;
+  window.scrollTo({ top: Math.max(0, pageY - offset), behavior: 'auto' });
+}
+
+// The open: land on the festival, ONCE per festival-day per tab — a re-render
+// after a pick must never yank the scroll, and a phone resumed from the
+// background keeps its place. A fresh open (new tab, a PWA cold start) lands
+// again, which is the point. Never while searching.
+function maybeOpenOnDay() {
   if (ctx.query) return;
   // One claim per festival per festival-day: the morning landing on today's
-  // header and the afternoon landing on the now line are the same open.
-  // Marked only after a real scroll, so an open before the festival week
-  // (nothing to land on) doesn't spend the claim.
+  // header, the afternoon landing on the now line and the week-before landing
+  // on the first grid day are all the same open. Marked only after a real
+  // scroll, so an open with nothing to land on doesn't spend the claim.
   const tz = state.fest().timezone || null; // the festival's clock, not the phone's
   const key = dayOfScrollKey(ctx.fid, new Date(), tz);
   if (scrolledBefore(key)) return;
-  if (scrollToNowLine($('wall-root'), { timeZone: tz })) rememberScrolled(key);
+  // During the festival: the now line, or today's rule before doors.
+  if (scrollToNowLine($('wall-root'), { timeZone: tz })) { rememberScrolled(key); return; }
+  // Before it and after it: the first grid day.
+  const day = defaultDayOf(dayNavOf(state.fest(), ctx), state.fest());
+  if (!day) return;
+  const rule = document.querySelector(`#wall-root .day-rule[data-day="${CSS.escape(day.anchor || day.key)}"]`);
+  if (!rule) return;
+  landOnRule(rule);
+  rememberScrolled(key);
 }
 
 // The explicit identity switch (FLOW-8), called from Settings.
@@ -376,35 +475,183 @@ function measureStickyChrome() {
 
 let unspy = () => {};
 // One day list feeds BOTH navigations: the mobile dock and the desktop day
-// rail (DT-1). Scheduled fests: tabs from days{} keys (labels via dayMeta
-// weekday). Lineup fests: the same split-aware grouping the wall renders —
-// a "Saturday & Sunday" artist must not mint its own tab (ST-1).
+// rail (DT-1). The axis is the wall's own (wall.js dayNavOf) so the tabs and
+// the wall can never disagree: the days something plays on, then a tab per
+// dated section (LATE) after them (MODEL-V4 §2).
+//
+// Two fields are optional and mean nothing to a single-weekend fest:
+// `anchor` is the day rule this tab jumps to when it is not the day's key —
+// a two-weekend fest renders Friday twice and one key cannot address both —
+// and `num` is the date the dock tab wears to tell those two apart
+// (FRI 2 · SAT 3 · SUN 4 · FRI 9 · SAT 10 · SUN 11). The rail's long label
+// carries its own date, so it never needs the num.
+export function dayTab({ key, num = null, anchor = null }, label, { withNum = false } = {}) {
+  const tab = document.createElement('button');
+  tab.className = 'day-tab';
+  tab.dataset.day = anchor || key;
+  tab.textContent = label;
+  if (withNum && num) {
+    const n = document.createElement('span');
+    n.className = 'num';
+    n.textContent = String(num);
+    tab.appendChild(n);
+    tab.setAttribute('aria-label', `${label} ${num}`); // read as "FRI 2", not "FRI2"
+  }
+  return tab;
+}
+
 function renderDayNav() {
   const dock = $('dock-days');
   const rail = $('rail-days');
   dock.textContent = '';
   rail.textContent = '';
-  // The tab bar mirrors what the wall shows — wall.js decides the days (a
-  // day-first fest: THU FRI SAT SUN; otherwise grid days plus the sections
-  // under the grid, or a lineup's day groups) so the two can never disagree.
-  for (const { key: day, short, long } of dayNavOf(state.fest(), ctx)) {
+  for (const day of dayNavOf(state.fest(), ctx)) {
+    const at = day.anchor || day.key;
     const jump = () => {
-      const target = document.querySelector(`.day-rule[data-day="${CSS.escape(day)}"]`);
+      const target = document.querySelector(`.day-rule[data-day="${CSS.escape(at)}"]`);
       if (target) target.scrollIntoView({ behavior: ctx.lowPower ? 'auto' : 'smooth', block: 'start' });
     };
-    const mkTab = (label) => {
-      const tab = document.createElement('button');
-      tab.className = 'day-tab';
-      tab.dataset.day = day;
-      tab.textContent = label;
+    for (const [host, tab] of [[dock, dayTab(day, day.short, { withNum: true })], [rail, dayTab(day, day.long)]]) {
       tab.addEventListener('click', jump);
-      return tab;
-    };
-    dock.appendChild(mkTab(short));
-    rail.appendChild(mkTab(long));
+      host.appendChild(tab);
+    }
   }
   unspy();
   unspy = wireScrollspy([dock, rail], $('wall-root'));
+}
+
+// ---- the show menu (MODEL-V4 §3.1) ------------------------------------------------
+// The fest name at the end of the dock (phone) and of the day rail (desktop)
+// is the door to what the wall shows: `Show`, a row per room of the festival
+// week with a check, then Settings — because that tap opened Settings before
+// V4 and nothing may be lost. Unchecking a room folds it on every day, which
+// is the SAME state a tap on that room's header writes. A fest with one room
+// has no menu: the tap goes straight to Settings, as it always did.
+//
+// The sort chip's popover component, reused (`.sort-wrap` + `.sort-pop`) —
+// one control vocabulary. On the phone it opens upward above the dock; on
+// desktop it hangs under the rail (both from the CSS).
+const SHOW_MENUS = [['dock-fest-wrap', 'dock-fest-link'], ['rail-fest-wrap', 'rail-fest-link']];
+let openMenu = null;
+
+function closeShowMenu({ instant = false } = {}) {
+  if (!openMenu) return;
+  const { pop, link } = openMenu;
+  openMenu = null;
+  link.setAttribute('aria-expanded', 'false');
+  const hide = () => { pop.style.display = 'none'; };
+  // The way out is quick and plain.
+  if (instant || !canAnimate(pop, ctx)) { hide(); return; }
+  const a = pop.animate([{ opacity: 1, transform: 'translateY(0)' }, { opacity: 0, transform: 'translateY(4px)' }],
+    { duration: OUT_MS, easing: EASE_LEAVE });
+  a.onfinish = hide;
+  a.oncancel = hide;
+}
+
+function openShowMenu(wrap, link, pop) {
+  closeShowMenu({ instant: true });
+  openMenu = { wrap, link, pop };
+  pop.style.display = '';
+  link.setAttribute('aria-expanded', 'true');
+  // The way in has the beat.
+  if (canAnimate(pop, ctx)) {
+    pop.animate([{ opacity: 0, transform: 'translateY(4px)' }, { opacity: 1, transform: 'translateY(0)' }],
+      { duration: CASCADE_MS, easing: EASE_ARRIVE, fill: 'backwards' });
+  }
+}
+
+function showMenuRow(label, { key = null, on = null, settings = false } = {}) {
+  const li = document.createElement('li');
+  li.setAttribute('role', 'option');
+  if (key != null) li.dataset.room = key;
+  if (on != null) li.setAttribute('aria-selected', on ? 'true' : 'false');
+  if (settings) li.className = 'settings';
+  const check = document.createElement('span');
+  check.className = 'check';
+  check.textContent = on ? '✓' : '';
+  check.setAttribute('aria-hidden', 'true');
+  const text = document.createElement('span');
+  text.textContent = label;
+  li.append(check, text);
+  if (settings) {
+    const chev = document.createElement('span');
+    chev.className = 'chev';
+    chev.textContent = '›';
+    chev.setAttribute('aria-hidden', 'true');
+    li.appendChild(chev);
+  }
+  return li;
+}
+
+function buildShowMenu(rooms, folded) {
+  const pop = document.createElement('ul');
+  pop.className = 'sort-pop';
+  pop.setAttribute('role', 'listbox');
+  pop.setAttribute('aria-label', 'Show on the wall');
+  pop.dataset.rooms = rooms.map((r) => r.key).join('|');
+  pop.style.display = 'none';
+  const head = document.createElement('li');
+  head.className = 'pop-head';
+  head.setAttribute('role', 'presentation');
+  head.textContent = 'Show';
+  pop.appendChild(head);
+  for (const room of rooms) {
+    const li = showMenuRow(room.label, { key: room.key, on: !folded.has(room.key) });
+    // A row tap closes the menu and moves the room — the fold flow owns the
+    // motion from there, on every day at once.
+    li.addEventListener('click', () => { closeShowMenu(); ctx.onToggleFold(room.key); });
+    pop.appendChild(li);
+  }
+  const divider = document.createElement('li');
+  divider.className = 'pop-div';
+  divider.setAttribute('role', 'presentation');
+  divider.setAttribute('aria-hidden', 'true');
+  pop.appendChild(divider);
+  const settings = showMenuRow('Settings', { settings: true });
+  settings.addEventListener('click', () => {
+    closeShowMenu({ instant: true });
+    openSettings();
+    router.push('settings');
+  });
+  pop.appendChild(settings);
+  return pop;
+}
+
+function paintShowMenus() {
+  // A search wall has no rooms, and the fest name must not change what it
+  // does while someone is typing — the festival's rooms are the same rooms.
+  if (ctx.query) return;
+  const rooms = roomsOnWall();
+  const folded = new Set(ctx.folded || []);
+  const signature = rooms.map((r) => r.key).join('|');
+  for (const [wrapId, linkId] of SHOW_MENUS) {
+    const wrap = $(wrapId);
+    const link = $(linkId);
+    if (!wrap || !link) continue;
+    const existing = wrap.querySelector('.sort-pop');
+    if (rooms.length < 2) {
+      if (existing) { if (openMenu && openMenu.pop === existing) closeShowMenu({ instant: true }); existing.remove(); }
+      link.removeAttribute('aria-haspopup');
+      link.removeAttribute('aria-expanded');
+      link.setAttribute('aria-label', 'Open settings');
+      continue;
+    }
+    link.setAttribute('aria-haspopup', 'listbox');
+    link.setAttribute('aria-label', 'Show on the wall');
+    // A repaint on the 25 s poll must not snatch an open menu away: while the
+    // rooms are the same list, the checks are repainted in place.
+    if (existing && existing.dataset.rooms === signature) {
+      for (const li of existing.querySelectorAll('li[data-room]')) {
+        const on = !folded.has(li.dataset.room);
+        li.setAttribute('aria-selected', on ? 'true' : 'false');
+        li.querySelector('.check').textContent = on ? '✓' : '';
+      }
+      continue;
+    }
+    if (existing) { if (openMenu && openMenu.pop === existing) closeShowMenu({ instant: true }); existing.remove(); }
+    link.setAttribute('aria-expanded', 'false');
+    wrap.appendChild(buildShowMenu(rooms, folded));
+  }
 }
 
 function repaintWall() {
@@ -425,58 +672,17 @@ function repaintWall() {
     if (again) zoomCard(again, keep.artist, ctx, { ...keep, instant: true });
   }
   renderDayNav();
+  paintShowMenus();
+  markNowCards($('wall-root'), ctx.now || new Date());
   $('notes-count').textContent = String(model.totalNoteCount(state.crewDoc, ctx.fid));
   // A timetable has one true order — a sort control there would be a lie
   // (CORE-5). Searching a scheduled fest sorts chronologically by design.
   const scheduled = !!(state.fest().days && Object.keys(state.fest().days).length);
   $('sort-control').style.display = scheduled ? 'none' : '';
   updateMigrationBanner();
-  updateWeekendRow();
   updateArchiveNote();
   maybeShowCoachMark();
   measureStickyChrome();
-}
-
-// Multi-weekend fests (ACL) get a weekend view (ST-3): pick yours once and
-// the wall shows who's actually playing it; W1/W2-only artists carry a tag
-// in the Both view so a wrong-weekend must can't sneak in.
-function updateWeekendRow() {
-  const existing = document.getElementById('weekend-row');
-  const fest = state.fest();
-  const has = (fest.artists || []).some((a) => a.weekends === 'W1' || a.weekends === 'W2');
-  if (!has) { if (existing) existing.remove(); return; }
-  // On a SCHEDULED two-weekend fest the row loses "Both": a clock grid can
-  // only honestly show one weekend at a time (duplicate overlapping cards
-  // otherwise), so a stored 'all' renders as Weekend One (ST-3, extended).
-  const schedWk = scheduledWeekendOf(fest, ctx.weekend);
-  let row = existing;
-  if (!row) {
-    row = document.createElement('div');
-    row.id = 'weekend-row';
-    row.style.cssText = 'display: flex; align-items: center; gap: 6px; margin-top: 11px;';
-    const lbl = document.createElement('span');
-    lbl.className = 'micro-label';
-    lbl.style.marginRight = '4px';
-    lbl.textContent = 'Weekend';
-    row.appendChild(lbl);
-    for (const [val, label] of [['all', 'Both'], ['W1', 'One'], ['W2', 'Two']]) {
-      const b = document.createElement('button');
-      b.className = 'seg';
-      b.dataset.w = val;
-      b.textContent = label;
-      b.addEventListener('click', () => {
-        saveLS(`fn_weekend_v1_${ctx.fid}`, val);
-        repaintWall();
-      });
-      row.appendChild(b);
-    }
-    document.querySelector('#screen-app .toolbar').after(row);
-  }
-  const active = schedWk || ctx.weekend || 'all';
-  row.querySelectorAll('.seg').forEach((b) => {
-    if (b.dataset.w === 'all') b.style.display = schedWk ? 'none' : '';
-    b.classList.toggle('active', b.dataset.w === active);
-  });
 }
 
 // First-wall coach mark (CT-1): the pick mechanic and long-press are
@@ -1098,9 +1304,10 @@ function applyLowPower(on) {
 // The most recent settings actions object — the router's forward re-open of
 // a settings drill needs it (openSettings rebuilds it on every render).
 let settingsActions = null;
-// Coming back from Settings may mean a festival switch — if THAT fest is on
-// today, land on its now line (once per fest-day, like a fresh open).
-function closeSettings() { show('screen-app'); repaintWall(); maybeScrollToNow(); }
+// Coming back from Settings may mean a festival switch — land on the new
+// fest's own day (its now line if it is on today), once per fest-day, like a
+// fresh open.
+function closeSettings() { show('screen-app'); repaintWall(); maybeOpenOnDay(); }
 
 function openSettings() {
   closeSheet();
@@ -1645,7 +1852,7 @@ async function enterApp(token, doc, current = () => true, customs = fetchCustomF
   renderPersonChips();
   renderYou();
   repaintWall();
-  maybeScrollToNow();
+  maybeOpenOnDay();
   startClock();
   history.replaceState(savedLayers ? { layers: savedLayers } : null, '', `/#g=${token}`);
   sync.pollSync();
@@ -1924,8 +2131,21 @@ export function init() {
   $('rail-you').addEventListener('click', jumpTop);
   const openSettingsLayer = () => { openSettings(); router.push('settings'); };
   $('gear-btn').addEventListener('click', openSettingsLayer);
-  $('dock-fest-link').addEventListener('click', openSettingsLayer);
-  $('rail-fest-link').addEventListener('click', openSettingsLayer);
+  // The fest name opens the show menu when the fest has rooms to choose
+  // between, and Settings when it does not (MODEL-V4 §3.1).
+  for (const [wrapId, linkId] of SHOW_MENUS) {
+    $(linkId).addEventListener('click', () => {
+      const wrap = $(wrapId);
+      const pop = wrap && wrap.querySelector('.sort-pop');
+      if (!pop) { openSettingsLayer(); return; }
+      if (openMenu && openMenu.pop === pop) closeShowMenu();
+      else openShowMenu(wrap, $(linkId), pop);
+    });
+  }
+  // A tap outside closes it, like every other popover in the app.
+  document.addEventListener('click', (e) => {
+    if (openMenu && !openMenu.wrap.contains(e.target)) closeShowMenu();
+  });
   $('fest-list-btn').addEventListener('click', goToFestList);
   $('notes-chip').addEventListener('click', () => { refreshCtx(); openAllNotes(ctx); router.push('sheet:all'); });
   $('create-go-btn').addEventListener('click', () => batchCreateFlow($('create-name-input').value.trim()));
@@ -1975,9 +2195,13 @@ export function init() {
   // the next poll (PS-3).
   window.addEventListener('offline', () => { sync.setSyncStatus('offline'); updateMigrationBanner(); });
   // Escape is universal back: pops the top layer through history so the
-  // browser's back button and the keyboard always agree (FLOW-2).
+  // browser's back button and the keyboard always agree (FLOW-2). The show
+  // menu is not a history layer — it is a popover, so Escape takes it first
+  // and nothing below it moves.
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && !router.requestClose()) closeSheet();
+    if (e.key !== 'Escape') return;
+    if (openMenu) { closeShowMenu(); return; }
+    if (!router.requestClose()) closeSheet();
   });
   // Last-resort net (FLOW-4): an early crash used to leave every screen
   // display:none. Only fires when nothing is rendered — a background sync

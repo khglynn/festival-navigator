@@ -185,11 +185,16 @@
         <div class="day-rail" id="day-rail">
           <button class="avatar you you-avatar" id="rail-you" aria-label="Jump to top"></button>
           <span class="rail-days" id="rail-days"></span>
-          <button class="fest-link" id="rail-fest-link" aria-label="Open settings">
-            <span class="fest-name" id="rail-fest-name"></span>
-            <span class="sync-dot"></span>
-            <span class="sr-only" id="sync-label">online</span>
-          </button>
+          <!-- The fest name is the show menu's door (MODEL-V4 §3.1) — app.js
+               hangs the popover in this wrap when the fest has more than one
+               room, and the tap goes straight to Settings when it has one. -->
+          <span class="sort-wrap" id="rail-fest-wrap" style="margin-left: auto;">
+            <button class="fest-link" id="rail-fest-link" aria-label="Open settings">
+              <span class="fest-name" id="rail-fest-name"></span>
+              <span class="sync-dot"></span>
+              <span class="sr-only" id="sync-label">online</span>
+            </button>
+          </span>
         </div>
         <div class="wall-wrap" id="wall-root"></div>
       </div>
@@ -198,10 +203,12 @@
       <div class="dock" id="dock">
         <button class="avatar you you-avatar" id="dock-you" aria-label="Jump to top"></button>
         <span class="days" id="dock-days"></span>
-        <button class="fest-link" id="dock-fest-link" aria-label="Open settings">
-          <span class="fest-name" id="dock-fest-name"></span>
-          <span class="sync-dot"></span>
-        </button>
+        <span class="sort-wrap" id="dock-fest-wrap" style="flex: none;">
+          <button class="fest-link" id="dock-fest-link" aria-label="Open settings">
+            <span class="fest-name" id="dock-fest-name"></span>
+            <span class="sync-dot"></span>
+          </button>
+        </span>
       </div>
     </div>
 
