@@ -23,7 +23,7 @@ globalThis.location = { origin: 'https://fest.kevinhg.com', hash: '' };
 
 const state = await import('../js/state.js');
 const { FESTIVAL_INDEX } = await import('../js/festivals.js');
-const { renderWall, dayNavOf } = await import('../js/v3/wall.js');
+const { renderWall, dayNavOf, wireScrollspy } = await import('../js/v3/wall.js');
 const { validateFestivalDoc } = await import('../api/_lib/festival-rules.mjs');
 
 const FEST = {
@@ -127,7 +127,45 @@ test('searching a scheduled two-weekend fest answers across the whole dated axis
   assert.deepEqual(namesOn('Friday|W2'), ['Two Only'], 'the W2 answer is not a wrong turn — it is the other tab');
   // The tabs a search offers are the tabs its headers carry, or a jump lands
   // nowhere.
-  assert.deepEqual(dayNavOf(FEST, mkCtx('all', 'only')).map((d) => d.key), ['Friday|W1', 'Friday|W2']);
+  assert.deepEqual(dayNavOf(FEST, mkCtx('all', 'only'), root).map((d) => d.key), ['Friday|W1', 'Friday|W2']);
+  root.remove();
+});
+
+// …and when only ONE of them answers, the nav is that one. The tab list came
+// off the plan, so a search that renders a single day still offered every tab
+// on the axis: six of ACL's seven jumped to nothing, and at scroll 0 the
+// scrollspy lit the first of them — FRI 2, a Weekend 1 tab, over a Weekend 2
+// answer (Codex re-check finding 2, 2026-09-17).
+test('while a query is on, the day nav is exactly the days that answered — and the first of them is the day you are on', () => {
+  const root = document.createElement('div');
+  document.body.appendChild(root);
+  const ctx = mkCtx('all', 'two only');
+  renderWall(root, ctx);
+  assert.deepEqual([...root.querySelectorAll('.day-rule')].map((r) => r.dataset.day), ['Friday|W2'],
+    'one day answered');
+  assert.deepEqual(dayNavOf(FEST, ctx, root).map((d) => d.key), ['Friday|W2'],
+    'so one tab — a tab that jumps nowhere is worse than no tab');
+
+  // The scrollspy's opening claim is the first tab, so filtering the list is
+  // what stops it naming the wrong weekend.
+  const hadIO = globalThis.IntersectionObserver;
+  globalThis.IntersectionObserver = class { observe() {} disconnect() {} };
+  const nav = document.createElement('div');
+  for (const d of dayNavOf(FEST, ctx, root)) {
+    const b = document.createElement('button');
+    b.className = 'day-tab';
+    b.dataset.day = d.anchor || d.key;
+    nav.appendChild(b);
+  }
+  const un = wireScrollspy(nav, root);
+  assert.deepEqual([...nav.querySelectorAll('.active')].map((t) => t.dataset.day), ['Friday|W2'],
+    'at scroll 0 the lit tab is the first answer, not the first day of the week');
+  un();
+  globalThis.IntersectionObserver = hadIO;
+
+  // Clearing the query gives the whole axis back.
+  renderWall(root, mkCtx('all'));
+  assert.deepEqual(dayNavOf(FEST, mkCtx('all'), root).map((d) => d.key), ['Friday|W1', 'Friday|W2']);
   root.remove();
 });
 
@@ -142,7 +180,8 @@ test('ACL as shipped: searching finds a Weekend 2 headliner, under the date they
 
   const root = document.createElement('div');
   document.body.appendChild(root);
-  renderWall(root, { ...mkCtx('all', 'kings of leon'), fid: 'acl-2026' });
+  const kolCtx = { ...mkCtx('all', 'kings of leon'), fid: 'acl-2026' };
+  renderWall(root, kolCtx);
 
   const cards = [...root.querySelectorAll('.card')];
   assert.deepEqual(cards.map((c) => c.dataset.artist), ['Kings of Leon'], 'found, not "No artists match"');
@@ -150,6 +189,13 @@ test('ACL as shipped: searching finds a Weekend 2 headliner, under the date they
   assert.equal(rule.dataset.day, 'Friday|W2', 'under the Friday they actually play');
   assert.equal(rule.querySelector('.date').textContent, 'Fri · Oct 9 · Weekend 2', 'and the rule says which date that is');
   assert.equal(JSON.parse(cards[0].dataset.occ).weekend, 'W2', 'the card carries the weekend, so the zoom tells the right night');
+  // The dock said seven tabs over this one answer, six of them dead, and lit
+  // the Weekend 1 Friday (Codex re-check finding 2, 2026-09-17).
+  assert.deepEqual(dayNavOf(ACL, kolCtx, root).map((d) => d.key), ['Friday|W2'],
+    'and the nav is that one day — no dead tab, no wrong weekend');
+  assert.deepEqual(dayNavOf(ACL, { ...kolCtx, query: '' }).map((d) => d.key),
+    ['Friday|W1', 'Saturday|W1', 'Sunday|W1', 'Friday|W2', 'Saturday|W2', 'Sunday|W2', 'Late nights'],
+    'clearing the query gives the whole axis back');
   root.remove();
 
   // A dated section's answers sit under their DATES, and each names its room:

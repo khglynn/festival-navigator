@@ -510,7 +510,10 @@ function renderDayNav() {
   const rail = $('rail-days');
   dock.textContent = '';
   rail.textContent = '';
-  for (const day of dayNavOf(state.fest(), ctx)) {
+  // The wall is painted first on every path that gets here, so it can be the
+  // answer to "which days are there": while a search is on, the tabs are the
+  // days it answered and nothing else.
+  for (const day of dayNavOf(state.fest(), ctx, $('wall-root'))) {
     const at = day.anchor || day.key;
     const jump = () => {
       const target = document.querySelector(anchorFor(at));

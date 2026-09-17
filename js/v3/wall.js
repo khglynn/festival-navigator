@@ -940,21 +940,33 @@ const groupTab = (fest) => (day) => {
   };
 };
 
-export function dayNavOf(fest, ctx) {
+// `wallRoot` is the wall this nav sits over. Hand it in and a SEARCH's tabs
+// are read off it; leave it out and the answer is the plan's whole axis.
+export function dayNavOf(fest, ctx, wallRoot = null) {
   const plan = wallPlanFor(fest, ctx);
   // A scheduled fest's SEARCH is its own week with the misses taken out, so
   // the tabs are the same axis either way — one list, and the keys match what
   // the wall stamps on its rules, or a tab jumps to nothing. Only a lineup
   // fest's flat search keeps its own group headers.
-  if (plan && (!ctx.query || plan.scheduled)) {
-    return [
+  const tabs = plan && (!ctx.query || plan.scheduled)
+    ? [
       ...plan.model.days.map(dayTab),
       // A dated section is one tab over many dates, and each of those dates
       // is its own note thread (§4) — so the tab carries them all.
       ...plan.model.extras.map((e) => ({ key: e.key, short: e.short, num: null, long: e.long, iso: null, dates: [...(e.byDate || new Map()).keys()], dated: true })),
-    ];
-  }
-  return [...groupByDay(fest.artists || [], knownDaysOf(fest)).keys()].filter(Boolean).map(groupTab(fest));
+    ]
+    : [...groupByDay(fest.artists || [], knownDaysOf(fest)).keys()].filter(Boolean).map(groupTab(fest));
+  // While a query is on, the wall is that axis with the days that answered
+  // nothing left off — so the nav is the days that ANSWERED, read off the
+  // wall itself rather than recomputed, because a second copy of "did this
+  // day match?" is a second thing to drift. ACL searched for Kings of Leon
+  // renders one day and used to keep all seven tabs: six jumped nowhere, and
+  // at scroll 0 the dock lit FRI 2 — a Weekend 1 tab, over a Weekend 2
+  // answer. Filtering fixes the tab it lights too, because the first tab is
+  // now the first answer, which is where the scrollspy starts.
+  if (!ctx.query || !wallRoot) return tabs;
+  const answered = new Set([...wallRoot.querySelectorAll(DAY_ANCHOR)].map((h) => h.dataset.day));
+  return tabs.filter((t) => answered.has(t.anchor || t.key));
 }
 
 const mk = (tag, className, text) => {
