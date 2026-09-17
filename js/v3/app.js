@@ -10,7 +10,7 @@ import * as spotify from '../spotify.js';
 import * as model from './model.js';
 import { loadFestivalIndex, loadFestival, fetchCustomFestivals, mergeCustoms, FESTIVAL_INDEX, defaultFestivalId } from '../festivals.js';
 import { renderWall, refreshCard, showUndoToast, showToast, wireScrollspy, colorIndexOf, scheduledWeekendOf, positionNowLines, scrollToNowLine, dayNavOf, cardFor, roomOf, isStripScroller } from './wall.js';
-import { loadPeopleFilter, savePeopleFilter, togglePerson, pruneToActive, loadSolo, saveSolo, loadHiddenBuckets, applyBucketToggle } from './filters.js';
+import { loadPeopleFilter, savePeopleFilter, togglePerson, pruneToActive, loadSolo, saveSolo, loadFolded, applyFoldToggle } from './filters.js';
 import { OUT_MS, CASCADE_MS, STAGGER_MS, EASE_ARRIVE, EASE_LEAVE, EASE_SURFACE, canAnimate } from './motion.js';
 import { scrolledBefore, rememberScrolled, dayOfScrollKey } from './now.js';
 import { disclosureFold, eqLoader, festRow } from './tools.js';
@@ -44,17 +44,17 @@ const ctx = {
   // shows, and which stage is soloed. Both per-fest, per-tab (filters.js).
   filterPeople: [],
   soloStage: null,
-  // The bucket filter (MODEL-V3 §3, 2026-09-01): which of the fest's rooms
-  // (the festival itself, Afters, Folsom …) are hidden on every day.
-  // Device-local, persisted per fest (filters.js) — never in the crew doc.
-  bucketsOff: [],
+  // The fold (MODEL-V4 §3, 2026-09-16): which of the fest's rooms (the
+  // festival itself, Afters, Folsom …) are folded on every day. Device-local,
+  // persisted per fest (filters.js) — never in the crew doc.
+  folded: [],
   now: null, // tests pin the clock; null = new Date() at render
   onSoloStage: (stage) => {
     saveSolo(ctx.fid, stage);
     refreshCtx();
     repaintWall();
   },
-  onToggleBucket: (key) => toggleBucketFlow(key),
+  onToggleFold: (key) => toggleFoldFlow(key),
   onTap: handleTap,
   onOpenNotes: (artist, occ = null) => {
     unzoom({ why: 'notes sheet opened' });
@@ -124,46 +124,61 @@ function refreshCtx() {
   // storage and silently reactivate the day they rejoin.
   if (ctx.filterPeople.length !== stored.length) savePeopleFilter(ctx.fid, ctx.filterPeople);
   ctx.soloStage = loadSolo(ctx.fid);
-  ctx.bucketsOff = loadHiddenBuckets(ctx.fid);
+  ctx.folded = loadFolded(ctx.fid);
 }
 
-// A bucket toggle is a small event (Kevin, 2026-08-30: nothing vanishes in
-// place, nothing pops): hiding fades the room out before the repaint; showing
-// lets the room arrive after it. Transforms and opacity only; instant under
-// Low Power and reduced motion.
-function roomsOf(key) {
-  return [...document.querySelectorAll(`#wall-root .room[data-bucket="${CSS.escape(key)}"]`)];
+// ---- the fold (MODEL-V4 §3) ------------------------------------------------------
+// A room's header is the door: tapping it folds the room's body on every day.
+// The header is the anchor — it carries the room's key already
+// (`.sec-head[data-section]`), so nothing here needs to know how the wall
+// builds a room.
+function roomHeads(key) {
+  return [...document.querySelectorAll(`#wall-root .sec-head[data-section="${CSS.escape(key)}"]`)];
 }
-function toggleBucketFlow(key) {
-  // The setting lands NOW — memory, storage and ctx — and the chip answers
-  // at once; only the room's leaving is deferred. A second tap during the
+// A room's body: everything in the room except the header, which stays.
+function roomBodiesOf(key) {
+  return roomHeads(key).flatMap((head) => {
+    const room = head.closest('.room') || head.parentElement;
+    return room ? [...room.children].filter((n) => n !== head) : [];
+  });
+}
+
+// A fold is a small event (Kevin, 2026-08-30: nothing vanishes in place,
+// nothing pops): the body leaves quick and plain before the repaint; on the
+// way back it arrives with the usual beat. Transforms and opacity only;
+// instant under Low Power and reduced motion.
+function toggleFoldFlow(key) {
+  // The setting lands NOW — memory, storage and ctx — and the header answers
+  // at once; only the body's leaving is deferred. A second tap during the
   // fade reads this one, never the state before it.
-  const { next, hiding } = applyBucketToggle(ctx.fid, ctx.bucketsOff || [], key);
-  ctx.bucketsOff = next;
-  const chip = document.querySelector(`#wall-root .bucket-chip[data-bucket="${CSS.escape(key)}"]`);
-  if (chip) chip.setAttribute('aria-pressed', hiding ? 'false' : 'true');
+  const { next, folding } = applyFoldToggle(ctx.fid, ctx.folded || [], key);
+  ctx.folded = next;
+  for (const head of roomHeads(key)) {
+    head.setAttribute('aria-expanded', folding ? 'false' : 'true');
+    head.classList.toggle('folded', folding);
+  }
   const finish = () => {
     repaintWall();
-    if (!hiding) {
-      roomsOf(key).forEach((room, i) => {
-        if (!canAnimate(room, ctx)) return;
-        room.animate([{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }],
+    if (!folding) {
+      roomBodiesOf(key).forEach((body, i) => {
+        if (!canAnimate(body, ctx)) return;
+        body.animate([{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }],
           { duration: CASCADE_MS, delay: i * STAGGER_MS, easing: EASE_ARRIVE, fill: 'backwards' });
       });
     }
   };
-  const leaving = hiding ? roomsOf(key).filter((room) => canAnimate(room, ctx)) : [];
+  const leaving = folding ? roomBodiesOf(key).filter((body) => canAnimate(body, ctx)) : [];
   if (!leaving.length) { finish(); return; }
   let pending = leaving.length;
   let done = false;
   const settle = () => { if (done) return; pending -= 1; if (pending <= 0) { done = true; finish(); } };
-  for (const room of leaving) {
-    const a = room.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateY(-4px)' }],
+  for (const body of leaving) {
+    const a = body.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateY(-4px)' }],
       { duration: OUT_MS, easing: EASE_LEAVE, fill: 'forwards' });
     a.onfinish = settle;
     a.oncancel = settle;
   }
-  setTimeout(() => { if (!done) { done = true; finish(); } }, OUT_MS * 3 + 50); // a backgrounded tab must not hang the toggle
+  setTimeout(() => { if (!done) { done = true; finish(); } }, OUT_MS * 3 + 50); // a backgrounded tab must not hang the fold
 }
 
 // ---- tap cycle -------------------------------------------------------------------
