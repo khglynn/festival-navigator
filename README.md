@@ -18,14 +18,17 @@ it lives. Adding one: [`docs/add-a-festival.md`](docs/add-a-festival.md).
   nobody can touch any other. Different friend groups get different links,
   exactly like real life; your own "My link" on the front page brings all of
   yours back on any device.
-- **Two walls.** While only the lineup is announced you get a sortable,
-  searchable **artist list**; once set times drop the same picks render as a
-  **timetable** — stage columns, honest clock, overlaps side by side. Picks carry
-  over automatically because they are keyed by artist, not by slot.
+- **Two presentations, one rule.** While only the lineup is announced you get
+  a sortable, searchable **artist list**. Where the festival publishes a stage
+  grid, that day renders as a **timetable** — stage columns, honest clock,
+  overlaps side by side. Everything else — the afters, the late nights, the
+  street party — is a **stack of cards under the room it happens in**, in play
+  order. The data's shape decides which, never a threshold. Picks carry over
+  automatically because they are keyed by artist, not by slot.
 - **Tap to pick.** Levels are `picked ×1 → ×2 → ×3 → must → clear`. Everyone in
   the crew gets a color, and overlapping picks blend on the wall so you can see
   at a glance where the crew is converging.
-- **Notes** attach to an artist, a day, or the festival itself.
+- **Notes** attach to an artist, a date, or the festival itself.
 - **A link looks like the festival it opens.** Paste one into iMessage or Slack
   and it unfurls as that fest's own card — its name in the display face, on a
   wash of its accent. The images are rendered ahead of time by `npm run brand`;
@@ -52,9 +55,9 @@ index.html                    app shell — all screens live here
 gallery.html                  every card, wall and zoom state on one page; the browser tests run against it
 service-worker.js             offline shell; bump CACHE_VERSION on any asset change
 js/v3/app.js                  boot, wiring, screen assembly, sheets
-js/v3/wall.js                 the wall: timetable + lineup, lanes, sticky stage strip, the day-first composition
+js/v3/wall.js                 the wall: the timetable where a grid is published, venue stacks everywhere else
 js/v3/card-facts.js           the zoom: a card grows in place into its facts (hover, hold, keyboard)
-js/v3/events.js               the events model: day-first, the layout rule, a night's timetable as one run per room
+js/v3/events.js               the events model: the days, the rooms a day holds, a room's stack in play order
 js/v3/motion.js               how this app moves — the shared motion constants
 js/v3/settings.js             settings and its drills (Spotify, export, bulk paste)
 js/v3/notes.js                notes at artist / day / fest scope
