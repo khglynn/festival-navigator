@@ -12,7 +12,7 @@ import { loadFestivalIndex, loadFestival, fetchCustomFestivals, mergeCustoms, FE
 import { renderWall, refreshCard, showUndoToast, showToast, wireScrollspy, colorIndexOf, positionNowLines, scrollToNowLine, dayNavOf, cardFor, roomOf, isStripScroller } from './wall.js';
 import { loadPeopleFilter, savePeopleFilter, togglePerson, pruneToActive, loadSolo, saveSolo, loadFolded, applyFoldToggle } from './filters.js';
 import { OUT_MS, CASCADE_MS, STAGGER_MS, EASE_ARRIVE, EASE_LEAVE, EASE_SURFACE, canAnimate } from './motion.js';
-import { scrolledBefore, rememberScrolled, dayOfScrollKey } from './now.js';
+import { scrolledBefore, rememberScrolled, dayOfScrollKey, festivalClock } from './now.js';
 import { disclosureFold, eqLoader, festRow } from './tools.js';
 import { openArtistSheet, openDayNotes, openAllNotes, openFestNotes, closeSheet, refreshOpenSheet, sheetChrome, dialogize, rememberOpener } from './notes.js';
 import { renderSettings, appSettings, openSubviewByKey } from './settings.js';
@@ -324,20 +324,47 @@ function startClock() {
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') tick(); });
 }
 
-// Day-of open: land on the now line, ONCE per festival-day per tab — a
-// re-render after a pick must never yank the scroll, and a phone resumed
-// from the background keeps its place. A fresh open (new tab, a PWA cold
-// start) scrolls again, which is the point. Never while searching.
-function maybeScrollToNow() {
+// Which day the wall opens on (MODEL-V4 §2): the festival's first grid day.
+// The day axis leads with whatever plays first — Portola's Thursday afters —
+// and opening a festival on somebody else's warehouse party is the wrong
+// answer. During the festival the day-of rule below wins instead.
+export function defaultDayOf(days, fest) {
+  if (!days || !days.length) return null;
+  const grid = (fest && fest.days) || {};
+  return days.find((d) => grid[d.key]) || days[0];
+}
+
+// Land a day rule where a day-tab jump lands it: below the sticky chrome
+// (--jump-offset, measured into every rule's scroll-margin-top).
+function landOnRule(rule) {
+  const pageY = rule.getBoundingClientRect().top + (window.scrollY || window.pageYOffset || 0);
+  const offset = (typeof window.getComputedStyle === 'function')
+    ? parseFloat(window.getComputedStyle(rule).scrollMarginTop) || 0 : 0;
+  window.scrollTo({ top: Math.max(0, pageY - offset), behavior: 'auto' });
+}
+
+// The open: land on the festival, ONCE per festival-day per tab — a re-render
+// after a pick must never yank the scroll, and a phone resumed from the
+// background keeps its place. A fresh open (new tab, a PWA cold start) lands
+// again, which is the point. Never while searching.
+function maybeOpenOnDay() {
   if (ctx.query) return;
   // One claim per festival per festival-day: the morning landing on today's
-  // header and the afternoon landing on the now line are the same open.
-  // Marked only after a real scroll, so an open before the festival week
-  // (nothing to land on) doesn't spend the claim.
+  // header, the afternoon landing on the now line and the week-before landing
+  // on the first grid day are all the same open. Marked only after a real
+  // scroll, so an open with nothing to land on doesn't spend the claim.
   const tz = state.fest().timezone || null; // the festival's clock, not the phone's
   const key = dayOfScrollKey(ctx.fid, new Date(), tz);
   if (scrolledBefore(key)) return;
-  if (scrollToNowLine($('wall-root'), { timeZone: tz })) rememberScrolled(key);
+  // During the festival: the now line, or today's rule before doors.
+  if (scrollToNowLine($('wall-root'), { timeZone: tz })) { rememberScrolled(key); return; }
+  // Before it and after it: the first grid day.
+  const day = defaultDayOf(dayNavOf(state.fest(), ctx), state.fest());
+  if (!day) return;
+  const rule = document.querySelector(`#wall-root .day-rule[data-day="${CSS.escape(day.anchor || day.key)}"]`);
+  if (!rule) return;
+  landOnRule(rule);
+  rememberScrolled(key);
 }
 
 // The explicit identity switch (FLOW-8), called from Settings.
@@ -388,32 +415,43 @@ function measureStickyChrome() {
 
 let unspy = () => {};
 // One day list feeds BOTH navigations: the mobile dock and the desktop day
-// rail (DT-1). Scheduled fests: tabs from days{} keys (labels via dayMeta
-// weekday). Lineup fests: the same split-aware grouping the wall renders —
-// a "Saturday & Sunday" artist must not mint its own tab (ST-1).
+// rail (DT-1). The axis is the wall's own (wall.js dayNavOf) so the tabs and
+// the wall can never disagree: the days something plays on, then a tab per
+// dated section (LATE) after them (MODEL-V4 §2).
+//
+// Two fields are optional and mean nothing to a single-weekend fest:
+// `anchor` is the day rule this tab jumps to when it is not the day's key —
+// a two-weekend fest renders Friday twice and one key cannot address both —
+// and `num` is the date the dock tab wears to tell those two apart
+// (FRI 2 · SAT 3 · SUN 4 · FRI 9 · SAT 10 · SUN 11). The rail's long label
+// carries its own date, so it never needs the num.
 function renderDayNav() {
   const dock = $('dock-days');
   const rail = $('rail-days');
   dock.textContent = '';
   rail.textContent = '';
-  // The tab bar mirrors what the wall shows — wall.js decides the days (a
-  // day-first fest: THU FRI SAT SUN; otherwise grid days plus the sections
-  // under the grid, or a lineup's day groups) so the two can never disagree.
-  for (const { key: day, short, long } of dayNavOf(state.fest(), ctx)) {
+  for (const { key, short, long, num = null, anchor = null } of dayNavOf(state.fest(), ctx)) {
+    const at = anchor || key;
     const jump = () => {
-      const target = document.querySelector(`.day-rule[data-day="${CSS.escape(day)}"]`);
+      const target = document.querySelector(`.day-rule[data-day="${CSS.escape(at)}"]`);
       if (target) target.scrollIntoView({ behavior: ctx.lowPower ? 'auto' : 'smooth', block: 'start' });
     };
-    const mkTab = (label) => {
+    const mkTab = (label, withNum) => {
       const tab = document.createElement('button');
       tab.className = 'day-tab';
-      tab.dataset.day = day;
+      tab.dataset.day = at;
       tab.textContent = label;
+      if (withNum && num) {
+        const n = document.createElement('span');
+        n.className = 'num';
+        n.textContent = String(num);
+        tab.appendChild(n);
+      }
       tab.addEventListener('click', jump);
       return tab;
     };
-    dock.appendChild(mkTab(short));
-    rail.appendChild(mkTab(long));
+    dock.appendChild(mkTab(short, true));
+    rail.appendChild(mkTab(long, false));
   }
   unspy();
   unspy = wireScrollspy([dock, rail], $('wall-root'));
@@ -1069,7 +1107,7 @@ function applyLowPower(on) {
 let settingsActions = null;
 // Coming back from Settings may mean a festival switch — if THAT fest is on
 // today, land on its now line (once per fest-day, like a fresh open).
-function closeSettings() { show('screen-app'); repaintWall(); maybeScrollToNow(); }
+function closeSettings() { show('screen-app'); repaintWall(); maybeOpenOnDay(); }
 
 function openSettings() {
   closeSheet();
@@ -1614,7 +1652,7 @@ async function enterApp(token, doc, current = () => true, customs = fetchCustomF
   renderPersonChips();
   renderYou();
   repaintWall();
-  maybeScrollToNow();
+  maybeOpenOnDay();
   startClock();
   history.replaceState(savedLayers ? { layers: savedLayers } : null, '', `/#g=${token}`);
   sync.pollSync();
