@@ -1532,8 +1532,10 @@ export function showToast(container, message, ms = 4000) {
 }
 
 // ---- action toast: a line and one button ---------------------------------------
-// The undo toast (design open question 1: tap-5 clears via undo window) and
-// the new-build toast are the same shape with a different verb.
+// The shape behind the undo toast (design open question 1: tap-5 clears via
+// undo window). A toast always goes away on its own — a notice that must
+// outlive the glance is a strip, not a toast (see the new-build strip in
+// app.js).
 export function showActionToast(container, message, label, onAction, ms = 5000) {
   container.textContent = '';
   const toast = document.createElement('div');
@@ -1547,7 +1549,7 @@ export function showActionToast(container, message, label, onAction, ms = 5000) 
   toast.append(msg, btn);
   container.appendChild(toast);
   clearTimeout(toastTimer);
-  if (ms) toastTimer = setTimeout(() => { container.textContent = ''; }, ms);
+  toastTimer = setTimeout(() => { container.textContent = ''; }, ms);
 }
 export function showUndoToast(container, message, onUndo) {
   showActionToast(container, message, 'Undo', onUndo, 5000);
