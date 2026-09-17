@@ -333,6 +333,16 @@
 .dock .days { flex: 1; display: flex; gap: 24px; overflow-x: auto; }
 .dock .day-tab:first-child { margin-left: auto; }
 .dock .day-tab:last-child { margin-right: auto; }
+/* More days than fit (ACL's seven on a 152px row): the row has always
+ * scrolled, but nothing said so and nothing kept the day you were in on
+ * screen. wall.js scrolls the active tab to the middle; this is the other
+ * half — the clipped edges fade, so the eye knows there is more. Only while
+ * it really overflows (wall.js marks it), or a row of four would be dimmed at
+ * its ends for nothing. -webkit- first: WebKit still wants the prefix. */
+.dock .days.overflowing, .day-rail .rail-days.overflowing {
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 18px, #000 calc(100% - 18px), transparent 100%);
+  mask-image: linear-gradient(to right, transparent 0, #000 18px, #000 calc(100% - 18px), transparent 100%);
+}
 .dock .day-tab { font-weight: 700; font-size: 12px; padding-bottom: 3px;
                  border-bottom: 2px solid transparent; color: var(--text-tertiary);
                  background: none; border-top: none; border-left: none; border-right: none;

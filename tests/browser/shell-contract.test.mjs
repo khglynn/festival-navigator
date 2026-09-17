@@ -166,3 +166,60 @@ test('the show menu\'s rows are worked by a keyboard, and clear the 44px floor o
     await ctx.close();
   }
 });
+
+// ACL has seven tabs and a phone dock has ~152px between the avatar and the
+// fest name. The row already scrolled, with no affordance and no idea where
+// you were standing: on open it showed FRI 2 / SAT 3 with a cut-off "SU", and
+// in LATE NIGHTS it still showed FRI 2 / SAT 3 (real-browser walk, 2026-09-17).
+// Only a real browser has the geometry for this.
+test('seven tabs on a phone: the day you are in is in the row, and the clipped edges fade', { skip }, async () => {
+  const { ctx, page } = await phone();
+  const TOKEN = 'dayrowcontract_0123456789'; // a made-up crew
+  const FID = 'acl-2026';                    // six dated tabs plus LATE NIGHTS
+  try {
+    await ctx.addInitScript(([t, f]) => {
+      localStorage.setItem('fn_crews_v3', JSON.stringify([{ token: t, name: 'Contract' }]));
+      localStorage.setItem(`fn_me_v3_${t}`, 'Kevin');
+      localStorage.setItem(`fn_crew_fest_v3_${t}`, f);
+      localStorage.setItem('fn_coach_v1', '1');
+    }, [TOKEN, FID]);
+    const doc = { v: 4, meta: { name: 'Contract', inviteFestId: FID }, spotify: {}, affinity: {}, people: { Kevin: { colorIndex: 0 } }, festivals: { [FID]: { selections: {} } } };
+    await ctx.route('**/api/crew**', (route) => route.fulfill({ contentType: 'application/json', body: JSON.stringify(doc) }));
+    await ctx.route('**/api/festival-add**', (route) => route.fulfill({ contentType: 'application/json', body: '{"festivals":[]}' }));
+    await ctx.route('**/api/person**', (route) => route.fulfill({ status: 503, contentType: 'application/json', body: '{}' }));
+
+    await page.goto(`${server.origin}/#g=${TOKEN}`, { waitUntil: 'load' });
+    await page.waitForSelector('#dock-days .day-tab.active', { timeout: 10000 });
+    await sleep(600); // the row's own smooth scroll
+
+    const read = () => page.evaluate(() => {
+      const row = document.getElementById('dock-days');
+      const tab = row.querySelector('.day-tab.active');
+      const r = row.getBoundingClientRect();
+      const t = tab.getBoundingClientRect();
+      return {
+        day: tab.dataset.day, tabs: row.querySelectorAll('.day-tab').length,
+        inside: t.left >= r.left - 1 && t.right <= r.right + 1,
+        overflowing: row.classList.contains('overflowing'),
+        masked: getComputedStyle(row).maskImage !== 'none' || getComputedStyle(row).webkitMaskImage !== 'none',
+      };
+    });
+
+    const open = await read();
+    assert.equal(open.tabs, 7, 'six dated days and Late nights');
+    assert.equal(open.day, 'Friday|W1', 'the wall opens on Oct 2');
+    assert.ok(open.inside, `the opening day sits inside its row — ${JSON.stringify(open)}`);
+    assert.ok(open.overflowing && open.masked, `the clipped edges fade — ${JSON.stringify(open)}`);
+
+    // Jump to the tab at the far end; the row has to bring it back. 7,000px of
+    // smooth scrolling takes a moment, so wait for the wall to say it arrived.
+    await page.click('#dock-days .day-tab[data-day="Late nights"]');
+    await page.waitForFunction(() => document.querySelector('#dock-days .day-tab.active')?.dataset.day === 'Late nights', null, { timeout: 8000 });
+    await sleep(500); // the row's own glide
+    const late = await read();
+    assert.equal(late.day, 'Late nights', 'the wall says you are in LATE NIGHTS');
+    assert.ok(late.inside, `and so does the dock — ${JSON.stringify(late)}`);
+  } finally {
+    await ctx.close();
+  }
+});

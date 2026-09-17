@@ -198,12 +198,12 @@ test('scrollspy: a re-wire mid-page claims the day you are actually in, not the 
     un();
 
     // WebKit parks the opening jump a couple of dozen pixels short of where it
-    // aimed: Saturday's rule sat 24px below --jump-offset while Saturday
-    // filled the screen, and a geometry rule that wanted the rule at-or-above
-    // the offset lit FRIDAY on the iPhone (real-browser walk, 2026-09-17).
-    // Chromium lands exactly, which is why no desktop ever showed it. One
-    // tolerance, not a WebKit branch. Three days here, so "the first tab" is
-    // never the right answer by accident.
+    // aimed: Saturday's rule sat at top 24px below --jump-offset while
+    // Saturday filled the screen, and a geometry rule that wanted the rule
+    // at-or-above the offset lit FRIDAY on the iPhone (real-browser walk,
+    // 2026-09-17). Chromium lands exactly, which is why nothing on a desktop
+    // ever showed it. One tolerance, not a WebKit branch.
+    // Three days, so "the first tab" is never the right answer by accident.
     nav.innerHTML = '<button class="day-tab" data-day="Friday"></button><button class="day-tab" data-day="Saturday"></button><button class="day-tab" data-day="Sunday"></button>';
     root.innerHTML = '<div class="day-rule" data-day="Friday"></div><div class="day-rule" data-day="Saturday"></div><div class="day-rule" data-day="Sunday"></div>';
     const [fri3, sat3, sun3] = root.querySelectorAll('.day-rule');
@@ -222,6 +222,48 @@ test('scrollspy: a re-wire mid-page claims the day you are actually in, not the 
     Object.defineProperty(window, 'scrollY', { value: 0, configurable: true });
     globalThis.IntersectionObserver = hadIO;
     globalThis.getComputedStyle = hadGCS;
+  }
+});
+
+// Seven tabs (ACL) do not fit a phone dock: the row already scrolls, but the
+// day you are standing in could sit off its edge — the dock showed FRI 2 /
+// SAT 3 while the wall was in LATE NIGHTS (real-browser walk, 2026-09-17).
+// The one place the active day changes is where it is brought into view.
+test('scrollspy: the day you are in is brought into the middle of its row, on open and on every change', async () => {
+  const { wireScrollspy } = await import('../js/v3/wall.js');
+  const hadIO = globalThis.IntersectionObserver;
+  globalThis.IntersectionObserver = class { observe() {} disconnect() {} };
+  const hadGCS = globalThis.getComputedStyle;
+  globalThis.getComputedStyle = window.getComputedStyle.bind(window);
+  const nav = document.createElement('div');
+  nav.innerHTML = '<button class="day-tab" data-day="Saturday"></button><button class="day-tab" data-day="Sunday"></button>';
+  const root = document.createElement('div');
+  root.innerHTML = '<div class="day-rule" data-day="Saturday"></div><div class="day-rule" data-day="Sunday"></div>';
+  const [sat, sun] = root.querySelectorAll('.day-rule');
+  const shown = [];
+  for (const t of nav.querySelectorAll('.day-tab')) t.scrollIntoView = (o) => shown.push([t.dataset.day, o]);
+  const hadRAF = globalThis.requestAnimationFrame;
+  globalThis.requestAnimationFrame = (fn) => { fn(); return 1; }; // the scroll path, synchronously
+  try {
+    const un = wireScrollspy(nav, root);
+    assert.deepEqual(shown.map(([day]) => day), ['Saturday'], 'the opening day is brought into view');
+    assert.equal(shown[0][1].inline, 'center', 'to the middle of the row');
+    assert.equal(shown[0][1].block, 'nearest', 'and never by moving the page');
+
+    // A scroll into Sunday moves the row; a second read of the same day does not.
+    Object.defineProperty(window, 'scrollY', { value: 1505, configurable: true });
+    sat.getBoundingClientRect = () => ({ top: -975 });
+    sun.getBoundingClientRect = () => ({ top: -162 });
+    window.dispatchEvent(new window.Event('scroll'));
+    assert.deepEqual(shown.map(([day]) => day), ['Saturday', 'Sunday'], 'the day changed, so the row did');
+    window.dispatchEvent(new window.Event('scroll'));
+    assert.deepEqual(shown.map(([day]) => day), ['Saturday', 'Sunday'], 'standing still moves nothing');
+    un();
+  } finally {
+    Object.defineProperty(window, 'scrollY', { value: 0, configurable: true });
+    globalThis.IntersectionObserver = hadIO;
+    globalThis.getComputedStyle = hadGCS;
+    globalThis.requestAnimationFrame = hadRAF;
   }
 });
 

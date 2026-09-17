@@ -1489,6 +1489,10 @@ export function showUndoToast(container, message, onUndo) {
 }
 
 // ---- day-nav scrollspy ------------------------------------------------------------
+// Where a day tab lands: a day rule, or the room header of a dated section,
+// which is a room and a tab at once. Never a grid scroller — that carries
+// data-day to name its own day.
+export const DAY_ANCHOR = '.day-rule[data-day], .sec-head[data-day]';
 // How far below --jump-offset a day rule may sit and still be the day you are
 // standing in. A jump lands its rule AT the offset on Chromium and about 24px
 // below it on WebKit; both are the same arrival.
@@ -1503,17 +1507,37 @@ export function wireScrollspy(containers, wallRoot) {
   // Observe ONLY headers that correspond to a tab — the NOTES/EVERYTHING-ELSE
   // pseudo-headers share dayHeader() anatomy and used to de-highlight every
   // tab when they scrolled into the band (audit 1.3). A tab's landing is a day
-  // rule, or the room header of a dated section, which is a room AND a tab.
-  const headers = [...wallRoot.querySelectorAll('[data-day]')]
+  // rule, or the room header of a dated section, which is a room AND a tab —
+  // and NOT a grid scroller, which carries data-day for its own reasons.
+  const headers = [...wallRoot.querySelectorAll(DAY_ANCHOR)]
     .filter((h) => tabDays.has(h.dataset.day));
+  // A tab row that cannot fit its days scrolls, and the day you are standing
+  // in has to be IN it: ACL's seven tabs leave four off the end of a phone
+  // dock, and the row stayed where it was, so it showed FRI 2 / SAT 3 while
+  // the wall was in LATE NIGHTS (real-browser walk, 2026-09-17). This is the
+  // one place the active day changes, so it is the one place the row moves.
+  // `block: 'nearest'` because the page is not ours to scroll.
+  let active = null;
   const setActive = (day) => {
+    if (day === active) return;
+    active = day;
+    const glide = !reduced() && !document.body.classList.contains('low-power');
     tabs.forEach((t) => {
       const on = t.dataset.day === day;
       t.classList.toggle('active', on);
       if (on) t.setAttribute('aria-current', 'true');
       else t.removeAttribute('aria-current');
+      if (on && t.scrollIntoView) t.scrollIntoView({ block: 'nearest', inline: 'center', behavior: glide ? 'smooth' : 'auto' });
     });
   };
+  // …and the eye is told there is more: the row's clipped edges fade, only
+  // while it actually overflows, so a row of four is not dimmed at its ends.
+  const markOverflow = () => {
+    for (const c of list) c.classList.toggle('overflowing', c.scrollWidth - c.clientWidth > 1);
+  };
+  markOverflow();
+  const onResize = () => markOverflow();
+  window.addEventListener('resize', onResize);
   const io = new IntersectionObserver((entries) => {
     for (const e of entries) {
       if (!e.isIntersecting) continue;
@@ -1577,6 +1601,7 @@ export function wireScrollspy(containers, wallRoot) {
   return () => {
     io.disconnect();
     window.removeEventListener('scroll', onScroll);
+    window.removeEventListener('resize', onResize);
     if (frame && typeof cancelAnimationFrame === 'function') cancelAnimationFrame(frame);
   };
 }

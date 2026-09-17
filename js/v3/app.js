@@ -9,7 +9,7 @@ import * as sync from '../sync.js';
 import * as spotify from '../spotify.js';
 import * as model from './model.js';
 import { loadFestivalIndex, loadFestival, fetchCustomFestivals, mergeCustoms, FESTIVAL_INDEX, defaultFestivalId } from '../festivals.js';
-import { renderWall, refreshCard, showUndoToast, showToast, wireScrollspy, colorIndexOf, positionNowLines, positionNowMarks, scrollToNowLine, dayNavOf, cardFor, roomOf, isStripScroller } from './wall.js';
+import { renderWall, refreshCard, showUndoToast, showToast, wireScrollspy, colorIndexOf, positionNowLines, positionNowMarks, scrollToNowLine, dayNavOf, cardFor, roomOf, isStripScroller, DAY_ANCHOR } from './wall.js';
 import { loadPeopleFilter, savePeopleFilter, togglePerson, pruneToActive, loadSolo, saveSolo, loadFolded, applyFoldToggle, FEST_ROOM } from './filters.js';
 import { OUT_MS, CASCADE_MS, STAGGER_MS, EASE_ARRIVE, EASE_LEAVE, EASE_SURFACE, canAnimate } from './motion.js';
 import { scrolledBefore, rememberScrolled, dayOfScrollKey } from './now.js';
@@ -382,6 +382,13 @@ function tickClock(date = new Date()) {
   positionNowMarks($('wall-root'), date);
 }
 
+// Where a day tab lands on the wall, in the wall's own words (DAY_ANCHOR):
+// its day rule, or — for a dated section, which is a room and a tab at once —
+// its room header.
+const anchorFor = (key) => DAY_ANCHOR.split(', ')
+  .map((sel) => `#wall-root ${sel.replace('[data-day]', `[data-day="${CSS.escape(key)}"]`)}`)
+  .join(', ');
+
 // Which day the wall opens on (MODEL-V4 §2): the festival's first grid day.
 // The day axis leads with whatever plays first — Portola's Thursday afters —
 // and opening a festival on somebody else's warehouse party is the wrong
@@ -419,7 +426,7 @@ function maybeOpenOnDay() {
   // Before it and after it: the first grid day.
   const day = defaultDayOf(dayNavOf(state.fest(), ctx), state.fest());
   if (!day) return;
-  const rule = document.querySelector(`#wall-root [data-day="${CSS.escape(day.anchor || day.key)}"]`);
+  const rule = document.querySelector(anchorFor(day.anchor || day.key));
   if (!rule) return;
   landOnRule(rule);
   rememberScrolled(key);
@@ -506,8 +513,7 @@ function renderDayNav() {
   for (const day of dayNavOf(state.fest(), ctx)) {
     const at = day.anchor || day.key;
     const jump = () => {
-      // Scoped to the wall: the tabs themselves carry data-day too.
-      const target = document.querySelector(`#wall-root [data-day="${CSS.escape(at)}"]`);
+      const target = document.querySelector(anchorFor(at));
       if (target) target.scrollIntoView({ behavior: ctx.lowPower ? 'auto' : 'smooth', block: 'start' });
     };
     for (const [host, tab] of [[dock, dayTab(day, day.short, { withNum: true })], [rail, dayTab(day, day.long)]]) {
