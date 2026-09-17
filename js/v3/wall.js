@@ -353,8 +353,9 @@ export function groupByDay(artists, knownDays = []) {
 //   - '' (everything else): a lineup artist with no set on any grid day yet.
 //     Grid-day entries whose name IS on the grid are skipped — that's the
 //     grid's job. Deduped by name.
-// Weekend-filtered like the grid, so a W2-only act stays out of a W1 view.
-export function extraSectionsOf(fest, scheduledNames, weekend) {
+// Every weekend, always: a weekend is which DAY you are looking at now
+// (MODEL-V4 §2), so there is no view left for a W2-only act to stay out of.
+export function extraSectionsOf(fest, scheduledNames) {
   const gridDays = Object.keys(fest.days || {});
   const known = knownDaysOf(fest);
   const groups = new Map();
@@ -363,7 +364,7 @@ export function extraSectionsOf(fest, scheduledNames, weekend) {
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key).push(a);
   };
-  for (const a of applyWeekend(fest.artists || [], weekend)) {
+  for (const a of fest.artists || []) {
     const days = splitDays(a.day, known) || [a.day || ''];
     for (const d of days) {
       if (gridDays.includes(d)) {
@@ -466,27 +467,12 @@ function dayHeader(label, sub, opts = {}) {
   return rule;
 }
 
-// The day rule's subtitle: real dates beat internal numbering (ST-4).
-// A two-weekend scheduled fest carries per-weekend dates in meta.dates
-// ({W1: 'Oct 2', W2: 'Oct 9'}) — the day key is the same "Friday" both
-// weekends, so the sub is where the actual date lives.
-function dayRuleSub(meta, weekend) {
+// A LIST section's day rule subtitle: real dates beat internal numbering
+// (ST-4). A dated day says its own date — that sub comes composed from the
+// model (events.js), which is the only place a weekend is still a thing.
+function dayRuleSub(meta) {
   if (!meta) return '';
-  const date = (weekend && meta.dates && meta.dates[weekend]) || meta.date;
-  return [meta.wd, date || (meta.num ? `Day ${meta.num}` : '')].filter(Boolean).join(' · ');
-}
-
-// Which weekend a SCHEDULED two-weekend fest should render. Null = this fest
-// has no weekend-tagged sets (single-weekend — the common case, no filter).
-// A stored 'all' maps to W1: a clock grid showing BOTH weekends' Friday would
-// double-book every stage with duplicate cards — "Both" is a lineup-view
-// concept; on a timetable you are looking at one weekend or the other (ST-3).
-export function scheduledWeekendOf(fest, pref) {
-  const days = fest.days || {};
-  const tagged = Object.keys(days).some((d) =>
-    (days[d].artists || []).some((a) => a.weekend === 'W1' || a.weekend === 'W2'));
-  if (!tagged) return null;
-  return pref === 'W2' ? 'W2' : 'W1';
+  return [meta.wd, meta.date || (meta.num ? `Day ${meta.num}` : '')].filter(Boolean).join(' · ');
 }
 
 // ---- search / sort / weekend -----------------------------------------------------
@@ -947,47 +933,60 @@ export function wallPlanFor(fest, ctx) {
   return { model: plan, scheduled, weekends, gridDays };
 }
 
+// The clock days of a scheduled fest, as the day axis has them: one per
+// weekend under MODEL-V4 §2. The one source both the wall and a search read,
+// so a name can never be on the wall and missing from its own search.
+function gridDaysOf(fest, ctx) {
+  const plan = wallPlanFor(fest, ctx);
+  return plan ? plan.model.days.filter((d) => d.grid) : [];
+}
+
 // What the day tabs (dock + rail) should list, in the wall's own order: the
 // days, then the tabs that hang off the end (a dated section like ACL's Late
 // nights). `key` is the jump id the wall stamps on its rule.
+const dayTab = (d) => ({ key: d.key, short: d.short, num: d.num, long: d.long, iso: d.iso, dates: d.iso ? [d.iso] : [], dated: false });
+// A group header a search draws for a section, or a lineup fest's own day.
+const groupTab = (fest) => (day) => {
+  const meta = (fest.dayMeta || {})[day];
+  return {
+    key: day,
+    short: (meta?.wd || day).slice(0, 3).toUpperCase(),
+    num: null,
+    dates: [],
+    // Rail tabs stay compact: a verbose day key shows its weekday only —
+    // the same split the day rule and the day sheet use.
+    long: (meta?.wd ? `${meta.wd} ${meta.num || ''}`.trim() : dayLabelParts(day).head).toUpperCase(),
+    iso: null,
+    dated: false,
+  };
+};
+
 export function dayNavOf(fest, ctx) {
   if (!ctx.query) {
     const plan = wallPlanFor(fest, ctx);
     if (plan) {
       return [
-        ...plan.model.days.map((d) => ({ key: d.key, short: d.short, num: d.num, long: d.long, iso: d.iso, dates: d.iso ? [d.iso] : [], dated: false })),
+        ...plan.model.days.map(dayTab),
         // A dated section is one tab over many dates, and each of those dates
         // is its own note thread (§4) — so the tab carries them all.
         ...plan.model.extras.map((e) => ({ key: e.key, short: e.short, num: null, long: e.long, iso: null, dates: [...(e.byDate || new Map()).keys()], dated: true })),
       ];
     }
   }
-  // Searching keeps the search view's own headers: grid days, then the
-  // sections its results land under.
-  const scheduled = !!(fest.days && Object.keys(fest.days).length);
-  let groups;
-  if (scheduled) {
-    const wk = scheduledWeekendOf(fest, ctx.weekend);
+  // Searching keeps the search view's own headers — and they are the SAME
+  // dated days the wall bills (a two-weekend fest's six), then the sections
+  // its results land under. The keys have to match what the search stamps on
+  // its rules, or a tab jumps to nothing.
+  if (fest.days && Object.keys(fest.days).length) {
+    const days = gridDaysOf(fest, ctx);
     const scheduledNames = new Set();
-    for (const d of Object.keys(fest.days)) for (const a of state.getDayArtists(d, wk)) scheduledNames.add(a.name);
-    groups = [...Object.keys(fest.days), ...[...extraSectionsOf(fest, scheduledNames, wk).keys()].filter(Boolean)];
-  } else {
-    groups = [...groupByDay(fest.artists || [], knownDaysOf(fest)).keys()].filter(Boolean);
+    for (const d of days) for (const a of state.getDayArtists(d.dayKey, d.weekend)) scheduledNames.add(a.name);
+    return [
+      ...days.map(dayTab),
+      ...[...extraSectionsOf(fest, scheduledNames).keys()].filter(Boolean).map(groupTab(fest)),
+    ];
   }
-  return groups.map((day) => {
-    const meta = (fest.dayMeta || {})[day];
-    return {
-      key: day,
-      short: (meta?.wd || day).slice(0, 3).toUpperCase(),
-      num: null,
-      dates: [],
-      // Rail tabs stay compact: a verbose day key shows its weekday only —
-      // the same split the day rule and the day sheet use.
-      long: (meta?.wd ? `${meta.wd} ${meta.num || ''}`.trim() : dayLabelParts(day).head).toUpperCase(),
-      iso: null,
-      dated: false,
-    };
-  });
+  return [...groupByDay(fest.artists || [], knownDaysOf(fest)).keys()].filter(Boolean).map(groupTab(fest));
 }
 
 // The rooms of the festival week, for the show menu (MODEL-V4 §3.1) and for
@@ -1343,13 +1342,14 @@ function renderWallInner(root, ctx) {
   // matches render per day, chronological, each card carrying stage · time.
   if (scheduled) {
     const q = ctx.query.trim().toLowerCase();
-    // Search respects the selected weekend too — you've declared which grid
-    // you're standing in, and a W2-only answer to a W1 search is a wrong turn.
-    const wk = scheduledWeekendOf(fest, ctx.weekend);
+    // Search walks the SAME dated day axis the wall and the tabs walk: a
+    // two-weekend fest is six days, so a Weekend 2 headliner answers under the
+    // Friday they play. Searching used to ask a weekend preference that no
+    // longer had a selector, defaulted to W1, and said "No artists match".
     const scheduledNames = new Set();
     let any = false;
-    for (const day of Object.keys(fest.days)) {
-      const computed = state.getDayArtists(day, wk);
+    for (const day of gridDaysOf(fest, ctx)) {
+      const computed = state.getDayArtists(day.dayKey, day.weekend);
       computed.forEach((a) => scheduledNames.add(a.name));
       // Search results are a LIST, so the people filter hides here rather
       // than dims — a filtered search must not resurface someone's non-pick.
@@ -1358,17 +1358,15 @@ function renderWallInner(root, ctx) {
         .sort((x, y) => x.startMin - y.startMin);
       if (!matches.length) continue;
       any = true;
-      const meta = (fest.dayMeta || {})[day];
-      root.appendChild(dayHeader(day, dayRuleSub(meta, wk) || (meta ? `${meta.wd || ''} ${meta.num || ''}`.trim() : '')));
+      root.appendChild(dayHeader(dayLabelParts(day.dayKey).head, day.sub, { dayKey: day.key }));
       const grid = document.createElement('div');
       grid.className = 'wall-grid';
-      for (const a of matches) grid.appendChild(renderCard(a.name, ctx, { time: `${a.stage} · ${a.startStr}`, occ: { day, stage: a.stage || null, time: a.time || null, weekend: a.weekend || null } }));
+      for (const a of matches) grid.appendChild(renderCard(a.name, ctx, { time: `${a.stage} · ${a.startStr}`, occ: { day: day.dayKey, stage: a.stage || null, time: a.time || null, weekend: a.weekend || null } }));
       root.appendChild(grid);
     }
     // Afters/Folsom cards and lineup entries with no set time yet still
-    // deserve to be findable — within the selected weekend: a W2-only act
-    // must not resurface here after the grid correctly filtered it out.
-    for (const [day, list] of extraSectionsOf(fest, scheduledNames, wk)) {
+    // deserve to be findable.
+    for (const [day, list] of extraSectionsOf(fest, scheduledNames)) {
       const matches = applyFilter(list, ctx.query).filter((a) => passesPeople(ctx.picks, a.name, ctx.filterPeople));
       if (!matches.length) continue;
       any = true;

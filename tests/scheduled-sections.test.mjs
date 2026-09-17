@@ -90,7 +90,7 @@ const roomsUnder = (root, dayKey) => {
 
 test('extraSectionsOf: non-grid days become sections in known-day order, leftovers last, deduped', () => {
   const scheduledNames = new Set(['Headliner', 'Overmono']);
-  const sections = extraSectionsOf(FEST, scheduledNames, 'all');
+  const sections = extraSectionsOf(FEST, scheduledNames);
   assert.deepEqual([...sections.keys()], ['Afters', 'Folsom', '']);
   assert.deepEqual(sections.get('Afters').map((a) => a.name), ['Overmono', 'Only Afters', 'Horse Meat Disco']);
   assert.deepEqual(sections.get('Folsom').map((a) => a.name), ['Horse Meat Disco', 'The Fair'], 'a combined day lands in each');

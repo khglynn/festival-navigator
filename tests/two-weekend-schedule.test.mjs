@@ -2,11 +2,14 @@
 // weekdays — they are frozen pick data and a rename would strand every pick —
 // each set carries weekend: 'W1'|'W2' (untagged/'both' = every weekend), and
 // each weekend's Friday is its own tab, because a clock grid showing both at
-// once would double-book every stage. A stored 'all' opens on Weekend One.
+// once would double-book every stage. A weekend is therefore not a filter over
+// the wall any more, it is which day you are looking at — and search reads that
+// same axis, so nothing is ever findable on the wall and missing from search.
 // Day NOTES key on the date instead of the label since V4 (MODEL-V4 §4), so
 // the two Fridays hold two conversations; events-wall covers that.
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { JSDOM } from 'jsdom';
 
 const dom = new JSDOM('<!doctype html><html><body></body></html>');
@@ -20,7 +23,7 @@ globalThis.location = { origin: 'https://fest.kevinhg.com', hash: '' };
 
 const state = await import('../js/state.js');
 const { FESTIVAL_INDEX } = await import('../js/festivals.js');
-const { renderWall, scheduledWeekendOf, dayNavOf } = await import('../js/v3/wall.js');
+const { renderWall, dayNavOf } = await import('../js/v3/wall.js');
 const { validateFestivalDoc } = await import('../api/_lib/festival-rules.mjs');
 
 const FEST = {
@@ -57,14 +60,6 @@ const mkCtx = (weekend, query = '') => ({
   fid: 'two-wk-fest', meName: 'Kevin', picks: {}, affinity: null, lowPower: true,
   sort: 'day', query, weekend, onTap: () => {}, onOpenNotes: null,
   onNotesChange: null, onOpenDayNotes: null,
-});
-
-test('scheduledWeekendOf: tagged fests render one weekend; untagged fests are untouched', () => {
-  assert.equal(scheduledWeekendOf(FEST, 'all'), 'W1', "'Both' maps to Weekend One on a timetable");
-  assert.equal(scheduledWeekendOf(FEST, undefined), 'W1');
-  assert.equal(scheduledWeekendOf(FEST, 'W2'), 'W2');
-  assert.equal(scheduledWeekendOf({ days: { F: { artists: [{ name: 'X', stage: 'S', time: '1:00 PM' }] } } }, 'W2'),
-    null, 'no weekend tags = single-weekend fest = no filter at all');
 });
 
 test('getDayArtists filters by weekend; untagged and both play every weekend', () => {
@@ -108,14 +103,56 @@ test('both weekends are on the wall, each as its own day: two Fridays, each with
   root.remove();
 });
 
-test('searching a scheduled two-weekend fest answers within the selected weekend', () => {
+// Search walks the same dated axis the wall and the day tabs walk. It used to
+// ask a surviving `scheduledWeekendOf()` which weekend to answer in, and that
+// function defaulted to W1 — with no selector left in the shell it could only
+// ever say W1, so a Weekend 2 headliner answered "No artists match".
+test('searching a scheduled two-weekend fest answers across the whole dated axis', () => {
   const root = document.createElement('div');
   document.body.appendChild(root);
-  renderWall(root, mkCtx('W1', 'only'));
-  const names = [...root.querySelectorAll('.card')].map((c) => c.dataset.artist);
-  assert.ok(names.includes('One Only'), 'the W1 match is found');
-  assert.ok(!names.includes('Two Only'), 'a W2-only answer to a W1 search is a wrong turn');
+  renderWall(root, mkCtx('all', 'only'));
+  const rules = [...root.querySelectorAll('.day-rule')];
+  assert.deepEqual(rules.map((r) => [r.dataset.day, r.querySelector('.date').textContent]),
+    [['Friday|W1', 'Fri · Oct 2 · Weekend 1'], ['Friday|W2', 'Fri · Oct 9 · Weekend 2']],
+    'a match under each weekend, each rule saying which date it is');
+  const namesOn = (tab) => {
+    const rule = rules.find((r) => r.dataset.day === tab);
+    const out = [];
+    for (let n = rule.nextElementSibling; n && !n.classList.contains('day-rule'); n = n.nextElementSibling) {
+      out.push(...[...n.querySelectorAll('.card')].map((c) => c.dataset.artist));
+    }
+    return out;
+  };
+  assert.deepEqual(namesOn('Friday|W1'), ['One Only']);
+  assert.deepEqual(namesOn('Friday|W2'), ['Two Only'], 'the W2 answer is not a wrong turn — it is the other tab');
+  // The tabs a search offers are the tabs its headers carry, or a jump lands
+  // nowhere.
+  assert.deepEqual(dayNavOf(FEST, mkCtx('all', 'only')).map((d) => d.key), ['Friday|W1', 'Friday|W2']);
   root.remove();
+});
+
+// The fixture proves the rule; the shipped file proves we ship it. ACL bills
+// Kings of Leon on the Friday of Weekend 2 only, which is exactly the answer
+// the old W1 default could never give. This activates ACL, so it runs last.
+test('ACL as shipped: searching finds a Weekend 2 headliner, under the date they play', () => {
+  const ACL = JSON.parse(readFileSync(new URL('../data/festivals/acl-2026.json', import.meta.url), 'utf8'));
+  FESTIVAL_INDEX.push({ id: 'acl-2026', status: 'scheduled' });
+  state.FESTIVALS['acl-2026'] = ACL;
+  state.setActiveFestivalId('acl-2026');
+
+  const root = document.createElement('div');
+  document.body.appendChild(root);
+  renderWall(root, { ...mkCtx('all', 'kings of leon'), fid: 'acl-2026' });
+
+  const cards = [...root.querySelectorAll('.card')];
+  assert.deepEqual(cards.map((c) => c.dataset.artist), ['Kings of Leon'], 'found, not "No artists match"');
+  const rule = root.querySelector('.day-rule');
+  assert.equal(rule.dataset.day, 'Friday|W2', 'under the Friday they actually play');
+  assert.equal(rule.querySelector('.date').textContent, 'Fri · Oct 9 · Weekend 2', 'and the rule says which date that is');
+  assert.equal(JSON.parse(cards[0].dataset.occ).weekend, 'W2', 'the card carries the weekend, so the zoom tells the right night');
+  root.remove();
+
+  state.setActiveFestivalId('two-wk-fest');
 });
 
 test('validator: per-set weekend must be W1|W2|both; the fixture validates clean', () => {
