@@ -869,6 +869,10 @@ export function weekendsOf(fest) {
     (days[d].artists || []).some((a) => a.weekend === 'W1' || a.weekend === 'W2'));
   return tagged ? ['W1', 'W2'] : [null];
 }
+// A weekend's key in the folded list (Kevin, 2026-09-17: "ACL needs options in
+// the show/hide menu to hide weekend 1 or weekend 2"). The colon keeps it out
+// of the space a data file's day labels live in, like FEST_ROOM.
+export const weekendRoom = (w) => `weekend:${w}`;
 
 // The whole wall's plan. Null only where the wall is not a week at all — a
 // flat sort or a search, which are lists of answers.
@@ -899,7 +903,12 @@ export function wallPlanFor(fest, ctx) {
   const festRoom = !hidden.has(FEST_ROOM);
   const sections = whole.sections.filter((s) => !hidden.has(s.key));
   const extras = whole.extras.filter((e) => !hidden.has(e.key));
-  const days = whole.days.filter((d) => (festRoom && (d.grid || d.billing)) || sections.some((s) => s.byDay.has(d.key)));
+  // A hidden weekend takes its dated days whole (a set tagged for both
+  // weekends keeps playing on the other); the days that stay are the ones
+  // with something visible on them.
+  const days = whole.days
+    .filter((d) => !(d.weekend && hidden.has(weekendRoom(d.weekend))))
+    .filter((d) => (festRoom && (d.grid || d.billing)) || sections.some((s) => s.byDay.has(d.key)));
   const looseNoDay = festRoom ? whole.looseNoDay : [];
   return { model: { ...whole, days, sections, extras, looseNoDay }, festRoom, scheduled, weekends, gridDays };
 }
@@ -915,7 +924,12 @@ export function roomsOf(fest, ctx) {
   if (!plan) return [];
   const { days, sections, extras, looseNoDay } = plan.model;
   const rooms = [];
-  if (days.some((d) => d.grid || d.billing) || looseNoDay.length) rooms.push({ key: FEST_ROOM, label: fest.name });
+  if (days.some((d) => d.grid || d.billing) || looseNoDay.length) {
+    // A two-weekend fest offers a row per weekend in place of its own room:
+    // hiding a weekend is the thing a person wants to do there.
+    if (plan.weekends.length > 1) plan.weekends.forEach((w, i) => rooms.push({ key: weekendRoom(w), label: `Weekend ${i + 1}` }));
+    else rooms.push({ key: FEST_ROOM, label: fest.name });
+  }
   for (const s of sections) rooms.push({ key: s.key, label: s.label });
   for (const e of extras) rooms.push({ key: e.key, label: e.label });
   return rooms;

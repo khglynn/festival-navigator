@@ -451,8 +451,8 @@ test('the show menu names every room the wall shows — ACL\'s dated section inc
   };
   try {
     assert.deepEqual(stand('acl-2026').map((r) => [r.key, r.label]),
-      [[':fest', 'ACL Music Festival'], ['Late nights', 'Late nights']],
-      'the festival\'s own room, then the dated section — two rooms, so there IS a menu');
+      [['weekend:W1', 'Weekend 1'], ['weekend:W2', 'Weekend 2'], ['Late nights', 'Late nights']],
+      'a weekend row each in place of the festival\'s own room, then the dated section — so there IS a menu');
     assert.deepEqual(stand('one-room').map((r) => r.key), [':fest'],
       'one room: below two the shell drops the menu and the fest name goes to Settings, as it always did');
   } finally {

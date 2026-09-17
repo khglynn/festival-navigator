@@ -34,7 +34,7 @@ dom.window.matchMedia = () => ({ matches: false, addEventListener() {}, removeEv
 const state = await import('../js/state.js');
 const model = await import('../js/v3/model.js');
 const { FESTIVALS, FESTIVAL_INDEX } = await import('../js/festivals.js');
-const { renderWall, dayNavOf, wallPlanFor, roomsOf } = await import('../js/v3/wall.js');
+const { renderWall, dayNavOf, wallPlanFor, roomsOf, weekendRoom } = await import('../js/v3/wall.js');
 const filters = await import('../js/v3/filters.js');
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -144,4 +144,42 @@ test('the folded list still round-trips through storage untouched by any of this
   filters.saveFolded('hp', ['Afters', 'Late nights']);
   assert.deepEqual(filters.loadFolded('hp'), ['Afters', 'Late nights']);
   filters.saveFolded('hp', []);
+});
+
+// ---- ACL: Weekend 1 / Weekend 2 in the show menu (Kevin, 2026-09-17) -----------
+// "ACL needs options in the show/hide menu to hide weekend 1 or weekend 2."
+// A two-weekend fest's festival-room row becomes two rows, one per weekend,
+// keyed `weekend:W1` / `weekend:W2` in the same folded list. Hiding one drops
+// its three dated tabs; a set tagged for both weekends keeps playing on the
+// other. A one-weekend fest is untouched.
+
+test('ACL with Weekend 1 hidden: FRI 9 · SAT 10 · SUN 11 · Late nights — and a both-weekend set still plays Weekend 2', () => {
+  const { root, ctx } = render('acl-2026', { folded: [weekendRoom('W1')] });
+  assert.equal(weekendRoom('W1'), 'weekend:W1', 'the persisted key');
+  assert.deepEqual(dayNavOf(acl, ctx).map((t) => t.long), ['FRI 9', 'SAT 10', 'SUN 11', 'LATE NIGHTS']);
+  assert.deepEqual(rulesOf(root), ['Friday|W2', 'Saturday|W2', 'Sunday|W2']);
+  const both = acl.days.Friday.artists.find((a) => !a.weekend || a.weekend === 'both');
+  assert.ok(both, 'ACL has a Friday set that plays both weekends');
+  assert.ok(root.querySelector(`.card.cell[data-artist="${both.name}"]`), 'and it is on the Weekend 2 grid');
+  // Both hidden: no dated tabs, Late nights alone.
+  const none = render('acl-2026', { folded: [weekendRoom('W1'), weekendRoom('W2')] });
+  assert.deepEqual(dayNavOf(acl, none.ctx).map((t) => t.long), ['LATE NIGHTS']);
+  assert.deepEqual(rulesOf(none.root), []);
+  assert.ok(none.root.querySelector('.room[data-room="Late nights"] .date-rule'), 'the late nights are still there');
+  // Weekend 2 hidden alone is the mirror.
+  const w2 = render('acl-2026', { folded: [weekendRoom('W2')] });
+  assert.deepEqual(dayNavOf(acl, w2.ctx).map((t) => t.long), ['FRI 2', 'SAT 3', 'SUN 4', 'LATE NIGHTS']);
+});
+
+test('the show menu on a two-weekend fest: Weekend 1, Weekend 2, Late nights — the festival-room row is replaced, not joined', () => {
+  assert.deepEqual(roomsOf(acl, ctxFor('acl-2026')).map((r) => [r.key, r.label]),
+    [['weekend:W1', 'Weekend 1'], ['weekend:W2', 'Weekend 2'], ['Late nights', 'Late nights']]);
+  assert.deepEqual(roomsOf(acl, ctxFor('acl-2026', { folded: ['weekend:W1', 'weekend:W2', 'Late nights'] })).map((r) => r.key),
+    ['weekend:W1', 'weekend:W2', 'Late nights'], 'hidden or not, every row is offered');
+  assert.deepEqual(roomsOf(portola, ctxFor('portola-2026')).map((r) => r.key), [':fest', 'Afters', 'Folsom'], 'a one-weekend fest is untouched');
+  // The key round-trips through the same folded list as every other room.
+  filters.saveFolded('acl-hp', ['weekend:W1', 'Late nights']);
+  assert.deepEqual(filters.loadFolded('acl-hp'), ['weekend:W1', 'Late nights']);
+  assert.deepEqual(filters.toggleFold(filters.loadFolded('acl-hp'), 'weekend:W2'), ['weekend:W1', 'Late nights', 'weekend:W2']);
+  filters.saveFolded('acl-hp', []);
 });
