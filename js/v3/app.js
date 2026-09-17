@@ -246,12 +246,9 @@ function toggleFoldFlow(key) {
 function refreshArtistCards(artistName) {
   const els = [...document.querySelectorAll(`#wall-root .card[data-artist="${CSS.escape(artistName)}"]`)];
   if (!els.length) { repaintWall(); return; }
-  // Under a people filter that includes ME, my tap changes the filter's
-  // visible set — a list card (afters, Folsom, search) must appear or
-  // vanish, which a single-card refresh cannot do. A filter on OTHER people
-  // is unaffected by my tap, so the cheap path stays.
-  const filter = ctx.filterPeople || [];
-  if (filter.length && (filter.includes(ctx.meName) || els.some((el) => !el.classList.contains('cell')))) { repaintWall(); return; }
+  // The people filter dims and never hides (2026-09-17), so a pick under it
+  // is still a single-card refresh: renderCard recomputes the dim from ctx,
+  // and no card anywhere has to appear or vanish.
   // A pick while zoomed keeps the zoom: the person is still resting on the
   // card, cycling to MUST while watching the pills. The refreshed node of THE
   // zoomed occurrence (an artist can play twice) slides under the overlay

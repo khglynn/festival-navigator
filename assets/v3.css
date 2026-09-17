@@ -852,16 +852,15 @@ button.f-chip.notes { cursor: pointer; }
 .card.timed .time { white-space: pre-line; }
 
 /* ---- wall filters + the now line (2026-08-27) ----------------------------------- */
-/* People filter: selected chips wear a ring, the rest step back. On the
- * timetable a non-matching card DIMS (the clock keeps its shape); on lineup
- * lists it hides. Dimmed cards stay tappable — a filter is a view, never a
- * lock on picking. */
+/* People filter: selected chips wear a ring, the rest step back. A card the
+ * selected people did not pick DIMS — on the clock, in a stack, in a list,
+ * one rule (it never hides; Kevin, 2026-09-17). Dimmed cards stay tappable —
+ * a filter is a view, never a lock on picking. */
 .person-chip.selected { box-shadow: 0 0 0 1.5px rgba(255, 255, 255, .85); }
 .person-chip.faded { opacity: .42; }
 .person-chip.everyone { background: transparent; border: 1px solid var(--border-emphasis); color: var(--text-body); }
 .person-chip.everyone .x { color: var(--text-tertiary); margin-left: 4px; }
 .card.dim { opacity: .28; }
-.section-empty { color: var(--text-tertiary); font-size: 12px; font-weight: 600; padding: 2px 0 4px; }
 
 /* The now line: brand violet, not the fest accent — it is app chrome that
  * happens to sit on a timetable. Drawn inside the grid (position: relative

@@ -530,14 +530,23 @@ test('a verbose day key shows its weekday head in the rule, the aside in the sub
   assert.deepEqual(roomsUnder(root, WED_KEY).map((r) => r.dataset.room), [':fest', 'Afters']);
 });
 
-test('the people filter hides in a stack, and says so when it leaves a room empty', () => {
+test('the people filter dims in a stack and in a billed list — every card stays, none is filtered', () => {
   const { root } = render('portola-2026', { filterPeople: ['Nhu'] });
   const fri = roomsUnder(root, 'Friday').find((r) => r.dataset.room === 'Afters');
-  assert.deepEqual([...fri.querySelectorAll('.stack > .card')].map((c) => c.dataset.artist), ['Channel Tres'],
-    'only what Nhu picked, and the rooms nobody picked in went with their cards');
+  const cards = [...fri.querySelectorAll('.stack > .card')];
+  assert.equal(cards.length, afters('Fri').length, 'every afters show on Friday is still a card');
+  assert.deepEqual(cards.filter((c) => !c.classList.contains('dim')).map((c) => c.dataset.artist), ['Channel Tres'],
+    'what Nhu picked is lit; everything else is dimmed, not gone');
   const folsom = roomsUnder(root, 'Friday').find((r) => r.dataset.room === 'Folsom');
-  assert.equal(folsom.querySelector('.venue-grid'), null);
-  assert.equal(folsom.querySelector('.section-empty').textContent, 'No picks here from Nhu.');
+  assert.ok(folsom.querySelector('.venue-grid'), 'a room nobody picked in keeps its stacks');
+  assert.ok([...folsom.querySelectorAll('.card')].every((c) => c.classList.contains('dim')));
+  assert.equal(root.querySelector('.section-empty'), null, 'no "No picks here" block anywhere');
+  // A billed list (a lineup day's card grid) is the same rule.
+  state.crewDoc.festivals['lineup-only'] = { selections: { Chassi: { Nhu: 2 } } };
+  const ll = render('lineup-only', { filterPeople: ['Nhu'], picks: model.picksFor(state.crewDoc, 'lineup-only') }).root;
+  const billed = [...ll.querySelectorAll('.wall-grid .card')].map((c) => [c.dataset.artist, c.classList.contains('dim')]);
+  assert.deepEqual(billed, [['Chassi', false], ['Headliner', true]], 'both billed names render; the one Nhu did not pick is dimmed');
+  assert.equal(ll.querySelector('.section-empty'), null);
 });
 
 // ---- the run in the zoom (the LOCKED copy) ---------------------------------------------------

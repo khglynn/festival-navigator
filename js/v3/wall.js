@@ -387,16 +387,15 @@ function lineupSubLabel(a) {
   return subLabel || undefined;
 }
 
-// The card grid every list section shares: the people filter HIDES here (no
-// clock to keep in shape) and says so when that leaves nothing, so an empty
-// section reads as "no picks here" rather than "the data is gone".
+// The card grid every list section shares. The people filter never hides a
+// card here or anywhere (Kevin, 2026-09-17: highlighting picks "shouldn't
+// work as a filter"): every entry renders, and renderCard dims the ones the
+// selected people did not pick.
 function renderCardGrid(root, list, ctx, { day = null, subLabelOf = lineupSubLabel, className = 'wall-grid' } = {}) {
-  const filtering = ctx.filterPeople && ctx.filterPeople.length;
-  const shown = filtering ? list.filter((a) => passesPeople(ctx.picks, a.name, ctx.filterPeople)) : list;
   const grid = document.createElement('div');
   grid.className = className;
   const showTags = !ctx.weekend || ctx.weekend === 'all';
-  for (const a of shown) {
+  for (const a of list) {
     const tag = showTags && (a.weekends === 'W1' || a.weekends === 'W2') ? a.weekends : undefined;
     // The occurrence comes from the model (events.js occOf), so a card found
     // in a search is the SAME card as the one on the wall — a dated show's
@@ -404,14 +403,8 @@ function renderCardGrid(root, list, ctx, { day = null, subLabelOf = lineupSubLab
     // list whose entries carry none.
     grid.appendChild(renderCard(a.name, ctx, { tag, time: subLabelOf(a), occ: { ...occOf(a), day: a.day || day || null } }));
   }
-  if (filtering && !shown.length) {
-    const none = document.createElement('div');
-    none.className = 'section-empty';
-    none.textContent = `No picks here from ${ctx.filterPeople.join(' or ')}.`;
-    root.appendChild(none);
-  }
   root.appendChild(grid);
-  return shown;
+  return list;
 }
 
 // `opts.dayKey` is the jump / scrollspy key when the visible label is not
@@ -981,22 +974,19 @@ const stackTime = (m) => {
 
 // THE LIST (MODEL-V4 §1.2). One `.venue-group` per venue: the venue's own
 // stage header, its doors/close line, then the night's cards stacked top to
-// bottom in play order. The people filter HIDES in a stack (there is no
-// clock to keep in shape), so a group everyone filtered out goes with it.
+// bottom in play order. The people filter dims here exactly as it does on
+// the clock — renderCard's one rule — and never takes a card or a group away.
 export function venueGroups(root, entries, ctx, { day = null, fest = null, fallbackVenue = null } = {}) {
-  const filtering = ctx.filterPeople && ctx.filterPeople.length;
   const grid = mk('div', 'venue-grid');
   if (day && day.iso) grid.dataset.iso = day.iso;
   if (fest && fest.timezone) grid.dataset.tz = fest.timezone;
   let shown = 0;
-  const groups = venueGroupsOf(entries, { fallbackVenue })
-    .map((g) => ({ g, members: filtering ? g.members.filter((m) => passesPeople(ctx.picks, m.e.name, ctx.filterPeople)) : g.members }))
-    .filter((x) => x.members.length);
+  const groups = venueGroupsOf(entries, { fallbackVenue });
   // Where one room published its doors, the line holds its place across the
   // whole grid — otherwise the stacks in a row start on different lines and
   // the row reads ragged.
-  const anySub = groups.some((x) => x.g.sub);
-  for (const { g, members } of groups) {
+  const anySub = groups.some((g) => g.sub);
+  for (const g of groups) {
     const group = mk('div', 'venue-group');
     // A venue head IS a stage header — the festival accent's third home.
     const head = stageHead(g.venue);
@@ -1004,7 +994,7 @@ export function venueGroups(root, entries, ctx, { day = null, fest = null, fallb
     group.appendChild(head);
     if (anySub) group.appendChild(mk('div', 'venue-sub', g.sub || ''));
     const stack = mk('div', 'stack');
-    for (const m of members) {
+    for (const m of g.members) {
       const card = renderCard(m.e.name, ctx, { time: stackTime(m), occ: occOf(m.e) });
       // A stack has no clock to draw a line on, so the card of whoever is
       // playing carries the mark instead. The window is the model's
@@ -1019,10 +1009,7 @@ export function venueGroups(root, entries, ctx, { day = null, fest = null, fallb
     group.appendChild(stack);
     grid.appendChild(group);
   }
-  if (!shown) {
-    if (filtering) root.appendChild(mk('div', 'section-empty', `No picks here from ${ctx.filterPeople.join(' or ')}.`));
-    return 0;
-  }
+  if (!shown) return 0;
   root.appendChild(grid);
   return shown;
 }
@@ -1323,9 +1310,9 @@ function renderWallInner(root, ctx) {
   // is not a place any more (MODEL-V4 §2).
   if (scheduled) {
     const q = ctx.query.trim().toLowerCase();
-    // Results are a LIST, so the people filter hides here rather than dims —
-    // a filtered search must not resurface someone's non-pick.
-    const wanted = (name) => name.toLowerCase().includes(q) && passesPeople(ctx.picks, name, ctx.filterPeople);
+    // Every name that matches answers; the people filter dims the answers
+    // the selected people did not pick (renderCard), the same as on the wall.
+    const wanted = (name) => name.toLowerCase().includes(q);
     const plan = wallPlanFor(fest, ctx);
     const answers = (cards, label, sub, opts) => {
       if (!cards.length) return false;

@@ -128,8 +128,8 @@ viewport (no vast dead space on desktop).
 **Expected:** nothing but a published stage grid ever gets a clock — no
 threshold decides a layout; the grid may exceed the page's reading max-width
 (full-bleed, headings at reading width, scroll-snap on mobile, as many
-columns as fit a desktop window); the people filter dims on the clock and
-hides in a stack.
+columns as fit a desktop window); the people filter dims everywhere — on
+the clock, in a stack, in a list — and never hides a card.
 
 ## F6 · Notes — artist scope (via the zoom, one grammar across mouse and touch — 2026-08-30)
 

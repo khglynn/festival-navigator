@@ -65,13 +65,17 @@ test('filters.js: pure helpers — toggle, pass, prune, storage that throws', ()
   assert.deepEqual(filters.loadPeopleFilter('portola-2026'), []);
 });
 
-test('scheduled search respects the people filter (a list hides, never dims)', () => {
+test('scheduled search under a people filter: every name that matches answers, dimmed where the person did not pick it', () => {
   const root = render(mkCtx({ filterPeople: ['Kat'], query: 'robyn' }));
-  assert.equal(root.querySelectorAll('.card').length, 0, "Robyn is not Kat's pick — she does not resurface through search");
-  assert.match(root.textContent, /No artists match/);
+  const robyn = [...root.querySelectorAll('.card')];
+  assert.equal(robyn.length, 1, "Robyn is not Kat's pick — she still answers the search");
+  assert.ok(robyn[0].classList.contains('dim'), 'dimmed, because Kat did not pick her');
+  assert.doesNotMatch(root.textContent, /No artists match/);
   root.remove();
   const hit = render(mkCtx({ filterPeople: ['Kat'], query: 'vtss' }));
-  assert.equal(hit.querySelectorAll('.card').length, 2, 'VTSS: the Sunday set and the afters card');
+  const cards = [...hit.querySelectorAll('.card')];
+  assert.equal(cards.length, 2, 'VTSS: the Sunday set and the afters card');
+  assert.ok(cards.every((c) => !c.classList.contains('dim')), "Kat's pick is lit in both");
   hit.remove();
 });
 
@@ -104,30 +108,42 @@ test('the card column is one token, declared once per breakpoint, and both grids
   assert.equal(filters.COL, 'var(--col-w)', 'and the timetable template is the same token, not a copy of the number');
 });
 
-test('the people filter dims on the clock and hides in a stack — and says so when a room is left empty', () => {
+// Highlighting someone's picks DIMS, never filters (Kevin, 2026-09-17:
+// "Deciding to highlight user(s) picks shouldn't work as a filter"). One
+// behaviour on the clock, in a stack, in a list: every card renders, and the
+// ones the selected people did not pick wear `.dim` — one rule, one class.
+test('the people filter dims everywhere and hides nothing: the clock keeps every set, a stack keeps every card, no room goes empty', () => {
+  const plain = render(mkCtx());
+  const count = (root, sel) => root.querySelectorAll(sel).length;
   const root = render(mkCtx({ filterPeople: ['Kat'] }));
   const grid = (name) => root.querySelector(`.room[data-room=":fest"] .card.cell[data-artist="${name}"]`);
   assert.ok(!grid('VTSS').classList.contains('dim'), "Kat's pick is lit");
   assert.ok(grid('underscores').classList.contains('dim'), 'a card Kat did not pick is dimmed');
-  assert.equal(root.querySelectorAll('.room[data-room=":fest"] .card.cell').length, 64, 'the clock keeps its shape: every set still renders');
+  assert.equal(count(root, '.room[data-room=":fest"] .card.cell'), 64, 'the clock keeps its shape: every set still renders');
   assert.equal(grid('underscores').getAttribute('role'), 'button', 'a dimmed card is still a tap target');
-  // A section is a stack — a list, with no clock to keep in shape — so it
-  // HIDES instead: only Kat's picks, and the rooms nobody picked in went with
-  // their cards.
+  // A stack is the same rule: every card, dimmed where Kat did not pick.
   const afters = [...root.querySelectorAll('.room[data-room="Afters"] .stack > .card')];
-  assert.ok(afters.length, 'Kat picked something in the afters');
-  assert.ok(afters.every((c) => !c.classList.contains('dim')), 'nothing dims in a stack');
-  assert.ok(afters.some((c) => c.dataset.artist === 'Despacio'), "Kat's afters pick is here");
-  assert.ok(!afters.some((c) => c.dataset.artist === '2manydjs'), 'a set Kat did not pick is gone, not dimmed');
-  // And a room the filter empties says so on every day it appears rather than
-  // vanishing.
+  assert.equal(afters.length, count(plain, '.room[data-room="Afters"] .stack > .card'), 'the afters keep every card they have without a filter');
+  assert.ok(afters.some((c) => c.dataset.artist === 'Despacio' && !c.classList.contains('dim')), "Kat's afters pick is lit");
+  assert.ok(afters.some((c) => c.dataset.artist === '2manydjs' && c.classList.contains('dim')), 'a set Kat did not pick is dimmed, not gone');
+  // A room nobody picked in keeps every card, all dimmed — and no empty block.
   const folsom = [...root.querySelectorAll('.room[data-room="Folsom"]')];
   assert.ok(folsom.length >= 1);
   for (const room of folsom) {
-    assert.equal(room.querySelectorAll('.card').length, 0);
-    assert.match(room.querySelector('.section-empty').textContent, /No picks here from Kat/);
+    const cards = [...room.querySelectorAll('.card')];
+    assert.ok(cards.length > 0, 'the room keeps its cards');
+    assert.ok(cards.every((c) => c.classList.contains('dim')));
+    assert.equal(room.querySelector('.section-empty'), null, 'nothing says "No picks here" — there is nothing empty');
   }
-  root.remove();
+  assert.equal(count(root, '.card'), count(plain, '.card'), 'the filtered wall has exactly the cards the plain wall has');
+  assert.equal(count(root, '.venue-group'), count(plain, '.venue-group'), 'and exactly the groups');
+  // One rule, one class: the dim on a cell and the dim on a stack card is the
+  // same `.card.dim` — nothing in the stylesheet tells them apart.
+  const css = readFileSync(join(ROOT, 'assets/v3.css'), 'utf8');
+  assert.equal((css.match(/\.dim\b/g) || []).length, 1, 'one .dim rule');
+  assert.match(css, /\.card\.dim \{ opacity: \.28; \}/);
+  assert.equal(css.includes('section-empty'), false, 'the empty-room copy has no rule left to wear');
+  plain.remove(); root.remove();
 });
 
 test('people filter combines: Kat OR Drew lights either’s picks', () => {
