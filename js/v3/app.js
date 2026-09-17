@@ -222,6 +222,9 @@ function refreshArtistCards(artistName) {
     // already moved on.
     onSwap: i === zi ? (fresh) => refreshZoom(fresh, ctx) : null,
   }));
+  // A refreshed card can be a NEW node, and the now mark rides the node: pick
+  // the artist who is playing and the ring would go out until the next tick.
+  markNowCards($('wall-root'), ctx.now || new Date());
 }
 
 function handleTap(artistName) {
