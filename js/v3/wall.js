@@ -936,7 +936,10 @@ export function wallPlanFor(fest, ctx) {
   const artists = applyWeekend(fest.artists || [], scheduled ? null : ctx.weekend);
   const gridDays = scheduled ? Object.keys(fest.days) : [];
   const plan = eventModelOf(fest, groupByDay(artists, knownDaysOf(fest)), { gridDays, weekends });
-  if (!plan.days.length && !plan.extras.length) return null;
+  // A whole lineup with no day on it (EDC Orlando) is still a lineup — the
+  // wall draws it as THE LINEUP and the exporter offers it. Only a fest with
+  // nothing at all has no plan.
+  if (!plan.days.length && !plan.extras.length && !plan.looseNoDay.length) return null;
   return { model: plan, scheduled, weekends, gridDays };
 }
 

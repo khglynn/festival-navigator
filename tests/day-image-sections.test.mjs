@@ -88,3 +88,23 @@ test('a lineup-only fest still exports by billing group', () => {
   assert.deepEqual(dayArtistsFor('Friday'), [{ name: 'A' }]);
   state.setActiveFestivalId('portola-2026');
 });
+
+// A fest whose whole lineup is dayless is still a lineup. The exporter asks the
+// wall for its plan, and the plan called itself nothing at all when no day and
+// no dated section survived — so EDC Orlando drew 106 cards on the wall while
+// Settings said "No lineup yet — nothing to export."
+test('a fest with no days at all still exports: the shipped EDC Orlando file', () => {
+  const edc = JSON.parse(readFileSync(join(ROOT, 'data/festivals/edc-orlando-2026.json'), 'utf8'));
+  assert.ok(edc.artists.length > 0 && edc.artists.every((a) => !a.day), 'the file really is one dayless lineup');
+  FESTIVAL_INDEX.push({ id: edc.id, status: 'lineup' });
+  state.FESTIVALS[edc.id] = edc;
+  state.setActiveFestivalId(edc.id);
+  try {
+    assert.deepEqual(dayImageChoices(edc), [{ key: '', label: 'THE LINEUP' }], 'one choice, and it is the lineup');
+    const rows = dayArtistsFor('');
+    assert.equal(rows.length, edc.artists.length, 'every billed name is in the image');
+    assert.equal(rows[0].name, edc.artists[0].name, 'in billing order, as the wall shows them');
+  } finally {
+    state.setActiveFestivalId('portola-2026');
+  }
+});
