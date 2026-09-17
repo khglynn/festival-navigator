@@ -940,21 +940,33 @@ const groupTab = (fest) => (day) => {
   };
 };
 
-export function dayNavOf(fest, ctx) {
+// `wallRoot` is the wall this nav sits over. Hand it in and a SEARCH's tabs
+// are read off it; leave it out and the answer is the plan's whole axis.
+export function dayNavOf(fest, ctx, wallRoot = null) {
   const plan = wallPlanFor(fest, ctx);
   // A scheduled fest's SEARCH is its own week with the misses taken out, so
   // the tabs are the same axis either way — one list, and the keys match what
   // the wall stamps on its rules, or a tab jumps to nothing. Only a lineup
   // fest's flat search keeps its own group headers.
-  if (plan && (!ctx.query || plan.scheduled)) {
-    return [
+  const tabs = plan && (!ctx.query || plan.scheduled)
+    ? [
       ...plan.model.days.map(dayTab),
       // A dated section is one tab over many dates, and each of those dates
       // is its own note thread (§4) — so the tab carries them all.
       ...plan.model.extras.map((e) => ({ key: e.key, short: e.short, num: null, long: e.long, iso: null, dates: [...(e.byDate || new Map()).keys()], dated: true })),
-    ];
-  }
-  return [...groupByDay(fest.artists || [], knownDaysOf(fest)).keys()].filter(Boolean).map(groupTab(fest));
+    ]
+    : [...groupByDay(fest.artists || [], knownDaysOf(fest)).keys()].filter(Boolean).map(groupTab(fest));
+  // While a query is on, the wall is that axis with the days that answered
+  // nothing left off — so the nav is the days that ANSWERED, read off the
+  // wall itself rather than recomputed, because a second copy of "did this
+  // day match?" is a second thing to drift. ACL searched for Kings of Leon
+  // renders one day and used to keep all seven tabs: six jumped nowhere, and
+  // at scroll 0 the dock lit FRI 2 — a Weekend 1 tab, over a Weekend 2
+  // answer. Filtering fixes the tab it lights too, because the first tab is
+  // now the first answer, which is where the scrollspy starts.
+  if (!ctx.query || !wallRoot) return tabs;
+  const answered = new Set([...wallRoot.querySelectorAll(DAY_ANCHOR)].map((h) => h.dataset.day));
+  return tabs.filter((t) => answered.has(t.anchor || t.key));
 }
 
 const mk = (tag, className, text) => {
@@ -963,9 +975,22 @@ const mk = (tag, className, text) => {
   if (text != null) n.textContent = text;
   return n;
 };
-const dedupeByName = (list) => {
+// The same card twice is the same ARTIST in the same OCCURRENCE — the pair
+// `cardFor` restores a zoom by, name plus the day/date/venue/stage/time
+// identity `occOf` builds. A name alone is not it: an artist who plays Room A
+// at 9 and Room B at 1 AM is two shows on one night, and folding them into one
+// answer loses the second outright. An occurrence alone is not it either —
+// every name billed on a day with no set yet shares one (day, no stage, no
+// time). The one thing that IS a single show reached twice is a combined-day
+// entry — Portola's Horse Meat Disco, day "Afters & Folsom", the same object
+// handed to two rooms — and it comes back as the same pair, so it stays one,
+// the same tie `cardFor` breaks with the room.
+const dedupeByCard = (list, occFor = occOf) => {
   const seen = new Set();
-  return list.filter((a) => (seen.has(a.name) ? false : (seen.add(a.name), true)));
+  return list.filter((a) => {
+    const key = JSON.stringify([a.name, occFor(a)]);
+    return seen.has(key) ? false : (seen.add(key), true);
+  });
 };
 
 // The card's time label in a stack: the range the venue posted, else the
@@ -1126,7 +1151,7 @@ function activitiesOf(fest, day) {
 function festRoomExtras(fest, day, layout) {
   if (layout.solo) return []; // the solo promises "just that stage"
   const onGrid = new Set(state.getDayArtists(day.dayKey, day.weekend).map((a) => a.name));
-  const billed = dedupeByName(applyWeekend(day.billing || [], day.weekend)).filter((a) => !onGrid.has(a.name));
+  const billed = dedupeByCard(applyWeekend(day.billing || [], day.weekend)).filter((a) => !onGrid.has(a.name));
   return [...straysOf(fest, day.dayKey, day.weekend, layout.stages), ...billed, ...activitiesOf(fest, day.dayKey)];
 }
 
@@ -1181,7 +1206,7 @@ function renderComposed(root, ctx, fest, { model: plan, scheduled }) {
   if (scheduled && plan.looseNoDay.length) {
     const onAnyGrid = new Set();
     for (const d of plan.days) if (d.grid) for (const a of state.getDayArtists(d.dayKey, d.weekend)) onAnyGrid.add(a.name);
-    const loose = dedupeByName(plan.looseNoDay.filter((a) => !onAnyGrid.has(a.name)));
+    const loose = dedupeByCard(plan.looseNoDay.filter((a) => !onAnyGrid.has(a.name)));
     if (loose.length) renderLineupGroup(root, '', loose, ctx, fest, { header: 'EVERYTHING ELSE', sub: 'NO SET TIME YET' });
   }
   festNotesFoot(root, ctx, fest);
@@ -1343,11 +1368,14 @@ function renderWallInner(root, ctx) {
       }
       // Then everything else of that night's, in the wall's order: the names
       // billed on the day with no set on its grid, then each room that plays.
-      // A combined-day show is one entry in two rooms — one answer here.
-      const billed = dedupeByName(applyWeekend(day.billing || [], day.weekend)).filter((a) => !onGrid.has(a.name));
-      const rooms = dedupeByName(plan.model.sections.flatMap((s) => s.byDay.get(day.key) || []));
-      for (const a of [...billed, ...rooms].filter((a) => wanted(a.name))) {
-        cards.push(renderCard(a.name, ctx, { time: lineupSubLabel(a), occ: { ...occOf(a), day: a.day || day.dayKey } }));
+      // One pass over both, deduped by the occurrence the card will carry: a
+      // combined-day show is one entry reached through two rooms and answers
+      // once, while two rooms on one night are two shows and answer twice.
+      const billed = applyWeekend(day.billing || [], day.weekend).filter((a) => !onGrid.has(a.name));
+      const rooms = plan.model.sections.flatMap((s) => s.byDay.get(day.key) || []);
+      const occHere = (a) => ({ ...occOf(a), day: a.day || day.dayKey });
+      for (const a of dedupeByCard([...billed, ...rooms].filter((a) => wanted(a.name)), occHere)) {
+        cards.push(renderCard(a.name, ctx, { time: lineupSubLabel(a), occ: occHere(a) }));
       }
       any = answers(cards, dayLabelParts(day.dayKey).head, day.sub, { dayKey: day.key }) || any;
     }
@@ -1367,7 +1395,7 @@ function renderWallInner(root, ctx) {
     if (plan) {
       const onAnyGrid = new Set();
       for (const d of plan.model.days) if (d.grid) for (const a of state.getDayArtists(d.dayKey, d.weekend)) onAnyGrid.add(a.name);
-      const loose = dedupeByName(plan.model.looseNoDay.filter((a) => !onAnyGrid.has(a.name) && wanted(a.name)));
+      const loose = dedupeByCard(plan.model.looseNoDay.filter((a) => !onAnyGrid.has(a.name) && wanted(a.name)));
       any = answers(loose.map((a) => renderCard(a.name, ctx, { time: lineupSubLabel(a), occ: occOf(a) })),
         'EVERYTHING ELSE', 'NO SET TIME YET', {}) || any;
     }
@@ -1467,16 +1495,16 @@ export const DAY_ANCHOR = '.day-rule[data-day], .sec-head[data-day]';
 // standing in. A jump lands its rule AT the offset on Chromium and about 24px
 // below it on WebKit; both are the same arrival.
 const LANDED_WITHIN = 32;
-// One observer drives every tab container (mobile dock + desktop rail): the
+// One rule drives every tab container (mobile dock + desktop rail): the
 // active day is a single fact rendered in two places.
 export function wireScrollspy(containers, wallRoot) {
   const list = Array.isArray(containers) ? containers : [containers];
   const tabs = list.flatMap((c) => [...c.querySelectorAll('.day-tab')]);
   if (!tabs.length) return () => {};
   const tabDays = new Set(tabs.map((t) => t.dataset.day));
-  // Observe ONLY headers that correspond to a tab — the NOTES/EVERYTHING-ELSE
+  // Read ONLY headers that correspond to a tab — the NOTES/EVERYTHING-ELSE
   // pseudo-headers share dayHeader() anatomy and used to de-highlight every
-  // tab when they scrolled into the band (audit 1.3). A tab's landing is a day
+  // tab when they scrolled past (audit 1.3). A tab's landing is a day
   // rule, or the room header of a dated section, which is a room AND a tab —
   // and NOT a grid scroller, which carries data-day for its own reasons.
   const headers = [...wallRoot.querySelectorAll(DAY_ANCHOR)]
@@ -1513,27 +1541,24 @@ export function wireScrollspy(containers, wallRoot) {
     }
   };
   markOverflow();
-  const onResize = () => markOverflow();
-  window.addEventListener('resize', onResize);
   for (const c of list) c.addEventListener('scroll', markOverflow, { passive: true });
-  const io = new IntersectionObserver((entries) => {
-    for (const e of entries) {
-      if (!e.isIntersecting) continue;
-      setActive(e.target.dataset.day);
-    }
-  }, { rootMargin: '-10% 0px -80% 0px' });
-  headers.forEach((h) => io.observe(h));
 
-  // The observer only speaks when a header crosses a thin band at 10–20% of the
-  // viewport. Any scroll big enough to clear that band in one go — a scrollbar
-  // drag, End, Page-Down, a hard fling on a 6,000px page — never trips it, so
-  // the day tab kept pointing at Thursday while you stood in Sunday's grid, and
-  // stayed wrong until a header happened to drift back through the band. A nav
-  // indicator that lies about where you are is worse than no indicator.
+  // ONE authority, and it is geometry: the active day is the last day-rule you
+  // have scrolled past. rAF-throttled, and it reads the same --jump-offset the
+  // day-tab jump lands against, so the two agree.
   //
-  // So geometry gets the last word: after every scroll, the active day is simply
-  // the last day-rule you have scrolled past. rAF-throttled, and it reads the
-  // same --jump-offset the day-tab jump lands against, so the two agree.
+  // There used to be an IntersectionObserver beside this, selecting any header
+  // that entered a band at 10–20% of the viewport. It came first, and the
+  // geometry rule was added under it because the band is the thing a fling
+  // clears in one frame: a scrollbar drag, End, Page-Down or a hard flick on a
+  // 6,000px page never tripped the observer, so the tab pointed at Thursday
+  // while you stood in Sunday's grid until a header happened to drift back
+  // through. Two rules over one fact means the second one to speak wins, and
+  // they do not agree — a probe watched geometry choose Saturday and the
+  // observer then choose Sunday without the page moving at all. Since the dock
+  // now scrolls itself to the active tab, a disagreement moves the row too.
+  // The band answers nothing geometry does not, so it is gone rather than
+  // taught to defer.
   let ticking = false;
   const syncFromGeometry = () => {
     ticking = false;
@@ -1575,9 +1600,14 @@ export function wireScrollspy(containers, wallRoot) {
     requestAnimationFrame(syncFromGeometry);
   };
   window.addEventListener('scroll', onScroll, { passive: true });
+  // A resize moves both facts this row shows: which tabs fit it, and where the
+  // day rules sit under a --jump-offset the sticky chrome has just remeasured.
+  // A phone's URL bar sliding away is a resize, and it must not leave the row
+  // naming a day you scrolled past three screens ago.
+  const onResize = () => { markOverflow(); syncFromGeometry(); };
+  window.addEventListener('resize', onResize);
 
   return () => {
-    io.disconnect();
     window.removeEventListener('scroll', onScroll);
     window.removeEventListener('resize', onResize);
     for (const c of list) c.removeEventListener('scroll', markOverflow);
