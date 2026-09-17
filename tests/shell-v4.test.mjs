@@ -276,60 +276,70 @@ test('ACL as shipped: the Late nights tab starts Sep 29 and the wall still opens
 });
 
 // ---- the now mark (MODEL-V4 §1.2) ----------------------------------------------------
+// ONE implementation, and it is the wall's. The wall stamps each stack card
+// with the window it plays in (data-now-from / data-now-to, minutes on the
+// festival-day axis) and reads the date and the timezone off the .venue-grid
+// those cards sit in. The shell carried a second one that expected all four on
+// every CARD; it therefore matched nothing, and ran right after every repaint
+// and on every tick — so the marks the wall had just drawn were wiped before
+// anyone saw them.
 
-// A stack card, stamped by the wall with the window it is playing in.
-function stackCard(root, { from, to, iso = '2026-09-24', tz = 'America/Los_Angeles' }) {
-  const card = document.createElement('div');
-  card.className = 'card';
-  card.dataset.nowIso = iso;
-  card.dataset.nowFrom = String(from);
-  card.dataset.nowTo = String(to);
-  card.dataset.tz = tz;
-  root.appendChild(card);
-  return card;
+const RealDate = globalThis.Date;
+// Saturday 2026-09-26, 11:30 PM in San Francisco (PDT is UTC-7) — the hour
+// Portola's afters are the whole festival.
+const SAT_LATE = RealDate.UTC(2026, 8, 27, 6, 30);
+function atFestivalTime(ms, fn) {
+  class Pinned extends RealDate {
+    constructor(...a) { if (a.length) super(...a); else super(ms); }
+    static now() { return ms; }
+  }
+  globalThis.Date = Pinned;
+  try { return fn(); } finally { globalThis.Date = RealDate; }
 }
-// 10:30 PM Pacific on Thursday 2026-09-24 — 22:30 on the festival-day axis.
-const at = (h, m = 0) => new Date(Date.UTC(2026, 8, 24, h + 7, m)); // PDT is UTC-7
+const marked = () => [...$('wall-root').querySelectorAll('.card.now')].map((c) => c.dataset.artist).sort();
+// The app's one ticker: a minute passing, or the tab coming back. jsdom never
+// renders, so its document sits at 'prerender' forever and the ticker's
+// visibility guard would never let one through.
+Object.defineProperty(dom.window.document, 'visibilityState', { value: 'visible', configurable: true });
+const tick = () => document.dispatchEvent(new dom.window.Event('visibilitychange'));
 
-test('the now mark lands on whoever is playing, and only while they are', () => {
-  const root = document.createElement('div');
-  const early = stackCard(root, { from: 22 * 60, to: 23 * 60 });        // 10 – 11 PM
-  const late = stackCard(root, { from: 23 * 60, to: 26 * 60 });          // 11 PM – 2 AM
-  const other = stackCard(root, { from: 22 * 60, to: 23 * 60, iso: '2026-09-25' }); // the next night
+test('the now mark survives the ticker and a pick — the shell reads the wall\'s marks, never its own', async () => {
+  atFestivalTime(SAT_LATE, () => {
+    tick();
+    const playing = marked();
+    assert.ok(playing.length > 0, 'somebody is playing at 11:30 PM on the Saturday of Portola');
+    for (const name of playing) {
+      const card = $('wall-root').querySelector(`.card.now[data-artist="${name}"]`);
+      assert.equal(card.querySelector('.now-label').textContent, 'NOW');
+      assert.equal(card.querySelector('.now-label').className, 'now-label in-card');
+      assert.ok(card.closest('.venue-grid[data-iso]'), 'a mark only ever lives on a stack card');
+    }
 
-  app.markNowCards(root, at(22, 30));
-  assert.equal(early.classList.contains('now'), true, '10:30 is inside the first set');
-  assert.equal(early.querySelector('.now-label').textContent, 'NOW');
-  assert.equal(early.querySelector('.now-label').className, 'now-label in-card');
-  assert.equal(late.classList.contains('now'), false);
-  assert.equal(other.classList.contains('now'), false, 'the same clock, a different night');
+    tick();
+    assert.deepEqual(marked(), playing, 'the ticker moves the mark, it does not clear it');
 
-  // The ticker moves the mark without a repaint — the label travels with it.
-  app.markNowCards(root, at(23, 1));
-  assert.equal(early.classList.contains('now'), false, 'the set ended: the ring and the label go');
-  assert.equal(early.querySelector('.now-label'), null);
-  assert.equal(late.classList.contains('now'), true);
-  assert.equal(late.querySelector('.now-label').textContent, 'NOW');
-
-  // A set's end is exclusive, so two cards can never both wear the mark.
-  app.markNowCards(root, at(23, 0));
-  assert.deepEqual([early, late, other].map((c) => c.classList.contains('now')), [false, true, false]);
-
-  // After the last set, nobody.
-  app.markNowCards(root, at(26, 0));
-  assert.deepEqual([early, late, other].map((c) => c.classList.contains('now')), [false, false, false]);
+    // A pick replaces the card's node. The window rides the node, so a refresh
+    // that dropped it would put the ring out until the next full repaint.
+    const first = $('wall-root').querySelector(`.card.now[data-artist="${playing[0]}"]`);
+    first.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
+    assert.deepEqual(marked(), playing, 'and a pick keeps every mark, the picked card included');
+    const fresh = $('wall-root').querySelector(`.card[data-artist="${playing[0]}"].now`);
+    assert.ok(fresh && fresh !== first, 'it really is a new node');
+    assert.ok(fresh.dataset.nowFrom && fresh.dataset.nowTo, 'carrying its window');
+  });
+  // The pick armed a real push (1.2 s). Let it land while the shell is still
+  // standing, rather than after test.after() has pulled the DOM out from under it.
+  await settle(1500);
 });
 
-test('a card with no window stamped on it is never marked, and an unstamped wall costs nothing', () => {
-  const root = document.createElement('div');
-  const plain = document.createElement('div');
-  plain.className = 'card';
-  root.appendChild(plain);
-  const broken = stackCard(root, { from: 'soon', to: 'later' });
-  assert.doesNotThrow(() => app.markNowCards(root, at(22, 30)));
-  assert.equal(plain.classList.contains('now'), false);
-  assert.equal(broken.classList.contains('now'), false, 'a window that is not a number is not a window');
-  assert.doesNotThrow(() => app.markNowCards(null, at(22, 30)));
+test('after the last set, nobody — and a wall with nothing playing costs nothing', () => {
+  // 6 AM the next morning: past the 5 AM rollover, so the festival day has
+  // moved on and no grid claims the clock.
+  atFestivalTime(RealDate.UTC(2026, 8, 27, 13, 0), () => {
+    tick();
+    assert.deepEqual(marked(), []);
+    assert.equal($('wall-root').querySelectorAll('.now-label.in-card').length, 0, 'the labels go with the ring');
+  });
 });
 
 // ---- the stylesheet answers for what this shell draws ---------------------------------

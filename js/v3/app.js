@@ -9,10 +9,10 @@ import * as sync from '../sync.js';
 import * as spotify from '../spotify.js';
 import * as model from './model.js';
 import { loadFestivalIndex, loadFestival, fetchCustomFestivals, mergeCustoms, FESTIVAL_INDEX, defaultFestivalId } from '../festivals.js';
-import { renderWall, refreshCard, showUndoToast, showToast, wireScrollspy, colorIndexOf, positionNowLines, scrollToNowLine, dayNavOf, cardFor, roomOf, isStripScroller } from './wall.js';
+import { renderWall, refreshCard, showUndoToast, showToast, wireScrollspy, colorIndexOf, positionNowLines, positionNowMarks, scrollToNowLine, dayNavOf, cardFor, roomOf, isStripScroller } from './wall.js';
 import { loadPeopleFilter, savePeopleFilter, togglePerson, pruneToActive, loadSolo, saveSolo, loadFolded, applyFoldToggle, FEST_ROOM } from './filters.js';
 import { OUT_MS, CASCADE_MS, STAGGER_MS, EASE_ARRIVE, EASE_LEAVE, EASE_SURFACE, canAnimate } from './motion.js';
-import { scrolledBefore, rememberScrolled, dayOfScrollKey, festivalClock } from './now.js';
+import { scrolledBefore, rememberScrolled, dayOfScrollKey } from './now.js';
 import { dayLabelParts } from '../time.js';
 import { disclosureFold, eqLoader, festRow } from './tools.js';
 import { openArtistSheet, openDayNotes, openAllNotes, openFestNotes, closeSheet, refreshOpenSheet, sheetChrome, dialogize, rememberOpener, shortDayLabel } from './notes.js';
@@ -252,7 +252,7 @@ function refreshArtistCards(artistName) {
   }));
   // A refreshed card can be a NEW node, and the now mark rides the node: pick
   // the artist who is playing and the ring would go out until the next tick.
-  markNowCards($('wall-root'), ctx.now || new Date());
+  positionNowMarks($('wall-root'), ctx.now || new Date());
 }
 
 function handleTap(artistName) {
@@ -368,7 +368,9 @@ function togglePeopleFilter(name) { setPeopleFilter(togglePerson(ctx.filterPeopl
 // One ticker for the app: every minute (and the moment the tab comes back
 // from the background) the now line moves and the now mark hops to whoever is
 // playing — both without a repaint. Cheap when nothing is today's:
-// positionNowLines and markNowCards find nothing to do.
+// positionNowLines and positionNowMarks find nothing to do. Both are the
+// wall's: it drew the line and stamped the windows, and the shell's job here
+// is the clock, not a second opinion about what is playing.
 let clockTimer = null;
 function startClock() {
   if (clockTimer) return;
@@ -377,34 +379,7 @@ function startClock() {
 }
 function tickClock(date = new Date()) {
   positionNowLines($('wall-root'), date);
-  markNowCards($('wall-root'), date);
-}
-
-// The now mark (MODEL-V4 §1.2). A stack has no clock to draw a line on, so
-// the card of whoever is playing right now carries the ring and a small NOW
-// label — the same violet, the same ticker, one idea in two places. The
-// window a card is playing in is stamped on it by the wall
-// (data-now-from / data-now-to, minutes on the festival-day axis, under
-// data-now-iso in data-tz's zone); the shell only reads the clock.
-export function markNowCards(root, date = new Date()) {
-  if (!root) return;
-  for (const card of root.querySelectorAll('.card[data-now-from]')) {
-    const from = Number(card.dataset.nowFrom);
-    const to = Number(card.dataset.nowTo);
-    const clock = festivalClock(date, card.dataset.tz || null);
-    const playing = card.dataset.nowIso === clock.iso
-      && Number.isFinite(from) && Number.isFinite(to)
-      && clock.minutes >= from && clock.minutes < to;
-    card.classList.toggle('now', playing);
-    let label = card.querySelector('.now-label');
-    if (playing && !label) {
-      label = document.createElement('span');
-      label.className = 'now-label in-card';
-      label.textContent = 'NOW';
-      label.setAttribute('aria-label', 'Playing now');
-      card.appendChild(label);
-    } else if (!playing && label) label.remove();
-  }
+  positionNowMarks($('wall-root'), date);
 }
 
 // Which day the wall opens on (MODEL-V4 §2): the festival's first grid day.
@@ -706,7 +681,7 @@ function repaintWall() {
   }
   renderDayNav();
   paintShowMenus();
-  markNowCards($('wall-root'), ctx.now || new Date());
+  positionNowMarks($('wall-root'), ctx.now || new Date());
   $('notes-count').textContent = String(model.totalNoteCount(state.crewDoc, ctx.fid));
   // A timetable has one true order — a sort control there would be a lie
   // (CORE-5). Searching a scheduled fest sorts chronologically by design.

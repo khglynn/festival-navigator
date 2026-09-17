@@ -241,6 +241,13 @@ export function refreshCard(el, artistName, ctx, { onSwap = null } = {}) {
     const v = el.style.getPropertyValue(prop);
     if (v) fresh.style.setProperty(prop, v);
   }
+  // The now window rides the NODE (venueGroups stamps it from the model), so a
+  // refresh that dropped it would put the ring out on whoever is playing the
+  // moment you picked them, until the next full repaint.
+  if (el.dataset.nowFrom) {
+    fresh.dataset.nowFrom = el.dataset.nowFrom;
+    fresh.dataset.nowTo = el.dataset.nowTo;
+  }
   // Keyboard users keep their place: replacing a focused node silently dumps
   // focus to <body>, forcing a full re-Tab per pick tap (audit 4.1).
   const hadFocus = document.activeElement === el;
