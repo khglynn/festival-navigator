@@ -13,7 +13,10 @@ like a lab notebook).
    re-case, or "fix" one — `tests/fixtures/live-pick-keys.json` freezes them
    and CI fails on any disappearance. A name the official source now spells
    differently gets a note in meta.note, not an edit.
-2. Freeze BEFORE touching: `node scripts/freeze-pick-keys.mjs <fest-id>`.
+2. Freeze BEFORE touching: `node scripts/freeze-pick-keys.mjs <fest-id>`,
+   and again after adding a name — the validator fails with "not frozen yet
+   … run node scripts/freeze-pick-keys.mjs <id>" until every name and day
+   label is frozen.
 3. Grid names must match `artists[]` byte for byte; the validator makes a
    case-only mismatch an ERROR.
 
@@ -26,8 +29,10 @@ like a lab notebook).
 3. Freeze (law 2). Edit: `days{}` on the Portola shape for a schedule,
    `artists[].day` for day tags, `dayMeta` (wd + date, `isos` {W1,W2} for a
    two-weekend fest), `timezone` (IANA), afters/events with stage
-   "Thu · Venue" + a time. `status`: lineup → scheduled ONLY with a real
-   grid. Update meta.researchedAt and write the sourcing story in meta.note.
+   "Thu · Venue" — a printed doors time goes in `doors`, never in `time`
+   (a show page prints doors, not a set; add-a-festival.md, "Guessing the
+   times"). `status`: lineup → scheduled ONLY with a real grid. Update
+   meta.researchedAt and write the sourcing story in meta.note.
 4. Gate: `node scripts/validate-festivals.mjs` (0 errors),
    `npm test` green, `git diff` shows zero changed name/day lines.
 5. If any cached asset changed (it usually did not — data files are not in
@@ -35,10 +40,5 @@ like a lab notebook).
 6. Hand back: files touched, sources with dates, what remains unknown and
    when it is expected (prior years' drop timing).
 
-## Standing dates (2026)
-- Lost Lands: day tags droppable now (2026-08-21 sources in meta.note);
-  full set times expected ~Sept 14–16. Eight pre-party reappearances noted
-  in the file — land them WITH the day tags.
-- ACL: set times are live as six schedule images (aclfestival.com/schedule);
-  ingest = visual transcription of all six, W1/W2 shape, before Oct 2.
-- Seismic 9.0: nothing to ingest before ~Sept 18 (8.0's phase-two timing).
+## What is due when
+`NOW.md` holds each festival's next data drop; dates written here go stale.

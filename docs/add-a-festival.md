@@ -1,6 +1,6 @@
 # Adding a festival
 
-*Updated 2026-08-27 (set-times drop recipe + the pick-key freeze).*
+*Updated 2026-09-16 (one rule for guessed times; doors go in `doors`).*
 
 Two files, one command:
 
@@ -32,7 +32,8 @@ Two files, one command:
    - When set times drop, add `dayMeta` and `days{}` — each day carries its own `stages[]`; there is no top-level stages field (the renderer and validator only read `fest.days.<day>.stages`) (see
      `portola-2026.json` for the full scheduled shape, with afters sections;
      `electric-forest-2026.json` for a four-day grid with activities) and flip
-     `status` to `scheduled` in BOTH the file and `index.json`. Times are
+     `status` to `scheduled` in BOTH the file and `index.json` (the validator
+     errors when they differ). Times are
      `"6:30 PM"` or `"6:30 PM - 7:30 PM"`; a missing end is filled from the
      next set on that stage. The validator enforces on any live grid: every
      grid name is an `artists[]` name **byte for byte** (a case-only match is
@@ -46,6 +47,8 @@ Two files, one command:
         `tests/live-pick-keys.test.mjs` fail if any of them later disappears,
         and every non-archived festival must be frozen (`--all-live` does them
         all). Renaming is then a visible fixture edit, never an accident.
+        Run it again after adding names: the validator fails with "not frozen
+        yet" until the freeze holds every name and day label.
         Two-minute version for whoever edits data: `data/festivals/README.md`.
      2. Transcribe the official poster into `days{}` using the EXISTING
         `artists[]` spellings; billing extras ("(DJ Set)", "(Live)",
@@ -72,6 +75,9 @@ Two files, one command:
      `dates: { "W1": "Oct 2", "W2": "Oct 9" }` so the day rule shows the
      selected weekend's real date. Keep `weekends` tags on the top-level
      `artists[]` — they drive the picker's presence and the search extras.
+     The two spellings never cross (`weekend` on a grid set, `weekends` on
+     `artists[]`): the validator errors on either one in the wrong place, and
+     on a W1/W2 lineup over a grid with no W1/W2 set.
    - Optional `activities{}` for non-stage programming (workshops, silent
      disco) — renders as a time-sorted list under the grid.
    - **Give each grid day its calendar date** in `dayMeta`: `iso:
@@ -159,7 +165,7 @@ data, never guessed at render time (MODEL-V3 §5):
 
 | Field | What |
 |---|---|
-| `time` | The guessed start for this set. |
+| `time` | This set's start — the venue's, or our guess. |
 | `approx` | `true` when that time is our guess, not the venue's. |
 | `doors` / `close` | The room's window, each a single clock time (`"10 PM"`, never a range). |
 | `closeApprox` | `true` when the CLOSE is our guess — `approx` scopes to `time` only, and the two are separate because a poster usually prints doors and not an end. |
@@ -173,27 +179,18 @@ combined card eats the crew's picks.
 
 **Guessing the times and the order**, when the page prints neither:
 
-- Times spread evenly from `doors` to `close` where the close is known, and go
-  an hour apart from doors where it is not — rounded to the half hour, so the
-  plan reads `11:30 PM` and never `11:20 PM`.
-- The order follows the billing: the billed headliner CLOSES and the rest run
-  in descending print, so a bill read top to bottom is the run read bottom to
-  top.
-- Mark every guessed set `approx: true` and every unposted order
-  `confirmed: false`. If no page prints an end, leave `close` out rather than
-  inventing one — the zoom then says `Doors 10 PM` instead of a window nobody
-  published.
-- A venue-night with NO time at all is not a run. Leave it timeless; the wall
-  tiles it under TIME TBA.
-
-Portola's twelve runs are the worked example, and they are generated rather
-than typed: `scripts/migrate-portola-events.mjs` holds the `RUNS` table (one
-row per room: doors, a printed close, the billed order, the source, and what
-the file used to say), and the clocks come from `scripts/guess-run-times.mjs`
-— the venue registry (`data/venues/index.json`: each room's routine close by
-weekday, its doors-to-first-act gap, its set lengths, every value with a
-source) says when a room usually ends, and the guesser lays the bill across
-that window. Any fest can run `node scripts/guess-run-times.mjs <id>` for a
-dry-run diff of its runs, and `--write` to record them; a printed close is
-never overwritten, and every guessed close carries `closeApprox` + its
-`closeSource`.
+- **A printed doors time goes in `doors`, never in `time`** — a show page
+  prints doors, not a set, and a time in `time` reads as a set start. A room
+  with one act may carry `doors`, a `close` and a guessed `time`, but no
+  `order`.
+- **The order follows the billing:** the billed headliner closes and the rest
+  run in descending print. Record it as `order` with `confirmed: false` until
+  the venue posts it.
+- **The clocks are `node scripts/guess-run-times.mjs <id>`** — one rule, a
+  dry-run diff, `--write` to record. For every room with an `order` it lays
+  the bill from `doors` to the close (the printed close; else one a listing
+  printed for that night, `closeApprox` with its https `closeSource`; else the
+  venue's routine close from `data/venues/index.json`) and marks each guess
+  `approx: true`. A set with a time and no `approx` is posted and never
+  touched, so re-run it whenever a room or the registry changes. A show with
+  no `time` tiles under TIME TBA.

@@ -2,6 +2,7 @@
 // consumed by BOTH scripts/validate-festivals.mjs (CI) and api/festival-add.js
 // (LLM-researched candidates). If a rule changes, it changes here once.
 import { timeToMinutes, computeDayArtists } from '../../js/time.js';
+import { parseEventTime, shortDate } from '../../js/v3/events.js';
 import { safeKey, FORBIDDEN_KEYS } from './crew-shared.mjs';
 
 export const SLUG_RE = /^[a-z0-9-]{1,64}$/;
@@ -40,6 +41,10 @@ const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 // doors/close are a single point on the clock, never a range.
 const CLOCK_RE = new RegExp(`^${CLOCK}$`, 'i');
 const startOf = (t) => String(t).split(' - ')[0];
+// An event runs on the festival-day clock the wall draws it on (events.js:
+// 9 AM starts the day, anything earlier is after midnight) — so a daytime
+// room reads as daytime, and 2 AM still reads as later than 10 PM.
+const eventMin = (t) => parseEventTime(t).startMin;
 
 function checkEventFields(fest, err, warn) {
   const plain = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
@@ -48,9 +53,11 @@ function checkEventFields(fest, err, warn) {
   // Runs are grouped by the room they happen in: one day, one night, one
   // venue. Nothing in the file declares a run — the grouping IS the run.
   const runs = new Map();
-  // …and EVERY event set in a room, numbered or not, so a room that has more
-  // than one show and no running order can be told about it (below).
+  // …and EVERY timed event set in a room, numbered or not, so a room that has
+  // more than one show and no running order can be told about it (below).
   const rooms = new Map();
+  // How many shows each room holds at all, timed or not.
+  const acts = new Map();
   const roomKey = (a) => {
     const bits = typeof a.stage === 'string' && a.stage.includes(' · ') ? a.stage.split(' · ') : null;
     const night = WEEKDAYS.includes(a.night) ? a.night
@@ -64,6 +71,8 @@ function checkEventFields(fest, err, warn) {
     if (!plain(a)) return;
     const at = `artists[${i}] (${safeKey(a.name)})`;
     const bits = typeof a.stage === 'string' && a.stage.includes(' · ') ? a.stage.split(' · ') : null;
+    const rk = roomKey(a);
+    if (rk) acts.set(rk, (acts.get(rk) || 0) + 1);
 
     if (a.night !== undefined) {
       if (!WEEKDAYS.includes(a.night)) err(`${at}: night must be one of ${WEEKDAYS.join('|')} (got ${JSON.stringify(safeKey(a.night))})`);
@@ -95,19 +104,17 @@ function checkEventFields(fest, err, warn) {
     for (const [k, set] of [['doors', (v) => { doorsMin = v; }], ['close', (v) => { closeMin = v; }]]) {
       if (a[k] === undefined) continue;
       if (typeof a[k] !== 'string' || !CLOCK_RE.test(a[k])) { err(`${at}: ${k} must be a single clock time like "10 PM" (got ${JSON.stringify(safeKey(a[k]))})`); continue; }
-      try { set(timeToMinutes(a[k])); } catch { err(`${at}: ${k} did not parse`); }
+      set(eventMin(a[k]));
     }
     if (doorsMin !== null && closeMin !== null && closeMin <= doorsMin) err(`${at}: close ${JSON.stringify(a.close)} is not after doors ${JSON.stringify(a.doors)}`);
     // A set outside the room's own window is a data-entry slip, and a guessed
     // time landing there is the slip this shape exists to prevent.
     if (doorsMin !== null && closeMin !== null && typeof a.time === 'string' && TIME_RE.test(a.time)) {
-      let t = null;
-      try { t = timeToMinutes(startOf(a.time)); } catch { /* reported above */ }
-      if (t !== null && (t < doorsMin || t > closeMin)) err(`${at}: set time ${JSON.stringify(safeKey(a.time))} falls outside doors ${JSON.stringify(a.doors)} – close ${JSON.stringify(a.close)}`);
+      const t = eventMin(a.time);
+      if (t < doorsMin || t > closeMin) err(`${at}: set time ${JSON.stringify(safeKey(a.time))} falls outside doors ${JSON.stringify(a.doors)} – close ${JSON.stringify(a.close)}`);
     }
 
     if (typeof a.time === 'string' && TIME_RE.test(a.time)) {
-      const rk = roomKey(a);
       if (rk) {
         if (!rooms.has(rk)) rooms.set(rk, []);
         rooms.get(rk).push(a);
@@ -124,10 +131,9 @@ function checkEventFields(fest, err, warn) {
       // over https, since the app is served over it.
       if (typeof o.source !== 'string' || !/^https:\/\/[^\s]+$/.test(o.source)) err(`${at}: order.source must be an https URL — the order line is a door to where the order came from`);
       if (typeof o.confirmed !== 'boolean') err(`${at}: order.confirmed must be true or false — whether the venue has posted this order, or it is still our read`);
-      if (int(o.seq) && int(o.of) && a.night !== undefined && a.venue !== undefined) {
-        const key = `${a.day || ''}|${a.night}|${a.venue}`;
-        if (!runs.has(key)) runs.set(key, []);
-        runs.get(key).push({ a, o, at });
+      if (int(o.seq) && int(o.of) && rk) {
+        if (!runs.has(rk)) runs.set(rk, []);
+        runs.get(rk).push({ a, o, at });
       }
     }
   });
@@ -151,6 +157,9 @@ function checkEventFields(fest, err, warn) {
   // One room, one night: the sets that share it must tell one story.
   for (const [key, members] of runs) {
     const where = safeKey(key.replace(/\|/g, ' · '));
+    // A single-act room may say its doors, its close and a guessed start —
+    // a show page prints doors, not a set — but it has nothing to sequence.
+    if (acts.get(key) === 1) { err(`${where}: one act in the room carries an order — there is nothing to sequence; drop \`order\` (doors, close and an approx time are fine)`); continue; }
     const ofs = new Set(members.map((m) => m.o.of));
     if (ofs.size > 1) err(`${where}: the sets disagree on how many are in the run (${[...ofs].sort().join(', ')})`);
     const seqs = members.map((m) => m.o.seq);
@@ -168,8 +177,7 @@ function checkEventFields(fest, err, warn) {
     // one of the two is wrong and no renderer can tell which.
     const timed = members
       .filter((m) => typeof m.a.time === 'string' && TIME_RE.test(m.a.time))
-      .map((m) => { try { return { seq: m.o.seq, t: timeToMinutes(startOf(m.a.time)), at: m.at }; } catch { return null; } })
-      .filter(Boolean)
+      .map((m) => ({ seq: m.o.seq, t: eventMin(m.a.time), at: m.at }))
       .sort((x, y) => x.seq - y.seq);
     for (let i = 1; i < timed.length; i++) {
       if (timed[i].t <= timed[i - 1].t) err(`${where}: ${timed[i].at} is ${timed[i].seq} of ${of} but starts no later than the set before it — the running order and the clock disagree`);
@@ -258,6 +266,9 @@ export function validateFestivalDoc(fest, { filename } = {}) {
     }
     if (a && a.time && !TIME_RE.test(a.time)) err(`artists[${i}] (${safeKey(a.name)}): unparseable time ${JSON.stringify(safeKey(a.time))}`);
     if (a && a.weekends && !['W1', 'W2', 'both'].includes(a.weekends)) err(`artists[${i}] (${safeKey(a.name)}): weekends must be W1|W2|both`);
+    // Two spellings, one idea: nothing reads the other one, so a crossed tag
+    // is not a typo the wall tolerates — it is a tag that is not there.
+    if (a && a.weekend !== undefined) err(`artists[${i}] (${safeKey(a.name)}): \`weekend\` is a grid set's tag — a lineup entry says \`weekends\` (W1|W2|both)`);
     // Combined day strings ("Saturday & Sunday") render split (ST-1) — but
     // only when every part matches a real day; flag the ones that won't.
     if (a && typeof a.day === 'string' && /[&+/]|\s+and\s+/i.test(a.day)) {
@@ -313,6 +324,7 @@ export function validateFestivalDoc(fest, { filename } = {}) {
         // 'both' plays every weekend. Day KEYS stay the plain weekdays — day
         // notes are keyed by day label, and renamed keys strand them.
         if (a.weekend && !['W1', 'W2', 'both'].includes(a.weekend)) err(`${safeKey(label)}.artists[${i}] (${safeKey(a.name)}): weekend must be W1|W2|both`);
+        if (a.weekends !== undefined) err(`${safeKey(label)}.artists[${i}] (${safeKey(a.name)}): \`weekends\` is the lineup's tag — a grid set says \`weekend\` (W1|W2|both); untagged, it plays every weekend`);
         if (!a.stage) err(`${safeKey(label)}.artists[${i}] (${safeKey(a.name)}): missing stage`);
         else if (!stages.includes(a.stage)) err(`${safeKey(label)}.artists[${i}] (${safeKey(a.name)}): stage ${JSON.stringify(safeKey(a.stage))} not in day stages`);
         if (!a.time || !TIME_RE.test(a.time)) err(`${safeKey(label)}.artists[${i}] (${safeKey(a.name)}): bad time ${JSON.stringify(safeKey(a.time))}`);
@@ -361,6 +373,13 @@ export function validateFestivalDoc(fest, { filename } = {}) {
         }
       }
       if (fest.dayMeta && !fest.dayMeta[label]) warn(`dayMeta missing entry for ${label}`);
+    }
+    // A lineup split by weekend over a grid that is not: the timetable only
+    // picks a weekend when some set is tagged W1/W2 (wall.js
+    // scheduledWeekendOf), so it would draw both weekends' sets at once.
+    const split = (list, k) => (Array.isArray(list) ? list : []).some((a) => isPlain(a) && (a[k] === 'W1' || a[k] === 'W2'));
+    if (split(fest.artists, 'weekends') && !Object.values(fest.days).some((d) => isPlain(d) && split(d.artists, 'weekend'))) {
+      err('artists[] tag W1/W2 but no days{} set carries a weekend tag — the timetable would show both weekends at once; tag each grid set weekend: "W1"|"W2" (untagged plays both)');
     }
     // The other direction: a lineup artist billed on a grid day with no set
     // on that grid is invisible on the timetable. Usually a missed box —
@@ -422,6 +441,13 @@ export function validateFestivalDoc(fest, { filename } = {}) {
             else claim(wk, v, label);
           }
         }
+      }
+      // Each date is typed twice — once to show (the day rule), once as ISO
+      // (the now line). Two copies that disagree name two different days.
+      const typedTwice = [['date', meta.date, 'iso', meta.iso]];
+      if (isPlain(meta.dates) && isPlain(meta.isos)) for (const wk of ['W1', 'W2']) typedTwice.push([`dates.${wk}`, meta.dates[wk], `isos.${wk}`, meta.isos[wk]]);
+      for (const [shown, value, isoKey, iso] of typedTwice) {
+        if (typeof value === 'string' && realDate(iso) && value !== shortDate(iso)) warn(`dayMeta.${safeKey(label)}.${shown} ${JSON.stringify(safeKey(value))} is not ${isoKey} ${iso} (${shortDate(iso)}) — the day rule and the now line would name different days`);
       }
     }
   }

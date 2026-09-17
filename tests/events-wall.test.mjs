@@ -33,13 +33,21 @@ const model = await import('../js/v3/model.js');
 const { FESTIVALS, FESTIVAL_INDEX } = await import('../js/festivals.js');
 const { renderWall, refreshCard, dayNavOf, cardFor, roomOf } = await import('../js/v3/wall.js');
 const facts = await import('../js/v3/card-facts.js');
+const { parseEventTime, hourLabelOf } = await import('../js/v3/events.js');
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const portola = JSON.parse(readFileSync(join(ROOT, 'data/festivals/portola-2026.json'), 'utf8'));
-const lostlands = JSON.parse(readFileSync(join(ROOT, 'data/festivals/lost-lands-2026.json'), 'utf8'));
+// Portola's afters as the file has them TODAY — venues, times, guesses and
+// timeless shows move as venues post, so the wall tests read them from here
+// rather than pinning a night that the next data drop rewrites.
+const afters = (wd) => portola.artists.filter((a) => a.night === wd && /Afters/.test(a.day));
+const venuesByFirstSet = (wd) => [...new Set(afters(wd)
+  .filter((a) => parseEventTime(a.time))
+  .sort((x, y) => parseEventTime(x.time).startMin - parseEventTime(y.time).startMin) // stable: ties keep file order
+  .map((a) => a.venue))];
 
 const TOKEN = 'eventswalltoken_0123456789';
-FESTIVAL_INDEX.push({ id: 'portola-2026', status: 'scheduled' }, { id: 'lost-lands-2026', status: 'lineup' }, { id: 'grid-only', status: 'scheduled' }, { id: 'tiles-run', status: 'lineup' }, { id: 'approx-run', status: 'lineup' }, { id: 'model-edges', status: 'lineup' }, { id: 'verbose-day', status: 'lineup' });
+FESTIVAL_INDEX.push({ id: 'portola-2026', status: 'scheduled' }, { id: 'lineup-only', status: 'lineup' }, { id: 'grid-only', status: 'scheduled' }, { id: 'tiles-run', status: 'lineup' }, { id: 'approx-run', status: 'lineup' }, { id: 'model-edges', status: 'lineup' }, { id: 'verbose-day', status: 'lineup' });
 state.activateCrew(TOKEN, {
   v: 4, meta: {}, spotify: {},
   people: { Kevin: { colorIndex: 0 }, Nhu: { colorIndex: 1 } },
@@ -47,7 +55,6 @@ state.activateCrew(TOKEN, {
   affinity: {},
 }, 'portola-2026');
 FESTIVALS['portola-2026'] = portola;
-FESTIVALS['lost-lands-2026'] = lostlands;
 FESTIVALS['grid-only'] = {
   id: 'grid-only', name: 'Grid Only', status: 'scheduled',
   dayMeta: { Friday: { wd: 'Fri', date: 'Oct 2', iso: '2026-10-02' } }, timezone: 'America/Chicago',
@@ -112,6 +119,11 @@ FESTIVALS['verbose-day'] = {
     { name: 'Chassi', day: WED_KEY },
     { name: 'Late Night', day: 'Afters', night: 'Wed', venue: 'The Barn', time: '11 PM' },
   ],
+};
+// The same verbose key on a lineup fest with no events at all.
+FESTIVALS['lineup-only'] = {
+  id: 'lineup-only', name: 'Lineup Only', status: 'lineup',
+  artists: [{ name: 'Chassi', day: WED_KEY }, { name: 'Headliner', day: 'Friday' }],
 };
 
 const ctxFor = (fid, over = {}) => {
@@ -197,13 +209,13 @@ test('every timetable carries its OWN sticky strip and scroll group — a grid d
   assert.equal(gridDays[0].scrollLeft, 120, 'the grid did not move');
   assert.equal(root.querySelector('.times-scroll[data-sync="Afters|Friday"]:not([data-day]) .times-grid').style.transform, 'translateX(-300px)', 'its own strip row did');
   // Event columns are capped; the grid's are not.
-  assert.equal(root.querySelector('.times-scroll[data-sync="Afters|Thursday"][data-day] .times-grid').style.gridTemplateColumns, 'repeat(2, minmax(150px, 240px))');
+  assert.equal(root.querySelector('.times-scroll[data-sync="Afters|Thursday"][data-day] .times-grid').style.gridTemplateColumns, `repeat(${venuesByFirstSet('Thu').length}, minmax(150px, 240px))`);
   assert.ok(root.querySelector('.times-scroll[data-sync="grid"][data-day] .times-grid').style.gridTemplateColumns.includes('1fr'));
   // The venue heads wear the stage-header look but are not solo buttons.
   const heads = [...root.querySelectorAll('.tt-block .stage-head.venue')];
-  assert.ok(heads.length >= 18);
+  assert.ok(heads.length > 0);
   assert.ok(heads.every((h) => h.tagName === 'DIV'));
-  assert.deepEqual([...root.querySelectorAll('.times-scroll[data-sync="Afters|Thursday"] .stage-head')].map((h) => h.textContent), ['Regency Ballroom', 'Club Six']);
+  assert.deepEqual([...root.querySelectorAll('.times-scroll[data-sync="Afters|Thursday"] .stage-head')].map((h) => h.textContent), venuesByFirstSet('Thu'));
 });
 
 test('a night\'s timetable: hour rail from the first set to the last close, tonight\'s iso on the grid so the now line can find it, TIME TBA under it', () => {
@@ -212,29 +224,35 @@ test('a night\'s timetable: hour rail from the first set to the last close, toni
   const grid = sun.querySelector('.times-scroll[data-day] .times-grid');
   assert.equal(grid.dataset.iso, '2026-09-27');
   assert.equal(grid.dataset.tz, 'America/Los_Angeles');
-  assert.equal(grid.dataset.startRow, '88', '10 PM');
-  assert.equal(grid.dataset.rows, '20', 'to 3 AM (Monarch closes)');
-  assert.deepEqual([...sun.querySelectorAll('.hour-label')].map((h) => h.textContent), ['10 PM', '11 PM', '12 AM', '1 AM', '2 AM']);
+  const sunday = afters('Sun');
+  const firstSet = Math.min(...sunday.filter((a) => parseEventTime(a.time)).map((a) => parseEventTime(a.time).startMin));
+  const lastClose = Math.max(...sunday.filter((a) => a.time && a.close).map((a) => parseEventTime(a.close).startMin));
+  const start = Number(grid.dataset.startRow);
+  const rows = Number(grid.dataset.rows);
+  assert.equal(start, Math.floor(firstSet / 15), 'the rail opens on the night\'s first set');
+  assert.equal(start + rows, Math.ceil(lastClose / 15), 'and runs to the latest close');
+  const hours = [];
+  for (let r = Math.ceil(start / 4) * 4; r < start + rows; r += 4) hours.push(hourLabelOf(r * 15));
+  assert.deepEqual([...sun.querySelectorAll('.hour-label')].map((h) => h.textContent), hours, 'a label on every hour inside it');
   const tba = sun.querySelector('.tba');
   assert.ok(tba);
   assert.equal(tba.querySelector('.tba-label').textContent, 'TIME TBA');
-  assert.deepEqual([...tba.querySelectorAll('.card')].map((c) => [c.dataset.artist, c.dataset.time]), [['Azzecca', undefined]]);
-  // Saturday's afters: four venue columns (Audio and Public Works joined the
-  // clock on 2026-09-01 — their show pages print doors 10 PM), and the one
-  // room nobody has timed at all is the only TBA tile left.
+  assert.deepEqual([...tba.querySelectorAll('.card')].map((c) => [c.dataset.artist, c.dataset.time]),
+    sunday.filter((a) => !a.time).map((a) => [a.name, undefined]), 'every show with no time yet, and nothing else');
+  // Saturday's afters: venue columns left to right by first set, ties in file
+  // order; the rooms nobody has timed are the TBA tiles.
   const sat = roomsUnder(root, 'Saturday')[1];
-  assert.deepEqual([...sat.querySelectorAll('.stage-strip .stage-head')].map((h) => h.textContent),
-    ['Regency Ballroom', 'Public Works', 'Audio', 'Monarch'], 'left to right by first set, ties in file order (Regency: doors 9 PM per AXS, first act ~10 PM — 2026-09-02)');
-  assert.deepEqual([...sat.querySelectorAll('.tba .card')].map((c) => c.dataset.artist), ['Groove Armada']);
+  assert.deepEqual([...sat.querySelectorAll('.stage-strip .stage-head')].map((h) => h.textContent), venuesByFirstSet('Sat'));
+  assert.deepEqual([...sat.querySelectorAll('.tba .card')].map((c) => c.dataset.artist), afters('Sat').filter((a) => !a.time).map((a) => a.name));
 });
 
-test('the untouched paths: a grid-only fest renders one page-wide strip and no rooms; Lost Lands stays a lineup wall (WED is a wall-grid — tiles)', () => {
+test('the untouched paths: a grid-only fest renders one page-wide strip and no rooms; a lineup fest with no events stays a lineup wall (WED is a wall-grid — tiles)', () => {
   const grid = render('grid-only').root;
   assert.equal(grid.querySelectorAll('.stage-strip').length, 1);
   assert.equal(grid.querySelector('.stage-strip').parentElement, grid, 'the strip sits at the root, above every day');
   assert.equal(grid.querySelectorAll('.room, .bucket-row, .tt-block, .sec-head').length, 0);
   assert.ok([...grid.querySelectorAll('.times-scroll')].every((s) => !s.dataset.sync));
-  const ll = render('lost-lands-2026').root;
+  const ll = render('lineup-only').root;
   assert.equal(ll.querySelectorAll('.room, .bucket-row').length, 0);
   const rules = rulesOf(ll);
   assert.ok(rules.includes('WEDNESDAY'));
@@ -319,13 +337,15 @@ test('every venue-night on the Portola wall is a vertical run: nothing lanes, no
   const fri = columnsOf(blocks[1]);
   const regency = [...fri.values()].find((l) => l.length === 3 && l[0].name === 'Gelli Haha');
   assert.ok(regency, 'the Regency three are one column');
-  // The clocks are the guesser's (scripts/guess-run-times.mjs, from the venue
-  // registry) and are read from the file, not retyped: the pin is the ORDER
-  // and the tilde, not a particular quarter hour.
-  const guess = (name) => `~${portola.artists.find((a) => a.name === name && a.order).time}`;
-  const withGuess = (names) => names.map((n) => [n, guess(n)]);
+  // The clocks are read from the file, not retyped: the pin is the ORDER, and
+  // a tilde exactly where the file says the time is a guess (`approx`) — a
+  // time the venue posted wears none.
+  const shown = (name) => {
+    const a = portola.artists.find((x) => x.name === name && x.order);
+    return a.approx === true ? `~${a.time}` : a.time;
+  };
+  const withGuess = (names) => names.map((n) => [n, shown(n)]);
   assert.deepEqual(regency.map((c) => [c.name, c.time]), withGuess(['Gelli Haha', 'Jyoty', 'Channel Tres']));
-  assert.ok(regency.every((c) => /^~/.test(c.time)), 'every run card wears the tilde');
   assert.ok(regency.every((c) => c.el.getAttribute('role') === 'button'), 'every set stays its own tappable card');
   // Sunday's Public Works — the other deck — and the Midway four.
   const sun = columnsOf(blocks[3]);
@@ -419,7 +439,7 @@ test('a run inside a TILES section: the tile wears the tilde and the range, one 
   assert.equal(afters.querySelectorAll('.sec-whisper').length, 1);
 });
 
-test('the tilde whisper appears once per NIGHT that carries a guess — three nights on Portola, never on Thursday and never on Folsom', () => {
+test('the tilde whisper appears once per room that carries a guess — never once per card, never on a night or in a section with nothing guessed', () => {
   const { root } = render('portola-2026');
   const per = {};
   for (const rule of root.querySelectorAll('.day-rule')) {
@@ -429,9 +449,16 @@ test('the tilde whisper appears once per NIGHT that carries a guess — three ni
     }
     per[rule.dataset.day] = n;
   }
-  assert.deepEqual(per, { Thursday: 0, Friday: 1, Saturday: 1, Sunday: 1 },
-    'Thursday has no guessed set; Fri/Sat/Sun each say it once, not once per card and not once per section');
-  assert.equal(root.querySelectorAll('.room[data-bucket="Folsom"] .sec-whisper').length, 0, 'nothing in Folsom is a guess');
+  // A room is a section on a night; "Afters & Folsom" stands in both.
+  const guessingRooms = (wd, only = null) => new Set(portola.artists
+    .filter((a) => a.night === wd && a.approx === true)
+    .flatMap((a) => a.day.split(' & '))
+    .filter((label) => !only || label === only)).size;
+  const want = { Thursday: guessingRooms('Thu'), Friday: guessingRooms('Fri'), Saturday: guessingRooms('Sat'), Sunday: guessingRooms('Sun') };
+  assert.ok(Object.values(want).some(Boolean), 'Portola carries guesses, so this is not vacuous');
+  assert.deepEqual(per, want, 'each room with a guessed set says it once, not once per card');
+  assert.equal(root.querySelectorAll('.room[data-bucket="Folsom"] .sec-whisper').length,
+    ['Thu', 'Fri', 'Sat', 'Sun'].reduce((n, wd) => n + guessingRooms(wd, 'Folsom'), 0), 'Folsom whispers only if something in it is a guess');
 });
 
 // ---- the zoom's restore target (2026-09-01) ---------------------------------------------
