@@ -52,8 +52,8 @@ const filters = await import('../js/v3/filters.js');
 
 const click = (el) => el.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
 const menu = (which) => $(`${which}-fest-wrap`).querySelector('.sort-pop');
-const rows = (which) => [...menu(which).querySelectorAll('li[data-room]')]
-  .map((li) => [li.dataset.room, li.textContent, li.getAttribute('aria-selected')]);
+const rows = (which) => [...menu(which).querySelectorAll('[data-room]')]
+  .map((r) => [r.dataset.room, r.textContent, r.getAttribute('aria-selected')]);
 
 test('the wall is up on Portola, with its three rooms', () => {
   assert.equal($('screen-app').style.display, '', 'the wall');
@@ -134,6 +134,28 @@ test('the fest name opens the show menu: Show, a row per room, then Settings', (
   }
 });
 
+// A row that is a <div> or an <li> with a click listener is a row a keyboard
+// cannot reach and a thumb under-measures: the 44px floor lives on `button`,
+// and so does Enter/Space. Both come back by being the element, not by
+// re-implementing either (the sort chip's roving keyboard stays its own).
+test('the show menu\'s rows are real buttons, and still options in the listbox', () => {
+  for (const which of ['dock', 'rail']) {
+    const pop = menu(which);
+    const els = [...pop.querySelectorAll('[data-room]'), pop.querySelector('.settings')];
+    assert.equal(els.length, 4, 'three rooms and Settings');
+    for (const el of els) {
+      assert.equal(el.tagName, 'BUTTON', `${which}: a row is a button — the touch floor and the keyboard come with it`);
+      assert.equal(el.type, 'button', 'never a submit');
+      assert.equal(el.getAttribute('role'), 'option', 'the listbox presentation is unchanged');
+    }
+    assert.equal(pop.getAttribute('role'), 'listbox');
+  }
+  // Focusable with no tabindex of its own, which is the whole point.
+  const row = menu('dock').querySelector('[data-room="Folsom"]');
+  row.focus();
+  assert.equal(dom.window.document.activeElement, row, 'a keyboard can stand on a row');
+});
+
 test('a tap opens it, Escape closes it, and a tap outside closes it', () => {
   const link = $('dock-fest-link');
   const pop = menu('dock');
@@ -156,7 +178,7 @@ test('a tap opens it, Escape closes it, and a tap outside closes it', () => {
 
 test('unchecking a room folds it on every day — the state a header tap writes', () => {
   const stored = () => globalThis.localStorage.getItem(`fn_fold_v1_${FID}`);
-  const row = (key) => [...menu('dock').querySelectorAll('li[data-room]')].find((li) => li.dataset.room === key);
+  const row = (key) => [...menu('dock').querySelectorAll('[data-room]')].find((r) => r.dataset.room === key);
 
   click($('dock-fest-link'));
   click(row('Folsom'));

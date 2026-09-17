@@ -559,39 +559,38 @@ function openShowMenu(wrap, link, pop) {
   }
 }
 
+// A row is a native <button>, which is where its keyboard and its 44px floor
+// come from — not from a second roving-focus controller lifted out of
+// sort-control.js, and not from a list of selectors in the stylesheet. The
+// popover keeps its listbox presentation; the <li> around each button is
+// packaging, so the button carries the option role.
 function showMenuRow(label, { key = null, on = null, settings = false } = {}) {
   const li = document.createElement('li');
-  li.setAttribute('role', 'option');
-  if (key != null) li.dataset.room = key;
-  if (on != null) li.setAttribute('aria-selected', on ? 'true' : 'false');
-  if (settings) li.className = 'settings';
+  li.setAttribute('role', 'presentation');
+  const row = document.createElement('button');
+  row.type = 'button';
+  row.setAttribute('role', 'option');
+  if (key != null) row.dataset.room = key;
+  if (on != null) row.setAttribute('aria-selected', on ? 'true' : 'false');
+  if (settings) row.className = 'settings';
   const check = document.createElement('span');
   check.className = 'check';
   check.textContent = on ? '✓' : '';
   check.setAttribute('aria-hidden', 'true');
   const text = document.createElement('span');
   text.textContent = label;
-  li.append(check, text);
+  row.append(check, text);
   if (settings) {
     const chev = document.createElement('span');
     chev.className = 'chev';
     chev.textContent = '›';
     chev.setAttribute('aria-hidden', 'true');
-    li.appendChild(chev);
+    row.appendChild(chev);
   }
-  return li;
+  li.appendChild(row);
+  return row;
 }
 
-// FOLLOW-UP, known and deliberate (integration, 2026-09-16): these rows are
-// pointer-only. The fest name is a <button>, so a keyboard opens the menu and
-// Escape closes it, but the rows carry no tabindex and no arrow handling — the
-// popover here reuses sort-control.js's LOOK (.sort-wrap + .sort-pop, listbox
-// semantics), not its keyboard, which has full parity (arrows, Enter,
-// typeahead, kb-active). Not a dead end: §3 makes every room header a
-// <button aria-expanded>, so a keyboard folds a room at the wall itself; this
-// is the second door to a reachable thing. Fixing it means lifting the roving
-// activeIdx out of sort-control.js so both popovers share it, which is more
-// than this round should move.
 function buildShowMenu(rooms, folded) {
   const pop = document.createElement('ul');
   pop.className = 'sort-pop';
@@ -605,11 +604,11 @@ function buildShowMenu(rooms, folded) {
   head.textContent = 'Show';
   pop.appendChild(head);
   for (const room of rooms) {
-    const li = showMenuRow(room.label, { key: room.key, on: !folded.has(room.key) });
+    const row = showMenuRow(room.label, { key: room.key, on: !folded.has(room.key) });
     // A row tap closes the menu and moves the room — the fold flow owns the
     // motion from there, on every day at once.
-    li.addEventListener('click', () => { closeShowMenu(); ctx.onToggleFold(room.key); });
-    pop.appendChild(li);
+    row.addEventListener('click', () => { closeShowMenu(); ctx.onToggleFold(room.key); });
+    pop.appendChild(row.parentElement);
   }
   const divider = document.createElement('li');
   divider.className = 'pop-div';
@@ -622,7 +621,7 @@ function buildShowMenu(rooms, folded) {
     openSettings();
     router.push('settings');
   });
-  pop.appendChild(settings);
+  pop.appendChild(settings.parentElement);
   return pop;
 }
 
@@ -650,10 +649,10 @@ function paintShowMenus() {
     // A repaint on the 25 s poll must not snatch an open menu away: while the
     // rooms are the same list, the checks are repainted in place.
     if (existing && existing.dataset.rooms === signature) {
-      for (const li of existing.querySelectorAll('li[data-room]')) {
-        const on = !folded.has(li.dataset.room);
-        li.setAttribute('aria-selected', on ? 'true' : 'false');
-        li.querySelector('.check').textContent = on ? '✓' : '';
+      for (const row of existing.querySelectorAll('[data-room]')) {
+        const on = !folded.has(row.dataset.room);
+        row.setAttribute('aria-selected', on ? 'true' : 'false');
+        row.querySelector('.check').textContent = on ? '✓' : '';
       }
       continue;
     }

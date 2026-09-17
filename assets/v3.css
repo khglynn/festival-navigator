@@ -169,9 +169,13 @@
   border-radius: 12px; padding: 5px; margin: 0; list-style: none;
   box-shadow: 0 12px 34px rgba(0, 0, 0, .5);
 }
+/* The show menu's rows are real buttons (§3.1) — that is where their keyboard
+ * and their 44px floor come from — so the row rule resets button chrome and
+ * spans the popover. Harmless on the sort chip's list items. */
 .sort-pop [role="option"] {
   display: flex; align-items: center; gap: 8px;
-  padding: 8px 11px; border-radius: 8px;
+  padding: 8px 11px; border-radius: 8px; width: 100%;
+  background: none; border: 0; text-align: left; font-family: inherit;
   color: var(--text-body); font-size: 13px; font-weight: 600; cursor: pointer;
 }
 .sort-pop [role="option"]:hover, .sort-pop [role="option"].kb-active {

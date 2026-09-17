@@ -33,7 +33,10 @@ test.after(async () => { if (browser) await browser.close(); await server.close(
 const skip = browser ? false : 'no browser available (npx playwright install chromium, or install Chrome)';
 
 async function phone() {
-  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, serviceWorkers: 'block' });
+  // hasTouch, because a phone has one: it is what puts the page on a COARSE
+  // pointer, and the 44px floor is a coarse-pointer rule. Without it the
+  // viewport is phone-sized and every control still measures like a desktop's.
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, serviceWorkers: 'block' });
   // A blocked worker's register() resolves to nothing; the glue's update
   // checks want a registration to call.
   await ctx.addInitScript(() => {
@@ -109,6 +112,56 @@ test('a cold open waiting on the crew shows the loader after a beat, and the wal
     answer();
     await page.waitForSelector('#screen-app', { state: 'visible', timeout: 10000 });
     assert.equal(await loaderOpacity(), null, 'gone with the first screen');
+  } finally {
+    await ctx.close();
+  }
+});
+
+// The show menu's rows (MODEL-V4 §3.1). Node sees an element and a listener;
+// what a thumb and a keyboard get is only real here. A click-only <li> measured
+// under the 44px floor and could not be reached at all without a mouse.
+test('the show menu\'s rows are worked by a keyboard, and clear the 44px floor on a phone', { skip }, async () => {
+  const { ctx, page } = await phone();
+  const TOKEN = 'showmenucontract_0123456789'; // a made-up crew
+  const FID = 'portola-2026';                  // three rooms, so there is a menu
+  try {
+    await ctx.addInitScript(([t, f]) => {
+      localStorage.setItem('fn_crews_v3', JSON.stringify([{ token: t, name: 'Contract' }]));
+      localStorage.setItem(`fn_me_v3_${t}`, 'Kevin');
+      localStorage.setItem(`fn_crew_fest_v3_${t}`, f);
+      localStorage.setItem('fn_coach_v1', '1'); // the coach mark is not what this is about
+    }, [TOKEN, FID]);
+    const doc = { v: 4, meta: { name: 'Contract', inviteFestId: FID }, spotify: {}, affinity: {}, people: { Kevin: { colorIndex: 0 } }, festivals: { [FID]: { selections: {} } } };
+    await ctx.route('**/api/crew**', (route) => route.fulfill({ contentType: 'application/json', body: JSON.stringify(doc) }));
+    await ctx.route('**/api/festival-add**', (route) => route.fulfill({ contentType: 'application/json', body: '{"festivals":[]}' }));
+    await ctx.route('**/api/person**', (route) => route.fulfill({ status: 503, contentType: 'application/json', body: '{}' }));
+
+    await page.goto(`${server.origin}/#g=${TOKEN}`, { waitUntil: 'load' });
+    await page.waitForSelector('#screen-app', { state: 'visible', timeout: 10000 });
+    await page.waitForSelector('#dock-fest-wrap .sort-pop', { state: 'attached', timeout: 10000 });
+
+    // Open it the way a keyboard opens it: the fest name is a button.
+    await page.focus('#dock-fest-link');
+    await page.keyboard.press('Enter');
+    const row = page.locator('#dock-fest-wrap .sort-pop [data-room="Folsom"]');
+    await row.waitFor({ state: 'visible' });
+    const box = await row.boundingBox();
+    assert.ok(box.height >= 44, `a menu row is ${box.height}px tall on a phone; the floor is 44`);
+
+    await row.focus();
+    assert.equal(await page.evaluate(() => document.activeElement.dataset.room), 'Folsom', 'and the keyboard can stand on it');
+    await page.keyboard.press('Space');
+    assert.equal(await page.evaluate(() => localStorage.getItem('fn_fold_v1_portola-2026')), '["Folsom"]',
+      'Space works the row — no second keyboard controller needed');
+    await page.waitForSelector('#wall-root .room[data-room="Folsom"] .sec-head.folded');
+
+    // And Escape puts the menu away without touching anything under it.
+    await page.focus('#dock-fest-link');
+    await page.keyboard.press('Enter');
+    assert.equal(await page.getAttribute('#dock-fest-link', 'aria-expanded'), 'true');
+    await page.keyboard.press('Escape');
+    assert.equal(await page.getAttribute('#dock-fest-link', 'aria-expanded'), 'false');
+    assert.ok(await page.isVisible('#screen-app'), 'the wall is still the wall');
   } finally {
     await ctx.close();
   }
