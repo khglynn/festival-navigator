@@ -7,11 +7,12 @@ how we got here belongs in DEVLOG.md.
 
 ## Live on production
 
-- **v73, from `main`** (PR #14, merged 2026-09-01) on fest / festival /
-  crew.kevinhg.com.
-- `main` has had two non-app changes since: actions/checkout v7 (PR #2,
-  2026-09-10) and the shared Dependabot auto-merge enrollment (PR #17,
-  2026-09-13).
+- **v80, from `main`** (PR #18, merged 2026-09-17 ~08:40 CT) on fest /
+  festival / crew.kevinhg.com — v73 plus the offline-cache fix alone, shipped
+  a day ahead so phones pick it up before the release. Confirmed by
+  `curl -s https://fest.kevinhg.com/service-worker.js | grep CACHE_VERSION`.
+- Before that: v73 (PR #14, 2026-09-01), then two non-app changes
+  (actions/checkout v7, PR #2; Dependabot auto-merge, PR #17).
 
 ## The release branch
 
@@ -42,9 +43,14 @@ how we got here belongs in DEVLOG.md.
   round (§3a: one column width, no header fold, notes written where you
   are, How it works grouped like the screen). 600 tests green, browser
   suite 19/19, validator clean. Pushed; the preview and CI are building.
-- `sw-first` off `main` carries only the offline-cache fix (SW v80) so it
-  can ship a day ahead; its preview
-  festival-navigator-o4kfu0igq-kevinhg.vercel.app is CI green.
+- `sw-first` shipped (PR #18, v80 on production) — step (a) of the ship is
+  done; `main` is merged into this branch.
+- **Kevin's ship notes (2026-09-17 morning) are building on
+  `polish/ship-round`**: stage solo deleted (feature and copy), highlighting
+  picks dims everywhere and never filters, a hidden part renders nothing and
+  a day with nothing visible has no tab, Weekend 1 / Weekend 2 rows in ACL's
+  show menu, How it works with a fixed `ACL '26` label and "red = something's
+  wrong". His words: "if you're feeling good about it we can ship it."
 - Open taste calls for Kevin's look, none blocking: at phone width the
   grid now shows just under two columns (the second card clips at the
   edge — the price of one width, and it says "scroll"); on desktop the
@@ -62,17 +68,15 @@ in this file's history.
 
 ## Next, in order
 
-1. **Kevin's last look** at the v84 preview (phone first: the venue-link
-   tap after a long press, a note written from a day rule and from a
-   section header, the show menu, How it works). His round is integrated;
-   anything he flags is a small follow-up on this branch, not a new lane.
+1. **The ship round** (Kevin's five notes on the v84 preview, above):
+   build → code skeptic + real-browser walk → repair; then merge, stamp
+   once, gates, push, and go straight to step 2b — Kevin's yes is given.
 2. **Ship, on Kevin's yes in chat, in two steps** (the repo's ruleset wants
    a PR + green CI; no approving review exists for a one-person repo):
-   a. `sw-first` → `main` (the offline-cache fix alone, SW v80): open the
-      PR, CI green, merge with a merge commit; confirm
-      `curl -s https://fest.kevinhg.com/service-worker.js | grep CACHE_VERSION`
-      says v80. Phones pick it up on their next focus.
-   b. `integration-0916` → `main` (the release): open the PR, CI green,
+   a. ~~`sw-first` → `main`~~ done 2026-09-17: PR #18 merged, production
+      confirmed on v80.
+   b. `integration-0916` → `main` (the release, after the ship round merges
+      and is stamped): open the PR, CI green,
       merge; confirm production serves the release's CACHE_VERSION; then
       close PR #16 and PR #15 as superseded, with a comment naming the PR
       that shipped. Target Sep 20–21, before Portola Week afters (Thu Sep 24).
@@ -92,7 +96,8 @@ from Sep 24 · ACL Oct 2–4 and 9–11 · EDC Orlando Nov 6–8 · Seismic Nov 
 
 ## Waiting on Kevin
 
-- The yes to ship (step 2 above), after his look at the v84 preview.
+- Nothing for the ship: the yes is given ("if you're feeling good about it
+  we can ship it", 2026-09-17). Below are the two loose ends.
 - stage.fest.kevinhg.com: the festival-navigator-staging Vercel project has
   cancelled every build since 2026-08-10 through the Ignored Build Step in
   its project settings (checked live 2026-09-16) and shares the production
