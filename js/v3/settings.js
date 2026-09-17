@@ -340,6 +340,22 @@ function openAddFestival(actions) {
 }
 
 // ---- HOW IT WORKS (21i) -------------------------------------------------------------
+// The dock's fest name, the way the person reading this sees it. It used to
+// be the literal "PORTOLA ’26", which would have gone quietly wrong the day
+// Portola left the catalog.
+// The real `.fest-name` component, drawn small — so the accent comes from its
+// own rule and this row can never drift from the dock it is describing.
+function festNameDemo() {
+  let label = 'YOUR FEST';
+  try {
+    const f = state.fest() || {};
+    label = `${(f.name || 'Your fest').toUpperCase()} ${f.year || ''}`.trim();
+  } catch { /* no fest open — the generic label reads fine */ }
+  const n = el('span', 'font-size: 11px;', label);
+  n.className = 'fest-name';
+  return n;
+}
+
 function openHowItWorks(actions) {
   const host = document.getElementById('settings-subview');
   host.textContent = '';
@@ -369,11 +385,14 @@ function openHowItWorks(actions) {
   };
   // Order (Kevin, 2026-08-27 20:04): the people row leads — tap = their picks
   // (pick-as moved to Settings → You, 2026-08-29) — then how picking works, then what a
-  // card shows, then the timetable moves, then how people get in, then the
-  // dock's one fact, and a Settings pointer that repeats nothing above it.
+  // card shows, then the wall's moves (the stage solo and the show menu),
+  // then how people get in, then the dock's one fact, and a Settings pointer
+  // that repeats nothing above it. The now mark gets no row: Kevin,
+  // 2026-09-17 — "don't need to explain now".
+  // The copy in these three rows is Kevin's own (2026-09-17), verbatim.
   card.appendChild(lesson((d) => {
     d.append(chipDemo('Kat', { ring: true }), chipDemo('Drew', { faded: true }));
-  }, 'Tap a name to see their picks.', 'Tap more names to combine. Picking for someone else? Switch who you are in Settings → You.'));
+  }, 'Tap a name to highlight their picks.', 'Switch who you are picking as in Settings.'));
   card.appendChild(lesson((d) => {
     [0.5, 0.75, 1].forEach((a) => {
       d.appendChild(el('span', `flex: 1; height: 30px; border-radius: 6px; border: 1px solid var(--hairline); background: radial-gradient(130% 130% at 20% 120%, hsla(10,90%,62%,${a}) 0%, transparent 78%), #1C1731;`));
@@ -388,18 +407,31 @@ function openHowItWorks(actions) {
     const s = el('span', '', '23'); s.className = 'chip-spotify'; s.style.height = '13px'; // the green pill, never a music-note glyph
     d.append(n, s);
   }, 'Hold for details.', 'Violet = crew notes; pin one to keep it on top. Green = it’s in your Spotify (connect in Settings).'));
+  // The tilde used to explain itself in a whisper under every venue night —
+  // one line of small print the wall had to carry forever (Kevin, 2026-09-17:
+  // "weird inline"). It is explained here once instead, in his words.
+  card.appendChild(lesson((d) => {
+    const chip = el('span', 'display: inline-flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 10px; border-radius: 6px; border: 1px solid var(--hairline); background: var(--card-unpicked);');
+    chip.appendChild(el('span', 'color: #fff; font-size: 10px; font-weight: 700;', 'Gelli Haha'));
+    chip.appendChild(el('span', 'color: var(--text-secondary); font-size: 8.5px; font-weight: 600;', '~10:30 PM'));
+    d.appendChild(chip);
+  }, '~', 'a guessed start time and artist order, based on limited intel'));
   card.appendChild(lesson((d) => {
     const head = el('span', 'font-family: var(--font-display); letter-spacing: .05em; font-size: 9px; color: rgb(var(--fest)); background: var(--card); border-radius: 6px; padding: 5px 8px; box-shadow: inset 0 0 0 1px rgba(var(--fest), .6);', 'WAREHOUSE'); // a .stage-head, drawn small — surface 3 of the accent's four
     d.appendChild(head);
   }, 'Tap a stage to see only that stage.', 'Tap it again for all of them.'));
+  // The show menu (MODEL-V4 §3.1) — the fest name in the dock is the door.
+  card.appendChild(lesson((d) => {
+    d.appendChild(festNameDemo());
+    d.appendChild(el('span', 'color: var(--text-tertiary); font-size: 9px;', '▾'));
+  }, 'Tap the fest name to filter out events.', 'Like hiding the afters.'));
   // The now-line explains itself on the day (Kevin, 2026-08-31: "I don't
   // think that'll confuse anyone") — its lesson row is gone.
   card.appendChild(lesson((d) => {
     d.append(chipDemo('+ Add', { dashed: true }));
   }, 'Add your people with + Add,', 'or share the crew link — anyone who opens it is in, no account needed.'));
-  // PORTOLA ’26 is a hardcoded example — goes stale if Portola leaves the catalog (copy pass flag).
   card.appendChild(lesson((d) => {
-    d.appendChild(el('span', 'font-family: var(--font-display); letter-spacing: .04em; font-size: 11px; color: rgb(var(--fest));', 'PORTOLA ’26'));
+    d.appendChild(festNameDemo());
     const dot = el('span'); dot.className = 'sync-dot';
     d.appendChild(dot);
   }, 'Green dot = synced.', 'Gray = offline (still works); red = something needs you.'));
