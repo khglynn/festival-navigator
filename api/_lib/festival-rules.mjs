@@ -311,7 +311,11 @@ export function validateFestivalDoc(fest, { filename } = {}) {
       // exactly as the renderer does (wall.js splitDays): only when EVERY part
       // is a known day — otherwise the label stays one literal section. No
       // day at all collides with everything.
-      const parts = renderedDays(dayStr);
+      // A DATED section entry renders under its date, not under its section
+      // label, so one artist playing two nights of ACL Fest Nights is two
+      // cards under two date rules — a reappearance, exactly like an afters
+      // set. Only the same name on the same date is a duplicate.
+      const parts = renderedDays(dayStr).map((p) => (typeof a.date === 'string' ? `${p} ${a.date}` : p));
       const seen = artistNames.get(key);
       if (seen && seen.some((prev) => prev.includes('') || parts.includes('') || prev.some((p) => parts.includes(p)))) {
         warn(`duplicate artist in artists[]: ${a.name}${dayStr ? ` (day ${JSON.stringify(dayStr)})` : ''}`);

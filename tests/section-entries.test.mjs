@@ -71,6 +71,24 @@ test('the legacy "Thu · Venue" stage string still answers both', () => {
   assert.deepEqual(validateFestivalDoc(withSections({ ...legacy, night: 'Thu', venue: 'Regency Ballroom' })).errors, []);
 });
 
+test('two nights of one artist in a dated section are two shows, not a duplicate', () => {
+  // Jess Williamson plays ACL Fest Nights twice: Stubb's on Oct 1, the
+  // Continental Club on Oct 8. Same name, same section label, two cards under
+  // two date rules — the same reappearance an afters set is, and the crew's
+  // pick covers both. Only the same name on the same DATE is a dupe.
+  const twice = withSections(
+    { name: 'Jess Williamson', day: 'Late nights', date: '2026-10-01', venue: "Stubb's", doors: '7 PM' },
+    { name: 'Jess Williamson', day: 'Late nights', date: '2026-10-08', venue: 'The Continental Club', doors: '9:30 PM' },
+  );
+  assert.deepEqual(validateFestivalDoc(twice), { errors: [], warnings: [] });
+
+  const sameNight = validateFestivalDoc(withSections(
+    { name: 'Jess Williamson', day: 'Late nights', date: '2026-10-01', venue: "Stubb's", doors: '7 PM' },
+    { name: 'Jess Williamson', day: 'Late nights', date: '2026-10-01', venue: "Emo's", doors: '9 PM' },
+  ));
+  assert.ok(sameNight.warnings.some((w) => /duplicate artist/.test(w)), sameNight.warnings.join('\n'));
+});
+
 test('a fest with no grid has no sections — its whole wall is the lineup', () => {
   // Every archived and lineup-only file in data/festivals is this shape: days
   // like "Friday" on entries that carry nothing else. They are not rooms.
