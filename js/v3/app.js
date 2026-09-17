@@ -1861,13 +1861,17 @@ export function init() {
       measureStickyChrome();
       // Each scroller clamps its own scrollLeft during a resize, which can
       // desync the mirrored columns from the strip (Kevin's wide-screen
-      // wonk screenshot, 2026-07-12) — re-mirror everyone to the first.
+      // wonk screenshot, 2026-07-12) — re-mirror each group to its first.
+      // Groups are wall.js's (`data-sync`, no key = one group): a rotation
+      // must not drag Friday's venue-night room to Thursday's position.
       // Day scrollers only: the stage strip follows its grid by transform
-      // now (wall.js followStrip) and is never scrolled itself — with it
-      // first in document order this loop would have reset every day to 0.
-      const scrollers = [...document.querySelectorAll('#wall-root .times-scroll')].filter((sc) => !isStripScroller(sc));
-      for (const sc of scrollers.slice(1)) {
-        if (sc.scrollLeft !== scrollers[0].scrollLeft) sc.scrollLeft = scrollers[0].scrollLeft;
+      // (wall.js followStrip) and is never scrolled itself.
+      const leads = new Map();
+      for (const sc of document.querySelectorAll('#wall-root .times-scroll')) {
+        if (isStripScroller(sc)) continue;
+        const key = sc.dataset.sync || '*';
+        if (!leads.has(key)) leads.set(key, sc.scrollLeft);
+        else if (sc.scrollLeft !== leads.get(key)) sc.scrollLeft = leads.get(key);
       }
     }, 150);
   });
