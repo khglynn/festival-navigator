@@ -1,7 +1,7 @@
 // How this app moves, as numbers (Kevin, 2026-08-30: "things grow from where
 // they already are … the way in has a little life, the way out is quick and
 // plain"). ONE home for the constants every grown surface shares — the zoom
-// (card-facts.js) and the bucket toggle (app.js) read them from here.
+// (card-facts.js) and the fold (app.js) read them from here.
 export const GROW_MS = 240;        // the box, k→1
 export const CONTENT_FADE_MS = 90; // the RESTING card's content stepping back (`.card > *` in v3.css matches)
 export const OUT_MS = 130;         // the way out: quick and plain

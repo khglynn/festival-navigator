@@ -1,5 +1,5 @@
 // js/v3/motion.js is the ONE home for how this app moves: the zoom
-// (card-facts.js) and the bucket toggle (app.js) import its constants, so the
+// (card-facts.js) and the fold (app.js) import its constants, so the
 // grammar cannot drift by construction. What is left to pin is the gate.
 import test from 'node:test';
 import assert from 'node:assert/strict';

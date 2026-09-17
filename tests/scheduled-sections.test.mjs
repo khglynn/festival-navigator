@@ -79,7 +79,7 @@ const roomsUnder = (root, dayKey) => {
   for (let n = rule.nextElementSibling; n && !n.classList.contains('day-rule'); n = n.nextElementSibling) {
     if (n.classList.contains('room')) {
       out.push({
-        bucket: n.dataset.room,
+        room: n.dataset.room,
         label: n.querySelector('.sec-label').textContent,
         cards: [...n.querySelectorAll('.card')].map((c) => ({ name: c.dataset.artist, time: c.dataset.time })),
       });
@@ -109,16 +109,16 @@ test('scheduled wall, composed: each day holds its grid and its sections; an aft
   renderWall(root, mkCtx());
   assert.deepEqual(rulesOf(root), ['FRIDAY', 'SATURDAY', 'SUNDAY']);
   const fri = roomsUnder(root, 'Friday');
-  assert.deepEqual(fri.map((r) => [r.bucket, r.label]), [['Afters', 'AFTERS'], ['Folsom', 'FOLSOM']]);
+  assert.deepEqual(fri.map((r) => [r.room, r.label]), [['Afters', 'AFTERS'], ['Folsom', 'FOLSOM']]);
   assert.deepEqual(fri[0].cards, [{ name: 'Horse Meat Disco', time: '9 PM – 3 AM' }]);
   const sat = roomsUnder(root, 'Saturday');
-  assert.deepEqual(sat.map((r) => [r.bucket, r.label]), [[':fest', 'SECTIONS FEST'], ['Afters', 'AFTERS']]);
+  assert.deepEqual(sat.map((r) => [r.room, r.label]), [[':fest', 'SECTIONS FEST'], ['Afters', 'AFTERS']]);
   assert.deepEqual(sat[0].cards.map((c) => c.name), ['Headliner', 'Overmono', 'Late Add'],
     'the grid, then the name billed on Saturday with no set on Saturday\'s grid — one room, no "everything else"');
   assert.deepEqual(sat[1].cards, [{ name: 'Overmono', time: '10 PM – 2 AM' }, { name: 'Only Afters', time: '10 PM' }],
     'the afters, venue group by venue group, in opening order');
   const sun = roomsUnder(root, 'Sunday');
-  assert.deepEqual(sun.map((r) => r.bucket), ['Folsom']);
+  assert.deepEqual(sun.map((r) => r.room), ['Folsom']);
   assert.deepEqual(sun[0].cards, [{ name: 'The Fair', time: '11 AM – 6 PM' }]);
   const overmonoCards = [...root.querySelectorAll('.card')].filter((c) => c.dataset.artist === 'Overmono');
   assert.equal(overmonoCards.length, 2, 'one on the grid, one under Afters — same pick key');
