@@ -10,7 +10,7 @@ import * as spotify from '../spotify.js';
 import * as model from './model.js';
 import { loadFestivalIndex, loadFestival, fetchCustomFestivals, mergeCustoms, FESTIVAL_INDEX, defaultFestivalId } from '../festivals.js';
 import { renderWall, refreshCard, showUndoToast, showToast, wireScrollspy, colorIndexOf, positionNowLines, scrollToNowLine, dayNavOf, cardFor, roomOf, isStripScroller } from './wall.js';
-import { loadPeopleFilter, savePeopleFilter, togglePerson, pruneToActive, loadSolo, saveSolo, loadFolded, applyFoldToggle } from './filters.js';
+import { loadPeopleFilter, savePeopleFilter, togglePerson, pruneToActive, loadSolo, saveSolo, loadFolded, applyFoldToggle, FEST_ROOM } from './filters.js';
 import { OUT_MS, CASCADE_MS, STAGGER_MS, EASE_ARRIVE, EASE_LEAVE, EASE_SURFACE, canAnimate } from './motion.js';
 import { scrolledBefore, rememberScrolled, dayOfScrollKey, festivalClock } from './now.js';
 import { disclosureFold, eqLoader, festRow } from './tools.js';
@@ -46,7 +46,8 @@ const ctx = {
   soloStage: null,
   // The fold (MODEL-V4 §3, 2026-09-16): which of the fest's rooms (the
   // festival itself, Afters, Folsom …) are folded on every day. Device-local,
-  // persisted per fest (filters.js) — never in the crew doc.
+  // persisted per fest (filters.js) — never in the crew doc. Two doors write
+  // it: a tap on a room's header, and the show menu on the fest name.
   folded: [],
   now: null, // tests pin the clock; null = new Date() at render
   onSoloStage: (stage) => {
@@ -125,8 +126,9 @@ function refreshCtx() {
 }
 
 // ---- the fold (MODEL-V4 §3) ------------------------------------------------------
-// A room's header is the door: tapping it folds the room's body on every day.
-// The header is the anchor — it carries the room's key already
+// A room's header is the door: tapping it folds the room's body on every day,
+// and the show menu on the fest name is the same state through a second door.
+// The header is the anchor for both — it carries the room's key already
 // (`.sec-head[data-section]`), so nothing here needs to know how the wall
 // builds a room.
 function roomHeads(key) {
@@ -138,6 +140,20 @@ function roomBodiesOf(key) {
     const room = head.closest('.room') || head.parentElement;
     return room ? [...room.children].filter((n) => n !== head) : [];
   });
+}
+// The rooms the wall is showing, in the order it shows them — the festival's
+// own room, then each section. Read off the wall rather than recomputed, so
+// the show menu can never name a room the wall does not have.
+function roomsOnWall() {
+  const rooms = [];
+  const seen = new Set();
+  for (const head of document.querySelectorAll('#wall-root .sec-head[data-section]')) {
+    const key = head.dataset.section;
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    rooms.push({ key, label: key === FEST_ROOM ? state.fest().name : key });
+  }
+  return rooms;
 }
 
 // A fold is a small event (Kevin, 2026-08-30: nothing vanishes in place,
@@ -488,6 +504,137 @@ function renderDayNav() {
   unspy = wireScrollspy([dock, rail], $('wall-root'));
 }
 
+// ---- the show menu (MODEL-V4 §3.1) ------------------------------------------------
+// The fest name at the end of the dock (phone) and of the day rail (desktop)
+// is the door to what the wall shows: `Show`, a row per room of the festival
+// week with a check, then Settings — because that tap opened Settings before
+// V4 and nothing may be lost. Unchecking a room folds it on every day, which
+// is the SAME state a tap on that room's header writes. A fest with one room
+// has no menu: the tap goes straight to Settings, as it always did.
+//
+// The sort chip's popover component, reused (`.sort-wrap` + `.sort-pop`) —
+// one control vocabulary. On the phone it opens upward above the dock; on
+// desktop it hangs under the rail (both from the CSS).
+const SHOW_MENUS = [['dock-fest-wrap', 'dock-fest-link'], ['rail-fest-wrap', 'rail-fest-link']];
+let openMenu = null;
+
+function closeShowMenu({ instant = false } = {}) {
+  if (!openMenu) return;
+  const { pop, link } = openMenu;
+  openMenu = null;
+  link.setAttribute('aria-expanded', 'false');
+  const hide = () => { pop.style.display = 'none'; };
+  // The way out is quick and plain.
+  if (instant || !canAnimate(pop, ctx)) { hide(); return; }
+  const a = pop.animate([{ opacity: 1, transform: 'translateY(0)' }, { opacity: 0, transform: 'translateY(4px)' }],
+    { duration: OUT_MS, easing: EASE_LEAVE });
+  a.onfinish = hide;
+  a.oncancel = hide;
+}
+
+function openShowMenu(wrap, link, pop) {
+  closeShowMenu({ instant: true });
+  openMenu = { wrap, link, pop };
+  pop.style.display = '';
+  link.setAttribute('aria-expanded', 'true');
+  // The way in has the beat.
+  if (canAnimate(pop, ctx)) {
+    pop.animate([{ opacity: 0, transform: 'translateY(4px)' }, { opacity: 1, transform: 'translateY(0)' }],
+      { duration: CASCADE_MS, easing: EASE_ARRIVE, fill: 'backwards' });
+  }
+}
+
+function showMenuRow(label, { key = null, on = null, settings = false } = {}) {
+  const li = document.createElement('li');
+  li.setAttribute('role', 'option');
+  if (key != null) li.dataset.room = key;
+  if (on != null) li.setAttribute('aria-selected', on ? 'true' : 'false');
+  if (settings) li.className = 'settings';
+  const check = document.createElement('span');
+  check.className = 'check';
+  check.textContent = on ? '✓' : '';
+  check.setAttribute('aria-hidden', 'true');
+  const text = document.createElement('span');
+  text.textContent = label;
+  li.append(check, text);
+  if (settings) {
+    const chev = document.createElement('span');
+    chev.className = 'chev-r';
+    chev.textContent = '›';
+    chev.setAttribute('aria-hidden', 'true');
+    li.appendChild(chev);
+  }
+  return li;
+}
+
+function buildShowMenu(rooms, folded) {
+  const pop = document.createElement('ul');
+  pop.className = 'sort-pop';
+  pop.setAttribute('role', 'listbox');
+  pop.setAttribute('aria-label', 'Show on the wall');
+  pop.dataset.rooms = rooms.map((r) => r.key).join('|');
+  pop.style.display = 'none';
+  const head = document.createElement('li');
+  head.className = 'pop-head';
+  head.setAttribute('role', 'presentation');
+  head.textContent = 'Show';
+  pop.appendChild(head);
+  for (const room of rooms) {
+    const li = showMenuRow(room.label, { key: room.key, on: !folded.has(room.key) });
+    // A row tap closes the menu and moves the room — the fold flow owns the
+    // motion from there, on every day at once.
+    li.addEventListener('click', () => { closeShowMenu(); ctx.onToggleFold(room.key); });
+    pop.appendChild(li);
+  }
+  const divider = document.createElement('li');
+  divider.className = 'pop-div';
+  divider.setAttribute('role', 'presentation');
+  divider.setAttribute('aria-hidden', 'true');
+  pop.appendChild(divider);
+  const settings = showMenuRow('Settings', { settings: true });
+  settings.addEventListener('click', () => {
+    closeShowMenu({ instant: true });
+    openSettings();
+    router.push('settings');
+  });
+  pop.appendChild(settings);
+  return pop;
+}
+
+function paintShowMenus() {
+  const rooms = roomsOnWall();
+  const folded = new Set(ctx.folded || []);
+  const signature = rooms.map((r) => r.key).join('|');
+  for (const [wrapId, linkId] of SHOW_MENUS) {
+    const wrap = $(wrapId);
+    const link = $(linkId);
+    if (!wrap || !link) continue;
+    const existing = wrap.querySelector('.sort-pop');
+    if (rooms.length < 2) {
+      if (existing) { if (openMenu && openMenu.pop === existing) closeShowMenu({ instant: true }); existing.remove(); }
+      link.removeAttribute('aria-haspopup');
+      link.removeAttribute('aria-expanded');
+      link.setAttribute('aria-label', 'Open settings');
+      continue;
+    }
+    link.setAttribute('aria-haspopup', 'listbox');
+    link.setAttribute('aria-label', 'Show on the wall');
+    // A repaint on the 25 s poll must not snatch an open menu away: while the
+    // rooms are the same list, the checks are repainted in place.
+    if (existing && existing.dataset.rooms === signature) {
+      for (const li of existing.querySelectorAll('li[data-room]')) {
+        const on = !folded.has(li.dataset.room);
+        li.setAttribute('aria-selected', on ? 'true' : 'false');
+        li.querySelector('.check').textContent = on ? '✓' : '';
+      }
+      continue;
+    }
+    if (existing) { if (openMenu && openMenu.pop === existing) closeShowMenu({ instant: true }); existing.remove(); }
+    link.setAttribute('aria-expanded', 'false');
+    wrap.appendChild(buildShowMenu(rooms, folded));
+  }
+}
+
 function repaintWall() {
   // A full repaint replaces every card. A zoom that was standing comes back
   // on the fresh card at once (a crew-mate's pick arriving on the 25 s poll
@@ -506,6 +653,7 @@ function repaintWall() {
     if (again) zoomCard(again, keep.artist, ctx, { ...keep, instant: true });
   }
   renderDayNav();
+  paintShowMenus();
   markNowCards($('wall-root'), ctx.now || new Date());
   $('notes-count').textContent = String(model.totalNoteCount(state.crewDoc, ctx.fid));
   // A timetable has one true order — a sort control there would be a lie
@@ -1963,8 +2111,21 @@ export function init() {
   $('rail-you').addEventListener('click', jumpTop);
   const openSettingsLayer = () => { openSettings(); router.push('settings'); };
   $('gear-btn').addEventListener('click', openSettingsLayer);
-  $('dock-fest-link').addEventListener('click', openSettingsLayer);
-  $('rail-fest-link').addEventListener('click', openSettingsLayer);
+  // The fest name opens the show menu when the fest has rooms to choose
+  // between, and Settings when it does not (MODEL-V4 §3.1).
+  for (const [wrapId, linkId] of SHOW_MENUS) {
+    $(linkId).addEventListener('click', () => {
+      const wrap = $(wrapId);
+      const pop = wrap && wrap.querySelector('.sort-pop');
+      if (!pop) { openSettingsLayer(); return; }
+      if (openMenu && openMenu.pop === pop) closeShowMenu();
+      else openShowMenu(wrap, $(linkId), pop);
+    });
+  }
+  // A tap outside closes it, like every other popover in the app.
+  document.addEventListener('click', (e) => {
+    if (openMenu && !openMenu.wrap.contains(e.target)) closeShowMenu();
+  });
   $('fest-list-btn').addEventListener('click', goToFestList);
   $('notes-chip').addEventListener('click', () => { refreshCtx(); openAllNotes(ctx); router.push('sheet:all'); });
   $('create-go-btn').addEventListener('click', () => batchCreateFlow($('create-name-input').value.trim()));
@@ -2014,9 +2175,13 @@ export function init() {
   // the next poll (PS-3).
   window.addEventListener('offline', () => { sync.setSyncStatus('offline'); updateMigrationBanner(); });
   // Escape is universal back: pops the top layer through history so the
-  // browser's back button and the keyboard always agree (FLOW-2).
+  // browser's back button and the keyboard always agree (FLOW-2). The show
+  // menu is not a history layer — it is a popover, so Escape takes it first
+  // and nothing below it moves.
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && !router.requestClose()) closeSheet();
+    if (e.key !== 'Escape') return;
+    if (openMenu) { closeShowMenu(); return; }
+    if (!router.requestClose()) closeSheet();
   });
   // Last-resort net (FLOW-4): an early crash used to leave every screen
   // display:none. Only fires when nothing is rendered — a background sync
