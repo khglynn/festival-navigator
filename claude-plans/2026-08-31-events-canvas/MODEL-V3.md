@@ -32,6 +32,8 @@ introduce NEW note keys, which is additive and safe. Nothing renames.
 
 ## 2 · The layout rule (per section — the data decides, ONCE per fest)
 
+> **Superseded by MODEL-V4 on 2026-09-16** (`claude-plans/2026-09-16-wall-v4/MODEL-V4.md` §1): the threshold is gone — stage columns only where the festival publishes a stage grid, venue stacks everywhere else.
+
 ```
 timed = events with a time
 E = timed.length          V = distinct venues among timed
@@ -61,6 +63,8 @@ declare a layout.
 
 ## 3 · The bucket filter (persists)
 
+> **Superseded by MODEL-V4 on 2026-09-16** (§3, §3.1): the bucket chips are gone — a room folds on a tap of its own header, and the fest name opens the show menu.
+
 *(Round-3 correction — venue-level filtering was overreach. Kevin: "hide
 or focus on big buckets when we have them like 'afters' 'folsom' or
 'portola'.")*
@@ -76,6 +80,8 @@ or focus on big buckets when we have them like 'afters' 'folsom' or
   sections. No interaction terms.
 
 ## 4 · The deck — REMOVED 2026-09-01 (kept in the back pocket)
+
+> **Superseded by MODEL-V4 on 2026-09-16** (§7): the deck is deleted from the code too; its picture stays in `gallery.html`.
 
 *(Was: in columns mode, 2 simultaneous sets lane-split and 3+ became one
 deck — a face card, two ghost edges, a `4 · 10 PM` count pill, growing in

@@ -181,6 +181,21 @@ Non-inferable facts only (the code answers everything else — read it).
   `user-select: none` did nothing on iOS and a long-press selected the time
   label and raised the Copy/Search callout over the zoom (2026-09-02). Every
   `user-select: none` in v3.css carries the prefix; keep it that way.
+- **The wall has two presentations and the data's SHAPE picks between them,
+  never a threshold** (MODEL-V4, 2026-09-16 —
+  `claude-plans/2026-09-16-wall-v4/MODEL-V4.md`): stage columns on a clock
+  ONLY where the festival publishes a stage grid (`fest.days[day].stages`);
+  everything else is a stack of artist cards under the venue it happens in,
+  in play order. A clock earns its complexity where "can I do both?" is a
+  real question — one site, several stages — and nowhere else. Before this,
+  three layout engines shared one card and a numeric threshold picked, so
+  nobody looking at the screen could see why one Sunday rendered three ways.
+  In the data: a SECTION is an `artists[].day` label that is not a grid day,
+  and it says where it goes with exactly one of `night` (a weekday — it
+  renders inside that day) or `date` (ISO — its section takes a tab of its
+  own; ACL's Late nights runs Sep 29 to Oct 10, so a weekday would mean two
+  nights), always with `venue`. The validator errors on both, on neither,
+  and on one section whose entries disagree.
 - **Run guesses come from `scripts/guess-run-times.mjs`, never render
   time** (the model doc is
   `claude-plans/2026-08-31-events-canvas/MODEL-V3.md`): a guess is
