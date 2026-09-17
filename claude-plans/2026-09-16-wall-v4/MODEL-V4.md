@@ -190,6 +190,13 @@ sheet section for `Afters` / `Folsom` / `Late nights` as targets.
 Door and section labels always use the day's short form (weekday · date),
 never a raw key.
 
+**No notes chip inside the notes sheet (Kevin, 2026-09-17: "confusing there
+cause we're already in notes").** The artist sheet's header is the card grown
+once more; its chip row drops the `+ note` / `n notes` chip there (the sheet
+IS the thread) and keeps the Spotify chip. `sheetCard` passes `factsFor` a
+flag, or filters the chip, whichever is the one-line change in `notes.js`.
+The zoomed card on the wall keeps its notes chip: that one is a door.
+
 ## 5. The zoom: opaque from the first frame
 
 The bloom fades the whole slot `0 → 1` over `MATERIALIZE_MS` while it grows,
