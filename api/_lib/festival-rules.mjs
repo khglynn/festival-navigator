@@ -2,7 +2,7 @@
 // consumed by BOTH scripts/validate-festivals.mjs (CI) and api/festival-add.js
 // (LLM-researched candidates). If a rule changes, it changes here once.
 import { timeToMinutes, computeDayArtists } from '../../js/time.js';
-import { parseEventTime } from '../../js/v3/events.js';
+import { parseEventTime, shortDate } from '../../js/v3/events.js';
 import { safeKey, FORBIDDEN_KEYS } from './crew-shared.mjs';
 
 export const SLUG_RE = /^[a-z0-9-]{1,64}$/;
@@ -266,6 +266,9 @@ export function validateFestivalDoc(fest, { filename } = {}) {
     }
     if (a && a.time && !TIME_RE.test(a.time)) err(`artists[${i}] (${safeKey(a.name)}): unparseable time ${JSON.stringify(safeKey(a.time))}`);
     if (a && a.weekends && !['W1', 'W2', 'both'].includes(a.weekends)) err(`artists[${i}] (${safeKey(a.name)}): weekends must be W1|W2|both`);
+    // Two spellings, one idea: nothing reads the other one, so a crossed tag
+    // is not a typo the wall tolerates — it is a tag that is not there.
+    if (a && a.weekend !== undefined) err(`artists[${i}] (${safeKey(a.name)}): \`weekend\` is a grid set's tag — a lineup entry says \`weekends\` (W1|W2|both)`);
     // Combined day strings ("Saturday & Sunday") render split (ST-1) — but
     // only when every part matches a real day; flag the ones that won't.
     if (a && typeof a.day === 'string' && /[&+/]|\s+and\s+/i.test(a.day)) {
@@ -321,6 +324,7 @@ export function validateFestivalDoc(fest, { filename } = {}) {
         // 'both' plays every weekend. Day KEYS stay the plain weekdays — day
         // notes are keyed by day label, and renamed keys strand them.
         if (a.weekend && !['W1', 'W2', 'both'].includes(a.weekend)) err(`${safeKey(label)}.artists[${i}] (${safeKey(a.name)}): weekend must be W1|W2|both`);
+        if (a.weekends !== undefined) err(`${safeKey(label)}.artists[${i}] (${safeKey(a.name)}): \`weekends\` is the lineup's tag — a grid set says \`weekend\` (W1|W2|both); untagged, it plays every weekend`);
         if (!a.stage) err(`${safeKey(label)}.artists[${i}] (${safeKey(a.name)}): missing stage`);
         else if (!stages.includes(a.stage)) err(`${safeKey(label)}.artists[${i}] (${safeKey(a.name)}): stage ${JSON.stringify(safeKey(a.stage))} not in day stages`);
         if (!a.time || !TIME_RE.test(a.time)) err(`${safeKey(label)}.artists[${i}] (${safeKey(a.name)}): bad time ${JSON.stringify(safeKey(a.time))}`);
@@ -369,6 +373,13 @@ export function validateFestivalDoc(fest, { filename } = {}) {
         }
       }
       if (fest.dayMeta && !fest.dayMeta[label]) warn(`dayMeta missing entry for ${label}`);
+    }
+    // A lineup split by weekend over a grid that is not: the timetable only
+    // picks a weekend when some set is tagged W1/W2 (wall.js
+    // scheduledWeekendOf), so it would draw both weekends' sets at once.
+    const split = (list, k) => (Array.isArray(list) ? list : []).some((a) => isPlain(a) && (a[k] === 'W1' || a[k] === 'W2'));
+    if (split(fest.artists, 'weekends') && !Object.values(fest.days).some((d) => isPlain(d) && split(d.artists, 'weekend'))) {
+      err('artists[] tag W1/W2 but no days{} set carries a weekend tag — the timetable would show both weekends at once; tag each grid set weekend: "W1"|"W2" (untagged plays both)');
     }
     // The other direction: a lineup artist billed on a grid day with no set
     // on that grid is invisible on the timetable. Usually a missed box —
@@ -430,6 +441,13 @@ export function validateFestivalDoc(fest, { filename } = {}) {
             else claim(wk, v, label);
           }
         }
+      }
+      // Each date is typed twice — once to show (the day rule), once as ISO
+      // (the now line). Two copies that disagree name two different days.
+      const typedTwice = [['date', meta.date, 'iso', meta.iso]];
+      if (isPlain(meta.dates) && isPlain(meta.isos)) for (const wk of ['W1', 'W2']) typedTwice.push([`dates.${wk}`, meta.dates[wk], `isos.${wk}`, meta.isos[wk]]);
+      for (const [shown, value, isoKey, iso] of typedTwice) {
+        if (typeof value === 'string' && realDate(iso) && value !== shortDate(iso)) warn(`dayMeta.${safeKey(label)}.${shown} ${JSON.stringify(safeKey(value))} is not ${isoKey} ${iso} (${shortDate(iso)}) — the day rule and the now line would name different days`);
       }
     }
   }
