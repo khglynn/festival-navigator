@@ -162,3 +162,26 @@ test('every repo path NOW.md and CLAUDE.md cite in backticks exists', () => {
   }
   assert.deepEqual(missing, [], `docs cite paths that do not exist: ${missing.join(', ')}`);
 });
+
+// MODEL-V4 §1.2 names three lines as Kevin's own words, verbatim, and the wall
+// gave up its inline tilde whisper on the strength of that — the explanation
+// lives in one place now, so if it drifts there is nowhere else it is said.
+// Copy is the easiest thing in a repo to "improve" in passing; this is the
+// same forcing function the rest of this file applies to the README.
+test('Settings → How it works still says Kevin’s copy, word for word', () => {
+  const settings = read('js/v3/settings.js');
+  const spec = read('claude-plans/2026-09-16-wall-v4/MODEL-V4.md').replace(/\s+/g, ' ');
+  const lines = [
+    ['~', 'a guessed start time and artist order, based on limited intel'],
+    ['Tap a name to highlight their picks.', 'Switch who you are picking as in Settings.'],
+    ['Tap the fest name to filter out events.', 'Like hiding the afters.'],
+  ];
+  for (const [strong, sub] of lines) {
+    assert.ok(spec.includes(sub), `the spec still carries "${sub}" — if Kevin changed it, change it in both places`);
+    assert.ok(settings.includes(`, '${strong}', '${sub}'));`),
+      `How it works must say "${strong} ${sub}" exactly (MODEL-V4 §1.2)`);
+  }
+  // "don't need to explain now" — the now mark gets no lesson row.
+  assert.equal(/lesson\(\([^)]*\)\s*=>[\s\S]{0,400}?'[^']*\bnow\b[^']*',/i.test(settings), false,
+    'the now mark explains itself on the day; it gets no row');
+});
