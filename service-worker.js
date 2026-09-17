@@ -128,10 +128,12 @@ self.addEventListener('fetch', (event) => {
 
   const url = new URL(request.url);
 
-  // Cross-origin (api.spotify.com, accounts.spotify.com, analytics): never
-  // ours to cache — a cache-first Spotify API response made every re-scan
-  // one scan stale, silently (SPOT-4). Let the browser handle it untouched.
-  if (url.origin !== location.origin) return;
+  // Cross-origin (api.spotify.com, accounts.spotify.com) and the platform's
+  // own scripts (/_vercel/insights): never ours to cache — a cache-first
+  // Spotify API response made every re-scan one scan stale, silently
+  // (SPOT-4), and a shell hit is never refreshed, so a cached analytics
+  // script would freeze until the next bump. Let the browser handle them.
+  if (url.origin !== location.origin || url.pathname.startsWith('/_vercel/')) return;
 
   // API calls: always go to the network (sync needs fresh data). If offline,
   // the app already has localStorage, so a failed fetch is handled client-side.
