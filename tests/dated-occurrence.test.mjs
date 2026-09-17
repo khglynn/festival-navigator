@@ -38,6 +38,8 @@ dom.window.matchMedia = () => ({ matches: false, addEventListener() {}, removeEv
 const state = await import('../js/state.js');
 const model = await import('../js/v3/model.js');
 const { FESTIVALS, FESTIVAL_INDEX } = await import('../js/festivals.js');
+const { renderWall, refreshCard, cardFor } = await import('../js/v3/wall.js');
+const facts = await import('../js/v3/card-facts.js');
 const { occOf, findEventEntry } = await import('../js/v3/events.js');
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -54,6 +56,27 @@ state.activateCrew(TOKEN, {
   festivals: { 'acl-2026': { selections: {} }, 'portola-2026': { selections: {} } },
   affinity: {},
 }, 'acl-2026');
+
+const ctxFor = (fid, over = {}) => {
+  const ctx = {
+    fid, meName: 'Kevin', affinity: null, lowPower: true, sort: 'day', query: '', weekend: 'all',
+    filterPeople: [], soloStage: null, folded: [], now: new Date('2026-01-01T12:00:00'),
+    taps: [], opened: [],
+    picks: model.picksFor(state.crewDoc, fid),
+    onOpenNotes: (a) => ctx.opened.push(a), onNotesChange: null, onOpenDayNotes: () => {}, onSoloStage: () => {},
+    onToggleFold: () => {},
+    ...over,
+  };
+  ctx.onTap = over.onTap || ((artist, el) => { ctx.taps.push(artist); return refreshCard(el, artist, ctx); });
+  return ctx;
+};
+const render = (fid, over = {}) => {
+  state.setActiveFestivalId(fid);
+  const root = document.getElementById('wall-root');
+  const ctx = ctxFor(fid, over);
+  renderWall(root, ctx);
+  return { root, ctx };
+};
 
 // The two nights this whole file is about, straight out of the shipped file.
 const lateNight = (name, date) => acl.artists.find((a) => a.name === name && a.day === 'Late nights' && a.date === date);
@@ -107,4 +130,125 @@ test('findEventEntry resolves each night to its OWN entry', () => {
   // dates) still matches the way it always did: a missing field asks nothing.
   const legacy = { day: 'Afters', stage: 'Sun · The Midway', time: '11:30 PM', weekend: null };
   assert.equal(findEventEntry(portola, 'VTSS', legacy), portola.artists.find((a) => a.name === 'VTSS' && a.day === 'Afters'));
+});
+
+// ---- the facts -----------------------------------------------------------------------
+
+test('factsFor tells each late night its own truth: the right venue, the right door, the right date', () => {
+  const ctx = ctxFor('acl-2026');
+  state.setActiveFestivalId('acl-2026');
+  const one = facts.factsFor('Jess Williamson', ctx, occOf(JESS_1));
+  assert.equal(one.when, 'Thu · Oct 1 · Doors 7 PM');
+  assert.equal(one.where, 'Stubb\'s');
+  assert.equal(one.mapUrl, acl.venues['Stubb\'s']);
+  const two = facts.factsFor('Jess Williamson', ctx, occOf(JESS_8));
+  assert.equal(two.when, 'Thu · Oct 8 · Doors 9:30 PM');
+  assert.equal(two.where, 'The Continental Club');
+  assert.equal(two.mapUrl, acl.venues['The Continental Club']);
+  assert.notEqual(one.where, two.where, 'the whole point: one card can never print the other room');
+
+  const b2 = facts.factsFor('BUNT.', ctx, occOf(BUNT_2));
+  const b9 = facts.factsFor('BUNT.', ctx, occOf(BUNT_9));
+  assert.equal(b2.when, 'Fri · Oct 2 · Doors 9 PM');
+  assert.equal(b2.where, 'Emo\'s');
+  assert.equal(b9.when, 'Fri · Oct 9 · Doors 9 PM');
+  assert.equal(b9.where, 'The Concourse Project');
+});
+
+test('a Portola run card\'s facts are byte-for-byte what they were', () => {
+  const ctx = ctxFor('portola-2026');
+  state.setActiveFestivalId('portola-2026');
+  const vtss = portola.artists.find((a) => a.name === 'VTSS' && a.day === 'Afters');
+  const f = facts.factsFor('VTSS', ctx, occOf(vtss));
+  assert.equal(f.when, 'Sun · Runs 10 PM – ~3 AM');
+  assert.equal(f.where, 'The Midway');
+  assert.equal(f.mapUrl, portola.venues['The Midway']);
+  assert.equal(f.approx, true);
+  assert.deepEqual(f.order, { text: 'Guessing they’re 2nd of 4', url: vtss.order.source, confirmed: false });
+  // And through a legacy occurrence — the pre-fix shape — the same answers.
+  const legacy = facts.factsFor('VTSS', ctx, { day: 'Afters', stage: 'Sun · The Midway', time: '11:30 PM', weekend: null });
+  assert.equal(legacy.when, f.when);
+  assert.equal(legacy.where, f.where);
+  assert.equal(legacy.mapUrl, f.mapUrl);
+  state.setActiveFestivalId('acl-2026');
+});
+
+test('the artist sheet\'s header for a dated occurrence shows the venue as a map door, and no notes chip', () => {
+  const ctx = ctxFor('acl-2026');
+  state.setActiveFestivalId('acl-2026');
+  const header = facts.sheetCard(facts.factsFor('Jess Williamson', ctx, occOf(JESS_8)), { onClose: () => {}, notesChip: false });
+  assert.equal(header.querySelector('.f-sub').textContent, 'Thu · Oct 8 · Doors 9:30 PM');
+  const door = header.querySelector('a.f-where');
+  assert.ok(door, 'the venue is a door, not a missing line');
+  assert.equal(door.textContent, 'The Continental Club');
+  assert.equal(door.getAttribute('href'), acl.venues['The Continental Club']);
+  assert.equal(header.querySelector('.f-chip.notes'), null, 'the sheet IS the thread (MODEL-V4 §4)');
+});
+
+// ---- the wall ------------------------------------------------------------------------
+
+const lateCards = (root, artist) => [...root.querySelectorAll('.venue-grid .card')].filter((c) => c.dataset.artist === artist
+  && (JSON.parse(c.dataset.occ || '{}').day === 'Late nights'));
+
+test('the wall gives an artist\'s two late nights two cards with two identities', () => {
+  const { root, ctx } = render('acl-2026');
+  const cards = lateCards(root, 'Jess Williamson');
+  assert.equal(cards.length, 2, 'both nights are on the wall');
+  assert.notEqual(cards[0].dataset.occ, cards[1].dataset.occ, 'and they are not the same card twice');
+  const occs = cards.map((c) => JSON.parse(c.dataset.occ));
+  assert.deepEqual(occs.map((o) => [o.date, o.venue]), [['2026-10-01', 'Stubb\'s'], ['2026-10-08', 'The Continental Club']]);
+  // Each card comes back as itself.
+  for (const [i, occ] of occs.entries()) assert.equal(cardFor(root, 'Jess Williamson', occ), cards[i]);
+  // And each is under its own date rule.
+  const dateOfCard = (card) => {
+    for (let n = card.closest('.venue-grid'); n; n = n.previousElementSibling) if (n.classList.contains('date-rule')) return n.dataset.iso;
+    return null;
+  };
+  assert.deepEqual(cards.map(dateOfCard), ['2026-10-01', '2026-10-08']);
+  // The zoom on each card reads its own room.
+  const seen = cards.map((card) => {
+    const occ = JSON.parse(card.dataset.occ);
+    return facts.factsFor('Jess Williamson', ctx, occ).where;
+  });
+  assert.deepEqual(seen, ['Stubb\'s', 'The Continental Club']);
+});
+
+test('a repaint puts the zoom back on the night it was on', () => {
+  const { root, ctx } = render('acl-2026');
+  const second = lateCards(root, 'Jess Williamson')[1];
+  assert.equal(JSON.parse(second.dataset.occ).date, '2026-10-08');
+  facts.zoomCard(second, 'Jess Williamson', ctx, { occ: JSON.parse(second.dataset.occ), instant: true });
+  const keep = facts.zoomSnapshot();
+  assert.ok(keep, 'the zoom is standing');
+  facts.unzoom({ instant: true, why: 'wall repaint' });
+  const after = render('acl-2026');
+  const again = cardFor(after.root, keep.artist, keep.occ);
+  assert.ok(again, 'the card came back');
+  assert.equal(JSON.parse(again.dataset.occ).date, '2026-10-08', 'the SAME night, not its twin');
+  assert.equal(again, lateCards(after.root, 'Jess Williamson')[1]);
+  assert.equal(facts.factsFor('Jess Williamson', after.ctx, keep.occ).where, 'The Continental Club');
+});
+
+test('the route key round-trips a dated occurrence, so a reload reopens the right night', async () => {
+  const { encodeNotesKey, decodeNotesKey } = await import('../js/v3/router.js');
+  const occ = occOf(JESS_8);
+  const back = decodeNotesKey(encodeNotesKey('Jess Williamson', occ));
+  assert.equal(back.artist, 'Jess Williamson');
+  assert.deepEqual(back.occ, occ);
+  const ctx = ctxFor('acl-2026');
+  state.setActiveFestivalId('acl-2026');
+  assert.equal(facts.factsFor('Jess Williamson', ctx, back.occ).where, 'The Continental Club');
+  // One thread per artist wherever they play: the occurrence only picks which
+  // card heads the sheet, it is never part of the note key.
+  assert.equal(model.noteCount(state.crewDoc, 'acl-2026', 'artist', 'Jess Williamson'), 0);
+});
+
+test('a search finds both nights too — a card in a list is the same card as the one on the wall', () => {
+  const { root, ctx } = render('acl-2026', { query: 'jess williamson' });
+  const cards = [...root.querySelectorAll('.card[data-artist="Jess Williamson"]')]
+    .filter((c) => JSON.parse(c.dataset.occ || '{}').day === 'Late nights');
+  assert.equal(cards.length, 2, 'a search answers "where and when" for both nights');
+  const occs = cards.map((c) => JSON.parse(c.dataset.occ));
+  assert.deepEqual(occs.map((o) => [o.date, o.venue]), [['2026-10-01', "Stubb's"], ['2026-10-08', 'The Continental Club']]);
+  assert.deepEqual(occs.map((o) => facts.factsFor('Jess Williamson', ctx, o).where), ["Stubb's", 'The Continental Club']);
 });

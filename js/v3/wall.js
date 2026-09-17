@@ -430,7 +430,11 @@ function renderCardGrid(root, list, ctx, { day = null, subLabelOf = lineupSubLab
   const showTags = !ctx.weekend || ctx.weekend === 'all';
   for (const a of shown) {
     const tag = showTags && (a.weekends === 'W1' || a.weekends === 'W2') ? a.weekends : undefined;
-    grid.appendChild(renderCard(a.name, ctx, { tag, time: subLabelOf(a), occ: { day: a.day || day || null, stage: a.stage || null, time: a.time || null, weekend: a.weekends || null } }));
+    // The occurrence comes from the model (events.js occOf), so a card found
+    // in a search is the SAME card as the one on the wall — a dated show's
+    // two nights included. Only the day falls back to the group's, for a
+    // list whose entries carry none.
+    grid.appendChild(renderCard(a.name, ctx, { tag, time: subLabelOf(a), occ: { ...occOf(a), day: a.day || day || null } }));
   }
   if (filtering && !shown.length) {
     const none = document.createElement('div');

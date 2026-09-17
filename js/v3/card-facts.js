@@ -14,7 +14,7 @@ import { ordered, auraBackground, nameColor, subColor } from './aura.js';
 import { hslOf } from './palette.js';
 import { colorIndexOf, roomOf } from './wall.js';
 import { record } from '../errlog.js';
-import { runFactsOf, findEventEntry } from './events.js';
+import { runFactsOf, findEventEntry, shortDateLabel, dateOf, venueOf } from './events.js';
 import { GROW_MS, CONTENT_FADE_MS, OUT_MS, CASCADE_MS, STAGGER_MS, REFRESH_MS, EASE_ARRIVE, EASE_LEAVE, EASE_SURFACE, canAnimate } from './motion.js';
 
 // "9:00 PM - 10:15 PM" -> "9:00 – 10:15 PM" (the shared meridiem said once).
@@ -33,16 +33,18 @@ const shortDay = (fest, day) => (fest.dayMeta && fest.dayMeta[day] && fest.dayMe
 // render from this object, so a detail the resting card carries cannot go
 // missing from the grown one (Kevin, 2026-08-30: two rounds dropped details
 // because two renderers derived them separately).
-// `occ` is the occurrence the CARD represents ({day, stage, time, weekend})
-// — an artist can play twice (a grid set AND an afters event, two grid days
-// at EF), and the first match is the wrong story for every card but the
-// first (Codex gate, 2026-08-29). Without one, the first scheduled/listed
-// occurrence stands in.
+// `occ` is the occurrence the CARD represents ({day, stage, time, weekend,
+// date, venue}) — an artist can play twice (a grid set AND an afters event,
+// two grid days at EF, TWO late nights in two different rooms), and the first
+// match is the wrong story for every card but the first (Codex gate,
+// 2026-08-29). Without one, the first scheduled/listed occurrence stands in.
 export function factsFor(artistName, ctx, occ = null) {
   const fest = state.fest() || {}; // a card can render before its fest file is known (tests, a stale index)
   let day = occ ? occ.day || null : null;
   let stage = occ ? occ.stage || null : null;
   let time = occ ? occ.time || null : null;
+  let date = occ ? occ.date || null : null;
+  let venue = occ ? occ.venue || null : null;
   const weekend = occ && (occ.weekend === 'W1' || occ.weekend === 'W2') ? occ.weekend : null;
   if (!occ) {
     for (const d of Object.keys(fest.days || {})) {
@@ -51,7 +53,7 @@ export function factsFor(artistName, ctx, occ = null) {
     }
     if (!time) {
       const a = (fest.artists || []).find((x) => x.name === artistName);
-      if (a) { day = a.day || day; stage = a.stage || stage; time = a.time || time; }
+      if (a) { day = a.day || day; stage = a.stage || stage; time = a.time || time; date = dateOf(a) || date; venue = venueOf(a) || venue; }
     }
   }
   const picksMap = ctx.picks[artistName] || {};
@@ -69,20 +71,32 @@ export function factsFor(artistName, ctx, occ = null) {
   // a name can be a grid billing AND an event — says whether its time is a
   // guess, the room's real window, and where it sits in the order.
   const run = occ ? runFactsOf(findEventEntry(fest, artistName, occ)) : null;
-  // The long form: when · day · where · which weekend. An EVENT's stage
-  // carries "Thu · Venue" — say when, then where, once. For a run member the
+  // The long form: when · day · where · which weekend. For a run member the
   // clock in WHEN is the venue's window, not the guessed slot (LOCKED copy,
   // Kevin 2026-09-01: "Sun · Runs 10 PM – 2 AM", then the order on its own
   // line as a door to the poster); a guess with no window keeps the tilde.
+  // One clock for every shape — a dated show reads it the same way.
+  const clock = run && run.window ? run.window : `${run && run.approx ? '~' : ''}${timeRange(time)}`;
+  // WHERE comes from the occurrence's own venue when it has one, and only
+  // falls back to parsing the legacy "Thu · Venue" stage string when it does
+  // not (MODEL-V4 §6: "the structured pair wins when present"). ONE place
+  // decides; nothing downstream re-derives a place from a string.
+  //
+  // WHAT SAYS WHEN depends on what the show is. A dated show has no weekday
+  // label to borrow, so its own date speaks: "Thu · Oct 1 · Doors 7 PM". An
+  // EVENT's stage carries the night — say when, then where, once. Anything
+  // else is a day on the festival's own axis, and the day follows the clock.
   let when, where;
-  if (stage && stage.includes(' · ')) {
+  if (date) {
+    when = [shortDateLabel(date), clock].filter(Boolean).join(' · ');
+    where = venue || '';
+  } else if (stage && stage.includes(' · ')) {
     const bits = stage.split(' · ');
-    const clock = run && run.window ? run.window : `${run && run.approx ? '~' : ''}${timeRange(time)}`;
     when = [bits[0], clock].filter(Boolean).join(' · ');
-    where = bits.slice(1).join(' · ');
+    where = venue || bits.slice(1).join(' · ');
   } else {
     when = [timeRange(time), day ? shortDay(fest, day) : null].filter(Boolean).join(' · ');
-    where = stage || '';
+    where = venue || stage || '';
   }
   // The weekend rides WHEN as plain text — a tag at the row's end read as the
   // resting chip flipping sides (Kevin, 2026-08-30); words don't flip.
