@@ -1,6 +1,7 @@
 # Adding a festival
 
-*Updated 2026-09-16 (one rule for guessed times; doors go in `doors`).*
+*Updated 2026-09-16 — MODEL-V4: a section entry says `night` or `date`; one
+rule for guessed times; doors go in `doors`.*
 
 Two files, one command:
 
@@ -56,11 +57,12 @@ Two files, one command:
         Read the poster more than once — two independent readings diffed
         box-by-box is the bar; the Portola drop used three.
      3. New names on the poster (Portola's Kaytree) get an `artists[]` entry too.
-     4. Sections that are NOT grid days (Afters, Folsom) need nothing — a
-        scheduled wall renders the grid days, then every remaining
-        `artists[].day` group as card sections, then anything billed on a
-        grid day but missing from the grid under EVERYTHING ELSE. The day
-        tabs mirror that order.
+     4. Sections that are NOT grid days (Afters, Folsom, Late nights) each
+        say where they go — `night` or `date`, and always `venue` (see
+        **Event fields** below). A weekday section renders inside that day,
+        under the festival's own room; a dated one takes a tab of its own
+        after the days. Anything the festival bills with no set on the grid
+        stays on its day too, as a stack rather than a column.
      5. Validate, `npm test`, bump `CACHE_VERSION`, eyeball a real browser.
         Festival JSONs are fetched network-first by the service worker (a
         bounded wait, cache as the offline fallback), so a data drop reaches
@@ -69,9 +71,12 @@ Two files, one command:
      ("Friday"/"Saturday"/"Sunday" — never "Friday W1"; day notes key on the
      label) and tag each set with `weekend: "W1"|"W2"` — untagged or
      `"both"` plays every weekend, and an artist whose times differ across
-     weekends is simply two entries. The wall renders one weekend at a time
-     (the weekend picker loses "Both" in scheduled mode; a stored "Both"
-     shows Weekend One). Give each `dayMeta` entry
+     weekends is simply two entries. A scheduled two-weekend fest gets SIX
+     dated tabs, one per date in `dayMeta[...].isos` (FRI 2 · SAT 3 · SUN 4 ·
+     FRI 9 · SAT 10 · SUN 11); each tab draws its own weekend's sets, and an
+     untagged set plays on both. A lineup-only two-weekend fest never had a
+     grid to split, so it shows both weekends on one wall with the W1/W2 tags
+     on the cards. Give each `dayMeta` entry
      `dates: { "W1": "Oct 2", "W2": "Oct 9" }` so the day rule shows the
      selected weekend's real date. Keep `weekends` tags on the top-level
      `artists[]` — they drive the picker's presence and the search extras.
@@ -126,34 +131,45 @@ strings the lineup phase used in `artists[].day` ("Friday", not "Fri" or
 written.
 
 An `artists[]` entry can also be an EVENT (an afterparty, a street-fair
-party): give it the venue in `stage` and the hours in `time` and the lineup
-wall renders them as a card sub-label. A same-name entry on a *different* day
+party): give it its night and its room (below) and the wall renders it as a
+card in that room's stack. A same-name entry on a *different* day
 is a reappearance (a lineup artist playing an afters show) — picks, auras and
 notes unify by exact name on purpose, and the validator only flags same-day or
 day-less duplicates. See `portola-2026.json` (the Afters/Folsom sections) for
 the worked example.
 
-### Event fields (added 2026-09-01)
+### Event fields — where a section goes (MODEL-V4 §6)
 
-Alongside `stage`, an event entry may carry the same facts as data — and
-they are what makes a fest **day-first** (`js/v3/events.js`, 2026-09-01):
-once a section's entries say their night, the wall's tabs become the union
-of the grid days and those nights, each day holds its grid and that night's
-sections, and each section wears one layout all week — venue columns on a
-clock where any night has 5+ timed shows over repeating venues (≥ 1.5 per
-venue, ≥ 60% timed), time-sorted tiles otherwise. Files never declare a
-layout; the numbers decide. A section whose entries carry no night renders
-as it always has, after the days.
+A SECTION is an `artists[].day` label that is not one of the grid's days:
+Portola's AFTERS and FOLSOM, ACL's LATE NIGHTS. Its entries carry the room
+and the night as data rather than as prose, and that is what places them.
+Every section entry says where its section sits with **exactly one** of
+`night` or `date`, plus `venue`.
 
 | Field | What |
 |---|---|
-| `night` | `Mon`…`Sun` — the night it plays. Must equal the part of `stage` before ` · `. |
-| `venue` | The room. Must equal the part of `stage` after ` · `, and should have an entry in `venues{}` so the card gets a map door. |
+| `night` | `Mon`…`Sun` — the night it plays. The section renders inside that day, under the festival's own room, and the day tabs are the union of the grid days and these nights. Must equal the part of `stage` before ` · `. |
+| `date` | `YYYY-MM-DD`, a real calendar date. The section takes a tab of its own after the days, ruled by date. Use it when a section runs longer than a week, where one weekday would mean two different nights — ACL Fest Nights runs Sep 29 to Oct 10, so "Fri" would be both Oct 2 and Oct 9. |
+| `venue` | The room. The wall stacks the section's cards under it, in play order. Must equal the part of `stage` after ` · `, and wants an entry in `venues{}` so the card's place line opens a map. |
 
-`stage` stays and stays authoritative: it is what the renderer reads today, so
-`night`/`venue` are a denormalization of it, and the validator makes a
-disagreement an ERROR. Adding them is optional per festival; adding one that
-contradicts `stage` is not allowed.
+`night` and `date` are two different places on the screen, so an entry never
+carries both, never neither, and one section's entries never disagree — the
+validator errors on all three. The pre-2026-09-01 `stage: "Thu · Regency
+Ballroom"` string answers both questions on its own and still does, so no
+existing file has to be rewritten; `stage` also stays authoritative where it
+is present, which makes `night`/`venue` a denormalization of it, and a
+disagreement between them an ERROR.
+
+A dated section carries its own range and its sub line in `dayMeta`, keyed
+by the section's label:
+
+```json
+"dayMeta": { "Late nights": { "date": "Sep 29 – Oct 10", "sub": "around Austin" } }
+```
+
+A dated entry renders under its date, not under the section label, so one
+artist playing two nights is two cards and one pick. Only the same name on
+the same date is a duplicate.
 
 **A venue-night is ONE ROOM, and its artists play IN SEQUENCE** (Kevin,
 2026-09-01). The wall draws every room as a vertical run — stacked in the time
@@ -193,4 +209,4 @@ combined card eats the crew's picks.
   venue's routine close from `data/venues/index.json`) and marks each guess
   `approx: true`. A set with a time and no `approx` is posted and never
   touched, so re-run it whenever a room or the registry changes. A show with
-  no `time` tiles under TIME TBA.
+  no `time` at all is fine — it is a card with no clock in its venue's stack.
