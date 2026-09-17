@@ -75,13 +75,10 @@ holding one `.venue-group` per venue:
 - **No explanatory line on the wall.** The `~ marks a guessed set time —
   the order is the plan` whisper is deleted (Kevin, 2026-09-17: "weird
   inline"); the tilde is explained once in Settings → How it works.
-  **The How it works copy is Kevin's (2026-09-17), verbatim:**
-  - `~ a guessed start time and artist order, based on limited intel`
-  - `Tap a name to highlight their picks.` with the sub `Switch who you are
-    picking as in Settings.` (replaces today's "Tap a name to see their picks.")
-  - `Tap the fest name to filter out events.` with the sub `Like hiding the
-    afters.`
-  - No lesson for the now mark ("don't need to explain now").
+  **The How it works rows — their order and their words — are §3a.4, and only
+  §3a.4.** They were listed here too until 2026-09-17; two of the three had
+  already drifted, which is what a second copy is for. No lesson for the now
+  mark ("don't need to explain now").
 - **The now mark.** A stack has no clock to draw a line on, so the card of
   whoever is playing right now carries `.card.now`: a 1.5px ring in `--brand`
   with the soft glow the now line uses, and a small `NOW` label (the

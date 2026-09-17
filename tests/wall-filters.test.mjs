@@ -79,11 +79,30 @@ test('scheduled search respects the people filter (a list hides, never dims)', (
   hit.remove();
 });
 
-test('columnsTemplate: a soloed stage is wide, every other stage folds to a rail; unknown solo = no solo', () => {
+test('columnsTemplate: every stage column is the ONE card column, a soloed stage is wide, every other stage folds to a rail; unknown solo = no solo', () => {
   const stages = ['Pier Stage', 'Crane Stage', 'Warehouse'];
-  assert.deepEqual(filters.columnsTemplate(stages, null), { template: 'minmax(150px, 1fr) minmax(150px, 1fr) minmax(150px, 1fr)', solo: null });
-  assert.deepEqual(filters.columnsTemplate(stages, 'Warehouse'), { template: '34px 34px minmax(150px, 1fr)', solo: 'Warehouse' });
+  assert.deepEqual(filters.columnsTemplate(stages, null), { template: 'var(--col-w) var(--col-w) var(--col-w)', solo: null });
+  assert.deepEqual(filters.columnsTemplate(stages, 'Warehouse'), { template: '34px 34px var(--col-w)', solo: 'Warehouse' });
   assert.equal(filters.columnsTemplate(stages, 'Renamed Stage').solo, null, 'a remembered stage that no longer exists cannot blank the wall');
+});
+
+// One column width everywhere (MODEL-V4 §3a.1). The regression this catches is
+// the one Kevin saw: a set card wider than an afters card on every screen,
+// because the grid stretched (`minmax(150px, 1fr)` in a full-bleed scroller)
+// while the stacks laid out their own floor. The width lives in ONE token, so
+// a second width can only appear by writing a second number — and if one is
+// written here, this fails.
+test('the card column is one token, declared once per breakpoint, and both grids ride it', () => {
+  const tokens = readFileSync(join(ROOT, 'assets/v3-tokens.css'), 'utf8');
+  const css = readFileSync(join(ROOT, 'assets/v3.css'), 'utf8');
+  const decls = tokens.match(/--col-w:\s*[^;]+;/g) || [];
+  assert.equal(decls.length, 2, 'exactly two declarations: the phone formula and the 720 width');
+  assert.match(decls[1], /176px/, 'at 720 the column is the width the stacks already resolved to');
+  assert.equal((css.match(/--col-w:/g) || []).length, 0, 'the component sheet reads the token, never re-declares it');
+  assert.match(css, /\.venue-grid \{[^}]*repeat\(auto-fill, var\(--col-w\)\)/, 'the stacks ride the token');
+  assert.match(css, /\.venue-grid \{[^}]*justify-content: start/, 'and lay out from the left rather than stretching');
+  assert.equal(css.includes('minmax(150px'), false, 'the old 150px column floor is gone from both grids');
+  assert.equal(filters.COL, 'var(--col-w)', 'and the timetable template is the same token, not a copy of the number');
 });
 
 test('the people filter dims on the clock and hides in a stack — and says so when a room is left empty', () => {
@@ -127,7 +146,7 @@ test('stage solo: the grid strips and every grid share the folded template, fold
   const strips = [...root.querySelectorAll('.room[data-room=":fest"] .stage-strip .times-grid')];
   assert.equal(strips.length, 2, 'one strip per grid day (Saturday, Sunday)');
   for (const strip of strips) {
-    assert.equal(strip.style.gridTemplateColumns, '34px 34px minmax(150px, 1fr) 34px 34px');
+    assert.equal(strip.style.gridTemplateColumns, '34px 34px var(--col-w) 34px 34px');
     const heads = [...strip.querySelectorAll('.stage-head')];
     assert.equal(heads.length, 5);
     assert.equal(heads.filter((h) => h.classList.contains('rail')).length, 4, 'four stages fold to rails');
@@ -161,7 +180,7 @@ test('stage solo: the grid strips and every grid share the folded template, fold
 test('no solo: the everyday template, and computeTimesLayout reports solo null', () => {
   const layout = computeTimesLayout(portola, null);
   assert.equal(layout.solo, null);
-  assert.equal(layout.colsTemplate, 'minmax(150px, 1fr) minmax(150px, 1fr) minmax(150px, 1fr) minmax(150px, 1fr) minmax(150px, 1fr)');
+  assert.equal(layout.colsTemplate, 'var(--col-w) var(--col-w) var(--col-w) var(--col-w) var(--col-w)');
   const stale = computeTimesLayout(portola, 'Gone Stage');
   assert.equal(stale.solo, null, 'a stale solo is ignored');
 });

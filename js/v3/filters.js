@@ -102,9 +102,15 @@ export const SOLO_RAIL = '34px';
 // renamed grid can't blank the wall. The columns are the festival's stages
 // and nothing else: under MODEL-V4 §1.3 anything off the grid is a venue
 // group below it, so there is no everything-else column to reserve.
+//
+// A stage column is `--col-w` — the ONE card column (§3a.1), the same track the
+// venue stacks ride, declared once in v3-tokens.css. It is a fixed width, not a
+// fraction, so the grid stops stretching to fill a wide window: it stays a
+// horizontal scroller, and a set card is the width of an afters card.
+export const COL = 'var(--col-w)';
 export function columnsTemplate(stages, solo) {
   const active = solo && stages.includes(solo) ? solo : null;
-  const cols = stages.map((s) => (active && s !== active ? SOLO_RAIL : 'minmax(150px, 1fr)'));
+  const cols = stages.map((s) => (active && s !== active ? SOLO_RAIL : COL));
   return { template: cols.join(' '), solo: active };
 }
 

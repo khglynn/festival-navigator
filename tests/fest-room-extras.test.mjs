@@ -103,7 +103,7 @@ test('Electric Forest: every day\'s activities are venue groups under that day\'
   const heads = [...root.querySelectorAll('.stage-strip .stage-head')].map((h) => h.textContent.trim());
   assert.ok(!heads.includes('EVERYTHING ELSE'), 'no muted head on the strip');
   const layout = computeTimesLayout(ef, null);
-  assert.equal((layout.colsTemplate.match(/minmax\(/g) || []).length, layout.stages.length, 'columns are the stages, nothing more');
+  assert.equal((layout.colsTemplate.match(/var\(--col-w\)/g) || []).length, layout.stages.length, 'columns are the stages, nothing more');
   assert.equal(root.querySelectorAll('.times-grid .venue-grid').length, 0, 'nothing off the clock inside a grid');
   // The groups sit AFTER the day's grid, inside the same room.
   const firstRule = root.querySelector('.day-rule');

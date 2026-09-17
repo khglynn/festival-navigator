@@ -46,9 +46,9 @@ const ctx = {
   filterPeople: [],
   soloStage: null,
   // The fold (MODEL-V4 §3, 2026-09-16): which of the fest's rooms (the
-  // festival itself, Afters, Folsom …) are folded on every day. Device-local,
-  // persisted per fest (filters.js) — never in the crew doc. Two doors write
-  // it: a tap on a room's header, and the show menu on the fest name.
+  // festival itself, Afters, Folsom …) are hidden on every day. Device-local,
+  // persisted per fest (filters.js) — never in the crew doc. One door writes
+  // it: the show menu on the fest name (§3a.2, Kevin 2026-09-17).
   folded: [],
   now: null, // tests pin the clock; null = new Date() at render
   onSoloStage: (stage) => {
@@ -56,7 +56,6 @@ const ctx = {
     refreshCtx();
     repaintWall();
   },
-  onToggleFold: (key) => toggleFoldFlow(key),
   onTap: handleTap,
   onOpenNotes: (artist, occ = null) => {
     unzoom({ why: 'notes sheet opened' });
@@ -66,9 +65,13 @@ const ctx = {
     // THIS set for an artist who plays twice.
     router.push(encodeNotesKey(artist, occ));
   },
-  onOpenDayNotes: (iso, label = null) => {
-    openDayNotes(iso, label, ctx, onNotesChange);
-    router.push(`sheet:day:${iso}`);
+  // `target` is a date or a section-on-a-date key (`2026-09-25|Folsom`). The
+  // route carries the key itself, so back, forward and a refresh reopen the
+  // same thread — the label is only what the door was wearing, and the sheet
+  // finds it again off the axis.
+  onOpenDayNotes: (target, label = null) => {
+    openDayNotes(target, label, ctx, onNotesChange);
+    router.push(`sheet:day:${target}`);
   },
   onOpenFestNotes: () => {
     openFestNotes(ctx, onNotesChange);
@@ -134,6 +137,14 @@ function refreshCtx() {
 // Portola afters night has a date the wall derives and dayMeta never names.
 // The query is stripped deliberately — searching narrows the wall, never the
 // dates a crew has notes on.
+// A date is CALLED what the wall's day rule calls it — "Friday" — because that
+// is the door you wrote through, and the sheet has to agree with the door
+// (MODEL-V4 §3a.3). The exception is the one that made §4 date-key day notes in
+// the first place: a two-weekend fest has two Fridays, and two rows both saying
+// "Friday" in a list with no wall under them is the ambiguity the dates were
+// meant to end — so where a name would answer for more than one date, EVERY
+// date takes the dated form ("Fri · Oct 2"). Decided once, here, where the whole
+// axis is visible; notes.js reads the answer and never re-derives it.
 function festDatesOf() {
   const fest = state.fest();
   if (!fest) return [];
@@ -143,18 +154,30 @@ function festDatesOf() {
     for (const iso of day.dates || []) {
       if (!model.ISO_DATE_RE.test(String(iso)) || seen.has(iso)) continue;
       seen.add(iso);
-      out.push({ iso, label: shortDayLabel(iso) });
+      // A dated section's tab covers many dates, so its own name cannot stand
+      // for any one of them; each date says itself.
+      out.push({ iso, label: day.dated ? shortDayLabel(iso) : dayLabelParts(day.dayKey || day.key).head });
     }
   }
-  return out;
+  return nameDates(out);
 }
 
-// ---- the fold (MODEL-V4 §3) ------------------------------------------------------
-// A room's header is the door: tapping it folds the room's body on every day,
-// and the show menu on the fest name is the same state through a second door.
-// The header is the anchor for both — it carries the room's key already
-// (`.sec-head[data-section]`), so nothing here needs to know how the wall
-// builds a room.
+// The collision pass, on its own so it can be held to account: a name that
+// answers for more than one date is no name at all, so every date takes the
+// dated form instead. Pure, order-preserving, and it never half-renames — one
+// Friday saying "Friday" beside another saying "Fri · Oct 9" would be worse
+// than either.
+export function nameDates(entries) {
+  const taken = new Map();
+  for (const d of entries) taken.set(d.label, (taken.get(d.label) || 0) + 1);
+  return entries.map((d) => (taken.get(d.label) > 1 ? { ...d, label: shortDayLabel(d.iso) } : d));
+}
+
+// ---- the fold (MODEL-V4 §3, §3a.2) -----------------------------------------------
+// The show menu on the fest name is the ONE door: unchecking a room hides it on
+// every day. A room's header is no longer a control — but it is still the
+// anchor, because it carries the room's key (`.sec-head[data-section]`), so
+// nothing here needs to know how the wall builds a room.
 function roomHeads(key) {
   return [...document.querySelectorAll(`#wall-root .sec-head[data-section="${CSS.escape(key)}"]`)];
 }
@@ -189,20 +212,17 @@ export function roomsOnWall() {
   return rooms;
 }
 
-// A fold is a small event (Kevin, 2026-08-30: nothing vanishes in place,
+// Hiding a room is a small event (Kevin, 2026-08-30: nothing vanishes in place,
 // nothing pops): the body leaves quick and plain before the repaint; on the
 // way back it arrives with the usual beat. Transforms and opacity only;
 // instant under Low Power and reduced motion.
 function toggleFoldFlow(key) {
-  // The setting lands NOW — memory, storage and ctx — and the header answers
-  // at once; only the body's leaving is deferred. A second tap during the
-  // fade reads this one, never the state before it.
+  // The setting lands NOW — memory, storage and ctx — and the header goes
+  // quiet at once; only the body's leaving is deferred. A second tap during
+  // the fade reads this one, never the state before it.
   const { next, folding } = applyFoldToggle(ctx.fid, ctx.folded || [], key);
   ctx.folded = next;
-  for (const head of roomHeads(key)) {
-    head.setAttribute('aria-expanded', folding ? 'false' : 'true');
-    head.classList.toggle('folded', folding);
-  }
+  for (const head of roomHeads(key)) head.classList.toggle('folded', folding);
   const finish = () => {
     repaintWall();
     if (!folding) {
@@ -616,7 +636,7 @@ function buildShowMenu(rooms, folded) {
     const row = showMenuRow(room.label, { key: room.key, on: !folded.has(room.key) });
     // A row tap closes the menu and moves the room — the fold flow owns the
     // motion from there, on every day at once.
-    row.addEventListener('click', () => { closeShowMenu(); ctx.onToggleFold(room.key); });
+    row.addEventListener('click', () => { closeShowMenu(); toggleFoldFlow(room.key); });
     pop.appendChild(row.parentElement);
   }
   const divider = document.createElement('li');

@@ -21,6 +21,24 @@ Non-inferable facts only (the code answers everything else — read it).
   2026-07-12, including the loader shown while a crew is being CREATED — i.e.
   wearing a festival's colour before a festival had been chosen.
 
+- **One card column, one token.** `--col-w` in `v3-tokens.css` is the width of
+  every card column on the wall — the stage grid's, the sticky strip's, and the
+  venue stacks' — so a set card and an afters card are never two widths. It is
+  an absolute length on purpose: a percentage in a custom property resolves at
+  the USE site, which is how one rule produced 158px in the grid and 178px in
+  the stack. Don't write a second number; the grid not filling a wide window is
+  the intended cost (it is a horizontal scroller, MODEL-V4 §3a.1).
+
+- **A note is written where you are standing, and nothing rolls up.** Four
+  targets: the festival, a DATE (ISO), a SECTION ON a date
+  (`<iso>|<section label>`, e.g. `2026-09-25|Folsom`), an artist. The doors are
+  the day rule, the section header on that day, and the card's zoom — real
+  buttons, nothing added to them but the hit. A `Folsom · Friday` note never
+  appears or counts under `Friday`. Legacy keys (a weekday label, a bare
+  section) are READ, never written: no migration, no rename, the freeze
+  untouched. The all-notes sheet lists only targets that have notes — it is not
+  a set of doors (MODEL-V4 §3a.3).
+
 - **The 44px touch floor is applied to `button`, not to a list of selectors.**
   It used to name six, and the naming WAS the bug — every control added after
   those six (chips at 26px, the "+ ✎" note chip at 17px, every button in

@@ -196,21 +196,50 @@ export function legacyDayKeysFor(fest, iso) {
   return out;
 }
 
-// The keys one date's conversation reads from, oldest convention first. The
-// LAST one is the date itself, and it is the only key anything new is written
-// to — so `dayNoteKeysFor(...).at(-1)` is always the write target.
+// ---- a section on a date (MODEL-V4 §3a.3, 2026-09-17) -------------------------------
+// "Folsom, on Friday" is its own conversation: you wrote it standing on that
+// night's Folsom, and it belongs to that night. The key is the date and the
+// section label with a pipe between them — `2026-09-25|Folsom` — which is
+// additive (nothing reads it today) and unambiguous, because a date cannot
+// hold a pipe and a section label that did would not be a day key either.
+// Nothing rolls up: this key is read by exactly one door and listed under
+// exactly one label.
+const SECTION_DATE_RE = /^(\d{4}-\d{2}-\d{2})\|(.+)$/;
+export const sectionDateKey = (iso, section) => `${iso}|${section}`;
+export function parseSectionDateKey(key) {
+  const m = SECTION_DATE_RE.exec(String(key || ''));
+  return m ? { iso: m[1], section: m[2] } : null;
+}
+
+// The keys one target's conversation reads from, oldest convention first. The
+// LAST one is the target itself, and it is the only key anything new is written
+// to — so `dayNoteKeysFor(...).at(-1)` is always the write target. A section on
+// a date has no older convention to read: it is new, so it reads only itself.
 export function dayNoteKeysFor(fest, iso) {
+  if (parseSectionDateKey(iso)) return [iso];
   return [...legacyDayKeysFor(fest, iso), iso];
 }
 
-// What is left in notes.day once every date has taken its own key and the
-// weekday labels those dates claim: the section labels ("Afters", "Folsom"),
-// plus any date the festival no longer has. Readable, never written to again.
+// Every section-on-a-date key a crew has written, grouped by date. The sheet
+// lists them under their date; the wall reads one at a time.
+export function sectionDateKeysOn(doc, fid, iso) {
+  return Object.keys(doc?.festivals?.[fid]?.notes?.day || {})
+    .map((k) => ({ key: k, parsed: parseSectionDateKey(k) }))
+    .filter(({ key, parsed }) => parsed && parsed.iso === iso && noteCount(doc, fid, 'day', key))
+    .sort((a, b) => a.parsed.section.localeCompare(b.parsed.section))
+    .map(({ key, parsed }) => ({ key, section: parsed.section }));
+}
+
+// What is left in notes.day once every date has taken its own key, the weekday
+// labels those dates claim, and the sections on those dates: the bare section
+// labels ("Afters", "Folsom") written before §3a.3, plus any date the festival
+// no longer has. Readable, never written to again.
 export function sectionNoteKeys(doc, fid, fest, dates) {
   const isos = [...new Set(dates || [])];
   const claimed = new Set(isos);
   for (const iso of isos) for (const k of legacyDayKeysFor(fest, iso)) claimed.add(k);
-  return Object.keys(doc?.festivals?.[fid]?.notes?.day || {}).filter((k) => !claimed.has(k));
+  return Object.keys(doc?.festivals?.[fid]?.notes?.day || {})
+    .filter((k) => !claimed.has(k) && !parseSectionDateKey(k));
 }
 
 // ---- threads (2026-08-29) ----------------------------------------------------------

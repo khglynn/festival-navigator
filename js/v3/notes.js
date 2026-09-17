@@ -34,14 +34,18 @@ import { factsFor, sheetCard } from './card-facts.js';
 import { router } from './router.js';
 import { loadJSON, saveLS } from '../util.js';
 
-// MODEL-V4 §4 (Kevin, 2026-09-17 — "artist, fest and dates; that simplifies
-// and is a defensible MVP"). Three scopes, three doors. A day note is keyed by
-// its ISO DATE, so a two-weekend festival's two Fridays are two conversations.
-// Sections (Afters, Folsom, Late nights) are not a note target at all.
+// MODEL-V4 §4 + §3a.3 (Kevin, 2026-09-17). A note is written WHERE YOU ARE
+// STANDING, and four places are standable: the festival, a date, a section on
+// a date, an artist. A day note is keyed by its ISO DATE, so a two-weekend
+// festival's two Fridays are two conversations; a section on a date is keyed
+// `<iso>|<section label>`, so Folsom on Friday is its own. Nothing rolls up —
+// a Folsom-on-Friday note does not appear under Friday.
 // Old keys are read, never rewritten: a note under a weekday label renders
 // under the date that label means — both dates on a two-weekend fest — and a
-// note under a section label stays readable with no way to add to it. The
+// note under a bare section label stays readable with no way to add to it. The
 // mapping lives in model.js; the freeze is untouched.
+// The all-notes sheet holds the festival composer and the targets that HAVE
+// notes; it is a list of conversations, not a set of doors.
 const LS_PINS = 'fn_pins_v1';
 const NOTE_MAX = 500;
 const COUNTER_FROM = 60;   // the counter stays out of the way until the cap is near
@@ -84,28 +88,50 @@ export function shortDayLabel(iso) {
   return `${WEEKDAYS_SHORT[d.getUTCDay()]} · ${MONTHS_SHORT[Number(m[2]) - 1]} ${Number(m[3])}`;
 }
 
-// The one law under all of this: a day note is written to a DATE. A target
-// that is not one is something the festival used to call a day — a weekday
-// label, a section — and it is read, never added to.
+// The one law under all of this: a day note is written where you are standing —
+// a DATE, or a SECTION ON a date (`2026-09-25|Folsom`, MODEL-V4 §3a.3). A
+// target that is neither is something the festival used to call a day — a
+// weekday label, a bare section — and it is read, never added to.
 const isDate = (target) => model.ISO_DATE_RE.test(String(target));
+const isDayTarget = (target) => isDate(target) || !!model.parseSectionDateKey(target);
 
-// The keys one date's conversation reads from. The last is the date itself and
-// the only one anything new is written to; the others are legacy weekday keys
-// that still hold notes.
-function dayReadKeys(ctx, iso) {
-  const keys = model.dayNoteKeysFor(state.fest(), iso);
+// The keys one target's conversation reads from. The last is the target itself
+// and the only one anything new is written to; the others are legacy weekday
+// keys that still hold notes.
+function dayReadKeys(ctx, target) {
+  const keys = model.dayNoteKeysFor(state.fest(), target);
   const write = keys[keys.length - 1];
   return keys.filter((k) => k === write || model.noteCount(state.crewDoc, ctx.fid, 'day', k));
 }
 
-// Every live note on a date, across those keys, oldest first — what the
+// Every live note on a target, across those keys, oldest first — what the
 // whisper counts and whose newest voice it shows.
-function dayNotesOn(ctx, iso) {
+function dayNotesOn(ctx, target) {
   const out = [];
-  for (const key of model.dayNoteKeysFor(state.fest(), iso)) {
+  for (const key of model.dayNoteKeysFor(state.fest(), target)) {
     out.push(...model.notesFor(state.crewDoc, ctx.fid, 'day', key));
   }
   return out.sort((a, b) => Date.parse(a.ts) - Date.parse(b.ts));
+}
+
+// What a target is CALLED, which is what the wall calls it: "Friday",
+// "Folsom · Friday". The date's own name comes off the day axis the shell hands
+// down (ctx.festDates) — the wall's day rule, in its words — so the sheet says
+// what the door said. Where two dates would answer to the same name (a
+// two-weekend fest has two Fridays) the axis carries the dated form instead;
+// that choice is made once, in the shell, not re-derived here.
+function dateLabel(ctx, iso, fallback) {
+  const hit = (ctx.festDates || []).find((d) => d && d.iso === iso);
+  return (hit && hit.label) || fallback || shortDayLabel(iso);
+}
+// `fallback` is what the caller already has on screen — the wall's day rule
+// hands down its own head, so a ctx with no axis still says a word rather than
+// a date nobody asked for.
+export function dayTargetLabel(ctx, target, fallback = null) {
+  const sec = model.parseSectionDateKey(target);
+  if (sec) return `${dayLabelParts(sec.section).head} · ${dateLabel(ctx, sec.iso, fallback)}`;
+  if (isDate(target)) return dateLabel(ctx, target, fallback);
+  return dayLabelParts(String(target)).head; // a legacy key, said the way the wall said it
 }
 
 // The dates this festival has, in order — grid days, section nights, a dated
@@ -411,30 +437,19 @@ function noteRow(note, ctx, opts = {}) {
 // place the note will actually appear, says the same thing structurally and says
 // it before you type instead of after. One level deep stays law, and now the UI
 // cannot even ask for anything else.
-function doorRow(ctx, onOpen, opts = {}) {
+function doorRow(ctx, onOpen) {
   const b = document.createElement('button');
-  b.className = opts.cls ? `n-door ${opts.cls}` : 'n-door';
+  b.className = 'n-door';
   const ci = colorIndexOf(ctx.meName, state.people()[ctx.meName]);
   b.style.setProperty('--wash', hslOf(ci, 0.08));
   b.appendChild(avatarFor(ctx.meName, 16, 7.5));
   const label = document.createElement('span');
   label.className = 'n-door-label';
-  label.textContent = opts.label || 'Reply…';
+  label.textContent = 'Reply…';
   b.append(label);
-  b.setAttribute('aria-label', opts.aria || 'Reply to this thread');
+  b.setAttribute('aria-label', 'Reply to this thread');
   b.addEventListener('click', onOpen);
   return b;
-}
-
-// The same door, at a DATE's foot rather than a thread's: the one way to start
-// a new conversation about a day without leaving the all-notes sheet. It says
-// the date out loud because it is the only row that could mean any of them.
-function addDoorRow(ctx, label, onOpen) {
-  return doorRow(ctx, onOpen, {
-    cls: 'new',
-    label: `+ Add a note for ${label}…`,
-    aria: `Add a note for ${label}`,
-  });
 }
 
 // Hover is the mouse's trigger and lives in CSS; focus-within is the keyboard's
@@ -624,11 +639,12 @@ function renderThreads(host, scope, target, ctx, { onChange, expandedPinned, edi
   }
 }
 
-// The composer that opens where you pressed. Its draft lives in `ui`, not in
-// the DOM, so a remote repaint mid-sentence cannot eat it (audit 1.2).
-// `threadKey` null means a NEW ROOT — the date door at the foot of an
-// all-notes section opens the same composer with nothing to reply to.
-function inlineComposer(scope, target, threadKey, ctx, ui, onChange, opts = {}) {
+// The composer that opens where you pressed — always at the foot of a thread,
+// which is why it says "Reply…" and nothing else now. Its draft lives in `ui`,
+// not in the DOM, so a remote repaint mid-sentence cannot eat it (audit 1.2).
+// It took a label and a placeholder until 2026-09-17, for the date door at the
+// foot of an all-notes section; that door is gone (§3a.3) and so are they.
+function inlineComposer(scope, target, threadKey, ctx, ui, onChange) {
   const wrap = document.createElement('div');
   wrap.className = 'n-inline';
   wrap.dataset.target = target == null ? '' : target;
@@ -647,11 +663,11 @@ function inlineComposer(scope, target, threadKey, ctx, ui, onChange, opts = {}) 
     ui.justAdded = id;
     onChange();
   };
-  const field = growingField(ui.reply.draft, opts.label || 'Write a reply', {
+  const field = growingField(ui.reply.draft, 'Write a reply', {
     onInput: (v) => { if (ui.reply) ui.reply.draft = v; },
     onEnter: send,
   });
-  field.ta.placeholder = opts.placeholder || 'Reply…';
+  field.ta.placeholder = 'Reply…';
   field.ta.addEventListener('focus', () => { ui.focusOwner = 'reply'; ui.replyFocused = true; });
   field.ta.addEventListener('blur', () => { ui.replyFocused = false; });
   const bar = document.createElement('div');
@@ -829,15 +845,16 @@ function openScopeSheet(scope, target, ctx, onChange, opts = {}) {
     };
     paintHeader();
   } else {
-    // A date says itself the short way; the festival says its name. Neither
-    // ever shows a storage key.
-    const title = scope === 'day' ? (opts.label || shortDayLabel(target)) : state.fest().name;
+    // A day target says itself the way the wall said it; the festival says its
+    // name. Neither ever shows a storage key.
+    const title = scope === 'day' ? (opts.label || dayTargetLabel(ctx, target)) : state.fest().name;
     sheetChrome(sheet, String(title).toUpperCase());
   }
 
-  // A day sheet on anything but a date is history: a section label, or a day
-  // whose festival file never carried one. It reads and takes nothing new.
-  const readOnly = scope === 'day' && !isDate(target);
+  // A day sheet on anything but a date or a section-on-a-date is history: a
+  // bare section label, or a day whose festival file never carried a date. It
+  // reads and takes nothing new.
+  const readOnly = scope === 'day' && !isDayTarget(target);
   const keys = scope === 'day' ? dayReadKeys(ctx, target) : [target];
   const wrap = document.createElement('div');
   // The same 14px a thread keeps from its neighbour, so two keys read as one
@@ -890,7 +907,7 @@ function openScopeSheet(scope, target, ctx, onChange, opts = {}) {
   if (box) sheet.appendChild(box);
   document.body.append(backdrop, sheet);
   const spoken = scope === 'artist' ? target
-    : scope === 'day' ? (opts.label || shortDayLabel(target))
+    : scope === 'day' ? (opts.label || dayTargetLabel(ctx, target))
       : state.fest().name;
   dialogize(sheet, scope === 'artist' ? spoken : `${spoken} notes`);
   activeSheetRepaint = paint;
@@ -900,10 +917,11 @@ export function openArtistSheet(artistName, ctx, onChange, occ = null) {
   openScopeSheet('artist', artistName, ctx, onChange, { occ });
 }
 
-// `iso` is the date; `label` is the short form the wall already showed on the
-// day rule. A caller restoring a route has only the date and can pass null.
-export function openDayNotes(iso, label, ctx, onChange) {
-  openScopeSheet('day', iso, ctx, onChange, { label });
+// `target` is the date, or the section-on-a-date key (§3a.3); `label` is what
+// the wall already showed on the door that opened it. A caller restoring a
+// route has only the key and passes null — the label comes back off the axis.
+export function openDayNotes(target, label, ctx, onChange) {
+  openScopeSheet('day', target, ctx, onChange, { label });
 }
 
 export function openFestNotes(ctx, onChange) {
@@ -994,37 +1012,35 @@ export function openAllNotes(ctx) {
 
     section('This festival', 'fest', null);
 
-    // Every date the festival has, whether or not anyone has written on it yet:
-    // the door at its foot is what makes the first note two taps.
+    // Only the targets somebody has WRITTEN on, in wall order: each date, then
+    // the sections written on that date (MODEL-V4 §3a.3). Before this the sheet
+    // listed every date the festival has with an "+ Add a note for…" door under
+    // each — a column of empty rows on a fest with three notes, and a second
+    // way to start a thread that was never where you were standing. You write a
+    // date's note from its rule and a section's from its header; the sheet is
+    // the list of what has been written, and the festival composer above is the
+    // one composer it holds.
     for (const d of dates) {
-      const keys = model.dayNoteKeysFor(fest, d.iso);
-      const live = keys.filter((k) => model.noteCount(doc, ctx.fid, 'day', k));
-      if (!live.length && !ctx.meName) continue;
-      if (live.length) any = true;
-      labelRow(d.label);
-      const wrap = document.createElement('div');
-      wrap.style.cssText = 'display: flex; flex-direction: column; gap: 10px;';
-      body.appendChild(wrap);
-      for (const key of live) threadsInto(wrap, 'day', key);
-      if (!ctx.meName) continue;
-      const composing = ui.reply && ui.reply.scope === 'day' && ui.reply.target === d.iso && ui.reply.threadKey === null;
-      wrap.appendChild(composing
-        ? inlineComposer('day', d.iso, null, ctx, ui, repaint, {
-          placeholder: `Add a note for ${d.label}…`,
-          label: `Add a note for ${d.label}`,
-        })
-        : addDoorRow(ctx, d.label, () => {
-          ui.reply = { scope: 'day', target: d.iso, threadKey: null, draft: '' };
-          ui.focusOwner = 'reply';
-          ui.replyFocused = true;
-          ui.unfold = true;
-          repaint({ localOnly: true });
-        }));
+      const keys = model.dayNoteKeysFor(fest, d.iso).filter((k) => model.noteCount(doc, ctx.fid, 'day', k));
+      if (keys.length) {
+        any = true;
+        labelRow(d.label);
+        const wrap = document.createElement('div');
+        wrap.style.cssText = 'display: flex; flex-direction: column; gap: 10px;';
+        body.appendChild(wrap);
+        // A legacy weekday note reads as part of its date's conversation, the
+        // same way the wall's whisper counts it.
+        for (const key of keys) threadsInto(wrap, 'day', key);
+      }
+      for (const { key, section: label } of model.sectionDateKeysOn(doc, ctx.fid, d.iso)) {
+        section(`${dayLabelParts(label).head} · ${d.label}`, 'day', key);
+      }
     }
 
-    // What is left under notes.day: the section labels (Afters, Folsom, Late
-    // nights). Readable, and that is all — a section is not a note target any
-    // more, so there is no door to add to one.
+    // What is left under notes.day: the bare section labels (Afters, Folsom,
+    // Late nights) written before a section note knew which night it was on.
+    // Readable, and that is all — there is no door back to a target that no
+    // longer exists.
     for (const key of model.sectionNoteKeys(doc, ctx.fid, fest, dates.map((d) => d.iso))) {
       section(dayLabelParts(key).head, 'day', key, { readOnly: true });
     }
@@ -1033,16 +1049,6 @@ export function openAllNotes(ctx) {
 
     pruneEditing(editing, live);
 
-    // The date door the viewer just opened is outside every thread host, so it
-    // does its own unfold and its own caret restore.
-    if (ui.reply && ui.reply.scope === 'day' && ui.reply.threadKey === null) {
-      const box2 = [...body.querySelectorAll('.n-inline')]
-        .find((n) => n.dataset.thread === '' && n.dataset.target === ui.reply.target);
-      if (box2) {
-        if (ui.unfold) { unfold(box2, ctx); ui.unfold = false; }
-        if (ui.replyFocused && ui.focusOwner === 'reply') caretToEnd(box2.querySelector('textarea'));
-      }
-    }
     if (!any) {
       const empty = document.createElement('div');
       empty.className = 'n-empty';
@@ -1091,13 +1097,15 @@ function whisperRow(list, ctx, onOpen, aria) {
   return btn;
 }
 
-// A DATE's whisper. `label` is the short form the day rule is already wearing
-// — the one the aria says out loud, because a storage key never appears in the
-// interface. The count spans every key the date reads from, so a legacy
-// weekday note is part of the same conversation.
-export function dayWhisper(iso, label, ctx, onOpen) {
-  if (!isDate(iso)) return null;   // only a date has a day's notes
-  return whisperRow(dayNotesOn(ctx, iso), ctx, onOpen, `Notes for ${label || shortDayLabel(iso)}`);
+// A DAY TARGET's whisper — a date under its rule, a section-on-a-date under
+// that section's header on that day, never anywhere else. `label` is what the
+// door it sits under is already wearing — the one the aria says out loud,
+// because a storage key never appears in the interface. The count spans every
+// key the target reads from, so a legacy weekday note is part of the same
+// conversation.
+export function dayWhisper(target, label, ctx, onOpen) {
+  if (!isDayTarget(target)) return null;   // only a real target has a day's notes
+  return whisperRow(dayNotesOn(ctx, target), ctx, onOpen, `Notes for ${label || dayTargetLabel(ctx, target)}`);
 }
 
 // The festival's own whisper, at the foot of the wall.
