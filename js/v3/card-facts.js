@@ -7,13 +7,15 @@
 //   · the compact sub lines the day/fest sheets carry.
 // Pure data + DOM builders. aura.js owns the gradient math; this file never
 // invents a colour. The runtime-only import cycle with wall.js (for
-// colorIndexOf) is the same safe shape notes.js already uses.
+// colorIndexOf and roomOf) is the same safe shape notes.js already uses.
 import * as state from '../state.js';
 import * as model from './model.js';
 import { ordered, auraBackground, nameColor, subColor } from './aura.js';
 import { hslOf } from './palette.js';
-import { colorIndexOf } from './wall.js';
+import { colorIndexOf, roomOf } from './wall.js';
 import { record } from '../errlog.js';
+import { runFactsOf, findEventEntry, shortDateLabel, dateOf, venueOf } from './events.js';
+import { GROW_MS, CONTENT_FADE_MS, OUT_MS, CASCADE_MS, STAGGER_MS, REFRESH_MS, EASE_ARRIVE, EASE_LEAVE, EASE_SURFACE, canAnimate } from './motion.js';
 
 // "9:00 PM - 10:15 PM" -> "9:00 – 10:15 PM" (the shared meridiem said once).
 export function timeRange(t) {
@@ -31,16 +33,18 @@ const shortDay = (fest, day) => (fest.dayMeta && fest.dayMeta[day] && fest.dayMe
 // render from this object, so a detail the resting card carries cannot go
 // missing from the grown one (Kevin, 2026-08-30: two rounds dropped details
 // because two renderers derived them separately).
-// `occ` is the occurrence the CARD represents ({day, stage, time, weekend})
-// — an artist can play twice (a grid set AND an afters event, two grid days
-// at EF), and the first match is the wrong story for every card but the
-// first (Codex gate, 2026-08-29). Without one, the first scheduled/listed
-// occurrence stands in.
+// `occ` is the occurrence the CARD represents ({day, stage, time, weekend,
+// date, venue}) — an artist can play twice (a grid set AND an afters event,
+// two grid days at EF, TWO late nights in two different rooms), and the first
+// match is the wrong story for every card but the first (Codex gate,
+// 2026-08-29). Without one, the first scheduled/listed occurrence stands in.
 export function factsFor(artistName, ctx, occ = null) {
   const fest = state.fest() || {}; // a card can render before its fest file is known (tests, a stale index)
   let day = occ ? occ.day || null : null;
   let stage = occ ? occ.stage || null : null;
   let time = occ ? occ.time || null : null;
+  let date = occ ? occ.date || null : null;
+  let venue = occ ? occ.venue || null : null;
   const weekend = occ && (occ.weekend === 'W1' || occ.weekend === 'W2') ? occ.weekend : null;
   if (!occ) {
     for (const d of Object.keys(fest.days || {})) {
@@ -49,7 +53,7 @@ export function factsFor(artistName, ctx, occ = null) {
     }
     if (!time) {
       const a = (fest.artists || []).find((x) => x.name === artistName);
-      if (a) { day = a.day || day; stage = a.stage || stage; time = a.time || time; }
+      if (a) { day = a.day || day; stage = a.stage || stage; time = a.time || time; date = dateOf(a) || date; venue = venueOf(a) || venue; }
     }
   }
   const picksMap = ctx.picks[artistName] || {};
@@ -62,16 +66,37 @@ export function factsFor(artistName, ctx, occ = null) {
   const spotify = aff && (aff.songs > 0 || aff.followed)
     ? { songs: aff.songs || 0, followed: !!aff.followed, hot: !!aff.followed && (aff.songs || 0) >= 5 }
     : null;
-  // The long form: when · day · where · which weekend. An EVENT's stage
-  // carries "Thu · Venue" — say when, then where, once.
+  // A back-to-back run (MODEL-V3 §5): the entry this occurrence came from —
+  // looked up by day + stage + time, never by name alone, because in Portola
+  // a name can be a grid billing AND an event — says whether its time is a
+  // guess, the room's real window, and where it sits in the order.
+  const run = occ ? runFactsOf(findEventEntry(fest, artistName, occ)) : null;
+  // The long form: when · day · where · which weekend. For a run member the
+  // clock in WHEN is the venue's window, not the guessed slot (LOCKED copy,
+  // Kevin 2026-09-01: "Sun · Runs 10 PM – 2 AM", then the order on its own
+  // line as a door to the poster); a guess with no window keeps the tilde.
+  // One clock for every shape — a dated show reads it the same way.
+  const clock = run && run.window ? run.window : `${run && run.approx ? '~' : ''}${timeRange(time)}`;
+  // WHERE comes from the occurrence's own venue when it has one, and only
+  // falls back to parsing the legacy "Thu · Venue" stage string when it does
+  // not (MODEL-V4 §6: "the structured pair wins when present"). ONE place
+  // decides; nothing downstream re-derives a place from a string.
+  //
+  // WHAT SAYS WHEN depends on what the show is. A dated show has no weekday
+  // label to borrow, so its own date speaks: "Thu · Oct 1 · Doors 7 PM". An
+  // EVENT's stage carries the night — say when, then where, once. Anything
+  // else is a day on the festival's own axis, and the day follows the clock.
   let when, where;
-  if (stage && stage.includes(' · ')) {
+  if (date) {
+    when = [shortDateLabel(date), clock].filter(Boolean).join(' · ');
+    where = venue || '';
+  } else if (stage && stage.includes(' · ')) {
     const bits = stage.split(' · ');
-    when = [bits[0], timeRange(time)].filter(Boolean).join(' · ');
-    where = bits.slice(1).join(' · ');
+    when = [bits[0], clock].filter(Boolean).join(' · ');
+    where = venue || bits.slice(1).join(' · ');
   } else {
     when = [timeRange(time), day ? shortDay(fest, day) : null].filter(Boolean).join(' · ');
-    where = stage || '';
+    where = venue || stage || '';
   }
   // The weekend rides WHEN as plain text — a tag at the row's end read as the
   // resting chip flipping sides (Kevin, 2026-08-30); words don't flip.
@@ -79,6 +104,8 @@ export function factsFor(artistName, ctx, occ = null) {
   const mapUrl = (where && fest.venues && fest.venues[where]) || null;
   return {
     name: artistName, day, stage, time, weekend, when, where, mapUrl,
+    approx: !!(run && run.approx),
+    order: run && run.orderText ? { text: run.orderText, url: run.orderUrl, confirmed: run.confirmed } : null,
     people, background, animated, nameColor: nameColor(people), subColor: subColor(people),
     noteCount: model.noteCount(state.crewDoc, ctx.fid, 'artist', artistName),
     spotify,
@@ -117,9 +144,10 @@ function bookmark() {
 
 // The chips line: the SAME notes door the resting card carries (grown), and
 // the Spotify chip with its flag sitting left of the word "following".
-export function factChips(facts, { onOpenNotes = null } = {}) {
+export function factChips(facts, { onOpenNotes = null, notesChip = true } = {}) {
   const row = document.createElement('div');
   row.className = 'f-chips';
+  if (!notesChip) { if (facts.spotify) spotChip(row, facts); return row; }
   const notes = document.createElement(onOpenNotes ? 'button' : 'span');
   notes.className = 'f-chip notes';
   notes.textContent = facts.noteCount ? `${facts.noteCount} note${facts.noteCount === 1 ? '' : 's'}` : '+ note';
@@ -130,18 +158,20 @@ export function factChips(facts, { onOpenNotes = null } = {}) {
     notes.addEventListener('click', (e) => { e.stopPropagation(); onOpenNotes(facts.name); });
   }
   row.appendChild(notes);
-  if (facts.spotify) {
-    const sp = document.createElement('span');
-    sp.className = 'f-chip spot';
-    if (facts.spotify.songs) sp.append(`${facts.spotify.songs} liked song${facts.spotify.songs === 1 ? '' : 's'}`);
-    if (facts.spotify.followed) {
-      if (facts.spotify.songs) sp.append(' · ');
-      sp.appendChild(bookmark());
-      sp.append(' following');
-    }
-    row.appendChild(sp);
-  }
+  if (facts.spotify) spotChip(row, facts);
   return row;
+}
+
+function spotChip(row, facts) {
+  const sp = document.createElement('span');
+  sp.className = 'f-chip spot';
+  if (facts.spotify.songs) sp.append(`${facts.spotify.songs} liked song${facts.spotify.songs === 1 ? '' : 's'}`);
+  if (facts.spotify.followed) {
+    if (facts.spotify.songs) sp.append(' · ');
+    sp.appendChild(bookmark());
+    sp.append(' following');
+  }
+  row.appendChild(sp);
 }
 
 // A place, said once: a pin and a name that open the map when the festival
@@ -194,18 +224,54 @@ export function festPlaceLine(fest, className = 'fest-place') {
 // the map when the festival names the venue) · the who-row · the chips — in
 // ONE builder, because the sheet header and the zoomed card must never
 // drift apart again (the two-renderers disease, 2026-08-30).
-function grownBlock(facts, { onOpenNotes = null } = {}) {
+// The order line of a back-to-back run — "Guessing they’re 3rd of 4" — is a
+// DOOR to the poster or ticket page the order came from, the way a venue is
+// a door to its map (same discipline: the click stops here, never a pick).
+// Once the venue posts the order the word goes and the door stays.
+function orderDoor(order) {
+  const w = document.createElement(order.url ? 'a' : 'span');
+  w.className = 'f-order';
+  if (order.url) {
+    w.href = order.url;
+    w.target = '_blank';
+    w.rel = 'noopener';
+    w.setAttribute('aria-label', `${order.text} — open where the order came from`);
+    w.addEventListener('click', (e) => e.stopPropagation());
+  }
+  w.textContent = order.text;
+  return w;
+}
+
+function grownBlock(facts, { onOpenNotes = null, notesChip = true } = {}) {
   const grown = document.createElement('div');
   grown.className = 'f-grown';
   if (facts.when) {
     const sub = document.createElement('div');
     sub.className = 'f-sub';
-    sub.textContent = facts.when;
+    if (facts.order) {
+      // Two lines in ONE .f-sub (the window, then the order): the bloom's
+      // cascade and the refresh bookkeeping below both key on a single
+      // WHEN element, so the pair travels as one piece.
+      sub.classList.add('f-stack');
+      const line = document.createElement('span');
+      line.className = 'f-when';
+      line.textContent = facts.when;
+      sub.append(line, orderDoor(facts.order));
+    } else {
+      sub.textContent = facts.when;
+    }
     grown.appendChild(sub);
   }
   if (facts.where) grown.appendChild(placeDoor(facts.where, facts.mapUrl, 'f-where'));
+  // The who-row only when there are people: a pill arriving after a tap
+  // slides in and its neighbours make room (the designed event). A reserved
+  // empty row was tried on 2026-09-01 to keep the venue door from sliding
+  // under a resting cursor after the first pick, and it left a ~34px hole on
+  // every UNPICKED grown card — the common view. Reverted; the still-hand
+  // answer belongs to the zoom's placement (PROGRESS, round-2 follow-up).
   if (facts.people.length) grown.appendChild(whoPills(facts));
-  grown.appendChild(factChips(facts, { onOpenNotes }));
+  const chips = factChips(facts, { onOpenNotes, notesChip });
+  if (chips.childNodes.length) grown.appendChild(chips);
   return grown;
 }
 
@@ -215,7 +281,7 @@ function grownBlock(facts, { onOpenNotes = null } = {}) {
 // covers whatever sits under the grown card. (Appending a second colour
 // layer made the shorthand invalid and every zoomed card went black —
 // caught on the 2026-08-30 preview.)
-function factsCard(facts, { className, onClose = null, onOpenNotes = null }) {
+function factsCard(facts, { className, onClose = null, onOpenNotes = null, notesChip = true }) {
   const card = document.createElement('div');
   card.className = className + (facts.animated ? ' animated' : '');
   card.style.background = facts.background;
@@ -234,15 +300,19 @@ function factsCard(facts, { className, onClose = null, onOpenNotes = null }) {
   name.className = 'f-name';
   name.textContent = facts.name;
   card.appendChild(name);
-  const grown = grownBlock(facts, { onOpenNotes });
+  const grown = grownBlock(facts, { onOpenNotes, notesChip });
   card.appendChild(grown);
   return card;
 }
 
 // The sheet header: the grown card once more, larger, breathing only when the
 // card would (.animated — reduced-motion and low-power still win globally).
-export function sheetCard(facts, { onClose, onOpenNotes = null } = {}) {
-  return factsCard(facts, { className: 'sheet-card', onClose, onOpenNotes });
+// `notesChip: false` drops the notes chip from the row and keeps Spotify — for
+// the artist sheet, where the thread is already open underneath (MODEL-V4 §4,
+// Kevin 2026-09-17: "confusing there cause we're already in notes"). The
+// ZOOMED card on the wall keeps its chip: that one is a door to here.
+export function sheetCard(facts, { onClose, onOpenNotes = null, notesChip = true } = {}) {
+  return factsCard(facts, { className: 'sheet-card', onClose, onOpenNotes, notesChip });
 }
 
 // ---- the zoom: the bloom (2026-08-30 rebuild — the storyboard lives in
@@ -262,38 +332,60 @@ export function sheetCard(facts, { onClose, onOpenNotes = null } = {}) {
 // the SAME aura background and blooms from the same centre — colour and
 // origin are what the eye reads, never glyph registration.
 //
-// The bloom: the overlay materialises fast (opacity) while it grows k→1
-// (scale, a touch of overshoot); underneath, the resting card's CONTENT
-// steps back through CSS while its wash stays (no hole in the wall).
+// The bloom: the overlay is a finished card from frame 0 — opaque, bordered
+// and shadowed — and only the BOX grows, k→1 (scale, a touch of overshoot);
+// underneath, the resting card's CONTENT steps back through CSS while its
+// wash stays (no hole in the wall). It used to fade 0→1 as it grew, which put
+// a translucent card over opaque neighbours for the length of the fade:
+// Kevin's "tucks behind its neighbours" (2026-08-31, again 2026-09-16),
+// MODEL-V4 §5.
 // Inside, the grown lines cascade a beat apart, each from its own corner —
 // WHEN and WHERE rise, the people slide in from the right where the colour
 // marks live, notes and Spotify from the left where their numbers live.
 // The way out is quick and plain. Transform and opacity only; one easing
 // in, one easing out. A tap on the grown card PICKS from the first frame;
 // its notes chip and the maps door are the only other controls.
-export const ZOOM_IN_MS = 300;   // hover intent — open slower than you close
+export const ZOOM_IN_MS = 200;   // hover intent — open slower than you close (300 read as a beat too long, Kevin 2026-09-01)
 export const ZOOM_OUT_MS = 260;  // hover-out grace before the close
-const GROW_MS = 240;             // the box, k→1
-const MATERIALIZE_MS = 90;       // the overlay's fade-in (the CSS content fade matches)
-const OUT_MS = 130;              // the way out: quick and plain
-const CASCADE_MS = 170;          // each grown line's arrival
-const STAGGER_MS = 30;           // the beat between arrivals
-const EASE_ARRIVE = 'cubic-bezier(.2, 1.15, .35, 1)';    // in: a 4% overshoot, then settle
-const EASE_LEAVE = 'cubic-bezier(.4, 0, 1, 1)';          // out: quick, no flourish
-const EASE_SURFACE = 'cubic-bezier(.4, 0, .2, 1)';       // refresh crossfades: crisp, no bounce
 const RADIUS = 8; // --r-card
 const MIN_W = 216, MAX_W = 360, MIN_H = 132;
 
 let zoomed = null;      // { el, artist, ctx, occ, source, onOpenNotes, slot, card, anims, cleanup }
-let dismissedEl = null; // a zoom put away on purpose waits for the pointer to leave the card
+let dismissedKey = null; // a zoom put away on purpose: its card's identity, until the mouse is elsewhere
 let layer = null;
 const exitingSlots = new Set(); // overlays still shrinking away — a NEW zoom clears them ALL
 // Where the mouse last was — the only way to judge a zoom restored under a
 // hand that is not moving. One passive listener for the module's lifetime.
 let lastMouse = null;
+// Which input the person used LAST — a key or a pointer. The keyboard route
+// (wireCardFocusZoom) opens on this, never on `:focus-visible`: measured in
+// Chrome 152 with real input (2026-09-02), a click focuses a card without the
+// pseudo-class, but any later keypress — Escape to put a zoom away counts —
+// flips the still-focused card to :focus-visible, and the script `focus()`
+// every pick makes (refreshCard hands focus to the fresh node) INHERITS it.
+// So click · Escape · click on one card grew a KEYBOARD zoom, which by design
+// ignores hover-out: "it won't close until I click out". WebKit reads script
+// focus more liberally still, and jsdom cannot evaluate the selector at all.
+// One rule the module owns, every engine agrees on, the suite can drive.
+// Capture phase, so a handler that stops propagation cannot blind it; a lone
+// modifier (Cmd-Tab back into the window) says nothing and is ignored.
+let lastInput = 'pointer';
+const MODIFIER_KEYS = new Set(['Shift', 'Control', 'Alt', 'Meta', 'CapsLock', 'Fn', 'AltGraph', 'OS', 'Hyper', 'Super', 'Symbol', 'NumLock', 'ScrollLock']);
 if (typeof document !== 'undefined') {
   document.addEventListener('pointermove', (e) => {
-    if (e.pointerType === 'mouse') lastMouse = { x: e.clientX, y: e.clientY };
+    if (e.pointerType !== 'mouse') return;
+    lastMouse = { x: e.clientX, y: e.clientY };
+    // The stay-away mark lifts the moment the mouse is over anything but the
+    // card it put away — that card's node, the fresh node a repaint put in its
+    // place, or a zoom standing on it.
+    if (dismissedKey) {
+      const over = isInsideZoom(zoomed, e.target) ? zoomed.el : e.target.closest?.('.card[data-artist]');
+      if (cardKey(over) !== dismissedKey) dismissedKey = null;
+    }
+  }, { passive: true, capture: true });
+  document.addEventListener('pointerdown', () => { lastInput = 'pointer'; }, { passive: true, capture: true });
+  document.addEventListener('keydown', (e) => {
+    if (typeof e.key === 'string' && e.key && !MODIFIER_KEYS.has(e.key)) lastInput = 'keyboard';
   }, { passive: true, capture: true });
 }
 
@@ -311,10 +403,10 @@ const underMouse = () => (lastMouse && typeof document.elementFromPoint === 'fun
   ? document.elementFromPoint(lastMouse.x, lastMouse.y)
   : null);
 
-const reduced = () => typeof window !== 'undefined' && !!window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-// Low Power promises "no animation" and CSS cannot reach Element.animate() —
-// the gate lives here (survey, 2026-08-30).
-const canAnimate = (node, ctx) => typeof node.animate === 'function' && !reduced() && !(ctx && ctx.lowPower);
+// A card's identity across repaints, which replace every node: the artist, the
+// occurrence and the room — the triple wall.js cardFor restores a zoom by.
+const cardKey = (el) => (el ? JSON.stringify([el.dataset.artist, el.dataset.occ || '', roomOf(el)]) : null);
+
 const rect = (n) => n.getBoundingClientRect();
 const mid = (r) => ({ x: r.left + r.width / 2, y: r.top + r.height / 2 });
 const box = (left, top, width, height) => ({ left, top, width, height, right: left + width, bottom: top + height });
@@ -350,7 +442,15 @@ export function zoomSnapshot() {
   return zoomed ? { artist: zoomed.artist, occ: zoomed.occ, source: zoomed.source, onOpenNotes: zoomed.onOpenNotes } : null;
 }
 export function dismissZoom() {
-  if (zoomed) { dismissedEl = zoomed.el; unzoom({ why: 'dismissed (Escape or tap-away)' }); }
+  if (!zoomed) return;
+  // The "stay away" mark is a MOUSE rule: a mouse resting on the card it just
+  // put away must not re-grow it — not even on the fresh node a repaint puts
+  // under it — and the mark lifts when the mouse is elsewhere. A keyboard or
+  // touch zoom has no mouse on the card, so a mark there would wait for a
+  // leave that never comes — Tab to a card, Escape, and its first hover later
+  // did nothing (the browser contract's random walk, 2026-09-02).
+  if (zoomed.source === 'mouse') dismissedKey = cardKey(zoomed.el);
+  unzoom({ why: 'dismissed (Escape)' });
 }
 
 // The clip that shows exactly the resting card's rect out of the overlay's.
@@ -406,7 +506,7 @@ function originFor(slot, r0, r1) {
   slot.style.transformOrigin = `${r0.left + r0.width / 2 - r1.left}px ${r0.top + r0.height / 2 - r1.top}px`;
 }
 // The bloom's starting scale: resting height over grown height, clamped so
-// the materialise never reads as tiny text blowing up.
+// the bloom never reads as tiny text blowing up.
 const scaleFor = (r0, r1) => Math.min(0.95, Math.max(0.7, r0.height / r1.height));
 
 function zoomCardInner(el, artistName, ctx, { onOpenNotes = null, source = 'mouse', occ = null, instant = false } = {}) {
@@ -439,7 +539,7 @@ function zoomCardInner(el, artistName, ctx, { onOpenNotes = null, source = 'mous
   el.classList.add('zoom-source'); // the resting CONTENT steps back; its wash stays
   zoomed = z;
   wireSlot(z);
-  slot.classList.add('shown'); // the shadow eases in through CSS
+  slot.classList.add('shown'); // what tells the standing zoom from the ghosts still shrinking away (the browser rig and the gallery's slow-mo both read it; the shadow is static now)
   if (!animate) {
     // An instant restore (a wall repaint under a mouse zoom) can land after
     // the hand has already moved elsewhere, and a still hand sends no
@@ -456,14 +556,13 @@ function zoomCardInner(el, artistName, ctx, { onOpenNotes = null, source = 'mous
     return facts;
   }
 
-  // The bloom: materialise fast while growing k→1 from the resting centre.
-  // At the start the overlay is resting-card-sized in the resting card's
-  // place, wearing the same wash — the crossfade is two card-shaped washes
-  // of one gradient in one spot, which is all the connection the eye needs.
+  // The bloom: ONE animation on the box — k→1 from the resting centre. At the
+  // start the overlay is resting-card-sized in the resting card's place,
+  // wearing the same wash, fully opaque: two card-shaped washes of one
+  // gradient in one spot, which is all the connection the eye needs.
   originFor(slot, r0, r1);
   const anims = [
     slot.animate([{ transform: `scale(${scaleFor(r0, r1)})` }, { transform: 'scale(1)' }], { duration: GROW_MS, easing: EASE_ARRIVE }),
-    slot.animate([{ opacity: 0 }, { opacity: 1 }], { duration: MATERIALIZE_MS, easing: 'ease-out' }),
   ];
   // The cascade: each grown line a beat apart, each from its own corner —
   // WHEN and WHERE rise, the people from the RIGHT where the colour marks
@@ -474,16 +573,19 @@ function zoomCardInner(el, artistName, ctx, { onOpenNotes = null, source = 'mous
     [{ transform: `translate(${x}px, ${y}px)`, opacity: 0 }, { opacity: 1, offset: 0.5 }, { transform: 'none', opacity: 1 }],
     { duration: CASCADE_MS, delay, easing: EASE_ARRIVE, fill: 'both' },
   ));
-  // WHEN waits out the content fade: the resting time line and the grown
-  // one are the same fact, and the law says never two renderings at once —
-  // the resting text is gone (MATERIALIZE_MS) before its grown self begins
-  // (Codex gate, 2026-08-30). WHERE and the rest follow in family order.
+  // WHEN waits out the resting content's fade: the resting time line and the
+  // grown one are the same fact, and the law says never two renderings at
+  // once — the resting text is gone (CONTENT_FADE_MS) before its grown self
+  // begins (Codex gate, 2026-08-30). The overlay no longer fades in, but the
+  // clamp lets a tall resting card stand a little proud of the bloom's first
+  // frame, so its own edges show underneath and the wait stands. WHERE and
+  // the rest follow in family order.
   const sub = card.querySelector('.f-sub');
   const where = card.querySelector('.f-where');
-  if (sub) arrive(sub, 0, 6, MATERIALIZE_MS + 5);
-  if (where) arrive(where, 0, 6, MATERIALIZE_MS + 35);
-  [...card.querySelectorAll('.f-pill')].forEach((p, i) => arrive(p, 14, 0, MATERIALIZE_MS + 55 + i * (STAGGER_MS - 2)));
-  [...card.querySelectorAll('.f-chip')].forEach((c, i) => arrive(c, -14, 0, MATERIALIZE_MS + 55 + i * STAGGER_MS));
+  if (sub) arrive(sub, 0, 6, CONTENT_FADE_MS + 5);
+  if (where) arrive(where, 0, 6, CONTENT_FADE_MS + 35);
+  [...card.querySelectorAll('.f-pill')].forEach((p, i) => arrive(p, 14, 0, CONTENT_FADE_MS + 55 + i * (STAGGER_MS - 2)));
+  [...card.querySelectorAll('.f-chip')].forEach((c, i) => arrive(c, -14, 0, CONTENT_FADE_MS + 55 + i * STAGGER_MS));
   z.anims = anims;
   return facts;
 }
@@ -496,7 +598,7 @@ function zoomCardInner(el, artistName, ctx, { onOpenNotes = null, source = 'mous
 // the box re-centres, every piece that stayed slides to its new spot, a pill
 // that arrived grows in with a little overshoot, a MUST badge fades on.
 // Transform and opacity only, inside the overlay.
-const REFRESH_MS = 300;
+//
 // WHICH parts move on a refresh; partKey below says HOW each is matched across
 // the rebuild. Add a row to grownBlock — a genre line, a conflict warning — and
 // you touch both: miss this selector and the row either animates as an arrival
@@ -623,9 +725,12 @@ function unzoomInner({ instant = false, why = 'unspecified' } = {}) {
   if (animate) {
     const cs = window.getComputedStyle(z.slot);
     if (cs.transform && cs.transform !== 'none') fromT = cs.transform;
-    // Number.isFinite, not `|| 1`: a dismissal on the bloom's very first
-    // frame reads opacity 0, and `|| 1` would flash the overlay fully
-    // opaque on its way out (Codex gate, 2026-08-30).
+    // The way out starts from whatever opacity the slot is actually wearing.
+    // Number.isFinite, not `|| 1`: an unreadable value must not flash the
+    // overlay fully opaque on its way out (Codex gate, 2026-08-30). Since
+    // MODEL-V4 §5 the bloom no longer fades the slot in, so this reads 1
+    // every time in production — the guard is what keeps the exit honest if
+    // anything ever makes the slot translucent again.
     const o = Number.parseFloat(cs.opacity);
     if (Number.isFinite(o)) fromO = o;
   }
@@ -814,7 +919,7 @@ function wireSlot(z) {
   // and follows it. Dismissing on any scroll event read as "hover is fully
   // broken" on a trackpad, where micro-deltas fire constantly while the
   // hand rests: the card grew, vanished on a 1px jiggle, and the dismissal
-  // poisoned it via dismissedEl (found on the 2026-08-31 review round).
+  // poisoned it with the stay-away mark (found on the 2026-08-31 review round).
   // The overlay closes only when its card has actually left the viewport.
   // Capture phase so an inner scroller's scroll (which does not bubble) is
   // heard too; rAF-throttled, one re-place per frame.
@@ -890,7 +995,7 @@ export function wireCardZoom(el, artistName, ctx, { onOpenNotes = null, occ = nu
   let inT = null;
   const arm = () => {
     if (zoomed && zoomed.el === el) return;
-    if (dismissedEl === el) return; // put away on purpose; a leave clears it
+    if (dismissedKey === cardKey(el)) return; // put away on purpose; the mouse leaving lifts it
     if (inT) clearTimeout(inT);
     inT = setTimeout(() => {
       inT = null;
@@ -913,12 +1018,7 @@ export function wireCardZoom(el, artistName, ctx, { onOpenNotes = null, occ = nu
     if (under && el.contains(under)) arm();
   });
   el.addEventListener('pointerleave', (e) => {
-    if (e.pointerType !== 'mouse') return;
-    if (inT) { clearTimeout(inT); inT = null; }
-    // The overlay appearing over the card IS a leave to the browser — not to
-    // the person. The overlay's own leave handles the close.
-    if (zoomed && zoomed.el === el && e.relatedTarget && zoomed.slot.contains(e.relatedTarget)) return;
-    if (dismissedEl === el) dismissedEl = null;
+    if (e.pointerType === 'mouse' && inT) { clearTimeout(inT); inT = null; }
   });
 }
 
@@ -928,19 +1028,19 @@ export function wireCardZoom(el, artistName, ctx, { onOpenNotes = null, occ = nu
 export function wireCardFocusZoom(el, artistName, ctx, { onOpenNotes = null, occ = null } = {}) {
   el.addEventListener('focusin', () => {
     if (zoomed && zoomed.el === el) return;
-    // dismissedEl is a POINTER rule (a mouse resting on a card it dismissed);
-    // deliberately not checked here — Tab is fresh intent, and gating it made
-    // keyboard growth look off-by-one-card (real-browser walk, 2026-08-30).
-    if (dismissedEl === el) dismissedEl = null;
+    // The stay-away mark is a MOUSE rule and deliberately not read here — Tab
+    // is fresh intent, and gating it made keyboard growth look off-by-one-card
+    // (real-browser walk, 2026-08-30).
     // KEYBOARD focus only: a mouse click and a finger tap also focus the
     // card, and zooming there would bypass the hover-intent delay and grow
-    // the card under every pick. :focus-visible is the browsers' own
-    // keyboard-vs-pointer call; engines without it just skip this route.
-    try { if (!el.matches(':focus-visible')) return; } catch { return; }
+    // the card under every pick — and a script focus that follows a click
+    // (refreshCard, after every pick) is that click's focus, not a key's.
+    // The module's own last-input tracker decides (see `lastInput`), never
+    // `:focus-visible`, which Chrome flips on a focused card after ANY key.
+    if (lastInput !== 'keyboard') return;
     zoomCard(el, artistName, ctx, { onOpenNotes, source: 'keyboard', occ });
   });
   el.addEventListener('focusout', (e) => {
-    if (dismissedEl === el) dismissedEl = null;
     if (!zoomed || zoomed.el !== el) return;
     if (isInsideZoom(zoomed, e.relatedTarget)) return;
     unzoom({ why: 'focus left the card' });

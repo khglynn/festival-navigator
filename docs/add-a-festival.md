@@ -1,6 +1,7 @@
 # Adding a festival
 
-*Updated 2026-08-27 (set-times drop recipe + the pick-key freeze).*
+*Updated 2026-09-16 — MODEL-V4: a section entry says `night` or `date`; one
+rule for guessed times; doors go in `doors`.*
 
 Two files, one command:
 
@@ -32,7 +33,8 @@ Two files, one command:
    - When set times drop, add `dayMeta` and `days{}` — each day carries its own `stages[]`; there is no top-level stages field (the renderer and validator only read `fest.days.<day>.stages`) (see
      `portola-2026.json` for the full scheduled shape, with afters sections;
      `electric-forest-2026.json` for a four-day grid with activities) and flip
-     `status` to `scheduled` in BOTH the file and `index.json`. Times are
+     `status` to `scheduled` in BOTH the file and `index.json` (the validator
+     errors when they differ). Times are
      `"6:30 PM"` or `"6:30 PM - 7:30 PM"`; a missing end is filled from the
      next set on that stage. The validator enforces on any live grid: every
      grid name is an `artists[]` name **byte for byte** (a case-only match is
@@ -46,6 +48,8 @@ Two files, one command:
         `tests/live-pick-keys.test.mjs` fail if any of them later disappears,
         and every non-archived festival must be frozen (`--all-live` does them
         all). Renaming is then a visible fixture edit, never an accident.
+        Run it again after adding names: the validator fails with "not frozen
+        yet" until the freeze holds every name and day label.
         Two-minute version for whoever edits data: `data/festivals/README.md`.
      2. Transcribe the official poster into `days{}` using the EXISTING
         `artists[]` spellings; billing extras ("(DJ Set)", "(Live)",
@@ -53,11 +57,12 @@ Two files, one command:
         Read the poster more than once — two independent readings diffed
         box-by-box is the bar; the Portola drop used three.
      3. New names on the poster (Portola's Kaytree) get an `artists[]` entry too.
-     4. Sections that are NOT grid days (Afters, Folsom) need nothing — a
-        scheduled wall renders the grid days, then every remaining
-        `artists[].day` group as card sections, then anything billed on a
-        grid day but missing from the grid under EVERYTHING ELSE. The day
-        tabs mirror that order.
+     4. Sections that are NOT grid days (Afters, Folsom, Late nights) each
+        say where they go — `night` or `date`, and always `venue` (see
+        **Event fields** below). A weekday section renders inside that day,
+        under the festival's own room; a dated one takes a tab of its own
+        after the days. Anything the festival bills with no set on the grid
+        stays on its day too, as a stack rather than a column.
      5. Validate, `npm test`, bump `CACHE_VERSION`, eyeball a real browser.
         Festival JSONs are fetched network-first by the service worker (a
         bounded wait, cache as the offline fallback), so a data drop reaches
@@ -66,12 +71,18 @@ Two files, one command:
      ("Friday"/"Saturday"/"Sunday" — never "Friday W1"; day notes key on the
      label) and tag each set with `weekend: "W1"|"W2"` — untagged or
      `"both"` plays every weekend, and an artist whose times differ across
-     weekends is simply two entries. The wall renders one weekend at a time
-     (the weekend picker loses "Both" in scheduled mode; a stored "Both"
-     shows Weekend One). Give each `dayMeta` entry
+     weekends is simply two entries. A scheduled two-weekend fest gets SIX
+     dated tabs, one per date in `dayMeta[...].isos` (FRI 2 · SAT 3 · SUN 4 ·
+     FRI 9 · SAT 10 · SUN 11); each tab draws its own weekend's sets, and an
+     untagged set plays on both. A lineup-only two-weekend fest never had a
+     grid to split, so it shows both weekends on one wall with the W1/W2 tags
+     on the cards. Give each `dayMeta` entry
      `dates: { "W1": "Oct 2", "W2": "Oct 9" }` so the day rule shows the
      selected weekend's real date. Keep `weekends` tags on the top-level
      `artists[]` — they drive the picker's presence and the search extras.
+     The two spellings never cross (`weekend` on a grid set, `weekends` on
+     `artists[]`): the validator errors on either one in the wrong place, and
+     on a W1/W2 lineup over a grid with no W1/W2 set.
    - Optional `activities{}` for non-stage programming (workshops, silent
      disco) — renders as a time-sorted list under the grid.
    - **Give each grid day its calendar date** in `dayMeta`: `iso:
@@ -120,9 +131,82 @@ strings the lineup phase used in `artists[].day` ("Friday", not "Fri" or
 written.
 
 An `artists[]` entry can also be an EVENT (an afterparty, a street-fair
-party): give it the venue in `stage` and the hours in `time` and the lineup
-wall renders them as a card sub-label. A same-name entry on a *different* day
+party): give it its night and its room (below) and the wall renders it as a
+card in that room's stack. A same-name entry on a *different* day
 is a reappearance (a lineup artist playing an afters show) — picks, auras and
 notes unify by exact name on purpose, and the validator only flags same-day or
 day-less duplicates. See `portola-2026.json` (the Afters/Folsom sections) for
 the worked example.
+
+### Event fields — where a section goes (MODEL-V4 §6)
+
+A SECTION is an `artists[].day` label that is not one of the grid's days:
+Portola's AFTERS and FOLSOM, ACL's LATE NIGHTS. Its entries carry the room
+and the night as data rather than as prose, and that is what places them.
+Every section entry says where its section sits with **exactly one** of
+`night` or `date`, plus `venue`.
+
+| Field | What |
+|---|---|
+| `night` | `Mon`…`Sun` — the night it plays. The section renders inside that day, under the festival's own room, and the day tabs are the union of the grid days and these nights. Must equal the part of `stage` before ` · `. |
+| `date` | `YYYY-MM-DD`, a real calendar date. The section takes a tab of its own after the days, ruled by date. Use it when a section runs longer than a week, where one weekday would mean two different nights — ACL Fest Nights runs Sep 29 to Oct 10, so "Fri" would be both Oct 2 and Oct 9. |
+| `venue` | The room. The wall stacks the section's cards under it, in play order. Must equal the part of `stage` after ` · `, and wants an entry in `venues{}` so the card's place line opens a map. |
+
+`night` and `date` are two different places on the screen, so an entry never
+carries both, never neither, and one section's entries never disagree — the
+validator errors on all three. The pre-2026-09-01 `stage: "Thu · Regency
+Ballroom"` string answers both questions on its own and still does, so no
+existing file has to be rewritten; `stage` also stays authoritative where it
+is present, which makes `night`/`venue` a denormalization of it, and a
+disagreement between them an ERROR.
+
+A dated section carries its own range and its sub line in `dayMeta`, keyed
+by the section's label:
+
+```json
+"dayMeta": { "Late nights": { "date": "Sep 29 – Oct 10", "sub": "around Austin" } }
+```
+
+A dated entry renders under its date, not under the section label, so one
+artist playing two nights is two cards and one pick. Only the same name on
+the same date is a duplicate.
+
+**A venue-night is ONE ROOM, and its artists play IN SEQUENCE** (Kevin,
+2026-09-01). The wall draws every room as a vertical run — stacked in the time
+bands, each set its own tappable card, never side by side. So a room with two
+or more shows needs to say who is on when; if it does not, the validator warns
+(and names the shared start, because a time repeated on every act is a DOORS
+time somebody transcribed into the set-time field). The run is recorded as
+data, never guessed at render time (MODEL-V3 §5):
+
+| Field | What |
+|---|---|
+| `time` | This set's start — the venue's, or our guess. |
+| `approx` | `true` when that time is our guess, not the venue's. |
+| `doors` / `close` | The room's window, each a single clock time (`"10 PM"`, never a range). |
+| `closeApprox` | `true` when the CLOSE is our guess — `approx` scopes to `time` only, and the two are separate because a poster usually prints doors and not an end. |
+| `order` | `{ seq, of, source, confirmed }` — position in the run (1…`of`), an `https` link to where the order came from, and whether the venue has posted it or it is still our read. |
+
+The validator holds a run together: every set sharing a day + night + venue
+must agree on `of`, `doors` and `close`, claim a distinct `seq`, sit inside
+the window, and run in the same direction on the clock as in the numbering.
+Never merge the sets into one card — artist separation is law, because a
+combined card eats the crew's picks.
+
+**Guessing the times and the order**, when the page prints neither:
+
+- **A printed doors time goes in `doors`, never in `time`** — a show page
+  prints doors, not a set, and a time in `time` reads as a set start. A room
+  with one act may carry `doors`, a `close` and a guessed `time`, but no
+  `order`.
+- **The order follows the billing:** the billed headliner closes and the rest
+  run in descending print. Record it as `order` with `confirmed: false` until
+  the venue posts it.
+- **The clocks are `node scripts/guess-run-times.mjs <id>`** — one rule, a
+  dry-run diff, `--write` to record. For every room with an `order` it lays
+  the bill from `doors` to the close (the printed close; else one a listing
+  printed for that night, `closeApprox` with its https `closeSource`; else the
+  venue's routine close from `data/venues/index.json`) and marks each guess
+  `approx: true`. A set with a time and no `approx` is posted and never
+  touched, so re-run it whenever a room or the registry changes. A show with
+  no `time` at all is fine — it is a card with no clock in its venue's stack.

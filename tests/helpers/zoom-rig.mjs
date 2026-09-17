@@ -10,7 +10,7 @@
 //
 // Each `node --test` file is its own process, so a rig built here is private
 // to the file that built it — module state (`zoomed`, `lastMouse`,
-// `dismissedEl`) never crosses files. INSIDE a file it is sticky: `lastMouse`
+// `dismissedKey`) never crosses files. INSIDE a file it is sticky: `lastMouse`
 // is never reset once a mouse pointermove has been seen, and a stubbed
 // `document.elementFromPoint` outlives the test that installed it unless a
 // try/finally puts it back. Both are load-bearing — see `feedMouse` below.
@@ -81,6 +81,12 @@ export async function makeRig({ fid = 'zoom-fest' } = {}) {
   function mountCard(ctx, name = 'GRiZ', opts = { occ: { day: 'Saturday', stage: null, time: null } }) {
     const wall = document.getElementById('wall-root');
     wall.replaceChildren();
+    // A fresh mount is a fresh page: the last input the module saw is a press,
+    // so a bare `card.focus()` in a test is a click's focus, not a key's. The
+    // modality tracker (card-facts.js `lastInput`) is module state and would
+    // otherwise carry a previous test's Tab into this one and grow the card
+    // on focus (tests/zoom-modality.test.mjs drives it on purpose).
+    document.body.dispatchEvent(new dom.window.PointerEvent('pointerdown', { pointerType: 'mouse', bubbles: true }));
     const card = renderCard(name, ctx, opts);
     wall.appendChild(card);
     return card;

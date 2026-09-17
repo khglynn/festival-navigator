@@ -6,14 +6,18 @@ following this runbook end to end is the intended operator; Kevin reviews the
 diff, never the transcript. Exemplar of the finished form:
 `data/festivals/portola-2026.json` (timezone, dayMeta with weekday codes,
 days{} with stages + times, afters/events as data, a meta.note that reads
-like a lab notebook).
+like a lab notebook). For a section that runs longer than a week, see the
+Late nights section in `data/festivals/acl-2026.json`.
 
 ## The law (CLAUDE.md, with teeth)
 1. Artist names and day strings in a live file are PICK KEYS. Never rename,
    re-case, or "fix" one — `tests/fixtures/live-pick-keys.json` freezes them
    and CI fails on any disappearance. A name the official source now spells
    differently gets a note in meta.note, not an edit.
-2. Freeze BEFORE touching: `node scripts/freeze-pick-keys.mjs <fest-id>`.
+2. Freeze BEFORE touching: `node scripts/freeze-pick-keys.mjs <fest-id>`,
+   and again after adding a name — the validator fails with "not frozen yet
+   … run node scripts/freeze-pick-keys.mjs <id>" until every name and day
+   label is frozen.
 3. Grid names must match `artists[]` byte for byte; the validator makes a
    case-only mismatch an ERROR.
 
@@ -25,9 +29,14 @@ like a lab notebook).
    stage or time; absent data stays absent.
 3. Freeze (law 2). Edit: `days{}` on the Portola shape for a schedule,
    `artists[].day` for day tags, `dayMeta` (wd + date, `isos` {W1,W2} for a
-   two-weekend fest), `timezone` (IANA), afters/events with stage
-   "Thu · Venue" + a time. `status`: lineup → scheduled ONLY with a real
-   grid. Update meta.researchedAt and write the sourcing story in meta.note.
+   two-weekend fest), `timezone` (IANA). A section entry (afters, Folsom,
+   late nights) says where its section goes with exactly one of `night` (a
+   weekday) or `date` (ISO, for a section spanning more than a week), plus
+   `venue` — add-a-festival.md, "Event fields". A printed doors time goes in
+   `doors`, never in `time` (a show page prints doors, not a set;
+   add-a-festival.md, "Guessing the times").
+   `status`: lineup → scheduled ONLY with a real grid. Update
+   meta.researchedAt and write the sourcing story in meta.note.
 4. Gate: `node scripts/validate-festivals.mjs` (0 errors),
    `npm test` green, `git diff` shows zero changed name/day lines.
 5. If any cached asset changed (it usually did not — data files are not in
@@ -35,10 +44,5 @@ like a lab notebook).
 6. Hand back: files touched, sources with dates, what remains unknown and
    when it is expected (prior years' drop timing).
 
-## Standing dates (2026)
-- Lost Lands: day tags droppable now (2026-08-21 sources in meta.note);
-  full set times expected ~Sept 14–16. Eight pre-party reappearances noted
-  in the file — land them WITH the day tags.
-- ACL: set times are live as six schedule images (aclfestival.com/schedule);
-  ingest = visual transcription of all six, W1/W2 shape, before Oct 2.
-- Seismic 9.0: nothing to ingest before ~Sept 18 (8.0's phase-two timing).
+## What is due when
+`NOW.md` holds each festival's next data drop; dates written here go stale.

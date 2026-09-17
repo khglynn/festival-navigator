@@ -75,10 +75,10 @@
       .brand { font-family: var(--font-display); letter-spacing: .04em; font-size: clamp(42px, 5.5vw, 54px); line-height: 1.04; color: #fff; text-align: center; }
       /* The gear pins to the right of the header row, at every width.
          It used to lose `margin-left: auto` at >=720, and .app-header wraps — so a
-         festival with a long date string (Lost Lands' runs to two clauses) pushed
-         the gear onto a line of its own and that override then parked it at the FAR
-         LEFT, alone, under the dates (Kevin, 2026-07-12). `order` keeps it last in
-         the visual row even if the sub wraps; `flex: none` stops it being squeezed. */
+         festival whose date string runs to two clauses pushed the gear onto a line
+         of its own and that override then parked it at the FAR LEFT, alone, under
+         the dates (Kevin, 2026-07-12). `order` keeps it last in the visual row even
+         if the sub wraps; `flex: none` stops it being squeezed. */
       .gear-btn { background: none; border: none; cursor: pointer; padding: 4px;
                   margin-left: auto; flex: none; order: 3; align-self: center; }
     </style>
@@ -185,11 +185,16 @@
         <div class="day-rail" id="day-rail">
           <button class="avatar you you-avatar" id="rail-you" aria-label="Jump to top"></button>
           <span class="rail-days" id="rail-days"></span>
-          <button class="fest-link" id="rail-fest-link" aria-label="Open settings">
-            <span class="fest-name" id="rail-fest-name"></span>
-            <span class="sync-dot"></span>
-            <span class="sr-only" id="sync-label">online</span>
-          </button>
+          <!-- The fest name is the show menu's door (MODEL-V4 §3.1) — app.js
+               hangs the popover in this wrap when the fest has more than one
+               room, and the tap goes straight to Settings when it has one. -->
+          <span class="sort-wrap" id="rail-fest-wrap" style="margin-left: auto;">
+            <button class="fest-link" id="rail-fest-link" aria-label="Open settings">
+              <span class="fest-name" id="rail-fest-name"></span>
+              <span class="sync-dot"></span>
+              <span class="sr-only" id="sync-label">online</span>
+            </button>
+          </span>
         </div>
         <div class="wall-wrap" id="wall-root"></div>
       </div>
@@ -198,10 +203,12 @@
       <div class="dock" id="dock">
         <button class="avatar you you-avatar" id="dock-you" aria-label="Jump to top"></button>
         <span class="days" id="dock-days"></span>
-        <button class="fest-link" id="dock-fest-link" aria-label="Open settings">
-          <span class="fest-name" id="dock-fest-name"></span>
-          <span class="sync-dot"></span>
-        </button>
+        <span class="sort-wrap" id="dock-fest-wrap" style="flex: none;">
+          <button class="fest-link" id="dock-fest-link" aria-label="Open settings">
+            <span class="fest-name" id="dock-fest-name"></span>
+            <span class="sync-dot"></span>
+          </button>
+        </span>
       </div>
     </div>
 
@@ -248,24 +255,54 @@
     <script src="/vendor/html2canvas.min.js" defer></script>
     <script type="module" src="/js/v3/app.js"></script>
     <script>
-      if ('serviceWorker' in navigator) {
-        // The shell is cache-first, so the first open after a deploy runs the
-        // PREVIOUS build while the new worker installs and claims the page —
-        // and a hash-only navigation keeps that stale module map alive. Every
-        // preview read as "the fix didn't land" until a hard reload
-        // (2026-08-31). When a NEW worker takes over an already-controlled
-        // page in its first seconds, reload once so what runs is what was
-        // shipped. Guards: never on the very first install (no prior
-        // controller), never twice, never after the person has settled in.
-        var hadController = !!navigator.serviceWorker.controller;
-        var reloaded = false;
-        navigator.serviceWorker.addEventListener('controllerchange', function () {
-          if (!hadController || reloaded || performance.now() > 20000) return;
-          reloaded = true;
-          location.reload();
+      (function () {
+        var sw = navigator.serviceWorker;
+        if (!sw) return;
+        // A new worker taking over an open page means the page runs the
+        // PREVIOUS build (its modules are already loaded — even a hash-only
+        // navigation keeps that map alive), and every "still broken" on
+        // 2026-09-01 was a v75 shell judging v76 code. So a new build reloads
+        // the page — by ONE rule: only when nothing is in progress (2026-09-16).
+        // A note being written lives only in memory; the old shortcuts (the
+        // page's first 20 s, a hidden tab) reloaded it away. Until the page is
+        // quiet the reload waits, re-checking whenever the tab comes or goes
+        // and on a slow timer, and app.js puts up a notice (fn:new-build) the
+        // person can tap instead. A tab left open asks for new workers itself
+        // — the browser only checks on navigation.
+        var hadController = !!sw.controller;
+        var pending = false;
+        // In progress: work marked on the body while it runs (a crew being
+        // made, a join, a Spotify scan), a sheet or a zoom open, or a field in
+        // use — focused, or holding words — that is on screen and editable.
+        function quiet() {
+          if (document.body.dataset.busy) return false;
+          if (document.getElementById('sheet-backdrop') || document.querySelector('#zoom-layer .zoom-slot')) return false;
+          var fields = document.querySelectorAll('input, textarea');
+          for (var i = 0; i < fields.length; i++) {
+            var f = fields[i];
+            if (!f.readOnly && (f.value || f === document.activeElement) && f.getClientRects().length) return false;
+          }
+          return true;
+        }
+        function settle() {
+          if (pending && quiet()) { pending = false; location.reload(); }
+        }
+        sw.addEventListener('controllerchange', function () {
+          // The first worker to claim a page serves the build it already runs.
+          if (!hadController) { hadController = true; return; }
+          if (pending) return;
+          pending = true;
+          settle();
+          if (pending) window.dispatchEvent(new CustomEvent('fn:new-build'));
         });
-        navigator.serviceWorker.register('/service-worker.js').catch(function () {});
-      }
+        document.addEventListener('visibilitychange', settle);
+        setInterval(settle, 15000);
+        sw.register('/service-worker.js').then(function (reg) {
+          var ask = function () { reg.update().catch(function () {}); };
+          document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') ask(); });
+          setInterval(ask, 10 * 60 * 1000);
+        }).catch(function () {});
+      })();
     </script>
     <script defer src="/_vercel/insights/script.js"></script>
 </body>

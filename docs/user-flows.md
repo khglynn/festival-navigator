@@ -5,6 +5,11 @@
 > one cluster, one link — and barely surfaces as a word. Locked model:
 > `claude-plans/2026-07-14-fests-circles-you-direction.md`.
 
+> **The wall, simplified (MODEL-V4, 2026-09-16).** Stage columns on a clock
+> only where the festival publishes a stage grid; everything else is a stack
+> of cards under the room it happens in. F5 is the walk; the spec is
+> `claude-plans/2026-09-16-wall-v4/MODEL-V4.md`.
+
 **Created 2026-07-11 · maintained as part of every design/UX change.**
 This is the canonical inventory of what a user can do and what correct looks
 like. The design-audit workflow walks these flows in a real browser at 390px /
@@ -86,19 +91,47 @@ accessible; an artist billed on multiple days appears under EACH of those days
 (never a combined "Day X & Day Y" section); grid density and type scale to the
 viewport (no vast dead space on desktop).
 
-## F5 · The wall — set-times view (scheduled fests)
+## F5 · The wall — a festival week (scheduled fests)
 
-1. A fest with day schedules renders stage-column grids per day: hour rail
-   left, one column per stage, cards spanning their set times.
-2. Same-stage time overlaps split into side-by-side lanes.
-3. Tapping a card cycles the pick **without the card moving or vanishing**.
-4. Items with a stage + time appear IN the grid; only genuinely
-   unscheduled/stage-less programming lives in a clearly-designed
-   "everything else" column at the far right.
-5. Searching falls back to the filterable flat grid.
-**Expected:** the grid may exceed the page's reading max-width — it goes
-full-bleed (headings stay at reading width) and scrolls horizontally with
-scroll-snap on mobile; desktop shows as many columns as fit the window.
+1. **The days are the days.** Day tabs are the grid days plus the nights the
+   weekday sections play, so no day is ever empty. A two-weekend scheduled
+   fest gets one tab per date (FRI 2 · SAT 3 · SUN 4 · FRI 9 · SAT 10 ·
+   SUN 11), each drawing its own weekend. The wall opens on the festival's
+   first grid day, or on today while the festival is running.
+2. **A day is rooms**, each under its own header: the festival's own room
+   first (PORTOLA · PIER 80), then each section playing that night (AFTERS,
+   FOLSOM).
+3. **Stage columns only where the festival publishes a stage grid.** That
+   day's timetable draws hour rail, sticky stage strip, cards spanning their
+   set times, side-by-side lanes for same-stage overlaps, and the now line —
+   spanning the whole day, doors to close, so the line always has a home.
+   Anything of the festival's that is not on that grid follows underneath as
+   venue groups.
+4. **Everything else is venue groups:** one stack per venue, the venue name
+   as its header, "Doors 10 PM · ~3 AM" under it where that is known, and the
+   night's artists as cards top to bottom in play order. Whoever is on right
+   now wears the now mark. A card with no time shows no time line.
+5. Tapping a card cycles the pick **without the card moving or vanishing**.
+6. **A room's header names the room** and takes no tap of its own — no
+   chevron, no fold (MODEL-V4 §3a.2).
+7. **The fest name** (bottom dock on mobile, day rail on desktop) opens the
+   show menu: one row per room of the festival week with a check, then
+   Settings. Unchecking a room hides it on every day — it renders nothing,
+   and a day with nothing visible left on it has no rule and no tab (never
+   an empty shell). Remembered per fest, on this device only, and it is the
+   ONE way to hide a part of the week; the menu still lists every room, which
+   is where the state is visible.
+   A fest with one room goes straight to Settings, as it always did.
+8. **A dated section is its own tab** after the days (LATE NIGHTS), ruled by
+   date (TUE · SEP 29) with its venue groups under each rule. Its cards pick
+   like any other, and an artist playing two of its nights is two cards and
+   one pick.
+9. Searching falls back to the filterable flat grid.
+**Expected:** nothing but a published stage grid ever gets a clock — no
+threshold decides a layout; the grid may exceed the page's reading max-width
+(full-bleed, headings at reading width, scroll-snap on mobile, as many
+columns as fit a desktop window); the people filter dims everywhere — on
+the clock, in a stack, in a list — and never hides a card.
 
 ## F6 · Notes — artist scope (via the zoom, one grammar across mouse and touch — 2026-08-30)
 
@@ -113,7 +146,8 @@ scroll-snap on mobile; desktop shows as many columns as fit the window.
    one-tap door to the sheet.
 3. Tapping outside the zoom, Escape, or scrolling puts the zoom away.
 4. The sheet opens with the card itself as its header (grown once more, ✕ in
-   its corner), then the conversation: threads one level deep. At rest a note
+   its corner) — with no notes chip on it, because the sheet IS the thread;
+   the Spotify chip stays — then the conversation: threads one level deep. At rest a note
    is a name, a time and words. Hover (mouse), press-and-hold (touch) or
    keyboard focus fades in one line of plain words under them — `Reply · Pin`,
    or `Edit · Reply · Pin` on your own. Replies indent one gutter under their
@@ -133,20 +167,34 @@ can be edited or deleted (tombstone). A pinned root sorts to the top and shows
 a reply count, never its thread, until tapped open — and replying into a folded
 thread opens it, so you can see where the words land.
 
-## F7 · Notes — day scope
+## F7 · Notes — a date, and a section on a date
 
-1. Each day header carries a notes affordance (with count) → opens that day's
-   notes surface (same sheet/dialog pattern).
-2. The WHISPER (2026-08-29): nothing sits inline until someone writes; then
-   the newest note (root or reply) rides as one soft line at the day's door,
-   and tapping it opens the day's notes. Composing happens in the sheet.
-**Expected:** both paths write the same day-scoped notes; day notes visible
-from the day header, not only by scrolling past the whole day.
+1. **A note is written where you are standing** (MODEL-V4 §3a.3). Tapping a
+   day's rule opens that date's notes; tapping a section's header on a day
+   opens that section-on-that-date's (`Folsom · Friday`); a card's zoom opens
+   the artist's. The rule and the header ARE the doors — real buttons, nothing
+   added to them but the hit.
+2. Day notes are keyed by the **ISO date**, so the two Fridays of a
+   two-weekend fest are two threads and an afters night is its own. A section
+   on a date is keyed `<iso>|<section>`, additive. Nothing rolls up: a
+   `Folsom · Friday` note never appears under `Friday`. A note written under an
+   older weekday label still renders under the date that label maps to; a note
+   written under a bare section label stays readable in the sheet, with no door.
+3. The WHISPER (2026-08-29): nothing sits inline until someone writes; then
+   the newest note (root or reply) rides as one soft line under the door it
+   belongs to — a date's under its rule, a section-on-a-date's under that
+   header on that day, never under another day. Composing happens in the sheet.
+**Expected:** a date reads the way the wall's rule reads it (`Friday`) — unless
+two dates would answer to the same name, when every date takes the dated form
+(`Fri · Oct 2`); a storage key never reaches the screen.
 
 ## F8 · Notes — festival scope + the all-notes view
 
 1. Notes chip (top of wall, with total count) → ALL NOTES view: festival-note
-   composer at top, then sections — This festival / each day / each artist.
+   composer at top, then ONLY the targets somebody has written on, in wall
+   order — This festival / a date / a section on that date / each artist. No
+   empty date rows and no "+ Add a note for…" doors: you write from where you
+   are standing, and the sheet is the list of what came of it.
 2. Wall bottom carries NOTES · <FEST> as a whisper once festival notes exist
    (on a lineup-less fest, a quiet "+ Add a note" keeps the invitation).
 **Expected:** the all-notes view is the notes HOME: you can always ADD a
@@ -156,11 +204,14 @@ legible (D3); empty state may hint at the hold but never as the only path.
 ## F9 · Day navigation
 
 1. Mobile: bottom dock — You chip (jump to top), day tabs (scrollspy-active),
-   fest link (opens settings).
+   fest name (the show menu, or Settings on a one-room fest — F5.7).
 2. Desktop: sticky day rail under the toolbar with the same tabs + jump to
    top; scrollspy highlights the day in view.
+3. A dated section's tab sits at the end, labelled by the section
+   (LATE NIGHTS). It never joins the day axis and is never split.
 **Expected:** every viewport has day navigation; dock hides while typing in
-search (keyboard avoidance).
+search (keyboard avoidance); no tab is ever empty, so nothing has to explain
+that everything on a day is hidden.
 
 ## F10 · Browser navigation
 

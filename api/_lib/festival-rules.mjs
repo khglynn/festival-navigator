@@ -2,6 +2,7 @@
 // consumed by BOTH scripts/validate-festivals.mjs (CI) and api/festival-add.js
 // (LLM-researched candidates). If a rule changes, it changes here once.
 import { timeToMinutes, computeDayArtists } from '../../js/time.js';
+import { parseEventTime, shortDate } from '../../js/v3/events.js';
 import { safeKey, FORBIDDEN_KEYS } from './crew-shared.mjs';
 
 export const SLUG_RE = /^[a-z0-9-]{1,64}$/;
@@ -12,6 +13,236 @@ export const STATUSES = ['lineup', 'scheduled', 'archived'];
 // 2026-08-27).
 const CLOCK = '(1[0-2]|0?[1-9])(:[0-5][0-9])? (AM|PM)';
 export const TIME_RE = new RegExp(`^${CLOCK}( - (${CLOCK}|Close))?$`, 'i');
+
+// ---------------------------------------------------------------------------
+// Structured event fields (MODEL-V3 §1 and §5, added 2026-09-01).
+//
+// An artists[] EVENT entry (an afters or Folsom show) has always carried its
+// room as a single string: `stage: "Sun · The Midway"`, which js/v3/wall.js
+// splits on ' · ' to draw the card's sub-label. Phase 1 of the events build
+// adds the split out as data — `night` + `venue` — so the day-first renderer
+// can group by night and column by venue without re-parsing prose.
+//
+// That makes the pair a DENORMALIZATION, and the rule with teeth is therefore
+// not "are they well-formed" but "do they still agree with `stage`". While
+// both exist, drift is the whole risk: `stage` is what ships today, the pair
+// is what phase 2 reads, and a file where they disagree renders one thing and
+// plans another. Disagreement is an ERROR.
+//
+// `night` is checked against the weekday vocabulary, not against the fest's
+// own days: a fest's event nights routinely fall OUTSIDE its grid (Portola
+// plays Sat–Sun and its afters run Thu–Sun), and the only machine-readable
+// day set — dayMeta — covers grid days only. A section's dates live in free
+// text ("Sep 24-27"), which is not something to parse into a rule. The
+// vocabulary check still catches what matters: phase 2 derives the day tabs
+// from the union of grid days and event nights, so "Sunday" or "sun" where
+// "Sun" belongs would mint a phantom tab.
+const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+// doors/close are a single point on the clock, never a range.
+const CLOCK_RE = new RegExp(`^${CLOCK}$`, 'i');
+// A real calendar date, not just the shape of one: 2026-13-01 and 2026-09-31
+// both pass a regex and name no day. Used by a section entry's `date` and by
+// dayMeta's iso/isos.
+const realDate = (s) => typeof s === 'string' && /^(19|20|21)\d{2}-\d{2}-\d{2}$/.test(s)
+  && !Number.isNaN(new Date(`${s}T00:00:00Z`).getTime())
+  && new Date(`${s}T00:00:00Z`).toISOString().slice(0, 10) === s;
+// How a day label splits into the days it renders as ("Afters & Folsom").
+const SPLIT_DAY = /\s*[&+/]\s*|\s+and\s+/i;
+const dayParts = (day) => String(day).split(SPLIT_DAY).map((s) => s.trim()).filter(Boolean);
+const startOf = (t) => String(t).split(' - ')[0];
+// An event runs on the festival-day clock the wall draws it on (events.js:
+// 9 AM starts the day, anything earlier is after midnight) — so a daytime
+// room reads as daytime, and 2 AM still reads as later than 10 PM.
+const eventMin = (t) => parseEventTime(t).startMin;
+
+function checkEventFields(fest, err, warn) {
+  const plain = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
+  const artists = Array.isArray(fest.artists) ? fest.artists : [];
+  const venueMap = plain(fest.venues) ? fest.venues : null;
+  // Runs are grouped by the room they happen in: one day, one night, one
+  // venue. Nothing in the file declares a run — the grouping IS the run.
+  const runs = new Map();
+  // …and EVERY timed event set in a room, numbered or not, so a room that has
+  // more than one show and no running order can be told about it (below).
+  const rooms = new Map();
+  // How many shows each room holds at all, timed or not.
+  const acts = new Map();
+  const roomKey = (a) => {
+    const bits = typeof a.stage === 'string' && a.stage.includes(' · ') ? a.stage.split(' · ') : null;
+    const night = WEEKDAYS.includes(a.night) ? a.night
+      : bits && WEEKDAYS.includes(bits[0].trim()) ? bits[0].trim() : null;
+    const venue = typeof a.venue === 'string' && a.venue.trim() ? a.venue.trim()
+      : bits ? bits.slice(1).join(' · ').trim() : '';
+    return night && venue ? `${a.day || ''}|${night}|${venue}` : null;
+  };
+
+  // MODEL-V4 §6 — where a section's cards go.
+  //
+  // A SECTION is an artists[].day label that is not one of the grid's days:
+  // Portola's AFTERS and FOLSOM, ACL's LATE NIGHTS. A section sits in one of
+  // two places, and its entries say which with exactly one field:
+  //   `night`  a weekday — the section plays that night and joins the day tabs
+  //   `date`   an ISO date — the section becomes its own tab, ruled by date
+  // Both is two answers to one question. Neither is none, and a card with no
+  // day is a card the wall drops without saying so. `venue` on top of that:
+  // the section renders as a stack under the room it happens in.
+  //
+  // The pre-V4 `stage: "Thu · Regency Ballroom"` string answers both questions
+  // on its own and still does — files written before the pair existed are
+  // still files. The structured fields win where both are present, and the
+  // drift check below keeps the two from ever saying different things.
+  //
+  // A festival with no grid has no sections: every day label on a lineup wall
+  // is a lineup day, and none of this applies. A combined label counts as a
+  // grid billing the moment one of its parts is a grid day ("Saturday &
+  // Sunday"), so only a label with no grid day anywhere in it is a section —
+  // erring toward the side that never fails a real billing.
+  const gridDays = new Set(Object.keys(plain(fest.days) ? fest.days : {}).map((d) => d.toLowerCase()));
+  const isSectionEntry = (a) => gridDays.size > 0
+    && typeof a.day === 'string' && a.day.trim()
+    && !dayParts(a.day).some((p) => gridDays.has(p.toLowerCase()));
+  // section label -> the axes its entries claim. A section that sits on the
+  // day tabs AND on its own tab is half a wall in each place.
+  const sectionAxis = new Map();
+
+  artists.forEach((a, i) => {
+    if (!plain(a)) return;
+    const at = `artists[${i}] (${safeKey(a.name)})`;
+    const bits = typeof a.stage === 'string' && a.stage.includes(' · ') ? a.stage.split(' · ') : null;
+    const rk = roomKey(a);
+    if (rk) acts.set(rk, (acts.get(rk) || 0) + 1);
+
+    if (a.date !== undefined && !realDate(a.date)) err(`${at}: date must be a real YYYY-MM-DD date (got ${JSON.stringify(safeKey(a.date))})`);
+    if (isSectionEntry(a)) {
+      const onANight = a.night !== undefined || !!(bits && WEEKDAYS.includes(bits[0].trim()));
+      const onADate = a.date !== undefined;
+      if (onANight && onADate) err(`${at}: night and date — a section entry says one or the other: night puts it on that day's tab, date gives its section a tab of its own`);
+      else if (!onANight && !onADate) err(`${at}: a section entry needs night (${WEEKDAYS.join('|')}) or date (YYYY-MM-DD) — without one there is no day to put the card on`);
+      const room = typeof a.venue === 'string' && a.venue.trim() ? a.venue.trim()
+        : bits ? bits.slice(1).join(' · ').trim() : '';
+      if (!room) err(`${at}: a section entry needs venue — the wall stacks its cards under the room they happen in`);
+      const axis = onADate ? 'date' : onANight ? 'night' : null;
+      if (axis) for (const part of dayParts(a.day)) {
+        if (!sectionAxis.has(part)) sectionAxis.set(part, new Set());
+        sectionAxis.get(part).add(axis);
+      }
+    }
+
+    if (a.night !== undefined) {
+      if (!WEEKDAYS.includes(a.night)) err(`${at}: night must be one of ${WEEKDAYS.join('|')} (got ${JSON.stringify(safeKey(a.night))})`);
+      else if (bits && bits[0].trim() !== a.night) err(`${at}: night ${JSON.stringify(a.night)} disagrees with stage ${JSON.stringify(safeKey(a.stage))} — the renderer still reads stage, so the two must say the same thing`);
+    }
+    if (a.venue !== undefined) {
+      if (typeof a.venue !== 'string' || !a.venue.trim()) err(`${at}: venue must be a non-empty string`);
+      else if (a.venue.length > 80) err(`${at}: venue over 80 chars`);
+      else {
+        if (bits && bits.slice(1).join(' · ').trim() !== a.venue) err(`${at}: venue ${JSON.stringify(safeKey(a.venue))} disagrees with stage ${JSON.stringify(safeKey(a.stage))} — the renderer still reads stage, so the two must say the same thing`);
+        // venues{} holds a map link per room, and the zoom's place line opens
+        // it. A room that is missing simply has nothing to tap — the card is
+        // fine — so this is a warning, the same weight as a lineup artist
+        // with no set yet.
+        if (venueMap && !Object.prototype.hasOwnProperty.call(venueMap, a.venue)) warn(`${at}: venue ${JSON.stringify(safeKey(a.venue))} has no entry in venues{} — its place line will not open a map`);
+      }
+    }
+
+    for (const k of ['approx', 'closeApprox']) {
+      if (a[k] !== undefined && typeof a[k] !== 'boolean') err(`${at}: ${k} must be true or false`);
+    }
+    // `approx` says THIS SET'S TIME is our guess, so it needs a time to
+    // qualify; `closeApprox` says the CLOSE is (they are separate because
+    // Portola's doors are sourced and its close is not).
+    if (a.approx === true && !a.time) err(`${at}: approx marks a guessed set time but the entry has no time`);
+    if (a.closeApprox !== undefined && a.close === undefined) err(`${at}: closeApprox qualifies close, which is missing`);
+
+    let doorsMin = null;
+    let closeMin = null;
+    for (const [k, set] of [['doors', (v) => { doorsMin = v; }], ['close', (v) => { closeMin = v; }]]) {
+      if (a[k] === undefined) continue;
+      if (typeof a[k] !== 'string' || !CLOCK_RE.test(a[k])) { err(`${at}: ${k} must be a single clock time like "10 PM" (got ${JSON.stringify(safeKey(a[k]))})`); continue; }
+      set(eventMin(a[k]));
+    }
+    if (doorsMin !== null && closeMin !== null && closeMin <= doorsMin) err(`${at}: close ${JSON.stringify(a.close)} is not after doors ${JSON.stringify(a.doors)}`);
+    // A set outside the room's own window is a data-entry slip, and a guessed
+    // time landing there is the slip this shape exists to prevent.
+    if (doorsMin !== null && closeMin !== null && typeof a.time === 'string' && TIME_RE.test(a.time)) {
+      const t = eventMin(a.time);
+      if (t < doorsMin || t > closeMin) err(`${at}: set time ${JSON.stringify(safeKey(a.time))} falls outside doors ${JSON.stringify(a.doors)} – close ${JSON.stringify(a.close)}`);
+    }
+
+    if (typeof a.time === 'string' && TIME_RE.test(a.time)) {
+      if (rk) {
+        if (!rooms.has(rk)) rooms.set(rk, []);
+        rooms.get(rk).push(a);
+      }
+    }
+
+    if (a.order !== undefined) {
+      const o = a.order;
+      if (!plain(o)) { err(`${at}: order must be an object { seq, of, source, confirmed }`); return; }
+      const int = (v) => Number.isInteger(v);
+      if (!int(o.of) || o.of < 2) err(`${at}: order.of must be a whole number of 2 or more (a run of one is not a run)`);
+      if (!int(o.seq) || o.seq < 1 || (int(o.of) && o.seq > o.of)) err(`${at}: order.seq must be a whole number from 1 to ${int(o.of) ? o.of : 'of'} (got ${JSON.stringify(safeKey(o.seq))})`);
+      // The order is a DOOR the zoom opens — it has to go somewhere real, and
+      // over https, since the app is served over it.
+      if (typeof o.source !== 'string' || !/^https:\/\/[^\s]+$/.test(o.source)) err(`${at}: order.source must be an https URL — the order line is a door to where the order came from`);
+      if (typeof o.confirmed !== 'boolean') err(`${at}: order.confirmed must be true or false — whether the venue has posted this order, or it is still our read`);
+      if (int(o.seq) && int(o.of) && rk) {
+        if (!runs.has(rk)) runs.set(rk, []);
+        runs.get(rk).push({ a, o, at });
+      }
+    }
+  });
+
+  for (const [label, axes] of sectionAxis) {
+    if (axes.size > 1) err(`${safeKey(label)}: some entries say night and some say date — one section sits in one place: on the day tabs (night) or on a tab of its own (date)`);
+  }
+
+  // A venue-night is ONE ROOM and its artists play IN SEQUENCE (the one rule,
+  // Kevin 2026-09-01), so the wall stacks every room as a vertical run. Two or
+  // more timed sets with no running order leave it stacking by the clock
+  // alone — and when they all carry the same time, that time is a DOORS time
+  // somebody transcribed into the set-time field, which is the exact misread
+  // MODEL-V3 §5 exists to correct. A warning, not an error: the wall still
+  // renders it, it just cannot tell anyone who is on when.
+  for (const [key, sets] of rooms) {
+    if (sets.length < 2 || sets.every((a) => a.order !== undefined)) continue;
+    const where = safeKey(key.replace(/\|/g, ' · '));
+    const starts = new Set(sets.map((a) => startOf(a.time)));
+    warn(starts.size === 1
+      ? `${where}: all ${sets.length} sets say ${JSON.stringify([...starts][0])} — that reads as the room's DOORS time, not ${sets.length} set times; add the run shape (doors/close, approx, order {seq, of, source, confirmed})`
+      : `${where}: ${sets.length} timed sets in one room and no running order — add the run shape (doors/close, approx, order {seq, of, source, confirmed}) so the stack says who is on when`);
+  }
+
+  // One room, one night: the sets that share it must tell one story.
+  for (const [key, members] of runs) {
+    const where = safeKey(key.replace(/\|/g, ' · '));
+    // A single-act room may say its doors, its close and a guessed start —
+    // a show page prints doors, not a set — but it has nothing to sequence.
+    if (acts.get(key) === 1) { err(`${where}: one act in the room carries an order — there is nothing to sequence; drop \`order\` (doors, close and an approx time are fine)`); continue; }
+    const ofs = new Set(members.map((m) => m.o.of));
+    if (ofs.size > 1) err(`${where}: the sets disagree on how many are in the run (${[...ofs].sort().join(', ')})`);
+    const seqs = members.map((m) => m.o.seq);
+    const dupes = seqs.filter((s, i) => seqs.indexOf(s) !== i);
+    if (dupes.length) err(`${where}: two sets both claim position ${[...new Set(dupes)].join(', ')} in the run`);
+    for (const k of ['doors', 'close']) {
+      const vals = new Set(members.map((m) => m.a[k]));
+      if (vals.size > 1) err(`${where}: the sets disagree on ${k} (${[...vals].map((v) => (v === undefined ? '(none)' : JSON.stringify(safeKey(v)))).join(', ')}) — one room, one window`);
+    }
+    const of = members[0].o.of;
+    if (ofs.size === 1 && members.length !== of) {
+      warn(`${where}: ${members.length} of ${of} sets in the run carry an order — the rest of the run is missing or unnumbered`);
+    }
+    // A run is a sequence in TIME. If the clock disagrees with the numbering,
+    // one of the two is wrong and no renderer can tell which.
+    const timed = members
+      .filter((m) => typeof m.a.time === 'string' && TIME_RE.test(m.a.time))
+      .map((m) => ({ seq: m.o.seq, t: eventMin(m.a.time), at: m.at }))
+      .sort((x, y) => x.seq - y.seq);
+    for (let i = 1; i < timed.length; i++) {
+      if (timed[i].t <= timed[i - 1].t) err(`${where}: ${timed[i].at} is ${timed[i].seq} of ${of} but starts no later than the set before it — the running order and the clock disagree`);
+    }
+  }
+}
 
 // Validate one festival document. `filename` is optional (CI passes it to
 // enforce filename-matches-id; API candidates have no file).
@@ -84,7 +315,11 @@ export function validateFestivalDoc(fest, { filename } = {}) {
       // exactly as the renderer does (wall.js splitDays): only when EVERY part
       // is a known day — otherwise the label stays one literal section. No
       // day at all collides with everything.
-      const parts = renderedDays(dayStr);
+      // A DATED section entry renders under its date, not under its section
+      // label, so one artist playing two nights of ACL Fest Nights is two
+      // cards under two date rules — a reappearance, exactly like an afters
+      // set. Only the same name on the same date is a duplicate.
+      const parts = renderedDays(dayStr).map((p) => (typeof a.date === 'string' ? `${p} ${a.date}` : p));
       const seen = artistNames.get(key);
       if (seen && seen.some((prev) => prev.includes('') || parts.includes('') || prev.some((p) => parts.includes(p)))) {
         warn(`duplicate artist in artists[]: ${a.name}${dayStr ? ` (day ${JSON.stringify(dayStr)})` : ''}`);
@@ -94,6 +329,9 @@ export function validateFestivalDoc(fest, { filename } = {}) {
     }
     if (a && a.time && !TIME_RE.test(a.time)) err(`artists[${i}] (${safeKey(a.name)}): unparseable time ${JSON.stringify(safeKey(a.time))}`);
     if (a && a.weekends && !['W1', 'W2', 'both'].includes(a.weekends)) err(`artists[${i}] (${safeKey(a.name)}): weekends must be W1|W2|both`);
+    // Two spellings, one idea: nothing reads the other one, so a crossed tag
+    // is not a typo the wall tolerates — it is a tag that is not there.
+    if (a && a.weekend !== undefined) err(`artists[${i}] (${safeKey(a.name)}): \`weekend\` is a grid set's tag — a lineup entry says \`weekends\` (W1|W2|both)`);
     // Combined day strings ("Saturday & Sunday") render split (ST-1) — but
     // only when every part matches a real day; flag the ones that won't.
     if (a && typeof a.day === 'string' && /[&+/]|\s+and\s+/i.test(a.day)) {
@@ -103,6 +341,10 @@ export function validateFestivalDoc(fest, { filename } = {}) {
       }
     }
   });
+
+  // The structured event fields (night/venue/approx/doors/close/order) —
+  // artists[] only, since a grid set's room is its `stage` column.
+  checkEventFields(fest, err, warn);
 
   const isPlain = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
   // days{} is an object keyed by day label. An array or a scalar here used to
@@ -145,6 +387,7 @@ export function validateFestivalDoc(fest, { filename } = {}) {
         // 'both' plays every weekend. Day KEYS stay the plain weekdays — day
         // notes are keyed by day label, and renamed keys strand them.
         if (a.weekend && !['W1', 'W2', 'both'].includes(a.weekend)) err(`${safeKey(label)}.artists[${i}] (${safeKey(a.name)}): weekend must be W1|W2|both`);
+        if (a.weekends !== undefined) err(`${safeKey(label)}.artists[${i}] (${safeKey(a.name)}): \`weekends\` is the lineup's tag — a grid set says \`weekend\` (W1|W2|both); untagged, it plays every weekend`);
         if (!a.stage) err(`${safeKey(label)}.artists[${i}] (${safeKey(a.name)}): missing stage`);
         else if (!stages.includes(a.stage)) err(`${safeKey(label)}.artists[${i}] (${safeKey(a.name)}): stage ${JSON.stringify(safeKey(a.stage))} not in day stages`);
         if (!a.time || !TIME_RE.test(a.time)) err(`${safeKey(label)}.artists[${i}] (${safeKey(a.name)}): bad time ${JSON.stringify(safeKey(a.time))}`);
@@ -194,6 +437,13 @@ export function validateFestivalDoc(fest, { filename } = {}) {
       }
       if (fest.dayMeta && !fest.dayMeta[label]) warn(`dayMeta missing entry for ${label}`);
     }
+    // A lineup split by weekend over a grid that is not: the timetable only
+    // picks a weekend when some set is tagged W1/W2 (wall.js
+    // scheduledWeekendOf), so it would draw both weekends' sets at once.
+    const split = (list, k) => (Array.isArray(list) ? list : []).some((a) => isPlain(a) && (a[k] === 'W1' || a[k] === 'W2'));
+    if (split(fest.artists, 'weekends') && !Object.values(fest.days).some((d) => isPlain(d) && split(d.artists, 'weekend'))) {
+      err('artists[] tag W1/W2 but no days{} set carries a weekend tag — the timetable would show both weekends at once; tag each grid set weekend: "W1"|"W2" (untagged plays both)');
+    }
     // The other direction: a lineup artist billed on a grid day with no set
     // on that grid is invisible on the timetable. Usually a missed box —
     // warn, don't block (partial drops are real). Live fests only.
@@ -225,8 +475,6 @@ export function validateFestivalDoc(fest, { filename } = {}) {
   // a typo here would put the now line on the wrong day, silently.
   if (fest.dayMeta !== undefined && !isPlain(fest.dayMeta)) err('dayMeta must be an object keyed by day label');
   else if (fest.dayMeta) {
-    const realDate = (s) => typeof s === 'string' && /^(19|20|21)\d{2}-\d{2}-\d{2}$/.test(s)
-      && !Number.isNaN(new Date(`${s}T00:00:00Z`).getTime()) && new Date(`${s}T00:00:00Z`).toISOString().slice(0, 10) === s;
     // Two grid days on one date would draw two now lines — each date is one
     // day's, per weekend.
     // A plain `iso` is that day's date on EVERY weekend, so it collides with
@@ -254,6 +502,13 @@ export function validateFestivalDoc(fest, { filename } = {}) {
             else claim(wk, v, label);
           }
         }
+      }
+      // Each date is typed twice — once to show (the day rule), once as ISO
+      // (the now line). Two copies that disagree name two different days.
+      const typedTwice = [['date', meta.date, 'iso', meta.iso]];
+      if (isPlain(meta.dates) && isPlain(meta.isos)) for (const wk of ['W1', 'W2']) typedTwice.push([`dates.${wk}`, meta.dates[wk], `isos.${wk}`, meta.isos[wk]]);
+      for (const [shown, value, isoKey, iso] of typedTwice) {
+        if (typeof value === 'string' && realDate(iso) && value !== shortDate(iso)) warn(`dayMeta.${safeKey(label)}.${shown} ${JSON.stringify(safeKey(value))} is not ${isoKey} ${iso} (${shortDate(iso)}) — the day rule and the now line would name different days`);
       }
     }
   }

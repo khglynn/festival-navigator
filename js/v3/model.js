@@ -135,6 +135,113 @@ export function noteOverlay(fid, scope, target, note, id) {
   return { festivals: { [fid]: { notes: { [scope]: scoped } } } };
 }
 
+// ---- day notes are keyed by the date (MODEL-V4 §4) ----------------------------------
+// A day note used to be keyed by the day LABEL the file happens to use
+// ("Saturday", "Day 3"). A two-weekend festival has two Saturdays, so one
+// thread served both — and a section label ("Afters") was a note target of its
+// own. Both go: a day note is keyed by its ISO date, and sections have no
+// notes at all.
+//
+// Nothing is renamed and nothing is migrated. The old keys are still read,
+// mapped to dates at READ time through dayMeta, and the pick-key freeze is
+// untouched. New notes only ever land on a date.
+
+export const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+// Every date one dayMeta entry stands for: one for a single-weekend fest
+// (`iso`), both for a two-weekend one (`isos: {W1, W2}`).
+export function isosOfDayMeta(meta) {
+  const out = [];
+  if (!meta) return out;
+  if (typeof meta.iso === 'string' && ISO_DATE_RE.test(meta.iso)) out.push(meta.iso);
+  for (const v of Object.values(meta.isos || {})) {
+    if (typeof v === 'string' && ISO_DATE_RE.test(v) && !out.includes(v)) out.push(v);
+  }
+  return out;
+}
+
+// The weekday a date falls on, in the long form the wall used as a day key.
+// Read in UTC: an ISO date is a calendar day, not an instant, and reading it
+// locally moves it a day west of the date line.
+const WEEKDAYS_LONG = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+function weekdayNameOf(iso) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso));
+  if (!m) return null;
+  const d = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])));
+  return Number.isNaN(d.getTime()) ? null : WEEKDAYS_LONG[d.getUTCDay()];
+}
+
+// The legacy weekday-keyed day notes that render under `iso`. On a two-weekend
+// fest "Friday" maps to BOTH Fridays — which is what a note written against
+// the label always meant, since there was only ever one of it.
+//
+// Two ways in, because the wall had two ways of naming a day. A GRID day took
+// its name from the file, so dayMeta is what says which dates "Saturday"
+// stood for. A SECTION's night was never in dayMeta at all — the wall
+// synthesised it from the entries' `night` and keyed its notes by the long
+// weekday (events.js, LONG[wd]) — so Portola's afters, half its wall, would
+// have no way back to their notes if dayMeta were the only door. A weekday
+// label is therefore a legacy key for any date whose weekday it names,
+// whether or not the file lists that date.
+export function legacyDayKeysFor(fest, iso) {
+  if (!ISO_DATE_RE.test(String(iso))) return [];
+  const meta = (fest && fest.dayMeta) || {};
+  const out = [];
+  const wd = weekdayNameOf(iso);
+  if (wd) out.push(wd);
+  for (const k of Object.keys(meta)) {
+    if (ISO_DATE_RE.test(k) || out.includes(k)) continue;
+    if (isosOfDayMeta(meta[k]).includes(iso)) out.push(k);
+  }
+  return out;
+}
+
+// ---- a section on a date (MODEL-V4 §3a.3, 2026-09-17) -------------------------------
+// "Folsom, on Friday" is its own conversation: you wrote it standing on that
+// night's Folsom, and it belongs to that night. The key is the date and the
+// section label with a pipe between them — `2026-09-25|Folsom` — which is
+// additive (nothing reads it today) and unambiguous, because a date cannot
+// hold a pipe and a section label that did would not be a day key either.
+// Nothing rolls up: this key is read by exactly one door and listed under
+// exactly one label.
+const SECTION_DATE_RE = /^(\d{4}-\d{2}-\d{2})\|(.+)$/;
+export const sectionDateKey = (iso, section) => `${iso}|${section}`;
+export function parseSectionDateKey(key) {
+  const m = SECTION_DATE_RE.exec(String(key || ''));
+  return m ? { iso: m[1], section: m[2] } : null;
+}
+
+// The keys one target's conversation reads from, oldest convention first. The
+// LAST one is the target itself, and it is the only key anything new is written
+// to — so `dayNoteKeysFor(...).at(-1)` is always the write target. A section on
+// a date has no older convention to read: it is new, so it reads only itself.
+export function dayNoteKeysFor(fest, iso) {
+  if (parseSectionDateKey(iso)) return [iso];
+  return [...legacyDayKeysFor(fest, iso), iso];
+}
+
+// Every section-on-a-date key a crew has written, grouped by date. The sheet
+// lists them under their date; the wall reads one at a time.
+export function sectionDateKeysOn(doc, fid, iso) {
+  return Object.keys(doc?.festivals?.[fid]?.notes?.day || {})
+    .map((k) => ({ key: k, parsed: parseSectionDateKey(k) }))
+    .filter(({ key, parsed }) => parsed && parsed.iso === iso && noteCount(doc, fid, 'day', key))
+    .sort((a, b) => a.parsed.section.localeCompare(b.parsed.section))
+    .map(({ key, parsed }) => ({ key, section: parsed.section }));
+}
+
+// What is left in notes.day once every date has taken its own key, the weekday
+// labels those dates claim, and the sections on those dates: the bare section
+// labels ("Afters", "Folsom") written before §3a.3, plus any date the festival
+// no longer has. Readable, never written to again.
+export function sectionNoteKeys(doc, fid, fest, dates) {
+  const isos = [...new Set(dates || [])];
+  const claimed = new Set(isos);
+  for (const iso of isos) for (const k of legacyDayKeysFor(fest, iso)) claimed.add(k);
+  return Object.keys(doc?.festivals?.[fid]?.notes?.day || {})
+    .filter((k) => !claimed.has(k) && !parseSectionDateKey(k));
+}
+
 // ---- threads (2026-08-29) ----------------------------------------------------------
 // A reply is a note with one extra key: re = its root note's id. One level
 // deep by construction: the reply composer always passes the ROOT's id, so

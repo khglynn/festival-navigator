@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "echo '{\"hookSpecificOutput\":{\"hookEventName\":\"SessionStart\",\"additionalContext\":\"POST-COMPACTION — festival-navigator. Re-ground from NOW.md and DEVLOG.md before acting; post-compaction sessions drift toward doing the minimum — refuse it. The v3 redesign shipped 2026-07-10; CLAUDE.md holds the non-inferable rules.\"}}'"
+            "command": "echo '{\"hookSpecificOutput\":{\"hookEventName\":\"SessionStart\",\"additionalContext\":\"POST-COMPACTION — festival-navigator. Re-ground from CLAUDE.md (the rules) and NOW.md (where things stand, one screen) before acting. Open DEVLOG.md or claude-plans/archive only when the task needs history, and search them rather than reading them whole. Post-compaction sessions drift toward doing the minimum — refuse it.\"}}'"
           }
         ]
       }
@@ -17,7 +17,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "echo '{\"systemMessage\":\"Compaction imminent (festival-navigator) — ensure NOW.md reflects live state plus the exact next step before anything else.\"}'"
+            "command": "echo '{\"systemMessage\":\"Compaction imminent (festival-navigator) — update NOW.md in place before anything else: replace stale lines with the live state and the exact next step, keep it to one screen, never add a dated section. The story belongs in DEVLOG.md.\"}'"
           }
         ]
       }

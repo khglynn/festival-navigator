@@ -75,7 +75,7 @@ const FEST_ID_RE = /^[a-z0-9-]{1,64}$/;
 export function crewLink(token, festId, meName) {
   const ok = Boolean(festId) && FEST_ID_RE.test(festId);
   // A fest-scoped share link puts the festival in the PATH:
-  //   https://fest.kevinhg.com/f/lost-lands-2026#g=<token>&f=lost-lands-2026
+  //   https://fest.kevinhg.com/f/edc-orlando-2026#g=<token>&f=edc-orlando-2026
   // A human glancing at that in a chat reads the festival before the noise
   // starts, which is the whole reason this work exists.
   //
@@ -201,11 +201,12 @@ export function hashHasBrokenPersonLink() {
 }
 
 // The person token travels ONLY in this header — a query param would put the
-// master key in platform logs and proxies (Codex gate, P1).
+// master key in platform logs and proxies (Codex gate, P1). Boot awaits this
+// (a me link, a parked absorb), so it gets the same deadline as fetchCrew.
 export async function fetchPerson(token) {
   const res = await fetch('/api/person', {
     headers: { 'X-Person-Token': token },
-    cache: 'no-store',
+    cache: 'no-store', signal: timeoutSignal(BOOT_FETCH_TIMEOUT_MS),
   });
   if (isApiNotFound(res)) return null;
   if (!res.ok) throw new Error('person fetch failed: ' + res.status);

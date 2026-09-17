@@ -6,7 +6,7 @@ everyone's picks sync live, whether the lineup just dropped or the set times
 are already out. Works offline once loaded, because the place you actually
 need it is a field with one bar of signal.
 
-**Festivals loaded:** 11 — the list lives in
+**Festivals loaded:** 10 — the list lives in
 [`data/festivals/index.json`](data/festivals/index.json), which is the only place
 it lives. Adding one: [`docs/add-a-festival.md`](docs/add-a-festival.md).
 
@@ -18,14 +18,17 @@ it lives. Adding one: [`docs/add-a-festival.md`](docs/add-a-festival.md).
   nobody can touch any other. Different friend groups get different links,
   exactly like real life; your own "My link" on the front page brings all of
   yours back on any device.
-- **Two walls.** While only the lineup is announced you get a sortable,
-  searchable **artist list**; once set times drop the same picks render as a
-  **timetable** — stage columns, honest clock, overlaps side by side. Picks carry
-  over automatically because they are keyed by artist, not by slot.
+- **Two presentations, one rule.** While only the lineup is announced you get
+  a sortable, searchable **artist list**. Where the festival publishes a stage
+  grid, that day renders as a **timetable** — stage columns, honest clock,
+  overlaps side by side. Everything else — the afters, the late nights, the
+  street party — is a **stack of cards under the room it happens in**, in play
+  order. The data's shape decides which, never a threshold. Picks carry over
+  automatically because they are keyed by artist, not by slot.
 - **Tap to pick.** Levels are `picked ×1 → ×2 → ×3 → must → clear`. Everyone in
   the crew gets a color, and overlapping picks blend on the wall so you can see
   at a glance where the crew is converging.
-- **Notes** attach to an artist, a day, or the festival itself.
+- **Notes** attach to an artist, a date, or the festival itself.
 - **A link looks like the festival it opens.** Paste one into iMessage or Slack
   and it unfurls as that fest's own card — its name in the display face, on a
   wash of its accent. The images are rendered ahead of time by `npm run brand`;
@@ -49,9 +52,13 @@ still exists, so this block cannot quietly rot.
 
 ```
 index.html                    app shell — all screens live here
+gallery.html                  every card, wall and zoom state on one page; the browser tests run against it
 service-worker.js             offline shell; bump CACHE_VERSION on any asset change
 js/v3/app.js                  boot, wiring, screen assembly, sheets
-js/v3/wall.js                 the wall: timetable + lineup, lanes, sticky stage strip
+js/v3/wall.js                 the wall: the timetable where a grid is published, venue stacks everywhere else
+js/v3/card-facts.js           the zoom: a card grows in place into its facts (hover, hold, keyboard)
+js/v3/events.js               the events model: the days, the rooms a day holds, a room's stack in play order
+js/v3/motion.js               how this app moves — the shared motion constants
 js/v3/settings.js             settings and its drills (Spotify, export, bulk paste)
 js/v3/notes.js                notes at artist / day / fest scope
 js/v3/model.js                the read model over a crew doc + festival data
@@ -78,11 +85,16 @@ assets/mark.svg               the mark — one vector source for every icon and 
 assets/og/                    pre-rendered link previews, one per festival
 api/share.js                  per-festival link previews: index.html with its OG tags swapped
 data/festivals/index.json     the festival list (single source of truth)
+data/venues/index.json        the venue registry: each room's usual doors, close and set lengths, with sources
 scripts/validate-festivals.mjs  run before committing festival data; CI enforces it
+scripts/guess-run-times.mjs   a club night's set-time guesses from the venue registry, as a reviewable diff
 scripts/brand-assets.mjs      npm run brand — regenerates the icons and every link preview
 tests/                        node --test suites (npm test)
+tests/browser/                the hover contract in a real browser, against gallery.html (npm run test:browser)
 docs/user-flows.md            what every screen is supposed to do
 docs/add-a-festival.md        how to add a festival
+docs/fest-update-runbook.md   bringing one festival's data up to date without orphaning a pick
+docs/fork-setup.md            forking and self-hosting, and the traps a real fork hit
 ```
 
 ## 🔄 Sync model

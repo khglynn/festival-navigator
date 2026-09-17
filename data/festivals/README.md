@@ -22,12 +22,13 @@ These are enforced, not advisory: `tests/fixtures/live-pick-keys.json`
 freezes every live festival's id, names and day labels, and both
 `node scripts/validate-festivals.mjs` and `npm test` fail when a frozen
 string disappears — the message says what to do. Every non-archived festival
-in `index.json` must have a freeze entry.
+in `index.json` must have a freeze entry, and the validator also fails while
+a name or day label in the file is missing from it.
 
 The routine for any data change:
 
 ```
-node scripts/freeze-pick-keys.mjs <id>    # BEFORE editing (also adds new names after)
+node scripts/freeze-pick-keys.mjs <id>    # BEFORE editing, and again after adding names
 # ...edit data/festivals/<id>.json...
 node scripts/validate-festivals.mjs       # structure + set-time rules + frozen keys
 npm test

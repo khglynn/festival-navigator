@@ -1,15 +1,5 @@
 [
   {
-    "id": "lost-lands-2026",
-    "name": "Lost Lands",
-    "year": "'26",
-    "startsOn": "2026-09-18",
-    "status": "lineup",
-    "dates": "September 18–20, 2026 · Fri–Sun",
-    "location": "Thornville, Ohio",
-    "accent": "74, 222, 128"
-  },
-  {
     "id": "portola-2026",
     "name": "Portola",
     "year": "'26",
@@ -24,7 +14,7 @@
     "name": "ACL Music Festival",
     "year": "'26",
     "startsOn": "2026-10-02",
-    "status": "lineup",
+    "status": "scheduled",
     "dates": "Oct 2–4 & 9–11, 2026",
     "location": "Austin, TX",
     "accent": "250, 204, 21"

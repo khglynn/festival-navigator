@@ -4,6 +4,14 @@
 // version: quiet surface, live caret, keyboard parity with the native one —
 // Enter/Space/ArrowDown open, arrows move, Enter selects, Esc closes,
 // first-letter typeahead. createElement-only (XSS rule).
+//
+// A row is a native <button> (the show menu's rows now work the same way,
+// app.js showMenuRow) — that is where the 44px touch floor comes from, by
+// being a `button`, not by naming this control in the stylesheet. The <li>
+// around it is packaging (role="presentation"); the button carries the
+// option role, so the popover keeps its listbox presentation. Focus stays on
+// the chip throughout (roving highlight + aria-activedescendant, unchanged) —
+// a row is a tap target, not a second place the keyboard has to visit.
 
 const OPTIONS = [
   { value: 'billing', label: 'Billing' },
@@ -40,25 +48,33 @@ export function createSortControl({ initial = 'billing', onChange }) {
 
   const items = OPTIONS.map((opt, i) => {
     const li = document.createElement('li');
-    li.setAttribute('role', 'option');
-    li.id = `sort-opt-${opt.value}`;
+    li.setAttribute('role', 'presentation');
+    const row = document.createElement('button');
+    row.type = 'button';
+    row.setAttribute('role', 'option');
+    row.id = `sort-opt-${opt.value}`;
+    // Kept out of the tab order on purpose: the chip owns real focus (roving
+    // highlight + aria-activedescendant, below), so a row is reachable by
+    // pointer/touch tap and by the chip's own arrow keys, not by Tab.
+    row.tabIndex = -1;
     const check = document.createElement('span');
     check.className = 'check';
     const text = document.createElement('span');
     text.textContent = opt.label;
-    li.append(check, text);
-    li.addEventListener('click', () => select(i));
-    return li;
+    row.append(check, text);
+    row.addEventListener('click', () => select(i));
+    li.appendChild(row);
+    return row;
   });
-  pop.append(...items);
+  pop.append(...items.map((row) => row.parentElement));
 
   function paint() {
     labelSpan.textContent = OPTIONS.find((o) => o.value === value).label;
-    items.forEach((li, i) => {
+    items.forEach((btn, i) => {
       const selected = OPTIONS[i].value === value;
-      li.setAttribute('aria-selected', String(selected));
-      li.firstChild.textContent = selected ? '✓' : '';
-      li.classList.toggle('kb-active', open && i === activeIdx);
+      btn.setAttribute('aria-selected', String(selected));
+      btn.firstChild.textContent = selected ? '✓' : '';
+      btn.classList.toggle('kb-active', open && i === activeIdx);
     });
     chip.setAttribute('aria-expanded', String(open));
     pop.style.display = open ? '' : 'none';
@@ -112,7 +128,10 @@ export function createSortControl({ initial = 'billing', onChange }) {
   });
   document.addEventListener('click', (e) => { if (open && !wrap.contains(e.target)) setOpen(false); });
   // Tabbing away closes the popover too — a click elsewhere isn't the only
-  // way focus leaves (options aren't focusable, so option clicks are safe).
+  // way focus leaves. A row click moves focus to that row and then, inside
+  // select(), back to the chip — both stops are inside `wrap`, so this
+  // handler stays quiet for it; by the time either fires `open` is already
+  // false.
   wrap.addEventListener('focusout', (e) => {
     if (open && !wrap.contains(e.relatedTarget)) setOpen(false);
   });

@@ -18,6 +18,7 @@ import { nameProblem, NAME_LIMITS } from '../name-rules.mjs';
 import { loadJSON, saveLS, getLS, removeLS, errorText } from '../util.js';
 
 const LS_SETTINGS = 'fn_settings_v1'; // {lowPower, stayOffline}
+export const SUPPORT_URL = 'https://buymeacoffee.com/kevinhg'; // Kevin's page (also list-maker's), 2026-09-02
 
 export function appSettings() { return loadJSON(LS_SETTINGS, {}); }
 export function saveAppSettings(s) { saveLS(LS_SETTINGS, JSON.stringify(s)); }
@@ -57,6 +58,19 @@ function toggleRow(title, sub, checked, onFlip) {
   return row;
 }
 
+// A row that leaves the app: a real link (a new tab, no opener), dressed as a
+// list row so it reads like its neighbours and stays keyboard-reachable.
+function externalRow(title, url, aria) {
+  const row = el('a');
+  row.className = 'list-row';
+  row.href = url; row.target = '_blank'; row.rel = 'noopener';
+  if (aria) row.setAttribute('aria-label', aria);
+  row.style.cssText = 'cursor: pointer; width: 100%; box-sizing: border-box; background: none; border: none; border-bottom: 1px solid var(--hairline); font: inherit; text-align: left; color: inherit; text-decoration: none;';
+  const t = el('span', 'flex: 1;', title); t.className = 'row-title';
+  const chev = el('span', '', '↗'); chev.className = 'chev';
+  row.append(t, chev);
+  return row;
+}
 function linkRow(title, onOpen) {
   // A real button (AX-7): keyboard-reachable, announced as interactive.
   const row = el('button');
@@ -326,6 +340,34 @@ function openAddFestival(actions) {
 }
 
 // ---- HOW IT WORKS (21i) -------------------------------------------------------------
+// The dock's fest link, the way the person reading this sees it — the WHOLE
+// component (`.fest-link`: the name in Anton, and the sync dot beside it), not
+// a redrawing of part of it. It was the name alone in one row and the
+// name-plus-dot in another, five rows apart and in two different faces
+// (Kevin, 2026-09-17); one row, one component, both facts. The label is the
+// fixed string `ACL '26` — never the current fest's name: "SEISMIC DANCE
+// EVENT 9.0 '26" broke out of its box at 390 (Kevin: "easiest fix: code in
+// one fest name, probs ACL"). It is a span, not a button: this is a picture
+// of the door, and the door is at the bottom of the screen.
+//
+// THE ACCENT LAW (CLAUDE.md): `--fest` appears in exactly four places, and
+// this drill is not one of them — but the component's own rule paints its
+// name in `--fest`, and `--fest` is set on <body> per fest, so the picture
+// wore the current fest's colour. The token is re-scoped to brand on the
+// picture itself: the component is untouched, and inside the drill it reads
+// as "ours", not as any festival's.
+function festLinkDemo() {
+  const link = el('span');
+  link.className = 'fest-link';
+  link.style.setProperty('--fest', 'var(--brand)');
+  const n = el('span', 'font-size: 11px;', "ACL '26");
+  n.className = 'fest-name';
+  const dot = el('span');
+  dot.className = 'sync-dot';
+  link.append(n, dot);
+  return link;
+}
+
 function openHowItWorks(actions) {
   const host = document.getElementById('settings-subview');
   host.textContent = '';
@@ -336,7 +378,9 @@ function openHowItWorks(actions) {
   card.style.cssText += 'display: flex; flex-direction: column; gap: 12px;';
   const lesson = (demoBuilder, strong, rest) => {
     const row = el('div', 'display: flex; align-items: center; gap: 12px;');
-    const demo = el('div', 'width: 104px; flex: none; display: flex; align-items: center; justify-content: center; gap: 3px;');
+    // min-width: 0 + overflow: hidden — a picture stays in its cell; no
+    // future label can break out of the row at 390 (2026-09-17).
+    const demo = el('div', 'width: 104px; flex: none; min-width: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; gap: 3px;');
     demoBuilder(demo);
     const text = el('span', 'color: var(--text-secondary); font-size: 11.5px; font-weight: 600; line-height: 1.45; flex: 1;');
     const s = el('strong', 'color: #fff;', strong);
@@ -353,13 +397,25 @@ function openHowItWorks(actions) {
     const c = el('span', `font-size: 9px; font-weight: 700; padding: 3px 8px; border-radius: 999px; color: #fff; background: ${dashed ? 'transparent' : 'hsla(172,90%,62%,.5)'}; border: 1px solid ${dashed ? 'var(--border-emphasis)' : 'hsla(172,90%,62%,.9)'};${dashed ? ' border-style: dashed; color: var(--text-secondary);' : ''}${ring ? ' box-shadow: 0 0 0 1.5px rgba(255,255,255,.85);' : ''}${faded ? ' opacity: .42;' : ''}`, label);
     return c;
   };
-  // Order (Kevin, 2026-08-27 20:04): the people row leads — tap = their picks
-  // (pick-as moved to Settings → You, 2026-08-29) — then how picking works, then what a
-  // card shows, then the timetable moves, then how people get in, then the
-  // dock's one fact, and a Settings pointer that repeats nothing above it.
+  // Order (Kevin, 2026-09-17, MODEL-V4 §3a.4): the rows are GROUPED THE WAY THE
+  // SCREEN READS — who is here and how they got here, then the card and what it
+  // wears, then the wall's own moves, then the dock, then Settings. Each row is
+  // the REAL component drawn small, never a lookalike: the fest link used to be
+  // drawn twice, differently, five rows apart ("YOUR FEST ▾" in the body face
+  // and "YOUR FEST ●" in Anton), which is exactly the drift a lookalike buys
+  // you. The now mark gets no row (Kevin, 2026-09-17: "don't need to explain
+  // now"); nor does the now line (2026-08-31: "I don't think that'll confuse
+  // anyone"). The copy in these rows is Kevin's own, verbatim.
+
+  // 1-2. The people: whose picks you are looking at, and how someone joins.
   card.appendChild(lesson((d) => {
     d.append(chipDemo('Kat', { ring: true }), chipDemo('Drew', { faded: true }));
-  }, 'Tap a name to see their picks.', 'Tap more names to combine. Picking for someone else? Switch who you are in Settings → You.'));
+  }, 'Tap a name to highlight their picks.', 'Switch who you are picking as in Settings.'));
+  card.appendChild(lesson((d) => {
+    d.append(chipDemo('+ Add', { dashed: true }));
+  }, 'Add your people with + Add,', 'or share the crew link — anyone who opens it is in, no account needed.'));
+
+  // 3-5. The card: what a tap does, and what the two corners are saying.
   card.appendChild(lesson((d) => {
     [0.5, 0.75, 1].forEach((a) => {
       d.appendChild(el('span', `flex: 1; height: 30px; border-radius: 6px; border: 1px solid var(--hairline); background: radial-gradient(130% 130% at 20% 120%, hsla(10,90%,62%,${a}) 0%, transparent 78%), #1C1731;`));
@@ -374,21 +430,24 @@ function openHowItWorks(actions) {
     const s = el('span', '', '23'); s.className = 'chip-spotify'; s.style.height = '13px'; // the green pill, never a music-note glyph
     d.append(n, s);
   }, 'Hold for details.', 'Violet = crew notes; pin one to keep it on top. Green = it’s in your Spotify (connect in Settings).'));
+
+  // 6. The wall: the one mark a card can wear that is a guess. The tilde used
+  // to explain itself in a whisper under every venue night — one line of
+  // small print the wall had to carry forever (Kevin, 2026-09-17: "weird
+  // inline"). It is explained here once instead. (A stage row sat under it
+  // until the ship round: the tap it explained was cut.)
   card.appendChild(lesson((d) => {
-    const head = el('span', 'font-family: var(--font-display); letter-spacing: .05em; font-size: 9px; color: rgb(var(--fest)); background: var(--card); border-radius: 6px; padding: 5px 8px; box-shadow: inset 0 0 0 1px rgba(var(--fest), .6);', 'WAREHOUSE'); // a .stage-head, drawn small — surface 3 of the accent's four
-    d.appendChild(head);
-  }, 'Tap a stage to see only that stage.', 'Tap it again for all of them.'));
-  // The now-line explains itself on the day (Kevin, 2026-08-31: "I don't
-  // think that'll confuse anyone") — its lesson row is gone.
+    const chip = el('span', 'display: inline-flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 10px; border-radius: 6px; border: 1px solid var(--hairline); background: var(--card-unpicked);');
+    chip.appendChild(el('span', 'color: #fff; font-size: 10px; font-weight: 700;', 'Gelli Haha'));
+    chip.appendChild(el('span', 'color: var(--text-secondary); font-size: 8.5px; font-weight: 600;', '~10:30 PM'));
+    d.appendChild(chip);
+  }, '~ a guessed start time and artist order.', 'Based on limited intel.'));
+
+  // 7-8. The dock: the fest link (the show menu, MODEL-V4 §3.1, and the sync
+  // dot — one component, so one row, with both facts), and the gear.
   card.appendChild(lesson((d) => {
-    d.append(chipDemo('+ Add', { dashed: true }));
-  }, 'Add your people with + Add,', 'or share the crew link — anyone who opens it is in, no account needed.'));
-  // PORTOLA ’26 is a hardcoded example — goes stale if Portola leaves the catalog (copy pass flag).
-  card.appendChild(lesson((d) => {
-    d.appendChild(el('span', 'font-family: var(--font-display); letter-spacing: .04em; font-size: 11px; color: rgb(var(--fest));', 'PORTOLA ’26'));
-    const dot = el('span'); dot.className = 'sync-dot';
-    d.appendChild(dot);
-  }, 'Green dot = synced.', 'Gray = offline (still works); red = something needs you.'));
+    d.appendChild(festLinkDemo());
+  }, 'Tap the fest name to show or hide parts of the week.', 'Green dot = synced. Gray = offline (still works); red = something’s wrong.'));
   card.appendChild(lesson((d) => {
     const gear = el('span', 'color: var(--text-secondary); font-size: 16px;', '⚙');
     d.appendChild(gear);
@@ -727,6 +786,9 @@ export function renderSettings(root, ctx, actions) {
     setTimeout(() => { t.textContent = errCount ? `Diagnostics · ${errCount} recent errors` : 'Diagnostics'; }, 2200);
   });
   list.appendChild(diagRow);
+  // The one ask this free app makes, at the foot of its own list (Kevin,
+  // 2026-09-02): a coffee, never a paywall, never in the way of a pick.
+  list.appendChild(externalRow('Buy Kevin a coffee ☕', SUPPORT_URL, 'Buy Kevin a coffee — opens buymeacoffee.com in a new tab'));
   main.appendChild(list);
 
   root.append(sub, main);
@@ -1062,6 +1124,9 @@ async function runFullSync(ctx, actions, onProgressIn, rerenderDrill, msg) {
   // he isn't in, 2026-07-13). Same crew at the end, or nothing is written.
   const tokenAtStart = state.getCrewToken();
   const meAtStart = ctx.meName;
+  // Busy (index.html's quiet()): a new build's reload waits out the scan
+  // rather than throwing away minutes of reading.
+  document.body.dataset.busy = 'spotify-scan';
   try {
     const map = await spotify.scanLibrary((p) => onProgress(p), {
       festNames: crewFestNamesLower(),
@@ -1100,6 +1165,8 @@ async function runFullSync(ctx, actions, onProgressIn, rerenderDrill, msg) {
     scanPill(null);
     lastSyncNote = String(e.message || e);
     rerenderDrill();
+  } finally {
+    delete document.body.dataset.busy;
   }
 }
 

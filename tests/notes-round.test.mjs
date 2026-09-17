@@ -34,10 +34,17 @@ const model = await import('../js/v3/model.js');
 const { FESTIVALS, FESTIVAL_INDEX } = await import('../js/festivals.js');
 const notes = await import('../js/v3/notes.js');
 const { validateIncoming } = await import('../api/_lib/crew-shared.mjs');
+const { sheetCard, factsFor } = await import('../js/v3/card-facts.js');
 
 const FID = 'round-fest';
 FESTIVAL_INDEX.push({ id: FID, status: 'lineup' });
-FESTIVALS[FID] = { id: FID, name: 'Round', artists: [{ name: 'GRiZ', day: 'Saturday' }] };
+// A day note is keyed by its DATE since V4; the legacy 'Saturday' key this
+// file writes maps to Sep 26 through dayMeta, read-time only.
+FESTIVALS[FID] = {
+  id: FID, name: 'Round',
+  dayMeta: { Saturday: { wd: 'Sat', date: 'Sep 26', iso: '2026-09-26' } },
+  artists: [{ name: 'GRiZ', day: 'Saturday' }],
+};
 const TOKEN = 'roundtesttoken_012345678';
 state.activateCrew(TOKEN, {
   v: 4, meta: {}, spotify: {},
@@ -67,19 +74,40 @@ const send = (box, text) => {
 };
 
 test('the whisper: nothing until someone writes, then the newest note and the count', () => {
-  assert.equal(notes.dayWhisper('day', 'Saturday', ctx, () => {}), null, 'no notes, no whisper');
+  assert.equal(notes.dayWhisper('2026-09-26', 'Sat · Sep 26', ctx, () => {}), null, 'no notes, no whisper');
   const t1 = '2026-09-26T20:00:00.000Z';
   state.recordNote(FID, 'day', 'Saturday', model.makeNoteId('Kevin', t1, 'aaaaaa'), { author: 'Kevin', ts: t1, text: 'gate at 1' });
   const t2 = '2026-09-26T20:10:00.000Z';
   state.recordNote(FID, 'day', 'Saturday', model.makeNoteId('Drew', t2, 'bbbbbb'), { author: 'Drew', ts: t2, text: 'works for me', re: model.makeNoteId('Kevin', t1, 'aaaaaa') });
   let opened = false;
-  const w = notes.dayWhisper('day', 'Saturday', ctx, () => { opened = true; });
+  const w = notes.dayWhisper('2026-09-26', 'Sat · Sep 26', ctx, () => { opened = true; });
   assert.ok(w, 'notes exist, the whisper renders');
   assert.equal(w.querySelector('.who').textContent, 'Drew', 'the NEWEST voice — a reply counts');
   assert.equal(w.querySelector('.text').textContent, 'works for me');
   assert.equal(w.querySelector('.more').textContent, '2 notes ›');
   click(w);
   assert.ok(opened, 'tapping the whisper opens the day notes');
+});
+
+// MODEL-V4 §4, Kevin 2026-09-17: "confusing there cause we're already in notes".
+test('the artist sheet\u2019s header card has no notes chip \u2014 the sheet IS the thread', () => {
+  // Spotify on this artist, so the test can tell "the chip row went" from
+  // "the notes chip went": one must stay while the other goes.
+  const withSpot = { ...ctx, affinity: { griz: { songs: 7, followed: true } } };
+  notes.openArtistSheet('GRiZ', withSpot, () => {});
+  const header = sheet().querySelector('.sheet-card');
+  assert.ok(header, 'the header is still the card');
+  assert.equal(header.querySelectorAll('.f-chip.notes').length, 0, 'no notes chip, button or span');
+  assert.equal(header.querySelectorAll('.f-chip.spot').length, 1, 'and Spotify stays \u2014 that one is not a door to here');
+  notes.closeSheet();
+
+  // The same card grown on the WALL keeps its chip: that one IS the door.
+  const zoomed = sheetCard(factsFor('GRiZ', withSpot, null), { onClose: () => {}, onOpenNotes: () => {} });
+  assert.equal(zoomed.querySelectorAll('.f-chip.notes').length, 1, 'the wall\u2019s grown card still offers it');
+
+  // And an artist with neither chip gets no empty row left behind.
+  const bare = sheetCard(factsFor('GRiZ', { ...ctx, affinity: null }, null), { onClose: () => {}, notesChip: false });
+  assert.equal(bare.querySelectorAll('.f-chips').length, 0, 'an empty chip row is not rendered at all');
 });
 
 test('every thread ends with an open door, and no note carries a Reply', () => {
@@ -240,7 +268,7 @@ test('the stub says "you" when the note you removed was your own', () => {
   const rt = '2026-09-26T22:05:00.000Z';
   state.recordNote(FID, 'day', 'Saturday', model.makeNoteId('Drew', rt, 'ffffff'), { author: 'Drew', ts: rt, text: 'ok', re: mineId });
   state.recordNote(FID, 'day', 'Saturday', mineId, { author: 'Kevin', ts: t, text: '', deleted: true });
-  notes.openDayNotes('Saturday', ctx, () => {});
+  notes.openDayNotes('2026-09-26', 'Sat · Sep 26', ctx, () => {});
   const stubs = [...sheet().querySelectorAll('.n-note.stub .n-text')].map((n) => n.textContent);
   assert.ok(stubs.includes('you removed this note'), `the file's own "you" convention, got ${JSON.stringify(stubs)}`);
   notes.closeSheet();

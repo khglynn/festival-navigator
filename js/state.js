@@ -32,6 +32,14 @@ let crewToken = null;
 export let crewDoc = null;        // full crew document (remote truth + pending overlay)
 export let pendingChanges = {};   // only locally-changed leaves not yet pushed
 export let activeFestivalId = null;
+// The festival this device ASKED for and the catalog no longer has — a fest
+// dropped from index.json while a crew doc, a saved id or an old share link
+// still names it (Lost Lands, 2026-09-16). activateCrew opens a fest that
+// exists instead; this names the one it could not, so the app can say so
+// rather than silently swapping the board under the person. Null on every
+// ordinary boot, and null whenever the catalog itself is empty (offline with
+// no cached index — then nothing is known and everything would look dropped).
+export let missingFestivalId = null;
 export let currentDay = null;
 export let selectedPerson = null;
 let editSeq = 0; // bumped on every local edit; guards the push/clear race
@@ -64,6 +72,14 @@ export function activateCrew(token, doc, festHint) {
   const savedFest = getLS(LS.fest(token));
   const known = (id) => FESTIVAL_INDEX.some((f) => f.id === id);
   const hinted = (festHint && known(festHint)) ? festHint : null;
+  // An id we were asked for and cannot honour. Only the SAVED id counts: a
+  // hint is a suggestion from a link, but a saved id is this device's own
+  // answer to "which festival am I looking at", and swapping it in silence is
+  // the board lying. Its picks stay in the doc either way — the merge never
+  // deletes, so the fest coming back brings them back. Assigned BEFORE the
+  // fallback, which can throw on an empty catalog: a stale value left over
+  // from the last crew would accuse the wrong festival.
+  missingFestivalId = (FESTIVAL_INDEX.length && savedFest && !known(savedFest)) ? savedFest : null;
   activeFestivalId = (savedFest && known(savedFest)) ? savedFest : (hinted || defaultFestivalId());
   if (hinted && activeFestivalId === hinted) saveLS(LS.fest(token), hinted);
   currentDay = null;

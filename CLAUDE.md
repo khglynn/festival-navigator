@@ -1,5 +1,8 @@
 # festival-navigator — agent notes
 
+**Start here:** NOW.md says where things stand (one screen); then the laws
+below. Specs and plans are indexed in `claude-plans/README.md`.
+
 Non-inferable facts only (the code answers everything else — read it).
 
 - **v3 design system**: static tokens in `assets/v3-tokens.css`, screen map +
@@ -17,6 +20,24 @@ Non-inferable facts only (the code answers everything else — read it).
   This is a rule with teeth: the accent had crept into seven places by
   2026-07-12, including the loader shown while a crew is being CREATED — i.e.
   wearing a festival's colour before a festival had been chosen.
+
+- **One card column, one token.** `--col-w` in `v3-tokens.css` is the width of
+  every card column on the wall — the stage grid's, the sticky strip's, and the
+  venue stacks' — so a set card and an afters card are never two widths. It is
+  an absolute length on purpose: a percentage in a custom property resolves at
+  the USE site, which is how one rule produced 158px in the grid and 178px in
+  the stack. Don't write a second number; the grid not filling a wide window is
+  the intended cost (it is a horizontal scroller, MODEL-V4 §3a.1).
+
+- **A note is written where you are standing, and nothing rolls up.** Four
+  targets: the festival, a DATE (ISO), a SECTION ON a date
+  (`<iso>|<section label>`, e.g. `2026-09-25|Folsom`), an artist. The doors are
+  the day rule, the section header on that day, and the card's zoom — real
+  buttons, nothing added to them but the hit. A `Folsom · Friday` note never
+  appears or counts under `Friday`. Legacy keys (a weekday label, a bare
+  section) are READ, never written: no migration, no rename, the freeze
+  untouched. The all-notes sheet lists only targets that have notes — it is not
+  a set of doors (MODEL-V4 §3a.3).
 
 - **The 44px touch floor is applied to `button`, not to a list of selectors.**
   It used to name six, and the naming WAS the bug — every control added after
@@ -66,12 +87,14 @@ Non-inferable facts only (the code answers everything else — read it).
   server understood us and said no — a deterministic rejection, so re-sending the
   same bytes is pointless; sync.js remembers the refused payload and waits for a
   NEW edit rather than re-POSTing forever.
-- **Docs cannot lie any more, and that is enforced**: `tests/docs-truth.test.mjs`
-  asserts the README's structure block points at files that exist, that no doc
-  tells anyone to run an npm script that does not exist, that no doc presents
-  Tailwind or Blob as part of the stack, and that the festival list lives ONLY in
-  `data/festivals/index.json`. History files (DEVLOG, claude-plans) are exempt —
-  they are supposed to talk about what we dropped.
+- **Docs cannot lie any more, and that is enforced**: the present-tense docs
+  (README, this file) are asserted against the code they describe by
+  `tests/docs-truth.test.mjs` — read it for the current list rather than a
+  copy here, which is the drift this bullet keeps inviting. Two of its rules
+  bind whoever writes THIS file: NOW.md stays a one-screen cursor (the test
+  holds the cap), and every repo path NOW.md or CLAUDE.md cites in backticks
+  must exist. History files (DEVLOG, claude-plans) are exempt — they are
+  supposed to talk about what we dropped.
 - `vercel dev` does not serve files created after it starts, and can serve
   STALE copies of edited files too (measured 2026-07-12: an edited app.js
   served an old version until restart) — when in doubt, restart it, and
@@ -120,9 +143,9 @@ Non-inferable facts only (the code answers everything else — read it).
   pointer input, never `element.click()`) before any promote.
 - **This repo is PUBLIC.** A crew token (`#g=…`) IS the credential for that
   crew's data. Never commit one; scan before every commit with `&&` (never `;`,
-  which runs the commit even when the scan trips). `.gitignore` denies `*.png`
-  by default and allowlists the three icons that ship, because an audit run once
-  dumped 50 screenshots into the repo root.
+  which runs the commit even when the scan trips). `.gitignore` denies images
+  by default and allowlists only what actually ships — read the file for the
+  list — because an audit run once dumped 50 screenshots into the repo root.
 - Deploy is gated: branch pushes = preview only; production promote is
   Kevin's call, always.
 - Adding a festival: `docs/add-a-festival.md`. Validate with
@@ -139,6 +162,69 @@ Non-inferable facts only (the code answers everything else — read it).
   cache-first in the persistent data cache, which meant a set-times drop
   reached an online phone one open LATE (found 2026-08-27). If a data drop
   "isn't showing", the SW is the first suspect — see the stale-SW note above.
+
+- **A hover report is only as good as the shell that made it (2026-09-02).**
+  Kevin's "hover is broken again" on 2026-09-01 was a v75 shell judging v76
+  code: his Diagnostics paste names the build, and the branch alias keeps an
+  open tab on the build it was born with. One rule now governs an open tab
+  (`index.html`): a new build reloads it only when nothing is in progress —
+  no timer and no hidden tab earns an exception — and until then the notice
+  is a persistent strip, never a toast, because a toast fades before the
+  person looks at it. Anything a reload would destroy must mark itself busy
+  while it runs; a flow that forgets gets reloaded out from under its user.
+  Before believing any "still broken": read the build line in the paste, and
+  walk the unique deployment URL, not the alias.
+- **The zoom's keyboard route opens on the module's own last-input, never
+  `:focus-visible`.** Chrome 152 flips a focused card to `:focus-visible`
+  after ANY keypress (Escape included), and the script `focus()` every pick
+  makes inherits it — click · Escape · click grew a keyboard zoom that no
+  hover-out could close. card-facts.js tracks the last keydown/pointerdown
+  at the document (capture); `tests/zoom-modality.test.mjs` pins it and the
+  real-browser contract (`npm run test:browser`, CI job `browser`) drives
+  Kevin's sequences with real input against gallery.html. The long-press
+  ignores mouse pointers for the same reason (a held button is a slow click).
+- **The stage strip is a follower, not a scroller.** Its row rides the lead
+  grid's scroll timeline (CSS scroll-driven animation; `--strip-max` is the
+  measured maximum scroll) or a transform from the lead's scroll event where
+  the engine lacks `ScrollTimeline` or motion is reduced. Never set a
+  strip's scrollLeft; anything that mirrors or restores scroll positions
+  skips `isStripScroller`. Three traps kill the timeline: jsdom's
+  `CSS.supports` says yes to everything (detect with
+  `typeof window.ScrollTimeline`), the tokens file's reduced-motion rule
+  kills every animation, and so does Low Power. Which route a strip takes is
+  therefore decided per RENDER, never once at load — a phone can drop into
+  Low Power with the wall already up — and each render undoes the last
+  render's wiring.
+- **WebKit only honours `-webkit-user-select`** — an unprefixed
+  `user-select: none` did nothing on iOS and a long-press selected the time
+  label and raised the Copy/Search callout over the zoom (2026-09-02). Every
+  `user-select: none` in v3.css carries the prefix; keep it that way.
+- **The wall has two presentations and the data's SHAPE picks between them,
+  never a threshold** (MODEL-V4, 2026-09-16 —
+  `claude-plans/2026-09-16-wall-v4/MODEL-V4.md`): stage columns on a clock
+  ONLY where the festival publishes a stage grid (`fest.days[day].stages`);
+  everything else is a stack of artist cards under the venue it happens in,
+  in play order. A clock earns its complexity where "can I do both?" is a
+  real question — one site, several stages — and nowhere else. Before this,
+  three layout engines shared one card and a numeric threshold picked, so
+  nobody looking at the screen could see why one Sunday rendered three ways.
+  In the data: a SECTION is an `artists[].day` label that is not a grid day,
+  and it says where it goes with exactly one of `night` (a weekday — it
+  renders inside that day) or `date` (ISO — its section takes a tab of its
+  own; ACL's Late nights runs Sep 29 to Oct 10, so a weekday would mean two
+  nights), always with `venue`. The validator errors on both, on neither,
+  and on one section whose entries disagree.
+- **Run guesses come from `scripts/guess-run-times.mjs`, never render
+  time** (the model doc is
+  `claude-plans/2026-08-31-events-canvas/MODEL-V3.md`): a guess is
+  data-entry judgment, recorded per event and reviewable as a diff, fed by
+  the venue registry `data/venues/index.json`. Two things the script must
+  never overwrite: a POSTED time (a time carrying no `approx`) and a printed
+  close. And a close says where it came from: an https `closeSource` means a
+  page printed THAT NIGHT's end, so it stands; anything else names the rule
+  that produced it, so a re-run re-reads the registry instead of mistaking
+  its own guess for evidence. Copying a registry URL onto an event is what
+  broke that once.
 
 - **How this app moves (Kevin, 2026-08-30 — the vibe, not the mechanics; the
   code carries those).** This is a designer's passion project, and the bar is

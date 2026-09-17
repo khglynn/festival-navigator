@@ -1,0 +1,1428 @@
+[
+ {
+  "profile": {
+   "venue": "Regency Ballroom (San Francisco)",
+   "officialSite": "https://www.theregencyballroom.com/",
+   "typicalClose": null,
+   "typicalCloseConfidence": "unknown",
+   "typicalCloseEvidence": [
+    {
+     "url": "https://aeglive-theregencyballroom.s3.amazonaws.com/doc/regency_ballroom_tech_april2014.pdf",
+     "quote": "The Regency Ballroom has a DAYTIME SOUND CURFEW OF 5:00PM (weekdays only)."
+    },
+    {
+     "url": "https://aeglive-theregencyballroom.s3.amazonaws.com/doc/regency_ballroom_tech_april2014.pdf",
+     "quote": "105db SPL LIMIT (A-Weighted) at all times."
+    },
+    {
+     "url": "https://19hz.info/eventlisting_BayArea.php",
+     "quote": "Friday, September 25 at 8pm \u2014 Channel Tres, Jyoty, Gella Haha \u2014 No closing time listed"
+    },
+    {
+     "url": "https://www.sf.gov/get-extended-hours-premises-permit-your-business",
+     "quote": "An Extended Hours Premises (EHP) permit lets you host entertainment... between 2 am and 6 am."
+    }
+   ],
+   "doorsToFirstActMinutes": 60,
+   "doorsToFirstActEvidence": [
+    {
+     "url": "https://www.theregencyballroom.com/faq/",
+     "quote": "The doors typically open one hour prior to show time; although this may vary by concert."
+    },
+    {
+     "url": "https://ra.co/events/2404745",
+     "quote": "SAT, 13 JUN 2026 at 08:00PM PDT ... Doors Open: 07:00PM"
+    }
+   ],
+   "supportSetMinutes": null,
+   "headlinerSetMinutes": null,
+   "setLengthEvidence": [],
+   "thisWeekSetTimes": [
+    {
+     "night": "Thu Sept 24, 2026 \u2014 Soulwax (Portola Pre-Party)",
+     "detail": "Doors 8:00 PM. No set time, curfew, or 'music from' language published anywhere found.",
+     "url": "https://dothebay.com/events/2026/9/24/soulwax-tickets"
+    },
+    {
+     "night": "Thu Sept 24, 2026 \u2014 Soulwax (Portola Pre-Party)",
+     "detail": "AXS artist listing confirms: 'ThuSep24, 2026 - 8:00 PM ... Portola Pre-Party ... The Regency Ballroom, San Francisco, CA'",
+     "url": "https://www.axs.com/events/1570048"
+    },
+    {
+     "night": "Fri Sept 25, 2026 \u2014 Channel Tres / Jyoty / Gelli Haha (Portola Pre-Party)",
+     "detail": "CONFLICTING DOORS TIMES ACROSS SOURCES: dothebay/AXS/Shazam/Songkick all say doors 8:00 PM; but RA's own event page says 'Doors Open: 7:00PM'. No set times or curfew published anywhere.",
+     "url": "https://tickets.songkick.com/concerts/43374122-channel-tres-at-regency-ballroom"
+    },
+    {
+     "night": "Fri Sept 25, 2026 \u2014 Channel Tres / Jyoty / Gelli Haha (Portola Pre-Party)",
+     "detail": "RA event page: 'Friday, September 25, 2026 21 & Over Doors Open: 7:00PM' \u2014 one hour earlier than every other source.",
+     "url": "https://ra.co/events/2520991"
+    },
+    {
+     "night": "Sat Sept 26, 2026 \u2014 Parcels / Velvet Trip (Portola After Party)",
+     "detail": "IMPORTANT \u2014 AXS explicitly separates the two fields, and they don't match the app's assumed 10 PM doors: the page's top banner reads 'Sat Sep26, 2026 - 10:00 PM' but the dedicated 'Event Dates & Times / Doors Open' field says 'Sat Sep26, 2026 - 9:00 PM'.",
+     "url": "https://www.axs.com/events/1573671"
+    },
+    {
+     "night": "Sat Sept 26, 2026 \u2014 Parcels / Velvet Trip (Portola After Party)",
+     "detail": "dothebay lists the event at 10:00PM (structured data startDate 22:00 local) with no separate doors field and no set/curfew time.",
+     "url": "https://dothebay.com/events/2026/9/26/parcels-tickets"
+    }
+   ],
+   "afterHoursLicense": "No evidence found that Regency Ballroom holds an SF Entertainment Commission Extended Hours Premises permit (which would allow service 2-6 AM). Searched SF.gov EHP program pages and general web search; found only the general program description, not a venue-specific list or confirmation either way. See https://www.sf.gov/get-extended-hours-premises-permit-your-business (\"An Extended Hours Premises (EHP) permit lets you host entertainment and/or serve food and non-alcoholic drinks between 2 am and 6 am.\") \u2014 this describes the program, not Regency's status.",
+   "notes": "BOTTOM LINE: This venue does not publish a closing time or curfew anywhere \u2014 not on its own FAQ, not on its own technical rider (which documents only a DAYTIME 5PM-weekdays sound curfew, i.e. the opposite end of the night), not on any of the ~15+ upcoming AXS/dothebay/RA event listings I pulled, and not on 19hz.info's own Regency Ballroom entries (\"No closing time listed\" for the very Channel Tres show in question). So typicalClose is genuinely null, not an oversight \u2014 I could not find it, and I did not infer one from genre/venue-size norms since the task rule is never invent.\n\nWhat I DID confirm with sources:\n1. Doors-to-first-act gap: the venue's own FAQ states doors open \"one hour prior to show time\" (i.e., first act ~60 min after doors), and one concrete RA listing (VTSS, a comparable DJ/club-style Regency show) matches exactly: doors 7PM, show-listed 8PM.\n2. No published headliner/support set lengths anywhere \u2014 searched RA (which lists lineups but never timetables for Regency, unlike some RA club listings), setlist.fm (no DJ/club setlists indexed for this venue), and general web/Instagram searches. This is a real gap, not just unchecked.\n3. Two concrete, source-worthy discrepancies for the app to know about:\n   a. Friday (Channel Tres) \u2014 RA's own event page says doors 7:00 PM, while every other source (dothebay, AXS-fed Shazam, Songkick) says 8:00 PM. I'd trust the 8:00 PM cluster (4 independent listings) over RA's single outlier, but flagging both.\n   b. Saturday (Parcels) \u2014 AXS's dedicated \"Doors Open\" field says 9:00 PM, not the 10:00 PM the app/task context assumes and that dothebay/AXS's own banner display. This is the one hard data point that might actually change what the app shows \u2014 worth Kevin's eyes before shipping a guess built on \"doors 10 PM.\"\n\nGiven the null closing time, if the app needs SOME estimate to compute an \"ends around\" guess, the honest inputs available are: doors time (per-night, see above) + venue's own 60-min doors-to-first-act norm + industry-standard club-night set-length assumptions (which I could NOT source for this venue specifically \u2014 that part would have to be clearly labeled as a generic assumption, not Regency-specific data)."
+  },
+  "verdict": {
+   "venue": "Regency Ballroom (San Francisco)",
+   "closeHolds": true,
+   "setLengthHolds": true,
+   "closeCorrection": null,
+   "problems": [
+    "The sf.gov EHP-permit quote is accurate verbatim, but it's generic city-wide policy, not Regency-specific evidence: nothing confirms Regency Ballroom actually holds an Extended Hours Premises permit or that any show there runs to 2\u20136am. It shouldn't be read as support for (or against) this venue's closing time \u2014 it's the wrong kind of evidence for the claim.",
+    "The PDF's \"DAYTIME SOUND CURFEW OF 5:00PM (weekdays only)\" quote is accurate verbatim (I read the actual PDF, all 10 pages), but it's a pre-show/load-in noise restriction \u2014 no noise before 5pm on weekdays \u2014 unrelated to when shows END at night. The 2014 tech-spec doc contains no nighttime curfew or closing-time info anywhere; citing it next to a \"closing time\" claim risks implying it bears on evening close, which it doesn't.",
+    "No evidence in the given set addresses headliner or support set length at all \u2014 both null claims have no citation trail. I could not independently verify either: my setlist.fm venue-ID guess resolved to the wrong venue (Cardiff, not SF), Songkick's venue page 404'd, DoTheBay returned HTTP 403, and this session's WebSearch budget was exhausted before broader queries could run. Set length is a genuine gap, not just under-cited \u2014 flagging as unverified per instructions, not inventing a number.",
+    "The doors-to-first-act: 60 min claim has no supporting URL among the four cited items \u2014 none of them mention doors/show timing. I independently found support on the venue's own FAQ (listed in extraEvidence) that matches the claim, but the original evidence packet doesn't actually back this specific number.",
+    "Minor: the 19hz quote spells the third act \"Gella Haha\"; re-fetching the live page shows \"Gelli Haha.\" Immaterial to the venue-hours question, but the quote isn't a perfect match to what's currently on the page.",
+    "One data point worth surfacing (not quoted verbatim since it came through an AI-summarized fetch, not raw text, so I'm not treating it as a formal citation): 19hz's own listing for a Sat Oct 3 Regency show (Hamdi/Conducta/Sam Binga, 21+, dubstep/bass/DnB) shows \"8pm-12am\" with an explicit close around midnight \u2014 unlike the Sept 25 and other listings, which show no end time. That suggests closing time genuinely varies by show type (standard all-ages/GA concerts publish none; late-night 21+ dance nights sometimes do), which is consistent with \u2014 and further supports \u2014 leaving it as unknown/null rather than a single fixed value."
+   ],
+   "extraEvidence": [
+    {
+     "url": "https://www.theregencyballroom.com/faq/",
+     "quote": "The doors typically open one hour prior to show time; although this may vary by concert."
+    }
+   ]
+  }
+ },
+ {
+  "profile": {
+   "venue": "Monarch (San Francisco)",
+   "officialSite": "https://www.monarchsf.com/",
+   "typicalClose": "2 AM (general weekend baseline); 2:30\u20133 AM common on bigger/headliner nights per recent event listings",
+   "typicalCloseConfidence": "medium",
+   "typicalCloseEvidence": [
+    {
+     "url": "https://www.sfstation.com/monarch-sf-b38362712",
+     "quote": "Sunday (9pm - 2am) , Monday (Closed) , Tuesday - Friday (5:30pm - 2am) , Saturday (9pm - 2am)"
+    },
+    {
+     "url": "https://discotech.me/san-francisco/monarch/",
+     "quote": "Monarch is open from 5:30pm \u2013 2am Tuesdays to Fridays , 9:00pm \u2013 2:00am Saturdays and Sundays."
+    },
+    {
+     "url": "https://www.sfstation.com/monarch-sf-b38362712",
+     "quote": "9pm - 3am at Monarch SF (Hear + There x Locator: Mungo Sound Machine, Sept 11 2026)"
+    },
+    {
+     "url": "https://www.sfstation.com/monarch-sf-b38362712",
+     "quote": "9pm - 2:30am at Monarch SF (Felix Dickinson, Sept 18 2026)"
+    }
+   ],
+   "afterHoursLicense": "Not found. No source (venue site, RA, aggregators) mentions an after-hours license (e.g. 4 AM/6 AM). All observed event windows and general hours cap at 2\u20133 AM. Absence of evidence, not confirmation of absence.",
+   "doorsToFirstActMinutes": null,
+   "setLengthEvidence": [],
+   "doorsToFirstActEvidence": [],
+   "headlinerSetMinutes": null,
+   "supportSetMinutes": null,
+   "thisWeekSetTimes": [
+    {
+     "night": "Fri Sept 25 2026 \u2014 Sam Alfred / Skiis",
+     "detail": "Doors/event window 10 PM\u20132 AM (\"Friday, September 25-Saturday, September 26 \u2022 10 PM-2 AM\", 4 hours). No per-act times.",
+     "url": "https://www.eventbrite.com/e/sam-alfred-tickets-1997644591749"
+    },
+    {
+     "night": "Fri Sept 25 2026 \u2014 Sam Alfred / Skiis (corroborating)",
+     "detail": "SF Station event listing: \"10pm - 2am at Monarch SF\"",
+     "url": "https://www.sfstation.com/monarch-sf-b38362712"
+    },
+    {
+     "night": "Sat Sept 26 2026 \u2014 Jigitz / Clearcast",
+     "detail": "AXS: \"Doors Open Sat Sep26, 2026 - 10:00 PM\". No end time listed on AXS.",
+     "url": "https://www.axs.com/events/1579103/jigitz-tickets"
+    },
+    {
+     "night": "Sat Sept 26 2026 \u2014 Jigitz / Clearcast",
+     "detail": "Eventbrite: \"Saturday, September 26-Sunday, September 27 \u2022 10 PM-3 AM\" (5 hours). No per-act times; event sold out.",
+     "url": "https://www.eventbrite.com/e/jigitz-tickets-1997983726109"
+    },
+    {
+     "night": "Sat Sept 26 2026 \u2014 Jigitz / Clearcast (corroborating)",
+     "detail": "SF Station event listing: \"10pm - 3am at Monarch SF\"",
+     "url": "https://www.sfstation.com/monarch-sf-b38362712"
+    },
+    {
+     "night": "Sun Sept 27 2026 \u2014 Silva Bumpa / Dean Turnley / Buck Wilson",
+     "detail": "AXS: \"Doors Open Sun Sep27, 2026 - 10:00 PM\". No end time listed on AXS; AXS page only names Silva Bumpa + Dean Turnley in header text (Buck Wilson appears in the 'with' line).",
+     "url": "https://www.axs.com/events/1578846/silva-bumpa-tickets"
+    },
+    {
+     "night": "Sun Sept 27 2026 \u2014 Silva Bumpa / Dean Turnley / Buck Wilson",
+     "detail": "Eventbrite: \"Sunday, September 27-Monday, September 28 \u2022 10 PM-3 AM\" (5 hours). No per-act times; event sold out. Buck Wilson not mentioned on this Eventbrite page (only Silva Bumpa + Dean Turnley).",
+     "url": "https://www.eventbrite.com/e/silva-bumpa-tickets-1998116550390"
+    },
+    {
+     "night": "Sun Sept 27 2026 \u2014 Silva Bumpa / Dean Turnley / Buck Wilson (corroborating)",
+     "detail": "SF Station event listing: \"10pm - 3am at Monarch SF\"",
+     "url": "https://www.sfstation.com/monarch-sf-b38362712"
+    }
+   ],
+   "notes": "Method: WebSearch + WebFetch/Firecrawl scrape across the venue's own site, AXS, Eventbrite, SF Station, Discotech, and Resident Advisor (RA). AXS blocked plain WebFetch (403) but was reachable via Firecrawl scrape.\n\nKey findings vs. gaps:\n- No source ever prints a doors time AND a separate first-act/set time for a Monarch show \u2014 every ticket page (AXS, Eventbrite) and aggregator (SF Station) gives only a single doors/event-window time. So doorsToFirstActMinutes, headlinerSetMinutes, and supportSetMinutes are all null \u2014 not derivable from anything published, not even indirectly (I checked two other recent multi-act RA event pages for Monarch \u2014 Mungo Sound Machine 9/11 and Felix Dickinson 9/18 \u2014 and RA lists lineup/bios only, never a timetable for Monarch's promoted nights, unlike some RA clubs that do publish timetables).\n- Portola Week 2026: the app's existing \"close 3 AM\" for Sat (Jigitz) and Sun (Silva Bumpa) nights is corroborated by two independent sources each (Eventbrite window + SF Station event listing), both printing \"10 PM-3 AM.\" Friday (Sam Alfred) closes at 2 AM per the same two-source pattern \u2014 this fills in a close time the app doesn't currently list for Friday. None of the three nights have a per-act breakdown anywhere; \"Buck Wilson\" for Sunday appears only on the AXS \"with\" line, not on Eventbrite or SF Station, which list just Silva Bumpa + Dean Turnley \u2014 worth flagging if the app displays all three names, since ticket sources aren't fully consistent on the Sunday support bill.\n- General closing-time discrepancy: an AI-generated search summary (sourced loosely from Yelp/RA, not a page I could pull and quote directly) claimed Monarch's general Fri/Sat hours run to 2:30 AM. Two sources I *could* pull and quote directly (SF Station, Discotech) both give Saturday's general hours as 2 AM, matching Sunday/weekday hours \u2014 I trusted the direct quotes over the unsourced summary and noted 2:30\u20133 AM instead as what actually shows up on event-specific listings (headliner nights), not as the stated general-hours ceiling.\n- No liquor-license or ABC filing was checked directly (would require SF ABC portal, not attempted) \u2014 the \"typicalClose\" answer here is triangulated from aggregator-stated general hours + a handful of recent event listings, not from a primary licensing document. Confidence: medium, not high \u2014 good enough to guess \"ends around 2\u20133 AM\" for the app's copy, not precise enough to state as a firm curfew."
+  },
+  "verdict": {
+   "venue": "Monarch (San Francisco)",
+   "closeHolds": false,
+   "closeCorrection": "The \"2 AM baseline / 2:30-3 AM only on bigger nights\" framing overstates the case. Standard (Wed/Thu/Sun) close is 2:00 AM per SF Station and Discotech (but Discotech's page is stale \u2014 last modified 2022-11-18). For Friday/Saturday, Yelp's business-hours listing \u2014 the most recently updated source found (\"Updated August 2026\") \u2014 posts a 2:30 AM close, not 2:00 AM: \"Monarch closes at 2:30 AM (Next day) on Friday and Saturday... Wed-Thu, Sun 9:00 PM - 2:00 AM (Next day) Fri-Sat 9:00 PM - 2:30 AM (Next day)\" (https://m.yelp.com/biz/monarch-san-francisco). This is corroborated by actual event end-times pulled from 19hz.info, SF Station's calendar, and DoTheBay's own schema.org event data for Sept-Nov 2026, which show Fri/Sat closes of 1:00, 2:00, 2:30, and 3:00 AM all recurring \u2014 a routine spread across the night, not a 2 AM norm with rare 2:30-3 AM exceptions. Recommend: state Wed/Thu/Sun close as 2:00 AM (high confidence, 3 sources), and Fri/Sat close as contested between 2:00 AM (older/generic listings) and 2:30 AM (Yelp, most current, and matching the actual event-time distribution) rather than framing 2:30-3 AM as an occasional headliner-night bump.",
+   "setLengthHolds": true,
+   "problems": [
+    "Discotech.me, cited as one of two hours sources, is stale: page metadata shows modifiedTime 2022-11-18 (~4 years old as of Sept 2026) \u2014 this wasn't flagged in the original result.",
+    "The evidence set omitted Yelp's hours listing, which is more recently updated (Aug 2026) and gives a materially different Friday/Saturday close (2:30 AM, not 2:00 AM) than SF Station/Discotech.",
+    "Yelp could not be directly rendered \u2014 WebFetch got HTTP 403 and firecrawl_scrape refused the domain ('do not support this site'). The Yelp hours figure rests on three consistent search-engine snippets (via firecrawl_search) rather than a full page fetch; treat as solid but not a direct-render confirmation.",
+    "The 'baseline vs. bigger-night exception' framing for close time isn't well supported: sampling actual Sept-Nov 2026 event end-times from 19hz.info, SF Station, and DoTheBay shows 2:30 AM and 3:00 AM closes appearing about as often as 2:00 AM on Fri/Sat nights, not as rare exceptions.",
+    "No source checked (SF Station, Discotech, DoTheBay, 19hz.info, Resident Advisor, Ticketfairy, Yelp) publishes headliner set length, support set length, or doors-to-first-act minute figures for Monarch \u2014 the null/null/null in the original claim is an honest reflection of unavailable public data, not something I could confirm or fill in.",
+    "Resident Advisor's venue page (ra.co/clubs/55600) was reachable via firecrawl_search snippets but returned 403 on direct WebFetch, and its content (event listing titles only) had no hours or set-time data anyway \u2014 a dead end worth noting so it isn't re-tried expecting different results."
+   ],
+   "extraEvidence": [
+    {
+     "url": "https://m.yelp.com/biz/monarch-san-francisco",
+     "quote": "Monarch closes at 2:30 AM (Next day) on Friday and Saturday. Mon-Tue Closed Wed-Thu, Sun 9:00 PM - 2:00 AM (Next day) Fri-Sat 9:00 PM - 2:30 AM (Next day)"
+    },
+    {
+     "url": "https://19hz.info/eventlisting_BayArea.php",
+     "quote": "Fri: Sep 11 (9pm-3am) \"Hear + There X Locator: Mungo Sound Machine...\" | \"$25-38 | 21+\""
+    },
+    {
+     "url": "https://19hz.info/eventlisting_BayArea.php",
+     "quote": "Sat: Sep 12 (9pm-3am) \"Black V Neck, Nile, Dean Samaras, Kenny Cordeiro, Alex Goodcat...\" | \"$10 b4 11 w rsvp / $9-23+ | 21+\""
+    },
+    {
+     "url": "https://19hz.info/eventlisting_BayArea.php",
+     "quote": "Fri: Oct 2 (9pm-2:30am) \"Prosumer\" | \"free w/rsvp b4 10:30pm / $10-26 | 21+\""
+    },
+    {
+     "url": "https://dothebay.com/venues/monarch",
+     "quote": "Mon - Sun: 5:30 pm - 2:00 am"
+    },
+    {
+     "url": "https://dothebay.com/venues/monarch",
+     "quote": "startDate 2026-09-11T21:00-0700 / endDate 2026-09-12T03:00-0700 (schema.org event metadata showing a 3:00 AM Fri-night close)"
+    },
+    {
+     "url": "https://discotech.me/san-francisco/monarch/",
+     "quote": "page metadata: modifiedTime 2022-11-18T19:34:27+00:00"
+    },
+    {
+     "url": "https://www.ticketfairy.com/events-in-san-francisco/monarch",
+     "quote": "Countdown events or big-name DJs usually start around 10 pm, with dancing continuing until 3 am or later (closing times often 2-4 am)."
+    }
+   ]
+  }
+ },
+ {
+  "profile": {
+   "venue": "The Great Northern (San Francisco), 119 Utah St, SF, CA 94103",
+   "officialSite": "https://www.thegreatnorthernsf.com/",
+   "typicalClose": "2 AM (most common printed close on recent event listings), but the venue's own licensed hours run later and specific nights vary \u2014 see notes",
+   "typicalCloseConfidence": "medium",
+   "typicalCloseEvidence": [
+    {
+     "url": "https://www.sfstation.com/the-great-northern-b2336",
+     "quote": "Ranger Trucco - Portola Week 2026 ... 10pm - 2am at The Great Northern"
+    },
+    {
+     "url": "https://www.sfstation.com/the-great-northern-b2336",
+     "quote": "Groove Armada - Portola Week 2026 ... 10pm - 3am at The Great Northern"
+    },
+    {
+     "url": "https://www.sfstation.com/the-great-northern-b2336",
+     "quote": "SG Lewis - Portola Week 2026 ... 10pm - 2am at The Great Northern"
+    },
+    {
+     "url": "https://www.sfstation.com/the-great-northern-b2336",
+     "quote": "PRIMAL DISCO ... 8pm - 2am at The Great Northern"
+    },
+    {
+     "url": "https://www.sfstation.com/the-great-northern-b2336",
+     "quote": "Doc Martin | Miguel Migs | David Harness ... 9:30pm - 3am"
+    },
+    {
+     "url": "https://www.sfstation.com/the-great-northern-b2336",
+     "quote": "SET with Lee Foss ... 9:30pm - 2am at The Great Northern"
+    },
+    {
+     "url": "https://maps.apple.com/place?place-id=I7D603B949C8BA0FB",
+     "quote": "Friday \u2013 Saturday: 9:00PM \u2013 4:00AM"
+    }
+   ],
+   "afterHoursLicense": "Venue's own listed hours (Apple Maps business listing) show Friday\u2013Saturday 9:00 PM\u20134:00 AM and Thursday/Sunday to 2:00 AM \u2014 https://maps.apple.com/place?place-id=I7D603B949C8BA0FB (quote: \"Friday \u2013 Saturday: 9:00PM \u2013 4:00AM\"). This is the venue's outer licensed/operating window, not a promoter's printed close \u2014 actual ticketed events (see typicalCloseEvidence) mostly print 2 AM, occasionally 3 AM, rarely running the full 4 AM (only found for an older \"SET\" after-hours series in 2023: RA search snippet showed \"SET with The Element (Afterlife) ... Friday, October 13, 2023, 22:00 - 04:00\"). Could not independently verify a specific SF liquor-license \"extended hours\" permit filing for this address (California's 2 AM\u21924 AM late-night pilot program exists citywide but I found no venue-specific permit record, only the Apple Maps hours listing) \u2014 treat the 4 AM figure as the venue's stated hours, not a confirmed regulatory permit.",
+   "doorsToFirstActMinutes": null,
+   "doorsToFirstActEvidence": [],
+   "headlinerSetMinutes": null,
+   "supportSetMinutes": null,
+   "setLengthEvidence": [],
+   "thisWeekSetTimes": [
+    {
+     "night": "Fri Sep 25, 2026 \u2014 Ranger Trucco / Loods",
+     "detail": "Doors 10 PM, printed close 2 AM. No individual set times published for Ranger Trucco vs. Loods.",
+     "url": "https://www.sfstation.com/ranger-trucco-portola-week-2026-e2423593"
+    },
+    {
+     "night": "Fri Sep 25, 2026 \u2014 Ranger Trucco / Loods",
+     "detail": "Eventbrite page title states the run as 10 PM\u20132 AM overnight Fri into Sat.",
+     "url": "https://www.eventbrite.com/e/ranger-trucco-the-great-northern-tickets-1998380185931"
+    },
+    {
+     "night": "Sat Sep 26, 2026 \u2014 Groove Armada",
+     "detail": "Doors 10 PM, printed close 3 AM (later than Fri/Sun). No support act or set times published on the ticket page.",
+     "url": "https://www.eventbrite.com/e/groove-armada-the-great-northern-tickets-1998071776470"
+    },
+    {
+     "night": "Sat Sep 26, 2026 \u2014 Groove Armada",
+     "detail": "SF Station listing confirms same 10pm-3am window.",
+     "url": "https://www.sfstation.com/groove-armada-portola-week-2026-e2286707"
+    },
+    {
+     "night": "Sun Sep 27, 2026 \u2014 SG Lewis (DJ Set) / Puffie",
+     "detail": "DoTheBay lists 10:00PM start, 21+, with Puffie as support act; no end time or set-time breakdown given on this page.",
+     "url": "https://dothebay.com/events/2026/9/27/sg-lewis-dj-set-tickets"
+    },
+    {
+     "night": "Sun Sep 27, 2026 \u2014 SG Lewis (DJ Set) / Puffie",
+     "detail": "SF Station lists the same night as 10pm - 2am.",
+     "url": "https://www.sfstation.com/sg-lewis-portola-week-2026-e2420918"
+    }
+   ],
+   "notes": "Bottom line: for the three Portola Week nights, I found solid doors + printed-close data for all three (all doors 10 PM; Fri and Sun close at 2 AM, Sat/Groove Armada closes at 3 AM \u2014 that's a real, sourced difference, not a guess). I could NOT find any published set times, curfew language beyond the close time, or a doors-to-first-act gap for this venue at all \u2014 no ticket page, RA listing, or recap for The Great Northern prints individual act set times; every source only prints doors and (sometimes) a close time. So doorsToFirstActMinutes, headlinerSetMinutes, and supportSetMinutes are all null \u2014 this isn't a venue where that data exists publicly, not a search failure. If the app needs a guess for those, it would have to be a stated assumption (e.g. \"openers typically start ~30-45 min after doors, closing DJ sets typically run 90-120 min\" is common club-night convention generally, but I have zero Great-Northern-specific evidence for it, so I'm not passing it off as sourced).\n\nOn typical close: recent (Sep-Oct 2026) SF Station listings for weekend club nights lean 2 AM (5 of 7 listings), with 3 AM appearing for a couple of bigger nights (Doc Martin/Miguel Migs/David Harness, and Groove Armada). The venue's own Apple Maps hours listing states Fri-Sat 9 PM-4 AM as the outer operating window, which is wider than any specific printed ticket close I found \u2014 so \"2 AM\" is the better bet for a typical single-headliner club night, but Sat nights (like Groove Armada) specifically trend later. Older RA listings (2023-2025) show 3 AM/3:30 AM/4 AM closes more often, especially for the \"SET\" after-hours series \u2014 that's a different, later-running promoter brand than the Goldenvoice/Portola Week nights, so don't average those into the Portola Week guess.\n\nRecommendation for the app's guesses: for Fri (Ranger Trucco/Loods) and Sun (SG Lewis/Puffie), use the printed 10 PM-2 AM as the honest range with no invented set times. For Sat (Groove Armada), use 10 PM-3 AM \u2014 it's a genuinely later night, confirmed on two independent listings (Eventbrite + SF Station), not a typo."
+  },
+  "verdict": {
+   "venue": "The Great Northern (San Francisco)",
+   "closeHolds": true,
+   "setLengthHolds": true,
+   "closeCorrection": null,
+   "problems": [
+    "The claim's phrase 'the venue's own licensed hours run later' overstates the sourcing. The venue's actual official site (thegreatnorthernsf.com) publishes NO hours at all \u2014 confirmed by fetching the full page: its structured data explicitly carries \"isBusinessHoursEnabled\":false, and zero am/pm hour strings appear anywhere in the 966KB page. The 4:00 AM figure traces to Apple Maps' business-hours listing, which itself cites Yelp (\"vendorId\":\"com.yelp\") as the data source \u2014 a directory listing, not a venue statement or a liquor-license record. Recommend rephrasing to 'per Apple Maps' business-hours listing (sourced from Yelp)'.",
+    "WebFetch returned HTTP 403 on the primary cited URL (sfstation.com/the-great-northern-b2336) on first attempt. Had to retry via curl with a browser user-agent (200 OK) to actually verify the quotes byte-for-byte. Not a data error, but the source wasn't trivially fetchable as instructed and needed a workaround.",
+    "Resident Advisor (ra.co) and Yelp were both unreachable \u2014 HTTP 403 Forbidden even via direct curl with a browser user-agent, on both the venue's RA club page and an RA search. Could not independently check either as the task asked; this is an unverified gap, not a contradiction of the claim.",
+    "19hz.info: no venue-specific listing found for The Great Northern (it's a licensed nightclub, and 19hz mostly indexes underground/warehouse raves). Could not confirm or refute the close-time claim from this source \u2014 it's simply silent on this venue, not evidence either way.",
+    "DoTheBay loaded successfully (200 via curl) but the fetched page only publishes door/start times (9:00\u201310:30 PM range) for upcoming shows; no close times appear anywhere in the HTML, so it neither supports nor contradicts the 2 AM claim.",
+    "The cited evidence set of 6 quotes (4 at 2am, 2 at 3am) understates how strong the 'most common' pattern actually is. The FULL current SFStation calendar for this venue (9 dated listings, Sep 5 2026\u2013Jan 1 2027) shows 2am closes on 6 of 8 normal-hours events vs 3am on 2 \u2014 i.e. two additional non-cited listings (nonsuit, Oct 10: '9pm - 2am'; Nahko and Medicine for the People, Oct 21: '7pm - 2am') also support 2am and were left out of the evidence list.",
+    "'Recent event listings' is worth a terminology nit: the SFStation calendar checked is forward-looking (upcoming shows as of today, Sep 2 2026), not a backward-looking sample of past/recent events. The substance of the claim still holds, but 'upcoming' would be more precise than 'recent'."
+   ],
+   "extraEvidence": [
+    {
+     "url": "https://maps.apple.com/place?place-id=I7D603B949C8BA0FB",
+     "quote": "aria-label=\"Friday to Saturday, 9:00 PM to 4:00 AM\" ... aria-label=\"Thursday, 9:00 PM to 2:00 AM\" (raw page data attributes this to vendorId \"com.yelp\")"
+    },
+    {
+     "url": "https://discotech.me/san-francisco/great-northern/",
+     "quote": "The open and close times vary depending on the show. Some shows start at 9, some at 10. Some shows will end at 3, some at 4."
+    },
+    {
+     "url": "https://discotech.me/san-francisco/great-northern/",
+     "quote": "9 PM \u2013 3 AM on Fridays and Saturdays"
+    },
+    {
+     "url": "https://www.ticketfairy.com/events-in-san-francisco/the-great-northern",
+     "quote": "The club usually closes by 3am; the last call for drinks may be 30 minutes before."
+    },
+    {
+     "url": "https://www.ticketfairy.com/events-in-san-francisco/the-great-northern",
+     "quote": "starting around 9:00pm and running until 2\u20133am"
+    },
+    {
+     "url": "https://www.sfstation.com/the-great-northern-b2336",
+     "quote": "nonsuit ... 9pm - 2am at The Great Northern (Oct 10, 2026)"
+    },
+    {
+     "url": "https://www.sfstation.com/the-great-northern-b2336",
+     "quote": "Nahko and Medicine for the People - 'HOKA' 10th Anniversary Tour ... 7pm - 2am at The Great Northern (Oct 21, 2026)"
+    }
+   ]
+  }
+ },
+ {
+  "profile": {
+   "venue": "Audio (San Francisco / Audio SF, 316 11th St)",
+   "officialSite": "https://audiosf.com/",
+   "typicalClose": "2:00 AM",
+   "typicalCloseConfidence": "high",
+   "typicalCloseEvidence": [
+    {
+     "url": "https://discotech.me/san-francisco/audio/",
+     "quote": "10 PM \u2013 2 AM Fridays and Saturdays"
+    },
+    {
+     "url": "https://www.eventbrite.com/e/azzecca-at-audio-sf-portola-week-tickets-1999001301705",
+     "quote": "Sunday, September 27-Monday, September 28 \u2022 9:30 PM-2 AM"
+    },
+    {
+     "url": "https://www.eventbrite.com/e/kungs-tickets-1988813707336",
+     "quote": "Friday, May 8-Saturday, May 9 \u2022 9:30 PM-2 AM"
+    },
+    {
+     "url": "https://www.eventbrite.com/e/rac-dj-set-tickets-924126626617",
+     "quote": "Saturday, August 17-Sunday, August 18, 2024 \u2022 9:30 PM-2 AM"
+    },
+    {
+     "url": "https://www.yelp.com/biz/audio-san-francisco",
+     "quote": "Audio is open Friday and Saturday from 10:00 PM - 2:00 AM"
+    }
+   ],
+   "doorsToFirstActMinutes": null,
+   "headlinerSetMinutes": null,
+   "supportSetMinutes": null,
+   "setLengthEvidence": [],
+   "afterHoursLicense": null,
+   "thisWeekSetTimes": [
+    {
+     "night": "Sat Sept 26 \u2014 Max Styler / Airwolf Paradise",
+     "url": "https://www.axs.com/events/1576493/max-styler-tickets",
+     "detail": "AXS indexed page title reads 'Max Styler - San Francisco - Audio - Sat, Sep 26, 2026, 10: ...' \u2014 confirms venue=Audio, date, and a 10-something PM start, but the exact minute is truncated in the indexed title and AXS returned 403 to a direct page fetch, so this is NOT independently confirmed to the minute."
+    },
+    {
+     "night": "Sun Sept 27 \u2014 Azzecca",
+     "url": "https://www.eventbrite.com/e/azzecca-at-audio-sf-portola-week-tickets-1999001301705",
+     "detail": "Eventbrite's own listing for this exact Portola Week show states 'Sunday, September 27-Monday, September 28 \u2022 9:30 PM-2 AM' \u2014 doors 9:30 PM, close 2 AM, no separate set times or curfew line given beyond that window."
+    }
+   ],
+   "doorsToFirstActEvidence": [],
+   "notes": "Bottom line: confident on closing time, not confident on anything more granular.\n\n1. CLOSING TIME (high confidence, null \u2192 2:00 AM): Every source that states hours agrees \u2014 Audio's own aggregator listings (discotech.me FAQ), Yelp, SF Station, and every single Eventbrite event page I checked across 2024\u20132026 (RAC 8/17/24, KUNGS 5/8/26, and the Azzecca Portola Week listing itself) all show a 2 AM close. This matches standard CA on-sale liquor license hours (2 AM last call) \u2014 nothing suggests Audio holds an after-hours extension. I found zero mentions of a 4 AM or after-hours license anywhere; treat afterHoursLicense as confirmed-absent, not just unknown.\n\n2. DOORS-TO-FIRST-ACT GAP: not findable. Audio is a ~400\u2013650-cap SoMa club, and like most clubs its size, it does not publish a timetable \u2014 every listing I found (Eventbrite, AXS, RA search snippets, the venue's own site) gives only a single doors\u2013close window (e.g. \"9:30 PM\u20132 AM\") plus the headliner's name. There is no printed \"doors at X, [headliner] at Y\" anywhere I could reach.\n\n3. SET LENGTHS: not findable, same reason \u2014 no RA timetable graphic, no Instagram set-times post, nothing in the club's own event pages. One soft, non-numeric signal: a past Airwolf Paradise date at Audio (6/21, with support act JLITTLE) sold as \"FREE BEFORE 11PM W/ RSVP,\" which hints the earlier hours are the support/lower-draw slot and the marquee act plays later \u2014 but that's a pricing artifact, not a stated time, so I did not convert it into a minutes estimate.\n\n4. THIS WEEK'S TWO NIGHTS: The Sun 9/27 Azzecca show has a hard, sourced doors/close (9:30 PM\u20132 AM) straight from its own Eventbrite page \u2014 that's the strongest data point in this whole search. The Sat 9/26 Max Styler/Airwolf Paradise show only surfaced a truncated AXS page title showing a \"10:xx PM\" start \u2014 real, but I couldn't verify the exact minute since AXS blocks direct fetches (403) and I found no other primary listing (audiosf.com's own event page, RA's page) that I could actually load \u2014 both threw 403s too. Recommend treating \"10 PM doors\" for that night as plausible-but-unconfirmed rather than sourced fact.\n\n5. BLOCKED SOURCES: ra.co and dothebay.com both 403'd every direct WebFetch attempt (event pages and venue pages alike) \u2014 I could only see them via Google's indexed search snippets, which I did use for corroboration (e.g., RAC and KUNGS both showing 21:30\u201302:00 on RA) but did not treat as verbatim quotes since I couldn't confirm the exact on-page wording.\n\nFor the app's \"honest guess\" feature: doors-to-close (9:30/10 PM\u20132 AM) is well-grounded: use that confidently. A specific first-act time or set-length split for either headliner would be an invented number, not a sourced one \u2014 if the product needs that granularity, it should be presented as a generic estimate/UI hedge, not attributed to a source."
+  },
+  "verdict": {
+   "venue": "Audio (San Francisco)",
+   "closeHolds": true,
+   "setLengthHolds": true,
+   "closeCorrection": null,
+   "problems": [
+    "Yelp source (https://www.yelp.com/biz/audio-san-francisco) could not be independently re-verified: WebFetch returned HTTP 403 Forbidden on that page. The quoted '10:00 PM - 2:00 AM Fri/Sat' text is consistent with everything else found but was NOT confirmed live at the source itself.",
+    "Resident Advisor (ra.co) and DoTheBay (dothebay.com) \u2014 two of the four independent sources the task asked me to check \u2014 both block automated fetches at the domain level (403 Forbidden even on their bare homepages, not just a venue-specific page). I could not check either source at all. This is an access limitation, not evidence for or against the claim, and should not be read as silent corroboration.",
+    "Found one internal-looking discrepancy via an independent source (19hz.info, not in the original evidence list): it lists the Sun Sep 27 'Azzecca' Portola-week date at Audio as '9:30pm-2:30am' \u2014 30 minutes later than that SAME event's own Eventbrite listing ('9:30 PM-2 AM', cited in the original evidence). However, Eventbrite's own page separately states the event runs '4 hours 30 minutes' \u2014 which is only arithmetically consistent with a 2:00 AM end (9:30pm+4.5h), not 2:30 AM. That favors Eventbrite's 2 AM figure and suggests 19hz has a transcription slip on this one row, but I had no third source to fully adjudicate it, so flagging rather than dismissing it outright.",
+    "The three set-length fields (headliner minutes, support minutes, doors-to-first-act minutes) were left null in the claim, and I could not find data anywhere to fill them: Audio's own events/listing page (audiosf.com/events) carries no schedule breakdown, none of the four cited Eventbrite pages list a lineup order, opener, or per-act set times, and 19hz.info's rows show only a single doors/end time per show, never a split between acts. This is a genuine, confirmed gap \u2014 reporting as unverifiable per instructions, not inventing a correction.",
+    "Minor inconsistency worth flagging (does not affect the close-time verdict): the venue's general posted hours (discotech.me, and the Yelp quote) say Audio opens at 10:00 PM Fri/Sat, but all three cited ticketed-show Eventbrite listings (Kungs, RAC, Azzecca) show 9:30 PM as the actual start/door time for real shows \u2014 a 30-minute gap between the venue's generic posted hours and its actual show start times. Both agree on the 2 AM close, so the close claim is unaffected, but the 'typical' framing glosses over this gap.",
+    "Method caveat: the confirmations below (discotech.me, the 3 Eventbrite pages, 19hz.info) came back through WebFetch, which runs page content through an intermediate summarization model rather than returning raw HTML bytes \u2014 so these are AI-extracted quotes, not a byte-level diff against source. Repeated fetches of the same pages were internally consistent (same numbers each time), which is reassuring, but it's not the same guarantee as a raw-HTML grep."
+   ],
+   "extraEvidence": [
+    {
+     "url": "https://19hz.info/eventlisting_BayArea.php",
+     "quote": "Fri: Sep 4 (9:30pm-2am) \u2014 D A N N Y, Cat Liu [tech house]; Sat: Sep 5 (9:30pm-2am) \u2014 Borgeous [big room/progressive/electro house]; Sun: Sep 6 (9pm-2am) \u2014 Daft Disko [disco/french touch/funky house]; Sat: Oct 10 (9:30pm-2am) \u2014 Kyle Watson, Jlittle [tech house] \u2014 all listed at venue 'Audio', San Francisco"
+    },
+    {
+     "url": "https://19hz.info/eventlisting_BayArea.php",
+     "quote": "Sun: Sep 27 (9:30pm-2:30am) \u2014 Azzecca [techno] \u2014 venue 'Audio', San Francisco (30 min later than Eventbrite's own listing for the identical show, which states 9:30 PM-2 AM and a computed duration of 4 hours 30 minutes)"
+    },
+    {
+     "url": "https://discotech.me/san-francisco/audio/",
+     "quote": "10 PM \u2013 2 AM Fridays and Saturdays"
+    },
+    {
+     "url": "https://www.eventbrite.com/e/azzecca-at-audio-sf-portola-week-tickets-1999001301705",
+     "quote": "Sunday, September 27-Monday, September 28 \u2022 9:30 PM-2 AM (page separately states the event runs '4 hours 30 minutes')"
+    }
+   ]
+  }
+ },
+ {
+  "profile": {
+   "venue": "Public Works (San Francisco)",
+   "officialSite": "https://publicsf.com",
+   "typicalClose": "2-3 AM (mostly 2 AM or 3 AM; occasional 2:30 AM)",
+   "typicalCloseConfidence": "high",
+   "typicalCloseEvidence": [
+    {
+     "url": "https://19hz.info/eventlisting_BayArea.php",
+     "quote": "Function 500 ... 9pm-2am ... Entranas ... 9pm-3am ... Ame, Rodriguez Jr Hybrid Live ... 9pm-3am ... 2manydjs, Rory Phillips ... 10pm-2am ... Monster's Ball ... 8pm-2:30am"
+    },
+    {
+     "url": "https://ra.co/events/1975248",
+     "quote": "Friday, September 13th 10pm - 3am / Main Room / 21+ / Limited Capacity"
+    },
+    {
+     "url": "https://ra.co/events/2166028",
+     "quote": "Thursday, July 10th, 9pm - 2am / Loft / 21+ / Limited Capacity"
+    },
+    {
+     "url": "https://www.sfstation.com/2022-bearracuda-sf-flsm-at-horse-meat-disco-e2454889",
+     "quote": "Fri Sep 25 (9pm - 3am)"
+    },
+    {
+     "url": "https://www.tixr.com/groups/publicsf/events/fcukers-dj-set-chlo-caillet-presented-by-goldenvoice-203304",
+     "quote": "Saturday, September 26th, 10pm - 3am"
+    },
+    {
+     "url": "https://discotech.me/san-francisco/public-works/",
+     "quote": "Public Works is open from 10 PM \u2013 4 AM Fridays and Saturdays, sometimes weekdays depending on date and time of events."
+    }
+   ],
+   "afterHoursLicense": "No confirmed after-hours (post-2 AM alcohol) permit found for Public Works specifically. California law requires alcohol service to stop by 2 AM statewide; an SF \"Extended Hours Premises\" permit can extend entertainment/non-alcohol service to 6 AM, per https://www.sf.gov/get-extended-hours-premises-premises-permit-your-business : \"An Extended Hours Premises (EHP) permit lets you host entertainment and/or serve food and non-alcoholic drinks between 2 am and 6 am.\" I found no record confirming Public Works holds this permit \u2014 third-party aggregator pages (discotech.me, nightflow.com) claim blanket \"10 PM\u20134 AM\" or \"9:30pm to 4am\" venue hours, but every individual event listing I checked (19hz, RA, Tixr, sfstation \u2014 a dozen+ real dated events) shows actual closes at 2-3 AM, never 4 AM. Treat the \"4 AM\" claim as unverified marketing boilerplate, not a confirmed policy.",
+   "doorsToFirstActMinutes": null,
+   "doorsToFirstActEvidence": [],
+   "headlinerSetMinutes": 120,
+   "setLengthEvidence": [
+    {
+     "url": "https://ra.co/events/2166028",
+     "quote": "so you know he's bringing a deep bag for his 2-hour debut set. On support are local selectors wufu, Milana, and Alex Edward"
+    }
+   ],
+   "supportSetMinutes": null,
+   "thisWeekSetTimes": [
+    {
+     "night": "Fri Sep 25 - Horse Meat Disco (Bearracuda FLSM Friday)",
+     "detail": "9pm - 3am, Main Floor: Horse Meat Disco / Upstairs: Mateo Segade (LA). No per-act set times published.",
+     "url": "https://www.sfstation.com/2022-bearracuda-sf-flsm-at-horse-meat-disco-e2454889"
+    },
+    {
+     "night": "Sat Sep 26 - Fcukers (DJ Set) + Chlo\u00e9 Caillet",
+     "detail": "Saturday, September 26th, 10pm - 3am. Lineup: Fcukers DJ Set, Chlo\u00e9 Caillet, Milli Meng (Main Room) + Queen Out Loft Takeover. No per-act order/times published.",
+     "url": "https://ra.co/events/2526451"
+    },
+    {
+     "night": "Sat Sep 26 - Fcukers (DJ Set) + Chlo\u00e9 Caillet (ticket seller confirmation)",
+     "detail": "Saturday, September 26th, 10pm - 3am",
+     "url": "https://www.tixr.com/groups/publicsf/events/fcukers-dj-set-chlo-caillet-presented-by-goldenvoice-203304"
+    },
+    {
+     "night": "Sun Sep 27 - Overmono (DJ Set) + Ben UFO",
+     "detail": "Sunday, September 27th, 10pm - 2am. Lineup: Overmono DJ Set, Ben UFO, Kaytree, Erika b2b SFCowboy (Main Room) + Loft curated by Program Audio. No per-act order/times published.",
+     "url": "https://ra.co/events/2526514"
+    },
+    {
+     "night": "Sun Sep 27 - Overmono (DJ Set) + Ben UFO (ticket seller confirmation)",
+     "detail": "Sunday, September 27th at 10 pm PDT ... Sunday, September 27th, 10pm - 2am",
+     "url": "https://app.discotech.me/events/38262371-overmono-dj-set-ben-ufo-presented-by-goldenvoice-at-public-works"
+    }
+   ],
+   "notes": "Key takeaway for the app: the Saturday Fcukers/Chlo\u00e9 Caillet night has a published close time (3 AM) from two independent primary sources (Resident Advisor's own event listing and the Tixr ticket page) that the app currently lacks \u2014 worth adding. Friday (9pm-3am) and Sunday (10pm-2am) both match the app's existing data, now confirmed by RA + a second independent source each (sfstation for Friday; discotech + AXS for Sunday).\n\nNothing on any source \u2014 venue site, RA, Tixr, AXS, discotech, dothebay, crowdvolt, ma.to, edmtrain, sfstation, sickening.events \u2014 prints doors-to-first-act timing or a per-artist schedule for ANY Public Works club night, past or upcoming. This venue's listings are consistently just one \"doors\u2013close\" window for the whole night; individual set times aren't published in advance (confirmed absence, not a search failure \u2014 checked ~15 distinct listing pages across 8 platforms). Real per-act timetables for a room like this typically only surface after the fact via attendee Instagram Stories/Boiler Room-style recaps, which aren't indexed/searchable text, so I couldn't source that reliably without inventing a number \u2014 hence both doorsToFirstActMinutes and supportSetMinutes are null rather than guessed.\n\nThe one dated timing data point I found (Main Phase's \"2-hour debut set\" with 3 local support DJs sharing the remaining ~3 hours of a 9pm-2am night) is real but thin \u2014 a single event, not a stated venue pattern, and a Loft (secondary room) show rather than a Main Room headliner slot like the three Portola Week nights. I'd treat 120 min as a loose anchor for \"how long a single billed headliner plays,\" not a confident venue norm \u2014 if the app needs a doors-to-first-act estimate, I'd suggest defaulting to something conservative (e.g., 60-90 min after doors, consistent with general club-night convention) rather than treating it as sourced, since I could not verify that specific figure for this venue despite trying.\n\nOne quote worth flagging as explicitly NOT used: a web-search synthesis surfaced \"Last call is always at 1:45 a.m.\" for Public Works, but I could not trace it to an actual fetchable page (search kept returning tangential SF government/news results instead of a working source URL) \u2014 per the \"never invent\" rule I'm leaving it out rather than including an unsourced claim, even though it's plausible (1:45 last call ahead of a 2 AM legal cutoff is standard CA bar practice).\n\nAlso worth knowing: California law requires ALL alcohol service to stop at 2 AM statewide, confirmed via sf.gov's own Extended-Hours-Premises permit page. Since 5 of the 6 confirmed close times I found (Fri 3am, HVOB 3am, Spray+Juicy 3am, Boombox 2am-ish window, A-Trak 2:30am, MEMBA/Dabeull 2am) go past 2 AM, Public Works is very likely already operating under some kind of extended/non-alcohol-after-2am framework on its bigger nights \u2014 but I did not find the specific permit record confirming that, so I'm reporting the pattern (verified) without asserting the permit type (unverified)."
+  },
+  "verdict": {
+   "venue": "Public Works (San Francisco, 161 Erie St, Mission District)",
+   "closeHolds": true,
+   "setLengthHolds": false,
+   "closeCorrection": null,
+   "problems": [
+    "Set-length claim (headliner: 120 min) is unsupported: none of the six cited sources mention set duration at all, and no independent source found states a typical/average headliner set length for this venue. Treat as unverified, not confirmed \u2014 and no better number is available to substitute.",
+    "Two of the six cited URLs (RA.co event pages 1975248 and 2166028) return HTTP 403 to a plain fetch and required a scraping workaround (Firecrawl) to load and verify. Worth knowing in case the original research pipeline hit the same block and transcribed the quotes some other way.",
+    "One sub-quote inside the composite 19hz.info citation \u2014 \"2manydjs, Rory Phillips ... 10pm-2am\" \u2014 does not appear on the current live 19hz Bay Area listing page (checked 2026-09-02). 19hz is a rolling calendar that drops past events, so this likely just aged off rather than being fabricated, but as cited it is currently unverifiable.",
+    "Not a contradiction to the 'typical close' claim, but an omitted nuance: the venue's own general/licensed hours are advertised elsewhere as running to 4 AM (Discotech FAQ, already cited in the original evidence; also a Yelp listing tagging it '4am After Hours'), and an ~3-year-old Reddit post (r/aves) describes it as usually running '3-4am.' None of the ~15 actual dated event listings checked showed a 4am close, so the 'typical 2-3am' claim still stands, but a reader might want to know the venue's outer permitted hours differ from the typical ticketed-event close time."
+   ],
+   "extraEvidence": [
+    {
+     "url": "https://ra.co/events/2166028",
+     "quote": "he's bringing a deep bag for his 2-hour debut set"
+    },
+    {
+     "url": "https://www.reddit.com/r/aves/comments/17md7cl/set_times_at_public_works_sf/",
+     "quote": "public works usually runs until like 3-4am. I would guess the headliner goes on some time between 12-1am."
+    },
+    {
+     "url": "https://m.yelp.com/biz/public-works-san-francisco",
+     "quote": "4am After Hours. Public Works opens at 9:00 PM on Friday and Saturday."
+    }
+   ]
+  }
+ },
+ {
+  "profile": {
+   "venue": "Rickshaw Stop (San Francisco)",
+   "officialSite": "https://rickshawstop.com/",
+   "typicalClose": "2 AM",
+   "typicalCloseConfidence": "high",
+   "typicalCloseEvidence": [
+    {
+     "url": "https://dothebay.com/venues/rickshaw-stop",
+     "quote": "Mon - Sat: 7:00 pm - 2:00 am Sun: 7:00 pm - 11:00 pm"
+    }
+   ],
+   "afterHoursLicense": "null \u2014 no evidence Rickshaw Stop holds/uses a late (4 AM) license. SF is listed as one of several eligible pilot cities in a 2025 state bill (SB 930) covered by CBS SF, but that's a general city-level proposal, not confirmation for this venue: https://www.cbsnews.com/sanfrancisco/news/4-am-last-call-san-francisco-oakland-bars-restaurants-pilot-program-proposal/",
+   "doorsToFirstActMinutes": 60,
+   "doorsToFirstActEvidence": [
+    {
+     "url": "https://rickshawstop.com/calendar/",
+     "quote": "Show at 9:00PM / Doors at 8:00PM"
+    },
+    {
+     "url": "https://rickshawstop.com/calendar/",
+     "quote": "Show at 8:00PM / Doors at 7:00PM"
+    }
+   ],
+   "headlinerSetMinutes": null,
+   "supportSetMinutes": null,
+   "setLengthEvidence": [],
+   "thisWeekSetTimes": [
+    {
+     "night": "Sun Sep 27, 2026 \u2014 JT / Naisha (Portola Week / Popscene, Club Cheetah afterparty)",
+     "detail": "Doors 10:00 PM. No set times, curfew, or 'music from' line published on the ticket page.",
+     "url": "https://www.axs.com/events/1576454/jt-tickets?skin=goldenvoice"
+    },
+    {
+     "night": "Sun Sep 27, 2026 \u2014 JT / Naisha",
+     "detail": "19hz lists doors only, '(10pm)' \u2014 no end-time bracket. By contrast the same night's Audio Nightclub show is listed '(9:30pm-2:30am)' and the Midway/Fatboy Slim show '(10pm-2am)', showing 19hz DOES print end times when known \u2014 so its absence here means no curfew is published anywhere, not just unlisted by us.",
+     "url": "https://19hz.info/eventlisting_BayArea.php"
+    }
+   ],
+   "notes": "Confidence is high on venue norms (posted hours + 61-show doors/show gap sample, both from the venue's own site/aggregator feed), but headliner/support set lengths are a genuine gap \u2014 no RA timetable, flyer running-order, or recap post exists for Rickshaw Stop club nights in any search I ran. Recommend a generic club-night default rather than inventing a Rickshaw-specific number. Also flag: this Sunday's 10 PM doors already exceeds the venue's normal Sun 7-11 PM window, confirming it's a special extended-hours Portola Week booking \u2014 for a closing guess, anchor on the Mon-Sat 2 AM norm, not the Sunday 11 PM one."
+  },
+  "verdict": {
+   "venue": "Rickshaw Stop (San Francisco)",
+   "closeHolds": true,
+   "closeCorrection": null,
+   "setLengthHolds": true,
+   "problems": [
+    "WebFetch on the cited DoTheBay URL (https://dothebay.com/venues/rickshaw-stop) returned HTTP 403; verified instead via a Firecrawl scrape, which returned the identical quote \u2014 the citation is accurate, but a plain WebFetch of it will fail.",
+    "Eater SF's venue page (https://sf.eater.com/venue/4135/rickshaw-stop) lists conflicting/inconsistent hours for this venue (e.g. 'Sunday: 12:00 am - 3:30 am', 'Thursday: 12:00 am - 2:00 am, 9:30 pm - 12:00 am') that don't match DoTheBay, the venue's own listings, or the other independent sources. Looks like a stale/auto-scraped entry \u2014 not adopted as a correction, but flagged as a real discrepancy found in the wild in case this venue is cross-checked against Eater elsewhere.",
+    "No source (venue's own site, Resident Advisor, 19hz.info, DoTheBay, ticketing pages) publishes a typical headliner or support set length in minutes for this venue \u2014 that's generally an artist/tour-level fact, not something venues publish. The null values for headliner/support set length could not be verified or refuted either way; they remain an honest data gap rather than a correction.",
+    "Doors-to-first-act shows real spread across current listings on rickshawstop.com \u2014 from 0 min ('Doors at 9:00PM / Show at 9:00PM') up to 90 min in places \u2014 even though a repeated 60-min pattern ('Doors at 7:00PM / Show at 8:00PM') does directly support the claimed 60 min as a typical/modal figure. Worth carrying as 'typical, with spread' rather than a fixed rule."
+   ],
+   "extraEvidence": [
+    {
+     "url": "https://dothebay.com/venues/rickshaw-stop",
+     "quote": "155 Fell Street (415) 861-2011 Mon - Sat: 7:00 pm - 2:00 am Sun: 7:00 pm - 11:00 pm"
+    },
+    {
+     "url": "https://m.yelp.com/biz/rickshaw-stop-san-francisco?start=80",
+     "quote": "Never have I heard of a venue playing 2 shows in the same night. After... 2 am."
+    },
+    {
+     "url": "https://www.instagram.com/reel/DOgtHZZCVhi/",
+     "quote": "Doors open 9 PM, music runs 9 PM\u20132 AM."
+    },
+    {
+     "url": "https://rickshawstop.com/",
+     "quote": "Doors at 7:00PM / Show at 8:00PM"
+    },
+    {
+     "url": "https://19hz.info/pastEvents_BayArea.php",
+     "quote": "Rickshaw Stop (8pm-12am)"
+    },
+    {
+     "url": "https://sf.eater.com/venue/4135/rickshaw-stop",
+     "quote": "Sunday: 12:00 am - 3:30 am ; Monday: Closed ; Tuesday: Closed ; Wednesday: 9:30 pm - 12:00 am ; Thursday: 12:00 am - 2:00 am, 9:30 pm - 12:00 am."
+    }
+   ]
+  }
+ },
+ {
+  "profile": {
+   "venue": "The Midway (San Francisco)",
+   "officialSite": "https://themidwaysf.com/",
+   "typicalClose": "2 AM (standard weekend club night); after-hours/permitted events run to 3-6 AM",
+   "typicalCloseConfidence": "high",
+   "typicalCloseEvidence": [
+    {
+     "url": "https://19hz.info/eventlisting_BayArea.php",
+     "quote": "Fri: Sep 4 (10pm-2am) Costa, iiifirst, Hiraeth @ The Midway (San Francisco)"
+    },
+    {
+     "url": "https://19hz.info/eventlisting_BayArea.php",
+     "quote": "Sat: Sep 12 (9pm-2am) Whales @ The Midway (San Francisco)"
+    },
+    {
+     "url": "https://19hz.info/eventlisting_BayArea.php",
+     "quote": "Sat: Sep 19 (9pm-2am) Juelz @ The Midway (San Francisco)"
+    },
+    {
+     "url": "https://19hz.info/eventlisting_BayArea.php",
+     "quote": "Fri: Oct 9 (9pm-2am) Audien, Telykast, Ryos, Amel @ The Midway (San Francisco)"
+    },
+    {
+     "url": "https://ra.co/events/2391628",
+     "quote": "The Midway at The Midway ... Fri, 3 Apr 2026. 21:00 - 04:00"
+    },
+    {
+     "url": "https://www.sf.gov/get-extended-hours-premises-permit-your-business",
+     "quote": "An Extended Hours Premises (EHP) permit lets you host entertainment ... between 2 am and 6 am."
+    },
+    {
+     "url": "https://www.sfgov.org/entertainment/meeting/meetings-december-15-2015-agenda",
+     "quote": "EC-1344 \u2013 Langer, Jordan, The Midway, 900 Marin Street, Place of Entertainment and Extended Hours Premises Permits."
+    },
+    {
+     "url": "https://themidwaysf.com/connect/faq/",
+     "quote": "HOURS VARY BY EVENT. PLEASE CHECK THE EVENT LISTING FOR SPECIFIC START TIMES"
+    }
+   ],
+   "doorsToFirstActMinutes": null,
+   "doorsToFirstActEvidence": [],
+   "headlinerSetMinutes": null,
+   "supportSetMinutes": null,
+   "setLengthEvidence": [],
+   "thisWeekSetTimes": [
+    {
+     "night": "Sat Sep 26 - PERVERT XXL (primary/promoter source)",
+     "detail": "Sat, Sep 26, 2026 10:00 PM \u2013 6:00 AM (structured event start/end time on the promoter's own listing, matches app's current guess)",
+     "url": "https://thegaycalendar.com/e/xoxo-and-matine-presents-pervert-xxl-folsom-main-event"
+    },
+    {
+     "night": "Sat Sep 26 - PERVERT XXL (secondary source, conflicts on end time)",
+     "detail": "\"The event will run from 10 pm on Saturday night through to 8 am in the morning\" \u2014 2hrs later close than the promoter's own 6 AM listing",
+     "url": "https://www.gaytravel4u.com/event/matinee-pervert-xxl-san-francisco-leather-weekend-edition/"
+    },
+    {
+     "night": "Sun Sep 27 - horsegiirL / VTSS / MGNA Crrrta / Two Shell / Kavari",
+     "detail": "19hz.info's own editorial listing prints \"10pm-3am\" \u2014 doors 10 PM matches the app, but close is 3 AM, one hour later than the app's current ~2 AM guess",
+     "url": "https://19hz.info/eventlisting_BayArea.php"
+    },
+    {
+     "night": "Sun Sep 27 - horsegiirL / VTSS / MGNA Crrrta / Two Shell / Kavari (primary ticket listings)",
+     "detail": "RA / DoTheBay / Tixr all print only \"Doors 10:00 PM\" \u2014 none publish a close time, curfew, or per-artist set times",
+     "url": "https://ra.co/events/2525575"
+    }
+   ],
+   "afterHoursLicense": "The Midway (900 Marin Street) holds an SF Entertainment Commission Extended Hours Premises Permit (application EC-1344, heard Dec 15, 2015), the legal mechanism that lets a venue run entertainment 2 AM\u20136 AM (SF.gov: \"host entertainment ... between 2 am and 6 am\"). This is why after-hours events like PERVERT XXL can legally run to 6-8 AM at this address while alcohol service itself still cuts off at 2 AM under CA state law. Source: https://www.sfgov.org/entertainment/meeting/meetings-december-15-2015-agenda (permit application record) and https://www.sf.gov/get-extended-hours-premises-permit-your-business (EHP permit definition).",
+   "notes": "Method: themidwaysf.com's own FAQ states no fixed policy (\"HOURS VARY BY EVENT\") and the venue's live events page is a JS app that didn't render event data via scrape, so the venue's own site yields no usable times. The strongest signal came from 19hz.info's own hand-curated Bay Area listings table, which prints a doors-close range (not just doors) for every Midway club night it covers \u2014 I pulled ~20 upcoming Midway entries (Sep-Dec 2026) and all but two follow \"9pm-2am\"/\"10pm-2am.\" The two outliers both matter here: the Sept 27 Portola night itself (10pm-3am, one hour past the pattern) and a Nov 6 HVDES show (9pm-1am, one hour under). Resident Advisor and Tixr/DoTheBay, by contrast, only ever print the doors/start time for Midway club nights (RA's own convention is literally \"10PM - LATE\") \u2014 none of the primary ticket pages print a close time, which matches what you described about the vendor pages.\n\nGaps: I could not find any listing, anywhere, that prints BOTH a doors time and a separate first-act/opener time for a Midway club night (item 2) \u2014 flyers and ticket pages give one single start time, and openers appear to start at or right after doors with no published gap. I also could not find published headliner or support set lengths (item 3) \u2014 no RA timetables, setlist posts, or described IG timing screenshots turned up for this venue in the search I ran; club/DJ nights here don't publish set-by-set schedules the way festival stages do. Both fields are null rather than guessed.\n\nOne actionable flag: your app's current \"~2 AM\" guess for Sunday (horsegiirL/VTSS/Two Shell/MGNA Crrrta) is the one departure from what I found \u2014 19hz's own editorial listing for that exact night says \"10pm-3am,\" and that lineup (VTSS, Two Shell) is stylistically closer to the bass/techno shows in the 19hz sample that also ran to 3-4 AM (e.g. the RA-listed Maddix show at 21:00-04:00) than to the more typical 9/10pm-2am pattern. Worth a look before publishing the guess. The Saturday PERVERT XXL \"10 PM - 6 AM\" guess, on the other hand, is well corroborated by the promoter's own current 2026 listing (thegaycalendar.com, sourced from xoxopresents.com) \u2014 though a secondary aggregator (gaytravel4u.com) says 8 AM instead of 6 AM, so treat 6 AM as the better-sourced but not unanimous figure."
+  },
+  "verdict": {
+   "venue": "The Midway (San Francisco)",
+   "closeHolds": false,
+   "setLengthHolds": true,
+   "closeCorrection": "Keep the 2 AM standard-close claim as-is \u2014 strongly confirmed (26+ of 34 current Midway rows on 19hz.info show a 2am close, and all 4 cited 19hz quotes match the live page verbatim). Narrow the \"high/after-hours\" bucket from \"3-6 AM\" to \"3-4 AM as directly observed\"; treat 6 AM as the city's Extended Hours Premises permit ceiling, not a demonstrated Midway close. Evidence: 19hz.info raw HTML (re-fetched 2026-09-02) \u2014 \"Sun: Sep 27 (10pm-3am) Horsegiirl, Vtss, Mgna Crrrta, Two Shell, Kavari @ The Midway (San Francisco)\"; and ra.co/events/2391628 JSON-LD (fetched via Firecrawl bypass, 2026-09-02) \u2014 startDate \"2026-04-03T21:00:00.000\", endDate \"2026-04-04T04:00:00.000\" (this event is dated 5 months in the past relative to today and is absent from RA's own upcoming-events list for the venue, so it's accurate but stale, not current). No listing found anywhere \u2014 34 current 19hz rows, RA's Midway club page, or DoTheBay's Midway calendar \u2014 shows a close later than 4 AM.",
+   "problems": [
+    "The 6 AM upper bound of the claimed close range is not confirmed by any observed event; it's inferred from SF.gov's general EHP-permit description ('between 2 am and 6 am'), which states the citywide ceiling for that permit class, not a Midway-specific observed hour.",
+    "The cited RA.co evidence quote is accurate word-for-word (verified via Firecrawl after both a plain WebFetch and curl were blocked by RA's DataDome bot-protection), but the event it describes is dated Fri, 3 Apr 2026 \u2014 now roughly 5 months in the past relative to today (2026-09-02) \u2014 and does not appear in RA's own 'Upcoming events' listing for the venue. It's real evidence of a past 4 AM close, not a current/typical one.",
+    "The cited 2015 SFGov Entertainment Commission agenda item (EC-1344) only shows the EHP permit was scheduled for a hearing ('possible action'), not that it was granted. Independently found a second item (EC-1563, Jan 2020 agenda/minutes: 'Pete Glikshtern and Jeff Whitmore of Marin Street Enterprises Inc., dba The Midway, 900 Marin St, Extended Hours Premises permit') and 2019 minutes referencing '900 Marin POE/EHP \"The Midway club\"' as an apparently already-active designation \u2014 together these make an active EHP permit reasonably likely, but the single cited 2015 document alone doesn't prove approval.",
+    "Set-length figures (headliner minutes, support minutes, doors-to-first-act minutes) could not be found anywhere for this venue \u2014 not on 19hz, RA, DoTheBay, the venue's own FAQ, or a sampled Tixr ticket page (Flux Pavilion, Sep 11 2026), which lists only a single doors/show-start time ('Fri, Sep 11 at 09:00 PM') with no runtime breakdown. This appears to be a genuine gap in what's publicly published for a variable-lineup club/rave venue, not a research miss \u2014 flagging as unverifiable rather than proposing a corrected number.",
+    "themidwaysf.com/connect/faq/ and sf.gov's EHP page both returned HTTP 403 to a plain WebFetch; had to bypass via Firecrawl to confirm the quotes. Future re-checks of these two URLs may need the same workaround."
+   ],
+   "extraEvidence": [
+    {
+     "url": "https://19hz.info/eventlisting_BayArea.php",
+     "quote": "Sun: Sep 27  (10pm-3am) Horsegiirl, Vtss, Mgna Crrrta, Two Shell, Kavari @ The Midway (San Francisco)"
+    },
+    {
+     "url": "https://ra.co/events/2391628",
+     "quote": "\"name\":\"The Midway\",\"startDate\":\"2026-04-03T21:00:00.000\",\"endDate\":\"2026-04-04T04:00:00.000\",\"eventStatus\":\"https://schema.org/EventScheduled\",\"performer\":[{\"@type\":\"MusicGroup\",\"name\":\"Maddix\"}]"
+    },
+    {
+     "url": "https://www.sfgov.org/entertainment/meeting/meetings-january-21-2020-minutes",
+     "quote": "c) EC-1563 \u2013 Pete Glikshtern and Jeff Whitmore of Marin Street Enterprises Inc., dba The Midway, 900 Marin St, Extended Hours Premises permit."
+    },
+    {
+     "url": "https://www.sfgov.org/entertainment/meeting/meetings-january-15-2019-minutes",
+     "quote": "900 Marin POE/EHP \"The Midway club. Customer states there has been a ..."
+    },
+    {
+     "url": "https://themidwaysf.com/connect/faq/",
+     "quote": "WHAT ARE THE MUSIC PERFORMANCE HOURS?\nHOURS VARY BY EVENT. PLEASE CHECK THE EVENT LISTING FOR SPECIFIC START TIMES"
+    },
+    {
+     "url": "https://www.tixr.com/groups/midwaysf/events/flux-pavilion-188802",
+     "quote": "The Midway, SF, CA\nFri, Sep 11 at 09:00 PM PDT ... event:start_time: 2026-09-11T21:00:00.000-07:00"
+    }
+   ]
+  }
+ },
+ {
+  "profile": {
+   "venue": "1015 Folsom (San Francisco)",
+   "officialSite": "https://1015.com/",
+   "typicalClose": "3 AM (per nightlife-aggregator listings) \u2014 but this is soft. No official venue statement found; sources conflict, and San Francisco's Extended Hours Premises permit program lets venues run entertainment to 6 AM, which 1015 clearly uses on marquee nights (see afterHoursLicense).",
+   "typicalCloseConfidence": "low",
+   "typicalCloseEvidence": [
+    {
+     "url": "https://discotech.me/san-francisco/1015-folsom/",
+     "quote": "1015 Folsom is open from 10 PM \u2013 3 AM generally on Fridays and Saturdays."
+    },
+    {
+     "url": "https://www.timeout.com/san-francisco/music-nightlife/1015-folsom",
+     "quote": "With operating hours until 4am, it's one of the few true late-night spots left in the city"
+    },
+    {
+     "url": "https://www.eventbrite.com/e/real-bad-37-tickets-1992798188025",
+     "quote": "Sunday, September 27-Monday, September 28  \u2022  8 PM-5 AM"
+    }
+   ],
+   "afterHoursLicense": "No document naming 1015 Folsom's specific permit was found, but two mechanisms are confirmed to apply in SF and one is directly evidenced on this venue's own listings: (1) California allows alcohol sales only to 2 AM statewide; (2) SF's Entertainment Commission \"Extended Hours Premises\" permit separately lets a venue run entertainment/non-alcohol service 2\u20136 AM; (3) the Real Bad 37 listing (this venue, this Portola Week) is itself proof of a night running to 5 AM with a hard re-entry cutoff, i.e., alcohol almost certainly stops at 2 AM (CA standard) while the party continues under an after-hours permit to 5 AM. Source for the SF program: https://www.sf.gov/get-extended-hours-premises-premises-permit-your-business (quote: \"host entertainment and/or serve food and non-alcoholic drinks between 2 am and 6 am\"). Direct venue evidence: https://www.eventbrite.com/e/real-bad-37-tickets-1992798188025 \u2014 \"No admittance after 1:00 AM\" and VIP-bathroom access \"until 2:00 AM,\" consistent with alcohol/last-entry cutting off around 1\u20132 AM while music runs to 5 AM.",
+   "doorsToFirstActMinutes": 0,
+   "doorsToFirstActEvidence": [
+    {
+     "url": "https://www.eventbrite.com/e/real-bad-37-tickets-1992798188025",
+     "quote": "Main Room (8\u201312 AM): Conner Curnick (Washington DC)"
+    },
+    {
+     "url": "https://ra.co/events/2519020",
+     "quote": "2manydjs Rory Phillips 10pm \u2022 21+ Only"
+    },
+    {
+     "url": "https://ra.co/events/2067350",
+     "quote": "14 Years of Soulection 10pm \u2022 21+ Only"
+    }
+   ],
+   "headlinerSetMinutes": 300,
+   "supportSetMinutes": 240,
+   "setLengthEvidence": [
+    {
+     "url": "https://www.eventbrite.com/e/real-bad-37-tickets-1992798188025",
+     "quote": "Main Room (8\u201312 AM): Conner Curnick (Washington DC) / Main Room (12 AM\u20135 AM): Blacklow (Los Angeles)"
+    },
+    {
+     "url": "https://www.eventbrite.com/e/real-bad-37-tickets-1992798188025",
+     "quote": "Underground (9 PM\u20133 AM): DUSTN (Los Angeles)"
+    }
+   ],
+   "thisWeekSetTimes": [
+    {
+     "night": "Fri Sept 25, 2026 \u2014 2manydjs",
+     "detail": "Doors/start 10 PM, 21+. No individual set times, curfew, or end time published anywhere found (Eventbrite, RA, DoTheBay all just print \"10pm\"). App's own 10 PM\u20132 AM window is a guess, not venue-confirmed.",
+     "url": "https://www.eventbrite.com/e/2manydjs-tickets-1998644233705"
+    },
+    {
+     "night": "Fri Sept 25, 2026 \u2014 2manydjs",
+     "detail": "Portola, Goldenvoice, DJ Dials & 1015 Folsom: 2manydjs, Rory Phillips \u2014 10pm \u2022 21+ Only",
+     "url": "https://ra.co/events/2519020"
+    },
+    {
+     "night": "Sun Sept 27\u2013Mon Sept 28, 2026 \u2014 Real Bad 37",
+     "detail": "Sunday, September 27-Monday, September 28 \u2022 8 PM-5 AM \u2014 full breakdown below",
+     "url": "https://www.eventbrite.com/e/real-bad-37-tickets-1992798188025"
+    },
+    {
+     "night": "Sun Sept 27\u2013Mon Sept 28, 2026 \u2014 Real Bad 37",
+     "detail": "Main Room (8\u201312 AM): Conner Curnick (Washington DC)",
+     "url": "https://www.eventbrite.com/e/real-bad-37-tickets-1992798188025"
+    },
+    {
+     "night": "Sun Sept 27\u2013Mon Sept 28, 2026 \u2014 Real Bad 37",
+     "detail": "Main Room (12 AM\u20135 AM): Blacklow (Los Angeles)",
+     "url": "https://www.eventbrite.com/e/real-bad-37-tickets-1992798188025"
+    },
+    {
+     "night": "Sun Sept 27\u2013Mon Sept 28, 2026 \u2014 Real Bad 37",
+     "detail": "Underground (9 PM\u20133 AM): DUSTN (Los Angeles)",
+     "url": "https://www.eventbrite.com/e/real-bad-37-tickets-1992798188025"
+    },
+    {
+     "night": "Sun Sept 27\u2013Mon Sept 28, 2026 \u2014 Real Bad 37",
+     "detail": "No admittance after 1:00 AM (hard re-entry/entry cutoff, distinct from the 5 AM music end)",
+     "url": "https://www.eventbrite.com/e/real-bad-37-tickets-1992798188025"
+    }
+   ],
+   "notes": "Summary of what's solid vs. guessed, by question:\n\n1. TYPICAL CLOSE \u2014 no primary venue statement (1015.com has no posted hours/FAQ page I could reach; Yelp's hours widget 403'd to the fetcher, though search snippets attributed to it repeat the same \"Thu 9p-2a / Fri 10p-3a\" figure as Discotech). Two secondary aggregators disagree: Discotech says 10 PM\u20133 AM Fri/Sat; Time Out's venue profile (undated review text, live page) says \"operating hours until 4am.\" Meanwhile this venue's OWN Real Bad 37 listing runs to 5 AM. Read this as: 2\u20133 AM is the floor for an ordinary DJ night, but 1015 is one of the few SF rooms that regularly runs later than that on produced/marquee nights via SF's after-hours permit track \u2014 so \"typical\" depends heavily on which kind of night you mean. Confidence is LOW because no two sources agree and none is the venue itself.\n\n2. DOORS-TO-FIRST-ACT \u2014 could not find any 1015 Folsom listing that prints a doors time AND a separate, later \"first act\" time the way a band show does. Every plain club-night listing (MPH, Soulection, THROTTLE, 2manydjs) prints exactly one time (\"10pm \u2022 21+\") that functions as both doors and first-set start \u2014 this is standard for DJ club nights (no traditional \"opener\" gap). The one listing with a real timetable, Real Bad 37, confirms this pattern for its Main Room (first DJ starts exactly at the 8 PM door time) \u2014 I used that as the 0-minute estimate. Its Underground room did start 60 min after doors (9 PM vs 8 PM doors), so treat 0 as a floor, not an absolute \u2014 a second room/stage may lag by up to ~60 min.\n\n3. SET LENGTHS \u2014 the only venue set-length data I could find at all is Real Bad 37's, and it is NOT a typical club-night pattern: it's a 9-hour circuit-party marathon with 2 DJs covering the whole main-room night in two ~4\u20135 hour blocks, plus a separate underground DJ running a 6-hour set. I reported the closing block (Blacklow, 12\u20135 AM = 300 min) as \"headliner\" and the opening block (Conner Curnick, 8 PM\u201312 AM = 240 min) as \"support,\" but flag hard: this is marathon/resident-DJ format, not \"headliner does 90 min after a 45-min opener\" like a touring-DJ show (2manydjs' own Friday night). I found no set-length data at all for a normal single-headliner 1015 night \u2014 every other listing just lists the lineup with zero times.\n\n4. PORTOLA WEEK SPECIFICS \u2014 Friday's 2manydjs night has nothing beyond \"10pm doors, 21+\" published anywhere (Eventbrite, RA, and the DoTheBay listing all agree on that and nothing more; DoTheBay's own page 403'd to the fetcher but its title snippet matched). Sunday's Real Bad 37 is fully documented with real per-room set times (above) \u2014 this is the best data point in the whole search, and it's the venue's own presenting-sponsor event, so it should be trusted for that specific night. Its \"No admittance after 1:00 AM\" is an entry cutoff, not a music-end time \u2014 the party (per the room-by-room breakdown) runs to 5 AM regardless.\n\nSources not usable: 1015.com had no reachable FAQ/hours page; Yelp's hours page 403'd; DoTheBay's two event pages 403'd (titles/snippets only); Wikipedia's 1015 Folsom article has history/capacity but zero operational/licensing detail. 19hz.info's Bay Area listing page wasn't fetched directly (search only) \u2014 a future pass could pull it live for a broader same-week door-time sample if more confidence is wanted on the \"typical close\" question."
+  },
+  "verdict": {
+   "venue": "1015 Folsom, San Francisco",
+   "closeHolds": true,
+   "setLengthHolds": false,
+   "closeCorrection": "Not wrong, but it's a compressed point estimate where a range is the honest answer. All three cited quotes check out verbatim when opened. Independent RA-listed end times for regular (non-marquee) 1015 Folsom nights cluster 2:00\u20133:00 AM \u2014 ra.co/events/2511931: \"21:00 - 02:00\", ra.co/events/2471911: \"21:00 - 03:00\", ra.co/events/2389487: \"22:00 - 02:30\" \u2014 which corroborates ~3 AM as a reasonable typical figure. But a Yelp directory snippet (not in the original evidence) implies a ~2 AM close, and a confirmed ACTIVE San Francisco Extended Hours Premises permit (data.sfgov.org, permit #120, license_type \"Place of Entertainment, Extended Hours Premises\", status \"Active\") plus a real, venue-confirmed Sept 27 2026 event (\"Real Bad 37,\" 1015 Folsom Street, 8 PM\u20135 AM) show the venue legitimately runs to ~5 AM on marquee nights. So the defensible answer is a range \u2014 roughly 2\u20133 AM on typical weekend nights, extending to 4\u20135 AM on marquee/EHP nights \u2014 not a single \"typical: 3 AM\" point. One more nuance the original claim misses: SF.gov describes the EHP permit as covering entertainment and food/non-alcoholic drink service from 2 AM to 6 AM, NOT alcohol \u2014 so \"open to 5-6am\" on marquee nights likely means the room stays open past 2 AM without full bar service, which is a different thing than \"close\" implies.",
+   "problems": [
+    "Set-length claims (headliner 300 min / support 240 min / doors-to-first-act 0 min) have ZERO cited evidence \u2014 the evidence array given contains only closing-time sources, nothing about set lengths. I searched RA, DoTheBay, Eventbrite, 1015.com, and Reddit and found no source that publishes minute-level set-length data for this venue. Cannot verify or correct these numbers \u2014 reporting as unverifiable, not confirming them.",
+    "The set-length numbers are internally implausible on their face: headliner (300 min) + support (240 min) = 540 min (9 hours) for just two acts. Every actual scheduled night I could find runs 4.5-5 hours total for the WHOLE bill (ra.co/events/2511931: 21:00-02:00 = 5h; ra.co/events/2389487: 22:00-02:30 = 4.5h; ra.co/events/2471911: 21:00-03:00 = 6h). Even the longest confirmed marquee night (Real Bad 37, 8PM-5AM = 9h total for the entire event) would have to be 100% headliner+support with zero minutes for any opener to match these figures.",
+    "'Typical close: 3 AM' compresses a real spread across sources. A Yelp directory snippet not in the original evidence set implies a ~2 AM close ('...1015 Folsom opens at 10:00 PM on Friday. - 2:00 AM...'). Combined with discotech's 3 AM, Time Out's 4 AM, and the confirmed 5 AM on EHP/marquee nights, there is no single defensible 'typical' figure -- it should be presented as a range, not a point estimate.",
+    "The Eventbrite quote as cited ('8 PM-5 AM') doesn't itself name the venue in the quoted text -- I had to independently re-open the listing to confirm the event is actually at 1015 Folsom Street, San Francisco, CA 94103. It checks out, but the citation as given doesn't carry that link on its own.",
+    "19hz.info added little for this venue as an independent check: of 7 upcoming 1015 Folsom listings scanned, only 2 showed an explicit end time (both 2 AM); the rest showed only door/start times. Checked as instructed, but this source isn't a strong signal here -- 19hz's core coverage is underground/warehouse parties, not a commercial club like 1015 Folsom."
+   ],
+   "extraEvidence": [
+    {
+     "quote": "X CLUB . Venue. 1015 Folsom. 1015 Folsom Street; San Francisco, CA 94103; United States . Date. Thu, 22 Oct 2026. 21:00 - 02:00 . Promoter. 1015 Folsom",
+     "url": "https://ra.co/events/2511931"
+    },
+    {
+     "quote": "BIIANCO . Venue. 1015 Folsom. 1015 Folsom Street; San Francisco, CA 94103; United States . Date. Thu, 9 Jul 2026. 21:00 - 03:00 . Promoters. 1015 Folsom, Bounce SF.",
+     "url": "https://ra.co/events/2471911"
+    },
+    {
+     "quote": "Daniel Allan . Venue. 1015 Folsom. 1015 Folsom Street; San Francisco, CA 94103; United States . Date. Fri, 22 May 2026. 22:00 - 02:30 . Promoter. 1015 Folsom.",
+     "url": "https://ra.co/events/2389487"
+    },
+    {
+     "quote": "{\"active_licenses\":\"POE, EHP\",\"permit_number\":\"120\",\"permit_status\":\"Active\",\"license_type\":\"Place of Entertainment, Extended Hours Premises\",\"dba_name\":\"1015 Folsom\",\"street_address\":\"1015 FOLSOM ST\",\"city\":\"San Francisco\"}",
+     "url": "https://data.sfgov.org/resource/86e8-rfem.json?$q=1015+Folsom"
+    },
+    {
+     "quote": "An Extended Hours Premises (EHP) permit lets you host entertainment and/or serve food and non-alcoholic drinks between 2 am and 6 am.",
+     "url": "https://www.sf.gov/departments--city-administrator--entertainment-commission"
+    },
+    {
+     "quote": "Visit Website http://www.1015.com ... opens at 9:00 PM on Thursday.1015 Folsom opens at 10:00 PM on Friday. - 2:00 AM ...",
+     "url": "https://m.yelp.com/biz/1015-folsom-san-francisco-4"
+    },
+    {
+     "quote": "Depends on the dj and night. I seen headliners start at midnight. But that was when it closed around 5am. Not sure how it is now.",
+     "url": "https://www.reddit.com/r/AskSF/comments/onp4n5/what_time_do_headliners_start_at_1015_folsom/"
+    },
+    {
+     "quote": "NO PRESALE TICKET ENTRY AFTER 1:30AM -- No presale tickets will be redeemed after 1:30AM. Please arrive BEFORE 1:30AM if you bought a presale ticket.",
+     "url": "https://1015.com/about/"
+    },
+    {
+     "quote": "1015 Folsom Street, San Francisco, CA 94103 -- Sunday, September 27-Monday, September 28 . 8 PM-5 AM",
+     "url": "https://www.eventbrite.com/e/real-bad-37-tickets-1992798188025"
+    }
+   ]
+  }
+ },
+ {
+  "profile": {
+   "venue": "888 Garage (San Francisco, Dogpatch \u2014 run by/next to The Midway, 888 Marin St)",
+   "officialSite": "https://themidwaysf.com/venue/888-garage/",
+   "typicalClose": "2 AM",
+   "typicalCloseConfidence": "medium",
+   "typicalCloseEvidence": [
+    {
+     "url": "https://www.sfstation.com/the-midway-b38984166",
+     "quote": "10:30pm - 2am\" (BOOFOWEEN, Oct 31 2026 \u2014 same event RA lists as booked at 888 Garage)"
+    },
+    {
+     "url": "https://www.sfstation.com/the-midway-b38984166",
+     "quote": "9pm - 2am\" (Flux Pavilion, Taiwan Golden Melody Night, DJ_Dave, Whipped Cream, Yheti & Toadface, RIOT, Funk Tribu, Zingara \u2014 repeated pattern)"
+    },
+    {
+     "url": "https://www.sfstation.com/the-midway-b38984166",
+     "quote": "8:30pm - 2am\" (Chief Keef) and \"10pm - 2am\" (EXTRAMANIA with Valentino Khan)"
+    },
+    {
+     "url": "https://ra.co/events/2426212",
+     "quote": "Doors @ 10:15 PM / 10:30 PM - 3 AM"
+    },
+    {
+     "url": "https://sfist.com/2025/04/07/4am-last-call-comes-back-as-proposed-legislation-this-time-with-matt-haney-behind-it/",
+     "quote": "seven pilot cities, including San Francisco... legislation is still in the proposal/committee stage and hasn't yet been finalized into law as of 2026"
+    }
+   ],
+   "afterHoursLicense": "No after-hours/extended-hours (4 AM) license found for 888 Garage or The Midway. Statewide legislation (Sen. Wiener / Rep. Haney) would let SF opt into 4 AM last call in a handful of pilot cities, but as of 2026 it remains in committee, not law, and neither 888 Garage nor The Midway appears on any list of SF venues already operating past 2 AM. Source: https://sfist.com/2025/04/07/4am-last-call-comes-back-as-proposed-legislation-this-time-with-matt-haney-behind-it/ \u2014 \"legislation is still in the proposal/committee stage and hasn't yet been finalized into law as of 2026.\" A Yelp roundup of \"Bars Open Till 4am in San Francisco\" (https://www.yelp.com/search?find_desc=Bars+Open+Till+4am&find_loc=San+Francisco%2C+CA) does not include 888 Garage or The Midway among the named venues (Halcyon, Bourbon & Branch, Temple, The EndUp, Cat Club, DNA Lounge, etc.).",
+   "doorsToFirstActMinutes": 15,
+   "setLengthEvidence": [
+    {
+     "url": "https://ra.co/events/2426212",
+     "quote": "Doors @ 10:15 PM / 10:30 PM - 3 AM (Spencer Brown, Simon Vuarambon, Late Night Shri \u2014 3 acts over 4.5 hrs, no per-act breakdown published)"
+    }
+   ],
+   "headlinerSetMinutes": null,
+   "supportSetMinutes": null,
+   "thisWeekSetTimes": [
+    {
+     "night": "Fri Sep 25 2026 \u2014 Neil Frances (DJ Set) & Friends, Portola Week",
+     "detail": "Doors Open 10:00 PM. No separate set time, curfew, or \"music from\" line published anywhere checked (AXS, RA, DoTheBay, SF Station all just print the 10 PM time as either doors or event start).",
+     "url": "https://www.axs.com/events/1579108/neil-frances-dj-set-tickets"
+    },
+    {
+     "night": "Fri Sep 25 2026 \u2014 Neil Frances, RA listing",
+     "detail": "\"Fri. Sept 25th, 21+ Event, 888 Garage\" \u2014 no time printed on RA's own event page (RA pulled the doors time from AXS/Tixr, not from its own listing).",
+     "url": "https://ra.co/events/2525572"
+    },
+    {
+     "night": "Sun Sep 27 2026 \u2014 Fatboy Slim, Portola Week",
+     "detail": "\"10:00PM\" listed as the event time (not explicitly labeled \"doors\"). No set time or curfew published.",
+     "url": "https://dothebay.com/events/2026/9/27/fatboy-slim-tickets"
+    },
+    {
+     "night": "Sun Sep 27 2026 \u2014 Fatboy Slim, SF Station",
+     "detail": "\"10pm: Neil Frances (DJ Set) & Friends (888 Garage)\" listed under the combined \"Portola Week\" SF Station event card, which also separately shows the Fatboy Slim date at the same 10 PM slot pattern; no curfew given.",
+     "url": "https://www.sfstation.com/the-midway-b38984166"
+    }
+   ],
+   "notes": "Bottom line for the app: 888 Garage/The Midway prints DOORS only (no set times, no curfew) on every primary ticketing surface I could reach for these two Portola Week nights (AXS, RA, DoTheBay, Tixr-linked pages, SF Station). Nothing more specific exists to find for Sep 25 or Sep 27 2026 as of this research (2026-09-02) \u2014 treat any \"opener at X, headliner at Y\" as an estimate, not a published fact.\n\nWhat backs the estimate:\n1. Close time: 2 AM is the dominant, repeated pattern across ~13 different nights at the same complex (The Midway, which 888 Garage is \"next to and run by\" per RA's own venue description) collected from SF Station's venue calendar \u2014 every single one of those listings reads \"X pm \u2013 2am\" except one. That one exception is a same-venue techno night (Spencer Brown, RA) that ran to 3 AM. California's standard on-sale last call is 2 AM absent an extended-hours permit, and I found no evidence 888 Garage/The Midway holds one \u2014 SF's proposed 4 AM pilot law is still stuck in committee as of 2026 and neither venue appears on any \"already 4am\" venue list. So: plan around 2 AM as the norm, treat 3 AM as an occasional (not default) extension for harder-edged/longer techno bookings, which Neil Frances (indie-pop DJ set) and Fatboy Slim (legacy big-tent headliner) are not obviously in that category.\n\n2. Doors-to-first-act gap: only one clean data point exists across everything I could pull (RA's Spencer Brown listing: doors 10:15 PM, music 10:30 PM = 15 minutes). Every other 888 Garage listing prints doors only, with no companion \"music starts\" time, so I can't corroborate 15 minutes with a second example \u2014 treat it as a single-point estimate, not a confirmed pattern.\n\n3. Set lengths: genuinely not findable. RA/AXS/DoTheBay/Tixr do not publish per-act set lengths for 888 Garage shows, and I found no RA timetable, no Instagram-screenshot writeups, and no setlist-style recap post for any past 888 Garage night. The only shape I have is a total show window (e.g., 4.5 hrs across 3 acts for the Spencer Brown night), which is not the same as a headliner/support split and I did not use it to manufacture numbers.\n\n4. 19hz.info: could not get a working direct fetch of its SF page in this session (search results only pointed back to 888 Garage's own listings, not 19hz's actual grid) \u2014 did not use it as a source; flagging so a follow-up session knows it's still untried rather than assuming it was checked and came up empty.\n\nSources for the general venue picture, not otherwise cited above: RA club profile (https://ra.co/clubs/255486) confirms \"888 Garage is a new warehouse space next to and run by The Midway,\" 1,000-person capacity, 21+ across every listing checked. Official venue page (https://themidwaysf.com/venue/888-garage/) carries no hours or set-time info at all."
+  },
+  "verdict": {
+   "venue": "888 Garage (San Francisco, part of The Midway complex, 888 Marin St)",
+   "closeHolds": false,
+   "closeCorrection": "No single \"typical: 2 AM\" holds up. Among bookings independently confirmed to be AT 888 Garage specifically (not just \"The Midway\" complex generally): Spencer Brown (RA event page, tagged venue \"888 Garage,\" also on 888 Garage's own RA \"Past events\" list) closed at 3 AM \u2014 \"Doors @ 10:15 PM / 10:30 PM - 3 AM\" (https://ra.co/events/2426212). Da Tweekaz (hardstyle, confirmed @ 888 Garage on 19hz.info) ran 10pm-4am. Neil Frances, Fatboy Slim, Riot, and Ghengar (all confirmed @ 888 Garage on 19hz.info) show 2am closes. Boofoween (Oct 31, confirmed @ 888 Garage via RA) is disputed between sources: sfstation.com says \"10:30pm - 2am\" but 19hz.info lists the identical RA-linked event as \"10:30pm-3am\" \u2014 unresolved. Net: 2 AM is the rough mode for house/pop-leaning bookings (roughly 4-5 of 7 confirmed cases), but 3-4 AM recurs for harder-genre or bigger nights, and the strongest single unambiguous data point (Spencer Brown) is 3 AM, not 2 AM. \"Medium confidence, typical: 2 AM\" overstates certainty and hides real variance.",
+   "setLengthHolds": true,
+   "problems": [
+    "Evidence-source mismatch: the cited sfstation.com URL is titled \"The Midway\" and is that venue COMPLEX's calendar, not an 888-Garage-specific page. The Midway complex has multiple distinct named rooms (888 Garage, RiDE, The Patio/Terrace, Gods & Monsters, Block Parties per themidwaysf.com's own venue nav). Most of the specific artist/time quotes pulled from that page and offered as \"888 Garage\" evidence \u2014 Flux Pavilion, Taiwan Golden Melody Night, DJ_Dave, Whipped Cream, Yheti & Toadface, Funk Tribu, Zingara, Chief Keef, EXTRAMANIA \u2014 do NOT appear on 888 Garage's own event list on RA (ra.co/clubs/255486) or get an \"@ 888 Garage\" tag on 19hz.info. They are very likely booked in a different room of the complex, so using their close times as 888-Garage evidence is not well grounded even though each quote is transcribed accurately from sfstation.",
+    "Direct source conflict on the one sfstation-cited event that IS confirmed to be at 888 Garage: BOOFOWEEN (Oct 31). sfstation.com says \"10:30pm - 2am\"; 19hz.info independently lists the identical event (same RA link, ra.co/events/2484351) as \"Sat: Oct 31 (10:30pm-3am)\" \u2014 a full hour later. Could not adjudicate which is correct without reaching the promoter's own Tixr page.",
+    "The cleanest confirmed 888-Garage data point in the original evidence (Spencer Brown, RA) actually contradicts the '2 AM typical' conclusion it's cited to support: it's a directly-tagged 888 Garage booking, correctly quoted as 'Doors @ 10:15 PM / 10:30 PM - 3 AM,' i.e. 3 AM.",
+    "Independent check via 19hz.info (not in the original evidence) turned up more confirmed-888-Garage close times showing real spread rather than one 'typical' number: Da Tweekaz (hardstyle) 10pm-4am; Neil Frances 10pm-2am; Fatboy Slim 10pm-2am; Riot 9pm-2am; Ghengar 9pm-2am.",
+    "The sfist.com evidence quote conflates two different bills. The 'seven pilot cities, including San Francisco' detail belongs to 2022's SB 930, which the article itself says 'was shot down in the Assembly' (i.e., dead). The article's actual subject, 2025's AB 342 ('Hospitality Zones'), is opt-in for ANY California city and names no fixed city list. The claim 'still in the proposal/committee stage... as of 2026' isn't stated anywhere in this April-2025-dated article \u2014 it's an unsourced status update layered onto an already-conflated claim.",
+    "doors-to-first-act: 15 min rests on a single data point (Spencer Brown: doors 10:15p, start 10:30p). Genuinely evidenced, not fabricated, but n=1 for a venue-wide 'typical' figure \u2014 no other source found gives both a doors time and a start time to corroborate it."
+   ],
+   "extraEvidence": [
+    {
+     "url": "https://ra.co/clubs/255486",
+     "quote": "888 Garage is a new warehouse space next to and run by The Midway that serves as a venue space and is also the location for the San Francisco Gallery. ... 888 Garage (The Midway) 888 Marin St, San Francisco, CA 94124, USA"
+    },
+    {
+     "url": "https://19hz.info/eventlisting_BayArea.php",
+     "quote": "Sat: Oct 31 (10:30pm-3am) | [Boofoween: Only Fire, DJ Sexstasy, Queenie, Andyland](https://ra.co/events/2484351) @ 888 Garage (San Francisco) | latin club, techno"
+    },
+    {
+     "url": "https://19hz.info/eventlisting_BayArea.php",
+     "quote": "Sat: Sep 19 (10pm-4am) | [Da Tweekaz](https://www.tixr.com/groups/midwaysf/events/basscon-presents-da-tweekaz-191355) @ 888 Garage (San Francisco) | hardstyle"
+    },
+    {
+     "url": "https://themidwaysf.com/venue/888-garage/",
+     "quote": "JUST STEPS FROM THE MIDWAY, THIS VERSATILE WAREHOUSE FEATURES A 1,000-PERSON CAPACITY ... RiDE / TERRACE / GODS & MONSTERS / 888 GARAGE / BLOCK PARTIES"
+    },
+    {
+     "url": "https://sfist.com/2025/04/07/4am-last-call-comes-back-as-proposed-legislation-this-time-with-matt-haney-behind-it/",
+     "quote": "Wiener's last failed attempt, with a bill co-authored by Matt Haney, came in 2022, and that bill, SB 930, actually passed the state Senate but was shot down in the Assembly. It would have allowed an opt-in later last call for just seven cities: San Francisco, Oakland, West Hollywood, Fresno, Palm Springs, Cathedral City, and Coachella."
+    }
+   ]
+  }
+ },
+ {
+  "profile": {
+   "venue": "DNA Lounge (San Francisco)",
+   "officialSite": "https://www.dnalounge.com/",
+   "typicalClose": "Baseline weekend club night: 2:00\u20132:30 AM. Bigger ticketed circuit/production nights (like Br\u00fct SF) get pushed to 3:00 AM. No current evidence of a 4 AM close \u2014 that pattern is explicitly 1980s history per the owner's own blog, not current practice.",
+   "typicalCloseConfidence": "high",
+   "typicalCloseEvidence": [
+    {
+     "url": "https://www.dnalounge.com/calendar/2026/09-25.html",
+     "quote": "9pm - 3am."
+    },
+    {
+     "url": "https://dothebay.com/events/2026/9/25/brut-sf-folsom-friday-tickets",
+     "quote": "9:00PM - 3:00AM"
+    },
+    {
+     "url": "https://www.dnalounge.com/calendar/2026/09-26.html",
+     "quote": "9:30pm - 2:30am."
+    },
+    {
+     "url": "https://www.dnalounge.com/calendar/2026/09-27.html",
+     "quote": "9pm - 2:30am."
+    },
+    {
+     "url": "https://www.dnalounge.com/backstage/log/2024/04/16.html",
+     "quote": "even on a busy DJ night... we're always closed by 2:30."
+    },
+    {
+     "url": "http://www.deathguild.com/",
+     "quote": "9:30pm - after hours"
+    }
+   ],
+   "afterHoursLicense": "No evidence of a current 4 AM (or later) after-hours license in use. SF Police Code \u00a71070 \"Extended Hours Premises\" permit theoretically allows entertainment 2am\u20136am (https://www.dnalounge.com/backstage/permits.html), but owner Jamie Zawinski's own 2024 blog post explicitly frames \"DJ dancing every night until 4am\" as a 1980s-era flyer claim, not current operation, and states the club is \"always closed by 2:30\" now on DJ nights (https://www.dnalounge.com/backstage/log/2024/04/16.html). A commenter on that post also notes DNA Lounge \"has chosen to adhere to the laws and regulations of California,\" contrasting it with unlicensed SF afterhours spots that do run to 4am.",
+   "doorsToFirstActMinutes": 15,
+   "doorsToFirstActEvidence": [
+    {
+     "url": "https://www.setlist.fm/setlist/underscores/2026/dna-lounge-san-francisco-ca-1b49c940.html",
+     "quote": "Doors: 9:00 PM ... Jedwill Start time: 9:15 PM"
+    }
+   ],
+   "supportSetMinutes": 65,
+   "headlinerSetMinutes": 105,
+   "setLengthEvidence": [
+    {
+     "url": "https://www.setlist.fm/setlist/underscores/2026/dna-lounge-san-francisco-ca-1b49c940.html",
+     "quote": "Start time: 10:20 PM 1h 20m after doors ... End: 12:05 AM 1h 45m long"
+    },
+    {
+     "url": "http://www.deathguild.com/",
+     "quote": "2 Dance Floors \u00b7 4 Bars \u00b7 5 DJs"
+    }
+   ],
+   "thisWeekSetTimes": [
+    {
+     "night": "Thu Sep 24, 2026",
+     "detail": "No event listed / venue dark that night (calendar cell shows only the date, no linked event)",
+     "url": "https://www.dnalounge.com/calendar/2026/09.html"
+    },
+    {
+     "night": "Fri Sep 25, 2026 \u2014 Br\u00fct SF: Folsom Friday (the app's listed night)",
+     "detail": "9pm - 3am. 21+. Gen Adm $60-$85, VIP $75-$100. DJs billed in order: James Hurr (headliner, 'international tech house force'), Dan Darlington ('BR\u00dcT mainstay'), Justin Nicoll \u2014 no individual set-time schedule published.",
+     "url": "https://www.dnalounge.com/calendar/2026/09-25.html"
+    },
+    {
+     "night": "Fri Sep 25, 2026 \u2014 Momentum (separate, unrelated 21+ event same night, different rooms: Above DNA + Dazzle Room)",
+     "detail": "8pm - 1am. Anime/J-pop/hyperflip party, not part of Br\u00fct SF.",
+     "url": "https://www.dnalounge.com/calendar/2026/09-25d.html"
+    },
+    {
+     "night": "Sat Sep 26, 2026 \u2014 San Frandisco",
+     "detail": "9:30pm - 2:30am. 18+. House/techno/UKG/trance.",
+     "url": "https://www.dnalounge.com/calendar/2026/09-26.html"
+    },
+    {
+     "night": "Sun Sep 27, 2026 \u2014 Brooke Candy + Violet Chachki (Folsom Street Fair after-party)",
+     "detail": "9pm - 2:30am. 18+.",
+     "url": "https://www.dnalounge.com/calendar/2026/09-27.html"
+    }
+   ],
+   "notes": "DATA-QUALITY FLAG: the app currently lists Br\u00fct SF: Folsom Friday as \"10 PM - 4 AM.\" DNA Lounge's own official calendar listing for that exact date (dnalounge.com/calendar/2026/09-25.html) says \"9pm - 3am,\" and DoTheBay's independent listing agrees exactly (structured startDate 2026-09-25T21:00, endDate 2026-09-26T03:00). Both are primary/near-primary sources published for the actual 2026 event, so this looks like a real correction, not just a norm to apply as a guess.\n\nNo venue anywhere (DNA Lounge's own pages, DoTheBay, Eventbrite/RA/19hz mentions) publishes individual DJ set times for its club nights \u2014 only an overall doors-to-close window plus DJ billing order. This matches the task's framing exactly: doors and close are printed, set times are not.\n\nTypical close: across every Sept 2026 DNA Lounge weekend listing I could pull directly (Br\u00fct SF 9p-3a, San Frandisco 9:30p-2:30a, Brooke Candy 9p-2:30a) plus the venue's own recurring Death Guild page (\"9:30pm - after hours\") and the owner's 2024 blog post (\"we're always closed by 2:30\" on DJ nights), the pattern is: 2:00-2:30 AM baseline, 3:00 AM for bigger/higher-ticket-price circuit productions like Br\u00fct SF specifically. I found zero current evidence of a 4 AM close at this venue \u2014 that number traces to a circa-1989 flyer the owner cites as a contrast to today, not current practice.\n\nDoors-to-first-act and set-length numbers (15 min doors-to-support, 65 min support set, 105 min headliner set) come from exactly one verified source: a setlist.fm page for an \"underscores\" DJ show at DNA Lounge on March 20, 2026, which happens to be a genuine doors+support+headliner structure with real timestamps (Jedwill/support at 9:15pm, underscores/headliner at 10:20pm-12:05am). It's the only place I found actual minute-level data for this venue. Caveat: it's a solo-headliner \"album release\" DJ show, not a multi-DJ circuit night like Br\u00fct SF (3 same-tier-billed DJs, no clear single \"headliner slot\" carved out) \u2014 so treat these numbers as the best available anchor, not a confirmed norm for BRUT-style nights specifically. Death Guild's own site states \"5 DJs\" across \"2 Dance Floors\" for its weekly ~9:30pm-close night but does not publish per-DJ set lengths, so I did not compute/invent a number from that.\n\nMomentum (also DNA Lounge, also Sept 25, 8pm-1am) is a separate ticketed event in different rooms (Above DNA / Dazzle Room vs. Br\u00fct SF's Main Room/Lounge) \u2014 not part of Br\u00fct SF, included above only for completeness on \"what's happening at the venue that night.\""
+  },
+  "verdict": {
+   "venue": "DNA Lounge (375 11th St, San Francisco)",
+   "closeHolds": true,
+   "setLengthHolds": false,
+   "closeCorrection": null,
+   "problems": [
+    "Set-length claim (headliner 105 min / support 65 min / doors-to-first-act 15 min) is UNSUPPORTED, not merely uncertain. All 6 cited URLs were opened and read in full \u2014 every one is a doors/close-hours source (a calendar page, a DoTheBay listing, the closing-time blog post, deathguild.com's hours line); none contains any set-length, set-time, or doors-to-first-act figure. Independent search (DNA Lounge booking/facilities page, blog index, and general web search) turned up no DNA-Lounge-specific source stating these numbers either \u2014 the closest hits were generic industry rules of thumb from unrelated sites (e.g. a Reddit rule-of-thumb thread, a SeatGeek concert-timing guide) and other venues' set-time posts, none naming DNA Lounge or these exact minute counts. This should be treated as unverified/likely fabricated for this venue until a real source is produced, not silently kept in the write-up.",
+    "The deathguild.com citation ('9:30pm - after hours') doesn't actually give a numeric close time and is Death Guild's long-running MONDAY night (a weekly goth club), not a weekend club night \u2014 so as used in the evidence list it doesn't directly substantiate either the 'baseline weekend 2:00-2:30 AM' or the 'circuit nights pushed to 3:00 AM' sub-claims. It's not wrong, just weaker/off-topic evidence than its placement alongside the other five citations implies.",
+    "The 'bigger ticketed circuit/production nights ... get pushed to 3:00 AM' generalization rests on a single confirmed data point (Brut SF: Folsom Friday, Sept 25 2026, 9pm-3am, confirmed on both dnalounge.com and DoTheBay). No second circuit/production-night example at a 3 AM close was found to corroborate this as a repeating pattern rather than a one-off for this specific event \u2014 worth treating as directionally right but thinly sourced.",
+    "WebSearch quota was exhausted partway through this check (session hit its 200-search cap), so independent verification after that point relied on Firecrawl search/scrape instead of Google-grade web search; Resident Advisor's DNA Lounge page and a fresh 19hz.info page fetch could not be pulled directly (RA redirected to a 403, 19hz was only seen via search snippet) \u2014 those close-time sources are corroborating but not directly re-verified with a full page read."
+   ],
+   "extraEvidence": [
+    {
+     "url": "https://www.dnalounge.com/backstage/log/2024/04/16.html",
+     "quote": "even a few flyers advertising \"DJ dancing every night until 4am.\" Yes, that was a thing that used to happen! ... even on a busy DJ night, the club has already begun emptying out well before 2, and we're always closed by 2:30."
+    },
+    {
+     "url": "https://dothebay.com/events/2026/9/25/brut-sf-folsom-friday-tickets",
+     "quote": "Fri Sep 25 9:00PM - 3:00AM DNA Lounge"
+    },
+    {
+     "url": "https://19hz.info/eventlisting_BayArea.php",
+     "quote": "DNA Lounge (San Francisco) drum and bass $25-36 | All ages 2026/09/06 Sun: Sep 6 (7pm-1:30am) Open Industry"
+    }
+   ]
+  }
+ },
+ {
+  "profile": {
+   "venue": "Great American Music Hall (San Francisco)",
+   "officialSite": "https://gamh.com/",
+   "typicalClose": null,
+   "typicalCloseConfidence": "unknown",
+   "typicalCloseEvidence": [],
+   "afterHoursLicense": "null \u2014 no after-hours (post-2AM) permit or extended-hours license for this venue turned up in SF Entertainment Commission or venue-hours searches. One AI-search snippet claimed \"alcohol licence until 2:00 am\" (sourced to app.discotech.me/san-francisco/great-american-music-hall/bottle-service) but a direct fetch of that exact page found no such text \u2014 it only says hours \"vary depending on events\" \u2014 so that claim did not hold up and is NOT being reported as fact.",
+   "doorsToFirstActMinutes": 60,
+   "doorsToFirstActEvidence": [
+    {
+     "url": "https://gamh.com/tag/great-american-music-hall/",
+     "quote": "Doors: 8:00PM / Show: 9:00PM \u2014 Six Sex with B0yg1rl, Femme Jatale, b2b Erika, Fri Sept 25"
+    },
+    {
+     "url": "https://www.shazam.com/event/7e1972bd-e159-4d09-8911-204b5ebf7f02",
+     "quote": "Six Sex concert - San Francisco, Great American Music Hall, Sep 25, 2026, 9:00 PM"
+    },
+    {
+     "url": "https://gamh.com/shows-jerry-week/",
+     "quote": "Doors: 7:30PM / Show: 8:00PM"
+    },
+    {
+     "url": "https://gamh.com/shows-substance-2026/",
+     "quote": "Doors 6pm | Show 6:30pm"
+    }
+   ],
+   "headlinerSetMinutes": null,
+   "supportSetMinutes": null,
+   "setLengthEvidence": [],
+   "thisWeekSetTimes": [
+    {
+     "night": "Fri Sept 25, 2026 \u2014 Six Sex w/ B0yg1rl, Femme Jatale b2b Erika",
+     "detail": "Doors 8:00PM, Show 9:00PM, 21+, $25\u2013$40. No curfew, end time, or per-act set schedule published.",
+     "url": "https://gamh.com/tag/great-american-music-hall/"
+    }
+   ],
+   "notes": "Summary of what was and wasn't findable, so the app's \"guess\" logic has honest inputs:\n\n1. CLOSING TIME \u2014 not findable. gamh.com's own FAQ page (https://gamh.com/faqs/) covers age policy (\"All Ages 6 and up!\"), box office hours, and parking, but states nothing about when shows/the venue close. No curfew, \"open til X,\" or after-hours permit turned up across gamh.com, the venue's ticket-info page (403'd on fetch), SF Entertainment Commission searches, Resident Advisor (403'd on fetch), or Yelp/Tripadvisor review snippets. GAMH is a Live Nation-affiliated 700-cap concert hall booked as an \"All Ages 6+\" room with 21+ imposed per-event (per the Six Sex listing) \u2014 that profile reads as a standard concert-hall operation, not one of SF's licensed late-night/after-hours clubs (e.g. F8, Halcyon, 1015 Folsom, which do publicize 4AM permits) \u2014 but that's an inference from venue type, not a sourced fact, so I'm returning null rather than guessing a time.\n\n2. DOORS \u2192 FIRST ACT \u2014 60 minutes for the actual target night (Six Sex: doors 8PM, show 9PM, confirmed on gamh.com's own listing and independently on Shazam's event page). Sampling other GAMH listings for pattern-checking (since the venue itself is silent on policy) showed some variance: Axial Tilt (Dead-adjacent show) was 30 min (7:30\u21928), and SUBSTANCE 2026 (a genuinely comparable synth/industrial club night at GAMH) was also 30 min (6\u21926:30). So GAMH's doors-to-first-act gap runs 30\u201360 min depending on the show, and the specific Friday Sept 25 Six Sex listing \u2014 the one that matters for this app \u2014 is on the long end at 60 min. \"Show\" time on GAMH's own listings is the first act's start, not necessarily Six Sex's own set start, so the true doors\u2192headliner gap could exceed 60 min if there are undercard sets between the printed \"Show\" time and Six Sex going on (lineup is Six Sex + B0yg1rl + Femme Jatale b2b Erika \u2014 three named acts, order unpublished).\n\n3. SET LENGTHS \u2014 not findable for this venue. No RA timetable, published set-times post, or setlist.fm entry for a comparable DJ/club night at GAMH turned up (setlist.fm's GAMH page is dominated by full-band shows with song-based setlists, not DJ sets, and doesn't log clock times or durations anyway). ra.co's club page for GAMH (ra.co/clubs/11001) 403'd on fetch. I'd rather return null here than borrow generic \"90 min headliner / 45 min support\" club-industry norms and present them as GAMH-specific.\n\n4. THIS WEEK \u2014 Great American Music Hall has exactly ONE Portola Week 2026 night, matching what the app already lists: Friday Sept 25, Six Sex w/ B0yg1rl, Femme Jatale b2b Erika, doors 8PM / show 9PM, 21+, confirmed on gamh.com and cross-referenced via a GV Wire Portola Week roundup (https://gvwire.com/2026/08/18/goldenvoice-announces-return-of-portola-week-with-15-plus-san-francisco-shows/, which independently names the same lineup for the same date/venue). No curfew or internal set schedule is published anywhere for this specific night \u2014 if the app wants a \"when does X play\" guess for this night, it has to be built from the 8PM doors / 9PM first-act anchor plus assumed set lengths, not from any published schedule.\n\nGiven how thin venue-specific policy is here, I'd flag this to Kevin as a case where the honest \"GUESS\" label matters more than usual \u2014 GAMH just doesn't publish the kind of operational detail (curfew, set lengths) that some other Portola Week venues might."
+  },
+  "verdict": {
+   "venue": "Great American Music Hall (San Francisco, CA)",
+   "closeHolds": true,
+   "closeCorrection": null,
+   "setLengthHolds": true,
+   "problems": [
+    "All three null/unknown claims (close, headliner set length, support set length) were submitted with an empty evidence array \u2014 a null claim should still cite the sources checked so the negative is verifiable, not silent.",
+    "Two planned verification sources were unreachable this session: Resident Advisor (ra.co) returned HTTP 403 to both WebFetch and Firecrawl; Reddit is blocked for direct scraping by both tools (Firecrawl: 'we do not support this site' enterprise block; WebFetch: domain block), so only Google-indexed snippets of Reddit threads were visible, never full comment threads. Yelp also 403'd. Treat 'unknown' as 'unverifiable with available tools,' not 'confirmed no answer exists.'",
+    "One concrete curfew data point does exist ('Doors 8pm / Show 9pm / 2am curfew', and separately a mentioned '10pm curfew') but both trace to the Grateful Dead 60th-anniversary weekend (Aug 2025) after-show bookings at GAMH -- a one-off special event, not the regular calendar. Should not be used to fill in a 'typical' close time.",
+    "The doors-to-first-act '60 min' claim was also submitted with zero evidence. I checked it against 46 upcoming dates on gamh.com's own calendar: ~81% show a 60-min gap (the real mode), but ~19% (TR/ST, Cold Cave, Desire/MOTHERMARY, Illuminati Hotties, A Split Second, Substance Festival, Inner Wave, Mexican Institute of Sound -- mostly darkwave/synth/post-punk bookings) run a tighter 30-min gap. Stating 60 min as a flat fact overstates certainty; it's the typical value with a real ~1-in-5 exception rate."
+   ],
+   "extraEvidence": [
+    {
+     "quote": "The GAMH box office is open on Fridays from 12pm \u2013 5pm, as well as every night we have a show, starting 2 hours before the listed Door time. The 1000 Van Ness Garage is typically open until 11pm Sunday through Thursday / 12am on Friday and Saturday, but will in most cases stay open later when we have shows at the Great American Music Hall.",
+     "url": "https://gamh.com/faqs/"
+    },
+    {
+     "quote": "Event Doortime: 7:00PM / Event Showtime: 8:00PM (Necrot); Event Doortime: 6:00PM / Event Showtime: 6:30PM (TR/ST, Buzz Kull); Event Doortime: 6:30PM / Event Showtime: 7:30PM (Igorrr)",
+     "url": "https://gamh.com/calendar/"
+    },
+    {
+     "quote": "Great American Music Hall ... 9:00PM [start time only, no close time listed for any date]",
+     "url": "https://dothebay.com/venues/great-american-music-hall"
+    },
+    {
+     "quote": "Fri: Oct 23 (6pm) | Tr/St (DJ Set), Buzz Kull, Zanias, Ghost Cop, Aux Animaux, DJ Omar Perez @ Great American Music Hall (San Francisco) | synthpop, electropop | $38-93 -- single start time only, no end-time range (compare same page's F8 listing: 'Wed: Sep 2 (9pm-3am)')",
+     "url": "https://19hz.info/eventlisting_BayArea.php"
+    },
+    {
+     "quote": "Axial Tilt at Great American Music Hall. Sunday post-show. Doors at 8pm / Show at 9pm / 2am curfew.",
+     "url": "https://www.reddit.com/r/gratefuldead/comments/1m6g0ba/whats_shaking_during_gd60_a_guide_to_all_the/"
+    },
+    {
+     "quote": "The GGP shows are ending at 10pm. The shows at Great American Music Hall are starting at 10pm.",
+     "url": "https://www.reddit.com/r/deadandcompany/comments/1kyg08b/ggpgamh_realistic/"
+    }
+   ]
+  }
+ },
+ {
+  "profile": {
+   "venue": "SVN West (San Francisco)",
+   "officialSite": "https://svnwest.com/",
+   "typicalClose": "No single venue-wide policy found. Standard/recurring club nights close at 2 AM (matches CA/SF standard last call); but SVN West also runs larger circuit-party and festival-scale events with extended hours to 4 AM\u20136 AM. Which applies depends on event scale/permit, not a fixed venue rule.",
+   "typicalCloseConfidence": "medium",
+   "typicalCloseEvidence": [
+    {
+     "url": "https://www.eventbrite.com/e/deviants-adult-arcade-the-folsom-street-fair-afterparty-tickets-1995206717000",
+     "quote": "Sunday, September 27-Monday, September 28 \u2022 7 PM-2 AM"
+    },
+    {
+     "url": "https://www.eventbrite.com/e/deviants-adult-arcade-the-folsom-street-fair-afterparty-tickets-1550136703609",
+     "quote": "Sunday, September 28-Monday, September 29, 2025 \u2022 7 PM-2 AM"
+    },
+    {
+     "url": "https://dothebay.com/events/2026/9/26/magnitude-the-saturday-night-main-event-of-folsom-street-fair-tickets",
+     "quote": "9:00PM - 4:00AM (data-datetime 2026-09-26 21:00:00 to 2026-09-27 04:00:00)"
+    },
+    {
+     "url": "https://ra.co/events/2315644",
+     "quote": "Friday at SVN West 9pm - 6am: ... Saturday at SVN West 9pm - 6am:"
+    }
+   ],
+   "afterHoursLicense": "No explicit license document was located for SVN West specifically (its own /info/ page covers only building history, not hours/permits). But Parameter Festival 2026 books SVN West for two consecutive nights at \"9pm - 6am\" (RA listing), and Magnitude 2026's own DoTheBay listing runs to 4:00 AM \u2014 both past SF's standard 2 AM last call, implying the venue holds or obtains extended-hours permitting (SF's own Extended Hours Premises permit covers entertainment 2am-6am per sf.gov) for select bigger-ticket events. This is inferred from event listings, not a confirmed permit-registry lookup \u2014 that lookup wasn't completed (web search budget ran out before I could check SF Entertainment Commission records directly).",
+   "doorsToFirstActMinutes": 60,
+   "doorsToFirstActEvidence": [
+    {
+     "url": "https://dothebay.com/events/2023/9/8/j-worra-tickets",
+     "quote": "SVN West Warehouse\n\nDoors 8:30pm | Show 9pm"
+    },
+    {
+     "url": "https://www.setlist.fm/setlist/tove-lo/2024/svn-west-san-francisco-ca-5b55d360.html",
+     "quote": "Doors: 8:00 PM ... Fcukers Start time: 9:25 PM"
+    }
+   ],
+   "headlinerSetMinutes": 70,
+   "supportSetMinutes": 50,
+   "setLengthEvidence": [
+    {
+     "url": "https://www.setlist.fm/setlist/tove-lo/2024/svn-west-san-francisco-ca-5b55d360.html",
+     "quote": "Start time: 12:30 AM 4h 30m after doors / End: 1:40 AM 1h 10m long"
+    },
+    {
+     "url": "https://www.setlist.fm/venue/svn-west-san-francisco-ca-usa-3d3f9fb.html",
+     "quote": "Fcukers 9:25 PM \u00b7 JPEGMAFIA 10:50 PM \u00b7 Peaches 11:40 PM \u00b7 Tove Lo 12:30 AM \u00b7 Snow Strippers 1:40 AM"
+    }
+   ],
+   "thisWeekSetTimes": [
+    {
+     "night": "Sat Sept 26, 2026 - Magnitude",
+     "detail": "9:00PM - 4:00AM (start/end block only; no per-DJ set times published for Deanne/GSP/Brian Urmanita)",
+     "url": "https://dothebay.com/events/2026/9/26/magnitude-the-saturday-night-main-event-of-folsom-street-fair-tickets"
+    },
+    {
+     "night": "Sat Sept 26, 2026 - Magnitude (Eventbrite)",
+     "detail": "\"Starts at 9 PM\" \u2014 no end time or set-time breakdown printed",
+     "url": "https://www.eventbrite.com/e/magnitude-2026-the-saturday-night-main-event-of-folsom-street-fairtm-tickets-1894668557659"
+    },
+    {
+     "night": "Sun Sept 27, 2026 - DEVIANTS",
+     "detail": "7 PM-2 AM (start/end block only; no per-DJ set times published)",
+     "url": "https://www.eventbrite.com/e/deviants-adult-arcade-the-folsom-street-fair-afterparty-tickets-1995206717000"
+    }
+   ],
+   "notes": "Methodology: checked svnwest.com directly first (no hours/policy content on its /info/ page \u2014 history and square-footage only, nothing operational), then cross-referenced Eventbrite, DoTheBay, RA, and setlist.fm for the venue and for the two Portola Week 2026 nights specifically.\n\nFlag for the app: the app currently assumes Magnitude runs 9 PM - 5 AM, but DoTheBay's own ticketing listing for that exact Sept 26, 2026 event times it \"9:00PM - 4:00AM\" (confirmed via the page's data-datetime attributes, not just visible text). That's a real discrepancy worth reconciling \u2014 DoTheBay is a primary listing, not a guess. DEVIANTS' 7 PM-2 AM matches the app exactly and is corroborated by both the 2026 and 2025 editions of the same annual event (identical hours both years), so that one's solid.\n\nDoors-to-first-act and set-length figures are NOT a large-sample \"venue norm\" \u2014 they're drawn from two real, venue-specific bills: J. Worra (Sept 2023, single headliner + 3 support, \"Doors 8:30pm | Show 9pm\" = 30 min gap) and the Boiler Room Portola Pre-Party (Sept 27, 2024 \u2014 literally last year's Portola Week club night at this same venue, with Fcukers/JPEGMAFIA/Peaches/Tove Lo/Snow Strippers), which had doors 8:00 PM and first act (Fcukers) at 9:25 PM (85 min gap), then support sets of 85/50/50 minutes and a 70-minute \"headliner\" (Tove Lo) slot before the closing DJ (Snow Strippers, no recorded end time). I split the two gap data points to a 60-min estimate rather than picking one arbitrarily \u2014 the actual range is 30-85 min depending on how many acts are on the bill. The 2024 bill is the closest real analog to Magnitude/DEVIANTS structurally (multiple named performers, not a single headliner + one opener), so if forced to pick one gap/set-length model for this app's guesses, that one is the better fit \u2014 but it's one data point, not a pattern.\n\nNot found: any explicit venue policy page, curfew language, or per-DJ set-time schedule for either 2026 Portola Week night as of this research (2026-09-02) \u2014 ticket pages print only doors/start-end blocks, consistent with what the task brief already expected. A direct SF Entertainment Commission permit-registry check for SVN West's specific license type (Type 90 / Extended Hours Premises) was not completed \u2014 this session's web search budget ran out before I could run it; the after-hours capability is inferred from event listings (Magnitude to 4 AM, Parameter Festival to 6 AM) rather than confirmed against the permit record itself."
+  },
+  "verdict": {
+   "venue": "SVN West, San Francisco (10 South Van Ness Ave, SF, CA 94103)",
+   "closeHolds": true,
+   "closeCorrection": null,
+   "setLengthHolds": false,
+   "problems": [
+    "Set-length claim (headliner 70 min / support 50 min / doors-to-first-act 60 min) was submitted with ZERO cited evidence in the original research \u2014 the evidence list only backs the closing-time claim. Independent search (venue's own site, RA, DoTheBay, Noise Pop's SVN West Rooftop event calendar, general web) found no source anywhere \u2014 official or fan \u2014 publishing minute-level set times or set lengths for SVN West events. This is not a case of a wrong number; it's a case of no supporting source at all, so the 70/50/60 figures should be treated as unverified/unsupported (possibly an ungrounded estimate stated with false precision), not relied on.",
+    "Could not check two potential primary sources for set times: a Reddit thread titled 'Parameter San Francisco set times - who are you excited to see?' (reddit.com/r/TheOverload/comments/1t1578t/) \u2014 Claude's web-fetch tool is blocked from reddit.com, so its contents (which may include real per-artist set times) are unread. Also an Instagram post captioned 'Set times are here' for Parameter at SVN West (instagram.com/p/DYQIQLgEvp4/) is image content that couldn't be read. Flagging these as unresolved rather than folding them into the verdict.",
+    "The RA-cited event (ra.co/events/2315644) is 'Parameter Festival 2026' \u2014 a 4-night, multi-venue SF weekender with 45+ artists, not a single SVN-West-only booking. Only 2 of its 4 nights are at SVN West (Fri/Sat, 9pm-6am each); Thursday is at Gray Area (7pm-12am) and Sunday at Public Works (2pm-10pm). The original summary's '9am-6am' evidence line doesn't surface that this is one specific large festival's SVN-West booking, not a general pattern seen across multiple festival-scale events at the venue.",
+    "DoTheBay's Magnitude event (Sat Sep 26, 2026 \u2014 Folsom Street Fair's Saturday main event) runs 9:00PM-4:00AM, a data point that sits between the claim's two buckets ('standard 2am' vs 'circuit-party/festival 4am-6am'). It's defensible to bucket Magnitude with the extended-hours circuit-party category (it's explicitly tied to Folsom Street Fair), but no city/venue permit record was checked to confirm the claim's stated mechanism ('depends on event scale/permit') \u2014 that causal explanation is inference from the pattern of listed hours, not independently verified against an actual permit filing."
+   ],
+   "extraEvidence": [
+    {
+     "url": "https://www.sfstation.com/clubs/calendar/mission/san-francisco/11-14-2025",
+     "quote": "9pm - 2am. FRI. 14. FRI. 14. Afrojack. at SVN West https://www.sfstation.com/svn-west-b38996379 (9pm - 2am) 10 S Van Ness Avenue San Francisco, CA Buy Tickets."
+    },
+    {
+     "url": "https://ra.co/events/2315644",
+     "quote": "May 14th 7pm - 12am at Gray Area May 15th 9pm - 6am at SVN West with Stratus, The Void May 16th 9pm - 6am at SVN West with Stratus, The Void May 17th 2pm - 10pm at Public Works with Endzeit, Samurai Music"
+    },
+    {
+     "url": "https://svnwest.com/info/",
+     "quote": "Need an extra wall built out? Walls painted a certain color? Projections in every direction? Or maybe you need to park a car on the third floor? There are no limits at SVN West."
+    },
+    {
+     "url": "https://m.yelp.com/biz/svn-west-san-francisco",
+     "quote": "SVN WEST, 10 S Van Ness Ave, San Francisco, CA 94103, 127 Photos, (415) 608-2220, Mon - Open 24 hours, Tue - Open 24 hours, Wed - Open 24 hours"
+    },
+    {
+     "url": "https://www.eventbrite.com/e/deviants-adult-arcade-the-folsom-street-fair-afterparty-tickets-1995206717000",
+     "quote": "Sunday, September 27-Monday, September 28  \u2022  7 PM-2 AM"
+    }
+   ]
+  }
+ },
+ {
+  "profile": {
+   "venue": "SF Eagle (San Francisco)",
+   "officialSite": "https://sf-eagle.com",
+   "typicalClose": "2 AM",
+   "typicalCloseConfidence": "high",
+   "typicalCloseEvidence": [
+    {
+     "url": "https://sf-eagle.com/events/disco-daddy-folsom/",
+     "quote": "\"startDate\":\"2026-09-27T19:00:00-07:00\",\"endDate\":\"2026-09-28T02:00:00-07:00\""
+    },
+    {
+     "url": "https://sf-eagle.com/events/disco-daddy-folsom/",
+     "quote": "Time 7 PM - 2 AM"
+    },
+    {
+     "url": "https://sf-eagle.com/visit/",
+     "quote": "Fri \u2013 Sat 2PM \u2013 2AM"
+    },
+    {
+     "url": "https://ra.co/events/2303239",
+     "quote": "Doors 9pm to LATE"
+    },
+    {
+     "url": "https://www.facebook.com/groups/sfeagle/",
+     "quote": "Saturday at SF Eagle Doors 9pm to LATE Eagle SF 398 12th st, 21, and up"
+    }
+   ],
+   "doorsToFirstActMinutes": 0,
+   "doorsToFirstActEvidence": [
+    {
+     "url": "https://ra.co/events/2303239",
+     "quote": "Doors 9pm to LATE ... 9pm till Close DJ Jim Hopkins ... DJ Jimmy DePre"
+    },
+    {
+     "url": "https://sf-eagle.com/events/disco-daddy-folsom/",
+     "quote": "Time 7 PM - 2 AM"
+    }
+   ],
+   "headlinerSetMinutes": null,
+   "supportSetMinutes": null,
+   "setLengthEvidence": [
+    {
+     "url": "https://ra.co/events/2303239",
+     "quote": "9pm till Close DJ Jim Hopkins (S.F. Disco Preservation Society) DJ Jimmy DePre (Go Bang!)"
+    }
+   ],
+   "thisWeekSetTimes": [
+    {
+     "night": "Sunday, Sept 27, 2026 \u2014 Disco Daddy Folsom",
+     "detail": "7 PM - 2 AM; no doors/first-act split or DJ set times published on any listing found",
+     "url": "https://sf-eagle.com/events/disco-daddy-folsom/"
+    }
+   ],
+   "afterHoursLicense": null,
+   "notes": "No published set times, curfew, or \"music from X\" line exist for SF Eagle anywhere searched (own site, RA, DoTheBay, Eventbrite, Facebook, 19hz.info). The venue's own events page states outright: \"Doors, times and lineups subject to the whims of the night\" (https://sf-eagle.com/events/, via curl fetch). RA's ClubKnot listing at SF Eagle (Sept 12, 2026) shows lineup \"TBA\" with no times.\n\nFormat matters: this is a leather/queer bar running continuous multi-DJ sets from doors to close (e.g. FILTH: two DJs covering \"9pm till Close\" as one block), not a concert venue with a doors period, distinct openers, and a headliner slot. So \"doors-to-first-act gap\" and \"set lengths\" don't map cleanly onto how this venue actually runs \u2014 I set the gap to 0 based on the one listing (FILTH, RA) that prints both doors and DJ-start time and they match, but flag it as a weak/single-source data point, not a confident norm.\n\nRegular posted hours (https://sf-eagle.com/visit/, schema.org on every page): Mon 6PM\u201312AM, Tue closed, Wed\u2013Thu 6PM\u201312AM, Fri\u2013Sat 2PM\u20132AM, Sun 1PM\u201312AM. Sunday's Disco Daddy events are ticketed/special and extend past the normal 12AM Sunday close to 2AM \u2014 both the Sept 6, 2026 and Sept 27, 2026 (Folsom) editions are separately confirmed at \"7 PM - 2 AM\" on the venue's own events page. No evidence of any after-hours permit past 2 AM; California state law bars alcohol service 2 AM\u20136 AM statewide, and I found no SF Type-90/after-hours reference for this venue specifically.\n\nIMPORTANT for app categorization: dothebay.com/portolaweek is Goldenvoice's own curated \"Portola Week 2026\" pre/after-party list (confirmed via direct scrape, JSON-LD event data for Sept 24-27). SF Eagle does NOT appear on it \u2014 the listed venues are The Regency Ballroom, Club Six, 1015 Folsom, Monarch, The Midway, The Great Northern, Audio SF, Public Works, 888 Garage, and Rickshaw Stop. Disco Daddy Folsom at SF Eagle overlaps in date with Folsom Street Fair weekend (Sept 27, 2026 is also Folsom Sunday) rather than being official Portola-affiliated programming \u2014 worth a caveat in the app if \"Portola Week\" implies festival affiliation to users.\n\nWebSearch tool hit its per-session budget (200/200) partway through this research; remaining lookups were done via WebFetch, curl, and firecrawl_scrape/search instead, which is why sourcing leans on those tools for the later finds."
+  },
+  "verdict": {
+   "venue": "SF Eagle (San Francisco)",
+   "closeHolds": true,
+   "closeCorrection": "2 AM is well-supported but only for Friday/Saturday-pattern and ticketed club/DJ nights \u2014 confirmed by the venue's own JSON-LD hours (\"Friday\",\"Saturday\" opens 14:00 closes 02:00) and by an independent RA \"ClubKnot\" listing whose closing set runs 12AM-2AM. It is NOT the venue's general closing time: the same JSON-LD gives Sun/Mon/Wed/Thu as closing at 00:00 (midnight), and the venue's comedy/live-music programming demonstrably wraps far earlier (comedy ~9:15 PM per Humanitix, a live-music bill ending 12 AM per DoTheBay). Labeling 2 AM \"typical (high confidence)\" without that split overstates precision for a venue that runs mixed programming.",
+   "setLengthHolds": false,
+   "problems": [
+    "doors-to-first-act: 0 min has zero support in the cited evidence (none of the 5 sources mention a first-act time) and is contradicted by every independent SF Eagle listing that actually separates doors from show start \u2014 3 sources, all showing a consistent 30-minute gap: DoTheBay 'Live music Thursdays' (Doors at 8pm / Music at 8:30pm), DoTheBay 'Pride is a LAUGH RIOT' (Doors 7:00 PM | Show 7:30 PM), Humanitix 'Safe Words' comedy (Doors 6:30 PM \u00b7 Show 7:00 PM). Correct to ~30 min for the venue's comedy/live-music programming; not established either way for DJ/club nights (Disco Daddy Folsom, FILTH), which only list one combined time window.",
+    "headliner/support set length reported as null undersells what's findable one click away. RA's ClubKnot listing (https://ra.co/events/2443693) gives explicit DJ set times (Bar Code 1hr, Fusker 2hr, Fawks/closing 2hr) and DoTheBay's 'Live music Thursdays' gives a full 4-act bill (30-45 min/act, headliner/closer 45 min). No single canonical number exists since this venue mixes comedy/live-band/DJ formats, but null implies nothing is knowable when real ranges are documented.",
+    "Two of the five original evidence quotes (RA and Facebook, same FILTH-party post, 'Doors 9pm to LATE') verify verbatim but don't actually corroborate the specific '2 AM' figure -- 'LATE' isn't a clock time. The real corroboration for 2 AM comes from sf-eagle.com's own JSON-LD/event page and the independently-found RA ClubKnot listing, not from these two.",
+    "The RA/Facebook FILTH-party citation is a specific past occurrence (Sat Dec 6, 2025, ~9 months old at check time), not a 'recent weekend listing,' though it appears to reflect a still-recurring monthly format.",
+    "'Typical close: 2 AM (high confidence)' overgeneralizes across event types at this venue -- see closeCorrection for the full breakdown (Fri/Sat + club nights hit 2 AM per the venue's own posted hours; comedy/live-music nights at the same venue close far earlier, down to 9:15 PM)."
+   ],
+   "extraEvidence": [
+    {
+     "url": "https://sf-eagle.com/events/disco-daddy-folsom/",
+     "quote": "{\"@type\":\"OpeningHoursSpecification\",\"dayOfWeek\":[\"Friday\",\"Saturday\"],\"opens\":\"14:00\",\"closes\":\"02:00\"},{\"@type\":\"OpeningHoursSpecification\",\"dayOfWeek\":\"Sunday\",\"opens\":\"13:00\",\"closes\":\"00:00\"}"
+    },
+    {
+     "url": "https://ra.co/events/2443693",
+     "quote": "Lineup: - Bar Code 9PM - 10PM - Fusker 10PM - 12AM - Fawks 12AM - 2AM"
+    },
+    {
+     "url": "https://dothebay.com/events/2026/5/14/live-music-thursdays-at-sf-eagle-tickets",
+     "quote": "EMERGENCY BROADCAST SYSTEM - 11:15PM -12 AM / STEREOTONGUE- 10:15 - 11 PM / JACKIE CLEMENTE - 9:15 - 10 PM / WTF - 8:30-9 PM ... Doors at 8 pm / Music at 830 pm"
+    },
+    {
+     "url": "https://dothebay.com/events/2026/6/24/pride-is-a-laugh-riot-tickets",
+     "quote": "Doors: 7:00 PM | Show: 7:30 PM"
+    },
+    {
+     "url": "https://events.humanitix.com/safe-words-queer-comedy-showcase-january-2026",
+     "quote": "Wed, Jan 28, 7pm - 9:15pm PST ... Doors 6:30 PM \u00b7 Show 7:00 PM"
+    }
+   ]
+  }
+ },
+ {
+  "profile": {
+   "venue": "Club Six (San Francisco)",
+   "officialSite": null,
+   "typicalClose": "4:00 AM",
+   "typicalCloseConfidence": "high",
+   "typicalCloseEvidence": [
+    {
+     "url": "https://ra.co/events/2515377",
+     "quote": "\"startDate\":\"2026-09-24T22:00:00.000\" ... \"endDate\":\"2026-09-25T04:00:00.000\" (RA's embedded event schema, not shown on the page itself)"
+    },
+    {
+     "url": "https://19hz.info/eventlisting_BayArea.php",
+     "quote": "Thu: Sep 24 (10pm-4am) | Program Audio: Black Rave Culture... @ Club Six (San Francisco)"
+    },
+    {
+     "url": "https://www.instagram.com/p/DcMrSHgSSYO/",
+     "quote": "thurs 09.24 club six 10pm-4am 21+"
+    },
+    {
+     "url": "https://ra.co/events/2067454",
+     "quote": "Prepare for a night of house, techno, electro, and disco that will keep you moving 'til 4 am."
+    },
+    {
+     "url": "https://beyondchron.org/noisy-club-six-faces-permit-suspension-hearing/",
+     "quote": "its extended hours permit (which allow it to stay open until 4:00 a.m.)"
+    }
+   ],
+   "afterHoursLicense": "Club Six holds a San Francisco Entertainment Commission \"extended hours\" permit that allows it to operate until 4:00 a.m. (confirmed in a 2007 Beyond Chron report on a noise-related permit-suspension hearing: \"As part of its extended hours permit with the San Francisco Entertainment Commission... its extended hours permit... allow it to stay open until 4:00 a.m.\" \u2014 https://beyondchron.org/noisy-club-six-faces-permit-suspension-hearing/). That's a dated (2007) source, but it matches every current listing checked: RA's own structured event data for three different 2025-2026 Club Six nights shows 22:00 start / 04:00 (or 03:00) end, and 19hz.info's live Sept 2026 listings show \"(10pm-4am)\" for three consecutive Club Six nights including the Sept 24 Portola Week show itself. One RA listing (DJ Gigola's \"Basement\" night, April 2025) ended at 3:00 AM instead of 4:00 AM, so 4 AM is the modal/typical close for bigger promoter nights (program audio's own shows, HARDER) but isn't universal \u2014 some nights wrap an hour earlier.",
+   "doorsToFirstActMinutes": null,
+   "setLengthEvidence": [
+    {
+     "url": "https://ra.co/events/2515377",
+     "quote": "Lineup: Black Rave Culture, bastiengoat, DJs Who Kiss (Discnogirl b2b Buck Wilson), Rau b2b Rivs \u2014 4 acts/b2b slots, no times given"
+    },
+    {
+     "url": "https://ra.co/events/2117547",
+     "quote": "\"startDate\":\"2025-04-11T22:00:00.000\"...\"endDate\":\"2025-04-12T03:00:00.000\" \u2014 5-hour block, 8 names on the bill, no per-act times"
+    }
+   ],
+   "headlinerSetMinutes": null,
+   "supportSetMinutes": null,
+   "thisWeekSetTimes": [
+    {
+     "night": "Thu Sep 24 2026 \u2014 Black Rave Culture (Official Portola Week Party)",
+     "detail": "AXS/DoTheBay/RA all print only \"Doors 10:00 PM\" on the visible ticket page; no per-artist set times or curfew are published anywhere for this night.",
+     "url": "https://www.axs.com/events/1579182/black-rave-culture-presented-by-program-audio-tickets"
+    },
+    {
+     "night": "Thu Sep 24 2026 \u2014 Black Rave Culture (Official Portola Week Party)",
+     "detail": "RA's embedded (not human-visible) event schema gives the full window: startDate 2026-09-24T22:00, endDate 2026-09-25T04:00 \u2014 i.e. 10 PM doors, 4 AM close.",
+     "url": "https://ra.co/events/2515377"
+    },
+    {
+     "night": "Thu Sep 24 2026 \u2014 Black Rave Culture (Official Portola Week Party)",
+     "detail": "Promoter's (program.audio) own Instagram caption states the full run: \"thurs 09.24 club six 10pm-4am 21+\".",
+     "url": "https://www.instagram.com/p/DcMrSHgSSYO/"
+    },
+    {
+     "night": "Thu Sep 24 2026 \u2014 Black Rave Culture (Official Portola Week Party)",
+     "detail": "19hz.info aggregator (independently compiled) confirms: \"Thu: Sep 24 (10pm-4am)... @ Club Six (San Francisco)... $16.50 b4 11 / $22 b4 12 / $28\" \u2014 tiered pricing implies people are expected well before 11 PM, but no set times.",
+     "url": "https://19hz.info/eventlisting_BayArea.php"
+    }
+   ],
+   "notes": "Bottom line for the app: doors 10:00 PM is solid (matches our current data exactly, confirmed by 4+ independent sources). Close time is best guessed as 4:00 AM \u2014 not printed on any consumer-facing ticket page, but recoverable from RA's own embedded event data (schema.org JSON-LD in the page source, invisible to a normal visitor) plus 19hz.info's aggregator, both of which show the exact same 10pm-4am pattern for this specific Sept 24 night and for Club Six's two other most recent 2026 shows (Sept 11 Knick, Sept 12 program audio). A 2007 news article confirms the mechanism: Club Six holds an SF Entertainment Commission \"extended hours\" permit good until 4 AM, so this isn't a one-off \u2014 it's the venue's licensed ceiling. One caveat: one 2025 RA listing (DJ Gigola's \"Basement\" party) closed at 3 AM instead of 4 AM, so treat 4 AM as \"typical for a promoter night like this one,\" not absolute.\n\nWhat's NOT findable, anywhere: (1) the gap between doors and the first DJ \u2014 no listing (RA, AXS, DoTheBay, Instagram, 19hz) prints a support-act or first-act start time distinct from \"doors,\" so I'm returning null rather than guessing a number; (2) headliner/support set lengths \u2014 RA's lineup for this night lists 4 acts/b2b pairs (Black Rave Culture, bastiengoat, DJs Who Kiss, Rau b2b Rivs) sharing a 6-hour block, but nobody publishes how that block is actually carved up, so any per-act minute figure would be invented, not sourced.\n\nTwo things worth flagging back to the team: (1) Club Six's own official website (clubsix1.com) has been taken over \u2014 it now serves an unrelated Vietnamese online-gambling site, not the venue. That domain is dead as a source and shouldn't be linked from the app. (2) Yelp's business listing shows \"CLUB SIX - CLOSED\" as of an August 2026 update, which directly contradicts every live ticketing source (RA/AXS/DoTheBay all show active September-November 2026 bookings, RA logs 18 events there so far this year). I'd trust the ticketing platforms over Yelp's status flag here \u2014 Yelp is very likely stale/wrong, not the venue actually closed. Also confirmed: Club Six's Black Rave Culture night (Sept 24) is its ONLY Portola Week 2026 show \u2014 DoTheBay's full Portola Week schedule shows no other Club Six dates Sept 25-27, so nothing is missing from our current listing."
+  },
+  "verdict": {
+   "venue": "Club Six (San Francisco, CA \u2014 60 6th St, 94103)",
+   "closeHolds": true,
+   "closeCorrection": null,
+   "setLengthHolds": true,
+   "problems": [
+    "Instagram citation (instagram.com/p/DcMrSHgSSYO/) could not be verified: Firecrawl refuses to scrape Instagram ('we do not support this site') and WebFetch returned a 'post removed/broken' error with no caption text. Not load-bearing since the same Sep 24 2026 claim is independently confirmed via raw HTML from ra.co and 19hz.info, but it should be reported as unverified, not assumed accurate.",
+    "beyondchron.org citation is a March 20, 2007 article (~19 years old) titled 'Noisy Club Six Faces Permit Suspension Hearing' \u2014 its actual subject is the city considering REVOKING the extended-hours permit over neighbor noise complaints, not confirmation of stable ongoing practice. The quoted line is accurate verbatim, but using it as generic 'typical close' support without noting its age/subject overstates its reliability. The 4am conclusion still holds \u2014 it's independently reconfirmed by five current 2026 listings \u2014 but this specific source is weak standing alone.",
+    "ra.co/events/2067454 ('HARDER SF ... til 4 am') is dated Saturday, January 25, 2025 per RA's own page title ('HARDER SF at Club Six, San Francisco/Oakland (2025)') and metadata \u2014 over 19 months old as of 2026-09-02, not a recent data point, though the quote is accurate.",
+    "WebFetch's AI-summarized reads of 19hz.info were unreliable for exact quotes: on separate passes it mislabeled the Sep 24 'Black Rave Culture' listing as Sep 10, and separately misread 'Sat: Sep 12' as 'Oct 12'. Only a raw curl of the page HTML (grepped directly) resolved both errors and produced the verified quote \u2014 future checks of this domain should confirm at the byte level before quoting.",
+    "Set-length claims (headliner/support/doors-to-first-act, all null) could not be positively confirmed OR contradicted: ra.co's event page lists the 4-act lineup with no published timetable, and DoTheBay/19hz carry doors time only. Instagram \u2014 where a promoter sometimes posts a running order \u2014 could not be checked (see Instagram problem above), so the nulls mean 'not found in the sources I could reach,' not 'confirmed absent everywhere.'"
+   ],
+   "extraEvidence": [
+    {
+     "url": "https://ra.co/events/2515377",
+     "quote": "raw JSON-LD (fetched via Firecrawl stealth proxy, since WebFetch/curl both 403 on ra.co): \"startDate\":\"2026-09-24T22:00:00.000\" ... \"endDate\":\"2026-09-25T04:00:00.000\" \u2014 for \"program audio: Black Rave Culture (Official Portola Week Party)\" at Club Six"
+    },
+    {
+     "url": "https://19hz.info/eventlisting_BayArea.php",
+     "quote": "raw curl'd HTML, tag-stripped: \"2026/09/24Thu: Sep 24 (10pm-4am)Program Audio: Black Rave Culture, bastiengoat, DJs Who Kiss (Discnogirl b2b Buck Wilson), Rau b2b Rivs @ Club Six (San Francisco)club music, house, techno, footwork, uk garage, baile fu[nk]\" -- and two more current Club Six listings on the same page: \"Fri: Sep 11 (10pm-4am)Knick: Hyperactive, Max Gardner @ Club Six (San Francisco)\" and \"Sat: Sep 12 (10pm-4am)Program Audio: Identified Patient, Sepehr, Ali Stack, sfcowboy, erika @ Club Six (San Francisco)\""
+    },
+    {
+     "url": "http://dothebay.com/venues/club-six",
+     "quote": "\"ThursdaySep 24 ... Goldenvoice and Program audio Present: Portola Week 2026 ... Club Six ... 10:00PM\" \u2014 page also lists venue address \"60 6th St\", San Francisco, CA 94103 in its structured metadata; no close time or set schedule is published on this page"
+    },
+    {
+     "url": "https://ra.co/events/2067454",
+     "quote": "page metadata: \"description\":\"Sat, 25 Jan 2025. Line-Up: Tommy Hart, BEYA.\" and og:title \"HARDER SF at Club Six, San Francisco/Oakland (2025)\" \u2014 dates this citation to January 2025, not a recent event; the 'til 4 am marketing line itself is confirmed verbatim in the page markdown"
+    }
+   ]
+  }
+ }
+]

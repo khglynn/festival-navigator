@@ -19,7 +19,7 @@
   border: 1px solid var(--hairline); border-radius: var(--r-card);
   display: flex; align-items: center; justify-content: center;
   padding: 9px 11px 20px; text-align: center; overflow: hidden;
-  cursor: pointer; -webkit-touch-callout: none; user-select: none;
+  cursor: pointer; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none;
   font-family: inherit; color: inherit; /* role=button div, keyboard-first (AX-1) */
 }
 .card.animated { background-size: 180% 180%; animation: gradShift 12s ease-in-out infinite; }
@@ -126,7 +126,7 @@
 
 /* ---- people ----------------------------------------------------------------- */
 .person-chip { color: #fff; font-size: 11.5px; font-weight: 600; padding: 5px 12px;
-               -webkit-touch-callout: none; user-select: none; /* a long press must never raise the OS text callout */
+               -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; /* a long press must never raise the OS text callout */
                border-radius: var(--r-pill); border: none; cursor: pointer; }
 .person-chip.you { font-weight: 700; }
 /* A chip's job is to say "this person, in their colour". On the wall and in the
@@ -169,9 +169,13 @@
   border-radius: 12px; padding: 5px; margin: 0; list-style: none;
   box-shadow: 0 12px 34px rgba(0, 0, 0, .5);
 }
+/* The show menu's rows are real buttons (§3.1) — that is where their keyboard
+ * and their 44px floor come from — so the row rule resets button chrome and
+ * spans the popover. Harmless on the sort chip's list items. */
 .sort-pop [role="option"] {
   display: flex; align-items: center; gap: 8px;
-  padding: 8px 11px; border-radius: 8px;
+  padding: 8px 11px; border-radius: 8px; width: 100%;
+  background: none; border: 0; text-align: left; font-family: inherit;
   color: var(--text-body); font-size: 13px; font-weight: 600; cursor: pointer;
 }
 .sort-pop [role="option"]:hover, .sort-pop [role="option"].kb-active {
@@ -181,6 +185,21 @@
  * reserved for fest name / active day tab / stage headers / current-fest border. */
 .sort-pop [role="option"][aria-selected="true"] { color: rgb(var(--brand)); }
 .sort-pop .check { width: 12px; flex: none; font-size: 11px; }
+
+/* The show menu (MODEL-V4 §3.1) is this same popover with three parts the
+ * sort chip never needed: a head, a divider, and Settings at the end. */
+.sort-pop .pop-head {
+  padding: 5px 11px 6px; color: var(--text-tertiary);
+  font-size: 10px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase;
+}
+.sort-pop .pop-div { height: 1px; margin: 5px 7px; background: var(--hairline); }
+.sort-pop .chev { color: var(--text-tertiary); margin-left: auto; padding-left: 10px; }
+/* The dock is fixed to the bottom of the phone, so a popover it carries opens
+ * UPWARD — downward is off the screen. The rail's is at the top of the page
+ * and keeps the default. One rule, on the one bottom-anchored wrap. The
+ * arrival already rises (translateY(4px) → 0), so it reads as growing out of
+ * the fest name either way. */
+.dock .sort-pop { top: auto; bottom: calc(100% + 8px); }
 .notes-chip {
   display: inline-flex; align-items: center; gap: 5px; background: transparent;
   border: 1.5px solid var(--notes-chip-stroke); color: var(--notes-chip-text);
@@ -193,7 +212,15 @@
 /* ---- day header rule --------------------------------------------------------- */
 /* Jumping to a day (tab tap) must land the header BELOW the sticky chrome,
  * not under it — app.js measures the rail + stage strip into --jump-offset. */
-.day-rule { display: flex; align-items: baseline; gap: 10px; scroll-margin-top: var(--jump-offset, 8px); }
+/* The rule is a BUTTON where the day has a date: it is the door to that date's
+ * notes (MODEL-V4 §3a.3), the tap the fold used to take. Nothing is added to
+ * it — same words, same hairline — so the rule resets button chrome, and its
+ * 44px floor comes from being a button, which is the only way this app gets a
+ * touch target. */
+.day-rule { display: flex; align-items: baseline; gap: 10px; scroll-margin-top: var(--jump-offset, 8px);
+            width: 100%; text-align: left; background: none; border: 0; padding: 0;
+            font: inherit; color: inherit; }
+button.day-rule, button.date-rule, button.sec-head { cursor: pointer; }
 .day-rule .day { font-family: var(--font-display); letter-spacing: var(--track-display);
                  font-size: var(--fs-day); color: var(--text-header); }
 .day-rule .date { color: var(--text-tertiary); font-size: 10px; font-weight: 700; }
@@ -276,10 +303,15 @@
                   touch-action: none; cursor: grab; padding: 6px 30px; background-clip: content-box; }
 .sheet .sheet-title { font-family: var(--font-display); letter-spacing: .04em;
                       font-size: 19px; color: var(--text-header); }
-.sheet .sheet-close { width: 30px; height: 30px; flex: none; border-radius: var(--r-pill);
-                      background: var(--card); border: 1px solid var(--border-card);
-                      color: var(--text-secondary); font-size: 12px; cursor: pointer;
-                      display: inline-flex; align-items: center; justify-content: center; }
+/* The close ✕ is a component, not a sheet detail — scoping its base look to
+ * .sheet meant it could not be reused anywhere else (the gallery's back-pocket
+ * panel wanted exactly this button and got a bare browser one). Unscoped now;
+ * .sheet-card below still overrides its placement and colour. Every existing
+ * .sheet-close sits inside a .sheet, so nothing in the app renders differently. */
+.sheet-close { width: 30px; height: 30px; flex: none; border-radius: var(--r-pill);
+               background: var(--card); border: 1px solid var(--border-card);
+               color: var(--text-secondary); font-size: 12px; cursor: pointer;
+               display: inline-flex; align-items: center; justify-content: center; }
 .note-action { background: none; border: none; padding: 0; cursor: pointer;
                color: var(--text-tertiary); font-size: 10px; font-weight: 700;
                text-decoration: underline; text-underline-offset: 2px; }
@@ -309,6 +341,21 @@
 .dock .days { flex: 1; display: flex; gap: 24px; overflow-x: auto; }
 .dock .day-tab:first-child { margin-left: auto; }
 .dock .day-tab:last-child { margin-right: auto; }
+/* More days than fit (ACL's seven on a 152px row): the row has always
+ * scrolled, but nothing said so and nothing kept the day you were in on
+ * screen. wall.js scrolls the active tab to the middle; this is the other
+ * half — the clipped edges fade, so the eye knows there is more. Only while
+ * it really overflows (wall.js marks it), or a row of four would be dimmed at
+ * its ends for nothing. -webkit- first: WebKit still wants the prefix. */
+.dock .days.overflowing, .day-rail .rail-days.overflowing {
+  --fade-l: 0px; --fade-r: 0px;
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 var(--fade-l), #000 calc(100% - var(--fade-r)), transparent 100%);
+  mask-image: linear-gradient(to right, transparent 0, #000 var(--fade-l), #000 calc(100% - var(--fade-r)), transparent 100%);
+}
+/* Each edge fades only while there is something past it, so the last tab —
+ * often the one you are standing in — is never the dim one. */
+.dock .days.more-left, .day-rail .rail-days.more-left { --fade-l: 18px; }
+.dock .days.more-right, .day-rail .rail-days.more-right { --fade-r: 18px; }
 .dock .day-tab { font-weight: 700; font-size: 12px; padding-bottom: 3px;
                  border-bottom: 2px solid transparent; color: var(--text-tertiary);
                  background: none; border-top: none; border-left: none; border-right: none;
@@ -493,15 +540,15 @@
     box-sizing: border-box;
   }
 }
-.times-grid { display: grid; gap: 4px; min-width: 100%; } /* columns set inline: repeat(n, minmax(150px,1fr)) */
+.times-grid { display: grid; gap: 4px; min-width: 100%; } /* columns set inline: repeat(n, var(--col-w)) */
 .stage-head { font-family: var(--font-display); letter-spacing: var(--track-display);
               color: rgb(var(--fest)); font-size: 12.5px;
               min-width: 0; padding: 0 8px; text-align: center;
               line-height: 32px; height: 32px; box-sizing: border-box;
               white-space: nowrap;
               background: var(--card); border-radius: var(--r-card); }
-/* The ellipsis lives on an inner label, not the head: `overflow: hidden` on
- * the button itself would clip the ::after that gives it a 44px tap target. */
+/* The ellipsis lives on an inner label, not the head. A stage head is a
+ * header, not a control (its tap-to-see-only-this-stage was cut 2026-09-17). */
 .stage-head .label { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* The sticky stage strip (one for the whole page): stage names pin below the
@@ -515,6 +562,15 @@
   backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
   padding-bottom: 4px;
 }
+/* A grid under the strip starts 7px lower, because its FIRST hour label
+ * straddles its own top edge — every other label has a grid row above it to
+ * straddle into, and that one had the strip, which is opaque, so "6 PM" sat
+ * half under the stage names at every width (2026-09-17). Said as the sibling
+ * rule it is: one rule, every grid that has a strip, no page-level patch — and
+ * padding on the WRAP moves the rail and the columns together, so the hours
+ * still line up with the cards. (Padding the strip's bottom instead moves the
+ * grid down with it and changes nothing.) */
+.stage-strip + .times-wrap { padding-top: 7px; }
 /* The strip's GEOMETRY is the day grids' geometry, full stop: it carries the
  * `times-wrap` class so the ≥720 full-viewport rule above sizes it exactly
  * like every day grid — same width, same asymmetric padding — and its
@@ -530,17 +586,20 @@
 .stage-strip .strip-rail { width: 40px; flex: none; } /* aligns with .times-rail */
 .stage-strip .times-scroll { scrollbar-width: none; }
 .stage-strip .times-scroll::-webkit-scrollbar { display: none; }
+/* The strip FOLLOWS its grid (wall.js followStrip, 2026-09-02): it is not a
+ * scroller of its own any more. Its row rides the grid's scroll timeline —
+ * the far keyframe is the grid's maximum scroll in px (--strip-max, measured
+ * by followStrip; the row's tracks overflow its box, so no percentage of the
+ * row could say it) — or, where scroll timelines are missing or animations
+ * are off (reduced motion, Low Power), a transform set from the grid's scroll
+ * event. Either way the row moves as one piece; no second scroll position
+ * exists to lag behind.
+ * pan-y: a finger on the strip still scrolls the page. */
+.stage-strip .times-scroll.follows { overflow: hidden; touch-action: pan-y; }
+.stage-strip .times-scroll.follows .times-grid { will-change: transform; }
+@keyframes strip-follow { from { transform: translateX(0); } to { transform: translateX(calc(-1 * var(--strip-max, 0px))); } }
 .hour-label { text-align: right; padding-right: 6px; font-size: 9.5px;
               color: var(--text-tertiary); font-weight: 600; position: relative; top: -7px; }
-/* Everything-else column (ST-2): activities + stage-less sets, chronological.
- * Quiet by design — it shares the grid but never competes with the stages. */
-.ee-col { display: flex; flex-direction: column; gap: 4px; align-items: stretch; min-height: 0; }
-.ee-item { display: flex; flex-direction: column; gap: 1px; background: var(--card);
-           border: 1px solid var(--hairline); border-radius: var(--r-card); padding: 6px 9px; }
-.ee-item .ee-time { color: var(--text-tertiary); font-size: 9px; font-weight: 700; }
-.ee-item .ee-name { color: var(--text-body); font-size: 11.5px; font-weight: 600; line-height: 1.25; }
-.ee-item .ee-venue { color: var(--text-tertiary); font-size: 9.5px; font-weight: 600; }
-
 /* ---- wall grid + undo toast ---------------------------------------------------- */
 /* Density scales with the window (DT-3): as many ~176px columns as fit, so a
  * 1080px shell breathes at 5-6 columns instead of stretching 4. */
@@ -708,7 +767,6 @@ a.f-where:hover { border-bottom-color: rgba(255,255,255,.75); }
 a.fest-place { text-decoration: none; border-bottom: 1px solid currentColor; padding-bottom: 1px; opacity: .92; }
 a.fest-place:hover { opacity: 1; }
 .fest-place .pin { flex: none; opacity: .8; }
-.day-sub { color: var(--text-tertiary); margin-top: -6px; }
 .f-who { display: flex; flex-wrap: wrap; justify-content: center; gap: 5px 6px; }
 /* Quieter than the words around them — a crew can be eight people
  * (Kevin, 2026-08-30: "not worth making them way bigger than the note text"). */
@@ -752,16 +810,20 @@ button.f-chip.notes { cursor: pointer; }
  * (40) and toasts (50). */
 #zoom-layer { position: fixed; inset: 0; z-index: 36; pointer-events: none; }
 .zoom-slot { position: absolute; width: max-content; pointer-events: none; }
+/* The slot's shadow is there from frame 0 (MODEL-V4 §5): it used to ease in
+ * over .38s, which is longer than the whole growth, so the card Kevin saw
+ * blooming had no shadow at all — the "tucks behind its neighbours" report.
+ * Static now; .shown stays a JS class because the exit drops it and both the
+ * browser rig and the gallery's slow-mo read it. */
 .zoom-slot::before { content: ''; position: absolute; inset: 0; border-radius: var(--r-card);
-                     box-shadow: 0 10px 28px rgba(0, 0, 0, .38); opacity: 0; transition: opacity .38s ease; } /* softened 2026-08-30 — 18/50/.55 read as a second card stacked behind a bright aura */
-.zoom-slot.shown::before { opacity: 1; }
+                     box-shadow: 0 10px 28px rgba(0, 0, 0, .38); } /* softened 2026-08-30 — 18/50/.55 read as a second card stacked behind a bright aura */
 /* The hit target is the whole grown box from the first frame; the SURFACE
  * under it carries the wash and the border — so a tap lands while the card
  * is still blooming. */
 .zoom-card { position: relative; box-sizing: border-box; min-height: inherit; pointer-events: auto;
              display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 7px;
              padding: 12px 14px 12px; text-align: center; cursor: pointer;
-             -webkit-touch-callout: none; user-select: none; color: inherit; font-family: inherit; }
+             -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; color: inherit; font-family: inherit; }
 .zoom-card .z-surface { position: absolute; inset: 0; overflow: hidden; border: 1px solid var(--hairline); border-radius: var(--r-card); }
 .zoom-card .z-surface.animated { background-size: 180% 180%; animation: gradShift 12s ease-in-out infinite; }
 .zoom-card > :not(.z-surface) { position: relative; z-index: 2; } /* content over both surfaces */
@@ -780,7 +842,7 @@ button.f-chip.notes { cursor: pointer; }
  * the BASE state, not on .zoom-source: a state-only transition dies with
  * the class, so the restore snapped to full opacity under the still-fading
  * overlay — a double print on the way out (Codex gate, 2026-08-30). The
- * .09s matches card-facts.js MATERIALIZE_MS. Low Power's global transition
+ * .09s matches motion.js CONTENT_FADE_MS. Low Power's global transition
  * kill already covers this; reduced-motion gets its own. */
 .card > * { transition: opacity .09s ease; }
 .card.zoom-source > * { opacity: 0; }
@@ -790,27 +852,16 @@ button.f-chip.notes { cursor: pointer; }
 .card.timed .time { white-space: pre-line; }
 
 /* ---- wall filters + the now line (2026-08-27) ----------------------------------- */
-/* People filter: selected chips wear a ring, the rest step back. On the
- * timetable a non-matching card DIMS (the clock keeps its shape); on lineup
- * lists it hides. Dimmed cards stay tappable — a filter is a view, never a
- * lock on picking. */
+/* People filter: selected chips wear a ring, the rest step back. A card the
+ * selected people did not pick DIMS — on the clock, in a stack, in a list,
+ * one rule (it never hides; Kevin, 2026-09-17). Dimmed cards stay tappable —
+ * a filter is a view, never a lock on picking. */
 .person-chip.selected { box-shadow: 0 0 0 1.5px rgba(255, 255, 255, .85); }
 .person-chip.faded { opacity: .42; }
 .person-chip.everyone { background: transparent; border: 1px solid var(--border-emphasis); color: var(--text-body); }
 .person-chip.everyone .x { color: var(--text-tertiary); margin-left: 4px; }
 .card.dim { opacity: .28; }
-.section-empty { color: var(--text-tertiary); font-size: 12px; font-weight: 600; padding: 2px 0 4px; }
 
-/* Stage solo: the stage heads are buttons now. The soloed head carries an
- * inset ring in the fest accent (it IS a stage header — one of the accent's
- * four homes) and a quiet "all stages" affix; folded stages become 34px
- * rails with the name set vertically. */
-.stage-head { cursor: pointer; border: none; font-weight: inherit; }
-.stage-head[aria-pressed="true"] { box-shadow: inset 0 0 0 1px rgba(var(--fest), .6); }
-.stage-head .solo-off { font-family: var(--font-ui); font-size: 9px; letter-spacing: 0; font-weight: 700;
-                        color: var(--text-tertiary); margin-left: 6px; }
-.stage-head.rail { padding: 0; font-size: 9px; letter-spacing: .06em; color: var(--text-tertiary); }
-.stage-head.rail .label { writing-mode: vertical-rl; transform: rotate(180deg); line-height: 34px; height: 32px; overflow: visible; }
 /* The now line: brand violet, not the fest accent — it is app chrome that
  * happens to sit on a timetable. Drawn inside the grid (position: relative
  * on the grid and the rail) so it scrolls with the day; the ticker in app.js
@@ -821,12 +872,79 @@ button.f-chip.notes { cursor: pointer; }
 .now-label { position: absolute; right: 4px; transform: translateY(-50%); background: rgb(var(--brand));
              color: var(--page); font-size: 8px; font-weight: 800; letter-spacing: .08em;
              padding: 1px 5px; border-radius: var(--r-pill); pointer-events: none; z-index: 3; white-space: nowrap; }
-/* On touch devices the stage strip row IS 44px — a borrowed ::after can't
- * escape the strip's own scroll container, so the target has to be real.
- * Desktop keeps the designed 32px. The inline row template on the strip
- * grid is 32px; the !important here is the one deliberate override. */
+/* The now mark (MODEL-V4 §1.2). A stack has no clock to draw a line on, so
+ * the card of whoever is playing wears the line instead: 1.5px of brand (the
+ * card's own 1px border, recoloured, plus half a pixel of spread — no layout
+ * moves) and the same soft glow. Brand, never the fest accent: this is app
+ * chrome, and the accent has four homes. The label is the .now-label
+ * component again, parked in the card's top-right corner instead of riding a
+ * line's centre — so it needs the transform undone, not a second component. */
+.card.now { border-color: rgb(var(--brand));
+            box-shadow: 0 0 0 .5px rgb(var(--brand)), 0 0 6px rgba(var(--brand), .8); }
+.now-label.in-card { top: 5px; right: 5px; transform: none; }
+
+/* ---- events: the composed day, venue groups (MODEL-V4, 2026-09-16) ------------- */
+/* claude-plans/2026-09-16-wall-v4/MODEL-V4.md. A day is the unit; inside it,
+ * rooms — the festival's own first, then each section that plays that night —
+ * each under a header that is the day-rule's quieter sibling. The header does
+ * not fold the room any more (§3a.2): the show menu on the fest name is the
+ * one way to hide a part of the week, so there is no chevron to draw. A room
+ * the menu has hidden renders nothing at all, and a day with nothing visible
+ * has no rule (2026-09-17) — the menu is where that state is visible. */
+.room { display: flex; flex-direction: column; gap: 9px; }
+.sec-head { display: flex; align-items: baseline; gap: 9px; width: 100%; text-align: left;
+            background: none; border: 0; padding: 0; font: inherit; color: inherit; }
+.sec-label { font-family: var(--font-display); letter-spacing: .07em; font-size: 12.5px; color: var(--text-header); }
+.sec-sub { color: var(--text-tertiary); font-size: 9.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.sec-line { flex: 1; height: 1px; background: var(--hairline); }
+/* A dated section (ACL's Late nights) is a room AND a tab of its own, so its
+ * header is where the tab lands — at the day rule's weight, and clearing the
+ * sticky chrome the same way. */
+.sec-head.tab { scroll-margin-top: var(--jump-offset, 8px); }
+.sec-head.tab .sec-label { font-size: var(--fs-day); letter-spacing: var(--track-display); }
+/* A rule and a header that open notes are buttons, so the touch floor gives
+ * them 44px of real height — at which point a baseline row would sit at the top
+ * of an empty box. This is the floor's consequence, not a new opt-out list, and
+ * borrowed space is the wrong answer here: a day rule's hit area would reach
+ * into the section header right under it, and the two open DIFFERENT threads.
+ * The min-height is repeated for the rules and headers that are NOT doors (the
+ * festival's own room on a day; a day the file gave no date), because a room
+ * header is one component and two of them at different heights on one day is a
+ * component with two looks. */
 @media (pointer: coarse) {
-  .stage-strip .times-grid { grid-template-rows: 44px !important; }
-  .stage-head { height: 44px; line-height: 44px; }
-  .stage-head.rail .label { height: 44px; line-height: 34px; }
+  .day-rule, .date-rule, .sec-head { align-items: center; min-height: 44px; }
 }
+/* One sticky strip PER timetable: position:sticky is bounded by its parent,
+ * so a strip inside this block pins while the block is on screen and leaves
+ * with it — a grid day's stage heads never sit over another day's. */
+.tt-block { display: flex; flex-direction: column; }
+
+/* THE LIST (MODEL-V4 §1.2): one group per venue, its stage header, its
+ * doors/close line, and the night's cards stacked in play order. The column is
+ * `--col-w` — the same track the timetable's columns ride (§3a.1) — so a stack
+ * card and a set card are one width. A stack is as tall as its content — no
+ * rows, no floors, no air. */
+.venue-grid { display: grid; grid-template-columns: repeat(auto-fill, var(--col-w));
+              justify-content: start; gap: 10px var(--col-gap); align-items: start; }
+.venue-group { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.venue-group .stage-head { font-size: 11.5px; }
+.venue-sub { color: var(--text-tertiary); font-size: 9.5px; font-weight: 700; text-align: center;
+             letter-spacing: .02em; margin-top: -1px; min-height: 12px; }
+.venue-group .stack { display: flex; flex-direction: column; gap: 5px; }
+@media (min-width: 720px) {
+  .venue-grid { row-gap: 12px; }
+}
+
+/* One date inside a dated section (ACL's Late nights): quieter than a day
+ * rule, because the day rule above already named the section. */
+.date-rule { display: flex; align-items: baseline; gap: 8px; margin-top: 4px;
+             width: 100%; text-align: left; background: none; border: 0; padding: 0;
+             font: inherit; color: inherit; }
+.date-rule .d { font-family: var(--font-display); letter-spacing: .06em; font-size: 12px; color: var(--text-secondary); }
+.date-rule .line { flex: 1; height: 1px; background: var(--hairline); }
+
+/* The zoom's WHEN for a back-to-back run (MODEL-V3 §5): two lines in one
+ * piece — the venue's window, then the order as a door to the poster. */
+.f-sub.f-stack { flex-direction: column; gap: 3px; }
+a.f-order { color: #fff; text-decoration: none; border-bottom: 1px solid rgba(255, 255, 255, .35); padding-bottom: 1px; }
+a.f-order:hover { border-bottom-color: rgba(255, 255, 255, .75); }

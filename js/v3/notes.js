@@ -34,6 +34,18 @@ import { factsFor, sheetCard } from './card-facts.js';
 import { router } from './router.js';
 import { loadJSON, saveLS } from '../util.js';
 
+// MODEL-V4 §4 + §3a.3 (Kevin, 2026-09-17). A note is written WHERE YOU ARE
+// STANDING, and four places are standable: the festival, a date, a section on
+// a date, an artist. A day note is keyed by its ISO DATE, so a two-weekend
+// festival's two Fridays are two conversations; a section on a date is keyed
+// `<iso>|<section label>`, so Folsom on Friday is its own. Nothing rolls up —
+// a Folsom-on-Friday note does not appear under Friday.
+// Old keys are read, never rewritten: a note under a weekday label renders
+// under the date that label means — both dates on a two-weekend fest — and a
+// note under a bare section label stays readable with no way to add to it. The
+// mapping lives in model.js; the freeze is untouched.
+// The all-notes sheet holds the festival composer and the targets that HAVE
+// notes; it is a list of conversations, not a set of doors.
 const LS_PINS = 'fn_pins_v1';
 const NOTE_MAX = 500;
 const COUNTER_FROM = 60;   // the counter stays out of the way until the cap is near
@@ -61,6 +73,91 @@ const requestSheetClose = () => { if (!router || !router.requestClose()) closeSh
 
 const loadPins = () => loadJSON(LS_PINS, {});
 const savePins = (pins) => saveLS(LS_PINS, JSON.stringify(pins));
+
+// ---- a date, said the short way -----------------------------------------------------
+// "Sat · Sep 26". Every door, sheet title and label a date appears on uses this
+// — never the storage key. The wall composes its own copy for the day rule and
+// hands it down, so a date reads the same wherever you meet it.
+const WEEKDAYS_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const MONTHS_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+export function shortDayLabel(iso) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || ''));
+  if (!m) return String(iso || '');
+  const d = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])));
+  if (Number.isNaN(d.getTime())) return String(iso);
+  return `${WEEKDAYS_SHORT[d.getUTCDay()]} · ${MONTHS_SHORT[Number(m[2]) - 1]} ${Number(m[3])}`;
+}
+
+// The one law under all of this: a day note is written where you are standing —
+// a DATE, or a SECTION ON a date (`2026-09-25|Folsom`, MODEL-V4 §3a.3). A
+// target that is neither is something the festival used to call a day — a
+// weekday label, a bare section — and it is read, never added to.
+const isDate = (target) => model.ISO_DATE_RE.test(String(target));
+const isDayTarget = (target) => isDate(target) || !!model.parseSectionDateKey(target);
+
+// The keys one target's conversation reads from. The last is the target itself
+// and the only one anything new is written to; the others are legacy weekday
+// keys that still hold notes.
+function dayReadKeys(ctx, target) {
+  const keys = model.dayNoteKeysFor(state.fest(), target);
+  const write = keys[keys.length - 1];
+  return keys.filter((k) => k === write || model.noteCount(state.crewDoc, ctx.fid, 'day', k));
+}
+
+// Every live note on a target, across those keys, oldest first — what the
+// whisper counts and whose newest voice it shows.
+function dayNotesOn(ctx, target) {
+  const out = [];
+  for (const key of model.dayNoteKeysFor(state.fest(), target)) {
+    out.push(...model.notesFor(state.crewDoc, ctx.fid, 'day', key));
+  }
+  return out.sort((a, b) => Date.parse(a.ts) - Date.parse(b.ts));
+}
+
+// What a target is CALLED, which is what the wall calls it: "Friday",
+// "Folsom · Friday". The date's own name comes off the day axis the shell hands
+// down (ctx.festDates) — the wall's day rule, in its words — so the sheet says
+// what the door said. Where two dates would answer to the same name (a
+// two-weekend fest has two Fridays) the axis carries the dated form instead;
+// that choice is made once, in the shell, not re-derived here.
+function dateLabel(ctx, iso, fallback) {
+  const hit = (ctx.festDates || []).find((d) => d && d.iso === iso);
+  return (hit && hit.label) || fallback || shortDayLabel(iso);
+}
+// `fallback` is what the caller already has on screen — the wall's day rule
+// hands down its own head, so a ctx with no axis still says a word rather than
+// a date nobody asked for.
+export function dayTargetLabel(ctx, target, fallback = null) {
+  const sec = model.parseSectionDateKey(target);
+  if (sec) return `${dayLabelParts(sec.section).head} · ${dateLabel(ctx, sec.iso, fallback)}`;
+  if (isDate(target)) return dateLabel(ctx, target, fallback);
+  return dayLabelParts(String(target)).head; // a legacy key, said the way the wall said it
+}
+
+// The dates this festival has, in order — grid days, section nights, a dated
+// section's own dates. The shell composes the day axis and hands it down as
+// ctx.festDates; with none (a tools export, an old caller) the dates dayMeta
+// names are the honest fallback.
+function festDates(ctx) {
+  const seen = new Set();
+  const out = [];
+  const add = (iso, label) => {
+    if (!model.ISO_DATE_RE.test(String(iso)) || seen.has(iso)) return;
+    seen.add(iso);
+    out.push({ iso, label: label || shortDayLabel(iso) });
+  };
+  if (Array.isArray(ctx.festDates)) {
+    for (const d of ctx.festDates) if (d) add(d.iso, d.label);   // the shell's own order is the axis
+  } else {
+    const isos = new Set();
+    for (const meta of Object.values((state.fest() || {}).dayMeta || {})) for (const iso of model.isosOfDayMeta(meta)) isos.add(iso);
+    for (const iso of [...isos].sort()) add(iso);                // ISO strings sort as dates
+  }
+  // A date somebody already wrote on is a date the sheet must show, whatever
+  // the axis says — a festival's days can be re-cut under a live crew doc.
+  for (const key of Object.keys(state.crewDoc?.festivals?.[ctx.fid]?.notes?.day || {}).sort()) add(key);
+  return out;
+}
 
 function relTime(ts) {
   const ms = Date.now() - Date.parse(ts);
@@ -410,6 +507,18 @@ function stubRow(author, ctx) {
   return row;
 }
 
+// A draft for a note a remote sync just tombstoned has nowhere to land, so it
+// goes. The editing map belongs to the SHEET, and a sheet paints as many thread
+// hosts as it has keys — a date reads a weekday label and its ISO, the all-notes
+// home reads every date, every section and every artist — so the sweep runs ONCE
+// against every note the sheet displayed. Inside a host it ran against that
+// host's own key, which made each host throw away the others' drafts: Edit on a
+// date-keyed note opened no editor at all (Codex, 2026-09-17).
+function pruneEditing(editing, live) {
+  if (!editing || !editing.size) return;
+  for (const id of [...editing.keys()]) if (!live.has(id)) editing.delete(id);
+}
+
 // ---- threads, rendered --------------------------------------------------------------
 // A pinned root sorts to the top and shows a reply COUNT, never its thread
 // (Kevin's rule, 2026-08-28); the count expands it in place for this open.
@@ -419,16 +528,19 @@ function stubRow(author, ctx) {
 // thread, so a field opened above three existing replies would promise a place
 // it cannot keep. For a root with no replies the foot IS directly under the
 // note you pressed, which is the common case.
-function renderThreads(host, scope, target, ctx, { onChange, expandedPinned, editing, ui }) {
+//
+// `quiet` suppresses the "No notes yet." caption: a date can read from two
+// keys, and the caption belongs to the DATE, not to each key it happens to be
+// stored under. `readOnly` takes the reply door away — a legacy section thread
+// stays readable and stays exactly as long as it is.
+function renderThreads(host, scope, target, ctx, { onChange, expandedPinned, editing, ui, quiet = false, readOnly = false, live = null }) {
   host.textContent = '';
   const pins = loadPins();
   const pinnedIds = new Set(pins[ctx.fid] || []);
   const threads = model.threadsFor(state.crewDoc, ctx.fid, scope, target, [...pinnedIds]);
-  // A draft for a note a remote sync just tombstoned has nowhere to land.
-  if (editing && editing.size) {
-    const live = new Set(model.notesFor(state.crewDoc, ctx.fid, scope, target).map((n) => n.id));
-    for (const id of [...editing.keys()]) if (!live.has(id)) editing.delete(id);
-  }
+  // What this key still has, for the sheet's own prune (see pruneEditing): one
+  // host knows one key, and one key is never the whole sheet.
+  if (live) for (const n of model.notesFor(state.crewDoc, ctx.fid, scope, target)) live.add(n.id);
   // Exactly ONE field may claim the caret after a repaint. You can be editing
   // note A while a reply composer is open on thread B, and a restore that
   // simply focused the first live draft would yank the caret out of whichever
@@ -449,7 +561,7 @@ function renderThreads(host, scope, target, ctx, { onChange, expandedPinned, edi
     // A person who can write sees the composer right there — the emptiness
     // needs no caption (Kevin, 2026-08-31). Only a nameless viewer, who has
     // no composer, is told the quiet is real.
-    if (!ctx.meName) {
+    if (!ctx.meName && !quiet) {
       const empty = document.createElement('div');
       empty.className = 'n-empty';
       empty.textContent = 'No notes yet.';
@@ -459,7 +571,7 @@ function renderThreads(host, scope, target, ctx, { onChange, expandedPinned, edi
   }
 
   const sameScope = (r) => r && r.scope === scope && r.target === target;
-  const canWrite = !!ctx.meName;
+  const canWrite = !!ctx.meName && !readOnly;
   const noteOps = {
     onEdit: (note, text) => { editNote(ctx, scope, target, note, text); onChange(); },
     onDelete: (note, row) => {
@@ -527,11 +639,16 @@ function renderThreads(host, scope, target, ctx, { onChange, expandedPinned, edi
   }
 }
 
-// The composer that opens where you pressed. Its draft lives in `ui`, not in
-// the DOM, so a remote repaint mid-sentence cannot eat it (audit 1.2).
+// The composer that opens where you pressed — always at the foot of a thread,
+// which is why it says "Reply…" and nothing else now. Its draft lives in `ui`,
+// not in the DOM, so a remote repaint mid-sentence cannot eat it (audit 1.2).
+// It took a label and a placeholder until 2026-09-17, for the date door at the
+// foot of an all-notes section; that door is gone (§3a.3) and so are they.
 function inlineComposer(scope, target, threadKey, ctx, ui, onChange) {
   const wrap = document.createElement('div');
   wrap.className = 'n-inline';
+  wrap.dataset.target = target == null ? '' : target;
+  wrap.dataset.thread = threadKey == null ? '' : threadKey;
   // Your avatar stays exactly where the door's was, and the field opens where
   // the word "Reply…" stood: the door BECOMES the composer rather than being
   // replaced by one.
@@ -691,8 +808,14 @@ export function dialogize(sheet, label) {
   });
 }
 
-// ---- scope sheet (artist or day) — one surface, two scopes (21g / NT-2) -------------
-function openScopeSheet(scope, target, ctx, onChange, occ = null) {
+// ---- scope sheet (artist, date or fest) — one surface, three scopes (21g / NT-2) -----
+// opts: { occ, label }. `target` for a day sheet is the ISO date, and `label`
+// is the short form the wall used on the day rule ("Sat · Sep 26"). It may read
+// from more than one key — the date, plus any legacy weekday key that maps to
+// it — so the threads render into one host per key, in one list. New notes only
+// ever land on the date.
+function openScopeSheet(scope, target, ctx, onChange, opts = {}) {
+  const occ = opts.occ || null;
   rememberOpener();  // no-op on a re-render — the original opener is kept
   teardownSheet();   // NOT closeSheet(): a re-render must not restore focus
   const backdrop = document.createElement('div');
@@ -717,58 +840,88 @@ function openScopeSheet(scope, target, ctx, onChange, occ = null) {
     const headerHost = document.createElement('div');
     sheet.appendChild(headerHost);
     paintHeader = () => {
-      headerHost.replaceChildren(sheetCard(factsFor(target, ctx, occ), { onClose: requestSheetClose }));
+      // No notes chip on the header: this sheet IS the thread (§4).
+      headerHost.replaceChildren(sheetCard(factsFor(target, ctx, occ), { onClose: requestSheetClose, notesChip: false }));
     };
     paintHeader();
   } else {
-    // A day key can be verbose; the sheet shows its weekday and moves the
-    // aside to the sub line, like the wall's day rule (time.js dayLabelParts).
-    const parts = scope === 'day' ? dayLabelParts(target) : null;
-    const head = sheetChrome(sheet, scope === 'fest' ? state.fest().name.toUpperCase() : (parts ? parts.head : target).toUpperCase());
-    const meta = (state.fest().dayMeta || {})[target];
-    if (scope === 'day' && (meta || parts.aside)) {
-      const sub = document.createElement('div');
-      sub.className = 'f-sub day-sub';
-      sub.textContent = [meta && meta.wd, meta && meta.date, parts.aside].filter(Boolean).join(' · ');
-      head.insertAdjacentElement('afterend', sub);
-    }
+    // A day target says itself the way the wall said it; the festival says its
+    // name. Neither ever shows a storage key.
+    const title = scope === 'day' ? (opts.label || dayTargetLabel(ctx, target)) : state.fest().name;
+    sheetChrome(sheet, String(title).toUpperCase());
   }
 
-  const list = document.createElement('div');
-  list.className = 'n-list';
-  sheet.appendChild(list);
+  // A day sheet on anything but a date or a section-on-a-date is history: a
+  // bare section label, or a day whose festival file never carried a date. It
+  // reads and takes nothing new.
+  const readOnly = scope === 'day' && !isDayTarget(target);
+  const keys = scope === 'day' ? dayReadKeys(ctx, target) : [target];
+  const wrap = document.createElement('div');
+  // The same 14px a thread keeps from its neighbour, so two keys read as one
+  // conversation rather than two lists.
+  wrap.style.cssText = 'display: flex; flex-direction: column; gap: 14px;';
+  const hosts = keys.map((key) => {
+    const host = document.createElement('div');
+    host.className = 'n-list';
+    wrap.appendChild(host);
+    return { key, host };
+  });
+  sheet.appendChild(wrap);
 
   // The composer lives OUTSIDE paint() — a remote sync repainting the list
   // must never eat a half-typed note (audit 1.2). localOnly changes (a pin,
-  // expanding a pinned thread) repaint without pushing anything.
-  const box = ctx.meName ? composer('Add a note…', (text) => {
-    ui.justAdded = addNote(ctx, scope, target, text);
+  // expanding a pinned thread) repaint without pushing anything. It writes to
+  // the LAST key, which for a date is the date itself.
+  const writeTo = keys[keys.length - 1];
+  const box = ctx.meName && !readOnly ? composer('Add a note…', (text) => {
+    ui.justAdded = addNote(ctx, scope, writeTo, text);
     paint();
     onChange();
   }) : null;
 
   const paint = () => {
     paintHeader();
-    renderThreads(list, scope, target, ctx, {
-      onChange: (o = {}) => { paint(); if (!o.localOnly) onChange(); },
-      expandedPinned,
-      editing,
-      ui,
-    });
+    const live = new Set();
+    for (const { key, host } of hosts) {
+      renderThreads(host, scope, key, ctx, {
+        onChange: (o = {}) => { paint(); if (!o.localOnly) onChange(); },
+        expandedPinned,
+        editing,
+        ui,
+        quiet: true,
+        readOnly,
+        live,
+      });
+    }
+    pruneEditing(editing, live);
+    // The caption belongs to the scope, not to each key it reads from — and
+    // only a nameless viewer, who has no composer, needs telling.
+    if (!ctx.meName && !hosts.some(({ key }) => model.noteCount(state.crewDoc, ctx.fid, scope, key))) {
+      const empty = document.createElement('div');
+      empty.className = 'n-empty';
+      empty.textContent = 'No notes yet.';
+      hosts[0].host.appendChild(empty);
+    }
   };
   paint();
   if (box) sheet.appendChild(box);
   document.body.append(backdrop, sheet);
-  dialogize(sheet, scope === 'artist' ? target : `${target || state.fest().name} notes`);
+  const spoken = scope === 'artist' ? target
+    : scope === 'day' ? (opts.label || dayTargetLabel(ctx, target))
+      : state.fest().name;
+  dialogize(sheet, scope === 'artist' ? spoken : `${spoken} notes`);
   activeSheetRepaint = paint;
 }
 
 export function openArtistSheet(artistName, ctx, onChange, occ = null) {
-  openScopeSheet('artist', artistName, ctx, onChange, occ);
+  openScopeSheet('artist', artistName, ctx, onChange, { occ });
 }
 
-export function openDayNotes(day, ctx, onChange) {
-  openScopeSheet('day', day, ctx, onChange);
+// `target` is the date, or the section-on-a-date key (§3a.3); `label` is what
+// the wall already showed on the door that opened it. A caller restoring a
+// route has only the key and passes null — the label comes back off the axis.
+export function openDayNotes(target, label, ctx, onChange) {
+  openScopeSheet('day', target, ctx, onChange, { label });
 }
 
 export function openFestNotes(ctx, onChange) {
@@ -824,30 +977,78 @@ export function openAllNotes(ctx) {
   body.style.cssText = 'display: flex; flex-direction: column; gap: 10px;';
   sheet.appendChild(body);
 
+  const repaint = (o = {}) => { paint(); if (!o.localOnly) ctx.onNotesChange(); };
+
   const paint = () => {
     body.textContent = '';
-    const notes = state.crewDoc?.festivals?.[ctx.fid]?.notes || {};
+    const doc = state.crewDoc;
+    const fest = state.fest();
+    const notes = doc?.festivals?.[ctx.fid]?.notes || {};
+    const dates = festDates(ctx);
+    const live = new Set();
     let any = false;
-    const section = (label, scope, target) => {
-      if (!model.noteCount(state.crewDoc, ctx.fid, scope, target)) return;
-      any = true;
+
+    const labelRow = (text) => {
       const lbl = document.createElement('div');
       lbl.className = 'micro-label';
-      lbl.textContent = label;
+      lbl.textContent = text;
       body.appendChild(lbl);
+    };
+    const threadsInto = (parent, scope, target, extra = {}) => {
       const host = document.createElement('div');
       host.className = 'n-list grouped';
+      parent.appendChild(host);
       renderThreads(host, scope, target, ctx, {
-        onChange: (o = {}) => { paint(); if (!o.localOnly) ctx.onNotesChange(); },
-        expandedPinned,
-        editing,
-        ui,
+        onChange: repaint, expandedPinned, editing, ui, quiet: true, live, ...extra,
       });
-      body.appendChild(host);
+      return host;
     };
+    const section = (label, scope, target, extra = {}) => {
+      if (!model.noteCount(doc, ctx.fid, scope, target)) return;
+      any = true;
+      labelRow(label);
+      threadsInto(body, scope, target, extra);
+    };
+
     section('This festival', 'fest', null);
-    for (const day of Object.keys(notes.day || {})) section(day, 'day', day);
+
+    // Only the targets somebody has WRITTEN on, in wall order: each date, then
+    // the sections written on that date (MODEL-V4 §3a.3). Before this the sheet
+    // listed every date the festival has with an "+ Add a note for…" door under
+    // each — a column of empty rows on a fest with three notes, and a second
+    // way to start a thread that was never where you were standing. You write a
+    // date's note from its rule and a section's from its header; the sheet is
+    // the list of what has been written, and the festival composer above is the
+    // one composer it holds.
+    for (const d of dates) {
+      const keys = model.dayNoteKeysFor(fest, d.iso).filter((k) => model.noteCount(doc, ctx.fid, 'day', k));
+      if (keys.length) {
+        any = true;
+        labelRow(d.label);
+        const wrap = document.createElement('div');
+        wrap.style.cssText = 'display: flex; flex-direction: column; gap: 10px;';
+        body.appendChild(wrap);
+        // A legacy weekday note reads as part of its date's conversation, the
+        // same way the wall's whisper counts it.
+        for (const key of keys) threadsInto(wrap, 'day', key);
+      }
+      for (const { key, section: label } of model.sectionDateKeysOn(doc, ctx.fid, d.iso)) {
+        section(`${dayLabelParts(label).head} · ${d.label}`, 'day', key);
+      }
+    }
+
+    // What is left under notes.day: the bare section labels (Afters, Folsom,
+    // Late nights) written before a section note knew which night it was on.
+    // Readable, and that is all — there is no door back to a target that no
+    // longer exists.
+    for (const key of model.sectionNoteKeys(doc, ctx.fid, fest, dates.map((d) => d.iso))) {
+      section(dayLabelParts(key).head, 'day', key, { readOnly: true });
+    }
+
     for (const artist of Object.keys(notes.artist || {})) section(artist, 'artist', artist);
+
+    pruneEditing(editing, live);
+
     if (!any) {
       const empty = document.createElement('div');
       empty.className = 'n-empty';
@@ -867,12 +1068,12 @@ export function openAllNotes(ctx) {
   activeSheetRepaint = paint;
 }
 
-// ---- the day whisper (2026-08-29, replaces the inline bars) --------------------------
+// ---- the whisper (2026-08-29, replaces the inline bars) -----------------------------
 // Nothing until someone writes; then the NEWEST note (root or reply) as one
 // soft wash under the day's rule — Kevin's call, 2026-08-29. Tapping it opens
-// the day's notes; the ✎ chip on the rule stays the add door and the count.
-export function dayWhisper(scope, target, ctx, onOpen) {
-  const list = model.notesFor(state.crewDoc, ctx.fid, scope, target);
+// that conversation. Since V4 it is the day rule's only note door: the ✎ chips
+// on the rule and on every section header are gone.
+function whisperRow(list, ctx, onOpen, aria) {
   if (!list.length) return null;
   const newest = list[list.length - 1];
   const btn = document.createElement('button');
@@ -880,7 +1081,7 @@ export function dayWhisper(scope, target, ctx, onOpen) {
   const ci = colorIndexOf(newest.author, state.people()[newest.author]);
   btn.style.setProperty('--wash', hslOf(ci, 0.26));
   btn.setAttribute('aria-label',
-    `Notes${target ? ` for ${target}` : ''}: ${list.length} note${list.length === 1 ? '' : 's'}. Newest — ${newest.author}: ${newest.text.slice(0, 80)}`);
+    `${aria}: ${list.length} note${list.length === 1 ? '' : 's'}. Newest — ${newest.author}: ${newest.text.slice(0, 80)}`);
   btn.appendChild(avatarFor(newest.author, 18, 8));
   const who = document.createElement('span');
   who.className = 'who';
@@ -894,4 +1095,20 @@ export function dayWhisper(scope, target, ctx, onOpen) {
   btn.append(who, text, more);
   btn.addEventListener('click', onOpen);
   return btn;
+}
+
+// A DAY TARGET's whisper — a date under its rule, a section-on-a-date under
+// that section's header on that day, never anywhere else. `label` is what the
+// door it sits under is already wearing — the one the aria says out loud,
+// because a storage key never appears in the interface. The count spans every
+// key the target reads from, so a legacy weekday note is part of the same
+// conversation.
+export function dayWhisper(target, label, ctx, onOpen) {
+  if (!isDayTarget(target)) return null;   // only a real target has a day's notes
+  return whisperRow(dayNotesOn(ctx, target), ctx, onOpen, `Notes for ${label || dayTargetLabel(ctx, target)}`);
+}
+
+// The festival's own whisper, at the foot of the wall.
+export function festWhisper(ctx, onOpen) {
+  return whisperRow(model.notesFor(state.crewDoc, ctx.fid, 'fest', null), ctx, onOpen, 'Notes');
 }

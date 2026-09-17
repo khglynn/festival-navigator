@@ -83,6 +83,30 @@
   --fs-micro: 11px;
   --shell-max: 960px;
   --sp-gutter: clamp(14px, 2.5vw, 28px);
+  /* ONE card column, everywhere a card column is drawn (MODEL-V4 §3a.1): the
+   * stage grid's columns, the sticky stage strip's, and the venue stacks'. A
+   * Portola set card and an afters card are the same width on every screen, so
+   * the eye reads one wall instead of two.
+   * On a phone: two columns across the SHELL — the stacks' box, and the widest
+   * box a card lives in. The timetable's scroller is narrower by the 40px hour
+   * rail, so it shows a little under two columns and scrolls, which is what a
+   * scroller is for.
+   * Why an absolute length and not `calc((100% - gap)/2)`: a percentage inside
+   * a custom property resolves at the USE site, so one token would have come
+   * out 158px in the grid and 178px in the stack — two widths again, from the
+   * rule written to end them. `--sp-gutter` is already a vw clamp, and the
+   * shell's own padding is this same arithmetic (see `.times-wrap`). */
+  --col-gap: 6px;
+  --col-w: calc((100vw - 2 * var(--sp-gutter) - var(--col-gap)) / 2);
+}
+
+/* From 720 the wall is not two-across any more, so the column stops being a
+ * fraction of the screen and becomes the width it has always resolved to —
+ * the same 176px floor `.wall-grid` uses. The timetable stops stretching to
+ * fill the window (it stays a horizontal scroller) and the stacks lay their
+ * columns out from the left. */
+@media (min-width: 720px) {
+  :root { --col-gap: 7px; --col-w: 176px; }
 }
 
 /* The one "wide" breakpoint (1100): shell widens, everything else is fluid. */

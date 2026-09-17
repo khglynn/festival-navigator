@@ -5,7 +5,13 @@
 # Secrets
 .env*
 
-# Node / Vercel
+# Node / Vercel. BOTH spellings on purpose: the trailing slash matches only a
+# directory, and every worktree here runs on a node_modules SYMLINK (one shared
+# install), which that rule sails straight past — a lane committed the link on
+# 2026-09-16 and `git status` stayed clean, because the link resolved in the
+# worktree that made it and nowhere else. This is about node_modules, not about
+# symlinks: AGENTS.md -> CLAUDE.md is tracked on purpose.
+node_modules
 node_modules/
 .vercel
 .vercel/

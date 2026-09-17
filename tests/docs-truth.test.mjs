@@ -129,3 +129,84 @@ test('package.json describes the app that exists, not one festival', () => {
     `package.json names specific festivals (${named.join(', ')}) in its description/keywords — it will rot; describe the app instead`,
   );
 });
+
+// NOW.md is the one-screen cursor every session (and every compaction) reads
+// first. By 2026-09-16 it had grown to 76 KB of newest-first history that
+// contradicted itself, and the compaction hook fed it back into every
+// resumed session. History belongs in DEVLOG.md; NOW stays small enough to
+// read in one go.
+const NOW_MAX_BYTES = 12 * 1024;
+
+test('NOW.md stays a one-screen cursor', () => {
+  const bytes = Buffer.byteLength(read('NOW.md'));
+  assert.ok(
+    bytes <= NOW_MAX_BYTES,
+    `NOW.md is ${bytes} bytes (limit ${NOW_MAX_BYTES}) — replace stale lines in place and move history to DEVLOG.md`,
+  );
+});
+
+test('every repo path NOW.md and CLAUDE.md cite in backticks exists', () => {
+  // Only words that look like repo files: relative, at least one slash, and
+  // either a file extension or a trailing slash. Branch names (origin/main,
+  // fix/docs), URLs and bare hostnames, globs and CSS/JS identifiers do not match.
+  const looksLikePath = /^\.?[\w-]+(\/[\w.-]+)*\/([\w-][\w.-]*\.[a-z0-9]+|)$/i;
+  const missing = [];
+  for (const doc of ['NOW.md', 'CLAUDE.md']) {
+    for (const [, span] of read(doc).matchAll(/`([^`]+)`/g)) {
+      for (const word of span.split(/\s+/)) {
+        const path = word.replace(/:\d+(-\d+)?$/, '');
+        if (!looksLikePath.test(path)) continue;
+        if (!existsSync(new URL(path.replace(/\/$/, ''), root))) missing.push(`${doc}: ${path}`);
+      }
+    }
+  }
+  assert.deepEqual(missing, [], `docs cite paths that do not exist: ${missing.join(', ')}`);
+});
+
+// MODEL-V4 §3a.4 names all eight rows — their ORDER and their words — as Kevin's
+// own, and the wall gave up its inline tilde whisper on the strength of one of
+// them, so the explanation lives in exactly one place. Copy is the easiest thing
+// in a repo to "improve" in passing, and an order is the easiest thing to lose
+// while moving a row; this holds both. Same forcing function the rest of this
+// file applies to the README.
+test('Settings → How it works says Kevin\u2019s eight rows, word for word and in his order', () => {
+  const settings = read('js/v3/settings.js');
+  const flat = (t) => t.replace(/[\u2018\u2019]/g, "'").replace(/\s+/g, ' ');
+  const spec = flat(read('claude-plans/2026-09-16-wall-v4/MODEL-V4.md'));
+  const rows = [
+    ['Tap a name to highlight their picks.', 'Switch who you are picking as in Settings.'],
+    ['Add your people with + Add,', 'or share the crew link \u2014 anyone who opens it is in, no account needed.'],
+    ['Tap an artist to add your color.', 'Brighter each tap. 4 taps = must see.'],
+    ['Everyone\u2019s picks land on the card.', 'Ticks are picks; a letter is a must. White stroke = you.'],
+    ['Hold for details.', 'Violet = crew notes; pin one to keep it on top. Green = it\u2019s in your Spotify (connect in Settings).'],
+    ['~ a guessed start time and artist order.', 'Based on limited intel.'],
+    ['Tap the fest name to show or hide parts of the week.', 'Green dot = synced. Gray = offline (still works); red = something\u2019s wrong.'],
+    ['Switch fests and more in Settings.', ''],
+  ];
+  let at = -1;
+  for (const [strong, sub] of rows) {
+    assert.ok(spec.includes(flat(sub)) || !sub, `the spec still carries "${sub}" \u2014 if Kevin changed it, change it in both places`);
+    const call = `, '${strong}', '${sub}'));`;
+    const i = settings.indexOf(call);
+    assert.notEqual(i, -1, `How it works must say "${strong} ${sub}" exactly (MODEL-V4 §3a.4)`);
+    assert.ok(i > at, `"${strong}" is out of order \u2014 the rows are grouped the way the screen reads (§3a.4)`);
+    at = i;
+  }
+  // ONE fest link, drawn as the real component, carrying both facts (Kevin,
+  // 2026-09-17: it was drawn twice, differently, five rows apart).
+  assert.equal((settings.match(/festLinkDemo\(\)/g) || []).length, 2, 'defined once, used once');
+  assert.equal(settings.includes('festNameDemo'), false, 'and the half-component that drifted is gone');
+  // Its label is the fixed `ACL '26`, never the current fest's name (a long
+  // name broke out of the box at 390 — ship round, 2026-09-17), and the
+  // picture wears brand, not the fest accent: the accent has four homes and
+  // this drill is not one of them (CLAUDE.md).
+  const demo = /function festLinkDemo\(\) \{([\s\S]*?)\n\}/.exec(settings)[1];
+  assert.ok(demo.includes(`"ACL '26"`), 'the one fest name, coded in');
+  assert.equal(/state\.fest\(/.test(demo), false, 'the current fest is never asked');
+  assert.ok(demo.includes(`setProperty('--fest', 'var(--brand)')`), 'the accent is re-scoped to brand on the picture');
+  const drill = /function openHowItWorks\(actions\) \{([\s\S]*?)\n\}/.exec(settings)[1];
+  assert.equal(/var\(--fest\)/.test(demo + drill), false, 'and no picture in the drill paints the accent by hand');
+  // "don't need to explain now" — the now mark gets no lesson row.
+  assert.equal(/lesson\(\([^)]*\)\s*=>[\s\S]{0,400}?'[^']*\bnow\b[^']*',/i.test(settings), false,
+    'the now mark explains itself on the day; it gets no row');
+});
