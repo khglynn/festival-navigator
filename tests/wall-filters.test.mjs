@@ -1,8 +1,8 @@
-// Wall filters (design options A + D, 2026-08-27): the people filter dims
-// non-matching cards on the timetable and hides them on lists; the stage
-// solo folds every other column to a rail. Both are views — a dimmed card
-// still takes a tap, and a stale solo (a stage that no longer exists) is
-// ignored rather than blanking the wall.
+// Wall filters: the people filter dims what the selected people did not
+// pick, everywhere (ship round, 2026-09-17 — it used to hide in a list). It
+// is a view — a dimmed card still takes a tap. Stage solo was deleted the
+// same day (Kevin: "this is no longer a thing"); the stage heads are plain
+// headers and the timetable is every stage at the one column width.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -44,8 +44,8 @@ state.setActiveFestivalId('portola-2026');
 
 const mkCtx = (over = {}) => ({
   fid: 'portola-2026', meName: 'HG', picks, affinity: null, lowPower: true,
-  sort: 'day', query: '', weekend: 'all', filterPeople: [], soloStage: null, now: new Date('2026-01-01T12:00:00'),
-  onTap: () => {}, onOpenNotes: null, onNotesChange: null, onOpenDayNotes: null, onSoloStage: () => {}, ...over,
+  sort: 'day', query: '', weekend: 'all', filterPeople: [], folded: [], now: new Date('2026-01-01T12:00:00'),
+  onTap: () => {}, onOpenNotes: null, onNotesChange: null, onOpenDayNotes: null, ...over,
 });
 const render = (ctx) => { const root = document.createElement('div'); document.body.appendChild(root); renderWall(root, ctx); return root; };
 
@@ -63,10 +63,6 @@ test('filters.js: pure helpers — toggle, pass, prune, storage that throws', ()
   assert.deepEqual(filters.loadPeopleFilter('portola-2026'), ['Kat'], 'a blocked store cannot make a chip tap do nothing');
   filters.savePeopleFilter('portola-2026', []);
   assert.deepEqual(filters.loadPeopleFilter('portola-2026'), []);
-  assert.doesNotThrow(() => filters.saveSolo('portola-2026', 'Warehouse'));
-  assert.equal(filters.loadSolo('portola-2026'), 'Warehouse');
-  filters.saveSolo('portola-2026', null);
-  assert.equal(filters.loadSolo('portola-2026'), null);
 });
 
 test('scheduled search respects the people filter (a list hides, never dims)', () => {
@@ -79,11 +75,14 @@ test('scheduled search respects the people filter (a list hides, never dims)', (
   hit.remove();
 });
 
-test('columnsTemplate: every stage column is the ONE card column, a soloed stage is wide, every other stage folds to a rail; unknown solo = no solo', () => {
-  const stages = ['Pier Stage', 'Crane Stage', 'Warehouse'];
-  assert.deepEqual(filters.columnsTemplate(stages, null), { template: 'var(--col-w) var(--col-w) var(--col-w)', solo: null });
-  assert.deepEqual(filters.columnsTemplate(stages, 'Warehouse'), { template: '34px 34px var(--col-w)', solo: 'Warehouse' });
-  assert.equal(filters.columnsTemplate(stages, 'Renamed Stage').solo, null, 'a remembered stage that no longer exists cannot blank the wall');
+test('the timetable template is every stage at the ONE card column — nothing folds, nothing is wide', () => {
+  const layout = computeTimesLayout(portola);
+  assert.equal(layout.colsTemplate, 'var(--col-w) var(--col-w) var(--col-w) var(--col-w) var(--col-w)');
+  assert.deepEqual(Object.keys(layout).sort(), ['colsTemplate', 'stages'], 'no solo, no rails — the layout says only what the columns are');
+  // The whole feature is gone, not switched off: nothing remembers a stage.
+  for (const name of ['loadSolo', 'saveSolo', 'columnsTemplate', 'railLabels', 'SOLO_RAIL']) {
+    assert.equal(filters[name], undefined, `${name} is deleted`);
+  }
 });
 
 // One column width everywhere (MODEL-V4 §3a.1). The regression this catches is
@@ -140,49 +139,49 @@ test('people filter combines: Kat OR Drew lights either’s picks', () => {
   root.remove();
 });
 
-test('stage solo: the grid strips and every grid share the folded template, folded columns render no cards, the head says how to get back — and venue heads never solo', () => {
-  const root = render(mkCtx({ soloStage: 'Warehouse' }));
-  // Each grid day carries its own strip; both wear the solo.
+// Stage solo is deleted (Kevin, 2026-09-17: "Tap a stage to see only that
+// stage … this is no longer a thing, remove it"). A feature nobody can find
+// from the screen is a feature to cut: the stage heads are plain headers.
+test('a stage head is a plain header: not a button, no aria, no rail, and a tap on it does nothing', () => {
+  const root = render(mkCtx());
   const strips = [...root.querySelectorAll('.room[data-room=":fest"] .stage-strip .times-grid')];
   assert.equal(strips.length, 2, 'one strip per grid day (Saturday, Sunday)');
   for (const strip of strips) {
-    assert.equal(strip.style.gridTemplateColumns, '34px 34px var(--col-w) 34px 34px');
+    assert.equal(strip.style.gridTemplateColumns, 'var(--col-w) var(--col-w) var(--col-w) var(--col-w) var(--col-w)');
     const heads = [...strip.querySelectorAll('.stage-head')];
     assert.equal(heads.length, 5);
-    assert.equal(heads.filter((h) => h.classList.contains('rail')).length, 4, 'four stages fold to rails');
-    const solo = heads.find((h) => h.getAttribute('aria-pressed') === 'true');
-    assert.ok(solo && solo.textContent.startsWith('Warehouse'), 'the soloed head is pressed');
-    assert.match(solo.textContent, /all stages/, 'and says how to restore');
-    assert.equal(heads.every((h) => h.tagName === 'BUTTON'), true, 'stage heads are real buttons');
+    for (const h of heads) {
+      assert.equal(h.tagName, 'DIV', 'a header, not a control');
+      assert.equal(h.hasAttribute('aria-pressed'), false);
+      assert.equal(h.hasAttribute('aria-label'), false, 'no "Solo X" for a screen reader either');
+      assert.equal(h.classList.contains('rail'), false);
+      assert.equal(h.querySelector('.solo-off'), null);
+      assert.equal(h.querySelector('.label').textContent, h.title, 'the whole name, never a four-letter rail label');
+    }
   }
   for (const grid of root.querySelectorAll('.times-scroll[data-sync="grid"][data-day] .times-grid')) {
     assert.equal(grid.style.gridTemplateColumns, strips[0].style.gridTemplateColumns, 'day grids mirror the strip');
   }
-  const names = [...root.querySelectorAll('.room[data-room=":fest"] .card.cell')].map((c) => c.dataset.artist);
-  assert.equal(names.length, 16, 'only the Warehouse sets render (8 + 8)');
-  assert.ok(names.includes('Four Tet') && !names.includes('Robyn'));
-  // The solo governs the festival's own grid only: a venue head on a stack is
-  // a stage header in look, never a solo button.
+  assert.equal(root.querySelectorAll('.room[data-room=":fest"] .card.cell').length, 64, 'every set renders — no column ever folds');
+  // A tap on a head changes nothing on the wall.
+  const before = root.innerHTML;
+  root.querySelector('.stage-strip .stage-head').click();
+  assert.equal(root.innerHTML, before);
+  // A venue head on a stack is the same component.
   const venueHeads = [...root.querySelectorAll('.room[data-room="Afters"] .venue-group .stage-head')];
   assert.ok(venueHeads.length > 0);
   assert.ok(venueHeads.every((h) => h.tagName === 'DIV' && h.classList.contains('venue') && !h.hasAttribute('aria-pressed')));
-  assert.equal(root.querySelectorAll('.room[data-room="Afters"] .times-grid').length, 0, 'a section never had a clock to fold');
-  // Tapping the pressed head asks for null (restore all); tapping a rail asks for that stage.
-  const asked = [];
-  const root2 = render(mkCtx({ soloStage: 'Warehouse', onSoloStage: (s) => asked.push(s) }));
-  const heads2 = [...root2.querySelectorAll('.room[data-room=":fest"] .stage-strip .stage-head')];
-  heads2.find((h) => h.getAttribute('aria-pressed') === 'true').click();
-  heads2.find((h) => h.classList.contains('rail')).click();
-  assert.deepEqual(asked, [null, 'Pier Stage']);
-  root.remove(); root2.remove();
+  root.remove();
 });
 
-test('no solo: the everyday template, and computeTimesLayout reports solo null', () => {
-  const layout = computeTimesLayout(portola, null);
-  assert.equal(layout.solo, null);
-  assert.equal(layout.colsTemplate, 'var(--col-w) var(--col-w) var(--col-w) var(--col-w) var(--col-w)');
-  const stale = computeTimesLayout(portola, 'Gone Stage');
-  assert.equal(stale.solo, null, 'a stale solo is ignored');
+// The stylesheet has no solo left either: a rule for a state nothing can
+// enter is a rule waiting to be re-wired by accident.
+test('no solo in the stylesheet, no solo in the shell', () => {
+  const css = readFileSync(join(ROOT, 'assets/v3.css'), 'utf8');
+  for (const sel of ['.solo-off', '.stage-head.rail', 'aria-pressed']) assert.equal(css.includes(sel), false, `${sel} is gone from v3.css`);
+  for (const file of ['js/v3/app.js', 'js/v3/wall.js', 'js/v3/filters.js', 'js/v3/settings.js']) {
+    assert.equal(/solo/i.test(readFileSync(join(ROOT, file), 'utf8')), false, `${file} knows no solo`);
+  }
 });
 
 test('scrollspy: a re-wire mid-page claims the day you are actually in, not the first tab', async () => {
@@ -383,12 +382,4 @@ test('scrollspy: a fling past two days in one step lands on the day you are in, 
     globalThis.getComputedStyle = hadGCS;
     globalThis.requestAnimationFrame = hadRAF;
   }
-});
-
-test('railLabels: four letters of the first word, initials when two stages would read the same', () => {
-  assert.deepEqual(filters.railLabels(['Pier', 'Crane', 'Ship', 'Warehouse', 'Despacio']), { Pier: 'Pier', Crane: 'Cran', Ship: 'Ship', Warehouse: 'Ware', Despacio: 'Desp' });
-  assert.deepEqual(filters.railLabels(['Bud Light', 'Bud Light Backyard', 'T-Mobile']), { 'Bud Light': 'BL', 'Bud Light Backyard': 'BLB', 'T-Mobile': 'T-Mo' });
-  assert.deepEqual(filters.railLabels([' Main  Stage', '🎪 Tent']), { ' Main  Stage': 'Main', '🎪 Tent': '🎪' }, 'leading space and an emoji do not break it');
-  assert.deepEqual(filters.railLabels(['Bud Light', 'Bud Lite']), { 'Bud Light': 'BL', 'Bud Lite': 'BL2' }, 'initials that still clash get a digit — two rails never read the same');
-  assert.deepEqual(filters.railLabels(['Main Stage', 'Mainstage']), { 'Main Stage': 'MS', Mainstage: 'M' });
 });

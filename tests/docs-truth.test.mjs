@@ -163,13 +163,13 @@ test('every repo path NOW.md and CLAUDE.md cite in backticks exists', () => {
   assert.deepEqual(missing, [], `docs cite paths that do not exist: ${missing.join(', ')}`);
 });
 
-// MODEL-V4 §3a.4 names all nine rows — their ORDER and their words — as Kevin's
+// MODEL-V4 §3a.4 names all eight rows — their ORDER and their words — as Kevin's
 // own, and the wall gave up its inline tilde whisper on the strength of one of
 // them, so the explanation lives in exactly one place. Copy is the easiest thing
 // in a repo to "improve" in passing, and an order is the easiest thing to lose
 // while moving a row; this holds both. Same forcing function the rest of this
 // file applies to the README.
-test('Settings → How it works says Kevin\u2019s nine rows, word for word and in his order', () => {
+test('Settings → How it works says Kevin\u2019s eight rows, word for word and in his order', () => {
   const settings = read('js/v3/settings.js');
   const flat = (t) => t.replace(/[\u2018\u2019]/g, "'").replace(/\s+/g, ' ');
   const spec = flat(read('claude-plans/2026-09-16-wall-v4/MODEL-V4.md'));
@@ -180,7 +180,6 @@ test('Settings → How it works says Kevin\u2019s nine rows, word for word and i
     ['Everyone\u2019s picks land on the card.', 'Ticks are picks; a letter is a must. White stroke = you.'],
     ['Hold for details.', 'Violet = crew notes; pin one to keep it on top. Green = it\u2019s in your Spotify (connect in Settings).'],
     ['~ a guessed start time and artist order.', 'Based on limited intel.'],
-    ['Tap a stage to see only that stage.', 'Tap it again for all of them.'],
     ['Tap the fest name to show or hide parts of the week.', 'Green dot = synced. Gray = offline (still works); red = something needs you.'],
     ['Switch fests and more in Settings.', ''],
   ];

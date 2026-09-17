@@ -60,8 +60,8 @@ state.activateCrew(TOKEN, { v: 4, meta: {}, spotify: {}, people: { Kevin: { colo
 
 const ctxFor = (fid, over = {}) => ({
   fid, meName: 'Kevin', affinity: null, lowPower: true, sort: 'day', query: '', weekend: 'all',
-  filterPeople: [], soloStage: null, folded: [], now: new Date('2026-01-01T12:00:00'),
-  picks: model.picksFor(state.crewDoc, fid), onOpenNotes: () => {}, onNotesChange: null, onOpenDayNotes: () => {}, onSoloStage: () => {}, onTap: () => {},
+  filterPeople: [], folded: [], now: new Date('2026-01-01T12:00:00'),
+  picks: model.picksFor(state.crewDoc, fid), onOpenNotes: () => {}, onNotesChange: null, onOpenDayNotes: () => {}, onTap: () => {},
   ...over,
 });
 const render = (fid, over = {}) => {
@@ -143,11 +143,9 @@ test('a set on a stage that is not a column is a card under that stage — its o
   ]);
 });
 
-test('a day with nothing off its grid has no groups; a stage solo hides them', () => {
-  let root = render('plain-fest');
+test('a day with nothing off its grid has no groups', () => {
+  const root = render('plain-fest');
   assert.deepEqual(festRooms(root).map((r) => r.groups.length), [0]);
-  root = render('stray-fest', { soloStage: 'A' });
-  assert.deepEqual(festRooms(root).map((r) => r.groups.length), [0, 0], 'solo promises just that stage');
 });
 
 test('the people filter reaches the festival room\'s groups like any stack', () => {

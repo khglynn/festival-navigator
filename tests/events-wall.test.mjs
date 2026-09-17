@@ -139,10 +139,10 @@ FESTIVALS['lineup-only'] = {
 const ctxFor = (fid, over = {}) => {
   const ctx = {
     fid, meName: 'Kevin', affinity: null, lowPower: true, sort: 'day', query: '', weekend: 'all',
-    filterPeople: [], soloStage: null, folded: [], now: new Date('2026-01-01T12:00:00'),
+    filterPeople: [], folded: [], now: new Date('2026-01-01T12:00:00'),
     taps: [], opened: [],
     picks: model.picksFor(state.crewDoc, fid),
-    onOpenNotes: (a) => ctx.opened.push(a), onNotesChange: null, onOpenDayNotes: () => {}, onSoloStage: () => {},
+    onOpenNotes: (a) => ctx.opened.push(a), onNotesChange: null, onOpenDayNotes: () => {},
     ...over,
   };
   ctx.onTap = over.onTap || ((artist, el) => { ctx.taps.push(artist); return refreshCard(el, artist, ctx); });
@@ -207,8 +207,8 @@ test('a night is venue groups: the venue\'s own stage header, its doors line, it
   assert.deepEqual(listOf(sat).map(([v, sub, cards]) => [v, sub, cards.map(([n, t]) => [n, t])]), want,
     'the DOM is the model, venue for venue and card for card');
   assert.ok(want.length > 1 && want.some(([, sub]) => sub), 'Saturday really has several rooms and a doors line — this is not vacuous');
-  // The venue head IS a stage header (the festival accent's third home), and
-  // it is never a solo button.
+  // The venue head IS a stage header (the festival accent's third home) — a
+  // header, never a control.
   const heads = [...sat.querySelectorAll('.venue-group .stage-head')];
   assert.ok(heads.length && heads.every((h) => h.tagName === 'DIV' && h.classList.contains('venue')));
   // A ranged show prints its range; a show with no clock prints none.

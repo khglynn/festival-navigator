@@ -425,22 +425,19 @@ function openHowItWorks(actions) {
     d.append(n, s);
   }, 'Hold for details.', 'Violet = crew notes; pin one to keep it on top. Green = it’s in your Spotify (connect in Settings).'));
 
-  // 6-7. The wall: the one mark a card can wear that is a guess, and the stage
-  // solo. The tilde used to explain itself in a whisper under every venue night
-  // — one line of small print the wall had to carry forever (Kevin, 2026-09-17:
-  // "weird inline"). It is explained here once instead.
+  // 6. The wall: the one mark a card can wear that is a guess. The tilde used
+  // to explain itself in a whisper under every venue night — one line of
+  // small print the wall had to carry forever (Kevin, 2026-09-17: "weird
+  // inline"). It is explained here once instead. (A stage row sat under it
+  // until the ship round: the tap it explained was cut.)
   card.appendChild(lesson((d) => {
     const chip = el('span', 'display: inline-flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 10px; border-radius: 6px; border: 1px solid var(--hairline); background: var(--card-unpicked);');
     chip.appendChild(el('span', 'color: #fff; font-size: 10px; font-weight: 700;', 'Gelli Haha'));
     chip.appendChild(el('span', 'color: var(--text-secondary); font-size: 8.5px; font-weight: 600;', '~10:30 PM'));
     d.appendChild(chip);
   }, '~ a guessed start time and artist order.', 'Based on limited intel.'));
-  card.appendChild(lesson((d) => {
-    const head = el('span', 'font-family: var(--font-display); letter-spacing: .05em; font-size: 9px; color: rgb(var(--fest)); background: var(--card); border-radius: 6px; padding: 5px 8px; box-shadow: inset 0 0 0 1px rgba(var(--fest), .6);', 'WAREHOUSE'); // a .stage-head, drawn small — surface 3 of the accent's four
-    d.appendChild(head);
-  }, 'Tap a stage to see only that stage.', 'Tap it again for all of them.'));
 
-  // 8-9. The dock: the fest link (the show menu, MODEL-V4 §3.1, and the sync
+  // 7-8. The dock: the fest link (the show menu, MODEL-V4 §3.1, and the sync
   // dot — one component, so one row, with both facts), and the gear.
   card.appendChild(lesson((d) => {
     d.appendChild(festLinkDemo());

@@ -14,7 +14,7 @@ import { whoCorner, aboutCorner } from './aura.js';
 import { BOARD } from './palette.js';
 import { dayWhisper, festWhisper, dayTargetLabel } from './notes.js'; // runtime-only cycle with this module (colorIndexOf) — safe
 import { factsFor, timeRange } from './card-facts.js'; // same runtime-only cycle: the card's ONE model
-import { passesPeople, columnsTemplate, railLabels, FEST_ROOM } from './filters.js';
+import { passesPeople, COL, FEST_ROOM } from './filters.js';
 import { nowOnDay, nowOffsetPx, clockLabel, festivalClock } from './now.js';
 import { eventModelOf, venueGroupsOf, dateRuleLabel, occOf, hourLabelOf, approxMark, parseEventTime } from './events.js';
 import { reduced } from './motion.js';
@@ -488,68 +488,37 @@ export function applySort(artists, mode, ctx) {
 // column stays on one stage from Thursday to Sunday. The strip lives OUTSIDE
 // the horizontal scrollers because position:sticky can't escape an
 // overflow-x container (the same physics that put the hour rail outside).
-export function computeTimesLayout(fest, solo = null) {
+export function computeTimesLayout(fest) {
   const stages = model.canonicalStages(fest);
-  // The columns are the festival's stages and nothing else. Anything that
-  // is not a stage set on the clock — activities, a set whose stage is not
-  // a column — renders as a venue group under the grid, in the festival's
-  // own room (MODEL-V4 §1.3), never in a reserved column: a 9:30 AM yoga row
-  // beside 5 PM sets was a column on a clock its items were not on (Kevin,
-  // Electric Forest, 2026-09-02: "a cards section with our header").
-  // Stage solo (design option D): one stage wide, the rest folded to rails.
-  // The same template feeds the strip and every day, so a folded column is
-  // folded everywhere — scrolling down a soloed stage stays on it.
-  const cols = columnsTemplate(stages, solo);
-  return {
-    stages,
-    solo: cols.solo,
-    colsTemplate: cols.template,
-    rails: railLabels(stages), // what each stage's folded rail says
-  };
+  // The columns are the festival's stages and nothing else, every one at the
+  // ONE card column (filters.js COL). Anything that is not a stage set on
+  // the clock — activities, a set whose stage is not a column — renders as
+  // a venue group under the grid, in the festival's own room (MODEL-V4
+  // §1.3), never in a reserved column: a 9:30 AM yoga row beside 5 PM sets
+  // was a column on a clock its items were not on (Kevin, Electric Forest,
+  // 2026-09-02: "a cards section with our header"). The same template feeds
+  // the strip and every day, so a column is the same column all the way
+  // down.
+  return { stages, colsTemplate: stages.map(() => COL).join(' ') };
 }
 
-// A stage header is a button: tap to solo that stage, tap the soloed one to
-// restore all. Folded stages render as slim rails (still tappable — tapping a
-// rail moves the solo there). A muted head never solos; it folds
-// with the others.
-function stageHead(label, { muted = false, layout = null, ctx = null } = {}) {
-  const canSolo = !muted && ctx && typeof ctx.onSoloStage === 'function';
-  const h = document.createElement(canSolo ? 'button' : 'div');
+// A stage header names its column and takes no tap (ship round, 2026-09-17:
+// the tap-to-see-only-this-stage it used to carry was cut whole — a feature
+// nobody could find from the screen). The same component heads a venue's
+// stack (venueGroups). The text sits in an inner label so the ellipsis clips
+// THAT, not the head.
+function stageHead(label) {
+  const h = document.createElement('div');
   h.className = 'stage-head';
-  if (muted) h.style.color = 'var(--text-secondary)'; // neutral tint — not a stage
   h.title = label; // long names ellipsize — hover recovers
-  const solo = layout && layout.solo;
-  // The text sits in an inner label so the ellipsis clips THAT, not the
-  // button — overflow:hidden on the button would also clip the ::after that
-  // gives a 32px-tall head its 44px tap target (Codex gate, 2026-08-27).
   const text = document.createElement('span');
   text.className = 'label';
+  text.textContent = label;
   h.appendChild(text);
-  if (solo && label !== solo) {
-    h.classList.add('rail');
-    // Bounded to what a rail can show (filters.js railLabels — Codex round
-    // 4, 2026-08-27); the full name stays in title and aria-label.
-    text.textContent = muted ? 'ELSE' : ((layout.rails || {})[label] || label.slice(0, 4));
-    h.setAttribute('aria-label', muted ? 'Everything else (folded)' : `Solo ${label}`);
-  } else {
-    text.textContent = label;
-    if (solo === label) {
-      h.setAttribute('aria-pressed', 'true');
-      h.setAttribute('aria-label', `${label} — showing only this stage; tap for all stages`);
-      const off = document.createElement('span');
-      off.className = 'solo-off';
-      off.textContent = '✕ all stages';
-      text.appendChild(off);
-    } else if (canSolo) {
-      h.setAttribute('aria-pressed', 'false');
-      h.setAttribute('aria-label', `Solo ${label}`);
-    }
-  }
-  if (canSolo) h.addEventListener('click', () => ctx.onSoloStage(solo === label ? null : label));
   return h;
 }
 
-function renderStageStrip(layout, ctx) {
+function renderStageStrip(layout) {
   const strip = document.createElement('div');
   strip.className = 'times-wrap stage-strip';
   const spacer = document.createElement('div');
@@ -560,7 +529,7 @@ function renderStageStrip(layout, ctx) {
   grid.className = 'times-grid';
   grid.style.gridTemplateColumns = layout.colsTemplate;
   grid.style.gridTemplateRows = '32px';
-  for (const s of layout.stages) grid.appendChild(stageHead(s, { layout, ctx }));
+  for (const s of layout.stages) grid.appendChild(stageHead(s));
   scroll.appendChild(grid);
   strip.append(spacer, scroll);
   return strip;
@@ -845,8 +814,6 @@ function renderScheduledDayBody(root, day, ctx, layout, weekend, { strip = false
   for (const a of drawn) {
     const col = stages.indexOf(a.stage);
     if (col === -1) continue; // not a column: the festival room's venue groups under this grid carry it (festRoomExtras)
-    // A folded (non-solo) column is a 34px rail — its cards don't render.
-    if (layout.solo && a.stage !== layout.solo) continue;
     const row = Math.floor(a.startMin / 15) - startRow + 1;
     // endMin here IS the display extent — minimum 2 rows (44px), below which
     // the name + time can't fit (Kevin's screenshot, 2026-07-12).
@@ -875,7 +842,7 @@ function renderScheduledDayBody(root, day, ctx, layout, weekend, { strip = false
   if (strip) {
     const block = document.createElement('div');
     block.className = 'tt-block';
-    const stripEl = renderStageStrip(layout, ctx);
+    const stripEl = renderStageStrip(layout);
     stripEl.querySelector('.times-scroll').dataset.sync = 'grid';
     scroll.dataset.sync = 'grid';
     block.append(stripEl, wrap);
@@ -1143,7 +1110,6 @@ function activitiesOf(fest, day) {
 
 // Everything of the festival's that is not on this day's grid.
 function festRoomExtras(fest, day, layout) {
-  if (layout.solo) return []; // the solo promises "just that stage"
   const onGrid = new Set(state.getDayArtists(day.dayKey, day.weekend).map((a) => a.name));
   const billed = dedupeByCard(applyWeekend(day.billing || [], day.weekend)).filter((a) => !onGrid.has(a.name));
   return [...straysOf(fest, day.dayKey, day.weekend, layout.stages), ...billed, ...activitiesOf(fest, day.dayKey)];
@@ -1151,7 +1117,7 @@ function festRoomExtras(fest, day, layout) {
 
 function renderComposed(root, ctx, fest, { model: plan, scheduled }) {
   const folded = new Set(ctx.folded || []);
-  const layout = scheduled ? computeTimesLayout(fest, ctx.soloStage || null) : null;
+  const layout = scheduled ? computeTimesLayout(fest) : null;
 
   // A lineup wall's day-less block (THE LINEUP) leads, as it always has.
   if (!scheduled && plan.looseNoDay.length) renderLineupGroup(root, '', plan.looseNoDay, ctx, fest);
@@ -1593,8 +1559,8 @@ export function wireScrollspy(containers, wallRoot) {
     setActive(current.dataset.day);
   };
   // The initial claim. At load the first day is on screen — say so instead
-  // of nothing. But this also runs on every re-wire (a people filter or a
-  // stage solo repaints the wall), and there the page may be scrolled deep
+  // of nothing. But this also runs on every re-wire (a people filter or the
+  // show menu repaints the wall), and there the page may be scrolled deep
   // into Sunday: claiming "Saturday" was a lie the tab wore until the next
   // scroll event (UI walk, 2026-08-27). Read the geometry whenever there is
   // scroll to read; position 0 keeps the first-day shortcut so a fresh load

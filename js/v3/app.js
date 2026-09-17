@@ -10,7 +10,7 @@ import * as spotify from '../spotify.js';
 import * as model from './model.js';
 import { loadFestivalIndex, loadFestival, fetchCustomFestivals, mergeCustoms, FESTIVAL_INDEX, defaultFestivalId } from '../festivals.js';
 import { renderWall, refreshCard, showUndoToast, showToast, wireScrollspy, colorIndexOf, positionNowLines, positionNowMarks, scrollToNowLine, dayNavOf, cardFor, roomOf, isStripScroller, DAY_ANCHOR } from './wall.js';
-import { loadPeopleFilter, savePeopleFilter, togglePerson, pruneToActive, loadSolo, saveSolo, loadFolded, applyFoldToggle, FEST_ROOM } from './filters.js';
+import { loadPeopleFilter, savePeopleFilter, togglePerson, pruneToActive, loadFolded, applyFoldToggle, FEST_ROOM } from './filters.js';
 import { OUT_MS, CASCADE_MS, STAGGER_MS, EASE_ARRIVE, EASE_LEAVE, EASE_SURFACE, canAnimate } from './motion.js';
 import { scrolledBefore, rememberScrolled, dayOfScrollKey } from './now.js';
 import { dayLabelParts } from '../time.js';
@@ -41,21 +41,15 @@ const ctx = {
   sort: 'billing',
   lowPower: false,
   migrationPending: false,
-  // Wall filters (design options A + D, 2026-08-27): whose picks the wall
-  // shows, and which stage is soloed. Both per-fest, per-tab (filters.js).
+  // The wall filter (design option A, 2026-08-27): whose picks the wall
+  // highlights. Per-fest, per-tab (filters.js).
   filterPeople: [],
-  soloStage: null,
   // The fold (MODEL-V4 §3, 2026-09-16): which of the fest's rooms (the
   // festival itself, Afters, Folsom …) are hidden on every day. Device-local,
   // persisted per fest (filters.js) — never in the crew doc. One door writes
   // it: the show menu on the fest name (§3a.2, Kevin 2026-09-17).
   folded: [],
   now: null, // tests pin the clock; null = new Date() at render
-  onSoloStage: (stage) => {
-    saveSolo(ctx.fid, stage);
-    refreshCtx();
-    repaintWall();
-  },
   onTap: handleTap,
   onOpenNotes: (artist, occ = null) => {
     unzoom({ why: 'notes sheet opened' });
@@ -125,7 +119,6 @@ function refreshCtx() {
   // Write the pruned list back, or a departed member's filter would sit in
   // storage and silently reactivate the day they rejoin.
   if (ctx.filterPeople.length !== stored.length) savePeopleFilter(ctx.fid, ctx.filterPeople);
-  ctx.soloStage = loadSolo(ctx.fid);
   ctx.folded = loadFolded(ctx.fid);
   ctx.festDates = festDatesOf();
 }
@@ -735,7 +728,7 @@ function maybeShowCoachMark() {
   bar.style.cssText = 'display: flex; align-items: center; gap: 10px; margin-top: 11px; padding: 10px 13px; border: 1px solid var(--notes-chip-stroke); border-radius: var(--r-row); background: rgba(139, 123, 255, .07);';
   const msg = document.createElement('span');
   msg.style.cssText = 'flex: 1; color: var(--text-body); font-size: 12px; font-weight: 600; line-height: 1.45;';
-  msg.append('Tap artists to add your color. 4 taps = must see. Hold for details. Tap a name or a stage to see just that. ');
+  msg.append('Tap artists to add your color. 4 taps = must see. Hold for details. Tap a name to highlight their picks. ');
   const how = document.createElement('button');
   how.style.cssText = 'background: none; border: none; padding: 0; cursor: pointer; color: var(--notes-chip-text); font-size: 12px; font-weight: 700; text-decoration: underline; text-underline-offset: 2px;';
   how.textContent = 'How it works';

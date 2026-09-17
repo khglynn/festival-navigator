@@ -547,8 +547,8 @@ button.day-rule, button.date-rule, button.sec-head { cursor: pointer; }
               line-height: 32px; height: 32px; box-sizing: border-box;
               white-space: nowrap;
               background: var(--card); border-radius: var(--r-card); }
-/* The ellipsis lives on an inner label, not the head: `overflow: hidden` on
- * the button itself would clip the ::after that gives it a 44px tap target. */
+/* The ellipsis lives on an inner label, not the head. A stage head is a
+ * header, not a control (its tap-to-see-only-this-stage was cut 2026-09-17). */
 .stage-head .label { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* The sticky stage strip (one for the whole page): stage names pin below the
@@ -863,16 +863,6 @@ button.f-chip.notes { cursor: pointer; }
 .card.dim { opacity: .28; }
 .section-empty { color: var(--text-tertiary); font-size: 12px; font-weight: 600; padding: 2px 0 4px; }
 
-/* Stage solo: the stage heads are buttons now. The soloed head carries an
- * inset ring in the fest accent (it IS a stage header — one of the accent's
- * four homes) and a quiet "all stages" affix; folded stages become 34px
- * rails with the name set vertically. */
-.stage-head { cursor: pointer; border: none; font-weight: inherit; }
-.stage-head[aria-pressed="true"] { box-shadow: inset 0 0 0 1px rgba(var(--fest), .6); }
-.stage-head .solo-off { font-family: var(--font-ui); font-size: 9px; letter-spacing: 0; font-weight: 700;
-                        color: var(--text-tertiary); margin-left: 6px; }
-.stage-head.rail { padding: 0; font-size: 9px; letter-spacing: .06em; color: var(--text-tertiary); }
-.stage-head.rail .label { writing-mode: vertical-rl; transform: rotate(180deg); line-height: 34px; height: 32px; overflow: visible; }
 /* The now line: brand violet, not the fest accent — it is app chrome that
  * happens to sit on a timetable. Drawn inside the grid (position: relative
  * on the grid and the rail) so it scrolls with the day; the ticker in app.js
@@ -893,15 +883,6 @@ button.f-chip.notes { cursor: pointer; }
 .card.now { border-color: rgb(var(--brand));
             box-shadow: 0 0 0 .5px rgb(var(--brand)), 0 0 6px rgba(var(--brand), .8); }
 .now-label.in-card { top: 5px; right: 5px; transform: none; }
-/* On touch devices the stage strip row IS 44px — a borrowed ::after can't
- * escape the strip's own scroll container, so the target has to be real.
- * Desktop keeps the designed 32px. The inline row template on the strip
- * grid is 32px; the !important here is the one deliberate override. */
-@media (pointer: coarse) {
-  .stage-strip .times-grid { grid-template-rows: 44px !important; }
-  .stage-head { height: 44px; line-height: 44px; }
-  .stage-head.rail .label { height: 44px; line-height: 34px; }
-}
 
 /* ---- events: the composed day, venue groups (MODEL-V4, 2026-09-16) ------------- */
 /* claude-plans/2026-09-16-wall-v4/MODEL-V4.md. A day is the unit; inside it,
@@ -939,7 +920,6 @@ button.f-chip.notes { cursor: pointer; }
  * so a strip inside this block pins while the block is on screen and leaves
  * with it — a grid day's stage heads never sit over another day's. */
 .tt-block { display: flex; flex-direction: column; }
-.stage-head.venue { cursor: default; } /* a venue head is a stage header, never a solo button */
 
 /* THE LIST (MODEL-V4 §1.2): one group per venue, its stage header, its
  * doors/close line, and the night's cards stacked in play order. The column is

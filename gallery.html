@@ -518,8 +518,7 @@ state.recordAffinity('Kevin', {
 
 const ctx = {
   fid: GFID, meName: 'Kevin', picks: {}, affinity: null,
-  lowPower: false, filterPeople: [], soloStage: null, now: null,
-  onSoloStage: () => {},
+  lowPower: false, filterPeople: [], now: null,
   onOpenNotes: (artist) => zoomStatus(`+ notes tapped for "${artist}" — the notes sheet lives in its own gallery section below, not wired here`),
   onOpenDayNotes: () => {},
   onOpenFestNotes: () => {},
@@ -795,8 +794,7 @@ let folded = [];
 const NOW = new Date('2026-09-27T06:30:00Z');
 const ectx = {
   fid: EFID, meName: 'Kevin', picks: {}, affinity: null, lowPower: false,
-  sort: 'day', query: '', weekend: 'all', filterPeople: [], soloStage: null, folded: [], now: NOW,
-  onSoloStage: () => {},
+  sort: 'day', query: '', weekend: 'all', filterPeople: [], folded: [], now: NOW,
   onOpenNotes: (artist) => eventsStatus(`+ notes tapped for "${artist}" — the sheet is not wired in the gallery`),
   onOpenDayNotes: (target, label) => eventsStatus(`notes tapped for ${label} (${target}) — the sheet is not wired in the gallery`),
   onOpenFestNotes: () => {},

@@ -35,7 +35,7 @@ state.setActiveFestivalId('portola-2026');
 
 const mkCtx = (date) => ({
   fid: 'portola-2026', meName: 'HG', picks: {}, affinity: null, lowPower: true, sort: 'day', query: '', weekend: 'all',
-  filterPeople: [], soloStage: null, now: date, onTap: () => {}, onOpenNotes: null, onNotesChange: null, onOpenDayNotes: null, onSoloStage: () => {},
+  filterPeople: [], now: date, onTap: () => {}, onOpenNotes: null, onNotesChange: null, onOpenDayNotes: null,
 });
 const render = (date) => { const root = document.createElement('div'); document.body.appendChild(root); renderWall(root, mkCtx(date)); return root; };
 const local = (s) => new Date(s); // no Z: the phone's own clock (the no-timezone path)

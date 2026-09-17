@@ -33,8 +33,12 @@ shape (a grid is a grid), never by a threshold.
 
 ### 1.1 The timetable (one change)
 `renderScheduledDayBody` as today: hour rail, sticky stage strip, 15-minute
-rows, lanes for same-stage overlaps, stage solo, the now line. Only a grid
-day renders it. `computeTimesLayout` loses its dead `hasEE` parameter.
+rows, lanes for same-stage overlaps, the now line. Only a grid day renders
+it. `computeTimesLayout` loses its dead `hasEE` parameter. **Stage solo is
+not in this list any more** (deleted 2026-09-17, Kevin: "Tap a stage to see
+only that stage. Tap it again for all of them — this is no longer a thing,
+remove it"): a stage head is a plain header, the timetable is every stage at
+`--col-w`, and nothing folds to a rail.
 **The grid spans the whole day** — from the festival's doors to its close
 (`dayMeta[day].doors` / `close` when present, else the first set's hour to
 the last set's end) — so the now line always has a home (Kevin, 2026-09-17:
@@ -165,9 +169,8 @@ section says its own sub from `dayMeta[<label>].sub` if present, else nothing.
    4. the who-corner marks — `Everyone's picks land on the card.` / `Ticks are picks; a letter is a must. White stroke = you.`
    5. the about-corner chips — `Hold for details.` / `Violet = crew notes; pin one to keep it on top. Green = it's in your Spotify (connect in Settings).`
    6. a run card (`Gelli Haha · ~10:30 PM`) — `**~ a guessed start time and artist order.** Based on limited intel.`
-   7. a stage head — `Tap a stage to see only that stage.` / `Tap it again for all of them.`
-   8. the dock's fest link (`.fest-link`: Anton, the fest accent, the sync dot — ONE row, the real component) — `Tap the fest name to show or hide parts of the week.` / `Green dot = synced. Gray = offline (still works); red = something needs you.`
-   9. the gear — `Switch fests and more in Settings.`
+   7. the dock's fest link (`.fest-link`: Anton, the fest accent, the sync dot — ONE row, the real component) — `Tap the fest name to show or hide parts of the week.` / `Green dot = synced. Gray = offline (still works); red = something needs you.`
+   8. the gear — `Switch fests and more in Settings.`
    Kevin, 2026-09-17: the fest name and its dot were drawn twice, differently, five rows apart ("PORTOLA '26 ▾" in the body face and "PORTOLA '26 ●"); once, together, as the component.
 5. Sort options inside the show menu for every fest: banked in hg-pen, not
    built (Kevin: "unless it's easy to knock out" — it is not: the old sort

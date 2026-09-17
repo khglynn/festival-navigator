@@ -60,10 +60,10 @@ state.activateCrew(TOKEN, {
 const ctxFor = (fid, over = {}) => {
   const ctx = {
     fid, meName: 'Kevin', affinity: null, lowPower: true, sort: 'day', query: '', weekend: 'all',
-    filterPeople: [], soloStage: null, folded: [], now: new Date('2026-01-01T12:00:00'),
+    filterPeople: [], folded: [], now: new Date('2026-01-01T12:00:00'),
     taps: [], opened: [],
     picks: model.picksFor(state.crewDoc, fid),
-    onOpenNotes: (a) => ctx.opened.push(a), onNotesChange: null, onOpenDayNotes: () => {}, onSoloStage: () => {},
+    onOpenNotes: (a) => ctx.opened.push(a), onNotesChange: null, onOpenDayNotes: () => {},
     ...over,
   };
   ctx.onTap = over.onTap || ((artist, el) => { ctx.taps.push(artist); return refreshCard(el, artist, ctx); });

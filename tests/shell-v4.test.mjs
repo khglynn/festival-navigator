@@ -411,7 +411,7 @@ test('the show menu names every room the wall shows — ACL\'s dated section inc
     state.setActiveFestivalId(fid);
     renderWall(wall, {
       fid, meName: 'Kevin', picks: {}, affinity: null, lowPower: true,
-      sort: 'day', query: '', weekend: 'all', filterPeople: [], soloStage: null, folded: [],
+      sort: 'day', query: '', weekend: 'all', filterPeople: [], folded: [],
       onTap: () => {}, onOpenDayNotes: () => {}, onNotesChange: null,
     });
     return app.roomsOnWall();
