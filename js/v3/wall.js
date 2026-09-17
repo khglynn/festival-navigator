@@ -12,7 +12,7 @@ import { computeLanes } from '../overlap.js';
 import { dayLabelParts } from '../time.js';
 import { whoCorner, aboutCorner } from './aura.js';
 import { BOARD } from './palette.js';
-import { dayWhisper, festWhisper, shortDayLabel } from './notes.js'; // runtime-only cycle with this module (colorIndexOf) — safe
+import { dayWhisper, festWhisper, dayTargetLabel } from './notes.js'; // runtime-only cycle with this module (colorIndexOf) — safe
 import { factsFor, timeRange } from './card-facts.js'; // same runtime-only cycle: the card's ONE model
 import { passesPeople, columnsTemplate, railLabels, FEST_ROOM } from './filters.js';
 import { nowOnDay, nowOffsetPx, clockLabel, festivalClock } from './now.js';
@@ -931,12 +931,16 @@ export function wallPlanFor(fest, ctx) {
 // What the day tabs (dock + rail) should list, in the wall's own order: the
 // days, then the tabs that hang off the end (a dated section like ACL's Late
 // nights). `key` is the jump id the wall stamps on its rule.
-const dayTab = (d) => ({ key: d.key, short: d.short, num: d.num, long: d.long, iso: d.iso, dates: d.iso ? [d.iso] : [], dated: false });
+// `dayKey` is the day WITHOUT its weekend suffix ("Friday", not "Friday|W1"):
+// the key the file wrote and the rule bills. The suffix is an axis detail, so
+// anything naming the day for a person reads this, not `key`.
+const dayTab = (d) => ({ key: d.key, dayKey: d.dayKey || d.key, short: d.short, num: d.num, long: d.long, iso: d.iso, dates: d.iso ? [d.iso] : [], dated: false });
 // A group header a search draws for a section, or a lineup fest's own day.
 const groupTab = (fest) => (day) => {
   const meta = (fest.dayMeta || {})[day];
   return {
     key: day,
+    dayKey: day,
     short: (meta?.wd || day).slice(0, 3).toUpperCase(),
     num: null,
     dates: [],
@@ -961,7 +965,7 @@ export function dayNavOf(fest, ctx, wallRoot = null) {
       ...plan.model.days.map(dayTab),
       // A dated section is one tab over many dates, and each of those dates
       // is its own note thread (§4) — so the tab carries them all.
-      ...plan.model.extras.map((e) => ({ key: e.key, short: e.short, num: null, long: e.long, iso: null, dates: [...(e.byDate || new Map()).keys()], dated: true })),
+      ...plan.model.extras.map((e) => ({ key: e.key, dayKey: e.key, short: e.short, num: null, long: e.long, iso: null, dates: [...(e.byDate || new Map()).keys()], dated: true })),
     ]
     : [...groupByDay(fest.artists || [], knownDaysOf(fest)).keys()].filter(Boolean).map(groupTab(fest));
   // While a query is on, the wall is that axis with the days that answered
@@ -1180,7 +1184,7 @@ function renderComposed(root, ctx, fest, { model: plan, scheduled }) {
       // (§3a.3): Folsom on Friday, not Folsom, and not Friday. A hidden room
       // has nothing under its header, so it is not a door either.
       const target = !isFolded && day.iso && ctx.onOpenDayNotes ? model.sectionDateKey(day.iso, sec.key) : null;
-      const label = target ? `${sec.label} · ${dayLabelParts(day.dayKey).head}` : null;
+      const label = target ? dayTargetLabel(ctx, target, dayLabelParts(day.dayKey).head) : null;
       room.appendChild(sectionHeader(sec.label, sectionSub(fest, sec), {
         key: sec.key,
         folded: isFolded,
@@ -1226,9 +1230,14 @@ function dayNoteWhisper(root, target, label, ctx) {
 // A day's rule — the door to that date's notes — and the newest note under it.
 // A day the file gives no date has no door: a label is not a date.
 function dayRuleFor(day, ctx) {
-  const label = dayLabelParts(day.dayKey).head;
+  const head = dayLabelParts(day.dayKey).head;
+  // What this date is CALLED — the rule's own head, unless the axis says two
+  // dates would answer to it (a two-weekend fest's two Fridays), in which case
+  // it says the date. One naming rule, decided once in the shell, so the door,
+  // the sheet's title and the sheet's row can never disagree.
+  const label = day.iso ? dayTargetLabel(ctx, day.iso, head) : head;
   const open = day.iso && ctx.onOpenDayNotes ? () => ctx.onOpenDayNotes(day.iso, label) : null;
-  const rule = dayHeader(label, day.sub, { dayKey: day.key, onOpen: open, aria: label });
+  const rule = dayHeader(head, day.sub, { dayKey: day.key, onOpen: open, aria: label });
   if (day.iso) rule.dataset.iso = day.iso; // the day-of open lands here before doors
   const frag = document.createDocumentFragment();
   frag.appendChild(rule);
@@ -1259,7 +1268,7 @@ function renderExtra(root, ctx, fest, extra, { folded }) {
   for (const [iso, list] of extra.byDate) {
     // A date rule inside a dated section is that tab's day rule, so it is the
     // same door: tap it, and you are writing on that date.
-    const label = shortDayLabel(iso);
+    const label = dayTargetLabel(ctx, iso);
     const open = ctx.onOpenDayNotes ? () => ctx.onOpenDayNotes(iso, label) : null;
     const dateRule = mk(open ? 'button' : 'div', 'date-rule');
     if (open) {

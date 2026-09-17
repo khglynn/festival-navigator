@@ -120,14 +120,17 @@ function dayNotesOn(ctx, target) {
 // what the door said. Where two dates would answer to the same name (a
 // two-weekend fest has two Fridays) the axis carries the dated form instead;
 // that choice is made once, in the shell, not re-derived here.
-function dateLabel(ctx, iso) {
+function dateLabel(ctx, iso, fallback) {
   const hit = (ctx.festDates || []).find((d) => d && d.iso === iso);
-  return (hit && hit.label) || shortDayLabel(iso);
+  return (hit && hit.label) || fallback || shortDayLabel(iso);
 }
-export function dayTargetLabel(ctx, target) {
+// `fallback` is what the caller already has on screen — the wall's day rule
+// hands down its own head, so a ctx with no axis still says a word rather than
+// a date nobody asked for.
+export function dayTargetLabel(ctx, target, fallback = null) {
   const sec = model.parseSectionDateKey(target);
-  if (sec) return `${dayLabelParts(sec.section).head} · ${dateLabel(ctx, sec.iso)}`;
-  if (isDate(target)) return dateLabel(ctx, target);
+  if (sec) return `${dayLabelParts(sec.section).head} · ${dateLabel(ctx, sec.iso, fallback)}`;
+  if (isDate(target)) return dateLabel(ctx, target, fallback);
   return dayLabelParts(String(target)).head; // a legacy key, said the way the wall said it
 }
 

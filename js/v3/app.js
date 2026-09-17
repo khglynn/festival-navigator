@@ -156,7 +156,7 @@ function festDatesOf() {
       seen.add(iso);
       // A dated section's tab covers many dates, so its own name cannot stand
       // for any one of them; each date says itself.
-      out.push({ iso, label: day.dated ? shortDayLabel(iso) : dayLabelParts(day.key).head });
+      out.push({ iso, label: day.dated ? shortDayLabel(iso) : dayLabelParts(day.dayKey || day.key).head });
     }
   }
   return nameDates(out);

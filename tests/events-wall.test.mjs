@@ -475,6 +475,25 @@ test('a hidden room is not a door either — and the festival\u2019s own room ne
     'the festival\u2019s room on a day IS that day; its rule is the door');
 });
 
+test('two Fridays, two doors that say which: the axis names the date when the day\u2019s own name would answer twice', () => {
+  const asked = [];
+  const { root } = render('two-dated', {
+    onOpenDayNotes: (k, label) => asked.push([k, label]),
+    // What the shell hands down (app.js festDatesOf / nameDates).
+    festDates: [
+      { iso: '2026-10-02', label: 'Fri \u00b7 Oct 2' },
+      { iso: '2026-10-09', label: 'Fri \u00b7 Oct 9' },
+    ],
+  });
+  const arias = [...root.querySelectorAll('.day-rule')].map((r) => r.getAttribute('aria-label'));
+  assert.deepEqual(arias, ['Notes for Fri \u00b7 Oct 2', 'Notes for Fri \u00b7 Oct 9'],
+    'two buttons that open different threads never say the same words');
+  assert.deepEqual([...root.querySelectorAll('.day-rule .day')].map((d) => d.textContent), ['FRIDAY', 'FRIDAY'],
+    'and the rule on screen still reads FRIDAY — the sub says which weekend');
+  root.querySelectorAll('.day-rule')[1].dispatchEvent(new dom.window.Event('click'));
+  assert.deepEqual(asked, [['2026-10-09', 'Fri \u00b7 Oct 9']], 'the sheet is told the same name the door wore');
+});
+
 test('a day the file gives no date has no note door', () => {
   // Not a loss of anything written: the note is still in the crew doc and
   // still listed in the all-notes sheet under the key it was stored on.
