@@ -80,6 +80,23 @@ test('a day exports its whole content in the wall\'s order: the grid in clock or
   assert.deepEqual(dayArtistsFor('Nope'), [], 'an unknown day exports nothing rather than throwing');
 });
 
+test('a share image is the wall you see: a hidden room is not in a day\'s image, and a day the fold emptied is not offered', async () => {
+  // The fold is viewer-side and lives in the same store the wall reads
+  // (fn_fold_v1_<fid>); the exporter used to read the plan with nothing
+  // folded, the one surface where "hidden renders nothing" was not true.
+  const filters = await import('../js/v3/filters.js');
+  filters.saveFolded('portola-2026', ['Afters', 'Folsom']);
+  try {
+    assert.deepEqual(dayImageChoices(portola).map((d) => d.key), ['Saturday', 'Sunday'], 'Thursday and Friday have nothing visible, so no image is offered for them');
+    assert.equal(dayArtistsFor('Saturday').length, 32, 'the grid alone — no afters, no Folsom');
+    assert.deepEqual(dayArtistsFor('Thursday'), [], 'a day that is not on the wall exports nothing');
+  } finally {
+    filters.saveFolded('portola-2026', []);
+  }
+  assert.equal(dayImageChoices(portola).length, 4, 'and everything is back once the fold clears');
+  assert.equal(dayArtistsFor('Saturday').length, 32 + 9 + 2);
+});
+
 test('a lineup-only fest still exports by billing group', () => {
   FESTIVAL_INDEX.push({ id: 'lineup-only', status: 'lineup' });
   state.FESTIVALS['lineup-only'] = { id: 'lineup-only', name: 'L', status: 'lineup', artists: [{ name: 'A', day: 'Friday' }, { name: 'B' }] };
