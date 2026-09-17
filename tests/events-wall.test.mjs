@@ -239,7 +239,17 @@ test('a grid day keeps its timetable, its own sticky strip and its own scroll gr
   assert.ok(gridDays.every((s) => s.scrollLeft === 120), 'the two grid days mirror each other');
   const strips = gridScrollers.filter((s) => !s.hasAttribute('data-day'));
   assert.ok(strips.every((s) => s.classList.contains('follows') && s.scrollLeft === 0));
-  assert.ok(strips.every((s) => s.querySelector('.times-grid').style.transform === 'translateX(-120px)'), 'both strip rows followed');
+  // A strip follows the grid it SITS ABOVE, never the group's first: bound to
+  // the wrong day, both strips freeze in a real browser. jsdom does not fire
+  // `scroll` when the mirror writes scrollLeft, which is what makes the two
+  // bindings visible here.
+  const stripRow = (dayKey) => [...root.querySelectorAll('.tt-block')]
+    .find((b) => b.querySelector(`.times-scroll[data-day="${dayKey}"]`))
+    .querySelector('.stage-strip .times-grid');
+  assert.equal(stripRow('Saturday').style.transform, 'translateX(-120px)', 'Saturday\'s names moved with Saturday\'s columns');
+  assert.equal(stripRow('Sunday').style.transform, 'translateX(0px)', 'Sunday\'s strip is on Sunday\'s grid, which has not spoken yet');
+  gridDays[1].dispatchEvent(new dom.window.Event('scroll'));
+  assert.equal(stripRow('Sunday').style.transform, 'translateX(-120px)', 'and when it does, its own names follow');
   // The grid spans whole hours of the festival day, so the now line always has
   // a home (MODEL-V4 §1.1).
   const grid = root.querySelector('.times-scroll[data-day="Sunday"] .times-grid');

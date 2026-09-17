@@ -749,6 +749,19 @@ function followStrip(strip, lead, root) {
   lead.addEventListener('scroll', follow, { passive: true });
   follow();
 }
+// The grid a strip follows is the one it SITS ABOVE — its own `.tt-block`'s.
+// Every day's grid and its strip share `data-sync="grid"` so the days mirror
+// one scroll position, and the wiring used to hand EVERY strip the group's
+// first grid: the second call overwrote that grid's scroll-timeline name, and
+// the second day's name ended up declared outside its own `timeline-scope`, so
+// on any fest with two grid days BOTH strips froze while the columns slid
+// under them and a stage name sat over another stage's set (real-browser walk,
+// 2026-09-17, Portola). One rule: the lead is the grid underneath.
+const gridUnderStrip = (strip) => {
+  const block = strip.closest('.tt-block');
+  return block ? [...block.querySelectorAll('.times-scroll')].find((s) => !isStripScroller(s)) : null;
+};
+
 export function wireTimesScrollSync(root) {
   const groups = new Map();
   for (const s of root.querySelectorAll('.times-scroll')) {
@@ -759,7 +772,11 @@ export function wireTimesScrollSync(root) {
   for (const all of groups.values()) {
     const scrollers = all.filter((s) => !isStripScroller(s));
     if (!scrollers.length) continue;
-    for (const strip of all) if (isStripScroller(strip)) followStrip(strip, scrollers[0], root);
+    for (const strip of all) {
+      if (!isStripScroller(strip)) continue;
+      const lead = gridUnderStrip(strip);
+      if (lead) followStrip(strip, lead, root);
+    }
     if (scrollers.length < 2) continue;
     const lastSet = new Map();
     for (const s of scrollers) {

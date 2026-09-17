@@ -95,6 +95,49 @@ test('the strip follows its columns — and still does under Low Power', { skip 
   assert.ok(Math.abs(f.strip - f.grid) <= 1, `Low Power off, the timeline follow is back: ${JSON.stringify(f)}`);
 });
 
+// Two grid days is the shape every real scheduled fest has, and one grid day
+// hid this: every day's grid and its strip carry data-sync="grid" so the days
+// mirror one scroll position, and the wiring handed EVERY strip the group's
+// first grid as its lead. The second call overwrote the lead's scroll-timeline
+// name, and the second day's name was declared outside its own timeline-scope
+// — so on Portola BOTH strips froze while the columns slid under them, and
+// "Pier Stage" sat over a Warehouse set (real-browser walk, 2026-09-17). A
+// strip follows the grid it sits above. Nothing else.
+test('two grid days: each strip is bound to its OWN columns, and both follow a real scroll', { skip }, async () => {
+  const blocks = () => page.evaluate(() => [...document.querySelectorAll('#events-wall .tt-block')].map((b) => {
+    const lead = b.querySelector('.times-wrap:not(.stage-strip) .times-scroll');
+    const row = b.querySelector('.stage-strip .times-grid');
+    const off = (scroller) => scroller.querySelector('.times-grid').getBoundingClientRect().left - scroller.getBoundingClientRect().left;
+    return {
+      day: lead.dataset.day,
+      scrollLeft: lead.scrollLeft,
+      grid: off(lead),
+      strip: off(b.querySelector('.stage-strip .times-scroll')),
+      timeline: (lead.style.scrollTimeline || '').split(' ')[0],
+      boundTo: row.style.animationTimeline || '',
+      stripMax: row.style.getPropertyValue('--strip-max'),
+      leadMax: `${Math.max(0, lead.scrollWidth - lead.clientWidth)}px`,
+    };
+  }));
+
+  const before = await blocks();
+  assert.equal(before.length, 2, 'the gallery fest has two grid days');
+  for (const b of before) {
+    assert.equal(b.boundTo, b.timeline, `${b.day}: its strip rides the timeline its OWN grid declares`);
+    assert.ok(b.timeline, `${b.day}: a timeline name`);
+    assert.equal(b.stripMax, b.leadMax, `${b.day}: --strip-max is its own grid's maximum scroll`);
+  }
+  assert.notEqual(before[0].timeline, before[1].timeline, 'two days, two timelines');
+
+  // One real wheel over the first day. The days mirror scrollLeft, so BOTH
+  // days' columns move — and both days' stage names have to move with them.
+  const after = await wheel(180).then(() => blocks());
+  assert.ok(after[0].scrollLeft > 60, `the columns scrolled: ${JSON.stringify(after)}`);
+  for (const b of after) {
+    assert.ok(Math.abs(b.strip - b.grid) <= 1, `${b.day}: the stage names sit over their own columns — ${JSON.stringify(b)}`);
+  }
+});
+
 // The first hour label straddles the top of its rail — every other one has a
 // grid row above it, and that one has the sticky strip, which is opaque. It
 // sat half under the stage names on every grid at every width (2026-09-17).

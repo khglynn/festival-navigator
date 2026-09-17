@@ -139,20 +139,30 @@ test('scheduled wall: one strip, canonical columns, mirrored scroll, guarded edg
   assert.ok(root.textContent.includes('No set times for this day yet.'));
 
   // Scroll mirroring: scrolling any one DAY moves the sibling days; a strip
-  // is not a scroller — its row follows its lead day by transform (in a
-  // browser with scroll timelines, by a CSS animation on the lead's
-  // timeline; here, the transform path).
+  // is not a scroller — its row follows THE GRID IT SITS ABOVE by transform
+  // (in a browser with scroll timelines, by a CSS animation on that grid's
+  // timeline; here, the transform path). A strip bound to another day's grid
+  // freezes as soon as two days exist — see the browser contract.
   const scrollers = [...root.querySelectorAll('.times-scroll')];
   assert.equal(scrollers.length, 4, 'a strip and a grid for Friday and for Saturday (empty Sunday has neither)');
   const stripScrollers = scrollers.filter((s) => s.closest('.stage-strip'));
   const days = scrollers.filter((s) => s.hasAttribute('data-day'));
+  const rowIn = (dayKey) => [...root.querySelectorAll('.tt-block')]
+    .find((b) => b.querySelector(`.times-scroll[data-day="${dayKey}"]`))
+    .querySelector('.stage-strip .times-grid');
   assert.equal(stripScrollers.length, 2);
   assert.ok(stripScrollers.every((s) => s.classList.contains('follows')), 'every strip is marked as a follower');
   days[0].scrollLeft = 120;
   days[0].dispatchEvent(new dom.window.Event('scroll'));
-  assert.ok(stripScrollers.every((s) => s.querySelector('.times-grid').style.transform === 'translateX(-120px)'), 'the strip rows follow the day scroller');
-  assert.ok(stripScrollers.every((s) => s.scrollLeft === 0), 'and a strip itself never scrolls');
   assert.equal(days[1].scrollLeft, 120, 'sibling day follows too');
+  assert.equal(rowIn('Friday').style.transform, 'translateX(-120px)', 'Friday\'s names move with Friday\'s columns');
+  // A browser fires `scroll` when the mirror writes scrollLeft; jsdom does
+  // not, so Saturday's is dispatched by hand — and that is the proof the two
+  // strips are on two different grids rather than both on Friday's.
+  assert.equal(rowIn('Saturday').style.transform, 'translateX(0px)', 'Saturday\'s has not heard from its own grid yet');
+  days[1].dispatchEvent(new dom.window.Event('scroll'));
+  assert.equal(rowIn('Saturday').style.transform, 'translateX(-120px)', 'and when it does, its own names follow');
+  assert.ok(stripScrollers.every((s) => s.scrollLeft === 0), 'and a strip itself never scrolls');
 
   root.remove();
 });
