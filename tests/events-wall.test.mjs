@@ -2,8 +2,8 @@
 // jsdom: the composition on Portola, the strips scoped per timetable, the
 // bucket filter's chips and whisper, EVERY venue-night as one vertical run
 // (§5's one rule — no lanes, no deck), the run's two-line WHEN in the grown
-// card, and the untouched paths — a grid-only fest and Lost Lands render
-// exactly as before. jsdom has no animate(), so every motion path here is
+// card, and the untouched paths — a grid-only fest and a lineup-only fest
+// render exactly as before. jsdom has no animate(), so every motion path here is
 // the instant one; the motion is the walker's job.
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -111,7 +111,7 @@ FESTIVALS['model-edges'] = {
   ],
 };
 
-// A verbose day key (Lost Lands' shape) on a fest that is day-first.
+// A verbose day key (an early-arrival pre-party's shape) on a fest that is day-first.
 const WED_KEY = 'Wednesday, Sept 16 (Early Arrival Pre-Party)';
 FESTIVALS['verbose-day'] = {
   id: 'verbose-day', name: 'Verbose Day', status: 'lineup',

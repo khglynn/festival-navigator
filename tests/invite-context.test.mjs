@@ -23,7 +23,7 @@ const { validateIncoming } = await import('../api/_lib/crew-shared.mjs');
 // The index normally loads via fetch; seed it directly (ordered by date,
 // like index.json — first non-archived entry is the default).
 FESTIVAL_INDEX.push(
-  { id: 'lost-lands-2026', status: 'scheduled' },
+  { id: 'edc-orlando-2026', status: 'lineup' },
   { id: 'electric-forest-2026', status: 'scheduled' },
 );
 
@@ -60,9 +60,9 @@ test('activateCrew: fest hint seeds a fresh device and persists', () => {
 
 test('activateCrew: a returning device keeps its own saved fest over the hint', () => {
   store.clear();
-  localStorage.setItem(`fn_crew_fest_v3_${TOKEN}`, 'lost-lands-2026');
+  localStorage.setItem(`fn_crew_fest_v3_${TOKEN}`, 'edc-orlando-2026');
   state.activateCrew(TOKEN, freshDoc(), 'electric-forest-2026');
-  assert.equal(state.activeFestivalId, 'lost-lands-2026');
+  assert.equal(state.activeFestivalId, 'edc-orlando-2026');
 });
 
 test('activateCrew: unknown hint falls back to the default festival', () => {
@@ -89,10 +89,10 @@ test('busiestFestival: the crew home is where the picks live', async () => {
       'electric-forest-2026': { selections: { GRiZ: { Kevin: 4 }, Zeds: { Kevin: 2 }, Odesza: { Drew: 1 } } },
       'portola-2026': { selections: { Skrillex: { Kevin: 1 } } },
       'ghost-fest': { selections: { X: { Kevin: 4 } } }, // not in the catalog — never wins
-      'lost-lands-2026': { selections: { Cleared: { Kevin: 0 } } }, // tombstones don't count
+      'edc-orlando-2026': { selections: { Cleared: { Kevin: 0 } } }, // tombstones don't count
     },
   };
-  const known = ['electric-forest-2026', 'portola-2026', 'lost-lands-2026'];
+  const known = ['electric-forest-2026', 'portola-2026', 'edc-orlando-2026'];
   assert.equal(busiestFestival(doc, known), 'electric-forest-2026');
   assert.equal(busiestFestival({ v: 4, festivals: {} }, known), null, 'no picks anywhere = no signal');
 });

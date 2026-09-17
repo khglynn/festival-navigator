@@ -31,7 +31,7 @@ const filters = await import('../js/v3/filters.js');
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const load = (id) => JSON.parse(readFileSync(join(ROOT, `data/festivals/${id}.json`), 'utf8'));
 const portola = load('portola-2026');
-const lostlands = load('lost-lands-2026');
+const edc = load('edc-orlando-2026');
 const groupsOf = (fest) => groupByDay(fest.artists || [], knownDaysOf(fest));
 const modelOf = (fest) => ev.eventModelOf(fest, groupsOf(fest), { gridDays: Object.keys(fest.days || {}) });
 
@@ -88,11 +88,10 @@ test('the consistency law: AFTERS is columns ALL WEEK (Thursday and Saturday inc
   assert.equal(ev.sectionModeOf(new Map([['Thu', portola.artists.filter((a) => a.night === 'Thu')]])), 'tiles', 'Thursday alone would be tiles — the law is what makes it columns');
 });
 
-test('Lost Lands WED: one venue, no times — the rule\'s floor is tiles, and the fest is not day-first at all (no section carries a night)', () => {
-  const wed = lostlands.artists.filter((a) => a.day === 'Wednesday, Sept 16 (Early Arrival Pre-Party)');
-  assert.ok(wed.length > 0);
-  assert.deepEqual(ev.earnsColumns(wed), { earns: false, E: 0, V: 0, R: 0, T: 0 });
-  const m = modelOf(lostlands);
+test('EDC Orlando, a lineup-only fest: no nights, no venues, no times — the rule\'s floor is tiles, and the fest is not day-first at all (no section carries a night)', () => {
+  assert.ok(edc.artists.length > 0);
+  assert.deepEqual(ev.earnsColumns(edc.artists), { earns: false, E: 0, V: 0, R: 0, T: 0 });
+  const m = modelOf(edc);
   assert.equal(m.dayFirst, false);
   assert.match(m.why, /no section entry carries a night/);
 });

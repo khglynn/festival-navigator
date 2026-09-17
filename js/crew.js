@@ -75,7 +75,7 @@ const FEST_ID_RE = /^[a-z0-9-]{1,64}$/;
 export function crewLink(token, festId, meName) {
   const ok = Boolean(festId) && FEST_ID_RE.test(festId);
   // A fest-scoped share link puts the festival in the PATH:
-  //   https://fest.kevinhg.com/f/lost-lands-2026#g=<token>&f=lost-lands-2026
+  //   https://fest.kevinhg.com/f/edc-orlando-2026#g=<token>&f=edc-orlando-2026
   // A human glancing at that in a chat reads the festival before the noise
   // starts, which is the whole reason this work exists.
   //
