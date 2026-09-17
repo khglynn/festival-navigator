@@ -13,6 +13,7 @@ import { renderWall, refreshCard, showUndoToast, showToast, wireScrollspy, color
 import { loadPeopleFilter, savePeopleFilter, togglePerson, pruneToActive, loadSolo, saveSolo, loadFolded, applyFoldToggle, FEST_ROOM } from './filters.js';
 import { OUT_MS, CASCADE_MS, STAGGER_MS, EASE_ARRIVE, EASE_LEAVE, EASE_SURFACE, canAnimate } from './motion.js';
 import { scrolledBefore, rememberScrolled, dayOfScrollKey, festivalClock } from './now.js';
+import { dayLabelParts } from '../time.js';
 import { disclosureFold, eqLoader, festRow } from './tools.js';
 import { openArtistSheet, openDayNotes, openAllNotes, openFestNotes, closeSheet, refreshOpenSheet, sheetChrome, dialogize, rememberOpener } from './notes.js';
 import { renderSettings, appSettings, openSubviewByKey } from './settings.js';
@@ -144,14 +145,18 @@ function roomBodiesOf(key) {
 // The rooms the wall is showing, in the order it shows them — the festival's
 // own room, then each section. Read off the wall rather than recomputed, so
 // the show menu can never name a room the wall does not have.
-function roomsOnWall() {
+export function roomsOnWall() {
   const rooms = [];
   const seen = new Set();
   for (const head of document.querySelectorAll('#wall-root .sec-head[data-section]')) {
     const key = head.dataset.section;
     if (!key || seen.has(key)) continue;
     seen.add(key);
-    rooms.push({ key, label: key === FEST_ROOM ? state.fest().name : key });
+    // A room key is frozen pick data and can be verbose — "Wednesday, Sept 16
+    // (Early Arrival Pre-Party)". The wall bills a section through
+    // dayLabelParts, and the menu naming the same room must say the same
+    // words, not the raw key.
+    rooms.push({ key, label: key === FEST_ROOM ? state.fest().name : dayLabelParts(key).head });
   }
   // The festival's own room leads wherever it first appears: Portola's
   // Thursday and Friday are other people's warehouses, so document order

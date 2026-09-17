@@ -181,6 +181,24 @@ test('unchecking a room folds it on every day — the state a header tap writes'
   assert.deepEqual(rows('dock').map((r) => r[2]), ['true', 'true', 'true']);
 });
 
+test('a room with a verbose key is billed in the menu the way the wall bills it', () => {
+  // A room key is frozen pick data, so it can carry a comma and a parenthetical
+  // ("Wednesday, Sept 16 (Early Arrival Pre-Party)"). Portola's keys are one
+  // clean word, which is exactly why this case has to be made rather than
+  // waited for: the wall runs every section label through dayLabelParts, and
+  // the menu naming the same room must say the same words.
+  const head = dom.window.document.createElement('div');
+  head.className = 'sec-head';
+  head.dataset.section = 'Wednesday, Sept 16 (Early Arrival Pre-Party)';
+  $('wall-root').appendChild(head);
+  try {
+    const labels = new Map(app.roomsOnWall().map((r) => [r.key, r.label]));
+    assert.equal(labels.get('Wednesday, Sept 16 (Early Arrival Pre-Party)'), 'Wednesday',
+      'the head of the label, never the raw key');
+    assert.equal(labels.get(':fest'), 'Portola', 'and the festival is still its own name');
+  } finally { head.remove(); }
+});
+
 // ---- the day axis (MODEL-V4 §2) ------------------------------------------------------
 
 test('the day tabs are the wall\'s own axis, in both navigations', () => {
