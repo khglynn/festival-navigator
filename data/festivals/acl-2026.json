@@ -7,7 +7,7 @@
   "locationUrl": "https://maps.google.com/?q=Zilker+Park,+2100+Barton+Springs+Rd,+Austin",
   "dates": "Oct 2–4 & 9–11, 2026",
   "accent": "250, 204, 21",
-  "status": "lineup",
+  "status": "scheduled",
   "timezone": "America/Chicago",
   "artists": [
     {
@@ -103,7 +103,7 @@
     {
       "name": "CMAT",
       "day": "Friday",
-      "weekends": "both"
+      "weekends": "W1"
     },
     {
       "name": "World Famous Pets",
@@ -123,7 +123,7 @@
     {
       "name": "Bo Staloch",
       "day": "Friday",
-      "weekends": "W1"
+      "weekends": "both"
     },
     {
       "name": "Molly Santana",
@@ -222,7 +222,7 @@
     },
     {
       "name": "Łaszewo",
-      "day": "Friday",
+      "day": "Saturday",
       "weekends": "W2"
     },
     {
@@ -272,7 +272,22 @@
     },
     {
       "name": "Sienna Spiro",
-      "day": "Saturday",
+      "day": "Friday",
+      "weekends": "W2"
+    },
+    {
+      "name": "Elijah Delgado",
+      "day": "Friday",
+      "weekends": "W1"
+    },
+    {
+      "name": "Radio Free Alice",
+      "day": "Friday",
+      "weekends": "W2"
+    },
+    {
+      "name": "LIVE",
+      "day": "Friday",
       "weekends": "W2"
     },
     {
@@ -422,6 +437,16 @@
     },
     {
       "name": "Presley Regier",
+      "day": "Saturday",
+      "weekends": "W2"
+    },
+    {
+      "name": "Annie DiRusso",
+      "day": "Saturday",
+      "weekends": "both"
+    },
+    {
+      "name": "Macy Todd",
       "day": "Saturday",
       "weekends": "W2"
     },
@@ -629,11 +654,36 @@
       "name": "Huston-Tillotson University Jazz Collective",
       "day": "Sunday",
       "weekends": "W2"
+    },
+    {
+      "name": "Dexter and The Moonrocks",
+      "day": "Sunday",
+      "weekends": "W1"
+    },
+    {
+      "name": "Jess Williamson",
+      "day": "Sunday",
+      "weekends": "W1"
+    },
+    {
+      "name": "Joshua Jensen",
+      "day": "Sunday",
+      "weekends": "W2"
+    },
+    {
+      "name": "Grace Ives",
+      "day": "Sunday",
+      "weekends": "W2"
+    },
+    {
+      "name": "Flight by Nothing",
+      "day": "Sunday",
+      "weekends": "W2"
     }
   ],
   "meta": {
-    "announcementStatus": "lineup-with-days",
-    "researchedAt": "2026-08-30",
+    "announcementStatus": "scheduled",
+    "researchedAt": "2026-09-16",
     "sources": [
       "https://www.aclfestival.com/",
       "https://www.aclfestival.com/lineup",
@@ -643,8 +693,843 @@
       "https://www.aclfestival.com/schedule",
       "https://austin.culturemap.com/news/entertainment/acl-fest-2026-schedule/",
       "https://www.theheartsounds.com/2026/08/17/acl-2026-daily-schedule/",
-      "https://do512.com/aclfestnights"
+      "https://do512.com/aclfestnights",
+      "https://cdn.prod.website-files.com/67456b422d0e4219d58ef713/6a905f9da78e00c5b323057d_ACL26-Schedule-Wk1-1002-V2-Fri-20260826-Draft3.webp",
+      "https://cdn.prod.website-files.com/67456b422d0e4219d58ef713/6a905f706b21a01de355e35c_ACL26-Schedule-Wk1-1003-V2-Sat-20260826-Draft3.webp",
+      "https://cdn.prod.website-files.com/67456b422d0e4219d58ef713/6a905fa4284a50416c202665_ACL26-Schedule-Wk1-1004-V2-Sun-20260826-Draft3.webp",
+      "https://cdn.prod.website-files.com/67456b422d0e4219d58ef713/6a907b08dc2908570803c143_ACL26-Schedule-Wk2-1002-V2-Fri-20260826-Draft3.png",
+      "https://cdn.prod.website-files.com/67456b422d0e4219d58ef713/6a907b31751443f86fda80c3_ACL26-Schedule-Wk2-1003-V2-Sat-20260826-Draft3.png",
+      "https://cdn.prod.website-files.com/67456b422d0e4219d58ef713/6a905f68fd30e82920a65757_ACL26-Schedule-Wk2-1004-V2-Sun-20260826-Draft3.webp",
+      "https://cdn.prod.website-files.com/67456b422d0e4219d58ef713/6aa7fbc9f1c73216806c6174_ACL26-Admat-ByDay-9.10.webp"
     ],
-    "note": "Captured 124 unique confirmed acts — the full day-by-day breakdown for both weekends, as reported by KVUE (Austin) on 2026-05-12 based on ACL's own by-day lineup graphic, cross-validated line-by-line against the official Live Nation/C3 Presents press release (2026-05-05). No stages or set times exist yet (C3 Presents has explicitly said daily set-time schedules \"will be announced at a later date\"), so those fields are null throughout. Two corrections applied versus the raw KVUE text: (1) KVUE's W1-Friday list had \"Brandon Thomas\" immediately after \"Leon Thomas\" — this is an evident OCR/typo error for \"Brandon Flowers\" (of The Killers), confirmed by the official press release's identical adjacent ordering and by three other outlets (BrooklynVegan, CultureMap, Billboard) explicitly naming Brandon Flowers as a Weekend-1-only act; (2) KVUE listed Izzy Escobar under both weekends' Friday bills, but the official Live Nation press release explicitly tags \"Izzy Escobar(W1)\" — the official/primary source was trusted over the secondary compilation. One quality-control flag: a few aggregator sites (e.g., liveforlivemusic.com) list The Marías, Role Model, Rilo Kiley, Djo, Pierce The Veil, and Sabrina Claudio as part of the 2026 bill. None of these appear in the official Live Nation press release, the KVUE day-by-day breakdown, or BrooklynVegan's coverage — and all six performed at ACL 2025, so this reads as a copy-paste/template carryover error in that one article rather than a confirmed 2026 booking. Deliberately excluded here; flag to Kevin if seen elsewhere. UPDATE 2026-08-23: official SET TIMES for both weekends went live the week of Aug 17 (aclfestival.com/schedule + the ACL app; earliest sets 12:45 PM, AmEx-stage headliner closes 10 PM). NOT yet ingested: the schedule page is JS-rendered and press/search snippets only carry the evening headline blocks (~6 of ~30 sets/day) - a 10%-populated grid would be worse than this honest lineup view, so the data stays day-level until someone with page access pastes the grids (renderer/validator support for the two-weekend scheduled shape shipped 2026-08-23 - see docs/add-a-festival.md; it is a pure data drop now). Verified evening anchors for cross-checking that ingest: W1 Fri Turnstile T-Mobile 6:15-7:15, Labrinth AmEx 6:30-7:30, Leon Thomas Miller Lite 7:15-8:15, The Chainsmokers Snapchat 7:30-8:30, Skrillex T-Mobile 8:15, Charli xcx AmEx 8:40; W1 Sat RUFUS DU SOL AmEx 8:30, Lorde T-Mobile 8:15; W2 Fri Kings of Leon T-Mobile 8:15, Charli xcx again 8:40. Stage names seen with set-time citations: American Express, T-Mobile, Miller Lite, Snapchat, Honda (do512 venue page) - Titos/BMI/Kiddie Limits names unverified for 2026. One roster change reported by theheartsounds.com 2026-08-17: Sienna Spiro moves to Friday W2 and Laszewo to Saturday W2 - single-sourced, verify against the official grid before applying. ALSO announced, not ingested: ACL Fest Nights 2026 (official late-night aftershows Oct 2-13, Emos/Scoot Inn/Antones etc, separately ticketed, $40-70 - do512.com/aclfestnights) with Brandon Flowers, Bleachers, BUNT., Finn Wolfhard, Rebecca Black DJ set, Palace, Hunx and his Punx - the Portola-style Afters section pattern fits when wanted. UPDATE 2026-08-30: re-confirmed by direct fetch of aclfestival.com/schedule - set times are six schedule images (Fri/Sat/Sun x two weekends), static HTML wrapping image files with no extractable grid text (more precise than the 'JS-rendered' guess above; same conclusion - still blocked on manual transcription, still nobody has pasted the grids). The Sienna Spiro/Laszewo flag above is RESOLVED: a second source (KVUE, 2026-08-30) confirms this file's current assignment - Sienna Spiro=Saturday W2, Laszewo=Friday W2 - is correct; the single-sourced 'move' reported 2026-08-17 does not appear to have happened. timezone: America/Chicago added."
+    "note": "Captured 124 unique confirmed acts — the full day-by-day breakdown for both weekends, as reported by KVUE (Austin) on 2026-05-12 based on ACL's own by-day lineup graphic, cross-validated line-by-line against the official Live Nation/C3 Presents press release (2026-05-05). No stages or set times exist yet (C3 Presents has explicitly said daily set-time schedules \"will be announced at a later date\"), so those fields are null throughout. Two corrections applied versus the raw KVUE text: (1) KVUE's W1-Friday list had \"Brandon Thomas\" immediately after \"Leon Thomas\" — this is an evident OCR/typo error for \"Brandon Flowers\" (of The Killers), confirmed by the official press release's identical adjacent ordering and by three other outlets (BrooklynVegan, CultureMap, Billboard) explicitly naming Brandon Flowers as a Weekend-1-only act; (2) KVUE listed Izzy Escobar under both weekends' Friday bills, but the official Live Nation press release explicitly tags \"Izzy Escobar(W1)\" — the official/primary source was trusted over the secondary compilation. One quality-control flag: a few aggregator sites (e.g., liveforlivemusic.com) list The Marías, Role Model, Rilo Kiley, Djo, Pierce The Veil, and Sabrina Claudio as part of the 2026 bill. None of these appear in the official Live Nation press release, the KVUE day-by-day breakdown, or BrooklynVegan's coverage — and all six performed at ACL 2025, so this reads as a copy-paste/template carryover error in that one article rather than a confirmed 2026 booking. Deliberately excluded here; flag to Kevin if seen elsewhere. UPDATE 2026-08-23: official SET TIMES for both weekends went live the week of Aug 17 (aclfestival.com/schedule + the ACL app; earliest sets 12:45 PM, AmEx-stage headliner closes 10 PM). NOT yet ingested: the schedule page is JS-rendered and press/search snippets only carry the evening headline blocks (~6 of ~30 sets/day) - a 10%-populated grid would be worse than this honest lineup view, so the data stays day-level until someone with page access pastes the grids (renderer/validator support for the two-weekend scheduled shape shipped 2026-08-23 - see docs/add-a-festival.md; it is a pure data drop now). Verified evening anchors for cross-checking that ingest: W1 Fri Turnstile T-Mobile 6:15-7:15, Labrinth AmEx 6:30-7:30, Leon Thomas Miller Lite 7:15-8:15, The Chainsmokers Snapchat 7:30-8:30, Skrillex T-Mobile 8:15, Charli xcx AmEx 8:40; W1 Sat RUFUS DU SOL AmEx 8:30, Lorde T-Mobile 8:15; W2 Fri Kings of Leon T-Mobile 8:15, Charli xcx again 8:40. Stage names seen with set-time citations: American Express, T-Mobile, Miller Lite, Snapchat, Honda (do512 venue page) - Titos/BMI/Kiddie Limits names unverified for 2026. One roster change reported by theheartsounds.com 2026-08-17: Sienna Spiro moves to Friday W2 and Laszewo to Saturday W2 - single-sourced, verify against the official grid before applying. ALSO announced, not ingested: ACL Fest Nights 2026 (official late-night aftershows Oct 2-13, Emos/Scoot Inn/Antones etc, separately ticketed, $40-70 - do512.com/aclfestnights) with Brandon Flowers, Bleachers, BUNT., Finn Wolfhard, Rebecca Black DJ set, Palace, Hunx and his Punx - the Portola-style Afters section pattern fits when wanted. UPDATE 2026-08-30: re-confirmed by direct fetch of aclfestival.com/schedule - set times are six schedule images (Fri/Sat/Sun x two weekends), static HTML wrapping image files with no extractable grid text (more precise than the 'JS-rendered' guess above; same conclusion - still blocked on manual transcription, still nobody has pasted the grids). The Sienna Spiro/Laszewo flag above is RESOLVED: a second source (KVUE, 2026-08-30) confirms this file's current assignment - Sienna Spiro=Saturday W2, Laszewo=Friday W2 - is correct; the single-sourced 'move' reported 2026-08-17 does not appear to have happened. timezone: America/Chicago added. SET TIMES INGESTED 2026-09-16. Source of record: the six official schedule posters on aclfestival.com/schedule (Webflow CDN files stamped \"V2-<Day>-20260826-Draft3\", HTTP last-modified 2026-08-27; W1 Fri/Sat/Sun and W2 Sun are 1080px webp, W2 Fri/Sat 2160px png) - read visually by two independent readers (one with column crops, one with crops plus a pixel check of box edges against the hour grid) and diffed box by box: 189 boxes, 0 disagreements. Seven stages every day, left to right as printed: T-Mobile, Miller Lite, BMI, Beatbox, Tito's (printed \"Tito's Handmade Vodka\"), Snapchat, American Express; 12:45 PM to 10 PM. Times are as printed; the posters give the T-Mobile and American Express closers a START only (Skrillex/Kings of Leon 8:15, Charli xcx 8:40, Lorde 8:15, RÜFÜS DU SOL 8:30, The xx 8:30, Twenty One Pilots 8:30), so those carry a start only here too (CultureMap 2026-08-17: the AmEx headliner finishes at 10 PM). Each set is tagged with the weekend it plays; a set identical on both weekends' posters is one untagged entry, and an act whose slot differs is two entries (Faouzia: W1 Miller Lite 1:45-2:30, W2 American Express 2:45-3:30; Paris Paloma: W1 3:15-4:15, W2 5:15-6:15; Arcy Drive: W1 Miller Lite 3:15-4:15, W2 Beatbox 3:30-4:30). Not entered: the Silent Disco box (Tito's, 8-10 PM every night), the ASL-interpreted marker (every American Express closer), and the Austin Kiddie Limits strip (presented by Lifeway Kefir). The posters spell SOLOMON HICKS and THE HUSTON-TILLOTSON UNIVERSITY JAZZ COLLECTIVE - the pick keys \"Soloman Hicks\" and \"Huston-Tillotson University Jazz Collective\" are KEPT. ROSTER CHANGES vs this file, each confirmed by the official posters AND the newer official by-day admat on aclfestival.com/lineup (ACL26-Admat-ByDay-9.10.webp, HTTP last-modified 2026-09-14, read visually): Sienna Spiro plays W2 FRIDAY and Łaszewo W2 SATURDAY (the 2026-08-17 theheartsounds swap was right; the 2026-08-30 note above that called it resolved the other way was wrong - day tags corrected, names untouched); Bo Staloch plays both weekends (was W1); CMAT is W1 only (CultureMap 2026-08-17: dropped from the second weekend). ADDED to artists[] (on the posters, not in the May lineup): Elijah Delgado (W1 Fri), Radio Free Alice and LIVE (W2 Fri), Annie DiRusso (both Sat), Macy Todd (W2 Sat), Dexter and The Moonrocks and Jess Williamson (W1 Sun), Joshua Jensen and Grace Ives (W2 Sun); plus Flight by Nothing (W2 Sun), who is on the 9/10 admat but on no poster, so has no set. ON NO OFFICIAL POSTER OR THE ADMAT - kept in artists[] because they are pick keys, left off the grid: Kingfishr (was W2 Fri), Josh Conway (W1 Sun), Presley Regier (W2 Sat). Sasha Keable (W2 Sun) is on the 8/27 poster (BMI 6:00-6:30) but NOT on the newer 9/10 admat, which lists Flight by Nothing [W2] instead; no press either way, so her set is left off the grid and Flight by Nothing gets no guessed slot - flagged for Kevin. \"ALL TIMES SUBJECT TO CHANGE. CHECK WEBSITE OR MOBILE APP FOR LATEST.\" is printed on every poster."
+  },
+  "dayMeta": {
+    "Friday": {
+      "wd": "Fri",
+      "date": "Oct 2 & 9",
+      "dates": {
+        "W1": "Oct 2",
+        "W2": "Oct 9"
+      },
+      "isos": {
+        "W1": "2026-10-02",
+        "W2": "2026-10-09"
+      }
+    },
+    "Saturday": {
+      "wd": "Sat",
+      "date": "Oct 3 & 10",
+      "dates": {
+        "W1": "Oct 3",
+        "W2": "Oct 10"
+      },
+      "isos": {
+        "W1": "2026-10-03",
+        "W2": "2026-10-10"
+      }
+    },
+    "Sunday": {
+      "wd": "Sun",
+      "date": "Oct 4 & 11",
+      "dates": {
+        "W1": "Oct 4",
+        "W2": "Oct 11"
+      },
+      "isos": {
+        "W1": "2026-10-04",
+        "W2": "2026-10-11"
+      }
+    }
+  },
+  "days": {
+    "Friday": {
+      "stages": [
+        "T-Mobile",
+        "Miller Lite",
+        "BMI",
+        "Beatbox",
+        "Tito's",
+        "Snapchat",
+        "American Express"
+      ],
+      "artists": [
+        {
+          "name": "Jesse Welles",
+          "stage": "T-Mobile",
+          "time": "4:15 PM - 5:15 PM"
+        },
+        {
+          "name": "Turnstile",
+          "stage": "T-Mobile",
+          "time": "6:15 PM - 7:15 PM"
+        },
+        {
+          "name": "Asleep at the Wheel",
+          "stage": "T-Mobile",
+          "time": "1:00 PM - 1:45 PM",
+          "weekend": "W1"
+        },
+        {
+          "name": "New Constellations",
+          "stage": "T-Mobile",
+          "time": "2:30 PM - 3:15 PM",
+          "weekend": "W1"
+        },
+        {
+          "name": "Skrillex",
+          "stage": "T-Mobile",
+          "time": "8:15 PM",
+          "weekend": "W1"
+        },
+        {
+          "name": "Happy Landing",
+          "stage": "T-Mobile",
+          "time": "1:00 PM - 1:45 PM",
+          "weekend": "W2"
+        },
+        {
+          "name": "Bella Kay",
+          "stage": "T-Mobile",
+          "time": "2:30 PM - 3:15 PM",
+          "weekend": "W2"
+        },
+        {
+          "name": "Kings of Leon",
+          "stage": "T-Mobile",
+          "time": "8:15 PM",
+          "weekend": "W2"
+        },
+        {
+          "name": "Leon Thomas",
+          "stage": "Miller Lite",
+          "time": "7:15 PM - 8:15 PM"
+        },
+        {
+          "name": "Faouzia",
+          "stage": "Miller Lite",
+          "time": "1:45 PM - 2:30 PM",
+          "weekend": "W1"
+        },
+        {
+          "name": "Paris Paloma",
+          "stage": "Miller Lite",
+          "time": "3:15 PM - 4:15 PM",
+          "weekend": "W1"
+        },
+        {
+          "name": "Brandon Flowers",
+          "stage": "Miller Lite",
+          "time": "5:15 PM - 6:15 PM",
+          "weekend": "W1"
+        },
+        {
+          "name": "Radio Free Alice",
+          "stage": "Miller Lite",
+          "time": "1:45 PM - 2:30 PM",
+          "weekend": "W2"
+        },
+        {
+          "name": "Sienna Spiro",
+          "stage": "Miller Lite",
+          "time": "3:30 PM - 4:15 PM",
+          "weekend": "W2"
+        },
+        {
+          "name": "Paris Paloma",
+          "stage": "Miller Lite",
+          "time": "5:15 PM - 6:15 PM",
+          "weekend": "W2"
+        },
+        {
+          "name": "Elle Coves",
+          "stage": "BMI",
+          "time": "1:45 PM - 2:30 PM",
+          "weekend": "W1"
+        },
+        {
+          "name": "Izzy Escobar",
+          "stage": "BMI",
+          "time": "3:30 PM - 4:15 PM",
+          "weekend": "W1"
+        },
+        {
+          "name": "Grocery Bag",
+          "stage": "BMI",
+          "time": "5:15 PM - 6:15 PM",
+          "weekend": "W1"
+        },
+        {
+          "name": "Leon Knight",
+          "stage": "BMI",
+          "time": "1:45 PM - 2:30 PM",
+          "weekend": "W2"
+        },
+        {
+          "name": "Girlfriend",
+          "stage": "BMI",
+          "time": "3:30 PM - 4:15 PM",
+          "weekend": "W2"
+        },
+        {
+          "name": "Joe Jordan",
+          "stage": "BMI",
+          "time": "5:15 PM - 6:15 PM",
+          "weekend": "W2"
+        },
+        {
+          "name": "rusowsky",
+          "stage": "Beatbox",
+          "time": "5:30 PM - 6:30 PM"
+        },
+        {
+          "name": "Night Traveler",
+          "stage": "Beatbox",
+          "time": "2:00 PM - 2:45 PM",
+          "weekend": "W1"
+        },
+        {
+          "name": "Marlon Funaki",
+          "stage": "Beatbox",
+          "time": "3:30 PM - 4:30 PM",
+          "weekend": "W1"
+        },
+        {
+          "name": "Molly Santana",
+          "stage": "Beatbox",
+          "time": "7:30 PM - 8:30 PM",
+          "weekend": "W1"
+        },
+        {
+          "name": "S.G. Goodman",
+          "stage": "Beatbox",
+          "time": "2:00 PM - 2:45 PM",
+          "weekend": "W2"
+        },
+        {
+          "name": "World Famous Pets",
+          "stage": "Beatbox",
+          "time": "3:30 PM - 4:30 PM",
+          "weekend": "W2"
+        },
+        {
+          "name": "LIVE",
+          "stage": "Beatbox",
+          "time": "7:30 PM - 8:30 PM",
+          "weekend": "W2"
+        },
+        {
+          "name": "Bo Staloch",
+          "stage": "Tito's",
+          "time": "3:15 PM - 4:00 PM"
+        },
+        {
+          "name": "Steve Aoki",
+          "stage": "Tito's",
+          "time": "6:30 PM - 7:30 PM"
+        },
+        {
+          "name": "The 4411",
+          "stage": "Tito's",
+          "time": "12:45 PM - 1:30 PM",
+          "weekend": "W1"
+        },
+        {
+          "name": "Soloman Hicks",
+          "stage": "Tito's",
+          "time": "2:00 PM - 2:45 PM",
+          "weekend": "W1"
+        },
+        {
+          "name": "Rebecca Black",
+          "stage": "Tito's",
+          "time": "4:30 PM - 5:30 PM",
+          "weekend": "W1"
+        },
+        {
+          "name": "Almost Heaven",
+          "stage": "Tito's",
+          "time": "12:45 PM - 1:30 PM",
+          "weekend": "W2"
+        },
+        {
+          "name": "Cassandra Coleman",
+          "stage": "Tito's",
+          "time": "2:00 PM - 2:45 PM",
+          "weekend": "W2"
+        },
+        {
+          "name": "Natasha Bedingfield",
+          "stage": "Tito's",
+          "time": "4:30 PM - 5:30 PM",
+          "weekend": "W2"
+        },
+        {
+          "name": "LP",
+          "stage": "Snapchat",
+          "time": "3:30 PM - 4:30 PM"
+        },
+        {
+          "name": "BUNT.",
+          "stage": "Snapchat",
+          "time": "5:30 PM - 6:30 PM"
+        },
+        {
+          "name": "The Chainsmokers",
+          "stage": "Snapchat",
+          "time": "7:30 PM - 8:30 PM"
+        },
+        {
+          "name": "Elijah Delgado",
+          "stage": "Snapchat",
+          "time": "2:00 PM - 2:45 PM",
+          "weekend": "W1"
+        },
+        {
+          "name": "Dallas Wax",
+          "stage": "Snapchat",
+          "time": "2:00 PM - 2:45 PM",
+          "weekend": "W2"
+        },
+        {
+          "name": "Amyl and the Sniffers",
+          "stage": "American Express",
+          "time": "4:30 PM - 5:30 PM"
+        },
+        {
+          "name": "Labrinth",
+          "stage": "American Express",
+          "time": "6:30 PM - 7:30 PM"
+        },
+        {
+          "name": "Charli xcx",
+          "stage": "American Express",
+          "time": "8:40 PM"
+        },
+        {
+          "name": "Hunx and his Punx",
+          "stage": "American Express",
+          "time": "1:15 PM - 2:00 PM",
+          "weekend": "W1"
+        },
+        {
+          "name": "CMAT",
+          "stage": "American Express",
+          "time": "2:45 PM - 3:30 PM",
+          "weekend": "W1"
+        },
+        {
+          "name": "Brigitte Calls Me Baby",
+          "stage": "American Express",
+          "time": "1:15 PM - 2:00 PM",
+          "weekend": "W2"
+        },
+        {
+          "name": "Faouzia",
+          "stage": "American Express",
+          "time": "2:45 PM - 3:30 PM",
+          "weekend": "W2"
+        }
+      ]
+    },
+    "Saturday": {
+      "stages": [
+        "T-Mobile",
+        "Miller Lite",
+        "BMI",
+        "Beatbox",
+        "Tito's",
+        "Snapchat",
+        "American Express"
+      ],
+      "artists": [
+        {
+          "name": "Night Tapes",
+          "stage": "T-Mobile",
+          "time": "1:00 PM - 1:45 PM"
+        },
+        {
+          "name": "Balu Brigada",
+          "stage": "T-Mobile",
+          "time": "2:30 PM - 3:15 PM"
+        },
+        {
+          "name": "Suki Waterhouse",
+          "stage": "T-Mobile",
+          "time": "4:15 PM - 5:15 PM"
+        },
+        {
+          "name": "Bleachers",
+          "stage": "T-Mobile",
+          "time": "6:15 PM - 7:15 PM"
+        },
+        {
+          "name": "Lorde",
+          "stage": "T-Mobile",
+          "time": "8:15 PM"
+        },
+        {
+          "name": "Temper City",
+          "stage": "Miller Lite",
+          "time": "1:45 PM - 2:30 PM"
+        },
+        {
+          "name": "Snow Strippers",
+          "stage": "Miller Lite",
+          "time": "5:15 PM - 6:15 PM"
+        },
+        {
+          "name": "Levity",
+          "stage": "Miller Lite",
+          "time": "7:15 PM - 8:15 PM"
+        },
+        {
+          "name": "Arcy Drive",
+          "stage": "Miller Lite",
+          "time": "3:15 PM - 4:15 PM",
+          "weekend": "W1"
+        },
+        {
+          "name": "Łaszewo",
+          "stage": "Miller Lite",
+          "time": "3:15 PM - 4:15 PM",
+          "weekend": "W2"
+        },
+        {
+          "name": "Fightmaster",
+          "stage": "BMI",
+          "time": "12:45 PM - 1:15 PM",
+          "weekend": "W1"
+        },
+        {
+          "name": "Emma Ogier",
+          "stage": "BMI",
+          "time": "1:45 PM - 2:30 PM",
+          "weekend": "W1"
+        },
+        {
+          "name": "Coleman Jennings",
+          "stage": "BMI",
+          "time": "3:30 PM - 4:15 PM",
+          "weekend": "W1"
+        },
+        {
+          "name": "Fai Laci",
+          "stage": "BMI",
+          "time": "5:15 PM - 6:15 PM",
+          "weekend": "W1"
+        },
+        {
+          "name": "Macy Todd",
+          "stage": "BMI",
+          "time": "12:45 PM - 1:15 PM",
+          "weekend": "W2"
+        },
+        {
+          "name": "Damaris Bojor",
+          "stage": "BMI",
+          "time": "1:45 PM - 2:30 PM",
+          "weekend": "W2"
+        },
+        {
+          "name": "Common People",
+          "stage": "BMI",
+          "time": "3:30 PM - 4:15 PM",
+          "weekend": "W2"
+        },
+        {
+          "name": "Chloe Qisha",
+          "stage": "BMI",
+          "time": "5:15 PM - 6:15 PM",
+          "weekend": "W2"
+        },
+        {
+          "name": "Fakemink",
+          "stage": "Beatbox",
+          "time": "7:30 PM - 8:30 PM"
+        },
+        {
+          "name": "Cure for Paranoia",
+          "stage": "Beatbox",
+          "time": "2:00 PM - 2:45 PM",
+          "weekend": "W1"
+        },
+        {
+          "name": "Ryan Beatty",
+          "stage": "Beatbox",
+          "time": "3:30 PM - 4:30 PM",
+          "weekend": "W1"
+        },
+        {
+          "name": "Palace",
+          "stage": "Beatbox",
+          "time": "5:30 PM - 6:30 PM",
+          "weekend": "W1"
+        },
+        {
+          "name": "lluvii",
+          "stage": "Beatbox",
+          "time": "2:00 PM - 2:45 PM",
+          "weekend": "W2"
+        },
+        {
+          "name": "Arcy Drive",
+          "stage": "Beatbox",
+          "time": "3:30 PM - 4:30 PM",
+          "weekend": "W2"
+        },
+        {
+          "name": "Ryan Beatty",
+          "stage": "Beatbox",
+          "time": "5:30 PM - 6:30 PM",
+          "weekend": "W2"
+        },
+        {
+          "name": "Don West",
+          "stage": "Tito's",
+          "time": "3:15 PM - 4:00 PM"
+        },
+        {
+          "name": "Rodrigo y Gabriela",
+          "stage": "Tito's",
+          "time": "4:30 PM - 5:30 PM"
+        },
+        {
+          "name": "¥ØU$UK€ ¥UK1MAT$U",
+          "stage": "Tito's",
+          "time": "6:30 PM - 7:30 PM"
+        },
+        {
+          "name": "Left Lucid",
+          "stage": "Tito's",
+          "time": "12:45 PM - 1:30 PM",
+          "weekend": "W1"
+        },
+        {
+          "name": "DJ Cassandra",
+          "stage": "Tito's",
+          "time": "2:00 PM - 2:45 PM",
+          "weekend": "W1"
+        },
+        {
+          "name": "Montclair",
+          "stage": "Tito's",
+          "time": "12:45 PM - 1:30 PM",
+          "weekend": "W2"
+        },
+        {
+          "name": "Nat Myers",
+          "stage": "Tito's",
+          "time": "2:00 PM - 2:45 PM",
+          "weekend": "W2"
+        },
+        {
+          "name": "Skye Newman",
+          "stage": "Snapchat",
+          "time": "3:30 PM - 4:30 PM"
+        },
+        {
+          "name": "It's Murph",
+          "stage": "Snapchat",
+          "time": "5:30 PM - 6:30 PM"
+        },
+        {
+          "name": "Lykke Li",
+          "stage": "Snapchat",
+          "time": "7:30 PM - 8:30 PM"
+        },
+        {
+          "name": "Rochelle Jordan",
+          "stage": "Snapchat",
+          "time": "2:00 PM - 2:45 PM",
+          "weekend": "W1"
+        },
+        {
+          "name": "Gabriel Jacoby",
+          "stage": "Snapchat",
+          "time": "2:00 PM - 2:45 PM",
+          "weekend": "W2"
+        },
+        {
+          "name": "Annie DiRusso",
+          "stage": "American Express",
+          "time": "1:15 PM - 2:00 PM"
+        },
+        {
+          "name": "Finn Wolfhard",
+          "stage": "American Express",
+          "time": "2:45 PM - 3:30 PM"
+        },
+        {
+          "name": "Young Miko",
+          "stage": "American Express",
+          "time": "4:30 PM - 5:30 PM"
+        },
+        {
+          "name": "Lola Young",
+          "stage": "American Express",
+          "time": "6:30 PM - 7:30 PM"
+        },
+        {
+          "name": "RÜFÜS DU SOL",
+          "stage": "American Express",
+          "time": "8:30 PM"
+        }
+      ]
+    },
+    "Sunday": {
+      "stages": [
+        "T-Mobile",
+        "Miller Lite",
+        "BMI",
+        "Beatbox",
+        "Tito's",
+        "Snapchat",
+        "American Express"
+      ],
+      "artists": [
+        {
+          "name": "Audrey Hobert",
+          "stage": "T-Mobile",
+          "time": "4:30 PM - 5:30 PM"
+        },
+        {
+          "name": "Geese",
+          "stage": "T-Mobile",
+          "time": "6:30 PM - 7:30 PM"
+        },
+        {
+          "name": "The xx",
+          "stage": "T-Mobile",
+          "time": "8:30 PM"
+        },
+        {
+          "name": "Solya",
+          "stage": "T-Mobile",
+          "time": "1:15 PM - 2:00 PM",
+          "weekend": "W1"
+        },
+        {
+          "name": "Stella Lefty",
+          "stage": "T-Mobile",
+          "time": "2:45 PM - 3:30 PM",
+          "weekend": "W1"
+        },
+        {
+          "name": "Thomas Day",
+          "stage": "T-Mobile",
+          "time": "1:15 PM - 2:00 PM",
+          "weekend": "W2"
+        },
+        {
+          "name": "Charlotte Lawrence",
+          "stage": "T-Mobile",
+          "time": "2:45 PM - 3:30 PM",
+          "weekend": "W2"
+        },
+        {
+          "name": "Claire Rosinkranz",
+          "stage": "Miller Lite",
+          "time": "3:30 PM - 4:30 PM"
+        },
+        {
+          "name": "Saint Motel",
+          "stage": "Miller Lite",
+          "time": "5:30 PM - 6:30 PM"
+        },
+        {
+          "name": "Parcels",
+          "stage": "Miller Lite",
+          "time": "7:30 PM - 8:30 PM"
+        },
+        {
+          "name": "Jess Williamson",
+          "stage": "Miller Lite",
+          "time": "2:00 PM - 2:45 PM",
+          "weekend": "W1"
+        },
+        {
+          "name": "Joshua Jensen",
+          "stage": "Miller Lite",
+          "time": "2:00 PM - 2:45 PM",
+          "weekend": "W2"
+        },
+        {
+          "name": "Rubio",
+          "stage": "BMI",
+          "time": "12:45 PM - 1:15 PM",
+          "weekend": "W1"
+        },
+        {
+          "name": "Aaron Rowe",
+          "stage": "BMI",
+          "time": "2:00 PM - 2:45 PM",
+          "weekend": "W1"
+        },
+        {
+          "name": "Fancy Hagood",
+          "stage": "BMI",
+          "time": "3:30 PM - 4:15 PM",
+          "weekend": "W1"
+        },
+        {
+          "name": "Lauren Sanderson",
+          "stage": "BMI",
+          "time": "5:30 PM - 6:30 PM",
+          "weekend": "W1"
+        },
+        {
+          "name": "Marzz",
+          "stage": "BMI",
+          "time": "12:45 PM - 1:15 PM",
+          "weekend": "W2"
+        },
+        {
+          "name": "Chelsea Jordan",
+          "stage": "BMI",
+          "time": "2:00 PM - 2:45 PM",
+          "weekend": "W2"
+        },
+        {
+          "name": "Vwillz",
+          "stage": "BMI",
+          "time": "3:30 PM - 4:15 PM",
+          "weekend": "W2"
+        },
+        {
+          "name": "Noga Erez",
+          "stage": "Beatbox",
+          "time": "5:30 PM - 6:30 PM"
+        },
+        {
+          "name": "Blood Orange",
+          "stage": "Beatbox",
+          "time": "7:30 PM - 8:30 PM"
+        },
+        {
+          "name": "Britton",
+          "stage": "Beatbox",
+          "time": "2:00 PM - 2:45 PM",
+          "weekend": "W1"
+        },
+        {
+          "name": "Underscores",
+          "stage": "Beatbox",
+          "time": "3:30 PM - 4:30 PM",
+          "weekend": "W1"
+        },
+        {
+          "name": "Kevin Atwater",
+          "stage": "Beatbox",
+          "time": "2:00 PM - 2:45 PM",
+          "weekend": "W2"
+        },
+        {
+          "name": "Bad Nerves",
+          "stage": "Beatbox",
+          "time": "3:30 PM - 4:30 PM",
+          "weekend": "W2"
+        },
+        {
+          "name": "Paloma Morphy",
+          "stage": "Tito's",
+          "time": "2:00 PM - 2:45 PM"
+        },
+        {
+          "name": "Calder Allen",
+          "stage": "Tito's",
+          "time": "3:15 PM - 4:00 PM"
+        },
+        {
+          "name": "Rio Kosta",
+          "stage": "Tito's",
+          "time": "4:30 PM - 5:30 PM"
+        },
+        {
+          "name": "Fcukers",
+          "stage": "Tito's",
+          "time": "6:30 PM - 7:30 PM"
+        },
+        {
+          "name": "The Moriah Sisters",
+          "stage": "Tito's",
+          "time": "12:45 PM - 1:30 PM",
+          "weekend": "W1"
+        },
+        {
+          "name": "Huston-Tillotson University Jazz Collective",
+          "stage": "Tito's",
+          "time": "12:45 PM - 1:30 PM",
+          "weekend": "W2"
+        },
+        {
+          "name": "Sunday (1994)",
+          "stage": "Snapchat",
+          "time": "2:00 PM - 2:45 PM"
+        },
+        {
+          "name": "The War on Drugs",
+          "stage": "Snapchat",
+          "time": "7:30 PM - 8:30 PM"
+        },
+        {
+          "name": "Cannons",
+          "stage": "Snapchat",
+          "time": "5:30 PM - 6:30 PM",
+          "weekend": "W1"
+        },
+        {
+          "name": "Grace Ives",
+          "stage": "Snapchat",
+          "time": "3:30 PM - 4:30 PM",
+          "weekend": "W2"
+        },
+        {
+          "name": "Houndmouth",
+          "stage": "Snapchat",
+          "time": "5:30 PM - 6:30 PM",
+          "weekend": "W2"
+        },
+        {
+          "name": "Max McNown",
+          "stage": "American Express",
+          "time": "4:30 PM - 5:30 PM"
+        },
+        {
+          "name": "SOFI TUKKER",
+          "stage": "American Express",
+          "time": "6:30 PM - 7:30 PM"
+        },
+        {
+          "name": "Twenty One Pilots",
+          "stage": "American Express",
+          "time": "8:30 PM"
+        },
+        {
+          "name": "Villanelle",
+          "stage": "American Express",
+          "time": "1:15 PM - 2:00 PM",
+          "weekend": "W1"
+        },
+        {
+          "name": "Dexter and The Moonrocks",
+          "stage": "American Express",
+          "time": "2:45 PM - 3:30 PM",
+          "weekend": "W1"
+        },
+        {
+          "name": "Rum Jungle",
+          "stage": "American Express",
+          "time": "1:15 PM - 2:00 PM",
+          "weekend": "W2"
+        },
+        {
+          "name": "Ethan Regan",
+          "stage": "American Express",
+          "time": "2:45 PM - 3:30 PM",
+          "weekend": "W2"
+        }
+      ]
+    }
   }
 }
