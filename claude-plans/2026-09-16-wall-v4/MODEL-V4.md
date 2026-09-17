@@ -336,12 +336,13 @@ for after ACL.
 | tests | `events-model` (columns/threshold/timetable cases → venue-group cases), `events-wall` (columns, buckets, hidden → groups, fold, default day), `wall-filters` (bucket cases out), `off-clock.test.mjs` (→ the festival room's non-grid groups), `scheduled-sections`, `afters-events`, `portola-events` (tilde-iff-approx stays), `day-image-sections` (a day's export includes its groups); browser contract gains the zoom opacity case and a fold case |
 | docs | this file is the spec; MODEL-V3 §2–§4 marked superseded at their heads; `docs/user-flows.md` gains the wall flow; CLAUDE.md carries the one rule in one bullet; README's structure block |
 
-Kept, untouched: the card, `factsFor`, the auras, the people filter (dims on a
-timetable, hides in a list — now the only list is venue groups, so the rule
-reads "dims on the clock, hides in a stack"), stage solo, search, the sort
-chip on lineup-only walls, the notes sheets, the sync layer, the service
-worker, `cardFor`'s room tie-break (an artist can still be one occurrence in
-two rooms).
+Kept, untouched: the card, `factsFor`, the auras, the people filter (it dimmed
+on a timetable and hid in a list when this was written — since the ship round
+it dims everywhere and never filters, §3b.2), search, the sort chip on
+lineup-only walls, the notes sheets, the sync layer, the service worker,
+`cardFor`'s room tie-break (an artist can still be one occurrence in two
+rooms). Stage solo was on this list until 2026-09-17, when Kevin deleted it
+(§1.1, §3b.1).
 
 ## 8. Build plan
 
