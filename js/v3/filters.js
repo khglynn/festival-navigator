@@ -1,9 +1,9 @@
 // Wall filters — pure state + helpers. Two filters, both "tap the thing that
 // is already on screen" (design canvas 2026-08-27, options A + D):
 //   people  — tap a member chip: the wall shows only what they picked (tap
-//             more chips to combine). On the timetable, non-matching cards
-//             DIM rather than hide, so the clock keeps its shape; on the
-//             lineup lists (afters, Folsom, a lineup-only fest) they hide.
+//             more chips to combine). It DIMS on the clock and HIDES in a
+//             stack: a timetable keeps its shape, a venue group has no shape
+//             to keep.
 //   solo    — tap a stage name in the sticky strip: that column goes wide and
 //             the others fold to slim rails (the phone case, where five
 //             columns never fit). Tap the head again to restore.
@@ -113,54 +113,58 @@ export function columnsTemplate(stages, hasEE, solo) {
 // on desktop, was machinery for a rare act). The gesture code that lived here
 // (HOLD_MS, ARM_MS, chipGesture, armFor, cancelHold) is gone with it.
 
-// ---- the bucket filter (MODEL-V3 §3, 2026-09-01) ---------------------------------
-// One chip per room the fest has — the festival itself (':fest'), then each
-// events section (keyed by its own day label: "Afters", "Folsom"). Toggling
-// a bucket off hides that room on EVERY day. Unlike the two filters above
-// this one PERSISTS, device-local like the weekend view (`fn_weekend_v1_`)
-// — a filter you would set once ("I'm not doing Folsom") and expect to hold
-// — and it is never written to the crew doc (a view is viewer-side; law).
-// Memory is the truth for the life of the page; localStorage is the copy
-// that survives a reload when the browser allows one.
+// ---- the fold (MODEL-V4 §3, 2026-09-16) ------------------------------------------
+// A room folds on a tap of its header — the festival's own room (':fest') and
+// every section (keyed by its own day label: "Afters", "Folsom"). A folded
+// room is folded on EVERY day, and the show menu on the fest name reads and
+// writes the same state, so both doors say one thing. Unlike the two filters
+// above this one PERSISTS, device-local — a setting you make once ("I'm not
+// doing Folsom") and expect to hold — and it is never written to the crew doc
+// (a view is viewer-side; law). Memory is the truth for the life of the page;
+// localStorage is the copy that survives a reload when the browser allows one.
 import { getLS, saveLS, removeLS } from '../util.js';
 
-const LS_BUCKETS = (fid) => `fn_buckets_v1_${fid}`;
-const bucketMemory = new Map();
+// The festival's own room. A leading colon keeps this key out of the space a
+// data file's day labels live in, so no section can ever collide with it.
+export const FEST_ROOM = ':fest';
+
+const LS_FOLD = (fid) => `fn_fold_v1_${fid}`;
+const foldMemory = new Map();
 // Fests whose last write did not land (storage full, a blocked store): the
 // stored value is OLDER than memory there, so memory wins until a write
 // lands again — or a reload would quietly resurrect the previous setting.
 const memoryWins = new Set();
 const cleanKeys = (v) => (Array.isArray(v) ? v.filter((k) => typeof k === 'string' && k) : []);
 
-export function loadHiddenBuckets(fid) {
-  if (memoryWins.has(fid) && bucketMemory.has(fid)) return bucketMemory.get(fid);
-  const raw = getLS(LS_BUCKETS(fid));
+export function loadFolded(fid) {
+  if (memoryWins.has(fid) && foldMemory.has(fid)) return foldMemory.get(fid);
+  const raw = getLS(LS_FOLD(fid));
   if (raw != null) {
     let keys = [];
     try { keys = cleanKeys(JSON.parse(raw)); } catch { keys = []; }
-    bucketMemory.set(fid, keys);
+    foldMemory.set(fid, keys);
     return keys;
   }
-  return bucketMemory.get(fid) || [];
+  return foldMemory.get(fid) || [];
 }
-export function saveHiddenBuckets(fid, keys) {
+export function saveFolded(fid, keys) {
   const clean = cleanKeys(keys);
-  bucketMemory.set(fid, clean);
+  foldMemory.set(fid, clean);
   let landed;
-  if (clean.length) landed = saveLS(LS_BUCKETS(fid), JSON.stringify(clean)) !== false;
-  else { removeLS(LS_BUCKETS(fid)); landed = getLS(LS_BUCKETS(fid)) == null; }
+  if (clean.length) landed = saveLS(LS_FOLD(fid), JSON.stringify(clean)) !== false;
+  else { removeLS(LS_FOLD(fid)); landed = getLS(LS_FOLD(fid)) == null; }
   if (landed) memoryWins.delete(fid); else memoryWins.add(fid);
 }
-export function toggleBucket(keys, key) {
+export function toggleFold(keys, key) {
   const list = cleanKeys(keys);
   return list.includes(key) ? list.filter((k) => k !== key) : [...list, key];
 }
 // One tap, applied at once: the setting lands in memory and storage BEFORE
 // anything animates, so a second tap inside the first one's fade reads the
-// first (two chips tapped in 130 ms used to lose the first — review round,
+// first (two rooms tapped in 130 ms used to lose the first — review round,
 // 2026-09-01). Returns what changed so the caller can move the room.
-export function applyBucketToggle(fid, current, key) {
-  const next = toggleBucket(current, key);
-  saveHiddenBuckets(fid, next);
-  return { next, hiding: !cleanKeys(current).includes(key) };
+export function applyFoldToggle(fid, current, key) {
+  const next = toggleFold(current, key);
+  saveFolded(fid, next);
+  return { next, folding: !cleanKeys(current).includes(key) };
 }

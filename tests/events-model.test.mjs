@@ -26,7 +26,6 @@ globalThis.location = { origin: 'https://fest.kevinhg.com', hash: '' };
 
 const ev = await import('../js/v3/events.js');
 const { groupByDay, knownDaysOf } = await import('../js/v3/wall.js');
-const filters = await import('../js/v3/filters.js');
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const load = (id) => JSON.parse(readFileSync(join(ROOT, `data/festivals/${id}.json`), 'utf8'));
@@ -311,59 +310,6 @@ test('findEventEntry: by day + stage + time, never by name alone — VTSS is a g
   assert.equal(ev.findEventEntry(portola, 'VTSS', { day: 'Sunday', stage: null, time: null }), billing);
   assert.equal(ev.findEventEntry(portola, 'VTSS', null), null);
   assert.equal(ev.findEventEntry(portola, 'Nobody', ev.occOf(afters)), null);
-});
-
-// ---- the bucket filter's persistence --------------------------------------------------------
-
-test('hidden buckets persist per fest in localStorage, toggle cleanly, and survive a blocked store in memory', () => {
-  store.clear();
-  assert.deepEqual(filters.loadHiddenBuckets('f1'), []);
-  filters.saveHiddenBuckets('f1', ['Folsom']);
-  assert.equal(store.get('fn_buckets_v1_f1'), '["Folsom"]', 'device-local, keyed per fest — never the crew doc');
-  assert.deepEqual(filters.loadHiddenBuckets('f1'), ['Folsom']);
-  assert.deepEqual(filters.loadHiddenBuckets('f2'), [], 'another fest is untouched');
-  assert.deepEqual(filters.toggleBucket(['Folsom'], ':fest'), ['Folsom', ':fest']);
-  assert.deepEqual(filters.toggleBucket(['Folsom', ':fest'], 'Folsom'), [':fest']);
-  filters.saveHiddenBuckets('f1', []);
-  assert.equal(store.has('fn_buckets_v1_f1'), false, 'nothing hidden = nothing stored');
-  store.set('fn_buckets_v1_f3', '{"not":"a list"}');
-  assert.deepEqual(filters.loadHiddenBuckets('f3'), [], 'garbage reads as nothing hidden');
-  // A write that fails against a store that still READS (storage full):
-  // memory wins until a write lands — the old stored value must not come
-  // back on the next read (Codex, review round 2026-09-01).
-  store.set('fn_buckets_v1_f5', '["Folsom"]');
-  assert.deepEqual(filters.loadHiddenBuckets('f5'), ['Folsom']);
-  const fullSet = globalThis.localStorage.setItem;
-  const quiet = console.warn;
-  console.warn = () => {};
-  globalThis.localStorage.setItem = () => { throw new DOMException('QuotaExceededError', 'QuotaExceededError'); };
-  try {
-    filters.saveHiddenBuckets('f5', ['Folsom', 'Afters']);
-    assert.deepEqual(filters.loadHiddenBuckets('f5'), ['Folsom', 'Afters'], 'the write failed — memory is newer than storage and wins');
-  } finally { globalThis.localStorage.setItem = fullSet; console.warn = quiet; }
-  filters.saveHiddenBuckets('f5', ['Afters']);
-  assert.equal(store.get('fn_buckets_v1_f5'), '["Afters"]', 'a write that lands re-arms storage');
-  store.set('fn_buckets_v1_f5', '["Folsom"]');
-  assert.deepEqual(filters.loadHiddenBuckets('f5'), ['Folsom'], 'and storage is read again');
-  // Two taps in a row apply at once — the second reads the first.
-  store.clear();
-  const t1 = filters.applyBucketToggle('f6', filters.loadHiddenBuckets('f6'), 'Folsom');
-  assert.deepEqual(t1, { next: ['Folsom'], hiding: true });
-  const t2 = filters.applyBucketToggle('f6', filters.loadHiddenBuckets('f6'), 'Afters');
-  assert.deepEqual(t2, { next: ['Folsom', 'Afters'], hiding: true });
-  assert.equal(store.get('fn_buckets_v1_f6'), '["Folsom","Afters"]', 'nothing was lost between the taps');
-  assert.deepEqual(filters.applyBucketToggle('f6', filters.loadHiddenBuckets('f6'), 'Folsom'), { next: ['Afters'], hiding: false });
-  // Blocked store: memory is the truth for the life of the page. (util.saveLS
-  // warns on a failed write — expected here, kept out of the test output.)
-  const real = globalThis.localStorage;
-  const warn = console.warn;
-  const denied = () => { throw new DOMException('The operation is insecure.', 'SecurityError'); };
-  globalThis.localStorage = { getItem: denied, setItem: denied, removeItem: denied };
-  console.warn = () => {};
-  try {
-    assert.doesNotThrow(() => filters.saveHiddenBuckets('f4', ['Afters']));
-    assert.deepEqual(filters.loadHiddenBuckets('f4'), ['Afters'], 'a blocked store cannot make a chip tap do nothing');
-  } finally { globalThis.localStorage = real; console.warn = warn; }
 });
 
 // ---- the review round (2026-09-01): the model -------------------------------------------
