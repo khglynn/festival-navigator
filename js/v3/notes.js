@@ -814,7 +814,8 @@ function openScopeSheet(scope, target, ctx, onChange, opts = {}) {
     const headerHost = document.createElement('div');
     sheet.appendChild(headerHost);
     paintHeader = () => {
-      headerHost.replaceChildren(sheetCard(factsFor(target, ctx, occ), { onClose: requestSheetClose }));
+      // No notes chip on the header: this sheet IS the thread (§4).
+      headerHost.replaceChildren(sheetCard(factsFor(target, ctx, occ), { onClose: requestSheetClose, notesChip: false }));
     };
     paintHeader();
   } else {

@@ -130,9 +130,10 @@ function bookmark() {
 
 // The chips line: the SAME notes door the resting card carries (grown), and
 // the Spotify chip with its flag sitting left of the word "following".
-export function factChips(facts, { onOpenNotes = null } = {}) {
+export function factChips(facts, { onOpenNotes = null, notesChip = true } = {}) {
   const row = document.createElement('div');
   row.className = 'f-chips';
+  if (!notesChip) { if (facts.spotify) spotChip(row, facts); return row; }
   const notes = document.createElement(onOpenNotes ? 'button' : 'span');
   notes.className = 'f-chip notes';
   notes.textContent = facts.noteCount ? `${facts.noteCount} note${facts.noteCount === 1 ? '' : 's'}` : '+ note';
@@ -143,18 +144,20 @@ export function factChips(facts, { onOpenNotes = null } = {}) {
     notes.addEventListener('click', (e) => { e.stopPropagation(); onOpenNotes(facts.name); });
   }
   row.appendChild(notes);
-  if (facts.spotify) {
-    const sp = document.createElement('span');
-    sp.className = 'f-chip spot';
-    if (facts.spotify.songs) sp.append(`${facts.spotify.songs} liked song${facts.spotify.songs === 1 ? '' : 's'}`);
-    if (facts.spotify.followed) {
-      if (facts.spotify.songs) sp.append(' · ');
-      sp.appendChild(bookmark());
-      sp.append(' following');
-    }
-    row.appendChild(sp);
-  }
+  if (facts.spotify) spotChip(row, facts);
   return row;
+}
+
+function spotChip(row, facts) {
+  const sp = document.createElement('span');
+  sp.className = 'f-chip spot';
+  if (facts.spotify.songs) sp.append(`${facts.spotify.songs} liked song${facts.spotify.songs === 1 ? '' : 's'}`);
+  if (facts.spotify.followed) {
+    if (facts.spotify.songs) sp.append(' · ');
+    sp.appendChild(bookmark());
+    sp.append(' following');
+  }
+  row.appendChild(sp);
 }
 
 // A place, said once: a pin and a name that open the map when the festival
@@ -225,7 +228,7 @@ function orderDoor(order) {
   return w;
 }
 
-function grownBlock(facts, { onOpenNotes = null } = {}) {
+function grownBlock(facts, { onOpenNotes = null, notesChip = true } = {}) {
   const grown = document.createElement('div');
   grown.className = 'f-grown';
   if (facts.when) {
@@ -253,7 +256,8 @@ function grownBlock(facts, { onOpenNotes = null } = {}) {
   // every UNPICKED grown card — the common view. Reverted; the still-hand
   // answer belongs to the zoom's placement (PROGRESS, round-2 follow-up).
   if (facts.people.length) grown.appendChild(whoPills(facts));
-  grown.appendChild(factChips(facts, { onOpenNotes }));
+  const chips = factChips(facts, { onOpenNotes, notesChip });
+  if (chips.childNodes.length) grown.appendChild(chips);
   return grown;
 }
 
@@ -263,7 +267,7 @@ function grownBlock(facts, { onOpenNotes = null } = {}) {
 // covers whatever sits under the grown card. (Appending a second colour
 // layer made the shorthand invalid and every zoomed card went black —
 // caught on the 2026-08-30 preview.)
-function factsCard(facts, { className, onClose = null, onOpenNotes = null }) {
+function factsCard(facts, { className, onClose = null, onOpenNotes = null, notesChip = true }) {
   const card = document.createElement('div');
   card.className = className + (facts.animated ? ' animated' : '');
   card.style.background = facts.background;
@@ -282,15 +286,19 @@ function factsCard(facts, { className, onClose = null, onOpenNotes = null }) {
   name.className = 'f-name';
   name.textContent = facts.name;
   card.appendChild(name);
-  const grown = grownBlock(facts, { onOpenNotes });
+  const grown = grownBlock(facts, { onOpenNotes, notesChip });
   card.appendChild(grown);
   return card;
 }
 
 // The sheet header: the grown card once more, larger, breathing only when the
 // card would (.animated — reduced-motion and low-power still win globally).
-export function sheetCard(facts, { onClose, onOpenNotes = null } = {}) {
-  return factsCard(facts, { className: 'sheet-card', onClose, onOpenNotes });
+// `notesChip: false` drops the notes chip from the row and keeps Spotify — for
+// the artist sheet, where the thread is already open underneath (MODEL-V4 §4,
+// Kevin 2026-09-17: "confusing there cause we're already in notes"). The
+// ZOOMED card on the wall keeps its chip: that one is a door to here.
+export function sheetCard(facts, { onClose, onOpenNotes = null, notesChip = true } = {}) {
+  return factsCard(facts, { className: 'sheet-card', onClose, onOpenNotes, notesChip });
 }
 
 // ---- the zoom: the bloom (2026-08-30 rebuild — the storyboard lives in

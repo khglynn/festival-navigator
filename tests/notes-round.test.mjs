@@ -34,6 +34,7 @@ const model = await import('../js/v3/model.js');
 const { FESTIVALS, FESTIVAL_INDEX } = await import('../js/festivals.js');
 const notes = await import('../js/v3/notes.js');
 const { validateIncoming } = await import('../api/_lib/crew-shared.mjs');
+const { sheetCard, factsFor } = await import('../js/v3/card-facts.js');
 
 const FID = 'round-fest';
 FESTIVAL_INDEX.push({ id: FID, status: 'lineup' });
@@ -86,6 +87,27 @@ test('the whisper: nothing until someone writes, then the newest note and the co
   assert.equal(w.querySelector('.more').textContent, '2 notes ›');
   click(w);
   assert.ok(opened, 'tapping the whisper opens the day notes');
+});
+
+// MODEL-V4 §4, Kevin 2026-09-17: "confusing there cause we're already in notes".
+test('the artist sheet\u2019s header card has no notes chip \u2014 the sheet IS the thread', () => {
+  // Spotify on this artist, so the test can tell "the chip row went" from
+  // "the notes chip went": one must stay while the other goes.
+  const withSpot = { ...ctx, affinity: { griz: { songs: 7, followed: true } } };
+  notes.openArtistSheet('GRiZ', withSpot, () => {});
+  const header = sheet().querySelector('.sheet-card');
+  assert.ok(header, 'the header is still the card');
+  assert.equal(header.querySelectorAll('.f-chip.notes').length, 0, 'no notes chip, button or span');
+  assert.equal(header.querySelectorAll('.f-chip.spot').length, 1, 'and Spotify stays \u2014 that one is not a door to here');
+  notes.closeSheet();
+
+  // The same card grown on the WALL keeps its chip: that one IS the door.
+  const zoomed = sheetCard(factsFor('GRiZ', withSpot, null), { onClose: () => {}, onOpenNotes: () => {} });
+  assert.equal(zoomed.querySelectorAll('.f-chip.notes').length, 1, 'the wall\u2019s grown card still offers it');
+
+  // And an artist with neither chip gets no empty row left behind.
+  const bare = sheetCard(factsFor('GRiZ', { ...ctx, affinity: null }, null), { onClose: () => {}, notesChip: false });
+  assert.equal(bare.querySelectorAll('.f-chips').length, 0, 'an empty chip row is not rendered at all');
 });
 
 test('every thread ends with an open door, and no note carries a Reply', () => {
