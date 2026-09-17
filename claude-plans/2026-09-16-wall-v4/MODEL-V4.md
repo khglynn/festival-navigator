@@ -237,12 +237,13 @@ two rooms).
 
 ## 8. Build plan
 
-Four lanes on branches off `integration-0916`, then integrate, stamp, gate,
+Five lanes on branches off `integration-0916`, then integrate, stamp, gate,
 Codex round, real-browser walk (Chromium + WebKit iPhone), Kevin's look on a
 unique preview URL, merge #16, promote. Target: Sun 2026-09-20 / Mon 09-21.
 
 1. **model + list** (`events.js`, `wall.js`, `v3.css`, their tests, `gallery.html`) — the venue groups, the composed day, the dated section, the deletions.
-2. **shell** (`app.js`, `filters.js`, `index.html`, `settings.js` for the How it works rows, `notes.js` for the doors) — day nav for dated sections and six-tab weekends, the default-day rule, the fold state and the show menu on the fest link, the now-mark ticker, the How it works rows in Kevin's words (§1.2: tilde, people filter, show menu; none for now), the per-day and per-section doors in the all-notes sheet, the deletions.
+2. **shell** (`app.js`, `filters.js`, `index.html`, `settings.js` for the How it works rows) — day nav for dated sections and six-tab weekends, the default-day rule, the fold state and the show menu on the fest link, the now-mark ticker, the How it works rows in Kevin's words (§1.2: tilde, people filter, show menu; none for now), the deletions.
+5. **notes** (`notes.js`, `js/v3/model.js` for the key mapping, `tests/notes-*`) — date-keyed day notes with the read-time mapping of legacy weekday and section keys (§4), the per-date doors in the all-notes sheet, the whisper keyed by date, no section notes.
 3. **data + validator** (`api/_lib/festival-rules.mjs`, `scripts/`, `data/festivals/acl-2026.json`, the freeze, docs) — `night` xor `date`, the Fest Nights entries, MODEL-V3 supersede notes, user-flows, CLAUDE.md, README.
 4. **zoom** (`card-facts.js`, `tests/browser/`) — opaque from frame one, the contract case.
 
