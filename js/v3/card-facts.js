@@ -15,7 +15,7 @@ import { hslOf } from './palette.js';
 import { colorIndexOf, roomOf } from './wall.js';
 import { record } from '../errlog.js';
 import { runFactsOf, findEventEntry } from './events.js';
-import { GROW_MS, MATERIALIZE_MS, OUT_MS, CASCADE_MS, STAGGER_MS, REFRESH_MS, EASE_ARRIVE, EASE_LEAVE, EASE_SURFACE, canAnimate } from './motion.js';
+import { GROW_MS, CONTENT_FADE_MS, OUT_MS, CASCADE_MS, STAGGER_MS, REFRESH_MS, EASE_ARRIVE, EASE_LEAVE, EASE_SURFACE, canAnimate } from './motion.js';
 
 // "9:00 PM - 10:15 PM" -> "9:00 – 10:15 PM" (the shared meridiem said once).
 export function timeRange(t) {
@@ -310,9 +310,13 @@ export function sheetCard(facts, { onClose, onOpenNotes = null } = {}) {
 // the SAME aura background and blooms from the same centre — colour and
 // origin are what the eye reads, never glyph registration.
 //
-// The bloom: the overlay materialises fast (opacity) while it grows k→1
-// (scale, a touch of overshoot); underneath, the resting card's CONTENT
-// steps back through CSS while its wash stays (no hole in the wall).
+// The bloom: the overlay is a finished card from frame 0 — opaque, bordered
+// and shadowed — and only the BOX grows, k→1 (scale, a touch of overshoot);
+// underneath, the resting card's CONTENT steps back through CSS while its
+// wash stays (no hole in the wall). It used to fade 0→1 as it grew, which put
+// a translucent card over opaque neighbours for the length of the fade:
+// Kevin's "tucks behind its neighbours" (2026-08-31, again 2026-09-16),
+// MODEL-V4 §5.
 // Inside, the grown lines cascade a beat apart, each from its own corner —
 // WHEN and WHERE rise, the people slide in from the right where the colour
 // marks live, notes and Spotify from the left where their numbers live.
@@ -480,7 +484,7 @@ function originFor(slot, r0, r1) {
   slot.style.transformOrigin = `${r0.left + r0.width / 2 - r1.left}px ${r0.top + r0.height / 2 - r1.top}px`;
 }
 // The bloom's starting scale: resting height over grown height, clamped so
-// the materialise never reads as tiny text blowing up.
+// the bloom never reads as tiny text blowing up.
 const scaleFor = (r0, r1) => Math.min(0.95, Math.max(0.7, r0.height / r1.height));
 
 function zoomCardInner(el, artistName, ctx, { onOpenNotes = null, source = 'mouse', occ = null, instant = false } = {}) {
@@ -513,7 +517,7 @@ function zoomCardInner(el, artistName, ctx, { onOpenNotes = null, source = 'mous
   el.classList.add('zoom-source'); // the resting CONTENT steps back; its wash stays
   zoomed = z;
   wireSlot(z);
-  slot.classList.add('shown'); // the shadow eases in through CSS
+  slot.classList.add('shown'); // the standing zoom: the shadow, and what tells it from the ghosts still shrinking away
   if (!animate) {
     // An instant restore (a wall repaint under a mouse zoom) can land after
     // the hand has already moved elsewhere, and a still hand sends no
@@ -530,14 +534,13 @@ function zoomCardInner(el, artistName, ctx, { onOpenNotes = null, source = 'mous
     return facts;
   }
 
-  // The bloom: materialise fast while growing k→1 from the resting centre.
-  // At the start the overlay is resting-card-sized in the resting card's
-  // place, wearing the same wash — the crossfade is two card-shaped washes
-  // of one gradient in one spot, which is all the connection the eye needs.
+  // The bloom: ONE animation on the box — k→1 from the resting centre. At the
+  // start the overlay is resting-card-sized in the resting card's place,
+  // wearing the same wash, fully opaque: two card-shaped washes of one
+  // gradient in one spot, which is all the connection the eye needs.
   originFor(slot, r0, r1);
   const anims = [
     slot.animate([{ transform: `scale(${scaleFor(r0, r1)})` }, { transform: 'scale(1)' }], { duration: GROW_MS, easing: EASE_ARRIVE }),
-    slot.animate([{ opacity: 0 }, { opacity: 1 }], { duration: MATERIALIZE_MS, easing: 'ease-out' }),
   ];
   // The cascade: each grown line a beat apart, each from its own corner —
   // WHEN and WHERE rise, the people from the RIGHT where the colour marks
@@ -548,16 +551,18 @@ function zoomCardInner(el, artistName, ctx, { onOpenNotes = null, source = 'mous
     [{ transform: `translate(${x}px, ${y}px)`, opacity: 0 }, { opacity: 1, offset: 0.5 }, { transform: 'none', opacity: 1 }],
     { duration: CASCADE_MS, delay, easing: EASE_ARRIVE, fill: 'both' },
   ));
-  // WHEN waits out the content fade: the resting time line and the grown
-  // one are the same fact, and the law says never two renderings at once —
-  // the resting text is gone (MATERIALIZE_MS) before its grown self begins
-  // (Codex gate, 2026-08-30). WHERE and the rest follow in family order.
+  // WHEN waits out the resting content's fade: the resting time line and the
+  // grown one are the same fact, and the law says never two renderings at
+  // once — the resting text is gone (CONTENT_FADE_MS) before its grown self
+  // begins (Codex gate, 2026-08-30). The overlay no longer fades in, but a
+  // resting card wider than the bloom's first frame still shows its own edges
+  // underneath, so the wait stands. WHERE and the rest follow in family order.
   const sub = card.querySelector('.f-sub');
   const where = card.querySelector('.f-where');
-  if (sub) arrive(sub, 0, 6, MATERIALIZE_MS + 5);
-  if (where) arrive(where, 0, 6, MATERIALIZE_MS + 35);
-  [...card.querySelectorAll('.f-pill')].forEach((p, i) => arrive(p, 14, 0, MATERIALIZE_MS + 55 + i * (STAGGER_MS - 2)));
-  [...card.querySelectorAll('.f-chip')].forEach((c, i) => arrive(c, -14, 0, MATERIALIZE_MS + 55 + i * STAGGER_MS));
+  if (sub) arrive(sub, 0, 6, CONTENT_FADE_MS + 5);
+  if (where) arrive(where, 0, 6, CONTENT_FADE_MS + 35);
+  [...card.querySelectorAll('.f-pill')].forEach((p, i) => arrive(p, 14, 0, CONTENT_FADE_MS + 55 + i * (STAGGER_MS - 2)));
+  [...card.querySelectorAll('.f-chip')].forEach((c, i) => arrive(c, -14, 0, CONTENT_FADE_MS + 55 + i * STAGGER_MS));
   z.anims = anims;
   return facts;
 }
@@ -697,9 +702,12 @@ function unzoomInner({ instant = false, why = 'unspecified' } = {}) {
   if (animate) {
     const cs = window.getComputedStyle(z.slot);
     if (cs.transform && cs.transform !== 'none') fromT = cs.transform;
-    // Number.isFinite, not `|| 1`: a dismissal on the bloom's very first
-    // frame reads opacity 0, and `|| 1` would flash the overlay fully
-    // opaque on its way out (Codex gate, 2026-08-30).
+    // The way out starts from whatever opacity the slot is actually wearing.
+    // Number.isFinite, not `|| 1`: an unreadable value must not flash the
+    // overlay fully opaque on its way out (Codex gate, 2026-08-30). Since
+    // MODEL-V4 §5 the bloom no longer fades the slot in, so this reads 1
+    // every time in production — the guard is what keeps the exit honest if
+    // anything ever makes the slot translucent again.
     const o = Number.parseFloat(cs.opacity);
     if (Number.isFinite(o)) fromO = o;
   }

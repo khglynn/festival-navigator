@@ -16,6 +16,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { makeRig, recordAnimations } from './helpers/zoom-rig.mjs';
+import { GROW_MS, CONTENT_FADE_MS } from '../js/v3/motion.js';
 
 const rig = await makeRig();
 const { document, zoom, state, makeCtx, mountCard, click, FID } = rig;
@@ -103,6 +104,41 @@ test('the cascade arrives in family order, each line from its own corner', () =>
   }
 });
 
+// The frame-0 rule (MODEL-V4 §5). The real assertion — computed opacity on the
+// first frame a browser paints — lives in tests/browser/hover-contract.test.mjs,
+// because jsdom has no compositor and nothing here would have caught the fade.
+// What Node CAN pin is the shape: one animation on the box, and it moves the
+// box, not its opacity.
+test("the box's only animation is its growth — nothing fades the slot in", () => {
+  setMyLevel(1);
+  const ctx = makeCtx();
+  ctx.affinity = { griz: { songs: 7, followed: true } };
+  const card = mountCard(ctx);
+  const rec = recordAnimations(rig.window);
+  const undo = fakeLayout();
+  try {
+    zoom.zoomCard(card, 'GRiZ', ctx, { onOpenNotes: ctx.onOpenNotes, occ: { day: 'Saturday', stage: 'Pier Stage', time: '9:00 PM - 10:15 PM' } });
+    const slot = document.querySelector('.zoom-slot');
+    const onSlot = rec.calls.filter((c) => c.target === slot);
+    assert.equal(onSlot.length, 1, 'one animation on the box — the bloom used to lay down a second one that faded it 0 → 1');
+    assert.match(firstTranslate(onSlot[0]), /^scale\([\d.]+\)$/, 'and it is the growth');
+    assert.equal(onSlot[0].options.duration, GROW_MS);
+    for (const kf of onSlot[0].keyframes) {
+      assert.ok(!('opacity' in kf), `the box never animates its opacity: ${JSON.stringify(kf)}`);
+    }
+    // The grown lines still wait out the RESTING card's CSS content fade — one
+    // rendering of one fact — so the cascade's constant outlives the overlay's.
+    const cascade = onTarget(rec.calls, '.f-sub, .f-where, .f-pill, .f-chip');
+    assert.ok(cascade.length, 'the cascade still runs');
+    for (const a of cascade) {
+      assert.ok(a.options.delay >= CONTENT_FADE_MS, `every line waits out the content fade (delay ${a.options.delay})`);
+    }
+  } finally {
+    undo();
+    rec.off();
+  }
+});
+
 test('the bloom starts from the resting card\'s own centre, at a scale inside the clamp', () => {
   const ctx = makeCtx();
   const card = mountCard(ctx);
@@ -115,7 +151,7 @@ test('the bloom starts from the resting card\'s own centre, at a scale inside th
     assert.ok(grow, 'the slot grows');
     const k = Number(firstTranslate(grow).match(/scale\(([\d.]+)\)/)[1]);
     // resting height 96 over grown height 140 = 0.686, floored at 0.7 — the
-    // clamp is what stops the materialise reading as tiny text blowing up.
+    // clamp is what stops the bloom reading as tiny text blowing up.
     assert.ok(k >= 0.7 && k <= 0.95, `the starting scale is clamped to 0.7–0.95 (got ${k})`);
     assert.equal(grow.keyframes[1].transform, 'scale(1)');
 
