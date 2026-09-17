@@ -659,6 +659,510 @@
       "name": "Flight by Nothing",
       "day": "Sunday",
       "weekends": "W2"
+    },
+    {
+      "name": "Fcukers",
+      "day": "Late nights",
+      "date": "2026-09-29",
+      "venue": "Mohawk Austin",
+      "doors": "7 PM",
+      "source": "https://do512.com/events/2026/9/29/fcukers-w-total-wife-tickets"
+    },
+    {
+      "name": "Total Wife",
+      "day": "Late nights",
+      "date": "2026-09-29",
+      "venue": "Mohawk Austin",
+      "doors": "7 PM",
+      "source": "https://do512.com/events/2026/9/29/fcukers-w-total-wife-tickets"
+    },
+    {
+      "name": "Brandon Flowers",
+      "day": "Late nights",
+      "date": "2026-10-01",
+      "venue": "Stubb's",
+      "doors": "7 PM",
+      "source": "https://do512.com/events/2026/10/1/brandon-flowers-w-jess-williamson-tickets"
+    },
+    {
+      "name": "Jess Williamson",
+      "day": "Late nights",
+      "date": "2026-10-01",
+      "venue": "Stubb's",
+      "doors": "7 PM",
+      "source": "https://do512.com/events/2026/10/1/brandon-flowers-w-jess-williamson-tickets"
+    },
+    {
+      "name": "Palace",
+      "day": "Late nights",
+      "date": "2026-10-01",
+      "venue": "Emo's",
+      "doors": "7 PM",
+      "source": "https://do512.com/events/2026/10/1/palace-tickets"
+    },
+    {
+      "name": "Montclair",
+      "day": "Late nights",
+      "date": "2026-10-01",
+      "venue": "Stubb's",
+      "doors": "9 PM",
+      "source": "https://do512.com/events/2026/10/1/montclair-tickets"
+    },
+    {
+      "name": "The Chainsmokers",
+      "day": "Late nights",
+      "date": "2026-10-01",
+      "venue": "The Concourse Project",
+      "doors": "9 PM",
+      "source": "https://do512.com/events/2026/10/1/the-chainsmokers-tickets"
+    },
+    {
+      "name": "Finn Wolfhard",
+      "day": "Late nights",
+      "date": "2026-10-02",
+      "venue": "Historic Scoot Inn",
+      "doors": "6 PM",
+      "source": "https://do512.com/events/2026/10/2/finn-wolfhard-w-malcy-tickets"
+    },
+    {
+      "name": "Malcy",
+      "day": "Late nights",
+      "date": "2026-10-02",
+      "venue": "Historic Scoot Inn",
+      "doors": "6 PM",
+      "source": "https://do512.com/events/2026/10/2/finn-wolfhard-w-malcy-tickets"
+    },
+    {
+      "name": "Bleachers",
+      "day": "Late nights",
+      "date": "2026-10-02",
+      "venue": "Stubb's",
+      "doors": "7 PM",
+      "source": "https://do512.com/events/2026/10/2/bleachers-w-this-is-lorelei-tickets"
+    },
+    {
+      "name": "This Is Lorelei",
+      "day": "Late nights",
+      "date": "2026-10-02",
+      "venue": "Stubb's",
+      "doors": "7 PM",
+      "source": "https://do512.com/events/2026/10/2/bleachers-w-this-is-lorelei-tickets"
+    },
+    {
+      "name": "Villanelle",
+      "day": "Late nights",
+      "date": "2026-10-02",
+      "venue": "3TEN",
+      "doors": "8 PM",
+      "source": "https://do512.com/events/2026/10/2/villanelle-tickets"
+    },
+    {
+      "name": "BUNT.",
+      "day": "Late nights",
+      "date": "2026-10-02",
+      "venue": "Emo's",
+      "doors": "9 PM",
+      "source": "https://do512.com/events/2026/10/2/bunt-w-sarah-pederzani-tickets"
+    },
+    {
+      "name": "Sarah Pederzani",
+      "day": "Late nights",
+      "date": "2026-10-02",
+      "venue": "Emo's",
+      "doors": "9 PM",
+      "source": "https://do512.com/events/2026/10/2/bunt-w-sarah-pederzani-tickets"
+    },
+    {
+      "name": "Hunx and his Punx",
+      "day": "Late nights",
+      "date": "2026-10-02",
+      "venue": "Brushy Street Commons",
+      "doors": "9 PM",
+      "source": "https://do512.com/events/2026/10/2/hunx-and-his-punx-w-cormae-tickets"
+    },
+    {
+      "name": "CorMae",
+      "day": "Late nights",
+      "date": "2026-10-02",
+      "venue": "Brushy Street Commons",
+      "doors": "9 PM",
+      "source": "https://do512.com/events/2026/10/2/hunx-and-his-punx-w-cormae-tickets"
+    },
+    {
+      "name": "Night Tapes",
+      "day": "Late nights",
+      "date": "2026-10-02",
+      "venue": "Antone's",
+      "doors": "9 PM",
+      "source": "https://do512.com/events/2026/10/2/night-tapes-w-alice-rivers-tickets"
+    },
+    {
+      "name": "Alice Rivers",
+      "day": "Late nights",
+      "date": "2026-10-02",
+      "venue": "Antone's",
+      "doors": "9 PM",
+      "source": "https://do512.com/events/2026/10/2/night-tapes-w-alice-rivers-tickets"
+    },
+    {
+      "name": "Steve Aoki",
+      "day": "Late nights",
+      "date": "2026-10-02",
+      "venue": "The Concourse Project",
+      "doors": "9 PM",
+      "source": "https://do512.com/events/2026/10/2/steve-aoki-dim-mak-30-w-elephante-b2b-riot-ten-tickets"
+    },
+    {
+      "name": "Elephante",
+      "day": "Late nights",
+      "date": "2026-10-02",
+      "venue": "The Concourse Project",
+      "doors": "9 PM",
+      "source": "https://do512.com/events/2026/10/2/steve-aoki-dim-mak-30-w-elephante-b2b-riot-ten-tickets"
+    },
+    {
+      "name": "Riot Ten",
+      "day": "Late nights",
+      "date": "2026-10-02",
+      "venue": "The Concourse Project",
+      "doors": "9 PM",
+      "source": "https://do512.com/events/2026/10/2/steve-aoki-dim-mak-30-w-elephante-b2b-riot-ten-tickets"
+    },
+    {
+      "name": "Grocery Bag",
+      "day": "Late nights",
+      "date": "2026-10-02",
+      "venue": "Stubb's",
+      "doors": "10 PM",
+      "source": "https://do512.com/events/2026/10/2/grocery-bag-tickets"
+    },
+    {
+      "name": "Rebecca Black",
+      "day": "Late nights",
+      "date": "2026-10-02",
+      "venue": "Devil May Care",
+      "doors": "10 PM",
+      "source": "https://do512.com/events/2026/10/2/rebecca-black-dj-set-tickets"
+    },
+    {
+      "name": "CMAT",
+      "day": "Late nights",
+      "date": "2026-10-03",
+      "venue": "Historic Scoot Inn",
+      "doors": "6 PM",
+      "source": "https://do512.com/events/2026/10/3/cmat-w-fancy-hagood-tickets"
+    },
+    {
+      "name": "Fancy Hagood",
+      "day": "Late nights",
+      "date": "2026-10-03",
+      "venue": "Historic Scoot Inn",
+      "doors": "6 PM",
+      "source": "https://do512.com/events/2026/10/3/cmat-w-fancy-hagood-tickets"
+    },
+    {
+      "name": "Paloma Morphy",
+      "day": "Late nights",
+      "date": "2026-10-03",
+      "venue": "3TEN",
+      "doors": "8 PM",
+      "source": "https://do512.com/events/2026/10/3/paloma-morphy-w-lueme-tickets"
+    },
+    {
+      "name": "LUEME",
+      "day": "Late nights",
+      "date": "2026-10-03",
+      "venue": "3TEN",
+      "doors": "8 PM",
+      "source": "https://do512.com/events/2026/10/3/paloma-morphy-w-lueme-tickets"
+    },
+    {
+      "name": "Parcels",
+      "day": "Late nights",
+      "date": "2026-10-03",
+      "venue": "Stubb's",
+      "doors": "8 PM",
+      "source": "https://do512.com/events/2026/10/3/parcels-w-velvet-trip-tickets"
+    },
+    {
+      "name": "Velvet Trip",
+      "day": "Late nights",
+      "date": "2026-10-03",
+      "venue": "Stubb's",
+      "doors": "8 PM",
+      "source": "https://do512.com/events/2026/10/3/parcels-w-velvet-trip-tickets"
+    },
+    {
+      "name": "Levity",
+      "day": "Late nights",
+      "date": "2026-10-03",
+      "venue": "Emo's",
+      "doors": "9 PM",
+      "source": "https://do512.com/events/2026/10/3/levity-w-untitld-tickets"
+    },
+    {
+      "name": "Untitld",
+      "day": "Late nights",
+      "date": "2026-10-03",
+      "venue": "Emo's",
+      "doors": "9 PM",
+      "source": "https://do512.com/events/2026/10/3/levity-w-untitld-tickets"
+    },
+    {
+      "name": "It's Murph",
+      "day": "Late nights",
+      "date": "2026-10-03",
+      "venue": "The Concourse Project",
+      "doors": "9 PM",
+      "source": "https://do512.com/events/2026/10/3/its-murph-w-nate-band-dazzle-camouflage-tickets"
+    },
+    {
+      "name": "Nate Band",
+      "day": "Late nights",
+      "date": "2026-10-03",
+      "venue": "The Concourse Project",
+      "doors": "9 PM",
+      "source": "https://do512.com/events/2026/10/3/its-murph-w-nate-band-dazzle-camouflage-tickets"
+    },
+    {
+      "name": "Dazzle Camouflage",
+      "day": "Late nights",
+      "date": "2026-10-03",
+      "venue": "The Concourse Project",
+      "doors": "9 PM",
+      "source": "https://do512.com/events/2026/10/3/its-murph-w-nate-band-dazzle-camouflage-tickets"
+    },
+    {
+      "name": "Underscores",
+      "day": "Late nights",
+      "date": "2026-10-03",
+      "venue": "Brushy Street Commons",
+      "doors": "9 PM",
+      "source": "https://do512.com/events/2026/10/3/underscores-dj-set-w-directress-1x333-tickets"
+    },
+    {
+      "name": "Directress",
+      "day": "Late nights",
+      "date": "2026-10-03",
+      "venue": "Brushy Street Commons",
+      "doors": "9 PM",
+      "source": "https://do512.com/events/2026/10/3/underscores-dj-set-w-directress-1x333-tickets"
+    },
+    {
+      "name": "1x333",
+      "day": "Late nights",
+      "date": "2026-10-03",
+      "venue": "Brushy Street Commons",
+      "doors": "9 PM",
+      "source": "https://do512.com/events/2026/10/3/underscores-dj-set-w-directress-1x333-tickets"
+    },
+    {
+      "name": "Almost Heaven",
+      "day": "Late nights",
+      "date": "2026-10-03",
+      "venue": "Stubb's",
+      "doors": "11 PM",
+      "source": "https://do512.com/events/2026/10/3/almost-heaven-tickets"
+    },
+    {
+      "name": "Ryan Beatty",
+      "day": "Late nights",
+      "date": "2026-10-04",
+      "venue": "Historic Scoot Inn",
+      "doors": "5 PM",
+      "source": "https://do512.com/events/2026/10/4/ryan-beatty-tickets"
+    },
+    {
+      "name": "Rochelle Jordan",
+      "day": "Late nights",
+      "date": "2026-10-04",
+      "venue": "Antone's",
+      "doors": "9 PM",
+      "source": "https://do512.com/events/2026/10/4/rochelle-jordan-tickets"
+    },
+    {
+      "name": "Suki Waterhouse",
+      "day": "Late nights",
+      "date": "2026-10-04",
+      "venue": "Emo's",
+      "doors": "9 PM",
+      "source": "https://do512.com/events/2026/10/4/suki-waterhouse-tickets"
+    },
+    {
+      "name": "Saint Motel",
+      "day": "Late nights",
+      "date": "2026-10-05",
+      "venue": "Historic Scoot Inn",
+      "doors": "5 PM",
+      "source": "https://do512.com/events/2026/10/5/saint-motel-w-the-4411-tickets"
+    },
+    {
+      "name": "The 4411",
+      "day": "Late nights",
+      "date": "2026-10-05",
+      "venue": "Historic Scoot Inn",
+      "doors": "5 PM",
+      "source": "https://do512.com/events/2026/10/5/saint-motel-w-the-4411-tickets"
+    },
+    {
+      "name": "LP",
+      "day": "Late nights",
+      "date": "2026-10-05",
+      "venue": "Brushy Street Commons",
+      "doors": "7 PM",
+      "source": "https://do512.com/events/2026/10/5/lp-tickets"
+    },
+    {
+      "name": "Lola Young",
+      "day": "Late nights",
+      "date": "2026-10-06",
+      "venue": "Stubb's",
+      "doors": "7 PM",
+      "source": "https://do512.com/events/2026/10/6/lola-young-w-leon-knight-tickets"
+    },
+    {
+      "name": "Leon Knight",
+      "day": "Late nights",
+      "date": "2026-10-06",
+      "venue": "Stubb's",
+      "doors": "7 PM",
+      "source": "https://do512.com/events/2026/10/6/lola-young-w-leon-knight-tickets"
+    },
+    {
+      "name": "Annie DiRusso",
+      "day": "Late nights",
+      "date": "2026-10-06",
+      "venue": "Stubb's",
+      "doors": "10 PM",
+      "source": "https://do512.com/events/2026/10/6/annie-dirusso-tickets"
+    },
+    {
+      "name": "The War on Drugs",
+      "day": "Late nights",
+      "date": "2026-10-08",
+      "venue": "Fair Market",
+      "doors": "6 PM",
+      "source": "https://do512.com/events/2026/10/8/the-war-on-drugs-a-special-performance-presented-by-defender-tickets"
+    },
+    {
+      "name": "Arcy Drive",
+      "day": "Late nights",
+      "date": "2026-10-08",
+      "venue": "Brushy Street Commons",
+      "doors": "7 PM",
+      "source": "https://do512.com/events/2026/10/8/arcy-drive-w-common-people-tickets"
+    },
+    {
+      "name": "Common People",
+      "day": "Late nights",
+      "date": "2026-10-08",
+      "venue": "Brushy Street Commons",
+      "doors": "7 PM",
+      "source": "https://do512.com/events/2026/10/8/arcy-drive-w-common-people-tickets"
+    },
+    {
+      "name": "World Famous Pets",
+      "day": "Late nights",
+      "date": "2026-10-08",
+      "venue": "Antone's",
+      "doors": "7 PM",
+      "source": "https://do512.com/events/2026/10/8/world-famous-pets-tickets"
+    },
+    {
+      "name": "Sunday (1994)",
+      "day": "Late nights",
+      "date": "2026-10-08",
+      "venue": "Stubb's",
+      "doors": "8 PM",
+      "source": "https://do512.com/events/2026/10/8/sunday-1994-tickets"
+    },
+    {
+      "name": "Łaszewo",
+      "day": "Late nights",
+      "date": "2026-10-08",
+      "venue": "3TEN",
+      "doors": "8 PM",
+      "source": "https://do512.com/events/2026/10/8/laszewo-w-left-lucid-tickets"
+    },
+    {
+      "name": "Left Lucid",
+      "day": "Late nights",
+      "date": "2026-10-08",
+      "venue": "3TEN",
+      "doors": "8 PM",
+      "source": "https://do512.com/events/2026/10/8/laszewo-w-left-lucid-tickets"
+    },
+    {
+      "name": "¥ØU$UK€ ¥UK1MAT$U",
+      "day": "Late nights",
+      "date": "2026-10-08",
+      "venue": "The Concourse Project",
+      "doors": "9 PM",
+      "source": "https://do512.com/events/2026/10/8/yousuke-yukimatsu-tickets"
+    },
+    {
+      "name": "Jess Williamson",
+      "day": "Late nights",
+      "date": "2026-10-08",
+      "venue": "The Continental Club",
+      "doors": "9:30 PM",
+      "source": "https://do512.com/events/2026/10/8/jess-williamson-tickets"
+    },
+    {
+      "name": "Noga Erez",
+      "day": "Late nights",
+      "date": "2026-10-09",
+      "venue": "Historic Scoot Inn",
+      "doors": "7 PM",
+      "source": "https://do512.com/events/2026/10/9/noga-erez-tickets"
+    },
+    {
+      "name": "BUNT.",
+      "day": "Late nights",
+      "date": "2026-10-09",
+      "venue": "The Concourse Project",
+      "doors": "9 PM",
+      "source": "https://do512.com/events/2026/10/9/bunt-w-dj-bad-apple-tickets"
+    },
+    {
+      "name": "DJ Bad Apple",
+      "day": "Late nights",
+      "date": "2026-10-09",
+      "venue": "The Concourse Project",
+      "doors": "9 PM",
+      "source": "https://do512.com/events/2026/10/9/bunt-w-dj-bad-apple-tickets"
+    },
+    {
+      "name": "Rodrigo y Gabriela",
+      "day": "Late nights",
+      "date": "2026-10-09",
+      "venue": "Emo's",
+      "doors": "9 PM",
+      "source": "https://do512.com/events/2026/10/9/rodrigo-y-gabriela-tickets"
+    },
+    {
+      "name": "Claire Rosinkranz",
+      "day": "Late nights",
+      "date": "2026-10-10",
+      "venue": "3TEN",
+      "doors": "8 PM",
+      "source": "https://do512.com/events/2026/10/10/claire-rosinkranz-tickets"
+    },
+    {
+      "name": "Don West",
+      "day": "Late nights",
+      "date": "2026-10-10",
+      "venue": "Antone's",
+      "doors": "9 PM",
+      "source": "https://do512.com/events/2026/10/10/don-west-w-kesmar-tickets"
+    },
+    {
+      "name": "Kesmar",
+      "day": "Late nights",
+      "date": "2026-10-10",
+      "venue": "Antone's",
+      "doors": "9 PM",
+      "source": "https://do512.com/events/2026/10/10/don-west-w-kesmar-tickets"
     }
   ],
   "meta": {
@@ -682,7 +1186,7 @@
       "https://cdn.prod.website-files.com/67456b422d0e4219d58ef713/6a905f68fd30e82920a65757_ACL26-Schedule-Wk2-1004-V2-Sun-20260826-Draft3.webp",
       "https://cdn.prod.website-files.com/67456b422d0e4219d58ef713/6aa7fbc9f1c73216806c6174_ACL26-Admat-ByDay-9.10.webp"
     ],
-    "note": "Captured 124 unique confirmed acts — the full day-by-day breakdown for both weekends, as reported by KVUE (Austin) on 2026-05-12 based on ACL's own by-day lineup graphic, cross-validated line-by-line against the official Live Nation/C3 Presents press release (2026-05-05). No stages or set times exist yet (C3 Presents has explicitly said daily set-time schedules \"will be announced at a later date\"), so those fields are null throughout. Two corrections applied versus the raw KVUE text: (1) KVUE's W1-Friday list had \"Brandon Thomas\" immediately after \"Leon Thomas\" — this is an evident OCR/typo error for \"Brandon Flowers\" (of The Killers), confirmed by the official press release's identical adjacent ordering and by three other outlets (BrooklynVegan, CultureMap, Billboard) explicitly naming Brandon Flowers as a Weekend-1-only act; (2) KVUE listed Izzy Escobar under both weekends' Friday bills, but the official Live Nation press release explicitly tags \"Izzy Escobar(W1)\" — the official/primary source was trusted over the secondary compilation. One quality-control flag: a few aggregator sites (e.g., liveforlivemusic.com) list The Marías, Role Model, Rilo Kiley, Djo, Pierce The Veil, and Sabrina Claudio as part of the 2026 bill. None of these appear in the official Live Nation press release, the KVUE day-by-day breakdown, or BrooklynVegan's coverage — and all six performed at ACL 2025, so this reads as a copy-paste/template carryover error in that one article rather than a confirmed 2026 booking. Deliberately excluded here; flag to Kevin if seen elsewhere. UPDATE 2026-08-23: official SET TIMES for both weekends went live the week of Aug 17 (aclfestival.com/schedule + the ACL app; earliest sets 12:45 PM, AmEx-stage headliner closes 10 PM). NOT yet ingested: the schedule page is JS-rendered and press/search snippets only carry the evening headline blocks (~6 of ~30 sets/day) - a 10%-populated grid would be worse than this honest lineup view, so the data stays day-level until someone with page access pastes the grids (renderer/validator support for the two-weekend scheduled shape shipped 2026-08-23 - see docs/add-a-festival.md; it is a pure data drop now). Verified evening anchors for cross-checking that ingest: W1 Fri Turnstile T-Mobile 6:15-7:15, Labrinth AmEx 6:30-7:30, Leon Thomas Miller Lite 7:15-8:15, The Chainsmokers Snapchat 7:30-8:30, Skrillex T-Mobile 8:15, Charli xcx AmEx 8:40; W1 Sat RUFUS DU SOL AmEx 8:30, Lorde T-Mobile 8:15; W2 Fri Kings of Leon T-Mobile 8:15, Charli xcx again 8:40. Stage names seen with set-time citations: American Express, T-Mobile, Miller Lite, Snapchat, Honda (do512 venue page) - Titos/BMI/Kiddie Limits names unverified for 2026. One roster change reported by theheartsounds.com 2026-08-17: Sienna Spiro moves to Friday W2 and Laszewo to Saturday W2 - single-sourced, verify against the official grid before applying. ALSO announced, not ingested: ACL Fest Nights 2026 (official late-night aftershows Oct 2-13, Emos/Scoot Inn/Antones etc, separately ticketed, $40-70 - do512.com/aclfestnights) with Brandon Flowers, Bleachers, BUNT., Finn Wolfhard, Rebecca Black DJ set, Palace, Hunx and his Punx - the Portola-style Afters section pattern fits when wanted. UPDATE 2026-08-30: re-confirmed by direct fetch of aclfestival.com/schedule - set times are six schedule images (Fri/Sat/Sun x two weekends), static HTML wrapping image files with no extractable grid text (more precise than the 'JS-rendered' guess above; same conclusion - still blocked on manual transcription, still nobody has pasted the grids). The Sienna Spiro/Laszewo flag above is RESOLVED: a second source (KVUE, 2026-08-30) confirms this file's current assignment - Sienna Spiro=Saturday W2, Laszewo=Friday W2 - is correct; the single-sourced 'move' reported 2026-08-17 does not appear to have happened. timezone: America/Chicago added. SET TIMES INGESTED 2026-09-16. Source of record: the six official schedule posters on aclfestival.com/schedule (Webflow CDN files stamped \"V2-<Day>-20260826-Draft3\", HTTP last-modified 2026-08-27; W1 Fri/Sat/Sun and W2 Sun are 1080px webp, W2 Fri/Sat 2160px png) - read visually by two independent readers (one with column crops, one with crops plus a pixel check of box edges against the hour grid) and diffed box by box: 189 boxes, 0 disagreements. Seven stages every day, left to right as printed: T-Mobile, Miller Lite, BMI, Beatbox, Tito's (printed \"Tito's Handmade Vodka\"), Snapchat, American Express; 12:45 PM to 10 PM. Times are as printed; the posters give the T-Mobile and American Express closers a START only (Skrillex/Kings of Leon 8:15, Charli xcx 8:40, Lorde 8:15, RÜFÜS DU SOL 8:30, The xx 8:30, Twenty One Pilots 8:30), so those carry a start only here too (CultureMap 2026-08-17: the AmEx headliner finishes at 10 PM). Each set is tagged with the weekend it plays; a set identical on both weekends' posters is one untagged entry, and an act whose slot differs is two entries (Faouzia: W1 Miller Lite 1:45-2:30, W2 American Express 2:45-3:30; Paris Paloma: W1 3:15-4:15, W2 5:15-6:15; Arcy Drive: W1 Miller Lite 3:15-4:15, W2 Beatbox 3:30-4:30). Not entered: the Silent Disco box (Tito's, 8-10 PM every night), the ASL-interpreted marker (every American Express closer), and the Austin Kiddie Limits strip (presented by Lifeway Kefir). The posters spell SOLOMON HICKS and THE HUSTON-TILLOTSON UNIVERSITY JAZZ COLLECTIVE - the pick keys \"Soloman Hicks\" and \"Huston-Tillotson University Jazz Collective\" are KEPT. ROSTER CHANGES vs this file, each confirmed by the official posters AND the newer official by-day admat on aclfestival.com/lineup (ACL26-Admat-ByDay-9.10.webp, HTTP last-modified 2026-09-14, read visually): Sienna Spiro plays W2 FRIDAY and Łaszewo W2 SATURDAY (the 2026-08-17 theheartsounds swap was right; the 2026-08-30 note above that called it resolved the other way was wrong - day tags corrected, names untouched); Bo Staloch plays both weekends (was W1); CMAT is W1 only (CultureMap 2026-08-17: dropped from the second weekend). ADDED to artists[] (on the posters, not in the May lineup): Elijah Delgado (W1 Fri), Radio Free Alice and LIVE (W2 Fri), Annie DiRusso (both Sat), Macy Todd (W2 Sat), Dexter and The Moonrocks and Jess Williamson (W1 Sun), Joshua Jensen and Grace Ives (W2 Sun); plus Flight by Nothing (W2 Sun), who is on the 9/10 admat but on no poster, so has no set. ON NO OFFICIAL POSTER OR THE ADMAT: Kingfishr (was W2 Fri), Josh Conway (W1 Sun), Presley Regier (W2 Sat). Sasha Keable (W2 Sun) is on the 8/27 poster (BMI 6:00-6:30) but NOT on the newer 9/10 admat, which lists Flight by Nothing [W2] instead. All four left artists[] the same day - see DROPPED 2026-09-16 at the end of this note. \"ALL TIMES SUBJECT TO CHANGE. CHECK WEBSITE OR MOBILE APP FOR LATEST.\" is printed on every poster. DROPPED 2026-09-16 (Kevin's rule: include clean recent verified info - an artist missing or replaced on a newer version of the same bill from the same source has probably dropped off it). Four names were REMOVED from artists[] and by hand from tests/fixtures/live-pick-keys.json, which orphans any pick under them: Kingfishr (was Friday W2), Josh Conway (Sunday W1) and Presley Regier (Saturday W2) appear on none of the six official schedule posters (aclfestival.com/schedule, last modified 2026-08-27, read visually 2026-09-16) and on none of the official by-day admat (ACL26-Admat-ByDay-9.10.webp on aclfestival.com/lineup, HTTP last-modified 2026-09-14, read visually 2026-09-16); Sasha Keable is on the 2026-08-27 W2 Sunday poster (BMI 6:00-6:30) but gone from that newer admat, which bills Flight by Nothing [W2] in her place. Flight by Nothing keeps its Sunday W2 tag and still has no published slot, so it has no grid set."
+    "note": "Captured 124 unique confirmed acts — the full day-by-day breakdown for both weekends, as reported by KVUE (Austin) on 2026-05-12 based on ACL's own by-day lineup graphic, cross-validated line-by-line against the official Live Nation/C3 Presents press release (2026-05-05). No stages or set times exist yet (C3 Presents has explicitly said daily set-time schedules \"will be announced at a later date\"), so those fields are null throughout. Two corrections applied versus the raw KVUE text: (1) KVUE's W1-Friday list had \"Brandon Thomas\" immediately after \"Leon Thomas\" — this is an evident OCR/typo error for \"Brandon Flowers\" (of The Killers), confirmed by the official press release's identical adjacent ordering and by three other outlets (BrooklynVegan, CultureMap, Billboard) explicitly naming Brandon Flowers as a Weekend-1-only act; (2) KVUE listed Izzy Escobar under both weekends' Friday bills, but the official Live Nation press release explicitly tags \"Izzy Escobar(W1)\" — the official/primary source was trusted over the secondary compilation. One quality-control flag: a few aggregator sites (e.g., liveforlivemusic.com) list The Marías, Role Model, Rilo Kiley, Djo, Pierce The Veil, and Sabrina Claudio as part of the 2026 bill. None of these appear in the official Live Nation press release, the KVUE day-by-day breakdown, or BrooklynVegan's coverage — and all six performed at ACL 2025, so this reads as a copy-paste/template carryover error in that one article rather than a confirmed 2026 booking. Deliberately excluded here; flag to Kevin if seen elsewhere. UPDATE 2026-08-23: official SET TIMES for both weekends went live the week of Aug 17 (aclfestival.com/schedule + the ACL app; earliest sets 12:45 PM, AmEx-stage headliner closes 10 PM). NOT yet ingested: the schedule page is JS-rendered and press/search snippets only carry the evening headline blocks (~6 of ~30 sets/day) - a 10%-populated grid would be worse than this honest lineup view, so the data stays day-level until someone with page access pastes the grids (renderer/validator support for the two-weekend scheduled shape shipped 2026-08-23 - see docs/add-a-festival.md; it is a pure data drop now). Verified evening anchors for cross-checking that ingest: W1 Fri Turnstile T-Mobile 6:15-7:15, Labrinth AmEx 6:30-7:30, Leon Thomas Miller Lite 7:15-8:15, The Chainsmokers Snapchat 7:30-8:30, Skrillex T-Mobile 8:15, Charli xcx AmEx 8:40; W1 Sat RUFUS DU SOL AmEx 8:30, Lorde T-Mobile 8:15; W2 Fri Kings of Leon T-Mobile 8:15, Charli xcx again 8:40. Stage names seen with set-time citations: American Express, T-Mobile, Miller Lite, Snapchat, Honda (do512 venue page) - Titos/BMI/Kiddie Limits names unverified for 2026. One roster change reported by theheartsounds.com 2026-08-17: Sienna Spiro moves to Friday W2 and Laszewo to Saturday W2 - single-sourced, verify against the official grid before applying. ALSO announced, not ingested: ACL Fest Nights 2026 (official late-night aftershows Oct 2-13, Emos/Scoot Inn/Antones etc, separately ticketed, $40-70 - do512.com/aclfestnights) with Brandon Flowers, Bleachers, BUNT., Finn Wolfhard, Rebecca Black DJ set, Palace, Hunx and his Punx - the Portola-style Afters section pattern fits when wanted. UPDATE 2026-08-30: re-confirmed by direct fetch of aclfestival.com/schedule - set times are six schedule images (Fri/Sat/Sun x two weekends), static HTML wrapping image files with no extractable grid text (more precise than the 'JS-rendered' guess above; same conclusion - still blocked on manual transcription, still nobody has pasted the grids). The Sienna Spiro/Laszewo flag above is RESOLVED: a second source (KVUE, 2026-08-30) confirms this file's current assignment - Sienna Spiro=Saturday W2, Laszewo=Friday W2 - is correct; the single-sourced 'move' reported 2026-08-17 does not appear to have happened. timezone: America/Chicago added. SET TIMES INGESTED 2026-09-16. Source of record: the six official schedule posters on aclfestival.com/schedule (Webflow CDN files stamped \"V2-<Day>-20260826-Draft3\", HTTP last-modified 2026-08-27; W1 Fri/Sat/Sun and W2 Sun are 1080px webp, W2 Fri/Sat 2160px png) - read visually by two independent readers (one with column crops, one with crops plus a pixel check of box edges against the hour grid) and diffed box by box: 189 boxes, 0 disagreements. Seven stages every day, left to right as printed: T-Mobile, Miller Lite, BMI, Beatbox, Tito's (printed \"Tito's Handmade Vodka\"), Snapchat, American Express; 12:45 PM to 10 PM. Times are as printed; the posters give the T-Mobile and American Express closers a START only (Skrillex/Kings of Leon 8:15, Charli xcx 8:40, Lorde 8:15, RÜFÜS DU SOL 8:30, The xx 8:30, Twenty One Pilots 8:30), so those carry a start only here too (CultureMap 2026-08-17: the AmEx headliner finishes at 10 PM). Each set is tagged with the weekend it plays; a set identical on both weekends' posters is one untagged entry, and an act whose slot differs is two entries (Faouzia: W1 Miller Lite 1:45-2:30, W2 American Express 2:45-3:30; Paris Paloma: W1 3:15-4:15, W2 5:15-6:15; Arcy Drive: W1 Miller Lite 3:15-4:15, W2 Beatbox 3:30-4:30). Not entered: the Silent Disco box (Tito's, 8-10 PM every night), the ASL-interpreted marker (every American Express closer), and the Austin Kiddie Limits strip (presented by Lifeway Kefir). The posters spell SOLOMON HICKS and THE HUSTON-TILLOTSON UNIVERSITY JAZZ COLLECTIVE - the pick keys \"Soloman Hicks\" and \"Huston-Tillotson University Jazz Collective\" are KEPT. ROSTER CHANGES vs this file, each confirmed by the official posters AND the newer official by-day admat on aclfestival.com/lineup (ACL26-Admat-ByDay-9.10.webp, HTTP last-modified 2026-09-14, read visually): Sienna Spiro plays W2 FRIDAY and Łaszewo W2 SATURDAY (the 2026-08-17 theheartsounds swap was right; the 2026-08-30 note above that called it resolved the other way was wrong - day tags corrected, names untouched); Bo Staloch plays both weekends (was W1); CMAT is W1 only (CultureMap 2026-08-17: dropped from the second weekend). ADDED to artists[] (on the posters, not in the May lineup): Elijah Delgado (W1 Fri), Radio Free Alice and LIVE (W2 Fri), Annie DiRusso (both Sat), Macy Todd (W2 Sat), Dexter and The Moonrocks and Jess Williamson (W1 Sun), Joshua Jensen and Grace Ives (W2 Sun); plus Flight by Nothing (W2 Sun), who is on the 9/10 admat but on no poster, so has no set. ON NO OFFICIAL POSTER OR THE ADMAT: Kingfishr (was W2 Fri), Josh Conway (W1 Sun), Presley Regier (W2 Sat). Sasha Keable (W2 Sun) is on the 8/27 poster (BMI 6:00-6:30) but NOT on the newer 9/10 admat, which lists Flight by Nothing [W2] instead. All four left artists[] the same day - see DROPPED 2026-09-16 at the end of this note. \"ALL TIMES SUBJECT TO CHANGE. CHECK WEBSITE OR MOBILE APP FOR LATEST.\" is printed on every poster. DROPPED 2026-09-16 (Kevin's rule: include clean recent verified info - an artist missing or replaced on a newer version of the same bill from the same source has probably dropped off it). Four names were REMOVED from artists[] and by hand from tests/fixtures/live-pick-keys.json, which orphans any pick under them: Kingfishr (was Friday W2), Josh Conway (Sunday W1) and Presley Regier (Saturday W2) appear on none of the six official schedule posters (aclfestival.com/schedule, last modified 2026-08-27, read visually 2026-09-16) and on none of the official by-day admat (ACL26-Admat-ByDay-9.10.webp on aclfestival.com/lineup, HTTP last-modified 2026-09-14, read visually 2026-09-16); Sasha Keable is on the 2026-08-27 W2 Sunday poster (BMI 6:00-6:30) but gone from that newer admat, which bills Flight by Nothing [W2] in her place. Flight by Nothing keeps its Sunday W2 tag and still has no published slot, so it has no grid set. ACL FEST NIGHTS INGESTED 2026-09-16. The 63 official late-night shows join artists[] as a DATED SECTION (MODEL-V4 §6): day \"Late nights\", one entry per artist a person would pick, each carrying its `date`, `venue`, printed `doors` and its own Do512 show page in `source`. They run Sep 29 to Oct 10, across both weekends and the midweek between them, which is why the section is keyed by date and gets its own tab rather than joining the day tabs. Source of record: do512.com/aclfestnights (pages 1-3), read 2026-09-16. Every printed time is DOORS - Do512 labels it \"(doors)\" and no page prints a set time - so no entry carries `time`. A show billed \"A w/ B, C\" is three entries sharing date and venue; a b2b is one entry per artist (Elephante b2b Riot Ten, 2026-10-02 at The Concourse Project, is two). 46 of the 63 names are this file's EXISTING keys byte for byte, so a pick on a late night and a pick on that artist's Zilker set are one pick; the single alias applied is Do512's \"Yousuke Yukimatsu\" for the key \"¥ØU$UK€ ¥UK1MAT$U\". Where Do512's billing differs from the key, the billing is: Hunx and his Punx = \"Hunx and His Punx\"; Steve Aoki = \"Steve Aoki: Dim Mak 30 w/ Elephante b2b Riot Ten\", a Dim Mak 30 showcase entered as Steve Aoki; Rebecca Black = \"Rebecca Black (DJ Set)\"; It's Murph = \"it's murph\"; Underscores = \"underscores (DJ Set)\"; The War on Drugs = \"The War on Drugs - Presented by Defender\". Jess Williamson and BUNT. each play two nights - two cards under two date rules, one pick each. The venues are as Do512 names them and have no entries in venues{} yet, so their place lines open no map."
   },
   "dayMeta": {
     "Friday": {
@@ -720,6 +1224,10 @@
         "W1": "2026-10-04",
         "W2": "2026-10-11"
       }
+    },
+    "Late nights": {
+      "date": "Sep 29 – Oct 10",
+      "sub": "around Austin"
     }
   },
   "days": {
