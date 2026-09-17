@@ -960,7 +960,6 @@ export function openAllNotes(ctx) {
       lbl.className = 'micro-label';
       lbl.textContent = text;
       body.appendChild(lbl);
-      return lbl;
     };
     const threadsInto = (parent, scope, target, extra = {}) => {
       const host = document.createElement('div');
@@ -993,8 +992,8 @@ export function openAllNotes(ctx) {
       body.appendChild(wrap);
       for (const key of live) threadsInto(wrap, 'day', key);
       if (!ctx.meName) continue;
-      const open = ui.reply && ui.reply.scope === 'day' && ui.reply.target === d.iso && ui.reply.threadKey === null;
-      wrap.appendChild(open
+      const composing = ui.reply && ui.reply.scope === 'day' && ui.reply.target === d.iso && ui.reply.threadKey === null;
+      wrap.appendChild(composing
         ? inlineComposer('day', d.iso, null, ctx, ui, repaint, {
           placeholder: `Add a note for ${d.label}…`,
           label: `Add a note for ${d.label}`,
@@ -1020,11 +1019,11 @@ export function openAllNotes(ctx) {
     // The date door the viewer just opened is outside every thread host, so it
     // does its own unfold and its own caret restore.
     if (ui.reply && ui.reply.scope === 'day' && ui.reply.threadKey === null) {
-      const open = [...body.querySelectorAll('.n-inline')]
+      const box2 = [...body.querySelectorAll('.n-inline')]
         .find((n) => n.dataset.thread === '' && n.dataset.target === ui.reply.target);
-      if (open) {
-        if (ui.unfold) { unfold(open, ctx); ui.unfold = false; }
-        if (ui.replyFocused && ui.focusOwner === 'reply') caretToEnd(open.querySelector('textarea'));
+      if (box2) {
+        if (ui.unfold) { unfold(box2, ctx); ui.unfold = false; }
+        if (ui.replyFocused && ui.focusOwner === 'reply') caretToEnd(box2.querySelector('textarea'));
       }
     }
     if (!any) {
