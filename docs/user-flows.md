@@ -5,6 +5,11 @@
 > one cluster, one link — and barely surfaces as a word. Locked model:
 > `claude-plans/2026-07-14-fests-circles-you-direction.md`.
 
+> **Not covered yet (2026-09-16):** the day-first events wall on PR #16
+> (day tabs, club nights as runs with guessed times, the card section under
+> each day) is not in F4, F5 or F9. Until it is added here, its spec is
+> `claude-plans/2026-08-31-events-canvas/MODEL-V3.md`.
+
 **Created 2026-07-11 · maintained as part of every design/UX change.**
 This is the canonical inventory of what a user can do and what correct looks
 like. The design-audit workflow walks these flows in a real browser at 390px /
