@@ -532,7 +532,7 @@
     box-sizing: border-box;
   }
 }
-.times-grid { display: grid; gap: 4px; min-width: 100%; } /* columns set inline: repeat(n, minmax(150px,1fr)) */
+.times-grid { display: grid; gap: 4px; min-width: 100%; } /* columns set inline: repeat(n, var(--col-w)) */
 .stage-head { font-family: var(--font-display); letter-spacing: var(--track-display);
               color: rgb(var(--fest)); font-size: 12.5px;
               min-width: 0; padding: 0 8px; text-align: center;
@@ -930,17 +930,19 @@ button.sec-head { cursor: pointer; }
 .stage-head.venue { cursor: default; } /* a venue head is a stage header, never a solo button */
 
 /* THE LIST (MODEL-V4 §1.2): one group per venue, its stage header, its
- * doors/close line, and the night's cards stacked in play order. Two columns
- * on a phone; at 720px the grid's own column floor takes over. A stack is as
- * tall as its content — no rows, no floors, no air. */
-.venue-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 6px; align-items: start; }
+ * doors/close line, and the night's cards stacked in play order. The column is
+ * `--col-w` — the same track the timetable's columns ride (§3a.1) — so a stack
+ * card and a set card are one width. A stack is as tall as its content — no
+ * rows, no floors, no air. */
+.venue-grid { display: grid; grid-template-columns: repeat(auto-fill, var(--col-w));
+              justify-content: start; gap: 10px var(--col-gap); align-items: start; }
 .venue-group { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
 .venue-group .stage-head { font-size: 11.5px; }
 .venue-sub { color: var(--text-tertiary); font-size: 9.5px; font-weight: 700; text-align: center;
              letter-spacing: .02em; margin-top: -1px; min-height: 12px; }
 .venue-group .stack { display: flex; flex-direction: column; gap: 5px; }
 @media (min-width: 720px) {
-  .venue-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px 7px; }
+  .venue-grid { row-gap: 12px; }
 }
 
 /* One date inside a dated section (ACL's Late nights): quieter than a day
