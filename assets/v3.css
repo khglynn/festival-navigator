@@ -925,11 +925,6 @@ button.sec-head { cursor: pointer; }
 .date-rule .d { font-family: var(--font-display); letter-spacing: .06em; font-size: 12px; color: var(--text-secondary); }
 .date-rule .line { flex: 1; height: 1px; background: var(--hairline); }
 
-/* The now mark: a stack has no clock to draw a line on, so the card of
- * whoever is playing carries the line's own violet and its label. */
-.card.now { box-shadow: 0 0 0 1.5px rgb(var(--brand)), 0 0 10px rgba(var(--brand), .55); }
-.now-label.in-card { top: 5px; right: 5px; transform: none; }
-
 /* The zoom's WHEN for a back-to-back run (MODEL-V3 §5): two lines in one
  * piece — the venue's window, then the order as a door to the poster. */
 .f-sub.f-stack { flex-direction: column; gap: 3px; }

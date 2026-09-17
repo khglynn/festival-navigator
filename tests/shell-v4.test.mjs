@@ -416,3 +416,26 @@ test('every class this shell writes for visual effect has a rule in v3.css', () 
   assert.match(dockPop[1], /bottom:\s*calc\(100%/, 'it opens upward, above the dock');
   assert.match(dockPop[1], /top:\s*auto/, 'and lets go of the downward default');
 });
+
+// Two definitions of one thing is the same bug as none: v3.css described the
+// now mark twice, and the later block silently won — so the ring and the glow
+// on screen were not the ones the first block (and MODEL-V4 §1.2) describe,
+// and editing the first one looked like it did nothing at all.
+test('the now mark is defined once, and wears the now line\'s own glow', () => {
+  const css = readFileSync(join(ROOT, 'assets/v3.css'), 'utf8');
+  const blocks = (re) => [...css.matchAll(re)].map((m) => m[1]);
+  const shadowOf = (block) => /box-shadow:\s*([^;]+);/.exec(block)[1].replace(/\s+/g, ' ').trim();
+
+  const mark = blocks(/\.card\.now\s*\{([^}]*)\}/g);
+  assert.equal(mark.length, 1, 'one .card.now block — a second one wins silently and makes the first unfixable');
+  assert.equal(blocks(/\.now-label\.in-card\s*\{([^}]*)\}/g).length, 1, 'and one .now-label.in-card');
+
+  // The design: a 1.5px ring in brand — the card's own 1px border recoloured
+  // plus half a pixel of spread, so no layout moves — and the now line's glow,
+  // because the line and the mark are one idea in two places.
+  const lineGlow = shadowOf(blocks(/\.now-line\s*\{([^}]*)\}/g)[0]);
+  const markShadow = shadowOf(mark[0]);
+  assert.match(mark[0], /border-color:\s*rgb\(var\(--brand\)\)/, 'the ring is the card\'s own border, recoloured');
+  assert.match(markShadow, /^0 0 0 \.5px rgb\(var\(--brand\)\)/, 'plus half a pixel of spread');
+  assert.ok(markShadow.endsWith(lineGlow), `the mark wears the line's glow — got "${markShadow}" against "${lineGlow}"`);
+});
