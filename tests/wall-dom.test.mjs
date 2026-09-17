@@ -109,13 +109,18 @@ test('scheduled wall: one strip, canonical columns, mirrored scroll, guarded edg
   document.body.appendChild(root);
   renderWall(root, ctx);
 
-  const strips = root.querySelectorAll('.stage-strip');
-  assert.equal(strips.length, 1, 'exactly one stage strip for the whole page');
-  assert.deepEqual(
-    [...strips[0].querySelectorAll('.stage-head')].map((h) => h.textContent),
-    ['Alpha', 'Beta', 'Gamma'],
-    'strip carries the canonical union in first-appearance order',
-  );
+  // Every day is its own `.tt-block` with its own sticky strip (MODEL-V4
+  // §1.3) — sticky is bounded by its parent, so a page-wide strip would name
+  // the wrong columns the moment a day held anything but its grid.
+  const strips = [...root.querySelectorAll('.stage-strip')];
+  assert.equal(strips.length, 2, 'one stage strip per day that has a grid — Sunday has no sets yet, so it has none');
+  for (const strip of strips) {
+    assert.deepEqual(
+      [...strip.querySelectorAll('.stage-head')].map((h) => h.textContent),
+      ['Alpha', 'Beta', 'Gamma'],
+      'every strip carries the canonical union in first-appearance order',
+    );
+  }
 
   const templates = new Set([...root.querySelectorAll('.times-grid')]
     .map((g) => g.style.gridTemplateColumns));
@@ -133,18 +138,21 @@ test('scheduled wall: one strip, canonical columns, mirrored scroll, guarded edg
   assert.ok(!root.innerHTML.includes('NaN') && !root.innerHTML.includes('Infinity'));
   assert.ok(root.textContent.includes('No set times for this day yet.'));
 
-  // Scroll mirroring: scrolling any one DAY moves the sibling days; the
-  // strip is not a scroller — its row follows the lead day by transform
-  // (in a browser with scroll timelines, by a CSS animation on the lead's
+  // Scroll mirroring: scrolling any one DAY moves the sibling days; a strip
+  // is not a scroller — its row follows its lead day by transform (in a
+  // browser with scroll timelines, by a CSS animation on the lead's
   // timeline; here, the transform path).
   const scrollers = [...root.querySelectorAll('.times-scroll')];
-  assert.equal(scrollers.length, 3, 'strip + Friday + Saturday (empty Sunday has none)');
-  assert.ok(scrollers[0].classList.contains('follows'), 'the strip is marked as a follower');
-  scrollers[1].scrollLeft = 120;
-  scrollers[1].dispatchEvent(new dom.window.Event('scroll'));
-  assert.equal(scrollers[0].querySelector('.times-grid').style.transform, 'translateX(-120px)', 'the strip row follows the day scroller');
-  assert.equal(scrollers[0].scrollLeft, 0, 'and the strip itself never scrolls');
-  assert.equal(scrollers[2].scrollLeft, 120, 'sibling day follows too');
+  assert.equal(scrollers.length, 4, 'a strip and a grid for Friday and for Saturday (empty Sunday has neither)');
+  const stripScrollers = scrollers.filter((s) => s.closest('.stage-strip'));
+  const days = scrollers.filter((s) => s.hasAttribute('data-day'));
+  assert.equal(stripScrollers.length, 2);
+  assert.ok(stripScrollers.every((s) => s.classList.contains('follows')), 'every strip is marked as a follower');
+  days[0].scrollLeft = 120;
+  days[0].dispatchEvent(new dom.window.Event('scroll'));
+  assert.ok(stripScrollers.every((s) => s.querySelector('.times-grid').style.transform === 'translateX(-120px)'), 'the strip rows follow the day scroller');
+  assert.ok(stripScrollers.every((s) => s.scrollLeft === 0), 'and a strip itself never scrolls');
+  assert.equal(days[1].scrollLeft, 120, 'sibling day follows too');
 
   root.remove();
 });

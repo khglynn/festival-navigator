@@ -86,24 +86,24 @@ test('columnsTemplate: a soloed stage is wide, everything else (the EE column to
   assert.equal(filters.columnsTemplate(stages, false, 'Renamed Stage').solo, null, 'a remembered stage that no longer exists cannot blank the wall');
 });
 
-test('people filter on the timetable: non-matching cards DIM but stay in place; tile sections HIDE non-matches and say so when empty', () => {
+test('the people filter dims on the clock and hides in a stack — and says so when a room is left empty', () => {
   const root = render(mkCtx({ filterPeople: ['Kat'] }));
-  const grid = (name) => root.querySelector(`.room[data-bucket=":fest"] .card.cell[data-artist="${name}"]`);
+  const grid = (name) => root.querySelector(`.room[data-room=":fest"] .card.cell[data-artist="${name}"]`);
   assert.ok(!grid('VTSS').classList.contains('dim'), "Kat's pick is lit");
   assert.ok(grid('underscores').classList.contains('dim'), 'a card Kat did not pick is dimmed');
-  assert.equal(root.querySelectorAll('.room[data-bucket=":fest"] .card.cell').length, 64, 'the clock keeps its shape: every set still renders');
+  assert.equal(root.querySelectorAll('.room[data-room=":fest"] .card.cell').length, 64, 'the clock keeps its shape: every set still renders');
   assert.equal(grid('underscores').getAttribute('role'), 'button', 'a dimmed card is still a tap target');
-  // Afters is COLUMNS all week (the consistency law) — a clock, so it dims
-  // like the grid: Friday's Despacio is lit, 2manydjs beside it is not, and
-  // the night keeps its shape.
-  const afters = [...root.querySelectorAll('.room[data-bucket="Afters"] .card.cell')];
-  const friDespacio = afters.find((c) => c.dataset.artist === 'Despacio');
-  const twomany = afters.find((c) => c.dataset.artist === '2manydjs');
-  assert.ok(friDespacio && !friDespacio.classList.contains('dim'), "Kat's afters pick is lit");
-  assert.ok(twomany && twomany.classList.contains('dim'), 'an afters set Kat did not pick dims, it does not vanish');
-  // Folsom is TILES — a list, so it hides non-matches and says so on every
-  // day it appears rather than vanishing.
-  const folsom = [...root.querySelectorAll('.room[data-bucket="Folsom"]')];
+  // A section is a stack — a list, with no clock to keep in shape — so it
+  // HIDES instead: only Kat's picks, and the rooms nobody picked in went with
+  // their cards.
+  const afters = [...root.querySelectorAll('.room[data-room="Afters"] .stack > .card')];
+  assert.ok(afters.length, 'Kat picked something in the afters');
+  assert.ok(afters.every((c) => !c.classList.contains('dim')), 'nothing dims in a stack');
+  assert.ok(afters.some((c) => c.dataset.artist === 'Despacio'), "Kat's afters pick is here");
+  assert.ok(!afters.some((c) => c.dataset.artist === '2manydjs'), 'a set Kat did not pick is gone, not dimmed');
+  // And a room the filter empties says so on every day it appears rather than
+  // vanishing.
+  const folsom = [...root.querySelectorAll('.room[data-room="Folsom"]')];
   assert.ok(folsom.length >= 1);
   for (const room of folsom) {
     assert.equal(room.querySelectorAll('.card').length, 0);
@@ -123,8 +123,8 @@ test('people filter combines: Kat OR Drew lights either’s picks', () => {
 
 test('stage solo: the grid strips and every grid share the folded template, folded columns render no cards, the head says how to get back — and venue heads never solo', () => {
   const root = render(mkCtx({ soloStage: 'Warehouse' }));
-  // Day-first: each grid day carries its own strip; both wear the solo.
-  const strips = [...root.querySelectorAll('.room[data-bucket=":fest"] .stage-strip .times-grid')];
+  // Each grid day carries its own strip; both wear the solo.
+  const strips = [...root.querySelectorAll('.room[data-room=":fest"] .stage-strip .times-grid')];
   assert.equal(strips.length, 2, 'one strip per grid day (Saturday, Sunday)');
   for (const strip of strips) {
     assert.equal(strip.style.gridTemplateColumns, '34px 34px minmax(150px, 1fr) 34px 34px');
@@ -139,20 +139,19 @@ test('stage solo: the grid strips and every grid share the folded template, fold
   for (const grid of root.querySelectorAll('.times-scroll[data-sync="grid"][data-day] .times-grid')) {
     assert.equal(grid.style.gridTemplateColumns, strips[0].style.gridTemplateColumns, 'day grids mirror the strip');
   }
-  const names = [...root.querySelectorAll('.room[data-bucket=":fest"] .card.cell')].map((c) => c.dataset.artist);
+  const names = [...root.querySelectorAll('.room[data-room=":fest"] .card.cell')].map((c) => c.dataset.artist);
   assert.equal(names.length, 16, 'only the Warehouse sets render (8 + 8)');
   assert.ok(names.includes('Four Tet') && !names.includes('Robyn'));
-  // The solo governs the main grid only (MODEL-V3 §3): an events timetable's
-  // venue heads are stage headers in look, never solo buttons, and its
-  // columns are untouched by the solo.
-  const venueHeads = [...root.querySelectorAll('.room[data-bucket="Afters"] .stage-strip .stage-head')];
+  // The solo governs the festival's own grid only: a venue head on a stack is
+  // a stage header in look, never a solo button.
+  const venueHeads = [...root.querySelectorAll('.room[data-room="Afters"] .venue-group .stage-head')];
   assert.ok(venueHeads.length > 0);
   assert.ok(venueHeads.every((h) => h.tagName === 'DIV' && h.classList.contains('venue') && !h.hasAttribute('aria-pressed')));
-  assert.ok([...root.querySelectorAll('.room[data-bucket="Afters"] .times-grid')].every((g) => !g.style.gridTemplateColumns.includes('34px')));
+  assert.equal(root.querySelectorAll('.room[data-room="Afters"] .times-grid').length, 0, 'a section never had a clock to fold');
   // Tapping the pressed head asks for null (restore all); tapping a rail asks for that stage.
   const asked = [];
   const root2 = render(mkCtx({ soloStage: 'Warehouse', onSoloStage: (s) => asked.push(s) }));
-  const heads2 = [...root2.querySelectorAll('.room[data-bucket=":fest"] .stage-strip .stage-head')];
+  const heads2 = [...root2.querySelectorAll('.room[data-room=":fest"] .stage-strip .stage-head')];
   heads2.find((h) => h.getAttribute('aria-pressed') === 'true').click();
   heads2.find((h) => h.classList.contains('rail')).click();
   assert.deepEqual(asked, [null, 'Pier Stage']);
@@ -160,10 +159,10 @@ test('stage solo: the grid strips and every grid share the folded template, fold
 });
 
 test('no solo: the everyday template, and computeTimesLayout reports solo null', () => {
-  const layout = computeTimesLayout(portola, (d) => state.getDayArtists(d, null), null);
+  const layout = computeTimesLayout(portola, null);
   assert.equal(layout.solo, null);
   assert.equal(layout.colsTemplate, 'minmax(150px, 1fr) minmax(150px, 1fr) minmax(150px, 1fr) minmax(150px, 1fr) minmax(150px, 1fr)');
-  const stale = computeTimesLayout(portola, (d) => state.getDayArtists(d, null), 'Gone Stage');
+  const stale = computeTimesLayout(portola, 'Gone Stage');
   assert.equal(stale.solo, null, 'a stale solo is ignored');
 });
 

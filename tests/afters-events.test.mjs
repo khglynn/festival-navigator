@@ -93,10 +93,10 @@ const ctx = {
   onTap: () => {}, onOpenNotes: null, onNotesChange: null, onOpenDayNotes: null,
 };
 
-// Day-first (MODEL-V3, 2026-09-01): a lineup fest whose sections say which
-// NIGHT each show is on composes by day — FRIDAY, SATURDAY, SUNDAY, each
-// holding that night's billing and sections. Inside a day the tile is CLEAN
-// (name + time; the venue lives in the zoom), because the day is the day.
+// The composed wall (MODEL-V4, 2026-09-16): a lineup fest whose sections say
+// which NIGHT each show is on composes by day — FRIDAY, SATURDAY, SUNDAY,
+// each holding that night's billing and sections. Inside a day the card is
+// CLEAN (name + time), because the venue is the group's own header.
 // The old two-line "night · time / venue" label survives where no day
 // implies the night: the flat sorts (A → Z, my picks, most picked).
 const AFTERS_FEST = {
@@ -110,7 +110,7 @@ const AFTERS_FEST = {
   ],
 };
 
-test('lineup wall, day-first: one day holds its billing and its sections; tiles say the time only; a timeless show shows no clock', () => {
+test('lineup wall, composed: one day holds its billing and its sections; a stack card says the time only; a timeless show shows no clock', () => {
   state.FESTIVALS['afters-fest'] = AFTERS_FEST;
   state.setActiveFestivalId('afters-fest');
   const root = document.createElement('div');
@@ -126,7 +126,7 @@ test('lineup wall, day-first: one day holds its billing and its sections; tiles 
   const overmonos = cards.filter((c) => c.dataset.artist === 'Overmono');
   assert.equal(overmonos.length, 2, 'one card per appearance, same pick identity');
   assert.deepEqual(overmonos.map(subOf).sort(), ['', '10 PM – 2 AM'],
-    'the billing card stays bare; the afters tile says the time only — the venue is in the zoom');
+    'the billing card stays bare; the afters card says the time only — the venue heads its group');
 
   const hmds = cards.filter((c) => c.dataset.artist === 'Horse Meat Disco');
   assert.equal(hmds.length, 2, 'combined "Afters & Folsom" splits into both sections');
@@ -138,7 +138,7 @@ test('lineup wall, day-first: one day holds its billing and its sections; tiles 
 
   const ga = cards.find((c) => c.dataset.artist === 'Groove Armada');
   assert.equal(subOf(ga), '', 'a show with no confirmed time wears no clock — the zoom says where');
-  assert.equal(ga.closest('.room').dataset.bucket, 'Afters');
+  assert.equal(ga.closest('.room').dataset.room, 'Afters');
 
   root.remove();
 });

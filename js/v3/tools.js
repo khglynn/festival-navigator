@@ -234,7 +234,7 @@ export function dayImageChoices(fest) {
   if (!plan) return [];
   const out = [];
   if (looseOf(plan).length) out.push({ key: '', label: plan.scheduled ? 'EVERYTHING ELSE' : 'THE LINEUP' });
-  for (const d of plan.model.days) out.push({ key: d.key, label: [d.long, d.sub].filter(Boolean).join(' · ') });
+  for (const d of plan.model.days) out.push({ key: d.key, label: d.sub || d.long });
   for (const e of plan.model.extras) out.push({ key: e.key, label: e.long });
   return out;
 }

@@ -1046,7 +1046,6 @@ export function venueGroups(root, entries, ctx, { day = null, fest = null } = {}
     return 0;
   }
   root.appendChild(grid);
-  if (ctx.now) positionNowMarks(grid, ctx.now);
   return shown;
 }
 
@@ -1054,7 +1053,8 @@ export function venueGroups(root, entries, ctx, { day = null, fest = null } = {}
 // same one-minute ticker, no repaint. A card is "now" when the festival's
 // clock is inside the window venueGroupsOf gave it.
 export function positionNowMarks(root, date = new Date()) {
-  for (const grid of root.querySelectorAll ? root.querySelectorAll('.venue-grid[data-iso]') : []) {
+  const here = root.matches && root.matches('.venue-grid[data-iso]') ? [root] : [];
+  for (const grid of [...here, ...root.querySelectorAll('.venue-grid[data-iso]')]) {
     const clock = festivalClock(date, grid.dataset.tz || null);
     const today = grid.dataset.iso === clock.iso;
     for (const card of grid.querySelectorAll('.card[data-now-from]')) {
@@ -1130,8 +1130,10 @@ export function sectionHeader(label, sub, { key = null, folded = false, count = 
 // reserved column (Kevin, Electric Forest, 2026-09-02).
 function straysOf(fest, day, weekend, stages) {
   return state.getDayArtists(day, weekend)
+    // A computed set knows its stage and its clock but not its day key — the
+    // occurrence needs both, or the zoom tells another card's story.
     .filter((a) => stages.indexOf(a.stage) === -1)
-    .map((a) => ({ ...a, venue: a.stage || null }));
+    .map((a) => ({ ...a, day, venue: a.stage || null }));
 }
 // The festival's activities (yoga, a workshop, the Brainery) are cards like
 // any other now — one venue group per place, in the order venueGroupsOf puts
@@ -1210,6 +1212,7 @@ function renderComposed(root, ctx, fest, { model: plan, scheduled }) {
   }
   festNotesFoot(root, ctx, fest);
   wireTimesScrollSync(root);
+  positionNowMarks(root, ctx.now || new Date());
 }
 
 // A day's rule, and the newest note at its door. Day notes are keyed by the

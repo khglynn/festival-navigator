@@ -327,38 +327,31 @@ test('the wall renders every Midway set in its run, the tilde exactly where the 
     fid: 'portola-2026', meName: 'Kevin', picks: {}, affinity: null, lowPower: true,
     sort: 'day', query: '', weekend: 'all', onTap: () => {}, onOpenNotes: null, onNotesChange: null, onOpenDayNotes: null,
   });
-  // Day-first: the days are THU FRI SAT SUN, and the run renders as a plain
-  // vertical column on Sunday's afters clock. Data-driven on purpose — the
-  // order, the times and which of them are guesses are the file's, never
-  // this test's.
+  // The days are THU FRI SAT SUN, and the run renders as one stack under its
+  // venue on Sunday. Data-driven on purpose — the order, the times and which
+  // of them are guesses are the file's, never this test's.
   const rules = [...root.querySelectorAll('.day-rule')].map((r) => r.querySelector('.day').textContent);
   assert.deepEqual(rules, ['THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY']);
   const sunday = [...root.querySelectorAll('.day-rule')].find((r) => r.dataset.day === 'Sunday');
   let afters = sunday.nextElementSibling;
-  while (afters && !(afters.classList.contains('room') && afters.dataset.bucket === 'Afters')) afters = afters.nextElementSibling;
+  while (afters && !(afters.classList.contains('room') && afters.dataset.room === 'Afters')) afters = afters.nextElementSibling;
   assert.ok(afters, 'Sunday has an AFTERS room');
-  const cellOf = (name) => [...afters.querySelectorAll('.times-grid .card.cell')].find((c) => c.dataset.artist === name);
+  const stackOf = (venue) => [...afters.querySelectorAll('.venue-group')]
+    .find((g) => g.querySelector('.stage-head .label').textContent === venue);
+  const midwayGroup = stackOf('The Midway');
+  assert.ok(midwayGroup, 'the Midway is one venue group');
   const bySeq = [...midway].sort((x, y) => x.order.seq - y.order.seq);
-  let prevRow = -1;
-  let column = null;
-  for (const a of bySeq) {
-    const cell = cellOf(a.name);
-    assert.ok(cell, `${a.name} is a cell on Sunday's afters clock`);
-    assert.equal(cell.dataset.time, a.approx === true ? `~${a.time}` : a.time, 'a guessed time wears the tilde; a posted one never does');
-    assert.equal(cell.style.width, '', 'a run never lane-splits');
-    assert.equal(cell.closest('.deck'), null, 'a run never becomes a deck');
-    const row = Number(cell.style.gridRow.split(' / ')[0]);
-    assert.ok(row > prevRow, `${a.name} sits below the set before it`);
-    prevRow = row;
-    if (column === null) column = cell.style.gridColumn;
-    assert.equal(cell.style.gridColumn, column, 'one venue, one column');
-  }
-  const guessedSunday = events.some((a) => a.night === 'Sun' && a.approx === true && /Afters/.test(a.day));
-  assert.equal(afters.querySelectorAll('.sec-whisper').length, guessedSunday ? 1 : 0, 'ONE section-level whisper, and only when something on the night is a guess');
-  if (guessedSunday) assert.equal(afters.querySelector('.sec-whisper').textContent, '~ marks a guessed set time — the order is the plan', 'the LOCKED copy, no terminal period');
+  const cards = [...midwayGroup.querySelectorAll('.stack > .card')];
+  assert.deepEqual(cards.map((c) => c.dataset.artist), bySeq.map((a) => a.name),
+    'every set is its own card, in the run\'s order, top to bottom');
+  assert.deepEqual(cards.map((c) => c.dataset.time), bySeq.map((a) => (a.approx === true ? `~${a.time}` : a.time)),
+    'a guessed time wears the tilde; a posted one never does');
+  assert.ok(cards.every((c) => !c.style.width && !c.style.gridColumn), 'a stack never lane-splits');
+  assert.equal(afters.querySelectorAll('.sec-whisper').length, 0,
+    'the inline tilde whisper is gone — How it works explains it once (Kevin, 2026-09-17)');
   const hmd = [...root.querySelectorAll('.card')].filter((c) => c.dataset.artist === 'Horse Meat Disco');
-  assert.deepEqual(hmd.map((c) => [c.closest('.room').dataset.bucket, c.classList.contains('cell'), c.querySelector('.time')?.textContent]),
-    [['Afters', true, '9 PM'], ['Folsom', false, '9 PM – 3 AM']],
-    'Friday: a cell on the afters clock (start time, the end at the cell\'s foot), and a Folsom tile that says the range');
+  assert.deepEqual(hmd.map((c) => [c.closest('.room').dataset.room, c.querySelector('.time')?.textContent]),
+    [['Afters', '9 PM – 3 AM'], ['Folsom', '9 PM – 3 AM']],
+    'Friday: one show, two rooms, the same printed window on both cards');
   root.remove();
 });

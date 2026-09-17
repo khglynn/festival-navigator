@@ -71,7 +71,7 @@ const cardsUnder = (root, dayLabel) => {
   const grid = rule.nextElementSibling;
   return [...grid.querySelectorAll('.card')].map((c) => ({ name: c.dataset.artist, time: c.dataset.time }));
 };
-// Day-first: the rooms between a day's rule and the next day's, by bucket.
+// The rooms between a day's rule and the next day's, by key.
 const roomsUnder = (root, dayKey) => {
   const rule = [...root.querySelectorAll('.day-rule')].find((r) => r.dataset.day === dayKey);
   assert.ok(rule, `no day rule ${dayKey}`);
@@ -79,7 +79,7 @@ const roomsUnder = (root, dayKey) => {
   for (let n = rule.nextElementSibling; n && !n.classList.contains('day-rule'); n = n.nextElementSibling) {
     if (n.classList.contains('room')) {
       out.push({
-        bucket: n.dataset.bucket,
+        bucket: n.dataset.room,
         label: n.querySelector('.sec-label').textContent,
         cards: [...n.querySelectorAll('.card')].map((c) => ({ name: c.dataset.artist, time: c.dataset.time })),
       });
@@ -97,12 +97,13 @@ test('extraSectionsOf: non-grid days become sections in known-day order, leftove
   assert.deepEqual(sections.get('').map((a) => a.name), ['Late Add'], 'billed on a grid day, not on the grid = everything else');
 });
 
-// Day-first (MODEL-V3, 2026-09-01): the sections say which NIGHT each show
-// is on, so the wall composes by day — FRIDAY (afters + Folsom), SATURDAY
-// (the grid, the billed-but-untimed, that night's afters), SUNDAY (Folsom).
-// The afters entries never lost their venue: it rides the occurrence into
-// the zoom, and the tile itself says only the time.
-test('scheduled wall, day-first: each day holds its grid, its everything-else and its sections; an afters card keeps its pick and its venue', () => {
+// The composed wall (MODEL-V4, 2026-09-16): the sections say which NIGHT each
+// show is on, so the wall composes by day — FRIDAY (afters + Folsom),
+// SATURDAY (the festival's own room, holding its grid AND the name billed on
+// it with no set time yet, then that night's afters), SUNDAY (Folsom). The
+// afters entries never lost their venue: it heads their group and rides the
+// occurrence into the zoom, and the card itself says only the time.
+test('scheduled wall, composed: each day holds its grid and its sections; an afters card keeps its pick and its venue', () => {
   const root = document.createElement('div');
   document.body.appendChild(root);
   renderWall(root, mkCtx());
@@ -111,10 +112,11 @@ test('scheduled wall, day-first: each day holds its grid, its everything-else an
   assert.deepEqual(fri.map((r) => [r.bucket, r.label]), [['Afters', 'AFTERS'], ['Folsom', 'FOLSOM']]);
   assert.deepEqual(fri[0].cards, [{ name: 'Horse Meat Disco', time: '9 PM – 3 AM' }]);
   const sat = roomsUnder(root, 'Saturday');
-  assert.deepEqual(sat.map((r) => [r.bucket, r.label]), [[':fest', 'SECTIONS FEST'], [':fest', 'EVERYTHING ELSE'], ['Afters', 'AFTERS']]);
-  assert.deepEqual(sat[0].cards.map((c) => c.name).sort(), ['Headliner', 'Overmono'], 'the grid is Saturday\'s first room');
-  assert.deepEqual(sat[1].cards, [{ name: 'Late Add', time: undefined }], 'billed on Saturday, not on Saturday\'s grid: still Saturday\'s');
-  assert.deepEqual(sat[2].cards, [{ name: 'Overmono', time: '10 PM – 2 AM' }, { name: 'Only Afters', time: '10 PM' }], 'tiles say the time only, time-sorted');
+  assert.deepEqual(sat.map((r) => [r.bucket, r.label]), [[':fest', 'SECTIONS FEST'], ['Afters', 'AFTERS']]);
+  assert.deepEqual(sat[0].cards.map((c) => c.name), ['Headliner', 'Overmono', 'Late Add'],
+    'the grid, then the name billed on Saturday with no set on Saturday\'s grid — one room, no "everything else"');
+  assert.deepEqual(sat[1].cards, [{ name: 'Overmono', time: '10 PM – 2 AM' }, { name: 'Only Afters', time: '10 PM' }],
+    'the afters, venue group by venue group, in opening order');
   const sun = roomsUnder(root, 'Sunday');
   assert.deepEqual(sun.map((r) => r.bucket), ['Folsom']);
   assert.deepEqual(sun[0].cards, [{ name: 'The Fair', time: '11 AM – 6 PM' }]);
