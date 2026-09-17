@@ -93,7 +93,10 @@ function checkEventFields(fest, err, warn) {
   // drift check below keeps the two from ever saying different things.
   //
   // A festival with no grid has no sections: every day label on a lineup wall
-  // is a lineup day, and none of this applies.
+  // is a lineup day, and none of this applies. A combined label counts as a
+  // grid billing the moment one of its parts is a grid day ("Saturday &
+  // Sunday"), so only a label with no grid day anywhere in it is a section —
+  // erring toward the side that never fails a real billing.
   const gridDays = new Set(Object.keys(plain(fest.days) ? fest.days : {}).map((d) => d.toLowerCase()));
   const isSectionEntry = (a) => gridDays.size > 0
     && typeof a.day === 'string' && a.day.trim()
