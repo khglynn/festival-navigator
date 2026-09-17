@@ -3,7 +3,7 @@
 // plain"). ONE home for the constants every grown surface shares — the zoom
 // (card-facts.js) and the bucket toggle (app.js) read them from here.
 export const GROW_MS = 240;        // the box, k→1
-export const MATERIALIZE_MS = 90;  // the overlay's fade-in (the CSS content fade matches)
+export const CONTENT_FADE_MS = 90; // the RESTING card's content stepping back (`.card > *` in v3.css matches)
 export const OUT_MS = 130;         // the way out: quick and plain
 export const CASCADE_MS = 170;     // each grown line's arrival
 export const STAGGER_MS = 30;      // the beat between arrivals
