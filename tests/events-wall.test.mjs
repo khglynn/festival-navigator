@@ -319,13 +319,15 @@ test('every venue-night on the Portola wall is a vertical run: nothing lanes, no
   const fri = columnsOf(blocks[1]);
   const regency = [...fri.values()].find((l) => l.length === 3 && l[0].name === 'Gelli Haha');
   assert.ok(regency, 'the Regency three are one column');
-  // The clocks are the guesser's (scripts/guess-run-times.mjs, from the venue
-  // registry) and are read from the file, not retyped: the pin is the ORDER
-  // and the tilde, not a particular quarter hour.
-  const guess = (name) => `~${portola.artists.find((a) => a.name === name && a.order).time}`;
-  const withGuess = (names) => names.map((n) => [n, guess(n)]);
+  // The clocks are read from the file, not retyped: the pin is the ORDER, and
+  // a tilde exactly where the file says the time is a guess (`approx`) — a
+  // time the venue posted wears none.
+  const shown = (name) => {
+    const a = portola.artists.find((x) => x.name === name && x.order);
+    return a.approx === true ? `~${a.time}` : a.time;
+  };
+  const withGuess = (names) => names.map((n) => [n, shown(n)]);
   assert.deepEqual(regency.map((c) => [c.name, c.time]), withGuess(['Gelli Haha', 'Jyoty', 'Channel Tres']));
-  assert.ok(regency.every((c) => /^~/.test(c.time)), 'every run card wears the tilde');
   assert.ok(regency.every((c) => c.el.getAttribute('role') === 'button'), 'every set stays its own tappable card');
   // Sunday's Public Works — the other deck — and the Midway four.
   const sun = columnsOf(blocks[3]);
