@@ -154,6 +154,27 @@ test('Escape puts a hovered zoom away and the mark clears on leave: coming back 
   await move(sp.x, sp.y); await sleep(CLOSE_MS);
 });
 
+test('a press outside is a plain close: come straight back and the card grows again', { skip }, async () => {
+  // app.js's rule. A press outside never marks the card put away — the hand is
+  // by definition elsewhere, and a mark there poisoned the next hover (Codex
+  // gate, 2026-08-31). The gallery once ran dismissZoom here instead, so this
+  // contract was testing a rule production does not have.
+  const [c] = await cards();
+  const sp = await empty();
+  await move(c.x, c.y); await sleep(OPEN_MS);
+  let s = await state();
+  assert.equal(s.shown, 1, `grown: ${JSON.stringify(s)}`);
+  await move(sp.x, sp.y);
+  await page.mouse.click(sp.x, sp.y);           // inside the hover-out grace
+  await sleep(300);
+  s = await state();
+  assert.equal(s.shown, 0, `the press put it away: ${JSON.stringify(s)}`);
+  await move(c.x, c.y); await sleep(OPEN_MS);
+  s = await state();
+  assert.equal(s.shown, 1, `coming straight back grows it again: ${JSON.stringify(s)}`);
+  await move(sp.x, sp.y); await sleep(CLOSE_MS);
+});
+
 test('a mouse button held on a resting card is a slow click, never a touch-style zoom that ignores the mouse', { skip }, async () => {
   const list = await cards();
   const c = list[5];
