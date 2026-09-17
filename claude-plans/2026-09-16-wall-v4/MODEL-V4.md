@@ -31,10 +31,15 @@ almost everything starts at 8 or 10 PM — you pick one door and stay. So:
 the place it happens, in play order.** Data still decides — but by its
 shape (a grid is a grid), never by a threshold.
 
-### 1.1 The timetable (unchanged)
+### 1.1 The timetable (one change)
 `renderScheduledDayBody` as today: hour rail, sticky stage strip, 15-minute
 rows, lanes for same-stage overlaps, stage solo, the now line. Only a grid
 day renders it. `computeTimesLayout` loses its dead `hasEE` parameter.
+**The grid spans the whole day** — from the festival's doors to its close
+(`dayMeta[day].doors` / `close` when present, else the first set's hour to
+the last set's end) — so the now line always has a home (Kevin, 2026-09-17:
+"otherwise the now line is weird"). Empty rows at the day's edges are the
+honest cost.
 
 ### 1.2 The list: venue groups (new; extends the stage head and the card)
 `venueGroups(entries, ctx, { fest, day, occOf })` renders one `.venue-grid`
@@ -67,8 +72,18 @@ holding one `.venue-group` per venue:
   gap: 10px 6px; align-items: start }` under 720px; `repeat(auto-fill,
   minmax(150px, 1fr))` at ≥720 (the grid's own column floor). The stack is
   as tall as its content — no rows, no floors, no air.
-- The one section-level whisper stays: `~ marks a guessed set time — the
-  order is the plan` once per section that carries a guess.
+- **No explanatory line on the wall.** The `~ marks a guessed set time —
+  the order is the plan` whisper is deleted (Kevin, 2026-09-17: "weird
+  inline"); the tilde is explained once in Settings → How it works, as a
+  lesson row (copy drafted by Codex, Kevin picks).
+- **The now mark.** A stack has no clock to draw a line on, so the card of
+  whoever is playing right now carries `.card.now`: a 1.5px ring in `--brand`
+  with the soft glow the now line uses, and a small `NOW` label (the
+  `.now-label` component, top-right of the card). "Playing now" = now is in
+  `[start, next member's start)` for a run, `[start, end)` for a ranged show,
+  `[doors, close)` for a doors-only show; the 1-minute ticker that moves the
+  now line toggles the class without a repaint. Same violet, same ticker,
+  one idea in two places.
 - **One renderer.** `renderEventsTimetable`, `timetableOf`, `earnsColumns`,
   `sectionModeOf`, `tbaBlock` and the deck are deleted. `runFactsOf` stays
   (the zoom's "Runs 10 PM – ~3 AM · Guessing they're 3rd of 4").
@@ -125,18 +140,41 @@ section says its own sub from `dayMeta[<label>].sub` if present, else nothing.
   layout change the person asked for.
 - This replaces the bucket chips, the hidden-bucket whisper and
   `toggleBucketFlow`; `filters.js` loses its bucket functions;
-  `bucketsOf` goes. Settings may later list "Show on the wall" as a second
-  door to the same state; not in this round.
+  `bucketsOf` goes.
+
+### 3.1 The show menu (Kevin, 2026-09-17)
+The fest name at the end of the dock (phone) and of the day rail (desktop)
+opens **the show menu**: the sort popover component reused (`.sort-wrap` +
+`.sort-pop`, listbox semantics), headed `Show`, one row per room of the
+festival week (`Portola`, `Afters`, `Folsom`) with a check, then a divider
+and `Settings ›` — because that tap opens Settings today and nothing may
+be lost. Unchecking a room folds it on every day; it is the SAME state as
+§3's fold (`fn_fold_v1_<fid>`), read by both doors. On the phone the popover
+opens upward above the dock; on desktop it hangs under the rail. A fest with
+one room has no menu: the tap goes straight to Settings, as today. Escape,
+a tap outside and a row tap all close it; the way in has the beat, the way
+out is quick.
 
 ## 4. Notes keep three doors
 
 The card's corner chip, the day whisper (nothing until someone writes, then
 the newest note as one line), and the toolbar `Notes` sheet. The `+ ✎` /
 `n ✎` chips on the day rule and on every section header are removed
-(`dayHeader` and `sectionHeader` lose their `onOpenNotes` option). The first
-note on a day is written from the Notes sheet's per-day composer — verify the
-all-notes sheet offers one per day; if it does not, add the `+ note` row
-there rather than putting a chip back on the wall.
+(`dayHeader` and `sectionHeader` lose their `onOpenNotes` option).
+
+**How a note gets added, by kind:**
+- *An artist:* hold (touch) or hover (mouse) the card → `+ note` on the
+  grown card; a card that already has notes also opens from its corner chip.
+  Unchanged.
+- *A day (or a section like Afters — a section IS a day label):* the
+  `Notes` chip in the toolbar opens the all-notes sheet; every day and
+  section there ends with the open-door row the threads already use (`.n-door`,
+  "Add a note for Saturday"), so the first note is two taps. Once a day has a
+  note, its whisper on the wall opens the same thread. The all-notes sheet
+  must offer that door per day and per section — it lists sections today
+  but ends only with the festival composer; add the per-day doors there,
+  never a chip on the wall.
+- *The festival:* the composer at the top of the all-notes sheet, as today.
 
 ## 5. The zoom: opaque from the first frame
 
@@ -196,18 +234,21 @@ Codex round, real-browser walk (Chromium + WebKit iPhone), Kevin's look on a
 unique preview URL, merge #16, promote. Target: Sun 2026-09-20 / Mon 09-21.
 
 1. **model + list** (`events.js`, `wall.js`, `v3.css`, their tests, `gallery.html`) — the venue groups, the composed day, the dated section, the deletions.
-2. **shell** (`app.js`, `filters.js`, `index.html`, `settings.js` if the fold gets a Settings door later) — day nav for dated sections and six-tab weekends, the default-day rule, the fold state, the deletions.
+2. **shell** (`app.js`, `filters.js`, `index.html`, `settings.js` for the How it works rows) — day nav for dated sections and six-tab weekends, the default-day rule, the fold state and the show menu on the fest link, the now-mark ticker, the three How it works lesson rows (tilde, show menu, now), the per-day doors in the all-notes sheet (`notes.js`), the deletions.
 3. **data + validator** (`api/_lib/festival-rules.mjs`, `scripts/`, `data/festivals/acl-2026.json`, the freeze, docs) — `night` xor `date`, the Fest Nights entries, MODEL-V3 supersede notes, user-flows, CLAUDE.md, README.
 4. **zoom** (`card-facts.js`, `tests/browser/`) — opaque from frame one, the contract case.
 
 Every lane: tests first where feasible, small scope-prefixed commits, no
 stamp (the integrator stamps once), no push.
 
-## 9. Open with Kevin (asked on the canvas hand-over)
+## 9. Kevin's notes on the canvas (2026-09-17), folded in
 
-- Direction A vs B vs C.
-- Fold on the header (proposed) vs a "Show on the wall" list in Settings, or both.
-- ACL as six dated tabs with no weekend switch.
-- Activities (yoga, ceremonies) as pickable cards.
-- Where the Late nights tab sits (after the days, proposed).
-- The default-open day (the festival's first day, proposed).
+- The fest name in the dock/rail becomes the show menu (§3.1). ✔
+- The grid keeps the full day so the now line is never weird (§1.1); stacks
+  mark whoever is playing now (§1.2). ✔
+- The inline tilde whisper goes; How it works explains it (§1.2, §8 lane 2). ✔
+- The "what goes" note on the canvas is in plain English now.
+
+Still open with Kevin: direction A vs B vs C; ACL as six dated tabs; activities
+as pickable cards; where the Late nights tab sits (after the days, proposed);
+the default-open day (the festival's first day, proposed).
