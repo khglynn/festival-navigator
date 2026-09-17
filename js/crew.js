@@ -201,11 +201,12 @@ export function hashHasBrokenPersonLink() {
 }
 
 // The person token travels ONLY in this header — a query param would put the
-// master key in platform logs and proxies (Codex gate, P1).
+// master key in platform logs and proxies (Codex gate, P1). Boot awaits this
+// (a me link, a parked absorb), so it gets the same deadline as fetchCrew.
 export async function fetchPerson(token) {
   const res = await fetch('/api/person', {
     headers: { 'X-Person-Token': token },
-    cache: 'no-store',
+    cache: 'no-store', signal: timeoutSignal(BOOT_FETCH_TIMEOUT_MS),
   });
   if (isApiNotFound(res)) return null;
   if (!res.ok) throw new Error('person fetch failed: ' + res.status);

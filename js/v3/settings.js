@@ -1079,6 +1079,9 @@ async function runFullSync(ctx, actions, onProgressIn, rerenderDrill, msg) {
   // he isn't in, 2026-07-13). Same crew at the end, or nothing is written.
   const tokenAtStart = state.getCrewToken();
   const meAtStart = ctx.meName;
+  // Busy (index.html's quiet()): a new build's reload waits out the scan
+  // rather than throwing away minutes of reading.
+  document.body.dataset.busy = 'spotify-scan';
   try {
     const map = await spotify.scanLibrary((p) => onProgress(p), {
       festNames: crewFestNamesLower(),
@@ -1117,6 +1120,8 @@ async function runFullSync(ctx, actions, onProgressIn, rerenderDrill, msg) {
     scanPill(null);
     lastSyncNote = String(e.message || e);
     rerenderDrill();
+  } finally {
+    delete document.body.dataset.busy;
   }
 }
 

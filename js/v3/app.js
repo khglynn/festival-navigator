@@ -8,10 +8,10 @@ import * as crew from '../crew.js';
 import * as sync from '../sync.js';
 import * as spotify from '../spotify.js';
 import * as model from './model.js';
-import { loadFestivalIndex, loadFestival, loadCustomFestivals, FESTIVAL_INDEX, defaultFestivalId } from '../festivals.js';
-import { renderWall, refreshCard, showUndoToast, showActionToast, showToast, wireScrollspy, colorIndexOf, scheduledWeekendOf, positionNowLines, scrollToNowLine, dayNavOf, cardFor, roomOf, isStripScroller } from './wall.js';
+import { loadFestivalIndex, loadFestival, fetchCustomFestivals, mergeCustoms, FESTIVAL_INDEX, defaultFestivalId } from '../festivals.js';
+import { renderWall, refreshCard, showUndoToast, showToast, wireScrollspy, colorIndexOf, scheduledWeekendOf, positionNowLines, scrollToNowLine, dayNavOf, cardFor, roomOf, isStripScroller } from './wall.js';
 import { loadPeopleFilter, savePeopleFilter, togglePerson, pruneToActive, loadSolo, saveSolo, loadHiddenBuckets, applyBucketToggle } from './filters.js';
-import { OUT_MS, CASCADE_MS, STAGGER_MS, EASE_ARRIVE, EASE_LEAVE, canAnimate } from './motion.js';
+import { OUT_MS, CASCADE_MS, STAGGER_MS, EASE_ARRIVE, EASE_LEAVE, EASE_SURFACE, canAnimate } from './motion.js';
 import { scrolledBefore, rememberScrolled, dayOfScrollKey } from './now.js';
 import { disclosureFold, eqLoader, festRow } from './tools.js';
 import { openArtistSheet, openDayNotes, openAllNotes, openFestNotes, closeSheet, refreshOpenSheet, sheetChrome, dialogize, rememberOpener } from './notes.js';
@@ -587,14 +587,58 @@ function updateMigrationBanner() {
     : 'You’re offline — picks unlock after one online update. Notes and reading work now.';
 }
 
+// A new build took over this tab while something was in progress (a note
+// half-typed, a sheet open, a card grown). index.html's worker glue reloads by
+// itself the moment the page is quiet; until then this strip says so, and it
+// stays until the reload — a strip, not a toast, because the next toast of any
+// kind cleared the shared slot and left the tab on the old build for good.
+function showNewBuildStrip() {
+  if (document.getElementById('new-build-strip')) return;
+  const bar = document.createElement('div');
+  bar.id = 'new-build-strip';
+  bar.style.cssText = 'display: flex; align-items: center; gap: 10px; margin-top: 11px; padding: 10px 13px; border: 1px solid var(--border-emphasis); border-radius: var(--r-row); background: var(--card);';
+  const msg = document.createElement('span');
+  msg.style.cssText = 'flex: 1; color: var(--text-body); font-size: 12px; font-weight: 600; line-height: 1.45;';
+  msg.textContent = 'Updated behind the scenes — refresh to run the latest.';
+  const refresh = document.createElement('button');
+  refresh.className = 'btn-tonal';
+  refresh.style.cssText = 'font-size: 11.5px; padding: 7px 13px; flex: none;';
+  refresh.textContent = 'Refresh';
+  refresh.addEventListener('click', () => location.reload());
+  bar.append(msg, refresh);
+  insertStrip(bar);
+}
+
 // ---- screens ----------------------------------------------------------------------
 const SCREENS = ['screen-landing', 'screen-join', 'screen-create', 'screen-app', 'screen-settings', 'screen-badlink', 'screen-error'];
 function show(screen) {
+  $('screen-boot')?.remove(); // the cold-open loader's job ends with the first screen
   for (const id of SCREENS) {
     $(id).style.display = id === screen ? '' : 'none';
   }
 }
 const anyScreenVisible = () => SCREENS.some((id) => $(id).style.display !== 'none');
+
+// A cold open waits on the network before it knows which screen is right —
+// on one bar that is seconds, and every screen starts display:none. The page
+// shows the app's loader meanwhile, never black. It arrives after a beat, so a
+// quick boot goes straight to its screen without a flash. Built here rather
+// than in index.html: a new page over an old worker's cached app.js would
+// otherwise carry a loader no show() of that build knows to remove.
+function showBootLoader() {
+  const screen = document.createElement('div');
+  screen.id = 'screen-boot';
+  screen.className = 'entry-screen';
+  const col = document.createElement('div');
+  col.className = 'center-col';
+  col.style.alignItems = 'center';
+  col.appendChild(eqLoader('Loading your festivals…'));
+  screen.appendChild(col);
+  document.body.prepend(screen);
+  if (canAnimate(screen, ctx)) {
+    screen.animate([{ opacity: 0 }, { opacity: 1 }], { duration: CASCADE_MS, delay: 400, easing: EASE_SURFACE, fill: 'backwards' });
+  }
+}
 
 // ---- create (spec F2, reshaped 2026-07-14): multi-pick fests, name once ------------
 
@@ -702,6 +746,9 @@ async function batchCreateFlow(myName) {
   const problem = nameProblem(myName);
   if (problem) { createStepName(); status.textContent = problem; return; }
   createInFlight = true;
+  // Busy (index.html's quiet()): a new build's reload waits for the batch —
+  // a reload mid-loop strands boards that exist but never reached this device.
+  document.body.dataset.busy = 'create';
   const goBtns = ['create-go-multi', 'create-go-btn'].map((id) => $(id)).filter(Boolean);
   goBtns.forEach((b) => { b.disabled = true; });
   try {
@@ -785,6 +832,7 @@ async function batchCreateFlow(myName) {
     showToast($('toast-root'), note, 8000);
   } finally {
     createInFlight = false;
+    delete document.body.dataset.busy;
     goBtns.forEach((b) => { b.disabled = false; });
   }
 }
@@ -1224,7 +1272,10 @@ function absorbPersonDoc(token, fetched, { replaceIdentity = true } = {}) {
 // must not write a word (the sync.js tokenAtStart convention).
 async function restoreFromMeLink(token, current = () => true) {
   let fetched = null, failed = false;
-  try { fetched = await crew.fetchPerson(token); } catch { failed = true; }
+  // Busy: the link is already out of the address bar, so a new build's
+  // reload mid-fetch would lose it with nothing on screen to say so.
+  document.body.dataset.busy = 'me-link';
+  try { fetched = await crew.fetchPerson(token); } catch { failed = true; } finally { delete document.body.dataset.busy; }
   if (!current()) return;
   if (!fetched) {
     renderLanding();
@@ -1450,6 +1501,7 @@ function renderJoin(token, doc) {
     // capability — rejoining resurrects.
     const person = { colorIndex: nextColorIndex(taken), removed: false };
     const festHint = pendingFestHint || (doc.meta && doc.meta.inviteFestId) || null;
+    document.body.dataset.busy = 'join'; // a new build's reload waits for the answer
     try {
       // The first write happens BEFORE entry (FLOW-5): if the server says no
       // (people cap, doc size), the joiner hears it here — not as a forever-
@@ -1476,6 +1528,7 @@ function renderJoin(token, doc) {
       enterApp(token, state.crewDoc);
       sync.scheduleSync();
     } finally {
+      delete document.body.dataset.busy;
       btn.disabled = false;
     }
   };
@@ -1519,10 +1572,12 @@ async function stampIdentity(token, current = () => true, { renameFrom = null } 
   } catch { /* next open retries */ }
 }
 
-async function enterApp(token, doc, current = () => true) {
+// `customs` is the crew's custom-festival fetch — boot starts it beside the
+// catalog; any other entry starts it here. Merged only now, catalog in hand.
+async function enterApp(token, doc, current = () => true, customs = fetchCustomFestivals(token)) {
   crew.setActiveCrew(token);
   crew.rememberCrew(token, (doc.meta && doc.meta.name) || '');
-  await loadCustomFestivals(token); // crew-private fests join the catalog first
+  mergeCustoms(await customs); // crew-private fests join the catalog first
   if (!current()) return;
   // Invite festival context (FLOW-1): the link's &f= wins (freshest), then the
   // doc's stamp. Consumed once — only fills the void on a fest-less device.
@@ -1692,15 +1747,19 @@ export async function boot() {
     history.replaceState(null, '', hopCrewToken ? `/#g=${hopCrewToken}` : '/');
   }
   try {
-    try { await loadFestivalIndex(); } catch { /* offline with cache: proceed */ }
+    // The catalog leaves now and nothing waits on it alone: a crew boot sends
+    // its own two requests beside it (below). Each branch that renders from
+    // the catalog awaits it first.
+    const catalog = loadFestivalIndex().catch(() => { /* offline with cache: proceed */ });
 
     if (personLinkBroken) {
+      await catalog;
       if (!current()) return;
       renderLanding();
       showToast($('toast-root'), 'That link looks cut off — copy it again from your other device.', 6000);
       return;
     }
-    if (personToken && !hopCrewToken) { await restoreFromMeLink(personToken, current); return; }
+    if (personToken && !hopCrewToken) { await catalog; await restoreFromMeLink(personToken, current); return; }
     // Quiet absorb — from the hop URL, or from a previous boot's absorb that
     // failed offline (the token waits in sessionStorage: session-scoped
     // master-key hygiene, dies with the tab, never re-enters a URL). Landing
@@ -1738,20 +1797,22 @@ export async function boot() {
       }
     }
 
-    if (location.hash === '#new') { renderCreate(); return; }
+    if (location.hash === '#new') { await catalog; renderCreate(); return; }
     // A crew link that is present but malformed (truncated by a chat app, half
     // pasted) must say so. Falling through to the landing page told the person
     // nothing at all — the app quietly acting as if they had never clicked.
     if (crew.hashHasBrokenToken()) { renderBadLink('', { gone: false, malformed: true }); return; }
     const token = crew.bootTokenFor(crew.tokenFromHash(), crew.activeCrewToken(), isFirst);
-    if (!token) { renderLanding(); return; }
+    if (!token) { await catalog; renderLanding(); return; }
 
+    // The crew doc and the crew's own festivals leave beside the catalog, so
+    // a network that hangs costs the slowest wait (8 s), never the sum of
+    // three. The customs merge later, in enterApp, once the catalog is in.
+    const customs = fetchCustomFestivals(token);
     let doc = null;
     let gone = false;
-    try {
-      doc = await crew.fetchCrew(token);
-      gone = doc === null;
-    } catch { /* network failure — try the cache below */ }
+    const fetched = crew.fetchCrew(token).then((d) => { doc = d; gone = d === null; }, () => { /* network failure — try the cache below */ });
+    await Promise.all([catalog, fetched]);
     if (!current()) return;
     // A deleted crew is deleted NOW — don't re-enter the app on a stale
     // cached doc just to bounce out one sync later (Codex trailing review).
@@ -1759,7 +1820,7 @@ export async function boot() {
     if (!doc) doc = state.cachedDoc(token);
     if (!doc) { renderBadLink(token, { gone }); return; }
     if (!crew.me(token)) { renderJoin(token, doc); return; }
-    await enterApp(token, doc, current);
+    await enterApp(token, doc, current, customs);
   } catch (e) {
     console.error('boot failed', e);
     if (current()) renderFatal();
@@ -1790,18 +1851,11 @@ export function init() {
     },
   });
 
+  window.addEventListener('fn:new-build', showNewBuildStrip);
   // A localStorage write that fails is the one way a pick can vanish without a
   // trace: the edit is in memory, the push is 1.2s away, and the on-disk copy
   // that would survive a reload never happened. It used to console.warn. Now
   // the person holding the phone finds out.
-  // A new build took over this tab while something was in progress (a note
-  // half-typed, a sheet open, a card grown) — index.html's worker glue
-  // reloads on its own only when the page is quiet, and says so here
-  // otherwise. The toast stays until the person acts: a build they cannot
-  // see is exactly what made every preview read as "still broken".
-  window.addEventListener('fn:new-build', () => {
-    showActionToast($('toast-root'), 'Updated behind the scenes — refresh to run the latest.', 'Refresh', () => location.reload(), 0);
-  });
   onStorageWriteFail(() => {
     showToast($('toast-root'), 'This phone’s storage is full, so picks can’t be saved offline. They still sync while you have signal.', 9000);
   });
@@ -1837,13 +1891,17 @@ export function init() {
       measureStickyChrome();
       // Each scroller clamps its own scrollLeft during a resize, which can
       // desync the mirrored columns from the strip (Kevin's wide-screen
-      // wonk screenshot, 2026-07-12) — re-mirror everyone to the first.
+      // wonk screenshot, 2026-07-12) — re-mirror each group to its first.
+      // Groups are wall.js's (`data-sync`, no key = one group): a rotation
+      // must not drag Friday's venue-night room to Thursday's position.
       // Day scrollers only: the stage strip follows its grid by transform
-      // now (wall.js followStrip) and is never scrolled itself — with it
-      // first in document order this loop would have reset every day to 0.
-      const scrollers = [...document.querySelectorAll('#wall-root .times-scroll')].filter((sc) => !isStripScroller(sc));
-      for (const sc of scrollers.slice(1)) {
-        if (sc.scrollLeft !== scrollers[0].scrollLeft) sc.scrollLeft = scrollers[0].scrollLeft;
+      // (wall.js followStrip) and is never scrolled itself.
+      const leads = new Map();
+      for (const sc of document.querySelectorAll('#wall-root .times-scroll')) {
+        if (isStripScroller(sc)) continue;
+        const key = sc.dataset.sync || '*';
+        if (!leads.has(key)) leads.set(key, sc.scrollLeft);
+        else if (sc.scrollLeft !== leads.get(key)) sc.scrollLeft = leads.get(key);
       }
     }, 150);
   });
@@ -1917,6 +1975,7 @@ export function init() {
   // hiccup must never nuke a working wall.
   window.addEventListener('error', () => { if (!anyScreenVisible()) renderFatal(); });
   window.addEventListener('unhandledrejection', () => { if (!anyScreenVisible()) renderFatal(); });
+  showBootLoader();
   boot();
 }
 
