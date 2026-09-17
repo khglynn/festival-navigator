@@ -163,24 +163,40 @@ test('every repo path NOW.md and CLAUDE.md cite in backticks exists', () => {
   assert.deepEqual(missing, [], `docs cite paths that do not exist: ${missing.join(', ')}`);
 });
 
-// MODEL-V4 §1.2 names three lines as Kevin's own words, verbatim, and the wall
-// gave up its inline tilde whisper on the strength of that — the explanation
-// lives in one place now, so if it drifts there is nowhere else it is said.
-// Copy is the easiest thing in a repo to "improve" in passing; this is the
-// same forcing function the rest of this file applies to the README.
-test('Settings → How it works still says Kevin’s copy, word for word', () => {
+// MODEL-V4 §3a.4 names all nine rows — their ORDER and their words — as Kevin's
+// own, and the wall gave up its inline tilde whisper on the strength of one of
+// them, so the explanation lives in exactly one place. Copy is the easiest thing
+// in a repo to "improve" in passing, and an order is the easiest thing to lose
+// while moving a row; this holds both. Same forcing function the rest of this
+// file applies to the README.
+test('Settings → How it works says Kevin\u2019s nine rows, word for word and in his order', () => {
   const settings = read('js/v3/settings.js');
-  const spec = read('claude-plans/2026-09-16-wall-v4/MODEL-V4.md').replace(/\s+/g, ' ');
-  const lines = [
-    ['~', 'a guessed start time and artist order, based on limited intel'],
+  const flat = (t) => t.replace(/[\u2018\u2019]/g, "'").replace(/\s+/g, ' ');
+  const spec = flat(read('claude-plans/2026-09-16-wall-v4/MODEL-V4.md'));
+  const rows = [
     ['Tap a name to highlight their picks.', 'Switch who you are picking as in Settings.'],
-    ['Tap the fest name to filter out events.', 'Like hiding the afters.'],
+    ['Add your people with + Add,', 'or share the crew link \u2014 anyone who opens it is in, no account needed.'],
+    ['Tap an artist to add your color.', 'Brighter each tap. 4 taps = must see.'],
+    ['Everyone\u2019s picks land on the card.', 'Ticks are picks; a letter is a must. White stroke = you.'],
+    ['Hold for details.', 'Violet = crew notes; pin one to keep it on top. Green = it\u2019s in your Spotify (connect in Settings).'],
+    ['~ a guessed start time and artist order.', 'Based on limited intel.'],
+    ['Tap a stage to see only that stage.', 'Tap it again for all of them.'],
+    ['Tap the fest name to show or hide parts of the week.', 'Green dot = synced. Gray = offline (still works); red = something needs you.'],
+    ['Switch fests and more in Settings.', ''],
   ];
-  for (const [strong, sub] of lines) {
-    assert.ok(spec.includes(sub), `the spec still carries "${sub}" — if Kevin changed it, change it in both places`);
-    assert.ok(settings.includes(`, '${strong}', '${sub}'));`),
-      `How it works must say "${strong} ${sub}" exactly (MODEL-V4 §1.2)`);
+  let at = -1;
+  for (const [strong, sub] of rows) {
+    assert.ok(spec.includes(flat(sub)) || !sub, `the spec still carries "${sub}" \u2014 if Kevin changed it, change it in both places`);
+    const call = `, '${strong}', '${sub}'));`;
+    const i = settings.indexOf(call);
+    assert.notEqual(i, -1, `How it works must say "${strong} ${sub}" exactly (MODEL-V4 §3a.4)`);
+    assert.ok(i > at, `"${strong}" is out of order \u2014 the rows are grouped the way the screen reads (§3a.4)`);
+    at = i;
   }
+  // ONE fest link, drawn as the real component, carrying both facts (Kevin,
+  // 2026-09-17: it was drawn twice, differently, five rows apart).
+  assert.equal((settings.match(/festLinkDemo\(\)/g) || []).length, 2, 'defined once, used once');
+  assert.equal(settings.includes('festNameDemo'), false, 'and the half-component that drifted is gone');
   // "don't need to explain now" — the now mark gets no lesson row.
   assert.equal(/lesson\(\([^)]*\)\s*=>[\s\S]{0,400}?'[^']*\bnow\b[^']*',/i.test(settings), false,
     'the now mark explains itself on the day; it gets no row');
