@@ -1,7 +1,9 @@
 // Festival data loading (v3 JSON model, replaces the old window.FESTIVALS
 // global script). The index is small and loaded at boot; full festival files
-// are fetched lazily on activation. The service worker's cache-first handler
-// makes both available offline after first load.
+// are fetched lazily on activation. The service worker serves both
+// network-first — the live copy when it answers within 4 s, so a set-times
+// drop lands on the next open — with its persistent data cache as the offline
+// answer for anything opened once.
 //
 // Festival file shape: data/festivals/<id>.json — see scripts/validate-festivals.mjs
 // for the schema (status: lineup | scheduled | archived; artists[] always
