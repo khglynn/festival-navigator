@@ -61,10 +61,28 @@ dies, the next agent reads the spec, then this, then `git log` on the branch.
   `npm run test:browser` 24/24.
 - Screenshots: scratchpad `heads-shots/` (see the final report).
 
-## Left
+- `993155f` docs + gallery: CLAUDE.md notes bullet, MODEL-V4 §3c (+ pointers
+  in §1.3, §2, §3a.3), add-a-festival, v3-inventory, claude-plans/README,
+  the validator's day-label warning, notes.js / tools.js comments; the
+  gallery's static head sample shows the three head states.
+- `e5d5bbd` tidy (anchorFor, events.js comments, the --fs-day comment).
+- `4d0da48` merged main 724fbc0 (PR #23, data only). No test in this area
+  pinned the old data; nothing needed fixing.
+- After the merge: `npm test` 614 tests, 612 pass, 1 skipped, 1 fail — the
+  service-worker stamp test, red by design until the integrator runs
+  `node scripts/sw-stamp.mjs` on a clean tree (computed stamp 9e31953e vs the
+  shipped cf2557a1 before the merge). `npm run test:browser` 24/24.
+- A local WebKit walk (scratchpad `webkit-walk.mjs`, iPhone-sized, touch):
+  all 11 tab landings (Portola 4, ACL 7) put the day's first head exactly at
+  --jump-offset, and a full scroll of each fest lit the right tab at every
+  stop (13 + 22 stops, 0 mismatches).
 
-- gallery.html (static head sample, the events-wall copy), docs
-  (CLAUDE.md notes bullet, MODEL-V4 pointer section, add-a-festival,
-  the validator's day-label warning text, notes.js comments).
-- A WebKit scrollspy walk (local only; CI has Chromium alone).
-- Final screenshots at 390 and 1280.
+## Left for the integrator
+
+- Stamp the service worker once, on a clean tree, then the preview walk and
+  Kevin's yes.
+- FYI, not this change: a very long festival name (tested with a made-up
+  "Tomorrowland Winter Wonderland Weekender") makes the phone dock's fest
+  link wide enough to cover the day tabs — a Playwright tap on SAT was
+  intercepted by the dock. No shipped fest is that long; the heads
+  themselves handle it (the sub goes, the name ellipsizes).
