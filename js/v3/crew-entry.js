@@ -27,7 +27,7 @@
 // the card at the bottom is the app's surface for the offer.
 import { picksFor, needsMigration } from './model.js';
 import { getLS, saveLS } from '../util.js';
-import { GROW_MS, OUT_MS, CASCADE_MS, STAGGER_MS, EASE_ARRIVE, EASE_LEAVE, canAnimate } from './motion.js';
+import { GROW_MS, OUT_MS, CASCADE_MS, STAGGER_MS, EASE_ARRIVE, EASE_LEAVE, EASE_SURFACE, canAnimate } from './motion.js';
 
 // ---- who is me, crew by crew ---------------------------------------------------------
 // The device's claim in a crew (crew.me) is the starting point; the person
@@ -244,23 +244,39 @@ export function showBringOffer(host, { copy, key, ctx = null, onBring, onDecline
   return box;
 }
 
-// "Bring them" landed: the question becomes its answer in place, the buttons
-// step back, and the card leaves on its own a moment later.
+// "Bring them" landed: the question becomes its answer in place. The words
+// and the buttons step back (quick), the card eases down to the one line it
+// needs, the answer rises into it — and a moment later the card leaves on
+// its own. Motion off: the answer is simply there.
 export function settleBringOffer(doneLine, { ctx = null } = {}) {
   const box = bringOfferCard();
   if (!box) return;
   const card = box.querySelector('.bring-card');
   const text = box.querySelector('.bring-text');
   const actions = box.querySelector('.bring-actions');
-  text.replaceChildren(node('div', 'bring-line', doneLine));
-  if (actions) actions.remove();
-  if (canAnimate(card, ctx)) {
-    text.animate(
-      [{ opacity: 0, transform: 'translateY(4px)' }, { opacity: 1, transform: 'none' }],
-      { duration: CASCADE_MS, easing: EASE_ARRIVE },
-    );
-  }
-  setTimeout(() => { if (bringOfferCard() === box) dismissBringOffer({ ctx }); }, DONE_HOLD_MS);
+  const leaveLater = () => setTimeout(() => { if (bringOfferCard() === box) dismissBringOffer({ ctx }); }, DONE_HOLD_MS);
+  const swap = (outs = []) => {
+    const from = card.offsetHeight;
+    outs.forEach((a) => a.cancel()); // a finished fade must not keep holding the new line at zero
+    text.replaceChildren(node('div', 'bring-line', doneLine));
+    if (actions) actions.remove();
+    if (canAnimate(card, ctx)) {
+      const to = card.offsetHeight;
+      card.style.overflow = 'hidden'; // only while the box shrinks — focus rings need it visible
+      const shrink = card.animate([{ height: `${from}px` }, { height: `${to}px` }], { duration: GROW_MS, easing: EASE_SURFACE });
+      shrink.onfinish = () => { card.style.overflow = ''; };
+      text.animate(
+        [{ opacity: 0, transform: 'translateY(4px)' }, { opacity: 1, transform: 'none' }],
+        { duration: CASCADE_MS, delay: GROW_MS / 2, easing: EASE_ARRIVE, fill: 'backwards' },
+      );
+    }
+    leaveLater();
+  };
+  if (!canAnimate(card, ctx)) { swap(); return; }
+  const fade = [{ opacity: 1 }, { opacity: 0 }];
+  const outs = [text, actions].filter(Boolean)
+    .map((n) => n.animate(fade, { duration: OUT_MS, easing: EASE_LEAVE, fill: 'forwards' }));
+  outs[0].onfinish = () => swap(outs);
 }
 
 // The way out is quick and plain. `instant` for crew switches and screen

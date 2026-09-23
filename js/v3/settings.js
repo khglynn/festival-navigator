@@ -1377,21 +1377,29 @@ function openSpotifyDrill(ctx, actions) {
     const bar = el('div');
     bar.className = 'scan-bar-fill';
     barWrap.appendChild(bar);
-    // Before the first number (a slow first page on one bar of signal) the
-    // bar breathes (v3.css .scan-bar.waiting) and these words say why — the
-    // words are all that reduced motion and Low Power get, and all they need.
-    const waitNote = el('div', 'color: var(--text-tertiary); font-size: 11px; font-weight: 600; line-height: 1.45;',
-      'Waiting on Spotify’s first page — a big library takes a minute.');
-    lines.append(counter, finds, barWrap, waitNote);
+    lines.append(counter, finds, barWrap);
     ticker.appendChild(lines);
     const sub = el('div', 'color: var(--text-tertiary); font-size: 11px; font-weight: 600; line-height: 1.5;',
       'Liked songs and follows — then every festival in your crew badges itself.');
     card.append(ticker, sub);
     col.append(card, msg);
-    // Only a scan that is really running (or about to) may look like one.
-    if (scanning || ctx.meName) barWrap.classList.add('waiting');
-    else waitNote.remove();
-    const numbersArrived = () => { barWrap.classList.remove('waiting'); waitNote.remove(); };
+    // Before the first number (a slow first page on one bar of signal) the
+    // bar breathes (v3.css .scan-bar.waiting) and the finds line — the slot
+    // the "at your festivals" count will use — says why, so nothing on the
+    // card moves when the numbers come. The words are all that reduced
+    // motion and Low Power get, and all they need. Only a scan that is really
+    // running (or about to be) may look like one.
+    if (scanning || ctx.meName) {
+      barWrap.classList.add('waiting');
+      finds.style.color = 'var(--text-tertiary)';
+      finds.textContent = 'Waiting on Spotify’s first page…';
+    }
+    const numbersArrived = () => {
+      if (!barWrap.classList.contains('waiting')) return;
+      barWrap.classList.remove('waiting');
+      finds.style.color = 'var(--spotify-stroke)';
+      finds.textContent = '';
+    };
 
     const noMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
     let lastFlick = 0, holdUntil = 0;
