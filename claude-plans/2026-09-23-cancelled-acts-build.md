@@ -55,3 +55,39 @@ stamp (the orchestrator stamps once, after the merges).
   verified the Chronicle and the v2 flyer (above). Mapped the two sibling
   builders' hunks so this branch stays out of them: the import line and the
   search block of wall.js, and the settings Spotify drill.
+- Tests first (`tests/cancelled-acts.test.mjs`, 15 of 18 red), then the
+  rules, then the data, then the model, render, zoom, day image and
+  playlist; each banked as its own commit.
+- Existing tests that counted Portola's grid moved with the data: 64 grid
+  cells → 63, Saturday 32 sets → 31, the live-pick-keys test accepts "on the
+  grid OR marked cancelled", the grid-billing test lets a cancelled entry
+  carry `venue`, and the day-image counts read 31 + 1 (Skepta) + 15 + 2.
+- Design, as built: the card keeps its aura under a scrim that also
+  desaturates it (`backdrop-filter: saturate(.3)`), holds still (no breathing,
+  no grain), the name struck through, CANCELLED where the time goes. The
+  corner marks sit above the scrim in full colour. The zoom and the sheet
+  header wear the same scrim: "Cancelled · Sat", "Announced Sep 21" (a door
+  to the report), the note, the place, the crew's pills. First pass used a
+  plain 50% scrim; it read "dark", not "off", so the desaturation went in.
+- Walked in headless Chrome with real input (mock `/api/crew` served by the
+  rig, random throwaway token, production never touched): the card at 390
+  and 1280, the zoom by hover, search "skep", and a tap on the grown card in
+  gallery.html (picks, stays struck, the You pill arrives).
+- gallery.html: 12b (a cancelled act in the zoom row); the events fest has a
+  cancelled billing under its stage and a cancelled show last in a stack.
+- A throwaway three-way merge (this branch + the one-line-heads branch + the
+  crew-join branch) merged with no conflicts and ran 685/687 green, the one
+  red being the service-worker stamp (below); the cancelled card rendered
+  under `SAT AFTERS` as expected. The merge branch was deleted.
+
+## Left for the integrator
+
+- `node scripts/sw-stamp.mjs` after the merges: this branch changes cached
+  assets (js, css, gallery), so `tests/app-shell-complete.test.mjs` is red
+  here by design until the stamp runs once.
+- An existing crew playlist made before the cancellation keeps Skepta's
+  tracks; the top-up only adds. Removing tracks from someone's playlist was
+  out of scope.
+- The search block (owned by the heads branch) lists billed names in file
+  order, so a cancelled name is not forced last among several billed
+  matches. It still answers "Crane Stage · Cancelled".
