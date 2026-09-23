@@ -2022,13 +2022,16 @@ async function enterApp(token, doc, current = () => true, customs = fetchCustomF
   // the poll loop retries; reads are safe throughout (readLevel maps by v).
   if (model.needsMigration(state.crewDoc) && warm) {
     // A warm open never waits on the network: picks stay gated (the banner
-    // says so) until the one-shot op lands — here, or on the 25 s loop.
+    // says so) until the one-shot op lands — here, or on the 25 s loop. Under
+    // Stay offline it is not asked for here at all.
     ctx.migrationPending = true;
-    sync.requestMigration().then(() => {
-      if (!current() || state.getCrewToken() !== token) return;
-      ctx.migrationPending = model.needsMigration(state.crewDoc);
-      if (!ctx.migrationPending) repaintWall();
-    });
+    if (!appSettings().stayOffline) {
+      sync.requestMigration().then(() => {
+        if (!current() || state.getCrewToken() !== token) return;
+        ctx.migrationPending = model.needsMigration(state.crewDoc);
+        if (!ctx.migrationPending) repaintWall();
+      });
+    }
   } else if (model.needsMigration(state.crewDoc)) {
     await sync.requestMigration();
     if (!current()) return;
