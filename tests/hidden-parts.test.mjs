@@ -206,3 +206,58 @@ test('the show menu on a two-weekend fest: Weekend 1, Weekend 2, Late nights —
   assert.deepEqual(filters.toggleFold(filters.loadFolded('acl-hp'), 'weekend:W2'), ['weekend:W1', 'Late nights', 'weekend:W2']);
   filters.saveFolded('acl-hp', []);
 });
+
+// Everything hidden (a real-engine walk, 2026-09-23): unchecking every room in
+// the show menu leaves no day and no tab — right by the 09-17 rule — and the
+// screen gave a friend no idea why it went blank or how to undo it. The wall
+// says so, quietly: one line in the app's voice, then where the switch is —
+// the fest link's own text, below on a phone (the dock), up top on a desktop
+// (the rail). No box, no button: the fest name is the one door.
+const noticeOf = (root) => root.querySelector('.wall-empty');
+const visibleText = (el, variant) => [...el.querySelectorAll(`.lead, .hint .${variant}`)].map((n) => n.textContent).join(' ');
+
+test('everything hidden: the wall says so and says where the switch is — Portola, and ACL with both weekends and Late nights', () => {
+  const p = render('portola-2026', { folded: [':fest', 'Afters', 'Folsom'] });
+  const n = noticeOf(p.root);
+  assert.ok(n, 'a blank wall says why');
+  assert.equal(p.root.querySelectorAll('.day-block, .card').length, 0, 'and it is still nothing but that');
+  assert.equal(visibleText(n, 'on-phone'), 'Everything’s hidden. Tap PORTOLA \'26 below to bring parts back.');
+  assert.equal(visibleText(n, 'on-desk'), 'Everything’s hidden. Click PORTOLA \'26 up top to bring parts back.');
+  assert.equal(n.querySelectorAll('button, a').length, 0, 'no button of its own — the fest name is the door');
+
+  const a = render('acl-2026', { folded: [weekendRoom('W1'), weekendRoom('W2'), 'Late nights'] });
+  assert.equal(visibleText(noticeOf(a.root), 'on-phone'), 'Everything’s hidden. Tap ACL MUSIC FESTIVAL \'26 below to bring parts back.');
+  assert.equal(a.root.querySelectorAll('.day-block').length, 0);
+
+  // Anything still visible is not "everything hidden".
+  assert.equal(noticeOf(render('portola-2026', { folded: [':fest', 'Folsom'] }).root), null, 'Afters still plays');
+  assert.equal(noticeOf(render('acl-2026', { folded: [weekendRoom('W1'), weekendRoom('W2')] }).root), null, 'Late nights still plays');
+  assert.equal(noticeOf(render('portola-2026').root), null);
+});
+
+test('everything hidden while searching: the answer is the same notice, never "No artists match"', () => {
+  const { root } = render('portola-2026', { folded: [':fest', 'Afters', 'Folsom'], query: 'vtss' });
+  assert.ok(noticeOf(root), 'VTSS is not missing — it is hidden, and the wall says how to bring it back');
+  assert.equal(root.textContent.includes('No artists match'), false);
+  assert.equal(noticeOf(render('portola-2026', { query: 'zzzz' }).root), null, 'a real miss is still a miss');
+});
+
+// A fest with ONE room has no show menu (the fest name opens Settings), so no
+// fold key can mean anything there — the same rule as a key the menu does not
+// offer. Without it, a stale key would blank the wall with no switch to undo
+// it, and the notice above would point at a door that is not there.
+test('a fest with one room has no menu, so nothing on it can be hidden — a stale key is inert', () => {
+  FESTIVALS['one-room'] = {
+    id: 'one-room', name: 'One Room', status: 'scheduled', timezone: 'America/Chicago',
+    dayMeta: { Friday: { wd: 'Fri', date: 'Oct 2', iso: '2026-10-02' } },
+    artists: [{ name: 'Solo', day: 'Friday' }],
+    days: { Friday: { stages: ['A'], artists: [{ name: 'Solo', stage: 'A', time: '8:00 PM - 9:00 PM' }] } },
+  };
+  FESTIVAL_INDEX.push({ id: 'one-room', status: 'scheduled' });
+  const ctx = ctxFor('one-room', { folded: [':fest'] });
+  assert.deepEqual(roomsOf(FESTIVALS['one-room'], ctx).map((r) => r.key), [':fest'], 'one room, so no menu');
+  const { root } = render('one-room', { folded: [':fest'] });
+  assert.equal(noticeOf(root), null);
+  assert.ok(root.querySelector('.card[data-artist="Solo"]'), 'the only room is on the wall');
+  assert.deepEqual(tabsOf(FESTIVALS['one-room'], ctx), ['Friday']);
+});

@@ -267,6 +267,66 @@ test('a fold moves the days that go with it: a room and the day it emptied leave
   }
 });
 
+// The last room hidden: the week leaves, and the notice that says so arrives
+// with the usual beat; the first room back takes the notice away, quick and
+// plain, before the days arrive (2026-09-23 — nothing pops, nothing vanishes
+// in place).
+test('hiding the last room: the notice arrives with the beat, and leaves when a room comes back', async () => {
+  const Proto = dom.window.Element.prototype;
+  const moved = [];
+  Proto.animate = function animate(frames) {
+    const a = { onfinish: null, oncancel: null };
+    moved.push({ el: this, out: frames[0].opacity === 1 });
+    setTimeout(() => { if (a.onfinish) a.onfinish(); }, 0);
+    return a;
+  };
+  const row = (key) => [...menu('dock').querySelectorAll('[data-room]')].find((r) => r.dataset.room === key);
+  const tabs = () => [...$('dock-days').querySelectorAll('.day-tab')].map((t) => t.dataset.day);
+  const notice = () => $('wall-root').querySelector('.wall-empty');
+  const take = (out) => { const got = moved.filter((m) => m.out === out && $('wall-root').contains(m.el)).map((m) => (m.el.classList.contains('wall-empty') ? 'notice' : m.el.classList.contains('day-block') ? `day:${m.el.dataset.day}` : `room:${m.el.dataset.room}`)); moved.length = 0; return got; };
+  try {
+    for (const key of ['Afters', 'Folsom']) {
+      click($('dock-fest-link'));
+      click(row(key));
+      await settle(30);
+    }
+    moved.length = 0;
+    assert.equal(notice(), null, 'Portola still plays Saturday and Sunday');
+    click($('dock-fest-link'));
+    click(row(':fest'));
+    assert.deepEqual(take(true), ['day:Saturday', 'day:Sunday'], 'the last two days leave whole');
+    await settle(30);
+    assert.ok(notice(), 'and the wall says why it is blank');
+    assert.deepEqual(tabs(), [], 'no day, no tab — the 09-17 rule stands');
+    assert.deepEqual(take(false), ['notice'], 'the notice arrives with the beat');
+    assert.ok(notice().textContent.includes('PORTOLA \'26'), 'naming the door by the words on it');
+
+    click($('dock-fest-link'));
+    click(row('Afters'));
+    assert.deepEqual(take(true), ['notice'], 'the first room back takes the notice away first');
+    await settle(30);
+    assert.equal(notice(), null);
+    assert.deepEqual(tabs(), ['Thursday', 'Friday', 'Saturday', 'Sunday']);
+    assert.deepEqual(take(false), ['day:Thursday', 'day:Friday', 'day:Saturday', 'day:Sunday'], 'and the week arrives, in its order');
+    for (const key of ['Folsom', ':fest']) {
+      click($('dock-fest-link'));
+      click(row(key));
+      await settle(30);
+    }
+    assert.equal(globalThis.localStorage.getItem(`fn_fold_v1_${FID}`), null, 'the whole week back');
+  } finally {
+    delete Proto.animate;
+    // Whatever an early failure left hidden comes back through the menu, so
+    // the tests after this one see the whole week.
+    for (const key of JSON.parse(globalThis.localStorage.getItem(`fn_fold_v1_${FID}`) || '[]')) {
+      click($('dock-fest-link'));
+      click(row(key));
+      await settle(30);
+    }
+    filters.saveFolded(FID, []);
+  }
+});
+
 test('a room with a verbose key is billed in the menu the way the wall bills it', async () => {
   // A room key is frozen pick data, so it can carry a comma and a parenthetical
   // ("Wednesday, Sept 16 (Early Arrival Pre-Party)"). Portola's keys are one
