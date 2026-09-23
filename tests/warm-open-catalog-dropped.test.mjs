@@ -2,8 +2,8 @@
 // 1): the cached catalog still lists a festival the live one has dropped, and
 // it is this device's saved festival. The warm open paints it from cache —
 // and when the live catalog lands, it moves to a festival that exists and
-// says why, in the words a cold open uses. The saved choice stays (the merge
-// never deletes; the fest coming back brings its picks back).
+// says why, in the words a cold open uses. Its picks stay in the doc (the
+// merge never deletes; the fest coming back brings them back).
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { bootShell, settle } from './helpers/shell-rig.mjs';
@@ -47,6 +47,9 @@ test('the live catalog dropped it: a real festival opens, and the toast says why
   assert.equal(state.activeFestivalId, 'portola-2026', 'the fallback a cold open would pick');
   assert.match($('fest-name').textContent, /PORTOLA/);
   assert.match($('toast-root').textContent, /Vanishing Fest isn’t in the lineup any more — opened Portola instead\. Its picks are still saved\./);
-  assert.equal(localStorage.getItem(`fn_crew_fest_v3_${TOKEN}`), GONE.id, 'the saved choice stays, as a cold open leaves it');
+  // Exactly what an ordinary open does with the same catalog: the invite's
+  // festival (the doc's inviteFestId, Portola) opened, so it becomes the
+  // saved one — decided on the LIVE list, never on the cached one.
+  assert.equal(localStorage.getItem(`fn_crew_fest_v3_${TOKEN}`), 'portola-2026', 'confirmed as a cold open would');
   assert.equal(state.crewDoc.festivals[GONE.id].selections.Robyn.Kevin, 1, 'its picks are still in the doc');
 });

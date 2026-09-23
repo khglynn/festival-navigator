@@ -56,7 +56,11 @@ export function setSelectedPerson(p) { selectedPerson = p; }
 // `festHint` (optional) is the invite's festival context — from the share
 // link's &f= param or the doc's meta.inviteFestId. It only fills the void on
 // a device with no saved fest for this crew; a returning device keeps its own.
-export function activateCrew(token, doc, festHint) {
+// `provisional` (the warm open, 2026-09-23): the catalog in hand is a cached
+// copy that may be stale, so nothing is written back to this device's saved
+// choice — a fallback forced by a stale list must never overwrite what the
+// person chose. confirmFestivalChoice writes it once the live list agrees.
+export function activateCrew(token, doc, festHint, { provisional = false } = {}) {
   crewToken = token;
   crewDoc = doc || loadJSON(LS.doc(token), null) || { v: 3, meta: {}, spotify: {}, people: {}, festivals: {}, affinity: {} };
   pendingChanges = loadJSON(LS.pending(token), {});
@@ -66,6 +70,24 @@ export function activateCrew(token, doc, festHint) {
   if (healPlaylistArtists(pendingChanges)) saveLS(LS.pending(token), JSON.stringify(pendingChanges));
   healPlaylistArtists(crewDoc); // rendered copy; persists via the normal paths
   crewDoc = deepMerge(crewDoc, pendingChanges);
+  // Cleared BEFORE the choice, which can throw on an empty catalog: a stale
+  // value left over from the last crew would accuse the wrong festival.
+  missingFestivalId = null;
+  const choice = festivalChoiceFor(token, festHint);
+  missingFestivalId = choice.missing;
+  activeFestivalId = choice.active;
+  if (!provisional) confirmFestivalChoice(token, choice);
+  currentDay = null;
+  selectedPerson = null;
+  Object.keys(dayCache).forEach((k) => delete dayCache[k]);
+  ensureFestivalState(activeFestivalId);
+}
+
+// Which festival a crew shows, from this device's saved choice, the invite's
+// hint and the catalog as it stands NOW. The one rule, used by activateCrew
+// and again when a live catalog lands after a warm open painted from a
+// cached one (2026-09-23).
+export function festivalChoiceFor(token, festHint = null) {
   // Guarded read: a storage-blocked browser THROWS on getItem, and this
   // runs on every crew activation — a throw here is the fatal screen for a
   // device that has the whole doc in memory (Codex gate, 2026-08-27).
@@ -76,16 +98,27 @@ export function activateCrew(token, doc, festHint) {
   // hint is a suggestion from a link, but a saved id is this device's own
   // answer to "which festival am I looking at", and swapping it in silence is
   // the board lying. Its picks stay in the doc either way — the merge never
-  // deletes, so the fest coming back brings them back. Assigned BEFORE the
-  // fallback, which can throw on an empty catalog: a stale value left over
-  // from the last crew would accuse the wrong festival.
-  missingFestivalId = (FESTIVAL_INDEX.length && savedFest && !known(savedFest)) ? savedFest : null;
-  activeFestivalId = (savedFest && known(savedFest)) ? savedFest : (hinted || defaultFestivalId());
-  if (hinted && activeFestivalId === hinted) saveLS(LS.fest(token), hinted);
+  // deletes, so the fest coming back brings them back.
+  const missing = (FESTIVAL_INDEX.length && savedFest && !known(savedFest)) ? savedFest : null;
+  const active = (savedFest && known(savedFest)) ? savedFest : (hinted || defaultFestivalId());
+  return { active, missing, hinted };
+}
+
+// Point the running page at the festival the catalog now says, without making
+// it this device's choice — the saved id stays, exactly as activateCrew
+// leaves it when it has to fall back.
+export function showFestivalChoice({ active, missing }) {
+  activeFestivalId = active;
+  missingFestivalId = missing;
   currentDay = null;
-  selectedPerson = null;
-  Object.keys(dayCache).forEach((k) => delete dayCache[k]);
-  ensureFestivalState(activeFestivalId);
+  ensureFestivalState(active);
+}
+
+// The invite's festival becomes this device's saved choice when it is the one
+// opened — activateCrew's long-standing rule, run by activateCrew itself on an
+// ordinary open and by the warm open only once the live catalog is in.
+export function confirmFestivalChoice(token, { active, hinted }) {
+  if (hinted && active === hinted) saveLS(LS.fest(token), hinted);
 }
 
 export function setActiveFestivalId(fid) {
@@ -369,9 +402,9 @@ export function applyRemoteDoc(remote) {
 
 // A festival file replaced under a running page (the warm open's live copy
 // landing after the cached one painted) makes every day computed from the old
-// copy stale.
-export function forgetComputedDays() {
-  Object.keys(dayCache).forEach((k) => delete dayCache[k]);
+// copy stale — that festival's (`fid`), or every festival's.
+export function forgetComputedDays(fid = null) {
+  Object.keys(dayCache).forEach((k) => { if (!fid || k.startsWith(`${fid}|`)) delete dayCache[k]; });
 }
 
 // Returns computed artists for a day with startMin/endMin resolved (cached).
