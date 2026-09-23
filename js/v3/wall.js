@@ -589,8 +589,12 @@ export function positionNowLines(root, date = new Date()) {
 // The day-of open: land the now line about a third of the way down the
 // viewport so the next hour is in view. Before doors on festival day there
 // is no line yet — land on today's block instead, whose first head names the
-// day. Returns the target it scrolled to ('now' | 'day') or null when today
-// is not on this wall.
+// day. A dated section's date is a festival day too (2026-09-23): on an ACL
+// night between the weekends, today is a room inside the Late nights block,
+// and the open lands on its head — but a real day block today (a grid day,
+// Oct 3) always wins, and a hidden section renders nothing to land on.
+// Returns the target it scrolled to ('now' | 'day') or null when today is not
+// on this wall.
 export function scrollToNowLine(root, { date = new Date(), viewportHeight = window.innerHeight, scrollTo = (y) => window.scrollTo({ top: y, behavior: 'auto' }), timeZone = null } = {}) {
   const pageY = (el) => el.getBoundingClientRect().top + (window.scrollY || window.pageYOffset || 0);
   const line = root.querySelector('.now-line');
@@ -601,12 +605,15 @@ export function scrollToNowLine(root, { date = new Date(), viewportHeight = wind
   // "Today" in the festival's zone — the grids carry it; the caller may too.
   const zoned = root.querySelector('.times-grid[data-tz]');
   const todayIso = festivalClock(date, timeZone || (zoned ? zoned.dataset.tz : null)).iso;
-  const day = root.querySelector(`.day-block[data-iso="${todayIso}"]`);
+  const day = root.querySelector(`.day-block[data-iso="${todayIso}"]`)
+    || root.querySelector(`.day-block .room[data-iso="${todayIso}"]`);
   if (!day) return null;
   // The block's scroll-margin-top is the sticky chrome's height (app.js
-  // measures it into --jump-offset); land below it like a day-tab jump does.
+  // measures it into --jump-offset); land below it like a day-tab jump does —
+  // a room inside a block lands against its block's.
+  const block = day.closest('.day-block') || day;
   const offset = (typeof window !== 'undefined' && window.getComputedStyle)
-    ? parseFloat(window.getComputedStyle(day).scrollMarginTop) || 0 : 0;
+    ? parseFloat(window.getComputedStyle(block).scrollMarginTop) || 0 : 0;
   scrollTo(Math.max(0, pageY(day) - offset));
   return 'day';
 }
@@ -651,15 +658,24 @@ const undoOnRepaint = (root, undo) => {
   teardowns.get(root).push(undo);
 };
 let timelineSeq = 0;
+// The strip element (`.stage-strip`) around a strip's scroller — where the
+// route taken is written down.
+const stripOf = (scroller) => (scroller.closest && scroller.closest('.stage-strip')) || scroller;
 function followStrip(strip, lead, root) {
   const row = strip.querySelector('.times-grid');
   if (!row) return;
   strip.classList.add('follows');
-  // The CSS follow only where CSS animations run: the tokens file kills every
-  // animation under reduced motion and under Low Power, and a killed follow
-  // leaves the stage names frozen over sliding columns. Decided per render —
-  // leaving Settings repaints the wall.
-  if (SCROLL_TIMELINES && !reduced() && !document.body.classList.contains('low-power')) {
+  // The timeline wherever the engine has one — under Reduce Motion and the
+  // app's Low power too (2026-09-23). A strip that tracks your finger is
+  // direct manipulation, not decorative motion: the people who turned motion
+  // off need the stage names over the right columns as much as anyone, and
+  // the transform route below trails the grid by a frame on a phone (Kevin's
+  // "stuttered delayed slide"). The two kill rules in the tokens file would
+  // still freeze it — their `animation` shorthand resets `animation-timeline`
+  // — so the follow's animation lives in v3.css, out-ranking them, and reads
+  // the timeline's name from `--strip-tl`, which no shorthand can reset.
+  // Still decided per render, as every wiring here is.
+  if (SCROLL_TIMELINES) {
     // The timeline is named on the lead and scoped on the nearest ancestor
     // both share (a day's .tt-block, or the wall for the one-strip page).
     // The far keyframe is the lead's maximum scroll in px (--strip-max): the
@@ -675,8 +691,9 @@ function followStrip(strip, lead, root) {
       if (lead.firstElementChild) ro.observe(lead.firstElementChild);
     }
     lead.style.scrollTimeline = `${name} x`;
-    row.style.animation = 'strip-follow linear both';
-    row.style.animationTimeline = name;
+    row.style.setProperty('--strip-tl', name);
+    row.classList.add('rides');
+    stripOf(strip).dataset.follow = 'timeline'; // what Diagnostics reports (js/errlog.js)
     const scope = strip.closest('.tt-block') || root;
     scope.style.timelineScope = [scope.style.timelineScope, name].filter(Boolean).join(', ');
     undoOnRepaint(root, () => {
@@ -685,8 +702,10 @@ function followStrip(strip, lead, root) {
     });
     return;
   }
-  // Set on the spot: scroll events already arrive at most once a frame, and
-  // a transform write is a compositor update, not a layout.
+  // No scroll timelines in this engine (iOS before 26): a transform set on
+  // the spot. Scroll events already arrive at most once a frame, and a
+  // transform write is a compositor update, not a layout.
+  stripOf(strip).dataset.follow = 'transform';
   const follow = () => { row.style.transform = `translateX(${-lead.scrollLeft}px)`; };
   lead.addEventListener('scroll', follow, { passive: true });
   follow();
@@ -1306,6 +1325,7 @@ function renderExtra(root, ctx, fest, extra) {
   } else {
     for (const [iso, list] of extra.byDate) {
       const room = roomBlock(extra.key);
+      room.dataset.iso = iso; // the day-of open lands here when tonight is one of these dates
       const door = dateDoor(ctx, iso);
       const wd = weekdayOfIso(iso);
       room.appendChild(roomHead({ weekday: wd ? wd.toUpperCase() : null, label: extra.label, sub: joinSub(shortDate(iso), ownSub), ...(door || {}) }));

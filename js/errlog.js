@@ -44,6 +44,30 @@ export function hookGlobalErrors() {
   window.addEventListener('unhandledrejection', (e) => record('promise', e.reason));
 }
 
+// The motion facts behind a "the stage names stutter" report (2026-09-23), so
+// the next one answers itself in one paste: whether the phone asks for
+// reduced motion, whether the app's Low power is on, and which way the stage
+// strip on the current wall follows its columns — 'timeline' (the compositor
+// moves it with the grid), 'transform' (a scroll handler, a frame behind on a
+// phone) or 'none' (no grid on the wall right now). The route is the one the
+// wall TOOK (wall.js followStrip writes it on the strip); `stripAnimation` is
+// the engine's own word for the follow's animation, so a rule that froze it
+// would show here as 'none'. Unknown is null, never a guess.
+function motionFacts() {
+  const facts = { reducedMotion: null, lowPower: null, stripRoute: 'none', stripAnimation: null };
+  try { facts.reducedMotion = !!window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch { /* no media queries */ }
+  try { facts.lowPower = document.body.classList.contains('low-power'); } catch { /* no body yet */ }
+  try {
+    const strip = document.querySelector('#wall-root .stage-strip[data-follow]');
+    if (strip) {
+      facts.stripRoute = strip.dataset.follow;
+      const row = strip.querySelector('.times-grid');
+      facts.stripAnimation = (row && window.getComputedStyle(row).animationName) || null;
+    }
+  } catch { /* a journal must never be the thing that throws */ }
+  return facts;
+}
+
 // The shareable dump: enough to see what a phone saw, nothing private.
 export async function diagnostics() {
   let build = 'unknown';
@@ -56,6 +80,7 @@ export async function diagnostics() {
     ua: navigator.userAgent,
     viewport: `${window.innerWidth}x${window.innerHeight}`,
     online: navigator.onLine,
+    ...motionFacts(),
     at: new Date().toISOString(),
     errors: recent(),
   };

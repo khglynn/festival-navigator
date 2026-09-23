@@ -294,3 +294,38 @@ test('seven tabs on a phone: the day you are in is in the row, and the clipped e
     await ctx.close();
   }
 });
+
+// Diagnostics answers "the stage names stutter" on its own (2026-09-23): the
+// paste says whether motion is off and which way the strip on the wall
+// follows — and a phone that asks for reduced motion (which boots the app
+// into Low power too) still has its strip on the grid's timeline, running.
+test('Diagnostics names the motion settings and the strip route; Reduce Motion still rides the timeline', { skip }, async () => {
+  for (const reducedMotion of ['no-preference', 'reduce']) {
+    const { ctx, page } = await phone();
+    const TOKEN = 'diagcontract_0123456789'; // a made-up crew
+    const FID = 'portola-2026';              // two grid days, so there are strips
+    try {
+      await page.emulateMedia({ reducedMotion });
+      await ctx.addInitScript(([t, f]) => {
+        localStorage.setItem('fn_crews_v3', JSON.stringify([{ token: t, name: 'Contract' }]));
+        localStorage.setItem(`fn_me_v3_${t}`, 'Kevin');
+        localStorage.setItem(`fn_crew_fest_v3_${t}`, f);
+        localStorage.setItem('fn_coach_v1', '1');
+      }, [TOKEN, FID]);
+      const doc = { v: 4, meta: { name: 'Contract', inviteFestId: FID }, spotify: {}, affinity: {}, people: { Kevin: { colorIndex: 0 } }, festivals: { [FID]: { selections: {} } } };
+      await ctx.route('**/api/crew**', (route) => route.fulfill({ contentType: 'application/json', body: JSON.stringify(doc) }));
+      await ctx.route('**/api/festival-add**', (route) => route.fulfill({ contentType: 'application/json', body: '{"festivals":[]}' }));
+      await ctx.route('**/api/person**', (route) => route.fulfill({ status: 503, contentType: 'application/json', body: '{}' }));
+      await page.goto(`${server.origin}/#g=${TOKEN}`, { waitUntil: 'load' });
+      await page.waitForSelector('#wall-root .stage-strip[data-follow]', { timeout: 10000 });
+      const d = await page.evaluate(() => import('/js/errlog.js').then((m) => m.diagnostics()));
+      const reduce = reducedMotion === 'reduce';
+      assert.equal(d.reducedMotion, reduce, 'the OS setting, as the page sees it');
+      assert.equal(d.lowPower, reduce, 'Reduce Motion boots the app into Low power');
+      assert.equal(d.stripRoute, 'timeline', `the strip rides the timeline (reduce: ${reduce})`);
+      assert.equal(d.stripAnimation, 'strip-follow', `and the engine runs it — no kill rule froze it (reduce: ${reduce})`);
+    } finally {
+      await ctx.close();
+    }
+  }
+});
