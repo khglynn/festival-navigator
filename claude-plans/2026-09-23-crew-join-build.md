@@ -32,3 +32,36 @@ two crews at one fest feel less like starting over:
 - 2026-09-23 — read NOW, CLAUDE.md, the fests × circles × you direction,
   crew.js / state.js / sync.js, app.js boot + join + enterApp, settings.js
   Spotify drill, the shell rig and the closest tests.
+- Pure first (`tests/crew-entry.test.mjs`, 16): `recognizedMember` in
+  crew.js; planner, copy and once-memory in `js/v3/crew-entry.js`.
+- Shell (`tests/crew-join-recognize.test.mjs`, 8, red before the glue):
+  boot's join branch recognizes; `enterApp` welcomes ("Welcome back,
+  Kevin." + a "Not me" door) and offers; a Settings festival switch offers
+  too. crew-entry.js added to APP_CORE.
+- Spotify (`tests/spotify-scan-progress.test.mjs`, 4, red before the fix):
+  progress goes to the mounted card, replays on mount, bar breathes before
+  the first page. Found alongside: a failed scan restarted itself forever
+  (offline = a hot loop) — now a "Try again" card.
+- Real Chromium walk (390×844, touch, reduced motion on/off, /api mocked
+  in-page, NO production writes): the day-of open lands the wall on
+  Saturday, which is why the offer is a card above the dock and not a
+  toolbar strip. Fixes from the walk: "Not me" wrapped to two lines (toast
+  action now nowrap); the done state now fades → shrinks → answer rises;
+  the Spotify waiting words moved into the finds slot so nothing jumps.
+- Not done here, on purpose: `scripts/sw-stamp.mjs` (the stamp test is the
+  one expected red until integration), any push.
+
+## Decisions worth a second look
+
+- A pick you CLEARED here (a 0 tombstone) counts as decided — bring-over
+  never writes onto it. Conservative reading of "never overwrite".
+- The offer counts as answered only on a tap; ignoring it asks again on the
+  next entry.
+- The "fullest" other crew = most of your live picks there, among crews
+  with anything left to bring.
+- Toasts shrink to half the viewport (`left: 50%` with no width), so
+  "Welcome back, Kevin." wraps on a phone. Left alone — a global toast
+  width change belongs to its own pass.
+- A possible follow-up: the + Add picker could carry a person's pid from
+  another crew, so their device is recognized the first time they open
+  the new crew's link. Not built — it writes a pid someone else asserted.

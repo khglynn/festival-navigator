@@ -1797,10 +1797,16 @@ function bringPicksHere(key) {
   const plan = planBringPicks(bringContext());
   rememberBringAnswer(token, fid, 'brought');
   if (!plan) { dismissBringOffer({ ctx }); return; }
+  // applyLocalPick's two steps, with the doc written to disk ONCE at the end:
+  // persisting the whole crew doc per pick is fine for a tap and a stall for
+  // fifty of them at once.
+  state.ensureFestivalState(fid);
+  const sels = state.crewDoc.festivals[fid].selections;
   for (const [artist, level] of Object.entries(plan.picks)) {
     state.recordSelection(artist, ctx.meName, level);
-    applyLocalPick(artist, ctx.meName, level);
+    (sels[artist] = sels[artist] || {})[ctx.meName] = level;
   }
+  state.persist();
   sync.scheduleSync();
   repaintWall();
   settleBringOffer(bringDoneLine(plan.count), { ctx });
