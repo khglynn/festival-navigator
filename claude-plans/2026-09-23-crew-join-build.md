@@ -94,3 +94,22 @@ the field escape hatch. Then the option-a copy trims from the notes audit
   against the new-build reload glue first).
 
 ## Log (round 2)
+- Warm open built test-first (`tests/warm-open*.test.mjs`, 4 files, shared
+  `tests/helpers/warm-rig.mjs`; the warm ones red before, the cold one an
+  invariant). Commit 7371230.
+- Codex found two bring-your-picks bugs on the merged branch; both
+  reproduced red (unit + `tests/bring-picks-guards.test.mjs`) and fixed in
+  03bbd80: ownership is affirmative on both sides (pid, or the record's own
+  mirror names exactly that name; another member carrying the pid = not me;
+  no person record = no offer), and the tap only brings from the crew the
+  card named (`bringFromSource`), else "Nothing new to bring". A picker
+  switch or rename withdraws the offer. A first join re-asks once the
+  identity stamp lands.
+- Worker: navigations give up at 1.5 s when a shell is cached; data keeps
+  4 s (145c3e1). Reasoned against the new-build glue: the browser's worker
+  update check and index.html's `reg.update()` never pass through the fetch
+  handler, so a new build still installs and reloads when quiet.
+- Real Chromium, worker installed, then EVERY request hangs, reload,
+  time to the wall: base 724fbc0 = 16,085 ms; this branch = 1,572 ms and
+  1,573 ms (≈ the navigation budget + ~70 ms). Online first paint unchanged
+  (~90–450 ms, machine load 60–95).
