@@ -209,11 +209,22 @@ function fetchAndStore(request, bucket) {
   return { response, done };
 }
 
-// The network's answer if it arrives inside NETWORK_MS, otherwise null — the
-// one budget both network-first strategies spend before the cache answers.
-const NETWORK_MS = 4000;
-function inTime(response) {
-  const timeout = new Promise((resolve) => setTimeout(() => resolve(null), NETWORK_MS));
+// The network's answer if it arrives inside the budget, otherwise null — what
+// each network-first strategy spends before the cache answers.
+const NETWORK_MS = 4000; // festival data: a set-times drop is worth a few seconds
+// Navigations spend less (2026-09-23). The page is the first thing anyone
+// waits for — before a single pixel of the app, not even the loader — and on
+// a network that hangs (Pier 80, 40k phones) 4 s of blank screen was a
+// quarter of a lie-fi cold open. Losing this race costs nothing that matters:
+// the fallback is this worker's own shell, the one page that matches the JS it
+// serves. And it cannot hold a new build back: the browser checks the worker
+// SCRIPT on every navigation, and index.html's glue asks again whenever the tab
+// comes back — neither request passes through this handler — so a new worker
+// still installs, takes over and reloads the page when it is quiet, or puts up
+// the new-build strip. A phone with no shell cached still waits for the network.
+const NAVIGATION_MS = 1500;
+function inTime(response, ms = NETWORK_MS) {
+  const timeout = new Promise((resolve) => setTimeout(() => resolve(null), ms));
   return Promise.race([response.catch(() => null), timeout]);
 }
 
@@ -241,7 +252,7 @@ function dataNetworkFirst(event) {
 // page is a deliberate 404. With no shell cached, the network however long.
 function navigationNetworkFirst(request) {
   const live = fetch(request);
-  return inTime(live).then((resp) => {
+  return inTime(live, NAVIGATION_MS).then((resp) => {
     if (resp && resp.status < 500) return resp;
     return caches.open(CACHE_VERSION).then((cache) => cache.match('/')).then((shell) => shell || live);
   });
