@@ -27,14 +27,27 @@ Given a card's picks `{person: level}` where level 1–3 = picked, 4 = must:
 
 ## Who-corner (bottom-right) + about-corner (bottom-left)
 
-- Must pill: 24×12px, r999, fill hue@.5, 1px tinted stroke, white letter
-  7.5px/800. Pick tick: 4×12px, same fill/stroke, no text. Gap 3px between
-  marks; corner insets ~4px bottom / 5-6px side. Caps: 2 musts + 2 ticks then
-  ghost `+n`. Duplicate initials get two letters.
+- Who-corner = EVERYONE ELSE (2026-09-23): you are never in it, so its `+n`
+  counts other people. Must pill: 24×12px, r999, fill hue@.5, 1px tinted
+  stroke, white letter 7.5px/800. Pick tick: 4×12px, same fill/stroke, no
+  text. Gap 3px between marks; corner insets ~4px bottom / 5-6px side.
+  Caps: 2 musts + 2 ticks then ghost `+n`. Duplicate initials (among the
+  others on the card) get two letters.
+- About-corner, left to right: YOUR meter, the notes chip, the Spotify pill.
+- Your meter (2026-09-23, `.chip-meter`): the Spotify pill's pattern — height
+  12px (11 in cells), r999, pad 0 6px (0 5px), 1px edge — filled your hue@.5
+  with the WHITE edge (strokeOf isYou). Three bars 2.5px wide, 1.5px apart,
+  3.5/6/8.5px tall (cells 3.5/5.5/7.5), white; unlit bars at .3, lit at 1.
+  Must: the word `MUST` in Anton 8.5px (8 in cells), tracking .05em, pad
+  0 5px (0 4px). Never `--brand` or `--fest`. aria-hidden (the card's
+  label says your level).
 - Notes chip: height 13px, pad 0 6px, radius `8px 8px 8px 2px`, notes
   fill/stroke, count 8.5px/800 white. Spotify pill: height 12px, r999, spotify
   fill/stroke, liked count + bookmark SVG `M1 1h8v11l-4-3-4 3z` (7×9) when
   followed. Grid cells shrink both by ~1px (12/11px heights, 8px font).
+- When a card is too narrow for both corners, things give way in the order
+  `js/v3/aura.js` GIVE_WAY names (the Spotify count first; your meter only
+  ever for an artist's name) — the widths it reckons with are the ones above.
 
 ## Person chips / avatars
 
@@ -103,8 +116,9 @@ Given a card's picks `{person: level}` where level 1–3 = picked, 4 = must:
   works ›, Low power + toggle, Stay offline + toggle, Bulk paste likes ›;
   v3 keeps: Export likes ›, Download day image › — Kevin's keeps, live here).
 - **21i How it works**: first card in Settings; teaches with REAL components
-  (3-swatch tap ladder, chips, corner badges, PINNED chip, dock chip). No
-  on-wall explainer exists.
+  (3-swatch tap ladder wearing your meter one bar fuller each, the crew
+  marks, chips, corner badges, PINNED chip, dock chip). No on-wall explainer
+  exists.
 - **21j 404 + email**: 404 = pulse-text `WYA?` Anton 72px + line + MY
   FESTIVALS hero (240px). Email (light `#F3F0E9`, static gradients): banner
   88px hero-bg + white square 11px + `FESTIVAL NAVIGATOR` Anton 16px/.08em;
