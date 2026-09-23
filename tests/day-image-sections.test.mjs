@@ -45,7 +45,7 @@ test('day image choices mirror the wall: THU FRI SAT SUN, each labelled as the r
 
 test('a day exports its whole content in the wall\'s order: the grid in clock order with stage · start, then each section\'s shows as section · venue · time', () => {
   const sat = dayArtistsFor('Saturday');
-  assert.equal(sat.length, 32 + 9 + 2, 'the grid, Saturday\'s afters, Saturday\'s Folsom');
+  assert.equal(sat.length, 32 + 15 + 2, 'the grid, Saturday\'s afters, Saturday\'s Folsom');
   assert.deepEqual(sat[0], { name: 'Airwolf Paradise', time: 'Pier Stage · 1:30 PM' });
   // Saturday's afters open with whoever plays FIRST — every room is a run, so
   // the export leads with the earliest set, not the biggest name. Derived from
@@ -53,12 +53,12 @@ test('a day exports its whole content in the wall\'s order: the grid in clock or
   const satFirst = portola.artists
     .filter((a) => a.day === 'Afters' && a.night === 'Sat' && a.time)
     .reduce((best, a) => (best && timeToMinutes(best.time) <= timeToMinutes(a.time) ? best : a), null);
-  assert.deepEqual(sat[32], { name: satFirst.name, time: `Afters · ${satFirst.venue} · ~${satFirst.time}` },
-    'the first afters show after the grid, time-sorted, wearing its tilde');
+  assert.deepEqual(sat[32], { name: satFirst.name, time: `Afters · ${satFirst.venue} · ${satFirst.approx ? '~' : ''}${satFirst.time}` },
+    'the first afters show after the grid, time-sorted, wearing a tilde only when its time is a guess (Velvet Trip\'s 9:15 PM is posted)');
   assert.deepEqual(sat[sat.length - 1], { name: 'PERVERT XXL', time: 'Folsom · The Midway · 10 PM - 6 AM' });
-  // Thursday is two single-act rooms, and they print different things. The
-  // Regency's own feed gives Soulwax doors AND a show time, so the export
-  // carries the start wearing its tilde; Club Six prints doors only, so
+  // Thursday is two rooms, and they print different things. The Regency's
+  // feed gives doors AND a show time, so its run carries guessed starts
+  // wearing their tilde; Club Six prints doors only, so
   // Black Rave Culture carries NO clock rather than an invented one. Read
   // from the file, so a re-read of either bill moves this with the data.
   const thu = dayArtistsFor('Thursday');
@@ -67,8 +67,13 @@ test('a day exports its whole content in the wall\'s order: the grid in clock or
   const brc = thuFile('Black Rave Culture');
   assert.ok(soulwax.time && soulwax.approx && soulwax.doors, 'Soulwax: doors and a guessed start');
   assert.ok(!brc.time && brc.doors, 'Black Rave Culture: doors and no start anybody published');
+  // Since the 2026-09-23 re-read the Regency is a three-act run (Rory Phillips,
+  // LAIMA, Soulwax), so Soulwax closes it: the run exports in play order.
+  const regency = portola.artists.filter((a) => a.night === 'Thu' && a.venue === soulwax.venue)
+    .sort((a, b) => a.order.seq - b.order.seq);
+  assert.deepEqual(regency.map((a) => a.name), ['Rory Phillips', 'LAIMA', 'Soulwax']);
   assert.deepEqual(thu, [
-    { name: 'Soulwax', time: `Afters · ${soulwax.venue} · ~${soulwax.time}` },
+    ...regency.map((a) => ({ name: a.name, time: `Afters · ${a.venue} · ~${a.time}` })),
     { name: 'Black Rave Culture', time: `Afters · ${brc.venue}` },
   ]);
   const fri = dayArtistsFor('Friday');
@@ -94,7 +99,7 @@ test('a share image is the wall you see: a hidden room is not in a day\'s image,
     filters.saveFolded('portola-2026', []);
   }
   assert.equal(dayImageChoices(portola).length, 4, 'and everything is back once the fold clears');
-  assert.equal(dayArtistsFor('Saturday').length, 32 + 9 + 2);
+  assert.equal(dayArtistsFor('Saturday').length, 32 + 15 + 2);
 });
 
 test('a lineup-only fest still exports by billing group', () => {
