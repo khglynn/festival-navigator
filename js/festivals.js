@@ -81,6 +81,64 @@ export async function fetchCustomFestivals(token) {
   return list;
 }
 
+// ---- the warm open: what this phone already holds (2026-09-23) --------------
+// At Pier 80 with 40k phones on one tower the network HANGS rather than fails,
+// and every network-first read above spends its whole budget before the cache
+// answers — a cold open sat on the loader for up to ~16 s over files that were
+// on the phone the entire time. These read the worker's caches directly, with
+// no network in the way, for the first paint; the ordinary reads refresh it
+// once they land (app.js freshenWarmOpen). None of them throws: a browser with
+// site data blocked throws from the `caches` getter itself.
+//
+// The worker's persistent festival-data bucket, looked in first because every
+// fetch refreshes it; the shell's install snapshot (index.json) is the fallback.
+// Must equal service-worker.js DATA_CACHE (tests/sw-data-network-first.test.mjs).
+export const DATA_CACHE_NAME = 'festival-nav-data-v1';
+
+async function cachedJSON(path) {
+  try {
+    const store = caches;
+    if (!store || typeof store.match !== 'function') return null;
+    const hit = (await store.match(path, { cacheName: DATA_CACHE_NAME })) || (await store.match(path));
+    return hit ? await hit.json() : null;
+  } catch { return null; }
+}
+
+// The catalog from cache when this page has none yet. True when the page
+// holds a catalog, either way. Never replaces one that is already here.
+export async function festivalIndexFromCache() {
+  if (FESTIVAL_INDEX.length) return true;
+  const list = await cachedJSON('/data/festivals/index.json');
+  if (Array.isArray(list) && list.length && !FESTIVAL_INDEX.length) FESTIVAL_INDEX = list;
+  return FESTIVAL_INDEX.length > 0;
+}
+
+// A festival file this page or this phone already holds; null when neither.
+export async function festivalFromCache(id) {
+  if (FESTIVALS[id]) return FESTIVALS[id];
+  const fest = await cachedJSON(`/data/festivals/${id}.json`);
+  if (fest && !FESTIVALS[id]) FESTIVALS[id] = fest;
+  return FESTIVALS[id] || null;
+}
+
+// The live festival file (network-first through the worker, as always) for
+// the warm open's freshness check. Null on any failure; never touches
+// FESTIVALS — the caller decides whether the fresh copy replaces the painted one.
+export async function fetchFestivalFile(id) {
+  try {
+    const res = await fetch(`/data/festivals/${id}.json`);
+    return res.ok ? await res.json() : null;
+  } catch { return null; }
+}
+
+// The crew's customs as last stored on this phone, without asking.
+export function cachedCustomFestivals(token) {
+  try {
+    const list = JSON.parse(localStorage.getItem(LS_CUSTOM(token)));
+    return Array.isArray(list) ? list : [];
+  } catch { return []; }
+}
+
 export async function loadCustomFestivals(token) {
   const list = await fetchCustomFestivals(token);
   mergeCustoms(list);

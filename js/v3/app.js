@@ -32,6 +32,8 @@ import { hslOf, strokeOf, nextColorIndex } from './palette.js';
 // open, and the one-time offer to bring your picks from another crew.
 import { planBringPicks, bringOfferCopy, bringDoneLine, bringAnswered, rememberBringAnswer, showBringOffer, settleBringOffer, dismissBringOffer, bringOfferCard } from './crew-entry.js';
 import { showActionToast } from './wall.js';
+// The warm open (2026-09-23): paint from what this phone holds, freshen after.
+import { festivalIndexFromCache, festivalFromCache, fetchFestivalFile, cachedCustomFestivals } from '../festivals.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -1961,7 +1963,9 @@ async function stampIdentity(token, current = () => true, { renameFrom = null } 
 // `customs` is the crew's custom-festival fetch — boot starts it beside the
 // catalog; any other entry starts it here. Merged only now, catalog in hand.
 // `recognized` (boot only): the name recognizeOnOpen claimed for this device.
-async function enterApp(token, doc, current = () => true, customs = fetchCustomFestivals(token), { recognized = null } = {}) {
+// `warm` (boot only): painting from this phone's own copy — nothing below may
+// wait on the network (see boot's warm open).
+async function enterApp(token, doc, current = () => true, customs = fetchCustomFestivals(token), { recognized = null, warm = false } = {}) {
   dismissBringOffer({ instant: true }); // an offer is about the crew it was made in — never the next one
   crew.setActiveCrew(token);
   crew.rememberCrew(token, (doc.meta && doc.meta.name) || '');
@@ -1990,7 +1994,16 @@ async function enterApp(token, doc, current = () => true, customs = fetchCustomF
   // corrupting a genuine "picked x3" into "must" (Codex P6 gate, finding 1).
   // Offline/failed migration -> writes stay gated (ctx.migrationPending) and
   // the poll loop retries; reads are safe throughout (readLevel maps by v).
-  if (model.needsMigration(state.crewDoc)) {
+  if (model.needsMigration(state.crewDoc) && warm) {
+    // A warm open never waits on the network: picks stay gated (the banner
+    // says so) until the one-shot op lands — here, or on the 25 s loop.
+    ctx.migrationPending = true;
+    sync.requestMigration().then(() => {
+      if (!current() || state.getCrewToken() !== token) return;
+      ctx.migrationPending = model.needsMigration(state.crewDoc);
+      if (!ctx.migrationPending) repaintWall();
+    });
+  } else if (model.needsMigration(state.crewDoc)) {
     await sync.requestMigration();
     if (!current()) return;
     ctx.migrationPending = model.needsMigration(state.crewDoc);
@@ -1998,7 +2011,10 @@ async function enterApp(token, doc, current = () => true, customs = fetchCustomF
     ctx.migrationPending = false;
   }
   try {
-    await loadFestival(state.activeFestivalId);
+    // Warm: the copy this phone holds paints now; freshenWarmOpen swaps in
+    // the live one if a data push changed it. A fest this phone never stored
+    // still has to come from the network.
+    if (!(warm && await festivalFromCache(state.activeFestivalId))) await loadFestival(state.activeFestivalId);
   } catch {
     // Offline with this fest uncached: fall back to a loadable fest rather
     // than stranding a blank wall (CORE-12). If the default also fails,
@@ -2069,6 +2085,34 @@ async function enterApp(token, doc, current = () => true, customs = fetchCustomF
       });
     }
   }
+}
+
+// After a warm open, the reads a cold open used to wait on — landing the
+// ordinary way when they arrive. The crew doc needs nothing here: enterApp's
+// poll already is its path. The live catalog replaces the list wholesale, so
+// the crew's own festivals rejoin it at once, then again fresh. The live
+// festival file (network-first through the worker, as ever — so a data push
+// still reaches an online phone on this very open) replaces the cached copy
+// only if it differs, through the same repaint a remote change takes: the
+// wall's repaint boundary keeps scroll and a half-typed note.
+function freshenWarmOpen(token, catalog, heldCustoms, current) {
+  const live = () => current() && state.getCrewToken() === token;
+  (async () => {
+    await catalog;
+    if (!live()) return;
+    mergeCustoms(heldCustoms);
+    const fresh = await fetchCustomFestivals(token);
+    if (live()) mergeCustoms(fresh);
+  })().catch((e) => console.warn('warm open: customs', e));
+  const fid = state.activeFestivalId;
+  fetchFestivalFile(fid).then((fest) => {
+    if (!fest || !live() || state.activeFestivalId !== fid) return;
+    if (JSON.stringify(fest) === JSON.stringify(state.FESTIVALS[fid])) return;
+    state.FESTIVALS[fid] = fest;
+    state.forgetComputedDays();
+    applyFestTheme();
+    repaintFromRemote();
+  }).catch((e) => console.warn('warm open: festival file', e));
 }
 
 // ---- lost states (spec F16) --------------------------------------------------------
@@ -2148,8 +2192,14 @@ export async function boot() {
   try {
     // The catalog leaves now and nothing waits on it alone: a crew boot sends
     // its own two requests beside it (below). Each branch that renders from
-    // the catalog awaits it first.
-    const catalog = loadFestivalIndex().catch(() => { /* offline with cache: proceed */ });
+    // the catalog awaits it first. "Stay offline" is the field escape hatch
+    // (2026-09-23): the catalog this phone holds, and the network only for one
+    // it never stored.
+    const stayOffline = !!appSettings().stayOffline;
+    const catalog = (stayOffline
+      ? festivalIndexFromCache().then((held) => held || loadFestivalIndex())
+      : loadFestivalIndex()
+    ).catch(() => { /* offline with cache: proceed */ });
 
     if (personLinkBroken) {
       await catalog;
@@ -2204,6 +2254,25 @@ export async function boot() {
     const token = crew.bootTokenFor(crew.tokenFromHash(), crew.activeCrewToken(), isFirst);
     if (!token) { await catalog; renderLanding(); return; }
 
+    // The warm open (2026-09-23). This phone holds the crew's doc and a name
+    // it claimed in it, so the wall paints from that NOW, and the network
+    // lands the ordinary way whenever it answers: enterApp's poll is the
+    // remote-change path (repaint, chips, an open sheet), and our API's JSON
+    // 404 is still the crew-gone path — one poll after the first paint rather
+    // than before it, which is the trade. At Pier 80 the network hangs rather
+    // than fails, and the path below spent up to ~16 s of loader on files that
+    // were already here. A crew this phone never opened or never claimed a
+    // name in still takes that path: there is nothing true to paint without
+    // the network.
+    const warmDoc = crew.me(token) ? state.cachedDoc(token) : null;
+    if (warmDoc && await festivalIndexFromCache()) {
+      if (!current()) return;
+      const heldCustoms = cachedCustomFestivals(token);
+      await enterApp(token, warmDoc, current, Promise.resolve(heldCustoms), { warm: true });
+      if (current() && !stayOffline) freshenWarmOpen(token, catalog, heldCustoms, current);
+      return;
+    }
+
     // The crew doc and the crew's own festivals leave beside the catalog, so
     // a network that hangs costs the slowest wait (8 s), never the sum of
     // three. The customs merge later, in enterApp, once the catalog is in.
@@ -2231,12 +2300,15 @@ export async function boot() {
   }
 }
 
+// Everything that renders identity/state repaints together — the dock avatar
+// was the one holdout showing a stale color (audit 1.5). The remote-change
+// path, and the warm open's fresh festival file takes it too.
+function repaintFromRemote() { repaintWall(); renderPersonChips(); renderYou(); refreshOpenSheet(); }
+
 // ---- wiring ----------------------------------------------------------------------
 export function init() {
   sync.initSync({
-    // Everything that renders identity/state repaints together — the dock
-    // avatar was the one holdout showing a stale color (audit 1.5).
-    onRemoteChange: () => { repaintWall(); renderPersonChips(); renderYou(); refreshOpenSheet(); },
+    onRemoteChange: repaintFromRemote,
     onCrewGone: (token) => {
       // The server said this crew no longer exists — a dead row on the
       // landing list would just 404 again (FLOW-3).
