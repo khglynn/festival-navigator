@@ -91,8 +91,8 @@
 .chip-meter {
   display: inline-flex; align-items: center; justify-content: center; height: 12px; padding: 0 6px;
   border-radius: var(--r-pill); border: 1px solid #fff; color: #fff; line-height: 1; flex: none;
+  transform-origin: 0 50%; /* it grows out of the corner's edge */
 }
-.chip-meter { transform-origin: 0 50%; } /* it grows out of the corner's edge */
 .chip-meter .bars { display: inline-flex; align-items: flex-end; gap: 1.5px; height: 8.5px; }
 .chip-meter .bar { width: 2.5px; border-radius: 1px; background: #fff; opacity: .3; transform-origin: 50% 100%; }
 .chip-meter .bar.on { opacity: 1; }
