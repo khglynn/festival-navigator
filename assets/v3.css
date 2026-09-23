@@ -242,7 +242,15 @@ button.room-head { cursor: pointer; }
 .room-head .sub { flex: 0 1000 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
                   color: var(--text-tertiary); font-size: 9.5px; font-weight: 700; letter-spacing: .08em;
                   text-transform: uppercase; }
-.room-head .line { flex: 1 1 0; min-width: 0; height: 1px; background: var(--hairline); }
+/* A head with no sub (SAT FOLSOM) is not a head with an invisible one: an empty
+ * sub still took a gap, so its hairline started twice as far from the name as
+ * SAT AFTERS's did from its date. */
+.room-head .sub:empty { display: none; }
+/* The hairline fades in over its first 12px: when a long head leaves it only a
+ * few pixels (FRI ACL MUSIC FESTIVAL  OCT 2 · WEEKEND 1 · ZILKER PARK at 390),
+ * a hard-edged stub read as a stray dot after the text. */
+.room-head .line { flex: 1 1 0; min-width: 0; height: 1px;
+                   background: linear-gradient(to right, transparent, var(--hairline) 12px); }
 
 /* A LIST's head: one line over a list of answers — a day in a search or a
  * lineup fest's by-day list, and THE LINEUP / EVERYTHING ELSE / NOTES · FEST.
