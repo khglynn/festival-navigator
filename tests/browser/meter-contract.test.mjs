@@ -97,9 +97,18 @@ function laneFest() {
   return f;
 }
 
-async function openWall({ width = 390, height = 844, touch = true, fest = null, reducedMotion = 'no-preference' } = {}) {
+async function openWall({ width = 390, height = 844, touch = true, fest = null, reducedMotion = 'no-preference', wide = null } = {}) {
   const ctx = await browser.newContext({ viewport: { width, height }, hasTouch: touch, serviceWorkers: 'block', reducedMotion });
   const TOKEN = 'metercontract_0123456789'; // a made-up crew, never a real link
+  // `wide`: every glyph in the two corners drawn this much wider than this
+  // engine draws it — a stand-in for an engine whose Inter is wider than the
+  // one the width table was measured on (CI's Linux; a real phone).
+  if (wide) {
+    await ctx.addInitScript((w) => {
+      const add = () => { const st = document.createElement('style'); st.textContent = `.corner-about *, .corner-who * { letter-spacing: ${w} !important; }`; document.head.appendChild(st); };
+      if (document.head) add(); else document.addEventListener('DOMContentLoaded', add);
+    }, wide);
+  }
   await ctx.addInitScript(([t, f]) => {
     navigator.serviceWorker.register = () => Promise.resolve({ update: () => Promise.resolve() });
     localStorage.setItem('fn_crews_v3', JSON.stringify([{ token: t, name: 'Meter' }]));
@@ -285,6 +294,26 @@ for (const width of [390, 320]) {
     } finally { await ctx.close(); }
   });
 }
+
+// Any engine (2026-09-23): aura.js's width table was measured in Chromium
+// on macOS, and CI's Linux drew Robyn's corners 1.4px apart at 1280 because
+// its Inter is wider. The fit now reads back what each card really drew and
+// gives way further wherever the corners crowd (wall.js fitAll), so the laws
+// hold whatever the glyphs measure. Here every corner glyph is drawn 1.3px
+// wider than this engine would — about what Linux adds to Robyn's corners.
+test('any engine: corner glyphs wider than the table knows, and the corners still never touch — at 390, 320 and 1280', { skip }, async () => {
+  for (const [width, height, touch, fest] of [[390, 844, true, null], [320, 700, true, laneFest()], [1280, 800, false, laneFest()]]) {
+    const { ctx, page } = await openWall({ width, height, touch, fest, wide: '1.3px' });
+    try {
+      const cards = await cornersOn(page);
+      assert.ok(cards.length > 100, 'the whole wall rendered');
+      assertCornersKeep(cards, `${width}, wide glyphs`);
+      assertMeterTells(cards);
+      const robyn = cards.find((c) => c.artist === 'Robyn');
+      assert.ok(robyn.fit >= 1, `the crowded card gave way (fit ${robyn.fit})`);
+    } finally { await ctx.close(); }
+  }
+});
 
 test('a laptop: the same laws at 1280, and the meter is drawn on the Spotify pill’s pattern', { skip }, async () => {
   const { ctx, page } = await openWall({ width: 1280, height: 800, touch: false, fest: laneFest() });

@@ -163,8 +163,12 @@ export const GIVE_WAY = [
   { meter: false },
 ];
 
-// Widths as v3.css draws each piece — measured in Chromium on 2026-09-23 (Inter
-// 800, Anton) and logged in claude-plans/2026-09-23-meter-build.md. Counts
+// Widths as v3.css draws each piece — measured in Chromium on macOS on
+// 2026-09-23 (Inter 800, Anton) and logged in claude-plans/2026-09-23-meter-build.md.
+// They are the fit's FIRST GUESS, never its last word: Linux draws Inter
+// wider (Robyn's corners landed 1.4px apart in CI), and so will real phones,
+// so wall.js reads back what each card really drew and gives way further
+// wherever the corners crowd (confirmFit). Counts
 // are summed from Inter 800's own digit widths (em, measured the same day;
 // no kerning between digits) and rounded up, so an estimate errs, if at all,
 // toward giving way a touch early; CLEAR keeps the two corners apart even so.
@@ -178,7 +182,7 @@ const GEO = {
 const EM = { 0: 0.692, 1: 0.441, 2: 0.638, 3: 0.657, 4: 0.689, 5: 0.634, 6: 0.663, 7: 0.606, 8: 0.665, 9: 0.663, '+': 0.686 };
 const textWidth = (text, px) => Math.ceil([...String(text || '')].reduce((w, ch) => w + (EM[ch] ?? 0.7), 0) * px * 10) / 10;
 const GAP = 3;    // between chips (.corner-about gap), and before every mark (.mark margin-left)
-const CLEAR = 4;  // the least air left between the two corners
+export const CLEAR = 4;  // the least air left between the two corners (wall.js measures against it too)
 const FLAG = 7;   // the followed bookmark (+3 when a count sits beside it)
 const MARK = { must: 26, pick: 6 }; // 24px / 4px plus a 1px stroke each side
 
@@ -217,10 +221,12 @@ export const needAt = (parts, step, opts) => layoutAt(parts, step, opts).need;
 // The corners for a card `width` px wide (its padding box): the first step of
 // GIVE_WAY that fits, or the last. No width yet (a card not laid out, jsdom)
 // means everything — the fit only ever takes away what a real width says
-// cannot fit.
+// cannot fit. `from` starts the search at a later step: what the engine
+// really drew said the steps before it crowd (wall.js confirmFit).
 export function fitCorners(parts, width, opts = {}) {
-  let out = layoutAt(parts, 0, opts);
+  const from = Math.min(Math.max(0, opts.from || 0), GIVE_WAY.length - 1);
+  let out = layoutAt(parts, from, opts);
   if (!(width > 0)) return out;
-  for (let step = 1; step < GIVE_WAY.length && out.need > width; step++) out = layoutAt(parts, step, opts);
+  for (let step = from + 1; step < GIVE_WAY.length && out.need > width; step++) out = layoutAt(parts, step, opts);
   return out;
 }

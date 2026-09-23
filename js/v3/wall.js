@@ -10,7 +10,7 @@ import * as model from './model.js';
 import { LEVEL_LABELS_V4 } from '../parse.js';
 import { computeLanes } from '../overlap.js';
 import { dayLabelParts } from '../time.js';
-import { aboutCorner, fitCorners } from './aura.js';
+import { aboutCorner, fitCorners, GIVE_WAY, CLEAR } from './aura.js';
 import { BOARD } from './palette.js';
 import { dayWhisper, festWhisper, dayTargetLabel } from './notes.js'; // runtime-only cycle with this module (colorIndexOf) — safe
 import { factsFor, timeRange } from './card-facts.js'; // same runtime-only cycle: the card's ONE model
@@ -295,6 +295,7 @@ function drawCorners(el, parts, { artistName, openNotes }) {
 
 function applyFit(el, fit) {
   el.dataset.fit = String(fit.step);
+  el._fit = fit; // what the read-back needs to know: whether the band's time is still shown
   for (const c of el.querySelector(':scope > .corner-about').children) {
     const kind = c.dataset.kind;
     c.hidden = (kind === 'spotify' && !fit.spot) || (kind === 'notes' && !fit.notes) || (kind === 'meter' && !fit.meter);
@@ -313,12 +314,66 @@ function applyFit(el, fit) {
 
 // Fit one card's corners to `width`, the px of its padding box, around the
 // centred text in their band (`band`, from bandText). aura.js fitCorners
-// holds the order things give way in. A no-op when nothing moves.
-export function fitCard(el, width, band = null) {
+// holds the order things give way in; `from`, the step the read-back says
+// the corners need at least (confirmFit). A no-op when nothing moves.
+export function fitCard(el, width, band = null, from = 0) {
   const parts = el._corners;
   if (!parts) return;
-  const fit = fitCorners(parts, width, { cell: el.classList.contains('cell'), ...(band || {}) });
+  const fit = fitCorners(parts, width, { cell: el.classList.contains('cell'), ...(band || {}), from });
   if (el.dataset.fit !== String(fit.step)) applyFit(el, fit);
+}
+
+// What the corners REALLY drew, read back after a fit is written: each
+// corner's own box as laid out (hidden chips gone, the crew corner's "+n"
+// as it is now) against the card's edges and the centred text in its band.
+// aura.js's width table is Chromium-on-macOS; Linux draws Inter wider and so
+// will real phones, and a table that guesses short left Robyn's corners
+// 1.4px apart in CI (2026-09-23). The law is the table's own: CLEAR between
+// the two corners, and between each corner and the band's text — with half
+// a pixel for sub-pixel layout. A card with no layout (a hidden screen,
+// jsdom) is taken at the table's word: there is nothing to read.
+const LAST_STEP = GIVE_WAY.length - 1;
+function cornersClear(el, band) {
+  const card = el.getBoundingClientRect();
+  if (!card.width) return true;
+  const drawn = (sel) => {
+    const n = el.querySelector(sel);
+    const r = n ? n.getBoundingClientRect() : null;
+    return r && r.width ? r : null;
+  };
+  const about = drawn(':scope > .corner-about');
+  const who = drawn(':scope > .corner-who');
+  const air = CLEAR - 0.5;
+  if (about && about.right > card.right - 1) return false;
+  if (who && who.left < card.left + 1) return false;
+  if (about && who && who.left - about.right < air) return false;
+  if (band) {
+    // The band's text as it stands after the fit: a time the fit stepped
+    // back takes no room; the name always does.
+    const spans = [band.nm, (!el._fit || el._fit.time) ? band.mid : null].filter(Boolean);
+    if (spans.length) {
+      const left = Math.min(...spans.map((x) => x[0]));
+      const right = Math.max(...spans.map((x) => x[1]));
+      if (about && about.right + air > left) return false;
+      if (who && who.left - air < right) return false;
+    }
+  }
+  return true;
+}
+
+// The table's guess, then the read-back: every card's corners are read (all
+// reads first — one layout for the batch), each one that crowds gives way one
+// more step (all writes), and only those are read again, until every card is
+// clear or at its last step. A handful of passes at most, and no observer
+// loop: the corners are absolute, so no step ever resizes a card.
+function fitAll(todo) {
+  for (const [el, width, band] of todo) fitCard(el, width, band);
+  let pending = todo;
+  for (let pass = 0; pending.length && pass < GIVE_WAY.length; pass += 1) {
+    const crowded = pending.filter(([el, , band]) => el.isConnected && Number(el.dataset.fit) < LAST_STEP && !cornersClear(el, band));
+    for (const [el, width, band] of crowded) fitCard(el, width, band, Number(el.dataset.fit) + 1);
+    pending = crowded;
+  }
 }
 
 // The centred text a timetable cell carries down in its corners' band,
@@ -333,20 +388,30 @@ function bandText(card) {
   const box = card.getBoundingClientRect();
   if (!box.height) return null;
   const top = box.bottom - CELL_BAND;
-  const widest = (el) => {
+  // The lines of `el` that sit down in the band: their widest width (the
+  // table's input) and where they reach, left and right (the read-back's).
+  const lines = (el) => {
+    const out = { w: 0, x: null };
     const range = document.createRange();
     range.selectNodeContents(el);
-    if (typeof range.getClientRects !== 'function') return 0;
+    if (typeof range.getClientRects !== 'function') return out;
     const own = el.getBoundingClientRect(); // a clamped name's hidden lines are not text anyone sees
-    let w = 0;
-    for (const r of range.getClientRects()) if (r.width && r.bottom > top && r.top < Math.min(box.bottom, own.bottom) - 1) w = Math.max(w, r.width);
-    return w;
+    for (const r of range.getClientRects()) {
+      if (!(r.width && r.bottom > top && r.top < Math.min(box.bottom, own.bottom) - 1)) continue;
+      out.w = Math.max(out.w, r.width);
+      out.x = out.x ? [Math.min(out.x[0], r.left), Math.max(out.x[1], r.right)] : [r.left, r.right];
+    }
+    return out;
   };
-  let middle = 0, name = 0;
-  for (const t of card.querySelectorAll(':scope > .time, :scope > .until')) middle = Math.max(middle, widest(t));
+  let middle = 0, name = 0, mid = null, nmX = null;
+  for (const t of card.querySelectorAll(':scope > .time, :scope > .until')) {
+    const l = lines(t);
+    middle = Math.max(middle, l.w);
+    if (l.x) mid = mid ? [Math.min(mid[0], l.x[0]), Math.max(mid[1], l.x[1])] : l.x;
+  }
   const nm = card.querySelector(':scope > .name');
-  if (nm) name = widest(nm);
-  return middle || name ? { middle, name } : null;
+  if (nm) { const l = lines(nm); name = l.w; nmX = l.x; }
+  return middle || name ? { middle, name, mid, nm: nmX } : null;
 }
 
 // A card learns its width only once it is laid out — and again on a rotation
@@ -366,8 +431,26 @@ const fitWatch = typeof ResizeObserver === 'function' ? new ResizeObserver((entr
     const box = borderBoxSize && borderBoxSize[0];
     todo.push([target, (box ? box.inlineSize : target.getBoundingClientRect().width) - 2, bandText(target)]);
   }
-  for (const [el, width, band] of todo) fitCard(el, width, band);
+  fitAll(todo);
 }) : null;
+// A late font changes every width without resizing a single card, so no
+// observer fires: refit every watched card when the fonts land — once when
+// the set is ready, and again whenever a font finishes loading after that.
+function refitAll() {
+  const todo = [];
+  for (const el of fitting) {
+    if (!el.isConnected) continue;
+    const width = el.getBoundingClientRect().width;
+    if (width > 0) todo.push([el, width - 2, bandText(el)]);
+  }
+  fitAll(todo);
+}
+try {
+  if (fitWatch && typeof document !== 'undefined' && document.fonts) {
+    if (document.fonts.ready && typeof document.fonts.ready.then === 'function') document.fonts.ready.then(refitAll, () => {});
+    if (typeof document.fonts.addEventListener === 'function') document.fonts.addEventListener('loadingdone', refitAll);
+  }
+} catch { /* a font set that cannot be asked is a font set the observer already covers */ }
 function watchFit(el) {
   if (!fitWatch) return;
   fitWatch.observe(el, { box: 'border-box' });
