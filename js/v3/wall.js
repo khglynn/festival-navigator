@@ -10,14 +10,14 @@ import * as model from './model.js';
 import { LEVEL_LABELS_V4 } from '../parse.js';
 import { computeLanes } from '../overlap.js';
 import { dayLabelParts } from '../time.js';
-import { whoCorner, aboutCorner } from './aura.js';
+import { aboutCorner, fitCorners } from './aura.js';
 import { BOARD } from './palette.js';
 import { dayWhisper, festWhisper, dayTargetLabel } from './notes.js'; // runtime-only cycle with this module (colorIndexOf) — safe
 import { factsFor, timeRange } from './card-facts.js'; // same runtime-only cycle: the card's ONE model
 import { passesPeople, COL, FEST_ROOM } from './filters.js';
 import { nowOnDay, nowOffsetPx, clockLabel, festivalClock } from './now.js';
 import { eventModelOf, venueGroupsOf, dateRuleLabel, occOf, hourLabelOf, approxMark, parseEventTime, weekdayOfIso, shortDate } from './events.js';
-import { reduced } from './motion.js';
+import { reduced, canAnimate, GROW_MS, OUT_MS, STAGGER_MS, EASE_ARRIVE, EASE_SURFACE } from './motion.js';
 import { isCancelled } from './events.js'; // a cancelled act (2026-09-23) — its own line, so the list above can grow without a merge
 
 // ---- person -> board color ---------------------------------------------------
@@ -131,34 +131,15 @@ export function renderCard(artistName, ctx, opts = {}) {
     }
   }
 
-  const about = document.createElement('span');
-  about.className = 'corner-about';
-  for (const chip of aboutCorner({ noteCount: facts.noteCount, spotify: facts.spotify })) {
-    // The clickable note-count chip is a real button (audit 4.4); the Spotify
-    // chip stays a passive span.
-    const clickable = chip.kind === 'notes' && ctx.onOpenNotes;
-    const c = document.createElement(clickable ? 'button' : 'span');
-    c.className = chip.kind === 'notes' ? 'chip-notes' : 'chip-spotify';
-    c.textContent = chip.label;
-    if (chip.kind === 'spotify' && chip.followed) c.appendChild(svgBookmark());
-    // Corner glow for high-affinity artists (followed + 5+ songs): a soft
-    // Spotify-green mini-aura behind the badge corner — same visual language
-    // as the people-auras, card geometry untouched (Kevin picked this over
-    // rings/outlines 2026-07-13; thicker outlines broke pixel rhythm before).
-    if (chip.kind === 'spotify' && chip.hot) {
-      const glow = document.createElement('span');
-      glow.className = 'spot-glow';
-      glow.setAttribute('aria-hidden', 'true');
-      el.appendChild(glow);
-    }
-    if (clickable) {
-      c.style.cursor = 'pointer';
-      c.setAttribute('aria-label', `${chip.label} note${chip.label === '1' ? '' : 's'} for ${artistName}`);
-      c.addEventListener('click', (e) => { e.stopPropagation(); ctx.onOpenNotes(artistName, opts.occ || null); });
-    }
-    about.appendChild(c);
-  }
-  el.appendChild(about);
+  // The two bottom corners: YOUR meter, the notes door and Spotify on the
+  // left; everyone else on the right (drawCorners). The card keeps their
+  // model so it can fit them to its width once it has one (fitCard).
+  const you = people.find((p) => p.isYou) || null;
+  el._corners = { people, about: aboutCorner({ noteCount: facts.noteCount, spotify: facts.spotify, you }) };
+  drawCorners(el, el._corners, {
+    artistName,
+    openNotes: ctx.onOpenNotes ? () => ctx.onOpenNotes(artistName, opts.occ || null) : null,
+  });
 
   // Long-press (touch) ZOOMS the card (~500ms, 10px slop — the OS constants;
   // 2026-08-29 round): the grown card carries the notes chip, so the sheet
@@ -198,22 +179,6 @@ export function renderCard(artistName, ctx, opts = {}) {
     el.addEventListener('click', (e) => { if (longPressed) { e.stopImmediatePropagation(); longPressed = false; } }, true);
   }
 
-  const who = document.createElement('span');
-  who.className = 'corner-who';
-  for (const m of whoCorner(people)) {
-    const s = document.createElement('span');
-    s.className = 'mark' + (m.kind === 'ghost' ? ' ghost' : '');
-    if (m.kind !== 'ghost') {
-      s.style.width = m.width + 'px';
-      s.style.background = m.fill;
-      s.style.border = '1px solid ' + m.stroke;
-      s.style.fontSize = m.kind === 'must' ? '7.5px' : '0px';
-    }
-    s.textContent = m.label;
-    who.appendChild(s);
-  }
-  el.appendChild(who);
-
   el.addEventListener('click', (e) => {
     // Belt over the chips' own stopPropagation (the research's Ant Design
     // lesson): a real button inside the card (the notes chip) is its own
@@ -225,7 +190,158 @@ export function renderCard(artistName, ctx, opts = {}) {
     ctx.onTap(artistName, el);
   });
   if (ctx.wireZoom) ctx.wireZoom(el, artistName, opts.occ || null);
+  watchFit(el);
   return el;
+}
+
+// YOUR meter (aura.js meterOf): three bars lit one per tap, and at must the
+// word. ONE builder — the card's corner and How it works both draw it, so the
+// lesson can never show a chip the wall does not. aria-hidden: the card's
+// own label already says your level (renderCard), and a screen reader should
+// hear it once.
+export function meterChip(chip) {
+  const c = document.createElement('span');
+  c.className = 'chip-meter' + (chip.level === 4 ? ' is-must' : '');
+  c.dataset.kind = 'meter';
+  c.dataset.level = String(chip.level);
+  c.style.background = chip.fill;
+  c.style.borderColor = chip.stroke;
+  c.setAttribute('aria-hidden', 'true');
+  if (chip.level === 4) {
+    const w = document.createElement('span');
+    w.className = 'must';
+    w.textContent = chip.label;
+    c.appendChild(w);
+  } else {
+    const bars = document.createElement('span');
+    bars.className = 'bars';
+    for (let i = 1; i <= 3; i++) {
+      const b = document.createElement('span');
+      b.className = 'bar' + (i <= chip.bars ? ' on' : '');
+      bars.appendChild(b);
+    }
+    c.appendChild(bars);
+  }
+  return c;
+}
+
+function markEl(m) {
+  const s = document.createElement('span');
+  s.className = 'mark' + (m.kind === 'ghost' ? ' ghost' : '');
+  if (m.kind !== 'ghost') {
+    s.style.width = m.width + 'px';
+    s.style.background = m.fill;
+    s.style.border = '1px solid ' + m.stroke;
+    s.style.fontSize = m.kind === 'must' ? '7.5px' : '0px';
+  }
+  s.textContent = m.label;
+  return s;
+}
+
+// The corners, drawn whole (a card that has not been laid out yet has no
+// width to fit to), then fitted: applyFit hides what gives way and redraws
+// the crew corner with its "+n" counting whoever it folded.
+function drawCorners(el, parts, { artistName, openNotes }) {
+  const about = document.createElement('span');
+  about.className = 'corner-about';
+  for (const chip of parts.about) {
+    let c;
+    if (chip.kind === 'meter') {
+      c = meterChip(chip);
+    } else if (chip.kind === 'notes') {
+      // The clickable note-count chip is a real button (audit 4.4).
+      c = document.createElement(openNotes ? 'button' : 'span');
+      c.className = 'chip-notes';
+      c.textContent = chip.label;
+      if (openNotes) {
+        c.style.cursor = 'pointer';
+        c.setAttribute('aria-label', `${chip.label} note${chip.label === '1' ? '' : 's'} for ${artistName}`);
+        c.addEventListener('click', (e) => { e.stopPropagation(); openNotes(); });
+      }
+    } else {
+      // The Spotify chip stays a passive span. Its count sits in its own
+      // span because the count is the first thing to give way (GIVE_WAY).
+      c = document.createElement('span');
+      c.className = 'chip-spotify';
+      if (chip.label) {
+        const n = document.createElement('span');
+        n.className = 'n';
+        n.textContent = chip.label;
+        c.appendChild(n);
+      }
+      if (chip.followed) c.appendChild(svgBookmark());
+      // Corner glow for high-affinity artists (followed + 5+ songs): a soft
+      // Spotify-green mini-aura behind the badge corner — same visual language
+      // as the people-auras, card geometry untouched (Kevin picked this over
+      // rings/outlines 2026-07-13; thicker outlines broke pixel rhythm before).
+      if (chip.hot) {
+        const glow = document.createElement('span');
+        glow.className = 'spot-glow';
+        glow.setAttribute('aria-hidden', 'true');
+        el.appendChild(glow);
+      }
+    }
+    c.dataset.kind = chip.kind;
+    about.appendChild(c);
+  }
+  el.appendChild(about);
+  const who = document.createElement('span');
+  who.className = 'corner-who';
+  el.appendChild(who);
+  applyFit(el, fitCorners(parts, 0));
+}
+
+function applyFit(el, fit) {
+  el.dataset.fit = String(fit.step);
+  for (const c of el.querySelector(':scope > .corner-about').children) {
+    const kind = c.dataset.kind;
+    c.hidden = (kind === 'spotify' && !fit.spot) || (kind === 'notes' && !fit.notes);
+    if (kind === 'spotify') {
+      const n = c.querySelector('.n');
+      if (n) n.hidden = !fit.spotCount;
+    }
+  }
+  const glow = el.querySelector(':scope > .spot-glow');
+  if (glow) glow.hidden = !fit.spot; // the glow rises from the pill; no pill, no glow
+  el.querySelector(':scope > .corner-who').replaceChildren(...fit.marks.map(markEl));
+}
+
+// Fit one card's corners to `width`, the px of its padding box (aura.js
+// fitCorners holds the order things give way in). A no-op when nothing moves.
+export function fitCard(el, width) {
+  const parts = el._corners;
+  if (!parts) return;
+  const fit = fitCorners(parts, width, { cell: el.classList.contains('cell') });
+  if (el.dataset.fit !== String(fit.step)) applyFit(el, fit);
+}
+
+// A card learns its width only once it is laid out — and again on a rotation
+// or a lane split — so the fit rides a ResizeObserver, whose callback runs
+// after layout and before paint: no frame ever shows the two corners
+// colliding. The corners are absolute, so a fit never resizes the card (no
+// observer loop). Width is the border box less the card's 1px edge each side.
+// Observed cards are held strongly, so each full render sweeps the ones it
+// replaced (renderWall), and a refresh lets go of the node it swaps out.
+const fitting = new Set();
+const fitWatch = typeof ResizeObserver === 'function' ? new ResizeObserver((entries) => {
+  for (const { target, borderBoxSize } of entries) {
+    if (!target.isConnected) { unwatchFit(target); continue; }
+    const box = borderBoxSize && borderBoxSize[0];
+    fitCard(target, (box ? box.inlineSize : target.getBoundingClientRect().width) - 2);
+  }
+}) : null;
+function watchFit(el) {
+  if (!fitWatch) return;
+  fitWatch.observe(el, { box: 'border-box' });
+  fitting.add(el);
+}
+function unwatchFit(el) {
+  if (!fitWatch) return;
+  fitWatch.unobserve(el);
+  fitting.delete(el);
+}
+function sweepFit() {
+  for (const el of fitting) if (!el.isConnected) unwatchFit(el);
 }
 
 // Re-render one card in place after a pick change (no full-wall repaint).
@@ -253,6 +369,13 @@ export function refreshCard(el, artistName, ctx, { onSwap = null } = {}) {
     fresh.dataset.nowFrom = el.dataset.nowFrom;
     fresh.dataset.nowTo = el.dataset.nowTo;
   }
+  // The fresh node is fitted to the width the old one had before it lands,
+  // so it never draws a frame unfitted, and the old corners are read for the
+  // level change's motion — both are reads of the old node, taken together
+  // before anything is written.
+  const width = el.getBoundingClientRect().width;
+  if (width > 0) fitCard(fresh, width - 2);
+  const before = canAnimate(el, ctx) ? cornersNow(el) : null;
   // Keyboard users keep their place: replacing a focused node silently dumps
   // focus to <body>, forcing a full re-Tab per pick tap (audit 4.1).
   const hadFocus = document.activeElement === el;
@@ -268,8 +391,80 @@ export function refreshCard(el, artistName, ctx, { onSwap = null } = {}) {
   el.before(fresh);
   if (onSwap) onSwap(fresh);
   el.remove();
+  unwatchFit(el);
   if (hadFocus) fresh.focus();
+  if (before) meterMoves(fresh, before);
   return fresh;
+}
+
+// Where the about corner's chips sat on the old card, and your level there.
+function cornersNow(card) {
+  const left = card.getBoundingClientRect().left;
+  const at = new Map();
+  for (const c of card.querySelectorAll(':scope > .corner-about > [data-kind]')) {
+    if (c.hidden) continue;
+    const r = c.getBoundingClientRect();
+    at.set(c.dataset.kind, { x: r.left - left, w: r.width });
+  }
+  const m = card.querySelector(':scope > .corner-about > .chip-meter');
+  return { at, level: m ? Number(m.dataset.level) : 0 };
+}
+
+// A level change is a small event (Kevin, 2026-08-30: things grow from where
+// they already are; the way in has a little life, the way out is quick and
+// plain). Your chip arrives by growing out of the corner's edge; each tap
+// lights the next bar, rising from the baseline; MUST arrives as a word
+// while the chip widens to hold it; clearing is the neighbours closing the
+// gap. The notes and Spotify chips travel from where they were whenever the
+// meter moves them. Transform and opacity only, and only when canAnimate
+// says so — Low Power and reduced motion get the finished card at once
+// (refreshCard only calls this when it may animate). Nothing here runs when
+// your level did not change (a note, a crew-mate's pick).
+function meterMoves(card, before) {
+  const meter = card.querySelector(':scope > .corner-about > .chip-meter');
+  const to = meter ? Number(meter.dataset.level) : 0;
+  const from = before.level;
+  if (to === from) return;
+  const left = card.getBoundingClientRect().left;
+  const slide = to ? { duration: GROW_MS, easing: EASE_ARRIVE } : { duration: OUT_MS, easing: EASE_SURFACE };
+  for (const c of card.querySelectorAll(':scope > .corner-about > [data-kind]:not(.chip-meter)')) {
+    const was = before.at.get(c.dataset.kind);
+    if (!was || c.hidden) continue;
+    const dx = was.x - (c.getBoundingClientRect().left - left);
+    if (Math.abs(dx) > 0.5) c.animate([{ transform: `translateX(${dx}px)` }, { transform: 'none' }], slide);
+  }
+  if (!meter) return;
+  if (!from) {
+    meter.animate([
+      { transform: 'scale(.4)', opacity: 0 },
+      { opacity: 1, offset: 0.45 },
+      { transform: 'none', opacity: 1 },
+    ], { duration: GROW_MS, easing: EASE_ARRIVE });
+    return;
+  }
+  if (to === 4 || from === 4) {
+    const was = before.at.get('meter');
+    const w = meter.getBoundingClientRect().width;
+    if (was && w > 0 && Math.abs(was.w - w) > 0.5) {
+      meter.animate([{ transform: `scaleX(${was.w / w})` }, { transform: 'none' }], { duration: GROW_MS, easing: EASE_ARRIVE });
+    }
+    meter.firstElementChild.animate([
+      { transform: 'translateY(3px)', opacity: 0 },
+      { transform: 'none', opacity: 1 },
+    ], { duration: GROW_MS, delay: 2 * STAGGER_MS, easing: EASE_ARRIVE, fill: 'backwards' });
+    return;
+  }
+  const bars = meter.querySelectorAll('.bar');
+  if (to > from) {
+    for (let i = from; i < to; i++) {
+      bars[i].animate([
+        { transform: 'scaleY(.35)', opacity: 0.3 },
+        { transform: 'none', opacity: 1 },
+      ], { duration: GROW_MS, delay: (i - from) * STAGGER_MS, easing: EASE_ARRIVE, fill: 'backwards' });
+    }
+  } else {
+    for (let i = to; i < from; i++) bars[i].animate([{ opacity: 1 }, { opacity: 0.3 }], { duration: OUT_MS, easing: EASE_SURFACE });
+  }
 }
 
 // The card a zoom should be restored onto after a repaint: the one carrying
@@ -1394,6 +1589,7 @@ export function renderWall(root, ctx) {
   teardowns.delete(root);
   renderWallInner(root, ctx);
   restoreEphemera(root, ephemera);
+  sweepFit(); // the cards this render replaced stop being watched
 }
 
 function renderWallInner(root, ctx) {

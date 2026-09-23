@@ -1,0 +1,230 @@
+// YOUR meter on the card (2026-09-23). A friend asked to "scroll through my
+// picks and see what I rated them, to decide if I want to go up or down" —
+// and until now your level lived only in the aura's brightness and in the
+// crew corner, where a busy card folded you into "+n". So the card carries a
+// chip at the about corner's edge: three bars lit one per tap, the word MUST
+// at four; and the crew corner counts everyone else.
+//
+// This drives REAL cards through REAL dispatched clicks (the pick-cycle
+// harness), then the fit (aura.js GIVE_WAY) and the motion. jsdom has no
+// layout, so the fit is driven with explicit widths here; the real widths
+// are the browser contract's job (tests/browser/meter-contract.test.mjs).
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { JSDOM } from 'jsdom';
+
+const dom = new JSDOM('<!doctype html><html><body><div id="wall-root"></div></body></html>');
+globalThis.window = dom.window;
+globalThis.document = dom.window.document;
+globalThis.CSS = dom.window.CSS;
+globalThis.requestAnimationFrame = (fn) => fn();
+const store = new Map();
+globalThis.localStorage = {
+  getItem: (k) => (store.has(k) ? store.get(k) : null),
+  setItem: (k, v) => store.set(k, String(v)),
+  removeItem: (k) => store.delete(k),
+  clear: () => store.clear(),
+};
+globalThis.location = { origin: 'https://fest.kevinhg.com', hash: '' };
+let reduce = false;
+dom.window.matchMedia = (q) => ({ matches: reduce && /reduce/.test(q), addEventListener() {}, removeEventListener() {} });
+
+const state = await import('../js/state.js');
+const model = await import('../js/v3/model.js');
+const { FESTIVALS, FESTIVAL_INDEX } = await import('../js/festivals.js');
+const { renderCard, refreshCard, fitCard, meterChip } = await import('../js/v3/wall.js');
+const { hslOf } = await import('../js/v3/palette.js');
+const { meterOf, needAt } = await import('../js/v3/aura.js');
+
+const FID = 'meter-fest';
+FESTIVAL_INDEX.push({ id: FID, status: 'lineup' });
+FESTIVALS[FID] = {
+  id: FID, name: 'Meter Fest',
+  artists: ['Robyn', 'Soulwax', 'Crowded', 'Nobody Yet'].map((name) => ({ name, day: 'Saturday' })),
+};
+// A made-up crew of seven; Kevin is you, colour slot 5 on purpose (not the
+// board's first colour, so a hard-coded hue cannot pass by accident).
+const PEOPLE = { Kevin: 5, Drew: 1, Kat: 2, Nhu: 3, Pegah: 4, Ross: 0, Sam: 6 };
+state.activateCrew('metertesttoken_0123456789', {
+  v: 4, meta: {}, spotify: {},
+  people: Object.fromEntries(Object.entries(PEOPLE).map(([n, c]) => [n, { colorIndex: c }])),
+  festivals: { [FID]: { selections: {
+    Soulwax: { Drew: 4, Kat: 4, Nhu: 1, Pegah: 2, Ross: 3, Sam: 1 },
+    Crowded: { Kevin: 4, Drew: 4, Kat: 4, Nhu: 1, Pegah: 2, Ross: 3, Sam: 1 },
+  } } },
+  affinity: {},
+}, FID);
+state.recordAffinity('Kevin', { Crowded: { songs: 41, followed: true } });
+state.recordNote(FID, 'artist', 'Crowded', model.makeNoteId('Drew', '2026-09-26T20:00:00.000Z', 'm1'), {
+  author: 'Drew', ts: '2026-09-26T20:00:00.000Z', text: 'front left',
+});
+
+const ctx = {
+  fid: FID, meName: 'Kevin', affinity: state.affinityLookup('Kevin'), lowPower: false,
+  picks: model.picksFor(state.crewDoc, FID),
+  onOpenNotes: () => {},
+};
+const setLevel = (artist, who, level) => {
+  state.recordSelection(artist, who, level);
+  const sels = state.crewDoc.festivals[FID].selections;
+  (sels[artist] = sels[artist] || {})[who] = level;
+  ctx.picks = model.picksFor(state.crewDoc, FID);
+};
+ctx.onTap = (artist) => {
+  setLevel(artist, 'Kevin', model.nextTapLevel((ctx.picks[artist] || {}).Kevin || 0));
+  for (const node of [...document.querySelectorAll(`#wall-root .card[data-artist="${artist}"]`)]) refreshCard(node, artist, ctx);
+};
+const wall = document.getElementById('wall-root');
+const mount = (artist) => { wall.replaceChildren(renderCard(artist, ctx, { occ: { day: 'Saturday', stage: null, time: null } })); return wall.firstChild; };
+const cardOf = (artist) => wall.querySelector(`.card[data-artist="${artist}"]`);
+const click = (node) => node.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true, cancelable: true }));
+const meter = (card) => card.querySelector('.corner-about > .chip-meter');
+const lit = (card) => [...meter(card).querySelectorAll('.bar')].map((b) => (b.classList.contains('on') ? 1 : 0)).join('');
+
+test('the meter follows a real tap cycle: none, one bar, two, three, MUST, none', () => {
+  const card = mount('Robyn');
+  assert.equal(meter(card), null, 'not picked = no chip');
+  const seen = [];
+  for (let i = 0; i < 5; i++) {
+    click(cardOf('Robyn'));
+    const c = cardOf('Robyn');
+    const m = meter(c);
+    seen.push(!m ? 'none' : m.classList.contains('is-must') ? m.textContent : lit(c));
+  }
+  assert.deepEqual(seen, ['100', '110', '111', 'MUST', 'none']);
+});
+
+test('the meter sits at the about corner’s edge, in your colour with the white edge — never brand, never fest', () => {
+  setLevel('Robyn', 'Kevin', 2);
+  const card = mount('Crowded');
+  const kinds = [...card.querySelector('.corner-about').children].map((c) => c.dataset.kind);
+  assert.deepEqual(kinds, ['meter', 'notes', 'spotify'], 'first, so a scroll through your picks reads down one line');
+  const m = meter(card);
+  assert.equal(m.tagName, 'SPAN', 'a span, not a button: the card is the target');
+  const fill = dom.window.document.createElement('i');
+  fill.style.background = hslOf(PEOPLE.Kevin, 0.5);
+  assert.equal(m.style.background, fill.style.background, 'your colour at .5 — the crew marks’ own fill');
+  assert.match(m.style.borderColor, /^(#fff|white|rgb\(255, 255, 255\))$/, 'the white edge that means you');
+  assert.equal(/brand|fest/.test(m.getAttribute('style')), false);
+  // The builder How it works draws is this one.
+  const alone = meterChip(meterOf({ level: 4, colorIndex: PEOPLE.Kevin }));
+  assert.equal(alone.outerHTML, m.outerHTML);
+});
+
+test('a screen reader hears your level once: in the card’s label, and the chip is hidden from it', () => {
+  const card = mount('Crowded');
+  assert.equal(meter(card).getAttribute('aria-hidden'), 'true');
+  const label = card.getAttribute('aria-label');
+  assert.equal(label, 'Crowded — must, picked by 6 others, 1 note, in your Spotify');
+  assert.equal(label.match(/must/g).length, 1, 'said once');
+});
+
+test('the crew corner counts everyone else: you are never folded into "+n"', () => {
+  const card = mount('Crowded');
+  const marks = [...card.querySelectorAll('.corner-who .mark')];
+  // Drew and Kat's musts, then the two first ticks (ordered keeps input
+  // order within a group), then +2 for the rest — six others in all.
+  assert.deepEqual(marks.map((m) => m.textContent), ['D', 'K', '', '', '+2']);
+  assert.ok(marks.every((m) => !/255, 255, 255\)$|#fff$/.test(m.style.border)), 'no white edge in the corner: that is you, and you are on the left');
+  // Soulwax: the same crew without you. The corner is identical — you were
+  // never in it.
+  const other = mount('Soulwax');
+  assert.equal(meter(other), null);
+  assert.deepEqual([...other.querySelectorAll('.corner-who .mark')].map((m) => m.textContent), ['D', 'K', '', '', '+2']);
+});
+
+test('a narrow card gives way in order, the "+n" stays true, and a wider one takes it all back', () => {
+  const card = mount('Crowded');
+  const parts = card._corners;
+  const at = (step) => { fitCard(card, Math.ceil(needAt(parts, step))); return card; };
+  const who = () => [...card.querySelectorAll('.corner-who .mark')].map((m) => m.textContent).join(' ');
+  const shown = () => [...card.querySelector('.corner-about').children].filter((c) => !c.hidden).map((c) => c.dataset.kind).join(' ');
+  const spotCount = () => { const n = card.querySelector('.chip-spotify .n'); return n && !n.hidden ? n.textContent : ''; };
+  at(0);
+  assert.equal(card.dataset.fit, '0');
+  assert.equal(spotCount(), '41');
+  at(1);
+  assert.equal(spotCount(), '', '1: the Spotify count goes first');
+  assert.equal(shown(), 'meter notes spotify', 'and the pill stays');
+  at(2); assert.equal(who(), 'D K  +3', '2: a tick folds into +n');
+  at(3); assert.equal(who(), 'D K +4');
+  at(4); assert.equal(shown(), 'meter notes', '3: the Spotify pill');
+  assert.equal(card.querySelector('.spot-glow').hidden, true, 'and its glow with it');
+  at(5); assert.equal(who(), 'D +5', '4: a must folds');
+  at(6); assert.equal(who(), '+6');
+  at(7); assert.equal(who(), '', '5: the +n itself');
+  at(8); assert.equal(shown(), 'meter', '6: the notes count — and never your meter');
+  fitCard(card, 400);
+  assert.equal(card.dataset.fit, '0');
+  assert.equal(shown(), 'meter notes spotify');
+  assert.equal(spotCount(), '41');
+  assert.equal(who(), 'D K   +2', 'everything back');
+  fitCard(card, 0);
+  assert.equal(card.dataset.fit, '0', 'no width (a hidden screen) keeps everything');
+});
+
+// ---- the motion ---------------------------------------------------------------
+// jsdom has no Element.animate, so every path is instant unless a test lends
+// one. This one records what refreshCard asks for; the real motion is the
+// real-browser walk's to judge.
+const calls = [];
+function lendAnimate() {
+  dom.window.Element.prototype.animate = function animate(frames, opts) {
+    calls.push({ el: this, frames, opts });
+    return { cancel() {}, finished: Promise.resolve() };
+  };
+}
+function takeAnimate() { delete dom.window.Element.prototype.animate; }
+const tapAndWatch = (artist) => { calls.length = 0; click(cardOf(artist)); return calls.slice(); };
+const describe = (c) => (c.el.classList.contains('chip-meter') ? 'meter'
+  : c.el.classList.contains('bar') ? `bar${[...c.el.parentNode.children].indexOf(c.el) + 1}`
+    : c.el.classList.contains('must') ? 'word' : c.el.dataset.kind || c.el.className);
+
+test('a level change is a small event: the chip grows in, each tap lights one bar, MUST arrives as a word, clearing is plain', () => {
+  lendAnimate();
+  try {
+    setLevel('Robyn', 'Kevin', 0);
+    mount('Robyn');
+    const arrive = tapAndWatch('Robyn');
+    assert.deepEqual(arrive.map(describe), ['meter'], '0 → 1: the chip grows out of the corner');
+    assert.match(JSON.stringify(arrive[0].frames[0]), /scale\(\.4\)/);
+    assert.equal(arrive[0].opts.easing, 'cubic-bezier(.2, 1.15, .35, 1)', 'the app’s arrive easing');
+    const two = tapAndWatch('Robyn');
+    assert.deepEqual(two.map(describe), ['bar2'], '1 → 2: only the new bar lights');
+    assert.deepEqual(Object.keys(two[0].frames[0]).sort(), ['opacity', 'transform'], 'transform and opacity only');
+    assert.deepEqual(tapAndWatch('Robyn').map(describe), ['bar3']);
+    const must = tapAndWatch('Robyn');
+    assert.ok(must.map(describe).includes('word'), '3 → 4: the word arrives');
+    assert.equal(must.find((c) => describe(c) === 'word').opts.easing, 'cubic-bezier(.2, 1.15, .35, 1)');
+    const clear = tapAndWatch('Robyn');
+    assert.equal(clear.filter((c) => ['meter', 'word', 'bar1', 'bar2', 'bar3'].includes(describe(c))).length, 0, '4 → 0: nothing of the meter is left to animate');
+    // A crew-mate's pick repaints the card; nothing of yours moved.
+    setLevel('Robyn', 'Kevin', 2);
+    mount('Robyn');
+    setLevel('Robyn', 'Drew', 4);
+    calls.length = 0;
+    refreshCard(cardOf('Robyn'), 'Robyn', ctx);
+    assert.deepEqual(calls, [], 'your level did not change: no meter motion');
+  } finally {
+    takeAnimate();
+  }
+});
+
+test('Low Power and reduced motion get the finished chip at once', () => {
+  lendAnimate();
+  try {
+    setLevel('Robyn', 'Kevin', 0);
+    ctx.lowPower = true;
+    mount('Robyn');
+    for (let i = 0; i < 5; i++) assert.deepEqual(tapAndWatch('Robyn'), [], `Low Power, tap ${i + 1}`);
+    ctx.lowPower = false;
+    reduce = true;
+    mount('Robyn');
+    for (let i = 0; i < 5; i++) assert.deepEqual(tapAndWatch('Robyn'), [], `reduced motion, tap ${i + 1}`);
+  } finally {
+    reduce = false;
+    ctx.lowPower = false;
+    takeAnimate();
+  }
+  assert.equal(meter(cardOf('Robyn')), null, 'and the cycle still ends where it began');
+});
