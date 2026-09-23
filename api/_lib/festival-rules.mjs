@@ -318,8 +318,13 @@ export function validateFestivalDoc(fest, { filename } = {}) {
       // A DATED section entry renders under its date, not under its section
       // label, so one artist playing two nights of ACL Fest Nights is two
       // cards under two date rules — a reappearance, exactly like an afters
-      // set. Only the same name on the same date is a duplicate.
-      const parts = renderedDays(dayStr).map((p) => (typeof a.date === 'string' ? `${p} ${a.date}` : p));
+      // set. Only the same name on the same date is a duplicate. A NIGHT
+      // section entry is the same story one level up: it renders inside that
+      // night's day, so Strawbry at Monarch on Friday and at The Great
+      // Northern on Saturday are two cards on two days (Portola Week,
+      // 2026-09-23) — only the same name on the same night is a duplicate.
+      const parts = renderedDays(dayStr).map((p) => (typeof a.date === 'string' ? `${p} ${a.date}`
+        : typeof a.night === 'string' ? `${p} ${a.night}` : p));
       const seen = artistNames.get(key);
       if (seen && seen.some((prev) => prev.includes('') || parts.includes('') || prev.some((p) => parts.includes(p)))) {
         warn(`duplicate artist in artists[]: ${a.name}${dayStr ? ` (day ${JSON.stringify(dayStr)})` : ''}`);
