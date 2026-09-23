@@ -184,3 +184,30 @@ How it works, rows 3 and 4 (copy unchanged this round):
 After this round: `npm test` has 720 tests: 718 pass, 1 is skipped, and 1
 fails, the service-worker stamp (red by design; the integrator re-stamps).
 `npm run test:browser` passes all 34.
+
+## The Linux fit (2026-09-23, evening; branch `fix/linux-fit`)
+
+CI's browser job (ubuntu Chromium, run 35925624533) failed three tests that
+pass on a Mac:
+
+1. **The meter contract at 1280: "Robyn: corners 1.4px apart at 176px (fit
+   2)".** The fit picked its give-way step from the width table measured on
+   macOS Chromium; Linux draws the corners' Inter and type about 5px wider on
+   Robyn, so the step the table chose left them crowding. Real phones will
+   differ the same way. Fixed in the app: the table is now the first guess,
+   and the ResizeObserver reads back each card's two corners as drawn
+   (against the card and a cell's band text) and gives way one more step
+   wherever they sit closer than CLEAR — reads batched, then writes, a pass
+   per step at most, no observer loop (the corners are absolute). A late
+   font refits every card (fonts.ready + `loadingdone`). 0.8 ms per fit on
+   Portola's 134 cards including the read-back. New: `tests/fit-measured.test.mjs`
+   (jsdom plays the engine) and the contract's "any engine" run with every
+   corner glyph 1.3px wider — red on the old fit, green on this one.
+2. **The hover contract's two list[4] / list[5] tests: "reading 'x' of
+   undefined".** `cards()` dropped the ladder's first line (the ladder sat at
+   the very top, inside the 60px margin) and kept six cards on a Mac; the
+   meter's gallery rows and Linux's taller text pushed the names row off the
+   bottom, leaving four. Now the rows are brought to 80px from the top before
+   reading (eleven cards on screen) and each test takes the first unused card
+   that fits what it needs — not at MUST where a click must land a pick; for
+   Tab, a card whose next tabbable element is the next card.

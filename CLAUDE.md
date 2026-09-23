@@ -46,11 +46,15 @@ Non-inferable facts only (the code answers everything else — read it).
 - **The two bottom corners share one line, and a card that is too narrow for
   both gives way in the order `js/v3/aura.js` GIVE_WAY names** (2026-09-23):
   your meter on the left, everyone else's marks on the right — the crew
-  corner never carries you, so its "+n" is other people. The fit is reckoned
-  from a width table in aura.js that mirrors `assets/v3.css` (chip padding,
-  type sizes, Inter's digit widths), so a change to a corner chip's size is a
-  change to that table too; `tests/browser/meter-contract.test.mjs` measures
-  every card in a real browser and goes red when they drift apart.
+  corner never carries you, so its "+n" is other people. The fit's FIRST
+  GUESS is a width table in aura.js that mirrors `assets/v3.css` (chip
+  padding, type sizes, Inter's digit widths, measured in Chromium on macOS);
+  then wall.js reads back what each card really drew and gives way further
+  wherever the corners crowd, and refits when a late font lands — because
+  Linux draws Inter wider (CI put Robyn's corners 1.4px apart, 2026-09-23)
+  and so will real phones. Keep the table close anyway (a good guess is one
+  pass); `tests/browser/meter-contract.test.mjs` measures every card in a
+  real browser, including a run with wider glyphs than this engine draws.
 
 - **The 44px touch floor is applied to `button`, not to a list of selectors.**
   It used to name six, and the naming WAS the bug — every control added after
