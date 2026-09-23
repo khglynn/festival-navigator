@@ -432,8 +432,10 @@ function openHowItWorks(actions) {
       d.appendChild(swatch);
     });
   }, 'Tap an artist to add your color.', 'Your bars fill each tap. 4 taps = must see.'));
+  // Kat is BOARD[6], the teal row 1's Kat chip already wears — one person,
+  // one colour, on one screen.
   card.appendChild(lesson((d) => {
-    for (const m of whoCorner([{ name: 'Kat', colorIndex: 2, level: 4 }, { name: 'Sam', colorIndex: 3, level: 1 }])) d.appendChild(crewMark(m));
+    for (const m of whoCorner([{ name: 'Kat', colorIndex: 6, level: 4 }, { name: 'Sam', colorIndex: 3, level: 1 }])) d.appendChild(crewMark(m));
   }, 'Everyone else’s picks land on the card.', 'Ticks are picks; a letter is a must.'));
   card.appendChild(lesson((d) => {
     const n = el('span', '', '2'); n.className = 'chip-notes'; n.style.height = '14px';

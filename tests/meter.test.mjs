@@ -228,3 +228,18 @@ test('Low Power and reduced motion get the finished chip at once', () => {
   }
   assert.equal(meter(cardOf('Robyn')), null, 'and the cycle still ends where it began');
 });
+
+// ---- How it works -------------------------------------------------------------
+// Row 1 draws a chip named Kat; row 4 draws Kat's must mark, a "K". One
+// person on one screen wears one colour — the review round (2026-09-23) found
+// row 4's K in magenta one row under a teal Kat.
+test('How it works: the K in row 4 is the same Kat, in the same colour, as row 1’s chip', async () => {
+  const fs = await import('node:fs');
+  const src = fs.readFileSync(new URL('../js/v3/settings.js', import.meta.url), 'utf8');
+  const chipFill = /background: \$\{dashed \? 'transparent' : '(hsla\([^']+\))'\}/.exec(src);
+  assert.ok(chipFill, 'row 1’s chip fill is where it was');
+  const kat = /\{ name: 'Kat', colorIndex: (\d+), level: 4 \}/.exec(src);
+  assert.ok(kat, 'row 4 draws Kat’s must');
+  const norm = (c) => c.replace(/\s+/g, '').replace(/,\.5\)$/, ',0.5)');
+  assert.equal(norm(hslOf(Number(kat[1]), 0.5)), norm(chipFill[1]), 'Kat’s must mark is filled with row 1’s Kat');
+});
