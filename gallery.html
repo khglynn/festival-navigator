@@ -92,6 +92,12 @@
 
     <div class="g-label" style="margin-top: 20px;">15 · far left and far right of the viewport</div>
     <div class="zoom-edge-row" id="zoom-row-edges"></div>
+
+    <div class="g-label" style="margin-top: 20px;">17 · your meter — one bar a tap, then MUST (tap any card to cycle it and watch the bar light)</div>
+    <div class="zoom-row" id="zoom-row-meter"></div>
+
+    <div class="g-label" style="margin-top: 20px;">18 · a crowd of seven, you at MUST, notes and a followed Spotify pill — what gives way as the card narrows (aura.js GIVE_WAY)</div>
+    <div class="zoom-row" id="zoom-row-crowd"></div>
   </div>
 </section>
 
@@ -290,6 +296,7 @@
 <script type="module">
 import { hslOf, strokeOf } from '/js/v3/palette.js';
 import { auraBackground, whoCorner, aboutCorner, nameColor, subColor } from '/js/v3/aura.js';
+import { meterChip, crewMark } from '/js/v3/wall.js'; // the real meter and marks (2026-09-23)
 
 const K = { name: 'Kevin', colorIndex: 0, isYou: true };
 const M = { name: 'Maya', colorIndex: 1 };
@@ -324,7 +331,8 @@ function card(name, people, about = {}, opts = {}) {
   }
   const ac = document.createElement('span');
   ac.className = 'corner-about';
-  for (const chip of aboutCorner(about)) {
+  for (const chip of aboutCorner({ ...about, you: people.find((q) => q.isYou) })) {
+    if (chip.kind === 'meter') { ac.appendChild(meterChip(chip)); continue; }
     const c = document.createElement('span');
     c.className = chip.kind === 'notes' ? 'chip-notes' : 'chip-spotify';
     c.textContent = chip.label;
@@ -334,18 +342,7 @@ function card(name, people, about = {}, opts = {}) {
   el.appendChild(ac);
   const wc = document.createElement('span');
   wc.className = 'corner-who';
-  for (const m of whoCorner(people)) {
-    const s = document.createElement('span');
-    s.className = 'mark' + (m.kind === 'ghost' ? ' ghost' : '');
-    if (m.kind !== 'ghost') {
-      s.style.width = m.width + 'px';
-      s.style.background = m.fill;
-      s.style.border = '1px solid ' + m.stroke;
-      s.style.fontSize = m.kind === 'must' ? '7.5px' : '0px';
-    }
-    s.textContent = m.label;
-    wc.appendChild(s);
-  }
+  for (const m of whoCorner(people)) wc.appendChild(crewMark(m));
   el.appendChild(wc);
   return el;
 }
@@ -483,7 +480,16 @@ const SELECTIONS = {
   'Right Edge Artist': { Kat: 1 },
   'Top Of Page Probe': { Kevin: 2 },
   'Bottom Of Page Probe': { Nhu: 2 },
-  'Called Off': { Drew: 4, Kat: 4, Nhu: 2 },
+  // You at MUST on a cancelled card: the loudest chip on the grayest card.
+  'Called Off': { Kevin: 4, Drew: 4, Kat: 4, Nhu: 2 },
+  // 17-18 · your meter (2026-09-23)
+  'Your One': { Kevin: 1 },
+  'Your Two': { Kevin: 2, Drew: 1 },
+  'Your Three': { Kevin: 3, Kat: 4 },
+  'Your Must': { Kevin: 4, Nhu: 2 },
+  'Only Others': { Drew: 4, Kat: 1, Nhu: 1 },
+  'Seven Of Seven': { Kevin: 4, Drew: 4, Kat: 4, Nhu: 3, Pegah: 2, Ross: 1, Sam: 1 },
+  Sevens: { Kevin: 4, Drew: 4, Kat: 4, Nhu: 3, Pegah: 2, Ross: 1, Sam: 1 },
 };
 
 // A fixed token, wiped on every load so the gallery renders the SAME states
@@ -498,7 +504,7 @@ try {
 
 state.activateCrew(TOKEN, {
   v: 4, meta: {}, spotify: {},
-  people: { Kevin: { colorIndex: 0 }, Drew: { colorIndex: 1 }, Kat: { colorIndex: 2 }, Nhu: { colorIndex: 3 }, Pegah: { colorIndex: 4 } },
+  people: { Kevin: { colorIndex: 0 }, Drew: { colorIndex: 1 }, Kat: { colorIndex: 2 }, Nhu: { colorIndex: 3 }, Pegah: { colorIndex: 4 }, Ross: { colorIndex: 5 }, Sam: { colorIndex: 6 } },
   festivals: { [GFID]: { selections: SELECTIONS } },
   affinity: {},
 }, GFID);
@@ -512,6 +518,9 @@ state.activateCrew(TOKEN, {
   ['Notes Only', 'Kat', "Let's meet at the merch tent after."],
   ['Everything At Once', 'Kevin', 'Front left for sightlines.'],
   ['Everything At Once', 'Pegah', 'Overlaps the afters bus — leave by 11.'],
+  ['Seven Of Seven', 'Drew', 'Front left.'],
+  ['Seven Of Seven', 'Kat', 'Meet at the rail.'],
+  ['Sevens', 'Drew', 'Front left.'],
 ].forEach(([artist, author, text], i) => {
   const ts = new Date(Date.UTC(2026, 8, 26, 20, i * 7)).toISOString();
   state.recordNote(GFID, 'artist', artist, model.makeNoteId(author, ts, `n${i}`), { author, ts, text });
@@ -521,6 +530,8 @@ state.activateCrew(TOKEN, {
 state.recordAffinity('Kevin', {
   'Spotify Favorite': { songs: 12, followed: true },
   'Everything At Once': { songs: 8, followed: true },
+  'Seven Of Seven': { songs: 41, followed: true },
+  Sevens: { songs: 41, followed: true },
 });
 
 const ctx = {
@@ -648,7 +659,7 @@ const ladderRow = document.getElementById('zoom-row-ladder');
   ['2 · you, level 1', 'First Pick', { occ: day }],
   ['3 · you, MUST', 'Certified Must', { occ: day }],
   ['4 · one other person at MUST', "Drew's Must", { occ: day }],
-  ['5 · four mixed + a +n ghost (5 pickers)', 'Packed House', { occ: day }],
+  ['5 · your MUST, and four others: a must, two ticks, a +1', 'Packed House', { occ: day }],
   ['6 · notes (3), no Spotify', 'Notes Only', { occ: day }],
   ['7 · Spotify (12, following, the glow), no notes', 'Spotify Favorite', { occ: day }],
   ['8 · everything at once', 'Everything At Once', { occ: day }],
@@ -673,8 +684,9 @@ eventRow.appendChild(stateCard('12 · Thursday night, no grid day', 'Midnight Af
   occ: { day: null, stage: 'Thu · The Midway', time: '10:00 PM - 2:00 AM', weekend: null },
 }));
 // Struck, "Cancelled" where the time goes, the wash turned down, the crew's
-// marks still on it; the zoom says when it was announced and what happened.
-eventRow.appendChild(stateCard('12b · a cancelled act, picked by three', 'Called Off', {
+// marks and your meter still on it (both corners sit above the scrim); the
+// zoom says when it was announced and what happened.
+eventRow.appendChild(stateCard('12b · a cancelled act, picked by three and you — your meter stays, above the gray', 'Called Off', {
   time: 'Cancelled',
   occ: { day: 'Saturday', stage: null, time: null, weekend: null, date: null, venue: 'Crane Stage' },
 }));
@@ -691,6 +703,42 @@ edgesRow.appendChild(stateCard('15b · far RIGHT edge of the viewport', 'Right E
 // zoom's placement rule only ever nudges left/right off-screen, top and
 // bottom never move it (card-facts.js `place`), so these two are the real
 // test of that rule at the extremes.
+// 17 · your meter at every level, beside a card only the others picked (no
+// chip, and the crew corner is all of them).
+const meterRow = document.getElementById('zoom-row-meter');
+[
+  ['17a · you, one bar', 'Your One'],
+  ['17b · you, two bars, and Drew', 'Your Two'],
+  ['17c · you, three bars, and Kat at MUST', 'Your Three'],
+  ['17d · you at MUST, and Nhu', 'Your Must'],
+  ['17e · only others — no meter', 'Only Others'],
+].forEach(([label, artist]) => meterRow.appendChild(stateCard(label, artist, { occ: day })));
+
+// 18 · the crowded card at the widths a card really has: a phone or laptop
+// column (176), narrower columns, a 30-minute set's 44px cell, lanes. The
+// fit is the production one (wall.js watchFit), measured live — each label
+// says what that width gives way (aura.js GIVE_WAY).
+const crowdRow = document.getElementById('zoom-row-crowd');
+const cellAt = (time) => ({ day: 'Saturday', stage: 'Pier Stage', time, weekend: null });
+[
+  ['18a · 176 — the Spotify count, both ticks, then the pill', 'Seven Of Seven', 176, 0, {}],
+  ['18b · 150 — then a must folds into +n', 'Seven Of Seven', 150, 0, {}],
+  ['18c · 120 — the crew is only its +n', 'Seven Of Seven', 120, 0, {}],
+  ['18d · a 30-minute cell, 44px — the corners fit around its start time', 'Seven Of Seven', 176, 44, { cell: true, time: '7:00 PM', occ: cellAt('7:00 PM - 7:30 PM') }],
+  ['18e · 30 minutes in half a column — the time steps back for your meter', 'Sevens', 86, 44, { cell: true, time: '7:00 PM', occ: cellAt('7:00 PM - 7:30 PM') }],
+  ['18f · 45 minutes in a third of a column — the name on two lines, clear of the band', 'Seven Of Seven', 57, 68, { cell: true, time: '7:00 PM', occ: cellAt('7:00 PM - 7:45 PM') }],
+  ['18g · 30 minutes, half a column, the name on two lines — the one place your meter steps back', 'Seven Of Seven', 86, 44, { cell: true, time: '7:00 PM', occ: cellAt('7:00 PM - 7:30 PM') }],
+].forEach(([label, artist, width, height, opts]) => {
+  const wrap = stateCard(label, artist, { occ: day, ...opts });
+  wrap.style.width = width + 'px';
+  if (height) {
+    const card = wrap.querySelector('.card');
+    card.style.minHeight = height + 'px';
+    card.style.height = height + 'px';
+  }
+  crowdRow.appendChild(wrap);
+});
+
 document.getElementById('zoom-top-probe').appendChild(stateCard('16a · very top of the page', 'Top Of Page Probe', { occ: day }));
 document.getElementById('zoom-bottom-probe').appendChild(stateCard('16b · very bottom of the page', 'Bottom Of Page Probe', { occ: day }));
 </script>

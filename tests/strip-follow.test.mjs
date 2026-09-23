@@ -36,9 +36,13 @@ globalThis.localStorage = {
 globalThis.location = { origin: 'https://fest.kevinhg.com', hash: '' };
 dom.window.matchMedia = () => ({ matches: false, addEventListener() {}, removeEventListener() {} });
 dom.window.ScrollTimeline = function ScrollTimeline() {};
+// The strips' size observers, one per render. wall.js also keeps ONE observer
+// for the module's life that watches cards (the corners' fit, watchFit) — it
+// is not a strip's and is not counted here.
 const observing = new Set();
 globalThis.ResizeObserver = class {
-  observe() { observing.add(this); }
+  observe(el) { if (!(el.classList && el.classList.contains('card'))) observing.add(this); }
+  unobserve() {}
   disconnect() { observing.delete(this); }
 };
 

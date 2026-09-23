@@ -43,6 +43,15 @@ Non-inferable facts only (the code answers everything else — read it).
   migration, no rename, the freeze untouched. The all-notes sheet lists only
   targets that have notes — it is not a set of doors (MODEL-V4 §3a.3).
 
+- **The two bottom corners share one line, and a card that is too narrow for
+  both gives way in the order `js/v3/aura.js` GIVE_WAY names** (2026-09-23):
+  your meter on the left, everyone else's marks on the right — the crew
+  corner never carries you, so its "+n" is other people. The fit is reckoned
+  from a width table in aura.js that mirrors `assets/v3.css` (chip padding,
+  type sizes, Inter's digit widths), so a change to a corner chip's size is a
+  change to that table too; `tests/browser/meter-contract.test.mjs` measures
+  every card in a real browser and goes red when they drift apart.
+
 - **The 44px touch floor is applied to `button`, not to a list of selectors.**
   It used to name six, and the naming WAS the bug — every control added after
   those six (chips at 26px, the "+ ✎" note chip at 17px, every button in
@@ -190,6 +199,12 @@ Non-inferable facts only (the code answers everything else — read it).
   real-browser contract (`npm run test:browser`, CI job `browser`) drives
   Kevin's sequences with real input against gallery.html. The long-press
   ignores mouse pointers for the same reason (a held button is a slow click).
+  The hover route has the mirror trap (2026-09-23): WebKit follows a touch
+  tap with MOUSE-type pointer events at the spot the finger lifted — a
+  click, then pointerenter on the fresh card a pick swaps in — so
+  `pointerType === 'mouse'` alone is not a hand. card-facts.js `touchAt`
+  ignores mouse events at recent finger points until a mouse really moves
+  (`tests/zoom-touch-ghost.test.mjs`); before it, a tapped card zoomed itself.
 - **The stage strip is a follower, not a scroller.** Its row rides the lead
   grid's scroll timeline (CSS scroll-driven animation; `--strip-max` is the
   measured maximum scroll) wherever the engine has `ScrollTimeline` — under

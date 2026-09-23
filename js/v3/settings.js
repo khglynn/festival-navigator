@@ -9,7 +9,8 @@ import * as sync from '../sync.js';
 import * as model from './model.js';
 import { FESTIVAL_INDEX, FESTIVALS } from '../festivals.js';
 import { BOARD, hslOf, strokeOf } from './palette.js';
-import { colorIndexOf } from './wall.js';
+import { colorIndexOf, meterChip, crewMark } from './wall.js';
+import { meterOf, whoCorner } from './aura.js';
 import { festPlaceLine } from './card-facts.js'; // the fest's place line, shared with the wall header
 import { recent as recentErrors, diagnostics } from '../errlog.js';
 import { el, subviewHead, eqLoader, festRow, openExportLikes, openBulkPaste, openDayImage } from './tools.js';
@@ -417,15 +418,25 @@ function openHowItWorks(actions) {
   }, 'Add your people with + Add,', 'or share the crew link — anyone who opens it is in, no account needed.'));
 
   // 3-5. The card: what a tap does, and what the two corners are saying.
+  // Row 3 is the card getting brighter with the REAL meter chip on it, filling
+  // a bar a tap (2026-09-23: your level is on the card now, bottom left). Row
+  // 4 is the REAL crew marks — everyone else's, since you are on the left.
   card.appendChild(lesson((d) => {
-    [0.5, 0.75, 1].forEach((a) => {
-      d.appendChild(el('span', `flex: 1; height: 30px; border-radius: 6px; border: 1px solid var(--hairline); background: radial-gradient(130% 130% at 20% 120%, hsla(10,90%,62%,${a}) 0%, transparent 78%), #1C1731;`));
+    [0.5, 0.75, 1].forEach((a, i) => {
+      const swatch = el('span', `position: relative; flex: 1; height: 30px; border-radius: 6px; border: 1px solid var(--hairline); background: radial-gradient(130% 130% at 20% 120%, hsla(10,90%,62%,${a}) 0%, transparent 78%), #1C1731;`);
+      const chip = meterChip(meterOf({ level: i + 1, colorIndex: 0 }));
+      chip.style.position = 'absolute';
+      chip.style.left = '3px';
+      chip.style.bottom = '3px';
+      swatch.appendChild(chip);
+      d.appendChild(swatch);
     });
-  }, 'Tap an artist to add your color.', 'Brighter each tap. 4 taps = must see.'));
+  }, 'Tap an artist to add your color.', 'Your bars fill each tap. 4 taps = must see.'));
+  // Kat is BOARD[6], the teal row 1's Kat chip already wears — one person,
+  // one colour, on one screen.
   card.appendChild(lesson((d) => {
-    d.appendChild(el('span', 'width: 4px; height: 12px; border-radius: 99px; background: hsla(150,70%,50%,.5); border: 1px solid hsl(150,70%,82%);'));
-    d.appendChild(el('span', 'width: 24px; height: 12px; border-radius: 99px; background: hsla(10,90%,62%,.5); border: 1px solid #fff; color: #fff; font-size: 7.5px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center;', 'K'));
-  }, 'Everyone’s picks land on the card.', 'Ticks are picks; a letter is a must. White stroke = you.'));
+    for (const m of whoCorner([{ name: 'Kat', colorIndex: 6, level: 4 }, { name: 'Sam', colorIndex: 3, level: 1 }])) d.appendChild(crewMark(m));
+  }, 'Everyone else’s picks land on the card.', 'Ticks are picks; a letter is a must.'));
   card.appendChild(lesson((d) => {
     const n = el('span', '', '2'); n.className = 'chip-notes'; n.style.height = '14px';
     const s = el('span', '', '23'); s.className = 'chip-spotify'; s.style.height = '13px'; // the green pill, never a music-note glyph

@@ -172,8 +172,8 @@ section says its own sub from `dayMeta[<label>].sub` if present, else nothing.
    each drawn with the REAL component (never a re-drawn lookalike):
    1. people chips — `Tap a name to highlight their picks.` / `Switch who you are picking as in Settings.`
    2. `+ Add` — `Add your people with + Add,` / `or share the crew link — anyone who opens it is in, no account needed.`
-   3. three cards — `Tap an artist to add your color.` / `Brighter each tap. 4 taps = must see.`
-   4. the who-corner marks — `Everyone's picks land on the card.` / `Ticks are picks; a letter is a must. White stroke = you.`
+   3. three cards, each wearing your meter one bar fuller (2026-09-23) — `Tap an artist to add your color.` / `Your bars fill each tap. 4 taps = must see.`
+   4. the who-corner marks, everyone else's (you are the meter on the left, 2026-09-23) — `Everyone else's picks land on the card.` / `Ticks are picks; a letter is a must.`
    5. the about-corner chips — `Hold for details.` / `Violet = crew notes; pin one to keep it on top. Green = it's in your Spotify (connect in Settings).`
    6. a run card (`Gelli Haha · ~10:30 PM`) — `**~ a guessed start time and artist order.** Based on limited intel.`
    7. the dock's fest link (`.fest-link`: Anton, the sync dot — ONE row, the real component; its label is the fixed string `ACL '26`, never the current fest's name, and inside the drill it wears `--brand`, because the fest accent's four homes do not include How it works) — `Tap the fest name to show or hide parts of the week.` / `Green dot = synced. Gray = offline (still works); red = something's wrong.`

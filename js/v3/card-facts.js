@@ -408,9 +408,35 @@ let lastMouse = null;
 // modifier (Cmd-Tab back into the window) says nothing and is ignored.
 let lastInput = 'pointer';
 const MODIFIER_KEYS = new Set(['Shift', 'Control', 'Alt', 'Meta', 'CapsLock', 'Fn', 'AltGraph', 'OS', 'Hyper', 'Super', 'Symbol', 'NumLock', 'ScrollLock']);
+// A finger leaves a GHOST of a mouse where it lifted (2026-09-23). WebKit
+// follows a touch tap with a click whose pointerType is "mouse", and when the
+// pick's refreshCard swaps a fresh card in under that spot, with trusted
+// mouse-type pointerover/pointerenter there — measured in Playwright's
+// WebKit, and the same family is on WebKit's tracker for iOS 26 (bug 214609,
+// comment 6). Hover intent believed them: the card you had just TAPPED grew
+// as a mouse zoom a phone can never hover out of, or whatever card scrolled
+// under the spot did (the meter walk's "wrong card"). So after a touch or pen
+// press, mouse events AT A SPOT A FINGER RECENTLY LANDED OR LIFTED arm
+// nothing — both points, because a real tap drifts a few px between the two,
+// and the last few taps, because one remembered point can be moved away from
+// where the engine's ghost still sits. A mouse that moves off them all, or
+// presses, is a hand again at once. A desktop never sees a finger, so never
+// meets this. tests/zoom-touch-ghost.test.mjs.
+let touchAt = [];
+const GHOST_SLOP = 3;   // px — a ghost reports a finger's point to the pixel; a hand arrives from elsewhere
+const GHOST_POINTS = 6; // the last three taps, landing and lift
+const ghostly = (e) => touchAt.some((p) => Math.hypot(e.clientX - p.x, e.clientY - p.y) <= GHOST_SLOP);
+const fingerAt = (e) => {
+  touchAt.push({ x: e.clientX, y: e.clientY });
+  if (touchAt.length > GHOST_POINTS) touchAt.shift();
+};
 if (typeof document !== 'undefined') {
   document.addEventListener('pointermove', (e) => {
     if (e.pointerType !== 'mouse') return;
+    if (touchAt.length) {
+      if (ghostly(e)) return; // the ghost is not where the mouse is
+      touchAt = [];
+    }
     lastMouse = { x: e.clientX, y: e.clientY };
     // The stay-away mark lifts the moment the mouse is over anything but the
     // card it put away — that card's node, the fresh node a repaint put in its
@@ -420,7 +446,12 @@ if (typeof document !== 'undefined') {
       if (cardKey(over) !== dismissedKey) dismissedKey = null;
     }
   }, { passive: true, capture: true });
-  document.addEventListener('pointerdown', () => { lastInput = 'pointer'; }, { passive: true, capture: true });
+  document.addEventListener('pointerdown', (e) => {
+    lastInput = 'pointer';
+    if (e.pointerType === 'mouse') touchAt = [];
+    else fingerAt(e);
+  }, { passive: true, capture: true });
+  document.addEventListener('pointerup', (e) => { if (e.pointerType !== 'mouse') fingerAt(e); }, { passive: true, capture: true });
   document.addEventListener('keydown', (e) => {
     if (typeof e.key === 'string' && e.key && !MODIFIER_KEYS.has(e.key)) lastInput = 'keyboard';
   }, { passive: true, capture: true });
@@ -1039,7 +1070,19 @@ export function wireCardZoom(el, artistName, ctx, { onOpenNotes = null, occ = nu
       if (el.isConnected) zoomCard(el, artistName, ctx, { onOpenNotes, source: 'mouse', occ });
     }, ZOOM_IN_MS);
   };
-  el.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse') arm(); });
+  // A finger's ghost entering arms nothing (`touchAt`), and a pointer already
+  // inside gets no second pointerenter — so when the ghost walked in, the
+  // first REAL move over the card is the hand's entry (a trackpad nudged on
+  // the card a finger just tapped still hovers it).
+  let ghosted = false;
+  el.addEventListener('pointerenter', (e) => {
+    if (e.pointerType !== 'mouse') return;
+    if (ghostly(e)) { ghosted = true; return; }
+    arm();
+  });
+  el.addEventListener('pointermove', (e) => {
+    if (ghosted && e.pointerType === 'mouse' && !ghostly(e)) { ghosted = false; arm(); }
+  }, { passive: true });
   // A card born UNDER a resting pointer never hears pointerenter — the wall
   // repaints on every sync echo and refreshCard swaps the node under a pick,
   // and the browser fires boundary events only on the next movement. The old
@@ -1050,12 +1093,14 @@ export function wireCardZoom(el, artistName, ctx, { onOpenNotes = null, occ = nu
   // :hover — Safari is notorious for stale :hover chains after DOM swaps,
   // and a stale match here would grow cards the pointer is nowhere near.
   requestAnimationFrame(() => {
-    if (!el.isConnected) return;
+    if (!el.isConnected || touchAt.length) return; // a finger was the last hand here, not a resting mouse
     const under = underMouse();
     if (under && el.contains(under)) arm();
   });
   el.addEventListener('pointerleave', (e) => {
-    if (e.pointerType === 'mouse' && inT) { clearTimeout(inT); inT = null; }
+    if (e.pointerType !== 'mouse') return;
+    ghosted = false;
+    if (inT) { clearTimeout(inT); inT = null; }
   });
 }
 

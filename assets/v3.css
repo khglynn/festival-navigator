@@ -65,6 +65,9 @@
 .card.cell .chip-spotify { height: 11px; padding: 0 5px; font-size: 8px; }
 
 .corner-about { position: absolute; bottom: 4px; left: 6px; display: flex; align-items: center; gap: 3px; }
+/* What a narrow card gives way (aura.js GIVE_WAY) is `hidden` — which the
+ * chips' own display would otherwise out-rank. */
+.corner-about [hidden] { display: none; }
 .corner-who { position: absolute; bottom: 4px; right: 5px; display: flex; align-items: center; }
 .chip-notes {
   display: inline-flex; align-items: center; height: 13px; padding: 0 6px;
@@ -77,6 +80,36 @@
   border-radius: var(--r-pill); background: var(--spotify-fill);
   border: 1px solid var(--spotify-stroke); color: #fff; font-size: 8.5px; font-weight: 800; line-height: 1;
 }
+/* YOUR meter (2026-09-23): how much you want this set, at the corner's edge,
+ * drawn on the Spotify pill's pattern (same height, radius, stroke, spacing).
+ * Fill is your colour at .5 and the edge is white, the app's "this is you"
+ * (palette.strokeOf isYou), both set inline by wall.js meterChip. Never
+ * --brand (beside the violet notes bubble it read as a second notes chip) and
+ * never --fest. Three bars, lit one per tap; must is the word in the display
+ * face. Unlit bars are the same white at .3, so lighting one is opacity and
+ * transform only. A span, not a button: the card is the target. */
+.chip-meter {
+  display: inline-flex; align-items: center; justify-content: center; height: 12px; padding: 0 6px;
+  border-radius: var(--r-pill); border: 1px solid #fff; color: #fff; line-height: 1; flex: none;
+  transform-origin: 0 50%; /* it grows out of the corner's edge */
+}
+.chip-meter .bars { display: inline-flex; align-items: flex-end; gap: 1.5px; height: 8.5px; }
+.chip-meter .bar { width: 2.5px; border-radius: 1px; background: #fff; opacity: .3; transform-origin: 50% 100%; }
+.chip-meter .bar.on { opacity: 1; }
+.chip-meter .bar:nth-child(1) { height: 3.5px; }
+.chip-meter .bar:nth-child(2) { height: 6px; }
+.chip-meter .bar:nth-child(3) { height: 8.5px; }
+.chip-meter.is-must { padding: 0 5px; }
+.chip-meter .must { display: block; font-family: var(--font-display); font-size: 8.5px; letter-spacing: var(--track-display); line-height: 1; }
+.card.cell .chip-meter { height: 11px; padding: 0 5px; }
+.card.cell .chip-meter.is-must { padding: 0 4px; }
+.card.cell .chip-meter .bars { height: 7.5px; }
+.card.cell .chip-meter .bar:nth-child(2) { height: 5.5px; }
+.card.cell .chip-meter .bar:nth-child(3) { height: 7.5px; }
+.card.cell .chip-meter .must { font-size: 8px; }
+/* A cleared meter on its way out (wall.js meterLeaves): drawn where the chip
+ * stood, under the corners so the neighbours closing the gap pass over it. */
+.card > .chip-meter.leaving { position: absolute; left: 0; top: 0; z-index: 1; margin: 0; pointer-events: none; }
 /* High-affinity corner glow (followed + 5+ songs): a soft Spotify-green
  * mini-aura rising from the badge corner — the aura language, not a border.
  * Absolutely positioned inside the already-relative card: zero layout shift,
