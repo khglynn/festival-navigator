@@ -117,8 +117,10 @@ test('lineup wall, composed: one day holds its billing and its sections; a stack
   document.body.appendChild(root);
   renderWall(root, ctx);
 
-  const rules = [...root.querySelectorAll('.day-rule')].map((r) => r.querySelector('.day').textContent);
-  assert.deepEqual(rules, ['FRIDAY', 'SATURDAY', 'SUNDAY'], 'the days are the union of the billing day and the event nights, in week order');
+  const days = [...root.querySelectorAll('.day-block')].map((b) => b.dataset.day);
+  assert.deepEqual(days, ['Friday', 'Saturday', 'Sunday'], 'the days are the union of the billing day and the event nights, in week order');
+  assert.deepEqual([...root.querySelectorAll('.room-head .name')].map((n) => n.textContent),
+    ['FRI AFTERS', 'FRI FOLSOM', 'SAT AFTERS', 'SUN AFTERS FEST', 'SUN AFTERS'], 'one line per room: when, then what');
 
   const cards = [...root.querySelectorAll('.card')];
   const subOf = (el) => el.querySelector('.time')?.textContent || '';

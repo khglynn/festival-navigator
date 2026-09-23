@@ -46,7 +46,9 @@ FESTIVALS['acl-2026'] = acl;
 const TOKEN = 'hiddenpartstoken_0123456789';
 state.activateCrew(TOKEN, {
   v: 4, meta: {}, spotify: {}, people: { Kevin: { colorIndex: 0 } },
-  festivals: { 'portola-2026': { selections: {}, notes: { day: { '2026-09-24': { n1: { author: 'Kevin', ts: '2026-09-20T18:00:00.000Z', text: 'Thursday warehouse' } } } } } },
+  // Written standing on Thursday's afters (`<iso>|<section>`): Thursday has no
+  // festival room, so its only doors are its rooms' heads (2026-09-23).
+  festivals: { 'portola-2026': { selections: {}, notes: { day: { '2026-09-24|Afters': { n1: { author: 'Kevin', ts: '2026-09-20T18:00:00.000Z', text: 'Thursday warehouse' } } } } } },
   affinity: {},
 }, 'portola-2026');
 
@@ -63,29 +65,34 @@ const render = (fid, over = {}) => {
   renderWall(root, ctx);
   return { root, ctx };
 };
-const rulesOf = (root) => [...root.querySelectorAll('.day-rule')].map((r) => r.dataset.day);
+// The week on the wall: one `.day-block` per day (one-line heads, 2026-09-23).
+// ACL's Late nights is a block too — the tab off the end, not a day of the
+// week — so the week leaves it out.
+const weekOf = (root) => [...root.querySelectorAll('.day-block')].map((b) => b.dataset.day).filter((k) => k !== 'Late nights');
 const roomsOnWall = (root) => [...new Set([...root.querySelectorAll('.room')].map((r) => r.dataset.room))];
 const tabsOf = (fest, ctx) => dayNavOf(fest, ctx).map((d) => d.key);
 
 test('Portola with Afters and Folsom hidden: the days are Saturday and Sunday, and Thursday and Friday are nowhere', () => {
   const { root, ctx } = render('portola-2026', { folded: ['Afters', 'Folsom'] });
-  assert.deepEqual(rulesOf(root), ['Saturday', 'Sunday'], 'no empty shells');
+  assert.deepEqual(weekOf(root), ['Saturday', 'Sunday'], 'no empty shells');
   assert.deepEqual(tabsOf(portola, ctx), ['Saturday', 'Sunday'], 'no tab for a day with nothing visible');
   assert.deepEqual(roomsOnWall(root), [':fest'], 'the hidden rooms render nothing — no header, no quiet label');
-  assert.equal(root.querySelectorAll('.sec-head.folded, .folded').length, 0, 'there is no folded look left to wear');
-  assert.equal(root.querySelector('.day-whisper'), null, 'the Thursday note has no rule to hang under — the sheet still lists it');
+  assert.equal(root.querySelectorAll('.room-head.folded, .folded').length, 0, 'there is no folded look left to wear');
+  assert.equal(root.querySelector('.day-whisper'), null, 'the Thursday note has no head to hang under — the sheet still lists it');
   assert.equal(wallPlanFor(portola, ctx).model.days[0].key, 'Saturday', 'the first visible grid day is the open');
   // Un-hide, and Thursday comes back exactly where it was.
   const back = render('portola-2026', { folded: [] });
-  assert.deepEqual(rulesOf(back.root), ['Thursday', 'Friday', 'Saturday', 'Sunday']);
-  assert.ok(back.root.querySelector('.day-whisper'), 'and the Thursday note is under its rule again');
+  assert.deepEqual(weekOf(back.root), ['Thursday', 'Friday', 'Saturday', 'Sunday']);
+  const thu = back.root.querySelector('.day-block[data-day="Thursday"] .room-head');
+  assert.equal(thu.querySelector('.name').textContent, 'THU AFTERS');
+  assert.ok(thu.nextElementSibling.classList.contains('day-whisper'), 'and the Thursday note is under its head again');
 });
 
 test('one hidden section is absent from every day it played; the other rooms are untouched', () => {
   const { root } = render('portola-2026', { folded: ['Folsom'] });
-  assert.deepEqual(rulesOf(root), ['Thursday', 'Friday', 'Saturday', 'Sunday'], 'the days stay: Afters plays them all');
+  assert.deepEqual(weekOf(root), ['Thursday', 'Friday', 'Saturday', 'Sunday'], 'the days stay: Afters plays them all');
   assert.equal(root.querySelector('.room[data-room="Folsom"]'), null, 'no Folsom room anywhere');
-  assert.equal([...root.querySelectorAll('.sec-label')].some((l) => l.textContent === 'FOLSOM'), false, 'not even its name');
+  assert.equal([...root.querySelectorAll('.room-head .name')].some((l) => l.textContent.endsWith('FOLSOM')), false, 'not even its name');
   assert.equal(root.querySelectorAll('.room[data-room="Afters"] .venue-grid').length, 4);
   assert.equal(root.querySelectorAll('.room[data-room=":fest"] .tt-block').length, 2);
 });
@@ -93,12 +100,12 @@ test('one hidden section is absent from every day it played; the other rooms are
 test('the festival\'s own room hidden: no timetable, no billed names, and the nights it did not own are still the week', () => {
   const { root, ctx } = render('portola-2026', { folded: [':fest'] });
   assert.equal(root.querySelector('.room[data-room=":fest"], .tt-block, .stage-strip'), null);
-  assert.deepEqual(rulesOf(root), ['Thursday', 'Friday', 'Saturday', 'Sunday'], 'the afters play Saturday and Sunday too');
+  assert.deepEqual(weekOf(root), ['Thursday', 'Friday', 'Saturday', 'Sunday'], 'the afters play Saturday and Sunday too');
   assert.deepEqual(tabsOf(portola, ctx), ['Thursday', 'Friday', 'Saturday', 'Sunday']);
   // A week with nothing visible at all is a wall with no days — and still a
   // plan, so the flat lineup never leaks through in its place.
   const none = render('portola-2026', { folded: [':fest', 'Afters', 'Folsom'] });
-  assert.deepEqual(rulesOf(none.root), []);
+  assert.deepEqual(weekOf(none.root), []);
   assert.equal(none.root.querySelectorAll('.card').length, 0, 'nothing renders — not the flat lineup, not a shell');
   assert.deepEqual(tabsOf(portola, none.ctx), []);
 });
@@ -109,8 +116,8 @@ test('ACL with Late nights hidden: six dated tabs and no Late nights tab; the ex
   assert.equal(tabs.length, 6);
   assert.ok(tabs.every((t) => !t.dated));
   assert.deepEqual(tabs.map((t) => t.long), ['FRI 2', 'SAT 3', 'SUN 4', 'FRI 9', 'SAT 10', 'SUN 11']);
-  assert.equal(root.querySelector('.room[data-room="Late nights"], .date-rule'), null);
-  assert.equal(root.querySelector('.sec-head[data-day="Late nights"]'), null, 'no anchor for a tab that is not there');
+  assert.equal(root.querySelector('.room[data-room="Late nights"]'), null);
+  assert.equal(root.querySelector('.day-block[data-day="Late nights"]'), null, 'no anchor for a tab that is not there');
 });
 
 test('a search does not resurface a hidden part', () => {
@@ -157,15 +164,15 @@ test('ACL with Weekend 1 hidden: FRI 9 · SAT 10 · SUN 11 · Late nights — an
   const { root, ctx } = render('acl-2026', { folded: [weekendRoom('W1')] });
   assert.equal(weekendRoom('W1'), 'weekend:W1', 'the persisted key');
   assert.deepEqual(dayNavOf(acl, ctx).map((t) => t.long), ['FRI 9', 'SAT 10', 'SUN 11', 'LATE NIGHTS']);
-  assert.deepEqual(rulesOf(root), ['Friday|W2', 'Saturday|W2', 'Sunday|W2']);
+  assert.deepEqual(weekOf(root), ['Friday|W2', 'Saturday|W2', 'Sunday|W2']);
   const both = acl.days.Friday.artists.find((a) => !a.weekend || a.weekend === 'both');
   assert.ok(both, 'ACL has a Friday set that plays both weekends');
   assert.ok(root.querySelector(`.card.cell[data-artist="${both.name}"]`), 'and it is on the Weekend 2 grid');
   // Both hidden: no dated tabs, Late nights alone.
   const none = render('acl-2026', { folded: [weekendRoom('W1'), weekendRoom('W2')] });
   assert.deepEqual(dayNavOf(acl, none.ctx).map((t) => t.long), ['LATE NIGHTS']);
-  assert.deepEqual(rulesOf(none.root), []);
-  assert.ok(none.root.querySelector('.room[data-room="Late nights"] .date-rule'), 'the late nights are still there');
+  assert.deepEqual(weekOf(none.root), []);
+  assert.ok(none.root.querySelector('.day-block[data-day="Late nights"] .room[data-room="Late nights"] .room-head'), 'the late nights are still there');
   // Weekend 2 hidden alone is the mirror.
   const w2 = render('acl-2026', { folded: [weekendRoom('W2')] });
   assert.deepEqual(dayNavOf(acl, w2.ctx).map((t) => t.long), ['FRI 2', 'SAT 3', 'SUN 4', 'LATE NIGHTS']);
@@ -178,12 +185,12 @@ test('a fold key the menu does not offer is inert: a stale ":fest" on ACL hides 
   const { root, ctx } = render('acl-2026', { folded: [':fest'] });
   assert.equal(wallPlanFor(acl, ctx).festRoom, true, 'the weekend rows are the festival room on a two-weekend fest');
   assert.equal(dayNavOf(acl, ctx).length, 7, 'seven tabs, nothing blanked');
-  assert.deepEqual(rulesOf(root), ['Friday|W1', 'Saturday|W1', 'Sunday|W1', 'Friday|W2', 'Saturday|W2', 'Sunday|W2']);
+  assert.deepEqual(weekOf(root), ['Friday|W1', 'Saturday|W1', 'Sunday|W1', 'Friday|W2', 'Saturday|W2', 'Sunday|W2']);
   assert.ok(root.querySelectorAll('.card.cell').length > 0, 'the grids render');
   assert.deepEqual(roomsOf(acl, ctx).map((r) => r.key), ['weekend:W1', 'weekend:W2', 'Late nights'], 'and the menu is unchanged');
   // The mirror: a weekend key on a one-weekend fest.
   const p = render('portola-2026', { folded: ['weekend:W1', 'weekend:W2'] });
-  assert.deepEqual(rulesOf(p.root), ['Thursday', 'Friday', 'Saturday', 'Sunday']);
+  assert.deepEqual(weekOf(p.root), ['Thursday', 'Friday', 'Saturday', 'Sunday']);
   assert.ok(p.root.querySelector('.room[data-room=":fest"] .tt-block'), 'the grid is untouched');
 });
 

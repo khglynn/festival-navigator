@@ -330,12 +330,12 @@ test('the wall renders every Midway set in its run, the tilde exactly where the 
   // The days are THU FRI SAT SUN, and the run renders as one stack under its
   // venue on Sunday. Data-driven on purpose — the order, the times and which
   // of them are guesses are the file's, never this test's.
-  const rules = [...root.querySelectorAll('.day-rule')].map((r) => r.querySelector('.day').textContent);
-  assert.deepEqual(rules, ['THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY']);
-  const sunday = [...root.querySelectorAll('.day-rule')].find((r) => r.dataset.day === 'Sunday');
-  let afters = sunday.nextElementSibling;
-  while (afters && !(afters.classList.contains('room') && afters.dataset.room === 'Afters')) afters = afters.nextElementSibling;
+  const days = [...root.querySelectorAll('.day-block')].map((b) => b.dataset.day);
+  assert.deepEqual(days, ['Thursday', 'Friday', 'Saturday', 'Sunday']);
+  const sunday = root.querySelector('.day-block[data-day="Sunday"]');
+  const afters = sunday.querySelector(':scope > .room[data-room="Afters"]');
   assert.ok(afters, 'Sunday has an AFTERS room');
+  assert.equal(afters.querySelector('.room-head .name').textContent, 'SUN AFTERS');
   const stackOf = (venue) => [...afters.querySelectorAll('.venue-group')]
     .find((g) => g.querySelector('.stage-head .label').textContent === venue);
   const midwayGroup = stackOf('The Midway');

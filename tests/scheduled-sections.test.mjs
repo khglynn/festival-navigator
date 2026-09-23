@@ -64,28 +64,26 @@ const mkCtx = (query = '') => ({
   onNotesChange: null, onOpenDayNotes: null,
 });
 
+// A search is a LIST: each answered day keeps its one-line list header.
 const rulesOf = (root) => [...root.querySelectorAll('.day-rule')].map((r) => r.querySelector('.day').textContent);
+// The composed wall: a `.day-block` per day, a room per part of it, each room
+// under its one head (one-line heads, 2026-09-23).
+const daysOf = (root) => [...root.querySelectorAll('.day-block')].map((b) => b.dataset.day);
 const cardsUnder = (root, dayLabel) => {
   const rule = [...root.querySelectorAll('.day-rule')].find((r) => r.querySelector('.day').textContent === dayLabel);
   assert.ok(rule, `no day rule ${dayLabel}`);
   const grid = rule.nextElementSibling;
   return [...grid.querySelectorAll('.card')].map((c) => ({ name: c.dataset.artist, time: c.dataset.time }));
 };
-// The rooms between a day's rule and the next day's, by key.
+// The rooms of a day's block, by key.
 const roomsUnder = (root, dayKey) => {
-  const rule = [...root.querySelectorAll('.day-rule')].find((r) => r.dataset.day === dayKey);
-  assert.ok(rule, `no day rule ${dayKey}`);
-  const out = [];
-  for (let n = rule.nextElementSibling; n && !n.classList.contains('day-rule'); n = n.nextElementSibling) {
-    if (n.classList.contains('room')) {
-      out.push({
-        room: n.dataset.room,
-        label: n.querySelector('.sec-label').textContent,
-        cards: [...n.querySelectorAll('.card')].map((c) => ({ name: c.dataset.artist, time: c.dataset.time })),
-      });
-    }
-  }
-  return out;
+  const block = [...root.querySelectorAll('.day-block')].find((b) => b.dataset.day === dayKey);
+  assert.ok(block, `no day block ${dayKey}`);
+  return [...block.querySelectorAll(':scope > .room')].map((n) => ({
+    room: n.dataset.room,
+    label: n.querySelector(':scope > .room-head .name').textContent,
+    cards: [...n.querySelectorAll('.card')].map((c) => ({ name: c.dataset.artist, time: c.dataset.time })),
+  }));
 };
 
 // The composed wall (MODEL-V4, 2026-09-16): the sections say which NIGHT each
@@ -98,12 +96,13 @@ test('scheduled wall, composed: each day holds its grid and its sections; an aft
   const root = document.createElement('div');
   document.body.appendChild(root);
   renderWall(root, mkCtx());
-  assert.deepEqual(rulesOf(root), ['FRIDAY', 'SATURDAY', 'SUNDAY']);
+  assert.deepEqual(daysOf(root), ['Friday', 'Saturday', 'Sunday']);
+  assert.equal(root.querySelectorAll('.day-rule').length, 0, 'the composed wall draws no day line: each room\'s head says the day');
   const fri = roomsUnder(root, 'Friday');
-  assert.deepEqual(fri.map((r) => [r.room, r.label]), [['Afters', 'AFTERS'], ['Folsom', 'FOLSOM']]);
+  assert.deepEqual(fri.map((r) => [r.room, r.label]), [['Afters', 'FRI AFTERS'], ['Folsom', 'FRI FOLSOM']]);
   assert.deepEqual(fri[0].cards, [{ name: 'Horse Meat Disco', time: '9 PM – 3 AM' }]);
   const sat = roomsUnder(root, 'Saturday');
-  assert.deepEqual(sat.map((r) => [r.room, r.label]), [[':fest', 'SECTIONS FEST'], ['Afters', 'AFTERS']]);
+  assert.deepEqual(sat.map((r) => [r.room, r.label]), [[':fest', 'SAT SECTIONS FEST'], ['Afters', 'SAT AFTERS']]);
   assert.deepEqual(sat[0].cards.map((c) => c.name), ['Headliner', 'Overmono', 'Late Add'],
     'the grid, then the name billed on Saturday with no set on Saturday\'s grid — one room, no "everything else"');
   assert.deepEqual(sat[1].cards, [{ name: 'Overmono', time: '10 PM – 2 AM' }, { name: 'Only Afters', time: '10 PM' }],

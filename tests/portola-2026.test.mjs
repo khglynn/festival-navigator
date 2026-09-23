@@ -95,12 +95,14 @@ test('portola-2026: the wall is day-first — THU FRI SAT SUN, the grid inside i
     fid: 'portola-2026', meName: 'Kevin', picks: {}, affinity: null, lowPower: true,
     sort: 'day', query: '', weekend: 'all', onTap: () => {}, onOpenNotes: null, onNotesChange: null, onOpenDayNotes: null,
   });
-  const rules = [...root.querySelectorAll('.day-rule')].map((r) => r.querySelector('.day').textContent);
-  assert.deepEqual(rules, ['THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY']);
+  const days = [...root.querySelectorAll('.day-block')].map((b) => b.dataset.day);
+  assert.deepEqual(days, ['Thursday', 'Friday', 'Saturday', 'Sunday']);
+  assert.deepEqual([...root.querySelectorAll('.room[data-room=":fest"] .room-head .name')].map((n) => n.textContent),
+    ['SAT PORTOLA', 'SUN PORTOLA'], 'the festival\'s own room names its day: one line');
   const gridCells = root.querySelectorAll('.room[data-room=":fest"] .card.cell').length;
   assert.equal(gridCells, 64, 'every timed set is a grid cell, inside the festival\'s own room');
   assert.equal(root.querySelectorAll('.room[data-room=":fest"] .stage-strip').length, 2, 'each grid day carries its own sticky strip');
-  assert.equal([...root.querySelectorAll('.sec-label')].filter((l) => l.textContent === 'EVERYTHING ELSE').length, 0);
+  assert.equal([...root.querySelectorAll('.room-head .label, .day-rule .day')].filter((l) => l.textContent === 'EVERYTHING ELSE').length, 0);
   const hmd = [...root.querySelectorAll('.card')].filter((c) => c.dataset.artist === 'Horse Meat Disco');
   assert.equal(hmd.length, 2, 'Horse Meat Disco under Friday\'s Afters AND Friday\'s Folsom');
   assert.deepEqual(hmd.map((c) => c.closest('.room').dataset.room), ['Afters', 'Folsom']);

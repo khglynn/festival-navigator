@@ -111,8 +111,11 @@ test('scrollToNowLine: the line a third of the way down; before doors on festiva
   // Sunday 10 AM: no line yet (doors at 1 PM) — land on Sunday's header.
   const morning = render(pt('2026-09-27T10:00:00'));
   assert.equal(morning.querySelectorAll('.now-line').length, 0);
-  const sunRule = morning.querySelector('.day-rule[data-iso="2026-09-27"]');
-  sunRule.getBoundingClientRect = () => ({ top: 3000 });
+  // The day's block: its first head is where the day starts (one-line heads,
+  // 2026-09-23 — there is no day line above it any more).
+  const sunday = morning.querySelector('.day-block[data-iso="2026-09-27"]');
+  assert.equal(sunday.firstElementChild.querySelector('.room-head .name').textContent, 'SUN PORTOLA');
+  sunday.getBoundingClientRect = () => ({ top: 3000 });
   assert.equal(scrollToNowLine(morning, { date: pt('2026-09-27T10:00:00'), viewportHeight: 900, scrollTo: (y) => calls.push(y) }), 'day');
   assert.equal(calls[1], 3000);
   morning.remove();
@@ -142,7 +145,7 @@ test('the day-of open: one claim per festival-day, marked only after a real land
   assert.equal(store.size, 0, 'and the claim was NOT spent');
   week.remove();
   const morning = render(pt('2026-09-27T10:00:00'));
-  morning.querySelector('.day-rule[data-iso="2026-09-27"]').getBoundingClientRect = () => ({ top: 3000 });
+  morning.querySelector('.day-block[data-iso="2026-09-27"]').getBoundingClientRect = () => ({ top: 3000 });
   assert.equal(open(morning, pt('2026-09-27T10:00:00')), 'day', 'festival morning: today\'s header');
   morning.remove();
   const afternoon = render(pt('2026-09-27T17:42:00'));
