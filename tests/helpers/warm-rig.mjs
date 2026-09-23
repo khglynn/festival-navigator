@@ -49,8 +49,17 @@ export function heldNetwork() {
     }
     return n;
   };
+  // Answer only the OLDEST held request `match` picks (two opens asking for
+  // the same file, answered in order).
+  const releaseFirst = (match, respond) => {
+    const i = held.findIndex(match);
+    if (i < 0) return 0;
+    const [h] = held.splice(i, 1);
+    h.resolve(respond(h));
+    return 1;
+  };
   const asked = (prefix) => calls.some((c) => c.includes(` ${prefix}`));
-  return { fetch, release, calls, asked };
+  return { fetch, release, releaseFirst, calls, asked };
 }
 
 export function cachesHolding(files) {

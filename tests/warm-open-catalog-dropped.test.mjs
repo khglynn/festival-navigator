@@ -1,9 +1,10 @@
-// The converse of warm-open-catalog-added (Codex review, 2026-09-23, finding
-// 1): the cached catalog still lists a festival the live one has dropped, and
-// it is this device's saved festival. The warm open paints it from cache —
-// and when the live catalog lands, it moves to a festival that exists and
-// says why, in the words a cold open uses. Its picks stay in the doc (the
-// merge never deletes; the fest coming back brings them back).
+// After a warm open the network only REFRESHES what is on screen — it never
+// changes which festival is showing (2026-09-23, round 4, strict warm open).
+// The cached catalog still lists this device's saved festival and its file is
+// cached, so the warm open paints it. The live catalog has since dropped it:
+// the wall stays exactly where it is (the next cold open resolves it, with its
+// usual toast), and a note typed meanwhile is saved where it was typed — the
+// round-3 correction re-aimed it into another festival (Codex round 3, new A).
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { bootShell, settle } from './helpers/shell-rig.mjs';
@@ -35,21 +36,28 @@ test.after(() => { shell.close(); delete globalThis.caches; });
 const { $ } = shell;
 const state = await import('../js/state.js');
 const shown = () => SCREENS.filter((id) => $(id).style.display !== 'none');
+const NOTE = 'Meet me at the entrance';
 
 test('the warm open paints the saved festival from cache', async () => {
   assert.notEqual(await within(1500, () => shown().includes('screen-app')), null);
   assert.equal(state.activeFestivalId, GONE.id);
 });
 
-test('the live catalog dropped it: a real festival opens, and the toast says why', async () => {
+test('a note half-typed while the live catalog (which dropped this festival) lands is saved HERE', async () => {
+  $('notes-chip').click();
+  await settle(10);
+  const ta = document.querySelector('#artist-sheet .composer textarea');
+  assert.ok(ta, 'the all-notes composer is open');
+  ta.value = NOTE;
   assert.equal(net.release((h) => h.u === '/data/festivals/index.json', () => json(INDEX)), 1);
   await settle(80);
-  assert.equal(state.activeFestivalId, 'portola-2026', 'the fallback a cold open would pick');
-  assert.match($('fest-name').textContent, /PORTOLA/);
-  assert.match($('toast-root').textContent, /Vanishing Fest isn’t in the lineup any more — opened Portola instead\. Its picks are still saved\./);
-  // Exactly what an ordinary open does with the same catalog: the invite's
-  // festival (the doc's inviteFestId, Portola) opened, so it becomes the
-  // saved one — decided on the LIVE list, never on the cached one.
-  assert.equal(localStorage.getItem(`fn_crew_fest_v3_${TOKEN}`), 'portola-2026', 'confirmed as a cold open would');
-  assert.equal(state.crewDoc.festivals[GONE.id].selections.Robyn.Kevin, 1, 'its picks are still in the doc');
+  assert.equal(state.activeFestivalId, GONE.id, 'the festival on screen never changes under the person');
+  const save = [...document.querySelectorAll('#artist-sheet .composer button')].find((b) => b.textContent === 'Save');
+  save.click();
+  await settle(20);
+  const notesOf = (fid) => JSON.stringify(((state.crewDoc.festivals[fid] || {}).notes) || {});
+  assert.match(notesOf(GONE.id), new RegExp(NOTE), 'the note is where it was typed');
+  assert.doesNotMatch(notesOf('portola-2026'), new RegExp(NOTE), 'and not in another festival');
+  assert.equal(localStorage.getItem(`fn_crew_fest_v3_${TOKEN}`), GONE.id, 'the saved choice untouched');
+  assert.doesNotMatch($('toast-root').textContent, /isn’t in the lineup/, 'no switch, so nothing to announce');
 });
