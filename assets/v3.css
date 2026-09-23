@@ -104,6 +104,23 @@
   .scan-tile img { animation: none; }
   .scan-bar-fill { transition: none; }
 }
+/* Before the first number arrives (one slow first page on festival signal)
+ * the bar breathes instead of sitting empty — an empty bar under "Reading
+ * your library…" read as frozen (Kevin, 2026-09-23; it had read 6,225
+ * artists fine). A segment drifts across the track on a pseudo-element, so
+ * the real fill never has to un-grow from a fake width. With motion off
+ * (reduced motion, Low Power) the animation is gone and the base shows: a
+ * dim, full track that reads as "working", never as a percent. */
+.scan-bar.waiting { position: relative; }
+.scan-bar.waiting::after {
+  content: ''; position: absolute; inset: 0; border-radius: inherit;
+  background: var(--spotify-stroke); opacity: .3;
+  animation: scan-wait 1.6s cubic-bezier(.4, 0, .2, 1) infinite;
+}
+@keyframes scan-wait {
+  from { opacity: .85; transform: translateX(-100%) scaleX(.35); }
+  to { opacity: .85; transform: translateX(100%) scaleX(.35); }
+}
 /* Wall-side scan pill: the library read keeps going when you leave the drill —
  * this says so. Above the dock, never interactive. */
 .spot-pill {
@@ -113,6 +130,37 @@
   color: var(--spotify-stroke); font-size: 11px; font-weight: 700; pointer-events: none;
 }
 @media (min-width: 720px) { .spot-pill { bottom: 16px; } }
+
+/* ---- crew entry: the bring-your-picks offer (2026-09-23) ----------------------
+ * One decision, asked once per crew × fest, so it waits above the dock where
+ * the thumb is — the toolbar strips get scrolled away by the day-of open.
+ * Same family as the toast (dock ground, emphasis hairline, row radius).
+ * Two layers: the outer box steps up when a toast arrives (crew-entry.js
+ * measures it), the inner card carries its own arrival and exit, so the two
+ * motions never fight over one transform. Below sheets (40) and toasts (50),
+ * above the zoom layer (36), the pill (35) and the dock (30). Brand, never
+ * --fest: the offer is about a person's picks, not the festival. */
+.bring-offer {
+  position: fixed; left: 12px; right: 12px; z-index: 38;
+  bottom: calc(64px + env(safe-area-inset-bottom, 0px));
+  display: flex; justify-content: center; pointer-events: none;
+  transition: transform .24s cubic-bezier(.2, 1.15, .35, 1);
+}
+.bring-card {
+  pointer-events: auto; width: 100%; max-width: 440px; box-sizing: border-box;
+  display: flex; flex-direction: column; gap: 10px; padding: 12px 14px;
+  background: var(--dock); border: 1px solid var(--border-emphasis);
+  border-radius: var(--r-row); box-shadow: 0 6px 24px rgba(0, 0, 0, .5);
+}
+.bring-line { color: var(--text-body); font-size: 13px; font-weight: 700; line-height: 1.4; }
+.bring-sub { color: var(--text-tertiary); font-size: 11.5px; font-weight: 600; line-height: 1.45; margin-top: 3px; }
+.bring-actions { display: flex; gap: 8px; }
+.bring-actions .btn-tonal { font-size: 12.5px; padding: 9px 16px; }
+.bring-actions .btn-ghost { font-size: 12px; padding: 9px 14px; }
+/* A toast's one action never breaks across lines: the toast shrinks to half
+ * the viewport (left: 50%), and "Not me" (the recognized-entry door) stacked
+ * as "Not / me" on a 390px phone (walk, 2026-09-23). */
+.undo-toast .undo-btn { white-space: nowrap; }
 .mark { height: 12px; border-radius: var(--r-pill); color: #fff; font-weight: 800;
         display: inline-flex; align-items: center; justify-content: center; margin-left: 3px; flex: none; }
 /* Weekend tag (ST-3): quiet top-left marker for W1/W2-only artists in Both view */

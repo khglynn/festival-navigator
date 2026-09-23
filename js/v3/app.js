@@ -28,6 +28,10 @@ import { createSortControl } from './sort-control.js';
 import { nameProblem } from '../name-rules.mjs';
 import { startFavicon, stopFavicon } from './favicon.js';
 import { hslOf, strokeOf, nextColorIndex } from './palette.js';
+// Entering a crew you already have a life in (2026-09-23): recognized on
+// open, and the one-time offer to bring your picks from another crew.
+import { planBringPicks, bringOfferCopy, bringDoneLine, bringAnswered, rememberBringAnswer, showBringOffer, settleBringOffer, dismissBringOffer, bringOfferCard } from './crew-entry.js';
+import { showActionToast } from './wall.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -1418,6 +1422,7 @@ function openSettings() {
       applyFestTheme();
       if (!router.requestClose()) closeSettings();
       sync.pollSync();
+      maybeOfferBringPicks(); // a festival switch is entering that festival here
     },
     onLowPower: (on) => { applyLowPower(on); },
     onStayOffline: (on) => { sync.setStayOffline(on); if (!on) sync.pushSync(); },
@@ -1702,6 +1707,102 @@ function renderLanding() {
   $('landing-empty').style.display = crews.length ? 'none' : '';
 }
 
+// Recognize you (2026-09-23). A crew link this device had no claim in used to
+// ask "who are you?" even when the crew doc already carried this device's
+// person id — someone who forgot the crew here, or joined on another phone
+// holding the same me link, re-introducing themselves to their own crew. An
+// unambiguous match (crew.recognizedMember) now walks straight in. A personal
+// link naming someone ELSE (&me=Drew, opened on Kevin's phone) is its own
+// answer to the question, so that one still asks.
+function recognizeOnOpen(token, doc) {
+  const known = crew.recognizedMember(crew.myPerson(), token, doc);
+  if (!known) return null;
+  if (pendingMeHint && pendingMeHint.toLowerCase() !== known.toLowerCase()) return null;
+  return known;
+}
+
+// Nothing needs doing after a recognized entry, so the acknowledgement is a
+// toast (it may fade) — carrying the one door a borrowed phone needs for as
+// long as it shows.
+function welcomeRecognized(token, name) {
+  showActionToast($('toast-root'), `Welcome back, ${name}.`, 'Not me', () => notMe(token), 6000);
+}
+
+// "Not me": forget the claim on this device and ask, exactly as the join
+// screen always has. The crew stays remembered; nothing in the shared doc
+// changes (the recognition only ever READ the pid).
+function notMe(token) {
+  if (state.getCrewToken() !== token) return; // the toast outlived its crew
+  crew.clearMe(token);
+  dismissBringOffer({ instant: true });
+  refreshCtx();
+  renderPersonChips();
+  renderYou();
+  renderJoin(token, state.crewDoc);
+}
+
+// Bring your picks (2026-09-23). Entering a crew at a festival where this
+// device knows ANOTHER crew holding your picks offers — once per crew ×
+// festival — to bring them over. The rules live in crew-entry.js; this is
+// the glue: the plan reads only this device's cache, and the write is the
+// ordinary pick path, so sync and the merge see nothing but taps.
+function bringContext() {
+  return {
+    token: state.getCrewToken(), fid: state.activeFestivalId, doc: state.crewDoc,
+    meName: ctx.meName, person: crew.myPerson(), crews: crew.knownCrews(),
+    docFor: state.cachedDoc, meFor: crew.me,
+  };
+}
+
+function maybeOfferBringPicks() {
+  const token = state.getCrewToken();
+  const fid = state.activeFestivalId;
+  const key = `${token}|${fid}`;
+  const standing = bringOfferCard();
+  if (standing && standing.dataset.key !== key) dismissBringOffer({ instant: true });
+  if (!token || !fid || !ctx.meName || ctx.migrationPending || bringAnswered(token, fid)) return;
+  if (bringOfferCard()) return; // already asking, here
+  const plan = planBringPicks(bringContext());
+  if (!plan) return;
+  showBringOffer($('screen-app'), {
+    copy: bringOfferCopy(plan, (state.fest() || {}).name),
+    key,
+    ctx,
+    onBring: () => bringPicksHere(key),
+    onDecline: () => rememberBringAnswer(token, fid, 'declined'),
+  });
+}
+
+function bringPicksHere(key) {
+  const token = state.getCrewToken();
+  const fid = state.activeFestivalId;
+  const card = bringOfferCard();
+  // The card must still be about the crew and festival on screen, and picks
+  // must be writable — anything else and it quietly goes.
+  if (!card || card.dataset.key !== key || key !== `${token}|${fid}` || !ctx.meName || ctx.migrationPending) {
+    dismissBringOffer({ instant: true });
+    return;
+  }
+  // Planned again at the tap: anything picked while the card was up is
+  // decided here now, and a decision here is never overwritten.
+  const plan = planBringPicks(bringContext());
+  rememberBringAnswer(token, fid, 'brought');
+  if (!plan) { dismissBringOffer({ ctx }); return; }
+  // applyLocalPick's two steps, with the doc written to disk ONCE at the end:
+  // persisting the whole crew doc per pick is fine for a tap and a stall for
+  // fifty of them at once.
+  state.ensureFestivalState(fid);
+  const sels = state.crewDoc.festivals[fid].selections;
+  for (const [artist, level] of Object.entries(plan.picks)) {
+    state.recordSelection(artist, ctx.meName, level);
+    (sels[artist] = sels[artist] || {})[ctx.meName] = level;
+  }
+  state.persist();
+  sync.scheduleSync();
+  repaintWall();
+  settleBringOffer(bringDoneLine(plan.count), { ctx });
+}
+
 function renderJoin(token, doc) {
   show('screen-join');
   // The invite names the FESTIVAL (FLOW-10) — the fest is why you came; the
@@ -1850,7 +1951,9 @@ async function stampIdentity(token, current = () => true, { renameFrom = null } 
 
 // `customs` is the crew's custom-festival fetch — boot starts it beside the
 // catalog; any other entry starts it here. Merged only now, catalog in hand.
-async function enterApp(token, doc, current = () => true, customs = fetchCustomFestivals(token)) {
+// `recognized` (boot only): the name recognizeOnOpen claimed for this device.
+async function enterApp(token, doc, current = () => true, customs = fetchCustomFestivals(token), { recognized = null } = {}) {
+  dismissBringOffer({ instant: true }); // an offer is about the crew it was made in — never the next one
   crew.setActiveCrew(token);
   crew.rememberCrew(token, (doc.meta && doc.meta.name) || '');
   mergeCustoms(await customs); // crew-private fests join the catalog first
@@ -1938,6 +2041,8 @@ async function enterApp(token, doc, current = () => true, customs = fetchCustomF
     }).catch((e) => console.warn('crew badge sweep:', e));
   }
   stampIdentity(token, current); // me link — fire-and-forget by design
+  if (recognized) welcomeRecognized(token, recognized);
+  maybeOfferBringPicks(); // after the welcome: the card steps up over its toast
   // A hop from an alias domain mid-Spotify-setup (SPOT-1): reopen the drill
   // so the member lands exactly where they left off.
   if (pendingSpotifyOpen) {
@@ -2104,8 +2209,13 @@ export async function boot() {
     if (gone) { renderBadLink(token, { gone: true }); return; }
     if (!doc) doc = state.cachedDoc(token);
     if (!doc) { renderBadLink(token, { gone }); return; }
-    if (!crew.me(token)) { renderJoin(token, doc); return; }
-    await enterApp(token, doc, current, customs);
+    let recognized = null;
+    if (!crew.me(token)) {
+      recognized = recognizeOnOpen(token, doc);
+      if (!recognized) { renderJoin(token, doc); return; }
+      crew.setMe(token, recognized);
+    }
+    await enterApp(token, doc, current, customs, { recognized });
   } catch (e) {
     console.error('boot failed', e);
     if (current()) renderFatal();
