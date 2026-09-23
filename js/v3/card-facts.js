@@ -52,7 +52,10 @@ export function factsFor(artistName, ctx, occ = null) {
       if (hit) { day = d; stage = hit.stage || null; time = hit.time || null; break; }
     }
     if (!time) {
-      const a = (fest.artists || []).find((x) => x.name === artistName);
+      // A live entry before a cancelled one: with no occurrence to ask, the
+      // facts must not describe a called-off slot as if it were on.
+      const named = (fest.artists || []).filter((x) => x.name === artistName);
+      const a = named.find((x) => !isCancelled(x)) || named[0];
       if (a) { day = a.day || day; stage = a.stage || stage; time = a.time || time; date = dateOf(a) || date; venue = venueOf(a) || venue; }
     }
   }

@@ -132,6 +132,39 @@ test('rules: the shape — an object of on (a real date), source (https) and an 
   assert.deepEqual(validateFestivalDoc(f).errors, []);
 });
 
+test('rules: two weekends — an act lost on Weekend 1 keeps its Weekend 2 set, and only a set on the SAME weekend is an error', () => {
+  const f = tiny({ id: 'tiny-fest' });
+  f.dayMeta.Saturday = { wd: 'Sat', dates: { W1: 'Oct 3', W2: 'Oct 10' }, isos: { W1: '2026-10-03', W2: '2026-10-10' } };
+  f.artists[1] = { ...f.artists[1], weekends: 'W1' };
+  f.days.Saturday.artists.push({ name: 'Gone', stage: 'Main', time: '9:00 PM - 10:00 PM', weekend: 'W2' });
+  assert.deepEqual(validateFestivalDoc(f).errors, [], 'W1 cancelled, W2 still on: clean');
+  f.days.Saturday.artists[1].weekend = 'W1';
+  assert.ok(validateFestivalDoc(f).errors.some((e) => /Gone is cancelled but still has a set/.test(e)), 'the same weekend is the error');
+  f.days.Saturday.artists[1].weekend = 'both';
+  assert.ok(validateFestivalDoc(f).errors.some((e) => /Gone is cancelled but still has a set/.test(e)), 'a set on both weekends overlaps');
+});
+
+test('rules: a cancelled show in a numbered run is out of the run — the live sets renumbered are clean, the guesser gives it no slot', async () => {
+  const src = 'https://example.test/bill';
+  const show = (name, seq, of, extra = {}) => ({ name, day: 'Afters', night: 'Sat', venue: 'The Room', stage: 'Sat · The Room', doors: '10 PM', close: '2 AM', ...(seq ? { order: { seq, of, source: src, confirmed: false } } : {}), ...extra });
+  const f = tiny({
+    venues: { 'The Room': 'https://maps.google.com/?q=The+Room' },
+    artists: [
+      { name: 'Opener', day: 'Saturday' },
+      show('First', 1, 2, { time: '10 PM', approx: true }),
+      show('Called Off', null, null, { time: '11 PM', approx: true, cancelled: { on: '2026-09-21', source: CHRONICLE } }),
+      show('Last', 2, 2, { time: '12 AM', approx: true }),
+    ],
+  });
+  const r = validateFestivalDoc(f);
+  assert.deepEqual(r.errors, []);
+  assert.deepEqual(r.warnings, [], 'no "timed sets and no running order" warning for the cancelled one');
+  const { runsOf } = await import('../scripts/guess-run-times.mjs');
+  // Even one that kept its old number takes no slot.
+  f.artists[2].order = { seq: 2, of: 3, source: src, confirmed: false };
+  assert.deepEqual(runsOf(f).flatMap((g) => g.members.map((m) => m.name)), ['First', 'Last']);
+});
+
 test('rules: a GRID set is never cancelled in place — it comes off the grid', () => {
   const f = tiny();
   f.days.Saturday.artists[0].cancelled = { on: '2026-09-21', source: CHRONICLE };
@@ -292,6 +325,30 @@ test('the zoom with no occurrence (the day image\'s cards) still finds the cance
   state.setActiveFestivalId(FID);
   assert.ok(factsFor('Skepta', ctxFor(FID)).cancelled);
   assert.equal(factsFor('Soulwax', ctxFor(FID)).cancelled, null);
+});
+
+test('with no occurrence, a name cancelled on one night but playing another is described by the night it plays', () => {
+  const fid = 'split-fest';
+  FESTIVAL_INDEX.push({ id: fid, status: 'scheduled' });
+  FESTIVALS[fid] = {
+    id: fid, name: 'Split Fest', status: 'scheduled', timezone: 'America/Los_Angeles',
+    dayMeta: { Saturday: { wd: 'Sat', date: 'Sep 26', iso: '2026-09-26' } },
+    artists: [
+      { name: 'Both Ways', day: 'Saturday', venue: 'Crane Stage', cancelled: { on: '2026-09-21', source: CHRONICLE } },
+      { name: 'Both Ways', day: 'Afters', night: 'Sun', venue: 'The Room', stage: 'Sun · The Room', time: '11 PM' },
+      { name: 'Opener', day: 'Saturday' },
+    ],
+    days: { Saturday: { stages: ['Crane Stage'], artists: [{ name: 'Opener', stage: 'Crane Stage', time: '8:00 PM - 9:00 PM' }] } },
+  };
+  state.setActiveFestivalId(fid);
+  const f = factsFor('Both Ways', ctxFor(fid));
+  assert.equal(f.cancelled, null);
+  assert.equal(f.when, 'Sun · 11 PM');
+  assert.equal(f.where, 'The Room');
+  // …while the Saturday card, which knows its occurrence, is the cancelled one.
+  const sat = factsFor('Both Ways', ctxFor(fid), events.occOf(FESTIVALS[fid].artists[0]));
+  assert.ok(sat.cancelled);
+  state.setActiveFestivalId(FID);
 });
 
 // ---- the day image -----------------------------------------------------------------

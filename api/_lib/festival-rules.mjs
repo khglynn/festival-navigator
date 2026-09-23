@@ -109,7 +109,10 @@ function checkEventFields(fest, err, warn) {
     if (!plain(a)) return;
     const at = `artists[${i}] (${safeKey(a.name)})`;
     const bits = typeof a.stage === 'string' && a.stage.includes(' · ') ? a.stage.split(' · ') : null;
-    const rk = roomKey(a);
+    // A cancelled show is in the room and plays no part in it (events.js
+    // venueGroupsOf): it is not an act of the run, a timed set of the room,
+    // or a member the order has to account for.
+    const rk = a.cancelled === undefined ? roomKey(a) : null;
     if (rk) acts.set(rk, (acts.get(rk) || 0) + 1);
 
     if (a.date !== undefined && !realDate(a.date)) err(`${at}: date must be a real YYYY-MM-DD date (got ${JSON.stringify(safeKey(a.date))})`);
@@ -283,7 +286,11 @@ function checkCancelled(fest, err) {
     const parts = typeof a.day === 'string' && a.day.trim() ? dayParts(a.day).map((p) => p.toLowerCase()) : null;
     for (const d of gridDays.filter((g) => !parts || parts.includes(g.toLowerCase()))) {
       const sets = plain(days[d]) && Array.isArray(days[d].artists) ? days[d].artists : [];
-      if (sets.some((s) => plain(s) && s.name === a.name)) err(`${safeKey(d)}: ${safeKey(a.name)} is cancelled but still has a set on the grid — take the set off; the cancelled entry is where its card renders`);
+      // Per weekend: a two-weekend fest can lose an act on one weekend and
+      // keep its grid set on the other (the wall draws each weekend's own
+      // sets). Untagged or "both" on either side overlaps everything.
+      const overlaps = (s) => !s.weekend || s.weekend === 'both' || !a.weekends || a.weekends === 'both' || s.weekend === a.weekends;
+      if (sets.some((s) => plain(s) && s.name === a.name && overlaps(s))) err(`${safeKey(d)}: ${safeKey(a.name)} is cancelled but still has a set on the grid — take the set off; the cancelled entry is where its card renders`);
     }
   });
   for (const [label, day] of Object.entries(days)) {

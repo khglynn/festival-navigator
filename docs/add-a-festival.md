@@ -163,7 +163,13 @@ the entry instead, and take its set off the grid:
 Keep the entry's `day`. Give it a `venue` when it had a stage — the card lands
 in the festival's own room under that stage's name, below the grid; without
 one it lands under the festival's site. It works the same on an afters or
-dated section entry, which keeps its `night`/`date` and `venue`.
+dated section entry, which keeps its `night`/`date` and `venue`. A cancelled
+show in a numbered run drops its `order`, and the live sets are renumbered
+(`seq`, `of`) — the validator and `scripts/guess-run-times.mjs` leave a
+cancelled entry out of the run, so the old numbering would warn as a gap. On
+a two-weekend fest, an act lost on one weekend keeps its other weekend's grid
+set: tag the cancelled entry `weekends: "W1"` (or `"W2"`) and the set
+`weekend` for the one it still plays.
 
 What the app does with it: the card stays (struck through, "Cancelled" where
 the time goes, the crew's marks still on it), sorts last in its room, is never
