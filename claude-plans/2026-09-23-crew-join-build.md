@@ -113,3 +113,17 @@ the field escape hatch. Then the option-a copy trims from the notes audit
   time to the wall: base 724fbc0 = 16,085 ms; this branch = 1,572 ms and
   1,573 ms (≈ the navigation budget + ~70 ms). Online first paint unchanged
   (~90–450 ms, machine load 60–95).
+- Copy (d462742): A5, A14, A19, A18, A11, A10 at option a; A17 and the P3
+  items untouched ("invite link" still appears in the Forget-this-crew row
+  and its toast — A15/A16, P3). No test pinned the old strings;
+  `tests/share-copy.test.mjs` pins the new vocabulary and the
+  one-sentence rule. Landing and Settings → Crew looked at on a 390 px
+  Chromium viewport.
+- Housekeeping: one tagged stash entry, navbudget-check-a0eac819, holds the
+  worker edit that is already committed in 145c3e1. The repo's
+  destructive-op hook blocks removing stash entries from an agent; it is
+  safe to remove by hand.
+- Not verified: a real iPhone / WebKit lie-fi open; the new-build reload
+  under a real worker update with the shorter navigation budget (reasoned,
+  not exercised); Stay offline and the data-push swap in a real browser
+  (jsdom only).
