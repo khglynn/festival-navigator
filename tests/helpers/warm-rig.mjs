@@ -71,3 +71,14 @@ export async function within(ms, ok) {
 }
 
 export const SCREENS = ['screen-landing', 'screen-join', 'screen-create', 'screen-app', 'screen-settings', 'screen-badlink', 'screen-error'];
+
+export const festFile = (id) => JSON.parse(readFileSync(join(ROOT, `data/festivals/${id}.json`), 'utf8'));
+
+// The first button under `root` whose text matches — the way a person finds it.
+export function buttonMatching(root, pattern) {
+  return [...root.querySelectorAll('button')].find((b) => pattern.test(b.textContent)) || null;
+}
+
+// A matcher for held requests.
+export const crewGet = (token) => (h) => h.method === 'GET' && h.u.startsWith(`/api/crew?t=${token}`);
+export const fileGet = (id) => (h) => h.u === `/data/festivals/${id}.json`;
