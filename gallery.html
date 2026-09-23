@@ -97,7 +97,7 @@
 
 <section id="events-gallery">
   <div class="zoom-title">THE EVENTS — the composed day, live</div>
-  <div class="hint">the real <code>renderWall</code> on a small fest holding every state of the list (MODEL-V4, 2026-09-16) — a grid day's timetable, venue groups everywhere else, a numbered back-to-back run, an un-numbered room that stacks anyway, a room with no clock, and the now mark. Hover / hold / Tab to a card to zoom it (the ~ cards show the two-line WHEN with the order door); tap any card to pick. A day's rule and a section's header are the notes doors (§3a.3) — Saturday has a date note and an Afters-on-Saturday note, each whispering under its own door. A room's header is not a control (MODEL-V4 §3a.2) — the show menu on the fest name hides a room, and the checkboxes below stand in for it here.</div>
+  <div class="hint">the real <code>renderWall</code> on a small fest holding every state of the list (MODEL-V4, 2026-09-16) — a grid day's timetable, venue groups everywhere else, a numbered back-to-back run, an un-numbered room that stacks anyway, a room with no clock, and the now mark. Hover / hold / Tab to a card to zoom it (the ~ cards show the two-line WHEN with the order door); tap any card to pick. Every room wears ONE head naming when and what — SAT GALLERY FEST, SAT AFTERS (one-line heads, 2026-09-23) — and the day's first head carries its date. The heads are the notes doors (§3a.3): the festival's head on a date opens that date, a section's opens that section on that date — Saturday has a date note and an Afters-on-Saturday note, each whispering under its own head. A head never folds its room (MODEL-V4 §3a.2) — the show menu on the fest name hides a room, and the checkboxes below stand in for it here; hide Gallery Fest and SAT AFTERS takes the date.</div>
   <div class="zoom-toolbar">
     <label><input type="checkbox" id="events-lowpower"> Low power (instant)</label>
     <span class="zoom-status">Show:</span>
@@ -105,15 +105,15 @@
     <span id="events-status" class="zoom-status"></span>
   </div>
   <ul class="events-states">
-    <li><b>FRIDAY · AFTERS</b> — venue groups: three <b>un-numbered</b> sets all stamped 8 PM at The Ballroom, two at The Basement, a printed window at The Pier, and a card with <b>no clock</b> at all — every room a stack, in opening order.</li>
-    <li><b>FRIDAY · FOLSOM</b> — one group, one show.</li>
-    <li><b>SATURDAY · GALLERY FEST</b> — the grid, its own sticky strip (five stages, so it scrolls on a phone), inside the day, spanning the whole festival day so the now line has a home. <b>All Night Long</b> runs four and a half hours: a tall cell.</li>
-    <li><b>SATURDAY · AFTERS</b> — a <b>numbered back-to-back run</b> at The Room (~ times, the doors line above it), one plain set beside it, and the <b>now mark</b> on whoever is playing at 11:30 PM.</li>
-    <li><b>SATURDAY · FOLSOM</b> — three groups, one of them with no time yet (Venue TBA sorts last).</li>
-    <li><b>SUNDAY · GALLERY FEST</b> — a <b>second grid day</b>: the shape every real scheduled fest has. Each day's strip follows <b>its own</b> columns, while the two days still mirror one scroll position between them — scroll either grid and both sets of stage names travel with their cards.</li>
-    <li><b>SUNDAY · FOLSOM</b> — an 11 AM street fair opens the day.</li>
-    <li><b>LATE NIGHTS</b> — a <b>dated</b> section: its own tab off the end of the week, a date rule per date, venue groups under each.</li>
-    <li><b>THE FOLD</b> — every room's header is a button: tap it and the body goes, the header stays, and its sub says how many shows are under it.</li>
+    <li><b>FRI AFTERS</b> — the day's first head, so it carries the date. Venue groups: three <b>un-numbered</b> sets all stamped 8 PM at The Ballroom, two at The Basement, a printed window at The Pier, and a card with <b>no clock</b> at all — every room a stack, in opening order.</li>
+    <li><b>FRI FOLSOM</b> — one group, one show; a later head on the day, so no date.</li>
+    <li><b>SAT GALLERY FEST</b> — the day's date door, with its whisper under it. The grid, its own sticky strip (five stages, so it scrolls on a phone), inside the day, spanning the whole festival day so the now line has a home. <b>All Night Long</b> runs four and a half hours: a tall cell.</li>
+    <li><b>SAT AFTERS</b> — its own door and whisper. A <b>numbered back-to-back run</b> at The Room (~ times, the doors line above it), one plain set beside it, and the <b>now mark</b> on whoever is playing at 11:30 PM.</li>
+    <li><b>SAT FOLSOM</b> — three groups, one of them with no time yet (Venue TBA sorts last).</li>
+    <li><b>SUN GALLERY FEST</b> — a <b>second grid day</b>: the shape every real scheduled fest has. Each day's strip follows <b>its own</b> columns, while the two days still mirror one scroll position between them — scroll either grid and both sets of stage names travel with their cards.</li>
+    <li><b>SUN FOLSOM</b> — an 11 AM street fair opens the day.</li>
+    <li><b>TUE LATE NIGHTS · THU LATE NIGHTS</b> — a <b>dated</b> section: its own tab off the end of the week, one head per date (each the door to that date), venue groups under each.</li>
+    <li><b>THE FOLD</b> — the checkboxes stand in for the show menu: a hidden room renders nothing, and a day it empties goes whole.</li>
   </ul>
   <div id="events-wall"></div>
 </section>
@@ -180,9 +180,14 @@
 </section>
 
 <section>
-  <div class="g-label">Day header · the whisper · aura notes (pinned + thread)</div>
+  <div class="g-label">Room heads · the whisper · aura notes (pinned + thread)</div>
   <div class="col">
-    <div class="day-rule"><span class="day">SATURDAY</span><span class="date">SEP 26</span><span class="line"></span></div>
+    <!-- One line per room (2026-09-23): the day's first head carries the date;
+         a head with no sub; a name too long for its box (the sub goes first,
+         then the name ellipsizes). The same markup roomHead() builds. -->
+    <button class="room-head" aria-label="Notes for Saturday"><span class="name"><span class="wd">SAT</span> <span class="label">PORTOLA</span></span><span class="sub">Sep 26 · Pier 80</span><span class="line"></span></button>
+    <div class="room-head"><span class="name"><span class="wd">SAT</span> <span class="label">FOLSOM</span></span><span class="sub"></span><span class="line"></span></div>
+    <div style="max-width: 300px;"><div class="room-head"><span class="name"><span class="wd">SUN</span> <span class="label">TOMORROWLAND WINTER WONDERLAND</span></span><span class="sub">Mar 21 · Alpe d’Huez</span><span class="line"></span></div></div>
     <button class="day-whisper" style="--wash: hsla(221,90%,62%,.26);">
       <span class="avatar" style="width: 18px; height: 18px; font-size: 8px; background: hsla(221,90%,62%,.5); border: 1px solid hsl(221,85%,82%);">M</span>
       <span class="who">Maya</span><span class="text">Leaving after Robyn — early flight.</span><span class="more">2 notes ›</span>
@@ -703,7 +708,7 @@ const POSTER = 'https://example.test/the-poster';
 const room = (night, venue, extra = {}) => ({ day: 'Afters', stage: `${night} · ${venue}`, night, venue, ...extra });
 const folsom = (night, venue, extra = {}) => ({ day: 'Folsom', stage: `${night} · ${venue}`, night, venue, ...extra });
 // A dated section: entries that carry a date instead of a night, so the
-// section is its own tab off the end of the week with a rule per date.
+// section is its own tab off the end of the week with a head per date.
 const late = (date, venue, extra = {}) => ({ day: 'Late nights', date, venue, ...extra });
 const run = { doors: '10 PM', close: '2 AM', closeApprox: true };
 FESTIVAL_INDEX.push({ id: EFID, status: 'scheduled' });
@@ -762,7 +767,7 @@ FESTIVALS[EFID] = {
     { name: 'DEVIANTS', ...folsom('Sat', 'The Street') },
     { name: 'Folsom Street Fair', ...folsom('Sun', 'The Street', { time: '11 AM - 6 PM' }) },
     { name: 'Real Bad 37', ...folsom('Sun', 'The Basement', { time: '8 PM - 5 AM' }) },
-    // Late nights: dated, not nightly — its own tab, a rule per date.
+    // Late nights: dated, not nightly — its own tab, a head per date.
     { name: 'Overmono', ...late('2026-09-29', 'The Room', { doors: '9 PM' }) },
     { name: 'Anz', ...late('2026-09-29', 'The Ballroom', { doors: '10 PM', time: '11 PM', approx: true }) },
     { name: 'Two Shell', ...late('2026-10-01', 'The Basement', { doors: '10 PM' }) },
@@ -780,10 +785,10 @@ const ESEL = {
 state.ensureFestivalState(EFID);
 Object.assign(state.crewDoc.festivals[EFID].selections, ESEL);
 // A day note is keyed by the DATE (MODEL-V4 §4), so this one is Saturday's
-// and the whisper rides under Saturday's rule.
+// and the whisper rides under SAT GALLERY FEST's head, the date's door.
 state.recordNote(EFID, 'day', '2026-09-26', model.makeNoteId('Nhu', '2026-09-20T20:00:00.000Z', 'e1'), { author: 'Nhu', ts: '2026-09-20T20:00:00.000Z', text: 'Meet at The Ballroom before 8 — the line wraps the block.' });
 // And one written standing on a SECTION on a day (MODEL-V4 §3a.3): its whisper
-// rides under that section's header on that day only, never under the rule.
+// rides under that section's head on that day only, never under the date's.
 state.recordNote(EFID, 'day', '2026-09-26|Afters', model.makeNoteId('Nhu', '2026-09-20T20:05:00.000Z', 'e2'), { author: 'Nhu', ts: '2026-09-20T20:05:00.000Z', text: 'Afters: The Room first, Halcyon after 2.' });
 
 // The fold, held here the way app.js holds it per fest (fn_fold_v1_<fid>).
@@ -850,7 +855,7 @@ document.getElementById('events-lowpower').addEventListener('change', (e) => {
 // Hiding a room: in the app this is the show menu on the fest name (MODEL-V4
 // §3.1), which lives in the shell and not in renderWall — so the gallery gives
 // it the same state through checkboxes. A hidden room renders nothing, and a
-// day with nothing visible has no rule and no tab (2026-09-17).
+// day with nothing visible has no block and no tab (2026-09-17).
 const ROOMS = [[':fest', 'Gallery Fest'], ['Afters', 'Afters'], ['Folsom', 'Folsom'], ['Late nights', 'Late nights']];
 (function wireRoomToggles() {
   const host = document.getElementById('events-rooms');

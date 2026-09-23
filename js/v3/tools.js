@@ -287,7 +287,7 @@ export function dayArtistsFor(day) {
   const extra = plan.model.extras.find((x) => x.key === day);
   if (extra) {
     // A dated section's image is its WHOLE run — ACL's Late nights span twelve
-    // days — so every row says which night, in the date rule's own words. One
+    // days — so every row says which night, in the date's short form. One
     // artist can play two of them a week apart, and a list that dropped the
     // dates could not tell the crew which door to walk through.
     const dated = extra.byDate ? [...extra.byDate] : [[null, extra.entries || []]];

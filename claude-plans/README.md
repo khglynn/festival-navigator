@@ -13,6 +13,10 @@ live in `archive/`.
 - `2026-09-16-wall-v4/MODEL-V4.md`: the wall, simplified — one rule for
   stage columns vs venue stacks, days are the days, sections fold. Proposed
   2026-09-16; supersedes MODEL-V3 §2–§4 once Kevin picks it.
+- `2026-09-23-one-line-heads.md`: one line per room ("SAT PORTOLA", "SAT
+  AFTERS") — the day line is gone, a day is a block the tabs land on, and
+  the notes doors moved onto the heads (MODEL-V4 §3c). Its build log:
+  `2026-09-23-one-line-heads-build.md`.
 - `2026-08-31-events-canvas/MODEL-V3.md`: the events model (day-first, the
   layout rule, back-to-back runs). Spec of record for PR #16 as built.
 - `2026-08-30-zoom-storyboard.md`: how the zoom moves ("the bloom").

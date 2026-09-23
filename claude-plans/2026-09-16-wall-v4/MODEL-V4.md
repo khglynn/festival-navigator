@@ -96,6 +96,8 @@ holding one `.venue-group` per venue:
   (the zoom's "Runs 10 PM – ~3 AM · Guessing they're 3rd of 4").
 
 ### 1.3 A day, composed
+*(Since 2026-09-23 each room's header is the one-line room head and the day
+has no rule of its own — §3c.)*
 Inside a day, rooms in this order, each under a `.sec-head`:
 1. the festival's own room (`PORTOLA · PIER 80`): the timetable if the day
    has a grid, then **anything of the festival's that is not on the grid as
@@ -108,6 +110,7 @@ Inside a day, rooms in this order, each under a `.sec-head`:
 
 Section header sub-lines: the festival room says its site (`PIER 80`); a
 section says its own sub from `dayMeta[<label>].sub` if present, else nothing.
+(§3c: the day's first head adds the date in front of its own sub.)
 
 ## 2. Days are the days
 
@@ -120,14 +123,15 @@ section says its own sub from `dayMeta[<label>].sub` if present, else nothing.
 - **Dated sections.** A section whose entries carry `date` (ISO) instead of
   `night` is **its own tab, after the days**, labelled by the section
   (`LATE NIGHTS`), rendered as a `.date-rule` per date (`TUE · SEP 29`) with
-  venue groups under each. It never joins the day axis, is never split, and
-  its cards pick like any other (Kevin, 2026-09-16). ACL Fest Nights is the
-  first.
+  venue groups under each (§3c: now a room head per date, `TUE LATE
+  NIGHTS`). It never joins the day axis, is never split, and its cards pick
+  like any other (Kevin, 2026-09-16). ACL Fest Nights is the first.
 - **Two-weekend scheduled fests get six dated tabs**, from `dayMeta.isos`:
   `FRI 2 · SAT 3 · SUN 4 · FRI 9 · SAT 10 · SUN 11`. A tab renders that
   weekend's grid (`weekend` W1 for the first three, W2 for the rest; a set
   with no `weekend` tag plays both). The day rule reads `FRIDAY · Fri · Oct 2
-  · Weekend 1`. The weekend strip (`updateWeekendRow`, `fn_weekend_v1`,
+  · Weekend 1` (§3c: the day's first head, `FRI ACL MUSIC FESTIVAL  Oct 2 ·
+  Weekend 1 · Zilker Park`). The weekend strip (`updateWeekendRow`, `fn_weekend_v1`,
   `scheduledWeekendOf`) is deleted. Day notes are per date (§4), so each
   Friday has its own thread; a legacy `Friday` note shows on both.
 - A lineup-only two-weekend fest (ACL 2025, archived) keeps the `W1`/`W2`
@@ -151,7 +155,7 @@ section says its own sub from `dayMeta[<label>].sub` if present, else nothing.
 3. **Notes: written where you are** (replaces §4's per-date doors).
    The Notes sheet holds the festival composer and *only the targets that
    have notes* — no empty date rows. A day's rule on the wall is the door to
-   that date's notes (label `Friday`); a section header on a day is the door
+   that date's notes (label `Friday`; §3c: the festival's head on that date); a section header on a day is the door
    to that section-on-that-date's notes (label `Folsom · Friday`, key
    `<iso>|<section label>` — a new, additive key); a card's zoom is the door
    to the artist's (unchanged). Each thread appears in the sheet only once
@@ -266,6 +270,30 @@ words:
    in one fest name, probs ACL"), the picture in brand rather than the
    accent, "red = something's wrong" ("just say something's wrong"), eight
    rows. (§3a.4)
+
+## 3c. One line per room, 2026-09-23 (supersedes the day rule, the section header and the date rule wherever §1.3, §2 and §3a.3 name them)
+
+Kevin: "combine the double lines (for day and then event) into one line each
+like 'Sat Portola' 'Sat Afters'." Spec: `claude-plans/2026-09-23-one-line-heads.md`;
+build log beside it. What the code does now:
+
+- **A day is a `.day-block`** holding its rooms, and it is what every tab
+  lands on (`DAY_ANCHOR`), the scrollspy reads and the fold moves as one
+  element. A tab off the end (Late nights) is a block too.
+- **Every room wears ONE head** (`.room-head`): the weekday, then the room —
+  `SAT PORTOLA`, `SAT AFTERS`, `TUE LATE NIGHTS` — at the old day rule's
+  weight. There is no day line above the rooms. The day's FIRST head carries
+  the date (`day.when`: `Sep 26`, `Oct 2 · Weekend 1`) before its own sub;
+  whichever room renders first gets it, so hiding Portola hands it to SAT
+  AFTERS.
+- **Doors keep their keys**: the festival's head on a date opens the bare ISO,
+  a section's head on a day opens `<iso>|<section>`, a Late nights head opens
+  its date. A date with no festival room (Portola's Thursday and Friday) has
+  no bare-date door; a note already there stays in the all-notes sheet.
+- **Late nights** is a room per date under its own head; the section itself
+  has no head (its label was never a note target).
+- **Lists** (a search, a lineup fest's by-day list, THE LINEUP, EVERYTHING
+  ELSE, NOTES · FEST) keep a one-line `.list-head`, never a door.
 
 ## 4. Notes: artist, fest, dates (Kevin, 2026-09-17 — "a defensible MVP")
 

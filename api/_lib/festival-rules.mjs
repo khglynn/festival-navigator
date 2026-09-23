@@ -538,11 +538,13 @@ export function validateFestivalDoc(fest, { filename } = {}) {
     }
   }
 
-  // Day labels render in the day-rule strip designed for weekday-length text;
-  // sentence-length labels wrap it to three lines (audit 12.5).
+  // Day labels render in one-line heads built for weekday-length text (a
+  // section's label is a room's name: `SAT AFTERS`); a sentence-length label
+  // ellipsizes to nothing useful on a phone (audit 12.5; one-line heads,
+  // 2026-09-23).
   (Array.isArray(fest.artists) ? fest.artists : []).forEach((a, i) => {
     if (a && typeof a.day === 'string' && a.day.length > 48) {
-      warn(`artists[${i}] (${safeKey(a.name)}): day label is ${a.day.length} chars — day-rule strips are designed for short labels`);
+      warn(`artists[${i}] (${safeKey(a.name)}): day label is ${a.day.length} chars — the wall's one-line heads are designed for short labels`);
     }
   });
 

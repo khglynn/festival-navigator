@@ -32,12 +32,16 @@ Non-inferable facts only (the code answers everything else — read it).
 - **A note is written where you are standing, and nothing rolls up.** Four
   targets: the festival, a DATE (ISO), a SECTION ON a date
   (`<iso>|<section label>`, e.g. `2026-09-25|Folsom`), an artist. The doors are
-  the day rule, the section header on that day, and the card's zoom — real
-  buttons, nothing added to them but the hit. A `Folsom · Friday` note never
-  appears or counts under `Friday`. Legacy keys (a weekday label, a bare
-  section) are READ, never written: no migration, no rename, the freeze
-  untouched. The all-notes sheet lists only targets that have notes — it is not
-  a set of doors (MODEL-V4 §3a.3).
+  the room heads — one line per room, `SAT PORTOLA` / `SAT AFTERS` (2026-09-23,
+  `claude-plans/2026-09-23-one-line-heads.md`): the festival's head on a date
+  opens that DATE, a section's head on a day opens that section on that date,
+  a Late nights head opens its date — and the card's zoom. Real buttons,
+  nothing added to them but the hit; each whisper sits directly under the head
+  that opens it. A date with no festival room (Portola's Thu/Fri) has no date
+  door. A `Folsom · Friday` note never appears or counts under `Friday`.
+  Legacy keys (a weekday label, a bare section) are READ, never written: no
+  migration, no rename, the freeze untouched. The all-notes sheet lists only
+  targets that have notes — it is not a set of doors (MODEL-V4 §3a.3).
 
 - **The 44px touch floor is applied to `button`, not to a list of selectors.**
   It used to name six, and the naming WAS the bug — every control added after

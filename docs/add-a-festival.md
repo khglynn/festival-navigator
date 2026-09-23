@@ -77,8 +77,9 @@ Two files, one command:
      untagged set plays on both. A lineup-only two-weekend fest never had a
      grid to split, so it shows both weekends on one wall with the W1/W2 tags
      on the cards. Give each `dayMeta` entry
-     `dates: { "W1": "Oct 2", "W2": "Oct 9" }` so the day rule shows the
-     selected weekend's real date. Keep `weekends` tags on the top-level
+     `dates: { "W1": "Oct 2", "W2": "Oct 9" }` so each day's first head
+     (`FRI ACL MUSIC FESTIVAL  Oct 2 · Weekend 1`) shows that weekend's real
+     date. Keep `weekends` tags on the top-level
      `artists[]` — they drive the picker's presence and the search extras.
      The two spellings never cross (`weekend` on a grid set, `weekends` on
      `artists[]`): the validator errors on either one in the wrong place, and
@@ -149,7 +150,7 @@ Every section entry says where its section sits with **exactly one** of
 | Field | What |
 |---|---|
 | `night` | `Mon`…`Sun` — the night it plays. The section renders inside that day, under the festival's own room, and the day tabs are the union of the grid days and these nights. Must equal the part of `stage` before ` · `. |
-| `date` | `YYYY-MM-DD`, a real calendar date. The section takes a tab of its own after the days, ruled by date. Use it when a section runs longer than a week, where one weekday would mean two different nights — ACL Fest Nights runs Sep 29 to Oct 10, so "Fri" would be both Oct 2 and Oct 9. |
+| `date` | `YYYY-MM-DD`, a real calendar date. The section takes a tab of its own after the days, one head per date (`TUE LATE NIGHTS  Sep 29`). Use it when a section runs longer than a week, where one weekday would mean two different nights — ACL Fest Nights runs Sep 29 to Oct 10, so "Fri" would be both Oct 2 and Oct 9. |
 | `venue` | The room. The wall stacks the section's cards under it, in play order. Must equal the part of `stage` after ` · `, and wants an entry in `venues{}` so the card's place line opens a map. |
 
 `night` and `date` are two different places on the screen, so an entry never

@@ -61,7 +61,10 @@ Given a card's picks `{person: level}` where level 1–3 = picked, 4 = must:
   chips + add · search pill (r999 `#141021`/`#2B2440`) · `Billing ▾` chip ·
   outlined Notes chip (bubble radius, `#8B7BFF`/`#A99BFF`, count badge
   `rgba(139,123,255,.25)`). Day header: Anton 16px `#EDEAF4` + date 10px/700
-  `#5D5578` + hairline rule. Card grid: 4-col desktop / 2-col mobile, gap
+  `#5D5578` + hairline rule. (2026-09-23: on the composed wall this is the
+  one-line ROOM head, `SAT PORTOLA  SEP 26 · PIER 80`, one per room; the
+  day header survives as a list's head — see
+  `claude-plans/2026-09-23-one-line-heads.md`.) Card grid: 4-col desktop / 2-col mobile, gap
   7/6px, min-height 64/60px, pad `9px 11px 20px`. Fest-wide notes section at
   wall end (`NOTES · {FEST}` Anton 14px). Mobile dock (pinned bottom,
   `#0A0812`, border-top hairline, pad 9px 16px): you-chip 26px · day tabs
