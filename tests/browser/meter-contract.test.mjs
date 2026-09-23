@@ -323,21 +323,29 @@ const tapAndSample = async (page, artist) => {
   await page.touchscreen.tap(box.x + box.width / 2, box.y + 12);
   return page.evaluate((a) => {
     const c = document.querySelector(`#wall-root .card[data-artist="${a}"]`);
-    const m = c.querySelector('.chip-meter');
-    const running = document.getAnimations().filter((an) => an.effect && an.effect.target && c.contains(an.effect.target) && an.effect.target.closest('.corner-about'));
+    const m = c.querySelector(':scope > .corner-about > .chip-meter');
+    // The corner's chips, and a cleared chip on its way out (wall.js meterLeaves).
+    const running = document.getAnimations().filter((an) => an.effect && an.effect.target && c.contains(an.effect.target) && an.effect.target.closest('.corner-about, .chip-meter.leaving'));
+    const name = (t) => (t.classList.contains('leaving') ? 'leaving' : t.classList.contains('chip-meter') ? 'meter' : t.classList.contains('bar') ? `bar${[...t.parentNode.children].indexOf(t) + 1}` : t.classList.contains('must') ? 'word' : t.dataset.kind || t.className);
+    const word = running.find((an) => name(an.effect.target) === 'word');
+    const ghost = c.querySelector(':scope > .chip-meter.leaving');
+    const cr = c.getBoundingClientRect();
     return {
       level: m ? Number(m.dataset.level) : 0,
       on: m ? m.querySelectorAll('.bar.on').length : 0,
-      moving: running.map((an) => {
-        const t = an.effect.target;
-        return t.classList.contains('chip-meter') ? 'meter' : t.classList.contains('bar') ? `bar${[...t.parentNode.children].indexOf(t) + 1}` : t.classList.contains('must') ? 'word' : t.dataset.kind || t.className;
-      }),
+      moving: running.map((an) => name(an.effect.target)),
+      timing: Object.fromEntries(running.map((an) => [name(an.effect.target), { duration: an.effect.getTiming().duration, easing: an.effect.getTiming().easing }])),
+      wordDelay: word ? word.effect.getTiming().delay : null,
+      // Where a leaving chip starts: at the corner's edge, on the card's bottom line.
+      ghostAt: ghost ? { left: ghost.getBoundingClientRect().left - cr.left, bottom: cr.bottom - ghost.getBoundingClientRect().bottom, text: ghost.textContent } : null,
       props: [...new Set(running.flatMap((an) => an.effect.getKeyframes().flatMap((k) => Object.keys(k).filter((p) => !['offset', 'easing', 'composite', 'computedOffset'].includes(p)))))],
     };
   }, artist);
 };
 
-test('a real tap is a small event: the chip grows in, the next bar lights, MUST arrives — transform and opacity only', { skip }, async () => {
+const leftovers = (page) => page.evaluate(() => document.querySelectorAll('#wall-root .chip-meter.leaving').length);
+
+test('a real tap is a small event: the chip grows in, the next bar lights, MUST arrives, clearing recedes — transform and opacity only', { skip }, async () => {
   const { ctx, page } = await openWall();
   try {
     // Velvet Trip: nobody has picked it yet. Five taps walk your whole ladder.
@@ -351,7 +359,12 @@ test('a real tap is a small event: the chip grows in, the next bar lights, MUST 
     assert.deepEqual(steps[1].moving, ['bar2'], 'the second bar lights, and only it');
     assert.deepEqual(steps[2].moving, ['bar3']);
     assert.ok(steps[3].moving.includes('word'), 'the word arrives');
-    assert.deepEqual(steps[4].moving, [], 'clearing: nothing of the meter is left to move');
+    assert.equal(steps[3].wordDelay, 0, 'with the widening — never after an empty pill');
+    assert.deepEqual(steps[4].moving, ['leaving'], 'clearing: the chip you saw recedes, nothing vanishes in place');
+    assert.equal(steps[4].ghostAt.text, 'MUST');
+    assert.ok(Math.abs(steps[4].ghostAt.left - 7) <= 1.5, `from the corner's edge (${steps[4].ghostAt.left}px in)`);
+    assert.ok(steps[4].ghostAt.bottom >= 3 && steps[4].ghostAt.bottom <= 6, `on the corners' line (${steps[4].ghostAt.bottom}px up)`);
+    assert.equal(await leftovers(page), 0, 'and it is gone once it has');
     for (const s of steps) assert.deepEqual(s.props.filter((p) => !['transform', 'opacity'].includes(p)), [], 'compositor-only');
     // With a neighbour: the Spotify pill travels to make room as your chip
     // arrives, and closes the gap when you clear it.
@@ -362,7 +375,10 @@ test('a real tap is a small event: the chip grows in, the next bar lights, MUST 
     await sleep(400);
     const clear = await tapAndSample(page, 'Milli Meng');
     assert.equal(clear.level, 0);
-    assert.deepEqual(clear.moving, ['spotify'], 'the pill slides back to the corner\u2019s edge');
+    assert.deepEqual(clear.moving.sort(), ['leaving', 'spotify'], 'the pill slides back to the corner\u2019s edge as your chip recedes into it');
+    assert.deepEqual(clear.timing.leaving, clear.timing.spotify, 'in lockstep — the pill chases the chip\u2019s edge and never covers it');
+    await sleep(400);
+    assert.equal(await leftovers(page), 0);
   } finally { await ctx.close(); }
 });
 
@@ -373,6 +389,7 @@ test('Reduce Motion: every tap lands the finished chip at once', { skip }, async
       const s = await tapAndSample(page, 'Velvet Trip');
       assert.equal(s.level, want);
       assert.deepEqual(s.moving, [], `level ${want}: nothing animates`);
+      assert.equal(s.ghostAt, null, `level ${want}: nothing is left behind to leave`);
     }
   } finally { await ctx.close(); }
 });

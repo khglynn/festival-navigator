@@ -107,6 +107,9 @@
 .card.cell .chip-meter .bar:nth-child(2) { height: 5.5px; }
 .card.cell .chip-meter .bar:nth-child(3) { height: 7.5px; }
 .card.cell .chip-meter .must { font-size: 8px; }
+/* A cleared meter on its way out (wall.js meterLeaves): drawn where the chip
+ * stood, under the corners so the neighbours closing the gap pass over it. */
+.card > .chip-meter.leaving { position: absolute; left: 0; top: 0; z-index: 1; margin: 0; pointer-events: none; }
 /* High-affinity corner glow (followed + 5+ songs): a soft Spotify-green
  * mini-aura rising from the badge corner — the aura language, not a border.
  * Absolutely positioned inside the already-relative card: zero layout shift,

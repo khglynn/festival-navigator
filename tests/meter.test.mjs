@@ -190,17 +190,19 @@ test('a narrow card gives way in order, the "+n" stays true, and a wider one tak
 const calls = [];
 function lendAnimate() {
   dom.window.Element.prototype.animate = function animate(frames, opts) {
-    calls.push({ el: this, frames, opts });
-    return { cancel() {}, finished: Promise.resolve() };
+    const anim = { onfinish: null, oncancel: null, cancel() { if (this.oncancel) this.oncancel(); }, finish() { if (this.onfinish) this.onfinish(); }, finished: Promise.resolve() };
+    calls.push({ el: this, frames, opts, anim });
+    return anim;
   };
 }
 function takeAnimate() { delete dom.window.Element.prototype.animate; }
 const tapAndWatch = (artist) => { calls.length = 0; click(cardOf(artist)); return calls.slice(); };
-const describe = (c) => (c.el.classList.contains('chip-meter') ? 'meter'
+const describe = (c) => (c.el.classList.contains('leaving') ? 'leaving'
+  : c.el.classList.contains('chip-meter') ? 'meter'
   : c.el.classList.contains('bar') ? `bar${[...c.el.parentNode.children].indexOf(c.el) + 1}`
     : c.el.classList.contains('must') ? 'word' : c.el.dataset.kind || c.el.className);
 
-test('a level change is a small event: the chip grows in, each tap lights one bar, MUST arrives as a word, clearing is plain', () => {
+test('a level change is a small event: the chip grows in, each tap lights one bar, MUST arrives as a word, clearing recedes into the corner', () => {
   lendAnimate();
   try {
     setLevel('Robyn', 'Kevin', 0);
@@ -215,9 +217,37 @@ test('a level change is a small event: the chip grows in, each tap lights one ba
     assert.deepEqual(tapAndWatch('Robyn').map(describe), ['bar3']);
     const must = tapAndWatch('Robyn');
     assert.ok(must.map(describe).includes('word'), '3 → 4: the word arrives');
-    assert.equal(must.find((c) => describe(c) === 'word').opts.easing, 'cubic-bezier(.2, 1.15, .35, 1)');
+    const word = must.find((c) => describe(c) === 'word');
+    assert.equal(word.opts.easing, 'cubic-bezier(.2, 1.15, .35, 1)');
+    // The bars are gone the instant the fresh chip lands, so a word that
+    // waited showed an EMPTY pill for four or five frames (the review
+    // round's slowed filmstrip, 2026-09-23). It rises with the widening.
+    assert.ok(!word.opts.delay, `the word starts with the widening, never after an empty pill (delay ${word.opts.delay})`);
+    // 4 → 0: nothing vanishes in place. The chip that was there recedes into
+    // the corner's edge it grew from — quick and plain — while the
+    // neighbours close the gap, and it is gone once it has.
     const clear = tapAndWatch('Robyn');
-    assert.equal(clear.filter((c) => ['meter', 'word', 'bar1', 'bar2', 'bar3'].includes(describe(c))).length, 0, '4 → 0: nothing of the meter is left to animate');
+    assert.equal(clear.filter((c) => ['meter', 'word', 'bar1', 'bar2', 'bar3'].includes(describe(c))).length, 0, '4 → 0: no meter is left on the card');
+    const leaving = clear.filter((c) => describe(c) === 'leaving');
+    assert.equal(leaving.length, 1, 'the chip that was there leaves');
+    const ghost = leaving[0];
+    assert.equal(ghost.el.textContent, 'MUST', 'it is the chip you just saw — MUST');
+    assert.equal(ghost.el.parentNode, cardOf('Robyn'), 'drawn on the fresh card while it leaves');
+    assert.equal(ghost.el.dataset.kind, undefined, 'and invisible to the corner’s own bookkeeping');
+    assert.equal(ghost.el.getAttribute('aria-hidden'), 'true');
+    assert.deepEqual(Object.keys(ghost.frames.at(-1)).sort(), ['opacity', 'transform'], 'transform and opacity only');
+    assert.equal(ghost.frames.at(-1).opacity, 0);
+    assert.equal(ghost.frames.at(-1).transform, 'scale(0)', 'all the way into the edge');
+    // In step with the neighbours closing the gap (OUT_MS on EASE_SURFACE —
+    // jsdom has no layout, so no neighbour moves here; the browser contract
+    // compares the two live): the pill sliding in chases the chip's right
+    // edge and never covers it. On an ease-in the chip was still near full
+    // size at 40ms with the pill already over it (the fix round's filmstrip).
+    assert.equal(ghost.opts.duration, 130, 'OUT_MS: the way out is quick');
+    assert.equal(ghost.opts.easing, 'cubic-bezier(.4, 0, .2, 1)', 'and plain, on the neighbours’ own curve');
+    ghost.anim.finish();
+    assert.equal(ghost.el.isConnected, false, 'gone when it has receded');
+    assert.equal(meter(cardOf('Robyn')), null);
     // A crew-mate's pick repaints the card; nothing of yours moved.
     setLevel('Robyn', 'Kevin', 2);
     mount('Robyn');

@@ -436,25 +436,29 @@ export function refreshCard(el, artistName, ctx, { onSwap = null } = {}) {
   return fresh;
 }
 
-// Where the about corner's chips sat on the old card, and your level there.
+// Where the about corner's chips sat on the old card (card-relative), your
+// level there, and the chip itself — the one a clear lets recede.
 function cornersNow(card) {
-  const left = card.getBoundingClientRect().left;
+  const box = card.getBoundingClientRect();
   const at = new Map();
   for (const c of card.querySelectorAll(':scope > .corner-about > [data-kind]')) {
     if (c.hidden) continue;
     const r = c.getBoundingClientRect();
-    at.set(c.dataset.kind, { x: r.left - left, w: r.width });
+    at.set(c.dataset.kind, { x: r.left - box.left, y: r.top - box.top, w: r.width });
   }
   const m = card.querySelector(':scope > .corner-about > .chip-meter');
-  return { at, level: m ? Number(m.dataset.level) : 0 };
+  return { at, level: m ? Number(m.dataset.level) : 0, meter: m && !m.hidden ? m : null };
 }
 
 // A level change is a small event (Kevin, 2026-08-30: things grow from where
 // they already are; the way in has a little life, the way out is quick and
-// plain). Your chip arrives by growing out of the corner's edge; each tap
-// lights the next bar, rising from the baseline; MUST arrives as a word
-// while the chip widens to hold it; clearing is the neighbours closing the
-// gap. The notes and Spotify chips travel from where they were whenever the
+// plain; nothing vanishes in place). Your chip arrives by growing out of the
+// corner's edge; each tap lights the next bar, rising from the baseline;
+// MUST rises in as a word WHILE the chip widens to hold it (a word that
+// waited left an empty pill on screen for four or five frames — the review
+// round's slowed filmstrip, 2026-09-23); clearing lets the chip you saw
+// recede into that same edge as the neighbours close the gap (meterLeaves).
+// The notes and Spotify chips travel from where they were whenever the
 // meter moves them. Transform and opacity only, and only when canAnimate
 // says so — Low Power and reduced motion get the finished card at once
 // (refreshCard only calls this when it may animate). Nothing here runs when
@@ -472,7 +476,11 @@ function meterMoves(card, before) {
     const dx = was.x - (c.getBoundingClientRect().left - left);
     if (Math.abs(dx) > 0.5) c.animate([{ transform: `translateX(${dx}px)` }, { transform: 'none' }], slide);
   }
-  if (!meter) return;
+  if (!meter) {
+    const was = before.at.get('meter');
+    if (before.meter && was) meterLeaves(card, before.meter, was);
+    return;
+  }
   if (!from) {
     // A beat after its neighbours start making room, so it grows into space.
     meter.animate([
@@ -491,7 +499,7 @@ function meterMoves(card, before) {
     meter.firstElementChild.animate([
       { transform: 'translateY(3px)', opacity: 0 },
       { transform: 'none', opacity: 1 },
-    ], { duration: GROW_MS, delay: 2 * STAGGER_MS, easing: EASE_ARRIVE, fill: 'backwards' });
+    ], { duration: GROW_MS, easing: EASE_ARRIVE });
     return;
   }
   const bars = meter.querySelectorAll('.bar');
@@ -505,6 +513,39 @@ function meterMoves(card, before) {
   } else {
     for (let i = to; i < from; i++) bars[i].animate([{ opacity: 1 }, { opacity: 0.3 }], { duration: OUT_MS, easing: EASE_SURFACE });
   }
+}
+
+// A clear: the chip you just saw recedes into the corner's edge it grew from
+// (.chip-meter's transform-origin), quick and plain, in lockstep with its
+// neighbours closing the gap — the same duration and curve, and all the way
+// to nothing, so the pill sliding in chases the chip's right edge and never
+// covers it (an ease-in to .4 left a near-whole MUST under the incoming pill
+// at 40ms; the fix round's filmstrip). The old card is already gone, so it leaves as a
+// copy drawn on the fresh card where it stood: before the corners (they
+// pass over it), outside .corner-about and without a data-kind, so the fit,
+// the next tap's cornersNow and every corner query never see it. It removes
+// itself when done, and a belt removes it anyway — a backgrounded tab may
+// never finish an animation (the zoom's own way out does the same).
+function meterLeaves(card, was, at) {
+  const ghost = was.cloneNode(true);
+  ghost.classList.add('leaving');
+  delete ghost.dataset.kind;
+  card.insertBefore(ghost, card.querySelector(':scope > .corner-about'));
+  // Placed at the card's padding-box origin by v3.css, then moved onto the
+  // spot the chip had: one read, one write.
+  const box = card.getBoundingClientRect();
+  const r = ghost.getBoundingClientRect();
+  ghost.style.left = `${at.x - (r.left - box.left)}px`;
+  ghost.style.top = `${at.y - (r.top - box.top)}px`;
+  const out = ghost.animate([
+    { transform: 'none', opacity: 1 },
+    { transform: 'scale(0)', opacity: 0 },
+  ], { duration: OUT_MS, easing: EASE_SURFACE, fill: 'forwards' });
+  let done = false;
+  const finish = () => { if (!done) { done = true; ghost.remove(); } };
+  out.onfinish = finish;
+  out.oncancel = finish;
+  setTimeout(finish, OUT_MS * 4 + 80);
 }
 
 // The card a zoom should be restored onto after a repaint: the one carrying
