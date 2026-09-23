@@ -199,3 +199,51 @@ wall the person left, otherwise the cold path, and never switch afterwards.
 - Known and unchanged from main: the 25 s loop retries a legacy migration
   whenever the network is up, Stay offline or not; stampIdentity's
   fire-and-forget /api/person calls. Neither is a warm-path step.
+
+# Round 5 — Codex round 4's leftovers, the share-then-offer order, WebKit lie-fi (2026-09-23)
+
+Fast-forwarded to `integrate/prefest-0923` @ a7b4885 first (my ceb3b9d + a
+`--keep` re-stamp). Codex round 4 closed every round-3 item.
+
+- Red first (a001c5c, 4a41221): `warm-open-admission-race`,
+  `boot-stale-entry`, `sync-status-honesty`, `bring-picks-after-share`.
+- Admission race (9aafa0a): canOpenWarm returns the admitted `{ fid, fest }`;
+  enterApp hands it to activateCrew's new `festival` option (shown as given:
+  no missing, no hint written) and holds its file — the live catalog landing
+  mid-admission can no longer re-decide the festival.
+- Stale entry boots (9aafa0a): `#new` and the no-token landing re-check
+  `current()` after their catalog await.
+- Sync dot (f95e12e): a 400/413 after Stay offline was switched on shows
+  offline (refusal kept; switching Stay offline off shows blocked); a poll
+  with pending work shows syncing from the moment it leaves (refused work
+  stays blocked — no flicker).
+- Share moment then offer (70a5b41): the create flow enters with
+  `holdOffer`, opens the share moment, then asks for the offer, which waits
+  while any sheet is up (MutationObserver on `<body>`) and arrives with its
+  usual beat once the sheet has gone. Walked at 390 px in Chromium and in
+  WebKit (iPhone 15 descriptor): no offer while the sheet is up; after Later
+  the card arrives, `elementFromPoint` at the "Bring them" centre is the
+  button, and a real touch tap brings the picks ("Brought 3 picks over ✓").
+- Lie-fi in both engines (6a90e51,
+  `claude-plans/2026-09-23-crew-join-build/liefi-harness.mjs`): one server
+  holds EVERY request (page and worker) after the worker is installed and
+  the festival cached; three reloads each, first paint from navigation start:
+
+  | Engine | Run 1 | Run 2 | Run 3 |
+  |---|---|---|---|
+  | Chromium (390, touch) | 1,548 ms | 1,549 ms | 1,541 ms |
+  | WebKit (iPhone 15) | 1,602 ms | 1,590 ms | 1,582 ms |
+
+  Later reloads send no new navigation at all (the per-host connection pool
+  is full of held requests) and still paint on time: the worker's 1.5 s
+  navigation timer answers from its shell regardless.
+- The walker's "never paints" in WebKit is its harness: with
+  `context.route('**/*', () => {})` (the harness's `route` mode) WebKit never
+  even commits the navigation (3/3, 20 s each) — the route holds the
+  navigation itself before the worker's fetch handler can answer from cache.
+  A network that really hangs paints in ~1.6 s.
+- Known limitation, left as the coordinator decided: Stay offline does not
+  suppress the COLD path's requests (catalog, crew doc, customs), nor
+  stampIdentity's /api/person calls, the 25 s migration retry, or the
+  worker's navigation fetch. The cold fallback is intentional — a crew this
+  phone cannot paint exactly needs the network.
