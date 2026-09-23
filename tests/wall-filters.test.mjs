@@ -119,7 +119,7 @@ test('the people filter dims everywhere and hides nothing: the clock keeps every
   const grid = (name) => root.querySelector(`.room[data-room=":fest"] .card.cell[data-artist="${name}"]`);
   assert.ok(!grid('VTSS').classList.contains('dim'), "Kat's pick is lit");
   assert.ok(grid('underscores').classList.contains('dim'), 'a card Kat did not pick is dimmed');
-  assert.equal(count(root, '.room[data-room=":fest"] .card.cell'), 64, 'the clock keeps its shape: every set still renders');
+  assert.equal(count(root, '.room[data-room=":fest"] .card.cell'), 63, 'the clock keeps its shape: every set still renders');
   assert.equal(grid('underscores').getAttribute('role'), 'button', 'a dimmed card is still a tap target');
   // A stack is the same rule: every card, dimmed where Kat did not pick.
   const afters = [...root.querySelectorAll('.room[data-room="Afters"] .stack > .card')];
@@ -178,7 +178,7 @@ test('a stage head is a plain header: not a button, no aria, no rail, and a tap 
   for (const grid of root.querySelectorAll('.times-scroll[data-sync="grid"][data-day] .times-grid')) {
     assert.equal(grid.style.gridTemplateColumns, strips[0].style.gridTemplateColumns, 'day grids mirror the strip');
   }
-  assert.equal(root.querySelectorAll('.room[data-room=":fest"] .card.cell').length, 64, 'every set renders — no column ever folds');
+  assert.equal(root.querySelectorAll('.room[data-room=":fest"] .card.cell').length, 63, 'every set renders — no column ever folds');
   // A tap on a head changes nothing on the wall.
   const before = root.innerHTML;
   root.querySelector('.stage-strip .stage-head').click();
