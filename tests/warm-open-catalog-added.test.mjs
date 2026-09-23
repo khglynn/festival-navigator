@@ -48,6 +48,7 @@ test('the live catalog lands: the festival this device chose opens', async () =>
   net.release(fileGet('acl-2026'), () => json(ACL)); // if it had to ask the network for the file
   await settle(60);
   assert.equal(state.activeFestivalId, 'acl-2026', 'ACL, as saved');
+  assert.ok(net.asked('/data/festivals/acl-2026.json'), 'opened from the cached copy, and the live file asked for too');
   assert.match($('fest-name').textContent, /ACL/i, 'and the wall says so');
   assert.doesNotMatch($('toast-root').textContent, /isn’t in the lineup/);
   assert.equal(localStorage.getItem(`fn_crew_fest_v3_${TOKEN}`), 'acl-2026', 'the saved choice was never overwritten');

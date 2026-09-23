@@ -2186,9 +2186,13 @@ async function settleFestivalChoice(token, live) {
     if (warm && warm.untold && choice.missing) { warm.untold = false; sayFestivalMissing(); }
     return;
   }
-  let fest = await festivalFromCache(choice.active);
+  const held = await festivalFromCache(choice.active);
+  let fest = held;
   if (!fest) { try { fest = await loadFestival(choice.active); } catch { fest = null; } }
   if (!fest || !live() || state.activeFestivalId !== was) return; // could not open it, or the person moved on
+  // Opened from this phone's copy: ask for the live one too, as the warm
+  // open did for the festival it painted first.
+  if (held && !appSettings().stayOffline) refreshFestivalFile(choice.active, live);
   if (warm) warm.untold = false;
   state.showFestivalChoice(choice);
   state.confirmFestivalChoice(token, choice);
