@@ -77,6 +77,37 @@ dies, the next agent reads the spec, then this, then `git log` on the branch.
   --jump-offset, and a full scroll of each fest lit the right tab at every
   stop (13 + 22 stops, 0 mismatches).
 
+## Round 2 (same day): three follow-ups from the coordinator
+
+1. `ca00dcc` **The strip rides its grid's timeline under Reduce Motion and
+   Low power too.** Kevin's phone note ("stuttered delayed slide for section
+   above") — the 09-02 fix only covered motion-on phones. `followStrip`
+   takes the timeline wherever the engine has `ScrollTimeline`; the follow's
+   animation moved from inline style into v3.css as the one rule that
+   out-ranks the two kill rules, with the timeline's name in `--strip-tl`
+   (the kill shorthand resets `animation-timeline`). `.rides` gates the rule
+   so an engine without timelines never gets a parked row. The route is
+   written on the strip (`data-follow`). Day-to-day scroll mirroring is
+   untouched (needs Kevin's yes). Verified: jsdom, the Chromium contract
+   (computed `strip-follow` on the grid's own timeline under Low Power and
+   emulated Reduce Motion, names over columns, every other animation still
+   killed), and a local WebKit run (timeline + aligned in all three modes).
+2. `c3a5074` **Diagnostics** gains `reducedMotion`, `lowPower`, `stripRoute`
+   ('timeline' | 'transform' | 'none') and `stripAnimation` (the engine's
+   computed animation-name for the follow, so a frozen follow reads 'none').
+   Browser contract boots Portola with and without Reduce Motion and reads
+   the paste back.
+3. `30e8b60` **A Late nights date counts as today** for the day-of open when
+   no day block is today: dated rooms carry `data-iso`, `scrollToNowLine`
+   falls back to them. Oct 3 (grid + late nights) still opens on the grid
+   day; hidden Late nights and a night with no show give nothing.
+
+Suites after round 2: `npm test` 618 tests, 616 pass, 1 skipped, 1 fail
+(the SW stamp, by design). One full run also failed
+`sw-data-network-first` "navigations: a redirect or the 404 page…" once;
+it passed alone 3/3 and in the next full run — a load-timing flake in a
+file this lane never touched. `npm run test:browser` 26/26.
+
 ## Left for the integrator
 
 - Stamp the service worker once, on a clean tree, then the preview walk and
