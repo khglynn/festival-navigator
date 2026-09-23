@@ -89,6 +89,24 @@ test('two nights of one artist in a dated section are two shows, not a duplicate
   assert.ok(sameNight.warnings.some((w) => /duplicate artist/.test(w)), sameNight.warnings.join('\n'));
 });
 
+test('two nights of one artist in a night section are two shows, not a duplicate', () => {
+  // Portola Week 2026 bills Strawbry at Monarch on Friday and at The Great
+  // Northern on Saturday. A night entry renders inside that night's day, so
+  // these are two cards on two days — only the same name on the same NIGHT is
+  // a dupe.
+  const twice = withSections(
+    { name: 'Strawbry', day: 'Afters', night: 'Fri', venue: 'Monarch', doors: '10 PM' },
+    { name: 'Strawbry', day: 'Afters', night: 'Sat', venue: 'The Great Northern', doors: '10 PM' },
+  );
+  assert.deepEqual(validateFestivalDoc(twice), { errors: [], warnings: [] });
+
+  const sameNight = validateFestivalDoc(withSections(
+    { name: 'Strawbry', day: 'Afters', night: 'Fri', venue: 'Monarch', doors: '10 PM' },
+    { name: 'Strawbry', day: 'Afters', night: 'Fri', venue: 'The Great Northern', doors: '10 PM' },
+  ));
+  assert.ok(sameNight.warnings.some((w) => /duplicate artist/.test(w)), sameNight.warnings.join('\n'));
+});
+
 test('a fest with no grid has no sections — its whole wall is the lineup', () => {
   // Every archived and lineup-only file in data/festivals is this shape: days
   // like "Friday" on entries that carry nothing else. They are not rooms.
