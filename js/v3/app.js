@@ -34,6 +34,7 @@ import { planBringPicks, bringFromSource, bringOfferCopy, bringDoneLine, bringAn
 import { showActionToast } from './wall.js';
 // The warm open (2026-09-23): paint from what this phone holds, freshen after.
 import { festivalIndexFromCache, festivalFromCache, fetchFestivalFile, cachedCustomFestivals } from '../festivals.js';
+import { getLS } from '../util.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -1439,7 +1440,7 @@ function openSettings() {
       // screen (Codex review, 2026-09-23).
       const token = state.getCrewToken();
       const gen = bootGeneration;
-      if (token) freshenFromNetwork(token, loadFestivalIndex().catch(() => { /* the cached list stays */ }), () => gen === bootGeneration);
+      if (token) freshenFromNetwork(token, () => loadFestivalIndex().catch(() => { /* the cached list stays */ }), () => gen === bootGeneration);
     },
     recordPick: (artist, person, level) => {
       if (ctx.migrationPending) return false; // same gate as handleTap (bulk paste path)
@@ -2000,8 +2001,7 @@ async function enterApp(token, doc, current = () => true, customs = fetchCustomF
   // doc's stamp. Consumed once — only fills the void on a fest-less device.
   const festHint = pendingFestHint || (doc.meta && doc.meta.inviteFestId) || null;
   pendingFestHint = null;
-  state.activateCrew(token, doc, festHint, { provisional: warm });
-  warmOpen = warm ? { token, hint: festHint, untold: false } : null;
+  state.activateCrew(token, doc, festHint);
   // Backfill (audit re-run finding): crews older than the fix never got the
   // stamp, so THEIR links — the ones already in group chats — still showed
   // joiners no festival. Any claimed member's boot heals the doc once, from
@@ -2037,10 +2037,9 @@ async function enterApp(token, doc, current = () => true, customs = fetchCustomF
     ctx.migrationPending = false;
   }
   try {
-    // Warm: the copy this phone holds paints now; freshenFromNetwork swaps in
-    // the live one if a data push changed it. A fest this phone never stored
-    // still has to come from the network.
-    if (!(warm && await festivalFromCache(state.activeFestivalId))) await loadFestival(state.activeFestivalId);
+    // A warm open arrives with this festival already in hand (canOpenWarm),
+    // so this answers from memory.
+    await loadFestival(state.activeFestivalId);
   } catch {
     // Offline with this fest uncached: fall back to a loadable fest rather
     // than stranding a blank wall (CORE-12). If the default also fails,
@@ -2057,12 +2056,11 @@ async function enterApp(token, doc, current = () => true, customs = fetchCustomF
   // We opened a real one instead; say which, and say the picks survived —
   // otherwise the board just changes underneath the person and the landing
   // row that promised "tap this fest, get this fest" has quietly lied.
-  // A warm open only has the CACHED catalog to judge by, and that copy can be
-  // older than the live one: the toast waits for freshenFromNetwork to check
-  // against the live list, which may well open the saved festival instead.
+  // (Never on a warm open: it only runs when the saved festival IS listed.)
   if (state.missingFestivalId) {
-    if (warm) warmOpen.untold = true;
-    else sayFestivalMissing();
+    const gone = model.festLabelFor(state.missingFestivalId, FESTIVAL_INDEX).name;
+    const here = model.festLabelFor(state.activeFestivalId, FESTIVAL_INDEX).name;
+    showToast($('toast-root'), `${gone} isn’t in the lineup any more — opened ${here} instead. Its picks are still saved.`, 6000);
   }
   if (!current()) return;
   // Captured before replaceState rewrites the entry: which layers were open
@@ -2120,108 +2118,77 @@ async function enterApp(token, doc, current = () => true, customs = fetchCustomF
   }
 }
 
-// After a warm open — and whenever "Stay offline" is switched back off — the
-// reads a cold open used to wait on, landing the ordinary way when they
-// arrive. The crew doc needs nothing here: enterApp's poll is its path.
-// "Stay offline" is read at every step, never once: switched on midway, the
-// next request is simply not made (Codex review, 2026-09-23).
-//   - The catalog. The live list replaces the cached one wholesale, so the
-//     crew's own festivals rejoin it, and the festival on screen is checked
-//     against it: the cached list may have lacked the saved festival, or
-//     still listed one the live list has dropped.
-//   - The crew's own festivals, fresh: a changed one is a data push too.
-//   - The festival file on screen, fresh (network-first through the worker,
-//     as ever — so a data push still reaches an online phone on this very
-//     open): kept whichever festival is showing by the time it lands, and
-//     repainted only if it is the one on screen. The wall's repaint boundary
-//     keeps scroll and a half-typed note.
+// ---- the warm open (2026-09-23) --------------------------------------------------
+// STRICT by design (round 4 — the coordinator's call the day before the
+// festival: fewer moving parts beats clever reconciliation). A warm open
+// paints only EXACTLY the wall the person left: a name this device claimed
+// in the crew, the crew's cached doc, the saved festival listed in the
+// CACHED catalog (a crew's own festival: in its locally stored list), and
+// that festival's file in hand. Anything missing and boot takes the ordinary
+// path and waits for the network, as it always did. So a warm open never
+// switches festivals, never writes the saved choice and never loads a
+// different festival — the round-3 reconciliation that did those things is
+// gone, with the bugs it grew (a note re-aimed into another festival, a
+// fallback confirmed before the facts arrived, a request under Stay offline).
+//
+// True when this device can paint that wall now. Its one side effect is the
+// point: the festival file it found is in memory for enterApp.
+async function canOpenWarm(token) {
+  if (!crew.me(token) || !state.cachedDoc(token)) return false;
+  const saved = getLS(state.LS.fest(token));
+  if (!saved) return false; // no saved choice: which wall was "left" is not known
+  if (!(await festivalIndexFromCache())) return false;
+  const listed = FESTIVAL_INDEX.some((f) => f.id === saved && !f.custom);
+  if (listed) return !!(await festivalFromCache(saved));
+  // A crew's own festival: the locally stored list IS its file.
+  return cachedCustomFestivals(token).some((f) => f && f.id === saved);
+}
+
+// After a warm paint (and whenever "Stay offline" is switched back off) the
+// network may only REFRESH what is on screen — never change which festival
+// is showing. Stay offline is read at the moment each request would fire:
+// while it is on, nothing is asked; switching it off runs this again.
+//   - The festival file on screen (network-first through the worker, as
+//     ever — a data push still reaches an online phone on this very open).
+//   - The catalog, for later switches. If the live catalog no longer lists
+//     the festival on screen, it STAYS on screen: the next cold open resolves
+//     it, with its usual toast. Moving someone's wall under them — with a note
+//     half-typed — is the worse failure.
+//   - The crew's own festivals: rejoin the replaced catalog, then fresh.
+//   The crew doc needs nothing here: enterApp's poll is its path.
 function freshenFromNetwork(token, catalog, current) {
   const live = () => current() && state.getCrewToken() === token;
   const online = () => !appSettings().stayOffline;
-  if (online()) refreshFestivalFile(state.activeFestivalId, live);
+  if (!online()) return;
+  refreshFestivalFile(state.activeFestivalId);
   (async () => {
-    await catalog;
+    await catalog();
     if (!live()) return;
-    mergeCustoms(cachedCustomFestivals(token));
-    await settleFestivalChoice(token, live);
+    mergeCustoms(cachedCustomFestivals(token)); // the live list replaced the cached one wholesale
     if (!online()) return;
     const fresh = await fetchCustomFestivals(token);
-    if (!live()) return;
-    applyFreshCustoms(fresh, live);
-    await settleFestivalChoice(token, live); // a saved festival of the crew's own may only exist now
+    if (live()) applyFreshCustoms(fresh);
   })().catch((e) => console.warn('warm open: catalog', e));
 }
 
-// What a warm open decided on a CACHED catalog, for the live one to confirm or
-// overrule: the crew, the invite hint it opened with (a later check must use
-// the same one), and whether it held back a "not in the lineup" toast because
-// a stale list might be the one saying so.
-let warmOpen = null; // { token, hint, untold }
-
-function sayFestivalMissing() {
-  const missing = state.missingFestivalId;
-  // The copy still held names it properly; a bare id is the last resort.
-  const gone = (state.FESTIVALS[missing] && state.FESTIVALS[missing].name) || model.festLabelFor(missing, FESTIVAL_INDEX).name;
-  const here = model.festLabelFor(state.activeFestivalId, FESTIVAL_INDEX).name;
-  showToast($('toast-root'), `${gone} isn’t in the lineup any more — opened ${here} instead. Its picks are still saved.`, 6000);
-}
-
-// The catalog changed under a running page: which festival should this crew
-// show NOW, by the rule an ordinary open uses (state.festivalChoiceFor) with
-// the catalog now in hand? If it is another one, open it the way a festival
-// switch does — from this phone's copy if it has one. Then the choice is
-// confirmed exactly as an ordinary open confirms it (the invite's festival
-// becomes the saved one only when it is what opened): the warm open never
-// does better or worse than a cold open would have with the same catalog,
-// it only does it later.
-async function settleFestivalChoice(token, live) {
-  if (!FESTIVAL_INDEX.length) return;
-  const warm = warmOpen && warmOpen.token === token ? warmOpen : null;
-  const hint = warm ? warm.hint : ((state.crewDoc.meta && state.crewDoc.meta.inviteFestId) || null);
-  const was = state.activeFestivalId;
-  let choice;
-  try { choice = state.festivalChoiceFor(token, hint); } catch { return; }
-  if (choice.active === was) {
-    state.confirmFestivalChoice(token, choice);
-    if (warm && warm.untold && choice.missing) { warm.untold = false; sayFestivalMissing(); }
-    return;
-  }
-  const held = await festivalFromCache(choice.active);
-  let fest = held;
-  if (!fest) { try { fest = await loadFestival(choice.active); } catch { fest = null; } }
-  if (!fest || !live() || state.activeFestivalId !== was) return; // could not open it, or the person moved on
-  // Opened from this phone's copy: ask for the live one too, as the warm
-  // open did for the festival it painted first.
-  if (held && !appSettings().stayOffline) refreshFestivalFile(choice.active, live);
-  if (warm) warm.untold = false;
-  state.showFestivalChoice(choice);
-  state.confirmFestivalChoice(token, choice);
-  ctx.query = '';
-  const searchBox = $('search-input');
-  if (searchBox) searchBox.value = '';
-  applyFestTheme();
-  repaintFromRemote();
-  maybeOpenOnDay();
-  if (choice.missing) sayFestivalMissing();
-  maybeOfferBringPicks(); // an offer is per festival
-}
-
-// A festival file, fresh from the network. Kept whichever festival is on
-// screen when it lands — a switch away and back must not reuse the stale
-// copy (Codex review, 2026-09-23) — and repainted only if it is this one.
-function refreshFestivalFile(fid, live) {
+// A festival file, fresh from the network. The file is shared by every crew
+// at that festival, so a changed one is kept, its computed days forgotten,
+// and whichever wall is SHOWING that festival now repaints — whatever crew's
+// open happened to ask (Codex round 3, new B: A's answer landed while B was
+// on screen, and B's identical answer then changed nothing).
+function refreshFestivalFile(fid) {
   fetchFestivalFile(fid).then((fest) => {
     if (!fest || JSON.stringify(fest) === JSON.stringify(state.FESTIVALS[fid])) return;
     state.FESTIVALS[fid] = fest;
     state.forgetComputedDays(fid);
-    if (live() && state.activeFestivalId === fid) { applyFestTheme(); repaintFromRemote(); }
+    if (state.activeFestivalId === fid) { applyFestTheme(); repaintFromRemote(); }
   }).catch((e) => console.warn('warm open: festival file', e));
 }
 
 // The crew's own festivals, fresh from the server. One that changed is a data
 // push like any other: its computed days go, and if it is on screen the wall
 // repaints (Codex review, 2026-09-23 — 8:00 PM live, 9:00 PM on screen).
-function applyFreshCustoms(list, live) {
+function applyFreshCustoms(list) {
   const ids = list.filter((f) => f && f.id).map((f) => f.id);
   const before = new Map(ids.map((id) => [id, JSON.stringify(state.FESTIVALS[id] || null)]));
   mergeCustoms(list);
@@ -2231,7 +2198,7 @@ function applyFreshCustoms(list, live) {
     state.forgetComputedDays(id);
     if (id === state.activeFestivalId) onScreen = true;
   }
-  if (onScreen && live()) { applyFestTheme(); repaintFromRemote(); }
+  if (onScreen) { applyFestTheme(); repaintFromRemote(); }
 }
 
 // ---- lost states (spec F16) --------------------------------------------------------
@@ -2311,23 +2278,21 @@ export async function boot() {
   try {
     // The catalog leaves now and nothing waits on it alone: a crew boot sends
     // its own two requests beside it (below). Each branch that renders from
-    // the catalog awaits it first. "Stay offline" is the field escape hatch
-    // (2026-09-23): the catalog this phone holds, and the network only for one
-    // it never stored.
-    const stayOffline = !!appSettings().stayOffline;
-    const catalog = (stayOffline
-      ? festivalIndexFromCache().then((held) => held || loadFestivalIndex())
-      : loadFestivalIndex()
-    ).catch(() => { /* offline with cache: proceed */ });
+    // the catalog awaits it first. Under "Stay offline" it leaves only when a
+    // branch actually needs the network (2026-09-23): a warm open asks the
+    // network for nothing.
+    const fetchCatalog = () => loadFestivalIndex().catch(() => { /* offline with cache: proceed */ });
+    let catalogRequest = appSettings().stayOffline ? null : fetchCatalog();
+    const catalog = () => catalogRequest || (catalogRequest = fetchCatalog());
 
     if (personLinkBroken) {
-      await catalog;
+      await catalog();
       if (!current()) return;
       renderLanding();
       showToast($('toast-root'), 'That link looks cut off — copy it again from your other device.', 6000);
       return;
     }
-    if (personToken && !hopCrewToken) { await catalog; await restoreFromMeLink(personToken, current); return; }
+    if (personToken && !hopCrewToken) { await catalog(); await restoreFromMeLink(personToken, current); return; }
     // Quiet absorb — from the hop URL, or from a previous boot's absorb that
     // failed offline (the token waits in sessionStorage: session-scoped
     // master-key hygiene, dies with the tab, never re-enters a URL). Landing
@@ -2365,29 +2330,26 @@ export async function boot() {
       }
     }
 
-    if (location.hash === '#new') { await catalog; renderCreate(); return; }
+    if (location.hash === '#new') { await catalog(); renderCreate(); return; }
     // A crew link that is present but malformed (truncated by a chat app, half
     // pasted) must say so. Falling through to the landing page told the person
     // nothing at all — the app quietly acting as if they had never clicked.
     if (crew.hashHasBrokenToken()) { renderBadLink('', { gone: false, malformed: true }); return; }
     const token = crew.bootTokenFor(crew.tokenFromHash(), crew.activeCrewToken(), isFirst);
-    if (!token) { await catalog; renderLanding(); return; }
+    if (!token) { await catalog(); renderLanding(); return; }
 
-    // The warm open (2026-09-23). This phone holds the crew's doc and a name
-    // it claimed in it, so the wall paints from that NOW, and the network
-    // lands the ordinary way whenever it answers: enterApp's poll is the
+    // The warm open (2026-09-23). When this phone can paint EXACTLY the wall
+    // the person left (canOpenWarm), it paints it NOW and the network lands
+    // the ordinary way whenever it answers: enterApp's poll is the
     // remote-change path (repaint, chips, an open sheet), and our API's JSON
     // 404 is still the crew-gone path — one poll after the first paint rather
     // than before it, which is the trade. At Pier 80 the network hangs rather
     // than fails, and the path below spent up to ~16 s of loader on files that
-    // were already here. A crew this phone never opened or never claimed a
-    // name in still takes that path: there is nothing true to paint without
-    // the network.
-    const warmDoc = crew.me(token) ? state.cachedDoc(token) : null;
-    if (warmDoc && await festivalIndexFromCache()) {
+    // were already here. Anything short of that exact wall takes the path
+    // below and waits, as it always did.
+    if (await canOpenWarm(token)) {
       if (!current()) return;
-      const heldCustoms = cachedCustomFestivals(token);
-      await enterApp(token, warmDoc, current, Promise.resolve(heldCustoms), { warm: true });
+      await enterApp(token, state.cachedDoc(token), current, Promise.resolve(cachedCustomFestivals(token)), { warm: true });
       if (current()) freshenFromNetwork(token, catalog, current);
       return;
     }
@@ -2399,7 +2361,7 @@ export async function boot() {
     let doc = null;
     let gone = false;
     const fetched = crew.fetchCrew(token).then((d) => { doc = d; gone = d === null; }, () => { /* network failure — try the cache below */ });
-    await Promise.all([catalog, fetched]);
+    await Promise.all([catalog(), fetched]);
     if (!current()) return;
     // A deleted crew is deleted NOW — don't re-enter the app on a stale
     // cached doc just to bounce out one sync later (Codex trailing review).
