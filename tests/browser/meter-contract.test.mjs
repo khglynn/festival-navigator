@@ -43,20 +43,23 @@ const SELECTIONS = {
   'Groove Armada': ALL7(4),
   'Chloé Caillet': { Kevin: 3, Drew: 4, Pegah: 1 },
   Parcels: { Kevin: 2 },
-  // The lane-split cells a made-up Saturday stage adds (laneFest below).
+  // The cells a made-up Saturday stage adds (laneFest below).
   'Lane A': { Kevin: 4 },
   'Lane B': ALL7(3),
   'Lane C': { Drew: 1 },
   'Duo A': ALL7(1),
   'Duo B': { Kat: 4, Ross: 4 },
+  'Short Set': ALL7(4),
+  'Fightmaster Remix': { Kevin: 3, Drew: 1 },
+  Oh: { Kevin: 2 },
 };
 const AFFINITY = {
   Robyn: { songs: 41, followed: true }, 'Groove Armada': { songs: 12, followed: true }, 'Dog Blood': { songs: 7 },
   Soulwax: { songs: 0, followed: true }, Parcels: { songs: 23, followed: true }, 'Lane B': { songs: 99, followed: true },
   'Milli Meng': { songs: 4 },
-  'Duo A': { songs: 5, followed: true },
+  'Duo A': { songs: 5, followed: true }, 'Short Set': { songs: 41, followed: true },
 };
-const NOTED = ['Robyn', 'Robyn', 'Groove Armada', 'Dog Blood', 'Lane B', 'Duo A'];
+const NOTED = ['Robyn', 'Robyn', 'Groove Armada', 'Dog Blood', 'Lane B', 'Duo A', 'Short Set'];
 
 function doc() {
   const notes = { artist: {} };
@@ -71,15 +74,19 @@ function doc() {
   };
 }
 
-// Portola with one more Saturday stage whose sets collide: three at 2 PM
-// (three lanes, each a third of a column) and two at 4 PM, all 30 minutes —
-// the narrowest and the shortest cards the grid can draw.
+// Portola with one more Saturday stage holding the smallest cells the grid
+// can make: three 45-minute sets side by side (each a third of a column —
+// no shipped fest has three lanes; this is the extreme), a 30-minute set a
+// whole column wide with a crowd of seven on it (the 44px floor), two
+// 30-minute sets sharing a column (ACL's both-weekends view has these), and
+// two more, one of whose names runs to a second line.
 function laneFest() {
   const f = structuredClone(PORTOLA);
   const sat = f.days.Saturday;
   sat.stages = [...sat.stages, 'Tiny Tent'];
-  const sets = [['Lane A', '2:00 PM - 2:30 PM'], ['Lane B', '2:00 PM - 2:30 PM'], ['Lane C', '2:00 PM - 2:30 PM'],
-    ['Duo A', '4:00 PM - 4:30 PM'], ['Duo B', '4:00 PM - 4:30 PM']];
+  const sets = [['Lane A', '2:00 PM - 2:45 PM'], ['Lane B', '2:00 PM - 2:45 PM'], ['Lane C', '2:00 PM - 2:45 PM'],
+    ['Duo A', '4:00 PM - 4:30 PM'], ['Duo B', '4:00 PM - 4:30 PM'], ['Short Set', '5:00 PM - 5:30 PM'],
+    ['Fightmaster Remix', '6:00 PM - 6:30 PM'], ['Oh', '6:00 PM - 6:30 PM']];
   for (const [name, time] of sets) {
     sat.artists.push({ name, stage: 'Tiny Tent', time });
     f.artists.push({ name, day: 'Saturday' });
@@ -131,10 +138,25 @@ const cornersOn = (page) => page.evaluate(() => {
     const who = [...card.querySelectorAll(':scope > .corner-who > *')].map((m) => ({ text: m.textContent, ghost: m.classList.contains('ghost'), ...box(m) }));
     const meter = card.querySelector(':scope > .corner-about > .chip-meter');
     const spotN = card.querySelector('.chip-spotify .n');
+    // The centred text a cell carries low: the start time, a tall set's
+    // "until", and every line of the name (clipped to what the name shows).
+    const texts = [...card.querySelectorAll(':scope > .time, :scope > .until')].map((t) => {
+      const range = document.createRange();
+      range.selectNodeContents(t);
+      return { shown: getComputedStyle(t).visibility !== 'hidden', ...box(range) };
+    });
+    const nm = card.querySelector(':scope > .name');
+    const nameRange = document.createRange();
+    nameRange.selectNodeContents(nm);
+    const nameBox = nm.getBoundingClientRect();
+    for (const r of nameRange.getClientRects()) {
+      if (r.width && r.top < nameBox.bottom - 1) texts.push({ shown: true, name: true, left: r.left, right: r.right, top: r.top, bottom: Math.min(r.bottom, nameBox.bottom) });
+    }
     out.push({
       artist: card.dataset.artist, cell: card.classList.contains('cell'), width: rc.width, height: rc.height, inner,
-      fit: Number(card.dataset.fit), about, who,
+      fit: Number(card.dataset.fit), about, who, texts,
       level: meter ? Number(meter.dataset.level) : 0,
+      meterShown: !!(meter && meter.getClientRects().length),
       lit: meter ? meter.querySelectorAll('.bar.on').length : 0,
       word: meter ? (meter.querySelector('.must') || { textContent: '' }).textContent : '',
       spotCount: spotN && spotN.getClientRects().length ? spotN.textContent : '',
@@ -162,6 +184,18 @@ function assertCornersKeep(cards, where) {
       const gap = Math.min(...c.who.map((m) => m.left)) - Math.max(...c.about.map((a) => a.right));
       if (gap < 2) bad.push(`${c.artist}: corners ${gap.toFixed(1)}px apart at ${c.width}px (fit ${c.fit}) (${where})`);
     }
+    // A set's start time (or "until") is never under a chip: either the
+    // corners clear it, or — only where your meter cannot sit beside it — it
+    // steps back. A time the card already crops (a two-line name pushed it
+    // past the bottom edge, as it always has) is not the corners' to clear.
+    for (const t of c.texts) {
+      if (!t.shown || (!t.name && t.bottom > c.bottom + 0.5)) continue;
+      for (const p of all) {
+        const vertical = p.top < t.bottom - 2 && p.bottom > t.top + 2;
+        const horizontal = p.left < t.right + 2 && p.right > t.left - 2;
+        if (vertical && horizontal) bad.push(`${c.artist}: a corner sits on its ${t.name ? 'name' : 'time'} at ${c.width}px (fit ${c.fit}) (${where})`);
+      }
+    }
   }
   assert.deepEqual(bad, [], bad.join('\n'));
 }
@@ -175,7 +209,10 @@ function assertMeterTells(cards) {
     assert.equal(c.level, mine, `${c.artist}: the meter says your level`);
     if (mine && mine < 4) assert.equal(c.lit, mine, `${c.artist}: ${mine} bar(s) lit`);
     if (mine === 4) assert.equal(c.word, 'MUST');
-    if (mine) assert.equal(c.about[0].kind, 'meter', `${c.artist}: at the corner's edge`);
+    // Drawn at the corner's edge — unless the artist's name runs down into a
+    // narrow short cell's band, the one place it steps back (GIVE_WAY's last).
+    if (mine && c.meterShown) assert.equal(c.about[0].kind, 'meter', `${c.artist}: at the corner's edge`);
+    if (mine && !c.meterShown) assert.ok(c.cell && c.texts.some((t) => t.name && t.bottom > c.bottom - 16), `${c.artist}: your meter stepped back only for its name`);
     if (c.fit < 7) {
       const drawn = c.who.filter((m) => !m.ghost).length;
       const ghost = c.who.find((m) => m.ghost);
@@ -209,25 +246,36 @@ test('a 390 phone: every card on Portola’s Saturday keeps its corners apart, a
   } finally { await ctx.close(); }
 });
 
-test('the smallest cards: a 30-minute set’s 44px cell and a lane a third of a column wide, on a 320 phone', { skip }, async () => {
-  const { ctx, page } = await openWall({ width: 320, height: 700, fest: laneFest() });
-  try {
-    const cards = await cornersOn(page);
-    assertCornersKeep(cards, '320');
-    assertMeterTells(cards);
-    const lane = (n) => cards.find((c) => c.artist === n);
-    assert.ok(lane('Lane A').width < 60, `three lanes: ${lane('Lane A').width}px`);
-    assert.ok(Math.round(lane('Lane A').height) <= 44, 'a 30-minute set is a 44px cell');
-    assert.equal(lane('Lane A').word, 'MUST', 'your MUST fits the narrowest cell');
-    assert.equal(lane('Lane B').level, 3, 'and so do your bars, beside a crowd that gave way');
-    assert.ok(lane('Lane B').fit >= 1);
-    // The meter sits inside the cell's bottom band, clear of the card's edge.
-    for (const n of ['Lane A', 'Lane B', 'Duo A']) {
-      const c = lane(n);
-      assert.ok(c.about[0].bottom <= c.bottom - 2, `${n}: the meter sits inside the card`);
-    }
-  } finally { await ctx.close(); }
-});
+for (const width of [390, 320]) {
+  test(`the smallest cards on a ${width} phone: a 30-minute set’s 44px cell under a crowd, lanes, a name on two lines`, { skip }, async () => {
+    const { ctx, page } = await openWall({ width, height: 700, fest: laneFest() });
+    try {
+      const cards = await cornersOn(page);
+      assertCornersKeep(cards, String(width));
+      assertMeterTells(cards);
+      const cell = (n) => cards.find((c) => c.artist === n);
+      // The 44px floor, a whole column wide, all seven on it: the corners fit
+      // around its start time, and your MUST and the start time both show.
+      const short = cell('Short Set');
+      assert.equal(Math.round(short.height), 44, 'a 30-minute set is a 44px cell');
+      assert.equal(short.word, 'MUST');
+      assert.ok(short.meterShown);
+      assert.ok(short.texts.find((t) => !t.name).shown, 'its start time stays');
+      assert.ok(short.fit >= 1, 'the crowd gave way around it');
+      // A third of a column: your MUST and your bars, beside a crowd that folded.
+      assert.ok(cell('Lane A').width < 64, `three lanes: ${cell('Lane A').width}px`);
+      assert.ok(cell('Lane A').meterShown && cell('Lane A').word === 'MUST');
+      assert.ok(cell('Lane B').meterShown && cell('Lane B').lit === 3);
+      assert.ok(cell('Lane B').fit >= 1);
+      // Two 30-minute sets sharing a column: your meter stays on both.
+      assert.ok(cell('Duo A').meterShown && cell('Oh').meterShown);
+      for (const n of ['Lane A', 'Lane B', 'Duo A', 'Short Set', 'Oh']) {
+        const c = cell(n);
+        assert.ok(c.about[0].bottom <= c.bottom - 2, `${n}: the meter sits inside the card`);
+      }
+    } finally { await ctx.close(); }
+  });
+}
 
 test('a laptop: the same laws at 1280, and the meter is drawn on the Spotify pill’s pattern', { skip }, async () => {
   const { ctx, page } = await openWall({ width: 1280, height: 800, touch: false, fest: laneFest() });

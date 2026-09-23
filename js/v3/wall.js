@@ -225,7 +225,9 @@ export function meterChip(chip) {
   return c;
 }
 
-function markEl(m) {
+// A crew mark (aura.js whoCorner): a lettered must, a tick, or the "+n".
+// Exported for How it works, which draws the real thing.
+export function crewMark(m) {
   const s = document.createElement('span');
   s.className = 'mark' + (m.kind === 'ghost' ? ' ghost' : '');
   if (m.kind !== 'ghost') {
@@ -295,7 +297,7 @@ function applyFit(el, fit) {
   el.dataset.fit = String(fit.step);
   for (const c of el.querySelector(':scope > .corner-about').children) {
     const kind = c.dataset.kind;
-    c.hidden = (kind === 'spotify' && !fit.spot) || (kind === 'notes' && !fit.notes);
+    c.hidden = (kind === 'spotify' && !fit.spot) || (kind === 'notes' && !fit.notes) || (kind === 'meter' && !fit.meter);
     if (kind === 'spotify') {
       const n = c.querySelector('.n');
       if (n) n.hidden = !fit.spotCount;
@@ -303,16 +305,48 @@ function applyFit(el, fit) {
   }
   const glow = el.querySelector(':scope > .spot-glow');
   if (glow) glow.hidden = !fit.spot; // the glow rises from the pill; no pill, no glow
-  el.querySelector(':scope > .corner-who').replaceChildren(...fit.marks.map(markEl));
+  // The last thing a cell gives way: the text in the band. Its space is kept
+  // (visibility, not display), so the name never moves when it steps back.
+  for (const t of el.querySelectorAll(':scope > .time, :scope > .until')) t.style.visibility = fit.time ? '' : 'hidden';
+  el.querySelector(':scope > .corner-who').replaceChildren(...fit.marks.map(crewMark));
 }
 
-// Fit one card's corners to `width`, the px of its padding box (aura.js
-// fitCorners holds the order things give way in). A no-op when nothing moves.
-export function fitCard(el, width) {
+// Fit one card's corners to `width`, the px of its padding box, around the
+// centred text in their band (`band`, from bandText). aura.js fitCorners
+// holds the order things give way in. A no-op when nothing moves.
+export function fitCard(el, width, band = null) {
   const parts = el._corners;
   if (!parts) return;
-  const fit = fitCorners(parts, width, { cell: el.classList.contains('cell') });
+  const fit = fitCorners(parts, width, { cell: el.classList.contains('cell'), ...(band || {}) });
   if (el.dataset.fit !== String(fit.step)) applyFit(el, fit);
+}
+
+// The centred text a timetable cell carries down in its corners' band,
+// measured line by line (the text, not its box — "until" spans the card):
+// `middle`, a 30-minute set's start time (its 44px cell has no room above the
+// band: wall.js's display floor) or a tall set's "until" on the bottom edge;
+// `name`, the artist's name where it runs to a second line in a narrow short
+// cell. Every other card keeps its text well above the band: null.
+const CELL_BAND = 16; // .card.cell corners: 3px up, 13px tall
+function bandText(card) {
+  if (!card.classList.contains('cell')) return null;
+  const box = card.getBoundingClientRect();
+  if (!box.height) return null;
+  const top = box.bottom - CELL_BAND;
+  const widest = (el) => {
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    if (typeof range.getClientRects !== 'function') return 0;
+    const own = el.getBoundingClientRect(); // a clamped name's hidden lines are not text anyone sees
+    let w = 0;
+    for (const r of range.getClientRects()) if (r.width && r.bottom > top && r.top < Math.min(box.bottom, own.bottom) - 1) w = Math.max(w, r.width);
+    return w;
+  };
+  let middle = 0, name = 0;
+  for (const t of card.querySelectorAll(':scope > .time, :scope > .until')) middle = Math.max(middle, widest(t));
+  const nm = card.querySelector(':scope > .name');
+  if (nm) name = widest(nm);
+  return middle || name ? { middle, name } : null;
 }
 
 // A card learns its width only once it is laid out — and again on a rotation
@@ -324,11 +358,15 @@ export function fitCard(el, width) {
 // replaced (renderWall), and a refresh lets go of the node it swaps out.
 const fitting = new Set();
 const fitWatch = typeof ResizeObserver === 'function' ? new ResizeObserver((entries) => {
+  // Every read first, then every write: layout is clean when the callback
+  // starts, and a write between two reads would force it again per card.
+  const todo = [];
   for (const { target, borderBoxSize } of entries) {
     if (!target.isConnected) { unwatchFit(target); continue; }
     const box = borderBoxSize && borderBoxSize[0];
-    fitCard(target, (box ? box.inlineSize : target.getBoundingClientRect().width) - 2);
+    todo.push([target, (box ? box.inlineSize : target.getBoundingClientRect().width) - 2, bandText(target)]);
   }
+  for (const [el, width, band] of todo) fitCard(el, width, band);
 }) : null;
 function watchFit(el) {
   if (!fitWatch) return;
@@ -374,8 +412,9 @@ export function refreshCard(el, artistName, ctx, { onSwap = null } = {}) {
   // level change's motion — both are reads of the old node, taken together
   // before anything is written.
   const width = el.getBoundingClientRect().width;
-  if (width > 0) fitCard(fresh, width - 2);
+  const band = bandText(el);
   const before = canAnimate(el, ctx) ? cornersNow(el) : null;
+  if (width > 0) fitCard(fresh, width - 2, band);
   // Keyboard users keep their place: replacing a focused node silently dumps
   // focus to <body>, forcing a full re-Tab per pick tap (audit 4.1).
   const hadFocus = document.activeElement === el;

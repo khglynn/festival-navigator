@@ -129,7 +129,7 @@ test('fit: everything stays while it fits, and a card with no width yet keeps ev
   assert.deepEqual(roomy.marks.map((m) => m.kind), ['must', 'must', 'pick', 'pick', 'ghost']);
 });
 
-test('fit: a crowded card gives way in order — Spotify count, ticks, Spotify pill, musts, the +n, notes — and never your meter', () => {
+test('fit: a crowded card gives way in order — Spotify count, ticks, Spotify pill, musts, the +n, notes — and keeps your meter', () => {
   const people = [p(K, 4), p(M, 4), p(J, 4), p(S, 1), { name: 'Pat', colorIndex: 4, level: 2 }, { name: 'Quinn', colorIndex: 5, level: 1 }];
   const about = aboutCorner({ noteCount: 12, spotify: { songs: 41, followed: true }, you: people[0] });
   const kinds = (f) => f.marks.map((m) => m.kind).join(' ');
@@ -155,8 +155,50 @@ test('fit: a crowded card gives way in order — Spotify count, ticks, Spotify p
   assert.equal(kinds(at(6)), 'ghost'); assert.equal(ghost(at(6)), '+5');
   assert.equal(at(7).crew, false); assert.deepEqual(at(7).marks, []);
   assert.equal(at(8).notes, false);
-  // The meter is in the about corner at every step.
-  for (let s = 0; s < GIVE_WAY.length; s++) assert.equal(at(s).about[0].kind, 'meter');
+  // The meter is in the about corner at every step that has a width to hold it.
+  for (let s = 0; s < GIVE_WAY.length - 1; s++) assert.equal(at(s).about[0].kind, 'meter');
+  // With nothing in the band, it goes only on a card narrower than itself.
+  assert.equal(fitCorners({ people, about }, 43).meter, true, 'MUST alone fits 43px');
+  assert.equal(fitCorners({ people, about }, 30).meter, false);
+});
+
+test('fit: a name that runs down into a cell’s band is never covered — the corners fit around it, and only there does your meter step back', () => {
+  const solo = { people: [p(K, 2)], about: aboutCorner({ you: p(K, 2) }) };
+  const cell = { cell: true };
+  // Half a column (padding box 85) with a two-line name whose second line
+  // ("Seven", 36px) sits in the band: the meter (22.5) cannot sit beside it.
+  const wide = fitCorners(solo, 85, { ...cell, middle: 36, name: 36 });
+  assert.equal(wide.time, false, 'the time steps back first');
+  assert.equal(wide.meter, false, 'then, the name being uncuttable, your meter');
+  // A short second line ("Of", 14px) leaves room: the meter stays.
+  const short = fitCorners(solo, 85, { ...cell, middle: 36, name: 14 });
+  assert.equal(short.meter, true);
+  assert.ok(short.need <= 85);
+  // A full column's 30-minute cell with a two-line name keeps the meter.
+  assert.equal(fitCorners(solo, 174, { ...cell, middle: 36, name: 90 }).meter, true);
+});
+
+test('fit: a 30-minute cell fits its corners around the start time, and a lane too narrow for your meter beside it lets the time go', () => {
+  const people = [p(K, 4), p(M, 4), p(J, 4), p(S, 1), { name: 'Pat', colorIndex: 4, level: 2 }];
+  const about = aboutCorner({ noteCount: 2, spotify: { songs: 7, followed: true }, you: people[0] });
+  const cell = { cell: true };
+  // A phone column's cell (padding box 174) with "7:00 PM" (36px) in the band.
+  const open = fitCorners({ people, about }, 174, cell);
+  const around = fitCorners({ people, about }, 174, { ...cell, middle: 36 });
+  assert.ok(around.step > open.step, `the time costs the crowd room (${open.step} → ${around.step})`);
+  assert.equal(around.time, true, 'and the time stays');
+  // Each corner keeps to its own side of the time, with air to spare.
+  assert.ok(around.need <= 174);
+  // Only you, in half a column (2 lanes at 390: 87px, padding box 85): the
+  // meter fits beside nothing, so the time steps back rather than sit under it.
+  const solo = { people: [p(K, 4)], about: aboutCorner({ you: p(K, 4) }) };
+  const lane = fitCorners(solo, 85, { ...cell, middle: 36 });
+  assert.equal(lane.time, false);
+  assert.equal(lane.about[0].kind, 'meter');
+  // With no time in the band (a taller cell), nothing gives way at all.
+  assert.equal(fitCorners(solo, 85, cell).step, 0);
+  // A full column's 30-minute cell keeps its time beside your meter.
+  assert.equal(fitCorners(solo, 174, { ...cell, middle: 36 }).step, 0);
 });
 
 test('fit: the phone column carries a crowded card with nothing folded but what it must; a grid cell measures tighter', () => {

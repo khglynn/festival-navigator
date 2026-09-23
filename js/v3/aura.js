@@ -141,8 +141,14 @@ export function aboutCorner({ noteCount = 0, spotify = null, you = null } = {}) 
 //   3. the Spotify pill (the zoom still says it),
 //   4. the crew's musts fold into "+n", one at a time,
 //   5. the "+n" itself (the aura still carries everyone's colour),
-//   6. the notes count (the zoom's notes chip is the same door).
-// Your meter never gives way: it is why the corner changed.
+//   6. the notes count (the zoom's notes chip is the same door),
+//   7. in a timetable cell too narrow for your meter beside its start time
+//      (a lane of a 30-minute set), the time itself — the hour rail beside
+//      the grid and the zoom still say when; nothing else says your level,
+//   8. your meter, only where the artist's NAME runs down into the band (a
+//      30-minute cell in a lane, a name on two lines): a name is never cut
+//      (v3.css .card.cell .name), and the aura and the zoom still say your
+//      level. Anywhere else your meter stays — it is why the corner changed.
 export const GIVE_WAY = [
   {},
   { spotCount: false },
@@ -153,6 +159,8 @@ export const GIVE_WAY = [
   { musts: 0 },
   { crew: false },
   { notes: false },
+  { time: false },
+  { meter: false },
 ];
 
 // Widths as v3.css draws each piece — measured in Chromium on 2026-09-23 (Inter
@@ -183,15 +191,24 @@ function chipWidth(c, g, s) {
 // The ghost: 7.5px type in 4px padding and a dashed 1px edge, cell or not.
 const markWidth = (m) => (m.kind === 'ghost' ? 10 + textWidth(m.label, 7.5) : MARK[m.kind]);
 
-function layoutAt({ people = [], about = [] }, step, { cell = false } = {}) {
+// Centred text can sit down in the corners' band of a short timetable cell
+// (wall.js bandText): `middle` is the widest line that may step back — a
+// 30-minute cell's start time, a tall cell's "until" — and `name` the widest
+// line of the artist's name there, which never does. The corners fit around
+// whichever is wider: each keeps to its own side with CLEAR to spare, so a
+// crowd never lands on the time a set starts or on who is playing.
+function layoutAt({ people = [], about = [] }, step, { cell = false, middle = 0, name = 0 } = {}) {
   const g = cell ? GEO.cell : GEO.base;
-  const s = Object.assign({ spotCount: true, spot: true, notes: true, crew: true, musts: 2, picks: 2 }, ...GIVE_WAY.slice(0, step + 1));
-  const shown = about.filter((c) => (c.kind !== 'spotify' || s.spot) && (c.kind !== 'notes' || s.notes));
+  const s = Object.assign({ spotCount: true, spot: true, notes: true, crew: true, musts: 2, picks: 2, time: true, meter: true }, ...GIVE_WAY.slice(0, step + 1));
+  const obstacle = Math.max(s.time ? middle : 0, name); // a time that stepped back is nothing to fit around
+  const shown = about.filter((c) => (c.kind !== 'spotify' || s.spot) && (c.kind !== 'notes' || s.notes) && (c.kind !== 'meter' || s.meter));
   const marks = s.crew ? whoCorner(people, { musts: s.musts, picks: s.picks }) : [];
   const aboutW = shown.reduce((w, c, i) => w + (i ? GAP : 0) + chipWidth(c, g, s), 0);
   const whoW = marks.reduce((w, m) => w + GAP + markWidth(m), 0);
-  const need = g.left + aboutW + (aboutW && whoW ? CLEAR : 0) + whoW + g.right;
-  return { step, spotCount: s.spotCount, spot: s.spot, notes: s.notes, crew: s.crew, about: shown, marks, need };
+  const need = obstacle > 0
+    ? 2 * Math.max(g.left + aboutW, whoW + g.right) + obstacle + 2 * CLEAR
+    : g.left + aboutW + (aboutW && whoW ? CLEAR : 0) + whoW + g.right;
+  return { step, spotCount: s.spotCount, spot: s.spot, notes: s.notes, crew: s.crew, time: s.time, meter: s.meter, about: shown, marks, need };
 }
 
 // What the card's corners need, in px of its padding box, at one give-way step.
