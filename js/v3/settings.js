@@ -534,8 +534,9 @@ function crewSection(ctx, actions) {
       memberLinkHost.append(mRow,
         el('div', 'color: var(--text-tertiary); font-size: 10.5px; font-weight: 600; margin-top: 4px;',
           p.pid
-            ? `${name} is linked — they've claimed this name, and this crew follows them. The link still works as a doorway back.`
-            : `${name} hasn't claimed this name yet. Opening this link makes it theirs — picks made for them included.`));
+            ? `${name}’s in. This link still gets them back in.`
+            // The same sentence the add-someone sheet says: one idea, one wording.
+            : `Send ${name} this link. Opening it makes the picks theirs.`));
     });
     chips.appendChild(chip);
   }
@@ -568,7 +569,7 @@ function crewSection(ctx, actions) {
   card.appendChild(linkRowEl);
   // Two links, two jobs — say which one this is (me-link build, 2026-07-13).
   card.appendChild(el('div', 'color: var(--text-tertiary); font-size: 10.5px; font-weight: 600; line-height: 1.45;',
-    'This link brings someone into this crew. The link that brings YOU back on a new phone lives on the front page.'));
+    'Anyone with this link joins the crew. Your own link (My link) is on the home page.'));
   card.appendChild(status);
   wrap.appendChild(card);
 

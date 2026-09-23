@@ -1215,7 +1215,7 @@ function openAddMember() {
   sheetChrome(sheet, 'ADD SOMEONE'); // one sheet anatomy, everywhere (see openShareMoment)
   const sub = document.createElement('div');
   sub.style.cssText = 'color: var(--text-secondary); font-size: 12.5px; line-height: 1.55;';
-  sub.textContent = 'You pick for them until they claim it — their link makes it theirs the moment they open it.';
+  sub.textContent = 'Pick for them until they open their link.';
   const row = document.createElement('div');
   row.style.cssText = 'display: flex; gap: 8px; align-items: center;';
   const input = document.createElement('input');
@@ -1611,7 +1611,8 @@ function renderLanding() {
     nm.textContent = person.name || 'You';
     const hint = document.createElement('div');
     hint.className = 'mini-copy';
-    hint.textContent = 'Open your link on a new phone and everything comes back — every crew, every pick. Sharing it makes someone else you, so don’t.';
+    // The me link is a master key: the warning stays, in fewer words.
+    hint.textContent = 'Open this on a new phone to get everything back. Keep it to yourself — it makes whoever opens it you.';
     mid.append(nm, hint);
     const copyBtn = document.createElement('button');
     copyBtn.className = 'btn-tonal';
