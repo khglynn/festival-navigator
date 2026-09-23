@@ -30,7 +30,7 @@ import { startFavicon, stopFavicon } from './favicon.js';
 import { hslOf, strokeOf, nextColorIndex } from './palette.js';
 // Entering a crew you already have a life in (2026-09-23): recognized on
 // open, and the one-time offer to bring your picks from another crew.
-import { planBringPicks, bringOfferCopy, bringDoneLine, bringAnswered, rememberBringAnswer, showBringOffer, settleBringOffer, dismissBringOffer, bringOfferCard } from './crew-entry.js';
+import { planBringPicks, bringFromSource, bringOfferCopy, bringDoneLine, bringAnswered, rememberBringAnswer, showBringOffer, settleBringOffer, dismissBringOffer, bringOfferCard } from './crew-entry.js';
 import { showActionToast } from './wall.js';
 // The warm open (2026-09-23): paint from what this phone holds, freshen after.
 import { festivalIndexFromCache, festivalFromCache, fetchFestivalFile, cachedCustomFestivals } from '../festivals.js';
@@ -502,6 +502,7 @@ function maybeOpenOnDay() {
 // The explicit identity switch (FLOW-8), called from Settings.
 function switchIdentity(name) {
   crew.setMe(state.getCrewToken(), name);
+  withdrawBringOffer(); // an offer of one person's picks is never another's
   // The wall is painted per identity (your level in every label, the white
   // stroke on your marks) — Settings → You is the ONLY switch now, so the
   // repaint lives here, not in a caller (Codex gate, 2026-08-29).
@@ -1514,6 +1515,7 @@ function openSettings() {
       if (state.crewDoc.people[old]) state.crewDoc.people[old].removed = true;
       state.persist();
       crew.setMe(state.getCrewToken(), newName);
+      withdrawBringOffer(); // it was made for the old name
       sync.scheduleSync();
       refreshCtx();
       renderPersonChips();
@@ -1745,7 +1747,7 @@ function welcomeRecognized(token, name) {
 function notMe(token) {
   if (state.getCrewToken() !== token) return; // the toast outlived its crew
   crew.clearMe(token);
-  dismissBringOffer({ instant: true });
+  withdrawBringOffer();
   refreshCtx();
   renderPersonChips();
   renderYou();
@@ -1765,16 +1767,23 @@ function bringContext() {
   };
 }
 
+// The offer on screen, and the plan it was made from: the tap is held to the
+// crew, festival, names and picks the card was showing (crew-entry.js
+// bringFromSource) — never re-planned into a different crew.
+let standingOffer = null; // { key, plan }
+const offerKey = () => `${state.getCrewToken()}|${state.activeFestivalId}|${ctx.meName || ''}`;
+
 function maybeOfferBringPicks() {
   const token = state.getCrewToken();
   const fid = state.activeFestivalId;
-  const key = `${token}|${fid}`;
+  const key = offerKey();
   const standing = bringOfferCard();
   if (standing && standing.dataset.key !== key) dismissBringOffer({ instant: true });
   if (!token || !fid || !ctx.meName || ctx.migrationPending || bringAnswered(token, fid)) return;
   if (bringOfferCard()) return; // already asking, here
   const plan = planBringPicks(bringContext());
   if (!plan) return;
+  standingOffer = { key, plan };
   showBringOffer($('screen-app'), {
     copy: bringOfferCopy(plan, (state.fest() || {}).name),
     key,
@@ -1784,34 +1793,46 @@ function maybeOfferBringPicks() {
   });
 }
 
+// Someone else is picking on this phone now (Settings → You, a rename): the
+// offer was made for the name before, so it goes. Unanswered — the next entry
+// asks the right person.
+function withdrawBringOffer() {
+  standingOffer = null;
+  dismissBringOffer({ instant: true });
+}
+
 function bringPicksHere(key) {
   const token = state.getCrewToken();
   const fid = state.activeFestivalId;
   const card = bringOfferCard();
-  // The card must still be about the crew and festival on screen, and picks
-  // must be writable — anything else and it quietly goes.
-  if (!card || card.dataset.key !== key || key !== `${token}|${fid}` || !ctx.meName || ctx.migrationPending) {
-    dismissBringOffer({ instant: true });
+  const offer = standingOffer;
+  // The card must still be about the crew, festival and picker on screen, and
+  // picks must be writable — anything else and it quietly goes, unanswered.
+  if (!card || card.dataset.key !== key || !offer || offer.key !== key || key !== offerKey() || ctx.migrationPending) {
+    withdrawBringOffer();
     return;
   }
-  // Planned again at the tap: anything picked while the card was up is
-  // decided here now, and a decision here is never overwritten.
-  const plan = planBringPicks(bringContext());
+  const tap = bringFromSource(offer.plan, bringContext());
+  if (!tap) { withdrawBringOffer(); return; }
   rememberBringAnswer(token, fid, 'brought');
-  if (!plan) { dismissBringOffer({ ctx }); return; }
+  standingOffer = null;
   // applyLocalPick's two steps, with the doc written to disk ONCE at the end:
   // persisting the whole crew doc per pick is fine for a tap and a stall for
   // fifty of them at once.
-  state.ensureFestivalState(fid);
-  const sels = state.crewDoc.festivals[fid].selections;
-  for (const [artist, level] of Object.entries(plan.picks)) {
-    state.recordSelection(artist, ctx.meName, level);
-    (sels[artist] = sels[artist] || {})[ctx.meName] = level;
+  if (tap.count) {
+    state.ensureFestivalState(fid);
+    const sels = state.crewDoc.festivals[fid].selections;
+    for (const [artist, level] of Object.entries(tap.picks)) {
+      state.recordSelection(artist, ctx.meName, level);
+      (sels[artist] = sels[artist] || {})[ctx.meName] = level;
+    }
+    state.persist();
+    sync.scheduleSync();
+    repaintWall();
   }
-  state.persist();
-  sync.scheduleSync();
-  repaintWall();
-  settleBringOffer(bringDoneLine(plan.count), { ctx });
+  // Nothing left from the crew the card named (all decided here meanwhile):
+  // the card says so rather than reaching into another crew.
+  settleBringOffer(bringDoneLine(tap.count), { ctx });
 }
 
 function renderJoin(token, doc) {
@@ -2065,7 +2086,12 @@ async function enterApp(token, doc, current = () => true, customs = fetchCustomF
       if (changed && current()) { sync.scheduleSync(); refreshCtx(); repaintWall(); }
     }).catch((e) => console.warn('crew badge sweep:', e));
   }
-  stampIdentity(token, current); // me link — fire-and-forget by design
+  // Me link — fire-and-forget by design. A first join only becomes provably
+  // "mine" once the stamp writes this device's pid onto the name, so the
+  // picks offer asks again when it lands (a no-op if it is already up).
+  stampIdentity(token, current).then(() => {
+    if (current() && state.getCrewToken() === token) maybeOfferBringPicks();
+  });
   if (recognized) welcomeRecognized(token, recognized);
   maybeOfferBringPicks(); // after the welcome: the card steps up over its toast
   // A hop from an alias domain mid-Spotify-setup (SPOT-1): reopen the drill
