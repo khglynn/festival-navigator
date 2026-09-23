@@ -178,13 +178,16 @@ function node(tag, cls, text) {
 // up by the toast's height; when it leaves, the offer settles back.
 function watchToasts(box) {
   const root = document.getElementById('toast-root');
-  if (!root || typeof MutationObserver !== 'function') return;
+  // Read off the page's window, not the bare global: the same object in a
+  // browser, and the one a jsdom shell actually has.
+  const Observer = typeof window !== 'undefined' ? window.MutationObserver : undefined;
+  if (!root || typeof Observer !== 'function') return;
   const place = () => {
     const t = root.firstElementChild;
     const h = t ? t.offsetHeight : 0;
     box.style.transform = h ? `translateY(-${h + 8}px)` : '';
   };
-  toastWatch = new MutationObserver(place);
+  toastWatch = new Observer(place);
   toastWatch.observe(root, { childList: true });
   place();
 }
