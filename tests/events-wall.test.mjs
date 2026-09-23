@@ -230,7 +230,7 @@ test('a night is venue groups: the venue\'s own stage header, its doors line, it
   const fri = roomsUnder(root, 'Friday').find((r) => r.dataset.room === 'Afters');
   const despacio = fri.querySelector('.card[data-artist="Despacio"]');
   assert.equal(despacio.querySelector('.time').textContent, '5 – 11 PM', 'the one printed window of the night');
-  const noClock = [...sat.querySelectorAll('.card')].find((c) => c.dataset.artist === 'Groove Armada');
+  const noClock = [...sat.querySelectorAll('.card')].find((c) => c.dataset.artist === 'Boys Noize');
   assert.equal(noClock.querySelector('.time'), null, 'doors and no start: a card without a clock, never an invented one');
   assert.equal(root.querySelectorAll('.deck, .deck-layer, .ee-col, .ee-item').length, 0);
 });

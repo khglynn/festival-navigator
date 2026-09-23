@@ -268,9 +268,18 @@
       "stage": "Thu · Regency Ballroom",
       "night": "Thu",
       "venue": "Regency Ballroom",
-      "time": "8 PM",
+      "time": "10:30 PM",
       "approx": true,
-      "doors": "7 PM"
+      "doors": "7 PM",
+      "order": {
+        "seq": 3,
+        "of": 3,
+        "source": "https://www.axs.com/events/1570048/soulwax-tickets",
+        "confirmed": false
+      },
+      "close": "12 AM",
+      "closeApprox": true,
+      "closeSource": "kind default (hall)"
     },
     {
       "name": "Black Rave Culture",
@@ -297,7 +306,18 @@
       "stage": "Fri · 1015 Folsom",
       "night": "Fri",
       "venue": "1015 Folsom",
-      "time": "10 PM - 2 AM"
+      "doors": "10 PM",
+      "close": "2 AM",
+      "closeApprox": true,
+      "closeSource": "https://19hz.info/eventlisting_BayArea.php",
+      "order": {
+        "seq": 2,
+        "of": 2,
+        "source": "https://www.axs.com/events/1575404/2manydjs-dj-set-tickets",
+        "confirmed": false
+      },
+      "time": "12:30 AM",
+      "approx": true
     },
     {
       "name": "Channel Tres",
@@ -362,9 +382,18 @@
       "stage": "Fri · Great American Music Hall",
       "night": "Fri",
       "venue": "Great American Music Hall",
-      "time": "9 PM",
+      "time": "10:30 PM",
       "approx": true,
-      "doors": "8 PM"
+      "doors": "8 PM",
+      "order": {
+        "seq": 3,
+        "of": 3,
+        "source": "https://www.eventim.us/event/six-sex/702210",
+        "confirmed": false
+      },
+      "close": "12 AM",
+      "closeApprox": true,
+      "closeSource": "kind default (hall)"
     },
     {
       "name": "Neil Frances",
@@ -375,7 +404,15 @@
       "doors": "10 PM",
       "close": "2 AM",
       "closeApprox": true,
-      "closeSource": "https://19hz.info/eventlisting_BayArea.php"
+      "closeSource": "https://19hz.info/eventlisting_BayArea.php",
+      "order": {
+        "seq": 2,
+        "of": 2,
+        "source": "https://www.tixr.com/groups/midwaysfgv/events/goldenvoice-presents-neil-frances-dj-set--203711",
+        "confirmed": false
+      },
+      "time": "12:30 AM",
+      "approx": true
     },
     {
       "name": "Sam Alfred",
@@ -383,16 +420,14 @@
       "stage": "Fri · Monarch",
       "night": "Fri",
       "venue": "Monarch",
-      "time": "1 AM",
+      "time": "12:30 AM",
       "approx": true,
       "doors": "10 PM",
-      "close": "2:30 AM",
-      "closeApprox": true,
-      "closeSource": "venue's Fri close",
+      "close": "2 AM",
       "order": {
-        "seq": 2,
-        "of": 2,
-        "source": "https://dothebay.com/events/2026/9/25/sam-alfred-tickets",
+        "seq": 3,
+        "of": 3,
+        "source": "https://www.eventbrite.com/e/sam-alfred-tickets-1997644591749",
         "confirmed": false
       }
     },
@@ -405,13 +440,11 @@
       "time": "10:30 PM",
       "approx": true,
       "doors": "10 PM",
-      "close": "2:30 AM",
-      "closeApprox": true,
-      "closeSource": "venue's Fri close",
+      "close": "2 AM",
       "order": {
         "seq": 1,
-        "of": 2,
-        "source": "https://dothebay.com/events/2026/9/25/sam-alfred-tickets",
+        "of": 3,
+        "source": "https://www.eventbrite.com/e/sam-alfred-tickets-1997644591749",
         "confirmed": false
       }
     },
@@ -467,11 +500,9 @@
       "approx": true,
       "doors": "10 PM",
       "close": "3 AM",
-      "closeApprox": true,
-      "closeSource": "https://19hz.info/eventlisting_BayArea.php",
       "order": {
-        "seq": 2,
-        "of": 2,
+        "seq": 3,
+        "of": 3,
         "source": "https://dothebay.com/events/2026/9/26/fcukers-dj-set-chloe-caillet-presented-by-goldenvoice-tickets",
         "confirmed": false
       }
@@ -482,15 +513,13 @@
       "stage": "Sat · Public Works",
       "night": "Sat",
       "venue": "Public Works",
-      "time": "10:30 PM",
+      "time": "11:45 PM",
       "approx": true,
       "doors": "10 PM",
       "close": "3 AM",
-      "closeApprox": true,
-      "closeSource": "https://19hz.info/eventlisting_BayArea.php",
       "order": {
-        "seq": 1,
-        "of": 2,
+        "seq": 2,
+        "of": 3,
         "source": "https://dothebay.com/events/2026/9/26/fcukers-dj-set-chloe-caillet-presented-by-goldenvoice-tickets",
         "confirmed": false
       }
@@ -520,8 +549,7 @@
       "stage": "Sat · Regency Ballroom",
       "night": "Sat",
       "venue": "Regency Ballroom",
-      "time": "10 PM",
-      "approx": true,
+      "time": "9:15 PM",
       "doors": "9 PM",
       "close": "12 AM",
       "closeApprox": true,
@@ -540,7 +568,15 @@
       "night": "Sat",
       "venue": "The Great Northern",
       "doors": "10 PM",
-      "close": "3 AM"
+      "close": "3 AM",
+      "order": {
+        "seq": 3,
+        "of": 3,
+        "source": "https://www.eventbrite.com/e/groove-armada-the-great-northern-tickets-1998071776470",
+        "confirmed": false
+      },
+      "time": "1:30 AM",
+      "approx": true
     },
     {
       "name": "Max Styler",
@@ -555,8 +591,8 @@
       "closeApprox": true,
       "closeSource": "venue's routine close",
       "order": {
-        "seq": 2,
-        "of": 2,
+        "seq": 3,
+        "of": 3,
         "source": "https://dothebay.com/events/2026/9/26/max-styler-tickets",
         "confirmed": false
       }
@@ -567,15 +603,15 @@
       "stage": "Sat · Audio",
       "night": "Sat",
       "venue": "Audio",
-      "time": "10:30 PM",
+      "time": "11:30 PM",
       "approx": true,
       "doors": "10 PM",
       "close": "2 AM",
       "closeApprox": true,
       "closeSource": "venue's routine close",
       "order": {
-        "seq": 1,
-        "of": 2,
+        "seq": 2,
+        "of": 3,
         "source": "https://dothebay.com/events/2026/9/26/max-styler-tickets",
         "confirmed": false
       }
@@ -591,8 +627,8 @@
       "doors": "10 PM",
       "close": "3 AM",
       "order": {
-        "seq": 2,
-        "of": 2,
+        "seq": 3,
+        "of": 3,
         "source": "https://dothebay.com/events/2026/9/26/jigitz-tickets",
         "confirmed": false
       }
@@ -603,13 +639,13 @@
       "stage": "Sat · Monarch",
       "night": "Sat",
       "venue": "Monarch",
-      "time": "10:30 PM",
+      "time": "12 AM",
       "approx": true,
       "doors": "10 PM",
       "close": "3 AM",
       "order": {
-        "seq": 1,
-        "of": 2,
+        "seq": 2,
+        "of": 3,
         "source": "https://dothebay.com/events/2026/9/26/jigitz-tickets",
         "confirmed": false
       }
@@ -768,11 +804,9 @@
       "approx": true,
       "doors": "10 PM",
       "close": "2 AM",
-      "closeApprox": true,
-      "closeSource": "venue's routine close",
       "order": {
-        "seq": 2,
-        "of": 2,
+        "seq": 3,
+        "of": 3,
         "source": "https://dothebay.com/events/2026/9/27/sg-lewis-dj-set-tickets",
         "confirmed": false
       }
@@ -783,15 +817,13 @@
       "stage": "Sun · The Great Northern",
       "night": "Sun",
       "venue": "The Great Northern",
-      "time": "10:30 PM",
+      "time": "11:30 PM",
       "approx": true,
       "doors": "10 PM",
       "close": "2 AM",
-      "closeApprox": true,
-      "closeSource": "venue's routine close",
       "order": {
-        "seq": 1,
-        "of": 2,
+        "seq": 2,
+        "of": 3,
         "source": "https://dothebay.com/events/2026/9/27/sg-lewis-dj-set-tickets",
         "confirmed": false
       }
@@ -805,7 +837,15 @@
       "doors": "10 PM",
       "close": "2 AM",
       "closeApprox": true,
-      "closeSource": "https://19hz.info/eventlisting_BayArea.php"
+      "closeSource": "https://19hz.info/eventlisting_BayArea.php",
+      "order": {
+        "seq": 2,
+        "of": 2,
+        "source": "https://www.axs.com/events/1575407/fatboy-slim-tickets",
+        "confirmed": false
+      },
+      "time": "12:30 AM",
+      "approx": true
     },
     {
       "name": "Silva Bumpa",
@@ -865,7 +905,15 @@
       "night": "Sun",
       "venue": "Audio",
       "doors": "9:30 PM",
-      "close": "2 AM"
+      "close": "2 AM",
+      "order": {
+        "seq": 3,
+        "of": 3,
+        "source": "https://www.axs.com/events/1579143/azzecca-tickets",
+        "confirmed": false
+      },
+      "time": "12:30 AM",
+      "approx": true
     },
     {
       "name": "JT",
@@ -880,8 +928,8 @@
       "closeApprox": true,
       "closeSource": "venue's routine close",
       "order": {
-        "seq": 2,
-        "of": 2,
+        "seq": 3,
+        "of": 3,
         "source": "https://dothebay.com/events/2026/9/27/jt-tickets",
         "confirmed": false
       }
@@ -892,15 +940,15 @@
       "stage": "Sun · Rickshaw Stop",
       "night": "Sun",
       "venue": "Rickshaw Stop",
-      "time": "11 PM",
+      "time": "11:45 PM",
       "approx": true,
       "doors": "10 PM",
       "close": "2 AM",
       "closeApprox": true,
       "closeSource": "venue's routine close",
       "order": {
-        "seq": 1,
-        "of": 2,
+        "seq": 2,
+        "of": 3,
         "source": "https://dothebay.com/events/2026/9/27/jt-tickets",
         "confirmed": false
       }
@@ -919,7 +967,7 @@
       "stage": "Sat · SVN West",
       "night": "Sat",
       "venue": "SVN West",
-      "time": "9 PM - 5 AM"
+      "time": "9 PM - 4 AM"
     },
     {
       "name": "PERVERT XXL",
@@ -960,6 +1008,399 @@
       "night": "Sun",
       "venue": "SF Eagle",
       "time": "7 PM - 2 AM"
+    },
+    {
+      "name": "LAIMA",
+      "day": "Afters",
+      "stage": "Thu · Regency Ballroom",
+      "night": "Thu",
+      "venue": "Regency Ballroom",
+      "doors": "7 PM",
+      "order": {
+        "seq": 2,
+        "of": 3,
+        "source": "https://www.axs.com/events/1570048/soulwax-tickets",
+        "confirmed": false
+      },
+      "time": "9:15 PM",
+      "approx": true,
+      "close": "12 AM",
+      "closeApprox": true,
+      "closeSource": "kind default (hall)"
+    },
+    {
+      "name": "Rory Phillips",
+      "day": "Afters",
+      "stage": "Thu · Regency Ballroom",
+      "night": "Thu",
+      "venue": "Regency Ballroom",
+      "doors": "7 PM",
+      "order": {
+        "seq": 1,
+        "of": 3,
+        "source": "https://www.axs.com/events/1570048/soulwax-tickets",
+        "confirmed": false
+      },
+      "time": "8 PM",
+      "approx": true,
+      "close": "12 AM",
+      "closeApprox": true,
+      "closeSource": "kind default (hall)"
+    },
+    {
+      "name": "B0yg1rl",
+      "day": "Afters",
+      "stage": "Fri · Great American Music Hall",
+      "night": "Fri",
+      "venue": "Great American Music Hall",
+      "doors": "8 PM",
+      "order": {
+        "seq": 2,
+        "of": 3,
+        "source": "https://www.eventim.us/event/six-sex/702210",
+        "confirmed": false
+      },
+      "time": "9:45 PM",
+      "approx": true,
+      "close": "12 AM",
+      "closeApprox": true,
+      "closeSource": "kind default (hall)"
+    },
+    {
+      "name": "Femme Jatale b2b erika",
+      "day": "Afters",
+      "stage": "Fri · Great American Music Hall",
+      "night": "Fri",
+      "venue": "Great American Music Hall",
+      "doors": "8 PM",
+      "order": {
+        "seq": 1,
+        "of": 3,
+        "source": "https://www.eventim.us/event/six-sex/702210",
+        "confirmed": false
+      },
+      "time": "9 PM",
+      "approx": true,
+      "close": "12 AM",
+      "closeApprox": true,
+      "closeSource": "kind default (hall)"
+    },
+    {
+      "name": "Strawbry",
+      "day": "Afters",
+      "stage": "Fri · Monarch",
+      "night": "Fri",
+      "venue": "Monarch",
+      "doors": "10 PM",
+      "close": "2 AM",
+      "order": {
+        "seq": 2,
+        "of": 3,
+        "source": "https://www.eventbrite.com/e/sam-alfred-tickets-1997644591749",
+        "confirmed": false
+      },
+      "time": "11:30 PM",
+      "approx": true
+    },
+    {
+      "name": "Rory Phillips",
+      "day": "Afters",
+      "stage": "Fri · 1015 Folsom",
+      "night": "Fri",
+      "venue": "1015 Folsom",
+      "doors": "10 PM",
+      "close": "2 AM",
+      "closeApprox": true,
+      "closeSource": "https://19hz.info/eventlisting_BayArea.php",
+      "order": {
+        "seq": 1,
+        "of": 2,
+        "source": "https://www.axs.com/events/1575404/2manydjs-dj-set-tickets",
+        "confirmed": false
+      },
+      "time": "10 PM",
+      "approx": true
+    },
+    {
+      "name": "The Hellp",
+      "day": "Afters",
+      "stage": "Fri · The Midway",
+      "night": "Fri",
+      "venue": "The Midway",
+      "doors": "10 PM",
+      "order": {
+        "seq": 4,
+        "of": 4,
+        "source": "https://www.tixr.com/groups/midwaysfgv/events/goldenvoice-presents-the-hellp-dj-set-bassvictim-dj-set-more-207362",
+        "confirmed": false
+      },
+      "time": "12:45 AM",
+      "approx": true,
+      "close": "2 AM",
+      "closeApprox": true,
+      "closeSource": "venue's routine close"
+    },
+    {
+      "name": "Bassvictim",
+      "day": "Afters",
+      "stage": "Fri · The Midway",
+      "night": "Fri",
+      "venue": "The Midway",
+      "doors": "10 PM",
+      "order": {
+        "seq": 3,
+        "of": 4,
+        "source": "https://www.tixr.com/groups/midwaysfgv/events/goldenvoice-presents-the-hellp-dj-set-bassvictim-dj-set-more-207362",
+        "confirmed": false
+      },
+      "time": "12 AM",
+      "approx": true,
+      "close": "2 AM",
+      "closeApprox": true,
+      "closeSource": "venue's routine close"
+    },
+    {
+      "name": "DJ Chaotic Ugly",
+      "day": "Afters",
+      "stage": "Fri · The Midway",
+      "night": "Fri",
+      "venue": "The Midway",
+      "doors": "10 PM",
+      "order": {
+        "seq": 2,
+        "of": 4,
+        "source": "https://www.tixr.com/groups/midwaysfgv/events/goldenvoice-presents-the-hellp-dj-set-bassvictim-dj-set-more-207362",
+        "confirmed": false
+      },
+      "time": "11:15 PM",
+      "approx": true,
+      "close": "2 AM",
+      "closeApprox": true,
+      "closeSource": "venue's routine close"
+    },
+    {
+      "name": "Izzy Camina",
+      "day": "Afters",
+      "stage": "Fri · The Midway",
+      "night": "Fri",
+      "venue": "The Midway",
+      "doors": "10 PM",
+      "order": {
+        "seq": 1,
+        "of": 4,
+        "source": "https://www.tixr.com/groups/midwaysfgv/events/goldenvoice-presents-the-hellp-dj-set-bassvictim-dj-set-more-207362",
+        "confirmed": false
+      },
+      "time": "10:30 PM",
+      "approx": true,
+      "close": "2 AM",
+      "closeApprox": true,
+      "closeSource": "venue's routine close"
+    },
+    {
+      "name": "Masha Mar",
+      "day": "Afters",
+      "stage": "Fri · 888 Garage",
+      "night": "Fri",
+      "venue": "888 Garage",
+      "doors": "10 PM",
+      "close": "2 AM",
+      "closeApprox": true,
+      "closeSource": "https://19hz.info/eventlisting_BayArea.php",
+      "order": {
+        "seq": 1,
+        "of": 2,
+        "source": "https://www.tixr.com/groups/midwaysfgv/events/goldenvoice-presents-neil-frances-dj-set--203711",
+        "confirmed": false
+      },
+      "time": "10:15 PM",
+      "approx": true
+    },
+    {
+      "name": "Milli Meng",
+      "day": "Afters",
+      "stage": "Sat · Public Works",
+      "night": "Sat",
+      "venue": "Public Works",
+      "doors": "10 PM",
+      "close": "3 AM",
+      "order": {
+        "seq": 1,
+        "of": 3,
+        "source": "https://www.tixr.com/groups/publicsf/events/fcukers-dj-set-chlo-caillet-presented-by-goldenvoice-203304",
+        "confirmed": false
+      },
+      "time": "10:30 PM",
+      "approx": true
+    },
+    {
+      "name": "Rumorous",
+      "day": "Afters",
+      "stage": "Sat · Monarch",
+      "night": "Sat",
+      "venue": "Monarch",
+      "doors": "10 PM",
+      "close": "3 AM",
+      "order": {
+        "seq": 1,
+        "of": 3,
+        "source": "https://www.axs.com/events/1579103/jigitz-tickets",
+        "confirmed": false
+      },
+      "time": "10:30 PM",
+      "approx": true
+    },
+    {
+      "name": "Strawbry",
+      "day": "Afters",
+      "stage": "Sat · The Great Northern",
+      "night": "Sat",
+      "venue": "The Great Northern",
+      "doors": "10 PM",
+      "close": "3 AM",
+      "order": {
+        "seq": 2,
+        "of": 3,
+        "source": "https://www.eventbrite.com/e/groove-armada-the-great-northern-tickets-1998071776470",
+        "confirmed": false
+      },
+      "time": "12 AM",
+      "approx": true
+    },
+    {
+      "name": "Galen",
+      "day": "Afters",
+      "stage": "Sat · The Great Northern",
+      "night": "Sat",
+      "venue": "The Great Northern",
+      "doors": "10 PM",
+      "close": "3 AM",
+      "order": {
+        "seq": 1,
+        "of": 3,
+        "source": "https://www.eventbrite.com/e/groove-armada-the-great-northern-tickets-1998071776470",
+        "confirmed": false
+      },
+      "time": "10:30 PM",
+      "approx": true
+    },
+    {
+      "name": "Emilio",
+      "day": "Afters",
+      "stage": "Sat · Audio",
+      "night": "Sat",
+      "venue": "Audio",
+      "doors": "10 PM",
+      "close": "2 AM",
+      "closeApprox": true,
+      "closeSource": "venue's routine close",
+      "order": {
+        "seq": 1,
+        "of": 3,
+        "source": "https://www.axs.com/events/1576493/max-styler-tickets",
+        "confirmed": false
+      },
+      "time": "10:30 PM",
+      "approx": true
+    },
+    {
+      "name": "Boys Noize",
+      "day": "Afters",
+      "stage": "Sat · 888 Garage",
+      "night": "Sat",
+      "venue": "888 Garage",
+      "doors": "10 PM",
+      "close": "2 AM",
+      "closeSource": "https://www.axs.com/events/1617573/boys-noize-special-guests-tickets"
+    },
+    {
+      "name": "Starfari",
+      "day": "Afters",
+      "stage": "Sun · The Great Northern",
+      "night": "Sun",
+      "venue": "The Great Northern",
+      "doors": "10 PM",
+      "close": "2 AM",
+      "order": {
+        "seq": 1,
+        "of": 3,
+        "source": "https://www.eventbrite.com/e/sg-lewis-the-great-northern-tickets-1998321213543",
+        "confirmed": false
+      },
+      "time": "10:30 PM",
+      "approx": true
+    },
+    {
+      "name": "Ahadadream",
+      "day": "Afters",
+      "stage": "Sun · Audio",
+      "night": "Sun",
+      "venue": "Audio",
+      "doors": "9:30 PM",
+      "close": "2 AM",
+      "order": {
+        "seq": 2,
+        "of": 3,
+        "source": "https://www.axs.com/events/1579143/azzecca-tickets",
+        "confirmed": false
+      },
+      "time": "11:15 PM",
+      "approx": true
+    },
+    {
+      "name": "Sara Afshar",
+      "day": "Afters",
+      "stage": "Sun · Audio",
+      "night": "Sun",
+      "venue": "Audio",
+      "doors": "9:30 PM",
+      "close": "2 AM",
+      "order": {
+        "seq": 1,
+        "of": 3,
+        "source": "https://www.axs.com/events/1579143/azzecca-tickets",
+        "confirmed": false
+      },
+      "time": "10 PM",
+      "approx": true
+    },
+    {
+      "name": "riria",
+      "day": "Afters",
+      "stage": "Sun · 888 Garage",
+      "night": "Sun",
+      "venue": "888 Garage",
+      "doors": "10 PM",
+      "close": "2 AM",
+      "closeApprox": true,
+      "closeSource": "https://19hz.info/eventlisting_BayArea.php",
+      "order": {
+        "seq": 1,
+        "of": 2,
+        "source": "https://www.axs.com/events/1575407/fatboy-slim-tickets",
+        "confirmed": false
+      },
+      "time": "10:15 PM",
+      "approx": true
+    },
+    {
+      "name": "Michael Milano",
+      "day": "Afters",
+      "stage": "Sun · Rickshaw Stop",
+      "night": "Sun",
+      "venue": "Rickshaw Stop",
+      "doors": "10 PM",
+      "close": "2 AM",
+      "closeApprox": true,
+      "closeSource": "venue's routine close",
+      "order": {
+        "seq": 1,
+        "of": 3,
+        "source": "https://www.axs.com/events/1576454/jt-tickets",
+        "confirmed": false
+      },
+      "time": "11 PM",
+      "approx": true
     }
   ],
   "meta": {
