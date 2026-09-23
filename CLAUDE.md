@@ -189,16 +189,20 @@ Non-inferable facts only (the code answers everything else — read it).
   ignores mouse pointers for the same reason (a held button is a slow click).
 - **The stage strip is a follower, not a scroller.** Its row rides the lead
   grid's scroll timeline (CSS scroll-driven animation; `--strip-max` is the
-  measured maximum scroll) or a transform from the lead's scroll event where
-  the engine lacks `ScrollTimeline` or motion is reduced. Never set a
-  strip's scrollLeft; anything that mirrors or restores scroll positions
-  skips `isStripScroller`. Three traps kill the timeline: jsdom's
-  `CSS.supports` says yes to everything (detect with
-  `typeof window.ScrollTimeline`), the tokens file's reduced-motion rule
-  kills every animation, and so does Low Power. Which route a strip takes is
-  therefore decided per RENDER, never once at load — a phone can drop into
-  Low Power with the wall already up — and each render undoes the last
-  render's wiring.
+  measured maximum scroll) wherever the engine has `ScrollTimeline` — under
+  Reduce Motion and Low power too (2026-09-23: tracking a finger is direct
+  manipulation, not decoration, and the fallback trails the grid by a frame
+  on a phone) — and a transform from the lead's scroll event only where the
+  engine lacks it (iOS before 26). Never set a strip's scrollLeft; anything
+  that mirrors or restores scroll positions skips `isStripScroller`. Traps:
+  jsdom's `CSS.supports` says yes to everything (detect with
+  `typeof window.ScrollTimeline`), and the tokens file's two motion kill
+  rules (`!important` on `*`) would freeze the follow — their `animation`
+  shorthand even resets `animation-timeline` — so the follow's animation is
+  the one rule in v3.css that out-ranks them, reading the timeline's name
+  from `--strip-tl`. Don't move it back inline. The route is decided per
+  RENDER and written on the strip (`data-follow`, which Diagnostics reports),
+  and each render undoes the last render's wiring.
 - **WebKit only honours `-webkit-user-select`** — an unprefixed
   `user-select: none` did nothing on iOS and a long-press selected the time
   label and raised the Copy/Search callout over the zoom (2026-09-02). Every

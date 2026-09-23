@@ -651,15 +651,24 @@ const undoOnRepaint = (root, undo) => {
   teardowns.get(root).push(undo);
 };
 let timelineSeq = 0;
+// The strip element (`.stage-strip`) around a strip's scroller — where the
+// route taken is written down.
+const stripOf = (scroller) => (scroller.closest && scroller.closest('.stage-strip')) || scroller;
 function followStrip(strip, lead, root) {
   const row = strip.querySelector('.times-grid');
   if (!row) return;
   strip.classList.add('follows');
-  // The CSS follow only where CSS animations run: the tokens file kills every
-  // animation under reduced motion and under Low Power, and a killed follow
-  // leaves the stage names frozen over sliding columns. Decided per render —
-  // leaving Settings repaints the wall.
-  if (SCROLL_TIMELINES && !reduced() && !document.body.classList.contains('low-power')) {
+  // The timeline wherever the engine has one — under Reduce Motion and the
+  // app's Low power too (2026-09-23). A strip that tracks your finger is
+  // direct manipulation, not decorative motion: the people who turned motion
+  // off need the stage names over the right columns as much as anyone, and
+  // the transform route below trails the grid by a frame on a phone (Kevin's
+  // "stuttered delayed slide"). The two kill rules in the tokens file would
+  // still freeze it — their `animation` shorthand resets `animation-timeline`
+  // — so the follow's animation lives in v3.css, out-ranking them, and reads
+  // the timeline's name from `--strip-tl`, which no shorthand can reset.
+  // Still decided per render, as every wiring here is.
+  if (SCROLL_TIMELINES) {
     // The timeline is named on the lead and scoped on the nearest ancestor
     // both share (a day's .tt-block, or the wall for the one-strip page).
     // The far keyframe is the lead's maximum scroll in px (--strip-max): the
@@ -675,8 +684,9 @@ function followStrip(strip, lead, root) {
       if (lead.firstElementChild) ro.observe(lead.firstElementChild);
     }
     lead.style.scrollTimeline = `${name} x`;
-    row.style.animation = 'strip-follow linear both';
-    row.style.animationTimeline = name;
+    row.style.setProperty('--strip-tl', name);
+    row.classList.add('rides');
+    stripOf(strip).dataset.follow = 'timeline'; // what Diagnostics reports (js/errlog.js)
     const scope = strip.closest('.tt-block') || root;
     scope.style.timelineScope = [scope.style.timelineScope, name].filter(Boolean).join(', ');
     undoOnRepaint(root, () => {
@@ -685,8 +695,10 @@ function followStrip(strip, lead, root) {
     });
     return;
   }
-  // Set on the spot: scroll events already arrive at most once a frame, and
-  // a transform write is a compositor update, not a layout.
+  // No scroll timelines in this engine (iOS before 26): a transform set on
+  // the spot. Scroll events already arrive at most once a frame, and a
+  // transform write is a compositor update, not a layout.
+  stripOf(strip).dataset.follow = 'transform';
   const follow = () => { row.style.transform = `translateX(${-lead.scrollLeft}px)`; };
   lead.addEventListener('scroll', follow, { passive: true });
   follow();

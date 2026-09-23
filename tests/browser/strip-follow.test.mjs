@@ -67,6 +67,37 @@ const follow = () => page.evaluate(() => {
   const off = (scroller) => scroller.querySelector('.times-grid').getBoundingClientRect().left - scroller.getBoundingClientRect().left;
   return { scrollLeft: lead.scrollLeft, grid: off(lead), strip: off(strip) };
 });
+// Which route the first overflowing strip is on, as the ENGINE sees it: the
+// computed animation (so a kill rule that froze it would show), the timeline
+// it rides against the one its grid declares, and any inline transform a
+// scroll handler wrote.
+const route = () => page.evaluate(() => {
+  const block = [...document.querySelectorAll('#events-wall .tt-block')].find((b) => {
+    const lead = b.querySelector('.times-wrap:not(.stage-strip) .times-scroll');
+    return lead && lead.scrollWidth - lead.clientWidth > 120;
+  });
+  const lead = block.querySelector('.times-wrap:not(.stage-strip) .times-scroll');
+  const row = block.querySelector('.stage-strip .times-grid');
+  const cs = getComputedStyle(row);
+  return {
+    follow: block.querySelector('.stage-strip').dataset.follow,
+    animation: cs.animationName,
+    rides: cs.animationTimeline,
+    declared: (lead.style.scrollTimeline || '').split(' ')[0],
+    inline: row.style.transform,
+    hasTimelines: typeof window.ScrollTimeline === 'function',
+  };
+});
+// Where the engine has scroll timelines, the follow is the timeline — Low
+// Power and Reduce Motion included (2026-09-23): tracking a finger is direct
+// manipulation, and the transform route trails the grid by a frame on a phone.
+const onTimeline = (r, why) => {
+  if (!r.hasTimelines) return;
+  assert.equal(r.follow, 'timeline', `${why}: the timeline route — ${JSON.stringify(r)}`);
+  assert.equal(r.animation, 'strip-follow', `${why}: and the kill rules did not freeze it — ${JSON.stringify(r)}`);
+  assert.equal(r.rides, r.declared, `${why}: riding its own grid's timeline — ${JSON.stringify(r)}`);
+  assert.equal(r.inline, '', `${why}: no script moves the row — ${JSON.stringify(r)}`);
+};
 const wheel = async (dx) => {
   const at = await settle();
   assert.ok(at, 'an overflowing timetable with an empty spot is on screen');
@@ -76,10 +107,11 @@ const wheel = async (dx) => {
   return follow();
 };
 
-test('the strip follows its columns — and still does under Low Power', { skip }, async () => {
+test('the strip follows its columns — and still does, on the timeline, under Low Power and Reduce Motion', { skip }, async () => {
   let f = await wheel(140);
   assert.ok(f.scrollLeft > 60, `the columns scrolled: ${JSON.stringify(f)}`);
   assert.ok(Math.abs(f.strip - f.grid) <= 1, `the venue names moved with them: ${JSON.stringify(f)}`);
+  onTimeline(await route(), 'motion on');
 
   // Low Power, the way the app gets it: the setting flips and the wall repaints.
   await page.click('#events-lowpower');
@@ -89,10 +121,26 @@ test('the strip follows its columns — and still does under Low Power', { skip 
   f = await wheel(160);
   assert.ok(f.scrollLeft > 60, `the columns scrolled again: ${JSON.stringify(f)}`);
   assert.ok(Math.abs(f.strip - f.grid) <= 1, `and the names followed: ${JSON.stringify(f)}`);
+  onTimeline(await route(), 'Low Power');
 
   await page.click('#events-lowpower');
   f = await wheel(-120);
-  assert.ok(Math.abs(f.strip - f.grid) <= 1, `Low Power off, the timeline follow is back: ${JSON.stringify(f)}`);
+  assert.ok(Math.abs(f.strip - f.grid) <= 1, `Low Power off, the follow is unchanged: ${JSON.stringify(f)}`);
+
+  // Reduce Motion (the OS setting): the tokens file's kill rule applies to the
+  // whole page, and the follow is the one animation that out-ranks it.
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  try {
+    f = await wheel(150);
+    assert.ok(f.scrollLeft > 60, `the columns scrolled under Reduce Motion: ${JSON.stringify(f)}`);
+    assert.ok(Math.abs(f.strip - f.grid) <= 1, `and the names followed them: ${JSON.stringify(f)}`);
+    onTimeline(await route(), 'Reduce Motion');
+    const others = await page.evaluate(() => [...document.querySelectorAll('.card.animated, .hero-grain')]
+      .map((el) => getComputedStyle(el).animationName).filter((n) => n && n !== 'none'));
+    assert.deepEqual(others, [], 'everything else is still still: only the follow is exempt');
+  } finally {
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
+  }
 });
 
 // Two grid days is the shape every real scheduled fest has, and one grid day
@@ -114,7 +162,7 @@ test('two grid days: each strip is bound to its OWN columns, and both follow a r
       grid: off(lead),
       strip: off(b.querySelector('.stage-strip .times-scroll')),
       timeline: (lead.style.scrollTimeline || '').split(' ')[0],
-      boundTo: row.style.animationTimeline || '',
+      boundTo: getComputedStyle(row).animationTimeline || '',
       stripMax: row.style.getPropertyValue('--strip-max'),
       leadMax: `${Math.max(0, lead.scrollWidth - lead.clientWidth)}px`,
     };

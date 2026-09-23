@@ -626,14 +626,27 @@ button.room-head { cursor: pointer; }
  * scroller of its own any more. Its row rides the grid's scroll timeline —
  * the far keyframe is the grid's maximum scroll in px (--strip-max, measured
  * by followStrip; the row's tracks overflow its box, so no percentage of the
- * row could say it) — or, where scroll timelines are missing or animations
- * are off (reduced motion, Low Power), a transform set from the grid's scroll
- * event. Either way the row moves as one piece; no second scroll position
- * exists to lag behind.
+ * row could say it) — or, where the engine has no scroll timelines, a
+ * transform set from the grid's scroll event. Either way the row moves as one
+ * piece; no second scroll position exists to lag behind.
  * pan-y: a finger on the strip still scrolls the page. */
 .stage-strip .times-scroll.follows { overflow: hidden; touch-action: pan-y; }
 .stage-strip .times-scroll.follows .times-grid { will-change: transform; }
 @keyframes strip-follow { from { transform: translateX(0); } to { transform: translateX(calc(-1 * var(--strip-max, 0px))); } }
+/* The follow is the ONE animation the motion kill rules do not stop
+ * (2026-09-23): the stage names tracking a finger are direct manipulation,
+ * not decoration, and Reduce Motion / Low power users need them over the
+ * right columns as much as anyone. The kill rules (v3-tokens.css: the
+ * reduced-motion one and `.low-power *`) are `!important` on `*`, so this
+ * out-ranks them by specificity; their `animation` shorthand also resets
+ * `animation-timeline`, which is why the timeline's name arrives as a custom
+ * property (--strip-tl, set by wall.js followStrip) that no shorthand can
+ * touch. `.rides` is set only where the engine has scroll timelines — without
+ * one, a zero-length `both` animation would park the row at its far end. */
+.stage-strip .times-scroll.follows .times-grid.rides {
+  animation: strip-follow linear both !important;
+  animation-timeline: var(--strip-tl) !important;
+}
 .hour-label { text-align: right; padding-right: 6px; font-size: 9.5px;
               color: var(--text-tertiary); font-weight: 600; position: relative; top: -7px; }
 /* ---- wall grid + undo toast ---------------------------------------------------- */
