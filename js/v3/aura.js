@@ -156,29 +156,32 @@ export const GIVE_WAY = [
 ];
 
 // Widths as v3.css draws each piece — measured in Chromium on 2026-09-23 (Inter
-// 800, Anton) and logged in claude-plans/2026-09-23-meter-build.md. A count
-// is charged at the WIDEST digit, so an estimate can only err toward giving
-// way a touch early, never toward a collision; the browser contract
-// (tests/browser/meter-contract.test.mjs) measures the real thing. `base` is
-// every card; `cell` is a timetable cell, whose chips are a pixel smaller.
+// 800, Anton) and logged in claude-plans/2026-09-23-meter-build.md. Counts
+// are summed from Inter 800's own digit widths (em, measured the same day;
+// no kerning between digits) and rounded up, so an estimate errs, if at all,
+// toward giving way a touch early; CLEAR keeps the two corners apart even so.
+// The browser contract (tests/browser/meter-contract.test.mjs) measures the
+// real thing on every card. `base` is every card; `cell` is a timetable cell,
+// whose chips draw a pixel smaller.
 const GEO = {
-  base: { left: 6, right: 5, chip: 14, digit: 5.9, meter: 24.5, must: 31.5 },
-  cell: { left: 5, right: 4, chip: 12, digit: 5.6, meter: 22.5, must: 28.5 },
+  base: { left: 6, right: 5, chip: 14, font: 8.5, meter: 24.5, must: 31.5 },
+  cell: { left: 5, right: 4, chip: 12, font: 8, meter: 22.5, must: 28.5 },
 };
+const EM = { 0: 0.692, 1: 0.441, 2: 0.638, 3: 0.657, 4: 0.689, 5: 0.634, 6: 0.663, 7: 0.606, 8: 0.665, 9: 0.663, '+': 0.686 };
+const textWidth = (text, px) => Math.ceil([...String(text || '')].reduce((w, ch) => w + (EM[ch] ?? 0.7), 0) * px * 10) / 10;
 const GAP = 3;    // between chips (.corner-about gap), and before every mark (.mark margin-left)
 const CLEAR = 4;  // the least air left between the two corners
 const FLAG = 7;   // the followed bookmark (+3 when a count sits beside it)
 const MARK = { must: 26, pick: 6 }; // 24px / 4px plus a 1px stroke each side
-const digits = (label) => String(label || '').length;
 
 function chipWidth(c, g, s) {
   if (c.kind === 'meter') return c.level === 4 ? g.must : g.meter;
-  if (c.kind === 'notes') return g.chip + g.digit * digits(c.label);
-  const count = s.spotCount ? digits(c.label) : 0;
-  return g.chip + g.digit * count + (c.followed ? FLAG + (count ? GAP : 0) : 0);
+  if (c.kind === 'notes') return g.chip + textWidth(c.label, g.font);
+  const count = s.spotCount ? textWidth(c.label, g.font) : 0;
+  return g.chip + count + (c.followed ? FLAG + (count ? GAP : 0) : 0);
 }
-// The ghost is 7.5px type in 4px padding and a dashed 1px edge: "+" then digits.
-const markWidth = (m) => (m.kind === 'ghost' ? 15.2 + 5.2 * (m.label.length - 1) : MARK[m.kind]);
+// The ghost: 7.5px type in 4px padding and a dashed 1px edge, cell or not.
+const markWidth = (m) => (m.kind === 'ghost' ? 10 + textWidth(m.label, 7.5) : MARK[m.kind]);
 
 function layoutAt({ people = [], about = [] }, step, { cell = false } = {}) {
   const g = cell ? GEO.cell : GEO.base;
