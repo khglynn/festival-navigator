@@ -1093,11 +1093,12 @@ async function batchCreateFlow(myName) {
       // where the new row already is.
       const { token, doc, fid } = made[0];
       try {
-        await enterApp(token, doc);
+        await enterApp(token, doc, undefined, undefined, { holdOffer: true });
         state.recordInviteFest(fid); // invites resolve on fresh devices (FLOW-1)
         sync.scheduleSync();
         openShareMoment();
         router.push('sheet:share');
+        maybeOfferBringPicks(); // waits for the share moment to close — never both at once
       } catch {
         history.replaceState(null, '', '/');
         renderLanding();
@@ -1786,6 +1787,7 @@ function maybeOfferBringPicks() {
   if (standing && standing.dataset.key !== key) dismissBringOffer({ instant: true });
   if (!token || !fid || !ctx.meName || ctx.migrationPending || bringAnswered(token, fid)) return;
   if (bringOfferCard()) return; // already asking, here
+  if (document.getElementById('artist-sheet')) { offerWhenSheetCloses(); return; }
   const plan = planBringPicks(bringContext());
   if (!plan) return;
   standingOffer = { key, plan };
@@ -1796,6 +1798,25 @@ function maybeOfferBringPicks() {
     onBring: () => bringPicksHere(key),
     onDecline: () => rememberBringAnswer(token, fid, 'declined'),
   });
+}
+
+// One thing at a time at the bottom of the screen: an offer that would come
+// up while a sheet is open waits for the sheet to close, then arrives with
+// its usual beat. The post-create share moment opened at the same instant
+// and covered the card — a real tap on "Bring it" hit the sheet (WebKit
+// walk, iPhone 15, 2026-09-23). Sheets live on <body>, so its child list
+// says when the last one has gone.
+let offerWaiter = null;
+function offerWhenSheetCloses() {
+  const Observer = typeof window !== 'undefined' ? window.MutationObserver : undefined;
+  if (offerWaiter || typeof Observer !== 'function') return;
+  offerWaiter = new Observer(() => {
+    if (document.getElementById('artist-sheet')) return;
+    offerWaiter.disconnect();
+    offerWaiter = null;
+    maybeOfferBringPicks();
+  });
+  offerWaiter.observe(document.body, { childList: true });
 }
 
 // Someone else is picking on this phone now (Settings → You, a rename): the
@@ -1992,7 +2013,7 @@ async function stampIdentity(token, current = () => true, { renameFrom = null } 
 // `warm` (boot only): the festival canOpenWarm admitted, `{ fid, fest }` —
 // painting from this phone's own copy, so nothing below may wait on the
 // network, and nothing re-decides the festival (see boot's warm open).
-async function enterApp(token, doc, current = () => true, customs = fetchCustomFestivals(token), { recognized = null, warm = null } = {}) {
+async function enterApp(token, doc, current = () => true, customs = fetchCustomFestivals(token), { recognized = null, warm = null, holdOffer = false } = {}) {
   dismissBringOffer({ instant: true }); // an offer is about the crew it was made in — never the next one
   crew.setActiveCrew(token);
   crew.rememberCrew(token, (doc.meta && doc.meta.name) || '');
@@ -2100,10 +2121,13 @@ async function enterApp(token, doc, current = () => true, customs = fetchCustomF
   // "mine" once the stamp writes this device's pid onto the name, so the
   // picks offer asks again when it lands (a no-op if it is already up).
   stampIdentity(token, current).then(() => {
-    if (current() && state.getCrewToken() === token) maybeOfferBringPicks();
+    if (!holdOffer && current() && state.getCrewToken() === token) maybeOfferBringPicks();
   });
   if (recognized) welcomeRecognized(token, recognized);
-  maybeOfferBringPicks(); // after the welcome: the card steps up over its toast
+  // After the welcome: the card steps up over its toast. `holdOffer`: the
+  // caller is about to open a sheet (the create flow's share moment), and
+  // asks for the offer itself once that sheet is up, so it waits for it.
+  if (!holdOffer) maybeOfferBringPicks();
   // A hop from an alias domain mid-Spotify-setup (SPOT-1): reopen the drill
   // so the member lands exactly where they left off.
   if (pendingSpotifyOpen) {
