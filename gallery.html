@@ -84,7 +84,7 @@
     <div class="g-label" style="margin-top: 20px;">10–11 · timetable cells — short set, tall set</div>
     <div class="zoom-row" id="zoom-row-cells"></div>
 
-    <div class="g-label" style="margin-top: 20px;">12 · an afters / event card</div>
+    <div class="g-label" style="margin-top: 20px;">12 · an afters / event card, and a cancelled act</div>
     <div class="zoom-row" id="zoom-row-event"></div>
 
     <div class="g-label" style="margin-top: 20px;">13–14 · name edge cases — two lines, one syllable</div>
@@ -453,7 +453,8 @@ FESTIVALS[GFID] = {
     ] },
     Sunday: { stages: ['Pier Stage', 'Crane Stage'], artists: [] },
   },
-  artists: [],
+  // A cancelled act (2026-09-23): off the grid, its entry kept and marked.
+  artists: [{ name: 'Called Off', day: 'Saturday', venue: 'Crane Stage', cancelled: { on: '2026-09-21', source: 'https://example.test/the-report', note: 'No replacement. The earlier Crane Stage sets run longer.' } }],
 };
 
 // Picks arranged per state (Kevin = You, colorIndex 0; Kevin/Kat share a
@@ -477,6 +478,7 @@ const SELECTIONS = {
   'Right Edge Artist': { Kat: 1 },
   'Top Of Page Probe': { Kevin: 2 },
   'Bottom Of Page Probe': { Nhu: 2 },
+  'Called Off': { Drew: 4, Kat: 4, Nhu: 2 },
 };
 
 // A fixed token, wiped on every load so the gallery renders the SAME states
@@ -665,6 +667,12 @@ eventRow.appendChild(stateCard('12 · Thursday night, no grid day', 'Midnight Af
   time: 'Thu · 10:00 PM - 2:00 AM\nThe Midway',
   occ: { day: null, stage: 'Thu · The Midway', time: '10:00 PM - 2:00 AM', weekend: null },
 }));
+// Struck, "Cancelled" where the time goes, the wash turned down, the crew's
+// marks still on it; the zoom says when it was announced and what happened.
+eventRow.appendChild(stateCard('12b · a cancelled act, picked by three', 'Called Off', {
+  time: 'Cancelled',
+  occ: { day: 'Saturday', stage: null, time: null, weekend: null, date: null, venue: 'Crane Stage' },
+}));
 
 const namesRow = document.getElementById('zoom-row-names');
 namesRow.appendChild(stateCard('13 · a two-line long name', 'Boiler Room B2B2B2B: The Never-Ending Sunrise Set', { occ: day }));
@@ -741,6 +749,9 @@ FESTIVALS[EFID] = {
     { name: 'Quick Set', day: 'Saturday' }, { name: 'Long Set', day: 'Saturday' }, { name: 'Headliner', day: 'Saturday' },
     { name: 'Warehouse Opener', day: 'Saturday' }, { name: 'Tent Closer', day: 'Saturday' }, { name: 'All Night Long', day: 'Saturday' },
     { name: 'Sunday Opener', day: 'Sunday' }, { name: 'Sunday Closer', day: 'Sunday' }, { name: 'Ship Tent Set', day: 'Sunday' },
+    // Cancelled (2026-09-23): a billing off Saturday's grid lands under its stage in the festival's room; a show in a room sorts last.
+    { name: 'Called Off', day: 'Saturday', venue: 'Crane Stage', cancelled: { on: '2026-09-21', source: 'https://example.test/the-report', note: 'No replacement. The earlier Crane Stage sets run longer.' } },
+    { name: 'No Show', ...room('Fri', 'The Basement', { time: '9 PM', cancelled: { on: '2026-09-22', source: 'https://example.test/the-report' } }) },
     // Friday afters: two un-numbered rooms (three at 8 PM, two at 10 PM — the pre-research state), a tall set, a timeless one.
     { name: 'Channel Tres', ...room('Fri', 'The Ballroom', { time: '8 PM' }) },
     { name: 'Jyoty', ...room('Fri', 'The Ballroom', { time: '8 PM' }) },
@@ -774,6 +785,7 @@ FESTIVALS[EFID] = {
 // so the zoom gallery's own taps keep landing in its fest.
 const ESEL = {
   'Channel Tres': { Kevin: 4, Nhu: 3 }, Jyoty: { Kat: 1 }, 'Sam Alfred': { Kevin: 2 }, Despacio: { Kevin: 3, Nhu: 2 },
+  'Called Off': { Drew: 4, Kat: 4, Nhu: 2 }, 'No Show': { Kevin: 3 },
   VTSS: { Kevin: 4, Nhu: 1 }, horsegiirL: { Nhu: 2 }, 'Fatboy Slim': { Kevin: 4, Nhu: 4, Kat: 1 },
   'Folsom Street Fair': { Kevin: 4, Nhu: 4, Kat: 4 }, Magnitude: { Kevin: 1 }, Headliner: { Kat: 4 }, 'Long Set': { Nhu: 3 },
 };
