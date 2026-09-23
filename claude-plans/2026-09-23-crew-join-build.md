@@ -65,3 +65,32 @@ two crews at one fest feel less like starting over:
 - A possible follow-up: the + Add picker could carry a person's pid from
   another crew, so their device is recognized the first time they open
   the new crew's link. Not built — it writes a pid someone else asserted.
+
+# Round 2 — the lie-fi cold open, and the share-copy trims (2026-09-23)
+
+Brief: on a network that HANGS (Pier 80, 40k phones), a cold open showed the
+loader for up to ~16 s with everything it needed already on the phone —
+navigation 4 s (worker budget), then catalog 4 s ‖ crew doc 8 s ‖ customs 8 s,
+then the festival file 4 s. Goal: with a cached crew doc + a claimed name (+
+the catalog and festival file in the worker's caches) the wall paints from
+cache at once, and the network lands the ordinary way. Keep: the crew-gone path
+(JSON 404 only), boot's generation guards, the bad-link paths, the first-ever
+open waiting on the network, festival-JSON freshness. "Stay offline" becomes
+the field escape hatch. Then the option-a copy trims from the notes audit
+(A5, A14, A19, A18, A11, A10).
+
+## Plan
+
+- Tests first: jsdom boots with a network that never answers (warm paints
+  fast; a later doc applies; a later JSON 404 is crew-gone; no cache still
+  waits; Stay offline asks the network nothing it can skip).
+- `js/festivals.js`: read index.json and a festival file straight from the
+  worker's caches (DATA_CACHE first), never throwing.
+- `js/v3/app.js` boot: a warm branch after the token is known; `enterApp`
+  gets `warm` (festival cache-first, migration not awaited); a small
+  `freshenWarmOpen` lands the catalog, customs and a fresh festival file
+  through the same repaint a remote change takes.
+- Worker: a shorter navigation budget when a shell is cached (decide
+  against the new-build reload glue first).
+
+## Log (round 2)
