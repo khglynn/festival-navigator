@@ -225,6 +225,12 @@ out is quick.
   VISIBLE grid day; during the fest, today if visible, else the next visible
   day. Kevin: "if all events for a day are hidden, don't show that day at all
   — not empty shells." Portola with Afters and Folsom hidden is SAT · SUN.
+  With EVERY room hidden (2026-09-23, a real-engine walk) the wall is not
+  left blank: one quiet line, "Everything's hidden.", then where the switch
+  is, by the fest link's own words — "Tap PORTOLA '26 below…" on a phone,
+  "Click … up top…" on a desktop. No box, no button; it arrives with the
+  beat and leaves first when a room comes back. A fest with one room has no
+  menu, so no fold key can hide anything there.
 - **The menu reads the fest, not the wall** (`roomsOf`: the same plan with
   nothing folded), so every room is offered whether or not it is hidden —
   that is where the state is visible. Hiding repaints the wall and the tabs

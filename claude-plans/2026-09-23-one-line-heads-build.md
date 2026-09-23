@@ -108,6 +108,34 @@ Suites after round 2: `npm test` 618 tests, 616 pass, 1 skipped, 1 fail
 it passed alone 3/3 and in the next full run — a load-timing flake in a
 file this lane never touched. `npm run test:browser` 26/26.
 
+## Round 3 (same day): everything hidden
+
+Built on integrate/prefest-0923 at `a7b4885` (a fast-forward: it already
+held rounds 1–2; baseline there `npm test` 716 tests, 715 pass, 1 skipped,
+0 fail — v86 stamped).
+
+- `06a90e0` tests first, `6e05028` the build, `cf5d11f` the browser case.
+- With the visible week empty (no day, no tab off the end, nothing
+  day-less) the wall shows `.wall-empty`: "Everything's hidden." then "Tap
+  PORTOLA '26 below to bring parts back." (under 720px, the dock) or "Click
+  … up top …" (720+, the rail). The name comes from `festLinkLabel`, which
+  the dock and rail now use too. Quiet copy, no box, no button,
+  `role="status"`. A search with everything hidden says the same instead of
+  "No artists match".
+- Motion: the notice arrives with the beat after the last day leaves, and
+  leaves first (quick and plain) when a room comes back; with nothing to
+  land on, the page goes to the top.
+- Added: a fest with ONE room has no show menu, so `wallPlanFor` treats
+  every fold key as inert there (`roomsIn`, shared with `roomsOf`) —
+  otherwise a stale key could blank it with no switch, and the notice would
+  point at a door that isn't there.
+- Checked: Chromium 390 + 1280 (Portola, ACL with both weekends and Late
+  nights hidden) and WebKit iPhone 15 through the real menu (hide all
+  three → notice; Afters back → notice gone, THU–SUN tabs back).
+  Screenshots: scratchpad `heads-shots/everything-hidden-*.png`.
+- Suites: `npm test` 720 tests, 718 pass, 1 skipped, 1 fail (the SW stamp,
+  red again because v3.css and the JS changed after v86). Browser 27/27.
+
 ## Left for the integrator
 
 - Stamp the service worker once, on a clean tree, then the preview walk and
