@@ -35,10 +35,36 @@ dies, the next agent reads the spec, then this, then `git log` on the branch.
 4. **The date without its weekday comes from the model** (`day.when` in
    events.js, beside the existing `day.sub`), never by string surgery.
 
+5. **Dated section heads carry the room's own sub too** (`TUE LATE NIGHTS
+   Sep 29 · around Austin`): the spec's rule ("the date, then the room's own
+   sub") applied uniformly; its example omitted the sub. Easy to drop if
+   Kevin finds the repeat noisy (`renderExtra`, one argument).
+6. **Two polish details from the 390 walk**: an empty sub is `display:none`
+   (it cost a second gap before the hairline), and the hairline fades in
+   over 12px (a 4px stub after a long head read as a dot).
+7. **Search folds**: a search's day answers are day blocks too, so the fold
+   still animates a day leaving while a query is on.
+
 ## Done
 
-- (filled as commits land)
+- `3158325` spec copied in · `69e83cf` this log.
+- `cccddba` tests first: the new truth in 12 unit test files (red on purpose).
+- `053273d` the build: events.js `day.when` + `weekdayOfIso`; wall.js
+  `dayBlock` / `roomHead` / `listHead` / `dateDoor`, renderComposed and
+  renderExtra rewritten, search and lineup lists in day blocks,
+  `DAY_ANCHOR = '.day-block[data-day]'`, scrollToNowLine on the block;
+  app.js fold (`dayBlocksOf` filter, `foldBlocksOf` no double motion,
+  `planDayKeys` includes dated tabs, `landOnDay`); v3.css heads.
+- `3a938ac` polish + `tests/browser/heads-contract.test.mjs` (5 cases).
+- Suites: `npm test` 613 tests, 612 pass + 1 skipped EXCEPT the service-
+  worker stamp test (red by design: no `sw-stamp.mjs` in this lane).
+  `npm run test:browser` 24/24.
+- Screenshots: scratchpad `heads-shots/` (see the final report).
 
 ## Left
 
-- (filled as work proceeds)
+- gallery.html (static head sample, the events-wall copy), docs
+  (CLAUDE.md notes bullet, MODEL-V4 pointer section, add-a-festival,
+  the validator's day-label warning text, notes.js comments).
+- A WebKit scrollspy walk (local only; CI has Chromium alone).
+- Final screenshots at 390 and 1280.
