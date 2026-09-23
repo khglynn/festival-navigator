@@ -135,8 +135,8 @@ export function shortDate(iso) {
   return MONTHS[m - 1] ? `${MONTHS[m - 1]} ${d}` : '';
 }
 // "Thu · Oct 1" — a date that speaks for itself, because a dated show has no
-// weekday label to borrow one from. One builder: the rule over a date inside
-// a dated section shouts it, the zoom says it.
+// weekday label to borrow one from. One builder: a search's list head over a
+// dated section's date shouts it (dateRuleLabel), the zoom says it.
 export function shortDateLabel(iso) {
   const wd = weekdayOfIso(iso);
   return wd ? `${wd} · ${shortDate(iso)}` : String(iso);
@@ -147,7 +147,8 @@ export function weekdayOfIso(iso) {
   const d = new Date(`${iso}T00:00:00Z`);
   return Number.isNaN(d.getTime()) ? null : WEEKDAYS[(d.getUTCDay() + 6) % 7];
 }
-// "TUE · SEP 29" — the rule over one date inside a dated section.
+// "TUE · SEP 29" — a search's list head over one date's answers in a dated
+// section. (On the wall that date is a room head, `TUE LATE NIGHTS  Sep 29`.)
 export function dateRuleLabel(iso) {
   return shortDateLabel(iso).toUpperCase();
 }

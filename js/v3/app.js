@@ -426,9 +426,7 @@ function tickClock(date = new Date()) {
 
 // Where a day tab lands on the wall, in the wall's own words (DAY_ANCHOR):
 // its day's block, whose first head names the day.
-const anchorFor = (key) => DAY_ANCHOR.split(', ')
-  .map((sel) => `#wall-root ${sel.replace('[data-day]', `[data-day="${CSS.escape(key)}"]`)}`)
-  .join(', ');
+const anchorFor = (key) => `#wall-root ${DAY_ANCHOR.replace('[data-day]', `[data-day="${CSS.escape(key)}"]`)}`;
 
 // Which day the wall opens on (MODEL-V4 §2): the festival's first VISIBLE grid
 // day. The day axis leads with whatever plays first — Portola's Thursday
