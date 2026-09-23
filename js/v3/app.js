@@ -30,8 +30,10 @@ import { startFavicon, stopFavicon } from './favicon.js';
 import { hslOf, strokeOf, nextColorIndex } from './palette.js';
 // Entering a crew you already have a life in (2026-09-23): recognized on
 // open, and the one-time offer to bring your picks from another crew.
-import { planBringPicks, bringOfferCopy, bringDoneLine, bringAnswered, rememberBringAnswer, showBringOffer, settleBringOffer, dismissBringOffer, bringOfferCard } from './crew-entry.js';
+import { planBringPicks, bringFromSource, bringOfferCopy, bringDoneLine, bringAnswered, rememberBringAnswer, showBringOffer, settleBringOffer, dismissBringOffer, bringOfferCard } from './crew-entry.js';
 import { showActionToast } from './wall.js';
+// The warm open (2026-09-23): paint from what this phone holds, freshen after.
+import { festivalIndexFromCache, festivalFromCache, fetchFestivalFile, cachedCustomFestivals } from '../festivals.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -493,6 +495,7 @@ function maybeOpenOnDay() {
 // The explicit identity switch (FLOW-8), called from Settings.
 function switchIdentity(name) {
   crew.setMe(state.getCrewToken(), name);
+  withdrawBringOffer(); // an offer of one person's picks is never another's
   // The wall is painted per identity (your level in every label, the white
   // stroke on your marks) — Settings → You is the ONLY switch now, so the
   // repaint lives here, not in a caller (Codex gate, 2026-08-29).
@@ -1205,7 +1208,7 @@ function openAddMember() {
   sheetChrome(sheet, 'ADD SOMEONE'); // one sheet anatomy, everywhere (see openShareMoment)
   const sub = document.createElement('div');
   sub.style.cssText = 'color: var(--text-secondary); font-size: 12.5px; line-height: 1.55;';
-  sub.textContent = 'You pick for them until they claim it — their link makes it theirs the moment they open it.';
+  sub.textContent = 'Pick for them until they open their link.';
   const row = document.createElement('div');
   row.style.cssText = 'display: flex; gap: 8px; align-items: center;';
   const input = document.createElement('input');
@@ -1505,6 +1508,7 @@ function openSettings() {
       if (state.crewDoc.people[old]) state.crewDoc.people[old].removed = true;
       state.persist();
       crew.setMe(state.getCrewToken(), newName);
+      withdrawBringOffer(); // it was made for the old name
       sync.scheduleSync();
       refreshCtx();
       renderPersonChips();
@@ -1600,7 +1604,8 @@ function renderLanding() {
     nm.textContent = person.name || 'You';
     const hint = document.createElement('div');
     hint.className = 'mini-copy';
-    hint.textContent = 'Open your link on a new phone and everything comes back — every crew, every pick. Sharing it makes someone else you, so don’t.';
+    // The me link is a master key: the warning stays, in fewer words.
+    hint.textContent = 'Open this on a new phone to get everything back. Keep it to yourself — it makes whoever opens it you.';
     mid.append(nm, hint);
     const copyBtn = document.createElement('button');
     copyBtn.className = 'btn-tonal';
@@ -1736,7 +1741,7 @@ function welcomeRecognized(token, name) {
 function notMe(token) {
   if (state.getCrewToken() !== token) return; // the toast outlived its crew
   crew.clearMe(token);
-  dismissBringOffer({ instant: true });
+  withdrawBringOffer();
   refreshCtx();
   renderPersonChips();
   renderYou();
@@ -1756,16 +1761,23 @@ function bringContext() {
   };
 }
 
+// The offer on screen, and the plan it was made from: the tap is held to the
+// crew, festival, names and picks the card was showing (crew-entry.js
+// bringFromSource) — never re-planned into a different crew.
+let standingOffer = null; // { key, plan }
+const offerKey = () => `${state.getCrewToken()}|${state.activeFestivalId}|${ctx.meName || ''}`;
+
 function maybeOfferBringPicks() {
   const token = state.getCrewToken();
   const fid = state.activeFestivalId;
-  const key = `${token}|${fid}`;
+  const key = offerKey();
   const standing = bringOfferCard();
   if (standing && standing.dataset.key !== key) dismissBringOffer({ instant: true });
   if (!token || !fid || !ctx.meName || ctx.migrationPending || bringAnswered(token, fid)) return;
   if (bringOfferCard()) return; // already asking, here
   const plan = planBringPicks(bringContext());
   if (!plan) return;
+  standingOffer = { key, plan };
   showBringOffer($('screen-app'), {
     copy: bringOfferCopy(plan, (state.fest() || {}).name),
     key,
@@ -1775,34 +1787,46 @@ function maybeOfferBringPicks() {
   });
 }
 
+// Someone else is picking on this phone now (Settings → You, a rename): the
+// offer was made for the name before, so it goes. Unanswered — the next entry
+// asks the right person.
+function withdrawBringOffer() {
+  standingOffer = null;
+  dismissBringOffer({ instant: true });
+}
+
 function bringPicksHere(key) {
   const token = state.getCrewToken();
   const fid = state.activeFestivalId;
   const card = bringOfferCard();
-  // The card must still be about the crew and festival on screen, and picks
-  // must be writable — anything else and it quietly goes.
-  if (!card || card.dataset.key !== key || key !== `${token}|${fid}` || !ctx.meName || ctx.migrationPending) {
-    dismissBringOffer({ instant: true });
+  const offer = standingOffer;
+  // The card must still be about the crew, festival and picker on screen, and
+  // picks must be writable — anything else and it quietly goes, unanswered.
+  if (!card || card.dataset.key !== key || !offer || offer.key !== key || key !== offerKey() || ctx.migrationPending) {
+    withdrawBringOffer();
     return;
   }
-  // Planned again at the tap: anything picked while the card was up is
-  // decided here now, and a decision here is never overwritten.
-  const plan = planBringPicks(bringContext());
+  const tap = bringFromSource(offer.plan, bringContext());
+  if (!tap) { withdrawBringOffer(); return; }
   rememberBringAnswer(token, fid, 'brought');
-  if (!plan) { dismissBringOffer({ ctx }); return; }
+  standingOffer = null;
   // applyLocalPick's two steps, with the doc written to disk ONCE at the end:
   // persisting the whole crew doc per pick is fine for a tap and a stall for
   // fifty of them at once.
-  state.ensureFestivalState(fid);
-  const sels = state.crewDoc.festivals[fid].selections;
-  for (const [artist, level] of Object.entries(plan.picks)) {
-    state.recordSelection(artist, ctx.meName, level);
-    (sels[artist] = sels[artist] || {})[ctx.meName] = level;
+  if (tap.count) {
+    state.ensureFestivalState(fid);
+    const sels = state.crewDoc.festivals[fid].selections;
+    for (const [artist, level] of Object.entries(tap.picks)) {
+      state.recordSelection(artist, ctx.meName, level);
+      (sels[artist] = sels[artist] || {})[ctx.meName] = level;
+    }
+    state.persist();
+    sync.scheduleSync();
+    repaintWall();
   }
-  state.persist();
-  sync.scheduleSync();
-  repaintWall();
-  settleBringOffer(bringDoneLine(plan.count), { ctx });
+  // Nothing left from the crew the card named (all decided here meanwhile):
+  // the card says so rather than reaching into another crew.
+  settleBringOffer(bringDoneLine(tap.count), { ctx });
 }
 
 function renderJoin(token, doc) {
@@ -1954,7 +1978,9 @@ async function stampIdentity(token, current = () => true, { renameFrom = null } 
 // `customs` is the crew's custom-festival fetch — boot starts it beside the
 // catalog; any other entry starts it here. Merged only now, catalog in hand.
 // `recognized` (boot only): the name recognizeOnOpen claimed for this device.
-async function enterApp(token, doc, current = () => true, customs = fetchCustomFestivals(token), { recognized = null } = {}) {
+// `warm` (boot only): painting from this phone's own copy — nothing below may
+// wait on the network (see boot's warm open).
+async function enterApp(token, doc, current = () => true, customs = fetchCustomFestivals(token), { recognized = null, warm = false } = {}) {
   dismissBringOffer({ instant: true }); // an offer is about the crew it was made in — never the next one
   crew.setActiveCrew(token);
   crew.rememberCrew(token, (doc.meta && doc.meta.name) || '');
@@ -1983,7 +2009,16 @@ async function enterApp(token, doc, current = () => true, customs = fetchCustomF
   // corrupting a genuine "picked x3" into "must" (Codex P6 gate, finding 1).
   // Offline/failed migration -> writes stay gated (ctx.migrationPending) and
   // the poll loop retries; reads are safe throughout (readLevel maps by v).
-  if (model.needsMigration(state.crewDoc)) {
+  if (model.needsMigration(state.crewDoc) && warm) {
+    // A warm open never waits on the network: picks stay gated (the banner
+    // says so) until the one-shot op lands — here, or on the 25 s loop.
+    ctx.migrationPending = true;
+    sync.requestMigration().then(() => {
+      if (!current() || state.getCrewToken() !== token) return;
+      ctx.migrationPending = model.needsMigration(state.crewDoc);
+      if (!ctx.migrationPending) repaintWall();
+    });
+  } else if (model.needsMigration(state.crewDoc)) {
     await sync.requestMigration();
     if (!current()) return;
     ctx.migrationPending = model.needsMigration(state.crewDoc);
@@ -1991,7 +2026,10 @@ async function enterApp(token, doc, current = () => true, customs = fetchCustomF
     ctx.migrationPending = false;
   }
   try {
-    await loadFestival(state.activeFestivalId);
+    // Warm: the copy this phone holds paints now; freshenWarmOpen swaps in
+    // the live one if a data push changed it. A fest this phone never stored
+    // still has to come from the network.
+    if (!(warm && await festivalFromCache(state.activeFestivalId))) await loadFestival(state.activeFestivalId);
   } catch {
     // Offline with this fest uncached: fall back to a loadable fest rather
     // than stranding a blank wall (CORE-12). If the default also fails,
@@ -2042,7 +2080,12 @@ async function enterApp(token, doc, current = () => true, customs = fetchCustomF
       if (changed && current()) { sync.scheduleSync(); refreshCtx(); repaintWall(); }
     }).catch((e) => console.warn('crew badge sweep:', e));
   }
-  stampIdentity(token, current); // me link — fire-and-forget by design
+  // Me link — fire-and-forget by design. A first join only becomes provably
+  // "mine" once the stamp writes this device's pid onto the name, so the
+  // picks offer asks again when it lands (a no-op if it is already up).
+  stampIdentity(token, current).then(() => {
+    if (current() && state.getCrewToken() === token) maybeOfferBringPicks();
+  });
   if (recognized) welcomeRecognized(token, recognized);
   maybeOfferBringPicks(); // after the welcome: the card steps up over its toast
   // A hop from an alias domain mid-Spotify-setup (SPOT-1): reopen the drill
@@ -2062,6 +2105,34 @@ async function enterApp(token, doc, current = () => true, customs = fetchCustomF
       });
     }
   }
+}
+
+// After a warm open, the reads a cold open used to wait on — landing the
+// ordinary way when they arrive. The crew doc needs nothing here: enterApp's
+// poll already is its path. The live catalog replaces the list wholesale, so
+// the crew's own festivals rejoin it at once, then again fresh. The live
+// festival file (network-first through the worker, as ever — so a data push
+// still reaches an online phone on this very open) replaces the cached copy
+// only if it differs, through the same repaint a remote change takes: the
+// wall's repaint boundary keeps scroll and a half-typed note.
+function freshenWarmOpen(token, catalog, heldCustoms, current) {
+  const live = () => current() && state.getCrewToken() === token;
+  (async () => {
+    await catalog;
+    if (!live()) return;
+    mergeCustoms(heldCustoms);
+    const fresh = await fetchCustomFestivals(token);
+    if (live()) mergeCustoms(fresh);
+  })().catch((e) => console.warn('warm open: customs', e));
+  const fid = state.activeFestivalId;
+  fetchFestivalFile(fid).then((fest) => {
+    if (!fest || !live() || state.activeFestivalId !== fid) return;
+    if (JSON.stringify(fest) === JSON.stringify(state.FESTIVALS[fid])) return;
+    state.FESTIVALS[fid] = fest;
+    state.forgetComputedDays();
+    applyFestTheme();
+    repaintFromRemote();
+  }).catch((e) => console.warn('warm open: festival file', e));
 }
 
 // ---- lost states (spec F16) --------------------------------------------------------
@@ -2141,8 +2212,14 @@ export async function boot() {
   try {
     // The catalog leaves now and nothing waits on it alone: a crew boot sends
     // its own two requests beside it (below). Each branch that renders from
-    // the catalog awaits it first.
-    const catalog = loadFestivalIndex().catch(() => { /* offline with cache: proceed */ });
+    // the catalog awaits it first. "Stay offline" is the field escape hatch
+    // (2026-09-23): the catalog this phone holds, and the network only for one
+    // it never stored.
+    const stayOffline = !!appSettings().stayOffline;
+    const catalog = (stayOffline
+      ? festivalIndexFromCache().then((held) => held || loadFestivalIndex())
+      : loadFestivalIndex()
+    ).catch(() => { /* offline with cache: proceed */ });
 
     if (personLinkBroken) {
       await catalog;
@@ -2197,6 +2274,25 @@ export async function boot() {
     const token = crew.bootTokenFor(crew.tokenFromHash(), crew.activeCrewToken(), isFirst);
     if (!token) { await catalog; renderLanding(); return; }
 
+    // The warm open (2026-09-23). This phone holds the crew's doc and a name
+    // it claimed in it, so the wall paints from that NOW, and the network
+    // lands the ordinary way whenever it answers: enterApp's poll is the
+    // remote-change path (repaint, chips, an open sheet), and our API's JSON
+    // 404 is still the crew-gone path — one poll after the first paint rather
+    // than before it, which is the trade. At Pier 80 the network hangs rather
+    // than fails, and the path below spent up to ~16 s of loader on files that
+    // were already here. A crew this phone never opened or never claimed a
+    // name in still takes that path: there is nothing true to paint without
+    // the network.
+    const warmDoc = crew.me(token) ? state.cachedDoc(token) : null;
+    if (warmDoc && await festivalIndexFromCache()) {
+      if (!current()) return;
+      const heldCustoms = cachedCustomFestivals(token);
+      await enterApp(token, warmDoc, current, Promise.resolve(heldCustoms), { warm: true });
+      if (current() && !stayOffline) freshenWarmOpen(token, catalog, heldCustoms, current);
+      return;
+    }
+
     // The crew doc and the crew's own festivals leave beside the catalog, so
     // a network that hangs costs the slowest wait (8 s), never the sum of
     // three. The customs merge later, in enterApp, once the catalog is in.
@@ -2224,12 +2320,15 @@ export async function boot() {
   }
 }
 
+// Everything that renders identity/state repaints together — the dock avatar
+// was the one holdout showing a stale color (audit 1.5). The remote-change
+// path, and the warm open's fresh festival file takes it too.
+function repaintFromRemote() { repaintWall(); renderPersonChips(); renderYou(); refreshOpenSheet(); }
+
 // ---- wiring ----------------------------------------------------------------------
 export function init() {
   sync.initSync({
-    // Everything that renders identity/state repaints together — the dock
-    // avatar was the one holdout showing a stale color (audit 1.5).
-    onRemoteChange: () => { repaintWall(); renderPersonChips(); renderYou(); refreshOpenSheet(); },
+    onRemoteChange: repaintFromRemote,
     onCrewGone: (token) => {
       // The server said this crew no longer exists — a dead row on the
       // landing list would just 404 again (FLOW-3).

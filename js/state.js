@@ -367,6 +367,13 @@ export function applyRemoteDoc(remote) {
   return visible() !== before;
 }
 
+// A festival file replaced under a running page (the warm open's live copy
+// landing after the cached one painted) makes every day computed from the old
+// copy stale.
+export function forgetComputedDays() {
+  Object.keys(dayCache).forEach((k) => delete dayCache[k]);
+}
+
 // Returns computed artists for a day with startMin/endMin resolved (cached).
 //
 // `weekend` ('W1'|'W2') filters a TWO-WEEKEND scheduled fest (ACL): a set may

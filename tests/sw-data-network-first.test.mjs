@@ -254,6 +254,27 @@ test('navigations: offline, a hanging network, or a server error all open this w
   assert.equal((await dispatch(erroring, '/', { mode: 'navigate' })).body, 'this build\'s shell');
 });
 
+test('navigations spend a shorter budget than data: a slow page gets the shell, slow data still gets the live copy', async () => {
+  // Lie-fi (2026-09-23): the page is the first thing anyone waits for, before
+  // even the loader, so a navigation gives up at 1.5 s where data waits 4 s
+  // (scaled here to 15 ms and 40 ms). A network answering at 2.5 s (25 ms):
+  const slow = (body) => () => delayed(body, 25);
+  const nav = bootWorker({ cached: { '/': 'this build\'s shell' }, fetchImpl: slow('live shell') });
+  assert.equal((await dispatch(nav, '/', { mode: 'navigate' })).body, 'this build\'s shell',
+    'the page falls back to this worker\'s own shell');
+  const data = bootWorker({ cached: { '/data/festivals/portola-2026.json': '{"old":true}' }, fetchImpl: slow('{"new":true}') });
+  assert.equal((await dispatch(data, '/data/festivals/portola-2026.json')).body, '{"new":true}',
+    'a data push still reaches a phone whose network answers within 4 s');
+  // And with no shell cached (a first-ever open) the page waits for the network.
+  const first = bootWorker({ fetchImpl: slow('live shell') });
+  assert.equal((await dispatch(first, '/', { mode: 'navigate' })).body, 'live shell');
+});
+
+test('the page reads the same festival-data bucket the worker writes', async () => {
+  const { DATA_CACHE_NAME } = await import('../js/festivals.js');
+  assert.equal(DATA_CACHE_NAME, DATA, 'js/festivals.js DATA_CACHE_NAME must match service-worker.js DATA_CACHE');
+});
+
 test('navigations: a redirect or the 404 page is the server\'s real answer and passes straight through', async () => {
   // A navigation's fetch runs redirect:manual, so a 302 (/f/<unknown> -> /)
   // or a cleanUrls 308 reaches the worker as an opaqueredirect with status 0

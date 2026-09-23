@@ -65,3 +65,65 @@ two crews at one fest feel less like starting over:
 - A possible follow-up: the + Add picker could carry a person's pid from
   another crew, so their device is recognized the first time they open
   the new crew's link. Not built — it writes a pid someone else asserted.
+
+# Round 2 — the lie-fi cold open, and the share-copy trims (2026-09-23)
+
+Brief: on a network that HANGS (Pier 80, 40k phones), a cold open showed the
+loader for up to ~16 s with everything it needed already on the phone —
+navigation 4 s (worker budget), then catalog 4 s ‖ crew doc 8 s ‖ customs 8 s,
+then the festival file 4 s. Goal: with a cached crew doc + a claimed name (+
+the catalog and festival file in the worker's caches) the wall paints from
+cache at once, and the network lands the ordinary way. Keep: the crew-gone path
+(JSON 404 only), boot's generation guards, the bad-link paths, the first-ever
+open waiting on the network, festival-JSON freshness. "Stay offline" becomes
+the field escape hatch. Then the option-a copy trims from the notes audit
+(A5, A14, A19, A18, A11, A10).
+
+## Plan
+
+- Tests first: jsdom boots with a network that never answers (warm paints
+  fast; a later doc applies; a later JSON 404 is crew-gone; no cache still
+  waits; Stay offline asks the network nothing it can skip).
+- `js/festivals.js`: read index.json and a festival file straight from the
+  worker's caches (DATA_CACHE first), never throwing.
+- `js/v3/app.js` boot: a warm branch after the token is known; `enterApp`
+  gets `warm` (festival cache-first, migration not awaited); a small
+  `freshenWarmOpen` lands the catalog, customs and a fresh festival file
+  through the same repaint a remote change takes.
+- Worker: a shorter navigation budget when a shell is cached (decide
+  against the new-build reload glue first).
+
+## Log (round 2)
+- Warm open built test-first (`tests/warm-open*.test.mjs`, 4 files, shared
+  `tests/helpers/warm-rig.mjs`; the warm ones red before, the cold one an
+  invariant). Commit 7371230.
+- Codex found two bring-your-picks bugs on the merged branch; both
+  reproduced red (unit + `tests/bring-picks-guards.test.mjs`) and fixed in
+  03bbd80: ownership is affirmative on both sides (pid, or the record's own
+  mirror names exactly that name; another member carrying the pid = not me;
+  no person record = no offer), and the tap only brings from the crew the
+  card named (`bringFromSource`), else "Nothing new to bring". A picker
+  switch or rename withdraws the offer. A first join re-asks once the
+  identity stamp lands.
+- Worker: navigations give up at 1.5 s when a shell is cached; data keeps
+  4 s (145c3e1). Reasoned against the new-build glue: the browser's worker
+  update check and index.html's `reg.update()` never pass through the fetch
+  handler, so a new build still installs and reloads when quiet.
+- Real Chromium, worker installed, then EVERY request hangs, reload,
+  time to the wall: base 724fbc0 = 16,085 ms; this branch = 1,572 ms and
+  1,573 ms (≈ the navigation budget + ~70 ms). Online first paint unchanged
+  (~90–450 ms, machine load 60–95).
+- Copy (d462742): A5, A14, A19, A18, A11, A10 at option a; A17 and the P3
+  items untouched ("invite link" still appears in the Forget-this-crew row
+  and its toast — A15/A16, P3). No test pinned the old strings;
+  `tests/share-copy.test.mjs` pins the new vocabulary and the
+  one-sentence rule. Landing and Settings → Crew looked at on a 390 px
+  Chromium viewport.
+- Housekeeping: one tagged stash entry, navbudget-check-a0eac819, holds the
+  worker edit that is already committed in 145c3e1. The repo's
+  destructive-op hook blocks removing stash entries from an agent; it is
+  safe to remove by hand.
+- Not verified: a real iPhone / WebKit lie-fi open; the new-build reload
+  under a real worker update with the shorter navigation budget (reasoned,
+  not exercised); Stay offline and the data-push swap in a real browser
+  (jsdom only).

@@ -30,19 +30,26 @@ import { getLS, saveLS } from '../util.js';
 import { GROW_MS, OUT_MS, CASCADE_MS, STAGGER_MS, EASE_ARRIVE, EASE_LEAVE, EASE_SURFACE, canAnimate } from './motion.js';
 
 // ---- who is me, crew by crew ---------------------------------------------------------
-// The device's claim in a crew (crew.me) is the starting point; the person
-// record may veto it. A member whose pid belongs to another record is someone
-// else's name now, and a record whose own mirror says "in this crew I am
-// <other name>" means the picker on this phone was switched (Settings → You on
-// a borrowed phone) — in both cases these are not my picks to move.
+// AFFIRMATIVE ownership, never the absence of a veto (Codex review,
+// 2026-09-23). The name the device claims in a crew (crew.me) is mine only
+// when this device's person record says so: the name carries its pid, or the
+// record's own mirror for that crew names exactly it. And if any OTHER active
+// member carries the pid, this name is not me, whatever else is true. A
+// borrowed phone is the case this exists for: the owner's record, a friend
+// picking as a placeholder with no pid — that placeholder is nobody's to move
+// picks onto or off. No person record on the device: nothing is provably
+// mine, so there is no offer.
 export function isMeIn(person, crewToken, doc, name) {
-  if (!name) return false;
-  const entry = ((doc && doc.people) || {})[name];
+  if (!person || !person.id || !name) return false;
+  const people = (doc && doc.people) || {};
+  const entry = people[name];
   if (!entry || entry.removed) return false;
-  if (person && person.id && entry.pid && entry.pid !== person.id) return false;
-  const claim = person && (person.crews || {})[crewToken];
-  if (claim && claim.name && claim.name !== name) return false;
-  return true;
+  const elsewhere = Object.entries(people)
+    .some(([n, p]) => n !== name && p && !p.removed && p.pid === person.id);
+  if (elsewhere) return false;
+  if (entry.pid) return entry.pid === person.id;
+  const claim = (person.crews || {})[crewToken];
+  return !!(claim && claim.name === name);
 }
 
 // ---- the plan -------------------------------------------------------------------------
@@ -92,13 +99,44 @@ export function planBringPicks({ token, fid, doc, meName, person = null, crews =
   found.sort((a, b) => (b.total - a.total) || (b.count - a.count));
   const [best, ...rest] = found;
   return {
+    // Who and where the offer was made for: the tap is held to all of it.
+    token,
     fid,
+    meName,
     from: { token: best.token, name: best.name, people: best.people },
     picks: best.picks,
     count: best.count,
     total: best.total,
     others: rest.length,
   };
+}
+
+// ---- the tap -------------------------------------------------------------------------------
+// The card names ONE crew, and the tap brings from that crew or from nothing
+// (Codex review, 2026-09-23). Planning afresh at the tap could pick a
+// different crew — pick Robyn here while the card says "from your crew with
+// Ross", and a fresh plan reached for Nhu's crew instead, under words that
+// still said Ross. So the tap re-checks the plan it was shown, against now:
+// the same crew, festival and names, still provably mine on both sides; then
+// the offered picks that are still mine over there and still untouched here.
+// Null when the offer no longer holds (someone else is picking on this phone
+// now); `count: 0` when it holds but everything was decided here meanwhile.
+export function bringFromSource(plan, { token, fid, doc, meName, person = null, docFor, meFor }) {
+  if (!plan || token !== plan.token || fid !== plan.fid || meName !== plan.meName) return null;
+  if (!doc || needsMigration(doc) || !isMeIn(person, token, doc, meName)) return null;
+  const source = docFor(plan.from.token);
+  const sourceMe = meFor(plan.from.token);
+  if (!source || sourceMe !== plan.from.name || !isMeIn(person, plan.from.token, source, sourceMe)) return null;
+  const theirs = picksFor(source, fid);
+  const here = ((doc.festivals || {})[fid] || {}).selections || {};
+  const picks = {};
+  for (const artist of Object.keys(plan.picks)) {
+    const level = (theirs[artist] || {})[sourceMe] || 0;
+    if (level < 1) continue;
+    if (Object.prototype.hasOwnProperty.call(here[artist] || {}, meName)) continue;
+    picks[artist] = level;
+  }
+  return { picks, count: Object.keys(picks).length };
 }
 
 // ---- the words ---------------------------------------------------------------------------
@@ -130,7 +168,9 @@ export function bringOfferCopy(plan, festName) {
 }
 
 export function bringDoneLine(n) {
-  return `Brought ${n} pick${n === 1 ? '' : 's'} over ✓`;
+  return n
+    ? `Brought ${n} pick${n === 1 ? '' : 's'} over ✓`
+    : 'Nothing new to bring — you’ve picked those here already.';
 }
 
 // ---- once per crew × festival, on this device ---------------------------------------------

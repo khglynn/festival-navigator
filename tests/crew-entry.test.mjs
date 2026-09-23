@@ -82,12 +82,16 @@ test('recognizedMember: my record answering to ANOTHER active name here is ambig
 
 // ---- 2. bring your picks ---------------------------------------------------------------
 // This device: HERE (Kevin + Nhu, a few of Kevin's picks already), ROSS (Kevin
-// as "Kev" + Ross, twelve-ish picks), SOLO (just Kevin).
-function device({ here, others }) {
+// as "Kev" + Ross), SOLO (just Kevin). "Mine" is AFFIRMATIVE on both sides
+// (Codex, 2026-09-23): the name carries this device's pid, or the person
+// record's own mirror for that crew names exactly it — an unclaimed
+// placeholder is nobody's to move picks onto or off.
+const MINE = { pid: PID };
+function device({ here, others, meName = 'Kevin', person = me() }) {
   const docs = new Map(Object.entries(others).map(([t, o]) => [t, o.doc]));
   const names = new Map(Object.entries(others).map(([t, o]) => [t, o.me]));
   return {
-    token: HERE, fid: FID, doc: here, meName: 'Kevin', person: me(),
+    token: HERE, fid: FID, doc: here, meName, person,
     crews: [{ token: HERE, name: '' }, ...Object.keys(others).map((t) => ({ token: t, name: '' }))],
     docFor: (t) => docs.get(t) || null,
     meFor: (t) => names.get(t) || null,
@@ -95,12 +99,12 @@ function device({ here, others }) {
 }
 
 test('plan: only MY picks, only above zero, only onto artists I have not touched here', () => {
-  const here = doc({ Kevin: {}, Nhu: {} }, {
+  const here = doc({ Kevin: MINE, Nhu: {} }, {
     Robyn: { Kevin: 2 },          // already picked here — never overwritten, never lowered
     Soulwax: { Kevin: 0 },        // cleared here on purpose — a tombstone is a decision
     Prospa: { Nhu: 3 },           // Nhu's pick — mine is still missing, so mine comes over
   });
-  const ross = doc({ Kev: { pid: PID }, Ross: {} }, {
+  const ross = doc({ Kev: MINE, Ross: {} }, {
     Robyn: { Kev: 4 },            // would RAISE my Robyn — still not touched
     Soulwax: { Kev: 3 },
     Prospa: { Kev: 1, Ross: 4 },
@@ -115,19 +119,28 @@ test('plan: only MY picks, only above zero, only onto artists I have not touched
   assert.equal(plan.total, 4, 'four live picks of mine over there, two of them already decided here');
   assert.equal(plan.from.token, ROSS);
   assert.deepEqual(plan.from.people, ['Ross'], 'named by its people, never by me');
+  assert.equal(plan.meName, 'Kevin', 'the plan remembers who it was made for');
+});
+
+test('plan: the person record’s own mirror is affirmative too (a name not yet stamped with the pid)', () => {
+  const here = doc({ Kevin: {}, Nhu: {} });
+  const ross = doc({ Kev: {}, Ross: {} }, { Robyn: { Kev: 4 } });
+  const person = me({ crews: { [HERE]: { name: 'Kevin' }, [ROSS]: { name: 'Kev' } } });
+  const plan = entry.planBringPicks(device({ here, person, others: { [ROSS]: { doc: ross, me: 'Kev' } } }));
+  assert.deepEqual(plan.picks, { Robyn: 4 });
 });
 
 test('plan: a legacy (v3) crew reads its old "Must See" as must', () => {
-  const here = doc({ Kevin: {} });
-  const ross = doc({ Kev: {}, Ross: {} }, { Robyn: { Kev: 3 }, Soulwax: { Kev: 1 } }, { v: 3 });
+  const here = doc({ Kevin: MINE });
+  const ross = doc({ Kev: MINE, Ross: {} }, { Robyn: { Kev: 3 }, Soulwax: { Kev: 1 } }, { v: 3 });
   const plan = entry.planBringPicks(device({ here, others: { [ROSS]: { doc: ross, me: 'Kev' } } }));
   assert.deepEqual(plan.picks, { Robyn: 4, Soulwax: 1 }, 'labels carry the meaning: legacy 3 IS must');
 });
 
 test('plan: several other crews — the one holding the most of my picks, and it says how many there are', () => {
-  const here = doc({ Kevin: {} });
-  const ross = doc({ Kev: {}, Ross: {} }, { Robyn: { Kev: 1 }, Soulwax: { Kev: 1 }, Prospa: { Kev: 1 } });
-  const solo = doc({ Kevin: {} }, { Robyn: { Kevin: 2 } });
+  const here = doc({ Kevin: MINE });
+  const ross = doc({ Kev: MINE, Ross: {} }, { Robyn: { Kev: 1 }, Soulwax: { Kev: 1 }, Prospa: { Kev: 1 } });
+  const solo = doc({ Kevin: MINE }, { Robyn: { Kevin: 2 } });
   const plan = entry.planBringPicks(device({ here, others: {
     [SOLO]: { doc: solo, me: 'Kevin' },
     [ROSS]: { doc: ross, me: 'Kev' },
@@ -137,42 +150,101 @@ test('plan: several other crews — the one holding the most of my picks, and it
 });
 
 test('plan: nothing to offer when there is nothing to bring', () => {
-  const here = doc({ Kevin: {} }, { Robyn: { Kevin: 1 } });
-  const ross = doc({ Kev: {}, Ross: {} }, { Robyn: { Kev: 4 } });
+  const here = doc({ Kevin: MINE }, { Robyn: { Kevin: 1 } });
+  const ross = doc({ Kev: MINE, Ross: {} }, { Robyn: { Kev: 4 } });
   assert.equal(entry.planBringPicks(device({ here, others: { [ROSS]: { doc: ross, me: 'Kev' } } })), null,
     'everything I picked there is already decided here');
   assert.equal(entry.planBringPicks(device({ here, others: {} })), null, 'no other crew on this device');
-  const elsewhere = doc({ Kev: {} }, { Robyn: { Kev: 1 } }, { fid: 'acl-2026' });
-  assert.equal(entry.planBringPicks(device({ here: doc({ Kevin: {} }), others: { [ROSS]: { doc: elsewhere, me: 'Kev' } } })), null,
+  const elsewhere = doc({ Kev: MINE }, { Robyn: { Kev: 1 } }, { fid: 'acl-2026' });
+  assert.equal(entry.planBringPicks(device({ here: doc({ Kevin: MINE }), others: { [ROSS]: { doc: elsewhere, me: 'Kev' } } })), null,
     'another crew at a DIFFERENT festival is not this festival');
-  const unclaimed = doc({ Kev: {} }, { Robyn: { Kev: 1 } });
-  assert.equal(entry.planBringPicks(device({ here: doc({ Kevin: {} }), others: { [ROSS]: { doc: unclaimed, me: null } } })), null,
+  const unclaimed = doc({ Kev: MINE }, { Robyn: { Kev: 1 } });
+  assert.equal(entry.planBringPicks(device({ here: doc({ Kevin: MINE }), others: { [ROSS]: { doc: unclaimed, me: null } } })), null,
     'a crew this device never claimed a name in has no "my picks"');
-  const d = device({ here: doc({ Kevin: {} }), others: { [ROSS]: { doc: unclaimed, me: 'Kev' } } });
+  const d = device({ here: doc({ Kevin: MINE }), others: { [ROSS]: { doc: unclaimed, me: 'Kev' } } });
   assert.equal(entry.planBringPicks({ ...d, docFor: () => null }), null, 'a crew with no cached doc — nothing to read, nothing fetched');
 });
 
 test('plan: the person record decides who is who — a shared phone never moves one human’s picks onto another', () => {
-  const ross = doc({ Kev: { pid: PID }, Ross: {} }, { Robyn: { Kev: 4 } });
+  const ross = doc({ Kev: MINE, Ross: {} }, { Robyn: { Kev: 4 } });
   // Here, the device picker is "Drew" (Settings → You on a borrowed phone),
   // and the person record says this device is Kevin in this crew.
-  const here = doc({ Kevin: { pid: PID }, Drew: {} });
-  const borrowed = { ...device({ here, others: { [ROSS]: { doc: ross, me: 'Kev' } } }), meName: 'Drew',
-    person: me({ crews: { [HERE]: { name: 'Kevin' } } }) };
+  const here = doc({ Kevin: MINE, Drew: {} });
+  const borrowed = device({ here, meName: 'Drew', person: me({ crews: { [HERE]: { name: 'Kevin' } } }),
+    others: { [ROSS]: { doc: ross, me: 'Kev' } } });
   assert.equal(entry.planBringPicks(borrowed), null, 'Drew is not the human whose picks these are');
   // Over there, the claimed name now carries someone else's pid.
   const reclaimed = doc({ Kev: { pid: 'pid_someone_else' }, Ross: {} }, { Robyn: { Kev: 4 } });
-  assert.equal(entry.planBringPicks(device({ here: doc({ Kevin: {} }), others: { [ROSS]: { doc: reclaimed, me: 'Kev' } } })), null,
+  assert.equal(entry.planBringPicks(device({ here: doc({ Kevin: MINE }), others: { [ROSS]: { doc: reclaimed, me: 'Kev' } } })), null,
     'a name another person record owns is not mine to copy from');
   // And a removed me is not me.
-  const removed = doc({ Kev: { removed: true }, Ross: {} }, { Robyn: { Kev: 4 } });
-  assert.equal(entry.planBringPicks(device({ here: doc({ Kevin: {} }), others: { [ROSS]: { doc: removed, me: 'Kev' } } })), null);
+  const removed = doc({ Kev: { ...MINE, removed: true }, Ross: {} }, { Robyn: { Kev: 4 } });
+  assert.equal(entry.planBringPicks(device({ here: doc({ Kevin: MINE }), others: { [ROSS]: { doc: removed, me: 'Kev' } } })), null);
+});
+
+test('plan (Codex repro 1): a borrowed phone with NO mirror entry — the placeholder picker gets no offer', () => {
+  // The device's person is Kevin; the picker on this phone is Drew, a
+  // placeholder with no pid; the person record has no mirror entry for this
+  // crew at all. Kevin's other crew holds Robyn: must. This used to plan
+  // Robyn.Drew = 4.
+  const here = doc({ Kevin: MINE, Drew: {} });
+  const ross = doc({ Kev: MINE, Ross: {} }, { Robyn: { Kev: 4 } });
+  assert.equal(entry.planBringPicks(device({ here, meName: 'Drew', others: { [ROSS]: { doc: ross, me: 'Kev' } } })), null,
+    'another member here carries my pid — Drew is not me');
+  const placeholderOnly = doc({ Drew: {} });
+  assert.equal(entry.planBringPicks(device({ here: placeholderOnly, meName: 'Drew', others: { [ROSS]: { doc: ross, me: 'Kev' } } })), null,
+    'an unclaimed placeholder is nobody’s: no offer');
+  assert.equal(entry.planBringPicks(device({ here: doc({ Kevin: MINE }), person: null, others: { [ROSS]: { doc: ross, me: 'Kev' } } })), null,
+    'no person record on this device — no offer');
+  // The same test on the SOURCE side: a placeholder there is not my picks.
+  const sourcePlaceholder = doc({ Kev: {}, Ross: {} }, { Robyn: { Kev: 4 } });
+  assert.equal(entry.planBringPicks(device({ here: doc({ Kevin: MINE }), others: { [ROSS]: { doc: sourcePlaceholder, me: 'Kev' } } })), null);
+  const mirrorNamesOther = doc({ Kev: {}, Ross: {} }, { Robyn: { Kev: 4 } });
+  assert.equal(entry.planBringPicks(device({ here: doc({ Kevin: MINE }), person: me({ crews: { [ROSS]: { name: 'Ross' } } }),
+    others: { [ROSS]: { doc: mirrorNamesOther, me: 'Kev' } } })), null, 'the mirror names someone else there');
 });
 
 test('plan: a crew still on the legacy format takes no writes until it migrates', () => {
-  const here = doc({ Kevin: {} }, {}, { v: 3 });
-  const ross = doc({ Kev: {}, Ross: {} }, { Robyn: { Kev: 1 } });
+  const here = doc({ Kevin: MINE }, {}, { v: 3 });
+  const ross = doc({ Kev: MINE, Ross: {} }, { Robyn: { Kev: 1 } });
   assert.equal(entry.planBringPicks(device({ here, others: { [ROSS]: { doc: ross, me: 'Kev' } } })), null);
+});
+
+// ---- the tap brings what the card named, from the crew it named ----------------------
+test('bringFromSource (Codex repro 2): never switches crews — what is left of the NAMED crew, or nothing', () => {
+  const NHU = 'crewentry_nhu_01234567890';
+  const here = doc({ Kevin: MINE });
+  const ross = doc({ Kev: MINE, Ross: {} }, { Robyn: { Kev: 4 } });
+  const nhu = doc({ Kevin: MINE, Nhu: {} }, { Soulwax: { Kevin: 4 } });
+  const d = device({ here, others: { [ROSS]: { doc: ross, me: 'Kev' }, [NHU]: { doc: nhu, me: 'Kevin' } } });
+  const plan = entry.planBringPicks(d);
+  assert.equal(plan.from.token, ROSS, 'the card names Ross’s crew');
+  // Robyn gets picked here while the card is up.
+  const now = { ...d, doc: doc({ Kevin: MINE }, { Robyn: { Kevin: 1 } }) };
+  assert.equal(entry.planBringPicks(now).from.token, NHU, 'a fresh plan WOULD pick Nhu’s crew now …');
+  const tap = entry.bringFromSource(plan, now);
+  assert.deepEqual(tap, { picks: {}, count: 0 }, '… but the tap only ever brings from the crew the card named');
+});
+
+test('bringFromSource: what is left of the named crew comes, re-checked at the tap', () => {
+  const here = doc({ Kevin: MINE });
+  const ross = doc({ Kev: MINE, Ross: {} }, { Robyn: { Kev: 4 }, Soulwax: { Kev: 1 } });
+  const d = device({ here, others: { [ROSS]: { doc: ross, me: 'Kev' } } });
+  const plan = entry.planBringPicks(d);
+  const now = { ...d, doc: doc({ Kevin: MINE }, { Robyn: { Kevin: 2 } }) };
+  assert.deepEqual(entry.bringFromSource(plan, now), { picks: { Soulwax: 1 }, count: 1 });
+});
+
+test('bringFromSource: a changed identity on either side voids the offer', () => {
+  const here = doc({ Kevin: MINE, Nhu: {} });
+  const ross = doc({ Kev: MINE, Ross: {} }, { Robyn: { Kev: 4 } });
+  const d = device({ here, others: { [ROSS]: { doc: ross, me: 'Kev' } } });
+  const plan = entry.planBringPicks(d);
+  assert.equal(entry.bringFromSource(plan, { ...d, meName: 'Nhu' }), null, 'switched to Nhu here (Settings → You)');
+  assert.equal(entry.bringFromSource(plan, { ...d, meFor: () => 'Ross' }), null, 'the source’s claim changed');
+  assert.equal(entry.bringFromSource(plan, { ...d, fid: 'acl-2026' }), null, 'another festival');
+  assert.equal(entry.bringFromSource(plan, { ...d, token: SOLO }), null, 'another crew');
+  assert.equal(entry.bringFromSource(plan, { ...d, person: null }), null, 'no person record any more');
 });
 
 // ---- the words ------------------------------------------------------------------------
