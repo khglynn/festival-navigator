@@ -161,3 +161,41 @@ Seven repro tests (2dd7e04) were red for all five findings before any fix:
 - Lie-fi first paint re-measured (real Chromium, worker installed, every
   request hanging): 1,545 ms and 1,663 ms (was 1,572 / 1,573 before this
   round; 16,085 on the old base).
+
+# Round 4 — the strict warm open (2026-09-23)
+
+Codex round 3 closed #2, #3, #4; #1 and #5 stayed open, with two new bugs
+(a note re-aimed into another festival by the automatic correction; a shared
+festival file updated without repainting the crew that shows it). All four
+lived in the provisional-festival reconciliation. The coordinator's call, the
+day before the festival: make the warm open STRICT — paint only the exact
+wall the person left, otherwise the cold path, and never switch afterwards.
+
+- Red first (67909ff): `warm-open-strict-catalog` (renamed from
+  `-catalog-added`), `-strict-stay-offline`, `-strict-file`,
+  `-strict-custom`, `-shared-file`, and `-catalog-dropped` rewritten (stays
+  on screen; a half-typed note saves where it was typed). 7 red on the
+  round-3 code.
+- Built (32d97f1, a9d8737): `canOpenWarm` — claimed name, cached doc, a SAVED
+  festival listed in the cached catalog (a crew's own: in local customs),
+  its file in hand.
+  - Deleted: activateCrew's provisional mode, festivalChoiceFor,
+    showFestivalChoice, confirmFestivalChoice (state.js back to pre-round-3
+    but for `forgetComputedDays(fid)`); settleFestivalChoice, the warmOpen
+    record, sayFestivalMissing and the deferred toast; enterApp's
+    cache-first festival load.
+  - Kept: freshenFromNetwork (only refreshes what is on screen: the file, the
+    catalog for later switches, the customs), refreshFestivalFile (now
+    repaints whichever wall SHOWS that fid — new B), applyFreshCustoms (#3),
+    the crew-gone guard (#4), sync's Stay-offline status (#5a), the
+    toggle-off refresh (#5b), the nav budget.
+  - Stay offline: boot starts the catalog request lazily (not at all on a
+    warm open under it); every warm-path request reads the setting as it
+    would fire; the warm migration kick is skipped under it.
+- Suite: 716 tests, 714 pass, 1 skipped, 1 fail = the stamp (app.js and
+  state.js touched again) — needs the `--keep` re-stamp.
+- Lie-fi first paint (real Chromium, same crew, same festival, all cached,
+  every request hanging): 1,556 ms and 1,577 ms.
+- Known and unchanged from main: the 25 s loop retries a legacy migration
+  whenever the network is up, Stay offline or not; stampIdentity's
+  fire-and-forget /api/person calls. Neither is a warm-path step.
