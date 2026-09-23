@@ -185,7 +185,11 @@ test('the day-of open on an ACL night between the weekends lands on tonight\'s L
   // Tue Sep 29, 8 PM in Austin: two late-night shows, no grid day.
   const { ctx, page } = await openPhone('acl-2026', { now: new Date('2026-09-30T01:00:00Z') });
   try {
-    await sleep(800); // the dock's own glide to the lit tab
+    // The dock's own glide to the lit tab — waited for, not slept: a fixed
+    // 800ms failed on a loaded machine (load average ~20, 2026-09-23) and
+    // passed at 3s. A tab that never lights still fails the assert below.
+    await page.waitForFunction(() => document.querySelector('#dock-days .day-tab.active')?.dataset.day === 'Late nights', null, { timeout: 8000 }).catch(() => {});
+    await sleep(200);
     const at = await page.evaluate(() => {
       const room = document.querySelector('#wall-root .day-block[data-day="Late nights"] .room[data-iso="2026-09-29"]');
       const offset = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--jump-offset')) || 8;
