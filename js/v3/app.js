@@ -130,7 +130,7 @@ function refreshCtx() {
 // Portola afters night has a date the wall derives and dayMeta never names.
 // The query is stripped deliberately — searching narrows the wall, never the
 // dates a crew has notes on.
-// A date is CALLED what the wall's day rule calls it — "Friday" — because that
+// A date is CALLED what its door on the wall calls it — "Friday" — because that
 // is the door you wrote through, and the sheet has to agree with the door
 // (MODEL-V4 §3a.3). The exception is the one that made §4 date-key day notes in
 // the first place: a two-weekend fest has two Fridays, and two rows both saying
@@ -145,7 +145,7 @@ function festDatesOf() {
   const seen = new Set();
   // The fold is stripped too: a hidden day renders nothing on the wall, but a
   // note already written on it is still a conversation the sheet lists, and
-  // it is called what its rule would call it.
+  // it is called what its door would call it.
   for (const day of dayNavOf(fest, { ...ctx, query: '', folded: [] })) {
     for (const iso of day.dates || []) {
       if (!model.ISO_DATE_RE.test(String(iso)) || seen.has(iso)) continue;
@@ -178,36 +178,30 @@ export function nameDates(entries) {
 function roomBlocksOf(key) {
   return [...document.querySelectorAll(`#wall-root .room[data-room="${CSS.escape(key)}"]`)];
 }
-// The days the plan gives the wall right now, by key — read before and after
+// The tabs the plan gives the wall right now, by key — read before and after
 // a fold, so the days a fold takes or gives back are the difference of two
-// plans and never a guess read off the DOM (a lineup wall's THE LINEUP rule
-// carries no day key and must never be swept). A dated section is a tab,
-// not a day: it moves as a room, by its own key.
+// plans and never a guess read off the DOM. A dated section (Late nights) is
+// a tab too, so hiding it takes its block whole.
 function planDayKeys() {
-  return new Set(dayNavOf(state.fest(), ctx).filter((t) => !t.dated).map((t) => t.key));
+  return new Set(dayNavOf(state.fest(), ctx).map((t) => t.key));
 }
-// The named days as they stand on the wall: each rule and every sibling
-// under it — its whisper, its rooms — up to the next tab anchor (the next
-// rule, or a dated section's room, which is a tab of its own).
+// The named days as they stand on the wall: one `.day-block` each, holding
+// everything the day shows — its rooms, their heads and whispers (one-line
+// heads, 2026-09-23). A block is a day, so a day that goes is one element.
 function dayBlocksOf(keys) {
-  const out = [];
-  let taking = false;
-  for (const el of $('wall-root').children) {
-    if (el.classList.contains('day-rule')) taking = keys.has(el.dataset.day);
-    else if (el.classList.contains('room') && el.querySelector('.sec-head[data-day]')) taking = false;
-    if (taking) out.push(el);
-  }
-  return out;
+  return [...$('wall-root').children].filter((el) => el.classList.contains('day-block') && keys.has(el.dataset.day));
 }
-// What a fold moves, in the wall's order: the room blocks stamped with the
-// key, and every day that goes with them. A weekend has no room of its own —
-// it leaves and returns as its three days; a Portola Thursday whose only
-// room was hidden leaves with that room instead of vanishing on the repaint
-// (Kevin, 2026-08-30: nothing vanishes in place, nothing pops).
+// What a fold moves, in the wall's order: every day that goes with it, whole,
+// and the room blocks stamped with the key on the days that stay — a room
+// inside a day that is leaving already leaves with its day, and moving it
+// twice would double its motion. A weekend has no room of its own — it leaves
+// and returns as its three days; a Portola Thursday whose only room was
+// hidden leaves as its day instead of vanishing on the repaint (Kevin,
+// 2026-08-30: nothing vanishes in place, nothing pops).
 function foldBlocksOf(key, dayKeys) {
-  const rooms = new Set(roomBlocksOf(key));
   const days = new Set(dayBlocksOf(dayKeys));
-  return [...$('wall-root').children].filter((el) => rooms.has(el) || days.has(el));
+  const rooms = new Set(roomBlocksOf(key).filter((room) => !days.has(room.closest('.day-block'))));
+  return [...$('wall-root').querySelectorAll('.day-block, .room')].filter((el) => days.has(el) || rooms.has(el));
 }
 // The rooms of the festival week the menu offers, hidden or not, in the
 // wall's order (wall.js roomsOf reads the fest through the wall's own plan).
@@ -261,12 +255,12 @@ function toggleFoldFlow(key) {
 }
 
 // Where the page stands after the wall changed shape under it. The day you
-// were in is still there: land on its rule again (the days above it may have
+// were in is still there: land on its block again (the days above it may have
 // gone, and an untouched scroll offset would be looking at somewhere else) —
 // unless you were at the top of the page, where there is nothing to keep and
 // nothing moves. The day you were in is gone: land on the first visible day,
 // which is what the open would choose, wherever you were standing (at the
-// top that is a short hop from the fest header to the first rule, and it is
+// top that is a short hop from the fest header to the first day, and it is
 // the day the dock now lights).
 function landAfterFold(standing) {
   const tabs = dayNavOf(state.fest(), ctx, $('wall-root'));
@@ -274,8 +268,8 @@ function landAfterFold(standing) {
   if (still && !(window.scrollY > 0)) return;
   const day = still || defaultDayOf(tabs);
   if (!day) return;
-  const rule = document.querySelector(anchorFor(day.anchor || day.key));
-  if (rule) landOnRule(rule);
+  const block = document.querySelector(anchorFor(day.anchor || day.key));
+  if (block) landOnDay(block);
 }
 
 // ---- tap cycle -------------------------------------------------------------------
@@ -431,8 +425,7 @@ function tickClock(date = new Date()) {
 }
 
 // Where a day tab lands on the wall, in the wall's own words (DAY_ANCHOR):
-// its day rule, or — for a dated section, which is a room and a tab at once —
-// its room header.
+// its day's block, whose first head names the day.
 const anchorFor = (key) => DAY_ANCHOR.split(', ')
   .map((sel) => `#wall-root ${sel.replace('[data-day]', `[data-day="${CSS.escape(key)}"]`)}`)
   .join(', ');
@@ -449,7 +442,7 @@ export function defaultDayOf(days) {
 }
 
 // During the festival, with today's part hidden (the day-of scroll found no
-// rule for today): the next visible day. Before the festival nothing has
+// block for today): the next visible day. Before the festival nothing has
 // begun and there is no "next" — the first grid day is the open; after it,
 // likewise. A dated section is a tab, not a day.
 export function nextVisibleDay(days, todayIso) {
@@ -458,12 +451,12 @@ export function nextVisibleDay(days, todayIso) {
   return dated.find((d) => d.iso >= todayIso) || null;
 }
 
-// Land a day rule where a day-tab jump lands it: below the sticky chrome
-// (--jump-offset, measured into every rule's scroll-margin-top).
-function landOnRule(rule) {
-  const pageY = rule.getBoundingClientRect().top + (window.scrollY || window.pageYOffset || 0);
+// Land a day's block where a day-tab jump lands it: below the sticky chrome
+// (--jump-offset, measured into every block's scroll-margin-top).
+function landOnDay(block) {
+  const pageY = block.getBoundingClientRect().top + (window.scrollY || window.pageYOffset || 0);
   const offset = (typeof window.getComputedStyle === 'function')
-    ? parseFloat(window.getComputedStyle(rule).scrollMarginTop) || 0 : 0;
+    ? parseFloat(window.getComputedStyle(block).scrollMarginTop) || 0 : 0;
   window.scrollTo({ top: Math.max(0, pageY - offset), behavior: 'auto' });
 }
 
@@ -480,16 +473,16 @@ function maybeOpenOnDay() {
   const tz = state.fest().timezone || null; // the festival's clock, not the phone's
   const key = dayOfScrollKey(ctx.fid, new Date(), tz);
   if (scrolledBefore(key)) return;
-  // During the festival: the now line, or today's rule before doors.
+  // During the festival: the now line, or today's first head before doors.
   if (scrollToNowLine($('wall-root'), { timeZone: tz })) { rememberScrolled(key); return; }
   // During it with today hidden: the next visible day. Before it and after
   // it: the first visible grid day.
   const tabs = dayNavOf(state.fest(), ctx);
   const day = nextVisibleDay(tabs, festivalClock(new Date(), tz).iso) || defaultDayOf(tabs);
   if (!day) return;
-  const rule = document.querySelector(anchorFor(day.anchor || day.key));
-  if (!rule) return;
-  landOnRule(rule);
+  const block = document.querySelector(anchorFor(day.anchor || day.key));
+  if (!block) return;
+  landOnDay(block);
   rememberScrolled(key);
 }
 
@@ -530,8 +523,8 @@ function measureStickyChrome() {
   const railH = rail && rail.offsetHeight ? rail.offsetHeight : 0;
   const strip = document.querySelector('.stage-strip');
   // On a day-first wall every strip is scoped to its own timetable block
-  // (`.tt-block`), so no strip ever sits above a day rule — a jump lands
-  // against the rail alone.
+  // (`.tt-block`), so no strip ever sits above a day's first head — a jump
+  // lands against the rail alone.
   const scoped = !!document.querySelector('#wall-root .tt-block');
   const stripH = strip && !scoped ? strip.offsetHeight : 0;
   const rootStyle = document.documentElement.style;
@@ -546,7 +539,7 @@ let unspy = () => {};
 // dated section (LATE) after them (MODEL-V4 §2).
 //
 // Two fields are optional and mean nothing to a single-weekend fest:
-// `anchor` is the day rule this tab jumps to when it is not the day's key —
+// `anchor` is the day block this tab jumps to when it is not the day's key —
 // a two-weekend fest renders Friday twice and one key cannot address both —
 // and `num` is the date the dock tab wears to tell those two apart
 // (FRI 2 · SAT 3 · SUN 4 · FRI 9 · SAT 10 · SUN 11). The rail's long label
@@ -2175,7 +2168,7 @@ export function init() {
     ctx.query = e.target.value;
     unzoom({ instant: true, why: 'wall switched' });
     renderWall($('wall-root'), ctx);
-    renderDayNav(); // scrollspy re-wires against the filtered day rules (gate F8)
+    renderDayNav(); // scrollspy re-wires against the filtered day blocks (gate F8)
     measureStickyChrome(); // search mode drops the stage strip — jump offset shrinks
   });
   let resizeTimer = null;

@@ -111,7 +111,7 @@ test('searching a scheduled two-weekend fest answers across the whole dated axis
   // A search is a list: each answered day is a block (the tab's anchor) under
   // its one-line list header.
   const blocks = [...root.querySelectorAll('.day-block')];
-  assert.deepEqual(blocks.map((b) => [b.dataset.day, b.querySelector('.day-rule .date').textContent]),
+  assert.deepEqual(blocks.map((b) => [b.dataset.day, b.querySelector('.list-head .sub').textContent]),
     [['Friday|W1', 'Fri · Oct 2 · Weekend 1'], ['Friday|W2', 'Fri · Oct 9 · Weekend 2']],
     'a match under each weekend, each header saying which date it is');
   const namesOn = (tab) => [...blocks.find((b) => b.dataset.day === tab).querySelectorAll('.card')].map((c) => c.dataset.artist);
@@ -179,7 +179,7 @@ test('ACL as shipped: searching finds a Weekend 2 headliner, under the date they
   assert.deepEqual(cards.map((c) => c.dataset.artist), ['Kings of Leon'], 'found, not "No artists match"');
   const block = root.querySelector('.day-block');
   assert.equal(block.dataset.day, 'Friday|W2', 'under the Friday they actually play');
-  assert.equal(block.querySelector('.day-rule .date').textContent, 'Fri · Oct 9 · Weekend 2', 'and the header says which date that is');
+  assert.equal(block.querySelector('.list-head .sub').textContent, 'Fri · Oct 9 · Weekend 2', 'and the header says which date that is');
   assert.equal(JSON.parse(cards[0].dataset.occ).weekend, 'W2', 'the card carries the weekend, so the zoom tells the right night');
   // The dock said seven tabs over this one answer, six of them dead, and lit
   // the Weekend 1 Friday (Codex re-check finding 2, 2026-09-17).
@@ -196,7 +196,7 @@ test('ACL as shipped: searching finds a Weekend 2 headliner, under the date they
   const root2 = document.createElement('div');
   document.body.appendChild(root2);
   renderWall(root2, { ...mkCtx('all', 'jess williamson'), fid: 'acl-2026' });
-  const rules = [...root2.querySelectorAll('.day-rule')].map((r) => [r.closest('.day-block').dataset.day, r.querySelector('.day').textContent, r.querySelector('.date').textContent]);
+  const rules = [...root2.querySelectorAll('.list-head')].map((r) => [r.closest('.day-block').dataset.day, r.querySelector('.label').textContent, r.querySelector('.sub').textContent]);
   assert.deepEqual(rules, [
     ['Sunday|W1', 'SUNDAY', 'Sun · Oct 4 · Weekend 1'],
     ['Late nights', 'THU · OCT 1', 'LATE NIGHTS'],

@@ -151,7 +151,7 @@ test('lineup wall, a flat sort: one list, and the event card carries night · ti
   const root = document.createElement('div');
   document.body.appendChild(root);
   renderWall(root, { ...ctx, sort: 'az' });
-  assert.deepEqual([...root.querySelectorAll('.day-rule')].map((r) => r.querySelector('.day').textContent), ['THE LINEUP']);
+  assert.deepEqual([...root.querySelectorAll('.list-head')].map((r) => r.querySelector('.label').textContent), ['THE LINEUP']);
   const hmd = [...root.querySelectorAll('.card')].find((c) => c.dataset.artist === 'Horse Meat Disco');
   assert.equal(hmd.querySelector('.time').textContent, 'Fri · 9 PM - 3 AM\nPublic Works', 'the two-line label (2026-08-29) is the list form');
   root.remove();

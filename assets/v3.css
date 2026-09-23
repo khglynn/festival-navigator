@@ -209,22 +209,50 @@
                      padding: 0 6px; font-size: 10px; }
 .toolbar-divider { width: 1px; height: 22px; background: var(--hairline); margin: 0 6px; }
 
-/* ---- day header rule --------------------------------------------------------- */
-/* Jumping to a day (tab tap) must land the header BELOW the sticky chrome,
- * not under it — app.js measures the rail + stage strip into --jump-offset. */
-/* The rule is a BUTTON where the day has a date: it is the door to that date's
- * notes (MODEL-V4 §3a.3), the tap the fold used to take. Nothing is added to
- * it — same words, same hairline — so the rule resets button chrome, and its
- * 44px floor comes from being a button, which is the only way this app gets a
- * touch target. */
-.day-rule { display: flex; align-items: baseline; gap: 10px; scroll-margin-top: var(--jump-offset, 8px);
-            width: 100%; text-align: left; background: none; border: 0; padding: 0;
-            font: inherit; color: inherit; }
-button.day-rule, button.date-rule, button.sec-head { cursor: pointer; }
-.day-rule .day { font-family: var(--font-display); letter-spacing: var(--track-display);
-                 font-size: var(--fs-day); color: var(--text-header); }
-.day-rule .date { color: var(--text-tertiary); font-size: 10px; font-weight: 700; }
-.day-rule .line { flex: 1; height: 1px; background: var(--hairline); }
+/* ---- a day, and the one head every room wears (one-line heads, 2026-09-23) ----- */
+/* claude-plans/2026-09-23-one-line-heads.md. Kevin: "combine the double lines
+ * (for day and then event) into one line each like 'Sat Portola' 'Sat Afters'".
+ * A day is a BLOCK of rooms, and the block is where its tab lands: jumping to a
+ * day must land it BELOW the sticky chrome, not under it — app.js measures the
+ * rail + stage strip into --jump-offset. The block spaces its rooms with the
+ * wall's own gap (index.html .wall-wrap), inherited so there is one number. */
+.day-block { display: flex; flex-direction: column; gap: inherit;
+             scroll-margin-top: var(--jump-offset, 8px); }
+
+/* THE room head: `.name` (the weekday, a space, the room) · `.sub` · `.line`.
+ * One component at one size — a head is the day's landmark now, so it takes the
+ * old day rule's weight (--fs-day, the display tracking); a day's first head is
+ * no bigger than its others, it just carries the date in its sub. The weekday
+ * is secondary and the room is the header colour, so "SAT PORTOLA" reads as
+ * when, then what. Never --fest: the accent's four homes do not include these.
+ * A head that opens notes is a BUTTON (the reset below) and its 44px floor
+ * comes from being a button; nothing is added to it — no chip, no glyph. */
+.room-head { display: flex; align-items: baseline; gap: 10px; width: 100%; min-width: 0;
+             text-align: left; background: none; border: 0; padding: 0;
+             font: inherit; color: inherit; }
+button.room-head { cursor: pointer; }
+/* One line, never two. On a 390px phone the sub gives way FIRST (its shrink
+ * outweighs the name's a thousand to one, so it ellipsizes from its end — the
+ * date and the weekend it leads with are the last to go); only a name that
+ * cannot fit on its own ellipsizes. The hairline takes whatever is left. */
+.room-head .name { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+                   font-family: var(--font-display); letter-spacing: var(--track-display);
+                   font-size: var(--fs-day); color: var(--text-header); }
+.room-head .wd { color: var(--text-secondary); }
+.room-head .sub { flex: 0 1000 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+                  color: var(--text-tertiary); font-size: 9.5px; font-weight: 700; letter-spacing: .08em;
+                  text-transform: uppercase; }
+.room-head .line { flex: 1 1 0; min-width: 0; height: 1px; background: var(--hairline); }
+
+/* A LIST's head: one line over a list of answers — a day in a search or a
+ * lineup fest's by-day list, and THE LINEUP / EVERYTHING ELSE / NOTES · FEST.
+ * Never a door and never an anchor (the day's block is). The look the old day
+ * rule had, because lists did not change. */
+.list-head { display: flex; align-items: baseline; gap: 10px; }
+.list-head .label { font-family: var(--font-display); letter-spacing: var(--track-display);
+                    font-size: var(--fs-day); color: var(--text-header); }
+.list-head .sub { color: var(--text-tertiary); font-size: 10px; font-weight: 700; }
+.list-head .line { flex: 1; height: 1px; background: var(--hairline); }
 
 /* ---- desktop day rail (DT-1) --------------------------------------------------- */
 /* ≥720 the dock dies; the rail is its desktop body — sticky under the top of
@@ -789,7 +817,8 @@ button.f-chip.notes { cursor: pointer; }
 .composer-wrap { display: flex; flex-direction: column; gap: 4px; }
 
 /* The day whisper: nothing until someone writes, then the newest note as one
- * soft wash at the day's door; the rule's ✎ chip stays the add door. */
+ * soft wash pinned directly under the room head that opens its thread; the
+ * head itself is the add door. */
 .day-whisper { display: flex; align-items: center; gap: 9px; width: 100%; min-width: 0; border: none;
                cursor: pointer; text-align: left; color: var(--text-body); font-family: var(--font-ui);
                font-size: 12px; line-height: 1.35; margin: -4px 0 2px; padding: 7px 12px 7px 10px;
@@ -884,35 +913,25 @@ button.f-chip.notes { cursor: pointer; }
 .now-label.in-card { top: 5px; right: 5px; transform: none; }
 
 /* ---- events: the composed day, venue groups (MODEL-V4, 2026-09-16) ------------- */
-/* claude-plans/2026-09-16-wall-v4/MODEL-V4.md. A day is the unit; inside it,
- * rooms — the festival's own first, then each section that plays that night —
- * each under a header that is the day-rule's quieter sibling. The header does
- * not fold the room any more (§3a.2): the show menu on the fest name is the
- * one way to hide a part of the week, so there is no chevron to draw. A room
- * the menu has hidden renders nothing at all, and a day with nothing visible
- * has no rule (2026-09-17) — the menu is where that state is visible. */
+/* claude-plans/2026-09-16-wall-v4/MODEL-V4.md. A day is the unit (a
+ * `.day-block`, above); inside it, rooms — the festival's own first, then each
+ * section that plays that night — each under its one `.room-head`. The head
+ * does not fold the room (§3a.2): the show menu on the fest name is the one way
+ * to hide a part of the week, so there is no chevron to draw. A room the menu
+ * has hidden renders nothing at all, and a day with nothing visible has no
+ * block (2026-09-17) — the menu is where that state is visible. */
 .room { display: flex; flex-direction: column; gap: 9px; }
-.sec-head { display: flex; align-items: baseline; gap: 9px; width: 100%; text-align: left;
-            background: none; border: 0; padding: 0; font: inherit; color: inherit; }
-.sec-label { font-family: var(--font-display); letter-spacing: .07em; font-size: 12.5px; color: var(--text-header); }
-.sec-sub { color: var(--text-tertiary); font-size: 9.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
-.sec-line { flex: 1; height: 1px; background: var(--hairline); }
-/* A dated section (ACL's Late nights) is a room AND a tab of its own, so its
- * header is where the tab lands — at the day rule's weight, and clearing the
- * sticky chrome the same way. */
-.sec-head.tab { scroll-margin-top: var(--jump-offset, 8px); }
-.sec-head.tab .sec-label { font-size: var(--fs-day); letter-spacing: var(--track-display); }
-/* A rule and a header that open notes are buttons, so the touch floor gives
- * them 44px of real height — at which point a baseline row would sit at the top
- * of an empty box. This is the floor's consequence, not a new opt-out list, and
- * borrowed space is the wrong answer here: a day rule's hit area would reach
- * into the section header right under it, and the two open DIFFERENT threads.
- * The min-height is repeated for the rules and headers that are NOT doors (the
- * festival's own room on a day; a day the file gave no date), because a room
- * header is one component and two of them at different heights on one day is a
- * component with two looks. */
+/* A head that opens notes is a button, so the touch floor gives it 44px of
+ * real height — at which point a baseline row would sit at the top of an empty
+ * box. This is the floor's consequence, not a new opt-out list, and borrowed
+ * space is the wrong answer here: a head's hit area would reach into the room
+ * above or the whisper under it, and they open DIFFERENT threads. The
+ * min-height is repeated for the heads that are NOT doors (a day the file gave
+ * no date; a section with no night), because a room head is one component and
+ * two of them at different heights on one day is a component with two looks.
+ * A list's head keeps the height it always had on a phone. */
 @media (pointer: coarse) {
-  .day-rule, .date-rule, .sec-head { align-items: center; min-height: 44px; }
+  .room-head, .list-head { align-items: center; min-height: 44px; }
 }
 /* One sticky strip PER timetable: position:sticky is bounded by its parent,
  * so a strip inside this block pins while the block is on screen and leaves
@@ -934,14 +953,6 @@ button.f-chip.notes { cursor: pointer; }
 @media (min-width: 720px) {
   .venue-grid { row-gap: 12px; }
 }
-
-/* One date inside a dated section (ACL's Late nights): quieter than a day
- * rule, because the day rule above already named the section. */
-.date-rule { display: flex; align-items: baseline; gap: 8px; margin-top: 4px;
-             width: 100%; text-align: left; background: none; border: 0; padding: 0;
-             font: inherit; color: inherit; }
-.date-rule .d { font-family: var(--font-display); letter-spacing: .06em; font-size: 12px; color: var(--text-secondary); }
-.date-rule .line { flex: 1; height: 1px; background: var(--hairline); }
 
 /* The zoom's WHEN for a back-to-back run (MODEL-V3 §5): two lines in one
  * piece — the venue's window, then the order as a door to the poster. */

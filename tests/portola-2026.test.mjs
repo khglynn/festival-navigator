@@ -102,7 +102,7 @@ test('portola-2026: the wall is day-first — THU FRI SAT SUN, the grid inside i
   const gridCells = root.querySelectorAll('.room[data-room=":fest"] .card.cell').length;
   assert.equal(gridCells, 64, 'every timed set is a grid cell, inside the festival\'s own room');
   assert.equal(root.querySelectorAll('.room[data-room=":fest"] .stage-strip').length, 2, 'each grid day carries its own sticky strip');
-  assert.equal([...root.querySelectorAll('.room-head .label, .day-rule .day')].filter((l) => l.textContent === 'EVERYTHING ELSE').length, 0);
+  assert.equal([...root.querySelectorAll('.room-head .label, .list-head .label')].filter((l) => l.textContent === 'EVERYTHING ELSE').length, 0);
   const hmd = [...root.querySelectorAll('.card')].filter((c) => c.dataset.artist === 'Horse Meat Disco');
   assert.equal(hmd.length, 2, 'Horse Meat Disco under Friday\'s Afters AND Friday\'s Folsom');
   assert.deepEqual(hmd.map((c) => c.closest('.room').dataset.room), ['Afters', 'Folsom']);

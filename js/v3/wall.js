@@ -16,7 +16,7 @@ import { dayWhisper, festWhisper, dayTargetLabel } from './notes.js'; // runtime
 import { factsFor, timeRange } from './card-facts.js'; // same runtime-only cycle: the card's ONE model
 import { passesPeople, COL, FEST_ROOM } from './filters.js';
 import { nowOnDay, nowOffsetPx, clockLabel, festivalClock } from './now.js';
-import { eventModelOf, venueGroupsOf, dateRuleLabel, occOf, hourLabelOf, approxMark, parseEventTime } from './events.js';
+import { eventModelOf, venueGroupsOf, dateRuleLabel, occOf, hourLabelOf, approxMark, parseEventTime, weekdayOfIso, shortDate } from './events.js';
 import { reduced } from './motion.js';
 
 // ---- person -> board color ---------------------------------------------------
@@ -350,20 +350,23 @@ export function groupByDay(artists, knownDays = []) {
 }
 
 
-// One lineup-style section: a day rule and a card grid. This is the SEARCH
-// and flat-sort shape — a list of answers, not a night. The composed wall
-// (below) never comes through here.
+// One lineup-style section: a list head and a card grid. This is the SEARCH
+// and flat-sort shape — a list of answers, not a night — and the composed
+// wall's day-less blocks (THE LINEUP, EVERYTHING ELSE). A named day's answers
+// sit in the block its tab lands on; the day-less blocks are not tabs.
 function renderLineupGroup(root, day, list, ctx, fest, { header, sub } = {}) {
   const meta = (fest.dayMeta || {})[day];
   // A day KEY is frozen pick data and can be verbose ("Wednesday, Sept 16
-  // (Early Arrival Pre-Party)"); the rule shows the weekday and moves the
+  // (Early Arrival Pre-Party)"); the head shows the weekday and moves the
   // aside to its sub line — the same split the day tab and the day sheet use.
   const parts = day ? dayLabelParts(day) : null;
-  root.appendChild(dayHeader(
+  const host = day ? dayBlock(day) : root;
+  host.appendChild(listHead(
     header || (parts && parts.head) || 'THE LINEUP',
     sub !== undefined ? sub : (day ? [dayRuleSub(meta), parts.aside].filter(Boolean).join(' · ') : (ctx.sort === 'billing' ? 'BILLING ORDER' : '')),
   ));
-  renderCardGrid(root, list, ctx, { day, subLabelOf: lineupSubLabel });
+  renderCardGrid(host, list, ctx, { day, subLabelOf: lineupSubLabel });
+  if (host !== root) root.appendChild(host);
 }
 
 // A lineup entry can be an EVENT (afters, Folsom) — venue rides in `stage`,
@@ -407,37 +410,45 @@ function renderCardGrid(root, list, ctx, { day = null, subLabelOf = lineupSubLab
   return list;
 }
 
-// `opts.dayKey` is the jump / scrollspy key when the visible label is not
-// the key itself — a day-first rule shows a verbose key's weekday head
-// ("Wednesday, Sept 16 (Early Arrival Pre-Party)" → WEDNESDAY) the way
-// every other path does, while the tabs still find it by its key.
-function dayHeader(label, sub, opts = {}) {
-  // The rule IS the door to that date's notes (MODEL-V4 §3a.3) — the tap the
-  // fold used to take. Nothing is added to it: same words, same hairline, a
-  // button instead of a div, which is also where its 44px floor comes from.
-  const rule = document.createElement(opts.onOpen ? 'button' : 'div');
-  if (opts.onOpen) {
-    rule.type = 'button';
-    rule.setAttribute('aria-label', `Notes for ${opts.aria || label}`);
-    rule.addEventListener('click', opts.onOpen);
-  }
-  rule.className = 'day-rule';
-  rule.dataset.day = opts.dayKey || label;
-  const d = document.createElement('span');
-  d.className = 'day';
-  d.textContent = label.toUpperCase();
-  const dt = document.createElement('span');
-  dt.className = 'date';
-  dt.textContent = sub || '';
-  const line = document.createElement('span');
-  line.className = 'line';
-  rule.append(d, dt, line);
-  return rule;
+// Where a day tab lands: one block per day — on the composed wall, holding
+// the day's rooms; in a list (a search, a lineup fest's by-day list), holding
+// that day's answers — and one per tab that hangs off the end of the week
+// (ACL's Late nights). `data-day` is the tab's key, so a verbose day key
+// ("Wednesday, Sept 16 (Early Arrival Pre-Party)") is found by its key while
+// its head shows the weekday. `data-iso` is the day's date where it is one:
+// the day-of open lands there before doors (scrollToNowLine). Every jump,
+// the scrollspy and the fold address this one shape (DAY_ANCHOR).
+function dayBlock(key, iso = null) {
+  const block = document.createElement('div');
+  block.className = 'day-block';
+  if (key) block.dataset.day = key;
+  if (iso) block.dataset.iso = iso;
+  return block;
 }
 
-// A LIST section's day rule subtitle: real dates beat internal numbering
-// (ST-4). A dated day says its own date — that sub comes composed from the
-// model (events.js), which is the only place a weekend is still a thing.
+// A LIST's head: one line over a list of answers — a day's in a search or a
+// lineup fest's by-day list, and the day-less blocks (THE LINEUP, EVERYTHING
+// ELSE · NO SET TIME YET, NOTES · <FEST>). It is never a door and never an
+// anchor (the day's block is). The composed wall does not draw one: every
+// room there wears its own head (roomHead), which names the day itself.
+function listHead(label, sub) {
+  const head = document.createElement('div');
+  head.className = 'list-head';
+  const l = document.createElement('span');
+  l.className = 'label';
+  l.textContent = String(label).toUpperCase();
+  const s = document.createElement('span');
+  s.className = 'sub';
+  s.textContent = sub || '';
+  const line = document.createElement('span');
+  line.className = 'line';
+  head.append(l, s, line);
+  return head;
+}
+
+// A LIST's day head subtitle: real dates beat internal numbering (ST-4). A
+// dated day says its own date — that sub comes composed from the model
+// (events.js), which is the only place a weekend is still a thing.
 function dayRuleSub(meta) {
   if (!meta) return '';
   return [meta.wd, meta.date || (meta.num ? `Day ${meta.num}` : '')].filter(Boolean).join(' · ');
@@ -471,8 +482,8 @@ export function applySort(artists, mode, ctx) {
 }
 
 // ---- set-times grid (atlas 21d: the same cards, on a clock) ---------------------
-// One vertical page: every day gets a rule + a clock grid. Mobile shows ~2
-// stages and swipes; desktop fits them all.
+// One vertical page: every grid day's festival room gets a clock grid under
+// its head. Mobile shows ~2 stages and swipes; desktop fits them all.
 //
 // The stage columns are CANONICAL across days (model.canonicalStages): every
 // day renders the same columns in the same order on the same template, all
@@ -577,8 +588,9 @@ export function positionNowLines(root, date = new Date()) {
 
 // The day-of open: land the now line about a third of the way down the
 // viewport so the next hour is in view. Before doors on festival day there
-// is no line yet — land on today's day header instead. Returns the target
-// it scrolled to ('now' | 'day') or null when today is not on this wall.
+// is no line yet — land on today's block instead, whose first head names the
+// day. Returns the target it scrolled to ('now' | 'day') or null when today
+// is not on this wall.
 export function scrollToNowLine(root, { date = new Date(), viewportHeight = window.innerHeight, scrollTo = (y) => window.scrollTo({ top: y, behavior: 'auto' }), timeZone = null } = {}) {
   const pageY = (el) => el.getBoundingClientRect().top + (window.scrollY || window.pageYOffset || 0);
   const line = root.querySelector('.now-line');
@@ -589,13 +601,13 @@ export function scrollToNowLine(root, { date = new Date(), viewportHeight = wind
   // "Today" in the festival's zone — the grids carry it; the caller may too.
   const zoned = root.querySelector('.times-grid[data-tz]');
   const todayIso = festivalClock(date, timeZone || (zoned ? zoned.dataset.tz : null)).iso;
-  const rule = root.querySelector(`.day-rule[data-iso="${todayIso}"]`);
-  if (!rule) return null;
-  // The day rule's scroll-margin-top is the sticky chrome's height (app.js
+  const day = root.querySelector(`.day-block[data-iso="${todayIso}"]`);
+  if (!day) return null;
+  // The block's scroll-margin-top is the sticky chrome's height (app.js
   // measures it into --jump-offset); land below it like a day-tab jump does.
   const offset = (typeof window !== 'undefined' && window.getComputedStyle)
-    ? parseFloat(window.getComputedStyle(rule).scrollMarginTop) || 0 : 0;
-  scrollTo(Math.max(0, pageY(rule) - offset));
+    ? parseFloat(window.getComputedStyle(day).scrollMarginTop) || 0 : 0;
+  scrollTo(Math.max(0, pageY(day) - offset));
   return 'day';
 }
 
@@ -852,12 +864,14 @@ function renderScheduledDayBody(root, day, ctx, layout, weekend, { strip = false
 // stage grid; everything else is a stack of cards under the place it
 // happens, in play order.
 //
-// A day is composed of ROOMS, in order: the festival's own first — its
+// A day is a block of ROOMS, in order: the festival's own first — its
 // timetable on a grid day, then anything of the festival's that is not on
 // that grid (a set whose stage is not a column, a billed name with no set
 // time yet, the day's activities) as venue groups — then each section that
-// plays that night. Every room folds on a tap of its header; the shell owns
-// which are folded.
+// plays that night. Every room wears ONE head naming when and what (`SAT
+// PORTOLA`, `SAT AFTERS` — one-line heads, 2026-09-23); there is no day line
+// above them. The show menu decides which rooms are hidden (wallPlanFor
+// applies it), and a hidden room renders nothing.
 
 
 // Which weekends a scheduled fest renders. A two-weekend one (ACL) gets six
@@ -881,7 +895,7 @@ export const weekendRoom = (w) => `weekend:${w}`;
 // contributes nothing: a hidden section is absent from every day it played,
 // a hidden extra (Late nights) is absent, the festival's own room takes its
 // grid, its billed names and its day-less names with it — and a day whose
-// visible rooms are all empty is not a day: no rule, no tab, never the open
+// visible rooms are all empty is not a day: no block, no tab, never the open
 // (Kevin: "if all events for a day are hidden, don't show that day at all —
 // not empty shells"). The show menu reads the same plan with nothing folded
 // (roomsOf), which is where the hidden state stays visible.
@@ -945,9 +959,9 @@ export function roomsOf(fest, ctx) {
 
 // What the day tabs (dock + rail) should list, in the wall's own order: the
 // days, then the tabs that hang off the end (a dated section like ACL's Late
-// nights). `key` is the jump id the wall stamps on its rule.
+// nights). `key` is the jump id the wall stamps on the day's block.
 // `dayKey` is the day WITHOUT its weekend suffix ("Friday", not "Friday|W1"):
-// the key the file wrote and the rule bills. The suffix is an axis detail, so
+// the key the file wrote and the heads bill. The suffix is an axis detail, so
 // anything naming the day for a person reads this, not `key`.
 // `grid` says the day has a timetable, so the shell can pick the first VISIBLE
 // grid day as the open without asking the fest (a hidden grid day is not here).
@@ -962,7 +976,7 @@ const groupTab = (fest) => (day) => {
     num: null,
     dates: [],
     // Rail tabs stay compact: a verbose day key shows its weekday only —
-    // the same split the day rule and the day sheet use.
+    // the same split the wall's heads and the day sheet use.
     long: (meta?.wd ? `${meta.wd} ${meta.num || ''}`.trim() : dayLabelParts(day).head).toUpperCase(),
     iso: null,
     dated: false,
@@ -975,8 +989,8 @@ export function dayNavOf(fest, ctx, wallRoot = null) {
   const plan = wallPlanFor(fest, ctx);
   // A scheduled fest's SEARCH is its own week with the misses taken out, so
   // the tabs are the same axis either way — one list, and the keys match what
-  // the wall stamps on its rules, or a tab jumps to nothing. Only a lineup
-  // fest's flat search keeps its own group headers.
+  // the wall stamps on its day blocks, or a tab jumps to nothing. Only a
+  // lineup fest's flat search keeps its own groups.
   const tabs = plan && (!ctx.query || plan.scheduled)
     ? [
       ...plan.model.days.map(dayTab),
@@ -1091,46 +1105,66 @@ export function positionNowMarks(root, date = new Date()) {
   }
 }
 
-// One room on a day: its header and body travel together, tagged with the
-// key that folds them (app.js animates the fold).
+// One room on a date: its head and body travel together, tagged with the key
+// the show menu hides it by (app.js animates the fold).
 function roomBlock(key) {
   const room = mk('div', 'room');
   room.dataset.room = key;
   return room;
 }
 
-// The festival's own room says where it is: "PORTOLA · PIER 80" — the venue
-// festPlaceLine leads with, as text.
+// The festival's own room says where it is: "SAT PORTOLA  Pier 80" — the
+// venue festPlaceLine leads with, as text.
 function festRoomSub(fest) {
   const venue = (fest.subtitle || '').split(' · ')[0].trim();
   return venue || fest.location || '';
 }
 
-// The room's header. It says what the room is; it does NOT fold it (MODEL-V4
-// §3a.2, Kevin 2026-09-17). The show menu on the fest name is the one way to
-// hide a part of the week, so the header carries no chevron, no aria-expanded
-// and no "<n> shows" — a header that answered a tap it no longer takes was
-// two affordances for one state.
-// `dayKey` is for the one room that is also a TAB — a dated section, which is
-// a room and a day axis entry at once. It stamps the jump/scrollspy anchor and
-// gives the header the day rule's weight, so the tab lands on something that
-// looks like every other tab's landing.
-// A hidden room never gets here: it renders nothing (wallPlanFor).
-export function sectionHeader(label, sub, { key = null, dayKey = null, onOpen = null, aria = null } = {}) {
-  const h = mk(onOpen ? 'button' : 'div', `sec-head${dayKey ? ' tab' : ''}`);
-  if (key) h.dataset.section = key;
-  if (dayKey) h.dataset.day = dayKey;
-  h.append(
-    mk('span', 'sec-label', String(label).toUpperCase()),
-    mk('span', 'sec-sub', sub || ''),
-    mk('span', 'sec-line'),
-  );
+// THE head every room on the wall wears — one line that names when, then what
+// (Kevin, 2026-09-23: "combine the double lines (for day and then event) into
+// one line each like 'Sat Portola' 'Sat Afters'"). Before it, a day was two
+// kinds of line stacked — a day rule, then a header per room — and Portola's
+// Thursday took two lines to say one thing.
+//
+//   .room-head   > .name (.wd "SAT" + " " + .label "PORTOLA") · .sub · .line
+//
+// The sub is the room's own ("Pier 80"), led by the date only on a day's FIRST
+// head — whichever room renders first, so hiding the festival hands the date
+// to SAT AFTERS (renderComposed decides it, per render). A head that opens a
+// thread is a button — that is where its 44px floor comes from — and the
+// thread is where you are standing (MODEL-V4 §3a.3); a head that opens nothing
+// is a div with the same look. It never folds its room (§3a.2): no chevron,
+// no aria-expanded, no "<n> shows" — the show menu is the one way to hide a
+// part of the week, and a hidden room never gets here.
+function roomHead({ weekday = null, label, sub = '', onOpen = null, aria = null }) {
+  const h = mk(onOpen ? 'button' : 'div', 'room-head');
+  const name = mk('span', 'name');
+  if (weekday) name.append(mk('span', 'wd', weekday), ' ');
+  name.append(mk('span', 'label', String(label).toUpperCase()));
+  h.append(name, mk('span', 'sub', sub || ''), mk('span', 'line'));
   if (onOpen) {
     h.type = 'button';
     h.setAttribute('aria-label', `Notes for ${aria || label}`);
     h.addEventListener('click', onOpen);
   }
   return h;
+}
+const joinSub = (...parts) => parts.filter(Boolean).join(' · ');
+
+// The weekday a day's heads lead with: `SAT`. A day whose key names no weekday
+// and whose file gives none (a bare "Day 1") says its own label instead — the
+// head never guesses a weekday.
+const headWeekday = (day) => (day.wd ? day.wd : dayLabelParts(day.dayKey).head).toUpperCase();
+
+// The door to a DATE's notes, called what the axis calls that date: its own
+// head, unless two dates would answer to it (a two-weekend fest's two
+// Fridays), in which case the date says itself. One naming rule, decided once
+// in the shell, so the door, the sheet's title and the sheet's row can never
+// disagree. No date, no door: a label is not a date.
+function dateDoor(ctx, iso, fallback = null) {
+  if (!iso || !ctx.onOpenDayNotes) return null;
+  const label = dayTargetLabel(ctx, iso, fallback);
+  return { onOpen: () => ctx.onOpenDayNotes(iso, label), aria: label };
 }
 
 // A set whose stage is not one of the grid's columns is still the festival's
@@ -1167,13 +1201,28 @@ function renderComposed(root, ctx, fest, { model: plan, scheduled, festRoom }) {
   if (!scheduled && plan.looseNoDay.length) renderLineupGroup(root, '', plan.looseNoDay, ctx, fest);
 
   for (const day of plan.days) {
-    root.appendChild(dayRuleFor(day, ctx));
+    const block = dayBlock(day.key, day.iso);
+    const weekday = headWeekday(day);
+    // The date rides the day's FIRST head and no other, whichever room that
+    // turns out to be — so it is spent by the first head made, never assigned
+    // to a room by name.
+    let when = day.when;
+    const head = (label, ownSub, door) => {
+      const h = roomHead({ weekday, label, sub: joinSub(when, ownSub), ...(door || {}) });
+      when = '';
+      return h;
+    };
     // 1. the festival's own room: its timetable on a grid day, then anything
     //    of the festival's that is not on that grid; a lineup day's billing
-    //    has no venue and no clock, so it stays the day's card grid.
+    //    has no venue and no clock, so it stays the day's card grid. On a
+    //    date, its head IS the door to that date's notes — the bare ISO, the
+    //    thread the day line used to open: on a Portola Saturday the date and
+    //    the festival's day are the same thing (spec 2026-09-23).
     if (festRoom && (day.grid || day.billing)) {
       const room = roomBlock(FEST_ROOM);
-      room.appendChild(sectionHeader(fest.name, festRoomSub(fest), { key: FEST_ROOM }));
+      const door = dateDoor(ctx, day.iso, dayLabelParts(day.dayKey).head);
+      room.appendChild(head(fest.name, festRoomSub(fest), door));
+      if (door) dayNoteWhisper(room, day.iso, door.aria, ctx);
       if (day.grid) {
         const extras = festRoomExtras(fest, day, layout);
         renderScheduledDayBody(room, day.dayKey, ctx, layout, day.weekend, { strip: true });
@@ -1181,26 +1230,25 @@ function renderComposed(root, ctx, fest, { model: plan, scheduled, festRoom }) {
       } else {
         renderCardGrid(room, day.billing, ctx, { day: day.dayKey });
       }
-      root.appendChild(room);
+      block.appendChild(room);
     }
-    // 2. each section that plays that night.
+    // 2. each section that plays that night. Its head on THIS day is the door
+    //    to that night's thread (§3a.3): Folsom on Friday, not Folsom, and not
+    //    Friday — even when it is the day's first head and carries the date. A
+    //    date with no festival room (Portola's Thursday) has no bare-date door;
+    //    a note already written there is still in the all-notes sheet.
     for (const sec of plan.sections) {
       const list = sec.byDay.get(day.key);
       if (!list) continue;
       const room = roomBlock(sec.key);
-      // The section's header on THIS day is the door to that night's thread
-      // (§3a.3): Folsom on Friday, not Folsom, and not Friday.
       const target = day.iso && ctx.onOpenDayNotes ? model.sectionDateKey(day.iso, sec.key) : null;
       const label = target ? dayTargetLabel(ctx, target, dayLabelParts(day.dayKey).head) : null;
-      room.appendChild(sectionHeader(sec.label, sectionSub(fest, sec), {
-        key: sec.key,
-        onOpen: target ? () => ctx.onOpenDayNotes(target, label) : null,
-        aria: label,
-      }));
+      room.appendChild(head(sec.label, sectionSub(fest, sec), target ? { onOpen: () => ctx.onOpenDayNotes(target, label), aria: label } : null));
       if (target) dayNoteWhisper(room, target, label, ctx);
       venueGroups(room, list, ctx, { day, fest });
-      root.appendChild(room);
+      block.appendChild(room);
     }
+    root.appendChild(block);
   }
 
   // The tabs that hang off the end: a dated section (ACL's Late nights), and
@@ -1219,34 +1267,17 @@ function renderComposed(root, ctx, fest, { model: plan, scheduled, festRoom }) {
   positionNowMarks(root, ctx.now || new Date());
 }
 
-// The newest note on a day target, under the thing that named it. Every day
-// note the wall opens is keyed by where you were standing (MODEL-V4 §4, §3a.3)
-// — the DATE under a day's rule, `<iso>|<section>` under a section's header on
-// that day — so this is the one place a key is chosen. A note written under the
-// old weekday label still belongs to the date's conversation; mapping it on the
-// way in is the notes layer's job (notes.js, model.js).
+// The newest note on a day target, pinned directly under the head that opens
+// it. Every day note the wall opens is keyed by where you were standing
+// (MODEL-V4 §4, §3a.3) — the DATE under the festival's head on that date (or a
+// dated section's head on its date), `<iso>|<section>` under a section's head
+// on that day — so the wall is the one place a key is chosen. A note written
+// under the old weekday label still belongs to the date's conversation;
+// mapping it on the way in is the notes layer's job (notes.js, model.js).
 function dayNoteWhisper(root, target, label, ctx) {
   if (!ctx.onOpenDayNotes) return;
   const w = dayWhisper(target, label, ctx, () => ctx.onOpenDayNotes(target, label));
   if (w) root.appendChild(w);
-}
-
-// A day's rule — the door to that date's notes — and the newest note under it.
-// A day the file gives no date has no door: a label is not a date.
-function dayRuleFor(day, ctx) {
-  const head = dayLabelParts(day.dayKey).head;
-  // What this date is CALLED — the rule's own head, unless the axis says two
-  // dates would answer to it (a two-weekend fest's two Fridays), in which case
-  // it says the date. One naming rule, decided once in the shell, so the door,
-  // the sheet's title and the sheet's row can never disagree.
-  const label = day.iso ? dayTargetLabel(ctx, day.iso, head) : head;
-  const open = day.iso && ctx.onOpenDayNotes ? () => ctx.onOpenDayNotes(day.iso, label) : null;
-  const rule = dayHeader(head, day.sub, { dayKey: day.key, onOpen: open, aria: label });
-  if (day.iso) rule.dataset.iso = day.iso; // the day-of open lands here before doors
-  const frag = document.createDocumentFragment();
-  frag.appendChild(rule);
-  if (day.iso) dayNoteWhisper(frag, day.iso, label, ctx);
-  return frag;
 }
 
 // A section's own sub line, when the file gives it one.
@@ -1255,33 +1286,35 @@ function sectionSub(fest, sec) {
   return meta.sub || '';
 }
 
-// A tab off the end of the week (MODEL-V4 §2), and a ROOM like any other: one
-// header — so the show menu can name it and the tab lands on it — holding
-// either a `.date-rule` per date with its venue groups under it, or, for a
-// section whose entries never said when, one set of venue groups. The header
-// carries no note door; each date inside it does.
+// A tab off the end of the week (MODEL-V4 §2), in the block the tab lands on.
+// A dated section (ACL's Late nights) is a room ON each of its dates — one
+// head per date, `TUE LATE NIGHTS  Sep 29 · around Austin`, each the first
+// head of its date and the door to that date's notes (the bare ISO, as the
+// date rule it replaced) — so the tab lands on its first date. The section
+// itself has no head: its label is not a note target, and a head over the
+// heads was the second line this change exists to remove. A section whose
+// entries never said when is one room under a head with no weekday: it has no
+// day to name.
 function renderExtra(root, ctx, fest, extra) {
-  const room = roomBlock(extra.key);
-  room.appendChild(sectionHeader(extra.label, extra.sub || '', { key: extra.key, dayKey: extra.key }));
-  root.appendChild(room);
-  if (!extra.byDate) { venueGroups(room, extra.entries || [], ctx, { fest }); return; }
-  for (const [iso, list] of extra.byDate) {
-    // A date rule inside a dated section is that tab's day rule, so it is the
-    // same door: tap it, and you are writing on that date.
-    const label = dayTargetLabel(ctx, iso);
-    const open = ctx.onOpenDayNotes ? () => ctx.onOpenDayNotes(iso, label) : null;
-    const dateRule = mk(open ? 'button' : 'div', 'date-rule');
-    if (open) {
-      dateRule.type = 'button';
-      dateRule.setAttribute('aria-label', `Notes for ${label}`);
-      dateRule.addEventListener('click', open);
+  const block = dayBlock(extra.key);
+  const ownSub = sectionSub(fest, extra);
+  if (!extra.byDate) {
+    const room = roomBlock(extra.key);
+    room.appendChild(roomHead({ label: extra.label, sub: ownSub }));
+    venueGroups(room, extra.entries || [], ctx, { fest });
+    block.appendChild(room);
+  } else {
+    for (const [iso, list] of extra.byDate) {
+      const room = roomBlock(extra.key);
+      const door = dateDoor(ctx, iso);
+      const wd = weekdayOfIso(iso);
+      room.appendChild(roomHead({ weekday: wd ? wd.toUpperCase() : null, label: extra.label, sub: joinSub(shortDate(iso), ownSub), ...(door || {}) }));
+      if (door) dayNoteWhisper(room, iso, door.aria, ctx);
+      venueGroups(room, list, ctx, { day: { iso }, fest });
+      block.appendChild(room);
     }
-    dateRule.dataset.iso = iso;
-    dateRule.append(mk('span', 'd', dateRuleLabel(iso)), mk('span', 'line'));
-    room.appendChild(dateRule);
-    dayNoteWhisper(room, iso, label, ctx);
-    venueGroups(room, list, ctx, { day: { iso }, fest });
   }
+  root.appendChild(block);
 }
 
 // ---- the wall ------------------------------------------------------------------
@@ -1361,14 +1394,17 @@ function renderWallInner(root, ctx) {
     // the selected people did not pick (renderCard), the same as on the wall.
     const wanted = (name) => name.toLowerCase().includes(q);
     const plan = wallPlanFor(fest, ctx);
-    const answers = (cards, label, sub, opts) => {
+    // A search is a LIST: each answer group is a list head over a card grid,
+    // and a day's groups sit in the block its tab lands on (dayBlock).
+    const answers = (host, cards, label, sub) => {
       if (!cards.length) return false;
-      root.appendChild(dayHeader(label, sub, opts));
+      host.appendChild(listHead(label, sub));
       const grid = mk('div', 'wall-grid');
       for (const c of cards) grid.appendChild(c);
-      root.appendChild(grid);
+      host.appendChild(grid);
       return true;
     };
+    const answered = (block, hit) => { if (hit) root.appendChild(block); return hit; };
     let any = false;
     // The plan is the visible week (wallPlanFor applies the fold), so a
     // hidden part never answers a search either.
@@ -1393,27 +1429,31 @@ function renderWallInner(root, ctx) {
       for (const a of dedupeByCard([...billed, ...rooms].filter((a) => wanted(a.name)), occHere)) {
         cards.push(renderCard(a.name, ctx, { time: lineupSubLabel(a), occ: occHere(a) }));
       }
-      any = answers(cards, dayLabelParts(day.dayKey).head, day.sub, { dayKey: day.key }) || any;
+      const block = dayBlock(day.key);
+      any = answered(block, answers(block, cards, dayLabelParts(day.dayKey).head, day.sub)) || any;
     }
     // A dated section's answers sit under their dates too — the date leads and
-    // the section is the aside, because days are the days. Every one of them
-    // carries the section's key: they are all the one tab, and a jump lands on
-    // the first that answered.
+    // the section is the aside, because days are the days. They are all the
+    // one tab, so they share its one block, and a jump lands on the first date
+    // that answered.
     for (const extra of (plan ? plan.model.extras : [])) {
+      const block = dayBlock(extra.key);
+      let hit = false;
       for (const [iso, list] of (extra.byDate || new Map([[null, extra.entries || []]]))) {
         const cards = list.filter((a) => wanted(a.name))
           .map((a) => renderCard(a.name, ctx, { time: lineupSubLabel(a), occ: occOf(a) }));
-        any = answers(cards, iso ? dateRuleLabel(iso) : extra.label,
-          iso ? extra.label.toUpperCase() : (extra.sub || ''), { dayKey: extra.key }) || any;
+        hit = answers(block, cards, iso ? dateRuleLabel(iso) : extra.label,
+          iso ? extra.label.toUpperCase() : (extra.sub || '')) || hit;
       }
+      any = answered(block, hit) || any;
     }
-    // Names the festival bills on no day at all.
+    // Names the festival bills on no day at all — not a tab, so no block.
     if (plan) {
       const onAnyGrid = new Set();
       for (const d of plan.model.days) if (d.grid) for (const a of state.getDayArtists(d.dayKey, d.weekend)) onAnyGrid.add(a.name);
       const loose = dedupeByCard(plan.model.looseNoDay.filter((a) => !onAnyGrid.has(a.name) && wanted(a.name)));
-      any = answers(loose.map((a) => renderCard(a.name, ctx, { time: lineupSubLabel(a), occ: occOf(a) })),
-        'EVERYTHING ELSE', 'NO SET TIME YET', {}) || any;
+      any = answers(root, loose.map((a) => renderCard(a.name, ctx, { time: lineupSubLabel(a), occ: occOf(a) })),
+        'EVERYTHING ELSE', 'NO SET TIME YET') || any;
     }
     if (!any) {
       const empty = document.createElement('div');
@@ -1451,7 +1491,7 @@ function festNotesFoot(root, ctx, fest, { invite = false } = {}) {
   if (!ctx.onOpenFestNotes) return;
   const has = model.noteCount(state.crewDoc, ctx.fid, 'fest', null) > 0;
   if (!has && !invite) return;
-  root.appendChild(dayHeader(`NOTES · ${fest.name.toUpperCase()}`, ''));
+  root.appendChild(listHead(`NOTES · ${fest.name.toUpperCase()}`, ''));
   const w = festWhisper(ctx, () => ctx.onOpenFestNotes());
   if (w) { root.appendChild(w); return; }
   const add = document.createElement('button');
@@ -1503,13 +1543,13 @@ export function showUndoToast(container, message, onUndo) {
 }
 
 // ---- day-nav scrollspy ------------------------------------------------------------
-// Where a day tab lands: a day rule, or the room header of a dated section,
-// which is a room and a tab at once. Never a grid scroller — that carries
-// data-day to name its own day.
-export const DAY_ANCHOR = '.day-rule[data-day], .sec-head[data-day]';
-// How far below --jump-offset a day rule may sit and still be the day you are
-// standing in. A jump lands its rule AT the offset on Chromium and about 24px
-// below it on WebKit; both are the same arrival.
+// Where a day tab lands: its day's block (dayBlock) — on the wall, in a
+// search, and for a tab off the end of the week alike. Never a grid scroller,
+// which carries data-day to name its own day.
+export const DAY_ANCHOR = '.day-block[data-day]';
+// How far below --jump-offset a day's block may sit and still be the day you
+// are standing in. A jump lands its block AT the offset on Chromium and about
+// 24px below it on WebKit; both are the same arrival.
 const LANDED_WITHIN = 32;
 // One rule drives every tab container (mobile dock + desktop rail): the
 // active day is a single fact rendered in two places.
@@ -1518,11 +1558,11 @@ export function wireScrollspy(containers, wallRoot) {
   const tabs = list.flatMap((c) => [...c.querySelectorAll('.day-tab')]);
   if (!tabs.length) return () => {};
   const tabDays = new Set(tabs.map((t) => t.dataset.day));
-  // Read ONLY headers that correspond to a tab — the NOTES/EVERYTHING-ELSE
-  // pseudo-headers share dayHeader() anatomy and used to de-highlight every
-  // tab when they scrolled past (audit 1.3). A tab's landing is a day
-  // rule, or the room header of a dated section, which is a room AND a tab —
-  // and NOT a grid scroller, which carries data-day for its own reasons.
+  // Read ONLY the blocks that correspond to a tab — the NOTES / EVERYTHING
+  // ELSE pseudo-headers used to de-highlight every tab when they scrolled past
+  // (audit 1.3), and they are not blocks now at all. A tab's landing is its
+  // day's block (a tab off the end of the week has one too) — and NOT a grid
+  // scroller, which carries data-day for its own reasons.
   const headers = [...wallRoot.querySelectorAll(DAY_ANCHOR)]
     .filter((h) => tabDays.has(h.dataset.day));
   // A tab row that cannot fit its days scrolls, and the day you are standing
@@ -1559,9 +1599,9 @@ export function wireScrollspy(containers, wallRoot) {
   markOverflow();
   for (const c of list) c.addEventListener('scroll', markOverflow, { passive: true });
 
-  // ONE authority, and it is geometry: the active day is the last day-rule you
-  // have scrolled past. rAF-throttled, and it reads the same --jump-offset the
-  // day-tab jump lands against, so the two agree.
+  // ONE authority, and it is geometry: the active day is the last day block
+  // whose top you have scrolled past. rAF-throttled, and it reads the same
+  // --jump-offset the day-tab jump lands against, so the two agree.
   //
   // There used to be an IntersectionObserver beside this, selecting any header
   // that entered a band at 10–20% of the viewport. It came first, and the
@@ -1582,10 +1622,10 @@ export function wireScrollspy(containers, wallRoot) {
     const offset = parseFloat(
       getComputedStyle(document.documentElement).getPropertyValue('--jump-offset'),
     ) || 8;
-    // The tolerance is not slop: a jump parks its rule NEAR the offset, and
+    // The tolerance is not slop: a jump parks its block NEAR the offset, and
     // WebKit parks it ~24px below where Chromium lands it exactly — so an
     // at-or-above test lit the day ABOVE the one filling the screen, on the
-    // iPhone only (real-browser walk, 2026-09-17). A rule this close is the
+    // iPhone only (real-browser walk, 2026-09-17). A block this close is the
     // day you are in, on every engine.
     let current = headers[0];
     for (const h of headers) {
@@ -1617,7 +1657,7 @@ export function wireScrollspy(containers, wallRoot) {
   };
   window.addEventListener('scroll', onScroll, { passive: true });
   // A resize moves both facts this row shows: which tabs fit it, and where the
-  // day rules sit under a --jump-offset the sticky chrome has just remeasured.
+  // day blocks sit under a --jump-offset the sticky chrome has just remeasured.
   // A phone's URL bar sliding away is a resize, and it must not leave the row
   // naming a day you scrolled past three screens ago.
   const onResize = () => { markOverflow(); syncFromGeometry(); };

@@ -138,9 +138,14 @@ export function shortDate(iso) {
 // weekday label to borrow one from. One builder: the rule over a date inside
 // a dated section shouts it, the zoom says it.
 export function shortDateLabel(iso) {
+  const wd = weekdayOfIso(iso);
+  return wd ? `${wd} · ${shortDate(iso)}` : String(iso);
+}
+// "Tue" for 2026-09-29 — the weekday a date's room head leads with
+// (`TUE LATE NIGHTS`); null for a string that is not a date.
+export function weekdayOfIso(iso) {
   const d = new Date(`${iso}T00:00:00Z`);
-  if (Number.isNaN(d.getTime())) return String(iso);
-  return `${WEEKDAYS[(d.getUTCDay() + 6) % 7]} · ${shortDate(iso)}`;
+  return Number.isNaN(d.getTime()) ? null : WEEKDAYS[(d.getUTCDay() + 6) % 7];
 }
 // "TUE · SEP 29" — the rule over one date inside a dated section.
 export function dateRuleLabel(iso) {
@@ -249,9 +254,13 @@ export function venueGroupsOf(entries, { fallbackVenue = null } = {}) {
 // ([null] for everything else).
 //
 // Returns:
-//   days     [{ key, dayKey, wd, short, num, long, sub, iso, weekend, grid,
-//               billing, synthetic }] in festival order — `key` is the tab
-//               and jump id, `dayKey` the frozen day label pick data uses
+//   days     [{ key, dayKey, wd, short, num, long, sub, when, iso, weekend,
+//               grid, billing, synthetic }] in festival order — `key` is the
+//               tab and jump id, `dayKey` the frozen day label pick data uses;
+//               `sub` is the day's line ("Sat · Sep 26") and `when` the same
+//               line without its weekday ("Sep 26", "Oct 2 · Weekend 1") —
+//               what a day's first room head says after the weekday its own
+//               label already carries (wall.js roomHead)
 //   sections [{ key, label, byNight, byDay }] in known order; byDay is keyed
 //               by the day's tab id
 //   extras   [{ key, label, short, long, sub, byDate, entries }] — the tabs
@@ -345,23 +354,27 @@ export function eventModelOf(fest, groups, { gridDays = [], weekends = [null] } 
       long: long.toUpperCase(),
       iso: synthetic ? null : dayIsoOf(meta, weekends[0]),
       sub: '',
+      when: '',
     };
   });
 
   // Dates: a synthetic day borrows its date from any real day that has one
   // (Saturday is the 26th, so Thursday is the 24th) — the day-of open and
-  // the now line need the iso; the rule's sub line wants "Sep 24".
+  // the now line need the iso; the day's first head wants "Sep 24".
   const ref = days.find((d) => d.iso);
   for (const d of days) {
     if (!d.iso && ref && d.wd) d.iso = isoPlusDays(ref.iso, dayOrderKey(d.wd, anchor) - dayOrderKey(ref.wd, anchor));
     const meta = dayMeta[d.key];
     if (meta) {
       const date = (weekends[0] && meta.dates && meta.dates[weekends[0]]) || meta.date;
-      d.sub = [meta.wd, date || (meta.num ? `Day ${meta.num}` : ''), dayLabelParts(d.key).aside].filter(Boolean).join(' · ');
+      d.when = [date || (meta.num ? `Day ${meta.num}` : ''), dayLabelParts(d.key).aside].filter(Boolean).join(' · ');
+      d.sub = [meta.wd, d.when].filter(Boolean).join(' · ');
     } else if (d.synthetic && d.iso) {
-      d.sub = [wdStyle ? d.wd : null, shortDate(d.iso)].filter(Boolean).join(' · ');
+      d.when = shortDate(d.iso);
+      d.sub = [wdStyle ? d.wd : null, d.when].filter(Boolean).join(' · ');
     } else {
-      d.sub = dayLabelParts(d.key).aside;
+      d.when = dayLabelParts(d.key).aside;
+      d.sub = d.when;
     }
   }
 
@@ -372,6 +385,7 @@ export function eventModelOf(fest, groups, { gridDays = [], weekends = [null] } 
     ? weekends.flatMap((w, wi) => days.filter((d) => d.grid).map((d) => {
       const meta = dayMeta[d.key] || {};
       const iso = dayIsoOf(meta, w);
+      const when = [(meta.dates && meta.dates[w]) || meta.date, `Weekend ${wi + 1}`].filter(Boolean).join(' · ');
       return {
         ...d,
         key: `${d.key}|${w}`,
@@ -379,7 +393,8 @@ export function eventModelOf(fest, groups, { gridDays = [], weekends = [null] } 
         iso,
         num: iso ? dayOfMonth(iso) : null,
         long: [d.long, iso ? dayOfMonth(iso) : null].filter(Boolean).join(' '),
-        sub: [meta.wd, (meta.dates && meta.dates[w]) || meta.date, `Weekend ${wi + 1}`].filter(Boolean).join(' · '),
+        sub: [meta.wd, when].filter(Boolean).join(' · '),
+        when,
       };
     }))
     : days;

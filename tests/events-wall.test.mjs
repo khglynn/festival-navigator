@@ -199,7 +199,7 @@ test('Portola is composed: THU FRI SAT SUN, one head per room per day naming whe
     assert.equal(room.querySelectorAll('.room-head').length, 1, `one head per room (${room.dataset.room})`);
     assert.equal(room.firstElementChild.classList.contains('room-head'), true, 'and it leads the room');
   }
-  assert.equal(root.querySelectorAll('.day-rule, .sec-head, .date-rule').length, 0, 'no second line left to say the day');
+  assert.equal(root.querySelectorAll('.day-block .list-head, .day-rule, .sec-head, .date-rule').length, 0, 'no second line left to say the day');
   assert.deepEqual(dayNavOf(portola, ctx).map((d) => [d.key, d.short, d.long, d.dated]), [
     ['Thursday', 'THU', 'THU', false], ['Friday', 'FRI', 'FRI', false],
     ['Saturday', 'SAT', 'SAT', false], ['Sunday', 'SUN', 'SUN', false]]);
@@ -677,8 +677,8 @@ test('a search answers per SHOW: two rooms on one night are two answers, and a c
   // A search is a LIST: its day keeps the list header (one line already),
   // inside the block the tab lands on — never a room head.
   const block = blockOf(root, 'Friday');
-  assert.equal(block.querySelector('.day-rule .day').textContent, 'FRIDAY');
-  assert.equal(block.querySelector('.day-rule').hasAttribute('data-day'), false, 'the block is the anchor, not its header');
+  assert.equal(block.querySelector('.list-head .label').textContent, 'FRIDAY');
+  assert.equal(block.querySelector('.list-head').hasAttribute('data-day'), false, 'the block is the anchor, not its header');
   assert.equal(root.querySelectorAll('.room-head, .room').length, 0);
 
   // …and the one shape that really is a single show reached twice: Portola's
