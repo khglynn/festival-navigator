@@ -1470,9 +1470,14 @@ function openSpotifyDrill(ctx, actions) {
         make.disabled = true;
         const names = spotify.playlistArtistsFromPicks(ctx.picks, { me: mineOnly ? ctx.meName : null, skip: cancelledNames(state.fest()) });
         if (!names.length) {
-          plStatus.textContent = mineOnly
-            ? 'You haven’t picked any artists on this fest yet — tap some cards first.'
-            : 'Nobody has picked artists on this fest yet — tap some cards first.';
+          // Picks that are all on cancelled acts are still picks — say so,
+          // rather than "you haven't picked anything".
+          const onlyOff = spotify.playlistArtistsFromPicks(ctx.picks, { me: mineOnly ? ctx.meName : null }).length > 0;
+          plStatus.textContent = onlyOff
+            ? `${mineOnly ? 'Your picks' : 'The picks'} on this fest are all cancelled acts — nothing to play yet.`
+            : mineOnly
+              ? 'You haven’t picked any artists on this fest yet — tap some cards first.'
+              : 'Nobody has picked artists on this fest yet — tap some cards first.';
           return;
         }
         const title = nameInput.value.trim() || defaultTitle();
