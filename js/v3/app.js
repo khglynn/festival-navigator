@@ -9,7 +9,7 @@ import * as sync from '../sync.js';
 import * as spotify from '../spotify.js';
 import * as model from './model.js';
 import { loadFestivalIndex, loadFestival, fetchCustomFestivals, mergeCustoms, FESTIVAL_INDEX, defaultFestivalId } from '../festivals.js';
-import { renderWall, refreshCard, showUndoToast, showToast, wireScrollspy, colorIndexOf, positionNowLines, positionNowMarks, scrollToNowLine, dayNavOf, roomsOf, cardFor, roomOf, isStripScroller, DAY_ANCHOR } from './wall.js';
+import { renderWall, refreshCard, showUndoToast, showToast, wireScrollspy, colorIndexOf, positionNowLines, positionNowMarks, scrollToNowLine, dayNavOf, roomsOf, cardFor, roomOf, isStripScroller, DAY_ANCHOR, festLinkLabel } from './wall.js';
 import { loadPeopleFilter, savePeopleFilter, togglePerson, pruneToActive, loadFolded, applyFoldToggle } from './filters.js';
 import { OUT_MS, CASCADE_MS, STAGGER_MS, EASE_ARRIVE, EASE_LEAVE, EASE_SURFACE, canAnimate } from './motion.js';
 import { scrolledBefore, rememberScrolled, dayOfScrollKey, festivalClock } from './now.js';
@@ -236,18 +236,23 @@ function toggleFoldFlow(key) {
   const diff = (a, b) => new Set([...a].filter((k) => !b.has(k)));
   // Where the person is standing, read before the wall is rebuilt.
   const standing = (document.querySelector('.day-tab.active') || {}).dataset?.day || null;
+  // The everything-hidden notice (wall.js) is the wall's one line when the
+  // last room goes: it arrives with the beat once the week has left, and it
+  // is the first thing to leave when a room comes back.
+  const notice = () => $('wall-root').querySelector(':scope > .wall-empty');
+  const arrive = (blocks) => blocks.forEach((block, i) => {
+    if (!canAnimate(block, ctx)) return;
+    block.animate([{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }],
+      { duration: CASCADE_MS, delay: i * STAGGER_MS, easing: EASE_ARRIVE, fill: 'backwards' });
+  });
   const finish = () => {
     repaintWall();
     landAfterFold(standing);
-    if (!folding) {
-      foldBlocksOf(key, diff(daysAfter, daysBefore)).forEach((block, i) => {
-        if (!canAnimate(block, ctx)) return;
-        block.animate([{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }],
-          { duration: CASCADE_MS, delay: i * STAGGER_MS, easing: EASE_ARRIVE, fill: 'backwards' });
-      });
-    }
+    if (!folding) arrive(foldBlocksOf(key, diff(daysAfter, daysBefore)));
+    else if (notice()) arrive([notice()]);
   };
-  const leaving = folding ? foldBlocksOf(key, diff(daysBefore, daysAfter)).filter((block) => canAnimate(block, ctx)) : [];
+  const leaving = (folding ? foldBlocksOf(key, diff(daysBefore, daysAfter)) : [notice()].filter(Boolean))
+    .filter((block) => canAnimate(block, ctx));
   if (!leaving.length) { finish(); return; }
   let pending = leaving.length;
   let done = false;
@@ -274,7 +279,9 @@ function landAfterFold(standing) {
   const still = standing ? tabs.find((t) => (t.anchor || t.key) === standing) : null;
   if (still && !(window.scrollY > 0)) return;
   const day = still || defaultDayOf(tabs);
-  if (!day) return;
+  // Nothing left to land on — everything is hidden: the top of the page,
+  // where the wall's notice says so.
+  if (!day) { if (window.scrollY > 0) window.scrollTo({ top: 0, behavior: 'auto' }); return; }
   const block = document.querySelector(anchorFor(day.anchor || day.key));
   if (block) landOnDay(block);
 }
@@ -345,8 +352,8 @@ function applyFestTheme() {
   $('fest-sub').replaceChildren(festPlaceLine(fest)); // the venue is a door to the map when the fest file knows where it is
   // Dock (mobile bottom) and day rail (desktop top) carry the same fest
   // name + sync dot — one component vocabulary, two positions (note 1.1).
-  $('dock-fest-name').textContent = `${fest.name.toUpperCase()} ${fest.year || ''}`.trim();
-  $('rail-fest-name').textContent = `${fest.name.toUpperCase()} ${fest.year || ''}`.trim();
+  $('dock-fest-name').textContent = festLinkLabel(fest);
+  $('rail-fest-name').textContent = festLinkLabel(fest);
   document.title = `${fest.name} — Festival Navigator`;
   startFavicon(fest.accent, { lowPower: ctx.lowPower });
 }

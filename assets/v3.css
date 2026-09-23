@@ -759,6 +759,20 @@ button.room-head { cursor: pointer; }
                             border: 1px dashed var(--border-emphasis); }
 .n-note.stub .n-text { color: var(--text-tertiary); font-style: italic; font-size: 12px; }
 .n-empty { color: var(--text-tertiary); font-size: 12px; font-weight: 600; text-align: center; padding: 10px 0; }
+/* Everything hidden (2026-09-23, wall.js allHiddenNotice): the app's quiet
+ * copy — no box, no button — with the lead a step up so a blank wall reads as
+ * a state, not a failure. Where the switch is depends on the chrome: the dock
+ * at the bottom under 720px, the rail at the top from 720 (the dock's own
+ * breakpoint), so the hint says below or up top and only one is shown. */
+.wall-empty { text-align: center; padding: 30px 0; }
+.wall-empty p { margin: 0; }
+.wall-empty .lead { color: var(--text-secondary); font-size: 12px; font-weight: 700; }
+.wall-empty .hint { color: var(--text-tertiary); font-size: 12px; font-weight: 600; margin-top: 4px; }
+.wall-empty .on-desk { display: none; }
+@media (min-width: 720px) {
+  .wall-empty .on-phone { display: none; }
+  .wall-empty .on-desk { display: inline; }
+}
 
 /* Actions live at the HEAD line's trailing edge (Kevin, 2026-08-30) and are
  * revealed by hover, a press-and-hold, or keyboard focus — two quiet words at

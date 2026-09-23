@@ -940,7 +940,10 @@ export function wallPlanFor(fest, ctx) {
   // nothing at all has no plan; a fest with everything hidden still has one
   // (an empty week), so the flat lineup never leaks through in its place.
   if (!whole.days.length && !whole.extras.length && !whole.looseNoDay.length) return null;
-  const hidden = new Set(ctx.folded || []);
+  // A fest with ONE room has no show menu at all (the fest name opens
+  // Settings), so no key can mean anything on it (2026-09-23) — the rule
+  // below, taken to its end.
+  const hidden = roomsIn(fest, whole, weekends).length > 1 ? new Set(ctx.folded || []) : new Set();
   // A key the show menu does not offer is inert here, or a stored setting
   // could hide something with nothing on the screen to bring it back. On a
   // two-weekend fest the weekend rows ARE the festival room (roomsOf offers
@@ -971,18 +974,51 @@ export function wallPlanFor(fest, ctx) {
 export function roomsOf(fest, ctx) {
   const plan = fest ? wallPlanFor(fest, { ...ctx, query: '', folded: [] }) : null;
   if (!plan) return [];
-  const { days, sections, extras, looseNoDay } = plan.model;
+  return roomsIn(fest, plan.model, plan.weekends);
+}
+// The same list, off a model — wallPlanFor asks it how many rooms there are
+// before it lets any key hide one.
+function roomsIn(fest, { days, sections, extras, looseNoDay }, weekends) {
   const rooms = [];
   if (days.some((d) => d.grid || d.billing) || looseNoDay.length) {
     // A two-weekend fest offers a row per weekend in place of its own room:
     // hiding a weekend is the thing a person wants to do there.
-    if (plan.weekends.length > 1) plan.weekends.forEach((w, i) => rooms.push({ key: weekendRoom(w), label: `Weekend ${i + 1}` }));
+    if (weekends.length > 1) weekends.forEach((w, i) => rooms.push({ key: weekendRoom(w), label: `Weekend ${i + 1}` }));
     else rooms.push({ key: FEST_ROOM, label: fest.name });
   }
   for (const s of sections) rooms.push({ key: s.key, label: s.label });
   for (const e of extras) rooms.push({ key: e.key, label: e.label });
   return rooms;
 }
+
+// The words on the fest link at the end of the dock (phone) and the rail
+// (desktop) — the show menu's door. One builder, because the wall names that
+// door when everything is hidden and must say exactly what is written on it.
+export const festLinkLabel = (fest) => `${String(fest.name || '').toUpperCase()} ${fest.year || ''}`.trim();
+
+// Everything hidden (a real-engine walk, 2026-09-23): the show menu unchecked
+// every room, so the week has no day and the dock no tab — right by the 09-17
+// rule, and a blank screen that told a friend nothing. The wall says why, in
+// the app's quiet voice, and where the switch is: the fest link's own words,
+// below on a phone (the dock) and up top on a desktop (the rail). No box and
+// no button — the fest name is the one door; a second would be a second
+// control for one state. It arrives with the beat and leaves before the week
+// comes back (app.js toggleFoldFlow).
+function allHiddenNotice(root, fest) {
+  const n = mk('div', 'wall-empty');
+  n.setAttribute('role', 'status');
+  const hint = mk('p', 'hint');
+  const name = festLinkLabel(fest);
+  hint.append(
+    mk('span', 'on-phone', `Tap ${name} below to bring parts back.`),
+    mk('span', 'on-desk', `Click ${name} up top to bring parts back.`),
+  );
+  n.append(mk('p', 'lead', 'Everything\u2019s hidden.'), hint);
+  root.appendChild(n);
+}
+// A plan whose visible week is empty: no day, no tab off the end, nothing
+// day-less. Only the show menu can do that.
+const nothingVisible = (plan) => !!plan && !plan.model.days.length && !plan.model.extras.length && !plan.model.looseNoDay.length;
 
 // What the day tabs (dock + rail) should list, in the wall's own order: the
 // days, then the tabs that hang off the end (a dated section like ACL's Late
@@ -1283,6 +1319,8 @@ function renderComposed(root, ctx, fest, { model: plan, scheduled, festRoom }) {
   // any section whose entries never said which night.
   for (const extra of plan.extras) renderExtra(root, ctx, fest, extra);
 
+  if (nothingVisible({ model: plan })) allHiddenNotice(root, fest);
+
   // A scheduled fest's day-less names that sit on no grid.
   if (scheduled && plan.looseNoDay.length) {
     const onAnyGrid = new Set();
@@ -1484,7 +1522,10 @@ function renderWallInner(root, ctx) {
       any = answers(root, loose.map((a) => renderCard(a.name, ctx, { time: lineupSubLabel(a), occ: occOf(a) })),
         'EVERYTHING ELSE', 'NO SET TIME YET') || any;
     }
-    if (!any) {
+    // Nothing answered because nothing is SHOWN: say that, not "no match" —
+    // the artist is hidden, not missing.
+    if (!any && nothingVisible(plan)) allHiddenNotice(root, fest);
+    else if (!any) {
       const empty = document.createElement('div');
       empty.style.cssText = 'color: var(--text-tertiary); font-size: 12px; font-weight: 600; text-align: center; padding: 30px 0;';
       empty.textContent = 'No artists match — try fewer letters.';
