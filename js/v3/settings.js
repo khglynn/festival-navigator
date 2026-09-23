@@ -1003,6 +1003,20 @@ let scanning = false; // a scan survives a re-render of the drill
 // The completion line survives the drill's re-render — writing it into the
 // pre-rerender msg node talked to a detached element (Codex round 5, P2).
 let lastSyncNote = '';
+// A scan outlives the card that started it, so progress goes to whichever
+// reading card is mounted NOW, and a card mounted mid-scan replays the
+// latest snapshot at once. It used to go only to the card that started the
+// scan: the drill re-renders under a running scan (the owner-app config
+// landing right after the OAuth return, a remote sync, back/forward), and
+// every card after the first sat on "Reading your library…" with an empty
+// bar and an empty cover until the very end — Kevin thought it had hung
+// (2026-09-23; it had read 6,225 artists fine).
+let scanView = null;   // the mounted reading card's painter
+let scanLatest = null; // the latest progress snapshot, for a card that mounts mid-scan
+// A failed scan waits for the person. The drill used to fall straight back
+// into its reading state and start again — offline, that was a scan loop
+// with no pause at all (found with the fix above, 2026-09-23).
+let scanFailed = false;
 
 // ONE card, used by every not-yet-connected state, so the first Spotify screen a
 // member sees says what connecting DOES instead of showing them a client ID.
@@ -1105,11 +1119,14 @@ function scanPill(text) {
 
 // Read the library, then badge EVERY festival the crew has. Both halves, always,
 // with no button in between — because connecting was the ask.
-async function runFullSync(ctx, actions, onProgressIn, rerenderDrill, msg) {
+async function runFullSync(ctx, actions, rerenderDrill, msg) {
   if (!ctx.meName) { msg.textContent = 'Claim your name first (open your crew link).'; return; }
   scanning = true;
+  scanFailed = false;
+  scanLatest = null;
   const onProgress = (p) => {
-    onProgressIn(p);
+    scanLatest = p;
+    if (scanView) scanView(p);
     // Only speak up when the drill isn't on screen — no double narration.
     // offsetParent is null whenever the settings screen is display:none.
     const drillVisible = !!document.getElementById('settings-subview')?.offsetParent;
@@ -1133,6 +1150,7 @@ async function runFullSync(ctx, actions, onProgressIn, rerenderDrill, msg) {
     });
     if (state.getCrewToken() !== tokenAtStart) {
       scanning = false;
+      scanView = null; scanLatest = null;
       scanPill(null);
       console.warn('spotify: crew changed mid-scan — library cached, crew writes skipped (reopen the drill to badge this crew)');
       return;
@@ -1154,6 +1172,7 @@ async function runFullSync(ctx, actions, onProgressIn, rerenderDrill, msg) {
     if (others.skipped) notes.push(`${others.skipped} board${others.skipped === 1 ? '' : 's'} couldn’t fill yet — each catches up when you open it.`);
     await syncEveryonePlaylists(ctx, actions, (n) => notes.push(n));
     scanning = false;
+    scanView = null; scanLatest = null;
     scanPill(null);
     const badgeLine = total
       ? `Badged ${total} artist${total === 1 ? '' : 's'} across ${fests} festival${fests === 1 ? '' : 's'}.`
@@ -1162,8 +1181,15 @@ async function runFullSync(ctx, actions, onProgressIn, rerenderDrill, msg) {
     rerenderDrill(); // renders lastSyncNote into the FRESH msg node
   } catch (e) {
     scanning = false;
+    scanFailed = true; // the drill offers "Try again" — never an automatic restart
+    scanView = null; scanLatest = null;
     scanPill(null);
-    lastSyncNote = String(e.message || e);
+    // fetch rejects with a TypeError when the network is gone, and its words
+    // ("Failed to fetch", "Load failed") are the browser's, not ours.
+    if (e instanceof TypeError) console.warn('spotify scan:', e);
+    lastSyncNote = e instanceof TypeError
+      ? 'Couldn’t reach Spotify — check your signal and try again.'
+      : String(e.message || e);
     rerenderDrill();
   } finally {
     delete document.body.dataset.busy;
@@ -1309,6 +1335,20 @@ function openSpotifyDrill(ctx, actions) {
       ].filter(Boolean),
     }));
     col.appendChild(msg);
+  } else if (scanFailed && !scanning && !spotify.libraryMap()) {
+    // The last read stopped (no signal, Spotify down). Say so and wait for
+    // the person: falling straight back into the reading state restarted the
+    // scan with no pause at all, which offline is a loop.
+    const card = el('div'); card.className = 'settings-card';
+    card.style.cssText += 'display: flex; flex-direction: column; gap: 10px; align-items: flex-start;';
+    card.appendChild(el('span', 'color: #fff; font-weight: 700; font-size: 14px;', 'Reading your Spotify stopped'));
+    card.appendChild(el('div', 'color: var(--text-body); font-size: 12px; font-weight: 600; line-height: 1.5;',
+      lastSyncNote || 'Something interrupted it partway.'));
+    const retry = el('button', 'font-size: 12.5px; padding: 10px 16px;', 'Try again');
+    retry.className = 'btn-tonal';
+    retry.addEventListener('click', () => { scanFailed = false; lastSyncNote = ''; rerenderDrill(); });
+    card.appendChild(retry);
+    col.appendChild(card);
   } else if (!spotify.libraryMap() || scanning) {
     // Connected, nothing read yet — so READ IT. No button.
     //
@@ -1337,16 +1377,26 @@ function openSpotifyDrill(ctx, actions) {
     const bar = el('div');
     bar.className = 'scan-bar-fill';
     barWrap.appendChild(bar);
-    lines.append(counter, finds, barWrap);
+    // Before the first number (a slow first page on one bar of signal) the
+    // bar breathes (v3.css .scan-bar.waiting) and these words say why — the
+    // words are all that reduced motion and Low Power get, and all they need.
+    const waitNote = el('div', 'color: var(--text-tertiary); font-size: 11px; font-weight: 600; line-height: 1.45;',
+      'Waiting on Spotify’s first page — a big library takes a minute.');
+    lines.append(counter, finds, barWrap, waitNote);
     ticker.appendChild(lines);
     const sub = el('div', 'color: var(--text-tertiary); font-size: 11px; font-weight: 600; line-height: 1.5;',
       'Liked songs and follows — then every festival in your crew badges itself.');
     card.append(ticker, sub);
     col.append(card, msg);
+    // Only a scan that is really running (or about to) may look like one.
+    if (scanning || ctx.meName) barWrap.classList.add('waiting');
+    else waitNote.remove();
+    const numbersArrived = () => { barWrap.classList.remove('waiting'); waitNote.remove(); };
 
     const noMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
     let lastFlick = 0, holdUntil = 0;
     const onProgress = (p) => {
+      numbersArrived();
       if (p.phase === 'badge') { counter.textContent = p.text; bar.style.width = '100%'; return; }
       counter.textContent = p.phase === 'follows'
         ? `${p.followed} followed artists · ${p.artists.toLocaleString()} artists total`
@@ -1364,7 +1414,11 @@ function openSpotifyDrill(ctx, actions) {
         img.onload = () => { tile.replaceChildren(img); };
       }
     };
-    if (!scanning) runFullSync(ctx, actions, onProgress, rerenderDrill, msg);
+    // THIS card hears the scan from now on, whoever started it; mounted
+    // mid-scan, it catches up from the latest page at once.
+    scanView = onProgress;
+    if (scanning) { if (scanLatest) onProgress(scanLatest); }
+    else runFullSync(ctx, actions, rerenderDrill, msg);
   } else {
     const lib = spotify.libraryMap();
     const card = el('div'); card.className = 'settings-card';
