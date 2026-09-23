@@ -156,7 +156,10 @@ Non-inferable facts only (the code answers everything else — read it).
   start picking in a fest, and before any set-times edit); a name that
   disappears fails CI. Grid names must match `artists[]` byte for byte —
   the validator makes a case-only match an ERROR because it would split
-  the crew's picks between two spellings forever (2026-08-27).
+  the crew's picks between two spellings forever (2026-08-27). A cancelled
+  act keeps its name the same way: its set comes off the grid and its
+  `artists[]` entry is marked `cancelled`, never deleted (Skepta,
+  2026-09-23 — "Cancelled acts" in `docs/add-a-festival.md`).
 - **Festival JSONs are served network-first by the service worker** (4 s
   budget, persistent cache as the offline answer). They used to be
   cache-first in the persistent data cache, which meant a set-times drop
