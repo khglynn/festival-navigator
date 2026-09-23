@@ -95,3 +95,93 @@ Reference (a prototype, not production code): the round-2 canvas's
 - Not done here, on purpose: the service-worker stamp (the integrator
   re-stamps with `scripts/sw-stamp.mjs --keep`); the zoom riffs Kevin asked
   for alongside this (the canvas session's round 3).
+
+## Review round (same day): an adversarial review and a real-browser walk
+
+Seven findings came back. Each was checked in the code and a real browser
+before anything changed; one was the walker's own note about its rig.
+
+1. **How it works drew Kat in two colours** (confirmed, fixed `a87f416`).
+   Row 4's K used BOARD[2], magenta, one row under row 1's teal Kat chip.
+   Now BOARD[6], which is the chip's own `hsla(172,90%,62%)`. A test reads
+   both values out of settings.js. The copy is unchanged (below).
+2. **Your chip on a cancelled card was decided nowhere** (confirmed; the
+   behaviour stays, now on record, `17ddcd4`). Your MUST sits above the gray
+   scrim beside the crew's marks, because `.corner-about` is z-index 1 like
+   `.corner-who`. The card still reads cancelled, and its label says
+   "(cancelled) — must". Gallery 12b now carries your MUST. The jsdom suite
+   renders a cancelled card with your pick, and the browser contract picks
+   Skepta on Portola's real Saturday. (The events-wall section of the
+   gallery already had one such card, "No Show" at your level 3, so the
+   finding's "lives nowhere" was half right.)
+3. **The motion's two missing frames** (confirmed, fixed `f440c29`).
+   3 → 4: the word waited 2 × STAGGER_MS behind the widening, so the chip
+   showed as an empty coloured pill for four or five frames. The word now
+   rises with the widening; one frame at t = 0 is the start of any fade-in.
+   4 → 0: the chip just vanished. It now leaves as a copy drawn where it
+   stood (outside `.corner-about` and without a `data-kind`, so no corner
+   query sees it). The copy collapses into the corner's edge in lockstep
+   with the neighbours closing the gap: the same OUT_MS and the same
+   EASE_SURFACE, all the way to `scale(0)`. My first attempt, an ease-in
+   to `.4`, failed its own filmstrip: at 40ms the incoming notes pill sat
+   over a nearly whole MUST. Low Power and Reduce Motion still land at once.
+   The filmstrip is in the scratchpad (`meter-shots/final-phone-meter-motion-filmstrip.png`).
+4. **WebKit zoomed the wrong card** (confirmed, and worse than reported;
+   fixed `9444d23`). Logged live in Playwright's WebKit, a touch tap on a
+   card is followed by a click with pointerType "mouse". When the pick's
+   refreshCard swaps a fresh card in under the lift point, trusted
+   mouse-type pointerover and pointerenter events fire at that spot. Hover
+   intent believed them. So one plain tap picked the card and then grew it,
+   200ms later, as a mouse zoom that a phone can never hover out of. If a
+   different card scrolled under the spot, that card grew instead: the
+   walker's "wrong card". (The walker's own repro also pressed an
+   off-screen card synthetically, at x = −310, which no finger can do. The
+   bug does not need that.) WebKit's tracker records the same family on
+   iOS 26 (bug 214609, comment 6, 2026-01-26); Chromium sends none of it.
+   card-facts.js `touchAt` now remembers where fingers recently landed and
+   lifted. Mouse events at those spots arm nothing, and the born-under check
+   stands down. A mouse that moves off those spots, or presses, is treated as
+   a hand again at once. If the ghost entered a card, the first real move
+   over it counts as the hand's entry. A desktop never meets the rule.
+   Tests: `tests/zoom-touch-ghost.test.mjs` (10) and
+   `tests/browser/touch-ghost-contract.test.mjs`. That contract has Chromium
+   drive the ghost through the real input layer, and WebKit (when
+   installed; CI has only Chromium) reproduce it from a bare tap. Both
+   browser tests go red with the guard removed. The walker's repro now
+   zooms the card it held 5 times out of 5; before the fix it was wrong
+   3 times out of 3 on this machine. Screens:
+   `meter-shots/fix-webkit-one-tap-before-after.png`. Not proven on a real
+   iPhone. The guard does nothing where no ghost exists, so it is safe
+   either way.
+5. **The zoom shows no level for 1–3** (confirmed; not built here, on
+   purpose). How the zoom shows everyone's level is the canvas session's
+   round 3 ("0 today · 1 meters on the pills · 2 tiers · 3 the room ·
+   4 the desk"), which Kevin asked to see and has not picked from. Putting
+   `meterChip` into `whoPills` would ship riff 1 by default. It is ready
+   the moment he says so. This is not a regression: the zoom never showed
+   levels 1–3.
+6. **A 30-minute set in half a column loses its start time once you pick
+   it** (confirmed; Kevin's call; unchanged). The geometry makes any pick
+   trigger it: 2 × (5 + 22.5) + ~36 + 8 = 99 > 84. With the time forced
+   visible, MUST covers the bottom of the "7". Portola has no such cell,
+   because JT is a full column wide. ACL's both-weekends view has four.
+7. **The walker's first Groove Armada check measured the grid card, not
+   the SAT AFTERS one** (the walker's own note; no product change). Its
+   re-run on the real afters card passed in both engines.
+
+Found along the way: `tests/browser/heads-contract.test.mjs`, "the day-of
+open on an ACL night between the weekends", fails when the machine is under
+load (load average 18–36 this afternoon). It fails the same way on this
+branch's untouched base, `6783b78`, and passes there with a 3s settle
+instead of 800ms. It is timing, not code, and it is another lane's test, so
+I left it alone. The fix belongs in that lane: wait for the lit tab rather
+than sleep.
+
+How it works, rows 3 and 4 (copy unchanged this round):
+3. **Tap an artist to add your color.** Your bars fill each tap. 4 taps = must see.
+4. **Everyone else's picks land on the card.** Ticks are picks; a letter is a must.
+
+After this round: `npm test` 720 tests, 718 pass, 1 skip, and 1 fail, which
+is the service-worker stamp (red by design; the integrator re-stamps).
+`npm run test:browser` has 34 tests; all pass except the load-flaky heads
+test above whenever the machine is busy.

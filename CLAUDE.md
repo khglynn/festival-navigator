@@ -199,6 +199,12 @@ Non-inferable facts only (the code answers everything else — read it).
   real-browser contract (`npm run test:browser`, CI job `browser`) drives
   Kevin's sequences with real input against gallery.html. The long-press
   ignores mouse pointers for the same reason (a held button is a slow click).
+  The hover route has the mirror trap (2026-09-23): WebKit follows a touch
+  tap with MOUSE-type pointer events at the spot the finger lifted — a
+  click, then pointerenter on the fresh card a pick swaps in — so
+  `pointerType === 'mouse'` alone is not a hand. card-facts.js `touchAt`
+  ignores mouse events at recent finger points until a mouse really moves
+  (`tests/zoom-touch-ghost.test.mjs`); before it, a tapped card zoomed itself.
 - **The stage strip is a follower, not a scroller.** Its row rides the lead
   grid's scroll timeline (CSS scroll-driven animation; `--strip-max` is the
   measured maximum scroll) wherever the engine has `ScrollTimeline` — under
