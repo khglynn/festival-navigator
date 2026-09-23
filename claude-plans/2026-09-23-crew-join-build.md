@@ -127,3 +127,37 @@ the field escape hatch. Then the option-a copy trims from the notes audit
   under a real worker update with the shorter navigation budget (reasoned,
   not exercised); Stay offline and the data-push swap in a real browser
   (jsdom only).
+
+# Round 3 — the Codex review of the warm open (2026-09-23)
+
+Merged `integrate/prefest-0923` @ 3d95ebb first (a fast-forward: nothing
+resolved by hand). Baseline there: 694 tests, 693 pass, 1 skipped, stamp v86
+green.
+
+Seven repro tests (2dd7e04) were red for all five findings before any fix:
+`tests/warm-open-catalog-added`, `-catalog-dropped`, `-switch`, `-custom`,
+`-gone-elsewhere`, `-stay-offline-toggle`, and a new case in
+`-stay-offline`.
+
+- 5a, sync half (14cf493): a poll/push landing after Stay offline was
+  switched on keeps the dot offline and schedules nothing.
+- 1–5 (2c1f940, 0ce611d): the warm open is provisional —
+  `activateCrew(..., { provisional })` writes no saved choice and the "not
+  in the lineup" toast waits; `state.festivalChoiceFor` (the one rule, now
+  shared with activateCrew) is re-run by `settleFestivalChoice` once the
+  live catalog lands, with the SAME invite hint, then
+  `confirmFestivalChoice` does what an ordinary open does. Fresh festival
+  files are kept whichever festival is showing (days forgotten per fid);
+  changed customs repaint; a late JSON 404 for a crew you left forgets it
+  without leaving the crew on screen; Stay offline is read at every step
+  and switching it off runs the skipped refresh.
+- One call to flag: with a dropped saved festival and a doc invite hint,
+  the warm open now confirms the hint as saved once the live catalog agrees
+  — exactly the long-standing cold-open rule. My first test expected the
+  saved id to survive; it was wrong about the cold path, and was corrected.
+- Suite: 709 tests, 707 pass, 1 skipped, 1 fail = the stamp (cached files
+  touched: js/state.js, js/sync.js, js/v3/app.js) — needs a `--keep`
+  re-stamp.
+- Lie-fi first paint re-measured (real Chromium, worker installed, every
+  request hanging): 1,545 ms and 1,663 ms (was 1,572 / 1,573 before this
+  round; 16,085 on the old base).
