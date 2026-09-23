@@ -80,6 +80,18 @@ stamp (the orchestrator stamps once, after the merges).
   red being the service-worker stamp (below); the cancelled card rendered
   under `SAT AFTERS` as expected. The merge branch was deleted.
 
+- An independent Opus review (read-only) found nothing serious in the
+  render, model or CSS and three real edges, all fixed in f8103a2 with
+  tests: the validator ignored weekends (an act lost on one ACL weekend
+  could not keep its other weekend's set); a cancelled run member still
+  counted in the validator's run checks and took a slot in
+  `scripts/guess-run-times.mjs`; and the zoom with no occurrence could
+  describe a cancelled slot when the name also plays elsewhere.
+- When every pick on a fest is a cancelled act, the playlist button now says
+  so instead of "you haven't picked anything".
+- Re-checked after the review round: both sibling branches (at e353b1a and
+  eeff59e) still merge with no conflicts.
+
 ## Left for the integrator
 
 - `node scripts/sw-stamp.mjs` after the merges: this branch changes cached
