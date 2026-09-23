@@ -589,8 +589,12 @@ export function positionNowLines(root, date = new Date()) {
 // The day-of open: land the now line about a third of the way down the
 // viewport so the next hour is in view. Before doors on festival day there
 // is no line yet — land on today's block instead, whose first head names the
-// day. Returns the target it scrolled to ('now' | 'day') or null when today
-// is not on this wall.
+// day. A dated section's date is a festival day too (2026-09-23): on an ACL
+// night between the weekends, today is a room inside the Late nights block,
+// and the open lands on its head — but a real day block today (a grid day,
+// Oct 3) always wins, and a hidden section renders nothing to land on.
+// Returns the target it scrolled to ('now' | 'day') or null when today is not
+// on this wall.
 export function scrollToNowLine(root, { date = new Date(), viewportHeight = window.innerHeight, scrollTo = (y) => window.scrollTo({ top: y, behavior: 'auto' }), timeZone = null } = {}) {
   const pageY = (el) => el.getBoundingClientRect().top + (window.scrollY || window.pageYOffset || 0);
   const line = root.querySelector('.now-line');
@@ -601,12 +605,15 @@ export function scrollToNowLine(root, { date = new Date(), viewportHeight = wind
   // "Today" in the festival's zone — the grids carry it; the caller may too.
   const zoned = root.querySelector('.times-grid[data-tz]');
   const todayIso = festivalClock(date, timeZone || (zoned ? zoned.dataset.tz : null)).iso;
-  const day = root.querySelector(`.day-block[data-iso="${todayIso}"]`);
+  const day = root.querySelector(`.day-block[data-iso="${todayIso}"]`)
+    || root.querySelector(`.day-block .room[data-iso="${todayIso}"]`);
   if (!day) return null;
   // The block's scroll-margin-top is the sticky chrome's height (app.js
-  // measures it into --jump-offset); land below it like a day-tab jump does.
+  // measures it into --jump-offset); land below it like a day-tab jump does —
+  // a room inside a block lands against its block's.
+  const block = day.closest('.day-block') || day;
   const offset = (typeof window !== 'undefined' && window.getComputedStyle)
-    ? parseFloat(window.getComputedStyle(day).scrollMarginTop) || 0 : 0;
+    ? parseFloat(window.getComputedStyle(block).scrollMarginTop) || 0 : 0;
   scrollTo(Math.max(0, pageY(day) - offset));
   return 'day';
 }
@@ -1318,6 +1325,7 @@ function renderExtra(root, ctx, fest, extra) {
   } else {
     for (const [iso, list] of extra.byDate) {
       const room = roomBlock(extra.key);
+      room.dataset.iso = iso; // the day-of open lands here when tonight is one of these dates
       const door = dateDoor(ctx, iso);
       const wd = weekdayOfIso(iso);
       room.appendChild(roomHead({ weekday: wd ? wd.toUpperCase() : null, label: extra.label, sub: joinSub(shortDate(iso), ownSub), ...(door || {}) }));

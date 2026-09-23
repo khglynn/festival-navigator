@@ -471,7 +471,9 @@ function maybeOpenOnDay() {
   const tz = state.fest().timezone || null; // the festival's clock, not the phone's
   const key = dayOfScrollKey(ctx.fid, new Date(), tz);
   if (scrolledBefore(key)) return;
-  // During the festival: the now line, or today's first head before doors.
+  // During the festival: the now line, or today's first head before doors —
+  // a Late nights date counts as today when no grid day is (wall.js
+  // scrollToNowLine).
   if (scrollToNowLine($('wall-root'), { timeZone: tz })) { rememberScrolled(key); return; }
   // During it with today hidden: the next visible day. Before it and after
   // it: the first visible grid day.

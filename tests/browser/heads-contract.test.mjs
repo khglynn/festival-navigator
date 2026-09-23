@@ -178,6 +178,31 @@ test('the day-of open lands on today\'s first head before doors', { skip }, asyn
   }
 });
 
+// A Late nights date is a festival day too (2026-09-23): on an ACL night
+// between the weekends the open lands on tonight's head, and the dock lights
+// LATE — it used to skip ahead to Friday Oct 2.
+test('the day-of open on an ACL night between the weekends lands on tonight\'s Late nights head', { skip }, async () => {
+  // Tue Sep 29, 8 PM in Austin: two late-night shows, no grid day.
+  const { ctx, page } = await openPhone('acl-2026', { now: new Date('2026-09-30T01:00:00Z') });
+  try {
+    await sleep(800); // the dock's own glide to the lit tab
+    const at = await page.evaluate(() => {
+      const room = document.querySelector('#wall-root .day-block[data-day="Late nights"] .room[data-iso="2026-09-29"]');
+      const offset = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--jump-offset')) || 8;
+      return {
+        top: room.getBoundingClientRect().top, offset,
+        head: room.querySelector('.room-head .name').textContent,
+        lit: document.querySelector('#dock-days .day-tab.active')?.dataset.day,
+      };
+    });
+    assert.equal(at.head, 'TUE LATE NIGHTS');
+    assert.ok(at.top >= at.offset - 2 && at.top <= at.offset + 32, `tonight landed at ${at.top}px; the chrome ends at ${at.offset}px`);
+    assert.equal(at.lit, 'Late nights', 'and the dock says where you are');
+  } finally {
+    await ctx.close();
+  }
+});
+
 test('Portola hidden: Saturday\'s first head is SAT AFTERS, carrying the date — and it is Afters\' door, not the date\'s', { skip }, async () => {
   const { ctx, page } = await openPhone('portola-2026', { folded: [':fest'] });
   try {

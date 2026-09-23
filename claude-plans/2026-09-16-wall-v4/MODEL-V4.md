@@ -118,7 +118,10 @@ section says its own sub from `dayMeta[<label>].sub` if present, else nothing.
   (`eventModelOf` as today). A day exists only when something plays on it,
   so no day is ever empty and the "Everything on X is hidden" copy goes.
 - **Opens on the festival.** Before the fest: the first grid day (Portola →
-  Saturday). During: the current festival day (the existing day-of rule).
+  Saturday). During: the current festival day (the existing day-of rule);
+  since 2026-09-23 a dated section's date counts as today when no day block
+  is (ACL's Tue Sep 29 opens on TUE LATE NIGHTS; Sat Oct 3 is still the
+  festival's day).
   After: the first grid day. Thursday and Friday keep their tabs.
 - **Dated sections.** A section whose entries carry `date` (ISO) instead of
   `night` is **its own tab, after the days**, labelled by the section
