@@ -170,18 +170,17 @@ before anything changed; one was the walker's own note about its rig.
    re-run on the real afters card passed in both engines.
 
 Found along the way: `tests/browser/heads-contract.test.mjs`, "the day-of
-open on an ACL night between the weekends", fails when the machine is under
-load (load average 18–36 this afternoon). It fails the same way on this
-branch's untouched base, `6783b78`, and passes there with a 3s settle
-instead of 800ms. It is timing, not code, and it is another lane's test, so
-I left it alone. The fix belongs in that lane: wait for the lit tab rather
-than sleep.
+open on an ACL night between the weekends", failed when the machine was
+under load (load average 18–36 this afternoon). It failed the same way on
+this branch's untouched base, `6783b78`, and passed there with a 3s settle
+instead of 800ms. That makes it timing, not code. `83fb92e` waits for the
+lit tab instead of sleeping: one line, in a hunk the integration branch does
+not touch.
 
 How it works, rows 3 and 4 (copy unchanged this round):
 3. **Tap an artist to add your color.** Your bars fill each tap. 4 taps = must see.
 4. **Everyone else's picks land on the card.** Ticks are picks; a letter is a must.
 
-After this round: `npm test` 720 tests, 718 pass, 1 skip, and 1 fail, which
-is the service-worker stamp (red by design; the integrator re-stamps).
-`npm run test:browser` has 34 tests; all pass except the load-flaky heads
-test above whenever the machine is busy.
+After this round: `npm test` has 720 tests: 718 pass, 1 is skipped, and 1
+fails, the service-worker stamp (red by design; the integrator re-stamps).
+`npm run test:browser` passes all 34.
