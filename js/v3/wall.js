@@ -474,11 +474,12 @@ function meterMoves(card, before) {
   }
   if (!meter) return;
   if (!from) {
+    // A beat after its neighbours start making room, so it grows into space.
     meter.animate([
       { transform: 'scale(.4)', opacity: 0 },
       { opacity: 1, offset: 0.45 },
       { transform: 'none', opacity: 1 },
-    ], { duration: GROW_MS, easing: EASE_ARRIVE });
+    ], { duration: GROW_MS, delay: STAGGER_MS, easing: EASE_ARRIVE, fill: 'backwards' });
     return;
   }
   if (to === 4 || from === 4) {
