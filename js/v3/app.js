@@ -1989,9 +1989,10 @@ async function stampIdentity(token, current = () => true, { renameFrom = null } 
 // `customs` is the crew's custom-festival fetch — boot starts it beside the
 // catalog; any other entry starts it here. Merged only now, catalog in hand.
 // `recognized` (boot only): the name recognizeOnOpen claimed for this device.
-// `warm` (boot only): painting from this phone's own copy — nothing below may
-// wait on the network (see boot's warm open).
-async function enterApp(token, doc, current = () => true, customs = fetchCustomFestivals(token), { recognized = null, warm = false } = {}) {
+// `warm` (boot only): the festival canOpenWarm admitted, `{ fid, fest }` —
+// painting from this phone's own copy, so nothing below may wait on the
+// network, and nothing re-decides the festival (see boot's warm open).
+async function enterApp(token, doc, current = () => true, customs = fetchCustomFestivals(token), { recognized = null, warm = null } = {}) {
   dismissBringOffer({ instant: true }); // an offer is about the crew it was made in — never the next one
   crew.setActiveCrew(token);
   crew.rememberCrew(token, (doc.meta && doc.meta.name) || '');
@@ -2001,7 +2002,7 @@ async function enterApp(token, doc, current = () => true, customs = fetchCustomF
   // doc's stamp. Consumed once — only fills the void on a fest-less device.
   const festHint = pendingFestHint || (doc.meta && doc.meta.inviteFestId) || null;
   pendingFestHint = null;
-  state.activateCrew(token, doc, festHint);
+  state.activateCrew(token, doc, festHint, { festival: warm ? warm.fid : null });
   // Backfill (audit re-run finding): crews older than the fix never got the
   // stamp, so THEIR links — the ones already in group chats — still showed
   // joiners no festival. Any claimed member's boot heals the doc once, from
@@ -2040,8 +2041,9 @@ async function enterApp(token, doc, current = () => true, customs = fetchCustomF
     ctx.migrationPending = false;
   }
   try {
-    // A warm open arrives with this festival already in hand (canOpenWarm),
-    // so this answers from memory.
+    // A warm open arrives with its festival's file in hand (canOpenWarm), so
+    // this answers from memory.
+    if (warm && !state.FESTIVALS[warm.fid]) state.FESTIVALS[warm.fid] = warm.fest;
     await loadFestival(state.activeFestivalId);
   } catch {
     // Offline with this fest uncached: fall back to a loadable fest rather
@@ -2134,17 +2136,22 @@ async function enterApp(token, doc, current = () => true, customs = fetchCustomF
 // gone, with the bugs it grew (a note re-aimed into another festival, a
 // fallback confirmed before the facts arrived, a request under Stay offline).
 //
-// True when this device can paint that wall now. Its one side effect is the
-// point: the festival file it found is in memory for enterApp.
+// The ADMITTED festival — `{ fid, fest }`, its id and its file — when this
+// device can paint that wall now; null when it cannot. The admission travels
+// into activation as it is (enterApp → activateCrew's `festival`): the live
+// catalog can land while this is still reading the cache, and nothing after
+// this point may re-decide the festival on it (Codex round 4, 2026-09-23).
 async function canOpenWarm(token) {
-  if (!crew.me(token) || !state.cachedDoc(token)) return false;
+  if (!crew.me(token) || !state.cachedDoc(token)) return null;
   const saved = getLS(state.LS.fest(token));
-  if (!saved) return false; // no saved choice: which wall was "left" is not known
-  if (!(await festivalIndexFromCache())) return false;
+  if (!saved) return null; // no saved choice: which wall was "left" is not known
+  if (!(await festivalIndexFromCache())) return null;
   const listed = FESTIVAL_INDEX.some((f) => f.id === saved && !f.custom);
-  if (listed) return !!(await festivalFromCache(saved));
   // A crew's own festival: the locally stored list IS its file.
-  return cachedCustomFestivals(token).some((f) => f && f.id === saved);
+  const fest = listed
+    ? await festivalFromCache(saved)
+    : cachedCustomFestivals(token).find((f) => f && f.id === saved);
+  return fest ? { fid: saved, fest } : null;
 }
 
 // After a warm paint (and whenever "Stay offline" is switched back off) the
@@ -2333,13 +2340,16 @@ export async function boot() {
       }
     }
 
-    if (location.hash === '#new') { await catalog(); renderCreate(); return; }
+    // Every branch re-checks it is still the current boot after its await: a
+    // boot superseded meanwhile (the person opened a crew) renders nothing
+    // over the newer wall (Codex round 4, 2026-09-23 — inherited from main).
+    if (location.hash === '#new') { await catalog(); if (current()) renderCreate(); return; }
     // A crew link that is present but malformed (truncated by a chat app, half
     // pasted) must say so. Falling through to the landing page told the person
     // nothing at all — the app quietly acting as if they had never clicked.
     if (crew.hashHasBrokenToken()) { renderBadLink('', { gone: false, malformed: true }); return; }
     const token = crew.bootTokenFor(crew.tokenFromHash(), crew.activeCrewToken(), isFirst);
-    if (!token) { await catalog(); renderLanding(); return; }
+    if (!token) { await catalog(); if (current()) renderLanding(); return; }
 
     // The warm open (2026-09-23). When this phone can paint EXACTLY the wall
     // the person left (canOpenWarm), it paints it NOW and the network lands
@@ -2350,9 +2360,10 @@ export async function boot() {
     // than fails, and the path below spent up to ~16 s of loader on files that
     // were already here. Anything short of that exact wall takes the path
     // below and waits, as it always did.
-    if (await canOpenWarm(token)) {
+    const admitted = await canOpenWarm(token);
+    if (admitted) {
       if (!current()) return;
-      await enterApp(token, state.cachedDoc(token), current, Promise.resolve(cachedCustomFestivals(token)), { warm: true });
+      await enterApp(token, state.cachedDoc(token), current, Promise.resolve(cachedCustomFestivals(token)), { warm: admitted });
       if (current()) freshenFromNetwork(token, catalog, current);
       return;
     }

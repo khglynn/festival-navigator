@@ -56,7 +56,11 @@ export function setSelectedPerson(p) { selectedPerson = p; }
 // `festHint` (optional) is the invite's festival context — from the share
 // link's &f= param or the doc's meta.inviteFestId. It only fills the void on
 // a device with no saved fest for this crew; a returning device keeps its own.
-export function activateCrew(token, doc, festHint) {
+// `festival` (the warm open only, 2026-09-23): the festival app.js canOpenWarm
+// ADMITTED against the catalog this phone held. It is shown as given — a live
+// catalog landing mid-activation must not re-decide it, nor write the saved
+// choice (Codex round 4: it picked Portola and overwrote the saved festival).
+export function activateCrew(token, doc, festHint, { festival = null } = {}) {
   crewToken = token;
   crewDoc = doc || loadJSON(LS.doc(token), null) || { v: 3, meta: {}, spotify: {}, people: {}, festivals: {}, affinity: {} };
   pendingChanges = loadJSON(LS.pending(token), {});
@@ -79,9 +83,9 @@ export function activateCrew(token, doc, festHint) {
   // deletes, so the fest coming back brings them back. Assigned BEFORE the
   // fallback, which can throw on an empty catalog: a stale value left over
   // from the last crew would accuse the wrong festival.
-  missingFestivalId = (FESTIVAL_INDEX.length && savedFest && !known(savedFest)) ? savedFest : null;
-  activeFestivalId = (savedFest && known(savedFest)) ? savedFest : (hinted || defaultFestivalId());
-  if (hinted && activeFestivalId === hinted) saveLS(LS.fest(token), hinted);
+  missingFestivalId = (!festival && FESTIVAL_INDEX.length && savedFest && !known(savedFest)) ? savedFest : null;
+  activeFestivalId = festival || ((savedFest && known(savedFest)) ? savedFest : (hinted || defaultFestivalId()));
+  if (!festival && hinted && activeFestivalId === hinted) saveLS(LS.fest(token), hinted);
   currentDay = null;
   selectedPerson = null;
   Object.keys(dayCache).forEach((k) => delete dayCache[k]);
