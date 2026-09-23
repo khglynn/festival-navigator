@@ -5,7 +5,7 @@ import * as model from './model.js';
 import { parseBulkLineV4, LEVEL_LABELS_V4 } from '../parse.js';
 import { renderCard, applyWeekend, wallPlanFor } from './wall.js';
 import { loadFolded } from './filters.js';
-import { approxMark, venueGroupsOf, shortDateLabel } from './events.js';
+import { approxMark, venueGroupsOf, shortDateLabel, isCancelled, occOf } from './events.js';
 
 export const el = (tag, css, text) => {
   const n = document.createElement(tag);
@@ -252,11 +252,21 @@ function looseOf(plan) {
 // One row per card the wall would draw, in the wall's order: the grid in
 // clock order with stage · start, the billed-but-untimed, then each section's
 // shows as section · venue · time — the tilde riding a guessed time.
+//
+// A CANCELLED act is in the image, marked, last in its block (2026-09-23).
+// The image is the wall you see, and a group chat is exactly where a crew-mate
+// who has not opened the app learns their pick is off; leaving the card out
+// would be the silent disappearance the cancelled state exists to prevent.
+// Its row carries its occurrence, so the card the image draws is the struck
+// one — every other row stays name + time.
+const offRow = (e, ...where) => ({ name: e.name, time: [...where, 'Cancelled'].filter(Boolean).join(' · '), occ: occOf(e) });
+const liveFirst = (list) => [...list.filter((a) => !isCancelled(a)), ...list.filter(isCancelled)];
 function sectionRows(plan, dayKey, out) {
   for (const sec of plan.model.sections) {
     for (const g of venueGroupsOf(sec.byDay.get(dayKey) || [])) {
       for (const m of g.members) {
-        out.push({ name: m.e.name, time: [sec.label, g.venue, m.e.time ? approxMark(m.e, m.e.time) : null].filter(Boolean).join(' · ') });
+        out.push(m.cancelled ? offRow(m.e, sec.label, g.venue)
+          : { name: m.e.name, time: [sec.label, g.venue, m.e.time ? approxMark(m.e, m.e.time) : null].filter(Boolean).join(' · ') });
       }
     }
   }
@@ -275,11 +285,11 @@ export function dayArtistsFor(day) {
         onGrid.add(a.name);
         out.push({ name: a.name, time: `${a.stage} · ${a.startStr}` });
       }
-      for (const a of applyWeekend(d.billing || [], d.weekend)) {
-        if (!onGrid.has(a.name) && !out.some((o) => o.name === a.name)) out.push({ name: a.name });
+      for (const a of liveFirst(applyWeekend(d.billing || [], d.weekend))) {
+        if (!onGrid.has(a.name) && !out.some((o) => o.name === a.name)) out.push(isCancelled(a) ? offRow(a, a.stage || a.venue) : { name: a.name });
       }
     } else {
-      for (const a of d.billing || []) out.push({ name: a.name });
+      for (const a of liveFirst(d.billing || [])) out.push(isCancelled(a) ? offRow(a, a.stage || a.venue) : { name: a.name });
     }
     sectionRows(plan, d.key, out);
     return out;
@@ -295,7 +305,7 @@ export function dayArtistsFor(day) {
     for (const [iso, list] of dated) {
       for (const g of venueGroupsOf(list)) {
         for (const m of g.members) {
-          out.push({
+          out.push(m.cancelled ? offRow(m.e, iso && shortDateLabel(iso), g.venue) : {
             name: m.e.name,
             time: [iso && shortDateLabel(iso), g.venue, m.e.time ? approxMark(m.e, m.e.time) : null]
               .filter(Boolean).join(' · '),
@@ -305,7 +315,7 @@ export function dayArtistsFor(day) {
     }
     return out;
   }
-  if (!day) return looseOf(plan).map((a) => ({ name: a.name }));
+  if (!day) return liveFirst(looseOf(plan)).map((a) => (isCancelled(a) ? offRow(a, a.stage || a.venue) : { name: a.name }));
   return [];
 }
 
@@ -323,7 +333,7 @@ async function buildDayCanvas(day, ctx, dayLabel) {
   // lowPower ctx: grain + animation lean on mix-blend / keyframes that
   // html2canvas renders unreliably — the flat aura is the honest export.
   const exportCtx = { ...ctx, lowPower: true, onOpenNotes: null, onTap: () => {} };
-  for (const a of dayArtistsFor(day)) grid.appendChild(renderCard(a.name, exportCtx, { time: a.time }));
+  for (const a of dayArtistsFor(day)) grid.appendChild(renderCard(a.name, exportCtx, { time: a.time, occ: a.occ }));
   node.appendChild(grid);
   node.appendChild(el('div', 'margin-top: 18px; color: #877FA4; font-size: 12px; font-weight: 700; letter-spacing: .08em;', `${state.crewName().toUpperCase()} · FESTIVAL NAVIGATOR`));
   document.body.appendChild(node);

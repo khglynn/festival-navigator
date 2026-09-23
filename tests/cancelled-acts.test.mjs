@@ -307,4 +307,19 @@ test('the day image marks him (it is the wall you see): after the grid, before t
   assert.ok(/^Afters · /.test(sat[i + 1].time), 'then the night\'s sections');
   const card = renderCard(sat[i].name, { ...ctxFor(FID), onOpenNotes: null }, { time: sat[i].time, occ: sat[i].occ });
   assert.ok(card.classList.contains('cancelled'));
+  // Every other row is exactly what it was: a name and a time, no occurrence.
+  assert.deepEqual(Object.keys(sat[0]), ['name', 'time']);
+});
+
+// ---- the playlist --------------------------------------------------------------------
+test('a playlist made from picks skips a cancelled act — the Make button and the crew top-up read one list', async () => {
+  globalThis.sessionStorage = globalThis.sessionStorage || { ...globalThis.localStorage };
+  const spotify = await import('../js/spotify.js');
+  const picks = model.picksFor(state.crewDoc, FID);
+  const skip = events.cancelledNames(portola);
+  assert.deepEqual(spotify.playlistArtistsFromPicks(picks, { skip }), ['DJ Shadow'], 'Skepta\'s two musts do not put his tracks first — or in at all');
+  assert.deepEqual(spotify.playlistArtistsFromPicks(picks, { me: 'Drew', skip }), [], '"Just mine" for someone whose only pick is off');
+  // Without the skip, the order is the one it always was: musts lead.
+  assert.deepEqual(spotify.playlistArtistsFromPicks(picks), ['Skepta', 'DJ Shadow']);
+  assert.deepEqual(spotify.playlistArtistsFromPicks(picks, { me: 'Kevin' }), ['DJ Shadow']);
 });

@@ -14,7 +14,7 @@ import { ordered, auraBackground, nameColor, subColor } from './aura.js';
 import { hslOf } from './palette.js';
 import { colorIndexOf, roomOf } from './wall.js';
 import { record } from '../errlog.js';
-import { runFactsOf, findEventEntry, shortDateLabel, dateOf, venueOf } from './events.js';
+import { runFactsOf, findEventEntry, shortDateLabel, shortDate, dateOf, venueOf, isCancelled, cancelledNames } from './events.js';
 import { GROW_MS, CONTENT_FADE_MS, OUT_MS, CASCADE_MS, STAGGER_MS, REFRESH_MS, EASE_ARRIVE, EASE_LEAVE, EASE_SURFACE, canAnimate } from './motion.js';
 
 // "9:00 PM - 10:15 PM" -> "9:00 – 10:15 PM" (the shared meridiem said once).
@@ -70,7 +70,20 @@ export function factsFor(artistName, ctx, occ = null) {
   // looked up by day + stage + time, never by name alone, because in Portola
   // a name can be a grid billing AND an event — says whether its time is a
   // guess, the room's real window, and where it sits in the order.
-  const run = occ ? runFactsOf(findEventEntry(fest, artistName, occ)) : null;
+  const entry = occ ? findEventEntry(fest, artistName, occ) : null;
+  // A cancelled act (2026-09-23): the entry this card IS says so — or, with
+  // no occurrence to ask (a list that only knows the name), the name has
+  // nothing left anywhere (events.js cancelledNames). A cancelled card has
+  // no run and no clock: it is not happening at any time.
+  const offEntry = isCancelled(entry) ? entry
+    : !occ && cancelledNames(fest).has(artistName) ? (fest.artists || []).find((a) => a.name === artistName && isCancelled(a)) : null;
+  const cancelled = offEntry ? {
+    text: `Announced ${shortDate(offEntry.cancelled.on)}`,
+    url: typeof offEntry.cancelled.source === 'string' && /^https:\/\//.test(offEntry.cancelled.source) ? offEntry.cancelled.source : null,
+    note: typeof offEntry.cancelled.note === 'string' ? offEntry.cancelled.note : null,
+  } : null;
+  const run = occ && !cancelled ? runFactsOf(entry) : null;
+  if (cancelled) time = null;
   // The long form: when · day · where · which weekend. For a run member the
   // clock in WHEN is the venue's window, not the guessed slot (LOCKED copy,
   // Kevin 2026-09-01: "Sun · Runs 10 PM – 2 AM", then the order on its own
@@ -98,6 +111,8 @@ export function factsFor(artistName, ctx, occ = null) {
     when = [timeRange(time), day ? shortDay(fest, day) : null].filter(Boolean).join(' · ');
     where = venue || stage || '';
   }
+  // Cancelled leads WHEN, where the clock would be: "Cancelled · Sat".
+  if (cancelled) when = ['Cancelled', when].filter(Boolean).join(' · ');
   // The weekend rides WHEN as plain text — a tag at the row's end read as the
   // resting chip flipping sides (Kevin, 2026-08-30); words don't flip.
   if (weekend) when = [when, weekend].filter(Boolean).join(' · ');
@@ -106,6 +121,7 @@ export function factsFor(artistName, ctx, occ = null) {
     name: artistName, day, stage, time, weekend, when, where, mapUrl,
     approx: !!(run && run.approx),
     order: run && run.orderText ? { text: run.orderText, url: run.orderUrl, confirmed: run.confirmed } : null,
+    cancelled,
     people, background, animated, nameColor: nameColor(people), subColor: subColor(people),
     noteCount: model.noteCount(state.crewDoc, ctx.fid, 'artist', artistName),
     spotify,
@@ -228,19 +244,22 @@ export function festPlaceLine(fest, className = 'fest-place') {
 // DOOR to the poster or ticket page the order came from, the way a venue is
 // a door to its map (same discipline: the click stops here, never a pick).
 // Once the venue posts the order the word goes and the door stays.
-function orderDoor(order) {
-  const w = document.createElement(order.url ? 'a' : 'span');
-  w.className = 'f-order';
-  if (order.url) {
-    w.href = order.url;
+// The cancellation's "Announced Sep 21" is the same kind of door, to the
+// report it came from.
+function sourceDoor({ text, url }, className, why) {
+  const w = document.createElement(url ? 'a' : 'span');
+  w.className = className;
+  if (url) {
+    w.href = url;
     w.target = '_blank';
     w.rel = 'noopener';
-    w.setAttribute('aria-label', `${order.text} — open where the order came from`);
+    w.setAttribute('aria-label', `${text} — ${why}`);
     w.addEventListener('click', (e) => e.stopPropagation());
   }
-  w.textContent = order.text;
+  w.textContent = text;
   return w;
 }
+const orderDoor = (order) => sourceDoor(order, 'f-order', 'open where the order came from');
 
 function grownBlock(facts, { onOpenNotes = null, notesChip = true } = {}) {
   const grown = document.createElement('div');
@@ -248,7 +267,22 @@ function grownBlock(facts, { onOpenNotes = null, notesChip = true } = {}) {
   if (facts.when) {
     const sub = document.createElement('div');
     sub.className = 'f-sub';
-    if (facts.order) {
+    if (facts.cancelled) {
+      // Cancelled, then when it was announced (a door to the report), then
+      // what happened around it — in ONE .f-sub, like a run's two lines, so
+      // the bloom and the refresh move it as one piece.
+      sub.classList.add('f-stack');
+      const line = document.createElement('span');
+      line.className = 'f-when';
+      line.textContent = facts.when;
+      sub.append(line, sourceDoor(facts.cancelled, 'f-cancel', 'open the report'));
+      if (facts.cancelled.note) {
+        const note = document.createElement('span');
+        note.className = 'f-note';
+        note.textContent = facts.cancelled.note;
+        sub.appendChild(note);
+      }
+    } else if (facts.order) {
       // Two lines in ONE .f-sub (the window, then the order): the bloom's
       // cascade and the refresh bookkeeping below both key on a single
       // WHEN element, so the pair travels as one piece.
@@ -283,7 +317,7 @@ function grownBlock(facts, { onOpenNotes = null, notesChip = true } = {}) {
 // caught on the 2026-08-30 preview.)
 function factsCard(facts, { className, onClose = null, onOpenNotes = null, notesChip = true }) {
   const card = document.createElement('div');
-  card.className = className + (facts.animated ? ' animated' : '');
+  card.className = className + (facts.animated ? ' animated' : '') + (facts.cancelled ? ' cancelled' : '');
   card.style.background = facts.background;
   const grain = document.createElement('span');
   grain.className = 'card-grain';
@@ -297,7 +331,7 @@ function factsCard(facts, { className, onClose = null, onOpenNotes = null, notes
     card.appendChild(close);
   }
   const name = document.createElement('div');
-  name.className = 'f-name';
+  name.className = 'f-name' + (facts.cancelled ? ' struck' : '');
   name.textContent = facts.name;
   card.appendChild(name);
   const grown = grownBlock(facts, { onOpenNotes, notesChip });
@@ -480,13 +514,13 @@ function place(slot, el) {
 // frame while the card is still blooming.
 function buildParts(z, facts) {
   const surface = document.createElement('div');
-  surface.className = 'z-surface' + (facts.animated ? ' animated' : '');
+  surface.className = 'z-surface' + (facts.animated ? ' animated' : '') + (facts.cancelled ? ' cancelled' : '');
   surface.style.background = facts.background;
   const grain = document.createElement('span');
   grain.className = 'card-grain';
   surface.appendChild(grain);
   const name = document.createElement('div');
-  name.className = 'f-name';
+  name.className = 'f-name' + (facts.cancelled ? ' struck' : '');
   name.textContent = facts.name;
   const grown = grownBlock(facts, { onOpenNotes: z.onOpenNotes });
   return [surface, name, grown];
