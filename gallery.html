@@ -480,7 +480,8 @@ const SELECTIONS = {
   'Right Edge Artist': { Kat: 1 },
   'Top Of Page Probe': { Kevin: 2 },
   'Bottom Of Page Probe': { Nhu: 2 },
-  'Called Off': { Drew: 4, Kat: 4, Nhu: 2 },
+  // You at MUST on a cancelled card: the loudest chip on the grayest card.
+  'Called Off': { Kevin: 4, Drew: 4, Kat: 4, Nhu: 2 },
   // 17-18 · your meter (2026-09-23)
   'Your One': { Kevin: 1 },
   'Your Two': { Kevin: 2, Drew: 1 },
@@ -683,8 +684,9 @@ eventRow.appendChild(stateCard('12 · Thursday night, no grid day', 'Midnight Af
   occ: { day: null, stage: 'Thu · The Midway', time: '10:00 PM - 2:00 AM', weekend: null },
 }));
 // Struck, "Cancelled" where the time goes, the wash turned down, the crew's
-// marks still on it; the zoom says when it was announced and what happened.
-eventRow.appendChild(stateCard('12b · a cancelled act, picked by three', 'Called Off', {
+// marks and your meter still on it (both corners sit above the scrim); the
+// zoom says when it was announced and what happened.
+eventRow.appendChild(stateCard('12b · a cancelled act, picked by three and you — your meter stays, above the gray', 'Called Off', {
   time: 'Cancelled',
   occ: { day: 'Saturday', stage: null, time: null, weekend: null, date: null, venue: 'Crane Stage' },
 }));

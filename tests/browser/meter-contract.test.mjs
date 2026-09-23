@@ -43,6 +43,9 @@ const SELECTIONS = {
   'Groove Armada': ALL7(4),
   'Chloé Caillet': { Kevin: 3, Drew: 4, Pegah: 1 },
   Parcels: { Kevin: 2 },
+  // Portola's cancelled act (off the grid, last in the Saturday room): your
+  // meter stays on it, above the scrim, with the crew's marks.
+  Skepta: { Kevin: 4, Drew: 4, Nhu: 1 },
   // The cells a made-up Saturday stage adds (laneFest below).
   'Lane A': { Kevin: 4 },
   'Lane B': ALL7(3),
@@ -153,7 +156,7 @@ const cornersOn = (page) => page.evaluate(() => {
       if (r.width && r.top < nameBox.bottom - 1) texts.push({ shown: true, name: true, left: r.left, right: r.right, top: r.top, bottom: Math.min(r.bottom, nameBox.bottom) });
     }
     out.push({
-      artist: card.dataset.artist, cell: card.classList.contains('cell'), width: rc.width, height: rc.height, inner,
+      artist: card.dataset.artist, cell: card.classList.contains('cell'), cancelled: card.classList.contains('cancelled'), width: rc.width, height: rc.height, inner,
       fit: Number(card.dataset.fit), about, who, texts,
       level: meter ? Number(meter.dataset.level) : 0,
       meterShown: !!(meter && meter.getClientRects().length),
@@ -243,6 +246,12 @@ test('a 390 phone: every card on Portola’s Saturday keeps its corners apart, a
     assert.equal(parcels.spotCount, '23');
     // The label says your level once, the chip is hidden from a screen reader.
     assert.match(robyn.label, /^Robyn — must, picked by 6 others/);
+    // A cancelled act keeps every pick on it, yours included.
+    const skepta = cards.find((c) => c.artist === 'Skepta');
+    assert.ok(skepta && skepta.cancelled, 'Skepta is on the wall, cancelled');
+    assert.ok(skepta.meterShown, 'your meter shows on a cancelled card');
+    assert.equal(skepta.word, 'MUST');
+    assert.match(skepta.label, /^Skepta \(cancelled\) — must, picked by 2 others/);
   } finally { await ctx.close(); }
 });
 

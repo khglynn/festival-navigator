@@ -40,7 +40,11 @@ const FID = 'meter-fest';
 FESTIVAL_INDEX.push({ id: FID, status: 'lineup' });
 FESTIVALS[FID] = {
   id: FID, name: 'Meter Fest',
-  artists: ['Robyn', 'Soulwax', 'Crowded', 'Nobody Yet'].map((name) => ({ name, day: 'Saturday' })),
+  artists: [
+    ...['Robyn', 'Soulwax', 'Crowded', 'Nobody Yet'].map((name) => ({ name, day: 'Saturday' })),
+    // A cancelled act (Skepta's shape): off the grid, the entry kept and marked.
+    { name: 'Called Off', day: 'Saturday', venue: 'Crane Stage', cancelled: { on: '2026-09-21' } },
+  ],
 };
 // A made-up crew of seven; Kevin is you, colour slot 5 on purpose (not the
 // board's first colour, so a hard-coded hue cannot pass by accident).
@@ -51,6 +55,7 @@ state.activateCrew('metertesttoken_0123456789', {
   festivals: { [FID]: { selections: {
     Soulwax: { Drew: 4, Kat: 4, Nhu: 1, Pegah: 2, Ross: 3, Sam: 1 },
     Crowded: { Kevin: 4, Drew: 4, Kat: 4, Nhu: 1, Pegah: 2, Ross: 3, Sam: 1 },
+    'Called Off': { Kevin: 4, Drew: 4, Nhu: 2 },
   } } },
   affinity: {},
 }, FID);
@@ -117,6 +122,21 @@ test('a screen reader hears your level once: in the card’s label, and the chip
   const label = card.getAttribute('aria-label');
   assert.equal(label, 'Crowded — must, picked by 6 others, 1 note, in your Spotify');
   assert.equal(label.match(/must/g).length, 1, 'said once');
+});
+
+// A cancelled card keeps every pick on it — the crew's marks AND your meter —
+// above its gray scrim (v3.css: both corners are z-index 1), because who was
+// going is still worth reading, yours included (review round, 2026-09-23).
+test('a cancelled card still carries your meter, above its scrim, beside the crew’s marks', () => {
+  wall.replaceChildren(renderCard('Called Off', ctx, { time: 'Cancelled', occ: { day: 'Saturday', stage: null, time: null, venue: 'Crane Stage' } }));
+  const card = cardOf('Called Off');
+  assert.ok(card.classList.contains('cancelled'), 'it reads cancelled');
+  const m = meter(card);
+  assert.ok(m, 'your meter is on it');
+  assert.equal(m.textContent, 'MUST');
+  assert.equal(m.parentNode.className, 'corner-about', 'in the corner that sits above the scrim');
+  assert.deepEqual([...card.querySelectorAll('.corner-who .mark')].map((x) => x.textContent), ['D', ''], 'and the crew’s marks, you not among them');
+  assert.equal(card.getAttribute('aria-label'), 'Called Off (cancelled) — must, picked by 2 others');
 });
 
 test('the crew corner counts everyone else: you are never folded into "+n"', () => {
