@@ -37,11 +37,13 @@ test('portola-2026: scheduled in both the file and the index, zero validator err
   assert.deepEqual(r.warnings, [], 'every billed artist has a set; no dupes');
 });
 
-test('portola-2026: the poster shape — 32 sets a day on the five printed columns, inside doors-to-close', () => {
+// Saturday lost Skepta on 2026-09-21 (cancelled, off the grid — tests/cancelled-acts.test.mjs).
+const SETS = { Saturday: 31, Sunday: 32 };
+test('portola-2026: the poster shape — 32 sets a day (31 on Saturday since Skepta\'s cancellation) on the five printed columns, inside doors-to-close', () => {
   for (const day of ['Saturday', 'Sunday']) {
     const d = portola.days[day];
     assert.deepEqual(d.stages, STAGES, `${day} columns as printed`);
-    assert.equal(d.artists.length, 32, `${day}: 31 acts + Despacio`);
+    assert.equal(d.artists.length, SETS[day], `${day}: ${SETS[day] - 1} acts + Despacio`);
     for (const a of d.artists) {
       const [s, e] = a.time.split(' - ');
       assert.ok(timeToMinutes(s) >= timeToMinutes('1:00 PM'), `${day} ${a.name} starts after doors`);
@@ -66,7 +68,7 @@ test('portola-2026: spot-check anchors against the official posters', () => {
   assert.deepEqual(at('Sunday', 'horsegiirL'), { name: 'horsegiirL', stage: 'Crane Stage', time: '8:10 PM - 9:00 PM' });
 });
 
-test('portola-2026: the crew\'s live pick keys (as of 2026-08-27) all sit on the grid', () => {
+test('portola-2026: the crew\'s live pick keys (as of 2026-08-27) all sit on the grid — or are marked cancelled, never gone', () => {
   // The 49 names the "Portola 26" crew had picked before set times dropped.
   const PICKED = ['Adéla', 'Azzecca', 'Bassvictim', 'Beltran b2b Ben Sterling', 'Ben UFO', 'Brunello', 'Channel Tres',
     'Chloé Caillet', 'DJ Shadow', 'Daphni', 'Dean Turnley', 'Despacio', 'Dog Blood', 'Fatboy Slim', 'Fcukers', 'Four Tet',
@@ -75,7 +77,10 @@ test('portola-2026: the crew\'s live pick keys (as of 2026-08-27) all sit on the
     'SG Lewis', 'Silva Bumpa', 'Six Sex', 'Skepta', 'Soulwax', 'Swedish House Mafia', 'Tiësto', 'Tove Lo', 'VTSS',
     'Zara Larsson', 'Zulan', 'ear', 'horsegiirL', 'riria', 'underscores'];
   const onGrid = new Set(Object.values(portola.days).flatMap((d) => d.artists.map((a) => a.name)));
-  for (const n of PICKED) assert.ok(onGrid.has(n), `${n} has live picks and must be on the grid under that exact name`);
+  // A cancelled act (Skepta, 2026-09-21) comes off the grid but keeps its
+  // entry, so its card — and the picks on it — still render.
+  const cancelled = new Set(portola.artists.filter((a) => a.cancelled).map((a) => a.name));
+  for (const n of PICKED) assert.ok(onGrid.has(n) || cancelled.has(n), `${n} has live picks and must be on the grid under that exact name, or marked cancelled`);
 });
 
 // Day-first (MODEL-V3, 2026-09-01): the days are THU FRI SAT SUN — the union
@@ -100,7 +105,7 @@ test('portola-2026: the wall is day-first — THU FRI SAT SUN, the grid inside i
   assert.deepEqual([...root.querySelectorAll('.room[data-room=":fest"] .room-head .name')].map((n) => n.textContent),
     ['SAT PORTOLA', 'SUN PORTOLA'], 'the festival\'s own room names its day: one line');
   const gridCells = root.querySelectorAll('.room[data-room=":fest"] .card.cell').length;
-  assert.equal(gridCells, 64, 'every timed set is a grid cell, inside the festival\'s own room');
+  assert.equal(gridCells, 63, 'every timed set is a grid cell, inside the festival\'s own room');
   assert.equal(root.querySelectorAll('.room[data-room=":fest"] .stage-strip').length, 2, 'each grid day carries its own sticky strip');
   assert.equal([...root.querySelectorAll('.room-head .label, .list-head .label')].filter((l) => l.textContent === 'EVERYTHING ELSE').length, 0);
   const hmd = [...root.querySelectorAll('.card')].filter((c) => c.dataset.artist === 'Horse Meat Disco');

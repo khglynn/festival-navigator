@@ -16,6 +16,7 @@ import { el, subviewHead, eqLoader, festRow, openExportLikes, openBulkPaste, ope
 import { router } from './router.js';
 import { nameProblem, NAME_LIMITS } from '../name-rules.mjs';
 import { loadJSON, saveLS, getLS, removeLS, errorText } from '../util.js';
+import { cancelledNames } from './events.js'; // a cancelled act never goes into a playlist (2026-09-23)
 
 const LS_SETTINGS = 'fn_settings_v1'; // {lowPower, stayOffline}
 export const SUPPORT_URL = 'https://buymeacoffee.com/kevinhg'; // Kevin's page (also list-maker's), 2026-09-02
@@ -1078,11 +1079,7 @@ async function syncEveryonePlaylists(ctx, actions, onNote) {
     if (meta.mode !== 'everyone') continue;
     const fest = FESTIVALS[fid];
     if (!fest) continue;
-    const picks = model.picksFor(state.crewDoc, fid);
-    const names = Object.entries(picks)
-      .map(([artist, byP]) => ({ artist, level: Math.max(0, ...Object.values(byP)) }))
-      .filter((x) => x.level > 0).sort((a, b) => b.level - a.level)
-      .map((x) => x.artist);
+    const names = spotify.playlistArtistsFromPicks(model.picksFor(state.crewDoc, fid), { skip: cancelledNames(fest) });
     const missing = spotify.playlistMissingArtists(names, meta);
     if (!missing.length) continue;
     try {
@@ -1534,16 +1531,16 @@ function openSpotifyDrill(ctx, actions) {
     make.addEventListener('click', async () => {
       try {
         make.disabled = true;
-        const picks = ctx.picks;
-        const names = Object.entries(picks)
-          .map(([artist, byP]) => ({ artist, level: mineOnly ? (byP[ctx.meName] || 0) : Math.max(...Object.values(byP)) }))
-          .filter((x) => x.level > 0)
-          .sort((a, b) => b.level - a.level)
-          .map((x) => x.artist);
+        const names = spotify.playlistArtistsFromPicks(ctx.picks, { me: mineOnly ? ctx.meName : null, skip: cancelledNames(state.fest()) });
         if (!names.length) {
-          plStatus.textContent = mineOnly
-            ? 'You haven’t picked any artists on this fest yet — tap some cards first.'
-            : 'Nobody has picked artists on this fest yet — tap some cards first.';
+          // Picks that are all on cancelled acts are still picks — say so,
+          // rather than "you haven't picked anything".
+          const onlyOff = spotify.playlistArtistsFromPicks(ctx.picks, { me: mineOnly ? ctx.meName : null }).length > 0;
+          plStatus.textContent = onlyOff
+            ? `${mineOnly ? 'Your picks' : 'The picks'} on this fest are all cancelled acts — nothing to play yet.`
+            : mineOnly
+              ? 'You haven’t picked any artists on this fest yet — tap some cards first.'
+              : 'Nobody has picked artists on this fest yet — tap some cards first.';
           return;
         }
         const title = nameInput.value.trim() || defaultTitle();

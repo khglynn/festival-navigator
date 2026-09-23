@@ -45,7 +45,7 @@ test('day image choices mirror the wall: THU FRI SAT SUN, each labelled as the r
 
 test('a day exports its whole content in the wall\'s order: the grid in clock order with stage · start, then each section\'s shows as section · venue · time', () => {
   const sat = dayArtistsFor('Saturday');
-  assert.equal(sat.length, 32 + 15 + 2, 'the grid, Saturday\'s afters, Saturday\'s Folsom');
+  assert.equal(sat.length, 31 + 1 + 15 + 2, 'the grid, the cancelled Skepta, Saturday\'s afters, Saturday\'s Folsom');
   assert.deepEqual(sat[0], { name: 'Airwolf Paradise', time: 'Pier Stage · 1:30 PM' });
   // Saturday's afters open with whoever plays FIRST — every room is a run, so
   // the export leads with the earliest set, not the biggest name. Derived from
@@ -93,13 +93,13 @@ test('a share image is the wall you see: a hidden room is not in a day\'s image,
   filters.saveFolded('portola-2026', ['Afters', 'Folsom']);
   try {
     assert.deepEqual(dayImageChoices(portola).map((d) => d.key), ['Saturday', 'Sunday'], 'Thursday and Friday have nothing visible, so no image is offered for them');
-    assert.equal(dayArtistsFor('Saturday').length, 32, 'the grid alone — no afters, no Folsom');
+    assert.equal(dayArtistsFor('Saturday').length, 31 + 1, 'the festival\'s room alone (its grid and the cancelled Skepta) — no afters, no Folsom');
     assert.deepEqual(dayArtistsFor('Thursday'), [], 'a day that is not on the wall exports nothing');
   } finally {
     filters.saveFolded('portola-2026', []);
   }
   assert.equal(dayImageChoices(portola).length, 4, 'and everything is back once the fold clears');
-  assert.equal(dayArtistsFor('Saturday').length, 32 + 15 + 2);
+  assert.equal(dayArtistsFor('Saturday').length, 31 + 1 + 15 + 2);
 });
 
 test('a lineup-only fest still exports by billing group', () => {

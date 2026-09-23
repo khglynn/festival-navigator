@@ -17,6 +17,9 @@ a festival file by exactly three strings, and the crew doc cannot rename a key
    "Saturday W1"). Combined labels ("Saturday & Sunday") are fine — they
    split on render.
 3. **The festival `id` is the board key.** Never rename one.
+4. **A cancelled act keeps its entry.** Take its set off the grid and add
+   `cancelled: { on, source, note? }` to its `artists[]` entry — never delete
+   the name (2026-09-23; `docs/add-a-festival.md`, "Cancelled acts").
 
 These are enforced, not advisory: `tests/fixtures/live-pick-keys.json`
 freezes every live festival's id, names and day labels, and both

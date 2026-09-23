@@ -960,6 +960,30 @@ button.f-chip.notes { cursor: pointer; }
 .person-chip.everyone .x { color: var(--text-tertiary); margin-left: 4px; }
 .card.dim { opacity: .28; }
 
+/* A cancelled act (2026-09-23 — Skepta, Portola Saturday). The card stays, in
+ * its room's stack, last: the crew's picks are still on it and still say who
+ * was going. It reads as OFF at a glance with nothing added to it — the name
+ * struck through, the word where the time goes, the aura quieted under a
+ * scrim and holding still. The marks sit above the scrim (their corner is
+ * z-index 1), so who picked it stays readable. No badge, no second border:
+ * the card is the same card, turned down. The zoom and the sheet header wear
+ * the same scrim, so the grown card is still the resting card, grown. */
+.card.cancelled::before,
+.zoom-card .z-surface.cancelled::after,
+.sheet-card.cancelled::before { content: ''; position: absolute; inset: 0; pointer-events: none;
+                                border-radius: inherit; background: rgba(12, 10, 20, .42);
+                                /* the wash goes grey-ish under the scrim — the marks above it keep their colour */
+                                -webkit-backdrop-filter: saturate(.3); backdrop-filter: saturate(.3); }
+.card.cancelled, .zoom-card .z-surface.cancelled, .sheet-card.cancelled { animation: none; }
+.card.cancelled .card-grain, .zoom-card .z-surface.cancelled .card-grain, .sheet-card.cancelled .card-grain { display: none; }
+.card.cancelled .name, .f-name.struck { text-decoration: line-through; text-decoration-thickness: 1.5px; }
+.card.cancelled:not(.zoom-source) .name { opacity: .82; } /* never over .zoom-source: the resting name must still step back under a zoom */
+.card.cancelled .time { text-transform: uppercase; letter-spacing: .08em; font-weight: 800; }
+.f-name.struck { text-decoration-thickness: 2px; }
+a.f-cancel { color: #fff; text-decoration: none; border-bottom: 1px solid rgba(255, 255, 255, .35); padding-bottom: 1px; }
+a.f-cancel:hover { border-bottom-color: rgba(255, 255, 255, .75); }
+.f-note { color: rgba(255, 255, 255, .68); font-size: 11px; font-weight: 600; max-width: 30ch; line-height: 1.35; text-align: center; }
+
 /* The now line: brand violet, not the fest accent — it is app chrome that
  * happens to sit on a timetable. Drawn inside the grid (position: relative
  * on the grid and the rail) so it scrolls with the day; the ticker in app.js

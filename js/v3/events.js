@@ -89,6 +89,31 @@ export function weekdayOfDay(dayKey, meta) {
 // A run member carries an order (MODEL-V4 §1.2 — the numbering leads the stack).
 export const isRunMember = (e) => !!(e && e.order && Number.isInteger(e.order.seq) && Number.isInteger(e.order.of));
 
+// ---- a cancelled act (2026-09-23) --------------------------------------------------
+// `cancelled: { on, source, note? }` on an artists[] entry (festival-rules.mjs
+// checkCancelled; docs/add-a-festival.md, "Cancelled acts"). The entry stays —
+// its name is a pick key — and its card says it is off: last in its room,
+// never "now", never in a playlist.
+export const isCancelled = (e) => !!(e && e.cancelled && typeof e.cancelled === 'object');
+// The names with nothing left to see: every entry under the name is cancelled
+// and no grid day has a set for it. One called-off night of an artist who
+// still plays another is not in here — that artist is still worth a playlist.
+const goneCache = new WeakMap();
+export function cancelledNames(fest) {
+  if (!fest || typeof fest !== 'object') return new Set();
+  if (goneCache.has(fest)) return goneCache.get(fest);
+  const live = new Set();
+  const off = new Set();
+  for (const a of fest.artists || []) {
+    if (!a || typeof a.name !== 'string') continue;
+    (isCancelled(a) ? off : live).add(a.name);
+  }
+  for (const d of Object.values(fest.days || {})) for (const s of (d && d.artists) || []) if (s) live.add(s.name);
+  const gone = new Set([...off].filter((n) => !live.has(n)));
+  goneCache.set(fest, gone);
+  return gone;
+}
+
 // ---- the clock -------------------------------------------------------------------
 // Events run on the festival-day axis (time.js activityMinutes): 9 AM starts
 // the day, anything before it is after midnight. timeToMinutes would put the
@@ -178,6 +203,12 @@ const dayOfMonth = (iso) => String(Number(String(iso).slice(8, 10)) || '');
 // the next member starts, else to its own printed end, else to the room's
 // close, else an hour. A room that only knows its doors and close lights the
 // whole room for that window — the only honest answer when nothing is timed.
+//
+// A CANCELLED member (isCancelled) is in the room and plays no part in it: it
+// sorts last, has no now window, is not "the next member" that ends the set
+// before it, and lends the room no doors, close or start. A room of nothing
+// but cancelled shows has no sub line and sorts after every room with
+// something on.
 export const VENUE_TBA = 'Venue TBA';
 
 export function venueGroupsOf(entries, { fallbackVenue = null } = {}) {
@@ -190,12 +221,16 @@ export function venueGroupsOf(entries, { fallbackVenue = null } = {}) {
     if (!rooms.has(venue)) rooms.set(venue, []);
     rooms.get(venue).push({ e, i, t: parseEventTime(e.time) });
   });
-  const groups = [...rooms].map(([venue, list], gi) => {
-    const numbered = list.length > 1 && list.every((m) => isRunMember(m.e));
+  const groups = [...rooms].map(([venue, all], gi) => {
+    const on = all.filter((m) => !isCancelled(m.e));
+    const off = all.filter((m) => isCancelled(m.e));
+    const numbered = on.length > 1 && on.every((m) => isRunMember(m.e));
     const at = (m) => (m.t ? m.t.startMin : Infinity);
-    list.sort(numbered
+    on.sort(numbered
       ? (a, b) => a.e.order.seq - b.e.order.seq || at(a) - at(b) || a.i - b.i
       : (a, b) => at(a) - at(b) || a.i - b.i);
+    off.sort((a, b) => at(a) - at(b) || a.i - b.i);
+    const list = on;
     const firstOf = (pick) => { for (const m of list) { const v = pick(m.e); if (typeof v === 'string' && v) return v; } return null; };
     const doors = firstOf((e) => e.doors);
     const close = firstOf((e) => e.close);
@@ -219,10 +254,14 @@ export function venueGroupsOf(entries, { fallbackVenue = null } = {}) {
         startStr: m.t ? m.t.startStr : null,
         endStr: m.t ? m.t.endStr : null,
         approx: m.e.approx === true,
+        cancelled: false,
         nowFrom,
         nowTo,
       };
     });
+    for (const m of off) {
+      members.push({ e: m.e, startStr: null, endStr: null, approx: false, cancelled: true, nowFrom: null, nowTo: null });
+    }
     const firstStart = Math.min(...list.map(at));
     const at0 = doorsMin ?? (Number.isFinite(firstStart) ? firstStart : null);
     return {
@@ -233,13 +272,16 @@ export function venueGroupsOf(entries, { fallbackVenue = null } = {}) {
       closeApprox,
       sub: [doors ? `Doors ${doors}` : null, close ? `${closeApprox ? '~' : ''}${close}` : null].filter(Boolean).join(' · '),
       at: at0,
+      cancelled: !on.length,
       gi,
       members,
     };
   });
-  // Groups with no known time last; the biggest stack leads a tie so a row
+  // A room with nothing on goes after every room that has something; then
+  // groups with no known time last; the biggest stack leads a tie so a row
   // of stacks holds less air; file order settles the rest.
   groups.sort((a, b) => {
+    if (a.cancelled !== b.cancelled) return a.cancelled ? 1 : -1;
     if ((a.at == null) !== (b.at == null)) return a.at == null ? 1 : -1;
     if (a.at != null && a.at !== b.at) return a.at - b.at;
     return b.members.length - a.members.length || a.gi - b.gi;

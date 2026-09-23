@@ -18,6 +18,7 @@ import { passesPeople, COL, FEST_ROOM } from './filters.js';
 import { nowOnDay, nowOffsetPx, clockLabel, festivalClock } from './now.js';
 import { eventModelOf, venueGroupsOf, dateRuleLabel, occOf, hourLabelOf, approxMark, parseEventTime, weekdayOfIso, shortDate } from './events.js';
 import { reduced } from './motion.js';
+import { isCancelled } from './events.js'; // a cancelled act (2026-09-23) — its own line, so the list above can grow without a merge
 
 // ---- person -> board color ---------------------------------------------------
 // v4 people carry colorIndex. Legacy people carry a "R, G, B" string from the
@@ -55,6 +56,10 @@ export function renderCard(artistName, ctx, opts = {}) {
   const people = facts.people;
   const el = document.createElement('div');
   el.className = 'card' + (opts.cell ? ' cell' : '') + (opts.time && !opts.cell ? ' timed' : '');
+  // A cancelled act (2026-09-23) is a card like any other — it picks, zooms
+  // and carries the crew's marks — worn quieter and struck through (v3.css
+  // .card.cancelled). The caller says "Cancelled" where the time goes.
+  if (facts.cancelled) el.classList.add('cancelled');
   // The people filter dims a card nobody selected has picked. Computed here,
   // from ctx, so refreshCard (a single-card repaint after a tap) reproduces
   // it without being told — a dimmed card you tap stays dimmed until the
@@ -69,7 +74,7 @@ export function renderCard(artistName, ctx, opts = {}) {
   el.tabIndex = 0;
   const myLevel = (ctx.picks[artistName] || {})[ctx.meName] || 0;
   const crewCount = people.filter((p) => !p.isYou).length;
-  const labelParts = [`${artistName} — ${myLevel === 4 ? 'must' : (LEVEL_LABELS_V4[myLevel] || 'not picked').toLowerCase()}`];
+  const labelParts = [`${artistName}${facts.cancelled ? ' (cancelled)' : ''} — ${myLevel === 4 ? 'must' : (LEVEL_LABELS_V4[myLevel] || 'not picked').toLowerCase()}`];
   if (crewCount) labelParts.push(`picked by ${crewCount} other${crewCount === 1 ? '' : 's'}`);
   if (facts.noteCount) labelParts.push(`${facts.noteCount} note${facts.noteCount === 1 ? '' : 's'}`);
   if (facts.spotify) labelParts.push('in your Spotify');
@@ -376,6 +381,8 @@ function renderLineupGroup(root, day, list, ctx, fest, { header, sub } = {}) {
 // newline is the break. Inside a day-first day the tile says only the time
 // (the day is the day, the venue lives in the zoom) — see eventTileSubLabel.
 function lineupSubLabel(a) {
+  // A cancelled act answers with its place and the word, never a clock.
+  if (isCancelled(a)) return [a.stage || a.venue || '', 'Cancelled'].filter(Boolean).join(' · ');
   const time = a.time ? approxMark(a, a.time) : ''; // the tilde travels with `approx`
   // A dated show says where in `venue`; the legacy afters shape says it in
   // `stage` ("Sun · The Midway"). Either way the answer names its room.
@@ -398,7 +405,8 @@ function renderCardGrid(root, list, ctx, { day = null, subLabelOf = lineupSubLab
   const grid = document.createElement('div');
   grid.className = className;
   const showTags = !ctx.weekend || ctx.weekend === 'all';
-  for (const a of list) {
+  // A cancelled act sorts last in its list, as it does in a stack.
+  for (const a of [...list.filter((x) => !isCancelled(x)), ...list.filter(isCancelled)]) {
     const tag = showTags && (a.weekends === 'W1' || a.weekends === 'W2') ? a.weekends : undefined;
     // The occurrence comes from the model (events.js occOf), so a card found
     // in a search is the SAME card as the one on the wall — a dated show's
@@ -1058,6 +1066,7 @@ const dedupeByCard = (list, occFor = occOf) => {
 // The card's time label in a stack: the range the venue posted, else the
 // start with the tilde a guess wears. No time, no time line.
 const stackTime = (m) => {
+  if (m.cancelled) return 'Cancelled';
   if (m.endStr) return timeRange(m.e.time);
   return m.startStr ? approxMark(m.e, m.startStr) : undefined;
 };

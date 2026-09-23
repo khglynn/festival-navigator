@@ -121,7 +121,9 @@ test('grid entries are left alone — night/venue belong to events, not to the t
   for (const a of portola.artists) {
     if (events.includes(a)) continue;
     assert.equal(a.night, undefined, `${a.name} is a grid billing, not an event`);
-    assert.equal(a.venue, undefined, `${a.name} is a grid billing, not an event`);
+    // A cancelled billing names the stage it would have played: it is a card
+    // in a stack under that stage now, not a set on the clock.
+    if (!a.cancelled) assert.equal(a.venue, undefined, `${a.name} is a grid billing, not an event`);
   }
   for (const day of Object.values(portola.days)) {
     for (const a of day.artists) assert.equal(a.venue, undefined, `${a.name}: a grid set's room is its stage column`);

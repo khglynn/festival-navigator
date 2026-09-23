@@ -137,6 +137,7 @@ export function runsOf(fest) {
   const groups = new Map();
   for (const a of fest.artists || []) {
     if (!a.order || !Number.isInteger(a.order.seq)) continue;
+    if (a.cancelled) continue; // a cancelled show takes no slot in the run (docs/add-a-festival.md, "Cancelled acts")
     const night = a.night || (typeof a.stage === 'string' && a.stage.includes(' · ') ? a.stage.split(' · ')[0] : null);
     const venue = a.venue || (typeof a.stage === 'string' && a.stage.includes(' · ') ? a.stage.split(' · ').slice(1).join(' · ') : null);
     if (!night || !venue) continue;

@@ -553,6 +553,19 @@ export async function playlistFromPicks({ title, artistNames, tracksPerArtist = 
   };
 }
 
+// The artists a playlist made from picks holds, strongest pick first (musts
+// lead): everyone's picks, or `me`'s alone for "Just mine". `skip` is the
+// fest's cancelled acts (events.js cancelledNames, 2026-09-23) — their picks
+// stay on their cards, but nobody is going to hear that set. One function for
+// the Make button and the crew top-up, so the two can never disagree.
+export function playlistArtistsFromPicks(picks, { me = null, skip = new Set() } = {}) {
+  return Object.entries(picks || {})
+    .map(([artist, byP]) => ({ artist, level: me ? (byP[me] || 0) : Math.max(0, ...Object.values(byP)) }))
+    .filter((x) => x.level > 0 && !skip.has(x.artist))
+    .sort((a, b) => b.level - a.level)
+    .map((x) => x.artist);
+}
+
 // Append tracks for artists that aren't in the crew playlist yet — the
 // auto-extend path when a member connects later or picks change. The diff is
 // computed against the crew doc's recorded artist list (not Spotify's items —
