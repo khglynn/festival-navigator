@@ -217,3 +217,63 @@ test('Portola hidden: Saturday\'s first head is SAT AFTERS, carrying the date �
     await ctx.close();
   }
 });
+
+// Everything hidden, the way a friend does it (2026-09-23): every room
+// unchecked in the show menu, at phone width and at desktop width. The wall
+// says so in one quiet line and names the door by the words on it — below on
+// a phone, up top on a desktop — and the first room back takes the notice
+// away and brings its days and tabs with it.
+test('every room hidden from the show menu: a quiet notice that names the door, at 390 and 1280; a room back takes it away', { skip }, async () => {
+  for (const [width, height, touch, door, where] of [[390, 844, true, 'dock', 'Tap PORTOLA \'26 below'], [1280, 800, false, 'rail', 'Click PORTOLA \'26 up top']]) {
+    const ctx = await browser.newContext({ viewport: { width, height }, hasTouch: touch, serviceWorkers: 'block' });
+    const TOKEN = 'allhiddencontract_0123456789'; // a made-up crew
+    try {
+      await ctx.addInitScript(([t]) => {
+        navigator.serviceWorker.register = () => Promise.resolve({ update: () => Promise.resolve() });
+        localStorage.setItem('fn_crews_v3', JSON.stringify([{ token: t, name: 'Contract' }]));
+        localStorage.setItem(`fn_me_v3_${t}`, 'Kevin');
+        localStorage.setItem(`fn_crew_fest_v3_${t}`, 'portola-2026');
+        localStorage.setItem('fn_coach_v1', '1');
+      }, [TOKEN]);
+      const doc = { v: 4, meta: { name: 'Contract', inviteFestId: 'portola-2026' }, spotify: {}, affinity: {}, people: { Kevin: { colorIndex: 0 } }, festivals: { 'portola-2026': { selections: {} } } };
+      await ctx.route('**/api/**', (route) => route.fulfill({ status: 503, contentType: 'application/json', body: '{}' }));
+      await ctx.route('**/api/crew**', (route) => route.fulfill({ contentType: 'application/json', body: JSON.stringify(doc) }));
+      await ctx.route('**/api/festival-add**', (route) => route.fulfill({ contentType: 'application/json', body: '{"festivals":[]}' }));
+      const page = await ctx.newPage();
+      page.on('pageerror', (e) => { throw e; });
+      await page.goto(`${server.origin}/#g=${TOKEN}`, { waitUntil: 'load' });
+      await page.waitForSelector(`#${door}-fest-wrap .sort-pop`, { state: 'attached', timeout: 15000 });
+      const hide = async (key) => {
+        await page.click(`#${door}-fest-link`);
+        await page.locator(`#${door}-fest-wrap .sort-pop [data-room="${key}"]`).click();
+        await sleep(600); // the leave, the repaint, the arrival
+      };
+      for (const key of ['Afters', 'Folsom', ':fest']) await hide(key);
+      const blank = await page.evaluate(() => {
+        const n = document.querySelector('#wall-root .wall-empty');
+        return {
+          text: n ? n.innerText.replace(/\s+/g, ' ').trim() : null,
+          opacity: n ? Number(getComputedStyle(n).opacity) : null,
+          top: n ? Math.round(n.getBoundingClientRect().top) : null,
+          tabs: document.querySelectorAll('#dock-days .day-tab, #rail-days .day-tab').length,
+          days: document.querySelectorAll('#wall-root .day-block').length,
+          buttons: n ? n.querySelectorAll('button, a').length : null,
+        };
+      });
+      assert.equal(blank.text, `Everything’s hidden. ${where} to bring parts back.`, `${width}px: the notice names the door where it is`);
+      assert.equal(blank.opacity, 1, 'it has arrived');
+      assert.ok(blank.top >= 0 && blank.top < height, `and it is on screen (${blank.top}px)`);
+      assert.deepEqual([blank.tabs, blank.days, blank.buttons], [0, 0, 0], 'no day, no tab, no button of its own');
+      // The door it names really opens the menu, and a room back clears it.
+      await hide('Afters');
+      const back = await page.evaluate(() => ({
+        notice: !!document.querySelector('#wall-root .wall-empty'),
+        tabs: [...document.querySelectorAll('#dock-days .day-tab')].map((t) => t.dataset.day),
+      }));
+      assert.equal(back.notice, false, 'the notice leaves when a room comes back');
+      assert.deepEqual(back.tabs, ['Thursday', 'Friday', 'Saturday', 'Sunday'], 'and the afters bring their days with them');
+    } finally {
+      await ctx.close();
+    }
+  }
+});
