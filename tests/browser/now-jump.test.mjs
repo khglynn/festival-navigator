@@ -19,15 +19,20 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const server = await serveStatic(ROOT);
 const browser = await launchBrowser();
-test.after(async () => { if (browser) await browser.close(); await server.close(); });
+// NOW is for a phone in a field, so the landings run in WebKit too (the
+// iPhone's engine: no scrollend, its own smooth scroll) where it is installed.
+let webkit = null;
+try { webkit = await (await import('playwright')).webkit.launch({ headless: true }); } catch { /* not installed: those cases skip */ }
+test.after(async () => { if (browser) await browser.close(); if (webkit) await webkit.close(); await server.close(); });
 const skip = browser ? false : NO_BROWSER;
+const skipWebkit = webkit ? false : 'Playwright WebKit is not installed (npx playwright install webkit)';
 
 const SAT_1030 = new Date('2026-09-26T22:30:00-07:00');
 const SAT_9AM = new Date('2026-09-26T09:00:00-07:00');
 const SELECTIONS = { 'Milli Meng': { Ross: 3 }, Galen: { Ross: 1, Nhu: 2 }, Soulwax: { Nhu: 4 }, Prospa: { Nhu: 2 } };
 
-async function openApp({ width = 390, height = 844, touch = true, now = SAT_1030, fest = 'portola-2026' } = {}) {
-  const ctx = await browser.newContext({ viewport: { width, height }, hasTouch: touch, serviceWorkers: 'block' });
+async function openApp({ width = 390, height = 844, touch = true, now = SAT_1030, fest = 'portola-2026', engine = browser } = {}) {
+  const ctx = await engine.newContext({ viewport: { width, height }, hasTouch: touch, serviceWorkers: 'block' });
   const TOKEN = 'nowjumpcontract_0123456789'; // a made-up crew, never a real link
   await ctx.addInitScript(([t, f]) => {
     navigator.serviceWorker.register = () => Promise.resolve({ update: () => Promise.resolve() });
@@ -107,9 +112,10 @@ const highlight = async (page, name) => {
   await sleep(400);
 };
 
-for (const [width, height, touch] of [[390, 844, true], [1280, 800, false]]) {
-  test(`${width}: NOW sits before the days, is not a day, and a tap lands the now line in view`, { skip }, async () => {
-    const { ctx, page, door } = await openApp({ width, height, touch });
+for (const [width, height, touch, engine, name] of [[390, 844, true, browser, ''], [1280, 800, false, browser, ''], [390, 844, true, webkit, 'WebKit ']]) {
+  const skip = engine === webkit ? skipWebkit : browser ? false : NO_BROWSER;
+  test(`${name}${width}: NOW sits before the days, is not a day, and a tap lands the now line in view`, { skip }, async () => {
+    const { ctx, page, door } = await openApp({ width, height, touch, engine });
     try {
       const tab = await page.evaluate((d) => {
         const now = document.getElementById(`${d}-now`);
@@ -135,8 +141,8 @@ for (const [width, height, touch] of [[390, 844, true], [1280, 800, false]]) {
     } finally { await ctx.close(); }
   });
 
-  test(`${width}: Ross highlighted — NOW lands on his live pick in SAT AFTERS`, { skip }, async () => {
-    const { ctx, page, door } = await openApp({ width, height, touch });
+  test(`${name}${width}: Ross highlighted — NOW lands on his live pick in SAT AFTERS`, { skip }, async () => {
+    const { ctx, page, door } = await openApp({ width, height, touch, engine });
     try {
       await highlight(page, 'Ross');
       await tapNow(page, door);
@@ -148,8 +154,8 @@ for (const [width, height, touch] of [[390, 844, true], [1280, 800, false]]) {
     } finally { await ctx.close(); }
   });
 
-  test(`${width}: Nhu highlighted — her live pick on the grid and the now line are in view together`, { skip }, async () => {
-    const { ctx, page, door } = await openApp({ width, height, touch });
+  test(`${name}${width}: Nhu highlighted — her live pick on the grid and the now line are in view together`, { skip }, async () => {
+    const { ctx, page, door } = await openApp({ width, height, touch, engine });
     try {
       await highlight(page, 'Nhu');
       await tapNow(page, door);
