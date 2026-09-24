@@ -481,9 +481,15 @@
     const sortHost = $in(shellEl, 'sort-control');
     if (sortHost) sortHost.remove(); // a season has no sort chip in any direction; today's sort is billing
     for (const t of ['pointerover', 'pointerdown', 'focusin']) vp.addEventListener(t, () => activate(frame), true);
+    // Production never closes a zoom on scroll: the overlay follows its card
+    // and closes once the card has left the viewport (card-facts.js follow).
+    // Here the frame is the phone's viewport, so "left" means left the frame.
     scroller.addEventListener('scroll', () => {
       const z = F.zoomedCard();
-      if (z && vp.contains(z)) F.unzoom({ instant: true, why: 'the frame scrolled' });
+      if (z && vp.contains(z)) {
+        const r = rect(z), v = rect(scroller);
+        if (r.bottom < v.top || r.top > v.bottom) F.unzoom({ instant: true, why: 'card scrolled out of the frame' });
+      }
       spy(frame);
     }, { passive: true });
     for (const id of ['dock-fest-link', 'rail-fest-link']) {
@@ -618,9 +624,8 @@
   // ---- a tab that comes and goes (B's YOURS, C's THIS WEEK) ------------------------------------
   // It arrives the way v87's NOW does (feat/now-jump app.js showNowTab): the
   // tab fades in from 6px left with the beat, and the tabs beside it slide
-  // over to make room, tab by tab. Its block lands at the top of the wall
-  // without moving what you are looking at: the scroll is carried by the
-  // block's height, and the block rises in only if it is on screen.
+  // over to make room, tab by tab; YOURS's dot lands a beat after. Its block
+  // lands at the top of the wall without moving what you are looking at.
   function replay(frame, flag) {
     if (!frame.painted) paint(frame);
     const sc = frame.scroller;
@@ -646,24 +651,34 @@
     const sc = frame.scroller;
     frame[flag] = true;
     frame.seenYours = false;
+    clearTimeout(frame.seeTimer); // a look that began before the match landed is not a look at it
+    frame.seeTimer = 0;
     const before = new Map(tabRows(frame).flatMap((r) => [...r.children].map((t) => [`${r.dataset.id}|${t.dataset.day}`, rect(t).left])));
     frame.tabs = tabsFor(frame);
     const t = frame.tabs[0];
     const block = tabBlock(t, frame);
+    // Scrolled into the months, what you are looking at stays put: the block
+    // lands above it and the scroll carries its height, so the news is the
+    // tab arriving (with its dot), not the wall moving — the NOW tab's rule.
+    // At the top, where B opens, YOURS takes the top: the month you were
+    // looking at goes the way it is going (down, quick and plain — a short
+    // slide and a fade, not a 4000px whoosh), then YOURS's rooms rise in
+    // with the beat.
     const atTop = sc.scrollTop < 4;
+    const under = [...frame.root.children].slice(0, 2);
     frame.root.insertBefore(block, frame.root.firstChild);
-    if (!atTop) sc.scrollTop += block.getBoundingClientRect().height + parseFloat(getComputedStyle(frame.root).rowGap || 0);
+    const h = block.getBoundingClientRect().height + parseFloat(getComputedStyle(frame.root).rowGap || 0);
+    if (!atTop) sc.scrollTop += h;
+    else {
+      for (const n of under) anim(n, [{ transform: `translateY(${-h}px)`, opacity: 1 }, { transform: `translateY(${-h + 48}px)`, opacity: 0 }], { duration: M.OUT_MS + 70, easing: M.EASE_LEAVE });
+      [...block.children].slice(0, 4).forEach((room, i) => anim(room, [{ opacity: 0, transform: 'translateY(10px)' }, { opacity: 1, transform: 'none' }], { duration: M.CASCADE_MS + 40, delay: M.OUT_MS + 40 + i * (M.STAGGER_MS + 25), easing: M.EASE_ARRIVE, fill: 'backwards' }));
+    }
     paintTabs(frame);
     slideTabs(frame, before);
     for (const tab of frame.el.querySelectorAll('.tab-yours, .tab-week')) {
       anim(tab, [{ opacity: 0, transform: 'translateX(-6px)' }, { opacity: 1, transform: 'none' }], { duration: M.CASCADE_MS, delay: M.STAGGER_MS, easing: M.EASE_ARRIVE, fill: 'backwards' });
-    }
-    if (atTop) {
-      // The wall below slides down to make room, and the rooms of the new tab
-      // rise in a beat apart.
-      const h = block.getBoundingClientRect().height;
-      for (const n of [...frame.root.children].slice(1, 3)) anim(n, [{ transform: `translateY(${-h}px)` }, { transform: 'none' }], { duration: M.REFRESH_MS + 80, easing: M.EASE_ARRIVE });
-      [...block.children].slice(0, 5).forEach((room, i) => anim(room, [{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }], { duration: M.CASCADE_MS + 40, delay: 120 + i * (M.STAGGER_MS + 20), easing: M.EASE_ARRIVE, fill: 'backwards' }));
+      const dot = tab.querySelector('.tab-dot');
+      if (dot) anim(dot, [{ transform: 'scale(0)', opacity: 0 }, { transform: 'scale(1.5)', opacity: 1, offset: 0.6 }, { transform: 'none', opacity: 1 }], { duration: M.GROW_MS + 120, delay: M.STAGGER_MS + M.CASCADE_MS, easing: M.EASE_ARRIVE, fill: 'backwards' });
     }
     spy(frame);
   }

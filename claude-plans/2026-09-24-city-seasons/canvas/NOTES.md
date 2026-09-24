@@ -1,55 +1,99 @@
 # City seasons canvas — working notes (2026-09-24)
 
-Brief: `BRIEF.md` beside this file. Exemplar rig forked from
-`claude-plans/2026-09-23-rating-canvas/` (build.mjs, entry.mjs, runtime.js,
-body.html, canvas.css).
+Brief: `BRIEF.md` beside this file. Rig forked from
+`claude-plans/2026-09-23-rating-canvas/`.
 
-Build: `ESBUILD=~/DevKev/personal/ynai/node_modules/esbuild node build.mjs`
-(from this folder, or give the full path) -> `canvas.html`, one file.
+Build (from the repo root or anywhere):
+`ESBUILD=~/DevKev/personal/ynai/node_modules/esbuild node claude-plans/2026-09-24-city-seasons/canvas/build.mjs`
+-> `canvas.html`, one self-contained file (~530 KB).
 
-## Status (bank — update as steps land)
+Checks (one headless Chromium each, closed after; screenshots go to OUT,
+never the repo): `PW=<repo>/node_modules/playwright OUT=<scratch>` then
+`node checks/shot.mjs <width> <selector…>`, `node checks/probe.mjs <width> '<js>'`,
+`node checks/walk.mjs desk|phone` (real mouse at 1280, real touch at 390).
 
-- [ ] 1. Rig forked, builds, artboard 0 renders (today's code, Austin fed in)
-- [ ] 2. Shared grammar layer: month tabs, `FRI OCT 16` heads, zoom lines
-      (support acts, tickets), taste seed
-- [ ] 3. A · The month (phone + desktop + Slack DM)
-- [ ] 4. B · Yours (tab arrives like NOW, on-sale whisper, digest + 48h DM)
-- [ ] 5. C · This week (week tab, day-before + on-sale reminders)
-- [ ] 6. Coverage filter (show menu: covered rooms with counts, uncovered named)
-- [ ] 7. Edge cases (96-char name, nine-show night, three-show month,
-      cancelled, no doors, door-only)
-- [ ] 8. Browser checks at 390 and 1280, fixes, honest read
+## Status (bank)
 
-## Plan (written before building)
+- [x] 1. Rig forked, builds, artboard 0 renders (today's code, Austin fed in)
+- [x] 2. Shared grammar: month tabs, `FRI OCT 16` heads, zoom lines (support
+      acts, tickets, on-sale, past pick), taste seed, thin-month line, zoom strip
+- [x] 3. A · The month (phone + desktop + Slack DM)
+- [x] 4. B · Yours (tab + dot arrive like NOW, on-sale whisper, 48h DM + digest;
+      "One list" variant beside the brief's night rooms)
+- [x] 5. C · This week (week tab, day-before + on-sale reminders)
+- [x] 6. Rooms filter (show menu: 15 read rooms with counts, 6 unread named)
+- [x] 7. Edge cases (96-char name, 15-show night, 3-show month, cancelled,
+      no doors, door only, one name two nights)
+- [ ] 8. Browser pass at 390 and 1280 on every frame, then the honest read
 
-Frames are whole app screens, not wall slices: header, toolbar, the day rail
-(desktop) or dock (phone), and the wall, inside a frame that scrolls on its
-own (390x780 phone, 1280x800 desktop scaled to fit). Tabs jump inside the
-frame; a canvas-side scrollspy re-hosts production's geometry rule on the
-frame's scroller (production's listens to the window).
+## How it is built (what differs from the rating canvas)
 
-- Artboard 0 is `renderWall` untouched, with the season file registered as a
-  festival. Its tabs are `dayNavOf`'s. What it shows: dock tabs `SEPTE OCTOB`,
-  heads `THU SEPTEMBER  Sep 24`, the show menu listing months.
-- Directions compose the wall from the exported production pieces
-  (`venueGroups`, the room-head DOM, `.day-block`), which is renderExtra's own
-  recipe with one change: the head names the date (`FRI OCT 16`).
-- Zoom additions come in through the grown-block hook: support acts under the
-  name (from `billedAs`), and `Tickets · Ticketmaster` as a door after WHERE.
-- Alerts are drawn for MUNA's real timeline (research/muna-timeline.md) as
-  each direction would have delivered them, so each direction answers
-  "would this have saved MUNA?"
+- Frames are whole app screens: index.html's own `#screen-app` markup
+  (header, toolbar, day rail, wall root, dock) is lifted at build time, ids
+  turned into `data-id`, and the runtime fills what app.js would paint. Each
+  frame scrolls on its own (390x760 phone, 1280x780 laptop scaled to fit).
+- Artboard 0 is `renderWall` untouched. The directions compose the wall from
+  exported production pieces (`venueGroups`, `renderCard`, the room-head DOM,
+  `.day-block`): renderExtra's own recipe with one change, the head names
+  the date. Tabs and the scrollspy are app.js's / wireScrollspy's rules,
+  re-hosted on the frame's scroller (production listens to the window).
+- Two hooks in the bundle only (repo untouched): end of `renderCard` (A's
+  NEW tag) and end of `grownBlock` (the zoom's new lines, so the zoom
+  measures and blooms them; they also join its cascade and slide on a pick).
+- Data: the season file, plus at build time (read-only) the venues' own buy
+  links from ground truth (265 shows) and Do512's 7 real on-sale times.
+- The zoom follows production's scroll rule (never closes on scroll; closes
+  when its card leaves the frame).
 
-## Seeds (say so on the canvas)
+## Seeds (said on the canvas)
 
-- Spotify affinity for Kevin, and a few past-fest picks (Portola, ACL).
-- Announce and on-sale times: none of the sources carries them; seeded for
-  a few shows. MUNA's are real.
-- One cancellation (the file has none), only in the edge-case specimens.
+Kevin's Spotify (13 artists), his picks at Portola and ACL, the crew (Ben,
+Cleo, Dev), the announce dates behind NEW, one cancellation (Stella Lefty,
+Jan 31). Real: every show/room/date/doors/billing, the buy links, Do512's 7
+on-sale times (Fri Sep 25, 10 AM), MUNA's whole timeline. The alerts assume
+a daily read at 9 AM (STUDY.md: Do512 + JamBase see an announcement within a
+day), so A's DM lands Sat May 9, B's and C's Mon May 11 — all before the
+first presale (Tue May 12).
+
+## Found while building
+
+- Today's code already renders the season as a calendar (MODEL-V4's dated
+  sections), and the rough edges are exactly three: dock tabs cut to five
+  letters (`SEPTE OCTOB NOVEM`), heads that name the month (`THU SEPTEMBER
+  SEP 24 · AUSTIN`), a show menu that lists months. The zoom has no buy line.
+- Cards are 95px tall in a stack (content-box: 64 min-height + padding);
+  production, not the canvas.
+- On Sep 24 tonight is the first night in the file, so every door opens on
+  the same room. The bar's "Fri Oct 16" switch shows the opens differing:
+  A lands mid-October on tonight's room with Oct 1-15 above; C's week is
+  Oct 16-22 (43 shows) and the months follow without those nights.
+- On Sep 24 THIS WEEK and SEP are the same seven nights, so C removes SEP
+  (no card shows twice). At a month's start the week is a quarter of it.
+- YOURS as night rooms is ~215px per show on a phone (one half-width card
+  per night: head, venue head, doors, card). 19 shows is four screens. The
+  "One list" variant (a search-style list: one head, the on-sale whispers,
+  cards saying their night and room) is one screen. Built beside the brief's.
+- A YOURS arriving while you look at the top: the first cut slid the whole
+  wall 4000px in 380ms (a whoosh with a blank beat). Now: scrolled into the
+  months, the view is anchored and only the tab (and its dot) arrives; at
+  the top, the month slides 48px down and fades (quick, plain) and YOURS's
+  rooms rise in with the beat.
+- The rooms menu stays open while you tick (production's closes on every
+  row tap); fifteen rooms is a list you edit. On a phone its 44px rows make
+  it scroll — production's touch floor, kept.
+- The season has names that play twice (Bleachers, Lola Young, ZHU, Kacey
+  Musgraves...). Picks are keyed by name, so a pick lights both nights.
+  Shown as an edge case; THINKING.md §2's show id is the fix.
+- Data-cleaning leftovers in the file (not the canvas's to fix): a show named
+  "TWO NIGHTS" (Emo's, Nov 6), Dave Chappelle (comedy) passed the music filter.
+- Harness: a Playwright mouse click in a touch context makes Chromium believe
+  a mouse exists and the zoom arms on hover; phone walks tap everything.
 
 ## Log
 - 2026-09-24: read the brief, the rating canvas rig, MODEL-V4 §1-3c/§6,
-  events.js, wall.js (renderCard, venueGroups, roomHead, renderExtra,
-  renderComposed, dayNavOf, scrollspy), card-facts.js (factsFor, grownBlock),
-  app.js (day tabs, show menu, fold flow, person chips), the v87 NOW tab on
-  `feat/now-jump` (arrival motion + CSS), the season data, ground truth.
+  events.js, wall.js, card-facts.js, app.js (tabs, show menu, fold, chips),
+  the v87 NOW tab on `feat/now-jump`, the season data, ground truth.
+- 2026-09-24: built steps 1-7; walked at 1280 (mouse) and 390 (touch):
+  zoom + pick, B's replay mid-flight in slow motion, the list variant, the
+  Oct 16 clock, untick a room. No console errors, no page overflow.
+- 2026-09-24: coordinator: Do512 carries real on-sale times (7); seeds cut.

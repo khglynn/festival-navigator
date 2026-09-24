@@ -891,7 +891,7 @@ body { color: var(--text-body); font-family: var(--font-ui); -webkit-text-size-a
 .cv-muna { margin-top: 22px; }
 .mt-cap { color: var(--text-tertiary); font-size: var(--fs-micro); font-weight: 800; letter-spacing: var(--track-label); text-transform: uppercase; margin-bottom: 10px; }
 .mt-wrap { overflow-x: auto; scrollbar-width: thin; padding-bottom: 4px; }
-.mt { display: grid; grid-template-columns: 92px repeat(var(--cols), minmax(58px, 1fr)); row-gap: 0; min-width: 640px; max-width: 1080px; }
+.mt { display: grid; grid-template-columns: 92px repeat(var(--cols), minmax(62px, 1fr)); row-gap: 0; min-width: 700px; max-width: 1080px; }
 .mt > * { min-width: 0; }
 .mt-h { display: flex; flex-direction: column; gap: 1px; padding: 0 0 8px; border-bottom: 1px solid var(--hairline); }
 .mt-h .wd { color: var(--text-tertiary); font-size: 9.5px; font-weight: 800; letter-spacing: .1em; }
@@ -899,15 +899,15 @@ body { color: var(--text-body); font-family: var(--font-ui); -webkit-text-size-a
 .mt-h.gap, .mt-c.gap { color: var(--text-tertiary); font-size: 10px; font-weight: 700; text-align: center; letter-spacing: .04em;
                        background: repeating-linear-gradient(90deg, var(--hairline) 0 4px, transparent 4px 8px) center / 100% 1px no-repeat; }
 .mt-h.gap { background: none; justify-content: flex-end; padding-bottom: 9px; }
-.mt-k { color: var(--text-secondary); font-size: 11px; font-weight: 800; letter-spacing: .04em; padding: 9px 8px 9px 0; border-bottom: 1px solid var(--hairline); white-space: nowrap; }
+.mt-k { color: var(--text-secondary); font-size: 11px; font-weight: 800; letter-spacing: .04em; padding: 8px 8px 8px 0; border-bottom: 1px solid var(--hairline); white-space: nowrap; display: flex; align-items: center; }
 .mt-k.fact { color: var(--text-header); }
 .mt-k.miss { color: var(--text-tertiary); }
-.mt-c { display: flex; align-items: center; gap: 5px; padding: 9px 4px 9px 0; border-bottom: 1px solid var(--hairline); }
+.mt-c { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 4px; padding: 8px 6px 8px 0; border-bottom: 1px solid var(--hairline); min-height: 22px; }
 .mt-dot { width: 8px; height: 8px; border-radius: var(--r-pill); flex: none; }
 .mt-dot.fact { background: var(--text-header); }
 .mt-dot.a, .mt-dot.b, .mt-dot.c { background: rgb(var(--brand)); box-shadow: 0 0 6px rgba(var(--brand), .7); }
 .mt-dot.miss { border: 1.5px solid var(--text-tertiary); box-sizing: border-box; }
-.mt-t { color: var(--text-body); font-size: 11px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mt-t { color: var(--text-body); font-size: 11px; font-weight: 600; line-height: 1.25; }
 .mt-c:has(.mt-dot.miss) .mt-t { color: var(--text-tertiary); }
 
 /* ---- shows per month ----------------------------------------------------------- */
@@ -1009,6 +1009,15 @@ a.f-buy-link:hover { border-bottom-color: rgba(255, 255, 255, .75); }
 /* B: YOURS holds NOW's dot, still, while something in it is new to you. */
 .day-tab .tab-dot { display: inline-block; width: 5px; height: 5px; border-radius: var(--r-pill); margin-right: 5px; vertical-align: 2px;
                     background: rgb(var(--brand)); box-shadow: 0 0 5px rgba(var(--brand), .8); }
+
+/* On a phone the bar is one row that scrolls sideways, so it never takes a
+ * third of the screen. */
+@media (max-width: 719.98px) {
+  .cv-bar { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; gap: 14px; }
+  .cv-bar::-webkit-scrollbar { display: none; }
+  .cv-bar > * { flex: none; }
+  .cv-bar-gap { display: none; }
+}
 
 </style>
 </head>
@@ -1624,9 +1633,15 @@ ${where}`}return subLabel||void 0}function renderCardGrid(root,list,ctx,{day=nul
     const sortHost = $in(shellEl, 'sort-control');
     if (sortHost) sortHost.remove(); // a season has no sort chip in any direction; today's sort is billing
     for (const t of ['pointerover', 'pointerdown', 'focusin']) vp.addEventListener(t, () => activate(frame), true);
+    // Production never closes a zoom on scroll: the overlay follows its card
+    // and closes once the card has left the viewport (card-facts.js follow).
+    // Here the frame is the phone's viewport, so "left" means left the frame.
     scroller.addEventListener('scroll', () => {
       const z = F.zoomedCard();
-      if (z && vp.contains(z)) F.unzoom({ instant: true, why: 'the frame scrolled' });
+      if (z && vp.contains(z)) {
+        const r = rect(z), v = rect(scroller);
+        if (r.bottom < v.top || r.top > v.bottom) F.unzoom({ instant: true, why: 'card scrolled out of the frame' });
+      }
       spy(frame);
     }, { passive: true });
     for (const id of ['dock-fest-link', 'rail-fest-link']) {
@@ -1761,9 +1776,8 @@ ${where}`}return subLabel||void 0}function renderCardGrid(root,list,ctx,{day=nul
   // ---- a tab that comes and goes (B's YOURS, C's THIS WEEK) ------------------------------------
   // It arrives the way v87's NOW does (feat/now-jump app.js showNowTab): the
   // tab fades in from 6px left with the beat, and the tabs beside it slide
-  // over to make room, tab by tab. Its block lands at the top of the wall
-  // without moving what you are looking at: the scroll is carried by the
-  // block's height, and the block rises in only if it is on screen.
+  // over to make room, tab by tab; YOURS's dot lands a beat after. Its block
+  // lands at the top of the wall without moving what you are looking at.
   function replay(frame, flag) {
     if (!frame.painted) paint(frame);
     const sc = frame.scroller;
@@ -1789,24 +1803,34 @@ ${where}`}return subLabel||void 0}function renderCardGrid(root,list,ctx,{day=nul
     const sc = frame.scroller;
     frame[flag] = true;
     frame.seenYours = false;
+    clearTimeout(frame.seeTimer); // a look that began before the match landed is not a look at it
+    frame.seeTimer = 0;
     const before = new Map(tabRows(frame).flatMap((r) => [...r.children].map((t) => [`${r.dataset.id}|${t.dataset.day}`, rect(t).left])));
     frame.tabs = tabsFor(frame);
     const t = frame.tabs[0];
     const block = tabBlock(t, frame);
+    // Scrolled into the months, what you are looking at stays put: the block
+    // lands above it and the scroll carries its height, so the news is the
+    // tab arriving (with its dot), not the wall moving — the NOW tab's rule.
+    // At the top, where B opens, YOURS takes the top: the month you were
+    // looking at goes the way it is going (down, quick and plain — a short
+    // slide and a fade, not a 4000px whoosh), then YOURS's rooms rise in
+    // with the beat.
     const atTop = sc.scrollTop < 4;
+    const under = [...frame.root.children].slice(0, 2);
     frame.root.insertBefore(block, frame.root.firstChild);
-    if (!atTop) sc.scrollTop += block.getBoundingClientRect().height + parseFloat(getComputedStyle(frame.root).rowGap || 0);
+    const h = block.getBoundingClientRect().height + parseFloat(getComputedStyle(frame.root).rowGap || 0);
+    if (!atTop) sc.scrollTop += h;
+    else {
+      for (const n of under) anim(n, [{ transform: `translateY(${-h}px)`, opacity: 1 }, { transform: `translateY(${-h + 48}px)`, opacity: 0 }], { duration: M.OUT_MS + 70, easing: M.EASE_LEAVE });
+      [...block.children].slice(0, 4).forEach((room, i) => anim(room, [{ opacity: 0, transform: 'translateY(10px)' }, { opacity: 1, transform: 'none' }], { duration: M.CASCADE_MS + 40, delay: M.OUT_MS + 40 + i * (M.STAGGER_MS + 25), easing: M.EASE_ARRIVE, fill: 'backwards' }));
+    }
     paintTabs(frame);
     slideTabs(frame, before);
     for (const tab of frame.el.querySelectorAll('.tab-yours, .tab-week')) {
       anim(tab, [{ opacity: 0, transform: 'translateX(-6px)' }, { opacity: 1, transform: 'none' }], { duration: M.CASCADE_MS, delay: M.STAGGER_MS, easing: M.EASE_ARRIVE, fill: 'backwards' });
-    }
-    if (atTop) {
-      // The wall below slides down to make room, and the rooms of the new tab
-      // rise in a beat apart.
-      const h = block.getBoundingClientRect().height;
-      for (const n of [...frame.root.children].slice(1, 3)) anim(n, [{ transform: `translateY(${-h}px)` }, { transform: 'none' }], { duration: M.REFRESH_MS + 80, easing: M.EASE_ARRIVE });
-      [...block.children].slice(0, 5).forEach((room, i) => anim(room, [{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }], { duration: M.CASCADE_MS + 40, delay: 120 + i * (M.STAGGER_MS + 20), easing: M.EASE_ARRIVE, fill: 'backwards' }));
+      const dot = tab.querySelector('.tab-dot');
+      if (dot) anim(dot, [{ transform: 'scale(0)', opacity: 0 }, { transform: 'scale(1.5)', opacity: 1, offset: 0.6 }, { transform: 'none', opacity: 1 }], { duration: M.GROW_MS + 120, delay: M.STAGGER_MS + M.CASCADE_MS, easing: M.EASE_ARRIVE, fill: 'backwards' });
     }
     spy(frame);
   }

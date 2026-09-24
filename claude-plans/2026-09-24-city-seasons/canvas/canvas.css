@@ -106,7 +106,7 @@ body { color: var(--text-body); font-family: var(--font-ui); -webkit-text-size-a
 .cv-muna { margin-top: 22px; }
 .mt-cap { color: var(--text-tertiary); font-size: var(--fs-micro); font-weight: 800; letter-spacing: var(--track-label); text-transform: uppercase; margin-bottom: 10px; }
 .mt-wrap { overflow-x: auto; scrollbar-width: thin; padding-bottom: 4px; }
-.mt { display: grid; grid-template-columns: 92px repeat(var(--cols), minmax(58px, 1fr)); row-gap: 0; min-width: 640px; max-width: 1080px; }
+.mt { display: grid; grid-template-columns: 92px repeat(var(--cols), minmax(62px, 1fr)); row-gap: 0; min-width: 700px; max-width: 1080px; }
 .mt > * { min-width: 0; }
 .mt-h { display: flex; flex-direction: column; gap: 1px; padding: 0 0 8px; border-bottom: 1px solid var(--hairline); }
 .mt-h .wd { color: var(--text-tertiary); font-size: 9.5px; font-weight: 800; letter-spacing: .1em; }
@@ -114,15 +114,15 @@ body { color: var(--text-body); font-family: var(--font-ui); -webkit-text-size-a
 .mt-h.gap, .mt-c.gap { color: var(--text-tertiary); font-size: 10px; font-weight: 700; text-align: center; letter-spacing: .04em;
                        background: repeating-linear-gradient(90deg, var(--hairline) 0 4px, transparent 4px 8px) center / 100% 1px no-repeat; }
 .mt-h.gap { background: none; justify-content: flex-end; padding-bottom: 9px; }
-.mt-k { color: var(--text-secondary); font-size: 11px; font-weight: 800; letter-spacing: .04em; padding: 9px 8px 9px 0; border-bottom: 1px solid var(--hairline); white-space: nowrap; }
+.mt-k { color: var(--text-secondary); font-size: 11px; font-weight: 800; letter-spacing: .04em; padding: 8px 8px 8px 0; border-bottom: 1px solid var(--hairline); white-space: nowrap; display: flex; align-items: center; }
 .mt-k.fact { color: var(--text-header); }
 .mt-k.miss { color: var(--text-tertiary); }
-.mt-c { display: flex; align-items: center; gap: 5px; padding: 9px 4px 9px 0; border-bottom: 1px solid var(--hairline); }
+.mt-c { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 4px; padding: 8px 6px 8px 0; border-bottom: 1px solid var(--hairline); min-height: 22px; }
 .mt-dot { width: 8px; height: 8px; border-radius: var(--r-pill); flex: none; }
 .mt-dot.fact { background: var(--text-header); }
 .mt-dot.a, .mt-dot.b, .mt-dot.c { background: rgb(var(--brand)); box-shadow: 0 0 6px rgba(var(--brand), .7); }
 .mt-dot.miss { border: 1.5px solid var(--text-tertiary); box-sizing: border-box; }
-.mt-t { color: var(--text-body); font-size: 11px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mt-t { color: var(--text-body); font-size: 11px; font-weight: 600; line-height: 1.25; }
 .mt-c:has(.mt-dot.miss) .mt-t { color: var(--text-tertiary); }
 
 /* ---- shows per month ----------------------------------------------------------- */
@@ -224,3 +224,12 @@ a.f-buy-link:hover { border-bottom-color: rgba(255, 255, 255, .75); }
 /* B: YOURS holds NOW's dot, still, while something in it is new to you. */
 .day-tab .tab-dot { display: inline-block; width: 5px; height: 5px; border-radius: var(--r-pill); margin-right: 5px; vertical-align: 2px;
                     background: rgb(var(--brand)); box-shadow: 0 0 5px rgba(var(--brand), .8); }
+
+/* On a phone the bar is one row that scrolls sideways, so it never takes a
+ * third of the screen. */
+@media (max-width: 719.98px) {
+  .cv-bar { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; gap: 14px; }
+  .cv-bar::-webkit-scrollbar { display: none; }
+  .cv-bar > * { flex: none; }
+  .cv-bar-gap { display: none; }
+}
