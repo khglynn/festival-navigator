@@ -1,0 +1,296 @@
+{
+  "collector": "sources-study-claude",
+  "fetchedAt": "2026-09-24",
+  "scope": {
+    "from": "2026-09-24",
+    "to": "2027-05-31"
+  },
+  "pages": [
+    {
+      "url": "https://continentalclub.com/robots.txt",
+      "how": "curl",
+      "ok": true,
+      "note": "Squarespace default; disallows /*?month=* and /*&month=* (the calendar block's own month-navigation query param) among others — so month navigation via URL was never attempted"
+    },
+    {
+      "url": "https://continentalclub.com/austin",
+      "how": "firecrawl",
+      "ok": true,
+      "note": "The venue's real nightly calendar (Squarespace calendar-block-renderer), renders as a full month grid, JS-required. Read via firecrawl markdown."
+    },
+    {
+      "url": "https://continentalclub.com/austin — next-month control",
+      "how": "firecrawl",
+      "ok": false,
+      "note": "Looked for a 'Next month' button via executeJavascript (querySelector across the page) and found none — the calendar widget appears to live inside an isolated context (likely an iframe) that a same-document JS query can't see. Combined with robots.txt disallowing the ?month= param, no respectful path to October 2026 and beyond was found on this pass."
+    },
+    {
+      "url": "https://continentalclub.com/austintickets",
+      "how": "curl",
+      "ok": true,
+      "note": "A SEPARATE, hand-curated page listing only the venue's bigger ticketed/Eventbrite shows (5 entries total, Aug 20-Sep 26 2026) — not a full calendar, but used to attach the one Eventbrite ticket link that falls in scope (RestFest 4, Sep 26)"
+    }
+  ],
+  "coverage": {
+    "complete": false,
+    "lastDateReached": "2026-09-30",
+    "why": "Only September 2026 (the month the calendar widget shows by default) could be read respectfully. The Continental Club books nightly — usually 2-3 sets a night, mostly local residencies with no individual ticket page — so this is a fundamentally different kind of source than the other three venues: high event VOLUME, low individual event DETAIL, and (so far) no automatable path past the current month without either violating robots.txt's ?month= disallow or finding the right way into the calendar widget's own navigation (possibly nested in an iframe; worth a real-browser follow-up rather than more firecrawl guessing). This is itself a finding for the sources study: whatever data source we pick for Continental Club will need month-by-month re-fetching on a schedule, not a one-shot read."
+  },
+  "events": [
+    {
+      "date": "2026-09-24",
+      "venue": "continental",
+      "venueRaw": "The Continental Club",
+      "title": "Return To Planet Casper with David Grissom, Roscoe Beck and Brannen Temple",
+      "artists": [
+        "Return To Planet Casper with David Grissom, Roscoe Beck and Brannen Temple"
+      ],
+      "url": "https://continentalclub.com/austin",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "6:30pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-24",
+      "venue": "continental",
+      "venueRaw": "The Continental Club",
+      "title": "Sean Wheeler & The Reluctant Messengers @10pm, Barfield, The Tyrant @11:45pm",
+      "artists": [
+        "Sean Wheeler & The Reluctant Messengers @10pm, Barfield, The Tyrant @11:45pm"
+      ],
+      "url": "https://continentalclub.com/austin",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "10:00pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-25",
+      "venue": "continental",
+      "venueRaw": "The Continental Club",
+      "title": "The Blues Specialists",
+      "artists": [
+        "The Blues Specialists"
+      ],
+      "url": "https://continentalclub.com/austin",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "6:30pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-25",
+      "venue": "continental",
+      "venueRaw": "The Continental Club",
+      "title": "Patricia Vonne album release @10pm, Mule Ears @11:30pm",
+      "artists": [
+        "Patricia Vonne album release @10pm, Mule Ears @11:30pm"
+      ],
+      "url": "https://continentalclub.com/austin",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "10:00pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-26",
+      "venue": "continental",
+      "venueRaw": "The Continental Club",
+      "title": "Earl Poole Ball",
+      "artists": [
+        "Earl Poole Ball"
+      ],
+      "url": "https://continentalclub.com/austin",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "3:30pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-26",
+      "venue": "continental",
+      "venueRaw": "The Continental Club",
+      "title": "Peterson Brothers Band",
+      "artists": [
+        "Peterson Brothers Band"
+      ],
+      "url": "https://continentalclub.com/austin",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "8:00pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-26",
+      "venue": "continental",
+      "venueRaw": "The Continental Club",
+      "title": "RestFest 4 - Restos album release!",
+      "artists": [
+        "RestFest 4 - Restos album release!"
+      ],
+      "url": "https://continentalclub.com/austin",
+      "ticketUrl": "https://www.eventbrite.com/e/restfest-4-restos-release-party-tickets-1996425103226?aff=oddtdtcreator",
+      "ticketer": "eventbrite",
+      "status": "scheduled",
+      "time": "10:15pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-27",
+      "venue": "continental",
+      "venueRaw": "The Continental Club",
+      "title": "Marshall Hood",
+      "artists": [
+        "Marshall Hood"
+      ],
+      "url": "https://continentalclub.com/austin",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "2:30pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-27",
+      "venue": "continental",
+      "venueRaw": "The Continental Club",
+      "title": "Heybale",
+      "artists": [
+        "Heybale"
+      ],
+      "url": "https://continentalclub.com/austin",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "6:30pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-27",
+      "venue": "continental",
+      "venueRaw": "The Continental Club",
+      "title": "Willie Pipkin & Friends",
+      "artists": [
+        "Willie Pipkin & Friends"
+      ],
+      "url": "https://continentalclub.com/austin",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "9:30pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-28",
+      "venue": "continental",
+      "venueRaw": "The Continental Club",
+      "title": "Eve Monsees & Mike Buck",
+      "artists": [
+        "Eve Monsees & Mike Buck"
+      ],
+      "url": "https://continentalclub.com/austin",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "6:30pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-28",
+      "venue": "continental",
+      "venueRaw": "The Continental Club",
+      "title": "Johnny McGowan's Rugged Gents",
+      "artists": [
+        "Johnny McGowan's Rugged Gents"
+      ],
+      "url": "https://continentalclub.com/austin",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "10:00pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-29",
+      "venue": "continental",
+      "venueRaw": "The Continental Club",
+      "title": "Jennifer Foster & The Audacity",
+      "artists": [
+        "Jennifer Foster & The Audacity"
+      ],
+      "url": "https://continentalclub.com/austin",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "6:30pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-29",
+      "venue": "continental",
+      "venueRaw": "The Continental Club",
+      "title": "Paul Val",
+      "artists": [
+        "Paul Val"
+      ],
+      "url": "https://continentalclub.com/austin",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "10:00pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-30",
+      "venue": "continental",
+      "venueRaw": "The Continental Club",
+      "title": "Louisiana Surf Department",
+      "artists": [
+        "Louisiana Surf Department"
+      ],
+      "url": "https://continentalclub.com/austin",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "10:30pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    }
+  ]
+}

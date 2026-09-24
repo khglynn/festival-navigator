@@ -1,0 +1,670 @@
+{
+  "collector": "sources-study-claude",
+  "fetchedAt": "2026-09-24",
+  "scope": {
+    "from": "2026-09-24",
+    "to": "2027-05-31"
+  },
+  "pages": [
+    {
+      "url": "https://antonesnightclub.com/robots.txt",
+      "how": "curl",
+      "ok": true,
+      "note": "Disallows /calendar/action* and /events/action* (the likely AJAX endpoints behind the month-nav widget) and any URL with a query string; these were never fetched directly"
+    },
+    {
+      "url": "https://antonesnightclub.com",
+      "how": "curl",
+      "ok": true,
+      "note": "WordPress site, 'tm-event' custom post type per show (Ticketmaster-integrated), no schema.org Event JSON-LD anywhere on the site"
+    },
+    {
+      "url": "https://antonesnightclub.com/calendar/",
+      "how": "firecrawl",
+      "ok": true,
+      "note": "JS-rendered month calendar widget (The Events Calendar-style). Read via firecrawl with click actions on the '#mobile-next-btn' Next Month control, one click per month, to walk forward from September 2026"
+    },
+    {
+      "url": "https://antonesnightclub.com (sitewide map)",
+      "how": "firecrawl",
+      "ok": true,
+      "note": "firecrawl_map of /tm-event/ pages returned a mixed bag of past AND future show pages (some from Feb/Mar 2026, already past) confirming the site does not delete old event pages; NOT used as the event source, only to confirm the calendar widget was the right read"
+    }
+  ],
+  "coverage": {
+    "complete": true,
+    "lastDateReached": "2027-01-31",
+    "why": "Walked the calendar month-by-month via the venue's own 'Next Month' control, September 2026 through February 2027. February 2027 renders with zero events on the day grid, and a further click did not advance past February (the button became a no-op) — so we stopped there rather than force navigation. The AJAX endpoint the widget calls to fetch new months (/calendar/action*) is explicitly disallowed in robots.txt, so it was never queried directly either. Last real event found: Sons of Cream, Jan 31, 2027. Nothing is booked for Feb-May 2027 as of the scrape date; that's expected for a room this size booking a few months out, not a reading failure — but it does mean Antone's spring 2027 will need a re-check closer to the season."
+  },
+  "events": [
+    {
+      "date": "2026-09-24",
+      "venue": "antones",
+      "venueRaw": "Antone's Nightclub",
+      "title": "Chicago Bound Album Release Party feat. Lurrie Bell, Anson Funderburgh, CC Adcock, Ivan Neville, Derek O'Brien, Young Rell Davenport, Ernie Johnson, The Texas Horns & More",
+      "artists": [
+        "Chicago Bound Album Release Party feat. Lurrie Bell, Anson Funderburgh, CC Adcock, Ivan Neville, Derek O'Brien, Young Rell Davenport, Ernie Johnson, The Texas Horns & More"
+      ],
+      "url": "https://antonesnightclub.com/calendar/",
+      "ticketUrl": "https://www.ticketmaster.com/chicago-bound-album-release-party-austin-texas-09-24-2026/event/3A0065120B876707",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-25",
+      "venue": "antones",
+      "venueRaw": "Antone's Nightclub",
+      "title": "Guided Full Venue History Tour (60 Minutes)",
+      "artists": [
+        "Guided Full Venue History Tour (60 Minutes)"
+      ],
+      "url": "https://antonesnightclub.com/calendar/",
+      "ticketUrl": "https://www.ticketmaster.com/guided-full-venue-history-tour-60-austin-texas-09-25-2026/event/3A00652AD378A530",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "1:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "non-music? — venue history walking tour"
+    },
+    {
+      "date": "2026-09-25",
+      "venue": "antones",
+      "venueRaw": "Antone's Nightclub",
+      "title": "Wolf Zapata w/ Very Special Guests & Elle Bramhall",
+      "artists": [
+        "Wolf Zapata"
+      ],
+      "url": "https://antonesnightclub.com/calendar/",
+      "ticketUrl": "https://www.ticketmaster.com/wolf-zapata-w-very-special-guests-austin-texas-09-25-2026/event/3A006513DB792D86",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "10:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-26",
+      "venue": "antones",
+      "venueRaw": "Antone's Nightclub",
+      "title": "Ariel Posen: The Bannatyne Tour w/ Zach Person",
+      "artists": [
+        "Ariel Posen"
+      ],
+      "url": "https://antonesnightclub.com/calendar/",
+      "ticketUrl": "https://www.ticketmaster.com/ariel-posen-w-zach-person-austin-texas-09-26-2026/event/3A00647DDE5594AA",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-26",
+      "venue": "antones",
+      "venueRaw": "Antone's Nightclub",
+      "title": "LATE: Joe Marcinek's Dead Funk Summit ft. George Porter Jr., Nikki Glaspie, Peter Levin, Zack Morgan & More",
+      "artists": [
+        "LATE"
+      ],
+      "url": "https://antonesnightclub.com/calendar/",
+      "ticketUrl": "https://www.ticketmaster.com/joe-marcineks-dead-funk-summit-austin-texas-09-26-2026/event/3A006513D9F92A9C",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "11:59 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-28",
+      "venue": "antones",
+      "venueRaw": "Antone's Nightclub",
+      "title": "Emmaline: Sinatra, My Sweetheart Tour",
+      "artists": [
+        "Emmaline"
+      ],
+      "url": "https://antonesnightclub.com/calendar/",
+      "ticketUrl": "https://www.ticketmaster.com/emmaline-sinatra-my-sweetheart-tour-austin-texas-09-28-2026/event/3A0064DD376CB32B",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-29",
+      "venue": "antones",
+      "venueRaw": "Antone's Nightclub",
+      "title": "Don Was & the Pan-Detroit Ensemble Celebrate the 50th Anniversary of Blues for Allah (NIGHT ONE)",
+      "artists": [
+        "Don Was & the Pan-Detroit Ensemble Celebrate the 50th Anniversary of Blues for Allah (NIGHT ONE)"
+      ],
+      "url": "https://antonesnightclub.com/calendar/",
+      "ticketUrl": "https://www.ticketmaster.com/don-was-and-the-pandetroit-ensemble-austin-texas-09-29-2026/event/3A0064F0209B192A",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-30",
+      "venue": "antones",
+      "venueRaw": "Antone's Nightclub",
+      "title": "Don Was & the Pan-Detroit Ensemble Celebrate the 50th Anniversary of Blues for Allah (NIGHT TWO)",
+      "artists": [
+        "Don Was & the Pan-Detroit Ensemble Celebrate the 50th Anniversary of Blues for Allah (NIGHT TWO)"
+      ],
+      "url": "https://antonesnightclub.com/calendar/",
+      "ticketUrl": "https://www.ticketmaster.com/don-was-and-the-pandetroit-ensemble-austin-texas-09-30-2026/event/3A0064F0209D192C",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-01",
+      "venue": "antones",
+      "venueRaw": "Antone's Nightclub",
+      "title": "Dana and Alden: Papa's Boat Tour w/ Ania Hoo",
+      "artists": [
+        "Dana and Alden"
+      ],
+      "url": "https://antonesnightclub.com/calendar/",
+      "ticketUrl": "https://www.ticketmaster.com/dana-and-alden-w-ania-hoo-austin-texas-10-01-2026/event/3A0064BEFD714D1B",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-02",
+      "venue": "antones",
+      "venueRaw": "Antone's Nightclub",
+      "title": "Official 2026 ACL Fest Nights: Night Tapes",
+      "artists": [
+        "Official 2026 ACL Fest Nights"
+      ],
+      "url": "https://antonesnightclub.com/calendar/",
+      "ticketUrl": "https://www.ticketmaster.com/official-2026-acl-fest-nights-night-austin-texas-10-02-2026/event/3A0064FCCB41EA73",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "10:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-04",
+      "venue": "antones",
+      "venueRaw": "Antone's Nightclub",
+      "title": "Official 2026 ACL Fest Nights: Rochelle Jordan w/ Stefon Osae",
+      "artists": [
+        "Official 2026 ACL Fest Nights"
+      ],
+      "url": "https://antonesnightclub.com/calendar/",
+      "ticketUrl": "https://www.ticketmaster.com/official-2026-acl-fest-nights-rochelle-austin-texas-10-04-2026/event/3A0064FCCD9EEE20",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "10:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-05",
+      "venue": "antones",
+      "venueRaw": "Antone's Nightclub",
+      "title": "Love for Lazy Lester: Jimmie Vaughan, Mark Hummel, Anson Funderburgh, Wes Starr, Johnny Nicholas, Mike Morgan, Mike Buck, Eve Monsees, Josh Fulero & More",
+      "artists": [
+        "Love for Lazy Lester"
+      ],
+      "url": "https://antonesnightclub.com/calendar/",
+      "ticketUrl": "https://www.ticketmaster.com/love-for-lazy-lester-austin-texas-10-05-2026/event/3A0064E9A902B453",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-07",
+      "venue": "antones",
+      "venueRaw": "Antone's Nightclub",
+      "title": "LAUNDRY DAY Presents: The Larger Than LIFE Tour w/ Illusion Hills",
+      "artists": [
+        "LAUNDRY DAY Presents"
+      ],
+      "url": "https://antonesnightclub.com/calendar/",
+      "ticketUrl": "https://www.ticketmaster.com/laundry-day-presents-the-larger-than-austin-texas-10-07-2026/event/3A0064ACBA94C6B6",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-08",
+      "venue": "antones",
+      "venueRaw": "Antone's Nightclub",
+      "title": "Official 2026 ACL Fest Nights: World Famous Pets w/ Elijah Delgado",
+      "artists": [
+        "Official 2026 ACL Fest Nights"
+      ],
+      "url": "https://antonesnightclub.com/calendar/",
+      "ticketUrl": "https://www.ticketmaster.com/official-2026-acl-fest-nights-world-austin-texas-10-08-2026/event/3A0064FCD21AF513",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-09",
+      "venue": "antones",
+      "venueRaw": "Antone's Nightclub",
+      "title": "Guided Full Venue History Tour (60 Minutes)",
+      "artists": [
+        "Guided Full Venue History Tour (60 Minutes)"
+      ],
+      "url": "https://antonesnightclub.com/calendar/",
+      "ticketUrl": "https://www.ticketmaster.com/guided-full-venue-history-tour-60-austin-texas-10-09-2026/event/3A00652AD37AA541",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "2:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "non-music? — venue history walking tour"
+    },
+    {
+      "date": "2026-10-09",
+      "venue": "antones",
+      "venueRaw": "Antone's Nightclub",
+      "title": "Z-Ro w/ Quiet Money Dot, Sunnitharapper, J Soulja & DJ Rapid Ric",
+      "artists": [
+        "Z-Ro"
+      ],
+      "url": "https://antonesnightclub.com/calendar/",
+      "ticketUrl": "https://www.ticketmaster.com/zro-w-quiet-money-dot-sunnitharapper-austin-texas-10-09-2026/event/3A00651FF501AFD2",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "10:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-10",
+      "venue": "antones",
+      "venueRaw": "Antone's Nightclub",
+      "title": "Official 2026 ACL Fest Nights: Don West w/ Kesmar",
+      "artists": [
+        "Official 2026 ACL Fest Nights"
+      ],
+      "url": "https://antonesnightclub.com/calendar/",
+      "ticketUrl": "https://www.ticketmaster.com/official-2026-acl-fest-nights-don-austin-texas-10-10-2026/event/3A0064FCCFDBF196",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "10:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-13",
+      "venue": "antones",
+      "venueRaw": "Antone's Nightclub",
+      "title": "Arrows in Action: I Think We've Toured Here Before w/ Good Boy Daisy & Instant Crush",
+      "artists": [
+        "Arrows in Action"
+      ],
+      "url": "https://antonesnightclub.com/calendar/",
+      "ticketUrl": "https://www.ticketmaster.com/arrows-in-action-i-think-weve-austin-texas-10-13-2026/event/3A0064A6CECA44F7",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "7:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-14",
+      "venue": "antones",
+      "venueRaw": "Antone's Nightclub",
+      "title": "Horse Jumper of Love w/ Dead Sullivan & Amelia's Best Friend",
+      "artists": [
+        "Horse Jumper of Love"
+      ],
+      "url": "https://antonesnightclub.com/calendar/",
+      "ticketUrl": "https://www.ticketmaster.com/horse-jumper-of-love-w-dead-austin-texas-10-14-2026/event/3A0064DDAAD6A842",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-15",
+      "venue": "antones",
+      "venueRaw": "Antone's Nightclub",
+      "title": "LØLØ - God Forbid a Girl Goes on Tour w/ Mylie Taylor & Sydney Sherrill",
+      "artists": [
+        "LØLØ - God Forbid a Girl Goes on Tour"
+      ],
+      "url": "https://antonesnightclub.com/calendar/",
+      "ticketUrl": "https://www.ticketmaster.com/ll-god-forbid-a-girl-goes-austin-texas-10-15-2026/event/3A0064A6DE6874C6",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-16",
+      "venue": "antones",
+      "venueRaw": "Antone's Nightclub",
+      "title": "KUTX Presents: Devon Gilfillian – Time Will Tell Tour w/ Jon Muq",
+      "artists": [
+        "KUTX Presents"
+      ],
+      "url": "https://antonesnightclub.com/calendar/",
+      "ticketUrl": "https://www.ticketmaster.com/kutx-presents-devon-gilfilliantime-will-tell-austin-texas-10-16-2026/event/3A0064A6EEF3A79C",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-17",
+      "venue": "antones",
+      "venueRaw": "Antone's Nightclub",
+      "title": "Michigander w/ Chapel",
+      "artists": [
+        "Michigander"
+      ],
+      "url": "https://antonesnightclub.com/calendar/",
+      "ticketUrl": "https://www.ticketmaster.com/michigander-w-chapel-austin-texas-10-17-2026/event/3A0064A43A9D9486",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-22",
+      "venue": "antones",
+      "venueRaw": "Antone's Nightclub",
+      "title": "The Jungle Giants w/ Morning Silk",
+      "artists": [
+        "The Jungle Giants"
+      ],
+      "url": "https://antonesnightclub.com/calendar/",
+      "ticketUrl": "https://www.ticketmaster.com/the-jungle-giants-w-morning-silk-austin-texas-10-22-2026/event/3A0064AF0B1A8172",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-28",
+      "venue": "antones",
+      "venueRaw": "Antone's Nightclub",
+      "title": "Chasing Abbey",
+      "artists": [
+        "Chasing Abbey"
+      ],
+      "url": "https://antonesnightclub.com/calendar/",
+      "ticketUrl": "https://www.ticketmaster.com/chasing-abbey-austin-texas-10-28-2026/event/3A0064662624D748",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-29",
+      "venue": "antones",
+      "venueRaw": "Antone's Nightclub",
+      "title": "Zilker Sessions V ft. The Droptines & Angel White",
+      "artists": [
+        "Zilker Sessions V ft. The Droptines & Angel White"
+      ],
+      "url": "https://antonesnightclub.com/calendar/",
+      "ticketUrl": "https://partiful.com/e/OmG5pP6XA4dtVwFtIV10",
+      "ticketer": "other:partiful.com",
+      "status": "scheduled",
+      "time": "7:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "free show, RSVP via Partiful, no formal ticket"
+    },
+    {
+      "date": "2026-10-31",
+      "venue": "antones",
+      "venueRaw": "Antone's Nightclub",
+      "title": "Kennedy Ryon: The Can We Evolve? Tour",
+      "artists": [
+        "Kennedy Ryon"
+      ],
+      "url": "https://antonesnightclub.com/calendar/",
+      "ticketUrl": "https://www.ticketmaster.com/kennedy-ryon-the-can-we-evolve-austin-texas-10-31-2026/event/3A0064FCBC53CD15",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-01",
+      "venue": "antones",
+      "venueRaw": "Antone's Nightclub",
+      "title": "the olllam",
+      "artists": [
+        "the olllam"
+      ],
+      "url": "https://antonesnightclub.com/calendar/",
+      "ticketUrl": "https://www.ticketmaster.com/the-olllam-austin-texas-12-01-2026/event/3A006505CA0ABDB3",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-03",
+      "venue": "antones",
+      "venueRaw": "Antone's Nightclub",
+      "title": "Under The Rock & SIMS w/ West Texas Exiles, Louisiana Surf Department & Caroline Hale",
+      "artists": [
+        "Under The Rock & SIMS"
+      ],
+      "url": "https://antonesnightclub.com/calendar/",
+      "ticketUrl": "https://boxoffice.goodwolflive.com/e/under-the-rock-antones",
+      "ticketer": "other:goodwolflive.com",
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-06",
+      "venue": "antones",
+      "venueRaw": "Antone's Nightclub",
+      "title": "DJ Paul of Three 6 Mafia: Crunk Gods Tour w/ DJ Montay, Los Kemet, TTBBY, Stockz & DJ Hella Yella",
+      "artists": [
+        "DJ Paul of Three 6 Mafia"
+      ],
+      "url": "https://antonesnightclub.com/calendar/",
+      "ticketUrl": "https://www.ticketmaster.com/dj-paul-of-three-6-mafia-austin-texas-12-06-2026/event/3A0064D6E006194D",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-10",
+      "venue": "antones",
+      "venueRaw": "Antone's Nightclub",
+      "title": "Venna",
+      "artists": [
+        "Venna"
+      ],
+      "url": "https://antonesnightclub.com/calendar/",
+      "ticketUrl": "https://www.ticketmaster.com/venna-austin-texas-12-10-2026/event/3A006505C80EBA86",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-11",
+      "venue": "antones",
+      "venueRaw": "Antone's Nightclub",
+      "title": "Joshua Ray Walker",
+      "artists": [
+        "Joshua Ray Walker"
+      ],
+      "url": "https://antonesnightclub.com/calendar/",
+      "ticketUrl": "https://www.ticketmaster.com/joshua-ray-walker-austin-texas-12-11-2026/event/3A0064EDDF80C037",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-17",
+      "venue": "antones",
+      "venueRaw": "Antone's Nightclub",
+      "title": "Tanner Usrey w/ Cam Allen",
+      "artists": [
+        "Tanner Usrey"
+      ],
+      "url": "https://antonesnightclub.com/calendar/",
+      "ticketUrl": "https://www.ticketmaster.com/tanner-usrey-w-cam-allen-austin-texas-12-17-2026/event/3A00650FEB5EF883",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-30",
+      "venue": "antones",
+      "venueRaw": "Antone's Nightclub",
+      "title": "Bob Schneider",
+      "artists": [
+        "Bob Schneider"
+      ],
+      "url": "https://antonesnightclub.com/calendar/",
+      "ticketUrl": "https://www.ticketmaster.com/bob-schneider-austin-texas-12-30-2026/event/3A006530D34A3780",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-31",
+      "venue": "antones",
+      "venueRaw": "Antone's Nightclub",
+      "title": "Magoo",
+      "artists": [
+        "Magoo"
+      ],
+      "url": "https://antonesnightclub.com/calendar/",
+      "ticketUrl": "https://www.ticketmaster.com/magoo-austin-texas-12-31-2026/event/3A00652AD679B71B",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2027-01-08",
+      "venue": "antones",
+      "venueRaw": "Antone's Nightclub",
+      "title": "Rob Baird Birthday Bash",
+      "artists": [
+        "Rob Baird Birthday Bash"
+      ],
+      "url": "https://antonesnightclub.com/calendar/",
+      "ticketUrl": "https://www.ticketmaster.com/rob-baird-birthday-bash-austin-texas-01-08-2027/event/3A0064FBE21DF89B",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2027-01-15",
+      "venue": "antones",
+      "venueRaw": "Antone's Nightclub",
+      "title": "The Jazz Room: A Frank Sinatra & Louis Armstrong Tribute",
+      "artists": [
+        "The Jazz Room"
+      ],
+      "url": "https://antonesnightclub.com/calendar/",
+      "ticketUrl": "https://feverup.com/m/391606",
+      "ticketer": "other:feverup.com",
+      "status": "scheduled",
+      "time": "6:30pm (also 8:30pm show)",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "two showtimes 6:30pm and 8:30pm; only 6:30pm date recorded, page states both"
+    },
+    {
+      "date": "2027-01-31",
+      "venue": "antones",
+      "venueRaw": "Antone's Nightclub",
+      "title": "Sons of Cream",
+      "artists": [
+        "Sons of Cream"
+      ],
+      "url": "https://antonesnightclub.com/calendar/",
+      "ticketUrl": "https://www.ticketmaster.com/sons-of-cream-austin-texas-01-31-2027/event/3A00652AD793BA8E",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    }
+  ]
+}
