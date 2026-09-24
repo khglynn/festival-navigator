@@ -154,3 +154,13 @@ test('the ticker is enough: as the line and the marks move, NOW’s answer follo
   assert.equal(l && l.kind, 'line', 'the same wall, ticked into the evening');
   root.remove();
 });
+
+test('past midnight is still Saturday night: Ross at 1:15 AM lands on his must in SAT AFTERS', () => {
+  const at = pt('2026-09-27T01:15:00'); // the calendar says Sunday; the festival night says Saturday
+  const { root, ctx } = render(at, ['Ross']);
+  const l = nowLanding(root, ctx, at);
+  assert.equal(artistOf(l), 'Fcukers', 'his must, playing at ~1 AM');
+  assert.equal(l.card.closest('.day-block').dataset.day, 'Saturday', 'under Saturday, where the night belongs');
+  assert.equal(l.line, null);
+  root.remove();
+});
