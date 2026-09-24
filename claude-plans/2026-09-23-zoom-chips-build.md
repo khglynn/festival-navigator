@@ -136,6 +136,31 @@ Pre-existing since the bloom (2026-09-01); found by the new 320 contract.
    lime, aqua checked in screenshots); the wrong name-order comment is fixed.
 6. The solo vanish/regrow: motion case 1 (carried).
 
+## The second review round (independent Opus review of the motion, 2026-09-24)
+
+Nothing blocked: ten-tap bursts at 40–260ms in Chromium and WebKit at 390
+and 320 never showed a name twice or left anything behind. Two glitches,
+both confirmed in both engines, and a test gap:
+
+1. **Clear, then a quick re-pick flew from the wrong chip.** At MUST beside
+   Nhu, clear, re-pick within ~130ms: the ×1 chip shot ~180px out of Nhu's
+   chip. A browser reports a cancelled animation on the next frame, so the
+   clear's parked name was still in the row the re-pick's snapshot read.
+   Fixed twice over: `whoSettle()` takes every leftover down right after the
+   refresh cancels, and `whoSnapshot()` reads only the row's own pieces. The
+   jsdom stub's `cancel()` now reports late too — which turned an existing
+   zoom-motion test red with exactly this bug, the proof the old stub hid it.
+2. **A cut-off name showed in full while sliding.** `.f-nm.f-travel` lifted
+   the name's own clip; now it keeps it, and the bud sits inside the name's
+   padding so it never needed the lift.
+3. **The gap:** `tests/browser/zoom-chips-burst.test.mjs` — real taps 40–90ms
+   apart, sampled every frame; clear-then-re-pick at 0/40/80ms; a cut-off
+   name mid-move. Each new check fails on the code before this round.
+
+Watched both fixes in slow motion in Chromium and WebKit (frame strips in
+the session scratchpad, `chips-shots/review2/`): the ×1 chip grows in at its
+own place; "Bartholome…" stays cut off the whole way across.
+
 ## Log
 
 - Baseline on `f5b5907`: `npm test` 761 (760 pass, 1 skipped);
