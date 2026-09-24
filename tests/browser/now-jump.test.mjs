@@ -34,15 +34,36 @@ const SAT_9AM = new Date('2026-09-26T09:00:00-07:00');
 // set hours long, over by 9:45, so it never competes at 10:30.
 const SELECTIONS = { 'Milli Meng': { Ross: 3 }, Galen: { Ross: 1, Nhu: 2 }, Soulwax: { Nhu: 4 }, Prospa: { Nhu: 2, Kat: 3 }, Despacio: { Ross: 3 } };
 
-async function openApp({ width = 390, height = 844, touch = true, now = SAT_1030, fest = 'portola-2026', engine = browser } = {}) {
+async function openApp({ width = 390, height = 844, touch = true, now = SAT_1030, fest = 'portola-2026', engine = browser, wide = null } = {}) {
   const ctx = await engine.newContext({ viewport: { width, height }, hasTouch: touch, serviceWorkers: 'block' });
   const TOKEN = 'nowjumpcontract_0123456789'; // a made-up crew, never a real link
+  // `wide`: every glyph in the dock drawn this much wider than
+  // this engine draws it — a stand-in for an engine whose Inter and Anton
+  // are wider (CI's Linux Chromium put ACL's dock row 15px narrower than a
+  // Mac at every width, 2026-09-24; Android draws like Linux). The meter
+  // contract's trick, aimed at the dock.
+  if (wide) {
+    await ctx.addInitScript((w) => {
+      // Added to what each face already carries (the fest name's .04em).
+      const css = `.dock .day-tab, .dock .now-tab .word { letter-spacing: ${w} !important; }
+        .dock .fest-name { letter-spacing: calc(.04em + ${w}) !important; }`;
+      const add = () => { const st = document.createElement('style'); st.textContent = css; document.head.appendChild(st); };
+      if (document.head) add(); else document.addEventListener('DOMContentLoaded', add);
+    }, wide);
+  }
   await ctx.addInitScript(([t, f]) => {
     navigator.serviceWorker.register = () => Promise.resolve({ update: () => Promise.resolve() });
     localStorage.setItem('fn_crews_v3', JSON.stringify([{ token: t, name: 'Now' }]));
     localStorage.setItem(`fn_me_v3_${t}`, 'Kevin');
     localStorage.setItem(`fn_crew_fest_v3_${t}`, f);
     localStorage.setItem('fn_coach_v1', '1');
+    // Every scroll the app asks of the dock's days row, for a failure message.
+    window.__rowLog = [];
+    const scrollToWas = Element.prototype.scrollTo;
+    Element.prototype.scrollTo = function (...args) {
+      if (this.id === 'dock-days') window.__rowLog.push([Math.round(performance.now()), JSON.stringify(args[0]), this.scrollLeft, this.clientWidth, (this.querySelector('.active') || {}).textContent, (new Error().stack.split('\n')[3] || '').trim().replace(/https?:\/\/[^/]+/, '')]);
+      return scrollToWas.apply(this, args);
+    };
     // NOW's pulse, told apart from every other animation a card runs (a
     // picked card's aura, an arrival): a running scale on the card itself.
     window.__pulsing = (c) => c.getAnimations().some((a) => a.playState === 'running' && a.effect
@@ -358,6 +379,31 @@ test('Reduce Motion: NOW lands at once and nothing pulses; the live dot is still
   } finally { await ctx.close(); }
 });
 
+// The squeeze is NOW's to undo: when the last set ends and NOW leaves, the
+// days give back the room they claimed and the fest name is whole again.
+test('ACL at 305: NOW squeezes the fest name while live, and gives the room back when it leaves', { skip }, async () => {
+  const { ctx, page } = await openApp({ fest: 'acl-2026', width: 305, height: 640, now: new Date('2026-10-03T20:00:00-05:00') });
+  try {
+    await sleep(600);
+    const state = () => page.evaluate(() => {
+      const f = document.getElementById('dock-fest-name');
+      return {
+        now: !document.getElementById('dock-now').hidden, squeezed: document.getElementById('dock').classList.contains('squeezed'),
+        minWidth: document.getElementById('dock-days').style.minWidth, cut: f.scrollWidth > f.clientWidth + 1,
+      };
+    });
+    const live = await state();
+    assert.ok(live.now && live.squeezed && live.cut, `live: squeezed, the name cut: ${JSON.stringify(live)}`);
+    // Next morning, nothing on; the app re-reads the clock when the page is
+    // shown again (the minute ticker's other door).
+    await page.clock.setFixedTime(new Date('2026-10-04T09:00:00-05:00'));
+    await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+    await sleep(700); // NOW's quick exit
+    const after = await state();
+    assert.deepEqual(after, { now: false, squeezed: false, minWidth: '', cut: false }, 'NOW gone, the room given back, the name whole');
+  } finally { await ctx.close(); }
+});
+
 test('outside the live window there is no NOW (Saturday 9 AM)', { skip }, async () => {
   const { ctx, page, door } = await openApp({ now: SAT_9AM });
   try {
@@ -397,6 +443,10 @@ const dockFit = (page) => page.evaluate(() => {
     dot: !!now.querySelector('.live') && getComputedStyle(now.querySelector('.live')).display !== 'none',
     rowW: Math.round(r.width), active: on.dataset.day, activeWhole: a.left >= r.left - 1 && a.right <= r.right + 1,
     overflowing: row.classList.contains('overflowing'), clear: n.right <= r.left,
+    squeezed: document.getElementById('dock').classList.contains('squeezed'),
+    festRight: document.getElementById('dock-fest-wrap').getBoundingClientRect().right, innerWidth,
+    festCut: (() => { const f = document.getElementById('dock-fest-name'); return f.scrollWidth > f.clientWidth + 1; })(),
+    scrollLeft: row.scrollLeft, rowLog: window.__rowLog, at: Math.round(performance.now()),
     // Pixels of the other days inside the row, the fades included.
     others: Math.round([...row.children].filter((t) => t !== on).reduce((sum, t) => {
       const b = t.getBoundingClientRect();
@@ -405,31 +455,65 @@ const dockFit = (page) => page.evaluate(() => {
   };
 });
 const ACL_SAT = new Date('2026-10-03T20:00:00-05:00');
-for (const [fest, width, height, now, compact, glimpse] of [
-  ['portola-2026', 430, 932, SAT_1030, false, true],
-  ['portola-2026', 390, 844, SAT_1030, false, true],
-  ['portola-2026', 375, 667, SAT_1030, false, true],
-  ['portola-2026', 320, 640, SAT_1030, true, true],
-  ['acl-2026', 430, 932, ACL_SAT, false, true],
-  ['acl-2026', 390, 844, ACL_SAT, true, true],
-  ['acl-2026', 375, 667, ACL_SAT, true, true],
-  // ACL's long fest name leaves 51px even beside the dot: the day you are in
-  // stays in the row, and there is no room for more.
-  ['acl-2026', 320, 640, ACL_SAT, true, false],
-]) {
-  test(`${fest} at ${width}: NOW ${compact ? 'keeps only its dot' : 'keeps its word'}, and the day you are in stays whole`, { skip }, async () => {
-    const { ctx, page } = await openApp({ fest, width, height, now });
+// What NOW does at each width is asserted where the margin is wide; within a
+// few px of the threshold (Portola 375, ACL 430) the engine's glyph widths
+// decide — Linux draws Inter wider than a Mac — so there the CONTRACT is what
+// is checked: NOW keeps its word only with a real glimpse of the other days.
+for (const [fest, width, height, now, expect] of [
+  ['portola-2026', 430, 932, SAT_1030, 'word'],
+  ['portola-2026', 390, 844, SAT_1030, 'word'],
+  ['portola-2026', 375, 667, SAT_1030, 'either'],
+  ['portola-2026', 320, 640, SAT_1030, 'dot'],
+  ['acl-2026', 430, 932, ACL_SAT, 'either'],
+  ['acl-2026', 390, 844, ACL_SAT, 'dot'],
+  ['acl-2026', 375, 667, ACL_SAT, 'dot'],
+  // ACL's long fest name leaves 51px even beside the dot here (Linux draws
+  // Inter wider: 36px in CI, narrower than the day's tab): the day you are in
+  // stays whole, and there is no room for more. At 305 this engine is where
+  // CI is at 320 — the row claims its widest tab and the fest name gives way.
+  ['acl-2026', 320, 640, ACL_SAT, 'dot'],
+  ['acl-2026', 305, 640, ACL_SAT, 'dot'],
+]) for (const wide of [null, '0.7px']) {
+  // Each case twice: as this engine draws, and with every dock glyph 0.7px
+  // wider — which reproduces CI's Linux rows to the pixel (ACL beside the
+  // dot: 146 / 106 / 91 / 36 at 430 / 390 / 375 / 320). With wider glyphs
+  // only the contract is asserted: which form NOW takes is the engine's.
+  const want = wide ? 'either' : expect;
+  const says = { word: 'keeps its word', dot: 'keeps only its dot', either: 'keeps its word only with a real glimpse' }[want];
+  test(`${fest} at ${width}${wide ? ', glyphs wider (as Linux draws them)' : ''}: NOW ${says}, and the day you are in stays whole`, { skip }, async () => {
+    const { ctx, page } = await openApp({ fest, width, height, now, wide });
     try {
-      await sleep(400); // the day-of open's glide, and the row's scroll to the day it lit
+      // The day-of open lands, the scrollspy lights today, the row glides to
+      // centre it: wait for today to be lit and the row to rest. (On ACL the
+      // dock lights FRI 2 for about a second after the open before it finds
+      // SAT 3 — v86 does the same; flagged, not NOW's.)
+      // Polled from here, in real time: the page's own timers run on the
+      // pinned clock, which let an in-page poll "rest" 26ms into the glide.
+      const today = fest === 'acl-2026' ? 'Saturday|W1' : 'Saturday';
+      const read = () => page.evaluate(() => {
+        const row = document.getElementById('dock-days');
+        return `${(row.querySelector('.active') || {}).dataset?.day}|${row.scrollLeft}|${row.clientWidth}`;
+      });
+      let last = await read(), still = 0;
+      for (let i = 0; i < 80 && still < 4; i++) {
+        await sleep(100);
+        const cur = await read();
+        still = cur === last && cur.startsWith(`${today}|`) ? still + 1 : 0;
+        last = cur;
+      }
       const f = await dockFit(page);
       assert.ok(f.shown, 'something is live');
-      assert.equal(f.compact, compact, JSON.stringify(f));
+      if (want !== 'either') assert.equal(f.compact, want === 'dot', JSON.stringify(f));
       assert.ok(f.dot, 'the live dot, either way');
       assert.equal(f.label, 'Jump to what is playing now');
       assert.ok(f.clear, 'NOW never sits over the days');
       assert.ok(f.activeWhole, `the day you are in is whole in the row: ${JSON.stringify(f)}`);
       assert.ok(f.overflowing, 'a row that scrolls says so at its edges (re-read when NOW took its room)');
-      if (glimpse) assert.ok(f.others >= 12, `and a real glimpse of the other days: ${JSON.stringify(f)}`);
+      if (!f.compact) assert.ok(f.others >= 12, `the word only with a real glimpse of the other days: ${JSON.stringify(f)}`);
+      assert.ok(f.festRight <= f.innerWidth + 0.5, `the fest name stays on screen: ${JSON.stringify(f)}`);
+      if (f.squeezed) assert.ok(f.festCut, 'squeezed: the fest name is what gives way, with its ellipsis');
+      else assert.equal(f.festCut, false, 'otherwise the fest name is whole');
+      if (width === 305) assert.ok(f.squeezed, 'at 305 the days need the fest name to give way');
     } finally { await ctx.close(); }
   });
 }
