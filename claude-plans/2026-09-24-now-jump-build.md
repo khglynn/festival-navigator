@@ -80,11 +80,38 @@ The rules as built are MODEL-V4 §3d. This log is how they got there.
    days, the day you are in centred, the edges fading. That stays. What
    does not: a long fest name on a 320 dock (an iPhone on Display Zoom) —
    ACL's row would be 27px, narrower than one tab. There NOW keeps only its
-   dot in a faint ring (`fitNowTab`: when the row cannot hold its widest
-   tab plus 24px), and the row gets 51px, the day whole. Measured in the
-   full form every time, so the answer never feeds on itself; re-measured on
-   resize and when a late font lands. The compact dot's hit area takes the
-   gap on its right, not its left (the avatar's reach is there).
+   dot in a faint ring (`fitNowTab`), and the row gets 51px, the day whole.
+   Measured in the full form every time, so the answer never feeds on
+   itself; re-measured on resize and when a late font lands. The compact
+   dot's hit area takes the gap on its right, not its left (the avatar's
+   reach is there).
+   **Revised after the review:** the first threshold (widest tab + 24px)
+   left one lone day at Portola 320 and ACL 375. A neighbour only shows
+   once the room beside the centred day clears the 24px gap between tabs
+   AND the 18px edge fade, so NOW keeps its word while the row holds
+   widest + 2 × (gap + fade), both read from the row's CSS (`--row-fade` is
+   now the token the fade itself uses). The review suggested widest +
+   2 × 18 + 12; that is 24px a side — exactly the gap — so it still leaves
+   Portola 320 with its word and 4px of the other days. Measured (Chromium,
+   touch, NOW live; ACL on Sat Oct 3, a middle day — the first or last day
+   has all the slack on one side). "Other days" is how many px of them sit
+   inside the row, fades included:
+
+   | fest | width | NOW | with the word | with the dot |
+   |---|---|---|---|---|
+   | Portola | 430 | word | 198px row · 3 days whole · 88px of others | 222px · 4 whole · 106px |
+   | Portola | 390 | word | 158px · 1 whole + 2 glimpsed · 68px | 182px · 3 whole · 72px |
+   | Portola | 375 | word | 143px · 1 whole + 2 glimpsed · 59px | 167px · 2 whole · 68px |
+   | Portola | 320 | dot | 88px · 1 whole · 4px | 112px · 1 whole + 2 glimpsed · 28px |
+   | ACL | 430 | word | 137px · 1 whole + 2 glimpsed · 46px | 161px · 70px |
+   | ACL | 390 | dot | 97px · 1 whole · 6px | 121px · 1 whole + 2 glimpsed · 30px |
+   | ACL | 375 | dot | 82px · 1 whole · 0px | 106px · 1 whole + 2 glimpsed · 15px |
+   | ACL | 320 | dot | 27px · today 0% clear | 51px · today 35% clear, no others |
+
+   ACL at 320 is short of room with or without NOW: its dock name ("ACL
+   MUSIC FESTIVAL '26") takes 152px, and even beside the dot the edge fades
+   dim part of the day you are in. The fix for that is the name (a shorter
+   dock label for long names), which is Kevin's call, not NOW's.
 8. **How it works: no row.** Kevin's standing call is that the now line and
    the now mark need no lesson; `NOW` says what it does. If "highlight, then
    NOW" wants teaching, it is half a sentence on row 1 — his copy, his call.

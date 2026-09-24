@@ -471,8 +471,11 @@ button.room-head { cursor: pointer; }
 }
 /* Each edge fades only while there is something past it, so the last tab —
  * often the one you are standing in — is never the dim one. */
-.dock .days.more-left, .day-rail .rail-days.more-left { --fade-l: 18px; }
-.dock .days.more-right, .day-rail .rail-days.more-right { --fade-r: 18px; }
+/* How far a clipped edge fades: one number, which app.js fitNowTab reads too
+ * (a neighbour day is only seen once it clears the gap AND the fade). */
+.dock .days, .day-rail .rail-days { --row-fade: 18px; }
+.dock .days.more-left, .day-rail .rail-days.more-left { --fade-l: var(--row-fade); }
+.dock .days.more-right, .day-rail .rail-days.more-right { --fade-r: var(--row-fade); }
 .dock .day-tab { font-weight: 700; font-size: 12px; padding-bottom: 3px;
                  border-bottom: 2px solid transparent; color: var(--text-tertiary);
                  background: none; border-top: none; border-left: none; border-right: none;

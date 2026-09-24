@@ -454,20 +454,27 @@ function paintNowTabs(date = ctx.now || new Date()) {
   const live = !!nowLanding($('wall-root'), ctx, date);
   for (const id of NOW_TABS) { showNowTab($(id), live); fitNowTab($(id)); }
 }
-// The days keep room for the day you are in. On a phone the dock's days row
-// already scrolls (Portola's four overflow a 390 dock by a few px), and NOW
-// narrows it further — fine while the row still holds its widest tab and a
-// glimpse of a neighbour. Where it cannot (a long fest name at 320, i.e. an
-// iPhone on Display Zoom: ACL's row would be 27px), NOW keeps only its live
-// dot — still a button, still named "Jump to what is playing now". Measured
-// in the full form every time, so the answer never feeds on itself.
+// The days keep room for the day you are in AND a glimpse of the days either
+// side — the glimpse is what says the row scrolls. On a phone the dock's days
+// row already scrolls (Portola's four overflow a 390 dock by a few px), and
+// NOW narrows it further. With the day you are in centred, a neighbour shows
+// only once the room beside it clears the gap between tabs AND the edge fade
+// (the first cut counted neither and kept NOW's word with one lone day
+// showing: Portola at 320, ACL at 375 — review, 2026-09-24). Where the row is
+// shorter than that, NOW keeps only its live dot — still a button, still named
+// "Jump to what is playing now". Gap and fade are read from the row's own CSS
+// (`--row-fade` is the number the fade itself uses). Measured in the full form
+// every time, so the answer never feeds on itself.
 function fitNowTab(tab) {
   if (!tab || tab.hidden) return;
   tab.classList.remove('compact');
   const row = tab.nextElementSibling;
   if (!row || !row.children.length) return;
+  const css = getComputedStyle(row);
+  const gap = parseFloat(css.columnGap) || 0;
+  const fade = parseFloat(css.getPropertyValue('--row-fade')) || 0;
   const widest = Math.max(...[...row.children].map((t) => t.offsetWidth));
-  if (row.clientWidth < Math.min(row.scrollWidth, widest + 24)) tab.classList.add('compact');
+  if (row.clientWidth < Math.min(row.scrollWidth, widest + 2 * (gap + fade))) tab.classList.add('compact');
 }
 // The day tabs beside a NOW that came or went slide from where they were (a
 // FLIP: transform only, the layout is already done). Tab by tab, not the

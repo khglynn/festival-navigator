@@ -313,11 +313,14 @@ test('320: NOW fits the dock beside the days and the fest name, nothing overlapp
   } finally { await ctx.close(); }
 });
 
-// The dock's days keep the day you are in. They already scroll on a phone
-// (Portola's four overflow a 390 dock by a few px), and NOW narrows them —
-// fine while the row holds its widest tab and a glimpse of the next. A long
-// fest name on a 320 dock (an iPhone on Display Zoom) cannot: ACL's row
-// would be 27px, so there NOW keeps only its dot, and the day stays whole.
+// The dock's days keep the day you are in AND a glimpse of the days either
+// side — the glimpse is what says the row scrolls. They already scroll on a
+// phone (Portola's four overflow a 390 dock by a few px), and NOW narrows
+// them. A neighbour shows only once the room beside the centred day clears
+// the gap between tabs and the edge fade; short of that NOW keeps only its
+// dot (review, 2026-09-24: the first cut left one lone day at Portola 320
+// and ACL 375). ACL is measured on Saturday Oct 3, a day in the middle of
+// its row — the first or last day has all the slack on one side.
 const dockFit = (page) => page.evaluate(() => {
   const now = document.getElementById('dock-now');
   const row = document.getElementById('dock-days');
@@ -328,13 +331,25 @@ const dockFit = (page) => page.evaluate(() => {
     dot: !!now.querySelector('.live') && getComputedStyle(now.querySelector('.live')).display !== 'none',
     rowW: Math.round(r.width), active: on.dataset.day, activeWhole: a.left >= r.left - 1 && a.right <= r.right + 1,
     overflowing: row.classList.contains('overflowing'), clear: n.right <= r.left,
+    // Pixels of the other days inside the row, the fades included.
+    others: Math.round([...row.children].filter((t) => t !== on).reduce((sum, t) => {
+      const b = t.getBoundingClientRect();
+      return sum + Math.max(0, Math.min(b.right, r.right) - Math.max(b.left, r.left));
+    }, 0)),
   };
 });
-for (const [fest, width, height, now, compact] of [
-  ['portola-2026', 390, 844, SAT_1030, false],
-  ['portola-2026', 320, 640, SAT_1030, false],
-  ['acl-2026', 390, 844, new Date('2026-10-02T20:00:00-05:00'), false],
-  ['acl-2026', 320, 640, new Date('2026-10-02T20:00:00-05:00'), true],
+const ACL_SAT = new Date('2026-10-03T20:00:00-05:00');
+for (const [fest, width, height, now, compact, glimpse] of [
+  ['portola-2026', 430, 932, SAT_1030, false, true],
+  ['portola-2026', 390, 844, SAT_1030, false, true],
+  ['portola-2026', 375, 667, SAT_1030, false, true],
+  ['portola-2026', 320, 640, SAT_1030, true, true],
+  ['acl-2026', 430, 932, ACL_SAT, false, true],
+  ['acl-2026', 390, 844, ACL_SAT, true, true],
+  ['acl-2026', 375, 667, ACL_SAT, true, true],
+  // ACL's long fest name leaves 51px even beside the dot: the day you are in
+  // stays in the row, and there is no room for more.
+  ['acl-2026', 320, 640, ACL_SAT, true, false],
 ]) {
   test(`${fest} at ${width}: NOW ${compact ? 'keeps only its dot' : 'keeps its word'}, and the day you are in stays whole`, { skip }, async () => {
     const { ctx, page } = await openApp({ fest, width, height, now });
@@ -348,6 +363,7 @@ for (const [fest, width, height, now, compact] of [
       assert.ok(f.clear, 'NOW never sits over the days');
       assert.ok(f.activeWhole, `the day you are in is whole in the row: ${JSON.stringify(f)}`);
       assert.ok(f.overflowing, 'a row that scrolls says so at its edges (re-read when NOW took its room)');
+      if (glimpse) assert.ok(f.others >= 12, `and a real glimpse of the other days: ${JSON.stringify(f)}`);
     } finally { await ctx.close(); }
   });
 }
