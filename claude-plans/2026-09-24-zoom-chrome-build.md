@@ -103,6 +103,49 @@ growing out from under the strip, not as a jump; an ordinary bloom shows the
 same kind of peek for those frames — the resting card's edges beside the
 box, which starts at 70% of the zoom's width, narrower than the card.
 
+## The still-hand walk under load (2026-09-24) — a real trap, closed by the ceiling
+
+The NOW builder measured "NOW glides the wall under a still mouse" failing
+under parallel load (six copies at once): 7 of 24 on its build before its
+last round, 9 of 24 after — a Skepta zoom opened and the second click on NOW
+picked Skepta. It passed alone and in CI. The question was whether a slow
+machine hits a real race.
+
+1. **CPU throttling of the page does not reproduce it** (Chromium's
+   `Emulation.setCPUThrottlingRate` at 6x, 4 runs: 0 failures). The slowness
+   that matters is not the page's but the hand's.
+2. **A slow hand does, every time.** The test moves the mouse from the wall
+   up to NOW in six steps. Loaded, those steps come slower, and the pass
+   dwells on the card under the pointer longer than the hover intent — so
+   that card's zoom rightly grows (the timeline shows the real
+   `pointermove`s at new pixels that arm it; nothing in the still-hand rule
+   misfired). Before the ceiling, that zoom grew UP over the rail and covered
+   NOW, and the click aimed at NOW landed on the zoom: a pick of Skepta, a
+   cancelled act. Six steps 70ms apart, no load: **3 of 3 fail on the build
+   before the ceiling (`a95e782`), 0 of 3 on this branch**. A person moving
+   a mouse unhurriedly from a card to NOW does exactly this.
+3. **The ceiling closes it at the root**: a zoom never covers the rail or the
+   stage strip now, so the click reaches NOW, the zoom closes on the hand
+   leaving it, and nothing is picked. Six copies at once, 4 rounds: **5 of
+   24 fail on `a95e782`, 2 of 24 on this branch before the test fix** (both
+   "not vacuous: after the glide the still pointer is over a card" — the
+   test checked 1500ms after the click, and a loaded glide was still moving),
+   **0 of 24 after it**; the whole file six at once, twice: 12 of 12.
+4. **The test now waits on state**: the glide has ended when scrollY holds
+   for ten frames; a negative ("nothing grew") gets the hover intent's
+   window from there; a standing zoom is waited out (`zoomGone`) rather than
+   slept past. And the slow hand is its own case — the pass grows the card,
+   the zoom never covers the rail, the click lands on NOW — red on
+   `a95e782` ("a standing zoom never covers the rail: top 6, rail bottom
+   45"), green here, in Chromium and WebKit.
+
+Two other load flakes turned up while running the whole suite with other
+sessions loading this Mac (load average 40–100 on 12 cores) and were fixed
+the same way: the cold-open loader's "after a beat" is now the fade's own
+recorded delay, not the wall clock (`shell-contract`), and the meter's tap
+walk reads what each tap started, recorded as it starts, instead of
+sampling what still runs after a fixed 400ms (`meter-contract`).
+
 ## Walked
 
 Chromium and WebKit; mouse, a real touch hold (Chromium; WebKit via
