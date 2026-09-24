@@ -569,7 +569,9 @@ function seenBand(inGrid) {
 // across a grid where a highlighted person's picks sit in columns that do not
 // fit the screen together), and after the last back to the top. Scroll away
 // by hand, either way, and the next tap is a fresh "take me to now" — the
-// best answer again. One stop only: a repeat tap pulses in place.
+// best answer again. One stop only: a repeat tap pulses in place — while the
+// page still shows it; once the clock has walked it off screen, the tap
+// brings it back (wall.js nowStep).
 // What it lands on pulses (transform only; none under Reduce Motion or Low
 // Power): the highlighted person's picks in that stop, or the stop's NOW
 // cards; a line landing does not. A highlight with nothing on gets the quiet

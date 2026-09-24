@@ -1790,8 +1790,15 @@ export function stillThere(cycle, geo) {
 // the best answer's stop. A stop lands the same way every time it is reached
 // (its own landing, which shows every member — that is what made them one
 // stop); its lead is the answer when the stop holds it — the column a grid
-// slides to, the key the next tap starts from — else its top member. The one
-// stop, tapped again, stays where the last tap left it.
+// slides to, the key the next tap starts from — else its top member.
+//
+// The one stop, tapped again, stays where the last tap left it — while that
+// landing still shows it (every member, by showsAt). The clock moves a stop
+// without moving the page: tap at 3 PM, tap again at 7 PM, and the line has
+// walked four hours down the grid (at 320x568, 198px → 582px, under the dock
+// at 523). The page is exactly where NOW left it, so this was "still there",
+// and the old landing stood with the line off screen (Codex, 2026-09-24).
+// Now it lands afresh — the stop's own landing, as its first tap would.
 export function nowStep(plan, cycle, geo) {
   const { best, stops, bestAt } = plan;
   let at = -1;
@@ -1803,8 +1810,8 @@ export function nowStep(plan, cycle, geo) {
   if (fresh) at = bestAt;
   const stop = stops[at];
   const lead = stop.keys.includes(best.key) ? best : stop.members[0];
-  const again = !fresh && stops.length === 1;
-  return { fresh, at, stop, lead, target: again ? cycle.y : stop.target };
+  const stays = !fresh && stops.length === 1 && stop.members.every((m) => showsAt(m, cycle.y, geo));
+  return { fresh, at, stop, lead, target: stays ? cycle.y : stop.target };
 }
 
 // One room on a date: its head and body travel together, tagged with the key

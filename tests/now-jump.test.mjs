@@ -414,3 +414,45 @@ test('the next tap across a repaint: a page nobody moved keeps its cycle; a side
   assert.equal(stillThere(null, unmoved), false, 'no last tap, nothing to continue');
   again.remove();
 });
+
+// The one stop, tapped again, stays put — but only while it still shows the
+// stop. Codex's case (2026-09-24): 320x568, the festival's room only; a tap at
+// 3 PM, a tap at 7 PM. The page never moved, so the cycle held, and the old
+// landing stood while the line had walked 384px down the grid (198 → 582, the
+// dock's top at 523). A phone's geometry here: the band under the rail and the
+// stage strip down to the dock; the line at page y 1000 at 3 PM.
+test('one stop, tapped again: it stays while its landing still shows it; once the clock walks it off screen, the tap brings it back', () => {
+  const at3 = pt('2026-09-26T15:00:00');
+  const at7 = pt('2026-09-26T19:00:00');
+  const { root, ctx } = render(at3, [], { folded: ['Afters'] });
+  const line = root.querySelector('.times-grid[data-iso="2026-09-26"] .now-line');
+  const band = { top: 150, bottom: 523 };
+  const phone = (lineY, scrollY) => ({
+    scrollY, maxY: 100000, now: 0, gridLeft: () => null, band: () => band,
+    box: (el) => (el === line ? { top: lineY - scrollY, bottom: lineY - scrollY + 2, left: 60, right: 380 } : { top: 0, bottom: 0, left: 0, right: 0 }),
+  });
+  const g3 = phone(1000, 0);
+  const plan3 = nowStops(root, ctx, at3, g3);
+  assert.deepEqual(plan3.stops.map(namesOf), [['LINE']], 'at 3 PM only the line is live: one stop');
+  const first = nowStep(plan3, null, g3);
+  const third = band.top + (band.bottom - band.top) / 3;
+  assert.ok(Math.abs(1000 - first.target - third) < 1, 'the first tap puts the line a third of the way down');
+  const cycle = { lead: first.lead.key, y: first.target, grid: null, sl: 0, until: 0 };
+  // A minute later, the page untouched: the line moved 1.6px — still shown, so the tap stays.
+  const at301 = pt('2026-09-26T15:01:00');
+  positionNowLines(root, at301);
+  const g301 = phone(1001.6, first.target);
+  assert.equal(nowStep(nowStops(root, ctx, at301, g301), cycle, g301).target, cycle.y, 'still showing it: the repeat tap stays (and pulses in place)');
+  // 7 PM, the page untouched: four hours down the grid, under the dock.
+  positionNowLines(root, at7);
+  positionNowMarks(root, at7);
+  const g7 = phone(1000 + 384, first.target);
+  assert.ok(g7.box(line).top > band.bottom, `the line walked off screen: ${g7.box(line).top}px, the dock at ${band.bottom}`);
+  const plan7 = nowStops(root, ctx, at7, g7);
+  assert.equal(plan7.stops.length, 1, 'still one stop');
+  const next = nowStep(plan7, cycle, g7);
+  assert.equal(next.fresh, false, 'the page is where NOW left it — it is the same stop, tapped again');
+  assert.notEqual(next.target, cycle.y, 'but the old landing no longer shows it: the tap moves');
+  assert.ok(Math.abs(1384 - next.target - third) < 1, `the line comes back a third of the way down: ${1384 - next.target}`);
+  root.remove();
+});
