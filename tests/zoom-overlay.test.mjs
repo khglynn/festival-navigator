@@ -369,12 +369,19 @@ test('a card rendered under a resting pointer arms its hover intent one frame af
   // Feed the module's last-known mouse position, and answer elementFromPoint
   // with this card — the browser-truth the re-arm asks for (it never trusts
   // :hover: Safari's stale hover chains after DOM swaps grew far-away cards).
+  // The hand is ON the card when the repaint lands: its last real move was
+  // over the old node, whose identity (artist, occurrence, room) the fresh
+  // node shares. (A card of another identity born under a still hand waits
+  // for the hand to move — tests/zoom-still-hand.test.mjs.)
+  const wall = document.getElementById('wall-root');
+  wall.replaceChildren();
+  const old = renderCard('GRiZ', ctx, { occ: { day: 'Saturday', stage: null, time: null } });
+  wall.appendChild(old);
   const move = new dom.window.MouseEvent('pointermove', { bubbles: true, clientX: 40, clientY: 40 });
   Object.defineProperty(move, 'pointerType', { value: 'mouse' });
-  document.dispatchEvent(move);
+  old.dispatchEvent(move);
   const realEFP = document.elementFromPoint;
   try {
-    const wall = document.getElementById('wall-root');
     wall.replaceChildren();
     const card = renderCard('GRiZ', ctx, { occ: { day: 'Saturday', stage: null, time: null } });
     document.elementFromPoint = () => card;

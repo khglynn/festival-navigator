@@ -511,6 +511,24 @@ const exitingSlots = new Set(); // overlays still shrinking away — a NEW zoom 
 // Where the mouse last was — the only way to judge a zoom restored under a
 // hand that is not moving. One passive listener for the module's lifetime.
 let lastMouse = null;
+// The card the HAND is on: the card (or the zoom standing on it) under the
+// pointer the last time the mouse actually MOVED — its identity (cardKey),
+// so it survives the repaints that replace every node. Content that moves
+// under a still pointer is not the hand arriving (2026-09-24, the v87
+// review): a click on NOW glides the page, a day tab jumps it, a wheel or a
+// trackpad scrolls it, and the engines answer with boundary events at the
+// pointer's own pixel — Chromium even before it reports the scroll, WebKit
+// with a pointermove at that same pixel. Hover intent believed them, so
+// whatever card slid under the resting pointer grew over the rail and ate
+// the next click there as a pick (Skepta, cancelled, picked by a NOW tap).
+// So an entry at the pixel the hand last moved to arms a card only if the
+// hand was already on that card (a repaint swapping its node under a resting
+// hand, which must keep hovering); any other card waits for the hand to
+// actually move. The same shape as the touch ghost below: a pointer event is
+// only a hand when the hand is where it says.
+let handEl = null;
+let handCard = null;
+const stillHand = (e) => !!lastMouse && Math.abs(e.clientX - lastMouse.x) < 0.5 && Math.abs(e.clientY - lastMouse.y) < 0.5;
 // Which input the person used LAST — a key or a pointer. The keyboard route
 // (wireCardFocusZoom) opens on this, never on `:focus-visible`: measured in
 // Chrome 152 with real input (2026-09-02), a click focuses a card without the
@@ -554,7 +572,15 @@ if (typeof document !== 'undefined') {
       if (ghostly(e)) return; // the ghost is not where the mouse is
       touchAt = [];
     }
+    // A pointermove at the pixel the mouse already stood on is the engine
+    // restating the hand after the page moved under it (WebKit does, after a
+    // scroll), not the hand: it does not move the hand onto a new card.
+    const moved = !stillHand(e);
     lastMouse = { x: e.clientX, y: e.clientY };
+    if (moved) {
+      const on = isInsideZoom(zoomed, e.target) ? zoomed.el : (e.target.closest?.('.card[data-artist]') || null);
+      if (on !== handEl) { handEl = on; handCard = cardKey(on); }
+    }
     // The stay-away mark lifts the moment the mouse is over anything but the
     // card it put away — that card's node, the fresh node a repaint put in its
     // place, or a zoom standing on it.
@@ -1228,13 +1254,20 @@ export function wireCardZoom(el, artistName, ctx, { onOpenNotes = null, occ = nu
   // first REAL move over the card is the hand's entry (a trackpad nudged on
   // the card a finger just tapped still hovers it).
   let ghosted = false;
+  // Content slid this card under a still hand (see `handCard`): where it
+  // came to rest under the pointer. The first move AWAY from that pixel is
+  // the hand's entry — one small nudge on the card grows it as usual.
+  let slidAt = null;
   el.addEventListener('pointerenter', (e) => {
     if (e.pointerType !== 'mouse') return;
     if (ghostly(e)) { ghosted = true; return; }
+    if (stillHand(e) && cardKey(el) !== handCard) { slidAt = { x: e.clientX, y: e.clientY }; return; }
     arm();
   });
   el.addEventListener('pointermove', (e) => {
-    if (ghosted && e.pointerType === 'mouse' && !ghostly(e)) { ghosted = false; arm(); }
+    if (e.pointerType !== 'mouse') return;
+    if (ghosted && !ghostly(e)) { ghosted = false; arm(); return; }
+    if (slidAt && (Math.abs(e.clientX - slidAt.x) >= 0.5 || Math.abs(e.clientY - slidAt.y) >= 0.5)) { slidAt = null; arm(); }
   }, { passive: true });
   // A card born UNDER a resting pointer never hears pointerenter — the wall
   // repaints on every sync echo and refreshCard swaps the node under a pick,
@@ -1245,14 +1278,18 @@ export function wireCardZoom(el, artistName, ctx, { onOpenNotes = null, occ = nu
   // check asks elementFromPoint under the LAST KNOWN mouse position, never
   // :hover — Safari is notorious for stale :hover chains after DOM swaps,
   // and a stale match here would grow cards the pointer is nowhere near.
+  // Only the card the hand was ON: a repaint swapping that card's node keeps
+  // it hovering, but a different card that a scroll or a relayout brought
+  // under the still pointer waits for the hand to move (`handCard`).
   requestAnimationFrame(() => {
     if (!el.isConnected || touchAt.length) return; // a finger was the last hand here, not a resting mouse
     const under = underMouse();
-    if (under && el.contains(under)) arm();
+    if (under && el.contains(under) && cardKey(el) === handCard) arm();
   });
   el.addEventListener('pointerleave', (e) => {
     if (e.pointerType !== 'mouse') return;
     ghosted = false;
+    slidAt = null;
     if (inT) { clearTimeout(inT); inT = null; }
   });
 }
