@@ -343,14 +343,18 @@ time bar." Build log: `claude-plans/2026-09-24-now-jump-build.md`.
   its grid's hours, and every NOW-marked stack card. Each is landed as the
   first tap lands it; going down the page, whatever a stop's landing already
   shows (inside the visible band, 8px in from the sticky chrome and the
-  dock) joins that stop, so side-by-side cards, every cell on one line and a
-  row of afters in view under the line are one stop and no tap scrolls to
-  where you already are. The first tap is the stop holding the best answer;
-  a tap while the page sits where the last NOW left it (within 4px, or still
-  gliding there) goes to the next stop down, then wraps to the top; a hand
-  scroll in between makes the next tap fresh. One stop: a repeat tap stays
-  and pulses. A stop lands the same way every time; the grid column it
-  slides to is the answer's when it holds it. It pulses its cards (the
+  dock) joins that stop, so side-by-side cards and a row of afters in view
+  under the line are one stop and no tap scrolls to where you already are.
+  Across, too: a stop frames its grid cells in one sideways slide, and a
+  highlighted pick whose column does not fit that frame is its own stop at
+  the same height, reached by the slide (on a phone two 176px columns do
+  not fit together). Stops run top to bottom, then left to right. With
+  nobody highlighted the line is one stop — it crosses every column. The
+  first tap is the stop holding the best answer; a tap while the page sits
+  where the last NOW left it (down and across within 4px, or still gliding
+  there) goes to the next stop, then wraps to the top; a hand scroll either
+  way makes the next tap fresh. One stop: a repeat tap stays and pulses. A
+  stop lands the same way every time. It pulses its cards (the
   highlight's picks, or a card-led stop's NOW cards); a line's stop does
   not, and a highlight with nothing on never pulses — its quiet line shows
   on the first tap only.

@@ -345,6 +345,53 @@ Browser — the sequence at 390 / 430 / 1280 (the rail) and WebKit 390, Nhu's
 picks, a hand scroll resets, Kat with nothing on; the tag's removal in the
 now-mark unit and shell tests.
 
+## The second review round: across, not only down (2026-09-24)
+
+An independent Opus review of 7b1f7a9 found that the stops judged a grid
+cell by its line alone, so every one of a highlighted person's live grid
+picks was one stop whatever its column. **Reproduced** (Chromium, 390x844,
+touch; Portola Sat 7:00 PM; Nhu with DJ Shadow at 2 and Despacio at 4, both
+on): every tap rested at y 2784 with the grid at scrollLeft 584 —
+Despacio's column — and DJ Shadow's column never came into view.
+
+- **The fix** (`nowStops`): a stop frames its grid cells in ONE sideways
+  slide (their middle in the middle, as far as the grid scrolls); a cell
+  that does not fit beside them, 8px in either side, is its own stop at the
+  same height, whose move is the slide. Stops run top to bottom, then left
+  to right. The tap slides only when some of a stop's cells are out of
+  view, and "still where the last NOW left it" means down AND across. With
+  nobody highlighted the line stays one stop.
+- **The stop order it produces:** Nhu with DJ Shadow and Despacio at 7 PM
+  (390) → the stops are DJ Shadow's column, then Despacio's, at one height;
+  the first tap goes to Despacio (the must, grid slid to 584), the next to
+  DJ Shadow (slid to 110), then back. Nhu at 10:30 PM (390): Soulwax, then
+  Prospa beside it (two 176px columns do not fit a 322px window), then
+  Galen in the afters — at 1280 Soulwax and Prospa share one stop. Nobody
+  highlighted, Sat 10:30 PM (390): unchanged — the line (with the first
+  afters in view), then the next afters row, then the lower cards, then
+  back.
+- **The grace, fixed on the way:** "still gliding there" was a fixed 1.5 s,
+  so a hand scroll right after a landing was taken for "still there" and
+  the next tap went on instead of back to the best answer (CI run
+  36057881009 caught it). It now lasts exactly as long as the glide
+  (scrollend); 1.5 s stays only as the cap where an engine has no scrollend.
+- **The review's test findings:** tapAndLook now waits for the page to
+  leave where it stood (down or across, with a deadline), then for rest,
+  then polls for the pulse with a deadline; a fixed window only where
+  nothing should pulse. The ACL-at-305 case polls for its state.
+
+## Untimed acts in a timed room (2026-09-24)
+
+The data agent found, in a real browser, that S.I.M, Espurr and New
+Nostalgia — on Sun's Midway bill with no order or times printed — all
+glowed beside Two Shell at 12:45 AM, and NOW's first tap pulsed four
+Midway cards: `venueGroupsOf` gave any untimed member the room's doors-to-
+close window. Now it does so only when nothing in the room is timed (a lone
+headliner with only doors still glows all night). An untimed act already
+sorted after the timed ones and its card shows no time — "on the bill, time
+unknown". Every shipped festival scanned: no room mixes the two today, so
+nothing live changes; the Midway three go in as data after v87 ships.
+
 ## Open
 
 - Kevin's "ship v87" once the PR's CI is green.
