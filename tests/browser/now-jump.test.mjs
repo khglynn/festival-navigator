@@ -81,9 +81,26 @@ const view = (page, artist, where = null) => page.evaluate(([a, w]) => {
   };
 }, [artist, where]);
 
+// The landing is a smooth scroll (the page, and a grid sideways): wait for it
+// to come to rest rather than for a fixed time — under a loaded CI box a
+// glide can outlast any sleep (a 1.1 s sleep flaked once in the full suite).
+const settled = (page) => page.evaluate(() => new Promise((resolve) => {
+  const where = () => scrollY + [...document.querySelectorAll('.times-scroll')].reduce((s, e) => s + e.scrollLeft * 1e-3, 0);
+  let last = NaN, still = 0;
+  const t0 = performance.now();
+  const step = () => {
+    const w = where();
+    still = w === last ? still + 1 : 0;
+    last = w;
+    if (still >= 12 || performance.now() - t0 > 6000) resolve();
+    else requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}));
 const tapNow = async (page, door) => {
   await page.locator(`#${door}-now`).click();
-  await sleep(1100); // the smooth scroll, and the pulse's start
+  await sleep(150); // the glide starts
+  await settled(page);
 };
 const highlight = async (page, name) => {
   await page.locator('#person-chips .person-chip', { hasText: name }).first().click();
