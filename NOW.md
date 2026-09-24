@@ -27,16 +27,18 @@ how we got here belongs in DEVLOG.md.
   "where is Ross right now" in two taps. Rules: MODEL-V4 §3d; log:
   `claude-plans/2026-09-24-now-jump-build.md`. Kevin looked at it on
   localhost on 2026-09-24: "It looks good". His look found two things, both
-  fixed before ship: the now line stopped at the first screen's width
-  instead of crossing every stage column (v86 has this too; fixed on the
-  branch), and on desktop a hover zoom near the bottom could cover the dock
-  (being fixed on the fix/zoom-dock branch; it goes into v87 only if it
-  lands clean). An independent Opus review found six more (a pulse on a
-  stranger's card when a highlighted friend has nothing on, the afters just
-  after close, level ties, the dock's glimpse, a listener leak, a tall set
-  on a small phone): all fixed on the branch, each with its test. 796 unit
-  tests, 133 browser (Chromium + WebKit locally); CI green on bd3e46e (the
-  dock now holds at Linux's wider glyph widths).
+  fixed: the now line stopped at the first screen's width instead of
+  crossing every stage column (v86 has this too), and a hover zoom near the
+  bottom covered the dock (it now moves up to clear it, never reshaped). An
+  independent Opus review found six more (a pulse on a stranger's card when
+  a highlighted friend has nothing on, the afters just after close, level
+  ties, the dock's glimpse, a listener leak, a tall set on a small phone)
+  and a desktop mis-pick: content gliding under a still mouse grew a zoom
+  that ate the next click as a pick. A zoom now opens only when the hand
+  moves (card-facts.js "still hand"). All fixed, each with its test. 801
+  unit tests, 141 browser (Chromium + WebKit locally); CI green on 7dc3a92,
+  including the dock at Linux's wider glyphs and a timing-proof re-pick
+  test (its CI flake was the test, not the app — zoom-chips build log).
 - What v86 carries, each with its spec or build log in `claude-plans/`:
   1. One line per room (`SAT PORTOLA`, `SAT AFTERS`, `TUE LATE NIGHTS`),
      `.day-block` per day — `claude-plans/2026-09-23-one-line-heads.md`.
@@ -77,11 +79,14 @@ how we got here belongs in DEVLOG.md.
 
 ## Next, in order
 
-1. v87: the now-line width fix, the zoom/dock fix if it lands clean, and
-   the review's findings; then a PR from `feat/now-jump` to main, CI green,
-   and Kevin's "ship v87" before Sat Sep 26.
+1. v87: Kevin's look at the combined build on localhost, a PR from
+   `feat/now-jump` to main, CI green, and his "ship v87" before Sat Sep 26.
 2. Data-only pushes as drops land (standing OK: validator + freeze + tests).
-   Portola Sep 26–27 (afters from Sep 24); ACL Oct 2–4 and 9–11.
+   Portola Sep 26–27 (afters from Sep 24); ACL Oct 2–4 and 9–11. Before
+   ACL: its closers print only a start, so the grid draws them 60 min and
+   NOW stops counting them live early (add ends, or run a stage's last
+   endless set to the day's close); and ACL's dock lights FRI for about a
+   second on open before finding SAT (v86 does it too).
 3. After Oct 11: the merged wall for two crews
    at one fest, add-a-show (`claude-plans/2026-09-02-add-a-show.md`), the
    staging site (fix or retire), the Ray draft.
