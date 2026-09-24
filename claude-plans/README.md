@@ -17,6 +17,9 @@ live in `archive/`.
   AFTERS") — the day line is gone, a day is a block the tabs land on, and
   the notes doors moved onto the heads (MODEL-V4 §3c). Its build log:
   `2026-09-23-one-line-heads-build.md`.
+- NOW, the jump to what is playing (MODEL-V4 §3d): a tab before the days
+  while something is live; with a person highlighted it lands on their live
+  pick. Its build log: `2026-09-24-now-jump-build.md`.
 - `2026-08-31-events-canvas/MODEL-V3.md`: the events model (day-first, the
   layout rule, back-to-back runs). Spec of record for PR #16 as built.
 - `2026-08-30-zoom-storyboard.md`: how the zoom moves ("the bloom").

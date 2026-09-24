@@ -304,6 +304,35 @@ build log beside it. What the code does now:
 - **Lists** (a search, a lineup fest's by-day list, THE LINEUP, EVERYTHING
   ELSE, NOTES · FEST) keep a one-line `.list-head`, never a door.
 
+## 3d. NOW, the jump to what is playing, 2026-09-24
+
+Kevin: "an option to the left of the days … if you tap it goes to now. A use
+case I'm thinking about is like 'where is ross likely right now' — tapping
+ross on the top to highlight him and then clicking something in the scroll to
+time bar." Build log: `claude-plans/2026-09-24-now-jump-build.md`.
+
+- **Where.** A `NOW` button before the day tabs, in the dock and in the rail,
+  in `--brand` (the now line's violet, never `--fest`) with a breathing dot.
+  It is not a day: no `data-day`, never `.active`, outside the tab rows.
+- **When.** Only while something is live on the wall you are looking at: a
+  now line on a grid, or a NOW mark on a stack (afters and Late nights
+  included). The minute ticker that moves the line brings it and takes it
+  away; it arrives with the beat, leaves quick and plain, and the day tabs
+  beside it slide.
+- **What a tap lands on** (`wall.js nowLanding`). No highlight: the now
+  line, a third of the way down what you can see — or, with no line, the
+  first NOW-marked card in wall order. A highlight: that person's pick that
+  is playing now, grid cell or stack card, highest level first (must), then
+  the earliest start; on the grid the line comes with it and both land in
+  view together, the card's column scrolled on screen; in a stack the card
+  sits under the chrome with its venue's head above it. One small pulse on
+  the card (none under Reduce Motion / Low Power). Nothing of theirs live →
+  as with no highlight; the highlight keeps dimming the rest.
+- **Room.** The dock's days already scroll on a phone. Where they would lose
+  the day you are in (a long fest name on a 320 dock), NOW keeps only its
+  dot, in a faint ring.
+- **How it works** gets no row, as the now line and the now mark get none.
+
 ## 4. Notes: artist, fest, dates (Kevin, 2026-09-17 — "a defensible MVP")
 
 Three scopes, three doors. The `+ ✎` / `n ✎` chips on the day rule and on
