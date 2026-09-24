@@ -366,6 +366,19 @@ const tapAndSample = async (page, artist) => {
     const word = running.find((an) => name(an.effect.target) === 'word');
     const ghost = c.querySelector(':scope > .chip-meter.leaving');
     const cr = c.getBoundingClientRect();
+    // Where a leaving chip STARTS is its first frame, whenever this sample
+    // lands: on a loaded machine the sample came late and read a chip already
+    // on its way (7–10px up; 2026-09-24). Wind its animations to the start,
+    // measure, and put them back.
+    const ghostStart = () => {
+      if (!ghost) return null;
+      const anims = ghost.getAnimations();
+      const was = anims.map((an) => an.currentTime);
+      for (const an of anims) an.currentTime = 0;
+      const g = ghost.getBoundingClientRect();
+      anims.forEach((an, i) => { an.currentTime = was[i]; });
+      return { left: g.left - cr.left, bottom: cr.bottom - g.bottom, text: ghost.textContent };
+    };
     return {
       level: m ? Number(m.dataset.level) : 0,
       on: m ? m.querySelectorAll('.bar.on').length : 0,
@@ -373,13 +386,21 @@ const tapAndSample = async (page, artist) => {
       timing: Object.fromEntries(running.map((an) => [name(an.effect.target), { duration: an.effect.getTiming().duration, easing: an.effect.getTiming().easing }])),
       wordDelay: word ? word.effect.getTiming().delay : null,
       // Where a leaving chip starts: at the corner's edge, on the card's bottom line.
-      ghostAt: ghost ? { left: ghost.getBoundingClientRect().left - cr.left, bottom: cr.bottom - ghost.getBoundingClientRect().bottom, text: ghost.textContent } : null,
+      ghostAt: ghostStart(),
       props: [...new Set(running.flatMap((an) => an.effect.getKeyframes().flatMap((k) => Object.keys(k).filter((p) => !['offset', 'easing', 'composite', 'computedOffset'].includes(p)))))],
     };
   }, artist);
 };
 
 const leftovers = (page) => page.evaluate(() => document.querySelectorAll('#wall-root .chip-meter.leaving').length);
+// A change has finished when nothing in the card's corners is still moving
+// and no cleared chip is still leaving — waited for, not assumed after a fixed
+// 400ms, which a loaded machine overran (2026-09-24).
+const settled = (page, artist) => page.waitForFunction((a) => {
+  const c = document.querySelector(`#wall-root .card[data-artist="${a}"]`);
+  return !!c && !c.querySelector('.chip-meter.leaving') && !document.getAnimations().some((an) => an.playState === 'running'
+    && an.effect && an.effect.target && c.contains(an.effect.target) && an.effect.target.closest('.corner-about, .chip-meter.leaving'));
+}, artist, { timeout: 5000 });
 
 test('a real tap is a small event: the chip grows in, the next bar lights, MUST arrives, clearing recedes — transform and opacity only', { skip }, async () => {
   const { ctx, page } = await openWall();
@@ -388,7 +409,7 @@ test('a real tap is a small event: the chip grows in, the next bar lights, MUST 
     const steps = [];
     for (let i = 0; i < 5; i++) {
       steps.push(await tapAndSample(page, 'Velvet Trip'));
-      await sleep(400); // let each change finish before the next tap
+      await settled(page, 'Velvet Trip'); // let each change finish before the next tap
     }
     assert.deepEqual(steps.map((s) => s.level), [1, 2, 3, 4, 0]);
     assert.deepEqual(steps[0].moving, ['meter'], 'the chip grows out of the corner');
@@ -407,13 +428,13 @@ test('a real tap is a small event: the chip grows in, the next bar lights, MUST 
     const arrive = await tapAndSample(page, 'Milli Meng');
     assert.equal(arrive.level, 1);
     assert.deepEqual(arrive.moving.sort(), ['meter', 'spotify']);
-    for (let i = 0; i < 3; i++) { await sleep(400); await tapAndSample(page, 'Milli Meng'); }
-    await sleep(400);
+    for (let i = 0; i < 3; i++) { await settled(page, 'Milli Meng'); await tapAndSample(page, 'Milli Meng'); }
+    await settled(page, 'Milli Meng');
     const clear = await tapAndSample(page, 'Milli Meng');
     assert.equal(clear.level, 0);
     assert.deepEqual(clear.moving.sort(), ['leaving', 'spotify'], 'the pill slides back to the corner\u2019s edge as your chip recedes into it');
     assert.deepEqual(clear.timing.leaving, clear.timing.spotify, 'in lockstep — the pill chases the chip\u2019s edge and never covers it');
-    await sleep(400);
+    await settled(page, 'Milli Meng');
     assert.equal(await leftovers(page), 0);
   } finally { await ctx.close(); }
 });
