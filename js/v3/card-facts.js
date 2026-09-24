@@ -1197,7 +1197,11 @@ function wireSlot(z) {
   // broken" on a trackpad, where micro-deltas fire constantly while the
   // hand rests: the card grew, vanished on a 1px jiggle, and the dismissal
   // poisoned it with the stay-away mark (found on the 2026-08-31 review round).
-  // The overlay closes only when its card has actually left the viewport.
+  // The overlay closes only when its card has actually left the viewport —
+  // or gone entirely under the sticky chrome (the pinned stage strip and
+  // rail above, the dock below), which is the same thing to the eye: the
+  // zoom stands clamped against that chrome while its card slides under it,
+  // and a zoom whose card cannot be seen any more is an orphan (2026-09-24).
   // Capture phase so an inner scroller's scroll (which does not bubble) is
   // heard too; rAF-throttled, one re-place per frame.
   let followRaf = 0;
@@ -1211,6 +1215,11 @@ function wireSlot(z) {
     const r = rect(z.el);
     if (r.bottom < 0 || r.top > window.innerHeight || r.right < 0 || r.left > window.innerWidth) {
       unzoom({ instant: true, why: 'card scrolled off screen' });
+      return;
+    }
+    const ceiling = chromeCeiling(z.el), floor = dockTop();
+    if ((ceiling !== null && r.bottom <= ceiling) || (floor !== null && r.top >= floor)) {
+      unzoom({ instant: true, why: 'card scrolled under the sticky chrome' });
       return;
     }
     place(z.slot, z.el);
