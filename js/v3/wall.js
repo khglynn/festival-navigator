@@ -1547,7 +1547,11 @@ export function positionNowMarks(root, date = new Date()) {
 //   · Otherwise, or no highlighted pick is live → the now line, or with no
 //     line (the grid closed, the afters running) the first NOW-marked card
 //     in the wall's order. The highlight keeps dimming the rest either way.
-// { kind: 'line' | 'card', line, card }.
+// { kind: 'line' | 'card', line, card, match }. `match` says whether the
+// landing answers the highlight: true — it is their pick; false — someone is
+// highlighted and nothing of theirs is on, so this is what IS on, not them
+// (the app must not pulse it as though it were: a dimmed card pulsing read
+// as "Ross is here", review 2026-09-24); null — nobody is highlighted.
 export function nowLanding(root, ctx, date = new Date()) {
   const line = root.querySelector('.times-grid .now-line');
   const marks = [...root.querySelectorAll('.venue-grid[data-iso] .card.now')];
@@ -1565,10 +1569,11 @@ export function nowLanding(root, ctx, date = new Date()) {
     const level = (card) => Math.max(0, ...people.map((p) => (((ctx.picks || {})[card.dataset.artist] || {})[p]) || 0));
     const best = live.filter((c) => !c.classList.contains('dim') && level(c) > 0)
       .sort((a, b) => level(b) - level(a) || Number(a.dataset.nowFrom) - Number(b.dataset.nowFrom))[0];
-    if (best) return { kind: 'card', card: best, line: grid && grid.contains(best) ? line : null };
+    if (best) return { kind: 'card', card: best, line: grid && grid.contains(best) ? line : null, match: true };
   }
-  if (line) return { kind: 'line', line, card: null };
-  return { kind: 'card', card: marks[0], line: null };
+  const match = people.length ? false : null;
+  if (line) return { kind: 'line', line, card: null, match };
+  return { kind: 'card', card: marks[0], line: null, match };
 }
 
 // One room on a date: its head and body travel together, tagged with the key

@@ -42,6 +42,10 @@ async function openApp({ width = 390, height = 844, touch = true, now = SAT_1030
     localStorage.setItem(`fn_me_v3_${t}`, 'Kevin');
     localStorage.setItem(`fn_crew_fest_v3_${t}`, f);
     localStorage.setItem('fn_coach_v1', '1');
+    // NOW's pulse, told apart from every other animation a card runs (a
+    // picked card's aura, an arrival): a running scale on the card itself.
+    window.__pulsing = (c) => c.getAnimations().some((a) => a.playState === 'running' && a.effect
+      && a.effect.target === c && a.effect.getKeyframes().some((k) => /scale\(/.test(k.transform || '')));
   }, [TOKEN, fest]);
   const doc = {
     v: 4, meta: { name: 'Now', inviteFestId: fest }, spotify: {}, affinity: {},
@@ -166,7 +170,7 @@ for (const [width, height, touch, engine, name] of [[390, 844, true, browser, ''
       await sleep(80);
       const again = await page.evaluate(() => {
         const c = [...document.querySelectorAll('#wall-root .room[data-room="Afters"] .card')].find((x) => x.dataset.artist === 'Milli Meng');
-        return { y: scrollY, pulsing: c.getAnimations().some((a) => a.playState === 'running') };
+        return { y: scrollY, pulsing: window.__pulsing(c) };
       });
       assert.ok(Math.abs(again.y - y) < 1, `a second tap does not move the page: ${y} -> ${again.y}`);
       assert.ok(again.pulsing, 'and the card pulses straight away — the pulse is the whole answer');
@@ -235,6 +239,37 @@ test('390: Kat highlighted — NOW scrolls to her pick in the third column, and 
   } finally { await ctx.close(); }
 });
 
+// Honest with a highlight (review, 2026-09-24): Kat's only pick (Prospa) is
+// long over at 11:45 PM. NOW lands where it would for nobody — the first
+// NOW card — pulses nothing, and says so in one quiet line on the app's
+// toast. The same for you: "Nothing of yours".
+for (const [who, says] of [['Kat', 'Nothing of Kat’s is on right now — here’s what is.'], ['Kevin', 'Nothing of yours is on right now — here’s what is.']]) {
+  test(`${who} highlighted, nothing of theirs on (Sat 11:45 PM): no pulse, the quiet line, the landing anyone would get`, { skip }, async () => {
+    const { ctx, page, door } = await openApp({ now: new Date('2026-09-26T23:45:00-07:00') });
+    try {
+      await highlight(page, who);
+      await page.evaluate(() => window.scrollTo(0, 0));
+      await sleep(150);
+      await page.locator(`#${door}-now`).click();
+      await sleep(150);
+      await settled(page);
+      await sleep(900); // past the 750 ms pulse fallback
+      const r = await page.evaluate(() => {
+        const first = document.querySelector('#wall-root .venue-grid[data-iso] .card.now');
+        const b = first.getBoundingClientRect();
+        return {
+          toast: (document.querySelector('#toast-root') || {}).textContent || '',
+          pulsing: [...document.querySelectorAll('#wall-root .card')].filter((c) => window.__pulsing(c)).map((c) => c.dataset.artist),
+          first: first.dataset.artist, top: b.top, bottom: b.bottom, dockTop: document.getElementById('dock').getBoundingClientRect().top,
+        };
+      });
+      assert.equal(r.toast.trim(), says);
+      assert.deepEqual(r.pulsing, [], 'nothing pulses — no stranger’s card passes for theirs');
+      assert.ok(r.top >= 0 && r.bottom <= r.dockTop, `it lands on what IS on, the first NOW card (${r.first}): ${JSON.stringify(r)}`);
+    } finally { await ctx.close(); }
+  });
+}
+
 test('Reduce Motion: NOW lands at once and nothing pulses; the live dot is still', { skip }, async () => {
   const { ctx, page, door } = await openApp();
   try {
@@ -249,7 +284,7 @@ test('Reduce Motion: NOW lands at once and nothing pulses; the live dot is still
       const b = c.getBoundingClientRect();
       const dot = getComputedStyle(document.querySelector(`#${d}-now .live`));
       return { y: scrollY, top: b.top, bottom: b.bottom, dockTop: document.getElementById('dock').getBoundingClientRect().top,
-        pulsing: c.getAnimations().length > 0, dotAnimation: dot.animationName };
+        pulsing: window.__pulsing(c), dotAnimation: dot.animationName };
     }, door);
     assert.ok(r.y > 0 && r.top >= 0 && r.bottom <= r.dockTop, `landed already, no glide: ${JSON.stringify(r)}`);
     assert.equal(r.pulsing, false, 'no pulse');

@@ -541,11 +541,15 @@ function seenBand(inGrid) {
 //   · a card in a stack — its NOW mark is its line: the card a quarter of the
 //     way down under the chrome, its venue's head above it.
 // A card it lands on gives one small pulse (transform only; none under
-// Reduce Motion or Low Power).
+// Reduce Motion or Low Power) — but only a card that answers: with someone
+// highlighted and nothing of theirs on, NOW lands where it would for nobody
+// and says so in one quiet line instead of pulsing a stranger's card
+// (review, 2026-09-24: Parcels pulsing, dimmed, read as "Kat is here").
 function jumpToNow() {
   const root = $('wall-root');
   const landing = nowLanding(root, ctx, ctx.now || new Date());
   if (!landing) { paintNowTabs(); return; }
+  if (landing.match === false) showToast($('toast-root'), nothingOnFor(ctx.filterPeople || []));
   const smooth = canAnimate(root, ctx);
   const behavior = smooth ? 'smooth' : 'auto';
   const pad = 8;
@@ -581,7 +585,7 @@ function jumpToNow() {
   const top = Math.min(maxY, Math.max(0, window.scrollY + dy));
   const moves = Math.abs(top - window.scrollY) >= 1;
   if (moves) window.scrollTo({ top, behavior });
-  if (!card || !canAnimate(card, ctx)) return;
+  if (!card || landing.match === false || !canAnimate(card, ctx)) return;
   let pulsed = false;
   const pulse = () => {
     if (pulsed || !card.isConnected) return;
@@ -594,6 +598,18 @@ function jumpToNow() {
   if (!moves && !slid) { pulse(); return; }
   window.addEventListener('scrollend', pulse);
   setTimeout(pulse, 750); // a sideways-only glide, or an engine without scrollend (WebKit)
+}
+
+// The quiet line when the highlighted people have nothing on: "Nothing of
+// Kat’s is on right now — here’s what is." Yours, one name, two names, or
+// "theirs" past that; the landing below it is what is on.
+function nothingOnFor(people, meName = ctx.meName) {
+  let whose;
+  if (people.length === 1 && people[0] === meName) whose = 'yours';
+  else if (people.length === 1) whose = `${people[0]}’s`;
+  else if (people.length === 2) whose = `${people[0]}’s or ${people[1]}’s`;
+  else whose = 'theirs';
+  return `Nothing of ${whose} is on right now — here’s what is.`;
 }
 
 // Where a day tab lands on the wall, in the wall's own words (DAY_ANCHOR):

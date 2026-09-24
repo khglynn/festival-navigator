@@ -112,12 +112,33 @@ test('two people highlighted: the best live pick of either; equal levels go to w
   r2.remove();
 });
 
-test('a highlight with nothing live lands on the line, the dim rule untouched', () => {
+test('a highlight with nothing live lands on the line, the dim rule untouched — and says it is no match', () => {
   const { root, ctx } = render(SAT_1030, ['Kevin']); // Kevin picked nothing
   const l = nowLanding(root, ctx, SAT_1030);
   assert.equal(l.kind, 'line');
+  assert.equal(l.match, false, 'the line is what is on, not Kevin');
   assert.ok(root.querySelector('.card.dim'), 'everything Kevin did not pick is still dimmed');
   root.remove();
+});
+
+// The review's repro (2026-09-24): Sat 11:45 PM, Kevin highlighted with no
+// picks — NOW landed on Parcels, dimmed, and pulsed it: "here", on the wrong
+// answer. The landing may stay (it is what is on); the answer must say it is
+// not a match, so the app neither pulses it nor lets it pass for Kevin's.
+test('no match is said out loud: a highlight whose people have nothing on gets match:false; a real answer true; nobody null', () => {
+  const at = pt('2026-09-26T23:45:00');
+  const { root, ctx } = render(at, ['Kevin']);
+  const l = nowLanding(root, ctx, at);
+  assert.equal(l.kind, 'card');
+  assert.equal(l.match, false);
+  assert.ok(l.card.classList.contains('dim'), 'the card it lands on is not theirs — dimmed, as the highlight says');
+  root.remove();
+  const { root: r2, ctx: c2 } = render(SAT_1030, ['Ross']);
+  assert.equal(nowLanding(r2, c2, SAT_1030).match, true, 'Milli Meng is Ross’s');
+  r2.remove();
+  const { root: r3, ctx: c3 } = render(SAT_1030);
+  assert.equal(nowLanding(r3, c3, SAT_1030).match, null, 'nobody asked about anyone');
+  r3.remove();
 });
 
 test('no line (the grid has closed), the afters running: NOW lands on the first NOW-marked card in wall order', () => {
