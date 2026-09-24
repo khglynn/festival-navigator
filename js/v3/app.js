@@ -636,6 +636,23 @@ function jumpToNow() {
   const moves = Math.abs(target - window.scrollY) >= 1;
   if (moves) window.scrollTo({ top: target, behavior });
   nowCycle = { lead: lead.key, y: target, sc, sl, until: (moves || slid) && smooth ? performance.now() + 1500 : 0 };
+  // The "still gliding there" grace lasts only as long as the glide: when it
+  // ends (both glides, if the grid slid too), where the page stands is the
+  // whole answer again — so a hand scroll right after a landing makes the
+  // next tap fresh, however quick (CI, 2026-09-24: a hand scroll inside the
+  // old fixed 1.5 s was taken for "still there" and the tap went on to the
+  // next stop). Engines without scrollend (WebKit before 26) keep the 1.5 s cap.
+  if (nowCycle.until) {
+    const mine = nowCycle;
+    let glides = (moves ? 1 : 0) + (slid ? 1 : 0);
+    const ended = () => { glides -= 1; if (glides <= 0 && nowCycle === mine) mine.until = 0; };
+    const onPage = () => { window.removeEventListener('scrollend', onPage); ended(); };
+    const onGrid = () => { sc.removeEventListener('scrollend', onGrid); ended(); };
+    if (moves) window.addEventListener('scrollend', onPage);
+    if (slid) sc.addEventListener('scrollend', onGrid);
+    // No listener outlives the cap (an engine with no scrollend never calls them).
+    setTimeout(() => { window.removeEventListener('scrollend', onPage); if (sc) sc.removeEventListener('scrollend', onGrid); }, 1600);
+  }
   // What pulses: the stop's cards — the highlighted person's picks, or, for
   // nobody, the NOW cards of a stop a card leads. Never a line's stop, and
   // never with no match.
