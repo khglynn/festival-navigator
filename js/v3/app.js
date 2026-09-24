@@ -9,7 +9,7 @@ import * as sync from '../sync.js';
 import * as spotify from '../spotify.js';
 import * as model from './model.js';
 import { loadFestivalIndex, loadFestival, fetchCustomFestivals, mergeCustoms, FESTIVAL_INDEX, defaultFestivalId } from '../festivals.js';
-import { renderWall, refreshCard, showUndoToast, showToast, wireScrollspy, colorIndexOf, positionNowLines, positionNowMarks, scrollToNowLine, dayNavOf, roomsOf, cardFor, roomOf, isStripScroller, DAY_ANCHOR, festLinkLabel, nowLanding } from './wall.js';
+import { renderWall, refreshCard, showUndoToast, showToast, wireScrollspy, colorIndexOf, positionNowLines, positionNowMarks, scrollToNowLine, dayNavOf, roomsOf, cardFor, roomOf, isStripScroller, DAY_ANCHOR, festLinkLabel, nowLanding, nowStops } from './wall.js';
 import { loadPeopleFilter, savePeopleFilter, togglePerson, pruneToActive, loadFolded, applyFoldToggle } from './filters.js';
 import { OUT_MS, CASCADE_MS, STAGGER_MS, EASE_ARRIVE, EASE_LEAVE, EASE_SURFACE, canAnimate } from './motion.js';
 import { scrolledBefore, rememberScrolled, dayOfScrollKey, festivalClock } from './now.js';
@@ -552,72 +552,83 @@ function seenBand(inGrid) {
   return { top, bottom: docked ? dock.getBoundingClientRect().top : window.innerHeight };
 }
 
-// Tap NOW: land on what is playing (wall.js nowLanding says what).
+// Tap NOW: land on what is playing (wall.js nowLanding says what, nowStops
+// says where each tap after it goes).
 //   · the now line — a third of the way down what you can see, the day-of
 //     open's own landing, so the sets crossing it (playing) and the next hour
 //     are both on screen;
 //   · a highlighted person's pick on the grid — the LINE AND THE CARD
-//     together (Kevin: "the line and highlight combo"): the line a third of
-//     the way down, moved only as far as it takes to bring the card's top on
-//     screen, never so far the line leaves; its column scrolled into view;
+//     together (Kevin: "the line and highlight combo"); its column scrolled
+//     into view;
 //   · a card in a stack — its NOW mark is its line: the card a quarter of the
 //     way down under the chrome, its venue's head above it.
-// A card it lands on gives one small pulse (transform only; none under
-// Reduce Motion or Low Power) — but only a card that answers: with someone
-// highlighted and nothing of theirs on, NOW lands where it would for nobody
-// and says so in one quiet line instead of pulsing a stranger's card
-// (review, 2026-09-24: Parcels pulsing, dimmed, read as "Kat is here").
+// TAP AGAIN (Kevin, 2026-09-24: "multiple taps … should move the user to the
+// next now item … by height"): while the page still sits where the last NOW
+// left it (within 4px, or still gliding there) and that stop is still live,
+// the next tap goes to the next stop down, and after the last back to the
+// top. Scroll away by hand and the next tap is a fresh "take me to now" —
+// the best answer again. One stop only: a repeat tap pulses in place.
+// What it lands on pulses (transform only; none under Reduce Motion or Low
+// Power): the highlighted person's picks in that stop, or the stop's NOW
+// cards; a line landing does not. A highlight with nothing on gets the quiet
+// line once, on the first tap, and no pulse on any tap — a stranger's card
+// pulsing reads as "Kat is here" (review, 2026-09-24).
+// Where the last NOW left the page, for the next tap: the stop's lead key,
+// the scroll position it landed at, and until when a glide is still on its
+// way there.
+let nowCycle = null;
+const pageGeo = () => ({
+  scrollY: window.scrollY,
+  maxY: Math.max(0, document.documentElement.scrollHeight - window.innerHeight),
+  box: (el) => el.getBoundingClientRect(),
+  band: (grid) => seenBand(grid),
+});
 function jumpToNow() {
   const root = $('wall-root');
-  const landing = nowLanding(root, ctx, ctx.now || new Date());
-  if (!landing) { paintNowTabs(); return; }
-  if (landing.match === false) showToast($('toast-root'), nothingOnFor(ctx.filterPeople || []));
+  const plan = nowStops(root, ctx, ctx.now || new Date(), pageGeo());
+  if (!plan || !plan.stops.length) { nowCycle = null; paintNowTabs(); return; }
+  const { best, stops, bestAt } = plan;
+  let at = -1;
+  if (nowCycle && (Math.abs(window.scrollY - nowCycle.y) <= 4 || performance.now() < nowCycle.until)) {
+    const was = stops.findIndex((st) => st.keys.includes(nowCycle.lead));
+    if (was >= 0) at = (was + 1) % stops.length;
+  }
+  const fresh = at < 0;
+  if (fresh && best.match === false) showToast($('toast-root'), nothingOnFor(ctx.filterPeople || []));
+  const stop = stops[fresh ? bestAt : at];
+  // The one stop, tapped again: stay exactly where the last tap left you
+  // (its lead may be a neighbour of the answer, a few px off) and pulse.
+  const again = !fresh && stops.length === 1;
+  const lead = fresh || again ? best : stop.members[0];
+  const target = fresh ? best.target : again ? nowCycle.y : stop.target;
   const smooth = canAnimate(root, ctx);
   const behavior = smooth ? 'smooth' : 'auto';
-  const pad = 8;
-  const { line, card } = landing;
-  let dy;
   let slid = false; // the grid moved sideways to bring the card's column in
-  if (line) {
-    const band = seenBand(line.closest('.times-grid'));
-    const lineTop = line.getBoundingClientRect().top;
-    dy = lineTop - (band.top + (band.bottom - band.top) / 3);
-    if (card) {
-      const cardTop = card.getBoundingClientRect().top;
-      // The card's top on screen too — when the two fit: the line no lower
-      // than two-thirds of the way down. A set too tall for that (Despacio's
-      // hours on a 320x568 phone) keeps the line a third of the way down, the
-      // rule everywhere else: the strip names its stage and the pulse marks
-      // it. Bringing its top in instead pinned the line above the dock with
-      // the top still off screen (review, 2026-09-24).
-      if (lineTop - cardTop <= (band.bottom - band.top) * (2 / 3) && cardTop - dy < band.top + pad) dy = cardTop - (band.top + pad);
-      if (lineTop - dy > band.bottom - pad) dy = lineTop - (band.bottom - pad);
-      const scroller = card.closest('.times-scroll');
-      if (scroller) {
-        const sr = scroller.getBoundingClientRect();
-        const cr = card.getBoundingClientRect();
-        if (cr.left < sr.left || cr.right > sr.right) {
-          const left = scroller.scrollLeft + (cr.left - sr.left) - (sr.width - cr.width) / 2;
-          scroller.scrollTo({ left: Math.max(0, Math.min(left, scroller.scrollWidth - scroller.clientWidth)), behavior });
-          slid = true;
-        }
-      }
+  const cell = lead.card && lead.line ? lead.card : null;
+  const scroller = cell ? cell.closest('.times-scroll') : null;
+  if (scroller) {
+    const sr = scroller.getBoundingClientRect();
+    const cr = cell.getBoundingClientRect();
+    if (cr.left < sr.left || cr.right > sr.right) {
+      const left = scroller.scrollLeft + (cr.left - sr.left) - (sr.width - cr.width) / 2;
+      scroller.scrollTo({ left: Math.max(0, Math.min(left, scroller.scrollWidth - scroller.clientWidth)), behavior });
+      slid = true;
     }
-  } else {
-    const band = seenBand(null);
-    const r = card.getBoundingClientRect();
-    dy = r.top - (band.top + (band.bottom - band.top) / 4);
-    if (r.bottom - dy > band.bottom - pad && r.height < band.bottom - band.top - 2 * pad) dy = r.bottom - (band.bottom - pad);
   }
-  const maxY = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
-  const top = Math.min(maxY, Math.max(0, window.scrollY + dy));
-  const moves = Math.abs(top - window.scrollY) >= 1;
-  if (moves) window.scrollTo({ top, behavior });
-  if (!card || landing.match === false || !canAnimate(card, ctx)) return;
-  // Who to pulse, by identity rather than by node: the wall can replace the
+  const moves = Math.abs(target - window.scrollY) >= 1;
+  if (moves) window.scrollTo({ top: target, behavior });
+  nowCycle = { lead: lead.key, y: target, until: moves && smooth ? performance.now() + 1500 : 0 };
+  // What pulses: the stop's cards — the highlighted person's picks, or, for
+  // nobody, the NOW cards of a stop a card leads. Never a line's stop, and
+  // never with no match.
+  const pulses = best.match === true || (best.match === null && lead.card);
+  const cards = pulses ? stop.members.filter((m) => m.card).map((m) => m.card) : [];
+  const bumps = cards.filter((c) => canAnimate(c, ctx));
+  if (!bumps.length) return;
+  // Who to pulse, by identity rather than by node: the wall can replace a
   // card during the glide (a poll repaint, a pick), and the pulse belongs on
   // whatever node stands there when it lands.
-  const who = { artist: card.dataset.artist, occ: card.dataset.occ || '', room: roomOf(card) };
+  const who = bumps.map((c) => ({ card: c, artist: c.dataset.artist, occ: c.dataset.occ || '', room: roomOf(c) }));
   let pulsed = false;
   const pulse = () => {
     if (pulsed) return;
@@ -626,21 +637,23 @@ function jumpToNow() {
     // for the life of the page (review, 2026-09-24).
     pulsed = true;
     window.removeEventListener('scrollend', pulse);
-    let target = card;
-    if (!target.isConnected) {
-      let occ = null;
-      try { occ = who.occ ? JSON.parse(who.occ) : null; } catch { occ = null; }
-      target = cardFor(root, who.artist, occ, { room: who.room });
+    for (const w of who) {
+      let target = w.card;
+      if (!target.isConnected) {
+        let occ = null;
+        try { occ = w.occ ? JSON.parse(w.occ) : null; } catch { occ = null; }
+        target = cardFor(root, w.artist, occ, { room: w.room });
+      }
+      if (!target || !canAnimate(target, ctx)) continue;
+      // 6% of an ordinary card is a few pixels; 6% of a six-hour slab is forty.
+      // The pulse grows a card by at most ~12px on its longer side.
+      const size = target.getBoundingClientRect();
+      const grow = Math.min(0.06, 12 / Math.max(1, size.width, size.height));
+      target.animate([{ transform: 'scale(1)' }, { transform: `scale(${(1 + grow).toFixed(4)})`, offset: 0.4 }, { transform: 'scale(1)' }],
+        { duration: 460, iterations: 2, easing: EASE_SURFACE });
     }
-    if (!target || !canAnimate(target, ctx)) return;
-    // 6% of an ordinary card is a few pixels; 6% of a six-hour slab is forty.
-    // The pulse grows the card by at most ~12px on its longer side.
-    const size = target.getBoundingClientRect();
-    const grow = Math.min(0.06, 12 / Math.max(1, size.width, size.height));
-    target.animate([{ transform: 'scale(1)' }, { transform: `scale(${(1 + grow).toFixed(4)})`, offset: 0.4 }, { transform: 'scale(1)' }],
-      { duration: 460, iterations: 2, easing: EASE_SURFACE });
   };
-  // Already there (a second tap): the pulse is the whole answer, at once.
+  // Already there (a repeat tap on the one stop): the pulse is the whole answer, at once.
   if (!moves && !slid) { pulse(); return; }
   window.addEventListener('scrollend', pulse);
   setTimeout(pulse, 750); // a sideways-only glide, or an engine without scrollend (WebKit)
