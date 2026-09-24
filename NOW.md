@@ -35,13 +35,15 @@ how we got here belongs in DEVLOG.md.
   hand's path to a mis-pick on NOW
   (`claude-plans/2026-09-24-zoom-chrome-build.md`); branch `fix/zoom-dock`
   carries all of feat/now-jump plus that.
-  **Codex's review of `bc6131b` found five more, being fixed on
-  feat/now-jump now:** a repaint mid-glide can pulse a card the highlighted
-  person just unpicked; a sideways hand scroll stops restarting the cycle
-  after a repaint; a one-stop cycle can stay parked while the line moves
-  off screen; NOW says nothing to a screen reader; and the cycle test's
-  check is too loose. Next: reproduce each, fix one per commit, re-stamp,
-  CI green; the coordinator merges.
+  Codex's review of `bc6131b` (five findings) and the zoom agent's phone
+  walk (a dead repeat tap on a line-only stop; one show billed to two rooms
+  reached twice) are fixed on feat/now-jump at `04c6ff3`, each with its
+  test: a pulse re-checks what still answers when the glide lands, the
+  cycle names its grid by day, a one-stop repeat tap re-lands once the
+  clock walks the stop off screen, a tap that moves nothing pulses the now
+  line and its label, and NOW says where it landed in a polite status
+  region. Next: the coordinator merges `fix/still-hand-test` (test-only)
+  into feat/now-jump, then Kevin's look and "ship v87".
 - What v86 carries, each with its spec or build log in `claude-plans/`:
   1. One line per room (`SAT PORTOLA`, `SAT AFTERS`, `TUE LATE NIGHTS`),
      `.day-block` per day — `claude-plans/2026-09-23-one-line-heads.md`.
