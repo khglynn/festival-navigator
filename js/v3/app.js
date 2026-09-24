@@ -465,16 +465,30 @@ function paintNowTabs(date = ctx.now || new Date()) {
 // "Jump to what is playing now". Gap and fade are read from the row's own CSS
 // (`--row-fade` is the number the fade itself uses). Measured in the full form
 // every time, so the answer never feeds on itself.
+//
+// And the last resort: where even beside the dot the row is narrower than one
+// day (ACL's long name at 320 wherever Inter draws wide — Linux CI measured a
+// 36px row for a ~40px tab, 2026-09-24; Android draws like Linux), the row
+// claims its widest tab and the fest name gives way with an ellipsis. The
+// day you are in is never what NOW squeezes out.
 function fitNowTab(tab) {
-  if (!tab || tab.hidden) return;
-  tab.classList.remove('compact');
+  if (!tab) return;
+  const bar = tab.parentElement;
   const row = tab.nextElementSibling;
-  if (!row || !row.children.length) return;
+  tab.classList.remove('compact');
+  if (bar) bar.classList.remove('squeezed');
+  if (row) row.style.minWidth = '';
+  if (tab.hidden || !row || !row.children.length) return;
   const css = getComputedStyle(row);
   const gap = parseFloat(css.columnGap) || 0;
   const fade = parseFloat(css.getPropertyValue('--row-fade')) || 0;
   const widest = Math.max(...[...row.children].map((t) => t.offsetWidth));
-  if (row.clientWidth < Math.min(row.scrollWidth, widest + 2 * (gap + fade))) tab.classList.add('compact');
+  if (row.clientWidth >= Math.min(row.scrollWidth, widest + 2 * (gap + fade))) return;
+  tab.classList.add('compact');
+  if (row.clientWidth < Math.min(row.scrollWidth, widest) && bar) {
+    row.style.minWidth = `${widest}px`;
+    bar.classList.add('squeezed');
+  }
 }
 // The day tabs beside a NOW that came or went slide from where they were (a
 // FLIP: transform only, the layout is already done). Tab by tab, not the
@@ -512,6 +526,7 @@ function showNowTab(tab, on) {
     delete tab.dataset.leaving;
     const before = tabLefts(row);
     tab.hidden = true;
+    fitNowTab(tab); // gone: whatever room it took is given back
     if (tab.getAnimations) tab.getAnimations().forEach((a) => a.cancel());
     slideTabs(before);
   };

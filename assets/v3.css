@@ -598,6 +598,13 @@ button.room-head { cursor: pointer; }
 .now-tab.compact .word { display: none; }
 .now-tab.compact .live { width: 7px; height: 7px; }
 .dock .now-tab { font-family: var(--font-ui); font-weight: 800; font-size: 12px; }
+/* The last resort (app.js fitNowTab): even beside NOW's dot the days are
+ * narrower than one tab, so they claim their widest and the fest name gives
+ * way with an ellipsis. !important only to out-rank the wrap's inline
+ * `flex: none` in index.html, which every other state keeps. */
+.dock.squeezed #dock-fest-wrap { flex: 0 1 auto !important; min-width: 0; }
+.dock.squeezed .fest-link { flex: 0 1 auto; max-width: 100%; min-width: 0; }
+.dock.squeezed .fest-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .day-rail .now-tab { font-family: var(--font-display); letter-spacing: var(--track-label);
                      font-size: var(--fs-micro); text-transform: uppercase; padding: 2px 0 3px; }
 .dock .day-tab .num { font-size: 9px; font-weight: 600; margin-left: 2px; }
