@@ -1,0 +1,329 @@
+{
+  "collector": "Claude Sonnet 5 curl",
+  "fetchedAt": "2026-09-24",
+  "scope": {
+    "from": "2026-09-24",
+    "to": "2027-05-31"
+  },
+  "pages": [
+    {
+      "url": "https://kingdomnightclub.com/events/",
+      "how": "curl",
+      "ok": true,
+      "note": "confirmed official (footer Instagram link is instagram.com/kingdomaustin, address 505 E 7th St matches Google listing); uses the 'RHP' (Roots Hospitality Platform) WordPress events plugin, server-rendered list, 18 events; no rhp_events REST route exposed and /events/page/2/ redirected back to page 1 with identical content, so no further pagination"
+    }
+  ],
+  "coverage": {
+    "complete": true,
+    "lastDateReached": "2027-01-29",
+    "why": "The events page rendered 18 events server-side with no visible pagination/load-more control, and requesting /events/page/2/ returned the identical set — so this is everything currently on the site. The last event (Ely Oaks, Jan 29 2027) is marked 'Just Announced' with no ticket link yet, suggesting the calendar simply hasn't been populated further out."
+  },
+  "events": [
+    {
+      "date": "2026-09-25",
+      "venue": "kingdom",
+      "venueRaw": "Kingdom Nightclub",
+      "title": "Ahmed Spins",
+      "artists": [
+        "Ahmed Spins"
+      ],
+      "url": "https://kingdomnightclub.com/event/ahmed-spins/kingdom-nightclub/austin-texas/",
+      "ticketUrl": "https://www.etix.com/ticket/p/48869359/ahmed-spins-austin-kingdom-nightclub?partner_id=100",
+      "ticketer": "etix",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-26",
+      "venue": "kingdom",
+      "venueRaw": "Kingdom Nightclub",
+      "title": "Space 92",
+      "artists": [
+        "Space 92"
+      ],
+      "url": "https://kingdomnightclub.com/event/space-92-2/kingdom-nightclub/austin-texas/",
+      "ticketUrl": "https://www.etix.com/ticket/p/89055335/space-92-austin-kingdom-nightclub?partner_id=100",
+      "ticketer": "etix",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-02",
+      "venue": "kingdom",
+      "venueRaw": "Kingdom Nightclub",
+      "title": "Matt Sassari",
+      "artists": [
+        "Matt Sassari"
+      ],
+      "url": "https://kingdomnightclub.com/event/matt-sassari/kingdom-nightclub/austin-texas/",
+      "ticketUrl": "https://www.etix.com/ticket/p/71968338/matt-sassari-austin-kingdom-nightclub?partner_id=100",
+      "ticketer": "etix",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-08",
+      "venue": "kingdom",
+      "venueRaw": "Kingdom Nightclub",
+      "title": "DVS1",
+      "artists": [
+        "DVS1"
+      ],
+      "url": "https://kingdomnightclub.com/event/dvs1-2/kingdom-nightclub/austin-texas/",
+      "ticketUrl": "https://www.etix.com/ticket/p/50371577/dvs1-austin-kingdom-nightclub?partner_id=100",
+      "ticketer": "etix",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-09",
+      "venue": "kingdom",
+      "venueRaw": "Kingdom Nightclub",
+      "title": "Andy Stott & Debit",
+      "artists": [
+        "Andy Stott & Debit"
+      ],
+      "url": "https://kingdomnightclub.com/event/andy-stott-debit/kingdom-nightclub/austin-texas/",
+      "ticketUrl": "https://www.etix.com/ticket/p/99957323/andy-stott-debit-austin-kingdom-nightclub?partner_id=100",
+      "ticketer": "etix",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-10",
+      "venue": "kingdom",
+      "venueRaw": "Kingdom Nightclub",
+      "title": "Matthew Dear b2b Juan Maclean",
+      "artists": [
+        "Matthew Dear b2b Juan Maclean"
+      ],
+      "url": "https://kingdomnightclub.com/event/matthew-dear-b2b-juan-maclean/kingdom-nightclub/austin-texas/",
+      "ticketUrl": "https://www.etix.com/ticket/p/89375100/matthew-dear-b2b-juan-maclean-austin-kingdom-nightclub?partner_id=100",
+      "ticketer": "etix",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-16",
+      "venue": "kingdom",
+      "venueRaw": "Kingdom Nightclub",
+      "title": "Twin Diplomacy",
+      "artists": [
+        "Twin Diplomacy"
+      ],
+      "url": "https://kingdomnightclub.com/event/twin-diplomacy/kingdom-nightclub/austin-texas/",
+      "ticketUrl": "https://www.etix.com/ticket/p/44554843/twin-diplomacy-austin-kingdom-nightclub?partner_id=100",
+      "ticketer": "etix",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-17",
+      "venue": "kingdom",
+      "venueRaw": "Kingdom Nightclub",
+      "title": "WonkyWilla | ATX",
+      "artists": [
+        "WonkyWilla | ATX"
+      ],
+      "url": "https://kingdomnightclub.com/event/wonkywilla-atx/kingdom-nightclub/austin-texas/",
+      "ticketUrl": "https://www.etix.com/ticket/p/99960547/wonkywilla-atx-austin-kingdom-nightclub?partner_id=100",
+      "ticketer": "etix",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-30",
+      "venue": "kingdom",
+      "venueRaw": "Kingdom Nightclub",
+      "title": "Dennis Ferrer",
+      "artists": [
+        "Dennis Ferrer"
+      ],
+      "url": "https://kingdomnightclub.com/event/dennis-ferrer/kingdom-nightclub/austin-texas/",
+      "ticketUrl": "https://www.etix.com/ticket/p/81557185/dennis-ferrer-austin-kingdom-nightclub?partner_id=100",
+      "ticketer": "etix",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-31",
+      "venue": "kingdom",
+      "venueRaw": "Kingdom Nightclub",
+      "title": "Jody Wisternoff",
+      "artists": [
+        "Jody Wisternoff"
+      ],
+      "url": "https://kingdomnightclub.com/event/jody-wisternoff-2/kingdom-nightclub/austin-texas/",
+      "ticketUrl": "https://www.etix.com/ticket/p/87145687/jody-wisternoff-austin-kingdom-nightclub?partner_id=100",
+      "ticketer": "etix",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-07",
+      "venue": "kingdom",
+      "venueRaw": "Kingdom Nightclub",
+      "title": "TOKiMONSTA",
+      "artists": [
+        "TOKiMONSTA"
+      ],
+      "url": "https://kingdomnightclub.com/event/tokimonsta/kingdom-nightclub/austin-texas/",
+      "ticketUrl": "https://www.etix.com/ticket/p/86702830/tokimonsta-austin-kingdom-nightclub?partner_id=100",
+      "ticketer": "etix",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-13",
+      "venue": "kingdom",
+      "venueRaw": "Kingdom Nightclub",
+      "title": "Com Truise – DJ Set",
+      "artists": [
+        "Com Truise – DJ Set"
+      ],
+      "url": "https://kingdomnightclub.com/event/com-truise-dj-set/kingdom-nightclub/austin-texas/",
+      "ticketUrl": "https://www.etix.com/ticket/p/47113924/com-truise-dj-set-austin-kingdom-nightclub?partner_id=100",
+      "ticketer": "etix",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-20",
+      "venue": "kingdom",
+      "venueRaw": "Kingdom Nightclub",
+      "title": "Only Fire & Friends",
+      "artists": [
+        "Only Fire & Friends"
+      ],
+      "url": "https://kingdomnightclub.com/event/only-fire-friends/kingdom-nightclub/austin-texas/",
+      "ticketUrl": "https://www.etix.com/ticket/p/91183333/only-fire-friends-austin-kingdom-nightclub?partner_id=100",
+      "ticketer": "etix",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-21",
+      "venue": "kingdom",
+      "venueRaw": "Kingdom Nightclub",
+      "title": "Mark Knight",
+      "artists": [
+        "Mark Knight"
+      ],
+      "url": "https://kingdomnightclub.com/event/mark-knight-2/kingdom-nightclub/austin-texas/",
+      "ticketUrl": "https://www.etix.com/ticket/p/87149692/mark-knight-austin-kingdom-nightclub?partner_id=100",
+      "ticketer": "etix",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-04",
+      "venue": "kingdom",
+      "venueRaw": "Kingdom Nightclub",
+      "title": "FOVOS",
+      "artists": [
+        "FOVOS"
+      ],
+      "url": "https://kingdomnightclub.com/event/fovos/kingdom-nightclub/austin-texas/",
+      "ticketUrl": "https://www.etix.com/ticket/p/81311121/fovos-austin-kingdom-nightclub?partner_id=100",
+      "ticketer": "etix",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-05",
+      "venue": "kingdom",
+      "venueRaw": "Kingdom Nightclub",
+      "title": "Amtrac",
+      "artists": [
+        "Amtrac"
+      ],
+      "url": "https://kingdomnightclub.com/event/amtrac/kingdom-nightclub/austin-texas/",
+      "ticketUrl": "https://www.etix.com/ticket/p/85819674/amtrac-austin-kingdom-nightclub?partner_id=100",
+      "ticketer": "etix",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-12",
+      "venue": "kingdom",
+      "venueRaw": "Kingdom Nightclub",
+      "title": "Rave Jesus – Rave Revival Fall Tour",
+      "artists": [
+        "Rave Jesus – Rave Revival Fall Tour"
+      ],
+      "url": "https://kingdomnightclub.com/event/rave-jesus-rave-revival-fall-tour/kingdom-nightclub/austin-texas/",
+      "ticketUrl": "https://www.etix.com/ticket/p/72889151/rave-jesus-rave-revival-fall-tour-austin-kingdom-nightclub?partner_id=100",
+      "ticketer": "etix",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2027-01-29",
+      "venue": "kingdom",
+      "venueRaw": "Kingdom Nightclub",
+      "title": "Ely Oaks",
+      "artists": [
+        "Ely Oaks"
+      ],
+      "url": "https://kingdomnightclub.com/event/ely-oaks/kingdom-nightclub/austin-texas/",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "listed as 'Just Announced'; no ticket link on site yet (tickets not on sale)"
+    }
+  ]
+}

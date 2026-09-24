@@ -1,0 +1,19 @@
+{
+  "collector": "curl + WebFetch + firecrawl_scrape (all three independently confirmed the same outage; no event data could be read)",
+  "fetchedAt": "2026-09-24",
+  "scope": {"from": "2026-09-24", "to": "2027-05-31"},
+  "pages": [
+    {"url": "https://empireatx.com/", "how": "curl", "ok": false, "note": "HTTP 403, Cloudflare error 1000 'DNS points to prohibited IP'"},
+    {"url": "https://empireatx.com/robots.txt", "how": "curl", "ok": false, "note": "connection failed (exit 28) / HTTP 000 -- same underlying DNS issue, no robots.txt could be read"},
+    {"url": "https://empireatx.com/calendar/", "how": "curl", "ok": false, "note": "HTTP 403, same Cloudflare error 1000"},
+    {"url": "https://empireatx.com/calendar/", "how": "webfetch", "ok": false, "note": "HTTP 403 Forbidden, confirms curl result independently"},
+    {"url": "https://empireatx.com/calendar/", "how": "firecrawl", "ok": false, "note": "firecrawl_scrape (proxy: basic) returned the same Cloudflare 'DNS points to prohibited IP' error page verbatim, statusCode 403 -- three independent fetch paths agree this is a real site-side outage, not a bot block"},
+    {"url": "https://www.ticketmaster.com/robots.txt", "how": "curl", "ok": false, "note": "checked as a possible fallback (Ticketmaster sells tickets for many Austin venues) -- robots endpoint itself returned {\"response\":\"block\"}, a bot-wall response; per fetching etiquette this was not pushed further"}
+  ],
+  "coverage": {
+    "complete": false,
+    "lastDateReached": null,
+    "why": "empireatx.com is fully unreachable: dig shows its DNS A records point directly at Cloudflare's own anycast IPs (172.67.149.245 / 104.21.29.231) rather than an origin server behind Cloudflare -- a classic 'orange-to-orange' DNS misconfiguration that Cloudflare itself refuses to serve (error 1000, 'DNS points to prohibited IP', https://developers.cloudflare.com/support/troubleshooting/http-status-codes/cloudflare-1xxx-errors/error-1000/). Confirmed independently via curl, WebFetch, and firecrawl_scrape (basic proxy) -- all three got the identical Cloudflare error page. This reads as a genuine, current outage of the venue's own site (as of 2026-09-24 ~21:15 UTC), not a bot block or a site closure -- Google/Bandsintown/Facebook/the Austin Chronicle calendar all still list empireatx.com as the live official site and the venue as operating. The natural fallback, Ticketmaster's venue page (ticketmaster.com/empire-control-room-garage-tickets-austin/venue/476109, found via web search), was not fetched: its robots.txt itself returned a bot-block response ({\"response\":\"block\"}), and per the fetching etiquette (no bypassing a block) that path was not pursued. Zero events could be read for this venue. This file should be re-run later once empireatx.com's DNS is fixed -- it is very likely a temporary misconfiguration, not evidence the venue lacks a real calendar."
+  },
+  "events": []
+}

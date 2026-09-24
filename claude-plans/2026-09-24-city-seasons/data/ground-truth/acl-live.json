@@ -1,0 +1,1194 @@
+{
+  "collector": "sources-study-claude",
+  "fetchedAt": "2026-09-24",
+  "scope": {
+    "from": "2026-09-24",
+    "to": "2027-05-31"
+  },
+  "pages": [
+    {
+      "url": "https://www.acllive.com/events",
+      "how": "curl",
+      "ok": true,
+      "note": "default listing, only ~2 months deep"
+    },
+    {
+      "url": "https://www.acllive.com/events/filtered/2026/November",
+      "how": "curl",
+      "ok": true,
+      "note": null
+    },
+    {
+      "url": "https://www.acllive.com/events/filtered/2026/December",
+      "how": "curl",
+      "ok": true,
+      "note": null
+    },
+    {
+      "url": "https://www.acllive.com/events/filtered/2027/January",
+      "how": "curl",
+      "ok": true,
+      "note": null
+    },
+    {
+      "url": "https://www.acllive.com/events/filtered/2027/February",
+      "how": "curl",
+      "ok": true,
+      "note": null
+    },
+    {
+      "url": "https://www.acllive.com/events/filtered/2027/March",
+      "how": "curl",
+      "ok": true,
+      "note": null
+    },
+    {
+      "url": "https://www.acllive.com/events/filtered/2027/April",
+      "how": "curl",
+      "ok": true,
+      "note": null
+    },
+    {
+      "url": "https://www.acllive.com/events/filtered/2027/June",
+      "how": "curl",
+      "ok": true,
+      "note": "beyond scope end, used only to confirm coverage boundary"
+    },
+    {
+      "url": "https://www.acllive.com/events/filtered/2026/September",
+      "how": "firecrawl",
+      "ok": true,
+      "note": "curl got HTTP 406 on this specific month path repeatedly (site's WAF); firecrawl succeeded"
+    },
+    {
+      "url": "https://www.acllive.com/events/filtered/2026/October",
+      "how": "firecrawl",
+      "ok": true,
+      "note": "curl got HTTP 406 on this specific month path repeatedly; firecrawl succeeded"
+    },
+    {
+      "url": "https://www.acllive.com/events/filtered/2027/May",
+      "how": "firecrawl",
+      "ok": true,
+      "note": "curl got HTTP 406 on this specific month path repeatedly; firecrawl succeeded"
+    },
+    {
+      "url": "https://www.acllive.com/event/2026-09-26-indigo-girls-at-7-pm",
+      "how": "firecrawl",
+      "ok": true,
+      "note": "spot-checked one event detail page for field richness (support act, exact AXS ticket link, showtime) — not repeated for all 99 events due to the 60-call firecrawl budget and curl 406s on every /event/ path tried"
+    }
+  ],
+  "coverage": {
+    "complete": true,
+    "lastDateReached": "2027-06-12",
+    "why": "The site's own /events/filtered/<year>/<month> pages were fetched for every month from Sep 2026 through Jun 2027 (Jun fetched to confirm no events beyond scope's May 31 cutoff were missed). Three of those ten month-pages (Sep 2026, Oct 2026, May 2027) returned HTTP 406 from curl on every retry -- consistent with the site's WAF, not a real absence of a page -- and were re-fetched via firecrawl_scrape instead, which succeeded. Listing pages give date, venue room, title, event URL, and a status/on-sale button; they do NOT carry support-act billing, exact showtime, or the outbound ticket-seller URL (AXS, based on one spot-checked detail page) for most rows -- those live only on each event's own /event/... detail page, and that path also returned 406 under curl. One detail page was fetched via firecrawl as a spot check; the remaining 98 were not, to stay inside the firecrawl call budget for the whole 5-venue task. 'time' below is read from the venue's own URL slug (e.g. '.../-at-8-pm', which the venue's CMS generates from the real showtime), not inferred by me. One event (Alison Krauss & Union Station, cancelled) is omitted from the events list because the site prints its date as literal 'TBD' with no reschedule date -- noted here rather than guessed."
+  },
+  "events": [
+    {
+      "date": "2026-09-25",
+      "venue": "acl-live",
+      "venueRaw": "Austin PBS Tapings",
+      "title": "Arturo Sandoval",
+      "artists": [
+        "Arturo Sandoval"
+      ],
+      "url": "https://www.acllive.com/event/acltaping-arturo-sandoval-092526",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-26",
+      "venue": "acl-live",
+      "venueRaw": "ACL Live at The Moody Theater",
+      "title": "Indigo Girls",
+      "artists": [
+        "Indigo Girls"
+      ],
+      "url": "https://www.acllive.com/event/2026-09-26-indigo-girls-at-7-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "7:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-27",
+      "venue": "acl-live",
+      "venueRaw": "ACL Live at The Moody Theater",
+      "title": "Dan and Phil",
+      "artists": [
+        "Dan and Phil"
+      ],
+      "url": "https://www.acllive.com/event/2026-09-27-dan-and-phil-at-8-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-08",
+      "venue": "acl-live",
+      "venueRaw": "Austin PBS Tapings",
+      "title": "Jesse Welles",
+      "artists": [
+        "Jesse Welles"
+      ],
+      "url": "https://www.acllive.com/event/acltaping-jesse-welles-100826",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-09",
+      "venue": "acl-live",
+      "venueRaw": "Austin PBS Tapings",
+      "title": "Lola Young",
+      "artists": [
+        "Lola Young"
+      ],
+      "url": "https://www.acllive.com/event/acltaping-lola-young-100926",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-10",
+      "venue": "acl-live",
+      "venueRaw": "ACL Live at The Moody Theater",
+      "title": "Wave to Earth",
+      "artists": [
+        "Wave to Earth"
+      ],
+      "url": "https://www.acllive.com/event/2026-10-10-wave-to-earth-at-8-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-11",
+      "venue": "acl-live",
+      "venueRaw": "Austin PBS Tapings",
+      "title": "Bleachers",
+      "artists": [
+        "Bleachers"
+      ],
+      "url": "https://www.acllive.com/event/acltaping-bleachers-101126",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-13",
+      "venue": "acl-live",
+      "venueRaw": "ACL Live at The Moody Theater",
+      "title": "Kylie Cantrall",
+      "artists": [
+        "Kylie Cantrall"
+      ],
+      "url": "https://www.acllive.com/event/2026-10-13-kylie-cantrall-at-8-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-14",
+      "venue": "acl-live",
+      "venueRaw": "ACL Live at The Moody Theater",
+      "title": "Sons of Legion",
+      "artists": [
+        "Sons of Legion"
+      ],
+      "url": "https://www.acllive.com/event/2026-10-14-sons-of-legion-at-8-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-15",
+      "venue": "acl-live",
+      "venueRaw": "ACL Live at The Moody Theater",
+      "title": "Modest Mouse",
+      "artists": [
+        "Modest Mouse"
+      ],
+      "url": "https://www.acllive.com/event/2026-10-15-modest-mouse-at-8-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-16",
+      "venue": "acl-live",
+      "venueRaw": "ACL Live at The Moody Theater",
+      "title": "Austin Quest for Ancient Civilizations",
+      "artists": [
+        "Austin Quest for Ancient Civilizations"
+      ],
+      "url": "https://www.acllive.com/event/2026-austin-quest-for-ancient-civilizations-at-6-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "6:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "multi-day listing on site ('Oct 16 - 18 , 2026'); date recorded is the first day"
+    },
+    {
+      "date": "2026-10-19",
+      "venue": "acl-live",
+      "venueRaw": "ACL Live at The Moody Theater",
+      "title": "Snarky Puppy",
+      "artists": [
+        "Snarky Puppy"
+      ],
+      "url": "https://www.acllive.com/event/2026-10-19-snarky-puppy-at-8-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-20",
+      "venue": "acl-live",
+      "venueRaw": "ACL Live at The Moody Theater",
+      "title": "Gregg Allman: The Music Of My Soul Screening",
+      "artists": [
+        "Gregg Allman: The Music Of My Soul Screening"
+      ],
+      "url": "https://www.acllive.com/event/2026-10-20-gregg-allman-the-music-of-my-soul-screening-at-8-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-21",
+      "venue": "acl-live",
+      "venueRaw": "ACL Live at The Moody Theater",
+      "title": "Leonid & Friends",
+      "artists": [
+        "Leonid & Friends"
+      ],
+      "url": "https://www.acllive.com/event/2026-10-21-leonid-friends-at-8-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-23",
+      "venue": "acl-live",
+      "venueRaw": "ACL Live at The Moody Theater",
+      "title": "Shyne",
+      "artists": [
+        "Shyne"
+      ],
+      "url": "https://www.acllive.com/event/2026-10-23-shyne-at-8-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-24",
+      "venue": "acl-live",
+      "venueRaw": "ACL Live at The Moody Theater",
+      "title": "Grand Prixview LIVE with Guenther Steiner & The Red Flags Podcast",
+      "artists": [
+        "Grand Prixview LIVE with Guenther Steiner & The Red Flags Podcast"
+      ],
+      "url": "https://www.acllive.com/event/2026-10-24-the-red-flags-podcast-with-guenther-steiner-at-9-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "9:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-25",
+      "venue": "acl-live",
+      "venueRaw": "ACL Live at The Moody Theater",
+      "title": "Brincos Dieras",
+      "artists": [
+        "Brincos Dieras"
+      ],
+      "url": "https://www.acllive.com/event/2026-10-25-brincos-dieras-at-8-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-26",
+      "venue": "acl-live",
+      "venueRaw": "ACL Live at The Moody Theater",
+      "title": "Daniel Sloss",
+      "artists": [
+        "Daniel Sloss"
+      ],
+      "url": "https://www.acllive.com/event/2026-10-26-daniel-sloss-at-7-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "7:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-28",
+      "venue": "acl-live",
+      "venueRaw": "ACL Live at The Moody Theater",
+      "title": "The Goonies 40th Anniversary Screening + Q&A",
+      "artists": [
+        "The Goonies 40th Anniversary Screening + Q&A"
+      ],
+      "url": "https://www.acllive.com/event/2026-10-28-the-goonies-40th-anniversary-screening-qa-at-8-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-30",
+      "venue": "acl-live",
+      "venueRaw": "ACL Live at The Moody Theater",
+      "title": "NoDak Palooza at ACL Live!",
+      "artists": [
+        "NoDak Palooza at ACL Live!"
+      ],
+      "url": "https://www.acllive.com/event/2026-10-30-nodak-palooza-at-acl-live-at-7-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "7:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-31",
+      "venue": "acl-live",
+      "venueRaw": "ACL Live at The Moody Theater",
+      "title": "Madeon",
+      "artists": [
+        "Madeon"
+      ],
+      "url": "https://www.acllive.com/event/2026-10-31-madeon-at-8-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-01",
+      "venue": "acl-live",
+      "venueRaw": "ACL Live at The Moody Theater",
+      "title": "Jim Henson's Labyrinth: In Concert 40th Anniversary",
+      "artists": [
+        "Jim Henson's Labyrinth: In Concert 40th Anniversary"
+      ],
+      "url": "https://www.acllive.com/event/2026-11-01-jim-hensons-labyrinth-in-concert-40th-anniversary-at-8-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-08",
+      "venue": "acl-live",
+      "venueRaw": "ACL Live at The Moody Theater",
+      "title": "Wheel of Fortune LIVE!",
+      "artists": [
+        "Wheel of Fortune LIVE!"
+      ],
+      "url": "https://www.acllive.com/event/2026-11-08-wheel-of-fortune-live-at-8-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-09",
+      "venue": "acl-live",
+      "venueRaw": "ACL Live at The Moody Theater",
+      "title": "Art Garfunkel",
+      "artists": [
+        "Art Garfunkel"
+      ],
+      "url": "https://www.acllive.com/event/2026-11-09-art-garfunkel-at-9-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "9:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-11",
+      "venue": "acl-live",
+      "venueRaw": "ACL Live at The Moody Theater",
+      "title": "An Evening of Alton Brown",
+      "artists": [
+        "An Evening of Alton Brown"
+      ],
+      "url": "https://www.acllive.com/event/2026-11-11-an-evening-of-alton-brown-at-7-30-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "7:30 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-13",
+      "venue": "acl-live",
+      "venueRaw": "ACL Live at The Moody Theater",
+      "title": "Earlybirds Club",
+      "artists": [
+        "Earlybirds Club"
+      ],
+      "url": "https://www.acllive.com/event/2026-11-13-earlybirds-club-at-6-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "6:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-14",
+      "venue": "acl-live",
+      "venueRaw": "ACL Live at The Moody Theater",
+      "title": "Michael Blaustein",
+      "artists": [
+        "Michael Blaustein"
+      ],
+      "url": "https://www.acllive.com/event/2026-11-14-michael-blaustein-at-7-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "7:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-18",
+      "venue": "acl-live",
+      "venueRaw": "ACL Live at The Moody Theater",
+      "title": "The Music of Hey Arnold! Live!",
+      "artists": [
+        "The Music of Hey Arnold! Live!"
+      ],
+      "url": "https://www.acllive.com/event/2026-11-18-the-music-of-hey-arnold-live-at-8-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-19",
+      "venue": "acl-live",
+      "venueRaw": "ACL Live at The Moody Theater",
+      "title": "Los Dos de Tamaulipas",
+      "artists": [
+        "Los Dos de Tamaulipas"
+      ],
+      "url": "https://www.acllive.com/event/2026-11-19-los-dos-de-tamaulipas-at-8-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-20",
+      "venue": "acl-live",
+      "venueRaw": "ACL Live at The Moody Theater",
+      "title": "Chelsea Handler",
+      "artists": [
+        "Chelsea Handler"
+      ],
+      "url": "https://www.acllive.com/event/2026-11-20-chelsea-handler-at-8-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-21",
+      "venue": "acl-live",
+      "venueRaw": "ACL Live at The Moody Theater",
+      "title": "Lyle Lovett and his Small Large Band",
+      "artists": [
+        "Lyle Lovett and his Small Large Band"
+      ],
+      "url": "https://www.acllive.com/event/2026-11-21-lyle-lovett-and-his-small-large-band-at-8-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-22",
+      "venue": "acl-live",
+      "venueRaw": "ACL Live at The Moody Theater",
+      "title": "Rawayana",
+      "artists": [
+        "Rawayana"
+      ],
+      "url": "https://www.acllive.com/event/2026-11-22-rawayana-at-8-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-27",
+      "venue": "acl-live",
+      "venueRaw": "ACL Live at The Moody Theater",
+      "title": "Michael Martin Murphey's Cowboy Christmas",
+      "artists": [
+        "Michael Martin Murphey's Cowboy Christmas"
+      ],
+      "url": "https://www.acllive.com/event/2026-11-27-michael-martin-murphey-s-cowboy-christmas-at-8-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-28",
+      "venue": "acl-live",
+      "venueRaw": "ACL Live at The Moody Theater",
+      "title": "Bob Schneider & The Moonlight Orchestra",
+      "artists": [
+        "Bob Schneider & The Moonlight Orchestra"
+      ],
+      "url": "https://www.acllive.com/event/2026-11-28-bob-schneider-the-moonlight-orchestra-at-8-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-29",
+      "venue": "acl-live",
+      "venueRaw": "ACL Live at The Moody Theater",
+      "title": "BEAT: Belew/Vai/Levin/Bozzio Performing the Music of KING CRIMSON",
+      "artists": [
+        "BEAT: Belew/Vai/Levin/Bozzio Performing the Music of KING CRIMSON"
+      ],
+      "url": "https://www.acllive.com/event/2026-11-29-beat-belew-vai-levin-bozzio-performing-the-music-of-king-crimson-at-8-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-01",
+      "venue": "acl-live",
+      "venueRaw": "ACL Live at The Moody Theater",
+      "title": "Eric Benét",
+      "artists": [
+        "Eric Benét"
+      ],
+      "url": "https://www.acllive.com/event/2026-12-01-eric-benet-at-8-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-02",
+      "venue": "acl-live",
+      "venueRaw": "ACL Live at The Moody Theater",
+      "title": "Victoria Monét",
+      "artists": [
+        "Victoria Monét"
+      ],
+      "url": "https://www.acllive.com/event/2026-12-02-victoria-monet-at-8-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-03",
+      "venue": "acl-live",
+      "venueRaw": "ACL Live at The Moody Theater",
+      "title": "Los Tucanes de Tijuana",
+      "artists": [
+        "Los Tucanes de Tijuana"
+      ],
+      "url": "https://www.acllive.com/event/2026-12-03-los-tucanes-de-tijuana-at-8-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-04",
+      "venue": "acl-live",
+      "venueRaw": "ACL Live at The Moody Theater",
+      "title": "Kansas",
+      "artists": [
+        "Kansas"
+      ],
+      "url": "https://www.acllive.com/event/2026-12-04-kansas-at-8-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-05",
+      "venue": "acl-live",
+      "venueRaw": "ACL Live at The Moody Theater",
+      "title": "Ben Schwartz & Friends",
+      "artists": [
+        "Ben Schwartz & Friends"
+      ],
+      "url": "https://www.acllive.com/event/2026-12-05-ben-schwartz-friends-at-8-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-07",
+      "venue": "acl-live",
+      "venueRaw": "ACL Live at The Moody Theater",
+      "title": "A Magical Cirque Christmas",
+      "artists": [
+        "A Magical Cirque Christmas"
+      ],
+      "url": "https://www.acllive.com/event/2026-12-07-a-magical-cirque-christmas-at-7-30-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "7:30 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-08",
+      "venue": "acl-live",
+      "venueRaw": "ACL Live at The Moody Theater",
+      "title": "A Live Conversation with Chevy Chase following a screening of National Lampoon’s Christmas Vacation",
+      "artists": [
+        "A Live Conversation with Chevy Chase following a screening of National Lampoon’s Christmas Vacation"
+      ],
+      "url": "https://www.acllive.com/event/2026-12-08-a-live-conversation-with-chevy-chase-following-a-screening-of-national-at-8-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-09",
+      "venue": "acl-live",
+      "venueRaw": "ACL Live at The Moody Theater",
+      "title": "Beartooth",
+      "artists": [
+        "Beartooth"
+      ],
+      "url": "https://www.acllive.com/event/2026-12-09-beartooth-at-6-30-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "6:30 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-10",
+      "venue": "acl-live",
+      "venueRaw": "ACL Live at The Moody Theater",
+      "title": "Live from Laurel Canyon",
+      "artists": [
+        "Live from Laurel Canyon"
+      ],
+      "url": "https://www.acllive.com/event/2026-12-10-live-from-laurel-canyon-at-8-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-11",
+      "venue": "acl-live",
+      "venueRaw": "ACL Live at The Moody Theater",
+      "title": "Sonic Guild Ball",
+      "artists": [
+        "Sonic Guild Ball"
+      ],
+      "url": "https://www.acllive.com/event/2026-12-11-sonic-guild-ball-at-8-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-13",
+      "venue": "acl-live",
+      "venueRaw": "ACL Live at The Moody Theater",
+      "title": "Molly Tuttle x Marty Stuart: Guitars on Fire",
+      "artists": [
+        "Molly Tuttle x Marty Stuart: Guitars on Fire"
+      ],
+      "url": "https://www.acllive.com/event/2026-12-13-molly-tuttle-x-marty-stuart-guitars-on-fire-at-8-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-15",
+      "venue": "acl-live",
+      "venueRaw": "ACL Live at The Moody Theater",
+      "title": "Underoath",
+      "artists": [
+        "Underoath"
+      ],
+      "url": "https://www.acllive.com/event/2026-12-15-underoath-at-8-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-16",
+      "venue": "acl-live",
+      "venueRaw": "ACL Live at The Moody Theater",
+      "title": "Blind Boys of Alabama & Asleep At The Wheel",
+      "artists": [
+        "Blind Boys of Alabama & Asleep At The Wheel"
+      ],
+      "url": "https://www.acllive.com/event/2026-12-16-blind-boys-of-alabama-asleep-at-the-wheel-at-8-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-19",
+      "venue": "acl-live",
+      "venueRaw": "ACL Live at The Moody Theater",
+      "title": "A Drag Queen Christmas",
+      "artists": [
+        "A Drag Queen Christmas"
+      ],
+      "url": "https://www.acllive.com/event/2026-12-19-a-drag-queen-christmas-at-8-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-22",
+      "venue": "acl-live",
+      "venueRaw": "ACL Live at The Moody Theater",
+      "title": "Mariachi Sol de México de Jose Hernandez",
+      "artists": [
+        "Mariachi Sol de México de Jose Hernandez"
+      ],
+      "url": "https://www.acllive.com/event/2026-12-22-mariachi-sol-de-mexico-de-jose-hernandez-at-8-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-26",
+      "venue": "acl-live",
+      "venueRaw": "ACL Live at The Moody Theater",
+      "title": "Toadies",
+      "artists": [
+        "Toadies"
+      ],
+      "url": "https://www.acllive.com/event/2026-12-26-toadies-at-8-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-29",
+      "venue": "acl-live",
+      "venueRaw": "ACL Live at The Moody Theater",
+      "title": "The Temptations",
+      "artists": [
+        "The Temptations"
+      ],
+      "url": "https://www.acllive.com/event/2026-12-29-the-temptations-at-7-30-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "7:30 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-30",
+      "venue": "acl-live",
+      "venueRaw": "ACL Live at The Moody Theater",
+      "title": "Gary Owen",
+      "artists": [
+        "Gary Owen"
+      ],
+      "url": "https://www.acllive.com/event/2026-12-30-gary-owen-at-8-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-31",
+      "venue": "acl-live",
+      "venueRaw": "ACL Live at The Moody Theater",
+      "title": "Spoon",
+      "artists": [
+        "Spoon"
+      ],
+      "url": "https://www.acllive.com/event/2026-12-31-spoon-at-9-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "9:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2027-01-21",
+      "venue": "acl-live",
+      "venueRaw": "ACL Live at The Moody Theater",
+      "title": "Alan Walker",
+      "artists": [
+        "Alan Walker"
+      ],
+      "url": "https://www.acllive.com/event/2027-01-21-alan-walker-at-7-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "7:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2027-01-22",
+      "venue": "acl-live",
+      "venueRaw": "ACL Live at The Moody Theater",
+      "title": "The Bald and the Beautiful Live",
+      "artists": [
+        "The Bald and the Beautiful Live"
+      ],
+      "url": "https://www.acllive.com/event/2027-01-22-the-bald-and-the-beautiful-live-at-7-30-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "7:30 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2027-01-29",
+      "venue": "acl-live",
+      "venueRaw": "ACL Live at The Moody Theater",
+      "title": "Franco Escamilla",
+      "artists": [
+        "Franco Escamilla"
+      ],
+      "url": "https://www.acllive.com/event/2027-01-29-franco-escamilla-at-8-30-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "8:30 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2027-01-31",
+      "venue": "acl-live",
+      "venueRaw": "ACL Live at The Moody Theater",
+      "title": "Stella Lefty",
+      "artists": [
+        "Stella Lefty"
+      ],
+      "url": "https://www.acllive.com/event/2027-01-31-stella-lefty-at-8-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2027-02-05",
+      "venue": "acl-live",
+      "venueRaw": "ACL Live at The Moody Theater",
+      "title": "Josh Johnson's Comedy Band Camp",
+      "artists": [
+        "Josh Johnson's Comedy Band Camp"
+      ],
+      "url": "https://www.acllive.com/event/2027-josh-johnsons-comedy-band-camp-at-7-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "7:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "multi-day listing on site ('Feb 5 - 6 , 2027'); date recorded is the first day"
+    },
+    {
+      "date": "2027-02-23",
+      "venue": "acl-live",
+      "venueRaw": "ACL Live at The Moody Theater",
+      "title": "RuPaul's Drag Race Werq the World Tour",
+      "artists": [
+        "RuPaul's Drag Race Werq the World Tour"
+      ],
+      "url": "https://www.acllive.com/event/2027-02-23-rupauls-drag-race-werq-the-world-tour-at-8-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2027-03-04",
+      "venue": "acl-live",
+      "venueRaw": "ACL Live at The Moody Theater",
+      "title": "Wheeler Walker Jr.",
+      "artists": [
+        "Wheeler Walker Jr."
+      ],
+      "url": "https://www.acllive.com/event/2027-03-04-wheeler-walker-jr-at-8-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2027-03-08",
+      "venue": "acl-live",
+      "venueRaw": "ACL Live at The Moody Theater",
+      "title": "Sylvan Esso",
+      "artists": [
+        "Sylvan Esso"
+      ],
+      "url": "https://www.acllive.com/event/2027-03-08-sylvan-esso-at-8-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2027-03-22",
+      "venue": "acl-live",
+      "venueRaw": "ACL Live at The Moody Theater",
+      "title": "The Interrupters",
+      "artists": [
+        "The Interrupters"
+      ],
+      "url": "https://www.acllive.com/event/2027-03-22-the-interrupters-at-7-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "7:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2027-03-25",
+      "venue": "acl-live",
+      "venueRaw": "ACL Live at The Moody Theater",
+      "title": "The Psychedelic Furs",
+      "artists": [
+        "The Psychedelic Furs"
+      ],
+      "url": "https://www.acllive.com/event/2027-03-25-the-psychedelic-furs-at-8-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2027-04-15",
+      "venue": "acl-live",
+      "venueRaw": "ACL Live at The Moody Theater",
+      "title": "Matt Mathews",
+      "artists": [
+        "Matt Mathews"
+      ],
+      "url": "https://www.acllive.com/event/2027-04-15-matt-mathews",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    }
+  ]
+}

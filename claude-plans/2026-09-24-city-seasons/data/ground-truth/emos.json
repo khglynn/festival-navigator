@@ -1,0 +1,704 @@
+{
+  "collector": "sources-study-claude",
+  "fetchedAt": "2026-09-24",
+  "scope": {
+    "from": "2026-09-24",
+    "to": "2027-05-31"
+  },
+  "pages": [
+    {
+      "url": "https://www.emosaustin.com/robots.txt",
+      "how": "curl",
+      "ok": true,
+      "note": "Allow: / — no restrictions"
+    },
+    {
+      "url": "https://www.emosaustin.com/shows",
+      "how": "curl",
+      "ok": true,
+      "note": "SSR page carries 36 schema.org MusicEvent JSON-LD blocks, Sep 24-Nov 20"
+    },
+    {
+      "url": "https://www.emosaustin.com/shows",
+      "how": "firecrawl",
+      "ok": true,
+      "note": "Rendered page shows 39 events total (through Fri Nov 27); JSON-LD in the curl fetch only carried 36 of them — the 3 extra (Bahamas Nov 21, Syd Nov 22, Grief Sucks Nov 27) are venue-listed but not in that structured block, read from rendered markdown instead"
+    },
+    {
+      "url": "https://www.emosaustin.com/shows/calendar/2026-12",
+      "how": "curl",
+      "ok": true,
+      "note": "Per-month calendar route (Ticketmaster-powered widget) renders only a date grid — no event data server-side or via firecrawl; not usable for reading events"
+    }
+  ],
+  "coverage": {
+    "complete": true,
+    "lastDateReached": "2026-11-27",
+    "why": "Emo's /shows page (Ticketmaster/Live Nation venue widget) lists every currently-booked show with no further pagination controls found; it runs out at Nov 27, 2026 because nothing later is booked yet, not because of a page limit. The per-month /shows/calendar/YYYY-MM route exists but renders empty of event data for both curl and firecrawl — only the flat /shows list is readable. This file will need a re-check closer to the season as more 2027 shows get booked and added to the list."
+  },
+  "events": [
+    {
+      "date": "2026-09-24",
+      "venue": "emos",
+      "venueRaw": "Emo's Austin",
+      "title": "ADÉLA: The Red Bottoms Tour",
+      "artists": [
+        "ADÉLA"
+      ],
+      "url": "https://www.ticketmaster.com/adela-the-red-bottoms-tour-austin-texas-09-24-2026/event/3A0064B69E279B47",
+      "ticketUrl": "https://www.ticketmaster.com/adela-the-red-bottoms-tour-austin-texas-09-24-2026/event/3A0064B69E279B47",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "7:00PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-26",
+      "venue": "emos",
+      "venueRaw": "Emo's Austin",
+      "title": "The Menzingers: Everything I Ever Saw North American Tour",
+      "artists": [
+        "The Menzingers"
+      ],
+      "url": "https://www.ticketmaster.com/the-menzingers-everything-i-ever-saw-austin-texas-09-26-2026/event/3A006494E8D53AAE",
+      "ticketUrl": "https://www.ticketmaster.com/the-menzingers-everything-i-ever-saw-austin-texas-09-26-2026/event/3A006494E8D53AAE",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "6:00PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-27",
+      "venue": "emos",
+      "venueRaw": "Emo's Austin",
+      "title": "Judah & the Lion",
+      "artists": [
+        "Judah & the Lion"
+      ],
+      "url": "https://www.ticketmaster.com/judah-the-lion-austin-texas-09-27-2026/event/3A0064CA993CA0F2",
+      "ticketUrl": "https://www.ticketmaster.com/judah-the-lion-austin-texas-09-27-2026/event/3A0064CA993CA0F2",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "6:30PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-30",
+      "venue": "emos",
+      "venueRaw": "Emo's Austin",
+      "title": "Tinlicker North America 2026",
+      "artists": [
+        "Tinlicker North America 2026"
+      ],
+      "url": "https://www.ticketmaster.com/tinlicker-north-america-2026-austin-texas-09-30-2026/event/3A006479ED454C87",
+      "ticketUrl": "https://www.ticketmaster.com/tinlicker-north-america-2026-austin-texas-09-30-2026/event/3A006479ED454C87",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "7:00PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-01",
+      "venue": "emos",
+      "venueRaw": "Emo's Austin",
+      "title": "Official 2026 ACL Nights: Palace",
+      "artists": [
+        "Official 2026 ACL Nights"
+      ],
+      "url": "https://www.ticketmaster.com/official-2026-acl-nights-palace-austin-texas-10-01-2026/event/3A0064FBD3B1E691",
+      "ticketUrl": "https://www.ticketmaster.com/official-2026-acl-nights-palace-austin-texas-10-01-2026/event/3A0064FBD3B1E691",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "7:00PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-02",
+      "venue": "emos",
+      "venueRaw": "Emo's Austin",
+      "title": "Official 2026 ACL Nights: BUNT.",
+      "artists": [
+        "Official 2026 ACL Nights"
+      ],
+      "url": "https://www.ticketmaster.com/official-2026-acl-nights-bunt-austin-texas-10-02-2026/event/3A0064FBD4C8E83E",
+      "ticketUrl": "https://www.ticketmaster.com/official-2026-acl-nights-bunt-austin-texas-10-02-2026/event/3A0064FBD4C8E83E",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "9:00PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-03",
+      "venue": "emos",
+      "venueRaw": "Emo's Austin",
+      "title": "Official 2026 ACL Nights: Levity",
+      "artists": [
+        "Official 2026 ACL Nights"
+      ],
+      "url": "https://www.ticketmaster.com/official-2026-acl-nights-levity-austin-texas-10-03-2026/event/3A0064FBD69EEA69",
+      "ticketUrl": "https://www.ticketmaster.com/official-2026-acl-nights-levity-austin-texas-10-03-2026/event/3A0064FBD69EEA69",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "9:00PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-04",
+      "venue": "emos",
+      "venueRaw": "Emo's Austin",
+      "title": "Official 2026 ACL Nights: Suki Waterhouse",
+      "artists": [
+        "Official 2026 ACL Nights"
+      ],
+      "url": "https://www.ticketmaster.com/official-2026-acl-nights-suki-waterhouse-austin-texas-10-04-2026/event/3A0064FBD862ECD1",
+      "ticketUrl": "https://www.ticketmaster.com/official-2026-acl-nights-suki-waterhouse-austin-texas-10-04-2026/event/3A0064FBD862ECD1",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "9:00PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-09",
+      "venue": "emos",
+      "venueRaw": "Emo's Austin",
+      "title": "Official 2026 ACL Nights: Rodrigo y Gabriela",
+      "artists": [
+        "Official 2026 ACL Nights"
+      ],
+      "url": "https://www.ticketmaster.com/official-2026-acl-nights-rodrigo-y-austin-texas-10-09-2026/event/3A0064FBD9A5EE44",
+      "ticketUrl": "https://www.ticketmaster.com/official-2026-acl-nights-rodrigo-y-austin-texas-10-09-2026/event/3A0064FBD9A5EE44",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "9:00PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-12",
+      "venue": "emos",
+      "venueRaw": "Emo's Austin",
+      "title": "L7: The Last Hurrah Tour 2026",
+      "artists": [
+        "L7"
+      ],
+      "url": "https://www.ticketmaster.com/l7-the-last-hurrah-tour-2026-austin-texas-10-12-2026/event/3A0064A1BAC8373A",
+      "ticketUrl": "https://www.ticketmaster.com/l7-the-last-hurrah-tour-2026-austin-texas-10-12-2026/event/3A0064A1BAC8373A",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "7:00PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-13",
+      "venue": "emos",
+      "venueRaw": "Emo's Austin",
+      "title": "Quadeca",
+      "artists": [
+        "Quadeca"
+      ],
+      "url": "https://www.ticketmaster.com/quadeca-austin-texas-10-13-2026/event/3A0064EEB0058ECA",
+      "ticketUrl": "https://www.ticketmaster.com/quadeca-austin-texas-10-13-2026/event/3A0064EEB0058ECA",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "7:00PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-14",
+      "venue": "emos",
+      "venueRaw": "Emo's Austin",
+      "title": "DJ Meredith Marks - YOU. CAN. DANCE. Tour",
+      "artists": [
+        "DJ Meredith Marks"
+      ],
+      "url": "https://www.ticketmaster.com/dj-meredith-marks-you-can-dance-austin-texas-10-14-2026/event/3A006529E4992E6D",
+      "ticketUrl": "https://www.ticketmaster.com/dj-meredith-marks-you-can-dance-austin-texas-10-14-2026/event/3A006529E4992E6D",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "6:30PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-15",
+      "venue": "emos",
+      "venueRaw": "Emo's Austin",
+      "title": "DYING FETUS & SANGUISUGABOGG",
+      "artists": [
+        "DYING FETUS & SANGUISUGABOGG"
+      ],
+      "url": "https://www.ticketmaster.com/dying-fetus-sanguisugabogg-austin-texas-10-15-2026/event/3A006491A0EDBA8B",
+      "ticketUrl": "https://www.ticketmaster.com/dying-fetus-sanguisugabogg-austin-texas-10-15-2026/event/3A006491A0EDBA8B",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "5:30PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-17",
+      "venue": "emos",
+      "venueRaw": "Emo's Austin",
+      "title": "Chelsea Wolfe: THE DARK World Tour",
+      "artists": [
+        "Chelsea Wolfe"
+      ],
+      "url": "https://www.ticketmaster.com/chelsea-wolfe-the-dark-world-tour-austin-texas-10-17-2026/event/3A0064CFCC37D954",
+      "ticketUrl": "https://www.ticketmaster.com/chelsea-wolfe-the-dark-world-tour-austin-texas-10-17-2026/event/3A0064CFCC37D954",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "7:30PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-21",
+      "venue": "emos",
+      "venueRaw": "Emo's Austin",
+      "title": "Marilyn Manson - 2 Day Ticket (10/21/26 + 10/22/26)",
+      "artists": [
+        "Marilyn Manson"
+      ],
+      "url": "https://www.ticketmaster.com/marilyn-manson-2-day-ticket-102126-austin-texas-10-21-2026/event/3A0064ED8E754D7B",
+      "ticketUrl": "https://www.ticketmaster.com/marilyn-manson-2-day-ticket-102126-austin-texas-10-21-2026/event/3A0064ED8E754D7B",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "multi-day ticket bundle; separate single-day listings also present"
+    },
+    {
+      "date": "2026-10-21",
+      "venue": "emos",
+      "venueRaw": "Emo's Austin",
+      "title": "Marilyn Manson",
+      "artists": [
+        "Marilyn Manson"
+      ],
+      "url": "https://www.ticketmaster.com/marilyn-manson-austin-texas-10-21-2026/event/3A0064ED8C38495C",
+      "ticketUrl": "https://www.ticketmaster.com/marilyn-manson-austin-texas-10-21-2026/event/3A0064ED8C38495C",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "8:00PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-22",
+      "venue": "emos",
+      "venueRaw": "Emo's Austin",
+      "title": "Marilyn Manson",
+      "artists": [
+        "Marilyn Manson"
+      ],
+      "url": "https://www.ticketmaster.com/marilyn-manson-austin-texas-10-22-2026/event/3A0064ED8C8749CB",
+      "ticketUrl": "https://www.ticketmaster.com/marilyn-manson-austin-texas-10-22-2026/event/3A0064ED8C8749CB",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "8:00PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-23",
+      "venue": "emos",
+      "venueRaw": "Emo's Austin",
+      "title": "GLAIVE - GOD SAVE THE THREE TOUR",
+      "artists": [
+        "GLAIVE"
+      ],
+      "url": "https://www.ticketmaster.com/glaive-god-save-the-three-tour-austin-texas-10-23-2026/event/3A0064A6A1E3C66F",
+      "ticketUrl": "https://www.ticketmaster.com/glaive-god-save-the-three-tour-austin-texas-10-23-2026/event/3A0064A6A1E3C66F",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "7:00PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-24",
+      "venue": "emos",
+      "venueRaw": "Emo's Austin",
+      "title": "Culture Wars",
+      "artists": [
+        "Culture Wars"
+      ],
+      "url": "https://www.ticketmaster.com/culture-wars-austin-texas-10-24-2026/event/3A0064829B18E66A",
+      "ticketUrl": "https://www.ticketmaster.com/culture-wars-austin-texas-10-24-2026/event/3A0064829B18E66A",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "7:00PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-25",
+      "venue": "emos",
+      "venueRaw": "Emo's Austin",
+      "title": "Mom Jeans",
+      "artists": [
+        "Mom Jeans"
+      ],
+      "url": "https://www.ticketmaster.com/mom-jeans-austin-texas-10-25-2026/event/3A0064A58E8B7BFE",
+      "ticketUrl": "https://www.ticketmaster.com/mom-jeans-austin-texas-10-25-2026/event/3A0064A58E8B7BFE",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "6:30PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-03",
+      "venue": "emos",
+      "venueRaw": "Emo's Austin",
+      "title": "Knox",
+      "artists": [
+        "Knox"
+      ],
+      "url": "https://www.ticketmaster.com/knox-austin-texas-11-03-2026/event/3A0064E6DE9ABC7D",
+      "ticketUrl": "https://www.ticketmaster.com/knox-austin-texas-11-03-2026/event/3A0064E6DE9ABC7D",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "6:30PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-04",
+      "venue": "emos",
+      "venueRaw": "Emo's Austin",
+      "title": "Slow Pulp",
+      "artists": [
+        "Slow Pulp"
+      ],
+      "url": "https://www.ticketmaster.com/slow-pulp-austin-texas-11-04-2026/event/3A0064A58FC6812F",
+      "ticketUrl": "https://www.ticketmaster.com/slow-pulp-austin-texas-11-04-2026/event/3A0064A58FC6812F",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "7:00PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-05",
+      "venue": "emos",
+      "venueRaw": "Emo's Austin",
+      "title": "Bonobo: Distance in Static Live North American Tour",
+      "artists": [
+        "Bonobo"
+      ],
+      "url": "https://www.ticketmaster.com/bonobo-distance-in-static-live-north-austin-texas-11-05-2026/event/3A0064C1E068D3A4",
+      "ticketUrl": "https://www.ticketmaster.com/bonobo-distance-in-static-live-north-austin-texas-11-05-2026/event/3A0064C1E068D3A4",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "7:00PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-06",
+      "venue": "emos",
+      "venueRaw": "Emo's Austin",
+      "title": "TWO NIGHTS WITH THEY MIGHT BE GIANTS - 2 Day Ticket(11/6/26 + 11/7/26)",
+      "artists": [
+        "TWO NIGHTS WITH THEY MIGHT BE GIANTS"
+      ],
+      "url": "https://www.ticketmaster.com/two-nights-with-they-might-be-austin-texas-11-06-2026/event/3A0064E7CDEA9A03",
+      "ticketUrl": "https://www.ticketmaster.com/two-nights-with-they-might-be-austin-texas-11-06-2026/event/3A0064E7CDEA9A03",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "multi-day ticket bundle; separate single-day listings also present"
+    },
+    {
+      "date": "2026-11-06",
+      "venue": "emos",
+      "venueRaw": "Emo's Austin",
+      "title": "TWO NIGHTS WITH THEY MIGHT BE GIANTS",
+      "artists": [
+        "TWO NIGHTS WITH THEY MIGHT BE GIANTS"
+      ],
+      "url": "https://www.ticketmaster.com/two-nights-with-they-might-be-austin-texas-11-06-2026/event/3A006487D8DA2D98",
+      "ticketUrl": "https://www.ticketmaster.com/two-nights-with-they-might-be-austin-texas-11-06-2026/event/3A006487D8DA2D98",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "7:00PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-07",
+      "venue": "emos",
+      "venueRaw": "Emo's Austin",
+      "title": "TWO NIGHTS WITH THEY MIGHT BE GIANTS",
+      "artists": [
+        "TWO NIGHTS WITH THEY MIGHT BE GIANTS"
+      ],
+      "url": "https://www.ticketmaster.com/two-nights-with-they-might-be-austin-texas-11-07-2026/event/3A006487D9252E5F",
+      "ticketUrl": "https://www.ticketmaster.com/two-nights-with-they-might-be-austin-texas-11-07-2026/event/3A006487D9252E5F",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "7:00PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-09",
+      "venue": "emos",
+      "venueRaw": "Emo's Austin",
+      "title": "Rival Sons - Domestic Bliss Tour",
+      "artists": [
+        "Rival Sons"
+      ],
+      "url": "https://www.ticketmaster.com/rival-sons-domestic-bliss-tour-austin-texas-11-09-2026/event/3A0064D0FAA324B2",
+      "ticketUrl": "https://www.ticketmaster.com/rival-sons-domestic-bliss-tour-austin-texas-11-09-2026/event/3A0064D0FAA324B2",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "7:00PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-10",
+      "venue": "emos",
+      "venueRaw": "Emo's Austin",
+      "title": "KTSN Presents: Medium Build Presents The King of Having Fun on Tour",
+      "artists": [
+        "KTSN Presents"
+      ],
+      "url": "https://www.ticketmaster.com/ktsn-presents-medium-build-presents-the-austin-texas-11-10-2026/event/3A0064D0B274A0F9",
+      "ticketUrl": "https://www.ticketmaster.com/ktsn-presents-medium-build-presents-the-austin-texas-11-10-2026/event/3A0064D0B274A0F9",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "7:00PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-11",
+      "venue": "emos",
+      "venueRaw": "Emo's Austin",
+      "title": "Jose Madero - USA Tour 2026",
+      "artists": [
+        "Jose Madero"
+      ],
+      "url": "https://www.ticketmaster.com/jose-madero-usa-tour-2026-austin-texas-11-11-2026/event/3A0064D196617E5C",
+      "ticketUrl": "https://www.ticketmaster.com/jose-madero-usa-tour-2026-austin-texas-11-11-2026/event/3A0064D196617E5C",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "7:00PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-13",
+      "venue": "emos",
+      "venueRaw": "Emo's Austin",
+      "title": "El Tri",
+      "artists": [
+        "El Tri"
+      ],
+      "url": "https://www.ticketmaster.com/el-tri-austin-texas-11-13-2026/event/3A0064A1C57166AE",
+      "ticketUrl": "https://www.ticketmaster.com/el-tri-austin-texas-11-13-2026/event/3A0064A1C57166AE",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "7:00PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-14",
+      "venue": "emos",
+      "venueRaw": "Emo's Austin",
+      "title": "DANNA - THE BEDROOM SESSIONS US TOUR",
+      "artists": [
+        "DANNA"
+      ],
+      "url": "https://www.ticketmaster.com/danna-the-bedroom-sessions-us-tour-austin-texas-11-14-2026/event/3A00651C9A4A98E5",
+      "ticketUrl": "https://www.ticketmaster.com/danna-the-bedroom-sessions-us-tour-austin-texas-11-14-2026/event/3A00651C9A4A98E5",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "7:00PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-15",
+      "venue": "emos",
+      "venueRaw": "Emo's Austin",
+      "title": "Clara La San - Chosen Silences Tour Fall 2026",
+      "artists": [
+        "Clara La San"
+      ],
+      "url": "https://www.ticketmaster.com/clara-la-san-chosen-silences-tour-austin-texas-11-15-2026/event/3A00650BB173ADDF",
+      "ticketUrl": "https://www.ticketmaster.com/clara-la-san-chosen-silences-tour-austin-texas-11-15-2026/event/3A00650BB173ADDF",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "7:00PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-17",
+      "venue": "emos",
+      "venueRaw": "Emo's Austin",
+      "title": "Amble",
+      "artists": [
+        "Amble"
+      ],
+      "url": "https://www.ticketmaster.com/amble-austin-texas-11-17-2026/event/3A006496EF8487E5",
+      "ticketUrl": "https://www.ticketmaster.com/amble-austin-texas-11-17-2026/event/3A006496EF8487E5",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "7:00PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-18",
+      "venue": "emos",
+      "venueRaw": "Emo's Austin",
+      "title": "Evan Honer - It's An Even Longer Road Tour",
+      "artists": [
+        "Evan Honer"
+      ],
+      "url": "https://www.ticketmaster.com/evan-honer-its-an-even-longer-austin-texas-11-18-2026/event/3A0064C2B970AC59",
+      "ticketUrl": "https://www.ticketmaster.com/evan-honer-its-an-even-longer-austin-texas-11-18-2026/event/3A0064C2B970AC59",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "7:00PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-19",
+      "venue": "emos",
+      "venueRaw": "Emo's Austin",
+      "title": "Dexter and The Moonrocks",
+      "artists": [
+        "Dexter and The Moonrocks"
+      ],
+      "url": "https://www.ticketmaster.com/dexter-and-the-moonrocks-austin-texas-11-19-2026/event/3A0064C2F2FCF0DC",
+      "ticketUrl": "https://www.ticketmaster.com/dexter-and-the-moonrocks-austin-texas-11-19-2026/event/3A0064C2F2FCF0DC",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "7:00PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-20",
+      "venue": "emos",
+      "venueRaw": "Emo's Austin",
+      "title": "Dexter and The Moonrocks",
+      "artists": [
+        "Dexter and The Moonrocks"
+      ],
+      "url": "https://www.ticketmaster.com/dexter-and-the-moonrocks-austin-texas-11-20-2026/event/3A0064CFAE3F9E53",
+      "ticketUrl": "https://www.ticketmaster.com/dexter-and-the-moonrocks-austin-texas-11-20-2026/event/3A0064CFAE3F9E53",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "7:00PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-21",
+      "venue": "emos",
+      "venueRaw": "Emo's Austin",
+      "title": "Bahamas - Industrial Sport & Sound",
+      "artists": [
+        "Bahamas"
+      ],
+      "url": "https://www.ticketmaster.com/bahamas-industrial-sport-sound-austin-texas-11-21-2026/event/3A006452B93B3A0F",
+      "ticketUrl": "https://www.ticketmaster.com/bahamas-industrial-sport-sound-austin-texas-11-21-2026/event/3A006452B93B3A0F",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "7:00PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-22",
+      "venue": "emos",
+      "venueRaw": "Emo's Austin",
+      "title": "Syd: Beard Tour",
+      "artists": [
+        "Syd"
+      ],
+      "url": "https://www.ticketmaster.com/syd-beard-tour-austin-texas-11-22-2026/event/3A00652BA143ABD3",
+      "ticketUrl": "https://www.ticketmaster.com/syd-beard-tour-austin-texas-11-22-2026/event/3A00652BA143ABD3",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "7:00PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-27",
+      "venue": "emos",
+      "venueRaw": "Emo's Austin",
+      "title": "Grief Sucks: A One Man Show By KevOnStage",
+      "artists": [
+        "Grief Sucks"
+      ],
+      "url": "https://www.ticketmaster.com/grief-sucks-a-one-man-show-austin-texas-11-27-2026/event/3A0064E6E42CC53F",
+      "ticketUrl": "https://www.ticketmaster.com/grief-sucks-a-one-man-show-austin-texas-11-27-2026/event/3A0064E6E42CC53F",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "6:30PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "non-music? — comedy/spoken-word show"
+    }
+  ]
+}

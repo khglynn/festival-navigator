@@ -1,0 +1,931 @@
+{
+  "collector": "curl (Prekindle organizer JSONP API that powers the venue's embedded show widget on mohawkaustin.com homepage)",
+  "fetchedAt": "2026-09-24",
+  "scope": {
+    "from": "2026-09-24",
+    "to": "2027-05-31"
+  },
+  "pages": [
+    {
+      "url": "https://mohawkaustin.com/",
+      "how": "curl",
+      "ok": true,
+      "note": "homepage IS the show calendar (nav labels it 'Shows'); loads a Prekindle widget script"
+    },
+    {
+      "url": "https://mohawkaustin.com/events/",
+      "how": "curl",
+      "ok": true,
+      "note": "this URL is the PRIVATE EVENTS / rentals contact form, not the concert calendar -- a naming trap for an automated reader"
+    },
+    {
+      "url": "https://www.prekindle.com/api/events/organizer/531433527670566235?callback=widgetCallback",
+      "how": "curl",
+      "ok": true,
+      "note": "JSONP endpoint the homepage widget itself calls (found via <script src> on the homepage); returned 50 events through 2027-05-05, no pagination params in the response -- treated as the venue's own word since it is the exact feed the venue's own site embeds"
+    }
+  ],
+  "coverage": {
+    "complete": true,
+    "lastDateReached": "2027-05-05",
+    "why": "Read the same Prekindle JSONP feed the venue's homepage widget loads; it returned 50 events with no visible pagination/limit field, running from today through 2027-05-05 -- essentially the whole requested window. Cannot confirm the API enforces a hard cap above 50; if Mohawk announces more than 50 upcoming shows this feed might truncate, unverified."
+  },
+  "events": [
+    {
+      "date": "2026-09-24",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk Indoor",
+      "title": "Cutting Up Men",
+      "artists": [
+        "Cutting Up Men",
+        "Variety",
+        "Looks Professional"
+      ],
+      "url": "http://www.prekindle.com/promo/id/-2852527949029280524",
+      "ticketUrl": "https://www.etix.com/ticket/p/76101274/cutting-up-men-austin-mohawk-austintxindoor",
+      "ticketer": "etix",
+      "status": "scheduled",
+      "time": "Doors 8:00pm / Show 9:00pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-25",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk Indoor",
+      "title": "Guzzlr",
+      "artists": [
+        "Guzzlr",
+        "Andrew Cashen & the Disciples of Creation",
+        "Club Coma",
+        "Alexi8bit"
+      ],
+      "url": "http://www.prekindle.com/promo/id/-2852527949034192815",
+      "ticketUrl": "https://www.etix.com/ticket/p/57059652/guzzlr-andrew-cashen-the-disciples-of-creation-club-coma-alexi-8bit-austin-mohawk-austintxindoor",
+      "ticketer": "etix",
+      "status": "scheduled",
+      "time": "Doors 7:30pm / Show 8:30pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-26",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk Indoor",
+      "title": "Brown Horse",
+      "artists": [
+        "Brown Horse",
+        "Brody Price"
+      ],
+      "url": "http://www.prekindle.com/promo/id/-2852527949130324214",
+      "ticketUrl": "http://etix.com/ticket/p/94019104/brown-horse-austin-resound-presents",
+      "ticketer": "etix",
+      "status": "scheduled",
+      "time": "Doors 7:00pm / Show 8:00pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-27",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk Outdoor",
+      "title": "SUMMER END OF SEASON SHOWS",
+      "artists": [],
+      "url": "http://www.prekindle.com/promo/id/-2852527949025911288",
+      "ticketUrl": "https://www.schoolofrock.com/locations/austin/events/end-of-season-show-summer-2026-mohawk-september-27-2026",
+      "ticketer": "other:www.schoolofrock.com",
+      "status": "scheduled",
+      "time": "Doors 10:30am / Show 11:00am",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-29",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk Outdoor",
+      "title": "Fcukers",
+      "artists": [
+        "Fcukers",
+        "Total Wife"
+      ],
+      "url": "http://www.prekindle.com/promo/id/-2852527949047271882",
+      "ticketUrl": "https://www.etix.com/ticket/p/97085640/fcuckers-austin-resound-presents",
+      "ticketer": "etix",
+      "status": "scheduled",
+      "time": "Doors 7:00pm / Show 8:00pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-02",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk Indoor",
+      "title": "Audrey Price",
+      "artists": [
+        "Audrey Price",
+        "Hill Country",
+        "Very Busy People"
+      ],
+      "url": "http://www.prekindle.com/promo/id/-2852527949007929524",
+      "ticketUrl": "https://www.etix.com/ticket/p/31527317/audrey-price-austin-mohawk-austintxindoor",
+      "ticketer": "etix",
+      "status": "scheduled",
+      "time": "Doors 8:00pm / Show 9:00pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-03",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk Indoor",
+      "title": "YOU4IC",
+      "artists": [
+        "HIP-HOP \u00d7 EDM \u00d7 ART",
+        "Jyme",
+        "Big Jade"
+      ],
+      "url": "http://www.prekindle.com/promo/id/-2852527949006531184",
+      "ticketUrl": "https://www.etix.com/ticket/p/35805317/you4ic-austin-mohawk-austintxindoor",
+      "ticketer": "etix",
+      "status": "scheduled",
+      "time": "Doors 5:00pm / Show 5:00pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-04",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk Indoor",
+      "title": "Flounce",
+      "artists": [
+        "Flounce",
+        "Hallo",
+        "Pry"
+      ],
+      "url": "http://www.prekindle.com/promo/id/-2852527949013427388",
+      "ticketUrl": "https://www.etix.com/ticket/p/46468114/flounce-austin-mohawk-austintxindoor",
+      "ticketer": "etix",
+      "status": "scheduled",
+      "time": "Doors 8:00pm / Show 9:00pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-06",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk Outdoor",
+      "title": "Brian Fallon",
+      "artists": [
+        "Brian Fallon & the Painkillers",
+        "Tim Barry"
+      ],
+      "url": "http://www.prekindle.com/promo/id/-2852527949091450833",
+      "ticketUrl": "https://www.etix.com/ticket/p/51768535/brian-fallon-austin-resound-presents",
+      "ticketer": "etix",
+      "status": "scheduled",
+      "time": "Doors 6:30pm / Show 7:30pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-07",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk Outdoor",
+      "title": "Show Me The Body",
+      "artists": [
+        "Show Me the Body",
+        "Whispers",
+        "Lip Critic",
+        "Truck Violence"
+      ],
+      "url": "http://www.prekindle.com/promo/id/-2852527949131788019",
+      "ticketUrl": "https://www.etix.com/ticket/p/45586599/show-me-the-body-austin-resound-presents",
+      "ticketer": "etix",
+      "status": "scheduled",
+      "time": "Doors 6:30pm / Show 7:30pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-09",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk Outdoor",
+      "title": "Plini",
+      "artists": [
+        "Plini",
+        "Night Verses",
+        "Portraits"
+      ],
+      "url": "http://www.prekindle.com/promo/id/-2852527949136495855",
+      "ticketUrl": "https://www.etix.com/ticket/p/54032748/plini-austin-resound-presents",
+      "ticketer": "etix",
+      "status": "scheduled",
+      "time": "Doors 7:00pm / Show 8:00pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-10",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk Outdoor",
+      "title": "Bassvictim",
+      "artists": [
+        "Bassvictim",
+        "Thoom"
+      ],
+      "url": "http://www.prekindle.com/promo/id/-2852527949090592266",
+      "ticketUrl": "https://www.etix.com/ticket/p/95921685/bassvictim-austin-resound-presents",
+      "ticketer": "etix",
+      "status": "scheduled",
+      "time": "Doors 8:00pm / Show 9:00pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-13",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk Indoor",
+      "title": "T\u014dth",
+      "artists": [
+        "T\u014dth",
+        "William Alexander"
+      ],
+      "url": "http://www.prekindle.com/promo/id/-2852527949136550572",
+      "ticketUrl": "https://www.etix.com/ticket/p/40887292/t%C5%8Dth-austin-resound-presents",
+      "ticketer": "etix",
+      "status": "scheduled",
+      "time": "Doors 7:00pm / Show 8:00pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-15",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk Outdoor",
+      "title": "INOHA",
+      "artists": [
+        "INOHA",
+        "Capital Soir\u00e9e",
+        "Pretoria"
+      ],
+      "url": "http://www.prekindle.com/promo/id/-2852527949117593042",
+      "ticketUrl": "https://www.etix.com/ticket/p/41387929/inoha-austin-resound-presents",
+      "ticketer": "etix",
+      "status": "scheduled",
+      "time": "Doors 7:00pm / Show 8:00pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-16",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk Outdoor",
+      "title": "Mon Rov\u00eea",
+      "artists": [
+        "Mon Rov\u00eea"
+      ],
+      "url": "http://www.prekindle.com/promo/id/-2852527949045356933",
+      "ticketUrl": "https://www.etix.com/ticket/p/96260682/mon-rovia-austin-resound-presents",
+      "ticketer": "etix",
+      "status": "scheduled",
+      "time": "Doors 7:00pm / Show 8:00pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-17",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk Outdoor",
+      "title": "Kishi Bashi",
+      "artists": [
+        "Kishi Bashi",
+        "Geographer"
+      ],
+      "url": "http://www.prekindle.com/promo/id/-2852852648454388613",
+      "ticketUrl": "https://www.etix.com/ticket/p/55254777/kishi-bashisonderlust-10th-anniversary-tour-austin-resound-presents",
+      "ticketer": "etix",
+      "status": "scheduled",
+      "time": "Doors 8:00pm / Show 7:00pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-18",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk Indoor",
+      "title": "Joey Cash",
+      "artists": [
+        "Joey Cash"
+      ],
+      "url": "http://www.prekindle.com/promo/id/-2852527949037609682",
+      "ticketUrl": "https://www.etix.com/ticket/p/36876433/joey-cash-austin-resound-presents",
+      "ticketer": "etix",
+      "status": "scheduled",
+      "time": "Doors 8:00pm / Show 9:00pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-20",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk Outdoor",
+      "title": "Peter Bjorn and John",
+      "artists": [
+        "Peter Bjorn and John",
+        "Josh Rouse"
+      ],
+      "url": "http://www.prekindle.com/promo/id/-2852527949131242424",
+      "ticketUrl": "https://www.etix.com/ticket/p/30131310/peter-bjorn-and-john-writers-block-tour-2026-austin-resound-presents",
+      "ticketer": "etix",
+      "status": "scheduled",
+      "time": "Doors 6:30pm / Show 7:30pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-21",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk Outdoor",
+      "title": "Ax and the Hatchetmen: The Late Checkout Tour 2026",
+      "artists": [
+        "Ax and the Hatchetmen",
+        "The Hails"
+      ],
+      "url": "http://www.prekindle.com/promo/id/-2852527949146470060",
+      "ticketUrl": "https://www.etix.com/ticket/p/71978043/ax-and-the-hatchetmenthe-late-checkout-tour-2026-austin-resound-presents",
+      "ticketer": "etix",
+      "status": "scheduled",
+      "time": "Doors 7:00pm / Show 8:00pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-22",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk Outdoor",
+      "title": "Speed + Sunami",
+      "artists": [
+        "Speed",
+        "Sunami",
+        "Paradise",
+        "Sittin' Sideways"
+      ],
+      "url": "http://www.prekindle.com/promo/id/-2852527949018245683",
+      "ticketUrl": "https://www.etix.com/ticket/p/58976274/speed-x-sunami-austin-resound-presents",
+      "ticketer": "etix",
+      "status": "scheduled",
+      "time": "Doors 7:00pm / Show 8:00pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-23",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk Outdoor",
+      "title": "Rickshaw Billie's Burger Patrol Album Release Show!",
+      "artists": [
+        "Rickshaw Billie's Burger Patrol",
+        "Bat Lips",
+        "Grocery Bag",
+        "Deerspine"
+      ],
+      "url": "http://www.prekindle.com/promo/id/-2852527949037605441",
+      "ticketUrl": "https://www.etix.com/ticket/p/72650004/rickshaw-billies-burger-patrol-austin-resound-presents",
+      "ticketer": "etix",
+      "status": "scheduled",
+      "time": "Doors 7:00pm / Show 8:00pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-24",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk Outdoor",
+      "title": "Bayonne",
+      "artists": [
+        "Bayonne",
+        "Club Coma"
+      ],
+      "url": "http://www.prekindle.com/promo/id/-2852527949166724982",
+      "ticketUrl": "https://www.etix.com/ticket/p/75745897/bayonne-austin-resound-presents",
+      "ticketer": "etix",
+      "status": "scheduled",
+      "time": "Doors 7:00pm / Show 8:00pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-26",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk Outdoor",
+      "title": "Hovvdy",
+      "artists": [
+        "Hovvdy",
+        "Emma Ogier"
+      ],
+      "url": "http://www.prekindle.com/promo/id/-2852527949150537294",
+      "ticketUrl": "https://www.etix.com/ticket/p/63140608/hovvdy-austin-resound-presents",
+      "ticketer": "etix",
+      "status": "scheduled",
+      "time": "Doors 6:30pm / Show 7:30pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-30",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk Indoor",
+      "title": "Playlunch",
+      "artists": [
+        "Playlunch",
+        "Buckets"
+      ],
+      "url": "http://www.prekindle.com/promo/id/-2852527949117560903",
+      "ticketUrl": "https://www.etix.com/ticket/p/48032978/playlunch-austin-resound-presents",
+      "ticketer": "etix",
+      "status": "scheduled",
+      "time": "Doors 7:00pm / Show 8:00pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-01",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk Outdoor",
+      "title": "The Linda Lindas",
+      "artists": [
+        "The Linda Lindas",
+        "The Rat Utopia Experiment"
+      ],
+      "url": "http://www.prekindle.com/promo/id/-2852527949092859671",
+      "ticketUrl": "https://www.etix.com/ticket/p/74977379/the-linda-lindas-austin-resound-presents",
+      "ticketer": "etix",
+      "status": "scheduled",
+      "time": "Doors 6:30pm / Show 7:30pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-05",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk Indoor",
+      "title": "Daring Greatly",
+      "artists": [
+        "Daring Greatly",
+        "The Waylanders"
+      ],
+      "url": "http://www.prekindle.com/promo/id/-2852527949022147044",
+      "ticketUrl": "https://www.etix.com/ticket/p/62055559/daring-greatly-austin-mohawk-austintxindoor",
+      "ticketer": "etix",
+      "status": "scheduled",
+      "time": "Doors 8:00pm / Show 9:00pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-06",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk Outdoor",
+      "title": "Ceremony",
+      "artists": [
+        "Ceremony",
+        "Slippers",
+        "World Peace"
+      ],
+      "url": "http://www.prekindle.com/promo/id/-2852527949124305204",
+      "ticketUrl": "https://www.etix.com/ticket/p/43965055/ceremony-austin-resound-presents",
+      "ticketer": "etix",
+      "status": "scheduled",
+      "time": "Doors 7:00pm / Show 8:00pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-07",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk Outdoor",
+      "title": "Puma Blue",
+      "artists": [
+        "Puma Blue"
+      ],
+      "url": "http://www.prekindle.com/promo/id/-2852527949131201010",
+      "ticketUrl": "https://www.etix.com/ticket/p/74052745/puma-blue-austin-resound-presents",
+      "ticketer": "etix",
+      "status": "scheduled",
+      "time": "Doors 7:00pm / Show 8:00pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-11",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk Indoor",
+      "title": "Tommy Fleece",
+      "artists": [
+        "Tommy Fleece",
+        "Reserv"
+      ],
+      "url": "http://www.prekindle.com/promo/id/-2852527949022325688",
+      "ticketUrl": "https://www.etix.com/ticket/p/65013481/tommy-fleece-austin-resound-presents",
+      "ticketer": "etix",
+      "status": "scheduled",
+      "time": "Doors 6:30pm / Show 7:30pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-13",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk Outdoor",
+      "title": "Helado Tropical",
+      "artists": [
+        "Helado Tropical"
+      ],
+      "url": "http://www.prekindle.com/promo/id/-2852527949131169786",
+      "ticketUrl": "https://www.etix.com/ticket/p/73018628/helado-tropical-austin-resound-presents",
+      "ticketer": "etix",
+      "status": "scheduled",
+      "time": "Doors 7:00pm / Show 8:00pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-14",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk Outdoor",
+      "title": "King Buffalo",
+      "artists": [
+        "King Buffalo",
+        "L.A. Witch"
+      ],
+      "url": "http://www.prekindle.com/promo/id/-2852527949146485768",
+      "ticketUrl": "https://www.etix.com/ticket/p/59220366/king-buffalo-austin-resound-presents",
+      "ticketer": "etix",
+      "status": "scheduled",
+      "time": "Doors 8:00pm / Show 9:00pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-20",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk Outdoor",
+      "title": "Static Dress",
+      "artists": [
+        "Static Dress",
+        "I Promised the World",
+        "Car Underwater",
+        "Concealer."
+      ],
+      "url": "http://www.prekindle.com/promo/id/-2852527949047163419",
+      "ticketUrl": "https://www.etix.com/ticket/p/51290557/static-dress-austin-resound-presents",
+      "ticketer": "etix",
+      "status": "scheduled",
+      "time": "Doors 6:30pm / Show 7:30pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-21",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk Outdoor",
+      "title": "Fruit Bats",
+      "artists": [
+        "Fruit Bats",
+        "Sarah Klang"
+      ],
+      "url": "http://www.prekindle.com/promo/id/-2852852648454395320",
+      "ticketUrl": "https://www.etix.com/ticket/p/87524898/fruit-bats-austin-resound-presents",
+      "ticketer": "etix",
+      "status": "scheduled",
+      "time": "Doors 7:00pm / Show 8:00pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-27",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk Outdoor",
+      "title": "Montell Fish",
+      "artists": [
+        "Montell Fish"
+      ],
+      "url": "http://www.prekindle.com/promo/id/-2852527949042577799",
+      "ticketUrl": "https://www.etix.com/ticket/p/31043689/montell-fish-the-nest-tour-austin-resound-presents",
+      "ticketer": "etix",
+      "status": "scheduled",
+      "time": "Doors 7:00pm / Show 8:00pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-28",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk Outdoor",
+      "title": "Pretty Sick",
+      "artists": [
+        "Pretty Sick"
+      ],
+      "url": "http://www.prekindle.com/promo/id/-2852527949056442912",
+      "ticketUrl": "https://www.etix.com/ticket/p/63472959/pretty-sick-austin-resound-presents",
+      "ticketer": "etix",
+      "status": "scheduled",
+      "time": "Doors 7:00pm / Show 8:00pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-03",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk Outdoor",
+      "title": "Danny Brown",
+      "artists": [
+        "Danny Brown",
+        "10th Anniversary of Atrocity Exhibition"
+      ],
+      "url": "http://www.prekindle.com/promo/id/-2852527949014722432",
+      "ticketUrl": "https://www.etix.com/ticket/p/31052827/danny-brown-mohawk-20th-anniversary-austin-resound-presents",
+      "ticketer": "etix",
+      "status": "scheduled",
+      "time": "Doors 7:00pm / Show 8:00pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-04",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk Outdoor",
+      "title": "The Black Angels",
+      "artists": [
+        "The Black Angels",
+        "20th Anniversary of Passover"
+      ],
+      "url": "http://www.prekindle.com/promo/id/-2852527949014719873",
+      "ticketUrl": "https://www.etix.com/ticket/p/85552566/the-black-angels-wdaiistarthor-harrisand-dj-tropicana-joe-mohawk-20th-anniversary-austin-resound-presents",
+      "ticketer": "etix",
+      "status": "scheduled",
+      "time": "Doors 7:00pm / Show 8:00pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-05",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk Outdoor",
+      "title": "The Impossibles",
+      "artists": [
+        "The Impossibles"
+      ],
+      "url": "http://www.prekindle.com/promo/id/-2852527949014718912",
+      "ticketUrl": "https://www.etix.com/ticket/p/42713410/the-impossibles-mohawk-20th-anniversary-austin-resound-presents",
+      "ticketer": "etix",
+      "status": "scheduled",
+      "time": "Doors 7:00pm / Show 8:00pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-10",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk Outdoor",
+      "title": "Amigo The Devil",
+      "artists": [
+        "Amigo the Devil"
+      ],
+      "url": "http://www.prekindle.com/promo/id/-2852527949014716799",
+      "ticketUrl": "https://www.etix.com/ticket/p/69183420/amigo-the-devil-austin-resound-presents",
+      "ticketer": "etix",
+      "status": "scheduled",
+      "time": "Doors 7:00pm / Show 8:00pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-11",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk Outdoor",
+      "title": "Ben Kweller",
+      "artists": [
+        "Ben Kweller"
+      ],
+      "url": "http://www.prekindle.com/promo/id/-2852527949014715543",
+      "ticketUrl": "https://www.etix.com/ticket/p/78981828/ben-kweller-austin-resound-presents",
+      "ticketer": "etix",
+      "status": "scheduled",
+      "time": "Doors 7:00pm / Show 8:00pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-12",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk Outdoor",
+      "title": "White Denim",
+      "artists": [
+        "White Denim"
+      ],
+      "url": "http://www.prekindle.com/promo/id/-2852527949014713317",
+      "ticketUrl": "https://www.etix.com/ticket/p/54759812/white-denim-austin-resound-presents",
+      "ticketer": "etix",
+      "status": "scheduled",
+      "time": "Doors 7:00pm / Show 8:00pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-13",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk Outdoor",
+      "title": "Heartless Bastards",
+      "artists": [
+        "Heartless Bastards",
+        "20th Anniversary of All This Time"
+      ],
+      "url": "http://www.prekindle.com/promo/id/-2852527949014711833",
+      "ticketUrl": "https://www.etix.com/ticket/p/70691367/heartless-bastards-mohawk-20th-anniversary-austin-resound-presents",
+      "ticketer": "etix",
+      "status": "scheduled",
+      "time": "Doors 7:00pm / Show 8:00pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-17",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk Outdoor",
+      "title": "The Lemon Twigs",
+      "artists": [
+        "The Lemon Twigs"
+      ],
+      "url": "http://www.prekindle.com/promo/id/-2852527949043660382",
+      "ticketUrl": "https://www.etix.com/ticket/p/86247413/the-lemon-twigs-austin-resound-presents",
+      "ticketer": "etix",
+      "status": "scheduled",
+      "time": "Doors 7:00pm / Show 8:00pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-18",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk Outdoor",
+      "title": "The Sword",
+      "artists": [
+        "The Sword"
+      ],
+      "url": "http://www.prekindle.com/promo/id/-2852527949014703686",
+      "ticketUrl": "https://www.etix.com/ticket/p/75958580/the-sword-mohawk-20th-anniversary-austin-resound-presents",
+      "ticketer": "etix",
+      "status": "scheduled",
+      "time": "Doors 7:00pm / Show 8:00pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-19",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk Outdoor",
+      "title": "Lucy Bedroque",
+      "artists": [
+        "Lucy Bedroque",
+        "Pinponpanpon"
+      ],
+      "url": "http://www.prekindle.com/promo/id/-2852527949048531616",
+      "ticketUrl": "https://www.etix.com/ticket/p/74981247/lucy-bedroque-austin-resound-presents",
+      "ticketer": "etix",
+      "status": "scheduled",
+      "time": "Doors 7:00pm / Show 8:00pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2027-01-23",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk Outdoor",
+      "title": "Vansire",
+      "artists": [
+        "Vansire"
+      ],
+      "url": "http://www.prekindle.com/promo/id/-2852527949077015862",
+      "ticketUrl": "https://www.etix.com/ticket/p/84931855/vansire-austin-resound-presents",
+      "ticketer": "etix",
+      "status": "scheduled",
+      "time": "Doors 7:00pm / Show 8:00pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2027-02-23",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk Outdoor",
+      "title": "Public Image Ltd",
+      "artists": [
+        "Public Image Ltd.",
+        "Plague Vendor"
+      ],
+      "url": "http://www.prekindle.com/promo/id/-2852852648460493721",
+      "ticketUrl": "https://www.etix.com/ticket/p/51035340/public-image-ltd-austin-resound-presents",
+      "ticketer": "etix",
+      "status": "scheduled",
+      "time": "Doors 6:30pm / Show 7:30pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2027-02-26",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk Outdoor",
+      "title": "Rayland Baxter",
+      "artists": [
+        "Rayland Baxter"
+      ],
+      "url": "http://www.prekindle.com/promo/id/-2852527949006773887",
+      "ticketUrl": "https://www.etix.com/ticket/p/80093657/rayland-baxterthe-true-violet-tour-austin-resound-presents",
+      "ticketer": "etix",
+      "status": "scheduled",
+      "time": "Doors 7:00pm / Show 8:00pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2027-04-03",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk Indoor",
+      "title": "Brooke Alexx Dream Girl Tour",
+      "artists": [],
+      "url": "http://www.prekindle.com/promo/id/-2852527949022451954",
+      "ticketUrl": "https://www.etix.com/ticket/p/55415672/brooke-alexxdream-girl-tour-austin-resound-presents",
+      "ticketer": "etix",
+      "status": "scheduled",
+      "time": "Doors 5:30pm / Show 6:30pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2027-05-05",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk Outdoor",
+      "title": "MASS OF THE FERMENTING DREGS",
+      "artists": [
+        "Mass of The Fermenting Dregs"
+      ],
+      "url": "http://www.prekindle.com/promo/id/-2852527949057935925",
+      "ticketUrl": "https://www.etix.com/ticket/p/79441060/mass-of-the-fermenting-dregs-iwaouthe-tour-austin-resound-presents",
+      "ticketer": "etix",
+      "status": "scheduled",
+      "time": "Doors 6:30pm / Show 7:30pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    }
+  ]
+}

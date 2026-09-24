@@ -1,0 +1,233 @@
+{
+  "collector": "Claude Sonnet 5 curl",
+  "fetchedAt": "2026-09-24",
+  "scope": {
+    "from": "2026-09-24",
+    "to": "2027-05-31"
+  },
+  "pages": [
+    {
+      "url": "https://www.vulcanatx.com/",
+      "how": "curl",
+      "ok": true,
+      "note": "homepage IS the calendar (single Webflow CMS list, 'SHOWS' nav item points here); server-rendered, no JS needed"
+    },
+    {
+      "url": "https://www.vulcanatx.com/?e-page=2",
+      "how": "curl",
+      "ok": true,
+      "note": "tried Webflow CMS pagination param to check for more; returned identical 12-item list, confirming this is the full announced calendar (empty w-pagination-wrapper on page 1 also signals no more pages)"
+    }
+  ],
+  "coverage": {
+    "complete": true,
+    "lastDateReached": "2026-11-24",
+    "why": "Single-page Webflow CMS collection list rendered server-side; no pagination controls present and a page-2 query param returned the same content, so all 12 currently-announced events were read. The venue simply hasn't announced anything past 2026-11-24 yet."
+  },
+  "events": [
+    {
+      "date": "2026-09-29",
+      "venue": "vulcan",
+      "venueRaw": "Vulcan Gas Company",
+      "title": "The Kill Tony Regulars",
+      "artists": [
+        "The Kill Tony Regulars"
+      ],
+      "url": "https://vulcanatx.ticketsauce.com/e/the-kill-tony-regulars-63",
+      "ticketUrl": "https://vulcanatx.ticketsauce.com/e/the-kill-tony-regulars-63",
+      "ticketer": "other:ticketsauce.com",
+      "status": "scheduled",
+      "time": "8:00 pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "non-music? (comedy)"
+    },
+    {
+      "date": "2026-10-02",
+      "venue": "vulcan",
+      "venueRaw": "Vulcan Gas Company",
+      "title": "Kirk Fox Live at Vulcan",
+      "artists": [
+        "Kirk Fox Live at Vulcan"
+      ],
+      "url": "https://vulcanatx.ticketsauce.com/e/kirk-fox-live-at-vulcan",
+      "ticketUrl": "https://vulcanatx.ticketsauce.com/e/kirk-fox-live-at-vulcan",
+      "ticketer": "other:ticketsauce.com",
+      "status": "scheduled",
+      "time": "8:00 pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "non-music? (comedy)"
+    },
+    {
+      "date": "2026-10-03",
+      "venue": "vulcan",
+      "venueRaw": "Vulcan Gas Company",
+      "title": "Kirk Fox Live at Vulcan",
+      "artists": [
+        "Kirk Fox Live at Vulcan"
+      ],
+      "url": "https://vulcanatx.ticketsauce.com/e/kirk-fox-live-at-vulcan-2",
+      "ticketUrl": "https://vulcanatx.ticketsauce.com/e/kirk-fox-live-at-vulcan-2",
+      "ticketer": "other:ticketsauce.com",
+      "status": "scheduled",
+      "time": "8:00 pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "non-music? (comedy)"
+    },
+    {
+      "date": "2026-10-06",
+      "venue": "vulcan",
+      "venueRaw": "Vulcan Gas Company",
+      "title": "The Kill Tony Regulars",
+      "artists": [
+        "The Kill Tony Regulars"
+      ],
+      "url": "https://vulcanatx.ticketsauce.com/e/the-kill-tony-regulars-64",
+      "ticketUrl": "https://vulcanatx.ticketsauce.com/e/the-kill-tony-regulars-64",
+      "ticketer": "other:ticketsauce.com",
+      "status": "scheduled",
+      "time": "8:00 pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "non-music? (comedy)"
+    },
+    {
+      "date": "2026-10-07",
+      "venue": "vulcan",
+      "venueRaw": "Vulcan Gas Company",
+      "title": "Wobble Wednesdays - Plastician",
+      "artists": [
+        "Wobble Wednesdays - Plastician"
+      ],
+      "url": "https://vulcanatx.ticketsauce.com/e/wobble-wednesday-plastician",
+      "ticketUrl": "https://vulcanatx.ticketsauce.com/e/wobble-wednesday-plastician",
+      "ticketer": "other:ticketsauce.com",
+      "status": "scheduled",
+      "time": "10:00 pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-13",
+      "venue": "vulcan",
+      "venueRaw": "Vulcan Gas Company",
+      "title": "The Kill Tony Regulars",
+      "artists": [
+        "The Kill Tony Regulars"
+      ],
+      "url": "https://vulcanatx.ticketsauce.com/e/the-kill-tony-regulars-65",
+      "ticketUrl": "https://vulcanatx.ticketsauce.com/e/the-kill-tony-regulars-65",
+      "ticketer": "other:ticketsauce.com",
+      "status": "scheduled",
+      "time": "8:00 pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "non-music? (comedy)"
+    },
+    {
+      "date": "2026-10-20",
+      "venue": "vulcan",
+      "venueRaw": "Vulcan Gas Company",
+      "title": "The Kill Tony Regulars",
+      "artists": [
+        "The Kill Tony Regulars"
+      ],
+      "url": "https://vulcanatx.ticketsauce.com/e/the-kill-tony-regulars-66",
+      "ticketUrl": "https://vulcanatx.ticketsauce.com/e/the-kill-tony-regulars-66",
+      "ticketer": "other:ticketsauce.com",
+      "status": "scheduled",
+      "time": "8:00 pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "non-music? (comedy)"
+    },
+    {
+      "date": "2026-11-03",
+      "venue": "vulcan",
+      "venueRaw": "Vulcan Gas Company",
+      "title": "The Kill Tony Regulars",
+      "artists": [
+        "The Kill Tony Regulars"
+      ],
+      "url": "https://vulcanatx.ticketsauce.com/e/the-kill-tony-regulars-67",
+      "ticketUrl": "https://vulcanatx.ticketsauce.com/e/the-kill-tony-regulars-67",
+      "ticketer": "other:ticketsauce.com",
+      "status": "scheduled",
+      "time": "8:00 pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "non-music? (comedy)"
+    },
+    {
+      "date": "2026-11-10",
+      "venue": "vulcan",
+      "venueRaw": "Vulcan Gas Company",
+      "title": "The Kill Tony Regulars",
+      "artists": [
+        "The Kill Tony Regulars"
+      ],
+      "url": "https://vulcanatx.ticketsauce.com/e/the-kill-tony-regulars-69",
+      "ticketUrl": "https://vulcanatx.ticketsauce.com/e/the-kill-tony-regulars-69",
+      "ticketer": "other:ticketsauce.com",
+      "status": "scheduled",
+      "time": "8:00 pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "non-music? (comedy)"
+    },
+    {
+      "date": "2026-11-17",
+      "venue": "vulcan",
+      "venueRaw": "Vulcan Gas Company",
+      "title": "The Kill Tony Regulars",
+      "artists": [
+        "The Kill Tony Regulars"
+      ],
+      "url": "https://vulcanatx.ticketsauce.com/e/the-kill-tony-regulars-70",
+      "ticketUrl": "https://vulcanatx.ticketsauce.com/e/the-kill-tony-regulars-70",
+      "ticketer": "other:ticketsauce.com",
+      "status": "scheduled",
+      "time": "8:00 pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "non-music? (comedy)"
+    },
+    {
+      "date": "2026-11-21",
+      "venue": "vulcan",
+      "venueRaw": "Vulcan Gas Company",
+      "title": "Adrian Marcelo Live at Vulcan Gas Company",
+      "artists": [
+        "Adrian Marcelo Live at Vulcan Gas Company"
+      ],
+      "url": "https://vulcanatx.ticketsauce.com/e/adrian-marcelo-live-at-vulcan-gas-company",
+      "ticketUrl": "https://vulcanatx.ticketsauce.com/e/adrian-marcelo-live-at-vulcan-gas-company",
+      "ticketer": "other:ticketsauce.com",
+      "status": "scheduled",
+      "time": "7:00 pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "non-music? (comedy)"
+    },
+    {
+      "date": "2026-11-24",
+      "venue": "vulcan",
+      "venueRaw": "Vulcan Gas Company",
+      "title": "The Kill Tony Regulars",
+      "artists": [
+        "The Kill Tony Regulars"
+      ],
+      "url": "https://vulcanatx.ticketsauce.com/e/the-kill-tony-regulars-71",
+      "ticketUrl": "https://vulcanatx.ticketsauce.com/e/the-kill-tony-regulars-71",
+      "ticketer": "other:ticketsauce.com",
+      "status": "scheduled",
+      "time": "8:00 pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "non-music? (comedy)"
+    }
+  ]
+}

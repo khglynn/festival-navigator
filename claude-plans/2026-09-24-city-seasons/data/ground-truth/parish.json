@@ -1,0 +1,770 @@
+{
+  "collector": "sources-study-claude",
+  "fetchedAt": "2026-09-24",
+  "scope": {
+    "from": "2026-09-24",
+    "to": "2027-05-31"
+  },
+  "pages": [
+    {
+      "url": "https://theparishaustin.com",
+      "how": "curl",
+      "ok": false,
+      "note": "domain does not resolve (DNS NXDOMAIN) — The Parish as a brand/domain appears gone"
+    },
+    {
+      "url": "https://brushystreet.com",
+      "how": "curl",
+      "ok": true,
+      "note": "The venue at 214 E 6th St (The Parish's historic address) is now branded Brushy Street Commons; confirmed via SeatGeek/Ticketmaster listing it as 'formerly The Parish'. Treated as the venue's current official site."
+    },
+    {
+      "url": "https://brushystreet.com/robots.txt",
+      "how": "curl",
+      "ok": true,
+      "note": "Squarespace default robots; disallows /*?format=ical and /*?format=json among others, so the .ics/JSON export links printed on each event page were NOT fetched"
+    },
+    {
+      "url": "https://brushystreet.com/event-calendar",
+      "how": "firecrawl",
+      "ok": true,
+      "note": "JS-rendered Squarespace events collection, single long scroll, no explicit pagination control found; read via firecrawl markdown (curl HTML had no event data, JS-rendered)"
+    },
+    {
+      "url": "https://brushystreet.com/event-calendar/2027",
+      "how": "firecrawl",
+      "ok": true,
+      "note": "This URL is NOT a year filter — it is the URL slug of one specific event ('Austin Electronic', Oct 10 2026) that happens to be named '2027'; a red herring, no separate 2027 view exists"
+    }
+  ],
+  "coverage": {
+    "complete": true,
+    "lastDateReached": "2027-02-06",
+    "why": "The event-calendar page renders one continuous chronological scroll starting today and running forward to Sat Feb 6, 2027 (Cold as Life), where it stops — nothing later is listed. Past that point the SAME page continues scrolling into what appears to be a second, non-chronological block of ALREADY-PAST events (Sep 2026 counting back down to Aug 2026) mixed in below the future list; those are out of scope and excluded here. No 'load more' control or month/year picker was found, so Feb 6 2027 is genuinely where the venue's forward-looking list ends today, not a pagination limit we hit."
+  },
+  "events": [
+    {
+      "date": "2026-09-24",
+      "venue": "parish",
+      "venueRaw": "Boys Go To Jupiter w/ Sydney Sherrill",
+      "title": "Boys Go To Jupiter w/ Sydney Sherrill",
+      "artists": [
+        "Boys Go To Jupiter",
+        "Sydney Sherrill"
+      ],
+      "url": "https://brushystreet.com/event-calendar/boys-go-to-jupiter",
+      "ticketUrl": "https://wl.eventim.us/event/boys-go-to-jupiter/689462?afflky=ResoundPresents",
+      "ticketer": "other:eventim.us",
+      "status": "scheduled",
+      "time": "3:30 PM4:30 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-25",
+      "venue": "parish",
+      "venueRaw": "SWMRS w/ The Happy Return",
+      "title": "SWMRS w/ The Happy Return",
+      "artists": [
+        "SWMRS",
+        "The Happy Return"
+      ],
+      "url": "https://brushystreet.com/event-calendar/swmrs",
+      "ticketUrl": "https://www.eventim.us/event/SWMRS/694473",
+      "ticketer": "other:eventim.us",
+      "status": "scheduled",
+      "time": "8:00 PM9:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-28",
+      "venue": "parish",
+      "venueRaw": "Corey Knox Presents: Monday Night Funny",
+      "title": "Corey Knox Presents: Monday Night Funny",
+      "artists": [
+        "Corey Knox Presents: Monday Night Funny"
+      ],
+      "url": "https://brushystreet.com/event-calendar/corey-knox-presents-monday-night-funny",
+      "ticketUrl": "https://brushystreet.com/event-calendar\\#tickets-147069",
+      "ticketer": "other:brushystreet.com",
+      "status": "scheduled",
+      "time": "8:00 PM9:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "non-music? — comedy show"
+    },
+    {
+      "date": "2026-10-02",
+      "venue": "parish",
+      "venueRaw": "Official 2026 ACL Nights: Hunx and His Punx",
+      "title": "Official 2026 ACL Nights: Hunx and His Punx",
+      "artists": [
+        "Official 2026 ACL Nights: Hunx and His Punx"
+      ],
+      "url": "https://brushystreet.com/event-calendar/official-2026-acl-nights-hunx-and-his-punx",
+      "ticketUrl": "https://www.eventim.us/event/Official-2026-ACL-Nights-Hunx-and-His-Punx/700544",
+      "ticketer": "other:eventim.us",
+      "status": "scheduled",
+      "time": "9:30 PM10:30 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-03",
+      "venue": "parish",
+      "venueRaw": "809 pop up - Militia’s Most Wanted",
+      "title": "809 pop up - Militia’s Most Wanted",
+      "artists": [
+        "809 pop up - Militia’s Most Wanted"
+      ],
+      "url": "https://brushystreet.com/event-calendar/809-pop-up-militias-most-wanted",
+      "ticketUrl": "https://brushystreet.com/event-calendar\\#tickets-146780",
+      "ticketer": "other:brushystreet.com",
+      "status": "scheduled",
+      "time": "8:00 PM9:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-03",
+      "venue": "parish",
+      "venueRaw": "Official 2026 ACL Nights: underscores (DJ Set) w/ Directress &amp; 1x333",
+      "title": "Official 2026 ACL Nights: underscores (DJ Set) w/ Directress &amp; 1x333",
+      "artists": [
+        "Official 2026 ACL Nights: underscores (DJ Set)",
+        "Directress &amp; 1x333"
+      ],
+      "url": "https://brushystreet.com/event-calendar/official-2026-acl-nights-hunx-and-his-punx-bta9d",
+      "ticketUrl": "https://www.eventim.us/event/Official-2026-ACL-Nights-underscores-DJ-Set/700550",
+      "ticketer": "other:eventim.us",
+      "status": "scheduled",
+      "time": "9:30 PM10:30 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-04",
+      "venue": "parish",
+      "venueRaw": "Exhorder / No Mas / Phantom / Intoxicated",
+      "title": "Exhorder / No Mas / Phantom / Intoxicated",
+      "artists": [
+        "Exhorder",
+        "No Mas",
+        "Phantom",
+        "Intoxicated"
+      ],
+      "url": "https://brushystreet.com/event-calendar/exhorder-no-mas-phantom-intoxicated",
+      "ticketUrl": "https://www.eventim.us/event/tickets/701680",
+      "ticketer": "other:eventim.us",
+      "status": "scheduled",
+      "time": "8:00 PM9:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-05",
+      "venue": "parish",
+      "venueRaw": "Official 2026 ACL Nights: LP",
+      "title": "Official 2026 ACL Nights: LP",
+      "artists": [
+        "Official 2026 ACL Nights: LP"
+      ],
+      "url": "https://brushystreet.com/event-calendar/official-2026-acl-nights-hunx-and-his-punx-bta9d-zhe89",
+      "ticketUrl": "https://www.eventim.us/event/Official-2026-ACL-Nights-LP/702361",
+      "ticketer": "other:eventim.us",
+      "status": "scheduled",
+      "time": "9:30 PM10:30 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-06",
+      "venue": "parish",
+      "venueRaw": "Chanel Beads w/ Horse Vision &amp; Car Culture",
+      "title": "Chanel Beads w/ Horse Vision &amp; Car Culture",
+      "artists": [
+        "Chanel Beads",
+        "Horse Vision &amp; Car Culture"
+      ],
+      "url": "https://brushystreet.com/event-calendar/chanel-beads-w-mechatok-car-culture",
+      "ticketUrl": "https://wl.eventim.us/event/chanel-beads/692543?afflky=ResoundPresents",
+      "ticketer": "other:eventim.us",
+      "status": "scheduled",
+      "time": "7:30 PM8:30 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-07",
+      "venue": "parish",
+      "venueRaw": "SPY w/ Destiny Bond and No Guard",
+      "title": "SPY w/ Destiny Bond and No Guard",
+      "artists": [
+        "SPY",
+        "Destiny Bond and No Guard"
+      ],
+      "url": "https://brushystreet.com/event-calendar/6abnlf7yek9zr6qnle5c40u2nbwkhq",
+      "ticketUrl": "https://wl.eventim.us/event/spy/701566?afflky=POFTX",
+      "ticketer": "other:eventim.us",
+      "status": "scheduled",
+      "time": "8:00 PM9:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-08",
+      "venue": "parish",
+      "venueRaw": "Official 2026 ACL Nights: Arcy Drive w/ Common People&nbsp;",
+      "title": "Official 2026 ACL Nights: Arcy Drive w/ Common People&nbsp;",
+      "artists": [
+        "Official 2026 ACL Nights: Arcy Drive",
+        "Common People&nbsp;"
+      ],
+      "url": "https://brushystreet.com/event-calendar/official-2026-acl-nights-hunx-and-his-punx-bta9d-zhe89-xhtsm",
+      "ticketUrl": "https://www.eventim.us/event/Official-2026-ACL-Nights-Arcy-Drive/700553",
+      "ticketer": "other:eventim.us",
+      "status": "scheduled",
+      "time": "8:00 PM10:30 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-09",
+      "venue": "parish",
+      "venueRaw": "WESTWRLD RAVE feat. EL DUSTY, Disko Cowboy, Hiram, Chore Boy",
+      "title": "WESTWRLD RAVE feat. EL DUSTY, Disko Cowboy, Hiram, Chore Boy",
+      "artists": [
+        "WESTWRLD RAVE feat. EL DUSTY, Disko Cowboy, Hiram, Chore Boy"
+      ],
+      "url": "https://brushystreet.com/event-calendar/westwrld-rave-feat-el-dusty-disko-cowboy-hiram-chore-boy",
+      "ticketUrl": "https://www.eventim.us/event/westwrld-rave-feat-el-dusty-disko-cowboy-hiram-chore-boy/704741?ttc=1911085",
+      "ticketer": "other:eventim.us",
+      "status": "scheduled",
+      "time": "8:00 PM9:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-10",
+      "venue": "parish",
+      "venueRaw": "Austin Electronic",
+      "title": "Austin Electronic",
+      "artists": [
+        "Austin Electronic"
+      ],
+      "url": "https://brushystreet.com/event-calendar/2027",
+      "ticketUrl": "https://brushystreet.com/event-calendar\\#tickets-146516",
+      "ticketer": "other:brushystreet.com",
+      "status": "scheduled",
+      "time": "8:00 PM11:59 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-11",
+      "venue": "parish",
+      "venueRaw": "nihmune",
+      "title": "nihmune",
+      "artists": [
+        "nihmune"
+      ],
+      "url": "https://brushystreet.com/event-calendar/nihmune",
+      "ticketUrl": "https://www.eventim.us/event/tickets/704091",
+      "ticketer": "other:eventim.us",
+      "status": "scheduled",
+      "time": "8:00 PM9:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-15",
+      "venue": "parish",
+      "venueRaw": "After w/ Silverdeer",
+      "title": "After w/ Silverdeer",
+      "artists": [
+        "After",
+        "Silverdeer"
+      ],
+      "url": "https://brushystreet.com/event-calendar/after",
+      "ticketUrl": "https://www.eventim.us/event/After/699268",
+      "ticketer": "other:eventim.us",
+      "status": "scheduled",
+      "time": "8:00 PM11:59 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-16",
+      "venue": "parish",
+      "venueRaw": "Karina Rykman",
+      "title": "Karina Rykman",
+      "artists": [
+        "Karina Rykman"
+      ],
+      "url": "https://brushystreet.com/event-calendar/karina-rykman",
+      "ticketUrl": "https://www.eventim.us/event/Karina-Rykman/695698",
+      "ticketer": "other:eventim.us",
+      "status": "scheduled",
+      "time": "8:00 PM9:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-17",
+      "venue": "parish",
+      "venueRaw": "she's green\tw/ Witches Exist, & smush",
+      "title": "she's green\tw/ Witches Exist, & smush",
+      "artists": [
+        "she's green",
+        "Witches Exist, & smush"
+      ],
+      "url": "https://brushystreet.com/event-calendar/shes-greenw-witches-exist-smush",
+      "ticketUrl": "https://wl.eventim.us/event/shes-green/698500?afflky=ResoundPresents",
+      "ticketer": "other:eventim.us",
+      "status": "scheduled",
+      "time": "8:00 PM9:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-18",
+      "venue": "parish",
+      "venueRaw": "zzzahara x Faerybabyy",
+      "title": "zzzahara x Faerybabyy",
+      "artists": [
+        "zzzahara x Faerybabyy"
+      ],
+      "url": "https://brushystreet.com/event-calendar/zzzahara-x-faerybabyy",
+      "ticketUrl": "https://www.eventim.us/event/tickets/703555",
+      "ticketer": "other:eventim.us",
+      "status": "scheduled",
+      "time": "8:00 PM9:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-20",
+      "venue": "parish",
+      "venueRaw": "The Wldlfe w/ Landon Conrath",
+      "title": "The Wldlfe w/ Landon Conrath",
+      "artists": [
+        "The Wldlfe",
+        "Landon Conrath"
+      ],
+      "url": "https://brushystreet.com/event-calendar/the-wldlfe",
+      "ticketUrl": "https://www.eventim.us/event/The-Wldlfe/695728",
+      "ticketer": "other:eventim.us",
+      "status": "scheduled",
+      "time": "8:00 PM9:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-21",
+      "venue": "parish",
+      "venueRaw": "Edgehill w/ Appleseed",
+      "title": "Edgehill w/ Appleseed",
+      "artists": [
+        "Edgehill",
+        "Appleseed"
+      ],
+      "url": "https://brushystreet.com/event-calendar/edgehill",
+      "ticketUrl": "https://www.eventim.us/event/Edgehill/691058",
+      "ticketer": "other:eventim.us",
+      "status": "scheduled",
+      "time": "8:00 PM9:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-22",
+      "venue": "parish",
+      "venueRaw": "bunii: BUNIIVERSITY TOUR",
+      "title": "bunii: BUNIIVERSITY TOUR",
+      "artists": [
+        "bunii: BUNIIVERSITY TOUR"
+      ],
+      "url": "https://brushystreet.com/event-calendar/bunii",
+      "ticketUrl": "https://wl.eventim.us/event/bunii-buniiversity-tour/702963?afflky=ResoundPresents",
+      "ticketer": "other:eventim.us",
+      "status": "scheduled",
+      "time": "8:00 PM9:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-24",
+      "venue": "parish",
+      "venueRaw": "Improvement Movement w/ Jalen Reyes",
+      "title": "Improvement Movement w/ Jalen Reyes",
+      "artists": [
+        "Improvement Movement",
+        "Jalen Reyes"
+      ],
+      "url": "https://brushystreet.com/event-calendar/a2xtmwfca5j45jiwho36hv3vm5tlhs",
+      "ticketUrl": "https://wl.eventim.us/event/improvement-movement/698343?afflky=ResoundPresents",
+      "ticketer": "other:eventim.us",
+      "status": "scheduled",
+      "time": "8:00 PM9:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-31",
+      "venue": "parish",
+      "venueRaw": "Surely Tempo",
+      "title": "Surely Tempo",
+      "artists": [
+        "Surely Tempo"
+      ],
+      "url": "https://brushystreet.com/event-calendar/surely-tempo",
+      "ticketUrl": "https://wl.eventim.us/event/surely-tempo/699142?afflky=ResoundPresents",
+      "ticketer": "other:eventim.us",
+      "status": "scheduled",
+      "time": "8:00 PM9:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-05",
+      "venue": "parish",
+      "venueRaw": "ApolloRed1",
+      "title": "ApolloRed1",
+      "artists": [
+        "ApolloRed1"
+      ],
+      "url": "https://brushystreet.com/event-calendar/apollored1",
+      "ticketUrl": "https://www.eventim.us/event/ApolloRed1/705696",
+      "ticketer": "other:eventim.us",
+      "status": "scheduled",
+      "time": "8:00 PM9:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-06",
+      "venue": "parish",
+      "venueRaw": "Nick Shoulders w/ Georgia Parker",
+      "title": "Nick Shoulders w/ Georgia Parker",
+      "artists": [
+        "Nick Shoulders",
+        "Georgia Parker"
+      ],
+      "url": "https://brushystreet.com/event-calendar/nick-shoulders",
+      "ticketUrl": "https://www.eventim.us/event/Nick-Shoulders/686877",
+      "ticketer": "other:eventim.us",
+      "status": "scheduled",
+      "time": "5:00 PM6:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-07",
+      "venue": "parish",
+      "venueRaw": "Bombargo",
+      "title": "Bombargo",
+      "artists": [
+        "Bombargo"
+      ],
+      "url": "https://brushystreet.com/event-calendar/bombargo",
+      "ticketUrl": "https://www.eventim.us/event/Bombargo/694379",
+      "ticketer": "other:eventim.us",
+      "status": "scheduled",
+      "time": "8:00 PM9:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-12",
+      "venue": "parish",
+      "venueRaw": "The Aces",
+      "title": "The Aces",
+      "artists": [
+        "The Aces"
+      ],
+      "url": "https://brushystreet.com/event-calendar/the-aces",
+      "ticketUrl": "https://www.eventim.us/event/Introducing-The-Aces/700407",
+      "ticketer": "other:eventim.us",
+      "status": "scheduled",
+      "time": "8:00 PM9:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-13",
+      "venue": "parish",
+      "venueRaw": "Yana w/ Emma Andersen",
+      "title": "Yana w/ Emma Andersen",
+      "artists": [
+        "Yana",
+        "Emma Andersen"
+      ],
+      "url": "https://brushystreet.com/event-calendar/l1o7zj9qlesjb32saako1k3szuekrt",
+      "ticketUrl": "https://www.eventim.us/event/Yana-The-Feelings-are-Forever-Tour/699133",
+      "ticketer": "other:eventim.us",
+      "status": "scheduled",
+      "time": "8:00 PM9:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-14",
+      "venue": "parish",
+      "venueRaw": "Claudio Simonetti's Goblin / TENEBRE (Live Score + Screening)",
+      "title": "Claudio Simonetti's Goblin / TENEBRE (Live Score + Screening)",
+      "artists": [
+        "Claudio Simonetti's Goblin",
+        "TENEBRE (Live Score + Screening)"
+      ],
+      "url": "https://brushystreet.com/event-calendar/claudio-simonettis-goblin-tenebre-live-score-screening",
+      "ticketUrl": "https://wl.eventim.us/event/goblin-tenebre/704465?afflky=ResoundPresents",
+      "ticketer": "other:eventim.us",
+      "status": "scheduled",
+      "time": "8:00 PM9:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-14",
+      "venue": "parish",
+      "venueRaw": "Tribal Gaze / Fleshrot / Paradise / Compulsion",
+      "title": "Tribal Gaze / Fleshrot / Paradise / Compulsion",
+      "artists": [
+        "Tribal Gaze",
+        "Fleshrot",
+        "Paradise",
+        "Compulsion"
+      ],
+      "url": "https://brushystreet.com/event-calendar/tribal-gaze-fleshrot-paradise-compulsion",
+      "ticketUrl": "https://brushystreet.com/event-calendar\\#tickets-146890",
+      "ticketer": "other:brushystreet.com",
+      "status": "scheduled",
+      "time": "8:00 PM9:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-15",
+      "venue": "parish",
+      "venueRaw": "Em Beihold",
+      "title": "Em Beihold",
+      "artists": [
+        "Em Beihold"
+      ],
+      "url": "https://brushystreet.com/event-calendar/em-beihold",
+      "ticketUrl": "https://www.eventim.us/event/Em-Beihold/696505",
+      "ticketer": "other:eventim.us",
+      "status": "scheduled",
+      "time": "8:00 PM9:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-17",
+      "venue": "parish",
+      "venueRaw": "No One Productions: Ben Quad / Drunk Uncle",
+      "title": "No One Productions: Ben Quad / Drunk Uncle",
+      "artists": [
+        "No One Productions: Ben Quad",
+        "Drunk Uncle"
+      ],
+      "url": "https://brushystreet.com/event-calendar/no-one-productions-ben-quad-drunk-uncle",
+      "ticketUrl": "https://www.eventim.us/event/tickets/703139",
+      "ticketer": "other:eventim.us",
+      "status": "scheduled",
+      "time": "8:00 PM11:30 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-18",
+      "venue": "parish",
+      "venueRaw": "Beauty School Dropout w/ No Love For The Middle Child",
+      "title": "Beauty School Dropout w/ No Love For The Middle Child",
+      "artists": [
+        "Beauty School Dropout",
+        "No Love For The Middle Child"
+      ],
+      "url": "https://brushystreet.com/event-calendar/beauty-school-dropout",
+      "ticketUrl": "https://www.eventim.us/event/Beauty-School-Dropout/701793",
+      "ticketer": "other:eventim.us",
+      "status": "scheduled",
+      "time": "7:00 PM8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-28",
+      "venue": "parish",
+      "venueRaw": "Desert Dwellers",
+      "title": "Desert Dwellers",
+      "artists": [
+        "Desert Dwellers"
+      ],
+      "url": "https://brushystreet.com/event-calendar/desert-dwellers",
+      "ticketUrl": "https://www.eventim.us/event/desert-dwellers/697936?ttc=1889854",
+      "ticketer": "other:eventim.us",
+      "status": "scheduled",
+      "time": "7:00 PM8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-04",
+      "venue": "parish",
+      "venueRaw": "Kendall Street Company: Yodeling Astroman Tour w/ Texas String Assembly",
+      "title": "Kendall Street Company: Yodeling Astroman Tour w/ Texas String Assembly",
+      "artists": [
+        "Kendall Street Company: Yodeling Astroman Tour",
+        "Texas String Assembly"
+      ],
+      "url": "https://brushystreet.com/event-calendar/kendall-street-company-yodeling-astroman-tour",
+      "ticketUrl": "https://kendall%20street%20company:%20Yodeling%20Astroman%20Tour/",
+      "ticketer": "other:kendall%20street%20company:%20Yodeling%20Astroman%20Tour",
+      "status": "scheduled",
+      "time": "8:30 PM9:30 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-05",
+      "venue": "parish",
+      "venueRaw": "Sleepwalk",
+      "title": "Sleepwalk",
+      "artists": [
+        "Sleepwalk"
+      ],
+      "url": "https://brushystreet.com/event-calendar/sleepwalk",
+      "ticketUrl": "https://wl.eventim.us/event/sleepwalk/704890?afflky=POFTX",
+      "ticketer": "other:eventim.us",
+      "status": "scheduled",
+      "time": "8:00 PM9:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-10",
+      "venue": "parish",
+      "venueRaw": "Eelke Kleijn",
+      "title": "Eelke Kleijn",
+      "artists": [
+        "Eelke Kleijn"
+      ],
+      "url": "https://brushystreet.com/event-calendar/eelke-kleijn",
+      "ticketUrl": "https://www.eventim.us/event/Eelke-Kleijn/705128",
+      "ticketer": "other:eventim.us",
+      "status": "scheduled",
+      "time": "8:00 PM9:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-12",
+      "venue": "parish",
+      "venueRaw": "Life of Hate: Thru The Ashes / Born Savage / By Any Means and more!",
+      "title": "Life of Hate: Thru The Ashes / Born Savage / By Any Means and more!",
+      "artists": [
+        "Life of Hate: Thru The Ashes",
+        "Born Savage",
+        "By Any Means and more!"
+      ],
+      "url": "https://brushystreet.com/event-calendar/life-of-hate-thru-the-ashes-born-savage-by-any-means-and-more",
+      "ticketUrl": "https://brushystreet.com/event-calendar\\#tickets-146893",
+      "ticketer": "other:brushystreet.com",
+      "status": "scheduled",
+      "time": "8:00 PM9:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-13",
+      "venue": "parish",
+      "venueRaw": "WHY?\t",
+      "title": "WHY?",
+      "artists": [
+        "WHY?"
+      ],
+      "url": "https://brushystreet.com/event-calendar/why",
+      "ticketUrl": "https://wl.eventim.us/event/why/701126?afflky=ResoundPresents",
+      "ticketer": "other:eventim.us",
+      "status": "scheduled",
+      "time": "8:00 PM9:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-18",
+      "venue": "parish",
+      "venueRaw": "Yaelokre",
+      "title": "Yaelokre",
+      "artists": [
+        "Yaelokre"
+      ],
+      "url": "https://brushystreet.com/event-calendar/yaelokre",
+      "ticketUrl": "https://www.eventim.us/event/Yaelokre/695337",
+      "ticketer": "other:eventim.us",
+      "status": "scheduled",
+      "time": "8:00 PM9:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2027-02-06",
+      "venue": "parish",
+      "venueRaw": "Cold as Life\tw/ FEAR OF LOSS, Spit My Rage, Born Savage, Soul Exchange",
+      "title": "Cold as Life\tw/ FEAR OF LOSS, Spit My Rage, Born Savage, Soul Exchange",
+      "artists": [
+        "Cold as Life",
+        "FEAR OF LOSS, Spit My Rage, Born Savage, Soul Exchange"
+      ],
+      "url": "https://brushystreet.com/event-calendar/cold-as-lifew-fear-of-loss-spit-my-rage-born-savage-soul-exchange",
+      "ticketUrl": "https://www.eventim.us/event/cold-as-life/691682?ttc=1870109",
+      "ticketer": "other:eventim.us",
+      "status": "scheduled",
+      "time": "8:00 PM9:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    }
+  ]
+}

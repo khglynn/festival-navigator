@@ -1,0 +1,641 @@
+{
+  "collector": "curl (venue calendar page \u2014 event array embedded server-side in FullCalendar init JS, Ticketmaster 'event-discovery' plugin)",
+  "fetchedAt": "2026-09-24",
+  "scope": {
+    "from": "2026-09-24",
+    "to": "2027-05-31"
+  },
+  "pages": [
+    {
+      "url": "https://www.stubbsaustin.com/",
+      "how": "curl",
+      "ok": true,
+      "note": "homepage, found concert-calendar link"
+    },
+    {
+      "url": "https://stubbsaustin.com/concert-calendar/",
+      "how": "curl",
+      "ok": true,
+      "note": "full event list embedded in page's FullCalendar JS init (36 events) plus matching detail dialogs with buy-ticket links; this is a Ticketmaster 'event-discovery' venue widget (images/checkout on ticketm.net / ticketmaster.com) skinned as the venue's own calendar page, which counts as the venue's own word per the brief; no pagination needed, this is everything currently published"
+    }
+  ],
+  "coverage": {
+    "complete": true,
+    "lastDateReached": "2027-04-20",
+    "why": "All known events are embedded directly in the calendar page's own JS array (FullCalendar init), not paginated/AJAX-loaded \u2014 a single fetch captured everything the venue currently has posted. Events run densely through 2026-11-25, then one outlier on 2027-04-20 (a rescheduled show); the venue simply hasn't announced anything else that far out yet \u2014 a real gap in what's published, not a reading limit."
+  },
+  "events": [
+    {
+      "date": "2026-09-27",
+      "venue": "stubbs",
+      "venueRaw": "Stubb's Indoors",
+      "title": "Gospel Brunch: The Moriah Sisters",
+      "artists": [
+        "Gospel Brunch: The Moriah Sisters"
+      ],
+      "url": "https://stubbsaustin.com/tm-event/gospel-brunch-the-moriah-sisters-5/",
+      "ticketUrl": "https://stubbsaustin.com/gospel-brunch/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "10:30 AM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "event page lists only a combined title, not a separate artist field \u2014 no headliner/support split is printed"
+    },
+    {
+      "date": "2026-09-29",
+      "venue": "stubbs",
+      "venueRaw": "Waller Creek Amphitheater",
+      "title": "Jane Remover \u2013 Live Exhibit",
+      "artists": [
+        "Jane Remover \u2013 Live Exhibit"
+      ],
+      "url": "https://stubbsaustin.com/tm-event/jane-remover-live-exhibit/",
+      "ticketUrl": "https://www.ticketmaster.com/jane-remover-live-exhibit-austin-texas-09-29-2026/event/3A006496118EB1BC",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "7:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "event page lists only a combined title, not a separate artist field \u2014 no headliner/support split is printed"
+    },
+    {
+      "date": "2026-10-01",
+      "venue": "stubbs",
+      "venueRaw": "Waller Creek Amphitheater",
+      "title": "Official 2026 ACL Nights: Brandon Flowers",
+      "artists": [
+        "Official 2026 ACL Nights: Brandon Flowers"
+      ],
+      "url": "https://stubbsaustin.com/tm-event/official-2026-acl-nights-brandon-flowers/",
+      "ticketUrl": "https://www.ticketmaster.com/official-2026-acl-nights-brandon-flowers-austin-texas-10-01-2026/event/3A0064FDAEAD9948",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "7:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "event page lists only a combined title, not a separate artist field \u2014 no headliner/support split is printed"
+    },
+    {
+      "date": "2026-10-01",
+      "venue": "stubbs",
+      "venueRaw": "Stubb's Indoors",
+      "title": "Official 2026 ACL Nights: Montclair",
+      "artists": [
+        "Official 2026 ACL Nights: Montclair"
+      ],
+      "url": "https://stubbsaustin.com/tm-event/official-2026-acl-nights-montclair/",
+      "ticketUrl": "https://www.ticketmaster.com/official-2026-acl-nights-montclair-austin-texas-10-01-2026/event/3A00650BBB2FBC0A",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "9:30 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "event page lists only a combined title, not a separate artist field \u2014 no headliner/support split is printed"
+    },
+    {
+      "date": "2026-10-02",
+      "venue": "stubbs",
+      "venueRaw": "Waller Creek Amphitheater",
+      "title": "Official 2026 ACL Fest Nights: Bleachers",
+      "artists": [
+        "Official 2026 ACL Fest Nights: Bleachers"
+      ],
+      "url": "https://stubbsaustin.com/tm-event/official-2026-acl-fest-nights-bleachers/",
+      "ticketUrl": "https://www.ticketmaster.com/official-2026-acl-fest-nights-bleachers-austin-texas-10-02-2026/event/3A0064FDB1009EA6",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "7:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "event page lists only a combined title, not a separate artist field \u2014 no headliner/support split is printed"
+    },
+    {
+      "date": "2026-10-02",
+      "venue": "stubbs",
+      "venueRaw": "Stubb's Indoors",
+      "title": "Official 2026 ACL Nights: Grocery Bag",
+      "artists": [
+        "Official 2026 ACL Nights: Grocery Bag"
+      ],
+      "url": "https://stubbsaustin.com/tm-event/official-2026-acl-nights-grocery-bag/",
+      "ticketUrl": "https://www.ticketmaster.com/official-2026-acl-nights-grocery-bag-austin-texas-10-02-2026/event/3A00650DAE3A9B91",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "10:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "event page lists only a combined title, not a separate artist field \u2014 no headliner/support split is printed"
+    },
+    {
+      "date": "2026-10-03",
+      "venue": "stubbs",
+      "venueRaw": "Waller Creek Amphitheater",
+      "title": "Official 2026 ACL Fest Nights: Parcels",
+      "artists": [
+        "Official 2026 ACL Fest Nights: Parcels"
+      ],
+      "url": "https://stubbsaustin.com/tm-event/official-2026-acl-fest-nights-parcels/",
+      "ticketUrl": "https://www.ticketmaster.com/official-2026-acl-fest-nights-parcels-austin-texas-10-03-2026/event/3A0064FDB2E8A336",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "event page lists only a combined title, not a separate artist field \u2014 no headliner/support split is printed"
+    },
+    {
+      "date": "2026-10-03",
+      "venue": "stubbs",
+      "venueRaw": "Stubb's Indoors",
+      "title": "Official 2026 ACL Nights: Almost Heaven",
+      "artists": [
+        "Official 2026 ACL Nights: Almost Heaven"
+      ],
+      "url": "https://stubbsaustin.com/tm-event/official-2026-acl-nights-almost-heaven/",
+      "ticketUrl": "https://www.ticketmaster.com/official-2026-acl-nights-almost-heaven-austin-texas-10-03-2026/event/3A00650BBF52C2DE",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "11:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "event page lists only a combined title, not a separate artist field \u2014 no headliner/support split is printed"
+    },
+    {
+      "date": "2026-10-04",
+      "venue": "stubbs",
+      "venueRaw": "Stubb's Indoors",
+      "title": "Gospel Brunch: Gospel Stars",
+      "artists": [
+        "Gospel Brunch: Gospel Stars"
+      ],
+      "url": "https://stubbsaustin.com/tm-event/gospel-brunch-gospel-stars-9/",
+      "ticketUrl": "https://stubbsaustin.com/gospel-brunch/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "10:30 AM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "event page lists only a combined title, not a separate artist field \u2014 no headliner/support split is printed"
+    },
+    {
+      "date": "2026-10-04",
+      "venue": "stubbs",
+      "venueRaw": "Waller Creek Amphitheater",
+      "title": "Loathe: A Stranger to You",
+      "artists": [
+        "Loathe: A Stranger to You"
+      ],
+      "url": "https://stubbsaustin.com/tm-event/loathe-a-stranger-to-you/",
+      "ticketUrl": "https://www.ticketmaster.com/loathe-a-stranger-to-you-austin-texas-10-04-2026/event/3A006494EE17453C",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "6:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "event page lists only a combined title, not a separate artist field \u2014 no headliner/support split is printed"
+    },
+    {
+      "date": "2026-10-06",
+      "venue": "stubbs",
+      "venueRaw": "Waller Creek Amphitheater",
+      "title": "Official 2026 ACL Fest Nights: Lola Young",
+      "artists": [
+        "Official 2026 ACL Fest Nights: Lola Young"
+      ],
+      "url": "https://stubbsaustin.com/tm-event/official-2026-acl-fest-nights-lola-young/",
+      "ticketUrl": "https://www.ticketmaster.com/official-2026-acl-fest-nights-lola-austin-texas-10-06-2026/event/3A0064FDB57AA7B0",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "7:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "event page lists only a combined title, not a separate artist field \u2014 no headliner/support split is printed"
+    },
+    {
+      "date": "2026-10-06",
+      "venue": "stubbs",
+      "venueRaw": "Stubb's Indoors",
+      "title": "Official 2026 ACL Nights: Annie DiRusso",
+      "artists": [
+        "Official 2026 ACL Nights: Annie DiRusso"
+      ],
+      "url": "https://stubbsaustin.com/tm-event/official-2026-acl-nights-annie-dirusso/",
+      "ticketUrl": "https://www.ticketmaster.com/official-2026-acl-nights-annie-dirusso-austin-texas-10-06-2026/event/3A00650CDC13C98E",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "10:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "event page lists only a combined title, not a separate artist field \u2014 no headliner/support split is printed"
+    },
+    {
+      "date": "2026-10-08",
+      "venue": "stubbs",
+      "venueRaw": "Stubb's Indoors",
+      "title": "Official 2026 ACL Nights: Sunday (1994)",
+      "artists": [
+        "Official 2026 ACL Nights: Sunday (1994)"
+      ],
+      "url": "https://stubbsaustin.com/tm-event/official-2026-acl-nights-sunday-1994/",
+      "ticketUrl": "https://www.ticketmaster.com/official-2026-acl-nights-sunday-1994-austin-texas-10-08-2026/event/3A00650CDFACD43D",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "event page lists only a combined title, not a separate artist field \u2014 no headliner/support split is printed"
+    },
+    {
+      "date": "2026-10-11",
+      "venue": "stubbs",
+      "venueRaw": "Stubb's Indoors",
+      "title": "Gospel Brunch: The Levites",
+      "artists": [
+        "Gospel Brunch: The Levites"
+      ],
+      "url": "https://stubbsaustin.com/tm-event/gospel-brunch-the-levites-11/",
+      "ticketUrl": "https://stubbsaustin.com/gospel-brunch/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "10:30 AM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "event page lists only a combined title, not a separate artist field \u2014 no headliner/support split is printed"
+    },
+    {
+      "date": "2026-10-13",
+      "venue": "stubbs",
+      "venueRaw": "Waller Creek Amphitheater",
+      "title": "Cavetown \u2013 Running With Scissors Tour",
+      "artists": [
+        "Cavetown \u2013 Running With Scissors Tour"
+      ],
+      "url": "https://stubbsaustin.com/tm-event/cavetown-running-with-scissors-tour/",
+      "ticketUrl": "https://www.ticketmaster.com/cavetown-running-with-scissors-tour-austin-texas-10-13-2026/event/3A006479EE7E4F7F",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "7:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "event page lists only a combined title, not a separate artist field \u2014 no headliner/support split is printed"
+    },
+    {
+      "date": "2026-10-15",
+      "venue": "stubbs",
+      "venueRaw": "Waller Creek Amphitheater",
+      "title": "Bright Eyes",
+      "artists": [
+        "Bright Eyes"
+      ],
+      "url": "https://stubbsaustin.com/tm-event/bright-eyes/",
+      "ticketUrl": "https://www.ticketmaster.com/bright-eyes-austin-texas-10-15-2026/event/3A0064C9A979BA1F",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "6:30 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-16",
+      "venue": "stubbs",
+      "venueRaw": "Waller Creek Amphitheater",
+      "title": "EsDeeKid \u2013 Council House Rat Tour",
+      "artists": [
+        "EsDeeKid \u2013 Council House Rat Tour"
+      ],
+      "url": "https://stubbsaustin.com/tm-event/esdeekid-council-house-rat-tour/",
+      "ticketUrl": "https://www.ticketmaster.com/esdeekid-council-house-rat-tour-austin-texas-10-16-2026/event/3A0064F19AFD808A",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "6:30 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "event page lists only a combined title, not a separate artist field \u2014 no headliner/support split is printed"
+    },
+    {
+      "date": "2026-10-17",
+      "venue": "stubbs",
+      "venueRaw": "Waller Creek Amphitheater",
+      "title": "Basement",
+      "artists": [
+        "Basement"
+      ],
+      "url": "https://stubbsaustin.com/tm-event/basement/",
+      "ticketUrl": "https://www.ticketmaster.com/basement-austin-texas-10-17-2026/event/3A0064A1C5FF6920",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "6:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-18",
+      "venue": "stubbs",
+      "venueRaw": "Stubb's Indoors",
+      "title": "Gospel Brunch: Shields of Faith",
+      "artists": [
+        "Gospel Brunch: Shields of Faith"
+      ],
+      "url": "https://stubbsaustin.com/tm-event/gospel-brunch-shields-of-faith-10/",
+      "ticketUrl": "https://stubbsaustin.com/gospel-brunch/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "10:30 AM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "event page lists only a combined title, not a separate artist field \u2014 no headliner/support split is printed"
+    },
+    {
+      "date": "2026-10-22",
+      "venue": "stubbs",
+      "venueRaw": "Waller Creek Amphitheater",
+      "title": "Vince Staples \u2013 Cry Baby Tour",
+      "artists": [
+        "Vince Staples \u2013 Cry Baby Tour"
+      ],
+      "url": "https://stubbsaustin.com/tm-event/vince-staples-cry-baby-tour/",
+      "ticketUrl": "https://www.ticketmaster.com/vince-staples-cry-baby-tour-austin-texas-10-22-2026/event/3A0064CA079B7D84",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "7:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "event page lists only a combined title, not a separate artist field \u2014 no headliner/support split is printed"
+    },
+    {
+      "date": "2026-10-23",
+      "venue": "stubbs",
+      "venueRaw": "Waller Creek Amphitheater",
+      "title": "Cameron Whitcomb \u2013 Kingdom of Fear Tour",
+      "artists": [
+        "Cameron Whitcomb \u2013 Kingdom of Fear Tour"
+      ],
+      "url": "https://stubbsaustin.com/tm-event/cameron-whitcomb-kingdom-of-fear-tour/",
+      "ticketUrl": "https://www.ticketmaster.com/cameron-whitcomb-kingdom-of-fear-tour-austin-texas-10-23-2026/event/3A0064A69F7BC028",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "6:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "event page lists only a combined title, not a separate artist field \u2014 no headliner/support split is printed"
+    },
+    {
+      "date": "2026-10-25",
+      "venue": "stubbs",
+      "venueRaw": "Stubb's Indoors",
+      "title": "Gospel Brunch: The Moriah Sisters",
+      "artists": [
+        "Gospel Brunch: The Moriah Sisters"
+      ],
+      "url": "https://stubbsaustin.com/tm-event/gospel-brunch-the-moriah-sisters-6/",
+      "ticketUrl": "https://stubbsaustin.com/gospel-brunch/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "10:30 AM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "event page lists only a combined title, not a separate artist field \u2014 no headliner/support split is printed"
+    },
+    {
+      "date": "2026-11-01",
+      "venue": "stubbs",
+      "venueRaw": "Stubb's Indoors",
+      "title": "Gospel Brunch: The Levites",
+      "artists": [
+        "Gospel Brunch: The Levites"
+      ],
+      "url": "https://stubbsaustin.com/tm-event/gospel-brunch-the-levites-12/",
+      "ticketUrl": "https://stubbsaustin.com/gospel-brunch/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "10:30 AM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "event page lists only a combined title, not a separate artist field \u2014 no headliner/support split is printed"
+    },
+    {
+      "date": "2026-11-05",
+      "venue": "stubbs",
+      "venueRaw": "Waller Creek Amphitheater",
+      "title": "Dinosaur Jr. \u2013 Fall Tour 2026 with special guest Stef Chura",
+      "artists": [
+        "Dinosaur Jr. \u2013 Fall Tour 2026 with special guest Stef Chura"
+      ],
+      "url": "https://stubbsaustin.com/tm-event/dinosaur-jr-fall-tour-2026-with-special-guest-stef-chura/",
+      "ticketUrl": "https://www.ticketmaster.com/dinosaur-jr-fall-tour-2026-with-austin-texas-11-05-2026/event/3A0064DCDD1AC45A",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "7:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "event page lists only a combined title, not a separate artist field \u2014 no headliner/support split is printed"
+    },
+    {
+      "date": "2026-11-06",
+      "venue": "stubbs",
+      "venueRaw": "Waller Creek Amphitheater",
+      "title": "Lenny Pearce \u2013 Toddler Rave World Tour",
+      "artists": [
+        "Lenny Pearce \u2013 Toddler Rave World Tour"
+      ],
+      "url": "https://stubbsaustin.com/tm-event/lenny-pearce-toddler-rave-world-tour/",
+      "ticketUrl": "https://www.ticketmaster.com/lenny-pearce-toddler-rave-world-tour-austin-texas-11-06-2026/event/3A0064DDBE2DC42C",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "5:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "event page lists only a combined title, not a separate artist field \u2014 no headliner/support split is printed"
+    },
+    {
+      "date": "2026-11-07",
+      "venue": "stubbs",
+      "venueRaw": "Waller Creek Amphitheater",
+      "title": "Turnover \u2013 Down On Earth Tour",
+      "artists": [
+        "Turnover \u2013 Down On Earth Tour"
+      ],
+      "url": "https://stubbsaustin.com/tm-event/turnover-down-on-earth-tour/",
+      "ticketUrl": "https://www.ticketmaster.com/turnover-down-on-earth-tour-austin-texas-11-07-2026/event/3A0064D2D3014AA9",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "6:30 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "event page lists only a combined title, not a separate artist field \u2014 no headliner/support split is printed"
+    },
+    {
+      "date": "2026-11-08",
+      "venue": "stubbs",
+      "venueRaw": "Stubb's Indoors",
+      "title": "Gospel Brunch: Gospel Stars",
+      "artists": [
+        "Gospel Brunch: Gospel Stars"
+      ],
+      "url": "https://stubbsaustin.com/tm-event/gospel-brunch-gospel-stars-10/",
+      "ticketUrl": "https://stubbsaustin.com/gospel-brunch/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "10:30 AM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "event page lists only a combined title, not a separate artist field \u2014 no headliner/support split is printed"
+    },
+    {
+      "date": "2026-11-13",
+      "venue": "stubbs",
+      "venueRaw": "Waller Creek Amphitheater",
+      "title": "Night Cap",
+      "artists": [
+        "Night Cap"
+      ],
+      "url": "https://stubbsaustin.com/tm-event/night-cap/",
+      "ticketUrl": "https://www.ticketmaster.com/night-cap-austin-texas-11-13-2026/event/3A006518F5D0291F",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "7:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-14",
+      "venue": "stubbs",
+      "venueRaw": "Waller Creek Amphitheater",
+      "title": "Switchfoot with special guest Anberlin \u2013 Forever Now Tour",
+      "artists": [
+        "Switchfoot with special guest Anberlin \u2013 Forever Now Tour"
+      ],
+      "url": "https://stubbsaustin.com/tm-event/switchfoot-with-special-guest-anberlin-forever-now-tour/",
+      "ticketUrl": "https://www.ticketmaster.com/switchfoot-with-special-guest-anberlin-forever-austin-texas-11-14-2026/event/3A0064A69F44BF99",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "7:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "event page lists only a combined title, not a separate artist field \u2014 no headliner/support split is printed"
+    },
+    {
+      "date": "2026-11-15",
+      "venue": "stubbs",
+      "venueRaw": "Stubb's Indoors",
+      "title": "Gospel Brunch: The Moriah Sisters",
+      "artists": [
+        "Gospel Brunch: The Moriah Sisters"
+      ],
+      "url": "https://stubbsaustin.com/tm-event/gospel-brunch-the-moriah-sisters-7/",
+      "ticketUrl": "https://stubbsaustin.com/gospel-brunch/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "10:30 AM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "event page lists only a combined title, not a separate artist field \u2014 no headliner/support split is printed"
+    },
+    {
+      "date": "2026-11-17",
+      "venue": "stubbs",
+      "venueRaw": "Stubb's Indoors",
+      "title": "Theo Kandel",
+      "artists": [
+        "Theo Kandel"
+      ],
+      "url": "https://stubbsaustin.com/tm-event/theo-kandel/",
+      "ticketUrl": "https://www.ticketmaster.com/theo-kandel-austin-texas-11-17-2026/event/3A006524AF55A701",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-19",
+      "venue": "stubbs",
+      "venueRaw": "Waller Creek Amphitheater",
+      "title": "An Evening With Band Of Horses",
+      "artists": [
+        "An Evening With Band Of Horses"
+      ],
+      "url": "https://stubbsaustin.com/tm-event/an-evening-with-band-of-horses/",
+      "ticketUrl": "https://www.ticketmaster.com/an-evening-with-band-of-horses-austin-texas-11-19-2026/event/3A0064A79A26A82B",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "7:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-20",
+      "venue": "stubbs",
+      "venueRaw": "Waller Creek Amphitheater",
+      "title": "Paul Cauthen",
+      "artists": [
+        "Paul Cauthen"
+      ],
+      "url": "https://stubbsaustin.com/tm-event/paul-cauthen/",
+      "ticketUrl": "https://www.ticketmaster.com/paul-cauthen-austin-texas-11-20-2026/event/3A0064D6E73F2787",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "7:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-22",
+      "venue": "stubbs",
+      "venueRaw": "Stubb's Indoors",
+      "title": "Gospel Brunch: The Levites",
+      "artists": [
+        "Gospel Brunch: The Levites"
+      ],
+      "url": "https://stubbsaustin.com/tm-event/gospel-brunch-the-levites-13/",
+      "ticketUrl": "https://stubbsaustin.com/gospel-brunch/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "10:30 AM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "event page lists only a combined title, not a separate artist field \u2014 no headliner/support split is printed"
+    },
+    {
+      "date": "2026-11-25",
+      "venue": "stubbs",
+      "venueRaw": "Waller Creek Amphitheater",
+      "title": "Imminence \u2013 Axis Mundi Tour: North America 2026",
+      "artists": [
+        "Imminence \u2013 Axis Mundi Tour: North America 2026"
+      ],
+      "url": "https://stubbsaustin.com/tm-event/imminence-north-america-2026/",
+      "ticketUrl": "https://www.ticketmaster.com/imminence-axis-mundi-tour-north-america-austin-texas-11-25-2026/event/3A0064CAAD18C9D4",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "6:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "event page lists only a combined title, not a separate artist field \u2014 no headliner/support split is printed"
+    },
+    {
+      "date": "2027-04-20",
+      "venue": "stubbs",
+      "venueRaw": "Waller Creek Amphitheater",
+      "title": "SAINT LEVANT \u2013 AFANDI WORLD TOUR",
+      "artists": [
+        "SAINT LEVANT \u2013 AFANDI WORLD TOUR"
+      ],
+      "url": "https://stubbsaustin.com/tm-event/saint-levant-afandi-world-tour/",
+      "ticketUrl": "https://www.ticketmaster.com/saint-levant-afandi-world-tour-austin-texas-04-20-2027/event/3A0064E88E004B8E",
+      "ticketer": "ticketmaster",
+      "status": "rescheduled",
+      "time": "7:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "event page lists only a combined title, not a separate artist field \u2014 no headliner/support split is printed"
+    }
+  ]
+}

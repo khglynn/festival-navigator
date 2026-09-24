@@ -1,0 +1,488 @@
+{
+  "collector": "curl (JSON-LD MusicEvent objects embedded directly in the /shows page HTML)",
+  "fetchedAt": "2026-09-24",
+  "scope": {
+    "from": "2026-09-24",
+    "to": "2027-05-31"
+  },
+  "pages": [
+    {
+      "url": "https://www.scootinnaustin.com/",
+      "how": "curl",
+      "ok": true,
+      "note": "homepage, found /shows nav link"
+    },
+    {
+      "url": "https://www.scootinnaustin.com/shows",
+      "how": "curl",
+      "ok": true,
+      "note": "27 schema.org MusicEvent JSON-LD blocks embedded in page HTML -- this is a Live Nation venue (location.sameAs points to livenation.com/venue/.../scoot-inn), Ticketmaster checkout; page shows no 'load more'/pagination control, appears to list everything currently on sale"
+    }
+  ],
+  "coverage": {
+    "complete": true,
+    "lastDateReached": "2027-05-09",
+    "why": "All 27 events on the page came through as structured JSON-LD in a single fetch, no pagination found. Dates run densely through 2026-11-28, then two outliers in 2027-03 and 2027-05 -- the far end of the venue's currently-announced calendar, not a reading limit. All 27 read as eventStatus EventScheduled (schema.org); none marked cancelled/postponed as of fetch time."
+  },
+  "events": [
+    {
+      "date": "2026-09-27",
+      "venue": "scoot-inn",
+      "venueRaw": "Scoot Inn",
+      "title": "HEY, NOTHING - THE HOUND TOUR",
+      "artists": [
+        "HEY, NOTHING - THE HOUND TOUR"
+      ],
+      "url": "https://www.ticketmaster.com/hey-nothing-the-hound-tour-austin-texas-09-27-2026/event/3A0064C5B261B554",
+      "ticketUrl": "https://www.ticketmaster.com/hey-nothing-the-hound-tour-austin-texas-09-27-2026/event/3A0064C5B261B554",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "5:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "JSON-LD title only, no separate artist/support field printed"
+    },
+    {
+      "date": "2026-10-02",
+      "venue": "scoot-inn",
+      "venueRaw": "Scoot Inn",
+      "title": "Official 2026 ACL Nights - Finn Wolfhard",
+      "artists": [
+        "Official 2026 ACL Nights - Finn Wolfhard"
+      ],
+      "url": "https://www.ticketmaster.com/official-2026-acl-nights-finn-wolfhard-austin-texas-10-02-2026/event/3A0064FBC71CD5F3",
+      "ticketUrl": "https://www.ticketmaster.com/official-2026-acl-nights-finn-wolfhard-austin-texas-10-02-2026/event/3A0064FBC71CD5F3",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "6:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "JSON-LD title only, no separate artist/support field printed"
+    },
+    {
+      "date": "2026-10-03",
+      "venue": "scoot-inn",
+      "venueRaw": "Scoot Inn",
+      "title": "Official 2026 ACL Nights: CMAT",
+      "artists": [
+        "Official 2026 ACL Nights: CMAT"
+      ],
+      "url": "https://www.ticketmaster.com/official-2026-acl-nights-cmat-austin-texas-10-03-2026/event/3A0064FBC8BBD830",
+      "ticketUrl": "https://www.ticketmaster.com/official-2026-acl-nights-cmat-austin-texas-10-03-2026/event/3A0064FBC8BBD830",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "6:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "JSON-LD title only, no separate artist/support field printed"
+    },
+    {
+      "date": "2026-10-04",
+      "venue": "scoot-inn",
+      "venueRaw": "Scoot Inn",
+      "title": "Official 2026 ACL Nights: Ryan Beatty",
+      "artists": [
+        "Official 2026 ACL Nights: Ryan Beatty"
+      ],
+      "url": "https://www.ticketmaster.com/official-2026-acl-nights-ryan-beatty-austin-texas-10-04-2026/event/3A0064FBC9F1D9DD",
+      "ticketUrl": "https://www.ticketmaster.com/official-2026-acl-nights-ryan-beatty-austin-texas-10-04-2026/event/3A0064FBC9F1D9DD",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "5:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "JSON-LD title only, no separate artist/support field printed"
+    },
+    {
+      "date": "2026-10-05",
+      "venue": "scoot-inn",
+      "venueRaw": "Scoot Inn",
+      "title": "Official 2026 ACL Nights: Saint Motel",
+      "artists": [
+        "Official 2026 ACL Nights: Saint Motel"
+      ],
+      "url": "https://www.ticketmaster.com/official-2026-acl-nights-saint-motel-austin-texas-10-05-2026/event/3A0064FBCB65DB99",
+      "ticketUrl": "https://www.ticketmaster.com/official-2026-acl-nights-saint-motel-austin-texas-10-05-2026/event/3A0064FBCB65DB99",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "5:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "JSON-LD title only, no separate artist/support field printed"
+    },
+    {
+      "date": "2026-10-09",
+      "venue": "scoot-inn",
+      "venueRaw": "Scoot Inn",
+      "title": "Official 2026 ACL Nights: Noga Erez",
+      "artists": [
+        "Official 2026 ACL Nights: Noga Erez"
+      ],
+      "url": "https://www.ticketmaster.com/official-2026-acl-nights-noga-erez-austin-texas-10-09-2026/event/3A0064FBD141E37A",
+      "ticketUrl": "https://www.ticketmaster.com/official-2026-acl-nights-noga-erez-austin-texas-10-09-2026/event/3A0064FBD141E37A",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "7:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "JSON-LD title only, no separate artist/support field printed"
+    },
+    {
+      "date": "2026-10-16",
+      "venue": "scoot-inn",
+      "venueRaw": "Scoot Inn",
+      "title": "Deer Tick",
+      "artists": [
+        "Deer Tick"
+      ],
+      "url": "https://www.ticketmaster.com/deer-tick-austin-texas-10-16-2026/event/3A006463EEAFF085",
+      "ticketUrl": "https://www.ticketmaster.com/deer-tick-austin-texas-10-16-2026/event/3A006463EEAFF085",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "6:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "JSON-LD title only, no separate artist/support field printed"
+    },
+    {
+      "date": "2026-10-17",
+      "venue": "scoot-inn",
+      "venueRaw": "Scoot Inn",
+      "title": "Joy Oladokun: The Heavy Things Tour",
+      "artists": [
+        "Joy Oladokun: The Heavy Things Tour"
+      ],
+      "url": "https://www.ticketmaster.com/joy-oladokun-the-heavy-things-tour-austin-texas-10-17-2026/event/3A0064F5B746BDBF",
+      "ticketUrl": "https://www.ticketmaster.com/joy-oladokun-the-heavy-things-tour-austin-texas-10-17-2026/event/3A0064F5B746BDBF",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "6:30 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "JSON-LD title only, no separate artist/support field printed"
+    },
+    {
+      "date": "2026-10-23",
+      "venue": "scoot-inn",
+      "venueRaw": "Scoot Inn",
+      "title": "MICO: Running From A Feeling Tour",
+      "artists": [
+        "MICO: Running From A Feeling Tour"
+      ],
+      "url": "https://www.ticketmaster.com/mico-running-from-a-feeling-tour-austin-texas-10-23-2026/event/3A0064ACBB5CC7DF",
+      "ticketUrl": "https://www.ticketmaster.com/mico-running-from-a-feeling-tour-austin-texas-10-23-2026/event/3A0064ACBB5CC7DF",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "6:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "JSON-LD title only, no separate artist/support field printed"
+    },
+    {
+      "date": "2026-10-24",
+      "venue": "scoot-inn",
+      "venueRaw": "Scoot Inn",
+      "title": "Dax - The Anger Management Tour",
+      "artists": [
+        "Dax - The Anger Management Tour"
+      ],
+      "url": "https://www.ticketmaster.com/dax-the-anger-management-tour-austin-texas-10-24-2026/event/3A0064AC065B7623",
+      "ticketUrl": "https://www.ticketmaster.com/dax-the-anger-management-tour-austin-texas-10-24-2026/event/3A0064AC065B7623",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "6:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "JSON-LD title only, no separate artist/support field printed"
+    },
+    {
+      "date": "2026-10-25",
+      "venue": "scoot-inn",
+      "venueRaw": "Scoot Inn",
+      "title": "25th Anniversary of musicforthemorning after - Pete Yorn solo acoustic",
+      "artists": [
+        "25th Anniversary of musicforthemorning after - Pete Yorn solo acoustic"
+      ],
+      "url": "https://www.ticketmaster.com/25th-anniversary-of-musicforthemorning-after-pete-austin-texas-10-25-2026/event/3A0064D0B0389C5C",
+      "ticketUrl": "https://www.ticketmaster.com/25th-anniversary-of-musicforthemorning-after-pete-austin-texas-10-25-2026/event/3A0064D0B0389C5C",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "5:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "JSON-LD title only, no separate artist/support field printed"
+    },
+    {
+      "date": "2026-10-26",
+      "venue": "scoot-inn",
+      "venueRaw": "Scoot Inn",
+      "title": "EMEI - Night at the Opera Tour",
+      "artists": [
+        "EMEI - Night at the Opera Tour"
+      ],
+      "url": "https://www.ticketmaster.com/emei-night-at-the-opera-tour-austin-texas-10-26-2026/event/3A006495E395E002",
+      "ticketUrl": "https://www.ticketmaster.com/emei-night-at-the-opera-tour-austin-texas-10-26-2026/event/3A006495E395E002",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "5:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "JSON-LD title only, no separate artist/support field printed"
+    },
+    {
+      "date": "2026-10-27",
+      "venue": "scoot-inn",
+      "venueRaw": "Scoot Inn",
+      "title": "Sawyer Hill",
+      "artists": [
+        "Sawyer Hill"
+      ],
+      "url": "https://www.ticketmaster.com/sawyer-hill-austin-texas-10-27-2026/event/3A0064C1D67EC8CC",
+      "ticketUrl": "https://www.ticketmaster.com/sawyer-hill-austin-texas-10-27-2026/event/3A0064C1D67EC8CC",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "5:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "JSON-LD title only, no separate artist/support field printed"
+    },
+    {
+      "date": "2026-10-28",
+      "venue": "scoot-inn",
+      "venueRaw": "Scoot Inn",
+      "title": "almost monday - THANK GOD IT'S ALMOST MONDAY",
+      "artists": [
+        "almost monday - THANK GOD IT'S ALMOST MONDAY"
+      ],
+      "url": "https://www.ticketmaster.com/almost-monday-thank-god-its-almost-austin-texas-10-28-2026/event/3A0064D2CA0722FF",
+      "ticketUrl": "https://www.ticketmaster.com/almost-monday-thank-god-its-almost-austin-texas-10-28-2026/event/3A0064D2CA0722FF",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "5:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "JSON-LD title only, no separate artist/support field printed"
+    },
+    {
+      "date": "2026-10-30",
+      "venue": "scoot-inn",
+      "venueRaw": "Scoot Inn",
+      "title": "The War And Treaty",
+      "artists": [
+        "The War And Treaty"
+      ],
+      "url": "https://www.ticketmaster.com/the-war-and-treaty-austin-texas-10-30-2026/event/3A0064C2AB9E9641",
+      "ticketUrl": "https://www.ticketmaster.com/the-war-and-treaty-austin-texas-10-30-2026/event/3A0064C2AB9E9641",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "6:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "JSON-LD title only, no separate artist/support field printed"
+    },
+    {
+      "date": "2026-10-31",
+      "venue": "scoot-inn",
+      "venueRaw": "Scoot Inn",
+      "title": "Mr. Fantasy - Sexy Saturday Nights Tour",
+      "artists": [
+        "Mr. Fantasy - Sexy Saturday Nights Tour"
+      ],
+      "url": "https://www.ticketmaster.com/mr-fantasy-sexy-saturday-nights-tour-austin-texas-10-31-2026/event/3A006528A3BF78A0",
+      "ticketUrl": "https://www.ticketmaster.com/mr-fantasy-sexy-saturday-nights-tour-austin-texas-10-31-2026/event/3A006528A3BF78A0",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "6:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "JSON-LD title only, no separate artist/support field printed"
+    },
+    {
+      "date": "2026-11-07",
+      "venue": "scoot-inn",
+      "venueRaw": "Scoot Inn",
+      "title": "Grateful Shred",
+      "artists": [
+        "Grateful Shred"
+      ],
+      "url": "https://www.ticketmaster.com/grateful-shred-austin-texas-11-07-2026/event/3A0064829B8AE7F9",
+      "ticketUrl": "https://www.ticketmaster.com/grateful-shred-austin-texas-11-07-2026/event/3A0064829B8AE7F9",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "6:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "JSON-LD title only, no separate artist/support field printed"
+    },
+    {
+      "date": "2026-11-08",
+      "venue": "scoot-inn",
+      "venueRaw": "Scoot Inn",
+      "title": "The Army, The Navy",
+      "artists": [
+        "The Army, The Navy"
+      ],
+      "url": "https://www.ticketmaster.com/the-army-the-navy-austin-texas-11-08-2026/event/3A0064CA066E7A64",
+      "ticketUrl": "https://www.ticketmaster.com/the-army-the-navy-austin-texas-11-08-2026/event/3A0064CA066E7A64",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "5:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "JSON-LD title only, no separate artist/support field printed"
+    },
+    {
+      "date": "2026-11-11",
+      "venue": "scoot-inn",
+      "venueRaw": "Scoot Inn",
+      "title": "Slothrust: The Dystopian Theatre Tour",
+      "artists": [
+        "Slothrust: The Dystopian Theatre Tour"
+      ],
+      "url": "https://www.ticketmaster.com/slothrust-the-dystopian-theatre-tour-austin-texas-11-11-2026/event/3A0064D1BAECD36F",
+      "ticketUrl": "https://www.ticketmaster.com/slothrust-the-dystopian-theatre-tour-austin-texas-11-11-2026/event/3A0064D1BAECD36F",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "5:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "JSON-LD title only, no separate artist/support field printed"
+    },
+    {
+      "date": "2026-11-13",
+      "venue": "scoot-inn",
+      "venueRaw": "Scoot Inn",
+      "title": "Tiny Habits",
+      "artists": [
+        "Tiny Habits"
+      ],
+      "url": "https://www.ticketmaster.com/tiny-habits-austin-texas-11-13-2026/event/3A0064C4B407ABE7",
+      "ticketUrl": "https://www.ticketmaster.com/tiny-habits-austin-texas-11-13-2026/event/3A0064C4B407ABE7",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "6:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "JSON-LD title only, no separate artist/support field printed"
+    },
+    {
+      "date": "2026-11-18",
+      "venue": "scoot-inn",
+      "venueRaw": "Scoot Inn",
+      "title": "Holywatr: Deo Gratias Tour",
+      "artists": [
+        "Holywatr: Deo Gratias Tour"
+      ],
+      "url": "https://www.ticketmaster.com/holywatr-deo-gratias-tour-austin-texas-11-18-2026/event/3A0064AC03DF6EB9",
+      "ticketUrl": "https://www.ticketmaster.com/holywatr-deo-gratias-tour-austin-texas-11-18-2026/event/3A0064AC03DF6EB9",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "5:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "JSON-LD title only, no separate artist/support field printed"
+    },
+    {
+      "date": "2026-11-19",
+      "venue": "scoot-inn",
+      "venueRaw": "Scoot Inn",
+      "title": "Aterciopelados: La Pipa De Laz Paz 30 Anos Tour",
+      "artists": [
+        "Aterciopelados: La Pipa De Laz Paz 30 Anos Tour"
+      ],
+      "url": "https://www.ticketmaster.com/aterciopelados-la-pipa-de-laz-paz-austin-texas-11-19-2026/event/3A0064F5E8D0253C",
+      "ticketUrl": "https://www.ticketmaster.com/aterciopelados-la-pipa-de-laz-paz-austin-texas-11-19-2026/event/3A0064F5E8D0253C",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "5:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "JSON-LD title only, no separate artist/support field printed"
+    },
+    {
+      "date": "2026-11-21",
+      "venue": "scoot-inn",
+      "venueRaw": "Scoot Inn",
+      "title": "The Afghan Whigs",
+      "artists": [
+        "The Afghan Whigs"
+      ],
+      "url": "https://www.ticketmaster.com/the-afghan-whigs-austin-texas-11-21-2026/event/3A0064BCB786C3F2",
+      "ticketUrl": "https://www.ticketmaster.com/the-afghan-whigs-austin-texas-11-21-2026/event/3A0064BCB786C3F2",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "6:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "JSON-LD title only, no separate artist/support field printed"
+    },
+    {
+      "date": "2026-11-22",
+      "venue": "scoot-inn",
+      "venueRaw": "Scoot Inn",
+      "title": "Jalen Ngonda: Doctrine of Love Tour",
+      "artists": [
+        "Jalen Ngonda: Doctrine of Love Tour"
+      ],
+      "url": "https://www.ticketmaster.com/jalen-ngonda-doctrine-of-love-tour-austin-texas-11-22-2026/event/3A0064C1DF54D27A",
+      "ticketUrl": "https://www.ticketmaster.com/jalen-ngonda-doctrine-of-love-tour-austin-texas-11-22-2026/event/3A0064C1DF54D27A",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "5:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "JSON-LD title only, no separate artist/support field printed"
+    },
+    {
+      "date": "2026-11-28",
+      "venue": "scoot-inn",
+      "venueRaw": "Scoot Inn",
+      "title": "Ripe",
+      "artists": [
+        "Ripe"
+      ],
+      "url": "https://www.ticketmaster.com/ripe-austin-texas-11-28-2026/event/3A006518B3D5A9E5",
+      "ticketUrl": "https://www.ticketmaster.com/ripe-austin-texas-11-28-2026/event/3A006518B3D5A9E5",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "6:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "JSON-LD title only, no separate artist/support field printed"
+    },
+    {
+      "date": "2027-03-26",
+      "venue": "scoot-inn",
+      "venueRaw": "Scoot Inn",
+      "title": "Bo Staloch - The 'Too Big, Too Big' Tour",
+      "artists": [
+        "Bo Staloch - The 'Too Big, Too Big' Tour"
+      ],
+      "url": "https://www.ticketmaster.com/bo-staloch-the-too-big-too-austin-texas-03-26-2027/event/3A006530B545D8FA",
+      "ticketUrl": "https://www.ticketmaster.com/bo-staloch-the-too-big-too-austin-texas-03-26-2027/event/3A006530B545D8FA",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "6:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "JSON-LD title only, no separate artist/support field printed"
+    },
+    {
+      "date": "2027-05-09",
+      "venue": "scoot-inn",
+      "venueRaw": "Scoot Inn",
+      "title": "Chris Mitchell: Begging for Sax II",
+      "artists": [
+        "Chris Mitchell: Begging for Sax II"
+      ],
+      "url": "https://www.ticketmaster.com/chris-mitchell-begging-for-sax-ii-austin-texas-05-09-2027/event/3A0064DEA6A397B8",
+      "ticketUrl": "https://www.ticketmaster.com/chris-mitchell-begging-for-sax-ii-austin-texas-05-09-2027/event/3A0064DEA6A397B8",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "5:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "JSON-LD title only, no separate artist/support field printed"
+    }
+  ]
+}

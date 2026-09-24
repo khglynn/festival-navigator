@@ -1,0 +1,667 @@
+{
+  "collector": "sources-study-claude",
+  "fetchedAt": "2026-09-24",
+  "scope": {
+    "from": "2026-09-24",
+    "to": "2027-05-31"
+  },
+  "pages": [
+    {
+      "url": "https://www.acllive.com/events",
+      "how": "curl",
+      "ok": true,
+      "note": "default listing, only ~2 months deep"
+    },
+    {
+      "url": "https://www.acllive.com/events/filtered/2026/November",
+      "how": "curl",
+      "ok": true,
+      "note": null
+    },
+    {
+      "url": "https://www.acllive.com/events/filtered/2026/December",
+      "how": "curl",
+      "ok": true,
+      "note": null
+    },
+    {
+      "url": "https://www.acllive.com/events/filtered/2027/January",
+      "how": "curl",
+      "ok": true,
+      "note": null
+    },
+    {
+      "url": "https://www.acllive.com/events/filtered/2027/February",
+      "how": "curl",
+      "ok": true,
+      "note": null
+    },
+    {
+      "url": "https://www.acllive.com/events/filtered/2027/March",
+      "how": "curl",
+      "ok": true,
+      "note": null
+    },
+    {
+      "url": "https://www.acllive.com/events/filtered/2027/April",
+      "how": "curl",
+      "ok": true,
+      "note": null
+    },
+    {
+      "url": "https://www.acllive.com/events/filtered/2027/June",
+      "how": "curl",
+      "ok": true,
+      "note": "beyond scope end, used only to confirm coverage boundary"
+    },
+    {
+      "url": "https://www.acllive.com/events/filtered/2026/September",
+      "how": "firecrawl",
+      "ok": true,
+      "note": "curl got HTTP 406 on this specific month path repeatedly (site's WAF); firecrawl succeeded"
+    },
+    {
+      "url": "https://www.acllive.com/events/filtered/2026/October",
+      "how": "firecrawl",
+      "ok": true,
+      "note": "curl got HTTP 406 on this specific month path repeatedly; firecrawl succeeded"
+    },
+    {
+      "url": "https://www.acllive.com/events/filtered/2027/May",
+      "how": "firecrawl",
+      "ok": true,
+      "note": "curl got HTTP 406 on this specific month path repeatedly; firecrawl succeeded"
+    },
+    {
+      "url": "https://www.acllive.com/event/2026-09-26-indigo-girls-at-7-pm",
+      "how": "firecrawl",
+      "ok": true,
+      "note": "spot-checked one event detail page for field richness (support act, exact AXS ticket link, showtime) — not repeated for all 99 events due to the 60-call firecrawl budget and curl 406s on every /event/ path tried"
+    }
+  ],
+  "coverage": {
+    "complete": true,
+    "lastDateReached": "2027-06-12",
+    "why": "The site's own /events/filtered/<year>/<month> pages were fetched for every month from Sep 2026 through Jun 2027 (Jun fetched to confirm no events beyond scope's May 31 cutoff were missed). Three of those ten month-pages (Sep 2026, Oct 2026, May 2027) returned HTTP 406 from curl on every retry -- consistent with the site's WAF, not a real absence of a page -- and were re-fetched via firecrawl_scrape instead, which succeeded. Listing pages give date, venue room, title, event URL, and a status/on-sale button; they do NOT carry support-act billing, exact showtime, or the outbound ticket-seller URL (AXS, based on one spot-checked detail page) for most rows -- those live only on each event's own /event/... detail page, and that path also returned 406 under curl. One detail page was fetched via firecrawl as a spot check; the remaining 98 were not, to stay inside the firecrawl call budget for the whole 5-venue task. 'time' below is read from the venue's own URL slug (e.g. '.../-at-8-pm', which the venue's CMS generates from the real showtime), not inferred by me. One event (Alison Krauss & Union Station, cancelled) is omitted from the events list because the site prints its date as literal 'TBD' with no reschedule date -- noted here rather than guessed."
+  },
+  "events": [
+    {
+      "date": "2026-09-26",
+      "venue": "3ten",
+      "venueRaw": "ACL Live at 3TEN",
+      "title": "Skyrocket!",
+      "artists": [
+        "Skyrocket!"
+      ],
+      "url": "https://www.acllive.com/event/2026-09-26-skyrocket-at-8-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-27",
+      "venue": "3ten",
+      "venueRaw": "ACL Live at 3TEN",
+      "title": "The Lagoons",
+      "artists": [
+        "The Lagoons"
+      ],
+      "url": "https://www.acllive.com/event/2026-09-27-the-lagoons-at-8-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-02",
+      "venue": "3ten",
+      "venueRaw": "ACL Live at 3TEN",
+      "title": "Official 2026 ACL Fest Nights: Villanelle",
+      "artists": [
+        "Official 2026 ACL Fest Nights: Villanelle"
+      ],
+      "url": "https://www.acllive.com/event/2026-10-02-official-2026-acl-fest-nights-villanelle-at-9-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "9:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-07",
+      "venue": "3ten",
+      "venueRaw": "ACL Live at 3TEN",
+      "title": "Big Loud Texas Live!",
+      "artists": [
+        "Big Loud Texas Live!"
+      ],
+      "url": "https://www.acllive.com/event/2026-10-07-big-loud-texas-live",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-08",
+      "venue": "3ten",
+      "venueRaw": "ACL Live at 3TEN",
+      "title": "Official 2026 ACL Fest Nights: Łaszewo",
+      "artists": [
+        "Official 2026 ACL Fest Nights: Łaszewo"
+      ],
+      "url": "https://www.acllive.com/event/2026-10-08-official-2026-acl-fest-nights-aszewo-at-9-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "9:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-10",
+      "venue": "3ten",
+      "venueRaw": "ACL Live at 3TEN",
+      "title": "Official 2026 ACL Fest Nights: Claire Rosinkranz",
+      "artists": [
+        "Official 2026 ACL Fest Nights: Claire Rosinkranz"
+      ],
+      "url": "https://www.acllive.com/event/2026-10-10-official-2026-acl-fest-nights-claire-rosinkranz-at-9-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "9:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-14",
+      "venue": "3ten",
+      "venueRaw": "ACL Live at 3TEN",
+      "title": "Lilyisthatyou",
+      "artists": [
+        "Lilyisthatyou"
+      ],
+      "url": "https://www.acllive.com/event/2026-10-14-lilyisthatyou-at-8-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-16",
+      "venue": "3ten",
+      "venueRaw": "ACL Live at 3TEN",
+      "title": "The Paradox",
+      "artists": [
+        "The Paradox"
+      ],
+      "url": "https://www.acllive.com/event/2026-10-16-the-paradox-at-8-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-17",
+      "venue": "3ten",
+      "venueRaw": "ACL Live at 3TEN",
+      "title": "DJ Mel",
+      "artists": [
+        "DJ Mel"
+      ],
+      "url": "https://www.acllive.com/event/2026-10-17-dj-mel-at-7-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "7:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-18",
+      "venue": "3ten",
+      "venueRaw": "ACL Live at 3TEN",
+      "title": "Blessing Offor",
+      "artists": [
+        "Blessing Offor"
+      ],
+      "url": "https://www.acllive.com/event/2026-10-18-blessing-offor-at-8-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-22",
+      "venue": "3ten",
+      "venueRaw": "ACL Live at 3TEN",
+      "title": "Katie Pruitt",
+      "artists": [
+        "Katie Pruitt"
+      ],
+      "url": "https://www.acllive.com/event/2026-10-22-katie-pruitt-at-8-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-30",
+      "venue": "3ten",
+      "venueRaw": "ACL Live at 3TEN",
+      "title": "Goodbye June",
+      "artists": [
+        "Goodbye June"
+      ],
+      "url": "https://www.acllive.com/event/2026-10-30-goodbye-june-at-8-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-03",
+      "venue": "3ten",
+      "venueRaw": "ACL Live at 3TEN",
+      "title": "All Get Out",
+      "artists": [
+        "All Get Out"
+      ],
+      "url": "https://www.acllive.com/event/2026-11-03-all-get-out-at-8-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-04",
+      "venue": "3ten",
+      "venueRaw": "ACL Live at 3TEN",
+      "title": "Stephen Day",
+      "artists": [
+        "Stephen Day"
+      ],
+      "url": "https://www.acllive.com/event/2026-11-04-stephen-day-at-8-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-05",
+      "venue": "3ten",
+      "venueRaw": "ACL Live at 3TEN",
+      "title": "Ike Dweck",
+      "artists": [
+        "Ike Dweck"
+      ],
+      "url": "https://www.acllive.com/event/2026-11-05-ike-dweck-at-8-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-06",
+      "venue": "3ten",
+      "venueRaw": "ACL Live at 3TEN",
+      "title": "OCT (On Company Time)",
+      "artists": [
+        "OCT (On Company Time)"
+      ],
+      "url": "https://www.acllive.com/event/2026-11-06-oct-on-company-time-at-8-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-07",
+      "venue": "3ten",
+      "venueRaw": "ACL Live at 3TEN",
+      "title": "Jervis Campbell",
+      "artists": [
+        "Jervis Campbell"
+      ],
+      "url": "https://www.acllive.com/event/2026-11-07-jervis-campbell-at-8-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-10",
+      "venue": "3ten",
+      "venueRaw": "ACL Live at 3TEN",
+      "title": "Liana Flores",
+      "artists": [
+        "Liana Flores"
+      ],
+      "url": "https://www.acllive.com/event/2026-11-10-liana-flores-at-8-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-12",
+      "venue": "3ten",
+      "venueRaw": "ACL Live at 3TEN",
+      "title": "Bebe Stockwell",
+      "artists": [
+        "Bebe Stockwell"
+      ],
+      "url": "https://www.acllive.com/event/2026-11-12-bebe-stockwell-at-8-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-13",
+      "venue": "3ten",
+      "venueRaw": "ACL Live at 3TEN",
+      "title": "Father Of Peace",
+      "artists": [
+        "Father Of Peace"
+      ],
+      "url": "https://www.acllive.com/event/2026-11-13-father-of-peace-at-8-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-14",
+      "venue": "3ten",
+      "venueRaw": "ACL Live at 3TEN",
+      "title": "Olive Jones",
+      "artists": [
+        "Olive Jones"
+      ],
+      "url": "https://www.acllive.com/event/2026-11-14-olive-jones-at-8-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-19",
+      "venue": "3ten",
+      "venueRaw": "ACL Live at 3TEN",
+      "title": "Daisy Grenade",
+      "artists": [
+        "Daisy Grenade"
+      ],
+      "url": "https://www.acllive.com/event/2026-11-19-daisy-grenade-at-8-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-20",
+      "venue": "3ten",
+      "venueRaw": "ACL Live at 3TEN",
+      "title": "Bryan Andrews",
+      "artists": [
+        "Bryan Andrews"
+      ],
+      "url": "https://www.acllive.com/event/2026-11-20-bryan-andrews-at-8-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-27",
+      "venue": "3ten",
+      "venueRaw": "ACL Live at 3TEN",
+      "title": "Poi Dog Pondering",
+      "artists": [
+        "Poi Dog Pondering"
+      ],
+      "url": "https://www.acllive.com/event/2026-11-27-poi-dog-pondering-at-8-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-28",
+      "venue": "3ten",
+      "venueRaw": "ACL Live at 3TEN",
+      "title": "The 36th Annual John Lennon Tribute with The #9 Orchestra",
+      "artists": [
+        "The 36th Annual John Lennon Tribute with The #9 Orchestra"
+      ],
+      "url": "https://www.acllive.com/event/2026-11-28-the-36th-annual-john-lennon-tribute-with-the-9-orchestra-at-8-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-03",
+      "venue": "3ten",
+      "venueRaw": "ACL Live at 3TEN",
+      "title": "Michael Smoak",
+      "artists": [
+        "Michael Smoak"
+      ],
+      "url": "https://www.acllive.com/event/2026-12-03-michael-smoak-at-8-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-04",
+      "venue": "3ten",
+      "venueRaw": "ACL Live at 3TEN",
+      "title": "John R Miller",
+      "artists": [
+        "John R Miller"
+      ],
+      "url": "https://www.acllive.com/event/2026-12-04-john-r-miller-at-8-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-05",
+      "venue": "3ten",
+      "venueRaw": "ACL Live at 3TEN",
+      "title": "American Aquarium",
+      "artists": [
+        "American Aquarium"
+      ],
+      "url": "https://www.acllive.com/event/2026-12-05-american-aquarium-at-8-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-13",
+      "venue": "3ten",
+      "venueRaw": "ACL Live at 3TEN",
+      "title": "The Rock and Roll Playhouse",
+      "artists": [
+        "The Rock and Roll Playhouse"
+      ],
+      "url": "https://www.acllive.com/event/2026-12-13-the-rock-and-roll-playhouse-at-12-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "12:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-17",
+      "venue": "3ten",
+      "venueRaw": "ACL Live at 3TEN",
+      "title": "Deep Eddies Band",
+      "artists": [
+        "Deep Eddies Band"
+      ],
+      "url": "https://www.acllive.com/event/2026-12-17-deep-eddies-band-at-8-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2027-03-05",
+      "venue": "3ten",
+      "venueRaw": "ACL Live at 3TEN",
+      "title": "Anna Shoemaker",
+      "artists": [
+        "Anna Shoemaker"
+      ],
+      "url": "https://www.acllive.com/event/2027-03-05-anna-shoemaker-at-8-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2027-04-22",
+      "venue": "3ten",
+      "venueRaw": "ACL Live at 3TEN",
+      "title": "Paloma Morphy",
+      "artists": [
+        "Paloma Morphy"
+      ],
+      "url": "https://www.acllive.com/event/2027-04-22-official-2026-acl-fest-nights-paloma-morphy-at-9-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "9:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2027-04-24",
+      "venue": "3ten",
+      "venueRaw": "ACL Live at 3TEN",
+      "title": "Alaska Thunderfuck",
+      "artists": [
+        "Alaska Thunderfuck"
+      ],
+      "url": "https://www.acllive.com/event/2027-04-24-alaska-thunderfuck-at-8-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2027-04-25",
+      "venue": "3ten",
+      "venueRaw": "ACL Live at 3TEN",
+      "title": "Terrian",
+      "artists": [
+        "Terrian"
+      ],
+      "url": "https://www.acllive.com/event/2027-04-25-terrian-at-8-pm",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    }
+  ]
+}
