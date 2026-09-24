@@ -156,3 +156,19 @@ missing data.
   five surfaces; adjudication of 230 listings the venue calendars didn't
   confirm). The canvas builder (Opus, one agent) started from
   `canvas/BRIEF.md`.
+- ~3:10 PM PT: wave 3 done. Adjudication of the 230 disputed listings:
+  110 were on the venue's own calendar and the first read missed them
+  (Antone's pagination, Moody Center's page shows 12 of 35), 25 real but
+  off-calendar, 33 not concerts, 30 duplicates, 32 genuinely wrong. Artist
+  pages (Bandsintown, Songkick, Ticketmaster) only show an artist's next
+  eight or so dates, so the alert should read the city feed, not artist
+  pages. Bandsintown's API is one-artist-per-key by its own help page.
+- ~3:15 PM PT: `STUDY.md` written. Codex (read-only, head 172ebfa) reviewed
+  it adversarially: distinct shows merged on the "Official 2026 ACL Nights"
+  prefix, order-dependent matching, flattering precision, thin spring
+  sample, and four overstated sentences. All fixed in the scorer and the
+  study; its identity and alert points are answered in THINKING.md. One
+  suggestion (add every adjudicated real show to the truth) was tried and
+  reverted: it added 31 support acts as if they were separate shows.
+- Final numbers: Do512 84% (68% after Nov 23), Bandsintown 81%, JamBase 74%;
+  Do512 + JamBase 93% (93% after Nov 23); Do512 + Bandsintown 95%.
