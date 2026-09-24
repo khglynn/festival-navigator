@@ -1544,9 +1544,11 @@ export function positionNowMarks(root, date = new Date()) {
 //     now, a grid cell or a stack card: the highest level first (must), then
 //     the earliest start. A grid cell brings its line with it: the answer to
 //     "where is Ross" is the line and his card seen together.
-//   · Otherwise, or no highlighted pick is live → the now line, or with no
-//     line (the grid closed, the afters running) the first NOW-marked card
-//     in the wall's order. The highlight keeps dimming the rest either way.
+//   · Otherwise, or no highlighted pick is live → the now line while the
+//     clock is inside the grid's hours; past them (the grid closed, the
+//     afters running) the first NOW-marked card in the wall's order; before
+//     doors, with nothing marked, the line at the top of the grid. The
+//     highlight keeps dimming the rest either way.
 // { kind: 'line' | 'card', line, card, match }. `match` says whether the
 // landing answers the highlight: true — it is their pick; false — someone is
 // highlighted and nothing of theirs is on, so this is what IS on, not them
@@ -1556,12 +1558,20 @@ export function nowLanding(root, ctx, date = new Date()) {
   const line = root.querySelector('.times-grid .now-line');
   const marks = [...root.querySelectorAll('.venue-grid[data-iso] .card.now')];
   if (!line && !marks.length) return null;
+  const grid = line ? line.closest('.times-grid') : null;
+  const minutes = grid ? festivalClock(date, grid.dataset.tz || null).minutes : null;
+  // The line is the answer only while the clock is inside the grid's own
+  // hours. nowOffsetPx keeps it drawn two rows either side, pinned to the
+  // edge — fine to look at, but from 11:00 to 11:30 PM it sat on the bottom
+  // of a closed Pier 80 while eight afters were on (review, 2026-09-24).
+  // Past the grid, the marks win when there are any; before doors there are
+  // none, and the top of the grid is the honest answer.
+  const onGrid = !!grid && Number(grid.dataset.startRow) * 15 <= minutes
+    && minutes < (Number(grid.dataset.startRow) + Number(grid.dataset.rows)) * 15;
   const people = ctx.filterPeople || [];
   if (people.length) {
     const live = [...marks];
-    const grid = line ? line.closest('.times-grid') : null;
     if (grid) {
-      const { minutes } = festivalClock(date, grid.dataset.tz || null);
       for (const cell of grid.querySelectorAll('.card[data-now-from]')) {
         if (Number(cell.dataset.nowFrom) <= minutes && minutes < Number(cell.dataset.nowTo)) live.push(cell);
       }
@@ -1572,7 +1582,7 @@ export function nowLanding(root, ctx, date = new Date()) {
     if (best) return { kind: 'card', card: best, line: grid && grid.contains(best) ? line : null, match: true };
   }
   const match = people.length ? false : null;
-  if (line) return { kind: 'line', line, card: null, match };
+  if (line && (onGrid || !marks.length)) return { kind: 'line', line, card: null, match };
   return { kind: 'card', card: marks[0], line: null, match };
 }
 

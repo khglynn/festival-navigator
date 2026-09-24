@@ -151,6 +151,35 @@ test('no line (the grid has closed), the afters running: NOW lands on the first 
   root.remove();
 });
 
+// The line stays drawn two rows past the grid's close, pinned to its bottom
+// (nowOffsetPx) — but from 11:00 to 11:30 PM that is the bottom of a closed
+// Pier 80 while the afters are on (review, 2026-09-24). The line answers only
+// inside the grid's own hours; before doors, with nothing marked, it still
+// does (the top of the grid: "doors soon").
+test('just after the grid closes, the line is still drawn but the afters are the answer; before doors the line is', () => {
+  const probe = render(SAT_1030);
+  const g = probe.root.querySelector('.times-grid[data-iso="2026-09-26"]');
+  const close = (Number(g.dataset.startRow) + Number(g.dataset.rows)) * 15;
+  const doors = Number(g.dataset.startRow) * 15;
+  probe.root.remove();
+  const clock = (min) => pt(`2026-09-26T${String(Math.floor(min / 60)).padStart(2, '0')}:${String(min % 60).padStart(2, '0')}:00`);
+  for (const after of [10, 25]) {
+    const at = clock(close + after);
+    const { root, ctx } = render(at);
+    assert.ok(root.querySelector('.times-grid[data-iso="2026-09-26"] .now-line'), `${after} min past close the line is still drawn`);
+    const l = nowLanding(root, ctx, at);
+    assert.equal(l.kind, 'card', `${after} min past close: a NOW card, not the bottom of the grid`);
+    assert.equal(l.card, root.querySelector('.venue-grid[data-iso] .card.now'), 'the first in the wall’s order');
+    root.remove();
+  }
+  const early = clock(doors - 20);
+  const { root, ctx } = render(early);
+  assert.ok(root.querySelector('.now-line'), 'twenty minutes before doors the line is drawn');
+  assert.equal(root.querySelectorAll('.venue-grid .card.now').length, 0, 'and nothing is marked');
+  assert.equal(nowLanding(root, ctx, early).kind, 'line', 'so the top of the grid is the answer');
+  root.remove();
+});
+
 test('outside the live window there is no NOW: a Saturday morning, a week early, a lineup fest with no clock', () => {
   for (const at of [pt('2026-09-26T09:00:00'), pt('2026-09-19T22:30:00')]) {
     const { root, ctx } = render(at);
