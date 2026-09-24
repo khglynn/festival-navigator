@@ -1,10 +1,86 @@
 # MUNA, Moody Amphitheater, Sat 2026-09-19: when could Kevin have known?
 
-**Started 2026-09-24 (CT). Status: in progress — findings banked as they land.**
+**Researched 2026-09-24 (CT). Status: DONE for this test case.**
+The first ground-truth case for the city-seasons sources study. Numbered
+findings with sources are in the log below; this top section is the verdict.
 
-The first ground-truth test case for the city-seasons sources study.
-Known: MUNA "Gets So Hot Tour", Sat Sep 19 2026, Moody Amphitheater at
-Waterloo Park, Austin, support Hemlocke Springs.
+## The answer in plain words
+
+1. **The show was public for 134 days.** MUNA announced the Gets So Hot
+   Tour, with Austin on it, on Fri 2026-05-08 (the day their album *Dancing
+   on the Wall* came out). The show was Sat 2026-09-19.
+2. **Tickets went on sale within a week and never sold out.** Artist
+   presale Tue May 12, then Spotify / venue / Live Nation presales Wed May
+   13, general sale Thu May 14, all 10 AM CT. Ticketmaster still showed
+   "not sold out, not limited" the morning of Sep 18, and the venue's own
+   day-before copy said "Still need tix? Grab yours now". So there was no
+   sell-out; a ticket was buyable for four straight months, up to the day
+   before.
+3. **Every big source had it on announcement day.** Ticketmaster (listed
+   between May 7 21:22 UTC and May 9 00:22 UTC), JamBase (page published
+   May 8 10:22 AM CT), Do512 (event photo uploaded May 8 12:21 PM CT),
+   the venue's own calendar (by May 16 at the latest, and absent on May 3).
+   Songkick very likely by May 23. Showlist Austin only shows about 90
+   days ahead, so it could not have carried it before late June. The Austin
+   Chronicle printed it the day before.
+4. **So this was never a data problem. It was an alert problem.** Any of
+   four sources would have told Kevin in May. Nothing pushed it to him.
+5. **Spotify was in the loop and still didn't land it.** Ticketmaster's
+   record for this show lists a "Spotify Presale" (Wed May 13). Spotify
+   says presale emails go to an artist's top fans "and/or anyone who follows
+   the artist", and its concert pushes need location set, push on, and the
+   artist followed. Spotify's own feed for concerts is Ticketmaster plus
+   Bandsintown, and this was a Ticketmaster show. So a MUNA follower in
+   Austin was plausibly shown this date and possibly emailed; whether Kevin
+   was, only his inbox can say (search Gmail for "MUNA" around May 8–13).
+
+## Timeline
+
+| When (CT) | What | Evidence | Confidence |
+|---|---|---|---|
+| 2026-05-03 | Venue calendar has no MUNA (Sep 12 then Sep 22) | Wayback moodyamphitheater.com/events-tickets 20260503195714 | high |
+| 2026-05-07 4:22 PM | Ticketmaster artist page has no Austin date | Wayback TM artist 2197571 @ 20260507212242 | high |
+| 2026-05-08 (Fri) | Tour + Austin date announced, album out same day | JamBase, Far Out, Exclaim, Vice (all May 8) | high |
+| 2026-05-08 10:22 AM | JamBase show page published | JSON-LD datePublished 2026-05-08T15:22:25Z | high |
+| 2026-05-08 12:21 PM | Do512 event image uploaded (event exists) | Cloudinary v1778260864 on Do512 event 17325831 | medium-high |
+| by 2026-05-08 7:22 PM | Ticketmaster lists event 3A0064A7C59AF73A | Wayback TM artist page @ 20260509002229 | high |
+| 2026-05-11 11:59 PM | Artist-presale signup closes (Laylo, whereismuna.com/tour) | Vice, May 8 | high |
+| 2026-05-12 10 AM | Artist presale | TM event state presaleDates | high |
+| 2026-05-13 10 AM | Spotify, venue, Live Nation presales | TM event state presaleDates | high |
+| 2026-05-14 10 AM | General on-sale | TM onsaleDate 2026-05-14T15:00:00Z | high |
+| by 2026-05-16 | Venue homepage: MUNA "BUY TICKETS" | Wayback moodyamphitheater.com @ 20260516180938 | high |
+| by 2026-05-23 | Songkick has the tour (42 upcoming) | Wayback Songkick artist page | medium (inferred) |
+| ~late Jun | Enters Showlist Austin's ~90-day window | Showlist horizon measured on 4 snapshots | medium (inferred) |
+| 2026-09-12 | Showlist Austin lists it | Wayback austin.showlists.net @ 20260912210541 | high |
+| 2026-09-18 | Chronicle print pick; TM soldOut:false; venue "still need tix?" | Chronicle PDF; TM @ 20260918151144; Do512 JSON | high |
+| 2026-09-19 (Sat) | Show happened | setlist.fm; Daily Texan photo gallery Sep 20 | high |
+
+## Notice
+
+1. Announcement to show: **134 days**. General on-sale to show: **128
+   days**. Spotify presale to show: 129 days.
+2. On-sale to sell-out: **no sell-out**, so no number. Tickets were on
+   sale for 128 days.
+3. Resale floor near show time was about $76 (SeatGeek, per a search
+   summary; not verified first-hand).
+
+## What this case says about sources (for the study)
+
+1. **Speed:** Ticketmaster, JamBase and Do512 were all same-day. None of
+   them beats the others on this case; any would have served an alert.
+2. **Buy link:** Ticketmaster is the buy link itself. Do512 carried none
+   (`actions.buy:false`). JamBase pointed at the venue homepage. The venue
+   pointed at the right Ticketmaster event.
+3. **Horizon:** Showlist Austin's ~90-day window disqualifies it for the
+   alert (it would have fired in late June, not May), though it's fine for
+   a "this month" view.
+4. **Archive reach:** Ticketmaster's *artist* pages are archived well even
+   though its event pages are not. That makes TM artist pages the best
+   tool for grading future test cases' "first seen" dates.
+5. **Unverified:** Bandsintown (no archive, API closed to unregistered
+   apps); SeatGeek (live tour ids in one block, 18230731–18230761, which
+   suggests one batch import; no archive); AXS (not involved: Moody
+   Amphitheater sells through Ticketmaster).
 
 ## Findings log (appended as found)
 
@@ -102,3 +178,59 @@ Waterloo Park, Austin, support Hemlocke Springs.
     (the venue homepage, not the Ticketmaster event). eventStatus stayed
     EventScheduled; no sold-out marker. (Raw HTML fetched through Firecrawl
     2026-09-24; plain curl got a 17 KB bot shell.)
+14. **Ticketmaster: bracketed to announcement day, plus the full sale
+    schedule (strongest evidence in the file).** The TM artist page
+    https://www.ticketmaster.com/muna-tickets/artist/2197571 is archived
+    often. The **2026-05-07 21:22 UTC** capture has no Austin/Moody/event id;
+    the **2026-05-09 00:22 UTC** capture lists event `3A0064A7C59AF73A`
+    ("MUNA: Gets So Hot Tour | Saturday, Sep 19, 2026, 8:00 PM | Moody
+    Amphitheater, Austin"). So TM listed it inside a ~27-hour window that
+    contains the May 8 announcement. The page's embedded event state gives
+    the sale schedule (UTC in the source, CT here):
+    a. Artist Presale: Tue May 12, 10:00 AM CT (15:00Z)
+    b. Spotify Presale: Wed May 13, 10:00 AM – 11:59 PM CT
+    c. Waterloo Greenway Venue Presale: Wed May 13, 10:00 AM – 11:59 PM CT
+    d. LIVE NATION PRESALE: Wed May 13, 10:00 AM – 11:59 PM CT
+    e. General on-sale: Thu May 14, 10:00 AM CT (`onsaleDate
+       2026-05-14T15:00:00Z`; JSON-LD `validFrom 2026-05-14T10:00:00`)
+    The **2026-09-18 15:11 UTC** capture (the day before the show) still
+    says `"soldOut":false,"limitedAvailability":false`, JSON-LD availability
+    `InStock`. **It never sold out**, as far as the record shows; the
+    question "days from on-sale to sell-out" has no answer because there
+    was no sell-out. (The web-search summary claiming a sell-out was wrong.)
+    Note the **Spotify Presale** by name: Spotify ran a presale for this
+    exact show.
+15. **Venue homepage 2026-05-16 18:09 UTC** (Wayback): "Gets So Hot Tour
+    MUNA with Hemlocke Springs September 19, 2026 BUY TICKETS", next to
+    Chance the Rapper "ON SALE 5/21 AT 10 AM".
+16. **Spotify.** (See `spotify-provenance.md` for where Spotify's listings
+    come from: Ticketmaster + Bandsintown + ~44 other ticketers, not
+    Songkick.)
+    a. Ticketmaster's event record names a **"Spotify Presale"**, Wed
+       2026-05-13 10:00 AM – 11:59 PM CT (finding 14).
+    b. Spotify support, "Presale and merch emails"
+       (https://support.spotify.com/us/article/presale-and-merch-emails/,
+       undated, fetched 2026-09-24): "Emails are sent to listeners who our
+       data shows are the artist's top fans and/or anyone who follows the
+       artist on Spotify." Requires "Spotify News and Offers" email on.
+    c. Spotify newsroom, 2025-03-20
+       (https://newsroom.spotify.com/2025-03-20/our-new-concerts-near-you-playlist-makes-it-fun-and-easy-to-discover-touring-artists/):
+       "Have push notifications turned on to receive reminder messages for
+       your favorite artists", "Make sure your location is up-to-date via the
+       'Live Events' section", "Follow your favorite artists on the app to
+       get their latest show updates."
+    d. Spotify notification settings
+       (https://support.spotify.com/us/article/notification-settings/):
+       categories include "concert recommendations, artist updates".
+    e. Wayback captures of MUNA's Spotify concerts page
+       (open.spotify.com/artist/6xdRb2GypJ7DqnWAI2mHGn/concerts) on
+       2026-06-23 and 2026-09-17 are JS shells with no dates, so there is
+       no archived proof the Austin date was shown. Inference: a
+       Ticketmaster-sold show at a Ticketmaster venue, with a named Spotify
+       presale, was very likely on MUNA's Spotify concerts tab from May.
+       Whether Kevin received the presale email or a push is checkable only
+       in his Gmail / phone (search "MUNA" May 8–14, 2026).
+17. **setlist.fm** confirms the show happened
+    (https://www.setlist.fm/setlist/muna/2026/moody-amphitheater-austin-tx-7b7fb240.html);
+    The Daily Texan ran a photo gallery 2026-09-20
+    (https://thedailytexan.com/2026/09/20/photo-gallery-muna-at-moody-amphitheater/).
