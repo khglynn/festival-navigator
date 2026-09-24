@@ -13,9 +13,10 @@
 //      every painted frame nobody is rendered twice (live or parked); once it
 //      settles, nothing temporary is left, no clip stays lifted, nothing in
 //      the zoom is still animating, and the row agrees with the card.
-//   2. Clear, then re-pick 0, 40 and 80ms later (inside the leaving name's
-//      130ms): the new level grows in where the row makes room (storyboard
-//      case 5), never out of the chip you left.
+//   2. Clear, then re-pick while your name is still stepping away (held,
+//      so any machine hits the race) and at 0, 40 and 80ms: the new level
+//      grows in where the row makes room (storyboard case 5), never out of
+//      the chip you left.
 //   3. A cut-off name stays cut off while it slides (it used to draw in full
 //      for the 300ms of the move, then snap back to "…").
 //
@@ -192,50 +193,91 @@ for (const [artist, width, height] of [['Soulwax', 390, 844], ['Robyn', 320, 640
 // Nhu's MUST chip — the re-pick cancels the clear's animations, but a
 // cancelled animation reports a frame late, so the parked name was still
 // there when the new snapshot read the row, and was read as you (review,
-// 2026-09-24, Chromium and WebKit). Each gap here fails on that code.
-for (const gap of [0, 40, 80]) {
-  test(`clear, then re-pick ${gap}ms later: the new level grows in where the row makes room — never out of the chip you left`, { skip }, async () => {
+// 2026-09-24, Chromium and WebKit).
+//
+// These wait on STATE, never on a clock (2026-09-24): the first cut caught
+// "the next change to the card's children" and asserted a ×1 chip in it —
+// but the clear's old wash leaves the card 150ms after the clear, and on a
+// slow CI runner the 80ms case's re-pick landed after that, so the observer
+// caught the wash leaving and saw no ×1 chip at all (flaky in CI from the
+// v87 merges on; never an app fault — see the zoom-chips build log). Now the
+// catch waits for the change that brings the ×1 chip in, and the case that
+// must exercise the race HOLDS the clear's move, so the leaving name is
+// certainly still parked when the re-pick lands, however slow the machine.
+const repickFirstFrame = (page) => page.evaluate(() => {
+  const card = document.querySelector('#zoom-layer .zoom-slot.shown .zoom-card');
+  window.__first = new Promise((res) => {
+    const mo = new MutationObserver(() => {
+      const chip = card.querySelector('.f-who > .f-pill[data-level="1"]');
+      if (!chip) return; // not the re-pick's rebuild (the clear's wash leaving, say): keep watching
+      mo.disconnect();
+      queueMicrotask(() => {
+        const anims = document.getAnimations().filter((x) => !(x instanceof CSSAnimation));
+        const m = (el) => { const r = el.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; };
+        for (const x of anims) { x.pause(); x.currentTime = 0; }
+        const start = m(chip);
+        const frames = chip.getAnimations().map((x) => x.effect.getKeyframes()[0].transform || '');
+        for (const x of anims) { x.currentTime = 10000; }
+        const end = m(chip);
+        for (const x of anims) { try { x.finish(); } catch { x.play(); } }
+        res({ start, end, frames });
+      });
+    });
+    mo.observe(card, { childList: true });
+  });
+});
+
+for (const when of ['held', 0, 40, 80]) {
+  const held = when === 'held';
+  const title = held
+    ? 'clear, then re-pick while the leaving name is still parked (the clear\'s move held): the new level grows in where the row makes room — never out of the chip you left'
+    : `clear, then re-pick ${when}ms later: the new level grows in where the row makes room — never out of the chip you left`;
+  test(title, { skip }, async () => {
     const { ctx, page } = await openWall();
     try {
       const cdp = await holdOpen(ctx, page, 'Soulwax');
       for (let i = 0; i < 3; i++) { await tap(page, cdp); await sleep(450); } // 1 → 4: MUST beside Nhu
       let s = await settledState(page, 'Soulwax');
       assert.equal(s.youLevel, '4', 'set up: you are at MUST, beside Nhu');
-      await tap(page, cdp); // MUST → nothing: your name steps away inside Nhu's chip
-      if (gap) await sleep(gap);
-      // Catch the re-pick's first frame: where the ×1 chip starts, against where it ends.
-      await page.evaluate(() => {
-        const card = document.querySelector('#zoom-layer .zoom-slot.shown .zoom-card');
-        window.__first = new Promise((res) => {
-          const mo = new MutationObserver(() => {
-            mo.disconnect();
-            queueMicrotask(() => {
-              const chip = card.querySelector('.f-who > .f-pill[data-level="1"]');
-              const anims = document.getAnimations().filter((x) => !(x instanceof CSSAnimation));
-              const m = (el) => { const r = el.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; };
-              for (const x of anims) { x.pause(); x.currentTime = 0; }
-              const start = chip ? m(chip) : null;
-              const frames = chip ? chip.getAnimations().map((x) => x.effect.getKeyframes()[0].transform || '') : [];
-              for (const x of anims) { x.currentTime = 10000; }
-              const end = chip ? m(chip) : null;
-              for (const x of anims) { try { x.finish(); } catch { x.play(); } }
-              res({ start, end, frames });
+      if (held) {
+        // Freeze the clear's move the moment its rebuild lands: every
+        // animation it started stays mid-flight until the re-pick cancels it.
+        await page.evaluate(() => {
+          const card = document.querySelector('#zoom-layer .zoom-slot.shown .zoom-card');
+          window.__cleared = new Promise((res) => {
+            const mo = new MutationObserver(() => {
+              if (card.querySelector('.f-who .f-pill.you')) return;
+              mo.disconnect();
+              queueMicrotask(() => { for (const x of document.getAnimations()) if (!(x instanceof CSSAnimation)) x.pause(); res(true); });
             });
+            mo.observe(card, { childList: true });
           });
-          mo.observe(card, { childList: true });
         });
-      });
+      }
+      await tap(page, cdp); // MUST → nothing: your name steps away inside Nhu's chip
+      if (held) {
+        await page.evaluate(() => window.__cleared);
+        const parked = await page.evaluate(() => document.querySelectorAll('#zoom-layer .zoom-card .f-pill[data-level="4"] > .f-nm.f-parked').length);
+        assert.equal(parked, 1, 'held: your leaving name is parked inside Nhu\'s chip as the re-pick lands — the race this case exists for');
+      } else if (when) {
+        await sleep(when);
+      }
+      await repickFirstFrame(page);
       await tap(page, cdp); // nothing → ×1: nobody was at ×1
-      const f = await page.evaluate(() => window.__first);
-      assert.ok(f.start, 'there is a ×1 chip');
+      const f = await Promise.race([
+        page.evaluate(() => window.__first),
+        sleep(4000).then(() => null),
+      ]);
+      assert.ok(f, 'the re-pick brought a ×1 chip into the row');
       assert.ok(f.frames.some((t) => /scale\(0?\.55\)/.test(t)), `it arrives the zoom's own way, growing in (${JSON.stringify(f.frames)})`);
       assert.ok(!f.frames.some((t) => /translate/.test(t)), `it does not travel from anywhere (${JSON.stringify(f.frames)})`);
       assert.ok(Math.abs(f.start.x - f.end.x) < 2 && Math.abs(f.start.y - f.end.y) < 2,
         `its first frame is its own place, not Nhu's chip: ${JSON.stringify(f)}`);
-      await sleep(700);
+      await page.waitForFunction(() => !document.querySelector('#zoom-layer .zoom-card .f-parked, #zoom-layer .zoom-card .f-travel')
+        && document.getAnimations().every((x) => x instanceof CSSAnimation || x.playState !== 'running' || !x.effect?.target?.closest?.('#zoom-layer')), null, { timeout: 3000 });
       s = await settledState(page, 'Soulwax');
       assert.equal(s.youLevel, '1');
-      assertSettled(s, `clear then re-pick at ${gap}ms`);
+      assertSettled(s, `clear then re-pick (${held ? 'held' : `${when}ms`})`);
     } finally {
       await ctx.close();
     }
