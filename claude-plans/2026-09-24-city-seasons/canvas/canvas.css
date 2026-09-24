@@ -1,0 +1,211 @@
+/* ============================================================================
+ * The canvas page (chrome around the artboards), forked from the 2026-09-23
+ * rating canvas: the app's own dark ground, its display face, brand violet
+ * for "ours". Every value comes from assets/v3-tokens.css.
+ * ========================================================================== */
+:root { color-scheme: dark; }
+html, body { background: var(--page); }
+body { color: var(--text-body); font-family: var(--font-ui); -webkit-text-size-adjust: 100%; }
+.cv-page { max-width: 1300px; margin: 0 auto; padding-inline: 16px; padding-block: 28px 80px; box-sizing: border-box; }
+@media (min-width: 720px) { .cv-page { padding-inline: 28px; } }
+
+.cv-eyebrow { margin: 0 0 10px; color: var(--text-tertiary); font-size: var(--fs-micro); font-weight: 800; letter-spacing: var(--track-label); text-transform: uppercase; }
+.cv-h1 { margin: 0; font-family: var(--font-display); font-weight: 400; letter-spacing: var(--track-display); text-transform: uppercase;
+         color: var(--text-header); font-size: clamp(34px, 6vw, 56px); line-height: 1; text-wrap: balance; }
+.cv-quote { margin: 16px 0 0; max-width: 52ch; color: var(--text-header); font-size: 17px; line-height: 1.45; font-weight: 600; }
+.cv-quote cite { display: block; margin-top: 6px; color: var(--text-tertiary); font-size: 12px; font-style: normal; font-weight: 600; }
+.cv-how { margin: 14px 0 0; max-width: 72ch; color: var(--text-secondary); font-size: 14px; line-height: 1.6; }
+.cv-how b { color: var(--text-header); }
+
+.cv-bar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 30; margin: 22px -16px 0; padding: 10px 16px;
+          display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px;
+          background: rgba(12, 10, 20, .94); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+          border-bottom: 1px solid var(--hairline); }
+@media (min-width: 720px) { .cv-bar { margin-inline: -28px; padding-inline: 28px; } }
+.cv-bar a { color: var(--text-secondary); font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; text-decoration: none; }
+.cv-bar a:hover { color: var(--text-header); }
+.cv-bar-gap { flex: 1; }
+.cv-toggle { display: inline-flex; align-items: center; gap: 6px; color: var(--text-secondary); font-size: 12px; font-weight: 700; cursor: pointer; }
+.cv-toggle input { accent-color: rgb(var(--brand)); width: 16px; height: 16px; margin: 0; }
+.cv-btn { background: var(--tonal-fill); color: var(--tonal-text); border: 0; border-radius: var(--r-pill);
+          font: 700 12px var(--font-ui); padding: 8px 14px; cursor: pointer; min-height: 32px; }
+
+.cv-group { margin-top: 64px; scroll-margin-top: 64px; }
+.cv-h2 { margin: 0; font-family: var(--font-display); font-weight: 400; letter-spacing: var(--track-display); text-transform: uppercase;
+         color: var(--text-header); font-size: clamp(26px, 4vw, 38px); line-height: 1.05; }
+.cv-lede { margin: 12px 0 0; max-width: 76ch; color: var(--text-secondary); font-size: 14px; line-height: 1.6; }
+.cv-lede b { color: var(--text-header); }
+.cv-dir { margin-top: 34px; padding-top: 24px; border-top: 1px solid var(--hairline); scroll-margin-top: 64px; }
+.cv-dir-head { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 12px; }
+.cv-h3 { margin: 0; font-family: var(--font-display); font-weight: 400; letter-spacing: var(--track-display); text-transform: uppercase;
+         color: var(--text-header); font-size: 22px; line-height: 1.1; }
+.cv-axis { order: 2; color: var(--tonal-text); font-size: var(--fs-micro); font-weight: 800; letter-spacing: var(--track-label); text-transform: uppercase; }
+.cv-why { margin: 10px 0 0; color: var(--text-body); font-size: 14px; line-height: 1.6; }
+.cv-why b, .cv-cost b { color: var(--text-header); }
+.cv-cost { margin: 8px 0 0; color: var(--text-secondary); font-size: 12.5px; line-height: 1.55; }
+.cv-note { margin: 16px 0 0; max-width: 80ch; color: var(--text-tertiary); font-size: 12.5px; line-height: 1.6; }
+.cv-mono { font-family: var(--font-display); letter-spacing: var(--track-display); color: var(--text-header); font-size: 13px; }
+
+.cv-grammar { margin: 16px 0 0; padding-left: 20px; max-width: 80ch; display: flex; flex-direction: column; gap: 9px;
+              color: var(--text-body); font-size: 14px; line-height: 1.55; }
+.cv-grammar b { color: var(--text-header); }
+.cv-grammar li::marker { color: var(--text-tertiary); font-weight: 700; }
+
+/* The three doors, side by side where they fit (three phones need ~1210px). */
+.cv-cols { margin-top: 26px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(392px, 100%), 1fr)); gap: 44px 16px; align-items: start; }
+.cv-col { min-width: 0; padding-top: 20px; border-top: 1px solid var(--hairline); }
+.cv-col .cv-why { min-height: 8.2em; }
+.cv-replay { margin-top: 12px; }
+.cv-phone-slot { margin-top: 14px; }
+.cv-alert { margin-top: 18px; }
+.cv-col#dir-a .cv-phone-slot { margin-top: 58px; } /* the other two carry a replay button above their phone */
+@media (max-width: 1240px) { .cv-col#dir-a .cv-phone-slot { margin-top: 14px; } }
+
+/* Artboards: a whole app screen that scrolls on its own. */
+.cv-boards { margin-top: 20px; display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start; }
+.cv-board { display: flex; flex-direction: column; gap: 8px; min-width: 0; max-width: 100%; }
+.cv-board-cap { color: var(--text-tertiary); font-size: var(--fs-micro); font-weight: 800; letter-spacing: var(--track-label); text-transform: uppercase; }
+.cv-board-cap b { color: var(--text-secondary); font-weight: 800; }
+.cv-frame { border: 1px solid var(--border-card); border-radius: 22px; overflow: hidden; background: var(--page); width: max-content; }
+.cv-board.is-desk .cv-frame { border-radius: var(--r-settings); }
+.cv-board.is-desk { width: 100%; }
+.vp { position: relative; overflow: hidden; background: var(--page); color: var(--text-body); font-family: var(--font-ui); box-sizing: border-box; }
+.vp.app { padding: 0; display: flex; flex-direction: column; }
+.vp-scroll { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; position: relative; overscroll-behavior: contain; scrollbar-width: thin; }
+.vp.app .dock { position: relative; flex: none; }
+.vp.app.phone .shell { padding-bottom: 28px; }
+.vp.app .dock .sort-pop, .vp.app .day-rail .sort-pop { z-index: 40; }
+
+/* On a phone, a phone frame is shown at true size, edge to edge. */
+@media (max-width: 440px) {
+  .cv-boards { width: 100%; }
+  .cv-board.is-phone { margin-inline: -16px; width: calc(100% + 32px); max-width: none; }
+  .cv-board.is-phone .cv-board-cap { padding-inline: 16px; }
+  .cv-board.is-phone .cv-frame { border-radius: 0; border-inline: 0; margin-inline: auto; }
+}
+
+/* A zoom at rest, drawn by the zoom's own builders (edge cases). */
+.cv-zbox { box-sizing: border-box; max-width: 100%; padding: 18px; border-radius: var(--r-settings); border: 1px solid var(--border-card);
+           background: radial-gradient(120% 90% at 50% 0%, rgba(20, 16, 33, .9), var(--page)); display: flex; justify-content: center; }
+.cv-zbox .zoom-slot { position: relative; }
+.cv-zbox .zoom-card { cursor: default; }
+
+.cv-rec { margin-top: 64px; padding: 20px 22px 22px; border-radius: var(--r-settings); background: var(--card);
+          border: 1px solid rgba(var(--brand), .45); max-width: 860px; scroll-margin-top: 64px; }
+.cv-rec .cv-rec-k { color: var(--tonal-text); font-size: var(--fs-micro); font-weight: 800; letter-spacing: var(--track-label); text-transform: uppercase; }
+.cv-rec h4 { margin: 8px 0 0; font-family: var(--font-display); font-weight: 400; letter-spacing: var(--track-display); text-transform: uppercase; color: var(--text-header); font-size: 24px; line-height: 1.1; }
+.cv-rec p { margin: 10px 0 0; color: var(--text-body); font-size: 14px; line-height: 1.6; max-width: 76ch; }
+.cv-rec p b { color: var(--text-header); }
+
+.cv-foot { margin-top: 72px; padding-top: 24px; border-top: 1px solid var(--hairline); color: var(--text-secondary); font-size: 13px; line-height: 1.6; max-width: 84ch; }
+.cv-foot h4 { margin: 0 0 8px; color: var(--text-tertiary); font-size: var(--fs-micro); font-weight: 800; letter-spacing: var(--track-label); text-transform: uppercase; }
+.cv-foot p { margin: 0; }
+.cv-foot code { font-size: 12px; color: var(--text-body); }
+
+/* ---- the MUNA timeline (the page's thesis) ------------------------------------- */
+.cv-muna { margin-top: 22px; }
+.mt-cap { color: var(--text-tertiary); font-size: var(--fs-micro); font-weight: 800; letter-spacing: var(--track-label); text-transform: uppercase; margin-bottom: 10px; }
+.mt-wrap { overflow-x: auto; scrollbar-width: thin; padding-bottom: 4px; }
+.mt { display: grid; grid-template-columns: 92px repeat(var(--cols), minmax(58px, 1fr)); row-gap: 0; min-width: 640px; max-width: 1080px; }
+.mt > * { min-width: 0; }
+.mt-h { display: flex; flex-direction: column; gap: 1px; padding: 0 0 8px; border-bottom: 1px solid var(--hairline); }
+.mt-h .wd { color: var(--text-tertiary); font-size: 9.5px; font-weight: 800; letter-spacing: .1em; }
+.mt-h .d { color: var(--text-secondary); font-size: 12px; font-weight: 700; }
+.mt-h.gap, .mt-c.gap { color: var(--text-tertiary); font-size: 10px; font-weight: 700; text-align: center; letter-spacing: .04em;
+                       background: repeating-linear-gradient(90deg, var(--hairline) 0 4px, transparent 4px 8px) center / 100% 1px no-repeat; }
+.mt-h.gap { background: none; justify-content: flex-end; padding-bottom: 9px; }
+.mt-k { color: var(--text-secondary); font-size: 11px; font-weight: 800; letter-spacing: .04em; padding: 9px 8px 9px 0; border-bottom: 1px solid var(--hairline); white-space: nowrap; }
+.mt-k.fact { color: var(--text-header); }
+.mt-k.miss { color: var(--text-tertiary); }
+.mt-c { display: flex; align-items: center; gap: 5px; padding: 9px 4px 9px 0; border-bottom: 1px solid var(--hairline); }
+.mt-dot { width: 8px; height: 8px; border-radius: var(--r-pill); flex: none; }
+.mt-dot.fact { background: var(--text-header); }
+.mt-dot.a, .mt-dot.b, .mt-dot.c { background: rgb(var(--brand)); box-shadow: 0 0 6px rgba(var(--brand), .7); }
+.mt-dot.miss { border: 1.5px solid var(--text-tertiary); box-sizing: border-box; }
+.mt-t { color: var(--text-body); font-size: 11px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mt-c:has(.mt-dot.miss) .mt-t { color: var(--text-tertiary); }
+
+/* ---- shows per month ----------------------------------------------------------- */
+.cv-months { margin-top: 22px; display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap; }
+.ms-col { display: flex; flex-direction: column; align-items: center; gap: 4px; width: 30px; }
+.ms-n { color: var(--text-secondary); font-size: 10.5px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.ms-bar { width: 20px; border-radius: 3px; background: rgba(var(--brand), .5); }
+.ms-m { color: var(--text-tertiary); font-size: 9.5px; font-weight: 800; letter-spacing: .08em; }
+.ms-cap { flex-basis: 100%; margin: 4px 0 0; color: var(--text-tertiary); font-size: 12px; }
+
+/* ============================================================================
+ * The directions' additions to the app. Proposed components, drawn in the
+ * app's own tokens and next to the components they extend.
+ * ========================================================================== */
+
+/* The zoom's new lines. Support acts sit under the name (the billing); the
+ * buy door rides under WHERE in WHERE's own door style; a past pick closes. */
+.f-bill { color: rgba(255, 255, 255, .74); font-size: 11px; font-weight: 600; line-height: 1.35; max-width: 30ch; text-align: center; margin-top: -3px; }
+.f-buy { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+a.f-buy-link { color: #fff; font-size: 11.5px; font-weight: 700; text-decoration: none; border-bottom: 1px solid rgba(255, 255, 255, .35); padding-bottom: 1px; }
+a.f-buy-link:hover { border-bottom-color: rgba(255, 255, 255, .75); }
+.f-door { color: rgba(255, 255, 255, .85); font-size: 11.5px; font-weight: 700; }
+.f-sale { color: rgba(255, 255, 255, .72); font-size: 11px; font-weight: 600; }
+.f-past { color: rgba(255, 255, 255, .68); font-size: 10.5px; font-weight: 600; }
+
+/* A: NEW for seven days — the card's own small tag (the W1/W2 component,
+ * .chip-weekend), in the corner the tag already owns. */
+.card .new-label { position: absolute; top: 4px; left: 5px; font-size: 7.5px; font-weight: 800; letter-spacing: .1em;
+                   color: rgba(255, 255, 255, .78); border: 1px solid rgba(255, 255, 255, .28); border-radius: var(--r-pill);
+                   padding: 1px 5px; background: rgba(10, 8, 18, .55); line-height: 1.2; pointer-events: none; z-index: 1; }
+
+/* B: the on-sale whisper — the day whisper's shape, the app's own violet. */
+.sale-whisper { --wash: rgba(var(--brand), .22); text-decoration: none; }
+.sale-whisper .who { color: rgb(var(--brand)); }
+
+/* A thin month says why it is thin, in the app's quiet voice (.wall-empty's). */
+.thin-month { text-align: center; padding: 14px 8px 6px; }
+.thin-month p { margin: 0; }
+.thin-month .lead { color: var(--text-secondary); font-size: 12px; font-weight: 700; }
+.thin-month .hint { color: var(--text-tertiary); font-size: 12px; font-weight: 600; margin-top: 3px; line-height: 1.45; text-wrap: balance; }
+.thin-month.yours-end { padding: 8px 8px 14px; }
+
+/* The rooms filter: the show menu's rows with a count at the end, then the
+ * rooms we do not read yet, named plainly. */
+.rooms-pop { min-width: 236px; max-height: min(620px, calc(var(--frame-h, 780px) - 120px)); overflow-y: auto; scrollbar-width: thin; }
+.rooms-pop [role="option"] { padding-block: 6px; }
+.sort-pop .count { margin-left: auto; padding-left: 12px; color: var(--text-tertiary); font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.sort-pop [role="option"][aria-selected="false"] .row-label { color: var(--text-tertiary); }
+.pop-note { display: flex; flex-direction: column; gap: 4px; padding: 5px 11px 6px; }
+.pop-note-k { color: var(--text-tertiary); font-size: 10px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; }
+.pop-note-v { color: var(--text-secondary); font-size: 12px; font-weight: 600; line-height: 1.5; max-width: 28ch; }
+
+/* ---- Slack, as the alert lands (dark theme, Slack's own anatomy) ----------------- */
+.sk { background: #1A1D21; border: 1px solid #2E3035; border-radius: 12px; padding: 6px 0 10px; max-width: 520px;
+      font-family: Lato, -apple-system, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; color: #D1D2D3; font-size: 15px; line-height: 1.46; }
+.sk-day { position: relative; text-align: center; margin: 10px 0 2px; }
+.sk-day::before { content: ''; position: absolute; left: 0; right: 0; top: 50%; height: 1px; background: #35373B; }
+.sk-day span { position: relative; display: inline-block; padding: 2px 14px; border: 1px solid #35373B; border-radius: 24px; background: #1A1D21;
+               color: #D1D2D3; font-size: 13px; font-weight: 700; }
+.sk-msg { display: grid; grid-template-columns: 36px 1fr; column-gap: 8px; padding: 8px 16px 4px 16px; }
+.sk-av { width: 36px; height: 36px; border-radius: 8px; display: block; }
+.sk-body { min-width: 0; }
+.sk-meta { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
+.sk-name { color: #F8F8F8; font-weight: 900; font-size: 15px; }
+.sk-app { color: rgba(232, 232, 232, .7); background: rgba(232, 232, 232, .13); font-size: 10px; font-weight: 700; padding: 1px 3px; border-radius: 2px; letter-spacing: .02em; }
+.sk-time { color: #ABABAD; font-size: 12px; }
+.sk-text { margin-top: 1px; overflow-wrap: anywhere; }
+.sk-text b, .sk-card b { color: #F8F8F8; font-weight: 900; }
+.sk-card { margin-top: 6px; padding: 2px 0 2px 12px; border-left: 4px solid rgb(var(--brand)); border-radius: 2px; }
+.sk-card-name { color: #F8F8F8; font-weight: 900; }
+.sk-card-line { font-size: 14px; color: #D1D2D3; overflow-wrap: anywhere; }
+.sk-context { margin-top: 6px; color: #ABABAD; font-size: 12px; }
+.sk-actions { margin-top: 8px; }
+.sk-btn { display: inline-flex; align-items: center; height: 28px; padding: 0 12px; border: 1px solid rgba(232, 232, 232, .28); border-radius: 4px;
+          color: #D1D2D3; font-size: 13px; font-weight: 700; text-decoration: none; }
+.sk-btn:hover { background: rgba(232, 232, 232, .06); }
+.sk-link { color: #1D9BD1; text-decoration: none; }
+
+/* ---- edge cases ------------------------------------------------------------------ */
+.cv-edges { margin-top: 22px; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(390px, 100%), 1fr)); gap: 28px 18px; align-items: start; }
+.cv-edge { min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+.cv-edge h5 { margin: 0; color: var(--text-header); font-size: 13px; font-weight: 800; }
+.cv-edge .cv-edge-why { margin: 0; color: var(--text-secondary); font-size: 12.5px; line-height: 1.55; }
+.cv-edge .vp.spec { padding: 12px var(--sp-gutter) 14px; border: 1px solid var(--border-card); border-radius: var(--r-settings); }
+.cv-edge .vp.spec .room { gap: 9px; }
+.cv-edge .cv-edge-z { display: flex; gap: 12px; flex-wrap: wrap; }

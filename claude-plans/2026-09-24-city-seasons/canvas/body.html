@@ -1,0 +1,103 @@
+<div class="cv-page">
+  <header class="cv-intro">
+    <p class="cv-eyebrow">festival navigator · city seasons · three doors into Austin · Thu 24 Sep 2026</p>
+    <h1 class="cv-h1">Austin, month by month</h1>
+    <blockquote class="cv-quote">“See and save shows with links to buy that leverage what we’ve built here… let’s not break relationships and build some special snowflake.”<cite>Kevin, 24 Sep</cite></blockquote>
+    <p class="cv-how">Kevin missed <b>MUNA at Moody Amphitheater on Sat Sep 19</b>. It was announced May 8, on sale May 14, and never sold out: 134 days of notice, and nothing he uses told him. So this page designs two things together: a <b>season</b> (Austin’s shows by month, pick them, tap through to buy) and an <b>alert</b> (a message when an artist he loves is announced here). Every card, stack, head and zoom below is the app’s own code running on the real season file: 425 shows at 15 rooms, read off each venue’s calendar today. Rest the mouse on a card (or hold it) to zoom; tap to pick.</p>
+    <div class="cv-muna" id="cv-muna" aria-label="The MUNA timeline, and when each direction would have spoken"></div>
+    <nav class="cv-bar" aria-label="Canvas controls">
+      <a href="#today">Today</a>
+      <a href="#dirs">Three doors</a>
+      <a href="#desks">Laptop</a>
+      <a href="#cover">Rooms filter</a>
+      <a href="#edges">Edge cases</a>
+      <a href="#rec">Pick</a>
+      <span class="cv-bar-gap"></span>
+      <label class="cv-toggle"><input type="checkbox" id="cv-slow"> Slow motion</label>
+      <button type="button" id="cv-reset" class="cv-btn">Reset picks</button>
+    </nav>
+  </header>
+
+  <section class="cv-group" id="today">
+    <h2 class="cv-h2">What the app draws today</h2>
+    <p class="cv-lede">The season file fed straight into today’s code, unchanged. It already works as a calendar: every month is a dated section, so it becomes a tab, every date a room, every venue a stack. What gives it away as a festival: the tabs are cut to five letters (<b>SEPTE OCTOB NOVEM</b>), every head says the month instead of the date (<b>THU SEPTEMBER · SEP 24</b>), and the show menu offers months, not rooms. The zoom has no buy link and drops the support acts.</p>
+    <div class="cv-boards" id="today-boards"></div>
+  </section>
+
+  <section class="cv-group" id="grammar">
+    <h2 class="cv-h2">What all three share</h2>
+    <ol class="cv-grammar">
+      <li><b>One Austin, entered like a fest.</b> It sits in the fest switcher. Tabs are the months that have shows, the current month first: <span class="cv-mono">SEP OCT NOV DEC JAN FEB MAR APR MAY</span>.</li>
+      <li><b>A night is a room.</b> One head per date, the way fest heads read: <span class="cv-mono">FRI OCT 16</span>. Under it, today’s venue stacks in doors order. A card is a show; the headliner is its name.</li>
+      <li><b>The zoom says how to go.</b> Support acts under the name, then when, where, and <span class="cv-mono">Tickets · Ticketmaster</span> as a door (or <span class="cv-mono">Door only</span>). A future on-sale rides the same line.</li>
+      <li><b>Yours</b> means an artist in your Spotify, or one you picked at any fest. Kevin’s taste here is seeded (below); the green pill on a card is today’s Spotify chip, unchanged.</li>
+      <li><b>The spring is thin, and says so.</b> Venues announce two to four months out, so in September the spring is nearly empty. A thin month ends with one quiet line that says why, instead of looking broken. That gap is the alert’s job.</li>
+    </ol>
+    <div class="cv-months" id="cv-months" aria-label="Shows per month, as announced on 24 Sep"></div>
+    <p class="cv-note" id="cv-seeds"></p>
+  </section>
+
+  <section class="cv-group" id="dirs">
+    <h2 class="cv-h2">Three doors</h2>
+    <p class="cv-lede">The three differ on one thing: what the season opens on, and how the alert reaches Kevin. Each is drawn on a phone from production code, then the alert as it would have landed <b>for MUNA</b>, on MUNA’s real dates.</p>
+    <div class="cv-cols">
+      <article class="cv-col" id="dir-a">
+        <header class="cv-dir-head"><span class="cv-axis">browse first</span><h3 class="cv-h3">A · The month</h3></header>
+        <p class="cv-why">Opens on this month, at tonight’s room, the way a fest opens on today. A Slack DM the moment a show by one of your artists is found. A show announced this week wears a small <b>NEW</b> on its card for seven days.</p>
+        <p class="cv-cost"><b>Cost:</b> the smallest. Month tabs and date heads are two changes to code that exists; NEW is one corner label. The alert needs a daily job, a taste list and a Slack app.</p>
+        <div class="cv-boards cv-phone-slot"></div>
+        <div class="cv-alert"></div>
+      </article>
+      <article class="cv-col" id="dir-b">
+        <header class="cv-dir-head"><span class="cv-axis">alert first</span><h3 class="cv-h3">B · Yours</h3></header>
+        <p class="cv-why">A <b>YOURS</b> tab before the months, there only when something matches: every Austin date by an artist you love, soonest first, each in its night room, with the on-sale time under it while it is still ahead. A weekly Slack digest, and a DM only when an on-sale is inside 48 hours.</p>
+        <p class="cv-cost"><b>Cost:</b> medium. A tab that comes and goes (the NOW tab’s code), the on-sale whisper, and on-sale times from Ticketmaster’s API, which none of today’s sources carry.</p>
+        <div class="cv-replay"><button type="button" class="cv-btn" data-replay="B">Replay: a match lands</button></div>
+        <div class="cv-boards cv-phone-slot"></div>
+        <div class="cv-alert"></div>
+      </article>
+      <article class="cv-col" id="dir-c">
+        <header class="cv-dir-head"><span class="cv-axis">going out first</span><h3 class="cv-h3">C · This week</h3></header>
+        <p class="cv-why">A <b>THIS WEEK</b> tab first: the next seven nights, everything on. The months follow, without the nights the week already shows. Slack reminds you the day before a show you picked, and the day before an on-sale for yours.</p>
+        <p class="cv-cost"><b>Cost:</b> medium. The week tab is a moving window (it has to roll at midnight); the day-before reminder needs picks the server can read.</p>
+        <div class="cv-replay"><button type="button" class="cv-btn" data-replay="C">Replay: the week arrives</button></div>
+        <div class="cv-boards cv-phone-slot"></div>
+        <div class="cv-alert"></div>
+      </article>
+    </div>
+  </section>
+
+  <section class="cv-group" id="desks">
+    <h2 class="cv-h2">On a laptop</h2>
+    <p class="cv-lede">The same three at 1280px. The rail carries the tabs; the stacks run five across at the one column width the whole app uses.</p>
+    <div class="cv-desks">
+      <article class="cv-dir" id="desk-a"><header class="cv-dir-head"><span class="cv-axis">browse first</span><h3 class="cv-h3">A · The month</h3></header><div class="cv-boards"></div></article>
+      <article class="cv-dir" id="desk-b"><header class="cv-dir-head"><span class="cv-axis">alert first</span><h3 class="cv-h3">B · Yours</h3></header><div class="cv-boards"></div></article>
+      <article class="cv-dir" id="desk-c"><header class="cv-dir-head"><span class="cv-axis">going out first</span><h3 class="cv-h3">C · This week</h3></header><div class="cv-boards"></div></article>
+    </div>
+  </section>
+
+  <section class="cv-group" id="cover">
+    <h2 class="cv-h2">The rooms filter</h2>
+    <p class="cv-lede">Kevin: “filters for what venues we’re covering will be a nice way to show what we have or don’t.” It lives where the app already hides parts of the week: the fest name opens the show menu. The rooms we read are rows with a check and a count; the rooms we don’t read yet are named plainly under them. Untick a room and its stacks leave; the rest close the gap. It stays open while you tick, because fifteen rooms is a list you edit, not one switch.</p>
+    <div class="cv-boards" id="cover-boards"></div>
+  </section>
+
+  <section class="cv-group" id="edges">
+    <h2 class="cv-h2">Edge cases</h2>
+    <p class="cv-lede">Real shows from the file, drawn by production code. Hold or rest on any card to see its zoom.</p>
+    <div class="cv-edges" id="cv-edges"></div>
+  </section>
+
+  <aside class="cv-rec" id="rec">
+    <div class="cv-rec-k">Recommendation</div>
+    <h4 id="rec-h"></h4>
+    <div id="rec-p"></div>
+  </aside>
+
+  <footer class="cv-foot">
+    <h4>How this page was made</h4>
+    <p id="cv-foot-p"></p>
+  </footer>
+</div>
+<div id="zoom-layer"></div>
