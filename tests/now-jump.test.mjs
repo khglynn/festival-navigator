@@ -32,7 +32,7 @@ globalThis.location = { origin: 'https://fest.kevinhg.com', hash: '' };
 const state = await import('../js/state.js');
 const model = await import('../js/v3/model.js');
 const { FESTIVAL_INDEX } = await import('../js/festivals.js');
-const { renderWall, nowLanding, nowStops, positionNowLines, positionNowMarks } = await import('../js/v3/wall.js');
+const { renderWall, nowLanding, nowStops, nowStep, stillThere, positionNowLines, positionNowMarks } = await import('../js/v3/wall.js');
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const portola = JSON.parse(readFileSync(join(ROOT, 'data/festivals/portola-2026.json'), 'utf8'));
@@ -373,4 +373,44 @@ test('stops across: two picks that fit one window side by side share a stop and 
   const phone = nowStops(root, ctx, SAT_1030, layout(root, { across: true }));
   assert.deepEqual(phone.stops.map(namesOf), [['Soulwax'], ['Prospa'], ['Galen']], 'across, then down');
   root.remove();
+});
+
+// ---- the next tap: where the last one left the page (wall.js nowStep) -------------
+// A tap's cycle names the grid it slid by its DAY, never by the node: the 25 s
+// poll (or any pick) repaints the wall and replaces every scroller. The first
+// cut held the node, and a detached node read as "unchanged" forever — so
+// after one repaint a sideways hand scroll no longer made the next tap fresh
+// (Codex, 2026-09-24). Nhu at 7 PM on a phone: DJ Shadow and Despacio, three
+// columns apart.
+test('the next tap across a repaint: a page nobody moved keeps its cycle; a sideways hand scroll, or a grid that is gone, makes it fresh', () => {
+  const at7 = pt('2026-09-26T19:00:00');
+  const picks = { 'DJ Shadow': { Nhu: 2 }, Despacio: { Nhu: 4 } };
+  const { root, ctx } = render(at7, ['Nhu'], { picks });
+  const geo = { ...layout(root, { across: true }), now: 0, gridLeft: () => null };
+  const first = nowStep(nowStops(root, ctx, at7, geo), null, geo);
+  assert.equal(first.fresh, true);
+  assert.deepEqual(namesOf(first.stop), ['Despacio'], 'the must first');
+  assert.equal(first.stop.frame.iso, '2026-09-26', 'its frame names its grid by day');
+  const cycle = { lead: first.lead.key, y: first.target, grid: first.stop.frame.iso, sl: first.stop.slide, until: 0 };
+  const slidScroller = root.querySelector('.times-grid[data-iso="2026-09-26"]').closest('.times-scroll');
+  root.remove();
+  // The wall repaints: every node is new, and the grid's scroll is put back.
+  const { root: again } = render(at7, ['Nhu'], { picks });
+  assert.notEqual(again.querySelector('.times-grid[data-iso="2026-09-26"]').closest('.times-scroll'), slidScroller, 'the scroller the first tap slid is gone');
+  const here = (left) => ({ ...layout(again, { across: true }), scrollY: cycle.y, now: 0, gridLeft: (iso) => (iso === '2026-09-26' ? left : null) });
+  const plan = (g) => nowStops(again, ctx, at7, g);
+  const unmoved = here(cycle.sl);
+  assert.equal(stillThere(cycle, unmoved), true, 'nobody moved the page: still there');
+  assert.deepEqual(namesOf(nowStep(plan(unmoved), cycle, unmoved).stop), ['DJ Shadow'], 'so the next tap goes on to the next stop');
+  const swiped = here(110); // the hand swipes the new grid back to DJ Shadow's column
+  assert.equal(stillThere(cycle, swiped), false, 'the new grid moved: not where NOW left it');
+  const fresh = nowStep(plan(swiped), cycle, swiped);
+  assert.equal(fresh.fresh, true);
+  assert.deepEqual(namesOf(fresh.stop), ['Despacio'], 'a fresh "take me to now": the best answer again');
+  const gone = { ...here(cycle.sl), gridLeft: () => null }; // its day hidden: no such grid
+  assert.equal(stillThere(cycle, gone), false, 'a grid that is gone ends the cycle');
+  // A glide still on its way holds the cycle whatever the page reads.
+  assert.equal(stillThere({ ...cycle, until: 100 }, { ...swiped, now: 50 }), true, 'mid-glide: still going there');
+  assert.equal(stillThere(null, unmoved), false, 'no last tap, nothing to continue');
+  again.remove();
 });

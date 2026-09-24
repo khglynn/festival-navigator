@@ -9,7 +9,7 @@ import * as sync from '../sync.js';
 import * as spotify from '../spotify.js';
 import * as model from './model.js';
 import { loadFestivalIndex, loadFestival, fetchCustomFestivals, mergeCustoms, FESTIVAL_INDEX, defaultFestivalId } from '../festivals.js';
-import { renderWall, refreshCard, showUndoToast, showToast, wireScrollspy, colorIndexOf, positionNowLines, positionNowMarks, scrollToNowLine, dayNavOf, roomsOf, cardFor, roomOf, isStripScroller, DAY_ANCHOR, festLinkLabel, nowLanding, nowStops } from './wall.js';
+import { renderWall, refreshCard, showUndoToast, showToast, wireScrollspy, colorIndexOf, positionNowLines, positionNowMarks, scrollToNowLine, dayNavOf, roomsOf, cardFor, roomOf, isStripScroller, DAY_ANCHOR, festLinkLabel, nowLanding, nowStops, nowStep } from './wall.js';
 import { loadPeopleFilter, savePeopleFilter, togglePerson, pruneToActive, loadFolded, applyFoldToggle } from './filters.js';
 import { OUT_MS, CASCADE_MS, STAGGER_MS, EASE_ARRIVE, EASE_LEAVE, EASE_SURFACE, canAnimate } from './motion.js';
 import { scrolledBefore, rememberScrolled, dayOfScrollKey, festivalClock } from './now.js';
@@ -575,13 +575,13 @@ function seenBand(inGrid) {
 // cards; a line landing does not. A highlight with nothing on gets the quiet
 // line once, on the first tap, and no pulse on any tap — a stranger's card
 // pulsing reads as "Kat is here" (review, 2026-09-24).
-// Where the last NOW left the page, for the next tap: the stop's lead key,
-// the scroll position it landed at (and the grid's sideways one, when it
-// slid a grid), and until when a glide is still on its way there.
+// Where the last NOW left the page, for the next tap (wall.js stillThere
+// says what it holds and why the grid is named by its day).
 let nowCycle = null;
-const pageGeo = () => ({
+const pageGeo = (root) => ({
   scrollY: window.scrollY,
   maxY: Math.max(0, document.documentElement.scrollHeight - window.innerHeight),
+  now: performance.now(),
   box: (el) => el.getBoundingClientRect(),
   band: (grid) => seenBand(grid),
   scroller: (cell) => {
@@ -589,33 +589,25 @@ const pageGeo = () => ({
     if (!el) return null;
     return { el, x: el.getBoundingClientRect().left, left: el.scrollLeft, width: el.clientWidth, max: Math.max(0, el.scrollWidth - el.clientWidth) };
   },
+  gridLeft: (iso) => {
+    const grid = root.querySelector(`.times-grid[data-iso="${CSS.escape(iso)}"]`);
+    const el = grid && grid.closest('.times-scroll');
+    return el ? el.scrollLeft : null;
+  },
 });
-const stillThere = (c) => c && (performance.now() < c.until
-  || (Math.abs(window.scrollY - c.y) <= 4 && (!c.sc || !c.sc.isConnected || Math.abs(c.sc.scrollLeft - c.sl) <= 4)));
 function jumpToNow() {
   const root = $('wall-root');
-  const plan = nowStops(root, ctx, ctx.now || new Date(), pageGeo());
+  const geo = pageGeo(root);
+  const plan = nowStops(root, ctx, ctx.now || new Date(), geo);
   if (!plan || !plan.stops.length) { nowCycle = null; paintNowTabs(); return; }
-  const { best, stops, bestAt } = plan;
-  let at = -1;
-  if (stillThere(nowCycle)) {
-    const was = stops.findIndex((st) => st.keys.includes(nowCycle.lead));
-    if (was >= 0) at = (was + 1) % stops.length;
-  }
-  const fresh = at < 0;
+  const { best } = plan;
+  // Which stop, led by what, landing where: wall.js nowStep. A stop lands the
+  // same way every time it is reached — first tap, next tap or wrap — at its
+  // own landing (its top member's). Landing on the answer's own spot instead
+  // put the first tap and the wrap a few hundred px apart when the answer was
+  // not the stop's top card (Fri 11:30 PM at 1280: 618 vs 418).
+  const { fresh, stop, lead, target } = nowStep(plan, nowCycle, geo);
   if (fresh && best.match === false) showToast($('toast-root'), nothingOnFor(ctx.filterPeople || []));
-  const stop = stops[fresh ? bestAt : at];
-  // A stop lands the same way every time it is reached — first tap, next tap
-  // or wrap: at its own landing (its top member's), which shows every member
-  // (that is what made them one stop). Landing on the answer's own spot
-  // instead put the first tap and the wrap a few hundred px apart when the
-  // answer was not the stop's top card (Fri 11:30 PM at 1280: 618 vs 418).
-  // Its FOCUS is the answer when the stop holds it — the column a grid
-  // slides to, the key the next tap starts from — else its top member. The
-  // one stop, tapped again, stays exactly where the last tap left it.
-  const again = !fresh && stops.length === 1;
-  const lead = stop.keys.includes(best.key) ? best : stop.members[0];
-  const target = again ? nowCycle.y : stop.target;
   const smooth = canAnimate(root, ctx);
   const behavior = smooth ? 'smooth' : 'auto';
   // Across: a stop of grid cells slides its grid to frame them (wall.js
@@ -635,7 +627,7 @@ function jumpToNow() {
   }
   const moves = Math.abs(target - window.scrollY) >= 1;
   if (moves) window.scrollTo({ top: target, behavior });
-  nowCycle = { lead: lead.key, y: target, sc, sl, until: (moves || slid) && smooth ? performance.now() + 1500 : 0 };
+  nowCycle = { lead: lead.key, y: target, grid: sc ? stop.frame.iso : null, sl, until: (moves || slid) && smooth ? performance.now() + 1500 : 0 };
   // The "still gliding there" grace lasts only as long as the glide: when it
   // ends (both glides, if the grid slid too), where the page stands is the
   // whole answer again — so a hand scroll right after a landing makes the

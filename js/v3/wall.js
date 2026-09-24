@@ -1696,13 +1696,15 @@ const keyOf = (m) => (m.card
 
 // A grid cell's place in its grid's sideways scroll, in the scroll's own
 // coordinates (so it does not depend on where the grid happens to sit).
+// `iso` names the grid by its day — the one identity of a grid that survives
+// a repaint (see stillThere).
 function spanIn(m, geo) {
   if (!m.card || !m.line || !geo.scroller) return null;
   const sc = geo.scroller(m.card);
   if (!sc) return null;
   const r = geo.box(m.card);
   const lo = r.left - sc.x + sc.left;
-  return { sc, lo, hi: lo + (r.right - r.left) };
+  return { sc, lo, hi: lo + (r.right - r.left), iso: m.line.closest('.times-grid').dataset.iso || null };
 }
 // The one sideways slide that frames a stop's cells: their middle in the
 // middle, as far as the grid scrolls.
@@ -1753,6 +1755,56 @@ export function nowStops(root, ctx, date, geo) {
   const bestKey = keyOf(best);
   const bestAt = Math.max(0, stops.findIndex((st) => st.keys.includes(bestKey)));
   return { best: { ...best, key: bestKey, target: landingTarget(best, geo) }, stops, bestAt };
+}
+
+// ---- the next tap ------------------------------------------------------------------
+// Where the last NOW tap left the page, for the next one — the app keeps it as
+// `cycle`: { lead, y, grid, sl, until } — the lead key of the stop it went to,
+// the scroll it landed at, the day (`data-iso`) of the grid it slid and that
+// grid's sideways scroll after the slide (grid null when it slid none), and
+// until when (on geo.now's clock) a glide was still on its way there.
+//
+// The page still sits where the last NOW left it while that glide runs, or
+// while the page is within 4px of y and — if a grid slid — that grid within
+// 4px of sl. The grid is named by its DAY, never held as a node: a repaint
+// (the 25 s poll, a pick, a highlight) replaces every scroller, and a held
+// node, once detached, went on reading "unchanged" — so after one repaint a
+// sideways hand scroll no longer made the next tap fresh (Codex, 2026-09-24).
+// A repaint puts the sideways scroll back (restoreEphemera), so a page
+// nobody moved keeps its cycle through one; a grid that is gone (its day
+// hidden) ends it.
+//
+// geo adds two readings to nowStops' own: now (the clock `until` is on) and
+// gridLeft(iso) → that day's grid's sideways scroll, or null with no such grid.
+export function stillThere(cycle, geo) {
+  if (!cycle) return false;
+  if (geo.now < cycle.until) return true;
+  if (Math.abs(geo.scrollY - cycle.y) > 4) return false;
+  if (cycle.grid == null) return true;
+  const left = geo.gridLeft(cycle.grid);
+  return left != null && Math.abs(left - cycle.sl) <= 4;
+}
+// The tap itself: the stop it goes to, the member it leads with, and the
+// scroll it lands at. Still there, and the last stop is still live → the next
+// stop, wrapping after the last; anything else is a fresh "take me to now" —
+// the best answer's stop. A stop lands the same way every time it is reached
+// (its own landing, which shows every member — that is what made them one
+// stop); its lead is the answer when the stop holds it — the column a grid
+// slides to, the key the next tap starts from — else its top member. The one
+// stop, tapped again, stays where the last tap left it.
+export function nowStep(plan, cycle, geo) {
+  const { best, stops, bestAt } = plan;
+  let at = -1;
+  if (stillThere(cycle, geo)) {
+    const was = stops.findIndex((st) => st.keys.includes(cycle.lead));
+    if (was >= 0) at = (was + 1) % stops.length;
+  }
+  const fresh = at < 0;
+  if (fresh) at = bestAt;
+  const stop = stops[at];
+  const lead = stop.keys.includes(best.key) ? best : stop.members[0];
+  const again = !fresh && stops.length === 1;
+  return { fresh, at, stop, lead, target: again ? cycle.y : stop.target };
 }
 
 // One room on a date: its head and body travel together, tagged with the key
