@@ -32,7 +32,7 @@ globalThis.location = { origin: 'https://fest.kevinhg.com', hash: '' };
 const state = await import('../js/state.js');
 const model = await import('../js/v3/model.js');
 const { FESTIVAL_INDEX } = await import('../js/festivals.js');
-const { renderWall, nowLanding, nowStops, nowStep, stillThere, nowPulseable, cardFor, roomOf, positionNowLines, positionNowMarks } = await import('../js/v3/wall.js');
+const { renderWall, nowLanding, nowStops, nowStep, stillThere, nowPulseable, nowSaid, cardFor, roomOf, positionNowLines, positionNowMarks } = await import('../js/v3/wall.js');
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const portola = JSON.parse(readFileSync(join(ROOT, 'data/festivals/portola-2026.json'), 'utf8'));
@@ -520,4 +520,50 @@ test('stops: a show that renders in two rooms is one stop member, not two taps',
     if (people.length) assert.equal(plan.best.card, hmd[0], 'and it is the answer the first tap lands on');
     root.remove();
   }
+});
+
+// ---- what NOW says (wall.js nowSaid) ----------------------------------------------
+// Codex (2026-09-24): NOW announced nothing — the page moved under a screen
+// reader in silence. The app puts this in a polite status region.
+test('what NOW says: the line’s time and what crosses it, cards by name and place, which stop of how many', () => {
+  const { root, ctx } = render(SAT_1030);
+  const plan = nowStops(root, ctx, SAT_1030, layout(root));
+  const n = plan.stops.length;
+  const said = plan.stops.map((st) => nowSaid(plan, st));
+  assert.match(said[0], /^Now, 10:30 PM\. Playing now: /, 'the line: its time, then the sets crossing it');
+  assert.ok(said[0].includes('Soulwax at Crane Stage') && said[0].includes('Prospa at Warehouse'), said[0]);
+  assert.ok(said[0].endsWith(` 1 of ${n}.`), 'and which stop, so a repeat tap has somewhere to go');
+  assert.ok(said.slice(1).every((s, i) => s.startsWith('Playing now: ') && s.endsWith(` ${i + 2} of ${n}.`)), JSON.stringify(said));
+  assert.ok(said.some((s) => s.includes('Milli Meng at Public Works')), 'a stack card is named with its venue');
+  root.remove();
+  const { root: r2, ctx: c2 } = render(SAT_1030, ['Ross']);
+  const ross = nowStops(r2, c2, SAT_1030, layout(r2));
+  assert.equal(nowSaid(ross, ross.stops[ross.bestAt]), 'Playing now: Milli Meng at Public Works. 1 of 2.', '“where is Ross right now”, out loud');
+  r2.remove();
+  // One stop: no "1 of 1". Before doors, nothing crosses the line: just the time.
+  const { root: r3, ctx: c3 } = render(SAT_1030);
+  const tall = nowStops(r3, c3, SAT_1030, layout(r3, { band: { top: 40, bottom: 20000 } }));
+  assert.equal(tall.stops.length, 1);
+  assert.ok(!/ of \d+\.$/.test(nowSaid(tall, tall.stops[0])), nowSaid(tall, tall.stops[0]));
+  r3.remove();
+  const probe = render(SAT_1030).root;
+  const doors = Number(probe.querySelector('.times-grid[data-iso="2026-09-26"]').dataset.startRow) * 15;
+  probe.remove();
+  const hh = Math.floor((doors - 20) / 60);
+  const mm = (doors - 20) % 60;
+  const early = pt(`2026-09-26T${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}:00`);
+  const { root: r4, ctx: c4 } = render(early);
+  const pre = nowStops(r4, c4, early, layout(r4));
+  assert.equal(nowSaid(pre, pre.stops[0]), `Now, ${hh % 12 || 12}:${String(mm).padStart(2, '0')} ${hh < 12 ? 'AM' : 'PM'}.`, 'before doors: the time, and nothing claimed');
+  r4.remove();
+});
+
+test('what NOW says names one show once, even where it renders in two rooms', () => {
+  const a = document.createElement('div');
+  a.className = 'card';
+  a.dataset.artist = 'Horse Meat Disco';
+  a.dataset.occ = JSON.stringify({ day: 'Afters & Folsom', venue: 'The Midway' });
+  const b = a.cloneNode(true);
+  const stop = { members: [{ card: a, line: null }, { card: b, line: null }] };
+  assert.equal(nowSaid({ stops: [stop] }, stop), 'Playing now: Horse Meat Disco at The Midway.');
 });

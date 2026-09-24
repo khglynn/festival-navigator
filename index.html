@@ -256,6 +256,10 @@
     </div>
 
     <div id="toast-root"></div>
+    <!-- What NOW landed on, said to a screen reader (focus stays on NOW). Here
+         from the first paint, empty: a live region added later is often not
+         heard. -->
+    <div id="now-status" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
 
     <script src="/vendor/html2canvas.min.js" defer></script>
     <script type="module" src="/js/v3/app.js"></script>

@@ -1790,6 +1790,42 @@ export function nowPulseable(root, ctx, date, match) {
   return [];
 }
 
+// What a NOW landing says to a screen reader (the app puts it in the page's
+// polite status region; focus stays on NOW). Sighted people see where the
+// page went; this says it: the line's time and what crosses it, the cards by
+// name and where they are ("Milli Meng at Public Works" — the answer to
+// "where is Ross"), and which stop of how many, so a repeat tap has somewhere
+// to go. "Now, 10:30 PM. Playing now: Soulwax at Crane Stage and Prospa at
+// Warehouse. 1 of 5." A card's place is its occurrence's venue (a stack) or
+// stage (the grid); one show named once, even where it renders in two rooms.
+export function nowSaid(plan, stop) {
+  const names = [];
+  const add = (card) => {
+    let occ = null;
+    try { occ = card.dataset.occ ? JSON.parse(card.dataset.occ) : null; } catch { occ = null; }
+    const where = occ && (occ.venue || occ.stage);
+    const name = where ? `${card.dataset.artist} at ${where}` : card.dataset.artist;
+    if (!names.includes(name)) names.push(name);
+  };
+  let time = null;
+  for (const m of stop.members) {
+    if (m.card) { add(m.card); continue; }
+    const minutes = Number(m.line.dataset.minutes);
+    if (!Number.isFinite(minutes)) continue;
+    time = time || clockLabel(minutes);
+    for (const cell of m.line.closest('.times-grid').querySelectorAll('.card[data-now-from]')) {
+      if (Number(cell.dataset.nowFrom) <= minutes && minutes < Number(cell.dataset.nowTo)) add(cell);
+    }
+  }
+  const list = names.length < 3 ? names.join(' and ') : `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
+  const parts = [];
+  if (time) parts.push(`Now, ${time}.`);
+  if (names.length) parts.push(`Playing now: ${list}.`);
+  const n = plan.stops.length;
+  if (n > 1) parts.push(`${plan.stops.indexOf(stop) + 1} of ${n}.`);
+  return parts.join(' ');
+}
+
 // ---- the next tap ------------------------------------------------------------------
 // Where the last NOW tap left the page, for the next one — the app keeps it as
 // `cycle`: { lead, y, grid, sl, until } — the lead key of the stop it went to,

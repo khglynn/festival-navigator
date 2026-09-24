@@ -658,6 +658,61 @@ test('390, Dee at 7 PM: a repaint keeps the cycle; after one, a sideways hand sc
   } finally { await ctx.close(); }
 });
 
+// Codex (2026-09-24): NOW announced nothing — the page moved under a screen
+// reader in silence. A polite status region, there from the first paint and
+// visually hidden, says where each tap landed (the quiet line first, when
+// there is one); focus stays on NOW, and the visible toast is unchanged.
+// Every text the region is given, in order (a live region speaks on change).
+const listen = (page) => page.evaluate(() => {
+  window.__said = [];
+  const region = document.getElementById('now-status');
+  new MutationObserver(() => { if (region.textContent) window.__said.push(region.textContent); })
+    .observe(region, { childList: true, characterData: true, subtree: true });
+});
+const saidAfter = async (page, n) => {
+  for (let t = 0; t < 30 && (await page.evaluate(() => window.__said.length)) < n; t++) await sleep(50);
+  return page.evaluate(() => window.__said);
+};
+test('390: NOW says where it landed in a polite status region — the quiet line first; focus stays on NOW', { skip }, async () => {
+  const { ctx, page, door } = await openApp({ now: new Date('2026-09-26T23:45:00-07:00') });
+  try {
+    const region = await page.evaluate(() => {
+      const el = document.getElementById('now-status');
+      const r = el && el.getBoundingClientRect();
+      return el && { role: el.getAttribute('role'), live: el.getAttribute('aria-live'), atomic: el.getAttribute('aria-atomic'), w: r.width, h: r.height, text: el.textContent };
+    });
+    assert.deepEqual(region && { role: region.role, live: region.live, atomic: region.atomic, text: region.text }, { role: 'status', live: 'polite', atomic: 'true', text: '' }, 'there from the first paint, polite, empty');
+    assert.ok(region.w <= 1 && region.h <= 1, `and visually hidden: ${JSON.stringify(region)}`);
+    await highlight(page, 'Kat');
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await sleep(200);
+    await listen(page);
+    const first = await tapAndLook(page, door, { pulse: 'none' });
+    const [said1] = await saidAfter(page, 1);
+    assert.ok(said1 && said1.startsWith(`${first.toast} Playing now: `), `the quiet line, then what is on: ${JSON.stringify(said1)} (toast ${JSON.stringify(first.toast)})`);
+    assert.match(said1, / 1 of \d+\.$/, 'and which stop');
+    assert.equal(await page.evaluate(() => document.activeElement && document.activeElement.id), `${door}-now`, 'focus stays on NOW');
+    await tapAndLook(page, door, { pulse: 'none' });
+    const said2 = (await saidAfter(page, 2))[1];
+    assert.ok(said2 && said2.startsWith('Playing now: ') && / 2 of \d+\.$/.test(said2), `tap two: the next stop, the quiet line not again: ${JSON.stringify(said2)}`);
+  } finally { await ctx.close(); }
+});
+
+test('390, Sat 7 PM, one stop: a repeat tap is said again, not swallowed as unchanged text', { skip }, async () => {
+  const { ctx, page, door } = await openApp({ now: new Date('2026-09-26T19:00:00-07:00') });
+  try {
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await sleep(200);
+    await listen(page);
+    await tapAndLook(page, door);
+    await tapAndLook(page, door);
+    const said = await saidAfter(page, 2);
+    assert.equal(said.length, 2, `said twice: ${JSON.stringify(said)}`);
+    assert.equal(said[0], said[1], 'the same words — the region was emptied between, so it speaks again');
+    assert.match(said[0], /^Now, 7:00 PM\. Playing now: .+\.$/, said[0]);
+  } finally { await ctx.close(); }
+});
+
 test('Reduce Motion: NOW lands at once and nothing pulses; the live dot is still', { skip }, async () => {
   const { ctx, page, door } = await openApp();
   try {

@@ -9,7 +9,7 @@ import * as sync from '../sync.js';
 import * as spotify from '../spotify.js';
 import * as model from './model.js';
 import { loadFestivalIndex, loadFestival, fetchCustomFestivals, mergeCustoms, FESTIVAL_INDEX, defaultFestivalId } from '../festivals.js';
-import { renderWall, refreshCard, showUndoToast, showToast, wireScrollspy, colorIndexOf, positionNowLines, positionNowMarks, scrollToNowLine, dayNavOf, roomsOf, cardFor, roomOf, isStripScroller, DAY_ANCHOR, festLinkLabel, nowLanding, nowStops, nowStep, nowPulseable, nowLabelOf } from './wall.js';
+import { renderWall, refreshCard, showUndoToast, showToast, wireScrollspy, colorIndexOf, positionNowLines, positionNowMarks, scrollToNowLine, dayNavOf, roomsOf, cardFor, roomOf, isStripScroller, DAY_ANCHOR, festLinkLabel, nowLanding, nowStops, nowStep, nowPulseable, nowLabelOf, nowSaid } from './wall.js';
 import { loadPeopleFilter, savePeopleFilter, togglePerson, pruneToActive, loadFolded, applyFoldToggle } from './filters.js';
 import { OUT_MS, CASCADE_MS, STAGGER_MS, EASE_ARRIVE, EASE_LEAVE, EASE_SURFACE, canAnimate } from './motion.js';
 import { scrolledBefore, rememberScrolled, dayOfScrollKey, festivalClock } from './now.js';
@@ -618,7 +618,13 @@ function jumpToNow() {
   // put the first tap and the wrap a few hundred px apart when the answer was
   // not the stop's top card (Fri 11:30 PM at 1280: 618 vs 418).
   const { fresh, stop, lead, target } = nowStep(plan, nowCycle, geo);
-  if (fresh && best.match === false) showToast($('toast-root'), nothingOnFor(ctx.filterPeople || []));
+  const quiet = fresh && best.match === false ? nothingOnFor(ctx.filterPeople || []) : null;
+  if (quiet) showToast($('toast-root'), quiet);
+  // Said as well as shown (Codex, 2026-09-24: NOW announced nothing — the
+  // page moved under a screen reader in silence). The quiet line leads when
+  // there is one; the toast is unchanged, and it is not a live region, so it
+  // is heard once, from here.
+  sayNow(quiet ? `${quiet} ${nowSaid(plan, stop)}` : nowSaid(plan, stop));
   const smooth = canAnimate(root, ctx);
   const behavior = smooth ? 'smooth' : 'auto';
   // Across: a stop of grid cells slides its grid to frame them (wall.js
@@ -705,6 +711,18 @@ function jumpToNow() {
   if (!moves && !slid) { pulse(); return; }
   window.addEventListener('scrollend', pulse);
   setTimeout(pulse, 750); // a sideways-only glide, or an engine without scrollend (WebKit)
+}
+// The polite status region (index.html #now-status). A live region speaks
+// when its text CHANGES, so a repeat tap that lands on the same words would
+// be silent: the region is emptied, then filled a beat later — and only by
+// the latest tap, when taps come quicker than the beat.
+let sayTimer = null;
+function sayNow(text) {
+  const region = $('now-status');
+  if (!region) return;
+  region.textContent = '';
+  clearTimeout(sayTimer);
+  sayTimer = setTimeout(() => { region.textContent = text; }, 100);
 }
 // The line's pulse, for a tap that moved nothing and pulses no card: the line
 // thickens and its time label on the rail swells, twice, on the card pulse's
