@@ -1,6 +1,6 @@
 # NOW — festival-navigator
 
-**last-updated: 2026-09-24 (v86 shipped; v87 built) · mode: live**
+**last-updated: 2026-09-24 (v86 live; v87 in review) · mode: live**
 
 Where things stand, on one screen. Change stale lines in place; the story of
 how we got here belongs in DEVLOG.md.
@@ -16,19 +16,24 @@ how we got here belongs in DEVLOG.md.
   & Bassvictim; Sat 888 Garage: Boys Noize), 21 billed openers, Sat Regency's
   9:15 PM start, Folsom's Magnitude close (4 AM), ACL Fest Nights per the
   official 9.21 graphic. Re-checked against the official feed 2026-09-24: same
-  20 events; only the held-back Thu Club Six openers and Sun Midway's S.I.M /
-  Espurr / New Nostalgia differ (Kevin's call, unanswered — they stay out).
+  20 events; the two held-back items are under Open with Kevin.
 
 ## Happening now
 
-- **v87 built, not pushed: the NOW jump** (Kevin, 2026-09-24), branch
-  `feat/now-jump`: a NOW tab before the day tabs, shown only while something
-  is live; tap lands on the now line (or the first NOW card after Pier 80
-  closes); with a person highlighted it lands on their live pick with the
-  now line in view — "where is Ross right now" in two taps. On a 320 dock
-  with a long fest name it keeps only its dot. Rules: MODEL-V4 §3d; log:
-  `claude-plans/2026-09-24-now-jump-build.md`. 793 unit tests, 111 browser
-  (Chromium + WebKit locally). Next: Kevin's look on localhost, then ship.
+- **v87 in review: the NOW jump**, branch `feat/now-jump` (pushed): a NOW
+  tab before the day tabs, shown only while something is live; tap lands on
+  the now line (or the first NOW card after Pier 80 closes); with a person
+  highlighted it lands on their live pick with the now line in view —
+  "where is Ross right now" in two taps. Rules: MODEL-V4 §3d; log:
+  `claude-plans/2026-09-24-now-jump-build.md`. Kevin looked at it on
+  localhost on 2026-09-24: "It looks good". His look found two things, both
+  fixed before ship: the now line stopped at the first screen's width
+  instead of crossing every stage column (v86 has this too; fixed on the
+  branch), and on desktop a hover zoom near the bottom could cover the dock
+  (being fixed on the fix/zoom-dock branch; it goes into v87 only if it
+  lands clean). An independent Opus review is in; its findings are being
+  fixed on the branch. 794 unit tests, 114 browser (Chromium + WebKit
+  locally).
 - What v86 carries, each with its spec or build log in `claude-plans/`:
   1. One line per room (`SAT PORTOLA`, `SAT AFTERS`, `TUE LATE NIGHTS`),
      `.day-block` per day — `claude-plans/2026-09-23-one-line-heads.md`.
@@ -54,14 +59,11 @@ how we got here belongs in DEVLOG.md.
 
 ## Open with Kevin
 
-- The zoom's "everyone's level" is in v86 (Kevin's pick, 2026-09-23): one
-  blended chip per vote level (the card's aura mixed from its people, the
-  meter's glyph, first names, "You" first, two then "+n"), one wrapping row;
-  its motion (carry, split, merge, both, first pick, clear) watched frame by
-  frame in Chromium and WebKit — storyboard
-  `claude-plans/2026-09-23-zoom-chips-motion.md`, build log
-  `claude-plans/2026-09-23-zoom-chips-build.md`; gallery.html row 19 replays
-  each case. Canvas: https://claude.ai/artifact/ShW4NLwgdtqMQxnAu43Pbh
+- Held back from the Portola afters, waiting on Kevin: the Thu Club Six
+  openers and Sun Midway's S.I.M / Espurr / New Nostalgia, which the official
+  feed lists. One data-only push once he says yes.
+- Vercel Web Analytics: the page carries the insights tag, but analytics is
+  not enabled on the project — enable it, or remove the tag.
 - Small call with a default: How it works dropped "White stroke = you" (you
   are never in the crew corner now). (A half-width 30-min cell hiding its
   start time once picked cannot happen in any shipped fest: ACL renders each
@@ -72,8 +74,9 @@ how we got here belongs in DEVLOG.md.
 
 ## Next, in order
 
-1. v87 (the NOW jump): push `feat/now-jump`, review, Kevin's local look,
-   ship before Sat.
+1. v87: the now-line width fix, the zoom/dock fix if it lands clean, and
+   the review's findings; then a PR from `feat/now-jump` to main, CI green,
+   and Kevin's "ship v87" before Sat Sep 26.
 2. Data-only pushes as drops land (standing OK: validator + freeze + tests).
    Portola Sep 26–27 (afters from Sep 24); ACL Oct 2–4 and 9–11.
 3. After Oct 11: the merged wall for two crews

@@ -29,7 +29,9 @@ const skipWebkit = webkit ? false : 'Playwright WebKit is not installed (npx pla
 
 const SAT_1030 = new Date('2026-09-26T22:30:00-07:00');
 const SAT_9AM = new Date('2026-09-26T09:00:00-07:00');
-const SELECTIONS = { 'Milli Meng': { Ross: 3 }, Galen: { Ross: 1, Nhu: 2 }, Soulwax: { Nhu: 4 }, Prospa: { Nhu: 2 } };
+// Kat is only at the Warehouse (Prospa): the third column, off a phone's
+// screen until the grid scrolls to it.
+const SELECTIONS = { 'Milli Meng': { Ross: 3 }, Galen: { Ross: 1, Nhu: 2 }, Soulwax: { Nhu: 4 }, Prospa: { Nhu: 2, Kat: 3 } };
 
 async function openApp({ width = 390, height = 844, touch = true, now = SAT_1030, fest = 'portola-2026', engine = browser } = {}) {
   const ctx = await engine.newContext({ viewport: { width, height }, hasTouch: touch, serviceWorkers: 'block' });
@@ -43,7 +45,7 @@ async function openApp({ width = 390, height = 844, touch = true, now = SAT_1030
   }, [TOKEN, fest]);
   const doc = {
     v: 4, meta: { name: 'Now', inviteFestId: fest }, spotify: {}, affinity: {},
-    people: { Kevin: { colorIndex: 0 }, Ross: { colorIndex: 5 }, Nhu: { colorIndex: 3 } },
+    people: { Kevin: { colorIndex: 0 }, Ross: { colorIndex: 5 }, Nhu: { colorIndex: 3 }, Kat: { colorIndex: 6 } },
     festivals: { [fest]: { selections: fest === 'portola-2026' ? SELECTIONS : {} } },
   };
   // Playwright tries the LAST-registered matching route first: the catch-all goes first.
@@ -81,7 +83,7 @@ const view = (page, artist, where = null) => page.evaluate(([a, w]) => {
   const cr = card ? card.getBoundingClientRect() : null;
   return {
     dockTop, railBottom, innerWidth,
-    line: lr && { top: lr.top }, stripBottom: strip ? strip.bottom : null,
+    line: lr && { top: lr.top, left: lr.left, right: lr.right }, stripBottom: strip ? strip.bottom : null,
     card: cr && { top: cr.top, bottom: cr.bottom, left: cr.left, right: cr.right, cell: card.classList.contains('cell'), room: card.closest('.room').dataset.room },
   };
 }, [artist, where]);
@@ -182,9 +184,56 @@ for (const [width, height, touch, engine, name] of [[390, 844, true, browser, ''
       assert.ok(v.card.top >= v.stripBottom - 1 && v.card.top < v.dockTop, `the card's top is in view: ${JSON.stringify(v)}`);
       assert.ok(v.card.top <= v.line.top && v.card.bottom >= v.line.top, 'and it crosses the line — it is playing now');
       assert.ok(v.card.left >= 0 && v.card.right <= v.innerWidth, `and across, its column is on screen: ${JSON.stringify(v)}`);
+      assert.ok(v.line.left <= v.card.left + 1 && v.line.right >= v.card.right - 1, `and the line runs right across the card: ${JSON.stringify(v)}`);
     } finally { await ctx.close(); }
   });
 }
+
+// The line runs under EVERY column (Kevin's local demo, 2026-09-24: at 430
+// the line stopped partway across the grid, and scrolled to Warehouse / Ship
+// Tent there was none). It was `left:0; right:0` on a grid whose BOX was only
+// the scroller's width while its tracks overflowed it — so it spanned the
+// view at scroll 0, not the columns.
+const lineVsColumns = (page) => page.evaluate(() => {
+  const line = document.querySelector('#wall-root .now-line');
+  const grid = line.closest('.times-grid');
+  const scroller = grid.closest('.times-scroll');
+  const cells = [...grid.querySelectorAll('.card.cell')];
+  const col = (c) => Number(c.style.gridColumn) || 0;
+  const lastCol = Math.max(...cells.map(col));
+  const last = cells.find((c) => col(c) === lastCol).getBoundingClientRect();
+  const l = line.getBoundingClientRect(), s = scroller.getBoundingClientRect();
+  return { lastCol, line: [l.left, l.right], last: [last.left, last.right], seen: [s.left, s.right], scrollLeft: scroller.scrollLeft, max: scroller.scrollWidth - scroller.clientWidth };
+});
+for (const [width, height] of [[390, 844], [430, 932]]) {
+  test(`${width}: the grid scrolled to its right end — the now line still crosses the last column`, { skip }, async () => {
+    const { ctx, page } = await openApp({ width, height });
+    try {
+      await page.evaluate(() => {
+        const s = document.querySelector('#wall-root .now-line').closest('.times-scroll');
+        s.scrollLeft = s.scrollWidth;
+      });
+      await sleep(250);
+      const r = await lineVsColumns(page);
+      assert.ok(r.max > 0 && Math.abs(r.scrollLeft - r.max) < 2, `the grid really is at its right end: ${JSON.stringify(r)}`);
+      assert.ok(r.line[0] <= r.last[0] + 1 && r.line[1] >= r.last[1] - 1, `the line crosses the last column (${r.lastCol}): ${JSON.stringify(r)}`);
+      assert.ok(r.line[0] <= r.seen[0] + 1 && r.line[1] >= r.seen[1] - 1, `and runs the whole visible width: ${JSON.stringify(r)}`);
+    } finally { await ctx.close(); }
+  });
+}
+
+test('390: Kat highlighted — NOW scrolls to her pick in the third column, and the line crosses it there', { skip }, async () => {
+  const { ctx, page, door } = await openApp();
+  try {
+    await highlight(page, 'Kat');
+    await tapNow(page, door);
+    const v = await view(page, 'Prospa', 'cell');
+    assert.ok(v.card && v.card.cell, 'Prospa, on the grid');
+    assert.ok(v.card.left >= 0 && v.card.right <= v.innerWidth, `the grid scrolled her column on screen: ${JSON.stringify(v)}`);
+    assert.ok(v.card.top <= v.line.top && v.card.bottom >= v.line.top, 'the card crosses the line — it is playing now');
+    assert.ok(v.line.left <= v.card.left + 1 && v.line.right >= v.card.right - 1, `and the line runs right across it: ${JSON.stringify(v)}`);
+  } finally { await ctx.close(); }
+});
 
 test('Reduce Motion: NOW lands at once and nothing pulses; the live dot is still', { skip }, async () => {
   const { ctx, page, door } = await openApp();

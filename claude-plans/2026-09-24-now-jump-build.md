@@ -127,6 +127,39 @@ The rules as built are MODEL-V4 §3d. This log is how they got there.
   tap, the line landing, Ross, Nhu; the dock on Portola, ACL, a lineup fest
   (kept outside the repo, in the session's scratchpad `now-jump-shots/`).
 
+## Kevin's look (localhost, 2026-09-24): "It looks good"
+
+It found the now line stopping partway across the grid (430 wide, Sat
+10:30 PM: scrolled to Warehouse / Ship Tent, no line). The line is
+`left: 0; right: 0` of its `.times-grid`, and that box was only
+`min-width: 100%` of the scroller while the fixed `var(--col-w)` tracks
+overflowed it — so the line spanned the first screen, not the columns. v86
+has it too; it also cut through the middle of Nhu's Soulwax in this log's
+own 390 screenshot, which the first browser test (vertical crossing only)
+did not catch.
+
+- **Fix: a day grid's box is its tracks** (`width: max-content` on
+  `.times-wrap:not(.stage-strip) > .times-scroll > .times-grid`;
+  `min-width: 100%` still fills a window wider than the columns). Chosen over
+  setting the line's width from `scrollWidth` in `positionNowLines`: nothing
+  to re-measure on resize, a late font or a repaint, and the minute ticker
+  stays free of layout reads. The strip's row keeps its own box — its follow
+  reads the lead's scroll range (`--strip-max`), identical either way.
+- **Probed** at scroll 0 / middle / end, Portola 390, 430, 1280, ACL 390,
+  Electric Forest 390, Chromium and WebKit: grid width = track sum on a
+  phone (906px at 390), the scroll range unchanged (584px at 390), stage
+  heads 0px off their columns, the rail's clock label 0px off the line.
+  Lane-split cells size in percentages of their grid area, not the box; no
+  shipped fest has one now, and the meter contract's three-lane fest passes.
+- **Tests:** jsdom — the line's grid is matched by a `width: max-content`
+  rule, every track is `var(--col-w)`, the strip's row is not matched.
+  Browser — at 390 and 430 scrolled to the right end the line crosses the
+  last column and the whole visible width; NOW to Kat's Prospa (third
+  column) and to Nhu's Soulwax shows the line right across the card. All
+  five went red before the fix.
+- The other thing Kevin's look found (a desktop hover zoom near the bottom
+  covering the dock) is `card-facts.js`, fixed on its own branch.
+
 ## Open
 
 - Kevin's look on localhost, then the ship.
