@@ -30,6 +30,8 @@
   .zoom-toolbar { display: flex; align-items: center; gap: 18px; margin: 14px 0 20px; flex-wrap: wrap; }
   .zoom-toolbar label { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: var(--text-secondary); cursor: pointer; }
   .zoom-status { font-size: 11px; color: var(--text-tertiary); font-weight: 600; }
+  .zoom-controls { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 14px; }
+  .zoom-controls button { font: 700 12px var(--font-ui); color: var(--tonal-text); background: var(--tonal-fill); border: 0; border-radius: var(--r-pill); padding: 8px 14px; cursor: pointer; }
   .zoom-row { display: flex; flex-wrap: wrap; gap: 18px; align-items: flex-start; margin-bottom: 4px; }
   .zoom-edge-row { display: flex; justify-content: space-between; width: 100%; align-items: flex-start; }
   .zoom-state { display: flex; flex-direction: column; gap: 6px; width: 176px; flex: none; }
@@ -98,6 +100,10 @@
 
     <div class="g-label" style="margin-top: 20px;">18 · a crowd of seven, you at MUST, notes and a followed Spotify pill — what gives way as the card narrows (aura.js GIVE_WAY)</div>
     <div class="zoom-row" id="zoom-row-crowd"></div>
+
+    <div class="g-label" style="margin-top: 20px;">19 · the who-chips in motion — press a case: its card resets, grows, and you tap once (Slow motion ×4 above; claude-plans/2026-09-23-zoom-chips-motion.md)</div>
+    <div class="zoom-controls" id="zoom-chip-cases"></div>
+    <div class="zoom-row" id="zoom-row-chips"></div>
   </div>
 </section>
 
@@ -467,6 +473,15 @@ const SELECTIONS = {
   'Certified Must': { Kevin: 4 },
   "Drew's Must": { Drew: 4 },
   'Packed House': { Kevin: 4, Drew: 4, Kat: 3, Nhu: 2, Pegah: 1 },
+  // 19 · the who-chips in motion: each card's picks BEFORE its one tap (the
+  // case buttons put these back, so every press replays the same move).
+  'Chip Carry': { Kevin: 2 },
+  'Chip Split': { Kevin: 2, Pegah: 2 },
+  'Chip Merge': { Kevin: 2, Drew: 3 },
+  'Chip Both': { Kevin: 2, Pegah: 2, Drew: 3 },
+  'Chip First': { Drew: 4 },
+  'Chip Clear': { Kevin: 4, Drew: 4 },
+  'Chip Crowd': { Kevin: 2, Pegah: 2, Nhu: 2, Drew: 3, Kat: 3, Ross: 4, Sam: 1 },
   'Notes Only': { Kevin: 2 },
   'Spotify Favorite': { Drew: 3 },
   'Everything At Once': { Kevin: 4, Drew: 4, Kat: 3, Nhu: 2, Pegah: 1 },
@@ -622,7 +637,9 @@ const slowMo = document.getElementById('zoom-slowmo');
       if (!slowMo.checked) return;
       const zoomActivity = muts.some((m) =>
         (m.type === 'attributes' && m.target.classList && m.target.classList.contains('zoom-slot'))
-        || [...m.addedNodes].some((n) => n.nodeType === 1 && n.classList && n.classList.contains('zoom-slot')));
+        || [...m.addedNodes].some((n) => n.nodeType === 1 && n.classList && n.classList.contains('zoom-slot'))
+        // a pick while grown: the refresh rebuilds the card's parts
+        || (m.type === 'childList' && m.target.classList && m.target.classList.contains('zoom-card')));
       if (zoomActivity) document.getAnimations().forEach((a) => { a.playbackRate = 0.25; });
     }).observe(layerEl, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
   };
@@ -738,6 +755,45 @@ const cellAt = (time) => ({ day: 'Saturday', stage: 'Pier Stage', time, weekend:
   }
   crowdRow.appendChild(wrap);
 });
+
+// 19 · the who-chips in motion (claude-plans/2026-09-23-zoom-chips-motion.md).
+// Each button puts its card's picks back to the "before" state, grows the
+// card (a keyboard-route zoom, so it stands without a hover), waits for the
+// bloom, and taps once — the refresh's who-motion is the thing to watch.
+const CHIP_CASES = [
+  ['1 · alone → alone', 'Chip Carry', 'you alone at ×2 → ×3: the chip is carried'],
+  ['2 · split', 'Chip Split', 'you and Pegah at ×2 → you at ×3: cell division'],
+  ['3 · merge', 'Chip Merge', 'you alone at ×2 → ×3 with Drew: you flow in'],
+  ['4 · split + merge', 'Chip Both', 'you leave Pegah at ×2 and join Drew at ×3'],
+  ['first pick', 'Chip First', 'nothing → ×1: a new level grows in'],
+  ['clear', 'Chip Clear', 'MUST with Drew → nothing: your name steps away'],
+  ['crowd', 'Chip Crowd', 'seven people, +n on both sides of the move'],
+];
+const chipRow = document.getElementById('zoom-row-chips');
+const chipCases = document.getElementById('zoom-chip-cases');
+const pause = (ms) => new Promise((r) => setTimeout(r, ms));
+for (const [label, artist, what] of CHIP_CASES) {
+  chipRow.appendChild(stateCard(`${label} — ${what}`, artist, { occ: day }));
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.textContent = label;
+  b.dataset.case = artist;
+  b.addEventListener('click', async () => {
+    unzoom({ instant: true, why: 'gallery case' });
+    state.crewDoc.festivals[GFID].selections[artist] = { ...SELECTIONS[artist] };
+    refreshPicks();
+    const was = chipRow.querySelector(`.card[data-artist="${CSS.escape(artist)}"]`);
+    const card = refreshCard(was, artist, ctx);
+    card.scrollIntoView({ block: 'center' });
+    zoomCard(card, artist, ctx, { onOpenNotes: ctx.onOpenNotes, source: 'keyboard', occ: day });
+    const slow = document.getElementById('zoom-slowmo').checked;
+    await pause(slow ? 2600 : 800);
+    handleTap(artist);
+    if (slow) document.getAnimations().forEach((a) => { a.playbackRate = 0.25; });
+    zoomStatus(`${label}: ${what}`);
+  });
+  chipCases.appendChild(b);
+}
 
 document.getElementById('zoom-top-probe').appendChild(stateCard('16a · very top of the page', 'Top Of Page Probe', { occ: day }));
 document.getElementById('zoom-bottom-probe').appendChild(stateCard('16b · very bottom of the page', 'Bottom Of Page Probe', { occ: day }));
