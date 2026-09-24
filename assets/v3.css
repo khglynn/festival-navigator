@@ -686,6 +686,15 @@ button.room-head { cursor: pointer; }
   }
 }
 .times-grid { display: grid; gap: 4px; min-width: 100%; } /* columns set inline: repeat(n, var(--col-w)) */
+/* A day's grid is as wide as its columns, not as its scroller (2026-09-24).
+ * Its tracks are fixed lengths that overflow the scroller on a phone, and the
+ * box stayed the scroller's width while they did — so the now line, which is
+ * `left: 0; right: 0` of the box, spanned the first screen and stopped: Kevin,
+ * scrolled to Warehouse and Ship Tent at 430, saw no line at all (v86 had it
+ * too). max-content makes the box the tracks' sum; min-width still fills a
+ * window wider than the columns. The strip's row keeps its own box: its follow
+ * reads the LEAD's scroll range (--strip-max), which is the same either way. */
+.times-wrap:not(.stage-strip) > .times-scroll > .times-grid { width: max-content; }
 .stage-head { font-family: var(--font-display); letter-spacing: var(--track-display);
               color: rgb(var(--fest)); font-size: 12.5px;
               min-width: 0; padding: 0 8px; text-align: center;
