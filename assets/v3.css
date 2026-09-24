@@ -923,16 +923,38 @@ a.fest-place:hover { opacity: 1; }
  * the words around it (Kevin, 2026-08-30: "not worth making them way bigger
  * than the note text"). */
 .f-who { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; max-width: 100%; }
-.f-pill { display: inline-flex; align-items: center; gap: 6px; flex: none; max-width: 100%; min-width: 0;
+.f-pill { position: relative; display: inline-flex; align-items: center; gap: 6px; flex: none; max-width: 100%; min-width: 0;
           box-sizing: border-box; height: 22px; padding: 0 9px 0 8px; border-radius: var(--r-pill);
-          border: 1px solid rgba(255, 255, 255, .14); color: #fff; font-size: 11px; font-weight: 700;
-          line-height: 1; white-space: nowrap; text-shadow: 0 1px 3px rgba(12, 10, 20, .55); }
-.f-pill.you { border-color: #fff; }
+          color: #fff; font-size: 11px; font-weight: 700;
+          line-height: 1; white-space: nowrap;
+          /* the card's shadow, plus a soft halo so white holds on the lightest blends */
+          text-shadow: 0 1px 2px rgba(12, 10, 20, .6), 0 0 6px rgba(12, 10, 20, .35); }
+/* The fill and the edge are one layer under everything else in the chip, so a
+ * width change is the layer's scale (who-motion.js) and never stretches a name. */
+.f-fill { position: absolute; inset: 0; border-radius: inherit; box-sizing: border-box;
+          border: 1px solid rgba(255, 255, 255, .14); transform-origin: 50% 50%; }
+.f-fill > .f-fill { border: 0; } /* the old blend, thinning away over the new (who-motion.js) */
+.f-pill.you > .f-fill { border-color: #fff; }
+.f-pill > :not(.f-fill) { position: relative; }
 .f-pill > .bars, .f-pill > .must { flex: none; }
 .f-pill .must { font-size: 9.5px; }
-.f-names { display: inline-flex; align-items: center; gap: 4px; min-width: 0; overflow: hidden; }
-.f-nm { min-width: 0; max-width: 7em; overflow: hidden; text-overflow: ellipsis; }
-.f-pill.you .f-nm:first-child { font-weight: 800; } /* you lead your own chip */
+/* The two clip boxes (for the ellipsis) are padded out past the glyphs and
+ * their shadow, and pulled back by the same amount, so nothing moves: at
+ * line-height 1 Inter's ascenders and descenders ("Pegah", "Mary") and the
+ * halo overhang an 11px box, and a tight clip cut the tails off and left a
+ * hard-edged shadow box around every name (review, 2026-09-23). The browser
+ * contract checks every name's glyphs sit inside its clip box. */
+.f-names { display: inline-flex; align-items: center; gap: 4px; min-width: 0; overflow: hidden;
+           padding: 5px 7px; margin: -5px -7px; }
+.f-nm { position: relative; min-width: 0; max-width: 7em; overflow: hidden; text-overflow: ellipsis;
+        padding: 5px 7px; margin: -5px -7px; }
+.f-sep, .f-more { position: relative; }
+.f-nm.you { font-weight: 800; } /* you lead your own chip */
+/* In flight between chips (who-motion.js): above its neighbours, with a bud of
+ * its own colour under it; a leaving node parked where it stood. */
+.f-nm.f-travel { z-index: 3; overflow: visible; }
+.f-bud { position: absolute; inset: -3px -6px; z-index: -1; border-radius: var(--r-pill); pointer-events: none; }
+.f-parked { position: absolute; margin: 0; pointer-events: none; z-index: 1; }
 .f-sep { flex: none; opacity: .7; }
 .f-more { flex: none; font-size: 10px; font-weight: 800; opacity: .92; }
 .f-chips { display: flex; justify-content: center; align-items: center; gap: 6px; flex-wrap: wrap; }
