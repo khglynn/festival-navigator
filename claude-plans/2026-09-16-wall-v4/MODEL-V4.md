@@ -349,15 +349,31 @@ time bar." Build log: `claude-plans/2026-09-24-now-jump-build.md`.
   highlighted pick whose column does not fit that frame is its own stop at
   the same height, reached by the slide (on a phone two 176px columns do
   not fit together). Stops run top to bottom, then left to right. With
-  nobody highlighted the line is one stop — it crosses every column. The
-  first tap is the stop holding the best answer; a tap while the page sits
-  where the last NOW left it (down and across within 4px, or still gliding
-  there) goes to the next stop, then wraps to the top; a hand scroll either
-  way makes the next tap fresh. One stop: a repeat tap stays and pulses. A
-  stop lands the same way every time. It pulses its cards (the
-  highlight's picks, or a card-led stop's NOW cards); a line's stop does
-  not, and a highlight with nothing on never pulses — its quiet line shows
-  on the first tap only.
+  nobody highlighted the line is one stop — it crosses every column. One
+  show is one member: a show billed to two rooms (Horse Meat Disco, Friday,
+  "Afters & Folsom") renders two cards but is reached once, by its first
+  card in wall order. The first tap is the stop holding the best answer; a
+  tap while the page sits where the last NOW left it (down and across within
+  4px — the grid it slid named by its day, so a repaint that puts the scroll
+  back keeps the cycle — or still gliding there) goes to the next stop, then
+  wraps to the top; a hand scroll either way makes the next tap fresh
+  (`wall.js stillThere`, `nowStep`). One stop: a repeat tap stays where it
+  is while that landing still shows the stop, and once the clock has walked
+  the stop off screen (a line four hours further down) it lands afresh. A
+  stop lands the same way every time. It pulses its cards (the highlight's
+  picks, or a card-led stop's NOW cards) when the glide lands, only those
+  that still answer then (a pick dropped mid-glide does not pulse; a later
+  tap cancels an earlier tap's pulse). A line's stop does not pulse its
+  landing — the glide is the answer — but a tap that moves nothing and
+  pulses no card pulses the line and its time label on the rail, so no tap
+  is dead (the line is nobody's, so this holds under a highlight with nothing
+  on too). A highlight with nothing on never pulses a card — its quiet line
+  shows on the first tap only.
+- **Said, not only shown.** Each tap puts what it landed on in a polite,
+  visually hidden status region (`#now-status`, `wall.js nowSaid`): the
+  line's time and the sets crossing it, cards by name and place ("Milli Meng
+  at Public Works"), and which stop of how many; the quiet line leads on a
+  fresh no-match tap. A repeat tap is said again. Focus stays on NOW.
 - **The now mark is the ring alone** since 2026-09-24: the `NOW` tag in the
   card's corner went ("users can figure out what the highlight means from
   the auto-scroll"); a live card's accessible name ends ", playing now".

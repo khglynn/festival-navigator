@@ -392,6 +392,74 @@ sorted after the timed ones and its card shows no time — "on the bill, time
 unknown". Every shipped festival scanned: no room mixes the two today, so
 nothing live changes; the Midway three go in as data after v87 ships.
 
+## Codex's review of bc6131b, and the phone walk (2026-09-24)
+
+Codex found five; the zoom agent's phone walk of the same commit (Chromium
+390/430, WebKit 390) found one more and an FYI. Each was confirmed from the
+code before its fix. Each new browser test also asserts its bad condition
+really happened before it checks the outcome (the un-pick lands mid-glide
+before any pulse; the scroller is really replaced; the clock really walks the
+line under the dock), and the one-stop jsdom test fails against the old rule.
+A scratch replay against bc6131b itself was refused by the session's
+permission settings, so the old commit was not run in a browser this round.
+
+1. **A repaint mid-glide could pulse a card that no longer answers.** The
+   pulse waits for the glide; a poll that dropped Ross's pick replaced the
+   card, and the pulse found the fresh, dimmed one by name and pulsed it.
+   `wall.js nowPulseable` applies the choosing rule again at landing (a live
+   match: the highlighted people's live picks as they stand; nobody: the NOW
+   cards; no match: nothing), and every tap is numbered so a later tap
+   cancels an earlier tap's pending pulse.
+2. **After a repaint, a sideways hand scroll no longer reset the cycle.** The
+   cycle held the scroller node; a repaint replaced it, and the detached node
+   read as "unchanged" forever. The cycle now names the grid by its day
+   (`data-iso`) and reads that day's scroller at the tap (`stillThere`,
+   `nowStep` in wall.js, pure). A repaint restores the sideways scroll, so an
+   unmoved page keeps its cycle; a grid that is gone ends it.
+3. **A one-stop cycle could stay parked at a stale time.** 320x568, the
+   festival's room only: tap at 3 PM, tap at 7 PM. The page had not moved,
+   so the repeat tap kept its old landing while the line had walked 384px
+   under the dock. The repeat tap now stays only while every member of the
+   stop still shows at that landing; otherwise it lands the stop afresh.
+4. **NOW said nothing to a screen reader.** A polite, atomic,
+   visually hidden `#now-status` region in index.html, there from the first
+   paint; `wall.js nowSaid` builds what a tap landed on ("Now, 10:30 PM.
+   Playing now: Soulwax at Crane Stage and Prospa at Warehouse. 1 of 5.";
+   "Playing now: Milli Meng at Public Works. 1 of 2."). The quiet line leads
+   on a fresh no-match tap; the toast is unchanged and not itself live. The
+   region empties and refills a beat later, so a repeat tap is said again.
+   Focus stays on NOW.
+5. **The cycle test's `reached.length <= live` passed with a show never
+   reached.** Each tap now reports the live stack cards a person can see
+   (hit-tested, so the dock and the sticky chrome hide them). Across the cycle
+   the seen shows must equal the live shows exactly, the line's
+   unpulsed ones included, and no single landing may show them all.
+
+From the phone walk:
+
+- **A dead repeat tap.** Sat 7 PM, nobody highlighted, the afters not yet
+  open: the line is the only stop, and tap 2 neither moved nor pulsed (a line
+  never pulsed). It happens on any daytime grid, and on the first tap after
+  the day-of open, which lands the line the same way. A tap that moves
+  nothing and pulses no card now pulses the stop's line (scaleY 2) and its
+  time label on the rail (scale 1.15, keeping its centring translate): twice,
+  on the card pulse's beat and curve, and nothing under Reduce Motion / Low
+  Power. This shares its code path with 3: the repeat tap pulses in place
+  only while the stop is on screen, and otherwise moves, and the move is its
+  answer.
+- **One show, two rooms, two taps (the FYI).** Horse Meat Disco (Fri,
+  "Afters & Folsom") renders a card in each room with one data-occ, and the
+  cycle visited it at taps 1 and 3 (Fri 11:30 PM). `nowStops` keeps one
+  member per show, the first in wall order, which is also nowLanding's
+  answer. Cheap and clean, so it is in.
+
+Tests: jsdom has 25 (was 19): the cycle across a repaint; the one stop
+against a moving clock; what may pulse at landing; what is said (two); one
+show one member. Browser adds: Ross drops the pick mid-glide; Dee's cycle across
+two repaints and a wheel swipe; 3 PM → 7 PM at 320x568; the line pulse
+(and none under Reduce Motion); the status region (Kat's quiet line, the
+repeat said again); the cycle's exact seen-set at 390 / 430 / 1280 / WebKit.
+
 ## Open
 
 - Kevin's "ship v87" once the PR's CI is green.
