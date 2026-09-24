@@ -1,10 +1,13 @@
 # City seasons: progress
 
-**last-updated: 2026-09-24 ~2:30 PM CT · status: rolling (sources study under way)**
+**last-updated: 2026-09-24 ~2:25 PM PT · status: rolling (sources study under way)**
+
+*(Times here are Pacific, from this Mac's clock; you're likely in SF for
+Portola. The brief's "CT" stamps look like Pacific too.)*
 
 ## For Kevin: where this stands
 
-Just started. The session opened at about 2:10 PM CT on 2026-09-24 while
+Just started. The session opened at about 2:10 PM PT on 2026-09-24 while
 you were away. Below is my read-back of the project and five questions; each
 has a default, so the sources study keeps moving without you. Nothing is
 built and nothing will be until you pick a direction.
@@ -90,10 +93,26 @@ missing data.
 
 ## Log
 
-- 2026-09-24 ~2:15 PM CT: worktree `.claude/worktrees/city-seasons` on
+- 2026-09-24 ~2:15 PM PT: worktree `.claude/worktrees/city-seasons` on
   branch `seasons/kickoff` from origin/main (9d6a2a3). Brief moved in from
   the main checkout (the original went to the Trash, identical copy verified).
-- 2026-09-24 ~2:25 PM CT: MUNA located (above). ACL's Late nights already
+- 2026-09-24 ~2:20 PM PT: MUNA located (above). ACL's Late nights already
   source 60 of 66 dated shows from Do512, so Do512 is the incumbent.
   The venue registry (`data/venues/index.json`) holds 14 San Francisco rooms
   and no Austin ones yet.
+- 2026-09-24 ~2:20 PM PT: two research runs started (Workflow, journaled).
+  Wave 1: four Sonnet readers take 17 venue calendars as ground truth
+  (`data/ground-truth/`), two Sonnet catalogers cover ticketing APIs and
+  listing sites, two Opus investigators take Spotify's provenance and the
+  MUNA timeline (`research/`). Wave 2: nine Sonnet readers take what each
+  candidate source lists at the same venues (`data/sources/`).
+  `score.mjs` grades them (self-tested on a synthetic fixture: headliner
+  matching, the one-day-off bucket, precision limited to dates a venue's
+  calendar was read to, best pairs and triples).
+- 2026-09-24 ~2:20 PM PT: first ground-truth file in: Emo's lists 39 shows
+  through Nov 27 on a Ticketmaster widget with schema.org JSON-LD, so at
+  Live Nation rooms Ticketmaster's data IS the venue's word. The study has to
+  read independents separately for that reason.
+- 2026-09-24: Ray's fork (raypp2) last pushed 2026-08-09; its work is the
+  artist preview player and YouTube backfill, not city listings. No overlap
+  with seasons yet; his player could later preview a month's artists.
