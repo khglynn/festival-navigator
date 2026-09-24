@@ -30,6 +30,8 @@
   .zoom-toolbar { display: flex; align-items: center; gap: 18px; margin: 14px 0 20px; flex-wrap: wrap; }
   .zoom-toolbar label { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: var(--text-secondary); cursor: pointer; }
   .zoom-status { font-size: 11px; color: var(--text-tertiary); font-weight: 600; }
+  .zoom-controls { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 14px; }
+  .zoom-controls button { font: 700 12px var(--font-ui); color: var(--tonal-text); background: var(--tonal-fill); border: 0; border-radius: var(--r-pill); padding: 8px 14px; cursor: pointer; }
   .zoom-row { display: flex; flex-wrap: wrap; gap: 18px; align-items: flex-start; margin-bottom: 4px; }
   .zoom-edge-row { display: flex; justify-content: space-between; width: 100%; align-items: flex-start; }
   .zoom-state { display: flex; flex-direction: column; gap: 6px; width: 176px; flex: none; }
@@ -84,7 +86,7 @@
     <div class="g-label" style="margin-top: 20px;">10–11 · timetable cells — short set, tall set</div>
     <div class="zoom-row" id="zoom-row-cells"></div>
 
-    <div class="g-label" style="margin-top: 20px;">12 · an afters / event card</div>
+    <div class="g-label" style="margin-top: 20px;">12 · an afters / event card, and a cancelled act</div>
     <div class="zoom-row" id="zoom-row-event"></div>
 
     <div class="g-label" style="margin-top: 20px;">13–14 · name edge cases — two lines, one syllable</div>
@@ -92,12 +94,22 @@
 
     <div class="g-label" style="margin-top: 20px;">15 · far left and far right of the viewport</div>
     <div class="zoom-edge-row" id="zoom-row-edges"></div>
+
+    <div class="g-label" style="margin-top: 20px;">17 · your meter — one bar a tap, then MUST (tap any card to cycle it and watch the bar light)</div>
+    <div class="zoom-row" id="zoom-row-meter"></div>
+
+    <div class="g-label" style="margin-top: 20px;">18 · a crowd of seven, you at MUST, notes and a followed Spotify pill — what gives way as the card narrows (aura.js GIVE_WAY)</div>
+    <div class="zoom-row" id="zoom-row-crowd"></div>
+
+    <div class="g-label" style="margin-top: 20px;">19 · the who-chips in motion — press a case: its card resets, grows, and you tap once (Slow motion ×4 above; claude-plans/2026-09-23-zoom-chips-motion.md)</div>
+    <div class="zoom-controls" id="zoom-chip-cases"></div>
+    <div class="zoom-row" id="zoom-row-chips"></div>
   </div>
 </section>
 
 <section id="events-gallery">
   <div class="zoom-title">THE EVENTS — the composed day, live</div>
-  <div class="hint">the real <code>renderWall</code> on a small fest holding every state of the list (MODEL-V4, 2026-09-16) — a grid day's timetable, venue groups everywhere else, a numbered back-to-back run, an un-numbered room that stacks anyway, a room with no clock, and the now mark. Hover / hold / Tab to a card to zoom it (the ~ cards show the two-line WHEN with the order door); tap any card to pick. A day's rule and a section's header are the notes doors (§3a.3) — Saturday has a date note and an Afters-on-Saturday note, each whispering under its own door. A room's header is not a control (MODEL-V4 §3a.2) — the show menu on the fest name hides a room, and the checkboxes below stand in for it here.</div>
+  <div class="hint">the real <code>renderWall</code> on a small fest holding every state of the list (MODEL-V4, 2026-09-16) — a grid day's timetable, venue groups everywhere else, a numbered back-to-back run, an un-numbered room that stacks anyway, a room with no clock, and the now mark. Hover / hold / Tab to a card to zoom it (the ~ cards show the two-line WHEN with the order door); tap any card to pick. Every room wears ONE head naming when and what — SAT GALLERY FEST, SAT AFTERS (one-line heads, 2026-09-23) — and the day's first head carries its date. The heads are the notes doors (§3a.3): the festival's head on a date opens that date, a section's opens that section on that date — Saturday has a date note and an Afters-on-Saturday note, each whispering under its own head. A head never folds its room (MODEL-V4 §3a.2) — the show menu on the fest name hides a room, and the checkboxes below stand in for it here; hide Gallery Fest and SAT AFTERS takes the date.</div>
   <div class="zoom-toolbar">
     <label><input type="checkbox" id="events-lowpower"> Low power (instant)</label>
     <span class="zoom-status">Show:</span>
@@ -105,15 +117,15 @@
     <span id="events-status" class="zoom-status"></span>
   </div>
   <ul class="events-states">
-    <li><b>FRIDAY · AFTERS</b> — venue groups: three <b>un-numbered</b> sets all stamped 8 PM at The Ballroom, two at The Basement, a printed window at The Pier, and a card with <b>no clock</b> at all — every room a stack, in opening order.</li>
-    <li><b>FRIDAY · FOLSOM</b> — one group, one show.</li>
-    <li><b>SATURDAY · GALLERY FEST</b> — the grid, its own sticky strip (five stages, so it scrolls on a phone), inside the day, spanning the whole festival day so the now line has a home. <b>All Night Long</b> runs four and a half hours: a tall cell.</li>
-    <li><b>SATURDAY · AFTERS</b> — a <b>numbered back-to-back run</b> at The Room (~ times, the doors line above it), one plain set beside it, and the <b>now mark</b> on whoever is playing at 11:30 PM.</li>
-    <li><b>SATURDAY · FOLSOM</b> — three groups, one of them with no time yet (Venue TBA sorts last).</li>
-    <li><b>SUNDAY · GALLERY FEST</b> — a <b>second grid day</b>: the shape every real scheduled fest has. Each day's strip follows <b>its own</b> columns, while the two days still mirror one scroll position between them — scroll either grid and both sets of stage names travel with their cards.</li>
-    <li><b>SUNDAY · FOLSOM</b> — an 11 AM street fair opens the day.</li>
-    <li><b>LATE NIGHTS</b> — a <b>dated</b> section: its own tab off the end of the week, a date rule per date, venue groups under each.</li>
-    <li><b>THE FOLD</b> — every room's header is a button: tap it and the body goes, the header stays, and its sub says how many shows are under it.</li>
+    <li><b>FRI AFTERS</b> — the day's first head, so it carries the date. Venue groups: three <b>un-numbered</b> sets all stamped 8 PM at The Ballroom, two at The Basement, a printed window at The Pier, and a card with <b>no clock</b> at all — every room a stack, in opening order.</li>
+    <li><b>FRI FOLSOM</b> — one group, one show; a later head on the day, so no date.</li>
+    <li><b>SAT GALLERY FEST</b> — the day's date door, with its whisper under it. The grid, its own sticky strip (five stages, so it scrolls on a phone), inside the day, spanning the whole festival day so the now line has a home. <b>All Night Long</b> runs four and a half hours: a tall cell.</li>
+    <li><b>SAT AFTERS</b> — its own door and whisper. A <b>numbered back-to-back run</b> at The Room (~ times, the doors line above it), one plain set beside it, and the <b>now mark</b> on whoever is playing at 11:30 PM.</li>
+    <li><b>SAT FOLSOM</b> — three groups, one of them with no time yet (Venue TBA sorts last).</li>
+    <li><b>SUN GALLERY FEST</b> — a <b>second grid day</b>: the shape every real scheduled fest has. Each day's strip follows <b>its own</b> columns, while the two days still mirror one scroll position between them — scroll either grid and both sets of stage names travel with their cards.</li>
+    <li><b>SUN FOLSOM</b> — an 11 AM street fair opens the day.</li>
+    <li><b>TUE LATE NIGHTS · THU LATE NIGHTS</b> — a <b>dated</b> section: its own tab off the end of the week, one head per date (each the door to that date), venue groups under each.</li>
+    <li><b>THE FOLD</b> — the checkboxes stand in for the show menu: a hidden room renders nothing, and a day it empties goes whole.</li>
   </ul>
   <div id="events-wall"></div>
 </section>
@@ -180,9 +192,14 @@
 </section>
 
 <section>
-  <div class="g-label">Day header · the whisper · aura notes (pinned + thread)</div>
+  <div class="g-label">Room heads · the whisper · aura notes (pinned + thread)</div>
   <div class="col">
-    <div class="day-rule"><span class="day">SATURDAY</span><span class="date">SEP 26</span><span class="line"></span></div>
+    <!-- One line per room (2026-09-23): the day's first head carries the date;
+         a head with no sub; a name too long for its box (the sub goes first,
+         then the name ellipsizes). The same markup roomHead() builds. -->
+    <button class="room-head" aria-label="Notes for Saturday"><span class="name"><span class="wd">SAT</span> <span class="label">PORTOLA</span></span><span class="sub">Sep 26 · Pier 80</span><span class="line"></span></button>
+    <div class="room-head"><span class="name"><span class="wd">SAT</span> <span class="label">FOLSOM</span></span><span class="sub"></span><span class="line"></span></div>
+    <div style="max-width: 300px;"><div class="room-head"><span class="name"><span class="wd">SUN</span> <span class="label">TOMORROWLAND WINTER WONDERLAND</span></span><span class="sub">Mar 21 · Alpe d’Huez</span><span class="line"></span></div></div>
     <button class="day-whisper" style="--wash: hsla(221,90%,62%,.26);">
       <span class="avatar" style="width: 18px; height: 18px; font-size: 8px; background: hsla(221,90%,62%,.5); border: 1px solid hsl(221,85%,82%);">M</span>
       <span class="who">Maya</span><span class="text">Leaving after Robyn — early flight.</span><span class="more">2 notes ›</span>
@@ -216,9 +233,9 @@
       <button class="sheet-close" aria-label="Close">✕</button>
       <div class="f-name">Robyn</div>
       <div class="f-sub">7:10 – 8:20 PM · Sat · Pier Stage</div>
-      <div class="f-who">
-        <span class="f-pill you" style="background: hsla(10,90%,62%,.42);">You<b>MUST</b></span>
-        <span class="f-pill" style="background: hsla(221,90%,62%,.42);">Maya</span>
+      <div class="f-who" role="list">
+        <span class="f-pill you" data-level="4" role="listitem" aria-label="Must: You" style="background: hsla(10,90%,62%,.6);"><span class="must" aria-hidden="true">MUST</span><span class="f-names" aria-hidden="true"><span class="f-nm">You</span></span></span>
+        <span class="f-pill" data-level="2" role="listitem" aria-label="Picked ×2: Maya" style="background: hsla(221,90%,62%,.6);"><span class="bars" aria-hidden="true"><span class="bar on"></span><span class="bar on"></span><span class="bar"></span></span><span class="f-names" aria-hidden="true"><span class="f-nm">Maya</span></span></span>
       </div>
       <div class="f-chips"><span class="f-chip notes">1 note</span><span class="f-chip spot">4 liked songs</span></div>
     </div>
@@ -285,6 +302,7 @@
 <script type="module">
 import { hslOf, strokeOf } from '/js/v3/palette.js';
 import { auraBackground, whoCorner, aboutCorner, nameColor, subColor } from '/js/v3/aura.js';
+import { meterChip, crewMark } from '/js/v3/wall.js'; // the real meter and marks (2026-09-23)
 
 const K = { name: 'Kevin', colorIndex: 0, isYou: true };
 const M = { name: 'Maya', colorIndex: 1 };
@@ -319,7 +337,8 @@ function card(name, people, about = {}, opts = {}) {
   }
   const ac = document.createElement('span');
   ac.className = 'corner-about';
-  for (const chip of aboutCorner(about)) {
+  for (const chip of aboutCorner({ ...about, you: people.find((q) => q.isYou) })) {
+    if (chip.kind === 'meter') { ac.appendChild(meterChip(chip)); continue; }
     const c = document.createElement('span');
     c.className = chip.kind === 'notes' ? 'chip-notes' : 'chip-spotify';
     c.textContent = chip.label;
@@ -329,18 +348,7 @@ function card(name, people, about = {}, opts = {}) {
   el.appendChild(ac);
   const wc = document.createElement('span');
   wc.className = 'corner-who';
-  for (const m of whoCorner(people)) {
-    const s = document.createElement('span');
-    s.className = 'mark' + (m.kind === 'ghost' ? ' ghost' : '');
-    if (m.kind !== 'ghost') {
-      s.style.width = m.width + 'px';
-      s.style.background = m.fill;
-      s.style.border = '1px solid ' + m.stroke;
-      s.style.fontSize = m.kind === 'must' ? '7.5px' : '0px';
-    }
-    s.textContent = m.label;
-    wc.appendChild(s);
-  }
+  for (const m of whoCorner(people)) wc.appendChild(crewMark(m));
   el.appendChild(wc);
   return el;
 }
@@ -453,7 +461,8 @@ FESTIVALS[GFID] = {
     ] },
     Sunday: { stages: ['Pier Stage', 'Crane Stage'], artists: [] },
   },
-  artists: [],
+  // A cancelled act (2026-09-23): off the grid, its entry kept and marked.
+  artists: [{ name: 'Called Off', day: 'Saturday', venue: 'Crane Stage', cancelled: { on: '2026-09-21', source: 'https://example.test/the-report', note: 'No replacement. The earlier Crane Stage sets run longer.' } }],
 };
 
 // Picks arranged per state (Kevin = You, colorIndex 0; Kevin/Kat share a
@@ -464,6 +473,15 @@ const SELECTIONS = {
   'Certified Must': { Kevin: 4 },
   "Drew's Must": { Drew: 4 },
   'Packed House': { Kevin: 4, Drew: 4, Kat: 3, Nhu: 2, Pegah: 1 },
+  // 19 · the who-chips in motion: each card's picks BEFORE its one tap (the
+  // case buttons put these back, so every press replays the same move).
+  'Chip Carry': { Kevin: 2 },
+  'Chip Split': { Kevin: 2, Pegah: 2 },
+  'Chip Merge': { Kevin: 2, Drew: 3 },
+  'Chip Both': { Kevin: 2, Pegah: 2, Drew: 3 },
+  'Chip First': { Drew: 4 },
+  'Chip Clear': { Kevin: 4, Drew: 4 },
+  'Chip Crowd': { Kevin: 2, Pegah: 2, Nhu: 2, Drew: 3, Kat: 3, Ross: 4, Sam: 1 },
   'Notes Only': { Kevin: 2 },
   'Spotify Favorite': { Drew: 3 },
   'Everything At Once': { Kevin: 4, Drew: 4, Kat: 3, Nhu: 2, Pegah: 1 },
@@ -477,6 +495,16 @@ const SELECTIONS = {
   'Right Edge Artist': { Kat: 1 },
   'Top Of Page Probe': { Kevin: 2 },
   'Bottom Of Page Probe': { Nhu: 2 },
+  // You at MUST on a cancelled card: the loudest chip on the grayest card.
+  'Called Off': { Kevin: 4, Drew: 4, Kat: 4, Nhu: 2 },
+  // 17-18 · your meter (2026-09-23)
+  'Your One': { Kevin: 1 },
+  'Your Two': { Kevin: 2, Drew: 1 },
+  'Your Three': { Kevin: 3, Kat: 4 },
+  'Your Must': { Kevin: 4, Nhu: 2 },
+  'Only Others': { Drew: 4, Kat: 1, Nhu: 1 },
+  'Seven Of Seven': { Kevin: 4, Drew: 4, Kat: 4, Nhu: 3, Pegah: 2, Ross: 1, Sam: 1 },
+  Sevens: { Kevin: 4, Drew: 4, Kat: 4, Nhu: 3, Pegah: 2, Ross: 1, Sam: 1 },
 };
 
 // A fixed token, wiped on every load so the gallery renders the SAME states
@@ -491,7 +519,7 @@ try {
 
 state.activateCrew(TOKEN, {
   v: 4, meta: {}, spotify: {},
-  people: { Kevin: { colorIndex: 0 }, Drew: { colorIndex: 1 }, Kat: { colorIndex: 2 }, Nhu: { colorIndex: 3 }, Pegah: { colorIndex: 4 } },
+  people: { Kevin: { colorIndex: 0 }, Drew: { colorIndex: 1 }, Kat: { colorIndex: 2 }, Nhu: { colorIndex: 3 }, Pegah: { colorIndex: 4 }, Ross: { colorIndex: 5 }, Sam: { colorIndex: 6 } },
   festivals: { [GFID]: { selections: SELECTIONS } },
   affinity: {},
 }, GFID);
@@ -505,6 +533,9 @@ state.activateCrew(TOKEN, {
   ['Notes Only', 'Kat', "Let's meet at the merch tent after."],
   ['Everything At Once', 'Kevin', 'Front left for sightlines.'],
   ['Everything At Once', 'Pegah', 'Overlaps the afters bus — leave by 11.'],
+  ['Seven Of Seven', 'Drew', 'Front left.'],
+  ['Seven Of Seven', 'Kat', 'Meet at the rail.'],
+  ['Sevens', 'Drew', 'Front left.'],
 ].forEach(([artist, author, text], i) => {
   const ts = new Date(Date.UTC(2026, 8, 26, 20, i * 7)).toISOString();
   state.recordNote(GFID, 'artist', artist, model.makeNoteId(author, ts, `n${i}`), { author, ts, text });
@@ -514,6 +545,8 @@ state.activateCrew(TOKEN, {
 state.recordAffinity('Kevin', {
   'Spotify Favorite': { songs: 12, followed: true },
   'Everything At Once': { songs: 8, followed: true },
+  'Seven Of Seven': { songs: 41, followed: true },
+  Sevens: { songs: 41, followed: true },
 });
 
 const ctx = {
@@ -604,7 +637,9 @@ const slowMo = document.getElementById('zoom-slowmo');
       if (!slowMo.checked) return;
       const zoomActivity = muts.some((m) =>
         (m.type === 'attributes' && m.target.classList && m.target.classList.contains('zoom-slot'))
-        || [...m.addedNodes].some((n) => n.nodeType === 1 && n.classList && n.classList.contains('zoom-slot')));
+        || [...m.addedNodes].some((n) => n.nodeType === 1 && n.classList && n.classList.contains('zoom-slot'))
+        // a pick while grown: the refresh rebuilds the card's parts
+        || (m.type === 'childList' && m.target.classList && m.target.classList.contains('zoom-card')));
       if (zoomActivity) document.getAnimations().forEach((a) => { a.playbackRate = 0.25; });
     }).observe(layerEl, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
   };
@@ -641,7 +676,7 @@ const ladderRow = document.getElementById('zoom-row-ladder');
   ['2 · you, level 1', 'First Pick', { occ: day }],
   ['3 · you, MUST', 'Certified Must', { occ: day }],
   ['4 · one other person at MUST', "Drew's Must", { occ: day }],
-  ['5 · four mixed + a +n ghost (5 pickers)', 'Packed House', { occ: day }],
+  ['5 · your MUST, and four others: a must, two ticks, a +1', 'Packed House', { occ: day }],
   ['6 · notes (3), no Spotify', 'Notes Only', { occ: day }],
   ['7 · Spotify (12, following, the glow), no notes', 'Spotify Favorite', { occ: day }],
   ['8 · everything at once', 'Everything At Once', { occ: day }],
@@ -665,6 +700,13 @@ eventRow.appendChild(stateCard('12 · Thursday night, no grid day', 'Midnight Af
   time: 'Thu · 10:00 PM - 2:00 AM\nThe Midway',
   occ: { day: null, stage: 'Thu · The Midway', time: '10:00 PM - 2:00 AM', weekend: null },
 }));
+// Struck, "Cancelled" where the time goes, the wash turned down, the crew's
+// marks and your meter still on it (both corners sit above the scrim); the
+// zoom says when it was announced and what happened.
+eventRow.appendChild(stateCard('12b · a cancelled act, picked by three and you — your meter stays, above the gray', 'Called Off', {
+  time: 'Cancelled',
+  occ: { day: 'Saturday', stage: null, time: null, weekend: null, date: null, venue: 'Crane Stage' },
+}));
 
 const namesRow = document.getElementById('zoom-row-names');
 namesRow.appendChild(stateCard('13 · a two-line long name', 'Boiler Room B2B2B2B: The Never-Ending Sunrise Set', { occ: day }));
@@ -678,6 +720,81 @@ edgesRow.appendChild(stateCard('15b · far RIGHT edge of the viewport', 'Right E
 // zoom's placement rule only ever nudges left/right off-screen, top and
 // bottom never move it (card-facts.js `place`), so these two are the real
 // test of that rule at the extremes.
+// 17 · your meter at every level, beside a card only the others picked (no
+// chip, and the crew corner is all of them).
+const meterRow = document.getElementById('zoom-row-meter');
+[
+  ['17a · you, one bar', 'Your One'],
+  ['17b · you, two bars, and Drew', 'Your Two'],
+  ['17c · you, three bars, and Kat at MUST', 'Your Three'],
+  ['17d · you at MUST, and Nhu', 'Your Must'],
+  ['17e · only others — no meter', 'Only Others'],
+].forEach(([label, artist]) => meterRow.appendChild(stateCard(label, artist, { occ: day })));
+
+// 18 · the crowded card at the widths a card really has: a phone or laptop
+// column (176), narrower columns, a 30-minute set's 44px cell, lanes. The
+// fit is the production one (wall.js watchFit), measured live — each label
+// says what that width gives way (aura.js GIVE_WAY).
+const crowdRow = document.getElementById('zoom-row-crowd');
+const cellAt = (time) => ({ day: 'Saturday', stage: 'Pier Stage', time, weekend: null });
+[
+  ['18a · 176 — the Spotify count, both ticks, then the pill', 'Seven Of Seven', 176, 0, {}],
+  ['18b · 150 — then a must folds into +n', 'Seven Of Seven', 150, 0, {}],
+  ['18c · 120 — the crew is only its +n', 'Seven Of Seven', 120, 0, {}],
+  ['18d · a 30-minute cell, 44px — the corners fit around its start time', 'Seven Of Seven', 176, 44, { cell: true, time: '7:00 PM', occ: cellAt('7:00 PM - 7:30 PM') }],
+  ['18e · 30 minutes in half a column — the time steps back for your meter', 'Sevens', 86, 44, { cell: true, time: '7:00 PM', occ: cellAt('7:00 PM - 7:30 PM') }],
+  ['18f · 45 minutes in a third of a column — the name on two lines, clear of the band', 'Seven Of Seven', 57, 68, { cell: true, time: '7:00 PM', occ: cellAt('7:00 PM - 7:45 PM') }],
+  ['18g · 30 minutes, half a column, the name on two lines — the one place your meter steps back', 'Seven Of Seven', 86, 44, { cell: true, time: '7:00 PM', occ: cellAt('7:00 PM - 7:30 PM') }],
+].forEach(([label, artist, width, height, opts]) => {
+  const wrap = stateCard(label, artist, { occ: day, ...opts });
+  wrap.style.width = width + 'px';
+  if (height) {
+    const card = wrap.querySelector('.card');
+    card.style.minHeight = height + 'px';
+    card.style.height = height + 'px';
+  }
+  crowdRow.appendChild(wrap);
+});
+
+// 19 · the who-chips in motion (claude-plans/2026-09-23-zoom-chips-motion.md).
+// Each button puts its card's picks back to the "before" state, grows the
+// card (a keyboard-route zoom, so it stands without a hover), waits for the
+// bloom, and taps once — the refresh's who-motion is the thing to watch.
+const CHIP_CASES = [
+  ['1 · alone → alone', 'Chip Carry', 'you alone at ×2 → ×3: the chip is carried'],
+  ['2 · split', 'Chip Split', 'you and Pegah at ×2 → you at ×3: cell division'],
+  ['3 · merge', 'Chip Merge', 'you alone at ×2 → ×3 with Drew: you flow in'],
+  ['4 · split + merge', 'Chip Both', 'you leave Pegah at ×2 and join Drew at ×3'],
+  ['first pick', 'Chip First', 'nothing → ×1: a new level grows in'],
+  ['clear', 'Chip Clear', 'MUST with Drew → nothing: your name steps away'],
+  ['crowd', 'Chip Crowd', 'seven people, +n on both sides of the move'],
+];
+const chipRow = document.getElementById('zoom-row-chips');
+const chipCases = document.getElementById('zoom-chip-cases');
+const pause = (ms) => new Promise((r) => setTimeout(r, ms));
+for (const [label, artist, what] of CHIP_CASES) {
+  chipRow.appendChild(stateCard(`${label} — ${what}`, artist, { occ: day }));
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.textContent = label;
+  b.dataset.case = artist;
+  b.addEventListener('click', async () => {
+    unzoom({ instant: true, why: 'gallery case' });
+    state.crewDoc.festivals[GFID].selections[artist] = { ...SELECTIONS[artist] };
+    refreshPicks();
+    const was = chipRow.querySelector(`.card[data-artist="${CSS.escape(artist)}"]`);
+    const card = refreshCard(was, artist, ctx);
+    card.scrollIntoView({ block: 'center' });
+    zoomCard(card, artist, ctx, { onOpenNotes: ctx.onOpenNotes, source: 'keyboard', occ: day });
+    const slow = document.getElementById('zoom-slowmo').checked;
+    await pause(slow ? 2600 : 800);
+    handleTap(artist);
+    if (slow) document.getAnimations().forEach((a) => { a.playbackRate = 0.25; });
+    zoomStatus(`${label}: ${what}`);
+  });
+  chipCases.appendChild(b);
+}
+
 document.getElementById('zoom-top-probe').appendChild(stateCard('16a · very top of the page', 'Top Of Page Probe', { occ: day }));
 document.getElementById('zoom-bottom-probe').appendChild(stateCard('16b · very bottom of the page', 'Bottom Of Page Probe', { occ: day }));
 </script>
@@ -703,7 +820,7 @@ const POSTER = 'https://example.test/the-poster';
 const room = (night, venue, extra = {}) => ({ day: 'Afters', stage: `${night} · ${venue}`, night, venue, ...extra });
 const folsom = (night, venue, extra = {}) => ({ day: 'Folsom', stage: `${night} · ${venue}`, night, venue, ...extra });
 // A dated section: entries that carry a date instead of a night, so the
-// section is its own tab off the end of the week with a rule per date.
+// section is its own tab off the end of the week with a head per date.
 const late = (date, venue, extra = {}) => ({ day: 'Late nights', date, venue, ...extra });
 const run = { doors: '10 PM', close: '2 AM', closeApprox: true };
 FESTIVAL_INDEX.push({ id: EFID, status: 'scheduled' });
@@ -741,6 +858,9 @@ FESTIVALS[EFID] = {
     { name: 'Quick Set', day: 'Saturday' }, { name: 'Long Set', day: 'Saturday' }, { name: 'Headliner', day: 'Saturday' },
     { name: 'Warehouse Opener', day: 'Saturday' }, { name: 'Tent Closer', day: 'Saturday' }, { name: 'All Night Long', day: 'Saturday' },
     { name: 'Sunday Opener', day: 'Sunday' }, { name: 'Sunday Closer', day: 'Sunday' }, { name: 'Ship Tent Set', day: 'Sunday' },
+    // Cancelled (2026-09-23): a billing off Saturday's grid lands under its stage in the festival's room; a show in a room sorts last.
+    { name: 'Called Off', day: 'Saturday', venue: 'Crane Stage', cancelled: { on: '2026-09-21', source: 'https://example.test/the-report', note: 'No replacement. The earlier Crane Stage sets run longer.' } },
+    { name: 'No Show', ...room('Fri', 'The Basement', { time: '9 PM', cancelled: { on: '2026-09-22', source: 'https://example.test/the-report' } }) },
     // Friday afters: two un-numbered rooms (three at 8 PM, two at 10 PM — the pre-research state), a tall set, a timeless one.
     { name: 'Channel Tres', ...room('Fri', 'The Ballroom', { time: '8 PM' }) },
     { name: 'Jyoty', ...room('Fri', 'The Ballroom', { time: '8 PM' }) },
@@ -762,7 +882,7 @@ FESTIVALS[EFID] = {
     { name: 'DEVIANTS', ...folsom('Sat', 'The Street') },
     { name: 'Folsom Street Fair', ...folsom('Sun', 'The Street', { time: '11 AM - 6 PM' }) },
     { name: 'Real Bad 37', ...folsom('Sun', 'The Basement', { time: '8 PM - 5 AM' }) },
-    // Late nights: dated, not nightly — its own tab, a rule per date.
+    // Late nights: dated, not nightly — its own tab, a head per date.
     { name: 'Overmono', ...late('2026-09-29', 'The Room', { doors: '9 PM' }) },
     { name: 'Anz', ...late('2026-09-29', 'The Ballroom', { doors: '10 PM', time: '11 PM', approx: true }) },
     { name: 'Two Shell', ...late('2026-10-01', 'The Basement', { doors: '10 PM' }) },
@@ -774,16 +894,17 @@ FESTIVALS[EFID] = {
 // so the zoom gallery's own taps keep landing in its fest.
 const ESEL = {
   'Channel Tres': { Kevin: 4, Nhu: 3 }, Jyoty: { Kat: 1 }, 'Sam Alfred': { Kevin: 2 }, Despacio: { Kevin: 3, Nhu: 2 },
+  'Called Off': { Drew: 4, Kat: 4, Nhu: 2 }, 'No Show': { Kevin: 3 },
   VTSS: { Kevin: 4, Nhu: 1 }, horsegiirL: { Nhu: 2 }, 'Fatboy Slim': { Kevin: 4, Nhu: 4, Kat: 1 },
   'Folsom Street Fair': { Kevin: 4, Nhu: 4, Kat: 4 }, Magnitude: { Kevin: 1 }, Headliner: { Kat: 4 }, 'Long Set': { Nhu: 3 },
 };
 state.ensureFestivalState(EFID);
 Object.assign(state.crewDoc.festivals[EFID].selections, ESEL);
 // A day note is keyed by the DATE (MODEL-V4 §4), so this one is Saturday's
-// and the whisper rides under Saturday's rule.
+// and the whisper rides under SAT GALLERY FEST's head, the date's door.
 state.recordNote(EFID, 'day', '2026-09-26', model.makeNoteId('Nhu', '2026-09-20T20:00:00.000Z', 'e1'), { author: 'Nhu', ts: '2026-09-20T20:00:00.000Z', text: 'Meet at The Ballroom before 8 — the line wraps the block.' });
 // And one written standing on a SECTION on a day (MODEL-V4 §3a.3): its whisper
-// rides under that section's header on that day only, never under the rule.
+// rides under that section's head on that day only, never under the date's.
 state.recordNote(EFID, 'day', '2026-09-26|Afters', model.makeNoteId('Nhu', '2026-09-20T20:05:00.000Z', 'e2'), { author: 'Nhu', ts: '2026-09-20T20:05:00.000Z', text: 'Afters: The Room first, Halcyon after 2.' });
 
 // The fold, held here the way app.js holds it per fest (fn_fold_v1_<fid>).
@@ -850,7 +971,7 @@ document.getElementById('events-lowpower').addEventListener('change', (e) => {
 // Hiding a room: in the app this is the show menu on the fest name (MODEL-V4
 // §3.1), which lives in the shell and not in renderWall — so the gallery gives
 // it the same state through checkboxes. A hidden room renders nothing, and a
-// day with nothing visible has no rule and no tab (2026-09-17).
+// day with nothing visible has no block and no tab (2026-09-17).
 const ROOMS = [[':fest', 'Gallery Fest'], ['Afters', 'Afters'], ['Folsom', 'Folsom'], ['Late nights', 'Late nights']];
 (function wireRoomToggles() {
   const host = document.getElementById('events-rooms');

@@ -10,14 +10,15 @@ import * as model from './model.js';
 import { LEVEL_LABELS_V4 } from '../parse.js';
 import { computeLanes } from '../overlap.js';
 import { dayLabelParts } from '../time.js';
-import { whoCorner, aboutCorner } from './aura.js';
+import { aboutCorner, fitCorners, GIVE_WAY, CLEAR } from './aura.js';
 import { BOARD } from './palette.js';
 import { dayWhisper, festWhisper, dayTargetLabel } from './notes.js'; // runtime-only cycle with this module (colorIndexOf) — safe
 import { factsFor, timeRange } from './card-facts.js'; // same runtime-only cycle: the card's ONE model
 import { passesPeople, COL, FEST_ROOM } from './filters.js';
 import { nowOnDay, nowOffsetPx, clockLabel, festivalClock } from './now.js';
-import { eventModelOf, venueGroupsOf, dateRuleLabel, occOf, hourLabelOf, approxMark, parseEventTime } from './events.js';
-import { reduced } from './motion.js';
+import { eventModelOf, venueGroupsOf, dateRuleLabel, occOf, hourLabelOf, approxMark, parseEventTime, weekdayOfIso, shortDate } from './events.js';
+import { reduced, canAnimate, GROW_MS, OUT_MS, STAGGER_MS, EASE_ARRIVE, EASE_SURFACE } from './motion.js';
+import { isCancelled } from './events.js'; // a cancelled act (2026-09-23) — its own line, so the list above can grow without a merge
 
 // ---- person -> board color ---------------------------------------------------
 // v4 people carry colorIndex. Legacy people carry a "R, G, B" string from the
@@ -55,6 +56,10 @@ export function renderCard(artistName, ctx, opts = {}) {
   const people = facts.people;
   const el = document.createElement('div');
   el.className = 'card' + (opts.cell ? ' cell' : '') + (opts.time && !opts.cell ? ' timed' : '');
+  // A cancelled act (2026-09-23) is a card like any other — it picks, zooms
+  // and carries the crew's marks — worn quieter and struck through (v3.css
+  // .card.cancelled). The caller says "Cancelled" where the time goes.
+  if (facts.cancelled) el.classList.add('cancelled');
   // The people filter dims a card nobody selected has picked. Computed here,
   // from ctx, so refreshCard (a single-card repaint after a tap) reproduces
   // it without being told — a dimmed card you tap stays dimmed until the
@@ -69,7 +74,7 @@ export function renderCard(artistName, ctx, opts = {}) {
   el.tabIndex = 0;
   const myLevel = (ctx.picks[artistName] || {})[ctx.meName] || 0;
   const crewCount = people.filter((p) => !p.isYou).length;
-  const labelParts = [`${artistName} — ${myLevel === 4 ? 'must' : (LEVEL_LABELS_V4[myLevel] || 'not picked').toLowerCase()}`];
+  const labelParts = [`${artistName}${facts.cancelled ? ' (cancelled)' : ''} — ${myLevel === 4 ? 'must' : (LEVEL_LABELS_V4[myLevel] || 'not picked').toLowerCase()}`];
   if (crewCount) labelParts.push(`picked by ${crewCount} other${crewCount === 1 ? '' : 's'}`);
   if (facts.noteCount) labelParts.push(`${facts.noteCount} note${facts.noteCount === 1 ? '' : 's'}`);
   if (facts.spotify) labelParts.push('in your Spotify');
@@ -126,34 +131,15 @@ export function renderCard(artistName, ctx, opts = {}) {
     }
   }
 
-  const about = document.createElement('span');
-  about.className = 'corner-about';
-  for (const chip of aboutCorner({ noteCount: facts.noteCount, spotify: facts.spotify })) {
-    // The clickable note-count chip is a real button (audit 4.4); the Spotify
-    // chip stays a passive span.
-    const clickable = chip.kind === 'notes' && ctx.onOpenNotes;
-    const c = document.createElement(clickable ? 'button' : 'span');
-    c.className = chip.kind === 'notes' ? 'chip-notes' : 'chip-spotify';
-    c.textContent = chip.label;
-    if (chip.kind === 'spotify' && chip.followed) c.appendChild(svgBookmark());
-    // Corner glow for high-affinity artists (followed + 5+ songs): a soft
-    // Spotify-green mini-aura behind the badge corner — same visual language
-    // as the people-auras, card geometry untouched (Kevin picked this over
-    // rings/outlines 2026-07-13; thicker outlines broke pixel rhythm before).
-    if (chip.kind === 'spotify' && chip.hot) {
-      const glow = document.createElement('span');
-      glow.className = 'spot-glow';
-      glow.setAttribute('aria-hidden', 'true');
-      el.appendChild(glow);
-    }
-    if (clickable) {
-      c.style.cursor = 'pointer';
-      c.setAttribute('aria-label', `${chip.label} note${chip.label === '1' ? '' : 's'} for ${artistName}`);
-      c.addEventListener('click', (e) => { e.stopPropagation(); ctx.onOpenNotes(artistName, opts.occ || null); });
-    }
-    about.appendChild(c);
-  }
-  el.appendChild(about);
+  // The two bottom corners: YOUR meter, the notes door and Spotify on the
+  // left; everyone else on the right (drawCorners). The card keeps their
+  // model so it can fit them to its width once it has one (fitCard).
+  const you = people.find((p) => p.isYou) || null;
+  el._corners = { people, about: aboutCorner({ noteCount: facts.noteCount, spotify: facts.spotify, you }) };
+  drawCorners(el, el._corners, {
+    artistName,
+    openNotes: ctx.onOpenNotes ? () => ctx.onOpenNotes(artistName, opts.occ || null) : null,
+  });
 
   // Long-press (touch) ZOOMS the card (~500ms, 10px slop — the OS constants;
   // 2026-08-29 round): the grown card carries the notes chip, so the sheet
@@ -193,22 +179,6 @@ export function renderCard(artistName, ctx, opts = {}) {
     el.addEventListener('click', (e) => { if (longPressed) { e.stopImmediatePropagation(); longPressed = false; } }, true);
   }
 
-  const who = document.createElement('span');
-  who.className = 'corner-who';
-  for (const m of whoCorner(people)) {
-    const s = document.createElement('span');
-    s.className = 'mark' + (m.kind === 'ghost' ? ' ghost' : '');
-    if (m.kind !== 'ghost') {
-      s.style.width = m.width + 'px';
-      s.style.background = m.fill;
-      s.style.border = '1px solid ' + m.stroke;
-      s.style.fontSize = m.kind === 'must' ? '7.5px' : '0px';
-    }
-    s.textContent = m.label;
-    who.appendChild(s);
-  }
-  el.appendChild(who);
-
   el.addEventListener('click', (e) => {
     // Belt over the chips' own stopPropagation (the research's Ant Design
     // lesson): a real button inside the card (the notes chip) is its own
@@ -220,7 +190,279 @@ export function renderCard(artistName, ctx, opts = {}) {
     ctx.onTap(artistName, el);
   });
   if (ctx.wireZoom) ctx.wireZoom(el, artistName, opts.occ || null);
+  watchFit(el);
   return el;
+}
+
+// YOUR meter (aura.js meterOf): three bars lit one per tap, and at must the
+// word. ONE builder — the card's corner and How it works both draw it, so the
+// lesson can never show a chip the wall does not. aria-hidden: the card's
+// own label already says your level (renderCard), and a screen reader should
+// hear it once.
+export function meterChip(chip) {
+  const c = document.createElement('span');
+  c.className = 'chip-meter' + (chip.level === 4 ? ' is-must' : '');
+  c.dataset.kind = 'meter';
+  c.dataset.level = String(chip.level);
+  c.style.background = chip.fill;
+  c.style.borderColor = chip.stroke;
+  c.setAttribute('aria-hidden', 'true');
+  if (chip.level === 4) {
+    const w = document.createElement('span');
+    w.className = 'must';
+    w.textContent = chip.label;
+    c.appendChild(w);
+  } else {
+    const bars = document.createElement('span');
+    bars.className = 'bars';
+    for (let i = 1; i <= 3; i++) {
+      const b = document.createElement('span');
+      b.className = 'bar' + (i <= chip.bars ? ' on' : '');
+      bars.appendChild(b);
+    }
+    c.appendChild(bars);
+  }
+  return c;
+}
+
+// A crew mark (aura.js whoCorner): a lettered must, a tick, or the "+n".
+// Exported for How it works, which draws the real thing.
+export function crewMark(m) {
+  const s = document.createElement('span');
+  s.className = 'mark' + (m.kind === 'ghost' ? ' ghost' : '');
+  if (m.kind !== 'ghost') {
+    s.style.width = m.width + 'px';
+    s.style.background = m.fill;
+    s.style.border = '1px solid ' + m.stroke;
+    s.style.fontSize = m.kind === 'must' ? '7.5px' : '0px';
+  }
+  s.textContent = m.label;
+  return s;
+}
+
+// The corners, drawn whole (a card that has not been laid out yet has no
+// width to fit to), then fitted: applyFit hides what gives way and redraws
+// the crew corner with its "+n" counting whoever it folded.
+function drawCorners(el, parts, { artistName, openNotes }) {
+  const about = document.createElement('span');
+  about.className = 'corner-about';
+  for (const chip of parts.about) {
+    let c;
+    if (chip.kind === 'meter') {
+      c = meterChip(chip);
+    } else if (chip.kind === 'notes') {
+      // The clickable note-count chip is a real button (audit 4.4).
+      c = document.createElement(openNotes ? 'button' : 'span');
+      c.className = 'chip-notes';
+      c.textContent = chip.label;
+      if (openNotes) {
+        c.style.cursor = 'pointer';
+        c.setAttribute('aria-label', `${chip.label} note${chip.label === '1' ? '' : 's'} for ${artistName}`);
+        c.addEventListener('click', (e) => { e.stopPropagation(); openNotes(); });
+      }
+    } else {
+      // The Spotify chip stays a passive span. Its count sits in its own
+      // span because the count is the first thing to give way (GIVE_WAY).
+      c = document.createElement('span');
+      c.className = 'chip-spotify';
+      if (chip.label) {
+        const n = document.createElement('span');
+        n.className = 'n';
+        n.textContent = chip.label;
+        c.appendChild(n);
+      }
+      if (chip.followed) c.appendChild(svgBookmark());
+      // Corner glow for high-affinity artists (followed + 5+ songs): a soft
+      // Spotify-green mini-aura behind the badge corner — same visual language
+      // as the people-auras, card geometry untouched (Kevin picked this over
+      // rings/outlines 2026-07-13; thicker outlines broke pixel rhythm before).
+      if (chip.hot) {
+        const glow = document.createElement('span');
+        glow.className = 'spot-glow';
+        glow.setAttribute('aria-hidden', 'true');
+        el.appendChild(glow);
+      }
+    }
+    c.dataset.kind = chip.kind;
+    about.appendChild(c);
+  }
+  el.appendChild(about);
+  const who = document.createElement('span');
+  who.className = 'corner-who';
+  el.appendChild(who);
+  applyFit(el, fitCorners(parts, 0));
+}
+
+function applyFit(el, fit) {
+  el.dataset.fit = String(fit.step);
+  el._fit = fit; // what the read-back needs to know: whether the band's time is still shown
+  for (const c of el.querySelector(':scope > .corner-about').children) {
+    const kind = c.dataset.kind;
+    c.hidden = (kind === 'spotify' && !fit.spot) || (kind === 'notes' && !fit.notes) || (kind === 'meter' && !fit.meter);
+    if (kind === 'spotify') {
+      const n = c.querySelector('.n');
+      if (n) n.hidden = !fit.spotCount;
+    }
+  }
+  const glow = el.querySelector(':scope > .spot-glow');
+  if (glow) glow.hidden = !fit.spot; // the glow rises from the pill; no pill, no glow
+  // The last thing a cell gives way: the text in the band. Its space is kept
+  // (visibility, not display), so the name never moves when it steps back.
+  for (const t of el.querySelectorAll(':scope > .time, :scope > .until')) t.style.visibility = fit.time ? '' : 'hidden';
+  el.querySelector(':scope > .corner-who').replaceChildren(...fit.marks.map(crewMark));
+}
+
+// Fit one card's corners to `width`, the px of its padding box, around the
+// centred text in their band (`band`, from bandText). aura.js fitCorners
+// holds the order things give way in; `from`, the step the read-back says
+// the corners need at least (confirmFit). A no-op when nothing moves.
+export function fitCard(el, width, band = null, from = 0) {
+  const parts = el._corners;
+  if (!parts) return;
+  const fit = fitCorners(parts, width, { cell: el.classList.contains('cell'), ...(band || {}), from });
+  if (el.dataset.fit !== String(fit.step)) applyFit(el, fit);
+}
+
+// What the corners REALLY drew, read back after a fit is written: each
+// corner's own box as laid out (hidden chips gone, the crew corner's "+n"
+// as it is now) against the card's edges and the centred text in its band.
+// aura.js's width table is Chromium-on-macOS; Linux draws Inter wider and so
+// will real phones, and a table that guesses short left Robyn's corners
+// 1.4px apart in CI (2026-09-23). The law is the table's own: CLEAR between
+// the two corners, and between each corner and the band's text — with half
+// a pixel for sub-pixel layout. A card with no layout (a hidden screen,
+// jsdom) is taken at the table's word: there is nothing to read.
+const LAST_STEP = GIVE_WAY.length - 1;
+function cornersClear(el, band) {
+  const card = el.getBoundingClientRect();
+  if (!card.width) return true;
+  const drawn = (sel) => {
+    const n = el.querySelector(sel);
+    const r = n ? n.getBoundingClientRect() : null;
+    return r && r.width ? r : null;
+  };
+  const about = drawn(':scope > .corner-about');
+  const who = drawn(':scope > .corner-who');
+  const air = CLEAR - 0.5;
+  if (about && about.right > card.right - 1) return false;
+  if (who && who.left < card.left + 1) return false;
+  if (about && who && who.left - about.right < air) return false;
+  if (band) {
+    // The band's text as it stands after the fit: a time the fit stepped
+    // back takes no room; the name always does.
+    const spans = [band.nm, (!el._fit || el._fit.time) ? band.mid : null].filter(Boolean);
+    if (spans.length) {
+      const left = Math.min(...spans.map((x) => x[0]));
+      const right = Math.max(...spans.map((x) => x[1]));
+      if (about && about.right + air > left) return false;
+      if (who && who.left - air < right) return false;
+    }
+  }
+  return true;
+}
+
+// The table's guess, then the read-back: every card's corners are read (all
+// reads first — one layout for the batch), each one that crowds gives way one
+// more step (all writes), and only those are read again, until every card is
+// clear or at its last step. A handful of passes at most, and no observer
+// loop: the corners are absolute, so no step ever resizes a card.
+function fitAll(todo) {
+  for (const [el, width, band] of todo) fitCard(el, width, band);
+  let pending = todo;
+  for (let pass = 0; pending.length && pass < GIVE_WAY.length; pass += 1) {
+    const crowded = pending.filter(([el, , band]) => el.isConnected && Number(el.dataset.fit) < LAST_STEP && !cornersClear(el, band));
+    for (const [el, width, band] of crowded) fitCard(el, width, band, Number(el.dataset.fit) + 1);
+    pending = crowded;
+  }
+}
+
+// The centred text a timetable cell carries down in its corners' band,
+// measured line by line (the text, not its box — "until" spans the card):
+// `middle`, a 30-minute set's start time (its 44px cell has no room above the
+// band: wall.js's display floor) or a tall set's "until" on the bottom edge;
+// `name`, the artist's name where it runs to a second line in a narrow short
+// cell. Every other card keeps its text well above the band: null.
+const CELL_BAND = 16; // .card.cell corners: 3px up, 13px tall
+function bandText(card) {
+  if (!card.classList.contains('cell')) return null;
+  const box = card.getBoundingClientRect();
+  if (!box.height) return null;
+  const top = box.bottom - CELL_BAND;
+  // The lines of `el` that sit down in the band: their widest width (the
+  // table's input) and where they reach, left and right (the read-back's).
+  const lines = (el) => {
+    const out = { w: 0, x: null };
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    if (typeof range.getClientRects !== 'function') return out;
+    const own = el.getBoundingClientRect(); // a clamped name's hidden lines are not text anyone sees
+    for (const r of range.getClientRects()) {
+      if (!(r.width && r.bottom > top && r.top < Math.min(box.bottom, own.bottom) - 1)) continue;
+      out.w = Math.max(out.w, r.width);
+      out.x = out.x ? [Math.min(out.x[0], r.left), Math.max(out.x[1], r.right)] : [r.left, r.right];
+    }
+    return out;
+  };
+  let middle = 0, name = 0, mid = null, nmX = null;
+  for (const t of card.querySelectorAll(':scope > .time, :scope > .until')) {
+    const l = lines(t);
+    middle = Math.max(middle, l.w);
+    if (l.x) mid = mid ? [Math.min(mid[0], l.x[0]), Math.max(mid[1], l.x[1])] : l.x;
+  }
+  const nm = card.querySelector(':scope > .name');
+  if (nm) { const l = lines(nm); name = l.w; nmX = l.x; }
+  return middle || name ? { middle, name, mid, nm: nmX } : null;
+}
+
+// A card learns its width only once it is laid out — and again on a rotation
+// or a lane split — so the fit rides a ResizeObserver, whose callback runs
+// after layout and before paint: no frame ever shows the two corners
+// colliding. The corners are absolute, so a fit never resizes the card (no
+// observer loop). Width is the border box less the card's 1px edge each side.
+// Observed cards are held strongly, so each full render sweeps the ones it
+// replaced (renderWall), and a refresh lets go of the node it swaps out.
+const fitting = new Set();
+const fitWatch = typeof ResizeObserver === 'function' ? new ResizeObserver((entries) => {
+  // Every read first, then every write: layout is clean when the callback
+  // starts, and a write between two reads would force it again per card.
+  const todo = [];
+  for (const { target, borderBoxSize } of entries) {
+    if (!target.isConnected) { unwatchFit(target); continue; }
+    const box = borderBoxSize && borderBoxSize[0];
+    todo.push([target, (box ? box.inlineSize : target.getBoundingClientRect().width) - 2, bandText(target)]);
+  }
+  fitAll(todo);
+}) : null;
+// A late font changes every width without resizing a single card, so no
+// observer fires: refit every watched card when the fonts land — once when
+// the set is ready, and again whenever a font finishes loading after that.
+function refitAll() {
+  const todo = [];
+  for (const el of fitting) {
+    if (!el.isConnected) continue;
+    const width = el.getBoundingClientRect().width;
+    if (width > 0) todo.push([el, width - 2, bandText(el)]);
+  }
+  fitAll(todo);
+}
+try {
+  if (fitWatch && typeof document !== 'undefined' && document.fonts) {
+    if (document.fonts.ready && typeof document.fonts.ready.then === 'function') document.fonts.ready.then(refitAll, () => {});
+    if (typeof document.fonts.addEventListener === 'function') document.fonts.addEventListener('loadingdone', refitAll);
+  }
+} catch { /* a font set that cannot be asked is a font set the observer already covers */ }
+function watchFit(el) {
+  if (!fitWatch) return;
+  fitWatch.observe(el, { box: 'border-box' });
+  fitting.add(el);
+}
+function unwatchFit(el) {
+  if (!fitWatch) return;
+  fitWatch.unobserve(el);
+  fitting.delete(el);
+}
+function sweepFit() {
+  for (const el of fitting) if (!el.isConnected) unwatchFit(el);
 }
 
 // Re-render one card in place after a pick change (no full-wall repaint).
@@ -248,6 +490,14 @@ export function refreshCard(el, artistName, ctx, { onSwap = null } = {}) {
     fresh.dataset.nowFrom = el.dataset.nowFrom;
     fresh.dataset.nowTo = el.dataset.nowTo;
   }
+  // The fresh node is fitted to the width the old one had before it lands,
+  // so it never draws a frame unfitted, and the old corners are read for the
+  // level change's motion — both are reads of the old node, taken together
+  // before anything is written.
+  const width = el.getBoundingClientRect().width;
+  const band = bandText(el);
+  const before = canAnimate(el, ctx) ? cornersNow(el) : null;
+  if (width > 0) fitCard(fresh, width - 2, band);
   // Keyboard users keep their place: replacing a focused node silently dumps
   // focus to <body>, forcing a full re-Tab per pick tap (audit 4.1).
   const hadFocus = document.activeElement === el;
@@ -263,8 +513,122 @@ export function refreshCard(el, artistName, ctx, { onSwap = null } = {}) {
   el.before(fresh);
   if (onSwap) onSwap(fresh);
   el.remove();
+  unwatchFit(el);
   if (hadFocus) fresh.focus();
+  if (before) meterMoves(fresh, before);
   return fresh;
+}
+
+// Where the about corner's chips sat on the old card (card-relative), your
+// level there, and the chip itself — the one a clear lets recede.
+function cornersNow(card) {
+  const box = card.getBoundingClientRect();
+  const at = new Map();
+  for (const c of card.querySelectorAll(':scope > .corner-about > [data-kind]')) {
+    if (c.hidden) continue;
+    const r = c.getBoundingClientRect();
+    at.set(c.dataset.kind, { x: r.left - box.left, y: r.top - box.top, w: r.width });
+  }
+  const m = card.querySelector(':scope > .corner-about > .chip-meter');
+  return { at, level: m ? Number(m.dataset.level) : 0, meter: m && !m.hidden ? m : null };
+}
+
+// A level change is a small event (Kevin, 2026-08-30: things grow from where
+// they already are; the way in has a little life, the way out is quick and
+// plain; nothing vanishes in place). Your chip arrives by growing out of the
+// corner's edge; each tap lights the next bar, rising from the baseline;
+// MUST rises in as a word WHILE the chip widens to hold it (a word that
+// waited left an empty pill on screen for four or five frames — the review
+// round's slowed filmstrip, 2026-09-23); clearing lets the chip you saw
+// recede into that same edge as the neighbours close the gap (meterLeaves).
+// The notes and Spotify chips travel from where they were whenever the
+// meter moves them. Transform and opacity only, and only when canAnimate
+// says so — Low Power and reduced motion get the finished card at once
+// (refreshCard only calls this when it may animate). Nothing here runs when
+// your level did not change (a note, a crew-mate's pick).
+function meterMoves(card, before) {
+  const meter = card.querySelector(':scope > .corner-about > .chip-meter');
+  const to = meter ? Number(meter.dataset.level) : 0;
+  const from = before.level;
+  if (to === from) return;
+  const left = card.getBoundingClientRect().left;
+  const slide = to ? { duration: GROW_MS, easing: EASE_ARRIVE } : { duration: OUT_MS, easing: EASE_SURFACE };
+  for (const c of card.querySelectorAll(':scope > .corner-about > [data-kind]:not(.chip-meter)')) {
+    const was = before.at.get(c.dataset.kind);
+    if (!was || c.hidden) continue;
+    const dx = was.x - (c.getBoundingClientRect().left - left);
+    if (Math.abs(dx) > 0.5) c.animate([{ transform: `translateX(${dx}px)` }, { transform: 'none' }], slide);
+  }
+  if (!meter) {
+    const was = before.at.get('meter');
+    if (before.meter && was) meterLeaves(card, before.meter, was);
+    return;
+  }
+  if (!from) {
+    // A beat after its neighbours start making room, so it grows into space.
+    meter.animate([
+      { transform: 'scale(.4)', opacity: 0 },
+      { opacity: 1, offset: 0.45 },
+      { transform: 'none', opacity: 1 },
+    ], { duration: GROW_MS, delay: STAGGER_MS, easing: EASE_ARRIVE, fill: 'backwards' });
+    return;
+  }
+  if (to === 4 || from === 4) {
+    const was = before.at.get('meter');
+    const w = meter.getBoundingClientRect().width;
+    if (was && w > 0 && Math.abs(was.w - w) > 0.5) {
+      meter.animate([{ transform: `scaleX(${was.w / w})` }, { transform: 'none' }], { duration: GROW_MS, easing: EASE_ARRIVE });
+    }
+    meter.firstElementChild.animate([
+      { transform: 'translateY(3px)', opacity: 0 },
+      { transform: 'none', opacity: 1 },
+    ], { duration: GROW_MS, easing: EASE_ARRIVE });
+    return;
+  }
+  const bars = meter.querySelectorAll('.bar');
+  if (to > from) {
+    for (let i = from; i < to; i++) {
+      bars[i].animate([
+        { transform: 'scaleY(.35)', opacity: 0.3 },
+        { transform: 'none', opacity: 1 },
+      ], { duration: GROW_MS, delay: (i - from) * STAGGER_MS, easing: EASE_ARRIVE, fill: 'backwards' });
+    }
+  } else {
+    for (let i = to; i < from; i++) bars[i].animate([{ opacity: 1 }, { opacity: 0.3 }], { duration: OUT_MS, easing: EASE_SURFACE });
+  }
+}
+
+// A clear: the chip you just saw recedes into the corner's edge it grew from
+// (.chip-meter's transform-origin), quick and plain, in lockstep with its
+// neighbours closing the gap — the same duration and curve, and all the way
+// to nothing, so the pill sliding in chases the chip's right edge and never
+// covers it (an ease-in to .4 left a near-whole MUST under the incoming pill
+// at 40ms; the fix round's filmstrip). The old card is already gone, so it leaves as a
+// copy drawn on the fresh card where it stood: before the corners (they
+// pass over it), outside .corner-about and without a data-kind, so the fit,
+// the next tap's cornersNow and every corner query never see it. It removes
+// itself when done, and a belt removes it anyway — a backgrounded tab may
+// never finish an animation (the zoom's own way out does the same).
+function meterLeaves(card, was, at) {
+  const ghost = was.cloneNode(true);
+  ghost.classList.add('leaving');
+  delete ghost.dataset.kind;
+  card.insertBefore(ghost, card.querySelector(':scope > .corner-about'));
+  // Placed at the card's padding-box origin by v3.css, then moved onto the
+  // spot the chip had: one read, one write.
+  const box = card.getBoundingClientRect();
+  const r = ghost.getBoundingClientRect();
+  ghost.style.left = `${at.x - (r.left - box.left)}px`;
+  ghost.style.top = `${at.y - (r.top - box.top)}px`;
+  const out = ghost.animate([
+    { transform: 'none', opacity: 1 },
+    { transform: 'scale(0)', opacity: 0 },
+  ], { duration: OUT_MS, easing: EASE_SURFACE, fill: 'forwards' });
+  let done = false;
+  const finish = () => { if (!done) { done = true; ghost.remove(); } };
+  out.onfinish = finish;
+  out.oncancel = finish;
+  setTimeout(finish, OUT_MS * 4 + 80);
 }
 
 // The card a zoom should be restored onto after a repaint: the one carrying
@@ -350,20 +714,23 @@ export function groupByDay(artists, knownDays = []) {
 }
 
 
-// One lineup-style section: a day rule and a card grid. This is the SEARCH
-// and flat-sort shape — a list of answers, not a night. The composed wall
-// (below) never comes through here.
+// One lineup-style section: a list head and a card grid. This is the SEARCH
+// and flat-sort shape — a list of answers, not a night — and the composed
+// wall's day-less blocks (THE LINEUP, EVERYTHING ELSE). A named day's answers
+// sit in the block its tab lands on; the day-less blocks are not tabs.
 function renderLineupGroup(root, day, list, ctx, fest, { header, sub } = {}) {
   const meta = (fest.dayMeta || {})[day];
   // A day KEY is frozen pick data and can be verbose ("Wednesday, Sept 16
-  // (Early Arrival Pre-Party)"); the rule shows the weekday and moves the
+  // (Early Arrival Pre-Party)"); the head shows the weekday and moves the
   // aside to its sub line — the same split the day tab and the day sheet use.
   const parts = day ? dayLabelParts(day) : null;
-  root.appendChild(dayHeader(
+  const host = day ? dayBlock(day) : root;
+  host.appendChild(listHead(
     header || (parts && parts.head) || 'THE LINEUP',
     sub !== undefined ? sub : (day ? [dayRuleSub(meta), parts.aside].filter(Boolean).join(' · ') : (ctx.sort === 'billing' ? 'BILLING ORDER' : '')),
   ));
-  renderCardGrid(root, list, ctx, { day, subLabelOf: lineupSubLabel });
+  renderCardGrid(host, list, ctx, { day, subLabelOf: lineupSubLabel });
+  if (host !== root) root.appendChild(host);
 }
 
 // A lineup entry can be an EVENT (afters, Folsom) — venue rides in `stage`,
@@ -373,6 +740,8 @@ function renderLineupGroup(root, day, list, ctx, fest, { header, sub } = {}) {
 // newline is the break. Inside a day-first day the tile says only the time
 // (the day is the day, the venue lives in the zoom) — see eventTileSubLabel.
 function lineupSubLabel(a) {
+  // A cancelled act answers with its place and the word, never a clock.
+  if (isCancelled(a)) return [a.stage || a.venue || '', 'Cancelled'].filter(Boolean).join(' · ');
   const time = a.time ? approxMark(a, a.time) : ''; // the tilde travels with `approx`
   // A dated show says where in `venue`; the legacy afters shape says it in
   // `stage` ("Sun · The Midway"). Either way the answer names its room.
@@ -395,7 +764,8 @@ function renderCardGrid(root, list, ctx, { day = null, subLabelOf = lineupSubLab
   const grid = document.createElement('div');
   grid.className = className;
   const showTags = !ctx.weekend || ctx.weekend === 'all';
-  for (const a of list) {
+  // A cancelled act sorts last in its list, as it does in a stack.
+  for (const a of [...list.filter((x) => !isCancelled(x)), ...list.filter(isCancelled)]) {
     const tag = showTags && (a.weekends === 'W1' || a.weekends === 'W2') ? a.weekends : undefined;
     // The occurrence comes from the model (events.js occOf), so a card found
     // in a search is the SAME card as the one on the wall — a dated show's
@@ -407,37 +777,45 @@ function renderCardGrid(root, list, ctx, { day = null, subLabelOf = lineupSubLab
   return list;
 }
 
-// `opts.dayKey` is the jump / scrollspy key when the visible label is not
-// the key itself — a day-first rule shows a verbose key's weekday head
-// ("Wednesday, Sept 16 (Early Arrival Pre-Party)" → WEDNESDAY) the way
-// every other path does, while the tabs still find it by its key.
-function dayHeader(label, sub, opts = {}) {
-  // The rule IS the door to that date's notes (MODEL-V4 §3a.3) — the tap the
-  // fold used to take. Nothing is added to it: same words, same hairline, a
-  // button instead of a div, which is also where its 44px floor comes from.
-  const rule = document.createElement(opts.onOpen ? 'button' : 'div');
-  if (opts.onOpen) {
-    rule.type = 'button';
-    rule.setAttribute('aria-label', `Notes for ${opts.aria || label}`);
-    rule.addEventListener('click', opts.onOpen);
-  }
-  rule.className = 'day-rule';
-  rule.dataset.day = opts.dayKey || label;
-  const d = document.createElement('span');
-  d.className = 'day';
-  d.textContent = label.toUpperCase();
-  const dt = document.createElement('span');
-  dt.className = 'date';
-  dt.textContent = sub || '';
-  const line = document.createElement('span');
-  line.className = 'line';
-  rule.append(d, dt, line);
-  return rule;
+// Where a day tab lands: one block per day — on the composed wall, holding
+// the day's rooms; in a list (a search, a lineup fest's by-day list), holding
+// that day's answers — and one per tab that hangs off the end of the week
+// (ACL's Late nights). `data-day` is the tab's key, so a verbose day key
+// ("Wednesday, Sept 16 (Early Arrival Pre-Party)") is found by its key while
+// its head shows the weekday. `data-iso` is the day's date where it is one:
+// the day-of open lands there before doors (scrollToNowLine). Every jump,
+// the scrollspy and the fold address this one shape (DAY_ANCHOR).
+function dayBlock(key, iso = null) {
+  const block = document.createElement('div');
+  block.className = 'day-block';
+  if (key) block.dataset.day = key;
+  if (iso) block.dataset.iso = iso;
+  return block;
 }
 
-// A LIST section's day rule subtitle: real dates beat internal numbering
-// (ST-4). A dated day says its own date — that sub comes composed from the
-// model (events.js), which is the only place a weekend is still a thing.
+// A LIST's head: one line over a list of answers — a day's in a search or a
+// lineup fest's by-day list, and the day-less blocks (THE LINEUP, EVERYTHING
+// ELSE · NO SET TIME YET, NOTES · <FEST>). It is never a door and never an
+// anchor (the day's block is). The composed wall does not draw one: every
+// room there wears its own head (roomHead), which names the day itself.
+function listHead(label, sub) {
+  const head = document.createElement('div');
+  head.className = 'list-head';
+  const l = document.createElement('span');
+  l.className = 'label';
+  l.textContent = String(label).toUpperCase();
+  const s = document.createElement('span');
+  s.className = 'sub';
+  s.textContent = sub || '';
+  const line = document.createElement('span');
+  line.className = 'line';
+  head.append(l, s, line);
+  return head;
+}
+
+// A LIST's day head subtitle: real dates beat internal numbering (ST-4). A
+// dated day says its own date — that sub comes composed from the model
+// (events.js), which is the only place a weekend is still a thing.
 function dayRuleSub(meta) {
   if (!meta) return '';
   return [meta.wd, meta.date || (meta.num ? `Day ${meta.num}` : '')].filter(Boolean).join(' · ');
@@ -471,8 +849,8 @@ export function applySort(artists, mode, ctx) {
 }
 
 // ---- set-times grid (atlas 21d: the same cards, on a clock) ---------------------
-// One vertical page: every day gets a rule + a clock grid. Mobile shows ~2
-// stages and swipes; desktop fits them all.
+// One vertical page: every grid day's festival room gets a clock grid under
+// its head. Mobile shows ~2 stages and swipes; desktop fits them all.
 //
 // The stage columns are CANONICAL across days (model.canonicalStages): every
 // day renders the same columns in the same order on the same template, all
@@ -577,8 +955,13 @@ export function positionNowLines(root, date = new Date()) {
 
 // The day-of open: land the now line about a third of the way down the
 // viewport so the next hour is in view. Before doors on festival day there
-// is no line yet — land on today's day header instead. Returns the target
-// it scrolled to ('now' | 'day') or null when today is not on this wall.
+// is no line yet — land on today's block instead, whose first head names the
+// day. A dated section's date is a festival day too (2026-09-23): on an ACL
+// night between the weekends, today is a room inside the Late nights block,
+// and the open lands on its head — but a real day block today (a grid day,
+// Oct 3) always wins, and a hidden section renders nothing to land on.
+// Returns the target it scrolled to ('now' | 'day') or null when today is not
+// on this wall.
 export function scrollToNowLine(root, { date = new Date(), viewportHeight = window.innerHeight, scrollTo = (y) => window.scrollTo({ top: y, behavior: 'auto' }), timeZone = null } = {}) {
   const pageY = (el) => el.getBoundingClientRect().top + (window.scrollY || window.pageYOffset || 0);
   const line = root.querySelector('.now-line');
@@ -589,13 +972,16 @@ export function scrollToNowLine(root, { date = new Date(), viewportHeight = wind
   // "Today" in the festival's zone — the grids carry it; the caller may too.
   const zoned = root.querySelector('.times-grid[data-tz]');
   const todayIso = festivalClock(date, timeZone || (zoned ? zoned.dataset.tz : null)).iso;
-  const rule = root.querySelector(`.day-rule[data-iso="${todayIso}"]`);
-  if (!rule) return null;
-  // The day rule's scroll-margin-top is the sticky chrome's height (app.js
-  // measures it into --jump-offset); land below it like a day-tab jump does.
+  const day = root.querySelector(`.day-block[data-iso="${todayIso}"]`)
+    || root.querySelector(`.day-block .room[data-iso="${todayIso}"]`);
+  if (!day) return null;
+  // The block's scroll-margin-top is the sticky chrome's height (app.js
+  // measures it into --jump-offset); land below it like a day-tab jump does —
+  // a room inside a block lands against its block's.
+  const block = day.closest('.day-block') || day;
   const offset = (typeof window !== 'undefined' && window.getComputedStyle)
-    ? parseFloat(window.getComputedStyle(rule).scrollMarginTop) || 0 : 0;
-  scrollTo(Math.max(0, pageY(rule) - offset));
+    ? parseFloat(window.getComputedStyle(block).scrollMarginTop) || 0 : 0;
+  scrollTo(Math.max(0, pageY(day) - offset));
   return 'day';
 }
 
@@ -639,15 +1025,24 @@ const undoOnRepaint = (root, undo) => {
   teardowns.get(root).push(undo);
 };
 let timelineSeq = 0;
+// The strip element (`.stage-strip`) around a strip's scroller — where the
+// route taken is written down.
+const stripOf = (scroller) => (scroller.closest && scroller.closest('.stage-strip')) || scroller;
 function followStrip(strip, lead, root) {
   const row = strip.querySelector('.times-grid');
   if (!row) return;
   strip.classList.add('follows');
-  // The CSS follow only where CSS animations run: the tokens file kills every
-  // animation under reduced motion and under Low Power, and a killed follow
-  // leaves the stage names frozen over sliding columns. Decided per render —
-  // leaving Settings repaints the wall.
-  if (SCROLL_TIMELINES && !reduced() && !document.body.classList.contains('low-power')) {
+  // The timeline wherever the engine has one — under Reduce Motion and the
+  // app's Low power too (2026-09-23). A strip that tracks your finger is
+  // direct manipulation, not decorative motion: the people who turned motion
+  // off need the stage names over the right columns as much as anyone, and
+  // the transform route below trails the grid by a frame on a phone (Kevin's
+  // "stuttered delayed slide"). The two kill rules in the tokens file would
+  // still freeze it — their `animation` shorthand resets `animation-timeline`
+  // — so the follow's animation lives in v3.css, out-ranking them, and reads
+  // the timeline's name from `--strip-tl`, which no shorthand can reset.
+  // Still decided per render, as every wiring here is.
+  if (SCROLL_TIMELINES) {
     // The timeline is named on the lead and scoped on the nearest ancestor
     // both share (a day's .tt-block, or the wall for the one-strip page).
     // The far keyframe is the lead's maximum scroll in px (--strip-max): the
@@ -663,8 +1058,9 @@ function followStrip(strip, lead, root) {
       if (lead.firstElementChild) ro.observe(lead.firstElementChild);
     }
     lead.style.scrollTimeline = `${name} x`;
-    row.style.animation = 'strip-follow linear both';
-    row.style.animationTimeline = name;
+    row.style.setProperty('--strip-tl', name);
+    row.classList.add('rides');
+    stripOf(strip).dataset.follow = 'timeline'; // what Diagnostics reports (js/errlog.js)
     const scope = strip.closest('.tt-block') || root;
     scope.style.timelineScope = [scope.style.timelineScope, name].filter(Boolean).join(', ');
     undoOnRepaint(root, () => {
@@ -673,8 +1069,10 @@ function followStrip(strip, lead, root) {
     });
     return;
   }
-  // Set on the spot: scroll events already arrive at most once a frame, and
-  // a transform write is a compositor update, not a layout.
+  // No scroll timelines in this engine (iOS before 26): a transform set on
+  // the spot. Scroll events already arrive at most once a frame, and a
+  // transform write is a compositor update, not a layout.
+  stripOf(strip).dataset.follow = 'transform';
   const follow = () => { row.style.transform = `translateX(${-lead.scrollLeft}px)`; };
   lead.addEventListener('scroll', follow, { passive: true });
   follow();
@@ -852,12 +1250,14 @@ function renderScheduledDayBody(root, day, ctx, layout, weekend, { strip = false
 // stage grid; everything else is a stack of cards under the place it
 // happens, in play order.
 //
-// A day is composed of ROOMS, in order: the festival's own first — its
+// A day is a block of ROOMS, in order: the festival's own first — its
 // timetable on a grid day, then anything of the festival's that is not on
 // that grid (a set whose stage is not a column, a billed name with no set
 // time yet, the day's activities) as venue groups — then each section that
-// plays that night. Every room folds on a tap of its header; the shell owns
-// which are folded.
+// plays that night. Every room wears ONE head naming when and what (`SAT
+// PORTOLA`, `SAT AFTERS` — one-line heads, 2026-09-23); there is no day line
+// above them. The show menu decides which rooms are hidden (wallPlanFor
+// applies it), and a hidden room renders nothing.
 
 
 // Which weekends a scheduled fest renders. A two-weekend one (ACL) gets six
@@ -881,7 +1281,7 @@ export const weekendRoom = (w) => `weekend:${w}`;
 // contributes nothing: a hidden section is absent from every day it played,
 // a hidden extra (Late nights) is absent, the festival's own room takes its
 // grid, its billed names and its day-less names with it — and a day whose
-// visible rooms are all empty is not a day: no rule, no tab, never the open
+// visible rooms are all empty is not a day: no block, no tab, never the open
 // (Kevin: "if all events for a day are hidden, don't show that day at all —
 // not empty shells"). The show menu reads the same plan with nothing folded
 // (roomsOf), which is where the hidden state stays visible.
@@ -899,7 +1299,10 @@ export function wallPlanFor(fest, ctx) {
   // nothing at all has no plan; a fest with everything hidden still has one
   // (an empty week), so the flat lineup never leaks through in its place.
   if (!whole.days.length && !whole.extras.length && !whole.looseNoDay.length) return null;
-  const hidden = new Set(ctx.folded || []);
+  // A fest with ONE room has no show menu at all (the fest name opens
+  // Settings), so no key can mean anything on it (2026-09-23) — the rule
+  // below, taken to its end.
+  const hidden = roomsIn(fest, whole, weekends).length > 1 ? new Set(ctx.folded || []) : new Set();
   // A key the show menu does not offer is inert here, or a stored setting
   // could hide something with nothing on the screen to bring it back. On a
   // two-weekend fest the weekend rows ARE the festival room (roomsOf offers
@@ -930,12 +1333,16 @@ export function wallPlanFor(fest, ctx) {
 export function roomsOf(fest, ctx) {
   const plan = fest ? wallPlanFor(fest, { ...ctx, query: '', folded: [] }) : null;
   if (!plan) return [];
-  const { days, sections, extras, looseNoDay } = plan.model;
+  return roomsIn(fest, plan.model, plan.weekends);
+}
+// The same list, off a model — wallPlanFor asks it how many rooms there are
+// before it lets any key hide one.
+function roomsIn(fest, { days, sections, extras, looseNoDay }, weekends) {
   const rooms = [];
   if (days.some((d) => d.grid || d.billing) || looseNoDay.length) {
     // A two-weekend fest offers a row per weekend in place of its own room:
     // hiding a weekend is the thing a person wants to do there.
-    if (plan.weekends.length > 1) plan.weekends.forEach((w, i) => rooms.push({ key: weekendRoom(w), label: `Weekend ${i + 1}` }));
+    if (weekends.length > 1) weekends.forEach((w, i) => rooms.push({ key: weekendRoom(w), label: `Weekend ${i + 1}` }));
     else rooms.push({ key: FEST_ROOM, label: fest.name });
   }
   for (const s of sections) rooms.push({ key: s.key, label: s.label });
@@ -943,11 +1350,40 @@ export function roomsOf(fest, ctx) {
   return rooms;
 }
 
+// The words on the fest link at the end of the dock (phone) and the rail
+// (desktop) — the show menu's door. One builder, because the wall names that
+// door when everything is hidden and must say exactly what is written on it.
+export const festLinkLabel = (fest) => `${String(fest.name || '').toUpperCase()} ${fest.year || ''}`.trim();
+
+// Everything hidden (a real-engine walk, 2026-09-23): the show menu unchecked
+// every room, so the week has no day and the dock no tab — right by the 09-17
+// rule, and a blank screen that told a friend nothing. The wall says why, in
+// the app's quiet voice, and where the switch is: the fest link's own words,
+// below on a phone (the dock) and up top on a desktop (the rail). No box and
+// no button — the fest name is the one door; a second would be a second
+// control for one state. It arrives with the beat and leaves before the week
+// comes back (app.js toggleFoldFlow).
+function allHiddenNotice(root, fest) {
+  const n = mk('div', 'wall-empty');
+  n.setAttribute('role', 'status');
+  const hint = mk('p', 'hint');
+  const name = festLinkLabel(fest);
+  hint.append(
+    mk('span', 'on-phone', `Tap ${name} below to bring parts back.`),
+    mk('span', 'on-desk', `Click ${name} up top to bring parts back.`),
+  );
+  n.append(mk('p', 'lead', 'Everything\u2019s hidden.'), hint);
+  root.appendChild(n);
+}
+// A plan whose visible week is empty: no day, no tab off the end, nothing
+// day-less. Only the show menu can do that.
+const nothingVisible = (plan) => !!plan && !plan.model.days.length && !plan.model.extras.length && !plan.model.looseNoDay.length;
+
 // What the day tabs (dock + rail) should list, in the wall's own order: the
 // days, then the tabs that hang off the end (a dated section like ACL's Late
-// nights). `key` is the jump id the wall stamps on its rule.
+// nights). `key` is the jump id the wall stamps on the day's block.
 // `dayKey` is the day WITHOUT its weekend suffix ("Friday", not "Friday|W1"):
-// the key the file wrote and the rule bills. The suffix is an axis detail, so
+// the key the file wrote and the heads bill. The suffix is an axis detail, so
 // anything naming the day for a person reads this, not `key`.
 // `grid` says the day has a timetable, so the shell can pick the first VISIBLE
 // grid day as the open without asking the fest (a hidden grid day is not here).
@@ -962,7 +1398,7 @@ const groupTab = (fest) => (day) => {
     num: null,
     dates: [],
     // Rail tabs stay compact: a verbose day key shows its weekday only —
-    // the same split the day rule and the day sheet use.
+    // the same split the wall's heads and the day sheet use.
     long: (meta?.wd ? `${meta.wd} ${meta.num || ''}`.trim() : dayLabelParts(day).head).toUpperCase(),
     iso: null,
     dated: false,
@@ -975,8 +1411,8 @@ export function dayNavOf(fest, ctx, wallRoot = null) {
   const plan = wallPlanFor(fest, ctx);
   // A scheduled fest's SEARCH is its own week with the misses taken out, so
   // the tabs are the same axis either way — one list, and the keys match what
-  // the wall stamps on its rules, or a tab jumps to nothing. Only a lineup
-  // fest's flat search keeps its own group headers.
+  // the wall stamps on its day blocks, or a tab jumps to nothing. Only a
+  // lineup fest's flat search keeps its own groups.
   const tabs = plan && (!ctx.query || plan.scheduled)
     ? [
       ...plan.model.days.map(dayTab),
@@ -1025,6 +1461,7 @@ const dedupeByCard = (list, occFor = occOf) => {
 // The card's time label in a stack: the range the venue posted, else the
 // start with the tilde a guess wears. No time, no time line.
 const stackTime = (m) => {
+  if (m.cancelled) return 'Cancelled';
   if (m.endStr) return timeRange(m.e.time);
   return m.startStr ? approxMark(m.e, m.startStr) : undefined;
 };
@@ -1091,46 +1528,66 @@ export function positionNowMarks(root, date = new Date()) {
   }
 }
 
-// One room on a day: its header and body travel together, tagged with the
-// key that folds them (app.js animates the fold).
+// One room on a date: its head and body travel together, tagged with the key
+// the show menu hides it by (app.js animates the fold).
 function roomBlock(key) {
   const room = mk('div', 'room');
   room.dataset.room = key;
   return room;
 }
 
-// The festival's own room says where it is: "PORTOLA · PIER 80" — the venue
-// festPlaceLine leads with, as text.
+// The festival's own room says where it is: "SAT PORTOLA  Pier 80" — the
+// venue festPlaceLine leads with, as text.
 function festRoomSub(fest) {
   const venue = (fest.subtitle || '').split(' · ')[0].trim();
   return venue || fest.location || '';
 }
 
-// The room's header. It says what the room is; it does NOT fold it (MODEL-V4
-// §3a.2, Kevin 2026-09-17). The show menu on the fest name is the one way to
-// hide a part of the week, so the header carries no chevron, no aria-expanded
-// and no "<n> shows" — a header that answered a tap it no longer takes was
-// two affordances for one state.
-// `dayKey` is for the one room that is also a TAB — a dated section, which is
-// a room and a day axis entry at once. It stamps the jump/scrollspy anchor and
-// gives the header the day rule's weight, so the tab lands on something that
-// looks like every other tab's landing.
-// A hidden room never gets here: it renders nothing (wallPlanFor).
-export function sectionHeader(label, sub, { key = null, dayKey = null, onOpen = null, aria = null } = {}) {
-  const h = mk(onOpen ? 'button' : 'div', `sec-head${dayKey ? ' tab' : ''}`);
-  if (key) h.dataset.section = key;
-  if (dayKey) h.dataset.day = dayKey;
-  h.append(
-    mk('span', 'sec-label', String(label).toUpperCase()),
-    mk('span', 'sec-sub', sub || ''),
-    mk('span', 'sec-line'),
-  );
+// THE head every room on the wall wears — one line that names when, then what
+// (Kevin, 2026-09-23: "combine the double lines (for day and then event) into
+// one line each like 'Sat Portola' 'Sat Afters'"). Before it, a day was two
+// kinds of line stacked — a day rule, then a header per room — and Portola's
+// Thursday took two lines to say one thing.
+//
+//   .room-head   > .name (.wd "SAT" + " " + .label "PORTOLA") · .sub · .line
+//
+// The sub is the room's own ("Pier 80"), led by the date only on a day's FIRST
+// head — whichever room renders first, so hiding the festival hands the date
+// to SAT AFTERS (renderComposed decides it, per render). A head that opens a
+// thread is a button — that is where its 44px floor comes from — and the
+// thread is where you are standing (MODEL-V4 §3a.3); a head that opens nothing
+// is a div with the same look. It never folds its room (§3a.2): no chevron,
+// no aria-expanded, no "<n> shows" — the show menu is the one way to hide a
+// part of the week, and a hidden room never gets here.
+function roomHead({ weekday = null, label, sub = '', onOpen = null, aria = null }) {
+  const h = mk(onOpen ? 'button' : 'div', 'room-head');
+  const name = mk('span', 'name');
+  if (weekday) name.append(mk('span', 'wd', weekday), ' ');
+  name.append(mk('span', 'label', String(label).toUpperCase()));
+  h.append(name, mk('span', 'sub', sub || ''), mk('span', 'line'));
   if (onOpen) {
     h.type = 'button';
     h.setAttribute('aria-label', `Notes for ${aria || label}`);
     h.addEventListener('click', onOpen);
   }
   return h;
+}
+const joinSub = (...parts) => parts.filter(Boolean).join(' · ');
+
+// The weekday a day's heads lead with: `SAT`. A day whose key names no weekday
+// and whose file gives none (a bare "Day 1") says its own label instead — the
+// head never guesses a weekday.
+const headWeekday = (day) => (day.wd ? day.wd : dayLabelParts(day.dayKey).head).toUpperCase();
+
+// The door to a DATE's notes, called what the axis calls that date: its own
+// head, unless two dates would answer to it (a two-weekend fest's two
+// Fridays), in which case the date says itself. One naming rule, decided once
+// in the shell, so the door, the sheet's title and the sheet's row can never
+// disagree. No date, no door: a label is not a date.
+function dateDoor(ctx, iso, fallback = null) {
+  if (!iso || !ctx.onOpenDayNotes) return null;
+  const label = dayTargetLabel(ctx, iso, fallback);
+  return { onOpen: () => ctx.onOpenDayNotes(iso, label), aria: label };
 }
 
 // A set whose stage is not one of the grid's columns is still the festival's
@@ -1167,13 +1624,28 @@ function renderComposed(root, ctx, fest, { model: plan, scheduled, festRoom }) {
   if (!scheduled && plan.looseNoDay.length) renderLineupGroup(root, '', plan.looseNoDay, ctx, fest);
 
   for (const day of plan.days) {
-    root.appendChild(dayRuleFor(day, ctx));
+    const block = dayBlock(day.key, day.iso);
+    const weekday = headWeekday(day);
+    // The date rides the day's FIRST head and no other, whichever room that
+    // turns out to be — so it is spent by the first head made, never assigned
+    // to a room by name.
+    let when = day.when;
+    const head = (label, ownSub, door) => {
+      const h = roomHead({ weekday, label, sub: joinSub(when, ownSub), ...(door || {}) });
+      when = '';
+      return h;
+    };
     // 1. the festival's own room: its timetable on a grid day, then anything
     //    of the festival's that is not on that grid; a lineup day's billing
-    //    has no venue and no clock, so it stays the day's card grid.
+    //    has no venue and no clock, so it stays the day's card grid. On a
+    //    date, its head IS the door to that date's notes — the bare ISO, the
+    //    thread the day line used to open: on a Portola Saturday the date and
+    //    the festival's day are the same thing (spec 2026-09-23).
     if (festRoom && (day.grid || day.billing)) {
       const room = roomBlock(FEST_ROOM);
-      room.appendChild(sectionHeader(fest.name, festRoomSub(fest), { key: FEST_ROOM }));
+      const door = dateDoor(ctx, day.iso, dayLabelParts(day.dayKey).head);
+      room.appendChild(head(fest.name, festRoomSub(fest), door));
+      if (door) dayNoteWhisper(room, day.iso, door.aria, ctx);
       if (day.grid) {
         const extras = festRoomExtras(fest, day, layout);
         renderScheduledDayBody(room, day.dayKey, ctx, layout, day.weekend, { strip: true });
@@ -1181,31 +1653,32 @@ function renderComposed(root, ctx, fest, { model: plan, scheduled, festRoom }) {
       } else {
         renderCardGrid(room, day.billing, ctx, { day: day.dayKey });
       }
-      root.appendChild(room);
+      block.appendChild(room);
     }
-    // 2. each section that plays that night.
+    // 2. each section that plays that night. Its head on THIS day is the door
+    //    to that night's thread (§3a.3): Folsom on Friday, not Folsom, and not
+    //    Friday — even when it is the day's first head and carries the date. A
+    //    date with no festival room (Portola's Thursday) has no bare-date door;
+    //    a note already written there is still in the all-notes sheet.
     for (const sec of plan.sections) {
       const list = sec.byDay.get(day.key);
       if (!list) continue;
       const room = roomBlock(sec.key);
-      // The section's header on THIS day is the door to that night's thread
-      // (§3a.3): Folsom on Friday, not Folsom, and not Friday.
       const target = day.iso && ctx.onOpenDayNotes ? model.sectionDateKey(day.iso, sec.key) : null;
       const label = target ? dayTargetLabel(ctx, target, dayLabelParts(day.dayKey).head) : null;
-      room.appendChild(sectionHeader(sec.label, sectionSub(fest, sec), {
-        key: sec.key,
-        onOpen: target ? () => ctx.onOpenDayNotes(target, label) : null,
-        aria: label,
-      }));
+      room.appendChild(head(sec.label, sectionSub(fest, sec), target ? { onOpen: () => ctx.onOpenDayNotes(target, label), aria: label } : null));
       if (target) dayNoteWhisper(room, target, label, ctx);
       venueGroups(room, list, ctx, { day, fest });
-      root.appendChild(room);
+      block.appendChild(room);
     }
+    root.appendChild(block);
   }
 
   // The tabs that hang off the end: a dated section (ACL's Late nights), and
   // any section whose entries never said which night.
   for (const extra of plan.extras) renderExtra(root, ctx, fest, extra);
+
+  if (nothingVisible({ model: plan })) allHiddenNotice(root, fest);
 
   // A scheduled fest's day-less names that sit on no grid.
   if (scheduled && plan.looseNoDay.length) {
@@ -1219,34 +1692,17 @@ function renderComposed(root, ctx, fest, { model: plan, scheduled, festRoom }) {
   positionNowMarks(root, ctx.now || new Date());
 }
 
-// The newest note on a day target, under the thing that named it. Every day
-// note the wall opens is keyed by where you were standing (MODEL-V4 §4, §3a.3)
-// — the DATE under a day's rule, `<iso>|<section>` under a section's header on
-// that day — so this is the one place a key is chosen. A note written under the
-// old weekday label still belongs to the date's conversation; mapping it on the
-// way in is the notes layer's job (notes.js, model.js).
+// The newest note on a day target, pinned directly under the head that opens
+// it. Every day note the wall opens is keyed by where you were standing
+// (MODEL-V4 §4, §3a.3) — the DATE under the festival's head on that date (or a
+// dated section's head on its date), `<iso>|<section>` under a section's head
+// on that day — so the wall is the one place a key is chosen. A note written
+// under the old weekday label still belongs to the date's conversation;
+// mapping it on the way in is the notes layer's job (notes.js, model.js).
 function dayNoteWhisper(root, target, label, ctx) {
   if (!ctx.onOpenDayNotes) return;
   const w = dayWhisper(target, label, ctx, () => ctx.onOpenDayNotes(target, label));
   if (w) root.appendChild(w);
-}
-
-// A day's rule — the door to that date's notes — and the newest note under it.
-// A day the file gives no date has no door: a label is not a date.
-function dayRuleFor(day, ctx) {
-  const head = dayLabelParts(day.dayKey).head;
-  // What this date is CALLED — the rule's own head, unless the axis says two
-  // dates would answer to it (a two-weekend fest's two Fridays), in which case
-  // it says the date. One naming rule, decided once in the shell, so the door,
-  // the sheet's title and the sheet's row can never disagree.
-  const label = day.iso ? dayTargetLabel(ctx, day.iso, head) : head;
-  const open = day.iso && ctx.onOpenDayNotes ? () => ctx.onOpenDayNotes(day.iso, label) : null;
-  const rule = dayHeader(head, day.sub, { dayKey: day.key, onOpen: open, aria: label });
-  if (day.iso) rule.dataset.iso = day.iso; // the day-of open lands here before doors
-  const frag = document.createDocumentFragment();
-  frag.appendChild(rule);
-  if (day.iso) dayNoteWhisper(frag, day.iso, label, ctx);
-  return frag;
 }
 
 // A section's own sub line, when the file gives it one.
@@ -1255,33 +1711,36 @@ function sectionSub(fest, sec) {
   return meta.sub || '';
 }
 
-// A tab off the end of the week (MODEL-V4 §2), and a ROOM like any other: one
-// header — so the show menu can name it and the tab lands on it — holding
-// either a `.date-rule` per date with its venue groups under it, or, for a
-// section whose entries never said when, one set of venue groups. The header
-// carries no note door; each date inside it does.
+// A tab off the end of the week (MODEL-V4 §2), in the block the tab lands on.
+// A dated section (ACL's Late nights) is a room ON each of its dates — one
+// head per date, `TUE LATE NIGHTS  Sep 29 · around Austin`, each the first
+// head of its date and the door to that date's notes (the bare ISO, as the
+// date rule it replaced) — so the tab lands on its first date. The section
+// itself has no head: its label is not a note target, and a head over the
+// heads was the second line this change exists to remove. A section whose
+// entries never said when is one room under a head with no weekday: it has no
+// day to name.
 function renderExtra(root, ctx, fest, extra) {
-  const room = roomBlock(extra.key);
-  room.appendChild(sectionHeader(extra.label, extra.sub || '', { key: extra.key, dayKey: extra.key }));
-  root.appendChild(room);
-  if (!extra.byDate) { venueGroups(room, extra.entries || [], ctx, { fest }); return; }
-  for (const [iso, list] of extra.byDate) {
-    // A date rule inside a dated section is that tab's day rule, so it is the
-    // same door: tap it, and you are writing on that date.
-    const label = dayTargetLabel(ctx, iso);
-    const open = ctx.onOpenDayNotes ? () => ctx.onOpenDayNotes(iso, label) : null;
-    const dateRule = mk(open ? 'button' : 'div', 'date-rule');
-    if (open) {
-      dateRule.type = 'button';
-      dateRule.setAttribute('aria-label', `Notes for ${label}`);
-      dateRule.addEventListener('click', open);
+  const block = dayBlock(extra.key);
+  const ownSub = sectionSub(fest, extra);
+  if (!extra.byDate) {
+    const room = roomBlock(extra.key);
+    room.appendChild(roomHead({ label: extra.label, sub: ownSub }));
+    venueGroups(room, extra.entries || [], ctx, { fest });
+    block.appendChild(room);
+  } else {
+    for (const [iso, list] of extra.byDate) {
+      const room = roomBlock(extra.key);
+      room.dataset.iso = iso; // the day-of open lands here when tonight is one of these dates
+      const door = dateDoor(ctx, iso);
+      const wd = weekdayOfIso(iso);
+      room.appendChild(roomHead({ weekday: wd ? wd.toUpperCase() : null, label: extra.label, sub: joinSub(shortDate(iso), ownSub), ...(door || {}) }));
+      if (door) dayNoteWhisper(room, iso, door.aria, ctx);
+      venueGroups(room, list, ctx, { day: { iso }, fest });
+      block.appendChild(room);
     }
-    dateRule.dataset.iso = iso;
-    dateRule.append(mk('span', 'd', dateRuleLabel(iso)), mk('span', 'line'));
-    room.appendChild(dateRule);
-    dayNoteWhisper(room, iso, label, ctx);
-    venueGroups(room, list, ctx, { day: { iso }, fest });
   }
+  root.appendChild(block);
 }
 
 // ---- the wall ------------------------------------------------------------------
@@ -1332,6 +1791,7 @@ export function renderWall(root, ctx) {
   teardowns.delete(root);
   renderWallInner(root, ctx);
   restoreEphemera(root, ephemera);
+  sweepFit(); // the cards this render replaced stop being watched
 }
 
 function renderWallInner(root, ctx) {
@@ -1361,14 +1821,17 @@ function renderWallInner(root, ctx) {
     // the selected people did not pick (renderCard), the same as on the wall.
     const wanted = (name) => name.toLowerCase().includes(q);
     const plan = wallPlanFor(fest, ctx);
-    const answers = (cards, label, sub, opts) => {
+    // A search is a LIST: each answer group is a list head over a card grid,
+    // and a day's groups sit in the block its tab lands on (dayBlock).
+    const answers = (host, cards, label, sub) => {
       if (!cards.length) return false;
-      root.appendChild(dayHeader(label, sub, opts));
+      host.appendChild(listHead(label, sub));
       const grid = mk('div', 'wall-grid');
       for (const c of cards) grid.appendChild(c);
-      root.appendChild(grid);
+      host.appendChild(grid);
       return true;
     };
+    const answered = (block, hit) => { if (hit) root.appendChild(block); return hit; };
     let any = false;
     // The plan is the visible week (wallPlanFor applies the fold), so a
     // hidden part never answers a search either.
@@ -1393,29 +1856,36 @@ function renderWallInner(root, ctx) {
       for (const a of dedupeByCard([...billed, ...rooms].filter((a) => wanted(a.name)), occHere)) {
         cards.push(renderCard(a.name, ctx, { time: lineupSubLabel(a), occ: occHere(a) }));
       }
-      any = answers(cards, dayLabelParts(day.dayKey).head, day.sub, { dayKey: day.key }) || any;
+      const block = dayBlock(day.key);
+      any = answered(block, answers(block, cards, dayLabelParts(day.dayKey).head, day.sub)) || any;
     }
     // A dated section's answers sit under their dates too — the date leads and
-    // the section is the aside, because days are the days. Every one of them
-    // carries the section's key: they are all the one tab, and a jump lands on
-    // the first that answered.
+    // the section is the aside, because days are the days. They are all the
+    // one tab, so they share its one block, and a jump lands on the first date
+    // that answered.
     for (const extra of (plan ? plan.model.extras : [])) {
+      const block = dayBlock(extra.key);
+      let hit = false;
       for (const [iso, list] of (extra.byDate || new Map([[null, extra.entries || []]]))) {
         const cards = list.filter((a) => wanted(a.name))
           .map((a) => renderCard(a.name, ctx, { time: lineupSubLabel(a), occ: occOf(a) }));
-        any = answers(cards, iso ? dateRuleLabel(iso) : extra.label,
-          iso ? extra.label.toUpperCase() : (extra.sub || ''), { dayKey: extra.key }) || any;
+        hit = answers(block, cards, iso ? dateRuleLabel(iso) : extra.label,
+          iso ? extra.label.toUpperCase() : (extra.sub || '')) || hit;
       }
+      any = answered(block, hit) || any;
     }
-    // Names the festival bills on no day at all.
+    // Names the festival bills on no day at all — not a tab, so no block.
     if (plan) {
       const onAnyGrid = new Set();
       for (const d of plan.model.days) if (d.grid) for (const a of state.getDayArtists(d.dayKey, d.weekend)) onAnyGrid.add(a.name);
       const loose = dedupeByCard(plan.model.looseNoDay.filter((a) => !onAnyGrid.has(a.name) && wanted(a.name)));
-      any = answers(loose.map((a) => renderCard(a.name, ctx, { time: lineupSubLabel(a), occ: occOf(a) })),
-        'EVERYTHING ELSE', 'NO SET TIME YET', {}) || any;
+      any = answers(root, loose.map((a) => renderCard(a.name, ctx, { time: lineupSubLabel(a), occ: occOf(a) })),
+        'EVERYTHING ELSE', 'NO SET TIME YET') || any;
     }
-    if (!any) {
+    // Nothing answered because nothing is SHOWN: say that, not "no match" —
+    // the artist is hidden, not missing.
+    if (!any && nothingVisible(plan)) allHiddenNotice(root, fest);
+    else if (!any) {
       const empty = document.createElement('div');
       empty.style.cssText = 'color: var(--text-tertiary); font-size: 12px; font-weight: 600; text-align: center; padding: 30px 0;';
       empty.textContent = 'No artists match — try fewer letters.';
@@ -1451,7 +1921,7 @@ function festNotesFoot(root, ctx, fest, { invite = false } = {}) {
   if (!ctx.onOpenFestNotes) return;
   const has = model.noteCount(state.crewDoc, ctx.fid, 'fest', null) > 0;
   if (!has && !invite) return;
-  root.appendChild(dayHeader(`NOTES · ${fest.name.toUpperCase()}`, ''));
+  root.appendChild(listHead(`NOTES · ${fest.name.toUpperCase()}`, ''));
   const w = festWhisper(ctx, () => ctx.onOpenFestNotes());
   if (w) { root.appendChild(w); return; }
   const add = document.createElement('button');
@@ -1503,13 +1973,13 @@ export function showUndoToast(container, message, onUndo) {
 }
 
 // ---- day-nav scrollspy ------------------------------------------------------------
-// Where a day tab lands: a day rule, or the room header of a dated section,
-// which is a room and a tab at once. Never a grid scroller — that carries
-// data-day to name its own day.
-export const DAY_ANCHOR = '.day-rule[data-day], .sec-head[data-day]';
-// How far below --jump-offset a day rule may sit and still be the day you are
-// standing in. A jump lands its rule AT the offset on Chromium and about 24px
-// below it on WebKit; both are the same arrival.
+// Where a day tab lands: its day's block (dayBlock) — on the wall, in a
+// search, and for a tab off the end of the week alike. Never a grid scroller,
+// which carries data-day to name its own day.
+export const DAY_ANCHOR = '.day-block[data-day]';
+// How far below --jump-offset a day's block may sit and still be the day you
+// are standing in. A jump lands its block AT the offset on Chromium and about
+// 24px below it on WebKit; both are the same arrival.
 const LANDED_WITHIN = 32;
 // One rule drives every tab container (mobile dock + desktop rail): the
 // active day is a single fact rendered in two places.
@@ -1518,11 +1988,11 @@ export function wireScrollspy(containers, wallRoot) {
   const tabs = list.flatMap((c) => [...c.querySelectorAll('.day-tab')]);
   if (!tabs.length) return () => {};
   const tabDays = new Set(tabs.map((t) => t.dataset.day));
-  // Read ONLY headers that correspond to a tab — the NOTES/EVERYTHING-ELSE
-  // pseudo-headers share dayHeader() anatomy and used to de-highlight every
-  // tab when they scrolled past (audit 1.3). A tab's landing is a day
-  // rule, or the room header of a dated section, which is a room AND a tab —
-  // and NOT a grid scroller, which carries data-day for its own reasons.
+  // Read ONLY the blocks that correspond to a tab — the NOTES / EVERYTHING
+  // ELSE pseudo-headers used to de-highlight every tab when they scrolled past
+  // (audit 1.3), and they are not blocks now at all. A tab's landing is its
+  // day's block (a tab off the end of the week has one too) — and NOT a grid
+  // scroller, which carries data-day for its own reasons.
   const headers = [...wallRoot.querySelectorAll(DAY_ANCHOR)]
     .filter((h) => tabDays.has(h.dataset.day));
   // A tab row that cannot fit its days scrolls, and the day you are standing
@@ -1559,9 +2029,9 @@ export function wireScrollspy(containers, wallRoot) {
   markOverflow();
   for (const c of list) c.addEventListener('scroll', markOverflow, { passive: true });
 
-  // ONE authority, and it is geometry: the active day is the last day-rule you
-  // have scrolled past. rAF-throttled, and it reads the same --jump-offset the
-  // day-tab jump lands against, so the two agree.
+  // ONE authority, and it is geometry: the active day is the last day block
+  // whose top you have scrolled past. rAF-throttled, and it reads the same
+  // --jump-offset the day-tab jump lands against, so the two agree.
   //
   // There used to be an IntersectionObserver beside this, selecting any header
   // that entered a band at 10–20% of the viewport. It came first, and the
@@ -1582,10 +2052,10 @@ export function wireScrollspy(containers, wallRoot) {
     const offset = parseFloat(
       getComputedStyle(document.documentElement).getPropertyValue('--jump-offset'),
     ) || 8;
-    // The tolerance is not slop: a jump parks its rule NEAR the offset, and
+    // The tolerance is not slop: a jump parks its block NEAR the offset, and
     // WebKit parks it ~24px below where Chromium lands it exactly — so an
     // at-or-above test lit the day ABOVE the one filling the screen, on the
-    // iPhone only (real-browser walk, 2026-09-17). A rule this close is the
+    // iPhone only (real-browser walk, 2026-09-17). A block this close is the
     // day you are in, on every engine.
     let current = headers[0];
     for (const h of headers) {
@@ -1617,7 +2087,7 @@ export function wireScrollspy(containers, wallRoot) {
   };
   window.addEventListener('scroll', onScroll, { passive: true });
   // A resize moves both facts this row shows: which tabs fit it, and where the
-  // day rules sit under a --jump-offset the sticky chrome has just remeasured.
+  // day blocks sit under a --jump-offset the sticky chrome has just remeasured.
   // A phone's URL bar sliding away is a resize, and it must not leave the row
   // naming a day you scrolled past three screens ago.
   const onResize = () => { markOverflow(); syncFromGeometry(); };

@@ -10,12 +10,14 @@
 // colorIndexOf and roomOf) is the same safe shape notes.js already uses.
 import * as state from '../state.js';
 import * as model from './model.js';
-import { ordered, auraBackground, nameColor, subColor } from './aura.js';
+import { ordered, auraBackground, auraLayers, nameColor, subColor } from './aura.js';
+import { LEVEL_LABELS_V4 } from '../parse.js';
 import { hslOf } from './palette.js';
 import { colorIndexOf, roomOf } from './wall.js';
 import { record } from '../errlog.js';
-import { runFactsOf, findEventEntry, shortDateLabel, dateOf, venueOf } from './events.js';
+import { runFactsOf, findEventEntry, shortDateLabel, shortDate, dateOf, venueOf, isCancelled, cancelledNames } from './events.js';
 import { GROW_MS, CONTENT_FADE_MS, OUT_MS, CASCADE_MS, STAGGER_MS, REFRESH_MS, EASE_ARRIVE, EASE_LEAVE, EASE_SURFACE, canAnimate } from './motion.js';
+import { whoSnapshot, whoMotion, whoSettle } from './who-motion.js';
 
 // "9:00 PM - 10:15 PM" -> "9:00 – 10:15 PM" (the shared meridiem said once).
 export function timeRange(t) {
@@ -52,7 +54,10 @@ export function factsFor(artistName, ctx, occ = null) {
       if (hit) { day = d; stage = hit.stage || null; time = hit.time || null; break; }
     }
     if (!time) {
-      const a = (fest.artists || []).find((x) => x.name === artistName);
+      // A live entry before a cancelled one: with no occurrence to ask, the
+      // facts must not describe a called-off slot as if it were on.
+      const named = (fest.artists || []).filter((x) => x.name === artistName);
+      const a = named.find((x) => !isCancelled(x)) || named[0];
       if (a) { day = a.day || day; stage = a.stage || stage; time = a.time || time; date = dateOf(a) || date; venue = venueOf(a) || venue; }
     }
   }
@@ -70,7 +75,20 @@ export function factsFor(artistName, ctx, occ = null) {
   // looked up by day + stage + time, never by name alone, because in Portola
   // a name can be a grid billing AND an event — says whether its time is a
   // guess, the room's real window, and where it sits in the order.
-  const run = occ ? runFactsOf(findEventEntry(fest, artistName, occ)) : null;
+  const entry = occ ? findEventEntry(fest, artistName, occ) : null;
+  // A cancelled act (2026-09-23): the entry this card IS says so — or, with
+  // no occurrence to ask (a list that only knows the name), the name has
+  // nothing left anywhere (events.js cancelledNames). A cancelled card has
+  // no run and no clock: it is not happening at any time.
+  const offEntry = isCancelled(entry) ? entry
+    : !occ && cancelledNames(fest).has(artistName) ? (fest.artists || []).find((a) => a.name === artistName && isCancelled(a)) : null;
+  const cancelled = offEntry ? {
+    text: `Announced ${shortDate(offEntry.cancelled.on)}`,
+    url: typeof offEntry.cancelled.source === 'string' && /^https:\/\//.test(offEntry.cancelled.source) ? offEntry.cancelled.source : null,
+    note: typeof offEntry.cancelled.note === 'string' ? offEntry.cancelled.note : null,
+  } : null;
+  const run = occ && !cancelled ? runFactsOf(entry) : null;
+  if (cancelled) time = null;
   // The long form: when · day · where · which weekend. For a run member the
   // clock in WHEN is the venue's window, not the guessed slot (LOCKED copy,
   // Kevin 2026-09-01: "Sun · Runs 10 PM – 2 AM", then the order on its own
@@ -98,6 +116,8 @@ export function factsFor(artistName, ctx, occ = null) {
     when = [timeRange(time), day ? shortDay(fest, day) : null].filter(Boolean).join(' · ');
     where = venue || stage || '';
   }
+  // Cancelled leads WHEN, where the clock would be: "Cancelled · Sat".
+  if (cancelled) when = ['Cancelled', when].filter(Boolean).join(' · ');
   // The weekend rides WHEN as plain text — a tag at the row's end read as the
   // resting chip flipping sides (Kevin, 2026-08-30); words don't flip.
   if (weekend) when = [when, weekend].filter(Boolean).join(' · ');
@@ -106,28 +126,144 @@ export function factsFor(artistName, ctx, occ = null) {
     name: artistName, day, stage, time, weekend, when, where, mapUrl,
     approx: !!(run && run.approx),
     order: run && run.orderText ? { text: run.orderText, url: run.orderUrl, confirmed: run.confirmed } : null,
+    cancelled,
     people, background, animated, nameColor: nameColor(people), subColor: subColor(people),
     noteCount: model.noteCount(state.crewDoc, ctx.fid, 'artist', artistName),
     spotify,
   };
 }
 
-// The who-row: borderless washes, You capitalised like a name, MUST on the
-// baseline. Same pills at both sizes — the sheet header only scales them.
+// The who-row: how much everyone wants this set (Kevin, 2026-09-23 — "cool
+// blended chips if multiple people have the same vote ... in a wrapping row
+// rather than a stack", then "aura and names: best mix of style and clarity").
+// ONE chip per level anyone chose — MUST, then three bars, two, one — loudest
+// first, in one wrapping row, so a crew of fifteen is at most four chips, not
+// fifteen pills. Inside a chip: the card meter's own glyph (the same bars and
+// the same MUST as wall.js meterChip, one set of CSS), then first names — You
+// first when you are in it, the others alphabetically, two at most, then
+// "+n". The fill is the card's
+// own aura mix of the people at that level (aura.js auraLayers) over a scrim;
+// one person alone is just their colour. The chip you are in wears `.you` (the
+// white edge that means you everywhere). Every chip keeps `.f-pill` and says
+// its level in `data-level`: the bloom cascade finds the chips as it found the
+// pills, and the refresh matches a chip across a pick by its level (partKey),
+// so a chip that stays slides and a level that appears grows in.
+// Canvas and the rounds that led here: claude-plans/2026-09-23-rating-canvas.
+const CHIP_NAMES = 2;
+const listOf = (names) => (names.length < 2 ? names.join('') : `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`);
+const firstWord = (name) => name.trim().split(/\s+/)[0];
+// A first name, unless another member of the crew starts with the same word
+// ("Drew Smith" and "Drew Jones"): then the whole name, which the 7em cap
+// still ellipsizes. Compared by NAME, never by object — the people handed in
+// here are rebuilt per render (aura.initialFor's identity trap).
+const shownName = (p, crew) => {
+  if (p.isYou) return 'You';
+  const first = firstWord(p.name);
+  const shared = crew.some((n) => n !== p.name && firstWord(n).toLowerCase() === first.toLowerCase());
+  return shared ? p.name.trim() : first;
+};
+// `crew`: every active member's name (whose first words could collide);
+// defaults to the pickers themselves.
+export function whoChips(people, crew = people.map((p) => p.name)) {
+  const chips = [];
+  for (const level of [4, 3, 2, 1]) {
+    const here = people.filter((p) => p.level === level);
+    if (!here.length) continue;
+    // You lead your own chip; everyone else alphabetically. NOT the doc's
+    // order: the crew doc is Postgres jsonb, which stores keys shortest-first,
+    // so "the order they picked in" is not what arrives — and a local pick
+    // and the server's echo would disagree, swapping names under your eyes.
+    const others = here.filter((p) => !p.isYou).sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+    const members = [...here.filter((p) => p.isYou), ...others];
+    chips.push({
+      level,
+      members,
+      you: members.some((p) => p.isYou),
+      names: members.slice(0, CHIP_NAMES).map((p) => shownName(p, crew)),
+      more: Math.max(0, members.length - CHIP_NAMES),
+      label: `${LEVEL_LABELS_V4[level]}: ${listOf(members.map((p) => (p.isYou ? 'You' : p.name)))}`,
+    });
+  }
+  return chips;
+}
+// --page (#0C0A14) at .28: the aura layers fade to transparent at their edges,
+// and a chip sits on the grown card's own aura, so its body needs a little
+// ground of its own for the names to read.
+const CHIP_SCRIM = 'rgba(12, 10, 20, .28)';
+// One person alone is their own colour, as bright as their level — the
+// aura's own step up (.5/.75/1 for picks, 1 for must), set a notch softer and
+// over the same scrim as a blend, so white names read on the lightest hues
+// (amber, lime, aqua): a tap that carries a chip from ×2 to ×3 deepens it.
+const SOLO_ALPHA = { 1: 0.45, 2: 0.6, 3: 0.72, 4: 0.85 };
+function levelGlyph(level) {
+  const g = document.createElement('span');
+  g.setAttribute('aria-hidden', 'true');
+  if (level === 4) {
+    g.className = 'must';
+    g.textContent = 'MUST';
+    return g;
+  }
+  g.className = 'bars';
+  for (let i = 1; i <= 3; i++) {
+    const b = document.createElement('span');
+    b.className = 'bar' + (i <= level ? ' on' : '');
+    g.appendChild(b);
+  }
+  return g;
+}
 export function whoPills(facts) {
   const row = document.createElement('div');
   row.className = 'f-who';
-  for (const p of facts.people) {
-    const w = document.createElement('span');
-    w.className = 'f-pill' + (p.isYou ? ' you' : '');
-    w.style.background = hslOf(p.colorIndex, 0.42);
-    w.append(p.isYou ? 'You' : p.name);
-    if (p.level === 4) {
-      const b = document.createElement('b');
-      b.textContent = 'MUST';
-      w.appendChild(b);
+  row.setAttribute('role', 'list');
+  let crew;
+  try { crew = state.activePeople().map(([n]) => n); } catch { crew = facts.people.map((p) => p.name); }
+  for (const chip of whoChips(facts.people, crew)) {
+    const c = document.createElement('span');
+    c.className = 'f-pill' + (chip.you ? ' you' : '');
+    c.dataset.level = String(chip.level);
+    // Who is in it — the refresh's motion reads this to tell a chip you
+    // joined from one you left (who-motion.js). Names, never tokens.
+    c.dataset.people = JSON.stringify(chip.members.map((p) => p.name));
+    c.setAttribute('role', 'listitem');
+    c.setAttribute('aria-label', chip.label);
+    // The fill is its own layer, under the glyph and the names, so a chip's
+    // width can change as the fill's scale (who-motion.js) without ever
+    // stretching a name — and so the fill, not a fact, is the one thing
+    // that may crossfade.
+    const fill = document.createElement('span');
+    fill.className = 'f-fill';
+    fill.setAttribute('aria-hidden', 'true');
+    const solo = hslOf(chip.members[0].colorIndex, SOLO_ALPHA[chip.level]);
+    fill.style.background = chip.members.length === 1
+      ? `linear-gradient(${solo}, ${solo}), ${CHIP_SCRIM}`
+      : `${auraLayers(chip.members)}, ${CHIP_SCRIM}`;
+    const names = document.createElement('span');
+    names.className = 'f-names';
+    names.setAttribute('aria-hidden', 'true');
+    chip.names.forEach((n, i) => {
+      if (i) {
+        const dot = document.createElement('span');
+        dot.className = 'f-sep';
+        dot.textContent = '·';
+        names.appendChild(dot);
+      }
+      const who = chip.members[i];
+      const nm = document.createElement('span');
+      nm.className = 'f-nm' + (who.isYou ? ' you' : '');
+      nm.dataset.person = who.name; // a name moves as itself across chips (who-motion.js)
+      nm.dataset.color = hslOf(who.colorIndex, 0.6); // the bud under it when it crosses
+      nm.textContent = n;
+      names.appendChild(nm);
+    });
+    if (chip.more) {
+      const more = document.createElement('span');
+      more.className = 'f-more';
+      more.dataset.level = String(chip.level);
+      more.textContent = `+${chip.more}`;
+      names.appendChild(more);
     }
-    row.appendChild(w);
+    c.append(fill, levelGlyph(chip.level), names);
+    row.appendChild(c);
   }
   return row;
 }
@@ -228,19 +364,22 @@ export function festPlaceLine(fest, className = 'fest-place') {
 // DOOR to the poster or ticket page the order came from, the way a venue is
 // a door to its map (same discipline: the click stops here, never a pick).
 // Once the venue posts the order the word goes and the door stays.
-function orderDoor(order) {
-  const w = document.createElement(order.url ? 'a' : 'span');
-  w.className = 'f-order';
-  if (order.url) {
-    w.href = order.url;
+// The cancellation's "Announced Sep 21" is the same kind of door, to the
+// report it came from.
+function sourceDoor({ text, url }, className, why) {
+  const w = document.createElement(url ? 'a' : 'span');
+  w.className = className;
+  if (url) {
+    w.href = url;
     w.target = '_blank';
     w.rel = 'noopener';
-    w.setAttribute('aria-label', `${order.text} — open where the order came from`);
+    w.setAttribute('aria-label', `${text} — ${why}`);
     w.addEventListener('click', (e) => e.stopPropagation());
   }
-  w.textContent = order.text;
+  w.textContent = text;
   return w;
 }
+const orderDoor = (order) => sourceDoor(order, 'f-order', 'open where the order came from');
 
 function grownBlock(facts, { onOpenNotes = null, notesChip = true } = {}) {
   const grown = document.createElement('div');
@@ -248,7 +387,22 @@ function grownBlock(facts, { onOpenNotes = null, notesChip = true } = {}) {
   if (facts.when) {
     const sub = document.createElement('div');
     sub.className = 'f-sub';
-    if (facts.order) {
+    if (facts.cancelled) {
+      // Cancelled, then when it was announced (a door to the report), then
+      // what happened around it — in ONE .f-sub, like a run's two lines, so
+      // the bloom and the refresh move it as one piece.
+      sub.classList.add('f-stack');
+      const line = document.createElement('span');
+      line.className = 'f-when';
+      line.textContent = facts.when;
+      sub.append(line, sourceDoor(facts.cancelled, 'f-cancel', 'open the report'));
+      if (facts.cancelled.note) {
+        const note = document.createElement('span');
+        note.className = 'f-note';
+        note.textContent = facts.cancelled.note;
+        sub.appendChild(note);
+      }
+    } else if (facts.order) {
       // Two lines in ONE .f-sub (the window, then the order): the bloom's
       // cascade and the refresh bookkeeping below both key on a single
       // WHEN element, so the pair travels as one piece.
@@ -283,7 +437,7 @@ function grownBlock(facts, { onOpenNotes = null, notesChip = true } = {}) {
 // caught on the 2026-08-30 preview.)
 function factsCard(facts, { className, onClose = null, onOpenNotes = null, notesChip = true }) {
   const card = document.createElement('div');
-  card.className = className + (facts.animated ? ' animated' : '');
+  card.className = className + (facts.animated ? ' animated' : '') + (facts.cancelled ? ' cancelled' : '');
   card.style.background = facts.background;
   const grain = document.createElement('span');
   grain.className = 'card-grain';
@@ -297,7 +451,7 @@ function factsCard(facts, { className, onClose = null, onOpenNotes = null, notes
     card.appendChild(close);
   }
   const name = document.createElement('div');
-  name.className = 'f-name';
+  name.className = 'f-name' + (facts.cancelled ? ' struck' : '');
   name.textContent = facts.name;
   card.appendChild(name);
   const grown = grownBlock(facts, { onOpenNotes, notesChip });
@@ -371,9 +525,35 @@ let lastMouse = null;
 // modifier (Cmd-Tab back into the window) says nothing and is ignored.
 let lastInput = 'pointer';
 const MODIFIER_KEYS = new Set(['Shift', 'Control', 'Alt', 'Meta', 'CapsLock', 'Fn', 'AltGraph', 'OS', 'Hyper', 'Super', 'Symbol', 'NumLock', 'ScrollLock']);
+// A finger leaves a GHOST of a mouse where it lifted (2026-09-23). WebKit
+// follows a touch tap with a click whose pointerType is "mouse", and when the
+// pick's refreshCard swaps a fresh card in under that spot, with trusted
+// mouse-type pointerover/pointerenter there — measured in Playwright's
+// WebKit, and the same family is on WebKit's tracker for iOS 26 (bug 214609,
+// comment 6). Hover intent believed them: the card you had just TAPPED grew
+// as a mouse zoom a phone can never hover out of, or whatever card scrolled
+// under the spot did (the meter walk's "wrong card"). So after a touch or pen
+// press, mouse events AT A SPOT A FINGER RECENTLY LANDED OR LIFTED arm
+// nothing — both points, because a real tap drifts a few px between the two,
+// and the last few taps, because one remembered point can be moved away from
+// where the engine's ghost still sits. A mouse that moves off them all, or
+// presses, is a hand again at once. A desktop never sees a finger, so never
+// meets this. tests/zoom-touch-ghost.test.mjs.
+let touchAt = [];
+const GHOST_SLOP = 3;   // px — a ghost reports a finger's point to the pixel; a hand arrives from elsewhere
+const GHOST_POINTS = 6; // the last three taps, landing and lift
+const ghostly = (e) => touchAt.some((p) => Math.hypot(e.clientX - p.x, e.clientY - p.y) <= GHOST_SLOP);
+const fingerAt = (e) => {
+  touchAt.push({ x: e.clientX, y: e.clientY });
+  if (touchAt.length > GHOST_POINTS) touchAt.shift();
+};
 if (typeof document !== 'undefined') {
   document.addEventListener('pointermove', (e) => {
     if (e.pointerType !== 'mouse') return;
+    if (touchAt.length) {
+      if (ghostly(e)) return; // the ghost is not where the mouse is
+      touchAt = [];
+    }
     lastMouse = { x: e.clientX, y: e.clientY };
     // The stay-away mark lifts the moment the mouse is over anything but the
     // card it put away — that card's node, the fresh node a repaint put in its
@@ -383,7 +563,12 @@ if (typeof document !== 'undefined') {
       if (cardKey(over) !== dismissedKey) dismissedKey = null;
     }
   }, { passive: true, capture: true });
-  document.addEventListener('pointerdown', () => { lastInput = 'pointer'; }, { passive: true, capture: true });
+  document.addEventListener('pointerdown', (e) => {
+    lastInput = 'pointer';
+    if (e.pointerType === 'mouse') touchAt = [];
+    else fingerAt(e);
+  }, { passive: true, capture: true });
+  document.addEventListener('pointerup', (e) => { if (e.pointerType !== 'mouse') fingerAt(e); }, { passive: true, capture: true });
   document.addEventListener('keydown', (e) => {
     if (typeof e.key === 'string' && e.key && !MODIFIER_KEYS.has(e.key)) lastInput = 'keyboard';
   }, { passive: true, capture: true });
@@ -465,14 +650,21 @@ function insetFor(r0, r1) {
 // bottom never move it — a card by the day rail grows where it is.
 function place(slot, el) {
   const r0 = rect(el);
+  // The overlay's own LAYOUT size, not its on-screen box: follow() re-places
+  // it on every scroll, including mid-bloom, when the box is still scaled
+  // down — and a scaled width centred it wrong and let the edge clamp pass a
+  // box that then grew past the screen (3px over at 320 wide, found by the
+  // zoom-chips browser contract, 2026-09-23). offsetWidth ignores transforms;
+  // jsdom has no layout (0), so the measured box stands in there.
   const b = rect(slot);
+  const w = slot.offsetWidth || b.width, h = slot.offsetHeight || b.height;
   const vw = window.innerWidth;
-  let left = Math.round(r0.left + r0.width / 2 - b.width / 2);
-  const top = Math.round(r0.top + r0.height / 2 - b.height / 2);
-  left = Math.max(8, Math.min(left, vw - 8 - b.width));
+  let left = Math.round(r0.left + r0.width / 2 - w / 2);
+  const top = Math.round(r0.top + r0.height / 2 - h / 2);
+  left = Math.max(8, Math.min(left, vw - 8 - w));
   slot.style.left = `${Number.isFinite(left) ? left : r0.left}px`;
   slot.style.top = `${Number.isFinite(top) ? top : r0.top}px`;
-  return { r0, r1: box(left, top, b.width, b.height) };
+  return { r0, r1: box(left, top, w, h) };
 }
 
 // The grown card's parts: a SURFACE (the wash and the border) under an
@@ -480,13 +672,13 @@ function place(slot, el) {
 // frame while the card is still blooming.
 function buildParts(z, facts) {
   const surface = document.createElement('div');
-  surface.className = 'z-surface' + (facts.animated ? ' animated' : '');
+  surface.className = 'z-surface' + (facts.animated ? ' animated' : '') + (facts.cancelled ? ' cancelled' : '');
   surface.style.background = facts.background;
   const grain = document.createElement('span');
   grain.className = 'card-grain';
   surface.appendChild(grain);
   const name = document.createElement('div');
-  name.className = 'f-name';
+  name.className = 'f-name' + (facts.cancelled ? ' struck' : '');
   name.textContent = facts.name;
   const grown = grownBlock(facts, { onOpenNotes: z.onOpenNotes });
   return [surface, name, grown];
@@ -495,7 +687,12 @@ function buildParts(z, facts) {
 // The overlay never grows smaller than the card it grows out of.
 function sizeSlot(slot, r0) {
   slot.style.minWidth = `${Math.max(MIN_W, Math.ceil(r0.width))}px`;
-  slot.style.maxWidth = `${Math.max(MAX_W, Math.ceil(r0.width))}px`;
+  // Never wider than the screen with its 8px margins (a 320px phone — an SE,
+  // or a mini under Display Zoom — lost the right 48px of a busy zoom), but
+  // never narrower than the card it grows out of. The viewport is the same
+  // read place() already makes; nothing inside the card is measured.
+  const vw = typeof window !== 'undefined' && window.innerWidth ? window.innerWidth - 16 : MAX_W;
+  slot.style.maxWidth = `${Math.max(Math.min(MAX_W, vw), Math.ceil(r0.width))}px`;
   slot.style.minHeight = `${Math.max(MIN_H, Math.ceil(r0.height))}px`;
 }
 
@@ -591,12 +788,13 @@ function zoomCardInner(el, artistName, ctx, { onOpenNotes = null, source = 'mous
 }
 
 // A pick while zoomed keeps the zoom: the person is resting on the card,
-// cycling to MUST while watching the pills. The fresh resting node takes the
+// cycling to MUST while watching the chips. The fresh resting node takes the
 // overlay's place underneath and the overlay's parts are rebuilt — and the
 // rebuild is itself a small event (Kevin, 2026-08-30: "it should again
 // animate in and slide things around"): the new wash fades in under the old,
-// the box re-centres, every piece that stayed slides to its new spot, a pill
-// that arrived grows in with a little overshoot, a MUST badge fades on.
+// the box re-centres, every piece that stayed slides to its new spot (a
+// who-chip is matched by its level), and a chip for a level that just
+// appeared grows in with a little overshoot.
 // Transform and opacity only, inside the overlay.
 //
 // WHICH parts move on a refresh; partKey below says HOW each is matched across
@@ -610,12 +808,15 @@ function zoomCardInner(el, artistName, ctx, { onOpenNotes = null, source = 'mous
 // scale. Using this constant there to "fix the inconsistency" would translate
 // the name on every zoom, against a stated design law, and the bloom test would
 // stay green while it happened.
-const REFRESH_PART_SEL = '.f-name, .f-sub, .f-where, .f-pill, .f-chip.notes, .f-chip.spot';
+// The who-row is NOT in this set: its chips split, merge and carry, and its
+// names move between them as themselves, so it reconciles itself
+// (who-motion.js, storyboard claude-plans/2026-09-23-zoom-chips-motion.md);
+// the refresh below only hands it a before-snapshot and keeps its animations.
+const REFRESH_PART_SEL = '.f-name, .f-sub, .f-where, .f-chip.notes, .f-chip.spot';
 function partKey(el) {
   if (el.classList.contains('f-name')) return 'name';
   if (el.classList.contains('f-sub')) return 'sub';
   if (el.classList.contains('f-where')) return 'where';
-  if (el.classList.contains('f-pill')) return `pill:${el.firstChild ? el.firstChild.textContent : ''}`;
   if (el.classList.contains('notes')) return 'notes';
   if (el.classList.contains('spot')) return 'spot';
   return null;
@@ -624,7 +825,7 @@ function snapshotParts(card) {
   const out = new Map();
   for (const el of card.querySelectorAll(REFRESH_PART_SEL)) {
     const k = partKey(el);
-    if (k) out.set(k, { rect: rect(el), must: !!el.querySelector('b') });
+    if (k) out.set(k, { rect: rect(el) });
   }
   return out;
 }
@@ -634,6 +835,7 @@ function refreshZoomInner(fresh, ctx) {
   const z = zoomed;
   for (const a of z.anims) { try { a.cancel(); } catch { /* finished */ } }
   z.anims = [];
+  whoSettle(z.card); // cancel reports a frame late; the snapshot below must read a settled row
   z.el.classList.remove('zoom-source');
   z.el = fresh;
   z.ctx = ctx;
@@ -644,6 +846,7 @@ function refreshZoomInner(fresh, ctx) {
   const animate = canAnimate(z.card, ctx);
   // READS: where everything was.
   const before = animate ? snapshotParts(z.card) : null;
+  const whoBefore = animate ? whoSnapshot(z.card) : null;
   const slotBefore = animate ? rect(z.slot) : null;
   const oldSurface = z.card.querySelector('.z-surface');
   // WRITES: the new parts, the box re-centred.
@@ -683,7 +886,7 @@ function refreshZoomInner(fresh, ctx) {
     ));
   }
   // Every piece: the ones that stayed slide from where they were; the ones
-  // that arrived grow in a beat later; a badge that appeared fades on.
+  // that arrived grow in a beat later.
   let arrivals = 0;
   for (const el of z.card.querySelectorAll(REFRESH_PART_SEL)) {
     const k = partKey(el);
@@ -694,8 +897,6 @@ function refreshZoomInner(fresh, ctx) {
       if (Math.abs(a.x - b.x) > 0.5 || Math.abs(a.y - b.y) > 0.5) {
         anims.push(el.animate([{ transform: `translate(${a.x - b.x}px, ${a.y - b.y}px)` }, { transform: 'none' }], { duration: REFRESH_MS, easing: EASE_ARRIVE }));
       }
-      const badge = el.querySelector('b');
-      if (badge && !was.must) anims.push(badge.animate([{ opacity: 0, transform: 'translateY(3px)' }, { opacity: 1, transform: 'translateY(1px)' }], { duration: REFRESH_MS, delay: 60, easing: EASE_ARRIVE, fill: 'both' }));
     } else if (!was) {
       anims.push(el.animate(
         [{ transform: 'scale(.55)', opacity: 0 }, { opacity: 1, offset: 0.45 }, { transform: 'none', opacity: 1 }],
@@ -704,6 +905,7 @@ function refreshZoomInner(fresh, ctx) {
       arrivals += 1;
     }
   }
+  anims.push(...whoMotion(z.card, whoBefore));
   z.anims = anims;
 }
 
@@ -1002,7 +1204,19 @@ export function wireCardZoom(el, artistName, ctx, { onOpenNotes = null, occ = nu
       if (el.isConnected) zoomCard(el, artistName, ctx, { onOpenNotes, source: 'mouse', occ });
     }, ZOOM_IN_MS);
   };
-  el.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse') arm(); });
+  // A finger's ghost entering arms nothing (`touchAt`), and a pointer already
+  // inside gets no second pointerenter — so when the ghost walked in, the
+  // first REAL move over the card is the hand's entry (a trackpad nudged on
+  // the card a finger just tapped still hovers it).
+  let ghosted = false;
+  el.addEventListener('pointerenter', (e) => {
+    if (e.pointerType !== 'mouse') return;
+    if (ghostly(e)) { ghosted = true; return; }
+    arm();
+  });
+  el.addEventListener('pointermove', (e) => {
+    if (ghosted && e.pointerType === 'mouse' && !ghostly(e)) { ghosted = false; arm(); }
+  }, { passive: true });
   // A card born UNDER a resting pointer never hears pointerenter — the wall
   // repaints on every sync echo and refreshCard swaps the node under a pick,
   // and the browser fires boundary events only on the next movement. The old
@@ -1013,12 +1227,14 @@ export function wireCardZoom(el, artistName, ctx, { onOpenNotes = null, occ = nu
   // :hover — Safari is notorious for stale :hover chains after DOM swaps,
   // and a stale match here would grow cards the pointer is nowhere near.
   requestAnimationFrame(() => {
-    if (!el.isConnected) return;
+    if (!el.isConnected || touchAt.length) return; // a finger was the last hand here, not a resting mouse
     const under = underMouse();
     if (under && el.contains(under)) arm();
   });
   el.addEventListener('pointerleave', (e) => {
-    if (e.pointerType === 'mouse' && inT) { clearTimeout(inT); inT = null; }
+    if (e.pointerType !== 'mouse') return;
+    ghosted = false;
+    if (inT) { clearTimeout(inT); inT = null; }
   });
 }
 

@@ -198,12 +198,14 @@ test('the wall gives an artist\'s two late nights two cards with two identities'
   assert.deepEqual(occs.map((o) => [o.date, o.venue]), [['2026-10-01', 'Stubb\'s'], ['2026-10-08', 'The Continental Club']]);
   // Each card comes back as itself.
   for (const [i, occ] of occs.entries()) assert.equal(cardFor(root, 'Jess Williamson', occ), cards[i]);
-  // And each is under its own date rule.
-  const dateOfCard = (card) => {
-    for (let n = card.closest('.venue-grid'); n; n = n.previousElementSibling) if (n.classList.contains('date-rule')) return n.dataset.iso;
-    return null;
-  };
+  // And each is under its own date's head — a room per date, its venue grid
+  // carrying the date the now mark reads.
+  const dateOfCard = (card) => card.closest('.venue-grid').dataset.iso;
   assert.deepEqual(cards.map(dateOfCard), ['2026-10-01', '2026-10-08']);
+  const headOfCard = (card) => card.closest('.room').querySelector(':scope > .room-head .name').textContent;
+  assert.deepEqual(cards.map(headOfCard), ['THU LATE NIGHTS', 'THU LATE NIGHTS'], 'two Thursdays, a week apart');
+  const subOfCard = (card) => card.closest('.room').querySelector(':scope > .room-head .sub').textContent;
+  assert.deepEqual(cards.map(subOfCard).map((s) => s.split(' · ')[0]), ['Oct 1', 'Oct 8'], 'and each head says which');
   // The zoom on each card reads its own room.
   const seen = cards.map((card) => {
     const occ = JSON.parse(card.dataset.occ);

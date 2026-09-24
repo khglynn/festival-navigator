@@ -106,10 +106,11 @@ test('Electric Forest: every day\'s activities are venue groups under that day\'
   assert.equal((layout.colsTemplate.match(/var\(--col-w\)/g) || []).length, layout.stages.length, 'columns are the stages, nothing more');
   assert.equal(root.querySelectorAll('.times-grid .venue-grid').length, 0, 'nothing off the clock inside a grid');
   // The groups sit AFTER the day's grid, inside the same room.
-  const firstRule = root.querySelector('.day-rule');
+  const firstHead = root.querySelector('.room-head');
   const firstGrid = root.querySelector('.tt-block');
   const firstGroups = root.querySelector('.venue-grid');
-  assert.ok(firstRule.compareDocumentPosition(firstGrid) & 4 && firstGrid.compareDocumentPosition(firstGroups) & 4, 'rule, then grid, then the groups');
+  assert.ok(firstHead.compareDocumentPosition(firstGrid) & 4 && firstGrid.compareDocumentPosition(firstGroups) & 4, 'head, then grid, then the groups');
+  assert.equal(firstHead.querySelector('.name').textContent, 'THU ELECTRIC FOREST', 'the weekday the file gives, then the festival');
 });
 
 test('a set on a stage that is not a column is a card under that stage — its occurrence carries the stage for the zoom, its face the time', () => {

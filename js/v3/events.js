@@ -89,6 +89,31 @@ export function weekdayOfDay(dayKey, meta) {
 // A run member carries an order (MODEL-V4 §1.2 — the numbering leads the stack).
 export const isRunMember = (e) => !!(e && e.order && Number.isInteger(e.order.seq) && Number.isInteger(e.order.of));
 
+// ---- a cancelled act (2026-09-23) --------------------------------------------------
+// `cancelled: { on, source, note? }` on an artists[] entry (festival-rules.mjs
+// checkCancelled; docs/add-a-festival.md, "Cancelled acts"). The entry stays —
+// its name is a pick key — and its card says it is off: last in its room,
+// never "now", never in a playlist.
+export const isCancelled = (e) => !!(e && e.cancelled && typeof e.cancelled === 'object');
+// The names with nothing left to see: every entry under the name is cancelled
+// and no grid day has a set for it. One called-off night of an artist who
+// still plays another is not in here — that artist is still worth a playlist.
+const goneCache = new WeakMap();
+export function cancelledNames(fest) {
+  if (!fest || typeof fest !== 'object') return new Set();
+  if (goneCache.has(fest)) return goneCache.get(fest);
+  const live = new Set();
+  const off = new Set();
+  for (const a of fest.artists || []) {
+    if (!a || typeof a.name !== 'string') continue;
+    (isCancelled(a) ? off : live).add(a.name);
+  }
+  for (const d of Object.values(fest.days || {})) for (const s of (d && d.artists) || []) if (s) live.add(s.name);
+  const gone = new Set([...off].filter((n) => !live.has(n)));
+  goneCache.set(fest, gone);
+  return gone;
+}
+
 // ---- the clock -------------------------------------------------------------------
 // Events run on the festival-day axis (time.js activityMinutes): 9 AM starts
 // the day, anything before it is after midnight. timeToMinutes would put the
@@ -135,14 +160,20 @@ export function shortDate(iso) {
   return MONTHS[m - 1] ? `${MONTHS[m - 1]} ${d}` : '';
 }
 // "Thu · Oct 1" — a date that speaks for itself, because a dated show has no
-// weekday label to borrow one from. One builder: the rule over a date inside
-// a dated section shouts it, the zoom says it.
+// weekday label to borrow one from. One builder: a search's list head over a
+// dated section's date shouts it (dateRuleLabel), the zoom says it.
 export function shortDateLabel(iso) {
-  const d = new Date(`${iso}T00:00:00Z`);
-  if (Number.isNaN(d.getTime())) return String(iso);
-  return `${WEEKDAYS[(d.getUTCDay() + 6) % 7]} · ${shortDate(iso)}`;
+  const wd = weekdayOfIso(iso);
+  return wd ? `${wd} · ${shortDate(iso)}` : String(iso);
 }
-// "TUE · SEP 29" — the rule over one date inside a dated section.
+// "Tue" for 2026-09-29 — the weekday a date's room head leads with
+// (`TUE LATE NIGHTS`); null for a string that is not a date.
+export function weekdayOfIso(iso) {
+  const d = new Date(`${iso}T00:00:00Z`);
+  return Number.isNaN(d.getTime()) ? null : WEEKDAYS[(d.getUTCDay() + 6) % 7];
+}
+// "TUE · SEP 29" — a search's list head over one date's answers in a dated
+// section. (On the wall that date is a room head, `TUE LATE NIGHTS  Sep 29`.)
 export function dateRuleLabel(iso) {
   return shortDateLabel(iso).toUpperCase();
 }
@@ -172,6 +203,12 @@ const dayOfMonth = (iso) => String(Number(String(iso).slice(8, 10)) || '');
 // the next member starts, else to its own printed end, else to the room's
 // close, else an hour. A room that only knows its doors and close lights the
 // whole room for that window — the only honest answer when nothing is timed.
+//
+// A CANCELLED member (isCancelled) is in the room and plays no part in it: it
+// sorts last, has no now window, is not "the next member" that ends the set
+// before it, and lends the room no doors, close or start. A room of nothing
+// but cancelled shows has no sub line and sorts after every room with
+// something on.
 export const VENUE_TBA = 'Venue TBA';
 
 export function venueGroupsOf(entries, { fallbackVenue = null } = {}) {
@@ -184,12 +221,16 @@ export function venueGroupsOf(entries, { fallbackVenue = null } = {}) {
     if (!rooms.has(venue)) rooms.set(venue, []);
     rooms.get(venue).push({ e, i, t: parseEventTime(e.time) });
   });
-  const groups = [...rooms].map(([venue, list], gi) => {
-    const numbered = list.length > 1 && list.every((m) => isRunMember(m.e));
+  const groups = [...rooms].map(([venue, all], gi) => {
+    const on = all.filter((m) => !isCancelled(m.e));
+    const off = all.filter((m) => isCancelled(m.e));
+    const numbered = on.length > 1 && on.every((m) => isRunMember(m.e));
     const at = (m) => (m.t ? m.t.startMin : Infinity);
-    list.sort(numbered
+    on.sort(numbered
       ? (a, b) => a.e.order.seq - b.e.order.seq || at(a) - at(b) || a.i - b.i
       : (a, b) => at(a) - at(b) || a.i - b.i);
+    off.sort((a, b) => at(a) - at(b) || a.i - b.i);
+    const list = on;
     const firstOf = (pick) => { for (const m of list) { const v = pick(m.e); if (typeof v === 'string' && v) return v; } return null; };
     const doors = firstOf((e) => e.doors);
     const close = firstOf((e) => e.close);
@@ -213,10 +254,14 @@ export function venueGroupsOf(entries, { fallbackVenue = null } = {}) {
         startStr: m.t ? m.t.startStr : null,
         endStr: m.t ? m.t.endStr : null,
         approx: m.e.approx === true,
+        cancelled: false,
         nowFrom,
         nowTo,
       };
     });
+    for (const m of off) {
+      members.push({ e: m.e, startStr: null, endStr: null, approx: false, cancelled: true, nowFrom: null, nowTo: null });
+    }
     const firstStart = Math.min(...list.map(at));
     const at0 = doorsMin ?? (Number.isFinite(firstStart) ? firstStart : null);
     return {
@@ -227,13 +272,16 @@ export function venueGroupsOf(entries, { fallbackVenue = null } = {}) {
       closeApprox,
       sub: [doors ? `Doors ${doors}` : null, close ? `${closeApprox ? '~' : ''}${close}` : null].filter(Boolean).join(' · '),
       at: at0,
+      cancelled: !on.length,
       gi,
       members,
     };
   });
-  // Groups with no known time last; the biggest stack leads a tie so a row
+  // A room with nothing on goes after every room that has something; then
+  // groups with no known time last; the biggest stack leads a tie so a row
   // of stacks holds less air; file order settles the rest.
   groups.sort((a, b) => {
+    if (a.cancelled !== b.cancelled) return a.cancelled ? 1 : -1;
     if ((a.at == null) !== (b.at == null)) return a.at == null ? 1 : -1;
     if (a.at != null && a.at !== b.at) return a.at - b.at;
     return b.members.length - a.members.length || a.gi - b.gi;
@@ -249,9 +297,13 @@ export function venueGroupsOf(entries, { fallbackVenue = null } = {}) {
 // ([null] for everything else).
 //
 // Returns:
-//   days     [{ key, dayKey, wd, short, num, long, sub, iso, weekend, grid,
-//               billing, synthetic }] in festival order — `key` is the tab
-//               and jump id, `dayKey` the frozen day label pick data uses
+//   days     [{ key, dayKey, wd, short, num, long, sub, when, iso, weekend,
+//               grid, billing, synthetic }] in festival order — `key` is the
+//               tab and jump id, `dayKey` the frozen day label pick data uses;
+//               `sub` is the day's line ("Sat · Sep 26") and `when` the same
+//               line without its weekday ("Sep 26", "Oct 2 · Weekend 1") —
+//               what a day's first room head says after the weekday its own
+//               label already carries (wall.js roomHead)
 //   sections [{ key, label, byNight, byDay }] in known order; byDay is keyed
 //               by the day's tab id
 //   extras   [{ key, label, short, long, sub, byDate, entries }] — the tabs
@@ -345,23 +397,27 @@ export function eventModelOf(fest, groups, { gridDays = [], weekends = [null] } 
       long: long.toUpperCase(),
       iso: synthetic ? null : dayIsoOf(meta, weekends[0]),
       sub: '',
+      when: '',
     };
   });
 
   // Dates: a synthetic day borrows its date from any real day that has one
   // (Saturday is the 26th, so Thursday is the 24th) — the day-of open and
-  // the now line need the iso; the rule's sub line wants "Sep 24".
+  // the now line need the iso; the day's first head wants "Sep 24".
   const ref = days.find((d) => d.iso);
   for (const d of days) {
     if (!d.iso && ref && d.wd) d.iso = isoPlusDays(ref.iso, dayOrderKey(d.wd, anchor) - dayOrderKey(ref.wd, anchor));
     const meta = dayMeta[d.key];
     if (meta) {
       const date = (weekends[0] && meta.dates && meta.dates[weekends[0]]) || meta.date;
-      d.sub = [meta.wd, date || (meta.num ? `Day ${meta.num}` : ''), dayLabelParts(d.key).aside].filter(Boolean).join(' · ');
+      d.when = [date || (meta.num ? `Day ${meta.num}` : ''), dayLabelParts(d.key).aside].filter(Boolean).join(' · ');
+      d.sub = [meta.wd, d.when].filter(Boolean).join(' · ');
     } else if (d.synthetic && d.iso) {
-      d.sub = [wdStyle ? d.wd : null, shortDate(d.iso)].filter(Boolean).join(' · ');
+      d.when = shortDate(d.iso);
+      d.sub = [wdStyle ? d.wd : null, d.when].filter(Boolean).join(' · ');
     } else {
-      d.sub = dayLabelParts(d.key).aside;
+      d.when = dayLabelParts(d.key).aside;
+      d.sub = d.when;
     }
   }
 
@@ -372,6 +428,7 @@ export function eventModelOf(fest, groups, { gridDays = [], weekends = [null] } 
     ? weekends.flatMap((w, wi) => days.filter((d) => d.grid).map((d) => {
       const meta = dayMeta[d.key] || {};
       const iso = dayIsoOf(meta, w);
+      const when = [(meta.dates && meta.dates[w]) || meta.date, `Weekend ${wi + 1}`].filter(Boolean).join(' · ');
       return {
         ...d,
         key: `${d.key}|${w}`,
@@ -379,7 +436,8 @@ export function eventModelOf(fest, groups, { gridDays = [], weekends = [null] } 
         iso,
         num: iso ? dayOfMonth(iso) : null,
         long: [d.long, iso ? dayOfMonth(iso) : null].filter(Boolean).join(' '),
-        sub: [meta.wd, (meta.dates && meta.dates[w]) || meta.date, `Weekend ${wi + 1}`].filter(Boolean).join(' · '),
+        sub: [meta.wd, when].filter(Boolean).join(' · '),
+        when,
       };
     }))
     : days;

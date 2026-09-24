@@ -77,7 +77,7 @@
    * is a designed size, not a stretched phone. Micro labels stay fixed. */
   --fs-display: clamp(26px, 4.5vw, 40px);  /* app-header fest title */
   --fs-screen: clamp(30px, 5vw, 44px);     /* PICK THE FEST, join headline */
-  --fs-day: clamp(16px, 1.6vw, 19px);      /* day-rule headers */
+  --fs-day: clamp(16px, 1.6vw, 19px);      /* room heads (SAT PORTOLA) + list heads */
   --fs-card: clamp(13.5px, 1.2vw, 15px);   /* card names */
   --fs-body: clamp(12.5px, 1.1vw, 13.5px);
   --fs-micro: 11px;

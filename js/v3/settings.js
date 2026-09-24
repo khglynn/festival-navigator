@@ -9,13 +9,15 @@ import * as sync from '../sync.js';
 import * as model from './model.js';
 import { FESTIVAL_INDEX, FESTIVALS } from '../festivals.js';
 import { BOARD, hslOf, strokeOf } from './palette.js';
-import { colorIndexOf } from './wall.js';
+import { colorIndexOf, meterChip, crewMark } from './wall.js';
+import { meterOf, whoCorner } from './aura.js';
 import { festPlaceLine } from './card-facts.js'; // the fest's place line, shared with the wall header
 import { recent as recentErrors, diagnostics } from '../errlog.js';
 import { el, subviewHead, eqLoader, festRow, openExportLikes, openBulkPaste, openDayImage } from './tools.js';
 import { router } from './router.js';
 import { nameProblem, NAME_LIMITS } from '../name-rules.mjs';
 import { loadJSON, saveLS, getLS, removeLS, errorText } from '../util.js';
+import { cancelledNames } from './events.js'; // a cancelled act never goes into a playlist (2026-09-23)
 
 const LS_SETTINGS = 'fn_settings_v1'; // {lowPower, stayOffline}
 export const SUPPORT_URL = 'https://buymeacoffee.com/kevinhg'; // Kevin's page (also list-maker's), 2026-09-02
@@ -416,15 +418,25 @@ function openHowItWorks(actions) {
   }, 'Add your people with + Add,', 'or share the crew link — anyone who opens it is in, no account needed.'));
 
   // 3-5. The card: what a tap does, and what the two corners are saying.
+  // Row 3 is the card getting brighter with the REAL meter chip on it, filling
+  // a bar a tap (2026-09-23: your level is on the card now, bottom left). Row
+  // 4 is the REAL crew marks — everyone else's, since you are on the left.
   card.appendChild(lesson((d) => {
-    [0.5, 0.75, 1].forEach((a) => {
-      d.appendChild(el('span', `flex: 1; height: 30px; border-radius: 6px; border: 1px solid var(--hairline); background: radial-gradient(130% 130% at 20% 120%, hsla(10,90%,62%,${a}) 0%, transparent 78%), #1C1731;`));
+    [0.5, 0.75, 1].forEach((a, i) => {
+      const swatch = el('span', `position: relative; flex: 1; height: 30px; border-radius: 6px; border: 1px solid var(--hairline); background: radial-gradient(130% 130% at 20% 120%, hsla(10,90%,62%,${a}) 0%, transparent 78%), #1C1731;`);
+      const chip = meterChip(meterOf({ level: i + 1, colorIndex: 0 }));
+      chip.style.position = 'absolute';
+      chip.style.left = '3px';
+      chip.style.bottom = '3px';
+      swatch.appendChild(chip);
+      d.appendChild(swatch);
     });
-  }, 'Tap an artist to add your color.', 'Brighter each tap. 4 taps = must see.'));
+  }, 'Tap an artist to add your color.', 'Your bars fill each tap. 4 taps = must see.'));
+  // Kat is BOARD[6], the teal row 1's Kat chip already wears — one person,
+  // one colour, on one screen.
   card.appendChild(lesson((d) => {
-    d.appendChild(el('span', 'width: 4px; height: 12px; border-radius: 99px; background: hsla(150,70%,50%,.5); border: 1px solid hsl(150,70%,82%);'));
-    d.appendChild(el('span', 'width: 24px; height: 12px; border-radius: 99px; background: hsla(10,90%,62%,.5); border: 1px solid #fff; color: #fff; font-size: 7.5px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center;', 'K'));
-  }, 'Everyone’s picks land on the card.', 'Ticks are picks; a letter is a must. White stroke = you.'));
+    for (const m of whoCorner([{ name: 'Kat', colorIndex: 6, level: 4 }, { name: 'Sam', colorIndex: 3, level: 1 }])) d.appendChild(crewMark(m));
+  }, 'Everyone else’s picks land on the card.', 'Ticks are picks; a letter is a must.'));
   card.appendChild(lesson((d) => {
     const n = el('span', '', '2'); n.className = 'chip-notes'; n.style.height = '14px';
     const s = el('span', '', '23'); s.className = 'chip-spotify'; s.style.height = '13px'; // the green pill, never a music-note glyph
@@ -534,8 +546,9 @@ function crewSection(ctx, actions) {
       memberLinkHost.append(mRow,
         el('div', 'color: var(--text-tertiary); font-size: 10.5px; font-weight: 600; margin-top: 4px;',
           p.pid
-            ? `${name} is linked — they've claimed this name, and this crew follows them. The link still works as a doorway back.`
-            : `${name} hasn't claimed this name yet. Opening this link makes it theirs — picks made for them included.`));
+            ? `${name}’s in. This link still gets them back in.`
+            // The same sentence the add-someone sheet says: one idea, one wording.
+            : `Send ${name} this link. Opening it makes the picks theirs.`));
     });
     chips.appendChild(chip);
   }
@@ -568,7 +581,7 @@ function crewSection(ctx, actions) {
   card.appendChild(linkRowEl);
   // Two links, two jobs — say which one this is (me-link build, 2026-07-13).
   card.appendChild(el('div', 'color: var(--text-tertiary); font-size: 10.5px; font-weight: 600; line-height: 1.45;',
-    'This link brings someone into this crew. The link that brings YOU back on a new phone lives on the front page.'));
+    'Anyone with this link joins the crew. Your own link (My link) is on the home page.'));
   card.appendChild(status);
   wrap.appendChild(card);
 
@@ -1003,6 +1016,20 @@ let scanning = false; // a scan survives a re-render of the drill
 // The completion line survives the drill's re-render — writing it into the
 // pre-rerender msg node talked to a detached element (Codex round 5, P2).
 let lastSyncNote = '';
+// A scan outlives the card that started it, so progress goes to whichever
+// reading card is mounted NOW, and a card mounted mid-scan replays the
+// latest snapshot at once. It used to go only to the card that started the
+// scan: the drill re-renders under a running scan (the owner-app config
+// landing right after the OAuth return, a remote sync, back/forward), and
+// every card after the first sat on "Reading your library…" with an empty
+// bar and an empty cover until the very end — Kevin thought it had hung
+// (2026-09-23; it had read 6,225 artists fine).
+let scanView = null;   // the mounted reading card's painter
+let scanLatest = null; // the latest progress snapshot, for a card that mounts mid-scan
+// A failed scan waits for the person. The drill used to fall straight back
+// into its reading state and start again — offline, that was a scan loop
+// with no pause at all (found with the fix above, 2026-09-23).
+let scanFailed = false;
 
 // ONE card, used by every not-yet-connected state, so the first Spotify screen a
 // member sees says what connecting DOES instead of showing them a client ID.
@@ -1063,11 +1090,7 @@ async function syncEveryonePlaylists(ctx, actions, onNote) {
     if (meta.mode !== 'everyone') continue;
     const fest = FESTIVALS[fid];
     if (!fest) continue;
-    const picks = model.picksFor(state.crewDoc, fid);
-    const names = Object.entries(picks)
-      .map(([artist, byP]) => ({ artist, level: Math.max(0, ...Object.values(byP)) }))
-      .filter((x) => x.level > 0).sort((a, b) => b.level - a.level)
-      .map((x) => x.artist);
+    const names = spotify.playlistArtistsFromPicks(model.picksFor(state.crewDoc, fid), { skip: cancelledNames(fest) });
     const missing = spotify.playlistMissingArtists(names, meta);
     if (!missing.length) continue;
     try {
@@ -1105,11 +1128,14 @@ function scanPill(text) {
 
 // Read the library, then badge EVERY festival the crew has. Both halves, always,
 // with no button in between — because connecting was the ask.
-async function runFullSync(ctx, actions, onProgressIn, rerenderDrill, msg) {
+async function runFullSync(ctx, actions, rerenderDrill, msg) {
   if (!ctx.meName) { msg.textContent = 'Claim your name first (open your crew link).'; return; }
   scanning = true;
+  scanFailed = false;
+  scanLatest = null;
   const onProgress = (p) => {
-    onProgressIn(p);
+    scanLatest = p;
+    if (scanView) scanView(p);
     // Only speak up when the drill isn't on screen — no double narration.
     // offsetParent is null whenever the settings screen is display:none.
     const drillVisible = !!document.getElementById('settings-subview')?.offsetParent;
@@ -1133,6 +1159,7 @@ async function runFullSync(ctx, actions, onProgressIn, rerenderDrill, msg) {
     });
     if (state.getCrewToken() !== tokenAtStart) {
       scanning = false;
+      scanView = null; scanLatest = null;
       scanPill(null);
       console.warn('spotify: crew changed mid-scan — library cached, crew writes skipped (reopen the drill to badge this crew)');
       return;
@@ -1154,6 +1181,7 @@ async function runFullSync(ctx, actions, onProgressIn, rerenderDrill, msg) {
     if (others.skipped) notes.push(`${others.skipped} board${others.skipped === 1 ? '' : 's'} couldn’t fill yet — each catches up when you open it.`);
     await syncEveryonePlaylists(ctx, actions, (n) => notes.push(n));
     scanning = false;
+    scanView = null; scanLatest = null;
     scanPill(null);
     const badgeLine = total
       ? `Badged ${total} artist${total === 1 ? '' : 's'} across ${fests} festival${fests === 1 ? '' : 's'}.`
@@ -1162,8 +1190,15 @@ async function runFullSync(ctx, actions, onProgressIn, rerenderDrill, msg) {
     rerenderDrill(); // renders lastSyncNote into the FRESH msg node
   } catch (e) {
     scanning = false;
+    scanFailed = true; // the drill offers "Try again" — never an automatic restart
+    scanView = null; scanLatest = null;
     scanPill(null);
-    lastSyncNote = String(e.message || e);
+    // fetch rejects with a TypeError when the network is gone, and its words
+    // ("Failed to fetch", "Load failed") are the browser's, not ours.
+    if (e instanceof TypeError) console.warn('spotify scan:', e);
+    lastSyncNote = e instanceof TypeError
+      ? 'Couldn’t reach Spotify — check your signal and try again.'
+      : String(e.message || e);
     rerenderDrill();
   } finally {
     delete document.body.dataset.busy;
@@ -1309,6 +1344,20 @@ function openSpotifyDrill(ctx, actions) {
       ].filter(Boolean),
     }));
     col.appendChild(msg);
+  } else if (scanFailed && !scanning && !spotify.libraryMap()) {
+    // The last read stopped (no signal, Spotify down). Say so and wait for
+    // the person: falling straight back into the reading state restarted the
+    // scan with no pause at all, which offline is a loop.
+    const card = el('div'); card.className = 'settings-card';
+    card.style.cssText += 'display: flex; flex-direction: column; gap: 10px; align-items: flex-start;';
+    card.appendChild(el('span', 'color: #fff; font-weight: 700; font-size: 14px;', 'Reading your Spotify stopped'));
+    card.appendChild(el('div', 'color: var(--text-body); font-size: 12px; font-weight: 600; line-height: 1.5;',
+      lastSyncNote || 'Something interrupted it partway.'));
+    const retry = el('button', 'font-size: 12.5px; padding: 10px 16px;', 'Try again');
+    retry.className = 'btn-tonal';
+    retry.addEventListener('click', () => { scanFailed = false; lastSyncNote = ''; rerenderDrill(); });
+    card.appendChild(retry);
+    col.appendChild(card);
   } else if (!spotify.libraryMap() || scanning) {
     // Connected, nothing read yet — so READ IT. No button.
     //
@@ -1343,10 +1392,28 @@ function openSpotifyDrill(ctx, actions) {
       'Liked songs and follows — then every festival in your crew badges itself.');
     card.append(ticker, sub);
     col.append(card, msg);
+    // Before the first number (a slow first page on one bar of signal) the
+    // bar breathes (v3.css .scan-bar.waiting) and the finds line — the slot
+    // the "at your festivals" count will use — says why, so nothing on the
+    // card moves when the numbers come. The words are all that reduced
+    // motion and Low Power get, and all they need. Only a scan that is really
+    // running (or about to be) may look like one.
+    if (scanning || ctx.meName) {
+      barWrap.classList.add('waiting');
+      finds.style.color = 'var(--text-tertiary)';
+      finds.textContent = 'Waiting on Spotify’s first page…';
+    }
+    const numbersArrived = () => {
+      if (!barWrap.classList.contains('waiting')) return;
+      barWrap.classList.remove('waiting');
+      finds.style.color = 'var(--spotify-stroke)';
+      finds.textContent = '';
+    };
 
     const noMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
     let lastFlick = 0, holdUntil = 0;
     const onProgress = (p) => {
+      numbersArrived();
       if (p.phase === 'badge') { counter.textContent = p.text; bar.style.width = '100%'; return; }
       counter.textContent = p.phase === 'follows'
         ? `${p.followed} followed artists · ${p.artists.toLocaleString()} artists total`
@@ -1364,7 +1431,11 @@ function openSpotifyDrill(ctx, actions) {
         img.onload = () => { tile.replaceChildren(img); };
       }
     };
-    if (!scanning) runFullSync(ctx, actions, onProgress, rerenderDrill, msg);
+    // THIS card hears the scan from now on, whoever started it; mounted
+    // mid-scan, it catches up from the latest page at once.
+    scanView = onProgress;
+    if (scanning) { if (scanLatest) onProgress(scanLatest); }
+    else runFullSync(ctx, actions, rerenderDrill, msg);
   } else {
     const lib = spotify.libraryMap();
     const card = el('div'); card.className = 'settings-card';
@@ -1471,16 +1542,16 @@ function openSpotifyDrill(ctx, actions) {
     make.addEventListener('click', async () => {
       try {
         make.disabled = true;
-        const picks = ctx.picks;
-        const names = Object.entries(picks)
-          .map(([artist, byP]) => ({ artist, level: mineOnly ? (byP[ctx.meName] || 0) : Math.max(...Object.values(byP)) }))
-          .filter((x) => x.level > 0)
-          .sort((a, b) => b.level - a.level)
-          .map((x) => x.artist);
+        const names = spotify.playlistArtistsFromPicks(ctx.picks, { me: mineOnly ? ctx.meName : null, skip: cancelledNames(state.fest()) });
         if (!names.length) {
-          plStatus.textContent = mineOnly
-            ? 'You haven’t picked any artists on this fest yet — tap some cards first.'
-            : 'Nobody has picked artists on this fest yet — tap some cards first.';
+          // Picks that are all on cancelled acts are still picks — say so,
+          // rather than "you haven't picked anything".
+          const onlyOff = spotify.playlistArtistsFromPicks(ctx.picks, { me: mineOnly ? ctx.meName : null }).length > 0;
+          plStatus.textContent = onlyOff
+            ? `${mineOnly ? 'Your picks' : 'The picks'} on this fest are all cancelled acts — nothing to play yet.`
+            : mineOnly
+              ? 'You haven’t picked any artists on this fest yet — tap some cards first.'
+              : 'Nobody has picked artists on this fest yet — tap some cards first.';
           return;
         }
         const title = nameInput.value.trim() || defaultTitle();

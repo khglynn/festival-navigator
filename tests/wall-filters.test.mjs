@@ -119,7 +119,7 @@ test('the people filter dims everywhere and hides nothing: the clock keeps every
   const grid = (name) => root.querySelector(`.room[data-room=":fest"] .card.cell[data-artist="${name}"]`);
   assert.ok(!grid('VTSS').classList.contains('dim'), "Kat's pick is lit");
   assert.ok(grid('underscores').classList.contains('dim'), 'a card Kat did not pick is dimmed');
-  assert.equal(count(root, '.room[data-room=":fest"] .card.cell'), 64, 'the clock keeps its shape: every set still renders');
+  assert.equal(count(root, '.room[data-room=":fest"] .card.cell'), 63, 'the clock keeps its shape: every set still renders');
   assert.equal(grid('underscores').getAttribute('role'), 'button', 'a dimmed card is still a tap target');
   // A stack is the same rule: every card, dimmed where Kat did not pick.
   const afters = [...root.querySelectorAll('.room[data-room="Afters"] .stack > .card')];
@@ -178,7 +178,7 @@ test('a stage head is a plain header: not a button, no aria, no rail, and a tap 
   for (const grid of root.querySelectorAll('.times-scroll[data-sync="grid"][data-day] .times-grid')) {
     assert.equal(grid.style.gridTemplateColumns, strips[0].style.gridTemplateColumns, 'day grids mirror the strip');
   }
-  assert.equal(root.querySelectorAll('.room[data-room=":fest"] .card.cell').length, 64, 'every set renders — no column ever folds');
+  assert.equal(root.querySelectorAll('.room[data-room=":fest"] .card.cell').length, 63, 'every set renders — no column ever folds');
   // A tap on a head changes nothing on the wall.
   const before = root.innerHTML;
   root.querySelector('.stage-strip .stage-head').click();
@@ -213,8 +213,8 @@ test('scrollspy: a re-wire mid-page claims the day you are actually in, not the 
   const nav = document.createElement('div');
   nav.innerHTML = '<button class="day-tab" data-day="Saturday"></button><button class="day-tab" data-day="Sunday"></button>';
   const root = document.createElement('div');
-  root.innerHTML = '<div class="day-rule" data-day="Saturday"></div><div class="day-rule" data-day="Sunday"></div>';
-  const [sat, sun] = root.querySelectorAll('.day-rule');
+  root.innerHTML = '<div class="day-block" data-day="Saturday"></div><div class="day-block" data-day="Sunday"></div>';
+  const [sat, sun] = root.querySelectorAll('.day-block');
   const active = () => [...nav.querySelectorAll('.day-tab')].filter((t) => t.classList.contains('active')).map((t) => t.dataset.day);
   try {
     // fresh load: nothing scrolled, the first day is the honest claim
@@ -239,8 +239,8 @@ test('scrollspy: a re-wire mid-page claims the day you are actually in, not the 
     // ever showed it. One tolerance, not a WebKit branch.
     // Three days, so "the first tab" is never the right answer by accident.
     nav.innerHTML = '<button class="day-tab" data-day="Friday"></button><button class="day-tab" data-day="Saturday"></button><button class="day-tab" data-day="Sunday"></button>';
-    root.innerHTML = '<div class="day-rule" data-day="Friday"></div><div class="day-rule" data-day="Saturday"></div><div class="day-rule" data-day="Sunday"></div>';
-    const [fri3, sat3, sun3] = root.querySelectorAll('.day-rule');
+    root.innerHTML = '<div class="day-block" data-day="Friday"></div><div class="day-block" data-day="Saturday"></div><div class="day-block" data-day="Sunday"></div>';
+    const [fri3, sat3, sun3] = root.querySelectorAll('.day-block');
     fri3.getBoundingClientRect = () => ({ top: -800 });   // scrolled well past
     sat3.getBoundingClientRect = () => ({ top: 8 + 24 }); // the iPhone's landing (--jump-offset is unset in jsdom, so 8)
     sun3.getBoundingClientRect = () => ({ top: 900 });
@@ -272,8 +272,8 @@ test('scrollspy: the day you are in is brought into the middle of its row, on op
   const nav = document.createElement('div');
   nav.innerHTML = '<button class="day-tab" data-day="Saturday"></button><button class="day-tab" data-day="Sunday"></button>';
   const root = document.createElement('div');
-  root.innerHTML = '<div class="day-rule" data-day="Saturday"></div><div class="day-rule" data-day="Sunday"></div>';
-  const [sat, sun] = root.querySelectorAll('.day-rule');
+  root.innerHTML = '<div class="day-block" data-day="Saturday"></div><div class="day-block" data-day="Sunday"></div>';
+  const [sat, sun] = root.querySelectorAll('.day-block');
   const shown = [];
   for (const t of nav.querySelectorAll('.day-tab')) t.scrollIntoView = (o) => shown.push([t.dataset.day, o]);
   const hadRAF = globalThis.requestAnimationFrame;
@@ -325,8 +325,8 @@ test('scrollspy: an observer band cannot overrule the geometry — there is no o
   const nav = document.createElement('div');
   nav.innerHTML = '<button class="day-tab" data-day="Saturday"></button><button class="day-tab" data-day="Sunday"></button>';
   const root = document.createElement('div');
-  root.innerHTML = '<div class="day-rule" data-day="Saturday"></div><div class="day-rule" data-day="Sunday"></div>';
-  const [sat, sun] = root.querySelectorAll('.day-rule');
+  root.innerHTML = '<div class="day-block" data-day="Saturday"></div><div class="day-block" data-day="Sunday"></div>';
+  const [sat, sun] = root.querySelectorAll('.day-block');
   const active = () => [...nav.querySelectorAll('.day-tab')].filter((t) => t.classList.contains('active')).map((t) => t.dataset.day);
   try {
     sat.getBoundingClientRect = () => ({ top: -900 });
@@ -360,8 +360,8 @@ test('scrollspy: a fling past two days in one step lands on the day you are in, 
     .map((d) => `<button class="day-tab" data-day="${d}"></button>`).join('');
   const root = document.createElement('div');
   root.innerHTML = ['Thursday', 'Friday', 'Saturday', 'Sunday']
-    .map((d) => `<div class="day-rule" data-day="${d}"></div>`).join('');
-  const rules = [...root.querySelectorAll('.day-rule')];
+    .map((d) => `<div class="day-block" data-day="${d}"></div>`).join('');
+  const rules = [...root.querySelectorAll('.day-block')];
   const active = () => [...nav.querySelectorAll('.day-tab')].filter((t) => t.classList.contains('active')).map((t) => t.dataset.day);
   // Where each rule sits on the page. A scroll moves them all together, which
   // is the one thing a fling does that a slow drag does not do in steps.

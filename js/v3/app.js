@@ -9,7 +9,7 @@ import * as sync from '../sync.js';
 import * as spotify from '../spotify.js';
 import * as model from './model.js';
 import { loadFestivalIndex, loadFestival, fetchCustomFestivals, mergeCustoms, FESTIVAL_INDEX, defaultFestivalId } from '../festivals.js';
-import { renderWall, refreshCard, showUndoToast, showToast, wireScrollspy, colorIndexOf, positionNowLines, positionNowMarks, scrollToNowLine, dayNavOf, roomsOf, cardFor, roomOf, isStripScroller, DAY_ANCHOR } from './wall.js';
+import { renderWall, refreshCard, showUndoToast, showToast, wireScrollspy, colorIndexOf, positionNowLines, positionNowMarks, scrollToNowLine, dayNavOf, roomsOf, cardFor, roomOf, isStripScroller, DAY_ANCHOR, festLinkLabel } from './wall.js';
 import { loadPeopleFilter, savePeopleFilter, togglePerson, pruneToActive, loadFolded, applyFoldToggle } from './filters.js';
 import { OUT_MS, CASCADE_MS, STAGGER_MS, EASE_ARRIVE, EASE_LEAVE, EASE_SURFACE, canAnimate } from './motion.js';
 import { scrolledBefore, rememberScrolled, dayOfScrollKey, festivalClock } from './now.js';
@@ -28,6 +28,13 @@ import { createSortControl } from './sort-control.js';
 import { nameProblem } from '../name-rules.mjs';
 import { startFavicon, stopFavicon } from './favicon.js';
 import { hslOf, strokeOf, nextColorIndex } from './palette.js';
+// Entering a crew you already have a life in (2026-09-23): recognized on
+// open, and the one-time offer to bring your picks from another crew.
+import { planBringPicks, bringFromSource, bringOfferCopy, bringDoneLine, bringAnswered, rememberBringAnswer, showBringOffer, settleBringOffer, dismissBringOffer, bringOfferCard } from './crew-entry.js';
+import { showActionToast } from './wall.js';
+// The warm open (2026-09-23): paint from what this phone holds, freshen after.
+import { festivalIndexFromCache, festivalFromCache, fetchFestivalFile, cachedCustomFestivals } from '../festivals.js';
+import { getLS } from '../util.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -130,7 +137,7 @@ function refreshCtx() {
 // Portola afters night has a date the wall derives and dayMeta never names.
 // The query is stripped deliberately — searching narrows the wall, never the
 // dates a crew has notes on.
-// A date is CALLED what the wall's day rule calls it — "Friday" — because that
+// A date is CALLED what its door on the wall calls it — "Friday" — because that
 // is the door you wrote through, and the sheet has to agree with the door
 // (MODEL-V4 §3a.3). The exception is the one that made §4 date-key day notes in
 // the first place: a two-weekend fest has two Fridays, and two rows both saying
@@ -145,7 +152,7 @@ function festDatesOf() {
   const seen = new Set();
   // The fold is stripped too: a hidden day renders nothing on the wall, but a
   // note already written on it is still a conversation the sheet lists, and
-  // it is called what its rule would call it.
+  // it is called what its door would call it.
   for (const day of dayNavOf(fest, { ...ctx, query: '', folded: [] })) {
     for (const iso of day.dates || []) {
       if (!model.ISO_DATE_RE.test(String(iso)) || seen.has(iso)) continue;
@@ -178,36 +185,30 @@ export function nameDates(entries) {
 function roomBlocksOf(key) {
   return [...document.querySelectorAll(`#wall-root .room[data-room="${CSS.escape(key)}"]`)];
 }
-// The days the plan gives the wall right now, by key — read before and after
+// The tabs the plan gives the wall right now, by key — read before and after
 // a fold, so the days a fold takes or gives back are the difference of two
-// plans and never a guess read off the DOM (a lineup wall's THE LINEUP rule
-// carries no day key and must never be swept). A dated section is a tab,
-// not a day: it moves as a room, by its own key.
+// plans and never a guess read off the DOM. A dated section (Late nights) is
+// a tab too, so hiding it takes its block whole.
 function planDayKeys() {
-  return new Set(dayNavOf(state.fest(), ctx).filter((t) => !t.dated).map((t) => t.key));
+  return new Set(dayNavOf(state.fest(), ctx).map((t) => t.key));
 }
-// The named days as they stand on the wall: each rule and every sibling
-// under it — its whisper, its rooms — up to the next tab anchor (the next
-// rule, or a dated section's room, which is a tab of its own).
+// The named days as they stand on the wall: one `.day-block` each, holding
+// everything the day shows — its rooms, their heads and whispers (one-line
+// heads, 2026-09-23). A block is a day, so a day that goes is one element.
 function dayBlocksOf(keys) {
-  const out = [];
-  let taking = false;
-  for (const el of $('wall-root').children) {
-    if (el.classList.contains('day-rule')) taking = keys.has(el.dataset.day);
-    else if (el.classList.contains('room') && el.querySelector('.sec-head[data-day]')) taking = false;
-    if (taking) out.push(el);
-  }
-  return out;
+  return [...$('wall-root').children].filter((el) => el.classList.contains('day-block') && keys.has(el.dataset.day));
 }
-// What a fold moves, in the wall's order: the room blocks stamped with the
-// key, and every day that goes with them. A weekend has no room of its own —
-// it leaves and returns as its three days; a Portola Thursday whose only
-// room was hidden leaves with that room instead of vanishing on the repaint
-// (Kevin, 2026-08-30: nothing vanishes in place, nothing pops).
+// What a fold moves, in the wall's order: every day that goes with it, whole,
+// and the room blocks stamped with the key on the days that stay — a room
+// inside a day that is leaving already leaves with its day, and moving it
+// twice would double its motion. A weekend has no room of its own — it leaves
+// and returns as its three days; a Portola Thursday whose only room was
+// hidden leaves as its day instead of vanishing on the repaint (Kevin,
+// 2026-08-30: nothing vanishes in place, nothing pops).
 function foldBlocksOf(key, dayKeys) {
-  const rooms = new Set(roomBlocksOf(key));
   const days = new Set(dayBlocksOf(dayKeys));
-  return [...$('wall-root').children].filter((el) => rooms.has(el) || days.has(el));
+  const rooms = new Set(roomBlocksOf(key).filter((room) => !days.has(room.closest('.day-block'))));
+  return [...$('wall-root').querySelectorAll('.day-block, .room')].filter((el) => days.has(el) || rooms.has(el));
 }
 // The rooms of the festival week the menu offers, hidden or not, in the
 // wall's order (wall.js roomsOf reads the fest through the wall's own plan).
@@ -235,18 +236,23 @@ function toggleFoldFlow(key) {
   const diff = (a, b) => new Set([...a].filter((k) => !b.has(k)));
   // Where the person is standing, read before the wall is rebuilt.
   const standing = (document.querySelector('.day-tab.active') || {}).dataset?.day || null;
+  // The everything-hidden notice (wall.js) is the wall's one line when the
+  // last room goes: it arrives with the beat once the week has left, and it
+  // is the first thing to leave when a room comes back.
+  const notice = () => $('wall-root').querySelector(':scope > .wall-empty');
+  const arrive = (blocks) => blocks.forEach((block, i) => {
+    if (!canAnimate(block, ctx)) return;
+    block.animate([{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }],
+      { duration: CASCADE_MS, delay: i * STAGGER_MS, easing: EASE_ARRIVE, fill: 'backwards' });
+  });
   const finish = () => {
     repaintWall();
     landAfterFold(standing);
-    if (!folding) {
-      foldBlocksOf(key, diff(daysAfter, daysBefore)).forEach((block, i) => {
-        if (!canAnimate(block, ctx)) return;
-        block.animate([{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }],
-          { duration: CASCADE_MS, delay: i * STAGGER_MS, easing: EASE_ARRIVE, fill: 'backwards' });
-      });
-    }
+    if (!folding) arrive(foldBlocksOf(key, diff(daysAfter, daysBefore)));
+    else if (notice()) arrive([notice()]);
   };
-  const leaving = folding ? foldBlocksOf(key, diff(daysBefore, daysAfter)).filter((block) => canAnimate(block, ctx)) : [];
+  const leaving = (folding ? foldBlocksOf(key, diff(daysBefore, daysAfter)) : [notice()].filter(Boolean))
+    .filter((block) => canAnimate(block, ctx));
   if (!leaving.length) { finish(); return; }
   let pending = leaving.length;
   let done = false;
@@ -261,21 +267,23 @@ function toggleFoldFlow(key) {
 }
 
 // Where the page stands after the wall changed shape under it. The day you
-// were in is still there: land on its rule again (the days above it may have
+// were in is still there: land on its block again (the days above it may have
 // gone, and an untouched scroll offset would be looking at somewhere else) —
 // unless you were at the top of the page, where there is nothing to keep and
 // nothing moves. The day you were in is gone: land on the first visible day,
 // which is what the open would choose, wherever you were standing (at the
-// top that is a short hop from the fest header to the first rule, and it is
+// top that is a short hop from the fest header to the first day, and it is
 // the day the dock now lights).
 function landAfterFold(standing) {
   const tabs = dayNavOf(state.fest(), ctx, $('wall-root'));
   const still = standing ? tabs.find((t) => (t.anchor || t.key) === standing) : null;
   if (still && !(window.scrollY > 0)) return;
   const day = still || defaultDayOf(tabs);
-  if (!day) return;
-  const rule = document.querySelector(anchorFor(day.anchor || day.key));
-  if (rule) landOnRule(rule);
+  // Nothing left to land on — everything is hidden: the top of the page,
+  // where the wall's notice says so.
+  if (!day) { if (window.scrollY > 0) window.scrollTo({ top: 0, behavior: 'auto' }); return; }
+  const block = document.querySelector(anchorFor(day.anchor || day.key));
+  if (block) landOnDay(block);
 }
 
 // ---- tap cycle -------------------------------------------------------------------
@@ -344,8 +352,8 @@ function applyFestTheme() {
   $('fest-sub').replaceChildren(festPlaceLine(fest)); // the venue is a door to the map when the fest file knows where it is
   // Dock (mobile bottom) and day rail (desktop top) carry the same fest
   // name + sync dot — one component vocabulary, two positions (note 1.1).
-  $('dock-fest-name').textContent = `${fest.name.toUpperCase()} ${fest.year || ''}`.trim();
-  $('rail-fest-name').textContent = `${fest.name.toUpperCase()} ${fest.year || ''}`.trim();
+  $('dock-fest-name').textContent = festLinkLabel(fest);
+  $('rail-fest-name').textContent = festLinkLabel(fest);
   document.title = `${fest.name} — Festival Navigator`;
   startFavicon(fest.accent, { lowPower: ctx.lowPower });
 }
@@ -431,11 +439,8 @@ function tickClock(date = new Date()) {
 }
 
 // Where a day tab lands on the wall, in the wall's own words (DAY_ANCHOR):
-// its day rule, or — for a dated section, which is a room and a tab at once —
-// its room header.
-const anchorFor = (key) => DAY_ANCHOR.split(', ')
-  .map((sel) => `#wall-root ${sel.replace('[data-day]', `[data-day="${CSS.escape(key)}"]`)}`)
-  .join(', ');
+// its day's block, whose first head names the day.
+const anchorFor = (key) => `#wall-root ${DAY_ANCHOR.replace('[data-day]', `[data-day="${CSS.escape(key)}"]`)}`;
 
 // Which day the wall opens on (MODEL-V4 §2): the festival's first VISIBLE grid
 // day. The day axis leads with whatever plays first — Portola's Thursday
@@ -449,7 +454,7 @@ export function defaultDayOf(days) {
 }
 
 // During the festival, with today's part hidden (the day-of scroll found no
-// rule for today): the next visible day. Before the festival nothing has
+// block for today): the next visible day. Before the festival nothing has
 // begun and there is no "next" — the first grid day is the open; after it,
 // likewise. A dated section is a tab, not a day.
 export function nextVisibleDay(days, todayIso) {
@@ -458,12 +463,12 @@ export function nextVisibleDay(days, todayIso) {
   return dated.find((d) => d.iso >= todayIso) || null;
 }
 
-// Land a day rule where a day-tab jump lands it: below the sticky chrome
-// (--jump-offset, measured into every rule's scroll-margin-top).
-function landOnRule(rule) {
-  const pageY = rule.getBoundingClientRect().top + (window.scrollY || window.pageYOffset || 0);
+// Land a day's block where a day-tab jump lands it: below the sticky chrome
+// (--jump-offset, measured into every block's scroll-margin-top).
+function landOnDay(block) {
+  const pageY = block.getBoundingClientRect().top + (window.scrollY || window.pageYOffset || 0);
   const offset = (typeof window.getComputedStyle === 'function')
-    ? parseFloat(window.getComputedStyle(rule).scrollMarginTop) || 0 : 0;
+    ? parseFloat(window.getComputedStyle(block).scrollMarginTop) || 0 : 0;
   window.scrollTo({ top: Math.max(0, pageY - offset), behavior: 'auto' });
 }
 
@@ -480,22 +485,25 @@ function maybeOpenOnDay() {
   const tz = state.fest().timezone || null; // the festival's clock, not the phone's
   const key = dayOfScrollKey(ctx.fid, new Date(), tz);
   if (scrolledBefore(key)) return;
-  // During the festival: the now line, or today's rule before doors.
+  // During the festival: the now line, or today's first head before doors —
+  // a Late nights date counts as today when no grid day is (wall.js
+  // scrollToNowLine).
   if (scrollToNowLine($('wall-root'), { timeZone: tz })) { rememberScrolled(key); return; }
   // During it with today hidden: the next visible day. Before it and after
   // it: the first visible grid day.
   const tabs = dayNavOf(state.fest(), ctx);
   const day = nextVisibleDay(tabs, festivalClock(new Date(), tz).iso) || defaultDayOf(tabs);
   if (!day) return;
-  const rule = document.querySelector(anchorFor(day.anchor || day.key));
-  if (!rule) return;
-  landOnRule(rule);
+  const block = document.querySelector(anchorFor(day.anchor || day.key));
+  if (!block) return;
+  landOnDay(block);
   rememberScrolled(key);
 }
 
 // The explicit identity switch (FLOW-8), called from Settings.
 function switchIdentity(name) {
   crew.setMe(state.getCrewToken(), name);
+  withdrawBringOffer(); // an offer of one person's picks is never another's
   // The wall is painted per identity (your level in every label, the white
   // stroke on your marks) — Settings → You is the ONLY switch now, so the
   // repaint lives here, not in a caller (Codex gate, 2026-08-29).
@@ -530,8 +538,8 @@ function measureStickyChrome() {
   const railH = rail && rail.offsetHeight ? rail.offsetHeight : 0;
   const strip = document.querySelector('.stage-strip');
   // On a day-first wall every strip is scoped to its own timetable block
-  // (`.tt-block`), so no strip ever sits above a day rule — a jump lands
-  // against the rail alone.
+  // (`.tt-block`), so no strip ever sits above a day's first head — a jump
+  // lands against the rail alone.
   const scoped = !!document.querySelector('#wall-root .tt-block');
   const stripH = strip && !scoped ? strip.offsetHeight : 0;
   const rootStyle = document.documentElement.style;
@@ -546,7 +554,7 @@ let unspy = () => {};
 // dated section (LATE) after them (MODEL-V4 §2).
 //
 // Two fields are optional and mean nothing to a single-weekend fest:
-// `anchor` is the day rule this tab jumps to when it is not the day's key —
+// `anchor` is the day block this tab jumps to when it is not the day's key —
 // a two-weekend fest renders Friday twice and one key cannot address both —
 // and `num` is the date the dock tab wears to tell those two apart
 // (FRI 2 · SAT 3 · SUN 4 · FRI 9 · SAT 10 · SUN 11). The rail's long label
@@ -1092,11 +1100,12 @@ async function batchCreateFlow(myName) {
       // where the new row already is.
       const { token, doc, fid } = made[0];
       try {
-        await enterApp(token, doc);
+        await enterApp(token, doc, undefined, undefined, { holdOffer: true });
         state.recordInviteFest(fid); // invites resolve on fresh devices (FLOW-1)
         sync.scheduleSync();
         openShareMoment();
         router.push('sheet:share');
+        maybeOfferBringPicks(); // waits for the share moment to close — never both at once
       } catch {
         history.replaceState(null, '', '/');
         renderLanding();
@@ -1208,7 +1217,7 @@ function openAddMember() {
   sheetChrome(sheet, 'ADD SOMEONE'); // one sheet anatomy, everywhere (see openShareMoment)
   const sub = document.createElement('div');
   sub.style.cssText = 'color: var(--text-secondary); font-size: 12.5px; line-height: 1.55;';
-  sub.textContent = 'You pick for them until they claim it — their link makes it theirs the moment they open it.';
+  sub.textContent = 'Pick for them until they open their link.';
   const row = document.createElement('div');
   row.style.cssText = 'display: flex; gap: 8px; align-items: center;';
   const input = document.createElement('input');
@@ -1427,9 +1436,20 @@ function openSettings() {
       applyFestTheme();
       if (!router.requestClose()) closeSettings();
       sync.pollSync();
+      maybeOfferBringPicks(); // a festival switch is entering that festival here
     },
     onLowPower: (on) => { applyLowPower(on); },
-    onStayOffline: (on) => { sync.setStayOffline(on); if (!on) sync.pushSync(); },
+    onStayOffline: (on) => {
+      sync.setStayOffline(on);
+      if (on) return;
+      sync.pushSync();
+      // Back online by choice: the refresh an offline open skipped runs now —
+      // the live catalog, the crew's own festivals, the festival file on
+      // screen (Codex review, 2026-09-23).
+      const token = state.getCrewToken();
+      const gen = bootGeneration;
+      if (token) freshenFromNetwork(token, () => loadFestivalIndex().catch(() => { /* the cached list stays */ }), () => gen === bootGeneration);
+    },
     recordPick: (artist, person, level) => {
       if (ctx.migrationPending) return false; // same gate as handleTap (bulk paste path)
       state.recordSelection(artist, person, level);
@@ -1507,6 +1527,7 @@ function openSettings() {
       if (state.crewDoc.people[old]) state.crewDoc.people[old].removed = true;
       state.persist();
       crew.setMe(state.getCrewToken(), newName);
+      withdrawBringOffer(); // it was made for the old name
       sync.scheduleSync();
       refreshCtx();
       renderPersonChips();
@@ -1602,7 +1623,8 @@ function renderLanding() {
     nm.textContent = person.name || 'You';
     const hint = document.createElement('div');
     hint.className = 'mini-copy';
-    hint.textContent = 'Open your link on a new phone and everything comes back — every crew, every pick. Sharing it makes someone else you, so don’t.';
+    // The me link is a master key: the warning stays, in fewer words.
+    hint.textContent = 'Open this on a new phone to get everything back. Keep it to yourself — it makes whoever opens it you.';
     mid.append(nm, hint);
     const copyBtn = document.createElement('button');
     copyBtn.className = 'btn-tonal';
@@ -1709,6 +1731,141 @@ function renderLanding() {
     list.appendChild(row);
   }
   $('landing-empty').style.display = crews.length ? 'none' : '';
+}
+
+// Recognize you (2026-09-23). A crew link this device had no claim in used to
+// ask "who are you?" even when the crew doc already carried this device's
+// person id — someone who forgot the crew here, or joined on another phone
+// holding the same me link, re-introducing themselves to their own crew. An
+// unambiguous match (crew.recognizedMember) now walks straight in. A personal
+// link naming someone ELSE (&me=Drew, opened on Kevin's phone) is its own
+// answer to the question, so that one still asks.
+function recognizeOnOpen(token, doc) {
+  const known = crew.recognizedMember(crew.myPerson(), token, doc);
+  if (!known) return null;
+  if (pendingMeHint && pendingMeHint.toLowerCase() !== known.toLowerCase()) return null;
+  return known;
+}
+
+// Nothing needs doing after a recognized entry, so the acknowledgement is a
+// toast (it may fade) — carrying the one door a borrowed phone needs for as
+// long as it shows.
+function welcomeRecognized(token, name) {
+  showActionToast($('toast-root'), `Welcome back, ${name}.`, 'Not me', () => notMe(token), 6000);
+}
+
+// "Not me": forget the claim on this device and ask, exactly as the join
+// screen always has. The crew stays remembered; nothing in the shared doc
+// changes (the recognition only ever READ the pid).
+function notMe(token) {
+  if (state.getCrewToken() !== token) return; // the toast outlived its crew
+  crew.clearMe(token);
+  withdrawBringOffer();
+  refreshCtx();
+  renderPersonChips();
+  renderYou();
+  renderJoin(token, state.crewDoc);
+}
+
+// Bring your picks (2026-09-23). Entering a crew at a festival where this
+// device knows ANOTHER crew holding your picks offers — once per crew ×
+// festival — to bring them over. The rules live in crew-entry.js; this is
+// the glue: the plan reads only this device's cache, and the write is the
+// ordinary pick path, so sync and the merge see nothing but taps.
+function bringContext() {
+  return {
+    token: state.getCrewToken(), fid: state.activeFestivalId, doc: state.crewDoc,
+    meName: ctx.meName, person: crew.myPerson(), crews: crew.knownCrews(),
+    docFor: state.cachedDoc, meFor: crew.me,
+  };
+}
+
+// The offer on screen, and the plan it was made from: the tap is held to the
+// crew, festival, names and picks the card was showing (crew-entry.js
+// bringFromSource) — never re-planned into a different crew.
+let standingOffer = null; // { key, plan }
+const offerKey = () => `${state.getCrewToken()}|${state.activeFestivalId}|${ctx.meName || ''}`;
+
+function maybeOfferBringPicks() {
+  const token = state.getCrewToken();
+  const fid = state.activeFestivalId;
+  const key = offerKey();
+  const standing = bringOfferCard();
+  if (standing && standing.dataset.key !== key) dismissBringOffer({ instant: true });
+  if (!token || !fid || !ctx.meName || ctx.migrationPending || bringAnswered(token, fid)) return;
+  if (bringOfferCard()) return; // already asking, here
+  if (document.getElementById('artist-sheet')) { offerWhenSheetCloses(); return; }
+  const plan = planBringPicks(bringContext());
+  if (!plan) return;
+  standingOffer = { key, plan };
+  showBringOffer($('screen-app'), {
+    copy: bringOfferCopy(plan, (state.fest() || {}).name),
+    key,
+    ctx,
+    onBring: () => bringPicksHere(key),
+    onDecline: () => rememberBringAnswer(token, fid, 'declined'),
+  });
+}
+
+// One thing at a time at the bottom of the screen: an offer that would come
+// up while a sheet is open waits for the sheet to close, then arrives with
+// its usual beat. The post-create share moment opened at the same instant
+// and covered the card — a real tap on "Bring it" hit the sheet (WebKit
+// walk, iPhone 15, 2026-09-23). Sheets live on <body>, so its child list
+// says when the last one has gone.
+let offerWaiter = null;
+function offerWhenSheetCloses() {
+  const Observer = typeof window !== 'undefined' ? window.MutationObserver : undefined;
+  if (offerWaiter || typeof Observer !== 'function') return;
+  offerWaiter = new Observer(() => {
+    if (document.getElementById('artist-sheet')) return;
+    offerWaiter.disconnect();
+    offerWaiter = null;
+    maybeOfferBringPicks();
+  });
+  offerWaiter.observe(document.body, { childList: true });
+}
+
+// Someone else is picking on this phone now (Settings → You, a rename): the
+// offer was made for the name before, so it goes. Unanswered — the next entry
+// asks the right person.
+function withdrawBringOffer() {
+  standingOffer = null;
+  dismissBringOffer({ instant: true });
+}
+
+function bringPicksHere(key) {
+  const token = state.getCrewToken();
+  const fid = state.activeFestivalId;
+  const card = bringOfferCard();
+  const offer = standingOffer;
+  // The card must still be about the crew, festival and picker on screen, and
+  // picks must be writable — anything else and it quietly goes, unanswered.
+  if (!card || card.dataset.key !== key || !offer || offer.key !== key || key !== offerKey() || ctx.migrationPending) {
+    withdrawBringOffer();
+    return;
+  }
+  const tap = bringFromSource(offer.plan, bringContext());
+  if (!tap) { withdrawBringOffer(); return; }
+  rememberBringAnswer(token, fid, 'brought');
+  standingOffer = null;
+  // applyLocalPick's two steps, with the doc written to disk ONCE at the end:
+  // persisting the whole crew doc per pick is fine for a tap and a stall for
+  // fifty of them at once.
+  if (tap.count) {
+    state.ensureFestivalState(fid);
+    const sels = state.crewDoc.festivals[fid].selections;
+    for (const [artist, level] of Object.entries(tap.picks)) {
+      state.recordSelection(artist, ctx.meName, level);
+      (sels[artist] = sels[artist] || {})[ctx.meName] = level;
+    }
+    state.persist();
+    sync.scheduleSync();
+    repaintWall();
+  }
+  // Nothing left from the crew the card named (all decided here meanwhile):
+  // the card says so rather than reaching into another crew.
+  settleBringOffer(bringDoneLine(tap.count), { ctx });
 }
 
 function renderJoin(token, doc) {
@@ -1859,7 +2016,12 @@ async function stampIdentity(token, current = () => true, { renameFrom = null } 
 
 // `customs` is the crew's custom-festival fetch — boot starts it beside the
 // catalog; any other entry starts it here. Merged only now, catalog in hand.
-async function enterApp(token, doc, current = () => true, customs = fetchCustomFestivals(token)) {
+// `recognized` (boot only): the name recognizeOnOpen claimed for this device.
+// `warm` (boot only): the festival canOpenWarm admitted, `{ fid, fest }` —
+// painting from this phone's own copy, so nothing below may wait on the
+// network, and nothing re-decides the festival (see boot's warm open).
+async function enterApp(token, doc, current = () => true, customs = fetchCustomFestivals(token), { recognized = null, warm = null, holdOffer = false } = {}) {
+  dismissBringOffer({ instant: true }); // an offer is about the crew it was made in — never the next one
   crew.setActiveCrew(token);
   crew.rememberCrew(token, (doc.meta && doc.meta.name) || '');
   mergeCustoms(await customs); // crew-private fests join the catalog first
@@ -1868,7 +2030,7 @@ async function enterApp(token, doc, current = () => true, customs = fetchCustomF
   // doc's stamp. Consumed once — only fills the void on a fest-less device.
   const festHint = pendingFestHint || (doc.meta && doc.meta.inviteFestId) || null;
   pendingFestHint = null;
-  state.activateCrew(token, doc, festHint);
+  state.activateCrew(token, doc, festHint, { festival: warm ? warm.fid : null });
   // Backfill (audit re-run finding): crews older than the fix never got the
   // stamp, so THEIR links — the ones already in group chats — still showed
   // joiners no festival. Any claimed member's boot heals the doc once, from
@@ -1887,7 +2049,19 @@ async function enterApp(token, doc, current = () => true, customs = fetchCustomF
   // corrupting a genuine "picked x3" into "must" (Codex P6 gate, finding 1).
   // Offline/failed migration -> writes stay gated (ctx.migrationPending) and
   // the poll loop retries; reads are safe throughout (readLevel maps by v).
-  if (model.needsMigration(state.crewDoc)) {
+  if (model.needsMigration(state.crewDoc) && warm) {
+    // A warm open never waits on the network: picks stay gated (the banner
+    // says so) until the one-shot op lands — here, or on the 25 s loop. Under
+    // Stay offline it is not asked for here at all.
+    ctx.migrationPending = true;
+    if (!appSettings().stayOffline) {
+      sync.requestMigration().then(() => {
+        if (!current() || state.getCrewToken() !== token) return;
+        ctx.migrationPending = model.needsMigration(state.crewDoc);
+        if (!ctx.migrationPending) repaintWall();
+      });
+    }
+  } else if (model.needsMigration(state.crewDoc)) {
     await sync.requestMigration();
     if (!current()) return;
     ctx.migrationPending = model.needsMigration(state.crewDoc);
@@ -1895,6 +2069,9 @@ async function enterApp(token, doc, current = () => true, customs = fetchCustomF
     ctx.migrationPending = false;
   }
   try {
+    // A warm open arrives with its festival's file in hand (canOpenWarm), so
+    // this answers from memory.
+    if (warm && !state.FESTIVALS[warm.fid]) state.FESTIVALS[warm.fid] = warm.fest;
     await loadFestival(state.activeFestivalId);
   } catch {
     // Offline with this fest uncached: fall back to a loadable fest rather
@@ -1912,6 +2089,7 @@ async function enterApp(token, doc, current = () => true, customs = fetchCustomF
   // We opened a real one instead; say which, and say the picks survived —
   // otherwise the board just changes underneath the person and the landing
   // row that promised "tap this fest, get this fest" has quietly lied.
+  // (Never on a warm open: it only runs when the saved festival IS listed.)
   if (state.missingFestivalId) {
     const gone = model.festLabelFor(state.missingFestivalId, FESTIVAL_INDEX).name;
     const here = model.festLabelFor(state.activeFestivalId, FESTIVAL_INDEX).name;
@@ -1946,7 +2124,17 @@ async function enterApp(token, doc, current = () => true, customs = fetchCustomF
       if (changed && current()) { sync.scheduleSync(); refreshCtx(); repaintWall(); }
     }).catch((e) => console.warn('crew badge sweep:', e));
   }
-  stampIdentity(token, current); // me link — fire-and-forget by design
+  // Me link — fire-and-forget by design. A first join only becomes provably
+  // "mine" once the stamp writes this device's pid onto the name, so the
+  // picks offer asks again when it lands (a no-op if it is already up).
+  stampIdentity(token, current).then(() => {
+    if (!holdOffer && current() && state.getCrewToken() === token) maybeOfferBringPicks();
+  });
+  if (recognized) welcomeRecognized(token, recognized);
+  // After the welcome: the card steps up over its toast. `holdOffer`: the
+  // caller is about to open a sheet (the create flow's share moment), and
+  // asks for the offer itself once that sheet is up, so it waits for it.
+  if (!holdOffer) maybeOfferBringPicks();
   // A hop from an alias domain mid-Spotify-setup (SPOT-1): reopen the drill
   // so the member lands exactly where they left off.
   if (pendingSpotifyOpen) {
@@ -1964,6 +2152,94 @@ async function enterApp(token, doc, current = () => true, customs = fetchCustomF
       });
     }
   }
+}
+
+// ---- the warm open (2026-09-23) --------------------------------------------------
+// STRICT by design (round 4 — the coordinator's call the day before the
+// festival: fewer moving parts beats clever reconciliation). A warm open
+// paints only EXACTLY the wall the person left: a name this device claimed
+// in the crew, the crew's cached doc, the saved festival listed in the
+// CACHED catalog (a crew's own festival: in its locally stored list), and
+// that festival's file in hand. Anything missing and boot takes the ordinary
+// path and waits for the network, as it always did. So a warm open never
+// switches festivals, never writes the saved choice and never loads a
+// different festival — the round-3 reconciliation that did those things is
+// gone, with the bugs it grew (a note re-aimed into another festival, a
+// fallback confirmed before the facts arrived, a request under Stay offline).
+//
+// The ADMITTED festival — `{ fid, fest }`, its id and its file — when this
+// device can paint that wall now; null when it cannot. The admission travels
+// into activation as it is (enterApp → activateCrew's `festival`): the live
+// catalog can land while this is still reading the cache, and nothing after
+// this point may re-decide the festival on it (Codex round 4, 2026-09-23).
+async function canOpenWarm(token) {
+  if (!crew.me(token) || !state.cachedDoc(token)) return null;
+  const saved = getLS(state.LS.fest(token));
+  if (!saved) return null; // no saved choice: which wall was "left" is not known
+  if (!(await festivalIndexFromCache())) return null;
+  const listed = FESTIVAL_INDEX.some((f) => f.id === saved && !f.custom);
+  // A crew's own festival: the locally stored list IS its file.
+  const fest = listed
+    ? await festivalFromCache(saved)
+    : cachedCustomFestivals(token).find((f) => f && f.id === saved);
+  return fest ? { fid: saved, fest } : null;
+}
+
+// After a warm paint (and whenever "Stay offline" is switched back off) the
+// network may only REFRESH what is on screen — never change which festival
+// is showing. Stay offline is read at the moment each request would fire:
+// while it is on, nothing is asked; switching it off runs this again.
+//   - The festival file on screen (network-first through the worker, as
+//     ever — a data push still reaches an online phone on this very open).
+//   - The catalog, for later switches. If the live catalog no longer lists
+//     the festival on screen, it STAYS on screen: the next cold open resolves
+//     it, with its usual toast. Moving someone's wall under them — with a note
+//     half-typed — is the worse failure.
+//   - The crew's own festivals: rejoin the replaced catalog, then fresh.
+//   The crew doc needs nothing here: enterApp's poll is its path.
+function freshenFromNetwork(token, catalog, current) {
+  const live = () => current() && state.getCrewToken() === token;
+  const online = () => !appSettings().stayOffline;
+  if (!online()) return;
+  refreshFestivalFile(state.activeFestivalId);
+  (async () => {
+    await catalog();
+    if (!live()) return;
+    mergeCustoms(cachedCustomFestivals(token)); // the live list replaced the cached one wholesale
+    if (!online()) return;
+    const fresh = await fetchCustomFestivals(token);
+    if (live()) applyFreshCustoms(fresh);
+  })().catch((e) => console.warn('warm open: catalog', e));
+}
+
+// A festival file, fresh from the network. The file is shared by every crew
+// at that festival, so a changed one is kept, its computed days forgotten,
+// and whichever wall is SHOWING that festival now repaints — whatever crew's
+// open happened to ask (Codex round 3, new B: A's answer landed while B was
+// on screen, and B's identical answer then changed nothing).
+function refreshFestivalFile(fid) {
+  fetchFestivalFile(fid).then((fest) => {
+    if (!fest || JSON.stringify(fest) === JSON.stringify(state.FESTIVALS[fid])) return;
+    state.FESTIVALS[fid] = fest;
+    state.forgetComputedDays(fid);
+    if (state.activeFestivalId === fid) { applyFestTheme(); repaintFromRemote(); }
+  }).catch((e) => console.warn('warm open: festival file', e));
+}
+
+// The crew's own festivals, fresh from the server. One that changed is a data
+// push like any other: its computed days go, and if it is on screen the wall
+// repaints (Codex review, 2026-09-23 — 8:00 PM live, 9:00 PM on screen).
+function applyFreshCustoms(list) {
+  const ids = list.filter((f) => f && f.id).map((f) => f.id);
+  const before = new Map(ids.map((id) => [id, JSON.stringify(state.FESTIVALS[id] || null)]));
+  mergeCustoms(list);
+  let onScreen = false;
+  for (const [id, was] of before) {
+    if (JSON.stringify(state.FESTIVALS[id] || null) === was) continue;
+    state.forgetComputedDays(id);
+    if (id === state.activeFestivalId) onScreen = true;
+  }
+  if (onScreen) { applyFestTheme(); repaintFromRemote(); }
 }
 
 // ---- lost states (spec F16) --------------------------------------------------------
@@ -2043,17 +2319,21 @@ export async function boot() {
   try {
     // The catalog leaves now and nothing waits on it alone: a crew boot sends
     // its own two requests beside it (below). Each branch that renders from
-    // the catalog awaits it first.
-    const catalog = loadFestivalIndex().catch(() => { /* offline with cache: proceed */ });
+    // the catalog awaits it first. Under "Stay offline" it leaves only when a
+    // branch actually needs the network (2026-09-23): a warm open asks the
+    // network for nothing.
+    const fetchCatalog = () => loadFestivalIndex().catch(() => { /* offline with cache: proceed */ });
+    let catalogRequest = appSettings().stayOffline ? null : fetchCatalog();
+    const catalog = () => catalogRequest || (catalogRequest = fetchCatalog());
 
     if (personLinkBroken) {
-      await catalog;
+      await catalog();
       if (!current()) return;
       renderLanding();
       showToast($('toast-root'), 'That link looks cut off — copy it again from your other device.', 6000);
       return;
     }
-    if (personToken && !hopCrewToken) { await catalog; await restoreFromMeLink(personToken, current); return; }
+    if (personToken && !hopCrewToken) { await catalog(); await restoreFromMeLink(personToken, current); return; }
     // Quiet absorb — from the hop URL, or from a previous boot's absorb that
     // failed offline (the token waits in sessionStorage: session-scoped
     // master-key hygiene, dies with the tab, never re-enters a URL). Landing
@@ -2091,13 +2371,33 @@ export async function boot() {
       }
     }
 
-    if (location.hash === '#new') { await catalog; renderCreate(); return; }
+    // Every branch re-checks it is still the current boot after its await: a
+    // boot superseded meanwhile (the person opened a crew) renders nothing
+    // over the newer wall (Codex round 4, 2026-09-23 — inherited from main).
+    if (location.hash === '#new') { await catalog(); if (current()) renderCreate(); return; }
     // A crew link that is present but malformed (truncated by a chat app, half
     // pasted) must say so. Falling through to the landing page told the person
     // nothing at all — the app quietly acting as if they had never clicked.
     if (crew.hashHasBrokenToken()) { renderBadLink('', { gone: false, malformed: true }); return; }
     const token = crew.bootTokenFor(crew.tokenFromHash(), crew.activeCrewToken(), isFirst);
-    if (!token) { await catalog; renderLanding(); return; }
+    if (!token) { await catalog(); if (current()) renderLanding(); return; }
+
+    // The warm open (2026-09-23). When this phone can paint EXACTLY the wall
+    // the person left (canOpenWarm), it paints it NOW and the network lands
+    // the ordinary way whenever it answers: enterApp's poll is the
+    // remote-change path (repaint, chips, an open sheet), and our API's JSON
+    // 404 is still the crew-gone path — one poll after the first paint rather
+    // than before it, which is the trade. At Pier 80 the network hangs rather
+    // than fails, and the path below spent up to ~16 s of loader on files that
+    // were already here. Anything short of that exact wall takes the path
+    // below and waits, as it always did.
+    const admitted = await canOpenWarm(token);
+    if (admitted) {
+      if (!current()) return;
+      await enterApp(token, state.cachedDoc(token), current, Promise.resolve(cachedCustomFestivals(token)), { warm: admitted });
+      if (current()) freshenFromNetwork(token, catalog, current);
+      return;
+    }
 
     // The crew doc and the crew's own festivals leave beside the catalog, so
     // a network that hangs costs the slowest wait (8 s), never the sum of
@@ -2106,31 +2406,43 @@ export async function boot() {
     let doc = null;
     let gone = false;
     const fetched = crew.fetchCrew(token).then((d) => { doc = d; gone = d === null; }, () => { /* network failure — try the cache below */ });
-    await Promise.all([catalog, fetched]);
+    await Promise.all([catalog(), fetched]);
     if (!current()) return;
     // A deleted crew is deleted NOW — don't re-enter the app on a stale
     // cached doc just to bounce out one sync later (Codex trailing review).
     if (gone) { renderBadLink(token, { gone: true }); return; }
     if (!doc) doc = state.cachedDoc(token);
     if (!doc) { renderBadLink(token, { gone }); return; }
-    if (!crew.me(token)) { renderJoin(token, doc); return; }
-    await enterApp(token, doc, current, customs);
+    let recognized = null;
+    if (!crew.me(token)) {
+      recognized = recognizeOnOpen(token, doc);
+      if (!recognized) { renderJoin(token, doc); return; }
+      crew.setMe(token, recognized);
+    }
+    await enterApp(token, doc, current, customs, { recognized });
   } catch (e) {
     console.error('boot failed', e);
     if (current()) renderFatal();
   }
 }
 
+// Everything that renders identity/state repaints together — the dock avatar
+// was the one holdout showing a stale color (audit 1.5). The remote-change
+// path, and the warm open's fresh festival file takes it too.
+function repaintFromRemote() { repaintWall(); renderPersonChips(); renderYou(); refreshOpenSheet(); }
+
 // ---- wiring ----------------------------------------------------------------------
 export function init() {
   sync.initSync({
-    // Everything that renders identity/state repaints together — the dock
-    // avatar was the one holdout showing a stale color (audit 1.5).
-    onRemoteChange: () => { repaintWall(); renderPersonChips(); renderYou(); refreshOpenSheet(); },
+    onRemoteChange: repaintFromRemote,
     onCrewGone: (token) => {
       // The server said this crew no longer exists — a dead row on the
       // landing list would just 404 again (FLOW-3).
       crew.forgetCrew(token);
+      // A late answer about a crew you have since left (a warm open's first
+      // poll, answering after you opened another crew): forget it, but the
+      // crew on screen stays on screen (Codex review, 2026-09-23).
+      if (state.getCrewToken() !== token) return;
       renderLanding();
       showToast($('toast-root'), 'That crew link no longer works — removed from your festivals.', 6000);
     },
@@ -2175,7 +2487,7 @@ export function init() {
     ctx.query = e.target.value;
     unzoom({ instant: true, why: 'wall switched' });
     renderWall($('wall-root'), ctx);
-    renderDayNav(); // scrollspy re-wires against the filtered day rules (gate F8)
+    renderDayNav(); // scrollspy re-wires against the filtered day blocks (gate F8)
     measureStickyChrome(); // search mode drops the stage strip — jump offset shrinks
   });
   let resizeTimer = null;

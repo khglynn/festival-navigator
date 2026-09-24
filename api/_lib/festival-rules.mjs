@@ -109,7 +109,10 @@ function checkEventFields(fest, err, warn) {
     if (!plain(a)) return;
     const at = `artists[${i}] (${safeKey(a.name)})`;
     const bits = typeof a.stage === 'string' && a.stage.includes(' · ') ? a.stage.split(' · ') : null;
-    const rk = roomKey(a);
+    // A cancelled show is in the room and plays no part in it (events.js
+    // venueGroupsOf): it is not an act of the run, a timed set of the room,
+    // or a member the order has to account for.
+    const rk = a.cancelled === undefined ? roomKey(a) : null;
     if (rk) acts.set(rk, (acts.get(rk) || 0) + 1);
 
     if (a.date !== undefined && !realDate(a.date)) err(`${at}: date must be a real YYYY-MM-DD date (got ${JSON.stringify(safeKey(a.date))})`);
@@ -140,8 +143,8 @@ function checkEventFields(fest, err, warn) {
         // venues{} holds a map link per room, and the zoom's place line opens
         // it. A room that is missing simply has nothing to tap — the card is
         // fine — so this is a warning, the same weight as a lineup artist
-        // with no set yet.
-        if (venueMap && !Object.prototype.hasOwnProperty.call(venueMap, a.venue)) warn(`${at}: venue ${JSON.stringify(safeKey(a.venue))} has no entry in venues{} — its place line will not open a map`);
+        // with no set yet. Nobody needs directions to a cancelled set.
+        if (venueMap && a.cancelled === undefined && !Object.prototype.hasOwnProperty.call(venueMap, a.venue)) warn(`${at}: venue ${JSON.stringify(safeKey(a.venue))} has no entry in venues{} — its place line will not open a map`);
       }
     }
 
@@ -241,6 +244,60 @@ function checkEventFields(fest, err, warn) {
     for (let i = 1; i < timed.length; i++) {
       if (timed[i].t <= timed[i - 1].t) err(`${where}: ${timed[i].at} is ${timed[i].seq} of ${of} but starts no later than the set before it — the running order and the clock disagree`);
     }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// A cancelled act (2026-09-23 — Skepta, called off Portola's Saturday Crane
+// Stage two days before, with three of the crew's picks on him).
+//
+// The artists[] entry STAYS: its name is a pick key with no rename path, and
+// a card that vanished would leave those picks planning around a set that is
+// not happening. It says so as data instead —
+//   cancelled: { on: "YYYY-MM-DD", source: "https://…", note?: "…" }
+// `on` is the day it was announced, `source` is where (the zoom's "Announced"
+// line is a door to it), `note` one short line of what happened around it.
+// The shape is small on purpose, so an unknown key is an error: a `date`
+// written for `on` should fail here, not render "Announced" with no date.
+//
+// The set itself comes OFF the grid: a cancelled act is a card in the
+// festival's room, never a column cell, so a cancelled name that still has a
+// set on a grid day its entry names is an ERROR. The grid set never carries
+// the field — one place says it, the entry. The name may still play another
+// day or an afters; only its own day is checked.
+const CANCEL_KEYS = new Set(['on', 'source', 'note']);
+function checkCancelled(fest, err) {
+  const plain = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
+  const days = plain(fest.days) ? fest.days : {};
+  const gridDays = Object.keys(days);
+  (Array.isArray(fest.artists) ? fest.artists : []).forEach((a, i) => {
+    if (!plain(a) || a.cancelled === undefined) return;
+    const at = `artists[${i}] (${safeKey(a.name)})`;
+    const c = a.cancelled;
+    if (!plain(c)) { err(`${at}: cancelled must be an object { on, source, note? }`); return; }
+    for (const k of Object.keys(c)) {
+      if (!CANCEL_KEYS.has(k)) err(`${at}: cancelled.${safeKey(k)} is not a field — cancelled carries on, source and an optional note`);
+    }
+    if (!realDate(c.on)) err(`${at}: cancelled.on must be the real YYYY-MM-DD date it was announced`);
+    if (typeof c.source !== 'string' || !/^https:\/\/[^\s]+$/.test(c.source)) err(`${at}: cancelled.source must be an https URL — the zoom's "Announced" line is a door to it`);
+    if (c.note !== undefined && (typeof c.note !== 'string' || !c.note.trim() || c.note.length > 140 || /[\x00-\x1f\x7f]/.test(c.note))) {
+      err(`${at}: cancelled.note must be one short line of text (140 chars at most)`);
+    }
+    const parts = typeof a.day === 'string' && a.day.trim() ? dayParts(a.day).map((p) => p.toLowerCase()) : null;
+    for (const d of gridDays.filter((g) => !parts || parts.includes(g.toLowerCase()))) {
+      const sets = plain(days[d]) && Array.isArray(days[d].artists) ? days[d].artists : [];
+      // Per weekend: a two-weekend fest can lose an act on one weekend and
+      // keep its grid set on the other (the wall draws each weekend's own
+      // sets). Untagged or "both" on either side overlaps everything.
+      const overlaps = (s) => !s.weekend || s.weekend === 'both' || !a.weekends || a.weekends === 'both' || s.weekend === a.weekends;
+      if (sets.some((s) => plain(s) && s.name === a.name && overlaps(s))) err(`${safeKey(d)}: ${safeKey(a.name)} is cancelled but still has a set on the grid — take the set off; the cancelled entry is where its card renders`);
+    }
+  });
+  for (const [label, day] of Object.entries(days)) {
+    if (!plain(day) || !Array.isArray(day.artists)) continue;
+    day.artists.forEach((s, i) => {
+      if (plain(s) && s.cancelled !== undefined) err(`${safeKey(label)}.artists[${i}] (${safeKey(s.name)}): a grid set is not cancelled in place — take it off the grid and mark its artists[] entry cancelled`);
+    });
   }
 }
 
@@ -350,6 +407,7 @@ export function validateFestivalDoc(fest, { filename } = {}) {
   // The structured event fields (night/venue/approx/doors/close/order) —
   // artists[] only, since a grid set's room is its `stage` column.
   checkEventFields(fest, err, warn);
+  checkCancelled(fest, err);
 
   const isPlain = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
   // days{} is an object keyed by day label. An array or a scalar here used to
@@ -451,10 +509,11 @@ export function validateFestivalDoc(fest, { filename } = {}) {
     }
     // The other direction: a lineup artist billed on a grid day with no set
     // on that grid is invisible on the timetable. Usually a missed box —
-    // warn, don't block (partial drops are real). Live fests only.
+    // warn, don't block (partial drops are real). Live fests only. A
+    // cancelled act is off the grid on purpose (checkCancelled).
     if (live) {
       (Array.isArray(fest.artists) ? fest.artists : []).forEach((a) => {
-        if (!a || !a.name || typeof a.day !== 'string') return;
+        if (!a || !a.name || typeof a.day !== 'string' || a.cancelled !== undefined) return;
         const parts = a.day.split(/\s*[&+/]\s*|\s+and\s+/i).map((s) => s.trim()).filter(Boolean);
         for (const part of parts) {
           const dayKey = Object.keys(fest.days).find((d) => d.toLowerCase() === part.toLowerCase());
@@ -543,11 +602,13 @@ export function validateFestivalDoc(fest, { filename } = {}) {
     }
   }
 
-  // Day labels render in the day-rule strip designed for weekday-length text;
-  // sentence-length labels wrap it to three lines (audit 12.5).
+  // Day labels render in one-line heads built for weekday-length text (a
+  // section's label is a room's name: `SAT AFTERS`); a sentence-length label
+  // ellipsizes to nothing useful on a phone (audit 12.5; one-line heads,
+  // 2026-09-23).
   (Array.isArray(fest.artists) ? fest.artists : []).forEach((a, i) => {
     if (a && typeof a.day === 'string' && a.day.length > 48) {
-      warn(`artists[${i}] (${safeKey(a.name)}): day label is ${a.day.length} chars — day-rule strips are designed for short labels`);
+      warn(`artists[${i}] (${safeKey(a.name)}): day label is ${a.day.length} chars — the wall's one-line heads are designed for short labels`);
     }
   });
 

@@ -65,6 +65,9 @@
 .card.cell .chip-spotify { height: 11px; padding: 0 5px; font-size: 8px; }
 
 .corner-about { position: absolute; bottom: 4px; left: 6px; display: flex; align-items: center; gap: 3px; }
+/* What a narrow card gives way (aura.js GIVE_WAY) is `hidden` — which the
+ * chips' own display would otherwise out-rank. */
+.corner-about [hidden] { display: none; }
 .corner-who { position: absolute; bottom: 4px; right: 5px; display: flex; align-items: center; }
 .chip-notes {
   display: inline-flex; align-items: center; height: 13px; padding: 0 6px;
@@ -77,6 +80,36 @@
   border-radius: var(--r-pill); background: var(--spotify-fill);
   border: 1px solid var(--spotify-stroke); color: #fff; font-size: 8.5px; font-weight: 800; line-height: 1;
 }
+/* YOUR meter (2026-09-23): how much you want this set, at the corner's edge,
+ * drawn on the Spotify pill's pattern (same height, radius, stroke, spacing).
+ * Fill is your colour at .5 and the edge is white, the app's "this is you"
+ * (palette.strokeOf isYou), both set inline by wall.js meterChip. Never
+ * --brand (beside the violet notes bubble it read as a second notes chip) and
+ * never --fest. Three bars, lit one per tap; must is the word in the display
+ * face. Unlit bars are the same white at .3, so lighting one is opacity and
+ * transform only. A span, not a button: the card is the target. */
+.chip-meter {
+  display: inline-flex; align-items: center; justify-content: center; height: 12px; padding: 0 6px;
+  border-radius: var(--r-pill); border: 1px solid #fff; color: #fff; line-height: 1; flex: none;
+  transform-origin: 0 50%; /* it grows out of the corner's edge */
+}
+.chip-meter .bars, .f-pill .bars { display: inline-flex; align-items: flex-end; gap: 1.5px; height: 8.5px; }
+.chip-meter .bar, .f-pill .bar { width: 2.5px; border-radius: 1px; background: #fff; opacity: .3; transform-origin: 50% 100%; }
+.chip-meter .bar.on, .f-pill .bar.on { opacity: 1; }
+.chip-meter .bar:nth-child(1), .f-pill .bar:nth-child(1) { height: 3.5px; }
+.chip-meter .bar:nth-child(2), .f-pill .bar:nth-child(2) { height: 6px; }
+.chip-meter .bar:nth-child(3), .f-pill .bar:nth-child(3) { height: 8.5px; }
+.chip-meter.is-must { padding: 0 5px; }
+.chip-meter .must, .f-pill .must { display: block; font-family: var(--font-display); font-size: 8.5px; letter-spacing: var(--track-display); line-height: 1; }
+.card.cell .chip-meter { height: 11px; padding: 0 5px; }
+.card.cell .chip-meter.is-must { padding: 0 4px; }
+.card.cell .chip-meter .bars { height: 7.5px; }
+.card.cell .chip-meter .bar:nth-child(2) { height: 5.5px; }
+.card.cell .chip-meter .bar:nth-child(3) { height: 7.5px; }
+.card.cell .chip-meter .must { font-size: 8px; }
+/* A cleared meter on its way out (wall.js meterLeaves): drawn where the chip
+ * stood, under the corners so the neighbours closing the gap pass over it. */
+.card > .chip-meter.leaving { position: absolute; left: 0; top: 0; z-index: 1; margin: 0; pointer-events: none; }
 /* High-affinity corner glow (followed + 5+ songs): a soft Spotify-green
  * mini-aura rising from the badge corner — the aura language, not a border.
  * Absolutely positioned inside the already-relative card: zero layout shift,
@@ -104,6 +137,23 @@
   .scan-tile img { animation: none; }
   .scan-bar-fill { transition: none; }
 }
+/* Before the first number arrives (one slow first page on festival signal)
+ * the bar breathes instead of sitting empty — an empty bar under "Reading
+ * your library…" read as frozen (Kevin, 2026-09-23; it had read 6,225
+ * artists fine). A segment drifts across the track on a pseudo-element, so
+ * the real fill never has to un-grow from a fake width. With motion off
+ * (reduced motion, Low Power) the animation is gone and the base shows: a
+ * dim, full track that reads as "working", never as a percent. */
+.scan-bar.waiting { position: relative; }
+.scan-bar.waiting::after {
+  content: ''; position: absolute; inset: 0; border-radius: inherit;
+  background: var(--spotify-stroke); opacity: .3;
+  animation: scan-wait 1.6s cubic-bezier(.4, 0, .2, 1) infinite;
+}
+@keyframes scan-wait {
+  from { opacity: .85; transform: translateX(-100%) scaleX(.35); }
+  to { opacity: .85; transform: translateX(100%) scaleX(.35); }
+}
 /* Wall-side scan pill: the library read keeps going when you leave the drill —
  * this says so. Above the dock, never interactive. */
 .spot-pill {
@@ -113,6 +163,37 @@
   color: var(--spotify-stroke); font-size: 11px; font-weight: 700; pointer-events: none;
 }
 @media (min-width: 720px) { .spot-pill { bottom: 16px; } }
+
+/* ---- crew entry: the bring-your-picks offer (2026-09-23) ----------------------
+ * One decision, asked once per crew × fest, so it waits above the dock where
+ * the thumb is — the toolbar strips get scrolled away by the day-of open.
+ * Same family as the toast (dock ground, emphasis hairline, row radius).
+ * Two layers: the outer box steps up when a toast arrives (crew-entry.js
+ * measures it), the inner card carries its own arrival and exit, so the two
+ * motions never fight over one transform. Below sheets (40) and toasts (50),
+ * above the zoom layer (36), the pill (35) and the dock (30). Brand, never
+ * --fest: the offer is about a person's picks, not the festival. */
+.bring-offer {
+  position: fixed; left: 12px; right: 12px; z-index: 38;
+  bottom: calc(64px + env(safe-area-inset-bottom, 0px));
+  display: flex; justify-content: center; pointer-events: none;
+  transition: transform .24s cubic-bezier(.2, 1.15, .35, 1);
+}
+.bring-card {
+  pointer-events: auto; width: 100%; max-width: 440px; box-sizing: border-box;
+  display: flex; flex-direction: column; gap: 10px; padding: 12px 14px;
+  background: var(--dock); border: 1px solid var(--border-emphasis);
+  border-radius: var(--r-row); box-shadow: 0 6px 24px rgba(0, 0, 0, .5);
+}
+.bring-line { color: var(--text-body); font-size: 13px; font-weight: 700; line-height: 1.4; }
+.bring-sub { color: var(--text-tertiary); font-size: 11.5px; font-weight: 600; line-height: 1.45; margin-top: 3px; }
+.bring-actions { display: flex; gap: 8px; }
+.bring-actions .btn-tonal { font-size: 12.5px; padding: 9px 16px; }
+.bring-actions .btn-ghost { font-size: 12px; padding: 9px 14px; }
+/* A toast's one action never breaks across lines: the toast shrinks to half
+ * the viewport (left: 50%), and "Not me" (the recognized-entry door) stacked
+ * as "Not / me" on a 390px phone (walk, 2026-09-23). */
+.undo-toast .undo-btn { white-space: nowrap; }
 .mark { height: 12px; border-radius: var(--r-pill); color: #fff; font-weight: 800;
         display: inline-flex; align-items: center; justify-content: center; margin-left: 3px; flex: none; }
 /* Weekend tag (ST-3): quiet top-left marker for W1/W2-only artists in Both view */
@@ -209,22 +290,58 @@
                      padding: 0 6px; font-size: 10px; }
 .toolbar-divider { width: 1px; height: 22px; background: var(--hairline); margin: 0 6px; }
 
-/* ---- day header rule --------------------------------------------------------- */
-/* Jumping to a day (tab tap) must land the header BELOW the sticky chrome,
- * not under it — app.js measures the rail + stage strip into --jump-offset. */
-/* The rule is a BUTTON where the day has a date: it is the door to that date's
- * notes (MODEL-V4 §3a.3), the tap the fold used to take. Nothing is added to
- * it — same words, same hairline — so the rule resets button chrome, and its
- * 44px floor comes from being a button, which is the only way this app gets a
- * touch target. */
-.day-rule { display: flex; align-items: baseline; gap: 10px; scroll-margin-top: var(--jump-offset, 8px);
-            width: 100%; text-align: left; background: none; border: 0; padding: 0;
-            font: inherit; color: inherit; }
-button.day-rule, button.date-rule, button.sec-head { cursor: pointer; }
-.day-rule .day { font-family: var(--font-display); letter-spacing: var(--track-display);
-                 font-size: var(--fs-day); color: var(--text-header); }
-.day-rule .date { color: var(--text-tertiary); font-size: 10px; font-weight: 700; }
-.day-rule .line { flex: 1; height: 1px; background: var(--hairline); }
+/* ---- a day, and the one head every room wears (one-line heads, 2026-09-23) ----- */
+/* claude-plans/2026-09-23-one-line-heads.md. Kevin: "combine the double lines
+ * (for day and then event) into one line each like 'Sat Portola' 'Sat Afters'".
+ * A day is a BLOCK of rooms, and the block is where its tab lands: jumping to a
+ * day must land it BELOW the sticky chrome, not under it — app.js measures the
+ * rail + stage strip into --jump-offset. The block spaces its rooms with the
+ * wall's own gap (index.html .wall-wrap), inherited so there is one number. */
+.day-block { display: flex; flex-direction: column; gap: inherit;
+             scroll-margin-top: var(--jump-offset, 8px); }
+
+/* THE room head: `.name` (the weekday, a space, the room) · `.sub` · `.line`.
+ * One component at one size — a head is the day's landmark now, so it takes the
+ * old day rule's weight (--fs-day, the display tracking); a day's first head is
+ * no bigger than its others, it just carries the date in its sub. The weekday
+ * is secondary and the room is the header colour, so "SAT PORTOLA" reads as
+ * when, then what. Never --fest: the accent's four homes do not include these.
+ * A head that opens notes is a BUTTON (the reset below) and its 44px floor
+ * comes from being a button; nothing is added to it — no chip, no glyph. */
+.room-head { display: flex; align-items: baseline; gap: 10px; width: 100%; min-width: 0;
+             text-align: left; background: none; border: 0; padding: 0;
+             font: inherit; color: inherit; }
+button.room-head { cursor: pointer; }
+/* One line, never two. On a 390px phone the sub gives way FIRST (its shrink
+ * outweighs the name's a thousand to one, so it ellipsizes from its end — the
+ * date and the weekend it leads with are the last to go); only a name that
+ * cannot fit on its own ellipsizes. The hairline takes whatever is left. */
+.room-head .name { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+                   font-family: var(--font-display); letter-spacing: var(--track-display);
+                   font-size: var(--fs-day); color: var(--text-header); }
+.room-head .wd { color: var(--text-secondary); }
+.room-head .sub { flex: 0 1000 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+                  color: var(--text-tertiary); font-size: 9.5px; font-weight: 700; letter-spacing: .08em;
+                  text-transform: uppercase; }
+/* A head with no sub (SAT FOLSOM) is not a head with an invisible one: an empty
+ * sub still took a gap, so its hairline started twice as far from the name as
+ * SAT AFTERS's did from its date. */
+.room-head .sub:empty { display: none; }
+/* The hairline fades in over its first 12px: when a long head leaves it only a
+ * few pixels (FRI ACL MUSIC FESTIVAL  OCT 2 · WEEKEND 1 · ZILKER PARK at 390),
+ * a hard-edged stub read as a stray dot after the text. */
+.room-head .line { flex: 1 1 0; min-width: 0; height: 1px;
+                   background: linear-gradient(to right, transparent, var(--hairline) 12px); }
+
+/* A LIST's head: one line over a list of answers — a day in a search or a
+ * lineup fest's by-day list, and THE LINEUP / EVERYTHING ELSE / NOTES · FEST.
+ * Never a door and never an anchor (the day's block is). The look the old day
+ * rule had, because lists did not change. */
+.list-head { display: flex; align-items: baseline; gap: 10px; }
+.list-head .label { font-family: var(--font-display); letter-spacing: var(--track-display);
+                    font-size: var(--fs-day); color: var(--text-header); }
+.list-head .sub { color: var(--text-tertiary); font-size: 10px; font-weight: 700; }
+.list-head .line { flex: 1; height: 1px; background: var(--hairline); }
 
 /* ---- desktop day rail (DT-1) --------------------------------------------------- */
 /* ≥720 the dock dies; the rail is its desktop body — sticky under the top of
@@ -590,14 +707,27 @@ button.day-rule, button.date-rule, button.sec-head { cursor: pointer; }
  * scroller of its own any more. Its row rides the grid's scroll timeline —
  * the far keyframe is the grid's maximum scroll in px (--strip-max, measured
  * by followStrip; the row's tracks overflow its box, so no percentage of the
- * row could say it) — or, where scroll timelines are missing or animations
- * are off (reduced motion, Low Power), a transform set from the grid's scroll
- * event. Either way the row moves as one piece; no second scroll position
- * exists to lag behind.
+ * row could say it) — or, where the engine has no scroll timelines, a
+ * transform set from the grid's scroll event. Either way the row moves as one
+ * piece; no second scroll position exists to lag behind.
  * pan-y: a finger on the strip still scrolls the page. */
 .stage-strip .times-scroll.follows { overflow: hidden; touch-action: pan-y; }
 .stage-strip .times-scroll.follows .times-grid { will-change: transform; }
 @keyframes strip-follow { from { transform: translateX(0); } to { transform: translateX(calc(-1 * var(--strip-max, 0px))); } }
+/* The follow is the ONE animation the motion kill rules do not stop
+ * (2026-09-23): the stage names tracking a finger are direct manipulation,
+ * not decoration, and Reduce Motion / Low power users need them over the
+ * right columns as much as anyone. The kill rules (v3-tokens.css: the
+ * reduced-motion one and `.low-power *`) are `!important` on `*`, so this
+ * out-ranks them by specificity; their `animation` shorthand also resets
+ * `animation-timeline`, which is why the timeline's name arrives as a custom
+ * property (--strip-tl, set by wall.js followStrip) that no shorthand can
+ * touch. `.rides` is set only where the engine has scroll timelines — without
+ * one, a zero-length `both` animation would park the row at its far end. */
+.stage-strip .times-scroll.follows .times-grid.rides {
+  animation: strip-follow linear both !important;
+  animation-timeline: var(--strip-tl) !important;
+}
 .hour-label { text-align: right; padding-right: 6px; font-size: 9.5px;
               color: var(--text-tertiary); font-weight: 600; position: relative; top: -7px; }
 /* ---- wall grid + undo toast ---------------------------------------------------- */
@@ -662,6 +792,20 @@ button.day-rule, button.date-rule, button.sec-head { cursor: pointer; }
                             border: 1px dashed var(--border-emphasis); }
 .n-note.stub .n-text { color: var(--text-tertiary); font-style: italic; font-size: 12px; }
 .n-empty { color: var(--text-tertiary); font-size: 12px; font-weight: 600; text-align: center; padding: 10px 0; }
+/* Everything hidden (2026-09-23, wall.js allHiddenNotice): the app's quiet
+ * copy — no box, no button — with the lead a step up so a blank wall reads as
+ * a state, not a failure. Where the switch is depends on the chrome: the dock
+ * at the bottom under 720px, the rail at the top from 720 (the dock's own
+ * breakpoint), so the hint says below or up top and only one is shown. */
+.wall-empty { text-align: center; padding: 30px 0; }
+.wall-empty p { margin: 0; }
+.wall-empty .lead { color: var(--text-secondary); font-size: 12px; font-weight: 700; }
+.wall-empty .hint { color: var(--text-tertiary); font-size: 12px; font-weight: 600; margin-top: 4px; }
+.wall-empty .on-desk { display: none; }
+@media (min-width: 720px) {
+  .wall-empty .on-phone { display: none; }
+  .wall-empty .on-desk { display: inline; }
+}
 
 /* Actions live at the HEAD line's trailing edge (Kevin, 2026-08-30) and are
  * revealed by hover, a press-and-hold, or keyboard focus — two quiet words at
@@ -767,14 +911,60 @@ a.f-where:hover { border-bottom-color: rgba(255,255,255,.75); }
 a.fest-place { text-decoration: none; border-bottom: 1px solid currentColor; padding-bottom: 1px; opacity: .92; }
 a.fest-place:hover { opacity: 1; }
 .fest-place .pin { flex: none; opacity: .8; }
-.f-who { display: flex; flex-wrap: wrap; justify-content: center; gap: 5px 6px; }
-/* Quieter than the words around them — a crew can be eight people
- * (Kevin, 2026-08-30: "not worth making them way bigger than the note text"). */
-.f-pill { display: inline-flex; align-items: center; gap: 5px; color: #fff; font-size: 11px;
-          font-weight: 600; padding: 0 9px; height: 20px; border-radius: var(--r-pill); line-height: 1; }
-.f-pill.you { font-weight: 800; }
-.f-pill b { font-size: 7.5px; font-weight: 800; letter-spacing: .1em; opacity: .9; line-height: 1;
-            transform: translateY(1px); /* optical: small caps sit on the name's baseline */ }
+/* The who-row: ONE chip per level anyone chose, loudest first, in one
+ * wrapping row (card-facts.js whoPills; Kevin, 2026-09-23). The fill is set
+ * inline: the card's aura layers for the people at that level over a scrim,
+ * or one person's colour. The level is the card meter's own glyph (the
+ * .bars/.must rules above, shared). Names are first names, two at most, then
+ * "+n"; a name never wraps and a chip never outgrows the row — at worst its
+ * last name ellipsizes, and the "+n" always shows. The chip you are in wears
+ * the white edge that means you everywhere. White text with the card's
+ * shadow, because the blend under it can be any colour. Still quieter than
+ * the words around it (Kevin, 2026-08-30: "not worth making them way bigger
+ * than the note text"). */
+.f-who { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; max-width: 100%; }
+.f-pill { position: relative; display: inline-flex; align-items: center; gap: 6px; flex: none; max-width: 100%; min-width: 0;
+          box-sizing: border-box; height: 22px; padding: 0 9px 0 8px; border-radius: var(--r-pill);
+          color: #fff; font-size: 11px; font-weight: 700;
+          line-height: 1; white-space: nowrap;
+          /* the card's shadow, plus a soft halo so white holds on the lightest blends */
+          text-shadow: 0 1px 2px rgba(12, 10, 20, .6), 0 0 6px rgba(12, 10, 20, .35); }
+/* The fill and the edge are one layer under everything else in the chip, so a
+ * width change is the layer's scale (who-motion.js) and never stretches a name. */
+.f-fill { position: absolute; inset: 0; border-radius: inherit; box-sizing: border-box;
+          border: 1px solid rgba(255, 255, 255, .14); transform-origin: 50% 50%; }
+.f-fill > .f-fill { border: 0; } /* the old blend, thinning away over the new (who-motion.js) */
+.f-pill.you > .f-fill { border-color: #fff; }
+.f-pill > :not(.f-fill) { position: relative; }
+/* A leaver parked inside the chip it left, riding that chip's slide
+ * (who-motion.js): out of flow, over the names that stay. */
+.f-pill > .f-parked { position: absolute; box-sizing: border-box; margin: 0; pointer-events: none; z-index: 3; }
+.f-pill > .bars, .f-pill > .must { flex: none; }
+.f-pill .must { font-size: 9.5px; }
+/* The two clip boxes (for the ellipsis) are padded out past the glyphs and
+ * their shadow, and pulled back by the same amount, so nothing moves: at
+ * line-height 1 Inter's ascenders and descenders ("Pegah", "Mary") and the
+ * halo overhang an 11px box, and a tight clip cut the tails off and left a
+ * hard-edged shadow box around every name (review, 2026-09-23). The browser
+ * contract checks every name's glyphs sit inside its clip box. */
+.f-names { display: inline-flex; align-items: center; gap: 4px; min-width: 0; overflow: hidden;
+           padding: 5px 7px; margin: -5px -7px; }
+.f-nm { position: relative; min-width: 0; max-width: 7em; overflow: hidden; text-overflow: ellipsis;
+        padding: 5px 7px; margin: -5px -7px; }
+.f-sep, .f-more { position: relative; }
+.f-nm.you { font-weight: 800; } /* you lead your own chip */
+/* In flight between chips (who-motion.js): above its neighbours, with a bud of
+ * its own colour under it. (A leaving node, parked: .f-pill > .f-parked above,
+ * .zoom-card > .f-parked below.) */
+.f-nm.f-travel { z-index: 3; } /* keeps its own clip: a cut-off name stays cut off in flight (review, 2026-09-24) */
+.f-nm.you.f-travel { z-index: 4; } /* crossing a chip-mate, you pass in front (your bud over their name) */
+.f-pill.f-carrying { z-index: 2; } /* a chip a name is arriving in rides over its neighbours until it lands */
+/* The bud sits INSIDE the name's padding (5px 7px, the descender fix), so the
+ * name's own clip never has to lift for it: 3px above and below the glyphs,
+ * 6px either side — the size it always had. */
+.f-bud { position: absolute; inset: 2px 1px; z-index: -1; border-radius: var(--r-pill); pointer-events: none; }
+.f-sep { flex: none; opacity: .7; }
+.f-more { flex: none; font-size: 10px; font-weight: 800; opacity: .92; }
 .f-chips { display: flex; justify-content: center; align-items: center; gap: 6px; flex-wrap: wrap; }
 .f-chip { display: inline-flex; align-items: center; gap: 4px; height: 17px; padding: 0 9px;
           font-size: 10px; font-weight: 800; color: #fff; border-radius: var(--r-pill); border: none;
@@ -789,7 +979,8 @@ button.f-chip.notes { cursor: pointer; }
 .composer-wrap { display: flex; flex-direction: column; gap: 4px; }
 
 /* The day whisper: nothing until someone writes, then the newest note as one
- * soft wash at the day's door; the rule's ✎ chip stays the add door. */
+ * soft wash pinned directly under the room head that opens its thread; the
+ * head itself is the add door. */
 .day-whisper { display: flex; align-items: center; gap: 9px; width: 100%; min-width: 0; border: none;
                cursor: pointer; text-align: left; color: var(--text-body); font-family: var(--font-ui);
                font-size: 12px; line-height: 1.35; margin: -4px 0 2px; padding: 7px 12px 7px 10px;
@@ -827,6 +1018,17 @@ button.f-chip.notes { cursor: pointer; }
 .zoom-card .z-surface { position: absolute; inset: 0; overflow: hidden; border: 1px solid var(--hairline); border-radius: var(--r-card); }
 .zoom-card .z-surface.animated { background-size: 180% 180%; animation: gradShift 12s ease-in-out infinite; }
 .zoom-card > :not(.z-surface) { position: relative; z-index: 2; } /* content over both surfaces */
+/* A leaving piece of the who-row, parked in the card where it stood
+ * (who-motion.js). Out of flow, and after the rule above on purpose: the two
+ * weigh the same, and in flow a parked chip grew the card and shifted the
+ * whole zoom 6px at the tap (Chromium, 2026-09-23). A chip body leaves UNDER
+ * the live content (it flows into the chip it joined). Anything smaller is
+ * parked inside the chip it left (.f-pill > .f-parked); only if that chip is
+ * gone does it land here, OVER the content, in a bare .f-pill host that keeps
+ * the chip's type. */
+.zoom-card > .f-parked { position: absolute; box-sizing: border-box; margin: 0; pointer-events: none; z-index: 1; }
+.zoom-card > .f-parked.f-ghost { z-index: 3; padding: 0; gap: 0; max-width: none; }
+.zoom-card > .f-ghost > * { margin: 0; }
 .zoom-card .f-name { font-size: 18px; font-weight: 700; line-height: 1.2; color: var(--text-primary); } /* the zoom's hero: the name grows (13.5–15px at rest) */
 /* After a pick the old wash lingers over the new one and thins away. */
 .zoom-card .z-surface-old { pointer-events: none; z-index: 1; }
@@ -862,6 +1064,30 @@ button.f-chip.notes { cursor: pointer; }
 .person-chip.everyone .x { color: var(--text-tertiary); margin-left: 4px; }
 .card.dim { opacity: .28; }
 
+/* A cancelled act (2026-09-23 — Skepta, Portola Saturday). The card stays, in
+ * its room's stack, last: the crew's picks are still on it and still say who
+ * was going. It reads as OFF at a glance with nothing added to it — the name
+ * struck through, the word where the time goes, the aura quieted under a
+ * scrim and holding still. The marks sit above the scrim (their corner is
+ * z-index 1), so who picked it stays readable. No badge, no second border:
+ * the card is the same card, turned down. The zoom and the sheet header wear
+ * the same scrim, so the grown card is still the resting card, grown. */
+.card.cancelled::before,
+.zoom-card .z-surface.cancelled::after,
+.sheet-card.cancelled::before { content: ''; position: absolute; inset: 0; pointer-events: none;
+                                border-radius: inherit; background: rgba(12, 10, 20, .42);
+                                /* the wash goes grey-ish under the scrim — the marks above it keep their colour */
+                                -webkit-backdrop-filter: saturate(.3); backdrop-filter: saturate(.3); }
+.card.cancelled, .zoom-card .z-surface.cancelled, .sheet-card.cancelled { animation: none; }
+.card.cancelled .card-grain, .zoom-card .z-surface.cancelled .card-grain, .sheet-card.cancelled .card-grain { display: none; }
+.card.cancelled .name, .f-name.struck { text-decoration: line-through; text-decoration-thickness: 1.5px; }
+.card.cancelled:not(.zoom-source) .name { opacity: .82; } /* never over .zoom-source: the resting name must still step back under a zoom */
+.card.cancelled .time { text-transform: uppercase; letter-spacing: .08em; font-weight: 800; }
+.f-name.struck { text-decoration-thickness: 2px; }
+a.f-cancel { color: #fff; text-decoration: none; border-bottom: 1px solid rgba(255, 255, 255, .35); padding-bottom: 1px; }
+a.f-cancel:hover { border-bottom-color: rgba(255, 255, 255, .75); }
+.f-note { color: rgba(255, 255, 255, .68); font-size: 11px; font-weight: 600; max-width: 30ch; line-height: 1.35; text-align: center; }
+
 /* The now line: brand violet, not the fest accent — it is app chrome that
  * happens to sit on a timetable. Drawn inside the grid (position: relative
  * on the grid and the rail) so it scrolls with the day; the ticker in app.js
@@ -884,35 +1110,25 @@ button.f-chip.notes { cursor: pointer; }
 .now-label.in-card { top: 5px; right: 5px; transform: none; }
 
 /* ---- events: the composed day, venue groups (MODEL-V4, 2026-09-16) ------------- */
-/* claude-plans/2026-09-16-wall-v4/MODEL-V4.md. A day is the unit; inside it,
- * rooms — the festival's own first, then each section that plays that night —
- * each under a header that is the day-rule's quieter sibling. The header does
- * not fold the room any more (§3a.2): the show menu on the fest name is the
- * one way to hide a part of the week, so there is no chevron to draw. A room
- * the menu has hidden renders nothing at all, and a day with nothing visible
- * has no rule (2026-09-17) — the menu is where that state is visible. */
+/* claude-plans/2026-09-16-wall-v4/MODEL-V4.md. A day is the unit (a
+ * `.day-block`, above); inside it, rooms — the festival's own first, then each
+ * section that plays that night — each under its one `.room-head`. The head
+ * does not fold the room (§3a.2): the show menu on the fest name is the one way
+ * to hide a part of the week, so there is no chevron to draw. A room the menu
+ * has hidden renders nothing at all, and a day with nothing visible has no
+ * block (2026-09-17) — the menu is where that state is visible. */
 .room { display: flex; flex-direction: column; gap: 9px; }
-.sec-head { display: flex; align-items: baseline; gap: 9px; width: 100%; text-align: left;
-            background: none; border: 0; padding: 0; font: inherit; color: inherit; }
-.sec-label { font-family: var(--font-display); letter-spacing: .07em; font-size: 12.5px; color: var(--text-header); }
-.sec-sub { color: var(--text-tertiary); font-size: 9.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
-.sec-line { flex: 1; height: 1px; background: var(--hairline); }
-/* A dated section (ACL's Late nights) is a room AND a tab of its own, so its
- * header is where the tab lands — at the day rule's weight, and clearing the
- * sticky chrome the same way. */
-.sec-head.tab { scroll-margin-top: var(--jump-offset, 8px); }
-.sec-head.tab .sec-label { font-size: var(--fs-day); letter-spacing: var(--track-display); }
-/* A rule and a header that open notes are buttons, so the touch floor gives
- * them 44px of real height — at which point a baseline row would sit at the top
- * of an empty box. This is the floor's consequence, not a new opt-out list, and
- * borrowed space is the wrong answer here: a day rule's hit area would reach
- * into the section header right under it, and the two open DIFFERENT threads.
- * The min-height is repeated for the rules and headers that are NOT doors (the
- * festival's own room on a day; a day the file gave no date), because a room
- * header is one component and two of them at different heights on one day is a
- * component with two looks. */
+/* A head that opens notes is a button, so the touch floor gives it 44px of
+ * real height — at which point a baseline row would sit at the top of an empty
+ * box. This is the floor's consequence, not a new opt-out list, and borrowed
+ * space is the wrong answer here: a head's hit area would reach into the room
+ * above or the whisper under it, and they open DIFFERENT threads. The
+ * min-height is repeated for the heads that are NOT doors (a day the file gave
+ * no date; a section with no night), because a room head is one component and
+ * two of them at different heights on one day is a component with two looks.
+ * A list's head keeps the height it always had on a phone. */
 @media (pointer: coarse) {
-  .day-rule, .date-rule, .sec-head { align-items: center; min-height: 44px; }
+  .room-head, .list-head { align-items: center; min-height: 44px; }
 }
 /* One sticky strip PER timetable: position:sticky is bounded by its parent,
  * so a strip inside this block pins while the block is on screen and leaves
@@ -934,14 +1150,6 @@ button.f-chip.notes { cursor: pointer; }
 @media (min-width: 720px) {
   .venue-grid { row-gap: 12px; }
 }
-
-/* One date inside a dated section (ACL's Late nights): quieter than a day
- * rule, because the day rule above already named the section. */
-.date-rule { display: flex; align-items: baseline; gap: 8px; margin-top: 4px;
-             width: 100%; text-align: left; background: none; border: 0; padding: 0;
-             font: inherit; color: inherit; }
-.date-rule .d { font-family: var(--font-display); letter-spacing: .06em; font-size: 12px; color: var(--text-secondary); }
-.date-rule .line { flex: 1; height: 1px; background: var(--hairline); }
 
 /* The zoom's WHEN for a back-to-back run (MODEL-V3 §5): two lines in one
  * piece — the venue's window, then the order as a door to the poster. */

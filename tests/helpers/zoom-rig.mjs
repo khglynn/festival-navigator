@@ -129,6 +129,13 @@ export async function makeRig({ fid = 'zoom-fest' } = {}) {
 // card-facts.js is dead until one is installed. Returns the call log and an
 // `off()` that removes the stub — ALWAYS call it in a finally, or the next
 // test in the file silently takes the animated path too.
+//
+// cancel() reports LATE, as browsers do: the effect is gone at once, but the
+// cancel event is queued and fires after the current script (a real engine
+// dispatches it on the next frame). A stub that called oncancel inline let
+// the who-chips' rapid-tap test pass while Chromium and WebKit, re-picking
+// while a clear was still moving, read its parked leftovers as live (review,
+// 2026-09-24). A test that needs the handler run awaits a microtask.
 export function recordAnimations(window) {
   const calls = [];
   const proto = window.Element.prototype;
@@ -136,7 +143,10 @@ export function recordAnimations(window) {
     const anim = {
       target: this, keyframes, options,
       cancelled: false,
-      cancel() { this.cancelled = true; if (this.oncancel) this.oncancel(); },
+      cancel() {
+        this.cancelled = true;
+        queueMicrotask(() => { if (this.oncancel) this.oncancel(); });
+      },
       play() {}, pause() {}, finish() { if (this.onfinish) this.onfinish(); },
       onfinish: null, oncancel: null,
     };

@@ -36,6 +36,9 @@ export function setActiveCrew(token) { saveLS(K.active, token); }
 
 export function me(token) { return getLS(K.me(token)) || null; }
 export function setMe(token, name) { saveLS(K.me(token), name); }
+// "Not me" after a recognized entry: forget the claim on this device only —
+// the crew stays remembered, and the join screen asks again.
+export function clearMe(token) { removeLS(K.me(token)); }
 
 // The token riding in the URL hash (#g=...), i.e. an opened share link.
 export function tokenFromHash() {
@@ -268,6 +271,26 @@ export function mayStampPerson(person, crewToken, name, { renameFrom = null } = 
   if (mirror) return mirror.name === name || (!!renameFrom && mirror.name === renameFrom);
   return !!person && typeof person.name === 'string'
     && person.name.toLowerCase() === String(name).toLowerCase();
+}
+
+// Which member of this crew IS this device's person, by the record alone
+// (2026-09-23). Crew docs carry the public pid at people.<Name>.pid, so a
+// crew link opened on a device whose person is already a member does not
+// need to ask "who are you?" — as long as the answer is unambiguous: exactly
+// ONE active member carrying my id, and the record's own mirror for this crew
+// (if it has one) not naming a DIFFERENT active member. Everything else
+// returns null and the join screen asks, exactly as before. Read-only: the
+// pid is public inside the circle, and the person token never comes near
+// this.
+export function recognizedMember(person, crewToken, doc) {
+  if (!person || !person.id || !doc) return null;
+  const people = doc.people || {};
+  const active = (n) => !!people[n] && !people[n].removed;
+  const mine = Object.keys(people).filter((n) => active(n) && people[n].pid === person.id);
+  if (mine.length !== 1) return null;
+  const claim = (person.crews || {})[crewToken];
+  if (claim && claim.name && claim.name !== mine[0] && active(claim.name)) return null;
+  return mine[0];
 }
 
 // Record "in this crew I am <name>" on the person doc. Idempotent via the

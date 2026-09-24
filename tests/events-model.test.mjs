@@ -176,6 +176,9 @@ test('eventModelOf on Portola: THU FRI SAT SUN, the grid days keep their keys, t
   assert.deepEqual(m.days.map((d) => d.synthetic), [true, true, false, false]);
   assert.deepEqual(m.days.map((d) => d.iso), ['2026-09-24', '2026-09-25', '2026-09-26', '2026-09-27'], 'Thursday borrows its date from Saturday\'s iso');
   assert.deepEqual(m.days.map((d) => d.sub), ['Thu · Sep 24', 'Fri · Sep 25', 'Sat · Sep 26', 'Sun · Sep 27']);
+  // `when` is the same line without its weekday: what a day's first room head
+  // says after the weekday its own label already shows ("SAT PORTOLA  Sep 26").
+  assert.deepEqual(m.days.map((d) => d.when), ['Sep 24', 'Sep 25', 'Sep 26', 'Sep 27']);
   assert.deepEqual(m.days.map((d) => [d.short, d.long, d.num]), [['THU', 'THU', null], ['FRI', 'FRI', null], ['SAT', 'SAT', null], ['SUN', 'SUN', null]]);
   assert.deepEqual(m.sections.map((s) => [s.key, s.label]), [['Afters', 'Afters'], ['Folsom', 'Folsom']], 'known-day order');
   assert.deepEqual(m.extras, [], 'every Portola event says its night, so nothing hangs off the end');
@@ -220,6 +223,8 @@ test('a two-weekend scheduled fest is six dated tabs: each renders its own weeke
   assert.deepEqual(m.days.map((d) => d.weekend), ['W1', 'W1', 'W1', 'W2', 'W2', 'W2']);
   assert.equal(m.days[0].sub, 'Fri · Oct 2 · Weekend 1');
   assert.equal(m.days[3].sub, 'Fri · Oct 9 · Weekend 2');
+  assert.deepEqual([m.days[0].when, m.days[3].when], ['Oct 2 · Weekend 1', 'Oct 9 · Weekend 2'],
+    'the first head of each Friday says which one, while scrolling');
 });
 
 test('a fest whose days name no weekday keeps its own day order, and its sections become tabs off the end', () => {

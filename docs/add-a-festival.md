@@ -1,7 +1,8 @@
 # Adding a festival
 
-*Updated 2026-09-16 — MODEL-V4: a section entry says `night` or `date`; one
-rule for guessed times; doors go in `doors`.*
+*Updated 2026-09-23 — a cancelled act keeps its entry and says so
+(`cancelled`, below). 2026-09-16 — MODEL-V4: a section entry says `night` or
+`date`; one rule for guessed times; doors go in `doors`.*
 
 Two files, one command:
 
@@ -40,7 +41,8 @@ Two files, one command:
      grid name is an `artists[]` name **byte for byte** (a case-only match is
      an error — it would split the crew's picks), no two sets overlap on one
      stage, no set ends before it starts; and it warns when a lineup artist
-     billed on a grid day has no set there (usually a missed box).
+     billed on a grid day has no set there (usually a missed box — unless the
+     act is cancelled, see **Cancelled acts** below).
    - **Set-times drop, in order (the Portola recipe, 2026-08-27):**
      1. `node scripts/freeze-pick-keys.mjs <id>` BEFORE editing — it snapshots
         the festival id, every artist name and every day label into
@@ -77,8 +79,9 @@ Two files, one command:
      untagged set plays on both. A lineup-only two-weekend fest never had a
      grid to split, so it shows both weekends on one wall with the W1/W2 tags
      on the cards. Give each `dayMeta` entry
-     `dates: { "W1": "Oct 2", "W2": "Oct 9" }` so the day rule shows the
-     selected weekend's real date. Keep `weekends` tags on the top-level
+     `dates: { "W1": "Oct 2", "W2": "Oct 9" }` so each day's first head
+     (`FRI ACL MUSIC FESTIVAL  Oct 2 · Weekend 1`) shows that weekend's real
+     date. Keep `weekends` tags on the top-level
      `artists[]` — they drive the picker's presence and the search extras.
      The two spellings never cross (`weekend` on a grid set, `weekends` on
      `artists[]`): the validator errors on either one in the wrong place, and
@@ -138,6 +141,50 @@ notes unify by exact name on purpose, and the validator only flags same-day or
 day-less duplicates. See `portola-2026.json` (the Afters/Folsom sections) for
 the worked example.
 
+### Cancelled acts (2026-09-23)
+
+When a festival calls an act off, **never delete its `artists[]` entry** —
+the name is a pick key, and a card that vanished would leave everyone who
+picked it planning around a set that is not happening (Skepta, Portola
+Saturday, called off 2026-09-21 with three of the crew's picks on him). Mark
+the entry instead, and take its set off the grid:
+
+```json
+{ "name": "Skepta", "day": "Saturday", "venue": "Crane Stage",
+  "cancelled": { "on": "2026-09-21", "source": "https://www.sfchronicle.com/…",
+                 "note": "No replacement. The earlier Crane Stage sets run longer." } }
+```
+
+| Field | What |
+|---|---|
+| `cancelled.on` | The real `YYYY-MM-DD` date it was announced. The zoom says "Announced Sep 21". |
+| `cancelled.source` | An `https` link to where it was announced — that line is a door to it. |
+| `cancelled.note` | Optional. One short line (140 chars at most) about what happened around it: a replacement, sets that moved. |
+
+Keep the entry's `day`. Give it a `venue` when it had a stage — the card lands
+in the festival's own room under that stage's name, below the grid; without
+one it lands under the festival's site. It works the same on an afters or
+dated section entry, which keeps its `night`/`date` and `venue`. A cancelled
+show in a numbered run drops its `order`, and the live sets are renumbered
+(`seq`, `of`) — the validator and `scripts/guess-run-times.mjs` leave a
+cancelled entry out of the run, so the old numbering would warn as a gap. On
+a two-weekend fest, an act lost on one weekend keeps its other weekend's grid
+set: tag the cancelled entry `weekends: "W1"` (or `"W2"`) and the set
+`weekend` for the one it still plays.
+
+What the app does with it: the card stays (struck through, "Cancelled" where
+the time goes, the crew's marks still on it), sorts last in its room, is never
+lit as playing now, answers a search as cancelled, is marked in the day
+image, and never goes into a playlist made from picks. Tapping it picks like
+any card. Re-time the sets around it from the new poster the same day, and
+add a dated line to `meta.note`.
+
+The validator errors on a malformed `cancelled` (not an object, an unknown
+key, `on` not a real date, `source` not https, a note that is long or
+multi-line), on a cancelled name that still has a set on a grid day its entry
+names, and on `cancelled` written on a grid set. It does not warn that the act
+has no set on the grid, or that its venue has no map.
+
 ### Event fields — where a section goes (MODEL-V4 §6)
 
 A SECTION is an `artists[].day` label that is not one of the grid's days:
@@ -149,7 +196,7 @@ Every section entry says where its section sits with **exactly one** of
 | Field | What |
 |---|---|
 | `night` | `Mon`…`Sun` — the night it plays. The section renders inside that day, under the festival's own room, and the day tabs are the union of the grid days and these nights. Must equal the part of `stage` before ` · `. |
-| `date` | `YYYY-MM-DD`, a real calendar date. The section takes a tab of its own after the days, ruled by date. Use it when a section runs longer than a week, where one weekday would mean two different nights — ACL Fest Nights runs Sep 29 to Oct 10, so "Fri" would be both Oct 2 and Oct 9. |
+| `date` | `YYYY-MM-DD`, a real calendar date. The section takes a tab of its own after the days, one head per date (`TUE LATE NIGHTS  Sep 29`). Use it when a section runs longer than a week, where one weekday would mean two different nights — ACL Fest Nights runs Sep 29 to Oct 10, so "Fri" would be both Oct 2 and Oct 9. |
 | `venue` | The room. The wall stacks the section's cards under it, in play order. Must equal the part of `stage` after ` · `, and wants an entry in `venues{}` so the card's place line opens a map. |
 
 `night` and `date` are two different places on the screen, so an entry never

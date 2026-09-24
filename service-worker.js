@@ -2,8 +2,8 @@
 // Bump CACHE_VERSION whenever you change cached static assets — `node
 // scripts/sw-stamp.mjs` does the bump and re-stamps; the suite fails when the
 // stamp is stale, so a silent asset change can never ship under an old version.
-const CACHE_VERSION = 'festival-nav-v85'; // v44 = the notes/desktop round: threads, the zoom morph, the day whisper, aura sheets; pick-as moved to Settings (v43 was its first cut)
-const ASSET_STAMP = 'cf2557a1'; // sha1 of APP_CORE — node scripts/sw-stamp.mjs after any cached-asset change (the suite checks it)
+const CACHE_VERSION = 'festival-nav-v86'; // v44 = the notes/desktop round: threads, the zoom morph, the day whisper, aura sheets; pick-as moved to Settings (v43 was its first cut)
+const ASSET_STAMP = 'cac7172f'; // sha1 of APP_CORE — node scripts/sw-stamp.mjs after any cached-asset change (the suite checks it)
 
 // Festival JSONs live in their OWN cache, outside the version-keyed shell
 // cache — because activate deletes every old version cache wholesale, and
@@ -40,8 +40,10 @@ const APP_CORE = [
   '/js/spotify.js',
   '/js/name-rules.mjs',
   '/js/v3/app.js',
+  '/js/v3/crew-entry.js',
   '/js/v3/wall.js',
   '/js/v3/card-facts.js',
+  '/js/v3/who-motion.js',
   '/js/v3/notes.js',
   '/js/v3/settings.js',
   '/js/v3/tools.js',
@@ -208,11 +210,22 @@ function fetchAndStore(request, bucket) {
   return { response, done };
 }
 
-// The network's answer if it arrives inside NETWORK_MS, otherwise null — the
-// one budget both network-first strategies spend before the cache answers.
-const NETWORK_MS = 4000;
-function inTime(response) {
-  const timeout = new Promise((resolve) => setTimeout(() => resolve(null), NETWORK_MS));
+// The network's answer if it arrives inside the budget, otherwise null — what
+// each network-first strategy spends before the cache answers.
+const NETWORK_MS = 4000; // festival data: a set-times drop is worth a few seconds
+// Navigations spend less (2026-09-23). The page is the first thing anyone
+// waits for — before a single pixel of the app, not even the loader — and on
+// a network that hangs (Pier 80, 40k phones) 4 s of blank screen was a
+// quarter of a lie-fi cold open. Losing this race costs nothing that matters:
+// the fallback is this worker's own shell, the one page that matches the JS it
+// serves. And it cannot hold a new build back: the browser checks the worker
+// SCRIPT on every navigation, and index.html's glue asks again whenever the tab
+// comes back — neither request passes through this handler — so a new worker
+// still installs, takes over and reloads the page when it is quiet, or puts up
+// the new-build strip. A phone with no shell cached still waits for the network.
+const NAVIGATION_MS = 1500;
+function inTime(response, ms = NETWORK_MS) {
+  const timeout = new Promise((resolve) => setTimeout(() => resolve(null), ms));
   return Promise.race([response.catch(() => null), timeout]);
 }
 
@@ -240,7 +253,7 @@ function dataNetworkFirst(event) {
 // page is a deliberate 404. With no shell cached, the network however long.
 function navigationNetworkFirst(request) {
   const live = fetch(request);
-  return inTime(live).then((resp) => {
+  return inTime(live, NAVIGATION_MS).then((resp) => {
     if (resp && resp.status < 500) return resp;
     return caches.open(CACHE_VERSION).then((cache) => cache.match('/')).then((shell) => shell || live);
   });

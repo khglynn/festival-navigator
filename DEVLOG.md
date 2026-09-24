@@ -2,6 +2,35 @@
 
 Newest first. One entry per meaningful unit of work.
 
+## 2026-09-23 — the pre-Portola round: data re-read, one line per room, Skepta cancelled, your meter, the warm open
+
+- **Data first, live the same morning (PR #23).** A readiness check against
+  official sources found two whole Portola Week nights missing (added to the
+  feed Sep 17, after our Sep 16 pass) and 21 billed openers; Kevin's
+  screenshots of the official app and a friend's AXS link confirmed them.
+  ACL Fest Nights moved to the official 9.21 graphic. Lesson: a week-before
+  re-read of every official surface is worth its hour; feeds change daily.
+- **Skepta was cancelled Sep 21 and three crew members had picked him**, so a
+  silent removal (the pick-key law) was never on the table: `cancelled` is a
+  data state now — off the grid, struck card, picks visible, zoom says why.
+- **The warm open went through four Codex rounds.** The first design paints
+  from cache and then *reconciled* the festival choice when the live catalog
+  landed; each round found new races in the reconciliation (a note typed on
+  a provisional wall saved into another fest). The fix that held was to cut
+  scope: warm-open only when the exact wall is cached, never switch after.
+  Lesson: when review keeps finding races in a reconciliation, delete the
+  reconciliation.
+- **The meter's fit trusted a width table measured on macOS**; Linux CI drew
+  Inter wider and the corners crowded. It now reads back what rendered (and
+  refits on font load). Lesson: a width table is a first guess, never truth,
+  on an app that runs on every engine.
+- **Walker false alarms, caught by checking screenshots**: a "missing
+  strike-through" was a class name the walker invented; "never paints on
+  bad signal" was the walker's own `context.route` holding the navigation
+  before the service worker could answer. A proxy harness that hangs page and
+  worker alike measured 1.6 s in Chromium and WebKit
+  (`claude-plans/2026-09-23-crew-join-build/liefi-harness.mjs`).
+
 ## 2026-09-02 — the hover was fine; the shell was old. Then the two hazards under it, a contract that runs in a browser, and Kevin's phone notes
 
 - **"Hover broken again" was a v75 shell judging v76 code.** Kevin's

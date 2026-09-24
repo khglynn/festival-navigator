@@ -125,7 +125,10 @@ export async function pushSync() {
       const body = await res.json().catch(() => ({}));
       refusedPayload = sig(payload);
       refusedFor = tokenAtStart;
-      setSyncStatus('blocked');
+      // Refused after "Stay offline" was switched on: the refusal is kept
+      // (these bytes are never re-sent), but the dot says what the person
+      // asked for; switching it off shows blocked again (Codex round 4).
+      setSyncStatus(stayOffline ? 'offline' : 'blocked');
       onSyncBlocked(errorText(body, 'These changes can’t sync — the crew may have hit a limit.'));
       return;
     }
@@ -141,6 +144,9 @@ export async function pushSync() {
     state.clearPending(payload);
     applyRemote(stored);
     pushGen++;
+    // "Stay offline" switched on while this was in flight: what arrived is
+    // kept, but nothing more is asked, and the dot says what was asked for.
+    if (stayOffline) { setSyncStatus('offline'); return; }
     if (state.hasPending()) scheduleSync();
     setSyncStatus(state.hasPending() ? 'syncing' : 'online');
   } catch (e) {
@@ -148,7 +154,7 @@ export async function pushSync() {
     // which may no longer be the active one after a mid-flight switch.
     if (e instanceof CrewGoneError) { onCrewGone(tokenAtStart); return; }
     console.error('sync push failed', e);
-    setSyncStatus(navigator.onLine ? 'error' : 'offline');
+    setSyncStatus(navigator.onLine && !stayOffline ? 'error' : 'offline');
   } finally {
     isSyncing = false;
     if (syncQueued) { syncQueued = false; scheduleSync(); }
@@ -211,6 +217,11 @@ export async function pollSync() {
   if (isSyncing) return; // a push already has the latest in flight
   const tokenAtStart = state.getCrewToken();
   const genAtStart = pushGen;
+  // Work not yet on the server is syncing from the moment this leaves — a
+  // warm wall with unsynced picks said "online" while its first poll hung
+  // (Codex round 4). Work the server already refused stays blocked: no
+  // blocked → syncing → blocked flicker (gate find, 2026-08-23).
+  if (state.hasPending() && !isRefused(state.pendingChanges, tokenAtStart)) setSyncStatus('syncing');
   try {
     const remote = await fetchRemote();
     if (state.getCrewToken() !== tokenAtStart) return;
@@ -232,6 +243,10 @@ export async function pollSync() {
       // change to the crew, not a 25s loop.
       clearRefused();
     }
+    // Stay offline switched on while this poll was out (2026-09-23): the doc
+    // it brought is applied above, but the dot keeps saying offline and no
+    // push is scheduled.
+    if (stayOffline) { setSyncStatus('offline'); return; }
     if (state.hasPending()) {
       // An unchanged remote plus unchanged refused bytes is still BLOCKED.
       // Reporting 'syncing' here and re-arming the push made the dot flip
@@ -247,6 +262,6 @@ export async function pollSync() {
     }
   } catch (e) {
     if (e instanceof CrewGoneError) { onCrewGone(tokenAtStart); return; }
-    setSyncStatus(navigator.onLine ? 'error' : 'offline');
+    setSyncStatus(navigator.onLine && !stayOffline ? 'error' : 'offline');
   }
 }

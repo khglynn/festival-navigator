@@ -50,14 +50,57 @@ const state = () => page.evaluate(() => {
   return {
     shown: document.querySelectorAll('#zoom-layer .zoom-slot.shown').length,
     zoom: card ? card.getAttribute('aria-label') : null,
-    you: !!document.querySelector('#zoom-layer .zoom-card .f-pill.you'),
+    // Your who-chip (2026-09-23: one chip per level, yours wears .you): its
+    // label, which names everyone in it — null when you are in no chip.
+    you: (document.querySelector('#zoom-layer .zoom-card .f-pill.you') || { getAttribute: () => null }).getAttribute('aria-label'),
     active: (document.activeElement && document.activeElement.dataset && document.activeElement.dataset.artist) || null,
   };
 });
-// Visible resting cards in the ladder row, centre points in viewport coordinates.
-const cards = () => page.evaluate(() => [...document.querySelectorAll('#zoom-row-ladder .card, #zoom-row-cells .card, #zoom-row-names .card')]
-  .map((el) => { const r = el.getBoundingClientRect(); return { artist: el.dataset.artist, x: Math.round(r.left + r.width / 2), y: Math.round(r.top + r.height / 2), top: r.top, bottom: r.bottom }; })
-  .filter((c) => c.top > 60 && c.bottom < innerHeight - 40));
+// The resting cards of the zoom rows (the ladder, the timetable cells, the
+// name edge cases) that are wholly on screen with room around them for the
+// grown zoom, centre points in viewport coordinates. The rows are brought to
+// the same place first — the ladder 80px from the top — so what is on screen
+// does not depend on where the last test left the page, or on how tall the
+// gallery's sections above render on this machine: CI's Linux fonts are
+// wider than a Mac's, and the meter's gallery rows pushed the names row down,
+// so an index into "whatever is visible" pointed at nothing there
+// (2026-09-23). Each card says what a test may need to know about it: whether
+// it is at MUST (a click on it cycles to not-picked, so no You pill), whether
+// it holds a button of its own (the notes chip, which Tab reaches first), and
+// which card a Tab from it lands on.
+const cards = async () => {
+  await page.evaluate(() => {
+    const row = document.getElementById('zoom-row-ladder');
+    window.scrollTo({ top: row.getBoundingClientRect().top + window.scrollY - 80, behavior: 'instant' });
+  });
+  await sleep(150);
+  return page.evaluate(() => {
+    const all = [...document.querySelectorAll('#zoom-row-ladder .card, #zoom-row-cells .card, #zoom-row-names .card')];
+    const tabbable = [...document.querySelectorAll('a[href], button, input, select, textarea, [tabindex]')]
+      .filter((el) => el.tabIndex >= 0 && !el.disabled && el.getClientRects().length);
+    return all.map((el) => {
+      const r = el.getBoundingClientRect();
+      const next = tabbable[tabbable.indexOf(el) + 1];
+      return {
+        artist: el.dataset.artist, x: Math.round(r.left + r.width / 2), y: Math.round(r.top + r.height / 2), top: r.top, bottom: r.bottom,
+        must: /\u2014 must\b/.test(el.getAttribute('aria-label') || ''),
+        ownButton: !!el.querySelector('button'),
+        tabsTo: next && next.classList.contains('card') ? next.dataset.artist : null,
+      };
+    }).filter((c) => c.top > 60 && c.bottom < innerHeight - 40);
+  });
+};
+// A card for one test: the first on screen that fits what the test needs and
+// that no earlier test has used — so no pick, stay-away mark or focus a test
+// leaves behind can decide the next one. A screen too short to hold what the
+// file needs says so, instead of failing on an undefined card.
+const used = new Set();
+const cardFor = (list, need = () => true, what = 'a card') => {
+  const c = list.find((x) => !used.has(x.artist) && need(x));
+  assert.ok(c, `${what}: none on screen fits (${list.length} on screen: ${list.map((x) => x.artist).join(', ')}; used: ${[...used].join(', ')})`);
+  used.add(c.artist);
+  return c;
+};
 // A point with nothing under it that a hover could grow: the row caption area
 // is text; the page background left of the ladder is empty.
 const empty = () => page.evaluate(() => {
@@ -72,7 +115,7 @@ const empty = () => page.evaluate(() => {
 const move = (x, y) => page.mouse.move(x, y, { steps: 8 });
 
 test('hover with intent grows the card; leaving it closes the zoom', { skip }, async () => {
-  const [c] = await cards();
+  const c = cardFor(await cards());
   const sp = await empty();
   assert.ok(c && sp, 'a card and an empty spot are on screen');
   await move(sp.x, sp.y); await sleep(200);
@@ -93,8 +136,7 @@ test('the zoom is opaque from its first frame — only the box grows', { skip },
   // scale and the grown rows' cascade animate. Nothing in Node can see this —
   // jsdom has no compositor and no computed opacity to read — so the assertion
   // lives here, on the first frame the bloom is really running.
-  const list = await cards();
-  const c = list[6] || list[0];
+  const c = cardFor(await cards());
   const sp = await empty();
   await move(sp.x, sp.y); await sleep(200);
   await page.evaluate(() => {
@@ -148,29 +190,27 @@ test('the zoom is opaque from its first frame — only the box grows', { skip },
 });
 
 test('a fast click on a resting card picks it, the hover then grows it, and leaving still closes it', { skip }, async () => {
-  const list = await cards();
-  const c = list[1];
+  const c = cardFor(await cards(), (x) => !x.must, 'a card a click picks (not at MUST, where a click clears)');
   const sp = await empty();
   await page.mouse.move(c.x, c.y, { steps: 2 });
   await page.mouse.click(c.x, c.y);
   await sleep(OPEN_MS + 200);
   let s = await state();
   assert.equal(s.shown, 1, `the zoom stands after a click on the resting card: ${JSON.stringify(s)}`);
-  assert.equal(s.you, true, 'and the pick landed (the You pill)');
+  assert.match(s.you || '', /: You\b/, `and the pick landed: your chip names you first (${s.you})`);
   await move(sp.x, sp.y); await sleep(CLOSE_MS);
   s = await state();
   assert.equal(s.shown, 0, `a zoom born after a click still closes on hover-out (it is a MOUSE zoom, not a keyboard one): ${JSON.stringify(s)}`);
 });
 
 test('a pick on the grown card keeps the zoom standing, and leaving closes it', { skip }, async () => {
-  const list = await cards();
-  const c = list[2];
+  const c = cardFor(await cards(), (x) => !x.must, 'a card a click picks (not at MUST, where a click clears)');
   const sp = await empty();
   await move(c.x, c.y); await sleep(OPEN_MS);
   await page.mouse.click(c.x, c.y); await sleep(500);
   let s = await state();
   assert.equal(s.shown, 1, `still standing after the pick: ${JSON.stringify(s)}`);
-  assert.equal(s.you, true, 'the You pill arrived');
+  assert.match(s.you || '', /: You\b/, `your chip arrived, naming you first (${s.you})`);
   await move(sp.x, sp.y); await sleep(CLOSE_MS);
   s = await state();
   assert.equal(s.shown, 0, `closed after leaving: ${JSON.stringify(s)}`);
@@ -179,8 +219,7 @@ test('a pick on the grown card keeps the zoom standing, and leaving closes it', 
 test("click, Escape, click again on one card: a keypress never turns the next pick into a zoom that ignores the mouse", { skip }, async () => {
   // Chrome flips a focused card to :focus-visible after any key; the module
   // must not read the script focus of the next pick as keyboard intent.
-  const list = await cards();
-  const c = list[3];
+  const c = cardFor(await cards());
   const sp = await empty();
   await page.mouse.move(c.x, c.y, { steps: 2 });
   await page.mouse.click(c.x, c.y);            // focuses + picks
@@ -199,8 +238,7 @@ test("click, Escape, click again on one card: a keypress never turns the next pi
 });
 
 test('Escape puts a hovered zoom away and the mark clears on leave: coming back regrows it', { skip }, async () => {
-  const list = await cards();
-  const c = list[4];
+  const c = cardFor(await cards());
   const sp = await empty();
   await move(c.x, c.y); await sleep(OPEN_MS);
   await page.keyboard.press('Escape'); await sleep(300);
@@ -221,7 +259,7 @@ test('a press outside is a plain close: come straight back and the card grows ag
   // by definition elsewhere, and a mark there poisoned the next hover (Codex
   // gate, 2026-08-31). The gallery once ran dismissZoom here instead, so this
   // contract was testing a rule production does not have.
-  const [c] = await cards();
+  const c = cardFor(await cards());
   const sp = await empty();
   await move(c.x, c.y); await sleep(OPEN_MS);
   let s = await state();
@@ -238,8 +276,7 @@ test('a press outside is a plain close: come straight back and the card grows ag
 });
 
 test('a mouse button held on a resting card is a slow click, never a touch-style zoom that ignores the mouse', { skip }, async () => {
-  const list = await cards();
-  const c = list[5];
+  const c = cardFor(await cards());
   const sp = await empty();
   await page.mouse.move(c.x, c.y, { steps: 2 });
   await page.mouse.down(); await sleep(700); await page.mouse.up();
@@ -250,8 +287,11 @@ test('a mouse button held on a resting card is a slow click, never a touch-style
 });
 
 test('Tab grows the focused card, Tab again reaches its notes chip, Escape closes it', { skip }, async () => {
+  // Two cards in a row where a real Tab from the first lands on the second:
+  // the first holds no button of its own (its notes chip would take the Tab).
   const list = await cards();
-  const prev = list[2], c = list[3]; // consecutive cards in the ladder row: Tab from one lands on the next
+  const prev = cardFor(list, (x) => !x.ownButton && x.tabsTo && !used.has(x.tabsTo) && list.some((y) => y.artist === x.tabsTo), 'two cards a Tab walks between');
+  const c = cardFor(list, (x) => x.artist === prev.tabsTo, 'the card that Tab lands on');
   const sp = await empty();
   await move(sp.x, sp.y);
   await page.mouse.click(sp.x, sp.y);           // the last input is a press…
@@ -275,6 +315,7 @@ test('Tab grows the focused card, Tab again reaches its notes chip, Escape close
 
 test('a random real-input walk: every dwell grows the right card, every leave closes it', { skip }, async () => {
   const list = await cards();
+  assert.ok(list.length >= 6, `a walk needs cards to walk between: ${list.length} on screen`);
   const sp = await empty();
   let seed = 7;
   const rnd = () => { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };

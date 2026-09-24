@@ -1,91 +1,92 @@
 # NOW — festival-navigator
 
-**last-updated: 2026-09-17 (shipped) · mode: live**
+**last-updated: 2026-09-23 (pre-Portola round) · mode: live**
 
 Where things stand, on one screen. Change stale lines in place; the story of
 how we got here belongs in DEVLOG.md.
 
 ## Live on production
 
-- **v85, from `main`** (PR #19, merged 2026-09-17 ~09:58 CT) on fest / festival /
-  crew.kevinhg.com — the wall simplified (MODEL-V4), the refreshed festival
-  data, the fix round, Kevin's two rounds of notes. Confirmed on all three
-  hosts by `curl -s https://fest.kevinhg.com/service-worker.js | grep
-  CACHE_VERSION` (v85, ASSET_STAMP cf2557a1).
-- v80 shipped an hour earlier (PR #18, the offline-cache fix alone) so phones
-  had it first. #16 shows as merged (its commits landed through #19); #15 is
-  closed unmerged on purpose.
-- Spec of record: `claude-plans/2026-09-16-wall-v4/MODEL-V4.md` (§3b holds
-  the ship-round notes). The fix-round read-back page:
-  https://claude.ai/artifact/DM2eNDCPjk5D5WJsNNHZXM
+- **v85 app, from `main`** (PR #19, 2026-09-17) on fest / festival /
+  crew.kevinhg.com.
+- **Data refreshed 2026-09-23** (PR #23, merged under the standing data-only
+  OK): the two Portola Week nights added on Sep 17 (Fri The Midway: The Hellp
+  & Bassvictim; Sat 888 Garage: Boys Noize), 21 billed openers, Sat Regency's
+  9:15 PM start, Folsom's Magnitude close (4 AM), ACL Fest Nights per the
+  official 9.21 graphic (Paloma Morphy postponed, Stubb's Indoors split, six
+  additions). The validator keys a night-section act by its night, so one act
+  on two nights is two shows.
 
 ## Happening now
 
-- **Shipped. Nothing is in flight.** The session worktrees under the
-  scratchpad (`wt-int`, `wt-ship`, …) and the local `polish/*` branches are
-  dead; a fresh session works on `main`.
-- Two things the ship round surfaced and left alone, for the record:
-  (1) in Playwright-WebKit with touch, after a tap on a show-menu row the
-  popover closes over a card and WebKit synthesises `pointerenter` with
-  `pointerType 'mouse'`, so `card-facts.js` arms a hover zoom over the dock.
-  Reproduced on the pre-round build too; Kevin's real-phone checks never
-  showed it. Candidate guard: arm hover intent only under `(hover: hover)`.
-  Not touched before the ship — the zoom's arming logic is the one place
-  where "small fix" has bitten three times. (2) The sticky stage strip is
-  32px on phones now, like desktop — its 44px coarse-pointer row existed
-  only because stage heads were tap targets, and they no longer are.
+- **v86 waits for Kevin's walk and yes**: draft PR #24, branch
+  `integrate/prefest-0923`. Promote = merge #24 (production is Kevin's call).
+  The read-back page with the preview link and a 10-minute phone walk is the
+  "Portola Weekend Release" artifact (kevin.hq@tecovas.com login).
+- What v86 carries, each with its spec or build log in `claude-plans/`:
+  1. One line per room (`SAT PORTOLA`, `SAT AFTERS`, `TUE LATE NIGHTS`),
+     `.day-block` per day — `claude-plans/2026-09-23-one-line-heads.md`.
+  2. Cancelled acts (`artists[].cancelled`), Skepta off Portola Saturday, the
+     Crane Stage per the v2 flyer — `claude-plans/2026-09-23-cancelled-acts-build.md`.
+  3. Your level meter chip (lower left, your colour, 1–3 bars then MUST); the
+     crew corner never counts you; the fit measures what rendered —
+     `claude-plans/2026-09-23-meter-build.md`.
+  4. The strict warm open (a phone with the exact wall cached paints in
+     ~1.6 s on a hanging network, was ~16 s), recognize-you, bring-your-picks,
+     Spotify progress, sync-dot honesty, shorter share copy —
+     `claude-plans/2026-09-23-crew-join-build.md`.
+  5. The zoom's who-row as blended level chips with first names. The strip
+     rides its timeline under Reduce Motion / Low power; Diagnostics
+     shows the route; a Late nights date counts as today; the everything-hidden
+     notice; the WebKit tap-ghost zoom fix in `js/v3/card-facts.js`.
+- Checked: 770 unit tests (two timezones), the browser suite in CI (Linux
+  Chromium) and locally (+ WebKit), four Codex rounds (all findings fixed;
+  Codex is out of credits until Sep 29), five real-engine walks. Not yet on a
+  physical iPhone — Kevin's walk is that check.
+
+## Open with Kevin
+
+- The zoom's "everyone's level" is in v86 (Kevin's pick, 2026-09-23): one
+  blended chip per vote level (the card's aura mixed from its people, the
+  meter's glyph, first names, "You" first, two then "+n"), one wrapping row;
+  its motion (carry, split, merge, both, first pick, clear) watched frame by
+  frame in Chromium and WebKit — storyboard
+  `claude-plans/2026-09-23-zoom-chips-motion.md`, build log
+  `claude-plans/2026-09-23-zoom-chips-build.md`; gallery.html row 19 replays
+  each case. Canvas: https://claude.ai/artifact/ShW4NLwgdtqMQxnAu43Pbh
+- Small call with a default: How it works dropped "White stroke = you" (you
+  are never in the crew corner now). (A half-width 30-min cell hiding its
+  start time once picked cannot happen in any shipped fest: ACL renders each
+  weekend as its own day, so it has no lane-split cells — checked 2026-09-24.)
+- If a phone tap ever grows a card on a real iPhone: gate hover arming on
+  `(any-hover: hover)` — card-facts.js deliberately avoids media queries, so
+  that is Kevin's call.
 
 ## Next, in order
 
-1. **Kevin walks production on his phone once** (a real document load — a
-   tab that already had v84 keeps the old module map until it reloads).
-2. Posted afters set times and any ACL drop go in as **data-only pushes**
-   (validator + freeze + tests first; standing OK). Portola Week afters start
-   Thu Sep 24; Portola Sep 26–27; ACL Oct 2–4 and 9–11.
-3. Loose ends with their own calls: the staging site (fix or retire), the
-   Ray draft, sort options in the show menu (hg-pen), the show-menu keyboard
-   follow-up, the `(hover: hover)` guard above, a masonry-style stack layout
-   so a short stack beside a tall one leaves less air.
-4. After Oct 11, the simplification arc: one pointer-position close rule for
-   the zoom, app.js and settings.js split, then add-a-show with a design
-   pass first (`claude-plans/2026-09-02-add-a-show.md`).
-
-Calendar: Portola Sep 26–27, afters from Sep 24 · ACL Oct 2–4 and 9–11 ·
-EDC Orlando Nov 6–8 · Seismic Nov 13–15.
-
-## Waiting on Kevin
-
-- stage.fest.kevinhg.com: the festival-navigator-staging Vercel project has
-  cancelled every build since 2026-08-10 through the Ignored Build Step in
-  its project settings (checked live 2026-09-16) and shares the production
-  database. Proposed: point it at `main` and remove the cancel, so it becomes
-  the stable phone-test URL. Fix or retire?
-- The Ray email: an unsent draft sits in the "Forked festival-navigator"
-  thread (hello@kevinhg.com, dated 2026-09-01); the GitHub issue comment did
-  go out. Refresh the wording and send?
-
-Decided 2026-09-16/17: data-only pushes have a standing OK (validator +
-freeze + tests first) · stale branches and worktrees go · crew tokens are
-not sensitive to Kevin · the unused Vercel Blob token can go when we're next
-in Vercel · Lost Lands dropped · highlighting picks dims, never filters ·
-stage solo is cut · a hidden part renders nothing and an empty day has no
-tab · the show menu hides ACL by weekend.
+1. Kevin walks the v86 preview; merge #24 on his yes; delete the walk's
+   throwaway crew.
+2. Data-only pushes as drops land (standing OK: validator + freeze + tests).
+   Portola Sep 26–27 (afters from Sep 24); ACL Oct 2–4 and 9–11.
+3. After Oct 11: the merged wall for two crews
+   at one fest, add-a-show (`claude-plans/2026-09-02-add-a-show.md`), the
+   staging site (fix or retire), the Ray draft.
 
 ## Banked, not built
 
 - The schedule-drop watcher:
   `claude-plans/2026-08-27-schedule-drop-watcher-future-build.md`.
-- An AI festival import graded by an eval against the festivals we already
-  ship (the 2026-08-31 section of the NOW archive below).
-- A sticky member-chip row · duplicate person rows for three members of the
-  Portola crew (an idempotent claim fixes it) · the deferred sync and merge
-  hardening list in DEVLOG 2026-08-23.
+- An AI festival import graded by an eval against the festivals we ship.
+- A sticky member-chip row · duplicate person rows for Portola crew members
+  (an idempotent claim fixes it) · the deferred sync and merge hardening list
+  in DEVLOG 2026-08-23 · day-to-day grid scroll mirroring only on scroll end
+  (needs Kevin's yes).
 
 ## Where the rest lives
 
 - Rules: CLAUDE.md. History: DEVLOG.md (search it; do not read it whole).
   Specs and plans: `claude-plans/README.md`.
+- Backups taken 2026-09-23 before any delete: Neon branch
+  `backup-2026-09-23-prefest` and JSON exports outside the repo.
 - NOW before 2026-09-16:
   `claude-plans/archive/2026/now-history-2026-07-07-to-2026-09-02.md`.
-- The fix round's read-back page:
-  https://claude.ai/artifact/DM2eNDCPjk5D5WJsNNHZXM

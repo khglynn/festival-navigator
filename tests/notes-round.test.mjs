@@ -117,8 +117,11 @@ test('every thread ends with an open door, and no note carries a Reply', () => {
   notes.openArtistSheet('GRiZ', ctx, () => {});
   assert.ok(sheet().querySelector('.sheet-card'), 'the header is the card');
   assert.equal(sheet().querySelector('.sheet-card .f-name').textContent, 'GRiZ');
-  assert.equal(sheet().querySelectorAll('.f-pill').length, 2, 'both pickers as pills');
-  assert.ok([...sheet().querySelectorAll('.f-pill')].some((p) => p.textContent.startsWith('You')), 'You, capitalised');
+  // The header draws the zoom's own who-chips (one builder): one chip per
+  // level, both pickers named, You capitalised and leading your chip.
+  const chips = [...sheet().querySelectorAll('.sheet-card .f-who .f-pill')];
+  assert.deepEqual(chips.map((p) => p.getAttribute('aria-label')), ['Must: Drew', 'Picked ×2: You'], 'both pickers, one chip per level');
+  assert.ok(chips.some((p) => p.classList.contains('you') && p.textContent.startsWith('You')), 'You, capitalised');
 
   // Kevin's law, held structurally: there is nowhere to ask for a nested reply.
   assert.equal(acts().find((b) => b.textContent === 'Reply'), undefined, 'no note carries a Reply');

@@ -1,0 +1,68 @@
+<div class="cv-page">
+  <header class="cv-intro">
+    <p class="cv-eyebrow">festival navigator · your rating · round 4 · Kevin’s blended chips · Wed 23 Sep 2026</p>
+    <h1 class="cv-h1">One chip per vote</h1>
+    <blockquote class="cv-quote">“What about using like cool blended chips if multiple people have the same vote and then those still live in a wrapping row rather than a stack?”<cite>Kevin</cite></blockquote>
+    <p class="cv-how">In the zoom, one chip for each level anyone chose (MUST, then three bars, two, one), loudest first, all in one wrapping row. Each chip is filled with the colours of the people at that level, blended, and says its level with the card meter’s own glyph; the chip you are in wears your white edge. Every card and zoom is the app’s own code, running live: rest the mouse on a card or hold it, then <b>tap the grown card</b> to turn yourself up and watch your letter move between chips. Slow motion is in the bar.</p>
+    <div class="cv-crew" id="cv-crew" aria-label="The crew"></div>
+    <nav class="cv-bar" aria-label="Canvas controls">
+      <a href="#compare">Before</a>
+      <a href="#t1">Three takes</a>
+      <a href="#rec">Pick</a>
+      <span class="cv-bar-gap"></span>
+      <label class="cv-toggle"><input type="checkbox" id="cv-slow"> Slow motion</label>
+      <button type="button" id="cv-reset" class="cv-btn">Reset picks</button>
+    </nav>
+  </header>
+
+  <section class="cv-group" id="compare">
+    <h2 class="cv-h2">Before</h2>
+    <p class="cv-lede">Every row shows the same six sets: all seven picked, five of seven, two, three without you, only you, and a crew of fifteen.</p>
+    <article class="cv-dir" id="c0">
+      <header class="cv-dir-head"><span class="cv-axis">today</span><h3 class="cv-h3">The zoom now</h3></header>
+      <div class="cv-zooms"></div>
+    </article>
+    <article class="cv-dir" id="c3">
+      <header class="cv-dir-head"><span class="cv-axis">round 3’s pick</span><h3 class="cv-h3">The room</h3></header>
+      <div class="cv-zooms"></div>
+    </article>
+  </section>
+
+  <section class="cv-group" id="takes">
+    <h2 class="cv-h2">Kevin’s chip, three takes</h2>
+    <p class="cv-lede">They differ in what fills a chip and what sits inside it. One person alone at a level is just their colour in all three; the text is the card’s own white.</p>
+
+    <article class="cv-dir" id="t1">
+      <header class="cv-dir-head"><span class="cv-axis">aura mix · letters</span><h3 class="cv-h3">1 · Aura chips</h3></header>
+      <p class="cv-why">Each chip is filled with the card’s own aura mix of its people, as bright as their level, so a MUST chip glows and a one-bar chip is quiet. The people are a tight run of letters; letters stay readable on any blend, but you have to know whose letter is whose.</p>
+      <div class="cv-zooms"></div>
+      <div class="cv-boards"></div>
+    </article>
+
+    <article class="cv-dir" id="t2">
+      <header class="cv-dir-head"><span class="cv-axis">smooth blend · avatars</span><h3 class="cv-h3">2 · Avatars on a blend</h3></header>
+      <p class="cv-why">A smooth left-to-right blend, with each person as the app’s own letter avatar overlapping the next, in their colour. The prettiest with two or three people; with five, a chip becomes a row of circles in a pill.</p>
+      <div class="cv-zooms"></div>
+      <div class="cv-boards"></div>
+    </article>
+
+    <article class="cv-dir" id="t3">
+      <header class="cv-dir-head"><span class="cv-axis">stripes · names</span><h3 class="cv-h3">3 · Stripes and names</h3></header>
+      <p class="cv-why">Hard stripes, one per person, so you can count the chip; up to two first names, then “+n”. It is the only take that names people, but the words sit on stripes, which is the hardest background to read text on.</p>
+      <div class="cv-zooms"></div>
+      <div class="cv-boards"></div>
+    </article>
+
+    <aside class="cv-rec" id="rec">
+      <div class="cv-rec-k">Recommendation</div>
+      <h4 id="rec-h"></h4>
+      <div id="rec-p"></div>
+    </aside>
+  </section>
+
+  <footer class="cv-foot">
+    <h4>How this page was made</h4>
+    <p>The app’s own modules and Portola’s real festival file are bundled into the page unchanged, apart from two hooks: one when a card is made (the meter, decided in round 2) and one when the zoom’s lines are built (the chips, so the zoom measures and blooms them like its own). The blends come from <code>aura.js</code> and <code>palette.js</code>, the way the card’s aura does. The crew is made up and lives only in memory; nothing talks to the app’s server or database. Earlier rounds: <code>canvas-round1.html</code>, <code>canvas-round2.html</code>, <code>canvas-round3.html</code>. Built 23 Sep 2026.</p>
+  </footer>
+</div>
+<div id="zoom-layer"></div>

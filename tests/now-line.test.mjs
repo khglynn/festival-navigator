@@ -111,8 +111,11 @@ test('scrollToNowLine: the line a third of the way down; before doors on festiva
   // Sunday 10 AM: no line yet (doors at 1 PM) — land on Sunday's header.
   const morning = render(pt('2026-09-27T10:00:00'));
   assert.equal(morning.querySelectorAll('.now-line').length, 0);
-  const sunRule = morning.querySelector('.day-rule[data-iso="2026-09-27"]');
-  sunRule.getBoundingClientRect = () => ({ top: 3000 });
+  // The day's block: its first head is where the day starts (one-line heads,
+  // 2026-09-23 — there is no day line above it any more).
+  const sunday = morning.querySelector('.day-block[data-iso="2026-09-27"]');
+  assert.equal(sunday.firstElementChild.querySelector('.room-head .name').textContent, 'SUN PORTOLA');
+  sunday.getBoundingClientRect = () => ({ top: 3000 });
   assert.equal(scrollToNowLine(morning, { date: pt('2026-09-27T10:00:00'), viewportHeight: 900, scrollTo: (y) => calls.push(y) }), 'day');
   assert.equal(calls[1], 3000);
   morning.remove();
@@ -142,7 +145,7 @@ test('the day-of open: one claim per festival-day, marked only after a real land
   assert.equal(store.size, 0, 'and the claim was NOT spent');
   week.remove();
   const morning = render(pt('2026-09-27T10:00:00'));
-  morning.querySelector('.day-rule[data-iso="2026-09-27"]').getBoundingClientRect = () => ({ top: 3000 });
+  morning.querySelector('.day-block[data-iso="2026-09-27"]').getBoundingClientRect = () => ({ top: 3000 });
   assert.equal(open(morning, pt('2026-09-27T10:00:00')), 'day', 'festival morning: today\'s header');
   morning.remove();
   const afternoon = render(pt('2026-09-27T17:42:00'));
@@ -211,4 +214,60 @@ test('validator: a morning set (5–11 AM) warns — the schedule axis and the n
   });
   assert.ok(r.warnings.some((w) => w.includes('9:00 AM') && w.includes('one axis')), `9 AM warns: ${r.warnings}`);
   assert.ok(!r.warnings.some((w) => w.includes('12:30 AM')), 'an after-midnight set is the normal case');
+});
+
+// A dated section's date is a festival day too (2026-09-23): ACL's Late nights
+// runs Sep 29 to Oct 10, and on a between-the-weekends night (Tue Sep 29, the
+// Mohawk) the day-of open used to skip it and land on the first grid day,
+// Oct 2. Now it lands on tonight's head in the Late nights block — unless a
+// real grid day is today, which still wins (Oct 3 has both).
+test('the day-of open counts a Late nights date as today; a grid day today still wins; hidden, it counts for nothing', () => {
+  const acl = JSON.parse(readFileSync(join(ROOT, 'data/festivals/acl-2026.json'), 'utf8'));
+  FESTIVAL_INDEX.push({ id: 'acl-2026', status: 'scheduled' });
+  state.FESTIVALS['acl-2026'] = acl;
+  const ct = (s) => new Date(`${s}-05:00`); // an instant whose Austin (CDT) wall clock reads s
+  const renderAcl = (date, folded = []) => {
+    state.setActiveFestivalId('acl-2026');
+    const root = document.createElement('div');
+    document.body.appendChild(root);
+    renderWall(root, { ...mkCtx(date), fid: 'acl-2026', folded });
+    return root;
+  };
+  const calls = [];
+  const opts = (date) => ({ date, viewportHeight: 900, scrollTo: (y) => calls.push(y), timeZone: acl.timezone });
+  try {
+    // Tue Sep 29, 8 PM in Austin: no grid today, two late-night shows.
+    const tue = renderAcl(ct('2026-09-29T20:00:00'));
+    const room = tue.querySelector('.day-block[data-day="Late nights"] .room[data-iso="2026-09-29"]');
+    assert.ok(room, 'tonight is a room on its own date inside the Late nights block');
+    assert.equal(room.querySelector('.room-head .name').textContent, 'TUE LATE NIGHTS');
+    room.getBoundingClientRect = () => ({ top: 7000 });
+    assert.equal(scrollToNowLine(tue, opts(ct('2026-09-29T20:00:00'))), 'day');
+    assert.deepEqual(calls, [7000], 'the open lands on TUE LATE NIGHTS, not on Friday Oct 2');
+    // 1 AM is still Tuesday night (the festival day runs to 5 AM).
+    assert.equal(scrollToNowLine(tue, opts(ct('2026-09-30T01:00:00'))), 'day');
+    assert.deepEqual(calls, [7000, 7000]);
+    tue.remove();
+
+    // Sat Oct 3, 9 AM: a grid day AND a late night — the grid day wins.
+    const sat = renderAcl(ct('2026-10-03T09:00:00'));
+    assert.ok(sat.querySelector('.room[data-iso="2026-10-03"]'), 'there IS a late night on the 3rd');
+    sat.querySelector('.day-block[data-iso="2026-10-03"]').getBoundingClientRect = () => ({ top: 3000 });
+    sat.querySelector('.room[data-iso="2026-10-03"]').getBoundingClientRect = () => ({ top: 9000 });
+    assert.equal(scrollToNowLine(sat, opts(ct('2026-10-03T09:00:00'))), 'day');
+    assert.equal(calls.at(-1), 3000, 'SAT ACL MUSIC FESTIVAL, the festival itself');
+    sat.remove();
+
+    // Late nights hidden: tonight has nothing to land on, and the shell falls
+    // back to its usual open (the first grid day).
+    const hidden = renderAcl(ct('2026-09-29T20:00:00'), ['Late nights']);
+    assert.equal(scrollToNowLine(hidden, opts(ct('2026-09-29T20:00:00'))), null);
+    hidden.remove();
+    // A night the section does not play (Wed Sep 30) is not a festival day either.
+    const wed = renderAcl(ct('2026-09-30T20:00:00'));
+    assert.equal(scrollToNowLine(wed, opts(ct('2026-09-30T20:00:00'))), null);
+    wed.remove();
+  } finally {
+    state.setActiveFestivalId('portola-2026');
+  }
 });

@@ -82,8 +82,11 @@ returning member on a new device recognizes themselves in one glance.
 
 1. Wall shows fest header (accent color), search, sort, Notes chip, day
    sections (or THE LINEUP when days are unknown), artist card grid.
-2. Tap a card → pick cycle 0→1→2→3→must→0; card aura + who-corner update
-   instantly; tap-out-of-must shows the undo toast.
+2. Tap a card → pick cycle 0→1→2→3→must→0; card aura + your meter (the
+   lower-left chip: one bar lit per tap, then MUST) update instantly, the
+   next bar lighting as you watch; tap-out-of-must shows the undo toast. The
+   who-corner (lower right) is everyone else's picks, and its +n counts
+   only other people.
 3. Search filters across all days; sort (Billing / A→Z / My picks / Most
    picked) reorders; both work together.
 **Expected:** sort control is a styled menu (not a native select), keyboard

@@ -117,8 +117,10 @@ test('lineup wall, composed: one day holds its billing and its sections; a stack
   document.body.appendChild(root);
   renderWall(root, ctx);
 
-  const rules = [...root.querySelectorAll('.day-rule')].map((r) => r.querySelector('.day').textContent);
-  assert.deepEqual(rules, ['FRIDAY', 'SATURDAY', 'SUNDAY'], 'the days are the union of the billing day and the event nights, in week order');
+  const days = [...root.querySelectorAll('.day-block')].map((b) => b.dataset.day);
+  assert.deepEqual(days, ['Friday', 'Saturday', 'Sunday'], 'the days are the union of the billing day and the event nights, in week order');
+  assert.deepEqual([...root.querySelectorAll('.room-head .name')].map((n) => n.textContent),
+    ['FRI AFTERS', 'FRI FOLSOM', 'SAT AFTERS', 'SUN AFTERS FEST', 'SUN AFTERS'], 'one line per room: when, then what');
 
   const cards = [...root.querySelectorAll('.card')];
   const subOf = (el) => el.querySelector('.time')?.textContent || '';
@@ -149,7 +151,7 @@ test('lineup wall, a flat sort: one list, and the event card carries night · ti
   const root = document.createElement('div');
   document.body.appendChild(root);
   renderWall(root, { ...ctx, sort: 'az' });
-  assert.deepEqual([...root.querySelectorAll('.day-rule')].map((r) => r.querySelector('.day').textContent), ['THE LINEUP']);
+  assert.deepEqual([...root.querySelectorAll('.list-head')].map((r) => r.querySelector('.label').textContent), ['THE LINEUP']);
   const hmd = [...root.querySelectorAll('.card')].find((c) => c.dataset.artist === 'Horse Meat Disco');
   assert.equal(hmd.querySelector('.time').textContent, 'Fri · 9 PM - 3 AM\nPublic Works', 'the two-line label (2026-08-29) is the list form');
   root.remove();

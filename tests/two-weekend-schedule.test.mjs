@@ -76,24 +76,21 @@ test('both weekends are on the wall, each as its own day: two Fridays, each with
   document.body.appendChild(root);
   renderWall(root, mkCtx('all'));
 
-  const rules = [...root.querySelectorAll('.day-rule')];
-  assert.deepEqual(rules.map((r) => [r.dataset.day, r.querySelector('.date').textContent]),
-    [['Friday|W1', 'Fri · Oct 2 · Weekend 1'], ['Friday|W2', 'Fri · Oct 9 · Weekend 2']],
-    'the weekend is which day you are looking at, not a filter over one');
+  // One day block per dated Friday, and the festival's own head on each says
+  // which: `FRI TWO WEEKEND FEST  Oct 2 · Weekend 1` (one-line heads, 2026-09-23).
+  const blocks = [...root.querySelectorAll('.day-block')];
+  assert.deepEqual(blocks.map((b) => {
+    const head = b.querySelector('.room-head');
+    return [b.dataset.day, head.querySelector('.name').textContent, head.querySelector('.sub').textContent];
+  }), [['Friday|W1', 'FRI TWO WEEKEND FEST', 'Oct 2 · Weekend 1'], ['Friday|W2', 'FRI TWO WEEKEND FEST', 'Oct 9 · Weekend 2']],
+  'the weekend is which day you are looking at, not a filter over one');
   // The tab's number is the day of the month, and it comes from the iso —
   // this fixture prints dates and no isos, so the tabs read FRI and FRI and
   // the rule below them is what tells the two apart. (acl-2026 carries isos;
   // events-model covers that shape.)
   assert.deepEqual(dayNavOf(FEST, mkCtx('all')).map((d) => [d.key, d.short, d.num]),
     [['Friday|W1', 'FRI', null], ['Friday|W2', 'FRI', null]]);
-  const namesOn = (tab) => {
-    const rule = rules.find((r) => r.dataset.day === tab);
-    const out = [];
-    for (let n = rule.nextElementSibling; n && !n.classList.contains('day-rule'); n = n.nextElementSibling) {
-      out.push(...[...n.querySelectorAll('.card')].map((c) => c.dataset.artist));
-    }
-    return out.sort();
-  };
+  const namesOn = (tab) => [...blocks.find((b) => b.dataset.day === tab).querySelectorAll('.card')].map((c) => c.dataset.artist).sort();
   assert.deepEqual(namesOn('Friday|W1'), ['Beta Both', 'One Only', 'Shared Head']);
   assert.deepEqual(namesOn('Friday|W2'), ['Beta Both', 'Shared Head', 'Two Only']);
   // The frozen day key never moved: the pick data on both tabs is Friday's.
@@ -111,18 +108,13 @@ test('searching a scheduled two-weekend fest answers across the whole dated axis
   const root = document.createElement('div');
   document.body.appendChild(root);
   renderWall(root, mkCtx('all', 'only'));
-  const rules = [...root.querySelectorAll('.day-rule')];
-  assert.deepEqual(rules.map((r) => [r.dataset.day, r.querySelector('.date').textContent]),
+  // A search is a list: each answered day is a block (the tab's anchor) under
+  // its one-line list header.
+  const blocks = [...root.querySelectorAll('.day-block')];
+  assert.deepEqual(blocks.map((b) => [b.dataset.day, b.querySelector('.list-head .sub').textContent]),
     [['Friday|W1', 'Fri · Oct 2 · Weekend 1'], ['Friday|W2', 'Fri · Oct 9 · Weekend 2']],
-    'a match under each weekend, each rule saying which date it is');
-  const namesOn = (tab) => {
-    const rule = rules.find((r) => r.dataset.day === tab);
-    const out = [];
-    for (let n = rule.nextElementSibling; n && !n.classList.contains('day-rule'); n = n.nextElementSibling) {
-      out.push(...[...n.querySelectorAll('.card')].map((c) => c.dataset.artist));
-    }
-    return out;
-  };
+    'a match under each weekend, each header saying which date it is');
+  const namesOn = (tab) => [...blocks.find((b) => b.dataset.day === tab).querySelectorAll('.card')].map((c) => c.dataset.artist);
   assert.deepEqual(namesOn('Friday|W1'), ['One Only']);
   assert.deepEqual(namesOn('Friday|W2'), ['Two Only'], 'the W2 answer is not a wrong turn — it is the other tab');
   // The tabs a search offers are the tabs its headers carry, or a jump lands
@@ -141,7 +133,7 @@ test('while a query is on, the day nav is exactly the days that answered — and
   document.body.appendChild(root);
   const ctx = mkCtx('all', 'two only');
   renderWall(root, ctx);
-  assert.deepEqual([...root.querySelectorAll('.day-rule')].map((r) => r.dataset.day), ['Friday|W2'],
+  assert.deepEqual([...root.querySelectorAll('.day-block')].map((b) => b.dataset.day), ['Friday|W2'],
     'one day answered');
   assert.deepEqual(dayNavOf(FEST, ctx, root).map((d) => d.key), ['Friday|W2'],
     'so one tab — a tab that jumps nowhere is worse than no tab');
@@ -185,9 +177,9 @@ test('ACL as shipped: searching finds a Weekend 2 headliner, under the date they
 
   const cards = [...root.querySelectorAll('.card')];
   assert.deepEqual(cards.map((c) => c.dataset.artist), ['Kings of Leon'], 'found, not "No artists match"');
-  const rule = root.querySelector('.day-rule');
-  assert.equal(rule.dataset.day, 'Friday|W2', 'under the Friday they actually play');
-  assert.equal(rule.querySelector('.date').textContent, 'Fri · Oct 9 · Weekend 2', 'and the rule says which date that is');
+  const block = root.querySelector('.day-block');
+  assert.equal(block.dataset.day, 'Friday|W2', 'under the Friday they actually play');
+  assert.equal(block.querySelector('.list-head .sub').textContent, 'Fri · Oct 9 · Weekend 2', 'and the header says which date that is');
   assert.equal(JSON.parse(cards[0].dataset.occ).weekend, 'W2', 'the card carries the weekend, so the zoom tells the right night');
   // The dock said seven tabs over this one answer, six of them dead, and lit
   // the Weekend 1 Friday (Codex re-check finding 2, 2026-09-17).
@@ -204,7 +196,7 @@ test('ACL as shipped: searching finds a Weekend 2 headliner, under the date they
   const root2 = document.createElement('div');
   document.body.appendChild(root2);
   renderWall(root2, { ...mkCtx('all', 'jess williamson'), fid: 'acl-2026' });
-  const rules = [...root2.querySelectorAll('.day-rule')].map((r) => [r.dataset.day, r.querySelector('.day').textContent, r.querySelector('.date').textContent]);
+  const rules = [...root2.querySelectorAll('.list-head')].map((r) => [r.closest('.day-block').dataset.day, r.querySelector('.label').textContent, r.querySelector('.sub').textContent]);
   assert.deepEqual(rules, [
     ['Sunday|W1', 'SUNDAY', 'Sun · Oct 4 · Weekend 1'],
     ['Late nights', 'THU · OCT 1', 'LATE NIGHTS'],

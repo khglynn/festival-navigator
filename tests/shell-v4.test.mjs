@@ -57,7 +57,7 @@ const rows = (which) => [...menu(which).querySelectorAll('[data-room]')]
 
 test('the wall is up on Portola, with its three rooms', () => {
   assert.equal($('screen-app').style.display, '', 'the wall');
-  const keys = [...new Set([...$('wall-root').querySelectorAll('.sec-head[data-section]')].map((h) => h.dataset.section))];
+  const keys = [...new Set([...$('wall-root').querySelectorAll('.room[data-room]')].map((r) => r.dataset.room))];
   // Thursday and Friday are afters nights, so the festival's own room does not
   // appear until Saturday — which is why the show menu sorts it to the front
   // rather than taking the wall's order as read.
@@ -218,8 +218,11 @@ test('a fold moves the days that go with it: a room and the day it emptied leave
   // way a real animation would, so this is the path a phone takes. Portola's
   // Thursday is an afters-only night: hide Afters and Thursday goes with it —
   // it must LEAVE with the room, not vanish on the repaint (CLAUDE.md: nothing
-  // vanishes in place, nothing pops). A weekend has no room of its own and
-  // moves as its days; the same rule, exercised on ACL in the browser walk.
+  // vanishes in place, nothing pops). A day is one block holding its rooms
+  // (one-line heads, 2026-09-23), so a day the fold empties leaves as ONE
+  // element, and the room inside it is not animated a second time. A weekend
+  // has no room of its own and moves as its days; the same rule, exercised on
+  // ACL in the browser walk.
   const Proto = dom.window.Element.prototype;
   const moved = [];
   Proto.animate = function animate(frames) {
@@ -230,27 +233,27 @@ test('a fold moves the days that go with it: a room and the day it emptied leave
   };
   const row = (key) => [...menu('dock').querySelectorAll('[data-room]')].find((r) => r.dataset.room === key);
   const tabs = () => [...$('dock-days').querySelectorAll('.day-tab')].map((t) => t.dataset.day);
-  const name = (m) => (m.el.classList.contains('day-rule') ? `rule:${m.el.dataset.day}` : m.el.classList.contains('room') ? `room:${m.el.dataset.room}` : m.el.className);
+  const name = (m) => (m.el.classList.contains('day-block') ? `day:${m.el.dataset.day}` : m.el.classList.contains('room') ? `room:${m.el.dataset.room}` : m.el.className);
   // The wall's blocks only: the menu's own close is a motion too, and not this one.
-  const take = (out) => { const got = moved.filter((m) => m.out === out && m.el.parentElement === $('wall-root')).map(name); moved.length = 0; return got; };
+  const take = (out) => { const got = moved.filter((m) => m.out === out && $('wall-root').contains(m.el)).map(name); moved.length = 0; return got; };
   try {
     click($('dock-fest-link'));
     click(row('Afters'));
-    assert.deepEqual(take(true), ['rule:Thursday', 'room:Afters', 'room:Afters', 'room:Afters', 'room:Afters'], 'Thursday leaves with its only room; the other nights keep their rule');
+    assert.deepEqual(take(true), ['day:Thursday', 'room:Afters', 'room:Afters', 'room:Afters'], 'Thursday leaves whole, its only room inside it; the other nights keep their day');
     assert.deepEqual(tabs(), ['Thursday', 'Friday', 'Saturday', 'Sunday'], 'the repaint waits for the leave');
     await settle(30);
     assert.deepEqual(tabs(), ['Friday', 'Saturday', 'Sunday'], 'and then Thursday is gone');
 
     click($('dock-fest-link'));
     click(row('Folsom'));
-    assert.deepEqual(take(true), ['rule:Friday', 'room:Folsom', 'room:Folsom', 'room:Folsom'], 'now Friday goes with Folsom');
+    assert.deepEqual(take(true), ['day:Friday', 'room:Folsom', 'room:Folsom'], 'now Friday goes with Folsom, as one block');
     await settle(30);
     assert.deepEqual(tabs(), ['Saturday', 'Sunday']);
 
     click($('dock-fest-link'));
     click(row('Afters'));
     await settle(30);
-    assert.deepEqual(take(false), ['rule:Thursday', 'room:Afters', 'rule:Friday', 'room:Afters', 'room:Afters', 'room:Afters'], 'Thursday and Friday arrive with Afters, in the wall\'s order');
+    assert.deepEqual(take(false), ['day:Thursday', 'day:Friday', 'room:Afters', 'room:Afters'], 'Thursday and Friday arrive whole with Afters, in the wall\'s order');
     assert.deepEqual(tabs(), ['Thursday', 'Friday', 'Saturday', 'Sunday']);
 
     click($('dock-fest-link'));
@@ -260,6 +263,66 @@ test('a fold moves the days that go with it: a room and the day it emptied leave
     assert.equal(globalThis.localStorage.getItem(`fn_fold_v1_${FID}`), null);
   } finally {
     delete Proto.animate;
+    filters.saveFolded(FID, []);
+  }
+});
+
+// The last room hidden: the week leaves, and the notice that says so arrives
+// with the usual beat; the first room back takes the notice away, quick and
+// plain, before the days arrive (2026-09-23 — nothing pops, nothing vanishes
+// in place).
+test('hiding the last room: the notice arrives with the beat, and leaves when a room comes back', async () => {
+  const Proto = dom.window.Element.prototype;
+  const moved = [];
+  Proto.animate = function animate(frames) {
+    const a = { onfinish: null, oncancel: null };
+    moved.push({ el: this, out: frames[0].opacity === 1 });
+    setTimeout(() => { if (a.onfinish) a.onfinish(); }, 0);
+    return a;
+  };
+  const row = (key) => [...menu('dock').querySelectorAll('[data-room]')].find((r) => r.dataset.room === key);
+  const tabs = () => [...$('dock-days').querySelectorAll('.day-tab')].map((t) => t.dataset.day);
+  const notice = () => $('wall-root').querySelector('.wall-empty');
+  const take = (out) => { const got = moved.filter((m) => m.out === out && $('wall-root').contains(m.el)).map((m) => (m.el.classList.contains('wall-empty') ? 'notice' : m.el.classList.contains('day-block') ? `day:${m.el.dataset.day}` : `room:${m.el.dataset.room}`)); moved.length = 0; return got; };
+  try {
+    for (const key of ['Afters', 'Folsom']) {
+      click($('dock-fest-link'));
+      click(row(key));
+      await settle(30);
+    }
+    moved.length = 0;
+    assert.equal(notice(), null, 'Portola still plays Saturday and Sunday');
+    click($('dock-fest-link'));
+    click(row(':fest'));
+    assert.deepEqual(take(true), ['day:Saturday', 'day:Sunday'], 'the last two days leave whole');
+    await settle(30);
+    assert.ok(notice(), 'and the wall says why it is blank');
+    assert.deepEqual(tabs(), [], 'no day, no tab — the 09-17 rule stands');
+    assert.deepEqual(take(false), ['notice'], 'the notice arrives with the beat');
+    assert.ok(notice().textContent.includes('PORTOLA \'26'), 'naming the door by the words on it');
+
+    click($('dock-fest-link'));
+    click(row('Afters'));
+    assert.deepEqual(take(true), ['notice'], 'the first room back takes the notice away first');
+    await settle(30);
+    assert.equal(notice(), null);
+    assert.deepEqual(tabs(), ['Thursday', 'Friday', 'Saturday', 'Sunday']);
+    assert.deepEqual(take(false), ['day:Thursday', 'day:Friday', 'day:Saturday', 'day:Sunday'], 'and the week arrives, in its order');
+    for (const key of ['Folsom', ':fest']) {
+      click($('dock-fest-link'));
+      click(row(key));
+      await settle(30);
+    }
+    assert.equal(globalThis.localStorage.getItem(`fn_fold_v1_${FID}`), null, 'the whole week back');
+  } finally {
+    delete Proto.animate;
+    // Whatever an early failure left hidden comes back through the menu, so
+    // the tests after this one see the whole week.
+    for (const key of JSON.parse(globalThis.localStorage.getItem(`fn_fold_v1_${FID}`) || '[]')) {
+      click($('dock-fest-link'));
+      click(row(key));
+      await settle(30);
+    }
     filters.saveFolded(FID, []);
   }
 });

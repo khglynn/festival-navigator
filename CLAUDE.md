@@ -32,12 +32,29 @@ Non-inferable facts only (the code answers everything else — read it).
 - **A note is written where you are standing, and nothing rolls up.** Four
   targets: the festival, a DATE (ISO), a SECTION ON a date
   (`<iso>|<section label>`, e.g. `2026-09-25|Folsom`), an artist. The doors are
-  the day rule, the section header on that day, and the card's zoom — real
-  buttons, nothing added to them but the hit. A `Folsom · Friday` note never
-  appears or counts under `Friday`. Legacy keys (a weekday label, a bare
-  section) are READ, never written: no migration, no rename, the freeze
-  untouched. The all-notes sheet lists only targets that have notes — it is not
-  a set of doors (MODEL-V4 §3a.3).
+  the room heads — one line per room, `SAT PORTOLA` / `SAT AFTERS` (2026-09-23,
+  `claude-plans/2026-09-23-one-line-heads.md`): the festival's head on a date
+  opens that DATE, a section's head on a day opens that section on that date,
+  a Late nights head opens its date — and the card's zoom. Real buttons,
+  nothing added to them but the hit; each whisper sits directly under the head
+  that opens it. A date with no festival room (Portola's Thu/Fri) has no date
+  door. A `Folsom · Friday` note never appears or counts under `Friday`.
+  Legacy keys (a weekday label, a bare section) are READ, never written: no
+  migration, no rename, the freeze untouched. The all-notes sheet lists only
+  targets that have notes — it is not a set of doors (MODEL-V4 §3a.3).
+
+- **The two bottom corners share one line, and a card that is too narrow for
+  both gives way in the order `js/v3/aura.js` GIVE_WAY names** (2026-09-23):
+  your meter on the left, everyone else's marks on the right — the crew
+  corner never carries you, so its "+n" is other people. The fit's FIRST
+  GUESS is a width table in aura.js that mirrors `assets/v3.css` (chip
+  padding, type sizes, Inter's digit widths, measured in Chromium on macOS);
+  then wall.js reads back what each card really drew and gives way further
+  wherever the corners crowd, and refits when a late font lands — because
+  Linux draws Inter wider (CI put Robyn's corners 1.4px apart, 2026-09-23)
+  and so will real phones. Keep the table close anyway (a good guess is one
+  pass); `tests/browser/meter-contract.test.mjs` measures every card in a
+  real browser, including a run with wider glyphs than this engine draws.
 
 - **The 44px touch floor is applied to `button`, not to a list of selectors.**
   It used to name six, and the naming WAS the bug — every control added after
@@ -156,7 +173,10 @@ Non-inferable facts only (the code answers everything else — read it).
   start picking in a fest, and before any set-times edit); a name that
   disappears fails CI. Grid names must match `artists[]` byte for byte —
   the validator makes a case-only match an ERROR because it would split
-  the crew's picks between two spellings forever (2026-08-27).
+  the crew's picks between two spellings forever (2026-08-27). A cancelled
+  act keeps its name the same way: its set comes off the grid and its
+  `artists[]` entry is marked `cancelled`, never deleted (Skepta,
+  2026-09-23 — "Cancelled acts" in `docs/add-a-festival.md`).
 - **Festival JSONs are served network-first by the service worker** (4 s
   budget, persistent cache as the offline answer). They used to be
   cache-first in the persistent data cache, which meant a set-times drop
@@ -183,18 +203,28 @@ Non-inferable facts only (the code answers everything else — read it).
   real-browser contract (`npm run test:browser`, CI job `browser`) drives
   Kevin's sequences with real input against gallery.html. The long-press
   ignores mouse pointers for the same reason (a held button is a slow click).
+  The hover route has the mirror trap (2026-09-23): WebKit follows a touch
+  tap with MOUSE-type pointer events at the spot the finger lifted — a
+  click, then pointerenter on the fresh card a pick swaps in — so
+  `pointerType === 'mouse'` alone is not a hand. card-facts.js `touchAt`
+  ignores mouse events at recent finger points until a mouse really moves
+  (`tests/zoom-touch-ghost.test.mjs`); before it, a tapped card zoomed itself.
 - **The stage strip is a follower, not a scroller.** Its row rides the lead
   grid's scroll timeline (CSS scroll-driven animation; `--strip-max` is the
-  measured maximum scroll) or a transform from the lead's scroll event where
-  the engine lacks `ScrollTimeline` or motion is reduced. Never set a
-  strip's scrollLeft; anything that mirrors or restores scroll positions
-  skips `isStripScroller`. Three traps kill the timeline: jsdom's
-  `CSS.supports` says yes to everything (detect with
-  `typeof window.ScrollTimeline`), the tokens file's reduced-motion rule
-  kills every animation, and so does Low Power. Which route a strip takes is
-  therefore decided per RENDER, never once at load — a phone can drop into
-  Low Power with the wall already up — and each render undoes the last
-  render's wiring.
+  measured maximum scroll) wherever the engine has `ScrollTimeline` — under
+  Reduce Motion and Low power too (2026-09-23: tracking a finger is direct
+  manipulation, not decoration, and the fallback trails the grid by a frame
+  on a phone) — and a transform from the lead's scroll event only where the
+  engine lacks it (iOS before 26). Never set a strip's scrollLeft; anything
+  that mirrors or restores scroll positions skips `isStripScroller`. Traps:
+  jsdom's `CSS.supports` says yes to everything (detect with
+  `typeof window.ScrollTimeline`), and the tokens file's two motion kill
+  rules (`!important` on `*`) would freeze the follow — their `animation`
+  shorthand even resets `animation-timeline` — so the follow's animation is
+  the one rule in v3.css that out-ranks them, reading the timeline's name
+  from `--strip-tl`. Don't move it back inline. The route is decided per
+  RENDER and written on the strip (`data-follow`, which Diagnostics reports),
+  and each render undoes the last render's wiring.
 - **WebKit only honours `-webkit-user-select`** — an unprefixed
   `user-select: none` did nothing on iOS and a long-press selected the time
   label and raised the Copy/Search callout over the zoom (2026-09-02). Every

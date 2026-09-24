@@ -1,6 +1,6 @@
 // Notes surfaces (reshaped 2026-08-29): scope sheets (artist + day), the
-// all-notes HOME, and the newest-note whisper on the wall (used for a day rule
-// AND for the festival — scope-neutral despite the name; wall.js imports it).
+// all-notes HOME, and the newest-note whisper on the wall (used under a room
+// head AND for the festival — scope-neutral despite the name; wall.js imports it).
 // The sheet opens with the card (card-facts.js) and reads as a conversation —
 // no boxes, a note is text on a wash of its author's hue, replies indent one
 // gutter under their root.
@@ -76,7 +76,7 @@ const savePins = (pins) => saveLS(LS_PINS, JSON.stringify(pins));
 
 // ---- a date, said the short way -----------------------------------------------------
 // "Sat · Sep 26". Every door, sheet title and label a date appears on uses this
-// — never the storage key. The wall composes its own copy for the day rule and
+// — never the storage key. The wall composes its own copy for a date's door and
 // hands it down, so a date reads the same wherever you meet it.
 const WEEKDAYS_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MONTHS_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -116,7 +116,7 @@ function dayNotesOn(ctx, target) {
 
 // What a target is CALLED, which is what the wall calls it: "Friday",
 // "Folsom · Friday". The date's own name comes off the day axis the shell hands
-// down (ctx.festDates) — the wall's day rule, in its words — so the sheet says
+// down (ctx.festDates) — the wall's date door, in its words — so the sheet says
 // what the door said. Where two dates would answer to the same name (a
 // two-weekend fest has two Fridays) the axis carries the dated form instead;
 // that choice is made once, in the shell, not re-derived here.
@@ -124,9 +124,9 @@ function dateLabel(ctx, iso, fallback) {
   const hit = (ctx.festDates || []).find((d) => d && d.iso === iso);
   return (hit && hit.label) || fallback || shortDayLabel(iso);
 }
-// `fallback` is what the caller already has on screen — the wall's day rule
-// hands down its own head, so a ctx with no axis still says a word rather than
-// a date nobody asked for.
+// `fallback` is what the caller already has on screen — the wall hands down the
+// day's own name, so a ctx with no axis still says a word rather than a date
+// nobody asked for.
 export function dayTargetLabel(ctx, target, fallback = null) {
   const sec = model.parseSectionDateKey(target);
   if (sec) return `${dayLabelParts(sec.section).head} · ${dateLabel(ctx, sec.iso, fallback)}`;
@@ -810,7 +810,7 @@ export function dialogize(sheet, label) {
 
 // ---- scope sheet (artist, date or fest) — one surface, three scopes (21g / NT-2) -----
 // opts: { occ, label }. `target` for a day sheet is the ISO date, and `label`
-// is the short form the wall used on the day rule ("Sat · Sep 26"). It may read
+// is what the wall's door called the date ("Saturday", "Sat · Sep 26"). It may read
 // from more than one key — the date, plus any legacy weekday key that maps to
 // it — so the threads render into one host per key, in one list. New notes only
 // ever land on the date.
@@ -1017,9 +1017,11 @@ export function openAllNotes(ctx) {
     // listed every date the festival has with an "+ Add a note for…" door under
     // each — a column of empty rows on a fest with three notes, and a second
     // way to start a thread that was never where you were standing. You write a
-    // date's note from its rule and a section's from its header; the sheet is
-    // the list of what has been written, and the festival composer above is the
-    // one composer it holds.
+    // date's note from the festival's head on that date and a section's from
+    // its head on that day (one-line heads, 2026-09-23); the sheet is the list
+    // of what has been written — including a date whose wall has no festival
+    // room and so no date door (Portola's Thursday) — and the festival
+    // composer above is the one composer it holds.
     for (const d of dates) {
       const keys = model.dayNoteKeysFor(fest, d.iso).filter((k) => model.noteCount(doc, ctx.fid, 'day', k));
       if (keys.length) {
@@ -1070,9 +1072,10 @@ export function openAllNotes(ctx) {
 
 // ---- the whisper (2026-08-29, replaces the inline bars) -----------------------------
 // Nothing until someone writes; then the NEWEST note (root or reply) as one
-// soft wash under the day's rule — Kevin's call, 2026-08-29. Tapping it opens
-// that conversation. Since V4 it is the day rule's only note door: the ✎ chips
-// on the rule and on every section header are gone.
+// soft wash pinned directly under the room head that opens the thread — Kevin's
+// call, 2026-08-29. Tapping it opens that conversation. The head itself is the
+// other door (one-line heads, 2026-09-23); the ✎ chips that sat on the day rule
+// and on every section header are long gone.
 function whisperRow(list, ctx, onOpen, aria) {
   if (!list.length) return null;
   const newest = list[list.length - 1];
