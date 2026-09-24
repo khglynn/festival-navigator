@@ -30,8 +30,9 @@ const skipWebkit = webkit ? false : 'Playwright WebKit is not installed (npx pla
 const SAT_1030 = new Date('2026-09-26T22:30:00-07:00');
 const SAT_9AM = new Date('2026-09-26T09:00:00-07:00');
 // Kat is only at the Warehouse (Prospa): the third column, off a phone's
-// screen until the grid scrolls to it.
-const SELECTIONS = { 'Milli Meng': { Ross: 3 }, Galen: { Ross: 1, Nhu: 2 }, Soulwax: { Nhu: 4 }, Prospa: { Nhu: 2, Kat: 3 } };
+// screen until the grid scrolls to it. Ross's early evening is Despacio — a
+// set hours long, over by 9:45, so it never competes at 10:30.
+const SELECTIONS = { 'Milli Meng': { Ross: 3 }, Galen: { Ross: 1, Nhu: 2 }, Soulwax: { Nhu: 4 }, Prospa: { Nhu: 2, Kat: 3 }, Despacio: { Ross: 3 } };
 
 async function openApp({ width = 390, height = 844, touch = true, now = SAT_1030, fest = 'portola-2026', engine = browser } = {}) {
   const ctx = await engine.newContext({ viewport: { width, height }, hasTouch: touch, serviceWorkers: 'block' });
@@ -301,6 +302,37 @@ test('390: the card is replaced mid-glide — the fresh one pulses, and no scrol
     assert.ok(pulsing, 'the node that stands there when the glide lands is the one that pulses');
     await sleep(900);
     assert.equal(await scrollends(), before, 'no scrollend listener outlives the landing');
+  } finally { await ctx.close(); }
+});
+
+// A tall pick on a small phone (review, 2026-09-24): at 9:15 PM Ross is at
+// Despacio, a set hours long. Its top and the line cannot both fit a 320x568
+// band, and the old landing pinned the line to the bottom of the band — just
+// above the dock — with the card's top still off screen. The line keeps its
+// third of the way down (the rule everywhere else: the strip names the
+// stage), and the pulse on a card that tall is scaled down to a few pixels.
+test('320x568, Ross at Despacio (a tall set): the line stays a third of the way down, and the pulse is small', { skip }, async () => {
+  const { ctx, page, door } = await openApp({ width: 320, height: 568, now: new Date('2026-09-26T21:15:00-07:00') });
+  try {
+    await highlight(page, 'Ross');
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await sleep(150);
+    await tapNow(page, door);
+    const v = await view(page, 'Despacio', 'cell');
+    assert.ok(v.card && v.card.cell, 'Despacio, on the grid');
+    const band = v.dockTop - v.stripBottom;
+    assert.ok(v.card.top < v.stripBottom, `a card taller than the band can show with its line: ${JSON.stringify(v)}`);
+    const at = (v.line.top - v.stripBottom) / band;
+    assert.ok(at > 0.2 && at < 0.45, `the line a third of the way down (${at.toFixed(2)}), not pinned above the dock: ${JSON.stringify(v)}`);
+    assert.ok(v.card.bottom >= v.line.top && v.card.top <= v.line.top, 'and the card crosses it');
+    const grow = await page.evaluate(() => {
+      const c = [...document.querySelectorAll('#wall-root .card.cell')].find((x) => x.dataset.artist === 'Despacio');
+      const a = c.getAnimations().find((x) => x.effect && x.effect.getKeyframes().some((k) => /scale\(/.test(k.transform || '')));
+      const h = c.getBoundingClientRect().height;
+      return a ? { scale: Math.max(...a.effect.getKeyframes().map((k) => parseFloat((/scale\(([\d.]+)\)/.exec(k.transform || '') || [0, 1])[1]))), h } : null;
+    });
+    assert.ok(grow, 'it pulses');
+    assert.ok((grow.scale - 1) * grow.h <= 13, `a few pixels of growth on a ${Math.round(grow.h)}px card, not ${Math.round((grow.scale - 1) * grow.h)}px`);
   } finally { await ctx.close(); }
 });
 

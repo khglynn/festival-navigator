@@ -569,7 +569,13 @@ function jumpToNow() {
     dy = lineTop - (band.top + (band.bottom - band.top) / 3);
     if (card) {
       const cardTop = card.getBoundingClientRect().top;
-      if (cardTop - dy < band.top + pad) dy = cardTop - (band.top + pad);
+      // The card's top on screen too — when the two fit: the line no lower
+      // than two-thirds of the way down. A set too tall for that (Despacio's
+      // hours on a 320x568 phone) keeps the line a third of the way down, the
+      // rule everywhere else: the strip names its stage and the pulse marks
+      // it. Bringing its top in instead pinned the line above the dock with
+      // the top still off screen (review, 2026-09-24).
+      if (lineTop - cardTop <= (band.bottom - band.top) * (2 / 3) && cardTop - dy < band.top + pad) dy = cardTop - (band.top + pad);
       if (lineTop - dy > band.bottom - pad) dy = lineTop - (band.bottom - pad);
       const scroller = card.closest('.times-scroll');
       if (scroller) {
@@ -612,7 +618,11 @@ function jumpToNow() {
       target = cardFor(root, who.artist, occ, { room: who.room });
     }
     if (!target || !canAnimate(target, ctx)) return;
-    target.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.06)', offset: 0.4 }, { transform: 'scale(1)' }],
+    // 6% of an ordinary card is a few pixels; 6% of a six-hour slab is forty.
+    // The pulse grows the card by at most ~12px on its longer side.
+    const size = target.getBoundingClientRect();
+    const grow = Math.min(0.06, 12 / Math.max(1, size.width, size.height));
+    target.animate([{ transform: 'scale(1)' }, { transform: `scale(${(1 + grow).toFixed(4)})`, offset: 0.4 }, { transform: 'scale(1)' }],
       { duration: 460, iterations: 2, easing: EASE_SURFACE });
   };
   // Already there (a second tap): the pulse is the whole answer, at once.
