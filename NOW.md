@@ -1,48 +1,55 @@
 # NOW — festival-navigator
 
-**last-updated: 2026-09-23 (pre-Portola round) · mode: live**
+**last-updated: 2026-09-24 (v86 shipped) · mode: live**
 
 Where things stand, on one screen. Change stale lines in place; the story of
 how we got here belongs in DEVLOG.md.
 
 ## Live on production
 
-- **v85 app, from `main`** (PR #19, 2026-09-17) on fest / festival /
-  crew.kevinhg.com.
+- **v86, from `main`** (PR #24, merged 2026-09-24 ~01:40 CT) on fest /
+  festival / crew.kevinhg.com — confirmed on all three hosts by `curl -s
+  https://fest.kevinhg.com/service-worker.js | grep CACHE_VERSION` (v86,
+  ASSET_STAMP cac7172f).
 - **Data refreshed 2026-09-23** (PR #23, merged under the standing data-only
   OK): the two Portola Week nights added on Sep 17 (Fri The Midway: The Hellp
   & Bassvictim; Sat 888 Garage: Boys Noize), 21 billed openers, Sat Regency's
   9:15 PM start, Folsom's Magnitude close (4 AM), ACL Fest Nights per the
-  official 9.21 graphic (Paloma Morphy postponed, Stubb's Indoors split, six
-  additions). The validator keys a night-section act by its night, so one act
-  on two nights is two shows.
+  official 9.21 graphic. Re-checked against the official feed 2026-09-24: same
+  20 events; only the held-back Thu Club Six openers and Sun Midway's S.I.M /
+  Espurr / New Nostalgia differ (Kevin's call, unanswered — they stay out).
 
 ## Happening now
 
-- **v86 waits for Kevin's walk and yes**: draft PR #24, branch
-  `integrate/prefest-0923`. Promote = merge #24 (production is Kevin's call).
-  The read-back page with the preview link and a 10-minute phone walk is the
-  "Portola Weekend Release" artifact (kevin.hq@tecovas.com login).
+- **v87 in build: the NOW jump** (Kevin, 2026-09-24): a NOW tab at the start
+  of the day tabs, shown only while something is live; tap lands on the now
+  line (or the first NOW card after Pier 80 closes); with a person
+  highlighted it lands on their live pick with the now line in view — "where
+  is Ross right now" in two taps. Its build log lands
+  with the v87 branch; Kevin checks it on localhost, then ship before
+  Saturday.
 - What v86 carries, each with its spec or build log in `claude-plans/`:
   1. One line per room (`SAT PORTOLA`, `SAT AFTERS`, `TUE LATE NIGHTS`),
      `.day-block` per day — `claude-plans/2026-09-23-one-line-heads.md`.
-  2. Cancelled acts (`artists[].cancelled`), Skepta off Portola Saturday, the
-     Crane Stage per the v2 flyer — `claude-plans/2026-09-23-cancelled-acts-build.md`.
-  3. Your level meter chip (lower left, your colour, 1–3 bars then MUST); the
-     crew corner never counts you; the fit measures what rendered —
+  2. Cancelled acts (`artists[].cancelled`), Skepta off Portola Saturday —
+     `claude-plans/2026-09-23-cancelled-acts-build.md`.
+  3. Your level meter chip (lower left, 1–3 bars then MUST); the crew corner
+     never counts you; the fit measures what rendered —
      `claude-plans/2026-09-23-meter-build.md`.
-  4. The strict warm open (a phone with the exact wall cached paints in
-     ~1.6 s on a hanging network, was ~16 s), recognize-you, bring-your-picks,
-     Spotify progress, sync-dot honesty, shorter share copy —
-     `claude-plans/2026-09-23-crew-join-build.md`.
-  5. The zoom's who-row as blended level chips with first names. The strip
-     rides its timeline under Reduce Motion / Low power; Diagnostics
-     shows the route; a Late nights date counts as today; the everything-hidden
-     notice; the WebKit tap-ghost zoom fix in `js/v3/card-facts.js`.
-- Checked: 770 unit tests (two timezones), the browser suite in CI (Linux
-  Chromium) and locally (+ WebKit), four Codex rounds (all findings fixed;
-  Codex is out of credits until Sep 29), five real-engine walks. Not yet on a
-  physical iPhone — Kevin's walk is that check.
+  4. The zoom's who-row as blended level chips with first names, and their
+     split / merge / carry motion — `claude-plans/2026-09-23-zoom-chips-build.md`,
+     `claude-plans/2026-09-23-zoom-chips-motion.md`.
+  5. The strict warm open (~1.6 s on a hanging network, was ~16 s),
+     recognize-you, bring-your-picks, Spotify progress, sync-dot honesty,
+     shorter share copy — `claude-plans/2026-09-23-crew-join-build.md`.
+  6. The strip rides its timeline under Reduce Motion / Low power; a Late
+     nights date counts as today; the everything-hidden notice; the WebKit
+     tap-ghost zoom fix.
+- Checked before ship: 783 unit tests (two timezones), 95 browser tests in CI
+  (the meter and zoom-chip contracts on every shipped fest), four Codex rounds
+  plus Opus reviews once Codex ran out of credits (until Sep 29), five
+  real-engine walks, Kevin's own look on a local build. Not on a physical
+  iPhone before ship.
 
 ## Open with Kevin
 
@@ -54,17 +61,17 @@ how we got here belongs in DEVLOG.md.
   `claude-plans/2026-09-23-zoom-chips-motion.md`, build log
   `claude-plans/2026-09-23-zoom-chips-build.md`; gallery.html row 19 replays
   each case. Canvas: https://claude.ai/artifact/ShW4NLwgdtqMQxnAu43Pbh
-- Small calls with defaults: a half-width 30-min cell hides its start time once
-  picked (ACL both-weekends view only); How it works dropped "White stroke =
-  you".
+- Small call with a default: How it works dropped "White stroke = you" (you
+  are never in the crew corner now). (A half-width 30-min cell hiding its
+  start time once picked cannot happen in any shipped fest: ACL renders each
+  weekend as its own day, so it has no lane-split cells — checked 2026-09-24.)
 - If a phone tap ever grows a card on a real iPhone: gate hover arming on
   `(any-hover: hover)` — card-facts.js deliberately avoids media queries, so
   that is Kevin's call.
 
 ## Next, in order
 
-1. Kevin walks the v86 preview; merge #24 on his yes; delete the walk's
-   throwaway crew.
+1. v87 (the NOW jump): build, review, Kevin's local look, ship before Sat.
 2. Data-only pushes as drops land (standing OK: validator + freeze + tests).
    Portola Sep 26–27 (afters from Sep 24); ACL Oct 2–4 and 9–11.
 3. After Oct 11: the merged wall for two crews

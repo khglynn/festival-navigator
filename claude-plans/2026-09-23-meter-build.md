@@ -65,8 +65,10 @@ Reference (a prototype, not production code): the round-2 canvas's
   measures that centred text (`bandText`) and keeps each corner to its own
   side of it — which also fixes the crew corner landing on the time, a
   collision that predates the meter. Real data: Portola has one 30-minute
-  set (JT, Sun), ACL 2026 four in two lanes (both-weekends view only), no
-  fest has three lanes.
+  set (JT, Sun), ACL 2026 none reachable (correction 2026-09-24: v86 renders each ACL
+  weekend as its own dated day, so no lane-split cells exist in any
+  shipped fest — the both-weekends grid is not reachable), no fest has
+  three lanes.
 - Motion (`meterMoves`, from refreshCard): 0 → 1 the chip grows out of the
   corner a beat after its neighbours start making room; each tap lights the
   next bar from the baseline; 3 → 4 the chip widens and MUST rises in; 4 → 0
@@ -164,7 +166,8 @@ before anything changed; one was the walker's own note about its rig.
    it** (confirmed; Kevin's call; unchanged). The geometry makes any pick
    trigger it: 2 × (5 + 22.5) + ~36 + 8 = 99 > 84. With the time forced
    visible, MUST covers the bottom of the "7". Portola has no such cell,
-   because JT is a full column wide. ACL's both-weekends view has four.
+   because JT is a full column wide, and ACL renders no lane cells at all
+   (correction 2026-09-24; the both-weekends view is not reachable in v86).
 7. **The walker's first Groove Armada check measured the grid card, not
    the SAT AFTERS one** (the walker's own note; no product change). Its
    re-run on the real afters card passed in both engines.
