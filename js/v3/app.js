@@ -596,11 +596,17 @@ function jumpToNow() {
   const fresh = at < 0;
   if (fresh && best.match === false) showToast($('toast-root'), nothingOnFor(ctx.filterPeople || []));
   const stop = stops[fresh ? bestAt : at];
-  // The one stop, tapped again: stay exactly where the last tap left you
-  // (its lead may be a neighbour of the answer, a few px off) and pulse.
+  // A stop lands the same way every time it is reached — first tap, next tap
+  // or wrap: at its own landing (its top member's), which shows every member
+  // (that is what made them one stop). Landing on the answer's own spot
+  // instead put the first tap and the wrap a few hundred px apart when the
+  // answer was not the stop's top card (Fri 11:30 PM at 1280: 618 vs 418).
+  // Its FOCUS is the answer when the stop holds it — the column a grid
+  // slides to, the key the next tap starts from — else its top member. The
+  // one stop, tapped again, stays exactly where the last tap left it.
   const again = !fresh && stops.length === 1;
-  const lead = fresh || again ? best : stop.members[0];
-  const target = fresh ? best.target : again ? nowCycle.y : stop.target;
+  const lead = stop.keys.includes(best.key) ? best : stop.members[0];
+  const target = again ? nowCycle.y : stop.target;
   const smooth = canAnimate(root, ctx);
   const behavior = smooth ? 'smooth' : 'auto';
   let slid = false; // the grid moved sideways to bring the card's column in
