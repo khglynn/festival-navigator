@@ -116,3 +116,20 @@ missing data.
 - 2026-09-24: Ray's fork (raypp2) last pushed 2026-08-09; its work is the
   artist preview player and YouTube backfill, not city listings. No overlap
   with seasons yet; his player could later preview a month's artists.
+- 2026-09-24: SeatGeek source study done — `data/sources/seatgeek.json`,
+  334 event rows across 14 of 17 venues (empire, continental, summit, vulcan
+  show live pages but zero listed events). Plain curl is fully blocked
+  (DataDome CAPTCHA on every path, even robots.txt); firecrawl_scrape with
+  the default "basic" proxy got through cleanly — no stealth/enhanced mode
+  needed. Findings worth carrying into scoring: (1) SeatGeek's own venue
+  page for 214 E 6th St is titled "Brushy Street Commons (Formerly The
+  Parish)" — our "parish" and "brushy" venue slugs are the SAME room on
+  SeatGeek, events duplicated under both, de-dupe before totaling; (2) three
+  events carry bogus far-future placeholder dates baked into the event URL
+  itself (2206, 2031, 2036) — recorded as null rather than guessed; (3)
+  every buy link stays on seatgeek.com (it's the marketplace, not a
+  redirect), so primary-vs-resale per event isn't visible from the listing
+  page alone — flagged, not guessed; (4) coverage horizon varies wildly by
+  venue on SeatGeek itself (Germania: 4 shows, nothing past mid-Oct; Emo's:
+  nothing past Nov 27; ACL Live: runs to mid-2027) — this may be a real
+  Austin data-quality trait for scoring, not a study miss.

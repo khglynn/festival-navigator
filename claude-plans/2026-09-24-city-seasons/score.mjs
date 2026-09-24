@@ -41,8 +41,11 @@ function load(dir) {
   })
 }
 
+const ENTITIES = { amp: '&', nbsp: ' ', quot: '"', apos: "'", lt: '<', gt: '>', '#39': "'", '#x27': "'", rsquo: "'", lsquo: "'" }
+
 function norm(s) {
   return String(s ?? '')
+    .replace(/&(#?\w+);/g, (m, e) => ENTITIES[e.toLowerCase()] ?? ' ')
     .normalize('NFKD').replace(/[̀-ͯ]/g, '')
     .toLowerCase()
     .replace(/&/g, ' and ')
@@ -66,8 +69,14 @@ function namesOf(ev) {
   return out
 }
 
+// Billing prefixes that are not the act ("Official 2026 ACL Nights: Montclair",
+// "Corey Knox Presents: Monday Night Funny").
+const PREFIX = /^\s*(official\s+\d{4}\s+acl(\s+fest)?\s+nights|[^:]{0,40}\bpresents?)\s*:\s*/i
+
 function headliner(ev) {
-  return norm((ev.artists ?? [])[0] ?? String(ev.title ?? '').split(/\s*(?::|\s[-–—|]\s|\bw\/|\bwith\b)\s*/i)[0])
+  const first = (ev.artists ?? [])[0] ?? String(ev.title ?? '')
+  const bare = String(first).replace(PREFIX, '')
+  return norm(bare.split(/\s*(?::|\s[-–—|]\s|\s\/\s|\bw\/|\bwith\b|\bfeat\.?\s|\bft\.?\s)\s*/i)[0])
 }
 
 function containsWord(hay, needle) {
@@ -89,22 +98,42 @@ function affinity(a, b) {
 }
 
 function inScope(ev) { return ev.date >= FROM && ev.date <= TO }
-function isMusic(ev) { return !/non-music/i.test(ev.notes ?? '') }
+// Not concerts: the season is music, so these never count for or against a source.
+const NOT_MUSIC = /comedy|funny|stand-?up|trivia|bingo|brunch|screening|podcast|\bmarket\b|yoga|wrestling|lecture|\bfilm\b|drag brunch/i
+function isMusic(ev) { return !/non-music/i.test(ev.notes ?? '') && !NOT_MUSIC.test(ev.title ?? '') }
 function shiftDay(iso, d) {
   const t = new Date(iso + 'T12:00:00Z'); t.setUTCDate(t.getUTCDate() + d)
   return t.toISOString().slice(0, 10)
 }
 
 // Ground truth, with each venue's reach (the last date its calendar was read to).
+// Venues that turned out to be one room under two names. The Parish's domain
+// is gone and its address now trades as Brushy Street Commons (brushystreet.com);
+// both ground-truth readers read that one calendar, so their reads are merged.
+const ALIAS = { parish: 'brushy' }
+const canon = v => ALIAS[v] ?? v
+
 const gtFiles = load(GT_DIR)
 const gt = []
 const reach = {}
 const gtComplete = {}
 for (const { name, doc } of gtFiles) {
+  const venue = canon(name)
+  const events = (doc.events ?? []).filter(inScope)
+  // A calendar nobody could read is not a calendar with no shows: leave the
+  // venue out entirely rather than count every source listing there as false.
+  if (!events.length && !doc.coverage?.complete) continue
   const last = doc.coverage?.lastDateReached ?? TO
-  reach[name] = last
-  gtComplete[name] = !!doc.coverage?.complete
-  for (const ev of doc.events ?? []) if (inScope(ev)) gt.push({ ...ev, venue: ev.venue ?? name })
+  reach[venue] = reach[venue] && reach[venue] > last ? reach[venue] : last
+  gtComplete[venue] = (gtComplete[venue] ?? true) && !!doc.coverage?.complete
+  for (const ev of events) {
+    const e = { ...ev, venue }
+    // Two reads of one calendar (the Parish and Brushy files) spell the same
+    // show differently; any shared name at the same venue and date is one show.
+    const twins = gt.filter(g => g.venue === venue && g.date === ev.date)
+    if (twins.some(g => affinity(g, e) > 0)) continue
+    gt.push(e)
+  }
 }
 const gtByKey = new Map()
 for (const ev of gt) {
@@ -114,7 +143,14 @@ for (const ev of gt) {
 }
 
 function scoreSource({ name, doc }) {
-  const evs = (doc.events ?? []).filter(inScope).filter(e => reach[e.venue] !== undefined)
+  // Same show listed twice (a source that files one room under two names, or
+  // repeats a listing) counts once, so a duplicate neither helps recall nor
+  // hurts precision.
+  const seen = new Set()
+  const evs = (doc.events ?? []).filter(inScope)
+    .map(e => ({ ...e, venue: canon(e.venue) }))
+    .filter(e => reach[e.venue] !== undefined)
+    .filter(e => { const k = e.venue + '|' + e.date + '|' + headliner(e); if (seen.has(k)) return false; seen.add(k); return true })
   const used = new Set()
   const matches = [], offByOne = [], unmatched = []
   for (const ev of evs) {
@@ -183,7 +219,7 @@ const sources = load(SRC_DIR).map(scoreSource)
 const music = gt.filter(isMusic)
 function unionRecall(names) {
   const hit = new Set()
-  for (const s of sources) if (names.includes(s.source)) for (const g of s._matchedGt) hit.add(g)
+  for (const s of sources) if (names.includes(s.source)) for (const g of s._matchedGt) if (isMusic(g)) hit.add(g)
   return music.length ? hit.size / music.length : 0
 }
 const names = sources.map(s => s.source)
@@ -206,8 +242,9 @@ const cell = b => b.of ? `${pct(b.recall)} (${b.hit}/${b.of})` : '—'
 if (unmatchedFor) {
   const s = sources.find(x => x.source === unmatchedFor)
   if (!s) { console.error('no source', unmatchedFor); process.exit(1) }
-  console.log(JSON.stringify({ unconfirmed: s._unmatched, offByOne: s._offByOne.map(o => ({ gt: o.gt, src: o.src, d: o.d })) }, null, 2))
-  process.exit(0)
+  // Write, then exit once flushed: a bare process.exit() cuts a piped stdout at 64 KB.
+  process.stdout.write(JSON.stringify({ unconfirmed: s._unmatched, offByOne: s._offByOne.map(o => ({ gt: o.gt, src: o.src, d: o.d })) }, null, 2) + '\n', () => process.exit(0))
+  await new Promise(() => {})
 }
 
 const out = {
@@ -224,7 +261,7 @@ const out = {
   orphans: orphans.map(g => ({ date: g.date, venue: g.venue, name: headliner(g), title: g.title })),
 }
 
-if (wantJson) { console.log(JSON.stringify(out, null, 2)); process.exit(0) }
+if (wantJson) { process.stdout.write(JSON.stringify(out, null, 2) + '\n', () => process.exit(0)); await new Promise(() => {}) }
 
 writeFileSync(join(DATA, 'scores.json'), JSON.stringify(out, null, 2) + '\n')
 console.log(`Ground truth: ${gt.length} events (${music.length} music) at ${Object.keys(reach).length} venues\n`)

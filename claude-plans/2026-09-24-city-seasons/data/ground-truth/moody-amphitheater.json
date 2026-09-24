@@ -1,0 +1,245 @@
+{
+  "collector": "sources-study-claude",
+  "fetchedAt": "2026-09-24",
+  "scope": {
+    "from": "2026-09-24",
+    "to": "2027-05-31"
+  },
+  "pages": [
+    {
+      "url": "https://www.moodyamphitheater.com/",
+      "how": "curl",
+      "ok": true,
+      "note": "homepage confirms the venue and links to the calendar; /events (guessed path) 404s"
+    },
+    {
+      "url": "https://www.moodyamphitheater.com/events-tickets",
+      "how": "curl",
+      "ok": true,
+      "note": "the real calendar path (found via homepage nav link '/events-tickets'); Webflow CMS collection, no JSON-LD, but each row prints headliner, support act, local date (no year), doors time, and event page link"
+    }
+  ],
+  "coverage": {
+    "complete": true,
+    "lastDateReached": "2026-11-07",
+    "why": "The single /events-tickets listing page has no pagination and no 'load more' -- it is a Webflow CMS collection that prints every upcoming show in one page load, and the last one on the page (Steve Lacy, Nov 7 2026) is followed by nothing. So the page's own end IS the coverage boundary: Moody Amphitheater currently has zero listed shows between Nov 8, 2026 and this study's May 31, 2027 cutoff -- that gap is real on the site today, not a fetch failure (it's an outdoor amphitheater; a fresh look closer to spring, when winter/spring booking usually firms up, would be worth repeating). The listing prints no year, only weekday/month/day; every date on the page falls Sep-Nov with no wraparound, so 2026 was assigned to all of them -- flagged here as a read, not an assumption, since the page's own event order and the 'this tour is happening now' framing make 2027 implausible for any of them. Ticketer is read from the homepage's outbound links (ticketmaster.com), not confirmed per-event since exact ticket URLs live one click into each /events/<slug> detail page, which were not fetched individually."
+  },
+  "events": [
+    {
+      "date": "2026-09-24",
+      "venue": "moody-amphitheater",
+      "venueRaw": "Moody Amphitheater at Waterloo Park",
+      "title": "Stars Align Tour",
+      "artists": [
+        "Freya Skye",
+        "Alex Sampson"
+      ],
+      "url": "https://www.moodyamphitheater.com/events/freya-skye",
+      "ticketUrl": null,
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "7:00 pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-26",
+      "venue": "moody-amphitheater",
+      "venueRaw": "Moody Amphitheater at Waterloo Park",
+      "title": "Of The Trees",
+      "artists": [
+        "Of The Trees",
+        "Jade Cicada",
+        "Mr. Bill",
+        "Ferrofluid"
+      ],
+      "url": "https://www.moodyamphitheater.com/events/of-the-trees",
+      "ticketUrl": null,
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "4:30 pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-30",
+      "venue": "moody-amphitheater",
+      "venueRaw": "Moody Amphitheater at Waterloo Park",
+      "title": "YSL Records & Young Thug Present: The New Generation Tour",
+      "artists": [
+        "Young Thug",
+        "NAV"
+      ],
+      "url": "https://www.moodyamphitheater.com/events/young-thug",
+      "ticketUrl": null,
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "6:30 pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-06",
+      "venue": "moody-amphitheater",
+      "venueRaw": "Moody Amphitheater at Waterloo Park",
+      "title": "Jack White Live 2026",
+      "artists": [
+        "Jack White"
+      ],
+      "url": "https://www.moodyamphitheater.com/events/jack-white",
+      "ticketUrl": null,
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "7:00 pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-07",
+      "venue": "moody-amphitheater",
+      "venueRaw": "Moody Amphitheater at Waterloo Park",
+      "title": "Role Model Presents: Chuck On Tour",
+      "artists": [
+        "Role Model",
+        "Samia"
+      ],
+      "url": "https://www.moodyamphitheater.com/events/role-model",
+      "ticketUrl": null,
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "6:30 pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-13",
+      "venue": "moody-amphitheater",
+      "venueRaw": "Moody Amphitheater at Waterloo Park",
+      "title": "The Weight of the Woods Tour",
+      "artists": [
+        "Dermot Kennedy",
+        "Jonah Kagen"
+      ],
+      "url": "https://www.moodyamphitheater.com/events/dermot-kennedy-26",
+      "ticketUrl": null,
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "6:30 pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-15",
+      "venue": "moody-amphitheater",
+      "venueRaw": "Moody Amphitheater at Waterloo Park",
+      "title": "Dreaming The Same Dream Tour",
+      "artists": [
+        "Ziggy Marley and Gov't Mule"
+      ],
+      "url": "https://www.moodyamphitheater.com/events/ziggy-marley-govt-mule",
+      "ticketUrl": null,
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "5:30 pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-16",
+      "venue": "moody-amphitheater",
+      "venueRaw": "Moody Amphitheater at Waterloo Park",
+      "title": "Good Mourning Sunshine Tour",
+      "artists": [
+        "Foster The People",
+        "Goth Babe"
+      ],
+      "url": "https://www.moodyamphitheater.com/events/foster-the-people",
+      "ticketUrl": null,
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "7:00 pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-18",
+      "venue": "moody-amphitheater",
+      "venueRaw": "Moody Amphitheater at Waterloo Park",
+      "title": "Hermanos Gutiérrez",
+      "artists": [
+        "Hermanos Gutiérrez",
+        "Y La Bamba"
+      ],
+      "url": "https://www.moodyamphitheater.com/events/hermanos-gutierrez",
+      "ticketUrl": null,
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "6:00 pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-20",
+      "venue": "moody-amphitheater",
+      "venueRaw": "Moody Amphitheater at Waterloo Park",
+      "title": "Femme Fatale Tour",
+      "artists": [
+        "Mon Laferte",
+        "Silvana Estrada"
+      ],
+      "url": "https://www.moodyamphitheater.com/events/mon-laferte-26",
+      "ticketUrl": null,
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "7:00 pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-05",
+      "venue": "moody-amphitheater",
+      "venueRaw": "Moody Amphitheater at Waterloo Park",
+      "title": "Knocked Loose & Denzel Curry",
+      "artists": [
+        "Knocked Loose & Denzel Curry",
+        "Superheaven",
+        "Boundaries"
+      ],
+      "url": "https://www.moodyamphitheater.com/events/knocked-loose-denzel-curry",
+      "ticketUrl": null,
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "6:00 pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-07",
+      "venue": "moody-amphitheater",
+      "venueRaw": "Moody Amphitheater at Waterloo Park",
+      "title": "Oh yeah? Tour",
+      "artists": [
+        "Steve Lacy"
+      ],
+      "url": "https://www.moodyamphitheater.com/events/steve-lacy",
+      "ticketUrl": null,
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "7:00 pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    }
+  ]
+}

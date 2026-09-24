@@ -1,0 +1,46 @@
+{
+  "collector": "Claude Sonnet 5 (curl + WebSearch + firecrawl_scrape)",
+  "fetchedAt": "2026-09-24",
+  "scope": {
+    "from": "2026-09-24",
+    "to": "2027-05-31"
+  },
+  "pages": [
+    {
+      "url": "https://summitaustin.com/",
+      "how": "curl",
+      "ok": false,
+      "note": "curl reported 'SSL certificate problem: self signed certificate' before any content loaded"
+    },
+    {
+      "url": "https://summitaustin.com/",
+      "how": "firecrawl",
+      "ok": true,
+      "note": "firecrawl reached the server (bypassing the cert issue) but the page returned is a generic Plesk hosting-panel 'Web Server's Default Page' — i.e. the domain points at an unconfigured/parked server, not a live venue site"
+    },
+    {
+      "url": "https://do512.com/venues/summit-rooftop",
+      "how": "webSearch",
+      "ok": true,
+      "note": "third-party listing page title is literally 'CLOSED: Summit Rooftop, Upcoming Events in Austin on Do512'"
+    },
+    {
+      "url": "https://www.yelp.com/biz/summit-rooftop-austin",
+      "how": "webSearch",
+      "ok": true,
+      "note": "Yelp listing title is 'SUMMIT ROOFTOP - CLOSED'"
+    },
+    {
+      "url": "https://summitaustin.uvtix.com/",
+      "how": "webSearch",
+      "ok": true,
+      "note": "the venue's ticketing subdomain (still resolving) shows its last listed event as Friday May 30 2025 — no events since, consistent with closure"
+    }
+  ],
+  "coverage": {
+    "complete": true,
+    "lastDateReached": "2026-09-24",
+    "why": "Summit Rooftop (120 W 5th St, downtown Austin) appears to have closed some time after May 2025. Its official domain (summitaustin.com) now serves a generic, unconfigured Plesk hosting default page with a self-signed TLS certificate -- not a real site. Every third-party listing checked (Do512, Yelp) marks the venue as CLOSED, and its ticketing subdomain's last event was May 30, 2025. There is no official calendar to read events from, so ground truth for this venue is zero events in scope; this is a venue-status finding, not a fetch failure. If it later reopens under a new name/site, this file should be revisited."
+  },
+  "events": []
+}

@@ -1,0 +1,303 @@
+[
+ {
+  "tier": "big",
+  "artist": "Eric Ben\u00e9t",
+  "date": "2026-12-01",
+  "venue": "acl-live",
+  "title": "Eric Ben\u00e9t",
+  "venueUrl": "https://www.acllive.com/event/2026-12-01-eric-benet-at-8-pm"
+ },
+ {
+  "tier": "big",
+  "artist": "Tyla",
+  "date": "2026-12-11",
+  "venue": "moody-center",
+  "title": "Tyla",
+  "venueUrl": "https://moodycenteratx.com/event/tyla/"
+ },
+ {
+  "tier": "big",
+  "artist": "Blind Boys of Alabama",
+  "date": "2026-12-16",
+  "venue": "acl-live",
+  "title": "Blind Boys of Alabama & Asleep At The Wheel",
+  "venueUrl": "https://www.acllive.com/event/2026-12-16-blind-boys-of-alabama-asleep-at-the-wheel-at-8-pm"
+ },
+ {
+  "tier": "big",
+  "artist": "Spoon",
+  "date": "2026-12-31",
+  "venue": "acl-live",
+  "title": "Spoon",
+  "venueUrl": "https://www.acllive.com/event/2026-12-31-spoon-at-9-pm"
+ },
+ {
+  "tier": "big",
+  "artist": "Stella Lefty",
+  "date": "2027-01-31",
+  "venue": "acl-live",
+  "title": "Stella Lefty",
+  "venueUrl": "https://www.acllive.com/event/2027-01-31-stella-lefty-at-8-pm"
+ },
+ {
+  "tier": "big",
+  "artist": "TobyMac",
+  "date": "2027-03-11",
+  "venue": "moody-center",
+  "title": "TobyMac",
+  "venueUrl": "https://moodycenteratx.com/event/tobymac/"
+ },
+ {
+  "tier": "big",
+  "artist": "Freya Skye",
+  "date": "2026-09-24",
+  "venue": "moody-amphitheater",
+  "title": "Stars Align Tour",
+  "venueUrl": "https://www.moodyamphitheater.com/events/freya-skye"
+ },
+ {
+  "tier": "big",
+  "artist": "Almost Heaven",
+  "date": "2026-10-03",
+  "venue": "stubbs",
+  "title": "Official 2026 ACL Nights: Almost Heaven",
+  "venueUrl": "https://stubbsaustin.com/tm-event/official-2026-acl-nights-almost-heaven/"
+ },
+ {
+  "tier": "big",
+  "artist": "Modest Mouse",
+  "date": "2026-10-15",
+  "venue": "acl-live",
+  "title": "Modest Mouse",
+  "venueUrl": "https://www.acllive.com/event/2026-10-15-modest-mouse-at-8-pm"
+ },
+ {
+  "tier": "big",
+  "artist": "The Smashing Pumpkins",
+  "date": "2026-10-25",
+  "venue": "moody-center",
+  "title": "The Smashing Pumpkins",
+  "venueUrl": "https://moodycenteratx.com/event/the-smashing-pumpkins-2026/"
+ },
+ {
+  "tier": "club",
+  "artist": "the olllam",
+  "date": "2026-12-01",
+  "venue": "antones",
+  "title": "the olllam",
+  "venueUrl": "https://antonesnightclub.com/calendar/"
+ },
+ {
+  "tier": "club",
+  "artist": "John R Miller",
+  "date": "2026-12-04",
+  "venue": "3ten",
+  "title": "John R Miller",
+  "venueUrl": "https://www.acllive.com/event/2026-12-04-john-r-miller-at-8-pm"
+ },
+ {
+  "tier": "club",
+  "artist": "Amigo the Devil",
+  "date": "2026-12-10",
+  "venue": "mohawk",
+  "title": "Amigo The Devil",
+  "venueUrl": "http://www.prekindle.com/promo/id/-2852527949014716799"
+ },
+ {
+  "tier": "club",
+  "artist": "Lucy Bedroque",
+  "date": "2026-12-19",
+  "venue": "mohawk",
+  "title": "Lucy Bedroque",
+  "venueUrl": "http://www.prekindle.com/promo/id/-2852527949048531616"
+ },
+ {
+  "tier": "club",
+  "artist": "Sons of Cream",
+  "date": "2027-01-31",
+  "venue": "antones",
+  "title": "Sons of Cream",
+  "venueUrl": "https://antonesnightclub.com/calendar/"
+ },
+ {
+  "tier": "club",
+  "artist": "Brooke Alexx",
+  "date": "2027-04-03",
+  "venue": "mohawk",
+  "title": "Brooke Alexx Dream Girl Tour",
+  "venueUrl": "http://www.prekindle.com/promo/id/-2852527949022451954"
+ },
+ {
+  "tier": "club",
+  "artist": "Louisiana Surf Department",
+  "date": "2026-09-30",
+  "venue": "continental",
+  "title": "Louisiana Surf Department",
+  "venueUrl": "https://continentalclub.com/austin"
+ },
+ {
+  "tier": "club",
+  "artist": "Arrows in Action",
+  "date": "2026-10-13",
+  "venue": "antones",
+  "title": "Arrows in Action: I Think We've Toured Here Before w/ Good Boy Daisy & Instant Crush",
+  "venueUrl": "https://antonesnightclub.com/calendar/"
+ },
+ {
+  "tier": "club",
+  "artist": "Dax",
+  "date": "2026-10-24",
+  "venue": "scoot-inn",
+  "title": "Dax - The Anger Management Tour",
+  "venueUrl": "https://www.ticketmaster.com/dax-the-anger-management-tour-austin-texas-10-24-2026/event/3A0064AC065B7623"
+ },
+ {
+  "tier": "club",
+  "artist": "Rival Sons",
+  "date": "2026-11-09",
+  "venue": "emos",
+  "title": "Rival Sons - Domestic Bliss Tour",
+  "venueUrl": "https://www.ticketmaster.com/rival-sons-domestic-bliss-tour-austin-texas-11-09-2026/event/3A0064D0FAA324B2"
+ },
+ {
+  "tier": "electronic",
+  "artist": "Franky Rizardo",
+  "date": "2026-12-03",
+  "venue": "concourse",
+  "title": "Franky Rizardo presents FLOW (Extended Set) | Austin",
+  "venueUrl": "https://wl.seetickets.us/event/Franky-Rizardo-presents-FLOW-Extended-Set-Austin/702951?afflky=TheConcourseProject"
+ },
+ {
+  "tier": "electronic",
+  "artist": "Kendall Street Company",
+  "date": "2026-12-04",
+  "venue": "brushy",
+  "title": "Kendall Street Company: Yodeling Astroman Tour w/ Texas String Assembly",
+  "venueUrl": "https://brushystreet.com/event-calendar/kendall-street-company-yodeling-astroman-tour"
+ },
+ {
+  "tier": "electronic",
+  "artist": "Sleepwalk",
+  "date": "2026-12-05",
+  "venue": "brushy",
+  "title": "Sleepwalk",
+  "venueUrl": "https://brushystreet.com/event-calendar/sleepwalk"
+ },
+ {
+  "tier": "electronic",
+  "artist": "Rossi.",
+  "date": "2026-12-11",
+  "venue": "concourse",
+  "title": "Rossi. at The Concourse Project",
+  "venueUrl": "https://wl.seetickets.us/event/Rossi-at-The-Concourse-Project/701142?afflky=TheConcourseProject"
+ },
+ {
+  "tier": "electronic",
+  "artist": "Bob Moses",
+  "date": "2026-12-12",
+  "venue": "concourse",
+  "title": "Bob Moses (Club Set) + Notre Dame at The Concourse Project",
+  "venueUrl": "https://wl.seetickets.us/event/Bob-Moses-Club-Set-Notre-Dame-at-The-Concourse-Project/705829?afflky=TheConcourseProject"
+ },
+ {
+  "tier": "electronic",
+  "artist": "Yaelokre",
+  "date": "2026-12-18",
+  "venue": "brushy",
+  "title": "Yaelokre",
+  "venueUrl": "https://brushystreet.com/event-calendar/yaelokre"
+ },
+ {
+  "tier": "electronic",
+  "artist": "Ely Oaks",
+  "date": "2027-01-29",
+  "venue": "kingdom",
+  "title": "Ely Oaks",
+  "venueUrl": "https://kingdomnightclub.com/event/ely-oaks/kingdom-nightclub/austin-texas/"
+ },
+ {
+  "tier": "electronic",
+  "artist": "Boys Go To Jupiter",
+  "date": "2026-09-24",
+  "venue": "brushy",
+  "title": "Boys Go To Jupiter w/ Sydney Sherrill",
+  "venueUrl": "https://brushystreet.com/event-calendar/boys-go-to-jupiter"
+ },
+ {
+  "tier": "electronic",
+  "artist": "it's murph",
+  "date": "2026-10-03",
+  "venue": "concourse",
+  "title": "Official 2026 ACL Fest Nights: it's murph",
+  "venueUrl": "https://wl.seetickets.us/event/Official-2026-ACL-Fest-Nights-its-murph/701295?afflky=TheConcourseProject"
+ },
+ {
+  "tier": "electronic",
+  "artist": "nihmune",
+  "date": "2026-10-11",
+  "venue": "brushy",
+  "title": "nihmune",
+  "venueUrl": "https://brushystreet.com/event-calendar/nihmune"
+ },
+ {
+  "tier": "electronic",
+  "artist": "Slow Magic",
+  "date": "2026-10-23",
+  "venue": "brushy",
+  "title": "Slow Magic w/ Jesse Beaman",
+  "venueUrl": "https://brushystreet.com/event-calendar/slow-magic"
+ },
+ {
+  "tier": "electronic",
+  "artist": "The Aces",
+  "date": "2026-11-12",
+  "venue": "brushy",
+  "title": "The Aces",
+  "venueUrl": "https://brushystreet.com/event-calendar/the-aces"
+ },
+ {
+  "tier": "club",
+  "artist": "Sylvan Esso",
+  "date": "2027-03-08",
+  "venue": "acl-live",
+  "title": "Sylvan Esso",
+  "venueUrl": "https://www.acllive.com/event/2027-03-08-sylvan-esso-at-8-pm",
+  "why": "Kevin-lane pick"
+ },
+ {
+  "tier": "big",
+  "artist": "Jungle",
+  "date": "2026-09-24",
+  "venue": "moody-center",
+  "title": "Jungle",
+  "venueUrl": "https://moodycenteratx.com/event/jungle/",
+  "why": "Kevin-lane pick"
+ },
+ {
+  "tier": "big",
+  "artist": "Gorillaz",
+  "date": "2026-10-15",
+  "venue": "moody-center",
+  "title": "Gorillaz",
+  "venueUrl": "https://moodycenteratx.com/event/gorillaz-2026/",
+  "why": "Kevin-lane pick"
+ },
+ {
+  "tier": "big",
+  "artist": "SOMBR",
+  "date": "2026-10-20",
+  "venue": "moody-center",
+  "title": "SOMBR",
+  "venueUrl": "https://moodycenteratx.com/event/sombr/",
+  "why": "Kevin-lane pick"
+ },
+ {
+  "tier": "electronic",
+  "artist": "Bonobo",
+  "date": "2026-11-05",
+  "venue": "emos",
+  "title": "Bonobo: Distance in Static Live North American Tour",
+  "venueUrl": "https://www.ticketmaster.com/bonobo-distance-in-static-live-north-austin-texas-11-05-2026/event/3A0064C1E068D3A4",
+  "why": "Kevin-lane pick"
+ }
+]

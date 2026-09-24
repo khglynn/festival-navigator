@@ -1,0 +1,750 @@
+{
+  "collector": "sources-study-claude",
+  "fetchedAt": "2026-09-24",
+  "scope": {
+    "from": "2026-09-24",
+    "to": "2027-05-31"
+  },
+  "pages": [
+    {
+      "url": "https://moodycenteratx.com/events",
+      "how": "curl",
+      "ok": true,
+      "note": "JSON-LD Event array embedded in page (12 events, page 1)"
+    },
+    {
+      "url": "https://moodycenteratx.com/events/page/2/",
+      "how": "curl",
+      "ok": true,
+      "note": null
+    },
+    {
+      "url": "https://moodycenteratx.com/events/page/3/",
+      "how": "curl",
+      "ok": true,
+      "note": null
+    },
+    {
+      "url": "https://moodycenteratx.com/events/page/4/",
+      "how": "curl",
+      "ok": true,
+      "note": "last page with real events (6, running through Jul 2027 -- past our scope end, confirming full coverage)"
+    },
+    {
+      "url": "https://moodycenteratx.com/events/page/5/",
+      "how": "curl",
+      "ok": true,
+      "note": "no ld+json Event data -- pagination has ended, confirms page 4 was the last real page"
+    },
+    {
+      "url": "https://moodycenteratx.com/event/jungle/",
+      "how": "curl",
+      "ok": true,
+      "note": "spot-checked one event detail page: confirms Ticketmaster is the ticketer (ticketmaster.com/event/... link), not embedded elsewhere"
+    }
+  ],
+  "coverage": {
+    "complete": true,
+    "lastDateReached": "2027-07-02",
+    "why": "Every event on moodycenteratx.com/events is emitted as a schema.org Event object in a single JSON-LD block per page (most faithful source on this site -- read directly, no HTML scraping needed for date/title/url). Paged through /events/page/2/ through /page/5/; page 4 was the last with real events (its last event is 2027-07-02, past this study's 2027-05-31 cutoff, which confirms nothing in scope was missed) and page 5 returned no event JSON-LD, confirming the listing had ended. The JSON-LD does not carry a ticket seller URL or exact ticketer, so one event page (Jungle) was fetched by hand to confirm the venue sells through Ticketmaster; the same lookup was not repeated for the other 41 events to stay within a reasonable page-fetch budget for a 5-venue study -- ticketUrl/ticketer are null throughout except where notable. 'time' is read directly from the JSON-LD startDate's local offset, which matches Austin's UTC-5/-6 (CDT/CST) for every event, not inferred."
+  },
+  "events": [
+    {
+      "date": "2026-09-24",
+      "venue": "moody-center",
+      "venueRaw": "Moody Center",
+      "title": "Jungle",
+      "artists": [
+        "Jungle"
+      ],
+      "url": "https://moodycenteratx.com/event/jungle/",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-26",
+      "venue": "moody-center",
+      "venueRaw": "Moody Center",
+      "title": "Eric Clapton’s Crossroads Guitar Festival",
+      "artists": [
+        "Eric Clapton’s Crossroads Guitar Festival"
+      ],
+      "url": "https://moodycenteratx.com/event/eric-claptons-crossroads-guitar-festival/",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "5:30 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-27",
+      "venue": "moody-center",
+      "venueRaw": "Moody Center",
+      "title": "Eric Clapton’s Crossroads Guitar Festival",
+      "artists": [
+        "Eric Clapton’s Crossroads Guitar Festival"
+      ],
+      "url": "https://moodycenteratx.com/event/eric-claptons-crossroads-guitar-festival-2/",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "4:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-01",
+      "venue": "moody-center",
+      "venueRaw": "Moody Center",
+      "title": "Riley Green",
+      "artists": [
+        "Riley Green"
+      ],
+      "url": "https://moodycenteratx.com/event/riley-green/",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "7:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-02",
+      "venue": "moody-center",
+      "venueRaw": "Moody Center",
+      "title": "Gabriel Iglesias",
+      "artists": [
+        "Gabriel Iglesias"
+      ],
+      "url": "https://moodycenteratx.com/event/gabriel-iglesias-2026/",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-07",
+      "venue": "moody-center",
+      "venueRaw": "Moody Center",
+      "title": "Kacey Musgraves",
+      "artists": [
+        "Kacey Musgraves"
+      ],
+      "url": "https://moodycenteratx.com/event/kacey-musgraves-2026/",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "7:30 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-08",
+      "venue": "moody-center",
+      "venueRaw": "Moody Center",
+      "title": "Kacey Musgraves",
+      "artists": [
+        "Kacey Musgraves"
+      ],
+      "url": "https://moodycenteratx.com/event/kacey-musgraves-2026-2/",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "7:30 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-13",
+      "venue": "moody-center",
+      "venueRaw": "Moody Center",
+      "title": "Bryson Tiller",
+      "artists": [
+        "Bryson Tiller"
+      ],
+      "url": "https://moodycenteratx.com/event/bryson-tiller/",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "7:30 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-15",
+      "venue": "moody-center",
+      "venueRaw": "Moody Center",
+      "title": "Gorillaz",
+      "artists": [
+        "Gorillaz"
+      ],
+      "url": "https://moodycenteratx.com/event/gorillaz-2026/",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "7:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-16",
+      "venue": "moody-center",
+      "venueRaw": "Moody Center",
+      "title": "Phoebe Bridgers",
+      "artists": [
+        "Phoebe Bridgers"
+      ],
+      "url": "https://moodycenteratx.com/event/phoebe-bridgers/",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "7:30 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-18",
+      "venue": "moody-center",
+      "venueRaw": "Moody Center",
+      "title": "Weezer",
+      "artists": [
+        "Weezer"
+      ],
+      "url": "https://moodycenteratx.com/event/weezer-2026/",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "7:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-19",
+      "venue": "moody-center",
+      "venueRaw": "Moody Center",
+      "title": "Staind",
+      "artists": [
+        "Staind"
+      ],
+      "url": "https://moodycenteratx.com/event/staind/",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "6:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-20",
+      "venue": "moody-center",
+      "venueRaw": "Moody Center",
+      "title": "SOMBR",
+      "artists": [
+        "SOMBR"
+      ],
+      "url": "https://moodycenteratx.com/event/sombr/",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "7:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-23",
+      "venue": "moody-center",
+      "venueRaw": "Moody Center",
+      "title": "San Antonio Spurs",
+      "artists": [
+        "San Antonio Spurs"
+      ],
+      "url": "https://moodycenteratx.com/event/spurs-rockets-2026/",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "8:30 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "non-music? (sports/family entertainment event, not a concert)"
+    },
+    {
+      "date": "2026-10-25",
+      "venue": "moody-center",
+      "venueRaw": "Moody Center",
+      "title": "The Smashing Pumpkins",
+      "artists": [
+        "The Smashing Pumpkins"
+      ],
+      "url": "https://moodycenteratx.com/event/the-smashing-pumpkins-2026/",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-26",
+      "venue": "moody-center",
+      "venueRaw": "Moody Center",
+      "title": "Dave Chappelle",
+      "artists": [
+        "Dave Chappelle"
+      ],
+      "url": "https://moodycenteratx.com/event/dc26/",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "7:30 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-27",
+      "venue": "moody-center",
+      "venueRaw": "Moody Center",
+      "title": "Dave Chappelle",
+      "artists": [
+        "Dave Chappelle"
+      ],
+      "url": "https://moodycenteratx.com/event/dc26-2/",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "7:30 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-28",
+      "venue": "moody-center",
+      "venueRaw": "Moody Center",
+      "title": "Teddy Swims",
+      "artists": [
+        "Teddy Swims"
+      ],
+      "url": "https://moodycenteratx.com/event/teddy-swims/",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "7:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-30",
+      "venue": "moody-center",
+      "venueRaw": "Moody Center",
+      "title": "Ramón Ayala",
+      "artists": [
+        "Ramón Ayala"
+      ],
+      "url": "https://moodycenteratx.com/event/ramon-ayala/",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "8:30 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-03",
+      "venue": "moody-center",
+      "venueRaw": "Moody Center",
+      "title": "Doja Cat",
+      "artists": [
+        "Doja Cat"
+      ],
+      "url": "https://moodycenteratx.com/event/doja-cat-2026/",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "7:30 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-06",
+      "venue": "moody-center",
+      "venueRaw": "Moody Center",
+      "title": "John Summit",
+      "artists": [
+        "John Summit"
+      ],
+      "url": "https://moodycenteratx.com/event/john-summit/",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "7:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-08",
+      "venue": "moody-center",
+      "venueRaw": "Moody Center",
+      "title": "Maná",
+      "artists": [
+        "Maná"
+      ],
+      "url": "https://moodycenteratx.com/event/mana-2026/",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "8:30 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-10",
+      "venue": "moody-center",
+      "venueRaw": "Moody Center",
+      "title": "KATSEYE",
+      "artists": [
+        "KATSEYE"
+      ],
+      "url": "https://moodycenteratx.com/event/katseye/",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-12",
+      "venue": "moody-center",
+      "venueRaw": "Moody Center",
+      "title": "Treaty Oak Revival",
+      "artists": [
+        "Treaty Oak Revival"
+      ],
+      "url": "https://moodycenteratx.com/event/treaty-oak-revival/",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "7:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-13",
+      "venue": "moody-center",
+      "venueRaw": "Moody Center",
+      "title": "Jonas Brothers",
+      "artists": [
+        "Jonas Brothers"
+      ],
+      "url": "https://moodycenteratx.com/event/jonasbrothers/",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "7:30 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-20",
+      "venue": "moody-center",
+      "venueRaw": "Moody Center",
+      "title": "Ty Myers",
+      "artists": [
+        "Ty Myers"
+      ],
+      "url": "https://moodycenteratx.com/event/ty-myers/",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "7:30 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-04",
+      "venue": "moody-center",
+      "venueRaw": "Moody Center",
+      "title": "Disney Worlds Collide",
+      "artists": [
+        "Disney Worlds Collide"
+      ],
+      "url": "https://moodycenteratx.com/event/disney-worlds-collide/",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "7:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-09",
+      "venue": "moody-center",
+      "venueRaw": "Moody Center",
+      "title": "Trans-Siberian Orchestra",
+      "artists": [
+        "Trans-Siberian Orchestra"
+      ],
+      "url": "https://moodycenteratx.com/event/tso-2026/",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "7:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-11",
+      "venue": "moody-center",
+      "venueRaw": "Moody Center",
+      "title": "Tyla",
+      "artists": [
+        "Tyla"
+      ],
+      "url": "https://moodycenteratx.com/event/tyla/",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-12",
+      "venue": "moody-center",
+      "venueRaw": "Moody Center",
+      "title": "Billy Strings",
+      "artists": [
+        "Billy Strings"
+      ],
+      "url": "https://moodycenteratx.com/event/billy-strings-2026/",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "7:30 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-15",
+      "venue": "moody-center",
+      "venueRaw": "Moody Center",
+      "title": "Pentatonix",
+      "artists": [
+        "Pentatonix"
+      ],
+      "url": "https://moodycenteratx.com/event/pentatonix26/",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "7:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-31",
+      "venue": "moody-center",
+      "venueRaw": "Moody Center",
+      "title": "Kill Tony",
+      "artists": [
+        "Kill Tony"
+      ],
+      "url": "https://moodycenteratx.com/event/kt2026/",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "7:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2027-01-09",
+      "venue": "moody-center",
+      "venueRaw": "Moody Center",
+      "title": "Hot Wheels Monster Trucks Live: Color Bash",
+      "artists": [
+        "Hot Wheels Monster Trucks Live: Color Bash"
+      ],
+      "url": "https://moodycenteratx.com/event/hwmtl-1/",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "12:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "non-music? (sports/family entertainment event, not a concert)"
+    },
+    {
+      "date": "2027-01-09",
+      "venue": "moody-center",
+      "venueRaw": "Moody Center",
+      "title": "Hot Wheels Monster Trucks Live: Color Bash",
+      "artists": [
+        "Hot Wheels Monster Trucks Live: Color Bash"
+      ],
+      "url": "https://moodycenteratx.com/event/hwmtl-2/",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "7:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "non-music? (sports/family entertainment event, not a concert)"
+    },
+    {
+      "date": "2027-01-10",
+      "venue": "moody-center",
+      "venueRaw": "Moody Center",
+      "title": "Hot Wheels Monster Trucks Live: Color Bash",
+      "artists": [
+        "Hot Wheels Monster Trucks Live: Color Bash"
+      ],
+      "url": "https://moodycenteratx.com/event/hwmtl-3/",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "2:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "non-music? (sports/family entertainment event, not a concert)"
+    },
+    {
+      "date": "2027-02-04",
+      "venue": "moody-center",
+      "venueRaw": "Moody Center",
+      "title": "Andrea Bocelli",
+      "artists": [
+        "Andrea Bocelli"
+      ],
+      "url": "https://moodycenteratx.com/event/andrea-bocelli-27/",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2027-02-26",
+      "venue": "moody-center",
+      "venueRaw": "Moody Center",
+      "title": "San Antonio Spurs",
+      "artists": [
+        "San Antonio Spurs"
+      ],
+      "url": "https://moodycenteratx.com/event/spurs-grizzlies-2027/",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "7:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "non-music? (sports/family entertainment event, not a concert)"
+    },
+    {
+      "date": "2027-02-28",
+      "venue": "moody-center",
+      "venueRaw": "Moody Center",
+      "title": "San Antonio Spurs",
+      "artists": [
+        "San Antonio Spurs"
+      ],
+      "url": "https://moodycenteratx.com/event/spurs-nuggets-2027/",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "12:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "non-music? (sports/family entertainment event, not a concert)"
+    },
+    {
+      "date": "2027-03-07",
+      "venue": "moody-center",
+      "venueRaw": "Moody Center",
+      "title": "Don Omar",
+      "artists": [
+        "Don Omar"
+      ],
+      "url": "https://moodycenteratx.com/event/don-omar/",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "8:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2027-03-11",
+      "venue": "moody-center",
+      "venueRaw": "Moody Center",
+      "title": "TobyMac",
+      "artists": [
+        "TobyMac"
+      ],
+      "url": "https://moodycenteratx.com/event/tobymac/",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "7:00 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2027-05-14",
+      "venue": "moody-center",
+      "venueRaw": "Moody Center",
+      "title": "Niall Horan",
+      "artists": [
+        "Niall Horan"
+      ],
+      "url": "https://moodycenteratx.com/event/niall-horan-2027/",
+      "ticketUrl": null,
+      "ticketer": null,
+      "status": "scheduled",
+      "time": "7:30 PM",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    }
+  ]
+}

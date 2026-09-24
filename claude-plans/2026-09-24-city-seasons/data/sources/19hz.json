@@ -1,0 +1,1041 @@
+{
+  "collector": "19hz",
+  "fetchedAt": "2026-09-24",
+  "scope": {
+    "from": "2026-09-24",
+    "to": "2027-05-31"
+  },
+  "pages": [
+    {
+      "url": "https://19hz.info/eventlisting_Texas.php",
+      "how": "curl",
+      "ok": true,
+      "note": "Single continuous HTML table, all TX events; client-side JS filters by city (button onclick=locationfilter('Austin')), no server-side query param found (tested ?loc=Austin, returned identical page) so filtering was done locally by matching '(Austin)' venue suffix in each row."
+    }
+  ],
+  "coverage": {
+    "complete": true,
+    "lastDateReached": "2027-03-16",
+    "perVenue": {
+      "moody-center": "read 2 events",
+      "moody-amphitheater": "read 1 events",
+      "acl-live": "read 2 events",
+      "3ten": "0 events found in source's Texas listing (page covers all Austin venues; this one had no matching rows in scope)",
+      "germania": "read 1 events",
+      "stubbs": "0 events found in source's Texas listing (page covers all Austin venues; this one had no matching rows in scope)",
+      "mohawk": "read 2 events",
+      "empire": "0 events found in source's Texas listing (page covers all Austin venues; this one had no matching rows in scope)",
+      "scoot-inn": "read 1 events",
+      "emos": "read 5 events",
+      "parish": "0 events found in source's Texas listing (page covers all Austin venues; this one had no matching rows in scope)",
+      "antones": "0 events found in source's Texas listing (page covers all Austin venues; this one had no matching rows in scope)",
+      "continental": "0 events found in source's Texas listing (page covers all Austin venues; this one had no matching rows in scope)",
+      "concourse": "read 24 events",
+      "brushy": "read 4 events",
+      "kingdom": "read 10 events",
+      "summit": "0 events found in source's Texas listing (page covers all Austin venues; this one had no matching rows in scope)",
+      "vulcan": "read 6 events"
+    },
+    "why": "The TX listing is one page with every currently-announced event (earliest 2026-09-24, latest 2027-03-16); nothing on the page falls after that date, which reflects how far out promoters have announced/submitted to 19hz, not a pagination limit we stopped at. robots.txt at 19hz.info returned 404 (no file), so no crawl restriction applied. 6 of 17 target venues (3ten, stubbs, empire, parish, antones, continental, summit) had zero Austin rows on the page in scope -- 19hz is an electronic/dance-music submission board, so this likely reflects those venues' bookings skewing rock/indie/hip-hop rather than a missing page (19hz has no per-venue pages at all, only this one city-wide table)."
+  },
+  "cityWide": {
+    "url": "https://19hz.info/eventlisting_Texas.php (city-filtered client-side via the 'Austin' button; server always returns the full Texas table)",
+    "next30DaysCount": 62,
+    "note": "Counted by parsing every row on the TX page whose venue field ends in '(Austin)' and whose sortdate (a hidden YYYY/MM/DD cell the page uses for sorting) falls within 2026-09-24..2026-10-24 inclusive. This includes ALL Austin venues on 19hz, not just our 17 -- total Austin rows on the page in the full scope window: 97."
+  },
+  "linkBehavior": "Every event's link goes straight to the ticketer 19hz copied it from (etix.com, wl.eventim.us, ticketmaster.com, etc.) -- 19hz hosts no event pages of its own, so 'url' and 'ticketUrl' are identical for every row. Some eventim.us links carry an affiliate tag in the query string, e.g. 'https://wl.eventim.us/event/Deorro-at-The-Concourse-Project/689339?afflky=TheConcourseProject&nts_trk=...' -- afflky/nts_trk look like 19hz's own referral tracking on an otherwise-direct ticketer link.",
+  "events": [
+    {
+      "date": "2026-09-24",
+      "venue": "kingdom",
+      "venueRaw": "Kingdom (Austin)",
+      "title": "Rave Jesus - Rave Revival Fall Tour",
+      "artists": [
+        "Rave Jesus - Rave Revival Fall Tour"
+      ],
+      "url": "https://www.etix.com/ticket/p/72889151",
+      "ticketUrl": "https://www.etix.com/ticket/p/72889151",
+      "ticketer": "etix",
+      "status": "scheduled",
+      "time": "5pm-9:30pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-25",
+      "venue": "concourse",
+      "venueRaw": "The Concourse Project (Austin)",
+      "title": "Deorro: Botas Y Rave",
+      "artists": [
+        "Deorro: Botas Y Rave"
+      ],
+      "url": "https://wl.eventim.us/event/Deorro-at-The-Concourse-Project/689339?afflky=TheConcourseProject&nts_trk=e9be7416-e5a6-4795-967d-c303a63a1cd8",
+      "ticketUrl": "https://wl.eventim.us/event/Deorro-at-The-Concourse-Project/689339?afflky=TheConcourseProject&nts_trk=e9be7416-e5a6-4795-967d-c303a63a1cd8",
+      "ticketer": "other:wl.eventim.us",
+      "status": "scheduled",
+      "time": "7pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "organizers listed: RealMusic Events"
+    },
+    {
+      "date": "2026-09-25",
+      "venue": "concourse",
+      "venueRaw": "The Concourse Project (Austin)",
+      "title": "Ben Sterling (Open To Close)",
+      "artists": [
+        "Ben Sterling (Open To Close)"
+      ],
+      "url": "https://wl.eventim.us/event/Ben-Sterling-at-The-Concourse-Project/687789?afflky=TheConcourseProject",
+      "ticketUrl": "https://wl.eventim.us/event/Ben-Sterling-at-The-Concourse-Project/687789?afflky=TheConcourseProject",
+      "ticketer": "other:wl.eventim.us",
+      "status": "scheduled",
+      "time": "9pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "organizers listed: RealMusic Events"
+    },
+    {
+      "date": "2026-09-25",
+      "venue": "kingdom",
+      "venueRaw": "Kingdom (Austin)",
+      "title": "Ahmed Spins",
+      "artists": [
+        "Ahmed Spins"
+      ],
+      "url": "https://www.etix.com/ticket/p/48869359",
+      "ticketUrl": "https://www.etix.com/ticket/p/48869359",
+      "ticketer": "etix",
+      "status": "scheduled",
+      "time": "10pm-4am",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "organizers listed: Power Gate"
+    },
+    {
+      "date": "2026-09-26",
+      "venue": "concourse",
+      "venueRaw": "The Concourse Project (Austin)",
+      "title": "Eli Brown (Outdoors)",
+      "artists": [
+        "Eli Brown (Outdoors)"
+      ],
+      "url": "https://wl.eventim.us/event/Eli-Brown-at-The-Concourse-Project-Outdoors/696552?afflky=TheConcourseProject",
+      "ticketUrl": "https://wl.eventim.us/event/Eli-Brown-at-The-Concourse-Project-Outdoors/696552?afflky=TheConcourseProject",
+      "ticketer": "other:wl.eventim.us",
+      "status": "scheduled",
+      "time": "7pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "organizers listed: RealMusic Events"
+    },
+    {
+      "date": "2026-09-26",
+      "venue": "kingdom",
+      "venueRaw": "Kingdom (Austin)",
+      "title": "Space 92",
+      "artists": [
+        "Space 92"
+      ],
+      "url": "https://www.etix.com/ticket/p/89055335",
+      "ticketUrl": "https://www.etix.com/ticket/p/89055335",
+      "ticketer": "etix",
+      "status": "scheduled",
+      "time": "10pm-4am",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-26",
+      "venue": "moody-amphitheater",
+      "venueRaw": "Moody Amphitheater (Austin)",
+      "title": "Of The Trees",
+      "artists": [
+        "Of The Trees"
+      ],
+      "url": "https://www.ticketmaster.com/event/3A0064D802E7DF26",
+      "ticketUrl": "https://www.ticketmaster.com/event/3A0064D802E7DF26",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "5:30pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-29",
+      "venue": "emos",
+      "venueRaw": "Emo's (Austin)",
+      "title": "Jane Remover, Dazegxd",
+      "artists": [
+        "Jane Remover",
+        "Dazegxd"
+      ],
+      "url": "https://www.ticketmaster.com/event/3A006490F0674CBE",
+      "ticketUrl": "https://www.ticketmaster.com/event/3A006490F0674CBE",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "7pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-29",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk (Austin)",
+      "title": "Fcukers",
+      "artists": [
+        "Fcukers"
+      ],
+      "url": "https://www.etix.com/ticket/p/97085640/fcukers-austin-resound-presents",
+      "ticketUrl": "https://www.etix.com/ticket/p/97085640/fcukers-austin-resound-presents",
+      "ticketer": "etix",
+      "status": "scheduled",
+      "time": "7pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-30",
+      "venue": "emos",
+      "venueRaw": "Emo's (Austin)",
+      "title": "Tinlicker",
+      "artists": [
+        "Tinlicker"
+      ],
+      "url": "https://www.ticketmaster.com/event/3A006479ED454C87",
+      "ticketUrl": "https://www.ticketmaster.com/event/3A006479ED454C87",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "7pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-01",
+      "venue": "concourse",
+      "venueRaw": "The Concourse Project (Austin)",
+      "title": "The Chainsmokers",
+      "artists": [
+        "The Chainsmokers"
+      ],
+      "url": "https://wl.eventim.us/event/Official-2026-ACL-Fest-Nights-The-Chainsmokers/701286?afflky=TheConcourseProject",
+      "ticketUrl": "https://wl.eventim.us/event/Official-2026-ACL-Fest-Nights-The-Chainsmokers/701286?afflky=TheConcourseProject",
+      "ticketer": "other:wl.eventim.us",
+      "status": "scheduled",
+      "time": "9pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "organizers listed: RealMusic Events"
+    },
+    {
+      "date": "2026-10-02",
+      "venue": "concourse",
+      "venueRaw": "The Concourse Project (Austin)",
+      "title": "Steve Aoki, Elephante b2b Riot Ten",
+      "artists": [
+        "Steve Aoki",
+        "Elephante b2b Riot Ten"
+      ],
+      "url": "https://wl.eventim.us/event/Official-2026-ACL-Fest-Nights-Steve-Aoki/701292?afflky=TheConcourseProject",
+      "ticketUrl": "https://wl.eventim.us/event/Official-2026-ACL-Fest-Nights-Steve-Aoki/701292?afflky=TheConcourseProject",
+      "ticketer": "other:wl.eventim.us",
+      "status": "scheduled",
+      "time": "9pm-2am",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "organizers listed: RealMusic Events"
+    },
+    {
+      "date": "2026-10-02",
+      "venue": "emos",
+      "venueRaw": "Emo's (Austin)",
+      "title": "Bunt.",
+      "artists": [
+        "Bunt."
+      ],
+      "url": "https://www.ticketmaster.com/event/3A0064FBD4C8E83E",
+      "ticketUrl": "https://www.ticketmaster.com/event/3A0064FBD4C8E83E",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "9pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-02",
+      "venue": "kingdom",
+      "venueRaw": "Kingdom (Austin)",
+      "title": "Matt Sassari",
+      "artists": [
+        "Matt Sassari"
+      ],
+      "url": "https://www.etix.com/ticket/p/71968338",
+      "ticketUrl": "https://www.etix.com/ticket/p/71968338",
+      "ticketer": "etix",
+      "status": "scheduled",
+      "time": "10pm-4am",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-03",
+      "venue": "concourse",
+      "venueRaw": "The Concourse Project (Austin)",
+      "title": "it's murph",
+      "artists": [
+        "it's murph"
+      ],
+      "url": "https://wl.eventim.us/event/Official-2026-ACL-Fest-Nights-its-murph/701295?afflky=TheConcourseProject",
+      "ticketUrl": "https://wl.eventim.us/event/Official-2026-ACL-Fest-Nights-its-murph/701295?afflky=TheConcourseProject",
+      "ticketer": "other:wl.eventim.us",
+      "status": "scheduled",
+      "time": "9pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "organizers listed: RealMusic Events"
+    },
+    {
+      "date": "2026-10-03",
+      "venue": "concourse",
+      "venueRaw": "The Concourse Project (Austin)",
+      "title": "Tony Romera, Essel",
+      "artists": [
+        "Tony Romera",
+        "Essel"
+      ],
+      "url": "https://wl.eventim.us/event/FREE-with-RSVP-Tony-Romera-ESSEL-at-The-Concourse-Project/696710?afflky=TheConcourseProject",
+      "ticketUrl": "https://wl.eventim.us/event/FREE-with-RSVP-Tony-Romera-ESSEL-at-The-Concourse-Project/696710?afflky=TheConcourseProject",
+      "ticketer": "other:wl.eventim.us",
+      "status": "scheduled",
+      "time": "9pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "organizers listed: Rme"
+    },
+    {
+      "date": "2026-10-03",
+      "venue": "emos",
+      "venueRaw": "Emo's (Austin)",
+      "title": "Levity",
+      "artists": [
+        "Levity"
+      ],
+      "url": "https://www.ticketmaster.com/event/3A0064FBD69EEA69",
+      "ticketUrl": "https://www.ticketmaster.com/event/3A0064FBD69EEA69",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "9pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-08",
+      "venue": "concourse",
+      "venueRaw": "The Concourse Project (Austin)",
+      "title": "Yousuke Yukimatsu",
+      "artists": [
+        "Yousuke Yukimatsu"
+      ],
+      "url": "https://wl.eventim.us/event/Official-2026-ACL-Fest-Nights-Yousuke-Yukimatsu/701792?afflky=TheConcourseProject",
+      "ticketUrl": "https://wl.eventim.us/event/Official-2026-ACL-Fest-Nights-Yousuke-Yukimatsu/701792?afflky=TheConcourseProject",
+      "ticketer": "other:wl.eventim.us",
+      "status": "scheduled",
+      "time": "9pm-2am",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "organizers listed: RealMusic Events"
+    },
+    {
+      "date": "2026-10-09",
+      "venue": "brushy",
+      "venueRaw": "Brushy Street Commons (Austin)",
+      "title": "Westwrld Rave Feat. El Dusty, Disko Cowboy, Hiram, Chore Boy",
+      "artists": [
+        "Westwrld Rave Feat. El Dusty",
+        "Disko Cowboy",
+        "Hiram",
+        "Chore Boy"
+      ],
+      "url": "https://wl.eventim.us/event/westwrld-rave-feat-el-dusty-disko-cowboy-hiram-chore-boy/704741?afflky=BrushyStreetCommons",
+      "ticketUrl": "https://wl.eventim.us/event/westwrld-rave-feat-el-dusty-disko-cowboy-hiram-chore-boy/704741?afflky=BrushyStreetCommons",
+      "ticketer": "other:wl.eventim.us",
+      "status": "scheduled",
+      "time": "9pm-3am",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "organizers listed: Brushy Street Commons"
+    },
+    {
+      "date": "2026-10-09",
+      "venue": "concourse",
+      "venueRaw": "The Concourse Project (Austin)",
+      "title": "bunt.",
+      "artists": [
+        "bunt."
+      ],
+      "url": "https://wl.eventim.us/event/Official-2026-ACL-Fest-Nights-BUNT/701303?afflky=TheConcourseProject",
+      "ticketUrl": "https://wl.eventim.us/event/Official-2026-ACL-Fest-Nights-BUNT/701303?afflky=TheConcourseProject",
+      "ticketer": "other:wl.eventim.us",
+      "status": "scheduled",
+      "time": "9pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "organizers listed: RealMusic Events"
+    },
+    {
+      "date": "2026-10-09",
+      "venue": "kingdom",
+      "venueRaw": "Kingdom (Austin)",
+      "title": "Andy Stott & Debit On",
+      "artists": [
+        "Andy Stott & Debit On"
+      ],
+      "url": "https://www.etix.com/ticket/p/79851797/andy-stott-debit-austin-resound-presents",
+      "ticketUrl": "https://www.etix.com/ticket/p/79851797/andy-stott-debit-austin-resound-presents",
+      "ticketer": "etix",
+      "status": "scheduled",
+      "time": "10pm-11:59pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "organizers listed: Resound & Kingdom"
+    },
+    {
+      "date": "2026-10-09",
+      "venue": "vulcan",
+      "venueRaw": "Vulcan Gas Company (Austin)",
+      "title": "Next Level Kpop Rave",
+      "artists": [
+        "Next Level Kpop Rave"
+      ],
+      "url": "https://prod-nts-api.seeticketsusa.us/v1.0.0/promote/5ed979c0-f37f-4d5b-8cc6-f8e1a868b0e6/clickthru",
+      "ticketUrl": "https://prod-nts-api.seeticketsusa.us/v1.0.0/promote/5ed979c0-f37f-4d5b-8cc6-f8e1a868b0e6/clickthru",
+      "ticketer": "seetickets",
+      "status": "scheduled",
+      "time": "9pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "organizers listed: Third String Entertainment"
+    },
+    {
+      "date": "2026-10-10",
+      "venue": "concourse",
+      "venueRaw": "The Concourse Project (Austin)",
+      "title": "Holy Priest",
+      "artists": [
+        "Holy Priest"
+      ],
+      "url": "https://wl.eventim.us/event/HOLY-PRIEST-at-The-Concourse-Project/695684?afflky=TheConcourseProject",
+      "ticketUrl": "https://wl.eventim.us/event/HOLY-PRIEST-at-The-Concourse-Project/695684?afflky=TheConcourseProject",
+      "ticketer": "other:wl.eventim.us",
+      "status": "scheduled",
+      "time": "9pm-2am",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "organizers listed: RealMusic Events"
+    },
+    {
+      "date": "2026-10-10",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk (Austin)",
+      "title": "Bassvictim",
+      "artists": [
+        "Bassvictim"
+      ],
+      "url": "https://www.etix.com/ticket/p/95921685/bassvictim-austin-resound-presents",
+      "ticketUrl": "https://www.etix.com/ticket/p/95921685/bassvictim-austin-resound-presents",
+      "ticketer": "etix",
+      "status": "scheduled",
+      "time": "9pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-11",
+      "venue": "concourse",
+      "venueRaw": "The Concourse Project (Austin)",
+      "title": "Holy Priest",
+      "artists": [
+        "Holy Priest"
+      ],
+      "url": "https://wl.eventim.us/event/HOLY-PRIEST-Night-2-at-The-Concourse-Project/699539?afflky=TheConcourseProject&nts_trk=df3e928b-f400-4f94-978e-038d0d4229f0",
+      "ticketUrl": "https://wl.eventim.us/event/HOLY-PRIEST-Night-2-at-The-Concourse-Project/699539?afflky=TheConcourseProject&nts_trk=df3e928b-f400-4f94-978e-038d0d4229f0",
+      "ticketer": "other:wl.eventim.us",
+      "status": "scheduled",
+      "time": "9pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "organizers listed: RealMusic Events"
+    },
+    {
+      "date": "2026-10-15",
+      "venue": "concourse",
+      "venueRaw": "The Concourse Project (Austin)",
+      "title": "Funk Tribu",
+      "artists": [
+        "Funk Tribu"
+      ],
+      "url": "https://wl.eventim.us/event/Funk-Tribu-at-The-Concourse-Project/694312?afflky=TheConcourseProject&nts_trk=765524df-82b8-4b70-8132-04e6f9dca155",
+      "ticketUrl": "https://wl.eventim.us/event/Funk-Tribu-at-The-Concourse-Project/694312?afflky=TheConcourseProject&nts_trk=765524df-82b8-4b70-8132-04e6f9dca155",
+      "ticketer": "other:wl.eventim.us",
+      "status": "scheduled",
+      "time": "9pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-15",
+      "venue": "moody-center",
+      "venueRaw": "Moody Center (Austin)",
+      "title": "Gorillaz - The Mountain Tour",
+      "artists": [
+        "Gorillaz - The Mountain Tour"
+      ],
+      "url": "https://www.ticketmaster.com/event/3A00645BCFD7447F",
+      "ticketUrl": "https://www.ticketmaster.com/event/3A00645BCFD7447F",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "7pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-16",
+      "venue": "concourse",
+      "venueRaw": "The Concourse Project (Austin)",
+      "title": "Adam Port",
+      "artists": [
+        "Adam Port"
+      ],
+      "url": "https://wl.eventim.us/event/Adam-Port-KEINEMUSIK-at-The-Concourse-Project/690792?afflky=TheConcourseProject",
+      "ticketUrl": "https://wl.eventim.us/event/Adam-Port-KEINEMUSIK-at-The-Concourse-Project/690792?afflky=TheConcourseProject",
+      "ticketer": "other:wl.eventim.us",
+      "status": "scheduled",
+      "time": "9pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-16",
+      "venue": "kingdom",
+      "venueRaw": "Kingdom (Austin)",
+      "title": "Twin Diplomacy",
+      "artists": [
+        "Twin Diplomacy"
+      ],
+      "url": "https://www.etix.com/ticket/p/44554843",
+      "ticketUrl": "https://www.etix.com/ticket/p/44554843",
+      "ticketer": "etix",
+      "status": "scheduled",
+      "time": "10pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-17",
+      "venue": "kingdom",
+      "venueRaw": "Kingdom (Austin)",
+      "title": "Wonkywilla | Atx",
+      "artists": [
+        "Wonkywilla | Atx"
+      ],
+      "url": "https://www.etix.com/ticket/p/62526155",
+      "ticketUrl": "https://www.etix.com/ticket/p/62526155",
+      "ticketer": "etix",
+      "status": "scheduled",
+      "time": "10pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-22",
+      "venue": "concourse",
+      "venueRaw": "The Concourse Project (Austin)",
+      "title": "Ben Bohmer",
+      "artists": [
+        "Ben Bohmer"
+      ],
+      "url": "https://wl.eventim.us/event/Ben-Bhmer-at-The-Concourse-Project/699543?afflky=TheConcourseProject",
+      "ticketUrl": "https://wl.eventim.us/event/Ben-Bhmer-at-The-Concourse-Project/699543?afflky=TheConcourseProject",
+      "ticketer": "other:wl.eventim.us",
+      "status": "scheduled",
+      "time": "9pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "organizers listed: RealMusic Events"
+    },
+    {
+      "date": "2026-10-23",
+      "venue": "brushy",
+      "venueRaw": "Brushy Street Commons (Austin)",
+      "title": "Slow Magic",
+      "artists": [
+        "Slow Magic"
+      ],
+      "url": "https://wl.eventim.us/event/Slow-Magic/687896?afflky=C3Presents",
+      "ticketUrl": "https://wl.eventim.us/event/Slow-Magic/687896?afflky=C3Presents",
+      "ticketer": "other:wl.eventim.us",
+      "status": "scheduled",
+      "time": "8pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "organizers listed: Live Nation"
+    },
+    {
+      "date": "2026-10-23",
+      "venue": "concourse",
+      "venueRaw": "The Concourse Project (Austin)",
+      "title": "Zhu",
+      "artists": [
+        "Zhu"
+      ],
+      "url": "https://wl.eventim.us/event/ZHU-at-The-Concourse-Project/689352?afflky=TheConcourseProject",
+      "ticketUrl": "https://wl.eventim.us/event/ZHU-at-The-Concourse-Project/689352?afflky=TheConcourseProject",
+      "ticketer": "other:wl.eventim.us",
+      "status": "scheduled",
+      "time": "9pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "organizers listed: RealMusic Events"
+    },
+    {
+      "date": "2026-10-23",
+      "venue": "vulcan",
+      "venueRaw": "Vulcan Gas Company (Austin)",
+      "title": "Capochino",
+      "artists": [
+        "Capochino"
+      ],
+      "url": "https://www.etix.com/ticket/p/95588456",
+      "ticketUrl": "https://www.etix.com/ticket/p/95588456",
+      "ticketer": "etix",
+      "status": "scheduled",
+      "time": "10pm-2am",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-24",
+      "venue": "concourse",
+      "venueRaw": "The Concourse Project (Austin)",
+      "title": "Ian Asher",
+      "artists": [
+        "Ian Asher"
+      ],
+      "url": "https://wl.eventim.us/event/Ian-Asher-at-The-Concourse-Project/702036?afflky=TheConcourseProject",
+      "ticketUrl": "https://wl.eventim.us/event/Ian-Asher-at-The-Concourse-Project/702036?afflky=TheConcourseProject",
+      "ticketer": "other:wl.eventim.us",
+      "status": "scheduled",
+      "time": "9pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-25",
+      "venue": "concourse",
+      "venueRaw": "The Concourse Project (Austin)",
+      "title": "Zhu",
+      "artists": [
+        "Zhu"
+      ],
+      "url": "https://wl.eventim.us/event/ZHU-Night-2-at-The-Concourse-Project/690115?afflky=TheConcourseProject",
+      "ticketUrl": "https://wl.eventim.us/event/ZHU-Night-2-at-The-Concourse-Project/690115?afflky=TheConcourseProject",
+      "ticketer": "other:wl.eventim.us",
+      "status": "scheduled",
+      "time": "9pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "organizers listed: RealMusic Events"
+    },
+    {
+      "date": "2026-10-25",
+      "venue": "germania",
+      "venueRaw": "Circuit Of The Americas (Austin)",
+      "title": "Alesso",
+      "artists": [
+        "Alesso"
+      ],
+      "url": "https://www.ticketmaster.com/event/3A00642D96C356B5",
+      "ticketUrl": "https://www.ticketmaster.com/event/3A00642D96C356B5",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "8am",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-29",
+      "venue": "concourse",
+      "venueRaw": "The Concourse Project (Austin)",
+      "title": "Chris Stussy (Extended Set)",
+      "artists": [
+        "Chris Stussy (Extended Set)"
+      ],
+      "url": "https://wl.eventim.us/event/Chris-Stussy-Extended-Set-at-The-Concourse-Project/698725?afflky=TheConcourseProject",
+      "ticketUrl": "https://wl.eventim.us/event/Chris-Stussy-Extended-Set-at-The-Concourse-Project/698725?afflky=TheConcourseProject",
+      "ticketer": "other:wl.eventim.us",
+      "status": "scheduled",
+      "time": "9pm-2am",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "organizers listed: RealMusic Events"
+    },
+    {
+      "date": "2026-10-30",
+      "venue": "concourse",
+      "venueRaw": "The Concourse Project (Austin)",
+      "title": "Dombresky (Extended Set)",
+      "artists": [
+        "Dombresky (Extended Set)"
+      ],
+      "url": "https://wl.eventim.us/event/Dombresky-Extended-Set-at-The-Concourse-Project/695046?afflky=TheConcourseProject",
+      "ticketUrl": "https://wl.eventim.us/event/Dombresky-Extended-Set-at-The-Concourse-Project/695046?afflky=TheConcourseProject",
+      "ticketer": "other:wl.eventim.us",
+      "status": "scheduled",
+      "time": "9pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "organizers listed: RealMusic Events"
+    },
+    {
+      "date": "2026-10-30",
+      "venue": "kingdom",
+      "venueRaw": "Kingdom (Austin)",
+      "title": "Dennis Ferrer",
+      "artists": [
+        "Dennis Ferrer"
+      ],
+      "url": "https://www.etix.com/ticket/p/81557185",
+      "ticketUrl": "https://www.etix.com/ticket/p/81557185",
+      "ticketer": "etix",
+      "status": "scheduled",
+      "time": "10pm-4am",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-31",
+      "venue": "acl-live",
+      "venueRaw": "Acl Live At Moody Theater (Austin)",
+      "title": "Madeon",
+      "artists": [
+        "Madeon"
+      ],
+      "url": "https://www.axs.com/events/1438072/madeon-tickets",
+      "ticketUrl": "https://www.axs.com/events/1438072/madeon-tickets",
+      "ticketer": "axs",
+      "status": "scheduled",
+      "time": "8pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-31",
+      "venue": "concourse",
+      "venueRaw": "The Concourse Project (Austin)",
+      "title": "Four Tet (Extended Set)",
+      "artists": [
+        "Four Tet (Extended Set)"
+      ],
+      "url": "https://wl.eventim.us/event/Four-Tet-Extended-Set-at-The-Concourse-Project/695214?afflky=TheConcourseProject",
+      "ticketUrl": "https://wl.eventim.us/event/Four-Tet-Extended-Set-at-The-Concourse-Project/695214?afflky=TheConcourseProject",
+      "ticketer": "other:wl.eventim.us",
+      "status": "scheduled",
+      "time": "9pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "organizers listed: RealMusic Events"
+    },
+    {
+      "date": "2026-11-05",
+      "venue": "emos",
+      "venueRaw": "Emo's (Austin)",
+      "title": "Bonobo",
+      "artists": [
+        "Bonobo"
+      ],
+      "url": "https://www.ticketmaster.com/event/3A0064C1E068D3A4",
+      "ticketUrl": "https://www.ticketmaster.com/event/3A0064C1E068D3A4",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "7pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-06",
+      "venue": "moody-center",
+      "venueRaw": "Moody Center (Austin)",
+      "title": "John Summit - Ctrl Escape Arena Tour",
+      "artists": [
+        "John Summit - Ctrl Escape Arena Tour"
+      ],
+      "url": "https://www.ticketmaster.com/event/3A0064B3DA33FD80",
+      "ticketUrl": "https://www.ticketmaster.com/event/3A0064B3DA33FD80",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "7pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-06",
+      "venue": "scoot-inn",
+      "venueRaw": "Scoot Inn (Austin)",
+      "title": "Lenny Pearce",
+      "artists": [
+        "Lenny Pearce"
+      ],
+      "url": "https://www.ticketmaster.com/event/3A0064C4A6CC9437",
+      "ticketUrl": "https://www.ticketmaster.com/event/3A0064C4A6CC9437",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": "5pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-13",
+      "venue": "concourse",
+      "venueRaw": "The Concourse Project (Austin)",
+      "title": "Seismic Dance Event 9.0",
+      "artists": [
+        "Seismic Dance Event 9.0"
+      ],
+      "url": "https://wl.eventim.us/event/Seismic-Dance-Event-90/672543?afflky=SeismicDanceEvent",
+      "ticketUrl": "https://wl.eventim.us/event/Seismic-Dance-Event-90/672543?afflky=SeismicDanceEvent",
+      "ticketer": "other:wl.eventim.us",
+      "status": "scheduled",
+      "time": "Fri: 9pm-Sun: 10pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-13",
+      "venue": "kingdom",
+      "venueRaw": "Kingdom (Austin)",
+      "title": "Com Truise - DJ Set",
+      "artists": [
+        "Com Truise - DJ Set"
+      ],
+      "url": "https://www.etix.com/ticket/p/89206358/com-truise-austin-resound-presents",
+      "ticketUrl": "https://www.etix.com/ticket/p/89206358/com-truise-austin-resound-presents",
+      "ticketer": "etix",
+      "status": "scheduled",
+      "time": "9pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-13",
+      "venue": "vulcan",
+      "venueRaw": "Vulcan Gas Company (Austin)",
+      "title": "Tisoki - Free w/ Rsvp",
+      "artists": [
+        "Tisoki - Free w/ Rsvp"
+      ],
+      "url": "https://www.etix.com/ticket/p/63008404",
+      "ticketUrl": "https://www.etix.com/ticket/p/63008404",
+      "ticketer": "etix",
+      "status": "scheduled",
+      "time": "9pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-20",
+      "venue": "concourse",
+      "venueRaw": "The Concourse Project (Austin)",
+      "title": "Kaskade",
+      "artists": [
+        "Kaskade"
+      ],
+      "url": "https://wl.eventim.us/event/Kaskade-at-The-Concourse-Project-Outdoors/702947?afflky=TheConcourseProject",
+      "ticketUrl": "https://wl.eventim.us/event/Kaskade-at-The-Concourse-Project-Outdoors/702947?afflky=TheConcourseProject",
+      "ticketer": "other:wl.eventim.us",
+      "status": "scheduled",
+      "time": "8pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-28",
+      "venue": "brushy",
+      "venueRaw": "Brushy Street Commons (Austin)",
+      "title": "Desert Dwellers",
+      "artists": [
+        "Desert Dwellers"
+      ],
+      "url": "https://wl.eventim.us/event/desert-dwellers/697936?afflky=BrushyStreetCommons",
+      "ticketUrl": "https://wl.eventim.us/event/desert-dwellers/697936?afflky=BrushyStreetCommons",
+      "ticketer": "other:wl.eventim.us",
+      "status": "scheduled",
+      "time": "7pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "organizers listed: Brushy Street Commons"
+    },
+    {
+      "date": "2026-12-03",
+      "venue": "concourse",
+      "venueRaw": "The Concourse Project (Austin)",
+      "title": "Franky Rizardo presents FLOW (Extended Set)",
+      "artists": [
+        "Franky Rizardo presents FLOW (Extended Set)"
+      ],
+      "url": "https://wl.eventim.us/event/Franky-Rizardo-presents-FLOW-Extended-Set-Austin/702951?afflky=TheConcourseProject",
+      "ticketUrl": "https://wl.eventim.us/event/Franky-Rizardo-presents-FLOW-Extended-Set-Austin/702951?afflky=TheConcourseProject",
+      "ticketer": "other:wl.eventim.us",
+      "status": "scheduled",
+      "time": "9pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "organizers listed: RealMusic Events"
+    },
+    {
+      "date": "2026-12-05",
+      "venue": "kingdom",
+      "venueRaw": "Kingdom (Austin)",
+      "title": "Amtrac",
+      "artists": [
+        "Amtrac"
+      ],
+      "url": "https://www.etix.com/ticket/p/44637223/amtrac-austin-resound-presents",
+      "ticketUrl": "https://www.etix.com/ticket/p/44637223/amtrac-austin-resound-presents",
+      "ticketer": "etix",
+      "status": "scheduled",
+      "time": "10pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "organizers listed: Resound"
+    },
+    {
+      "date": "2026-12-05",
+      "venue": "vulcan",
+      "venueRaw": "Vulcan Gas Company (Austin)",
+      "title": "Heyz Something Different Tour",
+      "artists": [
+        "Heyz Something Different Tour"
+      ],
+      "url": "https://www.etix.com/ticket/p/55393710",
+      "ticketUrl": "https://www.etix.com/ticket/p/55393710",
+      "ticketer": "etix",
+      "status": "scheduled",
+      "time": "10pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-10",
+      "venue": "brushy",
+      "venueRaw": "Brushy Street Commons (Austin)",
+      "title": "Eelke Kleijn",
+      "artists": [
+        "Eelke Kleijn"
+      ],
+      "url": "https://wl.eventim.us/event/Eelke-Kleijn/705128?afflky=C3Presents",
+      "ticketUrl": "https://wl.eventim.us/event/Eelke-Kleijn/705128?afflky=C3Presents",
+      "ticketer": "other:wl.eventim.us",
+      "status": "scheduled",
+      "time": "8pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-11",
+      "venue": "concourse",
+      "venueRaw": "The Concourse Project (Austin)",
+      "title": "Rossi.",
+      "artists": [
+        "Rossi."
+      ],
+      "url": "https://wl.eventim.us/event/Rossi-at-The-Concourse-Project/701142?afflky=TheConcourseProject&nts_trk=15bd1aab-3f4e-432b-9dad-a69f3e96e299",
+      "ticketUrl": "https://wl.eventim.us/event/Rossi-at-The-Concourse-Project/701142?afflky=TheConcourseProject&nts_trk=15bd1aab-3f4e-432b-9dad-a69f3e96e299",
+      "ticketer": "other:wl.eventim.us",
+      "status": "scheduled",
+      "time": "9pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-11",
+      "venue": "vulcan",
+      "venueRaw": "Vulcan Gas Company (Austin)",
+      "title": "Mitis",
+      "artists": [
+        "Mitis"
+      ],
+      "url": "https://www.etix.com/ticket/p/90947446",
+      "ticketUrl": "https://www.etix.com/ticket/p/90947446",
+      "ticketer": "etix",
+      "status": "scheduled",
+      "time": "10pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-12",
+      "venue": "vulcan",
+      "venueRaw": "Vulcan Gas Company (Austin)",
+      "title": "Infekt & Friends",
+      "artists": [
+        "Infekt & Friends"
+      ],
+      "url": "https://www.etix.com/ticket/p/34159996",
+      "ticketUrl": "https://www.etix.com/ticket/p/34159996",
+      "ticketer": "etix",
+      "status": "scheduled",
+      "time": "10pm-2am",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2027-03-08",
+      "venue": "acl-live",
+      "venueRaw": "ACL Live at the Moody Theater (Austin)",
+      "title": "Sylvan Esso",
+      "artists": [
+        "Sylvan Esso"
+      ],
+      "url": "https://www.axs.com/events/1478071",
+      "ticketUrl": "https://www.axs.com/events/1478071",
+      "ticketer": "axs",
+      "status": "scheduled",
+      "time": "8pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "organizers listed: Live Nation"
+    }
+  ]
+}

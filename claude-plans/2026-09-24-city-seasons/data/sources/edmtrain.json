@@ -1,0 +1,1500 @@
+{
+  "collector": "edmtrain",
+  "fetchedAt": "2026-09-24",
+  "scope": {
+    "from": "2026-09-24",
+    "to": "2027-05-31"
+  },
+  "pages": [
+    {
+      "url": "https://edmtrain.com/robots.txt",
+      "how": "curl",
+      "ok": true,
+      "note": "checked first; 'User-agent: *' with no Disallow rules at all -- nothing blocked"
+    },
+    {
+      "url": "https://edmtrain.com/austin-tx",
+      "how": "curl",
+      "ok": true,
+      "note": "static HTML shell only -- the event list (#eventListingEvents) is empty in server HTML and loads client-side via an XHR to a 'get-events' endpoint driven by JS globals (locationIdArray etc.) that aren't present in the static markup, so curl alone cannot recover events"
+    },
+    {
+      "url": "https://edmtrain.com/js/index.final.min.js",
+      "how": "curl",
+      "ok": true,
+      "note": "read to find the AJAX call; found loadEvents() hits a same-origin 'get-events'/'get-events-top' endpoint, but the location-id lookup table (globalLocationArray) is itself populated by a call not present in the static bundle, so reconstructing the endpoint by hand wasn't reliable in budget -- used firecrawl instead"
+    },
+    {
+      "url": "https://edmtrain.com/austin-tx",
+      "how": "firecrawl",
+      "ok": true,
+      "note": "JS-rendered; returned the full client-side event list as structured markdown (day-by-day, Sep 24 2026 through Jun 12 2027) in one call -- covers the whole scope window in a single fetch"
+    },
+    {
+      "url": "https://edmtrain.com/austin-tx/jungle-world-tour-2026-jungle-489788",
+      "how": "curl",
+      "ok": true,
+      "note": "spot-checked one event detail page for an added/created date or a show time; found neither -- same client-rendered shell, only meta tags differ (title/date, no time)"
+    },
+    {
+      "url": "https://edmtrain.com/austin-tx/jungle-world-tour-2026-jungle-489788?get=tickets",
+      "how": "curl",
+      "ok": true,
+      "note": "HEAD-followed the Buy Tickets link once to see where it actually goes (see linkBehavior)"
+    }
+  ],
+  "coverage": {
+    "complete": true,
+    "lastDateReached": "2027-06-12",
+    "perVenue": {
+      "moody-center": "read 3 events",
+      "moody-amphitheater": "read 1 events",
+      "acl-live": "read 3 events",
+      "3ten": "read 1 events",
+      "germania": "read 0 events | Edmtrain's citywide Austin feed lists no upcoming show at this venue as of fetch time",
+      "stubbs": "read 2 events",
+      "mohawk": "read 2 events",
+      "empire": "read 0 events | Edmtrain's citywide Austin feed lists no upcoming show at this venue as of fetch time",
+      "scoot-inn": "read 0 events | Edmtrain's citywide Austin feed lists no upcoming show at this venue as of fetch time",
+      "emos": "read 4 events",
+      "parish": "read 0 events | Edmtrain's citywide Austin feed lists no upcoming show at this venue as of fetch time",
+      "antones": "read 0 events | Edmtrain's citywide Austin feed lists no upcoming show at this venue as of fetch time",
+      "continental": "read 0 events | Edmtrain's citywide Austin feed lists no upcoming show at this venue as of fetch time",
+      "concourse": "read 32 events",
+      "brushy": "read 6 events",
+      "kingdom": "read 18 events",
+      "summit": "read 0 events | Edmtrain's citywide Austin feed lists no upcoming show at this venue as of fetch time",
+      "vulcan": "read 7 events"
+    },
+    "why": "One firecrawl render of the Austin city page returned edmtrain's entire forward-looking list in a single load -- no 'load more' control or pagination marker appeared anywhere in the rendered markdown, and the list runs to Jun 12 2027 on its own, past our May 31 2027 cutoff. So this is a complete read of everything Edmtrain currently has listed for Austin, not a truncated sample. Events past 2027-05-31 were read but dropped from the output (out of scope). Un-matched venues (0-count rows above) are venues Edmtrain simply has nothing booked at right now, not venues it lacks a page for -- the citywide feed covers all of Austin, there's no per-venue subpage to be missing. (Correction: an earlier draft of this note guessed at genre reasons for the zero-count venues -- that was inference, not something the source stated, so it's been removed. All we actually know is the citywide feed had nothing booked there as of fetch time.)"
+  },
+  "cityWide": {
+    "url": "https://edmtrain.com/austin-tx",
+    "next30DaysCount": 81,
+    "note": "Counted every dated event row in the rendered citywide list (all Austin-area venues, not just our 17) with a date between 2026-09-24 and 2026-10-24 inclusive -- 81 of 149 total rows read fell in that window. Note the citywide feed is not electronic-only in practice: alongside club/rave listings (Kingdom, Concourse, Vulcan) it also carried non-electronic bookings like Jungle, Sylvan Esso, and Bonobo -- Edmtrain's own genre toggle (Electronic vs 'Rap, Pop, Rock, Country...') didn't appear to be filtering the version firecrawl rendered."
+  },
+  "linkBehavior": "The visible 'Buy Tickets' link on every event is edmtrain's own URL (event page + '?get=tickets', e.g. https://edmtrain.com/austin-tx/jungle-world-tour-2026-jungle-489788?get=tickets) -- never a direct ticketer link. Following it once (curl -IL) showed it 302s through an Impact-network affiliate redirector (ticketmaster.evyy.net) and lands on the real ticketer (ticketmaster.com in this case) carrying edmtrain's own affiliate/UTM tags (utm_source=...-EDM+Train+LLC, utm_medium=affiliate). So the destination ticketer is real but only discoverable by following the redirect -- the listing itself never names the ticketer (ticketmaster/axs/etc.) in text, which is why every event below has ticketer: null. A subset of events also print a separate 'StubHub Tickets' link alongside Buy Tickets (flagged in notes) -- that is Edmtrain surfacing StubHub resale inventory for the same show, not a duplicate listing.",
+  "events": [
+    {
+      "date": "2026-09-24",
+      "venue": "moody-center",
+      "venueRaw": "Moody Center ATX",
+      "title": "JUNGLE World Tour 2026: Jungle, Rio Kosta",
+      "artists": [
+        "Jungle",
+        "Rio Kosta"
+      ],
+      "url": "https://edmtrain.com/austin-tx/jungle-world-tour-2026-jungle-489788",
+      "ticketUrl": "https://edmtrain.com/austin-tx/jungle-world-tour-2026-jungle-489788?get=tickets",
+      "ticketer": null,
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-25",
+      "venue": "concourse",
+      "venueRaw": "The Concourse Project",
+      "title": "Botas y Rave: Deorro, Juos, DoKnow",
+      "artists": [
+        "Deorro",
+        "Juos",
+        "DoKnow"
+      ],
+      "url": "https://edmtrain.com/austin-tx/botas-y-rave-deorro-499827",
+      "ticketUrl": "https://edmtrain.com/austin-tx/botas-y-rave-deorro-499827?get=tickets",
+      "ticketer": null,
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "18+ | also listed with a StubHub resale link"
+    },
+    {
+      "date": "2026-09-25",
+      "venue": "concourse",
+      "venueRaw": "The Concourse Project",
+      "title": "Ben Sterling",
+      "artists": [
+        "Ben Sterling"
+      ],
+      "url": "https://edmtrain.com/austin-tx/ben-sterling-505621",
+      "ticketUrl": "https://edmtrain.com/austin-tx/ben-sterling-505621?get=tickets",
+      "ticketer": null,
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "21+ | also listed with a StubHub resale link"
+    },
+    {
+      "date": "2026-09-25",
+      "venue": "kingdom",
+      "venueRaw": "Kingdom Austin",
+      "title": "Ahmed Spins",
+      "artists": [
+        "Ahmed Spins"
+      ],
+      "url": "https://edmtrain.com/austin-tx/ahmed-spins-522907",
+      "ticketUrl": "https://edmtrain.com/austin-tx/ahmed-spins-522907?get=tickets",
+      "ticketer": null,
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "18+ | also listed with a StubHub resale link"
+    },
+    {
+      "date": "2026-09-26",
+      "venue": "concourse",
+      "venueRaw": "The Concourse Project",
+      "title": "Eli Brown, Marie Vaunt, Kasia",
+      "artists": [
+        "Eli Brown",
+        "Marie Vaunt",
+        "Kasia"
+      ],
+      "url": "https://edmtrain.com/austin-tx/eli-brown-marie-vaunt-517251",
+      "ticketUrl": "https://edmtrain.com/austin-tx/eli-brown-marie-vaunt-517251?get=tickets",
+      "ticketer": null,
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "18+ | also listed with a StubHub resale link"
+    },
+    {
+      "date": "2026-09-26",
+      "venue": "kingdom",
+      "venueRaw": "Kingdom Austin",
+      "title": "Space 92",
+      "artists": [
+        "Space 92"
+      ],
+      "url": "https://edmtrain.com/austin-tx/space-92-529378",
+      "ticketUrl": "https://edmtrain.com/austin-tx/space-92-529378?get=tickets",
+      "ticketer": null,
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "also listed with a StubHub resale link"
+    },
+    {
+      "date": "2026-09-26",
+      "venue": "moody-amphitheater",
+      "venueRaw": "Moody Amphitheater",
+      "title": "Of The Trees, Jade Cicada, Mr. Bill, Ferrofluid",
+      "artists": [
+        "Of The Trees",
+        "Jade Cicada",
+        "Mr. Bill",
+        "Ferrofluid"
+      ],
+      "url": "https://edmtrain.com/austin-tx/of-the-trees-jade-cicada-516571",
+      "ticketUrl": "https://edmtrain.com/austin-tx/of-the-trees-jade-cicada-516571?get=tickets",
+      "ticketer": null,
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "also listed with a StubHub resale link"
+    },
+    {
+      "date": "2026-09-29",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk (Outdoors)",
+      "title": "Fcukers, Total Wife",
+      "artists": [
+        "Fcukers",
+        "Total Wife"
+      ],
+      "url": "https://edmtrain.com/austin-tx/fcukers-total-wife-533369",
+      "ticketUrl": "https://edmtrain.com/austin-tx/fcukers-total-wife-533369?get=tickets",
+      "ticketer": null,
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "All Ages | also listed with a StubHub resale link"
+    },
+    {
+      "date": "2026-09-29",
+      "venue": "stubbs",
+      "venueRaw": "Stubb's Waller Creek Amphitheater",
+      "title": "Jane Remover, Dazegxd",
+      "artists": [
+        "Jane Remover",
+        "Dazegxd"
+      ],
+      "url": "https://edmtrain.com/austin-tx/jane-remover-dazegxd-497992",
+      "ticketUrl": "https://edmtrain.com/austin-tx/jane-remover-dazegxd-497992?get=tickets",
+      "ticketer": null,
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "also listed with a StubHub resale link"
+    },
+    {
+      "date": "2026-09-30",
+      "venue": "emos",
+      "venueRaw": "Emo's",
+      "title": "Tinlicker, Helsloot",
+      "artists": [
+        "Tinlicker",
+        "Helsloot"
+      ],
+      "url": "https://edmtrain.com/austin-tx/tinlicker-helsloot-497579",
+      "ticketUrl": "https://edmtrain.com/austin-tx/tinlicker-helsloot-497579?get=tickets",
+      "ticketer": null,
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "All Ages | also listed with a StubHub resale link"
+    },
+    {
+      "date": "2026-10-01",
+      "venue": "concourse",
+      "venueRaw": "The Concourse Project",
+      "title": "The Chainsmokers, Austin Ashtin",
+      "artists": [
+        "The Chainsmokers",
+        "Austin Ashtin"
+      ],
+      "url": "https://edmtrain.com/austin-tx/the-chainsmokers-austin-ashtin-529753",
+      "ticketUrl": "https://edmtrain.com/austin-tx/the-chainsmokers-austin-ashtin-529753?get=tickets",
+      "ticketer": null,
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "18+ | also listed with a StubHub resale link"
+    },
+    {
+      "date": "2026-10-02",
+      "venue": "concourse",
+      "venueRaw": "The Concourse Project",
+      "title": "Steve Aoki, Elephante, Riot Ten",
+      "artists": [
+        "Steve Aoki",
+        "Elephante",
+        "Riot Ten"
+      ],
+      "url": "https://edmtrain.com/austin-tx/steve-aoki-elephante-529754",
+      "ticketUrl": "https://edmtrain.com/austin-tx/steve-aoki-elephante-529754?get=tickets",
+      "ticketer": null,
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "18+ | also listed with a StubHub resale link"
+    },
+    {
+      "date": "2026-10-02",
+      "venue": "emos",
+      "venueRaw": "Emo's",
+      "title": "BUNT., Sarah Pederzani",
+      "artists": [
+        "BUNT.",
+        "Sarah Pederzani"
+      ],
+      "url": "https://edmtrain.com/austin-tx/bunt-sarah-pederzani-529868",
+      "ticketUrl": "https://edmtrain.com/austin-tx/bunt-sarah-pederzani-529868?get=tickets",
+      "ticketer": null,
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "also listed with a StubHub resale link"
+    },
+    {
+      "date": "2026-10-02",
+      "venue": "kingdom",
+      "venueRaw": "Kingdom Austin",
+      "title": "Matt Sassari",
+      "artists": [
+        "Matt Sassari"
+      ],
+      "url": "https://edmtrain.com/austin-tx/matt-sassari-535156",
+      "ticketUrl": "https://edmtrain.com/austin-tx/matt-sassari-535156?get=tickets",
+      "ticketer": null,
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "18+"
+    },
+    {
+      "date": "2026-10-03",
+      "venue": "brushy",
+      "venueRaw": "Brushy Street Commons",
+      "title": "underscores",
+      "artists": [
+        "underscores"
+      ],
+      "url": "https://edmtrain.com/austin-tx/underscores-530068",
+      "ticketUrl": "https://edmtrain.com/austin-tx/underscores-530068?get=tickets",
+      "ticketer": null,
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "DJ Set | also listed with a StubHub resale link"
+    },
+    {
+      "date": "2026-10-03",
+      "venue": "concourse",
+      "venueRaw": "The Concourse Project",
+      "title": "it's murph, nate band, Dazzle Camouflage",
+      "artists": [
+        "it's murph",
+        "nate band",
+        "Dazzle Camouflage"
+      ],
+      "url": "https://edmtrain.com/austin-tx/its-murph-nate-band-529755",
+      "ticketUrl": "https://edmtrain.com/austin-tx/its-murph-nate-band-529755?get=tickets",
+      "ticketer": null,
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "also listed with a StubHub resale link"
+    },
+    {
+      "date": "2026-10-03",
+      "venue": "emos",
+      "venueRaw": "Emo's",
+      "title": "Levity, Untitld",
+      "artists": [
+        "Levity",
+        "Untitld"
+      ],
+      "url": "https://edmtrain.com/austin-tx/levity-untitld-529845",
+      "ticketUrl": "https://edmtrain.com/austin-tx/levity-untitld-529845?get=tickets",
+      "ticketer": null,
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "All Ages | also listed with a StubHub resale link"
+    },
+    {
+      "date": "2026-10-08",
+      "venue": "3ten",
+      "venueRaw": "3TEN Austin City Limits Live",
+      "title": "Łaszewo",
+      "artists": [
+        "Łaszewo"
+      ],
+      "url": "https://edmtrain.com/austin-tx/aszewo-529847",
+      "ticketUrl": "https://edmtrain.com/austin-tx/aszewo-529847?get=tickets",
+      "ticketer": null,
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "All Ages | also listed with a StubHub resale link"
+    },
+    {
+      "date": "2026-10-08",
+      "venue": "concourse",
+      "venueRaw": "The Concourse Project",
+      "title": "¥ØU$UK€ ¥UK1MAT$U",
+      "artists": [
+        "¥ØU$UK€ ¥UK1MAT$U"
+      ],
+      "url": "https://edmtrain.com/austin-tx/ou-uk-uk1mat-u-529756",
+      "ticketUrl": "https://edmtrain.com/austin-tx/ou-uk-uk1mat-u-529756?get=tickets",
+      "ticketer": null,
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "18+ | also listed with a StubHub resale link"
+    },
+    {
+      "date": "2026-10-08",
+      "venue": "kingdom",
+      "venueRaw": "Kingdom Austin",
+      "title": "DVS1",
+      "artists": [
+        "DVS1"
+      ],
+      "url": "https://edmtrain.com/austin-tx/dvs1-537229",
+      "ticketUrl": "https://edmtrain.com/austin-tx/dvs1-537229?get=tickets",
+      "ticketer": null,
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "18+"
+    },
+    {
+      "date": "2026-10-09",
+      "venue": "brushy",
+      "venueRaw": "Brushy Street Commons",
+      "title": "El Dusty, Disko Cowboy, Hiram, Baby Roo",
+      "artists": [
+        "El Dusty",
+        "Disko Cowboy",
+        "Hiram",
+        "Baby Roo"
+      ],
+      "url": "https://edmtrain.com/austin-tx/el-dusty-disko-cowboy-535392",
+      "ticketUrl": "https://edmtrain.com/austin-tx/el-dusty-disko-cowboy-535392?get=tickets",
+      "ticketer": null,
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-09",
+      "venue": "concourse",
+      "venueRaw": "The Concourse Project",
+      "title": "BUNT., DJ BAD APPLE",
+      "artists": [
+        "BUNT.",
+        "DJ BAD APPLE"
+      ],
+      "url": "https://edmtrain.com/austin-tx/bunt-dj-bad-apple-529757",
+      "ticketUrl": "https://edmtrain.com/austin-tx/bunt-dj-bad-apple-529757?get=tickets",
+      "ticketer": null,
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "18+ | also listed with a StubHub resale link"
+    },
+    {
+      "date": "2026-10-09",
+      "venue": "kingdom",
+      "venueRaw": "Kingdom Austin",
+      "title": "Andy Stott, Debit",
+      "artists": [
+        "Andy Stott",
+        "Debit"
+      ],
+      "url": "https://edmtrain.com/austin-tx/andy-stott-debit-538732",
+      "ticketUrl": "https://edmtrain.com/austin-tx/andy-stott-debit-538732?get=tickets",
+      "ticketer": null,
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "All Ages"
+    },
+    {
+      "date": "2026-10-10",
+      "venue": "concourse",
+      "venueRaw": "The Concourse Project",
+      "title": "Holy Priest",
+      "artists": [
+        "Holy Priest"
+      ],
+      "url": "https://edmtrain.com/austin-tx/holy-priest-519148",
+      "ticketUrl": "https://edmtrain.com/austin-tx/holy-priest-519148?get=tickets",
+      "ticketer": null,
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "21+ | also listed with a StubHub resale link"
+    },
+    {
+      "date": "2026-10-10",
+      "venue": "kingdom",
+      "venueRaw": "Kingdom Austin",
+      "title": "Matthew Dear b2b The Juan Maclean",
+      "artists": [
+        "Matthew Dear b2b The Juan Maclean"
+      ],
+      "url": "https://edmtrain.com/austin-tx/matthew-dear-the-juan-maclean-539580",
+      "ticketUrl": "https://edmtrain.com/austin-tx/matthew-dear-the-juan-maclean-539580?get=tickets",
+      "ticketer": null,
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "18+"
+    },
+    {
+      "date": "2026-10-10",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk (Outdoors)",
+      "title": "Bassvictim, Thoom",
+      "artists": [
+        "Bassvictim",
+        "Thoom"
+      ],
+      "url": "https://edmtrain.com/austin-tx/bassvictim-thoom-529077",
+      "ticketUrl": "https://edmtrain.com/austin-tx/bassvictim-thoom-529077?get=tickets",
+      "ticketer": null,
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "All Ages | also listed with a StubHub resale link"
+    },
+    {
+      "date": "2026-10-11",
+      "venue": "concourse",
+      "venueRaw": "The Concourse Project",
+      "title": "Holy Priest",
+      "artists": [
+        "Holy Priest"
+      ],
+      "url": "https://edmtrain.com/austin-tx/holy-priest-523594",
+      "ticketUrl": "https://edmtrain.com/austin-tx/holy-priest-523594?get=tickets",
+      "ticketer": null,
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "18+ | also listed with a StubHub resale link"
+    },
+    {
+      "date": "2026-10-15",
+      "venue": "concourse",
+      "venueRaw": "The Concourse Project",
+      "title": "Funk Tribu",
+      "artists": [
+        "Funk Tribu"
+      ],
+      "url": "https://edmtrain.com/austin-tx/funk-tribu-517285",
+      "ticketUrl": "https://edmtrain.com/austin-tx/funk-tribu-517285?get=tickets",
+      "ticketer": null,
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "18+ | also listed with a StubHub resale link"
+    },
+    {
+      "date": "2026-10-15",
+      "venue": "moody-center",
+      "venueRaw": "Moody Center ATX",
+      "title": "The Mountain Tour: Gorillaz, Little Simz, Deltron 3030",
+      "artists": [
+        "Gorillaz",
+        "Little Simz",
+        "Deltron 3030"
+      ],
+      "url": "https://edmtrain.com/austin-tx/the-mountain-tour-gorillaz-483648",
+      "ticketUrl": "https://edmtrain.com/austin-tx/the-mountain-tour-gorillaz-483648?get=tickets",
+      "ticketer": null,
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "also listed with a StubHub resale link"
+    },
+    {
+      "date": "2026-10-16",
+      "venue": "concourse",
+      "venueRaw": "The Concourse Project",
+      "title": "Adam Port, Keinemusik",
+      "artists": [
+        "Adam Port",
+        "Keinemusik"
+      ],
+      "url": "https://edmtrain.com/austin-tx/adam-port-keinemusik-511577",
+      "ticketUrl": "https://edmtrain.com/austin-tx/adam-port-keinemusik-511577?get=tickets",
+      "ticketer": null,
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "18+"
+    },
+    {
+      "date": "2026-10-16",
+      "venue": "kingdom",
+      "venueRaw": "Kingdom Austin",
+      "title": "Twin Diplomacy",
+      "artists": [
+        "Twin Diplomacy"
+      ],
+      "url": "https://edmtrain.com/austin-tx/twin-diplomacy-512649",
+      "ticketUrl": "https://edmtrain.com/austin-tx/twin-diplomacy-512649?get=tickets",
+      "ticketer": null,
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "18+"
+    },
+    {
+      "date": "2026-10-17",
+      "venue": "kingdom",
+      "venueRaw": "Kingdom Austin",
+      "title": "Wonking On Sunshine: WonkyWilla, SLOTH",
+      "artists": [
+        "WonkyWilla",
+        "SLOTH"
+      ],
+      "url": "https://edmtrain.com/austin-tx/wonking-on-sunshine-wonkywilla-511934",
+      "ticketUrl": "https://edmtrain.com/austin-tx/wonking-on-sunshine-wonkywilla-511934?get=tickets",
+      "ticketer": null,
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "Promoter code PSYCHED! | also listed with a StubHub resale link"
+    },
+    {
+      "date": "2026-10-17",
+      "venue": "vulcan",
+      "venueRaw": "Vulcan Gas Company",
+      "title": "GRIMM HALLOWEEN RAVE: Grin, LYTLBT, Ale-X, Nexus, Rendition (Austin)",
+      "artists": [
+        "Grin",
+        "LYTLBT",
+        "Ale-X",
+        "Nexus",
+        "Rendition (Austin)"
+      ],
+      "url": "https://edmtrain.com/austin-tx/grimm-halloween-rave-grin-539496",
+      "ticketUrl": "https://edmtrain.com/austin-tx/grimm-halloween-rave-grin-539496?get=tickets",
+      "ticketer": null,
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "DOWNTOWN ATX"
+    },
+    {
+      "date": "2026-10-22",
+      "venue": "concourse",
+      "venueRaw": "The Concourse Project",
+      "title": "Ben Böhmer",
+      "artists": [
+        "Ben Böhmer"
+      ],
+      "url": "https://edmtrain.com/austin-tx/ben-bohmer-524779",
+      "ticketUrl": "https://edmtrain.com/austin-tx/ben-bohmer-524779?get=tickets",
+      "ticketer": null,
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "18+ | also listed with a StubHub resale link"
+    },
+    {
+      "date": "2026-10-23",
+      "venue": "brushy",
+      "venueRaw": "Brushy Street Commons",
+      "title": "Slow Magic, Jesse Beaman",
+      "artists": [
+        "Slow Magic",
+        "Jesse Beaman"
+      ],
+      "url": "https://edmtrain.com/austin-tx/slow-magic-jesse-beaman-496800",
+      "ticketUrl": "https://edmtrain.com/austin-tx/slow-magic-jesse-beaman-496800?get=tickets",
+      "ticketer": null,
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "also listed with a StubHub resale link"
+    },
+    {
+      "date": "2026-10-23",
+      "venue": "concourse",
+      "venueRaw": "The Concourse Project",
+      "title": "ZHU",
+      "artists": [
+        "ZHU"
+      ],
+      "url": "https://edmtrain.com/austin-tx/zhu-499185",
+      "ticketUrl": "https://edmtrain.com/austin-tx/zhu-499185?get=tickets",
+      "ticketer": null,
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "18+ | also listed with a StubHub resale link"
+    },
+    {
+      "date": "2026-10-24",
+      "venue": "concourse",
+      "venueRaw": "The Concourse Project",
+      "title": "Ian Asher",
+      "artists": [
+        "Ian Asher"
+      ],
+      "url": "https://edmtrain.com/austin-tx/ian-asher-533618",
+      "ticketUrl": "https://edmtrain.com/austin-tx/ian-asher-533618?get=tickets",
+      "ticketer": null,
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "18+ | also listed with a StubHub resale link"
+    },
+    {
+      "date": "2026-10-25",
+      "venue": "concourse",
+      "venueRaw": "The Concourse Project",
+      "title": "ZHU",
+      "artists": [
+        "ZHU"
+      ],
+      "url": "https://edmtrain.com/austin-tx/zhu-500198",
+      "ticketUrl": "https://edmtrain.com/austin-tx/zhu-500198?get=tickets",
+      "ticketer": null,
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "18+ | also listed with a StubHub resale link"
+    },
+    {
+      "date": "2026-10-29",
+      "venue": "concourse",
+      "venueRaw": "The Concourse Project",
+      "title": "Chris Stassy",
+      "artists": [
+        "Chris Stassy"
+      ],
+      "url": "https://edmtrain.com/austin-tx/chris-stassy-523206",
+      "ticketUrl": "https://edmtrain.com/austin-tx/chris-stassy-523206?get=tickets",
+      "ticketer": null,
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "21+ | also listed with a StubHub resale link"
+    },
+    {
+      "date": "2026-10-30",
+      "venue": "concourse",
+      "venueRaw": "The Concourse Project",
+      "title": "Dombresky",
+      "artists": [
+        "Dombresky"
+      ],
+      "url": "https://edmtrain.com/austin-tx/dombresky-516586",
+      "ticketUrl": "https://edmtrain.com/austin-tx/dombresky-516586?get=tickets",
+      "ticketer": null,
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "18+ | also listed with a StubHub resale link"
+    },
+    {
+      "date": "2026-10-30",
+      "venue": "kingdom",
+      "venueRaw": "Kingdom Austin",
+      "title": "Dennis Ferrer",
+      "artists": [
+        "Dennis Ferrer"
+      ],
+      "url": "https://edmtrain.com/austin-tx/dennis-ferrer-527992",
+      "ticketUrl": "https://edmtrain.com/austin-tx/dennis-ferrer-527992?get=tickets",
+      "ticketer": null,
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "18+ | also listed with a StubHub resale link"
+    },
+    {
+      "date": "2026-10-31",
+      "venue": "acl-live",
+      "venueRaw": "ACL Live at Moody Theater",
+      "title": "Madeon, Anamanaguchi",
+      "artists": [
+        "Madeon",
+        "Anamanaguchi"
+      ],
+      "url": "https://edmtrain.com/austin-tx/madeon-anamanaguchi-502104",
+      "ticketUrl": "https://edmtrain.com/austin-tx/madeon-anamanaguchi-502104?get=tickets",
+      "ticketer": null,
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "All Ages | also listed with a StubHub resale link"
+    },
+    {
+      "date": "2026-10-31",
+      "venue": "concourse",
+      "venueRaw": "The Concourse Project",
+      "title": "Four Tet",
+      "artists": [
+        "Four Tet"
+      ],
+      "url": "https://edmtrain.com/austin-tx/four-tet-519609",
+      "ticketUrl": "https://edmtrain.com/austin-tx/four-tet-519609?get=tickets",
+      "ticketer": null,
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "18+ | also listed with a StubHub resale link"
+    },
+    {
+      "date": "2026-10-31",
+      "venue": "kingdom",
+      "venueRaw": "Kingdom Austin",
+      "title": "Jody Wisternoff",
+      "artists": [
+        "Jody Wisternoff"
+      ],
+      "url": "https://edmtrain.com/austin-tx/jody-wisternoff-534985",
+      "ticketUrl": "https://edmtrain.com/austin-tx/jody-wisternoff-534985?get=tickets",
+      "ticketer": null,
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "18+"
+    },
+    {
+      "date": "2026-11-05",
+      "venue": "emos",
+      "venueRaw": "Emo's",
+      "title": "Distance in Static Live North American Tour: Bonobo",
+      "artists": [
+        "Bonobo"
+      ],
+      "url": "https://edmtrain.com/austin-tx/distance-in-static-live-north-american-tour-bonobo-511382",
+      "ticketUrl": "https://edmtrain.com/austin-tx/distance-in-static-live-north-american-tour-bonobo-511382?get=tickets",
+      "ticketer": null,
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "All Ages | also listed with a StubHub resale link"
+    },
+    {
+      "date": "2026-11-06",
+      "venue": "moody-center",
+      "venueRaw": "Moody Center ATX",
+      "title": "Ctrl Escape Arena Tour: John Summit",
+      "artists": [
+        "John Summit"
+      ],
+      "url": "https://edmtrain.com/austin-tx/ctrl-escape-arena-tour-john-summit-505488",
+      "ticketUrl": "https://edmtrain.com/austin-tx/ctrl-escape-arena-tour-john-summit-505488?get=tickets",
+      "ticketer": null,
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "also listed with a StubHub resale link"
+    },
+    {
+      "date": "2026-11-06",
+      "venue": "stubbs",
+      "venueRaw": "Stubb's Waller Creek Amphitheater",
+      "title": "Toddler Rave World Tour: Lenny Pearce",
+      "artists": [
+        "Lenny Pearce"
+      ],
+      "url": "https://edmtrain.com/austin-tx/toddler-rave-world-tour-lenny-pearce-517872",
+      "ticketUrl": "https://edmtrain.com/austin-tx/toddler-rave-world-tour-lenny-pearce-517872?get=tickets",
+      "ticketer": null,
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "also listed with a StubHub resale link"
+    },
+    {
+      "date": "2026-11-07",
+      "venue": "kingdom",
+      "venueRaw": "Kingdom Austin",
+      "title": "TOKiMONSTA",
+      "artists": [
+        "TOKiMONSTA"
+      ],
+      "url": "https://edmtrain.com/austin-tx/tokimonsta-537836",
+      "ticketUrl": "https://edmtrain.com/austin-tx/tokimonsta-537836?get=tickets",
+      "ticketer": null,
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "18+ | also listed with a StubHub resale link"
+    },
+    {
+      "date": "2026-11-13",
+      "venue": "concourse",
+      "venueRaw": "The Concourse Project",
+      "title": "Seismic Dance Event: Porter Robinson, Chris Lorenzo, Layton Giordani, horsegiirL, Sara Landry, KI/KI, Max Styler, Above & Beyond, Brutalismus 3000, SG Lewis, Brunello, BOLO, MPH, Notion, Starjunk 95, VTSS, Devault, MËSTIZA, Cole Knight, Fallon (Dublin), Conrad Taylor, Smokey Bubblin' B, Hills, Joss Dean, Kamino, 1tbsp, Luke Alessi, Dreya V, HNTR, Welker, Adam Sellouk, Benwal, Diffrent, Kyle Starkey",
+      "artists": [
+        "Porter Robinson",
+        "Chris Lorenzo",
+        "Layton Giordani",
+        "horsegiirL",
+        "Sara Landry",
+        "KI/KI",
+        "Max Styler",
+        "Above & Beyond",
+        "Brutalismus 3000",
+        "SG Lewis",
+        "Brunello",
+        "BOLO",
+        "MPH",
+        "Notion",
+        "Starjunk 95",
+        "VTSS",
+        "Devault",
+        "MËSTIZA",
+        "Cole Knight",
+        "Fallon (Dublin)",
+        "Conrad Taylor",
+        "Smokey Bubblin' B",
+        "Hills",
+        "Joss Dean",
+        "Kamino",
+        "1tbsp",
+        "Luke Alessi",
+        "Dreya V",
+        "HNTR",
+        "Welker",
+        "Adam Sellouk",
+        "Benwal",
+        "Diffrent",
+        "Kyle Starkey"
+      ],
+      "url": "https://edmtrain.com/austin-tx/seismic-dance-event-453918",
+      "ticketUrl": "https://edmtrain.com/austin-tx/seismic-dance-event-453918?get=tickets",
+      "ticketer": null,
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "Use code JOHNNY10 for some $ off"
+    },
+    {
+      "date": "2026-11-13",
+      "venue": "kingdom",
+      "venueRaw": "Kingdom Austin",
+      "title": "Com Truise",
+      "artists": [
+        "Com Truise"
+      ],
+      "url": "https://edmtrain.com/austin-tx/com-truise-520169",
+      "ticketUrl": "https://edmtrain.com/austin-tx/com-truise-520169?get=tickets",
+      "ticketer": null,
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "All Ages | also listed with a StubHub resale link"
+    },
+    {
+      "date": "2026-11-13",
+      "venue": "vulcan",
+      "venueRaw": "Vulcan Gas Company",
+      "title": "SHOCK VALUE: Tisoki",
+      "artists": [
+        "Tisoki"
+      ],
+      "url": "https://edmtrain.com/austin-tx/shock-value-tisoki-524242",
+      "ticketUrl": "https://edmtrain.com/austin-tx/shock-value-tisoki-524242?get=tickets",
+      "ticketer": null,
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "FREE with RSVP! Use promoter code PSYCHED at checkout! | also listed with a StubHub resale link"
+    },
+    {
+      "date": "2026-11-14",
+      "venue": "concourse",
+      "venueRaw": "The Concourse Project",
+      "title": "Seismic Dance Event",
+      "artists": [
+        "Seismic Dance Event"
+      ],
+      "url": "https://edmtrain.com/austin-tx/seismic-dance-event-453919",
+      "ticketUrl": "https://edmtrain.com/austin-tx/seismic-dance-event-453919?get=tickets",
+      "ticketer": null,
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "Use code JOHNNY10 for some $ off"
+    },
+    {
+      "date": "2026-11-14",
+      "venue": "vulcan",
+      "venueRaw": "Vulcan Gas Company",
+      "title": "Back To Life Tour: Capochino",
+      "artists": [
+        "Capochino"
+      ],
+      "url": "https://edmtrain.com/austin-tx/back-to-life-tour-capochino-526217",
+      "ticketUrl": "https://edmtrain.com/austin-tx/back-to-life-tour-capochino-526217?get=tickets",
+      "ticketer": null,
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "Promoter code PSYCHED!"
+    },
+    {
+      "date": "2026-11-15",
+      "venue": "concourse",
+      "venueRaw": "The Concourse Project",
+      "title": "Seismic Dance Event",
+      "artists": [
+        "Seismic Dance Event"
+      ],
+      "url": "https://edmtrain.com/austin-tx/seismic-dance-event-453920",
+      "ticketUrl": "https://edmtrain.com/austin-tx/seismic-dance-event-453920?get=tickets",
+      "ticketer": null,
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "Use code JOHNNY10 for some $ off"
+    },
+    {
+      "date": "2026-11-20",
+      "venue": "concourse",
+      "venueRaw": "The Concourse Project",
+      "title": "Kaskade",
+      "artists": [
+        "Kaskade"
+      ],
+      "url": "https://edmtrain.com/austin-tx/kaskade-531426",
+      "ticketUrl": "https://edmtrain.com/austin-tx/kaskade-531426?get=tickets",
+      "ticketer": null,
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "18+ | also listed with a StubHub resale link"
+    },
+    {
+      "date": "2026-11-20",
+      "venue": "kingdom",
+      "venueRaw": "Kingdom Austin",
+      "title": "Only Fire, umru, River Moon, Kylie Exotic, ITZA",
+      "artists": [
+        "Only Fire",
+        "umru",
+        "River Moon",
+        "Kylie Exotic",
+        "ITZA"
+      ],
+      "url": "https://edmtrain.com/austin-tx/only-fire-umru-536318",
+      "ticketUrl": "https://edmtrain.com/austin-tx/only-fire-umru-536318?get=tickets",
+      "ticketer": null,
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-21",
+      "venue": "concourse",
+      "venueRaw": "The Concourse Project",
+      "title": "Eric Prydz",
+      "artists": [
+        "Eric Prydz"
+      ],
+      "url": "https://edmtrain.com/austin-tx/eric-prydz-528744",
+      "ticketUrl": "https://edmtrain.com/austin-tx/eric-prydz-528744?get=tickets",
+      "ticketer": null,
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "also listed with a StubHub resale link"
+    },
+    {
+      "date": "2026-11-21",
+      "venue": "kingdom",
+      "venueRaw": "Kingdom Austin",
+      "title": "Mark Knight",
+      "artists": [
+        "Mark Knight"
+      ],
+      "url": "https://edmtrain.com/austin-tx/mark-knight-533701",
+      "ticketUrl": "https://edmtrain.com/austin-tx/mark-knight-533701?get=tickets",
+      "ticketer": null,
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "18+"
+    },
+    {
+      "date": "2026-11-21",
+      "venue": "vulcan",
+      "venueRaw": "Vulcan Gas Company",
+      "title": "R&BASS TOUR: Seth David, SuperAve.",
+      "artists": [
+        "Seth David",
+        "SuperAve."
+      ],
+      "url": "https://edmtrain.com/austin-tx/r-and-bass-tour-seth-david-514094",
+      "ticketUrl": "https://edmtrain.com/austin-tx/r-and-bass-tour-seth-david-514094?get=tickets",
+      "ticketer": null,
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "Promoter code PSYCHED!; 18+ | also listed with a StubHub resale link"
+    },
+    {
+      "date": "2026-11-22",
+      "venue": "brushy",
+      "venueRaw": "Brushy Street Commons",
+      "title": "Baby Jane",
+      "artists": [
+        "Baby Jane"
+      ],
+      "url": "https://edmtrain.com/austin-tx/baby-jane-535861",
+      "ticketUrl": "https://edmtrain.com/austin-tx/baby-jane-535861?get=tickets",
+      "ticketer": null,
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-27",
+      "venue": "concourse",
+      "venueRaw": "The Concourse Project",
+      "title": "Hot Since 82, Avision",
+      "artists": [
+        "Hot Since 82",
+        "Avision"
+      ],
+      "url": "https://edmtrain.com/austin-tx/hot-since-82-avision-537351",
+      "ticketUrl": "https://edmtrain.com/austin-tx/hot-since-82-avision-537351?get=tickets",
+      "ticketer": null,
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "21+ | also listed with a StubHub resale link"
+    },
+    {
+      "date": "2026-11-28",
+      "venue": "brushy",
+      "venueRaw": "Brushy Street Commons",
+      "title": "Desert Dwellers",
+      "artists": [
+        "Desert Dwellers"
+      ],
+      "url": "https://edmtrain.com/austin-tx/desert-dwellers-518344",
+      "ticketUrl": "https://edmtrain.com/austin-tx/desert-dwellers-518344?get=tickets",
+      "ticketer": null,
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "also listed with a StubHub resale link"
+    },
+    {
+      "date": "2026-11-28",
+      "venue": "concourse",
+      "venueRaw": "The Concourse Project",
+      "title": "Green Velvet",
+      "artists": [
+        "Green Velvet"
+      ],
+      "url": "https://edmtrain.com/austin-tx/green-velvet-537688",
+      "ticketUrl": "https://edmtrain.com/austin-tx/green-velvet-537688?get=tickets",
+      "ticketer": null,
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "21+ | also listed with a StubHub resale link"
+    },
+    {
+      "date": "2026-12-03",
+      "venue": "concourse",
+      "venueRaw": "The Concourse Project",
+      "title": "Franky Rizardo",
+      "artists": [
+        "Franky Rizardo"
+      ],
+      "url": "https://edmtrain.com/austin-tx/franky-rizardo-533826",
+      "ticketUrl": "https://edmtrain.com/austin-tx/franky-rizardo-533826?get=tickets",
+      "ticketer": null,
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "21+ | also listed with a StubHub resale link"
+    },
+    {
+      "date": "2026-12-04",
+      "venue": "kingdom",
+      "venueRaw": "Kingdom Austin",
+      "title": "FOVOS",
+      "artists": [
+        "FOVOS"
+      ],
+      "url": "https://edmtrain.com/austin-tx/fovos-538733",
+      "ticketUrl": "https://edmtrain.com/austin-tx/fovos-538733?get=tickets",
+      "ticketer": null,
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "18+"
+    },
+    {
+      "date": "2026-12-05",
+      "venue": "kingdom",
+      "venueRaw": "Kingdom Austin",
+      "title": "Amtrac",
+      "artists": [
+        "Amtrac"
+      ],
+      "url": "https://edmtrain.com/austin-tx/amtrac-531018",
+      "ticketUrl": "https://edmtrain.com/austin-tx/amtrac-531018?get=tickets",
+      "ticketer": null,
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "also listed with a StubHub resale link"
+    },
+    {
+      "date": "2026-12-05",
+      "venue": "vulcan",
+      "venueRaw": "Vulcan Gas Company",
+      "title": "HEYZ",
+      "artists": [
+        "HEYZ"
+      ],
+      "url": "https://edmtrain.com/austin-tx/heyz-535694",
+      "ticketUrl": "https://edmtrain.com/austin-tx/heyz-535694?get=tickets",
+      "ticketer": null,
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "Use promoter code PSYCHED at checkout!"
+    },
+    {
+      "date": "2026-12-10",
+      "venue": "brushy",
+      "venueRaw": "Brushy Street Commons",
+      "title": "Eelke Kleijn",
+      "artists": [
+        "Eelke Kleijn"
+      ],
+      "url": "https://edmtrain.com/austin-tx/eelke-kleijn-536829",
+      "ticketUrl": "https://edmtrain.com/austin-tx/eelke-kleijn-536829?get=tickets",
+      "ticketer": null,
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "also listed with a StubHub resale link"
+    },
+    {
+      "date": "2026-12-11",
+      "venue": "concourse",
+      "venueRaw": "The Concourse Project",
+      "title": "Rossi.",
+      "artists": [
+        "Rossi."
+      ],
+      "url": "https://edmtrain.com/austin-tx/rossi-526563",
+      "ticketUrl": "https://edmtrain.com/austin-tx/rossi-526563?get=tickets",
+      "ticketer": null,
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "21+ | also listed with a StubHub resale link"
+    },
+    {
+      "date": "2026-12-11",
+      "venue": "vulcan",
+      "venueRaw": "Vulcan Gas Company",
+      "title": "MitiS",
+      "artists": [
+        "MitiS"
+      ],
+      "url": "https://edmtrain.com/austin-tx/mitis-537066",
+      "ticketUrl": "https://edmtrain.com/austin-tx/mitis-537066?get=tickets",
+      "ticketer": null,
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "18+"
+    },
+    {
+      "date": "2026-12-12",
+      "venue": "concourse",
+      "venueRaw": "The Concourse Project",
+      "title": "Bob Moses, Notre Dame",
+      "artists": [
+        "Bob Moses",
+        "Notre Dame"
+      ],
+      "url": "https://edmtrain.com/austin-tx/bob-moses-notre-dame-538610",
+      "ticketUrl": "https://edmtrain.com/austin-tx/bob-moses-notre-dame-538610?get=tickets",
+      "ticketer": null,
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "21+"
+    },
+    {
+      "date": "2026-12-12",
+      "venue": "kingdom",
+      "venueRaw": "Kingdom Austin",
+      "title": "Rave Revival: Rave Jesus",
+      "artists": [
+        "Rave Jesus"
+      ],
+      "url": "https://edmtrain.com/austin-tx/rave-revival-rave-jesus-533082",
+      "ticketUrl": "https://edmtrain.com/austin-tx/rave-revival-rave-jesus-533082?get=tickets",
+      "ticketer": null,
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "18+"
+    },
+    {
+      "date": "2026-12-12",
+      "venue": "vulcan",
+      "venueRaw": "Vulcan Gas Company",
+      "title": "INFEKT",
+      "artists": [
+        "INFEKT"
+      ],
+      "url": "https://edmtrain.com/austin-tx/infekt-524846",
+      "ticketUrl": "https://edmtrain.com/austin-tx/infekt-524846?get=tickets",
+      "ticketer": null,
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "Use promoter code PSYCHED!; 18+"
+    },
+    {
+      "date": "2026-12-19",
+      "venue": "concourse",
+      "venueRaw": "The Concourse Project",
+      "title": "INZO, Late Night Radio, Blookah, ALIGN",
+      "artists": [
+        "INZO",
+        "Late Night Radio",
+        "Blookah",
+        "ALIGN"
+      ],
+      "url": "https://edmtrain.com/austin-tx/inzo-late-night-radio-529779",
+      "ticketUrl": "https://edmtrain.com/austin-tx/inzo-late-night-radio-529779?get=tickets",
+      "ticketer": null,
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "Presale now on sale! Password VOID. Use promoter code PSYCHED at checkout! | also listed with a StubHub resale link"
+    },
+    {
+      "date": "2027-01-02",
+      "venue": "concourse",
+      "venueRaw": "The Concourse Project",
+      "title": "Max Dean, Luke Dean",
+      "artists": [
+        "Max Dean",
+        "Luke Dean"
+      ],
+      "url": "https://edmtrain.com/austin-tx/max-dean-luke-dean-539629",
+      "ticketUrl": "https://edmtrain.com/austin-tx/max-dean-luke-dean-539629?get=tickets",
+      "ticketer": null,
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "21+"
+    },
+    {
+      "date": "2027-01-21",
+      "venue": "acl-live",
+      "venueRaw": "ACL Live at Moody Theater",
+      "title": "Alan Walker",
+      "artists": [
+        "Alan Walker"
+      ],
+      "url": "https://edmtrain.com/austin-tx/alan-walker-536698",
+      "ticketUrl": "https://edmtrain.com/austin-tx/alan-walker-536698?get=tickets",
+      "ticketer": null,
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "All Ages | also listed with a StubHub resale link"
+    },
+    {
+      "date": "2027-01-29",
+      "venue": "kingdom",
+      "venueRaw": "Kingdom Austin",
+      "title": "Ely Oaks",
+      "artists": [
+        "Ely Oaks"
+      ],
+      "url": "https://edmtrain.com/austin-tx/ely-oaks-539072",
+      "ticketUrl": "https://edmtrain.com/austin-tx/ely-oaks-539072?get=tickets",
+      "ticketer": null,
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "18+ | also listed with a StubHub resale link"
+    },
+    {
+      "date": "2027-02-06",
+      "venue": "concourse",
+      "venueRaw": "The Concourse Project",
+      "title": "TWINSICK",
+      "artists": [
+        "TWINSICK"
+      ],
+      "url": "https://edmtrain.com/austin-tx/twinsick-537805",
+      "ticketUrl": "https://edmtrain.com/austin-tx/twinsick-537805?get=tickets",
+      "ticketer": null,
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "18+ | also listed with a StubHub resale link"
+    },
+    {
+      "date": "2027-03-08",
+      "venue": "acl-live",
+      "venueRaw": "ACL Live at Moody Theater",
+      "title": "Sylvan Esso",
+      "artists": [
+        "Sylvan Esso"
+      ],
+      "url": "https://edmtrain.com/austin-tx/sylvan-esso-511818",
+      "ticketUrl": "https://edmtrain.com/austin-tx/sylvan-esso-511818?get=tickets",
+      "ticketer": null,
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": "All Ages | also listed with a StubHub resale link"
+    }
+  ]
+}

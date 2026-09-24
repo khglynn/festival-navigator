@@ -1,0 +1,6046 @@
+{
+  "collector": "showlist-austin",
+  "fetchedAt": "2026-09-24",
+  "scope": {
+    "from": "2026-09-24",
+    "to": "2027-05-31"
+  },
+  "pages": [
+    {
+      "url": "https://www.showlistaustin.com/",
+      "how": "curl",
+      "ok": true,
+      "note": "Single page; embedded JS array `upcomingShows` (746 shows total) and matching <li data-show-id> markup both parsed. Page lists shows only through 2026-12-22 — that is the site's own horizon, not a fetch limit."
+    }
+  ],
+  "coverage": {
+    "complete": false,
+    "lastDateReached": "2026-12-22",
+    "perVenue": {
+      "moody-center": "read 24 events",
+      "moody-amphitheater": "read 12 events",
+      "acl-live": "read 42 events",
+      "3ten": "read 30 events",
+      "germania": "read 4 events",
+      "stubbs": "read 26 events",
+      "mohawk": "read 45 events",
+      "empire": "no page for this venue (not listed on Showlist Austin)",
+      "scoot-inn": "read 25 events",
+      "emos": "read 37 events",
+      "parish": "no page for this venue (not listed on Showlist Austin)",
+      "antones": "read 53 events",
+      "continental": "read 30 events",
+      "concourse": "no page for this venue (not listed on Showlist Austin)",
+      "brushy": "no page for this venue (not listed on Showlist Austin)",
+      "kingdom": "read 17 events",
+      "summit": "no page for this venue (not listed on Showlist Austin)",
+      "vulcan": "no page for this venue (not listed on Showlist Austin)"
+    },
+    "why": "Showlist Austin is a single hand-curated page (no pagination) that currently runs Thu 2026-09-24 through Tue 2026-12-22 — about 13 weeks. It has no listings past that date (nothing to read, not a stop point we chose), so it cannot cover our full 2026-09-24 to 2027-05-31 window by itself. Five of our 17 venues (Empire, The Parish, Brushy Street Commons, Summit, Vulcan Gas Company) have zero entries anywhere on the page — Showlist Austin appears not to track them at all (no per-venue landing page either); everything else uses the venue's own display name."
+  },
+  "cityWide": {
+    "url": "https://www.showlistaustin.com/",
+    "next30DaysCount": null,
+    "note": "The page is one continuous list of all upcoming shows citywide (not filterable by date range server-side); a client-side 'Filters' widget exists but a plain curl fetch returns the unfiltered full list, so a 'next 30 days' count would require counting rows by date client-side rather than the source exposing the count itself."
+  },
+  "linkBehavior": "Every show title links straight to the presenting venue's or promoter's own ticketing page — never a showlistaustin.com redirect and never visibly affiliate-tagged. Example: the Antone's Sept 24 show links to https://antonesnightclub.com/tm-event/chicago-bound-album-release-party/ (Antone's own Ticketmaster-powered event page). Domains seen: ticketmaster.com (88 of 345, via Emo's/Stubb's/Scoot Inn's own TM-hosted pages), acllive.com (72, ACL Live + 3TEN's own site), antonesnightclub.com (53), mohawkaustin.com (45), continentalclub.com (30), moodycenteratx.com (24), kingdomnightclub.com (17), moodyamphitheater.com (12), germaniaamp.com (4).",
+  "events": [
+    {
+      "date": "2026-09-24",
+      "venue": "antones",
+      "venueRaw": "Antone's",
+      "title": "Chicago Bound Album Release Party feat. Lurrie Bell, Anson Funderburgh, CC Adcock, Ivan Neville, Derek O’Brien, Young Rell Davenport, Ernie Johnson, The Texas Horns & More",
+      "artists": [
+        "Chicago Bound Album Release Party",
+        "Lurrie Bell",
+        "Anson Funderburgh",
+        "CC Adcock",
+        "Ivan Neville",
+        "Derek O’Brien",
+        "Young Rell Davenport",
+        "Ernie Johnson",
+        "The Texas Horns",
+        "More"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://antonesnightclub.com/tm-event/chicago-bound-album-release-party/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-24",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk",
+      "title": "Cutting Up Men, Variety, Looks Professional",
+      "artists": [
+        "Cutting Up Men",
+        "Variety",
+        "Looks Professional"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://mohawkaustin.com/event/?id=-2852527949029280526",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "8pm, Indoor, All Ages",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-24",
+      "venue": "moody-amphitheater",
+      "venueRaw": "Moody Amphitheater",
+      "title": "Freya Skye",
+      "artists": [
+        "Freya Skye"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.moodyamphitheater.com/events/freya-skye",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "7:00pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-24",
+      "venue": "moody-center",
+      "venueRaw": "Moody Center",
+      "title": "Jungle",
+      "artists": [
+        "Jungle"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://moodycenteratx.com/event/jungle/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-24",
+      "venue": "continental",
+      "venueRaw": "Continental Club",
+      "title": "Return To Planet Casper with David Grissom, Roscoe Beck and Brannen Temple",
+      "artists": [
+        "Return To Planet Casper",
+        "David Grissom",
+        "Roscoe Beck",
+        "Brannen Temple"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.continentalclub.com/austin#event=78373984;instance=20260924183000?popup=1&lang=en-US",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "6:30pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-24",
+      "venue": "continental",
+      "venueRaw": "Continental Club",
+      "title": "Sean Wheeler & The Reluctant Messengers, Barfield, The Tyrant",
+      "artists": [
+        "Sean Wheeler & The Reluctant Messengers",
+        "Barfield",
+        "The Tyrant"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.continentalclub.com/austin#event=69759005;instance=20260924220000?popup=1&lang=en-US",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "10:00pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-25",
+      "venue": "emos",
+      "venueRaw": "Emo's",
+      "title": "ADÉLA: The Red Bottoms Tour",
+      "artists": [
+        "ADÉLA: The Red Bottoms Tour"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/adela-the-red-bottoms-tour-austin-texas-09-24-2026/event/3A0064B69E279B47",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-25",
+      "venue": "kingdom",
+      "venueRaw": "Kingdom",
+      "title": "Ahmed Spins",
+      "artists": [
+        "Ahmed Spins"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://kingdomnightclub.com/event/ahmed-spins/kingdom-nightclub/austin-texas/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-25",
+      "venue": "antones",
+      "venueRaw": "Antone's",
+      "title": "Guided Full Venue History Tour (60 Minutes)",
+      "artists": [
+        "Guided Full Venue History Tour (60 Minutes)"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://antonesnightclub.com/tm-event/guided-full-venue-history-tour-60-minutes-2/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-25",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk",
+      "title": "Guzzlr, Andrew Cashen & the Disciples of Creation, Club Coma, Alexi8bit",
+      "artists": [
+        "Guzzlr",
+        "Andrew Cashen & the Disciples of Creation",
+        "Club Coma",
+        "Alexi8bit"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://mohawkaustin.com/event/?id=-2852527949034192817",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "7:30pm, Indoor, All Ages",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-25",
+      "venue": "continental",
+      "venueRaw": "Continental Club",
+      "title": "Patricia Vonne album release, Mule Ears",
+      "artists": [
+        "Patricia Vonne album release",
+        "Mule Ears"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.continentalclub.com/austin#event=78375001;instance=20260925220000?popup=1&lang=en-US",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "10:00pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-25",
+      "venue": "continental",
+      "venueRaw": "Continental Club",
+      "title": "The Blues Specialists",
+      "artists": [
+        "The Blues Specialists"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.continentalclub.com/austin#event=77200650;instance=20260925183000?popup=1&lang=en-US",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "6:30pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-25",
+      "venue": "antones",
+      "venueRaw": "Antone's",
+      "title": "Wolf Zapata w/ Very Special Guests & Elle Bramhall",
+      "artists": [
+        "Wolf Zapata",
+        "Very Special Guests",
+        "Elle Bramhall"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://antonesnightclub.com/tm-event/wolf-zapata-with-very-special-guests/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-26",
+      "venue": "antones",
+      "venueRaw": "Antone's",
+      "title": "Ariel Posen: The Bannatyne Tour w/ Zach Person",
+      "artists": [
+        "Ariel Posen: The Bannatyne Tour",
+        "Zach Person"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://antonesnightclub.com/tm-event/ariel-posen-2/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-26",
+      "venue": "germania",
+      "venueRaw": "Germania Insurance Amphitheater",
+      "title": "Babymetal",
+      "artists": [
+        "Babymetal"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "http://germaniaamp.com/events/babymetal",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-26",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk",
+      "title": "Brown Horse, Brody Price",
+      "artists": [
+        "Brown Horse",
+        "Brody Price"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://mohawkaustin.com/event/?id=-2852527949130324218",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "7pm, Indoor, All Ages",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-26",
+      "venue": "continental",
+      "venueRaw": "Continental Club",
+      "title": "Earl Poole Ball",
+      "artists": [
+        "Earl Poole Ball"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.continentalclub.com/austin#event=69402813;instance=20260926153000?popup=1&lang=en-US",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "3:30pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-26",
+      "venue": "moody-center",
+      "venueRaw": "Moody Center",
+      "title": "Eric Clapton's Crossroads Guitar Festival",
+      "artists": [
+        "Eric Clapton's Crossroads Guitar Festival"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://moodycenteratx.com/event/eric-claptons-crossroads-guitar-festival/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-26",
+      "venue": "acl-live",
+      "venueRaw": "Austin City Limits Live at The Moody Theater",
+      "title": "Indigo Girls",
+      "artists": [
+        "Indigo Girls"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.acllive.com/event/2026-09-26-indigo-girls-at-7-pm",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-26",
+      "venue": "antones",
+      "venueRaw": "Antone's",
+      "title": "LATE: Joe Marcinek’s Dead Funk Summit ft. George Porter Jr., Nikki Glaspie, Peter Levin, Zack Morgan & More",
+      "artists": [
+        "LATE: Joe Marcinek’s Dead Funk Summit",
+        "George Porter Jr.",
+        "Nikki Glaspie",
+        "Peter Levin",
+        "Zack Morgan",
+        "More"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://antonesnightclub.com/tm-event/joe-marcineks-dead-funk-summit/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-26",
+      "venue": "moody-amphitheater",
+      "venueRaw": "Moody Amphitheater",
+      "title": "Of The Trees",
+      "artists": [
+        "Of The Trees"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.moodyamphitheater.com/events/of-the-trees",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "4:30pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-26",
+      "venue": "continental",
+      "venueRaw": "Continental Club",
+      "title": "Peterson Brothers Band",
+      "artists": [
+        "Peterson Brothers Band"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.continentalclub.com/austin#event=77958510;instance=20260926200000?popup=1&lang=en-US",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "8:00pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-26",
+      "venue": "continental",
+      "venueRaw": "Continental Club",
+      "title": "RestFest 4 - Restos album release!",
+      "artists": [
+        "RestFest 4 - Restos album release!"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.continentalclub.com/austin#event=78375002;instance=20260926221500?popup=1&lang=en-US",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "10:15pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-26",
+      "venue": "3ten",
+      "venueRaw": "3TEN Austin City Limits Live",
+      "title": "Skyrocket!",
+      "artists": [
+        "Skyrocket!"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.acllive.com/event/2026-09-26-skyrocket-at-8-pm",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-26",
+      "venue": "kingdom",
+      "venueRaw": "Kingdom",
+      "title": "Space 92",
+      "artists": [
+        "Space 92"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://kingdomnightclub.com/event/space-92-2/kingdom-nightclub/austin-texas/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-26",
+      "venue": "emos",
+      "venueRaw": "Emo's",
+      "title": "The Menzingers: Everything I Ever Saw North American Tour",
+      "artists": [
+        "The Menzingers: Everything I Ever Saw North American Tour"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/the-menzingers-everything-i-ever-saw-austin-texas-09-26-2026/event/3A006494E8D53AAE",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-27",
+      "venue": "acl-live",
+      "venueRaw": "Austin City Limits Live at The Moody Theater",
+      "title": "Dan and Phil",
+      "artists": [
+        "Dan and Phil"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.acllive.com/event/2026-09-27-dan-and-phil-at-8-pm",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-27",
+      "venue": "moody-center",
+      "venueRaw": "Moody Center",
+      "title": "Eric Clapton's Crossroads Guitar Festival",
+      "artists": [
+        "Eric Clapton's Crossroads Guitar Festival"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://moodycenteratx.com/event/eric-claptons-crossroads-guitar-festival-2/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-27",
+      "venue": "scoot-inn",
+      "venueRaw": "Scoot Inn",
+      "title": "HEY, NOTHING - THE HOUND TOUR",
+      "artists": [
+        "HEY",
+        "NOTHING - THE HOUND TOUR"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/hey-nothing-the-hound-tour-austin-texas-09-27-2026/event/3A0064C5B261B554",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-27",
+      "venue": "continental",
+      "venueRaw": "Continental Club",
+      "title": "Heybale",
+      "artists": [
+        "Heybale"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.continentalclub.com/austin#event=69402816;instance=20260927183000?popup=1&lang=en-US",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "6:30pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-27",
+      "venue": "emos",
+      "venueRaw": "Emo's",
+      "title": "Judah & the Lion",
+      "artists": [
+        "Judah & the Lion"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/judah-the-lion-austin-texas-09-27-2026/event/3A0064CA993CA0F2",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-27",
+      "venue": "continental",
+      "venueRaw": "Continental Club",
+      "title": "Marshall Hood",
+      "artists": [
+        "Marshall Hood"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.continentalclub.com/austin#event=77921437;instance=20260927143000?popup=1&lang=en-US",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "2:30pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-27",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk",
+      "title": "SUMMER END OF SEASON SHOWS",
+      "artists": [
+        "SUMMER END OF SEASON SHOWS"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://mohawkaustin.com/event/?id=-2852527949025911290",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "10:30am, Outdoor, All Ages",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-27",
+      "venue": "3ten",
+      "venueRaw": "3TEN Austin City Limits Live",
+      "title": "The Lagoons",
+      "artists": [
+        "The Lagoons"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.acllive.com/event/2026-09-27-the-lagoons-at-8-pm",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-27",
+      "venue": "continental",
+      "venueRaw": "Continental Club",
+      "title": "Willie Pipkin & Friends",
+      "artists": [
+        "Willie Pipkin & Friends"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.continentalclub.com/austin#event=69402861;instance=20260927213000?popup=1&lang=en-US",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "9:30pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-28",
+      "venue": "antones",
+      "venueRaw": "Antone's",
+      "title": "Emmaline: Sinatra, My Sweetheart Tour",
+      "artists": [
+        "Emmaline: Sinatra",
+        "My Sweetheart Tour"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://antonesnightclub.com/tm-event/emmaline/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-28",
+      "venue": "continental",
+      "venueRaw": "Continental Club",
+      "title": "Eve Monsees & Mike Buck",
+      "artists": [
+        "Eve Monsees & Mike Buck"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.continentalclub.com/austin#event=77920068;instance=20260928183000?popup=1&lang=en-US",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "6:30pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-28",
+      "venue": "germania",
+      "venueRaw": "Germania Insurance Amphitheater",
+      "title": "Five Finger Death Punch",
+      "artists": [
+        "Five Finger Death Punch"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "http://germaniaamp.com/events/five-finger-death-punch-1",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-28",
+      "venue": "continental",
+      "venueRaw": "Continental Club",
+      "title": "Johnny McGowan's Rugged Gents",
+      "artists": [
+        "Johnny McGowan's Rugged Gents"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.continentalclub.com/austin#event=78448966;instance=20260928220000?popup=1&lang=en-US",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "10:00pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-29",
+      "venue": "antones",
+      "venueRaw": "Antone's",
+      "title": "Don Was & the Pan-Detroit Ensemble Celebrate the 50th Anniversary of Blues for Allah (NIGHT ONE)",
+      "artists": [
+        "Don Was & the Pan-Detroit Ensemble Celebrate the 50th Anniversary of Blues for Allah (NIGHT ONE)"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://antonesnightclub.com/tm-event/don-was-and-the-pan-detroit-ensemble/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-29",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk",
+      "title": "Fcukers, Total Wife",
+      "artists": [
+        "Fcukers",
+        "Total Wife"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://mohawkaustin.com/event/?id=-2852527949047271885",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "7pm, Outdoor, All Ages",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-29",
+      "venue": "continental",
+      "venueRaw": "Continental Club",
+      "title": "Jennifer Foster & The Audacity",
+      "artists": [
+        "Jennifer Foster & The Audacity"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.continentalclub.com/austin#event=78371207;instance=20260929183000?popup=1&lang=en-US",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "6:30pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-29",
+      "venue": "continental",
+      "venueRaw": "Continental Club",
+      "title": "Paul Val",
+      "artists": [
+        "Paul Val"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.continentalclub.com/austin#event=77813763;instance=20260929220000?popup=1&lang=en-US",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "10:00pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-30",
+      "venue": "antones",
+      "venueRaw": "Antone's",
+      "title": "Don Was & the Pan-Detroit Ensemble Celebrate the 50th Anniversary of Blues for Allah (NIGHT TWO)",
+      "artists": [
+        "Don Was & the Pan-Detroit Ensemble Celebrate the 50th Anniversary of Blues for Allah (NIGHT TWO)"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://antonesnightclub.com/tm-event/don-was-and-the-pan-detroit-ensemble-2/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-30",
+      "venue": "stubbs",
+      "venueRaw": "Stubb's",
+      "title": "Jane Remover - Live Exhibit",
+      "artists": [
+        "Jane Remover - Live Exhibit"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/jane-remover-live-exhibit-austin-texas-09-29-2026/event/3A006496118EB1BC",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-30",
+      "venue": "continental",
+      "venueRaw": "Continental Club",
+      "title": "Louisiana Surf Department",
+      "artists": [
+        "Louisiana Surf Department"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.continentalclub.com/austin#event=78338614;instance=20260930223000?popup=1&lang=en-US",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "10:30pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-30",
+      "venue": "moody-amphitheater",
+      "venueRaw": "Moody Amphitheater",
+      "title": "Young Thug",
+      "artists": [
+        "Young Thug"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.moodyamphitheater.com/events/young-thug",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "6:30pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-01",
+      "venue": "continental",
+      "venueRaw": "Continental Club",
+      "title": "Barfield, The Tyrant",
+      "artists": [
+        "Barfield",
+        "The Tyrant"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.continentalclub.com/austin#event=69402945;instance=20261001223000?popup=1&lang=en-US",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "10:30pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-01",
+      "venue": "continental",
+      "venueRaw": "Continental Club",
+      "title": "Casper Rawls",
+      "artists": [
+        "Casper Rawls"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.continentalclub.com/austin#event=69402828;instance=20261001183000?popup=1&lang=en-US",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "6:30pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-01",
+      "venue": "antones",
+      "venueRaw": "Antone's",
+      "title": "Dana and Alden: Papa’s Boat Tour w/ Ania Hoo",
+      "artists": [
+        "Dana and Alden: Papa’s Boat Tour",
+        "Ania Hoo"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://antonesnightclub.com/tm-event/dana-and-alden/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-01",
+      "venue": "moody-center",
+      "venueRaw": "Moody Center",
+      "title": "Riley Green",
+      "artists": [
+        "Riley Green"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://moodycenteratx.com/event/riley-green/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-01",
+      "venue": "emos",
+      "venueRaw": "Emo's",
+      "title": "Tinlicker North America 2026",
+      "artists": [
+        "Tinlicker North America 2026"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/tinlicker-north-america-2026-austin-texas-09-30-2026/event/3A006479ED454C87",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-02",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk",
+      "title": "Audrey Price, Hill Country, Very Busy People",
+      "artists": [
+        "Audrey Price",
+        "Hill Country",
+        "Very Busy People"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://mohawkaustin.com/event/?id=-2852527949007929526",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "8pm, Indoor, All Ages",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-02",
+      "venue": "kingdom",
+      "venueRaw": "Kingdom",
+      "title": "Matt Sassari",
+      "artists": [
+        "Matt Sassari"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://kingdomnightclub.com/event/matt-sassari/kingdom-nightclub/austin-texas/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-02",
+      "venue": "antones",
+      "venueRaw": "Antone's",
+      "title": "Official 2026 ACL Fest Nights: Night Tapes",
+      "artists": [
+        "Official 2026 ACL Fest Nights: Night Tapes"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://antonesnightclub.com/tm-event/official-2026-acl-fest-nights-night-tapes/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-02",
+      "venue": "3ten",
+      "venueRaw": "3TEN Austin City Limits Live",
+      "title": "Official 2026 ACL Fest Nights: Villanelle",
+      "artists": [
+        "Official 2026 ACL Fest Nights: Villanelle"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.acllive.com/event/2026-10-02-official-2026-acl-fest-nights-villanelle-at-9-pm",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-02",
+      "venue": "scoot-inn",
+      "venueRaw": "Scoot Inn",
+      "title": "Official 2026 ACL Nights - Finn Wolfhard",
+      "artists": [
+        "Official 2026 ACL Nights - Finn Wolfhard"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/official-2026-acl-nights-finn-wolfhard-austin-texas-10-02-2026/event/3A0064FBC71CD5F3",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-02",
+      "venue": "stubbs",
+      "venueRaw": "Stubb's",
+      "title": "Official 2026 ACL Nights: Brandon Flowers",
+      "artists": [
+        "Official 2026 ACL Nights: Brandon Flowers"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/official-2026-acl-nights-brandon-flowers-austin-texas-10-01-2026/event/3A0064FDAEAD9948",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-02",
+      "venue": "stubbs",
+      "venueRaw": "Stubb's",
+      "title": "Official 2026 ACL Nights: Montclair",
+      "artists": [
+        "Official 2026 ACL Nights: Montclair"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/official-2026-acl-nights-montclair-austin-texas-10-01-2026/event/3A00650BBB2FBC0A",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-02",
+      "venue": "emos",
+      "venueRaw": "Emo's",
+      "title": "Official 2026 ACL Nights: Palace",
+      "artists": [
+        "Official 2026 ACL Nights: Palace"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/official-2026-acl-nights-palace-austin-texas-10-01-2026/event/3A0064FBD3B1E691",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-02",
+      "venue": "continental",
+      "venueRaw": "Continental Club",
+      "title": "The Blues Specialists",
+      "artists": [
+        "The Blues Specialists"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.continentalclub.com/austin#event=77200650;instance=20261002183000?popup=1&lang=en-US",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "6:30pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-03",
+      "venue": "continental",
+      "venueRaw": "Continental Club",
+      "title": "Earl Poole Ball",
+      "artists": [
+        "Earl Poole Ball"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.continentalclub.com/austin#event=69402813;instance=20261003153000?popup=1&lang=en-US",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "3:30pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-03",
+      "venue": "stubbs",
+      "venueRaw": "Stubb's",
+      "title": "Official 2026 ACL Fest Nights: Bleachers",
+      "artists": [
+        "Official 2026 ACL Fest Nights: Bleachers"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/official-2026-acl-fest-nights-bleachers-austin-texas-10-02-2026/event/3A0064FDB1009EA6",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-03",
+      "venue": "emos",
+      "venueRaw": "Emo's",
+      "title": "Official 2026 ACL Nights: BUNT.",
+      "artists": [
+        "Official 2026 ACL Nights: BUNT."
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/official-2026-acl-nights-bunt-austin-texas-10-02-2026/event/3A0064FBD4C8E83E",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-03",
+      "venue": "scoot-inn",
+      "venueRaw": "Scoot Inn",
+      "title": "Official 2026 ACL Nights: CMAT",
+      "artists": [
+        "Official 2026 ACL Nights: CMAT"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/official-2026-acl-nights-cmat-austin-texas-10-03-2026/event/3A0064FBC8BBD830",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-03",
+      "venue": "stubbs",
+      "venueRaw": "Stubb's",
+      "title": "Official 2026 ACL Nights: Grocery Bag",
+      "artists": [
+        "Official 2026 ACL Nights: Grocery Bag"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/official-2026-acl-nights-grocery-bag-austin-texas-10-02-2026/event/3A00650DAE3A9B91",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-03",
+      "venue": "continental",
+      "venueRaw": "Continental Club",
+      "title": "SwellTune Garage Nite!",
+      "artists": [
+        "SwellTune Garage Nite!"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.continentalclub.com/austin#event=78394323;instance=20261003220000?popup=1&lang=en-US",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "10:00pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-03",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk",
+      "title": "YOU4IC, HIP-HOP × EDM × ART, Jyme, Big Jade",
+      "artists": [
+        "YOU4IC",
+        "HIP-HOP × EDM × ART",
+        "Jyme",
+        "Big Jade"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://mohawkaustin.com/event/?id=-2852527949006531186",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "5pm, Indoor, All Ages",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-04",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk",
+      "title": "Flounce, Hallo, Pry",
+      "artists": [
+        "Flounce",
+        "Hallo",
+        "Pry"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://mohawkaustin.com/event/?id=-2852527949013427390",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "8pm, Indoor, All Ages",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-04",
+      "venue": "continental",
+      "venueRaw": "Continental Club",
+      "title": "Heybale",
+      "artists": [
+        "Heybale"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.continentalclub.com/austin#event=69402816;instance=20261004183000?popup=1&lang=en-US",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "6:30pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-04",
+      "venue": "stubbs",
+      "venueRaw": "Stubb's",
+      "title": "Loathe: A Stranger to You",
+      "artists": [
+        "Loathe: A Stranger to You"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/loathe-a-stranger-to-you-austin-texas-10-04-2026/event/3A006494EE17453C",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-04",
+      "venue": "continental",
+      "venueRaw": "Continental Club",
+      "title": "Marshall Hood",
+      "artists": [
+        "Marshall Hood"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.continentalclub.com/austin#event=77921437;instance=20261004143000?popup=1&lang=en-US",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "2:30pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-04",
+      "venue": "stubbs",
+      "venueRaw": "Stubb's",
+      "title": "Official 2026 ACL Fest Nights: Parcels",
+      "artists": [
+        "Official 2026 ACL Fest Nights: Parcels"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/official-2026-acl-fest-nights-parcels-austin-texas-10-03-2026/event/3A0064FDB2E8A336",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-04",
+      "venue": "antones",
+      "venueRaw": "Antone's",
+      "title": "Official 2026 ACL Fest Nights: Rochelle Jordan w/ Stefon Osae",
+      "artists": [
+        "Official 2026 ACL Fest Nights: Rochelle Jordan",
+        "Stefon Osae"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://antonesnightclub.com/tm-event/official-2026-acl-fest-nights-rochelle-jordan/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-04",
+      "venue": "stubbs",
+      "venueRaw": "Stubb's",
+      "title": "Official 2026 ACL Nights: Almost Heaven",
+      "artists": [
+        "Official 2026 ACL Nights: Almost Heaven"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/official-2026-acl-nights-almost-heaven-austin-texas-10-03-2026/event/3A00650BBF52C2DE",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-04",
+      "venue": "emos",
+      "venueRaw": "Emo's",
+      "title": "Official 2026 ACL Nights: Levity",
+      "artists": [
+        "Official 2026 ACL Nights: Levity"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/official-2026-acl-nights-levity-austin-texas-10-03-2026/event/3A0064FBD69EEA69",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-04",
+      "venue": "scoot-inn",
+      "venueRaw": "Scoot Inn",
+      "title": "Official 2026 ACL Nights: Ryan Beatty",
+      "artists": [
+        "Official 2026 ACL Nights: Ryan Beatty"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/official-2026-acl-nights-ryan-beatty-austin-texas-10-04-2026/event/3A0064FBC9F1D9DD",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-04",
+      "venue": "continental",
+      "venueRaw": "Continental Club",
+      "title": "Willie Pipkin & Friends",
+      "artists": [
+        "Willie Pipkin & Friends"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.continentalclub.com/austin#event=69402861;instance=20261004213000?popup=1&lang=en-US",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "9:30pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-05",
+      "venue": "continental",
+      "venueRaw": "Continental Club",
+      "title": "Eve Monsees & Mike Buck",
+      "artists": [
+        "Eve Monsees & Mike Buck"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.continentalclub.com/austin#event=77920068;instance=20261005183000?popup=1&lang=en-US",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "6:30pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-05",
+      "venue": "antones",
+      "venueRaw": "Antone's",
+      "title": "Love for Lazy Lester: Jimmie Vaughan, Mark Hummel, Anson Funderburgh, Wes Starr, Johnny Nicholas, Mike Morgan, Mike Buck, Eve Monsees, Josh Fulero & More",
+      "artists": [
+        "Love for Lazy Lester: Jimmie Vaughan, Mark Hummel, Anson Funderburgh, Wes Starr, Johnny Nicholas, Mike Morgan, Mike Buck, Eve Monsees, Josh Fulero & More"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://antonesnightclub.com/tm-event/love-for-lazy-lester/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-05",
+      "venue": "scoot-inn",
+      "venueRaw": "Scoot Inn",
+      "title": "Official 2026 ACL Nights: Saint Motel",
+      "artists": [
+        "Official 2026 ACL Nights: Saint Motel"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/official-2026-acl-nights-saint-motel-austin-texas-10-05-2026/event/3A0064FBCB65DB99",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-05",
+      "venue": "emos",
+      "venueRaw": "Emo's",
+      "title": "Official 2026 ACL Nights: Suki Waterhouse",
+      "artists": [
+        "Official 2026 ACL Nights: Suki Waterhouse"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/official-2026-acl-nights-suki-waterhouse-austin-texas-10-04-2026/event/3A0064FBD862ECD1",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-06",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk",
+      "title": "Brian Fallon & the Painkillers, Tim Barry",
+      "artists": [
+        "Brian Fallon & the Painkillers",
+        "Tim Barry"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://mohawkaustin.com/event/?id=-2852527949091450835",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "6:30pm, Outdoor, All Ages",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-06",
+      "venue": "moody-amphitheater",
+      "venueRaw": "Moody Amphitheater",
+      "title": "Jack White",
+      "artists": [
+        "Jack White"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.moodyamphitheater.com/events/jack-white",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "7:00pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-06",
+      "venue": "continental",
+      "venueRaw": "Continental Club",
+      "title": "Jennifer Foster & The Audacity",
+      "artists": [
+        "Jennifer Foster & The Audacity"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.continentalclub.com/austin#event=78371207;instance=20261006183000?popup=1&lang=en-US",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "6:30pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-06",
+      "venue": "continental",
+      "venueRaw": "Continental Club",
+      "title": "The Last Jimenez",
+      "artists": [
+        "The Last Jimenez"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.continentalclub.com/austin#event=78428494;instance=20261006220000?popup=1&lang=en-US",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "10:00pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-07",
+      "venue": "3ten",
+      "venueRaw": "3TEN Austin City Limits Live",
+      "title": "Big Loud Texas Live!",
+      "artists": [
+        "Big Loud Texas Live!"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.acllive.com/event/2026-10-07-big-loud-texas-live",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-07",
+      "venue": "continental",
+      "venueRaw": "Continental Club",
+      "title": "Hot Club of Cowtown",
+      "artists": [
+        "Hot Club of Cowtown"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.continentalclub.com/austin#event=77814666;instance=20261007183000?popup=1&lang=en-US",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "6:30pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-07",
+      "venue": "moody-center",
+      "venueRaw": "Moody Center",
+      "title": "Kacey Musgraves",
+      "artists": [
+        "Kacey Musgraves"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://moodycenteratx.com/event/kacey-musgraves-2026/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-07",
+      "venue": "continental",
+      "venueRaw": "Continental Club",
+      "title": "Louisiana Surf Department",
+      "artists": [
+        "Louisiana Surf Department"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.continentalclub.com/austin#event=78338614;instance=20261007223000?popup=1&lang=en-US",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "10:30pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-07",
+      "venue": "stubbs",
+      "venueRaw": "Stubb's",
+      "title": "Official 2026 ACL Fest Nights: Lola Young",
+      "artists": [
+        "Official 2026 ACL Fest Nights: Lola Young"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/official-2026-acl-fest-nights-lola-austin-texas-10-06-2026/event/3A0064FDB57AA7B0",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-07",
+      "venue": "stubbs",
+      "venueRaw": "Stubb's",
+      "title": "Official 2026 ACL Nights: Annie DiRusso",
+      "artists": [
+        "Official 2026 ACL Nights: Annie DiRusso"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/official-2026-acl-nights-annie-dirusso-austin-texas-10-06-2026/event/3A00650CDC13C98E",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-07",
+      "venue": "moody-amphitheater",
+      "venueRaw": "Moody Amphitheater",
+      "title": "Role Model",
+      "artists": [
+        "Role Model"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.moodyamphitheater.com/events/role-model",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "6:30pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-07",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk",
+      "title": "Show Me the Body, Whispers, Lip Critic, Truck Violence",
+      "artists": [
+        "Show Me the Body",
+        "Whispers",
+        "Lip Critic",
+        "Truck Violence"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://mohawkaustin.com/event/?id=-2852527949131788021",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "6:30pm, Outdoor, All Ages",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-07",
+      "venue": "antones",
+      "venueRaw": "Antone's",
+      "title": "The Larger Than LIFE Tour w/ Illusion Hills",
+      "artists": [
+        "The Larger Than LIFE Tour",
+        "Illusion Hills"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://antonesnightclub.com/tm-event/laundry-day-presents-the-larger-than-life-tour/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-08",
+      "venue": "continental",
+      "venueRaw": "Continental Club",
+      "title": "Casper Rawls",
+      "artists": [
+        "Casper Rawls"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.continentalclub.com/austin#event=69402828;instance=20261008183000?popup=1&lang=en-US",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "6:30pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-08",
+      "venue": "kingdom",
+      "venueRaw": "Kingdom",
+      "title": "DVS1",
+      "artists": [
+        "DVS1"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://kingdomnightclub.com/event/dvs1-2/kingdom-nightclub/austin-texas/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-08",
+      "venue": "continental",
+      "venueRaw": "Continental Club",
+      "title": "Jess Williamson",
+      "artists": [
+        "Jess Williamson"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.continentalclub.com/austin#event=78394395;instance=20261008220000?popup=1&lang=en-US",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "10:00pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-08",
+      "venue": "moody-center",
+      "venueRaw": "Moody Center",
+      "title": "Kacey Musgraves",
+      "artists": [
+        "Kacey Musgraves"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://moodycenteratx.com/event/kacey-musgraves-2026-2/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-08",
+      "venue": "3ten",
+      "venueRaw": "3TEN Austin City Limits Live",
+      "title": "Official 2026 ACL Fest Nights: Łaszewo",
+      "artists": [
+        "Official 2026 ACL Fest Nights: Łaszewo"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.acllive.com/event/2026-10-08-official-2026-acl-fest-nights-aszewo-at-9-pm",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-08",
+      "venue": "antones",
+      "venueRaw": "Antone's",
+      "title": "Official 2026 ACL Fest Nights: World Famous Pets w/ Elijah Delgado",
+      "artists": [
+        "Official 2026 ACL Fest Nights: World Famous Pets",
+        "Elijah Delgado"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://antonesnightclub.com/tm-event/official-2026-acl-fest-nights-world-famous-pets/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-09",
+      "venue": "kingdom",
+      "venueRaw": "Kingdom",
+      "title": "Andy Stott & Debit",
+      "artists": [
+        "Andy Stott & Debit"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://kingdomnightclub.com/event/andy-stott-debit/kingdom-nightclub/austin-texas/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-09",
+      "venue": "antones",
+      "venueRaw": "Antone's",
+      "title": "Guided Full Venue History Tour (60 Minutes)",
+      "artists": [
+        "Guided Full Venue History Tour (60 Minutes)"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://antonesnightclub.com/tm-event/guided-full-venue-history-tour-60-minutes-3/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-09",
+      "venue": "stubbs",
+      "venueRaw": "Stubb's",
+      "title": "Official 2026 ACL Nights: Sunday (1994)",
+      "artists": [
+        "Official 2026 ACL Nights: Sunday (1994)"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/official-2026-acl-nights-sunday-1994-austin-texas-10-08-2026/event/3A00650CDFACD43D",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-09",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk",
+      "title": "Plini, Night Verses, Portraits",
+      "artists": [
+        "Plini",
+        "Night Verses",
+        "Portraits"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://mohawkaustin.com/event/?id=-2852527949136495857",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "7pm, Outdoor, All Ages",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-09",
+      "venue": "antones",
+      "venueRaw": "Antone's",
+      "title": "Z-Ro w/ Quiet Money Dot, Sunnitharapper, J Soulja & DJ Rapid Ric",
+      "artists": [
+        "Z-Ro",
+        "Quiet Money Dot",
+        "Sunnitharapper",
+        "J Soulja",
+        "DJ Rapid Ric"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://antonesnightclub.com/tm-event/z-ro-w-quiet-money-dot-sunni-the-rapper-j-soulja-dj-rapid-ric/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-10",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk",
+      "title": "Bassvictim, Thoom",
+      "artists": [
+        "Bassvictim",
+        "Thoom"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://mohawkaustin.com/event/?id=-2852527949090592268",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "8pm, Outdoor, All Ages",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-10",
+      "venue": "kingdom",
+      "venueRaw": "Kingdom",
+      "title": "Matthew Dear b2b Juan Maclean",
+      "artists": [
+        "Matthew Dear b2b Juan Maclean"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://kingdomnightclub.com/event/matthew-dear-b2b-juan-maclean/kingdom-nightclub/austin-texas/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-10",
+      "venue": "3ten",
+      "venueRaw": "3TEN Austin City Limits Live",
+      "title": "Official 2026 ACL Fest Nights: Claire Rosinkranz",
+      "artists": [
+        "Official 2026 ACL Fest Nights: Claire Rosinkranz"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.acllive.com/event/2026-10-10-official-2026-acl-fest-nights-claire-rosinkranz-at-9-pm",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-10",
+      "venue": "antones",
+      "venueRaw": "Antone's",
+      "title": "Official 2026 ACL Fest Nights: Don West w/ Kesmar",
+      "artists": [
+        "Official 2026 ACL Fest Nights: Don West",
+        "Kesmar"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://antonesnightclub.com/tm-event/official-2026-acl-fest-nights-don-west/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-10",
+      "venue": "scoot-inn",
+      "venueRaw": "Scoot Inn",
+      "title": "Official 2026 ACL Nights: Noga Erez",
+      "artists": [
+        "Official 2026 ACL Nights: Noga Erez"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/official-2026-acl-nights-noga-erez-austin-texas-10-09-2026/event/3A0064FBD141E37A",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-10",
+      "venue": "emos",
+      "venueRaw": "Emo's",
+      "title": "Official 2026 ACL Nights: Rodrigo y Gabriela",
+      "artists": [
+        "Official 2026 ACL Nights: Rodrigo y Gabriela"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/official-2026-acl-nights-rodrigo-y-austin-texas-10-09-2026/event/3A0064FBD9A5EE44",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-10",
+      "venue": "acl-live",
+      "venueRaw": "Austin City Limits Live at The Moody Theater",
+      "title": "Wave to Earth",
+      "artists": [
+        "Wave to Earth"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.acllive.com/event/2026-10-10-wave-to-earth-at-8-pm",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-13",
+      "venue": "germania",
+      "venueRaw": "Germania Insurance Amphitheater",
+      "title": "$uicideboy$",
+      "artists": [
+        "$uicideboy$"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "http://germaniaamp.com/events/suicideboys",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-13",
+      "venue": "antones",
+      "venueRaw": "Antone's",
+      "title": "Arrows in Action: I Think We’ve Toured Here Before w/ Good Boy Daisy & Instant Crush",
+      "artists": [
+        "Arrows in Action: I Think We’ve Toured Here Before",
+        "Good Boy Daisy",
+        "Instant Crush"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://antonesnightclub.com/tm-event/arrows-in-action-i-think-weve-toured-here-before/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-13",
+      "venue": "moody-center",
+      "venueRaw": "Moody Center",
+      "title": "Bryson Tiller",
+      "artists": [
+        "Bryson Tiller"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://moodycenteratx.com/event/bryson-tiller/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-13",
+      "venue": "moody-amphitheater",
+      "venueRaw": "Moody Amphitheater",
+      "title": "Dermot Kennedy",
+      "artists": [
+        "Dermot Kennedy"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.moodyamphitheater.com/events/dermot-kennedy-26",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "6:30pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-13",
+      "venue": "acl-live",
+      "venueRaw": "Austin City Limits Live at The Moody Theater",
+      "title": "Kylie Cantrall",
+      "artists": [
+        "Kylie Cantrall"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.acllive.com/event/2026-10-13-kylie-cantrall-at-8-pm",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-13",
+      "venue": "emos",
+      "venueRaw": "Emo's",
+      "title": "L7: The Last Hurrah Tour 2026",
+      "artists": [
+        "L7: The Last Hurrah Tour 2026"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/l7-the-last-hurrah-tour-2026-austin-texas-10-12-2026/event/3A0064A1BAC8373A",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-13",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk",
+      "title": "Tōth, William Alexander",
+      "artists": [
+        "Tōth",
+        "William Alexander"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://mohawkaustin.com/event/?id=-2852527949136550574",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "7pm, Indoor, All Ages",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-14",
+      "venue": "stubbs",
+      "venueRaw": "Stubb's",
+      "title": "Cavetown - Running With Scissors Tour",
+      "artists": [
+        "Cavetown - Running",
+        "Scissors Tour"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/cavetown-running-with-scissors-tour-austin-texas-10-13-2026/event/3A006479EE7E4F7F",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-14",
+      "venue": "emos",
+      "venueRaw": "Emo's",
+      "title": "DJ Meredith Marks - YOU. CAN. DANCE. Tour",
+      "artists": [
+        "DJ Meredith Marks - YOU. CAN. DANCE. Tour"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/dj-meredith-marks-you-can-dance-austin-texas-10-14-2026/event/3A006529E4992E6D",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-14",
+      "venue": "antones",
+      "venueRaw": "Antone's",
+      "title": "Horse Jumper of Love w/ Dead Sullivan & Amelia’s Best Friend",
+      "artists": [
+        "Horse Jumper of Love",
+        "Dead Sullivan",
+        "Amelia’s Best Friend"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://antonesnightclub.com/tm-event/horse-jumper-of-love-w-dead-sullivan-amelias-best-friend/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-14",
+      "venue": "3ten",
+      "venueRaw": "3TEN Austin City Limits Live",
+      "title": "Lilyisthatyou",
+      "artists": [
+        "Lilyisthatyou"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.acllive.com/event/2026-10-14-lilyisthatyou-at-8-pm",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-14",
+      "venue": "emos",
+      "venueRaw": "Emo's",
+      "title": "Quadeca",
+      "artists": [
+        "Quadeca"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/quadeca-austin-texas-10-13-2026/event/3A0064EEB0058ECA",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-14",
+      "venue": "acl-live",
+      "venueRaw": "Austin City Limits Live at The Moody Theater",
+      "title": "Sons of Legion",
+      "artists": [
+        "Sons of Legion"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.acllive.com/event/2026-10-14-sons-of-legion-at-8-pm",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-15",
+      "venue": "stubbs",
+      "venueRaw": "Stubb's",
+      "title": "Bright Eyes",
+      "artists": [
+        "Bright Eyes"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/bright-eyes-austin-texas-10-15-2026/event/3A0064C9A979BA1F",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-15",
+      "venue": "emos",
+      "venueRaw": "Emo's",
+      "title": "DYING FETUS & SANGUISUGABOGG",
+      "artists": [
+        "DYING FETUS & SANGUISUGABOGG"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/dying-fetus-sanguisugabogg-austin-texas-10-15-2026/event/3A006491A0EDBA8B",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-15",
+      "venue": "moody-center",
+      "venueRaw": "Moody Center",
+      "title": "Gorillaz",
+      "artists": [
+        "Gorillaz"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://moodycenteratx.com/event/gorillaz-2026/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-15",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk",
+      "title": "INOHA, Capital Soirée, Pretoria",
+      "artists": [
+        "INOHA",
+        "Capital Soirée",
+        "Pretoria"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://mohawkaustin.com/event/?id=-2852527949117593044",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "7pm, Outdoor, All Ages",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-15",
+      "venue": "antones",
+      "venueRaw": "Antone's",
+      "title": "LØLØ – God Forbid a Girl Goes on Tour w/ Mylie Taylor & Sydney Sherrill",
+      "artists": [
+        "LØLØ – God Forbid a Girl Goes on Tour",
+        "Mylie Taylor",
+        "Sydney Sherrill"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://antonesnightclub.com/tm-event/lolo-god-forbid-a-girl-goes-on-tour/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-15",
+      "venue": "acl-live",
+      "venueRaw": "Austin City Limits Live at The Moody Theater",
+      "title": "Modest Mouse",
+      "artists": [
+        "Modest Mouse"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.acllive.com/event/2026-10-15-modest-mouse-at-8-pm",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-15",
+      "venue": "moody-amphitheater",
+      "venueRaw": "Moody Amphitheater",
+      "title": "Ziggy Marley and Gov't Mule",
+      "artists": [
+        "Ziggy Marley and Gov't Mule"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.moodyamphitheater.com/events/ziggy-marley-govt-mule",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "5:30pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-16",
+      "venue": "acl-live",
+      "venueRaw": "Austin City Limits Live at The Moody Theater",
+      "title": "Austin Quest for Ancient Civilizations",
+      "artists": [
+        "Austin Quest for Ancient Civilizations"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.acllive.com/event/2026-austin-quest-for-ancient-civilizations-at-6-pm",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-16",
+      "venue": "scoot-inn",
+      "venueRaw": "Scoot Inn",
+      "title": "Deer Tick",
+      "artists": [
+        "Deer Tick"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/deer-tick-austin-texas-10-16-2026/event/3A006463EEAFF085",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-16",
+      "venue": "antones",
+      "venueRaw": "Antone's",
+      "title": "Devon Gilfillian – Time Will Tell Tour w/ Jon Muq",
+      "artists": [
+        "Devon Gilfillian – Time Will Tell Tour",
+        "Jon Muq"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://antonesnightclub.com/tm-event/devon-gilfillian-time-will-tell-tour/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-16",
+      "venue": "stubbs",
+      "venueRaw": "Stubb's",
+      "title": "EsDeeKid - Council House Rat Tour",
+      "artists": [
+        "EsDeeKid - Council House Rat Tour"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/esdeekid-council-house-rat-tour-austin-texas-10-16-2026/event/3A0064F19AFD808A",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-16",
+      "venue": "moody-amphitheater",
+      "venueRaw": "Moody Amphitheater",
+      "title": "Foster The People",
+      "artists": [
+        "Foster The People"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.moodyamphitheater.com/events/foster-the-people",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "7:00pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-16",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk",
+      "title": "Mon Rovîa",
+      "artists": [
+        "Mon Rovîa"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://mohawkaustin.com/event/?id=-2852527949045356935",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "7pm, Outdoor, All Ages",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-16",
+      "venue": "moody-center",
+      "venueRaw": "Moody Center",
+      "title": "Phoebe Bridgers",
+      "artists": [
+        "Phoebe Bridgers"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://moodycenteratx.com/event/phoebe-bridgers/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-16",
+      "venue": "3ten",
+      "venueRaw": "3TEN Austin City Limits Live",
+      "title": "The Paradox",
+      "artists": [
+        "The Paradox"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.acllive.com/event/2026-10-16-the-paradox-at-8-pm",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-16",
+      "venue": "kingdom",
+      "venueRaw": "Kingdom",
+      "title": "Twin Diplomacy",
+      "artists": [
+        "Twin Diplomacy"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://kingdomnightclub.com/event/twin-diplomacy/kingdom-nightclub/austin-texas/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-17",
+      "venue": "stubbs",
+      "venueRaw": "Stubb's",
+      "title": "Basement",
+      "artists": [
+        "Basement"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/basement-austin-texas-10-17-2026/event/3A0064A1C5FF6920",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-17",
+      "venue": "germania",
+      "venueRaw": "Germania Insurance Amphitheater",
+      "title": "beabadoobee",
+      "artists": [
+        "beabadoobee"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "http://germaniaamp.com/events/beabadoobee",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-17",
+      "venue": "3ten",
+      "venueRaw": "3TEN Austin City Limits Live",
+      "title": "DJ Mel",
+      "artists": [
+        "DJ Mel"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.acllive.com/event/2026-10-17-dj-mel-at-7-pm",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-17",
+      "venue": "scoot-inn",
+      "venueRaw": "Scoot Inn",
+      "title": "Joy Oladokun: The Heavy Things Tour",
+      "artists": [
+        "Joy Oladokun: The Heavy Things Tour"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/joy-oladokun-the-heavy-things-tour-austin-texas-10-17-2026/event/3A0064F5B746BDBF",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-17",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk",
+      "title": "Kishi Bashi, Geographer",
+      "artists": [
+        "Kishi Bashi",
+        "Geographer"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://mohawkaustin.com/event/?id=-2852852648454388615",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "8pm, Outdoor, All Ages",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-17",
+      "venue": "antones",
+      "venueRaw": "Antone's",
+      "title": "Michigander w/ Chapel",
+      "artists": [
+        "Michigander",
+        "Chapel"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://antonesnightclub.com/tm-event/michigander/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-17",
+      "venue": "kingdom",
+      "venueRaw": "Kingdom",
+      "title": "WonkyWilla | ATX",
+      "artists": [
+        "WonkyWilla | ATX"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://kingdomnightclub.com/event/wonkywilla-atx/kingdom-nightclub/austin-texas/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-18",
+      "venue": "3ten",
+      "venueRaw": "3TEN Austin City Limits Live",
+      "title": "Blessing Offor",
+      "artists": [
+        "Blessing Offor"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.acllive.com/event/2026-10-18-blessing-offor-at-8-pm",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-18",
+      "venue": "emos",
+      "venueRaw": "Emo's",
+      "title": "Chelsea Wolfe: THE DARK World Tour",
+      "artists": [
+        "Chelsea Wolfe: THE DARK World Tour"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/chelsea-wolfe-the-dark-world-tour-austin-texas-10-17-2026/event/3A0064CFCC37D954",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-18",
+      "venue": "moody-amphitheater",
+      "venueRaw": "Moody Amphitheater",
+      "title": "Hermanos Gutiérrez",
+      "artists": [
+        "Hermanos Gutiérrez"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.moodyamphitheater.com/events/hermanos-gutierrez",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "6:00pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-18",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk",
+      "title": "Joey Cash",
+      "artists": [
+        "Joey Cash"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://mohawkaustin.com/event/?id=-2852527949037609684",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "8pm, Indoor, All Ages",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-18",
+      "venue": "moody-center",
+      "venueRaw": "Moody Center",
+      "title": "Weezer",
+      "artists": [
+        "Weezer"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://moodycenteratx.com/event/weezer-2026/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-19",
+      "venue": "acl-live",
+      "venueRaw": "Austin City Limits Live at The Moody Theater",
+      "title": "Snarky Puppy",
+      "artists": [
+        "Snarky Puppy"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.acllive.com/event/2026-10-19-snarky-puppy-at-8-pm",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-19",
+      "venue": "moody-center",
+      "venueRaw": "Moody Center",
+      "title": "Staind",
+      "artists": [
+        "Staind"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://moodycenteratx.com/event/staind/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-20",
+      "venue": "acl-live",
+      "venueRaw": "Austin City Limits Live at The Moody Theater",
+      "title": "Gregg Allman: The Music Of My Soul Screening",
+      "artists": [
+        "Gregg Allman: The Music Of My Soul Screening"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.acllive.com/event/2026-10-20-gregg-allman-the-music-of-my-soul-screening-at-8-pm",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-20",
+      "venue": "moody-amphitheater",
+      "venueRaw": "Moody Amphitheater",
+      "title": "Mon Laferte",
+      "artists": [
+        "Mon Laferte"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.moodyamphitheater.com/events/mon-laferte-26",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "7:00pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-20",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk",
+      "title": "Peter Bjorn and John, Josh Rouse",
+      "artists": [
+        "Peter Bjorn and John",
+        "Josh Rouse"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://mohawkaustin.com/event/?id=-2852527949131242426",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "6:30pm, Outdoor, All Ages",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-20",
+      "venue": "moody-center",
+      "venueRaw": "Moody Center",
+      "title": "SOMBR",
+      "artists": [
+        "SOMBR"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://moodycenteratx.com/event/sombr/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-21",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk",
+      "title": "Ax and the Hatchetmen, The Hails",
+      "artists": [
+        "Ax and the Hatchetmen",
+        "The Hails"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://mohawkaustin.com/event/?id=-2852527949146470062",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "7pm, Outdoor, All Ages",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-21",
+      "venue": "acl-live",
+      "venueRaw": "Austin City Limits Live at The Moody Theater",
+      "title": "Leonid & Friends",
+      "artists": [
+        "Leonid & Friends"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.acllive.com/event/2026-10-21-leonid-friends-at-8-pm",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-22",
+      "venue": "3ten",
+      "venueRaw": "3TEN Austin City Limits Live",
+      "title": "Katie Pruitt",
+      "artists": [
+        "Katie Pruitt"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.acllive.com/event/2026-10-22-katie-pruitt-at-8-pm",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-22",
+      "venue": "emos",
+      "venueRaw": "Emo's",
+      "title": "Marilyn Manson",
+      "artists": [
+        "Marilyn Manson"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/marilyn-manson-austin-texas-10-21-2026/event/3A0064ED8C38495C",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-22",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk",
+      "title": "Speed, Sunami, Paradise, Sittin' Sideways",
+      "artists": [
+        "Speed",
+        "Sunami",
+        "Paradise",
+        "Sittin' Sideways"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://mohawkaustin.com/event/?id=-2852527949018245685",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "7pm, Outdoor, All Ages",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-22",
+      "venue": "antones",
+      "venueRaw": "Antone's",
+      "title": "The Jungle Giants w/ Morning Silk",
+      "artists": [
+        "The Jungle Giants",
+        "Morning Silk"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://antonesnightclub.com/tm-event/the-jungle-giants/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-23",
+      "venue": "stubbs",
+      "venueRaw": "Stubb's",
+      "title": "Cameron Whitcomb - Kingdom of Fear Tour",
+      "artists": [
+        "Cameron Whitcomb - Kingdom of Fear Tour"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/cameron-whitcomb-kingdom-of-fear-tour-austin-texas-10-23-2026/event/3A0064A69F7BC028",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-23",
+      "venue": "emos",
+      "venueRaw": "Emo's",
+      "title": "Marilyn Manson",
+      "artists": [
+        "Marilyn Manson"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/marilyn-manson-austin-texas-10-22-2026/event/3A0064ED8C8749CB",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-23",
+      "venue": "scoot-inn",
+      "venueRaw": "Scoot Inn",
+      "title": "MICO: Running From A Feeling Tour",
+      "artists": [
+        "MICO: Running From A Feeling Tour"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/mico-running-from-a-feeling-tour-austin-texas-10-23-2026/event/3A0064ACBB5CC7DF",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-23",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk",
+      "title": "Rickshaw Billie's Burger Patrol, Bat Lips, Grocery Bag, Deerspine",
+      "artists": [
+        "Rickshaw Billie's Burger Patrol",
+        "Bat Lips",
+        "Grocery Bag",
+        "Deerspine"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://mohawkaustin.com/event/?id=-2852527949037605443",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "7pm, Outdoor, All Ages",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-23",
+      "venue": "acl-live",
+      "venueRaw": "Austin City Limits Live at The Moody Theater",
+      "title": "Shyne",
+      "artists": [
+        "Shyne"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.acllive.com/event/2026-10-23-shyne-at-8-pm",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-23",
+      "venue": "stubbs",
+      "venueRaw": "Stubb's",
+      "title": "Vince Staples - Cry Baby Tour",
+      "artists": [
+        "Vince Staples - Cry Baby Tour"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/vince-staples-cry-baby-tour-austin-texas-10-22-2026/event/3A0064CA079B7D84",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-24",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk",
+      "title": "Bayonne, Club Coma",
+      "artists": [
+        "Bayonne",
+        "Club Coma"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://mohawkaustin.com/event/?id=-2852527949166724984",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "7pm, Outdoor, All Ages",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-24",
+      "venue": "scoot-inn",
+      "venueRaw": "Scoot Inn",
+      "title": "Dax - The Anger Management Tour",
+      "artists": [
+        "Dax - The Anger Management Tour"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/dax-the-anger-management-tour-austin-texas-10-24-2026/event/3A0064AC065B7623",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-24",
+      "venue": "emos",
+      "venueRaw": "Emo's",
+      "title": "GLAIVE - GOD SAVE THE THREE TOUR",
+      "artists": [
+        "GLAIVE - GOD SAVE THE THREE TOUR"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/glaive-god-save-the-three-tour-austin-texas-10-23-2026/event/3A0064A6A1E3C66F",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-25",
+      "venue": "scoot-inn",
+      "venueRaw": "Scoot Inn",
+      "title": "25th Anniversary of musicforthemorning after - Pete Yorn solo acoustic",
+      "artists": [
+        "25th Anniversary of musicforthemorning after - Pete Yorn solo acoustic"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/25th-anniversary-of-musicforthemorning-after-pete-austin-texas-10-25-2026/event/3A0064D0B0389C5C",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-25",
+      "venue": "acl-live",
+      "venueRaw": "Austin City Limits Live at The Moody Theater",
+      "title": "Brincos Dieras",
+      "artists": [
+        "Brincos Dieras"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.acllive.com/event/2026-10-25-brincos-dieras-at-8-pm",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-25",
+      "venue": "emos",
+      "venueRaw": "Emo's",
+      "title": "Culture Wars",
+      "artists": [
+        "Culture Wars"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/culture-wars-austin-texas-10-24-2026/event/3A0064829B18E66A",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-25",
+      "venue": "emos",
+      "venueRaw": "Emo's",
+      "title": "Mom Jeans",
+      "artists": [
+        "Mom Jeans"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/mom-jeans-austin-texas-10-25-2026/event/3A0064A58E8B7BFE",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-25",
+      "venue": "moody-center",
+      "venueRaw": "Moody Center",
+      "title": "The Smashing Pumpkins",
+      "artists": [
+        "The Smashing Pumpkins"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://moodycenteratx.com/event/the-smashing-pumpkins-2026/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-26",
+      "venue": "scoot-inn",
+      "venueRaw": "Scoot Inn",
+      "title": "EMEI - Night at the Opera Tour",
+      "artists": [
+        "EMEI - Night at the Opera Tour"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/emei-night-at-the-opera-tour-austin-texas-10-26-2026/event/3A006495E395E002",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-26",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk",
+      "title": "Hovvdy, Emma Ogier",
+      "artists": [
+        "Hovvdy",
+        "Emma Ogier"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://mohawkaustin.com/event/?id=-2852527949150537296",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "6:30pm, Outdoor, All Ages",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-27",
+      "venue": "scoot-inn",
+      "venueRaw": "Scoot Inn",
+      "title": "Sawyer Hill",
+      "artists": [
+        "Sawyer Hill"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/sawyer-hill-austin-texas-10-27-2026/event/3A0064C1D67EC8CC",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-28",
+      "venue": "scoot-inn",
+      "venueRaw": "Scoot Inn",
+      "title": "almost monday - THANK GOD IT'S ALMOST MONDAY",
+      "artists": [
+        "almost monday - THANK GOD IT'S ALMOST MONDAY"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/almost-monday-thank-god-its-almost-austin-texas-10-28-2026/event/3A0064D2CA0722FF",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-28",
+      "venue": "antones",
+      "venueRaw": "Antone's",
+      "title": "Chasing Abbey",
+      "artists": [
+        "Chasing Abbey"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://antonesnightclub.com/tm-event/chasing-abbey/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-28",
+      "venue": "moody-center",
+      "venueRaw": "Moody Center",
+      "title": "Teddy Swims",
+      "artists": [
+        "Teddy Swims"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://moodycenteratx.com/event/teddy-swims/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-28",
+      "venue": "acl-live",
+      "venueRaw": "Austin City Limits Live at The Moody Theater",
+      "title": "The Goonies 40th Anniversary Screening + Q&A",
+      "artists": [
+        "The Goonies 40th Anniversary Screening + Q&A"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.acllive.com/event/2026-10-28-the-goonies-40th-anniversary-screening-qa-at-8-pm",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-29",
+      "venue": "antones",
+      "venueRaw": "Antone's",
+      "title": "Zilker Sessions V ft. The Droptines & Angel White",
+      "artists": [
+        "Zilker Sessions V",
+        "The Droptines",
+        "Angel White"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://antonesnightclub.com/tm-event/zilker-sessions-v-ft-the-droptines-angel-white/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-30",
+      "venue": "kingdom",
+      "venueRaw": "Kingdom",
+      "title": "Dennis Ferrer",
+      "artists": [
+        "Dennis Ferrer"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://kingdomnightclub.com/event/dennis-ferrer/kingdom-nightclub/austin-texas/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-30",
+      "venue": "3ten",
+      "venueRaw": "3TEN Austin City Limits Live",
+      "title": "Goodbye June",
+      "artists": [
+        "Goodbye June"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.acllive.com/event/2026-10-30-goodbye-june-at-8-pm",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-30",
+      "venue": "acl-live",
+      "venueRaw": "Austin City Limits Live at The Moody Theater",
+      "title": "NoDak Palooza at ACL Live!",
+      "artists": [
+        "NoDak Palooza at ACL Live!"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.acllive.com/event/2026-10-30-nodak-palooza-at-acl-live-at-7-pm",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-30",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk",
+      "title": "Playlunch, Buckets",
+      "artists": [
+        "Playlunch",
+        "Buckets"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://mohawkaustin.com/event/?id=-2852527949117560905",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "7pm, Indoor, All Ages",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-30",
+      "venue": "moody-center",
+      "venueRaw": "Moody Center",
+      "title": "Ramón Ayala",
+      "artists": [
+        "Ramón Ayala"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://moodycenteratx.com/event/ramon-ayala/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-30",
+      "venue": "scoot-inn",
+      "venueRaw": "Scoot Inn",
+      "title": "The War And Treaty",
+      "artists": [
+        "The War And Treaty"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/the-war-and-treaty-austin-texas-10-30-2026/event/3A0064C2AB9E9641",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-31",
+      "venue": "kingdom",
+      "venueRaw": "Kingdom",
+      "title": "Jody Wisternoff",
+      "artists": [
+        "Jody Wisternoff"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://kingdomnightclub.com/event/jody-wisternoff-2/kingdom-nightclub/austin-texas/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-31",
+      "venue": "antones",
+      "venueRaw": "Antone's",
+      "title": "Kennedy Ryon: The Can We Evolve? Tour",
+      "artists": [
+        "Kennedy Ryon: The Can We Evolve? Tour"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://antonesnightclub.com/tm-event/kennedy-ryon-the-can-we-evolve-tour/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-31",
+      "venue": "acl-live",
+      "venueRaw": "Austin City Limits Live at The Moody Theater",
+      "title": "Madeon",
+      "artists": [
+        "Madeon"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.acllive.com/event/2026-10-31-madeon-at-8-pm",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-31",
+      "venue": "scoot-inn",
+      "venueRaw": "Scoot Inn",
+      "title": "Mr. Fantasy - Sexy Saturday Nights Tour",
+      "artists": [
+        "Mr. Fantasy - Sexy Saturday Nights Tour"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/mr-fantasy-sexy-saturday-nights-tour-austin-texas-10-31-2026/event/3A006528A3BF78A0",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-01",
+      "venue": "antones",
+      "venueRaw": "Antone's",
+      "title": "City of the Sun",
+      "artists": [
+        "City of the Sun"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://antonesnightclub.com/tm-event/city-of-the-sun/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-01",
+      "venue": "acl-live",
+      "venueRaw": "Austin City Limits Live at The Moody Theater",
+      "title": "Jim Henson's Labyrinth: In Concert 40th Anniversary",
+      "artists": [
+        "Jim Henson's Labyrinth: In Concert 40th Anniversary"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.acllive.com/event/2026-11-01-jim-hensons-labyrinth-in-concert-40th-anniversary-at-8-pm",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-01",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk",
+      "title": "The Linda Lindas, The Rat Utopia Experiment",
+      "artists": [
+        "The Linda Lindas",
+        "The Rat Utopia Experiment"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://mohawkaustin.com/event/?id=-2852527949092859673",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "6:30pm, Outdoor, All Ages",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-03",
+      "venue": "3ten",
+      "venueRaw": "3TEN Austin City Limits Live",
+      "title": "All Get Out",
+      "artists": [
+        "All Get Out"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.acllive.com/event/2026-11-03-all-get-out-at-8-pm",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-03",
+      "venue": "moody-center",
+      "venueRaw": "Moody Center",
+      "title": "Doja Cat",
+      "artists": [
+        "Doja Cat"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://moodycenteratx.com/event/doja-cat-2026/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-04",
+      "venue": "antones",
+      "venueRaw": "Antone's",
+      "title": "An Evening with Shadowgrass",
+      "artists": [
+        "An Evening",
+        "Shadowgrass"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://antonesnightclub.com/tm-event/an-evening-with-shadowgrass/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-04",
+      "venue": "emos",
+      "venueRaw": "Emo's",
+      "title": "Knox",
+      "artists": [
+        "Knox"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/knox-austin-texas-11-03-2026/event/3A0064E6DE9ABC7D",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-04",
+      "venue": "3ten",
+      "venueRaw": "3TEN Austin City Limits Live",
+      "title": "Stephen Day",
+      "artists": [
+        "Stephen Day"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.acllive.com/event/2026-11-04-stephen-day-at-8-pm",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-05",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk",
+      "title": "Daring Greatly, The Waylanders",
+      "artists": [
+        "Daring Greatly",
+        "The Waylanders"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://mohawkaustin.com/event/?id=-2852527949022147047",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "8pm, Indoor, All Ages",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-05",
+      "venue": "3ten",
+      "venueRaw": "3TEN Austin City Limits Live",
+      "title": "Ike Dweck",
+      "artists": [
+        "Ike Dweck"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.acllive.com/event/2026-11-05-ike-dweck-at-8-pm",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-05",
+      "venue": "moody-amphitheater",
+      "venueRaw": "Moody Amphitheater",
+      "title": "Knocked Loose & Denzel Curry",
+      "artists": [
+        "Knocked Loose & Denzel Curry"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.moodyamphitheater.com/events/knocked-loose-denzel-curry",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "6:00pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-05",
+      "venue": "emos",
+      "venueRaw": "Emo's",
+      "title": "Slow Pulp",
+      "artists": [
+        "Slow Pulp"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/slow-pulp-austin-texas-11-04-2026/event/3A0064A58FC6812F",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-05",
+      "venue": "antones",
+      "venueRaw": "Antone's",
+      "title": "The Jack Wharff Band w/ Tucker Stone",
+      "artists": [
+        "The Jack Wharff Band",
+        "Tucker Stone"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://antonesnightclub.com/tm-event/the-jack-wharff-band/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-06",
+      "venue": "emos",
+      "venueRaw": "Emo's",
+      "title": "Bonobo: Distance in Static Live North American Tour",
+      "artists": [
+        "Bonobo: Distance in Static Live North American Tour"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/bonobo-distance-in-static-live-north-austin-texas-11-05-2026/event/3A0064C1E068D3A4",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-06",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk",
+      "title": "Ceremony, Slippers, World Peace",
+      "artists": [
+        "Ceremony",
+        "Slippers",
+        "World Peace"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://mohawkaustin.com/event/?id=-2852527949124305206",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "7pm, Outdoor, All Ages",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-06",
+      "venue": "stubbs",
+      "venueRaw": "Stubb's",
+      "title": "Dinosaur Jr. - Fall Tour 2026 with special guest Stef Chura",
+      "artists": [
+        "Dinosaur Jr. - Fall Tour 2026",
+        "special guest Stef Chura"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/dinosaur-jr-fall-tour-2026-with-austin-texas-11-05-2026/event/3A0064DCDD1AC45A",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-06",
+      "venue": "moody-center",
+      "venueRaw": "Moody Center",
+      "title": "John Summit",
+      "artists": [
+        "John Summit"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://moodycenteratx.com/event/john-summit/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-06",
+      "venue": "stubbs",
+      "venueRaw": "Stubb's",
+      "title": "Lenny Pearce - Toddler Rave World Tour",
+      "artists": [
+        "Lenny Pearce - Toddler Rave World Tour"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/lenny-pearce-toddler-rave-world-tour-austin-texas-11-06-2026/event/3A0064DDBE2DC42C",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-06",
+      "venue": "antones",
+      "venueRaw": "Antone's",
+      "title": "Low Cut Connie w/ Laney Jones and the Spirits",
+      "artists": [
+        "Low Cut Connie",
+        "Laney Jones",
+        "the Spirits"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://antonesnightclub.com/tm-event/low-cut-connie/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-06",
+      "venue": "3ten",
+      "venueRaw": "3TEN Austin City Limits Live",
+      "title": "OCT (On Company Time)",
+      "artists": [
+        "OCT (On Company Time)"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.acllive.com/event/2026-11-06-oct-on-company-time-at-8-pm",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-07",
+      "venue": "antones",
+      "venueRaw": "Antone's",
+      "title": "Dan Penn & Spooner Oldham w/ Theo Lawrence & Barfield the Tyrant",
+      "artists": [
+        "Dan Penn & Spooner Oldham",
+        "Theo Lawrence",
+        "Barfield the Tyrant"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://antonesnightclub.com/tm-event/dan-penn-spooner-oldham-w-theo-lawrence-barfield-the-tyrant/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-07",
+      "venue": "3ten",
+      "venueRaw": "3TEN Austin City Limits Live",
+      "title": "Jervis Campbell",
+      "artists": [
+        "Jervis Campbell"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.acllive.com/event/2026-11-07-jervis-campbell-at-8-pm",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-07",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk",
+      "title": "Puma Blue",
+      "artists": [
+        "Puma Blue"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://mohawkaustin.com/event/?id=-2852527949131201012",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "7pm, Outdoor, All Ages",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-07",
+      "venue": "moody-amphitheater",
+      "venueRaw": "Moody Amphitheater",
+      "title": "Steve Lacy",
+      "artists": [
+        "Steve Lacy"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.moodyamphitheater.com/events/steve-lacy",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "7:00pm",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-07",
+      "venue": "kingdom",
+      "venueRaw": "Kingdom",
+      "title": "TOKiMONSTA",
+      "artists": [
+        "TOKiMONSTA"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://kingdomnightclub.com/event/tokimonsta/kingdom-nightclub/austin-texas/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-07",
+      "venue": "emos",
+      "venueRaw": "Emo's",
+      "title": "TWO NIGHTS WITH THEY MIGHT BE GIANTS",
+      "artists": [
+        "TWO NIGHTS",
+        "THEY MIGHT BE GIANTS"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/two-nights-with-they-might-be-austin-texas-11-06-2026/event/3A006487D8DA2D98",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-08",
+      "venue": "scoot-inn",
+      "venueRaw": "Scoot Inn",
+      "title": "Grateful Shred",
+      "artists": [
+        "Grateful Shred"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/grateful-shred-austin-texas-11-07-2026/event/3A0064829B8AE7F9",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-08",
+      "venue": "moody-center",
+      "venueRaw": "Moody Center",
+      "title": "Maná",
+      "artists": [
+        "Maná"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://moodycenteratx.com/event/mana-2026/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-08",
+      "venue": "scoot-inn",
+      "venueRaw": "Scoot Inn",
+      "title": "The Army, The Navy",
+      "artists": [
+        "The Army",
+        "The Navy"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/the-army-the-navy-austin-texas-11-08-2026/event/3A0064CA066E7A64",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-08",
+      "venue": "antones",
+      "venueRaw": "Antone's",
+      "title": "The Jazz Room: A Frank Sinatra & Louis Armstrong Tribute",
+      "artists": [
+        "The Jazz Room: A Frank Sinatra & Louis Armstrong Tribute"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://antonesnightclub.com/tm-event/the-jazz-room-a-frank-sinatra-louis-armstrong-tribute-3/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-08",
+      "venue": "stubbs",
+      "venueRaw": "Stubb's",
+      "title": "Turnover - Down On Earth Tour",
+      "artists": [
+        "Turnover - Down On Earth Tour"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/turnover-down-on-earth-tour-austin-texas-11-07-2026/event/3A0064D2D3014AA9",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-08",
+      "venue": "emos",
+      "venueRaw": "Emo's",
+      "title": "TWO NIGHTS WITH THEY MIGHT BE GIANTS",
+      "artists": [
+        "TWO NIGHTS",
+        "THEY MIGHT BE GIANTS"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/two-nights-with-they-might-be-austin-texas-11-07-2026/event/3A006487D9252E5F",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-08",
+      "venue": "acl-live",
+      "venueRaw": "Austin City Limits Live at The Moody Theater",
+      "title": "Wheel of Fortune LIVE!",
+      "artists": [
+        "Wheel of Fortune LIVE!"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.acllive.com/event/2026-11-08-wheel-of-fortune-live-at-8-pm",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-09",
+      "venue": "acl-live",
+      "venueRaw": "Austin City Limits Live at The Moody Theater",
+      "title": "Art Garfunkel",
+      "artists": [
+        "Art Garfunkel"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.acllive.com/event/2026-11-09-art-garfunkel-at-9-pm",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-09",
+      "venue": "antones",
+      "venueRaw": "Antone's",
+      "title": "The PIXIE Tour w/ Sophie Cates",
+      "artists": [
+        "The PIXIE Tour",
+        "Sophie Cates"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://antonesnightclub.com/tm-event/olivia-obrien-presents-the-pixie-tour/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-10",
+      "venue": "antones",
+      "venueRaw": "Antone's",
+      "title": "Greg Freeman w/ Touch Girl Apple Blossom",
+      "artists": [
+        "Greg Freeman",
+        "Touch Girl Apple Blossom"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://antonesnightclub.com/tm-event/greg-freeman/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-10",
+      "venue": "moody-center",
+      "venueRaw": "Moody Center",
+      "title": "KATSEYE",
+      "artists": [
+        "KATSEYE"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://moodycenteratx.com/event/katseye/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-10",
+      "venue": "3ten",
+      "venueRaw": "3TEN Austin City Limits Live",
+      "title": "Liana Flores",
+      "artists": [
+        "Liana Flores"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.acllive.com/event/2026-11-10-liana-flores-at-8-pm",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-10",
+      "venue": "emos",
+      "venueRaw": "Emo's",
+      "title": "Rival Sons - Domestic Bliss Tour",
+      "artists": [
+        "Rival Sons - Domestic Bliss Tour"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/rival-sons-domestic-bliss-tour-austin-texas-11-09-2026/event/3A0064D0FAA324B2",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-11",
+      "venue": "acl-live",
+      "venueRaw": "Austin City Limits Live at The Moody Theater",
+      "title": "An Evening of Alton Brown",
+      "artists": [
+        "An Evening of Alton Brown"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.acllive.com/event/2026-11-11-an-evening-of-alton-brown-at-7-30-pm",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-11",
+      "venue": "emos",
+      "venueRaw": "Emo's",
+      "title": "Medium Build Presents The King of Having Fun on Tour",
+      "artists": [
+        "Medium Build Presents The King of Having Fun on Tour"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/ktsn-presents-medium-build-presents-the-austin-texas-11-10-2026/event/3A0064D0B274A0F9",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-11",
+      "venue": "antones",
+      "venueRaw": "Antone's",
+      "title": "Paul Val w/ Nicky Diamonds",
+      "artists": [
+        "Paul Val",
+        "Nicky Diamonds"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://antonesnightclub.com/tm-event/paul-val/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-11",
+      "venue": "scoot-inn",
+      "venueRaw": "Scoot Inn",
+      "title": "Slothrust: The Dystopian Theatre Tour",
+      "artists": [
+        "Slothrust: The Dystopian Theatre Tour"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/slothrust-the-dystopian-theatre-tour-austin-texas-11-11-2026/event/3A0064D1BAECD36F",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-11",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk",
+      "title": "Tommy Fleece, Reserv",
+      "artists": [
+        "Tommy Fleece",
+        "Reserv"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://mohawkaustin.com/event/?id=-2852527949022325690",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "6:30pm, Indoor, All Ages",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-12",
+      "venue": "antones",
+      "venueRaw": "Antone's",
+      "title": "Andrew Duhon: Stop Motion Tour ’26",
+      "artists": [
+        "Andrew Duhon: Stop Motion Tour ’26"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://antonesnightclub.com/tm-event/andrew-duhon/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-12",
+      "venue": "3ten",
+      "venueRaw": "3TEN Austin City Limits Live",
+      "title": "Bebe Stockwell",
+      "artists": [
+        "Bebe Stockwell"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.acllive.com/event/2026-11-12-bebe-stockwell-at-8-pm",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-12",
+      "venue": "emos",
+      "venueRaw": "Emo's",
+      "title": "Jose Madero - USA Tour 2026",
+      "artists": [
+        "Jose Madero - USA Tour 2026"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/jose-madero-usa-tour-2026-austin-texas-11-11-2026/event/3A0064D196617E5C",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-12",
+      "venue": "moody-center",
+      "venueRaw": "Moody Center",
+      "title": "Treaty Oak Revival",
+      "artists": [
+        "Treaty Oak Revival"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://moodycenteratx.com/event/treaty-oak-revival/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-13",
+      "venue": "kingdom",
+      "venueRaw": "Kingdom",
+      "title": "Com Truise – DJ Set",
+      "artists": [
+        "Com Truise – DJ Set"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://kingdomnightclub.com/event/com-truise-dj-set/kingdom-nightclub/austin-texas/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-13",
+      "venue": "acl-live",
+      "venueRaw": "Austin City Limits Live at The Moody Theater",
+      "title": "Earlybirds Club",
+      "artists": [
+        "Earlybirds Club"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.acllive.com/event/2026-11-13-earlybirds-club-at-6-pm",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-13",
+      "venue": "3ten",
+      "venueRaw": "3TEN Austin City Limits Live",
+      "title": "Father Of Peace",
+      "artists": [
+        "Father Of Peace"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.acllive.com/event/2026-11-13-father-of-peace-at-8-pm",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-13",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk",
+      "title": "Helado Tropical",
+      "artists": [
+        "Helado Tropical"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://mohawkaustin.com/event/?id=-2852527949131169788",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "7pm, Outdoor, All Ages",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-13",
+      "venue": "moody-center",
+      "venueRaw": "Moody Center",
+      "title": "Jonas Brothers",
+      "artists": [
+        "Jonas Brothers"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://moodycenteratx.com/event/jonasbrothers/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-14",
+      "venue": "emos",
+      "venueRaw": "Emo's",
+      "title": "El Tri",
+      "artists": [
+        "El Tri"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/el-tri-austin-texas-11-13-2026/event/3A0064A1C57166AE",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-14",
+      "venue": "antones",
+      "venueRaw": "Antone's",
+      "title": "Israel Nash w/ Mid America",
+      "artists": [
+        "Israel Nash",
+        "Mid America"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://antonesnightclub.com/tm-event/israel-nash-2/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-14",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk",
+      "title": "King Buffalo, L.A. Witch",
+      "artists": [
+        "King Buffalo",
+        "L.A. Witch"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://mohawkaustin.com/event/?id=-2852527949146485770",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "8pm, Outdoor, All Ages",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-14",
+      "venue": "acl-live",
+      "venueRaw": "Austin City Limits Live at The Moody Theater",
+      "title": "Michael Blaustein",
+      "artists": [
+        "Michael Blaustein"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.acllive.com/event/2026-11-14-michael-blaustein-at-7-pm",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-14",
+      "venue": "stubbs",
+      "venueRaw": "Stubb's",
+      "title": "Night Cap",
+      "artists": [
+        "Night Cap"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/night-cap-austin-texas-11-13-2026/event/3A006518F5D0291F",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-14",
+      "venue": "3ten",
+      "venueRaw": "3TEN Austin City Limits Live",
+      "title": "Olive Jones",
+      "artists": [
+        "Olive Jones"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.acllive.com/event/2026-11-14-olive-jones-at-8-pm",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-14",
+      "venue": "scoot-inn",
+      "venueRaw": "Scoot Inn",
+      "title": "Tiny Habits",
+      "artists": [
+        "Tiny Habits"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/tiny-habits-austin-texas-11-13-2026/event/3A0064C4B407ABE7",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-15",
+      "venue": "emos",
+      "venueRaw": "Emo's",
+      "title": "DANNA - THE BEDROOM SESSIONS US TOUR",
+      "artists": [
+        "DANNA - THE BEDROOM SESSIONS US TOUR"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/danna-the-bedroom-sessions-us-tour-austin-texas-11-14-2026/event/3A00651C9A4A98E5",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-15",
+      "venue": "antones",
+      "venueRaw": "Antone's",
+      "title": "Makaya McCraven",
+      "artists": [
+        "Makaya McCraven"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://antonesnightclub.com/tm-event/makaya-mccraven/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-15",
+      "venue": "stubbs",
+      "venueRaw": "Stubb's",
+      "title": "Switchfoot with special guest Anberlin - Forever Now Tour",
+      "artists": [
+        "Switchfoot",
+        "special guest Anberlin - Forever Now Tour"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/switchfoot-with-special-guest-anberlin-forever-austin-texas-11-14-2026/event/3A0064A69F44BF99",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-16",
+      "venue": "emos",
+      "venueRaw": "Emo's",
+      "title": "Clara La San - Chosen Silences Tour Fall 2026",
+      "artists": [
+        "Clara La San - Chosen Silences Tour Fall 2026"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/clara-la-san-chosen-silences-tour-austin-texas-11-15-2026/event/3A00650BB173ADDF",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-18",
+      "venue": "emos",
+      "venueRaw": "Emo's",
+      "title": "Amble",
+      "artists": [
+        "Amble"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/amble-austin-texas-11-17-2026/event/3A006496EF8487E5",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-18",
+      "venue": "scoot-inn",
+      "venueRaw": "Scoot Inn",
+      "title": "Holywatr: Deo Gratias Tour",
+      "artists": [
+        "Holywatr: Deo Gratias Tour"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/holywatr-deo-gratias-tour-austin-texas-11-18-2026/event/3A0064AC03DF6EB9",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-18",
+      "venue": "antones",
+      "venueRaw": "Antone's",
+      "title": "Stop Light Observations w/ Runner and Bobby",
+      "artists": [
+        "Stop Light Observations",
+        "Runner",
+        "Bobby"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://antonesnightclub.com/tm-event/stop-light-observations/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-18",
+      "venue": "acl-live",
+      "venueRaw": "Austin City Limits Live at The Moody Theater",
+      "title": "The Music of Hey Arnold! Live!",
+      "artists": [
+        "The Music of Hey Arnold! Live!"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.acllive.com/event/2026-11-18-the-music-of-hey-arnold-live-at-8-pm",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-18",
+      "venue": "stubbs",
+      "venueRaw": "Stubb's",
+      "title": "Theo Kandel",
+      "artists": [
+        "Theo Kandel"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/theo-kandel-austin-texas-11-17-2026/event/3A006524AF55A701",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-19",
+      "venue": "scoot-inn",
+      "venueRaw": "Scoot Inn",
+      "title": "Aterciopelados: La Pipa De Laz Paz 30 Anos Tour",
+      "artists": [
+        "Aterciopelados: La Pipa De Laz Paz 30 Anos Tour"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/aterciopelados-la-pipa-de-laz-paz-austin-texas-11-19-2026/event/3A0064F5E8D0253C",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-19",
+      "venue": "3ten",
+      "venueRaw": "3TEN Austin City Limits Live",
+      "title": "Daisy Grenade",
+      "artists": [
+        "Daisy Grenade"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.acllive.com/event/2026-11-19-daisy-grenade-at-8-pm",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-19",
+      "venue": "emos",
+      "venueRaw": "Emo's",
+      "title": "Evan Honer - It's An Even Longer Road Tour",
+      "artists": [
+        "Evan Honer - It's An Even Longer Road Tour"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/evan-honer-its-an-even-longer-austin-texas-11-18-2026/event/3A0064C2B970AC59",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-19",
+      "venue": "acl-live",
+      "venueRaw": "Austin City Limits Live at The Moody Theater",
+      "title": "Los Dos de Tamaulipas",
+      "artists": [
+        "Los Dos de Tamaulipas"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.acllive.com/event/2026-11-19-los-dos-de-tamaulipas-at-8-pm",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-19",
+      "venue": "antones",
+      "venueRaw": "Antone's",
+      "title": "Tank and The Bangas: The Last Balloon Tour w/ Ariel J. & ZEUS (NIGHT ONE)",
+      "artists": [
+        "Tank and The Bangas: The Last Balloon Tour",
+        "Ariel J.",
+        "ZEUS (NIGHT ONE)"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://antonesnightclub.com/tm-event/tank-and-the-bangas-the-last-balloon-tour/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-20",
+      "venue": "stubbs",
+      "venueRaw": "Stubb's",
+      "title": "An Evening With Band Of Horses",
+      "artists": [
+        "An Evening",
+        "Band Of Horses"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/an-evening-with-band-of-horses-austin-texas-11-19-2026/event/3A0064A79A26A82B",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-20",
+      "venue": "3ten",
+      "venueRaw": "3TEN Austin City Limits Live",
+      "title": "Bryan Andrews",
+      "artists": [
+        "Bryan Andrews"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.acllive.com/event/2026-11-20-bryan-andrews-at-8-pm",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-20",
+      "venue": "emos",
+      "venueRaw": "Emo's",
+      "title": "Dexter and The Moonrocks",
+      "artists": [
+        "Dexter and The Moonrocks"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/dexter-and-the-moonrocks-austin-texas-11-19-2026/event/3A0064C2F2FCF0DC",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-20",
+      "venue": "kingdom",
+      "venueRaw": "Kingdom",
+      "title": "Only Fire & Friends",
+      "artists": [
+        "Only Fire & Friends"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://kingdomnightclub.com/event/only-fire-friends/kingdom-nightclub/austin-texas/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-20",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk",
+      "title": "Static Dress, I Promised the World, Car Underwater, Concealer.",
+      "artists": [
+        "Static Dress",
+        "I Promised the World",
+        "Car Underwater",
+        "Concealer."
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://mohawkaustin.com/event/?id=-2852527949047163423",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "6:30pm, Outdoor, All Ages",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-20",
+      "venue": "antones",
+      "venueRaw": "Antone's",
+      "title": "Tank and The Bangas: The Last Balloon Tour w/ Ariel J. & ZEUS (NIGHT TWO)",
+      "artists": [
+        "Tank and The Bangas: The Last Balloon Tour",
+        "Ariel J.",
+        "ZEUS (NIGHT TWO)"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://antonesnightclub.com/tm-event/tank-and-the-bangas-the-last-balloon-tour-2/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-20",
+      "venue": "moody-center",
+      "venueRaw": "Moody Center",
+      "title": "Ty Myers",
+      "artists": [
+        "Ty Myers"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://moodycenteratx.com/event/ty-myers/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-21",
+      "venue": "emos",
+      "venueRaw": "Emo's",
+      "title": "Dexter and The Moonrocks",
+      "artists": [
+        "Dexter and The Moonrocks"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/dexter-and-the-moonrocks-austin-texas-11-20-2026/event/3A0064CFAE3F9E53",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-21",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk",
+      "title": "Fruit Bats, Sarah Klang",
+      "artists": [
+        "Fruit Bats",
+        "Sarah Klang"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://mohawkaustin.com/event/?id=-2852852648454395322",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "7pm, Outdoor, All Ages",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-21",
+      "venue": "acl-live",
+      "venueRaw": "Austin City Limits Live at The Moody Theater",
+      "title": "Lyle Lovett and his Small Large Band",
+      "artists": [
+        "Lyle Lovett and his Small Large Band"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.acllive.com/event/2026-11-21-lyle-lovett-and-his-small-large-band-at-8-pm",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-21",
+      "venue": "kingdom",
+      "venueRaw": "Kingdom",
+      "title": "Mark Knight",
+      "artists": [
+        "Mark Knight"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://kingdomnightclub.com/event/mark-knight-2/kingdom-nightclub/austin-texas/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-21",
+      "venue": "stubbs",
+      "venueRaw": "Stubb's",
+      "title": "Paul Cauthen",
+      "artists": [
+        "Paul Cauthen"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/paul-cauthen-austin-texas-11-20-2026/event/3A0064D6E73F2787",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-22",
+      "venue": "emos",
+      "venueRaw": "Emo's",
+      "title": "Bahamas - Industrial Sport & Sound",
+      "artists": [
+        "Bahamas - Industrial Sport & Sound"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/bahamas-industrial-sport-sound-austin-texas-11-21-2026/event/3A006452B93B3A0F",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-22",
+      "venue": "scoot-inn",
+      "venueRaw": "Scoot Inn",
+      "title": "Jalen Ngonda: Doctrine of Love Tour",
+      "artists": [
+        "Jalen Ngonda: Doctrine of Love Tour"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/jalen-ngonda-doctrine-of-love-tour-austin-texas-11-22-2026/event/3A0064C1DF54D27A",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-22",
+      "venue": "antones",
+      "venueRaw": "Antone's",
+      "title": "North Mississippi Allstars",
+      "artists": [
+        "North Mississippi Allstars"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://antonesnightclub.com/tm-event/north-mississippi-allstars-2/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-22",
+      "venue": "acl-live",
+      "venueRaw": "Austin City Limits Live at The Moody Theater",
+      "title": "Rawayana",
+      "artists": [
+        "Rawayana"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.acllive.com/event/2026-11-22-rawayana-at-8-pm",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-22",
+      "venue": "scoot-inn",
+      "venueRaw": "Scoot Inn",
+      "title": "The Afghan Whigs",
+      "artists": [
+        "The Afghan Whigs"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/the-afghan-whigs-austin-texas-11-21-2026/event/3A0064BCB786C3F2",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-23",
+      "venue": "emos",
+      "venueRaw": "Emo's",
+      "title": "Syd: Beard Tour",
+      "artists": [
+        "Syd: Beard Tour"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/syd-beard-tour-austin-texas-11-22-2026/event/3A00652BA143ABD3",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-24",
+      "venue": "antones",
+      "venueRaw": "Antone's",
+      "title": "So Called Underground w/ Greyson Turner & Jeska",
+      "artists": [
+        "So Called Underground",
+        "Greyson Turner",
+        "Jeska"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://antonesnightclub.com/tm-event/so-called-underground-w-greyson-turner-jeska/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-25",
+      "venue": "antones",
+      "venueRaw": "Antone's",
+      "title": "Quentin Moore",
+      "artists": [
+        "Quentin Moore"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://antonesnightclub.com/tm-event/quentin-moore/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-26",
+      "venue": "stubbs",
+      "venueRaw": "Stubb's",
+      "title": "Imminence - Axis Mundi Tour: North America 2026",
+      "artists": [
+        "Imminence - Axis Mundi Tour: North America 2026"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/imminence-axis-mundi-tour-north-america-austin-texas-11-25-2026/event/3A0064CAAD18C9D4",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-27",
+      "venue": "antones",
+      "venueRaw": "Antone's",
+      "title": "Dumpstaphunk’s 5th Annual Phunksgiving",
+      "artists": [
+        "Dumpstaphunk’s 5th Annual Phunksgiving"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://antonesnightclub.com/tm-event/dumpstaphunks-5th-annual-phunksgiving/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-27",
+      "venue": "acl-live",
+      "venueRaw": "Austin City Limits Live at The Moody Theater",
+      "title": "Michael Martin Murphey's Cowboy Christmas",
+      "artists": [
+        "Michael Martin Murphey's Cowboy Christmas"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.acllive.com/event/2026-11-27-michael-martin-murphey-s-cowboy-christmas-at-8-pm",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-27",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk",
+      "title": "Montell Fish",
+      "artists": [
+        "Montell Fish"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://mohawkaustin.com/event/?id=-2852527949042577801",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "7pm, Outdoor, All Ages",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-27",
+      "venue": "3ten",
+      "venueRaw": "3TEN Austin City Limits Live",
+      "title": "Poi Dog Pondering",
+      "artists": [
+        "Poi Dog Pondering"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.acllive.com/event/2026-11-27-poi-dog-pondering-at-8-pm",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-28",
+      "venue": "acl-live",
+      "venueRaw": "Austin City Limits Live at The Moody Theater",
+      "title": "Bob Schneider & The Moonlight Orchestra",
+      "artists": [
+        "Bob Schneider & The Moonlight Orchestra"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.acllive.com/event/2026-11-28-bob-schneider-the-moonlight-orchestra-at-8-pm",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-28",
+      "venue": "antones",
+      "venueRaw": "Antone's",
+      "title": "Dumpstaphunk’s 5th Annual Phunksgiving",
+      "artists": [
+        "Dumpstaphunk’s 5th Annual Phunksgiving"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://antonesnightclub.com/tm-event/dumpstaphunks-5th-annual-phunksgiving-2/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-28",
+      "venue": "emos",
+      "venueRaw": "Emo's",
+      "title": "Grief Sucks: A One Man Show By KevOnStage",
+      "artists": [
+        "Grief Sucks: A One Man Show By KevOnStage"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/grief-sucks-a-one-man-show-austin-texas-11-27-2026/event/3A0064E6E42CC53F",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-28",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk",
+      "title": "Pretty Sick",
+      "artists": [
+        "Pretty Sick"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://mohawkaustin.com/event/?id=-2852527949056442914",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "7pm, Outdoor, All Ages",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-28",
+      "venue": "3ten",
+      "venueRaw": "3TEN Austin City Limits Live",
+      "title": "The 36th Annual John Lennon Tribute with The #9 Orchestra",
+      "artists": [
+        "The 36th Annual John Lennon Tribute",
+        "The #9 Orchestra"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.acllive.com/event/2026-11-28-the-36th-annual-john-lennon-tribute-with-the-9-orchestra-at-8-pm",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-29",
+      "venue": "acl-live",
+      "venueRaw": "Austin City Limits Live at The Moody Theater",
+      "title": "BEAT: Belew/Vai/Levin/Bozzio Performing the Music of KING CRIMSON",
+      "artists": [
+        "BEAT: Belew/Vai/Levin/Bozzio Performing the Music of KING CRIMSON"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.acllive.com/event/2026-11-29-beat-belew-vai-levin-bozzio-performing-the-music-of-king-crimson-at-8-pm",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-29",
+      "venue": "antones",
+      "venueRaw": "Antone's",
+      "title": "Project Pat",
+      "artists": [
+        "Project Pat"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://antonesnightclub.com/tm-event/project-pat/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-11-29",
+      "venue": "scoot-inn",
+      "venueRaw": "Scoot Inn",
+      "title": "Ripe",
+      "artists": [
+        "Ripe"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.ticketmaster.com/ripe-austin-texas-11-28-2026/event/3A006518B3D5A9E5",
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-01",
+      "venue": "acl-live",
+      "venueRaw": "Austin City Limits Live at The Moody Theater",
+      "title": "Eric Benét",
+      "artists": [
+        "Eric Benét"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.acllive.com/event/2026-12-01-eric-benet-at-8-pm",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-01",
+      "venue": "antones",
+      "venueRaw": "Antone's",
+      "title": "the olllam",
+      "artists": [
+        "the olllam"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://antonesnightclub.com/tm-event/the-olllam/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-02",
+      "venue": "acl-live",
+      "venueRaw": "Austin City Limits Live at The Moody Theater",
+      "title": "Victoria Monét",
+      "artists": [
+        "Victoria Monét"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.acllive.com/event/2026-12-02-victoria-monet-at-8-pm",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-03",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk",
+      "title": "Danny Brown, 10th Anniversary of Atrocity Exhibition",
+      "artists": [
+        "Danny Brown",
+        "10th Anniversary of Atrocity Exhibition"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://mohawkaustin.com/event/?id=-2852527949014722434",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "7pm, Outdoor, All Ages",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-03",
+      "venue": "acl-live",
+      "venueRaw": "Austin City Limits Live at The Moody Theater",
+      "title": "Los Tucanes de Tijuana",
+      "artists": [
+        "Los Tucanes de Tijuana"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.acllive.com/event/2026-12-03-los-tucanes-de-tijuana-at-8-pm",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-03",
+      "venue": "3ten",
+      "venueRaw": "3TEN Austin City Limits Live",
+      "title": "Michael Smoak",
+      "artists": [
+        "Michael Smoak"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.acllive.com/event/2026-12-03-michael-smoak-at-8-pm",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-03",
+      "venue": "antones",
+      "venueRaw": "Antone's",
+      "title": "Under The Rock & SIMS w/ West Texas Exiles, Louisiana Surf Department & Caroline Hale",
+      "artists": [
+        "Under The Rock & SIMS",
+        "West Texas Exiles",
+        "Louisiana Surf Department",
+        "Caroline Hale"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://antonesnightclub.com/tm-event/under-the-rock-sims/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-04",
+      "venue": "moody-center",
+      "venueRaw": "Moody Center",
+      "title": "Disney Worlds Collide",
+      "artists": [
+        "Disney Worlds Collide"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://moodycenteratx.com/event/disney-worlds-collide/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-04",
+      "venue": "kingdom",
+      "venueRaw": "Kingdom",
+      "title": "FOVOS",
+      "artists": [
+        "FOVOS"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://kingdomnightclub.com/event/fovos/kingdom-nightclub/austin-texas/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-04",
+      "venue": "3ten",
+      "venueRaw": "3TEN Austin City Limits Live",
+      "title": "John R Miller",
+      "artists": [
+        "John R Miller"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.acllive.com/event/2026-12-04-john-r-miller-at-8-pm",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-04",
+      "venue": "acl-live",
+      "venueRaw": "Austin City Limits Live at The Moody Theater",
+      "title": "Kansas",
+      "artists": [
+        "Kansas"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.acllive.com/event/2026-12-04-kansas-at-8-pm",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-04",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk",
+      "title": "The Black Angels, 20th Anniversary of Passover",
+      "artists": [
+        "The Black Angels",
+        "20th Anniversary of Passover"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://mohawkaustin.com/event/?id=-2852527949014719875",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "7pm, Outdoor, All Ages",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-05",
+      "venue": "3ten",
+      "venueRaw": "3TEN Austin City Limits Live",
+      "title": "American Aquarium",
+      "artists": [
+        "American Aquarium"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.acllive.com/event/2026-12-05-american-aquarium-at-8-pm",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-05",
+      "venue": "kingdom",
+      "venueRaw": "Kingdom",
+      "title": "Amtrac",
+      "artists": [
+        "Amtrac"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://kingdomnightclub.com/event/amtrac/kingdom-nightclub/austin-texas/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-05",
+      "venue": "acl-live",
+      "venueRaw": "Austin City Limits Live at The Moody Theater",
+      "title": "Ben Schwartz & Friends",
+      "artists": [
+        "Ben Schwartz & Friends"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.acllive.com/event/2026-12-05-ben-schwartz-friends-at-8-pm",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-05",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk",
+      "title": "The Impossibles",
+      "artists": [
+        "The Impossibles"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://mohawkaustin.com/event/?id=-2852527949014718914",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "7pm, Outdoor, All Ages",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-06",
+      "venue": "antones",
+      "venueRaw": "Antone's",
+      "title": "DJ Paul of Three 6 Mafia: Crunk Gods Tour w/ DJ Montay, Los Kemet, TTBBY, Stockz & DJ Hella Yella",
+      "artists": [
+        "DJ Paul of Three 6 Mafia: Crunk Gods Tour",
+        "DJ Montay",
+        "Los Kemet",
+        "TTBBY",
+        "Stockz",
+        "DJ Hella Yella"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://antonesnightclub.com/tm-event/dj-paul-of-three-6-mafia-crunk-gods-tour-w-montay/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-07",
+      "venue": "acl-live",
+      "venueRaw": "Austin City Limits Live at The Moody Theater",
+      "title": "A Magical Cirque Christmas",
+      "artists": [
+        "A Magical Cirque Christmas"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.acllive.com/event/2026-12-07-a-magical-cirque-christmas-at-7-30-pm",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-08",
+      "venue": "acl-live",
+      "venueRaw": "Austin City Limits Live at The Moody Theater",
+      "title": "A Live Conversation with Chevy Chase following a screening of National Lampoon’s Christmas Vacation",
+      "artists": [
+        "A Live Conversation",
+        "Chevy Chase following a screening of National Lampoon’s Christmas Vacation"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.acllive.com/event/2026-12-08-a-live-conversation-with-chevy-chase-following-a-screening-of-national-at-8-pm",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-09",
+      "venue": "acl-live",
+      "venueRaw": "Austin City Limits Live at The Moody Theater",
+      "title": "Beartooth",
+      "artists": [
+        "Beartooth"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.acllive.com/event/2026-12-09-beartooth-at-6-30-pm",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-09",
+      "venue": "moody-center",
+      "venueRaw": "Moody Center",
+      "title": "Trans-Siberian Orchestra",
+      "artists": [
+        "Trans-Siberian Orchestra"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://moodycenteratx.com/event/tso-2026/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-10",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk",
+      "title": "Amigo the Devil",
+      "artists": [
+        "Amigo the Devil"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://mohawkaustin.com/event/?id=-2852527949014716801",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "7pm, Outdoor, All Ages",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-10",
+      "venue": "acl-live",
+      "venueRaw": "Austin City Limits Live at The Moody Theater",
+      "title": "Live from Laurel Canyon",
+      "artists": [
+        "Live from Laurel Canyon"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.acllive.com/event/2026-12-10-live-from-laurel-canyon-at-8-pm",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-10",
+      "venue": "antones",
+      "venueRaw": "Antone's",
+      "title": "Venna",
+      "artists": [
+        "Venna"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://antonesnightclub.com/tm-event/venna/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-11",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk",
+      "title": "Ben Kweller",
+      "artists": [
+        "Ben Kweller"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://mohawkaustin.com/event/?id=-2852527949014715545",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "7pm, Outdoor, All Ages",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-11",
+      "venue": "antones",
+      "venueRaw": "Antone's",
+      "title": "Joshua Ray Walker",
+      "artists": [
+        "Joshua Ray Walker"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://antonesnightclub.com/tm-event/joshua-ray-walker/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-11",
+      "venue": "acl-live",
+      "venueRaw": "Austin City Limits Live at The Moody Theater",
+      "title": "Sonic Guild Ball",
+      "artists": [
+        "Sonic Guild Ball"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.acllive.com/event/2026-12-11-sonic-guild-ball-at-8-pm",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-12",
+      "venue": "kingdom",
+      "venueRaw": "Kingdom",
+      "title": "Rave Jesus – Rave Revival Fall Tour",
+      "artists": [
+        "Rave Jesus – Rave Revival Fall Tour"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://kingdomnightclub.com/event/rave-jesus-rave-revival-fall-tour/kingdom-nightclub/austin-texas/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-12",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk",
+      "title": "White Denim",
+      "artists": [
+        "White Denim"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://mohawkaustin.com/event/?id=-2852527949014713319",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "7pm, Outdoor, All Ages",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-13",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk",
+      "title": "Heartless Bastards, 20th Anniversary of All This Time",
+      "artists": [
+        "Heartless Bastards",
+        "20th Anniversary of All This Time"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://mohawkaustin.com/event/?id=-2852527949014711835",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "7pm, Outdoor, All Ages",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-13",
+      "venue": "acl-live",
+      "venueRaw": "Austin City Limits Live at The Moody Theater",
+      "title": "Molly Tuttle x Marty Stuart: Guitars on Fire",
+      "artists": [
+        "Molly Tuttle x Marty Stuart: Guitars on Fire"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.acllive.com/event/2026-12-13-molly-tuttle-x-marty-stuart-guitars-on-fire-at-8-pm",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-13",
+      "venue": "3ten",
+      "venueRaw": "3TEN Austin City Limits Live",
+      "title": "The Rock and Roll Playhouse",
+      "artists": [
+        "The Rock and Roll Playhouse"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.acllive.com/event/2026-12-13-the-rock-and-roll-playhouse-at-12-pm",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-15",
+      "venue": "acl-live",
+      "venueRaw": "Austin City Limits Live at The Moody Theater",
+      "title": "Underoath",
+      "artists": [
+        "Underoath"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.acllive.com/event/2026-12-15-underoath-at-8-pm",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-16",
+      "venue": "acl-live",
+      "venueRaw": "Austin City Limits Live at The Moody Theater",
+      "title": "Blind Boys of Alabama & Asleep At The Wheel",
+      "artists": [
+        "Blind Boys of Alabama & Asleep At The Wheel"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.acllive.com/event/2026-12-16-blind-boys-of-alabama-asleep-at-the-wheel-at-8-pm",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-17",
+      "venue": "3ten",
+      "venueRaw": "3TEN Austin City Limits Live",
+      "title": "Deep Eddies Band",
+      "artists": [
+        "Deep Eddies Band"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.acllive.com/event/2026-12-17-deep-eddies-band-at-8-pm",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-17",
+      "venue": "antones",
+      "venueRaw": "Antone's",
+      "title": "Tanner Usrey w/ Cam Allen",
+      "artists": [
+        "Tanner Usrey",
+        "Cam Allen"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://antonesnightclub.com/tm-event/tanner-usrey-w-cam-allen/",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-17",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk",
+      "title": "The Lemon Twigs",
+      "artists": [
+        "The Lemon Twigs"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://mohawkaustin.com/event/?id=-2852527949043660384",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "7pm, Outdoor, All Ages",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-18",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk",
+      "title": "The Sword",
+      "artists": [
+        "The Sword"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://mohawkaustin.com/event/?id=-2852527949014703688",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "7pm, Outdoor, All Ages",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-19",
+      "venue": "mohawk",
+      "venueRaw": "Mohawk",
+      "title": "Lucy Bedroque, Pinponpanpon",
+      "artists": [
+        "Lucy Bedroque",
+        "Pinponpanpon"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://mohawkaustin.com/event/?id=-2852527949048531618",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": "7pm, Outdoor, All Ages",
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-12-22",
+      "venue": "acl-live",
+      "venueRaw": "Austin City Limits Live at The Moody Theater",
+      "title": "Mariachi Sol de México de Jose Hernandez",
+      "artists": [
+        "Mariachi Sol de México de Jose Hernandez"
+      ],
+      "url": "https://www.showlistaustin.com/",
+      "ticketUrl": "https://www.acllive.com/event/2026-12-22-mariachi-sol-de-mexico-de-jose-hernandez-at-8-pm",
+      "ticketer": "venue",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 # Where do Spotify's concert listings come from? (researched 2026-09-24)
 
-Status: IN PROGRESS — grown as evidence lands. Evidence ranked: Spotify-owned 2025–26 pages > vendor press releases > trade press > blogs.
+Status: DONE 2026-09-24 (Verdict + Implications at the bottom). Evidence ranked: Spotify-owned 2025–26 pages > vendor press releases > trade press > blogs.
 
 ## Question
 Kevin sees Spotify's concert listings more than any other surface. If Spotify just shows another provider's data, that provider moves up our list for the Austin city-seasons feed.
@@ -49,3 +49,43 @@ Read for us: Spotify is an AGGREGATOR of primary ticketers + Bandsintown (the on
   | ADÉLA, Zoe Gitter | Emo's | Ticketmaster | ticketmaster.evyy.net affiliate |
   | Grocery Bag, Mugger… | Meanwhile Brewing | See Tickets | prf.hn affiliate → seeticketsusa |
   Footer on each: "Spotify earns commissions from ticket sales on our platform." (affiliate links — Impact/evyy for TM, Partnerize/prf.hn for See Tickets).
+
+### F6 — Measured provider mix of Spotify's Austin list: Bandsintown is the long tail, Ticketmaster is the headliners (CONFIRMED for this sample, 2026-09-24)
+Method: headless Chromium, logged out, loaded the Austin page and pressed "Load more" 12×, collecting 347 unique concert links (25 in the "Popular concerts" rail + 322 in "All events" — the All-events list only reached **Sep 26**, i.e. ~110 events/day in Spotify's Austin radius). Visited every 2nd one (80) and read the seller label + outbound link. Script: scratchpad sp3.mjs (not committed).
+| Surface | n | Bandsintown | Ticketmaster | See Tickets | Etix |
+|---|---|---|---|---|---|
+| Popular rail | 13 | 0 | 13 | 0 | 0 |
+| All events | 67 | 59 (88%) | 2 | 5 | 1 |
+| Total | 80 | 59 | 15 | 5 | 1 |
+Popular-rail TM events: USHER (Alamodome), sombr (Moody Center), ACL Fest W1, Lil Wayne, Teddy Swims, Steve Lacy (Moody Amphitheater), KATSEYE, Metallica, Journey, Trippie Redd, beabadoobee (Germania Amp), ADÉLA (Emo's). Non-BIT in All-events: See Tickets (Meanwhile Brewing, Cheatham Street, Brushy Street Commons, Paper Tiger, Concourse Project), TM (Jungle @ Moody Center, Phil Wickham @ H-E-B Center), Etix (Buck's Backyard, Buda).
+Caveats: (1) Spotify shows ONE seller per event; an event that exists in both Bandsintown and a ticketer is deduped, so "Bandsintown" here means "the link Spotify chose", not "only Bandsintown knew it". (2) Bandsintown itself ingests ticketer feeds + artist-entered dates, so BIT's share is partly re-served ticketer data. (3) Near-term sample (Sep 24–26); winter/spring announced shows skew to bigger ticketed events, where TM/AXS/DICE share will be higher. (4) No AXS or DICE hit in 80 — Austin's AXS/DICE rooms (if any) not sampled.
+Read for us: to match "what Kevin sees on Spotify", the two feeds that matter are **Bandsintown** (breadth, artist-entered long tail, and the one partner with a public-ish artist events API) and **Ticketmaster Discovery API** (the big rooms Spotify promotes). See Tickets/Etix/DICE/AXS fill specific rooms.
+
+### F6b — MUNA check (2026-09-24)
+https://open.spotify.com/artist/6xdRb2GypJ7DqnWAI2mHGn/concerts (logged out) lists 27 upcoming MUNA dates (Philadelphia Sep 25 → Berlin Nov 27; incl. All Things Go, Forest Hills, Red Rocks Oct 21). The Sep 19 Austin (Moody Amphitheater) show has already rolled off, so we cannot verify after the fact that Spotify listed it — but the tour's first date checked (Philadelphia) is Ticketmaster-fed, and Moody Amphitheater shows are Ticketmaster (Steve Lacy Nov 7 above). Very likely Spotify showed it; the miss was an ALERT problem (announce → notify), not a coverage problem. Unknown: whether Spotify ever pushed Kevin a notification.
+
+### F7 — Who feeds the other surfaces (the "structurally broadest" question)
+| Surface | Feed(s) | Evidence (date) | Grade |
+|---|---|---|---|
+| Spotify | ~46 ticketers + Bandsintown; not Songkick | support.spotify.com concerts page, updatedAt 2025-12-08; measured Austin mix 2026-09-24 | CONFIRMED |
+| Apple Music | Bandsintown AND Ticketmaster | Apple Music for Artists support 5469 (undated, fetched 2026-09-24): "By keeping your concert details up to date in Bandsintown…" + "If your concerts are available on Ticketmaster, they may also appear…" https://artists.apple.com/support/5469-make-concerts-discoverable-fans · Bandsintown PR 2026-03-31 (iOS 26.4) https://tools.prnewswire.com/en-us/live/20823/release/20260331EN20814 · TechCrunch 2026-03-24 "Apple Music partners with Ticketmaster…" (same day Apple also partnered with Bandsintown) https://techcrunch.com/2026/03/24/apple-music-partners-with-ticketmaster-to-power-its-concert-discovery-feature/ | CONFIRMED |
+| Shazam / Apple Maps / Spotlight | Bandsintown ("for years") + Ticketmaster (TechCrunch: TM "already powers other event listings across the Apple ecosystem, including Maps, Spotlight…") | same two sources | CONFIRMED |
+| YouTube | Bandsintown only — sole supported ticketer; YouTube dropped its earlier ticketer set (TM 2017, Eventbrite 2018) | YouTube Help 7570245 (fetched 2026-09-24) https://support.google.com/youtube/answer/7570245?hl=en ; trade coverage Mar 2025 | CONFIRMED |
+| Google Search event cards | schema.org Event structured data on any page + participating "third-party event platforms"; Bandsintown lists Google as a distribution partner (up to 30 h); Ticketmaster markets its schema/inventory feeds into Google AI Mode | Google Search Central Event doc, last updated 2026-09-08 https://developers.google.com/search/docs/appearance/structured-data/event ; Bandsintown help (dated 2026-04-22) https://help.artists.bandsintown.com/en/articles/10518205-distribution-to-spotify-google-apple-shazam-and-amazon-music ; Ticketmaster Business 2025-11-20 https://business.ticketmaster.com/ticketmaster-x-google-powering-live-event-discovery-with-agentic-capabilities-in-ai-search/ | CONFIRMED (mechanism); partner roster UNKNOWN |
+| Amazon Music | Bandsintown (up to 12 h) | Bandsintown help 2026-04-22 | CONFIRMED (vendor-side) |
+| Instagram | No evidence found of a native concert-listings feed on Instagram profiles in 2026. Meta's Muse AI agent added Ticketmaster as its first music "connector" 2026-09-10 (Music Ally). | https://musically.com/2026/09/10/ticketmaster-is-first-music-partner-for-metas-muse-ai-agent/ | UNKNOWN / likely none |
+
+Bandsintown distribution (vendor page dated 2026-04-22): Spotify, YouTube, Google, Apple (Music/Maps), Shazam, Amazon Music; shares "event name, artist lineup, location, date/time, venue, ticket link(s), and event image"; latency Spotify ≤48 h, YouTube ≤48 h, Google ≤30 h, Apple ≤48 h, Shazam ≤48 h, Amazon ≤12 h. Its 2026-03-31 PR also names Microsoft Bing.
+
+## Verdict (2026-09-24)
+1. **Confirmed:** Spotify is not a single-provider mirror. It auto-imports from ~46 ticketers plus Bandsintown, and has explicitly NOT shown Songkick since Feb 2024. There is no public Spotify concerts API. The Austin city page is publicly viewable logged out, and every event names the feed it came from.
+2. **Confirmed (measured):** In Spotify's Austin list, Bandsintown supplies the long tail (88% of an 67-event all-events sample) and Ticketmaster supplies the headliner rail (13/13 of the "Popular" sample).
+3. **Structurally broadest provider: Bandsintown.** It is the ONLY feed that reaches all of Spotify, YouTube (exclusive), Apple Music/Shazam/Maps, Google, Amazon Music, and Bing. Ticketmaster is second (Spotify, Apple, Google, Meta Muse) and owns Austin's big rooms (Moody Center, Moody Amphitheater, ACL Live, Stubb's, Emo's).
+4. **Likely:** Bandsintown's own corpus already includes most Ticketmaster events (it ingests ticketers), so Bandsintown alone approximates Spotify's Austin list; Ticketmaster Discovery API is the belt-and-braces for on-sale/presale timing on the big rooms.
+5. **Unknown:** exact Spotify dedupe/merge rules when an event exists in several feeds; whether Spotify's Popular rail has a bias toward Ticketmaster (affiliate) inventory; Instagram's feed (probably none); Google's full partner roster; whether AXS/DICE rooms in Austin show up proportionally (none in our sample).
+
+## Implications for the sources study
+- Move **Bandsintown** to the top of the candidate list (it is the common upstream of Spotify's long tail, YouTube, Apple, Shazam, Google). Next check: what Bandsintown's API actually allows a non-artist app to query in 2026 (the classic `rest.bandsintown.com/artists/{name}/events?app_id=` is per-artist, not per-city) — that shape suits the ALERT ("is an artist Kevin loves playing Austin?") better than the CITY VIEW.
+- Keep **Ticketmaster Discovery API** (city + date-range queries, public key) as the headliner/big-room source and for on-sale dates.
+- **Songkick is demoted**: no longer a Spotify feed, so it is not a proxy for Kevin's bar.
+- Spotify's own city page is a valid **ground-truth yardstick** to grade other sources against (render logged out, read each event's seller) — but not a data source (private API, ToS).

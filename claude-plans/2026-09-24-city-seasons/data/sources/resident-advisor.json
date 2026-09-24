@@ -1,0 +1,45 @@
+{
+  "collector": "resident-advisor",
+  "fetchedAt": "2026-09-24",
+  "scope": {"from": "2026-09-24", "to": "2027-05-31"},
+  "pages": [
+    {
+      "url": "https://www.ra.co/robots.txt",
+      "how": "curl",
+      "ok": true,
+      "note": "Checked once before fetching anything else, per the fetching-etiquette rule."
+    }
+  ],
+  "coverage": {
+    "complete": false,
+    "lastDateReached": null,
+    "perVenue": {
+      "moody-center": "blocked",
+      "moody-amphitheater": "blocked",
+      "acl-live": "blocked",
+      "3ten": "blocked",
+      "germania": "blocked",
+      "stubbs": "blocked",
+      "mohawk": "blocked",
+      "empire": "blocked",
+      "scoot-inn": "blocked",
+      "emos": "blocked",
+      "parish": "blocked",
+      "antones": "blocked",
+      "continental": "blocked",
+      "concourse": "blocked",
+      "brushy": "blocked",
+      "kingdom": "blocked",
+      "summit": "blocked",
+      "vulcan": "blocked"
+    },
+    "why": "ra.co/robots.txt names three user-agents under an 'ai content scraping bots' heading and disallows all of them from the entire site: Claude-Web, ClaudeBot, and anthropic-ai (alongside GPTBot, PerplexityBot, CCBot, etc.). I am a Claude/Anthropic agent. The task's fetching instructions supplied a generic browser User-Agent string for plain HTML, and my requests would technically have gone through under the general 'User-agent: *' rule (which allows everything except /pro, /user, /api, /my-tickets, /logout.aspx, /inbox.aspx, /widget) if I'd sent that string -- but the site has separately and explicitly named my own agent family as disallowed. Sending a spoofed browser UA specifically to route around a block that is addressed to me by name is the bypass the task's own etiquette rules forbid ('no bypassing a block ... a source that refuses a gentle reader is itself a finding'). So I did not fetch any ra.co content beyond robots.txt itself -- no event pages, no GraphQL calls, nothing. This is a source-level finding, not a per-venue one: RA is unreachable for this project through any automated Claude-driven fetch (curl, WebFetch, or firecrawl_scrape all identify the request as coming from this agent) unless Kevin (a human) pulls the pages himself, e.g. by browsing ra.co in his own signed-in session and saving/pasting what he sees, or reads them in Chrome via the claude-in-chrome extension backed by his own logged-in browser tab (this pipes through his own browser's real UA and session, not this fetch identity, though the ethics of doing that for a site that has explicitly said no to AI agents are worth Kevin weighing before we lean on it) -- or someone confirms the block doesn't apply to the intended use and asks RA for an exception."
+  },
+  "cityWide": {
+    "url": "https://ra.co/events/us/austin",
+    "next30DaysCount": null,
+    "note": "Not counted -- page never fetched (robots.txt block, see coverage.why)."
+  },
+  "linkBehavior": "Unknown -- no pages were fetched. Worth having someone check by hand: RA's own convention on other cities is that event pages sell RA's own tickets when RA is the box office, and otherwise link out to the venue/promoter's ticketer.",
+  "events": []
+}

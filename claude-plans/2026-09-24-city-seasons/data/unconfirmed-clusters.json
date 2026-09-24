@@ -1,0 +1,2925 @@
+[
+ {
+  "id": 0,
+  "venue": "3ten",
+  "date": "2026-10-03",
+  "headliner": "paloma morphy",
+  "titles": [
+   "Paloma Morphy"
+  ],
+  "sources": {
+   "bandsintown": "https://www.bandsintown.com/e/1039993147-paloma-morphy-at-3ten-austin-city-limits-live?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event",
+   "jambase": "https://www.jambase.com/show/paloma-morphy-3ten-austin-city-limits-live-20261003",
+   "austin-chronicle": "https://calendar.austinchronicle.com/event/paloma-morphy-14358476",
+   "ticketmaster": "https://www.ticketmaster.com/event/Z7r9jZ1AAvar4"
+  }
+ },
+ {
+  "id": 1,
+  "venue": "3ten",
+  "date": "2026-10-03",
+  "headliner": "acl fest nights",
+  "titles": [
+   "ACL Fest Nights: Paloma Morphy with Lueme"
+  ],
+  "sources": {
+   "seatgeek": "https://seatgeek.com/austin-city-limits-late-night-shows-tickets/austin-texas-3ten-austin-city-limits-live-1-2026-10-03-9-pm/concert/18508520"
+  }
+ },
+ {
+  "id": 2,
+  "venue": "3ten",
+  "date": "2026-10-07",
+  "headliner": "kolby cooper",
+  "titles": [
+   "Kolby Cooper",
+   "Kolby Cooper, Julianna Rankin"
+  ],
+  "sources": {
+   "bandsintown": "https://www.bandsintown.com/e/1040360116-kolby-cooper-at-3ten-austin-city-limits-live?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event",
+   "austin-chronicle": "https://calendar.austinchronicle.com/event/kolby-cooper-julianna-rankin-14375079"
+  }
+ },
+ {
+  "id": 3,
+  "venue": "3ten",
+  "date": "2026-10-08",
+  "headliner": "laszewo",
+  "titles": [
+   "Laszewo"
+  ],
+  "sources": {
+   "bandsintown": "https://www.bandsintown.com/e/1039992648-laszewo-at-3ten-austin-city-limits-live?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event",
+   "jambase": "https://www.jambase.com/show/laszewo-3ten-austin-city-limits-live-20261008",
+   "austin-chronicle": "https://calendar.austinchronicle.com/event/laszewo-14358480",
+   "ticketmaster": "https://www.ticketmaster.com/event/Z7r9jZ1AAvZ4w"
+  }
+ },
+ {
+  "id": 4,
+  "venue": "3ten",
+  "date": "2026-10-14",
+  "headliner": "lilyisthatyou",
+  "titles": [
+   "Lilyisthatyou"
+  ],
+  "sources": {
+   "bandsintown": "https://www.bandsintown.com/e/1038830979-lilyisthatyou-at-3ten-austin-city-limits-live?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event"
+  }
+ },
+ {
+  "id": 5,
+  "venue": "3ten",
+  "date": "2026-11-15",
+  "headliner": "flump toulouse",
+  "titles": [
+   "Flump Toulouse @ 3TEN ACL Live"
+  ],
+  "sources": {
+   "songkick": "https://www.songkick.com/concerts/43343174-flump-toulouse-at-3ten-acl-live"
+  }
+ },
+ {
+  "id": 6,
+  "venue": "3ten",
+  "date": "2026-12-19",
+  "headliner": "a drag queen christmas",
+  "titles": [
+   "A DRAG QUEEN CHRISTMAS"
+  ],
+  "sources": {
+   "bandsintown": "https://www.bandsintown.com/e/1039284079-nina-west-at-3ten-austin-city-limits-live?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event"
+  }
+ },
+ {
+  "id": 7,
+  "venue": "3ten",
+  "date": "2027-02-27",
+  "headliner": "rumours atl",
+  "titles": [
+   "Rumours ATL: A Fleetwood Mac Tribute"
+  ],
+  "sources": {
+   "jambase": "https://www.jambase.com/show/rumours-atl-a-fleetwood-mac-tribute-3ten-austin-city-limits-live-20270227"
+  }
+ },
+ {
+  "id": 8,
+  "venue": "acl-live",
+  "date": "2026-09-24",
+  "headliner": "bogo on select shows at acl live at the moody theater",
+  "titles": [
+   "BOGO on select shows at ACL Live at the Moody Theater!"
+  ],
+  "sources": {
+   "do512": "https://do512.com/events/2026/9/24/bogo-on-select-shows-at-acl-live-at-the-moody-theater-tickets"
+  }
+ },
+ {
+  "id": 9,
+  "venue": "acl-live",
+  "date": "2026-09-24",
+  "headliner": "alison krauss",
+  "titles": [
+   "Alison Krauss @ Austin City Limits (ACL) Live at the Moody Theater"
+  ],
+  "sources": {
+   "songkick": "https://www.songkick.com/concerts/43051904-alison-krauss-at-austin-city-limits-live-at-the-moody-theater"
+  }
+ },
+ {
+  "id": 10,
+  "venue": "acl-live",
+  "date": "2026-09-24",
+  "headliner": "theo lawrence",
+  "titles": [
+   "Theo Lawrence"
+  ],
+  "sources": {
+   "jambase": "https://www.jambase.com/show/theo-lawrence-acl-live-at-the-moody-theater-20260924"
+  }
+ },
+ {
+  "id": 11,
+  "venue": "acl-live",
+  "date": "2026-09-24",
+  "headliner": "allison krauss",
+  "titles": [
+   "Allison Krauss & Union Station"
+  ],
+  "sources": {
+   "austin-chronicle": "https://calendar.austinchronicle.com/event/allison-krauss-and-union-station-14334142"
+  }
+ },
+ {
+  "id": 12,
+  "venue": "acl-live",
+  "date": "2026-10-17",
+  "headliner": "austin quest for ancient civilizations",
+  "titles": [
+   "Austin Quest for Ancient Civilizations",
+   "Austin Quest for Ancient Civilizations "
+  ],
+  "sources": {
+   "do512": "https://do512.com/events/2026/10/17/austin-quest-for-ancient-civilizations-1770401135",
+   "ticketmaster": "https://www.ticketmaster.com/event/Z7r9jZ1A7-Nfp"
+  }
+ },
+ {
+  "id": 13,
+  "venue": "acl-live",
+  "date": "2026-10-18",
+  "headliner": "austin quest for ancient civilizations",
+  "titles": [
+   "Austin Quest for Ancient Civilizations",
+   "Austin Quest for Ancient Civilizations "
+  ],
+  "sources": {
+   "do512": "https://do512.com/events/2026/10/18/austin-quest-for-ancient-civilizations-1770401152",
+   "ticketmaster": "https://www.ticketmaster.com/event/Z7r9jZ1A7-Nf9"
+  }
+ },
+ {
+  "id": 14,
+  "venue": "acl-live",
+  "date": "2026-10-19",
+  "headliner": "snarky puppy",
+  "titles": [
+   "Snarky Puppy"
+  ],
+  "sources": {
+   "bandsintown": "https://www.bandsintown.com/e/1037965359-snarky-puppy-at-austin-city-limits-live-at-the-moody-theater?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event"
+  }
+ },
+ {
+  "id": 15,
+  "venue": "acl-live",
+  "date": "2026-10-23",
+  "headliner": "barrington levy",
+  "titles": [
+   "Barrington Levy"
+  ],
+  "sources": {
+   "bandsintown": "https://www.bandsintown.com/e/1039772944-barrington-levy-at-austin-city-limits-live-at-the-moody-theater?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event"
+  }
+ },
+ {
+  "id": 16,
+  "venue": "acl-live",
+  "date": "2026-10-29",
+  "headliner": "food for thought 2026",
+  "titles": [
+   "Food for Thought 2026: Recipes for the Future"
+  ],
+  "sources": {
+   "do512": "https://do512.com/events/2026/10/29/food-for-thought-2026-recipes-for-the-future-tickets",
+   "austin-chronicle": "https://calendar.austinchronicle.com/event/food-for-thought-2026-recipes-for-the-future-14197880"
+  }
+ },
+ {
+  "id": 17,
+  "venue": "acl-live",
+  "date": "2026-10-30",
+  "headliner": "the stateline band",
+  "titles": [
+   "The Stateline Band"
+  ],
+  "sources": {
+   "bandsintown": "https://www.bandsintown.com/e/1037894648-the-stateline-band-at-austin-city-limits-live-at-the-moody-theater?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event"
+  }
+ },
+ {
+  "id": 18,
+  "venue": "acl-live",
+  "date": "2026-11-05",
+  "headliner": "raul montoya",
+  "titles": [
+   "RAUL MONTOYA"
+  ],
+  "sources": {
+   "bandsintown": "https://www.bandsintown.com/e/1039714715-raul-montoya-at-austin-city-limits-live-at-the-moody-theater?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event"
+  }
+ },
+ {
+  "id": 19,
+  "venue": "acl-live",
+  "date": "2026-11-22",
+  "headliner": "forrest bones mudbaby ru",
+  "titles": [
+   "FORREST BONES & MUDBABY RU"
+  ],
+  "sources": {
+   "bandsintown": "https://www.bandsintown.com/e/1040199007-forrest-bones-at-austin-city-limits-live-at-the-moody-theater?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event"
+  }
+ },
+ {
+  "id": 20,
+  "venue": "acl-live",
+  "date": "2026-11-27",
+  "headliner": "michael martin murphey",
+  "titles": [
+   "Michael Martin Murphey",
+   "Michael Martin Murphey @ Austin City Limits (ACL) Live at the Moody Theater"
+  ],
+  "sources": {
+   "bandsintown": "https://www.bandsintown.com/e/1040150025-michael-martin-murphey-at-austin-city-limits-live-at-the-moody-theater?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event",
+   "songkick": "https://www.songkick.com/concerts/43396979-michael-martin-murphey-at-austin-city-limits-live-at-the-moody-theater",
+   "jambase": "https://www.jambase.com/show/michael-martin-murphey-acl-live-at-the-moody-theater-20261127"
+  }
+ },
+ {
+  "id": 21,
+  "venue": "acl-live",
+  "date": "2026-11-28",
+  "headliner": "bob schneider music",
+  "titles": [
+   "Bob Schneider Music"
+  ],
+  "sources": {
+   "bandsintown": "https://www.bandsintown.com/e/1039995350-bob-schneider-music-at-austin-city-limits-live-at-the-moody-theater?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event"
+  }
+ },
+ {
+  "id": 22,
+  "venue": "acl-live",
+  "date": "2026-11-28",
+  "headliner": "heartless bastards",
+  "titles": [
+   "Heartless Bastards @ Austin City Limits (ACL) Live at the Moody Theater"
+  ],
+  "sources": {
+   "songkick": "https://www.songkick.com/concerts/43424683-heartless-bastards-at-austin-city-limits-live-at-the-moody-theater"
+  }
+ },
+ {
+  "id": 23,
+  "venue": "acl-live",
+  "date": "2026-11-29",
+  "headliner": "the beat featuring ranking jnr",
+  "titles": [
+   "The Beat Featuring Ranking Jnr @ Austin City Limits (ACL) Live at the Moody Theater"
+  ],
+  "sources": {
+   "songkick": "https://www.songkick.com/concerts/43354064-beat-featuring-ranking-jnr-at-austin-city-limits-live-at-the-moody-theater"
+  }
+ },
+ {
+  "id": 24,
+  "venue": "acl-live",
+  "date": "2026-11-30",
+  "headliner": "george clinton",
+  "titles": [
+   "George Clinton @ Austin City Limits (ACL) Live at the Moody Theater"
+  ],
+  "sources": {
+   "songkick": "https://www.songkick.com/concerts/42771547-george-clinton-at-austin-city-limits-live-at-the-moody-theater"
+  }
+ },
+ {
+  "id": 25,
+  "venue": "acl-live",
+  "date": "2026-12-11",
+  "headliner": "sonic guild ball",
+  "titles": [
+   "Sonic Guild Ball"
+  ],
+  "sources": {
+   "austin-chronicle": "https://calendar.austinchronicle.com/event/sonic-guild-ball-14344748"
+  }
+ },
+ {
+  "id": 26,
+  "venue": "acl-live",
+  "date": "2026-12-15",
+  "headliner": "august burns red",
+  "titles": [
+   "August Burns Red"
+  ],
+  "sources": {
+   "bandsintown": "https://www.bandsintown.com/e/1039298380-august-burns-red-at-austin-city-limits-live-at-the-moody-theater?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event"
+  }
+ },
+ {
+  "id": 27,
+  "venue": "acl-live",
+  "date": "2027-01-22",
+  "headliner": "the bald and the beautiful podcast 18",
+  "titles": [
+   "The Bald and the Beautiful Podcast (18+)"
+  ],
+  "sources": {
+   "seatgeek": "https://seatgeek.com/the-bald-and-the-beautiful-podcast-tickets/entertainment/2027-01-22-7-30-pm/18556234"
+  }
+ },
+ {
+  "id": 28,
+  "venue": "acl-live",
+  "date": "2027-01-24",
+  "headliner": "catch your breath",
+  "titles": [
+   "Catch Your Breath"
+  ],
+  "sources": {
+   "bandsintown": "https://www.bandsintown.com/e/1039145545-catch-your-breath-at-austin-city-limits-live-at-the-moody-theater?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event"
+  }
+ },
+ {
+  "id": 29,
+  "venue": "acl-live",
+  "date": "2027-01-24",
+  "headliner": "nothing more",
+  "titles": [
+   "Nothing More @ Austin City Limits (ACL) Live at the Moody Theater"
+  ],
+  "sources": {
+   "songkick": "https://www.songkick.com/concerts/42597038-nothing-more-at-austin-city-limits-live-at-the-moody-theater"
+  }
+ },
+ {
+  "id": 30,
+  "venue": "acl-live",
+  "date": "2027-02-05",
+  "headliner": "josh johnson comedy",
+  "titles": [
+   "Josh Johnson (Comedy)"
+  ],
+  "sources": {
+   "bandsintown": "https://www.bandsintown.com/e/1040306541-josh-johnson-(comedy)-at-austin-city-limits-live-at-the-moody-theater?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event"
+  }
+ },
+ {
+  "id": 31,
+  "venue": "acl-live",
+  "date": "2027-02-05",
+  "headliner": "josh johnson comedian",
+  "titles": [
+   "Josh Johnson (Comedian) @ Austin City Limits (ACL) Live at the Moody Theater"
+  ],
+  "sources": {
+   "songkick": "https://www.songkick.com/concerts/43420271-josh-johnson-comedian-at-austin-city-limits-live-at-the-moody-theater"
+  }
+ },
+ {
+  "id": 32,
+  "venue": "acl-live",
+  "date": "2027-02-06",
+  "headliner": "josh johnson comedy",
+  "titles": [
+   "Josh Johnson (Comedy)"
+  ],
+  "sources": {
+   "bandsintown": "https://www.bandsintown.com/e/1040298419-josh-johnson-(comedy)-at-austin-city-limits-live-at-the-moody-theater?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event"
+  }
+ },
+ {
+  "id": 33,
+  "venue": "acl-live",
+  "date": "2027-02-06",
+  "headliner": "josh johnson comedian",
+  "titles": [
+   "Josh Johnson (Comedian) @ Austin City Limits (ACL) Live at the Moody Theater"
+  ],
+  "sources": {
+   "songkick": "https://www.songkick.com/concerts/43420274-josh-johnson-comedian-at-austin-city-limits-live-at-the-moody-theater"
+  }
+ },
+ {
+  "id": 34,
+  "venue": "acl-live",
+  "date": "2027-02-06",
+  "headliner": "josh johnson",
+  "titles": [
+   "Josh Johnson"
+  ],
+  "sources": {
+   "seatgeek": "https://seatgeek.com/josh-johnson-tickets/austin-texas-austin-city-limits-live-at-the-moody-theater-2027-02-06-8-30-pm/concert/18619316"
+  }
+ },
+ {
+  "id": 35,
+  "venue": "acl-live",
+  "date": "2027-03-04",
+  "headliner": "wheeler walker jr",
+  "titles": [
+   "Wheeler Walker, Jr. @ Austin City Limits (ACL) Live at the Moody Theater"
+  ],
+  "sources": {
+   "songkick": "https://www.songkick.com/concerts/43262735-wheeler-walker-jr-at-austin-city-limits-live-at-the-moody-theater"
+  }
+ },
+ {
+  "id": 36,
+  "venue": "antones",
+  "date": "2026-09-26",
+  "headliner": "joe marcinek",
+  "titles": [
+   "Joe Marcinek"
+  ],
+  "sources": {
+   "bandsintown": "https://www.bandsintown.com/e/1040022058-joe-marcinek-at-antone's?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event"
+  }
+ },
+ {
+  "id": 37,
+  "venue": "antones",
+  "date": "2026-09-29",
+  "headliner": "two night pass",
+  "titles": [
+   "TWO NIGHT PASS: Don Was and the Pan-Detroit Ensemble"
+  ],
+  "sources": {
+   "ticketmaster": "https://www.ticketmaster.com/two-night-pass-don-was-and-austin-texas-09-29-2026/event/3A006529CF1AD570"
+  }
+ },
+ {
+  "id": 38,
+  "venue": "antones",
+  "date": "2026-10-07",
+  "headliner": "",
+  "titles": [
+   "\u041d\u043e\u0433\u0443 \u0421\u0432\u0435\u043b\u043e! @ Antone's"
+  ],
+  "sources": {
+   "songkick": "https://www.songkick.com/concerts/43397241-noghu-svielo-at-antones"
+  }
+ },
+ {
+  "id": 39,
+  "venue": "antones",
+  "date": "2026-10-07",
+  "headliner": "nogu svelo concert in austin",
+  "titles": [
+   "Nogu Svelo! \u2013 Concert in Austin"
+  ],
+  "sources": {
+   "austin-chronicle": "https://calendar.austinchronicle.com/event/nogu-svelo-concert-in-austin-14366814"
+  }
+ },
+ {
+  "id": 40,
+  "venue": "antones",
+  "date": "2026-10-08",
+  "headliner": "elijah delgado",
+  "titles": [
+   "Elijah Delgado"
+  ],
+  "sources": {
+   "bandsintown": "https://www.bandsintown.com/e/1040305162-elijah-delgado-at-antone's?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event"
+  }
+ },
+ {
+  "id": 41,
+  "venue": "antones",
+  "date": "2026-10-15",
+  "headliner": "sydney sherrill",
+  "titles": [
+   "Sydney Sherrill"
+  ],
+  "sources": {
+   "bandsintown": "https://www.bandsintown.com/e/1040364607-sydney-sherrill-at-antone's?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event"
+  }
+ },
+ {
+  "id": 42,
+  "venue": "antones",
+  "date": "2026-10-15",
+  "headliner": "lolo",
+  "titles": [
+   "LOLO"
+  ],
+  "sources": {
+   "seatgeek": "https://seatgeek.com/lolo-tickets/austin-texas-antone-s-nightclub-2026-10-15-8-pm/concert/18283280"
+  }
+ },
+ {
+  "id": 43,
+  "venue": "antones",
+  "date": "2026-10-28",
+  "headliner": "chasing abbey",
+  "titles": [
+   "Chasing Abbey"
+  ],
+  "sources": {
+   "austin-chronicle": "https://calendar.austinchronicle.com/event/chasing-abbey-13877893"
+  }
+ },
+ {
+  "id": 44,
+  "venue": "antones",
+  "date": "2026-11-01",
+  "headliner": "city of the sun",
+  "titles": [
+   "City of the Sun"
+  ],
+  "sources": {
+   "do512": "https://do512.com/events/2026/11/1/city-of-the-sun-tickets",
+   "bandsintown": "https://www.bandsintown.com/e/1039631192-city-of-the-sun-at-antone's?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event",
+   "jambase": "https://www.jambase.com/show/city-of-the-sun-antones-20261101",
+   "seatgeek": "https://seatgeek.com/city-of-the-sun-tickets/austin-texas-antone-s-nightclub-2026-11-01-8-pm/concert/18370057",
+   "austin-chronicle": "https://calendar.austinchronicle.com/event/city-of-the-sun-14205655",
+   "showlist-austin": "https://www.showlistaustin.com/"
+  }
+ },
+ {
+  "id": 45,
+  "venue": "antones",
+  "date": "2026-11-01",
+  "headliner": "resound antone s present",
+  "titles": [
+   "Resound + Antone's Present: City of the Sun at Antone's on 11/1"
+  ],
+  "sources": {
+   "austin-chronicle": "https://calendar.austinchronicle.com/event/resound-antones-present-city-of-the-sun-at-antones-on-11-1-14207217"
+  }
+ },
+ {
+  "id": 46,
+  "venue": "antones",
+  "date": "2026-11-04",
+  "headliner": "shadowgrass",
+  "titles": [
+   "ShadowGrass",
+   "Shadowgrass"
+  ],
+  "sources": {
+   "do512": "https://do512.com/events/2026/11/4/shadowgrass-tickets",
+   "bandsintown": "https://www.bandsintown.com/e/1038685703-shadowgrass-at-antone's?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event",
+   "jambase": "https://www.jambase.com/show/shadowgrass-antones-20261104",
+   "seatgeek": "https://seatgeek.com/shadowgrass-tickets/austin-texas-antone-s-nightclub-2026-11-04-8-pm/concert/18177441"
+  }
+ },
+ {
+  "id": 47,
+  "venue": "antones",
+  "date": "2026-11-04",
+  "headliner": "antone s",
+  "titles": [
+   "Antone's & Resound Present: Shadowgrass"
+  ],
+  "sources": {
+   "austin-chronicle": "https://calendar.austinchronicle.com/event/antones-and-resound-present-shadowgrass-13968244"
+  }
+ },
+ {
+  "id": 48,
+  "venue": "antones",
+  "date": "2026-11-04",
+  "headliner": "an evening",
+  "titles": [
+   "An Evening with Shadowgrass"
+  ],
+  "sources": {
+   "austin-chronicle": "https://calendar.austinchronicle.com/event/an-evening-with-shadowgrass-13964621",
+   "showlist-austin": "https://www.showlistaustin.com/"
+  }
+ },
+ {
+  "id": 49,
+  "venue": "antones",
+  "date": "2026-11-05",
+  "headliner": "the jack wharff band",
+  "titles": [
+   "The Jack Wharff Band",
+   "The Jack Wharff Band w/ Tucker Stone"
+  ],
+  "sources": {
+   "do512": "https://do512.com/events/2026/11/5/the-jack-wharff-band-w-tucker-stone-tickets",
+   "bandsintown": "https://www.bandsintown.com/e/1039591986-the-jack-wharff-band-at-antone's?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event",
+   "jambase": "https://www.jambase.com/show/the-jack-wharff-band-antones-20261105",
+   "seatgeek": "https://seatgeek.com/the-jack-wharff-band-tickets/austin-texas-antone-s-nightclub-2026-11-05-8-pm/concert/18357696",
+   "showlist-austin": "https://www.showlistaustin.com/"
+  }
+ },
+ {
+  "id": 50,
+  "venue": "antones",
+  "date": "2026-11-06",
+  "headliner": "low cut connie",
+  "titles": [
+   "Low Cut Connie",
+   "Low Cut Connie w/ Laney Jones and the Spirits"
+  ],
+  "sources": {
+   "do512": "https://do512.com/events/2026/11/6/low-cut-connie-tickets",
+   "bandsintown": "https://www.bandsintown.com/e/1038800692-low-cut-connie-at-antone's?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event",
+   "jambase": "https://www.jambase.com/show/low-cut-connie-antones-20261106",
+   "seatgeek": "https://seatgeek.com/low-cut-connie-tickets/austin-texas-antone-s-nightclub-2026-11-06-8-pm/concert/18201218",
+   "showlist-austin": "https://www.showlistaustin.com/"
+  }
+ },
+ {
+  "id": 51,
+  "venue": "antones",
+  "date": "2026-11-07",
+  "headliner": "dan penn",
+  "titles": [
+   "Dan Penn",
+   "Dan Penn & Spooner Oldham w/ Theo Lawrence & Barfield the Tyrant"
+  ],
+  "sources": {
+   "do512": "https://do512.com/events/2026/11/7/dan-penn-spooner-oldham-w-theo-lawrence-barfield-the-tyrant-tickets",
+   "jambase": "https://www.jambase.com/show/dan-penn-antones-20261107"
+  }
+ },
+ {
+  "id": 52,
+  "venue": "antones",
+  "date": "2026-11-07",
+  "headliner": "dan penn spooner oldham",
+  "titles": [
+   "Dan Penn & Spooner Oldham w/ Theo Lawrence & Barfield the Tyrant"
+  ],
+  "sources": {
+   "showlist-austin": "https://www.showlistaustin.com/"
+  }
+ },
+ {
+  "id": 53,
+  "venue": "antones",
+  "date": "2026-11-08",
+  "headliner": "the jazz room",
+  "titles": [
+   "The Jazz Room: A Frank Sinatra & Louis Armstrong Tribute"
+  ],
+  "sources": {
+   "showlist-austin": "https://www.showlistaustin.com/"
+  }
+ },
+ {
+  "id": 54,
+  "venue": "antones",
+  "date": "2026-11-09",
+  "headliner": "olivia o brien",
+  "titles": [
+   "Olivia O'Brien",
+   "Olivia O'Brien Presents: The PIXIE Tour"
+  ],
+  "sources": {
+   "do512": "https://do512.com/events/2026/11/9/the-pixie-tour-tickets",
+   "bandsintown": "https://www.bandsintown.com/e/1039935008-olivia-o'brien-at-antone's?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event"
+  }
+ },
+ {
+  "id": 55,
+  "venue": "antones",
+  "date": "2026-11-09",
+  "headliner": "pleasure p",
+  "titles": [
+   "Pleasure P"
+  ],
+  "sources": {
+   "jambase": "https://www.jambase.com/show/pleasure-p-antones-20261109",
+   "seatgeek": "https://seatgeek.com/pleasure-p-tickets/austin-texas-antone-s-nightclub-2026-11-09-9-pm/concert/17094510"
+  }
+ },
+ {
+  "id": 56,
+  "venue": "antones",
+  "date": "2026-11-09",
+  "headliner": "the pixie tour",
+  "titles": [
+   "The PIXIE Tour w/ Sophie Cates"
+  ],
+  "sources": {
+   "showlist-austin": "https://www.showlistaustin.com/"
+  }
+ },
+ {
+  "id": 57,
+  "venue": "antones",
+  "date": "2026-11-10",
+  "headliner": "greg freeman",
+  "titles": [
+   "Greg Freeman",
+   "Greg Freeman w/ Touch Girl Apple Blossom"
+  ],
+  "sources": {
+   "do512": "https://do512.com/events/2026/11/10/greg-freeman-tickets",
+   "bandsintown": "https://www.bandsintown.com/e/1039723438-greg-freeman-at-antone's?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event",
+   "jambase": "https://www.jambase.com/show/greg-freeman-antones-20261110",
+   "seatgeek": "https://seatgeek.com/greg-freeman-tickets/austin-texas-antone-s-nightclub-2026-11-10-8-pm/concert/18392637",
+   "showlist-austin": "https://www.showlistaustin.com/"
+  }
+ },
+ {
+  "id": 58,
+  "venue": "antones",
+  "date": "2026-11-11",
+  "headliner": "paul val",
+  "titles": [
+   "Paul Val w/ Nicky Diamonds"
+  ],
+  "sources": {
+   "do512": "https://do512.com/events/2026/11/11/paul-val-w-nicky-diamonds-tickets",
+   "showlist-austin": "https://www.showlistaustin.com/"
+  }
+ },
+ {
+  "id": 59,
+  "venue": "antones",
+  "date": "2026-11-11",
+  "headliner": "nicky diamonds",
+  "titles": [
+   "Nicky Diamonds"
+  ],
+  "sources": {
+   "bandsintown": "https://www.bandsintown.com/e/1040237168-nicky-diamonds-at-antone's?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event"
+  }
+ },
+ {
+  "id": 60,
+  "venue": "antones",
+  "date": "2026-11-12",
+  "headliner": "andrew duhon",
+  "titles": [
+   "Andrew Duhon",
+   "Andrew Duhon: Stop Motion Tour \u201926"
+  ],
+  "sources": {
+   "do512": "https://do512.com/events/2026/11/12/andrew-duhon-tickets",
+   "bandsintown": "https://www.bandsintown.com/e/1039305338-andrew-duhon-at-antone's?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event",
+   "jambase": "https://www.jambase.com/show/andrew-duhon-antones-20261112",
+   "seatgeek": "https://seatgeek.com/andrew-duhon-tickets/austin-texas-antone-s-nightclub-2026-11-12-8-pm/concert/18297925",
+   "showlist-austin": "https://www.showlistaustin.com/"
+  }
+ },
+ {
+  "id": 61,
+  "venue": "antones",
+  "date": "2026-11-14",
+  "headliner": "israel nash",
+  "titles": [
+   "Israel Nash",
+   "Israel Nash w/ Mid America"
+  ],
+  "sources": {
+   "do512": "https://do512.com/events/2026/11/14/israel-nash-tickets",
+   "bandsintown": "https://www.bandsintown.com/e/1039075426-israel-nash-at-antone's?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event",
+   "jambase": "https://www.jambase.com/show/israel-nash-antones-20261114",
+   "seatgeek": "https://seatgeek.com/israel-nash-tickets/austin-texas-antone-s-nightclub-2026-11-14-8-pm/concert/18258580",
+   "showlist-austin": "https://www.showlistaustin.com/"
+  }
+ },
+ {
+  "id": 62,
+  "venue": "antones",
+  "date": "2026-11-15",
+  "headliner": "makaya mccraven",
+  "titles": [
+   "Makaya McCraven",
+   "Makaya McCraven - Austin"
+  ],
+  "sources": {
+   "do512": "https://do512.com/events/2026/11/15/makaya-mccraven-tickets",
+   "bandsintown": "https://www.bandsintown.com/e/1039703123-makaya-mccraven-at-antone's?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event",
+   "jambase": "https://www.jambase.com/show/makaya-mccraven-antones-20261115",
+   "seatgeek": "https://seatgeek.com/makaya-mccraven-tickets/classical/2026-11-15-8-pm/18390389",
+   "showlist-austin": "https://www.showlistaustin.com/"
+  }
+ },
+ {
+  "id": 63,
+  "venue": "antones",
+  "date": "2026-11-18",
+  "headliner": "stop light observations",
+  "titles": [
+   "Stop Light Observations",
+   "Stop Light Observations w/ Runner and Bobby"
+  ],
+  "sources": {
+   "do512": "https://do512.com/events/2026/11/18/stop-light-observations-w-runner-and-bobby-tickets",
+   "bandsintown": "https://www.bandsintown.com/e/1039217911-stop-light-observations-at-antone's?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event",
+   "jambase": "https://www.jambase.com/show/stop-light-observations-antones-20261118",
+   "seatgeek": "https://seatgeek.com/stop-light-observations-tickets/austin-texas-antone-s-nightclub-2026-11-18-8-pm/concert/18282534",
+   "showlist-austin": "https://www.showlistaustin.com/"
+  }
+ },
+ {
+  "id": 64,
+  "venue": "antones",
+  "date": "2026-11-19",
+  "headliner": "tank and the bangas",
+  "titles": [
+   "Tank and The Bangas",
+   "Tank and The Bangas, The Last Balloon Tour w/ Ariel J.",
+   "Tank and The Bangas: The Last Balloon Tour w/ Ariel J. & ZEUS (NIGHT ONE)"
+  ],
+  "sources": {
+   "do512": "https://do512.com/events/2026/11/19/tank-and-the-bangas-the-last-balloon-tour-w-ariel-j-tickets",
+   "bandsintown": "https://www.bandsintown.com/e/1038429668-tank-and-the-bangas-at-antone's?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event",
+   "jambase": "https://www.jambase.com/show/tank-and-the-bangas-ariel-j-antones-20261119",
+   "showlist-austin": "https://www.showlistaustin.com/"
+  }
+ },
+ {
+  "id": 65,
+  "venue": "antones",
+  "date": "2026-11-19",
+  "headliner": "tank and the bangas 21",
+  "titles": [
+   "Tank and the Bangas (21+)"
+  ],
+  "sources": {
+   "seatgeek": "https://seatgeek.com/tank-and-the-bangas-tickets/austin-texas-antone-s-nightclub-2026-11-19-8-pm/concert/18134835"
+  }
+ },
+ {
+  "id": 66,
+  "venue": "antones",
+  "date": "2026-11-20",
+  "headliner": "tank and the bangas",
+  "titles": [
+   "Tank and The Bangas",
+   "Tank and The Bangas, The Last Balloon Tour w/ Ariel J.",
+   "Tank and The Bangas: The Last Balloon Tour w/ Ariel J. & ZEUS (NIGHT TWO)"
+  ],
+  "sources": {
+   "do512": "https://do512.com/events/2026/11/20/tank-and-the-bangas-the-last-balloon-tour-w-ariel-j-tickets",
+   "bandsintown": "https://www.bandsintown.com/e/108458095-tank-and-the-bangas-at-antone's?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event",
+   "jambase": "https://www.jambase.com/show/tank-and-the-bangas-ariel-j-antones-20261120",
+   "showlist-austin": "https://www.showlistaustin.com/"
+  }
+ },
+ {
+  "id": 67,
+  "venue": "antones",
+  "date": "2026-11-20",
+  "headliner": "tank and the bangas 21",
+  "titles": [
+   "Tank and the Bangas (21+)"
+  ],
+  "sources": {
+   "seatgeek": "https://seatgeek.com/tank-and-the-bangas-tickets/austin-texas-antone-s-nightclub-2026-11-20-8-pm/concert/18134836"
+  }
+ },
+ {
+  "id": 68,
+  "venue": "antones",
+  "date": "2026-11-22",
+  "headliner": "north mississippi allstars",
+  "titles": [
+   "North Mississippi Allstars"
+  ],
+  "sources": {
+   "bandsintown": "https://www.bandsintown.com/e/1039449629-north-mississippi-allstars-at-antone's?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event",
+   "jambase": "https://www.jambase.com/show/north-mississippi-allstars-antones-20261122",
+   "seatgeek": "https://seatgeek.com/north-mississippi-allstars-tickets/austin-texas-antone-s-nightclub-2026-11-22-8-pm/concert/18328198",
+   "showlist-austin": "https://www.showlistaustin.com/"
+  }
+ },
+ {
+  "id": 69,
+  "venue": "antones",
+  "date": "2026-11-24",
+  "headliner": "so called underground",
+  "titles": [
+   "So Called Underground w/ Greyson Turner & Jeska"
+  ],
+  "sources": {
+   "showlist-austin": "https://www.showlistaustin.com/"
+  }
+ },
+ {
+  "id": 70,
+  "venue": "antones",
+  "date": "2026-11-25",
+  "headliner": "quentin moore",
+  "titles": [
+   "Quentin Moore"
+  ],
+  "sources": {
+   "bandsintown": "https://www.bandsintown.com/e/1040077344-quentin-moore-at-antone's?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event",
+   "jambase": "https://www.jambase.com/show/quentin-moore-antones-20261125",
+   "showlist-austin": "https://www.showlistaustin.com/"
+  }
+ },
+ {
+  "id": 71,
+  "venue": "antones",
+  "date": "2026-11-27",
+  "headliner": "dumpstaphunk",
+  "titles": [
+   "Dumpstaphunk"
+  ],
+  "sources": {
+   "bandsintown": "https://www.bandsintown.com/e/1040287442-dumpstaphunk-at-antone's?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event",
+   "jambase": "https://www.jambase.com/show/dumpstaphunk-antones-20261127",
+   "seatgeek": "https://seatgeek.com/dumpstaphunk-tickets/austin-texas-antone-s-nightclub-2026-11-27-9-pm/concert/18593687"
+  }
+ },
+ {
+  "id": 72,
+  "venue": "antones",
+  "date": "2026-11-27",
+  "headliner": "dumpstaphunks 5th annual phunksgiving",
+  "titles": [
+   "Dumpstaphunk\u2019s 5th Annual Phunksgiving"
+  ],
+  "sources": {
+   "showlist-austin": "https://www.showlistaustin.com/"
+  }
+ },
+ {
+  "id": 73,
+  "venue": "antones",
+  "date": "2026-11-28",
+  "headliner": "dumpstaphunk",
+  "titles": [
+   "Dumpstaphunk"
+  ],
+  "sources": {
+   "bandsintown": "https://www.bandsintown.com/e/1040286992-dumpstaphunk-at-antone's?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event",
+   "jambase": "https://www.jambase.com/show/dumpstaphunk-antones-20261128",
+   "seatgeek": "https://seatgeek.com/dumpstaphunk-tickets/austin-texas-antone-s-nightclub-2026-11-28-9-pm/concert/18593686"
+  }
+ },
+ {
+  "id": 74,
+  "venue": "antones",
+  "date": "2026-11-28",
+  "headliner": "dumpstaphunks 5th annual phunksgiving",
+  "titles": [
+   "Dumpstaphunk\u2019s 5th Annual Phunksgiving"
+  ],
+  "sources": {
+   "showlist-austin": "https://www.showlistaustin.com/"
+  }
+ },
+ {
+  "id": 75,
+  "venue": "antones",
+  "date": "2026-11-29",
+  "headliner": "project pat",
+  "titles": [
+   "Project Pat"
+  ],
+  "sources": {
+   "bandsintown": "https://www.bandsintown.com/e/1040007730-project-pat-at-antone's?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event",
+   "jambase": "https://www.jambase.com/show/project-pat-antones-20261129",
+   "seatgeek": "https://seatgeek.com/project-pat-tickets/austin-texas-antone-s-nightclub-2026-11-29-8-pm/concert/18515335",
+   "showlist-austin": "https://www.showlistaustin.com/"
+  }
+ },
+ {
+  "id": 76,
+  "venue": "brushy",
+  "date": "2026-09-24",
+  "headliner": "sydney sherrill",
+  "titles": [
+   "Sydney Sherrill"
+  ],
+  "sources": {
+   "bandsintown": "https://www.bandsintown.com/e/1040359322-sydney-sherrill-at-brushy-street-commons?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event"
+  }
+ },
+ {
+  "id": 77,
+  "venue": "brushy",
+  "date": "2026-09-24",
+  "headliner": "boys go to jupiter",
+  "titles": [
+   "Boys Go To Jupiter, Sydney Sherrill"
+  ],
+  "sources": {
+   "austin-chronicle": "https://calendar.austinchronicle.com/event/boys-go-to-jupiter-sydney-sherrill-14307376"
+  }
+ },
+ {
+  "id": 78,
+  "venue": "brushy",
+  "date": "2026-09-29",
+  "headliner": "grace enger",
+  "titles": [
+   "Grace Enger",
+   "Grace Enger @ Brushy Street Commons"
+  ],
+  "sources": {
+   "songkick": "https://www.songkick.com/concerts/43225827-grace-enger-at-brushy-street-commons",
+   "jambase": "https://www.jambase.com/show/grace-enger-brushy-street-commons-20260929"
+  }
+ },
+ {
+  "id": 79,
+  "venue": "brushy",
+  "date": "2026-10-02",
+  "headliner": "cormae",
+  "titles": [
+   "CorMae"
+  ],
+  "sources": {
+   "bandsintown": "https://www.bandsintown.com/e/1039994088-cormae-at-brushy-street-commons?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event"
+  }
+ },
+ {
+  "id": 80,
+  "venue": "brushy",
+  "date": "2026-10-05",
+  "headliner": "acl fest nights",
+  "titles": [
+   "ACL Fest Nights: LP"
+  ],
+  "sources": {
+   "seatgeek": "https://seatgeek.com/austin-city-limits-late-night-shows-tickets/austin-texas-the-parish-austin-2026-10-05-8-pm/concert/18508543"
+  }
+ },
+ {
+  "id": 81,
+  "venue": "brushy",
+  "date": "2026-10-10",
+  "headliner": "punchline at the pole",
+  "titles": [
+   "Punchline at the Pole: HALLOWEEN"
+  ],
+  "sources": {
+   "do512": "https://do512.com/events/2026/10/10/punchline-at-the-pole-halloween-tickets"
+  }
+ },
+ {
+  "id": 82,
+  "venue": "brushy",
+  "date": "2026-10-11",
+  "headliner": "el ten eleven",
+  "titles": [
+   "El Ten Eleven @ Parish"
+  ],
+  "sources": {
+   "songkick": "https://www.songkick.com/concerts/43251101-el-ten-eleven-at-parish"
+  }
+ },
+ {
+  "id": 83,
+  "venue": "brushy",
+  "date": "2026-10-16",
+  "headliner": "leah rudick",
+  "titles": [
+   "Leah Rudick"
+  ],
+  "sources": {
+   "austin-chronicle": "https://calendar.austinchronicle.com/event/leah-rudick-14159801",
+   "ticketmaster": "https://www.ticketweb.ca/event/leah-rudick-levity-comedy-club-lounge-tickets/14213564?REFERRAL_ID=tmfeed"
+  }
+ },
+ {
+  "id": 84,
+  "venue": "brushy",
+  "date": "2026-10-20",
+  "headliner": "so this is suffering",
+  "titles": [
+   "So This Is Suffering"
+  ],
+  "sources": {
+   "bandsintown": "https://www.bandsintown.com/e/1040360253-so-this-is-suffering-at-brushy-street-commons?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event"
+  }
+ },
+ {
+  "id": 85,
+  "venue": "brushy",
+  "date": "2026-10-22",
+  "headliner": "crayon",
+  "titles": [
+   "Crayon"
+  ],
+  "sources": {
+   "bandsintown": "https://www.bandsintown.com/e/1040383221-crayon-at-brushy-street-commons?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event"
+  }
+ },
+ {
+  "id": 86,
+  "venue": "brushy",
+  "date": "2026-10-24",
+  "headliner": "improvement movement",
+  "titles": [
+   "Improvement Movement"
+  ],
+  "sources": {
+   "bandsintown": "https://www.bandsintown.com/e/1039645773-improvement-movement-at-brushy-street-commons?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event"
+  }
+ },
+ {
+  "id": 87,
+  "venue": "brushy",
+  "date": "2026-10-24",
+  "headliner": "greg fitzsimmons",
+  "titles": [
+   "Greg Fitzsimmons"
+  ],
+  "sources": {
+   "seatgeek": "https://seatgeek.com/greg-fitzsimmons-tickets/comedy/2026-10-24-7-pm/18357850",
+   "austin-chronicle": "https://calendar.austinchronicle.com/event/greg-fitzsimmons-14192881",
+   "ticketmaster": "https://www.ticketweb.ca/event/greg-fitzsimmons-levity-comedy-club-lounge-tickets/14248094?REFERRAL_ID=tmfeed"
+  }
+ },
+ {
+  "id": 88,
+  "venue": "brushy",
+  "date": "2026-10-25",
+  "headliner": "creek",
+  "titles": [
+   "CREEK",
+   "Creek",
+   "Creek @ Brushy Street Commons"
+  ],
+  "sources": {
+   "bandsintown": "https://www.bandsintown.com/e/1040168574-creek-at-brushy-street-commons?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event",
+   "songkick": "https://www.songkick.com/concerts/43420038-creek-at-brushy-street-commons",
+   "jambase": "https://www.jambase.com/show/creek-brushy-street-commons-20261025"
+  }
+ },
+ {
+  "id": 89,
+  "venue": "brushy",
+  "date": "2026-11-17",
+  "headliner": "drunk uncle",
+  "titles": [
+   "Drunk Uncle"
+  ],
+  "sources": {
+   "bandsintown": "https://www.bandsintown.com/e/1040032451-drunk-uncle-at-brushy-street-commons?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event"
+  }
+ },
+ {
+  "id": 90,
+  "venue": "brushy",
+  "date": "2026-11-20",
+  "headliner": "jejune",
+  "titles": [
+   "Jejune",
+   "Jejune @ Brushy Street Commons"
+  ],
+  "sources": {
+   "bandsintown": "https://www.bandsintown.com/e/1040383372-jejune-at-brushy-street-commons?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event",
+   "songkick": "https://www.songkick.com/concerts/43431070-jejune-at-brushy-street-commons"
+  }
+ },
+ {
+  "id": 91,
+  "venue": "concourse",
+  "date": "2026-09-25",
+  "headliner": "ben sterling 21 and over",
+  "titles": [
+   "Ben Sterling (21 and Over)"
+  ],
+  "sources": {
+   "austin-chronicle": "https://calendar.austinchronicle.com/event/ben-sterling-21-and-over-14227016"
+  }
+ },
+ {
+  "id": 92,
+  "venue": "concourse",
+  "date": "2026-10-03",
+  "headliner": "tony romera",
+  "titles": [
+   "Tony Romera, Essel"
+  ],
+  "sources": {
+   "19hz": "https://wl.eventim.us/event/FREE-with-RSVP-Tony-Romera-ESSEL-at-The-Concourse-Project/696710?afflky=TheConcourseProject"
+  }
+ },
+ {
+  "id": 93,
+  "venue": "concourse",
+  "date": "2026-10-08",
+  "headliner": "u uk uk1mat u",
+  "titles": [
+   "\u00a5\u00d8U$UK\u20ac \u00a5UK1MAT$U"
+  ],
+  "sources": {
+   "austin-chronicle": "https://calendar.austinchronicle.com/event/ou-uk-uk1mat-u-14344847",
+   "edmtrain": "https://edmtrain.com/austin-tx/ou-uk-uk1mat-u-529756"
+  }
+ },
+ {
+  "id": 94,
+  "venue": "concourse",
+  "date": "2026-10-11",
+  "headliner": "holy priest",
+  "titles": [
+   "HOLY PRIEST"
+  ],
+  "sources": {
+   "bandsintown": "https://www.bandsintown.com/e/108691834-holy-priest-at-the-concourse-project?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event"
+  }
+ },
+ {
+  "id": 95,
+  "venue": "concourse",
+  "date": "2026-10-11",
+  "headliner": "kistenbrugger",
+  "titles": [
+   "KISTENBR\u00dcGGER"
+  ],
+  "sources": {
+   "bandsintown": "https://www.bandsintown.com/e/1040266442-kistenbrugger-at-the-concourse-project?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event"
+  }
+ },
+ {
+  "id": 96,
+  "venue": "concourse",
+  "date": "2026-11-13",
+  "headliner": "above beyond",
+  "titles": [
+   "Seismic Dance Event",
+   "Seismic Dance Event 9.0"
+  ],
+  "sources": {
+   "do512": "https://do512.com/events/2026/11/13/seismic-dance-event-9-0-tickets",
+   "jambase": "https://www.jambase.com/festival/seismic-dance-event-2026"
+  }
+ },
+ {
+  "id": 97,
+  "venue": "concourse",
+  "date": "2026-11-13",
+  "headliner": "horsegiirl",
+  "titles": [
+   "horsegiirL"
+  ],
+  "sources": {
+   "bandsintown": "https://www.bandsintown.com/e/108863943-horsegiirl-at-the-concourse-project?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event"
+  }
+ },
+ {
+  "id": 98,
+  "venue": "concourse",
+  "date": "2026-11-13",
+  "headliner": "mestiza",
+  "titles": [
+   "Mestiza"
+  ],
+  "sources": {
+   "bandsintown": "https://www.bandsintown.com/e/1040057992-mestiza-at-the-concourse-project?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event"
+  }
+ },
+ {
+  "id": 99,
+  "venue": "concourse",
+  "date": "2026-11-13",
+  "headliner": "maddix",
+  "titles": [
+   "Maddix @ Concourse Project"
+  ],
+  "sources": {
+   "songkick": "https://www.songkick.com/concerts/43404197-maddix-at-concourse-project"
+  }
+ },
+ {
+  "id": 100,
+  "venue": "concourse",
+  "date": "2026-11-13",
+  "headliner": "chris liebing",
+  "titles": [
+   "Chris Liebing @ Concourse Project"
+  ],
+  "sources": {
+   "songkick": "https://www.songkick.com/concerts/43406160-chris-liebing-at-concourse-project"
+  }
+ },
+ {
+  "id": 101,
+  "venue": "concourse",
+  "date": "2026-11-13",
+  "headliner": "seismic dance event",
+  "titles": [
+   "Seismic Dance Event (18 and Over) - Friday",
+   "Seismic Dance Event - 3 Day Pass (18+)"
+  ],
+  "sources": {
+   "seatgeek": "https://seatgeek.com/seismic-dance-event-tickets/austin-texas-the-concourse-project-2026-11-13-3-30-am/music-festival/18039208",
+   "ticketmaster": "https://www.ticketmaster.com/event/Z7r9jZ1A7PoOx"
+  }
+ },
+ {
+  "id": 102,
+  "venue": "concourse",
+  "date": "2026-11-13",
+  "headliner": "seismic dance event 18 and over",
+  "titles": [
+   "Seismic Dance Event (18 and Over) - Friday"
+  ],
+  "sources": {
+   "austin-chronicle": "https://calendar.austinchronicle.com/event/seismic-dance-event-18-and-over-friday-14226918"
+  }
+ },
+ {
+  "id": 103,
+  "venue": "concourse",
+  "date": "2026-11-13",
+  "headliner": "porter robinson",
+  "titles": [
+   "Seismic Dance Event: Porter Robinson, Chris Lorenzo, Layton Giordani, horsegiirL, Sara Landry, KI/KI, Max Styler, Above & Beyond, Brutalismus 3000, SG Lewis, Brunello, BOLO, MPH, Notion, Starjunk 95, VTSS, Devault, M\u00cbSTIZA, Cole Knight, Fallon (Dublin), Conrad Taylor, Smokey Bubblin' B, Hills, Joss Dean, Kamino, 1tbsp, Luke Alessi, Dreya V, HNTR, Welker, Adam Sellouk, Benwal, Diffrent, Kyle Starkey"
+  ],
+  "sources": {
+   "edmtrain": "https://edmtrain.com/austin-tx/seismic-dance-event-453918"
+  }
+ },
+ {
+  "id": 104,
+  "venue": "concourse",
+  "date": "2026-11-13",
+  "headliner": "seismic dance event 9 0",
+  "titles": [
+   "Seismic Dance Event 9.0"
+  ],
+  "sources": {
+   "19hz": "https://wl.eventim.us/event/Seismic-Dance-Event-90/672543?afflky=SeismicDanceEvent"
+  }
+ },
+ {
+  "id": 105,
+  "venue": "concourse",
+  "date": "2026-11-14",
+  "headliner": "above beyond",
+  "titles": [
+   "Above & Beyond"
+  ],
+  "sources": {
+   "bandsintown": "https://www.bandsintown.com/e/108863964-above-and-beyond-at-the-concourse-project?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event"
+  }
+ },
+ {
+  "id": 106,
+  "venue": "concourse",
+  "date": "2026-11-14",
+  "headliner": "seismic dance event",
+  "titles": [
+   "Seismic Dance Event",
+   "Seismic Dance Event (18 and Over) - Saturday",
+   "Seismic Dance Event - Saturday (18+)"
+  ],
+  "sources": {
+   "seatgeek": "https://seatgeek.com/seismic-dance-event-tickets/austin-texas-the-concourse-project-2026-11-14-3-30-am/music-festival/18039211",
+   "ticketmaster": "https://www.ticketmaster.com/event/Z7r9jZ1AAZ7-0",
+   "edmtrain": "https://edmtrain.com/austin-tx/seismic-dance-event-453919"
+  }
+ },
+ {
+  "id": 107,
+  "venue": "concourse",
+  "date": "2026-11-14",
+  "headliner": "seismic dance event 18 and over",
+  "titles": [
+   "Seismic Dance Event (18 and Over) - Saturday"
+  ],
+  "sources": {
+   "austin-chronicle": "https://calendar.austinchronicle.com/event/seismic-dance-event-18-and-over-saturday-14227012"
+  }
+ },
+ {
+  "id": 108,
+  "venue": "concourse",
+  "date": "2026-11-15",
+  "headliner": "sara landry",
+  "titles": [
+   "Sara Landry"
+  ],
+  "sources": {
+   "bandsintown": "https://www.bandsintown.com/e/108863982-sara-landry-at-the-concourse-project?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event"
+  }
+ },
+ {
+  "id": 109,
+  "venue": "concourse",
+  "date": "2026-11-15",
+  "headliner": "seismic dance event",
+  "titles": [
+   "Seismic Dance Event",
+   "Seismic Dance Event (18 and Over) - Sunday",
+   "Seismic Dance Event - Sunday (18+)"
+  ],
+  "sources": {
+   "seatgeek": "https://seatgeek.com/seismic-dance-event-tickets/austin-texas-the-concourse-project-2026-11-15-3-30-am/music-festival/18039210",
+   "ticketmaster": "https://www.ticketmaster.com/event/Z7r9jZ1A7PoOO",
+   "edmtrain": "https://edmtrain.com/austin-tx/seismic-dance-event-453920"
+  }
+ },
+ {
+  "id": 110,
+  "venue": "concourse",
+  "date": "2026-11-15",
+  "headliner": "the milk carton kids",
+  "titles": [
+   "The Milk Carton Kids"
+  ],
+  "sources": {
+   "seatgeek": "https://seatgeek.com/the-milk-carton-kids-tickets/austin-texas-the-concourse-project-2026-11-15-8-pm/concert/18234141"
+  }
+ },
+ {
+  "id": 111,
+  "venue": "concourse",
+  "date": "2026-11-15",
+  "headliner": "seismic dance event 18 and over",
+  "titles": [
+   "Seismic Dance Event (18 and Over) - Sunday"
+  ],
+  "sources": {
+   "austin-chronicle": "https://calendar.austinchronicle.com/event/seismic-dance-event-18-and-over-sunday-14226916"
+  }
+ },
+ {
+  "id": 112,
+  "venue": "concourse",
+  "date": "2026-12-19",
+  "headliner": "inzo",
+  "titles": [
+   "INZO",
+   "INZO at The Concourse Project - Ages 18+",
+   "INZO, Late Night Radio, Blookah, ALIGN"
+  ],
+  "sources": {
+   "bandsintown": "https://www.bandsintown.com/e/1039987698-inzo-at-the-concourse-project?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event",
+   "jambase": "https://www.jambase.com/show/inzo-the-concourse-project-20261219",
+   "ticketmaster": "https://www.ticketmaster.com/event/Z7r9jZ1AAZMa0",
+   "edmtrain": "https://edmtrain.com/austin-tx/inzo-late-night-radio-529779"
+  }
+ },
+ {
+  "id": 113,
+  "venue": "concourse",
+  "date": "2026-12-19",
+  "headliner": "in zo",
+  "titles": [
+   "IN-ZO @ Concourse Project"
+  ],
+  "sources": {
+   "songkick": "https://www.songkick.com/concerts/43372441-inzo-at-concourse-project"
+  }
+ },
+ {
+  "id": 114,
+  "venue": "continental",
+  "date": "2026-09-25",
+  "headliner": "patricia vonne fan page",
+  "titles": [
+   "Patricia Vonne Fan Page"
+  ],
+  "sources": {
+   "bandsintown": "https://www.bandsintown.com/e/1038667980-patricia-vonne-fan-page-at-continental-club?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event"
+  }
+ },
+ {
+  "id": 115,
+  "venue": "continental",
+  "date": "2026-09-25",
+  "headliner": "patricia vonne s my heart s got a mind of its own official album release show",
+  "titles": [
+   "Patricia Vonne's \u201cMy Heart's Got A Mind of Its Own\u201d Official Album Release Show"
+  ],
+  "sources": {
+   "austin-chronicle": "https://calendar.austinchronicle.com/event/patricia-vonnes-my-hearts-got-a-mind-of-its-own-official-album-release-show-13990814"
+  }
+ },
+ {
+  "id": 116,
+  "venue": "continental",
+  "date": "2026-09-26",
+  "headliner": "dossey",
+  "titles": [
+   "DOSSEY"
+  ],
+  "sources": {
+   "bandsintown": "https://www.bandsintown.com/e/1039863214-dossey-at-continental-club?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event"
+  }
+ },
+ {
+  "id": 117,
+  "venue": "continental",
+  "date": "2026-09-28",
+  "headliner": "dale watson",
+  "titles": [
+   "Dale Watson"
+  ],
+  "sources": {
+   "do512": "https://do512.com/events/weekly/mon/dale-watson-tickets-slvutjkc"
+  }
+ },
+ {
+  "id": 118,
+  "venue": "emos",
+  "date": "2026-09-25",
+  "headliner": "enter shikari",
+  "titles": [
+   "Enter Shikari North America 2026 @ Emo's Austin",
+   "Enter Shikari: North America 2026"
+  ],
+  "sources": {
+   "songkick": "https://www.songkick.com/festivals/3662889-enter-shikari-north-america/id/43135400-enter-shikari-north-america-2026",
+   "ticketmaster": "https://www.ticketmaster.com/enter-shikari-north-america-2026-austin-texas-09-25-2026/event/3A00647A9FAF8DCA"
+  }
+ },
+ {
+  "id": 119,
+  "venue": "emos",
+  "date": "2026-09-29",
+  "headliner": "jane remover",
+  "titles": [
+   "Jane Remover",
+   "Jane Remover with Dazegxd",
+   "Jane Remover, Dazegxd"
+  ],
+  "sources": {
+   "jambase": "https://www.jambase.com/show/jane-remover-dazegxd-emos-austin-20260929",
+   "seatgeek": "https://seatgeek.com/jane-remover-tickets/austin-texas-emo-s-austin-2026-09-29-7-pm/concert/18192038",
+   "19hz": "https://www.ticketmaster.com/event/3A006490F0674CBE"
+  }
+ },
+ {
+  "id": 120,
+  "venue": "emos",
+  "date": "2026-10-01",
+  "headliner": "the 4411",
+  "titles": [
+   "The 4411",
+   "The 4411 @ Emo's Austin"
+  ],
+  "sources": {
+   "bandsintown": "https://www.bandsintown.com/e/1039996704-the-4411-at-emo's-austin?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event",
+   "songkick": "https://www.songkick.com/concerts/43376400-4411-at-emos-austin"
+  }
+ },
+ {
+  "id": 121,
+  "venue": "emos",
+  "date": "2026-10-03",
+  "headliner": "untitld",
+  "titles": [
+   "Untitld"
+  ],
+  "sources": {
+   "bandsintown": "https://www.bandsintown.com/e/1039995429-untitld-at-emo's-austin?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event"
+  }
+ },
+ {
+  "id": 122,
+  "venue": "emos",
+  "date": "2026-10-05",
+  "headliner": "suki waterhouse",
+  "titles": [
+   "Official 2026 ACL Nights: Suki Waterhouse"
+  ],
+  "sources": {
+   "showlist-austin": "https://www.showlistaustin.com/"
+  }
+ },
+ {
+  "id": 123,
+  "venue": "emos",
+  "date": "2026-10-14",
+  "headliner": "ravyn lenae",
+  "titles": [
+   "Ravyn Lenae @ Emo's Austin"
+  ],
+  "sources": {
+   "songkick": "https://www.songkick.com/concerts/43288128-ravyn-lenae-at-emos-austin"
+  }
+ },
+ {
+  "id": 124,
+  "venue": "emos",
+  "date": "2026-10-14",
+  "headliner": "meredith marks",
+  "titles": [
+   "Meredith Marks @ Emo's Austin"
+  ],
+  "sources": {
+   "songkick": "https://www.songkick.com/concerts/43418581-meredith-marks-at-emos-austin"
+  }
+ },
+ {
+  "id": 125,
+  "venue": "emos",
+  "date": "2026-10-14",
+  "headliner": "ravyn lenae presents",
+  "titles": [
+   "Ravyn Lenae Presents: Blue Island"
+  ],
+  "sources": {
+   "ticketmaster": "https://www.ticketmaster.com/ravyn-lenae-presents-blue-island-austin-texas-10-14-2026/event/3A0064C9AC35BF7E"
+  }
+ },
+ {
+  "id": 126,
+  "venue": "emos",
+  "date": "2026-10-17",
+  "headliner": "live nation",
+  "titles": [
+   "Live Nation & Resound Presents: Chelsea Wolfe w/ Jonathan Hult\u00e9n"
+  ],
+  "sources": {
+   "austin-chronicle": "https://calendar.austinchronicle.com/event/live-nation-and-resound-presents-chelsea-wolfe-w-jonathan-hulten-14174958"
+  }
+ },
+ {
+  "id": 127,
+  "venue": "emos",
+  "date": "2026-10-23",
+  "headliner": "marilyn manson",
+  "titles": [
+   "Marilyn Manson"
+  ],
+  "sources": {
+   "showlist-austin": "https://www.showlistaustin.com/"
+  }
+ },
+ {
+  "id": 128,
+  "venue": "emos",
+  "date": "2026-10-29",
+  "headliner": "jane remover",
+  "titles": [
+   "Jane Remover"
+  ],
+  "sources": {
+   "jambase": "https://www.jambase.com/show/jane-remover-emos-austin-20261029"
+  }
+ },
+ {
+  "id": 129,
+  "venue": "emos",
+  "date": "2026-11-01",
+  "headliner": "hazlett",
+  "titles": [
+   "Hazlett",
+   "Hazlett @ Emo's Austin"
+  ],
+  "sources": {
+   "do512": "https://do512.com/events/2026/11/1/hazlett-tickets",
+   "songkick": "https://www.songkick.com/concerts/43275300-hazlett-at-emos-austin",
+   "jambase": "https://www.jambase.com/show/hazlett-emos-austin-20261101",
+   "austin-chronicle": "https://calendar.austinchronicle.com/event/hazlett-14132311"
+  }
+ },
+ {
+  "id": 130,
+  "venue": "emos",
+  "date": "2026-11-07",
+  "headliner": "two nights",
+  "titles": [
+   "TWO NIGHTS WITH THEY MIGHT BE GIANTS - 2 Day Ticket(11/6/26 + 11/7/26)"
+  ],
+  "sources": {
+   "austin-chronicle": "https://calendar.austinchronicle.com/event/two-nights-with-they-might-be-giants-2-day-ticket-11-6-26-11-7-26-14198573"
+  }
+ },
+ {
+  "id": 131,
+  "venue": "emos",
+  "date": "2026-11-08",
+  "headliner": "they might be giants",
+  "titles": [
+   "They Might Be Giants (Night Three)",
+   "They Might Be Giants @ Emo's Austin"
+  ],
+  "sources": {
+   "do512": "https://do512.com/events/2026/11/8/they-might-be-giants-night-three-tickets",
+   "songkick": "https://www.songkick.com/concerts/43169610-they-might-be-giants-at-emos-austin"
+  }
+ },
+ {
+  "id": 132,
+  "venue": "emos",
+  "date": "2026-11-08",
+  "headliner": "two nights",
+  "titles": [
+   "TWO NIGHTS WITH THEY MIGHT BE GIANTS"
+  ],
+  "sources": {
+   "showlist-austin": "https://www.showlistaustin.com/"
+  }
+ },
+ {
+  "id": 133,
+  "venue": "emos",
+  "date": "2026-11-11",
+  "headliner": "medium build presents the king of having fun on tour",
+  "titles": [
+   "Medium Build Presents The King of Having Fun on Tour"
+  ],
+  "sources": {
+   "showlist-austin": "https://www.showlistaustin.com/"
+  }
+ },
+ {
+  "id": 134,
+  "venue": "emos",
+  "date": "2026-11-14",
+  "headliner": "danna",
+  "titles": [
+   "Danna @ Emo's Austin"
+  ],
+  "sources": {
+   "songkick": "https://www.songkick.com/concerts/43392079-danna-at-emos-austin"
+  }
+ },
+ {
+  "id": 135,
+  "venue": "emos",
+  "date": "2026-11-17",
+  "headliner": "vincent lima",
+  "titles": [
+   "Vincent Lima"
+  ],
+  "sources": {
+   "bandsintown": "https://www.bandsintown.com/e/1038902399-vincent-lima-at-emo's-austin?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event"
+  }
+ },
+ {
+  "id": 136,
+  "venue": "emos",
+  "date": "2026-11-21",
+  "headliner": "dexter and the moonrocks",
+  "titles": [
+   "Dexter and The Moonrocks"
+  ],
+  "sources": {
+   "showlist-austin": "https://www.showlistaustin.com/"
+  }
+ },
+ {
+  "id": 137,
+  "venue": "emos",
+  "date": "2026-11-27",
+  "headliner": "kevonstage kevin fredericks",
+  "titles": [
+   "KevOnStage (Kevin Fredericks)"
+  ],
+  "sources": {
+   "seatgeek": "https://seatgeek.com/kevonstage-kevin-fredericks-tickets/comedy/2026-11-27-6-30-pm/18372175"
+  }
+ },
+ {
+  "id": 138,
+  "venue": "germania",
+  "date": "2026-09-25",
+  "headliner": "roxette",
+  "titles": [
+   "Roxette @ Germania Insurance Amphitheater"
+  ],
+  "sources": {
+   "songkick": "https://www.songkick.com/concerts/43236653-roxette-at-germania-insurance-amphitheater"
+  }
+ },
+ {
+  "id": 139,
+  "venue": "germania",
+  "date": "2026-09-26",
+  "headliner": "halestorm",
+  "titles": [
+   "Halestorm @ Germania Insurance Amphitheater"
+  ],
+  "sources": {
+   "songkick": "https://www.songkick.com/concerts/43127511-halestorm-at-germania-insurance-amphitheater"
+  }
+ },
+ {
+  "id": 140,
+  "venue": "kingdom",
+  "date": "2026-09-24",
+  "headliner": "rave jesus",
+  "titles": [
+   "Rave Jesus - Rave Revival Fall Tour"
+  ],
+  "sources": {
+   "19hz": "https://www.etix.com/ticket/p/72889151"
+  }
+ },
+ {
+  "id": 141,
+  "venue": "kingdom",
+  "date": "2026-10-09",
+  "headliner": "resound",
+  "titles": [
+   "Resound & Kingdom Presents: Andy Stott & Debit"
+  ],
+  "sources": {
+   "austin-chronicle": "https://calendar.austinchronicle.com/event/resound-and-kingdom-presents-andy-stott-and-debit-14337003"
+  }
+ },
+ {
+  "id": 142,
+  "venue": "kingdom",
+  "date": "2026-10-10",
+  "headliner": "matthew dear b2b the juan maclean",
+  "titles": [
+   "Matthew Dear b2b The Juan Maclean"
+  ],
+  "sources": {
+   "edmtrain": "https://edmtrain.com/austin-tx/matthew-dear-the-juan-maclean-539580"
+  }
+ },
+ {
+  "id": 143,
+  "venue": "mohawk",
+  "date": "2026-09-30",
+  "headliner": "new mohawk neon sign celebration",
+  "titles": [
+   "New Mohawk Neon Sign Celebration With Downtown Austin Alliance"
+  ],
+  "sources": {
+   "austin-chronicle": "https://calendar.austinchronicle.com/event/new-mohawk-neon-sign-celebration-with-downtown-austin-alliance-14374854"
+  }
+ },
+ {
+  "id": 144,
+  "venue": "mohawk",
+  "date": "2026-10-06",
+  "headliner": "brian fallon and the painkillers",
+  "titles": [
+   "Brian Fallon and The Painkillers"
+  ],
+  "sources": {
+   "austin-chronicle": "https://calendar.austinchronicle.com/event/brian-fallon-and-the-painkillers-14365834"
+  }
+ },
+ {
+  "id": 145,
+  "venue": "mohawk",
+  "date": "2026-10-13",
+  "headliner": "toth",
+  "titles": [
+   "T\u014dth",
+   "T\u014dth, William Alexander [inside]"
+  ],
+  "sources": {
+   "bandsintown": "https://www.bandsintown.com/e/1039215321-toth-at-mohawk-austin?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event",
+   "austin-chronicle": "https://calendar.austinchronicle.com/event/toth-william-alexander-inside-14374942"
+  }
+ },
+ {
+  "id": 146,
+  "venue": "mohawk",
+  "date": "2026-10-18",
+  "headliner": "joey ca h",
+  "titles": [
+   "Joey Ca$h @ Mohawk - Indoor"
+  ],
+  "sources": {
+   "songkick": "https://www.songkick.com/concerts/43392263-joey-cash-at-mohawk-indoor"
+  }
+ },
+ {
+  "id": 147,
+  "venue": "mohawk",
+  "date": "2026-10-20",
+  "headliner": "josh rouse",
+  "titles": [
+   "Josh Rouse"
+  ],
+  "sources": {
+   "bandsintown": "https://www.bandsintown.com/e/1039337714-josh-rouse-at-mohawk-austin?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event"
+  }
+ },
+ {
+  "id": 148,
+  "venue": "mohawk",
+  "date": "2026-11-13",
+  "headliner": "helado negro",
+  "titles": [
+   "Helado Negro"
+  ],
+  "sources": {
+   "bandsintown": "https://www.bandsintown.com/e/1039431583-helado-negro-at-mohawk-austin?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event"
+  }
+ },
+ {
+  "id": 149,
+  "venue": "moody-amphitheater",
+  "date": "2026-09-26",
+  "headliner": "of the trees",
+  "titles": [
+   "Of The Trees"
+  ],
+  "sources": {
+   "ticketmaster": "https://www.ticketmaster.com/of-the-trees-austin-texas-09-26-2026/event/3A0064D802E7DF26"
+  }
+ },
+ {
+  "id": 150,
+  "venue": "moody-amphitheater",
+  "date": "2026-09-30",
+  "headliner": "young thug",
+  "titles": [
+   "YSL Records & Young Thug Presents: The New Generation Tour"
+  ],
+  "sources": {
+   "ticketmaster": "https://www.ticketmaster.com/ysl-records-young-thug-presents-the-austin-texas-09-30-2026/event/3A0064EAC752C121"
+  }
+ },
+ {
+  "id": 151,
+  "venue": "moody-amphitheater",
+  "date": "2026-10-07",
+  "headliner": "role model",
+  "titles": [
+   "Role Model Presents: Chuck On Tour"
+  ],
+  "sources": {
+   "ticketmaster": "https://www.ticketmaster.com/role-model-presents-chuck-on-tour-austin-texas-10-07-2026/event/3A0064CFB985B749"
+  }
+ },
+ {
+  "id": 152,
+  "venue": "moody-amphitheater",
+  "date": "2026-10-08",
+  "headliner": "glow in the park concert",
+  "titles": [
+   "Glow in the Park Concert & Dinner"
+  ],
+  "sources": {
+   "austin-chronicle": "https://calendar.austinchronicle.com/event/glow-in-the-park-concert-and-dinner-14332639"
+  }
+ },
+ {
+  "id": 153,
+  "venue": "moody-amphitheater",
+  "date": "2026-10-08",
+  "headliner": "glow in the park",
+  "titles": [
+   "Glow in the Park w/ Pat Green"
+  ],
+  "sources": {
+   "austin-chronicle": "https://calendar.austinchronicle.com/event/glow-in-the-park-w-pat-green-14361935"
+  }
+ },
+ {
+  "id": 154,
+  "venue": "moody-amphitheater",
+  "date": "2026-10-13",
+  "headliner": "dermot kennedy",
+  "titles": [
+   "Dermot Kennedy"
+  ],
+  "sources": {
+   "bandsintown": "https://www.bandsintown.com/e/1038498718-dermot-kennedy-at-moody-amphitheater?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event"
+  }
+ },
+ {
+  "id": 155,
+  "venue": "moody-amphitheater",
+  "date": "2026-10-13",
+  "headliner": "aaron rowe",
+  "titles": [
+   "Aaron Rowe"
+  ],
+  "sources": {
+   "bandsintown": "https://www.bandsintown.com/e/1040359458-aaron-rowe-at-moody-amphitheater?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event"
+  }
+ },
+ {
+  "id": 156,
+  "venue": "moody-amphitheater",
+  "date": "2026-10-15",
+  "headliner": "gov t mule and ziggy marley",
+  "titles": [
+   "Gov't Mule and Ziggy Marley"
+  ],
+  "sources": {
+   "seatgeek": "https://seatgeek.com/gov-t-mule-tickets/austin-texas-moody-amphitheater-2026-10-15-7-pm/concert/18274889"
+  }
+ },
+ {
+  "id": 157,
+  "venue": "moody-amphitheater",
+  "date": "2026-10-15",
+  "headliner": "premium seating",
+  "titles": [
+   "Premium Seating - Ziggy Marley and Gov't Mule"
+  ],
+  "sources": {
+   "ticketmaster": "https://www.ticketmaster.com/premium-seating-ziggy-marley-and-govt-austin-texas-10-15-2026/event/3A0064CCA0B2A55B"
+  }
+ },
+ {
+  "id": 158,
+  "venue": "moody-amphitheater",
+  "date": "2026-10-15",
+  "headliner": "ziggy marley",
+  "titles": [
+   "Ziggy Marley and Gov't Mule"
+  ],
+  "sources": {
+   "ticketmaster": "https://www.ticketmaster.com/ziggy-marley-and-govt-mule-austin-texas-10-15-2026/event/3A0064BCC4CBD860"
+  }
+ },
+ {
+  "id": 159,
+  "venue": "moody-amphitheater",
+  "date": "2026-10-16",
+  "headliner": "foster the people",
+  "titles": [
+   "Foster The People - Good Mourning Sunshine"
+  ],
+  "sources": {
+   "ticketmaster": "https://www.ticketmaster.com/foster-the-people-good-mourning-sunshine-austin-texas-10-16-2026/event/3A00649CBDB12FBE"
+  }
+ },
+ {
+  "id": 160,
+  "venue": "moody-amphitheater",
+  "date": "2026-10-18",
+  "headliner": "hermanos gutierrez",
+  "titles": [
+   "Hermanos Gutierrez - Premium Seating"
+  ],
+  "sources": {
+   "ticketmaster": "https://www.ticketmaster.com/hermanos-gutierrez-premium-seating-austin-texas-10-18-2026/event/3A0064CC9AFF95B4"
+  }
+ },
+ {
+  "id": 161,
+  "venue": "moody-amphitheater",
+  "date": "2026-10-20",
+  "headliner": "mon laferte",
+  "titles": [
+   "Mon Laferte - Femme Fatale Tour"
+  ],
+  "sources": {
+   "ticketmaster": "https://www.ticketmaster.com/mon-laferte-femme-fatale-tour-austin-texas-10-20-2026/event/3A00646BDEFD1B5B"
+  }
+ },
+ {
+  "id": 162,
+  "venue": "moody-amphitheater",
+  "date": "2026-11-01",
+  "headliner": "dia de los muertos",
+  "titles": [
+   "Dia de los Muertos",
+   "D\u00eda de los Muertos"
+  ],
+  "sources": {
+   "do512": "https://do512.com/events/2026/11/1/dia-de-los-muertos-tickets",
+   "austin-chronicle": "https://calendar.austinchronicle.com/event/dia-de-los-muertos-14326738"
+  }
+ },
+ {
+  "id": 163,
+  "venue": "moody-amphitheater",
+  "date": "2026-11-05",
+  "headliner": "expedited entry social club happy hour",
+  "titles": [
+   "Expedited Entry & Social Club Happy Hour - Knocked Loose (4-7 PM)"
+  ],
+  "sources": {
+   "ticketmaster": "https://www.ticketmaster.com/expedited-entry-social-club-happy-hour-austin-texas-11-05-2026/event/3A0064C1FBF3EF25"
+  }
+ },
+ {
+  "id": 164,
+  "venue": "moody-amphitheater",
+  "date": "2026-11-07",
+  "headliner": "morning glories",
+  "titles": [
+   "Morning Glories: Diwali"
+  ],
+  "sources": {
+   "do512": "https://do512.com/events/2026/11/7/morning-glories-diwali-tickets"
+  }
+ },
+ {
+  "id": 165,
+  "venue": "moody-amphitheater",
+  "date": "2026-11-07",
+  "headliner": "morning glories diwali celebration",
+  "titles": [
+   "Morning Glories Diwali Celebration"
+  ],
+  "sources": {
+   "austin-chronicle": "https://calendar.austinchronicle.com/event/morning-glories-diwali-celebration-14326736"
+  }
+ },
+ {
+  "id": 166,
+  "venue": "moody-center",
+  "date": "2026-09-26",
+  "headliner": "jimmy fortune",
+  "titles": [
+   "Jimmy Fortune"
+  ],
+  "sources": {
+   "bandsintown": "https://www.bandsintown.com/e/1038812516-jimmy-fortune-at-moody-center?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event"
+  }
+ },
+ {
+  "id": 167,
+  "venue": "moody-center",
+  "date": "2026-09-26",
+  "headliner": "sierra hull",
+  "titles": [
+   "Sierra Hull"
+  ],
+  "sources": {
+   "bandsintown": "https://www.bandsintown.com/e/1038532685-sierra-hull-at-moody-center?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event"
+  }
+ },
+ {
+  "id": 168,
+  "venue": "moody-center",
+  "date": "2026-09-26",
+  "headliner": "eric clapton",
+  "titles": [
+   "Eric Clapton"
+  ],
+  "sources": {
+   "bandsintown": "https://www.bandsintown.com/e/1038527712-eric-clapton-at-moody-center?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event"
+  }
+ },
+ {
+  "id": 169,
+  "venue": "moody-center",
+  "date": "2026-09-26",
+  "headliner": "marcus king",
+  "titles": [
+   "Marcus King"
+  ],
+  "sources": {
+   "bandsintown": "https://www.bandsintown.com/e/1039703423-marcus-king-at-moody-center?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event"
+  }
+ },
+ {
+  "id": 170,
+  "venue": "moody-center",
+  "date": "2026-09-26",
+  "headliner": "julian lage",
+  "titles": [
+   "Julian Lage",
+   "Julian Lage @ Moody Center"
+  ],
+  "sources": {
+   "bandsintown": "https://www.bandsintown.com/e/1038535555-julian-lage-at-moody-center?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event",
+   "songkick": "https://www.songkick.com/concerts/43131356-julian-lage-at-moody-center"
+  }
+ },
+ {
+  "id": 171,
+  "venue": "moody-center",
+  "date": "2026-09-26",
+  "headliner": "tommy emmanuel",
+  "titles": [
+   "Tommy Emmanuel"
+  ],
+  "sources": {
+   "bandsintown": "https://www.bandsintown.com/e/1038527306-tommy-emmanuel-at-moody-center?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event"
+  }
+ },
+ {
+  "id": 172,
+  "venue": "moody-center",
+  "date": "2026-09-26",
+  "headliner": "eric gales",
+  "titles": [
+   "Eric Gales"
+  ],
+  "sources": {
+   "bandsintown": "https://www.bandsintown.com/e/1039718899-eric-gales-at-moody-center?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event"
+  }
+ },
+ {
+  "id": 173,
+  "venue": "moody-center",
+  "date": "2026-09-26",
+  "headliner": "john mayer",
+  "titles": [
+   "Eric Clapton's Crossroads 2026 @ Moody Center"
+  ],
+  "sources": {
+   "songkick": "https://www.songkick.com/festivals/3188959-eric-claptons-crossroads/id/43365060-eric-claptons-crossroads-2026"
+  }
+ },
+ {
+  "id": 174,
+  "venue": "moody-center",
+  "date": "2026-09-27",
+  "headliner": "the del mccoury band",
+  "titles": [
+   "The Del McCoury Band"
+  ],
+  "sources": {
+   "bandsintown": "https://www.bandsintown.com/e/1039551748-the-del-mccoury-band-at-moody-center?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event"
+  }
+ },
+ {
+  "id": 175,
+  "venue": "moody-center",
+  "date": "2026-09-27",
+  "headliner": "julian lage",
+  "titles": [
+   "Julian Lage",
+   "Julian Lage @ Moody Center"
+  ],
+  "sources": {
+   "bandsintown": "https://www.bandsintown.com/e/1038535423-julian-lage-at-moody-center?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event",
+   "songkick": "https://www.songkick.com/concerts/43131368-julian-lage-at-moody-center"
+  }
+ },
+ {
+  "id": 176,
+  "venue": "moody-center",
+  "date": "2026-09-27",
+  "headliner": "eric gales",
+  "titles": [
+   "Eric Gales"
+  ],
+  "sources": {
+   "bandsintown": "https://www.bandsintown.com/e/1039719698-eric-gales-at-moody-center?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event"
+  }
+ },
+ {
+  "id": 177,
+  "venue": "moody-center",
+  "date": "2026-09-27",
+  "headliner": "eric clapton",
+  "titles": [
+   "Eric Clapton"
+  ],
+  "sources": {
+   "bandsintown": "https://www.bandsintown.com/e/1038527889-eric-clapton-at-moody-center?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event"
+  }
+ },
+ {
+  "id": 178,
+  "venue": "moody-center",
+  "date": "2026-09-27",
+  "headliner": "keb mo",
+  "titles": [
+   "Keb' Mo'"
+  ],
+  "sources": {
+   "bandsintown": "https://www.bandsintown.com/e/1040220816-keb'-mo'-at-moody-center?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event"
+  }
+ },
+ {
+  "id": 179,
+  "venue": "moody-center",
+  "date": "2026-10-28",
+  "headliner": "teddy swims",
+  "titles": [
+   "Teddy Swims: The UGLY Tour"
+  ],
+  "sources": {
+   "austin-chronicle": "https://calendar.austinchronicle.com/event/teddy-swims-the-ugly-tour-13971198"
+  }
+ },
+ {
+  "id": 180,
+  "venue": "moody-center",
+  "date": "2026-10-29",
+  "headliner": "texas longhorns womens basketball vs eastern new mexico greyhounds womens basketball",
+  "titles": [
+   "Texas Longhorns Womens Basketball vs. Eastern New Mexico Greyhounds Womens Basketball"
+  ],
+  "sources": {
+   "ticketmaster": "https://www.ticketmaster.com/event/Z7r9jZ1AAeAoF"
+  }
+ },
+ {
+  "id": 181,
+  "venue": "moody-center",
+  "date": "2026-11-02",
+  "headliner": "chicago state cougars at texas longhorns mens basketball",
+  "titles": [
+   "Chicago State Cougars at Texas Longhorns Mens Basketball"
+  ],
+  "sources": {
+   "seatgeek": "https://seatgeek.com/texas-longhorns-mens-basketball-tickets/ncaa-basketball/2026-11-02-3-30-am/18469975"
+  }
+ },
+ {
+  "id": 182,
+  "venue": "moody-center",
+  "date": "2026-11-04",
+  "headliner": "fairleigh dickinson knights at texas longhorns womens basketball",
+  "titles": [
+   "Fairleigh Dickinson Knights at Texas Longhorns Womens Basketball"
+  ],
+  "sources": {
+   "seatgeek": "https://seatgeek.com/texas-longhorns-womens-basketball-tickets/ncaa-womens-basketball/2026-11-04-3-30-am/18572986"
+  }
+ },
+ {
+  "id": 183,
+  "venue": "moody-center",
+  "date": "2026-11-05",
+  "headliner": "gardner webb runnin bulldogs at texas longhorns mens basketball",
+  "titles": [
+   "Gardner-Webb Runnin' Bulldogs at Texas Longhorns Mens Basketball"
+  ],
+  "sources": {
+   "seatgeek": "https://seatgeek.com/texas-longhorns-mens-basketball-tickets/ncaa-basketball/2026-11-05-3-30-am/18469974"
+  }
+ },
+ {
+  "id": 184,
+  "venue": "moody-center",
+  "date": "2026-11-07",
+  "headliner": "northern colorado bears at texas longhorns womens basketball",
+  "titles": [
+   "Northern Colorado Bears at Texas Longhorns Womens Basketball"
+  ],
+  "sources": {
+   "seatgeek": "https://seatgeek.com/texas-longhorns-womens-basketball-tickets/ncaa-womens-basketball/2026-11-07-3-30-am/18572985"
+  }
+ },
+ {
+  "id": 185,
+  "venue": "moody-center",
+  "date": "2026-11-09",
+  "headliner": "grambling state tigers at texas longhorns mens basketball",
+  "titles": [
+   "Grambling State Tigers at Texas Longhorns Mens Basketball"
+  ],
+  "sources": {
+   "seatgeek": "https://seatgeek.com/texas-longhorns-mens-basketball-tickets/ncaa-basketball/2026-11-09-3-30-am/18469973"
+  }
+ },
+ {
+  "id": 186,
+  "venue": "moody-center",
+  "date": "2026-11-11",
+  "headliner": "south dakota state jackrabbits at texas longhorns womens basketball",
+  "titles": [
+   "South Dakota State Jackrabbits at Texas Longhorns Womens Basketball"
+  ],
+  "sources": {
+   "seatgeek": "https://seatgeek.com/texas-longhorns-womens-basketball-tickets/ncaa-womens-basketball/2026-11-11-3-30-am/18572988"
+  }
+ },
+ {
+  "id": 187,
+  "venue": "moody-center",
+  "date": "2026-11-13",
+  "headliner": "franklin jonas the byzantines",
+  "titles": [
+   "Franklin Jonas & The Byzantines"
+  ],
+  "sources": {
+   "bandsintown": "https://www.bandsintown.com/e/1039979696-franklin-jonas-and-the-byzantines-at-moody-center?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event"
+  }
+ },
+ {
+  "id": 188,
+  "venue": "moody-center",
+  "date": "2026-11-13",
+  "headliner": "alonzo demetrius",
+  "titles": [
+   "Alonzo Demetrius"
+  ],
+  "sources": {
+   "bandsintown": "https://www.bandsintown.com/e/1040219877-alonzo-demetrius-at-moody-center?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event"
+  }
+ },
+ {
+  "id": 189,
+  "venue": "moody-center",
+  "date": "2026-11-19",
+  "headliner": "southern utah thunderbirds at texas longhorns mens basketball",
+  "titles": [
+   "Southern Utah Thunderbirds at Texas Longhorns Mens Basketball"
+  ],
+  "sources": {
+   "seatgeek": "https://seatgeek.com/texas-longhorns-mens-basketball-tickets/ncaa-basketball/2026-11-19-3-30-am/18469977"
+  }
+ },
+ {
+  "id": 190,
+  "venue": "moody-center",
+  "date": "2026-11-22",
+  "headliner": "southern indiana screaming eagles at texas longhorns mens basketball",
+  "titles": [
+   "Southern Indiana Screaming Eagles at Texas Longhorns Mens Basketball"
+  ],
+  "sources": {
+   "seatgeek": "https://seatgeek.com/texas-longhorns-mens-basketball-tickets/ncaa-basketball/2026-11-22-3-30-am/18469976"
+  }
+ },
+ {
+  "id": 191,
+  "venue": "moody-center",
+  "date": "2026-11-25",
+  "headliner": "southeastern louisiana lions at texas longhorns womens basketball",
+  "titles": [
+   "Southeastern Louisiana Lions at Texas Longhorns Womens Basketball"
+  ],
+  "sources": {
+   "seatgeek": "https://seatgeek.com/texas-longhorns-womens-basketball-tickets/ncaa-womens-basketball/2026-11-25-3-30-am/18572987"
+  }
+ },
+ {
+  "id": 192,
+  "venue": "moody-center",
+  "date": "2026-12-02",
+  "headliner": "louisville cardinals at texas longhorns womens basketball",
+  "titles": [
+   "Louisville Cardinals at Texas Longhorns Womens Basketball"
+  ],
+  "sources": {
+   "seatgeek": "https://seatgeek.com/texas-longhorns-womens-basketball-tickets/ncaa-womens-basketball/2026-12-02-3-30-am/18288546"
+  }
+ },
+ {
+  "id": 193,
+  "venue": "moody-center",
+  "date": "2026-12-04",
+  "headliner": "descendants",
+  "titles": [
+   "Descendants - Cast"
+  ],
+  "sources": {
+   "bandsintown": "https://www.bandsintown.com/e/1038511853-descendants-cast-at-moody-center?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event"
+  }
+ },
+ {
+  "id": 194,
+  "venue": "moody-center",
+  "date": "2026-12-04",
+  "headliner": "cast of camp rock",
+  "titles": [
+   "Cast of Camp Rock"
+  ],
+  "sources": {
+   "bandsintown": "https://www.bandsintown.com/e/1038510469-cast-of-camp-rock-at-moody-center?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event"
+  }
+ },
+ {
+  "id": 195,
+  "venue": "moody-center",
+  "date": "2026-12-04",
+  "headliner": "zombies",
+  "titles": [
+   "ZOMBIES - Cast"
+  ],
+  "sources": {
+   "bandsintown": "https://www.bandsintown.com/e/1038605331-zombies-cast-at-moody-center?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event"
+  }
+ },
+ {
+  "id": 196,
+  "venue": "moody-center",
+  "date": "2026-12-04",
+  "headliner": "cast",
+  "titles": [
+   "Cast - Descendants"
+  ],
+  "sources": {
+   "bandsintown": "https://www.bandsintown.com/e/1038512070-cast-descendants-at-moody-center?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event"
+  }
+ },
+ {
+  "id": 197,
+  "venue": "moody-center",
+  "date": "2026-12-04",
+  "headliner": "disney concerts",
+  "titles": [
+   "Disney Concerts"
+  ],
+  "sources": {
+   "bandsintown": "https://www.bandsintown.com/e/1038508740-disney-concerts-at-moody-center?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event"
+  }
+ },
+ {
+  "id": 198,
+  "venue": "moody-center",
+  "date": "2026-12-04",
+  "headliner": "disney descendants zombies camp rock",
+  "titles": [
+   "Disney Descendants, ZOMBIES & Camp Rock: Worlds Collide Concert Tour"
+  ],
+  "sources": {
+   "seatgeek": "https://seatgeek.com/disney-descendants-zombies-tickets/family/2026-12-04-7-pm/18130535"
+  }
+ },
+ {
+  "id": 199,
+  "venue": "moody-center",
+  "date": "2026-12-04",
+  "headliner": "disney descendants",
+  "titles": [
+   "Disney Descendants, Zombies & Camp Rock: Worlds Collide Concert Tour"
+  ],
+  "sources": {
+   "austin-chronicle": "https://calendar.austinchronicle.com/event/disney-descendants-zombies-and-camp-rock-worlds-collide-concert-tour-13896443"
+  }
+ },
+ {
+  "id": 200,
+  "venue": "moody-center",
+  "date": "2026-12-08",
+  "headliner": "jackson state tigers at texas longhorns mens basketball",
+  "titles": [
+   "Jackson State Tigers at Texas Longhorns Mens Basketball"
+  ],
+  "sources": {
+   "seatgeek": "https://seatgeek.com/texas-longhorns-mens-basketball-tickets/ncaa-basketball/2026-12-08-3-30-am/18469978"
+  }
+ },
+ {
+  "id": 201,
+  "venue": "moody-center",
+  "date": "2026-12-09",
+  "headliner": "nate amor",
+  "titles": [
+   "Nate Amor"
+  ],
+  "sources": {
+   "bandsintown": "https://www.bandsintown.com/e/1040257548-nate-amor-at-moody-center?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event"
+  }
+ },
+ {
+  "id": 202,
+  "venue": "moody-center",
+  "date": "2026-12-10",
+  "headliner": "arkansas state red wolves at texas longhorns womens basketball",
+  "titles": [
+   "Arkansas State Red Wolves at Texas Longhorns Womens Basketball"
+  ],
+  "sources": {
+   "seatgeek": "https://seatgeek.com/texas-longhorns-womens-basketball-tickets/ncaa-womens-basketball/2026-12-10-3-30-am/18561271"
+  }
+ },
+ {
+  "id": 203,
+  "venue": "moody-center",
+  "date": "2026-12-13",
+  "headliner": "ut rio grande valley vaqueros at texas longhorns womens basketball",
+  "titles": [
+   "UT Rio Grande Valley Vaqueros at Texas Longhorns Womens Basketball"
+  ],
+  "sources": {
+   "seatgeek": "https://seatgeek.com/texas-longhorns-womens-basketball-tickets/ncaa-womens-basketball/2026-12-13-3-30-am/18572989"
+  }
+ },
+ {
+  "id": 204,
+  "venue": "moody-center",
+  "date": "2026-12-16",
+  "headliner": "memphis tigers at texas longhorns mens basketball",
+  "titles": [
+   "Memphis Tigers at Texas Longhorns Mens Basketball"
+  ],
+  "sources": {
+   "seatgeek": "https://seatgeek.com/texas-longhorns-mens-basketball-tickets/ncaa-basketball/2026-12-16-3-30-am/18314024"
+  }
+ },
+ {
+  "id": 205,
+  "venue": "moody-center",
+  "date": "2026-12-16",
+  "headliner": "little rock trojans at texas longhorns womens basketball",
+  "titles": [
+   "Little Rock Trojans at Texas Longhorns Womens Basketball"
+  ],
+  "sources": {
+   "seatgeek": "https://seatgeek.com/texas-longhorns-womens-basketball-tickets/ncaa-womens-basketball/2026-12-16-3-30-am/18572998"
+  }
+ },
+ {
+  "id": 206,
+  "venue": "moody-center",
+  "date": "2026-12-21",
+  "headliner": "prairie view a m panthers at texas longhorns mens basketball",
+  "titles": [
+   "Prairie View A&M Panthers at Texas Longhorns Mens Basketball"
+  ],
+  "sources": {
+   "seatgeek": "https://seatgeek.com/texas-longhorns-mens-basketball-tickets/ncaa-basketball/2026-12-21-3-30-am/18469985"
+  }
+ },
+ {
+  "id": 207,
+  "venue": "moody-center",
+  "date": "2026-12-28",
+  "headliner": "harvard crimson at texas longhorns womens basketball",
+  "titles": [
+   "Harvard Crimson at Texas Longhorns Womens Basketball"
+  ],
+  "sources": {
+   "seatgeek": "https://seatgeek.com/texas-longhorns-womens-basketball-tickets/ncaa-womens-basketball/2026-12-28-3-30-am/18572997"
+  }
+ },
+ {
+  "id": 208,
+  "venue": "scoot-inn",
+  "date": "2026-10-24",
+  "headliner": "gifted hands",
+  "titles": [
+   "Gifted Hands"
+  ],
+  "sources": {
+   "bandsintown": "https://www.bandsintown.com/e/1040306363-gifted-hands-at-scoot-inn?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event"
+  }
+ },
+ {
+  "id": 209,
+  "venue": "scoot-inn",
+  "date": "2026-10-26",
+  "headliner": "madelline",
+  "titles": [
+   "Madelline"
+  ],
+  "sources": {
+   "bandsintown": "https://www.bandsintown.com/e/1038871685-madelline-at-scoot-inn?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event"
+  }
+ },
+ {
+  "id": 210,
+  "venue": "scoot-inn",
+  "date": "2026-11-06",
+  "headliner": "lenny pearce",
+  "titles": [
+   "Lenny Pearce",
+   "Lenny Pearce - Toddler Rave World Tour"
+  ],
+  "sources": {
+   "seatgeek": "https://seatgeek.com/lenny-pearce-tickets/austin-texas-scoot-inn-2026-11-06-6-pm/concert/18305061",
+   "austin-chronicle": "https://calendar.austinchronicle.com/event/lenny-pearce-toddler-rave-world-tour-14125530",
+   "19hz": "https://www.ticketmaster.com/event/3A0064C4A6CC9437"
+  }
+ },
+ {
+  "id": 211,
+  "venue": "scoot-inn",
+  "date": "2026-11-21",
+  "headliner": "night moves",
+  "titles": [
+   "Night Moves"
+  ],
+  "sources": {
+   "bandsintown": "https://www.bandsintown.com/e/1039263005-night-moves-at-scoot-inn?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event"
+  }
+ },
+ {
+  "id": 212,
+  "venue": "stubbs",
+  "date": "2026-10-01",
+  "headliner": "montclair",
+  "titles": [
+   "Montclair",
+   "Montclair @ Stubb's Bar-B-Q (Indoors)",
+   "Official 2026 ACL Nights: Montclair"
+  ],
+  "sources": {
+   "do512": "https://do512.com/events/2026/10/1/montclair-tickets",
+   "bandsintown": "https://www.bandsintown.com/e/1039996820-montclair-at-stubb's-waller-creek-amphitheater?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event",
+   "songkick": "https://www.songkick.com/concerts/43374422-montclair-at-stubbs-barbq",
+   "jambase": "https://www.jambase.com/show/montclair-stubbs-indoors-20261001",
+   "ticketmaster": "https://www.ticketmaster.com/official-2026-acl-nights-montclair-austin-texas-10-01-2026/event/3A00650BBB2FBC0A"
+  }
+ },
+ {
+  "id": 213,
+  "venue": "stubbs",
+  "date": "2026-10-01",
+  "headliner": "montclair inside",
+  "titles": [
+   "Montclair [inside]"
+  ],
+  "sources": {
+   "austin-chronicle": "https://calendar.austinchronicle.com/event/montclair-inside-14291604"
+  }
+ },
+ {
+  "id": 214,
+  "venue": "stubbs",
+  "date": "2026-10-02",
+  "headliner": "montclair",
+  "titles": [
+   "Official 2026 ACL Nights: Montclair"
+  ],
+  "sources": {
+   "showlist-austin": "https://www.showlistaustin.com/"
+  }
+ },
+ {
+  "id": 215,
+  "venue": "stubbs",
+  "date": "2026-10-04",
+  "headliner": "parcels",
+  "titles": [
+   "Official 2026 ACL Fest Nights: Parcels"
+  ],
+  "sources": {
+   "showlist-austin": "https://www.showlistaustin.com/"
+  }
+ },
+ {
+  "id": 216,
+  "venue": "stubbs",
+  "date": "2026-10-04",
+  "headliner": "almost heaven",
+  "titles": [
+   "Official 2026 ACL Nights: Almost Heaven"
+  ],
+  "sources": {
+   "showlist-austin": "https://www.showlistaustin.com/"
+  }
+ },
+ {
+  "id": 217,
+  "venue": "stubbs",
+  "date": "2026-10-23",
+  "headliner": "noah rinker",
+  "titles": [
+   "Noah Rinker @ Stubb's Waller Creek Amphitheater (Outdoors)"
+  ],
+  "sources": {
+   "songkick": "https://www.songkick.com/concerts/43205551-noah-rinker-at-stubbs-waller-creek-amphitheater"
+  }
+ },
+ {
+  "id": 218,
+  "venue": "stubbs",
+  "date": "2026-11-09",
+  "headliner": "6lack",
+  "titles": [
+   "10 Years of 6LACK Tour w/ Eem Triplin",
+   "6LACK @ Stubb's Waller Creek Amphitheater (Outdoors)"
+  ],
+  "sources": {
+   "do512": "https://do512.com/events/2026/11/9/10-years-of-6lack-tour-w-eem-triplin-tickets",
+   "songkick": "https://www.songkick.com/concerts/43241921-6lack-at-stubbs-waller-creek-amphitheater"
+  }
+ },
+ {
+  "id": 219,
+  "venue": "stubbs",
+  "date": "2026-11-09",
+  "headliner": "david shabani",
+  "titles": [
+   "David Shabani"
+  ],
+  "sources": {
+   "bandsintown": "https://www.bandsintown.com/e/1039424629-david-shabani-at-stubb's-waller-creek-amphitheater?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event"
+  }
+ },
+ {
+  "id": 220,
+  "venue": "stubbs",
+  "date": "2026-11-09",
+  "headliner": "10 years of 6lack tour",
+  "titles": [
+   "10 Years of 6LACK Tour"
+  ],
+  "sources": {
+   "austin-chronicle": "https://calendar.austinchronicle.com/event/10-years-of-6lack-tour-14073614",
+   "ticketmaster": "https://www.ticketmaster.com/10-years-of-6lack-tour-austin-texas-11-09-2026/event/3A0064B6A505AD42"
+  }
+ },
+ {
+  "id": 221,
+  "venue": "vulcan",
+  "date": "2026-09-25",
+  "headliner": "tai nguyen",
+  "titles": [
+   "ROAST SIDE ASSISTANCE"
+  ],
+  "sources": {
+   "do512": "https://do512.com/events/2026/9/25/roast-side-assistance-tickets"
+  }
+ },
+ {
+  "id": 222,
+  "venue": "vulcan",
+  "date": "2026-09-30",
+  "headliner": "weekly guests",
+  "titles": [
+   "Wobble Wednesdays"
+  ],
+  "sources": {
+   "do512": "https://do512.com/events/weekly/wed/wobble-wednesdays-tickets"
+  }
+ },
+ {
+  "id": 223,
+  "venue": "vulcan",
+  "date": "2026-10-09",
+  "headliner": "next level kpop",
+  "titles": [
+   "Next Level KPop"
+  ],
+  "sources": {
+   "austin-chronicle": "https://calendar.austinchronicle.com/event/next-level-kpop-14267253"
+  }
+ },
+ {
+  "id": 224,
+  "venue": "vulcan",
+  "date": "2026-10-09",
+  "headliner": "next level kpop rave",
+  "titles": [
+   "Next Level Kpop Rave"
+  ],
+  "sources": {
+   "19hz": "https://prod-nts-api.seeticketsusa.us/v1.0.0/promote/5ed979c0-f37f-4d5b-8cc6-f8e1a868b0e6/clickthru"
+  }
+ },
+ {
+  "id": 225,
+  "venue": "vulcan",
+  "date": "2026-10-17",
+  "headliner": "grin",
+  "titles": [
+   "GRIMM HALLOWEEN RAVE: Grin, LYTLBT, Ale-X, Nexus, Rendition (Austin)"
+  ],
+  "sources": {
+   "edmtrain": "https://edmtrain.com/austin-tx/grimm-halloween-rave-grin-539496"
+  }
+ },
+ {
+  "id": 226,
+  "venue": "vulcan",
+  "date": "2026-10-23",
+  "headliner": "capochino",
+  "titles": [
+   "Capochino"
+  ],
+  "sources": {
+   "19hz": "https://www.etix.com/ticket/p/95588456"
+  }
+ },
+ {
+  "id": 227,
+  "venue": "vulcan",
+  "date": "2026-11-13",
+  "headliner": "tisoki",
+  "titles": [
+   "SHOCK VALUE: Tisoki",
+   "Tisoki",
+   "Tisoki - Free w/ Rsvp"
+  ],
+  "sources": {
+   "songkick": "https://www.songkick.com/concerts/43342746-tisoki-at-vulcan-gas-co",
+   "jambase": "https://www.jambase.com/show/tisoki-vulcan-gas-company-20261113",
+   "edmtrain": "https://edmtrain.com/austin-tx/shock-value-tisoki-524242",
+   "19hz": "https://www.etix.com/ticket/p/63008404"
+  }
+ },
+ {
+  "id": 228,
+  "venue": "vulcan",
+  "date": "2026-11-14",
+  "headliner": "capochino",
+  "titles": [
+   "Back To Life Tour: Capochino",
+   "Capochino",
+   "Capochino @ Vulcan Gas Co."
+  ],
+  "sources": {
+   "bandsintown": "https://www.bandsintown.com/e/1039890738-capochino-at-vulcan-gas-company?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event",
+   "songkick": "https://www.songkick.com/concerts/43356927-capochino-at-vulcan-gas-co",
+   "edmtrain": "https://edmtrain.com/austin-tx/back-to-life-tour-capochino-526217"
+  }
+ },
+ {
+  "id": 229,
+  "venue": "vulcan",
+  "date": "2026-11-21",
+  "headliner": "seth david",
+  "titles": [
+   "R&BASS TOUR: Seth David, SuperAve.",
+   "Seth David"
+  ],
+  "sources": {
+   "bandsintown": "https://www.bandsintown.com/e/1039413304-seth-david-at-vulcan-gas-company?came_from=252&utm_medium=web&utm_source=venue_page&utm_campaign=event",
+   "edmtrain": "https://edmtrain.com/austin-tx/r-and-bass-tour-seth-david-514094"
+  }
+ }
+]

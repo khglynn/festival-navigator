@@ -1,0 +1,103 @@
+{
+  "collector": "sources-study-claude",
+  "fetchedAt": "2026-09-24",
+  "scope": {
+    "from": "2026-09-24",
+    "to": "2027-05-31"
+  },
+  "pages": [
+    {
+      "url": "https://circuitoftheamericas.com/concerts-at-germania-insurance-amphitheater/",
+      "how": "curl",
+      "ok": true,
+      "note": "COTA's own concerts page; carries no per-event listing, just a description and a link out to germaniaamp.com and to Ticketmaster's COTA hub"
+    },
+    {
+      "url": "http://germaniaamp.com/events",
+      "how": "curl",
+      "ok": true,
+      "note": "the venue's dedicated concert microsite (linked from COTA's page) -- this IS the venue's own calendar. Fetched over plain HTTP; HTTPS to this host times out during the TLS handshake on every attempt (see coverage.why)"
+    },
+    {
+      "url": "https://www.ticketmaster.com/germania-insurance-amphitheater-tickets-austin/venue/476047",
+      "how": "curl",
+      "ok": false,
+      "note": "the venue's own 'Buy Tickets' nav link goes here; Ticketmaster returned HTTP 403 with body {\"response\":\"block\"} on a plain, slow, single-request fetch -- not retried with a stealth/enhanced proxy per the no-bypass rule"
+    }
+  ],
+  "coverage": {
+    "complete": false,
+    "lastDateReached": "2026-10-17",
+    "why": "Germania has no single-domain calendar the way the other four venues do. Its official COTA page (circuitoftheamericas.com/concerts-at-germania-insurance-amphitheater/) is a description with an out-link, not a listing. The venue's real calendar lives at germaniaamp.com (linked from that COTA page), and it currently lists exactly 4 upcoming shows, the last one Oct 17, 2026 -- nothing between then and 2027-05-31. That is a real, current gap on the venue's own site, not a fetch failure: the page has no 'load more', no pagination, and the HTML plainly ends after the 4th card. TWO complications, both worth flagging for the scorer: (1) germaniaamp.com's HTTPS endpoint hangs and times out on every TLS attempt from this machine (plain HTTP on the same host works and served the real page, so this reads as a server-side TLS misconfiguration on that host rather than a block -- an automated pipeline hitting this venue over HTTPS-only would get nothing and might wrongly conclude the venue has zero events). (2) The site's own 'Buy Tickets' link -- effectively its full box-office calendar -- goes to a Ticketmaster venue page, and Ticketmaster refused a plain, courteous fetch outright (HTTP 403, body {\"response\":\"block\"}), even before robots.txt could be checked (robots.txt itself 403'd). So it's plausible Germania has more shows booked for winter/spring that only show up on Ticketmaster and not yet on the venue's own microsite -- this study could not verify that without a browser-grade fetch, which was out of scope for a courtesy read. Recorded coverage.complete=false for exactly that reason: what's here is faithful to germaniaamp.com, but germaniaamp.com itself may be an incomplete picture of the venue's real booking calendar."
+  },
+  "events": [
+    {
+      "date": "2026-09-26",
+      "venue": "germania",
+      "venueRaw": "Germania Insurance Amphitheater",
+      "title": "Babymetal",
+      "artists": [
+        "Babymetal"
+      ],
+      "url": "http://germaniaamp.com/events/babymetal",
+      "ticketUrl": null,
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-09-28",
+      "venue": "germania",
+      "venueRaw": "Germania Insurance Amphitheater",
+      "title": "Five Finger Death Punch",
+      "artists": [
+        "Five Finger Death Punch"
+      ],
+      "url": "http://germaniaamp.com/events/five-finger-death-punch-1",
+      "ticketUrl": null,
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-13",
+      "venue": "germania",
+      "venueRaw": "Germania Insurance Amphitheater",
+      "title": "$uicideboy$",
+      "artists": [
+        "$uicideboy$"
+      ],
+      "url": "http://germaniaamp.com/events/suicideboys",
+      "ticketUrl": null,
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    },
+    {
+      "date": "2026-10-17",
+      "venue": "germania",
+      "venueRaw": "Germania Insurance Amphitheater",
+      "title": "beabadoobee",
+      "artists": [
+        "beabadoobee"
+      ],
+      "url": "http://germaniaamp.com/events/beabadoobee",
+      "ticketUrl": null,
+      "ticketer": "ticketmaster",
+      "status": "scheduled",
+      "time": null,
+      "announcedAt": null,
+      "onSaleAt": null,
+      "notes": null
+    }
+  ]
+}
