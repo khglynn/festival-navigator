@@ -35,7 +35,8 @@ how we got here belongs in DEVLOG.md.
   stranger's card when a highlighted friend has nothing on, the afters just
   after close, level ties, the dock's glimpse, a listener leak, a tall set
   on a small phone): all fixed on the branch, each with its test. 796 unit
-  tests, 122 browser (Chromium + WebKit locally).
+  tests, 133 browser (Chromium + WebKit locally); CI green on bd3e46e (the
+  dock now holds at Linux's wider glyph widths).
 - What v86 carries, each with its spec or build log in `claude-plans/`:
   1. One line per room (`SAT PORTOLA`, `SAT AFTERS`, `TUE LATE NIGHTS`),
      `.day-block` per day — `claude-plans/2026-09-23-one-line-heads.md`.

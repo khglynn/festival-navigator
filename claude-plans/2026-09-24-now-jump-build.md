@@ -230,6 +230,36 @@ where a second NOW click picks the card under it) is `card-facts.js`, on
 the zoom agent's branch. Not now: ACL grid headliners with only a start
 time stop being live after 60 minutes — ACL data prep, before Oct 2.
 
+## CI at Linux widths (2026-09-24, after the review round)
+
+CI's browser job (Linux Chromium) was red on every push after 17c6860 for
+the dock cases — I had not watched CI after the first push. Linux draws
+Inter and Anton wider: ACL's row beside NOW's dot was 146 / 106 / 91 / 36px
+at 430 / 390 / 375 / 320 (a Mac: 161 / 121 / 106 / 51), so at 320 the row
+was narrower than the day's own tab, and the test's expected forms were
+Mac numbers.
+
+- **Reproduced locally**, the meter contract's way: every dock glyph 0.7px
+  wider matches CI's rows to the pixel. Each dock case now runs as drawn and
+  at that width; at Linux widths only the contract is asserted (the day you
+  are in whole, the word only with a real glimpse, the fest name on screen),
+  because which form NOW takes near the threshold is the engine's.
+- **The last resort** (`fitNowTab`): where even beside the dot the row is
+  narrower than its widest tab, the row claims that width and the fest name
+  gives way with an ellipsis; undone when NOW leaves. ACL at 305 here, 320 on
+  Linux (and Android).
+- **The row centres from layout positions** (`wireScrollspy`): scrollIntoView
+  aimed at the transformed box while the tabs slide, and the row's
+  ResizeObserver now re-centres whenever its width changes.
+- **A test-harness trap**: an in-page `setInterval` poll under the pinned
+  clock "rested" 26ms into the row's glide, reading as a clipped day at
+  Portola 320 about one run in four. The wait is polled from Node now.
+- Counts: `npm test` 796 (795 pass, 1 skipped), both timezones;
+  `npm run test:browser` 133/133 locally; CI run 35992705918 on bd3e46e —
+  both jobs green.
+- Seen, not NOW's: on open, ACL's dock lights FRI 2 for about a second
+  before it finds SAT 3 — v86 does the same (traced on the shipped tree).
+
 ## Open
 
 - Kevin's "ship v87" once the PR's CI is green.
