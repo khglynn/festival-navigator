@@ -49,6 +49,10 @@ const ENTITIES = { amp: '&', nbsp: ' ', quot: '"', apos: "'", lt: '<', gt: '>', 
 function norm(s) {
   return String(s ?? '')
     .replace(/&(#?\w+);/g, (m, e) => ENTITIES[e.toLowerCase()] ?? ' ')
+    // Letters NFKD cannot split (Łaszewo, LØLØ), and the possessive
+    // ("Michael Martin Murphey's Cowboy Christmas" is Michael Martin Murphey).
+    .replace(/[łŁ]/g, 'l').replace(/[øØ]/g, 'o').replace(/[æÆ]/g, 'ae').replace(/ß/g, 'ss')
+    .replace(/['’]s\b/gi, '')
     .normalize('NFKD').replace(/[̀-ͯ]/g, '')
     .toLowerCase()
     .replace(/&/g, ' and ')
@@ -60,21 +64,25 @@ function norm(s) {
 
 // Every name an event could be known by: its artists, plus its title cut at the
 // usual separators ("MUNA: Gets So Hot Tour", "X w/ Y", "X presents Y").
-function namesOf(ev) {
-  const out = new Set()
-  for (const a of ev.artists ?? []) if (norm(a)) out.add(norm(a))
-  const t = String(ev.title ?? '')
-  if (norm(t)) out.add(norm(t))
-  for (const part of t.split(/\s*(?::|\s[-–—|]\s|\bw\/|\bwith\b|\bfeat\.?|\bft\.?|\bfeaturing\b|\bpresents?\b|\bplus\b|\+|,|\/)\s*/i)) {
-    const n = norm(part)
-    if (n.length >= 2) out.add(n)
-  }
-  return out
-}
-
 // Billing prefixes that are not the act ("Official 2026 ACL Nights: Montclair",
 // "Corey Knox Presents: Monday Night Funny").
 const PREFIX = /^\s*(official\s+\d{4}\s+acl(\s+fest)?\s+nights|[^:]{0,40}\bpresents?)\s*:\s*/i
+// Names that belong to a series or a promoter, never to one show: sharing one
+// says nothing about two listings being the same show (Codex review,
+// 2026-09-24: Stubb's Oct 1 Brandon Flowers and Montclair collapsed on
+// "Official 2026 ACL Nights").
+const GENERIC = /^(official \d{4} acl( fest)? nights|acl( fest)? nights|official|presents?|live|tour|tickets?|late show|early show|night one|night two|dj set|and more|more|tba)$/
+
+function namesOf(ev) {
+  const out = new Set()
+  const add = (x) => { const n = norm(x); if (n.length >= 2 && !GENERIC.test(n)) out.add(n) }
+  for (const a of ev.artists ?? []) add(String(a).replace(PREFIX, ''))
+  const t = String(ev.title ?? '').replace(PREFIX, '')
+  add(t)
+  for (const part of t.split(/\s*(?::|\s[-–—|]\s|\bw\/|\bwith\b|\bfeat\.?|\bft\.?|\bfeaturing\b|\bpresents?\b|\bplus\b|\+|,|\/)\s*/i)) add(part)
+  return out
+}
+
 
 function headliner(ev) {
   const first = (ev.artists ?? [])[0] ?? String(ev.title ?? '')
@@ -101,6 +109,15 @@ function affinity(a, b) {
 }
 
 function inScope(ev) { return ev.date >= FROM && ev.date <= TO }
+// Two listings with different printed start times are two shows (an early and
+// a late show, two rooms), whatever their names share.
+function clock(ev) {
+  const m = String(ev.time ?? '').match(/T(\d{2}):(\d{2})|\b(\d{1,2})(?::(\d{2}))?\s*([ap])\.?m/i)
+  if (!m) return null
+  if (m[1]) return Number(m[1]) * 60 + Number(m[2])
+  return ((Number(m[3]) % 12) + (/p/i.test(m[5]) ? 12 : 0)) * 60 + Number(m[4] ?? 0)
+}
+function timesDiffer(a, b) { const x = clock(a), y = clock(b); return x != null && y != null && Math.abs(x - y) >= 60 }
 // Not concerts: the season is music, so these never count for or against a source.
 const NOT_MUSIC = /comedy|funny|stand-?up|trivia|bingo|brunch|screening|podcast|\bmarket\b|yoga|wrestling|lecture|\bfilm\b|drag brunch/i
 function isMusic(ev) { return !/non-music/i.test(ev.notes ?? '') && !NOT_MUSIC.test(ev.title ?? '') }
@@ -134,7 +151,7 @@ for (const { name, doc } of gtFiles) {
     // Two reads of one calendar (the Parish and Brushy files) spell the same
     // show differently; any shared name at the same venue and date is one show.
     const twins = gt.filter(g => g.venue === venue && g.date === ev.date)
-    if (twins.some(g => affinity(g, e) > 0)) continue
+    if (twins.some(g => affinity(g, e) >= 2 && !timesDiffer(g, e))) continue
     gt.push(e)
   }
 }
@@ -142,9 +159,7 @@ for (const { name, doc } of gtFiles) {
 // read did not was judged by re-reading the venue and checking the ticketer or
 // artist. Shows judged real ("gt-miss": the venue lists it and the first read
 // missed it; "real-offcalendar": ticketed and real, not on the venue's page)
-// join the truth. One is added per venue and date only when the truth has no
-// show there yet, so a support act billed as its own listing never becomes a
-// second show that every honest source is then blamed for missing.
+// join the truth (the rule for which ones is at the push below).
 const verdictByListing = new Map()
 const adjudicatedAdds = []
 if (!raw && existsSync(join(DATA, 'adjudication'))) {
@@ -165,6 +180,12 @@ if (!raw && existsSync(join(DATA, 'adjudication'))) {
   for (const { c, v } of real) {
     const venue = canon(c.venue)
     if (reach[venue] === undefined) continue
+    // Only on a night the truth has no show at this venue yet. The adjudicators
+    // marked support acts "gt-miss" when the venue bills them under the
+    // headliner (Barrington Levy under Shyne, August Burns Red under Underoath),
+    // so a second show on a night is far likelier a support act than a late
+    // show; adding them would blame every headliner-only source for a miss.
+    // The cost: a real second show the first read missed is not added.
     if (gt.some(g => g.venue === venue && g.date === c.date)) continue
     const e = { date: c.date, venue, title: c.titles[0] ?? c.headliner, artists: [c.headliner], adjudicated: v.verdict, url: (v.evidence || '').split(/\s/)[0] }
     gt.push(e)
@@ -188,23 +209,28 @@ function scoreSource({ name, doc }) {
     .map(e => ({ ...e, venue: canon(e.venue) }))
     .filter(e => reach[e.venue] !== undefined)
     .filter(e => { const k = e.venue + '|' + e.date + '|' + headliner(e); if (seen.has(k)) return false; seen.add(k); return true })
-  const used = new Set()
-  const matches = [], offByOne = [], unmatched = []
+  // Every candidate pair, strongest first, so the result does not depend on the
+  // order a source happened to list things in; a one-day-off pair only counts
+  // when neither side found a same-day match.
+  const pairs = []
   for (const ev of evs) {
-    let best = null
     for (const d of [0, -1, 1]) {
-      const cands = gtByKey.get(ev.venue + '|' + shiftDay(ev.date, d)) ?? []
-      for (const g of cands) {
-        if (used.has(g)) continue
-        const s = affinity(g, ev) - (d === 0 ? 0 : 0.5)
-        if (s > 0.5 && (!best || s > best.s)) best = { g, s, d }
+      for (const g of gtByKey.get(ev.venue + '|' + shiftDay(ev.date, d)) ?? []) {
+        const a = affinity(g, ev)
+        if (a > 0) pairs.push({ g, ev, d, s: a - (d === 0 ? 0 : 1.5) })
       }
-      if (best && best.d === 0) break
     }
-    if (best && best.d === 0) { used.add(best.g); matches.push({ gt: best.g, src: ev, s: best.s }) }
-    else if (best) { used.add(best.g); offByOne.push({ gt: best.g, src: ev, d: best.d }) }
-    else unmatched.push(ev)
   }
+  pairs.sort((a, b) => b.s - a.s)
+  const usedG = new Set(), usedE = new Set()
+  const matches = [], offByOne = []
+  for (const p of pairs) {
+    if (usedG.has(p.g) || usedE.has(p.ev)) continue
+    usedG.add(p.g); usedE.add(p.ev)
+    if (p.d === 0) matches.push({ gt: p.g, src: p.ev, s: p.s })
+    else offByOne.push({ gt: p.g, src: p.ev, d: p.d })
+  }
+  const unmatched = evs.filter(e => !usedE.has(e))
   const matchedGt = new Set(matches.map(m => m.gt))
   const bucket = (pred) => {
     const denom = gt.filter(g => isMusic(g) && pred(g))
@@ -236,6 +262,13 @@ function scoreSource({ name, doc }) {
     const dead = s => /cancel|postpon|moved/.test(s)
     return dead(a) !== dead(b)
   })
+  // A match that says "on" when the venue says cancelled (or the reverse) is
+  // the right show with the wrong state: a wrong answer for someone deciding
+  // whether to go.
+  if (!raw && statusDisagree.length) {
+    tally.right -= statusDisagree.length; tally.wrong += statusDisagree.length
+    wrongKinds['wrong status'] = statusDisagree.length
+  }
   return {
     source: name,
     listed: evs.length,
@@ -243,6 +276,7 @@ function scoreSource({ name, doc }) {
       all: bucket(() => true),
       near: bucket(g => g.date <= NEAR_END),
       far: bucket(g => g.date > NEAR_END),
+      spring: bucket(g => g.date >= '2027-01-01'),
       bigRooms: bucket(g => BIG.has(g.venue)),
       clubs: bucket(g => !BIG.has(g.venue) && !ELECTRONIC.has(g.venue)),
       electronic: bucket(g => ELECTRONIC.has(g.venue)),
@@ -250,8 +284,8 @@ function scoreSource({ name, doc }) {
     perVenue: Object.fromEntries(Object.keys(reach).map(v => [v, bucket(g => g.venue === v)])),
     precision: raw ? {
       judgeable: judgeable.length,
-      unconfirmed: judgeableUnmatched.length,
-      precision: judgeable.length ? (judgeable.length - judgeableUnmatched.length) / judgeable.length : null,
+      unconfirmed: judgeableUnmatched.length + offByOne.length,
+      precision: judgeable.length ? (judgeable.length - judgeableUnmatched.length - offByOne.length) / judgeable.length : null,
     } : {
       ...tally,
       wrongKinds,
@@ -324,16 +358,16 @@ const out = {
 
 if (wantJson) { process.stdout.write(JSON.stringify(out, null, 2) + '\n', () => process.exit(0)); await new Promise(() => {}) }
 
-writeFileSync(join(DATA, 'scores.json'), JSON.stringify(out, null, 2) + '\n')
+writeFileSync(join(DATA, raw ? 'scores-raw.json' : 'scores.json'), JSON.stringify(out, null, 2) + '\n')
 console.log(`Ground truth: ${gt.length} events (${music.length} music) at ${Object.keys(reach).length} venues\n`)
 if (!raw) console.log(`Adjudication added ${adjudicatedAdds.length} shows the first calendar reads missed.\n`)
-console.log('| Source | Listed | Recall all | Near | Far | Big rooms | Clubs | Electronic | Precision | Wrong | Noise | Buy link |')
-console.log('|---|---|---|---|---|---|---|---|---|---|---|---|')
+console.log('| Source | Listed | Recall all | Near | Far | Jan–May | Big rooms | Clubs | Electronic | Precision | Wrong | Noise | Buy link |')
+console.log('|---|---|---|---|---|---|---|---|---|---|---|---|---|')
 for (const s of [...sources].sort((a, b) => (b.recall.all.recall ?? 0) - (a.recall.all.recall ?? 0))) {
   const r = s.recall, p = s.precision
   const wrong = raw ? `${p.unconfirmed} unconfirmed` : `${p.wrong}${p.unjudged ? ` (+${p.unjudged} unjudged)` : ''}`
   const noise = raw ? '—' : `${p.noise}`
-  console.log(`| ${s.source} | ${s.listed} | ${cell(r.all)} | ${cell(r.near)} | ${cell(r.far)} | ${cell(r.bigRooms)} | ${cell(r.clubs)} | ${cell(r.electronic)} | ${pct(p.precision)} | ${wrong} | ${noise} | ${pct(s.buyLinkShare)} |`)
+  console.log(`| ${s.source} | ${s.listed} | ${cell(r.all)} | ${cell(r.near)} | ${cell(r.far)} | ${cell(r.spring)} | ${cell(r.bigRooms)} | ${cell(r.clubs)} | ${cell(r.electronic)} | ${pct(p.precision)} | ${wrong} | ${noise} | ${pct(s.buyLinkShare)} |`)
 }
 const combo = c => `${c.set.join(' + ')} ${pct(c.recall)} (near ${pct(c.near)}, far ${pct(c.far)})`
 console.log('\nBest pairs:', out.bestPairs.slice(0, 4).map(combo).join(' · '))

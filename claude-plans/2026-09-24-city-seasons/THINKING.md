@@ -51,6 +51,33 @@ or one per artist as the fest wall does? Per show is my lean: a month at 17
 venues is roughly 150 to 250 shows, and splitting support acts into their own
 cards would double that.
 
+What the Codex review (2026-09-24) added, and my answers:
+
+- **Early and late shows** share a venue, a date and sometimes a headliner.
+  Identity needs the start time (an hour apart means two shows) or the
+  source's own id; venue + date + headliner alone merges them.
+- **A reschedule can arrive with a new source id.** Then the matcher sees a
+  new show and the old one vanishes. Treat "same venue, same headliner,
+  new date, old one gone" as a candidate move, confirmed by a second source
+  before the pick moves with it.
+- **Missing is not cancelled.** A show that drops out of one source's feed
+  becomes "unverified", not cancelled; cancelled needs a source saying so,
+  or every source dropping it for a few days in a row.
+- **Aliases need ordering.** An old-id must and a new-id clear can't be
+  reconciled at read time without knowing which came last, and the crew
+  doc keeps no per-pick timestamps. So a merge should run once, server-side,
+  in one atomic UPDATE (the same shape as the v3 to v4 migrate op): copy
+  each person's level from the old id to the new id where the new id has
+  none, and record the alias so clients rewrite old to new before they
+  write. Offline writes to an old id then land through the rewrite.
+- **Taste matches artists, not shows.** Keep an artist identity (normalised
+  name plus source artist ids) separate from the show id, so "MUNA" in the
+  taste list matches every MUNA show, including one billed as support.
+- **The crew doc is capped at 256 KiB** (`api/_lib/crew-shared.mjs`). A
+  season's picks are sparse (one entry per show someone picked), but they
+  accumulate forever in a rolling calendar. Picks on shows more than a few
+  months past need an archive rule before this ships.
+
 ## 3. The alert and the view ask different questions
 
 The alert asks "is one of my few hundred artists coming to Austin?" (a lookup
@@ -65,9 +92,20 @@ Alert shapes worth putting side by side:
 3. An in-app "yours" tab ahead of the months, shown only when something
    matches, the same pattern as v87's NOW tab.
 
-Taste list: Spotify top and followed artists plus picks across every fest,
-weighted (a must counts more than a 1). Stored on the person record, never in
-a crew doc. The server needs it to alert while the app is closed.
+Taste list: Spotify liked-song artists and followed artists (the app
+already reads both: scopes `user-library-read user-follow-read` in
+`js/spotify.js`; top artists would need one more scope, `user-top-read`),
+plus picks across every fest, weighted (a must counts more than a 1).
+Stored on the person record, never in a crew doc. The server needs it to
+alert while the app is closed.
+
+Matching (from the sources study and Codex's review): read every name on a
+bill, support acts and festival lineups included, across an Austin radius,
+whatever the calendar's venue filter says. Add a short watchlist of Kevin's
+top artists checked through the artists' own feeds, for shows outside the
+covered venues and presales that open before a venue lists the show.
+Dedupe alerts per show, retry delivery, and alert again on a change that
+matters (date, venue, cancelled, on-sale moved).
 
 ## 4. The venues themselves are a source
 
