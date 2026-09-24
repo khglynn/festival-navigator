@@ -335,9 +335,32 @@ time bar." Build log: `claude-plans/2026-09-24-now-jump-build.md`.
   as with no highlight, no pulse, and one quiet line on the toast ("Nothing
   of Kat's is on right now — here's what is."); the highlight keeps dimming
   the rest.
+- **Tap again** (Kevin, 2026-09-24: "multiple taps … should move the user to
+  the next now item … if filtered to a person it should only go to nows for
+  that person … by height"). The STOPS are read off the wall at every tap
+  (`wall.js nowStops`): with a highlight that has live picks, those picks
+  only; otherwise every live thing — each now line while the clock is inside
+  its grid's hours, and every NOW-marked stack card. Each is landed as the
+  first tap lands it; going down the page, whatever a stop's landing already
+  shows (inside the visible band, 8px in from the sticky chrome and the
+  dock) joins that stop, so side-by-side cards, every cell on one line and a
+  row of afters in view under the line are one stop and no tap scrolls to
+  where you already are. The first tap is the stop holding the best answer;
+  a tap while the page sits where the last NOW left it (within 4px, or still
+  gliding there) goes to the next stop down, then wraps to the top; a hand
+  scroll in between makes the next tap fresh. One stop: a repeat tap stays
+  and pulses. A stop lands the same way every time; the grid column it
+  slides to is the answer's when it holds it. It pulses its cards (the
+  highlight's picks, or a card-led stop's NOW cards); a line's stop does
+  not, and a highlight with nothing on never pulses — its quiet line shows
+  on the first tap only.
+- **The now mark is the ring alone** since 2026-09-24: the `NOW` tag in the
+  card's corner went ("users can figure out what the highlight means from
+  the auto-scroll"); a live card's accessible name ends ", playing now".
 - **Room.** The dock's days already scroll on a phone. Where they would lose
   the day you are in (a long fest name on a 320 dock), NOW keeps only its
-  dot, in a faint ring.
+  dot, in a faint ring; where even that leaves less than one day, the fest
+  name gives way with an ellipsis.
 - **How it works** gets no row, as the now line and the now mark get none.
 
 ## 4. Notes: artist, fest, dates (Kevin, 2026-09-17 — "a defensible MVP")
