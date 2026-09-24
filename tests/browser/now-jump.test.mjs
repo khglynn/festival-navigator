@@ -66,6 +66,13 @@ async function openApp({ width = 390, height = 844, touch = true, now = SAT_1030
     };
     // NOW's pulse, told apart from every other animation a card runs (a
     // picked card's aura, an arrival): a running scale on the card itself.
+    // Every card NOW pulses, in order, as it starts (a pulse is a scale).
+    window.__pulses = [];
+    const animateWas = Element.prototype.animate;
+    Element.prototype.animate = function (kf, opts) {
+      if (this.classList && this.classList.contains('card') && JSON.stringify(kf).includes('scale(')) window.__pulses.push(this);
+      return animateWas.call(this, kf, opts);
+    };
     window.__pulsing = (c) => c.getAnimations().some((a) => a.playState === 'running' && a.effect
       && a.effect.target === c && a.effect.getKeyframes().some((k) => /scale\(/.test(k.transform || '')));
   }, [TOKEN, fest]);
@@ -354,6 +361,118 @@ test('320x568, Ross at Despacio (a tall set): the line stays a third of the way 
     });
     assert.ok(grow, 'it pulses');
     assert.ok((grow.scale - 1) * grow.h <= 13, `a few pixels of growth on a ${Math.round(grow.h)}px card, not ${Math.round((grow.scale - 1) * grow.h)}px`);
+  } finally { await ctx.close(); }
+});
+
+// ---- tap after tap (Kevin, 2026-09-24) -------------------------------------------
+// "multiple taps on that scroll should move the user to the next now item if
+// there are multiple at different heights on the page. if filtered to a person
+// it should only go to nows for that person … by height because if items are
+// side by side multiple now clicks won't scroll that that'll be weird."
+// One tap: where the page came to rest, what pulsed (and whether each pulsed
+// card is live, in view, and whose), where the line is, what the toast says.
+const tapAndLook = async (page, door) => {
+  await page.evaluate(() => { window.__pulses = []; });
+  await page.locator(`#${door}-now`).click();
+  await sleep(150);
+  await settled(page);
+  await sleep(850); // the pulse starts at the glide's end, or 750 ms in
+  return page.evaluate(() => {
+    const dock = document.getElementById('dock');
+    const bottom = dock && getComputedStyle(dock).display !== 'none' ? dock.getBoundingClientRect().top : innerHeight;
+    const line = document.querySelector('#wall-root .now-line');
+    const lr = line && line.getBoundingClientRect();
+    const pulsed = [...new Set(window.__pulses)].map((c) => {
+      const r = c.getBoundingClientRect();
+      return { artist: c.dataset.artist, top: Math.round(r.top), now: c.classList.contains('now') || c.classList.contains('cell'), inView: r.top >= 0 && r.top < bottom, dim: c.classList.contains('dim') };
+    });
+    return { y: Math.round(scrollY), pulsed, line: lr ? Math.round(lr.top) : null, lineInView: !!lr && lr.top > 0 && lr.top < bottom, toast: ((document.getElementById('toast-root') || {}).textContent || '').trim() };
+  });
+};
+// Tap until the page comes back to where the first tap put it (the wrap).
+const cycle = async (page, door, max = 7) => {
+  const taps = [await tapAndLook(page, door)];
+  while (taps.length < max) {
+    const t = await tapAndLook(page, door);
+    taps.push(t);
+    if (Math.abs(t.y - taps[0].y) <= 2) break;
+  }
+  return taps;
+};
+const stopsOf = (taps) => taps.slice(0, -1);
+
+for (const [width, height, touch, engine, name] of [[390, 844, true, browser, ''], [430, 932, true, browser, ''], [1280, 800, false, browser, ''], [390, 844, true, webkit, 'WebKit ']]) {
+  const skip = engine === webkit ? skipWebkit : browser ? false : NO_BROWSER;
+  test(`${name}${width}, nobody highlighted: NOW taps go down the page stop by stop — the line, then the afters — and wrap to the top`, { skip }, async () => {
+    const { ctx, page, door } = await openApp({ width, height, touch, engine });
+    try {
+      await page.evaluate(() => window.scrollTo(0, 0));
+      await sleep(200);
+      const taps = await cycle(page, door);
+      const stops = stopsOf(taps);
+      assert.ok(Math.abs(taps[taps.length - 1].y - taps[0].y) <= 2, `it wraps back to the first stop: ${taps.map((t) => t.y).join(' → ')}`);
+      assert.ok(stops.length >= 2, `more than one stop at 10:30 PM: ${taps.map((t) => t.y).join(' → ')}`);
+      assert.ok(taps[0].lineInView && !taps[0].pulsed.length, 'the first tap is the line, as ever — and a line does not pulse');
+      for (let i = 1; i < stops.length; i++) {
+        assert.ok(stops[i].y > stops[i - 1].y + 100, `each tap goes further down: ${taps.map((t) => t.y).join(' → ')}`);
+        assert.ok(stops[i].pulsed.length, `stop ${i + 1} pulses what it landed on`);
+        for (const c of stops[i].pulsed) assert.ok(c.now && c.inView, `${c.artist}: live, and in view: ${JSON.stringify(stops[i])}`);
+      }
+      // Side by side is one stop: some stop pulses two cards at one height.
+      assert.ok(stops.some((st) => st.pulsed.some((a) => st.pulsed.some((b) => a !== b && Math.abs(a.top - b.top) <= 1))), 'cards side by side land together, in one tap');
+      // Every live card is reached, and none twice.
+      const live = await page.evaluate(() => document.querySelectorAll('#wall-root .venue-grid[data-iso] .card.now').length);
+      const reached = stops.flatMap((st) => st.pulsed.map((c) => `${c.artist}@${c.top + st.y}`));
+      assert.equal(new Set(reached).size, reached.length, 'no card is a stop twice');
+      assert.ok(reached.length <= live, 'and only live cards are stops');
+    } finally { await ctx.close(); }
+  });
+}
+
+test('390, Nhu highlighted: the stops are her live picks only — the line with Soulwax and Prospa, then Galen, then back', { skip }, async () => {
+  const { ctx, page, door } = await openApp();
+  try {
+    await highlight(page, 'Nhu');
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await sleep(200);
+    const taps = await cycle(page, door);
+    const names = stopsOf(taps).map((t) => t.pulsed.map((c) => c.artist).sort());
+    assert.deepEqual(names, [['Prospa', 'Soulwax'], ['Galen']], `her picks, top to bottom: ${JSON.stringify(names)}`);
+    assert.ok(taps[0].lineInView, 'the first stop brings the line with it');
+    for (const t of taps) for (const c of t.pulsed) assert.equal(c.dim, false, `${c.artist} is hers, never a dimmed card`);
+  } finally { await ctx.close(); }
+});
+
+test('390: a hand scroll between taps makes the next tap a fresh "take me to now", not "next"', { skip }, async () => {
+  const { ctx, page, door } = await openApp();
+  try {
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await sleep(200);
+    const first = await tapAndLook(page, door);
+    const second = await tapAndLook(page, door);
+    assert.ok(second.y > first.y + 100, 'the second tap went on down');
+    await page.mouse.wheel(0, 400); // the hand moves the page
+    await page.evaluate(() => window.scrollBy(0, 400));
+    await sleep(400);
+    const fresh = await tapAndLook(page, door);
+    assert.ok(Math.abs(fresh.y - first.y) <= 2, `back to the best answer, the line: ${first.y} / ${second.y} / ${fresh.y}`);
+    assert.ok(fresh.lineInView);
+  } finally { await ctx.close(); }
+});
+
+test('390, Kat highlighted with nothing on: the stops are everyone’s, nothing pulses, and the quiet line shows once', { skip }, async () => {
+  const { ctx, page, door } = await openApp({ now: new Date('2026-09-26T23:45:00-07:00') });
+  try {
+    await highlight(page, 'Kat');
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await sleep(200);
+    const first = await tapAndLook(page, door);
+    assert.equal(first.toast, 'Nothing of Kat’s is on right now — here’s what is.');
+    await page.evaluate(() => { document.getElementById('toast-root').textContent = ''; });
+    const second = await tapAndLook(page, door);
+    assert.ok(second.y > first.y + 100, `tap two goes on down through what IS on: ${first.y} → ${second.y}`);
+    assert.equal(second.toast, '', 'the line is said once, not on every tap');
+    assert.deepEqual([...first.pulsed, ...second.pulsed], [], 'and no stranger’s card pulses, ever');
   } finally { await ctx.close(); }
 });
 

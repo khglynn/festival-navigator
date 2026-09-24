@@ -32,7 +32,7 @@ globalThis.location = { origin: 'https://fest.kevinhg.com', hash: '' };
 const state = await import('../js/state.js');
 const model = await import('../js/v3/model.js');
 const { FESTIVAL_INDEX } = await import('../js/festivals.js');
-const { renderWall, nowLanding, positionNowLines, positionNowMarks } = await import('../js/v3/wall.js');
+const { renderWall, nowLanding, nowStops, positionNowLines, positionNowMarks } = await import('../js/v3/wall.js');
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const portola = JSON.parse(readFileSync(join(ROOT, 'data/festivals/portola-2026.json'), 'utf8'));
@@ -214,5 +214,107 @@ test('past midnight is still Saturday night: Ross at 1:15 AM lands on his must i
   assert.equal(artistOf(l), 'Fcukers', 'his must, playing at ~1 AM');
   assert.equal(l.card.closest('.day-block').dataset.day, 'Saturday', 'under Saturday, where the night belongs');
   assert.equal(l.line, null);
+  root.remove();
+});
+
+// ---- tap after tap: the stops (Kevin, 2026-09-24) ---------------------------------
+// "multiple taps … should move the user to the next now item if there are
+// multiple at different heights on the page. if filtered to a person it
+// should only go to nows for that person … by height because if items are
+// side by side multiple now clicks won't scroll that that'll be weird."
+// jsdom lays nothing out, so the wall's geometry is handed in: a phone-ish
+// layout where the now line sits at y 1000, the first row of afters venues
+// (two venues a row) at 2000, the next at 2600, and so on; each stack card is
+// 150px tall with 10px between. What a person can see is 40 → 800.
+const layout = (root, { band = { top: 40, bottom: 800 }, scrollY = 0, perRow = 2 } = {}) => {
+  const box = new Map();
+  const line = root.querySelector('.times-grid .now-line');
+  if (line) box.set(line, { top: 1000, bottom: 1002, left: 60 });
+  let y = 2000;
+  for (const vg of root.querySelectorAll('.venue-grid[data-iso]')) {
+    const groups = [...vg.querySelectorAll('.venue-group')];
+    const rows = Math.ceil(groups.length / perRow);
+    groups.forEach((g, i) => {
+      const top = y + Math.floor(i / perRow) * 600;
+      [...g.querySelectorAll('.card')].forEach((c, k) => box.set(c, { top: top + k * 160, bottom: top + k * 160 + 150, left: 16 + (i % perRow) * 180 }));
+    });
+    y += rows * 600 + 200;
+  }
+  // Grid cells cross the line: a cell's top a little above it.
+  if (line) for (const c of line.closest('.times-grid').querySelectorAll('.card')) box.set(c, { top: 940, bottom: 1060, left: 60 });
+  return { scrollY, maxY: 100000, band: () => band, box: (el) => box.get(el) || { top: 0, bottom: 0, left: 0 } };
+};
+const namesOf = (stop) => stop.members.map((m) => (m.card ? m.card.dataset.artist : 'LINE'));
+
+test('stops, nobody highlighted: the line, then each row of afters top to bottom — side-by-side cards are one stop', () => {
+  const { root, ctx } = render(SAT_1030);
+  const plan = nowStops(root, ctx, SAT_1030, layout(root));
+  assert.ok(plan.stops.length >= 3, `the line and at least two rows: ${plan.stops.map(namesOf).join(' / ')}`);
+  assert.deepEqual(namesOf(plan.stops[0]), ['LINE'], 'the line first — it is highest');
+  assert.equal(plan.bestAt, 0, 'and it is the first tap’s answer');
+  const targets = plan.stops.map((st) => st.target);
+  assert.deepEqual(targets, [...targets].sort((x, y) => x - y), 'top to bottom');
+  for (let i = 1; i < targets.length; i++) assert.ok(targets[i] - targets[i - 1] > 400, 'every next stop really moves the page');
+  // Two venues a row: the first row's live cards are one stop.
+  const all = [...root.querySelectorAll('.venue-grid[data-iso] .card.now')];
+  assert.equal(plan.stops.reduce((n, st) => n + st.members.filter((m) => m.card).length, 0), all.length, 'every NOW card is somewhere, once');
+  assert.ok(plan.stops.some((st) => st.members.length > 1), 'and side by side is one stop, not two taps that go nowhere');
+  root.remove();
+});
+
+test('stops fold together whatever one landing already shows — a tall window is one stop', () => {
+  const { root, ctx } = render(SAT_1030);
+  const tall = nowStops(root, ctx, SAT_1030, layout(root, { band: { top: 40, bottom: 20000 } }));
+  assert.equal(tall.stops.length, 1, 'everything is on screen at once: one stop, a repeat tap pulses in place');
+  root.remove();
+});
+
+test('stops with a highlight are that person’s live picks only; the first tap’s answer is the best of them', () => {
+  const { root, ctx } = render(SAT_1030, ['Nhu']);
+  const plan = nowStops(root, ctx, SAT_1030, layout(root));
+  const names = plan.stops.flatMap(namesOf);
+  assert.deepEqual(names.sort(), ['Galen', 'Prospa', 'Soulwax'], 'Soulwax and Prospa on the grid, Galen at the Great Northern — nothing else');
+  assert.deepEqual(namesOf(plan.stops[0]).sort(), ['Prospa', 'Soulwax'], 'both grid picks cross one line: one stop');
+  assert.equal(plan.bestAt, 0, 'the must (Soulwax) is the first answer');
+  assert.equal(plan.best.card.dataset.artist, 'Soulwax');
+  assert.deepEqual(namesOf(plan.stops[1]), ['Galen'], 'then down to the afters');
+  root.remove();
+});
+
+test('stops for a highlight with nothing on are every live thing, as for nobody — and the answer says no match', () => {
+  const { root, ctx } = render(SAT_1030, ['Kevin']);
+  const plan = nowStops(root, ctx, SAT_1030, layout(root));
+  const { root: r2, ctx: c2 } = render(SAT_1030);
+  const nobody = nowStops(r2, c2, SAT_1030, layout(r2));
+  assert.equal(plan.best.match, false);
+  assert.deepEqual(plan.stops.map(namesOf), nobody.stops.map(namesOf), 'the same stops anyone gets');
+  root.remove(); r2.remove();
+});
+
+test('stops after the grid closes: the afters only, first NOW card first; before doors: the line alone', () => {
+  const late = pt('2026-09-26T23:10:00');
+  const { root, ctx } = render(late);
+  const plan = nowStops(root, ctx, late, layout(root));
+  assert.ok(plan.stops.every((st) => st.members.every((m) => m.card)), 'no line stop: it sits on a closed grid');
+  assert.equal(plan.best.card, root.querySelector('.venue-grid[data-iso] .card.now'));
+  assert.ok(plan.stops[plan.bestAt].keys.includes(plan.best.key));
+  root.remove();
+  const probe = render(SAT_1030).root;
+  const doors = Number(probe.querySelector('.times-grid[data-iso="2026-09-26"]').dataset.startRow) * 15;
+  probe.remove();
+  const early = pt(`2026-09-26T${String(Math.floor((doors - 20) / 60)).padStart(2, '0')}:${String((doors - 20) % 60).padStart(2, '0')}:00`);
+  const { root: r2, ctx: c2 } = render(early);
+  const pre = nowStops(r2, c2, early, layout(r2));
+  assert.deepEqual(pre.stops.map(namesOf), [['LINE']], 'twenty minutes before doors: the top of the grid, nothing else');
+  r2.remove();
+});
+
+test('stops are read off the wall at the tap: the ticker moves them, nothing is remembered', () => {
+  const { root, ctx } = render(pt('2026-09-26T09:00:00'));
+  assert.equal(nowStops(root, ctx, pt('2026-09-26T09:00:00'), layout(root)), null, 'a morning: nothing live, no stops');
+  positionNowLines(root, SAT_1030);
+  positionNowMarks(root, SAT_1030);
+  const plan = nowStops(root, ctx, SAT_1030, layout(root));
+  assert.ok(plan && plan.stops.length >= 2, 'the same wall, ticked into the evening, has its stops');
   root.remove();
 });

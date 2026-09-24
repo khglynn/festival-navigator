@@ -260,6 +260,82 @@ Mac numbers.
 - Seen, not NOW's: on open, ACL's dock lights FRI 2 for about a second
   before it finds SAT 3 — v86 does the same (traced on the shipped tree).
 
+## Kevin's second look: no tag, and tap after tap (2026-09-24)
+
+Kevin: "really happy with where we are … since we have the now button now I
+don't think we need the now upper left tags. users can figure out what the
+highlight means from the auto-scroll. I think multiple taps on that scroll
+should move the user to the next now item if there are multiple at different
+heights on the page. if filtered to a person it should only go to nows for
+that person. if there's no now pick for that person normal now behavior -
+multiple clicks move through now events by height. I say by height because
+if items are side by side multiple now clicks won't scroll that that'll be
+weird." The coordinator's design turned it into rules; what was built:
+
+1. **The tag.** Walked first (390 and 1280, Sat 10:30 PM): the only "NOW"
+   text on any card was `.now-label.in-card`, top-RIGHT on every live stack
+   card; nothing in a card's top-left read NOW, and the zoom carried none.
+   It is gone; the `.card.now` ring and glow stay (the highlight, and the
+   hook nowLanding reads), as do the grid's line and its clock label. A live
+   card's accessible name ends ", playing now" — the same ticker adds and
+   removes it, and a pick's fresh node gets it back.
+2. **The stops** (`wall.js nowStops`, read off the wall at every tap): a
+   highlight with live picks → those picks (a grid cell with its line, a
+   stack card alone); otherwise every live thing (each line while the clock
+   is inside its grid's hours — before doors, with nothing marked, the line
+   anyway — and every `.card.now`). Each is landed as the first tap lands it
+   (`landingTarget`, moved into wall.js so the first tap and the stops
+   agree), and sorted by that landing.
+3. **The grouping — the tolerance is the band.** Going down, a candidate the
+   stop above already shows joins it: at that stop's landing, a line (a
+   cell's line) anywhere in its band, a card from its top down (as much as
+   the band holds), 8px in from the sticky chrome (under a grid's pinned
+   stage strip) and the dock. So no tap ever scrolls to where you already
+   are. Real bands: 390 → 36–799 (grid) / 6–799 (stacks); 1280 → under the
+   rail and strip to 800. No pixel constant for "close": what a person can
+   see is the measure.
+4. **The cycle.** The first tap lands the stop holding the best answer. A
+   tap while the page sits where the last NOW left it — within 4px, or
+   still gliding there (1.5 s) — and that stop still live goes to the next
+   stop down, then wraps to the top. A hand scroll in between: the next tap
+   is fresh. One stop: a repeat tap stays exactly where it is and pulses.
+   The dock's NOW and the rail's share one state (`nowCycle`).
+
+Walked (fake clock; Chromium 390 / 430 / 1280, WebKit 390; the page's
+scroll after each tap, what pulsed):
+
+| case | 390 | 1280 |
+|---|---|---|
+| Sat 10:30 PM, nobody | line (with Velvet Trip + Milli Meng in view) → Galen, Emilio, Rumorous, Boys Noize → Magnitude, PERVERT XXL → wrap | line (with the first afters row in view) → Boys Noize, Magnitude, PERVERT XXL → wrap |
+| Sat 10:30 PM, Nhu | line + Soulwax, Prospa → Galen → wrap | one stop (all three in view): pulses in place |
+| Sat 10:30 PM, Ross | one stop (Milli Meng, Galen): pulses in place | the same |
+| Thu 11:30 PM, nobody (stacks) | one stop (Black Rave Culture, Soulwax) | the same |
+| Fri 11:30 PM, nobody (stacks) | three stops ~616px apart, 3–4 cards each (side-by-side together) → wrap | two stops → wrap |
+| Sat 11:45 PM, Kat (nothing on) | the quiet line on tap one; everyone's stops; no pulse | the same |
+| Sun 1:15 AM, Ross | one stop (Fcukers) | the same |
+
+WebKit 390 matched Chromium 390 to a pixel or two in every case.
+
+**Where I differed from the design, and why:**
+- *No pulse on any tap for a highlight with nothing on* (the design pulses
+  "the stop's stack cards" on every landing). Those cards are not theirs —
+  pulsing them is the "Kat is here" the review found. The quiet line and
+  the landing carry the answer.
+- *A line's stop does not pulse, even when NOW cards are in it* ("the line
+  landing as today"): at 1280 the line's stop holds the first afters row.
+- *A stop lands at its own landing every time*, not at the answer's own
+  spot on the first tap: walking Fri 11:30 PM at 1280 put the first tap and
+  the wrap 200px apart (618 vs 418) because the answer was not the stop's
+  top card. The answer is still the first tap's stop, its focus (the grid
+  column slid into view) and where the next tap counts from.
+
+Tests: jsdom — `nowStops` with a handed-in layout (the line then each row;
+a tall window is one stop; Nhu's picks only; nothing on = everyone's
+stops; after close cards only, before doors the line alone; the ticker).
+Browser — the sequence at 390 / 430 / 1280 (the rail) and WebKit 390, Nhu's
+picks, a hand scroll resets, Kat with nothing on; the tag's removal in the
+now-mark unit and shell tests.
+
 ## Open
 
 - Kevin's "ship v87" once the PR's CI is green.

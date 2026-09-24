@@ -1518,7 +1518,13 @@ export function venueGroups(root, entries, ctx, { day = null, fest = null, fallb
 
 // The now mark on a stack (MODEL-V4 §1.2) — the now line's twin, same violet,
 // same one-minute ticker, no repaint. A card is "now" when the festival's
-// clock is inside the window venueGroupsOf gave it.
+// clock is inside the window venueGroupsOf gave it. The mark is the ring and
+// its glow, and nothing else: the "NOW" tag that sat in the card's corner went
+// with the NOW button (Kevin, 2026-09-24: "since we have the now button now I
+// don't think we need the now … tags. users can figure out what the highlight
+// means from the auto-scroll"). A screen reader still hears it — the card's
+// own name ends "playing now" while it is.
+export const PLAYING_NOW = ', playing now';
 export function positionNowMarks(root, date = new Date()) {
   const here = root.matches && root.matches('.venue-grid[data-iso]') ? [root] : [];
   for (const grid of [...here, ...root.querySelectorAll('.venue-grid[data-iso]')]) {
@@ -1529,9 +1535,9 @@ export function positionNowMarks(root, date = new Date()) {
       const to = Number(card.dataset.nowTo);
       const on = today && clock.minutes >= from && clock.minutes < to;
       card.classList.toggle('now', on);
-      const label = card.querySelector('.now-label');
-      if (on && !label) card.insertBefore(mk('span', 'now-label in-card', 'NOW'), card.firstChild);
-      else if (!on && label) label.remove();
+      const name = card.getAttribute('aria-label') || '';
+      if (on && !name.endsWith(PLAYING_NOW)) card.setAttribute('aria-label', name + PLAYING_NOW);
+      else if (!on && name.endsWith(PLAYING_NOW)) card.setAttribute('aria-label', name.slice(0, -PLAYING_NOW.length));
     }
   }
 }
@@ -1556,36 +1562,155 @@ export function positionNowMarks(root, date = new Date()) {
 // highlighted and nothing of theirs is on, so this is what IS on, not them
 // (the app must not pulse it as though it were: a dimmed card pulsing read
 // as "Ross is here", review 2026-09-24); null — nobody is highlighted.
-export function nowLanding(root, ctx, date = new Date()) {
-  const line = root.querySelector('.times-grid .now-line');
+// What is live on the wall, read once for nowLanding and nowStops alike: the
+// now lines (with whether the clock is inside their grid's own hours), the
+// stack cards wearing the mark, and — with a highlight — the highlighted
+// people's live picks, best first.
+function liveOnWall(root, ctx, date) {
+  const lines = [...root.querySelectorAll('.times-grid .now-line')].map((line) => {
+    const grid = line.closest('.times-grid');
+    const { minutes } = festivalClock(date, grid.dataset.tz || null);
+    // The line is an answer only while the clock is inside the grid's own
+    // hours. nowOffsetPx keeps it drawn two rows either side, pinned to the
+    // edge — fine to look at, but from 11:00 to 11:30 PM it sat on the bottom
+    // of a closed Pier 80 while eight afters were on (review, 2026-09-24).
+    // Past the grid, the marks win when there are any; before doors there are
+    // none, and the top of the grid is the honest answer.
+    const onGrid = Number(grid.dataset.startRow) * 15 <= minutes
+      && minutes < (Number(grid.dataset.startRow) + Number(grid.dataset.rows)) * 15;
+    return { line, grid, minutes, onGrid };
+  });
   const marks = [...root.querySelectorAll('.venue-grid[data-iso] .card.now')];
-  if (!line && !marks.length) return null;
-  const grid = line ? line.closest('.times-grid') : null;
-  const minutes = grid ? festivalClock(date, grid.dataset.tz || null).minutes : null;
-  // The line is the answer only while the clock is inside the grid's own
-  // hours. nowOffsetPx keeps it drawn two rows either side, pinned to the
-  // edge — fine to look at, but from 11:00 to 11:30 PM it sat on the bottom
-  // of a closed Pier 80 while eight afters were on (review, 2026-09-24).
-  // Past the grid, the marks win when there are any; before doors there are
-  // none, and the top of the grid is the honest answer.
-  const onGrid = !!grid && Number(grid.dataset.startRow) * 15 <= minutes
-    && minutes < (Number(grid.dataset.startRow) + Number(grid.dataset.rows)) * 15;
   const people = ctx.filterPeople || [];
+  let picks = [];
   if (people.length) {
     const live = [...marks];
-    if (grid) {
+    for (const { grid, minutes } of lines) {
       for (const cell of grid.querySelectorAll('.card[data-now-from]')) {
         if (Number(cell.dataset.nowFrom) <= minutes && minutes < Number(cell.dataset.nowTo)) live.push(cell);
       }
     }
     const level = (card) => Math.max(0, ...people.map((p) => (((ctx.picks || {})[card.dataset.artist] || {})[p]) || 0));
-    const best = live.filter((c) => !c.classList.contains('dim') && level(c) > 0)
-      .sort((a, b) => level(b) - level(a) || Number(b.dataset.nowFrom) - Number(a.dataset.nowFrom))[0];
-    if (best) return { kind: 'card', card: best, line: grid && grid.contains(best) ? line : null, match: true };
+    picks = live.filter((c) => !c.classList.contains('dim') && level(c) > 0)
+      .sort((a, b) => level(b) - level(a) || Number(b.dataset.nowFrom) - Number(a.dataset.nowFrom));
   }
+  return { lines, marks, people, picks };
+}
+const lineOf = (lines, card) => (lines.find((l) => l.grid.contains(card)) || {}).line || null;
+
+export function nowLanding(root, ctx, date = new Date()) {
+  const { lines, marks, people, picks } = liveOnWall(root, ctx, date);
+  if (!lines.length && !marks.length) return null;
+  if (picks.length) return { kind: 'card', card: picks[0], line: lineOf(lines, picks[0]), match: true };
   const match = people.length ? false : null;
-  if (line && (onGrid || !marks.length)) return { kind: 'line', line, card: null, match };
+  const first = lines[0];
+  if (first && (first.onGrid || !marks.length)) return { kind: 'line', line: first.line, card: null, match };
   return { kind: 'card', card: marks[0], line: null, match };
+}
+
+// ---- NOW, tap after tap (Kevin, 2026-09-24) --------------------------------------
+// "multiple taps on that scroll should move the user to the next now item if
+// there are multiple at different heights on the page. if filtered to a person
+// it should only go to nows for that person. if there's no now pick for that
+// person normal now behavior … by height because if items are side by side
+// multiple now clicks won't scroll that that'll be weird."
+//
+// The STOPS a NOW tap can take you to, top to bottom, read off the wall as it
+// is at the tap (never a list kept from the last one — the ticker and a
+// repaint move things between taps):
+//   · a highlight with live picks → those picks only: a grid cell with its
+//     grid's line, a stack card on its own;
+//   · otherwise (nobody highlighted, or a highlight with nothing on) → every
+//     live thing: each now line while the clock is inside its grid's hours
+//     (before doors, with nothing marked, the line anyway — nowLanding's own
+//     rule), and every stack card wearing the mark. Hidden rooms render
+//     nothing, so they are never stops.
+// Each is landed exactly as the first tap lands it (landingTarget). Then BY
+// HEIGHT: going down the page, a candidate that the stop above already shows
+// — inside the band a person can see, 8px in from the sticky chrome and the
+// dock — joins that stop instead of making one, so no tap ever scrolls to
+// where you already are: side-by-side cards, every cell crossing one line, a
+// row of afters under the line all fold into one. The first stop that
+// contains nowLanding's answer is `bestAt`.
+//
+// `geo` is the page's geometry, handed in so the rule is testable without a
+// layout engine: { scrollY, maxY, box(el) → viewport rect, band(grid|null) →
+// { top, bottom } of what can be seen (under a grid's pinned stage strip for a
+// grid, under the sticky chrome otherwise; above the dock on a phone) }.
+export const NOW_PAD = 8;
+export function landingTarget(m, geo) {
+  const pad = NOW_PAD;
+  let dy;
+  if (m.line) {
+    const band = geo.band(m.line.closest('.times-grid'));
+    const h = band.bottom - band.top;
+    const lineTop = geo.box(m.line).top;
+    dy = lineTop - (band.top + h / 3);
+    if (m.card) {
+      const cardTop = geo.box(m.card).top;
+      // The card's top on screen too — when the two fit: the line no lower
+      // than two-thirds of the way down. A set too tall for that (Despacio's
+      // hours on a 320x568 phone) keeps the line a third of the way down, the
+      // rule everywhere else (review, 2026-09-24).
+      if (lineTop - cardTop <= h * (2 / 3) && cardTop - dy < band.top + pad) dy = cardTop - (band.top + pad);
+      if (lineTop - dy > band.bottom - pad) dy = lineTop - (band.bottom - pad);
+    }
+  } else {
+    const band = geo.band(null);
+    const h = band.bottom - band.top;
+    const r = geo.box(m.card);
+    dy = r.top - (band.top + h / 4);
+    if (r.bottom - dy > band.bottom - pad && r.bottom - r.top < h - 2 * pad) dy = r.bottom - (band.bottom - pad);
+  }
+  return Math.min(geo.maxY, Math.max(0, geo.scrollY + dy));
+}
+// Whether a landing at `target` already shows m: a line (a cell's included —
+// the line is what says it is playing) anywhere in its band; a card from its
+// top down, as much of it as a band can hold.
+function showsAt(m, target, geo) {
+  const pad = NOW_PAD;
+  const shift = target - geo.scrollY;
+  if (m.line) {
+    const band = geo.band(m.line.closest('.times-grid'));
+    const y = geo.box(m.line).top - shift;
+    return y >= band.top + pad - 1 && y <= band.bottom - pad + 1;
+  }
+  const band = geo.band(null);
+  const r = geo.box(m.card);
+  const top = r.top - shift;
+  const bottom = Math.min(r.bottom, r.top + (band.bottom - band.top) - 2 * pad) - shift;
+  return top >= band.top + pad - 1 && bottom <= band.bottom - pad + 1;
+}
+const keyOf = (m) => (m.card
+  ? `${m.line ? 'cell' : 'card'}:${m.card.dataset.artist}|${m.card.dataset.occ || ''}|${roomOf(m.card) || ''}`
+  : `line:${m.line.closest('.times-grid').dataset.iso || ''}`);
+
+export function nowStops(root, ctx, date, geo) {
+  const best = nowLanding(root, ctx, date);
+  if (!best) return null;
+  const { lines, marks, picks } = liveOnWall(root, ctx, date);
+  const members = best.match === true
+    ? picks.map((card) => ({ card, line: lineOf(lines, card) }))
+    : [
+      ...lines.filter((l) => l.onGrid || !marks.length).map((l) => ({ card: null, line: l.line })),
+      ...marks.map((card) => ({ card, line: null })),
+    ];
+  for (const m of members) {
+    m.key = keyOf(m);
+    m.target = landingTarget(m, geo);
+    m.x = geo.box(m.card || m.line).left;
+  }
+  members.sort((a, b) => a.target - b.target || a.x - b.x);
+  const stops = [];
+  for (const m of members) {
+    const last = stops[stops.length - 1];
+    if (last && showsAt(m, last.target, geo)) last.members.push(m);
+    else stops.push({ target: m.target, members: [m] });
+  }
+  for (const s of stops) s.keys = s.members.map((m) => m.key);
+  const bestKey = keyOf(best);
+  const bestAt = Math.max(0, stops.findIndex((s) => s.keys.includes(bestKey)));
+  return { best: { ...best, key: bestKey, target: landingTarget(best, geo) }, stops, bestAt };
 }
 
 // One room on a date: its head and body travel together, tagged with the key
