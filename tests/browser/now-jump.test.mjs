@@ -86,10 +86,14 @@ async function openApp({ width = 390, height = 844, touch = true, now = SAT_1030
     window.__pulsing = (c) => c.getAnimations().some((a) => a.playState === 'running' && a.effect
       && a.effect.target === c && a.effect.getKeyframes().some((k) => /scale\(/.test(k.transform || '')));
   }, [TOKEN, fest, fold]);
+  // Each page gets its OWN copy of the picks: a test that changes `doc` (a
+  // remote un-pick) must not change them for every test after it — sharing
+  // SELECTIONS by reference turned Ross's Milli Meng to 0 for the Reduce
+  // Motion case three tests later (CI, 2026-09-24).
   const doc = {
     v: 4, meta: { name: 'Now', inviteFestId: fest }, spotify: {}, affinity: {},
     people: { Kevin: { colorIndex: 0 }, Ross: { colorIndex: 5 }, Nhu: { colorIndex: 3 }, Kat: { colorIndex: 6 }, Dee: { colorIndex: 2 } },
-    festivals: { [fest]: { selections: fest === 'portola-2026' ? SELECTIONS : {} } },
+    festivals: { [fest]: { selections: fest === 'portola-2026' ? structuredClone(SELECTIONS) : {} } },
   };
   // Playwright tries the LAST-registered matching route first: the catch-all goes first.
   await ctx.route('**/api/**', (route) => route.fulfill({ status: 503, contentType: 'application/json', body: '{}' }));
