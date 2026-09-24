@@ -39,8 +39,12 @@ how we got here belongs in DEVLOG.md.
   Kevin's second look ("really happy with where we are"): the NOW tag in
   live cards' corners is gone (the ring is the mark), and NOW taps now go
   down the page stop by stop and wrap — a highlight's own picks only,
-  side-by-side cards one stop (MODEL-V4 §3d). 807 unit tests; 148 browser
-  (Chromium + WebKit locally); CI green on 723b12b.
+  side-by-side cards one stop (MODEL-V4 §3d). And the zoom clears the
+  sticky rail and stage strip above as it clears the dock below — the
+  ceiling wins when both can't — which also closes a slow hand's path to
+  a mis-pick on NOW (`claude-plans/2026-09-24-zoom-chrome-build.md`).
+  Branch `fix/zoom-dock` carries all of feat/now-jump plus that: 811 unit
+  tests, 165 browser (Chromium + WebKit locally).
 - What v86 carries, each with its spec or build log in `claude-plans/`:
   1. One line per room (`SAT PORTOLA`, `SAT AFTERS`, `TUE LATE NIGHTS`),
      `.day-block` per day — `claude-plans/2026-09-23-one-line-heads.md`.
