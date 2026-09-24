@@ -23,6 +23,9 @@ live in `archive/`.
 - `2026-08-31-events-canvas/MODEL-V3.md`: the events model (day-first, the
   layout rule, back-to-back runs). Spec of record for PR #16 as built.
 - `2026-08-30-zoom-storyboard.md`: how the zoom moves ("the bloom").
+- `2026-09-24-zoom-chrome-build.md`: where the zoom stands — clear of the
+  phone dock below and the sticky rail and stage strip above, and never
+  grown by content sliding under a still mouse (v87).
 - `2026-07-12-taste-rubric.md`: the judgment calls a surface is checked
   against before it counts as finished (draft).
 
