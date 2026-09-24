@@ -45,6 +45,15 @@ for (const a of season.artists) {
   if (e.ticketUrl && /^https:\/\//.test(e.ticketUrl)) a.buy = { url: e.ticketUrl, ticketer: e.ticketer || null, from: 'venue' };
 }
 if (matched !== season.artists.length) console.warn(`ground truth matched ${matched} of ${season.artists.length}`);
+// On-sale times: Do512's JSON carries `ticket_onsale_time` (onSaleAt in the
+// study's copy) — 7 shows on Sep 24, all Fri Sep 25, 10 AM CT. Real, so used.
+let onSales = 0;
+for (const e of JSON.parse(read(`${STUDY}data/sources/do512.json`)).events || []) {
+  if (!e.onSaleAt) continue;
+  const venue = VENUE_NAME[e.venue];
+  const a = season.artists.find((x) => x.venue === venue && x.date === e.date && clean(e.title).toLowerCase().includes(x.name.toLowerCase().slice(0, 6)));
+  if (a) { a.onSale = e.onSaleAt; onSales += 1; } else console.warn(`do512 on-sale not matched: ${e.venue} ${e.date} ${e.title}`);
+}
 
 // ---- 1. the bundle, with two hook calls injected (bundle only) --------------------
 // Each anchor must match exactly once, or the build fails loudly: a silent
@@ -233,4 +242,4 @@ ${runtime}
 </html>
 `;
 writeFileSync(`${HERE}canvas.html`, html);
-console.log(`canvas.html: ${(html.length / 1024).toFixed(0)} KB (bundle ${(bundle.length / 1024).toFixed(0)} KB, ${season.artists.length} shows, ${season.artists.filter((a) => a.buy).length} with the venue's own buy link)`);
+console.log(`canvas.html: ${(html.length / 1024).toFixed(0)} KB (bundle ${(bundle.length / 1024).toFixed(0)} KB, ${season.artists.length} shows, ${season.artists.filter((a) => a.buy).length} with the venue's own buy link, ${onSales} on-sale times)`);

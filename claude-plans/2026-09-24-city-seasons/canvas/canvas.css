@@ -209,3 +209,18 @@ a.f-buy-link:hover { border-bottom-color: rgba(255, 255, 255, .75); }
 .cv-edge .vp.spec { padding: 12px var(--sp-gutter) 14px; border: 1px solid var(--border-card); border-radius: var(--r-settings); }
 .cv-edge .vp.spec .room { gap: 9px; }
 .cv-edge .cv-edge-z { display: flex; gap: 12px; flex-wrap: wrap; }
+
+/* ---- canvas controls added for the seasons ---------------------------------------- */
+.cv-clock { display: inline-flex; align-items: center; gap: 6px; }
+.cv-clock-k { color: var(--text-tertiary); font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; margin-right: 2px; }
+.cv-clock .seg { padding: 6px 11px; font-size: 11.5px; }
+.cv-replay { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
+.cv-zstrip { margin-top: 26px; display: flex; gap: 16px; overflow-x: auto; align-items: flex-start; padding-bottom: 6px; scrollbar-width: thin; }
+.cv-zspec { display: flex; flex-direction: column; gap: 8px; flex: none; width: max-content; max-width: 100%; }
+.cv-edge .cv-zspec { max-width: 100%; }
+.cv-edge .vp.spec.tall { max-height: 560px; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
+.cv-edge .vp.spec .room + .room { margin-top: 13px; }
+
+/* B: YOURS holds NOW's dot, still, while something in it is new to you. */
+.day-tab .tab-dot { display: inline-block; width: 5px; height: 5px; border-radius: var(--r-pill); margin-right: 5px; vertical-align: 2px;
+                    background: rgb(var(--brand)); box-shadow: 0 0 5px rgba(var(--brand), .8); }

@@ -65,6 +65,7 @@
     'Sylvan Esso': { songs: 17, followed: true }, 'Bob Moses': { songs: 6, followed: true }, 'Slow Magic': { songs: 4, followed: false },
     'The Aces': { songs: 3, followed: false }, 'Modest Mouse': { songs: 11, followed: false }, Gorillaz: { songs: 8, followed: true },
     SOMBR: { songs: 5, followed: false }, Tyla: { songs: 3, followed: false }, 'Four Tet': { songs: 30, followed: true },
+    Spoon: { songs: 19, followed: true },
   };
   const freshDoc = () => JSON.parse(JSON.stringify({
     v: 4, meta: { name: 'Canvas crew' }, spotify: {}, people: PEOPLE,
@@ -86,21 +87,25 @@
   }
   const isYours = (name) => !!((affinity || {})[lc(name)] || pastPickOf(name));
 
-  // Announce and on-sale times: none of the sources read on 24 Sep carries
-  // them (research/ticketing-apis.md), so these few are seeded. MUNA's are real.
+  // On-sale times are REAL where Do512 carries them (`onSale`, attached in
+  // build.mjs: 7 shows, all Fri Sep 25, 10 AM CT). Announce dates are not
+  // carried by any source we read, so the few behind NEW are seeded.
   const key = (a) => `${a.name}|${a.date}`;
   const ANNOUNCED = {
     'Sylvan Esso|2027-03-08': '2026-09-22', 'Tyla|2026-12-11': '2026-09-21', 'Bob Moses|2026-12-12': '2026-09-23',
     'Niall Horan|2027-05-14': '2026-09-22', 'Anna Shoemaker|2027-03-05': '2026-09-18', 'The Interrupters|2027-03-22': '2026-09-21',
-    'Alan Walker|2027-01-21': '2026-09-19', 'Vansire|2027-01-23': '2026-09-23',
+    'Alan Walker|2027-01-21': '2026-09-19', 'Vansire|2027-01-23': '2026-09-23', 'Spoon|2026-12-31': '2026-09-22',
+    'Poi Dog Pondering|2026-11-27': '2026-09-21', 'Terrian|2027-04-25': '2026-09-22', 'Bo Staloch|2027-03-26': '2026-09-21',
   };
-  const ON_SALE = {
-    'Sylvan Esso|2027-03-08': { at: '2026-09-25T15:00:00Z', text: 'Fri Sep 25, 10 AM' },
-    'Bob Moses|2026-12-12': { at: '2026-10-02T15:00:00Z', text: 'Fri Oct 2, 10 AM' },
-    'Tyla|2026-12-11': { at: '2026-10-02T15:00:00Z', text: 'Fri Oct 2, 10 AM' },
-  };
-  const onSaleOf = (a) => { const o = ON_SALE[key(a)]; return o && new Date(o.at) > NOW ? o : null; };
-  const inHours = (o) => { const h = Math.round((new Date(o.at) - NOW) / 3600000); return h < 48 ? `in ${h} h` : `in ${Math.round(h / 24)} days`; };
+  const saleFmt = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Chicago', weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+  function onSaleOf(a) {
+    if (!a.onSale) return null;
+    const at = new Date(a.onSale);
+    if (!(at > NOW)) return null;
+    const p = Object.fromEntries(saleFmt.formatToParts(at).map((x) => [x.type, x.value]));
+    return { at, text: `${p.weekday} ${p.month} ${p.day}, ${p.hour}${p.minute !== '00' ? `:${p.minute}` : ''} ${p.dayPeriod}` };
+  }
+  const inHours = (o) => { const h = Math.round((o.at - NOW) / 3600000); return h < 48 ? `in ${h} h` : `in ${Math.round(h / 24)} days`; };
 
   // ---- small helpers ---------------------------------------------------------------------
   const mk = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
@@ -367,18 +372,45 @@
     W.positionNowMarks(root, NOW);
     void ctx;
   }
+  // B, the other way to draw YOURS (built beside the brief's, not instead of
+  // it): one list, the way a search answers — one head, the on-sale
+  // whispers under it, then the cards, each saying its night and its room.
+  function yoursList(t, frame) {
+    const block = mk('div', 'day-block');
+    block.dataset.day = t.key;
+    block.dataset.kind = t.kind;
+    const room = mk('div', 'room');
+    room.dataset.room = t.key;
+    const head = mk('div', 'list-head');
+    const last = t.list[t.list.length - 1];
+    head.append(mk('span', 'label', 'YOURS'), mk('span', 'sub', `${t.count} SHOWS THROUGH ${upper(shortDate(last.date).split(' ')[0])}`), mk('span', 'line'));
+    room.appendChild(head);
+    for (const a of t.list) { const w = onSaleWhisper(a); if (w) room.appendChild(w); }
+    const grid = mk('div', 'wall-grid');
+    for (const a of t.list) {
+      const when = [`${wdOf(a.date)} ${shortDate(a.date)}`, a.doors].filter(Boolean).join(' · ');
+      grid.appendChild(W.renderCard(a.name, frame.ctx, { time: `${when}\n${a.venue}`, occ: E.occOf(a) }));
+    }
+    room.appendChild(grid);
+    block.appendChild(room);
+    return block;
+  }
+  function roomFor(iso, list, frame, { key: roomKey = 'night', whispers = false } = {}) {
+    const room = mk('div', 'room');
+    room.dataset.room = roomKey;
+    room.dataset.iso = iso;
+    room.appendChild(nightHead(iso));
+    if (whispers) for (const a of list) { const w = onSaleWhisper(a); if (w) room.appendChild(w); }
+    W.venueGroups(room, list, frame.ctx, { day: { iso }, fest: season });
+    return room;
+  }
   function tabBlock(t, frame) {
+    if (t.kind === 'yours' && frame.yoursAs === 'list') return yoursList(t, frame);
     const block = mk('div', 'day-block');
     block.dataset.day = t.key;
     block.dataset.kind = t.kind;
     for (const [iso, list] of t.dates) {
-      const room = mk('div', 'room');
-      room.dataset.room = t.key;
-      room.dataset.iso = iso;
-      room.appendChild(nightHead(iso));
-      if (t.kind === 'yours') for (const a of list) { const w = onSaleWhisper(a); if (w) room.appendChild(w); }
-      W.venueGroups(room, list, frame.ctx, { day: { iso }, fest: season });
-      block.appendChild(room);
+      block.appendChild(roomFor(iso, list, frame, { key: t.key, whispers: t.kind === 'yours' }));
     }
     if (t.kind === 'month' && t.count < 12) block.appendChild(thinLine(t, frame.dir));
     if (t.kind === 'yours') {
@@ -473,6 +505,7 @@
   function paint(frame) {
     frame.ctx = frame.ctx || makeCtx(frame);
     frame.ctx.picks = picks;
+    frame.ctx.now = NOW;
     if (frame.dir === '0') {
       W.renderWall(frame.root, frame.ctx);
       frame.tabs = W.dayNavOf(season, frame.ctx).map((t) => ({ key: t.key, short: t.short, long: t.long }));
@@ -482,9 +515,18 @@
     }
     paintTabs(frame);
     frame.painted = true;
-    if (frame.menuOpen) { const link = $in(frame.el, frame.scope === 'phone' ? 'dock-fest-link' : 'rail-fest-link'); if (link) openMenu(frame, link, { instant: true }); }
-    if (frame.after) frame.after(frame);
+    if (frame.menuOpen && !frame.menu) { const link = $in(frame.el, frame.scope === 'phone' ? 'dock-fest-link' : 'rail-fest-link'); if (link) openMenu(frame, link, { instant: true }); }
+    openFrame(frame);
     requestAnimationFrame(() => spy(frame));
+  }
+  // The open. A lands on tonight's room (the fest's day-of open: a dated
+  // room whose date is today); B and C open at the top, on their own tab.
+  function openFrame(frame) {
+    frame.scroller.scrollTop = 0;
+    if (frame.dir !== 'A') return;
+    const rooms = [...frame.root.querySelectorAll('.room[data-iso]')];
+    const tonight = rooms.find((r) => r.dataset.iso >= TODAY);
+    if (tonight && tonight !== rooms[0]) frame.scroller.scrollTop = Math.max(0, topIn(frame, tonight) - offsetOf(frame));
   }
 
   // ---- tabs: the dock (phone) and the rail (desktop) -------------------------------------------
@@ -494,8 +536,29 @@
     b.type = 'button';
     b.dataset.day = t.key;
     if (t.kind === 'yours' || t.kind === 'week') b.classList.add('tab-' + t.kind);
+    // YOURS carries a dot while something in it is new to you (announced this
+    // week, not yet looked at): NOW's dot, held still — it is news, not live.
+    if (t.kind === 'yours' && !frame.seenYours && t.list.some((a) => isNewShow(a))) {
+      b.prepend(mk('span', 'tab-dot'));
+      b.setAttribute('aria-label', `${label}, something new`);
+    }
     b.addEventListener('click', () => jump(frame, t.key));
     return b;
+  }
+  const isNewShow = (a) => { const on = ANNOUNCED[key(a)]; return !!on && on <= TODAY && isoPlus(on, 7) > TODAY; };
+  // Looked at: YOURS on screen for a moment clears its dot, quick and plain.
+  function seeYours(frame) {
+    if (frame.seenYours || frame.seeTimer) return;
+    frame.seeTimer = setTimeout(() => {
+      frame.seeTimer = 0;
+      if (frame.active !== 'yours') return;
+      frame.seenYours = true;
+      for (const d of frame.el.querySelectorAll('.tab-dot')) {
+        const a = anim(d, [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'scale(.4)' }], { duration: M.OUT_MS + 60, easing: M.EASE_LEAVE, fill: 'forwards' });
+        const gone = () => { const tab = d.parentElement; d.remove(); if (tab) tab.removeAttribute('aria-label'); };
+        if (a) a.onfinish = gone; else gone();
+      }
+    }, slow ? 5200 : 2600);
   }
   function paintTabs(frame) {
     const [dock, rail] = [$in(frame.el, 'dock-days'), $in(frame.el, 'rail-days')];
@@ -540,8 +603,10 @@
         row.classList.toggle('more-right', over && row.scrollLeft < row.scrollWidth - row.clientWidth - 1);
       }
       frame.active = day;
+      if (day === 'yours' && isVisible(frame)) seeYours(frame);
     });
   }
+  const isVisible = (frame) => { const r = rect(frame.el); return r.bottom > 0 && r.top < window.innerHeight; };
   function wireRowFades(frame) {
     for (const row of tabRows(frame)) row.addEventListener('scroll', () => {
       const over = row.scrollWidth - row.clientWidth > 1;
@@ -580,6 +645,7 @@
   function arrive(frame, flag) {
     const sc = frame.scroller;
     frame[flag] = true;
+    frame.seenYours = false;
     const before = new Map(tabRows(frame).flatMap((r) => [...r.children].map((t) => [`${r.dataset.id}|${t.dataset.day}`, rect(t).left])));
     frame.tabs = tabsFor(frame);
     const t = frame.tabs[0];
@@ -779,41 +845,47 @@
     for (const l of lines) { const p = mk('div', 'sk-card-line'); p.appendChild(rich(l)); c.appendChild(p); }
     return c;
   }
+  // MUNA, on its real dates (research/muna-timeline.md): announced Fri May 8,
+  // artist presale Tue May 12 10 AM (sign-up closed Mon May 11 11:59 PM),
+  // general sale Thu May 14 10 AM, the show Sat Sep 19. The job is a daily
+  // read each morning at 9: a daily read of Do512 + JamBase sees a new
+  // announcement within a day (STUDY.md). "You follow MUNA" is the seed.
   const MUNA = {
     name: 'MUNA',
     lines: ['with Hemlocke Springs', 'Sat · Sep 19 · Doors 7 PM', 'Moody Amphitheater', 'Tickets · <https://www.ticketmaster.com/event/3A0064A7C59AF73A|Ticketmaster> · presale Tue May 12, 10 AM · on sale Thu May 14, 10 AM'],
   };
+  const MUNA_SALE = { name: 'MUNA', lines: ['Artist presale Tue May 12, 10 AM · sign up by Mon 11:59 PM', 'General sale Thu May 14, 10 AM · <https://www.ticketmaster.com/event/3A0064A7C59AF73A|Ticketmaster>'] };
   function alerts() {
     slack(document.querySelector('#dir-a .cv-alert'), {
       msgs: [{
-        day: 'Friday, May 8th', time: '12:41 PM',
+        day: 'Saturday, May 9th', time: '9:00 AM',
         lines: ['*MUNA* is coming to Austin.'],
         card: MUNA,
-        context: 'You follow MUNA · 23 liked songs · announced this morning',
+        context: 'You follow MUNA · announced yesterday · artist presale sign-up closes Mon 11:59 PM',
       }],
     });
     slack(document.querySelector('#dir-b .cv-alert'), {
       msgs: [{
-        day: 'Sunday, May 10th', time: '10:00 AM',
-        lines: ['Presale in 48 hours: *MUNA* at Moody Amphitheater, Sat Sep 19.'],
-        card: { name: 'MUNA', lines: ['Presale Tue May 12, 10 AM · on sale Thu May 14, 10 AM', 'Tickets · <https://www.ticketmaster.com/event/3A0064A7C59AF73A|Ticketmaster>'] },
-        context: 'You follow MUNA · 23 liked songs',
-      }, {
         day: 'Monday, May 11th', time: '9:00 AM',
-        lines: ['*Your Austin week:* 1 new for you.', '*MUNA* · Sat Sep 19 · Moody Amphitheater · presale Tue 10 AM'],
+        lines: ['Presale tomorrow at 10 AM: *MUNA* at Moody Amphitheater, Sat Sep 19.'],
+        card: MUNA_SALE,
+        context: 'You follow MUNA · inside 48 hours, so it did not wait for the digest',
+      }, {
+        time: '9:00 AM',
+        lines: ['*Your Austin week:* 1 new for you.', '*MUNA* · Sat Sep 19 · Moody Amphitheater · presale tomorrow, 10 AM'],
         context: 'Every Monday · everything else announced this week is in the app',
       }],
     });
     slack(document.querySelector('#dir-c .cv-alert'), {
       msgs: [{
-        day: 'Monday, May 11th', time: '10:00 AM',
-        lines: ['Tomorrow at 10 AM, presale for *MUNA* at Moody Amphitheater, Sat Sep 19.'],
-        card: { name: 'MUNA', lines: ['Presale Tue May 12, 10 AM · on sale Thu May 14, 10 AM', 'Tickets · <https://www.ticketmaster.com/event/3A0064A7C59AF73A|Ticketmaster>'] },
-        context: 'You follow MUNA · 23 liked songs',
+        day: 'Monday, May 11th', time: '9:00 AM',
+        lines: ['Tomorrow at 10 AM: presale for *MUNA* at Moody Amphitheater, Sat Sep 19.'],
+        card: MUNA_SALE,
+        context: 'You follow MUNA · the first you hear of it is the day before its presale',
       }, {
-        day: 'Friday, September 18th', time: '10:00 AM',
+        day: 'Friday, September 18th', time: '9:00 AM',
         lines: ['Tomorrow: *MUNA* at Moody Amphitheater. Doors 7 PM.'],
-        context: 'You and Ben picked it · only if you picked it',
+        context: 'Only if you picked it · you and Ben did',
       }],
     });
   }
@@ -824,10 +896,10 @@
     const COLS = [['FRI', 'May 8'], ['SAT', '9'], ['SUN', '10'], ['MON', '11'], ['TUE', '12'], ['WED', '13'], ['THU', '14'], ['gap', ''], ['FRI', 'Sep 18'], ['SAT', '19']];
     const ROWS = [
       ['MUNA', 'fact', { 0: 'announced', 4: 'presale', 5: 'presales', 6: 'on sale', 9: 'the show' }],
-      ['A · month', 'a', { 0: 'DM, same day' }],
-      ['B · yours', 'b', { 2: 'DM', 3: 'digest' }],
+      ['A · month', 'a', { 1: 'DM, next morning' }],
+      ['B · yours', 'b', { 3: 'DM + digest' }],
       ['C · week', 'c', { 3: 'DM', 8: 'if picked' }],
-      ['Kevin, 2026', 'miss', { 9: 'found out after' }],
+      ['What happened', 'miss', { 9: 'found out after' }],
     ];
     const grid = mk('div', 'mt');
     grid.style.setProperty('--cols', COLS.length);
@@ -864,6 +936,121 @@
     host.appendChild(mk('p', 'ms-cap', 'Shows announced so far, per month, read 24 Sep. September is only its last week.'));
   }
 
+  // ---- a zoom at rest, built by the zoom's own builders --------------------------------------------
+  const find = (name, date) => season.artists.find((a) => a.name === name && (!date || a.date === date));
+  function staticZoom(host, { entry, cap, dir = 'A' }) {
+    const box = mk('div', 'cv-zspec');
+    if (cap) { const c = mk('div', 'cv-board-cap'); c.innerHTML = cap; box.appendChild(c); }
+    const z = mk('div', 'cv-zbox phone');
+    z.style.setProperty('--vw', '390px');
+    box.appendChild(z);
+    host.appendChild(box);
+    const s = {
+      artist: entry.name,
+      build() {
+        const ctx = { ...makeCtx({ dir, scope: 'phone' }), picks };
+        const keep = window.__zoomDir;
+        window.__zoomDir = dir;
+        let facts, sc;
+        try {
+          facts = F.factsFor(entry.name, ctx, E.occOf(entry));
+          sc = F.sheetCard(facts, { onOpenNotes: () => {} });
+        } finally { window.__zoomDir = keep; }
+        const slot = mk('div', 'zoom-slot shown');
+        slot.style.minWidth = '216px';
+        slot.style.maxWidth = 'min(360px, 100%)';
+        const card = mk('div', 'zoom-card');
+        const surface = mk('div', 'z-surface' + (facts.animated ? ' animated' : '') + (facts.cancelled ? ' cancelled' : ''));
+        surface.style.background = facts.background;
+        surface.appendChild(mk('span', 'card-grain'));
+        card.append(surface, sc.querySelector('.f-name'), sc.querySelector('.f-grown'));
+        card.addEventListener('click', (e) => { if (e.target.closest('button, a')) return; tap(entry.name); });
+        slot.appendChild(card);
+        z.replaceChildren(slot);
+      },
+    };
+    s.build();
+    statics.push(s);
+  }
+  function zoomStrip() {
+    const host = document.getElementById('cv-zooms');
+    host.textContent = '';
+    for (const x of statics.filter((y) => y.strip)) statics.splice(statics.indexOf(x), 1);
+    const before = statics.length;
+    staticZoom(host, { entry: find('Jungle', '2026-09-24'), cap: '<b>Jungle</b> · tonight, picked, in your Spotify' });
+    staticZoom(host, { entry: find('Boys Go To Jupiter'), cap: '<b>Boys Go To Jupiter</b> · a support act' });
+    staticZoom(host, { entry: find('Spoon'), cap: '<b>Spoon</b> · New Year’s Eve, on sale tomorrow' });
+    staticZoom(host, { entry: find('Fcukers'), cap: '<b>Fcukers</b> · yours from Portola' });
+    for (const x of statics.slice(before)) x.strip = true;
+  }
+
+  // ---- edge cases: real shows, production's rooms, and their zooms -----------------------------------
+  function specFrame(host) {
+    const vp = mk('div', 'vp spec phone');
+    vp.style.setProperty('--vw', '390px');
+    const frame = { dir: 'A', scope: 'phone', el: vp, spec: true };
+    frame.ctx = makeCtx(frame);
+    for (const t of ['pointerover', 'pointerdown', 'focusin']) vp.addEventListener(t, () => activate(frame), true);
+    host.appendChild(vp);
+    frames.push(frame);
+    return frame;
+  }
+  function edges() {
+    const host = document.getElementById('cv-edges');
+    for (const f of frames.filter((x) => x.spec)) frames.splice(frames.indexOf(f), 1);
+    for (const s of statics.filter((x) => x.edge)) statics.splice(statics.indexOf(s), 1);
+    host.textContent = '';
+    const edge = (title, why) => {
+      const e = mk('div', 'cv-edge');
+      e.append(mk('h5', null, title));
+      const p = mk('p', 'cv-edge-why');
+      p.innerHTML = why;
+      e.appendChild(p);
+      host.appendChild(e);
+      return e;
+    };
+    const zoomIn = (e, entry, cap) => {
+      const z = mk('div', 'cv-edge-z');
+      e.appendChild(z);
+      const before = statics.length;
+      staticZoom(z, { entry, cap });
+      for (const s of statics.slice(before)) s.edge = true;
+    };
+    const room = (e, iso, list, opts) => { const f = specFrame(e); f.el.appendChild(roomFor(iso, list, f, opts)); return f; };
+
+    const long = find('Don Was & the Pan-Detroit Ensemble Celebrate the 50th Anniversary of Blues for Allah (NIGHT ONE)');
+    let e = edge('A 96-character name', 'Antone’s billing, whole. The card wraps it at the one column width and the zoom wraps it again; nothing truncates, because it is how the room billed the night. The second night is its own name, so its own pick.');
+    if (long) { room(e, long.date, [long]); zoomIn(e, long, '<b>Its zoom</b>'); }
+
+    const sat = season.artists.filter((a) => a.date === '2026-09-26');
+    e = edge(`Fifteen shows on one night · Sat Sep 26`, `The busiest night in the file: ${new Set(sat.map((a) => a.venue)).size} rooms under one head, in doors order. It scrolls inside its box here; in the app it is simply a long night.`);
+    const f = room(e, '2026-09-26', sat);
+    f.el.classList.add('tall');
+
+    const may = season.artists.filter((a) => a.day === 'May');
+    e = edge('A month with three · May', 'The whole of May as announced on Sep 24. The month ends with the line that says why it is thin, in the voice the app uses when everything is hidden.');
+    { const sf = specFrame(e); const t = { key: 'May', kind: 'month', month: 'May', dates: byDate(may), count: may.length }; sf.el.appendChild(tabBlock(t, sf)); }
+
+    const off = find(CANCELLED.name, CANCELLED.date);
+    e = edge('A cancelled show (seeded)', 'Production’s cancelled card, unchanged: struck through, quieter, the word where the time goes, and its room sorts last on the night. The zoom says when it was called off and offers no tickets. The file has no cancellation, so this one is made up.');
+    room(e, CANCELLED.date, season.artists.filter((a) => a.date === CANCELLED.date));
+    if (off) zoomIn(e, off, '<b>Its zoom</b>');
+
+    const kingdom = find('Andy Stott & Debit');
+    e = edge('No doors time · Kingdom', 'Kingdom posts no doors. The line under its name stays empty, so the stacks beside it still start together; the zoom says the date and nothing it does not know.');
+    room(e, kingdom.date, [...season.artists.filter((a) => a.date === kingdom.date && a !== kingdom).slice(0, 3), kingdom]);
+    zoomIn(e, kingdom, '<b>Its zoom</b>');
+
+    const door = find('The Blues Specialists');
+    e = edge('Door only · Continental Club', 'The Continental Club sells at the door and has no ticket page for its residencies, so the zoom says <b>Door only</b> where the others say where to buy. Shows elsewhere with no link fall back to the venue’s own calendar page.');
+    zoomIn(e, door, '<b>The Blues Specialists</b> · Fri Sep 25');
+
+    const b1 = find('Bleachers', '2026-10-02');
+    const b2 = find('Bleachers', '2026-10-11');
+    e = edge('One name, two nights · Bleachers', 'Oct 2 at Stubb’s (billed as an ACL Fest Night) and Oct 11 at ACL Live. Picks are keyed by name today, so <b>tap one and both light</b>: a pick means “I like them”, not “I’m going Friday”. A season needs a show id before it ships (THINKING.md §2).');
+    { const sf = specFrame(e); sf.el.appendChild(roomFor(b1.date, [b1], sf)); sf.el.appendChild(roomFor(b2.date, [b2], sf)); }
+  }
+
   // ---- build the page ---------------------------------------------------------------------------
   function fit() {
     for (const b of document.querySelectorAll('.cv-board.is-desk .cv-frame')) {
@@ -878,37 +1065,48 @@
 
   munaTimeline();
   monthStrip();
-  document.getElementById('cv-seeds').textContent = 'Seeded, because no source we read carries them: Kevin’s Spotify (Jungle, Bonobo, Sylvan Esso, Four Tet and eight more), his picks at Portola and ACL, a small crew (Ben, Cleo, Dev), the announce dates behind NEW, the on-sale times, and one cancellation. Everything else is the season file: the shows, rooms, dates, doors, billing and buy links. The canvas clock is Thu Sep 24, 6:40 PM.';
+  document.getElementById('cv-seeds').textContent = 'Seeded, because no source we read carries them: Kevin’s Spotify (Jungle, Bonobo, Spoon, Four Tet and nine more), his picks at Portola and ACL, a small crew (Ben, Cleo, Dev), the announce dates behind NEW, and one cancellation. Real: every show, room, date, doors time and billing in the season file; the buy links (the venue’s own where its calendar links one, else Do512’s); the seven on-sale times Do512 carries (all Fri Sep 25, 10 AM); and MUNA’s whole timeline. The canvas clock is Thu Sep 24, 6:40 PM.';
+  zoomStrip();
 
   // Artboard 0: today's code.
   const today = document.getElementById('today-boards');
   buildFrame(today, { dir: '0', scope: 'phone', cap: '<b>Phone</b> · today’s code, the season file fed in' });
-  buildFrame(today, { dir: '0', scope: 'desk', cap: '<b>Laptop</b> · tap AUSTIN in the rail for today’s show menu' });
+  buildFrame(today, { dir: '0', scope: 'desk', cap: '<b>Laptop</b> · click AUSTIN in the rail for today’s show menu' });
 
   // The three directions on phones, then on laptops.
   const phoneOf = (id) => document.querySelector(`#${id} .cv-phone-slot`);
-  const fa = buildFrame(phoneOf('dir-a'), { dir: 'A', scope: 'phone', cap: '<b>Phone</b> · opens on tonight’s room' });
+  buildFrame(phoneOf('dir-a'), { dir: 'A', scope: 'phone', cap: '<b>Phone</b> · opens on tonight’s room' });
   const fb = buildFrame(phoneOf('dir-b'), { dir: 'B', scope: 'phone', cap: '<b>Phone</b> · opens on YOURS' });
   const fc = buildFrame(phoneOf('dir-c'), { dir: 'C', scope: 'phone', cap: '<b>Phone</b> · opens on this week' });
+  buildFrame(document.querySelector('#desk-a .cv-boards'), { dir: 'A', scope: 'desk' });
   const db = buildFrame(document.querySelector('#desk-b .cv-boards'), { dir: 'B', scope: 'desk' });
   const dc = buildFrame(document.querySelector('#desk-c .cv-boards'), { dir: 'C', scope: 'desk' });
-  buildFrame(document.querySelector('#desk-a .cv-boards'), { dir: 'A', scope: 'desk' });
-  for (const f of frames) wireRowFades(f);
   document.querySelectorAll('[data-replay]').forEach((b) => b.addEventListener('click', () => {
     const d = b.dataset.replay;
     for (const f of (d === 'B' ? [fb, db] : [fc, dc])) replay(f, d === 'B' ? 'yoursOn' : 'weekOn');
   }));
-  void fa;
+  // B, drawn two ways: the brief's rooms, and one list.
+  document.querySelectorAll('[data-yours]').forEach((b) => b.addEventListener('click', () => {
+    for (const x of document.querySelectorAll('[data-yours]')) x.classList.toggle('active', x === b);
+    for (const f of [fb, db]) { f.yoursAs = b.dataset.yours; if (f.painted) paint(f); }
+  }));
 
   // The rooms filter, open.
   const cover = document.getElementById('cover-boards');
   buildFrame(cover, { dir: 'A', scope: 'phone', menuOpen: true, pinMenu: true, cap: '<b>Phone</b> · the fest name opens it; tick and untick' });
   buildFrame(cover, { dir: 'A', scope: 'desk', menuOpen: true, pinMenu: true, cap: '<b>Laptop</b> · the same menu, under the rail' });
-  for (const f of frames) if (!f.rowFades) { wireRowFades(f); f.rowFades = true; }
+  for (const f of frames) wireRowFades(f);
 
+  edges();
   alerts();
   fit();
   window.addEventListener('resize', fit);
+  // A frame scrolled into view is looked at: its tab row catches up (and
+  // YOURS clears its dot once you have seen it).
+  const seen = new IntersectionObserver((entries) => {
+    for (const e of entries) if (e.isIntersecting) { const f = frames.find((x) => x.board === e.target); if (f) spy(f); }
+  }, { threshold: 0.5 });
+  for (const f of frames) if (f.board) seen.observe(f.board);
 
   // ---- controls ------------------------------------------------------------------------------
   document.getElementById('cv-slow').addEventListener('change', (e) => {
@@ -925,6 +1123,19 @@
       if (levelOf(artist) !== want) setLevel(artist, want);
     }
   });
+  // Pretend it is another day: every door re-opens on it.
+  document.querySelectorAll('[data-clock]').forEach((b) => b.addEventListener('click', () => {
+    if (F.zoomedCard()) F.unzoom({ instant: true, why: 'clock' });
+    for (const x of document.querySelectorAll('[data-clock]')) x.classList.toggle('active', x === b);
+    setClock(b.dataset.clock);
+    for (const f of frames) {
+      if (f.spec) continue;
+      f.seenYours = false;
+      if (f.painted) paint(f);
+    }
+    zoomStrip();
+    edges();
+  }));
 
   window.__canvas = { frames, statics, setLevel, levelOf, tabsFor, season, isYours, buyOf, billingOf };
 })();

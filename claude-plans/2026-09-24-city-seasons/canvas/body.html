@@ -13,6 +13,7 @@
       <a href="#edges">Edge cases</a>
       <a href="#rec">Pick</a>
       <span class="cv-bar-gap"></span>
+      <span class="cv-clock" role="group" aria-label="Pretend today is"><span class="cv-clock-k">Today</span><button type="button" class="seg active" data-clock="2026-09-24">Thu Sep 24</button><button type="button" class="seg" data-clock="2026-10-16">Fri Oct 16</button></span>
       <label class="cv-toggle"><input type="checkbox" id="cv-slow"> Slow motion</label>
       <button type="button" id="cv-reset" class="cv-btn">Reset picks</button>
     </nav>
@@ -34,16 +35,17 @@
       <li><b>The spring is thin, and says so.</b> Venues announce two to four months out, so in September the spring is nearly empty. A thin month ends with one quiet line that says why, instead of looking broken. That gap is the alert’s job.</li>
     </ol>
     <div class="cv-months" id="cv-months" aria-label="Shows per month, as announced on 24 Sep"></div>
+    <div class="cv-zstrip" id="cv-zooms" aria-label="Four zooms, drawn by the zoom's own builders"></div>
     <p class="cv-note" id="cv-seeds"></p>
   </section>
 
   <section class="cv-group" id="dirs">
     <h2 class="cv-h2">Three doors</h2>
-    <p class="cv-lede">The three differ on one thing: what the season opens on, and how the alert reaches Kevin. Each is drawn on a phone from production code, then the alert as it would have landed <b>for MUNA</b>, on MUNA’s real dates.</p>
+    <p class="cv-lede">The three differ on one thing: what the season opens on, and how the alert reaches Kevin. Each is drawn on a phone from production code, then the alert as it would have landed <b>for MUNA</b>, on MUNA’s real dates, from a daily read at 9 AM. MUNA’s first presale opened four days after it was announced; all three speak before it.</p>
     <div class="cv-cols">
       <article class="cv-col" id="dir-a">
         <header class="cv-dir-head"><span class="cv-axis">browse first</span><h3 class="cv-h3">A · The month</h3></header>
-        <p class="cv-why">Opens on this month, at tonight’s room, the way a fest opens on today. A Slack DM the moment a show by one of your artists is found. A show announced this week wears a small <b>NEW</b> on its card for seven days.</p>
+        <p class="cv-why">Opens on this month, at tonight’s room, the way a fest opens on today. A Slack DM the moment a show by one of your artists is found: a daily read of Do512 and JamBase sees an announcement within a day. A show announced this week wears a small <b>NEW</b> on its card for seven days.</p>
         <p class="cv-cost"><b>Cost:</b> the smallest. Month tabs and date heads are two changes to code that exists; NEW is one corner label. The alert needs a daily job, a taste list and a Slack app.</p>
         <div class="cv-boards cv-phone-slot"></div>
         <div class="cv-alert"></div>
@@ -51,8 +53,8 @@
       <article class="cv-col" id="dir-b">
         <header class="cv-dir-head"><span class="cv-axis">alert first</span><h3 class="cv-h3">B · Yours</h3></header>
         <p class="cv-why">A <b>YOURS</b> tab before the months, there only when something matches: every Austin date by an artist you love, soonest first, each in its night room, with the on-sale time under it while it is still ahead. A weekly Slack digest, and a DM only when an on-sale is inside 48 hours.</p>
-        <p class="cv-cost"><b>Cost:</b> medium. A tab that comes and goes (the NOW tab’s code), the on-sale whisper, and on-sale times from Ticketmaster’s API, which none of today’s sources carry.</p>
-        <div class="cv-replay"><button type="button" class="cv-btn" data-replay="B">Replay: a match lands</button></div>
+        <p class="cv-cost"><b>Cost:</b> medium. A tab that comes and goes (the NOW tab’s code) and the on-sale whisper. On-sale times: Do512 carries them where they exist (seven on Sep 24); Ticketmaster’s free API is the structured source for presales, and needs a key.</p>
+        <div class="cv-replay"><button type="button" class="cv-btn" data-replay="B">Replay: a match lands</button><span class="cv-clock" role="group" aria-label="Draw YOURS as"><button type="button" class="seg active" data-yours="rooms">Night rooms</button><button type="button" class="seg" data-yours="list">One list</button></span></div>
         <div class="cv-boards cv-phone-slot"></div>
         <div class="cv-alert"></div>
       </article>
