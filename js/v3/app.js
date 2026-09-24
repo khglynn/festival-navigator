@@ -9,7 +9,7 @@ import * as sync from '../sync.js';
 import * as spotify from '../spotify.js';
 import * as model from './model.js';
 import { loadFestivalIndex, loadFestival, fetchCustomFestivals, mergeCustoms, FESTIVAL_INDEX, defaultFestivalId } from '../festivals.js';
-import { renderWall, refreshCard, showUndoToast, showToast, wireScrollspy, colorIndexOf, positionNowLines, positionNowMarks, scrollToNowLine, dayNavOf, roomsOf, cardFor, roomOf, isStripScroller, DAY_ANCHOR, festLinkLabel } from './wall.js';
+import { renderWall, refreshCard, showUndoToast, showToast, wireScrollspy, colorIndexOf, positionNowLines, positionNowMarks, scrollToNowLine, dayNavOf, roomsOf, cardFor, roomOf, isStripScroller, DAY_ANCHOR, festLinkLabel, nowLanding } from './wall.js';
 import { loadPeopleFilter, savePeopleFilter, togglePerson, pruneToActive, loadFolded, applyFoldToggle } from './filters.js';
 import { OUT_MS, CASCADE_MS, STAGGER_MS, EASE_ARRIVE, EASE_LEAVE, EASE_SURFACE, canAnimate } from './motion.js';
 import { scrolledBefore, rememberScrolled, dayOfScrollKey, festivalClock } from './now.js';
@@ -436,6 +436,157 @@ function startClock() {
 function tickClock(date = new Date()) {
   positionNowLines($('wall-root'), date);
   positionNowMarks($('wall-root'), date);
+  paintNowTabs(date); // the same minute decides whether NOW is there at all
+}
+
+// ---- NOW: the jump to what is playing (Kevin, 2026-09-24) -------------------------
+// "an option to the left of the days … if you tap it goes to now. A use case
+// I'm thinking about is like 'where is ross likely right now' — tapping ross
+// on the top to highlight him and then clicking something in the scroll to
+// time bar." NOW sits before the day tabs in the dock and the rail, in the
+// now line's violet with a live dot, and only while something is live on the
+// wall you are looking at: a now line on today's grid or a NOW mark on a
+// stack (wall.js nowLanding decides what, and whether). It is not a day, so
+// the scrollspy never lights it; it arrives with the beat and leaves quick
+// and plain, and the days beside it slide to make room.
+const NOW_TABS = ['dock-now', 'rail-now'];
+function paintNowTabs(date = ctx.now || new Date()) {
+  const live = !!nowLanding($('wall-root'), ctx, date);
+  for (const id of NOW_TABS) { showNowTab($(id), live); fitNowTab($(id)); }
+}
+// The days keep room for the day you are in. On a phone the dock's days row
+// already scrolls (Portola's four overflow a 390 dock by a few px), and NOW
+// narrows it further — fine while the row still holds its widest tab and a
+// glimpse of a neighbour. Where it cannot (a long fest name at 320, i.e. an
+// iPhone on Display Zoom: ACL's row would be 27px), NOW keeps only its live
+// dot — still a button, still named "Jump to what is playing now". Measured
+// in the full form every time, so the answer never feeds on itself.
+function fitNowTab(tab) {
+  if (!tab || tab.hidden) return;
+  tab.classList.remove('compact');
+  const row = tab.nextElementSibling;
+  if (!row || !row.children.length) return;
+  const widest = Math.max(...[...row.children].map((t) => t.offsetWidth));
+  if (row.clientWidth < Math.min(row.scrollWidth, widest + 24)) tab.classList.add('compact');
+}
+// The day tabs beside a NOW that came or went slide from where they were (a
+// FLIP: transform only, the layout is already done). Tab by tab, not the
+// row: the dock centres a row that fits, so its tabs move by HALF the space
+// NOW took, and a row-wide slide would jump before it glided.
+const tabLefts = (row) => new Map(row ? [...row.children].map((t) => [t, t.getBoundingClientRect().left]) : []);
+function slideTabs(before) {
+  for (const [t, left] of before) {
+    if (!t.isConnected || !canAnimate(t, ctx)) continue;
+    const dx = left - t.getBoundingClientRect().left;
+    if (Math.abs(dx) >= 1) t.animate([{ transform: `translateX(${dx}px)` }, { transform: 'none' }], { duration: CASCADE_MS, easing: EASE_ARRIVE });
+  }
+}
+function showNowTab(tab, on) {
+  if (!tab) return;
+  const shown = !tab.hidden && !tab.dataset.leaving;
+  if (on === shown) return;
+  const row = tab.nextElementSibling;
+  if (on) {
+    delete tab.dataset.leaving;
+    if (tab.getAnimations) tab.getAnimations().forEach((a) => a.cancel()); // a leave cut short
+    const before = tabLefts(row);
+    tab.hidden = false;
+    fitNowTab(tab);
+    slideTabs(before);
+    if (canAnimate(tab, ctx)) {
+      tab.animate([{ opacity: 0, transform: 'translateX(-6px)' }, { opacity: 1, transform: 'none' }],
+        { duration: CASCADE_MS, delay: STAGGER_MS, easing: EASE_ARRIVE, fill: 'backwards' });
+    }
+    return;
+  }
+  tab.dataset.leaving = '1';
+  const gone = () => {
+    if (!tab.dataset.leaving) return; // it came back while leaving
+    delete tab.dataset.leaving;
+    const before = tabLefts(row);
+    tab.hidden = true;
+    if (tab.getAnimations) tab.getAnimations().forEach((a) => a.cancel());
+    slideTabs(before);
+  };
+  if (!canAnimate(tab, ctx)) { gone(); return; }
+  const a = tab.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateX(-6px)' }],
+    { duration: OUT_MS, easing: EASE_LEAVE, fill: 'forwards' });
+  a.onfinish = gone;
+  a.oncancel = gone;
+}
+
+// Where a person can see: under the sticky chrome — inside a grid, under its
+// pinned stage strip too — and above the dock on a phone.
+function seenBand(inGrid) {
+  const vars = getComputedStyle(document.documentElement);
+  let top = parseFloat(vars.getPropertyValue('--jump-offset')) || 8;
+  if (inGrid) {
+    const block = inGrid.closest('.tt-block');
+    const strip = block ? block.querySelector('.stage-strip') : null;
+    top = (parseFloat(vars.getPropertyValue('--rail-h')) || 0) + (strip ? strip.offsetHeight : 0);
+  }
+  const dock = $('dock');
+  const docked = dock && getComputedStyle(dock).display !== 'none' && !dock.classList.contains('hidden');
+  return { top, bottom: docked ? dock.getBoundingClientRect().top : window.innerHeight };
+}
+
+// Tap NOW: land on what is playing (wall.js nowLanding says what).
+//   · the now line — a third of the way down what you can see, the day-of
+//     open's own landing, so the sets crossing it (playing) and the next hour
+//     are both on screen;
+//   · a highlighted person's pick on the grid — the LINE AND THE CARD
+//     together (Kevin: "the line and highlight combo"): the line a third of
+//     the way down, moved only as far as it takes to bring the card's top on
+//     screen, never so far the line leaves; its column scrolled into view;
+//   · a card in a stack — its NOW mark is its line: the card a quarter of the
+//     way down under the chrome, its venue's head above it.
+// A card it lands on gives one small pulse (transform only; none under
+// Reduce Motion or Low Power).
+function jumpToNow() {
+  const root = $('wall-root');
+  const landing = nowLanding(root, ctx, ctx.now || new Date());
+  if (!landing) { paintNowTabs(); return; }
+  const smooth = canAnimate(root, ctx);
+  const behavior = smooth ? 'smooth' : 'auto';
+  const pad = 8;
+  const { line, card } = landing;
+  let dy;
+  if (line) {
+    const band = seenBand(line.closest('.times-grid'));
+    const lineTop = line.getBoundingClientRect().top;
+    dy = lineTop - (band.top + (band.bottom - band.top) / 3);
+    if (card) {
+      const cardTop = card.getBoundingClientRect().top;
+      if (cardTop - dy < band.top + pad) dy = cardTop - (band.top + pad);
+      if (lineTop - dy > band.bottom - pad) dy = lineTop - (band.bottom - pad);
+      const scroller = card.closest('.times-scroll');
+      if (scroller) {
+        const sr = scroller.getBoundingClientRect();
+        const cr = card.getBoundingClientRect();
+        if (cr.left < sr.left || cr.right > sr.right) {
+          const left = scroller.scrollLeft + (cr.left - sr.left) - (sr.width - cr.width) / 2;
+          scroller.scrollTo({ left: Math.max(0, Math.min(left, scroller.scrollWidth - scroller.clientWidth)), behavior });
+        }
+      }
+    }
+  } else {
+    const band = seenBand(null);
+    const r = card.getBoundingClientRect();
+    dy = r.top - (band.top + (band.bottom - band.top) / 4);
+    if (r.bottom - dy > band.bottom - pad && r.height < band.bottom - band.top - 2 * pad) dy = r.bottom - (band.bottom - pad);
+  }
+  window.scrollTo({ top: Math.max(0, window.scrollY + dy), behavior });
+  if (!card || !canAnimate(card, ctx)) return;
+  let pulsed = false;
+  const pulse = () => {
+    if (pulsed || !card.isConnected) return;
+    pulsed = true;
+    window.removeEventListener('scrollend', pulse);
+    card.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.06)', offset: 0.4 }, { transform: 'scale(1)' }],
+      { duration: 460, iterations: 2, easing: EASE_SURFACE });
+  };
+  window.addEventListener('scrollend', pulse);
+  setTimeout(pulse, smooth ? 750 : 0); // no scroll to wait for, or no scrollend in this engine
 }
 
 // Where a day tab lands on the wall, in the wall's own words (DAY_ANCHOR):
@@ -595,6 +746,9 @@ function renderDayNav() {
   }
   unspy();
   unspy = wireScrollspy([dock, rail], $('wall-root'));
+  // NOW rides with the tabs: it is there exactly while this wall has
+  // something live (a repaint, a search, a hidden room can all change that).
+  paintNowTabs();
 }
 
 // ---- the show menu (MODEL-V4 §3.1) ------------------------------------------------
@@ -2490,11 +2644,17 @@ export function init() {
     renderDayNav(); // scrollspy re-wires against the filtered day blocks (gate F8)
     measureStickyChrome(); // search mode drops the stage strip — jump offset shrinks
   });
+  // A late font changes how wide the fest name and the days draw, so NOW
+  // re-reads the room it has (the corners' refit does the same, wall.js).
+  if (document.fonts && typeof document.fonts.addEventListener === 'function') {
+    document.fonts.addEventListener('loadingdone', () => NOW_TABS.forEach((id) => fitNowTab($(id))));
+  }
   let resizeTimer = null;
   window.addEventListener('resize', () => {
     clearTimeout(resizeTimer);
     resizeTimer = setTimeout(() => {
       measureStickyChrome();
+      NOW_TABS.forEach((id) => fitNowTab($(id))); // a rotation changes the room the days have
       // Each scroller clamps its own scrollLeft during a resize, which can
       // desync the mirrored columns from the strip (Kevin's wide-screen
       // wonk screenshot, 2026-07-12) — re-mirror each group to its first.
@@ -2519,6 +2679,7 @@ export function init() {
   const jumpTop = () => window.scrollTo({ top: 0, behavior: ctx.lowPower ? 'auto' : 'smooth' });
   $('dock-you').addEventListener('click', jumpTop);
   $('rail-you').addEventListener('click', jumpTop);
+  for (const id of NOW_TABS) $(id).addEventListener('click', jumpToNow);
   const openSettingsLayer = () => { openSettings(); router.push('settings'); };
   $('gear-btn').addEventListener('click', openSettingsLayer);
   // The fest name opens the show menu when the fest has rooms to choose

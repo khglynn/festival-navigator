@@ -526,7 +526,7 @@ button.room-head { cursor: pointer; }
 
   /* --- the opt-outs: small controls that take borrowed space instead ------ */
   .person-chip, .notes-chip, .chip-notes, .note-action, .f-chip,
-  .dock .day-tab, .day-rail .day-tab,
+  .dock .day-tab, .day-rail .day-tab, .now-tab,
   .back-btn, .gear-btn, .fest-link, .sheet-close,
   button.avatar,
   .toggle,      /* a 40x24 switch; stretching its track to 44 breaks it, and the
@@ -535,7 +535,7 @@ button.room-head { cursor: pointer; }
     min-height: 0;
   }
   .person-chip, .notes-chip, .chip-notes, .note-action, .f-chip,
-  .dock .day-tab, .day-rail .day-tab,
+  .dock .day-tab, .day-rail .day-tab, .now-tab,
   .back-btn, .gear-btn, .fest-link, .sheet-close,
   button.avatar {
     position: relative;
@@ -545,9 +545,13 @@ button.room-head { cursor: pointer; }
    * tap meant for its neighbour — in a crowd, that is a pick recorded under the
    * wrong person's name. */
   .person-chip::after, .notes-chip::after, .note-action::after, .f-chip::after,
-  .dock .day-tab::after, .day-rail .day-tab::after {
+  .dock .day-tab::after, .day-rail .day-tab::after, .now-tab::after {
     content: ''; position: absolute; inset: -14px -2px;
   }
+  /* NOW down to its dot is 17px wide: it takes the gap on its right (the
+   * days' own reach is 2px) but not on its left, where the avatar's reach
+   * already is. */
+  .now-tab.compact::after { inset: -14px -10px -14px -2px; }
   /* Narrow glyph controls are 17-28px WIDE, so a tall-but-thin target is still a
    * miss — and they are isolated, so they can take the horizontal room.
    * `button.avatar` on purpose: the avatars inside cards are spans, and giving
@@ -569,6 +573,30 @@ button.room-head { cursor: pointer; }
    * on the densest surface in the app. */
   .card button::after { content: none; }
 }
+/* NOW (2026-09-24, Kevin: "where is ross likely right now"): the jump to
+ * what is playing, before the day tabs in the dock and the rail — in each
+ * one's own day-tab type, so it reads as one of the row, but in the now
+ * line's violet (brand, never the fest accent: it is app chrome), with a live
+ * dot that breathes. The motion kill rules make the dot still under Reduce
+ * Motion and Low Power, which is what they are for. It is only there while
+ * something is live (app.js paintNowTabs); `hidden` really hides it. */
+.now-tab { display: inline-flex; align-items: center; gap: 5px; flex: none; position: relative;
+           background: none; border: none; border-bottom: 2px solid transparent; cursor: pointer;
+           color: rgb(var(--brand)); padding: 0 0 3px; }
+.now-tab[hidden] { display: none; }
+.now-tab .live { width: 5px; height: 5px; border-radius: var(--r-pill); background: rgb(var(--brand));
+                 box-shadow: 0 0 5px rgba(var(--brand), .8); animation: now-live 2.4s ease-in-out infinite; }
+@keyframes now-live { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+/* Where the days would lose the day you are in (app.js fitNowTab — a long
+ * fest name on a 320 dock), NOW keeps only its dot, in a faint ring so it
+ * still reads as something to tap rather than a stray pixel. */
+.now-tab.compact { width: 17px; height: 17px; padding: 0; justify-content: center; gap: 0;
+                   border: 1.5px solid rgba(var(--brand), .45); border-radius: var(--r-pill); }
+.now-tab.compact .word { display: none; }
+.now-tab.compact .live { width: 7px; height: 7px; }
+.dock .now-tab { font-family: var(--font-ui); font-weight: 800; font-size: 12px; }
+.day-rail .now-tab { font-family: var(--font-display); letter-spacing: var(--track-label);
+                     font-size: var(--fs-micro); text-transform: uppercase; padding: 2px 0 3px; }
 .dock .day-tab .num { font-size: 9px; font-weight: 600; margin-left: 2px; }
 .dock .day-tab.active { color: rgb(var(--fest)); font-weight: 800; border-bottom-color: rgb(var(--fest)); }
 /* Shared between dock and day rail (one component, two positions). */

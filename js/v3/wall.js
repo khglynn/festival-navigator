@@ -1149,6 +1149,9 @@ function renderScheduledDayBody(root, day, ctx, layout, weekend, { strip = false
   // exactly like real overlaps (Codex arc gate, P1).
   const drawn = computed.map((a) => ({
     ...a, endMin: Math.max(a.endMin ?? a.startMin + 60, a.startMin + 30),
+    // The set's REAL window, before the display floor: what NOW asks when it
+    // looks for a highlighted person's pick that is playing (nowLanding).
+    liveTo: a.endMin ?? a.startMin + 60,
   }));
   // The grid spans the WHOLE festival day — its doors to its close when the
   // file says them, else whole hours around the sets (MODEL-V4 §1.1). A now
@@ -1218,6 +1221,11 @@ function renderScheduledDayBody(root, day, ctx, layout, weekend, { strip = false
     cell.style.gridColumn = String(col + 1);
     cell.style.gridRow = `${row} / span ${span}`;
     cell.style.minHeight = '0';
+    // Its window on the festival day's clock, the same data a stack card
+    // carries (positionNowMarks leaves grid cells alone: the grid has its
+    // line). NOW reads it to find who is playing (nowLanding).
+    cell.dataset.nowFrom = String(a.startMin);
+    cell.dataset.nowTo = String(a.liveTo);
     const lane = lanes.get(a);
     if (lane && lane.lanes > 1) {
       // Lane math assumes border-box sizing (v3.css sets it on .card):
@@ -1526,6 +1534,41 @@ export function positionNowMarks(root, date = new Date()) {
       else if (!on && label) label.remove();
     }
   }
+}
+
+// What NOW lands on (Kevin, 2026-09-24: "where is ross likely right now"),
+// read off the wall the person is looking at — hidden rooms render nothing,
+// so they are never an answer. Null when nothing is live: no now line on a
+// grid and no NOW mark on a stack (the NOW tab is absent then).
+//   · A highlight (the people filter) → that person's pick that is playing
+//     now, a grid cell or a stack card: the highest level first (must), then
+//     the earliest start. A grid cell brings its line with it: the answer to
+//     "where is Ross" is the line and his card seen together.
+//   · Otherwise, or no highlighted pick is live → the now line, or with no
+//     line (the grid closed, the afters running) the first NOW-marked card
+//     in the wall's order. The highlight keeps dimming the rest either way.
+// { kind: 'line' | 'card', line, card }.
+export function nowLanding(root, ctx, date = new Date()) {
+  const line = root.querySelector('.times-grid .now-line');
+  const marks = [...root.querySelectorAll('.venue-grid[data-iso] .card.now')];
+  if (!line && !marks.length) return null;
+  const people = ctx.filterPeople || [];
+  if (people.length) {
+    const live = [...marks];
+    const grid = line ? line.closest('.times-grid') : null;
+    if (grid) {
+      const { minutes } = festivalClock(date, grid.dataset.tz || null);
+      for (const cell of grid.querySelectorAll('.card[data-now-from]')) {
+        if (Number(cell.dataset.nowFrom) <= minutes && minutes < Number(cell.dataset.nowTo)) live.push(cell);
+      }
+    }
+    const level = (card) => Math.max(0, ...people.map((p) => (((ctx.picks || {})[card.dataset.artist] || {})[p]) || 0));
+    const best = live.filter((c) => !c.classList.contains('dim') && level(c) > 0)
+      .sort((a, b) => level(b) - level(a) || Number(a.dataset.nowFrom) - Number(b.dataset.nowFrom))[0];
+    if (best) return { kind: 'card', card: best, line: grid && grid.contains(best) ? line : null };
+  }
+  if (line) return { kind: 'line', line, card: null };
+  return { kind: 'card', card: marks[0], line: null };
 }
 
 // One room on a date: its head and body travel together, tagged with the key
@@ -2092,10 +2135,31 @@ export function wireScrollspy(containers, wallRoot) {
   // naming a day you scrolled past three screens ago.
   const onResize = () => { markOverflow(); syncFromGeometry(); };
   window.addEventListener('resize', onResize);
+  // The row can change width with the window standing still: NOW arrives
+  // before the days and leaves again (app.js, 2026-09-24). Its edges are
+  // re-read then, and a row that has just started to overflow keeps the day
+  // you are in on screen.
+  let rows = null;
+  if (typeof ResizeObserver === 'function') {
+    rows = new ResizeObserver(() => {
+      markOverflow();
+      // Layout positions, not rects: the tabs may be mid-slide (a transform).
+      for (const c of list) {
+        const on = [...c.querySelectorAll('.day-tab')].find((t) => t.dataset.day === active);
+        if (!on) continue;
+        const x = on.offsetParent === c ? on.offsetLeft : on.offsetLeft - c.offsetLeft - c.clientLeft;
+        if (x < c.scrollLeft || x + on.offsetWidth > c.scrollLeft + c.clientWidth) {
+          c.scrollLeft = Math.max(0, x - (c.clientWidth - on.offsetWidth) / 2);
+        }
+      }
+    });
+    for (const c of list) rows.observe(c);
+  }
 
   return () => {
     window.removeEventListener('scroll', onScroll);
     window.removeEventListener('resize', onResize);
+    if (rows) rows.disconnect();
     for (const c of list) c.removeEventListener('scroll', markOverflow);
     if (frame && typeof cancelAnimationFrame === 'function') cancelAnimationFrame(frame);
   };
