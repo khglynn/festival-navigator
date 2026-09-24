@@ -45,13 +45,14 @@ how we got here belongs in DEVLOG.md.
 
 ## Open with Kevin
 
-- The zoom's "everyone's level": Kevin's own idea (2026-09-23) — one blended
-  chip per vote level, the people's colours mixed like the card's aura, in one
-  wrapping row — was mocked in round 4 and is now the recommendation (take 1,
-  "aura chips", over round 3's "The room"). The chips alone replace
-  `whoPills()` in `js/v3/card-facts.js` (small); the travelling-initial motion
-  waits until after the weekend. Canvas (source in
-  `claude-plans/2026-09-23-rating-canvas/`):
+- The zoom's "everyone's level" is BUILT on branch `feat/zoom-chips` (not
+  pushed, not in #24): one blended chip per level, the card's aura mixed from
+  its people, the meter's glyph, first names — Kevin liked it on a local check.
+  Its motion (carry, split, merge, both, first pick, clear) is in, watched
+  frame by frame in Chromium and WebKit, with the reviewer's fixes;
+  storyboard `claude-plans/2026-09-23-zoom-chips-motion.md`, build log
+  `claude-plans/2026-09-23-zoom-chips-build.md`. Next: Kevin's look
+  (gallery.html row 19 has a button per case, plus Slow motion ×4). Canvas:
   https://claude.ai/artifact/ShW4NLwgdtqMQxnAu43Pbh
 - Small calls with defaults: a half-width 30-min cell hides its start time once
   picked (ACL both-weekends view only); How it works dropped "White stroke =
@@ -66,7 +67,8 @@ how we got here belongs in DEVLOG.md.
    throwaway crew.
 2. Data-only pushes as drops land (standing OK: validator + freeze + tests).
    Portola Sep 26–27 (afters from Sep 24); ACL Oct 2–4 and 9–11.
-3. After Oct 11: the zoom's "everyone's level", the merged wall for two crews
+3. The who-chips branch: Kevin's look, then his call on shipping it before
+   or after the weekend. After Oct 11: the merged wall for two crews
    at one fest, add-a-show (`claude-plans/2026-09-02-add-a-show.md`), the
    staging site (fix or retire), the Ray draft.
 
