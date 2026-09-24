@@ -35,24 +35,22 @@ how we got here belongs in DEVLOG.md.
      ~1.6 s on a hanging network, was ~16 s), recognize-you, bring-your-picks,
      Spotify progress, sync-dot honesty, shorter share copy —
      `claude-plans/2026-09-23-crew-join-build.md`.
-  5. The strip rides its timeline under Reduce Motion / Low power; Diagnostics
+  5. The zoom's who-row as blended level chips with first names. The strip
+     rides its timeline under Reduce Motion / Low power; Diagnostics
      shows the route; a Late nights date counts as today; the everything-hidden
      notice; the WebKit tap-ghost zoom fix in `js/v3/card-facts.js`.
-- Checked: 760 unit tests (two timezones), the browser suite in CI (Linux
+- Checked: 770 unit tests (two timezones), the browser suite in CI (Linux
   Chromium) and locally (+ WebKit), four Codex rounds (all findings fixed;
-  Codex is out of credits until Sep 29), three real-engine walks. Not yet on a
+  Codex is out of credits until Sep 29), five real-engine walks. Not yet on a
   physical iPhone — Kevin's walk is that check.
 
 ## Open with Kevin
 
-- The zoom's "everyone's level": Kevin's own idea (2026-09-23) — one blended
-  chip per vote level, the people's colours mixed like the card's aura, in one
-  wrapping row — was mocked in round 4 and is now the recommendation (take 1,
-  "aura chips", over round 3's "The room"). The chips alone replace
-  `whoPills()` in `js/v3/card-facts.js` (small); the travelling-initial motion
-  waits until after the weekend. Canvas (source in
-  `claude-plans/2026-09-23-rating-canvas/`):
-  https://claude.ai/artifact/ShW4NLwgdtqMQxnAu43Pbh
+- The zoom's "everyone's level" is BUILT (Kevin's pick, 2026-09-23): one chip
+  per vote level, the aura blend of its people, first names ("You · Pegah",
+  two then "+n"), one wrapping row — `claude-plans/2026-09-23-zoom-chips-build.md`.
+  After the weekend: the travelling-name / blend re-mix motion (logged there).
+  Canvas: https://claude.ai/artifact/ShW4NLwgdtqMQxnAu43Pbh
 - Small calls with defaults: a half-width 30-min cell hides its start time once
   picked (ACL both-weekends view only); How it works dropped "White stroke =
   you".
@@ -66,7 +64,7 @@ how we got here belongs in DEVLOG.md.
    throwaway crew.
 2. Data-only pushes as drops land (standing OK: validator + freeze + tests).
    Portola Sep 26–27 (afters from Sep 24); ACL Oct 2–4 and 9–11.
-3. After Oct 11: the zoom's "everyone's level", the merged wall for two crews
+3. After Oct 11: the zoom chips' travelling-name motion, the merged wall for two crews
    at one fest, add-a-show (`claude-plans/2026-09-02-add-a-show.md`), the
    staging site (fix or retire), the Ray draft.
 
