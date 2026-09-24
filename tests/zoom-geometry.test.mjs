@@ -131,7 +131,7 @@ test('the phone dock is a floor: a zoom that would hang over it is MOVED up to c
     assert.equal(slot().style.top, '280px', 'nothing else moves');
     zoom.unzoom({ instant: true });
 
-    // A card near the top by the dock rule's other side: the top still never clamps.
+    // A card near the top, no sticky chrome above it: the dock never pushes anything down.
     const top = mountCard(ctx);
     stubRect(top, { left: 400, top: 4, width: 160, height: 100 });
     zoom.zoomCard(top, 'GRiZ', ctx, { occ: OCC });

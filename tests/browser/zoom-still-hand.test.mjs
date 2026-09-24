@@ -12,10 +12,10 @@
 //
 // The rule (card-facts.js `handCard`): an entry at the pixel the mouse last
 // moved to grows only the card the hand was already on; any other card waits
-// for the hand to actually move, and then grows as usual. The zoom's top
-// stays unclamped on purpose — a card by the rail grows where it lives — and
-// this takes the trap away without moving it. The jsdom twin is
-// tests/zoom-still-hand.test.mjs.
+// for the hand to actually move, and then grows as usual. (Since 2026-09-24
+// a zoom also clears the sticky rail and strip — the chrome contract — but
+// this rule is what keeps content sliding under a still mouse from growing
+// anything at all.) The jsdom twin is tests/zoom-still-hand.test.mjs.
 //
 // Chromium always; WebKit too where Playwright's WebKit is installed.
 import test from 'node:test';

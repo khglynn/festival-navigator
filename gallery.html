@@ -115,6 +115,7 @@
     <span class="zoom-status">Show:</span>
     <span id="events-rooms" class="row" style="gap: 12px;"></span>
     <span id="events-status" class="zoom-status"></span>
+    <span class="zoom-controls" style="margin: 0;"><button type="button" id="events-by-strip">Zoom a card tucked under the strip</button></span>
   </div>
   <ul class="events-states">
     <li><b>FRI AFTERS</b> — the day's first head, so it carries the date. Venue groups: three <b>un-numbered</b> sets all stamped 8 PM at The Ballroom, two at The Basement, a printed window at The Pier, and a card with <b>no clock</b> at all — every room a stack, in opening order.</li>
@@ -126,6 +127,7 @@
     <li><b>SUN FOLSOM</b> — an 11 AM street fair opens the day.</li>
     <li><b>TUE LATE NIGHTS · THU LATE NIGHTS</b> — a <b>dated</b> section: its own tab off the end of the week, one head per date (each the door to that date), venue groups under each.</li>
     <li><b>THE FOLD</b> — the checkboxes stand in for the show menu: a hidden room renders nothing, and a day it empties goes whole.</li>
+    <li><b>BY THE STICKY STRIP</b> — the button scrolls SAT GALLERY FEST until its strip is pinned and a card's top is tucked under it, then grows that card (the keyboard route, so it stands): the zoom clears the stage names by 8px and still grows from the card's own centre (card-facts.js <code>place</code>, 2026-09-24). Scroll on with it open: it holds under the strip, and closes once its card is gone under it.</li>
   </ul>
   <div id="events-wall"></div>
 </section>
@@ -717,9 +719,9 @@ edgesRow.appendChild(stateCard('15a · far LEFT edge of the viewport', 'Left Edg
 edgesRow.appendChild(stateCard('15b · far RIGHT edge of the viewport', 'Right Edge Artist', { occ: day }));
 
 // 16 · one card at the very top of the page, one at the very bottom — the
-// zoom's placement rule only ever nudges left/right off-screen, top and
-// bottom never move it (card-facts.js `place`), so these two are the real
-// test of that rule at the extremes.
+// screen's own top and bottom edges never move a zoom (card-facts.js
+// `place`: only the sticky chrome and the phone dock do, and this page has
+// neither), so these two are the real test of that at the extremes.
 // 17 · your meter at every level, beside a card only the others picked (no
 // chip, and the crew corner is all of them).
 const meterRow = document.getElementById('zoom-row-meter');
@@ -989,6 +991,27 @@ const ROOMS = [[':fest', 'Gallery Fest'], ['Afters', 'Afters'], ['Folsom', 'Fols
     host.appendChild(wrap);
   }
 })();
+// A zoom by the sticky strip (2026-09-24): pin SAT GALLERY FEST's strip, tuck
+// a card's top 14px under it, and grow that card the keyboard's way (a key,
+// then focus), so it stands without a hover.
+document.getElementById('events-by-strip').addEventListener('click', async () => {
+  const block = [...document.querySelectorAll('#events-wall .tt-block')][0];
+  const strip = block && block.querySelector(':scope > .stage-strip');
+  const card = block && [...block.querySelectorAll('.times-grid .card')]
+    .sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top)[2];
+  if (!card) { eventsStatus('no grid card to tuck under the strip'); return; }
+  unzoom({ instant: true, why: 'gallery: by the strip' });
+  card.scrollIntoView({ block: 'center' });
+  // A frame between steps: WebKit settles a sticky strip's pin a frame late.
+  const frame = () => new Promise((r) => requestAnimationFrame(() => r()));
+  for (let i = 0; i < 4; i++) { await frame(); window.scrollBy(0, card.getBoundingClientRect().top - (strip.getBoundingClientRect().bottom - 14)); }
+  await frame();
+  // (Safari then scrolls a focused card out from under a sticky header on its
+  // own, a moment later; the zoom follows and stays clear of the strip.)
+  document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }));
+  card.focus({ preventScroll: true });
+  eventsStatus(`${card.dataset.artist}: its top under the strip, its zoom clear of it`);
+});
 // The zoom gallery above already owns the document-level Escape / press-outside
 // handlers for the zoom.
 // Both galleries share one state module: point it at THIS fest to render, and
