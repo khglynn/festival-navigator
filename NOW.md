@@ -35,10 +35,12 @@ how we got here belongs in DEVLOG.md.
   ties, the dock's glimpse, a listener leak, a tall set on a small phone)
   and a desktop mis-pick: content gliding under a still mouse grew a zoom
   that ate the next click as a pick. A zoom now opens only when the hand
-  moves (card-facts.js "still hand"). All fixed, each with its test. 801
-  unit tests, 141 browser (Chromium + WebKit locally); CI green on 7dc3a92,
-  including the dock at Linux's wider glyphs and a timing-proof re-pick
-  test (its CI flake was the test, not the app — zoom-chips build log).
+  moves (card-facts.js "still hand"). All fixed, each with its test.
+  Kevin's second look ("really happy with where we are"): the NOW tag in
+  live cards' corners is gone (the ring is the mark), and NOW taps now go
+  down the page stop by stop and wrap — a highlight's own picks only,
+  side-by-side cards one stop (MODEL-V4 §3d). 807 unit tests; 148 browser
+  (Chromium + WebKit locally); CI green on 723b12b.
 - What v86 carries, each with its spec or build log in `claude-plans/`:
   1. One line per room (`SAT PORTOLA`, `SAT AFTERS`, `TUE LATE NIGHTS`),
      `.day-block` per day — `claude-plans/2026-09-23-one-line-heads.md`.

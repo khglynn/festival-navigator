@@ -329,6 +329,15 @@ WebKit 390 matched Chromium 390 to a pixel or two in every case.
   top card. The answer is still the first tap's stop, its focus (the grid
   column slid into view) and where the next tap counts from.
 
+Counts at 723b12b: `npm test` 807 (806 pass, 1 skipped), both timezones;
+the NOW browser file 45/45 alone; the full browser suite 146/148 on a machine
+at load average ~90 (other sessions' builds), the two failures the zoom
+branch's still-hand test ("no zoom stands after the second NOW"). That test
+fails under parallel load with or without the tap cycle — six copies at
+once failed 7 of 24 runs on the build before this round and 9 of 24 on it —
+passes alone and in CI; it is the zoom agent's to look at. CI run
+36041110444 on 723b12b: both jobs green.
+
 Tests: jsdom — `nowStops` with a handed-in layout (the line then each row;
 a tall window is one stop; Nhu's picks only; nothing on = everyone's
 stops; after close cards only, before doors the line alone; the ticker).
