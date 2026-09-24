@@ -2,7 +2,7 @@
   "_readme": "Frozen pick keys per live festival: the id, every artist name, every day label. Each must still exist in data/festivals/<id>.json byte-for-byte, or the validator and tests/live-pick-keys.test.mjs fail. Every non-archived festival in index.json must have an entry. Regenerate with `node scripts/freeze-pick-keys.mjs <id>` (or --all-live); removing a string by hand is a deliberate decision to orphan the picks/notes under it.",
   "festivals": {
     "portola-2026": {
-      "frozenAt": "2026-09-23",
+      "frozenAt": "2026-09-24",
       "id": "portola-2026",
       "names": [
         "2manydjs",
@@ -26,6 +26,7 @@
         "DEVIANTS",
         "DJ Chaotic Ugly",
         "DJ Shadow",
+        "DJs Who Kiss",
         "Daphni",
         "Dean Turnley",
         "Despacio",
@@ -75,6 +76,7 @@
         "Puffie",
         "Ranger Trucco",
         "Ranger Trucco b2b Alisha",
+        "Rau b2b Rivs",
         "Real Bad 37",
         "Robyn",
         "Rory Phillips",
@@ -100,6 +102,7 @@
         "Velvet Trip",
         "Zara Larsson",
         "Zulan",
+        "bastiengoat",
         "ear",
         "erika b2b sfcowboy",
         "horsegiirL",
