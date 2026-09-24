@@ -1,6 +1,6 @@
 # NOW — festival-navigator
 
-**last-updated: 2026-09-24 (v86 shipped) · mode: live**
+**last-updated: 2026-09-24 (v86 shipped; v87 built) · mode: live**
 
 Where things stand, on one screen. Change stale lines in place; the story of
 how we got here belongs in DEVLOG.md.
@@ -21,13 +21,14 @@ how we got here belongs in DEVLOG.md.
 
 ## Happening now
 
-- **v87 in build: the NOW jump** (Kevin, 2026-09-24): a NOW tab at the start
-  of the day tabs, shown only while something is live; tap lands on the now
-  line (or the first NOW card after Pier 80 closes); with a person
-  highlighted it lands on their live pick with the now line in view — "where
-  is Ross right now" in two taps. Its build log lands
-  with the v87 branch; Kevin checks it on localhost, then ship before
-  Saturday.
+- **v87 built, not pushed: the NOW jump** (Kevin, 2026-09-24), branch
+  `feat/now-jump`: a NOW tab before the day tabs, shown only while something
+  is live; tap lands on the now line (or the first NOW card after Pier 80
+  closes); with a person highlighted it lands on their live pick with the
+  now line in view — "where is Ross right now" in two taps. On a 320 dock
+  with a long fest name it keeps only its dot. Rules: MODEL-V4 §3d; log:
+  `claude-plans/2026-09-24-now-jump-build.md`. 793 unit tests, 110 browser
+  (Chromium + WebKit locally). Next: Kevin's look on localhost, then ship.
 - What v86 carries, each with its spec or build log in `claude-plans/`:
   1. One line per room (`SAT PORTOLA`, `SAT AFTERS`, `TUE LATE NIGHTS`),
      `.day-block` per day — `claude-plans/2026-09-23-one-line-heads.md`.
@@ -71,7 +72,8 @@ how we got here belongs in DEVLOG.md.
 
 ## Next, in order
 
-1. v87 (the NOW jump): build, review, Kevin's local look, ship before Sat.
+1. v87 (the NOW jump): push `feat/now-jump`, review, Kevin's local look,
+   ship before Sat.
 2. Data-only pushes as drops land (standing OK: validator + freeze + tests).
    Portola Sep 26–27 (afters from Sep 24); ACL Oct 2–4 and 9–11.
 3. After Oct 11: the merged wall for two crews

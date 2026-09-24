@@ -13,7 +13,8 @@ The rules as built are MODEL-V4 §3d. This log is how they got there.
 ## Where things stand
 
 - Branch `feat/now-jump` (worktree agent-a13bbdee821d361d6), on top of
-  `main` after the v86 ship (e907f68). Not pushed.
+  `main` after the v86 ship (e907f68, merged in). Not pushed. No
+  production rows made: every crew in the tests and probes is routed.
 - Tests first: `tests/now-jump.test.mjs` (jsdom, the festival clock pinned)
   and `tests/browser/now-jump.test.mjs` (Chromium, `page.clock` pinned to
   Saturday 10:30 PM PDT at Portola) went in red at 5deed4e.
@@ -97,19 +98,26 @@ The rules as built are MODEL-V4 §3d. This log is how they got there.
   nothing of theirs live; the grid closed; nothing live at all and a lineup
   fest; the ticker alone; past midnight still Saturday's afters). Also run
   under `TZ=Asia/Tokyo`.
-- `tests/browser/now-jump.test.mjs`: 12 — at 390 (touch) and 1280: NOW sits
-  before the days, is not a day, has its dot; a tap puts the line between
-  the stage strip and the dock; Ross → his afters card whole under the
-  chrome; Nhu → the line AND Soulwax's cell in view together, the card
-  crossing the line, its column on screen. Saturday 9 AM: no NOW. 320: no
-  overlap. Portola at 390 and 320, ACL at 390: full NOW; ACL at 320: dot
-  only; the day you are in whole in the row every time.
+- `tests/browser/now-jump.test.mjs`: 15 — at 390 (touch) and 1280 in
+  Chromium, and at 390 in WebKit where it is installed (it is here; CI
+  installs Chromium only, so those three skip there): NOW sits before the
+  days, is not a day, has its dot; a tap puts the line between the stage
+  strip and the dock; Ross → his afters card whole under the chrome; Nhu →
+  the line AND Soulwax's cell in view together, the card crossing the line,
+  its column on screen. Saturday 9 AM: no NOW. 320: no overlap. Portola at
+  390 and 320, ACL at 390: full NOW; ACL at 320: dot only; the day you are
+  in whole in the row every time. The landings wait for the glide to come
+  to rest, not a fixed sleep: a 1.1 s sleep flaked once under the full
+  suite's load; with the wait, 8 copies run in parallel passed 96/96.
+- Whole suites at the v87 stamp: `npm test` 793 (792 pass, 1 skipped), also
+  under `TZ=Asia/Tokyo`; `npm run test:browser` 110/110.
 - Probed, not asserted: a lineup fest (Seismic 9.0, EDC Orlando) never shows
   NOW; ACL's Sep 29 Late nights (doors-only, no times) has no NOW mark, so no
   NOW — a data fact, not a bug; ACL Oct 10 at 11 PM (grid closed) shows NOW
   and lands on Fcukers at Devil May Care.
 - Screenshots (fixed clock, Sat 10:30 PM PDT) at 390 and 1280: before the
-  tap, the line landing, Ross, Nhu; the dock on Portola, ACL, a lineup fest.
+  tap, the line landing, Ross, Nhu; the dock on Portola, ACL, a lineup fest
+  (kept outside the repo, in the session's scratchpad `now-jump-shots/`).
 
 ## Open
 
