@@ -2060,7 +2060,18 @@ export function wireScrollspy(containers, wallRoot) {
   // dock, and the row stayed where it was, so it showed FRI 2 / SAT 3 while
   // the wall was in LATE NIGHTS (real-browser walk, 2026-09-17). This is the
   // one place the active day changes, so it is the one place the row moves.
-  // `block: 'nearest'` because the page is not ours to scroll.
+  // The ROW scrolls, never the page (it is not ours to scroll), to a spot
+  // worked out from layout positions, not rects: the tabs can be mid-slide
+  // while NOW arrives or leaves (a transform, app.js slideTabs), and
+  // scrollIntoView would aim at the transformed box.
+  const centre = (t, behavior) => {
+    const c = t.parentElement;
+    if (!c) return;
+    const x = t.offsetParent === c ? t.offsetLeft : t.offsetLeft - c.offsetLeft - c.clientLeft;
+    const left = Math.max(0, Math.min(x - (c.clientWidth - t.offsetWidth) / 2, c.scrollWidth - c.clientWidth));
+    if (typeof c.scrollTo === 'function') c.scrollTo({ left, behavior });
+    else c.scrollLeft = left;
+  };
   let active = null;
   const setActive = (day) => {
     if (day === active) return;
@@ -2071,7 +2082,7 @@ export function wireScrollspy(containers, wallRoot) {
       t.classList.toggle('active', on);
       if (on) t.setAttribute('aria-current', 'true');
       else t.removeAttribute('aria-current');
-      if (on && t.scrollIntoView) t.scrollIntoView({ block: 'nearest', inline: 'center', behavior: glide ? 'smooth' : 'auto' });
+      if (on) centre(t, glide ? 'smooth' : 'auto');
     });
   };
   // …and the eye is told there is more, on the side there is more ON: a row
@@ -2159,16 +2170,16 @@ export function wireScrollspy(containers, wallRoot) {
   let rows = null;
   if (typeof ResizeObserver === 'function') {
     rows = new ResizeObserver(() => {
-      markOverflow();
-      // Layout positions, not rects: the tabs may be mid-slide (a transform).
+      // A row that changed width (NOW came or went, a rotation) and scrolls
+      // centres the day you are in again, at once — not only when it is
+      // clipped: a glide setActive started was aimed for the old width, and
+      // an instant scroll aborts it (CSSOM View: a new scroll aborts any
+      // smooth one).
       for (const c of list) {
         const on = [...c.querySelectorAll('.day-tab')].find((t) => t.dataset.day === active);
-        if (!on) continue;
-        const x = on.offsetParent === c ? on.offsetLeft : on.offsetLeft - c.offsetLeft - c.clientLeft;
-        if (x < c.scrollLeft || x + on.offsetWidth > c.scrollLeft + c.clientWidth) {
-          c.scrollLeft = Math.max(0, x - (c.clientWidth - on.offsetWidth) / 2);
-        }
+        if (on && c.scrollWidth - c.clientWidth > 1) centre(on, 'auto');
       }
+      markOverflow();
     });
     for (const c of list) rows.observe(c);
   }

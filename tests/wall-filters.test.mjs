@@ -274,26 +274,36 @@ test('scrollspy: the day you are in is brought into the middle of its row, on op
   const root = document.createElement('div');
   root.innerHTML = '<div class="day-block" data-day="Saturday"></div><div class="day-block" data-day="Sunday"></div>';
   const [sat, sun] = root.querySelectorAll('.day-block');
+  // A 60px row holding two 40px tabs at 0 and 100 (layout positions — the
+  // tabs may be mid-slide, and a slide is a transform the row must ignore).
+  const px = (el, props) => { for (const [k, v] of Object.entries(props)) Object.defineProperty(el, k, { value: v, configurable: true }); };
+  px(nav, { clientWidth: 60, scrollWidth: 240, offsetLeft: 0, clientLeft: 0 });
+  const [satTab, sunTab] = nav.querySelectorAll('.day-tab');
+  px(satTab, { offsetLeft: 0, offsetWidth: 40 });
+  px(sunTab, { offsetLeft: 100, offsetWidth: 40 });
   const shown = [];
-  for (const t of nav.querySelectorAll('.day-tab')) t.scrollIntoView = (o) => shown.push([t.dataset.day, o]);
+  nav.scrollTo = (o) => shown.push([o.left === 0 ? 'Saturday' : o.left === 90 ? 'Sunday' : `left ${o.left}`, o]);
+  const pageScrolls = [];
+  const hadScrollTo = window.scrollTo;
+  window.scrollTo = (...a) => pageScrolls.push(a);
   const hadRAF = globalThis.requestAnimationFrame;
   globalThis.requestAnimationFrame = (fn) => { fn(); return 1; }; // the scroll path, synchronously
   try {
     const un = wireScrollspy(nav, root);
-    assert.deepEqual(shown.map(([day]) => day), ['Saturday'], 'the opening day is brought into view');
-    assert.equal(shown[0][1].inline, 'center', 'to the middle of the row');
-    assert.equal(shown[0][1].block, 'nearest', 'and never by moving the page');
+    assert.deepEqual(shown.map(([day]) => day), ['Saturday'], 'the opening day is brought into view (clamped at the start)');
+    assert.equal(pageScrolls.length, 0, 'by scrolling the row, never the page');
 
     // A scroll into Sunday moves the row; a second read of the same day does not.
     Object.defineProperty(window, 'scrollY', { value: 1505, configurable: true });
     sat.getBoundingClientRect = () => ({ top: -975 });
     sun.getBoundingClientRect = () => ({ top: -162 });
     window.dispatchEvent(new window.Event('scroll'));
-    assert.deepEqual(shown.map(([day]) => day), ['Saturday', 'Sunday'], 'the day changed, so the row did');
+    assert.deepEqual(shown.map(([day]) => day), ['Saturday', 'Sunday'], 'the day changed, so the row did — Sunday in its middle: 100 − (60 − 40) / 2');
     window.dispatchEvent(new window.Event('scroll'));
     assert.deepEqual(shown.map(([day]) => day), ['Saturday', 'Sunday'], 'standing still moves nothing');
     un();
   } finally {
+    window.scrollTo = hadScrollTo;
     Object.defineProperty(window, 'scrollY', { value: 0, configurable: true });
     globalThis.IntersectionObserver = hadIO;
     globalThis.getComputedStyle = hadGCS;
