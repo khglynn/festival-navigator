@@ -85,8 +85,9 @@ alone below the strip over a card nobody could see, until the card left the
 screen entirely. Now a card that has gone ENTIRELY under the sticky chrome
 (its bottom at or above the ceiling) — or entirely under the dock — closes
 its zoom, exactly as if it had left the screen: to the eye it has. A card
-still partly showing keeps its zoom. (Safari scrolls a focused card out from
-under a sticky header by itself a moment after focus; the zoom follows.)
+still partly showing keeps its zoom. (WebKit scrolls a focused card out from
+under a sticky header by itself a moment after focus — seen at 430 in the
+gallery; the zoom follows.)
 
 ### (c) A card tucked under the pinned strip: the first bloom frame
 
@@ -98,8 +99,9 @@ its place; the resting card's own name, cut by the strip's edge, shows above
 the box for the first two frames while its content steps back (the same
 ~90ms fade every bloom has — in an ordinary bloom the box covers the name,
 here the strip half-covers it). By 90ms it is gone. It reads as the card
-growing out from under the strip, not as a jump; the side-edge clamp shows
-the same peek of the resting card's edges.
+growing out from under the strip, not as a jump; an ordinary bloom shows the
+same kind of peek for those frames — the resting card's edges beside the
+box, which starts at 70% of the zoom's width, narrower than the card.
 
 ## Walked
 
