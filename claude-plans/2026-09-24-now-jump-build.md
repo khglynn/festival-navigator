@@ -36,7 +36,7 @@ The rules as built are MODEL-V4 §3d. This log is how they got there.
      the dock) — the day-of open's own landing. No line (Pier 80 closed, the
      afters running): the first NOW-marked card in wall order;
    - a highlight: that person's live pick, highest level first (must), then
-     the earliest start. A grid cell brings the line: the line lands a third
+     the most recent start. A grid cell brings the line: the line lands a third
      of the way down, moved only as far as it takes to get the card's top on
      screen and never so far the line leaves; the grid scrolls sideways to
      centre the card's column if it is off screen. A stack card lands a
@@ -56,9 +56,12 @@ The rules as built are MODEL-V4 §3d. This log is how they got there.
 2. **Grid cells carry their real now window** (`data-now-from/to`: start to
    the published end, or start + 60 when there is none — not the 30-minute
    display floor). The stack cards already did; the grid had only its line.
-3. **Level, then start.** A must (4) beats a 3 anywhere on the wall; a tie
-   goes to the set that started first. Two people highlighted: the best
-   live pick of either.
+3. **Level, then the most recent start.** A must (4) beats a 3 anywhere on
+   the wall; a tie goes to the set that started most recently. The first
+   build gave it to the earliest start; the review pointed out that favours
+   a room marked live from doors to close, or a set half over, and the
+   coordinator made the call: "where is Ross right now" is the set that just
+   began. Two people highlighted: the best live pick of either.
 4. **The line a third of the way down, not at the jump offset.** At the
    offset the line would sit on the stage strip with only the next hour
    below it; a third down shows what is crossing it (playing) and what is

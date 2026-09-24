@@ -320,14 +320,18 @@ time bar." Build log: `claude-plans/2026-09-24-now-jump-build.md`.
   away; it arrives with the beat, leaves quick and plain, and the day tabs
   beside it slide.
 - **What a tap lands on** (`wall.js nowLanding`). No highlight: the now
-  line, a third of the way down what you can see — or, with no line, the
-  first NOW-marked card in wall order. A highlight: that person's pick that
+  line, a third of the way down what you can see, while the clock is inside
+  the grid's hours — past them (the grid closed, the afters on), the first
+  NOW-marked card in wall order. A highlight: that person's pick that
   is playing now, grid cell or stack card, highest level first (must), then
-  the earliest start; on the grid the line comes with it and both land in
+  the most recent start (the set that just began, not a room live since
+  doors); on the grid the line comes with it and both land in
   view together, the card's column scrolled on screen; in a stack the card
   sits under the chrome with its venue's head above it. One small pulse on
   the card (none under Reduce Motion / Low Power). Nothing of theirs live →
-  as with no highlight; the highlight keeps dimming the rest.
+  as with no highlight, no pulse, and one quiet line on the toast ("Nothing
+  of Kat's is on right now — here's what is."); the highlight keeps dimming
+  the rest.
 - **Room.** The dock's days already scroll on a phone. Where they would lose
   the day you are in (a long fest name on a 320 dock), NOW keeps only its
   dot, in a faint ring.

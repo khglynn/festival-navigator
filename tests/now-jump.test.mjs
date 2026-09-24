@@ -6,12 +6,13 @@
 // What NOW lands on is the wall's decision (wall.js nowLanding), read off the
 // wall the person is looking at, with the festival's clock pinned here:
 //   · nothing live (no now line, no NOW mark) → no NOW at all;
-//   · no highlight → the now line, or — no line (Pier 80 closed, the afters
-//     running) — the first NOW-marked card in wall order;
+//   · no highlight → the now line while the clock is inside the grid's
+//     hours, or — past them (Pier 80 closed, the afters running) — the first
+//     NOW-marked card in wall order;
 //   · a highlight → that person's pick that is playing now, grid cell or
-//     stack card: the highest level first (must), then the earliest start;
+//     stack card: the highest level first (must), then the most recent start;
 //     none live → the line (or the first NOW card) as above, the highlight
-//     still dimming the rest.
+//     still dimming the rest, and the answer says it is no match.
 // Where the page scrolls to (the line and the card in view together) is
 // geometry, so it is the browser contract's (tests/browser/now-jump.test.mjs).
 import test from 'node:test';
@@ -102,13 +103,14 @@ test('Nhu highlighted: her MUST on the grid beats her afters pick — and it lan
   root.remove();
 });
 
-test('two people highlighted: the best live pick of either; equal levels go to whoever started first', () => {
+test('two people highlighted: the best live pick of either; equal levels go to the set that started most recently', () => {
   const { root, ctx } = render(SAT_1030, ['Ross', 'Nhu']);
   assert.equal(artistOf(nowLanding(root, ctx, SAT_1030)), 'Soulwax', 'Nhu’s must outranks Ross’s 3');
   root.remove();
-  // Level ties: Prospa (Nhu 2, 9:45 PM) against Galen (Nhu 2, ~10:30 PM).
+  // Level ties: Prospa (Nhu 2, 9:45 PM, 45 minutes in) against Galen (Nhu 2,
+  // ~10:30 PM, just on). "Where is Nhu right now" is the set that just began.
   const { root: r2, ctx: c2 } = render(SAT_1030, ['Nhu'], { picks: { Prospa: { Nhu: 2 }, Galen: { Nhu: 2 } } });
-  assert.equal(artistOf(nowLanding(r2, c2, SAT_1030)), 'Prospa', 'the one that started first');
+  assert.equal(artistOf(nowLanding(r2, c2, SAT_1030)), 'Galen', 'the one that started most recently');
   r2.remove();
 });
 

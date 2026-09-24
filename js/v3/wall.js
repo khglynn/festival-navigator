@@ -1542,7 +1542,9 @@ export function positionNowMarks(root, date = new Date()) {
 // grid and no NOW mark on a stack (the NOW tab is absent then).
 //   · A highlight (the people filter) → that person's pick that is playing
 //     now, a grid cell or a stack card: the highest level first (must), then
-//     the earliest start. A grid cell brings its line with it: the answer to
+//     the most recent start — "where is Ross right now" is the set that just
+//     began, not a room live since doors or a set half over (review call,
+//     2026-09-24). A grid cell brings its line with it: the answer to
 //     "where is Ross" is the line and his card seen together.
 //   · Otherwise, or no highlighted pick is live → the now line while the
 //     clock is inside the grid's hours; past them (the grid closed, the
@@ -1578,7 +1580,7 @@ export function nowLanding(root, ctx, date = new Date()) {
     }
     const level = (card) => Math.max(0, ...people.map((p) => (((ctx.picks || {})[card.dataset.artist] || {})[p]) || 0));
     const best = live.filter((c) => !c.classList.contains('dim') && level(c) > 0)
-      .sort((a, b) => level(b) - level(a) || Number(a.dataset.nowFrom) - Number(b.dataset.nowFrom))[0];
+      .sort((a, b) => level(b) - level(a) || Number(b.dataset.nowFrom) - Number(a.dataset.nowFrom))[0];
     if (best) return { kind: 'card', card: best, line: grid && grid.contains(best) ? line : null, match: true };
   }
   const match = people.length ? false : null;
