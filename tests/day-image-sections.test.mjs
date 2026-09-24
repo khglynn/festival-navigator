@@ -56,26 +56,29 @@ test('a day exports its whole content in the wall\'s order: the grid in clock or
   assert.deepEqual(sat[32], { name: satFirst.name, time: `Afters · ${satFirst.venue} · ${satFirst.approx ? '~' : ''}${satFirst.time}` },
     'the first afters show after the grid, time-sorted, wearing a tilde only when its time is a guess (Velvet Trip\'s 9:15 PM is posted)');
   assert.deepEqual(sat[sat.length - 1], { name: 'PERVERT XXL', time: 'Folsom · The Midway · 10 PM - 6 AM' });
-  // Thursday is two rooms, and they print different things. The Regency's
-  // feed gives doors AND a show time, so its run carries guessed starts
-  // wearing their tilde; Club Six prints doors only, so
-  // Black Rave Culture carries NO clock rather than an invented one. Read
-  // from the file, so a re-read of either bill moves this with the data.
+  // Thursday is two rooms, each a run: the Regency (doors 7 PM) before Club
+  // Six (doors 10 PM), each in play order, every start a guess wearing its
+  // tilde. Club Six printed doors only; while Black Rave Culture was its one
+  // act it carried NO clock. Its whole bill landed 2026-09-24 (the official
+  // feed's three supports), and a room of four has to say who is on when, so
+  // it is a guessed run like every other doors-only afters room. Read from the
+  // file, so a re-read of either bill moves this with the data.
   const thu = dayArtistsFor('Thursday');
   const thuFile = (name) => portola.artists.find((a) => a.night === 'Thu' && a.name === name);
   const soulwax = thuFile('Soulwax');
   const brc = thuFile('Black Rave Culture');
   assert.ok(soulwax.time && soulwax.approx && soulwax.doors, 'Soulwax: doors and a guessed start');
-  assert.ok(!brc.time && brc.doors, 'Black Rave Culture: doors and no start anybody published');
+  assert.ok(brc.time && brc.approx && brc.doors, 'Black Rave Culture: doors and a guessed start');
+  const runOf = (venue) => portola.artists.filter((a) => a.night === 'Thu' && a.venue === venue)
+    .sort((a, b) => a.order.seq - b.order.seq);
   // Since the 2026-09-23 re-read the Regency is a three-act run (Rory Phillips,
   // LAIMA, Soulwax), so Soulwax closes it: the run exports in play order.
-  const regency = portola.artists.filter((a) => a.night === 'Thu' && a.venue === soulwax.venue)
-    .sort((a, b) => a.order.seq - b.order.seq);
+  const regency = runOf(soulwax.venue);
   assert.deepEqual(regency.map((a) => a.name), ['Rory Phillips', 'LAIMA', 'Soulwax']);
-  assert.deepEqual(thu, [
-    ...regency.map((a) => ({ name: a.name, time: `Afters · ${a.venue} · ~${a.time}` })),
-    { name: 'Black Rave Culture', time: `Afters · ${brc.venue}` },
-  ]);
+  // Club Six: the billed headliner closes, the supports in descending print.
+  const clubSix = runOf(brc.venue);
+  assert.deepEqual(clubSix.map((a) => a.name), ['Rau b2b Rivs', 'DJs Who Kiss', 'bastiengoat', 'Black Rave Culture']);
+  assert.deepEqual(thu, [...regency, ...clubSix].map((a) => ({ name: a.name, time: `Afters · ${a.venue} · ~${a.time}` })));
   const fri = dayArtistsFor('Friday');
   assert.deepEqual(fri.filter((a) => a.name === 'Horse Meat Disco').map((a) => a.time),
     ['Afters · Public Works · 9 PM - 3 AM', 'Folsom · Public Works · 9 PM - 3 AM'], 'a combined-day show appears under each of its sections');
