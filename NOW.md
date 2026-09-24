@@ -46,11 +46,14 @@ how we got here belongs in DEVLOG.md.
 
 ## Open with Kevin
 
-- The zoom's "everyone's level" is BUILT (Kevin's pick, 2026-09-23): one chip
-  per vote level, the aura blend of its people, first names ("You · Pegah",
-  two then "+n"), one wrapping row — `claude-plans/2026-09-23-zoom-chips-build.md`.
-  After the weekend: the travelling-name / blend re-mix motion (logged there).
-  Canvas: https://claude.ai/artifact/ShW4NLwgdtqMQxnAu43Pbh
+- The zoom's "everyone's level" is in v86 (Kevin's pick, 2026-09-23): one
+  blended chip per vote level (the card's aura mixed from its people, the
+  meter's glyph, first names, "You" first, two then "+n"), one wrapping row;
+  its motion (carry, split, merge, both, first pick, clear) watched frame by
+  frame in Chromium and WebKit — storyboard
+  `claude-plans/2026-09-23-zoom-chips-motion.md`, build log
+  `claude-plans/2026-09-23-zoom-chips-build.md`; gallery.html row 19 replays
+  each case. Canvas: https://claude.ai/artifact/ShW4NLwgdtqMQxnAu43Pbh
 - Small calls with defaults: a half-width 30-min cell hides its start time once
   picked (ACL both-weekends view only); How it works dropped "White stroke =
   you".
@@ -64,7 +67,7 @@ how we got here belongs in DEVLOG.md.
    throwaway crew.
 2. Data-only pushes as drops land (standing OK: validator + freeze + tests).
    Portola Sep 26–27 (afters from Sep 24); ACL Oct 2–4 and 9–11.
-3. After Oct 11: the zoom chips' travelling-name motion, the merged wall for two crews
+3. After Oct 11: the merged wall for two crews
    at one fest, add-a-show (`claude-plans/2026-09-02-add-a-show.md`), the
    staging site (fix or retire), the Ray draft.
 

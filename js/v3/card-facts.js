@@ -17,6 +17,7 @@ import { colorIndexOf, roomOf } from './wall.js';
 import { record } from '../errlog.js';
 import { runFactsOf, findEventEntry, shortDateLabel, shortDate, dateOf, venueOf, isCancelled, cancelledNames } from './events.js';
 import { GROW_MS, CONTENT_FADE_MS, OUT_MS, CASCADE_MS, STAGGER_MS, REFRESH_MS, EASE_ARRIVE, EASE_LEAVE, EASE_SURFACE, canAnimate } from './motion.js';
+import { whoSnapshot, whoMotion } from './who-motion.js';
 
 // "9:00 PM - 10:15 PM" -> "9:00 – 10:15 PM" (the shared meridiem said once).
 export function timeRange(t) {
@@ -139,7 +140,8 @@ export function factsFor(artistName, ctx, occ = null) {
 // first, in one wrapping row, so a crew of fifteen is at most four chips, not
 // fifteen pills. Inside a chip: the card meter's own glyph (the same bars and
 // the same MUST as wall.js meterChip, one set of CSS), then first names — You
-// first when you are in it, two at most, then "+n". The fill is the card's
+// first when you are in it, the others alphabetically, two at most, then
+// "+n". The fill is the card's
 // own aura mix of the people at that level (aura.js auraLayers) over a scrim;
 // one person alone is just their colour. The chip you are in wears `.you` (the
 // white edge that means you everywhere). Every chip keeps `.f-pill` and says
@@ -148,20 +150,36 @@ export function factsFor(artistName, ctx, occ = null) {
 // so a chip that stays slides and a level that appears grows in.
 // Canvas and the rounds that led here: claude-plans/2026-09-23-rating-canvas.
 const CHIP_NAMES = 2;
-const listOf = (names) => (names.length < 2 ? names.join('') : `${names.slice(0, -1).join(', ')} and ${names.at(-1)}`);
-const firstName = (p) => (p.isYou ? 'You' : p.name.trim().split(/\s+/)[0]);
-export function whoChips(people) {
+const listOf = (names) => (names.length < 2 ? names.join('') : `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`);
+const firstWord = (name) => name.trim().split(/\s+/)[0];
+// A first name, unless another member of the crew starts with the same word
+// ("Drew Smith" and "Drew Jones"): then the whole name, which the 7em cap
+// still ellipsizes. Compared by NAME, never by object — the people handed in
+// here are rebuilt per render (aura.initialFor's identity trap).
+const shownName = (p, crew) => {
+  if (p.isYou) return 'You';
+  const first = firstWord(p.name);
+  const shared = crew.some((n) => n !== p.name && firstWord(n).toLowerCase() === first.toLowerCase());
+  return shared ? p.name.trim() : first;
+};
+// `crew`: every active member's name (whose first words could collide);
+// defaults to the pickers themselves.
+export function whoChips(people, crew = people.map((p) => p.name)) {
   const chips = [];
   for (const level of [4, 3, 2, 1]) {
     const here = people.filter((p) => p.level === level);
     if (!here.length) continue;
-    // You lead your own chip; everyone else keeps the order they picked in.
-    const members = [...here.filter((p) => p.isYou), ...here.filter((p) => !p.isYou)];
+    // You lead your own chip; everyone else alphabetically. NOT the doc's
+    // order: the crew doc is Postgres jsonb, which stores keys shortest-first,
+    // so "the order they picked in" is not what arrives — and a local pick
+    // and the server's echo would disagree, swapping names under your eyes.
+    const others = here.filter((p) => !p.isYou).sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+    const members = [...here.filter((p) => p.isYou), ...others];
     chips.push({
       level,
       members,
       you: members.some((p) => p.isYou),
-      names: members.slice(0, CHIP_NAMES).map(firstName),
+      names: members.slice(0, CHIP_NAMES).map((p) => shownName(p, crew)),
       more: Math.max(0, members.length - CHIP_NAMES),
       label: `${LEVEL_LABELS_V4[level]}: ${listOf(members.map((p) => (p.isYou ? 'You' : p.name)))}`,
     });
@@ -172,6 +190,11 @@ export function whoChips(people) {
 // and a chip sits on the grown card's own aura, so its body needs a little
 // ground of its own for the names to read.
 const CHIP_SCRIM = 'rgba(12, 10, 20, .28)';
+// One person alone is their own colour, as bright as their level — the
+// aura's own step up (.5/.75/1 for picks, 1 for must), set a notch softer and
+// over the same scrim as a blend, so white names read on the lightest hues
+// (amber, lime, aqua): a tap that carries a chip from ×2 to ×3 deepens it.
+const SOLO_ALPHA = { 1: 0.45, 2: 0.6, 3: 0.72, 4: 0.85 };
 function levelGlyph(level) {
   const g = document.createElement('span');
   g.setAttribute('aria-hidden', 'true');
@@ -192,14 +215,27 @@ export function whoPills(facts) {
   const row = document.createElement('div');
   row.className = 'f-who';
   row.setAttribute('role', 'list');
-  for (const chip of whoChips(facts.people)) {
+  let crew;
+  try { crew = state.activePeople().map(([n]) => n); } catch { crew = facts.people.map((p) => p.name); }
+  for (const chip of whoChips(facts.people, crew)) {
     const c = document.createElement('span');
     c.className = 'f-pill' + (chip.you ? ' you' : '');
     c.dataset.level = String(chip.level);
+    // Who is in it — the refresh's motion reads this to tell a chip you
+    // joined from one you left (who-motion.js). Names, never tokens.
+    c.dataset.people = JSON.stringify(chip.members.map((p) => p.name));
     c.setAttribute('role', 'listitem');
     c.setAttribute('aria-label', chip.label);
-    c.style.background = chip.members.length === 1
-      ? hslOf(chip.members[0].colorIndex, 0.6)
+    // The fill is its own layer, under the glyph and the names, so a chip's
+    // width can change as the fill's scale (who-motion.js) without ever
+    // stretching a name — and so the fill, not a fact, is the one thing
+    // that may crossfade.
+    const fill = document.createElement('span');
+    fill.className = 'f-fill';
+    fill.setAttribute('aria-hidden', 'true');
+    const solo = hslOf(chip.members[0].colorIndex, SOLO_ALPHA[chip.level]);
+    fill.style.background = chip.members.length === 1
+      ? `linear-gradient(${solo}, ${solo}), ${CHIP_SCRIM}`
       : `${auraLayers(chip.members)}, ${CHIP_SCRIM}`;
     const names = document.createElement('span');
     names.className = 'f-names';
@@ -211,18 +247,22 @@ export function whoPills(facts) {
         dot.textContent = '·';
         names.appendChild(dot);
       }
+      const who = chip.members[i];
       const nm = document.createElement('span');
-      nm.className = 'f-nm';
+      nm.className = 'f-nm' + (who.isYou ? ' you' : '');
+      nm.dataset.person = who.name; // a name moves as itself across chips (who-motion.js)
+      nm.dataset.color = hslOf(who.colorIndex, 0.6); // the bud under it when it crosses
       nm.textContent = n;
       names.appendChild(nm);
     });
     if (chip.more) {
       const more = document.createElement('span');
       more.className = 'f-more';
+      more.dataset.level = String(chip.level);
       more.textContent = `+${chip.more}`;
       names.appendChild(more);
     }
-    c.append(levelGlyph(chip.level), names);
+    c.append(fill, levelGlyph(chip.level), names);
     row.appendChild(c);
   }
   return row;
@@ -610,14 +650,21 @@ function insetFor(r0, r1) {
 // bottom never move it — a card by the day rail grows where it is.
 function place(slot, el) {
   const r0 = rect(el);
+  // The overlay's own LAYOUT size, not its on-screen box: follow() re-places
+  // it on every scroll, including mid-bloom, when the box is still scaled
+  // down — and a scaled width centred it wrong and let the edge clamp pass a
+  // box that then grew past the screen (3px over at 320 wide, found by the
+  // zoom-chips browser contract, 2026-09-23). offsetWidth ignores transforms;
+  // jsdom has no layout (0), so the measured box stands in there.
   const b = rect(slot);
+  const w = slot.offsetWidth || b.width, h = slot.offsetHeight || b.height;
   const vw = window.innerWidth;
-  let left = Math.round(r0.left + r0.width / 2 - b.width / 2);
-  const top = Math.round(r0.top + r0.height / 2 - b.height / 2);
-  left = Math.max(8, Math.min(left, vw - 8 - b.width));
+  let left = Math.round(r0.left + r0.width / 2 - w / 2);
+  const top = Math.round(r0.top + r0.height / 2 - h / 2);
+  left = Math.max(8, Math.min(left, vw - 8 - w));
   slot.style.left = `${Number.isFinite(left) ? left : r0.left}px`;
   slot.style.top = `${Number.isFinite(top) ? top : r0.top}px`;
-  return { r0, r1: box(left, top, b.width, b.height) };
+  return { r0, r1: box(left, top, w, h) };
 }
 
 // The grown card's parts: a SURFACE (the wash and the border) under an
@@ -640,7 +687,12 @@ function buildParts(z, facts) {
 // The overlay never grows smaller than the card it grows out of.
 function sizeSlot(slot, r0) {
   slot.style.minWidth = `${Math.max(MIN_W, Math.ceil(r0.width))}px`;
-  slot.style.maxWidth = `${Math.max(MAX_W, Math.ceil(r0.width))}px`;
+  // Never wider than the screen with its 8px margins (a 320px phone — an SE,
+  // or a mini under Display Zoom — lost the right 48px of a busy zoom), but
+  // never narrower than the card it grows out of. The viewport is the same
+  // read place() already makes; nothing inside the card is measured.
+  const vw = typeof window !== 'undefined' && window.innerWidth ? window.innerWidth - 16 : MAX_W;
+  slot.style.maxWidth = `${Math.max(Math.min(MAX_W, vw), Math.ceil(r0.width))}px`;
   slot.style.minHeight = `${Math.max(MIN_H, Math.ceil(r0.height))}px`;
 }
 
@@ -756,12 +808,15 @@ function zoomCardInner(el, artistName, ctx, { onOpenNotes = null, source = 'mous
 // scale. Using this constant there to "fix the inconsistency" would translate
 // the name on every zoom, against a stated design law, and the bloom test would
 // stay green while it happened.
-const REFRESH_PART_SEL = '.f-name, .f-sub, .f-where, .f-pill, .f-chip.notes, .f-chip.spot';
+// The who-row is NOT in this set: its chips split, merge and carry, and its
+// names move between them as themselves, so it reconciles itself
+// (who-motion.js, storyboard claude-plans/2026-09-23-zoom-chips-motion.md);
+// the refresh below only hands it a before-snapshot and keeps its animations.
+const REFRESH_PART_SEL = '.f-name, .f-sub, .f-where, .f-chip.notes, .f-chip.spot';
 function partKey(el) {
   if (el.classList.contains('f-name')) return 'name';
   if (el.classList.contains('f-sub')) return 'sub';
   if (el.classList.contains('f-where')) return 'where';
-  if (el.classList.contains('f-pill')) return `pill:${el.dataset.level}`; // a who-chip is its level: the chip that stays slides, a new level grows in
   if (el.classList.contains('notes')) return 'notes';
   if (el.classList.contains('spot')) return 'spot';
   return null;
@@ -790,6 +845,7 @@ function refreshZoomInner(fresh, ctx) {
   const animate = canAnimate(z.card, ctx);
   // READS: where everything was.
   const before = animate ? snapshotParts(z.card) : null;
+  const whoBefore = animate ? whoSnapshot(z.card) : null;
   const slotBefore = animate ? rect(z.slot) : null;
   const oldSurface = z.card.querySelector('.z-surface');
   // WRITES: the new parts, the box re-centred.
@@ -848,6 +904,7 @@ function refreshZoomInner(fresh, ctx) {
       arrivals += 1;
     }
   }
+  anims.push(...whoMotion(z.card, whoBefore));
   z.anims = anims;
 }
 
