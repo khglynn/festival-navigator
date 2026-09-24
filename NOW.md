@@ -45,8 +45,13 @@ how we got here belongs in DEVLOG.md.
 
 ## Open with Kevin
 
-- The zoom's "everyone's level": "The room" after Portola (recommended), meters
-  on the name pills now, or "The room" now. Design canvas:
+- The zoom's "everyone's level": Kevin's own idea (2026-09-23) — one blended
+  chip per vote level, the people's colours mixed like the card's aura, in one
+  wrapping row — was mocked in round 4 and is now the recommendation (take 1,
+  "aura chips", over round 3's "The room"). The chips alone replace
+  `whoPills()` in `js/v3/card-facts.js` (small); the travelling-initial motion
+  waits until after the weekend. Canvas (source in
+  `claude-plans/2026-09-23-rating-canvas/`):
   https://claude.ai/artifact/ShW4NLwgdtqMQxnAu43Pbh
 - Small calls with defaults: a half-width 30-min cell hides its start time once
   picked (ACL both-weekends view only); How it works dropped "White stroke =
