@@ -233,3 +233,13 @@ a.f-buy-link:hover { border-bottom-color: rgba(255, 255, 255, .75); }
   .cv-bar > * { flex: none; }
   .cv-bar-gap { display: none; }
 }
+
+/* ---- plain-text sections (sources, your call) ------------------------------------- */
+.cv-list { margin: 16px 0 0; padding-left: 18px; max-width: 80ch; display: flex; flex-direction: column; gap: 9px;
+           color: var(--text-body); font-size: 14px; line-height: 1.55; }
+.cv-list b { color: var(--text-header); }
+.cv-list li::marker { color: var(--text-tertiary); }
+.cv-more { margin: 14px 0 0; font-size: 13px; font-weight: 700; }
+.cv-more a { color: var(--tonal-text); text-decoration: none; border-bottom: 1px solid rgba(var(--brand), .4); padding-bottom: 1px; }
+.cv-more a:hover { border-bottom-color: rgb(var(--brand)); }
+.cv-call { font-size: 15px; gap: 12px; }

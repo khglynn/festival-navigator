@@ -69,10 +69,10 @@ first presale (Tue May 12).
   Oct 16-22 (43 shows) and the months follow without those nights.
 - On Sep 24 THIS WEEK and SEP are the same seven nights, so C removes SEP
   (no card shows twice). At a month's start the week is a quarter of it.
-- YOURS as night rooms is ~215px per show on a phone (one half-width card
-  per night: head, venue head, doors, card). 19 shows is four screens. The
-  "One list" variant (a search-style list: one head, the on-sale whispers,
-  cards saying their night and room) is one screen. Built beside the brief's.
+- YOURS as night rooms, measured on the phone frame: 3,950px for 19 shows
+  (5.5 screens of 715px), mostly one half-width card per night. The "One
+  list" variant (a search-style list: one head, the on-sale whisper, cards
+  saying their night and room) is 1,090px. Built beside the brief's.
 - A YOURS arriving while you look at the top: the first cut slid the whole
   wall 4000px in 380ms (a whoosh with a blank beat). Now: scrolled into the
   months, the view is anchored and only the tab (and its dot) arrives; at

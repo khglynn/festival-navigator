@@ -1019,6 +1019,16 @@ a.f-buy-link:hover { border-bottom-color: rgba(255, 255, 255, .75); }
   .cv-bar-gap { display: none; }
 }
 
+/* ---- plain-text sections (sources, your call) ------------------------------------- */
+.cv-list { margin: 16px 0 0; padding-left: 18px; max-width: 80ch; display: flex; flex-direction: column; gap: 9px;
+           color: var(--text-body); font-size: 14px; line-height: 1.55; }
+.cv-list b { color: var(--text-header); }
+.cv-list li::marker { color: var(--text-tertiary); }
+.cv-more { margin: 14px 0 0; font-size: 13px; font-weight: 700; }
+.cv-more a { color: var(--tonal-text); text-decoration: none; border-bottom: 1px solid rgba(var(--brand), .4); padding-bottom: 1px; }
+.cv-more a:hover { border-bottom-color: rgb(var(--brand)); }
+.cv-call { font-size: 15px; gap: 12px; }
+
 </style>
 </head>
 <body>
@@ -1030,18 +1040,31 @@ a.f-buy-link:hover { border-bottom-color: rgba(255, 255, 255, .75); }
     <p class="cv-how">Kevin missed <b>MUNA at Moody Amphitheater on Sat Sep 19</b>. It was announced May 8, on sale May 14, and never sold out: 134 days of notice, and nothing he uses told him. So this page designs two things together: a <b>season</b> (Austin’s shows by month, pick them, tap through to buy) and an <b>alert</b> (a message when an artist he loves is announced here). Every card, stack, head and zoom below is the app’s own code running on the real season file: 425 shows at 15 rooms, read off each venue’s calendar today. Rest the mouse on a card (or hold it) to zoom; tap to pick.</p>
     <div class="cv-muna" id="cv-muna" aria-label="The MUNA timeline, and when each direction would have spoken"></div>
     <nav class="cv-bar" aria-label="Canvas controls">
+      <a href="#sources">Sources</a>
       <a href="#today">Today</a>
       <a href="#dirs">Three doors</a>
       <a href="#desks">Laptop</a>
       <a href="#cover">Rooms filter</a>
       <a href="#edges">Edge cases</a>
       <a href="#rec">Pick</a>
+      <a href="#call">Your call</a>
       <span class="cv-bar-gap"></span>
       <span class="cv-clock" role="group" aria-label="Pretend today is"><span class="cv-clock-k">Today</span><button type="button" class="seg active" data-clock="2026-09-24">Thu Sep 24</button><button type="button" class="seg" data-clock="2026-10-16">Fri Oct 16</button></span>
       <label class="cv-toggle"><input type="checkbox" id="cv-slow"> Slow motion</label>
       <button type="button" id="cv-reset" class="cv-btn">Reset picks</button>
     </nav>
   </header>
+
+  <section class="cv-group" id="sources">
+    <h2 class="cv-h2">Where the shows come from</h2>
+    <ul class="cv-list">
+      <li><b>Do512 is the base:</b> it had 84% of 468 shows at 16 venues and was wrong twice. It’s an independent Austin company, and its buy links carry its own referral codes, so a friend buying through them pays Do512.</li>
+      <li><b>A second source covers winter and spring:</b> JamBase is the leading candidate (independent since 1998; free API tier). Together the two had 93% of shows, and 93% after Nov 23.</li>
+      <li><b>Ticketmaster’s free API</b> supplies presale and on-sale times for the rooms it sells (Moody Center, Moody Amphitheater, Stubb’s, Emo’s, Scoot Inn, Antone’s).</li>
+      <li><b>MUNA:</b> announced May 8, on sale May 14, never sold out. That’s 134 days of notice, and the listing existed from day one. What was missing was something that told Kevin.</li>
+    </ul>
+    <p class="cv-more"><a href="https://github.com/khglynn/festival-navigator/blob/seasons/kickoff/claude-plans/2026-09-24-city-seasons/STUDY.md" target="_blank" rel="noopener">The full study</a></p>
+  </section>
 
   <section class="cv-group" id="today">
     <h2 class="cv-h2">What the app draws today</h2>
@@ -1120,6 +1143,16 @@ a.f-buy-link:hover { border-bottom-color: rgba(255, 255, 255, .75); }
     <h4 id="rec-h"></h4>
     <div id="rec-p"></div>
   </aside>
+
+  <section class="cv-group" id="call">
+    <h2 class="cv-h2">Your call</h2>
+    <ol class="cv-grammar cv-call">
+      <li><b>Which door:</b> A (the month), B (yours), C (this week), or a mix (say which parts).</li>
+      <li><b>Where alerts land:</b> Slack in your personal Trimm workspace, email, or a phone notification.</li>
+      <li><b>Show cards:</b> one card per show (headliner, with support acts in the zoom), or one card per artist like the fest wall.</li>
+      <li><b>OK to email Do512</b> asking to use their listings, and to sign up for free JamBase and Ticketmaster developer keys in your name?</li>
+    </ol>
+  </section>
 
   <footer class="cv-foot">
     <h4>How this page was made</h4>
@@ -2303,6 +2336,17 @@ ${where}`}return subLabel||void 0}function renderCardGrid(root,list,ctx,{day=nul
     zoomStrip();
     edges();
   }));
+
+  // ---- the recommendation and the footer --------------------------------------------------------
+  document.getElementById('rec-h').textContent = 'B’s wall, A’s alert, YOURS as one list';
+  document.getElementById('rec-p').innerHTML = [
+    '<p><b>Take the alert from A.</b> It is the only one of the three that needs nothing but the listing: a daily read finds the show, the DM goes out the next morning. For MUNA that is Saturday May 9, while the artist-presale sign-up was still open. B’s and C’s first word came Monday, and C’s depends on an on-sale time, which our sources carry for only some shows (Do512 had seven on Sep 24; Ticketmaster’s API covers only the rooms it sells). For a Mohawk or Continental Club show by an artist you love, C might never speak at all. One change to A: matches found the same morning go out as one DM, so an ACL Fest Nights drop is one message, not ten.</p>',
+    '<p><b>Take the wall from B.</b> October is 178 shows, ten of them yours, and the small green Spotify pill is the only thing on the wall that says which ten. YOURS gathers them, it is where the DM’s “Open in Festival Navigator” should land, and its dot says something new arrived. The months follow as A draws them, so browsing is unchanged. Keep A’s NEW tag in the months; it is one corner label.</p>',
+    '<p><b>Draw YOURS as one list, not night rooms.</b> Nineteen shows as night rooms is five and a half phone screens (3,950px), mostly one half-width card per night; as a list, the way a search answers, it is a screen and a half (1,090px), with the on-sale whisper at its top. Switch it with <b>One list</b> above B’s phone.</p>',
+    '<p><b>From C, keep the day-before reminder for later.</b> It only helps once picks live where the server can read them, and THIS WEEK is the month itself at the end of a month.</p>',
+    '<p><b>Before any of it ships:</b> a show id, because picks are keyed by name and Bleachers’ two nights share one; and a decision on whose buy link to show (the venue’s own, as drawn here, or Do512’s, which pays Do512).</p>',
+  ].join('');
+  document.getElementById('cv-foot-p').innerHTML = 'The app’s own modules are bundled into this page unchanged, apart from two hooks: one when a card is made (A’s NEW tag) and one when the zoom’s lines are built (support acts, tickets, on-sale, a past pick), so the zoom measures and blooms them like its own. Each frame is the app screen’s own markup from <code>index.html</code>. Artboard 0 is <code>renderWall</code> as it is today; the directions compose the wall from the exported pieces (<code>venueGroups</code>, <code>renderCard</code>, the room head). The season is <code>data/season-austin.json</code>, with the venues’ own buy links and Do512’s on-sale times attached at build time. The crew is made up and lives only in memory; nothing talks to the app’s server or database. Source and notes: <code>claude-plans/2026-09-24-city-seasons/canvas/</code>. Built 24 Sep 2026.';
 
   window.__canvas = { frames, statics, setLevel, levelOf, tabsFor, season, isYours, buyOf, billingOf };
 })();

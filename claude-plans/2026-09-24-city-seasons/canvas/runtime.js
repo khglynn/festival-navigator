@@ -1152,5 +1152,16 @@
     edges();
   }));
 
+  // ---- the recommendation and the footer --------------------------------------------------------
+  document.getElementById('rec-h').textContent = 'B’s wall, A’s alert, YOURS as one list';
+  document.getElementById('rec-p').innerHTML = [
+    '<p><b>Take the alert from A.</b> It is the only one of the three that needs nothing but the listing: a daily read finds the show, the DM goes out the next morning. For MUNA that is Saturday May 9, while the artist-presale sign-up was still open. B’s and C’s first word came Monday, and C’s depends on an on-sale time, which our sources carry for only some shows (Do512 had seven on Sep 24; Ticketmaster’s API covers only the rooms it sells). For a Mohawk or Continental Club show by an artist you love, C might never speak at all. One change to A: matches found the same morning go out as one DM, so an ACL Fest Nights drop is one message, not ten.</p>',
+    '<p><b>Take the wall from B.</b> October is 178 shows, ten of them yours, and the small green Spotify pill is the only thing on the wall that says which ten. YOURS gathers them, it is where the DM’s “Open in Festival Navigator” should land, and its dot says something new arrived. The months follow as A draws them, so browsing is unchanged. Keep A’s NEW tag in the months; it is one corner label.</p>',
+    '<p><b>Draw YOURS as one list, not night rooms.</b> Nineteen shows as night rooms is five and a half phone screens (3,950px), mostly one half-width card per night; as a list, the way a search answers, it is a screen and a half (1,090px), with the on-sale whisper at its top. Switch it with <b>One list</b> above B’s phone.</p>',
+    '<p><b>From C, keep the day-before reminder for later.</b> It only helps once picks live where the server can read them, and THIS WEEK is the month itself at the end of a month.</p>',
+    '<p><b>Before any of it ships:</b> a show id, because picks are keyed by name and Bleachers’ two nights share one; and a decision on whose buy link to show (the venue’s own, as drawn here, or Do512’s, which pays Do512).</p>',
+  ].join('');
+  document.getElementById('cv-foot-p').innerHTML = 'The app’s own modules are bundled into this page unchanged, apart from two hooks: one when a card is made (A’s NEW tag) and one when the zoom’s lines are built (support acts, tickets, on-sale, a past pick), so the zoom measures and blooms them like its own. Each frame is the app screen’s own markup from <code>index.html</code>. Artboard 0 is <code>renderWall</code> as it is today; the directions compose the wall from the exported pieces (<code>venueGroups</code>, <code>renderCard</code>, the room head). The season is <code>data/season-austin.json</code>, with the venues’ own buy links and Do512’s on-sale times attached at build time. The crew is made up and lives only in memory; nothing talks to the app’s server or database. Source and notes: <code>claude-plans/2026-09-24-city-seasons/canvas/</code>. Built 24 Sep 2026.';
+
   window.__canvas = { frames, statics, setLevel, levelOf, tabsFor, season, isYours, buyOf, billingOf };
 })();
