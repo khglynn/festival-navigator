@@ -133,3 +133,26 @@ missing data.
   venue on SeatGeek itself (Germania: 4 shows, nothing past mid-Oct; Emo's:
   nothing past Nov 27; ACL Live: runs to mid-2027) — this may be a real
   Austin data-quality trait for scoring, not a study miss.
+- 2026-09-24 ~2:40 PM PT: waves 1 and 2 done. First grading (`score.mjs`,
+  425 music shows at 16 venues, Parish merged into Brushy Street): Do512
+  recall 87% / precision 93% (before adjudication) / buy link 96%;
+  Bandsintown 82% / 80%, strongest far out (Dec–May 82%) and on electronic;
+  JamBase 75%; Songkick 75%; Showlist and the Chronicle 60%; the Ticketmaster
+  website read is capped at 20 shows a venue, so its 41% is not the API's
+  number. Best pair Do512 + Bandsintown 97%.
+- Verified by hand: Spotify's help page lists 46 ticketing feeds including
+  Bandsintown and says "We don't display events from Songkick"; Do512's
+  venue JSON works (`/venues/<slug>.json`, paged) and carries
+  `ticket_onsale_time`, stable event ids and doors; Do512's buy links carry
+  DoStuff's own affiliate ids (`SharedId=DoStuff`, `pubref:dostuff`), which
+  corrects the wave-2 reader who said they were untagged; Showlist Austin's
+  own data dates 41 Ticketmaster-venue shows a day late (Jane Remover is
+  Sep 29 at Stubb's everywhere else, Sep 30 on Showlist).
+- MUNA timeline (`research/muna-timeline.md`): announced Fri May 8, presales
+  May 12–13 (one was a Spotify presale), on sale May 14, never sold out; 134
+  days of notice. Ticketmaster, JamBase and Do512 had it on announcement day.
+  The miss was an alert problem, not a data problem.
+- ~2:50 PM PT: wave 3 started (artist-page lookups for 37 headliners across
+  five surfaces; adjudication of 230 listings the venue calendars didn't
+  confirm). The canvas builder (Opus, one agent) started from
+  `canvas/BRIEF.md`.
