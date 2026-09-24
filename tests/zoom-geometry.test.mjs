@@ -5,13 +5,18 @@
 // the viewport clamp, the NaN fallback and the size floors were all inert.
 //
 // The rule these pin is a design law, not an implementation detail. The
-// screen's LEFT and RIGHT edges push the box inward; the top never moves it,
-// because a card by the day rail must grow where it lives; and the phone
-// dock, when it is showing, is a floor the box is moved up from (Kevin,
-// 2026-09-24) — the screen's own bottom edge still is not. And the follow
-// path closes on exactly one condition — the card genuinely left the viewport
-// — because dismissing on any scroll event read as "hover is fully broken" on
-// a trackpad, where micro-deltas fire constantly under a resting hand.
+// screen's LEFT and RIGHT edges push the box inward. The chrome is kept
+// clear (Kevin, 2026-09-24): the phone dock, when it shows, is a FLOOR the
+// box moves up from, and the sticky chrome above the card — the desktop day
+// rail and the card's own stage strip — is a CEILING it moves down from; when
+// it cannot clear both, the ceiling wins. The screen's own top and bottom
+// edges move nothing: a card with no chrome above it grows where it lives.
+// (Until 2026-09-24 the top never moved it at all — "a card by the day rail
+// grows where it is"; Kevin overruled that for the sticky headers.) And the
+// follow path closes only when the card genuinely left the viewport or went
+// entirely under that chrome — because dismissing on any scroll event read
+// as "hover is fully broken" on a trackpad, where micro-deltas fire
+// constantly under a resting hand.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { makeRig, stubRect } from './helpers/zoom-rig.mjs';
@@ -72,16 +77,16 @@ test('the overlay centres on its card, and only the LEFT and RIGHT edges ever pu
   }
 });
 
-test('a card at the very top grows where it is — the top edge never clamps', () => {
+test('with no sticky chrome above it, a card at the very top grows where it is — the screen\'s edges never clamp', () => {
   const ctx = makeCtx();
   const undo = sizedSlot(300, 140);
   try {
     const card = mountCard(ctx);
     stubRect(card, { left: 400, top: 4, width: 160, height: 100 });
     zoom.zoomCard(card, 'GRiZ', ctx, { occ: OCC });
-    // 4 + 50 − 70 = −16: deliberately negative. A card by the day rail grows
-    // where it lives; nudging it down would break the "grows from its own
-    // centre" illusion the whole bloom rests on.
+    // 4 + 50 − 70 = −16: deliberately negative. With nothing pinned above it
+    // (a stack of cards on a phone, say) a card grows where it lives; only
+    // real chrome is a ceiling (the next tests).
     assert.equal(slot().style.top, '-16px', 'the top is left exactly where the arithmetic put it');
     zoom.unzoom({ instant: true });
 
@@ -166,6 +171,174 @@ test('a zoom taller than the space above the dock stays where the arithmetic put
     assert.equal(slot().style.top, `${window.innerHeight - 104 + 50 - 70}px`, 'a dock that is not showing moves nothing');
   } finally {
     dock.remove();
+    undo2();
+  }
+});
+
+// The sticky chrome above a card as the zoom layer sees it: the desktop day
+// rail (#day-rail) and the card's own timetable's stage strip (a .tt-block's
+// .stage-strip), each with a real box.
+function showChrome(card, { rail = null, strip = null } = {}) {
+  const made = [];
+  const box = (el, r) => { el.getClientRects = () => [{}]; stubRect(el, r); made.push(el); };
+  if (rail) {
+    const el = document.createElement('div');
+    el.id = 'day-rail';
+    document.body.prepend(el);
+    box(el, { left: 0, top: rail.top ?? 0, width: VW, height: rail.height });
+  }
+  if (strip) {
+    const block = document.createElement('div');
+    block.className = 'tt-block';
+    const el = document.createElement('div');
+    el.className = 'times-wrap stage-strip';
+    card.parentNode.insertBefore(block, card);
+    block.append(el, card);
+    box(el, { left: 0, top: strip.top, width: VW, height: strip.height });
+    made.push(block);
+  }
+  return () => { for (const el of made) el.remove(); };
+}
+
+test('the sticky chrome is a ceiling: a zoom that would reach under it MOVES down to clear it by 8px — same size, same card', () => {
+  const ctx = makeCtx();
+  const undo = sizedSlot(300, 140);
+  try {
+    // A phone: the card's own stage strip pinned at the top (0–36), no rail.
+    let card = mountCard(ctx);
+    let hide = showChrome(card, { strip: { top: 0, height: 36 } });
+    stubRect(card, { left: 400, top: 20, width: 160, height: 100 }); // its top under the strip
+    zoom.zoomCard(card, 'GRiZ', ctx, { occ: OCC });
+    assert.equal(slot().style.top, `${36 + 8}px`, 'moved down until its top sits 8px under the strip');
+    assert.equal(slot().style.left, '330px', 'and only down: its left is where centring put it');
+    assert.equal(slot().style.minHeight, '132px', 'never shrunk or reshaped');
+    zoom.unzoom({ instant: true });
+    hide();
+
+    // A desktop: the rail (0–60) and the strip pinned under it (60–100); the lowest edge is the ceiling.
+    card = mountCard(ctx);
+    hide = showChrome(card, { rail: { height: 60 }, strip: { top: 60, height: 40 } });
+    stubRect(card, { left: 400, top: 110, width: 160, height: 100 });
+    zoom.zoomCard(card, 'GRiZ', ctx, { occ: OCC });
+    assert.equal(slot().style.top, `${100 + 8}px`, 'rail and strip: clears the lower of the two by 8px');
+    zoom.unzoom({ instant: true });
+    hide();
+
+    // A strip still at its natural spot, well above the card: the zoom is clear of it — nothing moves.
+    card = mountCard(ctx);
+    hide = showChrome(card, { strip: { top: 150, height: 36 } });
+    stubRect(card, { left: 400, top: 300, width: 160, height: 100 });
+    zoom.zoomCard(card, 'GRiZ', ctx, { occ: OCC });
+    assert.equal(slot().style.top, '280px', 'clear of the chrome, centred on its card as ever');
+    hide();
+  } finally {
+    undo();
+  }
+});
+
+test('no ceiling is invented: a stack card has only the rail on a desktop, and nothing on a phone', () => {
+  const ctx = makeCtx();
+  const undo = sizedSlot(300, 140);
+  try {
+    // A stack card (no .tt-block) near the top of a phone: nothing above it but the screen edge.
+    let card = mountCard(ctx);
+    stubRect(card, { left: 400, top: 4, width: 160, height: 100 });
+    zoom.zoomCard(card, 'GRiZ', ctx, { occ: OCC });
+    assert.equal(slot().style.top, '-16px', 'no strip, no rail: it grows where it lives');
+    zoom.unzoom({ instant: true });
+
+    // Another timetable's strip is not this card's ceiling.
+    const other = document.createElement('div');
+    other.className = 'tt-block';
+    other.innerHTML = '<div class="times-wrap stage-strip"></div>';
+    document.body.appendChild(other);
+    const otherStrip = other.firstChild;
+    otherStrip.getClientRects = () => [{}];
+    stubRect(otherStrip, { left: 0, top: 0, width: VW, height: 36 });
+    card = mountCard(ctx);
+    stubRect(card, { left: 400, top: 4, width: 160, height: 100 });
+    zoom.zoomCard(card, 'GRiZ', ctx, { occ: OCC });
+    assert.equal(slot().style.top, '-16px', 'only the card\'s own timetable\'s strip counts');
+    zoom.unzoom({ instant: true });
+    other.remove();
+
+    // The same stack card on a desktop, under the rail (0–60): the rail is its ceiling.
+    card = mountCard(ctx);
+    const hide = showChrome(card, { rail: { height: 60 } });
+    stubRect(card, { left: 400, top: 40, width: 160, height: 100 });
+    zoom.zoomCard(card, 'GRiZ', ctx, { occ: OCC });
+    assert.equal(slot().style.top, `${60 + 8}px`, 'the rail alone is a ceiling');
+    hide();
+  } finally {
+    undo();
+  }
+});
+
+test('too tall for the band between the ceiling and the dock: the ceiling wins, the dock gives way', () => {
+  const ctx = makeCtx();
+  const DOCK = 300;
+  const undo = sizedSlot(300, 240); // the band is 36+8 … 300−8: 248 tall, the zoom 240 fits…
+  const hideDock = showDock(DOCK);
+  let hide = () => {};
+  try {
+    let card = mountCard(ctx);
+    hide = showChrome(card, { strip: { top: 0, height: 36 } });
+    stubRect(card, { left: 400, top: 200, width: 160, height: 100 }); // centred it would reach 370
+    zoom.zoomCard(card, 'GRiZ', ctx, { occ: OCC });
+    assert.equal(slot().style.top, `${DOCK - 8 - 240}px`, '…so it clears both: its bottom 8px above the dock');
+    zoom.unzoom({ instant: true });
+    hide();
+  } finally {
+    undo();
+  }
+  // Now taller than the band — and taller than the whole space above the dock,
+  // where the dock rule alone would have left it centred on its card. With a
+  // ceiling the rule is one continuous clamp (the ceiling applied last), so a
+  // zoom kept open while a strip rides up to its pin never jumps between
+  // "clamped" and "left where it was".
+  const undo2 = sizedSlot(300, 290);
+  try {
+    const card = mountCard(ctx);
+    hide = showChrome(card, { strip: { top: 0, height: 36 } });
+    stubRect(card, { left: 400, top: 200, width: 160, height: 100 });
+    zoom.zoomCard(card, 'GRiZ', ctx, { occ: OCC });
+    assert.equal(slot().style.top, `${36 + 8}px`, 'cannot clear both: its top clears the stage names, its bottom hangs over the dock');
+  } finally {
+    hide();
+    hideDock();
+    undo2();
+  }
+});
+
+test('a followed zoom glides against a pinned ceiling, and closes when its card has gone entirely under it', () => {
+  const ctx = makeCtx();
+  const undo = sizedSlot(300, 140);
+  const card = mountCard(ctx);
+  const hide = showChrome(card, { strip: { top: 0, height: 36 } });
+  try {
+    stubRect(card, { left: 400, top: 300, width: 160, height: 100 });
+    zoom.zoomCard(card, 'GRiZ', ctx, { occ: OCC });
+    assert.equal(slot().style.top, '280px');
+    stubRect(card, { left: 400, top: 10, width: 160, height: 100 }); // the wall scrolled; the card's top is under the strip
+    window.dispatchEvent(new window.Event('scroll'));
+    assert.equal(slot().style.top, `${36 + 8}px`, 'clamped under the strip, still open — part of its card still shows');
+  } finally {
+    zoom.unzoom({ instant: true });
+    hide();
+    undo();
+  }
+  // A fresh zoom (the rig's rAF throttle latches one scroll per zoom).
+  const undo2 = sizedSlot(300, 140);
+  const card2 = mountCard(ctx);
+  const hide2 = showChrome(card2, { strip: { top: 0, height: 36 } });
+  try {
+    stubRect(card2, { left: 400, top: 300, width: 160, height: 100 });
+    zoom.zoomCard(card2, 'GRiZ', ctx, { occ: OCC });
+    stubRect(card2, { left: 400, top: -70, width: 160, height: 100 }); // bottom at 30: entirely under the strip, still on screen
+    window.dispatchEvent(new window.Event('scroll'));
+    assert.equal(slot(), null, 'a zoom whose card cannot be seen any more closes, as if it had left the screen');
+  } finally {
+    hide2();
     undo2();
   }
 });
