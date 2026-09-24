@@ -93,14 +93,14 @@
   border-radius: var(--r-pill); border: 1px solid #fff; color: #fff; line-height: 1; flex: none;
   transform-origin: 0 50%; /* it grows out of the corner's edge */
 }
-.chip-meter .bars { display: inline-flex; align-items: flex-end; gap: 1.5px; height: 8.5px; }
-.chip-meter .bar { width: 2.5px; border-radius: 1px; background: #fff; opacity: .3; transform-origin: 50% 100%; }
-.chip-meter .bar.on { opacity: 1; }
-.chip-meter .bar:nth-child(1) { height: 3.5px; }
-.chip-meter .bar:nth-child(2) { height: 6px; }
-.chip-meter .bar:nth-child(3) { height: 8.5px; }
+.chip-meter .bars, .f-pill .bars { display: inline-flex; align-items: flex-end; gap: 1.5px; height: 8.5px; }
+.chip-meter .bar, .f-pill .bar { width: 2.5px; border-radius: 1px; background: #fff; opacity: .3; transform-origin: 50% 100%; }
+.chip-meter .bar.on, .f-pill .bar.on { opacity: 1; }
+.chip-meter .bar:nth-child(1), .f-pill .bar:nth-child(1) { height: 3.5px; }
+.chip-meter .bar:nth-child(2), .f-pill .bar:nth-child(2) { height: 6px; }
+.chip-meter .bar:nth-child(3), .f-pill .bar:nth-child(3) { height: 8.5px; }
 .chip-meter.is-must { padding: 0 5px; }
-.chip-meter .must { display: block; font-family: var(--font-display); font-size: 8.5px; letter-spacing: var(--track-display); line-height: 1; }
+.chip-meter .must, .f-pill .must { display: block; font-family: var(--font-display); font-size: 8.5px; letter-spacing: var(--track-display); line-height: 1; }
 .card.cell .chip-meter { height: 11px; padding: 0 5px; }
 .card.cell .chip-meter.is-must { padding: 0 4px; }
 .card.cell .chip-meter .bars { height: 7.5px; }
@@ -911,14 +911,30 @@ a.f-where:hover { border-bottom-color: rgba(255,255,255,.75); }
 a.fest-place { text-decoration: none; border-bottom: 1px solid currentColor; padding-bottom: 1px; opacity: .92; }
 a.fest-place:hover { opacity: 1; }
 .fest-place .pin { flex: none; opacity: .8; }
-.f-who { display: flex; flex-wrap: wrap; justify-content: center; gap: 5px 6px; }
-/* Quieter than the words around them — a crew can be eight people
- * (Kevin, 2026-08-30: "not worth making them way bigger than the note text"). */
-.f-pill { display: inline-flex; align-items: center; gap: 5px; color: #fff; font-size: 11px;
-          font-weight: 600; padding: 0 9px; height: 20px; border-radius: var(--r-pill); line-height: 1; }
-.f-pill.you { font-weight: 800; }
-.f-pill b { font-size: 7.5px; font-weight: 800; letter-spacing: .1em; opacity: .9; line-height: 1;
-            transform: translateY(1px); /* optical: small caps sit on the name's baseline */ }
+/* The who-row: ONE chip per level anyone chose, loudest first, in one
+ * wrapping row (card-facts.js whoPills; Kevin, 2026-09-23). The fill is set
+ * inline: the card's aura layers for the people at that level over a scrim,
+ * or one person's colour. The level is the card meter's own glyph (the
+ * .bars/.must rules above, shared). Names are first names, two at most, then
+ * "+n"; a name never wraps and a chip never outgrows the row — at worst its
+ * last name ellipsizes, and the "+n" always shows. The chip you are in wears
+ * the white edge that means you everywhere. White text with the card's
+ * shadow, because the blend under it can be any colour. Still quieter than
+ * the words around it (Kevin, 2026-08-30: "not worth making them way bigger
+ * than the note text"). */
+.f-who { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; max-width: 100%; }
+.f-pill { display: inline-flex; align-items: center; gap: 6px; flex: none; max-width: 100%; min-width: 0;
+          box-sizing: border-box; height: 22px; padding: 0 9px 0 8px; border-radius: var(--r-pill);
+          border: 1px solid rgba(255, 255, 255, .14); color: #fff; font-size: 11px; font-weight: 700;
+          line-height: 1; white-space: nowrap; text-shadow: 0 1px 3px rgba(12, 10, 20, .55); }
+.f-pill.you { border-color: #fff; }
+.f-pill > .bars, .f-pill > .must { flex: none; }
+.f-pill .must { font-size: 9.5px; }
+.f-names { display: inline-flex; align-items: center; gap: 4px; min-width: 0; overflow: hidden; }
+.f-nm { min-width: 0; max-width: 7em; overflow: hidden; text-overflow: ellipsis; }
+.f-pill.you .f-nm:first-child { font-weight: 800; } /* you lead your own chip */
+.f-sep { flex: none; opacity: .7; }
+.f-more { flex: none; font-size: 10px; font-weight: 800; opacity: .92; }
 .f-chips { display: flex; justify-content: center; align-items: center; gap: 6px; flex-wrap: wrap; }
 .f-chip { display: inline-flex; align-items: center; gap: 4px; height: 17px; padding: 0 9px;
           font-size: 10px; font-weight: 800; color: #fff; border-radius: var(--r-pill); border: none;

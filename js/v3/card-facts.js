@@ -10,7 +10,8 @@
 // colorIndexOf and roomOf) is the same safe shape notes.js already uses.
 import * as state from '../state.js';
 import * as model from './model.js';
-import { ordered, auraBackground, nameColor, subColor } from './aura.js';
+import { ordered, auraBackground, auraLayers, nameColor, subColor } from './aura.js';
+import { LEVEL_LABELS_V4 } from '../parse.js';
 import { hslOf } from './palette.js';
 import { colorIndexOf, roomOf } from './wall.js';
 import { record } from '../errlog.js';
@@ -131,22 +132,98 @@ export function factsFor(artistName, ctx, occ = null) {
   };
 }
 
-// The who-row: borderless washes, You capitalised like a name, MUST on the
-// baseline. Same pills at both sizes — the sheet header only scales them.
+// The who-row: how much everyone wants this set (Kevin, 2026-09-23 — "cool
+// blended chips if multiple people have the same vote ... in a wrapping row
+// rather than a stack", then "aura and names: best mix of style and clarity").
+// ONE chip per level anyone chose — MUST, then three bars, two, one — loudest
+// first, in one wrapping row, so a crew of fifteen is at most four chips, not
+// fifteen pills. Inside a chip: the card meter's own glyph (the same bars and
+// the same MUST as wall.js meterChip, one set of CSS), then first names — You
+// first when you are in it, two at most, then "+n". The fill is the card's
+// own aura mix of the people at that level (aura.js auraLayers) over a scrim;
+// one person alone is just their colour. The chip you are in wears `.you` (the
+// white edge that means you everywhere). Every chip keeps `.f-pill` and says
+// its level in `data-level`: the bloom cascade finds the chips as it found the
+// pills, and the refresh matches a chip across a pick by its level (partKey),
+// so a chip that stays slides and a level that appears grows in.
+// Canvas and the rounds that led here: claude-plans/2026-09-23-rating-canvas.
+const CHIP_NAMES = 2;
+const listOf = (names) => (names.length < 2 ? names.join('') : `${names.slice(0, -1).join(', ')} and ${names.at(-1)}`);
+const firstName = (p) => (p.isYou ? 'You' : p.name.trim().split(/\s+/)[0]);
+export function whoChips(people) {
+  const chips = [];
+  for (const level of [4, 3, 2, 1]) {
+    const here = people.filter((p) => p.level === level);
+    if (!here.length) continue;
+    // You lead your own chip; everyone else keeps the order they picked in.
+    const members = [...here.filter((p) => p.isYou), ...here.filter((p) => !p.isYou)];
+    chips.push({
+      level,
+      members,
+      you: members.some((p) => p.isYou),
+      names: members.slice(0, CHIP_NAMES).map(firstName),
+      more: Math.max(0, members.length - CHIP_NAMES),
+      label: `${LEVEL_LABELS_V4[level]}: ${listOf(members.map((p) => (p.isYou ? 'You' : p.name)))}`,
+    });
+  }
+  return chips;
+}
+// --page (#0C0A14) at .28: the aura layers fade to transparent at their edges,
+// and a chip sits on the grown card's own aura, so its body needs a little
+// ground of its own for the names to read.
+const CHIP_SCRIM = 'rgba(12, 10, 20, .28)';
+function levelGlyph(level) {
+  const g = document.createElement('span');
+  g.setAttribute('aria-hidden', 'true');
+  if (level === 4) {
+    g.className = 'must';
+    g.textContent = 'MUST';
+    return g;
+  }
+  g.className = 'bars';
+  for (let i = 1; i <= 3; i++) {
+    const b = document.createElement('span');
+    b.className = 'bar' + (i <= level ? ' on' : '');
+    g.appendChild(b);
+  }
+  return g;
+}
 export function whoPills(facts) {
   const row = document.createElement('div');
   row.className = 'f-who';
-  for (const p of facts.people) {
-    const w = document.createElement('span');
-    w.className = 'f-pill' + (p.isYou ? ' you' : '');
-    w.style.background = hslOf(p.colorIndex, 0.42);
-    w.append(p.isYou ? 'You' : p.name);
-    if (p.level === 4) {
-      const b = document.createElement('b');
-      b.textContent = 'MUST';
-      w.appendChild(b);
+  row.setAttribute('role', 'list');
+  for (const chip of whoChips(facts.people)) {
+    const c = document.createElement('span');
+    c.className = 'f-pill' + (chip.you ? ' you' : '');
+    c.dataset.level = String(chip.level);
+    c.setAttribute('role', 'listitem');
+    c.setAttribute('aria-label', chip.label);
+    c.style.background = chip.members.length === 1
+      ? hslOf(chip.members[0].colorIndex, 0.6)
+      : `${auraLayers(chip.members)}, ${CHIP_SCRIM}`;
+    const names = document.createElement('span');
+    names.className = 'f-names';
+    names.setAttribute('aria-hidden', 'true');
+    chip.names.forEach((n, i) => {
+      if (i) {
+        const dot = document.createElement('span');
+        dot.className = 'f-sep';
+        dot.textContent = '·';
+        names.appendChild(dot);
+      }
+      const nm = document.createElement('span');
+      nm.className = 'f-nm';
+      nm.textContent = n;
+      names.appendChild(nm);
+    });
+    if (chip.more) {
+      const more = document.createElement('span');
+      more.className = 'f-more';
+      more.textContent = `+${chip.more}`;
+      names.appendChild(more);
     }
-    row.appendChild(w);
+    c.append(levelGlyph(chip.level), names);
+    row.appendChild(c);
   }
   return row;
 }
@@ -659,12 +736,13 @@ function zoomCardInner(el, artistName, ctx, { onOpenNotes = null, source = 'mous
 }
 
 // A pick while zoomed keeps the zoom: the person is resting on the card,
-// cycling to MUST while watching the pills. The fresh resting node takes the
+// cycling to MUST while watching the chips. The fresh resting node takes the
 // overlay's place underneath and the overlay's parts are rebuilt — and the
 // rebuild is itself a small event (Kevin, 2026-08-30: "it should again
 // animate in and slide things around"): the new wash fades in under the old,
-// the box re-centres, every piece that stayed slides to its new spot, a pill
-// that arrived grows in with a little overshoot, a MUST badge fades on.
+// the box re-centres, every piece that stayed slides to its new spot (a
+// who-chip is matched by its level), and a chip for a level that just
+// appeared grows in with a little overshoot.
 // Transform and opacity only, inside the overlay.
 //
 // WHICH parts move on a refresh; partKey below says HOW each is matched across
@@ -683,7 +761,7 @@ function partKey(el) {
   if (el.classList.contains('f-name')) return 'name';
   if (el.classList.contains('f-sub')) return 'sub';
   if (el.classList.contains('f-where')) return 'where';
-  if (el.classList.contains('f-pill')) return `pill:${el.firstChild ? el.firstChild.textContent : ''}`;
+  if (el.classList.contains('f-pill')) return `pill:${el.dataset.level}`; // a who-chip is its level: the chip that stays slides, a new level grows in
   if (el.classList.contains('notes')) return 'notes';
   if (el.classList.contains('spot')) return 'spot';
   return null;
@@ -692,7 +770,7 @@ function snapshotParts(card) {
   const out = new Map();
   for (const el of card.querySelectorAll(REFRESH_PART_SEL)) {
     const k = partKey(el);
-    if (k) out.set(k, { rect: rect(el), must: !!el.querySelector('b') });
+    if (k) out.set(k, { rect: rect(el) });
   }
   return out;
 }
@@ -751,7 +829,7 @@ function refreshZoomInner(fresh, ctx) {
     ));
   }
   // Every piece: the ones that stayed slide from where they were; the ones
-  // that arrived grow in a beat later; a badge that appeared fades on.
+  // that arrived grow in a beat later.
   let arrivals = 0;
   for (const el of z.card.querySelectorAll(REFRESH_PART_SEL)) {
     const k = partKey(el);
@@ -762,8 +840,6 @@ function refreshZoomInner(fresh, ctx) {
       if (Math.abs(a.x - b.x) > 0.5 || Math.abs(a.y - b.y) > 0.5) {
         anims.push(el.animate([{ transform: `translate(${a.x - b.x}px, ${a.y - b.y}px)` }, { transform: 'none' }], { duration: REFRESH_MS, easing: EASE_ARRIVE }));
       }
-      const badge = el.querySelector('b');
-      if (badge && !was.must) anims.push(badge.animate([{ opacity: 0, transform: 'translateY(3px)' }, { opacity: 1, transform: 'translateY(1px)' }], { duration: REFRESH_MS, delay: 60, easing: EASE_ARRIVE, fill: 'both' }));
     } else if (!was) {
       anims.push(el.animate(
         [{ transform: 'scale(.55)', opacity: 0 }, { opacity: 1, offset: 0.45 }, { transform: 'none', opacity: 1 }],

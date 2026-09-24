@@ -18,11 +18,13 @@ export function ordered(people) {
   return [...musts, ...picks];
 }
 
-// Background CSS for a card. Empty -> flat base, no animation, no grain.
-export function auraBackground(people) {
-  const all = ordered(people);
-  if (!all.length) return { background: CARD_BASE, animated: false };
-  const layers = all.map((p, i) => {
+// The aura's colour layers alone, without the card base under them: one
+// radial glow per person, at their level's brightness, from the four anchors
+// in turn. '' for nobody. The zoom's who-chips (card-facts.js whoPills) wear
+// these same layers over a scrim, so a chip is a small piece of the card's
+// own aura rather than a second colour system (2026-09-23).
+export function auraLayers(people) {
+  return ordered(people).map((p, i) => {
     const a = p.level === 4 ? 1 : PICK_ALPHA[p.level - 1];
     const at = ANCHORS[i % 4];
     return (
@@ -30,8 +32,14 @@ export function auraBackground(people) {
       `${hslOf(p.colorIndex, a)} 0%, ` +
       `${hslOf(p.colorIndex, a * 0.5)} 45%, transparent 78%)`
     );
-  });
-  return { background: `${layers.join(', ')}, ${CARD_BASE}`, animated: true };
+  }).join(', ');
+}
+
+// Background CSS for a card. Empty -> flat base, no animation, no grain.
+export function auraBackground(people) {
+  const layers = auraLayers(people);
+  if (!layers) return { background: CARD_BASE, animated: false };
+  return { background: `${layers}, ${CARD_BASE}`, animated: true };
 }
 
 // Two-letter disambiguation: members sharing a first initial show two letters.
