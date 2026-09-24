@@ -1626,17 +1626,26 @@ export function nowLanding(root, ctx, date = new Date()) {
 //     rule), and every stack card wearing the mark. Hidden rooms render
 //     nothing, so they are never stops.
 // Each is landed exactly as the first tap lands it (landingTarget). Then BY
-// HEIGHT: going down the page, a candidate that the stop above already shows
-// — inside the band a person can see, 8px in from the sticky chrome and the
-// dock — joins that stop instead of making one, so no tap ever scrolls to
-// where you already are: side-by-side cards, every cell crossing one line, a
-// row of afters under the line all fold into one. The first stop that
-// contains nowLanding's answer is `bestAt`.
+// HEIGHT: going down the page, a candidate that a stop already shows — inside
+// the band a person can see, 8px in from the sticky chrome and the dock —
+// joins that stop instead of making one, so no tap ever scrolls to where you
+// already are: side-by-side cards, a row of afters under the line fold into
+// one. AND ACROSS, for grid cells: a grid scrolls sideways on a phone, so
+// "side by side" can mean off screen. A stop frames its cells in one sideways
+// slide; a cell that does not fit that frame beside them (Nhu's DJ Shadow in
+// column 2 and Despacio in column 5 at 390 — review, 2026-09-24) is its own
+// stop at the same height, reached by the slide alone. So every live pick is
+// reachable by tapping, and every tap still moves something into view. Stops
+// run top to bottom, then left to right within a height. The first stop that
+// contains nowLanding's answer is `bestAt`. With nobody highlighted the line
+// is one stop, whatever the columns: it crosses them all.
 //
 // `geo` is the page's geometry, handed in so the rule is testable without a
 // layout engine: { scrollY, maxY, box(el) → viewport rect, band(grid|null) →
 // { top, bottom } of what can be seen (under a grid's pinned stage strip for a
-// grid, under the sticky chrome otherwise; above the dock on a phone) }.
+// grid, under the sticky chrome otherwise; above the dock on a phone),
+// scroller(cell) → { el, x, left, width, max } of the grid's own sideways
+// scroll (its viewport x, scrollLeft, clientWidth, and the most it scrolls) }.
 export const NOW_PAD = 8;
 export function landingTarget(m, geo) {
   const pad = NOW_PAD;
@@ -1685,6 +1694,22 @@ const keyOf = (m) => (m.card
   ? `${m.line ? 'cell' : 'card'}:${m.card.dataset.artist}|${m.card.dataset.occ || ''}|${roomOf(m.card) || ''}`
   : `line:${m.line.closest('.times-grid').dataset.iso || ''}`);
 
+// A grid cell's place in its grid's sideways scroll, in the scroll's own
+// coordinates (so it does not depend on where the grid happens to sit).
+function spanIn(m, geo) {
+  if (!m.card || !m.line || !geo.scroller) return null;
+  const sc = geo.scroller(m.card);
+  if (!sc) return null;
+  const r = geo.box(m.card);
+  const lo = r.left - sc.x + sc.left;
+  return { sc, lo, hi: lo + (r.right - r.left) };
+}
+// The one sideways slide that frames a stop's cells: their middle in the
+// middle, as far as the grid scrolls.
+export function frameSlide(frame) {
+  const { sc, lo, hi } = frame;
+  return Math.min(sc.max, Math.max(0, (lo + hi) / 2 - sc.width / 2));
+}
 export function nowStops(root, ctx, date, geo) {
   const best = nowLanding(root, ctx, date);
   if (!best) return null;
@@ -1698,18 +1723,35 @@ export function nowStops(root, ctx, date, geo) {
   for (const m of members) {
     m.key = keyOf(m);
     m.target = landingTarget(m, geo);
-    m.x = geo.box(m.card || m.line).left;
+    m.span = spanIn(m, geo);
+    m.x = m.span ? m.span.lo : geo.box(m.card || m.line).left;
   }
   members.sort((a, b) => a.target - b.target || a.x - b.x);
+  // Room across: a frame holds its cells side by side with 8px either side.
+  const fits = (frame, span) => !frame || (frame.sc.el === span.sc.el
+    && Math.max(frame.hi, span.hi) - Math.min(frame.lo, span.lo) <= span.sc.width - 2 * NOW_PAD);
   const stops = [];
   for (const m of members) {
-    const last = stops[stops.length - 1];
-    if (last && showsAt(m, last.target, geo)) last.members.push(m);
-    else stops.push({ target: m.target, members: [m] });
+    const home = stops.find((st) => showsAt(m, st.target, geo) && (!m.span || fits(st.frame, m.span)));
+    if (home) {
+      home.members.push(m);
+      if (m.span) home.frame = home.frame ? { ...home.frame, lo: Math.min(home.frame.lo, m.span.lo), hi: Math.max(home.frame.hi, m.span.hi) } : { ...m.span };
+      continue;
+    }
+    // A stop of its own. Where a stop already shows it at that height and
+    // only its column is out of frame, it lands at the same height — the
+    // tap's move is the sideways slide.
+    const beside = m.span ? stops.find((st) => showsAt(m, st.target, geo)) : null;
+    stops.push({ target: beside ? beside.target : m.target, members: [m], frame: m.span ? { ...m.span } : null });
   }
-  for (const s of stops) s.keys = s.members.map((m) => m.key);
+  for (const st of stops) {
+    st.keys = st.members.map((m) => m.key);
+    st.x = Math.min(...st.members.map((m) => m.x));
+    st.slide = st.frame ? frameSlide(st.frame) : null;
+  }
+  stops.sort((a, b) => a.target - b.target || a.x - b.x);
   const bestKey = keyOf(best);
-  const bestAt = Math.max(0, stops.findIndex((s) => s.keys.includes(bestKey)));
+  const bestAt = Math.max(0, stops.findIndex((st) => st.keys.includes(bestKey)));
   return { best: { ...best, key: bestKey, target: landingTarget(best, geo) }, stops, bestAt };
 }
 

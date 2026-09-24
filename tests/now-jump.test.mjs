@@ -226,7 +226,7 @@ test('past midnight is still Saturday night: Ross at 1:15 AM lands on his must i
 // layout where the now line sits at y 1000, the first row of afters venues
 // (two venues a row) at 2000, the next at 2600, and so on; each stack card is
 // 150px tall with 10px between. What a person can see is 40 → 800.
-const layout = (root, { band = { top: 40, bottom: 800 }, scrollY = 0, perRow = 2 } = {}) => {
+const layout = (root, { band = { top: 40, bottom: 800 }, scrollY = 0, perRow = 2, across = false } = {}) => {
   const box = new Map();
   const line = root.querySelector('.times-grid .now-line');
   if (line) box.set(line, { top: 1000, bottom: 1002, left: 60 });
@@ -240,9 +240,21 @@ const layout = (root, { band = { top: 40, bottom: 800 }, scrollY = 0, perRow = 2
     });
     y += rows * 600 + 200;
   }
-  // Grid cells cross the line: a cell's top a little above it.
-  if (line) for (const c of line.closest('.times-grid').querySelectorAll('.card')) box.set(c, { top: 940, bottom: 1060, left: 60 });
-  return { scrollY, maxY: 100000, band: () => band, box: (el) => box.get(el) || { top: 0, bottom: 0, left: 0 } };
+  // Grid cells cross the line: a cell's top a little above it. With `across`,
+  // they sit in their columns of a phone's sideways-scrolling grid (176px
+  // columns, 4px apart, a 322px window at x 56 scrolled to 0, 584px of scroll).
+  if (line) {
+    for (const c of line.closest('.times-grid').querySelectorAll('.card')) {
+      const left = across ? 56 + (Number(c.style.gridColumn) - 1) * 180 : 60;
+      box.set(c, { top: 940, bottom: 1060, left, right: left + 176 });
+    }
+  }
+  const geo = { scrollY, maxY: 100000, band: () => band, box: (el) => box.get(el) || { top: 0, bottom: 0, left: 0, right: 0 } };
+  if (across && line) {
+    const el = line.closest('.times-scroll');
+    geo.scroller = (cell) => (cell.closest('.times-scroll') === el ? { el, x: 56, left: 0, width: 322, max: 584 } : null);
+  }
+  return geo;
 };
 const namesOf = (stop) => stop.members.map((m) => (m.card ? m.card.dataset.artist : 'LINE'));
 
@@ -316,5 +328,49 @@ test('stops are read off the wall at the tap: the ticker moves them, nothing is 
   positionNowMarks(root, SAT_1030);
   const plan = nowStops(root, ctx, SAT_1030, layout(root));
   assert.ok(plan && plan.stops.length >= 2, 'the same wall, ticked into the evening, has its stops');
+  root.remove();
+});
+
+// The review's finding (2026-09-24): by height alone, all of a highlighted
+// person's live grid picks were one stop, so on a phone a pick in another
+// column was never slid into view. Across counts too: a stop frames its cells
+// in one sideways slide, and a cell that does not fit beside them is its own
+// stop at the same height, ordered left to right.
+test('stops across: live picks in columns that do not fit a phone together are stops of their own, at one height, left to right', () => {
+  const at7 = pt('2026-09-26T19:00:00');
+  const { root, ctx } = render(at7, ['Nhu'], { picks: { 'DJ Shadow': { Nhu: 2 }, Despacio: { Nhu: 4 } } });
+  const cols = Object.fromEntries(['DJ Shadow', 'Despacio'].map((a) => [a, Number(root.querySelector(`.times-grid .card.cell[data-artist="${a}"]`).style.gridColumn)]));
+  assert.ok(cols.Despacio - cols['DJ Shadow'] >= 2, `columns apart: ${JSON.stringify(cols)}`);
+  const plan = nowStops(root, ctx, at7, layout(root, { across: true }));
+  assert.deepEqual(plan.stops.map(namesOf), [['DJ Shadow'], ['Despacio']], 'two stops, left to right');
+  assert.equal(plan.stops[0].target, plan.stops[1].target, 'at one height: the move between them is the slide');
+  assert.equal(plan.best.card.dataset.artist, 'Despacio', 'the must is the first answer');
+  assert.equal(plan.bestAt, 1);
+  const [a, b] = plan.stops;
+  assert.ok(a.slide < b.slide, `each frames its own column: ${a.slide} / ${b.slide}`);
+  for (const st of plan.stops) {
+    assert.ok(st.frame.lo >= st.slide + 8 - 1 && st.frame.hi <= st.slide + 322 - 8 + 1 || st.slide === 584, `the slide shows the whole cell: ${JSON.stringify({ lo: st.frame.lo, hi: st.frame.hi, slide: st.slide })}`);
+  }
+  root.remove();
+  // Nobody highlighted: the line is one stop whatever the columns — it crosses them all.
+  const { root: r2, ctx: c2 } = render(at7);
+  const open = nowStops(r2, c2, at7, layout(r2, { across: true }));
+  assert.equal(open.stops.filter((st) => st.members.some((m) => !m.card)).length, 1, 'one line stop');
+  assert.equal(open.stops[0].frame, null, 'and it slides nothing');
+  r2.remove();
+});
+
+test('stops across: two picks that fit one window side by side share a stop and its slide', () => {
+  // At 1280 the grid shows every column: nothing is out of frame.
+  const { root, ctx } = render(SAT_1030, ['Nhu']);
+  const geo = layout(root, { across: true });
+  const el = root.querySelector('.times-grid .now-line').closest('.times-scroll');
+  geo.scroller = (cell) => (cell.closest('.times-scroll') === el ? { el, x: 56, left: 0, width: 1100, max: 0 } : null);
+  const plan = nowStops(root, ctx, SAT_1030, geo);
+  assert.deepEqual(plan.stops.map(namesOf).map((n) => n.sort()), [['Prospa', 'Soulwax'], ['Galen']], 'Soulwax and Prospa together, then the afters');
+  assert.equal(plan.stops[0].slide, 0);
+  // At 390 the same two columns (2 x 176px) do not fit a 322px window: two stops.
+  const phone = nowStops(root, ctx, SAT_1030, layout(root, { across: true }));
+  assert.deepEqual(phone.stops.map(namesOf), [['Soulwax'], ['Prospa'], ['Galen']], 'across, then down');
   root.remove();
 });

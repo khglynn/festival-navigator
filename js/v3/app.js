@@ -558,38 +558,47 @@ function seenBand(inGrid) {
 //     open's own landing, so the sets crossing it (playing) and the next hour
 //     are both on screen;
 //   · a highlighted person's pick on the grid — the LINE AND THE CARD
-//     together (Kevin: "the line and highlight combo"); its column scrolled
-//     into view;
+//     together (Kevin: "the line and highlight combo"); the grid slid
+//     sideways to frame the stop's cells when they are off screen;
 //   · a card in a stack — its NOW mark is its line: the card a quarter of the
 //     way down under the chrome, its venue's head above it.
 // TAP AGAIN (Kevin, 2026-09-24: "multiple taps … should move the user to the
 // next now item … by height"): while the page still sits where the last NOW
-// left it (within 4px, or still gliding there) and that stop is still live,
-// the next tap goes to the next stop down, and after the last back to the
-// top. Scroll away by hand and the next tap is a fresh "take me to now" —
-// the best answer again. One stop only: a repeat tap pulses in place.
+// left it — down and across, within 4px, or still gliding there — and that
+// stop is still live, the next tap goes to the next stop (down the page;
+// across a grid where a highlighted person's picks sit in columns that do not
+// fit the screen together), and after the last back to the top. Scroll away
+// by hand, either way, and the next tap is a fresh "take me to now" — the
+// best answer again. One stop only: a repeat tap pulses in place.
 // What it lands on pulses (transform only; none under Reduce Motion or Low
 // Power): the highlighted person's picks in that stop, or the stop's NOW
 // cards; a line landing does not. A highlight with nothing on gets the quiet
 // line once, on the first tap, and no pulse on any tap — a stranger's card
 // pulsing reads as "Kat is here" (review, 2026-09-24).
 // Where the last NOW left the page, for the next tap: the stop's lead key,
-// the scroll position it landed at, and until when a glide is still on its
-// way there.
+// the scroll position it landed at (and the grid's sideways one, when it
+// slid a grid), and until when a glide is still on its way there.
 let nowCycle = null;
 const pageGeo = () => ({
   scrollY: window.scrollY,
   maxY: Math.max(0, document.documentElement.scrollHeight - window.innerHeight),
   box: (el) => el.getBoundingClientRect(),
   band: (grid) => seenBand(grid),
+  scroller: (cell) => {
+    const el = cell.closest('.times-scroll');
+    if (!el) return null;
+    return { el, x: el.getBoundingClientRect().left, left: el.scrollLeft, width: el.clientWidth, max: Math.max(0, el.scrollWidth - el.clientWidth) };
+  },
 });
+const stillThere = (c) => c && (performance.now() < c.until
+  || (Math.abs(window.scrollY - c.y) <= 4 && (!c.sc || !c.sc.isConnected || Math.abs(c.sc.scrollLeft - c.sl) <= 4)));
 function jumpToNow() {
   const root = $('wall-root');
   const plan = nowStops(root, ctx, ctx.now || new Date(), pageGeo());
   if (!plan || !plan.stops.length) { nowCycle = null; paintNowTabs(); return; }
   const { best, stops, bestAt } = plan;
   let at = -1;
-  if (nowCycle && (Math.abs(window.scrollY - nowCycle.y) <= 4 || performance.now() < nowCycle.until)) {
+  if (stillThere(nowCycle)) {
     const was = stops.findIndex((st) => st.keys.includes(nowCycle.lead));
     if (was >= 0) at = (was + 1) % stops.length;
   }
@@ -609,21 +618,24 @@ function jumpToNow() {
   const target = again ? nowCycle.y : stop.target;
   const smooth = canAnimate(root, ctx);
   const behavior = smooth ? 'smooth' : 'auto';
-  let slid = false; // the grid moved sideways to bring the card's column in
-  const cell = lead.card && lead.line ? lead.card : null;
-  const scroller = cell ? cell.closest('.times-scroll') : null;
-  if (scroller) {
-    const sr = scroller.getBoundingClientRect();
-    const cr = cell.getBoundingClientRect();
-    if (cr.left < sr.left || cr.right > sr.right) {
-      const left = scroller.scrollLeft + (cr.left - sr.left) - (sr.width - cr.width) / 2;
-      scroller.scrollTo({ left: Math.max(0, Math.min(left, scroller.scrollWidth - scroller.clientWidth)), behavior });
-      slid = true;
+  // Across: a stop of grid cells slides its grid to frame them (wall.js
+  // frameSlide) — only when some of them are out of view, so a grid you are
+  // already looking at stays put.
+  let slid = false;
+  let sc = null;
+  let sl = 0;
+  if (stop.frame && stop.frame.sc.el.isConnected) {
+    sc = stop.frame.sc.el;
+    sl = sc.scrollLeft;
+    const inView = stop.frame.lo >= sl + 8 && stop.frame.hi <= sl + sc.clientWidth - 8;
+    if (!inView) {
+      sl = stop.slide;
+      if (Math.abs(sl - sc.scrollLeft) >= 1) { sc.scrollTo({ left: sl, behavior }); slid = true; }
     }
   }
   const moves = Math.abs(target - window.scrollY) >= 1;
   if (moves) window.scrollTo({ top: target, behavior });
-  nowCycle = { lead: lead.key, y: target, until: moves && smooth ? performance.now() + 1500 : 0 };
+  nowCycle = { lead: lead.key, y: target, sc, sl, until: (moves || slid) && smooth ? performance.now() + 1500 : 0 };
   // What pulses: the stop's cards — the highlighted person's picks, or, for
   // nobody, the NOW cards of a stop a card leads. Never a line's stop, and
   // never with no match.
