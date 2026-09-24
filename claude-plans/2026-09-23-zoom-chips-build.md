@@ -161,6 +161,48 @@ Watched both fixes in slow motion in Chromium and WebKit (frame strips in
 the session scratchpad, `chips-shots/review2/`): the ×1 chip grows in at its
 own place; "Bartholome…" stays cut off the whole way across.
 
+## The CI flake in the quick re-pick test (2026-09-24) — the test, not the app
+
+"clear, then re-pick 80ms later" failed in CI (Linux Chromium) with "there
+is a ×1 chip — actual: null" on the v87 merge `d67d60b` (run 35974476738)
+and on feat/now-jump `5684c15` (run 35974826435), which has none of the zoom
+changes; it had passed on main, `2f47e5a`, `17c6860` and `3275398`.
+
+1. **Not reproducible by repetition on this Mac.** 20 runs each of that one
+   test on main, `2f47e5a`, `5684c15`, `3275398` and `d67d60b`: 100 of 100
+   pass clean, 100 of 100 pass again under 14 busy loops on 12 cores (macOS
+   still gives Chromium its share).
+2. **The cause, found by logging every change to the zoom card's children.**
+   The test's observer resolved on the FIRST childList change after it was
+   armed and asserted a ×1 chip in it. But the clear leaves one more change
+   behind: its old wash (`.z-surface-old`) removes itself when its fade ends,
+   `REFRESH_MS * 0.5` = 150ms after the clear's rebuild. Timeline under 4x
+   CPU throttling: clear rebuilt at 54ms, observer armed at 143, re-pick
+   rebuilt at ~195 — about 9ms ahead of the wash leaving at ~204. A knife
+   edge, so any slower runner loses it: the observer catches the wash
+   leaving (no ×1 chip yet) and the test fails, although the re-pick lands a
+   moment later and grows the ×1 chip exactly right. On main (v86) at 10x
+   throttling, 7 of 10 runs failed exactly so (wash gone at 280ms, re-pick
+   at 328ms). Nothing in the two failing commits broke anything; they sat
+   on the edge on a slow CI box, which is why a commit with no zoom change
+   failed too.
+3. **No app race.** A slow phone simply lands the re-pick later: after the
+   leaving name has gone it is an ordinary first pick; while it is still
+   parked, `whoSettle` and the anchored snapshot handle it.
+4. **The fix is the test's.** The catch now waits for the change that brings
+   the ×1 chip into the row (with a deadline), the settle waits on state
+   instead of 700ms, and a new `held` case pauses the clear's move the moment
+   it lands, so the leaving name is certainly parked when the re-pick
+   arrives — the race these cases exist for, on any machine. At 10x
+   throttling the old cases failed 7 of 15 and the new ones 0 of 20; the held
+   case fails 3 of 3 on the pre-fix app (`translate(-178.75px, 0px)`). The
+   0/40/80ms cases stay as natural-timing variety; on a fast machine they
+   also hit the race, on a slow one they are ordinary re-picks.
+
+The lesson is the harness-traps one again: before believing a motion test's
+failure, ask what else changes the DOM on the same clock. A MutationObserver
+that takes the first change it sees is a fixed delay in disguise.
+
 ## Log
 
 - Baseline on `f5b5907`: `npm test` 761 (760 pass, 1 skipped);
