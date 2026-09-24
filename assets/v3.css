@@ -956,10 +956,13 @@ a.fest-place:hover { opacity: 1; }
 /* In flight between chips (who-motion.js): above its neighbours, with a bud of
  * its own colour under it. (A leaving node, parked: .f-pill > .f-parked above,
  * .zoom-card > .f-parked below.) */
-.f-nm.f-travel { z-index: 3; overflow: visible; }
+.f-nm.f-travel { z-index: 3; } /* keeps its own clip: a cut-off name stays cut off in flight (review, 2026-09-24) */
 .f-nm.you.f-travel { z-index: 4; } /* crossing a chip-mate, you pass in front (your bud over their name) */
 .f-pill.f-carrying { z-index: 2; } /* a chip a name is arriving in rides over its neighbours until it lands */
-.f-bud { position: absolute; inset: -3px -6px; z-index: -1; border-radius: var(--r-pill); pointer-events: none; }
+/* The bud sits INSIDE the name's padding (5px 7px, the descender fix), so the
+ * name's own clip never has to lift for it: 3px above and below the glyphs,
+ * 6px either side — the size it always had. */
+.f-bud { position: absolute; inset: 2px 1px; z-index: -1; border-radius: var(--r-pill); pointer-events: none; }
 .f-sep { flex: none; opacity: .7; }
 .f-more { flex: none; font-size: 10px; font-weight: 800; opacity: .92; }
 .f-chips { display: flex; justify-content: center; align-items: center; gap: 6px; flex-wrap: wrap; }
