@@ -32,6 +32,9 @@ const BIG = new Set(['moody-center', 'moody-amphitheater', 'acl-live', 'germania
 const args = process.argv.slice(2)
 const wantJson = args.includes('--json')
 const unmatchedFor = args.includes('--unmatched') ? args[args.indexOf('--unmatched') + 1] : null
+// --raw grades against the venue calendars as first read, ignoring the
+// adjudication (how the 230 disputed listings were found in the first place).
+const raw = args.includes('--raw')
 
 function load(dir) {
   if (!existsSync(dir)) return []
@@ -135,6 +138,40 @@ for (const { name, doc } of gtFiles) {
     gt.push(e)
   }
 }
+// Adjudication (wave 3): every listing a source had that the first calendar
+// read did not was judged by re-reading the venue and checking the ticketer or
+// artist. Shows judged real ("gt-miss": the venue lists it and the first read
+// missed it; "real-offcalendar": ticketed and real, not on the venue's page)
+// join the truth. One is added per venue and date only when the truth has no
+// show there yet, so a support act billed as its own listing never becomes a
+// second show that every honest source is then blamed for missing.
+const verdictByListing = new Map()
+const adjudicatedAdds = []
+if (!raw && existsSync(join(DATA, 'adjudication'))) {
+  const clusters = JSON.parse(readFileSync(join(DATA, 'unconfirmed-clusters.json'), 'utf8'))
+  const verdicts = new Map()
+  for (const { doc } of load(join(DATA, 'adjudication'))) for (const v of doc) if (typeof v.id === 'number') verdicts.set(v.id, v)
+  const real = []
+  for (const c of clusters) {
+    const v = verdicts.get(c.id)
+    if (!v) continue
+    for (const [src, url] of Object.entries(c.sources)) {
+      verdictByListing.set(`${src}|${url}`, v.verdict)
+      verdictByListing.set(`${src}|${c.venue}|${c.date}|${c.headliner}`, v.verdict)
+    }
+    if ((v.verdict === 'gt-miss' || v.verdict === 'real-offcalendar') && inScope(c)) real.push({ c, v })
+  }
+  real.sort((a, b) => Object.keys(b.c.sources).length - Object.keys(a.c.sources).length)
+  for (const { c, v } of real) {
+    const venue = canon(c.venue)
+    if (reach[venue] === undefined) continue
+    if (gt.some(g => g.venue === venue && g.date === c.date)) continue
+    const e = { date: c.date, venue, title: c.titles[0] ?? c.headliner, artists: [c.headliner], adjudicated: v.verdict, url: (v.evidence || '').split(/\s/)[0] }
+    gt.push(e)
+    adjudicatedAdds.push(e)
+  }
+}
+
 const gtByKey = new Map()
 for (const ev of gt) {
   const k = ev.venue + '|' + ev.date
@@ -178,6 +215,19 @@ function scoreSource({ name, doc }) {
   // judged, so precision only counts what the ground truth could have confirmed.
   const judgeable = evs.filter(e => e.date <= reach[e.venue])
   const judgeableUnmatched = unmatched.filter(e => e.date <= reach[e.venue])
+  // With adjudication: a listing is right if it matches the truth or was judged
+  // real; wrong if judged stale, wrong-date, wrong-venue or unconfirmed (and a
+  // one-day-off match is a wrong date); noise if a duplicate or not a concert.
+  const verdictOf = (e) => verdictByListing.get(`${name}|${e.url}`) ?? verdictByListing.get(`${name}|${e.venue}|${e.date}|${headliner(e)}`) ?? null
+  const tally = { right: matches.length, wrong: offByOne.length, noise: 0, unjudged: 0 }
+  const wrongKinds = { 'wrong-date (±1 day)': offByOne.length }
+  for (const e of judgeableUnmatched) {
+    const v = verdictOf(e)
+    if (v === 'gt-miss' || v === 'real-offcalendar') tally.right++
+    else if (v === 'duplicate' || v === 'not-music') tally.noise++
+    else if (v) { tally.wrong++; wrongKinds[v] = (wrongKinds[v] ?? 0) + 1 }
+    else tally.unjudged++
+  }
   const withBuy = matches.filter(m => m.src.ticketUrl).length
   const ticketers = {}
   for (const m of matches) { const t = m.src.ticketer ?? 'none'; ticketers[t] = (ticketers[t] ?? 0) + 1 }
@@ -198,10 +248,15 @@ function scoreSource({ name, doc }) {
       electronic: bucket(g => ELECTRONIC.has(g.venue)),
     },
     perVenue: Object.fromEntries(Object.keys(reach).map(v => [v, bucket(g => g.venue === v)])),
-    precision: {
+    precision: raw ? {
       judgeable: judgeable.length,
       unconfirmed: judgeableUnmatched.length,
       precision: judgeable.length ? (judgeable.length - judgeableUnmatched.length) / judgeable.length : null,
+    } : {
+      ...tally,
+      wrongKinds,
+      precision: tally.right + tally.wrong ? tally.right / (tally.right + tally.wrong) : null,
+      noiseShare: evs.length ? tally.noise / evs.length : null,
     },
     offByOne: offByOne.length,
     buyLinkShare: matches.length ? withBuy / matches.length : null,
@@ -217,10 +272,11 @@ const sources = load(SRC_DIR).map(scoreSource)
 
 // Best unions of two and three sources — the "small set of robust sources" question.
 const music = gt.filter(isMusic)
-function unionRecall(names) {
+function unionRecall(names, pred = () => true) {
   const hit = new Set()
-  for (const s of sources) if (names.includes(s.source)) for (const g of s._matchedGt) if (isMusic(g)) hit.add(g)
-  return music.length ? hit.size / music.length : 0
+  for (const s of sources) if (names.includes(s.source)) for (const g of s._matchedGt) if (isMusic(g) && pred(g)) hit.add(g)
+  const of = music.filter(pred).length
+  return of ? hit.size / of : 0
 }
 const names = sources.map(s => s.source)
 const combos = []
@@ -231,6 +287,10 @@ for (let i = 0; i < names.length; i++) {
   }
 }
 combos.sort((a, b) => b.recall - a.recall)
+for (const c of combos.slice(0, 40)) {
+  c.near = unionRecall(c.set, g => g.date <= NEAR_END)
+  c.far = unionRecall(c.set, g => g.date > NEAR_END)
+}
 
 // Ground-truth shows no source had: the union's blind spot.
 const everMatched = new Set(sources.flatMap(s => [...s._matchedGt]))
@@ -249,6 +309,7 @@ if (unmatchedFor) {
 
 const out = {
   scoredAt: new Date().toISOString(),
+  adjudicated: raw ? null : { added: adjudicatedAdds.length, shows: adjudicatedAdds.map(e => ({ date: e.date, venue: e.venue, name: e.artists[0], verdict: e.adjudicated })) },
   groundTruth: {
     venues: Object.keys(reach).length,
     events: gt.length,
@@ -265,12 +326,16 @@ if (wantJson) { process.stdout.write(JSON.stringify(out, null, 2) + '\n', () => 
 
 writeFileSync(join(DATA, 'scores.json'), JSON.stringify(out, null, 2) + '\n')
 console.log(`Ground truth: ${gt.length} events (${music.length} music) at ${Object.keys(reach).length} venues\n`)
-console.log('| Source | Listed | Recall all | Near | Far | Big rooms | Clubs | Electronic | Precision | ±1 day | Buy link |')
-console.log('|---|---|---|---|---|---|---|---|---|---|---|')
+if (!raw) console.log(`Adjudication added ${adjudicatedAdds.length} shows the first calendar reads missed.\n`)
+console.log('| Source | Listed | Recall all | Near | Far | Big rooms | Clubs | Electronic | Precision | Wrong | Noise | Buy link |')
+console.log('|---|---|---|---|---|---|---|---|---|---|---|---|')
 for (const s of [...sources].sort((a, b) => (b.recall.all.recall ?? 0) - (a.recall.all.recall ?? 0))) {
-  const r = s.recall
-  console.log(`| ${s.source} | ${s.listed} | ${cell(r.all)} | ${cell(r.near)} | ${cell(r.far)} | ${cell(r.bigRooms)} | ${cell(r.clubs)} | ${cell(r.electronic)} | ${pct(s.precision.precision)} (${s.precision.unconfirmed} unconfirmed) | ${s.offByOne} | ${pct(s.buyLinkShare)} |`)
+  const r = s.recall, p = s.precision
+  const wrong = raw ? `${p.unconfirmed} unconfirmed` : `${p.wrong}${p.unjudged ? ` (+${p.unjudged} unjudged)` : ''}`
+  const noise = raw ? '—' : `${p.noise}`
+  console.log(`| ${s.source} | ${s.listed} | ${cell(r.all)} | ${cell(r.near)} | ${cell(r.far)} | ${cell(r.bigRooms)} | ${cell(r.clubs)} | ${cell(r.electronic)} | ${pct(p.precision)} | ${wrong} | ${noise} | ${pct(s.buyLinkShare)} |`)
 }
-console.log('\nBest pairs:', out.bestPairs.slice(0, 4).map(c => `${c.set.join(' + ')} ${pct(c.recall)}`).join(' · '))
-console.log('Best triples:', out.bestTriples.slice(0, 4).map(c => `${c.set.join(' + ')} ${pct(c.recall)}`).join(' · '))
+const combo = c => `${c.set.join(' + ')} ${pct(c.recall)} (near ${pct(c.near)}, far ${pct(c.far)})`
+console.log('\nBest pairs:', out.bestPairs.slice(0, 4).map(combo).join(' · '))
+console.log('Best triples:', out.bestTriples.slice(0, 4).map(combo).join(' · '))
 console.log(`Shows no source had: ${orphans.length}`)

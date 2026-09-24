@@ -1,12 +1,269 @@
 {
-  "scoredAt": "2026-09-24T21:41:05.966Z",
+  "scoredAt": "2026-09-24T22:13:24.212Z",
+  "adjudicated": {
+    "added": 42,
+    "shows": [
+      {
+        "date": "2026-11-01",
+        "venue": "antones",
+        "name": "city of the sun",
+        "verdict": "gt-miss"
+      },
+      {
+        "date": "2026-11-05",
+        "venue": "antones",
+        "name": "the jack wharff band",
+        "verdict": "gt-miss"
+      },
+      {
+        "date": "2026-11-06",
+        "venue": "antones",
+        "name": "low cut connie",
+        "verdict": "gt-miss"
+      },
+      {
+        "date": "2026-11-10",
+        "venue": "antones",
+        "name": "greg freeman",
+        "verdict": "gt-miss"
+      },
+      {
+        "date": "2026-11-12",
+        "venue": "antones",
+        "name": "andrew duhon",
+        "verdict": "gt-miss"
+      },
+      {
+        "date": "2026-11-14",
+        "venue": "antones",
+        "name": "israel nash",
+        "verdict": "gt-miss"
+      },
+      {
+        "date": "2026-11-15",
+        "venue": "antones",
+        "name": "makaya mccraven",
+        "verdict": "gt-miss"
+      },
+      {
+        "date": "2026-11-18",
+        "venue": "antones",
+        "name": "stop light observations",
+        "verdict": "gt-miss"
+      },
+      {
+        "date": "2026-10-03",
+        "venue": "3ten",
+        "name": "paloma morphy",
+        "verdict": "gt-miss"
+      },
+      {
+        "date": "2026-11-04",
+        "venue": "antones",
+        "name": "shadowgrass",
+        "verdict": "gt-miss"
+      },
+      {
+        "date": "2026-11-19",
+        "venue": "antones",
+        "name": "tank and the bangas",
+        "verdict": "gt-miss"
+      },
+      {
+        "date": "2026-11-20",
+        "venue": "antones",
+        "name": "tank and the bangas",
+        "verdict": "gt-miss"
+      },
+      {
+        "date": "2026-11-22",
+        "venue": "antones",
+        "name": "north mississippi allstars",
+        "verdict": "gt-miss"
+      },
+      {
+        "date": "2026-11-29",
+        "venue": "antones",
+        "name": "project pat",
+        "verdict": "gt-miss"
+      },
+      {
+        "date": "2026-12-19",
+        "venue": "concourse",
+        "name": "inzo",
+        "verdict": "gt-miss"
+      },
+      {
+        "date": "2026-11-01",
+        "venue": "emos",
+        "name": "hazlett",
+        "verdict": "gt-miss"
+      },
+      {
+        "date": "2026-11-13",
+        "venue": "vulcan",
+        "name": "tisoki",
+        "verdict": "real-offcalendar"
+      },
+      {
+        "date": "2026-11-25",
+        "venue": "antones",
+        "name": "quentin moore",
+        "verdict": "gt-miss"
+      },
+      {
+        "date": "2026-11-27",
+        "venue": "antones",
+        "name": "dumpstaphunk",
+        "verdict": "gt-miss"
+      },
+      {
+        "date": "2026-11-28",
+        "venue": "antones",
+        "name": "dumpstaphunk",
+        "verdict": "gt-miss"
+      },
+      {
+        "date": "2026-10-25",
+        "venue": "brushy",
+        "name": "creek",
+        "verdict": "real-offcalendar"
+      },
+      {
+        "date": "2026-11-14",
+        "venue": "concourse",
+        "name": "seismic dance event",
+        "verdict": "gt-miss"
+      },
+      {
+        "date": "2026-11-15",
+        "venue": "concourse",
+        "name": "seismic dance event",
+        "verdict": "gt-miss"
+      },
+      {
+        "date": "2026-11-14",
+        "venue": "vulcan",
+        "name": "capochino",
+        "verdict": "real-offcalendar"
+      },
+      {
+        "date": "2026-11-07",
+        "venue": "antones",
+        "name": "dan penn",
+        "verdict": "gt-miss"
+      },
+      {
+        "date": "2026-11-09",
+        "venue": "antones",
+        "name": "olivia o brien",
+        "verdict": "gt-miss"
+      },
+      {
+        "date": "2026-11-11",
+        "venue": "antones",
+        "name": "paul val",
+        "verdict": "gt-miss"
+      },
+      {
+        "date": "2026-09-29",
+        "venue": "brushy",
+        "name": "grace enger",
+        "verdict": "real-offcalendar"
+      },
+      {
+        "date": "2026-11-20",
+        "venue": "brushy",
+        "name": "jejune",
+        "verdict": "gt-miss"
+      },
+      {
+        "date": "2026-11-13",
+        "venue": "concourse",
+        "name": "above beyond",
+        "verdict": "gt-miss"
+      },
+      {
+        "date": "2026-09-25",
+        "venue": "emos",
+        "name": "enter shikari",
+        "verdict": "gt-miss"
+      },
+      {
+        "date": "2026-11-08",
+        "venue": "emos",
+        "name": "they might be giants",
+        "verdict": "real-offcalendar"
+      },
+      {
+        "date": "2026-11-01",
+        "venue": "moody-amphitheater",
+        "name": "dia de los muertos",
+        "verdict": "real-offcalendar"
+      },
+      {
+        "date": "2026-11-09",
+        "venue": "stubbs",
+        "name": "6lack",
+        "verdict": "real-offcalendar"
+      },
+      {
+        "date": "2026-11-15",
+        "venue": "3ten",
+        "name": "flump toulouse",
+        "verdict": "real-offcalendar"
+      },
+      {
+        "date": "2027-02-27",
+        "venue": "3ten",
+        "name": "rumours atl",
+        "verdict": "real-offcalendar"
+      },
+      {
+        "date": "2026-11-08",
+        "venue": "antones",
+        "name": "the jazz room",
+        "verdict": "gt-miss"
+      },
+      {
+        "date": "2026-11-24",
+        "venue": "antones",
+        "name": "so called underground",
+        "verdict": "gt-miss"
+      },
+      {
+        "date": "2026-10-08",
+        "venue": "moody-amphitheater",
+        "name": "glow in the park concert",
+        "verdict": "real-offcalendar"
+      },
+      {
+        "date": "2026-09-30",
+        "venue": "vulcan",
+        "name": "weekly guests",
+        "verdict": "real-offcalendar"
+      },
+      {
+        "date": "2026-10-09",
+        "venue": "vulcan",
+        "name": "next level kpop",
+        "verdict": "real-offcalendar"
+      },
+      {
+        "date": "2026-10-17",
+        "venue": "vulcan",
+        "name": "grin",
+        "verdict": "real-offcalendar"
+      }
+    ]
+  },
   "groundTruth": {
     "venues": 16,
-    "events": 460,
-    "musicEvents": 425,
+    "events": 502,
+    "musicEvents": 467,
     "perVenue": {
       "3ten": {
-        "events": 34,
+        "events": 37,
         "reach": "2027-06-12",
         "complete": true
       },
@@ -16,17 +273,17 @@
         "complete": true
       },
       "antones": {
-        "events": 37,
+        "events": 58,
         "reach": "2027-01-31",
         "complete": true
       },
       "brushy": {
-        "events": 45,
+        "events": 48,
         "reach": "2027-02-06",
         "complete": true
       },
       "concourse": {
-        "events": 29,
+        "events": 33,
         "reach": "2027-02-06",
         "complete": true
       },
@@ -36,7 +293,7 @@
         "complete": false
       },
       "emos": {
-        "events": 37,
+        "events": 40,
         "reach": "2026-11-27",
         "complete": true
       },
@@ -56,7 +313,7 @@
         "complete": true
       },
       "moody-amphitheater": {
-        "events": 12,
+        "events": 14,
         "reach": "2026-11-07",
         "complete": true
       },
@@ -71,7 +328,7 @@
         "complete": true
       },
       "stubbs": {
-        "events": 35,
+        "events": 36,
         "reach": "2027-04-20",
         "complete": true
       },
@@ -81,7 +338,7 @@
         "complete": true
       },
       "vulcan": {
-        "events": 12,
+        "events": 17,
         "reach": "2026-11-24",
         "complete": true
       }
@@ -93,40 +350,40 @@
       "listed": 58,
       "recall": {
         "all": {
-          "hit": 46,
-          "of": 425,
-          "recall": 0.10823529411764705
+          "hit": 49,
+          "of": 467,
+          "recall": 0.10492505353319058
         },
         "near": {
-          "hit": 40,
-          "of": 321,
-          "recall": 0.12461059190031153
+          "hit": 43,
+          "of": 356,
+          "recall": 0.12078651685393259
         },
         "far": {
           "hit": 6,
-          "of": 104,
-          "recall": 0.057692307692307696
+          "of": 111,
+          "recall": 0.05405405405405406
         },
         "bigRooms": {
           "hit": 5,
-          "of": 137,
-          "recall": 0.0364963503649635
+          "of": 140,
+          "recall": 0.03571428571428571
         },
         "clubs": {
           "hit": 6,
-          "of": 197,
-          "recall": 0.030456852791878174
+          "of": 224,
+          "recall": 0.026785714285714284
         },
         "electronic": {
-          "hit": 35,
-          "of": 91,
-          "recall": 0.38461538461538464
+          "hit": 38,
+          "of": 103,
+          "recall": 0.36893203883495146
         }
       },
       "perVenue": {
         "3ten": {
           "hit": 0,
-          "of": 34,
+          "of": 37,
           "recall": 0
         },
         "acl-live": {
@@ -136,18 +393,18 @@
         },
         "antones": {
           "hit": 0,
-          "of": 35,
+          "of": 56,
           "recall": 0
         },
         "brushy": {
           "hit": 4,
-          "of": 43,
-          "recall": 0.09302325581395349
+          "of": 46,
+          "recall": 0.08695652173913043
         },
         "concourse": {
-          "hit": 22,
-          "of": 29,
-          "recall": 0.7586206896551724
+          "hit": 23,
+          "of": 33,
+          "recall": 0.696969696969697
         },
         "continental": {
           "hit": 0,
@@ -156,8 +413,8 @@
         },
         "emos": {
           "hit": 4,
-          "of": 36,
-          "recall": 0.1111111111111111
+          "of": 39,
+          "recall": 0.10256410256410256
         },
         "germania": {
           "hit": 0,
@@ -176,8 +433,8 @@
         },
         "moody-amphitheater": {
           "hit": 1,
-          "of": 12,
-          "recall": 0.08333333333333333
+          "of": 14,
+          "recall": 0.07142857142857142
         },
         "moody-center": {
           "hit": 2,
@@ -191,7 +448,7 @@
         },
         "stubbs": {
           "hit": 0,
-          "of": 26,
+          "of": 27,
           "recall": 0
         },
         "summit": {
@@ -200,22 +457,31 @@
           "recall": null
         },
         "vulcan": {
-          "hit": 0,
-          "of": 1,
-          "recall": 0
+          "hit": 2,
+          "of": 6,
+          "recall": 0.3333333333333333
         }
       },
       "precision": {
-        "judgeable": 54,
-        "unconfirmed": 8,
-        "precision": 0.8518518518518519
+        "right": 49,
+        "wrong": 5,
+        "noise": 0,
+        "unjudged": 0,
+        "wrongKinds": {
+          "wrong-date (±1 day)": 0,
+          "wrong-date": 3,
+          "wrong-venue": 2
+        },
+        "precision": 0.9074074074074074,
+        "noiseShare": 0
       },
       "offByOne": 0,
       "buyLinkShare": 1,
       "ticketers": {
-        "other:wl.eventim.us": 26,
-        "etix": 11,
+        "other:wl.eventim.us": 27,
+        "etix": 12,
         "ticketmaster": 7,
+        "seetickets": 1,
         "axs": 2
       },
       "statusDisagree": []
@@ -225,41 +491,41 @@
       "listed": 313,
       "recall": {
         "all": {
-          "hit": 253,
-          "of": 425,
-          "recall": 0.5952941176470589
+          "hit": 264,
+          "of": 467,
+          "recall": 0.5653104925053534
         },
         "near": {
-          "hit": 240,
-          "of": 321,
-          "recall": 0.7476635514018691
+          "hit": 251,
+          "of": 356,
+          "recall": 0.7050561797752809
         },
         "far": {
           "hit": 13,
-          "of": 104,
-          "recall": 0.125
+          "of": 111,
+          "recall": 0.11711711711711711
         },
         "bigRooms": {
-          "hit": 77,
-          "of": 137,
-          "recall": 0.5620437956204379
+          "hit": 80,
+          "of": 140,
+          "recall": 0.5714285714285714
         },
         "clubs": {
-          "hit": 124,
-          "of": 197,
-          "recall": 0.6294416243654822
+          "hit": 128,
+          "of": 224,
+          "recall": 0.5714285714285714
         },
         "electronic": {
-          "hit": 52,
-          "of": 91,
-          "recall": 0.5714285714285714
+          "hit": 56,
+          "of": 103,
+          "recall": 0.5436893203883495
         }
       },
       "perVenue": {
         "3ten": {
-          "hit": 22,
-          "of": 34,
-          "recall": 0.6470588235294118
+          "hit": 23,
+          "of": 37,
+          "recall": 0.6216216216216216
         },
         "acl-live": {
           "hit": 10,
@@ -267,19 +533,19 @@
           "recall": 0.16666666666666666
         },
         "antones": {
-          "hit": 22,
-          "of": 35,
-          "recall": 0.6285714285714286
+          "hit": 24,
+          "of": 56,
+          "recall": 0.42857142857142855
         },
         "brushy": {
           "hit": 23,
-          "of": 43,
-          "recall": 0.5348837209302325
+          "of": 46,
+          "recall": 0.5
         },
         "concourse": {
-          "hit": 20,
-          "of": 29,
-          "recall": 0.6896551724137931
+          "hit": 23,
+          "of": 33,
+          "recall": 0.696969696969697
         },
         "continental": {
           "hit": 10,
@@ -287,9 +553,9 @@
           "recall": 0.6666666666666666
         },
         "emos": {
-          "hit": 27,
-          "of": 36,
-          "recall": 0.75
+          "hit": 28,
+          "of": 39,
+          "recall": 0.717948717948718
         },
         "germania": {
           "hit": 4,
@@ -307,8 +573,8 @@
           "recall": 0.32
         },
         "moody-amphitheater": {
-          "hit": 12,
-          "of": 12,
+          "hit": 14,
+          "of": 14,
           "recall": 1
         },
         "moody-center": {
@@ -322,9 +588,9 @@
           "recall": 1
         },
         "stubbs": {
-          "hit": 25,
-          "of": 26,
-          "recall": 0.9615384615384616
+          "hit": 26,
+          "of": 27,
+          "recall": 0.9629629629629629
         },
         "summit": {
           "hit": 0,
@@ -332,25 +598,33 @@
           "recall": null
         },
         "vulcan": {
-          "hit": 0,
-          "of": 1,
-          "recall": 0
+          "hit": 1,
+          "of": 6,
+          "recall": 0.16666666666666666
         }
       },
       "precision": {
-        "judgeable": 300,
-        "unconfirmed": 38,
-        "precision": 0.8733333333333333
+        "right": 291,
+        "wrong": 3,
+        "noise": 6,
+        "unjudged": 0,
+        "wrongKinds": {
+          "wrong-date (±1 day)": 1,
+          "stale": 1,
+          "wrong-venue": 1
+        },
+        "precision": 0.9897959183673469,
+        "noiseShare": 0.019169329073482427
       },
-      "offByOne": 0,
-      "buyLinkShare": 0.916030534351145,
+      "offByOne": 1,
+      "buyLinkShare": 0.9157509157509157,
       "ticketers": {
-        "ticketmaster": 168,
-        "none": 22,
+        "ticketmaster": 174,
+        "none": 23,
+        "venue": 3,
         "axs": 16,
-        "venue": 2,
         "etix": 11,
-        "other:eventim": 42,
+        "other:eventim": 45,
         "eventbrite": 1
       },
       "statusDisagree": []
@@ -360,41 +634,41 @@
       "listed": 478,
       "recall": {
         "all": {
-          "hit": 347,
-          "of": 425,
-          "recall": 0.8164705882352942
+          "hit": 370,
+          "of": 467,
+          "recall": 0.7922912205567452
         },
         "near": {
-          "hit": 262,
-          "of": 321,
-          "recall": 0.8161993769470405
+          "hit": 280,
+          "of": 356,
+          "recall": 0.7865168539325843
         },
         "far": {
-          "hit": 85,
-          "of": 104,
-          "recall": 0.8173076923076923
+          "hit": 90,
+          "of": 111,
+          "recall": 0.8108108108108109
         },
         "bigRooms": {
           "hit": 109,
-          "of": 137,
-          "recall": 0.7956204379562044
+          "of": 140,
+          "recall": 0.7785714285714286
         },
         "clubs": {
-          "hit": 160,
-          "of": 197,
-          "recall": 0.8121827411167513
+          "hit": 179,
+          "of": 224,
+          "recall": 0.7991071428571429
         },
         "electronic": {
-          "hit": 78,
-          "of": 91,
-          "recall": 0.8571428571428571
+          "hit": 82,
+          "of": 103,
+          "recall": 0.7961165048543689
         }
       },
       "perVenue": {
         "3ten": {
-          "hit": 27,
-          "of": 34,
-          "recall": 0.7941176470588235
+          "hit": 28,
+          "of": 37,
+          "recall": 0.7567567567567568
         },
         "acl-live": {
           "hit": 36,
@@ -402,19 +676,19 @@
           "recall": 0.6
         },
         "antones": {
-          "hit": 31,
-          "of": 35,
-          "recall": 0.8857142857142857
+          "hit": 49,
+          "of": 56,
+          "recall": 0.875
         },
         "brushy": {
-          "hit": 37,
-          "of": 43,
-          "recall": 0.8604651162790697
+          "hit": 39,
+          "of": 46,
+          "recall": 0.8478260869565217
         },
         "concourse": {
-          "hit": 28,
-          "of": 29,
-          "recall": 0.9655172413793104
+          "hit": 29,
+          "of": 33,
+          "recall": 0.8787878787878788
         },
         "continental": {
           "hit": 2,
@@ -423,8 +697,8 @@
         },
         "emos": {
           "hit": 32,
-          "of": 36,
-          "recall": 0.8888888888888888
+          "of": 39,
+          "recall": 0.8205128205128205
         },
         "germania": {
           "hit": 4,
@@ -443,8 +717,8 @@
         },
         "moody-amphitheater": {
           "hit": 12,
-          "of": 12,
-          "recall": 1
+          "of": 14,
+          "recall": 0.8571428571428571
         },
         "moody-center": {
           "hit": 32,
@@ -458,8 +732,8 @@
         },
         "stubbs": {
           "hit": 25,
-          "of": 26,
-          "recall": 0.9615384615384616
+          "of": 27,
+          "recall": 0.9259259259259259
         },
         "summit": {
           "hit": 0,
@@ -467,20 +741,29 @@
           "recall": null
         },
         "vulcan": {
-          "hit": 1,
-          "of": 1,
-          "recall": 1
+          "hit": 2,
+          "of": 6,
+          "recall": 0.3333333333333333
         }
       },
       "precision": {
-        "judgeable": 440,
-        "unconfirmed": 89,
-        "precision": 0.7977272727272727
+        "right": 409,
+        "wrong": 9,
+        "noise": 22,
+        "unjudged": 0,
+        "wrongKinds": {
+          "wrong-date (±1 day)": 1,
+          "unconfirmed": 6,
+          "wrong-venue": 1,
+          "stale": 1
+        },
+        "precision": 0.9784688995215312,
+        "noiseShare": 0.04602510460251046
       },
       "offByOne": 1,
       "buyLinkShare": 0,
       "ticketers": {
-        "none": 350
+        "none": 373
       },
       "statusDisagree": []
     },
@@ -489,41 +772,41 @@
       "listed": 417,
       "recall": {
         "all": {
-          "hit": 370,
-          "of": 425,
-          "recall": 0.8705882352941177
+          "hit": 390,
+          "of": 467,
+          "recall": 0.8351177730192719
         },
         "near": {
-          "hit": 295,
-          "of": 321,
-          "recall": 0.9190031152647975
+          "hit": 315,
+          "of": 356,
+          "recall": 0.8848314606741573
         },
         "far": {
           "hit": 75,
-          "of": 104,
-          "recall": 0.7211538461538461
+          "of": 111,
+          "recall": 0.6756756756756757
         },
         "bigRooms": {
-          "hit": 132,
-          "of": 137,
-          "recall": 0.9635036496350365
+          "hit": 134,
+          "of": 140,
+          "recall": 0.9571428571428572
         },
         "clubs": {
-          "hit": 170,
-          "of": 197,
-          "recall": 0.8629441624365483
+          "hit": 186,
+          "of": 224,
+          "recall": 0.8303571428571429
         },
         "electronic": {
-          "hit": 68,
-          "of": 91,
-          "recall": 0.7472527472527473
+          "hit": 70,
+          "of": 103,
+          "recall": 0.6796116504854369
         }
       },
       "perVenue": {
         "3ten": {
           "hit": 31,
-          "of": 34,
-          "recall": 0.9117647058823529
+          "of": 37,
+          "recall": 0.8378378378378378
         },
         "acl-live": {
           "hit": 57,
@@ -531,19 +814,19 @@
           "recall": 0.95
         },
         "antones": {
-          "hit": 25,
-          "of": 35,
-          "recall": 0.7142857142857143
+          "hit": 39,
+          "of": 56,
+          "recall": 0.6964285714285714
         },
         "brushy": {
           "hit": 28,
-          "of": 43,
-          "recall": 0.6511627906976745
+          "of": 46,
+          "recall": 0.6086956521739131
         },
         "concourse": {
-          "hit": 29,
-          "of": 29,
-          "recall": 1
+          "hit": 30,
+          "of": 33,
+          "recall": 0.9090909090909091
         },
         "continental": {
           "hit": 14,
@@ -551,9 +834,9 @@
           "recall": 0.9333333333333333
         },
         "emos": {
-          "hit": 36,
-          "of": 36,
-          "recall": 1
+          "hit": 38,
+          "of": 39,
+          "recall": 0.9743589743589743
         },
         "germania": {
           "hit": 4,
@@ -571,9 +854,9 @@
           "recall": 0.76
         },
         "moody-amphitheater": {
-          "hit": 12,
-          "of": 12,
-          "recall": 1
+          "hit": 13,
+          "of": 14,
+          "recall": 0.9285714285714286
         },
         "moody-center": {
           "hit": 33,
@@ -586,8 +869,8 @@
           "recall": 0.9629629629629629
         },
         "stubbs": {
-          "hit": 26,
-          "of": 26,
+          "hit": 27,
+          "of": 27,
           "recall": 1
         },
         "summit": {
@@ -596,34 +879,41 @@
           "recall": null
         },
         "vulcan": {
-          "hit": 0,
-          "of": 1,
-          "recall": 0
+          "hit": 1,
+          "of": 6,
+          "recall": 0.16666666666666666
         }
       },
       "precision": {
-        "judgeable": 409,
-        "unconfirmed": 29,
-        "precision": 0.9290953545232273
+        "right": 401,
+        "wrong": 2,
+        "noise": 6,
+        "unjudged": 0,
+        "wrongKinds": {
+          "wrong-date (±1 day)": 1,
+          "stale": 1
+        },
+        "precision": 0.9950372208436724,
+        "noiseShare": 0.014388489208633094
       },
       "offByOne": 1,
-      "buyLinkShare": 0.9630606860158312,
+      "buyLinkShare": 0.9598997493734336,
       "ticketers": {
-        "ticketmaster": 162,
+        "ticketmaster": 179,
         "other:moodycenteratx.com": 1,
         "livenation": 1,
+        "none": 16,
         "other:acltv.com": 4,
         "axs": 79,
         "other:bit.ly": 1,
         "other:www.acllive.com": 6,
         "other:&__cf_chl_tk=PJmVw7L2_I5.nb1u2DlIfjqYXPasJrFJyf.jNtlkU2Y-1785864031-1.0.1.1-hAtqvhsgTvuGMH38UzIsNYssAlHVRwCHSHfAGnT5jBU": 1,
         "other:100726bigloudtexaslive.rsvpify.com": 1,
-        "none": 14,
         "prekindle": 3,
         "etix": 45,
         "other:partiful.com": 1,
         "eventbrite": 2,
-        "other:wl.eventim.us": 37,
+        "other:wl.eventim.us": 38,
         "seetickets": 7,
         "other:www.eventim.us": 12,
         "other:www.squadup.com": 1,
@@ -636,41 +926,41 @@
       "listed": 79,
       "recall": {
         "all": {
-          "hit": 66,
-          "of": 425,
-          "recall": 0.15529411764705883
+          "hit": 73,
+          "of": 467,
+          "recall": 0.15631691648822268
         },
         "near": {
-          "hit": 51,
-          "of": 321,
-          "recall": 0.1588785046728972
+          "hit": 57,
+          "of": 356,
+          "recall": 0.1601123595505618
         },
         "far": {
-          "hit": 15,
-          "of": 104,
-          "recall": 0.14423076923076922
+          "hit": 16,
+          "of": 111,
+          "recall": 0.14414414414414414
         },
         "bigRooms": {
           "hit": 9,
-          "of": 137,
-          "recall": 0.06569343065693431
+          "of": 140,
+          "recall": 0.06428571428571428
         },
         "clubs": {
           "hit": 7,
-          "of": 197,
-          "recall": 0.03553299492385787
+          "of": 224,
+          "recall": 0.03125
         },
         "electronic": {
-          "hit": 50,
-          "of": 91,
-          "recall": 0.5494505494505495
+          "hit": 57,
+          "of": 103,
+          "recall": 0.5533980582524272
         }
       },
       "perVenue": {
         "3ten": {
           "hit": 1,
-          "of": 34,
-          "recall": 0.029411764705882353
+          "of": 37,
+          "recall": 0.02702702702702703
         },
         "acl-live": {
           "hit": 3,
@@ -679,18 +969,18 @@
         },
         "antones": {
           "hit": 0,
-          "of": 35,
+          "of": 56,
           "recall": 0
         },
         "brushy": {
           "hit": 6,
-          "of": 43,
-          "recall": 0.13953488372093023
+          "of": 46,
+          "recall": 0.13043478260869565
         },
         "concourse": {
-          "hit": 27,
-          "of": 29,
-          "recall": 0.9310344827586207
+          "hit": 31,
+          "of": 33,
+          "recall": 0.9393939393939394
         },
         "continental": {
           "hit": 0,
@@ -699,8 +989,8 @@
         },
         "emos": {
           "hit": 4,
-          "of": 36,
-          "recall": 0.1111111111111111
+          "of": 39,
+          "recall": 0.10256410256410256
         },
         "germania": {
           "hit": 0,
@@ -719,8 +1009,8 @@
         },
         "moody-amphitheater": {
           "hit": 1,
-          "of": 12,
-          "recall": 0.08333333333333333
+          "of": 14,
+          "recall": 0.07142857142857142
         },
         "moody-center": {
           "hit": 3,
@@ -734,8 +1024,8 @@
         },
         "stubbs": {
           "hit": 2,
-          "of": 26,
-          "recall": 0.07692307692307693
+          "of": 27,
+          "recall": 0.07407407407407407
         },
         "summit": {
           "hit": 0,
@@ -743,20 +1033,26 @@
           "recall": null
         },
         "vulcan": {
-          "hit": 0,
-          "of": 1,
-          "recall": 0
+          "hit": 3,
+          "of": 6,
+          "recall": 0.5
         }
       },
       "precision": {
-        "judgeable": 76,
-        "unconfirmed": 10,
-        "precision": 0.868421052631579
+        "right": 76,
+        "wrong": 0,
+        "noise": 0,
+        "unjudged": 0,
+        "wrongKinds": {
+          "wrong-date (±1 day)": 0
+        },
+        "precision": 1,
+        "noiseShare": 0
       },
       "offByOne": 0,
       "buyLinkShare": 1,
       "ticketers": {
-        "none": 66
+        "none": 73
       },
       "statusDisagree": []
     },
@@ -765,41 +1061,41 @@
       "listed": 360,
       "recall": {
         "all": {
-          "hit": 318,
-          "of": 425,
-          "recall": 0.7482352941176471
+          "hit": 343,
+          "of": 467,
+          "recall": 0.734475374732334
         },
         "near": {
-          "hit": 241,
-          "of": 321,
-          "recall": 0.7507788161993769
+          "hit": 260,
+          "of": 356,
+          "recall": 0.7303370786516854
         },
         "far": {
-          "hit": 77,
-          "of": 104,
-          "recall": 0.7403846153846154
+          "hit": 83,
+          "of": 111,
+          "recall": 0.7477477477477478
         },
         "bigRooms": {
           "hit": 101,
-          "of": 137,
-          "recall": 0.7372262773722628
+          "of": 140,
+          "recall": 0.7214285714285714
         },
         "clubs": {
-          "hit": 149,
-          "of": 197,
-          "recall": 0.7563451776649747
+          "hit": 169,
+          "of": 224,
+          "recall": 0.7544642857142857
         },
         "electronic": {
-          "hit": 68,
-          "of": 91,
-          "recall": 0.7472527472527473
+          "hit": 73,
+          "of": 103,
+          "recall": 0.7087378640776699
         }
       },
       "perVenue": {
         "3ten": {
-          "hit": 26,
-          "of": 34,
-          "recall": 0.7647058823529411
+          "hit": 28,
+          "of": 37,
+          "recall": 0.7567567567567568
         },
         "acl-live": {
           "hit": 33,
@@ -807,19 +1103,19 @@
           "recall": 0.55
         },
         "antones": {
-          "hit": 26,
-          "of": 35,
-          "recall": 0.7428571428571429
+          "hit": 43,
+          "of": 56,
+          "recall": 0.7678571428571429
         },
         "brushy": {
-          "hit": 37,
-          "of": 43,
-          "recall": 0.8604651162790697
+          "hit": 39,
+          "of": 46,
+          "recall": 0.8478260869565217
         },
         "concourse": {
-          "hit": 28,
-          "of": 29,
-          "recall": 0.9655172413793104
+          "hit": 30,
+          "of": 33,
+          "recall": 0.9090909090909091
         },
         "continental": {
           "hit": 0,
@@ -827,9 +1123,9 @@
           "recall": 0
         },
         "emos": {
-          "hit": 35,
-          "of": 36,
-          "recall": 0.9722222222222222
+          "hit": 36,
+          "of": 39,
+          "recall": 0.9230769230769231
         },
         "germania": {
           "hit": 4,
@@ -848,8 +1144,8 @@
         },
         "moody-amphitheater": {
           "hit": 12,
-          "of": 12,
-          "recall": 1
+          "of": 14,
+          "recall": 0.8571428571428571
         },
         "moody-center": {
           "hit": 28,
@@ -863,8 +1159,8 @@
         },
         "stubbs": {
           "hit": 24,
-          "of": 26,
-          "recall": 0.9230769230769231
+          "of": 27,
+          "recall": 0.8888888888888888
         },
         "summit": {
           "hit": 0,
@@ -872,20 +1168,29 @@
           "recall": null
         },
         "vulcan": {
-          "hit": 0,
-          "of": 1,
-          "recall": 0
+          "hit": 1,
+          "of": 6,
+          "recall": 0.16666666666666666
         }
       },
       "precision": {
-        "judgeable": 350,
-        "unconfirmed": 32,
-        "precision": 0.9085714285714286
+        "right": 347,
+        "wrong": 3,
+        "noise": 0,
+        "unjudged": 0,
+        "wrongKinds": {
+          "wrong-date (±1 day)": 0,
+          "stale": 1,
+          "wrong-venue": 1,
+          "unconfirmed": 1
+        },
+        "precision": 0.9914285714285714,
+        "noiseShare": 0
       },
       "offByOne": 0,
-      "buyLinkShare": 0.006289308176100629,
+      "buyLinkShare": 0.0058309037900874635,
       "ticketers": {
-        "none": 316,
+        "none": 341,
         "other:axs.com": 1,
         "ticketmaster": 1
       },
@@ -897,39 +1202,39 @@
       "recall": {
         "all": {
           "hit": 0,
-          "of": 425,
+          "of": 467,
           "recall": 0
         },
         "near": {
           "hit": 0,
-          "of": 321,
+          "of": 356,
           "recall": 0
         },
         "far": {
           "hit": 0,
-          "of": 104,
+          "of": 111,
           "recall": 0
         },
         "bigRooms": {
           "hit": 0,
-          "of": 137,
+          "of": 140,
           "recall": 0
         },
         "clubs": {
           "hit": 0,
-          "of": 197,
+          "of": 224,
           "recall": 0
         },
         "electronic": {
           "hit": 0,
-          "of": 91,
+          "of": 103,
           "recall": 0
         }
       },
       "perVenue": {
         "3ten": {
           "hit": 0,
-          "of": 34,
+          "of": 37,
           "recall": 0
         },
         "acl-live": {
@@ -939,17 +1244,17 @@
         },
         "antones": {
           "hit": 0,
-          "of": 35,
+          "of": 56,
           "recall": 0
         },
         "brushy": {
           "hit": 0,
-          "of": 43,
+          "of": 46,
           "recall": 0
         },
         "concourse": {
           "hit": 0,
-          "of": 29,
+          "of": 33,
           "recall": 0
         },
         "continental": {
@@ -959,7 +1264,7 @@
         },
         "emos": {
           "hit": 0,
-          "of": 36,
+          "of": 39,
           "recall": 0
         },
         "germania": {
@@ -979,7 +1284,7 @@
         },
         "moody-amphitheater": {
           "hit": 0,
-          "of": 12,
+          "of": 14,
           "recall": 0
         },
         "moody-center": {
@@ -994,7 +1299,7 @@
         },
         "stubbs": {
           "hit": 0,
-          "of": 26,
+          "of": 27,
           "recall": 0
         },
         "summit": {
@@ -1004,14 +1309,20 @@
         },
         "vulcan": {
           "hit": 0,
-          "of": 1,
+          "of": 6,
           "recall": 0
         }
       },
       "precision": {
-        "judgeable": 0,
-        "unconfirmed": 0,
-        "precision": null
+        "right": 0,
+        "wrong": 0,
+        "noise": 0,
+        "unjudged": 0,
+        "wrongKinds": {
+          "wrong-date (±1 day)": 0
+        },
+        "precision": null,
+        "noiseShare": null
       },
       "offByOne": 0,
       "buyLinkShare": null,
@@ -1023,41 +1334,41 @@
       "listed": 305,
       "recall": {
         "all": {
-          "hit": 250,
-          "of": 425,
-          "recall": 0.5882352941176471
+          "hit": 269,
+          "of": 467,
+          "recall": 0.576017130620985
         },
         "near": {
-          "hit": 201,
-          "of": 321,
-          "recall": 0.6261682242990654
+          "hit": 217,
+          "of": 356,
+          "recall": 0.6095505617977528
         },
         "far": {
-          "hit": 49,
-          "of": 104,
-          "recall": 0.47115384615384615
+          "hit": 52,
+          "of": 111,
+          "recall": 0.46846846846846846
         },
         "bigRooms": {
           "hit": 108,
-          "of": 137,
-          "recall": 0.7883211678832117
+          "of": 140,
+          "recall": 0.7714285714285715
         },
         "clubs": {
-          "hit": 115,
-          "of": 197,
-          "recall": 0.583756345177665
+          "hit": 131,
+          "of": 224,
+          "recall": 0.5848214285714286
         },
         "electronic": {
-          "hit": 27,
-          "of": 91,
-          "recall": 0.2967032967032967
+          "hit": 30,
+          "of": 103,
+          "recall": 0.2912621359223301
         }
       },
       "perVenue": {
         "3ten": {
-          "hit": 12,
-          "of": 34,
-          "recall": 0.35294117647058826
+          "hit": 13,
+          "of": 37,
+          "recall": 0.35135135135135137
         },
         "acl-live": {
           "hit": 43,
@@ -1065,19 +1376,19 @@
           "recall": 0.7166666666666667
         },
         "antones": {
-          "hit": 24,
-          "of": 35,
-          "recall": 0.6857142857142857
+          "hit": 39,
+          "of": 56,
+          "recall": 0.6964285714285714
         },
         "brushy": {
           "hit": 11,
-          "of": 43,
-          "recall": 0.2558139534883721
+          "of": 46,
+          "recall": 0.2391304347826087
         },
         "concourse": {
-          "hit": 15,
-          "of": 29,
-          "recall": 0.5172413793103449
+          "hit": 18,
+          "of": 33,
+          "recall": 0.5454545454545454
         },
         "continental": {
           "hit": 0,
@@ -1086,8 +1397,8 @@
         },
         "emos": {
           "hit": 36,
-          "of": 36,
-          "recall": 1
+          "of": 39,
+          "recall": 0.9230769230769231
         },
         "germania": {
           "hit": 4,
@@ -1106,8 +1417,8 @@
         },
         "moody-amphitheater": {
           "hit": 11,
-          "of": 12,
-          "recall": 0.9166666666666666
+          "of": 14,
+          "recall": 0.7857142857142857
         },
         "moody-center": {
           "hit": 29,
@@ -1121,8 +1432,8 @@
         },
         "stubbs": {
           "hit": 21,
-          "of": 26,
-          "recall": 0.8076923076923077
+          "of": 27,
+          "recall": 0.7777777777777778
         },
         "summit": {
           "hit": 0,
@@ -1131,19 +1442,26 @@
         },
         "vulcan": {
           "hit": 0,
-          "of": 1,
+          "of": 6,
           "recall": 0
         }
       },
       "precision": {
-        "judgeable": 301,
-        "unconfirmed": 48,
-        "precision": 0.840531561461794
+        "right": 277,
+        "wrong": 3,
+        "noise": 21,
+        "unjudged": 0,
+        "wrongKinds": {
+          "wrong-date (±1 day)": 1,
+          "wrong-venue": 2
+        },
+        "precision": 0.9892857142857143,
+        "noiseShare": 0.06885245901639345
       },
       "offByOne": 1,
       "buyLinkShare": 1,
       "ticketers": {
-        "seatgeek": 252
+        "seatgeek": 271
       },
       "statusDisagree": []
     },
@@ -1152,41 +1470,41 @@
       "listed": 345,
       "recall": {
         "all": {
-          "hit": 256,
-          "of": 425,
-          "recall": 0.6023529411764705
+          "hit": 275,
+          "of": 467,
+          "recall": 0.588865096359743
         },
         "near": {
-          "hit": 210,
-          "of": 321,
-          "recall": 0.6542056074766355
+          "hit": 226,
+          "of": 356,
+          "recall": 0.6348314606741573
         },
         "far": {
-          "hit": 46,
-          "of": 104,
-          "recall": 0.4423076923076923
+          "hit": 49,
+          "of": 111,
+          "recall": 0.44144144144144143
         },
         "bigRooms": {
           "hit": 88,
-          "of": 137,
-          "recall": 0.6423357664233577
+          "of": 140,
+          "recall": 0.6285714285714286
         },
         "clubs": {
-          "hit": 151,
-          "of": 197,
-          "recall": 0.766497461928934
+          "hit": 170,
+          "of": 224,
+          "recall": 0.7589285714285714
         },
         "electronic": {
           "hit": 17,
-          "of": 91,
-          "recall": 0.18681318681318682
+          "of": 103,
+          "recall": 0.1650485436893204
         }
       },
       "perVenue": {
         "3ten": {
           "hit": 30,
-          "of": 34,
-          "recall": 0.8823529411764706
+          "of": 37,
+          "recall": 0.8108108108108109
         },
         "acl-live": {
           "hit": 39,
@@ -1194,18 +1512,18 @@
           "recall": 0.65
         },
         "antones": {
-          "hit": 30,
-          "of": 35,
+          "hit": 48,
+          "of": 56,
           "recall": 0.8571428571428571
         },
         "brushy": {
           "hit": 0,
-          "of": 43,
+          "of": 46,
           "recall": 0
         },
         "concourse": {
           "hit": 0,
-          "of": 29,
+          "of": 33,
           "recall": 0
         },
         "continental": {
@@ -1214,9 +1532,9 @@
           "recall": 1
         },
         "emos": {
-          "hit": 11,
-          "of": 36,
-          "recall": 0.3055555555555556
+          "hit": 12,
+          "of": 39,
+          "recall": 0.3076923076923077
         },
         "germania": {
           "hit": 4,
@@ -1235,8 +1553,8 @@
         },
         "moody-amphitheater": {
           "hit": 12,
-          "of": 12,
-          "recall": 1
+          "of": 14,
+          "recall": 0.8571428571428571
         },
         "moody-center": {
           "hit": 24,
@@ -1250,8 +1568,8 @@
         },
         "stubbs": {
           "hit": 9,
-          "of": 26,
-          "recall": 0.34615384615384615
+          "of": 27,
+          "recall": 0.3333333333333333
         },
         "summit": {
           "hit": 0,
@@ -1260,20 +1578,27 @@
         },
         "vulcan": {
           "hit": 0,
-          "of": 1,
+          "of": 6,
           "recall": 0
         }
       },
       "precision": {
-        "judgeable": 329,
-        "unconfirmed": 29,
-        "precision": 0.9118541033434651
+        "right": 280,
+        "wrong": 50,
+        "noise": 0,
+        "unjudged": 0,
+        "wrongKinds": {
+          "wrong-date (±1 day)": 40,
+          "wrong-date": 10
+        },
+        "precision": 0.8484848484848485,
+        "noiseShare": 0
       },
       "offByOne": 40,
       "buyLinkShare": 1,
       "ticketers": {
-        "venue": 221,
-        "ticketmaster": 40
+        "venue": 239,
+        "ticketmaster": 41
       },
       "statusDisagree": []
     },
@@ -1282,41 +1607,41 @@
       "listed": 378,
       "recall": {
         "all": {
-          "hit": 318,
-          "of": 425,
-          "recall": 0.7482352941176471
+          "hit": 328,
+          "of": 467,
+          "recall": 0.702355460385439
         },
         "near": {
-          "hit": 249,
-          "of": 321,
-          "recall": 0.7757009345794392
+          "hit": 259,
+          "of": 356,
+          "recall": 0.7275280898876404
         },
         "far": {
           "hit": 69,
-          "of": 104,
-          "recall": 0.6634615384615384
+          "of": 111,
+          "recall": 0.6216216216216216
         },
         "bigRooms": {
-          "hit": 108,
-          "of": 137,
-          "recall": 0.7883211678832117
+          "hit": 109,
+          "of": 140,
+          "recall": 0.7785714285714286
         },
         "clubs": {
-          "hit": 129,
-          "of": 197,
-          "recall": 0.6548223350253807
+          "hit": 133,
+          "of": 224,
+          "recall": 0.59375
         },
         "electronic": {
-          "hit": 81,
-          "of": 91,
-          "recall": 0.8901098901098901
+          "hit": 86,
+          "of": 103,
+          "recall": 0.8349514563106796
         }
       },
       "perVenue": {
         "3ten": {
-          "hit": 29,
-          "of": 34,
-          "recall": 0.8529411764705882
+          "hit": 30,
+          "of": 37,
+          "recall": 0.8108108108108109
         },
         "acl-live": {
           "hit": 36,
@@ -1325,18 +1650,18 @@
         },
         "antones": {
           "hit": 7,
-          "of": 35,
-          "recall": 0.2
+          "of": 56,
+          "recall": 0.125
         },
         "brushy": {
-          "hit": 35,
-          "of": 43,
-          "recall": 0.813953488372093
+          "hit": 38,
+          "of": 46,
+          "recall": 0.8260869565217391
         },
         "concourse": {
           "hit": 28,
-          "of": 29,
-          "recall": 0.9655172413793104
+          "of": 33,
+          "recall": 0.8484848484848485
         },
         "continental": {
           "hit": 2,
@@ -1344,9 +1669,9 @@
           "recall": 0.13333333333333333
         },
         "emos": {
-          "hit": 35,
-          "of": 36,
-          "recall": 0.9722222222222222
+          "hit": 38,
+          "of": 39,
+          "recall": 0.9743589743589743
         },
         "germania": {
           "hit": 4,
@@ -1365,8 +1690,8 @@
         },
         "moody-amphitheater": {
           "hit": 12,
-          "of": 12,
-          "recall": 1
+          "of": 14,
+          "recall": 0.8571428571428571
         },
         "moody-center": {
           "hit": 32,
@@ -1379,9 +1704,9 @@
           "recall": 0.9629629629629629
         },
         "stubbs": {
-          "hit": 24,
-          "of": 26,
-          "recall": 0.9230769230769231
+          "hit": 25,
+          "of": 27,
+          "recall": 0.9259259259259259
         },
         "summit": {
           "hit": 0,
@@ -1389,63 +1714,103 @@
           "recall": null
         },
         "vulcan": {
-          "hit": 0,
-          "of": 1,
-          "recall": 0
+          "hit": 2,
+          "of": 6,
+          "recall": 0.3333333333333333
         }
       },
       "precision": {
-        "judgeable": 357,
-        "unconfirmed": 36,
-        "precision": 0.8991596638655462
+        "right": 344,
+        "wrong": 8,
+        "noise": 5,
+        "unjudged": 0,
+        "wrongKinds": {
+          "wrong-date (±1 day)": 1,
+          "stale": 4,
+          "wrong-venue": 1,
+          "unconfirmed": 2
+        },
+        "precision": 0.9772727272727273,
+        "noiseShare": 0.013227513227513227
       },
       "offByOne": 1,
       "buyLinkShare": 0,
       "ticketers": {
-        "none": 320
+        "none": 330
       },
-      "statusDisagree": []
+      "statusDisagree": [
+        {
+          "date": "2026-11-09",
+          "venue": "stubbs",
+          "src": "cancelled",
+          "name": "6lack"
+        },
+        {
+          "date": "2026-09-25",
+          "venue": "emos",
+          "src": "cancelled",
+          "name": "enter shikari"
+        },
+        {
+          "date": "2026-11-01",
+          "venue": "emos",
+          "src": "postponed",
+          "name": "hazlett"
+        },
+        {
+          "date": "2026-11-08",
+          "venue": "emos",
+          "src": "cancelled",
+          "name": "they might be giants"
+        },
+        {
+          "date": "2026-09-29",
+          "venue": "brushy",
+          "src": "cancelled",
+          "name": "grace enger"
+        }
+      ]
     },
     {
       "source": "ticketmaster",
       "listed": 213,
       "recall": {
         "all": {
-          "hit": 175,
-          "of": 425,
-          "recall": 0.4117647058823529
+          "hit": 182,
+          "of": 467,
+          "recall": 0.3897216274089936
         },
         "near": {
-          "hit": 170,
-          "of": 321,
-          "recall": 0.5295950155763239
+          "hit": 176,
+          "of": 356,
+          "recall": 0.4943820224719101
         },
         "far": {
-          "hit": 5,
-          "of": 104,
-          "recall": 0.04807692307692308
+          "hit": 6,
+          "of": 111,
+          "recall": 0.05405405405405406
         },
         "bigRooms": {
-          "hit": 73,
-          "of": 137,
-          "recall": 0.5328467153284672
+          "hit": 74,
+          "of": 140,
+          "recall": 0.5285714285714286
         },
         "clubs": {
-          "hit": 83,
-          "of": 197,
-          "recall": 0.4213197969543147
+          "hit": 85,
+          "of": 224,
+          "recall": 0.3794642857142857
         },
         "electronic": {
-          "hit": 19,
-          "of": 91,
-          "recall": 0.2087912087912088
+          "hit": 23,
+          "of": 103,
+          "recall": 0.22330097087378642
         }
       },
       "perVenue": {
         "3ten": {
-          "hit": 18,
-          "of": 34,
-          "recall": 0.5294117647058824
+          "hit": 19,
+          "of": 37,
+          "recall": 0.5135135135135135
         },
         "acl-live": {
           "hit": 17,
@@ -1454,18 +1819,18 @@
         },
         "antones": {
           "hit": 17,
-          "of": 35,
-          "recall": 0.4857142857142857
+          "of": 56,
+          "recall": 0.30357142857142855
         },
         "brushy": {
           "hit": 4,
-          "of": 43,
-          "recall": 0.09302325581395349
+          "of": 46,
+          "recall": 0.08695652173913043
         },
         "concourse": {
-          "hit": 15,
-          "of": 29,
-          "recall": 0.5172413793103449
+          "hit": 19,
+          "of": 33,
+          "recall": 0.5757575757575758
         },
         "continental": {
           "hit": 0,
@@ -1473,9 +1838,9 @@
           "recall": 0
         },
         "emos": {
-          "hit": 17,
-          "of": 36,
-          "recall": 0.4722222222222222
+          "hit": 18,
+          "of": 39,
+          "recall": 0.46153846153846156
         },
         "germania": {
           "hit": 4,
@@ -1494,8 +1859,8 @@
         },
         "moody-amphitheater": {
           "hit": 10,
-          "of": 12,
-          "recall": 0.8333333333333334
+          "of": 14,
+          "recall": 0.7142857142857143
         },
         "moody-center": {
           "hit": 18,
@@ -1508,9 +1873,9 @@
           "recall": 0.7407407407407407
         },
         "stubbs": {
-          "hit": 24,
-          "of": 26,
-          "recall": 0.9230769230769231
+          "hit": 25,
+          "of": 27,
+          "recall": 0.9259259259259259
         },
         "summit": {
           "hit": 0,
@@ -1519,22 +1884,42 @@
         },
         "vulcan": {
           "hit": 0,
-          "of": 1,
+          "of": 6,
           "recall": 0
         }
       },
       "precision": {
-        "judgeable": 213,
-        "unconfirmed": 25,
-        "precision": 0.8826291079812206
+        "right": 204,
+        "wrong": 1,
+        "noise": 8,
+        "unjudged": 0,
+        "wrongKinds": {
+          "wrong-date (±1 day)": 0,
+          "unconfirmed": 1
+        },
+        "precision": 0.9951219512195122,
+        "noiseShare": 0.03755868544600939
       },
       "offByOne": 0,
       "buyLinkShare": 1,
       "ticketers": {
-        "ticketmaster": 179,
+        "ticketmaster": 186,
         "venue": 9
       },
-      "statusDisagree": []
+      "statusDisagree": [
+        {
+          "date": "2026-11-09",
+          "venue": "stubbs",
+          "src": "cancelled",
+          "name": "6lack"
+        },
+        {
+          "date": "2026-09-25",
+          "venue": "emos",
+          "src": "cancelled",
+          "name": "enter shikari"
+        }
+      ]
     }
   ],
   "bestPairs": [
@@ -1543,74 +1928,84 @@
         "bandsintown",
         "do512"
       ],
-      "recall": 0.9670588235294117
-    },
-    {
-      "set": [
-        "bandsintown",
-        "showlist-austin"
-      ],
-      "recall": 0.9529411764705882
+      "recall": 0.9443254817987152,
+      "near": 0.9410112359550562,
+      "far": 0.954954954954955
     },
     {
       "set": [
         "do512",
         "jambase"
       ],
-      "recall": 0.9505882352941176
+      "recall": 0.9314775160599572,
+      "near": 0.9325842696629213,
+      "far": 0.9279279279279279
     },
     {
       "set": [
-        "do512",
+        "bandsintown",
         "showlist-austin"
       ],
-      "recall": 0.9388235294117647
+      "recall": 0.9250535331905781,
+      "near": 0.9213483146067416,
+      "far": 0.9369369369369369
     },
     {
       "set": [
         "jambase",
         "showlist-austin"
       ],
-      "recall": 0.9388235294117647
+      "recall": 0.9164882226980728
     },
     {
       "set": [
         "do512",
-        "songkick"
+        "showlist-austin"
       ],
-      "recall": 0.9247058823529412
+      "recall": 0.9079229122055674
     },
     {
       "set": [
         "showlist-austin",
         "songkick"
       ],
-      "recall": 0.9247058823529412
+      "recall": 0.9014989293361885
     },
     {
       "set": [
         "do512",
-        "seatgeek"
+        "songkick"
       ],
-      "recall": 0.9058823529411765
+      "recall": 0.8993576017130621
+    },
+    {
+      "set": [
+        "austin-chronicle",
+        "bandsintown"
+      ],
+      "recall": 0.8843683083511777
     }
   ],
   "bestTriples": [
-    {
-      "set": [
-        "bandsintown",
-        "do512",
-        "showlist-austin"
-      ],
-      "recall": 0.9882352941176471
-    },
     {
       "set": [
         "do512",
         "jambase",
         "showlist-austin"
       ],
-      "recall": 0.9882352941176471
+      "recall": 0.9700214132762313,
+      "near": 0.9662921348314607,
+      "far": 0.9819819819819819
+    },
+    {
+      "set": [
+        "bandsintown",
+        "do512",
+        "showlist-austin"
+      ],
+      "recall": 0.9678800856531049,
+      "near": 0.9662921348314607,
+      "far": 0.972972972972973
     },
     {
       "set": [
@@ -1618,7 +2013,9 @@
         "bandsintown",
         "do512"
       ],
-      "recall": 0.9788235294117648
+      "recall": 0.9635974304068522,
+      "near": 0.9634831460674157,
+      "far": 0.963963963963964
     },
     {
       "set": [
@@ -1626,7 +2023,9 @@
         "do512",
         "songkick"
       ],
-      "recall": 0.9788235294117648
+      "recall": 0.9635974304068522,
+      "near": 0.9634831460674157,
+      "far": 0.963963963963964
     },
     {
       "set": [
@@ -1634,7 +2033,29 @@
         "do512",
         "ticketmaster"
       ],
-      "recall": 0.9764705882352941
+      "recall": 0.9593147751605996,
+      "near": 0.9606741573033708,
+      "far": 0.954954954954955
+    },
+    {
+      "set": [
+        "do512",
+        "jambase",
+        "songkick"
+      ],
+      "recall": 0.9593147751605996,
+      "near": 0.9634831460674157,
+      "far": 0.9459459459459459
+    },
+    {
+      "set": [
+        "bandsintown",
+        "do512",
+        "edmtrain"
+      ],
+      "recall": 0.9571734475374732,
+      "near": 0.9578651685393258,
+      "far": 0.954954954954955
     },
     {
       "set": [
@@ -1642,23 +2063,9 @@
         "do512",
         "jambase"
       ],
-      "recall": 0.9741176470588235
-    },
-    {
-      "set": [
-        "bandsintown",
-        "do512",
-        "seatgeek"
-      ],
-      "recall": 0.9741176470588235
-    },
-    {
-      "set": [
-        "bandsintown",
-        "seatgeek",
-        "showlist-austin"
-      ],
-      "recall": 0.9741176470588235
+      "recall": 0.9571734475374732,
+      "near": 0.9550561797752809,
+      "far": 0.963963963963964
     }
   ],
   "orphans": [

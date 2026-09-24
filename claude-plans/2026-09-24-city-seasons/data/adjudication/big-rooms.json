@@ -1,0 +1,703 @@
+[
+  {
+    "id": "venue-rereads",
+    "venues": {
+      "moody-center": {
+        "calendarUrl": "https://moodycenteratx.com/wp-json/tribe/events/v1/events (official Tribe Events REST API for moodycenteratx.com/events)",
+        "eventsSeenOnCalendar": 35,
+        "throughDate": "2027-01-10",
+        "note": "Re-read via the venue's own WordPress/Tribe Events REST API (more complete than the paginated HTML page, which only rendered 12 of the 35 events). Confirms Crossroads Guitar Festival on Sep 26-27, Teddy Swims Oct 28, Disney Worlds Collide Dec 4, Trans-Siberian Orchestra Dec 9, etc. Basketball games are on the same calendar (mixed with concerts) but are not music."
+      },
+      "moody-amphitheater": {
+        "calendarUrl": "https://www.moodyamphitheater.com/events-tickets",
+        "eventsSeenOnCalendar": 12,
+        "throughDate": "2026-11-07",
+        "note": "Webflow site, server-rendered event cards (no further pagination found in the static HTML). Only 12 shows listed, running Sep 23 through Nov 7, 2026 (Steve Lacy). Several real, independently-confirmed shows in this window (Glow in the Park benefit, Dia de los Muertos, Morning Glories Diwali) are not on this list at all -- likely third-party/private bookings in Waterloo Park that the venue's own marketing site doesn't carry."
+      },
+      "germania": {
+        "calendarUrl": "https://www.germaniaamp.com/events",
+        "eventsSeenOnCalendar": 4,
+        "throughDate": "2026-10-17",
+        "note": "Only 4 upcoming shows listed (Babymetal 9/26, Five Finger Death Punch 9/28, $uicideboy$ 10/13, beabadoobee 10/17) -- cross-checked against Ticketmaster's own venue page, which shows the identical 4 events, so this is a genuinely short near-term calendar, not a scraping miss. Halestorm is on the bill as Babymetal's support (per Ticketmaster lineup) but not named on either site."
+      },
+      "stubbs": {
+        "calendarUrl": "https://stubbsaustin.com/concert-calendar/",
+        "eventsSeenOnCalendar": 36,
+        "throughDate": "2027-04-20",
+        "note": "Extracted from the page's embedded JS calendar array (start/title pairs), which is more complete and precisely dated than the visible HTML cards on stubbsaustin.com's homepage. Covers Sep 27, 2026 through Nov 25, 2026 continuously, plus one outlier in Apr 2027. Two real, independently-confirmed Nov 9 shows (6LACK, David Shabani) are missing from this list entirely -- the calendar jumps from Nov 8 straight to Nov 13."
+      },
+      "scoot-inn": {
+        "calendarUrl": "https://www.scootinnaustin.com (embedded schema.org MusicEvent JSON-LD blocks)",
+        "eventsSeenOnCalendar": 25,
+        "throughDate": "2026-11-28",
+        "note": "Extracted from JSON-LD MusicEvent blocks on the homepage, which name only the headliner (no support acts). Covers Sep 27 through Nov 28, 2026. Several cluster items were support acts for shows that ARE on this list under the headliner's name (Gifted Hands/Dax, Madelline/EMEI, Night Moves/The Afghan Whigs); one (Lenny Pearce) is a real show but at the wrong venue in the source data (belongs to Stubb's, not Scoot Inn)."
+      }
+    }
+  },
+  {
+    "id": 138,
+    "venue": "germania",
+    "date": "2026-09-25",
+    "verdict": "stale",
+    "evidence": "https://www.songkick.com/concerts/43236653-roxette-at-germania-insurance-amphitheater",
+    "correction": null,
+    "notes": "Songkick's own event page is marked 'Canceled' in a banner; not on Germania's site (4 upcoming events) or Ticketmaster (4 results) either."
+  },
+  {
+    "id": 139,
+    "venue": "germania",
+    "date": "2026-09-26",
+    "verdict": "duplicate",
+    "evidence": "https://www.ticketmaster.com/germania-insurance-amphitheater-tickets-austin/venue/476047 (Babymetal 9/26 lineup) ; germaniaamp.com/events",
+    "correction": null,
+    "notes": "Halestorm is the opening/co-bill act for Babymetal on 9/26 per Ticketmaster's lineup for that date; Germania's own site lists only 'Babymetal' for 9/26, not Halestorm separately."
+  },
+  {
+    "id": 149,
+    "venue": "moody-amphitheater",
+    "date": "2026-09-26",
+    "verdict": "gt-miss",
+    "evidence": "moodyamphitheater.com/events-tickets",
+    "correction": null,
+    "notes": "'Of The Trees' with Jade Cicada, Mr. Bill and Ferrofluid is listed for Sat Sep 26 on the venue's own calendar."
+  },
+  {
+    "id": 150,
+    "venue": "moody-amphitheater",
+    "date": "2026-09-30",
+    "verdict": "gt-miss",
+    "evidence": "moodyamphitheater.com/events-tickets",
+    "correction": null,
+    "notes": "'YSL Records & Young Thug Present: The New Generation Tour' is listed for Wed Sep 30."
+  },
+  {
+    "id": 151,
+    "venue": "moody-amphitheater",
+    "date": "2026-10-07",
+    "verdict": "gt-miss",
+    "evidence": "moodyamphitheater.com/events-tickets",
+    "correction": null,
+    "notes": "'Role Model Presents: Chuck On Tour' is listed for Wed Oct 7."
+  },
+  {
+    "id": 152,
+    "venue": "moody-amphitheater",
+    "date": "2026-10-08",
+    "verdict": "real-offcalendar",
+    "evidence": "https://calendar.austinchronicle.com/event/glow-in-the-park-concert-and-dinner-14332639 ; https://waterloogreenway.org/sponsorship-events/glow2026/",
+    "correction": null,
+    "notes": "Waterloo Greenway Conservancy fundraiser at Moody Amphitheater, Oct 8 6pm, confirmed via its own sponsorship page; not on moodyamphitheater.com/events-tickets (third-party/private benefit event). Duplicate of #153 (same show, two source title variants)."
+  },
+  {
+    "id": 153,
+    "venue": "moody-amphitheater",
+    "date": "2026-10-08",
+    "verdict": "real-offcalendar",
+    "evidence": "https://calendar.austinchronicle.com/event/glow-in-the-park-w-pat-green-14361935 ; https://waterloogreenway.org/sponsorship-events/glow2026/",
+    "correction": null,
+    "notes": "Same Waterloo Greenway 'Glow in the Park' fundraiser, Oct 8, confirmed by its own event page (Thu Oct 8, 6pm, Moody Amphitheater); not on the venue's own calendar. Same show as #152."
+  },
+  {
+    "id": 154,
+    "venue": "moody-amphitheater",
+    "date": "2026-10-13",
+    "verdict": "gt-miss",
+    "evidence": "moodyamphitheater.com/events-tickets",
+    "correction": null,
+    "notes": "'The Weight of the Woods Tour' - Dermot Kennedy with Jonah Kagen is listed for Tue Oct 13."
+  },
+  {
+    "id": 155,
+    "venue": "moody-amphitheater",
+    "date": "2026-10-13",
+    "verdict": "duplicate",
+    "evidence": "https://www.bandsintown.com/e/1040359458-aaron-rowe-at-moody-amphitheater",
+    "correction": null,
+    "notes": "Aaron Rowe plays Moody Amphitheater same date (Oct 13) as the venue-listed Dermot Kennedy/Jonah Kagen show; almost certainly an added opening act Bandsintown auto-generated its own event page for, not a separate show (same pattern Bandsintown used for Jonah Kagen, who IS the named opener)."
+  },
+  {
+    "id": 156,
+    "venue": "moody-amphitheater",
+    "date": "2026-10-15",
+    "verdict": "gt-miss",
+    "evidence": "moodyamphitheater.com/events-tickets",
+    "correction": null,
+    "notes": "'Dreaming The Same Dream Tour' - Ziggy Marley and Gov't Mule is listed for Thu Oct 15."
+  },
+  {
+    "id": 157,
+    "venue": "moody-amphitheater",
+    "date": "2026-10-15",
+    "verdict": "duplicate",
+    "evidence": null,
+    "correction": null,
+    "notes": "Same Oct 15 Ziggy Marley/Gov't Mule show as #156/#158; 'Premium Seating' is a ticket-tier add-on, not a separate show."
+  },
+  {
+    "id": 158,
+    "venue": "moody-amphitheater",
+    "date": "2026-10-15",
+    "verdict": "gt-miss",
+    "evidence": "moodyamphitheater.com/events-tickets",
+    "correction": null,
+    "notes": "Same show as #156, exact title match on the venue calendar for Oct 15."
+  },
+  {
+    "id": 159,
+    "venue": "moody-amphitheater",
+    "date": "2026-10-16",
+    "verdict": "gt-miss",
+    "evidence": "moodyamphitheater.com/events-tickets",
+    "correction": null,
+    "notes": "'Good Mourning Sunshine Tour' - Foster The People (w/ Goth Babe) is listed for Fri Oct 16."
+  },
+  {
+    "id": 160,
+    "venue": "moody-amphitheater",
+    "date": "2026-10-18",
+    "verdict": "gt-miss",
+    "evidence": "moodyamphitheater.com/events-tickets",
+    "correction": null,
+    "notes": "Hermanos Guti\u00e9rrez (w/ Y La Bamba) is listed for Sun Oct 18; 'Premium Seating' is the same show's ticket tier."
+  },
+  {
+    "id": 161,
+    "venue": "moody-amphitheater",
+    "date": "2026-10-20",
+    "verdict": "gt-miss",
+    "evidence": "moodyamphitheater.com/events-tickets",
+    "correction": null,
+    "notes": "'Femme Fatale Tour' - Mon Laferte (w/ Silvana Estrada) is listed for Tue Oct 20."
+  },
+  {
+    "id": 162,
+    "venue": "moody-amphitheater",
+    "date": "2026-11-01",
+    "verdict": "real-offcalendar",
+    "evidence": "https://do512.com/events/2026/11/1/dia-de-los-muertos-tickets",
+    "correction": null,
+    "notes": "do512 lists 'D\u00eda de los Muertos' at 'Moody Amphitheater at Waterloo' for Nov 1; not on the venue's own calendar (which has nothing between Oct 20 and Nov 5) \u2014 looks like a third-party cultural event booked in the park, not a venue-programmed concert."
+  },
+  {
+    "id": 163,
+    "venue": "moody-amphitheater",
+    "date": "2026-11-05",
+    "verdict": "duplicate",
+    "evidence": "moodyamphitheater.com/events-tickets",
+    "correction": null,
+    "notes": "Add-on package (early entry / happy hour) for the Nov 5 'Knocked Loose & Denzel Curry' show, which is on the venue calendar; not a separate show."
+  },
+  {
+    "id": 164,
+    "venue": "moody-amphitheater",
+    "date": "2026-11-07",
+    "verdict": "real-offcalendar",
+    "evidence": "https://do512.com/events/2026/11/7/morning-glories-diwali-tickets",
+    "correction": null,
+    "notes": "do512 lists 'Morning Glories: Diwali' at 'Moody Amphitheater at Waterloo' for Nov 7; venue's own calendar lists a different show that night ('Oh yeah? Tour' - Steve Lacy) with no mention of this \u2014 third-party cultural event, not on venue's own listing. Same show as #165."
+  },
+  {
+    "id": 165,
+    "venue": "moody-amphitheater",
+    "date": "2026-11-07",
+    "verdict": "real-offcalendar",
+    "evidence": "https://calendar.austinchronicle.com/event/morning-glories-diwali-celebration-14326736",
+    "correction": null,
+    "notes": "Same 'Morning Glories Diwali Celebration' as #164, Austin Chronicle listing, Nov 7 at Moody Amphitheater; not on venue's own calendar."
+  },
+  {
+    "id": 166,
+    "venue": "moody-center",
+    "date": "2026-09-26",
+    "verdict": "duplicate",
+    "evidence": "https://moodycenteratx.com/event/eric-claptons-crossroads-guitar-festival/ ; https://www.songkick.com (lineup)",
+    "correction": null,
+    "notes": "Jimmy Fortune is a performer name attached by a source to the Sep 26 Moody Center show, which the venue's own calendar lists only as 'Eric Clapton's Crossroads Guitar Festival' (see #173). Same underlying show."
+  },
+  {
+    "id": 167,
+    "venue": "moody-center",
+    "date": "2026-09-26",
+    "verdict": "duplicate",
+    "evidence": "https://moodycenteratx.com/event/eric-claptons-crossroads-guitar-festival/",
+    "correction": null,
+    "notes": "Sierra Hull is a confirmed Crossroads Guitar Festival performer (per festival press); same Sep 26 show as #173, which is what the venue's own calendar lists."
+  },
+  {
+    "id": 168,
+    "venue": "moody-center",
+    "date": "2026-09-26",
+    "verdict": "duplicate",
+    "evidence": "https://moodycenteratx.com/event/eric-claptons-crossroads-guitar-festival/",
+    "correction": null,
+    "notes": "Eric Clapton headlines both nights of the festival; same Sep 26 show as #173."
+  },
+  {
+    "id": 169,
+    "venue": "moody-center",
+    "date": "2026-09-26",
+    "verdict": "duplicate",
+    "evidence": "https://moodycenteratx.com/event/eric-claptons-crossroads-guitar-festival/",
+    "correction": null,
+    "notes": "Marcus King is a Crossroads veteran performer; same Sep 26 show as #173."
+  },
+  {
+    "id": 170,
+    "venue": "moody-center",
+    "date": "2026-09-26",
+    "verdict": "duplicate",
+    "evidence": "https://moodycenteratx.com/event/eric-claptons-crossroads-guitar-festival/",
+    "correction": null,
+    "notes": "Julian Lage is a confirmed 2026 Crossroads debut performer; same Sep 26 show as #173."
+  },
+  {
+    "id": 171,
+    "venue": "moody-center",
+    "date": "2026-09-26",
+    "verdict": "duplicate",
+    "evidence": "https://moodycenteratx.com/event/eric-claptons-crossroads-guitar-festival/",
+    "correction": null,
+    "notes": "Tommy Emmanuel is a confirmed 2026 Crossroads debut performer; same Sep 26 show as #173."
+  },
+  {
+    "id": 172,
+    "venue": "moody-center",
+    "date": "2026-09-26",
+    "verdict": "duplicate",
+    "evidence": "https://moodycenteratx.com/event/eric-claptons-crossroads-guitar-festival/",
+    "correction": null,
+    "notes": "Eric Gales is a past Crossroads performer; same Sep 26 show as #173 (not independently confirmed for this exact year's bill, but the venue only has one Sep 26 event and this is it)."
+  },
+  {
+    "id": 173,
+    "venue": "moody-center",
+    "date": "2026-09-26",
+    "verdict": "gt-miss",
+    "evidence": "https://moodycenteratx.com/wp-json/tribe/events/v1/events ; moodycenteratx.com/events",
+    "correction": null,
+    "notes": "'Eric Clapton's Crossroads Guitar Festival' is on the venue's own calendar for Sep 26 (and Sep 27) \u2014 exact match."
+  },
+  {
+    "id": 174,
+    "venue": "moody-center",
+    "date": "2026-09-27",
+    "verdict": "duplicate",
+    "evidence": "https://moodycenteratx.com/event/eric-claptons-crossroads-guitar-festival/",
+    "correction": null,
+    "notes": "Del McCoury Band is a Crossroads veteran performer; same Sep 27 show as #173 (the festival's second night)."
+  },
+  {
+    "id": 175,
+    "venue": "moody-center",
+    "date": "2026-09-27",
+    "verdict": "duplicate",
+    "evidence": "https://moodycenteratx.com/event/eric-claptons-crossroads-guitar-festival/",
+    "correction": null,
+    "notes": "Julian Lage, Sep 27 night of the same festival."
+  },
+  {
+    "id": 176,
+    "venue": "moody-center",
+    "date": "2026-09-27",
+    "verdict": "duplicate",
+    "evidence": "https://moodycenteratx.com/event/eric-claptons-crossroads-guitar-festival/",
+    "correction": null,
+    "notes": "Eric Gales, Sep 27 night of the same festival."
+  },
+  {
+    "id": 177,
+    "venue": "moody-center",
+    "date": "2026-09-27",
+    "verdict": "duplicate",
+    "evidence": "https://moodycenteratx.com/event/eric-claptons-crossroads-guitar-festival/",
+    "correction": null,
+    "notes": "Eric Clapton performs both nights; Sep 27 night of the same festival."
+  },
+  {
+    "id": 178,
+    "venue": "moody-center",
+    "date": "2026-09-27",
+    "verdict": "duplicate",
+    "evidence": "https://moodycenteratx.com/event/eric-claptons-crossroads-guitar-festival/",
+    "correction": null,
+    "notes": "Keb' Mo' is a past Crossroads performer; Sep 27 night of the same festival."
+  },
+  {
+    "id": 179,
+    "venue": "moody-center",
+    "date": "2026-10-28",
+    "verdict": "gt-miss",
+    "evidence": "https://moodycenteratx.com/wp-json/tribe/events/v1/events",
+    "correction": null,
+    "notes": "Teddy Swims: The UGLY Tour is on the venue calendar for Oct 28."
+  },
+  {
+    "id": 180,
+    "venue": "moody-center",
+    "date": "2026-10-29",
+    "verdict": "not-music",
+    "evidence": null,
+    "correction": null,
+    "notes": "Texas Longhorns Women's Basketball game."
+  },
+  {
+    "id": 181,
+    "venue": "moody-center",
+    "date": "2026-11-02",
+    "verdict": "not-music",
+    "evidence": null,
+    "correction": null,
+    "notes": "Texas Longhorns Men's Basketball game."
+  },
+  {
+    "id": 182,
+    "venue": "moody-center",
+    "date": "2026-11-04",
+    "verdict": "not-music",
+    "evidence": null,
+    "correction": null,
+    "notes": "Texas Longhorns Women's Basketball game."
+  },
+  {
+    "id": 183,
+    "venue": "moody-center",
+    "date": "2026-11-05",
+    "verdict": "not-music",
+    "evidence": null,
+    "correction": null,
+    "notes": "Texas Longhorns Men's Basketball game."
+  },
+  {
+    "id": 184,
+    "venue": "moody-center",
+    "date": "2026-11-07",
+    "verdict": "not-music",
+    "evidence": null,
+    "correction": null,
+    "notes": "Texas Longhorns Women's Basketball game."
+  },
+  {
+    "id": 185,
+    "venue": "moody-center",
+    "date": "2026-11-09",
+    "verdict": "not-music",
+    "evidence": null,
+    "correction": null,
+    "notes": "Texas Longhorns Men's Basketball game."
+  },
+  {
+    "id": 186,
+    "venue": "moody-center",
+    "date": "2026-11-11",
+    "verdict": "not-music",
+    "evidence": null,
+    "correction": null,
+    "notes": "Texas Longhorns Women's Basketball game."
+  },
+  {
+    "id": 187,
+    "venue": "moody-center",
+    "date": "2026-11-13",
+    "verdict": "unconfirmed",
+    "evidence": null,
+    "correction": null,
+    "notes": "'Franklin Jonas & The Byzantines' at Moody Center Nov 13 \u2014 not on the venue's Sep-Jan API list (35 events) and no independent confirmation found; Moody Center's programming skews arena-scale, making a niche indie-rock bill implausible without corroboration."
+  },
+  {
+    "id": 188,
+    "venue": "moody-center",
+    "date": "2026-11-13",
+    "verdict": "unconfirmed",
+    "evidence": null,
+    "correction": null,
+    "notes": "'Alonzo Demetrius' at Moody Center Nov 13 \u2014 same date as #187, same lack of corroboration; not on venue's own calendar."
+  },
+  {
+    "id": 189,
+    "venue": "moody-center",
+    "date": "2026-11-19",
+    "verdict": "not-music",
+    "evidence": null,
+    "correction": null,
+    "notes": "Texas Longhorns Men's Basketball game."
+  },
+  {
+    "id": 190,
+    "venue": "moody-center",
+    "date": "2026-11-22",
+    "verdict": "not-music",
+    "evidence": null,
+    "correction": null,
+    "notes": "Texas Longhorns Men's Basketball game."
+  },
+  {
+    "id": 191,
+    "venue": "moody-center",
+    "date": "2026-11-25",
+    "verdict": "not-music",
+    "evidence": null,
+    "correction": null,
+    "notes": "Texas Longhorns Women's Basketball game."
+  },
+  {
+    "id": 192,
+    "venue": "moody-center",
+    "date": "2026-12-02",
+    "verdict": "not-music",
+    "evidence": null,
+    "correction": null,
+    "notes": "Texas Longhorns Women's Basketball game."
+  },
+  {
+    "id": 193,
+    "venue": "moody-center",
+    "date": "2026-12-04",
+    "verdict": "duplicate",
+    "evidence": "https://moodycenteratx.com/wp-json/tribe/events/v1/events",
+    "correction": null,
+    "notes": "Same Dec 4 'Disney Worlds Collide' show as #197-199 (the venue calendar's actual title); 'Descendants - Cast' names one of the three Disney franchises in the tour, not a separate show."
+  },
+  {
+    "id": 194,
+    "venue": "moody-center",
+    "date": "2026-12-04",
+    "verdict": "duplicate",
+    "evidence": null,
+    "correction": null,
+    "notes": "Same Dec 4 'Disney Worlds Collide' show; 'Cast of Camp Rock' names one of the three franchises."
+  },
+  {
+    "id": 195,
+    "venue": "moody-center",
+    "date": "2026-12-04",
+    "verdict": "duplicate",
+    "evidence": null,
+    "correction": null,
+    "notes": "Same Dec 4 'Disney Worlds Collide' show; 'ZOMBIES - Cast' names one of the three franchises."
+  },
+  {
+    "id": 196,
+    "venue": "moody-center",
+    "date": "2026-12-04",
+    "verdict": "duplicate",
+    "evidence": null,
+    "correction": null,
+    "notes": "Same Dec 4 'Disney Worlds Collide' show; reordered title of #193."
+  },
+  {
+    "id": 197,
+    "venue": "moody-center",
+    "date": "2026-12-04",
+    "verdict": "gt-miss",
+    "evidence": "https://moodycenteratx.com/wp-json/tribe/events/v1/events",
+    "correction": null,
+    "notes": "'Disney Worlds Collide' is on the venue calendar for Dec 4 \u2014 this and #198/#199 are the full/long-form version of the calendar's short title."
+  },
+  {
+    "id": 198,
+    "venue": "moody-center",
+    "date": "2026-12-04",
+    "verdict": "duplicate",
+    "evidence": null,
+    "correction": null,
+    "notes": "Same Dec 4 show as #197, full marketing title vs. the calendar's shortened 'Disney Worlds Collide'."
+  },
+  {
+    "id": 199,
+    "venue": "moody-center",
+    "date": "2026-12-04",
+    "verdict": "duplicate",
+    "evidence": null,
+    "correction": null,
+    "notes": "Same as #198, curly-apostrophe/typographic variant."
+  },
+  {
+    "id": 200,
+    "venue": "moody-center",
+    "date": "2026-12-08",
+    "verdict": "not-music",
+    "evidence": null,
+    "correction": null,
+    "notes": "Texas Longhorns Men's Basketball game."
+  },
+  {
+    "id": 201,
+    "venue": "moody-center",
+    "date": "2026-12-09",
+    "verdict": "unconfirmed",
+    "evidence": null,
+    "correction": null,
+    "notes": "'Nate Amor' at Moody Center Dec 9 \u2014 venue's own calendar lists 'Trans-Siberian Orchestra' for Dec 9, no mention of Nate Amor; no independent confirmation found of a Nate Amor show at this venue on this date."
+  },
+  {
+    "id": 202,
+    "venue": "moody-center",
+    "date": "2026-12-10",
+    "verdict": "not-music",
+    "evidence": null,
+    "correction": null,
+    "notes": "Texas Longhorns Women's Basketball game."
+  },
+  {
+    "id": 203,
+    "venue": "moody-center",
+    "date": "2026-12-13",
+    "verdict": "not-music",
+    "evidence": null,
+    "correction": null,
+    "notes": "Texas Longhorns Women's Basketball game."
+  },
+  {
+    "id": 204,
+    "venue": "moody-center",
+    "date": "2026-12-16",
+    "verdict": "not-music",
+    "evidence": null,
+    "correction": null,
+    "notes": "Texas Longhorns Men's Basketball / Women's Basketball doubleheader listing."
+  },
+  {
+    "id": 205,
+    "venue": "moody-center",
+    "date": "2026-12-16",
+    "verdict": "not-music",
+    "evidence": null,
+    "correction": null,
+    "notes": "Texas Longhorns Women's Basketball game (see #204)."
+  },
+  {
+    "id": 206,
+    "venue": "moody-center",
+    "date": "2026-12-21",
+    "verdict": "not-music",
+    "evidence": null,
+    "correction": null,
+    "notes": "Texas Longhorns Men's Basketball game."
+  },
+  {
+    "id": 207,
+    "venue": "moody-center",
+    "date": "2026-12-28",
+    "verdict": "not-music",
+    "evidence": null,
+    "correction": null,
+    "notes": "Texas Longhorns Women's Basketball game."
+  },
+  {
+    "id": 208,
+    "venue": "scoot-inn",
+    "date": "2026-10-24",
+    "verdict": "duplicate",
+    "evidence": "https://calendar.austinchronicle.com/event/dax-gifted-hands-14054056 ; https://www.bandsintown.com/e/1040304870-gifted-hands-at-scoot-inn",
+    "correction": null,
+    "notes": "Gifted Hands is the opening act for 'Dax - The Anger Management Tour', which is on Scoot Inn's own calendar for Oct 24; not a separate show."
+  },
+  {
+    "id": 209,
+    "venue": "scoot-inn",
+    "date": "2026-10-26",
+    "verdict": "duplicate",
+    "evidence": "https://www.facebook.com/scootinn/posts/... (Emei/Madelline support update) ; https://seatgeek.com/emei-tickets/austin-texas-scoot-inn-2026-10-26-5-pm/concert/18199080",
+    "correction": null,
+    "notes": "Madelline is the added support act for 'EMEI - Night at the Opera Tour', which is on Scoot Inn's own calendar for Oct 26; not a separate show."
+  },
+  {
+    "id": 210,
+    "venue": "scoot-inn",
+    "date": "2026-11-06",
+    "verdict": "wrong-venue",
+    "evidence": "https://www.ticketmaster.com/lenny-pearce-toddler-rave-world-tour-austin-texas-11-06-2026/event/3A0064C4A6CC9437 ; https://www.livenation.com/event/G5dIZ_uUX5j8i/lenny-pearce-toddler-rave-world-tour ; stubbsaustin.com/concert-calendar (2026-11-06 entry)",
+    "correction": "stubbs",
+    "notes": "Real show, but Ticketmaster/LiveNation and Stubb's own calendar JSON both place 'Lenny Pearce - Toddler Rave World Tour' at Stubb's Waller Creek Amphitheater on Nov 6, not Scoot Inn (whose own calendar has nothing between Oct 31 and Nov 7)."
+  },
+  {
+    "id": 211,
+    "venue": "scoot-inn",
+    "date": "2026-11-21",
+    "verdict": "duplicate",
+    "evidence": "https://do512.com/events/2026/11/21/the-afghan-whigs-w-night-moves-tickets",
+    "correction": null,
+    "notes": "Night Moves is the opening act for 'The Afghan Whigs', which is on Scoot Inn's own calendar for Nov 21; not a separate show."
+  },
+  {
+    "id": 212,
+    "venue": "stubbs",
+    "date": "2026-10-01",
+    "verdict": "gt-miss",
+    "evidence": "stubbsaustin.com/concert-calendar/",
+    "correction": null,
+    "notes": "'Official 2026 ACL Nights: Montclair' is on the venue's own calendar JSON for Oct 1 (indoor room)."
+  },
+  {
+    "id": 213,
+    "venue": "stubbs",
+    "date": "2026-10-01",
+    "verdict": "duplicate",
+    "evidence": null,
+    "correction": null,
+    "notes": "Same Oct 1 Montclair show as #212, '[inside]' just notes the indoor room."
+  },
+  {
+    "id": 214,
+    "venue": "stubbs",
+    "date": "2026-10-02",
+    "verdict": "wrong-date",
+    "evidence": "stubbsaustin.com/concert-calendar/",
+    "correction": "2026-10-01",
+    "notes": "Venue's own calendar lists Montclair on Oct 1, not Oct 2."
+  },
+  {
+    "id": 215,
+    "venue": "stubbs",
+    "date": "2026-10-04",
+    "verdict": "wrong-date",
+    "evidence": "stubbsaustin.com/concert-calendar/",
+    "correction": "2026-10-03",
+    "notes": "Venue's own calendar lists 'Official 2026 ACL Fest Nights: Parcels' on Oct 3, not Oct 4."
+  },
+  {
+    "id": 216,
+    "venue": "stubbs",
+    "date": "2026-10-04",
+    "verdict": "wrong-date",
+    "evidence": "stubbsaustin.com/concert-calendar/",
+    "correction": "2026-10-03",
+    "notes": "Venue's own calendar lists 'Official 2026 ACL Nights: Almost Heaven' on Oct 3, not Oct 4."
+  },
+  {
+    "id": 217,
+    "venue": "stubbs",
+    "date": "2026-10-23",
+    "verdict": "gt-miss",
+    "evidence": "stubbsaustin.com/concert-calendar/",
+    "correction": null,
+    "notes": "Noah Rinker is the named support act for 'Cameron Whitcomb - Kingdom of Fear Tour', which the venue's own calendar lists for Oct 23 (outdoor Waller Creek Amphitheater)."
+  },
+  {
+    "id": 218,
+    "venue": "stubbs",
+    "date": "2026-11-09",
+    "verdict": "real-offcalendar",
+    "evidence": "https://www.ticketmaster.com/10-years-of-6lack-tour-austin-texas-11-09-2026/event/3A0064B6A505AD42 ; https://www.livenation.com/event/G5dIZ_5QPvQge/10-years-of-6lack-tour",
+    "correction": null,
+    "notes": "'10 Years of 6LACK Tour' at Stubb's Waller Creek Amphitheater Nov 9 is real and on sale via Ticketmaster/Live Nation, but is genuinely absent from Stubb's own concert-calendar JSON (which jumps straight from Nov 8 to Nov 13)."
+  },
+  {
+    "id": 219,
+    "venue": "stubbs",
+    "date": "2026-11-09",
+    "verdict": "real-offcalendar",
+    "evidence": "https://www.bandsintown.com/e/108562586 ; https://music.apple.com/ng/concerts/ce.83f9150d-116c-4e6c-a519-fa2a8376f87b",
+    "correction": null,
+    "notes": "David Shabani plays Stubb's the same night (Nov 9, 10pm - a separate later show from 6LACK's 7pm), confirmed independently, but also absent from the venue's own calendar."
+  },
+  {
+    "id": 220,
+    "venue": "stubbs",
+    "date": "2026-11-09",
+    "verdict": "duplicate",
+    "evidence": "https://www.ticketmaster.com/10-years-of-6lack-tour-austin-texas-11-09-2026/event/3A0064B6A505AD42",
+    "correction": null,
+    "notes": "Same Nov 9 6LACK show as #218, shortened title."
+  }
+]
