@@ -85,31 +85,90 @@ const cardUnder = (page, x, y) => page.evaluate(([px, py]) => {
   return c ? c.dataset.artist : null;
 }, [x, y]);
 
+// Wait on state, never a fixed delay (a loaded laptop runs every timer late,
+// 2026-09-24): the page has stopped scrolling when scrollY holds still for
+// ten frames in a row.
+const scrollSettled = (page) => page.evaluate(() => new Promise((res) => {
+  let last = -1, still = 0;
+  const tick = () => {
+    if (window.scrollY === last) still++; else { still = 0; last = window.scrollY; }
+    if (still >= 10) res(window.scrollY); else requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+}));
+// A negative ("nothing grew") needs a window: the hover intent's delay and a
+// margin, measured from when the page settled.
+const INTENT_WINDOW = 200 + 400;
+const zoomGone = (page) => page.waitForFunction(() => !document.querySelector('#zoom-layer .zoom-slot.shown'), null, { timeout: 5000 });
+const railNow = (page) => page.evaluate(() => { const r = document.getElementById('rail-now').getBoundingClientRect(); return { x: Math.round(r.left + r.width / 2), y: Math.round(r.top + r.height / 2) }; });
+const labelOf = (page, a) => page.evaluate((x) => { const c = [...document.querySelectorAll('#wall-root .card')].find((el) => el.dataset.artist === x); return c && c.getAttribute('aria-label'); }, a);
+
+// The glide: NOW clicked with the mouse, the page settling under it.
+async function glide(page) {
+  await page.locator('#person-chips .person-chip', { hasText: 'Ross' }).first().click();
+  await sleep(400);
+  const now = await railNow(page);
+  await page.mouse.click(now.x, now.y);
+  await sleep(200); // let the glide begin
+  await scrollSettled(page);
+  return now;
+}
+
 for (const [engine, name, skip] of ENGINES) {
   test(`${name}NOW glides the wall under a still mouse: nothing grows, and the second click on NOW picks nothing`, { skip }, async () => {
     const { ctx, page } = await openWall(engine, '2026-09-26T22:30:00-07:00');
     try {
-      await page.locator('#person-chips .person-chip', { hasText: 'Ross' }).first().click();
-      await sleep(400);
-      const now = await page.evaluate(() => { const r = document.getElementById('rail-now').getBoundingClientRect(); return { x: Math.round(r.left + r.width / 2), y: Math.round(r.top + r.height / 2) }; });
-      await page.mouse.click(now.x, now.y); // the glide
-      await sleep(1500);
+      const now = await glide(page);
+      await sleep(INTENT_WINDOW);
       const under = await cardUnder(page, now.x, now.y);
       assert.ok(under, `not vacuous: after the glide the still pointer is over a card (${under})`);
-      let z = await zoomState(page);
+      const z = await zoomState(page);
       assert.equal(z.open, false, `the card that slid under the still pointer (${under}) did not grow: ${JSON.stringify(z)}`);
       // The hand goes back up to NOW (the rail is stuck at the top now) and clicks it again.
-      const again = await page.evaluate(() => { const r = document.getElementById('rail-now').getBoundingClientRect(); return { x: Math.round(r.left + r.width / 2), y: Math.round(r.top + r.height / 2) }; });
-      const before = await page.evaluate((a) => { const c = [...document.querySelectorAll('#wall-root .card')].find((x) => x.dataset.artist === a); return c && c.getAttribute('aria-label'); }, under);
+      const again = await railNow(page);
+      const before = await labelOf(page, under);
       await page.mouse.move(again.x, again.y, { steps: 6 });
       await page.mouse.click(again.x, again.y);
-      await sleep(900);
-      z = await zoomState(page);
-      assert.equal(z.open, false, `no zoom stands after the second NOW: ${JSON.stringify(z)}`);
-      const skepta = await page.evaluate(() => { const c = [...document.querySelectorAll('#wall-root .card')].find((x) => x.dataset.artist === 'Skepta'); return c && c.getAttribute('aria-label'); });
-      assert.match(skepta || '', / — not picked/, `Skepta is still unpicked: "${skepta}"`);
-      const after = await page.evaluate((a) => { const c = [...document.querySelectorAll('#wall-root .card')].find((x) => x.dataset.artist === a); return c && c.getAttribute('aria-label'); }, under);
-      assert.equal(after, before, `nor did the second click pick the card under the pointer (${under})`);
+      await zoomGone(page);
+      assert.match(await labelOf(page, 'Skepta') || '', / — not picked/, 'Skepta is still unpicked');
+      assert.equal(await labelOf(page, under), before, `nor did the second click pick the card under the pointer (${under})`);
+    } finally {
+      await ctx.close();
+    }
+  });
+
+  // The same walk with a slow hand: the way up to NOW dwells on the card under
+  // it for longer than the hover intent, so that card's zoom rightly grows.
+  // Before the zoom cleared the sticky chrome it grew over the rail and ate
+  // the click aimed at NOW as a pick of Skepta, a cancelled act — 3 of 3 at
+  // 70ms a step on the build before the ceiling, and 5 to 9 of 24 when six
+  // copies of the test above ran at once, where a loaded driver made the same
+  // slow pass (2026-09-24, the zoom-chrome build log).
+  test(`${name}a slow hand on its way up to NOW grows the card it passes — and the click still lands on NOW`, { skip }, async () => {
+    const { ctx, page } = await openWall(engine, '2026-09-26T22:30:00-07:00');
+    try {
+      const now = await glide(page);
+      await sleep(INTENT_WINDOW);
+      const under = await cardUnder(page, now.x, now.y);
+      const again = await railNow(page);
+      const before = await labelOf(page, under);
+      let grew = false;
+      for (let i = 1; i <= 6; i++) {
+        await page.mouse.move(now.x + ((again.x - now.x) * i) / 6, now.y + ((again.y - now.y) * i) / 6);
+        await sleep(i === 1 ? 450 : 70); // a dwell on the card, longer than the intent
+        grew = grew || (await zoomState(page)).open;
+      }
+      assert.ok(grew, `not vacuous: the slow pass grew the card it dwelt on (${under})`);
+      const z = await page.evaluate(() => {
+        const s = document.querySelector('#zoom-layer .zoom-slot.shown');
+        const rail = document.getElementById('day-rail').getBoundingClientRect();
+        return s ? { top: s.getBoundingClientRect().top, railBottom: rail.bottom } : null;
+      });
+      if (z) assert.ok(z.top >= z.railBottom, `a standing zoom never covers the rail: ${JSON.stringify(z)}`);
+      await page.mouse.click(again.x, again.y);
+      await zoomGone(page);
+      assert.match(await labelOf(page, 'Skepta') || '', / — not picked/, 'Skepta is still unpicked');
+      assert.equal(await labelOf(page, under), before, `the click aimed at NOW picked nothing (${under})`);
     } finally {
       await ctx.close();
     }
@@ -134,18 +193,19 @@ for (const [engine, name, skip] of ENGINES) {
       assert.ok(P, 'found an empty spot above a card');
       await page.mouse.move(P.x - 40, P.y, { steps: 2 });
       await page.mouse.move(P.x, P.y, { steps: 2 });
-      await sleep(500);
+      await sleep(INTENT_WINDOW);
       assert.equal((await zoomState(page)).open, false, 'resting on empty wall: nothing grows');
       await page.mouse.wheel(0, P.dy);
-      await sleep(900);
+      await sleep(100);
+      await scrollSettled(page);
+      await sleep(INTENT_WINDOW);
       const under = await cardUnder(page, P.x, P.y);
       assert.ok(under, `not vacuous: the wheel brought a card under the still pointer (${under})`);
-      let z = await zoomState(page);
+      const z = await zoomState(page);
       assert.equal(z.open, false, `the card the wheel brought under the still pointer (${under}) did not grow: ${JSON.stringify(z)}`);
       await page.mouse.move(P.x + 2, P.y, { steps: 1 }); // the hand: one small move
-      await sleep(250 + 450);
-      z = await zoomState(page);
-      assert.equal(z.card, under, `one small move over it and it grows, after the usual intent delay: ${JSON.stringify(z)}`);
+      await page.waitForSelector('#zoom-layer .zoom-slot.shown', { timeout: 5000 });
+      assert.equal((await zoomState(page)).card, under, 'one small move over it and it grows, after the usual intent delay');
     } finally {
       await ctx.close();
     }
