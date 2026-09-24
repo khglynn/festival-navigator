@@ -645,9 +645,26 @@ function insetFor(r0, r1) {
   return `inset(${t}px ${r}px ${b}px ${l}px round ${RADIUS}px)`;
 }
 
-// Centre the overlay on the resting card. Only the screen's left and right
-// edges push it inward (an overlay cannot be read off-screen); top and
-// bottom never move it — a card by the day rail grows where it is.
+// The phone dock's top edge while it is showing (under 720px; display:none
+// above it, and on the screens that hide it), else null. The one piece of
+// bottom chrome a zoom has to clear: the zoom layer sits over the dock, so a
+// card grown near the bottom hung across it (Kevin, 2026-09-24, a narrow
+// desktop window under a mouse: "keep this from happening easily").
+function dockTop() {
+  const dock = document.getElementById('dock');
+  if (!dock || !dock.getClientRects().length) return null;
+  const t = dock.getBoundingClientRect().top;
+  return t > 0 && t < window.innerHeight ? t : null;
+}
+
+// Centre the overlay on the resting card. The screen's left and right edges
+// push it inward (an overlay cannot be read off-screen), and the phone dock,
+// when it is showing, is a floor: a zoom that would reach within 8px of it is
+// MOVED up — never shrunk or reshaped — unless it is taller than the space
+// above the dock, where it stays where the arithmetic put it. The top never
+// moves it — a card by the day rail grows where it is. Either way the bloom's
+// origin is the card's own centre (originFor, from the box returned here),
+// so a moved zoom still grows out of its card, as it does at the side edges.
 function place(slot, el) {
   const r0 = rect(el);
   // The overlay's own LAYOUT size, not its on-screen box: follow() re-places
@@ -660,8 +677,10 @@ function place(slot, el) {
   const w = slot.offsetWidth || b.width, h = slot.offsetHeight || b.height;
   const vw = window.innerWidth;
   let left = Math.round(r0.left + r0.width / 2 - w / 2);
-  const top = Math.round(r0.top + r0.height / 2 - h / 2);
+  let top = Math.round(r0.top + r0.height / 2 - h / 2);
   left = Math.max(8, Math.min(left, vw - 8 - w));
+  const floor = dockTop();
+  if (floor !== null && top + h > floor - 8 && h <= floor - 16) top = Math.floor(floor - 8 - h);
   slot.style.left = `${Number.isFinite(left) ? left : r0.left}px`;
   slot.style.top = `${Number.isFinite(top) ? top : r0.top}px`;
   return { r0, r1: box(left, top, w, h) };

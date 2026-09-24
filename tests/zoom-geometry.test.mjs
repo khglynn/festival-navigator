@@ -4,9 +4,11 @@
 // arithmetic degenerates to constants and never once did anything in any test:
 // the viewport clamp, the NaN fallback and the size floors were all inert.
 //
-// The rule these pin is a design law, not an implementation detail. Only the
-// screen's LEFT and RIGHT edges push the box inward; top and bottom never move
-// it, because a card by the day rail must grow where it lives. And the follow
+// The rule these pin is a design law, not an implementation detail. The
+// screen's LEFT and RIGHT edges push the box inward; the top never moves it,
+// because a card by the day rail must grow where it lives; and the phone
+// dock, when it is showing, is a floor the box is moved up from (Kevin,
+// 2026-09-24) — the screen's own bottom edge still is not. And the follow
 // path closes on exactly one condition — the card genuinely left the viewport
 // — because dismissing on any scroll event read as "hover is fully broken" on
 // a trackpad, where micro-deltas fire constantly under a resting hand.
@@ -89,6 +91,82 @@ test('a card at the very top grows where it is — the top edge never clamps', (
     assert.equal(slot().style.top, `${window.innerHeight - 20 + 50 - 70}px`, 'and the bottom edge does not clamp either');
   } finally {
     undo();
+  }
+});
+
+// The phone dock (fixed at the bottom under 720px) as the zoom layer sees it.
+function showDock(top) {
+  const dock = document.createElement('div');
+  dock.id = 'dock';
+  document.body.appendChild(dock);
+  dock.getClientRects = () => [{}];
+  stubRect(dock, { left: 0, top, width: VW, height: window.innerHeight - top });
+  return () => dock.remove();
+}
+
+test('the phone dock is a floor: a zoom that would hang over it is MOVED up to clear it by 8px — same size, same card', () => {
+  const ctx = makeCtx();
+  const undo = sizedSlot(300, 140);
+  const DOCK = window.innerHeight - 45;
+  const hide = showDock(DOCK);
+  try {
+    // A card just above the dock: centred, its zoom would reach 21px past the dock's top.
+    const low = mountCard(ctx);
+    stubRect(low, { left: 400, top: DOCK - 104, width: 160, height: 100 });
+    zoom.zoomCard(low, 'GRiZ', ctx, { occ: OCC });
+    assert.equal(slot().style.top, `${DOCK - 8 - 140}px`, 'moved up until its bottom sits 8px above the dock');
+    assert.equal(slot().style.left, '330px', 'and only up: its left is where centring put it');
+    assert.equal(slot().style.minHeight, '132px', 'never shrunk or reshaped: the size floors are the design defaults');
+    zoom.unzoom({ instant: true });
+
+    // Mid-screen, clear of the dock: exactly as before.
+    const mid = mountCard(ctx);
+    stubRect(mid, { left: 400, top: 300, width: 160, height: 100 });
+    zoom.zoomCard(mid, 'GRiZ', ctx, { occ: OCC });
+    assert.equal(slot().style.top, '280px', 'nothing else moves');
+    zoom.unzoom({ instant: true });
+
+    // A card near the top by the dock rule's other side: the top still never clamps.
+    const top = mountCard(ctx);
+    stubRect(top, { left: 400, top: 4, width: 160, height: 100 });
+    zoom.zoomCard(top, 'GRiZ', ctx, { occ: OCC });
+    assert.equal(slot().style.top, '-16px', 'the dock never pushes anything down');
+  } finally {
+    hide();
+    undo();
+  }
+});
+
+test('a zoom taller than the space above the dock stays where the arithmetic put it, and a hidden dock is no floor', () => {
+  const ctx = makeCtx();
+  const DOCK = 200;
+  const undo = sizedSlot(300, DOCK - 10); // 190 tall: more than the 184 between 8px and the dock's 8px
+  const hide = showDock(DOCK);
+  try {
+    const card = mountCard(ctx);
+    stubRect(card, { left: 400, top: 120, width: 160, height: 100 });
+    zoom.zoomCard(card, 'GRiZ', ctx, { occ: OCC });
+    assert.equal(slot().style.top, `${120 + 50 - 95}px`, 'moving it up would push it off the top: today\'s place stands');
+    zoom.unzoom({ instant: true });
+  } finally {
+    hide();
+    undo();
+  }
+  // The dock hidden (display:none above 720px, or while search has focus): no client rects, no floor.
+  const undo2 = sizedSlot(300, 140);
+  const dock = document.createElement('div');
+  dock.id = 'dock';
+  document.body.appendChild(dock);
+  dock.getClientRects = () => [];
+  stubRect(dock, { left: 0, top: window.innerHeight - 45, width: VW, height: 45 });
+  try {
+    const low = mountCard(ctx);
+    stubRect(low, { left: 400, top: window.innerHeight - 104, width: 160, height: 100 });
+    zoom.zoomCard(low, 'GRiZ', ctx, { occ: OCC });
+    assert.equal(slot().style.top, `${window.innerHeight - 104 + 50 - 70}px`, 'a dock that is not showing moves nothing');
+  } finally {
+    dock.remove();
+    undo2();
   }
 });
 
