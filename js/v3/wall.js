@@ -1725,11 +1725,21 @@ export function nowStops(root, ctx, date, geo) {
   const best = nowLanding(root, ctx, date);
   if (!best) return null;
   const { lines, marks, picks } = liveOnWall(root, ctx, date);
+  // One show, one member: a show billed to two rooms ("Afters & Folsom" —
+  // Horse Meat Disco, Friday) renders a card in each, byte-identical in
+  // data-occ, and the cycle landed on it twice (the phone walk, 2026-09-24).
+  // The first in wall order stands for it — the one nowLanding would answer
+  // with; the other still shows wherever its room is on screen.
+  const shows = new Set();
+  const once = (card) => {
+    const show = `${card.dataset.artist}|${card.dataset.occ || ''}`;
+    return shows.has(show) ? false : (shows.add(show), true);
+  };
   const members = best.match === true
-    ? picks.map((card) => ({ card, line: lineOf(lines, card) }))
+    ? picks.filter(once).map((card) => ({ card, line: lineOf(lines, card) }))
     : [
       ...lines.filter((l) => l.onGrid || !marks.length).map((l) => ({ card: null, line: l.line })),
-      ...marks.map((card) => ({ card, line: null })),
+      ...marks.filter(once).map((card) => ({ card, line: null })),
     ];
   for (const m of members) {
     m.key = keyOf(m);

@@ -497,3 +497,27 @@ test('what may pulse is decided again when the glide lands: a dropped pick, a ne
   assert.equal(nowPulseable(late, c4, end, true).includes(card), false, 'a set that has ended does not answer');
   late.remove();
 });
+
+// One show billed to two rooms — Horse Meat Disco, Friday, "Afters & Folsom" —
+// renders a card in each (one occurrence, byte-identical data-occ; one pick
+// key). The cycle landed on it twice (the phone walk, 2026-09-24: Fri 11:30 PM,
+// taps 1 and 3). One show is one member; the first in wall order stands for it.
+test('stops: a show that renders in two rooms is one stop member, not two taps', () => {
+  const at = pt('2026-09-25T23:30:00');
+  for (const people of [[], ['Ross']]) {
+    const { root, ctx } = render(at, people, people.length ? { picks: { 'Horse Meat Disco': { Ross: 4 } } } : {});
+    const hmd = [...root.querySelectorAll('.venue-grid[data-iso] .card.now')].filter((c) => c.dataset.artist === 'Horse Meat Disco');
+    assert.equal(hmd.length, 2, 'two cards, one in each room');
+    assert.equal(hmd[0].dataset.occ, hmd[1].dataset.occ, 'one occurrence');
+    assert.notEqual(roomOf(hmd[0]), roomOf(hmd[1]), 'two rooms');
+    const plan = nowStops(root, ctx, at, layout(root));
+    const members = plan.stops.flatMap((st) => st.members.filter((m) => m.card));
+    const shows = members.map((m) => `${m.card.dataset.artist}|${m.card.dataset.occ}`);
+    assert.equal(new Set(shows).size, shows.length, `no show is a member twice (${people.join(',') || 'nobody'})`);
+    const it = members.filter((m) => m.card.dataset.artist === 'Horse Meat Disco');
+    assert.equal(it.length, 1, 'Horse Meat Disco once');
+    assert.equal(it[0].card, hmd[0], 'the first in wall order');
+    if (people.length) assert.equal(plan.best.card, hmd[0], 'and it is the answer the first tap lands on');
+    root.remove();
+  }
+});
