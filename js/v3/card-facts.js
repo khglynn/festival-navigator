@@ -17,7 +17,7 @@ import { colorIndexOf, roomOf } from './wall.js';
 import { record } from '../errlog.js';
 import { runFactsOf, findEventEntry, shortDateLabel, shortDate, dateOf, venueOf, isCancelled, cancelledNames } from './events.js';
 import { GROW_MS, CONTENT_FADE_MS, OUT_MS, CASCADE_MS, STAGGER_MS, REFRESH_MS, EASE_ARRIVE, EASE_LEAVE, EASE_SURFACE, canAnimate } from './motion.js';
-import { whoSnapshot, whoMotion } from './who-motion.js';
+import { whoSnapshot, whoMotion, whoSettle } from './who-motion.js';
 
 // "9:00 PM - 10:15 PM" -> "9:00 – 10:15 PM" (the shared meridiem said once).
 export function timeRange(t) {
@@ -835,6 +835,7 @@ function refreshZoomInner(fresh, ctx) {
   const z = zoomed;
   for (const a of z.anims) { try { a.cancel(); } catch { /* finished */ } }
   z.anims = [];
+  whoSettle(z.card); // cancel reports a frame late; the snapshot below must read a settled row
   z.el.classList.remove('zoom-source');
   z.el = fresh;
   z.ctx = ctx;

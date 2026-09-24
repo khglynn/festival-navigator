@@ -199,7 +199,7 @@ test('an exit animation that never finishes still has its slot reaped', async ()
   }
 });
 
-test('an exit reaps its slot whether the animation finishes or is cancelled', () => {
+test('an exit reaps its slot whether the animation finishes or is cancelled', async () => {
   const ctx = makeCtx();
   const card = mountCard(ctx);
   const rec = recordAnimations(rig.window);
@@ -222,6 +222,7 @@ test('an exit reaps its slot whether the animation finishes or is cancelled', ()
     zoom.unzoom({ why: 'an exit that is cancelled' });
     const out = exitAnim(ghost);
     out.cancel();
+    await Promise.resolve(); // cancel reports late, as in a browser (zoom-rig recordAnimations)
     assert.ok(!ghost.isConnected, 'oncancel reaps it too — a cancelled way out must not strand a ghost');
     // A browser that fires both, or a timeout landing on top of a finish, runs
     // the teardown once: it is guarded, not merely idempotent-by-luck.

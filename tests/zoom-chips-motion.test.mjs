@@ -221,7 +221,7 @@ test('clear: alone, the MUST chip goes where it stood; shared, only your name go
   } finally { s2.done(); }
 });
 
-test('rapid taps never strand anything: each refresh cancels the last, and everything temporary goes with it', () => {
+test('rapid taps never strand anything: each refresh cancels the last, and everything temporary goes with it', async () => {
   const s = scene({ Kevin: 1, Pegah: 2, Drew: 3 });
   try {
     let prev = [];
@@ -237,8 +237,53 @@ test('rapid taps never strand anything: each refresh cancels the last, and every
       prev = calls;
     }
     for (const a of prev) a.cancel();
-    assert.equal(overlay().querySelectorAll('.f-parked, .f-bud, .f-fill .f-fill, .f-travel').length, 0, 'after the last one: nothing');
+    await Promise.resolve(); // cancel reports late, as in a browser (zoom-rig recordAnimations)
+    assert.equal(overlay().querySelectorAll('.f-parked, .f-bud, .f-fill .f-fill, .f-travel, .f-carrying').length, 0, 'after the last one: nothing');
     for (const host of overlay().querySelectorAll('.f-names')) assert.equal(host.style.overflow, '', 'no lifted clip left behind');
+  } finally { s.done(); }
+});
+
+// Storyboard case 5 right after case 6, while your name is still stepping
+// away. The re-pick cancels the clear's animations, but a browser reports a
+// cancelled animation on the NEXT frame, so the clear's parked name was still
+// inside Nhu's chip when the re-pick read the row, was taken for you, and the
+// new ×1 chip flew ~180px out of Nhu's MUST chip (review, 2026-09-24, both
+// engines). The rig's cancel() reports late now, so this is that browser.
+test('clear, then a quick re-pick: the new level grows in where the row makes room — never out of the chip you left', () => {
+  const s = scene({ Kevin: 4, Nhu: 4 });
+  try {
+    s.tap(); // MUST → 0: your name is parked inside Nhu's chip, stepping away
+    assert.ok(parked().some((p) => p.classList.contains('f-nm')), 'the clear parked your name (the leftover the re-pick must not read)');
+    const calls = s.tap(); // 0 → 1 before the cancel report lands
+    const born = chipAt(1);
+    assert.ok(born && born.classList.contains('you'), 'you are at ×1');
+    assert.ok(on(calls, born).some((c) => /scale\(\.55\)/.test(first(c))), 'the ×1 chip is born in place — the zoom\'s own arrival');
+    assert.ok(!on(calls, born).some((c) => /^translate/.test(first(c))), 'it does not travel from anywhere: nobody was at ×1, and you were at nothing');
+    assert.equal(parked().length, 0, 'the clear\'s leftovers were taken down before the re-pick read the row');
+  } finally { s.done(); }
+});
+
+test('the two defences, each on its own: whoSettle takes every leftover down; whoSnapshot never reads a parked piece as live', async () => {
+  const { whoSettle, whoSnapshot } = await import('../js/v3/who-motion.js');
+  const s = scene({ Kevin: 4, Nhu: 4 });
+  try {
+    s.tap(); // MUST → 0 with Nhu: your name parked inside Nhu's chip
+    const card = overlay();
+    // Stand in everything a pick can leave behind, all at once.
+    const chip = chipAt(4);
+    const bud = document.createElement('span'); bud.className = 'f-bud'; chip.querySelector('.f-nm').appendChild(bud);
+    const layer = document.createElement('span'); layer.className = 'f-fill'; chip.querySelector(':scope > .f-fill').appendChild(layer);
+    chip.classList.add('f-carrying');
+    chip.querySelector('.f-nm').classList.add('f-travel');
+    chip.querySelector('.f-names').style.overflow = 'visible';
+    const snap = whoSnapshot(card);
+    assert.ok(!snap.names.has('Kevin'), 'the snapshot reads only the row\'s own names: your parked name is not a fact');
+    assert.equal(snap.you, null, 'and so you are nowhere — you cleared');
+    assert.ok(snap.names.has('Nhu'), 'Nhu is');
+    whoSettle(card);
+    assert.equal(card.querySelectorAll('.f-parked, .f-bud, .f-fill .f-fill, .f-travel, .f-carrying').length, 0, 'whoSettle: nothing temporary left');
+    for (const host of card.querySelectorAll('.f-names')) assert.equal(host.style.overflow, '', 'whoSettle: no lifted clip');
+    assert.ok(chip.querySelector('.f-nm[data-person="Nhu"]'), 'and the live row is untouched');
   } finally { s.done(); }
 });
 

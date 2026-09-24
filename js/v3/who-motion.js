@@ -27,27 +27,44 @@ const mid = (r) => ({ x: r.left + r.width / 2, y: r.top + r.height / 2 });
 const people = (chip) => { try { return JSON.parse(chip.dataset.people || '[]'); } catch { return []; } };
 const sameSet = (a, b) => a.length === b.length && a.every((x) => b.includes(x));
 
+// The last pick's leftovers, taken down now. A pick that lands while the
+// last one is still moving cancels it, but a cancelled animation reports
+// LATE — a real engine fires the cancel event on the next frame — so the
+// last pick's parked pieces, buds and re-mix layers are still in the row the
+// new snapshot is about to read. A clear's parked name, read as live, made a
+// quick re-pick fly ~180px out of the chip you had just left (review,
+// 2026-09-24, Chromium and WebKit). The refresh calls this right after
+// cancelling; the late reports then find their nodes gone, which is harmless.
+export function whoSettle(card) {
+  for (const n of card.querySelectorAll('.f-parked, .f-bud, .f-fill .f-fill')) n.remove();
+  for (const n of card.querySelectorAll('.f-travel, .f-carrying')) n.classList.remove('f-travel', 'f-carrying');
+  for (const n of card.querySelectorAll('.f-names')) n.style.overflow = '';
+}
+
 // Where everything in the who-row stands, and the nodes themselves (the
 // refresh is about to discard them; a leaving name is parked from here).
+// Only the row's own pieces are read — each selector is anchored to where a
+// live piece lives — so nothing parked is ever taken for a fact, even if a
+// caller forgets whoSettle.
 export function whoSnapshot(card) {
   const snap = { chips: new Map(), names: new Map(), more: new Map(), you: null };
   const row = card.querySelector('.f-who');
   if (!row) return snap;
   for (const chip of row.children) {
-    if (!chip.classList.contains('f-pill')) continue;
+    if (!chip.classList.contains('f-pill') || chip.classList.contains('f-parked')) continue;
     const level = chip.dataset.level;
     const fill = chip.querySelector(':scope > .f-fill');
-    const glyph = chip.querySelector(':scope > .bars, :scope > .must');
+    const glyph = chip.querySelector(':scope > .bars:not(.f-parked), :scope > .must:not(.f-parked)');
     snap.chips.set(level, {
       node: chip, rect: rect(chip), fillWidth: fill ? rect(fill).width : rect(chip).width,
       bg: fill ? fill.style.background : '', people: people(chip), glyph, glyphRect: glyph ? rect(glyph) : null,
     });
-    for (const nm of chip.querySelectorAll('.f-nm[data-person]')) {
+    for (const nm of chip.querySelectorAll(':scope > .f-names > .f-nm[data-person]')) {
       const entry = { node: nm, rect: rect(nm), level };
       snap.names.set(nm.dataset.person, entry);
       if (nm.classList.contains('you')) snap.you = { person: nm.dataset.person, level, rect: entry.rect };
     }
-    const more = chip.querySelector(':scope .f-more');
+    const more = chip.querySelector(':scope > .f-names > .f-more');
     if (more) snap.more.set(level, { node: more, rect: rect(more) });
   }
   return snap;
