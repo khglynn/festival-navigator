@@ -1149,12 +1149,10 @@ a.f-cancel:hover { border-bottom-color: rgba(255, 255, 255, .75); }
  * the card of whoever is playing wears the line instead: 1.5px of brand (the
  * card's own 1px border, recoloured, plus half a pixel of spread — no layout
  * moves) and the same soft glow. Brand, never the fest accent: this is app
- * chrome, and the accent has four homes. The label is the .now-label
- * component again, parked in the card's top-right corner instead of riding a
- * line's centre — so it needs the transform undone, not a second component. */
+ * chrome, and the accent has four homes. No tag in the card's corner since
+ * 2026-09-24: the NOW button's landing teaches what the ring means. */
 .card.now { border-color: rgb(var(--brand));
             box-shadow: 0 0 0 .5px rgb(var(--brand)), 0 0 6px rgba(var(--brand), .8); }
-.now-label.in-card { top: 5px; right: 5px; transform: none; }
 
 /* ---- events: the composed day, venue groups (MODEL-V4, 2026-09-16) ------------- */
 /* claude-plans/2026-09-16-wall-v4/MODEL-V4.md. A day is the unit (a

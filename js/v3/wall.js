@@ -1518,7 +1518,13 @@ export function venueGroups(root, entries, ctx, { day = null, fest = null, fallb
 
 // The now mark on a stack (MODEL-V4 §1.2) — the now line's twin, same violet,
 // same one-minute ticker, no repaint. A card is "now" when the festival's
-// clock is inside the window venueGroupsOf gave it.
+// clock is inside the window venueGroupsOf gave it. The mark is the ring and
+// its glow, and nothing else: the "NOW" tag that sat in the card's corner went
+// with the NOW button (Kevin, 2026-09-24: "since we have the now button now I
+// don't think we need the now … tags. users can figure out what the highlight
+// means from the auto-scroll"). A screen reader still hears it — the card's
+// own name ends "playing now" while it is.
+export const PLAYING_NOW = ', playing now';
 export function positionNowMarks(root, date = new Date()) {
   const here = root.matches && root.matches('.venue-grid[data-iso]') ? [root] : [];
   for (const grid of [...here, ...root.querySelectorAll('.venue-grid[data-iso]')]) {
@@ -1529,9 +1535,9 @@ export function positionNowMarks(root, date = new Date()) {
       const to = Number(card.dataset.nowTo);
       const on = today && clock.minutes >= from && clock.minutes < to;
       card.classList.toggle('now', on);
-      const label = card.querySelector('.now-label');
-      if (on && !label) card.insertBefore(mk('span', 'now-label in-card', 'NOW'), card.firstChild);
-      else if (!on && label) label.remove();
+      const name = card.getAttribute('aria-label') || '';
+      if (on && !name.endsWith(PLAYING_NOW)) card.setAttribute('aria-label', name + PLAYING_NOW);
+      else if (!on && name.endsWith(PLAYING_NOW)) card.setAttribute('aria-label', name.slice(0, -PLAYING_NOW.length));
     }
   }
 }

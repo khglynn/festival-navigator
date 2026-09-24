@@ -502,8 +502,8 @@ test('the now mark survives the ticker and a pick — the shell reads the wall\'
     assert.ok(playing.length > 0, 'somebody is playing at 11:30 PM on the Saturday of Portola');
     for (const name of playing) {
       const card = $('wall-root').querySelector(`.card.now[data-artist="${name}"]`);
-      assert.equal(card.querySelector('.now-label').textContent, 'NOW');
-      assert.equal(card.querySelector('.now-label').className, 'now-label in-card');
+      assert.equal(card.querySelector('.now-label'), null, 'the ring is the mark — no tag in the corner');
+      assert.ok(card.getAttribute('aria-label').endsWith(', playing now'), 'and its name says so');
       assert.ok(card.closest('.venue-grid[data-iso]'), 'a mark only ever lives on a stack card');
     }
 
@@ -518,6 +518,8 @@ test('the now mark survives the ticker and a pick — the shell reads the wall\'
     const fresh = $('wall-root').querySelector(`.card[data-artist="${playing[0]}"].now`);
     assert.ok(fresh && fresh !== first, 'it really is a new node');
     assert.ok(fresh.dataset.nowFrom && fresh.dataset.nowTo, 'carrying its window');
+    assert.ok(fresh.getAttribute('aria-label').endsWith(', playing now'), 'and "playing now" in its fresh name, once');
+    assert.equal(fresh.getAttribute('aria-label').split('playing now').length, 2, 'not twice');
   });
   // The pick armed a real push (1.2 s). Let it land while the shell is still
   // standing, rather than after test.after() has pulled the DOM out from under it.
@@ -530,7 +532,7 @@ test('after the last set, nobody — and a wall with nothing playing costs nothi
   atFestivalTime(RealDate.UTC(2026, 8, 27, 13, 0), () => {
     tick();
     assert.deepEqual(marked(), []);
-    assert.equal($('wall-root').querySelectorAll('.now-label.in-card').length, 0, 'the labels go with the ring');
+    assert.equal([...$('wall-root').querySelectorAll('.card')].filter((c) => (c.getAttribute('aria-label') || '').includes('playing now')).length, 0, '"playing now" goes with the ring');
   });
 });
 
@@ -617,8 +619,8 @@ test('every class this shell writes for visual effect has a rule in v3.css', () 
     '.sort-pop .pop-div',    // the divider before Settings
     '.sort-pop .chev',       // the › on the Settings row
     '.card.now',             // the now mark's ring
-    '.now-label.in-card',    // and its label, parked in the card's corner
   ]) assert.ok(css.includes(sel), `${sel} is drawn by the shell and styled by nothing`);
+  assert.ok(!css.includes('.now-label.in-card'), 'the in-card NOW tag is gone (2026-09-24), and so is its rule');
   // The dock is fixed to the bottom of the phone. A popover that opens
   // downward from it opens off the screen — the show menu's own surface.
   const dockPop = /\.dock \.sort-pop\s*\{([^}]*)\}/.exec(css);
@@ -638,7 +640,6 @@ test('the now mark is defined once, and wears the now line\'s own glow', () => {
 
   const mark = blocks(/\.card\.now\s*\{([^}]*)\}/g);
   assert.equal(mark.length, 1, 'one .card.now block — a second one wins silently and makes the first unfixable');
-  assert.equal(blocks(/\.now-label\.in-card\s*\{([^}]*)\}/g).length, 1, 'and one .now-label.in-card');
 
   // The design: a 1.5px ring in brand — the card's own 1px border recoloured
   // plus half a pixel of spread, so no layout moves — and the now line's glow,

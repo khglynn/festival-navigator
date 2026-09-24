@@ -85,8 +85,11 @@ holding one `.venue-group` per venue:
   mark ("don't need to explain now").
 - **The now mark.** A stack has no clock to draw a line on, so the card of
   whoever is playing right now carries `.card.now`: a 1.5px ring in `--brand`
-  with the soft glow the now line uses, and a small `NOW` label (the
-  `.now-label` component, top-right of the card). "Playing now" = now is in
+  with the soft glow the now line uses. (It also wore a small `NOW` tag in
+  its top-right corner until 2026-09-24, when the NOW button made it
+  redundant — Kevin: "users can figure out what the highlight means from the
+  auto-scroll". A screen reader hears ", playing now" at the end of the
+  card's name instead.) "Playing now" = now is in
   `[start, next member's start)` for a run, `[start, end)` for a ranged show,
   `[doors, close)` for a doors-only show; the 1-minute ticker that moves the
   now line toggles the class without a repaint. Same violet, same ticker,
