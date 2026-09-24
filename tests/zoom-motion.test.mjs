@@ -197,7 +197,7 @@ test('Low Power and reduced motion each force the instant path, and still build 
 // ---- the animated refresh: fifty lines CI had never executed ----------------
 
 test('a pick while zoomed re-enters: the old wash unclips away, survivors slide, an arrival grows in', () => {
-  setMyLevel(0); // so my first tap CREATES the You pill — a genuine arrival
+  setMyLevel(0); // so my first tap CREATES your one-bar chip — a genuine arrival
   const ctx = makeCtx();
   const card = mountCard(ctx);
   const rec = recordAnimations(rig.window);
@@ -218,7 +218,7 @@ test('a pick while zoomed re-enters: the old wash unclips away, survivors slide,
 
     const arrivals = rec.calls.filter((c) => /scale\(\.55\)/.test(firstTranslate(c)));
     assert.equal(arrivals.length >= 1, true, 'the pill that just arrived grows in with a little overshoot');
-    assert.ok(arrivals[0].target.matches('.f-pill'), 'and it is a pill');
+    assert.ok(arrivals[0].target.matches('.f-pill[data-level="1"]'), 'and it is the chip for your new level');
     assert.equal(arrivals[0].keyframes[0].opacity, 0);
 
     const slides = rec.calls.filter((c) => /^translate\(-?[\d.]+px, -?[\d.]+px\)$/.test(firstTranslate(c)) && c.keyframes.at(-1).transform === 'none');
@@ -230,28 +230,32 @@ test('a pick while zoomed re-enters: the old wash unclips away, survivors slide,
   }
 });
 
-test('a badge that just appeared fades on, and one that was already there does not', () => {
-  setMyLevel(3); // one tap from MUST
+test('a level that just appeared grows in; a chip that was already there slides, never re-arrives', () => {
+  // The who-row is one chip per level (2026-09-23), matched across a pick by
+  // its level (partKey). What used to be "the MUST badge fades on" is now
+  // "you join the MUST chip": that chip was already there, so it moves; only a
+  // level nobody held before is an arrival.
+  setMyLevel(3); // one tap from MUST; Drew is MUST throughout
   const ctx = makeCtx();
   const card = mountCard(ctx);
   const rec = recordAnimations(rig.window);
   const undo = fakeLayout();
-  const badgeFades = () => rec.calls.filter((c) => c.target.tagName === 'B');
+  const arrivalsOn = (sel) => rec.calls.filter((c) => /scale\(\.55\)/.test(firstTranslate(c)) && c.target.matches(sel));
   try {
     zoom.zoomCard(card, 'GRiZ', ctx, { onOpenNotes: ctx.onOpenNotes, occ: OCC });
     rec.calls.length = 0;
-    click(overlay()); // 3 → 4: the You pill gains its MUST badge
-    const fades = badgeFades();
-    assert.equal(fades.length, 1, 'exactly the badge that just appeared fades on');
-    assert.equal(fades[0].keyframes[0].opacity, 0);
-    assert.equal(fades[0].keyframes[1].opacity, 1);
-    assert.ok(fades[0].options.delay > 0, 'a beat after the pill it sits on has moved');
+    click(overlay()); // 3 → 4: you join Drew's MUST chip
+    assert.equal(overlay().querySelector('.f-pill.you').dataset.level, '4', 'you are in the MUST chip now');
+    assert.equal(arrivalsOn('.f-pill').length, 0, 'the MUST chip was already there: joining it is not an arrival');
 
-    // Drew has been MUST throughout; a re-render must not re-announce them.
     rec.calls.length = 0;
     click(overlay()); // 4 → 0
-    click(overlay()); // 0 → 1: Drew's badge has never changed
-    assert.equal(badgeFades().length, 0, 'a badge that was always there is not an event');
+    rec.calls.length = 0;
+    click(overlay()); // 0 → 1: a level nobody held a moment ago
+    const grew = arrivalsOn('.f-pill[data-level="1"]');
+    assert.equal(grew.length, 1, 'exactly the chip for the level that just appeared grows in');
+    assert.equal(grew[0].keyframes[0].opacity, 0);
+    assert.equal(arrivalsOn('.f-pill[data-level="4"]').length, 0, 'Drew\'s MUST chip has never changed level: not an event');
   } finally {
     undo();
     rec.off();

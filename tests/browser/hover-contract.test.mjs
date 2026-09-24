@@ -50,7 +50,9 @@ const state = () => page.evaluate(() => {
   return {
     shown: document.querySelectorAll('#zoom-layer .zoom-slot.shown').length,
     zoom: card ? card.getAttribute('aria-label') : null,
-    you: !!document.querySelector('#zoom-layer .zoom-card .f-pill.you'),
+    // Your who-chip (2026-09-23: one chip per level, yours wears .you): its
+    // label, which names everyone in it — null when you are in no chip.
+    you: (document.querySelector('#zoom-layer .zoom-card .f-pill.you') || { getAttribute: () => null }).getAttribute('aria-label'),
     active: (document.activeElement && document.activeElement.dataset && document.activeElement.dataset.artist) || null,
   };
 });
@@ -195,7 +197,7 @@ test('a fast click on a resting card picks it, the hover then grows it, and leav
   await sleep(OPEN_MS + 200);
   let s = await state();
   assert.equal(s.shown, 1, `the zoom stands after a click on the resting card: ${JSON.stringify(s)}`);
-  assert.equal(s.you, true, 'and the pick landed (the You pill)');
+  assert.match(s.you || '', /: You\b/, `and the pick landed: your chip names you first (${s.you})`);
   await move(sp.x, sp.y); await sleep(CLOSE_MS);
   s = await state();
   assert.equal(s.shown, 0, `a zoom born after a click still closes on hover-out (it is a MOUSE zoom, not a keyboard one): ${JSON.stringify(s)}`);
@@ -208,7 +210,7 @@ test('a pick on the grown card keeps the zoom standing, and leaving closes it', 
   await page.mouse.click(c.x, c.y); await sleep(500);
   let s = await state();
   assert.equal(s.shown, 1, `still standing after the pick: ${JSON.stringify(s)}`);
-  assert.equal(s.you, true, 'the You pill arrived');
+  assert.match(s.you || '', /: You\b/, `your chip arrived, naming you first (${s.you})`);
   await move(sp.x, sp.y); await sleep(CLOSE_MS);
   s = await state();
   assert.equal(s.shown, 0, `closed after leaving: ${JSON.stringify(s)}`);

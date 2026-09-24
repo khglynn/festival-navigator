@@ -759,8 +759,9 @@ test('picks on a stack card keep cycling across the sync-echo repaint; the who-r
   assert.equal(overlay().querySelector('a.f-where').textContent, 'Regency Ballroom', 'the venue is a map door');
   click(overlay().querySelector('.f-name'));
   assert.equal(level('Gelli Haha'), 1, 'click 1 picks');
-  assert.deepEqual(rowsOf(overlay()), ['f-sub', 'f-where', 'f-who', 'f-chips'], 'the pill arrived and its neighbours made room');
+  assert.deepEqual(rowsOf(overlay()), ['f-sub', 'f-where', 'f-who', 'f-chips'], 'your chip arrived and its neighbours made room');
   assert.equal(overlay().querySelector('.f-who .f-pill.you').textContent, 'You');
+  assert.equal(overlay().querySelector('.f-who .f-pill.you').getAttribute('aria-label'), 'Picked: You', 'alone at one bar: your own chip');
   repaintWall();
   const back = facts.zoomedCard();
   assert.ok(back && back.isConnected && back.dataset.artist === 'Gelli Haha' && back.closest('.stack'),

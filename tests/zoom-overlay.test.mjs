@@ -95,7 +95,12 @@ test('the grown card is an overlay: outside the wall, and the resting card is ne
   assert.ok(zoom.zoomContains(card));
   assert.ok(!zoom.zoomContains(document.body));
   assert.equal(grown.querySelector('.f-name').textContent, 'GRiZ');
-  assert.deepEqual([...grown.querySelectorAll('.f-pill')].map((p) => p.textContent), ['DrewMUST', 'You']);
+  // The who-row is one chip per level (2026-09-23): Drew's MUST, then your
+  // one bar — each named in full for a screen reader, yours wearing .you.
+  const chips = [...grown.querySelectorAll('.f-who .f-pill')];
+  assert.deepEqual(chips.map((p) => p.dataset.level), ['4', '1'], 'one chip per level, loudest first');
+  assert.deepEqual(chips.map((p) => p.getAttribute('aria-label')), ['Must: Drew', 'Picked: You']);
+  assert.deepEqual(chips.map((p) => p.classList.contains('you')), [false, true], 'the white edge is on your chip only');
 });
 
 test('a click on the grown card PICKS; its notes chip opens notes and never picks', () => {
@@ -116,7 +121,7 @@ test('a click on the grown card PICKS; its notes chip opens notes and never pick
   assert.deepEqual(ctx.taps, ['GRiZ'], 'and it is not a pick');
 });
 
-test('taps while zoomed cycle 1 → 2 → 3 → 4 → 0 and the pills follow', () => {
+test('taps while zoomed cycle 1 → 2 → 3 → 4 → 0 and your chip follows', () => {
   state.crewDoc.festivals[FID].selections.GRiZ.Kevin = 1; // the doc carries over between tests
   const ctx = makeCtx();
   const card = mountCard(ctx);
@@ -129,14 +134,17 @@ test('taps while zoomed cycle 1 → 2 → 3 → 4 → 0 and the pills follow', (
     levels.push(mine());
   }
   assert.deepEqual(levels, [2, 3, 4, 0]);
-  assert.equal(youPill(), undefined, 'at 0 the You pill is gone');
+  assert.equal(youPill(), undefined, 'at 0 you are in no chip');
   click(document.querySelector('#zoom-layer .zoom-card'));
   assert.equal(mine(), 1);
+  assert.equal(youPill().dataset.level, '1', 'one tap: your own one-bar chip');
   assert.equal(youPill().textContent, 'You');
   click(document.querySelector('#zoom-layer .zoom-card'));
   click(document.querySelector('#zoom-layer .zoom-card'));
   click(document.querySelector('#zoom-layer .zoom-card'));
-  assert.equal(youPill().textContent, 'YouMUST', 'four taps = MUST, shown live in the overlay');
+  assert.equal(youPill().dataset.level, '4', 'four taps = MUST: you join the MUST chip, shown live in the overlay');
+  assert.equal(youPill().getAttribute('aria-label'), 'Must: You and Drew', 'you lead the chip you share');
+  assert.equal(document.querySelectorAll('#zoom-layer .f-pill').length, 1, 'two people at one level are one chip');
   assert.equal(zoom.zoomedCard(), document.querySelector('#wall-root .card'), 'the zoom never left');
 });
 
@@ -205,7 +213,10 @@ test('the grown card and the resting card render from ONE model: same aura, ever
   assert.equal(facts.where, 'Pier Stage', 'WHERE is its own row');
   assert.equal(grown.querySelector('.f-sub').textContent, facts.when);
   assert.equal(grown.querySelector('.f-where').textContent, 'Pier Stage');
-  assert.equal(grown.querySelectorAll('.f-pill').length, facts.people.length);
+  // One chip per level anyone chose, and every picker named in exactly one chip.
+  assert.equal(grown.querySelectorAll('.f-pill').length, new Set(facts.people.map((p) => p.level)).size);
+  const named = [...grown.querySelectorAll('.f-pill')].map((p) => p.getAttribute('aria-label')).join(' ');
+  for (const p of facts.people) assert.ok(named.includes(p.isYou ? 'You' : p.name), `${p.name} is in a chip`);
   assert.equal(card.querySelectorAll('.corner-who .mark:not(.ghost)').length, Math.min(facts.people.length, 4));
 });
 
