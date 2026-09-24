@@ -650,14 +650,21 @@ function insetFor(r0, r1) {
 // bottom never move it — a card by the day rail grows where it is.
 function place(slot, el) {
   const r0 = rect(el);
+  // The overlay's own LAYOUT size, not its on-screen box: follow() re-places
+  // it on every scroll, including mid-bloom, when the box is still scaled
+  // down — and a scaled width centred it wrong and let the edge clamp pass a
+  // box that then grew past the screen (3px over at 320 wide, found by the
+  // zoom-chips browser contract, 2026-09-23). offsetWidth ignores transforms;
+  // jsdom has no layout (0), so the measured box stands in there.
   const b = rect(slot);
+  const w = slot.offsetWidth || b.width, h = slot.offsetHeight || b.height;
   const vw = window.innerWidth;
-  let left = Math.round(r0.left + r0.width / 2 - b.width / 2);
-  const top = Math.round(r0.top + r0.height / 2 - b.height / 2);
-  left = Math.max(8, Math.min(left, vw - 8 - b.width));
+  let left = Math.round(r0.left + r0.width / 2 - w / 2);
+  const top = Math.round(r0.top + r0.height / 2 - h / 2);
+  left = Math.max(8, Math.min(left, vw - 8 - w));
   slot.style.left = `${Number.isFinite(left) ? left : r0.left}px`;
   slot.style.top = `${Number.isFinite(top) ? top : r0.top}px`;
-  return { r0, r1: box(left, top, b.width, b.height) };
+  return { r0, r1: box(left, top, w, h) };
 }
 
 // The grown card's parts: a SURFACE (the wash and the border) under an
