@@ -71,9 +71,13 @@ async function openApp({ width = 390, height = 844, touch = true, now = SAT_1030
     // picked card's aura, an arrival): a running scale on the card itself.
     // Every card NOW pulses, in order, as it starts (a pulse is a scale).
     window.__pulses = [];
+    // And the now line's own pulse (a tap that moved nothing): the line and
+    // its time label on the rail, by class name.
+    window.__linePulses = [];
     const animateWas = Element.prototype.animate;
     Element.prototype.animate = function (kf, opts) {
       if (this.classList && this.classList.contains('card') && JSON.stringify(kf).includes('scale(')) window.__pulses.push(this);
+      if (this.classList && (this.classList.contains('now-line') || this.classList.contains('now-label')) && JSON.stringify(kf).includes('scale')) window.__linePulses.push(this.className);
       return animateWas.call(this, kf, opts);
     };
     window.__pulsing = (c) => c.getAnimations().some((a) => a.playState === 'running' && a.effect
@@ -513,6 +517,31 @@ test('390, Kat highlighted with nothing on: the stops are everyone’s, nothing 
     assert.ok(second.y > first.y + 100, `tap two goes on down through what IS on: ${first.y} → ${second.y}`);
     assert.equal(second.toast, '', 'the line is said once, not on every tap');
     assert.deepEqual([...first.pulsed, ...second.pulsed], [], 'and no stranger’s card pulses, ever');
+  } finally { await ctx.close(); }
+});
+
+// The phone walk (2026-09-24): Sat 7:00 PM, nobody highlighted, the afters not
+// yet open — the now line is the only stop. Tap 1 landed it; tap 2 neither
+// moved (3072 → 3072) nor pulsed, because a line never pulsed: a dead button,
+// on every daytime grid. A tap that moves nothing now pulses the line and its
+// time label on the rail — and under Reduce Motion, nothing moves at all.
+test('390, Sat 7 PM, the line the only stop: a repeat tap that moves nothing pulses the line and its time label', { skip }, async () => {
+  const { ctx, page, door } = await openApp({ now: new Date('2026-09-26T19:00:00-07:00') });
+  try {
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await sleep(200);
+    const first = await tapAndLook(page, door);
+    assert.ok(first.lineInView, 'tap 1 lands the line');
+    await page.evaluate(() => { window.__linePulses = []; });
+    const second = await tapAndLook(page, door);
+    assert.equal(second.y, first.y, 'tap 2 has nowhere to go: the page stays');
+    assert.equal(second.pulsed.length, 0, 'no card pulses — nothing is anyone’s');
+    const lines = await page.evaluate(() => window.__linePulses);
+    assert.ok(lines.includes('now-line') && lines.includes('now-label'), `but the line and its time label do: ${JSON.stringify(lines)}`);
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.evaluate(() => { window.__linePulses = []; });
+    await tapAndLook(page, door, { pulse: 'none' });
+    assert.deepEqual(await page.evaluate(() => window.__linePulses), [], 'Reduce Motion: no pulse at all');
   } finally { await ctx.close(); }
 });
 

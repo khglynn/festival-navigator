@@ -9,7 +9,7 @@ import * as sync from '../sync.js';
 import * as spotify from '../spotify.js';
 import * as model from './model.js';
 import { loadFestivalIndex, loadFestival, fetchCustomFestivals, mergeCustoms, FESTIVAL_INDEX, defaultFestivalId } from '../festivals.js';
-import { renderWall, refreshCard, showUndoToast, showToast, wireScrollspy, colorIndexOf, positionNowLines, positionNowMarks, scrollToNowLine, dayNavOf, roomsOf, cardFor, roomOf, isStripScroller, DAY_ANCHOR, festLinkLabel, nowLanding, nowStops, nowStep, nowPulseable } from './wall.js';
+import { renderWall, refreshCard, showUndoToast, showToast, wireScrollspy, colorIndexOf, positionNowLines, positionNowMarks, scrollToNowLine, dayNavOf, roomsOf, cardFor, roomOf, isStripScroller, DAY_ANCHOR, festLinkLabel, nowLanding, nowStops, nowStep, nowPulseable, nowLabelOf } from './wall.js';
 import { loadPeopleFilter, savePeopleFilter, togglePerson, pruneToActive, loadFolded, applyFoldToggle } from './filters.js';
 import { OUT_MS, CASCADE_MS, STAGGER_MS, EASE_ARRIVE, EASE_LEAVE, EASE_SURFACE, canAnimate } from './motion.js';
 import { scrolledBefore, rememberScrolled, dayOfScrollKey, festivalClock } from './now.js';
@@ -574,9 +574,14 @@ function seenBand(inGrid) {
 // brings it back (wall.js nowStep).
 // What it lands on pulses (transform only; none under Reduce Motion or Low
 // Power): the highlighted person's picks in that stop, or the stop's NOW
-// cards; a line landing does not. A highlight with nothing on gets the quiet
-// line once, on the first tap, and no pulse on any tap — a stranger's card
-// pulsing reads as "Kat is here" (review, 2026-09-24).
+// cards; a line landing does not — the glide there is its answer. A tap that
+// moves nothing at all still answers: where no card pulses, the stop's line
+// and its time label on the rail do (the phone walk, 2026-09-24: Sat 7 PM,
+// nobody highlighted, the line the only stop — tap 2 neither moved nor
+// pulsed, a dead button). A highlight with nothing on gets the quiet
+// line once, on the first tap, and no card pulse on any tap — a stranger's
+// card pulsing reads as "Kat is here" (review, 2026-09-24); the line is not
+// anyone's, so it may.
 // Where the last NOW left the page, for the next tap (wall.js stillThere
 // says what it holds and why the grid is named by its day).
 let nowCycle = null;
@@ -653,11 +658,15 @@ function jumpToNow() {
   }
   // What pulses: the stop's cards — the highlighted person's picks, or, for
   // nobody, the NOW cards of a stop a card leads. Never a line's stop, and
-  // never with no match.
+  // never with no match — except that a tap that moved nothing pulses the
+  // stop's line, so no tap is dead.
   const pulses = best.match === true || (best.match === null && lead.card);
   const cards = pulses ? stop.members.filter((m) => m.card).map((m) => m.card) : [];
   const bumps = cards.filter((c) => canAnimate(c, ctx));
-  if (!bumps.length) return;
+  if (!bumps.length) {
+    if (!moves && !slid) pulseLine((stop.members.find((m) => m.line) || {}).line || null);
+    return;
+  }
   // Who to pulse, by identity rather than by node: the wall can replace a
   // card during the glide (a poll repaint, a pick), and the pulse belongs on
   // whatever node stands there when it lands.
@@ -696,6 +705,17 @@ function jumpToNow() {
   if (!moves && !slid) { pulse(); return; }
   window.addEventListener('scrollend', pulse);
   setTimeout(pulse, 750); // a sideways-only glide, or an engine without scrollend (WebKit)
+}
+// The line's pulse, for a tap that moved nothing and pulses no card: the line
+// thickens and its time label on the rail swells, twice, on the card pulse's
+// beat and curve — transform only (the label keeps its own centring
+// translate), and nothing at all under Reduce Motion or Low Power.
+function pulseLine(line) {
+  if (!line || !line.isConnected || !canAnimate(line, ctx)) return;
+  const beat = { duration: 460, iterations: 2, easing: EASE_SURFACE };
+  line.animate([{ transform: 'scaleY(1)' }, { transform: 'scaleY(2)', offset: 0.4 }, { transform: 'scaleY(1)' }], beat);
+  const label = nowLabelOf(line);
+  if (label) label.animate([{ transform: 'translateY(-50%) scale(1)' }, { transform: 'translateY(-50%) scale(1.15)', offset: 0.4 }, { transform: 'translateY(-50%) scale(1)' }], beat);
 }
 
 // The quiet line when the highlighted people have nothing on: "Nothing of

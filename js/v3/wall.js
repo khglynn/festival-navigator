@@ -913,14 +913,23 @@ const ROW_PX = 20;
 const ROW_GAP = 4;
 const ROW_PITCH = ROW_PX + ROW_GAP;
 
+// The hour rail beside a grid, where the now line's time label sits.
+const railOf = (grid) => (grid && grid.parentElement && grid.parentElement.parentElement
+  ? grid.parentElement.parentElement.querySelector('.times-rail') : null);
+// The now line's time label ("7:00 PM" on the rail), for whatever answers
+// with the line (NOW's repeat tap pulses both).
+export function nowLabelOf(line) {
+  const rail = railOf(line && line.closest('.times-grid'));
+  return rail ? rail.querySelector('.now-label') : null;
+}
+
 // Draw (or move) the now line on every timetable grid whose day is today.
 // Each grid carries its geometry as data attributes, so this can run from
 // a one-minute ticker without a repaint. Removes a line whose day has ended.
 export function positionNowLines(root, date = new Date()) {
   for (const grid of root.querySelectorAll('.times-grid[data-iso]')) {
     const clock = festivalClock(date, grid.dataset.tz || null); // the grid knows its festival's zone
-    const rail = grid.parentElement && grid.parentElement.parentElement
-      ? grid.parentElement.parentElement.querySelector('.times-rail') : null;
+    const rail = railOf(grid);
     const isToday = grid.dataset.iso === clock.iso;
     const top = isToday ? nowOffsetPx(clock.minutes, {
       startRow: Number(grid.dataset.startRow), rows: Number(grid.dataset.rows), pitch: ROW_PITCH,
