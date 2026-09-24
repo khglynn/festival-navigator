@@ -85,11 +85,17 @@ The rules as built are MODEL-V4 §3d. This log is how they got there.
 8. **How it works: no row.** Kevin's standing call is that the now line and
    the now mark need no lesson; `NOW` says what it does. If "highlight, then
    NOW" wants teaching, it is half a sentence on row 1 — his copy, his call.
-9. **v87, not `--keep`.** The brief said `--keep`, but v86 shipped while
+9. **The pulse: twice, and at once when you are already there.** Two beats
+   of scale 1.06 (460 ms each) read as "here" where one reads as a flicker;
+   it starts when the glide ends (`scrollend`, or 750 ms where the engine
+   has none — WebKit), and straight away when a tap finds the page already
+   in place, because then the pulse is the whole answer.
+10. **v87, not `--keep`.** The brief said `--keep`, but v86 shipped while
    this was in build (PR #24, merged 2026-09-24) and `--keep` is for an
    unreleased version: new JS under the live version number is exactly the
    shell existing installs never fetch (the v43 lesson the stamp exists
-   for). `main`'s NOW.md already names this build v87.
+   for). `main`'s NOW.md already names this build v87. Later changes on
+   the branch re-stamp with `--keep`, since v87 is not out yet.
 
 ## Checked
 
@@ -98,19 +104,21 @@ The rules as built are MODEL-V4 §3d. This log is how they got there.
   nothing of theirs live; the grid closed; nothing live at all and a lineup
   fest; the ticker alone; past midnight still Saturday's afters). Also run
   under `TZ=Asia/Tokyo`.
-- `tests/browser/now-jump.test.mjs`: 15 — at 390 (touch) and 1280 in
+- `tests/browser/now-jump.test.mjs`: 16 — at 390 (touch) and 1280 in
   Chromium, and at 390 in WebKit where it is installed (it is here; CI
   installs Chromium only, so those three skip there): NOW sits before the
   days, is not a day, has its dot; a tap puts the line between the stage
   strip and the dock; Ross → his afters card whole under the chrome; Nhu →
   the line AND Soulwax's cell in view together, the card crossing the line,
-  its column on screen. Saturday 9 AM: no NOW. 320: no overlap. Portola at
+  its column on screen; a second tap on Ross moves nothing and pulses at
+  once. Reduce Motion: lands at once, no pulse, the dot still. Saturday 9
+  AM: no NOW. 320: no overlap. Portola at
   390 and 320, ACL at 390: full NOW; ACL at 320: dot only; the day you are
   in whole in the row every time. The landings wait for the glide to come
   to rest, not a fixed sleep: a 1.1 s sleep flaked once under the full
-  suite's load; with the wait, 8 copies run in parallel passed 96/96.
-- Whole suites at the v87 stamp: `npm test` 793 (792 pass, 1 skipped), also
-  under `TZ=Asia/Tokyo`; `npm run test:browser` 110/110.
+  suite's load; with the wait, 8 copies run in parallel passed 128/128.
+- Whole suites at the final v87 stamp: `npm test` 793 (792 pass, 1
+  skipped), also under `TZ=Asia/Tokyo`; `npm run test:browser` 111/111.
 - Probed, not asserted: a lineup fest (Seismic 9.0, EDC Orlando) never shows
   NOW; ACL's Sep 29 Late nights (doors-only, no times) has no NOW mark, so no
   NOW — a data fact, not a bug; ACL Oct 10 at 11 PM (grid closed) shows NOW
@@ -123,3 +131,11 @@ The rules as built are MODEL-V4 §3d. This log is how they got there.
 
 - Kevin's look on localhost, then the ship.
 - If NOW reads as clutter in the dock: call 1's fallback.
+- Seen, not changed (desktop, a mouse, NOW clicked from the very top of the
+  page): the jump sticks the rail to the top, which leaves the resting
+  pointer over the wall, so hover grows whatever card is now under it
+  (Skepta, in the test) — and a zoom blooms over the rail by design (z 36
+  over 25), so it can cover NOW until the hand moves. A day tab clicked
+  from the top does the same today. The fix, if wanted, is the zoom's call:
+  a jump the page made (NOW, a day tab) quiets hover until the mouse really
+  moves, the way `touchAt` already quiets a finger's ghost.

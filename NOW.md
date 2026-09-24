@@ -27,7 +27,7 @@ how we got here belongs in DEVLOG.md.
   closes); with a person highlighted it lands on their live pick with the
   now line in view — "where is Ross right now" in two taps. On a 320 dock
   with a long fest name it keeps only its dot. Rules: MODEL-V4 §3d; log:
-  `claude-plans/2026-09-24-now-jump-build.md`. 793 unit tests, 110 browser
+  `claude-plans/2026-09-24-now-jump-build.md`. 793 unit tests, 111 browser
   (Chromium + WebKit locally). Next: Kevin's look on localhost, then ship.
 - What v86 carries, each with its spec or build log in `claude-plans/`:
   1. One line per room (`SAT PORTOLA`, `SAT AFTERS`, `TUE LATE NIGHTS`),
