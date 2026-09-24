@@ -1542,33 +1542,50 @@ export function positionNowMarks(root, date = new Date()) {
 // grid and no NOW mark on a stack (the NOW tab is absent then).
 //   · A highlight (the people filter) → that person's pick that is playing
 //     now, a grid cell or a stack card: the highest level first (must), then
-//     the earliest start. A grid cell brings its line with it: the answer to
+//     the most recent start — "where is Ross right now" is the set that just
+//     began, not a room live since doors or a set half over (review call,
+//     2026-09-24). A grid cell brings its line with it: the answer to
 //     "where is Ross" is the line and his card seen together.
-//   · Otherwise, or no highlighted pick is live → the now line, or with no
-//     line (the grid closed, the afters running) the first NOW-marked card
-//     in the wall's order. The highlight keeps dimming the rest either way.
-// { kind: 'line' | 'card', line, card }.
+//   · Otherwise, or no highlighted pick is live → the now line while the
+//     clock is inside the grid's hours; past them (the grid closed, the
+//     afters running) the first NOW-marked card in the wall's order; before
+//     doors, with nothing marked, the line at the top of the grid. The
+//     highlight keeps dimming the rest either way.
+// { kind: 'line' | 'card', line, card, match }. `match` says whether the
+// landing answers the highlight: true — it is their pick; false — someone is
+// highlighted and nothing of theirs is on, so this is what IS on, not them
+// (the app must not pulse it as though it were: a dimmed card pulsing read
+// as "Ross is here", review 2026-09-24); null — nobody is highlighted.
 export function nowLanding(root, ctx, date = new Date()) {
   const line = root.querySelector('.times-grid .now-line');
   const marks = [...root.querySelectorAll('.venue-grid[data-iso] .card.now')];
   if (!line && !marks.length) return null;
+  const grid = line ? line.closest('.times-grid') : null;
+  const minutes = grid ? festivalClock(date, grid.dataset.tz || null).minutes : null;
+  // The line is the answer only while the clock is inside the grid's own
+  // hours. nowOffsetPx keeps it drawn two rows either side, pinned to the
+  // edge — fine to look at, but from 11:00 to 11:30 PM it sat on the bottom
+  // of a closed Pier 80 while eight afters were on (review, 2026-09-24).
+  // Past the grid, the marks win when there are any; before doors there are
+  // none, and the top of the grid is the honest answer.
+  const onGrid = !!grid && Number(grid.dataset.startRow) * 15 <= minutes
+    && minutes < (Number(grid.dataset.startRow) + Number(grid.dataset.rows)) * 15;
   const people = ctx.filterPeople || [];
   if (people.length) {
     const live = [...marks];
-    const grid = line ? line.closest('.times-grid') : null;
     if (grid) {
-      const { minutes } = festivalClock(date, grid.dataset.tz || null);
       for (const cell of grid.querySelectorAll('.card[data-now-from]')) {
         if (Number(cell.dataset.nowFrom) <= minutes && minutes < Number(cell.dataset.nowTo)) live.push(cell);
       }
     }
     const level = (card) => Math.max(0, ...people.map((p) => (((ctx.picks || {})[card.dataset.artist] || {})[p]) || 0));
     const best = live.filter((c) => !c.classList.contains('dim') && level(c) > 0)
-      .sort((a, b) => level(b) - level(a) || Number(a.dataset.nowFrom) - Number(b.dataset.nowFrom))[0];
-    if (best) return { kind: 'card', card: best, line: grid && grid.contains(best) ? line : null };
+      .sort((a, b) => level(b) - level(a) || Number(b.dataset.nowFrom) - Number(a.dataset.nowFrom))[0];
+    if (best) return { kind: 'card', card: best, line: grid && grid.contains(best) ? line : null, match: true };
   }
-  if (line) return { kind: 'line', line, card: null };
-  return { kind: 'card', card: marks[0], line: null };
+  const match = people.length ? false : null;
+  if (line && (onGrid || !marks.length)) return { kind: 'line', line, card: null, match };
+  return { kind: 'card', card: marks[0], line: null, match };
 }
 
 // One room on a date: its head and body travel together, tagged with the key
@@ -2043,7 +2060,18 @@ export function wireScrollspy(containers, wallRoot) {
   // dock, and the row stayed where it was, so it showed FRI 2 / SAT 3 while
   // the wall was in LATE NIGHTS (real-browser walk, 2026-09-17). This is the
   // one place the active day changes, so it is the one place the row moves.
-  // `block: 'nearest'` because the page is not ours to scroll.
+  // The ROW scrolls, never the page (it is not ours to scroll), to a spot
+  // worked out from layout positions, not rects: the tabs can be mid-slide
+  // while NOW arrives or leaves (a transform, app.js slideTabs), and
+  // scrollIntoView would aim at the transformed box.
+  const centre = (t, behavior) => {
+    const c = t.parentElement;
+    if (!c) return;
+    const x = t.offsetParent === c ? t.offsetLeft : t.offsetLeft - c.offsetLeft - c.clientLeft;
+    const left = Math.max(0, Math.min(x - (c.clientWidth - t.offsetWidth) / 2, c.scrollWidth - c.clientWidth));
+    if (typeof c.scrollTo === 'function') c.scrollTo({ left, behavior });
+    else c.scrollLeft = left;
+  };
   let active = null;
   const setActive = (day) => {
     if (day === active) return;
@@ -2054,7 +2082,7 @@ export function wireScrollspy(containers, wallRoot) {
       t.classList.toggle('active', on);
       if (on) t.setAttribute('aria-current', 'true');
       else t.removeAttribute('aria-current');
-      if (on && t.scrollIntoView) t.scrollIntoView({ block: 'nearest', inline: 'center', behavior: glide ? 'smooth' : 'auto' });
+      if (on) centre(t, glide ? 'smooth' : 'auto');
     });
   };
   // …and the eye is told there is more, on the side there is more ON: a row
@@ -2142,16 +2170,16 @@ export function wireScrollspy(containers, wallRoot) {
   let rows = null;
   if (typeof ResizeObserver === 'function') {
     rows = new ResizeObserver(() => {
-      markOverflow();
-      // Layout positions, not rects: the tabs may be mid-slide (a transform).
+      // A row that changed width (NOW came or went, a rotation) and scrolls
+      // centres the day you are in again, at once — not only when it is
+      // clipped: a glide setActive started was aimed for the old width, and
+      // an instant scroll aborts it (CSSOM View: a new scroll aborts any
+      // smooth one).
       for (const c of list) {
         const on = [...c.querySelectorAll('.day-tab')].find((t) => t.dataset.day === active);
-        if (!on) continue;
-        const x = on.offsetParent === c ? on.offsetLeft : on.offsetLeft - c.offsetLeft - c.clientLeft;
-        if (x < c.scrollLeft || x + on.offsetWidth > c.scrollLeft + c.clientWidth) {
-          c.scrollLeft = Math.max(0, x - (c.clientWidth - on.offsetWidth) / 2);
-        }
+        if (on && c.scrollWidth - c.clientWidth > 1) centre(on, 'auto');
       }
+      markOverflow();
     });
     for (const c of list) rows.observe(c);
   }

@@ -13,12 +13,12 @@ The rules as built are MODEL-V4 §3d. This log is how they got there.
 ## Where things stand
 
 - Branch `feat/now-jump` (worktree agent-a13bbdee821d361d6), on top of
-  `main` after the v86 ship (e907f68, merged in). Not pushed. No
+  `main` after the v86 ship (e907f68, merged in), pushed to origin. No
   production rows made: every crew in the tests and probes is routed.
 - Tests first: `tests/now-jump.test.mjs` (jsdom, the festival clock pinned)
   and `tests/browser/now-jump.test.mjs` (Chromium, `page.clock` pinned to
   Saturday 10:30 PM PDT at Portola) went in red at 5deed4e.
-- The build is v87 (`node scripts/sw-stamp.mjs`, a bump — see call 9).
+- The build is v87 (`node scripts/sw-stamp.mjs`, a bump — see call 10).
 
 ## What it does
 
@@ -33,16 +33,20 @@ The rules as built are MODEL-V4 §3d. This log is how they got there.
 3. A tap (`app.js jumpToNow`, `wall.js nowLanding`):
    - no highlight: the now line, a third of the way down the part of the
      window you can see (under the rail and the pinned stage strip, above
-     the dock) — the day-of open's own landing. No line (Pier 80 closed, the
-     afters running): the first NOW-marked card in wall order;
+     the dock) — the day-of open's own landing — while the clock is inside
+     the grid's hours. Past them (Pier 80 closed, the afters running): the
+     first NOW-marked card in wall order;
    - a highlight: that person's live pick, highest level first (must), then
-     the earliest start. A grid cell brings the line: the line lands a third
+     the most recent start. A grid cell brings the line: the line lands a third
      of the way down, moved only as far as it takes to get the card's top on
-     screen and never so far the line leaves; the grid scrolls sideways to
+     screen and never so far the line leaves — unless the set is too tall
+     for both, when the line keeps its third; the grid scrolls sideways to
      centre the card's column if it is off screen. A stack card lands a
      quarter of the way down, its venue's head above it. The card gives one
-     pulse (scale 1.06, twice, transform only; none under Reduce Motion or
-     Low Power). Nothing of theirs live: as with no highlight.
+     pulse (twice, transform only, at most ~12px of growth; none under
+     Reduce Motion or Low Power). Nothing of theirs live: as with no
+     highlight, no pulse, and one quiet line on the toast — "Nothing of
+     Kat's is on right now — here's what is." 
 
 ## Calls I made
 
@@ -56,9 +60,12 @@ The rules as built are MODEL-V4 §3d. This log is how they got there.
 2. **Grid cells carry their real now window** (`data-now-from/to`: start to
    the published end, or start + 60 when there is none — not the 30-minute
    display floor). The stack cards already did; the grid had only its line.
-3. **Level, then start.** A must (4) beats a 3 anywhere on the wall; a tie
-   goes to the set that started first. Two people highlighted: the best
-   live pick of either.
+3. **Level, then the most recent start.** A must (4) beats a 3 anywhere on
+   the wall; a tie goes to the set that started most recently. The first
+   build gave it to the earliest start; the review pointed out that favours
+   a room marked live from doors to close, or a set half over, and the
+   coordinator made the call: "where is Ross right now" is the set that just
+   began. Two people highlighted: the best live pick of either.
 4. **The line a third of the way down, not at the jump offset.** At the
    offset the line would sit on the stage strip with only the next hour
    below it; a third down shows what is crossing it (playing) and what is
@@ -77,11 +84,38 @@ The rules as built are MODEL-V4 §3d. This log is how they got there.
    days, the day you are in centred, the edges fading. That stays. What
    does not: a long fest name on a 320 dock (an iPhone on Display Zoom) —
    ACL's row would be 27px, narrower than one tab. There NOW keeps only its
-   dot in a faint ring (`fitNowTab`: when the row cannot hold its widest
-   tab plus 24px), and the row gets 51px, the day whole. Measured in the
-   full form every time, so the answer never feeds on itself; re-measured on
-   resize and when a late font lands. The compact dot's hit area takes the
-   gap on its right, not its left (the avatar's reach is there).
+   dot in a faint ring (`fitNowTab`), and the row gets 51px, the day whole.
+   Measured in the full form every time, so the answer never feeds on
+   itself; re-measured on resize and when a late font lands. The compact
+   dot's hit area takes the gap on its right, not its left (the avatar's
+   reach is there).
+   **Revised after the review:** the first threshold (widest tab + 24px)
+   left one lone day at Portola 320 and ACL 375. A neighbour only shows
+   once the room beside the centred day clears the 24px gap between tabs
+   AND the 18px edge fade, so NOW keeps its word while the row holds
+   widest + 2 × (gap + fade), both read from the row's CSS (`--row-fade` is
+   now the token the fade itself uses). The review suggested widest +
+   2 × 18 + 12; that is 24px a side — exactly the gap — so it still leaves
+   Portola 320 with its word and 4px of the other days. Measured (Chromium,
+   touch, NOW live; ACL on Sat Oct 3, a middle day — the first or last day
+   has all the slack on one side). "Other days" is how many px of them sit
+   inside the row, fades included:
+
+   | fest | width | NOW | with the word | with the dot |
+   |---|---|---|---|---|
+   | Portola | 430 | word | 198px row · 3 days whole · 88px of others | 222px · 4 whole · 106px |
+   | Portola | 390 | word | 158px · 1 whole + 2 glimpsed · 68px | 182px · 3 whole · 72px |
+   | Portola | 375 | word | 143px · 1 whole + 2 glimpsed · 59px | 167px · 2 whole · 68px |
+   | Portola | 320 | dot | 88px · 1 whole · 4px | 112px · 1 whole + 2 glimpsed · 28px |
+   | ACL | 430 | word | 137px · 1 whole + 2 glimpsed · 46px | 161px · 70px |
+   | ACL | 390 | dot | 97px · 1 whole · 6px | 121px · 1 whole + 2 glimpsed · 30px |
+   | ACL | 375 | dot | 82px · 1 whole · 0px | 106px · 1 whole + 2 glimpsed · 15px |
+   | ACL | 320 | dot | 27px · today 0% clear | 51px · today 35% clear, no others |
+
+   ACL at 320 is short of room with or without NOW: its dock name ("ACL
+   MUSIC FESTIVAL '26") takes 152px, and even beside the dot the edge fades
+   dim part of the day you are in. The fix for that is the name (a shorter
+   dock label for long names), which is Kevin's call, not NOW's.
 8. **How it works: no row.** Kevin's standing call is that the now line and
    the now mark need no lesson; `NOW` says what it does. If "highlight, then
    NOW" wants teaching, it is half a sentence on row 1 — his copy, his call.
@@ -99,12 +133,14 @@ The rules as built are MODEL-V4 §3d. This log is how they got there.
 
 ## Checked
 
-- `tests/now-jump.test.mjs`: 9 (the line; Ross → Milli Meng in SAT AFTERS;
-  Nhu → Soulwax on the grid with its line; two people and a level tie;
-  nothing of theirs live; the grid closed; nothing live at all and a lineup
-  fest; the ticker alone; past midnight still Saturday's afters). Also run
-  under `TZ=Asia/Tokyo`.
-- `tests/browser/now-jump.test.mjs`: 16 — at 390 (touch) and 1280 in
+- `tests/now-jump.test.mjs`: 11 (the line; Ross → Milli Meng in SAT AFTERS;
+  Nhu → Soulwax on the grid with its line; two people and a level tie to
+  the most recent start; nothing of theirs live, and match true / false /
+  null; the grid closed; just past the close and before doors; nothing
+  live at all and a lineup fest; the ticker alone; past midnight still
+  Saturday's afters). `tests/now-line.test.mjs` gained the line's width
+  contract. Also run under `TZ=Asia/Tokyo`.
+- `tests/browser/now-jump.test.mjs`: 27 — at 390 (touch) and 1280 in
   Chromium, and at 390 in WebKit where it is installed (it is here; CI
   installs Chromium only, so those three skip there): NOW sits before the
   days, is not a day, has its dot; a tap puts the line between the stage
@@ -114,11 +150,20 @@ The rules as built are MODEL-V4 §3d. This log is how they got there.
   once. Reduce Motion: lands at once, no pulse, the dot still. Saturday 9
   AM: no NOW. 320: no overlap. Portola at
   390 and 320, ACL at 390: full NOW; ACL at 320: dot only; the day you are
-  in whole in the row every time. The landings wait for the glide to come
-  to rest, not a fixed sleep: a 1.1 s sleep flaked once under the full
-  suite's load; with the wait, 8 copies run in parallel passed 128/128.
-- Whole suites at the final v87 stamp: `npm test` 793 (792 pass, 1
-  skipped), also under `TZ=Asia/Tokyo`; `npm run test:browser` 111/111.
+  in whole in the row every time (the dock table below replaced these
+  cases). The landings wait for the glide to come to rest, not a fixed
+  sleep: a 1.1 s sleep flaked once under the full suite's load; with the
+  wait, 8 copies run in parallel passed 128/128. Since then: the line
+  across every column (right end at 390 and 430; Kat's third column), the
+  review's six (below), and the dock at 430/390/375/320 for Portola and
+  ACL.
+- Whole suites at the final v87 stamp (bcc05784): `npm test` 796 (795
+  pass, 1 skipped), also under `TZ=Asia/Tokyo`; `npm run test:browser`
+  122/122 with WebKit installed. One full run in four had a single failure
+  in `tests/browser/zoom-chips-burst.test.mjs` ("clear, then re-pick 40ms /
+  80ms later … there is a ×1 chip"): a timing test in the zoom's who-row,
+  not NOW's code; it passed 7 of 7 alone and the next full run was 122/122.
+  It flakes under local load, which this file's 27 browser cases add to.
 - Probed, not asserted: a lineup fest (Seismic 9.0, EDC Orlando) never shows
   NOW; ACL's Sep 29 Late nights (doors-only, no times) has no NOW mark, so no
   NOW — a data fact, not a bug; ACL Oct 10 at 11 PM (grid closed) shows NOW
@@ -160,15 +205,71 @@ did not catch.
 - The other thing Kevin's look found (a desktop hover zoom near the bottom
   covering the dock) is `card-facts.js`, fixed on its own branch.
 
+## The independent review (Opus, 2026-09-24, on 17c6860)
+
+Clean on timezones, the 5 AM rollover, cancelled acts, hidden rooms,
+search, lineup fests, the active-tab state, the ResizeObserver, timers,
+Low Power / Reduce Motion, accessibility and the service worker. Findings,
+each fixed as its own commit with its test:
+
+| # | Finding | Fix | Test |
+|---|---|---|---|
+| 1 | Highlighted and nothing of theirs on: NOW pulsed a dimmed stranger's card (Sat 11:45 PM, Kevin: Parcels) | `nowLanding` returns `match`; no match = no pulse + "Nothing of Kat's is on right now — here's what is." on the app's toast (`yours` for you) | jsdom match true/false/null; browser Kat and Kevin at 11:45 |
+| 2 | 11:00–11:30 PM the line sits pinned to the bottom of a closed grid while the afters are on | the line answers only inside the grid's rows; past them the marks win; before doors the line still does | jsdom 10 and 25 min past the close; 20 min before doors |
+| 3 | Level ties went to the earliest start (a room live since doors beat the set that just began) | ties go to the most recent start; MODEL-V4 §3d says so | jsdom Prospa 9:45 vs Galen 10:30 → Galen |
+| 4 | The dock kept NOW's word with one lone day showing (Portola 320, ACL 375) | NOW keeps its word while the row holds widest + 2 × (gap + fade); `--row-fade` shared by the mask and the rule | browser table cases at 430/390/375/320 |
+| 5 | The pulse could return before removing its scrollend listener (a leak per repaint mid-glide) | cleanup first; re-find the card via `cardFor` and pulse that | browser: card swapped mid-glide, clone pulses, listener count unchanged (CDP) |
+| 6 | A tall pick on a small phone pinned the line above the dock (Despacio, 320x568, 9:15 PM) | chase the card's top only while the line stays within two-thirds; the pulse grows ≤ ~12px | browser: the line at a third, ≤ 13px of growth |
+
+Where I differed from the brief: finding 4's suggested threshold (widest +
+2 × 18 + 12) is 24px a side — exactly the gap between tabs — so it still
+kept NOW's word at Portola 320 with 4px of the other days; counting the
+gap and the fade gives the result the finding asked for (call 7's table).
+Not mine: the desktop mis-pick (a hover zoom over the rail after the jump,
+where a second NOW click picks the card under it) is `card-facts.js`, on
+the zoom agent's branch. Not now: ACL grid headliners with only a start
+time stop being live after 60 minutes — ACL data prep, before Oct 2.
+
+## CI at Linux widths (2026-09-24, after the review round)
+
+CI's browser job (Linux Chromium) was red on every push after 17c6860 for
+the dock cases — I had not watched CI after the first push. Linux draws
+Inter and Anton wider: ACL's row beside NOW's dot was 146 / 106 / 91 / 36px
+at 430 / 390 / 375 / 320 (a Mac: 161 / 121 / 106 / 51), so at 320 the row
+was narrower than the day's own tab, and the test's expected forms were
+Mac numbers.
+
+- **Reproduced locally**, the meter contract's way: every dock glyph 0.7px
+  wider matches CI's rows to the pixel. Each dock case now runs as drawn and
+  at that width; at Linux widths only the contract is asserted (the day you
+  are in whole, the word only with a real glimpse, the fest name on screen),
+  because which form NOW takes near the threshold is the engine's.
+- **The last resort** (`fitNowTab`): where even beside the dot the row is
+  narrower than its widest tab, the row claims that width and the fest name
+  gives way with an ellipsis; undone when NOW leaves. ACL at 305 here, 320 on
+  Linux (and Android).
+- **The row centres from layout positions** (`wireScrollspy`): scrollIntoView
+  aimed at the transformed box while the tabs slide, and the row's
+  ResizeObserver now re-centres whenever its width changes.
+- **A test-harness trap**: an in-page `setInterval` poll under the pinned
+  clock "rested" 26ms into the row's glide, reading as a clipped day at
+  Portola 320 about one run in four. The wait is polled from Node now.
+- Counts: `npm test` 796 (795 pass, 1 skipped), both timezones;
+  `npm run test:browser` 133/133 locally; CI run 35992705918 on bd3e46e —
+  both jobs green.
+- Seen, not NOW's: on open, ACL's dock lights FRI 2 for about a second
+  before it finds SAT 3 — v86 does the same (traced on the shipped tree).
+
 ## Open
 
-- Kevin's look on localhost, then the ship.
+- Kevin's "ship v87" once the PR's CI is green.
 - If NOW reads as clutter in the dock: call 1's fallback.
-- Seen, not changed (desktop, a mouse, NOW clicked from the very top of the
-  page): the jump sticks the rail to the top, which leaves the resting
-  pointer over the wall, so hover grows whatever card is now under it
-  (Skepta, in the test) — and a zoom blooms over the rail by design (z 36
-  over 25), so it can cover NOW until the hand moves. A day tab clicked
-  from the top does the same today. The fix, if wanted, is the zoom's call:
-  a jump the page made (NOW, a day tab) quiets hover until the mouse really
-  moves, the way `touchAt` already quiets a finger's ghost.
+- Desktop, a mouse, NOW clicked from the very top of the page: the jump
+  sticks the rail to the top and leaves the resting pointer over the wall,
+  so hover grows whatever card is now under it, and that zoom blooms over
+  the rail (z 36 over 25), covering NOW; the review showed a second click
+  then picks the card underneath. The fix is the zoom's (`card-facts.js`),
+  on its own branch.
+- ACL at 320: its dock name takes 152px, so even beside NOW's dot the edge
+  fades dim part of the day you are in. A shorter dock label for long
+  names would fix it — Kevin's call, not NOW's.

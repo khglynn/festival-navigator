@@ -6,12 +6,13 @@
 // What NOW lands on is the wall's decision (wall.js nowLanding), read off the
 // wall the person is looking at, with the festival's clock pinned here:
 //   · nothing live (no now line, no NOW mark) → no NOW at all;
-//   · no highlight → the now line, or — no line (Pier 80 closed, the afters
-//     running) — the first NOW-marked card in wall order;
+//   · no highlight → the now line while the clock is inside the grid's
+//     hours, or — past them (Pier 80 closed, the afters running) — the first
+//     NOW-marked card in wall order;
 //   · a highlight → that person's pick that is playing now, grid cell or
-//     stack card: the highest level first (must), then the earliest start;
+//     stack card: the highest level first (must), then the most recent start;
 //     none live → the line (or the first NOW card) as above, the highlight
-//     still dimming the rest.
+//     still dimming the rest, and the answer says it is no match.
 // Where the page scrolls to (the line and the card in view together) is
 // geometry, so it is the browser contract's (tests/browser/now-jump.test.mjs).
 import test from 'node:test';
@@ -102,22 +103,44 @@ test('Nhu highlighted: her MUST on the grid beats her afters pick — and it lan
   root.remove();
 });
 
-test('two people highlighted: the best live pick of either; equal levels go to whoever started first', () => {
+test('two people highlighted: the best live pick of either; equal levels go to the set that started most recently', () => {
   const { root, ctx } = render(SAT_1030, ['Ross', 'Nhu']);
   assert.equal(artistOf(nowLanding(root, ctx, SAT_1030)), 'Soulwax', 'Nhu’s must outranks Ross’s 3');
   root.remove();
-  // Level ties: Prospa (Nhu 2, 9:45 PM) against Galen (Nhu 2, ~10:30 PM).
+  // Level ties: Prospa (Nhu 2, 9:45 PM, 45 minutes in) against Galen (Nhu 2,
+  // ~10:30 PM, just on). "Where is Nhu right now" is the set that just began.
   const { root: r2, ctx: c2 } = render(SAT_1030, ['Nhu'], { picks: { Prospa: { Nhu: 2 }, Galen: { Nhu: 2 } } });
-  assert.equal(artistOf(nowLanding(r2, c2, SAT_1030)), 'Prospa', 'the one that started first');
+  assert.equal(artistOf(nowLanding(r2, c2, SAT_1030)), 'Galen', 'the one that started most recently');
   r2.remove();
 });
 
-test('a highlight with nothing live lands on the line, the dim rule untouched', () => {
+test('a highlight with nothing live lands on the line, the dim rule untouched — and says it is no match', () => {
   const { root, ctx } = render(SAT_1030, ['Kevin']); // Kevin picked nothing
   const l = nowLanding(root, ctx, SAT_1030);
   assert.equal(l.kind, 'line');
+  assert.equal(l.match, false, 'the line is what is on, not Kevin');
   assert.ok(root.querySelector('.card.dim'), 'everything Kevin did not pick is still dimmed');
   root.remove();
+});
+
+// The review's repro (2026-09-24): Sat 11:45 PM, Kevin highlighted with no
+// picks — NOW landed on Parcels, dimmed, and pulsed it: "here", on the wrong
+// answer. The landing may stay (it is what is on); the answer must say it is
+// not a match, so the app neither pulses it nor lets it pass for Kevin's.
+test('no match is said out loud: a highlight whose people have nothing on gets match:false; a real answer true; nobody null', () => {
+  const at = pt('2026-09-26T23:45:00');
+  const { root, ctx } = render(at, ['Kevin']);
+  const l = nowLanding(root, ctx, at);
+  assert.equal(l.kind, 'card');
+  assert.equal(l.match, false);
+  assert.ok(l.card.classList.contains('dim'), 'the card it lands on is not theirs — dimmed, as the highlight says');
+  root.remove();
+  const { root: r2, ctx: c2 } = render(SAT_1030, ['Ross']);
+  assert.equal(nowLanding(r2, c2, SAT_1030).match, true, 'Milli Meng is Ross’s');
+  r2.remove();
+  const { root: r3, ctx: c3 } = render(SAT_1030);
+  assert.equal(nowLanding(r3, c3, SAT_1030).match, null, 'nobody asked about anyone');
+  r3.remove();
 });
 
 test('no line (the grid has closed), the afters running: NOW lands on the first NOW-marked card in wall order', () => {
@@ -127,6 +150,35 @@ test('no line (the grid has closed), the afters running: NOW lands on the first 
   const l = nowLanding(root, ctx, at);
   assert.equal(l.kind, 'card');
   assert.equal(l.card, root.querySelector('.venue-grid .card.now'), 'the first NOW card in the wall’s order');
+  root.remove();
+});
+
+// The line stays drawn two rows past the grid's close, pinned to its bottom
+// (nowOffsetPx) — but from 11:00 to 11:30 PM that is the bottom of a closed
+// Pier 80 while the afters are on (review, 2026-09-24). The line answers only
+// inside the grid's own hours; before doors, with nothing marked, it still
+// does (the top of the grid: "doors soon").
+test('just after the grid closes, the line is still drawn but the afters are the answer; before doors the line is', () => {
+  const probe = render(SAT_1030);
+  const g = probe.root.querySelector('.times-grid[data-iso="2026-09-26"]');
+  const close = (Number(g.dataset.startRow) + Number(g.dataset.rows)) * 15;
+  const doors = Number(g.dataset.startRow) * 15;
+  probe.root.remove();
+  const clock = (min) => pt(`2026-09-26T${String(Math.floor(min / 60)).padStart(2, '0')}:${String(min % 60).padStart(2, '0')}:00`);
+  for (const after of [10, 25]) {
+    const at = clock(close + after);
+    const { root, ctx } = render(at);
+    assert.ok(root.querySelector('.times-grid[data-iso="2026-09-26"] .now-line'), `${after} min past close the line is still drawn`);
+    const l = nowLanding(root, ctx, at);
+    assert.equal(l.kind, 'card', `${after} min past close: a NOW card, not the bottom of the grid`);
+    assert.equal(l.card, root.querySelector('.venue-grid[data-iso] .card.now'), 'the first in the wall’s order');
+    root.remove();
+  }
+  const early = clock(doors - 20);
+  const { root, ctx } = render(early);
+  assert.ok(root.querySelector('.now-line'), 'twenty minutes before doors the line is drawn');
+  assert.equal(root.querySelectorAll('.venue-grid .card.now').length, 0, 'and nothing is marked');
+  assert.equal(nowLanding(root, ctx, early).kind, 'line', 'so the top of the grid is the answer');
   root.remove();
 });
 

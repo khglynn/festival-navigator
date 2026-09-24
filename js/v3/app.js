@@ -454,20 +454,41 @@ function paintNowTabs(date = ctx.now || new Date()) {
   const live = !!nowLanding($('wall-root'), ctx, date);
   for (const id of NOW_TABS) { showNowTab($(id), live); fitNowTab($(id)); }
 }
-// The days keep room for the day you are in. On a phone the dock's days row
-// already scrolls (Portola's four overflow a 390 dock by a few px), and NOW
-// narrows it further — fine while the row still holds its widest tab and a
-// glimpse of a neighbour. Where it cannot (a long fest name at 320, i.e. an
-// iPhone on Display Zoom: ACL's row would be 27px), NOW keeps only its live
-// dot — still a button, still named "Jump to what is playing now". Measured
-// in the full form every time, so the answer never feeds on itself.
+// The days keep room for the day you are in AND a glimpse of the days either
+// side — the glimpse is what says the row scrolls. On a phone the dock's days
+// row already scrolls (Portola's four overflow a 390 dock by a few px), and
+// NOW narrows it further. With the day you are in centred, a neighbour shows
+// only once the room beside it clears the gap between tabs AND the edge fade
+// (the first cut counted neither and kept NOW's word with one lone day
+// showing: Portola at 320, ACL at 375 — review, 2026-09-24). Where the row is
+// shorter than that, NOW keeps only its live dot — still a button, still named
+// "Jump to what is playing now". Gap and fade are read from the row's own CSS
+// (`--row-fade` is the number the fade itself uses). Measured in the full form
+// every time, so the answer never feeds on itself.
+//
+// And the last resort: where even beside the dot the row is narrower than one
+// day (ACL's long name at 320 wherever Inter draws wide — Linux CI measured a
+// 36px row for a ~40px tab, 2026-09-24; Android draws like Linux), the row
+// claims its widest tab and the fest name gives way with an ellipsis. The
+// day you are in is never what NOW squeezes out.
 function fitNowTab(tab) {
-  if (!tab || tab.hidden) return;
-  tab.classList.remove('compact');
+  if (!tab) return;
+  const bar = tab.parentElement;
   const row = tab.nextElementSibling;
-  if (!row || !row.children.length) return;
+  tab.classList.remove('compact');
+  if (bar) bar.classList.remove('squeezed');
+  if (row) row.style.minWidth = '';
+  if (tab.hidden || !row || !row.children.length) return;
+  const css = getComputedStyle(row);
+  const gap = parseFloat(css.columnGap) || 0;
+  const fade = parseFloat(css.getPropertyValue('--row-fade')) || 0;
   const widest = Math.max(...[...row.children].map((t) => t.offsetWidth));
-  if (row.clientWidth < Math.min(row.scrollWidth, widest + 24)) tab.classList.add('compact');
+  if (row.clientWidth >= Math.min(row.scrollWidth, widest + 2 * (gap + fade))) return;
+  tab.classList.add('compact');
+  if (row.clientWidth < Math.min(row.scrollWidth, widest) && bar) {
+    row.style.minWidth = `${widest}px`;
+    bar.classList.add('squeezed');
+  }
 }
 // The day tabs beside a NOW that came or went slide from where they were (a
 // FLIP: transform only, the layout is already done). Tab by tab, not the
@@ -505,6 +526,7 @@ function showNowTab(tab, on) {
     delete tab.dataset.leaving;
     const before = tabLefts(row);
     tab.hidden = true;
+    fitNowTab(tab); // gone: whatever room it took is given back
     if (tab.getAnimations) tab.getAnimations().forEach((a) => a.cancel());
     slideTabs(before);
   };
@@ -541,11 +563,15 @@ function seenBand(inGrid) {
 //   · a card in a stack — its NOW mark is its line: the card a quarter of the
 //     way down under the chrome, its venue's head above it.
 // A card it lands on gives one small pulse (transform only; none under
-// Reduce Motion or Low Power).
+// Reduce Motion or Low Power) — but only a card that answers: with someone
+// highlighted and nothing of theirs on, NOW lands where it would for nobody
+// and says so in one quiet line instead of pulsing a stranger's card
+// (review, 2026-09-24: Parcels pulsing, dimmed, read as "Kat is here").
 function jumpToNow() {
   const root = $('wall-root');
   const landing = nowLanding(root, ctx, ctx.now || new Date());
   if (!landing) { paintNowTabs(); return; }
+  if (landing.match === false) showToast($('toast-root'), nothingOnFor(ctx.filterPeople || []));
   const smooth = canAnimate(root, ctx);
   const behavior = smooth ? 'smooth' : 'auto';
   const pad = 8;
@@ -558,7 +584,13 @@ function jumpToNow() {
     dy = lineTop - (band.top + (band.bottom - band.top) / 3);
     if (card) {
       const cardTop = card.getBoundingClientRect().top;
-      if (cardTop - dy < band.top + pad) dy = cardTop - (band.top + pad);
+      // The card's top on screen too — when the two fit: the line no lower
+      // than two-thirds of the way down. A set too tall for that (Despacio's
+      // hours on a 320x568 phone) keeps the line a third of the way down, the
+      // rule everywhere else: the strip names its stage and the pulse marks
+      // it. Bringing its top in instead pinned the line above the dock with
+      // the top still off screen (review, 2026-09-24).
+      if (lineTop - cardTop <= (band.bottom - band.top) * (2 / 3) && cardTop - dy < band.top + pad) dy = cardTop - (band.top + pad);
       if (lineTop - dy > band.bottom - pad) dy = lineTop - (band.bottom - pad);
       const scroller = card.closest('.times-scroll');
       if (scroller) {
@@ -581,19 +613,49 @@ function jumpToNow() {
   const top = Math.min(maxY, Math.max(0, window.scrollY + dy));
   const moves = Math.abs(top - window.scrollY) >= 1;
   if (moves) window.scrollTo({ top, behavior });
-  if (!card || !canAnimate(card, ctx)) return;
+  if (!card || landing.match === false || !canAnimate(card, ctx)) return;
+  // Who to pulse, by identity rather than by node: the wall can replace the
+  // card during the glide (a poll repaint, a pick), and the pulse belongs on
+  // whatever node stands there when it lands.
+  const who = { artist: card.dataset.artist, occ: card.dataset.occ || '', room: roomOf(card) };
   let pulsed = false;
   const pulse = () => {
-    if (pulsed || !card.isConnected) return;
+    if (pulsed) return;
+    // Clean up first, whatever happens next: a return before this line left a
+    // scrollend listener (and the detached card it closed over) on the window
+    // for the life of the page (review, 2026-09-24).
     pulsed = true;
     window.removeEventListener('scrollend', pulse);
-    card.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.06)', offset: 0.4 }, { transform: 'scale(1)' }],
+    let target = card;
+    if (!target.isConnected) {
+      let occ = null;
+      try { occ = who.occ ? JSON.parse(who.occ) : null; } catch { occ = null; }
+      target = cardFor(root, who.artist, occ, { room: who.room });
+    }
+    if (!target || !canAnimate(target, ctx)) return;
+    // 6% of an ordinary card is a few pixels; 6% of a six-hour slab is forty.
+    // The pulse grows the card by at most ~12px on its longer side.
+    const size = target.getBoundingClientRect();
+    const grow = Math.min(0.06, 12 / Math.max(1, size.width, size.height));
+    target.animate([{ transform: 'scale(1)' }, { transform: `scale(${(1 + grow).toFixed(4)})`, offset: 0.4 }, { transform: 'scale(1)' }],
       { duration: 460, iterations: 2, easing: EASE_SURFACE });
   };
   // Already there (a second tap): the pulse is the whole answer, at once.
   if (!moves && !slid) { pulse(); return; }
   window.addEventListener('scrollend', pulse);
   setTimeout(pulse, 750); // a sideways-only glide, or an engine without scrollend (WebKit)
+}
+
+// The quiet line when the highlighted people have nothing on: "Nothing of
+// Kat’s is on right now — here’s what is." Yours, one name, two names, or
+// "theirs" past that; the landing below it is what is on.
+function nothingOnFor(people, meName = ctx.meName) {
+  let whose;
+  if (people.length === 1 && people[0] === meName) whose = 'yours';
+  else if (people.length === 1) whose = `${people[0]}’s`;
+  else if (people.length === 2) whose = `${people[0]}’s or ${people[1]}’s`;
+  else whose = 'theirs';
+  return `Nothing of ${whose} is on right now — here’s what is.`;
 }
 
 // Where a day tab lands on the wall, in the wall's own words (DAY_ANCHOR):

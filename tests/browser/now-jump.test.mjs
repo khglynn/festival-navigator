@@ -30,18 +30,44 @@ const skipWebkit = webkit ? false : 'Playwright WebKit is not installed (npx pla
 const SAT_1030 = new Date('2026-09-26T22:30:00-07:00');
 const SAT_9AM = new Date('2026-09-26T09:00:00-07:00');
 // Kat is only at the Warehouse (Prospa): the third column, off a phone's
-// screen until the grid scrolls to it.
-const SELECTIONS = { 'Milli Meng': { Ross: 3 }, Galen: { Ross: 1, Nhu: 2 }, Soulwax: { Nhu: 4 }, Prospa: { Nhu: 2, Kat: 3 } };
+// screen until the grid scrolls to it. Ross's early evening is Despacio — a
+// set hours long, over by 9:45, so it never competes at 10:30.
+const SELECTIONS = { 'Milli Meng': { Ross: 3 }, Galen: { Ross: 1, Nhu: 2 }, Soulwax: { Nhu: 4 }, Prospa: { Nhu: 2, Kat: 3 }, Despacio: { Ross: 3 } };
 
-async function openApp({ width = 390, height = 844, touch = true, now = SAT_1030, fest = 'portola-2026', engine = browser } = {}) {
+async function openApp({ width = 390, height = 844, touch = true, now = SAT_1030, fest = 'portola-2026', engine = browser, wide = null } = {}) {
   const ctx = await engine.newContext({ viewport: { width, height }, hasTouch: touch, serviceWorkers: 'block' });
   const TOKEN = 'nowjumpcontract_0123456789'; // a made-up crew, never a real link
+  // `wide`: every glyph in the dock drawn this much wider than
+  // this engine draws it — a stand-in for an engine whose Inter and Anton
+  // are wider (CI's Linux Chromium put ACL's dock row 15px narrower than a
+  // Mac at every width, 2026-09-24; Android draws like Linux). The meter
+  // contract's trick, aimed at the dock.
+  if (wide) {
+    await ctx.addInitScript((w) => {
+      // Added to what each face already carries (the fest name's .04em).
+      const css = `.dock .day-tab, .dock .now-tab .word { letter-spacing: ${w} !important; }
+        .dock .fest-name { letter-spacing: calc(.04em + ${w}) !important; }`;
+      const add = () => { const st = document.createElement('style'); st.textContent = css; document.head.appendChild(st); };
+      if (document.head) add(); else document.addEventListener('DOMContentLoaded', add);
+    }, wide);
+  }
   await ctx.addInitScript(([t, f]) => {
     navigator.serviceWorker.register = () => Promise.resolve({ update: () => Promise.resolve() });
     localStorage.setItem('fn_crews_v3', JSON.stringify([{ token: t, name: 'Now' }]));
     localStorage.setItem(`fn_me_v3_${t}`, 'Kevin');
     localStorage.setItem(`fn_crew_fest_v3_${t}`, f);
     localStorage.setItem('fn_coach_v1', '1');
+    // Every scroll the app asks of the dock's days row, for a failure message.
+    window.__rowLog = [];
+    const scrollToWas = Element.prototype.scrollTo;
+    Element.prototype.scrollTo = function (...args) {
+      if (this.id === 'dock-days') window.__rowLog.push([Math.round(performance.now()), JSON.stringify(args[0]), this.scrollLeft, this.clientWidth, (this.querySelector('.active') || {}).textContent, (new Error().stack.split('\n')[3] || '').trim().replace(/https?:\/\/[^/]+/, '')]);
+      return scrollToWas.apply(this, args);
+    };
+    // NOW's pulse, told apart from every other animation a card runs (a
+    // picked card's aura, an arrival): a running scale on the card itself.
+    window.__pulsing = (c) => c.getAnimations().some((a) => a.playState === 'running' && a.effect
+      && a.effect.target === c && a.effect.getKeyframes().some((k) => /scale\(/.test(k.transform || '')));
   }, [TOKEN, fest]);
   const doc = {
     v: 4, meta: { name: 'Now', inviteFestId: fest }, spotify: {}, affinity: {},
@@ -166,7 +192,7 @@ for (const [width, height, touch, engine, name] of [[390, 844, true, browser, ''
       await sleep(80);
       const again = await page.evaluate(() => {
         const c = [...document.querySelectorAll('#wall-root .room[data-room="Afters"] .card')].find((x) => x.dataset.artist === 'Milli Meng');
-        return { y: scrollY, pulsing: c.getAnimations().some((a) => a.playState === 'running') };
+        return { y: scrollY, pulsing: window.__pulsing(c) };
       });
       assert.ok(Math.abs(again.y - y) < 1, `a second tap does not move the page: ${y} -> ${again.y}`);
       assert.ok(again.pulsing, 'and the card pulses straight away — the pulse is the whole answer');
@@ -235,6 +261,102 @@ test('390: Kat highlighted — NOW scrolls to her pick in the third column, and 
   } finally { await ctx.close(); }
 });
 
+// Honest with a highlight (review, 2026-09-24): Kat's only pick (Prospa) is
+// long over at 11:45 PM. NOW lands where it would for nobody — the first
+// NOW card — pulses nothing, and says so in one quiet line on the app's
+// toast. The same for you: "Nothing of yours".
+for (const [who, says] of [['Kat', 'Nothing of Kat’s is on right now — here’s what is.'], ['Kevin', 'Nothing of yours is on right now — here’s what is.']]) {
+  test(`${who} highlighted, nothing of theirs on (Sat 11:45 PM): no pulse, the quiet line, the landing anyone would get`, { skip }, async () => {
+    const { ctx, page, door } = await openApp({ now: new Date('2026-09-26T23:45:00-07:00') });
+    try {
+      await highlight(page, who);
+      await page.evaluate(() => window.scrollTo(0, 0));
+      await sleep(150);
+      await page.locator(`#${door}-now`).click();
+      await sleep(150);
+      await settled(page);
+      await sleep(900); // past the 750 ms pulse fallback
+      const r = await page.evaluate(() => {
+        const first = document.querySelector('#wall-root .venue-grid[data-iso] .card.now');
+        const b = first.getBoundingClientRect();
+        return {
+          toast: (document.querySelector('#toast-root') || {}).textContent || '',
+          pulsing: [...document.querySelectorAll('#wall-root .card')].filter((c) => window.__pulsing(c)).map((c) => c.dataset.artist),
+          first: first.dataset.artist, top: b.top, bottom: b.bottom, dockTop: document.getElementById('dock').getBoundingClientRect().top,
+        };
+      });
+      assert.equal(r.toast.trim(), says);
+      assert.deepEqual(r.pulsing, [], 'nothing pulses — no stranger’s card passes for theirs');
+      assert.ok(r.top >= 0 && r.bottom <= r.dockTop, `it lands on what IS on, the first NOW card (${r.first}): ${JSON.stringify(r)}`);
+    } finally { await ctx.close(); }
+  });
+}
+
+// The wall can replace the landing card mid-glide (a poll repaint, a pick).
+// The pulse used to return early on the detached node — before it removed its
+// scrollend listener, which then lived on the window for the life of the page
+// with the old card in its closure (review, 2026-09-24). Now it cleans up
+// first and pulses whatever node stands there when the glide lands.
+test('390: the card is replaced mid-glide — the fresh one pulses, and no scrollend listener is left behind', { skip }, async () => {
+  const { ctx, page, door } = await openApp();
+  try {
+    await highlight(page, 'Ross');
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await sleep(150);
+    const cdp = await ctx.newCDPSession(page);
+    const { result } = await cdp.send('Runtime.evaluate', { expression: 'window' });
+    const scrollends = async () => (await cdp.send('DOMDebugger.getEventListeners', { objectId: result.objectId }))
+      .listeners.filter((l) => l.type === 'scrollend').length;
+    const before = await scrollends();
+    await page.locator(`#${door}-now`).click();
+    const swapped = await page.evaluate(() => {
+      const old = [...document.querySelectorAll('#wall-root .room[data-room="Afters"] .card')].find((c) => c.dataset.artist === 'Milli Meng');
+      const fresh = old.cloneNode(true);
+      fresh.id = 'swapped-in';
+      old.replaceWith(fresh);
+      return !old.isConnected && document.getElementById('swapped-in').isConnected;
+    });
+    assert.ok(swapped, 'the landing card was replaced while the page glided');
+    await sleep(150);
+    await settled(page);
+    const pulsing = await page.evaluate(() => window.__pulsing(document.getElementById('swapped-in')));
+    assert.ok(pulsing, 'the node that stands there when the glide lands is the one that pulses');
+    await sleep(900);
+    assert.equal(await scrollends(), before, 'no scrollend listener outlives the landing');
+  } finally { await ctx.close(); }
+});
+
+// A tall pick on a small phone (review, 2026-09-24): at 9:15 PM Ross is at
+// Despacio, a set hours long. Its top and the line cannot both fit a 320x568
+// band, and the old landing pinned the line to the bottom of the band — just
+// above the dock — with the card's top still off screen. The line keeps its
+// third of the way down (the rule everywhere else: the strip names the
+// stage), and the pulse on a card that tall is scaled down to a few pixels.
+test('320x568, Ross at Despacio (a tall set): the line stays a third of the way down, and the pulse is small', { skip }, async () => {
+  const { ctx, page, door } = await openApp({ width: 320, height: 568, now: new Date('2026-09-26T21:15:00-07:00') });
+  try {
+    await highlight(page, 'Ross');
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await sleep(150);
+    await tapNow(page, door);
+    const v = await view(page, 'Despacio', 'cell');
+    assert.ok(v.card && v.card.cell, 'Despacio, on the grid');
+    const band = v.dockTop - v.stripBottom;
+    assert.ok(v.card.top < v.stripBottom, `a card taller than the band can show with its line: ${JSON.stringify(v)}`);
+    const at = (v.line.top - v.stripBottom) / band;
+    assert.ok(at > 0.2 && at < 0.45, `the line a third of the way down (${at.toFixed(2)}), not pinned above the dock: ${JSON.stringify(v)}`);
+    assert.ok(v.card.bottom >= v.line.top && v.card.top <= v.line.top, 'and the card crosses it');
+    const grow = await page.evaluate(() => {
+      const c = [...document.querySelectorAll('#wall-root .card.cell')].find((x) => x.dataset.artist === 'Despacio');
+      const a = c.getAnimations().find((x) => x.effect && x.effect.getKeyframes().some((k) => /scale\(/.test(k.transform || '')));
+      const h = c.getBoundingClientRect().height;
+      return a ? { scale: Math.max(...a.effect.getKeyframes().map((k) => parseFloat((/scale\(([\d.]+)\)/.exec(k.transform || '') || [0, 1])[1]))), h } : null;
+    });
+    assert.ok(grow, 'it pulses');
+    assert.ok((grow.scale - 1) * grow.h <= 13, `a few pixels of growth on a ${Math.round(grow.h)}px card, not ${Math.round((grow.scale - 1) * grow.h)}px`);
+  } finally { await ctx.close(); }
+});
+
 test('Reduce Motion: NOW lands at once and nothing pulses; the live dot is still', { skip }, async () => {
   const { ctx, page, door } = await openApp();
   try {
@@ -249,11 +371,36 @@ test('Reduce Motion: NOW lands at once and nothing pulses; the live dot is still
       const b = c.getBoundingClientRect();
       const dot = getComputedStyle(document.querySelector(`#${d}-now .live`));
       return { y: scrollY, top: b.top, bottom: b.bottom, dockTop: document.getElementById('dock').getBoundingClientRect().top,
-        pulsing: c.getAnimations().length > 0, dotAnimation: dot.animationName };
+        pulsing: window.__pulsing(c), dotAnimation: dot.animationName };
     }, door);
     assert.ok(r.y > 0 && r.top >= 0 && r.bottom <= r.dockTop, `landed already, no glide: ${JSON.stringify(r)}`);
     assert.equal(r.pulsing, false, 'no pulse');
     assert.equal(r.dotAnimation, 'none', 'the dot does not breathe');
+  } finally { await ctx.close(); }
+});
+
+// The squeeze is NOW's to undo: when the last set ends and NOW leaves, the
+// days give back the room they claimed and the fest name is whole again.
+test('ACL at 305: NOW squeezes the fest name while live, and gives the room back when it leaves', { skip }, async () => {
+  const { ctx, page } = await openApp({ fest: 'acl-2026', width: 305, height: 640, now: new Date('2026-10-03T20:00:00-05:00') });
+  try {
+    await sleep(600);
+    const state = () => page.evaluate(() => {
+      const f = document.getElementById('dock-fest-name');
+      return {
+        now: !document.getElementById('dock-now').hidden, squeezed: document.getElementById('dock').classList.contains('squeezed'),
+        minWidth: document.getElementById('dock-days').style.minWidth, cut: f.scrollWidth > f.clientWidth + 1,
+      };
+    });
+    const live = await state();
+    assert.ok(live.now && live.squeezed && live.cut, `live: squeezed, the name cut: ${JSON.stringify(live)}`);
+    // Next morning, nothing on; the app re-reads the clock when the page is
+    // shown again (the minute ticker's other door).
+    await page.clock.setFixedTime(new Date('2026-10-04T09:00:00-05:00'));
+    await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+    await sleep(700); // NOW's quick exit
+    const after = await state();
+    assert.deepEqual(after, { now: false, squeezed: false, minWidth: '', cut: false }, 'NOW gone, the room given back, the name whole');
   } finally { await ctx.close(); }
 });
 
@@ -278,11 +425,14 @@ test('320: NOW fits the dock beside the days and the fest name, nothing overlapp
   } finally { await ctx.close(); }
 });
 
-// The dock's days keep the day you are in. They already scroll on a phone
-// (Portola's four overflow a 390 dock by a few px), and NOW narrows them —
-// fine while the row holds its widest tab and a glimpse of the next. A long
-// fest name on a 320 dock (an iPhone on Display Zoom) cannot: ACL's row
-// would be 27px, so there NOW keeps only its dot, and the day stays whole.
+// The dock's days keep the day you are in AND a glimpse of the days either
+// side — the glimpse is what says the row scrolls. They already scroll on a
+// phone (Portola's four overflow a 390 dock by a few px), and NOW narrows
+// them. A neighbour shows only once the room beside the centred day clears
+// the gap between tabs and the edge fade; short of that NOW keeps only its
+// dot (review, 2026-09-24: the first cut left one lone day at Portola 320
+// and ACL 375). ACL is measured on Saturday Oct 3, a day in the middle of
+// its row — the first or last day has all the slack on one side.
 const dockFit = (page) => page.evaluate(() => {
   const now = document.getElementById('dock-now');
   const row = document.getElementById('dock-days');
@@ -293,26 +443,77 @@ const dockFit = (page) => page.evaluate(() => {
     dot: !!now.querySelector('.live') && getComputedStyle(now.querySelector('.live')).display !== 'none',
     rowW: Math.round(r.width), active: on.dataset.day, activeWhole: a.left >= r.left - 1 && a.right <= r.right + 1,
     overflowing: row.classList.contains('overflowing'), clear: n.right <= r.left,
+    squeezed: document.getElementById('dock').classList.contains('squeezed'),
+    festRight: document.getElementById('dock-fest-wrap').getBoundingClientRect().right, innerWidth,
+    festCut: (() => { const f = document.getElementById('dock-fest-name'); return f.scrollWidth > f.clientWidth + 1; })(),
+    scrollLeft: row.scrollLeft, rowLog: window.__rowLog, at: Math.round(performance.now()),
+    // Pixels of the other days inside the row, the fades included.
+    others: Math.round([...row.children].filter((t) => t !== on).reduce((sum, t) => {
+      const b = t.getBoundingClientRect();
+      return sum + Math.max(0, Math.min(b.right, r.right) - Math.max(b.left, r.left));
+    }, 0)),
   };
 });
-for (const [fest, width, height, now, compact] of [
-  ['portola-2026', 390, 844, SAT_1030, false],
-  ['portola-2026', 320, 640, SAT_1030, false],
-  ['acl-2026', 390, 844, new Date('2026-10-02T20:00:00-05:00'), false],
-  ['acl-2026', 320, 640, new Date('2026-10-02T20:00:00-05:00'), true],
-]) {
-  test(`${fest} at ${width}: NOW ${compact ? 'keeps only its dot' : 'keeps its word'}, and the day you are in stays whole`, { skip }, async () => {
-    const { ctx, page } = await openApp({ fest, width, height, now });
+const ACL_SAT = new Date('2026-10-03T20:00:00-05:00');
+// What NOW does at each width is asserted where the margin is wide; within a
+// few px of the threshold (Portola 375, ACL 430) the engine's glyph widths
+// decide — Linux draws Inter wider than a Mac — so there the CONTRACT is what
+// is checked: NOW keeps its word only with a real glimpse of the other days.
+for (const [fest, width, height, now, expect] of [
+  ['portola-2026', 430, 932, SAT_1030, 'word'],
+  ['portola-2026', 390, 844, SAT_1030, 'word'],
+  ['portola-2026', 375, 667, SAT_1030, 'either'],
+  ['portola-2026', 320, 640, SAT_1030, 'dot'],
+  ['acl-2026', 430, 932, ACL_SAT, 'either'],
+  ['acl-2026', 390, 844, ACL_SAT, 'dot'],
+  ['acl-2026', 375, 667, ACL_SAT, 'dot'],
+  // ACL's long fest name leaves 51px even beside the dot here (Linux draws
+  // Inter wider: 36px in CI, narrower than the day's tab): the day you are in
+  // stays whole, and there is no room for more. At 305 this engine is where
+  // CI is at 320 — the row claims its widest tab and the fest name gives way.
+  ['acl-2026', 320, 640, ACL_SAT, 'dot'],
+  ['acl-2026', 305, 640, ACL_SAT, 'dot'],
+]) for (const wide of [null, '0.7px']) {
+  // Each case twice: as this engine draws, and with every dock glyph 0.7px
+  // wider — which reproduces CI's Linux rows to the pixel (ACL beside the
+  // dot: 146 / 106 / 91 / 36 at 430 / 390 / 375 / 320). With wider glyphs
+  // only the contract is asserted: which form NOW takes is the engine's.
+  const want = wide ? 'either' : expect;
+  const says = { word: 'keeps its word', dot: 'keeps only its dot', either: 'keeps its word only with a real glimpse' }[want];
+  test(`${fest} at ${width}${wide ? ', glyphs wider (as Linux draws them)' : ''}: NOW ${says}, and the day you are in stays whole`, { skip }, async () => {
+    const { ctx, page } = await openApp({ fest, width, height, now, wide });
     try {
-      await sleep(400); // the day-of open's glide, and the row's scroll to the day it lit
+      // The day-of open lands, the scrollspy lights today, the row glides to
+      // centre it: wait for today to be lit and the row to rest. (On ACL the
+      // dock lights FRI 2 for about a second after the open before it finds
+      // SAT 3 — v86 does the same; flagged, not NOW's.)
+      // Polled from here, in real time: the page's own timers run on the
+      // pinned clock, which let an in-page poll "rest" 26ms into the glide.
+      const today = fest === 'acl-2026' ? 'Saturday|W1' : 'Saturday';
+      const read = () => page.evaluate(() => {
+        const row = document.getElementById('dock-days');
+        return `${(row.querySelector('.active') || {}).dataset?.day}|${row.scrollLeft}|${row.clientWidth}`;
+      });
+      let last = await read(), still = 0;
+      for (let i = 0; i < 80 && still < 4; i++) {
+        await sleep(100);
+        const cur = await read();
+        still = cur === last && cur.startsWith(`${today}|`) ? still + 1 : 0;
+        last = cur;
+      }
       const f = await dockFit(page);
       assert.ok(f.shown, 'something is live');
-      assert.equal(f.compact, compact, JSON.stringify(f));
+      if (want !== 'either') assert.equal(f.compact, want === 'dot', JSON.stringify(f));
       assert.ok(f.dot, 'the live dot, either way');
       assert.equal(f.label, 'Jump to what is playing now');
       assert.ok(f.clear, 'NOW never sits over the days');
       assert.ok(f.activeWhole, `the day you are in is whole in the row: ${JSON.stringify(f)}`);
       assert.ok(f.overflowing, 'a row that scrolls says so at its edges (re-read when NOW took its room)');
+      if (!f.compact) assert.ok(f.others >= 12, `the word only with a real glimpse of the other days: ${JSON.stringify(f)}`);
+      assert.ok(f.festRight <= f.innerWidth + 0.5, `the fest name stays on screen: ${JSON.stringify(f)}`);
+      if (f.squeezed) assert.ok(f.festCut, 'squeezed: the fest name is what gives way, with its ellipsis');
+      else assert.equal(f.festCut, false, 'otherwise the fest name is whole');
+      if (width === 305) assert.ok(f.squeezed, 'at 305 the days need the fest name to give way');
     } finally { await ctx.close(); }
   });
 }

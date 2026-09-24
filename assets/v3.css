@@ -471,8 +471,11 @@ button.room-head { cursor: pointer; }
 }
 /* Each edge fades only while there is something past it, so the last tab —
  * often the one you are standing in — is never the dim one. */
-.dock .days.more-left, .day-rail .rail-days.more-left { --fade-l: 18px; }
-.dock .days.more-right, .day-rail .rail-days.more-right { --fade-r: 18px; }
+/* How far a clipped edge fades: one number, which app.js fitNowTab reads too
+ * (a neighbour day is only seen once it clears the gap AND the fade). */
+.dock .days, .day-rail .rail-days { --row-fade: 18px; }
+.dock .days.more-left, .day-rail .rail-days.more-left { --fade-l: var(--row-fade); }
+.dock .days.more-right, .day-rail .rail-days.more-right { --fade-r: var(--row-fade); }
 .dock .day-tab { font-weight: 700; font-size: 12px; padding-bottom: 3px;
                  border-bottom: 2px solid transparent; color: var(--text-tertiary);
                  background: none; border-top: none; border-left: none; border-right: none;
@@ -595,6 +598,13 @@ button.room-head { cursor: pointer; }
 .now-tab.compact .word { display: none; }
 .now-tab.compact .live { width: 7px; height: 7px; }
 .dock .now-tab { font-family: var(--font-ui); font-weight: 800; font-size: 12px; }
+/* The last resort (app.js fitNowTab): even beside NOW's dot the days are
+ * narrower than one tab, so they claim their widest and the fest name gives
+ * way with an ellipsis. !important only to out-rank the wrap's inline
+ * `flex: none` in index.html, which every other state keeps. */
+.dock.squeezed #dock-fest-wrap { flex: 0 1 auto !important; min-width: 0; }
+.dock.squeezed .fest-link { flex: 0 1 auto; max-width: 100%; min-width: 0; }
+.dock.squeezed .fest-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .day-rail .now-tab { font-family: var(--font-display); letter-spacing: var(--track-label);
                      font-size: var(--fs-micro); text-transform: uppercase; padding: 2px 0 3px; }
 .dock .day-tab .num { font-size: 9px; font-weight: 600; margin-left: 2px; }
