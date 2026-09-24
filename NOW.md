@@ -26,25 +26,22 @@ how we got here belongs in DEVLOG.md.
   highlighted it lands on their live pick with the now line in view —
   "where is Ross right now" in two taps. Rules: MODEL-V4 §3d; log:
   `claude-plans/2026-09-24-now-jump-build.md`. Kevin looked at it on
-  localhost on 2026-09-24: "It looks good". His look found two things, both
-  fixed: the now line stopped at the first screen's width instead of
-  crossing every stage column (v86 has this too), and a hover zoom near the
-  bottom covered the dock (it now moves up to clear it, never reshaped). An
-  independent Opus review found six more (a pulse on a stranger's card when
-  a highlighted friend has nothing on, the afters just after close, level
-  ties, the dock's glimpse, a listener leak, a tall set on a small phone)
-  and a desktop mis-pick: content gliding under a still mouse grew a zoom
-  that ate the next click as a pick. A zoom now opens only when the hand
-  moves (card-facts.js "still hand"). All fixed, each with its test.
-  Kevin's second look ("really happy with where we are"): the NOW tag in
-  live cards' corners is gone (the ring is the mark), and NOW taps now go
-  down the page stop by stop and wrap — a highlight's own picks only,
-  side-by-side cards one stop (MODEL-V4 §3d). And the zoom clears the
-  sticky rail and stage strip above as it clears the dock below — the
-  ceiling wins when both can't — which also closes a slow hand's path to
-  a mis-pick on NOW (`claude-plans/2026-09-24-zoom-chrome-build.md`).
-  Branch `fix/zoom-dock` carries all of feat/now-jump plus that: 811 unit
-  tests, 165 browser (Chromium + WebKit locally).
+  localhost on 2026-09-24 ("really happy with where we are"); every finding
+  from his two looks and the Opus reviews is fixed with its test (the build
+  log has the list). NOW taps go down the page stop by stop and wrap — a
+  highlight's own picks only, side-by-side cards one stop (MODEL-V4 §3d).
+  The zoom clears the sticky rail and stage strip above as it clears the
+  dock below — the ceiling wins when both can't — which also closes a slow
+  hand's path to a mis-pick on NOW
+  (`claude-plans/2026-09-24-zoom-chrome-build.md`); branch `fix/zoom-dock`
+  carries all of feat/now-jump plus that.
+  **Codex's review of `bc6131b` found five more, being fixed on
+  feat/now-jump now:** a repaint mid-glide can pulse a card the highlighted
+  person just unpicked; a sideways hand scroll stops restarting the cycle
+  after a repaint; a one-stop cycle can stay parked while the line moves
+  off screen; NOW says nothing to a screen reader; and the cycle test's
+  check is too loose. Next: reproduce each, fix one per commit, re-stamp,
+  CI green; the coordinator merges.
 - What v86 carries, each with its spec or build log in `claude-plans/`:
   1. One line per room (`SAT PORTOLA`, `SAT AFTERS`, `TUE LATE NIGHTS`),
      `.day-block` per day — `claude-plans/2026-09-23-one-line-heads.md`.
