@@ -151,6 +151,23 @@ for (const [width, height, touch, engine, name] of [[390, 844, true, browser, ''
       assert.equal(v.card.room, 'Afters');
       const top = Math.max(v.railBottom, 0);
       assert.ok(v.card.top >= top && v.card.bottom <= v.dockTop, `his card sits in view below the chrome: ${JSON.stringify(v)}`);
+      // Tap again, already there: nothing moves, and the card pulses at once.
+      // With a mouse, the first click was made while the rail still sat below
+      // the header; the jump stuck the rail to the top and left the pointer
+      // over the wall, where hover grows whatever card is under it — and a
+      // zoom blooms OVER the rail by design (z 36 > 25), covering NOW. A hand
+      // moves off it first (Playwright would otherwise scroll to dodge it).
+      await page.mouse.move(8, 8);
+      await sleep(1000); // the zoom's grace close, and the first landing's pulse, are over
+      const y = await page.evaluate(() => scrollY);
+      await page.locator(`#${door}-now`).click();
+      await sleep(80);
+      const again = await page.evaluate(() => {
+        const c = [...document.querySelectorAll('#wall-root .room[data-room="Afters"] .card')].find((x) => x.dataset.artist === 'Milli Meng');
+        return { y: scrollY, pulsing: c.getAnimations().some((a) => a.playState === 'running') };
+      });
+      assert.ok(Math.abs(again.y - y) < 1, `a second tap does not move the page: ${y} -> ${again.y}`);
+      assert.ok(again.pulsing, 'and the card pulses straight away — the pulse is the whole answer');
     } finally { await ctx.close(); }
   });
 
@@ -168,6 +185,28 @@ for (const [width, height, touch, engine, name] of [[390, 844, true, browser, ''
     } finally { await ctx.close(); }
   });
 }
+
+test('Reduce Motion: NOW lands at once and nothing pulses; the live dot is still', { skip }, async () => {
+  const { ctx, page, door } = await openApp();
+  try {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await highlight(page, 'Ross');
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await sleep(100);
+    await page.locator(`#${door}-now`).click();
+    await sleep(60);
+    const r = await page.evaluate((d) => {
+      const c = [...document.querySelectorAll('#wall-root .room[data-room="Afters"] .card')].find((x) => x.dataset.artist === 'Milli Meng');
+      const b = c.getBoundingClientRect();
+      const dot = getComputedStyle(document.querySelector(`#${d}-now .live`));
+      return { y: scrollY, top: b.top, bottom: b.bottom, dockTop: document.getElementById('dock').getBoundingClientRect().top,
+        pulsing: c.getAnimations().length > 0, dotAnimation: dot.animationName };
+    }, door);
+    assert.ok(r.y > 0 && r.top >= 0 && r.bottom <= r.dockTop, `landed already, no glide: ${JSON.stringify(r)}`);
+    assert.equal(r.pulsing, false, 'no pulse');
+    assert.equal(r.dotAnimation, 'none', 'the dot does not breathe');
+  } finally { await ctx.close(); }
+});
 
 test('outside the live window there is no NOW (Saturday 9 AM)', { skip }, async () => {
   const { ctx, page, door } = await openApp({ now: SAT_9AM });

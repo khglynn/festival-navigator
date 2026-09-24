@@ -551,6 +551,7 @@ function jumpToNow() {
   const pad = 8;
   const { line, card } = landing;
   let dy;
+  let slid = false; // the grid moved sideways to bring the card's column in
   if (line) {
     const band = seenBand(line.closest('.times-grid'));
     const lineTop = line.getBoundingClientRect().top;
@@ -566,6 +567,7 @@ function jumpToNow() {
         if (cr.left < sr.left || cr.right > sr.right) {
           const left = scroller.scrollLeft + (cr.left - sr.left) - (sr.width - cr.width) / 2;
           scroller.scrollTo({ left: Math.max(0, Math.min(left, scroller.scrollWidth - scroller.clientWidth)), behavior });
+          slid = true;
         }
       }
     }
@@ -575,7 +577,10 @@ function jumpToNow() {
     dy = r.top - (band.top + (band.bottom - band.top) / 4);
     if (r.bottom - dy > band.bottom - pad && r.height < band.bottom - band.top - 2 * pad) dy = r.bottom - (band.bottom - pad);
   }
-  window.scrollTo({ top: Math.max(0, window.scrollY + dy), behavior });
+  const maxY = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+  const top = Math.min(maxY, Math.max(0, window.scrollY + dy));
+  const moves = Math.abs(top - window.scrollY) >= 1;
+  if (moves) window.scrollTo({ top, behavior });
   if (!card || !canAnimate(card, ctx)) return;
   let pulsed = false;
   const pulse = () => {
@@ -585,8 +590,10 @@ function jumpToNow() {
     card.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.06)', offset: 0.4 }, { transform: 'scale(1)' }],
       { duration: 460, iterations: 2, easing: EASE_SURFACE });
   };
+  // Already there (a second tap): the pulse is the whole answer, at once.
+  if (!moves && !slid) { pulse(); return; }
   window.addEventListener('scrollend', pulse);
-  setTimeout(pulse, smooth ? 750 : 0); // no scroll to wait for, or no scrollend in this engine
+  setTimeout(pulse, 750); // a sideways-only glide, or an engine without scrollend (WebKit)
 }
 
 // Where a day tab lands on the wall, in the wall's own words (DAY_ANCHOR):
