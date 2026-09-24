@@ -141,6 +141,29 @@ test('venueGroupsOf, the now window: a member runs until the next starts, else t
   assert.equal(ev.venueGroupsOf([V('Solo')])[0].members[0].nowFrom, null, 'nothing known, nothing marked');
 });
 
+// Sun's Midway, the way the data agent found it (2026-09-24): Tixr bills seven
+// in the room with no order or times for three of them. The timed four keep
+// their windows; the three untimed are on the bill, time unknown — no window
+// (they glowed beside Two Shell all night before), sorted after the timed,
+// and their card carries no time. A room where NOTHING is timed still glows
+// from doors to close, the lone headliner included.
+test('venueGroupsOf, the now window: an untimed act in a timed room is on the bill, time unknown — no window, last in the stack', () => {
+  const room = { doors: '10 PM', close: '4 AM' };
+  const g = ev.venueGroupsOf([
+    V('Untimed A', room),
+    V('Opener', { ...room, time: '10 PM' }),
+    V('Untimed B', room),
+    V('Closer', { ...room, time: '12 AM' }),
+  ])[0];
+  assert.deepEqual(g.members.map((m) => m.e.name), ['Opener', 'Closer', 'Untimed A', 'Untimed B'], 'timed in play order, then the untimed, in bill order');
+  assert.deepEqual(g.members.map((m) => [m.nowFrom, m.nowTo]), [[22 * 60, 24 * 60], [24 * 60, 28 * 60], [null, null], [null, null]],
+    'the timed run as ever; the untimed never glow');
+  assert.deepEqual(g.members.map((m) => m.startStr), ['10 PM', '12 AM', null, null], 'and their cards show no time');
+  const nothingTimed = ev.venueGroupsOf([V('Headliner', room), V('Support', room)])[0];
+  assert.deepEqual(nothingTimed.members.map((m) => [m.nowFrom, m.nowTo]), [[22 * 60, 28 * 60], [22 * 60, 28 * 60]],
+    'nothing in the room is timed: the room is what is on');
+});
+
 test('venueGroupsOf on Portola Friday: the real bill, read off the file so a re-read of any venue moves this', () => {
   const fri = portola.artists.filter((a) => /Afters/.test(a.day) && a.night === 'Fri');
   const groups = ev.venueGroupsOf(fri);
