@@ -26,20 +26,20 @@ const SAT_1030 = new Date('2026-09-26T22:30:00-07:00');
 const SAT_9AM = new Date('2026-09-26T09:00:00-07:00');
 const SELECTIONS = { 'Milli Meng': { Ross: 3 }, Galen: { Ross: 1, Nhu: 2 }, Soulwax: { Nhu: 4 }, Prospa: { Nhu: 2 } };
 
-async function openApp({ width = 390, height = 844, touch = true, now = SAT_1030 } = {}) {
+async function openApp({ width = 390, height = 844, touch = true, now = SAT_1030, fest = 'portola-2026' } = {}) {
   const ctx = await browser.newContext({ viewport: { width, height }, hasTouch: touch, serviceWorkers: 'block' });
   const TOKEN = 'nowjumpcontract_0123456789'; // a made-up crew, never a real link
-  await ctx.addInitScript(([t]) => {
+  await ctx.addInitScript(([t, f]) => {
     navigator.serviceWorker.register = () => Promise.resolve({ update: () => Promise.resolve() });
     localStorage.setItem('fn_crews_v3', JSON.stringify([{ token: t, name: 'Now' }]));
     localStorage.setItem(`fn_me_v3_${t}`, 'Kevin');
-    localStorage.setItem(`fn_crew_fest_v3_${t}`, 'portola-2026');
+    localStorage.setItem(`fn_crew_fest_v3_${t}`, f);
     localStorage.setItem('fn_coach_v1', '1');
-  }, [TOKEN]);
+  }, [TOKEN, fest]);
   const doc = {
-    v: 4, meta: { name: 'Now', inviteFestId: 'portola-2026' }, spotify: {}, affinity: {},
+    v: 4, meta: { name: 'Now', inviteFestId: fest }, spotify: {}, affinity: {},
     people: { Kevin: { colorIndex: 0 }, Ross: { colorIndex: 5 }, Nhu: { colorIndex: 3 } },
-    festivals: { 'portola-2026': { selections: SELECTIONS } },
+    festivals: { [fest]: { selections: fest === 'portola-2026' ? SELECTIONS : {} } },
   };
   // Playwright tries the LAST-registered matching route first: the catch-all goes first.
   await ctx.route('**/api/**', (route) => route.fulfill({ status: 503, contentType: 'application/json', body: '{}' }));
@@ -59,7 +59,10 @@ async function openApp({ width = 390, height = 844, touch = true, now = SAT_1030
 
 // Where things are now, against the part of the window a person can see:
 // under the sticky chrome (and a grid's pinned stage strip), above the dock.
-const view = (page, artist) => page.evaluate((a) => {
+// `where` narrows the card — 'cell' for the grid's, else a room's name —
+// because an artist can play twice (Soulwax is Thursday's afters AND
+// Saturday's grid).
+const view = (page, artist, where = null) => page.evaluate(([a, w]) => {
   const dock = document.getElementById('dock');
   const dockTop = dock && getComputedStyle(dock).display !== 'none' ? dock.getBoundingClientRect().top : innerHeight;
   const rail = document.getElementById('day-rail');
@@ -68,14 +71,15 @@ const view = (page, artist) => page.evaluate((a) => {
   const lr = line ? line.getBoundingClientRect() : null;
   const block = line ? line.closest('.tt-block') : null;
   const strip = block ? block.querySelector('.stage-strip').getBoundingClientRect() : null;
-  const card = a ? [...document.querySelectorAll('#wall-root .card')].find((c) => c.dataset.artist === a && !c.classList.contains('dim')) : null;
+  const card = a ? [...document.querySelectorAll('#wall-root .card')].find((c) => c.dataset.artist === a && !c.classList.contains('dim')
+    && (!w || (w === 'cell' ? c.classList.contains('cell') : c.closest('.room').dataset.room === w))) : null;
   const cr = card ? card.getBoundingClientRect() : null;
   return {
     dockTop, railBottom, innerWidth,
     line: lr && { top: lr.top }, stripBottom: strip ? strip.bottom : null,
     card: cr && { top: cr.top, bottom: cr.bottom, left: cr.left, right: cr.right, cell: card.classList.contains('cell'), room: card.closest('.room').dataset.room },
   };
-}, artist);
+}, [artist, where]);
 
 const tapNow = async (page, door) => {
   await page.locator(`#${door}-now`).click();
@@ -119,7 +123,7 @@ for (const [width, height, touch] of [[390, 844, true], [1280, 800, false]]) {
     try {
       await highlight(page, 'Ross');
       await tapNow(page, door);
-      const v = await view(page, 'Milli Meng');
+      const v = await view(page, 'Milli Meng', 'Afters');
       assert.ok(v.card, 'his card is on the wall, undimmed');
       assert.equal(v.card.room, 'Afters');
       const top = Math.max(v.railBottom, 0);
@@ -132,7 +136,7 @@ for (const [width, height, touch] of [[390, 844, true], [1280, 800, false]]) {
     try {
       await highlight(page, 'Nhu');
       await tapNow(page, door);
-      const v = await view(page, 'Soulwax');
+      const v = await view(page, 'Soulwax', 'cell');
       assert.ok(v.card && v.card.cell, 'Soulwax, on the grid');
       assert.ok(v.line.top > v.stripBottom && v.line.top < v.dockTop, `the line is in view: ${JSON.stringify(v)}`);
       assert.ok(v.card.top >= v.stripBottom - 1 && v.card.top < v.dockTop, `the card's top is in view: ${JSON.stringify(v)}`);
@@ -162,3 +166,42 @@ test('320: NOW fits the dock beside the days and the fest name, nothing overlapp
     assert.ok(r.fest[1] <= r.width, 'nothing off the right edge');
   } finally { await ctx.close(); }
 });
+
+// The dock's days keep the day you are in. They already scroll on a phone
+// (Portola's four overflow a 390 dock by a few px), and NOW narrows them —
+// fine while the row holds its widest tab and a glimpse of the next. A long
+// fest name on a 320 dock (an iPhone on Display Zoom) cannot: ACL's row
+// would be 27px, so there NOW keeps only its dot, and the day stays whole.
+const dockFit = (page) => page.evaluate(() => {
+  const now = document.getElementById('dock-now');
+  const row = document.getElementById('dock-days');
+  const on = row.querySelector('.day-tab.active');
+  const n = now.getBoundingClientRect(), r = row.getBoundingClientRect(), a = on.getBoundingClientRect();
+  return {
+    shown: !now.hidden && n.width > 0, compact: now.classList.contains('compact'), label: now.getAttribute('aria-label'),
+    dot: !!now.querySelector('.live') && getComputedStyle(now.querySelector('.live')).display !== 'none',
+    rowW: Math.round(r.width), active: on.dataset.day, activeWhole: a.left >= r.left - 1 && a.right <= r.right + 1,
+    overflowing: row.classList.contains('overflowing'), clear: n.right <= r.left,
+  };
+});
+for (const [fest, width, height, now, compact] of [
+  ['portola-2026', 390, 844, SAT_1030, false],
+  ['portola-2026', 320, 640, SAT_1030, false],
+  ['acl-2026', 390, 844, new Date('2026-10-02T20:00:00-05:00'), false],
+  ['acl-2026', 320, 640, new Date('2026-10-02T20:00:00-05:00'), true],
+]) {
+  test(`${fest} at ${width}: NOW ${compact ? 'keeps only its dot' : 'keeps its word'}, and the day you are in stays whole`, { skip }, async () => {
+    const { ctx, page } = await openApp({ fest, width, height, now });
+    try {
+      await sleep(400); // the day-of open's glide, and the row's scroll to the day it lit
+      const f = await dockFit(page);
+      assert.ok(f.shown, 'something is live');
+      assert.equal(f.compact, compact, JSON.stringify(f));
+      assert.ok(f.dot, 'the live dot, either way');
+      assert.equal(f.label, 'Jump to what is playing now');
+      assert.ok(f.clear, 'NOW never sits over the days');
+      assert.ok(f.activeWhole, `the day you are in is whole in the row: ${JSON.stringify(f)}`);
+      assert.ok(f.overflowing, 'a row that scrolls says so at its edges (re-read when NOW took its room)');
+    } finally { await ctx.close(); }
+  });
+}
