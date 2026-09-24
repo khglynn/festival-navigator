@@ -270,6 +270,40 @@ for (const [who, says] of [['Kat', 'Nothing of Kat’s is on right now — here�
   });
 }
 
+// The wall can replace the landing card mid-glide (a poll repaint, a pick).
+// The pulse used to return early on the detached node — before it removed its
+// scrollend listener, which then lived on the window for the life of the page
+// with the old card in its closure (review, 2026-09-24). Now it cleans up
+// first and pulses whatever node stands there when the glide lands.
+test('390: the card is replaced mid-glide — the fresh one pulses, and no scrollend listener is left behind', { skip }, async () => {
+  const { ctx, page, door } = await openApp();
+  try {
+    await highlight(page, 'Ross');
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await sleep(150);
+    const cdp = await ctx.newCDPSession(page);
+    const { result } = await cdp.send('Runtime.evaluate', { expression: 'window' });
+    const scrollends = async () => (await cdp.send('DOMDebugger.getEventListeners', { objectId: result.objectId }))
+      .listeners.filter((l) => l.type === 'scrollend').length;
+    const before = await scrollends();
+    await page.locator(`#${door}-now`).click();
+    const swapped = await page.evaluate(() => {
+      const old = [...document.querySelectorAll('#wall-root .room[data-room="Afters"] .card')].find((c) => c.dataset.artist === 'Milli Meng');
+      const fresh = old.cloneNode(true);
+      fresh.id = 'swapped-in';
+      old.replaceWith(fresh);
+      return !old.isConnected && document.getElementById('swapped-in').isConnected;
+    });
+    assert.ok(swapped, 'the landing card was replaced while the page glided');
+    await sleep(150);
+    await settled(page);
+    const pulsing = await page.evaluate(() => window.__pulsing(document.getElementById('swapped-in')));
+    assert.ok(pulsing, 'the node that stands there when the glide lands is the one that pulses');
+    await sleep(900);
+    assert.equal(await scrollends(), before, 'no scrollend listener outlives the landing');
+  } finally { await ctx.close(); }
+});
+
 test('Reduce Motion: NOW lands at once and nothing pulses; the live dot is still', { skip }, async () => {
   const { ctx, page, door } = await openApp();
   try {

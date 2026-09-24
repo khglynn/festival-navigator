@@ -593,12 +593,26 @@ function jumpToNow() {
   const moves = Math.abs(top - window.scrollY) >= 1;
   if (moves) window.scrollTo({ top, behavior });
   if (!card || landing.match === false || !canAnimate(card, ctx)) return;
+  // Who to pulse, by identity rather than by node: the wall can replace the
+  // card during the glide (a poll repaint, a pick), and the pulse belongs on
+  // whatever node stands there when it lands.
+  const who = { artist: card.dataset.artist, occ: card.dataset.occ || '', room: roomOf(card) };
   let pulsed = false;
   const pulse = () => {
-    if (pulsed || !card.isConnected) return;
+    if (pulsed) return;
+    // Clean up first, whatever happens next: a return before this line left a
+    // scrollend listener (and the detached card it closed over) on the window
+    // for the life of the page (review, 2026-09-24).
     pulsed = true;
     window.removeEventListener('scrollend', pulse);
-    card.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.06)', offset: 0.4 }, { transform: 'scale(1)' }],
+    let target = card;
+    if (!target.isConnected) {
+      let occ = null;
+      try { occ = who.occ ? JSON.parse(who.occ) : null; } catch { occ = null; }
+      target = cardFor(root, who.artist, occ, { room: who.room });
+    }
+    if (!target || !canAnimate(target, ctx)) return;
+    target.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.06)', offset: 0.4 }, { transform: 'scale(1)' }],
       { duration: 460, iterations: 2, easing: EASE_SURFACE });
   };
   // Already there (a second tap): the pulse is the whole answer, at once.
