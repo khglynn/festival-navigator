@@ -31,9 +31,11 @@ how we got here belongs in DEVLOG.md.
   instead of crossing every stage column (v86 has this too; fixed on the
   branch), and on desktop a hover zoom near the bottom could cover the dock
   (being fixed on the fix/zoom-dock branch; it goes into v87 only if it
-  lands clean). An independent Opus review is in; its findings are being
-  fixed on the branch. 794 unit tests, 114 browser (Chromium + WebKit
-  locally).
+  lands clean). An independent Opus review found six more (a pulse on a
+  stranger's card when a highlighted friend has nothing on, the afters just
+  after close, level ties, the dock's glimpse, a listener leak, a tall set
+  on a small phone): all fixed on the branch, each with its test. 796 unit
+  tests, 122 browser (Chromium + WebKit locally).
 - What v86 carries, each with its spec or build log in `claude-plans/`:
   1. One line per room (`SAT PORTOLA`, `SAT AFTERS`, `TUE LATE NIGHTS`),
      `.day-block` per day — `claude-plans/2026-09-23-one-line-heads.md`.
