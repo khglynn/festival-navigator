@@ -63,6 +63,19 @@ export function whoMotion(card, before) {
   const youNew = row ? row.querySelector('.f-nm.you') : null;
   const fromL = before.you ? before.you.level : null;
   const toL = youNew ? youNew.closest('.f-pill').dataset.level : null;
+  // Every READ of the new row happens here, before the first animation: a
+  // FLIP's first frame applies the instant it starts, so a name measured after
+  // its chip's slide began reads as already home and never travels (seen in
+  // Chromium 2026-09-23; jsdom has no transforms to show it). Below this line
+  // nothing in the new row is measured again.
+  const now = new Map();
+  if (row) for (const el of row.querySelectorAll('.f-pill, .f-fill, .f-nm[data-person], .f-more, .f-pill > .bars, .f-pill > .must')) now.set(el, rect(el));
+  const at = (el) => now.get(el) || rect(el);
+  // The new row's names and "+n"s, listed once, now: leavers are parked INSIDE
+  // live chips below, and a later query of the row would take a parked ghost
+  // for a live node and slide it (it did: a folded "+1" flew 73px, 2026-09-23).
+  const liveNames = row ? [...row.querySelectorAll('.f-nm[data-person]')] : [];
+  const liveMore = row ? [...row.querySelectorAll('.f-more')] : [];
 
   const run = (el, frames, opts, done) => {
     const a = el.animate(frames, opts);
@@ -70,23 +83,60 @@ export function whoMotion(card, before) {
     anims.push(a);
     return a;
   };
-  // A node from the discarded row, parked where it stood (card coordinates:
-  // the card is the positioned box the zoom's content lives in).
-  const park = (node, r) => {
-    node.classList.add('f-parked');
-    node.style.left = `${r.left - cardRect.left}px`;
-    node.style.top = `${r.top - cardRect.top}px`;
-    node.style.width = `${r.width}px`;
-    node.style.height = `${r.height}px`;
-    card.appendChild(node);
-    return node;
+  const moveOf = new Map(); // new chip -> {dx, dy}: its own translate, which what is inside it compounds with
+  // A node from the discarded row, parked where it stood. When the chip it
+  // leaves lives on, it is parked INSIDE that chip, so it rides the chip's
+  // slide: a name folding into "+n" while its chip moves goes with the chip
+  // instead of hanging in the air where the chip used to be (the Crowd case,
+  // Chromium 2026-09-23). The chip's first frame is its new box plus its
+  // slide, so that is the origin. Otherwise it is parked in the card, a chip
+  // as itself and anything smaller inside a bare .f-pill host — no fill, so no
+  // box — because out of a chip it would lose the chip's type, colour and
+  // shadow. What is animated and removed is what this returns.
+  const park = (node, r, chip = null) => {
+    let el = node;
+    let host = card, ox = cardRect.left, oy = cardRect.top;
+    if (chip) {
+      const b = at(chip), m = moveOf.get(chip) || { dx: 0, dy: 0 };
+      host = chip; ox = b.left + m.dx; oy = b.top + m.dy;
+    } else if (!node.classList.contains('f-pill')) {
+      el = document.createElement('span');
+      el.className = 'f-pill f-ghost';
+      el.appendChild(node);
+    }
+    el.classList.add('f-parked');
+    el.setAttribute('aria-hidden', 'true'); // leaving: the chip's label already says who is there
+    el.style.left = `${r.left - ox}px`;
+    el.style.top = `${r.top - oy}px`;
+    el.style.width = `${r.width}px`;
+    el.style.height = `${r.height}px`;
+    host.appendChild(el);
+    return el;
   };
-  // A name (or "+n") in flight may cross its chip's clipped names box.
-  const lift = (el) => {
+  // The chip a node leaves, if it lives on as the same chip (the carried chip
+  // counts: it is the one you were alone in).
+  const liveChip = (level) => {
+    const was = before.chips.get(level);
+    for (const [chip, old] of pairs) if (old === was) return chip;
+    return null;
+  };
+  // A name (or "+n") in flight may cross its chip's clipped names box. A name
+  // arriving from ANOTHER chip also lifts the chip it lands in above its
+  // neighbours until it lands: a sliding chip is its own layer, so a
+  // neighbour painted later would cover the name. Only arrivals raise: were
+  // every chip with a name sliding inside it raised, the later one in the row
+  // would win again (it did — Both, 2026-09-23).
+  const lift = (el, raise = false) => {
     const host = el.parentElement;
+    const chip = raise ? el.closest('.f-pill') : null;
     el.classList.add('f-travel');
     if (host) host.style.overflow = 'visible';
-    return () => { el.classList.remove('f-travel'); if (host) host.style.overflow = ''; };
+    if (chip) chip.classList.add('f-carrying');
+    return () => {
+      el.classList.remove('f-travel');
+      if (host) host.style.overflow = '';
+      if (chip) chip.classList.remove('f-carrying');
+    };
   };
 
   // ---- chips: which old chip each new chip IS ----------------------------------------------
@@ -101,7 +151,6 @@ export function whoMotion(card, before) {
     if (old.people.length === 1 && people(nu).length === 1) { pairs.set(nu, old); carried = nu; }
   }
   const matched = new Set(pairs.values());
-  const moveOf = new Map(); // new chip -> {dx, dy}: its own translate, which its names compound with
 
   const bloop = (fill, k) => run(fill, [
     { transform: `scale(${k}, .92)` }, { transform: 'scale(1.03, 1.05)', offset: 0.6 }, { transform: 'none' },
@@ -115,7 +164,7 @@ export function whoMotion(card, before) {
   };
 
   for (const [chip, old] of pairs) {
-    const r = rect(chip);
+    const r = at(chip);
     const a = mid(old.rect), b = mid(r);
     const move = { dx: a.x - b.x, dy: a.y - b.y };
     moveOf.set(chip, move);
@@ -124,20 +173,31 @@ export function whoMotion(card, before) {
     }
     const fill = chip.querySelector(':scope > .f-fill');
     if (!fill) continue;
-    const k = old.fillWidth / (rect(fill).width || old.fillWidth || 1);
+    const k = old.fillWidth / (at(fill).width || old.fillWidth || 1);
     const joinedOrLeft = !sameSet(old.people, people(chip));
     if (joinedOrLeft || chip === carried) bloop(fill, k);
     else if (Math.abs(k - 1) > 0.01) run(fill, [{ transform: `scaleX(${k})` }, { transform: 'none' }], { duration: R, easing: EASE_ARRIVE });
     if (old.bg && old.bg !== fill.style.background) remix(fill, old.bg);
+    // The level glyph is the chip's own fact: it slides from where it stood,
+    // less the chip's own slide, so it rides the fill's edge as the chip
+    // widens or narrows instead of starting outside it (Merge, Both, Clear —
+    // Chromium 2026-09-23).
+    const nowGlyph = chip.querySelector(':scope > .bars, :scope > .must');
+    let g = { dx: 0, dy: 0 };
+    if (nowGlyph && old.glyphRect) {
+      const a0 = mid(old.glyphRect), b0 = mid(at(nowGlyph));
+      g = { dx: a0.x - b0.x - move.dx, dy: a0.y - b0.y - move.dy };
+    }
+    const glyphMoves = Math.abs(g.dx) > 0.5 || Math.abs(g.dy) > 0.5;
     // The carried chip's level changed: the next bar rises from its foot, or
     // the bars step out and MUST arrives as the word.
-    if (chip === carried) {
-      const nowGlyph = chip.querySelector(':scope > .bars, :scope > .must');
-      if (nowGlyph && nowGlyph.classList.contains('must') && old.glyph && old.glyph.classList.contains('bars')) {
-        const parked = park(old.glyph, old.glyphRect);
-        run(parked, [{ opacity: 1 }, { opacity: 0 }], { duration: OUT_MS, easing: EASE_LEAVE, fill: 'forwards' }, () => parked.remove());
-        run(nowGlyph, [{ opacity: 0, transform: 'translateY(4px)' }, { opacity: 1, transform: 'none' }], { duration: GROW_MS, delay: 60, easing: EASE_ARRIVE, fill: 'both' });
-      } else if (nowGlyph && nowGlyph.classList.contains('bars') && Number(toL) > Number(fromL)) {
+    if (chip === carried && nowGlyph && nowGlyph.classList.contains('must') && old.glyph && old.glyph.classList.contains('bars')) {
+      const parked = park(old.glyph, old.glyphRect, chip);
+      run(parked, [{ opacity: 1 }, { opacity: 0 }], { duration: OUT_MS, easing: EASE_LEAVE, fill: 'forwards' }, () => parked.remove());
+      run(nowGlyph, [{ opacity: 0, transform: `translate(${g.dx}px, ${g.dy + 4}px)` }, { opacity: 1, transform: 'none' }], { duration: GROW_MS, delay: 60, easing: EASE_ARRIVE, fill: 'both' });
+    } else {
+      if (glyphMoves) run(nowGlyph, [{ transform: `translate(${g.dx}px, ${g.dy}px)` }, { transform: 'none' }], { duration: R, easing: EASE_ARRIVE });
+      if (chip === carried && nowGlyph && nowGlyph.classList.contains('bars') && Number(toL) > Number(fromL)) {
         const bar = nowGlyph.children[Number(toL) - 1];
         if (bar) run(bar, [{ transform: 'scaleY(0)' }, { transform: 'none' }], { duration: R, delay: 40, easing: EASE_ARRIVE, fill: 'both' });
       }
@@ -148,14 +208,14 @@ export function whoMotion(card, before) {
   const bornInPlace = new Set();
   for (const [lv, chip] of after) {
     if (pairs.has(chip)) continue;
-    const r = rect(chip);
+    const r = at(chip);
     const fill = chip.querySelector(':scope > .f-fill');
     if (lv === toL && before.you) {
       const a = mid(before.you.rect), b = mid(r);
       const move = { dx: a.x - b.x, dy: a.y - b.y };
       moveOf.set(chip, move);
       run(chip, [{ transform: `translate(${move.dx}px, ${move.dy}px)` }, { transform: 'none' }], { duration: R, easing: EASE_ARRIVE });
-      if (fill) bloop(fill, Math.min(1, (before.you.rect.width + 16) / (rect(fill).width || 1)));
+      if (fill) bloop(fill, Math.min(1, (before.you.rect.width + 16) / (at(fill).width || 1)));
       const glyph = chip.querySelector(':scope > .bars, :scope > .must');
       if (glyph) run(glyph, [{ opacity: 0 }, { opacity: 1 }], { duration: CASCADE_MS, delay: 90, easing: EASE_ARRIVE, fill: 'both' });
     } else {
@@ -166,7 +226,7 @@ export function whoMotion(card, before) {
   }
 
   // ---- chips that ended: flowed into the chip you joined, or gone where they stood ------------
-  const newNames = new Set(row ? [...row.querySelectorAll('.f-nm[data-person]')].map((n) => n.dataset.person) : []);
+  const newNames = new Set(liveNames.map((n) => n.dataset.person));
   const parkedWith = new Set(); // names that leave inside a parked chip
   for (const [lv, old] of before.chips) {
     if (matched.has(old)) continue;
@@ -176,7 +236,7 @@ export function whoMotion(card, before) {
       // names that live on there (they travel as themselves).
       for (const nm of [...old.node.querySelectorAll('.f-nm, .f-sep')]) nm.remove();
       const ghost = park(old.node, old.rect);
-      const a = mid(old.rect), b = mid(rect(target));
+      const a = mid(old.rect), b = mid(at(target));
       run(ghost, [{ transform: 'none', opacity: 1 }, { transform: `translate(${b.x - a.x}px, ${b.y - a.y}px) scaleX(.4)`, opacity: 0 }],
         { duration: R * 0.8, easing: EASE_SURFACE, fill: 'forwards' }, () => ghost.remove());
     } else {
@@ -193,7 +253,7 @@ export function whoMotion(card, before) {
 
   // ---- names ---------------------------------------------------------------------------------
   if (row) {
-    for (const nm of row.querySelectorAll('.f-nm[data-person]')) {
+    for (const nm of liveNames) {
       const chip = nm.closest('.f-pill');
       if (bornInPlace.has(chip)) continue; // it rides its chip's arrival
       const old = before.names.get(nm.dataset.person);
@@ -202,11 +262,11 @@ export function whoMotion(card, before) {
           { duration: R, delay: 50, easing: EASE_ARRIVE, fill: 'both' });
         continue;
       }
-      const a = mid(old.rect), b = mid(rect(nm));
+      const a = mid(old.rect), b = mid(at(nm));
       const m = moveOf.get(chip) || { dx: 0, dy: 0 };
       const dx = a.x - b.x - m.dx, dy = a.y - b.y - m.dy;
       if (Math.abs(dx) <= 0.5 && Math.abs(dy) <= 0.5) continue;
-      const down = lift(nm);
+      const down = lift(nm, old.level !== chip.dataset.level);
       run(nm, [{ transform: `translate(${dx}px, ${dy}px)` }, { transform: 'none' }], { duration: R, easing: EASE_ARRIVE }, down);
       // Crossing from one chip into another that was already there: a bud of
       // its own colour travels under it (a fill, not a fact).
@@ -225,25 +285,25 @@ export function whoMotion(card, before) {
   // node, parked where it stood, steps away.
   for (const [person, old] of before.names) {
     if (newNames.has(person) || parkedWith.has(person)) continue;
-    const ghost = park(old.node, old.rect);
+    const ghost = park(old.node, old.rect, liveChip(old.level));
     run(ghost, [{ transform: 'none', opacity: 1 }, { transform: 'scale(.7)', opacity: 0 }],
       { duration: OUT_MS, easing: EASE_LEAVE, fill: 'forwards' }, () => ghost.remove());
   }
 
   // ---- "+n": slides by level; its count changes in place; one no longer needed steps away -----
-  const moreNow = new Set(row ? [...row.querySelectorAll('.f-more')].map((m) => m.dataset.level) : []);
+  const moreNow = new Set(liveMore.map((m) => m.dataset.level));
   for (const [lv, old] of before.more) {
     if (moreNow.has(lv) || !after.has(lv)) continue; // a chip that ended took its "+n" with it
-    const ghost = park(old.node, old.rect);
+    const ghost = park(old.node, old.rect, liveChip(lv));
     run(ghost, [{ opacity: 1 }, { opacity: 0 }], { duration: OUT_MS, easing: EASE_LEAVE, fill: 'forwards' }, () => ghost.remove());
   }
   if (row) {
-    for (const more of row.querySelectorAll('.f-more')) {
+    for (const more of liveMore) {
       const chip = more.closest('.f-pill');
       if (bornInPlace.has(chip)) continue;
       const old = before.more.get(more.dataset.level);
       if (!old) { run(more, [{ opacity: 0 }, { opacity: 1 }], { duration: CASCADE_MS, delay: 60, easing: EASE_ARRIVE, fill: 'both' }); continue; }
-      const a = mid(old.rect), b = mid(rect(more));
+      const a = mid(old.rect), b = mid(at(more));
       const m = moveOf.get(chip) || { dx: 0, dy: 0 };
       const dx = a.x - b.x - m.dx, dy = a.y - b.y - m.dy;
       if (Math.abs(dx) > 0.5 || Math.abs(dy) > 0.5) {

@@ -936,6 +936,9 @@ a.fest-place:hover { opacity: 1; }
 .f-fill > .f-fill { border: 0; } /* the old blend, thinning away over the new (who-motion.js) */
 .f-pill.you > .f-fill { border-color: #fff; }
 .f-pill > :not(.f-fill) { position: relative; }
+/* A leaver parked inside the chip it left, riding that chip's slide
+ * (who-motion.js): out of flow, over the names that stay. */
+.f-pill > .f-parked { position: absolute; box-sizing: border-box; margin: 0; pointer-events: none; z-index: 3; }
 .f-pill > .bars, .f-pill > .must { flex: none; }
 .f-pill .must { font-size: 9.5px; }
 /* The two clip boxes (for the ellipsis) are padded out past the glyphs and
@@ -951,10 +954,12 @@ a.fest-place:hover { opacity: 1; }
 .f-sep, .f-more { position: relative; }
 .f-nm.you { font-weight: 800; } /* you lead your own chip */
 /* In flight between chips (who-motion.js): above its neighbours, with a bud of
- * its own colour under it; a leaving node parked where it stood. */
+ * its own colour under it. (A leaving node, parked: .f-pill > .f-parked above,
+ * .zoom-card > .f-parked below.) */
 .f-nm.f-travel { z-index: 3; overflow: visible; }
+.f-nm.you.f-travel { z-index: 4; } /* crossing a chip-mate, you pass in front (your bud over their name) */
+.f-pill.f-carrying { z-index: 2; } /* a chip a name is arriving in rides over its neighbours until it lands */
 .f-bud { position: absolute; inset: -3px -6px; z-index: -1; border-radius: var(--r-pill); pointer-events: none; }
-.f-parked { position: absolute; margin: 0; pointer-events: none; z-index: 1; }
 .f-sep { flex: none; opacity: .7; }
 .f-more { flex: none; font-size: 10px; font-weight: 800; opacity: .92; }
 .f-chips { display: flex; justify-content: center; align-items: center; gap: 6px; flex-wrap: wrap; }
@@ -1010,6 +1015,17 @@ button.f-chip.notes { cursor: pointer; }
 .zoom-card .z-surface { position: absolute; inset: 0; overflow: hidden; border: 1px solid var(--hairline); border-radius: var(--r-card); }
 .zoom-card .z-surface.animated { background-size: 180% 180%; animation: gradShift 12s ease-in-out infinite; }
 .zoom-card > :not(.z-surface) { position: relative; z-index: 2; } /* content over both surfaces */
+/* A leaving piece of the who-row, parked in the card where it stood
+ * (who-motion.js). Out of flow, and after the rule above on purpose: the two
+ * weigh the same, and in flow a parked chip grew the card and shifted the
+ * whole zoom 6px at the tap (Chromium, 2026-09-23). A chip body leaves UNDER
+ * the live content (it flows into the chip it joined). Anything smaller is
+ * parked inside the chip it left (.f-pill > .f-parked); only if that chip is
+ * gone does it land here, OVER the content, in a bare .f-pill host that keeps
+ * the chip's type. */
+.zoom-card > .f-parked { position: absolute; box-sizing: border-box; margin: 0; pointer-events: none; z-index: 1; }
+.zoom-card > .f-parked.f-ghost { z-index: 3; padding: 0; gap: 0; max-width: none; }
+.zoom-card > .f-ghost > * { margin: 0; }
 .zoom-card .f-name { font-size: 18px; font-weight: 700; line-height: 1.2; color: var(--text-primary); } /* the zoom's hero: the name grows (13.5–15px at rest) */
 /* After a pick the old wash lingers over the new one and thins away. */
 .zoom-card .z-surface-old { pointer-events: none; z-index: 1; }

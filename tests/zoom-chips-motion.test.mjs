@@ -24,7 +24,9 @@ function fakeBox(el) {
   if (c.contains('zoom-slot') || c.contains('zoom-card') || c.contains('z-surface')) return { left: CARD.left, top: CARD.top, width: 320, height: 180 };
   if (c.contains('card')) return { left: 120, top: 240, width: 160, height: 96 };
   if (c.contains('f-parked')) {
-    return { left: CARD.left + parseFloat(el.style.left), top: CARD.top + parseFloat(el.style.top), width: parseFloat(el.style.width), height: parseFloat(el.style.height) };
+    // Parked in the card, or inside the chip it left (then the chip's box is the origin).
+    const host = el.parentElement && el.parentElement.classList.contains('f-pill') ? fakeBox(el.parentElement) : CARD;
+    return { left: host.left + parseFloat(el.style.left), top: host.top + parseFloat(el.style.top), width: parseFloat(el.style.width), height: parseFloat(el.style.height) };
   }
   const chip = el.closest('.f-pill');
   if (!chip) return { left: 0, top: 0, width: 0, height: 0 };
@@ -104,6 +106,7 @@ test('alone → alone: the chip is carried — a bar rises, the glow deepens, no
     const must = chipAt(4);
     const oldBars = parked().find((p) => p.classList.contains('bars'));
     assert.ok(oldBars, 'the bars step out where they stood …');
+    assert.equal(oldBars.parentElement, must, '… inside the carried chip, so they ride its slide and keep its look');
     assert.deepEqual(on(calls2, oldBars)[0].keyframes.map((k) => k.opacity), [1, 0]);
     const word = must.querySelector('.must');
     assert.equal(on(calls2, word)[0].keyframes[0].opacity, 0, '… and MUST arrives as the word');
@@ -139,7 +142,7 @@ test('merge: your chip flows into your friend\'s; your name travels as itself, w
     const calls = s.tap(); // you 2 → 3, into Drew's chip
     const joined = chipAt(3);
     assert.equal(chipAt(2), null);
-    const ghost = parked().find((p) => p.classList.contains('f-pill'));
+    const ghost = parked().find((p) => p.classList.contains('f-pill') && !p.classList.contains('f-ghost'));
     assert.ok(ghost, 'the ×2 chip\'s body is parked where it stood …');
     assert.equal(ghost.querySelector('.f-nm'), null, '… emptied of your name, which lives on in Drew\'s chip');
     assert.match(on(calls, ghost)[0].keyframes[1].transform, /^translate\(.+\) scaleX\(\.4\)$/, '… flowing toward the chip it joins');
@@ -151,9 +154,14 @@ test('merge: your chip flows into your friend\'s; your name travels as itself, w
     probe.style.background = you.dataset.color;
     assert.equal(bud.style.background, probe.style.background, 'your own colour');
     assert.ok(you.classList.contains('f-travel'), 'above its neighbours in flight');
+    assert.ok(joined.classList.contains('f-carrying'), '… and the chip it lands in rides over the chips beside it until it does');
     assert.ok(joined.querySelector(':scope > .f-fill > .f-fill'), 'Drew\'s colour re-mixes into the blend of both');
+    // The level glyph is the chip's own fact: as the chip widens it slides from
+    // where it stood (less the chip's own slide), riding the fill's edge.
+    const glyph = joined.querySelector(':scope > .bars');
+    assert.ok(on(calls, glyph).some((c) => /^translate/.test(first(c))), 'the glyph slides from where it stood, never jumps');
     for (const c of calls) c.finish();
-    assert.equal(overlay().querySelectorAll('.f-parked, .f-bud, .f-fill .f-fill, .f-travel').length, 0, 'everything temporary is gone at the end');
+    assert.equal(overlay().querySelectorAll('.f-parked, .f-bud, .f-fill .f-fill, .f-travel, .f-carrying').length, 0, 'everything temporary is gone at the end');
   } finally { s.done(); }
 });
 
@@ -191,7 +199,7 @@ test('clear: alone, the MUST chip goes where it stood; shared, only your name go
   try {
     const calls = s.tap(); // MUST → 0
     assert.equal(overlay().querySelector('.f-who'), null, 'nobody left: no row');
-    const ghost = parked().find((p) => p.classList.contains('f-pill'));
+    const ghost = parked().find((p) => p.classList.contains('f-pill') && !p.classList.contains('f-ghost'));
     assert.ok(ghost && ghost.querySelector('.f-nm.you'), 'the chip leaves with your name in it — its one rendering');
     assert.deepEqual(on(calls, ghost)[0].keyframes.map((k) => k.opacity), [1, 0], 'quick and plain');
   } finally { s.done(); }
@@ -199,8 +207,16 @@ test('clear: alone, the MUST chip goes where it stood; shared, only your name go
   try {
     const calls = s2.tap();
     const gone = parked().find((p) => p.classList.contains('f-nm'));
-    assert.ok(gone && gone.dataset.person === 'Kevin', 'your name is parked where it stood and steps away');
-    assert.equal(chipAt(4).querySelector('.f-nm.you'), null);
+    assert.ok(gone && gone.dataset.person === 'Kevin', 'your name is parked where it stood and steps away …');
+    assert.equal(gone.parentElement, chipAt(4), '… inside the chip it left, riding that chip\'s slide');
+    assert.equal(gone.getAttribute('aria-hidden'), 'true', 'a leaver is hidden from the reader (the chip\'s label says who is there)');
+    // Where it stood: the chip's first frame is its box plus its slide, so the
+    // parked offset is measured from there.
+    const slide = on(calls, chipAt(4))[0];
+    const [sx, sy] = slide ? (first(slide).match(/-?[\d.]+/g) || [0, 0]).map(Number) : [0, 0];
+    const chipBox = chipAt(4).getBoundingClientRect();
+    assert.equal(chipBox.left + sx + parseFloat(gone.style.left), 110 + 22, 'its first frame is exactly where it stood (x)');
+    assert.equal(chipAt(4).querySelector('.f-names .f-nm.you'), null, 'the MUST chip no longer lists you');
     assert.ok(on(calls, gone)[0].keyframes[1].opacity === 0);
   } finally { s2.done(); }
 });
@@ -212,7 +228,7 @@ test('rapid taps never strand anything: each refresh cancels the last, and every
     for (let i = 0; i < 9; i++) {
       const calls = s.tap(); // 2, 3, 4, 0, 1, 2, … through every case, never letting one finish
       assert.ok(prev.every((a) => a.cancelled), `tap ${i + 1}: the previous refresh's animations were all cancelled`);
-      const temp = overlay().querySelectorAll('.f-parked, .f-bud, .f-fill .f-fill, .f-travel');
+      const temp = overlay().querySelectorAll('.f-parked, .f-bud, .f-fill .f-fill, .f-travel, .f-carrying');
       const live = new Set(calls.map((c) => c.target));
       for (const t of temp) {
         const mine = live.has(t) || [...live].some((n) => n.contains && n.contains(t)) || t.classList.contains('f-travel');
