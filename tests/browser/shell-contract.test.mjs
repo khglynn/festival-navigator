@@ -104,7 +104,18 @@ test('a cold open waiting on the crew shows the loader after a beat, and the wal
       const el = document.getElementById('screen-boot');
       return el ? Number(getComputedStyle(el).opacity) : null;
     });
-    assert.equal(await loaderOpacity(), 0, 'present, and not yet seen — a quick boot never flashes it');
+    // "After a beat" is the fade's own delay, read from the loader's animation,
+    // not from how fast this machine got here: under a loaded runner the page
+    // can finish loading after the beat is already over, and a wall-clock
+    // check read that as a flash (seen twice in full parallel runs, 2026-09-24).
+    const early = await page.evaluate(() => {
+      const el = document.getElementById('screen-boot');
+      const a = el && el.getAnimations()[0];
+      return el ? { opacity: Number(getComputedStyle(el).opacity), t: a ? a.currentTime : null, delay: a ? a.effect.getTiming().delay : null } : null;
+    });
+    assert.ok(early, 'the loader is there while the crew is on its way');
+    assert.ok(early.delay >= 300, `it arrives after a beat, so a quick boot never flashes it: ${JSON.stringify(early)}`);
+    if (early.t !== null && early.t < early.delay) assert.equal(early.opacity, 0, `and it is not yet seen while the beat lasts: ${JSON.stringify(early)}`);
     await sleep(900);
     assert.equal(await loaderOpacity(), 1, 'a slow boot shows it');
     assert.ok(await page.isVisible('#screen-boot .eq-loader'));
