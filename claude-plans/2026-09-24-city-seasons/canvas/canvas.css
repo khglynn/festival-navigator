@@ -184,6 +184,8 @@ a.f-buy-link:hover { border-bottom-color: rgba(255, 255, 255, .75); }
                color: #D1D2D3; font-size: 13px; font-weight: 700; }
 .sk-msg { display: grid; grid-template-columns: 36px 1fr; column-gap: 8px; padding: 8px 16px 4px 16px; }
 .sk-av { width: 36px; height: 36px; border-radius: 8px; display: block; }
+.sk-msg.cont { padding-top: 2px; }
+.sk-gut { color: #ABABAD; font-size: 11px; text-align: right; padding-top: 3px; white-space: nowrap; }
 .sk-body { min-width: 0; }
 .sk-meta { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
 .sk-name { color: #F8F8F8; font-weight: 900; font-size: 15px; }

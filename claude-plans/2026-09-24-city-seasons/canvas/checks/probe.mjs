@@ -9,7 +9,7 @@ const expr = process.argv[3] || 'document.title';
 const phone = width < 500;
 const browser = await chromium.launch({ headless: true });
 try {
-  const ctx = await browser.newContext({ viewport: { width, height: phone ? 844 : 900 }, hasTouch: phone, isMobile: phone });
+  const ctx = await browser.newContext({ viewport: { width, height: phone ? 844 : 900 }, hasTouch: phone, isMobile: phone, reducedMotion: process.env.RM ? 'reduce' : 'no-preference' });
   const page = await ctx.newPage();
   const errors = [];
   page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`));

@@ -366,11 +366,9 @@
     return p;
   }
   function renderSeason(root, frame) {
-    const ctx = frame.ctx;
     root.textContent = '';
     for (const t of frame.tabs) root.appendChild(tabBlock(t, frame));
     W.positionNowMarks(root, NOW);
-    void ctx;
   }
   // B, the other way to draw YOURS (built beside the brief's, not instead of
   // it): one list, the way a search answers — one head, the on-sale
@@ -716,7 +714,9 @@
   function buildMenu(frame) {
     const pop = mk('ul', 'sort-pop' + (frame.dir === '0' ? '' : ' rooms-pop'));
     pop.setAttribute('role', 'listbox');
-    const head = mk('li', 'pop-head', 'Show');
+    // The rooms filter says what we have and don't in its first line, so a
+    // phone that has to scroll to the unread rooms still sees the count.
+    const head = mk('li', 'pop-head', frame.dir === '0' ? 'Show' : `Show · ${venueCounts().length} of ${venueCounts().length + UNCOVERED.length} rooms`);
     head.setAttribute('role', 'presentation');
     pop.appendChild(head);
     if (frame.dir === '0') {
@@ -831,13 +831,17 @@
     if (day) { const d = mk('div', 'sk-day'); d.appendChild(mk('span', null, day)); box.appendChild(d); }
     for (const msg of msgs) {
       if (msg.day) { const d = mk('div', 'sk-day'); d.appendChild(mk('span', null, msg.day)); box.appendChild(d); }
-      const row = mk('div', 'sk-msg');
-      const av = mk('img', 'sk-av');
-      av.src = window.__MARK; av.alt = '';
+      // A second message from the same app minutes later is a continuation,
+      // as Slack draws it: no avatar, no name, the time in the gutter.
+      const row = mk('div', 'sk-msg' + (msg.cont ? ' cont' : ''));
+      const av = msg.cont ? mk('span', 'sk-gut', msg.time.replace(/\s?[AP]M$/, '')) : mk('img', 'sk-av');
+      if (!msg.cont) { av.src = window.__MARK; av.alt = ''; }
       const body = mk('div', 'sk-body');
-      const meta = mk('div', 'sk-meta');
-      meta.append(mk('b', 'sk-name', 'Festival Navigator'), mk('span', 'sk-app', 'APP'), mk('span', 'sk-time', msg.time));
-      body.appendChild(meta);
+      if (!msg.cont) {
+        const meta = mk('div', 'sk-meta');
+        meta.append(mk('b', 'sk-name', 'Festival Navigator'), mk('span', 'sk-app', 'APP'), mk('span', 'sk-time', msg.time));
+        body.appendChild(meta);
+      }
       for (const line of msg.lines) { const p = mk('div', 'sk-text'); p.appendChild(rich(line)); body.appendChild(p); }
       if (msg.card) body.appendChild(skCard(msg.card));
       if (msg.context) { const c = mk('div', 'sk-context'); c.appendChild(rich(msg.context)); body.appendChild(c); }
@@ -884,9 +888,9 @@
         day: 'Monday, May 11th', time: '9:00 AM',
         lines: ['Presale tomorrow at 10 AM: *MUNA* at Moody Amphitheater, Sat Sep 19.'],
         card: MUNA_SALE,
-        context: 'You follow MUNA · inside 48 hours, so it did not wait for the digest',
+        context: 'You follow MUNA · the presale is inside 48 hours, so this one does not wait for the digest',
       }, {
-        time: '9:00 AM',
+        time: '9:01 AM', cont: true,
         lines: ['*Your Austin week:* 1 new for you.', '*MUNA* · Sat Sep 19 · Moody Amphitheater · presale tomorrow, 10 AM'],
         context: 'Every Monday · everything else announced this week is in the app',
       }],
@@ -1057,7 +1061,7 @@
     zoomIn(e, kingdom, '<b>Its zoom</b>');
 
     const door = find('The Blues Specialists');
-    e = edge('Door only · Continental Club', 'The Continental Club sells at the door and has no ticket page for its residencies, so the zoom says <b>Door only</b> where the others say where to buy. Shows elsewhere with no link fall back to the venue’s own calendar page.');
+    e = edge('Door only · Continental Club', 'The Continental Club lists its nightly residencies with no ticket page (a separate page carries its few ticketed shows), so the zoom says <b>Door only</b> where the others say where to buy. That is our reading of its calendar, worth confirming with the club. Shows elsewhere with no link fall back to the venue’s own calendar page.');
     zoomIn(e, door, '<b>The Blues Specialists</b> · Fri Sep 25');
 
     const b1 = find('Bleachers', '2026-10-02');
@@ -1076,6 +1080,9 @@
       const avail = b.parentElement.clientWidth;
       b.style.zoom = avail >= PHONE_W + 2 ? '1' : String(avail / (PHONE_W + 2));
     }
+    // An edge-case box narrower than a phone is that phone: its column width
+    // comes from its own width, as the app's does from the screen's.
+    for (const v of document.querySelectorAll('.vp.spec')) v.style.setProperty('--vw', `${Math.min(PHONE_W, v.clientWidth)}px`);
   }
 
   munaTimeline();
@@ -1150,6 +1157,7 @@
     }
     zoomStrip();
     edges();
+    fit();
   }));
 
   // ---- the recommendation and the footer --------------------------------------------------------

@@ -24,7 +24,9 @@ never the repo): `PW=<repo>/node_modules/playwright OUT=<scratch>` then
 - [x] 6. Rooms filter (show menu: 15 read rooms with counts, 6 unread named)
 - [x] 7. Edge cases (96-char name, 15-show night, 3-show month, cancelled,
       no doors, door only, one name two nights)
-- [ ] 8. Browser pass at 390 and 1280 on every frame, then the honest read
+- [x] 8. Browser pass at 390 and 1280 on every frame, then the honest read
+- Added at the coordinator's ask: "Where the shows come from" (after the
+  intro) and "Your call" (four numbered questions, at the end).
 
 ## How it is built (what differs from the rating canvas)
 
@@ -97,3 +99,84 @@ first presale (Tue May 12).
   zoom + pick, B's replay mid-flight in slow motion, the list variant, the
   Oct 16 clock, untick a room. No console errors, no page overflow.
 - 2026-09-24: coordinator: Do512 carries real on-sale times (7); seeds cut.
+- 2026-09-24: final pass. Looked at, in headless Chromium: at 1280 every
+  section and frame (artboard 0 phone + laptop, A/B/C phones and laptops,
+  both rooms-filter frames, the zoom strip, every edge case, the alerts,
+  the timeline, the recommendation); at 390 (touch, isMobile) the intro,
+  timeline, bar, artboard 0, A/B/C, laptops (scaled), rooms filter, edge
+  cases, recommendation, your call. Walked with real input at both widths:
+  zoom by hover (1280) and by hold (390), a pick while zoomed, a press
+  outside closes it, B's replay mid-flight in slow motion, the One-list
+  switch, the Oct 16 clock, untick a room (its stacks leave, the rest
+  slide). Reduced motion: replay and filter land instantly. No console
+  errors, no horizontal page overflow at either width.
+- Fixed from the look: timeline columns (10 days, 9 tracks), labels that
+  ellipsized at 390 now wrap under their dot; the bar is one scrolling row
+  on a phone; edge-case boxes narrower than a phone take their own width as
+  the phone's (two columns, not one); Kingdom's edge case now includes
+  Kingdom; YOURS's arrival no longer whooshes the wall; the dot's look-timer
+  resets on a new match; the rooms menu's head says `15 of 21 rooms`; the
+  zoom follows production's scroll rule instead of closing.
+
+## Honest read
+
+**Pick: B's wall with A's alert, YOURS drawn as one list.** (Also the
+canvas's recommendation block.)
+
+1. A's alert is the only one that needs nothing but the listing: the daily
+   read finds a match and the DM goes out the next morning (MUNA: Sat May 9,
+   while the artist-presale sign-up was still open). B's weekly digest +
+   48h rule and C's on-sale reminders both spoke Monday, and both lean on
+   on-sale times, which we have for few shows (Do512: 7 of 425 on Sep 24;
+   Ticketmaster's API only for the rooms it sells). C, as briefed, never
+   announces — a Mohawk show by an artist Kevin loves, with no on-sale time,
+   would pass in silence. Batch same-morning matches into one DM (an ACL
+   Fest Nights drop is ten matches at once).
+2. B's YOURS is the in-app home the alert needs (the DM's button should land
+   there), and its dot is the in-app echo of the DM. The months stay A's.
+3. YOURS as night rooms is the weakest surface on the page: 3,950px of one
+   half-width card per night on a phone, and on a laptop a single card per
+   row across a 1,000px shell. As one list it is 1,090px. I built the list
+   beside the brief's rooms rather than swapping it.
+
+**Weakest in each**
+- A: nothing in the app gathers yours. October is 178 shows, 10 of them
+  Kevin's, and the only mark is the small green Spotify pill (a past-fest
+  pick has no mark on the resting card at all, only a line in the zoom).
+- B: the brief's alert cadence (it spoke Monday; the DM and the digest land
+  the same morning and repeat each other); YOURS as rooms (above).
+- C: no announcement alert; THIS WEEK equals the month at a month's end
+  (Sep 24: SEP disappears entirely); the day-before reminder needs picks
+  the server can read, which is later work.
+
+**What I'd change in the shared grammar**
+1. A show id before a season ships (THINKING.md §2): picks are keyed by
+   name, so Bleachers' Oct 2 and Oct 11 share one pick. Shown as an edge case.
+2. Support acts should be data (`with: […]`), not parsed from `billedAs` —
+   the parse is good on w/ / with / feat. / +, and shows the billing as
+   printed otherwise ("Official 2026 ACL Fest Nights: Bleachers").
+3. Whose buy link: the canvas prefers the venue's own (ground truth, 265
+   shows, no hop) and falls back to Do512's; the study notes Do512's links
+   carry its referral code and pay Do512. That is a values call for Kevin,
+   tied to the Do512 email ("Your call" 4).
+4. "Door only" for the Continental Club is our reading of its calendar (no
+   ticket page for residencies); confirm with the club before shipping it.
+5. The rooms menu stays open while ticking (production's closes per tap).
+   On a phone the 44px rows make it scroll, so the head carries the count.
+6. The head's sub says TONIGHT / TOMORROW; nothing else. Kept deliberately
+   quiet (the fest heads' sub is the place).
+
+**Where I disagree with the brief (built beside, not swapped)**
+- YOURS as night rooms (above): the list variant is on the page.
+- "Arrives the way the NOW tab does": NOW is a jump button beside the tabs,
+  never lit by the scrollspy; YOURS and THIS WEEK are real tabs with blocks.
+  I kept them real tabs (the scrollspy lights them) and gave them NOW's
+  motion (fade in from 6px left with the beat, neighbours slide tab by
+  tab), plus a still NOW-style dot on YOURS for "something new".
+- "Opens on the current month, scrolled to tonight's room": on Sep 24 the
+  file starts tonight, so every door opens on the same room. The bar's
+  "Fri Oct 16" switch is what makes A's open visible.
+
+**Open questions for Kevin** are the canvas's "Your call" list: which door
+(or mix), where alerts land, card per show or per artist, and the Do512 /
+JamBase / Ticketmaster asks.
