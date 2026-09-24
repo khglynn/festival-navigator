@@ -405,12 +405,28 @@ const tapAndLook = async (page, door, { pulse = 'maybe' } = {}) => {
     const bottom = dock && getComputedStyle(dock).display !== 'none' ? dock.getBoundingClientRect().top : innerHeight;
     const line = document.querySelector('#wall-root .now-line');
     const lr = line && line.getBoundingClientRect();
+    // A show is its artist and its occurrence: one show billed to two rooms
+    // is one show (two cards, one data-occ).
+    const show = (c) => `${c.dataset.artist}|${c.dataset.occ || ''}`;
     const pulsed = [...new Set(window.__pulses)].map((c) => {
       const r = c.getBoundingClientRect();
-      return { artist: c.dataset.artist, top: Math.round(r.top), now: c.classList.contains('now') || c.classList.contains('cell'), inView: r.top >= 0 && r.top < bottom, across: r.left >= -1 && r.right <= innerWidth + 1, dim: c.classList.contains('dim') };
+      return { artist: c.dataset.artist, show: show(c), top: Math.round(r.top), now: c.classList.contains('now') || c.classList.contains('cell'), inView: r.top >= 0 && r.top < bottom, across: r.left >= -1 && r.right <= innerWidth + 1, dim: c.classList.contains('dim') };
     });
+    // Every live stack card a person can actually see right now, pulsed or
+    // not: hit-tested near its top and a little further down, so a card under
+    // the dock, the sticky chrome or off the side counts as not seen.
+    const visible = (c) => {
+      const r = c.getBoundingClientRect();
+      const x = Math.min(innerWidth - 2, Math.max(1, r.left + r.width / 2));
+      return [r.top + 4, r.top + Math.min(r.height - 4, 40)].every((y) => {
+        if (y < 0 || y >= innerHeight) return false;
+        const hit = document.elementFromPoint(x, y);
+        return !!hit && c.contains(hit);
+      });
+    };
+    const seen = [...document.querySelectorAll('#wall-root .venue-grid[data-iso] .card.now')].filter(visible).map(show);
     const sc = line && line.closest('.times-scroll');
-    return { y: Math.round(scrollY), sl: sc ? Math.round(sc.scrollLeft) : null, pulsed, line: lr ? Math.round(lr.top) : null, lineInView: !!lr && lr.top > 0 && lr.top < bottom, toast: ((document.getElementById('toast-root') || {}).textContent || '').trim() };
+    return { y: Math.round(scrollY), sl: sc ? Math.round(sc.scrollLeft) : null, pulsed, seen, line: lr ? Math.round(lr.top) : null, lineInView: !!lr && lr.top > 0 && lr.top < bottom, toast: ((document.getElementById('toast-root') || {}).textContent || '').trim() };
   });
 };
 // Tap until the page comes back to where the first tap put it (the wrap).
@@ -444,11 +460,20 @@ for (const [width, height, touch, engine, name] of [[390, 844, true, browser, ''
       }
       // Side by side is one stop: some stop pulses two cards at one height.
       assert.ok(stops.some((st) => st.pulsed.some((a) => st.pulsed.some((b) => a !== b && Math.abs(a.top - b.top) <= 1))), 'cards side by side land together, in one tap');
-      // Every live card is reached, and none twice.
-      const live = await page.evaluate(() => document.querySelectorAll('#wall-root .venue-grid[data-iso] .card.now').length);
-      const reached = stops.flatMap((st) => st.pulsed.map((c) => `${c.artist}@${c.top + st.y}`));
-      assert.equal(new Set(reached).size, reached.length, 'no card is a stop twice');
-      assert.ok(reached.length <= live, 'and only live cards are stops');
+      // Every live show is brought into view by some tap — pulsed at its own
+      // stop, or seen without a pulse where a stop (the line's, say) already
+      // shows it — exactly the live ones, and none pulses twice. (The first cut
+      // only checked that no more cards pulsed than were live, which passes
+      // with a show never reached at all — Codex, 2026-09-24.)
+      const live = await page.evaluate(() => [...new Set([...document.querySelectorAll('#wall-root .venue-grid[data-iso] .card.now')]
+        .map((c) => `${c.dataset.artist}|${c.dataset.occ || ''}`))].sort());
+      assert.ok(live.length >= 4, `the afters are on at 10:30 PM: ${live.length} live shows`);
+      const seen = [...new Set(stops.flatMap((st) => st.seen))].sort();
+      assert.ok(stops.every((st) => st.seen.length < live.length), `no one landing shows them all — the taps are what reach them: ${stops.map((st) => st.seen.length).join(', ')} of ${live.length}`);
+      assert.deepEqual(seen, live, `every live show is seen at some stop: ${JSON.stringify(stops.map((st) => st.seen))}`);
+      for (const st of stops) for (const c of st.pulsed) assert.ok(st.seen.includes(c.show), `${c.artist} pulses where it can be seen: ${JSON.stringify(st)}`);
+      const pulsedShows = stops.flatMap((st) => st.pulsed.map((c) => c.show));
+      assert.equal(new Set(pulsedShows).size, pulsedShows.length, `no show is a stop twice: ${JSON.stringify(pulsedShows)}`);
     } finally { await ctx.close(); }
   });
 }
