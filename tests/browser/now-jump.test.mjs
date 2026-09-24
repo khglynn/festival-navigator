@@ -32,7 +32,10 @@ const SAT_9AM = new Date('2026-09-26T09:00:00-07:00');
 // Kat is only at the Warehouse (Prospa): the third column, off a phone's
 // screen until the grid scrolls to it. Ross's early evening is Despacio — a
 // set hours long, over by 9:45, so it never competes at 10:30.
-const SELECTIONS = { 'Milli Meng': { Ross: 3 }, Galen: { Ross: 1, Nhu: 2 }, Soulwax: { Nhu: 4 }, Prospa: { Nhu: 2, Kat: 3 }, Despacio: { Ross: 3 } };
+// Dee, at 7:00 PM, has two sets on at once three columns apart: DJ Shadow
+// (Crane Stage) and Despacio (the last column) — off each other's screen on
+// a phone.
+const SELECTIONS = { 'Milli Meng': { Ross: 3 }, Galen: { Ross: 1, Nhu: 2 }, Soulwax: { Nhu: 4 }, Prospa: { Nhu: 2, Kat: 3 }, Despacio: { Ross: 3, Dee: 4 }, 'DJ Shadow': { Dee: 2 } };
 
 async function openApp({ width = 390, height = 844, touch = true, now = SAT_1030, fest = 'portola-2026', engine = browser, wide = null } = {}) {
   const ctx = await engine.newContext({ viewport: { width, height }, hasTouch: touch, serviceWorkers: 'block' });
@@ -78,7 +81,7 @@ async function openApp({ width = 390, height = 844, touch = true, now = SAT_1030
   }, [TOKEN, fest]);
   const doc = {
     v: 4, meta: { name: 'Now', inviteFestId: fest }, spotify: {}, affinity: {},
-    people: { Kevin: { colorIndex: 0 }, Ross: { colorIndex: 5 }, Nhu: { colorIndex: 3 }, Kat: { colorIndex: 6 } },
+    people: { Kevin: { colorIndex: 0 }, Ross: { colorIndex: 5 }, Nhu: { colorIndex: 3 }, Kat: { colorIndex: 6 }, Dee: { colorIndex: 2 } },
     festivals: { [fest]: { selections: fest === 'portola-2026' ? SELECTIONS : {} } },
   };
   // Playwright tries the LAST-registered matching route first: the catch-all goes first.
@@ -371,12 +374,22 @@ test('320x568, Ross at Despacio (a tall set): the line stays a third of the way 
 // side by side multiple now clicks won't scroll that that'll be weird."
 // One tap: where the page came to rest, what pulsed (and whether each pulsed
 // card is live, in view, and whose), where the line is, what the toast says.
-const tapAndLook = async (page, door) => {
+// Where the page stands, down and across (every grid's sideways scroll).
+const place = (page) => page.evaluate(() => `${Math.round(scrollY)}|${[...document.querySelectorAll('#wall-root .times-scroll')].map((s) => Math.round(s.scrollLeft)).join(',')}`);
+// `pulse`: 'maybe' polls for a pulse and returns as soon as one starts (a
+// line's stop has none, so it waits the whole 1.5 s); 'none' holds a fixed
+// window, for the checks that nothing pulses. Every wait is polled from here
+// in real time — the page's own timers run on the pinned clock.
+const tapAndLook = async (page, door, { pulse = 'maybe' } = {}) => {
   await page.evaluate(() => { window.__pulses = []; });
+  const from = await place(page);
   await page.locator(`#${door}-now`).click();
-  await sleep(150);
+  // The move starts (down or across) — or, for a tap with nowhere to go, the
+  // deadline passes.
+  for (let t = 0; t < 15 && (await place(page)) === from; t++) await sleep(100);
   await settled(page);
-  await sleep(850); // the pulse starts at the glide's end, or 750 ms in
+  if (pulse === 'none') await sleep(900);
+  else for (let t = 0; t < 15 && !(await page.evaluate(() => window.__pulses.length)); t++) await sleep(100);
   return page.evaluate(() => {
     const dock = document.getElementById('dock');
     const bottom = dock && getComputedStyle(dock).display !== 'none' ? dock.getBoundingClientRect().top : innerHeight;
@@ -384,9 +397,10 @@ const tapAndLook = async (page, door) => {
     const lr = line && line.getBoundingClientRect();
     const pulsed = [...new Set(window.__pulses)].map((c) => {
       const r = c.getBoundingClientRect();
-      return { artist: c.dataset.artist, top: Math.round(r.top), now: c.classList.contains('now') || c.classList.contains('cell'), inView: r.top >= 0 && r.top < bottom, dim: c.classList.contains('dim') };
+      return { artist: c.dataset.artist, top: Math.round(r.top), now: c.classList.contains('now') || c.classList.contains('cell'), inView: r.top >= 0 && r.top < bottom, across: r.left >= -1 && r.right <= innerWidth + 1, dim: c.classList.contains('dim') };
     });
-    return { y: Math.round(scrollY), pulsed, line: lr ? Math.round(lr.top) : null, lineInView: !!lr && lr.top > 0 && lr.top < bottom, toast: ((document.getElementById('toast-root') || {}).textContent || '').trim() };
+    const sc = line && line.closest('.times-scroll');
+    return { y: Math.round(scrollY), sl: sc ? Math.round(sc.scrollLeft) : null, pulsed, line: lr ? Math.round(lr.top) : null, lineInView: !!lr && lr.top > 0 && lr.top < bottom, toast: ((document.getElementById('toast-root') || {}).textContent || '').trim() };
   });
 };
 // Tap until the page comes back to where the first tap put it (the wrap).
@@ -395,7 +409,7 @@ const cycle = async (page, door, max = 7) => {
   while (taps.length < max) {
     const t = await tapAndLook(page, door);
     taps.push(t);
-    if (Math.abs(t.y - taps[0].y) <= 2) break;
+    if (Math.abs(t.y - taps[0].y) <= 2 && (t.sl == null || Math.abs(t.sl - taps[0].sl) <= 2)) break;
   }
   return taps;
 };
@@ -429,7 +443,7 @@ for (const [width, height, touch, engine, name] of [[390, 844, true, browser, ''
   });
 }
 
-test('390, Nhu highlighted: the stops are her live picks only — the line with Soulwax and Prospa, then Galen, then back', { skip }, async () => {
+test('390, Nhu highlighted: the stops are her live picks only — Soulwax, then Prospa beside it, then Galen, then back', { skip }, async () => {
   const { ctx, page, door } = await openApp();
   try {
     await highlight(page, 'Nhu');
@@ -437,9 +451,35 @@ test('390, Nhu highlighted: the stops are her live picks only — the line with 
     await sleep(200);
     const taps = await cycle(page, door);
     const names = stopsOf(taps).map((t) => t.pulsed.map((c) => c.artist).sort());
-    assert.deepEqual(names, [['Prospa', 'Soulwax'], ['Galen']], `her picks, top to bottom: ${JSON.stringify(names)}`);
-    assert.ok(taps[0].lineInView, 'the first stop brings the line with it');
-    for (const t of taps) for (const c of t.pulsed) assert.equal(c.dim, false, `${c.artist} is hers, never a dimmed card`);
+    // Two columns side by side are wider than a 390 phone's grid (2 x 176px
+    // in a 322px window): the must first, then the grid slides to Prospa at
+    // the same height, then down to the afters.
+    assert.deepEqual(names, [['Soulwax'], ['Prospa'], ['Galen']], `her picks, the must first, across then down: ${JSON.stringify(names)}`);
+    assert.ok(taps[0].lineInView && taps[1].lineInView, 'the grid stops bring the line with them');
+    assert.equal(taps[1].y, taps[0].y, 'Prospa is at the same height — the tap moves the grid across');
+    assert.notEqual(taps[1].sl, taps[0].sl, 'and it does move');
+    for (const t of taps) for (const c of t.pulsed) assert.ok(!c.dim && c.across, `${c.artist} is hers, and on screen across: ${JSON.stringify(c)}`);
+  } finally { await ctx.close(); }
+});
+
+// The review's finding (2026-09-24): with a highlight, every live grid pick
+// folded into one stop by height alone, so on a phone a pick three columns
+// over was never slid into view — taps 2 and 3 stayed put and pulsed the one
+// already showing. Sat 7:00 PM, Dee: DJ Shadow (Crane Stage) and Despacio
+// (the last column), both on.
+test('390, Dee highlighted at 7 PM: two live picks three columns apart are two stops — each tap slides the grid to the next', { skip }, async () => {
+  const { ctx, page, door } = await openApp({ now: new Date('2026-09-26T19:00:00-07:00') });
+  try {
+    await highlight(page, 'Dee');
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await sleep(200);
+    const taps = await cycle(page, door);
+    const stops = stopsOf(taps);
+    assert.deepEqual(stops.map((t) => t.pulsed.map((c) => c.artist)), [['Despacio'], ['DJ Shadow']], `the must first, then the other column: ${JSON.stringify(taps)}`);
+    assert.equal(stops[1].y, stops[0].y, 'one height');
+    assert.ok(Math.abs(stops[1].sl - stops[0].sl) > 100, `the grid slid across: ${stops.map((t) => t.sl).join(' → ')}`);
+    for (const t of stops) for (const c of t.pulsed) assert.ok(c.across && c.inView, `${c.artist} is on screen, down and across: ${JSON.stringify(c)}`);
+    assert.ok(Math.abs(taps[taps.length - 1].sl - taps[0].sl) <= 2, 'and the third tap comes back to the first');
   } finally { await ctx.close(); }
 });
 
@@ -466,10 +506,10 @@ test('390, Kat highlighted with nothing on: the stops are everyone’s, nothing 
     await highlight(page, 'Kat');
     await page.evaluate(() => window.scrollTo(0, 0));
     await sleep(200);
-    const first = await tapAndLook(page, door);
+    const first = await tapAndLook(page, door, { pulse: 'none' });
     assert.equal(first.toast, 'Nothing of Kat’s is on right now — here’s what is.');
     await page.evaluate(() => { document.getElementById('toast-root').textContent = ''; });
-    const second = await tapAndLook(page, door);
+    const second = await tapAndLook(page, door, { pulse: 'none' });
     assert.ok(second.y > first.y + 100, `tap two goes on down through what IS on: ${first.y} → ${second.y}`);
     assert.equal(second.toast, '', 'the line is said once, not on every tap');
     assert.deepEqual([...first.pulsed, ...second.pulsed], [], 'and no stranger’s card pulses, ever');
@@ -502,8 +542,9 @@ test('Reduce Motion: NOW lands at once and nothing pulses; the live dot is still
 // days give back the room they claimed and the fest name is whole again.
 test('ACL at 305: NOW squeezes the fest name while live, and gives the room back when it leaves', { skip }, async () => {
   const { ctx, page } = await openApp({ fest: 'acl-2026', width: 305, height: 640, now: new Date('2026-10-03T20:00:00-05:00') });
+  // Poll (from here, in real time) until the state reads as asserted, or 5 s.
+  const until = async (read, ok) => { let v = await read(); for (let t = 0; t < 50 && !ok(v); t++) { await sleep(100); v = await read(); } return v; };
   try {
-    await sleep(600);
     const state = () => page.evaluate(() => {
       const f = document.getElementById('dock-fest-name');
       return {
@@ -511,14 +552,13 @@ test('ACL at 305: NOW squeezes the fest name while live, and gives the room back
         minWidth: document.getElementById('dock-days').style.minWidth, cut: f.scrollWidth > f.clientWidth + 1,
       };
     });
-    const live = await state();
+    const live = await until(state, (v) => v.now && v.squeezed && v.cut);
     assert.ok(live.now && live.squeezed && live.cut, `live: squeezed, the name cut: ${JSON.stringify(live)}`);
     // Next morning, nothing on; the app re-reads the clock when the page is
     // shown again (the minute ticker's other door).
     await page.clock.setFixedTime(new Date('2026-10-04T09:00:00-05:00'));
     await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
-    await sleep(700); // NOW's quick exit
-    const after = await state();
+    const after = await until(state, (v) => !v.now && !v.squeezed); // NOW's quick exit
     assert.deepEqual(after, { now: false, squeezed: false, minWidth: '', cut: false }, 'NOW gone, the room given back, the name whole');
   } finally { await ctx.close(); }
 });
