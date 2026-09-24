@@ -10,17 +10,23 @@
 // small event (the chip grows in, the next bar lights) that Reduce Motion
 // turns into the finished card at once. The app is booted for real against
 // a made-up crew of seven; /api never leaves this page.
+//
+// The laws are not Portola's (2026-09-24): the last block runs them on every
+// festival we ship, from each one's real data file — ACL's two weekends of
+// dated tabs and its Late nights stacks, the lineup-only walls (EDC Orlando,
+// Seismic), Electric Forest's activities, and Portola again under the same
+// generic crew — with the crew's load placed by shape (tests/helpers/fest-shapes.mjs).
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { serveStatic } from '../helpers/static-server.mjs';
 import { launchBrowser, NO_BROWSER } from '../helpers/browser.mjs';
+import { CREW, festData, stressCrew } from '../helpers/fest-shapes.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const FID = 'portola-2026';
-const PORTOLA = JSON.parse(fs.readFileSync(path.join(ROOT, `data/festivals/${FID}.json`), 'utf8'));
+const PORTOLA = festData(FID);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const server = await serveStatic(ROOT);
@@ -28,10 +34,10 @@ const browser = await launchBrowser();
 test.after(async () => { if (browser) await browser.close(); await server.close(); });
 const skip = browser ? false : NO_BROWSER;
 
-// A made-up crew of seven. Kevin is you. Levels are chosen to put every
-// shape on the wall: you at 1, 2, 3 and must; a card all seven picked with
-// notes and a followed Spotify pill; cards only the others picked.
-const CREW = { Kevin: 0, Drew: 1, Kat: 2, Nhu: 3, Pegah: 4, Ross: 5, Sam: 6 };
+// A made-up crew of seven (CREW, shared with the other festivals' runs).
+// Kevin is you. Levels are chosen to put every shape on Portola's wall: you
+// at 1, 2, 3 and must; a card all seven picked with notes and a followed
+// Spotify pill; cards only the others picked.
 const ALL7 = (you) => ({ Kevin: you, Drew: 4, Kat: 4, Nhu: 3, Pegah: 2, Ross: 1, Sam: 1 });
 const SELECTIONS = {
   Robyn: ALL7(4),
@@ -63,17 +69,18 @@ const AFFINITY = {
   'Duo A': { songs: 5, followed: true }, 'Short Set': { songs: 41, followed: true },
 };
 const NOTED = ['Robyn', 'Robyn', 'Groove Armada', 'Dog Blood', 'Lane B', 'Duo A', 'Short Set'];
+const PORTOLA_CREW = { selections: SELECTIONS, affinity: AFFINITY, noted: NOTED };
 
-function doc() {
+function doc(fid = FID, { selections, affinity, noted } = PORTOLA_CREW) {
   const notes = { artist: {} };
-  NOTED.forEach((a, i) => {
+  noted.forEach((a, i) => {
     const ts = new Date(Date.UTC(2026, 8, 22, 18, i)).toISOString();
     (notes.artist[a] = notes.artist[a] || {})[`Drew.${Date.parse(ts)}.m${i}`] = { author: 'Drew', ts, text: 'see you there' };
   });
   return {
-    v: 4, meta: { name: 'Meter', inviteFestId: FID }, spotify: {}, affinity: { Kevin: AFFINITY },
+    v: 4, meta: { name: 'Meter', inviteFestId: fid }, spotify: {}, affinity: { Kevin: affinity },
     people: Object.fromEntries(Object.entries(CREW).map(([n, c]) => [n, { colorIndex: c }])),
-    festivals: { [FID]: { selections: SELECTIONS, notes } },
+    festivals: { [fid]: { selections, notes } },
   };
 }
 
@@ -97,7 +104,7 @@ function laneFest() {
   return f;
 }
 
-async function openWall({ width = 390, height = 844, touch = true, fest = null, reducedMotion = 'no-preference', wide = null } = {}) {
+async function openWall({ width = 390, height = 844, touch = true, fest = null, reducedMotion = 'no-preference', wide = null, fid = FID, crew = PORTOLA_CREW } = {}) {
   const ctx = await browser.newContext({ viewport: { width, height }, hasTouch: touch, serviceWorkers: 'block', reducedMotion });
   const TOKEN = 'metercontract_0123456789'; // a made-up crew, never a real link
   // `wide`: every glyph in the two corners drawn this much wider than this
@@ -115,8 +122,8 @@ async function openWall({ width = 390, height = 844, touch = true, fest = null, 
     localStorage.setItem(`fn_me_v3_${t}`, 'Kevin');
     localStorage.setItem(`fn_crew_fest_v3_${t}`, f);
     localStorage.setItem('fn_coach_v1', '1');
-  }, [TOKEN, FID]);
-  const body = JSON.stringify(doc());
+  }, [TOKEN, fid]);
+  const body = JSON.stringify(doc(fid, crew));
   // Playwright tries the LAST-registered matching route first: the catch-all goes first.
   await ctx.route('**/api/**', (route) => route.fulfill({ status: 503, contentType: 'application/json', body: '{}' }));
   // The crew doc reads; a pick's push is left unanswered-as-offline so the
@@ -125,7 +132,7 @@ async function openWall({ width = 390, height = 844, touch = true, fest = null, 
     ? route.fulfill({ contentType: 'application/json', body })
     : route.fulfill({ status: 503, contentType: 'application/json', body: '{}' })));
   await ctx.route('**/api/festival-add**', (route) => route.fulfill({ contentType: 'application/json', body: '{"festivals":[]}' }));
-  if (fest) await ctx.route(`**/data/festivals/${FID}.json`, (route) => route.fulfill({ contentType: 'application/json', body: JSON.stringify(fest) }));
+  if (fest) await ctx.route(`**/data/festivals/${fid}.json`, (route) => route.fulfill({ contentType: 'application/json', body: JSON.stringify(fest) }));
   const page = await ctx.newPage();
   page.on('pageerror', (e) => { throw e; });
   await page.clock.setFixedTime(new Date('2026-09-23T19:00:00-07:00'));
@@ -214,10 +221,10 @@ function assertCornersKeep(cards, where) {
 
 // Your meter is on exactly the cards you picked, at your level; the +n is
 // the others the crew corner does not draw.
-function assertMeterTells(cards) {
-  const others = (artist) => Object.entries(SELECTIONS[artist] || {}).filter(([n, l]) => n !== 'Kevin' && l > 0).length;
+function assertMeterTells(cards, selections = SELECTIONS) {
+  const others = (artist) => Object.entries(selections[artist] || {}).filter(([n, l]) => n !== 'Kevin' && l > 0).length;
   for (const c of cards) {
-    const mine = (SELECTIONS[c.artist] || {}).Kevin || 0;
+    const mine = (selections[c.artist] || {}).Kevin || 0;
     assert.equal(c.level, mine, `${c.artist}: the meter says your level`);
     if (mine && mine < 4) assert.equal(c.lit, mine, `${c.artist}: ${mine} bar(s) lit`);
     if (mine === 4) assert.equal(c.word, 'MUST');
@@ -422,3 +429,84 @@ test('Reduce Motion: every tap lands the finished chip at once', { skip }, async
     }
   } finally { await ctx.close(); }
 });
+
+// ---- every festival we ship (2026-09-24) ------------------------------------
+// The same laws on each festival's real data file — nothing added to it —
+// with the generic crew of seven loaded where that wall is tightest
+// (fest-shapes.mjs stressCrew): the longest name each kind of card carries,
+// the 44px cell, the right-most column, the stacks. A 390 phone, a 320 phone
+// and a laptop, then glyphs wider than the width table knows. Portola runs
+// here too: the named cases above are its own; this is the generic crew on
+// its longest names (Despacio's seven-hour cell among them).
+const ALL_FESTS = ['portola-2026', 'acl-2026', 'edc-orlando-2026', 'seismic-9', 'electric-forest-2026'];
+const VIEWS = [[390, 844, true], [320, 700, true], [1280, 800, false]];
+
+// Every card the crew was cast on is on the wall, or the laws ran on less
+// than they claim.
+function assertCast(cards, roles, where) {
+  for (const [role, name] of Object.entries(roles)) {
+    assert.ok(cards.some((c) => c.artist === name), `${role} (${name}) is on the wall (${where})`);
+  }
+}
+
+// What the loaded cards carry, whatever the festival.
+function assertLoads(cards, roles, width, where) {
+  const of = (role) => cards.filter((c) => c.artist === roles[role]);
+  // The 44px cell under a crowd: your meter stays, and so does the start time
+  // wherever the name leaves it room (a whole column, a name on one line).
+  for (const role of ['shortCrowd', 'shortLow']) {
+    for (const c of of(role).filter((x) => x.cell)) {
+      assert.equal(Math.round(c.height), 44, `${c.artist}: a 30-minute set is a 44px cell (${where})`);
+      assert.ok(c.meterShown, `${c.artist}: your meter shows on the 44px cell (${where})`);
+      const nameLines = c.texts.filter((t) => t.name).length;
+      if (nameLines === 1 && c.width > 150) assert.ok(c.texts.find((t) => !t.name).shown, `${c.artist}: its start time stays (${where})`);
+    }
+  }
+  // Seven people, notes and a followed Spotify pill do not fit a phone's
+  // column: every such card gave way (and assertCornersKeep says how well).
+  if (width <= 390) {
+    for (const role of ['cellCrowd', 'shortCrowd', 'stackCrowd', 'listCrowd']) {
+      for (const c of of(role)) assert.ok(c.fit >= 1, `${c.artist}: the crowded card gave way (fit ${c.fit}, ${where})`);
+    }
+  }
+  // A card with room keeps everything: you alone, a followed pill and its count.
+  for (const c of of('cellTiny')) {
+    if (c.width < 150) continue;
+    assert.equal(c.fit, 0, `${c.artist}: nothing gave way (${where})`);
+    assert.equal(c.spotCount, '23', `${c.artist}: the Spotify count stays (${where})`);
+  }
+}
+
+for (const fid of ALL_FESTS) {
+  const fest = festData(fid);
+  const crew = stressCrew(fest);
+  for (const [width, height, touch] of VIEWS) {
+    test(`${fest.name} at ${width}: every card keeps its corners apart and off its text, and your meter says your level`, { skip }, async () => {
+      const { ctx, page } = await openWall({ width, height, touch, fid, crew });
+      try {
+        const cards = await cornersOn(page);
+        const where = `${fid} ${width}`;
+        assertCast(cards, crew.roles, where);
+        assertCornersKeep(cards, where);
+        assertMeterTells(cards, crew.selections);
+        assertLoads(cards, crew.roles, width, where);
+        // Not a vacuous run: your meter is on the wall, on every kind of card
+        // this festival draws.
+        const kinds = new Set(cards.filter((c) => c.meterShown).map((c) => (c.cell ? 'cell' : 'card')));
+        if (crew.shapes.cells.length) assert.ok(kinds.has('cell'), `your meter on a timetable cell (${where})`);
+        if (crew.shapes.stacked.length || crew.shapes.listed.length) assert.ok(kinds.has('card'), `your meter on a card (${where})`);
+      } finally { await ctx.close(); }
+    });
+  }
+  test(`${fest.name}, any engine: corner glyphs wider than the table knows, at 390 and 1280`, { skip }, async () => {
+    for (const [width, height, touch] of [VIEWS[0], VIEWS[2]]) {
+      const { ctx, page } = await openWall({ width, height, touch, fid, crew, wide: '1.3px' });
+      try {
+        const cards = await cornersOn(page);
+        const where = `${fid} ${width}, wide glyphs`;
+        assertCornersKeep(cards, where);
+        assertMeterTells(cards, crew.selections);
+      } finally { await ctx.close(); }
+    }
+  });
+}
