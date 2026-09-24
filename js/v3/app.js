@@ -9,7 +9,7 @@ import * as sync from '../sync.js';
 import * as spotify from '../spotify.js';
 import * as model from './model.js';
 import { loadFestivalIndex, loadFestival, fetchCustomFestivals, mergeCustoms, FESTIVAL_INDEX, defaultFestivalId } from '../festivals.js';
-import { renderWall, refreshCard, showUndoToast, showToast, wireScrollspy, colorIndexOf, positionNowLines, positionNowMarks, scrollToNowLine, dayNavOf, roomsOf, cardFor, roomOf, isStripScroller, DAY_ANCHOR, festLinkLabel, nowLanding, nowStops, nowStep } from './wall.js';
+import { renderWall, refreshCard, showUndoToast, showToast, wireScrollspy, colorIndexOf, positionNowLines, positionNowMarks, scrollToNowLine, dayNavOf, roomsOf, cardFor, roomOf, isStripScroller, DAY_ANCHOR, festLinkLabel, nowLanding, nowStops, nowStep, nowPulseable } from './wall.js';
 import { loadPeopleFilter, savePeopleFilter, togglePerson, pruneToActive, loadFolded, applyFoldToggle } from './filters.js';
 import { OUT_MS, CASCADE_MS, STAGGER_MS, EASE_ARRIVE, EASE_LEAVE, EASE_SURFACE, canAnimate } from './motion.js';
 import { scrolledBefore, rememberScrolled, dayOfScrollKey, festivalClock } from './now.js';
@@ -580,6 +580,9 @@ function seenBand(inGrid) {
 // Where the last NOW left the page, for the next tap (wall.js stillThere
 // says what it holds and why the grid is named by its day).
 let nowCycle = null;
+// Every tap is numbered; a tap's pulse waits for its glide, and a later tap
+// cancels it (two quick taps pulsed the first stop's cards on the second's).
+let nowSeq = 0;
 const pageGeo = (root) => ({
   scrollY: window.scrollY,
   maxY: Math.max(0, document.documentElement.scrollHeight - window.innerHeight),
@@ -598,6 +601,7 @@ const pageGeo = (root) => ({
   },
 });
 function jumpToNow() {
+  const seq = ++nowSeq;
   const root = $('wall-root');
   const geo = pageGeo(root);
   const plan = nowStops(root, ctx, ctx.now || new Date(), geo);
@@ -666,6 +670,12 @@ function jumpToNow() {
     // for the life of the page (review, 2026-09-24).
     pulsed = true;
     window.removeEventListener('scrollend', pulse);
+    // A later NOW tap owns the page: this tap's pulse would land on its stop.
+    if (seq !== nowSeq) return;
+    // Only what still answers when the glide lands, by the rule that chose it
+    // (wall.js nowPulseable): the wall can change under a glide, and a pick
+    // dropped mid-glide must not pulse as though it were still theirs.
+    const answers = new Set(nowPulseable(root, ctx, ctx.now || new Date(), best.match));
     for (const w of who) {
       let target = w.card;
       if (!target.isConnected) {
@@ -673,7 +683,7 @@ function jumpToNow() {
         try { occ = w.occ ? JSON.parse(w.occ) : null; } catch { occ = null; }
         target = cardFor(root, w.artist, occ, { room: w.room });
       }
-      if (!target || !canAnimate(target, ctx)) continue;
+      if (!target || !answers.has(target) || !canAnimate(target, ctx)) continue;
       // 6% of an ordinary card is a few pixels; 6% of a six-hour slab is forty.
       // The pulse grows a card by at most ~12px on its longer side.
       const size = target.getBoundingClientRect();

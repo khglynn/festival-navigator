@@ -1757,6 +1757,20 @@ export function nowStops(root, ctx, date, geo) {
   return { best: { ...best, key: bestKey, target: landingTarget(best, geo) }, stops, bestAt };
 }
 
+// What NOW may pulse at this moment, by the rule that chose it (the app pulses
+// only when the glide lands, and the wall can change under a glide — the 25 s
+// poll, a pick, the highlight, the clock): with a live match, the highlighted
+// people's live picks as they stand now; with nobody highlighted, the NOW
+// cards; with no match, nothing. A repaint mid-glide that dropped Ross's pick
+// used to pulse the fresh, dimmed card anyway — "Ross is here" on a card he
+// had just left (Codex, 2026-09-24).
+export function nowPulseable(root, ctx, date, match) {
+  const { marks, people, picks } = liveOnWall(root, ctx, date);
+  if (match === true) return picks;
+  if (match === null && !people.length) return marks;
+  return [];
+}
+
 // ---- the next tap ------------------------------------------------------------------
 // Where the last NOW tap left the page, for the next one — the app keeps it as
 // `cycle`: { lead, y, grid, sl, until } — the lead key of the stop it went to,

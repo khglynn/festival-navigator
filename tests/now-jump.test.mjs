@@ -32,7 +32,7 @@ globalThis.location = { origin: 'https://fest.kevinhg.com', hash: '' };
 const state = await import('../js/state.js');
 const model = await import('../js/v3/model.js');
 const { FESTIVAL_INDEX } = await import('../js/festivals.js');
-const { renderWall, nowLanding, nowStops, nowStep, stillThere, positionNowLines, positionNowMarks } = await import('../js/v3/wall.js');
+const { renderWall, nowLanding, nowStops, nowStep, stillThere, nowPulseable, cardFor, roomOf, positionNowLines, positionNowMarks } = await import('../js/v3/wall.js');
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const portola = JSON.parse(readFileSync(join(ROOT, 'data/festivals/portola-2026.json'), 'utf8'));
@@ -455,4 +455,45 @@ test('one stop, tapped again: it stays while its landing still shows it; once th
   assert.notEqual(next.target, cycle.y, 'but the old landing no longer shows it: the tap moves');
   assert.ok(Math.abs(1384 - next.target - third) < 1, `the line comes back a third of the way down: ${1384 - next.target}`);
   root.remove();
+});
+
+// ---- what may pulse when the glide lands (wall.js nowPulseable) -------------------
+// The pulse waits for the glide, and the wall can change under it. Codex's case
+// (2026-09-24): Ross highlighted, NOW gliding to Milli Meng, and the poll
+// brings Ross's un-pick of it — the repaint dims the fresh card, and the pulse
+// found that fresh card by name and pulsed it anyway: "Ross is here", on a card
+// he had just left. What pulses is decided again when it lands, by the rule
+// that chose it.
+test('what may pulse is decided again when the glide lands: a dropped pick, a new highlight, or a set that ended no longer answers', () => {
+  const { root, ctx } = render(SAT_1030, ['Ross']);
+  const plan = nowStops(root, ctx, SAT_1030, layout(root));
+  assert.equal(plan.best.match, true);
+  const milli = plan.best.card;
+  assert.equal(milli.dataset.artist, 'Milli Meng');
+  assert.ok(nowPulseable(root, ctx, SAT_1030, true).includes(milli), 'at the tap, his pick answers');
+  const identity = { artist: milli.dataset.artist, occ: JSON.parse(milli.dataset.occ), room: roomOf(milli) };
+  root.remove();
+  // Mid-glide the poll brings the un-pick; the wall repaints under the glide.
+  const dropped = { ...ctx.picks, 'Milli Meng': { Ross: 0 } };
+  const { root: after, ctx: c2 } = render(SAT_1030, ['Ross'], { picks: dropped });
+  const fresh = cardFor(after, identity.artist, identity.occ, { room: identity.room });
+  assert.ok(fresh && fresh.classList.contains('dim'), 'the fresh card stands where the old one was, dimmed');
+  assert.equal(nowPulseable(after, c2, SAT_1030, true).includes(fresh), false, 'it no longer answers: no pulse');
+  assert.ok(nowPulseable(after, c2, SAT_1030, true).some((c) => c.dataset.artist === 'Galen'), 'his other live pick still would');
+  after.remove();
+  // Nobody highlighted at the tap (the NOW cards pulse) — then someone is:
+  // a card pulsing now would read as theirs.
+  const { root: open, ctx: c3 } = render(SAT_1030);
+  const marks = nowPulseable(open, c3, SAT_1030, null);
+  assert.ok(marks.length > 1 && marks.every((c) => c.classList.contains('now')), 'nobody highlighted: the NOW cards');
+  assert.deepEqual(nowPulseable(open, { ...c3, filterPeople: ['Kat'] }, SAT_1030, null), [], 'a highlight arrived mid-glide: nothing');
+  assert.deepEqual(nowPulseable(open, c3, SAT_1030, false), [], 'no match never pulses');
+  open.remove();
+  // The clock: the set ended while the page glided.
+  const { root: late, ctx: c4 } = render(SAT_1030, ['Ross']);
+  const card = nowPulseable(late, c4, SAT_1030, true).find((c) => c.dataset.artist === 'Milli Meng');
+  const end = new Date(SAT_1030.getTime() + (Number(card.dataset.nowTo) - Number(card.dataset.nowFrom)) * 60000 + 3600000);
+  positionNowMarks(late, end);
+  assert.equal(nowPulseable(late, c4, end, true).includes(card), false, 'a set that has ended does not answer');
+  late.remove();
 });
