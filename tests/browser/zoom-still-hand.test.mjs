@@ -100,6 +100,34 @@ const scrollSettled = (page) => page.evaluate(() => new Promise((res) => {
 // margin, measured from when the page settled.
 const INTENT_WINDOW = 200 + 400;
 const zoomGone = (page) => page.waitForFunction(() => !document.querySelector('#zoom-layer .zoom-slot.shown'), null, { timeout: 5000 });
+// Watch the zoom layer from now until stopZoomWatch: whether a zoom GREW in
+// that time (a slot added, or one turned shown — a mutation observer, so even
+// a zoom that closes on its own grace timer before anyone looks is caught),
+// and, every frame a zoom stands, its painted top against the rail's bottom.
+// Waiting for "no zoom" afterwards cannot tell a zoom that never grew from one
+// that grew and went (the review, 2026-09-24).
+const watchZoom = (page) => page.evaluate(() => {
+  const w = { grew: false, frames: [], on: true };
+  window.__zoomWatch = w;
+  const isSlot = (n) => n.nodeType === 1 && n.classList.contains('zoom-slot');
+  w.mo = new MutationObserver((muts) => {
+    for (const m of muts) {
+      if ([...m.addedNodes].some(isSlot)) w.grew = true;
+      if (m.type === 'attributes' && isSlot(m.target) && m.target.classList.contains('shown') && !(m.oldValue || '').includes('shown')) w.grew = true;
+    }
+  });
+  w.mo.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'], attributeOldValue: true });
+  const tick = () => {
+    const s = document.querySelector('#zoom-layer .zoom-slot.shown');
+    if (s) {
+      const rail = document.getElementById('day-rail');
+      w.frames.push({ top: s.getBoundingClientRect().top, railBottom: rail && rail.getClientRects().length ? rail.getBoundingClientRect().bottom : 0 });
+    }
+    if (w.on) requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+});
+const stopZoomWatch = (page) => page.evaluate(() => { const w = window.__zoomWatch; w.on = false; w.mo.disconnect(); return { grew: w.grew, frames: w.frames }; });
 const railNow = (page) => page.evaluate(() => { const r = document.getElementById('rail-now').getBoundingClientRect(); return { x: Math.round(r.left + r.width / 2), y: Math.round(r.top + r.height / 2) }; });
 const labelOf = (page, a) => page.evaluate((x) => { const c = [...document.querySelectorAll('#wall-root .card')].find((el) => el.dataset.artist === x); return c && c.getAttribute('aria-label'); }, a);
 
@@ -128,8 +156,14 @@ for (const [engine, name, skip] of ENGINES) {
       const again = await railNow(page);
       const before = await labelOf(page, under);
       await page.mouse.move(again.x, again.y, { steps: 6 });
+      await watchZoom(page);
       await page.mouse.click(again.x, again.y);
-      await zoomGone(page);
+      await sleep(200); // a second NOW may glide on to the next stop
+      await scrollSettled(page);
+      await sleep(INTENT_WINDOW);
+      const after = await stopZoomWatch(page);
+      assert.equal(after.grew, false, 'no zoom grew between the second click and the page settling — not even one that closed again');
+      await zoomGone(page); // a zoom the quick pass itself grew (a slow driver) closes once the hand has left it
       assert.match(await labelOf(page, 'Skepta') || '', / — not picked/, 'Skepta is still unpicked');
       assert.equal(await labelOf(page, under), before, `nor did the second click pick the card under the pointer (${under})`);
     } finally {
@@ -152,19 +186,16 @@ for (const [engine, name, skip] of ENGINES) {
       const under = await cardUnder(page, now.x, now.y);
       const again = await railNow(page);
       const before = await labelOf(page, under);
-      let grew = false;
+      await watchZoom(page);
       for (let i = 1; i <= 6; i++) {
         await page.mouse.move(now.x + ((again.x - now.x) * i) / 6, now.y + ((again.y - now.y) * i) / 6);
         await sleep(i === 1 ? 450 : 70); // a dwell on the card, longer than the intent
-        grew = grew || (await zoomState(page)).open;
       }
-      assert.ok(grew, `not vacuous: the slow pass grew the card it dwelt on (${under})`);
-      const z = await page.evaluate(() => {
-        const s = document.querySelector('#zoom-layer .zoom-slot.shown');
-        const rail = document.getElementById('day-rail').getBoundingClientRect();
-        return s ? { top: s.getBoundingClientRect().top, railBottom: rail.bottom } : null;
-      });
-      if (z) assert.ok(z.top >= z.railBottom, `a standing zoom never covers the rail: ${JSON.stringify(z)}`);
+      // Judged before the click: a zoom over the rail would take the click itself.
+      const seen = await stopZoomWatch(page);
+      assert.ok(seen.grew && seen.frames.length > 0, `not vacuous: the slow pass grew the card it dwelt on (${under}), and it was measured while it stood (${seen.frames.length} frames)`);
+      const worst = seen.frames.reduce((a, f) => (f.top - f.railBottom < a.top - a.railBottom ? f : a));
+      assert.ok(worst.top >= worst.railBottom - 0.5, `on no frame, the bloom included, did the zoom cover the rail: ${JSON.stringify(worst)}`);
       await page.mouse.click(again.x, again.y);
       await zoomGone(page);
       assert.match(await labelOf(page, 'Skepta') || '', / — not picked/, 'Skepta is still unpicked');
