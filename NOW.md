@@ -54,9 +54,10 @@ how we got here belongs in DEVLOG.md.
   `claude-plans/2026-09-23-zoom-chips-motion.md`, build log
   `claude-plans/2026-09-23-zoom-chips-build.md`; gallery.html row 19 replays
   each case. Canvas: https://claude.ai/artifact/ShW4NLwgdtqMQxnAu43Pbh
-- Small calls with defaults: a half-width 30-min cell hides its start time once
-  picked (ACL both-weekends view only); How it works dropped "White stroke =
-  you".
+- Small call with a default: How it works dropped "White stroke = you" (you
+  are never in the crew corner now). (A half-width 30-min cell hiding its
+  start time once picked cannot happen in any shipped fest: ACL renders each
+  weekend as its own day, so it has no lane-split cells — checked 2026-09-24.)
 - If a phone tap ever grows a card on a real iPhone: gate hover arming on
   `(any-hover: hover)` — card-facts.js deliberately avoids media queries, so
   that is Kevin's call.
