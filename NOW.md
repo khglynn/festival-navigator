@@ -70,9 +70,11 @@ how we got here belongs in DEVLOG.md.
 
 ## Open with Kevin
 
-- Held back from the Portola afters, waiting on Kevin: the Thu Club Six
-  openers and Sun Midway's S.I.M / Espurr / New Nostalgia, which the official
-  feed lists. One data-only push once he says yes.
+- Sun Midway's S.I.M / Espurr / New Nostalgia (the official feed lists them,
+  untimed) are held out of the data: untimed acts in a timed room used to
+  glow doors to close. v87 fixes that (they are on the bill, time unknown);
+  one data-only push adds them once v87 ships, before Sunday. (The Thu Club
+  Six openers went live on 2026-09-24, PR #27.)
 - Vercel Web Analytics: the page carries the insights tag, but analytics is
   not enabled on the project — enable it, or remove the tag.
 - Small call with a default: How it works dropped "White stroke = you" (you
