@@ -683,12 +683,40 @@ function dockTop() {
   return t > 0 && t < window.innerHeight ? t : null;
 }
 
-// Centre the overlay on the resting card. The screen's left and right edges
-// push it inward (an overlay cannot be read off-screen), and the phone dock,
-// when it is showing, is a floor: a zoom that would reach within 8px of it is
-// MOVED up — never shrunk or reshaped — unless it is taller than the space
-// above the dock, where it stays where the arithmetic put it. The top never
-// moves it — a card by the day rail grows where it is. Either way the bloom's
+// The sticky chrome ABOVE a card, as the zoom layer sees it: the lowest
+// bottom edge on screen of the desktop day rail (≥720, sticky at the top)
+// and the card's OWN timetable's stage strip (one per .tt-block, sticky
+// under the rail) — pinned, or still at its natural spot over the grid. Real
+// boxes, never tokens. Null where there is none: a stack of cards (the
+// afters) has only the rail on a desktop and nothing at all on a phone, and
+// no ceiling is invented there. The zoom layer sits over all of it, so a
+// card grown near the top covered the stage names (Kevin, 2026-09-24: the
+// dock's floor "for the sticky headers too").
+function chromeCeiling(el) {
+  let bottom = null;
+  const vh = window.innerHeight;
+  const take = (n) => {
+    if (!n || !n.getClientRects().length) return;
+    const r = n.getBoundingClientRect();
+    if (r.height > 0 && r.bottom > 0 && r.top < vh && (bottom === null || r.bottom > bottom)) bottom = r.bottom;
+  };
+  take(document.getElementById('day-rail'));
+  const block = el && el.closest ? el.closest('.tt-block') : null;
+  if (block) take(block.querySelector(':scope > .stage-strip'));
+  return bottom;
+}
+
+// Centre the overlay on the resting card, then keep it off the chrome. The
+// screen's left and right edges push it inward (an overlay cannot be read
+// off-screen). The phone dock, when it is showing, is a FLOOR and the sticky
+// chrome above the card a CEILING: a zoom that would come within 8px of
+// either is MOVED — never shrunk or reshaped — and when it cannot clear both
+// (taller than the band between them) the ceiling wins and the dock gives
+// way, so its name and the stage names stay readable; as one continuous
+// rule (max of min), it glides while the page scrolls under follow() instead
+// of jumping between clamped and not. With no ceiling, a zoom too tall for
+// the space above the dock stays where the arithmetic put it, and the
+// screen's own top and bottom edges move nothing. Either way the bloom's
 // origin is the card's own centre (originFor, from the box returned here),
 // so a moved zoom still grows out of its card, as it does at the side edges.
 function place(slot, el) {
@@ -706,7 +734,9 @@ function place(slot, el) {
   let top = Math.round(r0.top + r0.height / 2 - h / 2);
   left = Math.max(8, Math.min(left, vw - 8 - w));
   const floor = dockTop();
-  if (floor !== null && top + h > floor - 8 && h <= floor - 16) top = Math.floor(floor - 8 - h);
+  const ceiling = chromeCeiling(el);
+  if (floor !== null && top + h > floor - 8 && (ceiling !== null || h <= floor - 16)) top = Math.floor(floor - 8 - h);
+  if (ceiling !== null && top < ceiling + 8) top = Math.ceil(ceiling + 8);
   slot.style.left = `${Number.isFinite(left) ? left : r0.left}px`;
   slot.style.top = `${Number.isFinite(top) ? top : r0.top}px`;
   return { r0, r1: box(left, top, w, h) };
