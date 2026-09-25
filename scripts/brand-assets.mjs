@@ -246,7 +246,13 @@ const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June',
 // Wednesday Sept 16..."), and prose does not survive poster scale.
 function subLine(fest) {
   const [y, m] = String(fest.startsOn || '').split('-');
-  const when = MONTHS[Number(m) - 1] ? `${MONTHS[Number(m) - 1]} ${y}` : '';
+  let when = MONTHS[Number(m) - 1] ? `${MONTHS[Number(m) - 1]} ${y}` : '';
+  // A city season is a window of months (Austin Winter '27: Dec 2026 – Feb 2027).
+  const [y2, m2] = String(fest.endsOn || '').split('-');
+  if (fest.kind === 'season' && MONTHS[Number(m) - 1] && MONTHS[Number(m2) - 1]) {
+    const mon = (n) => MONTHS[Number(n) - 1].slice(0, 3);
+    when = y === y2 ? `${mon(m)} – ${mon(m2)} ${y}` : `${mon(m)} ${y} – ${mon(m2)} ${y2}`;
+  }
   return [fest.location, when].filter(Boolean).join('  ·  ').toUpperCase();
 }
 

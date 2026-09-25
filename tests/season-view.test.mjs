@@ -41,7 +41,7 @@ const TODAY = '2026-09-25';
 const show = (name, date, venue, more = {}) => ({ name, day: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'][Number(date.slice(5, 7)) - 1], date, venue, ...more });
 const SEASON = {
   id: 'season-test', kind: 'season', name: 'Austin', year: "'26–27", subtitle: 'Winter + Spring', location: 'Austin, TX',
-  dates: 'Aug 2026 – Jan 2027', status: 'scheduled', timezone: 'America/Chicago', accent: '244, 114, 182', days: {},
+  dates: 'Aug 2026 – Jan 2027', startsOn: '2026-08-01', endsOn: '2027-01-31', status: 'scheduled', timezone: 'America/Chicago', accent: '244, 114, 182', days: {},
   venues: { Mohawk: 'https://maps.google.com/?q=Mohawk' },
   artists: [
     show('Last Month', '2026-08-30', 'Parish', { time: '8 PM' }),                 // a month that is over

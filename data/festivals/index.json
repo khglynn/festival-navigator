@@ -20,17 +20,6 @@
     "accent": "250, 204, 21"
   },
   {
-    "id": "austin",
-    "kind": "season",
-    "name": "Austin",
-    "year": "'26–27",
-    "startsOn": "2026-09-24",
-    "status": "scheduled",
-    "dates": "Sep 2026 – Jul 2027",
-    "location": "Austin, TX",
-    "accent": "244, 114, 182"
-  },
-  {
     "id": "edc-orlando-2026",
     "name": "EDC Orlando",
     "year": "'26",
@@ -59,6 +48,58 @@
     "dates": "March 20–27, 2027 (8-day event, seventh edition)",
     "location": "Alpe d'Huez, France",
     "accent": "147, 197, 253"
+  },
+  {
+    "id": "austin-fall-2026",
+    "kind": "season",
+    "name": "Austin Fall",
+    "year": "'26",
+    "startsOn": "2026-09-01",
+    "endsOn": "2026-11-30",
+    "status": "scheduled",
+    "dates": "Sep – Nov 2026",
+    "updated": "2026-09-25",
+    "location": "Austin, TX",
+    "accent": "240, 146, 76"
+  },
+  {
+    "id": "austin-winter-2027",
+    "kind": "season",
+    "name": "Austin Winter",
+    "year": "'27",
+    "startsOn": "2026-12-01",
+    "endsOn": "2027-02-28",
+    "status": "scheduled",
+    "dates": "Dec 2026 – Feb 2027",
+    "updated": "2026-09-25",
+    "location": "Austin, TX",
+    "accent": "125, 196, 255"
+  },
+  {
+    "id": "austin-spring-2027",
+    "kind": "season",
+    "name": "Austin Spring",
+    "year": "'27",
+    "startsOn": "2027-03-01",
+    "endsOn": "2027-05-31",
+    "status": "scheduled",
+    "dates": "Mar – May 2027",
+    "updated": "2026-09-25",
+    "location": "Austin, TX",
+    "accent": "244, 114, 182"
+  },
+  {
+    "id": "austin-summer-2027",
+    "kind": "season",
+    "name": "Austin Summer",
+    "year": "'27",
+    "startsOn": "2027-06-01",
+    "endsOn": "2027-08-31",
+    "status": "scheduled",
+    "dates": "Jun – Aug 2027",
+    "updated": "2026-09-25",
+    "location": "Austin, TX",
+    "accent": "250, 204, 90"
   },
   {
     "id": "electric-forest-2026",

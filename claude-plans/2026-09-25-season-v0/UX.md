@@ -60,6 +60,23 @@ the alert exists for. A thin March is the truth, not a bug.
    own small head, not in start-date order: a rolling season always starts
    "today", so date order would pin it above Portola during Portola.
 
+## Seasons, not one long list (Kevin, 2026-09-25 evening)
+
+"I want to do seasons … Austin, winter, 27, and Austin, spring, 27 … they
+should just be different entries and then they get archived after they're
+over, just like festivals." So a city is a run of entries, each a festival
+file with a window: Austin Fall '26 (Sep–Nov), Austin Winter '27 (Dec 2026 –
+Feb 2027, named for its January), Austin Spring '27 (Mar–May), Austin Summer
+'27 (Jun–Aug). Ids `austin-<season>-<year>`; each file carries `startsOn`,
+`endsOn` and `updated` (the day the feed last ran), and the validator keeps
+every show inside its window. The feed writes one file per season with
+shows, adds each to the index and the freeze, and marks a season archived
+once its window is over. A season's month tabs are its three months. The
+description line says when it was last updated, in place of the old
+"Winter + Spring" subtitle. One artist registry serves the whole city, so a
+name is spelled the same in every season; picks are per season, like a
+festival's.
+
 ## Live usage: Portola is live now; ACL is Oct 2–4 and 9–11
 
 1. **Production stays on v88 until Kevin says otherwise, and never changes

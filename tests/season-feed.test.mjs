@@ -7,8 +7,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   keyOf, venueName, headlinerFromTitle, tidyHeadliner, nightOf, ticketsOf,
-  nearName, mergeShows, clampName, monthOf,
+  nearName, mergeShows, clampName, monthOf, seasonOf,
 } from '../scripts/season-feed.mjs';
+
+const pickSeason = (s) => [s.id, s.name, s.year, s.startsOn, s.endsOn];
 
 const show = (o) => ({ date: '2026-10-02', venue: 'Mohawk', title: o.headliner, with: [], ...o });
 
@@ -128,8 +130,13 @@ test('names with no Latin letters keep keys of their own, and never an empty one
   assert.equal(out.length, 2);
 });
 
-test('a month a year or more after the season began carries its year', () => {
-  assert.equal(monthOf('2026-09-26'), 'September');
-  assert.equal(monthOf('2027-08-31'), 'August');
-  assert.equal(monthOf('2027-09-01'), 'September 2027');
+test('a city runs in seasons, each its own entry with a window (Kevin, 2026-09-25)', () => {
+  assert.deepEqual(pickSeason(seasonOf('2026-09-25')), ['austin-fall-2026', "Austin Fall", "'26", '2026-09-01', '2026-11-30']);
+  // Winter wears the year of its January: December 2026 is Austin Winter '27.
+  assert.deepEqual(pickSeason(seasonOf('2026-12-01')), ['austin-winter-2027', 'Austin Winter', "'27", '2026-12-01', '2027-02-28']);
+  assert.deepEqual(pickSeason(seasonOf('2027-02-28')), ['austin-winter-2027', 'Austin Winter', "'27", '2026-12-01', '2027-02-28']);
+  assert.equal(seasonOf('2028-01-10').endsOn, '2028-02-29', 'a leap February ends on the 29th');
+  assert.equal(seasonOf('2027-03-01').id, 'austin-spring-2027');
+  assert.equal(seasonOf('2027-08-31').id, 'austin-summer-2027');
+  assert.equal(monthOf('2027-01-15'), 'January', 'a season is three months, so a month label is just its name');
 });

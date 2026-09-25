@@ -25,11 +25,16 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { validateFestivalDoc } from '../api/_lib/festival-rules.mjs';
+import { freezeFestival } from '../api/_lib/pick-keys.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
-// SEASON_OUT / SEASON_REGISTRY point a trial run somewhere other than the repo.
-const OUT = process.env.SEASON_OUT || join(ROOT, 'data/festivals/austin.json');
+// SEASON_OUT_DIR / SEASON_REGISTRY point a trial run somewhere other than the
+// repo; a trial run leaves the index and the freeze alone.
+const FEST_DIR = join(ROOT, 'data/festivals');
+const OUT_DIR = process.env.SEASON_OUT_DIR || FEST_DIR;
+const TRIAL = OUT_DIR !== FEST_DIR;
 const REGISTRY = process.env.SEASON_REGISTRY || join(ROOT, 'data/seasons/austin-artists.json');
+const FREEZE = join(ROOT, 'tests/fixtures/live-pick-keys.json');
 const args = new Set(process.argv.slice(2));
 const DRY = args.has('--dry');
 
@@ -372,31 +377,62 @@ function spellingOf(s) {
 // A pick key the crew document accepts is at most 100 characters.
 export const clampName = (n) => (n.length <= 100 ? n : n.slice(0, 100).replace(/\s+\S*$/, '').trim());
 
-// ---- the file --------------------------------------------------------------------
+// ---- the seasons -----------------------------------------------------------------
+// A city is a run of seasons, each its own entry like a festival (Kevin,
+// 2026-09-25: "they should just be different entries and then they get
+// archived after they're over, just like festivals"): Austin Fall '26, Austin
+// Winter '27, … Winter is December to February and wears the year of its
+// January. Each season file's id, its artist names and its month labels are
+// pick keys, so none of them ever changes once written.
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-// Month labels are pick keys (notes hang on them) and never change. The season
-// began Sep 2026, so a month twelve or more months after that carries its year
-// ("September 2027") and never shares a tab with the September already here.
-const SEASON_START = { y: 2026, m: 9 };
-export function monthOf(iso) {
+const CITY = { id: 'austin', name: 'Austin', location: 'Austin, TX' };
+const SEASONS = {
+  winter: { name: 'Winter', first: 12, accent: '125, 196, 255' },
+  spring: { name: 'Spring', first: 3, accent: '244, 114, 182' },
+  summer: { name: 'Summer', first: 6, accent: '250, 204, 90' },
+  fall: { name: 'Fall', first: 9, accent: '240, 146, 76' },
+};
+export const monthOf = (iso) => MONTHS[Number(iso.slice(5, 7)) - 1];
+const lastDay = (y, m) => new Date(Date.UTC(y, m, 0)).toISOString().slice(0, 10); // m is 1-based
+export function seasonOf(iso) {
   const y = Number(iso.slice(0, 4)), m = Number(iso.slice(5, 7));
-  const name = MONTHS[m - 1];
-  return (y - SEASON_START.y) * 12 + (m - SEASON_START.m) >= 12 ? `${name} ${y}` : name;
+  const key = m === 12 || m <= 2 ? 'winter' : m <= 5 ? 'spring' : m <= 8 ? 'summer' : 'fall';
+  const s = SEASONS[key];
+  const startY = key === 'winter' && m <= 2 ? y - 1 : y;
+  const endY = key === 'winter' ? startY + 1 : startY;
+  const endM = (s.first + 1) % 12 + 1;
+  const named = key === 'winter' ? endY : startY; // Winter '27 runs Dec 2026 – Feb 2027
+  const mon = (mm) => MONTHS[mm - 1].slice(0, 3);
+  return {
+    id: `${CITY.id}-${key}-${named}`, key, name: `${CITY.name} ${s.name}`, year: `'${String(named).slice(2)}`,
+    startsOn: `${startY}-${String(s.first).padStart(2, '0')}-01`, endsOn: lastDay(endY, endM), accent: s.accent,
+    dates: startY === endY ? `${mon(s.first)} – ${mon(endM)} ${startY}` : `${mon(s.first)} ${startY} – ${mon(endM)} ${endY}`,
+  };
 }
 
 async function main() {
   const problems = [];
   const today = todayIso();
-  // --fresh ignores the file on disk: only for a season nobody has picked in yet
-  // (before Austin reaches production), since every name it drops must also
-  // leave the freeze. After that, never: names are pick keys.
-  const prev = !args.has('--fresh') && existsSync(OUT) ? JSON.parse(readFileSync(OUT, 'utf8')) : null;
-  // --fresh starts the registry over too: with no file, no name is a pick key yet.
-  const registry = !args.has('--fresh') && existsSync(REGISTRY) ? JSON.parse(readFileSync(REGISTRY, 'utf8')) : { note: '', names: {} };
-  // alias key -> canonical name, seeded from every name already in the file.
+  const fresh = args.has('--fresh');
+  const index = JSON.parse(readFileSync(join(FEST_DIR, 'index.json'), 'utf8'));
+  const isCitySeason = (row) => row.kind === 'season' && row.id.startsWith(`${CITY.id}-`);
+  // --fresh ignores the files on disk: only while no season has reached
+  // production, since every name it drops must also leave the freeze. After
+  // that, never: names are pick keys.
+  const prevById = new Map();
+  if (!fresh) {
+    for (const row of index.filter(isCitySeason)) {
+      const file = join(OUT_DIR, `${row.id}.json`);
+      if (existsSync(file)) prevById.set(row.id, JSON.parse(readFileSync(file, 'utf8')));
+    }
+  }
+  const prevShows = [...prevById.values()].flatMap((f) => f.artists || []);
+  const registry = !fresh && existsSync(REGISTRY) ? JSON.parse(readFileSync(REGISTRY, 'utf8')) : { note: '', names: {} };
+  // alias key -> canonical name, one registry for the city, so an artist is
+  // spelled the same in every season.
   const aliasToName = new Map();
   for (const [name, aliases] of Object.entries(registry.names)) for (const a of [name, ...aliases]) aliasToName.set(keyOf(a), name);
-  for (const a of prev?.artists || []) if (!aliasToName.has(keyOf(a.name))) aliasToName.set(keyOf(a.name), a.name);
+  for (const a of prevShows) if (!aliasToName.has(keyOf(a.name))) aliasToName.set(keyOf(a.name), a.name);
 
   const do512 = await readDo512(problems);
   const jb = args.has('--no-jambase') || !process.env.JAMBASE_API_KEY ? { shows: [], calls: 0 } : await readJamBase(process.env.JAMBASE_API_KEY, problems);
@@ -416,7 +452,7 @@ async function main() {
   const moved = (s) => Object.keys(s.sources).join() === 'jambase' && trusted.has(`${s.date}|${keyOf(s.headliner)}`);
   const merged = allMerged.filter((s) => !inOtherFest(s) && !moved(s));
 
-  const before = new Map((prev?.artists || []).map((a) => [`${a.name}|${a.date}|${a.venue}`, a]));
+  const before = new Map(prevShows.map((a) => [`${a.name}|${a.date}|${a.venue}`, a]));
   const entries = [];
   for (const s of merged) {
     const spelled = clampName(spellingOf(s));
@@ -438,11 +474,11 @@ async function main() {
     e.sources = s.sources;
     entries.push(e);
   }
-  // Keep every name the file already had: past shows as they were, and a
+  // Keep every name a file already had: past shows as they were, and a
   // future show no source lists any more marked unlisted (never dropped).
   const seen = new Set(entries.map((e) => `${e.name}|${e.date}|${e.venue}`));
   let kept = 0, unlisted = 0;
-  for (const a of prev?.artists || []) {
+  for (const a of prevShows) {
     if (seen.has(`${a.name}|${a.date}|${a.venue}`)) continue;
     const e = { ...a };
     if (a.date >= today && !a.unlisted) { e.unlisted = today; unlisted++; }
@@ -450,26 +486,40 @@ async function main() {
   }
   entries.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : (minutes(a.time) ?? 1440) - (minutes(b.time) ?? 1440) || a.venue.localeCompare(b.venue)));
 
-  const months = [...new Set(entries.map((e) => e.day))];
-  const venuesSeen = [...new Set(entries.map((e) => e.venue))];
   const counts = { do512: do512.length, jambase: jb.shows.length, ticketmaster: tm.length, jambaseCalls: jb.calls, merged: merged.length, inAnotherFest: allMerged.filter(inOtherFest).length, movedPerJamBaseOnly: allMerged.filter((s) => !inOtherFest(s) && moved(s)).length, keptFromBefore: kept, newlyUnlisted: unlisted };
   const addressOf = {};
   for (const s of merged) if (s.address && !addressOf[s.venue]) addressOf[s.venue] = s.address;
-  const fest = {
-    id: 'austin', kind: 'season', name: 'Austin', year: "'26–27", subtitle: 'Winter + Spring', location: 'Austin, TX',
-    dates: `${entries[0]?.date ? MONTHS[Number(entries[0].date.slice(5, 7)) - 1].slice(0, 3) : ''} ${entries[0]?.date?.slice(0, 4) || ''} – ${entries.at(-1)?.date ? MONTHS[Number(entries.at(-1).date.slice(5, 7)) - 1].slice(0, 3) : ''} ${entries.at(-1)?.date?.slice(0, 4) || ''}`.trim(),
-    status: 'scheduled', timezone: TZ, accent: prev?.accent || '244, 114, 182',
-    artists: entries,
-    dayMeta: Object.fromEntries(months.map((m) => { const any = entries.find((e) => e.day === m); return [m, { date: `${m.slice(0, 3)} ${any.date.slice(0, 4)}` }]; })),
-    venues: Object.fromEntries(venuesSeen.map((v) => [v, VENUE_MAPS[v] || prev?.venues?.[v] || mapSearch(v, addressOf[v], 'Austin, TX')])),
-    meta: {
-      announcementStatus: 'scheduled', researchedAt: today,
-      sources: ['https://do512.com/', 'https://data.jambase.com/', 'https://developer.ticketmaster.com/'],
-      feed: { generatedAt: new Date().toISOString(), counts, problems },
-      note: 'Generated by scripts/season-feed.mjs; do not hand-edit shows (a re-run keeps names, never overwrites a past show). Plan: claude-plans/2026-09-25-season-v0/PLAN.md.',
-    },
-    days: {},
-  };
+
+  // One file per season that has a show; a season already in the index keeps
+  // its file even when this run found nothing for it.
+  const bySeason = new Map();
+  for (const e of entries) {
+    const season = seasonOf(e.date);
+    if (!bySeason.has(season.id)) bySeason.set(season.id, { season, shows: [] });
+    bySeason.get(season.id).shows.push(e);
+  }
+  for (const id of prevById.keys()) if (!bySeason.has(id)) bySeason.set(id, { season: seasonOf(prevById.get(id).startsOn), shows: prevById.get(id).artists || [] });
+  const generatedAt = new Date().toISOString();
+  const files = [...bySeason.values()].sort((a, b) => a.season.startsOn.localeCompare(b.season.startsOn)).map(({ season, shows }) => {
+    const prev = prevById.get(season.id);
+    const months = [...new Set(shows.map((e) => e.day))];
+    const venuesSeen = [...new Set(shows.map((e) => e.venue))];
+    return {
+      id: season.id, kind: 'season', name: season.name, year: season.year, location: CITY.location,
+      dates: season.dates, startsOn: season.startsOn, endsOn: season.endsOn, updated: today,
+      status: today > season.endsOn ? 'archived' : 'scheduled', timezone: TZ, accent: prev?.accent || season.accent,
+      artists: shows,
+      dayMeta: Object.fromEntries(months.map((m) => { const any = shows.find((e) => e.day === m); return [m, { date: `${m.slice(0, 3)} ${any.date.slice(0, 4)}` }]; })),
+      venues: Object.fromEntries(venuesSeen.map((v) => [v, VENUE_MAPS[v] || prev?.venues?.[v] || mapSearch(v, addressOf[v], CITY.location)])),
+      meta: {
+        announcementStatus: 'scheduled', researchedAt: today,
+        sources: ['https://do512.com/', 'https://data.jambase.com/', 'https://developer.ticketmaster.com/'],
+        feed: { generatedAt, counts, problems },
+        note: 'Generated by scripts/season-feed.mjs; do not hand-edit shows (a re-run keeps names, never overwrites a past show). Plan: claude-plans/2026-09-25-season-v0/PLAN.md.',
+      },
+      days: {},
+    };
+  });
 
   // Expected ranges (the data rule: decide what is plausible before trusting a run).
   const future = entries.filter((e) => e.date >= today && !e.unlisted);
@@ -479,25 +529,47 @@ async function main() {
   if (next90.length < 100) range.push(`only ${next90.length} shows in the next 90 days`);
   if (!do512.length) range.push('Do512 returned nothing');
   if (unlisted > 150) range.push(`${unlisted} shows vanished from every source at once — a source is probably broken`);
-  const { errors, warnings } = validateFestivalDoc(fest, { filename: 'austin.json' });
-  const report = { counts, upcoming: future.length, next90: next90.length, months, problems, range, errors: errors.slice(0, 10), warnings: warnings.length };
+  const errors = [], warnings = [];
+  for (const f of files) {
+    const r = validateFestivalDoc(f, { filename: `${f.id}.json` });
+    errors.push(...r.errors.map((x) => `${f.id}: ${x}`)); warnings.push(...r.warnings);
+  }
+  const report = { counts, upcoming: future.length, next90: next90.length, seasons: Object.fromEntries(files.map((f) => [f.id, f.artists.length])), problems, range, errors: errors.slice(0, 10), warnings: warnings.length };
   console.log(JSON.stringify(report, null, 1));
   if (errors.length || range.length) { console.error('not written: fix the errors or range problems above'); process.exit(1); }
   if (DRY) { console.log('dry run: nothing written'); return; }
-  writeFileSync(OUT, JSON.stringify(fest, null, 2) + '\n');
-  // The landing's date line comes from the index; keep it saying what the file holds.
-  if (!process.env.SEASON_OUT) {
-    const indexFile = join(ROOT, 'data/festivals/index.json');
-    const index = JSON.parse(readFileSync(indexFile, 'utf8'));
-    const row = index.find((f) => f.id === fest.id);
-    if (row && row.dates !== fest.dates) { row.dates = fest.dates; writeFileSync(indexFile, JSON.stringify(index, null, 2) + '\n'); }
+
+  mkdirSync(OUT_DIR, { recursive: true });
+  for (const f of files) writeFileSync(join(OUT_DIR, `${f.id}.json`), JSON.stringify(f, null, 2) + '\n');
+  if (!TRIAL) {
+    // The index lists each season like a festival: its window, its status
+    // (archived once over, as festivals are) and the day the feed last ran.
+    const rows = files.map((f) => ({
+      id: f.id, kind: 'season', name: f.name, year: f.year, startsOn: f.startsOn, endsOn: f.endsOn,
+      status: f.status, dates: f.dates, updated: f.updated, location: f.location, accent: f.accent,
+    }));
+    const at = index.findIndex(isCitySeason);
+    const rest = index.filter((r) => !isCitySeason(r));
+    const insertAt = at >= 0 ? at : Math.max(0, rest.findIndex((r) => r.status === 'archived'));
+    rest.splice(insertAt, 0, ...rows);
+    writeFileSync(join(FEST_DIR, 'index.json'), JSON.stringify(rest, null, 2) + '\n');
+    // A season is in the freeze from its first run: every name only ever
+    // grows (the freeze refuses a drop), and CI wants every listed season frozen.
+    const fixture = JSON.parse(readFileSync(FREEZE, 'utf8'));
+    for (const f of files) {
+      const next = freezeFestival(f, today);
+      const old = fixture.festivals[f.id];
+      if (old && old.names.some((n) => !next.names.includes(n))) { console.error(`${f.id}: a frozen name is missing; not refreezing`); process.exit(1); }
+      fixture.festivals[f.id] = old ? { ...next, frozenAt: old.frozenAt } : next;
+    }
+    writeFileSync(FREEZE, JSON.stringify(fixture, null, 2) + '\n');
   }
   mkdirSync(dirname(REGISTRY), { recursive: true });
   registry.note = 'Canonical Austin season names (the pick keys) and every other spelling a source has used for them. A new spelling maps to the name already here; a name is never renamed. Written by scripts/season-feed.mjs.';
   registry.names = Object.fromEntries(Object.entries(registry.names).sort(([a], [b]) => a.localeCompare(b)));
   for (const e of entries) registry.names[e.name] ||= [];
   writeFileSync(REGISTRY, JSON.stringify(registry, null, 1) + '\n');
-  console.log(`wrote ${OUT} (${entries.length} shows) and ${REGISTRY}`);
+  console.log(`wrote ${files.map((f) => `${f.id} (${f.artists.length})`).join(', ')} and ${REGISTRY}`);
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) main().catch((e) => { console.error(e); process.exit(1); });

@@ -129,7 +129,12 @@ async function main() {
   const opt = (k) => { const i = args.indexOf(k); return i >= 0 ? args[i + 1] : null; };
   const lovedFile = opt('--loved');
   if (!lovedFile) { console.error('usage: node scripts/season-alert.mjs --loved loved.json [--post <channel id>]'); process.exit(2); }
-  const fest = JSON.parse(readFileSync(opt('--season') || join(ROOT, 'data/festivals/austin.json'), 'utf8'));
+  // Every Austin season that is not over, as one city (a season is its own
+  // entry in the app; the alert is about the city).
+  const index = JSON.parse(readFileSync(join(ROOT, 'data/festivals/index.json'), 'utf8'));
+  const files = opt('--season') ? [opt('--season')]
+    : index.filter((f) => f.kind === 'season' && f.id.startsWith('austin-') && f.status !== 'archived').map((f) => join(ROOT, 'data/festivals', `${f.id}.json`));
+  const fest = { name: 'Austin', artists: files.flatMap((file) => JSON.parse(readFileSync(file, 'utf8')).artists || []) };
   const loved = JSON.parse(readFileSync(lovedFile, 'utf8'));
   const today = new Intl.DateTimeFormat('en-CA', { timeZone: TZ }).format(new Date());
   const msg = buildMessage(fest, matchShows(fest, loved, today));

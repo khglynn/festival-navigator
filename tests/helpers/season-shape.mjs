@@ -99,7 +99,7 @@ export function seasonShape({ today = '2026-09-25', names = [], seed = 2026 } = 
   const dayMeta = Object.fromEntries([...new Set(artists.map((a) => a.day))].map((m) => [m, { date: `${m.slice(0, 3)} ${artists.find((a) => a.day === m).date.slice(0, 4)}` }]));
   return {
     id: 'austin', kind: 'season', name: 'Austin', year: "'26–27", subtitle: 'Winter + Spring', location: 'Austin, TX',
-    dates: 'Sep 2026 – May 2027', status: 'scheduled', timezone: 'America/Chicago', accent: '244, 114, 182',
+    dates: 'Sep 2026 – May 2027', startsOn: artists[0].date, endsOn: artists.at(-1).date, status: 'scheduled', timezone: 'America/Chicago', accent: '244, 114, 182',
     artists, dayMeta, venues: { Mohawk: 'https://maps.google.com/?q=Mohawk+Austin' }, days: {},
     meta: { note: 'tests/helpers/season-shape.mjs — shaped like the 2026-09-25 trial feed' },
   };

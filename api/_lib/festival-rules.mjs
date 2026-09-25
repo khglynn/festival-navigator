@@ -372,9 +372,16 @@ export function validateFestivalDoc(fest, { filename } = {}) {
   if (isSeason) {
     const plainObj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
     if (plainObj(fest.days) && Object.keys(fest.days).length) err('a season has no grid: days{} must be empty');
+    // A season is a stretch of time like a festival's weekend (Austin Winter
+    // '27 = Dec 2026 – Feb 2027): it names its window, every show sits inside
+    // it, and it is archived once the window is over.
+    const window = realDate(fest.startsOn) && realDate(fest.endsOn) && fest.startsOn <= fest.endsOn;
+    if (!window) err('a season needs startsOn and endsOn (YYYY-MM-DD, in order)');
+    if (fest.updated !== undefined && !realDate(fest.updated)) err('updated must be a YYYY-MM-DD date');
     (Array.isArray(fest.artists) ? fest.artists : []).forEach((a, i) => {
       if (!plainObj(a)) return;
       if (!realDate(a.date) || !a.venue) err(`artists[${i}] (${safeKey(a.name)}): every show in a season carries a date and a venue`);
+      else if (window && (a.date < fest.startsOn || a.date > fest.endsOn)) err(`artists[${i}] (${safeKey(a.name)}): ${a.date} is outside the season (${fest.startsOn} – ${fest.endsOn})`);
     });
   }
   if (fest.accent && !ACCENT_RE.test(fest.accent)) err(`accent must be "R, G, B" (got ${safeKey(fest.accent)})`);

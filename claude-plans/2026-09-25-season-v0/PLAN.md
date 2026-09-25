@@ -29,7 +29,7 @@ on branch `seasons/kickoff` (STUDY.md, KEVIN-NOTES-ROUND1.md, BUILD-PLAN.md).
   calls a run, 1,000 a month).
 - **Slack** only ever posts to Kevin's own `#dont-miss`, and only when he says.
 
-## The data contract (`data/festivals/austin.json`)
+## The data contract (`data/festivals/austin-<season>-<year>.json`, one per season since 2026-09-25 evening; see UX.md "Seasons")
 
 A festival file with no grid (`days: {}`) and one extra field:
 

@@ -1,0 +1,2719 @@
+{
+  "id": "austin-winter-2027",
+  "kind": "season",
+  "name": "Austin Winter",
+  "year": "'27",
+  "location": "Austin, TX",
+  "dates": "Dec 2026 – Feb 2027",
+  "startsOn": "2026-12-01",
+  "endsOn": "2027-02-28",
+  "updated": "2026-09-25",
+  "status": "scheduled",
+  "timezone": "America/Chicago",
+  "accent": "125, 196, 255",
+  "artists": [
+    {
+      "name": "Darkest Hour",
+      "day": "December",
+      "date": "2026-12-01",
+      "venue": "Come and Take It Live",
+      "time": "6 PM",
+      "with": [
+        "Judiciary"
+      ],
+      "billedAs": "Darkest Hour at Come and Take It Live",
+      "page": {
+        "url": "https://www.jambase.com/show/darkest-hour-come-and-take-it-live-20261201",
+        "at": "JamBase"
+      },
+      "tickets": {
+        "url": "https://etix.prf.hn/click/camref:1101lGKCg/destination:https://www.etix.com/ticket/p/85843993/darkest-hour-austin-come-and-take-it-live?utm_source=jambase",
+        "at": "Etix"
+      },
+      "sources": {
+        "jambase": "jambase:17097730"
+      }
+    },
+    {
+      "name": "Emma Ruth Rundle",
+      "day": "December",
+      "date": "2026-12-01",
+      "venue": "29th Street Ballroom",
+      "time": "8 PM",
+      "billedAs": "Emma Ruth Rundle at 29th Street Ballroom",
+      "page": {
+        "url": "https://www.jambase.com/show/emma-ruth-rundle-29th-street-ballroom-20261201",
+        "at": "JamBase"
+      },
+      "tickets": {
+        "url": "https://prod-nts-api.seeticketsusa.us/v1.0.0/promote/YWZmOlNUVVMtNjk5MzgyOjE4/clickthru?utm_source=jambase",
+        "at": "See Tickets"
+      },
+      "sources": {
+        "jambase": "jambase:16995093"
+      }
+    },
+    {
+      "name": "Eric Benet",
+      "day": "December",
+      "date": "2026-12-01",
+      "venue": "ACL Live",
+      "time": "8 PM",
+      "page": {
+        "url": "https://do512.com/events/2026/12/1/eric-benet-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://www.axs.com/events/1595881/eric-benet-tickets?skin=acllive&_gl=1*1vebbe7*_gcl_aw*R0NMLjE3ODc1OTI3NTguQ2owS0NRancxNl9VQmhDcUFSSXNBSWRPYVh4QnNlMmd5Vjd5NUZFWVRNcWVfQTdPMWlyRDhfd1VXb0RUZUUwUDNCVjdaMklNT2p5Rm40QWFBcHNURUFMd193Y0I.*_gcl_dc*R0NMLjE3ODc1O?cid=usaffdostuff",
+        "at": "AXS"
+      },
+      "sources": {
+        "do512": "17821669",
+        "ticketmaster": "Z7r9jZ1AAvtby",
+        "jambase": "jambase:17000740"
+      }
+    },
+    {
+      "name": "the olllam",
+      "day": "December",
+      "date": "2026-12-01",
+      "venue": "Antone's",
+      "time": "8 PM",
+      "page": {
+        "url": "https://www.jambase.com/show/the-olllam-antones-20261201",
+        "at": "JamBase"
+      },
+      "tickets": {
+        "url": "https://www.ticketmaster.com/the-olllam-austin-texas-12-01-2026/event/3A006505CA0ABDB3",
+        "at": "Ticketmaster"
+      },
+      "onSale": "2026-08-14T15:00:00Z",
+      "sources": {
+        "ticketmaster": "G5dIZ_891elUS",
+        "jambase": "jambase:16869683"
+      }
+    },
+    {
+      "name": "D.R.I. (Dirty Rotten Imbeciles)",
+      "day": "December",
+      "date": "2026-12-02",
+      "venue": "Come and Take It Live",
+      "time": "7 PM",
+      "with": [
+        "Authors of Fate"
+      ],
+      "billedAs": "D.R.I. (Dirty Rotten Imbeciles) at Come and Take It Live",
+      "page": {
+        "url": "https://www.jambase.com/show/d-r-i-dirty-rotten-imbeciles-come-and-take-it-live-20261202",
+        "at": "JamBase"
+      },
+      "tickets": {
+        "url": "https://etix.prf.hn/click/camref:1101lGKCg/destination:https://www.etix.com/ticket/p/93401418/dri-austin-come-and-take-it-live?utm_source=jambase",
+        "at": "Etix"
+      },
+      "sources": {
+        "jambase": "jambase:17116337"
+      }
+    },
+    {
+      "name": "Victoria Monet",
+      "day": "December",
+      "date": "2026-12-02",
+      "venue": "ACL Live",
+      "time": "8 PM",
+      "billedAs": "Victoria Monét - Frequency Of Love Tour",
+      "page": {
+        "url": "https://do512.com/events/2026/12/2/victoria-monet-frequency-of-love-tour-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://www.axs.com/events/1595745/victoria-monet-tickets?skin=acllive&_gl=1*1vvqi2l*_gcl_aw*R0NMLjE3ODc1OTI3NTguQ2owS0NRancxNl9VQmhDcUFSSXNBSWRPYVh4QnNlMmd5Vjd5NUZFWVRNcWVfQTdPMWlyRDhfd1VXb0RUZUUwUDNCVjdaMklNT2p5Rm40QWFBcHNURUFMd193Y0I.*_gcl_dc*R0NMLjE3O",
+        "at": "AXS"
+      },
+      "onSale": "2026-09-16T15:00:00Z",
+      "presales": [
+        {
+          "name": "Artist Presale",
+          "start": "2026-09-14T16:00:00Z"
+        },
+        {
+          "name": "Community Artist Presale",
+          "start": "2026-09-14T15:00:00Z"
+        },
+        {
+          "name": "LIVE NATION PRESALE",
+          "start": "2026-09-15T15:00:00Z"
+        }
+      ],
+      "sources": {
+        "do512": "17829891",
+        "ticketmaster": "Z7r9jZ1AAvPbs",
+        "jambase": "jambase:17020899"
+      }
+    },
+    {
+      "name": "Louisiana Surf Department",
+      "day": "December",
+      "date": "2026-12-03",
+      "venue": "Antone's",
+      "time": "6 PM",
+      "with": [
+        "West Texas Exiles",
+        "Caroline Hale"
+      ],
+      "billedAs": "Louisiana Surf Department at Antone’s",
+      "page": {
+        "url": "https://www.jambase.com/show/louisiana-surf-department-antones-20261203",
+        "at": "JamBase"
+      },
+      "sources": {
+        "jambase": "jambase:17033421"
+      }
+    },
+    {
+      "name": "Danny Brown",
+      "day": "December",
+      "date": "2026-12-03",
+      "venue": "Mohawk",
+      "time": "7 PM",
+      "billedAs": "Danny Brown - Mohawk 20th Anniversary",
+      "page": {
+        "url": "https://do512.com/events/2026/12/3/danny-brown-mohawk-20th-anniversary-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://etix.prf.hn/click/camref:1011l3GdWo/pubref:dostuff/destination:https%3A%2F%2Fwww.etix.com%2Fticket%2Fp%2F31052827%2Fdanny-brown-mohawk-20th-anniversary-austin-resound-presents",
+        "at": "Etix"
+      },
+      "sources": {
+        "do512": "17884671",
+        "jambase": "jambase:17092698"
+      }
+    },
+    {
+      "name": "Rippleberry",
+      "day": "December",
+      "date": "2026-12-03",
+      "venue": "White Tiger",
+      "time": "7 PM",
+      "billedAs": "Rippleberry at White Tiger",
+      "page": {
+        "url": "https://www.jambase.com/show/rippleberry-white-tiger-20261203",
+        "at": "JamBase"
+      },
+      "cancelled": {
+        "on": "2026-09-25",
+        "source": "https://www.jambase.com/show/rippleberry-white-tiger-20261203",
+        "note": "A source lists it as cancelled."
+      },
+      "sources": {
+        "jambase": "jambase:15678855"
+      }
+    },
+    {
+      "name": "Los Tucanes De Tijuana",
+      "day": "December",
+      "date": "2026-12-03",
+      "venue": "ACL Live",
+      "time": "8 PM",
+      "billedAs": "Los Tucanes de Tijuana: Tucanes Time Tour 2026",
+      "page": {
+        "url": "https://do512.com/events/2026/12/3/los-tucanes-de-tijuana-tucanes-time-tour-2026-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://www.axs.com/events/1561846/los-tucanes-de-tijuana-tickets?skin=acllive&_gl=1*hdgyqo*_gcl_au*MTIyOTA5MjgyNS4xNzg2Mzk0MDQ5*_ga*MTkxODY1MzU4OC4xNzg2Mzk0MDQ5*_ga_12QE9CF8FS*czE3ODY5ODY2ODckbzQkZzAkdDE3ODY5ODY2OTckajUwJGwwJGgw?cid=usaffdostuff",
+        "at": "AXS"
+      },
+      "sources": {
+        "do512": "17739042",
+        "ticketmaster": "Z7r9jZ1AAZgaV",
+        "jambase": "jambase:16893525"
+      }
+    },
+    {
+      "name": "Franky Rizardo",
+      "day": "December",
+      "date": "2026-12-03",
+      "venue": "Concourse Project",
+      "time": "9 PM",
+      "billedAs": "Franky Rizardo presents FLOW (Extended Set) | Austin",
+      "page": {
+        "url": "https://do512.com/events/2026/12/3/franky-rizardo-presents-flow-extended-set-austin-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://wl.eventim.us/event/Franky-Rizardo-presents-FLOW-Extended-Set-Austin/702951?afflky=TheConcourseProject",
+        "at": "Eventim"
+      },
+      "sources": {
+        "do512": "17794721",
+        "jambase": "jambase:16983168"
+      }
+    },
+    {
+      "name": "Caleb Lee Hutchinson",
+      "day": "December",
+      "date": "2026-12-03",
+      "venue": "Hole in the Wall",
+      "time": "9 PM",
+      "billedAs": "Caleb Lee Hutchinson at Hole in the Wall",
+      "page": {
+        "url": "https://www.jambase.com/show/caleb-lee-hutchinson-hole-in-the-wall-20261203",
+        "at": "JamBase"
+      },
+      "tickets": {
+        "url": "https://www.prekindle.com/promo/id/-2852527949028154563?utm_source=jambase",
+        "at": "Prekindle"
+      },
+      "sources": {
+        "jambase": "jambase:16995009"
+      }
+    },
+    {
+      "name": "Eyes Set To Kill",
+      "day": "December",
+      "date": "2026-12-04",
+      "venue": "Come and Take It Live",
+      "time": "6 PM",
+      "with": [
+        "Sicksense",
+        "Twist It"
+      ],
+      "page": {
+        "url": "https://www.jambase.com/show/eyes-set-to-kill-come-and-take-it-live-20261204",
+        "at": "JamBase"
+      },
+      "tickets": {
+        "url": "https://www.ticketmaster.com/event/Z7r9jZ1AAZ3f-",
+        "at": "Ticketmaster"
+      },
+      "sources": {
+        "ticketmaster": "Z7r9jZ1AAZ3f-",
+        "jambase": "jambase:16809212"
+      }
+    },
+    {
+      "name": "Kendall Street Company",
+      "day": "December",
+      "date": "2026-12-04",
+      "venue": "Brushy Street",
+      "time": "7 PM",
+      "billedAs": "Kendall Street Company: Yodeling Astroman Tour",
+      "page": {
+        "url": "https://do512.com/events/2026/12/4/kendall-street-company-yodeling-astroman-tour-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://prod-nts-api.seeticketsusa.us/v1.0.0/promote/YWZmOlNUVVMtNzAwMjEzOjE4/clickthru?utm_source=jambase",
+        "at": "See Tickets"
+      },
+      "sources": {
+        "do512": "17665866",
+        "jambase": "jambase:16803648"
+      }
+    },
+    {
+      "name": "The Black Angels",
+      "day": "December",
+      "date": "2026-12-04",
+      "venue": "Mohawk",
+      "time": "7 PM",
+      "with": [
+        "Daiistar",
+        "Thor Harris",
+        "DJ Tropicana Joe"
+      ],
+      "billedAs": "The Black Angels w/ DAIISTAR, Thor Harris, & DJ Tropicana Joe - Mohawk 20th Anniversary",
+      "page": {
+        "url": "https://do512.com/events/2026/12/4/the-black-angels-w-daiistar-thor-harris-dj-tropicana-joe-mohawk-20th-anniversary-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://etix.prf.hn/click/camref:1011l3GdWo/pubref:dostuff/destination:https%3A%2F%2Fwww.etix.com%2Fticket%2Fp%2F85552566%2Fthe-black-angels-wdaiistarthor-harrisand-dj-tropicana-joe-mohawk-20th-anniversary-austin-resound-presents",
+        "at": "Etix"
+      },
+      "sources": {
+        "do512": "17884691"
+      }
+    },
+    {
+      "name": "Disney Worlds Collide Concert Tour",
+      "day": "December",
+      "date": "2026-12-04",
+      "venue": "Moody Center",
+      "time": "7 PM",
+      "billedAs": "Disney Worlds Collide - Worlds Collide Concert Tour",
+      "page": {
+        "url": "https://do512.com/events/2026/12/4/disney-worlds-collide-worlds-collide-concert-tour-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://www.ticketmaster.com/event/3A00646C3500E378?CAMEFROM=CFC_MOODY_CENTER_WEB_MOODYSITE_DISNEYWORLDSCOLLIDE",
+        "at": "Ticketmaster"
+      },
+      "onSale": "2026-03-27T15:00:00Z",
+      "presales": [
+        {
+          "name": "Sponsor Presale",
+          "start": "2026-03-25T15:00:00Z"
+        },
+        {
+          "name": "Spotify Presale",
+          "start": "2026-03-25T17:00:00Z"
+        },
+        {
+          "name": "Disney+ Subscriber Presale",
+          "start": "2026-03-23T15:00:00Z"
+        },
+        {
+          "name": "Ticketmaster Presale",
+          "start": "2026-03-26T15:00:00Z"
+        }
+      ],
+      "sources": {
+        "do512": "17100628",
+        "ticketmaster": "G5dIZ_kYgZCuz"
+      }
+    },
+    {
+      "name": "Temachii",
+      "day": "December",
+      "date": "2026-12-04",
+      "venue": "29th Street Ballroom",
+      "time": "8 PM",
+      "with": [
+        "Orca"
+      ],
+      "billedAs": "Temachii at 29th Street Ballroom",
+      "page": {
+        "url": "https://www.jambase.com/show/temachii-29th-street-ballroom-20261204",
+        "at": "JamBase"
+      },
+      "tickets": {
+        "url": "https://prod-nts-api.seeticketsusa.us/v1.0.0/promote/YWZmOlNUVVMtNzA0MzcyOjE4/clickthru?utm_source=jambase",
+        "at": "See Tickets"
+      },
+      "sources": {
+        "jambase": "jambase:17037445"
+      }
+    },
+    {
+      "name": "John R. Miller",
+      "day": "December",
+      "date": "2026-12-04",
+      "venue": "3TEN",
+      "time": "8 PM",
+      "page": {
+        "url": "https://do512.com/events/2026/12/4/john-r-miller-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://www.axs.com/events/1576455/john-r-miller-tickets?skin=3ten&_gl=1*1d37w7*_gcl_au*MTIyOTA5MjgyNS4xNzg2Mzk0MDQ5*_ga*MTkxODY1MzU4OC4xNzg2Mzk0MDQ5*_ga_12QE9CF8FS*czE3ODcwNzQwMTckbzckZzAkdDE3ODcwNzQwMzEkajQ2JGwwJGgw?cid=usaffdostuff",
+        "at": "AXS"
+      },
+      "sources": {
+        "do512": "17742501",
+        "ticketmaster": "Z7r9jZ1AAZUa0",
+        "jambase": "jambase:16914738"
+      }
+    },
+    {
+      "name": "Kansas",
+      "day": "December",
+      "date": "2026-12-04",
+      "venue": "ACL Live",
+      "time": "8 PM",
+      "with": [
+        "Brother Cane"
+      ],
+      "billedAs": "Kansas w/ Brother Cane",
+      "page": {
+        "url": "https://do512.com/events/2026/12/4/kansas-w-brother-cane-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://www.axs.com/events/1594124/kansas-tickets?skin=acllive&_gl=1*iycx74*_gcl_aw*R0NMLjE3ODc1OTI3NTguQ2owS0NRancxNl9VQmhDcUFSSXNBSWRPYVh4QnNlMmd5Vjd5NUZFWVRNcWVfQTdPMWlyRDhfd1VXb0RUZUUwUDNCVjdaMklNT2p5Rm40QWFBcHNURUFMd193Y0I.*_gcl_dc*R0NMLjE3ODc1OTI3NT?cid=usaffdostuff",
+        "at": "AXS"
+      },
+      "sources": {
+        "do512": "17824765",
+        "ticketmaster": "Z7r9jZ1AAvxPS",
+        "jambase": "jambase:17000564"
+      }
+    },
+    {
+      "name": "Futurebirds",
+      "day": "December",
+      "date": "2026-12-04",
+      "venue": "Central Machine Works",
+      "time": "8 PM",
+      "billedAs": "Futurebirds at Central Machine Works",
+      "page": {
+        "url": "https://www.jambase.com/show/futurebirds-central-machine-works-20261204",
+        "at": "JamBase"
+      },
+      "tickets": {
+        "url": "https://prod-nts-api.seeticketsusa.us/v1.0.0/promote/YWZmOlNUVVMtNzAzMDk1OjE4/clickthru?utm_source=jambase",
+        "at": "See Tickets"
+      },
+      "sources": {
+        "jambase": "jambase:16942304"
+      }
+    },
+    {
+      "name": "The Milk Carton Kids",
+      "day": "December",
+      "date": "2026-12-05",
+      "venue": "State Theater",
+      "time": "4 PM",
+      "billedAs": "The Milk Carton Kids at State Theater",
+      "page": {
+        "url": "https://www.jambase.com/show/the-milk-carton-kids-state-theater-20261205",
+        "at": "JamBase"
+      },
+      "sources": {
+        "jambase": "jambase:17055620"
+      }
+    },
+    {
+      "name": "American Aquarium",
+      "day": "December",
+      "date": "2026-12-05",
+      "venue": "3TEN",
+      "time": "7 PM",
+      "page": {
+        "url": "https://do512.com/events/2026/12/5/american-aquarium-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://www.axs.com/events/1524202/american-aquarium-tickets?skin=3ten&_gl=1*nwaf0*_gcl_au*NTU3NjgwNDIwLjE3ODA0MjA3Nzk.*_ga*MTcyNDc5NDkxNi4xNzI1MzgyNDAz*_ga_12QE9CF8FS*czE3ODQ1Njg1NzkkbzQ2NiRnMCR0MTc4NDU2ODU5NCRqNDUkbDAkaDA.*_ga_WE38K849S4*czE3ODQ1Njg1Nzk",
+        "at": "AXS"
+      },
+      "sources": {
+        "do512": "17630605",
+        "ticketmaster": "Z7r9jZ1AAZ8GA",
+        "jambase": "jambase:16766996"
+      }
+    },
+    {
+      "name": "Sleepwalk",
+      "day": "December",
+      "date": "2026-12-05",
+      "venue": "Brushy Street",
+      "time": "7 PM",
+      "billedAs": "Sleepwalk at Brushy Street Commons",
+      "page": {
+        "url": "https://www.jambase.com/show/sleepwalk-brushy-street-commons-20261205",
+        "at": "JamBase"
+      },
+      "tickets": {
+        "url": "https://prod-nts-api.seeticketsusa.us/v1.0.0/promote/YWZmOlNUVVMtNzA0ODkwOjE4/clickthru?utm_source=jambase",
+        "at": "See Tickets"
+      },
+      "sources": {
+        "jambase": "jambase:17016370"
+      }
+    },
+    {
+      "name": "The Impossibles",
+      "day": "December",
+      "date": "2026-12-05",
+      "venue": "Mohawk",
+      "time": "7 PM",
+      "with": [
+        "Recover",
+        "Valley Video"
+      ],
+      "billedAs": "The Impossibles w/ Recover, Valley Video & God Wants Blood - Mohawk 20th Anniversary",
+      "page": {
+        "url": "https://do512.com/events/2026/12/5/the-impossibles-w-recover-valley-video-god-wants-blood-mohawk-20th-anniversary-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://etix.prf.hn/click/camref:1011l3GdWo/pubref:dostuff/destination:https%3A%2F%2Fwww.etix.com%2Fticket%2Fp%2F42713410%2Fthe-impossibles-mohawk-20th-anniversary-austin-resound-presents",
+        "at": "Etix"
+      },
+      "sources": {
+        "do512": "17884706"
+      }
+    },
+    {
+      "name": "Ben Schwartz",
+      "day": "December",
+      "date": "2026-12-05",
+      "venue": "ACL Live",
+      "time": "8 PM",
+      "billedAs": "Ben Schwartz & Friends",
+      "page": {
+        "url": "https://do512.com/events/2026/12/5/ben-schwartz-friends-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://www.axs.com/events/1378813/ben-schwartz-friends-tickets?skin=acllive&_gl=1*10a0dk0*_gcl_au*MTMzNjQ3NDU0NS4xNzcyNDc0Nzg1*_ga*MTcyNDc5NDkxNi4xNzI1MzgyNDAz*_ga_12QE9CF8FS*czE3NzQzNzI4MTAkbzM5MSRnMSR0MTc3NDM3Mjg0MiRqMjgkbDAkaDA.*_ga_WE38K849S4*czE3NzQ?cid=usaffdostuff",
+        "at": "AXS"
+      },
+      "sources": {
+        "do512": "17127774"
+      }
+    },
+    {
+      "name": "Amtrac",
+      "day": "December",
+      "date": "2026-12-05",
+      "venue": "Kingdom",
+      "time": "10 PM",
+      "page": {
+        "url": "https://do512.com/events/2026/12/5/amtrac-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://etix.prf.hn/click/camref:1011l3GdWo/pubref:dostuff/destination:https%3A%2F%2Fwww.etix.com%2Fticket%2Fp%2F44637223%2Famtrac-austin-resound-presents",
+        "at": "Etix"
+      },
+      "sources": {
+        "do512": "17775504"
+      }
+    },
+    {
+      "name": "JD McPherson",
+      "day": "December",
+      "date": "2026-12-06",
+      "venue": "04 Center",
+      "time": "8 PM",
+      "billedAs": "JD McPherson at The 04 Center",
+      "page": {
+        "url": "https://www.jambase.com/show/jd-mcpherson-the-04-center-20261206",
+        "at": "JamBase"
+      },
+      "tickets": {
+        "url": "https://www.prekindle.com/promo/id/-2852527949015794152?utm_source=jambase",
+        "at": "Prekindle"
+      },
+      "sources": {
+        "jambase": "jambase:17037355"
+      }
+    },
+    {
+      "name": "DJ Paul",
+      "day": "December",
+      "date": "2026-12-06",
+      "venue": "Antone's",
+      "time": "8 PM",
+      "with": [
+        "DJ Montay",
+        "LOS KEMET",
+        "Ttbby",
+        "Stockz",
+        "DJ Hella Yella"
+      ],
+      "billedAs": "DJ Paul of Three 6 Mafia: Crunk Gods Tour w/ Montay",
+      "page": {
+        "url": "https://do512.com/events/2026/12/6/dj-paul-of-three-6-mafia-crunk-gods-tour-w-montay-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fdj-paul-of-three-6-mafia-austin-texas-08-09-2026%2Fevent%2F3A0064D6E006194D",
+        "at": "Ticketmaster"
+      },
+      "onSale": "2026-06-26T15:00:00Z",
+      "presales": [
+        {
+          "name": "VIP",
+          "start": "2026-06-26T15:01:00Z"
+        },
+        {
+          "name": "LN + Antone's Summer of Love 2 Pack Deal",
+          "start": "2026-07-13T15:00:00Z"
+        }
+      ],
+      "sources": {
+        "do512": "17541979",
+        "ticketmaster": "G5dIZ_uhOv-Pu",
+        "jambase": "jambase:16603216"
+      }
+    },
+    {
+      "name": "Scarlet Demore",
+      "day": "December",
+      "date": "2026-12-06",
+      "venue": "Come and Take It Live",
+      "time": "8 PM",
+      "billedAs": "Babe Haven, Spaced, Scarlet Demore",
+      "tickets": {
+        "url": "https://www.ticketweb.com/event/babe-haven-spaced-scarlet-demore-come-and-take-it-live-tickets/14192774",
+        "at": "Ticketmaster"
+      },
+      "onSale": "2026-06-16T16:00:00Z",
+      "sources": {
+        "ticketmaster": "rZ7HnEZ1Afk3qV"
+      }
+    },
+    {
+      "name": "Sap",
+      "day": "December",
+      "date": "2026-12-06",
+      "venue": "Radio/East",
+      "time": "8 PM",
+      "billedAs": "Sap at Radio/East",
+      "page": {
+        "url": "https://www.jambase.com/show/sap-radio-east-20261206",
+        "at": "JamBase"
+      },
+      "tickets": {
+        "url": "https://www.prekindle.com/promo/id/-2852527949039747179?utm_source=jambase",
+        "at": "Prekindle"
+      },
+      "sources": {
+        "jambase": "jambase:16945647"
+      }
+    },
+    {
+      "name": "Insomnium",
+      "day": "December",
+      "date": "2026-12-08",
+      "venue": "Come and Take It Live",
+      "time": "6:30 PM",
+      "with": [
+        "Amorphis"
+      ],
+      "billedAs": "Insomnium w/ Amorphis",
+      "page": {
+        "url": "https://www.jambase.com/show/insomnium-come-and-take-it-live-20261208",
+        "at": "JamBase"
+      },
+      "tickets": {
+        "url": "https://www.ticketmaster.com/event/Z7r9jZ1AAv60J",
+        "at": "Ticketmaster"
+      },
+      "sources": {
+        "ticketmaster": "Z7r9jZ1AAv60J",
+        "jambase": "jambase:16946478"
+      }
+    },
+    {
+      "name": "Beartooth",
+      "day": "December",
+      "date": "2026-12-09",
+      "venue": "ACL Live",
+      "time": "6:30 PM",
+      "with": [
+        "DON BROCO",
+        "Windwaker",
+        "Magnolia Park"
+      ],
+      "billedAs": "Beartooth - Pure Ecstasy World Tour",
+      "page": {
+        "url": "https://do512.com/events/2026/12/9/beartooth-pure-ecstasy-world-tour-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://www.axs.com/events/1449718/beartooth-tickets?skin=acllive&_gl=1*n3e9oe*_gcl_au*MTMzNjQ3NDU0NS4xNzcyNDc0Nzg1*_ga*MTcyNDc5NDkxNi4xNzI1MzgyNDAz*_ga_12QE9CF8FS*czE3NzkyMTA1NDQkbzQyNyRnMSR0MTc3OTIxMDY2MyRqMjgkbDAkaDA.*_ga_WE38K849S4*czE3NzkyMTA1NDQkbzQ?cid=usaffdostuff",
+        "at": "AXS"
+      },
+      "onSale": "2026-05-22T15:00:00Z",
+      "presales": [
+        {
+          "name": "Artist Presale",
+          "start": "2026-05-19T16:00:00Z"
+        },
+        {
+          "name": "Live Nation Presale",
+          "start": "2026-05-20T17:00:00Z"
+        }
+      ],
+      "sources": {
+        "do512": "17372920",
+        "ticketmaster": "Z7r9jZ1A70I8v",
+        "jambase": "jambase:16321879"
+      }
+    },
+    {
+      "name": "Trans-Siberian Orchestra",
+      "day": "December",
+      "date": "2026-12-09",
+      "venue": "Moody Center",
+      "time": "7 PM",
+      "billedAs": "Trans-Siberian Orchestra: The Ghosts of Christmas Eve",
+      "page": {
+        "url": "https://do512.com/events/2026/12/9/trans-siberian-orchestra-the-ghosts-of-christmas-eve-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://www.ticketmaster.com/event/3A006510C43173A4?CAMEFROM=CFC_MOODY_CENTER_WEB_MOODYSITE_TSO-EVENTPAGE",
+        "at": "Ticketmaster"
+      },
+      "onSale": "2026-09-18T15:00:00Z",
+      "presales": [
+        {
+          "name": "Artist Presale",
+          "start": "2026-09-17T15:00:00Z"
+        },
+        {
+          "name": "T-Mobile Concert Perks",
+          "start": "2026-09-18T15:00:00Z"
+        },
+        {
+          "name": "LIVE NATION PRESALE",
+          "start": "2026-09-17T15:00:00Z"
+        },
+        {
+          "name": "Local Presale",
+          "start": "2026-09-17T15:00:00Z"
+        }
+      ],
+      "sources": {
+        "do512": "17824851",
+        "ticketmaster": "G5dIZ_od7G9C0"
+      }
+    },
+    {
+      "name": "Hayes Carll",
+      "day": "December",
+      "date": "2026-12-09",
+      "venue": "04 Center",
+      "time": "8 PM",
+      "with": [
+        "Calder Allen"
+      ],
+      "billedAs": "Hayes Carll w/ Calder Allen",
+      "page": {
+        "url": "https://www.jambase.com/show/hayes-carll-the-04-center-20261209",
+        "at": "JamBase"
+      },
+      "tickets": {
+        "url": "https://www.ticketmaster.com/event/Z7r9jZ1AAvg1Z",
+        "at": "Ticketmaster"
+      },
+      "sources": {
+        "ticketmaster": "Z7r9jZ1AAvg1Z",
+        "jambase": "jambase:17051637"
+      }
+    },
+    {
+      "name": "Jackopierce",
+      "day": "December",
+      "date": "2026-12-09",
+      "venue": "Pershing",
+      "time": "8 PM",
+      "billedAs": "Jackopierce at Pershing",
+      "page": {
+        "url": "https://www.jambase.com/show/jackopierce-pershing-20261209",
+        "at": "JamBase"
+      },
+      "tickets": {
+        "url": "https://www.prekindle.com/promo/id/-2852527949131704946?utm_source=jambase",
+        "at": "Prekindle"
+      },
+      "sources": {
+        "jambase": "jambase:16443345"
+      }
+    },
+    {
+      "name": "Amigo the Devil",
+      "day": "December",
+      "date": "2026-12-10",
+      "venue": "Mohawk",
+      "time": "7 PM",
+      "billedAs": "Amigo the Devil - Mohawk 20th Anniversary",
+      "page": {
+        "url": "https://do512.com/events/2026/12/10/amigo-the-devil-mohawk-20th-anniversary-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://etix.prf.hn/click/camref:1011l3GdWo/pubref:dostuff/destination:https%3A%2F%2Fwww.etix.com%2Fticket%2Fp%2F69183420%2Famigo-the-devil-austin-resound-presents",
+        "at": "Etix"
+      },
+      "sources": {
+        "do512": "17884859",
+        "jambase": "jambase:17089840"
+      }
+    },
+    {
+      "name": "Hayes Carll",
+      "day": "December",
+      "date": "2026-12-10",
+      "venue": "04 Center",
+      "time": "8 PM",
+      "with": [
+        "Calder Allen"
+      ],
+      "billedAs": "Hayes Carll w/ Calder Allen",
+      "page": {
+        "url": "https://www.jambase.com/show/hayes-carll-the-04-center-20261210",
+        "at": "JamBase"
+      },
+      "tickets": {
+        "url": "https://www.ticketmaster.com/event/Z7r9jZ1AAvg1v",
+        "at": "Ticketmaster"
+      },
+      "sources": {
+        "ticketmaster": "Z7r9jZ1AAvg1v",
+        "jambase": "jambase:17051633"
+      }
+    },
+    {
+      "name": "Live from Laurel Canyon",
+      "day": "December",
+      "date": "2026-12-10",
+      "venue": "ACL Live",
+      "time": "8 PM",
+      "billedAs": "Live From Laurel Canyon - Stories of American Folk Rock",
+      "page": {
+        "url": "https://do512.com/events/2026/12/10/live-from-laurel-canyon-stories-of-american-folk-rock-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://www.axs.com/events/1605607/live-from-laurel-canyon-tickets?skin=acllive&_gl=1*zycqwk*_gcl_aw*R0NMLjE3ODc1OTI3NTguQ2owS0NRancxNl9VQmhDcUFSSXNBSWRPYVh4QnNlMmd5Vjd5NUZFWVRNcWVfQTdPMWlyRDhfd1VXb0RUZUUwUDNCVjdaMklNT2p5Rm40QWFBcHNURUFMd193Y0I.*_gcl_dc*R",
+        "at": "AXS"
+      },
+      "sources": {
+        "do512": "17847286"
+      }
+    },
+    {
+      "name": "Venna",
+      "day": "December",
+      "date": "2026-12-10",
+      "venue": "Antone's",
+      "time": "8 PM",
+      "page": {
+        "url": "https://www.jambase.com/show/venna-antones-20261210",
+        "at": "JamBase"
+      },
+      "tickets": {
+        "url": "https://www.ticketmaster.com/venna-austin-texas-12-10-2026/event/3A006505C80EBA86",
+        "at": "Ticketmaster"
+      },
+      "onSale": "2026-08-14T17:00:00Z",
+      "presales": [
+        {
+          "name": "Artist Presale",
+          "start": "2026-08-12T15:00:00Z"
+        }
+      ],
+      "sources": {
+        "ticketmaster": "G5dIZ_89Fdlnk",
+        "jambase": "jambase:16862353"
+      }
+    },
+    {
+      "name": "Eelke Kleijn",
+      "day": "December",
+      "date": "2026-12-10",
+      "venue": "Brushy Street",
+      "time": "8 PM",
+      "billedAs": "Eelke Kleijn at Brushy Street Commons",
+      "page": {
+        "url": "https://www.jambase.com/show/eelke-kleijn-brushy-street-commons-20261210",
+        "at": "JamBase"
+      },
+      "tickets": {
+        "url": "https://prod-nts-api.seeticketsusa.us/v1.0.0/promote/YWZmOlNUVVMtNzA1MTI4OjE4/clickthru?utm_source=jambase",
+        "at": "See Tickets"
+      },
+      "sources": {
+        "jambase": "jambase:17037107"
+      }
+    },
+    {
+      "name": "Sonic Guild Ball",
+      "day": "December",
+      "date": "2026-12-11",
+      "venue": "ACL Live",
+      "time": "7 PM",
+      "page": {
+        "url": "https://do512.com/events/2026/12/11/sonic-guild-ball-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://www.axs.com/events/1601212/sonic-guild-ball-tickets?skin=acllive&_gl=1*eshrb3*_gcl_aw*R0NMLjE3ODc1OTI3NTguQ2owS0NRancxNl9VQmhDcUFSSXNBSWRPYVh4QnNlMmd5Vjd5NUZFWVRNcWVfQTdPMWlyRDhfd1VXb0RUZUUwUDNCVjdaMklNT2p5Rm40QWFBcHNURUFMd193Y0I.*_gcl_dc*R0NMLjE3?cid=usaffdostuff",
+        "at": "AXS"
+      },
+      "sources": {
+        "do512": "17821672"
+      }
+    },
+    {
+      "name": "Ben Kweller",
+      "day": "December",
+      "date": "2026-12-11",
+      "venue": "Mohawk",
+      "time": "7 PM",
+      "billedAs": "Ben Kweller - Mohawk 20th Anniversary",
+      "page": {
+        "url": "https://do512.com/events/2026/12/11/ben-kweller-mohawk-20th-anniversary-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://etix.prf.hn/click/camref:1011l3GdWo/pubref:dostuff/destination:https%3A%2F%2Fwww.etix.com%2Fticket%2Fp%2F78981828%2Fben-kweller-austin-resound-presents",
+        "at": "Etix"
+      },
+      "sources": {
+        "do512": "17884852",
+        "jambase": "jambase:17090418"
+      }
+    },
+    {
+      "name": "Tyla",
+      "day": "December",
+      "date": "2026-12-11",
+      "venue": "Moody Center",
+      "time": "7 PM",
+      "billedAs": "Tyla: THE A*POP WORLD TOUR",
+      "page": {
+        "url": "https://do512.com/events/2026/12/11/tyla-the-apop-world-tour-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064F8A6F0F07A%3FCAMEFROM%3DCFC_MOODY_CENTER_WEB_MOODYSITE_TYLA",
+        "at": "Ticketmaster"
+      },
+      "onSale": "2026-07-31T15:00:00Z",
+      "presales": [
+        {
+          "name": "Artist Presale",
+          "start": "2026-07-29T15:00:00Z"
+        },
+        {
+          "name": "VIP Package Presale",
+          "start": "2026-07-29T15:00:00Z"
+        },
+        {
+          "name": "LIVE NATION PRESALE",
+          "start": "2026-07-30T15:00:00Z"
+        },
+        {
+          "name": "Venue Presale",
+          "start": "2026-07-30T15:00:00Z"
+        }
+      ],
+      "sources": {
+        "do512": "17656884",
+        "ticketmaster": "G5dIZ_2xJH2vB",
+        "jambase": "jambase:16797551"
+      }
+    },
+    {
+      "name": "Hayes Carll",
+      "day": "December",
+      "date": "2026-12-11",
+      "venue": "04 Center",
+      "time": "8 PM",
+      "with": [
+        "Calder Allen"
+      ],
+      "billedAs": "Hayes Carll w/ Calder Allen",
+      "page": {
+        "url": "https://www.jambase.com/show/hayes-carll-the-04-center-20261211",
+        "at": "JamBase"
+      },
+      "tickets": {
+        "url": "https://www.ticketmaster.com/event/Z7r9jZ1AAvSqo",
+        "at": "Ticketmaster"
+      },
+      "sources": {
+        "ticketmaster": "Z7r9jZ1AAvSqo",
+        "jambase": "jambase:17051629"
+      }
+    },
+    {
+      "name": "Joshua Ray Walker",
+      "day": "December",
+      "date": "2026-12-11",
+      "venue": "Antone's",
+      "time": "8 PM",
+      "page": {
+        "url": "https://www.jambase.com/show/joshua-ray-walker-antones-20261211",
+        "at": "JamBase"
+      },
+      "tickets": {
+        "url": "https://www.ticketmaster.com/joshua-ray-walker-austin-texas-12-11-2026/event/3A0064EDDF80C037",
+        "at": "Ticketmaster"
+      },
+      "onSale": "2026-07-22T15:00:00Z",
+      "sources": {
+        "ticketmaster": "G5dIZ_CMLOGZM",
+        "jambase": "jambase:16772002"
+      }
+    },
+    {
+      "name": "Blue October",
+      "day": "December",
+      "date": "2026-12-11",
+      "venue": "Bass Concert Hall",
+      "time": "8 PM",
+      "with": [
+        "Jess Woodland"
+      ],
+      "page": {
+        "url": "https://www.jambase.com/show/blue-october-bass-concert-hall-20261211",
+        "at": "JamBase"
+      },
+      "tickets": {
+        "url": "https://www.ticketmaster.com/event/Z7r9jZ1A7-V0K",
+        "at": "Ticketmaster"
+      },
+      "sources": {
+        "ticketmaster": "Z7r9jZ1A7-V0K",
+        "jambase": "jambase:15966706"
+      }
+    },
+    {
+      "name": "Rossi.",
+      "day": "December",
+      "date": "2026-12-11",
+      "venue": "Concourse Project",
+      "time": "9 PM",
+      "billedAs": "Rossi. at The Concourse Project",
+      "page": {
+        "url": "https://do512.com/events/2026/12/11/rossi-at-the-concourse-project-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://wl.eventim.us/event/Rossi-at-The-Concourse-Project/701142?afflky=TheConcourseProject",
+        "at": "Eventim"
+      },
+      "sources": {
+        "do512": "17690338",
+        "jambase": "jambase:16836633"
+      }
+    },
+    {
+      "name": "Holiday Hootenanny",
+      "day": "December",
+      "date": "2026-12-11",
+      "venue": "Radio/East",
+      "with": [
+        "Thundercat",
+        "54 Ultra",
+        "The Two Lips",
+        "Drugdealer",
+        "Sports",
+        "Hannah Cohen",
+        "Twen",
+        "Chinese American Bear"
+      ],
+      "page": {
+        "url": "https://www.jambase.com/festival/holiday-hootenanny-2026",
+        "at": "JamBase"
+      },
+      "tickets": {
+        "url": "https://www.prekindle.com/find-tickets/id/-2852527949096852903",
+        "at": "Prekindle"
+      },
+      "sources": {
+        "jambase": "jambase:16741673"
+      }
+    },
+    {
+      "name": "Rave Jesus",
+      "day": "December",
+      "date": "2026-12-12",
+      "venue": "Kingdom",
+      "time": "5 PM",
+      "billedAs": "Rave Jesus – Rave Revival Fall Tour",
+      "page": {
+        "url": "https://do512.com/events/2026/12/12/rave-jesus-rave-revival-fall-tour-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://etix.prf.hn/click/camref:1011l3GdWo/pubref:dostuff/destination:https%3A%2F%2Fwww.etix.com%2Fticket%2Fp%2F72889151%2Frave-jesus-rave-revival-fall-tour-austin-kingdom-nightclub%3Fpartner_id%3D100",
+        "at": "Etix"
+      },
+      "sources": {
+        "do512": "17781789"
+      }
+    },
+    {
+      "name": "The Stitches",
+      "day": "December",
+      "date": "2026-12-12",
+      "venue": "Lost Well",
+      "time": "6 PM",
+      "with": [
+        "Bullshit Detector",
+        "The 13th Victim"
+      ],
+      "billedAs": "The Stitches at The Lost Well",
+      "page": {
+        "url": "https://www.jambase.com/show/the-stitches-the-lost-well-20261212",
+        "at": "JamBase"
+      },
+      "sources": {
+        "jambase": "jambase:16983370"
+      }
+    },
+    {
+      "name": "Kingdom of Giants",
+      "day": "December",
+      "date": "2026-12-12",
+      "venue": "Come and Take It Live",
+      "time": "7 PM",
+      "with": [
+        "Holy Wars",
+        "Deadlands",
+        "Night Rider"
+      ],
+      "billedAs": "Kingdom of Giants at Come and Take It Live",
+      "page": {
+        "url": "https://www.jambase.com/show/kingdom-of-giants-come-and-take-it-live-20261212",
+        "at": "JamBase"
+      },
+      "tickets": {
+        "url": "https://prod-nts-api.seeticketsusa.us/v1.0.0/promote/YWZmOlNUVVMtNzAwOTE5OjE4/clickthru?utm_source=jambase",
+        "at": "See Tickets"
+      },
+      "sources": {
+        "jambase": "jambase:16836403"
+      }
+    },
+    {
+      "name": "White Denim",
+      "day": "December",
+      "date": "2026-12-12",
+      "venue": "Mohawk",
+      "time": "7 PM",
+      "with": [],
+      "billedAs": "White Denim - Mohawk 20th Anniversary",
+      "page": {
+        "url": "https://do512.com/events/2026/12/12/white-denim-mohawk-20th-anniversary-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://etix.prf.hn/click/camref:1011l3GdWo/pubref:dostuff/destination:https%3A%2F%2Fwww.etix.com%2Fticket%2Fp%2F54759812%2Fwhite-denim-austin-resound-presents",
+        "at": "Etix"
+      },
+      "sources": {
+        "do512": "17884873"
+      }
+    },
+    {
+      "name": "Billy Strings",
+      "day": "December",
+      "date": "2026-12-12",
+      "venue": "Moody Center",
+      "time": "7 PM",
+      "page": {
+        "url": "https://do512.com/events/2026/12/12/billy-strings-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://www.ticketmaster.com/event/3A0064DE8BE85BE9",
+        "at": "Ticketmaster"
+      },
+      "onSale": "2026-07-10T15:00:00Z",
+      "presales": [
+        {
+          "name": "Artist Presale",
+          "start": "2026-07-08T15:00:00Z"
+        },
+        {
+          "name": "Local Presale",
+          "start": "2026-07-09T15:00:00Z"
+        },
+        {
+          "name": "Ticketmaster Presale",
+          "start": "2026-07-09T15:00:00Z"
+        }
+      ],
+      "sources": {
+        "do512": "17573177",
+        "ticketmaster": "G5dIZ_uB5BARt",
+        "jambase": "jambase:16684268"
+      }
+    },
+    {
+      "name": "Rippleberry",
+      "day": "December",
+      "date": "2026-12-12",
+      "venue": "White Tiger",
+      "time": "7 PM",
+      "billedAs": "Rippleberry at White Tiger",
+      "page": {
+        "url": "https://www.jambase.com/show/rippleberry-white-tiger-20261212",
+        "at": "JamBase"
+      },
+      "sources": {
+        "jambase": "jambase:16060339"
+      }
+    },
+    {
+      "name": "Ian Moore",
+      "day": "December",
+      "date": "2026-12-12",
+      "venue": "04 Center",
+      "time": "8 PM",
+      "with": [
+        "Bukka Allen",
+        "Warren Hood"
+      ],
+      "billedAs": "Ian Moore at The 04 Center",
+      "page": {
+        "url": "https://www.jambase.com/show/ian-moore-the-04-center-20261212",
+        "at": "JamBase"
+      },
+      "tickets": {
+        "url": "https://www.prekindle.com/promo/id/-2852527949022373825?utm_source=jambase",
+        "at": "Prekindle"
+      },
+      "sources": {
+        "jambase": "jambase:17005327"
+      }
+    },
+    {
+      "name": "Distant Worlds: music from FINAL FANTASY",
+      "day": "December",
+      "date": "2026-12-12",
+      "venue": "Bass Concert Hall",
+      "time": "8 PM",
+      "page": {
+        "url": "https://www.jambase.com/show/distant-worlds-music-from-final-fantasy-bass-concert-hall-20261212",
+        "at": "JamBase"
+      },
+      "tickets": {
+        "url": "https://www.ticketmaster.com/event/Z7r9jZ1A7PkGF",
+        "at": "Ticketmaster"
+      },
+      "sources": {
+        "ticketmaster": "Z7r9jZ1A7PkGF",
+        "jambase": "jambase:16953892"
+      }
+    },
+    {
+      "name": "The Peterson Brothers Band (ATX)",
+      "day": "December",
+      "date": "2026-12-12",
+      "venue": "Continental Club",
+      "time": "8 PM",
+      "billedAs": "The Peterson Brothers Live at The Continental Club 12/12/26",
+      "page": {
+        "url": "https://do512.com/events/2026/12/12/the-peterson-brothers-live-at-the-continental-club-12-12-26-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://consumer.pxf.io/APvP5J?u=https%3A%2F%2Fwww.eventbrite.com%2Fe%2F1999933108765%3Faff%3Doddtdtcreator",
+        "at": "Eventbrite"
+      },
+      "sources": {
+        "do512": "17816966"
+      }
+    },
+    {
+      "name": "Mazel Tov Kocktail Hour",
+      "day": "December",
+      "date": "2026-12-12",
+      "venue": "Radio Coffee & Beer",
+      "time": "8 PM",
+      "billedAs": "Mazel Tov Kocktail Hour at Radio Coffee & Beer",
+      "page": {
+        "url": "https://www.jambase.com/show/mazel-tov-kocktail-hour-radio-coffee-beer-20261212",
+        "at": "JamBase"
+      },
+      "tickets": {
+        "url": "https://www.prekindle.com/promo/id/-2852527949010272708?utm_source=jambase",
+        "at": "Prekindle"
+      },
+      "sources": {
+        "jambase": "jambase:17075189"
+      }
+    },
+    {
+      "name": "Bob Moses",
+      "day": "December",
+      "date": "2026-12-12",
+      "venue": "Concourse Project",
+      "time": "9 PM",
+      "with": [
+        "Notre Dame"
+      ],
+      "billedAs": "Bob Moses (Club Set) + Notre Dame",
+      "page": {
+        "url": "https://do512.com/events/2026/12/12/bob-moses-club-set-notre-dame-at-the-concourse-project-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://wl.eventim.us/event/Bob-Moses-Club-Set-Notre-Dame-at-The-Concourse-Project/705829?afflky=TheConcourseProject",
+        "at": "Eventim"
+      },
+      "sources": {
+        "do512": "17870139",
+        "jambase": "jambase:17081795"
+      }
+    },
+    {
+      "name": "Greg 99",
+      "day": "December",
+      "date": "2026-12-12",
+      "venue": "ROMA",
+      "time": "10 PM",
+      "billedAs": "GREG 99 at ROMA",
+      "page": {
+        "url": "https://www.jambase.com/show/greg-99-roma-20261212",
+        "at": "JamBase"
+      },
+      "tickets": {
+        "url": "https://link.dice.fm/p1f99a9b5da7?utm_source=jambase",
+        "at": "DICE"
+      },
+      "sources": {
+        "jambase": "jambase:17065333"
+      }
+    },
+    {
+      "name": "The Rock and Roll Playhouse",
+      "day": "December",
+      "date": "2026-12-13",
+      "venue": "3TEN",
+      "time": "12 PM",
+      "billedAs": "The Rock and Roll Playhouse Plays the Music of Taylor Swift",
+      "page": {
+        "url": "https://do512.com/events/2026/12/13/the-rock-and-roll-playhouse-plays-the-music-of-taylor-swift-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://www.axs.com/events/1579460/the-rock-and-roll-playhouse-tickets?skin=3ten&_gl=1*1v0m69i*_gcl_aw*R0NMLjE3ODc1OTI3NTguQ2owS0NRancxNl9VQmhDcUFSSXNBSWRPYVh4QnNlMmd5Vjd5NUZFWVRNcWVfQTdPMWlyRDhfd1VXb0RUZUUwUDNCVjdaMklNT2p5Rm40QWFBcHNURUFMd193Y0I.*_gcl_dc?cid=usaffdostuff",
+        "at": "AXS"
+      },
+      "sources": {
+        "do512": "17770382",
+        "ticketmaster": "Z7r9jZ1AAvFjs"
+      }
+    },
+    {
+      "name": "A Charlie Brown Christmas",
+      "day": "December",
+      "date": "2026-12-13",
+      "venue": "Bass Concert Hall",
+      "time": "4 PM",
+      "billedAs": "Charlie Brown Christmas",
+      "tickets": {
+        "url": "https://www.ticketmaster.com/event/Z7r9jZ1AAZe_Z",
+        "at": "Ticketmaster"
+      },
+      "sources": {
+        "ticketmaster": "Z7r9jZ1AAZe_Z"
+      }
+    },
+    {
+      "name": "Upon A Burning Body",
+      "day": "December",
+      "date": "2026-12-13",
+      "venue": "Come and Take It Live",
+      "time": "6 PM",
+      "billedAs": "Upon A Burning Body at Come and Take It Live",
+      "page": {
+        "url": "https://www.jambase.com/show/upon-a-burning-body-come-and-take-it-live-20261213",
+        "at": "JamBase"
+      },
+      "tickets": {
+        "url": "https://etix.prf.hn/click/camref:1101lGKCg/destination:https://www.etix.com/ticket/p/80226473/upon-a-burning-body-austin-austin-come-and-take-it-live?utm_source=jambase",
+        "at": "Etix"
+      },
+      "sources": {
+        "jambase": "jambase:16955588"
+      }
+    },
+    {
+      "name": "Why?",
+      "day": "December",
+      "date": "2026-12-13",
+      "venue": "Brushy Street",
+      "time": "7 PM",
+      "page": {
+        "url": "https://do512.com/events/2026/12/13/why-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://wl.eventim.us/event/why/701126?afflky=ResoundPresents",
+        "at": "Eventim"
+      },
+      "sources": {
+        "do512": "17695314",
+        "jambase": "jambase:16833034"
+      }
+    },
+    {
+      "name": "Heartless Bastards",
+      "day": "December",
+      "date": "2026-12-13",
+      "venue": "Mohawk",
+      "time": "7 PM",
+      "with": [
+        "Tele Novella"
+      ],
+      "billedAs": "Heartless Bastards w/ Tele Novella - Mohawk 20th Anniversary",
+      "page": {
+        "url": "https://do512.com/events/2026/12/13/heartless-bastards-w-tele-novella-mohawk-20th-anniversary-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://etix.prf.hn/click/camref:1011l3GdWo/pubref:dostuff/destination:https%3A%2F%2Fwww.etix.com%2Fticket%2Fp%2F70691367%2Fheartless-bastards-mohawk-20th-anniversary-austin-resound-presents",
+        "at": "Etix"
+      },
+      "sources": {
+        "do512": "17884882",
+        "jambase": "jambase:17055605"
+      }
+    },
+    {
+      "name": "Molly Tuttle",
+      "day": "December",
+      "date": "2026-12-13",
+      "venue": "ACL Live",
+      "time": "8 PM",
+      "with": [
+        "Marty Stuart"
+      ],
+      "billedAs": "Molly Tuttle x Marty Stuart: Guitars on Fire",
+      "page": {
+        "url": "https://do512.com/events/2026/12/13/molly-tuttle-x-marty-stuart-guitars-on-fire-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://www.axs.com/events/1593468/molly-tuttle-x-marty-stuart-guitars-on-fire-tickets?skin=acllive&_gl=1*14tx08z*_gcl_aw*R0NMLjE3ODc1OTI3NTguQ2owS0NRancxNl9VQmhDcUFSSXNBSWRPYVh4QnNlMmd5Vjd5NUZFWVRNcWVfQTdPMWlyRDhfd1VXb0RUZUUwUDNCVjdaMklNT2p5Rm40QWFBcHNUR",
+        "at": "AXS"
+      },
+      "sources": {
+        "do512": "17794528",
+        "ticketmaster": "Z7r9jZ1AAvO4Y",
+        "jambase": "jambase:16982963"
+      }
+    },
+    {
+      "name": "Underoath",
+      "day": "December",
+      "date": "2026-12-15",
+      "venue": "ACL Live",
+      "time": "6:30 PM",
+      "with": [
+        "August Burns Red",
+        "Atreyu",
+        "Emery"
+      ],
+      "billedAs": "Underoath: Define the Great Line 20th Anniversary Tour",
+      "page": {
+        "url": "https://do512.com/events/2026/12/15/underoath-define-the-great-line-20th-anniversary-tour-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://www.axs.com/events/1473793/underoath-tickets?skin=acllive&_gl=1*w46uan*_gcl_au*NTU3NjgwNDIwLjE3ODA0MjA3Nzk.*_ga*MTcyNDc5NDkxNi4xNzI1MzgyNDAz*_ga_WE38K849S4*czE3ODEwMjQ2ODIkbzQ0MiRnMCR0MTc4MTAyNDY5OCRqNDQkbDAkaDA.*_ga_12QE9CF8FS*czE3ODEwMjQ2ODIkbzQ",
+        "at": "AXS"
+      },
+      "onSale": "2026-06-12T15:00:00Z",
+      "presales": [
+        {
+          "name": "Artist Presale",
+          "start": "2026-06-10T15:00:00Z"
+        },
+        {
+          "name": "Live Nation Presale",
+          "start": "2026-06-11T15:00:00Z"
+        }
+      ],
+      "sources": {
+        "do512": "17464334",
+        "ticketmaster": "Z7r9jZ1A7P3__",
+        "jambase": "jambase:16468078"
+      }
+    },
+    {
+      "name": "Pentatonix",
+      "day": "December",
+      "date": "2026-12-15",
+      "venue": "Moody Center",
+      "time": "7 PM",
+      "billedAs": "Pentatonix: Christmas in the City Tour",
+      "page": {
+        "url": "https://do512.com/events/2026/12/15/pentatonix-christmas-in-the-city-tour-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A006504EE731AE5%3Futm_campaign%3DPRM-00523463%26utm_source%3Ddo512.com%26utm_medium%3Dln_promo",
+        "at": "Ticketmaster"
+      },
+      "onSale": "2026-08-14T15:00:00Z",
+      "presales": [
+        {
+          "name": "Patreon Presale",
+          "start": "2026-08-10T15:00:00Z"
+        },
+        {
+          "name": "Artist Presale",
+          "start": "2026-08-11T15:00:00Z"
+        },
+        {
+          "name": "LIVE NATION PRESALE",
+          "start": "2026-08-12T15:00:00Z"
+        },
+        {
+          "name": "Venue Presale",
+          "start": "2026-08-12T15:00:00Z"
+        }
+      ],
+      "sources": {
+        "do512": "17700369",
+        "ticketmaster": "G5dIZ_8KmjslP",
+        "jambase": "jambase:16850454"
+      }
+    },
+    {
+      "name": "Wishy",
+      "day": "December",
+      "date": "2026-12-15",
+      "venue": "29th Street Ballroom",
+      "time": "8 PM",
+      "billedAs": "Wishy at 29th Street Ballroom",
+      "page": {
+        "url": "https://www.jambase.com/show/wishy-29th-street-ballroom-20261215",
+        "at": "JamBase"
+      },
+      "tickets": {
+        "url": "https://prod-nts-api.seeticketsusa.us/v1.0.0/promote/YWZmOlNUVVMtNzAxMDM5OjE4/clickthru?utm_source=jambase",
+        "at": "See Tickets"
+      },
+      "sources": {
+        "jambase": "jambase:16917487"
+      }
+    },
+    {
+      "name": "Taken by Tides",
+      "day": "December",
+      "date": "2026-12-16",
+      "venue": "Come and Take It Live",
+      "time": "6 PM",
+      "with": [
+        "Rain Division"
+      ],
+      "billedAs": "Taken by Tides at Come and Take It Live",
+      "page": {
+        "url": "https://www.jambase.com/show/taken-by-tides-come-and-take-it-live-20261216",
+        "at": "JamBase"
+      },
+      "tickets": {
+        "url": "https://etix.prf.hn/click/camref:1101lGKCg/destination:https://www.etix.com/ticket/p/64569103/taken-by-tidesghost-vibrations-tour-austin-come-and-take-it-live?utm_source=jambase",
+        "at": "Etix"
+      },
+      "sources": {
+        "jambase": "jambase:17112834"
+      }
+    },
+    {
+      "name": "Blind Boys of Alabama",
+      "day": "December",
+      "date": "2026-12-16",
+      "venue": "ACL Live",
+      "time": "8 PM",
+      "with": [
+        "Asleep at the Wheel"
+      ],
+      "billedAs": "Blind Boys of Alabama & Asleep At The Wheel",
+      "page": {
+        "url": "https://do512.com/events/2026/12/16/blind-boys-of-alabama-asleep-at-the-wheel-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://www.axs.com/events/1616851/blind-boys-of-alabama-asleep-at-the-wheel-tickets?skin=acllive&_gl=1*lwh8vm*_gcl_aw*R0NMLjE3ODc1OTI3NTguQ2owS0NRancxNl9VQmhDcUFSSXNBSWRPYVh4QnNlMmd5Vjd5NUZFWVRNcWVfQTdPMWlyRDhfd1VXb0RUZUUwUDNCVjdaMklNT2p5Rm40QWFBcHNURUFM?cid=usaffdostuff",
+        "at": "AXS"
+      },
+      "onSale": "2026-09-25T10:00:00-05:00",
+      "sources": {
+        "do512": "17873295",
+        "jambase": "jambase:17085826"
+      }
+    },
+    {
+      "name": "The Lemon Twigs",
+      "day": "December",
+      "date": "2026-12-17",
+      "venue": "Mohawk",
+      "time": "7 PM",
+      "page": {
+        "url": "https://do512.com/events/2026/12/17/the-lemon-twigs-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://etix.prf.hn/click/camref:1011l3GdWo/pubref:dostuff/destination:https%3A%2F%2Fwww.etix.com%2Fticket%2Fp%2F86247413%2Fthe-lemon-twigs-austin-resound-presents",
+        "at": "Etix"
+      },
+      "sources": {
+        "do512": "17775785",
+        "jambase": "jambase:16964132"
+      }
+    },
+    {
+      "name": "Deep Eddies Band",
+      "day": "December",
+      "date": "2026-12-17",
+      "venue": "3TEN",
+      "time": "8 PM",
+      "page": {
+        "url": "https://do512.com/events/2026/12/17/deep-eddies-band-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://www.axs.com/events/1541839/deep-eddies-band-tickets?skin=3ten&_gl=1*jcb2wc*_gcl_au*MTIyOTA5MjgyNS4xNzg2Mzk0MDQ5*_ga*MTkxODY1MzU4OC4xNzg2Mzk0MDQ5*_ga_12QE9CF8FS*czE3ODcxNTkyNDIkbzgkZzEkdDE3ODcxNTk0MjkkajM2JGwwJGgw?cid=usaffdostuff",
+        "at": "AXS"
+      },
+      "sources": {
+        "do512": "17746386"
+      }
+    },
+    {
+      "name": "Tanner Usrey",
+      "day": "December",
+      "date": "2026-12-17",
+      "venue": "Antone's",
+      "time": "8 PM",
+      "billedAs": "Tanner Usrey w/ Cam Allen",
+      "page": {
+        "url": "https://www.jambase.com/show/tanner-usrey-antones-20261217",
+        "at": "JamBase"
+      },
+      "tickets": {
+        "url": "https://www.ticketmaster.com/tanner-usrey-w-cam-allen-austin-texas-12-17-2026/event/3A00650FEB5EF883",
+        "at": "Ticketmaster"
+      },
+      "onSale": "2026-09-11T15:00:00Z",
+      "sources": {
+        "ticketmaster": "G5dIZ_8Tl9Rxd",
+        "jambase": "jambase:17013176"
+      }
+    },
+    {
+      "name": "The Sword",
+      "day": "December",
+      "date": "2026-12-18",
+      "venue": "Mohawk",
+      "time": "7 PM",
+      "billedAs": "The Sword - Mohawk 20th Anniversary",
+      "page": {
+        "url": "https://do512.com/events/2026/12/18/the-sword-mohawk-20th-anniversary-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://etix.prf.hn/click/camref:1011l3GdWo/pubref:dostuff/destination:https%3A%2F%2Fwww.etix.com%2Fticket%2Fp%2F75958580%2Fthe-sword-mohawk-20th-anniversary-austin-resound-presents",
+        "at": "Etix"
+      },
+      "sources": {
+        "do512": "17884819",
+        "jambase": "jambase:17055551"
+      }
+    },
+    {
+      "name": "Yaelokre",
+      "day": "December",
+      "date": "2026-12-18",
+      "venue": "Brushy Street",
+      "time": "8 PM",
+      "with": [
+        "Ben Caplan"
+      ],
+      "page": {
+        "url": "https://do512.com/events/2026/12/18/yaelokre-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://wl.seetickets.us/event/Yaelokre/695337?afflky=C3Presents",
+        "at": "See Tickets"
+      },
+      "sources": {
+        "do512": "17497459",
+        "ticketmaster": "Z7r9jZ1A7JoQ6",
+        "jambase": "jambase:16527325"
+      }
+    },
+    {
+      "name": "Lucy Bedroque",
+      "day": "December",
+      "date": "2026-12-19",
+      "venue": "Mohawk",
+      "time": "7 PM",
+      "page": {
+        "url": "https://do512.com/events/2026/12/19/lucy-bedroque-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://etix.prf.hn/click/camref:1011l3GdWo/pubref:dostuff/destination:https%3A%2F%2Fwww.etix.com%2Fticket%2Fp%2F74981247%2Flucy-bedroque-austin-resound-presents",
+        "at": "Etix"
+      },
+      "sources": {
+        "do512": "17761994",
+        "jambase": "jambase:16893892"
+      }
+    },
+    {
+      "name": "INZO",
+      "day": "December",
+      "date": "2026-12-19",
+      "venue": "Concourse Project",
+      "time": "9 PM",
+      "with": [
+        "Late Night Radio",
+        "Align",
+        "BLOOKAH"
+      ],
+      "billedAs": "INZO at The Concourse Project - Ages 18+",
+      "page": {
+        "url": "https://www.jambase.com/show/inzo-the-concourse-project-20261219",
+        "at": "JamBase"
+      },
+      "tickets": {
+        "url": "https://www.ticketmaster.com/event/Z7r9jZ1AAZMa0",
+        "at": "Ticketmaster"
+      },
+      "sources": {
+        "ticketmaster": "Z7r9jZ1AAZMa0",
+        "jambase": "jambase:16916886"
+      }
+    },
+    {
+      "name": "In The Christmas Mood",
+      "day": "December",
+      "date": "2026-12-20",
+      "venue": "Bass Concert Hall",
+      "time": "3 PM",
+      "with": [
+        "Glenn Miller Orchestra"
+      ],
+      "billedAs": "In The Christmas Mood w/ Glenn Miller Orchestra",
+      "page": {
+        "url": "https://www.jambase.com/show/glenn-miller-orchestra-bass-concert-hall-20261220",
+        "at": "JamBase"
+      },
+      "tickets": {
+        "url": "https://www.ticketmaster.com/event/Z7r9jZ1A70_P4",
+        "at": "Ticketmaster"
+      },
+      "sources": {
+        "ticketmaster": "Z7r9jZ1A70_P4",
+        "jambase": "jambase:16337110"
+      }
+    },
+    {
+      "name": "Mariachi Sol de Mexico® de José Hernández",
+      "day": "December",
+      "date": "2026-12-22",
+      "venue": "ACL Live",
+      "time": "8 PM",
+      "page": {
+        "url": "https://do512.com/events/2026/12/22/mariachi-sol-de-mexico-de-jose-hernandez-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://www.axs.com/events/1616977/mariachi-sol-de-mexico-de-jose-hernandez-tickets?skin=acllive&_gl=1*53pzgg*_gcl_aw*R0NMLjE3ODc1OTI3NTguQ2owS0NRancxNl9VQmhDcUFSSXNBSWRPYVh4QnNlMmd5Vjd5NUZFWVRNcWVfQTdPMWlyRDhfd1VXb0RUZUUwUDNCVjdaMklNT2p5Rm40QWFBcHNURUFMd?cid=usaffdostuff",
+        "at": "AXS"
+      },
+      "onSale": "2026-09-25T10:00:00-05:00",
+      "sources": {
+        "do512": "17877251",
+        "jambase": "jambase:17094696"
+      }
+    },
+    {
+      "name": "Will Taylor",
+      "day": "December",
+      "date": "2026-12-25",
+      "venue": "Strings in the Woods South Corner Park",
+      "time": "4 PM",
+      "with": [
+        "Strings Attached"
+      ],
+      "billedAs": "Will Taylor at Strings in the Woods South Corner Park",
+      "page": {
+        "url": "https://www.jambase.com/show/will-taylor-strings-in-the-woods-south-corner-park-20261225",
+        "at": "JamBase"
+      },
+      "tickets": {
+        "url": "https://www.eventbrite.com/e/1979053919548?aff=ebdijbjambase&utm_source=jambase",
+        "at": "Eventbrite"
+      },
+      "sources": {
+        "jambase": "jambase:17096048"
+      }
+    },
+    {
+      "name": "Toadies",
+      "day": "December",
+      "date": "2026-12-26",
+      "venue": "ACL Live",
+      "time": "8 PM",
+      "with": [
+        "Sparta"
+      ],
+      "billedAs": "Toadies - The Charmer Tour with Sparta",
+      "page": {
+        "url": "https://do512.com/events/2026/12/26/toadies-the-charmer-tour-with-sparta-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://www.axs.com/events/1607328/toadies-tickets?skin=acllive&_gl=1*fs74fd*_gcl_aw*R0NMLjE3ODc1OTI3NTguQ2owS0NRancxNl9VQmhDcUFSSXNBSWRPYVh4QnNlMmd5Vjd5NUZFWVRNcWVfQTdPMWlyRDhfd1VXb0RUZUUwUDNCVjdaMklNT2p5Rm40QWFBcHNURUFMd193Y0I.*_gcl_dc*R0NMLjE3ODc1OTI3N",
+        "at": "AXS"
+      },
+      "sources": {
+        "do512": "17847303",
+        "jambase": "jambase:17051529"
+      }
+    },
+    {
+      "name": "The Peterson Brothers Band (ATX)",
+      "day": "December",
+      "date": "2026-12-26",
+      "venue": "Continental Club",
+      "time": "8 PM",
+      "billedAs": "The Peterson Brothers Live at The Continental Club 12/26/26",
+      "page": {
+        "url": "https://do512.com/events/2026/12/26/the-peterson-brothers-live-at-the-continental-club-12-26-26-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://consumer.pxf.io/APvP5J?u=https%3A%2F%2Fwww.eventbrite.com%2Fe%2Fthe-peterson-brothers-live-at-the-continental-club-122626-tickets-1999278906027%3Faff%3Doddtdtcreator",
+        "at": "Eventbrite"
+      },
+      "sources": {
+        "do512": "17790472"
+      }
+    },
+    {
+      "name": "The Temptations",
+      "day": "December",
+      "date": "2026-12-29",
+      "venue": "ACL Live",
+      "time": "7:30 PM",
+      "page": {
+        "url": "https://do512.com/events/2026/12/29/the-temptations-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://www.axs.com/events/1556422/the-temptations-tickets?skin=acllive&_gl=1*hp91g9*_gcl_au*MTIyOTA5MjgyNS4xNzg2Mzk0MDQ5*_ga*MTkxODY1MzU4OC4xNzg2Mzk0MDQ5*_ga_12QE9CF8FS*czE3ODY0Njg1MzYkbzIkZzAkdDE3ODY0Njg1MzkkajU3JGwwJGgw?cid=usaffdostuff",
+        "at": "AXS"
+      },
+      "sources": {
+        "do512": "17717241",
+        "ticketmaster": "Z7r9jZ1AAZy4e",
+        "jambase": "jambase:16868314"
+      }
+    },
+    {
+      "name": "Bob Schneider",
+      "day": "December",
+      "date": "2026-12-30",
+      "venue": "Antone's",
+      "time": "8 PM",
+      "page": {
+        "url": "https://www.jambase.com/show/bob-schneider-antones-20261230",
+        "at": "JamBase"
+      },
+      "tickets": {
+        "url": "https://www.ticketmaster.com/bob-schneider-austin-texas-12-30-2026/event/3A006530D34A3780",
+        "at": "Ticketmaster"
+      },
+      "onSale": "2026-09-25T15:00:00Z",
+      "sources": {
+        "ticketmaster": "G5dIZ_KdK3NrZ",
+        "jambase": "jambase:17077488"
+      }
+    },
+    {
+      "name": "Madam Radar",
+      "day": "December",
+      "date": "2026-12-31",
+      "venue": "04 Center",
+      "time": "8 PM",
+      "billedAs": "Madam Radar at The 04 Center",
+      "page": {
+        "url": "https://www.jambase.com/show/madam-radar-the-04-center-20261231",
+        "at": "JamBase"
+      },
+      "tickets": {
+        "url": "https://www.prekindle.com/promo/id/-2852527949071713139?utm_source=jambase",
+        "at": "Prekindle"
+      },
+      "sources": {
+        "jambase": "jambase:16818229"
+      }
+    },
+    {
+      "name": "Magoo",
+      "day": "December",
+      "date": "2026-12-31",
+      "venue": "Antone's",
+      "time": "8 PM",
+      "page": {
+        "url": "https://do512.com/events/2026/12/31/magoo-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A00652AD679B71B",
+        "at": "Ticketmaster"
+      },
+      "onSale": "2026-09-18T15:00:00Z",
+      "presales": [
+        {
+          "name": "Artist Presale",
+          "start": "2026-09-17T15:00:00Z"
+        }
+      ],
+      "sources": {
+        "do512": "17884913",
+        "ticketmaster": "G5dIZ_3lprhjh",
+        "jambase": "jambase:17056085"
+      }
+    },
+    {
+      "name": "Spoon",
+      "day": "December",
+      "date": "2026-12-31",
+      "venue": "ACL Live",
+      "time": "8:30 PM",
+      "with": [
+        "Alejandro Escovedo",
+        "Jo Alice"
+      ],
+      "billedAs": "New Year's Eve w/ Spoon, Alejandro Escovedo & Jo Alice",
+      "page": {
+        "url": "https://do512.com/events/2026/12/31/new-years-eve-w-spoon-alejandro-escovedo-jo-alice-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://www.axs.com/events/1621563/spoon-tickets?skin=acllive&_gl=1*1cxf1*_gcl_aw*R0NMLjE3ODc1OTI3NTguQ2owS0NRancxNl9VQmhDcUFSSXNBSWRPYVh4QnNlMmd5Vjd5NUZFWVRNcWVfQTdPMWlyRDhfd1VXb0RUZUUwUDNCVjdaMklNT2p5Rm40QWFBcHNURUFMd193Y0I.*_gcl_dc*R0NMLjE3ODc1OTI3NTgu",
+        "at": "AXS"
+      },
+      "onSale": "2026-09-25T10:00:00-05:00",
+      "sources": {
+        "do512": "17873299",
+        "jambase": "jambase:17084606"
+      }
+    },
+    {
+      "name": "Max Dean b2b Luke Dean",
+      "day": "January",
+      "date": "2027-01-02",
+      "venue": "Concourse Project",
+      "time": "9 PM",
+      "with": [
+        "Max Dean",
+        "Luke Dean"
+      ],
+      "billedAs": "Max Dean b2b Luke Dean at The Concourse Project",
+      "page": {
+        "url": "https://do512.com/events/2027/1/2/max-dean-b2b-luke-dean-at-the-concourse-project-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://wl.eventim.us/event/Max-Dean-b2b-Luke-Dean-at-The-Concourse-Project/703678?afflky=TheConcourseProject",
+        "at": "Eventim"
+      },
+      "sources": {
+        "do512": "17877209",
+        "jambase": "jambase:17098105"
+      }
+    },
+    {
+      "name": "Rob Baird",
+      "day": "January",
+      "date": "2027-01-08",
+      "venue": "Antone's",
+      "time": "8 PM",
+      "billedAs": "Rob Baird Birthday Bash",
+      "page": {
+        "url": "https://www.jambase.com/show/rob-baird-antones-20270108",
+        "at": "JamBase"
+      },
+      "tickets": {
+        "url": "https://www.ticketmaster.com/rob-baird-birthday-bash-austin-texas-01-08-2027/event/3A0064FBE21DF89B",
+        "at": "Ticketmaster"
+      },
+      "onSale": "2026-09-04T15:00:00Z",
+      "sources": {
+        "ticketmaster": "G5dIZ_2Rx6Lxh",
+        "jambase": "jambase:16999400"
+      }
+    },
+    {
+      "name": "The Koffin Kats",
+      "day": "January",
+      "date": "2027-01-16",
+      "venue": "Come and Take It Live",
+      "time": "6 PM",
+      "with": [
+        "The Last Gang",
+        "Hans Gruber and the Die Hards"
+      ],
+      "billedAs": "The Koffin Kats at Come and Take It Live",
+      "page": {
+        "url": "https://www.jambase.com/show/the-koffin-kats-come-and-take-it-live-20270116",
+        "at": "JamBase"
+      },
+      "tickets": {
+        "url": "https://etix.prf.hn/click/camref:1101lGKCg/destination:https://www.etix.com/ticket/p/88500105/the-koffin-kats-austin-come-and-take-it-live?utm_source=jambase",
+        "at": "Etix"
+      },
+      "sources": {
+        "jambase": "jambase:17117361"
+      }
+    },
+    {
+      "name": "Cari Hutson & Good Company",
+      "day": "January",
+      "date": "2027-01-16",
+      "venue": "04 Center",
+      "time": "8 PM",
+      "with": [
+        "The South Austin Moonlighters"
+      ],
+      "billedAs": "Cari Hutson & Good Company at The 04 Center",
+      "page": {
+        "url": "https://www.jambase.com/show/cari-hutson-good-company-the-04-center-20270116",
+        "at": "JamBase"
+      },
+      "tickets": {
+        "url": "https://www.prekindle.com/promo/id/-2852527949023604243?utm_source=jambase",
+        "at": "Prekindle"
+      },
+      "sources": {
+        "jambase": "jambase:17033310"
+      }
+    },
+    {
+      "name": "Audra McDonald",
+      "day": "January",
+      "date": "2027-01-17",
+      "venue": "Bass Concert Hall",
+      "time": "6 PM",
+      "page": {
+        "url": "https://www.jambase.com/show/audra-mcdonald-bass-concert-hall-20270117",
+        "at": "JamBase"
+      },
+      "tickets": {
+        "url": "https://www.ticketmaster.com/event/Z7r9jZ1A7PkGa",
+        "at": "Ticketmaster"
+      },
+      "sources": {
+        "ticketmaster": "Z7r9jZ1A7PkGa",
+        "jambase": "jambase:16485817"
+      }
+    },
+    {
+      "name": "Alan Walker",
+      "day": "January",
+      "date": "2027-01-21",
+      "venue": "ACL Live",
+      "time": "7 PM",
+      "page": {
+        "url": "https://www.jambase.com/show/alan-walker-acl-live-at-the-moody-theater-20270121",
+        "at": "JamBase"
+      },
+      "tickets": {
+        "url": "https://www.ticketmaster.com/event/Z7r9jZ1AAvtfx",
+        "at": "Ticketmaster"
+      },
+      "onSale": "2026-09-18T15:00:00Z",
+      "sources": {
+        "ticketmaster": "Z7r9jZ1AAvtfx",
+        "jambase": "jambase:17038406"
+      }
+    },
+    {
+      "name": "Vansire",
+      "day": "January",
+      "date": "2027-01-23",
+      "venue": "Mohawk",
+      "time": "7 PM",
+      "page": {
+        "url": "https://do512.com/events/2027/1/23/vansire-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://etix.prf.hn/click/camref:1011l3GdWo/pubref:dostuff/destination:https%3A%2F%2Fwww.etix.com%2Fticket%2Fp%2F84931855%2Fvansire-austin-resound-presents",
+        "at": "Etix"
+      },
+      "sources": {
+        "do512": "17657150",
+        "jambase": "jambase:16796160"
+      }
+    },
+    {
+      "name": "James Tonic",
+      "day": "January",
+      "date": "2027-01-24",
+      "venue": "Austin Scottish Rite Theater",
+      "time": "6:30 PM",
+      "billedAs": "James Tonic at Austin Scottish Rite Theater",
+      "page": {
+        "url": "https://www.jambase.com/show/james-tonic-austin-scottish-rite-theater-20270124",
+        "at": "JamBase"
+      },
+      "tickets": {
+        "url": "https://link.dice.fm/a1d8d51fe8d2?utm_source=jambase",
+        "at": "DICE"
+      },
+      "sources": {
+        "jambase": "jambase:16583505"
+      }
+    },
+    {
+      "name": "Ely Oaks",
+      "day": "January",
+      "date": "2027-01-29",
+      "venue": "Kingdom",
+      "time": "10 PM",
+      "billedAs": "Ely Oaks at Kingdom",
+      "page": {
+        "url": "https://www.jambase.com/show/ely-oaks-kingdom-20270129",
+        "at": "JamBase"
+      },
+      "tickets": {
+        "url": "https://etix.prf.hn/click/camref:1101lGKCg/destination:https://www.etix.com/ticket/p/98419656/ely-oaks-austin-kingdom-nightclub?utm_source=jambase",
+        "at": "Etix"
+      },
+      "sources": {
+        "jambase": "jambase:17093263"
+      }
+    },
+    {
+      "name": "Stella Lefty",
+      "day": "January",
+      "date": "2027-01-31",
+      "venue": "ACL Live",
+      "time": "8 PM",
+      "billedAs": "Stella Lefty - Long Way Home Tour",
+      "page": {
+        "url": "https://do512.com/events/2027/1/31/stella-lefty-long-way-home-tour-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://www.axs.com/events/1580750/stella-lefty-tickets?skin=acllive&_gl=1*17tvqyp*_gcl_au*MTIyOTA5MjgyNS4xNzg2Mzk0MDQ5*_ga*MTkxODY1MzU4OC4xNzg2Mzk0MDQ5*_ga_12QE9CF8FS*czE3ODc1OTIxNTIkbzExJGcwJHQxNzg3NTkyMTYyJGo1MCRsMCRoMA..",
+        "at": "AXS"
+      },
+      "onSale": "2026-08-28T15:00:00Z",
+      "presales": [
+        {
+          "name": "Artist Presale",
+          "start": "2026-08-27T15:00:00Z"
+        },
+        {
+          "name": "Artist VIP Presale",
+          "start": "2026-08-27T15:00:00Z"
+        }
+      ],
+      "sources": {
+        "do512": "17763070",
+        "ticketmaster": "Z7r9jZ1AAv7F6",
+        "jambase": "jambase:16937601"
+      }
+    },
+    {
+      "name": "Sons of Cream",
+      "day": "January",
+      "date": "2027-01-31",
+      "venue": "Antone's",
+      "time": "8 PM",
+      "page": {
+        "url": "https://www.jambase.com/show/sons-of-cream-antones-20270131",
+        "at": "JamBase"
+      },
+      "tickets": {
+        "url": "https://www.ticketmaster.com/sons-of-cream-austin-texas-01-31-2027/event/3A00652AD793BA8E",
+        "at": "Ticketmaster"
+      },
+      "onSale": "2026-09-25T15:00:00Z",
+      "sources": {
+        "ticketmaster": "G5dIZ_3l90DnC",
+        "jambase": "jambase:17088571"
+      }
+    },
+    {
+      "name": "Andrea Bocelli",
+      "day": "February",
+      "date": "2027-02-04",
+      "venue": "Moody Center",
+      "time": "7 PM",
+      "billedAs": "Andrea Bocelli : Romanza - 30th Anniversary World Tour",
+      "page": {
+        "url": "https://do512.com/events/2027/2/4/andrea-bocelli-romanza-30th-anniversary-world-tour-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://www.ticketmaster.com/event/3A006521A5AD9867?CAMEFROM=CFC_MOODY_CENTER_WEB_MOODYSITE_BOCELLI-EVENTPAGE",
+        "at": "Ticketmaster"
+      },
+      "onSale": "2026-09-18T15:00:00Z",
+      "presales": [
+        {
+          "name": "Andrea Bocelli Social Fan Presale",
+          "start": "2026-09-16T15:00:00Z"
+        },
+        {
+          "name": "AEG/Venue/Radio Presale",
+          "start": "2026-09-17T15:00:00Z"
+        },
+        {
+          "name": "Ticketmaster Presale",
+          "start": "2026-09-17T15:00:00Z"
+        },
+        {
+          "name": "Amex Presale Tickets®",
+          "start": "2026-09-15T15:00:00Z"
+        }
+      ],
+      "sources": {
+        "do512": "17829913",
+        "ticketmaster": "G5dIZ_3kPl_-E",
+        "jambase": "jambase:17020546"
+      }
+    },
+    {
+      "name": "Aubory Bugg",
+      "day": "February",
+      "date": "2027-02-05",
+      "venue": "Radio/East",
+      "time": "8 PM",
+      "billedAs": "Aubory Bugg at Radio/East",
+      "page": {
+        "url": "https://www.jambase.com/show/aubory-bugg-radio-east-20270205",
+        "at": "JamBase"
+      },
+      "tickets": {
+        "url": "https://www.prekindle.com/promo/id/-2852527949006875753?utm_source=jambase",
+        "at": "Prekindle"
+      },
+      "sources": {
+        "jambase": "jambase:17086844"
+      }
+    },
+    {
+      "name": "Cold As Life",
+      "day": "February",
+      "date": "2027-02-06",
+      "venue": "Brushy Street",
+      "time": "4 PM",
+      "with": [
+        "Fear of Loss",
+        "Spit My Rage",
+        "Born Savage",
+        "Soul Exchange"
+      ],
+      "billedAs": "Cold As Life w/ Fear of Loss, Spit My Rage & More",
+      "page": {
+        "url": "https://do512.com/events/2027/2/6/cold-as-life-w-fear-of-loss-spit-my-rage-more-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://www.eventim.us/event/cold-as-life/691682?ttc=1870109",
+        "at": "Eventim"
+      },
+      "sources": {
+        "do512": "17369934",
+        "jambase": "jambase:16937863"
+      }
+    },
+    {
+      "name": "Nervosa",
+      "day": "February",
+      "date": "2027-02-06",
+      "venue": "Come and Take It Live",
+      "time": "6 PM",
+      "with": [
+        "Embryonic Autopsy"
+      ],
+      "billedAs": "Nervosa at Come and Take It Live",
+      "page": {
+        "url": "https://www.jambase.com/show/nervosa-come-and-take-it-live-20270206",
+        "at": "JamBase"
+      },
+      "tickets": {
+        "url": "https://etix.prf.hn/click/camref:1101lGKCg/destination:https://www.etix.com/ticket/p/58519272/nervosa-austin-austin-come-and-take-it-live?utm_source=jambase",
+        "at": "Etix"
+      },
+      "sources": {
+        "jambase": "jambase:16780422"
+      }
+    },
+    {
+      "name": "The Bronx Wanderers",
+      "day": "February",
+      "date": "2027-02-06",
+      "venue": "Hogg Auditorium",
+      "time": "7 PM",
+      "billedAs": "The Bronx Wanderers at Hogg Auditorium",
+      "page": {
+        "url": "https://www.jambase.com/show/the-bronx-wanderers-hogg-auditorium-20270206",
+        "at": "JamBase"
+      },
+      "sources": {
+        "jambase": "jambase:16529928"
+      }
+    },
+    {
+      "name": "Twinsick",
+      "day": "February",
+      "date": "2027-02-06",
+      "venue": "Concourse Project",
+      "time": "9 PM",
+      "billedAs": "TWINSICK at The Concourse Project",
+      "page": {
+        "url": "https://do512.com/events/2027/2/6/twinsick-at-the-concourse-project-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://wl.eventim.us/event/TWINSICK-at-The-Concourse-Project/705132?afflky=TheConcourseProject",
+        "at": "Eventim"
+      },
+      "sources": {
+        "do512": "17855386",
+        "jambase": "jambase:17066055"
+      }
+    },
+    {
+      "name": "Fink",
+      "day": "February",
+      "date": "2027-02-07",
+      "venue": "04 Center",
+      "time": "8 PM",
+      "with": [
+        "Maggie Koerner"
+      ],
+      "billedAs": "Fink w/ Maggie Koerner",
+      "page": {
+        "url": "https://www.jambase.com/show/fink-the-04-center-20270207",
+        "at": "JamBase"
+      },
+      "tickets": {
+        "url": "https://www.ticketmaster.com/event/Z7r9jZ1AAvKba",
+        "at": "Ticketmaster"
+      },
+      "sources": {
+        "ticketmaster": "Z7r9jZ1AAvKba",
+        "jambase": "jambase:16969069"
+      }
+    },
+    {
+      "name": "Madds Buckley",
+      "day": "February",
+      "date": "2027-02-07",
+      "venue": "Antone's",
+      "time": "8 PM",
+      "page": {
+        "url": "https://www.jambase.com/show/madds-buckley-antones-20270207",
+        "at": "JamBase"
+      },
+      "tickets": {
+        "url": "https://www.ticketmaster.com/madds-buckley-austin-texas-02-07-2027/event/3A0064EDE3CDC539",
+        "at": "Ticketmaster"
+      },
+      "onSale": "2026-07-31T15:00:00Z",
+      "presales": [
+        {
+          "name": "Artist Presale",
+          "start": "2026-07-29T15:00:00Z"
+        }
+      ],
+      "sources": {
+        "ticketmaster": "G5dIZ_CMNSjfy",
+        "jambase": "jambase:16798049"
+      }
+    },
+    {
+      "name": "Jake Xerxes Fussell",
+      "day": "February",
+      "date": "2027-02-16",
+      "venue": "Sagebrush",
+      "time": "8 PM",
+      "billedAs": "Jake Xerxes Fussell at Sagebrush",
+      "page": {
+        "url": "https://www.jambase.com/show/jake-xerxes-fussell-sagebrush-20270216",
+        "at": "JamBase"
+      },
+      "tickets": {
+        "url": "https://link.dice.fm/H256a5aca6bc?utm_source=jambase",
+        "at": "DICE"
+      },
+      "sources": {
+        "jambase": "jambase:17051821"
+      }
+    },
+    {
+      "name": "Karla Bonoff",
+      "day": "February",
+      "date": "2027-02-17",
+      "venue": "04 Center",
+      "time": "8 PM",
+      "billedAs": "Karla Bonoff at The 04 Center",
+      "page": {
+        "url": "https://www.jambase.com/show/karla-bonoff-the-04-center-20270217",
+        "at": "JamBase"
+      },
+      "tickets": {
+        "url": "https://www.prekindle.com/promo/id/-2852527949075858706?utm_source=jambase",
+        "at": "Prekindle"
+      },
+      "sources": {
+        "jambase": "jambase:16803878"
+      }
+    },
+    {
+      "name": "Kodo",
+      "day": "February",
+      "date": "2027-02-18",
+      "venue": "Bass Concert Hall",
+      "time": "7:30 PM",
+      "tickets": {
+        "url": "https://www.ticketmaster.com/event/Z7r9jZ1A7P0_7",
+        "at": "Ticketmaster"
+      },
+      "sources": {
+        "ticketmaster": "Z7r9jZ1A7P0_7"
+      }
+    },
+    {
+      "name": "Ashley Cooke",
+      "day": "February",
+      "date": "2027-02-18",
+      "venue": "Antone's",
+      "time": "8 PM",
+      "billedAs": "Ashley Cooke: The Baby Blues Tour",
+      "page": {
+        "url": "https://www.jambase.com/show/ashley-cooke-antones-20270218",
+        "at": "JamBase"
+      },
+      "tickets": {
+        "url": "https://www.ticketmaster.com/ashley-cooke-the-baby-blues-tour-austin-texas-02-18-2027/event/3A0064A6E7D49291",
+        "at": "Ticketmaster"
+      },
+      "onSale": "2026-05-15T15:00:00Z",
+      "presales": [
+        {
+          "name": "Artist Presale",
+          "start": "2026-05-13T15:00:00Z"
+        },
+        {
+          "name": "Spotify Presale",
+          "start": "2026-05-14T17:00:00Z"
+        },
+        {
+          "name": "VIP",
+          "start": "2026-05-15T15:00:00Z"
+        },
+        {
+          "name": "VIP Presale",
+          "start": "2026-05-13T15:00:00Z"
+        }
+      ],
+      "sources": {
+        "ticketmaster": "G5dIZ_1hEga1o",
+        "jambase": "jambase:16271859"
+      }
+    },
+    {
+      "name": "Steep Canyon Rangers",
+      "day": "February",
+      "date": "2027-02-20",
+      "venue": "04 Center",
+      "time": "8 PM",
+      "billedAs": "Steep Canyon Rangers at The 04 Center",
+      "page": {
+        "url": "https://www.jambase.com/show/steep-canyon-rangers-the-04-center-20270220",
+        "at": "JamBase"
+      },
+      "tickets": {
+        "url": "https://www.prekindle.com/promo/id/-2852527949068037692?utm_source=jambase",
+        "at": "Prekindle"
+      },
+      "sources": {
+        "jambase": "jambase:16836521"
+      }
+    },
+    {
+      "name": "Marian Hill",
+      "day": "February",
+      "date": "2027-02-20",
+      "venue": "Antone's",
+      "time": "8 PM",
+      "billedAs": "Marian Hill ACT TWO: THE TOUR",
+      "page": {
+        "url": "https://www.jambase.com/show/marian-hill-antones-20270220",
+        "at": "JamBase"
+      },
+      "tickets": {
+        "url": "https://www.ticketmaster.com/marian-hill-act-two-the-tour-austin-texas-02-20-2027/event/3A00652806825560",
+        "at": "Ticketmaster"
+      },
+      "onSale": "2026-09-18T15:00:00Z",
+      "presales": [
+        {
+          "name": "artist presale",
+          "start": "2026-09-17T15:00:00Z"
+        }
+      ],
+      "sources": {
+        "ticketmaster": "G5dIZ_3OkOP4O",
+        "jambase": "jambase:17060721"
+      }
+    },
+    {
+      "name": "Public Image Ltd.",
+      "day": "February",
+      "date": "2027-02-23",
+      "venue": "Mohawk",
+      "time": "6:30 PM",
+      "with": [
+        "Plague Vendor"
+      ],
+      "page": {
+        "url": "https://do512.com/events/2027/2/23/public-image-ltd-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://etix.prf.hn/click/camref:1011l3GdWo/pubref:dostuff/destination:https%3A%2F%2Fwww.etix.com%2Fticket%2Fp%2F51035340%2Fpublic-image-ltd-austin-resound-presents",
+        "at": "Etix"
+      },
+      "sources": {
+        "do512": "17126114",
+        "ticketmaster": "Z7r9jZ1AAvwGv",
+        "jambase": "jambase:15958507"
+      }
+    },
+    {
+      "name": "The Lemonheads",
+      "day": "February",
+      "date": "2027-02-23",
+      "venue": "Radio/East",
+      "time": "8:30 PM",
+      "billedAs": "The Lemonheads at Radio/East",
+      "page": {
+        "url": "https://www.jambase.com/show/the-lemonheads-radio-east-20270223",
+        "at": "JamBase"
+      },
+      "tickets": {
+        "url": "https://www.prekindle.com/promo/id/-2852527949014606946?utm_source=jambase",
+        "at": "Prekindle"
+      },
+      "sources": {
+        "jambase": "jambase:17053471"
+      }
+    },
+    {
+      "name": "Rayland Baxter",
+      "day": "February",
+      "date": "2027-02-26",
+      "venue": "Mohawk",
+      "time": "7 PM",
+      "page": {
+        "url": "https://do512.com/events/2027/2/26/rayland-baxter-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://etix.prf.hn/click/camref:1011l3GdWo/pubref:dostuff/destination:https%3A%2F%2Fwww.etix.com%2Fticket%2Fp%2F80093657%2Frayland-baxterthe-true-violet-tour-austin-resound-presents",
+        "at": "Etix"
+      },
+      "sources": {
+        "do512": "17884990",
+        "jambase": "jambase:17085610"
+      }
+    },
+    {
+      "name": "Joan Osborne",
+      "day": "February",
+      "date": "2027-02-26",
+      "venue": "04 Center",
+      "time": "8 PM",
+      "billedAs": "Joan Osborne at The 04 Center",
+      "page": {
+        "url": "https://www.jambase.com/show/joan-osborne-the-04-center-20270226",
+        "at": "JamBase"
+      },
+      "tickets": {
+        "url": "https://www.prekindle.com/promo/id/-2852527949006875751?utm_source=jambase",
+        "at": "Prekindle"
+      },
+      "sources": {
+        "jambase": "jambase:17085229"
+      }
+    },
+    {
+      "name": "Rumours ATL: A Fleetwood Mac Tribute",
+      "day": "February",
+      "date": "2027-02-27",
+      "venue": "3TEN",
+      "time": "8 PM",
+      "billedAs": "Rumours ATL: A Fleetwood Mac Tribute at 3TEN Austin City Limits Live",
+      "page": {
+        "url": "https://www.jambase.com/show/rumours-atl-a-fleetwood-mac-tribute-3ten-austin-city-limits-live-20270227",
+        "at": "JamBase"
+      },
+      "tickets": {
+        "url": "https://www.axs.com/events/1617564/rumours-atl-a-fleetwood-mac-tribute-tickets?cid=usaffjambase&utm_source=jambase",
+        "at": "AXS"
+      },
+      "sources": {
+        "jambase": "jambase:17094878"
+      }
+    }
+  ],
+  "dayMeta": {
+    "December": {
+      "date": "Dec 2026"
+    },
+    "January": {
+      "date": "Jan 2027"
+    },
+    "February": {
+      "date": "Feb 2027"
+    }
+  },
+  "venues": {
+    "Come and Take It Live": "https://maps.google.com/?q=Come+and+Take+It+Live%2C+2015+E.+Riverside+Dr%2C+Austin%2C+TX",
+    "29th Street Ballroom": "https://maps.google.com/?q=29th+Street+Ballroom%2C+2906+Fruth+St%2C+Austin%2C+TX",
+    "ACL Live": "https://maps.google.com/?q=ACL+Live+at+the+Moody+Theater,+310+W+Willie+Nelson+Blvd,+Austin",
+    "Antone's": "https://maps.google.com/?q=Antone's+Nightclub,+305+E+5th+St,+Austin",
+    "Mohawk": "https://maps.google.com/?q=Mohawk+Austin,+912+Red+River+St,+Austin",
+    "White Tiger": "https://maps.google.com/?q=White+Tiger%2C+1321+South+Congress+Avenue%2C+Austin%2C+TX",
+    "Concourse Project": "https://maps.google.com/?q=The+Concourse+Project,+8509+Burleson+Rd,+Austin",
+    "Hole in the Wall": "https://maps.google.com/?q=Hole+in+the+Wall%2C+2538+Guadalupe+St.%2C+Austin%2C+TX",
+    "Brushy Street": "https://maps.google.com/?q=Brushy+Street+Commons,+Austin",
+    "Moody Center": "https://maps.google.com/?q=Moody+Center,+2001+Robert+Dedman+Dr,+Austin",
+    "3TEN": "https://maps.google.com/?q=3TEN+ACL+Live,+310+Willie+Nelson+Blvd,+Austin",
+    "Central Machine Works": "https://maps.google.com/?q=Central+Machine+Works%2C+4824+East+Cesar+Chavez%2C+Austin%2C+TX",
+    "State Theater": "https://maps.google.com/?q=State+Theater%2C+719+Congress+Ave%2C+Austin%2C+TX",
+    "Kingdom": "https://maps.google.com/?q=Kingdom+Nightclub,+Austin",
+    "04 Center": "https://maps.google.com/?q=04+Center%2C+2701+South+Lamar+Blvd.%2C+Austin%2C+TX",
+    "Radio/East": "https://maps.google.com/?q=Radio%2FEast%2C+3504+Montopolis+Dr%2C+Austin%2C+TX",
+    "Pershing": "https://maps.google.com/?q=Pershing%2C+2415+East+5th+Street%2C+Austin%2C+TX",
+    "Bass Concert Hall": "https://maps.google.com/?q=Bass+Concert+Hall%2C+2350+Robert+Dedman+Drive%2C+Austin%2C+TX",
+    "Lost Well": "https://maps.google.com/?q=Lost+Well%2C+1141+1%2F2+Airport+Boulevard%2C+Austin%2C+TX",
+    "Continental Club": "https://maps.google.com/?q=The+Continental+Club,+1315+S+Congress+Ave,+Austin",
+    "Radio Coffee & Beer": "https://maps.google.com/?q=Radio+Coffee+%26+Beer%2C+4204+Manchaca+Road%2C+Austin%2C+TX",
+    "ROMA": "https://maps.google.com/?q=ROMA%2C+309+East+3rd+Street%2C+Austin%2C+TX",
+    "Strings in the Woods South Corner Park": "https://maps.google.com/?q=Strings+in+the+Woods+South+Corner+Park%2C+207+E+Monroe%2C+Austin%2C+TX",
+    "Austin Scottish Rite Theater": "https://maps.google.com/?q=Austin+Scottish+Rite+Theater%2C+207+West+18th+Street%2C+Austin%2C+TX",
+    "Hogg Auditorium": "https://maps.google.com/?q=Hogg+Auditorium%2C+510+East+23rd+Street%2C+Austin%2C+TX",
+    "Sagebrush": "https://maps.google.com/?q=Sagebrush%2C+5500+S+Congress+Ave%2C+Austin%2C+TX"
+  },
+  "meta": {
+    "announcementStatus": "scheduled",
+    "researchedAt": "2026-09-25",
+    "sources": [
+      "https://do512.com/",
+      "https://data.jambase.com/",
+      "https://developer.ticketmaster.com/"
+    ],
+    "feed": {
+      "generatedAt": "2026-09-25T23:45:16.542Z",
+      "counts": {
+        "do512": 403,
+        "jambase": 673,
+        "ticketmaster": 347,
+        "jambaseCalls": 7,
+        "merged": 752,
+        "inAnotherFest": 37,
+        "movedPerJamBaseOnly": 2,
+        "keptFromBefore": 0,
+        "newlyUnlisted": 0
+      },
+      "problems": []
+    },
+    "note": "Generated by scripts/season-feed.mjs; do not hand-edit shows (a re-run keeps names, never overwrites a past show). Plan: claude-plans/2026-09-25-season-v0/PLAN.md."
+  },
+  "days": {}
+}
