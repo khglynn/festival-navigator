@@ -77,6 +77,14 @@ description line says when it was last updated, in place of the old
 name is spelled the same in every season; picks are per season, like a
 festival's.
 
+Kevin, same evening: "we can show in the app just the next two seasons -
+we can have the others tucked away." The lists show the season in progress
+plus the one after it (on Sep 25: Fall '26 and Winter '27; from Dec 1:
+Winter and Spring). Later seasons sit behind one collapsed "Later seasons"
+row; a season the crew already has always shows; archived seasons go with
+the past festivals. The alert still reads every season, so a show announced
+far ahead is still caught.
+
 ## Live usage: Portola is live now; ACL is Oct 2–4 and 9–11
 
 1. **Production stays on v88 until Kevin says otherwise, and never changes
