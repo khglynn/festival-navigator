@@ -1201,3 +1201,11 @@ a.f-cancel:hover { border-bottom-color: rgba(255, 255, 255, .75); }
 .f-sub.f-stack { flex-direction: column; gap: 3px; }
 a.f-order { color: #fff; text-decoration: none; border-bottom: 1px solid rgba(255, 255, 255, .35); padding-bottom: 1px; }
 a.f-order:hover { border-bottom-color: rgba(255, 255, 255, .75); }
+/* A show's doors out, "Tix @ AXS · Info @ DoTheBay" (events.js linksOf): one
+ * row under WHERE, in WHERE's voice, each door underlined like the order and
+ * the map. The row wraps rather than widening the zoom. */
+.f-links { display: inline-flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 2px 7px;
+           color: rgba(255, 255, 255, .85); font-size: 11.5px; font-weight: 600; }
+.f-links .f-dot { color: rgba(255, 255, 255, .45); }
+a.f-link { color: #fff; text-decoration: none; border-bottom: 1px solid rgba(255, 255, 255, .35); padding-bottom: 1px; }
+a.f-link:hover { border-bottom-color: rgba(255, 255, 255, .75); }
