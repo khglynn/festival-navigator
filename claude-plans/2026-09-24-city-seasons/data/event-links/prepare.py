@@ -30,7 +30,7 @@ SELLERS = [
     (r'etix\.com', 'Etix'), (r'eventim\.us', 'Eventim'), (r'seetickets\.us', 'See Tickets'),
     (r'eventbrite\.', 'Eventbrite'), (r'tixr\.com', 'Tixr'), (r'dice\.fm', 'DICE'),
     (r'ticketweb\.', 'TicketWeb'), (r'posh\.vip', 'Posh'), (r'prekindle\.com', 'Prekindle'),
-    (r'ra\.co', 'RA'), (r'ticketsauce\.com', 'Ticketsauce'), (r'dnalounge\.com', 'DNA Lounge'),
+    (r'ra\.co', 'RA'), (r'ticketsauce\.com', 'Ticketsauce'), (r'dnalounge\.com', 'DNA Lounge'), (r'universe\.com', 'Universe'),
 ]
 # Pages people read: the listing sites, then the venues and fests we link to.
 SITES = [
@@ -89,7 +89,12 @@ def tickets_of(url):
     if not url:
         return None
     at = seller_of(url)
-    return {'url': url, 'at': at} if at else None
+    if not at:
+        # Never drop a buy link quietly (the War on Drugs' universe.com link
+        # was, until the review of #29): name the seller and re-run.
+        print(f'no seller name for {real_destination(url)}: add it to SELLERS', file=sys.stderr)
+        return None
+    return {'url': url, 'at': at}
 
 
 def key_of(a):
