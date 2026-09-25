@@ -12,7 +12,7 @@ import { BOARD, hslOf, strokeOf } from './palette.js';
 import { colorIndexOf, meterChip, crewMark } from './wall.js';
 import { meterOf, whoCorner } from './aura.js';
 import { festPlaceLine } from './card-facts.js'; // the fest's place line, shared with the wall header
-import { recent as recentErrors, diagnostics, SETTINGS_KEY, reportKey, reportsOn, clearReports } from '../errlog.js';
+import { recent as recentErrors, diagnostics, SETTINGS_KEY, reportKey, reportsOn, clearReports, noteSettings } from '../errlog.js';
 import { el, subviewHead, eqLoader, festRow, openExportLikes, openBulkPaste, openDayImage } from './tools.js';
 import { router } from './router.js';
 import { nameProblem, NAME_LIMITS } from '../name-rules.mjs';
@@ -25,7 +25,9 @@ const LS_SETTINGS = SETTINGS_KEY;
 export const SUPPORT_URL = 'https://buymeacoffee.com/kevinhg'; // Kevin's page (also list-maker's), 2026-09-02
 
 export function appSettings() { return loadJSON(LS_SETTINGS, {}); }
-export function saveAppSettings(s) { saveLS(LS_SETTINGS, JSON.stringify(s)); }
+// A write that does not land (storage blocked or full) still reaches the crash
+// reporter, so Off and Stay offline hold for this page either way.
+export function saveAppSettings(s) { noteSettings(s, saveLS(LS_SETTINGS, JSON.stringify(s))); }
 
 function microLabel(text) {
   const n = el('div', 'margin-top: 8px;', text);

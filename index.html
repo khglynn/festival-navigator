@@ -16,9 +16,11 @@
          cloud. A write-only ingestion key, public by design; only the phc_
          shape is ever used, so a personal API key pasted here by mistake is
          ignored. Empty means no report leaves any phone (the journal behind
-         Settings → Diagnostics still works). A fork empties it or puts its
-         own here (docs/fork-setup.md). -->
-    <meta name="fn-report-key" content="phc_nrzrd8czFTPFnUhaBPFUroh5CY6zUytTmvmv3zkYDmwi">
+         Settings → Diagnostics still works). data-hosts: the domains the
+         key works on (their subdomains too; localhost always), so on a
+         fork's domain it is inert. A fork empties both or puts its own here
+         (docs/fork-setup.md). -->
+    <meta name="fn-report-key" content="phc_nrzrd8czFTPFnUhaBPFUroh5CY6zUytTmvmv3zkYDmwi" data-hosts="kevinhg.com">
     <link rel="manifest" href="/manifest.json">
     <link rel="icon" type="image/png" href="/favicon.png">
     <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">

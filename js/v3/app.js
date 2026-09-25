@@ -2770,7 +2770,9 @@ export async function boot() {
     // The worst failure the app can have, and a CAUGHT one never reaches the
     // global hooks — so it names itself (DESIGN §1: before v88 the crash
     // that locks a friend out was the one Diagnostics could not see).
-    record('boot', e);
+    // A boot a newer one already replaced (a hashchange mid-boot) was never
+    // on screen: still worth knowing, but not "the app won't open".
+    record(current() ? 'boot' : 'boot:superseded', e);
     if (current()) renderFatal();
   }
 }
