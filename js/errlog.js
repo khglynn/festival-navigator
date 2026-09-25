@@ -232,31 +232,54 @@ export function parseStack(stack, known) {
 }
 
 // ---- the device, coarse on purpose -------------------------------------------
-// Enough to know where to test; the user agent itself never leaves.
+// Enough to know where to test; the user agent itself never leaves. In
+// PostHog's own keys and values (posthog-js's names: 'iOS', 'Mobile Safari',
+// 'Chrome iOS' …), so the shared Slack template and PostHog's filters read
+// both apps the same way (slack-alert-design.md §5). Versions are MAJOR only.
+// `engine` is ours: every browser on an iPhone is WebKit underneath, which is
+// what a WebKit-only bug needs to know.
 function device() {
   let ua = '';
   try { ua = String(window.navigator.userAgent || ''); } catch { ua = ''; }
   let touch = 0;
   try { touch = Number(window.navigator.maxTouchPoints) || 0; } catch { touch = 0; }
-  const iOS = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && touch > 1); // iPadOS asks for the desktop site
-  let os = 'other';
-  let major = null;
+  const iPad = /iPad/.test(ua) || (/Macintosh/.test(ua) && touch > 1); // iPadOS asks for the desktop site
+  const iOS = iPad || /iPhone|iPod/.test(ua);
+  const android = /Android/.test(ua);
+  let os = null;
   let m = null;
-  if (iOS) {
-    os = 'ios';
-    m = /OS (\d+)_/.exec(ua) || /Version\/(\d+)/.exec(ua);
-  } else if (/Android/.test(ua)) {
-    os = 'android';
-    m = /Android (\d+)/.exec(ua);
-  } else if (/Mac OS X/.test(ua)) os = 'mac';
-  else if (/Windows/.test(ua)) os = 'windows';
-  if (m) major = Number(m[1]);
+  if (iOS) { os = 'iOS'; m = /OS (\d+)_/.exec(ua) || /Version\/(\d+)/.exec(ua); }
+  else if (android) { os = 'Android'; m = /Android (\d+)/.exec(ua); }
+  else if (/CrOS/.test(ua)) os = 'Chrome OS';
+  else if (/Mac OS X/.test(ua)) os = 'Mac OS X'; // frozen at 10_15 in every browser: no version worth sending
+  else if (/Windows/.test(ua)) os = 'Windows';
+  else if (/Linux/.test(ua)) os = 'Linux';
+  const osVersion = m ? m[1] : null;
+  let browser = null;
+  let b = null;
+  if (/EdgiOS\/|EdgA\/|Edg\//.test(ua)) { browser = 'Microsoft Edge'; b = /(?:EdgiOS|EdgA|Edg)\/(\d+)/.exec(ua); }
+  else if (/CriOS\//.test(ua)) { browser = 'Chrome iOS'; b = /CriOS\/(\d+)/.exec(ua); }
+  else if (/FxiOS\//.test(ua)) { browser = 'Firefox iOS'; b = /FxiOS\/(\d+)/.exec(ua); }
+  else if (/SamsungBrowser\//.test(ua)) { browser = 'Samsung Internet'; b = /SamsungBrowser\/(\d+)/.exec(ua); }
+  else if (/Firefox\//.test(ua)) { browser = 'Firefox'; b = /Firefox\/(\d+)/.exec(ua); }
+  else if (/Chrome\//.test(ua)) { browser = 'Chrome'; b = /Chrome\/(\d+)/.exec(ua); }
+  // A home-screen app's user agent has no Version/: Safari's major is iOS's.
+  else if (iOS) { browser = 'Mobile Safari'; b = /Version\/(\d+)/.exec(ua) || (osVersion ? [null, osVersion] : null); }
+  else if (/Safari\//.test(ua)) { browser = 'Safari'; b = /Version\/(\d+)/.exec(ua); }
   let engine = 'other';
-  if (iOS) engine = 'webkit'; // every iOS browser is WebKit underneath
-  else if (/Firefox\//.test(ua)) engine = 'gecko';
-  else if (/Chrome\/|Chromium\/|Edg\//.test(ua)) engine = 'blink';
+  if (iOS) engine = 'webkit';
+  else if (browser === 'Firefox') engine = 'gecko';
+  else if (browser === 'Chrome' || browser === 'Microsoft Edge' || browser === 'Samsung Internet') engine = 'blink';
   else if (/AppleWebKit\//.test(ua)) engine = 'webkit';
-  return { engine: engine, os: os, os_major: major };
+  return {
+    $device: iPad ? 'iPad' : (/iPhone/.test(ua) ? 'iPhone' : (/iPod/.test(ua) ? 'iPod Touch' : (android ? 'Android' : null))),
+    $device_type: iPad || (android && !/Mobile/.test(ua)) ? 'Tablet' : (iOS || android ? 'Mobile' : 'Desktop'),
+    $os: os,
+    $os_version: osVersion,
+    $browser: browser,
+    $browser_version: b ? Number(b[1]) : null,
+    engine: engine,
+  };
 }
 
 const round50 = (n) => Math.round((Number(n) || 0) / 50) * 50;
@@ -530,9 +553,13 @@ function baseProps() {
     sync_state: syncNow(),
     online: online(),
     standalone: standalone(),
+    $device: d.$device,
+    $device_type: d.$device_type,
+    $os: d.$os,
+    $os_version: d.$os_version,
+    $browser: d.$browser,
+    $browser_version: d.$browser_version,
     engine: d.engine,
-    os: d.os,
-    os_major: d.os_major,
     viewport: round50(vw) + 'x' + round50(vh),
     reduced_motion: motion.reducedMotion,
     low_power: motion.lowPower,
@@ -540,7 +567,7 @@ function baseProps() {
     strip_animation: motion.stripAnimation,
     fest: null,
     pid: null,
-    name: null,
+    member_name: null, // the person's name in the crew (Eachie's key for it)
   };
   let c = null;
   try { c = provider.context ? provider.context() : null; } catch { c = null; }
@@ -550,7 +577,7 @@ function baseProps() {
     // every token's length, so a token can never pass here), a short name.
     if (typeof c.fest === 'string' && /^[a-z0-9-]{1,64}$/.test(c.fest)) p.fest = c.fest;
     if (typeof c.pid === 'string' && /^[A-Za-z0-9_-]{10,16}$/.test(c.pid)) p.pid = c.pid;
-    if (typeof c.name === 'string' && c.name.length && c.name.length <= 40) p.name = c.name;
+    if (typeof c.name === 'string' && c.name.length && c.name.length <= 40) p.member_name = c.name;
   }
   return p;
 }
@@ -582,6 +609,22 @@ function isNoise(d) {
 
 const UNHANDLED = ['error', 'promise', 'module-load'];
 const LEVEL = { boot: 'fatal', 'module-load': 'fatal', 'zoom-close-after-click': 'warning' };
+// A readable issue name where the error's own type says little
+// (slack-alert-design.md §5.3). PostHog uses it only on the event that opens
+// an issue, for the issue list and the Slack headline. Never for `boot`: the
+// template already heads that one "App won't open".
+const ISSUE_NAMES = {
+  'zoom-close-after-click': 'Zoom closed right after a click',
+  'sync:blocked': 'Server refused a sync',
+  'module-load': 'App code didn’t load',
+};
+// The words each engine uses for "the request never got an answer".
+const NETWORK_FAILURE = /^(?:Failed to fetch|Load failed|NetworkError when attempting to fetch resource\.?|The network connection was lost\.?|The Internet connection appears to be offline\.?)$/;
+function issueName(kind, value) {
+  if (kind === 'boot') return null;
+  if (ISSUE_NAMES[kind]) return ISSUE_NAMES[kind];
+  return NETWORK_FAILURE.test(value) ? 'Network request failed' : null;
+}
 
 // The error event's own file, line and column, when the error brought no
 // stack worth parsing — a module that failed to PARSE (the old-Safari case)
@@ -611,6 +654,8 @@ function buildReport(kind, d, known, at) {
   props.$exception_list = [exception];
   props.$exception_level = LEVEL[kind] || 'error';
   props.kind = scrubText(String(kind), known).slice(0, 60);
+  const named = issueName(kind, value);
+  if (named) props.$issue_name = named;
   // With no stack there is nothing for PostHog to group on but the words, so
   // each cause is its own issue (DESIGN §2c.8).
   if (!frames.length) props.$exception_fingerprint = (props.kind + ':' + type + ':' + value).slice(0, 400);
@@ -768,15 +813,16 @@ export function hookGlobalErrors() {
     // and when the browser says it is back online — never on a timer.
     window.addEventListener('fn:synced', flushSoon);
     window.addEventListener('online', () => { if (settings().lowPower !== true) flushSoon(); });
-    // The hide beacon is wired at `load`, after app.js has wired its own:
-    // listeners run in the order they were added, so the crew's beacon
-    // (sync.js flushOnHide) always claims the keepalive budget first.
-    const wireHide = () => {
-      window.document.addEventListener('visibilitychange', () => { if (window.document.visibilityState === 'hidden') beaconReports(); });
-      window.addEventListener('pagehide', () => { beaconReports(); });
-    };
-    if (window.document.readyState === 'complete') wireHide();
-    else window.addEventListener('load', wireHide, { once: true });
+    // The hide beacon goes AFTER the crew's own (sync.js flushOnHide, wired
+    // by app.js on the document): both share the browser's 64 KB keepalive
+    // budget, and a pick outranks a crash report. visibilitychange bubbles
+    // from the document to the window, so a window listener runs after every
+    // document listener whenever it was added. pagehide fires at the window
+    // itself, so that one is wired at `load`, after app.js has wired its own.
+    window.addEventListener('visibilitychange', () => { if (window.document.visibilityState === 'hidden') beaconReports(); });
+    const wirePagehide = () => { window.addEventListener('pagehide', () => { beaconReports(); }); };
+    if (window.document.readyState === 'complete') wirePagehide();
+    else window.addEventListener('load', wirePagehide, { once: true });
     if (reporting()) askBuild();
   } catch { /* a journal must never be the thing that throws */ }
 }
