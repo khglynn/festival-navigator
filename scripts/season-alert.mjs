@@ -6,6 +6,7 @@
 //
 //   node scripts/season-alert.mjs --loved loved.json            # print the message
 //   node scripts/season-alert.mjs --loved loved.json --post C…  # post it (SLACK_BOT_TOKEN)
+//   … --post C… --update <ts>                                   # edit a message it posted
 //
 // loved.json is [{ "name": "Four Tet", "why": "picked at Portola 2026" }, …],
 // read from the crew database by whoever runs it. It is personal, so it never
@@ -95,11 +96,9 @@ export function buildMessage(fest, matches, now = new Date()) {
   const n = matches.length;
   const title = `Festival Navigator · ${fest.name}: ${n} show${n === 1 ? '' : 's'} by artists you love`;
   const blocks = [{ type: 'header', text: { type: 'plain_text', text: title.slice(0, 150) } }];
-  for (const { show, why, via } of matches) {
+  matches.forEach(({ show, why, via }, i) => {
     const when = `${DAY.format(new Date(`${show.date}T12:00:00Z`))}${show.time ? `, ${show.time}` : ''}`;
-    const section = { type: 'section', text: { type: 'plain_text', text: `${show.name} — ${when} · ${show.venue}`.slice(0, 3000) } };
-    if (show.tickets) section.accessory = { type: 'button', text: { type: 'plain_text', text: `Tix @ ${show.tickets.at}` }, url: show.tickets.url };
-    blocks.push(section);
+    blocks.push({ type: 'section', text: { type: 'plain_text', text: `${show.name} — ${when} · ${show.venue}`.slice(0, 3000) } });
     const facts = [];
     // The bill's own words when they say more than the name ("ACL TV Taping:
     // Lola Young" is a taping, not a ticketed show).
@@ -110,10 +109,16 @@ export function buildMessage(fest, matches, now = new Date()) {
     const pre = (show.presales || []).find((p) => Date.parse(p.start) > now.getTime());
     if (pre) facts.push(`${esc(pre.name)} ${token(pre.start, pre.start.slice(0, 10))}`);
     if (show.soldOut) facts.push('sold out');
-    facts.push(link(calendarUrl(show, `${show.venue}, Austin, TX`), 'Add to calendar'));
-    if (show.page) facts.push(link(show.page.url, `Info @ ${show.page.at}`));
     blocks.push({ type: 'context', elements: [{ type: 'mrkdwn', text: facts.join(' · ') }] });
-  }
+    // The doors as buttons, the app's own words (the zoom's "Tix @ AXS ·
+    // Info @ Do512"): a thumb on a phone hits a button, not a text link.
+    const button = (id, text, url, primary) => ({ type: 'button', action_id: `${id}-${i}`, text: { type: 'plain_text', text: text.slice(0, 75) }, url, ...(primary ? { style: 'primary' } : {}) });
+    const doors = [];
+    if (show.tickets) doors.push(button('tix', `Tix @ ${show.tickets.at}`, show.tickets.url, true));
+    if (show.page) doors.push(button('info', `Info @ ${show.page.at}`, show.page.url));
+    doors.push(button('cal', 'Add to calendar', calendarUrl(show, `${show.venue}, Austin, TX`)));
+    blocks.push({ type: 'actions', elements: doors });
+  });
   const first = matches[0].show;
   const text = `Festival Navigator · ${fest.name}: ${esc(first.name)} ${DAY.format(new Date(`${first.date}T12:00:00Z`))}${n > 1 ? ` and ${n - 1} more` : ''} by artists you love`;
   return { text, blocks, unfurl_links: false, unfurl_media: false };
@@ -130,15 +135,16 @@ async function main() {
   const msg = buildMessage(fest, matchShows(fest, loved, today));
   if (!msg) { console.log('nothing to send: no upcoming show by a loved artist'); return; }
   const channel = opt('--post');
+  const replace = opt('--update'); // the ts of a message this bot posted: edit it instead of posting again
   if (!channel) { console.log(JSON.stringify(msg, null, 1)); return; }
   const token = process.env.SLACK_BOT_TOKEN;
   if (!token) { console.error('SLACK_BOT_TOKEN is not set'); process.exit(2); }
-  const res = await fetch('https://slack.com/api/chat.postMessage', {
+  const res = await fetch(`https://slack.com/api/${replace ? 'chat.update' : 'chat.postMessage'}`, {
     method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json; charset=utf-8' },
-    body: JSON.stringify({ channel, ...msg }),
+    body: JSON.stringify({ channel, ...(replace ? { ts: replace } : {}), ...msg }),
   }).then((r) => r.json());
   if (!res.ok) { console.error(`slack said no: ${res.error}`); process.exit(1); }
-  console.log(`posted ${msg.blocks.length} blocks to ${channel} (ts ${res.ts})`);
+  console.log(`${replace ? 'updated' : 'posted'} ${msg.blocks.length} blocks in ${channel} (ts ${res.ts})`);
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) main().catch((e) => { console.error(e); process.exit(1); });

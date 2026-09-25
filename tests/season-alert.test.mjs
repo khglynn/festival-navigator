@@ -9,7 +9,7 @@ import { matchShows, buildMessage, calendarUrl, austinInstant } from '../scripts
 const fest = {
   name: 'Austin',
   artists: [
-    { name: 'Four Tet', date: '2026-10-31', time: '9 PM', venue: 'Concourse Project', tickets: { url: 'https://www.eventim.us/x', at: 'Eventim' } },
+    { name: 'Four Tet', date: '2026-10-31', time: '9 PM', venue: 'Concourse Project', tickets: { url: 'https://www.eventim.us/x', at: 'Eventim' }, page: { url: 'https://do512.com/events/x', at: 'Do512' } },
     { name: 'John Summit', date: '2026-11-06', time: '7 PM', venue: 'Moody Center', with: ['Alok', 'Jackie Hollander'] },
     { name: 'Old Show', date: '2026-09-01', time: '8 PM', venue: 'Mohawk' },
     { name: 'Robyn', date: '2026-12-01', time: '8 PM', venue: 'ACL Live', cancelled: { on: '2026-09-25' } },
@@ -38,10 +38,12 @@ test('the message leads with the app, keeps typed names in plain_text, and leave
   assert.match(msg.blocks[0].text.text, /^Festival Navigator · Austin: 2 shows/);
   const sections = msg.blocks.filter((b) => b.type === 'section');
   assert.ok(sections.every((b) => b.text.type === 'plain_text'));
-  assert.equal(sections[0].accessory.text.text, 'Tix @ Eventim');
-  assert.equal(sections[1].accessory, undefined, 'no tickets, no button');
+  const doors = msg.blocks.filter((b) => b.type === 'actions').map((b) => b.elements.map((e) => e.text.text));
+  assert.deepEqual(doors[0], ['Tix @ Eventim', 'Info @ Do512', 'Add to calendar']);
+  assert.deepEqual(doors[1], ['Add to calendar'], 'no tickets, no Tix button');
+  const ids = msg.blocks.filter((b) => b.type === 'actions').flatMap((b) => b.elements.map((e) => e.action_id));
+  assert.equal(new Set(ids).size, ids.length, 'every button has its own action_id');
   const facts = msg.blocks.filter((b) => b.type === 'context').map((b) => b.elements[0].text);
-  assert.ok(facts.every((t) => t.includes('|Add to calendar>')));
   assert.ok(!facts.join(' ').includes('undefined'));
 });
 
@@ -50,6 +52,7 @@ test('a future on-sale time uses Slack\'s date token; a past one is not mentione
   const f2 = { name: 'Austin', artists: [show] };
   const before = buildMessage(f2, matchShows(f2, loved, '2026-09-25'), new Date('2026-09-25T12:00:00Z'));
   assert.match(before.blocks[2].elements[0].text, /on sale <!date\^\d+\^/);
+  assert.equal(before.blocks[3].type, 'actions');
   const after = buildMessage(f2, matchShows(f2, loved, '2026-09-25'), new Date('2026-10-03T12:00:00Z'));
   assert.doesNotMatch(after.blocks[2].elements[0].text, /on sale/);
 });
