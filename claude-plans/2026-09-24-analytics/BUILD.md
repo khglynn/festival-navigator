@@ -29,9 +29,13 @@ See "Log" at the bottom for the newest state.
 ```
 
 It now holds the "Festival Navigator" project's key (PostHog project 627900,
-US cloud). It's a write-only ingestion key and public by design, so it ships
-in the page like any analytics key. Only the `phc_` shape is ever used: a
-personal `phx_` key (a real secret) pasted there by mistake is ignored.
+US cloud), with `data-hosts="kevinhg.com"`. It's a write-only ingestion key
+and public by design, so it ships in the page like any analytics key. Only
+the `phc_` shape is ever used: a personal `phx_` key (a real secret) pasted
+there by mistake is ignored. **The key only works on the hosts in
+`data-hosts`** (and their subdomains, plus localhost): fest / festival /
+crew / stage.fest.kevinhg.com send; a unique `*.vercel.app` preview URL and
+any fork's domain do not.
 Emptying it switches every phone's reports off; the Settings toggle
 disappears and the journal behind Diagnostics keeps working. The jsdom shell
 rig overwrites it (empty unless a test asks), so no test ever sends with the
@@ -135,8 +139,8 @@ real key, and the browser test swaps in a test key.
     recorded by the reporter.
 13. **Sends:** after a successful sync (`fn:synced`, dispatched by sync.js on
     a push or poll that got through), on the browser's `online`, and by
-    beacon on hide. Never on a timer. Stay offline blocks all of them; Low
-    power allows only the after-sync send (DESIGN §2e.3).
+    beacon on hide. Never on a timer. Stay offline blocks all of them. Low
+    power does NOT hold reports back (changed after review, see below).
 14. **The Settings toggle only appears when a key is set.** A build with no
     key sends nothing, so it offers nothing to switch, and a fork that
     empties the key doesn't show "Send crash reports to Kevin". Off clears
@@ -181,6 +185,57 @@ real key, and the browser test swaps in a test key.
     use `--keep` (v88 is unreleased). The coordinator re-stamps again on
     `release/v88`.
 
+## The independent review (Opus, 2026-09-25) and what changed because of it
+
+Verdict: "ship after fixes"; no P0 (nothing leaks, nothing breaks the app).
+Every finding below was reproduced here before it was fixed.
+
+1. **P1, a flood buried the first error and slowed the page.** The per-error
+   cap was keyed on the message, so a loop whose message carried a changing
+   number (`reading '0'`, `'1'` …) made a new report every time. Reproduced:
+   2,000 such errors left 56 reports (the 96 KB byte cap, about 80 reports,
+   not 300), the boot crash that started it was evicted, and every repeat
+   re-ran the whole pipeline (style read, storage parses, a ~96 KB queue
+   rewrite). Fixed: "the same error" is decided in memory from the raw words
+   with numbers blurred, plus the first two frames; repeats fold in memory
+   and are written at most once a second; one page load queues at most 25
+   reports (the first ones) and at most 5 per error; the journal keeps the
+   first 3 of each; the memory map is bounded at 200. A test pins it: the
+   2,000-error loop is ONE report counting 2,000, at most 3 queue writes,
+   and the boot crash survives a second flood of changing words.
+2. **P2, no backoff.** A persistent 5xx/429 re-posted up to 60 KB on every
+   25-second sync for a week. Fixed: 408/429/5xx/no answer keep the batch
+   and wait (1 min, doubling, 30 min cap); any other 4xx (400, 401, 403,
+   404, 413) drops it as refused for good.
+3. **P2, Off and Stay offline with storage refused.** Settings saves fail
+   silently when storage is blocked or full, and the reporter read `{}`
+   (reports on). Fixed: `saveAppSettings` hands a save that didn't land to
+   errlog (`noteSettings`), which obeys it for the page.
+4. **P2, Low power blocked the only way out for a boot crash.** No sync
+   ever succeeds after one, and Low power held back both the hide beacon
+   and `online`. Fixed by removing the Low-power gate: a report only exists
+   after an error, so a healthy phone pays nothing. (Changes DESIGN §2e.3.)
+5. **P2, repeats folded into a report already on its way were dropped with
+   it.** Fixed: a report being fetched or beaconed takes no more repeats; the
+   next one starts a new report.
+6. **P2, forks would send to Kevin.** The key ships in a public repo, and a
+   fork that pulls upstream keeps it. Fixed with `data-hosts` (above).
+7. Nits fixed: the journal is scrubbed on read too (v87 entries hold raw
+   words); V8's `… on string '<text>'` loses its quoted text; a crash in a
+   boot a newer one replaced reports as `boot:superseded`, not a fatal "App
+   won't open"; `module-load` says "a file the app needs did not load (from
+   …)", since Chrome fires on the entry script; the pagehide ordering and
+   401/403/404/413 now have tests (the pagehide test was shown to fail with
+   the wiring broken); the browser test now proves a sync succeeded after
+   the send and still only one request went.
+8. Not changed: frames leave `resolved` unset (PostHog's default, false).
+   With it false, PostHog's grouping ignores line and column: steadier
+   across builds, but all anonymous functions in one file share a group.
+   Worth a look after the first real reports. Two tabs rewriting the queue
+   at once can still lose or double a report (rare; left). The reviewer
+   could not confirm "Discard client IP data" is on in 627900 (its key gets
+   a 403 there); the coordinator set it.
+
 ## What changed from DESIGN.md, and why
 
 | DESIGN said | Built | Why |
@@ -192,6 +247,9 @@ real key, and the browser test swaps in a test key.
 | §2d.2c redact `#g=`, `?t=`, `me=`, `f=` values | every URL's query and hash dropped, every `?x=`/`#x=`/`&x=` parameter, plus any token-shaped run | "never a URL hash or query string" from the brief, by construction |
 | §2d.4 pid not sent | pid sent, PID_RE-checked | Kevin's Decision 3 |
 | §2e.3b hide via `fetch(keepalive)` | `sendBeacon`, ordered after the crew's beacon | the brief; ordering (decision 10) |
+| §2e.3 Low power sends only after a sync | Low power holds nothing back | a boot crash never reaches a sync (review 4) |
+| §2e.2 300 entries | 96 KB (about 80 reports) across opens; 25 new reports per page load | the byte cap binds first; a flood must not bury the first error (review 1) |
+| (not in DESIGN) | the key is bound to `data-hosts` | forks (review 6) |
 | §2e.5 Diagnostics line "n waiting / all sent" | the Diagnostics JSON carries `reports` and `reportsWaiting`; no new on-screen line | the brief left it out of this slice; the paste still answers "did Kevin get it" |
 | §2c.3 kind `api` (5xx) | not built | decision 17 |
 | §4b.4 toggle "crash reports and usage", plus a line in How it works | "Send crash reports to Kevin", Settings only | Kevin's Decision 4; usage isn't in this slice |
@@ -293,4 +351,7 @@ Still needed:
 - 2026-09-25 early: the alert design's fields, the project key, the tests,
   the browser test; merged origin/main (`28f8c45`, data only); re-stamped
   `--keep` (`b15a4a5d`). Unit suite locally: 862 tests, 861 pass, 1
-  pre-existing skip.
+  pre-existing skip. CI 36107115487 (code) and 36107319964 / 36107354748
+  (docs head, push + PR) green on both jobs. Draft PR #30 opened.
+- 2026-09-25 later: the independent Opus review ("ship after fixes"); every
+  finding reproduced, then fixed with a test (section above).
