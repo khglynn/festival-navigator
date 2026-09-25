@@ -359,6 +359,30 @@ test('the overlay never steals focus: a click on its body picks even when the re
   assert.ok(document.querySelector('.zoom-slot'), 'and the zoom is still up');
 });
 
+test('Safari: a press on the notes chip that sends focus nowhere is the press, not a departure — the zoom stays and the chip opens the notes (v88 live, 2026-09-25)', async () => {
+  const ctx = makeCtx();
+  const card = mountCard(ctx);
+  zoom.wireCardFocusZoom(card, 'GRiZ', ctx, { occ: { day: 'Saturday', stage: null, time: null } });
+  card.focus(); // the last pick left focus on the resting card
+  zoom.zoomCard(card, 'GRiZ', ctx, { occ: { day: 'Saturday', stage: null, time: null }, instant: true, onOpenNotes: ctx.onOpenNotes });
+  const chip = document.querySelector('.zoom-slot button.f-chip.notes');
+  // Safari does not focus a pressed button: the press moves focus from the
+  // card to nowhere (relatedTarget null). Before the fix this closed the zoom
+  // and the chip's click landed on nothing — Kevin's phone logged it twice.
+  chip.dispatchEvent(new dom.window.MouseEvent('pointerdown', { bubbles: true }));
+  card.blur();
+  assert.ok(document.querySelector('.zoom-slot'), 'focus going nowhere right after a press on the zoom does not close it');
+  click(chip);
+  assert.deepEqual(ctx.opened, ['GRiZ'], 'the chip opened the notes');
+  assert.deepEqual(ctx.taps, [], 'the chip is not a pick');
+  // Without a press, focus leaving still closes: the guard is the press, not blanket.
+  await new Promise((r) => setTimeout(r, 650));
+  card.focus();
+  zoom.zoomCard(card, 'GRiZ', ctx, { occ: { day: 'Saturday', stage: null, time: null }, instant: true, onOpenNotes: ctx.onOpenNotes });
+  card.blur();
+  assert.equal(document.querySelector('.zoom-slot'), null, 'a blur with no press on the zoom still closes it');
+});
+
 test('a card rendered under a resting pointer arms its hover intent one frame after insertion (a repaint under a still hand)', async () => {
   const ctx = makeCtx();
   // Production shape: renderCard wires the card BEFORE inserting it, so the
