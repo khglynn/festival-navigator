@@ -239,3 +239,18 @@ missing data.
   final head ffd9614 and the error-capture work; production still serves
   v87. The keys, the Slack channel and Kevin's read of `BUILD-PLAN.md` are
   still open; none of them blocks the weekend.
+- 2026-09-25 ~1 PM PT: Kevin pasted the Ticketmaster and JamBase keys in the
+  thread (never in the repo). Both work, one call each for Austin from Dec 1
+  within 15 miles: JamBase `api.data.jambase.com/v3/events` (Bearer auth,
+  query by `geoLatitude`/`geoLongitude`/`geoRadiusAmount`; `geoCityName` is
+  not a parameter) returned 113; Ticketmaster Discovery returned 70 music
+  events, including ACL Live, with presale names and on-sale times (a
+  `1900-01-01` on-sale means unknown and must read as null). `~/.env` is
+  protected by a hook, so Kevin adds the keys there himself.
+- Slack: the personal bot `claudecodebridge` in the Trimm workspace has
+  `chat:write` (not `chat:write.public`), so it posts only where it is a
+  member; `#dont-miss` isn't visible to it yet (private or not joined), and
+  it isn't in `#hg-agents`. Plan: show alerts in `#dont-miss`, feed-health
+  notes in `#hg-agents`; Kevin runs `/invite @claudecodebridge` in each. The
+  Slack CLI (not installed here) can now log in from inside Slack
+  (`/slackauthticket`) and manage apps and manifests from the terminal.
