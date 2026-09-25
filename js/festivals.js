@@ -152,6 +152,9 @@ export async function loadCustomFestivals(token) {
 // The sensible default for a fresh crew/device: the next upcoming festival
 // (index.json is ordered by date, archived last).
 export function defaultFestivalId() {
-  const active = FESTIVAL_INDEX.find((f) => f.status !== 'archived');
+  // A city season is never the default: it is not a festival a crew was made
+  // for, and a rolling one would otherwise win the moment it led the list.
+  const active = FESTIVAL_INDEX.find((f) => f.status !== 'archived' && f.kind !== 'season')
+    || FESTIVAL_INDEX.find((f) => f.status !== 'archived');
   return (active || FESTIVAL_INDEX[0]).id;
 }

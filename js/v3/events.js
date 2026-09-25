@@ -501,10 +501,29 @@ export function runFactsOf(entry) {
 // matches the way it always did. `null` is an answer ("this show has no
 // date"), `undefined` is silence.
 const sameField = (a, b) => (a || null) === (b || null);
+// A file's entries by name, in file order, built once per file (the file
+// object is replaced whole when it changes). Every card asks for its own
+// entry, and a scan of every entry per card is a city season's hundreds
+// squared — ~560k name compares a repaint (review, 2026-09-25).
+const byNameCache = new WeakMap();
+export function entriesNamed(fest, name) {
+  if (!fest || typeof fest !== 'object') return [];
+  let m = byNameCache.get(fest);
+  if (!m) {
+    m = new Map();
+    for (const a of fest.artists || []) {
+      if (!a || typeof a.name !== 'string') continue;
+      if (!m.has(a.name)) m.set(a.name, []);
+      m.get(a.name).push(a);
+    }
+    byNameCache.set(fest, m);
+  }
+  return m.get(name) || [];
+}
 export function findEventEntry(fest, name, occ) {
   if (!occ || !fest) return null;
   const want = occ.stage || '';
-  return (fest.artists || []).find((a) => a && a.name === name
+  return entriesNamed(fest, name).find((a) => a && a.name === name
     && sameField(a.day, occ.day)
     && sameField(a.time, occ.time)
     && (occ.date === undefined || sameField(dateOf(a), occ.date))
@@ -512,6 +531,183 @@ export function findEventEntry(fest, name, occ) {
     && (occOf(a).stage || '') === want) || null;
 }
 
+
+// ---- a city season (2026-09-25) -----------------------------------------------------
+// claude-plans/2026-09-25-season-v0/. A season is a festival-shaped file with
+// no grid: every show is an artists[] entry whose `day` is its month
+// ("December"), with a `date` and a `venue` (festival-rules.mjs insists on
+// both). Kevin, 2026-09-24: "a simple set of cards, sorted by date and time
+// but just a responsive set of cards with details like location on hover. …
+// I don't think splitting by name and location in the grid is necessary. if
+// anything just do by weekend." So a month is the lineup view — one set of
+// cards in date and time order — cut into weeks, and nothing is split by
+// location.
+//
+// WHAT SHOWS: from today on. A month is a tab while it has a show dated today
+// or later, and the days before today go the way a finished month does. The
+// file keeps every show (a name is a pick key and never disappears); only the
+// view lets go of what is over. Past days kept in would have landed the
+// month's tab on its first, finished week all month long.
+export const isSeason = (fest) => !!fest && fest.kind === 'season';
+// A show no source lists any more (the feed marks it `unlisted: <date>` and
+// keeps the entry, because its name is a pick key). It is not on the wall,
+// not in YOURS, not in a count and not "also" anywhere: a moved show would
+// otherwise stand twice, at its old date and its new one.
+export const isUnlisted = (e) => !!(e && e.unlisted);
+
+const MONTH_LONG = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+// The Monday on or before a date: a week on the season wall runs Monday to
+// Sunday, so its weekend closes it.
+export function mondayOf(iso) {
+  const wd = weekdayOfIso(iso);
+  return wd ? isoPlusDays(iso, -WEEKDAYS.indexOf(wd)) : null;
+}
+const monthStart = (iso) => `${String(iso).slice(0, 7)}-01`;
+function monthEnd(iso) {
+  const [y, m] = String(iso).split('-').map(Number);
+  const last = new Date(Date.UTC(y, m, 0)).getUTCDate();
+  return `${String(iso).slice(0, 7)}-${String(last).padStart(2, '0')}`;
+}
+// When a show starts on its date, for the order: its posted start, else its
+// doors, else it goes after the timed ones. The festival-day axis (9 AM
+// starts the day) is the right one here too: a 1 AM set is the night before's.
+const clockOf = (e) => {
+  const t = parseEventTime(e.time) || parseEventTime(e.doors);
+  return t ? t.startMin : Infinity;
+};
+
+// What the resting card says under the name: the date, and the start when the
+// show has posted one — "Fri · Oct 9 · 8 PM". Doors, the location and the
+// links are the zoom's (card-facts.js factsFor reads the same entry). A
+// cancelled show says so first, the way the zoom's WHEN does.
+export function seasonWhen(e) {
+  const iso = dateOf(e);
+  const date = iso ? shortDateLabel(iso) : '';
+  if (isCancelled(e)) return ['Cancelled', date].filter(Boolean).join(' · ');
+  const t = parseEventTime(e.time);
+  return [date, t ? tilde(e, t.startStr) : null].filter(Boolean).join(' · ');
+}
+
+// The season's wall, as data. `today` is the festival's own calendar day
+// (now.js festivalClock in the file's timezone). `isYours` (name → bool) is
+// null for someone who has not connected Spotify: then there is no YOURS at
+// all (Kevin, 2026-09-25: "yours tab is good but just plan to not show if
+// they don't have spotify"). `only` narrows the shows (a search).
+//
+// Returns:
+//   months  [{ key, short, long, num, count, weeks }] in calendar order — `key`
+//           is the month label the file wrote (the tab and jump id; never
+//           parsed), `short`/`long` what the tabs say, read off the dates,
+//           `num` the year a dock tab wears when two months share three
+//           letters, `count` the shows still on (a cancelled one is on the
+//           wall, not on; an unlisted one is not on the wall at all);
+//   weeks   [{ key, monday, from, to, when, entries }] — Monday to Sunday,
+//           clamped to the month so a week never names another tab's dates,
+//           and to today so this week never names days the wall has let go;
+//           `when` is 'this' / 'next' for the week today is in and the one
+//           after; entries by date, then start, then file order, a cancelled
+//           show last in its week (as it is last in any list);
+//   yours   the shows by an artist that is yours, soonest first — never a
+//           cancelled one (YOURS is what you can go to) — or null.
+export function seasonModelOf(fest, { today, isYours = null, only = null, hidden = null } = {}) {
+  const on = [];
+  ((fest && fest.artists) || []).forEach((e, i) => {
+    const iso = dateOf(e);
+    if (!e || typeof e.name !== 'string' || !iso || iso < today || isUnlisted(e)) return;
+    // A location the show menu has unticked takes its shows off the wall —
+    // the months, YOURS and a search alike (viewer-side, like every fold).
+    if (hidden && hidden.size && hidden.has(venueOf(e))) return;
+    if (only && !only(e)) return;
+    on.push({ e, i, iso, at: clockOf(e) });
+  });
+  const byTime = (a, b) => (a.iso < b.iso ? -1 : a.iso > b.iso ? 1 : 0) || a.at - b.at || a.i - b.i;
+  on.sort(byTime);
+  const thisMonday = mondayOf(today);
+  const nextMonday = thisMonday ? isoPlusDays(thisMonday, 7) : null;
+  const todayYear = String(today).slice(0, 4);
+  const months = new Map();
+  for (const s of on) {
+    // The month label the file wrote is the tab (and the section key a note
+    // or a pick could ever hang off); one it forgot is read off the date.
+    // The label is only ever a KEY: a month a year or more out carries its
+    // year ("September 2027", the feed's monthOf), and what a tab says comes
+    // from the dates below, never from parsing the label.
+    const key = typeof s.e.day === 'string' && s.e.day.trim() ? s.e.day.trim() : `${MONTH_LONG[Number(s.iso.slice(5, 7)) - 1]} ${s.iso.slice(0, 4)}`;
+    if (!months.has(key)) months.set(key, []);
+    months.get(key).push(s);
+  }
+  const out = [...months].map(([key, shows]) => {
+    const weeks = new Map();
+    for (const s of shows) {
+      const monday = mondayOf(s.iso);
+      if (!weeks.has(monday)) weeks.set(monday, []);
+      weeks.get(monday).push(s);
+    }
+    const year = shows[0].iso.slice(0, 4);
+    const m = Number(shows[0].iso.slice(5, 7)) - 1;
+    return {
+      key,
+      // What the tabs say, from the month's own dates: "OCT" in the dock, and
+      // on the rail "JANUARY ’27" for a month in another year than today's.
+      short: MONTHS[m].toUpperCase(),
+      long: `${MONTH_LONG[m].toUpperCase()}${year !== todayYear ? ` \u2019${year.slice(2)}` : ''}`,
+      year,
+      count: shows.filter((s) => !isCancelled(s.e)).length,
+      first: shows[0].iso,
+      weeks: [...weeks].map(([monday, list]) => {
+        const first = list[0].iso;
+        // The week as the wall shows it: from its Monday, or the month's
+        // first, or today — whichever is latest, since nothing before today
+        // is on the wall (`SEP 25 – 27  THIS WEEK` on a Friday).
+        const from = [monday, monthStart(first), today].reduce((a, b) => (b > a ? b : a));
+        const sunday = isoPlusDays(monday, 6);
+        const to = sunday > monthEnd(first) ? monthEnd(first) : sunday;
+        return {
+          key: monday,
+          monday,
+          from,
+          to,
+          when: monday === thisMonday ? 'this' : monday === nextMonday ? 'next' : null,
+          entries: [...list.filter((s) => !isCancelled(s.e)), ...list.filter((s) => isCancelled(s.e))].map((s) => s.e),
+        };
+      }),
+    };
+  }).sort((a, b) => (a.first < b.first ? -1 : a.first > b.first ? 1 : 0));
+  // Two tabs the dock would call "SEP" (this September and next) wear their
+  // year's two digits as the dock tab's small number: SEP · SEP 27.
+  for (const mo of out) {
+    if (out.some((o) => o !== mo && o.short === mo.short) && mo.year !== todayYear) mo.num = `\u2019${mo.year.slice(2)}`;
+  }
+  const yours = isYours ? on.filter((s) => !isCancelled(s.e) && isYours(s.e.name)).map((s) => s.e) : null;
+  return { months: out, yours, today };
+}
+// The season's locations and how many shows each has from today on, busiest
+// first (people have home rooms, and the big rooms are the ones most people
+// mean), then by name — the show menu's list ("64 of 69 locations"; Kevin,
+// 2026-09-24: "Let's call this location … in pretty much every context").
+export function seasonLocationsOf(fest, { today } = {}) {
+  const counts = new Map();
+  for (const e of (fest && fest.artists) || []) {
+    const iso = dateOf(e);
+    const venue = venueOf(e);
+    if (!e || !iso || iso < today || !venue || isUnlisted(e)) continue;
+    // A room whose only show was called off is still on the wall (struck
+    // through), so it is still a row to untick; it counts nothing that is on.
+    counts.set(venue, (counts.get(venue) || 0) + (isCancelled(e) ? 0 : 1));
+  }
+  return [...counts].map(([venue, count]) => ({ venue, count }))
+    .sort((a, b) => b.count - a.count || a.venue.localeCompare(b.venue));
+}
+
+// A week's head, said the way the room heads say a day: the month in the
+// quiet weight, then the dates — `OCT 5 – 11`, `NOV 1` for a week the month
+// cuts to one day.
+export function weekHeadOf(week) {
+  const month = MONTHS[Number(String(week.from).slice(5, 7)) - 1] || '';
+  const a = dayOfMonth(week.from);
+  const b = dayOfMonth(week.to);
+  return { wd: month.toUpperCase(), label: a === b ? a : `${a} – ${b}` };
+}
 
 // ---- A show's doors out: its page and its tickets (Kevin, 2026-09-24) ------------
 // "when it's afters or shows like this I naturally want to click through to

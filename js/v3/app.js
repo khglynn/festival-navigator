@@ -9,18 +9,19 @@ import * as sync from '../sync.js';
 import * as spotify from '../spotify.js';
 import * as model from './model.js';
 import { loadFestivalIndex, loadFestival, fetchCustomFestivals, mergeCustoms, FESTIVAL_INDEX, defaultFestivalId } from '../festivals.js';
-import { renderWall, refreshCard, showToast, wireScrollspy, colorIndexOf, positionNowLines, positionNowMarks, scrollToNowLine, dayNavOf, roomsOf, cardFor, roomOf, isStripScroller, DAY_ANCHOR, festLinkLabel, nowLanding, nowStops, nowStep, nowPulseable, nowLabelOf, nowSaid } from './wall.js';
-import { loadPeopleFilter, savePeopleFilter, togglePerson, pruneToActive, loadFolded, applyFoldToggle } from './filters.js';
+import { renderWall, refreshCard, showToast, wireScrollspy, colorIndexOf, positionNowLines, positionNowMarks, scrollToNowLine, dayNavOf, roomsOf, cardFor, roomOf, isStripScroller, DAY_ANCHOR, festLinkLabel, nowLanding, nowStops, nowStep, nowPulseable, nowLabelOf, nowSaid, LOCATION_KEY } from './wall.js';
+import { loadPeopleFilter, savePeopleFilter, togglePerson, pruneToActive, loadFolded, applyFoldToggle, saveFolded } from './filters.js';
 import { OUT_MS, CASCADE_MS, STAGGER_MS, EASE_ARRIVE, EASE_LEAVE, EASE_SURFACE, canAnimate } from './motion.js';
 import { scrolledBefore, rememberScrolled, dayOfScrollKey, festivalClock } from './now.js';
 import { dayLabelParts } from '../time.js';
-import { disclosureFold, eqLoader, festRow } from './tools.js';
+import { disclosureFold, eqLoader, festRow, seasonsHead, listHeadFor } from './tools.js';
 import { openArtistSheet, openDayNotes, openAllNotes, openFestNotes, closeSheet, refreshOpenSheet, sheetChrome, dialogize, rememberOpener, shortDayLabel } from './notes.js';
 import { renderSettings, appSettings, openSubviewByKey } from './settings.js';
 import { onStorageWriteFail, saveLS, errorText } from '../util.js';
 import { router, encodeNotesKey, decodeNotesKey } from './router.js';
 import { wireCardZoom, wireCardFocusZoom, zoomCard, unzoom, dismissZoom, zoomedCard, zoomContains, zoomSnapshot, refreshZoom, festPlaceLine } from './card-facts.js';
 import { hookGlobalErrors, configureReports, record } from '../errlog.js';
+import { isSeason } from './events.js'; // a city season (2026-09-25)
 // The crash journal listens from the first module tick — an error during
 // boot is exactly the kind nobody can describe later (2026-08-31). index.html
 // hooks it earlier still, from a module script of its own; this second call
@@ -179,7 +180,9 @@ function refreshCtx() {
 // axis is visible; notes.js reads the answer and never re-derives it.
 function festDatesOf() {
   const fest = state.fest();
-  if (!fest) return [];
+  // A city season has no date doors (its months carry no dates), so there is
+  // nothing to list — and no reason to build its model on every tap.
+  if (!fest || isSeason(fest)) return [];
   const out = [];
   const seen = new Set();
   // The fold is stripped too: a hidden day renders nothing on the wall, but a
@@ -460,10 +463,22 @@ function startClock() {
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') tickClock(); });
 }
 function tickClock(date = new Date()) {
+  // A city season's wall is "from today on": when its day turns (a phone
+  // resumed the next morning, or open past 5 AM), yesterday's shows and THIS
+  // WEEK have to go — a repaint, which holds the week you are reading. Only
+  // the day's turn repaints, never the minute.
+  const fest = state.fest();
+  const app = $('screen-app');
+  if (fest && isSeason(fest) && app && app.style.display !== 'none') {
+    const day = festivalClock(ctx.now || date, fest.timezone || null).iso;
+    if (seasonDay && day !== seasonDay) repaintWall();
+  }
   positionNowLines($('wall-root'), date);
   positionNowMarks($('wall-root'), date);
   paintNowTabs(date); // the same minute decides whether NOW is there at all
 }
+// The season day the wall was last drawn for (repaintWall writes it).
+let seasonDay = null;
 
 // ---- NOW: the jump to what is playing (Kevin, 2026-09-24) -------------------------
 // "an option to the left of the days … if you tap it goes to now. A use case
@@ -821,6 +836,18 @@ function maybeOpenOnDay() {
   const tz = state.fest().timezone || null; // the festival's clock, not the phone's
   const key = dayOfScrollKey(ctx.fid, new Date(), tz);
   if (scrolledBefore(key)) return;
+  // A season opens on today (Kevin, at kickoff): the month it is, from
+  // today — which is the first month block, since the wall starts today. The
+  // one thing that can sit above it is YOURS, whose tab arrives in the dock
+  // to say it is there; with no YOURS today is already the top of the page,
+  // and the season's name stays in view.
+  if (isSeason(state.fest())) {
+    const month = document.querySelector('#wall-root .day-block[data-kind="month"]');
+    if (!month) return;
+    if (month.previousElementSibling) landOnDay(month);
+    rememberScrolled(key);
+    return;
+  }
   // During the festival: the now line, or today's first head before doors —
   // a Late nights date counts as today when no grid day is (wall.js
   // scrollToNowLine).
@@ -910,15 +937,52 @@ export function dayTab({ key, num = null, anchor = null }, label, { withNum = fa
   return tab;
 }
 
+// A season's YOURS tab arrives the way NOW does (VIEW-BRIEF, 2026-09-25): it
+// fades in from 6px to the left with the beat, and the months beside it slide
+// over to make room, tab by tab — never on a repaint that changed nothing, so
+// the rows are rebuilt as always and only the difference moves. Leaving is
+// quick and plain: the months slide back. Which fests last painted a YOURS,
+// for the life of the page: the first paint of a season with one is its
+// arrival too, as NOW's first appearance is.
+const yoursPainted = new Map();
+const lefts = (row) => new Map([...row.children].map((t) => [t.dataset.day, t.getBoundingClientRect().left]));
+function yoursMoves(rows, before, had) {
+  for (const [i, row] of rows.entries()) {
+    const yours = [...row.children].find((t) => t.dataset.day === 'yours');
+    for (const t of row.children) {
+      if (t === yours || !canAnimate(t, ctx)) continue;
+      const was = before[i].get(t.dataset.day);
+      if (was == null) continue;
+      const dx = was - t.getBoundingClientRect().left;
+      if (Math.abs(dx) >= 1) t.animate([{ transform: `translateX(${dx}px)` }, { transform: 'none' }], { duration: CASCADE_MS, easing: EASE_ARRIVE });
+    }
+    if (yours && !had && canAnimate(yours, ctx)) {
+      yours.animate([{ opacity: 0, transform: 'translateX(-6px)' }, { opacity: 1, transform: 'none' }],
+        { duration: CASCADE_MS, delay: STAGGER_MS, easing: EASE_ARRIVE, fill: 'backwards' });
+    }
+  }
+}
+
 function renderDayNav() {
   const dock = $('dock-days');
   const rail = $('rail-days');
+  // Where the tabs stood, for YOURS's arrival — read only on a season: on a
+  // festival it would be a layout read on every repaint for nothing.
+  const season = isSeason(state.fest()) && !ctx.query;
+  const before = season ? [lefts(dock), lefts(rail)] : null;
   dock.textContent = '';
   rail.textContent = '';
   // The wall is painted first on every path that gets here, so it can be the
   // answer to "which days are there": while a search is on, the tabs are the
   // days it answered and nothing else.
-  for (const day of dayNavOf(state.fest(), ctx, $('wall-root'))) {
+  const tabs = dayNavOf(state.fest(), ctx, $('wall-root'));
+  if (season) {
+    const has = tabs.some((t) => t.kind === 'yours');
+    const had = !!yoursPainted.get(ctx.fid);
+    yoursPainted.set(ctx.fid, has);
+    if (has !== had) queueMicrotask(() => yoursMoves([dock, rail], before, had));
+  }
+  for (const day of tabs) {
     const at = day.anchor || day.key;
     const jump = () => {
       const target = document.querySelector(anchorFor(at));
@@ -1008,7 +1072,143 @@ function showMenuRow(label, { key = null, on = null, settings = false } = {}) {
   return row;
 }
 
+// ---- a season's locations (2026-09-25, UX.md §3) ----------------------------------
+// On a city season the fest name's menu lists its LOCATIONS (Kevin: "Let's
+// call this location … in pretty much every context"), busiest first with
+// their counts, under "Show · 64 of 69 locations". People have home rooms, so
+// a tap keeps the menu open — unticking five rooms is one visit, not five —
+// and the wall moves under it: that location's cards leave quick and plain,
+// and the cards that stay slide into the room they left (slideSeasonCards).
+// "All locations" leads: one tap back from any filter, or a clean wall to
+// build one up from. Device-local like every fold, never the crew doc.
+const ALL_LOCATIONS = `${LOCATION_KEY}*`;
+function paintLocationMenu(pop, rooms, folded) {
+  const shown = rooms.filter((r) => !folded.has(r.key)).length;
+  const head = pop.querySelector('.pop-head');
+  if (head) head.textContent = `Show · ${shown} of ${rooms.length} locations`;
+  for (const row of pop.querySelectorAll('[data-room]')) {
+    const on = row.dataset.room === ALL_LOCATIONS ? shown === rooms.length : !folded.has(row.dataset.room);
+    row.setAttribute('aria-selected', on ? 'true' : 'false');
+    row.querySelector('.check').textContent = on ? '✓' : '';
+  }
+}
+function buildLocationMenu(rooms, folded) {
+  const pop = document.createElement('ul');
+  pop.className = 'sort-pop locations';
+  pop.setAttribute('role', 'listbox');
+  pop.setAttribute('aria-label', 'Locations on the wall');
+  pop.dataset.rooms = rooms.map((r) => r.key).join('|');
+  pop.style.display = 'none';
+  const head = document.createElement('li');
+  head.className = 'pop-head';
+  head.setAttribute('role', 'presentation');
+  pop.appendChild(head);
+  const all = showMenuRow('All locations', { key: ALL_LOCATIONS, on: true });
+  all.addEventListener('click', () => {
+    const hiddenNow = rooms.some((r) => (ctx.folded || []).includes(r.key));
+    const others = (ctx.folded || []).filter((k) => !k.startsWith(LOCATION_KEY));
+    setSeasonLocations(hiddenNow ? others : [...others, ...rooms.map((r) => r.key)]);
+  });
+  pop.appendChild(all.parentElement);
+  for (const room of rooms) {
+    const row = showMenuRow(room.label, { key: room.key, on: !folded.has(room.key) });
+    const n = document.createElement('span');
+    n.className = 'count';
+    n.textContent = String(room.count);
+    n.setAttribute('aria-label', `${room.count} show${room.count === 1 ? '' : 's'}`);
+    row.appendChild(n);
+    row.addEventListener('click', () => {
+      const cur = ctx.folded || [];
+      setSeasonLocations(cur.includes(room.key) ? cur.filter((k) => k !== room.key) : [...cur, room.key]);
+    });
+    pop.appendChild(row.parentElement);
+  }
+  const divider = document.createElement('li');
+  divider.className = 'pop-div';
+  divider.setAttribute('role', 'presentation');
+  divider.setAttribute('aria-hidden', 'true');
+  pop.appendChild(divider);
+  const settings = showMenuRow('Settings', { settings: true });
+  settings.addEventListener('click', () => {
+    closeShowMenu({ instant: true });
+    openSettings();
+    router.push('settings');
+  });
+  pop.appendChild(settings.parentElement);
+  paintLocationMenu(pop, rooms, folded);
+  return pop;
+}
+
+// The cards a person can see (and a screen either side), by the identity a
+// repaint keeps — artist, show, room — with where each one is now.
+const cardIdentity = (c) => `${c.dataset.artist}|${c.dataset.occ || ''}|${roomOf(c) || ''}`;
+function cardsInView() {
+  const out = new Map();
+  const h = window.innerHeight;
+  for (const c of document.querySelectorAll('#wall-root .card[data-artist]')) {
+    const r = c.getBoundingClientRect();
+    if (r.bottom > -h / 2 && r.top < h * 1.5) out.set(cardIdentity(c), { card: c, r });
+  }
+  return out;
+}
+// After the repaint: a card that stayed in its row (or its column) slides from
+// where it was — the neighbours making room. A card the reflow carried to
+// another row AND column does not travel: a diagonal across the grid runs it
+// over its neighbours mid-flight (watched in slow motion, 2026-09-25). It
+// fades in where it now is, pushed a little from the side it came from — the
+// next row's start (from the right) or the last row's end (from the left). A
+// card that arrived (a location ticked back on) rises in with the beat.
+// Transforms and opacity only, and only the cards on screen.
+function slideSeasonCards(before) {
+  let arrivals = 0;
+  for (const [id, { card, r }] of cardsInView()) {
+    if (!canAnimate(card, ctx)) return;
+    const was = before.get(id);
+    if (was) {
+      const dx = was.r.left - r.left;
+      const dy = was.r.top - r.top;
+      const moved = Math.abs(dx) >= 1 || Math.abs(dy) >= 1;
+      if (moved && (Math.abs(dx) < 1 || Math.abs(dy) < 1)) {
+        card.animate([{ transform: `translate(${dx}px, ${dy}px)` }, { transform: 'none' }], { duration: CASCADE_MS + 80, easing: EASE_ARRIVE });
+      } else if (moved) {
+        card.animate([{ opacity: 0, transform: `translateX(${dy > 0 ? 14 : -14}px)` }, { opacity: 1, transform: 'none' }],
+          { duration: CASCADE_MS + 40, delay: STAGGER_MS * 2, easing: EASE_ARRIVE, fill: 'backwards' });
+      }
+    } else if (r.bottom > 0 && r.top < window.innerHeight) {
+      card.animate([{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }],
+        { duration: CASCADE_MS, delay: OUT_MS + Math.min(arrivals, 8) * STAGGER_MS, easing: EASE_ARRIVE, fill: 'backwards' });
+      arrivals += 1;
+    }
+  }
+}
+function setSeasonLocations(next) {
+  const was = new Set(ctx.folded || []);
+  const hiding = new Set(next.filter((k) => !was.has(k)).map((k) => k.slice(LOCATION_KEY.length)));
+  // The setting lands now — memory, storage and ctx; only the leaving is deferred.
+  ctx.folded = next;
+  saveFolded(ctx.fid, next);
+  const before = cardsInView();
+  const finish = () => {
+    repaintWall();
+    slideSeasonCards(before);
+  };
+  const venueOfCard = (c) => { try { return JSON.parse(c.dataset.occ || '{}').venue || null; } catch { return null; } };
+  const leaving = [...before.values()].map((x) => x.card)
+    .filter((c) => hiding.has(venueOfCard(c)) && canAnimate(c, ctx));
+  if (!leaving.length) { finish(); return; }
+  let done = false;
+  const go = () => { if (!done) { done = true; finish(); } };
+  let pending = leaving.length;
+  for (const c of leaving) {
+    const a = c.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'scale(.96)' }], { duration: OUT_MS, easing: EASE_LEAVE, fill: 'forwards' });
+    a.onfinish = () => { pending -= 1; if (pending <= 0) go(); };
+    a.oncancel = a.onfinish;
+  }
+  setTimeout(go, OUT_MS * 3 + 50); // a backgrounded tab must not hang the filter
+}
+
 function buildShowMenu(rooms, folded) {
+  if (isSeason(state.fest())) return buildLocationMenu(rooms, folded);
   const pop = document.createElement('ul');
   pop.className = 'sort-pop';
   pop.setAttribute('role', 'listbox');
@@ -1065,6 +1265,10 @@ function paintShowMenus() {
     link.setAttribute('aria-label', 'Show on the wall');
     // A repaint on the 25 s poll must not snatch an open menu away: while the
     // rooms are the same list, the checks are repainted in place.
+    if (existing && existing.dataset.rooms === signature && existing.classList.contains('locations')) {
+      paintLocationMenu(existing, rooms, folded);
+      continue;
+    }
     if (existing && existing.dataset.rooms === signature) {
       for (const row of existing.querySelectorAll('[data-room]')) {
         const on = !folded.has(row.dataset.room);
@@ -1079,6 +1283,30 @@ function paintShowMenus() {
   }
 }
 
+// A season's wall can change height ABOVE where you are standing without you
+// doing anything: YOURS arrives when your Spotify scan lands, grows when a
+// feed adds a show by someone you love. A festival repaint redraws the same
+// shape, but a season's must not carry the months you are reading down the
+// page. So the week you are in (the first room still on screen under the
+// chrome) is read before the repaint and held where it was after it — a
+// no-op when nothing above it changed. Nothing to hold at the top of the page,
+// or when the room you were in is gone.
+function seasonPlace() {
+  if (!isSeason(state.fest()) || !(window.scrollY > 0)) return null;
+  const top = parseFloat(window.getComputedStyle(document.documentElement).getPropertyValue('--jump-offset')) || 8;
+  const room = [...document.querySelectorAll('#wall-root .room')].find((r) => r.getBoundingClientRect().bottom > top);
+  if (!room) return null;
+  return { room: room.dataset.room, week: room.dataset.week || '', top: room.getBoundingClientRect().top };
+}
+function holdSeasonPlace(place) {
+  if (!place) return;
+  const room = [...document.querySelectorAll('#wall-root .room')]
+    .find((r) => r.dataset.room === place.room && (r.dataset.week || '') === place.week);
+  if (!room) return;
+  const dy = room.getBoundingClientRect().top - place.top;
+  if (Math.abs(dy) >= 1) window.scrollTo({ top: window.scrollY + dy, behavior: 'auto' });
+}
+
 function repaintWall() {
   // A full repaint replaces every card. A zoom that was standing comes back
   // on the fresh card at once (a crew-mate's pick arriving on the 25 s poll
@@ -1091,7 +1319,11 @@ function repaintWall() {
   const keepRoom = keep ? roomOf(zoomedCard()) : null;
   unzoom({ instant: !!keep, why: 'wall repaint' });
   refreshCtx();
+  const place = seasonPlace();
+  const fest = state.fest();
+  seasonDay = fest && isSeason(fest) ? festivalClock(ctx.now || new Date(), fest.timezone || null).iso : null;
   renderWall($('wall-root'), ctx);
+  holdSeasonPlace(place);
   if (keep) {
     const again = cardFor($('wall-root'), keep.artist, keep.occ, { room: keepRoom });
     if (again) zoomCard(again, keep.artist, ctx, { ...keep, instant: true });
@@ -1101,9 +1333,10 @@ function repaintWall() {
   positionNowMarks($('wall-root'), ctx.now || new Date());
   $('notes-count').textContent = String(model.totalNoteCount(state.crewDoc, ctx.fid));
   // A timetable has one true order — a sort control there would be a lie
-  // (CORE-5). Searching a scheduled fest sorts chronologically by design.
+  // (CORE-5). Searching a scheduled fest sorts chronologically by design. A
+  // season is a calendar: its one order is the date's.
   const scheduled = !!(state.fest().days && Object.keys(state.fest().days).length);
-  $('sort-control').style.display = scheduled ? 'none' : '';
+  $('sort-control').style.display = scheduled || isSeason(state.fest()) ? 'none' : '';
   updateMigrationBanner();
   updateArchiveNote();
   maybeShowCoachMark();
@@ -1303,9 +1536,13 @@ function renderCreate() {
     // cannot finish must not start (Codex reshape gate, P2). 8 leaves
     // headroom for singles in the same hour.
     goBtn.disabled = !n || n > 8;
+    // Austin alone is not "1 festival" (UX.md §6: a season says its own name).
+    const picked = FESTIVAL_INDEX.filter((f) => createSel.has(f.id));
+    const onlySeasons = picked.length && picked.every((f) => f.kind === 'season');
     goBtn.textContent = !n ? 'Pick your fests'
       : n > 8 ? '8 at a time is the max'
-        : `ADD ${n} FESTIVAL${n === 1 ? '' : 'S'} →`;
+        : onlySeasons ? `ADD ${picked.length === 1 ? picked[0].name.toUpperCase() : `${n} SEASONS`} →`
+          : `ADD ${n} FESTIVAL${n === 1 ? '' : 'S'} →`;
   };
   const pick = (f, rowEl) => {
     if (createSel.has(f.id)) createSel.delete(f.id);
@@ -1313,7 +1550,16 @@ function renderCreate() {
     rowEl.classList.toggle('sel-fest', createSel.has(f.id));
     paintGo();
   };
-  for (const f of FESTIVAL_INDEX.filter((x) => x.status !== 'archived')) {
+  // The upcoming festivals, then the city seasons under their own small head
+  // (UX.md §9) — never in the index's order, which is by start date.
+  const upcoming = FESTIVAL_INDEX.filter((x) => x.status !== 'archived');
+  const seasons = upcoming.filter((x) => x.kind === 'season');
+  for (const f of upcoming.filter((x) => x.kind !== 'season')) {
+    const rowEl = festPickRow(f, { onPick: () => pick(f, rowEl) });
+    list.appendChild(rowEl);
+  }
+  if (seasons.length) list.appendChild(seasonsHead());
+  for (const f of seasons) {
     const rowEl = festPickRow(f, { onPick: () => pick(f, rowEl) });
     list.appendChild(rowEl);
   }
@@ -1990,7 +2236,14 @@ function renderLanding() {
   const list = $('landing-fests');
   list.textContent = '';
   const crews = crew.knownCrews();
+  let group = 'fest';
   for (const pair of model.landingPairs(crews, state.cachedDoc, FESTIVAL_INDEX)) {
+    // The seasons come after the festivals (landingPairs orders them), under
+    // one small head of their own (UX.md §9), and past festivals after them
+    // get theirs back.
+    const turn = listHeadFor(group, pair);
+    if (turn.head) list.appendChild(seasonsHead(turn.head));
+    group = turn.group;
     const row = document.createElement('button');
     row.className = 'fest-row';
     row.style.width = '100%';

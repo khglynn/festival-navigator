@@ -54,6 +54,30 @@ export function festRow(f, { muted = false, sub, chev = false, onPick }) {
   return row;
 }
 
+// The small head a list puts over its city seasons (2026-09-25, UX.md §9):
+// the seasons follow the festivals in every list, under their own name, so a
+// rolling "starts today" season never reads as the next festival. A list whose
+// past festivals follow its seasons closes the group with the same head saying
+// "Past festivals", or they would read as seasons.
+export function seasonsHead(text = 'City seasons') {
+  const n = el('div', 'margin-top: 6px;', text);
+  n.className = 'micro-label';
+  return n;
+}
+// Which head a landingPairs row needs before it, given the group the list is
+// in: none while the list is still festivals (a list with no season has no
+// heads at all, as before), then "City seasons", then "Past festivals" for
+// archived ones, and "More" for anything else that sorts after them — a
+// crew's own (AI-added) festival or a crew this device has never opened,
+// which would otherwise read as a season or as past (review, 2026-09-25).
+export function listHeadFor(group, pair) {
+  // No season yet, no heads: a list without one reads exactly as it did.
+  if (group === 'fest' && !pair.season) return { group, head: null };
+  const next = pair.season ? 'season' : pair.past ? 'past' : 'more';
+  if (next === group || next === 'fest') return { group: next, head: null };
+  return { group: next, head: next === 'season' ? 'City seasons' : next === 'past' ? 'Past festivals' : 'More' };
+}
+
 export function subviewHead(title, onBack) {
   const head = el('div', 'display: flex; align-items: center; gap: 10px;');
   const back = el('button', '', '‹'); back.className = 'back-btn';

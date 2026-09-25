@@ -33,6 +33,7 @@ import { colorIndexOf } from './wall.js';
 import { factsFor, sheetCard } from './card-facts.js';
 import { router } from './router.js';
 import { loadJSON, saveLS } from '../util.js';
+import { isSeason } from './events.js'; // a city season's notes say its name (2026-09-25)
 
 // MODEL-V4 §4 + §3a.3 (Kevin, 2026-09-17). A note is written WHERE YOU ARE
 // STANDING, and four places are standable: the festival, a date, a section on
@@ -968,7 +969,11 @@ export function openAllNotes(ctx) {
   // The composer lives OUTSIDE paint() — a remote sync repainting the list
   // must never eat a half-typed festival note (audit 1.2, same discipline as
   // the scope sheet).
-  const box = ctx.meName ? composer('Add a festival note…', (text) => {
+  // A city season's notes are called by its name (UX.md §6: "Austin notes",
+  // never "festival notes").
+  const season = isSeason(state.fest());
+  const seasonName = season ? state.fest().name : '';
+  const box = ctx.meName ? composer(season ? `Add ${/^[aeiou]/i.test(seasonName) ? 'an' : 'a'} ${seasonName} note…` : 'Add a festival note…', (text) => {
     ui.justAdded = addNote(ctx, 'fest', null, text);
     paint();
     ctx.onNotesChange();
@@ -1011,7 +1016,7 @@ export function openAllNotes(ctx) {
       threadsInto(body, scope, target, extra);
     };
 
-    section('This festival', 'fest', null);
+    section(season ? seasonName : 'This festival', 'fest', null);
 
     // Only the targets somebody has WRITTEN on, in wall order: each date, then
     // the sections written on that date (MODEL-V4 §3a.3). Before this the sheet

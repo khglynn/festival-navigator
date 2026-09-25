@@ -13,11 +13,11 @@ import { colorIndexOf, meterChip, crewMark } from './wall.js';
 import { meterOf, whoCorner } from './aura.js';
 import { festPlaceLine } from './card-facts.js'; // the fest's place line, shared with the wall header
 import { recent as recentErrors, diagnostics, SETTINGS_KEY, reportKey, reportsOn, clearReports, noteSettings } from '../errlog.js';
-import { el, subviewHead, eqLoader, festRow, openExportLikes, openBulkPaste, openDayImage } from './tools.js';
+import { el, subviewHead, eqLoader, festRow, openExportLikes, openBulkPaste, openDayImage, seasonsHead, listHeadFor } from './tools.js';
 import { router } from './router.js';
 import { nameProblem, NAME_LIMITS } from '../name-rules.mjs';
 import { loadJSON, saveLS, getLS, removeLS, errorText } from '../util.js';
-import { cancelledNames } from './events.js'; // a cancelled act never goes into a playlist (2026-09-23)
+import { cancelledNames, isSeason } from './events.js'; // a cancelled act never goes into a playlist (2026-09-23)
 
 // {lowPower, stayOffline, crashReports}. The key's home is js/errlog.js: the
 // crash reporter reads Off and Stay offline before any other module runs.
@@ -186,7 +186,13 @@ function festivalsSection(ctx, actions) {
   // landing rows do. Adding a fest goes to the shared multi-pick page.
   const pairs = model.landingPairs(crew.knownCrews(), state.cachedDoc, FESTIVAL_INDEX)
     .filter((p) => p.fid && !(p.token === state.getCrewToken() && p.fid === state.activeFestivalId));
+  // The seasons follow the festivals under their own small head, and past
+  // festivals after them get theirs (UX.md §9; the landing does the same).
+  let group = 'fest';
   for (const p of pairs) {
+    const turn = listHeadFor(group, p);
+    if (turn.head) wrap.appendChild(seasonsHead(turn.head));
+    group = turn.group;
     const meta = FESTIVAL_INDEX.find((f) => f.id === p.fid)
       || { id: p.fid, name: model.festLabelFor(p.fid, FESTIVAL_INDEX).name };
     const sameCrew = p.token === state.getCrewToken();
@@ -798,7 +804,9 @@ export function renderSettings(root, ctx, actions) {
   }
   list.appendChild(linkRow('Bulk paste picks', () => openSub('sub:bulk')));
   list.appendChild(linkRow('Export picks', () => openSub('sub:export')));
-  list.appendChild(linkRow('Day image', () => openSub('sub:day-image')));
+  // A city season has no day to frame (a month is hundreds of shows), so it
+  // offers no day image rather than one saying "no lineup yet".
+  if (!isSeason(state.fest())) list.appendChild(linkRow('Day image', () => openSub('sub:day-image')));
   // The crash journal's one door (2026-08-31): a tap copies a shareable dump
   // (build, device, the last 20 recorded errors — never anything private).
   // Exists so "it broke on my phone" can travel as text instead of a video.
