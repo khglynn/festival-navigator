@@ -2416,7 +2416,7 @@ export function wireScrollspy(containers, wallRoot) {
     ticking = false;
     if (!headers.length) return;
     const offset = parseFloat(
-      getComputedStyle(document.documentElement).getPropertyValue('--jump-offset'),
+      window.getComputedStyle(document.documentElement).getPropertyValue('--jump-offset'),
     ) || 8;
     // The tolerance is not slop: a jump parks its block NEAR the offset, and
     // WebKit parks it ~24px below where Chromium lands it exactly — so an
