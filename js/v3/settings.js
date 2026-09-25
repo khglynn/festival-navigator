@@ -12,18 +12,22 @@ import { BOARD, hslOf, strokeOf } from './palette.js';
 import { colorIndexOf, meterChip, crewMark } from './wall.js';
 import { meterOf, whoCorner } from './aura.js';
 import { festPlaceLine } from './card-facts.js'; // the fest's place line, shared with the wall header
-import { recent as recentErrors, diagnostics } from '../errlog.js';
+import { recent as recentErrors, diagnostics, SETTINGS_KEY, reportKey, reportsOn, clearReports, noteSettings } from '../errlog.js';
 import { el, subviewHead, eqLoader, festRow, openExportLikes, openBulkPaste, openDayImage } from './tools.js';
 import { router } from './router.js';
 import { nameProblem, NAME_LIMITS } from '../name-rules.mjs';
 import { loadJSON, saveLS, getLS, removeLS, errorText } from '../util.js';
 import { cancelledNames } from './events.js'; // a cancelled act never goes into a playlist (2026-09-23)
 
-const LS_SETTINGS = 'fn_settings_v1'; // {lowPower, stayOffline}
+// {lowPower, stayOffline, crashReports}. The key's home is js/errlog.js: the
+// crash reporter reads Off and Stay offline before any other module runs.
+const LS_SETTINGS = SETTINGS_KEY;
 export const SUPPORT_URL = 'https://buymeacoffee.com/kevinhg'; // Kevin's page (also list-maker's), 2026-09-02
 
 export function appSettings() { return loadJSON(LS_SETTINGS, {}); }
-export function saveAppSettings(s) { saveLS(LS_SETTINGS, JSON.stringify(s)); }
+// A write that does not land (storage blocked or full) still reaches the crash
+// reporter, so Off and Stay offline hold for this page either way.
+export function saveAppSettings(s) { noteSettings(s, saveLS(LS_SETTINGS, JSON.stringify(s))); }
 
 function microLabel(text) {
   const n = el('div', 'margin-top: 8px;', text);
@@ -781,6 +785,17 @@ export function renderSettings(root, ctx, actions) {
     saveAppSettings({ ...appSettings(), stayOffline: on });
     actions.onStayOffline(on);
   }));
+  // Crash reports (v88, Kevin 2026-09-24: on by default, the line beside it
+  // says what goes, name included). This phone's choice alone — it lives in
+  // this device's settings, never the crew doc. Off drops whatever was
+  // waiting, and nothing leaves after that. A build with no report key
+  // sends nothing, so it offers nothing to switch.
+  if (reportKey()) {
+    list.appendChild(toggleRow('Send crash reports to Kevin', 'with your name and phone type · never notes or crew links', reportsOn(), (on) => {
+      saveAppSettings({ ...appSettings(), crashReports: on });
+      if (!on) clearReports();
+    }));
+  }
   list.appendChild(linkRow('Bulk paste picks', () => openSub('sub:bulk')));
   list.appendChild(linkRow('Export picks', () => openSub('sub:export')));
   list.appendChild(linkRow('Day image', () => openSub('sub:day-image')));

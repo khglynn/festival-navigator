@@ -3,6 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <script>
+      // Safari on iPhone/iPad zooms into any text field whose text is under
+      // 16px and never zooms back out (Kevin, live at Portola, 2026-09-25: "I
+      // have to pinch to zoom back out"). Our fields are 12.5px by design, so
+      // on iOS only we add maximum-scale=1: Safari honours it for that
+      // auto-zoom but ignores it for pinch, so people can still zoom. Android
+      // would honour it for pinch too and lose zoom, and it never auto-zooms
+      // fields, so it never gets this. iPadOS reports a Mac, hence the touch
+      // check. css-tricks.com/16px-or-larger-text-prevents-ios-form-zoom
+      (function () {
+        try {
+          var ua = navigator.userAgent || '';
+          var ios = /iP(hone|od|ad)/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+          var vp = ios && document.querySelector('meta[name="viewport"]');
+          if (vp && !/maximum-scale/.test(vp.content)) vp.content += ', maximum-scale=1';
+        } catch (e) { /* no zoom fix is better than no page */ }
+      })();
+    </script>
     <title>Festival Navigator</title>
     <meta name="theme-color" content="#0C0A14">
     <!-- A fork sets ITS host here, once — js/spotify.js and js/v3/settings.js
@@ -11,6 +29,16 @@
          shipped source, so a fork's users were handed to OUR domain with their
          tokens in the hash). docs/fork-setup.md is the fork runbook. -->
     <meta name="fn-canonical-host" content="fest.kevinhg.com">
+    <!-- Crash reports (js/errlog.js, v88): the PostHog PROJECT key (phc_…) of
+         the project the reports go to — "Festival Navigator", id 627900, US
+         cloud. A write-only ingestion key, public by design; only the phc_
+         shape is ever used, so a personal API key pasted here by mistake is
+         ignored. Empty means no report leaves any phone (the journal behind
+         Settings → Diagnostics still works). data-hosts: the domains the
+         key works on (their subdomains too; localhost always), so on a
+         fork's domain it is inert. A fork empties both or puts its own here
+         (docs/fork-setup.md). -->
+    <meta name="fn-report-key" content="phc_nrzrd8czFTPFnUhaBPFUroh5CY6zUytTmvmv3zkYDmwi" data-hosts="kevinhg.com">
     <link rel="manifest" href="/manifest.json">
     <link rel="icon" type="image/png" href="/favicon.png">
     <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
@@ -262,6 +290,15 @@
     <div id="now-status" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
 
     <script src="/vendor/html2canvas.min.js" defer></script>
+    <!-- The crash journal hooks in from a module script of its OWN, before
+         app.js: a module that fails to parse (syntax an older Safari doesn't
+         know) stops every module in app.js's graph from running, errlog.js
+         included, and leaves a blank page no hook installed from app.js could
+         ever see. This graph is errlog.js alone. -->
+    <script type="module">
+      import { hookGlobalErrors } from '/js/errlog.js';
+      hookGlobalErrors();
+    </script>
     <script type="module" src="/js/v3/app.js"></script>
     <script>
       (function () {
@@ -313,6 +350,5 @@
         }).catch(function () {});
       })();
     </script>
-    <script defer src="/_vercel/insights/script.js"></script>
 </body>
 </html>

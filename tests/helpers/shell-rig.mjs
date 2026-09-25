@@ -6,7 +6,9 @@
 // bootShell() per file: the module graph (and its boot) runs once.
 //
 // `fetch` is the whole network. `storage` seeds localStorage before app.js
-// reads it. Browser primitives jsdom lacks are supplied, never app behaviour.
+// reads it. `reportKey` fills index.html's fn-report-key meta, as a build
+// with crash reports switched on ships it (js/errlog.js). Browser primitives
+// jsdom lacks are supplied, never app behaviour.
 import { JSDOM } from 'jsdom';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -14,8 +16,12 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
-export async function bootShell({ url = 'https://fest.kevinhg.com/', storage = {}, fetch } = {}) {
-  const dom = new JSDOM(readFileSync(join(ROOT, 'index.html'), 'utf8'), { url });
+export async function bootShell({ url = 'https://fest.kevinhg.com/', storage = {}, fetch, reportKey = '' } = {}) {
+  // The shipped key is overwritten either way: a test sends reports only when
+  // it asks to, and never with the real project's key.
+  const html = readFileSync(join(ROOT, 'index.html'), 'utf8')
+    .replace(/(<meta name="fn-report-key" content=")[^"]*/, `$1${reportKey}`);
+  const dom = new JSDOM(html, { url });
   globalThis.window = dom.window;
   globalThis.document = dom.window.document;
   globalThis.CSS = { escape: (s) => String(s).replace(/[^\w-]/g, (c) => `\\${c}`) };

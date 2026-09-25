@@ -185,6 +185,40 @@ multi-line), on a cancelled name that still has a set on a grid day its entry
 names, and on `cancelled` written on a grid set. It does not warn that the act
 has no set on the grid, or that its venue has no map.
 
+### Event pages and tickets (2026-09-24)
+
+A show that is not the festival's own set — an afters night, a Folsom party,
+a Late nights gig — can say where to read about it and where to buy. Kevin:
+"when it's afters or shows like this I naturally want to click through to the
+event page… and what about before tix are available." The zoom shows one
+line under the place, **Tix @ AXS · Info @ DoTheBay**:
+
+```json
+{ "name": "Six Sex", "day": "Afters", "night": "Fri", "venue": "Great American Music Hall",
+  "page":    { "url": "https://dothebay.com/events/2026/9/25/six-sex-tickets", "at": "DoTheBay" },
+  "tickets": { "url": "https://www.axs.com/events/1579125/six-sex-tickets?cid=usaffdostuff", "at": "AXS" } }
+```
+
+| Field | What |
+|---|---|
+| `page` | The show's own page for people: the whole bill, the details, and the one place to look before tickets exist. A DoStuff listing (DoTheBay, Do512) when there is one, else the venue's or promoter's page. `at` is the site as a person says it. |
+| `tickets` | Where to buy, exactly as the listing printed it. Keep a referral tag (`SharedId=DoStuff`, `pubref:dostuff`): it pays the small company that listed the show. `at` is the seller the link lands on (`AXS`, `Ticketmaster`, `Tixr`, `Eventim`), written out because a referral wrapper hides it. |
+
+Leave `tickets` off a free night, a door-only night, or a sold-out one with no
+resale link — the page is then the only door, which is the point. One room on
+one night with one doors time is one show: every name on that bill carries
+the same `page` and `tickets`, so a name added to a bill takes the bill's
+links, and an opener found on the venue's own page takes its headliner's
+(`tests/show-links.test.mjs` fails otherwise, naming the show). Two doors
+times in one room are two shows and may differ. When the
+page and the tickets are the same page, the zoom shows one door. A cancelled
+show keeps its page and drops the tickets door. The validator errors on
+anything but `{ url, at }`, a URL that is not `https`, an empty `at`, an
+`at` longer than 24 characters, and either field on a festival set (an entry
+whose day is a grid day). Research for a new festival never writes them:
+`api/festival-add.js` drops both from what the model returns, because a page
+it read could steer it to a look-alike ticket site.
+
 ### Event fields — where a section goes (MODEL-V4 §6)
 
 A SECTION is an `artists[].day` label that is not one of the grid's days:

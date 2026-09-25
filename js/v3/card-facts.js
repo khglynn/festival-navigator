@@ -15,7 +15,7 @@ import { LEVEL_LABELS_V4 } from '../parse.js';
 import { hslOf } from './palette.js';
 import { colorIndexOf, roomOf } from './wall.js';
 import { record } from '../errlog.js';
-import { runFactsOf, findEventEntry, shortDateLabel, shortDate, dateOf, venueOf, isCancelled, cancelledNames } from './events.js';
+import { runFactsOf, findEventEntry, shortDateLabel, shortDate, dateOf, venueOf, isCancelled, cancelledNames, linksOf } from './events.js';
 import { GROW_MS, CONTENT_FADE_MS, OUT_MS, CASCADE_MS, STAGGER_MS, REFRESH_MS, EASE_ARRIVE, EASE_LEAVE, EASE_SURFACE, canAnimate } from './motion.js';
 import { whoSnapshot, whoMotion, whoSettle } from './who-motion.js';
 
@@ -88,6 +88,13 @@ export function factsFor(artistName, ctx, occ = null) {
     note: typeof offEntry.cancelled.note === 'string' ? offEntry.cancelled.note : null,
   } : null;
   const run = occ && !cancelled ? runFactsOf(entry) : null;
+  // The show's doors out, "Tix @ AXS · Info @ DoTheBay" (events.js linksOf):
+  // only from the entry this card IS. A card that knows only a name (a list,
+  // an old link's notes sheet) takes its when and where from the grid, so
+  // borrowing another show's links by name would put an afters' tickets under
+  // a festival set (the review of #29: Overmono "Sun · Warehouse" with the
+  // Public Works Tixr link). A festival's grid sets carry none.
+  const links = linksOf(offEntry || entry, { cancelled: !!cancelled });
   if (cancelled) time = null;
   // The long form: when · day · where · which weekend. For a run member the
   // clock in WHEN is the venue's window, not the guessed slot (LOCKED copy,
@@ -130,6 +137,7 @@ export function factsFor(artistName, ctx, occ = null) {
     people, background, animated, nameColor: nameColor(people), subColor: subColor(people),
     noteCount: model.noteCount(state.crewDoc, ctx.fid, 'artist', artistName),
     spotify,
+    links,
   };
 }
 
@@ -380,6 +388,24 @@ function sourceDoor({ text, url }, className, why) {
   return w;
 }
 const orderDoor = (order) => sourceDoor(order, 'f-order', 'open where the order came from');
+// "Tix @ AXS · Info @ DoTheBay": the show's doors out, one row under WHERE.
+// Each is a sourceDoor, so a click opens the page and never reaches the
+// card's pick (a click on the zoom picks, by design).
+function linksRow(links) {
+  const row = document.createElement('div');
+  row.className = 'f-links';
+  links.forEach((l, i) => {
+    if (i) {
+      const dot = document.createElement('span');
+      dot.className = 'f-dot';
+      dot.textContent = '·';
+      dot.setAttribute('aria-hidden', 'true');
+      row.appendChild(dot);
+    }
+    row.appendChild(sourceDoor(l, `f-link ${l.kind}`, l.kind === 'tix' ? 'buy tickets' : 'open the show page'));
+  });
+  return row;
+}
 
 function grownBlock(facts, { onOpenNotes = null, notesChip = true } = {}) {
   const grown = document.createElement('div');
@@ -417,6 +443,7 @@ function grownBlock(facts, { onOpenNotes = null, notesChip = true } = {}) {
     grown.appendChild(sub);
   }
   if (facts.where) grown.appendChild(placeDoor(facts.where, facts.mapUrl, 'f-where'));
+  if (facts.links) grown.appendChild(linksRow(facts.links));
   // The who-row only when there are people: a pill arriving after a tap
   // slides in and its neighbours make room (the designed event). A reserved
   // empty row was tried on 2026-09-01 to keep the venue door from sliding
@@ -854,8 +881,10 @@ function zoomCardInner(el, artistName, ctx, { onOpenNotes = null, source = 'mous
   // the rest follow in family order.
   const sub = card.querySelector('.f-sub');
   const where = card.querySelector('.f-where');
+  const links = card.querySelector('.f-links');
   if (sub) arrive(sub, 0, 6, CONTENT_FADE_MS + 5);
   if (where) arrive(where, 0, 6, CONTENT_FADE_MS + 35);
+  if (links) arrive(links, 0, 6, CONTENT_FADE_MS + 45);
   [...card.querySelectorAll('.f-pill')].forEach((p, i) => arrive(p, 14, 0, CONTENT_FADE_MS + 55 + i * (STAGGER_MS - 2)));
   [...card.querySelectorAll('.f-chip')].forEach((c, i) => arrive(c, -14, 0, CONTENT_FADE_MS + 55 + i * STAGGER_MS));
   z.anims = anims;
@@ -887,11 +916,12 @@ function zoomCardInner(el, artistName, ctx, { onOpenNotes = null, source = 'mous
 // names move between them as themselves, so it reconciles itself
 // (who-motion.js, storyboard claude-plans/2026-09-23-zoom-chips-motion.md);
 // the refresh below only hands it a before-snapshot and keeps its animations.
-const REFRESH_PART_SEL = '.f-name, .f-sub, .f-where, .f-chip.notes, .f-chip.spot';
+const REFRESH_PART_SEL = '.f-name, .f-sub, .f-where, .f-links, .f-chip.notes, .f-chip.spot';
 function partKey(el) {
   if (el.classList.contains('f-name')) return 'name';
   if (el.classList.contains('f-sub')) return 'sub';
   if (el.classList.contains('f-where')) return 'where';
+  if (el.classList.contains('f-links')) return 'links';
   if (el.classList.contains('notes')) return 'notes';
   if (el.classList.contains('spot')) return 'spot';
   return null;
@@ -908,6 +938,7 @@ function snapshotParts(card) {
 function refreshZoomInner(fresh, ctx) {
   if (!zoomed || !fresh) return;
   const z = zoomed;
+  z.refreshedAt = Date.now(); // this zoom's own clock: a new zoom starts settled
   for (const a of z.anims) { try { a.cancel(); } catch { /* finished */ } }
   z.anims = [];
   whoSettle(z.card); // cancel reports a frame late; the snapshot below must read a settled row
@@ -985,6 +1016,16 @@ function refreshZoomInner(fresh, ctx) {
 }
 
 let lastOverlayPress = 0; // a close right after an overlay press is the suspicious pattern — journal its cause
+// A door that has only just arrived under the hand is not a door yet (review
+// of the links row, 2026-09-25). A pick re-centres the zoom as its chip
+// arrives, which slides the rows up under a finger that is still tapping its
+// way to MUST; the second tap then opened AXS instead of picking. For a beat
+// after a pick's refresh, a press on any door in the zoom (the links, the
+// map, the order, the cancellation) picks, like the rest of the card. The
+// same principle as the still hand: content that moved, not the person,
+// decides nothing.
+export const DOOR_SETTLE_MS = 700;
+const ZOOM_DOORS = 'a.f-link, a.f-where, a.f-order, a.f-cancel';
 function unzoomInner({ instant = false, why = 'unspecified' } = {}) {
   if (!zoomed) return;
   // Kevin's "every click closes the hover" journaled itself as NOTHING —
@@ -1147,6 +1188,23 @@ function wireSlot(z) {
     if (isOwnControl(e.target)) return;
     e.preventDefault();
   });
+
+  // A door that a pick just slid under the hand picks (DOOR_SETTLE_MS). Capture,
+  // so it runs before the door's own click (which stops the event there).
+  card.addEventListener('click', (e) => {
+    if (zoomed !== z || !z.refreshedAt || Date.now() - z.refreshedAt >= DOOR_SETTLE_MS) return;
+    if (!e.target.closest?.(ZOOM_DOORS)) return;
+    e.preventDefault();
+    e.stopPropagation();
+    if (!z.el.isConnected) return;
+    // The door took focus on its own mousedown (doors keep their default so a
+    // settled click really opens). The pick's refresh rebuilds the door row,
+    // and a focused node that vanishes reads as "focus left the zoom", which
+    // closed the zoom mid-pick (v88 walk, 2026-09-25). Hand focus back to the
+    // card first: where an ordinary pick on the zoom leaves it.
+    if (card.contains(document.activeElement)) z.el.focus({ preventScroll: true });
+    z.ctx.onTap(z.artist, z.el);
+  }, true);
 
   // A tap or click on the grown card is a pick — the same thing it means on
   // the resting card. Its one button (the notes chip) is its own control.

@@ -6,6 +6,14 @@
  * dialogs, auto-fill grid), and the unannounced quality floor (focus-visible
  * everywhere, 44px touch targets, reduced-motion). */
 
+/* Double-tap-to-zoom off, pinch-zoom kept (Kevin, live at Portola,
+ * 2026-09-25). A quick tap-tap on a card cycles its pick, and Safari read the
+ * second tap as "zoom in here". `manipulation` allows panning and pinch-zoom
+ * and drops only double-tap zoom; elements with their own touch-action (the
+ * stage strip, the sheet grabber) keep theirs. The text-field zoom has its
+ * own fix in index.html. */
+html { touch-action: manipulation; }
+
 /* The focus + motion floor (AX-2) MOVED to v3-tokens.css on 2026-07-12.
  * It lived here, and 404.html does not load this file — so the 404 page, which
  * runs two infinite animations, ignored prefers-reduced-motion entirely. An
@@ -225,9 +233,12 @@
 .avatar.lg { width: 30px; height: 30px; font-size: 12px; }
 
 /* ---- toolbar (wall header row) ---------------------------------------------- */
+/* A text field, so it wears the text fields' shape (8px corners, the input
+ * border), not the chips' pill beside it (Kevin, 2026-09-25: "taller and more
+ * rounded than other text fields on mobile and it looks awk"). */
 .search-pill {
   display: inline-flex; align-items: center; gap: 7px; background: var(--card);
-  border: 1px solid var(--border-card); border-radius: var(--r-pill);
+  border: 1px solid var(--border-input); border-radius: var(--r-card);
   padding: 7px 13px; color: var(--text-secondary); font-size: 12.5px;
 }
 .search-pill input { background: transparent; border: none; outline: none; color: var(--text-primary);
@@ -519,8 +530,11 @@ button.room-head { cursor: pointer; }
 @media (pointer: coarse) {
   /* --- the safe default ------------------------------------------------- */
   button { min-height: 44px; }
-  /* An input cannot carry a pseudo-element either way. */
-  #search-input { min-height: 44px; }
+  /* An input cannot carry a pseudo-element either way. The 44px is the
+   * PILL's height with the input stretched to fill it — flooring the input
+   * inside the pill's own padding made the box ~58px tall (2026-09-25). */
+  .search-pill { min-height: 44px; padding-block: 0; box-sizing: border-box; }
+  .search-pill input { align-self: stretch; }
 
   /* Settings rows are DIVs, so `button` never reaches them — and the row is the
    * real target now that tapping the label flips the toggle. Give the row the
@@ -1201,3 +1215,11 @@ a.f-cancel:hover { border-bottom-color: rgba(255, 255, 255, .75); }
 .f-sub.f-stack { flex-direction: column; gap: 3px; }
 a.f-order { color: #fff; text-decoration: none; border-bottom: 1px solid rgba(255, 255, 255, .35); padding-bottom: 1px; }
 a.f-order:hover { border-bottom-color: rgba(255, 255, 255, .75); }
+/* A show's doors out, "Tix @ AXS · Info @ DoTheBay" (events.js linksOf): one
+ * row under WHERE, in WHERE's voice, each door underlined like the order and
+ * the map. A long pair widens the zoom up to its max width, then wraps. */
+.f-links { display: inline-flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 2px 7px;
+           color: rgba(255, 255, 255, .85); font-size: 11.5px; font-weight: 600; }
+.f-links .f-dot { color: rgba(255, 255, 255, .45); }
+a.f-link { color: #fff; text-decoration: none; border-bottom: 1px solid rgba(255, 255, 255, .35); padding-bottom: 1px; }
+a.f-link:hover { border-bottom-color: rgba(255, 255, 255, .75); }

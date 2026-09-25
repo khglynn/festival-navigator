@@ -2,8 +2,8 @@
 // Bump CACHE_VERSION whenever you change cached static assets — `node
 // scripts/sw-stamp.mjs` does the bump and re-stamps; the suite fails when the
 // stamp is stale, so a silent asset change can never ship under an old version.
-const CACHE_VERSION = 'festival-nav-v87'; // v44 = the notes/desktop round: threads, the zoom morph, the day whisper, aura sheets; pick-as moved to Settings (v43 was its first cut)
-const ASSET_STAMP = '63f88365'; // sha1 of APP_CORE — node scripts/sw-stamp.mjs after any cached-asset change (the suite checks it)
+const CACHE_VERSION = 'festival-nav-v88'; // v44 = the notes/desktop round: threads, the zoom morph, the day whisper, aura sheets; pick-as moved to Settings (v43 was its first cut)
+const ASSET_STAMP = '3f537ac1'; // sha1 of APP_CORE — node scripts/sw-stamp.mjs after any cached-asset change (the suite checks it)
 
 // Festival JSONs live in their OWN cache, outside the version-keyed shell
 // cache — because activate deletes every old version cache wholesale, and
@@ -124,18 +124,31 @@ self.addEventListener('activate', (event) => {
   })());
 });
 
+// "Which build am I?" (js/errlog.js, v88). The worker that controlled a page
+// when it loaded served that page's modules, so ITS version is the page's
+// build — even after a newer worker takes over and the page has not reloaded
+// yet. Crash reports carry the answer. A worker from before v88 never
+// answers, and the page falls back to the cache names.
+self.addEventListener('message', (event) => {
+  const d = event.data;
+  if (!d || d.fn !== 'build?' || !event.source) return;
+  try { event.source.postMessage({ fnBuild: CACHE_VERSION, fnStamp: ASSET_STAMP }); } catch { /* the page is gone */ }
+});
+
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   if (request.method !== 'GET') return;
 
   const url = new URL(request.url);
 
-  // Cross-origin (api.spotify.com, accounts.spotify.com) and the platform's
-  // own scripts (/_vercel/insights): never ours to cache — a cache-first
-  // Spotify API response made every re-scan one scan stale, silently
-  // (SPOT-4), and a shell hit is never refreshed, so a cached analytics
-  // script would freeze until the next bump. Let the browser handle them.
-  if (url.origin !== location.origin || url.pathname.startsWith('/_vercel/')) return;
+  // Cross-origin (api.spotify.com, accounts.spotify.com), the platform's own
+  // paths (/_vercel/) and the crash-report door (/fn-i/, rewritten to PostHog
+  // by vercel.json): never ours to cache — a cache-first Spotify API response
+  // made every re-scan one scan stale, silently (SPOT-4), and a shell hit is
+  // never refreshed. Reports are POSTs, which never reach this line; the
+  // path is named anyway so no future GET there is ever answered from a
+  // cache. Let the browser handle them.
+  if (url.origin !== location.origin || url.pathname.startsWith('/_vercel/') || url.pathname.startsWith('/fn-i/')) return;
 
   // API calls: always go to the network (sync needs fresh data). If offline,
   // the app already has localStorage, so a failed fetch is handled client-side.

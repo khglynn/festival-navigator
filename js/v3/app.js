@@ -20,10 +20,42 @@ import { renderSettings, appSettings, openSubviewByKey } from './settings.js';
 import { onStorageWriteFail, saveLS, errorText } from '../util.js';
 import { router, encodeNotesKey, decodeNotesKey } from './router.js';
 import { wireCardZoom, wireCardFocusZoom, zoomCard, unzoom, dismissZoom, zoomedCard, zoomContains, zoomSnapshot, refreshZoom, festPlaceLine } from './card-facts.js';
-import { hookGlobalErrors } from '../errlog.js';
+import { hookGlobalErrors, configureReports, record } from '../errlog.js';
 // The crash journal listens from the first module tick — an error during
-// boot is exactly the kind nobody can describe later (2026-08-31).
+// boot is exactly the kind nobody can describe later (2026-08-31). index.html
+// hooks it earlier still, from a module script of its own; this second call
+// is a no-op there and the hook everywhere else (the jsdom rigs).
 hookGlobalErrors();
+// What a crash report may say about who and where (v88, Kevin 2026-09-24:
+// the public pid and the person's name in the crew ride along), and every
+// secret this device holds, so the reporter can cut each one out of an
+// error's words by exact match. Read at the moment of each report.
+configureReports({
+  context: () => {
+    const fid = state.activeFestivalId;
+    const listed = fid ? FESTIVAL_INDEX.find((f) => f.id === fid) : null;
+    const token = state.getCrewToken();
+    const person = crew.myPerson();
+    return {
+      // A catalogue id is public; a crew's own festival is only 'custom'.
+      fest: !fid ? null : (listed ? (listed.custom ? 'custom' : fid) : 'unlisted'),
+      pid: (person && person.id) || null,
+      name: (token && crew.me(token)) || null,
+    };
+  },
+  secrets: () => {
+    const out = [];
+    // Each source on its own: one that throws (a blocked store, a mangled
+    // list) never costs the others.
+    const add = (read) => { try { out.push(...[].concat(read())); } catch { /* the rest still count */ } };
+    add(() => crew.knownCrews().map((c) => c && c.token));
+    add(() => { const p = crew.myPerson(); return p ? [p.token, ...Object.keys(p.crews || {})] : []; });
+    add(() => state.getCrewToken());
+    add(() => crew.activeCrewToken());
+    add(() => window.sessionStorage.getItem('fn_pending_absorb'));
+    return out;
+  },
+});
 import { createSortControl } from './sort-control.js';
 import { nameProblem } from '../name-rules.mjs';
 import { startFavicon, stopFavicon } from './favicon.js';
@@ -2522,7 +2554,7 @@ function freshenFromNetwork(token, catalog, current) {
     if (!online()) return;
     const fresh = await fetchCustomFestivals(token);
     if (live()) applyFreshCustoms(fresh);
-  })().catch((e) => console.warn('warm open: catalog', e));
+  })().catch((e) => { console.warn('warm open: catalog', e); record('warm-open:catalog', e); });
 }
 
 // A festival file, fresh from the network. The file is shared by every crew
@@ -2536,7 +2568,7 @@ function refreshFestivalFile(fid) {
     state.FESTIVALS[fid] = fest;
     state.forgetComputedDays(fid);
     if (state.activeFestivalId === fid) { applyFestTheme(); repaintFromRemote(); }
-  }).catch((e) => console.warn('warm open: festival file', e));
+  }).catch((e) => { console.warn('warm open: festival file', e); record('warm-open:fest-file', e); });
 }
 
 // The crew's own festivals, fresh from the server. One that changed is a data
@@ -2735,6 +2767,12 @@ export async function boot() {
     await enterApp(token, doc, current, customs, { recognized });
   } catch (e) {
     console.error('boot failed', e);
+    // The worst failure the app can have, and a CAUGHT one never reaches the
+    // global hooks — so it names itself (DESIGN §1: before v88 the crash
+    // that locks a friend out was the one Diagnostics could not see).
+    // A boot a newer one already replaced (a hashchange mid-boot) was never
+    // on screen: still worth knowing, but not "the app won't open".
+    record(current() ? 'boot' : 'boot:superseded', e);
     if (current()) renderFatal();
   }
 }
