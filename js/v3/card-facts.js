@@ -511,6 +511,24 @@ const exitingSlots = new Set(); // overlays still shrinking away — a NEW zoom 
 // Where the mouse last was — the only way to judge a zoom restored under a
 // hand that is not moving. One passive listener for the module's lifetime.
 let lastMouse = null;
+// The card the HAND is on: the card (or the zoom standing on it) under the
+// pointer the last time the mouse actually MOVED — its identity (cardKey),
+// so it survives the repaints that replace every node. Content that moves
+// under a still pointer is not the hand arriving (2026-09-24, the v87
+// review): a click on NOW glides the page, a day tab jumps it, a wheel or a
+// trackpad scrolls it, and the engines answer with boundary events at the
+// pointer's own pixel — Chromium even before it reports the scroll, WebKit
+// with a pointermove at that same pixel. Hover intent believed them, so
+// whatever card slid under the resting pointer grew over the rail and ate
+// the next click there as a pick (Skepta, cancelled, picked by a NOW tap).
+// So an entry at the pixel the hand last moved to arms a card only if the
+// hand was already on that card (a repaint swapping its node under a resting
+// hand, which must keep hovering); any other card waits for the hand to
+// actually move. The same shape as the touch ghost below: a pointer event is
+// only a hand when the hand is where it says.
+let handEl = null;
+let handCard = null;
+const stillHand = (e) => !!lastMouse && Math.abs(e.clientX - lastMouse.x) < 0.5 && Math.abs(e.clientY - lastMouse.y) < 0.5;
 // Which input the person used LAST — a key or a pointer. The keyboard route
 // (wireCardFocusZoom) opens on this, never on `:focus-visible`: measured in
 // Chrome 152 with real input (2026-09-02), a click focuses a card without the
@@ -554,7 +572,15 @@ if (typeof document !== 'undefined') {
       if (ghostly(e)) return; // the ghost is not where the mouse is
       touchAt = [];
     }
+    // A pointermove at the pixel the mouse already stood on is the engine
+    // restating the hand after the page moved under it (WebKit does, after a
+    // scroll), not the hand: it does not move the hand onto a new card.
+    const moved = !stillHand(e);
     lastMouse = { x: e.clientX, y: e.clientY };
+    if (moved) {
+      const on = isInsideZoom(zoomed, e.target) ? zoomed.el : (e.target.closest?.('.card[data-artist]') || null);
+      if (on !== handEl) { handEl = on; handCard = cardKey(on); }
+    }
     // The stay-away mark lifts the moment the mouse is over anything but the
     // card it put away — that card's node, the fresh node a repaint put in its
     // place, or a zoom standing on it.
@@ -645,9 +671,54 @@ function insetFor(r0, r1) {
   return `inset(${t}px ${r}px ${b}px ${l}px round ${RADIUS}px)`;
 }
 
-// Centre the overlay on the resting card. Only the screen's left and right
-// edges push it inward (an overlay cannot be read off-screen); top and
-// bottom never move it — a card by the day rail grows where it is.
+// The phone dock's top edge while it is showing (under 720px; display:none
+// above it, and on the screens that hide it), else null. The one piece of
+// bottom chrome a zoom has to clear: the zoom layer sits over the dock, so a
+// card grown near the bottom hung across it (Kevin, 2026-09-24, a narrow
+// desktop window under a mouse: "keep this from happening easily").
+function dockTop() {
+  const dock = document.getElementById('dock');
+  if (!dock || !dock.getClientRects().length) return null;
+  const t = dock.getBoundingClientRect().top;
+  return t > 0 && t < window.innerHeight ? t : null;
+}
+
+// The sticky chrome ABOVE a card, as the zoom layer sees it: the lowest
+// bottom edge on screen of the desktop day rail (≥720, sticky at the top)
+// and the card's OWN timetable's stage strip (one per .tt-block, sticky
+// under the rail) — pinned, or still at its natural spot over the grid. Real
+// boxes, never tokens. Null where there is none: a stack of cards (the
+// afters) has only the rail on a desktop and nothing at all on a phone, and
+// no ceiling is invented there. The zoom layer sits over all of it, so a
+// card grown near the top covered the stage names (Kevin, 2026-09-24: the
+// dock's floor "for the sticky headers too").
+function chromeCeiling(el) {
+  let bottom = null;
+  const vh = window.innerHeight;
+  const take = (n) => {
+    if (!n || !n.getClientRects().length) return;
+    const r = n.getBoundingClientRect();
+    if (r.height > 0 && r.bottom > 0 && r.top < vh && (bottom === null || r.bottom > bottom)) bottom = r.bottom;
+  };
+  take(document.getElementById('day-rail'));
+  const block = el && el.closest ? el.closest('.tt-block') : null;
+  if (block) take(block.querySelector(':scope > .stage-strip'));
+  return bottom;
+}
+
+// Centre the overlay on the resting card, then keep it off the chrome. The
+// screen's left and right edges push it inward (an overlay cannot be read
+// off-screen). The phone dock, when it is showing, is a FLOOR and the sticky
+// chrome above the card a CEILING: a zoom that would come within 8px of
+// either is MOVED — never shrunk or reshaped — and when it cannot clear both
+// (taller than the band between them) the ceiling wins and the dock gives
+// way, so its name and the stage names stay readable; as one continuous
+// rule (max of min), it glides while the page scrolls under follow() instead
+// of jumping between clamped and not. With no ceiling, a zoom too tall for
+// the space above the dock stays where the arithmetic put it, and the
+// screen's own top and bottom edges move nothing. Either way the bloom's
+// origin is the card's own centre (originFor, from the box returned here),
+// so a moved zoom still grows out of its card, as it does at the side edges.
 function place(slot, el) {
   const r0 = rect(el);
   // The overlay's own LAYOUT size, not its on-screen box: follow() re-places
@@ -660,8 +731,12 @@ function place(slot, el) {
   const w = slot.offsetWidth || b.width, h = slot.offsetHeight || b.height;
   const vw = window.innerWidth;
   let left = Math.round(r0.left + r0.width / 2 - w / 2);
-  const top = Math.round(r0.top + r0.height / 2 - h / 2);
+  let top = Math.round(r0.top + r0.height / 2 - h / 2);
   left = Math.max(8, Math.min(left, vw - 8 - w));
+  const floor = dockTop();
+  const ceiling = chromeCeiling(el);
+  if (floor !== null && top + h > floor - 8 && (ceiling !== null || h <= floor - 16)) top = Math.floor(floor - 8 - h);
+  if (ceiling !== null && top < ceiling + 8) top = Math.ceil(ceiling + 8);
   slot.style.left = `${Number.isFinite(left) ? left : r0.left}px`;
   slot.style.top = `${Number.isFinite(top) ? top : r0.top}px`;
   return { r0, r1: box(left, top, w, h) };
@@ -1122,7 +1197,11 @@ function wireSlot(z) {
   // broken" on a trackpad, where micro-deltas fire constantly while the
   // hand rests: the card grew, vanished on a 1px jiggle, and the dismissal
   // poisoned it with the stay-away mark (found on the 2026-08-31 review round).
-  // The overlay closes only when its card has actually left the viewport.
+  // The overlay closes only when its card has actually left the viewport —
+  // or gone entirely under the sticky chrome (the pinned stage strip and
+  // rail above, the dock below), which is the same thing to the eye: the
+  // zoom stands clamped against that chrome while its card slides under it,
+  // and a zoom whose card cannot be seen any more is an orphan (2026-09-24).
   // Capture phase so an inner scroller's scroll (which does not bubble) is
   // heard too; rAF-throttled, one re-place per frame.
   let followRaf = 0;
@@ -1136,6 +1215,11 @@ function wireSlot(z) {
     const r = rect(z.el);
     if (r.bottom < 0 || r.top > window.innerHeight || r.right < 0 || r.left > window.innerWidth) {
       unzoom({ instant: true, why: 'card scrolled off screen' });
+      return;
+    }
+    const ceiling = chromeCeiling(z.el), floor = dockTop();
+    if ((ceiling !== null && r.bottom <= ceiling) || (floor !== null && r.top >= floor)) {
+      unzoom({ instant: true, why: 'card scrolled under the sticky chrome' });
       return;
     }
     place(z.slot, z.el);
@@ -1209,13 +1293,20 @@ export function wireCardZoom(el, artistName, ctx, { onOpenNotes = null, occ = nu
   // first REAL move over the card is the hand's entry (a trackpad nudged on
   // the card a finger just tapped still hovers it).
   let ghosted = false;
+  // Content slid this card under a still hand (see `handCard`): where it
+  // came to rest under the pointer. The first move AWAY from that pixel is
+  // the hand's entry — one small nudge on the card grows it as usual.
+  let slidAt = null;
   el.addEventListener('pointerenter', (e) => {
     if (e.pointerType !== 'mouse') return;
     if (ghostly(e)) { ghosted = true; return; }
+    if (stillHand(e) && cardKey(el) !== handCard) { slidAt = { x: e.clientX, y: e.clientY }; return; }
     arm();
   });
   el.addEventListener('pointermove', (e) => {
-    if (ghosted && e.pointerType === 'mouse' && !ghostly(e)) { ghosted = false; arm(); }
+    if (e.pointerType !== 'mouse') return;
+    if (ghosted && !ghostly(e)) { ghosted = false; arm(); return; }
+    if (slidAt && (Math.abs(e.clientX - slidAt.x) >= 0.5 || Math.abs(e.clientY - slidAt.y) >= 0.5)) { slidAt = null; arm(); }
   }, { passive: true });
   // A card born UNDER a resting pointer never hears pointerenter — the wall
   // repaints on every sync echo and refreshCard swaps the node under a pick,
@@ -1226,14 +1317,18 @@ export function wireCardZoom(el, artistName, ctx, { onOpenNotes = null, occ = nu
   // check asks elementFromPoint under the LAST KNOWN mouse position, never
   // :hover — Safari is notorious for stale :hover chains after DOM swaps,
   // and a stale match here would grow cards the pointer is nowhere near.
+  // Only the card the hand was ON: a repaint swapping that card's node keeps
+  // it hovering, but a different card that a scroll or a relayout brought
+  // under the still pointer waits for the hand to move (`handCard`).
   requestAnimationFrame(() => {
     if (!el.isConnected || touchAt.length) return; // a finger was the last hand here, not a resting mouse
     const under = underMouse();
-    if (under && el.contains(under)) arm();
+    if (under && el.contains(under) && cardKey(el) === handCard) arm();
   });
   el.addEventListener('pointerleave', (e) => {
     if (e.pointerType !== 'mouse') return;
     ghosted = false;
+    slidAt = null;
     if (inT) { clearTimeout(inT); inT = null; }
   });
 }

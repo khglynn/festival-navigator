@@ -913,14 +913,23 @@ const ROW_PX = 20;
 const ROW_GAP = 4;
 const ROW_PITCH = ROW_PX + ROW_GAP;
 
+// The hour rail beside a grid, where the now line's time label sits.
+const railOf = (grid) => (grid && grid.parentElement && grid.parentElement.parentElement
+  ? grid.parentElement.parentElement.querySelector('.times-rail') : null);
+// The now line's time label ("7:00 PM" on the rail), for whatever answers
+// with the line (NOW's repeat tap pulses both).
+export function nowLabelOf(line) {
+  const rail = railOf(line && line.closest('.times-grid'));
+  return rail ? rail.querySelector('.now-label') : null;
+}
+
 // Draw (or move) the now line on every timetable grid whose day is today.
 // Each grid carries its geometry as data attributes, so this can run from
 // a one-minute ticker without a repaint. Removes a line whose day has ended.
 export function positionNowLines(root, date = new Date()) {
   for (const grid of root.querySelectorAll('.times-grid[data-iso]')) {
     const clock = festivalClock(date, grid.dataset.tz || null); // the grid knows its festival's zone
-    const rail = grid.parentElement && grid.parentElement.parentElement
-      ? grid.parentElement.parentElement.querySelector('.times-rail') : null;
+    const rail = railOf(grid);
     const isToday = grid.dataset.iso === clock.iso;
     const top = isToday ? nowOffsetPx(clock.minutes, {
       startRow: Number(grid.dataset.startRow), rows: Number(grid.dataset.rows), pitch: ROW_PITCH,
@@ -1149,6 +1158,9 @@ function renderScheduledDayBody(root, day, ctx, layout, weekend, { strip = false
   // exactly like real overlaps (Codex arc gate, P1).
   const drawn = computed.map((a) => ({
     ...a, endMin: Math.max(a.endMin ?? a.startMin + 60, a.startMin + 30),
+    // The set's REAL window, before the display floor: what NOW asks when it
+    // looks for a highlighted person's pick that is playing (nowLanding).
+    liveTo: a.endMin ?? a.startMin + 60,
   }));
   // The grid spans the WHOLE festival day — its doors to its close when the
   // file says them, else whole hours around the sets (MODEL-V4 §1.1). A now
@@ -1218,6 +1230,11 @@ function renderScheduledDayBody(root, day, ctx, layout, weekend, { strip = false
     cell.style.gridColumn = String(col + 1);
     cell.style.gridRow = `${row} / span ${span}`;
     cell.style.minHeight = '0';
+    // Its window on the festival day's clock, the same data a stack card
+    // carries (positionNowMarks leaves grid cells alone: the grid has its
+    // line). NOW reads it to find who is playing (nowLanding).
+    cell.dataset.nowFrom = String(a.startMin);
+    cell.dataset.nowTo = String(a.liveTo);
     const lane = lanes.get(a);
     if (lane && lane.lanes > 1) {
       // Lane math assumes border-box sizing (v3.css sets it on .card):
@@ -1510,7 +1527,13 @@ export function venueGroups(root, entries, ctx, { day = null, fest = null, fallb
 
 // The now mark on a stack (MODEL-V4 §1.2) — the now line's twin, same violet,
 // same one-minute ticker, no repaint. A card is "now" when the festival's
-// clock is inside the window venueGroupsOf gave it.
+// clock is inside the window venueGroupsOf gave it. The mark is the ring and
+// its glow, and nothing else: the "NOW" tag that sat in the card's corner went
+// with the NOW button (Kevin, 2026-09-24: "since we have the now button now I
+// don't think we need the now … tags. users can figure out what the highlight
+// means from the auto-scroll"). A screen reader still hears it — the card's
+// own name ends "playing now" while it is.
+export const PLAYING_NOW = ', playing now';
 export function positionNowMarks(root, date = new Date()) {
   const here = root.matches && root.matches('.venue-grid[data-iso]') ? [root] : [];
   for (const grid of [...here, ...root.querySelectorAll('.venue-grid[data-iso]')]) {
@@ -1521,11 +1544,343 @@ export function positionNowMarks(root, date = new Date()) {
       const to = Number(card.dataset.nowTo);
       const on = today && clock.minutes >= from && clock.minutes < to;
       card.classList.toggle('now', on);
-      const label = card.querySelector('.now-label');
-      if (on && !label) card.insertBefore(mk('span', 'now-label in-card', 'NOW'), card.firstChild);
-      else if (!on && label) label.remove();
+      const name = card.getAttribute('aria-label') || '';
+      if (on && !name.endsWith(PLAYING_NOW)) card.setAttribute('aria-label', name + PLAYING_NOW);
+      else if (!on && name.endsWith(PLAYING_NOW)) card.setAttribute('aria-label', name.slice(0, -PLAYING_NOW.length));
     }
   }
+}
+
+// What NOW lands on (Kevin, 2026-09-24: "where is ross likely right now"),
+// read off the wall the person is looking at — hidden rooms render nothing,
+// so they are never an answer. Null when nothing is live: no now line on a
+// grid and no NOW mark on a stack (the NOW tab is absent then).
+//   · A highlight (the people filter) → that person's pick that is playing
+//     now, a grid cell or a stack card: the highest level first (must), then
+//     the most recent start — "where is Ross right now" is the set that just
+//     began, not a room live since doors or a set half over (review call,
+//     2026-09-24). A grid cell brings its line with it: the answer to
+//     "where is Ross" is the line and his card seen together.
+//   · Otherwise, or no highlighted pick is live → the now line while the
+//     clock is inside the grid's hours; past them (the grid closed, the
+//     afters running) the first NOW-marked card in the wall's order; before
+//     doors, with nothing marked, the line at the top of the grid. The
+//     highlight keeps dimming the rest either way.
+// { kind: 'line' | 'card', line, card, match }. `match` says whether the
+// landing answers the highlight: true — it is their pick; false — someone is
+// highlighted and nothing of theirs is on, so this is what IS on, not them
+// (the app must not pulse it as though it were: a dimmed card pulsing read
+// as "Ross is here", review 2026-09-24); null — nobody is highlighted.
+// What is live on the wall, read once for nowLanding and nowStops alike: the
+// now lines (with whether the clock is inside their grid's own hours), the
+// stack cards wearing the mark, and — with a highlight — the highlighted
+// people's live picks, best first.
+function liveOnWall(root, ctx, date) {
+  const lines = [...root.querySelectorAll('.times-grid .now-line')].map((line) => {
+    const grid = line.closest('.times-grid');
+    const { minutes } = festivalClock(date, grid.dataset.tz || null);
+    // The line is an answer only while the clock is inside the grid's own
+    // hours. nowOffsetPx keeps it drawn two rows either side, pinned to the
+    // edge — fine to look at, but from 11:00 to 11:30 PM it sat on the bottom
+    // of a closed Pier 80 while eight afters were on (review, 2026-09-24).
+    // Past the grid, the marks win when there are any; before doors there are
+    // none, and the top of the grid is the honest answer.
+    const onGrid = Number(grid.dataset.startRow) * 15 <= minutes
+      && minutes < (Number(grid.dataset.startRow) + Number(grid.dataset.rows)) * 15;
+    return { line, grid, minutes, onGrid };
+  });
+  const marks = [...root.querySelectorAll('.venue-grid[data-iso] .card.now')];
+  const people = ctx.filterPeople || [];
+  let picks = [];
+  if (people.length) {
+    const live = [...marks];
+    for (const { grid, minutes } of lines) {
+      for (const cell of grid.querySelectorAll('.card[data-now-from]')) {
+        if (Number(cell.dataset.nowFrom) <= minutes && minutes < Number(cell.dataset.nowTo)) live.push(cell);
+      }
+    }
+    const level = (card) => Math.max(0, ...people.map((p) => (((ctx.picks || {})[card.dataset.artist] || {})[p]) || 0));
+    picks = live.filter((c) => !c.classList.contains('dim') && level(c) > 0)
+      .sort((a, b) => level(b) - level(a) || Number(b.dataset.nowFrom) - Number(a.dataset.nowFrom));
+  }
+  return { lines, marks, people, picks };
+}
+const lineOf = (lines, card) => (lines.find((l) => l.grid.contains(card)) || {}).line || null;
+
+export function nowLanding(root, ctx, date = new Date()) {
+  const { lines, marks, people, picks } = liveOnWall(root, ctx, date);
+  if (!lines.length && !marks.length) return null;
+  if (picks.length) return { kind: 'card', card: picks[0], line: lineOf(lines, picks[0]), match: true };
+  const match = people.length ? false : null;
+  const first = lines[0];
+  if (first && (first.onGrid || !marks.length)) return { kind: 'line', line: first.line, card: null, match };
+  return { kind: 'card', card: marks[0], line: null, match };
+}
+
+// ---- NOW, tap after tap (Kevin, 2026-09-24) --------------------------------------
+// "multiple taps on that scroll should move the user to the next now item if
+// there are multiple at different heights on the page. if filtered to a person
+// it should only go to nows for that person. if there's no now pick for that
+// person normal now behavior … by height because if items are side by side
+// multiple now clicks won't scroll that that'll be weird."
+//
+// The STOPS a NOW tap can take you to, top to bottom, read off the wall as it
+// is at the tap (never a list kept from the last one — the ticker and a
+// repaint move things between taps):
+//   · a highlight with live picks → those picks only: a grid cell with its
+//     grid's line, a stack card on its own;
+//   · otherwise (nobody highlighted, or a highlight with nothing on) → every
+//     live thing: each now line while the clock is inside its grid's hours
+//     (before doors, with nothing marked, the line anyway — nowLanding's own
+//     rule), and every stack card wearing the mark. Hidden rooms render
+//     nothing, so they are never stops.
+// Each is landed exactly as the first tap lands it (landingTarget). Then BY
+// HEIGHT: going down the page, a candidate that a stop already shows — inside
+// the band a person can see, 8px in from the sticky chrome and the dock —
+// joins that stop instead of making one, so no tap ever scrolls to where you
+// already are: side-by-side cards, a row of afters under the line fold into
+// one. AND ACROSS, for grid cells: a grid scrolls sideways on a phone, so
+// "side by side" can mean off screen. A stop frames its cells in one sideways
+// slide; a cell that does not fit that frame beside them (Nhu's DJ Shadow in
+// column 2 and Despacio in column 5 at 390 — review, 2026-09-24) is its own
+// stop at the same height, reached by the slide alone. So every live pick is
+// reachable by tapping, and every tap still moves something into view. Stops
+// run top to bottom, then left to right within a height. The first stop that
+// contains nowLanding's answer is `bestAt`. With nobody highlighted the line
+// is one stop, whatever the columns: it crosses them all.
+//
+// `geo` is the page's geometry, handed in so the rule is testable without a
+// layout engine: { scrollY, maxY, box(el) → viewport rect, band(grid|null) →
+// { top, bottom } of what can be seen (under a grid's pinned stage strip for a
+// grid, under the sticky chrome otherwise; above the dock on a phone),
+// scroller(cell) → { el, x, left, width, max } of the grid's own sideways
+// scroll (its viewport x, scrollLeft, clientWidth, and the most it scrolls) }.
+export const NOW_PAD = 8;
+export function landingTarget(m, geo) {
+  const pad = NOW_PAD;
+  let dy;
+  if (m.line) {
+    const band = geo.band(m.line.closest('.times-grid'));
+    const h = band.bottom - band.top;
+    const lineTop = geo.box(m.line).top;
+    dy = lineTop - (band.top + h / 3);
+    if (m.card) {
+      const cardTop = geo.box(m.card).top;
+      // The card's top on screen too — when the two fit: the line no lower
+      // than two-thirds of the way down. A set too tall for that (Despacio's
+      // hours on a 320x568 phone) keeps the line a third of the way down, the
+      // rule everywhere else (review, 2026-09-24).
+      if (lineTop - cardTop <= h * (2 / 3) && cardTop - dy < band.top + pad) dy = cardTop - (band.top + pad);
+      if (lineTop - dy > band.bottom - pad) dy = lineTop - (band.bottom - pad);
+    }
+  } else {
+    const band = geo.band(null);
+    const h = band.bottom - band.top;
+    const r = geo.box(m.card);
+    dy = r.top - (band.top + h / 4);
+    if (r.bottom - dy > band.bottom - pad && r.bottom - r.top < h - 2 * pad) dy = r.bottom - (band.bottom - pad);
+  }
+  return Math.min(geo.maxY, Math.max(0, geo.scrollY + dy));
+}
+// Whether a landing at `target` already shows m: a line (a cell's included —
+// the line is what says it is playing) anywhere in its band; a card from its
+// top down, as much of it as a band can hold.
+function showsAt(m, target, geo) {
+  const pad = NOW_PAD;
+  const shift = target - geo.scrollY;
+  if (m.line) {
+    const band = geo.band(m.line.closest('.times-grid'));
+    const y = geo.box(m.line).top - shift;
+    return y >= band.top + pad - 1 && y <= band.bottom - pad + 1;
+  }
+  const band = geo.band(null);
+  const r = geo.box(m.card);
+  const top = r.top - shift;
+  const bottom = Math.min(r.bottom, r.top + (band.bottom - band.top) - 2 * pad) - shift;
+  return top >= band.top + pad - 1 && bottom <= band.bottom - pad + 1;
+}
+const keyOf = (m) => (m.card
+  ? `${m.line ? 'cell' : 'card'}:${m.card.dataset.artist}|${m.card.dataset.occ || ''}|${roomOf(m.card) || ''}`
+  : `line:${m.line.closest('.times-grid').dataset.iso || ''}`);
+
+// A grid cell's place in its grid's sideways scroll, in the scroll's own
+// coordinates (so it does not depend on where the grid happens to sit).
+// `iso` names the grid by its day — the one identity of a grid that survives
+// a repaint (see stillThere).
+function spanIn(m, geo) {
+  if (!m.card || !m.line || !geo.scroller) return null;
+  const sc = geo.scroller(m.card);
+  if (!sc) return null;
+  const r = geo.box(m.card);
+  const lo = r.left - sc.x + sc.left;
+  return { sc, lo, hi: lo + (r.right - r.left), iso: m.line.closest('.times-grid').dataset.iso || null };
+}
+// The one sideways slide that frames a stop's cells: their middle in the
+// middle, as far as the grid scrolls.
+export function frameSlide(frame) {
+  const { sc, lo, hi } = frame;
+  return Math.min(sc.max, Math.max(0, (lo + hi) / 2 - sc.width / 2));
+}
+export function nowStops(root, ctx, date, geo) {
+  const best = nowLanding(root, ctx, date);
+  if (!best) return null;
+  const { lines, marks, picks } = liveOnWall(root, ctx, date);
+  // One show, one member: a show billed to two rooms ("Afters & Folsom" —
+  // Horse Meat Disco, Friday) renders a card in each, byte-identical in
+  // data-occ, and the cycle landed on it twice (the phone walk, 2026-09-24).
+  // The first in wall order stands for it — the one nowLanding would answer
+  // with; the other still shows wherever its room is on screen.
+  const shows = new Set();
+  const once = (card) => {
+    const show = `${card.dataset.artist}|${card.dataset.occ || ''}`;
+    return shows.has(show) ? false : (shows.add(show), true);
+  };
+  const members = best.match === true
+    ? picks.filter(once).map((card) => ({ card, line: lineOf(lines, card) }))
+    : [
+      ...lines.filter((l) => l.onGrid || !marks.length).map((l) => ({ card: null, line: l.line })),
+      ...marks.filter(once).map((card) => ({ card, line: null })),
+    ];
+  for (const m of members) {
+    m.key = keyOf(m);
+    m.target = landingTarget(m, geo);
+    m.span = spanIn(m, geo);
+    m.x = m.span ? m.span.lo : geo.box(m.card || m.line).left;
+  }
+  members.sort((a, b) => a.target - b.target || a.x - b.x);
+  // Room across: a frame holds its cells side by side with 8px either side.
+  const fits = (frame, span) => !frame || (frame.sc.el === span.sc.el
+    && Math.max(frame.hi, span.hi) - Math.min(frame.lo, span.lo) <= span.sc.width - 2 * NOW_PAD);
+  const stops = [];
+  for (const m of members) {
+    const home = stops.find((st) => showsAt(m, st.target, geo) && (!m.span || fits(st.frame, m.span)));
+    if (home) {
+      home.members.push(m);
+      if (m.span) home.frame = home.frame ? { ...home.frame, lo: Math.min(home.frame.lo, m.span.lo), hi: Math.max(home.frame.hi, m.span.hi) } : { ...m.span };
+      continue;
+    }
+    // A stop of its own. Where a stop already shows it at that height and
+    // only its column is out of frame, it lands at the same height — the
+    // tap's move is the sideways slide.
+    const beside = m.span ? stops.find((st) => showsAt(m, st.target, geo)) : null;
+    stops.push({ target: beside ? beside.target : m.target, members: [m], frame: m.span ? { ...m.span } : null });
+  }
+  for (const st of stops) {
+    st.keys = st.members.map((m) => m.key);
+    st.x = Math.min(...st.members.map((m) => m.x));
+    st.slide = st.frame ? frameSlide(st.frame) : null;
+  }
+  stops.sort((a, b) => a.target - b.target || a.x - b.x);
+  const bestKey = keyOf(best);
+  const bestAt = Math.max(0, stops.findIndex((st) => st.keys.includes(bestKey)));
+  return { best: { ...best, key: bestKey, target: landingTarget(best, geo) }, stops, bestAt };
+}
+
+// What NOW may pulse at this moment, by the rule that chose it (the app pulses
+// only when the glide lands, and the wall can change under a glide — the 25 s
+// poll, a pick, the highlight, the clock): with a live match, the highlighted
+// people's live picks as they stand now; with nobody highlighted, the NOW
+// cards; with no match, nothing. A repaint mid-glide that dropped Ross's pick
+// used to pulse the fresh, dimmed card anyway — "Ross is here" on a card he
+// had just left (Codex, 2026-09-24).
+export function nowPulseable(root, ctx, date, match) {
+  const { marks, people, picks } = liveOnWall(root, ctx, date);
+  if (match === true) return picks;
+  if (match === null && !people.length) return marks;
+  return [];
+}
+
+// What a NOW landing says to a screen reader (the app puts it in the page's
+// polite status region; focus stays on NOW). Sighted people see where the
+// page went; this says it: the line's time and what crosses it, the cards by
+// name and where they are ("Milli Meng at Public Works" — the answer to
+// "where is Ross"), and which stop of how many, so a repeat tap has somewhere
+// to go. "Now, 10:30 PM. Playing now: Soulwax at Crane Stage and Prospa at
+// Warehouse. 1 of 5." A card's place is its occurrence's venue (a stack) or
+// stage (the grid); one show named once, even where it renders in two rooms.
+export function nowSaid(plan, stop) {
+  const names = [];
+  const add = (card) => {
+    let occ = null;
+    try { occ = card.dataset.occ ? JSON.parse(card.dataset.occ) : null; } catch { occ = null; }
+    const where = occ && (occ.venue || occ.stage);
+    const name = where ? `${card.dataset.artist} at ${where}` : card.dataset.artist;
+    if (!names.includes(name)) names.push(name);
+  };
+  let time = null;
+  for (const m of stop.members) {
+    if (m.card) { add(m.card); continue; }
+    const minutes = Number(m.line.dataset.minutes);
+    if (!Number.isFinite(minutes)) continue;
+    time = time || clockLabel(minutes);
+    for (const cell of m.line.closest('.times-grid').querySelectorAll('.card[data-now-from]')) {
+      if (Number(cell.dataset.nowFrom) <= minutes && minutes < Number(cell.dataset.nowTo)) add(cell);
+    }
+  }
+  const list = names.length < 3 ? names.join(' and ') : `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
+  const parts = [];
+  if (time) parts.push(`Now, ${time}.`);
+  if (names.length) parts.push(`Playing now: ${list}.`);
+  const n = plan.stops.length;
+  if (n > 1) parts.push(`${plan.stops.indexOf(stop) + 1} of ${n}.`);
+  return parts.join(' ');
+}
+
+// ---- the next tap ------------------------------------------------------------------
+// Where the last NOW tap left the page, for the next one — the app keeps it as
+// `cycle`: { lead, y, grid, sl, until } — the lead key of the stop it went to,
+// the scroll it landed at, the day (`data-iso`) of the grid it slid and that
+// grid's sideways scroll after the slide (grid null when it slid none), and
+// until when (on geo.now's clock) a glide was still on its way there.
+//
+// The page still sits where the last NOW left it while that glide runs, or
+// while the page is within 4px of y and — if a grid slid — that grid within
+// 4px of sl. The grid is named by its DAY, never held as a node: a repaint
+// (the 25 s poll, a pick, a highlight) replaces every scroller, and a held
+// node, once detached, went on reading "unchanged" — so after one repaint a
+// sideways hand scroll no longer made the next tap fresh (Codex, 2026-09-24).
+// A repaint puts the sideways scroll back (restoreEphemera), so a page
+// nobody moved keeps its cycle through one; a grid that is gone (its day
+// hidden) ends it.
+//
+// geo adds two readings to nowStops' own: now (the clock `until` is on) and
+// gridLeft(iso) → that day's grid's sideways scroll, or null with no such grid.
+export function stillThere(cycle, geo) {
+  if (!cycle) return false;
+  if (geo.now < cycle.until) return true;
+  if (Math.abs(geo.scrollY - cycle.y) > 4) return false;
+  if (cycle.grid == null) return true;
+  const left = geo.gridLeft(cycle.grid);
+  return left != null && Math.abs(left - cycle.sl) <= 4;
+}
+// The tap itself: the stop it goes to, the member it leads with, and the
+// scroll it lands at. Still there, and the last stop is still live → the next
+// stop, wrapping after the last; anything else is a fresh "take me to now" —
+// the best answer's stop. A stop lands the same way every time it is reached
+// (its own landing, which shows every member — that is what made them one
+// stop); its lead is the answer when the stop holds it — the column a grid
+// slides to, the key the next tap starts from — else its top member.
+//
+// The one stop, tapped again, stays where the last tap left it — while that
+// landing still shows it (every member, by showsAt). The clock moves a stop
+// without moving the page: tap at 3 PM, tap again at 7 PM, and the line has
+// walked four hours down the grid (at 320x568, 198px → 582px, under the dock
+// at 523). The page is exactly where NOW left it, so this was "still there",
+// and the old landing stood with the line off screen (Codex, 2026-09-24).
+// Now it lands afresh — the stop's own landing, as its first tap would.
+export function nowStep(plan, cycle, geo) {
+  const { best, stops, bestAt } = plan;
+  let at = -1;
+  if (stillThere(cycle, geo)) {
+    const was = stops.findIndex((st) => st.keys.includes(cycle.lead));
+    if (was >= 0) at = (was + 1) % stops.length;
+  }
+  const fresh = at < 0;
+  if (fresh) at = bestAt;
+  const stop = stops[at];
+  const lead = stop.keys.includes(best.key) ? best : stop.members[0];
+  const stays = !fresh && stops.length === 1 && stop.members.every((m) => showsAt(m, cycle.y, geo));
+  return { fresh, at, stop, lead, target: stays ? cycle.y : stop.target };
 }
 
 // One room on a date: its head and body travel together, tagged with the key
@@ -2000,7 +2355,18 @@ export function wireScrollspy(containers, wallRoot) {
   // dock, and the row stayed where it was, so it showed FRI 2 / SAT 3 while
   // the wall was in LATE NIGHTS (real-browser walk, 2026-09-17). This is the
   // one place the active day changes, so it is the one place the row moves.
-  // `block: 'nearest'` because the page is not ours to scroll.
+  // The ROW scrolls, never the page (it is not ours to scroll), to a spot
+  // worked out from layout positions, not rects: the tabs can be mid-slide
+  // while NOW arrives or leaves (a transform, app.js slideTabs), and
+  // scrollIntoView would aim at the transformed box.
+  const centre = (t, behavior) => {
+    const c = t.parentElement;
+    if (!c) return;
+    const x = t.offsetParent === c ? t.offsetLeft : t.offsetLeft - c.offsetLeft - c.clientLeft;
+    const left = Math.max(0, Math.min(x - (c.clientWidth - t.offsetWidth) / 2, c.scrollWidth - c.clientWidth));
+    if (typeof c.scrollTo === 'function') c.scrollTo({ left, behavior });
+    else c.scrollLeft = left;
+  };
   let active = null;
   const setActive = (day) => {
     if (day === active) return;
@@ -2011,7 +2377,7 @@ export function wireScrollspy(containers, wallRoot) {
       t.classList.toggle('active', on);
       if (on) t.setAttribute('aria-current', 'true');
       else t.removeAttribute('aria-current');
-      if (on && t.scrollIntoView) t.scrollIntoView({ block: 'nearest', inline: 'center', behavior: glide ? 'smooth' : 'auto' });
+      if (on) centre(t, glide ? 'smooth' : 'auto');
     });
   };
   // …and the eye is told there is more, on the side there is more ON: a row
@@ -2050,7 +2416,7 @@ export function wireScrollspy(containers, wallRoot) {
     ticking = false;
     if (!headers.length) return;
     const offset = parseFloat(
-      getComputedStyle(document.documentElement).getPropertyValue('--jump-offset'),
+      window.getComputedStyle(document.documentElement).getPropertyValue('--jump-offset'),
     ) || 8;
     // The tolerance is not slop: a jump parks its block NEAR the offset, and
     // WebKit parks it ~24px below where Chromium lands it exactly — so an
@@ -2092,10 +2458,31 @@ export function wireScrollspy(containers, wallRoot) {
   // naming a day you scrolled past three screens ago.
   const onResize = () => { markOverflow(); syncFromGeometry(); };
   window.addEventListener('resize', onResize);
+  // The row can change width with the window standing still: NOW arrives
+  // before the days and leaves again (app.js, 2026-09-24). Its edges are
+  // re-read then, and a row that has just started to overflow keeps the day
+  // you are in on screen.
+  let rows = null;
+  if (typeof ResizeObserver === 'function') {
+    rows = new ResizeObserver(() => {
+      // A row that changed width (NOW came or went, a rotation) and scrolls
+      // centres the day you are in again, at once — not only when it is
+      // clipped: a glide setActive started was aimed for the old width, and
+      // an instant scroll aborts it (CSSOM View: a new scroll aborts any
+      // smooth one).
+      for (const c of list) {
+        const on = [...c.querySelectorAll('.day-tab')].find((t) => t.dataset.day === active);
+        if (on && c.scrollWidth - c.clientWidth > 1) centre(on, 'auto');
+      }
+      markOverflow();
+    });
+    for (const c of list) rows.observe(c);
+  }
 
   return () => {
     window.removeEventListener('scroll', onScroll);
     window.removeEventListener('resize', onResize);
+    if (rows) rows.disconnect();
     for (const c of list) c.removeEventListener('scroll', markOverflow);
     if (frame && typeof cancelAnimationFrame === 'function') cancelAnimationFrame(frame);
   };

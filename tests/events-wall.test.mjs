@@ -325,14 +325,15 @@ test('a room head does not fold: no chevron, no aria-expanded, no "<n> shows" �
 
 // ---- the now mark (MODEL-V4 §1.2) ------------------------------------------------------
 
-test('the now mark: the card of whoever is playing carries the ring and the label; the ticker moves it without a repaint', () => {
+test('the now mark: the card of whoever is playing carries the ring, and "playing now" in its name — no tag; the ticker moves it without a repaint', () => {
   // Sunday the 27th, 11:30 PM in San Francisco — the middle of the Midway run.
   const now = new Date('2026-09-28T06:30:00Z');
   const { root } = render('portola-2026', { now });
   const marked = [...root.querySelectorAll('.card.now')];
   assert.ok(marked.length, 'something is on');
   for (const card of marked) {
-    assert.equal(card.querySelector('.now-label').textContent, 'NOW');
+    assert.equal(card.querySelector('.now-label'), null, 'no NOW tag in the corner (2026-09-24: the NOW button teaches the ring)');
+    assert.ok(card.getAttribute('aria-label').endsWith(', playing now'), `a screen reader hears it: ${card.getAttribute('aria-label')}`);
     const from = Number(card.dataset.nowFrom);
     const to = Number(card.dataset.nowTo);
     assert.ok(from <= 23.5 * 60 && 23.5 * 60 < to, `${card.dataset.artist} is really on at 11:30 PM`);
@@ -344,10 +345,13 @@ test('the now mark: the card of whoever is playing carries the ring and the labe
   const later = [...root.querySelectorAll('.card.now')].map((c) => c.dataset.artist);
   assert.notDeepEqual(later, marked.map((c) => c.dataset.artist));
   assert.ok(!root.querySelector('.card[data-artist="VTSS"].now'), 'VTSS handed the room over');
-  assert.equal(root.querySelectorAll('.now-label.in-card').length, later.length, 'a label lives and dies with its mark');
+  const named = [...root.querySelectorAll('.card')].filter((c) => (c.getAttribute('aria-label') || '').endsWith(', playing now'));
+  assert.deepEqual(named.map((c) => c.dataset.artist).sort(), [...later].sort(), '"playing now" lives and dies with its mark');
+  assert.ok(!root.querySelector('.card[data-artist="VTSS"]').getAttribute('aria-label').includes('playing now'), 'and leaves VTSS’s name clean');
   // Another day entirely: nothing is on.
   positionNowMarks(root, new Date('2026-06-01T06:30:00Z'));
-  assert.equal(root.querySelectorAll('.card.now, .now-label.in-card').length, 0);
+  assert.equal(root.querySelectorAll('.card.now').length, 0);
+  assert.equal([...root.querySelectorAll('.card')].filter((c) => (c.getAttribute('aria-label') || '').includes('playing now')).length, 0);
 });
 
 // ---- the tabs off the end (MODEL-V4 §2) ------------------------------------------------

@@ -92,6 +92,14 @@ test('a cold open waiting on the crew shows the loader after a beat, and the wal
       localStorage.setItem(`fn_me_v3_${t}`, 'Kevin');
       localStorage.setItem(`fn_crew_fest_v3_${t}`, f);
     }, [TOKEN, FID]);
+    // bootFade: what the page asks of the loader's fade-in, the moment it asks.
+    await ctx.addInitScript(() => {
+      const animate = Element.prototype.animate;
+      Element.prototype.animate = function (keyframes, options) {
+        if (this.id === 'screen-boot') window.__bootFade = { delay: options && options.delay, at: performance.now() };
+        return animate.call(this, keyframes, options);
+      };
+    });
     const doc = { v: 4, meta: { name: 'Contract', inviteFestId: FID }, spotify: {}, affinity: {}, people: { Kevin: { colorIndex: 0 } }, festivals: { [FID]: { selections: {} } } };
     let answer;
     const crewAnswered = new Promise((r) => { answer = r; });
@@ -104,7 +112,19 @@ test('a cold open waiting on the crew shows the loader after a beat, and the wal
       const el = document.getElementById('screen-boot');
       return el ? Number(getComputedStyle(el).opacity) : null;
     });
-    assert.equal(await loaderOpacity(), 0, 'present, and not yet seen — a quick boot never flashes it');
+    // "After a beat" is the fade's own delay, recorded where the page asks for
+    // it (bootFade, below), not inferred from how fast this machine got here:
+    // on a loaded runner the page can finish loading after the beat — even
+    // after the whole fade — and a wall-clock check read that as a flash
+    // (seen twice in full parallel runs, 2026-09-24).
+    const early = await page.evaluate(() => {
+      const el = document.getElementById('screen-boot');
+      const f = window.__bootFade;
+      return el ? { opacity: Number(getComputedStyle(el).opacity), delay: f ? f.delay : null, elapsed: f ? performance.now() - f.at : null } : null;
+    });
+    assert.ok(early, 'the loader is there while the crew is on its way');
+    assert.ok(early.delay >= 300, `it arrives after a beat, so a quick boot never flashes it: ${JSON.stringify(early)}`);
+    if (early.elapsed < early.delay - 50) assert.equal(early.opacity, 0, `and it is not yet seen while the beat lasts: ${JSON.stringify(early)}`);
     await sleep(900);
     assert.equal(await loaderOpacity(), 1, 'a slow boot shows it');
     assert.ok(await page.isVisible('#screen-boot .eq-loader'));

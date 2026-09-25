@@ -84,6 +84,38 @@ test('the wall draws the now line on today’s grid only, with a clock label on 
   off.remove();
 });
 
+// The line spans EVERY column (Kevin's local demo, 2026-09-24: at 430 it
+// stopped partway across the grid, and scrolled to Warehouse / Ship Tent there
+// was none). It is `left: 0; right: 0` of its grid's box, and that box was the
+// scroller's width while the fixed-length tracks overflowed it. jsdom lays
+// nothing out, so this pins the two facts the geometry follows from — the
+// browser contract (tests/browser/now-jump.test.mjs) measures the result:
+//   · the line's grid is sized to its tracks (width: max-content), every
+//     track a fixed length, so the box ends where the last column ends;
+//   · the stage strip's row is NOT (its follow reads the lead's scroll range,
+//     and nothing there needed to move).
+test('the now line’s grid is as wide as its columns, so the line crosses the last one', () => {
+  const root = render(pt('2026-09-26T22:30:00'));
+  const line = root.querySelector('.now-line');
+  const grid = line.closest('.times-grid');
+  const css = readFileSync(join(ROOT, 'assets/v3.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+  const lineRule = css.match(/\.now-line\s*\{([^}]*)\}/)[1];
+  assert.match(lineRule, /left:\s*0/);
+  assert.match(lineRule, /right:\s*0/, 'the line is its grid box, edge to edge');
+  const sized = [...css.matchAll(/([^{}]+)\{([^}]*)\}/g)]
+    .filter(([, , body]) => /(^|;)\s*width:\s*max-content/.test(body))
+    .map(([, sel]) => sel.trim())
+    .filter((sel) => sel.includes('.times-grid'));
+  assert.ok(sized.length, 'some rule sizes a times grid to its tracks');
+  assert.ok(sized.some((sel) => grid.matches(sel)), `the line's grid is one of them: ${sized.join(' | ')}`);
+  const tracks = grid.style.gridTemplateColumns.trim().split(/\s+(?![^(]*\))/);
+  assert.ok(tracks.length > 1 && tracks.every((t) => t === 'var(--col-w)'), `fixed tracks, one token: ${grid.style.gridTemplateColumns}`);
+  const strip = root.querySelector('.stage-strip .times-grid');
+  assert.ok(strip, 'the strip is on this wall');
+  assert.ok(!sized.some((sel) => strip.matches(sel)), 'the strip’s row keeps its own box');
+  root.remove();
+});
+
 test('the ticker moves the line without a repaint, and removes it once the day is over', () => {
   const root = render(pt('2026-09-26T14:00:00'));
   const line = root.querySelector('.now-line');

@@ -28,8 +28,10 @@ it is measured, cloned, or crossfaded.
 
 The overlay wears the **same aura background string** as the resting card
 and grows **from the resting card's centre** (true transform-origin, even
-when the box is clamped at a viewport edge). Colour + origin is what the
-eye actually uses to read "that card grew"; glyph registration never was.
+when the box is clamped at a viewport edge, or moved to clear the sticky
+chrome and the phone dock — 2026-09-24, `2026-09-24-zoom-chrome-build.md`).
+Colour + origin is what the eye actually uses to read "that card grew";
+glyph registration never was.
 
 ## Timeline IN (~320ms end to end)
 

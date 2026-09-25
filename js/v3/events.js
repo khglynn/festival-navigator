@@ -202,7 +202,13 @@ const dayOfMonth = (iso) => String(Number(String(iso).slice(8, 10)) || '');
 // now (the stack's answer to the timetable's now line): a member runs until
 // the next member starts, else to its own printed end, else to the room's
 // close, else an hour. A room that only knows its doors and close lights the
-// whole room for that window — the only honest answer when nothing is timed.
+// whole room for that window — the only honest answer when NOTHING in it is
+// timed (a lone headliner with doors glows all night). Where some members
+// are timed, an untimed one gets no window: it is on the bill, time unknown
+// — it sorts after the timed ones and its card shows no time. Before this,
+// three untimed names added to Sun's Midway (S.I.M, Espurr, New Nostalgia;
+// Tixr prints no order or times) all glowed beside Two Shell at 12:45 AM and
+// NOW's first tap pulsed four Midway cards (data agent, 2026-09-24).
 //
 // A CANCELLED member (isCancelled) is in the room and plays no part in it: it
 // sorts last, has no now window, is not "the next member" that ends the set
@@ -237,6 +243,7 @@ export function venueGroupsOf(entries, { fallbackVenue = null } = {}) {
     const closeApprox = list.some((m) => m.e.closeApprox === true || m.e.approx === true);
     const doorsMin = doors ? (parseEventTime(doors) || {}).startMin ?? null : null;
     const closeMin = close ? (parseEventTime(close) || {}).startMin ?? null : null;
+    const anyTimed = list.some((m) => m.t);
     const members = list.map((m, k) => {
       const next = list[k + 1];
       let nowFrom = null;
@@ -245,7 +252,7 @@ export function venueGroupsOf(entries, { fallbackVenue = null } = {}) {
         nowFrom = m.t.startMin;
         const nextStart = next && next.t && next.t.startMin > m.t.startMin ? next.t.startMin : null;
         nowTo = nextStart ?? m.t.endMin ?? (closeMin != null && closeMin > m.t.startMin ? closeMin : null) ?? m.t.startMin + 60;
-      } else if (doorsMin != null && closeMin != null) {
+      } else if (!anyTimed && doorsMin != null && closeMin != null) {
         nowFrom = doorsMin;
         nowTo = closeMin;
       }

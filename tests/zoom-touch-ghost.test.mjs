@@ -144,8 +144,13 @@ test('a desktop that never sees a finger hovers exactly as before', async () => 
   const ctx = makeCtx();
   const card = mountCard(ctx);
   wire(card, ctx);
-  move(120, 300);
+  // A hand's entry as the engines send it: it comes from elsewhere, and the
+  // enter at the new pixel precedes the move that reports it. (An enter at
+  // the pixel the mouse last moved to is content sliding under a still hand
+  // — tests/zoom-still-hand.test.mjs — which is not what this pins.)
+  move(100, 300);
   enter(card, 120, 300);
+  move(120, 300, card);
   await wait(INTENT);
   assert.equal(zoom.zoomedCard(), card);
 });

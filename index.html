@@ -184,6 +184,10 @@
              avatar, day tabs, fest name + sync dot (unified, Kevin note 1.1) -->
         <div class="day-rail" id="day-rail">
           <button class="avatar you you-avatar" id="rail-you" aria-label="Jump to top"></button>
+          <!-- NOW (2026-09-24): the jump to what is playing, while something
+               is (app.js paintNowTabs / jumpToNow). Not a day: the scrollspy
+               never lights it. -->
+          <button class="now-tab" id="rail-now" type="button" aria-label="Jump to what is playing now" hidden><span class="live" aria-hidden="true"></span><span class="word">NOW</span></button>
           <span class="rail-days" id="rail-days"></span>
           <!-- The fest name is the show menu's door (MODEL-V4 §3.1) — app.js
                hangs the popover in this wrap when the fest has more than one
@@ -202,6 +206,7 @@
       <!-- Mobile dock (atlas 21c) -->
       <div class="dock" id="dock">
         <button class="avatar you you-avatar" id="dock-you" aria-label="Jump to top"></button>
+        <button class="now-tab" id="dock-now" type="button" aria-label="Jump to what is playing now" hidden><span class="live" aria-hidden="true"></span><span class="word">NOW</span></button>
         <span class="days" id="dock-days"></span>
         <span class="sort-wrap" id="dock-fest-wrap" style="flex: none;">
           <button class="fest-link" id="dock-fest-link" aria-label="Open settings">
@@ -251,6 +256,10 @@
     </div>
 
     <div id="toast-root"></div>
+    <!-- What NOW landed on, said to a screen reader (focus stays on NOW). Here
+         from the first paint, empty: a live region added later is often not
+         heard. -->
+    <div id="now-status" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
 
     <script src="/vendor/html2canvas.min.js" defer></script>
     <script type="module" src="/js/v3/app.js"></script>

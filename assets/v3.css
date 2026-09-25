@@ -471,8 +471,11 @@ button.room-head { cursor: pointer; }
 }
 /* Each edge fades only while there is something past it, so the last tab —
  * often the one you are standing in — is never the dim one. */
-.dock .days.more-left, .day-rail .rail-days.more-left { --fade-l: 18px; }
-.dock .days.more-right, .day-rail .rail-days.more-right { --fade-r: 18px; }
+/* How far a clipped edge fades: one number, which app.js fitNowTab reads too
+ * (a neighbour day is only seen once it clears the gap AND the fade). */
+.dock .days, .day-rail .rail-days { --row-fade: 18px; }
+.dock .days.more-left, .day-rail .rail-days.more-left { --fade-l: var(--row-fade); }
+.dock .days.more-right, .day-rail .rail-days.more-right { --fade-r: var(--row-fade); }
 .dock .day-tab { font-weight: 700; font-size: 12px; padding-bottom: 3px;
                  border-bottom: 2px solid transparent; color: var(--text-tertiary);
                  background: none; border-top: none; border-left: none; border-right: none;
@@ -526,7 +529,7 @@ button.room-head { cursor: pointer; }
 
   /* --- the opt-outs: small controls that take borrowed space instead ------ */
   .person-chip, .notes-chip, .chip-notes, .note-action, .f-chip,
-  .dock .day-tab, .day-rail .day-tab,
+  .dock .day-tab, .day-rail .day-tab, .now-tab,
   .back-btn, .gear-btn, .fest-link, .sheet-close,
   button.avatar,
   .toggle,      /* a 40x24 switch; stretching its track to 44 breaks it, and the
@@ -535,7 +538,7 @@ button.room-head { cursor: pointer; }
     min-height: 0;
   }
   .person-chip, .notes-chip, .chip-notes, .note-action, .f-chip,
-  .dock .day-tab, .day-rail .day-tab,
+  .dock .day-tab, .day-rail .day-tab, .now-tab,
   .back-btn, .gear-btn, .fest-link, .sheet-close,
   button.avatar {
     position: relative;
@@ -545,9 +548,13 @@ button.room-head { cursor: pointer; }
    * tap meant for its neighbour — in a crowd, that is a pick recorded under the
    * wrong person's name. */
   .person-chip::after, .notes-chip::after, .note-action::after, .f-chip::after,
-  .dock .day-tab::after, .day-rail .day-tab::after {
+  .dock .day-tab::after, .day-rail .day-tab::after, .now-tab::after {
     content: ''; position: absolute; inset: -14px -2px;
   }
+  /* NOW down to its dot is 17px wide: it takes the gap on its right (the
+   * days' own reach is 2px) but not on its left, where the avatar's reach
+   * already is. */
+  .now-tab.compact::after { inset: -14px -10px -14px -2px; }
   /* Narrow glyph controls are 17-28px WIDE, so a tall-but-thin target is still a
    * miss — and they are isolated, so they can take the horizontal room.
    * `button.avatar` on purpose: the avatars inside cards are spans, and giving
@@ -569,6 +576,37 @@ button.room-head { cursor: pointer; }
    * on the densest surface in the app. */
   .card button::after { content: none; }
 }
+/* NOW (2026-09-24, Kevin: "where is ross likely right now"): the jump to
+ * what is playing, before the day tabs in the dock and the rail — in each
+ * one's own day-tab type, so it reads as one of the row, but in the now
+ * line's violet (brand, never the fest accent: it is app chrome), with a live
+ * dot that breathes. The motion kill rules make the dot still under Reduce
+ * Motion and Low Power, which is what they are for. It is only there while
+ * something is live (app.js paintNowTabs); `hidden` really hides it. */
+.now-tab { display: inline-flex; align-items: center; gap: 5px; flex: none; position: relative;
+           background: none; border: none; border-bottom: 2px solid transparent; cursor: pointer;
+           color: rgb(var(--brand)); padding: 0 0 3px; }
+.now-tab[hidden] { display: none; }
+.now-tab .live { width: 5px; height: 5px; border-radius: var(--r-pill); background: rgb(var(--brand));
+                 box-shadow: 0 0 5px rgba(var(--brand), .8); animation: now-live 2.4s ease-in-out infinite; }
+@keyframes now-live { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+/* Where the days would lose the day you are in (app.js fitNowTab — a long
+ * fest name on a 320 dock), NOW keeps only its dot, in a faint ring so it
+ * still reads as something to tap rather than a stray pixel. */
+.now-tab.compact { width: 17px; height: 17px; padding: 0; justify-content: center; gap: 0;
+                   border: 1.5px solid rgba(var(--brand), .45); border-radius: var(--r-pill); }
+.now-tab.compact .word { display: none; }
+.now-tab.compact .live { width: 7px; height: 7px; }
+.dock .now-tab { font-family: var(--font-ui); font-weight: 800; font-size: 12px; }
+/* The last resort (app.js fitNowTab): even beside NOW's dot the days are
+ * narrower than one tab, so they claim their widest and the fest name gives
+ * way with an ellipsis. !important only to out-rank the wrap's inline
+ * `flex: none` in index.html, which every other state keeps. */
+.dock.squeezed #dock-fest-wrap { flex: 0 1 auto !important; min-width: 0; }
+.dock.squeezed .fest-link { flex: 0 1 auto; max-width: 100%; min-width: 0; }
+.dock.squeezed .fest-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.day-rail .now-tab { font-family: var(--font-display); letter-spacing: var(--track-label);
+                     font-size: var(--fs-micro); text-transform: uppercase; padding: 2px 0 3px; }
 .dock .day-tab .num { font-size: 9px; font-weight: 600; margin-left: 2px; }
 .dock .day-tab.active { color: rgb(var(--fest)); font-weight: 800; border-bottom-color: rgb(var(--fest)); }
 /* Shared between dock and day rail (one component, two positions). */
@@ -658,6 +696,15 @@ button.room-head { cursor: pointer; }
   }
 }
 .times-grid { display: grid; gap: 4px; min-width: 100%; } /* columns set inline: repeat(n, var(--col-w)) */
+/* A day's grid is as wide as its columns, not as its scroller (2026-09-24).
+ * Its tracks are fixed lengths that overflow the scroller on a phone, and the
+ * box stayed the scroller's width while they did — so the now line, which is
+ * `left: 0; right: 0` of the box, spanned the first screen and stopped: Kevin,
+ * scrolled to Warehouse and Ship Tent at 430, saw no line at all (v86 had it
+ * too). max-content makes the box the tracks' sum; min-width still fills a
+ * window wider than the columns. The strip's row keeps its own box: its follow
+ * reads the LEAD's scroll range (--strip-max), which is the same either way. */
+.times-wrap:not(.stage-strip) > .times-scroll > .times-grid { width: max-content; }
 .stage-head { font-family: var(--font-display); letter-spacing: var(--track-display);
               color: rgb(var(--fest)); font-size: 12.5px;
               min-width: 0; padding: 0 8px; text-align: center;
@@ -1102,12 +1149,10 @@ a.f-cancel:hover { border-bottom-color: rgba(255, 255, 255, .75); }
  * the card of whoever is playing wears the line instead: 1.5px of brand (the
  * card's own 1px border, recoloured, plus half a pixel of spread — no layout
  * moves) and the same soft glow. Brand, never the fest accent: this is app
- * chrome, and the accent has four homes. The label is the .now-label
- * component again, parked in the card's top-right corner instead of riding a
- * line's centre — so it needs the transform undone, not a second component. */
+ * chrome, and the accent has four homes. No tag in the card's corner since
+ * 2026-09-24: the NOW button's landing teaches what the ring means. */
 .card.now { border-color: rgb(var(--brand));
             box-shadow: 0 0 0 .5px rgb(var(--brand)), 0 0 6px rgba(var(--brand), .8); }
-.now-label.in-card { top: 5px; right: 5px; transform: none; }
 
 /* ---- events: the composed day, venue groups (MODEL-V4, 2026-09-16) ------------- */
 /* claude-plans/2026-09-16-wall-v4/MODEL-V4.md. A day is the unit (a

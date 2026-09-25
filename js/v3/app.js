@@ -9,7 +9,7 @@ import * as sync from '../sync.js';
 import * as spotify from '../spotify.js';
 import * as model from './model.js';
 import { loadFestivalIndex, loadFestival, fetchCustomFestivals, mergeCustoms, FESTIVAL_INDEX, defaultFestivalId } from '../festivals.js';
-import { renderWall, refreshCard, showUndoToast, showToast, wireScrollspy, colorIndexOf, positionNowLines, positionNowMarks, scrollToNowLine, dayNavOf, roomsOf, cardFor, roomOf, isStripScroller, DAY_ANCHOR, festLinkLabel } from './wall.js';
+import { renderWall, refreshCard, showUndoToast, showToast, wireScrollspy, colorIndexOf, positionNowLines, positionNowMarks, scrollToNowLine, dayNavOf, roomsOf, cardFor, roomOf, isStripScroller, DAY_ANCHOR, festLinkLabel, nowLanding, nowStops, nowStep, nowPulseable, nowLabelOf, nowSaid } from './wall.js';
 import { loadPeopleFilter, savePeopleFilter, togglePerson, pruneToActive, loadFolded, applyFoldToggle } from './filters.js';
 import { OUT_MS, CASCADE_MS, STAGGER_MS, EASE_ARRIVE, EASE_LEAVE, EASE_SURFACE, canAnimate } from './motion.js';
 import { scrolledBefore, rememberScrolled, dayOfScrollKey, festivalClock } from './now.js';
@@ -436,6 +436,316 @@ function startClock() {
 function tickClock(date = new Date()) {
   positionNowLines($('wall-root'), date);
   positionNowMarks($('wall-root'), date);
+  paintNowTabs(date); // the same minute decides whether NOW is there at all
+}
+
+// ---- NOW: the jump to what is playing (Kevin, 2026-09-24) -------------------------
+// "an option to the left of the days … if you tap it goes to now. A use case
+// I'm thinking about is like 'where is ross likely right now' — tapping ross
+// on the top to highlight him and then clicking something in the scroll to
+// time bar." NOW sits before the day tabs in the dock and the rail, in the
+// now line's violet with a live dot, and only while something is live on the
+// wall you are looking at: a now line on today's grid or a NOW mark on a
+// stack (wall.js nowLanding decides what, and whether). It is not a day, so
+// the scrollspy never lights it; it arrives with the beat and leaves quick
+// and plain, and the days beside it slide to make room.
+const NOW_TABS = ['dock-now', 'rail-now'];
+function paintNowTabs(date = ctx.now || new Date()) {
+  const live = !!nowLanding($('wall-root'), ctx, date);
+  for (const id of NOW_TABS) { showNowTab($(id), live); fitNowTab($(id)); }
+}
+// The days keep room for the day you are in AND a glimpse of the days either
+// side — the glimpse is what says the row scrolls. On a phone the dock's days
+// row already scrolls (Portola's four overflow a 390 dock by a few px), and
+// NOW narrows it further. With the day you are in centred, a neighbour shows
+// only once the room beside it clears the gap between tabs AND the edge fade
+// (the first cut counted neither and kept NOW's word with one lone day
+// showing: Portola at 320, ACL at 375 — review, 2026-09-24). Where the row is
+// shorter than that, NOW keeps only its live dot — still a button, still named
+// "Jump to what is playing now". Gap and fade are read from the row's own CSS
+// (`--row-fade` is the number the fade itself uses). Measured in the full form
+// every time, so the answer never feeds on itself.
+//
+// And the last resort: where even beside the dot the row is narrower than one
+// day (ACL's long name at 320 wherever Inter draws wide — Linux CI measured a
+// 36px row for a ~40px tab, 2026-09-24; Android draws like Linux), the row
+// claims its widest tab and the fest name gives way with an ellipsis. The
+// day you are in is never what NOW squeezes out.
+function fitNowTab(tab) {
+  if (!tab) return;
+  const bar = tab.parentElement;
+  const row = tab.nextElementSibling;
+  tab.classList.remove('compact');
+  if (bar) bar.classList.remove('squeezed');
+  if (row) row.style.minWidth = '';
+  if (tab.hidden || !row || !row.children.length) return;
+  const css = window.getComputedStyle(row);
+  const gap = parseFloat(css.columnGap) || 0;
+  const fade = parseFloat(css.getPropertyValue('--row-fade')) || 0;
+  const widest = Math.max(...[...row.children].map((t) => t.offsetWidth));
+  if (row.clientWidth >= Math.min(row.scrollWidth, widest + 2 * (gap + fade))) return;
+  tab.classList.add('compact');
+  if (row.clientWidth < Math.min(row.scrollWidth, widest) && bar) {
+    row.style.minWidth = `${widest}px`;
+    bar.classList.add('squeezed');
+  }
+}
+// The day tabs beside a NOW that came or went slide from where they were (a
+// FLIP: transform only, the layout is already done). Tab by tab, not the
+// row: the dock centres a row that fits, so its tabs move by HALF the space
+// NOW took, and a row-wide slide would jump before it glided.
+const tabLefts = (row) => new Map(row ? [...row.children].map((t) => [t, t.getBoundingClientRect().left]) : []);
+function slideTabs(before) {
+  for (const [t, left] of before) {
+    if (!t.isConnected || !canAnimate(t, ctx)) continue;
+    const dx = left - t.getBoundingClientRect().left;
+    if (Math.abs(dx) >= 1) t.animate([{ transform: `translateX(${dx}px)` }, { transform: 'none' }], { duration: CASCADE_MS, easing: EASE_ARRIVE });
+  }
+}
+function showNowTab(tab, on) {
+  if (!tab) return;
+  const shown = !tab.hidden && !tab.dataset.leaving;
+  if (on === shown) return;
+  const row = tab.nextElementSibling;
+  if (on) {
+    delete tab.dataset.leaving;
+    if (tab.getAnimations) tab.getAnimations().forEach((a) => a.cancel()); // a leave cut short
+    const before = tabLefts(row);
+    tab.hidden = false;
+    fitNowTab(tab);
+    slideTabs(before);
+    if (canAnimate(tab, ctx)) {
+      tab.animate([{ opacity: 0, transform: 'translateX(-6px)' }, { opacity: 1, transform: 'none' }],
+        { duration: CASCADE_MS, delay: STAGGER_MS, easing: EASE_ARRIVE, fill: 'backwards' });
+    }
+    return;
+  }
+  tab.dataset.leaving = '1';
+  const gone = () => {
+    if (!tab.dataset.leaving) return; // it came back while leaving
+    delete tab.dataset.leaving;
+    const before = tabLefts(row);
+    tab.hidden = true;
+    fitNowTab(tab); // gone: whatever room it took is given back
+    if (tab.getAnimations) tab.getAnimations().forEach((a) => a.cancel());
+    slideTabs(before);
+  };
+  if (!canAnimate(tab, ctx)) { gone(); return; }
+  const a = tab.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateX(-6px)' }],
+    { duration: OUT_MS, easing: EASE_LEAVE, fill: 'forwards' });
+  a.onfinish = gone;
+  a.oncancel = gone;
+}
+
+// Where a person can see: under the sticky chrome — inside a grid, under its
+// pinned stage strip too — and above the dock on a phone.
+function seenBand(inGrid) {
+  const vars = window.getComputedStyle(document.documentElement);
+  let top = parseFloat(vars.getPropertyValue('--jump-offset')) || 8;
+  if (inGrid) {
+    const block = inGrid.closest('.tt-block');
+    const strip = block ? block.querySelector('.stage-strip') : null;
+    top = (parseFloat(vars.getPropertyValue('--rail-h')) || 0) + (strip ? strip.offsetHeight : 0);
+  }
+  const dock = $('dock');
+  const docked = dock && window.getComputedStyle(dock).display !== 'none' && !dock.classList.contains('hidden');
+  return { top, bottom: docked ? dock.getBoundingClientRect().top : window.innerHeight };
+}
+
+// Tap NOW: land on what is playing (wall.js nowLanding says what, nowStops
+// says where each tap after it goes).
+//   · the now line — a third of the way down what you can see, the day-of
+//     open's own landing, so the sets crossing it (playing) and the next hour
+//     are both on screen;
+//   · a highlighted person's pick on the grid — the LINE AND THE CARD
+//     together (Kevin: "the line and highlight combo"); the grid slid
+//     sideways to frame the stop's cells when they are off screen;
+//   · a card in a stack — its NOW mark is its line: the card a quarter of the
+//     way down under the chrome, its venue's head above it.
+// TAP AGAIN (Kevin, 2026-09-24: "multiple taps … should move the user to the
+// next now item … by height"): while the page still sits where the last NOW
+// left it — down and across, within 4px, or still gliding there — and that
+// stop is still live, the next tap goes to the next stop (down the page;
+// across a grid where a highlighted person's picks sit in columns that do not
+// fit the screen together), and after the last back to the top. Scroll away
+// by hand, either way, and the next tap is a fresh "take me to now" — the
+// best answer again. One stop only: a repeat tap pulses in place — while the
+// page still shows it; once the clock has walked it off screen, the tap
+// brings it back (wall.js nowStep).
+// What it lands on pulses (transform only; none under Reduce Motion or Low
+// Power): the highlighted person's picks in that stop, or the stop's NOW
+// cards; a line landing does not — the glide there is its answer. A tap that
+// moves nothing at all still answers: where no card pulses, the stop's line
+// and its time label on the rail do (the phone walk, 2026-09-24: Sat 7 PM,
+// nobody highlighted, the line the only stop — tap 2 neither moved nor
+// pulsed, a dead button). A highlight with nothing on gets the quiet
+// line once, on the first tap, and no card pulse on any tap — a stranger's
+// card pulsing reads as "Kat is here" (review, 2026-09-24); the line is not
+// anyone's, so it may.
+// Where the last NOW left the page, for the next tap (wall.js stillThere
+// says what it holds and why the grid is named by its day).
+let nowCycle = null;
+// Every tap is numbered; a tap's pulse waits for its glide, and a later tap
+// cancels it (two quick taps pulsed the first stop's cards on the second's).
+let nowSeq = 0;
+const pageGeo = (root) => ({
+  scrollY: window.scrollY,
+  maxY: Math.max(0, document.documentElement.scrollHeight - window.innerHeight),
+  now: performance.now(),
+  box: (el) => el.getBoundingClientRect(),
+  band: (grid) => seenBand(grid),
+  scroller: (cell) => {
+    const el = cell.closest('.times-scroll');
+    if (!el) return null;
+    return { el, x: el.getBoundingClientRect().left, left: el.scrollLeft, width: el.clientWidth, max: Math.max(0, el.scrollWidth - el.clientWidth) };
+  },
+  gridLeft: (iso) => {
+    const grid = root.querySelector(`.times-grid[data-iso="${CSS.escape(iso)}"]`);
+    const el = grid && grid.closest('.times-scroll');
+    return el ? el.scrollLeft : null;
+  },
+});
+function jumpToNow() {
+  const seq = ++nowSeq;
+  const root = $('wall-root');
+  const geo = pageGeo(root);
+  const plan = nowStops(root, ctx, ctx.now || new Date(), geo);
+  if (!plan || !plan.stops.length) { nowCycle = null; paintNowTabs(); return; }
+  const { best } = plan;
+  // Which stop, led by what, landing where: wall.js nowStep. A stop lands the
+  // same way every time it is reached — first tap, next tap or wrap — at its
+  // own landing (its top member's). Landing on the answer's own spot instead
+  // put the first tap and the wrap a few hundred px apart when the answer was
+  // not the stop's top card (Fri 11:30 PM at 1280: 618 vs 418).
+  const { fresh, stop, lead, target } = nowStep(plan, nowCycle, geo);
+  const quiet = fresh && best.match === false ? nothingOnFor(ctx.filterPeople || []) : null;
+  if (quiet) showToast($('toast-root'), quiet);
+  // Said as well as shown (Codex, 2026-09-24: NOW announced nothing — the
+  // page moved under a screen reader in silence). The quiet line leads when
+  // there is one; the toast is unchanged, and it is not a live region, so it
+  // is heard once, from here.
+  sayNow(quiet ? `${quiet} ${nowSaid(plan, stop)}` : nowSaid(plan, stop));
+  const smooth = canAnimate(root, ctx);
+  const behavior = smooth ? 'smooth' : 'auto';
+  // Across: a stop of grid cells slides its grid to frame them (wall.js
+  // frameSlide) — only when some of them are out of view, so a grid you are
+  // already looking at stays put.
+  let slid = false;
+  let sc = null;
+  let sl = 0;
+  if (stop.frame && stop.frame.sc.el.isConnected) {
+    sc = stop.frame.sc.el;
+    sl = sc.scrollLeft;
+    const inView = stop.frame.lo >= sl + 8 && stop.frame.hi <= sl + sc.clientWidth - 8;
+    if (!inView) {
+      sl = stop.slide;
+      if (Math.abs(sl - sc.scrollLeft) >= 1) { sc.scrollTo({ left: sl, behavior }); slid = true; }
+    }
+  }
+  const moves = Math.abs(target - window.scrollY) >= 1;
+  if (moves) window.scrollTo({ top: target, behavior });
+  nowCycle = { lead: lead.key, y: target, grid: sc ? stop.frame.iso : null, sl, until: (moves || slid) && smooth ? performance.now() + 1500 : 0 };
+  // The "still gliding there" grace lasts only as long as the glide: when it
+  // ends (both glides, if the grid slid too), where the page stands is the
+  // whole answer again — so a hand scroll right after a landing makes the
+  // next tap fresh, however quick (CI, 2026-09-24: a hand scroll inside the
+  // old fixed 1.5 s was taken for "still there" and the tap went on to the
+  // next stop). Engines without scrollend (WebKit before 26) keep the 1.5 s cap.
+  if (nowCycle.until) {
+    const mine = nowCycle;
+    let glides = (moves ? 1 : 0) + (slid ? 1 : 0);
+    const ended = () => { glides -= 1; if (glides <= 0 && nowCycle === mine) mine.until = 0; };
+    const onPage = () => { window.removeEventListener('scrollend', onPage); ended(); };
+    const onGrid = () => { sc.removeEventListener('scrollend', onGrid); ended(); };
+    if (moves) window.addEventListener('scrollend', onPage);
+    if (slid) sc.addEventListener('scrollend', onGrid);
+    // No listener outlives the cap (an engine with no scrollend never calls them).
+    setTimeout(() => { window.removeEventListener('scrollend', onPage); if (sc) sc.removeEventListener('scrollend', onGrid); }, 1600);
+  }
+  // What pulses: the stop's cards — the highlighted person's picks, or, for
+  // nobody, the NOW cards of a stop a card leads. Never a line's stop, and
+  // never with no match — except that a tap that moved nothing pulses the
+  // stop's line, so no tap is dead.
+  const pulses = best.match === true || (best.match === null && lead.card);
+  const cards = pulses ? stop.members.filter((m) => m.card).map((m) => m.card) : [];
+  const bumps = cards.filter((c) => canAnimate(c, ctx));
+  if (!bumps.length) {
+    if (!moves && !slid) pulseLine((stop.members.find((m) => m.line) || {}).line || null);
+    return;
+  }
+  // Who to pulse, by identity rather than by node: the wall can replace a
+  // card during the glide (a poll repaint, a pick), and the pulse belongs on
+  // whatever node stands there when it lands.
+  const who = bumps.map((c) => ({ card: c, artist: c.dataset.artist, occ: c.dataset.occ || '', room: roomOf(c) }));
+  let pulsed = false;
+  const pulse = () => {
+    if (pulsed) return;
+    // Clean up first, whatever happens next: a return before this line left a
+    // scrollend listener (and the detached card it closed over) on the window
+    // for the life of the page (review, 2026-09-24).
+    pulsed = true;
+    window.removeEventListener('scrollend', pulse);
+    // A later NOW tap owns the page: this tap's pulse would land on its stop.
+    if (seq !== nowSeq) return;
+    // Only what still answers when the glide lands, by the rule that chose it
+    // (wall.js nowPulseable): the wall can change under a glide, and a pick
+    // dropped mid-glide must not pulse as though it were still theirs.
+    const answers = new Set(nowPulseable(root, ctx, ctx.now || new Date(), best.match));
+    for (const w of who) {
+      let target = w.card;
+      if (!target.isConnected) {
+        let occ = null;
+        try { occ = w.occ ? JSON.parse(w.occ) : null; } catch { occ = null; }
+        target = cardFor(root, w.artist, occ, { room: w.room });
+      }
+      if (!target || !answers.has(target) || !canAnimate(target, ctx)) continue;
+      // 6% of an ordinary card is a few pixels; 6% of a six-hour slab is forty.
+      // The pulse grows a card by at most ~12px on its longer side.
+      const size = target.getBoundingClientRect();
+      const grow = Math.min(0.06, 12 / Math.max(1, size.width, size.height));
+      target.animate([{ transform: 'scale(1)' }, { transform: `scale(${(1 + grow).toFixed(4)})`, offset: 0.4 }, { transform: 'scale(1)' }],
+        { duration: 460, iterations: 2, easing: EASE_SURFACE });
+    }
+  };
+  // Already there (a repeat tap on the one stop): the pulse is the whole answer, at once.
+  if (!moves && !slid) { pulse(); return; }
+  window.addEventListener('scrollend', pulse);
+  setTimeout(pulse, 750); // a sideways-only glide, or an engine without scrollend (WebKit)
+}
+// The polite status region (index.html #now-status). A live region speaks
+// when its text CHANGES, so a repeat tap that lands on the same words would
+// be silent: the region is emptied, then filled a beat later — and only by
+// the latest tap, when taps come quicker than the beat.
+let sayTimer = null;
+function sayNow(text) {
+  const region = $('now-status');
+  if (!region) return;
+  region.textContent = '';
+  clearTimeout(sayTimer);
+  sayTimer = setTimeout(() => { region.textContent = text; }, 100);
+}
+// The line's pulse, for a tap that moved nothing and pulses no card: the line
+// thickens and its time label on the rail swells, twice, on the card pulse's
+// beat and curve — transform only (the label keeps its own centring
+// translate), and nothing at all under Reduce Motion or Low Power.
+function pulseLine(line) {
+  if (!line || !line.isConnected || !canAnimate(line, ctx)) return;
+  const beat = { duration: 460, iterations: 2, easing: EASE_SURFACE };
+  line.animate([{ transform: 'scaleY(1)' }, { transform: 'scaleY(2)', offset: 0.4 }, { transform: 'scaleY(1)' }], beat);
+  const label = nowLabelOf(line);
+  if (label) label.animate([{ transform: 'translateY(-50%) scale(1)' }, { transform: 'translateY(-50%) scale(1.15)', offset: 0.4 }, { transform: 'translateY(-50%) scale(1)' }], beat);
+}
+
+// The quiet line when the highlighted people have nothing on: "Nothing of
+// Kat’s is on right now — here’s what is." Yours, one name, two names, or
+// "theirs" past that; the landing below it is what is on.
+function nothingOnFor(people, meName = ctx.meName) {
+  let whose;
+  if (people.length === 1 && people[0] === meName) whose = 'yours';
+  else if (people.length === 1) whose = `${people[0]}’s`;
+  else if (people.length === 2) whose = `${people[0]}’s or ${people[1]}’s`;
+  else whose = 'theirs';
+  return `Nothing of ${whose} is on right now — here’s what is.`;
 }
 
 // Where a day tab lands on the wall, in the wall's own words (DAY_ANCHOR):
@@ -595,6 +905,9 @@ function renderDayNav() {
   }
   unspy();
   unspy = wireScrollspy([dock, rail], $('wall-root'));
+  // NOW rides with the tabs: it is there exactly while this wall has
+  // something live (a repaint, a search, a hidden room can all change that).
+  paintNowTabs();
 }
 
 // ---- the show menu (MODEL-V4 §3.1) ------------------------------------------------
@@ -2490,11 +2803,17 @@ export function init() {
     renderDayNav(); // scrollspy re-wires against the filtered day blocks (gate F8)
     measureStickyChrome(); // search mode drops the stage strip — jump offset shrinks
   });
+  // A late font changes how wide the fest name and the days draw, so NOW
+  // re-reads the room it has (the corners' refit does the same, wall.js).
+  if (document.fonts && typeof document.fonts.addEventListener === 'function') {
+    document.fonts.addEventListener('loadingdone', () => NOW_TABS.forEach((id) => fitNowTab($(id))));
+  }
   let resizeTimer = null;
   window.addEventListener('resize', () => {
     clearTimeout(resizeTimer);
     resizeTimer = setTimeout(() => {
       measureStickyChrome();
+      NOW_TABS.forEach((id) => fitNowTab($(id))); // a rotation changes the room the days have
       // Each scroller clamps its own scrollLeft during a resize, which can
       // desync the mirrored columns from the strip (Kevin's wide-screen
       // wonk screenshot, 2026-07-12) — re-mirror each group to its first.
@@ -2519,6 +2838,7 @@ export function init() {
   const jumpTop = () => window.scrollTo({ top: 0, behavior: ctx.lowPower ? 'auto' : 'smooth' });
   $('dock-you').addEventListener('click', jumpTop);
   $('rail-you').addEventListener('click', jumpTop);
+  for (const id of NOW_TABS) $(id).addEventListener('click', jumpToNow);
   const openSettingsLayer = () => { openSettings(); router.push('settings'); };
   $('gear-btn').addEventListener('click', openSettingsLayer);
   // The fest name opens the show menu when the fest has rooms to choose

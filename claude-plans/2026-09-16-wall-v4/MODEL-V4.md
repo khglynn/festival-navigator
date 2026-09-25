@@ -85,8 +85,11 @@ holding one `.venue-group` per venue:
   mark ("don't need to explain now").
 - **The now mark.** A stack has no clock to draw a line on, so the card of
   whoever is playing right now carries `.card.now`: a 1.5px ring in `--brand`
-  with the soft glow the now line uses, and a small `NOW` label (the
-  `.now-label` component, top-right of the card). "Playing now" = now is in
+  with the soft glow the now line uses. (It also wore a small `NOW` tag in
+  its top-right corner until 2026-09-24, when the NOW button made it
+  redundant — Kevin: "users can figure out what the highlight means from the
+  auto-scroll". A screen reader hears ", playing now" at the end of the
+  card's name instead.) "Playing now" = now is in
   `[start, next member's start)` for a run, `[start, end)` for a ranged show,
   `[doors, close)` for a doors-only show; the 1-minute ticker that moves the
   now line toggles the class without a repaint. Same violet, same ticker,
@@ -303,6 +306,82 @@ build log beside it. What the code does now:
   has no head (its label was never a note target).
 - **Lists** (a search, a lineup fest's by-day list, THE LINEUP, EVERYTHING
   ELSE, NOTES · FEST) keep a one-line `.list-head`, never a door.
+
+## 3d. NOW, the jump to what is playing, 2026-09-24
+
+Kevin: "an option to the left of the days … if you tap it goes to now. A use
+case I'm thinking about is like 'where is ross likely right now' — tapping
+ross on the top to highlight him and then clicking something in the scroll to
+time bar." Build log: `claude-plans/2026-09-24-now-jump-build.md`.
+
+- **Where.** A `NOW` button before the day tabs, in the dock and in the rail,
+  in `--brand` (the now line's violet, never `--fest`) with a breathing dot.
+  It is not a day: no `data-day`, never `.active`, outside the tab rows.
+- **When.** Only while something is live on the wall you are looking at: a
+  now line on a grid, or a NOW mark on a stack (afters and Late nights
+  included). The minute ticker that moves the line brings it and takes it
+  away; it arrives with the beat, leaves quick and plain, and the day tabs
+  beside it slide.
+- **What a tap lands on** (`wall.js nowLanding`). No highlight: the now
+  line, a third of the way down what you can see, while the clock is inside
+  the grid's hours — past them (the grid closed, the afters on), the first
+  NOW-marked card in wall order. A highlight: that person's pick that
+  is playing now, grid cell or stack card, highest level first (must), then
+  the most recent start (the set that just began, not a room live since
+  doors); on the grid the line comes with it and both land in
+  view together, the card's column scrolled on screen; in a stack the card
+  sits under the chrome with its venue's head above it. One small pulse on
+  the card (none under Reduce Motion / Low Power). Nothing of theirs live →
+  as with no highlight, no pulse, and one quiet line on the toast ("Nothing
+  of Kat's is on right now — here's what is."); the highlight keeps dimming
+  the rest.
+- **Tap again** (Kevin, 2026-09-24: "multiple taps … should move the user to
+  the next now item … if filtered to a person it should only go to nows for
+  that person … by height"). The STOPS are read off the wall at every tap
+  (`wall.js nowStops`): with a highlight that has live picks, those picks
+  only; otherwise every live thing — each now line while the clock is inside
+  its grid's hours, and every NOW-marked stack card. Each is landed as the
+  first tap lands it; going down the page, whatever a stop's landing already
+  shows (inside the visible band, 8px in from the sticky chrome and the
+  dock) joins that stop, so side-by-side cards and a row of afters in view
+  under the line are one stop and no tap scrolls to where you already are.
+  Across, too: a stop frames its grid cells in one sideways slide, and a
+  highlighted pick whose column does not fit that frame is its own stop at
+  the same height, reached by the slide (on a phone two 176px columns do
+  not fit together). Stops run top to bottom, then left to right. With
+  nobody highlighted the line is one stop — it crosses every column. One
+  show is one member: a show billed to two rooms (Horse Meat Disco, Friday,
+  "Afters & Folsom") renders two cards but is reached once, by its first
+  card in wall order. The first tap is the stop holding the best answer; a
+  tap while the page sits where the last NOW left it (down and across within
+  4px — the grid it slid named by its day, so a repaint that puts the scroll
+  back keeps the cycle — or still gliding there) goes to the next stop, then
+  wraps to the top; a hand scroll either way makes the next tap fresh
+  (`wall.js stillThere`, `nowStep`). One stop: a repeat tap stays where it
+  is while that landing still shows the stop, and once the clock has walked
+  the stop off screen (a line four hours further down) it lands afresh. A
+  stop lands the same way every time. It pulses its cards (the highlight's
+  picks, or a card-led stop's NOW cards) when the glide lands, only those
+  that still answer then (a pick dropped mid-glide does not pulse; a later
+  tap cancels an earlier tap's pulse). A line's stop does not pulse its
+  landing — the glide is the answer — but a tap that moves nothing and
+  pulses no card pulses the line and its time label on the rail, so no tap
+  is dead (the line is nobody's, so this holds under a highlight with nothing
+  on too). A highlight with nothing on never pulses a card — its quiet line
+  shows on the first tap only.
+- **Said, not only shown.** Each tap puts what it landed on in a polite,
+  visually hidden status region (`#now-status`, `wall.js nowSaid`): the
+  line's time and the sets crossing it, cards by name and place ("Milli Meng
+  at Public Works"), and which stop of how many; the quiet line leads on a
+  fresh no-match tap. A repeat tap is said again. Focus stays on NOW.
+- **The now mark is the ring alone** since 2026-09-24: the `NOW` tag in the
+  card's corner went ("users can figure out what the highlight means from
+  the auto-scroll"); a live card's accessible name ends ", playing now".
+- **Room.** The dock's days already scroll on a phone. Where they would lose
+  the day you are in (a long fest name on a 320 dock), NOW keeps only its
+  dot, in a faint ring; where even that leaves less than one day, the fest
+  name gives way with an ellipsis.
+- **How it works** gets no row, as the now line and the now mark get none.
 
 ## 4. Notes: artist, fest, dates (Kevin, 2026-09-17 — "a defensible MVP")
 
