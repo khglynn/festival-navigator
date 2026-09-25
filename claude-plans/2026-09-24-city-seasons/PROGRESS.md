@@ -233,3 +233,9 @@ missing data.
   research never writes links, festival sets can't carry them, The War on
   Drugs' Universe link). CI green at ffd9614; handed to the pre-Portola
   session for v88. `BUILD-PLAN.md` written for the season.
+- 2026-09-25 ~12:40 PM PT, after Kevin's restart: nothing of this session's
+  was left running. The pre-Portola session is integrating v88 on
+  `release/v88` (local, last commit 12:37 PM PT), which merges #29 at its
+  final head ffd9614 and the error-capture work; production still serves
+  v87. The keys, the Slack channel and Kevin's read of `BUILD-PLAN.md` are
+  still open; none of them blocks the weekend.
