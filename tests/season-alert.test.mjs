@@ -60,3 +60,8 @@ test('calendar times are Austin wall-clock times, right on both sides of the DST
   const allDay = new URL(calendarUrl({ name: 'Freaky Deaky', venue: 'Expo Center', date: '2026-10-30' }, 'Expo Center, Austin, TX'));
   assert.equal(allDay.searchParams.get('dates'), '20261030/20261031', 'no time is an all-day event, never a guessed hour');
 });
+
+test('a 1 AM set filed under the night before goes on the calendar the next morning', () => {
+  const u = new URL(calendarUrl({ name: 'Late Set', venue: 'Kingdom', date: '2026-10-02', time: '1 AM' }, 'Kingdom, Austin, TX'));
+  assert.equal(u.searchParams.get('dates').slice(0, 16), '20261003T060000Z');
+});

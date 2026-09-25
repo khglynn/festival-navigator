@@ -56,7 +56,8 @@ export function calendarUrl(show, place) {
     const next = new Date(`${show.date}T12:00:00Z`); next.setUTCDate(next.getUTCDate() + 1);
     dates = `${show.date.replace(/-/g, '')}/${next.toISOString().slice(0, 10).replace(/-/g, '')}`;
   } else {
-    const t = austinInstant(show.date, start);
+    // The feed files a 1 AM set under the night before; the clock is the next morning.
+    const t = new Date(austinInstant(show.date, start).getTime() + (start < 5 * 60 ? 864e5 : 0));
     dates = `${gcal(t)}/${gcal(new Date(t.getTime() + 3 * 3600e3))}`;
   }
   const details = [show.tickets && `Tickets: ${show.tickets.url}`, show.page && `Info: ${show.page.url}`].filter(Boolean).join('\n');
