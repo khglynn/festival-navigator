@@ -285,7 +285,11 @@
       },
       "close": "12 AM",
       "closeApprox": true,
-      "closeSource": "kind default (hall)"
+      "closeSource": "kind default (hall)",
+      "page": {
+        "url": "https://dothebay.com/events/2026/9/24/soulwax-tickets",
+        "at": "DoTheBay"
+      }
     },
     {
       "name": "Black Rave Culture",
@@ -304,7 +308,11 @@
         "confirmed": false
       },
       "time": "2:30 AM",
-      "approx": true
+      "approx": true,
+      "page": {
+        "url": "https://dothebay.com/events/2026/9/24/black-rave-culture-tickets",
+        "at": "DoTheBay"
+      }
     },
     {
       "name": "Rau b2b Rivs",
@@ -323,7 +331,11 @@
         "confirmed": false
       },
       "time": "10:30 PM",
-      "approx": true
+      "approx": true,
+      "page": {
+        "url": "https://dothebay.com/events/2026/9/24/black-rave-culture-tickets",
+        "at": "DoTheBay"
+      }
     },
     {
       "name": "DJs Who Kiss",
@@ -342,7 +354,11 @@
         "confirmed": false
       },
       "time": "11:45 PM",
-      "approx": true
+      "approx": true,
+      "page": {
+        "url": "https://dothebay.com/events/2026/9/24/black-rave-culture-tickets",
+        "at": "DoTheBay"
+      }
     },
     {
       "name": "bastiengoat",
@@ -361,7 +377,11 @@
         "confirmed": false
       },
       "time": "1:15 AM",
-      "approx": true
+      "approx": true,
+      "page": {
+        "url": "https://dothebay.com/events/2026/9/24/black-rave-culture-tickets",
+        "at": "DoTheBay"
+      }
     },
     {
       "name": "Despacio",
@@ -369,7 +389,11 @@
       "stage": "Fri · Pier 80 (loyalty invite)",
       "night": "Fri",
       "venue": "Pier 80 (loyalty invite)",
-      "time": "5 PM - 11 PM"
+      "time": "5 PM - 11 PM",
+      "page": {
+        "url": "https://www.portolamusicfestival.com/portola-week#despacio-info",
+        "at": "Portola"
+      }
     },
     {
       "name": "2manydjs",
@@ -388,7 +412,15 @@
         "confirmed": false
       },
       "time": "12:30 AM",
-      "approx": true
+      "approx": true,
+      "page": {
+        "url": "https://dothebay.com/events/2026/9/25/2manydjs-dj-set-tickets",
+        "at": "DoTheBay"
+      },
+      "tickets": {
+        "url": "https://www.axs.com/events/1575404/2manydjs-dj-set-tickets?cid=usaffdostuff",
+        "at": "AXS"
+      }
     },
     {
       "name": "Channel Tres",
@@ -407,6 +439,14 @@
         "of": 3,
         "source": "https://dothebay.com/events/2026/9/25/channel-tres-jyoty-gelli-haha-tickets",
         "confirmed": false
+      },
+      "page": {
+        "url": "https://dothebay.com/events/2026/9/25/channel-tres-jyoty-gelli-haha-tickets",
+        "at": "DoTheBay"
+      },
+      "tickets": {
+        "url": "https://www.axs.com/events/1573661/channel-tres-tickets?cid=usaffdostuff",
+        "at": "AXS"
       }
     },
     {
@@ -426,6 +466,14 @@
         "of": 3,
         "source": "https://dothebay.com/events/2026/9/25/channel-tres-jyoty-gelli-haha-tickets",
         "confirmed": false
+      },
+      "page": {
+        "url": "https://dothebay.com/events/2026/9/25/channel-tres-jyoty-gelli-haha-tickets",
+        "at": "DoTheBay"
+      },
+      "tickets": {
+        "url": "https://www.axs.com/events/1573661/channel-tres-tickets?cid=usaffdostuff",
+        "at": "AXS"
       }
     },
     {
@@ -445,6 +493,14 @@
         "of": 3,
         "source": "https://dothebay.com/events/2026/9/25/channel-tres-jyoty-gelli-haha-tickets",
         "confirmed": false
+      },
+      "page": {
+        "url": "https://dothebay.com/events/2026/9/25/channel-tres-jyoty-gelli-haha-tickets",
+        "at": "DoTheBay"
+      },
+      "tickets": {
+        "url": "https://www.axs.com/events/1573661/channel-tres-tickets?cid=usaffdostuff",
+        "at": "AXS"
       }
     },
     {
@@ -464,7 +520,15 @@
       },
       "close": "12 AM",
       "closeApprox": true,
-      "closeSource": "kind default (hall)"
+      "closeSource": "kind default (hall)",
+      "page": {
+        "url": "https://dothebay.com/events/2026/9/25/six-sex-tickets",
+        "at": "DoTheBay"
+      },
+      "tickets": {
+        "url": "https://www.axs.com/events/1579125/six-sex-tickets?cid=usaffdostuff",
+        "at": "AXS"
+      }
     },
     {
       "name": "Neil Frances",
@@ -483,7 +547,15 @@
         "confirmed": false
       },
       "time": "12:30 AM",
-      "approx": true
+      "approx": true,
+      "page": {
+        "url": "https://dothebay.com/events/2026/9/25/neil-frances-dj-set-tickets",
+        "at": "DoTheBay"
+      },
+      "tickets": {
+        "url": "https://www.axs.com/events/1579108/neil-frances-dj-set-tickets?cid=usaffdostuff",
+        "at": "AXS"
+      }
     },
     {
       "name": "Sam Alfred",
@@ -500,6 +572,14 @@
         "of": 3,
         "source": "https://www.eventbrite.com/e/sam-alfred-tickets-1997644591749",
         "confirmed": false
+      },
+      "page": {
+        "url": "https://dothebay.com/events/2026/9/25/sam-alfred-tickets",
+        "at": "DoTheBay"
+      },
+      "tickets": {
+        "url": "https://www.axs.com/events/1573658/sam-alfred-tickets?cid=usaffdostuff",
+        "at": "AXS"
       }
     },
     {
@@ -517,6 +597,14 @@
         "of": 3,
         "source": "https://www.eventbrite.com/e/sam-alfred-tickets-1997644591749",
         "confirmed": false
+      },
+      "page": {
+        "url": "https://dothebay.com/events/2026/9/25/sam-alfred-tickets",
+        "at": "DoTheBay"
+      },
+      "tickets": {
+        "url": "https://www.axs.com/events/1573658/sam-alfred-tickets?cid=usaffdostuff",
+        "at": "AXS"
       }
     },
     {
@@ -534,6 +622,14 @@
         "of": 2,
         "source": "https://dothebay.com/events/2026/9/25/ranger-trucco-tickets",
         "confirmed": false
+      },
+      "page": {
+        "url": "https://dothebay.com/events/2026/9/25/ranger-trucco-tickets",
+        "at": "DoTheBay"
+      },
+      "tickets": {
+        "url": "https://www.axs.com/events/1579115/ranger-trucco-tickets?cid=usaffdostuff",
+        "at": "AXS"
       }
     },
     {
@@ -551,6 +647,14 @@
         "of": 2,
         "source": "https://dothebay.com/events/2026/9/25/ranger-trucco-tickets",
         "confirmed": false
+      },
+      "page": {
+        "url": "https://dothebay.com/events/2026/9/25/ranger-trucco-tickets",
+        "at": "DoTheBay"
+      },
+      "tickets": {
+        "url": "https://www.axs.com/events/1579115/ranger-trucco-tickets?cid=usaffdostuff",
+        "at": "AXS"
       }
     },
     {
@@ -559,7 +663,15 @@
       "stage": "Fri · Public Works",
       "night": "Fri",
       "venue": "Public Works",
-      "time": "9 PM - 3 AM"
+      "time": "9 PM - 3 AM",
+      "page": {
+        "url": "https://www.tixr.com/groups/publicsf/events/bearracuda-folsom-street-horse-meat-disco-198657",
+        "at": "Tixr"
+      },
+      "tickets": {
+        "url": "https://www.tixr.com/groups/publicsf/events/bearracuda-folsom-street-horse-meat-disco-198657",
+        "at": "Tixr"
+      }
     },
     {
       "name": "Fcukers",
@@ -576,6 +688,14 @@
         "of": 3,
         "source": "https://dothebay.com/events/2026/9/26/fcukers-dj-set-chloe-caillet-presented-by-goldenvoice-tickets",
         "confirmed": false
+      },
+      "page": {
+        "url": "https://dothebay.com/events/2026/9/26/fcukers-dj-set-chloe-caillet-presented-by-goldenvoice-tickets",
+        "at": "DoTheBay"
+      },
+      "tickets": {
+        "url": "https://tixr.com/af/dostuff/203304",
+        "at": "Tixr"
       }
     },
     {
@@ -593,6 +713,14 @@
         "of": 3,
         "source": "https://dothebay.com/events/2026/9/26/fcukers-dj-set-chloe-caillet-presented-by-goldenvoice-tickets",
         "confirmed": false
+      },
+      "page": {
+        "url": "https://dothebay.com/events/2026/9/26/fcukers-dj-set-chloe-caillet-presented-by-goldenvoice-tickets",
+        "at": "DoTheBay"
+      },
+      "tickets": {
+        "url": "https://tixr.com/af/dostuff/203304",
+        "at": "Tixr"
       }
     },
     {
@@ -612,6 +740,14 @@
         "of": 2,
         "source": "https://www.axs.com/events/1573671",
         "confirmed": false
+      },
+      "page": {
+        "url": "https://dothebay.com/events/2026/9/26/parcels-tickets",
+        "at": "DoTheBay"
+      },
+      "tickets": {
+        "url": "https://www.axs.com/events/1573671/parcels-tickets?cid=usaffdostuff",
+        "at": "AXS"
       }
     },
     {
@@ -630,6 +766,14 @@
         "of": 2,
         "source": "https://www.axs.com/events/1573671",
         "confirmed": false
+      },
+      "page": {
+        "url": "https://dothebay.com/events/2026/9/26/parcels-tickets",
+        "at": "DoTheBay"
+      },
+      "tickets": {
+        "url": "https://www.axs.com/events/1573671/parcels-tickets?cid=usaffdostuff",
+        "at": "AXS"
       }
     },
     {
@@ -647,7 +791,15 @@
         "confirmed": false
       },
       "time": "1:30 AM",
-      "approx": true
+      "approx": true,
+      "page": {
+        "url": "https://dothebay.com/events/2026/9/26/groove-armada",
+        "at": "DoTheBay"
+      },
+      "tickets": {
+        "url": "https://www.axs.com/events/1579095/groove-armada-tickets?cid=usaffdostuff",
+        "at": "AXS"
+      }
     },
     {
       "name": "Max Styler",
@@ -666,6 +818,14 @@
         "of": 3,
         "source": "https://dothebay.com/events/2026/9/26/max-styler-tickets",
         "confirmed": false
+      },
+      "page": {
+        "url": "https://dothebay.com/events/2026/9/26/max-styler-tickets",
+        "at": "DoTheBay"
+      },
+      "tickets": {
+        "url": "https://www.axs.com/events/1576493/max-styler-tickets?cid=usaffdostuff",
+        "at": "AXS"
       }
     },
     {
@@ -685,6 +845,14 @@
         "of": 3,
         "source": "https://dothebay.com/events/2026/9/26/max-styler-tickets",
         "confirmed": false
+      },
+      "page": {
+        "url": "https://dothebay.com/events/2026/9/26/max-styler-tickets",
+        "at": "DoTheBay"
+      },
+      "tickets": {
+        "url": "https://www.axs.com/events/1576493/max-styler-tickets?cid=usaffdostuff",
+        "at": "AXS"
       }
     },
     {
@@ -702,6 +870,14 @@
         "of": 3,
         "source": "https://dothebay.com/events/2026/9/26/jigitz-tickets",
         "confirmed": false
+      },
+      "page": {
+        "url": "https://dothebay.com/events/2026/9/26/jigitz-tickets",
+        "at": "DoTheBay"
+      },
+      "tickets": {
+        "url": "https://www.axs.com/events/1579103/jigitz-tickets?cid=usaffdostuff",
+        "at": "AXS"
       }
     },
     {
@@ -719,6 +895,14 @@
         "of": 3,
         "source": "https://dothebay.com/events/2026/9/26/jigitz-tickets",
         "confirmed": false
+      },
+      "page": {
+        "url": "https://dothebay.com/events/2026/9/26/jigitz-tickets",
+        "at": "DoTheBay"
+      },
+      "tickets": {
+        "url": "https://www.axs.com/events/1579103/jigitz-tickets?cid=usaffdostuff",
+        "at": "AXS"
       }
     },
     {
@@ -736,6 +920,14 @@
         "of": 4,
         "source": "https://dothebay.com/events/2026/9/27/overmono-dj-set-ben-ufo-tickets",
         "confirmed": false
+      },
+      "page": {
+        "url": "https://dothebay.com/events/2026/9/27/overmono-dj-set-ben-ufo-tickets",
+        "at": "DoTheBay"
+      },
+      "tickets": {
+        "url": "https://www.tixr.com/groups/publicsf/events/overmono-dj-set-ben-ufo-presented-by-goldenvoice-203447?axssid=token_a5197d85aea7&locale=en-US&originalReferringURL=https%3A%2F%2Fwww.axs.com%2Fevents%2F1576494%2Fovermono-dj-set-ben-ufo-tickets%3F__cf_chl_tk%3D",
+        "at": "Tixr"
       }
     },
     {
@@ -753,6 +945,14 @@
         "of": 4,
         "source": "https://dothebay.com/events/2026/9/27/overmono-dj-set-ben-ufo-tickets",
         "confirmed": false
+      },
+      "page": {
+        "url": "https://dothebay.com/events/2026/9/27/overmono-dj-set-ben-ufo-tickets",
+        "at": "DoTheBay"
+      },
+      "tickets": {
+        "url": "https://www.tixr.com/groups/publicsf/events/overmono-dj-set-ben-ufo-presented-by-goldenvoice-203447?axssid=token_a5197d85aea7&locale=en-US&originalReferringURL=https%3A%2F%2Fwww.axs.com%2Fevents%2F1576494%2Fovermono-dj-set-ben-ufo-tickets%3F__cf_chl_tk%3D",
+        "at": "Tixr"
       }
     },
     {
@@ -770,6 +970,14 @@
         "of": 4,
         "source": "https://dothebay.com/events/2026/9/27/overmono-dj-set-ben-ufo-tickets",
         "confirmed": false
+      },
+      "page": {
+        "url": "https://dothebay.com/events/2026/9/27/overmono-dj-set-ben-ufo-tickets",
+        "at": "DoTheBay"
+      },
+      "tickets": {
+        "url": "https://www.tixr.com/groups/publicsf/events/overmono-dj-set-ben-ufo-presented-by-goldenvoice-203447?axssid=token_a5197d85aea7&locale=en-US&originalReferringURL=https%3A%2F%2Fwww.axs.com%2Fevents%2F1576494%2Fovermono-dj-set-ben-ufo-tickets%3F__cf_chl_tk%3D",
+        "at": "Tixr"
       }
     },
     {
@@ -787,6 +995,14 @@
         "of": 4,
         "source": "https://dothebay.com/events/2026/9/27/overmono-dj-set-ben-ufo-tickets",
         "confirmed": false
+      },
+      "page": {
+        "url": "https://dothebay.com/events/2026/9/27/overmono-dj-set-ben-ufo-tickets",
+        "at": "DoTheBay"
+      },
+      "tickets": {
+        "url": "https://www.tixr.com/groups/publicsf/events/overmono-dj-set-ben-ufo-presented-by-goldenvoice-203447?axssid=token_a5197d85aea7&locale=en-US&originalReferringURL=https%3A%2F%2Fwww.axs.com%2Fevents%2F1576494%2Fovermono-dj-set-ben-ufo-tickets%3F__cf_chl_tk%3D",
+        "at": "Tixr"
       }
     },
     {
@@ -806,6 +1022,14 @@
         "of": 4,
         "source": "https://www.axs.com/events/1575408/horsegiirl-tickets",
         "confirmed": false
+      },
+      "page": {
+        "url": "https://dothebay.com/events/2026/9/27/horsegiirl-vtss-mgna-crrrta-dj-set-two-shell-tickets",
+        "at": "DoTheBay"
+      },
+      "tickets": {
+        "url": "https://www.axs.com/events/1575408/horsegiirl-tickets?cid=usaffdostuff",
+        "at": "AXS"
       }
     },
     {
@@ -825,6 +1049,14 @@
         "of": 4,
         "source": "https://www.axs.com/events/1575408/horsegiirl-tickets",
         "confirmed": false
+      },
+      "page": {
+        "url": "https://dothebay.com/events/2026/9/27/horsegiirl-vtss-mgna-crrrta-dj-set-two-shell-tickets",
+        "at": "DoTheBay"
+      },
+      "tickets": {
+        "url": "https://www.axs.com/events/1575408/horsegiirl-tickets?cid=usaffdostuff",
+        "at": "AXS"
       }
     },
     {
@@ -844,6 +1076,14 @@
         "of": 4,
         "source": "https://www.axs.com/events/1575408/horsegiirl-tickets",
         "confirmed": false
+      },
+      "page": {
+        "url": "https://dothebay.com/events/2026/9/27/horsegiirl-vtss-mgna-crrrta-dj-set-two-shell-tickets",
+        "at": "DoTheBay"
+      },
+      "tickets": {
+        "url": "https://www.axs.com/events/1575408/horsegiirl-tickets?cid=usaffdostuff",
+        "at": "AXS"
       }
     },
     {
@@ -863,6 +1103,14 @@
         "of": 4,
         "source": "https://www.axs.com/events/1575408/horsegiirl-tickets",
         "confirmed": false
+      },
+      "page": {
+        "url": "https://dothebay.com/events/2026/9/27/horsegiirl-vtss-mgna-crrrta-dj-set-two-shell-tickets",
+        "at": "DoTheBay"
+      },
+      "tickets": {
+        "url": "https://www.axs.com/events/1575408/horsegiirl-tickets?cid=usaffdostuff",
+        "at": "AXS"
       }
     },
     {
@@ -880,6 +1128,14 @@
         "of": 3,
         "source": "https://dothebay.com/events/2026/9/27/sg-lewis-dj-set-tickets",
         "confirmed": false
+      },
+      "page": {
+        "url": "https://dothebay.com/events/2026/9/27/sg-lewis-dj-set-tickets",
+        "at": "DoTheBay"
+      },
+      "tickets": {
+        "url": "https://www.axs.com/events/1578072/sg-lewis-tickets?cid=usaffdostuff",
+        "at": "AXS"
       }
     },
     {
@@ -897,6 +1153,14 @@
         "of": 3,
         "source": "https://dothebay.com/events/2026/9/27/sg-lewis-dj-set-tickets",
         "confirmed": false
+      },
+      "page": {
+        "url": "https://dothebay.com/events/2026/9/27/sg-lewis-dj-set-tickets",
+        "at": "DoTheBay"
+      },
+      "tickets": {
+        "url": "https://www.axs.com/events/1578072/sg-lewis-tickets?cid=usaffdostuff",
+        "at": "AXS"
       }
     },
     {
@@ -916,7 +1180,15 @@
         "confirmed": false
       },
       "time": "12:30 AM",
-      "approx": true
+      "approx": true,
+      "page": {
+        "url": "https://dothebay.com/events/2026/9/27/fatboy-slim-tickets",
+        "at": "DoTheBay"
+      },
+      "tickets": {
+        "url": "https://www.axs.com/events/1575407/fatboy-slim-tickets?cid=usaffdostuff",
+        "at": "AXS"
+      }
     },
     {
       "name": "Silva Bumpa",
@@ -933,6 +1205,14 @@
         "of": 3,
         "source": "https://dothebay.com/events/2026/9/27/silva-bumpa-tickets",
         "confirmed": false
+      },
+      "page": {
+        "url": "https://dothebay.com/events/2026/9/27/silva-bumpa-tickets",
+        "at": "DoTheBay"
+      },
+      "tickets": {
+        "url": "https://www.axs.com/events/1578846/silva-bumpa-tickets?cid=usaffdostuff",
+        "at": "AXS"
       }
     },
     {
@@ -950,6 +1230,14 @@
         "of": 3,
         "source": "https://dothebay.com/events/2026/9/27/silva-bumpa-tickets",
         "confirmed": false
+      },
+      "page": {
+        "url": "https://dothebay.com/events/2026/9/27/silva-bumpa-tickets",
+        "at": "DoTheBay"
+      },
+      "tickets": {
+        "url": "https://www.axs.com/events/1578846/silva-bumpa-tickets?cid=usaffdostuff",
+        "at": "AXS"
       }
     },
     {
@@ -967,6 +1255,14 @@
         "of": 3,
         "source": "https://dothebay.com/events/2026/9/27/silva-bumpa-tickets",
         "confirmed": false
+      },
+      "page": {
+        "url": "https://dothebay.com/events/2026/9/27/silva-bumpa-tickets",
+        "at": "DoTheBay"
+      },
+      "tickets": {
+        "url": "https://www.axs.com/events/1578846/silva-bumpa-tickets?cid=usaffdostuff",
+        "at": "AXS"
       }
     },
     {
@@ -984,7 +1280,15 @@
         "confirmed": false
       },
       "time": "12:30 AM",
-      "approx": true
+      "approx": true,
+      "page": {
+        "url": "https://dothebay.com/events/2026/9/27/azzecca-tickets",
+        "at": "DoTheBay"
+      },
+      "tickets": {
+        "url": "https://www.axs.com/events/1579143/azzecca-tickets?cid=usaffdostuff",
+        "at": "AXS"
+      }
     },
     {
       "name": "JT",
@@ -1003,6 +1307,14 @@
         "of": 3,
         "source": "https://dothebay.com/events/2026/9/27/jt-tickets",
         "confirmed": false
+      },
+      "page": {
+        "url": "https://dothebay.com/events/2026/9/27/jt-tickets",
+        "at": "DoTheBay"
+      },
+      "tickets": {
+        "url": "https://www.axs.com/events/1576454/jt-tickets?cid=usaffdostuff",
+        "at": "AXS"
       }
     },
     {
@@ -1022,6 +1334,14 @@
         "of": 3,
         "source": "https://dothebay.com/events/2026/9/27/jt-tickets",
         "confirmed": false
+      },
+      "page": {
+        "url": "https://dothebay.com/events/2026/9/27/jt-tickets",
+        "at": "DoTheBay"
+      },
+      "tickets": {
+        "url": "https://www.axs.com/events/1576454/jt-tickets?cid=usaffdostuff",
+        "at": "AXS"
       }
     },
     {
@@ -1030,7 +1350,15 @@
       "stage": "Fri · DNA Lounge",
       "night": "Fri",
       "venue": "DNA Lounge",
-      "time": "9 PM - 3 AM"
+      "time": "9 PM - 3 AM",
+      "page": {
+        "url": "https://www.dnalounge.com/calendar/2026/09-25.html",
+        "at": "DNA Lounge"
+      },
+      "tickets": {
+        "url": "https://www.dnalounge.com/calendar/2026/09-25.html",
+        "at": "DNA Lounge"
+      }
     },
     {
       "name": "Magnitude",
@@ -1038,7 +1366,15 @@
       "stage": "Sat · SVN West",
       "night": "Sat",
       "venue": "SVN West",
-      "time": "9 PM - 4 AM"
+      "time": "9 PM - 4 AM",
+      "page": {
+        "url": "https://www.dothebay.com/events/2026/9/26/magnitude-the-saturday-night-main-event-of-folsom-street-fair-tickets",
+        "at": "DoTheBay"
+      },
+      "tickets": {
+        "url": "https://www.eventbrite.com/e/magnitude-2026-the-saturday-night-main-event-of-folsom-street-fairtm-tickets-1894668557659",
+        "at": "Eventbrite"
+      }
     },
     {
       "name": "PERVERT XXL",
@@ -1046,7 +1382,15 @@
       "stage": "Sat · The Midway",
       "night": "Sat",
       "venue": "The Midway",
-      "time": "10 PM - 6 AM"
+      "time": "10 PM - 6 AM",
+      "page": {
+        "url": "https://www.dothebay.com/events/2026/9/26/xoxo-and-matinee-presents-pervert-xxl-folsom-edition-tickets",
+        "at": "DoTheBay"
+      },
+      "tickets": {
+        "url": "https://www.tixr.com/groups/midwaysf/events/xoxo-and-matin-e-presents-pervert-xxl-folsom-edition-207997",
+        "at": "Tixr"
+      }
     },
     {
       "name": "Folsom Street Fair",
@@ -1054,7 +1398,11 @@
       "stage": "Sun · Folsom St, 8th-13th",
       "night": "Sun",
       "venue": "Folsom St, 8th-13th",
-      "time": "11 AM - 6 PM"
+      "time": "11 AM - 6 PM",
+      "page": {
+        "url": "https://www.folsomstreet.org/",
+        "at": "Folsom Street"
+      }
     },
     {
       "name": "DEVIANTS",
@@ -1062,7 +1410,15 @@
       "stage": "Sun · SVN West",
       "night": "Sun",
       "venue": "SVN West",
-      "time": "7 PM - 2 AM"
+      "time": "7 PM - 2 AM",
+      "page": {
+        "url": "https://www.eventbrite.com/e/deviants-adult-arcade-the-folsom-street-fair-afterparty-tickets-1995206717000",
+        "at": "Eventbrite"
+      },
+      "tickets": {
+        "url": "https://www.eventbrite.com/e/deviants-adult-arcade-the-folsom-street-fair-afterparty-tickets-1995206717000",
+        "at": "Eventbrite"
+      }
     },
     {
       "name": "Real Bad 37",
@@ -1070,7 +1426,11 @@
       "stage": "Sun · 1015 Folsom",
       "night": "Sun",
       "venue": "1015 Folsom",
-      "time": "8 PM - 5 AM"
+      "time": "8 PM - 5 AM",
+      "page": {
+        "url": "https://www.realbad.org/real-bad",
+        "at": "Real Bad"
+      }
     },
     {
       "name": "Disco Daddy",
@@ -1078,7 +1438,11 @@
       "stage": "Sun · SF Eagle",
       "night": "Sun",
       "venue": "SF Eagle",
-      "time": "7 PM - 2 AM"
+      "time": "7 PM - 2 AM",
+      "page": {
+        "url": "https://www.sf-eagle.com/events/disco-daddy-folsom/",
+        "at": "SF Eagle"
+      }
     },
     {
       "name": "LAIMA",
@@ -1097,7 +1461,11 @@
       "approx": true,
       "close": "12 AM",
       "closeApprox": true,
-      "closeSource": "kind default (hall)"
+      "closeSource": "kind default (hall)",
+      "page": {
+        "url": "https://dothebay.com/events/2026/9/24/soulwax-tickets",
+        "at": "DoTheBay"
+      }
     },
     {
       "name": "Rory Phillips",
@@ -1116,7 +1484,11 @@
       "approx": true,
       "close": "12 AM",
       "closeApprox": true,
-      "closeSource": "kind default (hall)"
+      "closeSource": "kind default (hall)",
+      "page": {
+        "url": "https://dothebay.com/events/2026/9/24/soulwax-tickets",
+        "at": "DoTheBay"
+      }
     },
     {
       "name": "B0yg1rl",
@@ -1135,7 +1507,15 @@
       "approx": true,
       "close": "12 AM",
       "closeApprox": true,
-      "closeSource": "kind default (hall)"
+      "closeSource": "kind default (hall)",
+      "page": {
+        "url": "https://dothebay.com/events/2026/9/25/six-sex-tickets",
+        "at": "DoTheBay"
+      },
+      "tickets": {
+        "url": "https://www.axs.com/events/1579125/six-sex-tickets?cid=usaffdostuff",
+        "at": "AXS"
+      }
     },
     {
       "name": "Femme Jatale b2b erika",
@@ -1154,7 +1534,15 @@
       "approx": true,
       "close": "12 AM",
       "closeApprox": true,
-      "closeSource": "kind default (hall)"
+      "closeSource": "kind default (hall)",
+      "page": {
+        "url": "https://dothebay.com/events/2026/9/25/six-sex-tickets",
+        "at": "DoTheBay"
+      },
+      "tickets": {
+        "url": "https://www.axs.com/events/1579125/six-sex-tickets?cid=usaffdostuff",
+        "at": "AXS"
+      }
     },
     {
       "name": "Strawbry",
@@ -1171,7 +1559,15 @@
         "confirmed": false
       },
       "time": "11:30 PM",
-      "approx": true
+      "approx": true,
+      "page": {
+        "url": "https://dothebay.com/events/2026/9/25/sam-alfred-tickets",
+        "at": "DoTheBay"
+      },
+      "tickets": {
+        "url": "https://www.axs.com/events/1573658/sam-alfred-tickets?cid=usaffdostuff",
+        "at": "AXS"
+      }
     },
     {
       "name": "Rory Phillips",
@@ -1190,7 +1586,15 @@
         "confirmed": false
       },
       "time": "10 PM",
-      "approx": true
+      "approx": true,
+      "page": {
+        "url": "https://dothebay.com/events/2026/9/25/2manydjs-dj-set-tickets",
+        "at": "DoTheBay"
+      },
+      "tickets": {
+        "url": "https://www.axs.com/events/1575404/2manydjs-dj-set-tickets?cid=usaffdostuff",
+        "at": "AXS"
+      }
     },
     {
       "name": "The Hellp",
@@ -1209,7 +1613,15 @@
       "approx": true,
       "close": "2 AM",
       "closeApprox": true,
-      "closeSource": "venue's routine close"
+      "closeSource": "venue's routine close",
+      "page": {
+        "url": "https://www.axs.com/events/1617567/the-hellp-dj-set-bassvictim-dj-set-tickets",
+        "at": "AXS"
+      },
+      "tickets": {
+        "url": "https://www.tixr.com/groups/midwaysfgv/events/goldenvoice-presents-the-hellp-dj-set-bassvictim-dj-set-more-207362",
+        "at": "Tixr"
+      }
     },
     {
       "name": "Bassvictim",
@@ -1228,7 +1640,15 @@
       "approx": true,
       "close": "2 AM",
       "closeApprox": true,
-      "closeSource": "venue's routine close"
+      "closeSource": "venue's routine close",
+      "page": {
+        "url": "https://www.axs.com/events/1617567/the-hellp-dj-set-bassvictim-dj-set-tickets",
+        "at": "AXS"
+      },
+      "tickets": {
+        "url": "https://www.tixr.com/groups/midwaysfgv/events/goldenvoice-presents-the-hellp-dj-set-bassvictim-dj-set-more-207362",
+        "at": "Tixr"
+      }
     },
     {
       "name": "DJ Chaotic Ugly",
@@ -1247,7 +1667,15 @@
       "approx": true,
       "close": "2 AM",
       "closeApprox": true,
-      "closeSource": "venue's routine close"
+      "closeSource": "venue's routine close",
+      "page": {
+        "url": "https://www.axs.com/events/1617567/the-hellp-dj-set-bassvictim-dj-set-tickets",
+        "at": "AXS"
+      },
+      "tickets": {
+        "url": "https://www.tixr.com/groups/midwaysfgv/events/goldenvoice-presents-the-hellp-dj-set-bassvictim-dj-set-more-207362",
+        "at": "Tixr"
+      }
     },
     {
       "name": "Izzy Camina",
@@ -1266,7 +1694,15 @@
       "approx": true,
       "close": "2 AM",
       "closeApprox": true,
-      "closeSource": "venue's routine close"
+      "closeSource": "venue's routine close",
+      "page": {
+        "url": "https://www.axs.com/events/1617567/the-hellp-dj-set-bassvictim-dj-set-tickets",
+        "at": "AXS"
+      },
+      "tickets": {
+        "url": "https://www.tixr.com/groups/midwaysfgv/events/goldenvoice-presents-the-hellp-dj-set-bassvictim-dj-set-more-207362",
+        "at": "Tixr"
+      }
     },
     {
       "name": "Masha Mar",
@@ -1285,7 +1721,15 @@
         "confirmed": false
       },
       "time": "10:15 PM",
-      "approx": true
+      "approx": true,
+      "page": {
+        "url": "https://dothebay.com/events/2026/9/25/neil-frances-dj-set-tickets",
+        "at": "DoTheBay"
+      },
+      "tickets": {
+        "url": "https://www.axs.com/events/1579108/neil-frances-dj-set-tickets?cid=usaffdostuff",
+        "at": "AXS"
+      }
     },
     {
       "name": "Milli Meng",
@@ -1302,7 +1746,15 @@
         "confirmed": false
       },
       "time": "10:30 PM",
-      "approx": true
+      "approx": true,
+      "page": {
+        "url": "https://dothebay.com/events/2026/9/26/fcukers-dj-set-chloe-caillet-presented-by-goldenvoice-tickets",
+        "at": "DoTheBay"
+      },
+      "tickets": {
+        "url": "https://tixr.com/af/dostuff/203304",
+        "at": "Tixr"
+      }
     },
     {
       "name": "Rumorous",
@@ -1319,7 +1771,15 @@
         "confirmed": false
       },
       "time": "10:30 PM",
-      "approx": true
+      "approx": true,
+      "page": {
+        "url": "https://dothebay.com/events/2026/9/26/jigitz-tickets",
+        "at": "DoTheBay"
+      },
+      "tickets": {
+        "url": "https://www.axs.com/events/1579103/jigitz-tickets?cid=usaffdostuff",
+        "at": "AXS"
+      }
     },
     {
       "name": "Strawbry",
@@ -1336,7 +1796,15 @@
         "confirmed": false
       },
       "time": "12 AM",
-      "approx": true
+      "approx": true,
+      "page": {
+        "url": "https://dothebay.com/events/2026/9/26/groove-armada",
+        "at": "DoTheBay"
+      },
+      "tickets": {
+        "url": "https://www.axs.com/events/1579095/groove-armada-tickets?cid=usaffdostuff",
+        "at": "AXS"
+      }
     },
     {
       "name": "Galen",
@@ -1353,7 +1821,15 @@
         "confirmed": false
       },
       "time": "10:30 PM",
-      "approx": true
+      "approx": true,
+      "page": {
+        "url": "https://dothebay.com/events/2026/9/26/groove-armada",
+        "at": "DoTheBay"
+      },
+      "tickets": {
+        "url": "https://www.axs.com/events/1579095/groove-armada-tickets?cid=usaffdostuff",
+        "at": "AXS"
+      }
     },
     {
       "name": "Emilio",
@@ -1372,7 +1848,15 @@
         "confirmed": false
       },
       "time": "10:30 PM",
-      "approx": true
+      "approx": true,
+      "page": {
+        "url": "https://dothebay.com/events/2026/9/26/max-styler-tickets",
+        "at": "DoTheBay"
+      },
+      "tickets": {
+        "url": "https://www.axs.com/events/1576493/max-styler-tickets?cid=usaffdostuff",
+        "at": "AXS"
+      }
     },
     {
       "name": "Boys Noize",
@@ -1382,7 +1866,15 @@
       "venue": "888 Garage",
       "doors": "10 PM",
       "close": "2 AM",
-      "closeSource": "https://www.axs.com/events/1617573/boys-noize-special-guests-tickets"
+      "closeSource": "https://www.axs.com/events/1617573/boys-noize-special-guests-tickets",
+      "page": {
+        "url": "https://www.axs.com/events/1617573/boys-noize-special-guests-tickets",
+        "at": "AXS"
+      },
+      "tickets": {
+        "url": "https://tixr.com/e/207359",
+        "at": "Tixr"
+      }
     },
     {
       "name": "Starfari",
@@ -1399,7 +1891,15 @@
         "confirmed": false
       },
       "time": "10:30 PM",
-      "approx": true
+      "approx": true,
+      "page": {
+        "url": "https://dothebay.com/events/2026/9/27/sg-lewis-dj-set-tickets",
+        "at": "DoTheBay"
+      },
+      "tickets": {
+        "url": "https://www.axs.com/events/1578072/sg-lewis-tickets?cid=usaffdostuff",
+        "at": "AXS"
+      }
     },
     {
       "name": "Ahadadream",
@@ -1416,7 +1916,15 @@
         "confirmed": false
       },
       "time": "11:15 PM",
-      "approx": true
+      "approx": true,
+      "page": {
+        "url": "https://dothebay.com/events/2026/9/27/azzecca-tickets",
+        "at": "DoTheBay"
+      },
+      "tickets": {
+        "url": "https://www.axs.com/events/1579143/azzecca-tickets?cid=usaffdostuff",
+        "at": "AXS"
+      }
     },
     {
       "name": "Sara Afshar",
@@ -1433,7 +1941,15 @@
         "confirmed": false
       },
       "time": "10 PM",
-      "approx": true
+      "approx": true,
+      "page": {
+        "url": "https://dothebay.com/events/2026/9/27/azzecca-tickets",
+        "at": "DoTheBay"
+      },
+      "tickets": {
+        "url": "https://www.axs.com/events/1579143/azzecca-tickets?cid=usaffdostuff",
+        "at": "AXS"
+      }
     },
     {
       "name": "riria",
@@ -1452,7 +1968,15 @@
         "confirmed": false
       },
       "time": "10:15 PM",
-      "approx": true
+      "approx": true,
+      "page": {
+        "url": "https://dothebay.com/events/2026/9/27/fatboy-slim-tickets",
+        "at": "DoTheBay"
+      },
+      "tickets": {
+        "url": "https://www.axs.com/events/1575407/fatboy-slim-tickets?cid=usaffdostuff",
+        "at": "AXS"
+      }
     },
     {
       "name": "Michael Milano",
@@ -1471,7 +1995,15 @@
         "confirmed": false
       },
       "time": "11 PM",
-      "approx": true
+      "approx": true,
+      "page": {
+        "url": "https://dothebay.com/events/2026/9/27/jt-tickets",
+        "at": "DoTheBay"
+      },
+      "tickets": {
+        "url": "https://www.axs.com/events/1576454/jt-tickets?cid=usaffdostuff",
+        "at": "AXS"
+      }
     }
   ],
   "meta": {

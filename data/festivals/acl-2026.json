@@ -666,7 +666,15 @@
       "date": "2026-09-29",
       "venue": "Mohawk Austin",
       "doors": "7 PM",
-      "source": "https://do512.com/events/2026/9/29/fcukers-w-total-wife-tickets"
+      "source": "https://do512.com/events/2026/9/29/fcukers-w-total-wife-tickets",
+      "page": {
+        "url": "https://do512.com/events/2026/9/29/fcukers-w-total-wife-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://etix.prf.hn/click/camref:1011l3GdWo/pubref:dostuff/destination:https%3A%2F%2Fwww.etix.com%2Fticket%2Fp%2F97085640%2Ffcuckers-austin-resound-presents",
+        "at": "Etix"
+      }
     },
     {
       "name": "Total Wife",
@@ -674,7 +682,15 @@
       "date": "2026-09-29",
       "venue": "Mohawk Austin",
       "doors": "7 PM",
-      "source": "https://do512.com/events/2026/9/29/fcukers-w-total-wife-tickets"
+      "source": "https://do512.com/events/2026/9/29/fcukers-w-total-wife-tickets",
+      "page": {
+        "url": "https://do512.com/events/2026/9/29/fcukers-w-total-wife-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://etix.prf.hn/click/camref:1011l3GdWo/pubref:dostuff/destination:https%3A%2F%2Fwww.etix.com%2Fticket%2Fp%2F97085640%2Ffcuckers-austin-resound-presents",
+        "at": "Etix"
+      }
     },
     {
       "name": "Brandon Flowers",
@@ -682,7 +698,15 @@
       "date": "2026-10-01",
       "venue": "Stubb's",
       "doors": "7 PM",
-      "source": "https://do512.com/events/2026/10/1/brandon-flowers-w-jess-williamson-tickets"
+      "source": "https://do512.com/events/2026/10/1/brandon-flowers-w-jess-williamson-tickets",
+      "page": {
+        "url": "https://do512.com/events/2026/10/1/brandon-flowers-w-jess-williamson-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064FDAEAD9948",
+        "at": "Ticketmaster"
+      }
     },
     {
       "name": "Jess Williamson",
@@ -690,7 +714,15 @@
       "date": "2026-10-01",
       "venue": "Stubb's",
       "doors": "7 PM",
-      "source": "https://do512.com/events/2026/10/1/brandon-flowers-w-jess-williamson-tickets"
+      "source": "https://do512.com/events/2026/10/1/brandon-flowers-w-jess-williamson-tickets",
+      "page": {
+        "url": "https://do512.com/events/2026/10/1/brandon-flowers-w-jess-williamson-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064FDAEAD9948",
+        "at": "Ticketmaster"
+      }
     },
     {
       "name": "Palace",
@@ -698,7 +730,15 @@
       "date": "2026-10-01",
       "venue": "Emo's",
       "doors": "7 PM",
-      "source": "https://do512.com/events/2026/10/1/palace-tickets"
+      "source": "https://do512.com/events/2026/10/1/palace-tickets",
+      "page": {
+        "url": "https://do512.com/events/2026/10/1/palace-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064FBD3B1E691",
+        "at": "Ticketmaster"
+      }
     },
     {
       "name": "The 4411",
@@ -706,7 +746,11 @@
       "date": "2026-10-01",
       "venue": "Emo's",
       "doors": "7 PM",
-      "source": "https://www.aclfestival.com/page/nights"
+      "source": "https://www.aclfestival.com/page/nights",
+      "page": {
+        "url": "https://www.aclfestival.com/page/nights",
+        "at": "ACL Fest"
+      }
     },
     {
       "name": "Montclair",
@@ -714,7 +758,15 @@
       "date": "2026-10-01",
       "venue": "Stubb's Indoors",
       "doors": "9:30 PM",
-      "source": "https://do512.com/events/2026/10/1/montclair-tickets"
+      "source": "https://do512.com/events/2026/10/1/montclair-tickets",
+      "page": {
+        "url": "https://do512.com/events/2026/10/1/montclair-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A00650BBB2FBC0A",
+        "at": "Ticketmaster"
+      }
     },
     {
       "name": "The Chainsmokers",
@@ -722,7 +774,15 @@
       "date": "2026-10-01",
       "venue": "The Concourse Project",
       "doors": "9 PM",
-      "source": "https://do512.com/events/2026/10/1/the-chainsmokers-tickets"
+      "source": "https://do512.com/events/2026/10/1/the-chainsmokers-tickets",
+      "page": {
+        "url": "https://do512.com/events/2026/10/1/the-chainsmokers-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://wl.eventim.us/event/Official-2026-ACL-Fest-Nights-The-Chainsmokers/701286?afflky=TheConcourseProject",
+        "at": "Eventim"
+      }
     },
     {
       "name": "Austin Ashtin",
@@ -730,7 +790,11 @@
       "date": "2026-10-01",
       "venue": "The Concourse Project",
       "doors": "9 PM",
-      "source": "https://www.concourseproject.com/"
+      "source": "https://www.concourseproject.com/",
+      "page": {
+        "url": "https://www.concourseproject.com/",
+        "at": "Concourse Project"
+      }
     },
     {
       "name": "Finn Wolfhard",
@@ -738,7 +802,15 @@
       "date": "2026-10-02",
       "venue": "Historic Scoot Inn",
       "doors": "6 PM",
-      "source": "https://do512.com/events/2026/10/2/finn-wolfhard-w-malcy-tickets"
+      "source": "https://do512.com/events/2026/10/2/finn-wolfhard-w-malcy-tickets",
+      "page": {
+        "url": "https://do512.com/events/2026/10/2/finn-wolfhard-w-malcy-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064FBC71CD5F3",
+        "at": "Ticketmaster"
+      }
     },
     {
       "name": "Malcy",
@@ -746,7 +818,15 @@
       "date": "2026-10-02",
       "venue": "Historic Scoot Inn",
       "doors": "6 PM",
-      "source": "https://do512.com/events/2026/10/2/finn-wolfhard-w-malcy-tickets"
+      "source": "https://do512.com/events/2026/10/2/finn-wolfhard-w-malcy-tickets",
+      "page": {
+        "url": "https://do512.com/events/2026/10/2/finn-wolfhard-w-malcy-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064FBC71CD5F3",
+        "at": "Ticketmaster"
+      }
     },
     {
       "name": "Bleachers",
@@ -754,7 +834,15 @@
       "date": "2026-10-02",
       "venue": "Stubb's",
       "doors": "7 PM",
-      "source": "https://do512.com/events/2026/10/2/bleachers-w-this-is-lorelei-tickets"
+      "source": "https://do512.com/events/2026/10/2/bleachers-w-this-is-lorelei-tickets",
+      "page": {
+        "url": "https://do512.com/events/2026/10/2/bleachers-w-this-is-lorelei-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064FDB1009EA6",
+        "at": "Ticketmaster"
+      }
     },
     {
       "name": "This Is Lorelei",
@@ -762,7 +850,15 @@
       "date": "2026-10-02",
       "venue": "Stubb's",
       "doors": "7 PM",
-      "source": "https://do512.com/events/2026/10/2/bleachers-w-this-is-lorelei-tickets"
+      "source": "https://do512.com/events/2026/10/2/bleachers-w-this-is-lorelei-tickets",
+      "page": {
+        "url": "https://do512.com/events/2026/10/2/bleachers-w-this-is-lorelei-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064FDB1009EA6",
+        "at": "Ticketmaster"
+      }
     },
     {
       "name": "Villanelle",
@@ -770,7 +866,15 @@
       "date": "2026-10-02",
       "venue": "3TEN",
       "doors": "8 PM",
-      "source": "https://do512.com/events/2026/10/2/villanelle-tickets"
+      "source": "https://do512.com/events/2026/10/2/villanelle-tickets",
+      "page": {
+        "url": "https://do512.com/events/2026/10/2/villanelle-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://www.axs.com/events/1566083/official-2026-acl-fest-nights-villanelle-tickets?skin=3ten?cid=usaffdostuff",
+        "at": "AXS"
+      }
     },
     {
       "name": "BUNT.",
@@ -778,7 +882,15 @@
       "date": "2026-10-02",
       "venue": "Emo's",
       "doors": "9 PM",
-      "source": "https://do512.com/events/2026/10/2/bunt-w-sarah-pederzani-tickets"
+      "source": "https://do512.com/events/2026/10/2/bunt-w-sarah-pederzani-tickets",
+      "page": {
+        "url": "https://do512.com/events/2026/10/2/bunt-w-sarah-pederzani-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064FBD4C8E83E",
+        "at": "Ticketmaster"
+      }
     },
     {
       "name": "Sarah Pederzani",
@@ -786,7 +898,15 @@
       "date": "2026-10-02",
       "venue": "Emo's",
       "doors": "9 PM",
-      "source": "https://do512.com/events/2026/10/2/bunt-w-sarah-pederzani-tickets"
+      "source": "https://do512.com/events/2026/10/2/bunt-w-sarah-pederzani-tickets",
+      "page": {
+        "url": "https://do512.com/events/2026/10/2/bunt-w-sarah-pederzani-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064FBD4C8E83E",
+        "at": "Ticketmaster"
+      }
     },
     {
       "name": "Hunx and his Punx",
@@ -794,7 +914,15 @@
       "date": "2026-10-02",
       "venue": "Brushy Street Commons",
       "doors": "9 PM",
-      "source": "https://do512.com/events/2026/10/2/hunx-and-his-punx-w-cormae-tickets"
+      "source": "https://do512.com/events/2026/10/2/hunx-and-his-punx-w-cormae-tickets",
+      "page": {
+        "url": "https://do512.com/events/2026/10/2/hunx-and-his-punx-w-cormae-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://www.eventim.us/event/Official-2026-ACL-Fest-Nights-Hunx-and-His-Punx/700544",
+        "at": "Eventim"
+      }
     },
     {
       "name": "CorMae",
@@ -802,7 +930,15 @@
       "date": "2026-10-02",
       "venue": "Brushy Street Commons",
       "doors": "9 PM",
-      "source": "https://do512.com/events/2026/10/2/hunx-and-his-punx-w-cormae-tickets"
+      "source": "https://do512.com/events/2026/10/2/hunx-and-his-punx-w-cormae-tickets",
+      "page": {
+        "url": "https://do512.com/events/2026/10/2/hunx-and-his-punx-w-cormae-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://www.eventim.us/event/Official-2026-ACL-Fest-Nights-Hunx-and-His-Punx/700544",
+        "at": "Eventim"
+      }
     },
     {
       "name": "Night Tapes",
@@ -810,7 +946,15 @@
       "date": "2026-10-02",
       "venue": "Antone's",
       "doors": "9 PM",
-      "source": "https://do512.com/events/2026/10/2/night-tapes-w-alice-rivers-tickets"
+      "source": "https://do512.com/events/2026/10/2/night-tapes-w-alice-rivers-tickets",
+      "page": {
+        "url": "https://do512.com/events/2026/10/2/night-tapes-w-alice-rivers-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064FCCB41EA73",
+        "at": "Ticketmaster"
+      }
     },
     {
       "name": "Steve Aoki",
@@ -818,7 +962,15 @@
       "date": "2026-10-02",
       "venue": "The Concourse Project",
       "doors": "9 PM",
-      "source": "https://do512.com/events/2026/10/2/steve-aoki-dim-mak-30-w-elephante-b2b-riot-ten-tickets"
+      "source": "https://do512.com/events/2026/10/2/steve-aoki-dim-mak-30-w-elephante-b2b-riot-ten-tickets",
+      "page": {
+        "url": "https://do512.com/events/2026/10/2/steve-aoki-dim-mak-30-w-elephante-b2b-riot-ten-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://wl.eventim.us/event/Official-2026-ACL-Fest-Nights-Steve-Aoki/701292?afflky=TheConcourseProject",
+        "at": "Eventim"
+      }
     },
     {
       "name": "Elephante",
@@ -826,7 +978,15 @@
       "date": "2026-10-02",
       "venue": "The Concourse Project",
       "doors": "9 PM",
-      "source": "https://do512.com/events/2026/10/2/steve-aoki-dim-mak-30-w-elephante-b2b-riot-ten-tickets"
+      "source": "https://do512.com/events/2026/10/2/steve-aoki-dim-mak-30-w-elephante-b2b-riot-ten-tickets",
+      "page": {
+        "url": "https://do512.com/events/2026/10/2/steve-aoki-dim-mak-30-w-elephante-b2b-riot-ten-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://wl.eventim.us/event/Official-2026-ACL-Fest-Nights-Steve-Aoki/701292?afflky=TheConcourseProject",
+        "at": "Eventim"
+      }
     },
     {
       "name": "Riot Ten",
@@ -834,7 +994,15 @@
       "date": "2026-10-02",
       "venue": "The Concourse Project",
       "doors": "9 PM",
-      "source": "https://do512.com/events/2026/10/2/steve-aoki-dim-mak-30-w-elephante-b2b-riot-ten-tickets"
+      "source": "https://do512.com/events/2026/10/2/steve-aoki-dim-mak-30-w-elephante-b2b-riot-ten-tickets",
+      "page": {
+        "url": "https://do512.com/events/2026/10/2/steve-aoki-dim-mak-30-w-elephante-b2b-riot-ten-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://wl.eventim.us/event/Official-2026-ACL-Fest-Nights-Steve-Aoki/701292?afflky=TheConcourseProject",
+        "at": "Eventim"
+      }
     },
     {
       "name": "Grocery Bag",
@@ -842,7 +1010,15 @@
       "date": "2026-10-02",
       "venue": "Stubb's Indoors",
       "doors": "10 PM",
-      "source": "https://do512.com/events/2026/10/2/grocery-bag-tickets"
+      "source": "https://do512.com/events/2026/10/2/grocery-bag-tickets",
+      "page": {
+        "url": "https://do512.com/events/2026/10/2/grocery-bag-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A00650DAE3A9B91",
+        "at": "Ticketmaster"
+      }
     },
     {
       "name": "Rebecca Black",
@@ -850,7 +1026,15 @@
       "date": "2026-10-02",
       "venue": "Devil May Care",
       "doors": "10 PM",
-      "source": "https://do512.com/events/2026/10/2/rebecca-black-dj-set-tickets"
+      "source": "https://do512.com/events/2026/10/2/rebecca-black-dj-set-tickets",
+      "page": {
+        "url": "https://do512.com/events/2026/10/2/rebecca-black-dj-set-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://wl.eventim.us/event/official-2026-acl-fest-nights-rebecca-black-at-dmc-or-atx/702467?afflky=DevilMayCare",
+        "at": "Eventim"
+      }
     },
     {
       "name": "Bambi",
@@ -858,7 +1042,11 @@
       "date": "2026-10-02",
       "venue": "Devil May Care",
       "doors": "10 PM",
-      "source": "https://www.aclfestival.com/page/nights"
+      "source": "https://www.aclfestival.com/page/nights",
+      "page": {
+        "url": "https://www.aclfestival.com/page/nights",
+        "at": "ACL Fest"
+      }
     },
     {
       "name": "CMAT",
@@ -866,7 +1054,15 @@
       "date": "2026-10-03",
       "venue": "Historic Scoot Inn",
       "doors": "6 PM",
-      "source": "https://do512.com/events/2026/10/3/cmat-w-fancy-hagood-tickets"
+      "source": "https://do512.com/events/2026/10/3/cmat-w-fancy-hagood-tickets",
+      "page": {
+        "url": "https://do512.com/events/2026/10/3/cmat-w-fancy-hagood-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064FBC8BBD830",
+        "at": "Ticketmaster"
+      }
     },
     {
       "name": "Fancy Hagood",
@@ -874,7 +1070,15 @@
       "date": "2026-10-03",
       "venue": "Historic Scoot Inn",
       "doors": "6 PM",
-      "source": "https://do512.com/events/2026/10/3/cmat-w-fancy-hagood-tickets"
+      "source": "https://do512.com/events/2026/10/3/cmat-w-fancy-hagood-tickets",
+      "page": {
+        "url": "https://do512.com/events/2026/10/3/cmat-w-fancy-hagood-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064FBC8BBD830",
+        "at": "Ticketmaster"
+      }
     },
     {
       "name": "Parcels",
@@ -882,7 +1086,15 @@
       "date": "2026-10-03",
       "venue": "Stubb's",
       "doors": "8 PM",
-      "source": "https://do512.com/events/2026/10/3/parcels-w-velvet-trip-tickets"
+      "source": "https://do512.com/events/2026/10/3/parcels-w-velvet-trip-tickets",
+      "page": {
+        "url": "https://do512.com/events/2026/10/3/parcels-w-velvet-trip-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064FDB2E8A336",
+        "at": "Ticketmaster"
+      }
     },
     {
       "name": "Velvet Trip",
@@ -890,7 +1102,15 @@
       "date": "2026-10-03",
       "venue": "Stubb's",
       "doors": "8 PM",
-      "source": "https://do512.com/events/2026/10/3/parcels-w-velvet-trip-tickets"
+      "source": "https://do512.com/events/2026/10/3/parcels-w-velvet-trip-tickets",
+      "page": {
+        "url": "https://do512.com/events/2026/10/3/parcels-w-velvet-trip-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064FDB2E8A336",
+        "at": "Ticketmaster"
+      }
     },
     {
       "name": "Levity",
@@ -898,7 +1118,15 @@
       "date": "2026-10-03",
       "venue": "Emo's",
       "doors": "9 PM",
-      "source": "https://do512.com/events/2026/10/3/levity-w-untitld-tickets"
+      "source": "https://do512.com/events/2026/10/3/levity-w-untitld-tickets",
+      "page": {
+        "url": "https://do512.com/events/2026/10/3/levity-w-untitld-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064FBD69EEA69",
+        "at": "Ticketmaster"
+      }
     },
     {
       "name": "Untitld",
@@ -906,7 +1134,15 @@
       "date": "2026-10-03",
       "venue": "Emo's",
       "doors": "9 PM",
-      "source": "https://do512.com/events/2026/10/3/levity-w-untitld-tickets"
+      "source": "https://do512.com/events/2026/10/3/levity-w-untitld-tickets",
+      "page": {
+        "url": "https://do512.com/events/2026/10/3/levity-w-untitld-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064FBD69EEA69",
+        "at": "Ticketmaster"
+      }
     },
     {
       "name": "It's Murph",
@@ -914,7 +1150,15 @@
       "date": "2026-10-03",
       "venue": "The Concourse Project",
       "doors": "9 PM",
-      "source": "https://do512.com/events/2026/10/3/its-murph-w-nate-band-dazzle-camouflage-tickets"
+      "source": "https://do512.com/events/2026/10/3/its-murph-w-nate-band-dazzle-camouflage-tickets",
+      "page": {
+        "url": "https://do512.com/events/2026/10/3/its-murph-w-nate-band-dazzle-camouflage-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://wl.eventim.us/event/Official-2026-ACL-Fest-Nights-its-murph/701295?afflky=TheConcourseProject",
+        "at": "Eventim"
+      }
     },
     {
       "name": "Nate Band",
@@ -922,7 +1166,15 @@
       "date": "2026-10-03",
       "venue": "The Concourse Project",
       "doors": "9 PM",
-      "source": "https://do512.com/events/2026/10/3/its-murph-w-nate-band-dazzle-camouflage-tickets"
+      "source": "https://do512.com/events/2026/10/3/its-murph-w-nate-band-dazzle-camouflage-tickets",
+      "page": {
+        "url": "https://do512.com/events/2026/10/3/its-murph-w-nate-band-dazzle-camouflage-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://wl.eventim.us/event/Official-2026-ACL-Fest-Nights-its-murph/701295?afflky=TheConcourseProject",
+        "at": "Eventim"
+      }
     },
     {
       "name": "Dazzle Camouflage",
@@ -930,7 +1182,15 @@
       "date": "2026-10-03",
       "venue": "The Concourse Project",
       "doors": "9 PM",
-      "source": "https://do512.com/events/2026/10/3/its-murph-w-nate-band-dazzle-camouflage-tickets"
+      "source": "https://do512.com/events/2026/10/3/its-murph-w-nate-band-dazzle-camouflage-tickets",
+      "page": {
+        "url": "https://do512.com/events/2026/10/3/its-murph-w-nate-band-dazzle-camouflage-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://wl.eventim.us/event/Official-2026-ACL-Fest-Nights-its-murph/701295?afflky=TheConcourseProject",
+        "at": "Eventim"
+      }
     },
     {
       "name": "Underscores",
@@ -938,7 +1198,15 @@
       "date": "2026-10-03",
       "venue": "Brushy Street Commons",
       "doors": "9 PM",
-      "source": "https://do512.com/events/2026/10/3/underscores-dj-set-w-directress-1x333-tickets"
+      "source": "https://do512.com/events/2026/10/3/underscores-dj-set-w-directress-1x333-tickets",
+      "page": {
+        "url": "https://do512.com/events/2026/10/3/underscores-dj-set-w-directress-1x333-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://www.eventim.us/event/Official-2026-ACL-Fest-Nights-underscores-DJ-Set/700550",
+        "at": "Eventim"
+      }
     },
     {
       "name": "Directress",
@@ -946,7 +1214,15 @@
       "date": "2026-10-03",
       "venue": "Brushy Street Commons",
       "doors": "9 PM",
-      "source": "https://do512.com/events/2026/10/3/underscores-dj-set-w-directress-1x333-tickets"
+      "source": "https://do512.com/events/2026/10/3/underscores-dj-set-w-directress-1x333-tickets",
+      "page": {
+        "url": "https://do512.com/events/2026/10/3/underscores-dj-set-w-directress-1x333-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://www.eventim.us/event/Official-2026-ACL-Fest-Nights-underscores-DJ-Set/700550",
+        "at": "Eventim"
+      }
     },
     {
       "name": "1x333",
@@ -954,7 +1230,15 @@
       "date": "2026-10-03",
       "venue": "Brushy Street Commons",
       "doors": "9 PM",
-      "source": "https://do512.com/events/2026/10/3/underscores-dj-set-w-directress-1x333-tickets"
+      "source": "https://do512.com/events/2026/10/3/underscores-dj-set-w-directress-1x333-tickets",
+      "page": {
+        "url": "https://do512.com/events/2026/10/3/underscores-dj-set-w-directress-1x333-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://www.eventim.us/event/Official-2026-ACL-Fest-Nights-underscores-DJ-Set/700550",
+        "at": "Eventim"
+      }
     },
     {
       "name": "Almost Heaven",
@@ -962,7 +1246,15 @@
       "date": "2026-10-03",
       "venue": "Stubb's Indoors",
       "doors": "11 PM",
-      "source": "https://do512.com/events/2026/10/3/almost-heaven-tickets"
+      "source": "https://do512.com/events/2026/10/3/almost-heaven-tickets",
+      "page": {
+        "url": "https://do512.com/events/2026/10/3/almost-heaven-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A00650BBF52C2DE",
+        "at": "Ticketmaster"
+      }
     },
     {
       "name": "Ryan Beatty",
@@ -970,7 +1262,15 @@
       "date": "2026-10-04",
       "venue": "Historic Scoot Inn",
       "doors": "5 PM",
-      "source": "https://do512.com/events/2026/10/4/ryan-beatty-tickets"
+      "source": "https://do512.com/events/2026/10/4/ryan-beatty-tickets",
+      "page": {
+        "url": "https://do512.com/events/2026/10/4/ryan-beatty-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064FBC9F1D9DD",
+        "at": "Ticketmaster"
+      }
     },
     {
       "name": "Rochelle Jordan",
@@ -978,7 +1278,15 @@
       "date": "2026-10-04",
       "venue": "Antone's",
       "doors": "9 PM",
-      "source": "https://do512.com/events/2026/10/4/rochelle-jordan-tickets"
+      "source": "https://do512.com/events/2026/10/4/rochelle-jordan-tickets",
+      "page": {
+        "url": "https://do512.com/events/2026/10/4/rochelle-jordan-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064FCCD9EEE20",
+        "at": "Ticketmaster"
+      }
     },
     {
       "name": "Stefon Osae",
@@ -986,7 +1294,11 @@
       "date": "2026-10-04",
       "venue": "Antone's",
       "doors": "9 PM",
-      "source": "https://antonesnightclub.com/tm-event/official-2026-acl-fest-nights-rochelle-jordan/"
+      "source": "https://antonesnightclub.com/tm-event/official-2026-acl-fest-nights-rochelle-jordan/",
+      "page": {
+        "url": "https://antonesnightclub.com/tm-event/official-2026-acl-fest-nights-rochelle-jordan/",
+        "at": "Antone's"
+      }
     },
     {
       "name": "Suki Waterhouse",
@@ -994,7 +1306,15 @@
       "date": "2026-10-04",
       "venue": "Emo's",
       "doors": "9 PM",
-      "source": "https://do512.com/events/2026/10/4/suki-waterhouse-tickets"
+      "source": "https://do512.com/events/2026/10/4/suki-waterhouse-tickets",
+      "page": {
+        "url": "https://do512.com/events/2026/10/4/suki-waterhouse-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064FBD862ECD1",
+        "at": "Ticketmaster"
+      }
     },
     {
       "name": "Saint Motel",
@@ -1002,7 +1322,15 @@
       "date": "2026-10-05",
       "venue": "Historic Scoot Inn",
       "doors": "5 PM",
-      "source": "https://do512.com/events/2026/10/5/saint-motel-w-the-4411-tickets"
+      "source": "https://do512.com/events/2026/10/5/saint-motel-w-the-4411-tickets",
+      "page": {
+        "url": "https://do512.com/events/2026/10/5/saint-motel-w-the-4411-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064FBCB65DB99",
+        "at": "Ticketmaster"
+      }
     },
     {
       "name": "The 4411",
@@ -1010,7 +1338,15 @@
       "date": "2026-10-05",
       "venue": "Historic Scoot Inn",
       "doors": "5 PM",
-      "source": "https://do512.com/events/2026/10/5/saint-motel-w-the-4411-tickets"
+      "source": "https://do512.com/events/2026/10/5/saint-motel-w-the-4411-tickets",
+      "page": {
+        "url": "https://do512.com/events/2026/10/5/saint-motel-w-the-4411-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064FBCB65DB99",
+        "at": "Ticketmaster"
+      }
     },
     {
       "name": "LP",
@@ -1018,7 +1354,15 @@
       "date": "2026-10-05",
       "venue": "Brushy Street Commons",
       "doors": "7 PM",
-      "source": "https://do512.com/events/2026/10/5/lp-tickets"
+      "source": "https://do512.com/events/2026/10/5/lp-tickets",
+      "page": {
+        "url": "https://do512.com/events/2026/10/5/lp-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://www.eventim.us/event/Official-2026-ACL-Nights-LP/702361",
+        "at": "Eventim"
+      }
     },
     {
       "name": "Lola Young",
@@ -1026,7 +1370,15 @@
       "date": "2026-10-06",
       "venue": "Stubb's",
       "doors": "7 PM",
-      "source": "https://do512.com/events/2026/10/6/lola-young-w-leon-knight-tickets"
+      "source": "https://do512.com/events/2026/10/6/lola-young-w-leon-knight-tickets",
+      "page": {
+        "url": "https://do512.com/events/2026/10/6/lola-young-w-leon-knight-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064FDB57AA7B0",
+        "at": "Ticketmaster"
+      }
     },
     {
       "name": "Leon Knight",
@@ -1034,7 +1386,15 @@
       "date": "2026-10-06",
       "venue": "Stubb's",
       "doors": "7 PM",
-      "source": "https://do512.com/events/2026/10/6/lola-young-w-leon-knight-tickets"
+      "source": "https://do512.com/events/2026/10/6/lola-young-w-leon-knight-tickets",
+      "page": {
+        "url": "https://do512.com/events/2026/10/6/lola-young-w-leon-knight-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064FDB57AA7B0",
+        "at": "Ticketmaster"
+      }
     },
     {
       "name": "Annie DiRusso",
@@ -1042,7 +1402,15 @@
       "date": "2026-10-06",
       "venue": "Stubb's Indoors",
       "doors": "10 PM",
-      "source": "https://do512.com/events/2026/10/6/annie-dirusso-tickets"
+      "source": "https://do512.com/events/2026/10/6/annie-dirusso-tickets",
+      "page": {
+        "url": "https://do512.com/events/2026/10/6/annie-dirusso-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A00650CDC13C98E",
+        "at": "Ticketmaster"
+      }
     },
     {
       "name": "The War on Drugs",
@@ -1050,7 +1418,11 @@
       "date": "2026-10-08",
       "venue": "Fair Market",
       "doors": "6 PM",
-      "source": "https://do512.com/events/2026/10/8/the-war-on-drugs-a-special-performance-presented-by-defender-tickets"
+      "source": "https://do512.com/events/2026/10/8/the-war-on-drugs-a-special-performance-presented-by-defender-tickets",
+      "page": {
+        "url": "https://do512.com/events/2026/10/8/the-war-on-drugs-a-special-performance-presented-by-defender-tickets",
+        "at": "Do512"
+      }
     },
     {
       "name": "Arcy Drive",
@@ -1058,7 +1430,15 @@
       "date": "2026-10-08",
       "venue": "Brushy Street Commons",
       "doors": "7 PM",
-      "source": "https://do512.com/events/2026/10/8/arcy-drive-w-common-people-tickets"
+      "source": "https://do512.com/events/2026/10/8/arcy-drive-w-common-people-tickets",
+      "page": {
+        "url": "https://do512.com/events/2026/10/8/arcy-drive-w-common-people-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://www.eventim.us/event/Official-2026-ACL-Fest-Nights-Arcy-Drive/700553",
+        "at": "Eventim"
+      }
     },
     {
       "name": "Common People",
@@ -1066,7 +1446,15 @@
       "date": "2026-10-08",
       "venue": "Brushy Street Commons",
       "doors": "7 PM",
-      "source": "https://do512.com/events/2026/10/8/arcy-drive-w-common-people-tickets"
+      "source": "https://do512.com/events/2026/10/8/arcy-drive-w-common-people-tickets",
+      "page": {
+        "url": "https://do512.com/events/2026/10/8/arcy-drive-w-common-people-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://www.eventim.us/event/Official-2026-ACL-Fest-Nights-Arcy-Drive/700553",
+        "at": "Eventim"
+      }
     },
     {
       "name": "World Famous Pets",
@@ -1074,7 +1462,15 @@
       "date": "2026-10-08",
       "venue": "Antone's",
       "doors": "7 PM",
-      "source": "https://do512.com/events/2026/10/8/world-famous-pets-tickets"
+      "source": "https://do512.com/events/2026/10/8/world-famous-pets-tickets",
+      "page": {
+        "url": "https://do512.com/events/2026/10/8/world-famous-pets-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064FCD21AF513",
+        "at": "Ticketmaster"
+      }
     },
     {
       "name": "Elijah Delgado",
@@ -1082,7 +1478,11 @@
       "date": "2026-10-08",
       "venue": "Antone's",
       "doors": "7 PM",
-      "source": "https://antonesnightclub.com/tm-event/official-2026-acl-fest-nights-world-famous-pets/"
+      "source": "https://antonesnightclub.com/tm-event/official-2026-acl-fest-nights-world-famous-pets/",
+      "page": {
+        "url": "https://antonesnightclub.com/tm-event/official-2026-acl-fest-nights-world-famous-pets/",
+        "at": "Antone's"
+      }
     },
     {
       "name": "Sunday (1994)",
@@ -1090,7 +1490,15 @@
       "date": "2026-10-08",
       "venue": "Stubb's Indoors",
       "doors": "8 PM",
-      "source": "https://do512.com/events/2026/10/8/sunday-1994-tickets"
+      "source": "https://do512.com/events/2026/10/8/sunday-1994-tickets",
+      "page": {
+        "url": "https://do512.com/events/2026/10/8/sunday-1994-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A00650CDFACD43D",
+        "at": "Ticketmaster"
+      }
     },
     {
       "name": "Łaszewo",
@@ -1098,7 +1506,15 @@
       "date": "2026-10-08",
       "venue": "3TEN",
       "doors": "8 PM",
-      "source": "https://do512.com/events/2026/10/8/laszewo-w-left-lucid-tickets"
+      "source": "https://do512.com/events/2026/10/8/laszewo-w-left-lucid-tickets",
+      "page": {
+        "url": "https://do512.com/events/2026/10/8/laszewo-w-left-lucid-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://www.axs.com/events/1568163/official-2026-acl-fest-nights-aszewo-tickets?skin=3ten?cid=usaffdostuff",
+        "at": "AXS"
+      }
     },
     {
       "name": "Left Lucid",
@@ -1106,7 +1522,15 @@
       "date": "2026-10-08",
       "venue": "3TEN",
       "doors": "8 PM",
-      "source": "https://do512.com/events/2026/10/8/laszewo-w-left-lucid-tickets"
+      "source": "https://do512.com/events/2026/10/8/laszewo-w-left-lucid-tickets",
+      "page": {
+        "url": "https://do512.com/events/2026/10/8/laszewo-w-left-lucid-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://www.axs.com/events/1568163/official-2026-acl-fest-nights-aszewo-tickets?skin=3ten?cid=usaffdostuff",
+        "at": "AXS"
+      }
     },
     {
       "name": "¥ØU$UK€ ¥UK1MAT$U",
@@ -1114,7 +1538,15 @@
       "date": "2026-10-08",
       "venue": "The Concourse Project",
       "doors": "9 PM",
-      "source": "https://do512.com/events/2026/10/8/yousuke-yukimatsu-tickets"
+      "source": "https://do512.com/events/2026/10/8/yousuke-yukimatsu-tickets",
+      "page": {
+        "url": "https://do512.com/events/2026/10/8/yousuke-yukimatsu-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://wl.eventim.us/event/Official-2026-ACL-Fest-Nights-Yousuke-Yukimatsu/701792?afflky=TheConcourseProject",
+        "at": "Eventim"
+      }
     },
     {
       "name": "Jess Williamson",
@@ -1122,7 +1554,15 @@
       "date": "2026-10-08",
       "venue": "The Continental Club",
       "doors": "9:30 PM",
-      "source": "https://do512.com/events/2026/10/8/jess-williamson-tickets"
+      "source": "https://do512.com/events/2026/10/8/jess-williamson-tickets",
+      "page": {
+        "url": "https://do512.com/events/2026/10/8/jess-williamson-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://consumer.pxf.io/APvP5J?u=https%3A%2F%2Fwww.eventbrite.com%2Fe%2Fjess-williamson-tickets-1998237458028%3Faff%3Doddtdtcreator",
+        "at": "Eventbrite"
+      }
     },
     {
       "name": "Noga Erez",
@@ -1130,7 +1570,15 @@
       "date": "2026-10-09",
       "venue": "Historic Scoot Inn",
       "doors": "7 PM",
-      "source": "https://do512.com/events/2026/10/9/noga-erez-tickets"
+      "source": "https://do512.com/events/2026/10/9/noga-erez-tickets",
+      "page": {
+        "url": "https://do512.com/events/2026/10/9/noga-erez-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064FBD141E37A",
+        "at": "Ticketmaster"
+      }
     },
     {
       "name": "BUNT.",
@@ -1138,7 +1586,15 @@
       "date": "2026-10-09",
       "venue": "The Concourse Project",
       "doors": "9 PM",
-      "source": "https://do512.com/events/2026/10/9/bunt-w-dj-bad-apple-tickets"
+      "source": "https://do512.com/events/2026/10/9/bunt-w-dj-bad-apple-tickets",
+      "page": {
+        "url": "https://do512.com/events/2026/10/9/bunt-w-dj-bad-apple-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://wl.eventim.us/event/Official-2026-ACL-Fest-Nights-BUNT/701303?afflky=TheConcourseProject",
+        "at": "Eventim"
+      }
     },
     {
       "name": "DJ Bad Apple",
@@ -1146,7 +1602,15 @@
       "date": "2026-10-09",
       "venue": "The Concourse Project",
       "doors": "9 PM",
-      "source": "https://do512.com/events/2026/10/9/bunt-w-dj-bad-apple-tickets"
+      "source": "https://do512.com/events/2026/10/9/bunt-w-dj-bad-apple-tickets",
+      "page": {
+        "url": "https://do512.com/events/2026/10/9/bunt-w-dj-bad-apple-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://wl.eventim.us/event/Official-2026-ACL-Fest-Nights-BUNT/701303?afflky=TheConcourseProject",
+        "at": "Eventim"
+      }
     },
     {
       "name": "Rodrigo y Gabriela",
@@ -1154,7 +1618,15 @@
       "date": "2026-10-09",
       "venue": "Emo's",
       "doors": "9 PM",
-      "source": "https://do512.com/events/2026/10/9/rodrigo-y-gabriela-tickets"
+      "source": "https://do512.com/events/2026/10/9/rodrigo-y-gabriela-tickets",
+      "page": {
+        "url": "https://do512.com/events/2026/10/9/rodrigo-y-gabriela-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064FBD9A5EE44",
+        "at": "Ticketmaster"
+      }
     },
     {
       "name": "Claire Rosinkranz",
@@ -1162,7 +1634,15 @@
       "date": "2026-10-10",
       "venue": "3TEN",
       "doors": "8 PM",
-      "source": "https://do512.com/events/2026/10/10/claire-rosinkranz-tickets"
+      "source": "https://do512.com/events/2026/10/10/claire-rosinkranz-tickets",
+      "page": {
+        "url": "https://do512.com/events/2026/10/10/claire-rosinkranz-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://www.axs.com/events/1566242/official-2026-acl-fest-nights-claire-rosinkranz-tickets?skin=3ten?cid=usaffdostuff",
+        "at": "AXS"
+      }
     },
     {
       "name": "Don West",
@@ -1170,7 +1650,15 @@
       "date": "2026-10-10",
       "venue": "Antone's",
       "doors": "9 PM",
-      "source": "https://do512.com/events/2026/10/10/don-west-w-kesmar-tickets"
+      "source": "https://do512.com/events/2026/10/10/don-west-w-kesmar-tickets",
+      "page": {
+        "url": "https://do512.com/events/2026/10/10/don-west-w-kesmar-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064FCCFDBF196",
+        "at": "Ticketmaster"
+      }
     },
     {
       "name": "Kesmar",
@@ -1178,7 +1666,15 @@
       "date": "2026-10-10",
       "venue": "Antone's",
       "doors": "9 PM",
-      "source": "https://do512.com/events/2026/10/10/don-west-w-kesmar-tickets"
+      "source": "https://do512.com/events/2026/10/10/don-west-w-kesmar-tickets",
+      "page": {
+        "url": "https://do512.com/events/2026/10/10/don-west-w-kesmar-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064FCCFDBF196",
+        "at": "Ticketmaster"
+      }
     },
     {
       "name": "Fcukers",
@@ -1187,7 +1683,11 @@
       "venue": "Devil May Care",
       "doors": "10 PM",
       "close": "2 AM",
-      "source": "https://www.devilmaycareatx.com/acl-nights-2"
+      "source": "https://www.devilmaycareatx.com/acl-nights-2",
+      "page": {
+        "url": "https://www.devilmaycareatx.com/acl-nights-2",
+        "at": "Devil May Care"
+      }
     }
   ],
   "meta": {
