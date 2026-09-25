@@ -32,8 +32,28 @@ here and the last commit.
 - [x] Throwaway crew `zz-season-demo` made through the preview (one member,
       Kevin; a seeded, made-up Spotify taste of 14 artists so YOURS shows; its
       invite points at Austin). Its token is in the builder's report only.
-- This notes commit is local on purpose: pushing it would rebuild the preview
-  and kill the share link.
+
+### Round 2 (the review, 2026-09-25 evening)
+
+- [x] Merged `seasons/austin-v0` at e326f9d (main's v89 merged there; stamp
+      v90, unreleased). Import conflict resolved without `showUndoToast`
+      (main removed it); data files match e326f9d exactly.
+- [x] `unlisted` shows: off the wall, YOURS, counts, the location list and
+      "also" (a moved show stood twice).
+- [x] The day turn: tickClock repaints a season when Austin's festival day
+      changes (5 AM rollover). Browser test crosses 4:58 → 5:02 AM and fails
+      without the fix.
+- [x] One season model per repaint (memo; festDatesOf skips a season);
+      findEventEntry reads a per-file name index. **Full repaint of the real
+      752-show file at 4x CPU throttle: ~180 ms** (265 after round 1, ~450
+      before it). Portola: ~52 ms, unchanged.
+- [x] renderDayNav reads tab positions only on a season.
+- [x] Month labels are keys, never parsed: "September 2027" gets its own tab;
+      labels come from dates; a second SEP wears "’27" in the dock.
+- [x] Sale times say "CT".
+- [x] List heads after the seasons: City seasons → Past festivals → More.
+- [x] `npm test` 929/929 (1 skip) and `npm run test:browser` 187/187 on
+      9615bc1 (the merged tree with every fix).
 
 ## Decisions (and why)
 
@@ -105,16 +125,17 @@ here and the last commit.
 
 ## Weakest
 
-- A full repaint of ~750 cards is ~265 ms at 4x CPU throttle (~65 ms on this
-  Mac). It happens when a crew-mate's pick arrives by poll and when a search
-  is cleared. Rendering month by month would fix it; not done in v0.
+- A full repaint of ~750 cards is ~180 ms at 4x CPU throttle. It happens when
+  a crew-mate's pick arrives by poll and when a search is cleared. Rendering
+  month by month would take it further; not done in v0.
 - October is ~150 rows on a phone. Week heads, search and the location
   filter are the lenses; nothing yet says "your crew picked these" as a lens
   (the people filter dims, it does not gather).
 - An API-made crew without `meta.inviteFestId` opens the default festival
   (Portola) — found making the demo crew; crews made in the app are stamped.
-- `unlisted` (a show no source lists any more) is not read by the view: none
-  in today's file. It will show as a normal card until the view says so.
+- On the preview nobody can connect Spotify (Connect hops to production, v88,
+  which has no Austin), so YOURS's Spotify half only knows artists v88 badged
+  at the crew's other festivals, until production has Austin.
 
 ## For Kevin
 
