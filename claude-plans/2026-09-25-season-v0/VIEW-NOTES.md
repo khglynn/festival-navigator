@@ -22,9 +22,18 @@ here and the last commit.
 - [x] Speed: a full repaint of the real season 450 → 265 ms at 4x CPU throttle
 - [x] Unit tests (`tests/season-view.test.mjs`, clock pinned via ctx.now) and a
       browser contract (`tests/browser/season-contract.test.mjs`)
-- [ ] Full browser suite green on the final tree
-- [ ] Push, preview URL, throwaway `zz-season-` crew
-- [ ] Location filter (UX.md §3: only if it fits v0)
+- [x] Location filter (UX.md §3): the fest name lists the locations
+- [x] Full browser suite 185/185 and unit 915/915 on 5794d66 (d7a2c3e is one
+      Settings line after it; unit + shell and season contracts re-run green)
+- [x] Pushed; preview built from d7a2c3e (stamp 66ae6153):
+      https://festival-navigator-git-seasons-view-kevinhg.vercel.app
+      (unique: festival-navigator-finc8whma-kevinhg.vercel.app). Behind Vercel
+      login; a share link lasts 23 h and dies on the next deploy of the branch.
+- [x] Throwaway crew `zz-season-demo` made through the preview (one member,
+      Kevin; a seeded, made-up Spotify taste of 14 artists so YOURS shows; its
+      invite points at Austin). Its token is in the builder's report only.
+- This notes commit is local on purpose: pushing it would rebuild the preview
+  and kill the share link.
 
 ## Decisions (and why)
 
@@ -53,6 +62,16 @@ here and the last commit.
 8. **The zoom's billing line** shows `billedAs` only when it does not simply
    lead with the artist's own name ("ACL TV Taping: Lola Young" shows;
    "Denis O'Donnell at Hole in the Wall" does not).
+9. **The location filter** is the show menu on the fest name: "Show · 69 of
+   69 locations", busiest first with counts, "All locations" first (one tap
+   back from any filter, or a clear wall). A tap keeps the menu open. Hidden
+   locations leave the months, YOURS and search. Motion: the location's cards
+   leave quick and plain; cards that stay in their row or column slide, and
+   cards the reflow moves to another row fade in where they land (a diagonal
+   slide ran them over their neighbours, watched in slow motion).
+10. **Lists**: Austin after the upcoming festivals under "City seasons", then
+   "Past festivals" gets its own head (landing, Settings, create). Never the
+   default festival. Settings shows no Day image row for a season.
 
 ## Checked in a real browser (headless Chromium, real input)
 
@@ -72,14 +91,39 @@ here and the last commit.
 - Search "mohawk": 48 answers in 8 months, each saying `Fri · Sep 25 · 8:30 PM`
   then `Mohawk`; tabs narrow to the months that answered.
 
+- The location menu at 390 (touch) and 1280 (mouse): untick the busiest
+  location (its cards leave, the menu stays open, "68 of 69"), All locations
+  back, a tap outside closes; slow-motion frames of the reflow at 1280.
+- Edge cases on the real file: Freaky Deaky (untimed, 8-name bill → "with
+  AHEE, Boogie T, Crankdat +5"), cancelled shows (struck, last in their week,
+  Info door kept, tickets gone), the longest name, 320px (no overflow).
+- **On the real preview** (share link, then the crew link, "I'm Kevin"), 390
+  by touch and 1280 by mouse: lands on SEP 25 – 27 under YOURS (15 shows),
+  held-finger and hover zooms, a pick on the zoom lights both of that
+  artist's cards and reached the server, the location filter, a "mohawk"
+  search. No console errors.
+
 ## Weakest
 
-- A full repaint of ~750 cards is ~265 ms at 4x throttle (~65 ms on this
-  Mac). It happens on a crew-mate's pick arriving by poll and on clearing a
-  search. Month-by-month rendering would fix it; not done in v0.
-- 2 across on a phone means October is ~150 rows. Week heads and search help;
-  the location filter (not built yet) is the next lens.
+- A full repaint of ~750 cards is ~265 ms at 4x CPU throttle (~65 ms on this
+  Mac). It happens when a crew-mate's pick arrives by poll and when a search
+  is cleared. Rendering month by month would fix it; not done in v0.
+- October is ~150 rows on a phone. Week heads, search and the location
+  filter are the lenses; nothing yet says "your crew picked these" as a lens
+  (the people filter dims, it does not gather).
+- An API-made crew without `meta.inviteFestId` opens the default festival
+  (Portola) — found making the demo crew; crews made in the app are stamped.
+- `unlisted` (a show no source lists any more) is not read by the view: none
+  in today's file. It will show as a normal card until the view says so.
 
 ## For Kevin
 
-(filled in at the end)
+1. Past days of this month are gone too (the wall starts today). OK, or keep
+   the month whole and land on today?
+2. Weeks run Monday to Sunday under `OCT 5 – 11`. Want weekend-only breaks
+   instead?
+3. Locations sort busiest first. A–Z instead?
+4. The preview is behind Vercel login. Showing friends: a share link (23 h)
+   or turn preview protection off?
+5. Don't press Connect Spotify on the preview: it hops to production (v88,
+   no Austin). The demo crew's YOURS uses a made-up taste of 14 artists.
