@@ -1,18 +1,17 @@
 # NOW — festival-navigator
 
-**last-updated: 2026-09-25 (v88 live) · mode: live**
+**last-updated: 2026-09-25 (v89 live) · mode: live**
 
 Where things stand, on one screen. Change stale lines in place; the story of
 how we got here belongs in DEVLOG.md.
 
 ## Live on production
 
-- **v88, from `main`** (release PR #31 = #29 + #30 + gate fixes, merged
-  2026-09-25 ~1:20 PM PT) on fest / festival / crew.kevinhg.com — confirmed
-  on all three hosts at 1:24 PM PT by `curl -s
-  https://fest.kevinhg.com/service-worker.js | grep CACHE_VERSION`
-  (festival-nav-v88, ASSET_STAMP 3f537ac1). v87 (PR #26) went out the night
-  before.
+- **v89, from `main`** (PR #33, merged 2026-09-25 2:50 PM PT) on fest /
+  festival / crew.kevinhg.com — confirmed on all three hosts at 2:52 PM PT
+  (festival-nav-v89, ASSET_STAMP 4ad32b2f). The first release shipped under
+  Kevin's standing rule: CI green plus a clean independent review, no ask
+  (CLAUDE.md, "Deploy is gated"). v88 (release PR #31) went out at 1:20 PM.
 - **Data** (merged under the standing data-only OK): the 2026-09-23 re-read
   (PR #23 — the two Portola Week nights added Sep 17, 21 billed openers, ACL
   Fest Nights per the 9.21 graphic); Thu Club Six's three openers as a
@@ -39,7 +38,14 @@ how we got here belongs in DEVLOG.md.
   alone gets `maximum-scale=1`), no double-tap zoom, the search box shaped
   like a text field (Kevin, live at Portola). Walked in a real browser; the
   walk's one bug (a door tapped in the settle beat closed the zoom) is fixed.
-  Kevin's live iPhone check of the no-zoom fix is pending.
+  Kevin checked it live: no zoom anywhere when typing.
+- What v89 carries (Kevin's v88 feedback, 2026-09-25): the zoom's notes chip
+  opens on the first tap on iPhone (Safari's unfocused button had sent focus
+  nowhere and closed the zoom — diagnosed from his phone's own PostHog
+  reports); holding a note reveals its actions instead of selecting text on
+  touch (so note text can't be copied on a phone — offered back on a second
+  hold if Kevin wants it); no undo toast when a must clears; error kinds read
+  as words in PostHog.
 - What v86 carries, each with its spec or build log in `claude-plans/`:
   1. One line per room (`SAT PORTOLA`, `SAT AFTERS`, `TUE LATE NIGHTS`),
      `.day-block` per day — `claude-plans/2026-09-23-one-line-heads.md`.
