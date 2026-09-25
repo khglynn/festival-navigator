@@ -207,8 +207,8 @@ test('eventModelOf on Portola: THU FRI SAT SUN, the grid days keep their keys, t
   assert.deepEqual(m.extras, [], 'every Portola event says its night, so nothing hangs off the end');
   const afters = m.sections[0];
   assert.deepEqual([...afters.byDay.keys()], ['Thursday', 'Friday', 'Saturday', 'Sunday']);
-  assert.deepEqual([...afters.byDay.values()].map((l) => l.length), [7, 21, 15, 22],
-    'Friday: twenty Afters entries plus Horse Meat Disco (Afters & Folsom); the 2026-09-23 pass added The Hellp & Bassvictim (Fri), Boys Noize (Sat) and the billed support acts; 2026-09-24 added Club Six\'s three (Thu)');
+  assert.deepEqual([...afters.byDay.values()].map((l) => l.length), [7, 21, 15, 25],
+    'Friday: twenty Afters entries plus Horse Meat Disco (Afters & Folsom); the 2026-09-23 pass added The Hellp & Bassvictim (Fri), Boys Noize (Sat) and the billed support acts; 2026-09-24 added Club Six\'s three (Thu), 2026-09-25 the Midway\'s three (Sun)');
   assert.deepEqual([...m.sections[1].byDay].map(([k, l]) => [k, l.length]), [['Friday', 2], ['Saturday', 2], ['Sunday', 4]]);
   assert.deepEqual(afters.loose, [], 'every Portola event says its night');
 });
