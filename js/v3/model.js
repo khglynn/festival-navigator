@@ -42,6 +42,23 @@ export function picksFor(doc, fid) {
   return out;
 }
 
+// The artists `person` picked at any OTHER festival in this crew, lowercased
+// — half of what makes a season's show "yours" (the other half is Spotify;
+// events.js seasonModelOf). Read from the one crew doc on screen, so it is
+// only ever this person's own picks where this crew can already see them:
+// nothing reaches across circles (CLAUDE.md, the model's first law).
+export function pickedElsewhere(doc, person, exceptFid) {
+  const out = new Set();
+  if (!person) return out;
+  for (const fid of Object.keys(doc?.festivals || {})) {
+    if (fid === exceptFid) continue;
+    for (const [artist, by] of Object.entries(picksFor(doc, fid))) {
+      if ((by[person] || 0) >= 1) out.add(artist.toLowerCase());
+    }
+  }
+  return out;
+}
+
 // True when a client should request the server-side migrate op before its
 // first v4-semantics write.
 export function needsMigration(doc) {

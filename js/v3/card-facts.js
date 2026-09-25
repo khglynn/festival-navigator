@@ -15,7 +15,8 @@ import { LEVEL_LABELS_V4 } from '../parse.js';
 import { hslOf } from './palette.js';
 import { colorIndexOf, roomOf } from './wall.js';
 import { record } from '../errlog.js';
-import { runFactsOf, findEventEntry, shortDateLabel, shortDate, dateOf, venueOf, isCancelled, cancelledNames, linksOf } from './events.js';
+import { runFactsOf, findEventEntry, shortDateLabel, shortDate, dateOf, venueOf, isCancelled, cancelledNames, linksOf, isSeason, weekdayOfIso } from './events.js';
+import { festivalClock } from './now.js';
 import { GROW_MS, CONTENT_FADE_MS, OUT_MS, CASCADE_MS, STAGGER_MS, REFRESH_MS, EASE_ARRIVE, EASE_LEAVE, EASE_SURFACE, canAnimate } from './motion.js';
 import { whoSnapshot, whoMotion, whoSettle } from './who-motion.js';
 
@@ -112,7 +113,14 @@ export function factsFor(artistName, ctx, occ = null) {
   // EVENT's stage carries the night — say when, then where, once. Anything
   // else is a day on the festival's own axis, and the day follows the clock.
   let when, where;
-  if (date) {
+  // A city season's show (2026-09-25) says its start AND its doors — the
+  // festival rule above lets a run's window stand in for the clock, and a
+  // season show is never a run, so "Fri · Oct 9 · 8 PM · Doors 7 PM".
+  const seasonShow = !!(date && entry && isSeason(fest));
+  if (seasonShow) {
+    when = [shortDateLabel(date), cancelled ? null : timeRange(time), !cancelled && entry.doors ? `Doors ${entry.doors}` : null].filter(Boolean).join(' · ');
+    where = venue || '';
+  } else if (date) {
     when = [shortDateLabel(date), clock].filter(Boolean).join(' · ');
     where = venue || '';
   } else if (stage && stage.includes(' · ')) {
@@ -130,6 +138,7 @@ export function factsFor(artistName, ctx, occ = null) {
   if (weekend) when = [when, weekend].filter(Boolean).join(' · ');
   const mapUrl = (where && fest.venues && fest.venues[where]) || null;
   return {
+    ...(seasonShow ? seasonFactsOf(fest, entry, { cancelled: !!cancelled, now: ctx.now || new Date() }) : {}),
     name: artistName, day, stage, time, weekend, when, where, mapUrl,
     approx: !!(run && run.approx),
     order: run && run.orderText ? { text: run.orderText, url: run.orderUrl, confirmed: run.confirmed } : null,
@@ -138,6 +147,73 @@ export function factsFor(artistName, ctx, occ = null) {
     noteCount: model.noteCount(state.crewDoc, ctx.fid, 'artist', artistName),
     spotify,
     links,
+  };
+}
+
+// ---- a season show's own lines (2026-09-25, claude-plans/2026-09-25-season-v0/UX.md) ----
+// "The zoom answers 'should I go, and how'": who else is on the bill, when the
+// tickets go on sale while that is still ahead (and any presale before it),
+// and the artist's other nights in the season — the pick covers them all
+// (Kevin's call: one pick per artist). Only a season's shows carry these; a
+// festival's zoom is exactly what it was.
+const BILL_MAX = 3;
+function billOf(entry) {
+  const w = Array.isArray(entry.with) ? entry.with.filter((s) => typeof s === 'string' && s.trim()).map((s) => s.trim()) : [];
+  if (!w.length) return null;
+  const shown = w.slice(0, BILL_MAX);
+  const more = w.length - shown.length;
+  return `with ${more ? `${shown.join(', ')} +${more}` : listOf(shown)}`;
+}
+// "Fri · Oct 2 · 10 AM" in the season's own zone (Austin's on-sale is Austin's
+// 10 AM wherever you are), or null for a time that does not parse.
+function saleClock(isoStamp, timeZone) {
+  const at = new Date(isoStamp);
+  if (Number.isNaN(at.getTime())) return null;
+  try {
+    const p = Object.fromEntries(new Intl.DateTimeFormat('en-US', {
+      timeZone: timeZone || undefined, weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit',
+    }).formatToParts(at).map((x) => [x.type, x.value]));
+    return { at, text: `${p.weekday} · ${p.month} ${p.day} · ${p.hour}${p.minute && p.minute !== '00' ? `:${p.minute}` : ''} ${p.dayPeriod}` };
+  } catch { return null; }
+}
+// The tickets' own timeline, only while some of it is still ahead: the first
+// presale still to come, then the general on-sale. Sold out says so instead;
+// a cancelled show has no tickets to talk about.
+function saleOf(entry, { cancelled, now, timeZone }) {
+  if (cancelled) return null;
+  if (entry.soldOut === true) return ['Sold out'];
+  const lines = [];
+  const pre = (Array.isArray(entry.presales) ? entry.presales : [])
+    .map((p) => (p && typeof p.start === 'string' ? saleClock(p.start, timeZone) : null))
+    .filter((c) => c && c.at > now)
+    .sort((a, b) => a.at - b.at)[0];
+  const sale = typeof entry.onSale === 'string' ? saleClock(entry.onSale, timeZone) : null;
+  if (pre && (!sale || pre.at < sale.at)) lines.push(`Presale ${pre.text}`);
+  if (sale && sale.at > now) lines.push(`On sale ${sale.text}`);
+  return lines.length ? lines : null;
+}
+// The other nights by the same name still ahead — "Also Sat Oct 3 · Sun Oct 11
+// at Mohawk" — the place said only where it differs from this card's.
+const ALSO_MAX = 3;
+function alsoOf(fest, entry, now) {
+  const today = festivalClock(now, fest.timezone || null).iso;
+  const others = (fest.artists || []).filter((a) => a && a !== entry && a.name === entry.name && !isCancelled(a)
+    && dateOf(a) && dateOf(a) >= today && !(dateOf(a) === dateOf(entry) && venueOf(a) === venueOf(entry)))
+    .sort((a, b) => (dateOf(a) < dateOf(b) ? -1 : 1));
+  if (!others.length) return null;
+  const night = (a) => {
+    const iso = dateOf(a);
+    const here = venueOf(a) && venueOf(a) !== venueOf(entry) ? ` at ${venueOf(a)}` : '';
+    return `${weekdayOfIso(iso) || ''} ${shortDate(iso)}${here}`.trim();
+  };
+  const shown = others.slice(0, ALSO_MAX).map(night);
+  return `Also ${shown.join(' · ')}${others.length > ALSO_MAX ? ` +${others.length - ALSO_MAX}` : ''}`;
+}
+function seasonFactsOf(fest, entry, { cancelled, now }) {
+  return {
+    bill: billOf(entry),
+    sale: saleOf(entry, { cancelled, now, timeZone: fest.timezone || null }),
+    also: alsoOf(fest, entry, now),
   };
 }
 
@@ -407,9 +483,25 @@ function linksRow(links) {
   return row;
 }
 
+// A season show's quiet line: the bill, the sale, the other nights — plain
+// text in the WHEN family's voice. `lines` stack in one piece, like a run's
+// window and order, so the bloom and the refresh move them as one.
+function quietLine(className, lines) {
+  const row = document.createElement('div');
+  row.className = `f-quiet ${className}`;
+  for (const text of [].concat(lines)) {
+    const s = document.createElement('span');
+    s.textContent = text;
+    row.appendChild(s);
+  }
+  return row;
+}
+
 function grownBlock(facts, { onOpenNotes = null, notesChip = true } = {}) {
   const grown = document.createElement('div');
   grown.className = 'f-grown';
+  // Who else is on the bill sits right under the name it follows.
+  if (facts.bill) grown.appendChild(quietLine('f-bill', facts.bill));
   if (facts.when) {
     const sub = document.createElement('div');
     sub.className = 'f-sub';
@@ -444,6 +536,10 @@ function grownBlock(facts, { onOpenNotes = null, notesChip = true } = {}) {
   }
   if (facts.where) grown.appendChild(placeDoor(facts.where, facts.mapUrl, 'f-where'));
   if (facts.links) grown.appendChild(linksRow(facts.links));
+  // Under the doors to the tickets, when they go on sale; then the other
+  // nights this pick also covers.
+  if (facts.sale) grown.appendChild(quietLine('f-sale', facts.sale));
+  if (facts.also) grown.appendChild(quietLine('f-also', facts.also));
   // The who-row only when there are people: a pill arriving after a tap
   // slides in and its neighbours make room (the designed event). A reserved
   // empty row was tried on 2026-09-01 to keep the venue door from sliding
@@ -882,9 +978,17 @@ function zoomCardInner(el, artistName, ctx, { onOpenNotes = null, source = 'mous
   const sub = card.querySelector('.f-sub');
   const where = card.querySelector('.f-where');
   const links = card.querySelector('.f-links');
+  // A season show's quiet lines (2026-09-25) rise with the family they sit
+  // in: the bill with WHEN, the sale and the other nights after the links.
+  const bill = card.querySelector('.f-bill');
+  const sale = card.querySelector('.f-sale');
+  const also = card.querySelector('.f-also');
+  if (bill) arrive(bill, 0, 6, CONTENT_FADE_MS + 5);
   if (sub) arrive(sub, 0, 6, CONTENT_FADE_MS + 5);
   if (where) arrive(where, 0, 6, CONTENT_FADE_MS + 35);
   if (links) arrive(links, 0, 6, CONTENT_FADE_MS + 45);
+  if (sale) arrive(sale, 0, 6, CONTENT_FADE_MS + 50);
+  if (also) arrive(also, 0, 6, CONTENT_FADE_MS + 55);
   [...card.querySelectorAll('.f-pill')].forEach((p, i) => arrive(p, 14, 0, CONTENT_FADE_MS + 55 + i * (STAGGER_MS - 2)));
   [...card.querySelectorAll('.f-chip')].forEach((c, i) => arrive(c, -14, 0, CONTENT_FADE_MS + 55 + i * STAGGER_MS));
   z.anims = anims;
@@ -916,12 +1020,15 @@ function zoomCardInner(el, artistName, ctx, { onOpenNotes = null, source = 'mous
 // names move between them as themselves, so it reconciles itself
 // (who-motion.js, storyboard claude-plans/2026-09-23-zoom-chips-motion.md);
 // the refresh below only hands it a before-snapshot and keeps its animations.
-const REFRESH_PART_SEL = '.f-name, .f-sub, .f-where, .f-links, .f-chip.notes, .f-chip.spot';
+const REFRESH_PART_SEL = '.f-name, .f-bill, .f-sub, .f-where, .f-links, .f-sale, .f-also, .f-chip.notes, .f-chip.spot';
 function partKey(el) {
   if (el.classList.contains('f-name')) return 'name';
+  if (el.classList.contains('f-bill')) return 'bill';
   if (el.classList.contains('f-sub')) return 'sub';
   if (el.classList.contains('f-where')) return 'where';
   if (el.classList.contains('f-links')) return 'links';
+  if (el.classList.contains('f-sale')) return 'sale';
+  if (el.classList.contains('f-also')) return 'also';
   if (el.classList.contains('notes')) return 'notes';
   if (el.classList.contains('spot')) return 'spot';
   return null;

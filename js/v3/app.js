@@ -21,6 +21,7 @@ import { onStorageWriteFail, saveLS, errorText } from '../util.js';
 import { router, encodeNotesKey, decodeNotesKey } from './router.js';
 import { wireCardZoom, wireCardFocusZoom, zoomCard, unzoom, dismissZoom, zoomedCard, zoomContains, zoomSnapshot, refreshZoom, festPlaceLine } from './card-facts.js';
 import { hookGlobalErrors, configureReports, record } from '../errlog.js';
+import { isSeason } from './events.js'; // a city season (2026-09-25)
 // The crash journal listens from the first module tick — an error during
 // boot is exactly the kind nobody can describe later (2026-08-31). index.html
 // hooks it earlier still, from a module script of its own; this second call
@@ -827,6 +828,18 @@ function maybeOpenOnDay() {
   const tz = state.fest().timezone || null; // the festival's clock, not the phone's
   const key = dayOfScrollKey(ctx.fid, new Date(), tz);
   if (scrolledBefore(key)) return;
+  // A season opens on today (Kevin, at kickoff): the month it is, from
+  // today — which is the first month block, since the wall starts today. The
+  // one thing that can sit above it is YOURS, whose tab arrives in the dock
+  // to say it is there; with no YOURS today is already the top of the page,
+  // and the season's name stays in view.
+  if (isSeason(state.fest())) {
+    const month = document.querySelector('#wall-root .day-block[data-kind="month"]');
+    if (!month) return;
+    if (month.previousElementSibling) landOnDay(month);
+    rememberScrolled(key);
+    return;
+  }
   // During the festival: the now line, or today's first head before doors —
   // a Late nights date counts as today when no grid day is (wall.js
   // scrollToNowLine).
@@ -916,15 +929,49 @@ export function dayTab({ key, num = null, anchor = null }, label, { withNum = fa
   return tab;
 }
 
+// A season's YOURS tab arrives the way NOW does (VIEW-BRIEF, 2026-09-25): it
+// fades in from 6px to the left with the beat, and the months beside it slide
+// over to make room, tab by tab — never on a repaint that changed nothing, so
+// the rows are rebuilt as always and only the difference moves. Leaving is
+// quick and plain: the months slide back. Which fests last painted a YOURS,
+// for the life of the page: the first paint of a season with one is its
+// arrival too, as NOW's first appearance is.
+const yoursPainted = new Map();
+const lefts = (row) => new Map([...row.children].map((t) => [t.dataset.day, t.getBoundingClientRect().left]));
+function yoursMoves(rows, before, had) {
+  for (const [i, row] of rows.entries()) {
+    const yours = [...row.children].find((t) => t.dataset.day === 'yours');
+    for (const t of row.children) {
+      if (t === yours || !canAnimate(t, ctx)) continue;
+      const was = before[i].get(t.dataset.day);
+      if (was == null) continue;
+      const dx = was - t.getBoundingClientRect().left;
+      if (Math.abs(dx) >= 1) t.animate([{ transform: `translateX(${dx}px)` }, { transform: 'none' }], { duration: CASCADE_MS, easing: EASE_ARRIVE });
+    }
+    if (yours && !had && canAnimate(yours, ctx)) {
+      yours.animate([{ opacity: 0, transform: 'translateX(-6px)' }, { opacity: 1, transform: 'none' }],
+        { duration: CASCADE_MS, delay: STAGGER_MS, easing: EASE_ARRIVE, fill: 'backwards' });
+    }
+  }
+}
+
 function renderDayNav() {
   const dock = $('dock-days');
   const rail = $('rail-days');
+  const before = [lefts(dock), lefts(rail)];
   dock.textContent = '';
   rail.textContent = '';
   // The wall is painted first on every path that gets here, so it can be the
   // answer to "which days are there": while a search is on, the tabs are the
   // days it answered and nothing else.
-  for (const day of dayNavOf(state.fest(), ctx, $('wall-root'))) {
+  const tabs = dayNavOf(state.fest(), ctx, $('wall-root'));
+  if (isSeason(state.fest()) && !ctx.query) {
+    const has = tabs.some((t) => t.kind === 'yours');
+    const had = !!yoursPainted.get(ctx.fid);
+    yoursPainted.set(ctx.fid, has);
+    if (has !== had) queueMicrotask(() => yoursMoves([dock, rail], before, had));
+  }
+  for (const day of tabs) {
     const at = day.anchor || day.key;
     const jump = () => {
       const target = document.querySelector(anchorFor(at));
@@ -1085,6 +1132,30 @@ function paintShowMenus() {
   }
 }
 
+// A season's wall can change height ABOVE where you are standing without you
+// doing anything: YOURS arrives when your Spotify scan lands, grows when a
+// feed adds a show by someone you love. A festival repaint redraws the same
+// shape, but a season's must not carry the months you are reading down the
+// page. So the week you are in (the first room still on screen under the
+// chrome) is read before the repaint and held where it was after it — a
+// no-op when nothing above it changed. Nothing to hold at the top of the page,
+// or when the room you were in is gone.
+function seasonPlace() {
+  if (!isSeason(state.fest()) || !(window.scrollY > 0)) return null;
+  const top = parseFloat(window.getComputedStyle(document.documentElement).getPropertyValue('--jump-offset')) || 8;
+  const room = [...document.querySelectorAll('#wall-root .room')].find((r) => r.getBoundingClientRect().bottom > top);
+  if (!room) return null;
+  return { room: room.dataset.room, week: room.dataset.week || '', top: room.getBoundingClientRect().top };
+}
+function holdSeasonPlace(place) {
+  if (!place) return;
+  const room = [...document.querySelectorAll('#wall-root .room')]
+    .find((r) => r.dataset.room === place.room && (r.dataset.week || '') === place.week);
+  if (!room) return;
+  const dy = room.getBoundingClientRect().top - place.top;
+  if (Math.abs(dy) >= 1) window.scrollTo({ top: window.scrollY + dy, behavior: 'auto' });
+}
+
 function repaintWall() {
   // A full repaint replaces every card. A zoom that was standing comes back
   // on the fresh card at once (a crew-mate's pick arriving on the 25 s poll
@@ -1097,7 +1168,9 @@ function repaintWall() {
   const keepRoom = keep ? roomOf(zoomedCard()) : null;
   unzoom({ instant: !!keep, why: 'wall repaint' });
   refreshCtx();
+  const place = seasonPlace();
   renderWall($('wall-root'), ctx);
+  holdSeasonPlace(place);
   if (keep) {
     const again = cardFor($('wall-root'), keep.artist, keep.occ, { room: keepRoom });
     if (again) zoomCard(again, keep.artist, ctx, { ...keep, instant: true });
@@ -1107,9 +1180,10 @@ function repaintWall() {
   positionNowMarks($('wall-root'), ctx.now || new Date());
   $('notes-count').textContent = String(model.totalNoteCount(state.crewDoc, ctx.fid));
   // A timetable has one true order — a sort control there would be a lie
-  // (CORE-5). Searching a scheduled fest sorts chronologically by design.
+  // (CORE-5). Searching a scheduled fest sorts chronologically by design. A
+  // season is a calendar: its one order is the date's.
   const scheduled = !!(state.fest().days && Object.keys(state.fest().days).length);
-  $('sort-control').style.display = scheduled ? 'none' : '';
+  $('sort-control').style.display = scheduled || isSeason(state.fest()) ? 'none' : '';
   updateMigrationBanner();
   updateArchiveNote();
   maybeShowCoachMark();
