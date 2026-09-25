@@ -22,6 +22,12 @@ how we got here belongs in DEVLOG.md.
 
 ## Happening now
 
+- **Austin season v0, on branch `seasons/austin-v0` only** (preview + demo
+  crew; production after Portola on Kevin's word, v90): 752 shows from
+  `scripts/season-feed.mjs`, months as week-cut lineups, YOURS, a location
+  filter, and a Slack digest (`scripts/season-alert.mjs`). Plan and the
+  live-usage rules: `claude-plans/2026-09-25-season-v0/UX.md`. Next: Kevin's
+  go on the digest, then the promote window Mon Sep 28 – Thu Oct 1.
 - What v87 carries: the NOW jump — a NOW tab before the day tabs while
   something is live; taps go down the page stop by stop and wrap; with a
   person highlighted, only their live picks (MODEL-V4 §3d) —
