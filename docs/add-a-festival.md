@@ -205,7 +205,10 @@ line under the place, **Tix @ AXS · Info @ DoTheBay**:
 | `tickets` | Where to buy, exactly as the listing printed it. Keep a referral tag (`SharedId=DoStuff`, `pubref:dostuff`): it pays the small company that listed the show. `at` is the seller the link lands on (`AXS`, `Ticketmaster`, `Tixr`, `Eventim`), written out because a referral wrapper hides it. |
 
 Leave `tickets` off a free night, a door-only night, or a sold-out one with no
-resale link — the page is then the only door, which is the point. When the
+resale link — the page is then the only door, which is the point. One room on
+one night is one show with one page: a name added to a bill that already has
+a page takes the room's `page` and `tickets` too (`tests/show-links.test.mjs`
+fails otherwise, naming the room). When the
 page and the tickets are the same page, the zoom shows one door. A cancelled
 show keeps its page and drops the tickets door. The validator errors on
 anything but `{ url, at }`, a URL that is not `https`, an empty `at`, or an

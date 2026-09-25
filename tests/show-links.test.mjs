@@ -89,15 +89,10 @@ test('the validator: page and tickets are { url: https, at: a short name }, and 
 });
 
 for (const id of ['portola-2026', 'acl-2026']) {
-  test(`${id}: every show that is not a festival set has its page; every link is https and named; no festival set carries one`, () => {
+  test(`${id}: every link is https and named, no festival set carries one, and a room's bill shares its links`, () => {
     const fest = load(id);
     const off = fest.artists.filter((a) => !onGrid(fest, a));
     assert.ok(off.length > 50, 'the afters / late nights are there');
-    // Three Folsom-weekend nights and the Folsom Street Fair have a page and
-    // no tickets (free, door only, sold out through a host list), which is
-    // exactly the "before tix" case: the page is the door.
-    const missing = off.filter((a) => !a.page).map((a) => a.name);
-    assert.deepEqual(missing, [], 'every afters / Folsom / Late nights show links to its page');
     for (const a of fest.artists) {
       for (const f of ['page', 'tickets']) {
         if (!a[f]) continue;
@@ -105,6 +100,24 @@ for (const id of ['portola-2026', 'acl-2026']) {
         assert.match(a[f].url, /^https:\/\/\S+$/, `${a.name}.${f}.url`);
         assert.ok(a[f].at && a[f].at.length <= 24, `${a.name}.${f}.at`);
       }
+    }
+    // One room on one night is one show with one page: a name added to a
+    // bill that already has a page takes the room's page (and its tickets).
+    // Forgetting to is how S.I.M, Espurr and New Nostalgia first arrived on
+    // Sun The Midway with no doors (2026-09-25). A brand-new room with no
+    // known page yet is fine: its page comes when there is one.
+    const rooms = new Map();
+    for (const a of off) {
+      if (a.cancelled) continue;
+      const k = `${a.day}|${a.night || a.date}|${a.venue}`;
+      if (!rooms.has(k)) rooms.set(k, []);
+      rooms.get(k).push(a);
+    }
+    for (const [k, bill] of rooms) {
+      const withPage = bill.filter((a) => a.page);
+      if (!withPage.length) continue;
+      const missing = bill.filter((a) => !a.page).map((a) => a.name);
+      assert.deepEqual(missing, [], `${k}: these names are on a bill whose room has a page; copy its page and tickets onto them`);
     }
   });
 }
