@@ -711,9 +711,24 @@ function eventFrame(at, known) {
   return frame('?', at.filename, line, Number(at.colno) || 0, known);
 }
 
+// A kind (and the type a bare string takes from it) is a name the code wrote
+// — `zoom-close-after-click`, `sync:blocked` — never data a person typed. The
+// 20-character token rule cut it to ‹token› (Kevin's first live reports,
+// 2026-09-25), so a lower-case, hyphen- or colon-joined word name keeps its
+// words; the device's own secrets are still cut from it first, and anything
+// else still goes through the full scrubber.
+const CODE_NAME = /^[a-z][a-z0-9]*(?:[-:][a-z0-9]+)*$/;
+function nameText(text, known) {
+  if (!CODE_NAME.test(text) || text.length > 60) return scrubText(text, known);
+  const list = known || knownSecrets();
+  let t = text;
+  for (let i = 0; i < list.length; i++) t = t.split(list[i]).join(MARK.token);
+  return t;
+}
+
 function buildReport(kind, d, known, at) {
   const value = scrubText(d.value, known).slice(0, 300);
-  const type = scrubText(d.type, known).slice(0, 60) || 'Error';
+  const type = nameText(d.type, known).slice(0, 60) || 'Error';
   let frames = parseStack(d.stack, known);
   let synthetic = !d.stack;
   if (!frames.length) {
@@ -729,7 +744,7 @@ function buildReport(kind, d, known, at) {
   const props = baseProps();
   props.$exception_list = [exception];
   props.$exception_level = LEVEL[kind] || 'error';
-  props.kind = scrubText(String(kind), known).slice(0, 60);
+  props.kind = nameText(String(kind), known).slice(0, 60);
   const named = issueName(kind, value);
   if (named) props.$issue_name = named;
   // With no stack there is nothing for PostHog to group on but the words, so
