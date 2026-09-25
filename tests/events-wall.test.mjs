@@ -783,10 +783,18 @@ test('picks on a stack card keep cycling across the sync-echo repaint; the who-r
   assert.deepEqual(ctx.taps, ['Gelli Haha', 'Gelli Haha', 'Gelli Haha', 'Gelli Haha', 'Gelli Haha']);
   const gridCell = root.querySelector('.room[data-room=":fest"] .card.cell[data-artist="Gelli Haha"]');
   assert.ok(gridCell.getAttribute('aria-label').startsWith('Gelli Haha — not picked'));
+  // A door the last pick has just slid under the hand is not a door yet: the
+  // tap that meant "one more bar" picks, and opens nothing (DOOR_SETTLE_MS).
+  const early = new dom.window.MouseEvent('click', { bubbles: true, cancelable: true });
+  overlay().querySelector('.f-links a.f-link').dispatchEvent(early);
+  assert.equal(level('Gelli Haha'), 1, 'a door the pick just slid under the hand picks');
+  assert.ok(early.defaultPrevented, 'and does not open its page');
+  // Once the zoom has settled, every door is a door again, and none picks.
+  await new Promise((r) => setTimeout(r, facts.DOOR_SETTLE_MS + 40));
   click(overlay().querySelector('a.f-where'));
-  assert.equal(level('Gelli Haha'), 0, 'the map door does not pick');
+  assert.equal(level('Gelli Haha'), 1, 'the map door does not pick');
   for (const door of overlay().querySelectorAll('.f-links a.f-link')) click(door);
-  assert.equal(level('Gelli Haha'), 0, 'neither link door picks');
-  assert.equal(ctx.taps.length, 5);
+  assert.equal(level('Gelli Haha'), 1, 'neither link door picks');
+  assert.equal(ctx.taps.length, 6);
   facts.unzoom({ instant: true });
 });

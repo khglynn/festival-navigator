@@ -533,7 +533,7 @@ export function findEventEntry(fest, name, occ) {
 // page (what happened, refunds) and loses its tickets. When the page IS the
 // ticket page, one door says it. An entry without links has no doors, which
 // is every festival grid set.
-export const httpsUrl = (u) => (typeof u === 'string' && /^https:\/\/[^\s]+$/.test(u) ? u : null);
+const httpsUrl = (u) => (typeof u === 'string' && /^https:\/\/[^\s]+$/.test(u) ? u : null);
 const linkOf = (l, kind, word) => {
   if (!l || typeof l !== 'object' || !httpsUrl(l.url)) return null;
   const at = typeof l.at === 'string' ? l.at.trim() : '';
