@@ -1,49 +1,36 @@
 # NOW — festival-navigator
 
-**last-updated: 2026-09-24 (v86 live; v87 in review) · mode: live**
+**last-updated: 2026-09-25 (v87 live) · mode: live**
 
 Where things stand, on one screen. Change stale lines in place; the story of
 how we got here belongs in DEVLOG.md.
 
 ## Live on production
 
-- **v86, from `main`** (PR #24, merged 2026-09-24 ~01:40 CT) on fest /
-  festival / crew.kevinhg.com — confirmed on all three hosts by `curl -s
-  https://fest.kevinhg.com/service-worker.js | grep CACHE_VERSION` (v86,
-  ASSET_STAMP cac7172f).
-- **Data refreshed 2026-09-23** (PR #23, merged under the standing data-only
-  OK): the two Portola Week nights added on Sep 17 (Fri The Midway: The Hellp
-  & Bassvictim; Sat 888 Garage: Boys Noize), 21 billed openers, Sat Regency's
-  9:15 PM start, Folsom's Magnitude close (4 AM), ACL Fest Nights per the
-  official 9.21 graphic. Re-checked against the official feed 2026-09-24: same
-  20 events; the two held-back items are under Open with Kevin.
+- **v87, from `main`** (PR #26, merged 2026-09-24 11:57 PM PT) on fest /
+  festival / crew.kevinhg.com — confirmed on all three hosts at 12:00 AM PT
+  Fri 2026-09-25 by `curl -s https://fest.kevinhg.com/service-worker.js |
+  grep CACHE_VERSION` (festival-nav-v87, ASSET_STAMP 63f88365).
+- **Data** (merged under the standing data-only OK): the 2026-09-23 re-read
+  (PR #23 — the two Portola Week nights added Sep 17, 21 billed openers, ACL
+  Fest Nights per the 9.21 graphic); Thu Club Six's three openers as a
+  guessed run (2026-09-24, PR #27); Sun Midway's S.I.M / Espurr / New
+  Nostalgia on the bill, untimed (2026-09-25). Every opener in the official
+  Portola Week feed is now on the wall.
 
 ## Happening now
 
-- **v87 in review: the NOW jump**, branch `feat/now-jump` (pushed): a NOW
-  tab before the day tabs, shown only while something is live; tap lands on
-  the now line (or the first NOW card after Pier 80 closes); with a person
-  highlighted it lands on their live pick with the now line in view —
-  "where is Ross right now" in two taps. Rules: MODEL-V4 §3d; log:
-  `claude-plans/2026-09-24-now-jump-build.md`. Kevin looked at it on
-  localhost on 2026-09-24 ("really happy with where we are"); every finding
-  from his two looks and the Opus reviews is fixed with its test (the build
-  log has the list). NOW taps go down the page stop by stop and wrap — a
-  highlight's own picks only, side-by-side cards one stop (MODEL-V4 §3d).
-  The zoom clears the sticky rail and stage strip above as it clears the
-  dock below — the ceiling wins when both can't — which also closes a slow
-  hand's path to a mis-pick on NOW
-  (`claude-plans/2026-09-24-zoom-chrome-build.md`); branch `fix/zoom-dock`
-  carries all of feat/now-jump plus that.
-  Codex's review of `bc6131b` (five findings) and the zoom agent's phone
-  walk (a dead repeat tap on a line-only stop; one show billed to two rooms
-  reached twice) are fixed on feat/now-jump at `04c6ff3`, each with its
-  test: a pulse re-checks what still answers when the glide lands, the
-  cycle names its grid by day, a one-stop repeat tap re-lands once the
-  clock walks the stop off screen, a tap that moves nothing pulses the now
-  line and its label, and NOW says where it landed in a polite status
-  region. Next: the coordinator merges `fix/still-hand-test` (test-only)
-  into feat/now-jump, then Kevin's look and "ship v87".
+- What v87 carries: the NOW jump — a NOW tab before the day tabs while
+  something is live; taps go down the page stop by stop and wrap; with a
+  person highlighted, only their live picks (MODEL-V4 §3d) —
+  `claude-plans/2026-09-24-now-jump-build.md`; the full-width now line; the
+  zoom that clears the sticky rail and stage strip as well as the dock —
+  `claude-plans/2026-09-24-zoom-chrome-build.md`; and an untimed act in a
+  timed room is never lit as playing.
+- **v88 in build: error capture to PostHog**, branch `feat/error-capture`;
+  cut line Fri Sep 25 noon CT.
+- Event-page and ticket links: the city-seasons session is building them,
+  for v88 or v89.
 - What v86 carries, each with its spec or build log in `claude-plans/`:
   1. One line per room (`SAT PORTOLA`, `SAT AFTERS`, `TUE LATE NIGHTS`),
      `.day-block` per day — `claude-plans/2026-09-23-one-line-heads.md`.
@@ -61,19 +48,17 @@ how we got here belongs in DEVLOG.md.
   6. The strip rides its timeline under Reduce Motion / Low power; a Late
      nights date counts as today; the everything-hidden notice; the WebKit
      tap-ghost zoom fix.
-- Checked before ship: 783 unit tests (two timezones), 95 browser tests in CI
-  (the meter and zoom-chip contracts on every shipped fest), four Codex rounds
-  plus Opus reviews once Codex ran out of credits (until Sep 29), five
-  real-engine walks, Kevin's own look on a local build. Not on a physical
-  iPhone before ship.
+- v86 was checked before ship: 783 unit tests (two timezones), 95 browser
+  tests in CI (the meter and zoom-chip contracts on every shipped fest), four
+  Codex rounds plus Opus reviews once Codex ran out of credits (until Sep
+  29), five real-engine walks, Kevin's own look on a local build. Not on a
+  physical iPhone before ship.
 
 ## Open with Kevin
 
-- Sun Midway's S.I.M / Espurr / New Nostalgia (the official feed lists them,
-  untimed) are held out of the data: untimed acts in a timed room used to
-  glow doors to close. v87 fixes that (they are on the bill, time unknown);
-  one data-only push adds them once v87 ships, before Sunday. (The Thu Club
-  Six openers went live on 2026-09-24, PR #27.)
+- All Portola Week openers are in (nothing held back): Thu Club Six's
+  three (PR #27) and Sun Midway's S.I.M / Espurr / New Nostalgia, the Midway
+  three untimed so the four named sets keep their guesses (2026-09-25).
 - Vercel Web Analytics: the page carries the insights tag, but analytics is
   not enabled on the project — enable it, or remove the tag.
 - Small call with a default: How it works dropped "White stroke = you" (you
@@ -86,14 +71,13 @@ how we got here belongs in DEVLOG.md.
 
 ## Next, in order
 
-1. v87: Kevin's look at the combined build on localhost, a PR from
-   `feat/now-jump` to main, CI green, and his "ship v87" before Sat Sep 26.
+1. v88 or v89 before ACL (Oct 2), and ACL prep: headliner end times (its
+   closers print only a start, so the grid draws them 60 min and NOW stops
+   counting them live early — add ends, or run a stage's last endless set to
+   the day's close), and the dock's FRI flash on open (ACL lights FRI for
+   about a second before finding SAT).
 2. Data-only pushes as drops land (standing OK: validator + freeze + tests).
-   Portola Sep 26–27 (afters from Sep 24); ACL Oct 2–4 and 9–11. Before
-   ACL: its closers print only a start, so the grid draws them 60 min and
-   NOW stops counting them live early (add ends, or run a stage's last
-   endless set to the day's close); and ACL's dock lights FRI for about a
-   second on open before finding SAT (v86 does it too).
+   Portola Sep 26–27 (afters from Sep 24); ACL Oct 2–4 and 9–11.
 3. After Oct 11: the merged wall for two crews
    at one fest, add-a-show (`claude-plans/2026-09-02-add-a-show.md`), the
    staging site (fix or retire), the Ray draft.

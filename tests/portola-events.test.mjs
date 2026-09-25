@@ -48,7 +48,11 @@ const splitStage = (stage) => {
   return { night: bits[0].trim(), venue: bits.slice(1).join(' · ').trim() };
 };
 const events = portola.artists.filter((a) => typeof a.stage === 'string' && a.stage.includes(' · '));
-const midway = portola.artists.filter((a) => a.night === 'Sun' && a.venue === 'The Midway');
+// Sunday's Midway is a numbered run (the four named sets) plus three locals
+// billed for the same room with no order and no clock (2026-09-25).
+const midwayAll = portola.artists.filter((a) => a.night === 'Sun' && a.venue === 'The Midway');
+const midway = midwayAll.filter((a) => a.order);
+const midwayBilled = midwayAll.filter((a) => !a.order);
 const clone = (x) => JSON.parse(JSON.stringify(x));
 // Every venue-night in the file, however many acts are in it.
 const roomsOf = (fest) => {
@@ -132,17 +136,31 @@ test('grid entries are left alone — night/venue belong to events, not to the t
 
 // ---- §5, the back-to-back run ----------------------------------------------
 
+// A timed room is a run. It may also carry acts that are only ON THE BILL — no
+// time, no order — when no page says where they fall and guessing would re-lay
+// the sets people plan around (Sunday's Midway locals, 2026-09-25). Those stay
+// clockless on purpose: since v87 an untimed card in a room with timed sets is
+// never lit as playing (events.js venueGroupsOf). A TIMED set with no order is
+// still a pile, and is still caught here.
 test('EVERY multi-artist venue-night with a time is a complete run — no pile is left in the file', () => {
   const timedMulti = [...roomsOf(portola)].filter(([, l]) => l.length > 1 && l.some((a) => a.time));
   assert.ok(timedMulti.length > 0);
   for (const [key, list] of timedMulti) {
-    assert.ok(list.every((a) => a.order), `${key}: every set carries its position in the room's run`);
-    assert.equal(new Set(list.map((a) => a.order.seq)).size, list.length, `${key}: no two sets claim one position`);
-    assert.equal(new Set(list.map((a) => a.order.of)).size, 1, `${key}: one room, one run length`);
-    assert.equal(list[0].order.of, list.length, `${key}: the whole bill is in the file`);
-    assert.ok(list.every((a) => a.time), `${key}: every set has a start — the venue's, or our guess marked approx`);
-    assert.equal(new Set(list.map((a) => a.time)).size, list.length, `${key}: the doors time is not stamped on every act`);
-    assert.ok(list.every((a) => a.doors), `${key}: a run needs the room's doors`);
+    const run = list.filter((a) => a.order);
+    const billed = list.filter((a) => !a.order);
+    assert.ok(list.every((a) => a.order || !a.time), `${key}: every timed set carries its position in the room's run`);
+    assert.ok(run.length > 1, `${key}: a timed room's run has at least two sets`);
+    assert.equal(new Set(run.map((a) => a.order.seq)).size, run.length, `${key}: no two sets claim one position`);
+    assert.equal(new Set(run.map((a) => a.order.of)).size, 1, `${key}: one room, one run length`);
+    assert.equal(run[0].order.of, run.length, `${key}: the whole run is in the file`);
+    assert.ok(run.every((a) => a.time), `${key}: every set in the run has a start — the venue's, or our guess marked approx`);
+    assert.equal(new Set(run.map((a) => a.time)).size, run.length, `${key}: the doors time is not stamped on every act`);
+    assert.ok(run.every((a) => a.doors), `${key}: a run needs the room's doors`);
+    for (const a of billed) {
+      assert.ok(!a.time && !a.approx, `${key}: ${a.name} is on the bill with no clock, not a guessed set`);
+      assert.equal(a.doors, run[0].doors, `${key}: ${a.name} shares the room's doors`);
+      assert.equal(a.close, run[0].close, `${key}: ${a.name} shares the room's close`);
+    }
   }
 });
 
@@ -191,6 +209,14 @@ test('The Midway keeps Kevin\'s running order — the ticket billing decides the
     assert.equal(a.day, 'Afters', 'the section key is untouched — notes written on "Afters" stay there');
     assert.equal(a.order.of, 4);
     assert.match(a.order.source, /^https:\/\//, 'the order line is a door, so it needs somewhere to go');
+  }
+  // The locals Goldenvoice bills for the same room (2026-09-25), spelled as the
+  // feed spells them (they are pick keys): on the bill, no order, no clock, so
+  // the four named sets keep the guesses people are planning around.
+  assert.deepEqual(midwayBilled.map((a) => a.name), ['S.I.M', 'Espurr', 'New Nostalgia']);
+  for (const a of midwayBilled) {
+    assert.equal(a.day, 'Afters');
+    assert.equal(a.time, undefined, `${a.name}: no page prints a time, so none is guessed`);
   }
 });
 
@@ -344,10 +370,10 @@ test('the wall renders every Midway set in its run, the tilde exactly where the 
   assert.ok(midwayGroup, 'the Midway is one venue group');
   const bySeq = [...midway].sort((x, y) => x.order.seq - y.order.seq);
   const cards = [...midwayGroup.querySelectorAll('.stack > .card')];
-  assert.deepEqual(cards.map((c) => c.dataset.artist), bySeq.map((a) => a.name),
-    'every set is its own card, in the run\'s order, top to bottom');
-  assert.deepEqual(cards.map((c) => c.dataset.time), bySeq.map((a) => (a.approx === true ? `~${a.time}` : a.time)),
-    'a guessed time wears the tilde; a posted one never does');
+  assert.deepEqual(cards.map((c) => c.dataset.artist), [...bySeq, ...midwayBilled].map((a) => a.name),
+    'every set is its own card, in the run\'s order, top to bottom; the untimed locals after the timed sets');
+  assert.deepEqual(cards.map((c) => c.dataset.time), [...bySeq, ...midwayBilled].map((a) => (!a.time ? undefined : a.approx === true ? `~${a.time}` : a.time)),
+    'a guessed time wears the tilde; a posted one never does; an act only on the bill shows no time');
   assert.ok(cards.every((c) => !c.style.width && !c.style.gridColumn), 'a stack never lane-splits');
   assert.equal(afters.querySelectorAll('.sec-whisper').length, 0,
     'the inline tilde whisper is gone — How it works explains it once (Kevin, 2026-09-17)');
