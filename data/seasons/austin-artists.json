@@ -1,8 +1,8 @@
 {
  "note": "Canonical Austin season names (the pick keys) and every other spelling a source has used for them. A new spelling maps to the name already here; a name is never renamed. Written by scripts/season-feed.mjs.",
  "names": {
-  "$UICIDEBOY$": [
-   "$uicideboy$"
+  "$uicideboy$": [
+   "$UICIDEBOY$"
   ],
   "6LACK": [],
   "8onthebeat (OCHO)": [],
@@ -78,6 +78,7 @@
   "Beartooth": [],
   "BEAT": [],
   "Beauty School Dropout": [],
+  "Bebe Stockwell": [],
   "Belmont": [],
   "Ben Böhmer": [
    "BEN BÖHMER"
@@ -99,7 +100,9 @@
   "Blue Tongue": [],
   "Bo Staloch": [],
   "Bob Log III": [],
-  "BOB MOSES": [],
+  "Bob Moses": [
+   "BOB MOSES"
+  ],
   "Bob Schneider": [],
   "Bombargo": [],
   "Bonobo": [],
@@ -165,8 +168,8 @@
   "Dan Reeder": [],
   "Dana and Alden": [],
   "Daniel Sloss": [],
-  "DANNA": [
-   "Danna"
+  "Danna": [
+   "DANNA"
   ],
   "Danny Brown": [],
   "Danny Worsnop": [],
@@ -297,7 +300,9 @@
   "Graham Hunt": [],
   "Grateful Shred": [],
   "Green Velvet": [],
-  "GREG 99": [],
+  "Greg 99": [
+   "GREG 99"
+  ],
   "Greg Freeman": [],
   "Gully Boys": [],
   "Gus Miller": [],
@@ -312,8 +317,8 @@
   "Hermanos Gutiérrez": [
    "Hermanos Gutiérrez"
   ],
-  "Hey, Nothing": [
-   "hey, nothing"
+  "hey, nothing": [
+   "Hey, Nothing"
   ],
   "Heybale!": [],
   "Ho99o9": [],
@@ -392,7 +397,9 @@
   "Kat Hasty": [],
   "Kathy Mattea": [],
   "Katie Pruitt": [],
-  "KATSEYE": [],
+  "Katseye": [
+   "KATSEYE"
+  ],
   "Kelly Willis": [],
   "Kendall Street Company": [],
   "Kennedy Ryon": [],
@@ -454,8 +461,8 @@
   "Magenta Wave": [],
   "Magoo": [],
   "Makaya McCraven": [],
-  "MANÁ": [
-   "Maná"
+  "Maná": [
+   "MANÁ"
   ],
   "Mannequin Pussy": [],
   "Margaret Glaspy": [],
@@ -471,6 +478,7 @@
   "Matt Mathews": [],
   "Matt Sassari": [],
   "Matt the Electrician": [],
+  "Matthew Dear": [],
   "Max Dean b2b Luke Dean": [],
   "Mazel Tov Kocktail Hour": [],
   "Mean Jolene": [],
@@ -603,8 +611,8 @@
   "Shyne": [],
   "SiM": [],
   "Six Foot Blonde": [],
-  "SKYROCKET!": [
-   "Skyrocket!"
+  "Skyrocket!": [
+   "SKYROCKET!"
   ],
   "Slaid Cleaves": [],
   "Sleep Club": [],
@@ -650,8 +658,8 @@
   "Surprise Chef": [],
   "Susannah Joffe": [],
   "Suzanna Choffel": [],
-  "SWITCHFOOT": [
-   "Switchfoot"
+  "Switchfoot": [
+   "SWITCHFOOT"
   ],
   "SWMRS": [],
   "Syd": [],
@@ -735,8 +743,8 @@
   "Tisoki": [],
   "To The Grave": [],
   "Toadies": [],
-  "TOBYMAC": [
-   "TobyMac"
+  "TobyMac": [
+   "TOBYMAC"
   ],
   "Token": [],
   "Tokyo Tea Room": [],
@@ -770,8 +778,9 @@
   "Virga": [],
   "VNV Nation": [],
   "Warren Hood": [],
-  "Wave To Earth": [
-   "wave to earth"
+  "Wave to Earth": [
+   "wave to earth",
+   "Wave To Earth"
   ],
   "Wax": [],
   "Wax Monkey": [],

@@ -314,6 +314,16 @@ export function mergeShows(all) {
 function otherFestShows() {
   const index = JSON.parse(readFileSync(join(ROOT, 'data/festivals/index.json'), 'utf8'));
   const keys = new Set();
+  // The same pass learns how the app already spells every artist it knows.
+  // A name that matches another festival's pick key takes that spelling, so
+  // "BOB MOSES" (Ticketmaster) reads "Bob Moses" as it does at Portola, and
+  // YOURS and the alert meet the same name everywhere.
+  for (const f of index) {
+    if (f.kind === 'season') continue;
+    const file = join(ROOT, 'data/festivals', `${f.id}.json`);
+    if (!existsSync(file)) continue;
+    for (const a of JSON.parse(readFileSync(file, 'utf8')).artists || []) if (a.name && !knownSpelling.has(keyOf(a.name))) knownSpelling.set(keyOf(a.name), a.name);
+  }
   for (const f of index) {
     if (f.id === 'austin' || f.kind === 'season' || f.status === 'archived' || !/austin/i.test(f.location || '')) continue;
     const file = join(ROOT, 'data/festivals', `${f.id}.json`);
@@ -321,6 +331,16 @@ function otherFestShows() {
     for (const a of JSON.parse(readFileSync(file, 'utf8')).artists || []) if (a.date && a.name) keys.add(`${a.date}|${keyOf(a.name)}`);
   }
   return keys;
+}
+const knownSpelling = new Map();
+const shouting = (n) => /[A-Z]{3}/.test(n) && n === n.toUpperCase();
+// Which spelling a new name takes: the app's own (another festival's), then
+// Ticketmaster's unless it is shouting and another source is not, then the
+// source that listed it.
+function spellingOf(s) {
+  for (const n of [s.tmName, s.headliner]) if (n && knownSpelling.has(keyOf(n))) return knownSpelling.get(keyOf(n));
+  if (s.tmName && !(shouting(s.tmName) && s.headliner && !shouting(s.headliner) && keyOf(s.headliner) === keyOf(s.tmName))) return s.tmName;
+  return s.headliner;
 }
 // A pick key the crew document accepts is at most 100 characters.
 export const clampName = (n) => (n.length <= 100 ? n : n.slice(0, 100).replace(/\s+\S*$/, '').trim());
@@ -335,7 +355,8 @@ async function main() {
   // --fresh ignores the file on disk: only for a season nobody has picked in yet
   // (the 2026-09-25 seed), since every name it drops must also leave the freeze.
   const prev = !args.has('--fresh') && existsSync(OUT) ? JSON.parse(readFileSync(OUT, 'utf8')) : null;
-  const registry = existsSync(REGISTRY) ? JSON.parse(readFileSync(REGISTRY, 'utf8')) : { note: '', names: {} };
+  // --fresh starts the registry over too: with no file, no name is a pick key yet.
+  const registry = !args.has('--fresh') && existsSync(REGISTRY) ? JSON.parse(readFileSync(REGISTRY, 'utf8')) : { note: '', names: {} };
   // alias key -> canonical name, seeded from every name already in the file.
   const aliasToName = new Map();
   for (const [name, aliases] of Object.entries(registry.names)) for (const a of [name, ...aliases]) aliasToName.set(keyOf(a), name);
@@ -359,7 +380,7 @@ async function main() {
 
   const entries = [];
   for (const s of merged) {
-    const spelled = clampName(s.tmName || s.headliner);
+    const spelled = clampName(spellingOf(s));
     let name = aliasToName.get(keyOf(spelled)) || aliasToName.get(keyOf(s.headliner));
     if (!name) { name = spelled; aliasToName.set(keyOf(spelled), name); }
     const aliases = (registry.names[name] ||= []);
