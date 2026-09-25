@@ -455,9 +455,10 @@ function doorRow(ctx, onOpen) {
 // Hover is the mouse's trigger and lives in CSS; focus-within is the keyboard's
 // and lives in CSS too. Touch has neither, so a press-and-hold marks ONE note
 // revealed at a time (kept in per-open UI state so a repaint does not lose it).
-// The hold is timing-only — it never calls preventDefault, so the browser's own
-// press-to-select-text gesture still works; at worst both happen, which is
-// harmless. Verified with real pointer input before promoting.
+// The hold is timing-only — it never calls preventDefault. The browser's own
+// press-to-select used to run alongside it, and on iOS it won: the note lit up
+// as a text selection and the reveal never came (Kevin on v88, 2026-09-25), so
+// v3.css turns selection and the callout off on a note (not in its edit field).
 function wireReveal(row, noteId, ui) {
   if (!ui) return;
   if (ui.revealed === noteId) row.classList.add('revealed');
