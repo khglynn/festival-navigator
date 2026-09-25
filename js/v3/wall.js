@@ -1,6 +1,6 @@
 // The wall — v3's main screen (atlas 21c/21d, lineup mode). Renders day
-// sections of aura cards from the live crew doc, owns the tap cycle with the
-// undo toast, search/sort, and the mobile dock's scrollspy.
+// sections of aura cards from the live crew doc, owns the tap cycle, the
+// toasts, search/sort, and the mobile dock's scrollspy.
 //
 // SECURITY RULE (Codex P2 gate, finding 6): every artist name, person name,
 // and note text in this file goes through textContent / createElement — no
@@ -2304,8 +2304,9 @@ export function showToast(container, message, ms = 4000) {
 }
 
 // ---- action toast: a line and one button ---------------------------------------
-// The shape behind the undo toast (design open question 1: tap-5 clears via
-// undo window). A toast always goes away on its own — a notice that must
+// "Welcome back — Not me" rides it. (The must-cleared undo toast it was built
+// for was dropped on 2026-09-25, Kevin: "unnecessary".) A toast always goes
+// away on its own — a notice that must
 // outlive the glance is a strip, not a toast (see the new-build strip in
 // app.js).
 export function showActionToast(container, message, label, onAction, ms = 5000) {
@@ -2322,9 +2323,6 @@ export function showActionToast(container, message, label, onAction, ms = 5000) 
   container.appendChild(toast);
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => { container.textContent = ''; }, ms);
-}
-export function showUndoToast(container, message, onUndo) {
-  showActionToast(container, message, 'Undo', onUndo, 5000);
 }
 
 // ---- day-nav scrollspy ------------------------------------------------------------

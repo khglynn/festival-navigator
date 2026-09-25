@@ -9,7 +9,7 @@ import * as sync from '../sync.js';
 import * as spotify from '../spotify.js';
 import * as model from './model.js';
 import { loadFestivalIndex, loadFestival, fetchCustomFestivals, mergeCustoms, FESTIVAL_INDEX, defaultFestivalId } from '../festivals.js';
-import { renderWall, refreshCard, showUndoToast, showToast, wireScrollspy, colorIndexOf, positionNowLines, positionNowMarks, scrollToNowLine, dayNavOf, roomsOf, cardFor, roomOf, isStripScroller, DAY_ANCHOR, festLinkLabel, nowLanding, nowStops, nowStep, nowPulseable, nowLabelOf, nowSaid } from './wall.js';
+import { renderWall, refreshCard, showToast, wireScrollspy, colorIndexOf, positionNowLines, positionNowMarks, scrollToNowLine, dayNavOf, roomsOf, cardFor, roomOf, isStripScroller, DAY_ANCHOR, festLinkLabel, nowLanding, nowStops, nowStep, nowPulseable, nowLabelOf, nowSaid } from './wall.js';
 import { loadPeopleFilter, savePeopleFilter, togglePerson, pruneToActive, loadFolded, applyFoldToggle } from './filters.js';
 import { OUT_MS, CASCADE_MS, STAGGER_MS, EASE_ARRIVE, EASE_LEAVE, EASE_SURFACE, canAnimate } from './motion.js';
 import { scrolledBefore, rememberScrolled, dayOfScrollKey, festivalClock } from './now.js';
@@ -356,15 +356,9 @@ function handleTap(artistName) {
   refreshCtx();
   refreshArtistCards(artistName);
   sync.scheduleSync();
-  if (current === 4 && next === 0) {
-    showUndoToast($('toast-root'), 'Cleared your must for ' + artistName, () => {
-      state.recordSelection(artistName, ctx.meName, 4);
-      applyLocalPick(artistName, ctx.meName, 4);
-      refreshCtx();
-      refreshArtistCards(artistName);
-      sync.scheduleSync();
-    });
-  }
+  // No undo toast when a must clears (Kevin, 2026-09-25: "unnecessary for
+  // removing a must. it's not that destructive"): tapping again starts the
+  // cycle over from the first bar.
 }
 
 // recordSelection writes pending; mirror into the local doc for instant render.

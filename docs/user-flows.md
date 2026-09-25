@@ -84,7 +84,8 @@ returning member on a new device recognizes themselves in one glance.
    sections (or THE LINEUP when days are unknown), artist card grid.
 2. Tap a card → pick cycle 0→1→2→3→must→0; card aura + your meter (the
    lower-left chip: one bar lit per tap, then MUST) update instantly, the
-   next bar lighting as you watch; tap-out-of-must shows the undo toast. The
+   next bar lighting as you watch; tap-out-of-must clears quietly (no undo
+   toast since 2026-09-25; the next tap starts the cycle again). The
    who-corner (lower right) is everyone else's picks, and its +n counts
    only other people.
 3. Search filters across all days; sort (Billing / A→Z / My picks / Most

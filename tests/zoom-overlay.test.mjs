@@ -324,7 +324,7 @@ test('an orphaned mouse zoom closes on the next outside movement (a repaint can 
   assert.equal(document.querySelector('.zoom-slot'), null, 'outside movement closes the orphan');
 });
 
-test('the overlay never steals focus: a click on its body picks even when the resting card holds focus (the 2026-08-31 "hover and click, it closes")', () => {
+test('the overlay never steals focus: a click on its body picks even when the resting card holds focus (the 2026-08-31 "hover and click, it closes")', async () => {
   const ctx = makeCtx();
   const card = mountCard(ctx);
   // Production wiring: the keyboard route's focusout closes the zoom when
@@ -347,8 +347,11 @@ test('the overlay never steals focus: a click on its body picks even when the re
   document.querySelector('.zoom-slot button.f-chip.notes').dispatchEvent(onChip);
   assert.equal(onChip.defaultPrevented, false, 'the notes chip keeps its mousedown default');
   // The failure the fix prevents, spelled out on the live handler: were focus
-  // to leave the card anyway (an unprevented mousedown in a real browser),
-  // the keyboard route's focusout closes the zoom before any click arrives.
+  // to leave the card anyway, the keyboard route's focusout closes the zoom
+  // before any click arrives. (Focus going nowhere within 600 ms of a press
+  // on the zoom is that press since 2026-09-25 — Safari's unfocused button —
+  // so the departure is staged after the grace.)
+  await new Promise((r) => setTimeout(r, 650));
   card.blur();
   assert.equal(document.querySelector('.zoom-slot'), null, 'a real blur closes the zoom — which is exactly why the overlay must not cause one');
   // Focus kept, the click is a pick and the zoom stays.
@@ -357,6 +360,61 @@ test('the overlay never steals focus: a click on its body picks even when the re
   click(document.querySelector('.zoom-slot .f-name'));
   assert.deepEqual(ctx.taps, ['GRiZ'], 'the click is a pick');
   assert.ok(document.querySelector('.zoom-slot'), 'and the zoom is still up');
+});
+
+test('Safari: a press on the notes chip that sends focus nowhere is the press, not a departure — the zoom stays and the chip opens the notes (v88 live, 2026-09-25)', async () => {
+  const ctx = makeCtx();
+  const card = mountCard(ctx);
+  zoom.wireCardFocusZoom(card, 'GRiZ', ctx, { occ: { day: 'Saturday', stage: null, time: null } });
+  card.focus(); // the last pick left focus on the resting card
+  zoom.zoomCard(card, 'GRiZ', ctx, { occ: { day: 'Saturday', stage: null, time: null }, instant: true, onOpenNotes: ctx.onOpenNotes });
+  const chip = document.querySelector('.zoom-slot button.f-chip.notes');
+  // Safari does not focus a pressed button: the press moves focus from the
+  // card to nowhere (relatedTarget null). Before the fix this closed the zoom
+  // and the chip's click landed on nothing — Kevin's phone logged it twice.
+  chip.dispatchEvent(new dom.window.MouseEvent('pointerdown', { bubbles: true }));
+  card.blur();
+  assert.ok(document.querySelector('.zoom-slot'), 'focus going nowhere right after a press on the zoom does not close it');
+  click(chip);
+  assert.deepEqual(ctx.opened, ['GRiZ'], 'the chip opened the notes');
+  assert.deepEqual(ctx.taps, [], 'the chip is not a pick');
+  // Without a press, focus leaving still closes: the guard is the press, not blanket.
+  await new Promise((r) => setTimeout(r, 650));
+  card.focus();
+  zoom.zoomCard(card, 'GRiZ', ctx, { occ: { day: 'Saturday', stage: null, time: null }, instant: true, onOpenNotes: ctx.onOpenNotes });
+  card.blur();
+  assert.equal(document.querySelector('.zoom-slot'), null, 'a blur with no press on the zoom still closes it');
+});
+
+test('the press grace is narrow: focus moving to a real control outside the zoom still closes it, even right after a press', () => {
+  const ctx = makeCtx();
+  const card = mountCard(ctx);
+  const outside = document.createElement('button');
+  outside.textContent = 'elsewhere';
+  document.body.appendChild(outside);
+  zoom.wireCardFocusZoom(card, 'GRiZ', ctx, { occ: { day: 'Saturday', stage: null, time: null } });
+  card.focus();
+  zoom.zoomCard(card, 'GRiZ', ctx, { occ: { day: 'Saturday', stage: null, time: null }, instant: true, onOpenNotes: ctx.onOpenNotes });
+  document.querySelector('.zoom-slot .f-name').dispatchEvent(new dom.window.MouseEvent('pointerdown', { bubbles: true }));
+  outside.focus(); // focus lands SOMEWHERE outside: that is leaving, press or not
+  assert.equal(document.querySelector('.zoom-slot'), null, 'a real destination outside closes the zoom');
+  outside.remove();
+});
+
+test('the press grace covers the overlay too: focus on the chip, then a press that sends focus nowhere, keeps the zoom', async () => {
+  const ctx = makeCtx();
+  const card = mountCard(ctx);
+  zoom.zoomCard(card, 'GRiZ', ctx, { occ: { day: 'Saturday', stage: null, time: null }, instant: true, onOpenNotes: ctx.onOpenNotes });
+  const chip = document.querySelector('.zoom-slot button.f-chip.notes');
+  chip.focus(); // reached by Tab: focus sits inside the overlay
+  assert.equal(document.activeElement, chip);
+  document.querySelector('.zoom-slot .f-name').dispatchEvent(new dom.window.MouseEvent('pointerdown', { bubbles: true }));
+  chip.blur(); // Safari: the press focuses nothing, so focus goes nowhere
+  assert.ok(document.querySelector('.zoom-slot'), 'focus to nowhere right after a press on the zoom is the press');
+  await new Promise((r) => setTimeout(r, 650)); // past the grace
+  chip.focus();
+  chip.blur(); // no press this time
+  assert.equal(document.querySelector('.zoom-slot'), null, 'focus to nowhere with no press still closes it');
 });
 
 test('a card rendered under a resting pointer arms its hover intent one frame after insertion (a repaint under a still hand)', async () => {
