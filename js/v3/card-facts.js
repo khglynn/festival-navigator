@@ -166,13 +166,23 @@ function billOf(entry) {
 }
 // "Fri · Oct 2 · 10 AM" in the season's own zone (Austin's on-sale is Austin's
 // 10 AM wherever you are), or null for a time that does not parse.
+// Every season card's facts ask this (factsFor is the resting card's model
+// too), so the formatter is built once per zone, never per card.
+const saleFormats = new Map();
+const saleFormat = (timeZone) => {
+  const key = timeZone || '';
+  if (!saleFormats.has(key)) {
+    saleFormats.set(key, new Intl.DateTimeFormat('en-US', {
+      timeZone: timeZone || undefined, weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit',
+    }));
+  }
+  return saleFormats.get(key);
+};
 function saleClock(isoStamp, timeZone) {
   const at = new Date(isoStamp);
   if (Number.isNaN(at.getTime())) return null;
   try {
-    const p = Object.fromEntries(new Intl.DateTimeFormat('en-US', {
-      timeZone: timeZone || undefined, weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit',
-    }).formatToParts(at).map((x) => [x.type, x.value]));
+    const p = Object.fromEntries(saleFormat(timeZone).formatToParts(at).map((x) => [x.type, x.value]));
     return { at, text: `${p.weekday} · ${p.month} ${p.day} · ${p.hour}${p.minute && p.minute !== '00' ? `:${p.minute}` : ''} ${p.dayPeriod}` };
   } catch { return null; }
 }
@@ -195,9 +205,22 @@ function saleOf(entry, { cancelled, now, timeZone }) {
 // The other nights by the same name still ahead — "Also Sat Oct 3 · Sun Oct 11
 // at Mohawk" — the place said only where it differs from this card's.
 const ALSO_MAX = 3;
+// The file's shows by name, built once per file: every card asks, and a scan
+// of every show per card is a season's hundreds squared.
+const byNameCache = new WeakMap();
+function showsNamed(fest, name) {
+  if (!byNameCache.has(fest)) {
+    const m = new Map();
+    for (const a of fest.artists || []) if (a && typeof a.name === 'string') (m.get(a.name) || m.set(a.name, []).get(a.name)).push(a);
+    byNameCache.set(fest, m);
+  }
+  return byNameCache.get(fest).get(name) || [];
+}
 function alsoOf(fest, entry, now) {
+  const named = showsNamed(fest, entry.name);
+  if (named.length < 2) return null;
   const today = festivalClock(now, fest.timezone || null).iso;
-  const others = (fest.artists || []).filter((a) => a && a !== entry && a.name === entry.name && !isCancelled(a)
+  const others = named.filter((a) => a !== entry && !isCancelled(a)
     && dateOf(a) && dateOf(a) >= today && !(dateOf(a) === dateOf(entry) && venueOf(a) === venueOf(entry)))
     .sort((a, b) => (dateOf(a) < dateOf(b) ? -1 : 1));
   if (!others.length) return null;

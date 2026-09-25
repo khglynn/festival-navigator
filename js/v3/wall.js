@@ -335,6 +335,10 @@ export function fitCard(el, width, band = null, from = 0) {
 // jsdom) is taken at the table's word: there is nothing to read.
 const LAST_STEP = GIVE_WAY.length - 1;
 function cornersClear(el, band) {
+  // Nothing in either corner crowds nothing: the answer without three layout
+  // reads, which is most of a season's hundreds of cards (2026-09-25).
+  const parts = el._corners;
+  if (parts && !parts.people.length && !parts.about.length) return true;
   const card = el.getBoundingClientRect();
   if (!card.width) return true;
   const drawn = (sel) => {
