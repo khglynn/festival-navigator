@@ -86,6 +86,13 @@ test('the validator: page and tickets are { url: https, at: a short name }, and 
   assert.match(errs({ tickets: { url: 'https://x.com', at: 'A name far too long for one zoom line' } }).join(), /24 chars at most/);
   assert.match(errs({ page: { ...PAGE, label: 'x' } }).join(), /page\.label is not a field/);
   assert.match(errs({ page: 'https://x.com' }).join(), /page must be an object \{ url, at \}/);
+  // A festival's own set carries neither: the doors belong to shows in a section.
+  const grid = validateFestivalDoc({
+    id: 'x-2026', name: 'X', year: "'26", dates: 'Sep 1', status: 'lineup', location: 'Austin, TX',
+    days: { Saturday: { stages: ['Main'], artists: [] } },
+    artists: [{ name: 'A', day: 'Saturday', tickets: TIX }],
+  }).errors;
+  assert.match(grid.join(), /a festival set carries no tickets/);
 });
 
 for (const id of ['portola-2026', 'acl-2026']) {
@@ -101,23 +108,25 @@ for (const id of ['portola-2026', 'acl-2026']) {
         assert.ok(a[f].at && a[f].at.length <= 24, `${a.name}.${f}.at`);
       }
     }
-    // One room on one night is one show with one page: a name added to a
-    // bill that already has a page takes the room's page (and its tickets).
-    // Forgetting to is how S.I.M, Espurr and New Nostalgia first arrived on
-    // Sun The Midway with no doors (2026-09-25). A brand-new room with no
-    // known page yet is fine: its page comes when there is one.
-    const rooms = new Map();
+    // One room on one night with one doors time is one show with one page
+    // and one ticket link: every name on that bill carries the same two. A
+    // name added to a bill that already has links takes them (S.I.M, Espurr
+    // and New Nostalgia first arrived on Sun The Midway with none), and an
+    // opener found on the venue's page takes its headliner's (five ACL Late
+    // nights openers pointed at the venue or the festival instead, the review
+    // of #29). Two doors times in one room are two shows (an early and a late
+    // show) and may differ. A brand-new room with no known page yet is fine.
+    const shows = new Map();
     for (const a of off) {
       if (a.cancelled) continue;
-      const k = `${a.day}|${a.night || a.date}|${a.venue}`;
-      if (!rooms.has(k)) rooms.set(k, []);
-      rooms.get(k).push(a);
+      const k = `${a.day}|${a.night || a.date}|${a.venue}|${a.doors || ''}`;
+      if (!shows.has(k)) shows.set(k, []);
+      shows.get(k).push(a);
     }
-    for (const [k, bill] of rooms) {
-      const withPage = bill.filter((a) => a.page);
-      if (!withPage.length) continue;
-      const missing = bill.filter((a) => !a.page).map((a) => a.name);
-      assert.deepEqual(missing, [], `${k}: these names are on a bill whose room has a page; copy its page and tickets onto them`);
+    for (const [k, bill] of shows) {
+      if (!bill.some((a) => a.page)) continue;
+      const links = new Set(bill.map((a) => JSON.stringify([a.page || null, a.tickets || null])));
+      assert.equal(links.size, 1, `${k}: one show, one page and one ticket link; these differ: ${bill.map((a) => `${a.name} → ${a.page ? a.page.at : 'no page'} / ${a.tickets ? a.tickets.at : 'no tickets'}`).join('; ')}`);
     }
   });
 }
@@ -137,6 +146,10 @@ test('the zoom’s facts: a Portola afters set says where to buy and where to re
   const occ = { day: gelli.day, stage: gelli.stage, time: gelli.time, date: null, venue: gelli.venue };
   const run = factsFor('Gelli Haha', ctx, occ);
   assert.deepEqual(run.links.map((l) => l.text), ['Tix @ AXS', 'Info @ DoTheBay']);
+  // A card that knows only a name borrows nobody's links: Overmono is a
+  // Sunday festival set AND a Public Works afters, and its name-only facts
+  // take the festival set's when and where (the review of #29).
+  assert.equal(factsFor('Overmono', ctx).links, null, 'no occurrence, no links');
   const setOnly = portola.days.Saturday.artists[0];
   assert.equal(factsFor(setOnly.name, ctx, { day: 'Saturday', stage: setOnly.stage, time: setOnly.time }).links, null);
   // The notes sheet's header is the same builder: the doors ride along.

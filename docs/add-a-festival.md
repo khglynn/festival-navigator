@@ -206,13 +206,18 @@ line under the place, **Tix @ AXS · Info @ DoTheBay**:
 
 Leave `tickets` off a free night, a door-only night, or a sold-out one with no
 resale link — the page is then the only door, which is the point. One room on
-one night is one show with one page: a name added to a bill that already has
-a page takes the room's `page` and `tickets` too (`tests/show-links.test.mjs`
-fails otherwise, naming the room). When the
+one night with one doors time is one show: every name on that bill carries
+the same `page` and `tickets`, so a name added to a bill takes the bill's
+links, and an opener found on the venue's own page takes its headliner's
+(`tests/show-links.test.mjs` fails otherwise, naming the show). Two doors
+times in one room are two shows and may differ. When the
 page and the tickets are the same page, the zoom shows one door. A cancelled
 show keeps its page and drops the tickets door. The validator errors on
-anything but `{ url, at }`, a URL that is not `https`, an empty `at`, or an
-`at` longer than 24 characters; festival grid sets never carry either field.
+anything but `{ url, at }`, a URL that is not `https`, an empty `at`, an
+`at` longer than 24 characters, and either field on a festival set (an entry
+whose day is a grid day). Research for a new festival never writes them:
+`api/festival-add.js` drops both from what the model returns, because a page
+it read could steer it to a look-alike ticket site.
 
 ### Event fields — where a section goes (MODEL-V4 §6)
 

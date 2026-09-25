@@ -315,11 +315,17 @@ function checkCancelled(fest, err) {
 const LINK_KEYS = new Set(['url', 'at']);
 function checkLinks(fest, err) {
   const plain = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
+  const gridDays = plain(fest.days) ? Object.keys(fest.days).map((d) => d.toLowerCase()) : [];
   (Array.isArray(fest.artists) ? fest.artists : []).forEach((a, i) => {
     if (!plain(a)) return;
+    // A festival's own set has no page or tickets of its own (the festival is
+    // the ticket): the doors belong to shows in a section.
+    const parts = typeof a.day === 'string' && a.day.trim() ? dayParts(a.day).map((p) => p.toLowerCase()) : [];
+    const onGrid = parts.length > 0 && parts.every((p) => gridDays.includes(p));
     for (const field of ['page', 'tickets']) {
       if (a[field] === undefined) continue;
       const at = `artists[${i}] (${safeKey(a.name)}).${field}`;
+      if (onGrid) { err(`${at}: a festival set carries no ${field} — the doors belong to shows in a section (afters, late nights)`); continue; }
       const l = a[field];
       if (!plain(l)) { err(`${at} must be an object { url, at }`); continue; }
       for (const k of Object.keys(l)) {

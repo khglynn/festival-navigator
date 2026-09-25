@@ -89,3 +89,36 @@ test('a real click on a door opens its page in a new tab and does not pick', { s
     assert.equal(await label(), before, 'the pick did not move');
   } finally { await ctx.close(); }
 });
+
+// The review of #29 (2026-09-25): a pick re-centres the zoom as its chip
+// arrives, which can slide the links row under a pointer that is still
+// clicking its way to MUST. For DOOR_SETTLE_MS after a pick, a click on a door
+// picks and opens nothing; after that, doors are doors again.
+test('a door a pick just slid under the pointer picks instead of opening a tab', { skip }, async () => {
+  const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  const page = await ctx.newPage();
+  try {
+    await page.goto(`${server.origin}/gallery.html`);
+    await page.evaluate(() => document.fonts.ready);
+    const label = () => page.evaluate(() => document.querySelector('#events-gallery .card[data-artist="Channel Tres"]').getAttribute('aria-label'));
+    const z = await zoomOf(page, 'Channel Tres');
+    const name = await z.locator('.f-name').boundingBox();
+    await page.mouse.click(name.x + name.width / 2, name.y + name.height / 2);
+    const afterPick = await label();
+    await sleep(120); // the chip has arrived and the rows have moved; well inside the settle beat
+    const door = await z.locator('.f-links a.f-link').first().boundingBox();
+    let opened = false;
+    page.on('popup', () => { opened = true; });
+    await page.mouse.click(door.x + door.width / 2, door.y + door.height / 2);
+    await sleep(400);
+    assert.equal(opened, false, 'no tab opened');
+    assert.notEqual(await label(), afterPick, 'the click picked');
+    await sleep(900); // settled
+    const settled = await label();
+    const again = await z.locator('.f-links a.f-link').first().boundingBox();
+    const popup = page.waitForEvent('popup', { timeout: 3000 });
+    await page.mouse.click(again.x + again.width / 2, again.y + again.height / 2);
+    await (await popup).close();
+    assert.equal(await label(), settled, 'a settled door opens its page and picks nothing');
+  } finally { await ctx.close(); }
+});
