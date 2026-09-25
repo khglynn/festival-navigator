@@ -17,7 +17,7 @@ import { el, subviewHead, eqLoader, festRow, openExportLikes, openBulkPaste, ope
 import { router } from './router.js';
 import { nameProblem, NAME_LIMITS } from '../name-rules.mjs';
 import { loadJSON, saveLS, getLS, removeLS, errorText } from '../util.js';
-import { cancelledNames } from './events.js'; // a cancelled act never goes into a playlist (2026-09-23)
+import { cancelledNames, isSeason } from './events.js'; // a cancelled act never goes into a playlist (2026-09-23)
 
 // {lowPower, stayOffline, crashReports}. The key's home is js/errlog.js: the
 // crash reporter reads Off and Stay offline before any other module runs.
@@ -803,7 +803,9 @@ export function renderSettings(root, ctx, actions) {
   }
   list.appendChild(linkRow('Bulk paste picks', () => openSub('sub:bulk')));
   list.appendChild(linkRow('Export picks', () => openSub('sub:export')));
-  list.appendChild(linkRow('Day image', () => openSub('sub:day-image')));
+  // A city season has no day to frame (a month is hundreds of shows), so it
+  // offers no day image rather than one saying "no lineup yet".
+  if (!isSeason(state.fest())) list.appendChild(linkRow('Day image', () => openSub('sub:day-image')));
   // The crash journal's one door (2026-08-31): a tap copies a shareable dump
   // (build, device, the last 20 recorded errors — never anything private).
   // Exists so "it broke on my phone" can travel as text instead of a video.
