@@ -78,8 +78,8 @@ export function canonicalStages(fest) {
   return out;
 }
 
-// The tap cycle: 0 -> 1 -> 2 -> 3 -> 4(must) -> 0 (the 5th tap clears; the
-// UI wraps this in an undo toast — design open question 1, decided).
+// The tap cycle: 0 -> 1 -> 2 -> 3 -> 4(must) -> 0 (the 5th tap clears, with
+// no undo toast since 2026-09-25: the next tap starts the cycle again).
 export function nextTapLevel(current) {
   const c = Number.isInteger(current) ? current : 0;
   return c >= 4 ? 0 : c + 1;
