@@ -4,6 +4,15 @@
 import * as state from './state.js';
 import { isApiNotFound } from './crew.js';
 import { timeoutSignal as makeTimeoutSignal, errorText } from './util.js';
+import { record } from './errlog.js';
+
+// A sync that succeeded proves the network works and the radio is already
+// awake: the moment crash reports waiting on this phone go out (js/errlog.js
+// listens). An event rather than an import, so the sender stays the one
+// module that decides whether anything may leave.
+function announceSynced() {
+  try { window.dispatchEvent(new window.Event('fn:synced')); } catch { /* no window (a test) */ }
+}
 
 let syncTimer = null, isSyncing = false, syncQueued = false;
 let pushGen = 0; // bumped when a push APPLIES its merged doc — guards the poll race
@@ -129,7 +138,12 @@ export async function pushSync() {
       // (these bytes are never re-sent), but the dot says what the person
       // asked for; switching it off shows blocked again (Codex round 4).
       setSyncStatus(stayOffline ? 'offline' : 'blocked');
-      onSyncBlocked(errorText(body, 'These changes can’t sync — the crew may have hit a limit.'));
+      const reason = errorText(body, 'These changes can’t sync — the crew may have hit a limit.');
+      // A deterministic refusal is a bug or a crew at its limit, and either
+      // way Kevin wants to know before a friend has to say so. The server's
+      // reasons name people and paths, never note text (crew-shared.mjs).
+      record('sync:blocked', new Error(`${res.status}: ${reason}`));
+      onSyncBlocked(reason);
       return;
     }
     if (!res.ok) throw new Error('POST failed: ' + res.status);
@@ -149,6 +163,7 @@ export async function pushSync() {
     if (stayOffline) { setSyncStatus('offline'); return; }
     if (state.hasPending()) scheduleSync();
     setSyncStatus(state.hasPending() ? 'syncing' : 'online');
+    announceSynced();
   } catch (e) {
     // Thread the token: this 404 is about the crew the request was FOR,
     // which may no longer be the active one after a mid-flight switch.
@@ -254,12 +269,13 @@ export async function pollSync() {
       // nothing was making, forever (gate find, 2026-08-23). The two real
       // exits both already work: a NEW edit changes the payload, and a
       // CHANGED remote cleared the refusal above.
-      if (isRefused(state.pendingChanges, tokenAtStart)) { setSyncStatus('blocked'); return; }
+      if (isRefused(state.pendingChanges, tokenAtStart)) { setSyncStatus('blocked'); announceSynced(); return; }
       setSyncStatus('syncing');
       scheduleSync();
     } else {
       setSyncStatus('online');
     }
+    announceSynced();
   } catch (e) {
     if (e instanceof CrewGoneError) { onCrewGone(tokenAtStart); return; }
     setSyncStatus(navigator.onLine && !stayOffline ? 'error' : 'offline');

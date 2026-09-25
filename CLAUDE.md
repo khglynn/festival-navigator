@@ -163,6 +163,18 @@ Non-inferable facts only (the code answers everything else — read it).
   which runs the commit even when the scan trips). `.gitignore` denies images
   by default and allowlists only what actually ships — read the file for the
   list — because an audit run once dumped 50 screenshots into the repo root.
+- **`js/errlog.js` is the only door out (v88, 2026-09-24).** An error leaves
+  the phone as one PostHog `$exception` built field by field there, queued on
+  the phone, sent through `/fn-i/batch` (a vercel.json rewrite, key in
+  index.html's `fn-report-key` meta). No analytics SDK, no autocapture, no
+  replay: every SDK records `location.href`, which here carries
+  `#g=<crew token>`, and click text, which carries names. Anything new that
+  leaves goes through `record()` (usage events: an allowlisted `track()`
+  later, same queue), whose scrubber cuts tokens, queries, hashes and quoted
+  snippets. The public pid and the name in the crew may ride along (Kevin,
+  2026-09-24); note text never. Off in Settings and Stay offline are read
+  inside errlog.js, so they hold even when app.js never loaded. Why each
+  rule: `claude-plans/2026-09-24-analytics/BUILD.md`.
 - Deploy is gated: branch pushes = preview only; production promote is
   Kevin's call, always.
 - Adding a festival: `docs/add-a-festival.md`. Validate with

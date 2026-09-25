@@ -234,6 +234,14 @@ test('no rewrite source is shadowed by a file the filesystem would serve first',
     for (const candidate of candidates) {
       if (existsSync(path(candidate))) shadowed.push(`${rule.source} <- ${candidate}`);
     }
+    // An EXTERNAL destination is a proxy, not a file: the crash-report door
+    // (/fn-i/batch → PostHog's US ingestion host, js/errlog.js, v88). Only
+    // that one host is allowed, so a rewrite can never quietly turn this
+    // domain into a proxy for somewhere else.
+    if (/^https?:\/\//.test(rule.destination)) {
+      assert.equal(new URL(rule.destination).origin, 'https://us.i.posthog.com', `${rule.source} proxies to an unexpected host`);
+      continue;
+    }
     const dest = rule.destination.split('?')[0].replace(/^\//, '');
     assert.ok(
       existsSync(path(dest)) || existsSync(path(`${dest}.js`)),

@@ -223,6 +223,30 @@ test('the platform\'s own scripts (/_vercel/) are never ours to cache — the br
   assert.equal(w.fetches, 0);
 });
 
+test('the crash-report door (/fn-i/, rewritten to PostHog) is never answered or cached by the worker', () => {
+  // Reports are POSTs, which the worker never handles; a GET there is left
+  // alone too, so no future request on that path is ever served from a cache.
+  const w = bootWorker({ fetchImpl: () => delayed('nope', 5) });
+  for (const init of [{ method: 'POST', body: '{}' }, {}]) {
+    let responded = false;
+    w.handlers.fetch({ request: new Request(`${ORIGIN}/fn-i/batch`, init), respondWith: () => { responded = true; }, waitUntil: () => {} });
+    assert.equal(responded, false, `${init.method || 'GET'} passes through`);
+  }
+  assert.equal(w.fetches, 0);
+  assert.deepEqual(w.puts, []);
+});
+
+test('a page asking "which build am I?" gets this worker\'s version and stamp; anything else gets no answer', () => {
+  const w = bootWorker({ fetchImpl: () => never() });
+  const said = [];
+  const source = { postMessage: (m) => said.push(m) };
+  w.handlers.message({ data: { fn: 'build?' }, source });
+  w.handlers.message({ data: 'hello', source });
+  w.handlers.message({ data: { fn: 'build?' }, source: null });
+  const stamp = SW_SRC.match(/ASSET_STAMP = '([0-9a-f]{8})'/)[1];
+  assert.deepEqual(JSON.parse(JSON.stringify(said)), [{ fnBuild: CURRENT, fnStamp: stamp }]); // the worker's objects come from its own realm
+});
+
 test('shell assets: a cold miss with a dead network is an explicit error response, never respondWith(undefined)', async () => {
   const w = bootWorker({ fetchImpl: async () => { throw new TypeError('Failed to fetch'); } });
   const { resp } = await dispatch(w, '/js/v3/nowhere.js');
