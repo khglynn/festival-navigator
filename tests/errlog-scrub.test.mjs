@@ -96,6 +96,11 @@ test('a JSON parse message loses its quoted snippet — the bad input can be a c
   assert.equal(scrubText('can\'t access property "people", doc is undefined', []), 'can\'t access property "people", doc is undefined');
 });
 
+test('V8 quotes a string\'s own content when code sets a property on it — that content never rides along', () => {
+  const out = scrubText("Cannot create property 'seen' on string 'meet by the ferris wheel'", []);
+  assert.equal(out, `Cannot create property 'seen' on string '${MARK.text}'`);
+});
+
 test('email addresses never ride along', () => {
   assert.equal(scrubText('access request for kevin@example.com failed', []), `access request for ${MARK.email} failed`);
 });

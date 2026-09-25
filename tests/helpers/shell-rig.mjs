@@ -20,7 +20,7 @@ export async function bootShell({ url = 'https://fest.kevinhg.com/', storage = {
   // The shipped key is overwritten either way: a test sends reports only when
   // it asks to, and never with the real project's key.
   const html = readFileSync(join(ROOT, 'index.html'), 'utf8')
-    .replace(/<meta name="fn-report-key" content="[^"]*">/, `<meta name="fn-report-key" content="${reportKey}">`);
+    .replace(/(<meta name="fn-report-key" content=")[^"]*/, `$1${reportKey}`);
   const dom = new JSDOM(html, { url });
   globalThis.window = dom.window;
   globalThis.document = dom.window.document;

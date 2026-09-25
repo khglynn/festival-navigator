@@ -13,7 +13,7 @@
 // Each case gets a fresh page (a new JSDOM) and a fresh copy of the module (a
 // query string makes a new module instance), so no listener or counter
 // carries over.
-import test from 'node:test';
+import test, { mock } from 'node:test';
 import assert from 'node:assert/strict';
 import { randomBytes } from 'node:crypto';
 import { JSDOM } from 'jsdom';
@@ -28,9 +28,10 @@ const typeError = (msg, stack = V8(msg)) => { const e = new TypeError(msg); e.st
 const settle = (ms = 5) => new Promise((r) => setTimeout(r, ms));
 
 let instance = 0;
-async function fresh({ key = KEY, settings = null, online = true, ua = null, touch = 0 } = {}) {
-  const dom = new JSDOM(`<!doctype html><html><head><meta name="fn-report-key" content="${key}"></head>`
-    + '<body><div id="screen-app"></div><span id="sync-label">online</span></body></html>', { url: 'https://fest.kevinhg.com/' });
+async function fresh({ key = KEY, settings = null, online = true, ua = null, touch = 0, url = 'https://fest.kevinhg.com/', hosts = 'kevinhg.com' } = {}) {
+  const hostsAttr = hosts === null ? '' : ` data-hosts="${hosts}"`;
+  const dom = new JSDOM(`<!doctype html><html><head><meta name="fn-report-key" content="${key}"${hostsAttr}></head>`
+    + '<body><div id="screen-app"></div><span id="sync-label">online</span></body></html>', { url });
   globalThis.window = dom.window;
   const store = new Map();
   if (settings) store.set('fn_settings_v1', JSON.stringify(settings));
@@ -170,8 +171,7 @@ test('a repeating error folds into one report and counts; one page load queues i
   const { m, sent, queue } = await fresh();
   for (let i = 0; i < 10; i++) m.record('error', typeError('loops'));
   assert.equal(queue().length, 1);
-  assert.equal(queue()[0].n, 10);
-  await m.flushReports();
+  await m.flushReports(); // the repeats are written on their way out (or within a second)
   assert.equal(sent[0].body.batch[0].properties.count, 10);
   for (let round = 0; round < 6; round++) { m.record('error', typeError('loops')); await m.flushReports(); }
   assert.equal(sent.length, 5, 'the first report and four more, then this page load stops queuing it');
@@ -179,14 +179,61 @@ test('a repeating error folds into one report and counts; one page load queues i
   assert.equal(queue().length, 1, 'other errors still get through');
 });
 
-test('the queue is bounded: at most 300 reports and 96 KB, oldest out first', async () => {
+test('the queue on the phone is bounded — 96 KB, which is about 80 reports — oldest out first', async () => {
   const { m, queue, store } = await fresh();
-  for (let i = 0; i < 400; i++) m.record('error', typeError(`distinct ${i} ${'.'.repeat(40)}`));
+  // Reports from earlier opens (a week offline, say), each ~1.2 KB like a real one.
+  const now = Date.now();
+  const earlier = Array.from({ length: 400 }, (_, i) => ({
+    id: `00000000-0000-4000-8000-${String(i).padStart(12, '0')}`, k: 'error', t: new Date(now - (400 - i) * 1000).toISOString(), n: 1, s: 'earlier',
+    e: { event: '$exception', properties: { i, pad: 'e'.repeat(1100) } },
+  }));
+  store.set('fn_telemetry_q_v1', JSON.stringify(earlier));
+  m.record('error', typeError('the newest'));
   const q = queue();
-  assert.ok(q.length <= 300, `${q.length} entries`);
   assert.ok(store.get('fn_telemetry_q_v1').length <= 96 * 1024, `${store.get('fn_telemetry_q_v1').length} bytes`);
-  assert.match(q.at(-1).e.properties.$exception_list[0].value, /distinct 399/, 'the newest is kept');
+  assert.ok(q.length < 100 && q.length > 60, `${q.length} reports fit`);
+  assert.match(q.at(-1).e.properties.$exception_list[0].value, /the newest/, 'the newest is kept');
+  assert.equal(q[0].e.properties.i, 400 - (q.length - 1), 'the oldest went first');
   assert.equal(m.pendingReports(), q.length);
+});
+
+test('a flood cannot bury the first error or slow the page: 25 reports a page load, repeats folded in memory', async () => {
+  const { m, sent, queue, store } = await fresh();
+  let queueWrites = 0;
+  const ls = globalThis.localStorage;
+  const set = ls.setItem;
+  ls.setItem = (k, v) => { if (k === 'fn_telemetry_q_v1') queueWrites++; return set(k, v); };
+  m.record('boot', typeError('the one that explains the rest'));
+  // A loop whose message carries a changing number folds into ONE report …
+  for (let i = 0; i < 2000; i++) m.record('error', typeError(`Cannot read properties of undefined (reading '${i}')`));
+  assert.equal(queue().length, 2);
+  assert.ok(queueWrites <= 3, `a loop rewrote the queue ${queueWrites} times`);
+  // … and a loop whose WORDS change stops at the page load's cap.
+  for (let i = 0; i < 2000; i++) m.record('error', typeError(`unexpected state ${['red', 'blue', 'grey'][i % 3]}${'x'.repeat(i % 40)}`));
+  const q = queue();
+  assert.equal(q.length, 25, 'the page load\'s cap');
+  assert.equal(q[0].e.properties.kind, 'boot', 'the first error is never pushed out by the flood it caused');
+  await m.flushReports();
+  const looped = sent[0].body.batch.find((ev) => /reading/.test(ev.properties.$exception_list[0].value));
+  assert.equal(looped.properties.count, 2000, 'every repeat counted');
+  assert.ok(store.get('fn_telemetry_q_v1') === undefined || queue().length === 0);
+  assert.equal((await m.diagnostics()).reportsHeldBack > 0, true, 'Diagnostics says how many were held back');
+  ls.setItem = set;
+});
+
+test('the journal on the phone keeps the first three of an error, not twenty copies of one', async () => {
+  const { m } = await fresh();
+  for (let i = 0; i < 10; i++) m.record('error', typeError('same again'));
+  m.record('error', typeError('something else'));
+  assert.deepEqual(m.recent().map((e) => e.msg), ['same again', 'same again', 'same again', 'something else']);
+});
+
+test('the journal is scrubbed on the way out too — a v87 entry holds raw words', async () => {
+  const { m, store } = await fresh();
+  const t = randomBytes(20).toString('base64url');
+  store.set('fn_errlog_v1', JSON.stringify([{ t: '2026-09-20T02:00:00.000Z', kind: 'error', msg: `failed at https://fest.kevinhg.com/#g=${t}`, stack: `at x (https://fest.kevinhg.com/js/a.js?t=${t}:1:2)` }]));
+  const out = JSON.stringify(m.recent());
+  assert.ok(!out.includes(t) && !out.includes('#g='), out);
 });
 
 test('when full, usage events go before any error, and errors only push out errors', async () => {
@@ -197,9 +244,9 @@ test('when full, usage events go before any error, and errors only push out erro
     e: { event: 'app_open', properties: { pad: 'u'.repeat(300) } },
   }));
   store.set('fn_telemetry_q_v1', JSON.stringify(usage));
-  for (let i = 0; i < 30; i++) m.record('error', typeError(`kept ${i}`));
+  for (let i = 0; i < 20; i++) m.record('error', typeError(`kept ${'k'.repeat(i + 1)}`));
   const q = queue();
-  assert.equal(q.filter((x) => x.k === 'error').length, 30, 'every error kept');
+  assert.equal(q.filter((x) => x.k === 'error').length, 20, 'every error kept');
   assert.ok(q.filter((x) => x.k === 'usage').length < 280, 'usage made the room');
 });
 
@@ -238,18 +285,104 @@ test('offline, nothing is sent; the browser\'s online sends it', async () => {
   assert.equal(m.pendingReports(), 0);
 });
 
-test('a failed send keeps the batch for the next try; a refused one (400) is dropped, not retried forever', async () => {
+test('a send that may pass later is kept and the next try waits; one refused for good is dropped', async (t) => {
+  mock.timers.enable({ apis: ['Date'], now: Date.now() });
+  t.after(() => mock.timers.reset());
   const { m, sent, respondWith } = await fresh();
   m.record('error', typeError('flaky'));
   respondWith(async () => { throw new TypeError('Failed to fetch'); });
   assert.equal(await m.flushReports(), false);
   respondWith(async () => ({ ok: false, status: 503 }));
   assert.equal(await m.flushReports(), false);
-  assert.equal(m.pendingReports(), 1);
-  assert.equal(sent[0].body.batch[0].uuid, sent[1].body.batch[0].uuid, 'the retry is the same report');
-  respondWith(async () => ({ ok: false, status: 400 }));
+  assert.equal(sent.length, 1, 'no second try inside the first minute — every sync would re-send 60 KB');
+  mock.timers.tick(61 * 1000);
   assert.equal(await m.flushReports(), false);
-  assert.equal(m.pendingReports(), 0);
+  assert.equal(sent.length, 2);
+  assert.equal(sent[0].body.batch[0].uuid, sent[1].body.batch[0].uuid, 'the retry is the same report');
+  mock.timers.tick(61 * 1000);
+  assert.equal(await m.flushReports(), false);
+  assert.equal(sent.length, 2, 'the wait doubles');
+  mock.timers.tick(60 * 1000);
+  respondWith(async () => ({ ok: false, status: 429 }));
+  assert.equal(await m.flushReports(), false);
+  assert.equal(m.pendingReports(), 1, 'rate-limited: kept');
+  mock.timers.tick(5 * 60 * 1000);
+  respondWith(async () => ({ ok: true, status: 200 }));
+  assert.equal(await m.flushReports(), true);
+  m.record('error', typeError('a second one'));
+  assert.equal(await m.flushReports(), true, 'a success clears the wait');
+});
+
+for (const status of [400, 401, 403, 404, 413]) {
+  test(`a ${status} is refused for good: dropped, not re-sent on every sync`, async () => {
+    const { m, sent, respondWith } = await fresh();
+    m.record('error', typeError(`refused ${status}`));
+    respondWith(async () => ({ ok: false, status }));
+    assert.equal(await m.flushReports(), false);
+    assert.equal(m.pendingReports(), 0);
+    assert.equal(sent.length, 1);
+  });
+}
+
+test('a repeat that happens while its report is on the way starts a new one — it is not lost with the sent one', async () => {
+  const { m, sent, dom } = await fresh();
+  let answer;
+  dom.window.fetch = async (url, opts) => {
+    sent.push({ body: JSON.parse(opts.body) });
+    return new Promise((r) => { answer = r; });
+  };
+  m.record('error', typeError('mid-flight'));
+  const flying = m.flushReports();
+  await settle(5);
+  assert.equal(sent.length, 1, 'on its way');
+  for (let i = 0; i < 9; i++) m.record('error', typeError('mid-flight'));
+  answer({ ok: true, status: 200 });
+  assert.equal(await flying, true);
+  assert.equal(m.pendingReports(), 1, 'the nine that came later are waiting');
+  dom.window.fetch = async (url, opts) => { sent.push({ body: JSON.parse(opts.body) }); return { ok: true, status: 200 }; };
+  await m.flushReports();
+  assert.equal(sent[0].body.batch[0].properties.count, 1);
+  assert.equal(sent[1].body.batch[0].properties.count, 9);
+});
+
+test('storage refusing the settings write: Off and Stay offline still hold for this page', async () => {
+  const off = await fresh();
+  const blocked = () => { throw new off.dom.window.DOMException('blocked', 'SecurityError'); };
+  Object.defineProperty(globalThis, 'localStorage', { configurable: true, get: blocked });
+  Object.defineProperty(off.dom.window, 'localStorage', { configurable: true, get: blocked });
+  off.m.noteSettings({ crashReports: false }, false); // what settings.js does when saveLS says it didn't land
+  off.m.record('error', typeError('while off, storage blocked'));
+  assert.equal(off.m.pendingReports(), 0);
+  assert.equal(await off.m.flushReports(), false);
+
+  const stay = await fresh();
+  const beacons = strictBeacon(stay.dom);
+  stay.m.record('error', typeError('queued before'));
+  stay.m.noteSettings({ stayOffline: true }, false);
+  assert.equal(await stay.m.flushReports(), false);
+  assert.equal(stay.m.beaconReports(), false);
+  assert.equal(stay.sent.length + beacons.length, 0);
+  stay.m.noteSettings({ stayOffline: true }, true); // a write that landed: storage is the truth again
+  assert.equal(await stay.m.flushReports(), true);
+});
+
+test('the key works only on the hosts it was issued for — a fork\'s domain sends nothing', async () => {
+  const cases = [
+    ['https://fest.kevinhg.com/', 'kevinhg.com', true],
+    ['https://stage.fest.kevinhg.com/', 'kevinhg.com', true],
+    ['https://kevinhg.com/', 'kevinhg.com', true],
+    ['http://127.0.0.1:5173/', 'kevinhg.com', true],
+    ['https://fest.example.org/', 'kevinhg.com', false],
+    ['https://notkevinhg.com/', 'kevinhg.com', false],
+    ['https://festival-navigator-git-main-someone.vercel.app/', 'kevinhg.com', false],
+    ['https://fest.kevinhg.com/', null, false],
+  ];
+  for (const [url, hosts, allowed] of cases) {
+    const { m, queue } = await fresh({ url, hosts });
+    m.record('error', typeError('where am I'));
+    assert.equal(m.reportKey() !== null, allowed, `${url} (${hosts})`);
+    assert.equal(queue().length, allowed ? 1 : 0, url);
+  }
 });
 
 test('Stay offline: nothing leaves, not over fetch and not as a beacon', async () => {
@@ -331,7 +464,7 @@ test('the page going hidden sends a beacon ON navigator, marks what it sent, and
   assert.equal(m.pendingReports(), 0);
 });
 
-test('a beacon the browser refuses marks nothing; Low power sends no beacon at all', async () => {
+test('a beacon the browser refuses marks nothing; Low power still lets a waiting report out', async () => {
   const a = await fresh();
   let accept = false;
   const calls = strictBeacon(a.dom, () => accept);
@@ -341,11 +474,36 @@ test('a beacon the browser refuses marks nothing; Low power sends no beacon at a
   assert.equal(a.m.beaconReports(), true, 'tried again, since nothing was marked');
   assert.equal(calls.length, 2);
 
+  // A boot crash never reaches a successful sync; with Low power on (likely at
+  // a fest) the hide beacon and `online` are its only ways out. A report only
+  // exists after an error, so this costs no radio on a healthy phone.
   const b = await fresh({ settings: { lowPower: true } });
   const lowCalls = strictBeacon(b.dom);
-  b.m.record('error', typeError('low power'));
-  assert.equal(b.m.beaconReports(), false);
-  assert.equal(lowCalls.length, 0, 'Low power only sends after a sync, which already woke the radio');
+  b.m.record('boot', typeError('low power'));
+  assert.equal(b.m.beaconReports(), true);
+  assert.equal(lowCalls.length, 1);
+});
+
+test('pagehide: the crew\'s beacon goes first here too (the reporter wires its listener at load)', async () => {
+  const { m, dom, loaded } = await fresh();
+  const order = [];
+  const nav = dom.window.navigator;
+  nav.sendBeacon = function sendBeacon(url) {
+    if (this !== nav) throw new TypeError('Illegal invocation');
+    order.push(url);
+    return true;
+  };
+  // In a browser the inline module runs while the page is still loading;
+  // model that exactly, whatever jsdom's own timing did.
+  await loaded();
+  Object.defineProperty(dom.window.document, 'readyState', { configurable: true, get: () => 'interactive' });
+  m.hookGlobalErrors(); // index.html
+  dom.window.addEventListener('pagehide', () => nav.sendBeacon('/api/crew?t=stand-in')); // app.js init(), during load
+  delete dom.window.document.readyState;
+  dom.window.dispatchEvent(new dom.window.Event('load'));
+  m.record('error', typeError('closing the tab'));
+  dom.window.dispatchEvent(new dom.window.Event('pagehide'));
+  assert.deepEqual(order, ['/api/crew?t=stand-in', '/fn-i/batch']);
 });
 
 test('the crew\'s last-second beacon goes before the report beacon', async () => {

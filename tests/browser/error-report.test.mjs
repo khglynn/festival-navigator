@@ -40,6 +40,8 @@ test('a thrown error in the real page sends exactly one scrubbed request to /fn-
       localStorage.setItem(`fn_crew_fest_v3_${t}`, f);
       localStorage.setItem('fn_coach_v1', '1');
       localStorage.setItem('fn_person_v1', JSON.stringify({ token: p, id: pid, name: 'Kevin', crews: { [t]: { name: 'Kevin', crewName: 'Report' } } }));
+      window.__synced = 0;
+      window.addEventListener('fn:synced', () => { window.__synced += 1; });
     }, [CREW, PERSON, PID, FID]);
     const doc = {
       v: 4, meta: { name: 'Report', inviteFestId: FID }, spotify: {}, affinity: {},
@@ -94,6 +96,7 @@ test('a thrown error in the real page sends exactly one scrubbed request to /fn-
     await page.evaluate(() => window.dispatchEvent(new Event('online')));
     await sleep(1500);
 
+    assert.ok(await page.evaluate(() => window.__synced) > 0, 'a sync succeeded after the send, so the same report had a second chance to go');
     assert.equal(reports.length, 1, `exactly one request (got ${reports.length})`);
     const [r] = reports;
     assert.equal(r.url, '/fn-i/batch');
