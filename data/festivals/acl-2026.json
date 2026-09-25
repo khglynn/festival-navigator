@@ -748,8 +748,12 @@
       "doors": "7 PM",
       "source": "https://www.aclfestival.com/page/nights",
       "page": {
-        "url": "https://www.aclfestival.com/page/nights",
-        "at": "ACL Fest"
+        "url": "https://do512.com/events/2026/10/1/palace-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064FBD3B1E691",
+        "at": "Ticketmaster"
       }
     },
     {
@@ -792,8 +796,12 @@
       "doors": "9 PM",
       "source": "https://www.concourseproject.com/",
       "page": {
-        "url": "https://www.concourseproject.com/",
-        "at": "Concourse Project"
+        "url": "https://do512.com/events/2026/10/1/the-chainsmokers-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://wl.eventim.us/event/Official-2026-ACL-Fest-Nights-The-Chainsmokers/701286?afflky=TheConcourseProject",
+        "at": "Eventim"
       }
     },
     {
@@ -872,7 +880,7 @@
         "at": "Do512"
       },
       "tickets": {
-        "url": "https://www.axs.com/events/1566083/official-2026-acl-fest-nights-villanelle-tickets?skin=3ten?cid=usaffdostuff",
+        "url": "https://www.axs.com/events/1566083/official-2026-acl-fest-nights-villanelle-tickets?skin=3ten&cid=usaffdostuff",
         "at": "AXS"
       }
     },
@@ -1044,8 +1052,12 @@
       "doors": "10 PM",
       "source": "https://www.aclfestival.com/page/nights",
       "page": {
-        "url": "https://www.aclfestival.com/page/nights",
-        "at": "ACL Fest"
+        "url": "https://do512.com/events/2026/10/2/rebecca-black-dj-set-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://wl.eventim.us/event/official-2026-acl-fest-nights-rebecca-black-at-dmc-or-atx/702467?afflky=DevilMayCare",
+        "at": "Eventim"
       }
     },
     {
@@ -1296,8 +1308,12 @@
       "doors": "9 PM",
       "source": "https://antonesnightclub.com/tm-event/official-2026-acl-fest-nights-rochelle-jordan/",
       "page": {
-        "url": "https://antonesnightclub.com/tm-event/official-2026-acl-fest-nights-rochelle-jordan/",
-        "at": "Antone's"
+        "url": "https://do512.com/events/2026/10/4/rochelle-jordan-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064FCCD9EEE20",
+        "at": "Ticketmaster"
       }
     },
     {
@@ -1422,6 +1438,10 @@
       "page": {
         "url": "https://do512.com/events/2026/10/8/the-war-on-drugs-a-special-performance-presented-by-defender-tickets",
         "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.universe.com%2Fdestinationdefendermusicexperience-austin-tx",
+        "at": "Universe"
       }
     },
     {
@@ -1480,8 +1500,12 @@
       "doors": "7 PM",
       "source": "https://antonesnightclub.com/tm-event/official-2026-acl-fest-nights-world-famous-pets/",
       "page": {
-        "url": "https://antonesnightclub.com/tm-event/official-2026-acl-fest-nights-world-famous-pets/",
-        "at": "Antone's"
+        "url": "https://do512.com/events/2026/10/8/world-famous-pets-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064FCD21AF513",
+        "at": "Ticketmaster"
       }
     },
     {
@@ -1512,7 +1536,7 @@
         "at": "Do512"
       },
       "tickets": {
-        "url": "https://www.axs.com/events/1568163/official-2026-acl-fest-nights-aszewo-tickets?skin=3ten?cid=usaffdostuff",
+        "url": "https://www.axs.com/events/1568163/official-2026-acl-fest-nights-aszewo-tickets?skin=3ten&cid=usaffdostuff",
         "at": "AXS"
       }
     },
@@ -1528,7 +1552,7 @@
         "at": "Do512"
       },
       "tickets": {
-        "url": "https://www.axs.com/events/1568163/official-2026-acl-fest-nights-aszewo-tickets?skin=3ten?cid=usaffdostuff",
+        "url": "https://www.axs.com/events/1568163/official-2026-acl-fest-nights-aszewo-tickets?skin=3ten&cid=usaffdostuff",
         "at": "AXS"
       }
     },
@@ -1640,7 +1664,7 @@
         "at": "Do512"
       },
       "tickets": {
-        "url": "https://www.axs.com/events/1566242/official-2026-acl-fest-nights-claire-rosinkranz-tickets?skin=3ten?cid=usaffdostuff",
+        "url": "https://www.axs.com/events/1566242/official-2026-acl-fest-nights-claire-rosinkranz-tickets?skin=3ten&cid=usaffdostuff",
         "at": "AXS"
       }
     },
