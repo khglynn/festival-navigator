@@ -68,10 +68,23 @@ const USAGE_TTL = 3 * 24 * 3600 * 1000;
 const BATCH_MAX = 50;
 const FETCH_BYTES = 60 * 1024;
 const BEACON_BYTES = 16 * 1024;
-// A looping error must not flood the queue: identical unsent reports fold
-// into one (its `count` grows), and one page load queues any one error at
-// most this many times.
+// A looping error must not flood the queue or slow the page: repeats fold
+// into one report (its `count` grows) and are written at most once a
+// second; one page load queues any one error at most PER_SESSION times and
+// at most SESSION_CAP reports in all — the first ones, which are the ones
+// that explain the rest; the journal keeps the first few of each. Measured
+// before the caps (review, 2026-09-25): 2,000 errors whose message carried
+// a changing index filled the queue to its byte cap and evicted the boot
+// crash that caused them.
 const PER_SESSION = 5;
+const SESSION_CAP = 25;
+const JOURNAL_REPEATS = 3;
+const MAX_KEYS = 200;
+const FOLD_WRITE_MS = 1000;
+// A send that failed for a reason that may pass (no network, 408, 429, 5xx)
+// waits before the next try: a minute, doubling, at most half an hour.
+const BACKOFF_BASE_MS = 60 * 1000;
+const BACKOFF_MAX_MS = 30 * 60 * 1000;
 const SEND_TIMEOUT_MS = 15000;
 const BUILD_WAIT_MS = 3000;
 
@@ -118,8 +131,18 @@ function journal(kind, d, known, at) {
   lsSet(KEY, JSON.stringify(list));
 }
 
+// Scrubbed on the way out too: a journal written by v87 or earlier holds raw
+// words, and this is what Diagnostics hands a person to paste.
 export function recent() {
-  try { return seed().slice(); } catch { return []; }
+  try {
+    const known = knownSecrets();
+    return seed().map((e) => ({
+      t: e.t,
+      kind: e.kind,
+      msg: scrubText(String(e.msg || ''), known),
+      stack: e.stack ? scrubText(String(e.stack), known) : null,
+    }));
+  } catch { return []; }
 }
 
 // ---- what the app tells the reporter ----------------------------------------
@@ -169,6 +192,9 @@ export function scrubText(input, known) {
   s = s.replace(URL_TAIL, '$1');
   s = s.replace(PARAM, MARK.param);
   s = s.replace(EMAIL, MARK.email);
+  // V8 quotes a string's own content when code sets a property on it
+  // ("Cannot create property 'x' on string '<the text>'").
+  s = s.replace(/ on string '[\s\S]*'/, ' on string \'' + MARK.text + '\'');
   if (/JSON/i.test(s)) {
     // First quote to last, greedily; with no closing quote, everything after
     // the lone one.
@@ -422,18 +448,43 @@ function deviceId() {
 }
 
 // ---- settings and the key -------------------------------------------------------
+// When a settings write does NOT land (storage blocked or full — the app
+// carries on from memory), settings.js hands the choice over here, so Off and
+// Stay offline still hold for this page (review F3, 2026-09-25).
+let memSettings = null;
+export function noteSettings(value, landed) {
+  memSettings = !landed && value && typeof value === 'object' ? value : null;
+}
 function settings() {
+  if (memSettings) return memSettings;
   try {
     const v = JSON.parse(lsGet(SETTINGS_KEY) || '{}');
     return v && typeof v === 'object' ? v : {};
   } catch { return {}; }
 }
 
+// The key only works on the hosts it was issued for: the meta's `data-hosts`
+// (domains; each one's subdomains count) plus a machine's own localhost. A
+// fork that pulls upstream gets the key AND the hosts, and on its own domain
+// the key is inert — its people's names and errors never reach this
+// project's Slack (review, 2026-09-25). No `data-hosts`: localhost only.
+function hostAllowed(m) {
+  let h = '';
+  try { h = String(window.location.hostname || ''); } catch { h = ''; }
+  if (h === 'localhost' || h === '127.0.0.1' || h === '[::1]') return true;
+  const list = String(m.getAttribute('data-hosts') || '').split(',');
+  for (let i = 0; i < list.length; i++) {
+    const d = list[i].trim().toLowerCase();
+    if (d && (h === d || h.slice(-(d.length + 1)) === '.' + d)) return true;
+  }
+  return false;
+}
+
 export function reportKey() {
   try {
     const m = window.document.querySelector('meta[name="' + KEY_META + '"]');
     const k = m ? String(m.getAttribute('content') || '').trim() : '';
-    return KEY_RE.test(k) ? k : null;
+    return KEY_RE.test(k) && hostAllowed(m) ? k : null;
   } catch { return null; }
 }
 
@@ -510,25 +561,50 @@ export function clearReports() {
   lsRemove(QUEUE_KEY);
 }
 
-const perSession = {};
+// This page load's errors, in MEMORY only and keyed on their raw words
+// (never stored): how many journal lines and reports each has had, and the
+// report its repeats fold into. A repeat costs a Map lookup, not a report
+// build and a queue rewrite.
+const seen = new Map();
+let sessionReports = 0;
+let sessionDropped = 0;
+const pendingFolds = new Map(); // report id -> repeats not yet written
+let foldTimer = null;
+
+function applyFolds() {
+  if (foldTimer) { clearTimeout(foldTimer); foldTimer = null; }
+  if (!pendingFolds.size) return;
+  const folds = new Map(pendingFolds);
+  pendingFolds.clear();
+  const at = new Date().toISOString();
+  withQueue((q) => {
+    for (let i = 0; i < q.length; i++) {
+      const n = folds.get(q[i].id);
+      if (n) { q[i].n = (q[i].n || 1) + n; q[i].last = at; }
+    }
+  });
+}
+function scheduleFolds() {
+  if (!foldTimer) foldTimer = setTimeout(() => { foldTimer = null; applyFolds(); }, FOLD_WRITE_MS);
+}
+
+// A report on its way (fetched, or handed to a beacon) takes no more
+// repeats: one folded into a report that is then dropped as sent would be
+// lost with it (review F5). The next repeat starts a new report.
+function retarget(ids) {
+  seen.forEach((v) => { if (v.target && ids.indexOf(v.target) >= 0) v.target = null; });
+}
 
 // The one place anything is queued. Errors today; allowlisted usage events
 // (`track(name, props)`, DESIGN §2b) arrive through here later with
 // kind 'usage', the same base properties and the same bounds.
-function enqueue(kind, event, properties, fingerprint) {
-  const seen = perSession[fingerprint] || 0;
+function enqueue(kind, event, properties) {
+  const id = uuid();
+  if (properties.build == null) awaitingBuild.push(id);
   withQueue((q) => {
-    // Folds only into this page load's own unsent report: an earlier load's
-    // may be another build's.
-    for (let i = q.length - 1; i >= 0; i--) {
-      if (q[i].fp === fingerprint && q[i].s === SESSION && !q[i].b) { q[i].n = (q[i].n || 1) + 1; q[i].last = new Date().toISOString(); return; }
-    }
-    if (seen >= PER_SESSION) return;
-    perSession[fingerprint] = seen + 1;
-    const id = uuid();
-    if (properties.build == null) awaitingBuild.push(id);
-    q.push({ id: id, k: kind, t: new Date().toISOString(), n: 1, fp: fingerprint, s: SESSION, e: { event: event, properties: properties } });
+    q.push({ id: id, k: kind, t: new Date().toISOString(), n: 1, s: SESSION, e: { event: event, properties: properties } });
   });
+  return id;
 }
 
 // Every report carries these (DESIGN §2b/§2c). Future usage events share it.
@@ -659,11 +735,22 @@ function buildReport(kind, d, known, at) {
   // With no stack there is nothing for PostHog to group on but the words, so
   // each cause is its own issue (DESIGN §2c.8).
   if (!frames.length) props.$exception_fingerprint = (props.kind + ':' + type + ':' + value).slice(0, 400);
-  let top = '';
-  for (let i = frames.length - 1; i >= 0; i--) {
-    if (frames[i].in_app) { top = frames[i].filename + ':' + frames[i].lineno + ':' + frames[i].colno; break; }
+  return props;
+}
+
+// What makes two errors "the same" for this page load: kind, type, the words
+// with every number blurred (a loop's changing index or pixel count), and the
+// first two frames. Raw, so in memory only — never stored, never sent.
+function sameKey(kind, d, at) {
+  let where = '';
+  if (d.stack) {
+    const lines = d.stack.split('\n');
+    for (let i = 0, got = 0; i < lines.length && got < 2; i++) {
+      if (/:\d+:\d+/.test(lines[i])) { where += lines[i].trim() + '|'; got++; }
+    }
   }
-  return { props: props, fingerprint: props.kind + '|' + type + '|' + value + '|' + top };
+  if (!where && at && at.filename) where = at.filename + ':' + at.lineno + ':' + at.colno;
+  return kind + '|' + d.type + '|' + String(d.value).replace(/\d+/g, '#').slice(0, 200) + '|' + where;
 }
 
 // `at` (optional): the error event's {filename, lineno, colno}.
@@ -671,12 +758,32 @@ export function record(kind, err, at) {
   try {
     const d = describe(kind, err);
     if (isNoise(d)) return;
-    const known = knownSecrets();
-    try { journal(kind, d, known, at); } catch { /* the journal is best-effort */ }
+    const key = sameKey(kind, d, at);
+    let e = seen.get(key);
+    if (!e) {
+      if (seen.size >= MAX_KEYS) { sessionDropped++; return; }
+      e = { journaled: 0, queued: 0, target: null };
+      seen.set(key, e);
+    }
+    let known = null;
+    // The journal keeps the first few of each: a loop must not push every
+    // other entry out of its twenty slots.
+    if (e.journaled < JOURNAL_REPEATS) {
+      e.journaled++;
+      known = knownSecrets();
+      try { journal(kind, d, known, at); } catch { /* the journal is best-effort */ }
+    }
     if (!reporting()) return;
+    if (e.target) {
+      pendingFolds.set(e.target, (pendingFolds.get(e.target) || 0) + 1);
+      scheduleFolds();
+      return;
+    }
+    if (e.queued >= PER_SESSION || sessionReports >= SESSION_CAP) { sessionDropped++; return; }
+    e.queued++;
+    sessionReports++;
     askBuild();
-    const r = buildReport(kind, d, known, at);
-    enqueue('error', '$exception', r.props, r.fingerprint);
+    e.target = enqueue('error', '$exception', buildReport(kind, d, known || knownSecrets(), at));
   } catch { /* a journal must never be the thing that throws */ }
 }
 
@@ -718,23 +825,32 @@ function drop(ids) {
 }
 
 let inFlight = false;
+let retryAt = 0;
+let failures = 0;
+function backoff() {
+  failures++;
+  retryAt = Date.now() + Math.min(BACKOFF_MAX_MS, BACKOFF_BASE_MS * Math.pow(2, failures - 1));
+}
 
 // Send what is waiting over fetch. Resolves true when a batch was accepted;
 // never rejects — an unhandled rejection from here would be recorded as an
 // error, and that is a loop.
 export async function flushReports() {
-  if (inFlight) return false;
+  if (inFlight || Date.now() < retryAt) return false;
   inFlight = true;
   try {
     if (!maySend()) return false;
     await buildReady();
     if (!maySend()) return false;
+    applyFolds();
     const key = reportKey();
     const chosen = pick(readQueue(), FETCH_BYTES, false);
     const poisoned = chosen.filter((c) => !c.ev).map((c) => c.id);
     const events = chosen.filter((c) => c.ev).map((c) => c.ev);
     if (poisoned.length) drop(poisoned);
     if (!events.length) return false;
+    const ids = events.map((ev) => ev.uuid);
+    retarget(ids);
     let ctl = null;
     try { ctl = typeof AbortController === 'function' ? new AbortController() : null; } catch { ctl = null; }
     const timer = ctl ? setTimeout(() => { try { ctl.abort(); } catch { /* done */ } }, SEND_TIMEOUT_MS) : null;
@@ -749,11 +865,16 @@ export async function flushReports() {
         signal: ctl ? ctl.signal : undefined,
       });
     } catch { res = null; } finally { if (timer) clearTimeout(timer); }
-    if (!res) return false;
-    // Delivered — or refused for good (a malformed batch is refused the same
-    // way every time, and retrying it would stall everything behind it).
-    if (res.ok || res.status === 400 || res.status === 413) drop(events.map((ev) => ev.uuid));
-    return !!res.ok;
+    if (!res) { backoff(); return false; }
+    if (res.ok) { failures = 0; drop(ids); return true; }
+    // Refused for good — a malformed batch, no key, no door on this host
+    // (401/403/404): the same bytes get the same answer every time, and
+    // retrying them would stall everything behind them. A 408, a 429 or a
+    // 5xx may pass: kept, and the next try waits (review F2).
+    const s = res.status;
+    if (s >= 400 && s < 500 && s !== 408 && s !== 429) drop(ids);
+    else backoff();
+    return false;
   } catch {
     return false;
   } finally {
@@ -768,9 +889,13 @@ export async function flushReports() {
 // count once. A lost report is worse than a double-counted one.
 export function beaconReports() {
   try {
-    if (!maySend() || settings().lowPower === true) return false;
+    // Low power does not hold a report back: one exists only after an error,
+    // and a boot crash — no sync will ever succeed — has only this way out
+    // (review F4).
+    if (!maySend()) return false;
     const nav = window.navigator;
     if (!nav || typeof nav.sendBeacon !== 'function') return false;
+    applyFolds();
     const key = reportKey();
     const chosen = pick(readQueue(), BEACON_BYTES, true).filter((c) => c.ev);
     if (!chosen.length) return false;
@@ -783,6 +908,7 @@ export function beaconReports() {
     try { ok = nav.sendBeacon(REPORT_PATH, blob) === true; } catch { ok = false; }
     if (ok) {
       const ids = chosen.map((c) => c.id);
+      retarget(ids);
       withQueue((q) => { for (let i = 0; i < q.length; i++) if (ids.indexOf(q[i].id) >= 0) q[i].b = 1; });
     }
     return ok;
@@ -807,12 +933,14 @@ export function hookGlobalErrors() {
       if (!t || t === window || t.tagName !== 'SCRIPT' || t.type !== 'module') return;
       let path = '?';
       try { path = new URL(t.src).pathname; } catch { path = '?'; }
-      record('module-load', 'the app\'s code did not load: ' + path);
+      // Chrome fires on the entry script whichever of its files failed.
+      record('module-load', 'a file the app needs did not load (from ' + path + ')');
     }, true);
     // Send after a sync succeeds (the network works and the radio is awake),
-    // and when the browser says it is back online — never on a timer.
+    // and when the browser says it is back online — never on a timer. Low
+    // power doesn't hold reports back: they only exist after an error.
     window.addEventListener('fn:synced', flushSoon);
-    window.addEventListener('online', () => { if (settings().lowPower !== true) flushSoon(); });
+    window.addEventListener('online', flushSoon);
     // The hide beacon goes AFTER the crew's own (sync.js flushOnHide, wired
     // by app.js on the document): both share the browser's 64 KB keepalive
     // budget, and a pick outranks a crash report. visibilitychange bubbles
@@ -870,6 +998,7 @@ export async function diagnostics() {
   }, motionFacts(), {
     reports: reportKey() ? (reportsOn() ? 'on' : 'off') : 'not set up',
     reportsWaiting: pendingReports(),
+    reportsHeldBack: sessionDropped,
     at: new Date().toISOString(),
     errors: recent(),
   });
