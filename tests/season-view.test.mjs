@@ -200,7 +200,10 @@ test('the tabs: YOURS, then a tab per month; none carries a date (no date notes 
   ]);
   assert.ok(tabs.every((t) => t.dates.length === 0));
   assert.equal(wallPlanFor(SEASON, ctxFor('season-test')), null, 'a season is not a week of days');
-  assert.deepEqual(roomsOf(SEASON, ctxFor('season-test')), [], 'no rooms to hide: the fest name opens Settings');
+  // The show menu's parts are the season's locations, busiest first.
+  const rooms = roomsOf(SEASON, ctxFor('season-test'));
+  assert.deepEqual(rooms.slice(0, 2).map((r) => `${r.key}:${r.count}`), ['location:Parish:6', 'location:Mohawk:5'], 'busiest first; a called-off show counts nothing');
+  assert.ok(rooms.every((r) => r.key === `location:${r.label}`));
 });
 
 test('no Spotify, no YOURS — not even with picks at other festivals', () => {
@@ -272,6 +275,20 @@ test('the plan reads the season’s own clock: at 1 AM Saturday it is still Frid
   const plan = seasonPlanOf(SEASON, ctxFor('season-test', { now: new Date('2026-09-26T01:00:00-05:00') }));
   assert.equal(plan.today, TODAY);
   assert.equal(plan.months[0].weeks[0].entries[0].name, 'Early Tonight');
+});
+
+test('a location the show menu unticks leaves the months, YOURS and a search; every location unticked says so', () => {
+  const folded = ['location:Mohawk'];
+  const { root } = render('season-test', { folded });
+  const venues = [...root.querySelectorAll('.card')].map((c) => JSON.parse(c.dataset.occ).venue);
+  assert.ok(venues.length && !venues.includes('Mohawk'), 'no Mohawk card anywhere');
+  assert.equal(root.querySelector('.card[data-artist="Rich Show"]'), null, 'a Mohawk show is gone from YOURS too');
+  assert.equal(render('season-test', { folded, query: 'mohawk' }).root.querySelectorAll('.card').length, 0, 'a hidden location never answers a search');
+  const all = roomsOf(SEASON, ctxFor('season-test')).map((r) => r.key);
+  const empty = render('season-test', { folded: all }).root;
+  assert.equal(empty.querySelectorAll('.card').length, 0);
+  assert.match(empty.querySelector('.wall-empty').textContent, /Everything\u2019s hidden\..*bring locations back/);
+  assert.deepEqual(dayNavOf(SEASON, ctxFor('season-test', { folded: all })), [], 'no tabs over an empty wall');
 });
 
 test('lists: the season follows the upcoming festivals and precedes the past ones; it is never the default', () => {

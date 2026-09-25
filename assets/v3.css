@@ -285,6 +285,16 @@ html { touch-action: manipulation; }
   font-size: 10px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase;
 }
 .sort-pop .pop-div { height: 1px; margin: 5px 7px; background: var(--hairline); }
+/* A season's show menu lists its locations (2026-09-25): dozens of rows, so
+ * it scrolls inside itself and never past the screen (the dock's opens
+ * upward, the rail's downward), and each row ends in its count. */
+.sort-pop.locations { min-width: 236px; max-height: min(62vh, 560px); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
+.sort-pop .count { margin-left: auto; padding-left: 12px; color: var(--text-tertiary); font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums; }
+/* Sixty rows all in brand violet is a wall of colour: here the check carries
+ * the brand, the name stays in body text, and an unticked name steps back. */
+.sort-pop.locations [role="option"][aria-selected="true"] { color: var(--text-body); }
+.sort-pop.locations .check { color: rgb(var(--brand)); }
+.sort-pop.locations [role="option"][aria-selected="false"] > span:not(.check):not(.count) { color: var(--text-tertiary); }
 .sort-pop .chev { color: var(--text-tertiary); margin-left: auto; padding-left: 10px; }
 /* The dock is fixed to the bottom of the phone, so a popover it carries opens
  * UPWARD — downward is off the screen. The rail's is at the top of the page

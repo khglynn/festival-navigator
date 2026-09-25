@@ -19,7 +19,7 @@ import { nowOnDay, nowOffsetPx, clockLabel, festivalClock } from './now.js';
 import { eventModelOf, venueGroupsOf, dateRuleLabel, occOf, hourLabelOf, approxMark, parseEventTime, weekdayOfIso, shortDate } from './events.js';
 import { reduced, canAnimate, GROW_MS, OUT_MS, STAGGER_MS, EASE_ARRIVE, EASE_SURFACE } from './motion.js';
 import { isCancelled } from './events.js'; // a cancelled act (2026-09-23) — its own line, so the list above can grow without a merge
-import { isSeason, seasonModelOf, seasonWhen, weekHeadOf, venueOf } from './events.js'; // a city season (2026-09-25)
+import { isSeason, seasonModelOf, seasonWhen, weekHeadOf, venueOf, seasonLocationsOf } from './events.js'; // a city season (2026-09-25)
 
 // ---- person -> board color ---------------------------------------------------
 // v4 people carry colorIndex. Legacy people carry a "R, G, B" string from the
@@ -1356,6 +1356,8 @@ export function wallPlanFor(fest, ctx) {
 // leads wherever it first appears (Portola's Thursday and Friday are other
 // people's warehouses), then each section, then the tabs off the end.
 export function roomsOf(fest, ctx) {
+  // A season's parts are its locations (UX.md §3: "15 of 76 locations").
+  if (isSeason(fest)) return seasonRoomsOf(fest, ctx);
   const plan = fest ? wallPlanFor(fest, { ...ctx, query: '', folded: [] }) : null;
   if (!plan) return [];
   return roomsIn(fest, plan.model, plan.weekends);
@@ -1388,14 +1390,14 @@ export const festLinkLabel = (fest) => `${String(fest.name || '').toUpperCase()}
 // no button — the fest name is the one door; a second would be a second
 // control for one state. It arrives with the beat and leaves before the week
 // comes back (app.js toggleFoldFlow).
-function allHiddenNotice(root, fest) {
+function allHiddenNotice(root, fest, { parts = 'parts' } = {}) {
   const n = mk('div', 'wall-empty');
   n.setAttribute('role', 'status');
   const hint = mk('p', 'hint');
   const name = festLinkLabel(fest);
   hint.append(
-    mk('span', 'on-phone', `Tap ${name} below to bring parts back.`),
-    mk('span', 'on-desk', `Click ${name} up top to bring parts back.`),
+    mk('span', 'on-phone', `Tap ${name} below to bring ${parts} back.`),
+    mk('span', 'on-desk', `Click ${name} up top to bring ${parts} back.`),
   );
   n.append(mk('p', 'lead', 'Everything\u2019s hidden.'), hint);
   root.appendChild(n);
@@ -2140,14 +2142,28 @@ export function yoursTestOf(ctx, fest) {
 // The season as the wall draws it right now: the months from today on in the
 // festival's own calendar (a friend in another zone sees Austin's today), a
 // search narrowing it to the shows whose name or location answers.
+export const LOCATION_KEY = 'location:';
+// The locations the show menu has unticked, from the fold (device-local, per
+// fest — never the crew doc: hiding is the viewer's own, CLAUDE.md).
+const hiddenLocationsOf = (ctx) => new Set((ctx.folded || []).filter((k) => typeof k === 'string' && k.startsWith(LOCATION_KEY)).map((k) => k.slice(LOCATION_KEY.length)));
 export function seasonPlanOf(fest, ctx) {
   const today = festivalClock(ctx.now || new Date(), fest.timezone || null).iso;
+  const hidden = hiddenLocationsOf(ctx);
   const q = fold((ctx.query || '').trim());
   // A search answers by location too: "mohawk" is a question a city season
   // gets, and the answer's card says where (renderSeason).
   const only = q ? (e) => fold(e.name).includes(q) || fold(venueOf(e) || '').includes(q) : null;
   const isYours = q ? null : yoursTestOf(ctx, fest);
-  return { ...seasonModelOf(fest, { today, isYours, only }), isYours, query: q };
+  return { ...seasonModelOf(fest, { today, isYours, only, hidden }), isYours, query: q, hidden };
+}
+
+// The show menu's rows for a season: one per location with a show from today
+// on, busiest first, each with its count — hidden or not, so the menu can
+// offer a hidden one back. One location has nothing to choose between.
+function seasonRoomsOf(fest, ctx) {
+  const today = festivalClock(ctx.now || new Date(), fest.timezone || null).iso;
+  const rows = seasonLocationsOf(fest, { today }).map(({ venue, count }) => ({ key: `${LOCATION_KEY}${venue}`, label: venue, count }));
+  return rows.length > 1 ? rows : [];
 }
 
 // The tabs: YOURS when there is something in it, then the months. A month tab
@@ -2176,6 +2192,13 @@ function seasonGrid(host, entries, ctx, { place = false } = {}) {
   host.appendChild(grid);
 }
 
+// Nothing on the wall because the menu hid it, not because nothing is on.
+function everyLocationHidden(fest, ctx, plan) {
+  if (!plan.hidden.size) return false;
+  const rows = seasonRoomsOf(fest, ctx);
+  return rows.length > 0 && rows.every((r) => plan.hidden.has(r.label));
+}
+
 function renderSeason(root, ctx, fest) {
   const plan = seasonPlanOf(fest, ctx);
   if (plan.query) {
@@ -2189,7 +2212,8 @@ function renderSeason(root, ctx, fest) {
       seasonGrid(block, month.weeks.flatMap((w) => w.entries), ctx, { place: true });
       root.appendChild(block);
     }
-    if (!plan.months.length) {
+    if (!plan.months.length && everyLocationHidden(fest, ctx, plan)) allHiddenNotice(root, fest, { parts: 'locations' });
+    else if (!plan.months.length) {
       const empty = mk('div', 'season-empty', 'No shows match — try fewer letters, or a location.');
       empty.setAttribute('role', 'status');
       root.appendChild(empty);
@@ -2219,6 +2243,12 @@ function renderSeason(root, ctx, fest) {
       block.appendChild(room);
     }
     root.appendChild(block);
+  }
+  // Every location unticked: say why the wall is empty and where the switch
+  // is, as a festival with every part hidden does.
+  if (!plan.months.length && everyLocationHidden(fest, ctx, plan)) {
+    allHiddenNotice(root, fest, { parts: 'locations' });
+    return;
   }
   // A season with nothing ahead says so in the wall's quiet voice — the feed
   // fills it as rooms announce.

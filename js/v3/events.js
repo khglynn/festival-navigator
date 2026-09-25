@@ -582,11 +582,14 @@ export function seasonWhen(e) {
 //           show last in its week (as it is last in any list);
 //   yours   the shows by an artist that is yours, soonest first — never a
 //           cancelled one (YOURS is what you can go to) — or null.
-export function seasonModelOf(fest, { today, isYours = null, only = null } = {}) {
+export function seasonModelOf(fest, { today, isYours = null, only = null, hidden = null } = {}) {
   const on = [];
   ((fest && fest.artists) || []).forEach((e, i) => {
     const iso = dateOf(e);
     if (!e || typeof e.name !== 'string' || !iso || iso < today) return;
+    // A location the show menu has unticked takes its shows off the wall —
+    // the months, YOURS and a search alike (viewer-side, like every fold).
+    if (hidden && hidden.size && hidden.has(venueOf(e))) return;
     if (only && !only(e)) return;
     on.push({ e, i, iso, at: clockOf(e) });
   });
@@ -641,6 +644,24 @@ export function seasonModelOf(fest, { today, isYours = null, only = null } = {})
   const yours = isYours ? on.filter((s) => !isCancelled(s.e) && isYours(s.e.name)).map((s) => s.e) : null;
   return { months: out, yours, today };
 }
+// The season's locations and how many shows each has from today on, busiest
+// first (people have home rooms, and the big rooms are the ones most people
+// mean), then by name — the show menu's list ("64 of 69 locations"; Kevin,
+// 2026-09-24: "Let's call this location … in pretty much every context").
+export function seasonLocationsOf(fest, { today } = {}) {
+  const counts = new Map();
+  for (const e of (fest && fest.artists) || []) {
+    const iso = dateOf(e);
+    const venue = venueOf(e);
+    if (!e || !iso || iso < today || !venue) continue;
+    // A room whose only show was called off is still on the wall (struck
+    // through), so it is still a row to untick; it counts nothing that is on.
+    counts.set(venue, (counts.get(venue) || 0) + (isCancelled(e) ? 0 : 1));
+  }
+  return [...counts].map(([venue, count]) => ({ venue, count }))
+    .sort((a, b) => b.count - a.count || a.venue.localeCompare(b.venue));
+}
+
 // A week's head, said the way the room heads say a day: the month in the
 // quiet weight, then the dates — `OCT 5 – 11`, `NOV 1` for a week the month
 // cuts to one day.

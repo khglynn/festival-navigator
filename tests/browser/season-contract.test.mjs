@@ -234,3 +234,50 @@ test('390: a held finger zooms a YOURS card with its on-sale timeline; a tap on 
     assert.ok(labels.every((l) => /— picked/.test(l)), `both cards carry the pick: ${JSON.stringify(labels)}`);
   } finally { await ctx.close(); }
 });
+
+test('390: the fest name opens the locations — a tap hides one and the menu stays open; All locations brings everything back', { skip }, async () => {
+  const { ctx, page, errors } = await openSeason({ width: 390, touch: true });
+  const tapAt = async (sel) => {
+    const el = page.locator(sel).first();
+    await el.scrollIntoViewIfNeeded();
+    const b = await el.boundingBox();
+    await page.touchscreen.tap(b.x + b.width / 2, b.y + b.height / 2);
+  };
+  const POP = '#dock-fest-wrap .sort-pop.locations';
+  const read = () => page.evaluate((s) => {
+    const pop = document.querySelector(s);
+    const r = pop.getBoundingClientRect();
+    const venues = [...document.querySelectorAll('#wall-root .card')].map((c) => JSON.parse(c.dataset.occ).venue);
+    return {
+      open: pop.style.display !== 'none', head: pop.querySelector('.pop-head').textContent,
+      first: pop.querySelectorAll('[data-room]')[1].dataset.room, cards: venues.length, venues,
+      onScreen: r.top >= 0 && r.bottom <= innerHeight && r.left >= 0 && r.right <= innerWidth,
+    };
+  }, POP);
+  try {
+    await tapAt('#dock-fest-link');
+    await sleep(400);
+    const a = await read();
+    const total = Number(a.head.match(/of (\d+) locations/)[1]);
+    assert.ok(a.open && a.onScreen, 'the menu opens, on the screen');
+    assert.equal(a.head, `Show · ${total} of ${total} locations`);
+    const busiest = a.first.slice('location:'.length);
+    assert.ok(a.venues.includes(busiest));
+    await tapAt(`${POP} [data-room="${a.first.replace(/"/g, '\\"')}"]`);
+    await sleep(700);
+    const b = await read();
+    assert.ok(b.open, 'the menu stays open for the next tick');
+    assert.equal(b.head, `Show · ${total - 1} of ${total} locations`);
+    assert.ok(!b.venues.includes(busiest), `no ${busiest} card on the wall`);
+    assert.ok(b.cards < a.cards);
+    await tapAt(`${POP} [data-room="location:*"]`);
+    await sleep(700);
+    const c = await read();
+    assert.equal(c.head, `Show · ${total} of ${total} locations`, 'All locations brings every one back');
+    assert.equal(c.cards, a.cards);
+    await page.touchscreen.tap(20, 200);
+    await sleep(400);
+    assert.equal((await read()).open, false, 'a tap outside closes it');
+    assert.deepEqual(errors, []);
+  } finally { await ctx.close(); }
+});

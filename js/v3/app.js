@@ -9,8 +9,8 @@ import * as sync from '../sync.js';
 import * as spotify from '../spotify.js';
 import * as model from './model.js';
 import { loadFestivalIndex, loadFestival, fetchCustomFestivals, mergeCustoms, FESTIVAL_INDEX, defaultFestivalId } from '../festivals.js';
-import { renderWall, refreshCard, showUndoToast, showToast, wireScrollspy, colorIndexOf, positionNowLines, positionNowMarks, scrollToNowLine, dayNavOf, roomsOf, cardFor, roomOf, isStripScroller, DAY_ANCHOR, festLinkLabel, nowLanding, nowStops, nowStep, nowPulseable, nowLabelOf, nowSaid } from './wall.js';
-import { loadPeopleFilter, savePeopleFilter, togglePerson, pruneToActive, loadFolded, applyFoldToggle } from './filters.js';
+import { renderWall, refreshCard, showUndoToast, showToast, wireScrollspy, colorIndexOf, positionNowLines, positionNowMarks, scrollToNowLine, dayNavOf, roomsOf, cardFor, roomOf, isStripScroller, DAY_ANCHOR, festLinkLabel, nowLanding, nowStops, nowStep, nowPulseable, nowLabelOf, nowSaid, LOCATION_KEY } from './wall.js';
+import { loadPeopleFilter, savePeopleFilter, togglePerson, pruneToActive, loadFolded, applyFoldToggle, saveFolded } from './filters.js';
 import { OUT_MS, CASCADE_MS, STAGGER_MS, EASE_ARRIVE, EASE_LEAVE, EASE_SURFACE, canAnimate } from './motion.js';
 import { scrolledBefore, rememberScrolled, dayOfScrollKey, festivalClock } from './now.js';
 import { dayLabelParts } from '../time.js';
@@ -1061,7 +1061,143 @@ function showMenuRow(label, { key = null, on = null, settings = false } = {}) {
   return row;
 }
 
+// ---- a season's locations (2026-09-25, UX.md §3) ----------------------------------
+// On a city season the fest name's menu lists its LOCATIONS (Kevin: "Let's
+// call this location … in pretty much every context"), busiest first with
+// their counts, under "Show · 64 of 69 locations". People have home rooms, so
+// a tap keeps the menu open — unticking five rooms is one visit, not five —
+// and the wall moves under it: that location's cards leave quick and plain,
+// and the cards that stay slide into the room they left (slideSeasonCards).
+// "All locations" leads: one tap back from any filter, or a clean wall to
+// build one up from. Device-local like every fold, never the crew doc.
+const ALL_LOCATIONS = `${LOCATION_KEY}*`;
+function paintLocationMenu(pop, rooms, folded) {
+  const shown = rooms.filter((r) => !folded.has(r.key)).length;
+  const head = pop.querySelector('.pop-head');
+  if (head) head.textContent = `Show · ${shown} of ${rooms.length} locations`;
+  for (const row of pop.querySelectorAll('[data-room]')) {
+    const on = row.dataset.room === ALL_LOCATIONS ? shown === rooms.length : !folded.has(row.dataset.room);
+    row.setAttribute('aria-selected', on ? 'true' : 'false');
+    row.querySelector('.check').textContent = on ? '✓' : '';
+  }
+}
+function buildLocationMenu(rooms, folded) {
+  const pop = document.createElement('ul');
+  pop.className = 'sort-pop locations';
+  pop.setAttribute('role', 'listbox');
+  pop.setAttribute('aria-label', 'Locations on the wall');
+  pop.dataset.rooms = rooms.map((r) => r.key).join('|');
+  pop.style.display = 'none';
+  const head = document.createElement('li');
+  head.className = 'pop-head';
+  head.setAttribute('role', 'presentation');
+  pop.appendChild(head);
+  const all = showMenuRow('All locations', { key: ALL_LOCATIONS, on: true });
+  all.addEventListener('click', () => {
+    const hiddenNow = rooms.some((r) => (ctx.folded || []).includes(r.key));
+    const others = (ctx.folded || []).filter((k) => !k.startsWith(LOCATION_KEY));
+    setSeasonLocations(hiddenNow ? others : [...others, ...rooms.map((r) => r.key)]);
+  });
+  pop.appendChild(all.parentElement);
+  for (const room of rooms) {
+    const row = showMenuRow(room.label, { key: room.key, on: !folded.has(room.key) });
+    const n = document.createElement('span');
+    n.className = 'count';
+    n.textContent = String(room.count);
+    n.setAttribute('aria-label', `${room.count} show${room.count === 1 ? '' : 's'}`);
+    row.appendChild(n);
+    row.addEventListener('click', () => {
+      const cur = ctx.folded || [];
+      setSeasonLocations(cur.includes(room.key) ? cur.filter((k) => k !== room.key) : [...cur, room.key]);
+    });
+    pop.appendChild(row.parentElement);
+  }
+  const divider = document.createElement('li');
+  divider.className = 'pop-div';
+  divider.setAttribute('role', 'presentation');
+  divider.setAttribute('aria-hidden', 'true');
+  pop.appendChild(divider);
+  const settings = showMenuRow('Settings', { settings: true });
+  settings.addEventListener('click', () => {
+    closeShowMenu({ instant: true });
+    openSettings();
+    router.push('settings');
+  });
+  pop.appendChild(settings.parentElement);
+  paintLocationMenu(pop, rooms, folded);
+  return pop;
+}
+
+// The cards a person can see (and a screen either side), by the identity a
+// repaint keeps — artist, show, room — with where each one is now.
+const cardIdentity = (c) => `${c.dataset.artist}|${c.dataset.occ || ''}|${roomOf(c) || ''}`;
+function cardsInView() {
+  const out = new Map();
+  const h = window.innerHeight;
+  for (const c of document.querySelectorAll('#wall-root .card[data-artist]')) {
+    const r = c.getBoundingClientRect();
+    if (r.bottom > -h / 2 && r.top < h * 1.5) out.set(cardIdentity(c), { card: c, r });
+  }
+  return out;
+}
+// After the repaint: a card that stayed in its row (or its column) slides from
+// where it was — the neighbours making room. A card the reflow carried to
+// another row AND column does not travel: a diagonal across the grid runs it
+// over its neighbours mid-flight (watched in slow motion, 2026-09-25). It
+// fades in where it now is, pushed a little from the side it came from — the
+// next row's start (from the right) or the last row's end (from the left). A
+// card that arrived (a location ticked back on) rises in with the beat.
+// Transforms and opacity only, and only the cards on screen.
+function slideSeasonCards(before) {
+  let arrivals = 0;
+  for (const [id, { card, r }] of cardsInView()) {
+    if (!canAnimate(card, ctx)) return;
+    const was = before.get(id);
+    if (was) {
+      const dx = was.r.left - r.left;
+      const dy = was.r.top - r.top;
+      const moved = Math.abs(dx) >= 1 || Math.abs(dy) >= 1;
+      if (moved && (Math.abs(dx) < 1 || Math.abs(dy) < 1)) {
+        card.animate([{ transform: `translate(${dx}px, ${dy}px)` }, { transform: 'none' }], { duration: CASCADE_MS + 80, easing: EASE_ARRIVE });
+      } else if (moved) {
+        card.animate([{ opacity: 0, transform: `translateX(${dy > 0 ? 14 : -14}px)` }, { opacity: 1, transform: 'none' }],
+          { duration: CASCADE_MS + 40, delay: STAGGER_MS * 2, easing: EASE_ARRIVE, fill: 'backwards' });
+      }
+    } else if (r.bottom > 0 && r.top < window.innerHeight) {
+      card.animate([{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }],
+        { duration: CASCADE_MS, delay: OUT_MS + Math.min(arrivals, 8) * STAGGER_MS, easing: EASE_ARRIVE, fill: 'backwards' });
+      arrivals += 1;
+    }
+  }
+}
+function setSeasonLocations(next) {
+  const was = new Set(ctx.folded || []);
+  const hiding = new Set(next.filter((k) => !was.has(k)).map((k) => k.slice(LOCATION_KEY.length)));
+  // The setting lands now — memory, storage and ctx; only the leaving is deferred.
+  ctx.folded = next;
+  saveFolded(ctx.fid, next);
+  const before = cardsInView();
+  const finish = () => {
+    repaintWall();
+    slideSeasonCards(before);
+  };
+  const venueOfCard = (c) => { try { return JSON.parse(c.dataset.occ || '{}').venue || null; } catch { return null; } };
+  const leaving = [...before.values()].map((x) => x.card)
+    .filter((c) => hiding.has(venueOfCard(c)) && canAnimate(c, ctx));
+  if (!leaving.length) { finish(); return; }
+  let done = false;
+  const go = () => { if (!done) { done = true; finish(); } };
+  let pending = leaving.length;
+  for (const c of leaving) {
+    const a = c.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'scale(.96)' }], { duration: OUT_MS, easing: EASE_LEAVE, fill: 'forwards' });
+    a.onfinish = () => { pending -= 1; if (pending <= 0) go(); };
+    a.oncancel = a.onfinish;
+  }
+  setTimeout(go, OUT_MS * 3 + 50); // a backgrounded tab must not hang the filter
+}
+
 function buildShowMenu(rooms, folded) {
+  if (isSeason(state.fest())) return buildLocationMenu(rooms, folded);
   const pop = document.createElement('ul');
   pop.className = 'sort-pop';
   pop.setAttribute('role', 'listbox');
@@ -1118,6 +1254,10 @@ function paintShowMenus() {
     link.setAttribute('aria-label', 'Show on the wall');
     // A repaint on the 25 s poll must not snatch an open menu away: while the
     // rooms are the same list, the checks are repainted in place.
+    if (existing && existing.dataset.rooms === signature && existing.classList.contains('locations')) {
+      paintLocationMenu(existing, rooms, folded);
+      continue;
+    }
     if (existing && existing.dataset.rooms === signature) {
       for (const row of existing.querySelectorAll('[data-room]')) {
         const on = !folded.has(row.dataset.room);
