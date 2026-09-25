@@ -1,68 +1,41 @@
 # City seasons: progress
 
-**last-updated: 2026-09-24 ~6:45 PM PT · status: your move (pick a direction)**
+**last-updated: 2026-09-25 ~1:00 AM PT · status: your move (two small asks)**
 
 *(Times are Pacific, from this Mac's clock.)*
 
-## For Kevin: where this stands
+## For Kevin: where this stands (morning of Fri Sep 25)
 
-You asked for a way to never miss another MUNA: Austin's shows by month,
-saved and bought through the app, plus an alert when an artist you love is
-announced here. Nothing is built into the app. What exists is the research
-and a page to choose from.
-
-1. **Why you missed MUNA.** It was announced May 8, went on sale May 14, and
-   never sold out: 134 days of notice. Ticketmaster, JamBase and Do512 listed
-   it within about a day. The listings were there; nothing told you.
-2. **Where the shows should come from.** I checked nine sources against what
-   16 Austin venues list on their own calendars (468 shows, Sep through May).
-   a. Do512 is the base: it had 84% and was wrong twice. It's an independent
-      Austin company, and its buy links already pay it a referral.
-   b. It's weaker for shows after Nov 23 (68%), so a second source is needed.
-      JamBase (independent, free developer tier) is the leading candidate;
-      together they had 93%.
-   c. Ticketmaster's free API gives presale and on-sale times for the rooms
-      it sells (Moody Center, Stubb's, Emo's and similar).
-   d. Bandsintown feeds Spotify's listings and graded well, but its API is
-      only for one artist's own site, so it's out unless they agree.
-   e. Codex reviewed the study and caught real scoring flaws; they're fixed
-      and the numbers above are the corrected ones. Full study: `STUDY.md`.
-3. **The alert.** It should check a daily Austin feed against your artists
-   (Spotify likes and follows, plus your fest picks), reading full lineups,
-   plus a short watchlist of your top artists checked through their own
-   pages. Artist pages alone don't work: they only show the next eight or so
-   dates.
-4. **The direction page:** https://claude.ai/artifact/HsB9FmNeWgAiKRXJkoLYbL
-   (lives in your kevn.hg@gmail.com login). Every card on it is the app's own
-   code with the real Austin shows.
-   a. It shows what today's app draws with Austin fed in unchanged, then three
-      ways in: **A · the month** (browse first; a Slack message the morning
-      after a match), **B · yours** (a YOURS tab of your artists' Austin
-      dates; weekly digest), **C · this week** (the next seven nights first).
-   b. Each has its Slack alert drawn on MUNA's real dates, a phone and a
-      laptop version, and a note on what it costs to build.
-   c. The builder's pick is B's YOURS tab with A's next-morning alert, with
-      YOURS as one list. I lean the same way: the alert is what saves the
-      next MUNA, and YOURS gives it somewhere to land in the app.
-5. **One decision to settle before anything ships:** picks are saved under
-   an artist's name today, so Bleachers' two Austin nights would light up
-   together. A season needs its own id per show (`THINKING.md` §2).
+1. **Event links are in the v88 gate.** Every Portola afters and Folsom night
+   and every ACL Late night now links to its event page, and to tickets where
+   they sell: "Tix @ AXS · Info @ DoTheBay" under the place in the zoom.
+   a. PR #29 (https://github.com/khglynn/festival-navigator/pull/29) is ready
+      and green. The Portola session folds it into v88 with the error
+      capture work, walks the combined build, and brings it to you for your
+      look and your go. Its cut line is noon CT today.
+   b. An independent review (Opus; Codex is out of credits until Sep 30)
+      found two things worth fixing and five small ones; all are fixed and
+      listed on the PR.
+   c. One behavior change to know: right after a pick, a tap that lands on
+      a link (because the card shifted) picks instead of opening the page.
+      Say so if you'd rather it didn't.
+2. **The season build plan is written:** `BUILD-PLAN.md` in this folder.
+   It follows your notes: month tabs laid out like the lineup view, one card
+   per artist, YOURS only with Spotify, a morning Slack message with
+   add-to-calendar, and a feed that checks itself daily. Nothing ships before
+   Oct 11.
+3. **Your notes from last night** are pieced together in
+   `KEVIN-NOTES-ROUND1.md`, with what each decided.
 
 ## Need from you
 
-1. **Answer the four questions at the bottom of the direction page**, by
-   number (for example "1: B + A's alert, 2: Slack, 3: per show, 4: yes").
-   They are: which way in, where alerts land, one card per show or per
-   artist, and whether I can ask Do512 and sign up for the free keys.
-2. **If you answer 4 with yes:** the JamBase and Ticketmaster developer keys
-   need your personal email to sign up (data.jambase.com and
-   developer.ticketmaster.com), a couple of minutes each. I'll draft the
-   Do512 email for you to send; it goes out under your name, so nothing is
-   sent until you've read it.
-
-Once you've answered, I'll test the real JamBase and Ticketmaster APIs
-against this same scorer, then write the build plan. Nothing ships before
-Oct 11 (after ACL), and production promotion stays your call.
+1. **Paste the two API keys here** (Ticketmaster's "Consumer Key" from My
+   Apps, and JamBase's key from its Account page). They were masked on your
+   screen and this session can only read the screen. I'll save them to
+   `~/.env` and test each against Austin.
+2. **Name the Slack channel** in your Trimm workspace where the Austin alerts
+   should go.
+3. **Your look and go on v88** when the Portola session brings it to you.
 
 ## My read-back
 
@@ -252,3 +225,11 @@ missing data.
   DoTheBay" under the place line; the validator and
   `docs/add-a-festival.md` cover the fields; 829 unit tests green. Link
   sources and the prep script: `data/event-links/`.
+- ~1:00 AM PT Fri: PR #29 (event links) opened, reviewed and made ready.
+  Codex refused with a usage limit (until Sep 30), so an Opus reviewer ran
+  the review: two fixes (a door that a pick slides under the finger now
+  picks for 700 ms; a name-only card borrows no links) and five small ones
+  (five ACL openers share their headliner's links, cleaned buy links,
+  research never writes links, festival sets can't carry them, The War on
+  Drugs' Universe link). CI green at ffd9614; handed to the pre-Portola
+  session for v88. `BUILD-PLAN.md` written for the season.
