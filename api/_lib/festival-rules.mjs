@@ -301,6 +301,38 @@ function checkCancelled(fest, err) {
   }
 }
 
+// ---------------------------------------------------------------------------
+// A show's doors out (2026-09-24, Kevin: "when it's afters or shows like this
+// I naturally want to click through to the event page"). An artists[] entry
+// may carry
+//   page:    { url: "https://…", at: "DoTheBay" }   the show's own page
+//   tickets: { url: "https://…", at: "AXS" }        where to buy
+// and the zoom reads them as "Info @ DoTheBay" and "Tix @ AXS" (events.js
+// linksOf). `at` is a short name a person recognises, written as data because
+// a referral wrapper hides the seller's domain. Both URLs must be https: the
+// app is served over it, and a door that opens an insecure page is a door
+// the browser may refuse. The shape is small, so an unknown key is an error.
+const LINK_KEYS = new Set(['url', 'at']);
+function checkLinks(fest, err) {
+  const plain = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
+  (Array.isArray(fest.artists) ? fest.artists : []).forEach((a, i) => {
+    if (!plain(a)) return;
+    for (const field of ['page', 'tickets']) {
+      if (a[field] === undefined) continue;
+      const at = `artists[${i}] (${safeKey(a.name)}).${field}`;
+      const l = a[field];
+      if (!plain(l)) { err(`${at} must be an object { url, at }`); continue; }
+      for (const k of Object.keys(l)) {
+        if (!LINK_KEYS.has(k)) err(`${at}.${safeKey(k)} is not a field — ${field} carries url and at`);
+      }
+      if (typeof l.url !== 'string' || !/^https:\/\/[^\s]+$/.test(l.url)) err(`${at}.url must be an https URL — the zoom's line is a door to it`);
+      if (typeof l.at !== 'string' || !l.at.trim() || l.at.length > 24 || /[\x00-\x1f\x7f]/.test(l.at)) {
+        err(`${at}.at must name the site in a few words (24 chars at most), e.g. "DoTheBay" or "AXS"`);
+      }
+    }
+  });
+}
+
 // Validate one festival document. `filename` is optional (CI passes it to
 // enforce filename-matches-id; API candidates have no file).
 export function validateFestivalDoc(fest, { filename } = {}) {
@@ -408,6 +440,7 @@ export function validateFestivalDoc(fest, { filename } = {}) {
   // artists[] only, since a grid set's room is its `stage` column.
   checkEventFields(fest, err, warn);
   checkCancelled(fest, err);
+  checkLinks(fest, err);
 
   const isPlain = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
   // days{} is an object keyed by day label. An array or a scalar here used to
