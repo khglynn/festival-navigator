@@ -72,6 +72,14 @@ the alert exists for. A thin March is the truth, not a bug.
    landing and in Settings that will not open (`landingPairs` in
    `js/v3/model.js`, rendered in `js/v3/app.js` and `js/v3/settings.js`;
    checked 2026-09-25). Real crews pick Austin once production has it.
+   The review (2026-09-25 evening) found it is wider than picking: merely
+   OPENING Austin in a real crew writes `festivals.austin`
+   (`ensureFestivalState`), and opening the invite sheet there sets the
+   crew's `meta.inviteFestId` to `austin`, which production v89 ignores, so
+   new joiners land on the default festival instead of the crew's own. On
+   production v89 the stray row opens Portola with a "not in the lineup any
+   more" toast. Nothing is rejected or lost, but it confuses live users, so
+   the rule stands: demo crew only until Austin is on production.
 3. **Few preview pushes.** Each push builds a preview; batching them keeps
    the build queue clear for a Portola hotfix.
 4. **Main's NOW.md belongs to the Portola session this weekend.** This
