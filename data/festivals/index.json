@@ -20,6 +20,17 @@
     "accent": "250, 204, 21"
   },
   {
+    "id": "austin",
+    "kind": "season",
+    "name": "Austin",
+    "year": "'26–27",
+    "startsOn": "2026-09-24",
+    "status": "scheduled",
+    "dates": "Sep 2026 – May 2027",
+    "location": "Austin, TX",
+    "accent": "244, 114, 182"
+  },
+  {
     "id": "edc-orlando-2026",
     "name": "EDC Orlando",
     "year": "'26",

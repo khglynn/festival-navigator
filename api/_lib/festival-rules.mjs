@@ -8,6 +8,11 @@ import { safeKey, FORBIDDEN_KEYS } from './crew-shared.mjs';
 export const SLUG_RE = /^[a-z0-9-]{1,64}$/;
 export const ACCENT_RE = /^\d{1,3}, \d{1,3}, \d{1,3}$/;
 export const STATUSES = ['lineup', 'scheduled', 'archived'];
+// A city season (2026-09-25, claude-plans/2026-09-25-season-v0/PLAN.md) is a
+// festival-shaped file with no grid: every show is a dated section entry
+// (`day` = its month, `date`, `venue`), and the wall draws each month as a
+// lineup of cards sorted by date. A festival omits `kind`.
+export const KINDS = ['season'];
 // A clock time: 1–12 hours, 00–59 minutes. "13:00 PM" and "99:59 PM" used to
 // pass the old \d{1,2} shape and parse into nonsense minutes (Codex gate,
 // 2026-08-27).
@@ -362,6 +367,16 @@ export function validateFestivalDoc(fest, { filename } = {}) {
     if (fest[k] !== undefined && (typeof fest[k] !== 'string' || fest[k].length > cap)) err(`${k} must be a string of at most ${cap} chars`);
   }
   if (!STATUSES.includes(fest.status)) err(`status must be one of ${STATUSES.join('|')}`);
+  if (fest.kind !== undefined && !KINDS.includes(fest.kind)) err(`kind must be one of ${KINDS.join('|')}, or absent for a festival`);
+  const isSeason = fest.kind === 'season';
+  if (isSeason) {
+    const plainObj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
+    if (plainObj(fest.days) && Object.keys(fest.days).length) err('a season has no grid: days{} must be empty');
+    (Array.isArray(fest.artists) ? fest.artists : []).forEach((a, i) => {
+      if (!plainObj(a)) return;
+      if (!realDate(a.date) || !a.venue) err(`artists[${i}] (${safeKey(a.name)}): every show in a season carries a date and a venue`);
+    });
+  }
   if (fest.accent && !ACCENT_RE.test(fest.accent)) err(`accent must be "R, G, B" (got ${safeKey(fest.accent)})`);
   if (!Array.isArray(fest.artists)) err('artists[] must be an array');
   else if (fest.artists.length === 0) {
@@ -456,7 +471,7 @@ export function validateFestivalDoc(fest, { filename } = {}) {
     err('days must be an object keyed by day label');
     return { errors, warnings };
   }
-  if (fest.status === 'scheduled' && (!fest.days || Object.keys(fest.days).length === 0)) {
+  if (fest.status === 'scheduled' && !isSeason && (!fest.days || Object.keys(fest.days).length === 0)) {
     err('scheduled festival needs days{}');
     return { errors, warnings };
   }

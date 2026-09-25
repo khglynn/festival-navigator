@@ -1,0 +1,5692 @@
+{
+  "id": "austin",
+  "kind": "season",
+  "name": "Austin",
+  "year": "'26–27",
+  "subtitle": "Winter + Spring",
+  "location": "Austin, TX",
+  "dates": "Sep 2026 – May 2027",
+  "status": "scheduled",
+  "timezone": "America/Chicago",
+  "accent": "244, 114, 182",
+  "artists": [
+    {
+      "name": "Chicago Bound Album Release Party",
+      "day": "September",
+      "date": "2026-09-24",
+      "venue": "Antone's",
+      "doors": "8 PM",
+      "billedAs": "Chicago Bound Album Release Party feat. Lurrie Bell, Anson Funderburgh, CC Adcock, Ivan Neville, Derek O'Brien, Young Rell Davenport, Ernie Johnson, The Texas Horns & More",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Boys Go To Jupiter",
+      "day": "September",
+      "date": "2026-09-24",
+      "venue": "Brushy Street",
+      "doors": "3:30 PM",
+      "billedAs": "Boys Go To Jupiter w/ Sydney Sherrill",
+      "tickets": {
+        "url": "https://wl.eventim.us/event/boys-go-to-jupiter/689462?afflky=ResoundPresents",
+        "at": "Eventim"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Return To Planet Casper",
+      "day": "September",
+      "date": "2026-09-24",
+      "venue": "Continental Club",
+      "doors": "6:30 PM",
+      "billedAs": "Return To Planet Casper with David Grissom, Roscoe Beck and Brannen Temple",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Sean Wheeler & The Reluctant Messengers",
+      "day": "September",
+      "date": "2026-09-24",
+      "venue": "Continental Club",
+      "doors": "10 PM",
+      "billedAs": "Sean Wheeler & The Reluctant Messengers @10pm, Barfield, The Tyrant @11:45pm",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "ADÉLA",
+      "day": "September",
+      "date": "2026-09-24",
+      "venue": "Emo's",
+      "doors": "7 PM",
+      "billedAs": "ADÉLA: The Red Bottoms Tour",
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fadela-the-red-bottoms-tour-austin-texas-09-24-2026%2Fevent%2F3A0064B69E279B47%3Futm_medium%3Daffiliate%26fbclid%3DIwY2xjawSECC1leHRuA2FlbQIxMABicmlkETFEV3psYm5kT0FzYlFDZTBVc3J0YwZhcHBfaWQQMjIyMDM5MTc4ODIwMDg5MgABHiJLg3bPHCUGTGgsMPhqRnDZj9",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Cutting Up Men",
+      "day": "September",
+      "date": "2026-09-24",
+      "venue": "Mohawk",
+      "doors": "8 PM",
+      "tickets": {
+        "url": "https://www.prekindle.com/promo/id/-2852527949029280524",
+        "at": "Prekindle"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Freya Skye",
+      "day": "September",
+      "date": "2026-09-24",
+      "venue": "Moody Amphitheater",
+      "doors": "7 PM",
+      "billedAs": "Stars Align Tour",
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Ffreya-skye-stars-align-tour-austin-texas-09-24-2026%2Fevent%2F3A00644BF1DC20AD%3Futm_medium%3Daffiliate%26fbclid%3DIwY2xjawQERABleHRuA2FlbQIxMABicmlkETJBVW9EWW0wT1NrdW1EanpTc3J0YwZhcHBfaWQQMjIyMDM5MTc4ODIwMDg5MgABHqpuo92gHAxATj5p10Lkpi-p0",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Jungle",
+      "day": "September",
+      "date": "2026-09-24",
+      "venue": "Moody Center",
+      "doors": "8 PM",
+      "tickets": {
+        "url": "https://www.ticketmaster.com/event/3A006471B677B085?CAMEFROM=CFC_MOODY_CENTER_WEB_MOODYSITE_JUNGLE",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Arturo Sandoval",
+      "day": "September",
+      "date": "2026-09-25",
+      "venue": "ACL Live",
+      "doors": "8 PM",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Wolf Zapata",
+      "day": "September",
+      "date": "2026-09-25",
+      "venue": "Antone's",
+      "doors": "10 PM",
+      "billedAs": "Wolf Zapata w/ Very Special Guests & Elle Bramhall",
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fwolf-zapata-with-very-special-guests-austin-texas-09-25-2026%2Fevent%2F3A006513DB792D86",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "SWMRS",
+      "day": "September",
+      "date": "2026-09-25",
+      "venue": "Brushy Street",
+      "doors": "8 PM",
+      "billedAs": "SWMRS w/ The Happy Return",
+      "tickets": {
+        "url": "https://wl.seetickets.us/event/SWMRS/694473?afflky=C3Presents",
+        "at": "See Tickets"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Deorro",
+      "day": "September",
+      "date": "2026-09-25",
+      "venue": "Concourse Project",
+      "doors": "7 PM",
+      "billedAs": "Deorro pres Botas Y Rave at The Concourse Project (Outdoors)",
+      "tickets": {
+        "url": "https://wl.eventim.us/event/Deorro-pres-Botas-Y-Rave-at-The-Concourse-Project-Outdoors/689339?afflky=TheConcourseProject",
+        "at": "Eventim"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Ben Sterling",
+      "day": "September",
+      "date": "2026-09-25",
+      "venue": "Concourse Project",
+      "doors": "8:30 PM",
+      "billedAs": "Ben Sterling (Open to Close) at The Concourse Project",
+      "tickets": {
+        "url": "https://wl.eventim.us/event/Ben-Sterling-at-The-Concourse-Project/687789?afflky=TheConcourseProject",
+        "at": "Eventim"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "The Blues Specialists",
+      "day": "September",
+      "date": "2026-09-25",
+      "venue": "Continental Club",
+      "doors": "6:30 PM",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Patricia Vonne album release",
+      "day": "September",
+      "date": "2026-09-25",
+      "venue": "Continental Club",
+      "doors": "10 PM",
+      "billedAs": "Patricia Vonne album release @10pm, Mule Ears @11:30pm",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Ahmed Spins",
+      "day": "September",
+      "date": "2026-09-25",
+      "venue": "Kingdom",
+      "doors": "10 PM",
+      "tickets": {
+        "url": "https://etix.prf.hn/click/camref:1011l3GdWo/pubref:dostuff/destination:https%3A%2F%2Fwww.etix.com%2Fticket%2Fp%2F48869359%2Fahmed-spins-austin-kingdom-nightclub%3Fpartner_id%3D100",
+        "at": "Etix"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Guzzlr",
+      "day": "September",
+      "date": "2026-09-25",
+      "venue": "Mohawk",
+      "doors": "7:30 PM",
+      "tickets": {
+        "url": "https://etix.prf.hn/click/camref:1011l3GdWo/pubref:dostuff/destination:https%3A%2F%2Fwww.etix.com%2Fticket%2Fp%2F57059652%2Fguzzlr-andrew-cashen-the-disciples-of-creation-club-coma-alexi-8bit-austin-mohawk-austintxindoor",
+        "at": "Etix"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Skyrocket!",
+      "day": "September",
+      "date": "2026-09-26",
+      "venue": "3TEN",
+      "doors": "8 PM",
+      "tickets": {
+        "url": "https://www.axs.com/events/1536395/skyrocket-tickets?skin=3ten&_gl=1*1yc5bic*_gcl_au*NTU3NjgwNDIwLjE3ODA0MjA3Nzk.*_ga*MTcyNDc5NDkxNi4xNzI1MzgyNDAz*_ga_WE38K849S4*czE3ODQ3NDQzNTIkbzQ3MSRnMSR0MTc4NDc0NDUyMiRqMTckbDAkaDA.*_ga_12QE9CF8FS*czE3ODQ3NDQzNTIkbzQ2O",
+        "at": "AXS"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Indigo Girls",
+      "day": "September",
+      "date": "2026-09-26",
+      "venue": "ACL Live",
+      "doors": "7 PM",
+      "tickets": {
+        "url": "https://www.axs.com/events/1428037/indigo-girls-tickets?skin=acllive&_gl=1*bdqi7d*_gcl_au*MTMzNjQ3NDU0NS4xNzcyNDc0Nzg1*_ga*MTcyNDc5NDkxNi4xNzI1MzgyNDAz*_ga_12QE9CF8FS*czE3NzkyMTA1NDQkbzQyNyRnMSR0MTc3OTIxMDgyMCRqMzgkbDAkaDA.*_ga_WE38K849S4*czE3NzkyMTA1NDQk",
+        "at": "AXS"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Ariel Posen",
+      "day": "September",
+      "date": "2026-09-26",
+      "venue": "Antone's",
+      "doors": "8 PM",
+      "billedAs": "Ariel Posen: The Bannatyne Tour w/ Zach Person",
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fariel-posen-austin-texas-09-26-2026%2Fevent%2F3A00647DDE5594AA",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "LATE",
+      "day": "September",
+      "date": "2026-09-26",
+      "venue": "Antone's",
+      "doors": "11:59 PM",
+      "billedAs": "LATE: Joe Marcinek's Dead Funk Summit ft. George Porter Jr., Nikki Glaspie, Peter Levin, Zack Morgan & More",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Gable Price and Friends",
+      "day": "September",
+      "date": "2026-09-26",
+      "venue": "Brushy Street",
+      "doors": "3:30 PM",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Eli Brown",
+      "day": "September",
+      "date": "2026-09-26",
+      "venue": "Concourse Project",
+      "doors": "8 PM",
+      "billedAs": "Eli Brown (Extended Set) + Marie Vaunt & KASIA in Austin",
+      "tickets": {
+        "url": "https://wl.eventim.us/event/Eli-Brown-at-The-Concourse-Project-Outdoors/696552?afflky=TheConcourseProject",
+        "at": "Eventim"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Earl Poole Ball",
+      "day": "September",
+      "date": "2026-09-26",
+      "venue": "Continental Club",
+      "doors": "3:30 PM",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Peterson Brothers Band",
+      "day": "September",
+      "date": "2026-09-26",
+      "venue": "Continental Club",
+      "doors": "8 PM",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "RestFest 4",
+      "day": "September",
+      "date": "2026-09-26",
+      "venue": "Continental Club",
+      "doors": "10:15 PM",
+      "billedAs": "RestFest 4 - Restos album release!",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "The Menzingers",
+      "day": "September",
+      "date": "2026-09-26",
+      "venue": "Emo's",
+      "doors": "6 PM",
+      "billedAs": "The Menzingers: Everything I Ever Saw North American Tour",
+      "tickets": {
+        "url": "https://www.ticketmaster.com/the-menzingers-everything-i-ever-saw-austin-texas-09-26-2026/event/3A006494E8D53AAE?utm_medium=affiliate&fbclid=IwY2xjawRnBFFleHRuA2FlbQIxMABicmlkETFNWEZNUWRjaWd4ZnhKVXpBc3J0YwZhcHBfaWQQMjIyMDM5MTc4ODIwMDg5MgABHn47iX5U8bWShaLM",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Babymetal",
+      "day": "September",
+      "date": "2026-09-26",
+      "venue": "Germania Amphitheater",
+      "doors": "7:20 PM",
+      "tickets": {
+        "url": "https://www.ticketmaster.com/babymetal-world-tour-2026-austin-texas-09-26-2026/event/3A006474C6FEF92A?utm_medium=affiliate&fbclid=IwY2xjawQ47X1leHRuA2FlbQIxMABicmlkETFMaHFMdlNaTDJ6aUdCdXZRc3J0YwZhcHBfaWQQMjIyMDM5MTc4ODIwMDg5MgABHuWfNvJlo2jTE_PlZeVzILu_dkY",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Space 92",
+      "day": "September",
+      "date": "2026-09-26",
+      "venue": "Kingdom",
+      "doors": "10 PM",
+      "tickets": {
+        "url": "https://etix.prf.hn/click/camref:1011l3GdWo/pubref:dostuff/destination:https%3A%2F%2Fwww.etix.com%2Fticket%2Fp%2F89055335%2Fspace-92-austin-kingdom-nightclub%3Fpartner_id%3D100",
+        "at": "Etix"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Brown Horse",
+      "day": "September",
+      "date": "2026-09-26",
+      "venue": "Mohawk",
+      "doors": "7 PM",
+      "tickets": {
+        "url": "https://etix.prf.hn/click/camref:1011l3GdWo/pubref:dostuff/destination:https%3A%2F%2Fwww.etix.com%2Fticket%2Fp%2F94019104%2Fbrown-horse-austin-resound-presents",
+        "at": "Etix"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Of The Trees",
+      "day": "September",
+      "date": "2026-09-26",
+      "venue": "Moody Amphitheater",
+      "doors": "4:30 PM",
+      "tickets": {
+        "url": "https://www.ticketmaster.com/of-the-trees-austin-texas-09-26-2026/event/3A0064D802E7DF26?utm_medium=affiliate&fbclid=IwY2xjawSqQCtleHRuA2FlbQIxMABicmlkETF1bHNiYkVmRlRFeWRabWIxc3J0YwZhcHBfaWQQMjIyMDM5MTc4ODIwMDg5MgABHrIjbXMsa3kguGuKoipWAftUtLagN-IiYkGjkdKz",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Eric Clapton’s Crossroads Guitar Festival",
+      "day": "September",
+      "date": "2026-09-26",
+      "venue": "Moody Center",
+      "doors": "5:30 PM",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "The Lagoons",
+      "day": "September",
+      "date": "2026-09-27",
+      "venue": "3TEN",
+      "doors": "8 PM",
+      "tickets": {
+        "url": "https://www.axs.com/events/1541556/the-lagoons-tickets?skin=3ten&_gl=1*x3rgn0*_gcl_au*NTU3NjgwNDIwLjE3ODA0MjA3Nzk.*_ga*MTcyNDc5NDkxNi4xNzI1MzgyNDAz*_ga_12QE9CF8FS*czE3ODU1MTgwNDckbzQ3NiRnMCR0MTc4NTUxODA2MCRqNDckbDAkaDA.?cid=usaffdostuff",
+        "at": "AXS"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Dan and Phil",
+      "day": "September",
+      "date": "2026-09-27",
+      "venue": "ACL Live",
+      "doors": "8 PM",
+      "tickets": {
+        "url": "https://www.axs.com/events/1474740/dan-and-phil-tickets?skin=acllive&_gl=1*1et40cb*_gcl_au*NTU3NjgwNDIwLjE3ODA0MjA3Nzk.*_ga*MTcyNDc5NDkxNi4xNzI1MzgyNDAz*_ga_12QE9CF8FS*czE3ODIyMzQ1ODQkbzQ0OSRnMCR0MTc4MjIzNDU4NiRqNTgkbDAkaDA.*_ga_WE38K849S4*czE3ODIyMzQ1ODQ",
+        "at": "AXS"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Marshall Hood",
+      "day": "September",
+      "date": "2026-09-27",
+      "venue": "Continental Club",
+      "doors": "2:30 PM",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Heybale",
+      "day": "September",
+      "date": "2026-09-27",
+      "venue": "Continental Club",
+      "doors": "6:30 PM",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Willie Pipkin & Friends",
+      "day": "September",
+      "date": "2026-09-27",
+      "venue": "Continental Club",
+      "doors": "9:30 PM",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Judah & the Lion",
+      "day": "September",
+      "date": "2026-09-27",
+      "venue": "Emo's",
+      "doors": "6:30 PM",
+      "tickets": {
+        "url": "https://www.ticketmaster.com/judah-the-lion-austin-texas-09-27-2026/event/3A0064CA993CA0F2?utm_medium=affiliate&fbclid=IwY2xjawSZLx1leHRuA2FlbQIxMABicmlkETFxNG5yMzkzN3YzbHpIZ3Rwc3J0YwZhcHBfaWQQMjIyMDM5MTc4ODIwMDg5MgABHk7FRhgL6oBryFoOPEAqnihULzRg6H8IrWGNfx",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "SUMMER END OF SEASON SHOWS",
+      "day": "September",
+      "date": "2026-09-27",
+      "venue": "Mohawk",
+      "doors": "10:30 AM",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Eric Clapton’s Crossroads Guitar Festival",
+      "day": "September",
+      "date": "2026-09-27",
+      "venue": "Moody Center",
+      "doors": "4 PM",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "HEY",
+      "day": "September",
+      "date": "2026-09-27",
+      "venue": "Scoot Inn",
+      "doors": "5 PM",
+      "billedAs": "HEY, NOTHING - THE HOUND TOUR",
+      "tickets": {
+        "url": "https://www.ticketmaster.com/hey-nothing-the-hound-tour-austin-texas-09-27-2026/event/3A0064C5B261B554?utm_medium=affiliate&fbclid=IwY2xjawSXzrVleHRuA2FlbQIxMABicmlkETFoOURudXRYSFJFUHdVWkt5c3J0YwZhcHBfaWQQMjIyMDM5MTc4ODIwMDg5MgABHiZ0EUhmGq_K_bkPUpu2KkXokK",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Emmaline",
+      "day": "September",
+      "date": "2026-09-28",
+      "venue": "Antone's",
+      "doors": "8 PM",
+      "billedAs": "Emmaline: Sinatra, My Sweetheart Tour",
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Femmaline-sinatra-my-sweetheart-tour-austin-texas-09-28-2026%2Fevent%2F3A0064DD376CB32B",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Eve Monsees & Mike Buck",
+      "day": "September",
+      "date": "2026-09-28",
+      "venue": "Continental Club",
+      "doors": "6:30 PM",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Johnny McGowan's Rugged Gents",
+      "day": "September",
+      "date": "2026-09-28",
+      "venue": "Continental Club",
+      "doors": "10 PM",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Five Finger Death Punch",
+      "day": "September",
+      "date": "2026-09-28",
+      "venue": "Germania Amphitheater",
+      "doors": "6:45 PM",
+      "tickets": {
+        "url": "https://www.ticketmaster.com/five-finger-death-punch-austin-texas-09-28-2026/event/3A0064268C9F4335?utm_medium=affiliate&fbclid=IwY2xjawPTcWVleHRuA2FlbQIxMABicmlkETFEejJCTTdlYzlDT3BOT2lIc3J0YwZhcHBfaWQQMjIyMDM5MTc4ODIwMDg5MgABHm1iiVT0Al3TyUq9an40-m9WzO--e",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Don Was & the Pan-Detroit Ensemble Celebrate the 50th Anniversary of Blues for Allah (NIGHT ONE)",
+      "day": "September",
+      "date": "2026-09-29",
+      "venue": "Antone's",
+      "doors": "8 PM",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Jennifer Foster & The Audacity",
+      "day": "September",
+      "date": "2026-09-29",
+      "venue": "Continental Club",
+      "doors": "6:30 PM",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Paul Val",
+      "day": "September",
+      "date": "2026-09-29",
+      "venue": "Continental Club",
+      "doors": "10 PM",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Fcukers",
+      "day": "September",
+      "date": "2026-09-29",
+      "venue": "Mohawk",
+      "doors": "7 PM",
+      "tickets": {
+        "url": "https://etix.prf.hn/click/camref:1011l3GdWo/pubref:dostuff/destination:https%3A%2F%2Fwww.etix.com%2Fticket%2Fp%2F97085640%2Ffcuckers-austin-resound-presents",
+        "at": "Etix"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Jane Remover",
+      "day": "September",
+      "date": "2026-09-29",
+      "venue": "Stubb's",
+      "doors": "7 PM",
+      "billedAs": "Jane Remover – Live Exhibit",
+      "tickets": {
+        "url": "https://www.ticketmaster.com/jane-remover-live-exhibit-austin-texas-09-29-2026/event/3A006496118EB1BC",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Don Was & the Pan-Detroit Ensemble Celebrate the 50th Anniversary of Blues for Allah (NIGHT TWO)",
+      "day": "September",
+      "date": "2026-09-30",
+      "venue": "Antone's",
+      "doors": "8 PM",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Phoebe Ryan",
+      "day": "September",
+      "date": "2026-09-30",
+      "venue": "Brushy Street",
+      "doors": "9 PM",
+      "tickets": {
+        "url": "https://www.eventim.us/event/Phoebe-Ryan/691049?fbclid=IwY2xjawRxnchleHRuA2FlbQIxMABicmlkETE0U2tiY0VJQzU1VnpYQVN1c3J0YwZhcHBfaWQQMjIyMDM5MTc4ODIwMDg5MgABHmLNRV3zUJ2lUEArzzk73Iv-BKdi57-kT-n8Vwt0CPoLQbdxAu2YhFGnvags_aem_eYAkmUMOK3nl5J5hZxIplQ",
+        "at": "Eventim"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Louisiana Surf Department",
+      "day": "September",
+      "date": "2026-09-30",
+      "venue": "Continental Club",
+      "doors": "10:30 PM",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Tinlicker North America 2026",
+      "day": "September",
+      "date": "2026-09-30",
+      "venue": "Emo's",
+      "doors": "7 PM",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Young Thug",
+      "day": "September",
+      "date": "2026-09-30",
+      "venue": "Moody Amphitheater",
+      "doors": "6:30 PM",
+      "billedAs": "YSL Records & Young Thug Present: The New Generation Tour",
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fysl-records-young-thug-presents-the-austin-texas-09-30-2026%2Fevent%2F3A0064EAC752C121%3Futm_medium%3Daffiliate%26fbclid%3DIwY2xjawTCAjVleHRuA2FlbQIxMABicmlkETF5UnRURkxFYUx3eVVmR2o2c3J0YwZhcHBfaWQQMjIyMDM5MTc4ODIwMDg5MgABHqifW0g89yN5AqsXV",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Dana and Alden",
+      "day": "October",
+      "date": "2026-10-01",
+      "venue": "Antone's",
+      "doors": "8 PM",
+      "billedAs": "Dana and Alden: Papa's Boat Tour w/ Ania Hoo",
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fdana-and-alden-w-ania-hoo-austin-texas-10-01-2026%2Fevent%2F3A0064BEFD714D1B",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "The Chainsmokers",
+      "day": "October",
+      "date": "2026-10-01",
+      "venue": "Concourse Project",
+      "doors": "9 PM",
+      "billedAs": "Official 2026 ACL Fest Nights: The Chainsmokers",
+      "tickets": {
+        "url": "https://wl.eventim.us/event/Official-2026-ACL-Fest-Nights-The-Chainsmokers/701286?afflky=TheConcourseProject",
+        "at": "Eventim"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Palace",
+      "day": "October",
+      "date": "2026-10-01",
+      "venue": "Emo's",
+      "doors": "7 PM",
+      "billedAs": "Official 2026 ACL Nights: Palace",
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064FBD3B1E691",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Riley Green",
+      "day": "October",
+      "date": "2026-10-01",
+      "venue": "Moody Center",
+      "doors": "7 PM",
+      "tickets": {
+        "url": "https://www.ticketmaster.com/event/3A0064BD8AC9677D?CAMEFROM=CFC_MOODY_CENTER_WEB_MOODYSITE_RILEYGREEN",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Brandon Flowers",
+      "day": "October",
+      "date": "2026-10-01",
+      "venue": "Stubb's",
+      "doors": "7 PM",
+      "billedAs": "Official 2026 ACL Nights: Brandon Flowers",
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064FDAEAD9948",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Montclair",
+      "day": "October",
+      "date": "2026-10-01",
+      "venue": "Stubb's",
+      "doors": "9:30 PM",
+      "billedAs": "Official 2026 ACL Nights: Montclair",
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A00650BBB2FBC0A",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Villanelle",
+      "day": "October",
+      "date": "2026-10-02",
+      "venue": "3TEN",
+      "doors": "9 PM",
+      "billedAs": "Official 2026 ACL Fest Nights: Villanelle",
+      "tickets": {
+        "url": "https://www.axs.com/events/1566083/official-2026-acl-fest-nights-villanelle-tickets?skin=3ten?cid=usaffdostuff",
+        "at": "AXS"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Night Tapes",
+      "day": "October",
+      "date": "2026-10-02",
+      "venue": "Antone's",
+      "doors": "10 PM",
+      "billedAs": "Official 2026 ACL Fest Nights: Night Tapes",
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064FCCB41EA73",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Hunx and His Punx",
+      "day": "October",
+      "date": "2026-10-02",
+      "venue": "Brushy Street",
+      "doors": "9:30 PM",
+      "billedAs": "Official 2026 ACL Nights: Hunx and His Punx",
+      "tickets": {
+        "url": "https://www.eventim.us/event/Official-2026-ACL-Fest-Nights-Hunx-and-His-Punx/700544",
+        "at": "Eventim"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Steve Aoki",
+      "day": "October",
+      "date": "2026-10-02",
+      "venue": "Concourse Project",
+      "doors": "9 PM",
+      "billedAs": "Official 2026 ACL Fest Nights: Steve Aoki",
+      "tickets": {
+        "url": "https://wl.eventim.us/event/Official-2026-ACL-Fest-Nights-Steve-Aoki/701292?afflky=TheConcourseProject",
+        "at": "Eventim"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "BUNT.",
+      "day": "October",
+      "date": "2026-10-02",
+      "venue": "Emo's",
+      "doors": "9 PM",
+      "billedAs": "Official 2026 ACL Nights: BUNT.",
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064FBD4C8E83E",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Matt Sassari",
+      "day": "October",
+      "date": "2026-10-02",
+      "venue": "Kingdom",
+      "doors": "10 PM",
+      "tickets": {
+        "url": "https://etix.prf.hn/click/camref:1011l3GdWo/pubref:dostuff/destination:https%3A%2F%2Fwww.etix.com%2Fticket%2Fp%2F71968338%2Fmatt-sassari-austin-kingdom-nightclub%3Fpartner_id%3D100",
+        "at": "Etix"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Audrey Price",
+      "day": "October",
+      "date": "2026-10-02",
+      "venue": "Mohawk",
+      "doors": "8 PM",
+      "tickets": {
+        "url": "https://etix.prf.hn/click/camref:1011l3GdWo/pubref:dostuff/destination:https%3A%2F%2Fwww.etix.com%2Fticket%2Fp%2F31527317%2Faudrey-price-austin-mohawk-austintxindoor",
+        "at": "Etix"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Gabriel Iglesias",
+      "day": "October",
+      "date": "2026-10-02",
+      "venue": "Moody Center",
+      "doors": "8 PM",
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A00642DFE1BE90C",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "- Finn Wolfhard",
+      "day": "October",
+      "date": "2026-10-02",
+      "venue": "Scoot Inn",
+      "doors": "6 PM",
+      "billedAs": "Official 2026 ACL Nights - Finn Wolfhard",
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064FBC71CD5F3",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Bleachers",
+      "day": "October",
+      "date": "2026-10-02",
+      "venue": "Stubb's",
+      "doors": "7 PM",
+      "billedAs": "Official 2026 ACL Fest Nights: Bleachers",
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064FDB1009EA6",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Grocery Bag",
+      "day": "October",
+      "date": "2026-10-02",
+      "venue": "Stubb's",
+      "doors": "10 PM",
+      "billedAs": "Official 2026 ACL Nights: Grocery Bag",
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A00650DAE3A9B91",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "809 pop up",
+      "day": "October",
+      "date": "2026-10-03",
+      "venue": "Brushy Street",
+      "doors": "8 PM",
+      "billedAs": "809 pop up - Militia’s Most Wanted",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "underscores (DJ Set)",
+      "day": "October",
+      "date": "2026-10-03",
+      "venue": "Brushy Street",
+      "doors": "9:30 PM",
+      "billedAs": "Official 2026 ACL Nights: underscores (DJ Set) w/ Directress & 1x333",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "it's murph",
+      "day": "October",
+      "date": "2026-10-03",
+      "venue": "Concourse Project",
+      "doors": "9 PM",
+      "billedAs": "Official 2026 ACL Fest Nights: it's murph",
+      "tickets": {
+        "url": "https://wl.eventim.us/event/Official-2026-ACL-Fest-Nights-its-murph/701295?afflky=TheConcourseProject",
+        "at": "Eventim"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Levity",
+      "day": "October",
+      "date": "2026-10-03",
+      "venue": "Emo's",
+      "doors": "9 PM",
+      "billedAs": "Official 2026 ACL Nights: Levity",
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064FBD69EEA69",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "HIP-HOP × EDM × ART",
+      "day": "October",
+      "date": "2026-10-03",
+      "venue": "Mohawk",
+      "doors": "5 PM",
+      "billedAs": "YOU4IC",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "CMAT",
+      "day": "October",
+      "date": "2026-10-03",
+      "venue": "Scoot Inn",
+      "doors": "6 PM",
+      "billedAs": "Official 2026 ACL Nights: CMAT",
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064FBC8BBD830",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Parcels",
+      "day": "October",
+      "date": "2026-10-03",
+      "venue": "Stubb's",
+      "doors": "8 PM",
+      "billedAs": "Official 2026 ACL Fest Nights: Parcels",
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064FDB2E8A336",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Almost Heaven",
+      "day": "October",
+      "date": "2026-10-03",
+      "venue": "Stubb's",
+      "doors": "11 PM",
+      "billedAs": "Official 2026 ACL Nights: Almost Heaven",
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A00650BBF52C2DE",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Rochelle Jordan",
+      "day": "October",
+      "date": "2026-10-04",
+      "venue": "Antone's",
+      "doors": "10 PM",
+      "billedAs": "Official 2026 ACL Fest Nights: Rochelle Jordan w/ Stefon Osae",
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064FCCD9EEE20",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Exhorder",
+      "day": "October",
+      "date": "2026-10-04",
+      "venue": "Brushy Street",
+      "doors": "8 PM",
+      "billedAs": "Exhorder / No Mas / Phantom / Intoxicated",
+      "tickets": {
+        "url": "https://www.eventim.us/event/tickets/701680",
+        "at": "Eventim"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Suki Waterhouse",
+      "day": "October",
+      "date": "2026-10-04",
+      "venue": "Emo's",
+      "doors": "9 PM",
+      "billedAs": "Official 2026 ACL Nights: Suki Waterhouse",
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064FBD862ECD1",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Flounce",
+      "day": "October",
+      "date": "2026-10-04",
+      "venue": "Mohawk",
+      "doors": "8 PM",
+      "tickets": {
+        "url": "https://etix.prf.hn/click/camref:1011l3GdWo/pubref:dostuff/destination:https%3A%2F%2Fwww.etix.com%2Fticket%2Fp%2F46468114%2Fflounce-austin-mohawk-austintxindoor",
+        "at": "Etix"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Ryan Beatty",
+      "day": "October",
+      "date": "2026-10-04",
+      "venue": "Scoot Inn",
+      "doors": "5 PM",
+      "billedAs": "Official 2026 ACL Nights: Ryan Beatty",
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064FBC9F1D9DD",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Loathe",
+      "day": "October",
+      "date": "2026-10-04",
+      "venue": "Stubb's",
+      "doors": "6 PM",
+      "billedAs": "Loathe: A Stranger to You",
+      "tickets": {
+        "url": "https://www.ticketmaster.com/loathe-a-stranger-to-you-austin-texas-10-04-2026/event/3A006494EE17453C?utm_medium=affiliate&fbclid=IwY2xjawRdzWBleHRuA2FlbQIxMABicmlkETFGOXhmcDgxUjNEOTVHZW14c3J0YwZhcHBfaWQQMjIyMDM5MTc4ODIwMDg5MgABHt6pboQkjv_s7peH4eDecfXUNuhO",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Love for Lazy Lester",
+      "day": "October",
+      "date": "2026-10-05",
+      "venue": "Antone's",
+      "doors": "8 PM",
+      "billedAs": "Love for Lazy Lester: Jimmie Vaughan, Mark Hummel, Anson Funderburgh, Wes Starr, Johnny Nicholas, Mike Morgan, Mike Buck, Eve Monsees, Josh Fulero & More",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "LP",
+      "day": "October",
+      "date": "2026-10-05",
+      "venue": "Brushy Street",
+      "doors": "9:30 PM",
+      "billedAs": "Official 2026 ACL Nights: LP",
+      "tickets": {
+        "url": "https://www.eventim.us/event/Official-2026-ACL-Nights-LP/702361",
+        "at": "Eventim"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Saint Motel",
+      "day": "October",
+      "date": "2026-10-05",
+      "venue": "Scoot Inn",
+      "doors": "5 PM",
+      "billedAs": "Official 2026 ACL Nights: Saint Motel",
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064FBCB65DB99",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Chanel Beads",
+      "day": "October",
+      "date": "2026-10-06",
+      "venue": "Brushy Street",
+      "doors": "7:30 PM",
+      "billedAs": "Chanel Beads w/ Horse Vision & Car Culture",
+      "tickets": {
+        "url": "https://wl.eventim.us/event/chanel-beads/692543?afflky=ResoundPresents",
+        "at": "Eventim"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Brian Fallon & the Painkillers",
+      "day": "October",
+      "date": "2026-10-06",
+      "venue": "Mohawk",
+      "doors": "6:30 PM",
+      "billedAs": "Brian Fallon",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Jack White",
+      "day": "October",
+      "date": "2026-10-06",
+      "venue": "Moody Amphitheater",
+      "doors": "7 PM",
+      "billedAs": "Jack White Live 2026",
+      "tickets": {
+        "url": "https://www.ticketmaster.com/jack-white-live-2026-austin-texas-10-06-2026/event/3A00648880EB4995?utm_campaign=PRM-00524071&utm_source=do512.com&utm_medium=ln_promo",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Lola Young",
+      "day": "October",
+      "date": "2026-10-06",
+      "venue": "Stubb's",
+      "doors": "7 PM",
+      "billedAs": "Official 2026 ACL Fest Nights: Lola Young",
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064FDB57AA7B0",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Annie DiRusso",
+      "day": "October",
+      "date": "2026-10-06",
+      "venue": "Stubb's",
+      "doors": "10 PM",
+      "billedAs": "Official 2026 ACL Nights: Annie DiRusso",
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A00650CDC13C98E",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Big Loud Texas Live!",
+      "day": "October",
+      "date": "2026-10-07",
+      "venue": "3TEN",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "The Larger Than LIFE Tour",
+      "day": "October",
+      "date": "2026-10-07",
+      "venue": "Antone's",
+      "doors": "8 PM",
+      "billedAs": "LAUNDRY DAY Presents: The Larger Than LIFE Tour w/ Illusion Hills",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "SPY",
+      "day": "October",
+      "date": "2026-10-07",
+      "venue": "Brushy Street",
+      "doors": "8 PM",
+      "billedAs": "SPY w/ Destiny Bond and No Guard",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Show Me the Body",
+      "day": "October",
+      "date": "2026-10-07",
+      "venue": "Mohawk",
+      "doors": "6:30 PM",
+      "billedAs": "Show Me The Body",
+      "tickets": {
+        "url": "https://etix.prf.hn/click/camref:1011l3GdWo/pubref:dostuff/destination:https%3A%2F%2Fwww.etix.com%2Fticket%2Fp%2F45586599%2Fshow-me-the-body-austin-resound-presents",
+        "at": "Etix"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Role Model",
+      "day": "October",
+      "date": "2026-10-07",
+      "venue": "Moody Amphitheater",
+      "doors": "6:30 PM",
+      "billedAs": "Role Model Presents: Chuck On Tour",
+      "tickets": {
+        "url": "https://www.ticketmaster.com/role-model-presents-chuck-on-tour-austin-texas-10-07-2026/event/3A0064CFB985B749?utm_medium=affiliate&fbclid=IwY2xjawShDF9leHRuA2FlbQIxMABicmlkETFvZXZRcEhWZnJYNkxydjBwc3J0YwZhcHBfaWQQMjIyMDM5MTc4ODIwMDg5MgABHsal3wingBDniWcdoZn",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Kacey Musgraves",
+      "day": "October",
+      "date": "2026-10-07",
+      "venue": "Moody Center",
+      "doors": "7:30 PM",
+      "tickets": {
+        "url": "https://www.ticketmaster.com/event/3A006498F97064FD?CAMEFROM=CFC_MOODY_CENTER_WEB_MOODYSITE_KACEYMUSGRAVES",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Wobble Wednesdays",
+      "day": "October",
+      "date": "2026-10-07",
+      "venue": "Vulcan Gas Co.",
+      "doors": "10 PM",
+      "billedAs": "Wobble Wednesdays - Plastician",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Łaszewo",
+      "day": "October",
+      "date": "2026-10-08",
+      "venue": "3TEN",
+      "doors": "9 PM",
+      "billedAs": "Official 2026 ACL Fest Nights: Łaszewo",
+      "tickets": {
+        "url": "https://www.axs.com/events/1568163/official-2026-acl-fest-nights-aszewo-tickets?skin=3ten?cid=usaffdostuff",
+        "at": "AXS"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Jesse Welles",
+      "day": "October",
+      "date": "2026-10-08",
+      "venue": "ACL Live",
+      "doors": "8 PM",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "World Famous Pets",
+      "day": "October",
+      "date": "2026-10-08",
+      "venue": "Antone's",
+      "doors": "8 PM",
+      "billedAs": "Official 2026 ACL Fest Nights: World Famous Pets w/ Elijah Delgado",
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064FCD21AF513",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Arcy Drive",
+      "day": "October",
+      "date": "2026-10-08",
+      "venue": "Brushy Street",
+      "doors": "8 PM",
+      "billedAs": "Official 2026 ACL Nights: Arcy Drive w/ Common People",
+      "tickets": {
+        "url": "https://www.eventim.us/event/Official-2026-ACL-Fest-Nights-Arcy-Drive/700553",
+        "at": "Eventim"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Yousuke Yukimatsu",
+      "day": "October",
+      "date": "2026-10-08",
+      "venue": "Concourse Project",
+      "doors": "9 PM",
+      "billedAs": "Official 2026 ACL Fest Nights: Yousuke Yukimatsu",
+      "tickets": {
+        "url": "https://wl.eventim.us/event/Official-2026-ACL-Fest-Nights-Yousuke-Yukimatsu/701792?afflky=TheConcourseProject",
+        "at": "Eventim"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "DVS1",
+      "day": "October",
+      "date": "2026-10-08",
+      "venue": "Kingdom",
+      "doors": "10 PM",
+      "tickets": {
+        "url": "https://etix.prf.hn/click/camref:1011l3GdWo/pubref:dostuff/destination:https%3A%2F%2Fwww.etix.com%2Fticket%2Fp%2F50371577%2Fdvs1-austin-kingdom-nightclub%3Fpartner_id%3D100",
+        "at": "Etix"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Kacey Musgraves",
+      "day": "October",
+      "date": "2026-10-08",
+      "venue": "Moody Center",
+      "doors": "7:30 PM",
+      "tickets": {
+        "url": "https://www.ticketmaster.com/artist/1668663?venueId=476228&mkt_campaign=H107A7W8K0O9P3D4L2Y3B1S3",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Sunday (1994)",
+      "day": "October",
+      "date": "2026-10-08",
+      "venue": "Stubb's",
+      "doors": "8 PM",
+      "billedAs": "Official 2026 ACL Nights: Sunday (1994)",
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A00650CDFACD43D",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Lola Young",
+      "day": "October",
+      "date": "2026-10-09",
+      "venue": "ACL Live",
+      "doors": "8 PM",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Z-Ro",
+      "day": "October",
+      "date": "2026-10-09",
+      "venue": "Antone's",
+      "doors": "10 PM",
+      "billedAs": "Z-Ro w/ Quiet Money Dot, Sunnitharapper, J Soulja & DJ Rapid Ric",
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fzro-w-quiet-money-dot-sunnitharapper-austin-texas-10-09-2026%2Fevent%2F3A00651FF501AFD2",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "WESTWRLD RAVE",
+      "day": "October",
+      "date": "2026-10-09",
+      "venue": "Brushy Street",
+      "doors": "8 PM",
+      "billedAs": "WESTWRLD RAVE feat. EL DUSTY, Disko Cowboy, Hiram, Chore Boy",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "BUNT.",
+      "day": "October",
+      "date": "2026-10-09",
+      "venue": "Concourse Project",
+      "doors": "9 PM",
+      "billedAs": "Official 2026 ACL Fest Nights: BUNT.",
+      "tickets": {
+        "url": "https://wl.eventim.us/event/Official-2026-ACL-Fest-Nights-BUNT/701303?afflky=TheConcourseProject",
+        "at": "Eventim"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Rodrigo y Gabriela",
+      "day": "October",
+      "date": "2026-10-09",
+      "venue": "Emo's",
+      "doors": "9 PM",
+      "billedAs": "Official 2026 ACL Nights: Rodrigo y Gabriela",
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064FBD9A5EE44",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Andy Stott & Debit",
+      "day": "October",
+      "date": "2026-10-09",
+      "venue": "Kingdom",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Plini",
+      "day": "October",
+      "date": "2026-10-09",
+      "venue": "Mohawk",
+      "doors": "7 PM",
+      "tickets": {
+        "url": "https://etix.prf.hn/click/camref:1011l3GdWo/pubref:dostuff/destination:https%3A%2F%2Fwww.etix.com%2Fticket%2Fp%2F54032748%2Fplini-austin-resound-presents",
+        "at": "Etix"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Noga Erez",
+      "day": "October",
+      "date": "2026-10-09",
+      "venue": "Scoot Inn",
+      "doors": "7 PM",
+      "billedAs": "Official 2026 ACL Nights: Noga Erez",
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064FBD141E37A",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Claire Rosinkranz",
+      "day": "October",
+      "date": "2026-10-10",
+      "venue": "3TEN",
+      "doors": "9 PM",
+      "billedAs": "Official 2026 ACL Fest Nights: Claire Rosinkranz",
+      "tickets": {
+        "url": "https://www.axs.com/events/1566242/official-2026-acl-fest-nights-claire-rosinkranz-tickets?skin=3ten?cid=usaffdostuff",
+        "at": "AXS"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Wave to Earth",
+      "day": "October",
+      "date": "2026-10-10",
+      "venue": "ACL Live",
+      "doors": "8 PM",
+      "tickets": {
+        "url": "https://www.axs.com/events/1449345/wave-to-earth-tickets?skin=acllive&_gl=1*zha0iw*_gcl_au*MTMzNjQ3NDU0NS4xNzcyNDc0Nzg1*_ga*MTcyNDc5NDkxNi4xNzI1MzgyNDAz*_ga_12QE9CF8FS*czE3NzkxMjQ4ODMkbzQyNSRnMCR0MTc3OTEyNDkxNSRqMjgkbDAkaDA.*_ga_WE38K849S4*czE3NzkxMjQ4ODM",
+        "at": "AXS"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Don West",
+      "day": "October",
+      "date": "2026-10-10",
+      "venue": "Antone's",
+      "doors": "10 PM",
+      "billedAs": "Official 2026 ACL Fest Nights: Don West w/ Kesmar",
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064FCCFDBF196",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Austin Electronic",
+      "day": "October",
+      "date": "2026-10-10",
+      "venue": "Brushy Street",
+      "doors": "8 PM",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Holy Priest",
+      "day": "October",
+      "date": "2026-10-10",
+      "venue": "Concourse Project",
+      "doors": "9 PM",
+      "billedAs": "HOLY PRIEST (Night 1) at The Concourse Project",
+      "tickets": {
+        "url": "https://wl.eventim.us/event/HOLY-PRIEST-at-The-Concourse-Project/695684?afflky=TheConcourseProject",
+        "at": "Eventim"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Matthew Dear b2b Juan Maclean",
+      "day": "October",
+      "date": "2026-10-10",
+      "venue": "Kingdom",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Bassvictim",
+      "day": "October",
+      "date": "2026-10-10",
+      "venue": "Mohawk",
+      "doors": "8 PM",
+      "tickets": {
+        "url": "https://etix.prf.hn/click/camref:1011l3GdWo/pubref:dostuff/destination:https%3A%2F%2Fwww.etix.com%2Fticket%2Fp%2F95921685%2Fbassvictim-austin-resound-presents",
+        "at": "Etix"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Bleachers",
+      "day": "October",
+      "date": "2026-10-11",
+      "venue": "ACL Live",
+      "doors": "8 PM",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "nihmune",
+      "day": "October",
+      "date": "2026-10-11",
+      "venue": "Brushy Street",
+      "doors": "8 PM",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Holy Priest",
+      "day": "October",
+      "date": "2026-10-11",
+      "venue": "Concourse Project",
+      "doors": "9 PM",
+      "billedAs": "HOLY PRIEST (Night 2) at The Concourse Project",
+      "tickets": {
+        "url": "https://wl.eventim.us/event/HOLY-PRIEST-Night-2-at-The-Concourse-Project/699539?afflky=TheConcourseProject",
+        "at": "Eventim"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "L7",
+      "day": "October",
+      "date": "2026-10-12",
+      "venue": "Emo's",
+      "doors": "7 PM",
+      "billedAs": "L7: The Last Hurrah Tour 2026",
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fl7-the-last-hurrah-tour-2026-austin-texas-10-12-2026%2Fevent%2F3A0064A1BAC8373A%3Futm_medium%3Daffiliate%26fbclid%3DIwY2xjawRprJxleHRuA2FlbQIxMABicmlkETFQNVFLd1c3M1lwMDhUM3lBc3J0YwZhcHBfaWQQMjIyMDM5MTc4ODIwMDg5MgABHjYTF2Znca934okHzpaAWAHx",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Kylie Cantrall",
+      "day": "October",
+      "date": "2026-10-13",
+      "venue": "ACL Live",
+      "doors": "8 PM",
+      "tickets": {
+        "url": "https://www.axs.com/events/1541906/kylie-cantrall-tickets?skin=acllive&_gl=1*149tidm*_gcl_au*NTU3NjgwNDIwLjE3ODA0MjA3Nzk.*_ga*MTcyNDc5NDkxNi4xNzI1MzgyNDAz*_ga_12QE9CF8FS*czE3ODU3NzgxODUkbzQ3OCRnMSR0MTc4NTc3ODMxNSRqNDEkbDAkaDA.?cid=usaffdostuff",
+        "at": "AXS"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Arrows in Action",
+      "day": "October",
+      "date": "2026-10-13",
+      "venue": "Antone's",
+      "doors": "7 PM",
+      "billedAs": "Arrows in Action: I Think We've Toured Here Before w/ Good Boy Daisy & Instant Crush",
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Farrows-in-action-i-think-weve-austin-texas-10-13-2026%2Fevent%2F3A0064A6CECA44F7",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Quadeca",
+      "day": "October",
+      "date": "2026-10-13",
+      "venue": "Emo's",
+      "doors": "7 PM",
+      "tickets": {
+        "url": "https://www.ticketmaster.com/quadeca-austin-texas-10-13-2026/event/3A0064EEB0058ECA?utm_medium=affiliate&fbclid=IwY2xjawTPLBdleHRuA2FlbQIxMABicmlkETF0MHdtWDRxc2EzYnF3RVoyc3J0YwZhcHBfaWQQMjIyMDM5MTc4ODIwMDg5MgABHtQHoMt2r5GAr9bm3zHozL32rtQ-6YPHpWIa-J8EPiKD-",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "$uicideboy$",
+      "day": "October",
+      "date": "2026-10-13",
+      "venue": "Germania Amphitheater",
+      "doors": "6:30 PM",
+      "tickets": {
+        "url": "https://www.ticketmaster.com/uicideboy-present-grey-day-tour-2026-austin-texas-10-13-2026/event/3A00647BC8B110BC?utm_medium=affiliate&fbclid=IwY2xjawQ47PNleHRuA2FlbQIxMABicmlkETFMaHFMdlNaTDJ6aUdCdXZRc3J0YwZhcHBfaWQQMjIyMDM5MTc4ODIwMDg5MgABHtJhvu6o51cDNdP4",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Tōth",
+      "day": "October",
+      "date": "2026-10-13",
+      "venue": "Mohawk",
+      "doors": "7 PM",
+      "tickets": {
+        "url": "https://etix.prf.hn/click/camref:1011l3GdWo/pubref:dostuff/destination:https%3A%2F%2Fwww.etix.com%2Fticket%2Fp%2F40887292%2Ft%25C5%258Dth-austin-resound-presents",
+        "at": "Etix"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Dermot Kennedy",
+      "day": "October",
+      "date": "2026-10-13",
+      "venue": "Moody Amphitheater",
+      "doors": "6:30 PM",
+      "billedAs": "The Weight of the Woods Tour",
+      "tickets": {
+        "url": "https://www.ticketmaster.com/dermot-kennedy-the-weight-of-the-austin-texas-10-13-2026/event/3A006478E7C4E970?utm_medium=affiliate&fbclid=IwY2xjawQyVNpleHRuA2FlbQIxMABicmlkETF6a3ZOQzdDSEZrSmJwUzNLc3J0YwZhcHBfaWQQMjIyMDM5MTc4ODIwMDg5MgABHpXvLo8UGT1xefXS2lV_",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Bryson Tiller",
+      "day": "October",
+      "date": "2026-10-13",
+      "venue": "Moody Center",
+      "doors": "7:30 PM",
+      "tickets": {
+        "url": "https://www.ticketmaster.com/event/3A0064BBC36BF022?CAMEFROM=CFC_MOODY_CENTER_WEB_MOODYSITE_BRYSONTILLER",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Cavetown",
+      "day": "October",
+      "date": "2026-10-13",
+      "venue": "Stubb's",
+      "doors": "7 PM",
+      "billedAs": "Cavetown – Running With Scissors Tour",
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fcavetown-running-with-scissors-tour-austin-texas-10-13-2026%2Fevent%2F3A006479EE7E4F7F%3Futm_medium%3Daffiliate%26fbclid%3DIwY2xjawRKAqFleHRuA2FlbQIxMABicmlkETFBTEZwTUNsMGtHbzJuN2xOc3J0YwZhcHBfaWQQMjIyMDM5MTc4ODIwMDg5MgABHr7iDShAYO-lmnxr-",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Lilyisthatyou",
+      "day": "October",
+      "date": "2026-10-14",
+      "venue": "3TEN",
+      "doors": "8 PM",
+      "tickets": {
+        "url": "https://www.axs.com/events/1423292/lilyisthatyou-tickets?skin=3ten&_gl=1*15h3ljb*_gcl_au*MTMzNjQ3NDU0NS4xNzcyNDc0Nzg1*_ga*MTcyNDc5NDkxNi4xNzI1MzgyNDAz*_ga_12QE9CF8FS*czE3NzczOTYzMjEkbzQxNCRnMCR0MTc3NzM5NjMzMSRqNTAkbDAkaDA.*_ga_WE38K849S4*czE3NzczOTYzMjEkb",
+        "at": "AXS"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Sons of Legion",
+      "day": "October",
+      "date": "2026-10-14",
+      "venue": "ACL Live",
+      "doors": "8 PM",
+      "tickets": {
+        "url": "https://www.axs.com/events/1497759/sons-of-legion-tickets?skin=acllive&_gl=1*1w0vz95*_gcl_au*NTU3NjgwNDIwLjE3ODA0MjA3Nzk.*_ga*MTcyNDc5NDkxNi4xNzI1MzgyNDAz*_ga_WE38K849S4*czE3ODIyMzQ1ODQkbzQ1MSRnMSR0MTc4MjIzNDg2NSRqNTEkbDAkaDA.*_ga_12QE9CF8FS*czE3ODIyMzQ1O?cid=usaffdostuff",
+        "at": "AXS"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Horse Jumper of Love",
+      "day": "October",
+      "date": "2026-10-14",
+      "venue": "Antone's",
+      "doors": "8 PM",
+      "billedAs": "Horse Jumper of Love w/ Dead Sullivan & Amelia's Best Friend",
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064DDAAD6A842",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "DJ Meredith Marks",
+      "day": "October",
+      "date": "2026-10-14",
+      "venue": "Emo's",
+      "doors": "6:30 PM",
+      "billedAs": "DJ Meredith Marks - YOU. CAN. DANCE. Tour",
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fdj-meredith-marks-you-can-dance-austin-texas-10-14-2026%2Fevent%2F3A006529E4992E6D%3Futm_medium%3Daffiliate%26fbclid%3DIwY2xjawUVCdNwZG9mBWV4dG4DYWVtAjEwAGJyaWQRMTVJcDc2djVNdVdHU3NrZklzcnRjBmFwcF9pZBAyMjIwMzkxNzg4MjAwODkyAAEebpm3lEn9U0sLF",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Modest Mouse",
+      "day": "October",
+      "date": "2026-10-15",
+      "venue": "ACL Live",
+      "doors": "8 PM",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "LØLØ",
+      "day": "October",
+      "date": "2026-10-15",
+      "venue": "Antone's",
+      "doors": "8 PM",
+      "billedAs": "LØLØ - God Forbid a Girl Goes on Tour w/ Mylie Taylor & Sydney Sherrill",
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fll-god-forbid-a-girl-goes-austin-texas-10-15-2026%2Fevent%2F3A0064A6DE6874C6",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "After",
+      "day": "October",
+      "date": "2026-10-15",
+      "venue": "Brushy Street",
+      "doors": "8 PM",
+      "billedAs": "After w/ Silverdeer",
+      "tickets": {
+        "url": "https://www.eventim.us/event/After/699268",
+        "at": "Eventim"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Funk Tribu",
+      "day": "October",
+      "date": "2026-10-15",
+      "venue": "Concourse Project",
+      "doors": "9 PM",
+      "billedAs": "Funk Tribu at The Concourse Project",
+      "tickets": {
+        "url": "https://wl.eventim.us/event/Funk-Tribu-at-The-Concourse-Project/694312?afflky=TheConcourseProject",
+        "at": "Eventim"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "DYING FETUS & SANGUISUGABOGG",
+      "day": "October",
+      "date": "2026-10-15",
+      "venue": "Emo's",
+      "doors": "5:30 PM",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "INOHA",
+      "day": "October",
+      "date": "2026-10-15",
+      "venue": "Mohawk",
+      "doors": "7 PM",
+      "tickets": {
+        "url": "https://etix.prf.hn/click/camref:1011l3GdWo/pubref:dostuff/destination:https%3A%2F%2Fwww.etix.com%2Fticket%2Fp%2F41387929%2Finoha-austin-resound-presents",
+        "at": "Etix"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Ziggy Marley and Gov't Mule",
+      "day": "October",
+      "date": "2026-10-15",
+      "venue": "Moody Amphitheater",
+      "doors": "5:30 PM",
+      "billedAs": "Dreaming The Same Dream Tour",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Gorillaz",
+      "day": "October",
+      "date": "2026-10-15",
+      "venue": "Moody Center",
+      "doors": "7 PM",
+      "tickets": {
+        "url": "https://www.ticketmaster.com/event/3A00645BCFD7447F?CAMEFROM=CFC_MOODY_CENTER_WEB_MOODYSITE_GORILLAZ",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Bright Eyes",
+      "day": "October",
+      "date": "2026-10-15",
+      "venue": "Stubb's",
+      "doors": "6:30 PM",
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fbright-eyes-austin-texas-10-15-2026%2Fevent%2F3A0064C9A979BA1F%3Futm_campaign%3DAdv-3658059%26utm_source%3Ddo512.com%26utm_medium%3Dother_med_ln_digital",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "The Paradox",
+      "day": "October",
+      "date": "2026-10-16",
+      "venue": "3TEN",
+      "doors": "8 PM",
+      "tickets": {
+        "url": "https://www.axs.com/events/1488529/the-paradox-tickets?skin=3ten&_gl=1*2v6mv3*_gcl_au*NTU3NjgwNDIwLjE3ODA0MjA3Nzk.*_ga*MTcyNDc5NDkxNi4xNzI1MzgyNDAz*_ga_12QE9CF8FS*czE3ODIxNTA1NjkkbzQ0OCRnMSR0MTc4MjE1MDg3OCRqMzQkbDAkaDA.*_ga_WE38K849S4*czE3ODIxNTA1NjkkbzQ1?cid=usaffdostuff",
+        "at": "AXS"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Austin Quest for Ancient Civilizations",
+      "day": "October",
+      "date": "2026-10-16",
+      "venue": "ACL Live",
+      "doors": "6 PM",
+      "tickets": {
+        "url": "https://www.axs.com/series/31409/acl-live-austin-quest-for-ancient-civilizations-tickets?skin=acllive&_gl=1*4zr2cp*_gcl_au*ODg5MTIzODc2LjE3NjQ2MjI2ODc.*_ga*MTcyNDc5NDkxNi4xNzI1MzgyNDAz*_ga_12QE9CF8FS*czE3NzA0MDA5MDkkbzM2MSRnMCR0MTc3MDQwMDkxNSRqNTQkbDAkaDA",
+        "at": "AXS"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Devon Gilfillian",
+      "day": "October",
+      "date": "2026-10-16",
+      "venue": "Antone's",
+      "doors": "8 PM",
+      "billedAs": "KUTX Presents: Devon Gilfillian – Time Will Tell Tour w/ Jon Muq",
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fkutx-presents-devon-gilfilliantime-will-tell-austin-texas-10-16-2026%2Fevent%2F3A0064A6EEF3A79C",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Karina Rykman",
+      "day": "October",
+      "date": "2026-10-16",
+      "venue": "Brushy Street",
+      "doors": "8 PM",
+      "tickets": {
+        "url": "https://wl.seetickets.us/event/Karina-Rykman/695698?afflky=C3Presents",
+        "at": "See Tickets"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Adam Port",
+      "day": "October",
+      "date": "2026-10-16",
+      "venue": "Concourse Project",
+      "doors": "9 PM",
+      "billedAs": "Adam Port (KEINEMUSIK) at The Concourse Project",
+      "tickets": {
+        "url": "https://wl.eventim.us/event/Adam-Port-KEINEMUSIK-at-The-Concourse-Project/690792?afflky=TheConcourseProject",
+        "at": "Eventim"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Twin Diplomacy",
+      "day": "October",
+      "date": "2026-10-16",
+      "venue": "Kingdom",
+      "doors": "10 PM",
+      "tickets": {
+        "url": "https://etix.prf.hn/click/camref:1011l3GdWo/pubref:dostuff/destination:https%3A%2F%2Fwww.etix.com%2Fticket%2Fp%2F44554843%2Ftwin-diplomacy-austin-kingdom-nightclub%3Fpartner_id%3D100",
+        "at": "Etix"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Mon Rovîa",
+      "day": "October",
+      "date": "2026-10-16",
+      "venue": "Mohawk",
+      "doors": "7 PM",
+      "tickets": {
+        "url": "https://etix.prf.hn/click/camref:1011l3GdWo/pubref:dostuff/destination:https%3A%2F%2Fwww.etix.com%2Fticket%2Fp%2F96260682%2Fmon-rovia-austin-resound-presents",
+        "at": "Etix"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Foster The People",
+      "day": "October",
+      "date": "2026-10-16",
+      "venue": "Moody Amphitheater",
+      "doors": "7 PM",
+      "billedAs": "Good Mourning Sunshine Tour",
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Ffoster-the-people-good-mourning-sunshine-austin-texas-10-16-2026%2Fevent%2F3A00649CBDB12FBE%3Futm_medium%3Daffiliate%26fbclid%3DIwY2xjawRfIL9leHRuA2FlbQIxMABicmlkETF0WldkdGFFM3U5clpyN0d0c3J0YwZhcHBfaWQQMjIyMDM5MTc4ODIwMDg5MgABHnsuqXwCCIiQ",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Phoebe Bridgers",
+      "day": "October",
+      "date": "2026-10-16",
+      "venue": "Moody Center",
+      "doors": "7:30 PM",
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064C32C32A6C9",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Deer Tick",
+      "day": "October",
+      "date": "2026-10-16",
+      "venue": "Scoot Inn",
+      "doors": "6 PM",
+      "tickets": {
+        "url": "https://www.ticketmaster.com/deer-tick-austin-texas-10-16-2026/event/3A006463EEAFF085?utm_medium=affiliate&fbclid=IwY2xjawQ5DBZleHRuA2FlbQIxMABicmlkETFHVWhmNkNxREJCT1lVajkxc3J0YwZhcHBfaWQQMjIyMDM5MTc4ODIwMDg5MgABHqvP_4zbU3Te8X2Yb3mOBH-9vYIW09z-mafalM1oG1Z",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "EsDeeKid",
+      "day": "October",
+      "date": "2026-10-16",
+      "venue": "Stubb's",
+      "doors": "6:30 PM",
+      "billedAs": "EsDeeKid – Council House Rat Tour",
+      "tickets": {
+        "url": "https://www.ticketmaster.com/esdeekid-council-house-rat-tour-austin-texas-10-16-2026/event/3A0064F19AFD808A?utm_medium=affiliate&fbclid=IwY2xjawTXF55leHRuA2FlbQIxMABicmlkETFVZk1IMnFiejN4QkFuYjVlc3J0YwZhcHBfaWQQMjIyMDM5MTc4ODIwMDg5MgABHrAxux3rsIYHDvtRxJ0uj",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "DJ Mel",
+      "day": "October",
+      "date": "2026-10-17",
+      "venue": "3TEN",
+      "doors": "7 PM",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Michigander",
+      "day": "October",
+      "date": "2026-10-17",
+      "venue": "Antone's",
+      "doors": "8 PM",
+      "billedAs": "Michigander w/ Chapel",
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fmichigander-w-chapel-austin-texas-10-17-2026%2Fevent%2F3A0064A43A9D9486",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "she's green",
+      "day": "October",
+      "date": "2026-10-17",
+      "venue": "Brushy Street",
+      "doors": "8 PM",
+      "billedAs": "she's green w/ Witches Exist, & smush",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "MGMT",
+      "day": "October",
+      "date": "2026-10-17",
+      "venue": "Concourse Project",
+      "doors": "9 PM",
+      "billedAs": "MGMT (DJ Set) at The Concourse Project",
+      "tickets": {
+        "url": "https://wl.eventim.us/event/MGMT-DJ-Set-at-The-Concourse-Project/705134?afflky=TheConcourseProject",
+        "at": "Eventim"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Chelsea Wolfe",
+      "day": "October",
+      "date": "2026-10-17",
+      "venue": "Emo's",
+      "doors": "7:30 PM",
+      "billedAs": "Chelsea Wolfe: THE DARK World Tour",
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064CFCC37D954",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "beabadoobee",
+      "day": "October",
+      "date": "2026-10-17",
+      "venue": "Germania Amphitheater",
+      "doors": "8 PM",
+      "tickets": {
+        "url": "https://www.ticketmaster.com/beabadoobee-the-powerlines-tour-austin-texas-10-17-2026/event/3A0064D2A02FEF11?utm_medium=affiliate&fbclid=IwY2xjawSo9RRleHRuA2FlbQIxMABicmlkETFWRHBrVVZpU2VGT3owdFBWc3J0YwZhcHBfaWQQMjIyMDM5MTc4ODIwMDg5MgABHpCpMPg5dW7e7mUBf6ZEN",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "WonkyWilla",
+      "day": "October",
+      "date": "2026-10-17",
+      "venue": "Kingdom",
+      "billedAs": "WonkyWilla | ATX",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Kishi Bashi",
+      "day": "October",
+      "date": "2026-10-17",
+      "venue": "Mohawk",
+      "doors": "8 PM",
+      "tickets": {
+        "url": "https://etix.prf.hn/click/camref:1011l3GdWo/pubref:dostuff/destination:https%3A%2F%2Fwww.etix.com%2Fticket%2Fp%2F55254777%2Fkishi-bashisonderlust-10th-anniversary-tour-austin-resound-presents",
+        "at": "Etix"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Joy Oladokun",
+      "day": "October",
+      "date": "2026-10-17",
+      "venue": "Scoot Inn",
+      "doors": "6:30 PM",
+      "billedAs": "Joy Oladokun: The Heavy Things Tour",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Basement",
+      "day": "October",
+      "date": "2026-10-17",
+      "venue": "Stubb's",
+      "doors": "6 PM",
+      "tickets": {
+        "url": "https://www.ticketmaster.com/basement-austin-texas-10-17-2026/event/3A0064A1C5FF6920?utm_medium=affiliate&fbclid=IwY2xjawRvHFpleHRuA2FlbQIxMABicmlkETExY1dYVlhiajJ1d3hFU1Q0c3J0YwZhcHBfaWQQMjIyMDM5MTc4ODIwMDg5MgABHt7TGKKISkmCbNfbkp_EfGSZWZlVYszVP1ojsJ7VizFc",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Blessing Offor",
+      "day": "October",
+      "date": "2026-10-18",
+      "venue": "3TEN",
+      "doors": "8 PM",
+      "tickets": {
+        "url": "https://www.axs.com/events/1536714/blessing-offor-tickets?skin=3ten&_gl=1*1n4khsv*_gcl_au*NTU3NjgwNDIwLjE3ODA0MjA3Nzk.*_ga*MTcyNDc5NDkxNi4xNzI1MzgyNDAz*_ga_12QE9CF8FS*czE3ODQ5MTQ3MzEkbzQ3MSRnMCR0MTc4NDkxNDc0NSRqNDYkbDAkaDA.",
+        "at": "AXS"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "zzzahara x Faerybabyy",
+      "day": "October",
+      "date": "2026-10-18",
+      "venue": "Brushy Street",
+      "doors": "8 PM",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Joey Cash",
+      "day": "October",
+      "date": "2026-10-18",
+      "venue": "Mohawk",
+      "doors": "8 PM",
+      "tickets": {
+        "url": "https://etix.prf.hn/click/camref:1011l3GdWo/pubref:dostuff/destination:https%3A%2F%2Fwww.etix.com%2Fticket%2Fp%2F36876433%2Fjoey-cash-austin-resound-presents",
+        "at": "Etix"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Hermanos Gutiérrez",
+      "day": "October",
+      "date": "2026-10-18",
+      "venue": "Moody Amphitheater",
+      "doors": "6 PM",
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064C1F0AEE3E1%3Futm_campaign%3DPRM-00507835%26utm_source%3Ddo512.com%26utm_medium%3Dln_promo",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Weezer",
+      "day": "October",
+      "date": "2026-10-18",
+      "venue": "Moody Center",
+      "doors": "7 PM",
+      "tickets": {
+        "url": "https://www.ticketmaster.com/event/3A00646DDF7A288A?CAMEFROM=CFC_MOODY_CENTER_WEB_MOODYSITE_WEEZER",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Snarky Puppy",
+      "day": "October",
+      "date": "2026-10-19",
+      "venue": "ACL Live",
+      "doors": "8 PM",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Staind",
+      "day": "October",
+      "date": "2026-10-19",
+      "venue": "Moody Center",
+      "doors": "6 PM",
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A00643C063099B5",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "The Wldlfe",
+      "day": "October",
+      "date": "2026-10-20",
+      "venue": "Brushy Street",
+      "doors": "8 PM",
+      "billedAs": "The Wldlfe w/ Landon Conrath",
+      "tickets": {
+        "url": "https://wl.seetickets.us/event/The-Wldlfe/695728?afflky=C3Presents",
+        "at": "See Tickets"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Peter Bjorn and John",
+      "day": "October",
+      "date": "2026-10-20",
+      "venue": "Mohawk",
+      "doors": "6:30 PM",
+      "tickets": {
+        "url": "https://etix.prf.hn/click/camref:1011l3GdWo/pubref:dostuff/destination:https%3A%2F%2Fwww.etix.com%2Fticket%2Fp%2F30131310%2Fpeter-bjorn-and-john-writers-block-tour-2026-austin-resound-presents%3F",
+        "at": "Etix"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Mon Laferte",
+      "day": "October",
+      "date": "2026-10-20",
+      "venue": "Moody Amphitheater",
+      "doors": "7 PM",
+      "billedAs": "Femme Fatale Tour",
+      "tickets": {
+        "url": "https://www.ticketmaster.com/mon-laferte-femme-fatale-tour-austin-texas-10-20-2026/event/3A00646BDEFD1B5B?utm_medium=affiliate&fbclid=IwY2xjawQvrddleHRuA2FlbQIxMABicmlkETFPZzZQaXpzRkpibmdtWGZKc3J0YwZhcHBfaWQQMjIyMDM5MTc4ODIwMDg5MgABHpQ_S7jIbT7kgrAPNai0r7u",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "SOMBR",
+      "day": "October",
+      "date": "2026-10-20",
+      "venue": "Moody Center",
+      "doors": "7 PM",
+      "tickets": {
+        "url": "https://www.ticketmaster.com/event/3A006489F72D8914?CAMEFROM=CFC_MOODY_CENTER_WEB_MOODYSITE_SOMBR",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Leonid & Friends",
+      "day": "October",
+      "date": "2026-10-21",
+      "venue": "ACL Live",
+      "doors": "8 PM",
+      "tickets": {
+        "url": "https://www.axs.com/events/1505218/leonid-friends-tickets?skin=acllive&_gl=1*3lc13q*_gcl_au*NTU3NjgwNDIwLjE3ODA0MjA3Nzk.*_ga*MTcyNDc5NDkxNi4xNzI1MzgyNDAz*_ga_WE38K849S4*czE3ODM1MzI2MzYkbzQ2MSRnMCR0MTc4MzUzMjY0OCRqNDgkbDAkaDA.*_ga_12QE9CF8FS*czE3ODM1MzI2Mz",
+        "at": "AXS"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Edgehill",
+      "day": "October",
+      "date": "2026-10-21",
+      "venue": "Brushy Street",
+      "doors": "8 PM",
+      "billedAs": "Edgehill w/ Appleseed",
+      "tickets": {
+        "url": "https://www.eventim.us/event/Edgehill/691058?fbclid=IwY2xjawRxnlxleHRuA2FlbQIxMABicmlkETE0U2tiY0VJQzU1VnpYQVN1c3J0YwZhcHBfaWQQMjIyMDM5MTc4ODIwMDg5MgABHttTgmmQr8bUF2At-SUh-_QkAJaoKdkVVq43lDgH3RhVdtPuQxF0ivwUGdiC_aem_ybH6o6rm-0hFvhu98pK7Aw",
+        "at": "Eventim"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Marilyn Manson",
+      "day": "October",
+      "date": "2026-10-21",
+      "venue": "Emo's",
+      "doors": "8 PM",
+      "billedAs": "Marilyn Manson - 2 Day Ticket (10/21/26 + 10/22/26)",
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fmarilyn-manson-austin-texas-10-21-2026%2Fevent%2F3A0064ED8C38495C%3Futm_medium%3Daffiliate%26fbclid%3DIwY2xjawTMiiVleHRuA2FlbQIxMABicmlkETFWdHpQMkVqMkhNeElYa2c1c3J0YwZhcHBfaWQQMjIyMDM5MTc4ODIwMDg5MgABHtDlqfcyYIEvSeDt819yzct9r6gGgFzhBVKTHb",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Ax and the Hatchetmen",
+      "day": "October",
+      "date": "2026-10-21",
+      "venue": "Mohawk",
+      "doors": "7 PM",
+      "billedAs": "Ax and the Hatchetmen: The Late Checkout Tour 2026",
+      "tickets": {
+        "url": "https://etix.prf.hn/click/camref:1011l3GdWo/pubref:dostuff/destination:https%3A%2F%2Fwww.etix.com%2Fticket%2Fp%2F71978043%2Fax-and-the-hatchetmenthe-late-checkout-tour-2026-austin-resound-presents",
+        "at": "Etix"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Katie Pruitt",
+      "day": "October",
+      "date": "2026-10-22",
+      "venue": "3TEN",
+      "doors": "8 PM",
+      "tickets": {
+        "url": "https://www.axs.com/events/1489840/katie-pruitt-tickets?skin=3ten&_gl=1*3ev5cr*_gcl_au*NTU3NjgwNDIwLjE3ODA0MjA3Nzk.*_ga*MTcyNDc5NDkxNi4xNzI1MzgyNDAz*_ga_12QE9CF8FS*czE3ODE1NDQ1MDEkbzQ0NCRnMSR0MTc4MTU0NDY0OSRqNTEkbDAkaDA.*_ga_WE38K849S4*czE3ODE1NDQ1MDEkbzQ?cid=usaffdostuff",
+        "at": "AXS"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "The Jungle Giants",
+      "day": "October",
+      "date": "2026-10-22",
+      "venue": "Antone's",
+      "doors": "8 PM",
+      "billedAs": "The Jungle Giants w/ Morning Silk",
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fthe-jungle-giants-w-morning-silk-austin-texas-10-22-2026%2Fevent%2F3A0064AF0B1A8172",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "bunii",
+      "day": "October",
+      "date": "2026-10-22",
+      "venue": "Brushy Street",
+      "doors": "8 PM",
+      "billedAs": "bunii: BUNIIVERSITY TOUR",
+      "tickets": {
+        "url": "https://wl.eventim.us/event/bunii-buniiversity-tour/702963?afflky=ResoundPresents",
+        "at": "Eventim"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Ben Böhmer",
+      "day": "October",
+      "date": "2026-10-22",
+      "venue": "Concourse Project",
+      "doors": "9 PM",
+      "billedAs": "Ben Böhmer at The Concourse Project",
+      "tickets": {
+        "url": "https://wl.eventim.us/event/Ben-Bhmer-at-The-Concourse-Project/699543?afflky=TheConcourseProject",
+        "at": "Eventim"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Marilyn Manson",
+      "day": "October",
+      "date": "2026-10-22",
+      "venue": "Emo's",
+      "doors": "8 PM",
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fmarilyn-manson-austin-texas-10-22-2026%2Fevent%2F3A0064ED8C8749CB%3Futm_medium%3Daffiliate%26fbclid%3DIwY2xjawTMioRleHRuA2FlbQIxMABicmlkETFWdHpQMkVqMkhNeElYa2c1c3J0YwZhcHBfaWQQMjIyMDM5MTc4ODIwMDg5MgABHvyhltTpsxgm6bU4nWldT5PMPQR0EIWHnf8K1N",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Speed",
+      "day": "October",
+      "date": "2026-10-22",
+      "venue": "Mohawk",
+      "doors": "7 PM",
+      "billedAs": "Speed + Sunami",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Vince Staples",
+      "day": "October",
+      "date": "2026-10-22",
+      "venue": "Stubb's",
+      "doors": "7 PM",
+      "billedAs": "Vince Staples – Cry Baby Tour",
+      "tickets": {
+        "url": "https://www.ticketmaster.com/vince-staples-cry-baby-tour-austin-texas-10-22-2026/event/3A0064CA079B7D84?utm_medium=affiliate&fbclid=IwY2xjawSeZMxleHRuA2FlbQIxMABicmlkETFNWWlLQWlIQm9Yc01yaXJXc3J0YwZhcHBfaWQQMjIyMDM5MTc4ODIwMDg5MgABHiFU-3o1OLpmI5MVvDNmptPTB",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Shyne",
+      "day": "October",
+      "date": "2026-10-23",
+      "venue": "ACL Live",
+      "doors": "8 PM",
+      "tickets": {
+        "url": "https://www.axs.com/events/1540164/shyne-tickets?skin=acllive&_gl=1*18m5aed*_gcl_au*NTU3NjgwNDIwLjE3ODA0MjA3Nzk.*_ga*MTcyNDc5NDkxNi4xNzI1MzgyNDAz*_ga_12QE9CF8FS*czE3ODUxNzI2ODYkbzQ3MyRnMCR0MTc4NTE3MjY5NSRqNTEkbDAkaDA.",
+        "at": "AXS"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Slow Magic",
+      "day": "October",
+      "date": "2026-10-23",
+      "venue": "Brushy Street",
+      "doors": "11 PM",
+      "billedAs": "Slow Magic w/ Jesse Beaman",
+      "tickets": {
+        "url": "https://www.eventim.us/event/Slow-Magic/687896?fbclid=IwY2xjawRWCCpleHRuA2FlbQIxMABicmlkETFjSGx6Z1RqcFJrTk5QM1Jwc3J0YwZhcHBfaWQQMjIyMDM5MTc4ODIwMDg5MgABHurNCrslAKodfXeHAKFZcJEloB4bbLTYhdvPMbDpRM9zfGwlgl_XgLHKp878_aem_GNoAVUQSO9k1-Twx4iiwDA",
+        "at": "Eventim"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "ZHU",
+      "day": "October",
+      "date": "2026-10-23",
+      "venue": "Concourse Project",
+      "doors": "9 PM",
+      "billedAs": "ZHU (Night 1) at The Concourse Project",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "GLAIVE",
+      "day": "October",
+      "date": "2026-10-23",
+      "venue": "Emo's",
+      "doors": "7 PM",
+      "billedAs": "GLAIVE - GOD SAVE THE THREE TOUR",
+      "tickets": {
+        "url": "https://www.ticketmaster.com/glaive-god-save-the-three-tour-austin-texas-10-23-2026/event/3A0064A6A1E3C66F?utm_medium=affiliate&fbclid=IwY2xjawRwP_ZleHRuA2FlbQIxMABicmlkETFPMGtJVHAzaDFCZkQ2UFh6c3J0YwZhcHBfaWQQMjIyMDM5MTc4ODIwMDg5MgABHmmxqAo0_ygpsCdFUJqdDW",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Rickshaw Billie's Burger Patrol",
+      "day": "October",
+      "date": "2026-10-23",
+      "venue": "Mohawk",
+      "doors": "7 PM",
+      "billedAs": "Rickshaw Billie's Burger Patrol Album Release Show!",
+      "tickets": {
+        "url": "https://etix.prf.hn/click/camref:1011l3GdWo/pubref:dostuff/destination:https%3A%2F%2Fwww.etix.com%2Fticket%2Fp%2F72650004%2Frickshaw-billies-burger-patrol-austin-resound-presents",
+        "at": "Etix"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "MICO",
+      "day": "October",
+      "date": "2026-10-23",
+      "venue": "Scoot Inn",
+      "doors": "6 PM",
+      "billedAs": "MICO: Running From A Feeling Tour",
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fmico-running-from-a-feeling-tour-austin-texas-10-23-2026%2Fevent%2F3A0064ACBB5CC7DF%3Futm_medium%3Daffiliate%26fbclid%3DIwY2xjawR4MgJleHRuA2FlbQIxMABicmlkETF3TVlTZ1NGak5tT0JzWEhmc3J0YwZhcHBfaWQQMjIyMDM5MTc4ODIwMDg5MgABHhoOIuOYZddtT63yDu9i",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Cameron Whitcomb",
+      "day": "October",
+      "date": "2026-10-23",
+      "venue": "Stubb's",
+      "doors": "6 PM",
+      "billedAs": "Cameron Whitcomb – Kingdom of Fear Tour",
+      "tickets": {
+        "url": "https://www.ticketmaster.com/cameron-whitcomb-kingdom-of-fear-tour-austin-texas-10-23-2026/event/3A0064A69F7BC028?utm_medium=affiliate&fbclid=IwY2xjawRq-jxleHRuA2FlbQIxMABicmlkETE4TE5wVmFwVGFpNWtua2xuc3J0YwZhcHBfaWQQMjIyMDM5MTc4ODIwMDg5MgABHlvYkOrzBRWCDLs",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Improvement Movement",
+      "day": "October",
+      "date": "2026-10-24",
+      "venue": "Brushy Street",
+      "doors": "8 PM",
+      "billedAs": "Improvement Movement w/ Jalen Reyes",
+      "tickets": {
+        "url": "https://wl.eventim.us/event/improvement-movement/698343?afflky=ResoundPresents",
+        "at": "Eventim"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Ian Asher",
+      "day": "October",
+      "date": "2026-10-24",
+      "venue": "Concourse Project",
+      "doors": "9 PM",
+      "billedAs": "Ian Asher at The Concourse Project",
+      "tickets": {
+        "url": "https://wl.eventim.us/event/Ian-Asher-at-The-Concourse-Project/702036?afflky=TheConcourseProject",
+        "at": "Eventim"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Culture Wars",
+      "day": "October",
+      "date": "2026-10-24",
+      "venue": "Emo's",
+      "doors": "7 PM",
+      "tickets": {
+        "url": "https://www.ticketmaster.com/culture-wars-austin-texas-10-24-2026/event/3A0064829B18E66A?utm_medium=affiliate&fbclid=IwY2xjawRCH0pleHRuA2FlbQIxMABicmlkETF3WVpRT3hremR1dElFMm1wc3J0YwZhcHBfaWQQMjIyMDM5MTc4ODIwMDg5MgABHp0zpeAtws-1bhwGZ0vj4rZ_UjyyfNgzp56m64Cr",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Bayonne",
+      "day": "October",
+      "date": "2026-10-24",
+      "venue": "Mohawk",
+      "doors": "7 PM",
+      "tickets": {
+        "url": "https://etix.prf.hn/click/camref:1011l3GdWo/pubref:dostuff/destination:https%3A%2F%2Fwww.etix.com%2Fticket%2Fp%2F75745897%2Fbayonne-austin-resound-presents%3F",
+        "at": "Etix"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Dax",
+      "day": "October",
+      "date": "2026-10-24",
+      "venue": "Scoot Inn",
+      "doors": "6 PM",
+      "billedAs": "Dax - The Anger Management Tour",
+      "tickets": {
+        "url": "https://www.ticketmaster.com/dax-the-anger-management-tour-austin-texas-10-24-2026/event/3A0064AC065B7623?utm_medium=affiliate&fbclid=IwY2xjawR5fH1leHRuA2FlbQIxMABicmlkETFPRFVNS01tbUhCTUU3UmNyc3J0YwZhcHBfaWQQMjIyMDM5MTc4ODIwMDg5MgABHkqatTnw3Q0UVLTKoI-sUf6",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Brincos Dieras",
+      "day": "October",
+      "date": "2026-10-25",
+      "venue": "ACL Live",
+      "doors": "8 PM",
+      "tickets": {
+        "url": "https://www.axs.com/events/1541708/brincos-dieras-tickets?skin=acllive&_gl=1*fwix7a*_gcl_au*NTU3NjgwNDIwLjE3ODA0MjA3Nzk.*_ga*MTcyNDc5NDkxNi4xNzI1MzgyNDAz*_ga_12QE9CF8FS*czE3ODU4NjM4NzkkbzQ4MCRnMSR0MTc4NTg2NDEzMCRqNyRsMCRoMA..",
+        "at": "AXS"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "ZHU",
+      "day": "October",
+      "date": "2026-10-25",
+      "venue": "Concourse Project",
+      "doors": "9 PM",
+      "billedAs": "ZHU (Night 2) at The Concourse Project",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Mom Jeans",
+      "day": "October",
+      "date": "2026-10-25",
+      "venue": "Emo's",
+      "doors": "6:30 PM",
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fmom-jeans-austin-texas-10-25-2026%2Fevent%2F3A0064A58E8B7BFE%3Futm_medium%3Daffiliate%26fbclid%3DIwY2xjawRvGaxleHRuA2FlbQIxMABicmlkETExY1dYVlhiajJ1d3hFU1Q0c3J0YwZhcHBfaWQQMjIyMDM5MTc4ODIwMDg5MgABHpPCtbSAsAA8SI-pjs_WC2R2tAwmRCLWq_xRcQejtfM",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "The Smashing Pumpkins",
+      "day": "October",
+      "date": "2026-10-25",
+      "venue": "Moody Center",
+      "doors": "8 PM",
+      "tickets": {
+        "url": "https://www.ticketmaster.com/event/3A0064AFFE9A5864?CAMEFROM=CFC_MOODY_CENTER_WEB_MOODYSITE_SMASHINGPUMPKINS",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "25th Anniversary of musicforthemorning after",
+      "day": "October",
+      "date": "2026-10-25",
+      "venue": "Scoot Inn",
+      "doors": "5 PM",
+      "billedAs": "25th Anniversary of musicforthemorning after - Pete Yorn solo acoustic",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Daniel Sloss",
+      "day": "October",
+      "date": "2026-10-26",
+      "venue": "ACL Live",
+      "doors": "7 PM",
+      "tickets": {
+        "url": "https://www.axs.com/events/1324669/daniel-sloss-tickets?skin=acllive&_gl=1*187821x*_gcl_au*ODg5MTIzODc2LjE3NjQ2MjI2ODc.*_ga*MTcyNDc5NDkxNi4xNzI1MzgyNDAz*_ga_12QE9CF8FS*czE3NzA3NDczNDAkbzM2MyRnMCR0MTc3MDc0NzM1MiRqNDgkbDAkaDA.*_ga_WE38K849S4*czE3NzA3NDczNDA?cid=usaffdostuff",
+        "at": "AXS"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Hovvdy",
+      "day": "October",
+      "date": "2026-10-26",
+      "venue": "Mohawk",
+      "doors": "6:30 PM",
+      "tickets": {
+        "url": "https://etix.prf.hn/click/camref:1011l3GdWo/pubref:dostuff/destination:https%3A%2F%2Fwww.etix.com%2Fticket%2Fp%2F63140608%2Fhovvdy-austin-resound-presents",
+        "at": "Etix"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Dave Chappelle",
+      "day": "October",
+      "date": "2026-10-26",
+      "venue": "Moody Center",
+      "doors": "7:30 PM",
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A00652A2C2CEF0A%3Futm_campaign%3DAdv-3738751%26utm_source%3Ddo512.com%26utm_medium%3Dother_med_ln_digital",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "EMEI",
+      "day": "October",
+      "date": "2026-10-26",
+      "venue": "Scoot Inn",
+      "doors": "5 PM",
+      "billedAs": "EMEI - Night at the Opera Tour",
+      "tickets": {
+        "url": "https://www.ticketmaster.com/emei-night-at-the-opera-tour-austin-texas-10-26-2026/event/3A006495E395E002?utm_medium=affiliate&fbclid=IwY2xjawRnG4BleHRuA2FlbQIxMABicmlkETFQeG5ndnlPbHhOdnpaTnJRc3J0YwZhcHBfaWQQMjIyMDM5MTc4ODIwMDg5MgABHsYqCJGZ20J9B1Py0z3NUmXz",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Dave Chappelle",
+      "day": "October",
+      "date": "2026-10-27",
+      "venue": "Moody Center",
+      "doors": "7:30 PM",
+      "tickets": {
+        "url": "https://www.ticketmaster.com/event/3A00652A2C2CEF0A?utm_campaign=Adv-3738751&utm_source=do512.com&utm_medium=other_med_ln_digital",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Sawyer Hill",
+      "day": "October",
+      "date": "2026-10-27",
+      "venue": "Scoot Inn",
+      "doors": "5 PM",
+      "tickets": {
+        "url": "https://www.ticketmaster.com/sawyer-hill-austin-texas-10-27-2026/event/3A0064C1D67EC8CC?utm_medium=affiliate&fbclid=IwY2xjawST7I9leHRuA2FlbQIxMABicmlkETE0d3VRZVFrRnk4WGlpOW9zc3J0YwZhcHBfaWQQMjIyMDM5MTc4ODIwMDg5MgABHprNNSqgJRqLTmbZ8S59Y6jveAdd9dzF6t8m8ouH_",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Chasing Abbey",
+      "day": "October",
+      "date": "2026-10-28",
+      "venue": "Antone's",
+      "doors": "8 PM",
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064662624D748",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Teddy Swims",
+      "day": "October",
+      "date": "2026-10-28",
+      "venue": "Moody Center",
+      "doors": "7 PM",
+      "tickets": {
+        "url": "https://www.ticketmaster.com/event/3A00648FB5BDA148?CAMEFROM=CFC_MOODY_CENTER_WEB_MOODYSITE_TEDDYSWIMS",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "almost monday",
+      "day": "October",
+      "date": "2026-10-28",
+      "venue": "Scoot Inn",
+      "doors": "5 PM",
+      "billedAs": "almost monday - THANK GOD IT'S ALMOST MONDAY",
+      "tickets": {
+        "url": "https://www.ticketmaster.com/almost-monday-thank-god-its-almost-austin-texas-10-28-2026/event/3A0064D2CA0722FF?utm_medium=affiliate&fbclid=IwY2xjawSmV_RleHRuA2FlbQIxMABicmlkETEyU0RhdjVDYzM1TDhmY0JRc3J0YwZhcHBfaWQQMjIyMDM5MTc4ODIwMDg5MgABHmJsh4FQJugBeaLDfl",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Zilker Sessions V",
+      "day": "October",
+      "date": "2026-10-29",
+      "venue": "Antone's",
+      "doors": "7 PM",
+      "billedAs": "Zilker Sessions V ft. The Droptines & Angel White",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Chris Stussy",
+      "day": "October",
+      "date": "2026-10-29",
+      "venue": "Concourse Project",
+      "doors": "9 PM",
+      "billedAs": "Chris Stassy (Extended Set) at The Concourse Project",
+      "tickets": {
+        "url": "https://wl.eventim.us/event/Chris-Stussy-Extended-Set-at-The-Concourse-Project/698725?afflky=TheConcourseProject",
+        "at": "Eventim"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Goodbye June",
+      "day": "October",
+      "date": "2026-10-30",
+      "venue": "3TEN",
+      "doors": "8 PM",
+      "tickets": {
+        "url": "https://www.axs.com/events/1511344/goodbye-june-tickets?skin=3ten&_gl=1*cg78ap*_gcl_au*NTU3NjgwNDIwLjE3ODA0MjA3Nzk.*_ga*MTcyNDc5NDkxNi4xNzI1MzgyNDAz*_ga_12QE9CF8FS*czE3ODM0NDQwODIkbzQ1OCRnMSR0MTc4MzQ0NDU2OSRqMzgkbDAkaDA.*_ga_WE38K849S4*czE3ODM0NDQwODIkbzQ",
+        "at": "AXS"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "NoDak Palooza at ACL Live!",
+      "day": "October",
+      "date": "2026-10-30",
+      "venue": "ACL Live",
+      "doors": "7 PM",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Dombresky",
+      "day": "October",
+      "date": "2026-10-30",
+      "venue": "Concourse Project",
+      "doors": "9 PM",
+      "billedAs": "Dombresky (Extended Set) at The Concourse Project",
+      "tickets": {
+        "url": "https://wl.eventim.us/event/Dombresky-Extended-Set-at-The-Concourse-Project/695046?afflky=TheConcourseProject",
+        "at": "Eventim"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Dennis Ferrer",
+      "day": "October",
+      "date": "2026-10-30",
+      "venue": "Kingdom",
+      "doors": "10 PM",
+      "tickets": {
+        "url": "https://etix.prf.hn/click/camref:1011l3GdWo/pubref:dostuff/destination:https%3A%2F%2Fwww.etix.com%2Fticket%2Fp%2F81557185%2Fdennis-ferrer-austin-kingdom-nightclub%3Fpartner_id%3D100",
+        "at": "Etix"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Playlunch",
+      "day": "October",
+      "date": "2026-10-30",
+      "venue": "Mohawk",
+      "doors": "7 PM",
+      "tickets": {
+        "url": "https://etix.prf.hn/click/camref:1011l3GdWo/pubref:dostuff/destination:https%3A%2F%2Fwww.etix.com%2Fticket%2Fp%2F48032978%2Fplaylunch-austin-resound-presents",
+        "at": "Etix"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Ramón Ayala",
+      "day": "October",
+      "date": "2026-10-30",
+      "venue": "Moody Center",
+      "doors": "8:30 PM",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "The War And Treaty",
+      "day": "October",
+      "date": "2026-10-30",
+      "venue": "Scoot Inn",
+      "doors": "6 PM",
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fthe-war-and-treaty-austin-texas-10-30-2026%2Fevent%2F3A0064C2AB9E9641%3Futm_medium%3Daffiliate%26fbclid%3DIwY2xjawSmWKhleHRuA2FlbQIxMABicmlkETEyU0RhdjVDYzM1TDhmY0JRc3J0YwZhcHBfaWQQMjIyMDM5MTc4ODIwMDg5MgABHpurBL9EgeUCC7gTfEqBc-OTtEQJfhP08B",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Madeon",
+      "day": "October",
+      "date": "2026-10-31",
+      "venue": "ACL Live",
+      "doors": "8 PM",
+      "tickets": {
+        "url": "https://www.axs.com/events/1438072/madeon-tickets?skin=acllive&_gl=1*y1vfia*_gcl_au*mtc3mtk1nzm5mc4xnzc3mjywnjg4*_ga*mjq4odu1ndu3lje3mzaymzc4mdy.*_ga_12qe9cf8fs*cze3nzg4njmwndikbzezmjkkzzakdde3nzg4njmwndukaju3jgwwjggw*_ga_we38k849s4*cze3nzg4njmwndikbzezmz?cid=usaffdostuff",
+        "at": "AXS"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Kennedy Ryon",
+      "day": "October",
+      "date": "2026-10-31",
+      "venue": "Antone's",
+      "doors": "8 PM",
+      "billedAs": "Kennedy Ryon: The Can We Evolve? Tour",
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fkennedy-ryon-the-can-we-evolve-austin-texas-10-31-2026%2Fevent%2F3A0064FCBC53CD15",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Surely Tempo",
+      "day": "October",
+      "date": "2026-10-31",
+      "venue": "Brushy Street",
+      "doors": "8 PM",
+      "tickets": {
+        "url": "https://wl.eventim.us/event/surely-tempo/699142?afflky=ResoundPresents",
+        "at": "Eventim"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Four Tet",
+      "day": "October",
+      "date": "2026-10-31",
+      "venue": "Concourse Project",
+      "doors": "9 PM",
+      "billedAs": "Four Tet (Extended Set) at The Concourse Project",
+      "tickets": {
+        "url": "https://wl.eventim.us/event/Four-Tet-Extended-Set-at-The-Concourse-Project/695214?afflky=TheConcourseProject",
+        "at": "Eventim"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Jody Wisternoff",
+      "day": "October",
+      "date": "2026-10-31",
+      "venue": "Kingdom",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Mr. Fantasy",
+      "day": "October",
+      "date": "2026-10-31",
+      "venue": "Scoot Inn",
+      "doors": "6 PM",
+      "billedAs": "Mr. Fantasy - Sexy Saturday Nights Tour",
+      "tickets": {
+        "url": "https://www.ticketmaster.com/mr-fantasy-sexy-saturday-nights-tour-austin-texas-10-31-2026/event/3A006528A3BF78A0?utm_medium=affiliate&fbclid=IwY2xjawUOdRdwZG9mBWV4dG4DYWVtAjEwAGJyaWQRMVRXOEdiZjlTeHI2UlhacjdzcnRjBmFwcF9pZBAyMjIwMzkxNzg4MjAwODkyAAEe4lCtVwnF",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Jim Henson's Labyrinth",
+      "day": "November",
+      "date": "2026-11-01",
+      "venue": "ACL Live",
+      "doors": "8 PM",
+      "billedAs": "Jim Henson's Labyrinth: In Concert 40th Anniversary",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "The Linda Lindas",
+      "day": "November",
+      "date": "2026-11-01",
+      "venue": "Mohawk",
+      "doors": "6:30 PM",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "All Get Out",
+      "day": "November",
+      "date": "2026-11-03",
+      "venue": "3TEN",
+      "doors": "8 PM",
+      "tickets": {
+        "url": "https://www.axs.com/events/1579237/all-get-out-tickets?skin=3ten&_gl=1*11cms55*_gcl_au*MTIyOTA5MjgyNS4xNzg2Mzk0MDQ5*_ga*MTkxODY1MzU4OC4xNzg2Mzk0MDQ5*_ga_12QE9CF8FS*czE3ODcxNTkyNDIkbzgkZzAkdDE3ODcxNTkyNjkkajMzJGwwJGgw?cid=usaffdostuff",
+        "at": "AXS"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Knox",
+      "day": "November",
+      "date": "2026-11-03",
+      "venue": "Emo's",
+      "doors": "6:30 PM",
+      "tickets": {
+        "url": "https://www.ticketmaster.com/knox-austin-texas-11-03-2026/event/3A0064E6DE9ABC7D?utm_medium=affiliate&fbclid=IwY2xjawTB_l1leHRuA2FlbQIxMABicmlkETF5UnRURkxFYUx3eVVmR2o2c3J0YwZhcHBfaWQQMjIyMDM5MTc4ODIwMDg5MgABHgb50H732higywtPlE3jbD-g7Wyb4YdaRDdF3hajnbI4UgIF",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Doja Cat",
+      "day": "November",
+      "date": "2026-11-03",
+      "venue": "Moody Center",
+      "doors": "7:30 PM",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Stephen Day",
+      "day": "November",
+      "date": "2026-11-04",
+      "venue": "3TEN",
+      "doors": "8 PM",
+      "tickets": {
+        "url": "https://www.axs.com/events/1477901/stephen-day-tickets?skin=3ten&_gl=1*7r5eyp*_gcl_au*NTU3NjgwNDIwLjE3ODA0MjA3Nzk.*_ga*MTcyNDc5NDkxNi4xNzI1MzgyNDAz*_ga_12QE9CF8FS*czE3ODA5MzkzMTIkbzQzOCRnMSR0MTc4MDkzOTc4NiRqMzAkbDAkaDA.*_ga_WE38K849S4*czE3ODA5MzkzMTIkbzQ0",
+        "at": "AXS"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Slow Pulp",
+      "day": "November",
+      "date": "2026-11-04",
+      "venue": "Emo's",
+      "doors": "7 PM",
+      "tickets": {
+        "url": "https://www.ticketmaster.com/slow-pulp-austin-texas-11-04-2026/event/3A0064A58FC6812F?utm_medium=affiliate&fbclid=IwY2xjawRvGh1leHRuA2FlbQIxMABicmlkETExY1dYVlhiajJ1d3hFU1Q0c3J0YwZhcHBfaWQQMjIyMDM5MTc4ODIwMDg5MgABHuFzagATb138omBUDLvkTdEduuErM7yO4xZ0IMiDeMz",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Ike Dweck",
+      "day": "November",
+      "date": "2026-11-05",
+      "venue": "3TEN",
+      "doors": "8 PM",
+      "tickets": {
+        "url": "https://www.axs.com/events/1412231/ike-dweck-tickets?skin=3ten&_gl=1*i1v7vz*_gcl_au*MTMzNjQ3NDU0NS4xNzcyNDc0Nzg1*_ga*MTcyNDc5NDkxNi4xNzI1MzgyNDAz*_ga_12QE9CF8FS*czE3NzY3OTIxNDIkbzQwOCRnMCR0MTc3Njc5MjE1MyRqNDkkbDAkaDA.*_ga_WE38K849S4*czE3NzY3OTIxNDIkbzQxMC",
+        "at": "AXS"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "ApolloRed1",
+      "day": "November",
+      "date": "2026-11-05",
+      "venue": "Brushy Street",
+      "doors": "8 PM",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Bonobo",
+      "day": "November",
+      "date": "2026-11-05",
+      "venue": "Emo's",
+      "doors": "7 PM",
+      "billedAs": "Bonobo: Distance in Static Live North American Tour",
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fbonobo-distance-in-static-live-north-austin-texas-11-05-2026%2Fevent%2F3A0064C1E068D3A4",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Daring Greatly",
+      "day": "November",
+      "date": "2026-11-05",
+      "venue": "Mohawk",
+      "doors": "8 PM",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Knocked Loose & Denzel Curry",
+      "day": "November",
+      "date": "2026-11-05",
+      "venue": "Moody Amphitheater",
+      "doors": "6 PM",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Dinosaur Jr.",
+      "day": "November",
+      "date": "2026-11-05",
+      "venue": "Stubb's",
+      "doors": "7 PM",
+      "billedAs": "Dinosaur Jr. – Fall Tour 2026 with special guest Stef Chura",
+      "tickets": {
+        "url": "https://www.ticketmaster.com/dinosaur-jr-fall-tour-2026-with-austin-texas-11-05-2026/event/3A0064DCDD1AC45A?utm_medium=affiliate&fbclid=IwY2xjawSw2bBleHRuA2FlbQIxMABicmlkETEzWkJ4TjBmUlg0bzFIOHcxc3J0YwZhcHBfaWQQMjIyMDM5MTc4ODIwMDg5MgABHtgrL1r9zHs1uk6z8Z-nG",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "OCT (On Company Time)",
+      "day": "November",
+      "date": "2026-11-06",
+      "venue": "3TEN",
+      "doors": "8 PM",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Nick Shoulders",
+      "day": "November",
+      "date": "2026-11-06",
+      "venue": "Brushy Street",
+      "doors": "5 PM",
+      "billedAs": "Nick Shoulders w/ Georgia Parker",
+      "tickets": {
+        "url": "https://wl.seetickets.us/event/Nick-Shoulders/686877?afflky=C3Presents",
+        "at": "See Tickets"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "TWO NIGHTS",
+      "day": "November",
+      "date": "2026-11-06",
+      "venue": "Emo's",
+      "billedAs": "TWO NIGHTS WITH THEY MIGHT BE GIANTS - 2 Day Ticket(11/6/26 + 11/7/26)",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Ceremony",
+      "day": "November",
+      "date": "2026-11-06",
+      "venue": "Mohawk",
+      "doors": "7 PM",
+      "tickets": {
+        "url": "https://etix.prf.hn/click/camref:1011l3GdWo/pubref:dostuff/destination:https%3A%2F%2Fwww.etix.com%2Fticket%2Fp%2F43965055%2Fceremony-austin-resound-presents",
+        "at": "Etix"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "John Summit",
+      "day": "November",
+      "date": "2026-11-06",
+      "venue": "Moody Center",
+      "doors": "7 PM",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Lenny Pearce",
+      "day": "November",
+      "date": "2026-11-06",
+      "venue": "Stubb's",
+      "doors": "5 PM",
+      "billedAs": "Lenny Pearce – Toddler Rave World Tour",
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Flenny-pearce-toddler-rave-world-tour-austin-texas-11-06-2026%2Fevent%2F3A0064C4A6CC9437%3Futm_medium%3Daffiliate%26fbclid%3DIwY2xjawSZMBFleHRuA2FlbQIxMABicmlkETFxNG5yMzkzN3YzbHpIZ3Rwc3J0YwZhcHBfaWQQMjIyMDM5MTc4ODIwMDg5MgABHqU-n5nDLgNSaJDp",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Jervis Campbell",
+      "day": "November",
+      "date": "2026-11-07",
+      "venue": "3TEN",
+      "doors": "8 PM",
+      "tickets": {
+        "url": "https://www.axs.com/events/1441057/jervis-campbell-tickets?skin=3ten&_gl=1*jtgcdx*_gcl_au*MTMzNjQ3NDU0NS4xNzcyNDc0Nzg1*_ga*MTcyNDc5NDkxNi4xNzI1MzgyNDAz*_ga_WE38K849S4*czE3Nzg1MzA2NjAkbzQyNCRnMCR0MTc3ODUzMDY4NSRqMzUkbDAkaDA.*_ga_12QE9CF8FS*czE3Nzg1MzA2NjAk",
+        "at": "AXS"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Bombargo",
+      "day": "November",
+      "date": "2026-11-07",
+      "venue": "Brushy Street",
+      "doors": "8 PM",
+      "tickets": {
+        "url": "https://wl.seetickets.us/event/Bombargo/694379?afflky=C3Presents",
+        "at": "See Tickets"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "TWO NIGHTS",
+      "day": "November",
+      "date": "2026-11-07",
+      "venue": "Emo's",
+      "doors": "7 PM",
+      "billedAs": "TWO NIGHTS WITH THEY MIGHT BE GIANTS",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "TOKiMONSTA",
+      "day": "November",
+      "date": "2026-11-07",
+      "venue": "Kingdom",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Puma Blue",
+      "day": "November",
+      "date": "2026-11-07",
+      "venue": "Mohawk",
+      "doors": "7 PM",
+      "tickets": {
+        "url": "https://etix.prf.hn/click/camref:1011l3GdWo/pubref:dostuff/destination:https%3A%2F%2Fwww.etix.com%2Fticket%2Fp%2F74052745%2Fpuma-blue-austin-resound-presents",
+        "at": "Etix"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Steve Lacy",
+      "day": "November",
+      "date": "2026-11-07",
+      "venue": "Moody Amphitheater",
+      "doors": "7 PM",
+      "billedAs": "Oh yeah? Tour",
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fsteve-lacy-austin-texas-11-07-2026%2Fevent%2F3A006505BA5CA4CF%3Futm_medium%3Daffiliate%26fbclid%3DIwY2xjawTpishwZG9mBWV4dG4DYWVtAjEwAGJyaWQRMWFTVDJwYXF1Nk54SGJCT3JzcnRjBmFwcF9pZBAyMjIwMzkxNzg4MjAwODkyAAEeS1SYiMMrbGuAROG3YALcIO7-UMALB6rnZ1",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Grateful Shred",
+      "day": "November",
+      "date": "2026-11-07",
+      "venue": "Scoot Inn",
+      "doors": "6 PM",
+      "tickets": {
+        "url": "https://www.ticketmaster.com/grateful-shred-austin-texas-11-07-2026/event/3A0064829B8AE7F9?utm_medium=affiliate&fbclid=IwY2xjawRCIdpleHRuA2FlbQIxMABicmlkETF3WVpRT3hremR1dElFMm1wc3J0YwZhcHBfaWQQMjIyMDM5MTc4ODIwMDg5MgABHnqleBurr0_6x-m7DspOEbqqvIyN7oKW-LyAmr",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Turnover",
+      "day": "November",
+      "date": "2026-11-07",
+      "venue": "Stubb's",
+      "doors": "6:30 PM",
+      "billedAs": "Turnover – Down On Earth Tour",
+      "tickets": {
+        "url": "https://www.ticketmaster.com/turnover-down-on-earth-tour-austin-texas-11-07-2026/event/3A0064D2D3014AA9?utm_medium=affiliate&fbclid=IwY2xjawSnpQBleHRuA2FlbQIxMABicmlkETFuaG9wU05kSDA2Tk1VTEg4c3J0YwZhcHBfaWQQMjIyMDM5MTc4ODIwMDg5MgABHoNszRAnSNUto9C4srOJOmW2k",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Wheel of Fortune LIVE!",
+      "day": "November",
+      "date": "2026-11-08",
+      "venue": "ACL Live",
+      "doors": "8 PM",
+      "tickets": {
+        "url": "https://www.axs.com/events/1491824/wheel-of-fortune-live-tickets?skin=acllive&_gl=1*td3zb5*_gcl_au*NTU3NjgwNDIwLjE3ODA0MjA3Nzk.*_ga*MTcyNDc5NDkxNi4xNzI1MzgyNDAz*_ga_12QE9CF8FS*czE3ODIxNTA1NjkkbzQ0OCRnMSR0MTc4MjE1MDYxNiRqMTMkbDAkaDA.*_ga_WE38K849S4*czE3ODI",
+        "at": "AXS"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Maná",
+      "day": "November",
+      "date": "2026-11-08",
+      "venue": "Moody Center",
+      "doors": "8:30 PM",
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0063780576D4F7",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "The Army",
+      "day": "November",
+      "date": "2026-11-08",
+      "venue": "Scoot Inn",
+      "doors": "5 PM",
+      "billedAs": "The Army, The Navy",
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fthe-army-the-navy-austin-texas-11-08-2026%2Fevent%2F3A0064CA066E7A64%3Futm_medium%3Daffiliate%26fbclid%3DIwY2xjawSebARleHRuA2FlbQIxMABicmlkETFNWWlLQWlIQm9Yc01yaXJXc3J0YwZhcHBfaWQQMjIyMDM5MTc4ODIwMDg5MgABHk1JXnkqIH6jKy1X1qfiIWYorsuZw97y23N",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Art Garfunkel",
+      "day": "November",
+      "date": "2026-11-09",
+      "venue": "ACL Live",
+      "doors": "9 PM",
+      "tickets": {
+        "url": "https://www.axs.com/events/1579570/art-garfunkel-tickets?skin=acllive&_gl=1*13ggehf*_gcl_aw*R0NMLjE3ODc1OTI3NTguQ2owS0NRancxNl9VQmhDcUFSSXNBSWRPYVh4QnNlMmd5Vjd5NUZFWVRNcWVfQTdPMWlyRDhfd1VXb0RUZUUwUDNCVjdaMklNT2p5Rm40QWFBcHNURUFMd193Y0I.*_gcl_dc*R0NMLjE3OD",
+        "at": "AXS"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Rival Sons",
+      "day": "November",
+      "date": "2026-11-09",
+      "venue": "Emo's",
+      "doors": "7 PM",
+      "billedAs": "Rival Sons - Domestic Bliss Tour",
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Frival-sons-domestic-bliss-tour-austin-texas-11-09-2026%2Fevent%2F3A0064D0FAA324B2%3Futm_medium%3Daffiliate%26fbclid%3DIwY2xjawSo8y1leHRuA2FlbQIxMABicmlkETFWRHBrVVZpU2VGT3owdFBWc3J0YwZhcHBfaWQQMjIyMDM5MTc4ODIwMDg5MgABHpl1WB9m0d2HlTgWE84L1P",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Liana Flores",
+      "day": "November",
+      "date": "2026-11-10",
+      "venue": "3TEN",
+      "doors": "8 PM",
+      "tickets": {
+        "url": "https://www.axs.com/events/1493729/liana-flores-tickets?skin=3ten&_gl=1*4e677x*_gcl_au*NTU3NjgwNDIwLjE3ODA0MjA3Nzk.*_ga*MTcyNDc5NDkxNi4xNzI1MzgyNDAz*_ga_12QE9CF8FS*czE3ODIzMjE2MzAkbzQ1MCRnMCR0MTc4MjMyMTY0MyRqNDckbDAkaDA.*_ga_WE38K849S4*czE3ODIzMjE2MzAkbzQ?cid=usaffdostuff",
+        "at": "AXS"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Medium Build Presents The King of Having Fun on Tour",
+      "day": "November",
+      "date": "2026-11-10",
+      "venue": "Emo's",
+      "doors": "7 PM",
+      "billedAs": "KTSN Presents: Medium Build Presents The King of Having Fun on Tour",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "KATSEYE",
+      "day": "November",
+      "date": "2026-11-10",
+      "venue": "Moody Center",
+      "doors": "8 PM",
+      "tickets": {
+        "url": "https://www.ticketmaster.com/event/3A0064AAC1419703?CAMEFROM=CFC_MOODY_CENTER_WEB_MOODYSITE_KATSEYE",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Jose Madero",
+      "day": "November",
+      "date": "2026-11-11",
+      "venue": "Emo's",
+      "doors": "7 PM",
+      "billedAs": "Jose Madero - USA Tour 2026",
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fjose-madero-usa-tour-2026-austin-texas-11-11-2026%2Fevent%2F3A0064D196617E5C%3Futm_medium%3Daffiliate%26fbclid%3DIwY2xjawSmVvZleHRuA2FlbQIxMABicmlkETEyU0RhdjVDYzM1TDhmY0JRc3J0YwZhcHBfaWQQMjIyMDM5MTc4ODIwMDg5MgABHjvHUtOzc1KYIxyojC4IDrr9XG8",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Tommy Fleece",
+      "day": "November",
+      "date": "2026-11-11",
+      "venue": "Mohawk",
+      "doors": "6:30 PM",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Slothrust",
+      "day": "November",
+      "date": "2026-11-11",
+      "venue": "Scoot Inn",
+      "doors": "5 PM",
+      "billedAs": "Slothrust: The Dystopian Theatre Tour",
+      "tickets": {
+        "url": "https://www.ticketmaster.com/slothrust-the-dystopian-theatre-tour-austin-texas-11-11-2026/event/3A0064D1BAECD36F?utm_medium=affiliate&fbclid=IwY2xjawSnpjFleHRuA2FlbQIxMABicmlkETFuaG9wU05kSDA2Tk1VTEg4c3J0YwZhcHBfaWQQMjIyMDM5MTc4ODIwMDg5MgABHu_6xy1SfyhMh2KA",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Bebe Stockwell",
+      "day": "November",
+      "date": "2026-11-12",
+      "venue": "3TEN",
+      "doors": "8 PM",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "The Aces",
+      "day": "November",
+      "date": "2026-11-12",
+      "venue": "Brushy Street",
+      "doors": "8 PM",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Treaty Oak Revival",
+      "day": "November",
+      "date": "2026-11-12",
+      "venue": "Moody Center",
+      "doors": "7 PM",
+      "tickets": {
+        "url": "https://www.ticketmaster.com/event/3A0064A5E9CB90BC?CAMEFROM=CFC_MOODY_CENTER_WEB_MOODYSITE_TREATYOAKREVIVAL",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Father Of Peace",
+      "day": "November",
+      "date": "2026-11-13",
+      "venue": "3TEN",
+      "doors": "8 PM",
+      "tickets": {
+        "url": "https://www.axs.com/events/1497555/father-of-peace-tickets?skin=3ten&_gl=1*1llyx6e*_gcl_au*NTU3NjgwNDIwLjE3ODA0MjA3Nzk.*_ga*MTcyNDc5NDkxNi4xNzI1MzgyNDAz*_ga_12QE9CF8FS*czE3ODIxNTA1NjkkbzQ0OCRnMSR0MTc4MjE1MDY4MCRqNDYkbDAkaDA.*_ga_WE38K849S4*czE3ODIxNTA1Njk?cid=usaffdostuff",
+        "at": "AXS"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Earlybirds Club",
+      "day": "November",
+      "date": "2026-11-13",
+      "venue": "ACL Live",
+      "doors": "6 PM",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Yana",
+      "day": "November",
+      "date": "2026-11-13",
+      "venue": "Brushy Street",
+      "doors": "8 PM",
+      "billedAs": "Yana w/ Emma Andersen",
+      "tickets": {
+        "url": "https://www.eventim.us/event/Yana-The-Feelings-are-Forever-Tour/699133",
+        "at": "Eventim"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "El Tri",
+      "day": "November",
+      "date": "2026-11-13",
+      "venue": "Emo's",
+      "doors": "7 PM",
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fel-tri-austin-texas-11-13-2026%2Fevent%2F3A0064A1C57166AE",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Com Truise",
+      "day": "November",
+      "date": "2026-11-13",
+      "venue": "Kingdom",
+      "doors": "10 PM",
+      "billedAs": "Com Truise – DJ Set",
+      "tickets": {
+        "url": "https://etix.prf.hn/click/camref:1011l3GdWo/pubref:dostuff/destination:https%3A%2F%2Fwww.etix.com%2Fticket%2Fp%2F89206358%2Fcom-truise-austin-resound-presents",
+        "at": "Etix"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Helado Tropical",
+      "day": "November",
+      "date": "2026-11-13",
+      "venue": "Mohawk",
+      "doors": "7 PM",
+      "tickets": {
+        "url": "https://etix.prf.hn/click/camref:1011l3GdWo/pubref:dostuff/destination:https%3A%2F%2Fwww.etix.com%2Fticket%2Fp%2F94019104%2Fbrown-horse-austin-resound-presents",
+        "at": "Etix"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Jonas Brothers",
+      "day": "November",
+      "date": "2026-11-13",
+      "venue": "Moody Center",
+      "doors": "7:30 PM",
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A00650D02CC62D0",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Tiny Habits",
+      "day": "November",
+      "date": "2026-11-13",
+      "venue": "Scoot Inn",
+      "doors": "6 PM",
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Ftiny-habits-austin-texas-11-13-2026%2Fevent%2F3A0064C4B407ABE7%3Futm_medium%3Daffiliate%26fbclid%3DIwY2xjawSmWD5leHRuA2FlbQIxMABicmlkETEyU0RhdjVDYzM1TDhmY0JRc3J0YwZhcHBfaWQQMjIyMDM5MTc4ODIwMDg5MgABHqgQXhDWsbBhDomuXyVSGbAMrJeTxuUTVVQ8VIyX2",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Night Cap",
+      "day": "November",
+      "date": "2026-11-13",
+      "venue": "Stubb's",
+      "doors": "7 PM",
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fnight-cap-austin-texas-11-13-2026%2Fevent%2F3A006518F5D0291F%3Futm_medium%3Daffiliate%26fbclid%3DIwY2xjawT8FbhwZG9mBWV4dG4DYWVtAjEwAGJyaWQRMXdPN3daTGpFejZmMGVYTlNzcnRjBmFwcF9pZBAyMjIwMzkxNzg4MjAwODkyAAEe3x_IHOVuKA-V8KRkDm40ZuZoh0z3vQh31O3",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Olive Jones",
+      "day": "November",
+      "date": "2026-11-14",
+      "venue": "3TEN",
+      "doors": "8 PM",
+      "tickets": {
+        "url": "https://www.axs.com/events/1592075/olive-jones-tickets?skin=3ten&_gl=1*b6w89e*_gcl_aw*R0NMLjE3ODc1OTI3NTguQ2owS0NRancxNl9VQmhDcUFSSXNBSWRPYVh4QnNlMmd5Vjd5NUZFWVRNcWVfQTdPMWlyRDhfd1VXb0RUZUUwUDNCVjdaMklNT2p5Rm40QWFBcHNURUFMd193Y0I.*_gcl_dc*R0NMLjE3ODc1OTI3?cid=usaffdostuff",
+        "at": "AXS"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Michael Blaustein",
+      "day": "November",
+      "date": "2026-11-14",
+      "venue": "ACL Live",
+      "doors": "7 PM",
+      "tickets": {
+        "url": "https://www.axs.com/events/1405877/michael-blaustein-tickets?skin=acllive&_gl=1*1gvdyn4*_gcl_au*MTMzNjQ3NDU0NS4xNzcyNDc0Nzg1*_ga*MTcyNDc5NDkxNi4xNzI1MzgyNDAz*_ga_12QE9CF8FS*czE3NzYxODYxODUkbzQwNSRnMSR0MTc3NjE4NjE5NCRqNTEkbDAkaDA.*_ga_WE38K849S4*czE3NzYxOD?cid=usaffdostuff",
+        "at": "AXS"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Tribal Gaze",
+      "day": "November",
+      "date": "2026-11-14",
+      "venue": "Brushy Street",
+      "doors": "8 PM",
+      "billedAs": "Tribal Gaze / Fleshrot / Paradise / Compulsion",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "DANNA",
+      "day": "November",
+      "date": "2026-11-14",
+      "venue": "Emo's",
+      "doors": "7 PM",
+      "billedAs": "DANNA - THE BEDROOM SESSIONS US TOUR",
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fdanna-the-bedroom-sessions-us-tour-austin-texas-11-14-2026%2Fevent%2F3A00651C9A4A98E5%3Futm_medium%3Daffiliate%26fbclid%3DIwY2xjawUD6oRwZG9mBWV4dG4DYWVtAjEwAGJyaWQRMWlYQjRaaXVSM3VTYkxHMVFzcnRjBmFwcF9pZBAyMjIwMzkxNzg4MjAwODkyAAEeuYXJEKPgy_",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "King Buffalo",
+      "day": "November",
+      "date": "2026-11-14",
+      "venue": "Mohawk",
+      "doors": "8 PM",
+      "tickets": {
+        "url": "https://etix.prf.hn/click/camref:1011l3GdWo/pubref:dostuff/destination:https%3A%2F%2Fwww.etix.com%2Fticket%2Fp%2F59220366%2Fking-buffalo-austin-resound-presents",
+        "at": "Etix"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Switchfoot",
+      "day": "November",
+      "date": "2026-11-14",
+      "venue": "Stubb's",
+      "doors": "7 PM",
+      "billedAs": "Switchfoot with special guest Anberlin – Forever Now Tour",
+      "tickets": {
+        "url": "https://www.ticketmaster.com/switchfoot-with-special-guest-anberlin-forever-austin-texas-11-14-2026/event/3A0064A69F44BF99?utm_medium=affiliate&fbclid=IwY2xjawRvHMdleHRuA2FlbQIxMABicmlkETExY1dYVlhiajJ1d3hFU1Q0c3J0YwZhcHBfaWQQMjIyMDM5MTc4ODIwMDg5MgABHtoEPq",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Em Beihold",
+      "day": "November",
+      "date": "2026-11-15",
+      "venue": "Brushy Street",
+      "doors": "8 PM",
+      "tickets": {
+        "url": "https://wl.seetickets.us/event/Em-Beihold/696505?afflky=C3Presents",
+        "at": "See Tickets"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Clara La San",
+      "day": "November",
+      "date": "2026-11-15",
+      "venue": "Emo's",
+      "doors": "7 PM",
+      "billedAs": "Clara La San - Chosen Silences Tour Fall 2026",
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fclara-la-san-chosen-silences-tour-austin-texas-11-15-2026%2Fevent%2F3A00650BB173ADDF%3Futm_medium%3Daffiliate%26fbclid%3DIwY2xjawTwIb9wZG9mBWV4dG4DYWVtAjEwAGJyaWQRMVYwWmRFSzg1SjBCUkI5MFZzcnRjBmFwcF9pZBAyMjIwMzkxNzg4MjAwODkyAAEeQyWlR1VyuLm",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "No One Productions",
+      "day": "November",
+      "date": "2026-11-17",
+      "venue": "Brushy Street",
+      "doors": "8 PM",
+      "billedAs": "No One Productions: Ben Quad / Drunk Uncle",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Amble",
+      "day": "November",
+      "date": "2026-11-17",
+      "venue": "Emo's",
+      "doors": "7 PM",
+      "tickets": {
+        "url": "https://www.ticketmaster.com/amble-austin-texas-11-17-2026/event/3A006496EF8487E5?utm_medium=affiliate&fbclid=IwY2xjawRlsUxleHRuA2FlbQIxMABicmlkETFxWkZGNXdicGZnVlh6MHV1c3J0YwZhcHBfaWQQMjIyMDM5MTc4ODIwMDg5MgABHmJzUiEO-3_GrAjLfmyCZrV5K5XsyTQeJoP59bTro33VYc-",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Theo Kandel",
+      "day": "November",
+      "date": "2026-11-17",
+      "venue": "Stubb's",
+      "doors": "8 PM",
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Ftheo-kandel-austin-texas-11-17-2026%2Fevent%2F3A006524AF55A701%3Futm_medium%3Daffiliate%26fbclid%3DIwY2xjawUOc65wZG9mBWV4dG4DYWVtAjEwAGJyaWQRMVRXOEdiZjlTeHI2UlhacjdzcnRjBmFwcF9pZBAyMjIwMzkxNzg4MjAwODkyAAEeBBaUeARj94IceXh5GtQTnGjyFlAz1y1xi",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "The Music of Hey Arnold! Live!",
+      "day": "November",
+      "date": "2026-11-18",
+      "venue": "ACL Live",
+      "doors": "8 PM",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Beauty School Dropout",
+      "day": "November",
+      "date": "2026-11-18",
+      "venue": "Brushy Street",
+      "doors": "7 PM",
+      "billedAs": "Beauty School Dropout w/ No Love For The Middle Child",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Evan Honer",
+      "day": "November",
+      "date": "2026-11-18",
+      "venue": "Emo's",
+      "doors": "7 PM",
+      "billedAs": "Evan Honer - It's An Even Longer Road Tour",
+      "tickets": {
+        "url": "https://www.ticketmaster.com/evan-honer-its-an-even-longer-austin-texas-11-18-2026/event/3A0064C2B970AC59?utm_medium=affiliate&fbclid=IwY2xjawSZL4NleHRuA2FlbQIxMABicmlkETFxNG5yMzkzN3YzbHpIZ3Rwc3J0YwZhcHBfaWQQMjIyMDM5MTc4ODIwMDg5MgABHuhpvXuBDAE18jrchmw9ee0",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Holywatr",
+      "day": "November",
+      "date": "2026-11-18",
+      "venue": "Scoot Inn",
+      "doors": "5 PM",
+      "billedAs": "Holywatr: Deo Gratias Tour",
+      "tickets": {
+        "url": "https://www.ticketmaster.com/holywatr-deo-gratias-tour-austin-texas-11-18-2026/event/3A0064AC03DF6EB9?utm_medium=affiliate&fbclid=IwY2xjawSeZe5leHRuA2FlbQIxMABicmlkETFNWWlLQWlIQm9Yc01yaXJXc3J0YwZhcHBfaWQQMjIyMDM5MTc4ODIwMDg5MgABHrofmcKR2wQrEsUfgtpu5CsXjUK",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Daisy Grenade",
+      "day": "November",
+      "date": "2026-11-19",
+      "venue": "3TEN",
+      "doors": "8 PM",
+      "tickets": {
+        "url": "https://www.axs.com/events/1523999/daisy-grenade-tickets?skin=3ten&_gl=1*11a0agg*_gcl_au*NTU3NjgwNDIwLjE3ODA0MjA3Nzk.*_ga*MTcyNDc5NDkxNi4xNzI1MzgyNDAz*_ga_WE38K849S4*czE3ODQ1Njg1NzkkbzQ2OCRnMSR0MTc4NDU2ODg4OCRqNTEkbDAkaDA.*_ga_12QE9CF8FS*czE3ODQ1Njg1Nzkkb?cid=usaffdostuff",
+        "at": "AXS"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Los Dos de Tamaulipas",
+      "day": "November",
+      "date": "2026-11-19",
+      "venue": "ACL Live",
+      "doors": "8 PM",
+      "tickets": {
+        "url": "https://www.axs.com/events/1528347/los-dos-de-tamaulipas-tickets?skin=acllive&_gl=1*tl345*_gcl_au*NTU3NjgwNDIwLjE3ODA0MjA3Nzk.*_ga*MTcyNDc5NDkxNi4xNzI1MzgyNDAz*_ga_12QE9CF8FS*czE3ODQ3NDQzNTIkbzQ2OSRnMSR0MTc4NDc0NDM3MyRqMzkkbDAkaDA.*_ga_WE38K849S4*czE3ODQ3?cid=usaffdostuff",
+        "at": "AXS"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Dexter and The Moonrocks",
+      "day": "November",
+      "date": "2026-11-19",
+      "venue": "Emo's",
+      "doors": "7 PM",
+      "tickets": {
+        "url": "https://www.ticketmaster.com/dexter-and-the-moonrocks-austin-texas-11-19-2026/event/3A0064C2F2FCF0DC?utm_medium=affiliate&fbclid=IwY2xjawST7AZleHRuA2FlbQIxMABicmlkETF5QnFLVEI2cGNJa3o1MzZkc3J0YwZhcHBfaWQQMjIyMDM5MTc4ODIwMDg5MgABHhaWvE6vhKVyv2SUgyKW5G1Z1jAy",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Aterciopelados",
+      "day": "November",
+      "date": "2026-11-19",
+      "venue": "Scoot Inn",
+      "doors": "5 PM",
+      "billedAs": "Aterciopelados: La Pipa De Laz Paz 30 Anos Tour",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "An Evening",
+      "day": "November",
+      "date": "2026-11-19",
+      "venue": "Stubb's",
+      "doors": "7 PM",
+      "billedAs": "An Evening With Band Of Horses",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Bryan Andrews",
+      "day": "November",
+      "date": "2026-11-20",
+      "venue": "3TEN",
+      "doors": "8 PM",
+      "tickets": {
+        "url": "https://www.axs.com/events/1511214/bryan-andrews-tickets?skin=3ten&_gl=1*19mwh21*_gcl_au*NTU3NjgwNDIwLjE3ODA0MjA3Nzk.*_ga*MTcyNDc5NDkxNi4xNzI1MzgyNDAz*_ga_12QE9CF8FS*czE3ODM0NDQwODIkbzQ1OCRnMCR0MTc4MzQ0NDEwNyRqMzUkbDAkaDA.*_ga_WE38K849S4*czE3ODM0NDQwODIkb",
+        "at": "AXS"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Chelsea Handler",
+      "day": "November",
+      "date": "2026-11-20",
+      "venue": "ACL Live",
+      "doors": "8 PM",
+      "tickets": {
+        "url": "https://www.axs.com/events/1382127/chelsea-handler-tickets?skin=acllive&_gl=1*1lwcqm5*_gcl_au*MTMzNjQ3NDU0NS4xNzcyNDc0Nzg1*_ga*MTcyNDc5NDkxNi4xNzI1MzgyNDAz*_ga_12QE9CF8FS*czE3NzQzNzI4MTAkbzM5MSRnMSR0MTc3NDM3MzA2OCRqMzIkbDAkaDA.*_ga_WE38K849S4*czE3NzQzNzI4",
+        "at": "AXS"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Kaskade",
+      "day": "November",
+      "date": "2026-11-20",
+      "venue": "Concourse Project",
+      "doors": "8 PM",
+      "billedAs": "Kaskade at The Concourse Project (Outdoors)",
+      "tickets": {
+        "url": "https://wl.eventim.us/event/Kaskade-at-The-Concourse-Project-Outdoors/702947?afflky=TheConcourseProject",
+        "at": "Eventim"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Dexter and The Moonrocks",
+      "day": "November",
+      "date": "2026-11-20",
+      "venue": "Emo's",
+      "doors": "7 PM",
+      "tickets": {
+        "url": "https://www.ticketmaster.com/dexter-and-the-moonrocks-austin-texas-11-20-2026/event/3A0064CFAE3F9E53?utm_medium=affiliate&fbclid=IwY2xjawSeY2pleHRuA2FlbQIxMABicmlkETFNWWlLQWlIQm9Yc01yaXJXc3J0YwZhcHBfaWQQMjIyMDM5MTc4ODIwMDg5MgABHnbucFTPfGKhfifWKrEF4AVsvWhb",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Only Fire & Friends",
+      "day": "November",
+      "date": "2026-11-20",
+      "venue": "Kingdom",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Static Dress",
+      "day": "November",
+      "date": "2026-11-20",
+      "venue": "Mohawk",
+      "doors": "6:30 PM",
+      "tickets": {
+        "url": "https://etix.prf.hn/click/camref:1011l3GdWo/pubref:dostuff/destination:https%3A%2F%2Fwww.etix.com%2Fticket%2Fp%2F51290557%2Fstatic-dress-austin-resound-presents",
+        "at": "Etix"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Ty Myers",
+      "day": "November",
+      "date": "2026-11-20",
+      "venue": "Moody Center",
+      "doors": "7:30 PM",
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A00646DA0949E2B",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Paul Cauthen",
+      "day": "November",
+      "date": "2026-11-20",
+      "venue": "Stubb's",
+      "doors": "7 PM",
+      "tickets": {
+        "url": "https://www.ticketmaster.com/paul-cauthen-austin-texas-11-20-2026/event/3A0064D6E73F2787?utm_medium=affiliate&fbclid=IwY2xjawSrlQlleHRuA2FlbQIxMABicmlkETFEdTVlRVJVcURVVGlKY2owc3J0YwZhcHBfaWQQMjIyMDM5MTc4ODIwMDg5MgABHuKny0HGOu-4wqysG87ULjaaGeQ8w_kH05MnlGQW",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Lyle Lovett and his Small Large Band",
+      "day": "November",
+      "date": "2026-11-21",
+      "venue": "ACL Live",
+      "doors": "8 PM",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Eric Prydz",
+      "day": "November",
+      "date": "2026-11-21",
+      "venue": "Concourse Project",
+      "doors": "9 PM",
+      "billedAs": "Eric Prydz at The Concourse Project",
+      "tickets": {
+        "url": "https://wl.eventim.us/event/Eric-Prydz-at-The-Concourse-Project/691628?afflky=TheConcourseProject",
+        "at": "Eventim"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Bahamas",
+      "day": "November",
+      "date": "2026-11-21",
+      "venue": "Emo's",
+      "doors": "7 PM",
+      "billedAs": "Bahamas - Industrial Sport & Sound",
+      "tickets": {
+        "url": "https://www.ticketmaster.com/bahamas-industrial-sport-sound-austin-texas-11-21-2026/event/3A006452B93B3A0F?utm_medium=affiliate&fbclid=IwY2xjawQesb1leHRuA2FlbQIxMABicmlkETFLWTVmaERFN1VRcDYzNE91c3J0YwZhcHBfaWQQMjIyMDM5MTc4ODIwMDg5MgABHpOtGPXATYxcAvOq0erCcw",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Mark Knight",
+      "day": "November",
+      "date": "2026-11-21",
+      "venue": "Kingdom",
+      "doors": "10 PM",
+      "tickets": {
+        "url": "https://etix.prf.hn/click/camref:1011l3GdWo/pubref:dostuff/destination:https%3A%2F%2Fwww.etix.com%2Fticket%2Fp%2F87149692%2Fmark-knight-austin-kingdom-nightclub%3Fpartner_id%3D100",
+        "at": "Etix"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Fruit Bats",
+      "day": "November",
+      "date": "2026-11-21",
+      "venue": "Mohawk",
+      "doors": "7 PM",
+      "tickets": {
+        "url": "https://etix.prf.hn/click/camref:1011l3GdWo/pubref:dostuff/destination:https%3A%2F%2Fwww.etix.com%2Fticket%2Fp%2F87524898%2Ffruit-bats-austin-resound-presents",
+        "at": "Etix"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "The Afghan Whigs",
+      "day": "November",
+      "date": "2026-11-21",
+      "venue": "Scoot Inn",
+      "doors": "6 PM",
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fthe-afghan-whigs-austin-texas-11-21-2026%2Fevent%2F3A0064BCB786C3F2%3Futm_medium%3Daffiliate%26fbclid%3DIwY2xjawSNWVNleHRuA2FlbQIxMABicmlkETFBNHV0OWVpN0pJMDVHVHY4c3J0YwZhcHBfaWQQMjIyMDM5MTc4ODIwMDg5MgABHoZ0jL7Kf6y0aMynRMUbzzOG_6h2EiYds4h8",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Rawayana",
+      "day": "November",
+      "date": "2026-11-22",
+      "venue": "ACL Live",
+      "doors": "8 PM",
+      "tickets": {
+        "url": "https://www.axs.com/events/1371102/rawayana-tickets?skin=acllive&_gl=1*12zapis*_gcl_au*MTMzNjQ3NDU0NS4xNzcyNDc0Nzg1*_ga*MTcyNDc5NDkxNi4xNzI1MzgyNDAz*_ga_WE38K849S4*czE3NzM2ODI2OTUkbzM5MCRnMCR0MTc3MzY4MjcxNiRqMzkkbDAkaDA.*_ga_12QE9CF8FS*czE3NzM2ODI2OTUkbzM",
+        "at": "AXS"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Baby Jane",
+      "day": "November",
+      "date": "2026-11-22",
+      "venue": "Brushy Street",
+      "doors": "8 PM",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Syd",
+      "day": "November",
+      "date": "2026-11-22",
+      "venue": "Emo's",
+      "doors": "7 PM",
+      "billedAs": "Syd: Beard Tour",
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fsyd-beard-tour-austin-texas-11-22-2026%2Fevent%2F3A00652BA143ABD3%3Futm_medium%3Daffiliate%26fbclid%3DIwY2xjawUWXnZwZG9mBWV4dG4DYWVtAjEwAGJyaWQRMUZocE5SUHdYdWx6YXJLY1VzcnRjBmFwcF9pZBAyMjIwMzkxNzg4MjAwODkyAAEe-53LnE8iZMr5p5_TXMaAeYr1-NreCc",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Jalen Ngonda",
+      "day": "November",
+      "date": "2026-11-22",
+      "venue": "Scoot Inn",
+      "doors": "5 PM",
+      "billedAs": "Jalen Ngonda: Doctrine of Love Tour",
+      "tickets": {
+        "url": "https://www.ticketmaster.com/jalen-ngonda-doctrine-of-love-tour-austin-texas-11-22-2026/event/3A0064C1DF54D27A?utm_medium=affiliate&fbclid=IwY2xjawST7PBleHRuA2FlbQIxMABicmlkETE0d3VRZVFrRnk4WGlpOW9zc3J0YwZhcHBfaWQQMjIyMDM5MTc4ODIwMDg5MgABHoJivbgx4iKwqiW_ig",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Imminence",
+      "day": "November",
+      "date": "2026-11-25",
+      "venue": "Stubb's",
+      "doors": "6 PM",
+      "billedAs": "Imminence – Axis Mundi Tour: North America 2026",
+      "tickets": {
+        "url": "https://www.ticketmaster.com/imminence-north-america-2026-austin-texas-11-25-2026/event/3A0064CAAD18C9D4?utm_medium=affiliate&fbclid=IwY2xjawSeZFtleHRuA2FlbQIxMABicmlkETFNWWlLQWlIQm9Yc01yaXJXc3J0YwZhcHBfaWQQMjIyMDM5MTc4ODIwMDg5MgABHs3ECYLeSJTcUeGW7N9y4JpU",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Poi Dog Pondering",
+      "day": "November",
+      "date": "2026-11-27",
+      "venue": "3TEN",
+      "doors": "8 PM",
+      "tickets": {
+        "url": "https://www.axs.com/events/1616968/poi-dog-pondering-tickets?skin=3ten&_gl=1*s51kf0*_gcl_aw*R0NMLjE3ODc1OTI3NTguQ2owS0NRancxNl9VQmhDcUFSSXNBSWRPYVh4QnNlMmd5Vjd5NUZFWVRNcWVfQTdPMWlyRDhfd1VXb0RUZUUwUDNCVjdaMklNT2p5Rm40QWFBcHNURUFMd193Y0I.*_gcl_dc*R0NMLjE3OD?cid=usaffdostuff",
+        "at": "AXS"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Michael Martin Murphey's Cowboy Christmas",
+      "day": "November",
+      "date": "2026-11-27",
+      "venue": "ACL Live",
+      "doors": "8 PM",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Hot Since 82",
+      "day": "November",
+      "date": "2026-11-27",
+      "venue": "Concourse Project",
+      "doors": "9 PM",
+      "billedAs": "Hot Since 82 + Avision at The Concourse Project",
+      "tickets": {
+        "url": "https://wl.eventim.us/event/Hot-Since-82-at-The-Concourse-Project/702026?afflky=TheConcourseProject",
+        "at": "Eventim"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Montell Fish",
+      "day": "November",
+      "date": "2026-11-27",
+      "venue": "Mohawk",
+      "doors": "7 PM",
+      "tickets": {
+        "url": "https://etix.prf.hn/click/camref:1011l3GdWo/pubref:dostuff/destination:https%3A%2F%2Fwww.etix.com%2Fticket%2Fp%2F31043689%2Fmontell-fish-the-nest-tour-austin-resound-presents",
+        "at": "Etix"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "The 36th Annual John Lennon Tribute",
+      "day": "November",
+      "date": "2026-11-28",
+      "venue": "3TEN",
+      "doors": "8 PM",
+      "billedAs": "The 36th Annual John Lennon Tribute with The #9 Orchestra",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Bob Schneider & The Moonlight Orchestra",
+      "day": "November",
+      "date": "2026-11-28",
+      "venue": "ACL Live",
+      "doors": "8 PM",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Desert Dwellers",
+      "day": "November",
+      "date": "2026-11-28",
+      "venue": "Brushy Street",
+      "doors": "7 PM",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Green Velvet",
+      "day": "November",
+      "date": "2026-11-28",
+      "venue": "Concourse Project",
+      "doors": "9 PM",
+      "billedAs": "Green Velvet at The Concourse Project",
+      "tickets": {
+        "url": "https://wl.eventim.us/event/Green-Velvet-at-The-Concourse-Project/705130?afflky=TheConcourseProject",
+        "at": "Eventim"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Pretty Sick",
+      "day": "November",
+      "date": "2026-11-28",
+      "venue": "Mohawk",
+      "doors": "7 PM",
+      "tickets": {
+        "url": "https://etix.prf.hn/click/camref:1011l3GdWo/pubref:dostuff/destination:https%3A%2F%2Fwww.etix.com%2Fticket%2Fp%2F63472959%2Fpretty-sick-austin-resound-presents",
+        "at": "Etix"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Ripe",
+      "day": "November",
+      "date": "2026-11-28",
+      "venue": "Scoot Inn",
+      "doors": "6 PM",
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fripe-austin-texas-11-28-2026%2Fevent%2F3A006518B3D5A9E5%3Futm_medium%3Daffiliate%26fbclid%3DIwY2xjawT8F4JwZG9mBWV4dG4DYWVtAjEwAGJyaWQRMXdPN3daTGpFejZmMGVYTlNzcnRjBmFwcF9pZBAyMjIwMzkxNzg4MjAwODkyAAEeuiIxweT0pJ5XGNtvjn2w_ihDCG-mtm-tD5EuKxKI",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "BEAT",
+      "day": "November",
+      "date": "2026-11-29",
+      "venue": "ACL Live",
+      "doors": "8 PM",
+      "billedAs": "BEAT: Belew/Vai/Levin/Bozzio Performing the Music of KING CRIMSON",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Eric Benét",
+      "day": "December",
+      "date": "2026-12-01",
+      "venue": "ACL Live",
+      "doors": "8 PM",
+      "tickets": {
+        "url": "https://www.axs.com/events/1595881/eric-benet-tickets?skin=acllive&_gl=1*1vebbe7*_gcl_aw*R0NMLjE3ODc1OTI3NTguQ2owS0NRancxNl9VQmhDcUFSSXNBSWRPYVh4QnNlMmd5Vjd5NUZFWVRNcWVfQTdPMWlyRDhfd1VXb0RUZUUwUDNCVjdaMklNT2p5Rm40QWFBcHNURUFMd193Y0I.*_gcl_dc*R0NMLjE3ODc1O?cid=usaffdostuff",
+        "at": "AXS"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "the olllam",
+      "day": "December",
+      "date": "2026-12-01",
+      "venue": "Antone's",
+      "doors": "8 PM",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Victoria Monét",
+      "day": "December",
+      "date": "2026-12-02",
+      "venue": "ACL Live",
+      "doors": "8 PM",
+      "tickets": {
+        "url": "https://www.axs.com/events/1595745/victoria-monet-tickets?skin=acllive&_gl=1*1vvqi2l*_gcl_aw*R0NMLjE3ODc1OTI3NTguQ2owS0NRancxNl9VQmhDcUFSSXNBSWRPYVh4QnNlMmd5Vjd5NUZFWVRNcWVfQTdPMWlyRDhfd1VXb0RUZUUwUDNCVjdaMklNT2p5Rm40QWFBcHNURUFMd193Y0I.*_gcl_dc*R0NMLjE3O",
+        "at": "AXS"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Michael Smoak",
+      "day": "December",
+      "date": "2026-12-03",
+      "venue": "3TEN",
+      "doors": "8 PM",
+      "tickets": {
+        "url": "https://www.axs.com/events/1474774/michael-smoak-tickets?skin=3ten&_gl=1*6g78j9*_gcl_au*NTU3NjgwNDIwLjE3ODA0MjA3Nzk.*_ga*MTcyNDc5NDkxNi4xNzI1MzgyNDAz*_ga_12QE9CF8FS*czE3ODA5MzkzMTIkbzQzOCRnMSR0MTc4MDkzOTk1MCRqMjgkbDAkaDA.*_ga_WE38K849S4*czE3ODA5MzkzMTIkbz",
+        "at": "AXS"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Los Tucanes de Tijuana",
+      "day": "December",
+      "date": "2026-12-03",
+      "venue": "ACL Live",
+      "doors": "8 PM",
+      "tickets": {
+        "url": "https://www.axs.com/events/1561846/los-tucanes-de-tijuana-tickets?skin=acllive&_gl=1*hdgyqo*_gcl_au*MTIyOTA5MjgyNS4xNzg2Mzk0MDQ5*_ga*MTkxODY1MzU4OC4xNzg2Mzk0MDQ5*_ga_12QE9CF8FS*czE3ODY5ODY2ODckbzQkZzAkdDE3ODY5ODY2OTckajUwJGwwJGgw?cid=usaffdostuff",
+        "at": "AXS"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Under The Rock & SIMS",
+      "day": "December",
+      "date": "2026-12-03",
+      "venue": "Antone's",
+      "doors": "8 PM",
+      "billedAs": "Under The Rock & SIMS w/ West Texas Exiles, Louisiana Surf Department & Caroline Hale",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Franky Rizardo",
+      "day": "December",
+      "date": "2026-12-03",
+      "venue": "Concourse Project",
+      "doors": "9 PM",
+      "billedAs": "Franky Rizardo presents FLOW (Extended Set) | Austin",
+      "tickets": {
+        "url": "https://wl.eventim.us/event/Franky-Rizardo-presents-FLOW-Extended-Set-Austin/702951?afflky=TheConcourseProject",
+        "at": "Eventim"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Danny Brown",
+      "day": "December",
+      "date": "2026-12-03",
+      "venue": "Mohawk",
+      "doors": "7 PM",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "John R Miller",
+      "day": "December",
+      "date": "2026-12-04",
+      "venue": "3TEN",
+      "doors": "8 PM",
+      "tickets": {
+        "url": "https://www.axs.com/events/1576455/john-r-miller-tickets?skin=3ten&_gl=1*1d37w7*_gcl_au*MTIyOTA5MjgyNS4xNzg2Mzk0MDQ5*_ga*MTkxODY1MzU4OC4xNzg2Mzk0MDQ5*_ga_12QE9CF8FS*czE3ODcwNzQwMTckbzckZzAkdDE3ODcwNzQwMzEkajQ2JGwwJGgw?cid=usaffdostuff",
+        "at": "AXS"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Kansas",
+      "day": "December",
+      "date": "2026-12-04",
+      "venue": "ACL Live",
+      "doors": "8 PM",
+      "tickets": {
+        "url": "https://www.axs.com/events/1594124/kansas-tickets?skin=acllive&_gl=1*iycx74*_gcl_aw*R0NMLjE3ODc1OTI3NTguQ2owS0NRancxNl9VQmhDcUFSSXNBSWRPYVh4QnNlMmd5Vjd5NUZFWVRNcWVfQTdPMWlyRDhfd1VXb0RUZUUwUDNCVjdaMklNT2p5Rm40QWFBcHNURUFMd193Y0I.*_gcl_dc*R0NMLjE3ODc1OTI3NT?cid=usaffdostuff",
+        "at": "AXS"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Kendall Street Company",
+      "day": "December",
+      "date": "2026-12-04",
+      "venue": "Brushy Street",
+      "doors": "8:30 PM",
+      "billedAs": "Kendall Street Company: Yodeling Astroman Tour w/ Texas String Assembly",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "FOVOS",
+      "day": "December",
+      "date": "2026-12-04",
+      "venue": "Kingdom",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "The Black Angels",
+      "day": "December",
+      "date": "2026-12-04",
+      "venue": "Mohawk",
+      "doors": "7 PM",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Disney Worlds Collide",
+      "day": "December",
+      "date": "2026-12-04",
+      "venue": "Moody Center",
+      "doors": "7 PM",
+      "tickets": {
+        "url": "https://www.ticketmaster.com/event/3A00646C3500E378?CAMEFROM=CFC_MOODY_CENTER_WEB_MOODYSITE_DISNEYWORLDSCOLLIDE",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "American Aquarium",
+      "day": "December",
+      "date": "2026-12-05",
+      "venue": "3TEN",
+      "doors": "8 PM",
+      "tickets": {
+        "url": "https://www.axs.com/events/1524202/american-aquarium-tickets?skin=3ten&_gl=1*nwaf0*_gcl_au*NTU3NjgwNDIwLjE3ODA0MjA3Nzk.*_ga*MTcyNDc5NDkxNi4xNzI1MzgyNDAz*_ga_12QE9CF8FS*czE3ODQ1Njg1NzkkbzQ2NiRnMCR0MTc4NDU2ODU5NCRqNDUkbDAkaDA.*_ga_WE38K849S4*czE3ODQ1Njg1Nzk",
+        "at": "AXS"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Ben Schwartz & Friends",
+      "day": "December",
+      "date": "2026-12-05",
+      "venue": "ACL Live",
+      "doors": "8 PM",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Sleepwalk",
+      "day": "December",
+      "date": "2026-12-05",
+      "venue": "Brushy Street",
+      "doors": "8 PM",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Amtrac",
+      "day": "December",
+      "date": "2026-12-05",
+      "venue": "Kingdom",
+      "doors": "10 PM",
+      "tickets": {
+        "url": "https://etix.prf.hn/click/camref:1011l3GdWo/pubref:dostuff/destination:https%3A%2F%2Fwww.etix.com%2Fticket%2Fp%2F44637223%2Famtrac-austin-resound-presents",
+        "at": "Etix"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "The Impossibles",
+      "day": "December",
+      "date": "2026-12-05",
+      "venue": "Mohawk",
+      "doors": "7 PM",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "DJ Paul of Three 6 Mafia",
+      "day": "December",
+      "date": "2026-12-06",
+      "venue": "Antone's",
+      "doors": "8 PM",
+      "billedAs": "DJ Paul of Three 6 Mafia: Crunk Gods Tour w/ DJ Montay, Los Kemet, TTBBY, Stockz & DJ Hella Yella",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "A Magical Cirque Christmas",
+      "day": "December",
+      "date": "2026-12-07",
+      "venue": "ACL Live",
+      "doors": "7:30 PM",
+      "tickets": {
+        "url": "https://www.axs.com/events/1525104/a-magical-cirque-christmas-tickets?skin=acllive&_gl=1*5bz5ir*_gcl_au*NTU3NjgwNDIwLjE3ODA0MjA3Nzk.*_ga*MTcyNDc5NDkxNi4xNzI1MzgyNDAz*_ga_12QE9CF8FS*czE3ODQ1Njg1NzkkbzQ2NiRnMSR0MTc4NDU2ODcyMiRqMzAkbDAkaDA.*_ga_WE38K849S4*cz?cid=usaffdostuff",
+        "at": "AXS"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Beartooth",
+      "day": "December",
+      "date": "2026-12-09",
+      "venue": "ACL Live",
+      "doors": "6:30 PM",
+      "tickets": {
+        "url": "https://www.axs.com/events/1449718/beartooth-tickets?skin=acllive&_gl=1*n3e9oe*_gcl_au*MTMzNjQ3NDU0NS4xNzcyNDc0Nzg1*_ga*MTcyNDc5NDkxNi4xNzI1MzgyNDAz*_ga_12QE9CF8FS*czE3NzkyMTA1NDQkbzQyNyRnMSR0MTc3OTIxMDY2MyRqMjgkbDAkaDA.*_ga_WE38K849S4*czE3NzkyMTA1NDQkbzQ?cid=usaffdostuff",
+        "at": "AXS"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Trans-Siberian Orchestra",
+      "day": "December",
+      "date": "2026-12-09",
+      "venue": "Moody Center",
+      "doors": "7 PM",
+      "tickets": {
+        "url": "https://www.ticketmaster.com/event/3A006510C43173A4?CAMEFROM=CFC_MOODY_CENTER_WEB_MOODYSITE_TSO-EVENTPAGE",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Live from Laurel Canyon",
+      "day": "December",
+      "date": "2026-12-10",
+      "venue": "ACL Live",
+      "doors": "8 PM",
+      "tickets": {
+        "url": "https://www.axs.com/events/1605607/live-from-laurel-canyon-tickets?skin=acllive&_gl=1*zycqwk*_gcl_aw*R0NMLjE3ODc1OTI3NTguQ2owS0NRancxNl9VQmhDcUFSSXNBSWRPYVh4QnNlMmd5Vjd5NUZFWVRNcWVfQTdPMWlyRDhfd1VXb0RUZUUwUDNCVjdaMklNT2p5Rm40QWFBcHNURUFMd193Y0I.*_gcl_dc*R",
+        "at": "AXS"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Venna",
+      "day": "December",
+      "date": "2026-12-10",
+      "venue": "Antone's",
+      "doors": "8 PM",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Eelke Kleijn",
+      "day": "December",
+      "date": "2026-12-10",
+      "venue": "Brushy Street",
+      "doors": "8 PM",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Amigo the Devil",
+      "day": "December",
+      "date": "2026-12-10",
+      "venue": "Mohawk",
+      "doors": "7 PM",
+      "billedAs": "Amigo The Devil",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Sonic Guild Ball",
+      "day": "December",
+      "date": "2026-12-11",
+      "venue": "ACL Live",
+      "doors": "8 PM",
+      "tickets": {
+        "url": "https://www.axs.com/events/1601212/sonic-guild-ball-tickets?skin=acllive&_gl=1*eshrb3*_gcl_aw*R0NMLjE3ODc1OTI3NTguQ2owS0NRancxNl9VQmhDcUFSSXNBSWRPYVh4QnNlMmd5Vjd5NUZFWVRNcWVfQTdPMWlyRDhfd1VXb0RUZUUwUDNCVjdaMklNT2p5Rm40QWFBcHNURUFMd193Y0I.*_gcl_dc*R0NMLjE3?cid=usaffdostuff",
+        "at": "AXS"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Joshua Ray Walker",
+      "day": "December",
+      "date": "2026-12-11",
+      "venue": "Antone's",
+      "doors": "8 PM",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Rossi.",
+      "day": "December",
+      "date": "2026-12-11",
+      "venue": "Concourse Project",
+      "doors": "9 PM",
+      "billedAs": "Rossi. at The Concourse Project",
+      "tickets": {
+        "url": "https://wl.eventim.us/event/Rossi-at-The-Concourse-Project/701142?afflky=TheConcourseProject",
+        "at": "Eventim"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Ben Kweller",
+      "day": "December",
+      "date": "2026-12-11",
+      "venue": "Mohawk",
+      "doors": "7 PM",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Tyla",
+      "day": "December",
+      "date": "2026-12-11",
+      "venue": "Moody Center",
+      "doors": "8 PM",
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A0064F8A6F0F07A%3FCAMEFROM%3DCFC_MOODY_CENTER_WEB_MOODYSITE_TYLA",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Life of Hate",
+      "day": "December",
+      "date": "2026-12-12",
+      "venue": "Brushy Street",
+      "doors": "8 PM",
+      "billedAs": "Life of Hate: Thru The Ashes / Born Savage / By Any Means and more!",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Bob Moses",
+      "day": "December",
+      "date": "2026-12-12",
+      "venue": "Concourse Project",
+      "doors": "9 PM",
+      "billedAs": "Bob Moses (Club Set) + Notre Dame at The Concourse Project",
+      "tickets": {
+        "url": "https://wl.eventim.us/event/Bob-Moses-Club-Set-Notre-Dame-at-The-Concourse-Project/705829?afflky=TheConcourseProject",
+        "at": "Eventim"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Rave Jesus",
+      "day": "December",
+      "date": "2026-12-12",
+      "venue": "Kingdom",
+      "doors": "5 PM",
+      "billedAs": "Rave Jesus – Rave Revival Fall Tour",
+      "tickets": {
+        "url": "https://etix.prf.hn/click/camref:1011l3GdWo/pubref:dostuff/destination:https%3A%2F%2Fwww.etix.com%2Fticket%2Fp%2F72889151%2Frave-jesus-rave-revival-fall-tour-austin-kingdom-nightclub%3Fpartner_id%3D100",
+        "at": "Etix"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "White Denim",
+      "day": "December",
+      "date": "2026-12-12",
+      "venue": "Mohawk",
+      "doors": "7 PM",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Billy Strings",
+      "day": "December",
+      "date": "2026-12-12",
+      "venue": "Moody Center",
+      "doors": "7:30 PM",
+      "tickets": {
+        "url": "https://www.ticketmaster.com/event/3A0064DE8BE85BE9",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "The Rock and Roll Playhouse",
+      "day": "December",
+      "date": "2026-12-13",
+      "venue": "3TEN",
+      "doors": "12 PM",
+      "tickets": {
+        "url": "https://www.axs.com/events/1579460/the-rock-and-roll-playhouse-tickets?skin=3ten&_gl=1*1v0m69i*_gcl_aw*R0NMLjE3ODc1OTI3NTguQ2owS0NRancxNl9VQmhDcUFSSXNBSWRPYVh4QnNlMmd5Vjd5NUZFWVRNcWVfQTdPMWlyRDhfd1VXb0RUZUUwUDNCVjdaMklNT2p5Rm40QWFBcHNURUFMd193Y0I.*_gcl_dc?cid=usaffdostuff",
+        "at": "AXS"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Molly Tuttle x Marty Stuart",
+      "day": "December",
+      "date": "2026-12-13",
+      "venue": "ACL Live",
+      "doors": "8 PM",
+      "billedAs": "Molly Tuttle x Marty Stuart: Guitars on Fire",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "WHY?",
+      "day": "December",
+      "date": "2026-12-13",
+      "venue": "Brushy Street",
+      "doors": "8 PM",
+      "tickets": {
+        "url": "https://wl.eventim.us/event/why/701126?afflky=ResoundPresents",
+        "at": "Eventim"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Heartless Bastards",
+      "day": "December",
+      "date": "2026-12-13",
+      "venue": "Mohawk",
+      "doors": "7 PM",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Underoath",
+      "day": "December",
+      "date": "2026-12-15",
+      "venue": "ACL Live",
+      "doors": "8 PM",
+      "tickets": {
+        "url": "https://www.axs.com/events/1473793/underoath-tickets?skin=acllive&_gl=1*w46uan*_gcl_au*NTU3NjgwNDIwLjE3ODA0MjA3Nzk.*_ga*MTcyNDc5NDkxNi4xNzI1MzgyNDAz*_ga_WE38K849S4*czE3ODEwMjQ2ODIkbzQ0MiRnMCR0MTc4MTAyNDY5OCRqNDQkbDAkaDA.*_ga_12QE9CF8FS*czE3ODEwMjQ2ODIkbzQ",
+        "at": "AXS"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Pentatonix",
+      "day": "December",
+      "date": "2026-12-15",
+      "venue": "Moody Center",
+      "doors": "7 PM",
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A006504EE731AE5%3Futm_campaign%3DPRM-00523463%26utm_source%3Ddo512.com%26utm_medium%3Dln_promo",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Blind Boys of Alabama & Asleep At The Wheel",
+      "day": "December",
+      "date": "2026-12-16",
+      "venue": "ACL Live",
+      "doors": "8 PM",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Deep Eddies Band",
+      "day": "December",
+      "date": "2026-12-17",
+      "venue": "3TEN",
+      "doors": "8 PM",
+      "tickets": {
+        "url": "https://www.axs.com/events/1541839/deep-eddies-band-tickets?skin=3ten&_gl=1*jcb2wc*_gcl_au*MTIyOTA5MjgyNS4xNzg2Mzk0MDQ5*_ga*MTkxODY1MzU4OC4xNzg2Mzk0MDQ5*_ga_12QE9CF8FS*czE3ODcxNTkyNDIkbzgkZzEkdDE3ODcxNTk0MjkkajM2JGwwJGgw?cid=usaffdostuff",
+        "at": "AXS"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Tanner Usrey",
+      "day": "December",
+      "date": "2026-12-17",
+      "venue": "Antone's",
+      "doors": "8 PM",
+      "billedAs": "Tanner Usrey w/ Cam Allen",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "The Lemon Twigs",
+      "day": "December",
+      "date": "2026-12-17",
+      "venue": "Mohawk",
+      "doors": "7 PM",
+      "tickets": {
+        "url": "https://etix.prf.hn/click/camref:1011l3GdWo/pubref:dostuff/destination:https%3A%2F%2Fwww.etix.com%2Fticket%2Fp%2F86247413%2Fthe-lemon-twigs-austin-resound-presents",
+        "at": "Etix"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Yaelokre",
+      "day": "December",
+      "date": "2026-12-18",
+      "venue": "Brushy Street",
+      "doors": "8 PM",
+      "tickets": {
+        "url": "https://wl.seetickets.us/event/Yaelokre/695337?afflky=C3Presents",
+        "at": "See Tickets"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "The Sword",
+      "day": "December",
+      "date": "2026-12-18",
+      "venue": "Mohawk",
+      "doors": "7 PM",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "A Drag Queen Christmas",
+      "day": "December",
+      "date": "2026-12-19",
+      "venue": "ACL Live",
+      "doors": "8 PM",
+      "tickets": {
+        "url": "https://www.axs.com/events/1468136/a-drag-queen-christmas-tickets?skin=acllive&_gl=1*x3ar84*_gcl_au*NTU3NjgwNDIwLjE3ODA0MjA3Nzk.*_ga*MTcyNDc5NDkxNi4xNzI1MzgyNDAz*_ga_12QE9CF8FS*czE3ODA0MjA3NzgkbzQzMyRnMSR0MTc4MDQyMDk0MyRqMTAkbDAkaDA.*_ga_WE38K849S4*czE3OD?cid=usaffdostuff",
+        "at": "AXS"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Lucy Bedroque",
+      "day": "December",
+      "date": "2026-12-19",
+      "venue": "Mohawk",
+      "doors": "7 PM",
+      "tickets": {
+        "url": "https://etix.prf.hn/click/camref:1011l3GdWo/pubref:dostuff/destination:https%3A%2F%2Fwww.etix.com%2Fticket%2Fp%2F74981247%2Flucy-bedroque-austin-resound-presents",
+        "at": "Etix"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Mariachi Sol de México de Jose Hernandez",
+      "day": "December",
+      "date": "2026-12-22",
+      "venue": "ACL Live",
+      "doors": "8 PM",
+      "tickets": {
+        "url": "https://www.axs.com/events/1616977/mariachi-sol-de-mexico-de-jose-hernandez-tickets?skin=acllive&_gl=1*53pzgg*_gcl_aw*R0NMLjE3ODc1OTI3NTguQ2owS0NRancxNl9VQmhDcUFSSXNBSWRPYVh4QnNlMmd5Vjd5NUZFWVRNcWVfQTdPMWlyRDhfd1VXb0RUZUUwUDNCVjdaMklNT2p5Rm40QWFBcHNURUFMd?cid=usaffdostuff",
+        "at": "AXS"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Toadies",
+      "day": "December",
+      "date": "2026-12-26",
+      "venue": "ACL Live",
+      "doors": "8 PM",
+      "tickets": {
+        "url": "https://www.axs.com/events/1607328/toadies-tickets?skin=acllive&_gl=1*fs74fd*_gcl_aw*R0NMLjE3ODc1OTI3NTguQ2owS0NRancxNl9VQmhDcUFSSXNBSWRPYVh4QnNlMmd5Vjd5NUZFWVRNcWVfQTdPMWlyRDhfd1VXb0RUZUUwUDNCVjdaMklNT2p5Rm40QWFBcHNURUFMd193Y0I.*_gcl_dc*R0NMLjE3ODc1OTI3N",
+        "at": "AXS"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "The Temptations",
+      "day": "December",
+      "date": "2026-12-29",
+      "venue": "ACL Live",
+      "doors": "7:30 PM",
+      "tickets": {
+        "url": "https://www.axs.com/events/1556422/the-temptations-tickets?skin=acllive&_gl=1*hp91g9*_gcl_au*MTIyOTA5MjgyNS4xNzg2Mzk0MDQ5*_ga*MTkxODY1MzU4OC4xNzg2Mzk0MDQ5*_ga_12QE9CF8FS*czE3ODY0Njg1MzYkbzIkZzAkdDE3ODY0Njg1MzkkajU3JGwwJGgw?cid=usaffdostuff",
+        "at": "AXS"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Gary Owen",
+      "day": "December",
+      "date": "2026-12-30",
+      "venue": "ACL Live",
+      "doors": "8 PM",
+      "tickets": {
+        "url": "https://www.axs.com/events/1402211/gary-owen-tickets?skin=acllive&_gl=1*mz5cou*_gcl_au*MTMzNjQ3NDU0NS4xNzcyNDc0Nzg1*_ga*MTcyNDc5NDkxNi4xNzI1MzgyNDAz*_ga_WE38K849S4*czE3NzU1ODI0MDIkbzQwMiRnMSR0MTc3NTU4Mjg2NSRqNDMkbDAkaDA.*_ga_12QE9CF8FS*czE3NzU1ODI0MDIkbzQ",
+        "at": "AXS"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Bob Schneider",
+      "day": "December",
+      "date": "2026-12-30",
+      "venue": "Antone's",
+      "doors": "8 PM",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Spoon",
+      "day": "December",
+      "date": "2026-12-31",
+      "venue": "ACL Live",
+      "doors": "9 PM",
+      "tickets": {
+        "url": "https://www.axs.com/events/1621563/spoon-tickets?skin=acllive&_gl=1*1cxf1*_gcl_aw*R0NMLjE3ODc1OTI3NTguQ2owS0NRancxNl9VQmhDcUFSSXNBSWRPYVh4QnNlMmd5Vjd5NUZFWVRNcWVfQTdPMWlyRDhfd1VXb0RUZUUwUDNCVjdaMklNT2p5Rm40QWFBcHNURUFMd193Y0I.*_gcl_dc*R0NMLjE3ODc1OTI3NTgu",
+        "at": "AXS"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Magoo",
+      "day": "December",
+      "date": "2026-12-31",
+      "venue": "Antone's",
+      "doors": "8 PM",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Kill Tony",
+      "day": "December",
+      "date": "2026-12-31",
+      "venue": "Moody Center",
+      "doors": "7 PM",
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A00650DAA3A94EF",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Max Dean",
+      "day": "January",
+      "date": "2027-01-02",
+      "venue": "Concourse Project",
+      "doors": "9 PM",
+      "billedAs": "Max Dean b2b Luke Dean at The Concourse Project",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Rob Baird Birthday Bash",
+      "day": "January",
+      "date": "2027-01-08",
+      "venue": "Antone's",
+      "doors": "8 PM",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "The Jazz Room",
+      "day": "January",
+      "date": "2027-01-15",
+      "venue": "Antone's",
+      "doors": "6:30 PM",
+      "billedAs": "The Jazz Room: A Frank Sinatra & Louis Armstrong Tribute",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Alan Walker",
+      "day": "January",
+      "date": "2027-01-21",
+      "venue": "ACL Live",
+      "doors": "7 PM",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "The Bald and the Beautiful Live",
+      "day": "January",
+      "date": "2027-01-22",
+      "venue": "ACL Live",
+      "doors": "7:30 PM",
+      "tickets": {
+        "url": "https://www.axs.com/events/1526714/the-bald-and-the-beautiful-live-tickets?skin=acllive&_gl=1*1p1dijr*_gcl_au*NTU3NjgwNDIwLjE3ODA0MjA3Nzk.*_ga*MTcyNDc5NDkxNi4xNzI1MzgyNDAz*_ga_12QE9CF8FS*czE3ODQ2NTQzMDckbzQ2OCRnMCR0MTc4NDY1NDMyMiRqNDUkbDAkaDA.*_ga_WE38K84?cid=usaffdostuff",
+        "at": "AXS"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Vansire",
+      "day": "January",
+      "date": "2027-01-23",
+      "venue": "Mohawk",
+      "doors": "7 PM",
+      "tickets": {
+        "url": "https://etix.prf.hn/click/camref:1011l3GdWo/pubref:dostuff/destination:https%3A%2F%2Fwww.etix.com%2Fticket%2Fp%2F84931855%2Fvansire-austin-resound-presents",
+        "at": "Etix"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Franco Escamilla",
+      "day": "January",
+      "date": "2027-01-29",
+      "venue": "ACL Live",
+      "doors": "8:30 PM",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Ely Oaks",
+      "day": "January",
+      "date": "2027-01-29",
+      "venue": "Kingdom",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Stella Lefty",
+      "day": "January",
+      "date": "2027-01-31",
+      "venue": "ACL Live",
+      "doors": "8 PM",
+      "tickets": {
+        "url": "https://www.axs.com/events/1580750/stella-lefty-tickets?skin=acllive&_gl=1*17tvqyp*_gcl_au*MTIyOTA5MjgyNS4xNzg2Mzk0MDQ5*_ga*MTkxODY1MzU4OC4xNzg2Mzk0MDQ5*_ga_12QE9CF8FS*czE3ODc1OTIxNTIkbzExJGcwJHQxNzg3NTkyMTYyJGo1MCRsMCRoMA..",
+        "at": "AXS"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Sons of Cream",
+      "day": "January",
+      "date": "2027-01-31",
+      "venue": "Antone's",
+      "doors": "8 PM",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Andrea Bocelli",
+      "day": "February",
+      "date": "2027-02-04",
+      "venue": "Moody Center",
+      "doors": "8 PM",
+      "tickets": {
+        "url": "https://www.ticketmaster.com/event/3A006521A5AD9867?CAMEFROM=CFC_MOODY_CENTER_WEB_MOODYSITE_BOCELLI-EVENTPAGE",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Cold as Life",
+      "day": "February",
+      "date": "2027-02-06",
+      "venue": "Brushy Street",
+      "doors": "8 PM",
+      "billedAs": "Cold as Life w/ FEAR OF LOSS, Spit My Rage, Born Savage, Soul Exchange",
+      "tickets": {
+        "url": "https://www.eventim.us/event/cold-as-life/691682?ttc=1870109",
+        "at": "Eventim"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "TWINSICK",
+      "day": "February",
+      "date": "2027-02-06",
+      "venue": "Concourse Project",
+      "doors": "9 PM",
+      "billedAs": "TWINSICK at The Concourse Project",
+      "tickets": {
+        "url": "https://wl.eventim.us/event/TWINSICK-at-The-Concourse-Project/705132?afflky=TheConcourseProject",
+        "at": "Eventim"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "RuPaul's Drag Race Werq the World Tour",
+      "day": "February",
+      "date": "2027-02-23",
+      "venue": "ACL Live",
+      "doors": "8 PM",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Public Image Ltd.",
+      "day": "February",
+      "date": "2027-02-23",
+      "venue": "Mohawk",
+      "doors": "6:30 PM",
+      "billedAs": "Public Image Ltd",
+      "tickets": {
+        "url": "https://etix.prf.hn/click/camref:1011l3GdWo/pubref:dostuff/destination:https%3A%2F%2Fwww.etix.com%2Fticket%2Fp%2F51035340%2Fpublic-image-ltd-austin-resound-presents",
+        "at": "Etix"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Rayland Baxter",
+      "day": "February",
+      "date": "2027-02-26",
+      "venue": "Mohawk",
+      "doors": "7 PM",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Wheeler Walker Jr.",
+      "day": "March",
+      "date": "2027-03-04",
+      "venue": "ACL Live",
+      "doors": "8 PM",
+      "tickets": {
+        "url": "https://www.axs.com/events/1479213/wheeler-walker-jr-tickets?skin=acllive&_gl=1*ny4pwb*_gcl_au*NTU3NjgwNDIwLjE3ODA0MjA3Nzk.*_ga*MTcyNDc5NDkxNi4xNzI1MzgyNDAz*_ga_12QE9CF8FS*czE3ODA5MzkzMTIkbzQzOCRnMSR0MTc4MDkzOTQ4NiRqNTAkbDAkaDA.*_ga_WE38K849S4*czE3ODA5Mzk",
+        "at": "AXS"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Anna Shoemaker",
+      "day": "March",
+      "date": "2027-03-05",
+      "venue": "3TEN",
+      "doors": "8 PM",
+      "tickets": {
+        "url": "https://www.axs.com/events/1608445/anna-shoemaker-tickets?skin=3ten&_gl=1*1tj2sk5*_gcl_aw*R0NMLjE3ODc1OTI3NTguQ2owS0NRancxNl9VQmhDcUFSSXNBSWRPYVh4QnNlMmd5Vjd5NUZFWVRNcWVfQTdPMWlyRDhfd1VXb0RUZUUwUDNCVjdaMklNT2p5Rm40QWFBcHNURUFMd193Y0I.*_gcl_dc*R0NMLjE3ODc1",
+        "at": "AXS"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Don Omar",
+      "day": "March",
+      "date": "2027-03-07",
+      "venue": "Moody Center",
+      "doors": "8 PM",
+      "tickets": {
+        "url": "https://www.ticketmaster.com/event/3A0064D4B74DB03F?CAMEFROM=CFC_MOODY_CENTER_WEB_MOODYSITE_DONOMAR",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Sylvan Esso",
+      "day": "March",
+      "date": "2027-03-08",
+      "venue": "ACL Live",
+      "doors": "8 PM",
+      "tickets": {
+        "url": "https://www.axs.com/events/1478071/sylvan-esso-tickets?skin=acllive&_gl=1*veewgy*_gcl_au*NTU3NjgwNDIwLjE3ODA0MjA3Nzk.*_ga*MTcyNDc5NDkxNi4xNzI1MzgyNDAz*_ga_12QE9CF8FS*czE3ODExMTg3MTYkbzQ0MSRnMCR0MTc4MTExODczMiRqNDQkbDAkaDA.*_ga_WE38K849S4*czE3ODExMTg3MTYkb",
+        "at": "AXS"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "TobyMac",
+      "day": "March",
+      "date": "2027-03-11",
+      "venue": "Moody Center",
+      "doors": "7 PM",
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fevent%2F3A006519DF89EF83",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "The Interrupters",
+      "day": "March",
+      "date": "2027-03-22",
+      "venue": "ACL Live",
+      "doors": "7 PM",
+      "tickets": {
+        "url": "https://www.axs.com/events/1617097/the-interrupters-tickets?skin=acllive&_gl=1*q8n45s*_gcl_aw*R0NMLjE3ODc1OTI3NTguQ2owS0NRancxNl9VQmhDcUFSSXNBSWRPYVh4QnNlMmd5Vjd5NUZFWVRNcWVfQTdPMWlyRDhfd1VXb0RUZUUwUDNCVjdaMklNT2p5Rm40QWFBcHNURUFMd193Y0I.*_gcl_dc*R0NMLjE3?cid=usaffdostuff",
+        "at": "AXS"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "The Psychedelic Furs",
+      "day": "March",
+      "date": "2027-03-25",
+      "venue": "ACL Live",
+      "doors": "8 PM",
+      "tickets": {
+        "url": "https://www.axs.com/events/1608388/the-psychedelic-furs-tickets?skin=acllive&_gl=1*v91eb4*_gcl_aw*R0NMLjE3ODc1OTI3NTguQ2owS0NRancxNl9VQmhDcUFSSXNBSWRPYVh4QnNlMmd5Vjd5NUZFWVRNcWVfQTdPMWlyRDhfd1VXb0RUZUUwUDNCVjdaMklNT2p5Rm40QWFBcHNURUFMd193Y0I.*_gcl_dc*R0NM",
+        "at": "AXS"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Bo Staloch",
+      "day": "March",
+      "date": "2027-03-26",
+      "venue": "Scoot Inn",
+      "doors": "6 PM",
+      "billedAs": "Bo Staloch - The 'Too Big, Too Big' Tour",
+      "tickets": {
+        "url": "https://ticketmaster.evyy.net/c/253185/264167/4272?SharedId=DoStuff&u=https%3A%2F%2Fwww.ticketmaster.com%2Fbo-staloch-the-too-big-too-austin-texas-03-26-2027%2Fevent%2F3A006530B545D8FA%3Futm_medium%3Daffiliate%26fbclid%3DIwY2xjawUfuNpwZG9mBWV4dG4DYWVtAjEwAGJyaWQRMWgwQzdRUUtGeFRBUGllOHlzcnRjBmFwcF9pZBAyMjIwMzkxNzg4MjAwODkyAAEeB1hW5P0nnvVIDj0zm8",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Brooke Alexx Dream Girl Tour",
+      "day": "April",
+      "date": "2027-04-03",
+      "venue": "Mohawk",
+      "doors": "5:30 PM",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Matt Mathews",
+      "day": "April",
+      "date": "2027-04-15",
+      "venue": "ACL Live",
+      "doors": "10:15 PM",
+      "tickets": {
+        "url": "https://www.axs.com/events/1454992/matt-mathews-tickets?skin=acllive&_gl=1*1s6l24q*_gcl_au*NTU3NjgwNDIwLjE3ODA0MjA3Nzk.*_ga*MTcyNDc5NDkxNi4xNzI1MzgyNDAz*_ga_12QE9CF8FS*czE3ODUyNTk0MjgkbzQ3NSRnMCR0MTc4NTI1OTQ0MyRqNDUkbDAkaDA.?cid=usaffdostuff",
+        "at": "AXS"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "SAINT LEVANT",
+      "day": "April",
+      "date": "2027-04-20",
+      "venue": "Stubb's",
+      "doors": "7 PM",
+      "billedAs": "SAINT LEVANT – AFANDI WORLD TOUR",
+      "tickets": {
+        "url": "https://www.ticketmaster.com/saint-levant-afandi-world-tour-austin-texas-04-20-2027/event/3A0064E88E004B8E?utm_medium=affiliate&fbclid=IwY2xjawUD9GFwZG9mBWV4dG4DYWVtAjEwAGJyaWQRMWlYQjRaaXVSM3VTYkxHMVFzcnRjBmFwcF9pZBAyMjIwMzkxNzg4MjAwODkyAAEefbau-Nui0rDaA8",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Paloma Morphy",
+      "day": "April",
+      "date": "2027-04-22",
+      "venue": "3TEN",
+      "doors": "9 PM",
+      "tickets": {
+        "url": "https://www.axs.com/events/1566212/official-2026-acl-fest-nights-paloma-morphy-tickets?skin=3ten?cid=usaffdostuff",
+        "at": "AXS"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Alaska Thunderfuck",
+      "day": "April",
+      "date": "2027-04-24",
+      "venue": "3TEN",
+      "doors": "8 PM",
+      "tickets": {
+        "url": "https://www.axs.com/events/1608421/alaska-thunderfuck-tickets?skin=3ten&_gl=1*1sgluq4*_gcl_aw*R0NMLjE3ODc1OTI3NTguQ2owS0NRancxNl9VQmhDcUFSSXNBSWRPYVh4QnNlMmd5Vjd5NUZFWVRNcWVfQTdPMWlyRDhfd1VXb0RUZUUwUDNCVjdaMklNT2p5Rm40QWFBcHNURUFMd193Y0I.*_gcl_dc*R0NMLjE3?cid=usaffdostuff",
+        "at": "AXS"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Terrian",
+      "day": "April",
+      "date": "2027-04-25",
+      "venue": "3TEN",
+      "doors": "8 PM",
+      "tickets": {
+        "url": "https://www.axs.com/events/1621791/terrian-tickets?skin=3ten&_gl=1*1rupeq7*_gcl_aw*R0NMLjE3ODc1OTI3NTguQ2owS0NRancxNl9VQmhDcUFSSXNBSWRPYVh4QnNlMmd5Vjd5NUZFWVRNcWVfQTdPMWlyRDhfd1VXb0RUZUUwUDNCVjdaMklNT2p5Rm40QWFBcHNURUFMd193Y0I.*_gcl_dc*R0NMLjE3ODc1OTI3NTg",
+        "at": "AXS"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Mass of The Fermenting Dregs",
+      "day": "May",
+      "date": "2027-05-05",
+      "venue": "Mohawk",
+      "doors": "6:30 PM",
+      "billedAs": "MASS OF THE FERMENTING DREGS",
+      "tickets": {
+        "url": "https://etix.prf.hn/click/camref:1011l3GdWo/pubref:dostuff/destination:https%3A%2F%2Fwww.etix.com%2Fticket%2Fp%2F79441060%2Fmass-of-the-fermenting-dregs-iwaouthe-tour-austin-resound-presents",
+        "at": "Etix"
+      },
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Chris Mitchell",
+      "day": "May",
+      "date": "2027-05-09",
+      "venue": "Scoot Inn",
+      "doors": "5 PM",
+      "billedAs": "Chris Mitchell: Begging for Sax II",
+      "sources": [
+        "venue"
+      ]
+    },
+    {
+      "name": "Niall Horan",
+      "day": "May",
+      "date": "2027-05-14",
+      "venue": "Moody Center",
+      "doors": "7:30 PM",
+      "tickets": {
+        "url": "https://www.ticketmaster.com/event/3A0064A7E5175AFD?CAMEFROM=CFC_MOODY_CENTER_WEB_MOODYSITE_NIALLHORAN",
+        "at": "Ticketmaster"
+      },
+      "sources": [
+        "venue"
+      ]
+    }
+  ],
+  "dayMeta": {
+    "September": {
+      "date": "Sep 2026"
+    },
+    "October": {
+      "date": "Oct 2026"
+    },
+    "November": {
+      "date": "Nov 2026"
+    },
+    "December": {
+      "date": "Dec 2026"
+    },
+    "January": {
+      "date": "Jan 2027"
+    },
+    "February": {
+      "date": "Feb 2027"
+    },
+    "March": {
+      "date": "Mar 2027"
+    },
+    "April": {
+      "date": "Apr 2027"
+    },
+    "May": {
+      "date": "May 2027"
+    }
+  },
+  "venues": {
+    "3TEN": "https://maps.google.com/?q=3TEN+ACL+Live,+310+Willie+Nelson+Blvd,+Austin",
+    "ACL Live": "https://maps.google.com/?q=ACL+Live+at+the+Moody+Theater,+310+W+Willie+Nelson+Blvd,+Austin",
+    "Antone's": "https://maps.google.com/?q=Antone's+Nightclub,+305+E+5th+St,+Austin",
+    "Brushy Street": "https://maps.google.com/?q=Brushy+Street+Commons,+Austin",
+    "Concourse Project": "https://maps.google.com/?q=The+Concourse+Project,+8509+Burleson+Rd,+Austin",
+    "Continental Club": "https://maps.google.com/?q=The+Continental+Club,+1315+S+Congress+Ave,+Austin",
+    "Emo's": "https://maps.google.com/?q=Emo's+Austin,+2015+E+Riverside+Dr,+Austin",
+    "Germania Amphitheater": "https://maps.google.com/?q=Germania+Insurance+Amphitheater,+9201+Circuit+of+the+Americas+Blvd,+Austin",
+    "Kingdom": "https://maps.google.com/?q=Kingdom+Nightclub,+Austin",
+    "Mohawk": "https://maps.google.com/?q=Mohawk+Austin,+912+Red+River+St,+Austin",
+    "Moody Amphitheater": "https://maps.google.com/?q=Moody+Amphitheater+at+Waterloo+Park,+Austin",
+    "Moody Center": "https://maps.google.com/?q=Moody+Center,+2001+Robert+Dedman+Dr,+Austin",
+    "Scoot Inn": "https://maps.google.com/?q=Historic+Scoot+Inn,+1308+E+4th+St,+Austin",
+    "Stubb's": "https://maps.google.com/?q=Stubb's+Waller+Creek+Amphitheater,+801+Red+River+St,+Austin",
+    "Vulcan Gas Co.": "https://maps.google.com/?q=Vulcan+Gas+Company,+418+E+6th+St,+Austin"
+  },
+  "meta": {
+    "announcementStatus": "scheduled",
+    "researchedAt": "2026-09-24",
+    "sources": [
+      "https://do512.com/",
+      "venue calendars (study, 2026-09-24)"
+    ],
+    "note": "SEED for the view builder: 2026-09-24 venue-calendar study data. scripts/season-feed.mjs replaces this with the live feed."
+  },
+  "days": {}
+}
