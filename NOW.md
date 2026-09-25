@@ -1,16 +1,18 @@
 # NOW — festival-navigator
 
-**last-updated: 2026-09-25 (v87 live) · mode: live**
+**last-updated: 2026-09-25 (v88 live) · mode: live**
 
 Where things stand, on one screen. Change stale lines in place; the story of
 how we got here belongs in DEVLOG.md.
 
 ## Live on production
 
-- **v87, from `main`** (PR #26, merged 2026-09-24 11:57 PM PT) on fest /
-  festival / crew.kevinhg.com — confirmed on all three hosts at 12:00 AM PT
-  Fri 2026-09-25 by `curl -s https://fest.kevinhg.com/service-worker.js |
-  grep CACHE_VERSION` (festival-nav-v87, ASSET_STAMP 63f88365).
+- **v88, from `main`** (release PR #31 = #29 + #30 + gate fixes, merged
+  2026-09-25 ~1:20 PM PT) on fest / festival / crew.kevinhg.com — confirmed
+  on all three hosts at 1:24 PM PT by `curl -s
+  https://fest.kevinhg.com/service-worker.js | grep CACHE_VERSION`
+  (festival-nav-v88, ASSET_STAMP 3f537ac1). v87 (PR #26) went out the night
+  before.
 - **Data** (merged under the standing data-only OK): the 2026-09-23 re-read
   (PR #23 — the two Portola Week nights added Sep 17, 21 billed openers, ACL
   Fest Nights per the 9.21 graphic); Thu Club Six's three openers as a
@@ -27,10 +29,17 @@ how we got here belongs in DEVLOG.md.
   zoom that clears the sticky rail and stage strip as well as the dock —
   `claude-plans/2026-09-24-zoom-chrome-build.md`; and an untimed act in a
   timed room is never lit as playing.
-- **v88 in build: error capture to PostHog**, branch `feat/error-capture`;
-  cut line Fri Sep 25 noon CT.
-- Event-page and ticket links: the city-seasons session is building them,
-  for v88 or v89.
+- What v88 carries: event-page and ticket doors in the zoom for every
+  afters, Folsom and Late-nights show ("Event pages and tickets" in
+  `docs/add-a-festival.md`); the app reporting its own errors to the PostHog
+  project "Festival Navigator" (627900) through `js/errlog.js`, crew links
+  and notes scrubbed, a Settings switch —
+  `claude-plans/2026-09-24-analytics/BUILD.md` (design, Eachie audit and the
+  shared Slack message design beside it); no zoom-on-focus on iPhone (iOS
+  alone gets `maximum-scale=1`), no double-tap zoom, the search box shaped
+  like a text field (Kevin, live at Portola). Walked in a real browser; the
+  walk's one bug (a door tapped in the settle beat closed the zoom) is fixed.
+  Kevin's live iPhone check of the no-zoom fix is pending.
 - What v86 carries, each with its spec or build log in `claude-plans/`:
   1. One line per room (`SAT PORTOLA`, `SAT AFTERS`, `TUE LATE NIGHTS`),
      `.day-block` per day — `claude-plans/2026-09-23-one-line-heads.md`.
@@ -59,8 +68,11 @@ how we got here belongs in DEVLOG.md.
 - All Portola Week openers are in (nothing held back): Thu Club Six's
   three (PR #27) and Sun Midway's S.I.M / Espurr / New Nostalgia, the Midway
   three untimed so the four named sets keep their guesses (2026-09-25).
-- Vercel Web Analytics: the page carries the insights tag, but analytics is
-  not enabled on the project — enable it, or remove the tag.
+- PostHog: connect Slack in project 627900 (Settings → Integrations), so the
+  new-error and came-back alerts can post to #eachie-feedback; plus four
+  calls — Sentry stays for Eachie's errors, rename that channel, the shared
+  Slack script's home (an ops/posthog folder proposed), and whether the Eachie
+  session fixes its rollup (eachie-posthog-audit.md beside BUILD.md).
 - Small call with a default: How it works dropped "White stroke = you" (you
   are never in the crew corner now). (A half-width 30-min cell hiding its
   start time once picked cannot happen in any shipped fest: ACL renders each
@@ -71,7 +83,7 @@ how we got here belongs in DEVLOG.md.
 
 ## Next, in order
 
-1. v88 or v89 before ACL (Oct 2), and ACL prep: headliner end times (its
+1. v89 before ACL (Oct 2) with the ACL prep: headliner end times (its
    closers print only a start, so the grid draws them 60 min and NOW stops
    counting them live early — add ends, or run a stage's last endless set to
    the day's close), and the dock's FRI flash on open (ACL lights FRI for
