@@ -1,0 +1,152 @@
+[
+  {
+    "row": 1,
+    "name": "Despacio",
+    "night": "Fri Sep 25",
+    "venue": "Pier 80 (Portola loyalty invite)",
+    "eventPage": "https://www.portolamusicfestival.com/portola-week#despacio-info",
+    "tickets": null,
+    "ticketSeller": null,
+    "evidence": "portolamusicfestival.com/portola-week page content: \"PORTOLA'S 5TH BIRTHDAY DESPACIO EXTRAVAGANZA (SOLD OUT)\" -- onsite at Pier 80 Fri Sep 25, restricted to 5-year AXS FanAccount alumni (4-year alumni who bought passes by Aug 23 also invited), non-refundable/non-transferable, tickets sold as an add-on in qualifying AXS FanAccounts starting Aug 19; now sold out, so no live public buy link."
+  },
+  {
+    "row": 2,
+    "name": "Horse Meat Disco",
+    "night": "Fri Sep 25",
+    "venue": "Public Works",
+    "eventPage": "https://www.tixr.com/groups/publicsf/events/bearracuda-folsom-street-horse-meat-disco-198657",
+    "tickets": "https://www.tixr.com/groups/publicsf/events/bearracuda-folsom-street-horse-meat-disco-198657",
+    "ticketSeller": "tixr",
+    "evidence": "publicsf.com/calendar/ lists this as \"Bearracuda Folsom Street: Horse Meat Disco\" on Sep 25, linking directly to this Tixr event page. Public Works has no separate per-event page of its own -- the venue calendar links straight to Tixr."
+  },
+  {
+    "row": 3,
+    "name": "BRUT SF",
+    "night": "Fri Sep 25",
+    "venue": "DNA Lounge",
+    "eventPage": "https://www.dnalounge.com/calendar/2026/09-25.html",
+    "tickets": "https://www.dnalounge.com/calendar/2026/09-25.html",
+    "ticketSeller": "dnalounge (venue box office)",
+    "evidence": "DNA Lounge's own calendar page, titled \"Brüt SF: Folsom Friday\", 9pm-3am, 21+. Tickets are sold directly by DNA Lounge via an embedded order form on that same page (Gen Adm $70+fees, VIP $85+fees) -- no separate ticket-vendor URL exists."
+  },
+  {
+    "row": 4,
+    "name": "Magnitude",
+    "night": "Sat Sep 26",
+    "venue": "SVN West",
+    "eventPage": "https://www.dothebay.com/events/2026/9/26/magnitude-the-saturday-night-main-event-of-folsom-street-fair-tickets",
+    "tickets": "https://www.eventbrite.com/e/magnitude-2026-the-saturday-night-main-event-of-folsom-street-fairtm-tickets-1894668557659",
+    "ticketSeller": "eventbrite",
+    "evidence": "DoTheBay event JSON (.json endpoint) confirms venue SVN West, Sep 26 9pm-4am, presented by Brian Kent Productions; buy_url is an affiliate redirect to this Eventbrite listing (id 1894668557659), cleaned to the direct Eventbrite URL."
+  },
+  {
+    "row": 5,
+    "name": "PERVERT XXL",
+    "night": "Sat Sep 26",
+    "venue": "The Midway",
+    "eventPage": "https://www.dothebay.com/events/2026/9/26/xoxo-and-matinee-presents-pervert-xxl-folsom-edition-tickets",
+    "tickets": "https://www.tixr.com/groups/midwaysf/events/xoxo-and-matin-e-presents-pervert-xxl-folsom-edition-207997",
+    "ticketSeller": "tixr",
+    "evidence": "DoTheBay event JSON confirms title \"XOXO and MATINÉ presents PERVERT XXL FOLSOM EDITION\", venue The Midway, Sep 26 10pm; buy_url points directly to this Tixr event."
+  },
+  {
+    "row": 6,
+    "name": "Folsom Street Fair",
+    "night": "Sun Sep 27",
+    "venue": "Folsom St, 8th-13th",
+    "eventPage": "https://www.folsomstreet.org/",
+    "tickets": null,
+    "ticketSeller": null,
+    "evidence": "DoTheBay event JSON for \"Folsom Street Fair 2026\" confirms is_free=true, ticket_info \"FREE, 18+\", 11am-6pm Sep 27, buy_url points to folsomstreet.org. It's a free street fair (suggested donation at gates, not a ticket)."
+  },
+  {
+    "row": 7,
+    "name": "DEVIANTS",
+    "night": "Sun Sep 27",
+    "venue": "SVN West",
+    "eventPage": "https://www.eventbrite.com/e/deviants-adult-arcade-the-folsom-street-fair-afterparty-tickets-1995206717000",
+    "tickets": "https://www.eventbrite.com/e/deviants-adult-arcade-the-folsom-street-fair-afterparty-tickets-1995206717000",
+    "ticketSeller": "eventbrite",
+    "evidence": "48hills.org's Folsom weekend parties roundup (48hills.org/2026/09/score-a-pair-of-tickets-to-these-naughty-folsom-street-fair-parties/) lists \"DEVIANTS\" -- full title \"Deviants: Adult Arcade -- The Folsom Street Fair Afterparty\" -- Sunday Sep 27, SVN West, 7pm-2am, \"climax of Folsom Weekend\" post-fest party, linking to this Eventbrite listing. Verified the Eventbrite URL resolves live (HTTP 200). SVN West itself is a bare rental venue with no own per-event pages (it's an NPU/Non Plus Ultra venue, confirmed on svnwest.com)."
+  },
+  {
+    "row": 8,
+    "name": "Real Bad 37",
+    "night": "Sun Sep 27",
+    "venue": "1015 Folsom",
+    "eventPage": "https://www.realbad.org/real-bad",
+    "tickets": null,
+    "ticketSeller": null,
+    "evidence": "REAL BAD's own official site (realbad.org/real-bad, reached via their Linktree instagram bio link): \"REAL BAD 37, SUNDAY, SEPTEMBER 27, 2026, 8 PM - 5 AM | 1015 FOLSOM\" -- a benefit circuit party for the Grass Roots Gay Rights Foundation. Ticket info section states plainly: \"REAL BAD is sold out. There will be no additional tickets available at the door.\" Tickets were distributed two ways, both now closed: (1) free codes from individual Hosts redeemable on Eventbrite, codes expired Sep 1; (2) limited in-person advance sales at the Folsom Street Community Center on Sep 5. No live public buy link exists, so tickets = null. Not found on DoTheBay, Funcheap, or 1015.com's own site/sitemap -- this is an invite/host-network-ticketed party, not conventionally publicly listed."
+  },
+  {
+    "row": 9,
+    "name": "Disco Daddy",
+    "night": "Sun Sep 27",
+    "venue": "SF Eagle",
+    "eventPage": "https://www.sf-eagle.com/events/disco-daddy-folsom/",
+    "tickets": null,
+    "ticketSeller": null,
+    "evidence": "SF Eagle's own site: /events/disco-daddy-folsom/, title \"Disco Daddy Folsom\", Sunday Sep 27, 7 PM - 2 AM at SF Eagle (398 12th St). Page's structured data (schema.org Event) has no \"offers\"/price field, and the page shows only Time/Where/Add-to-calendar -- no ticket link or price anywhere on the page, consistent with SF Eagle's usual free/door-cover bar events. Treated as free/door -- tickets = null."
+  },
+  {
+    "row": 10,
+    "name": "The Hellp",
+    "night": "Fri Sep 25",
+    "venue": "The Midway",
+    "eventPage": "https://www.axs.com/events/1617567/the-hellp-dj-set-bassvictim-dj-set-tickets",
+    "tickets": "https://www.tixr.com/groups/midwaysfgv/events/goldenvoice-presents-the-hellp-dj-set-bassvictim-dj-set-more-207362",
+    "ticketSeller": "tixr",
+    "evidence": "Official Portola Week AEG data feed (aegwebprod.blob.core.windows.net/json/tours/14/11058/tours.json, eventId 1617567): title \"The Hellp (DJ Set) & Bassvictim (DJ Set)\" with \"DJ Chaotic Ugly, Izzy Camina\" as supporting acts, billed as the \"Portola Pre-Party\" presented by Goldenvoice, venue The Midway (900 Marin St, SF), Fri Sep 25 10pm, 21+, created/announced 2026-09-17 (matches the prompt's 'added Sep 17'). eventUrl (AXS) used as event page, ticketURL (Tixr) used as tickets."
+  },
+  {
+    "row": 11,
+    "name": "Bassvictim",
+    "night": "Fri Sep 25",
+    "venue": "The Midway",
+    "eventPage": "https://www.axs.com/events/1617567/the-hellp-dj-set-bassvictim-dj-set-tickets",
+    "tickets": "https://www.tixr.com/groups/midwaysfgv/events/goldenvoice-presents-the-hellp-dj-set-bassvictim-dj-set-more-207362",
+    "ticketSeller": "tixr",
+    "evidence": "Same event as row 10 (one night, one bill) -- see row 10 evidence. Bassvictim is co-headliner."
+  },
+  {
+    "row": 12,
+    "name": "DJ Chaotic Ugly",
+    "night": "Fri Sep 25",
+    "venue": "The Midway",
+    "eventPage": "https://www.axs.com/events/1617567/the-hellp-dj-set-bassvictim-dj-set-tickets",
+    "tickets": "https://www.tixr.com/groups/midwaysfgv/events/goldenvoice-presents-the-hellp-dj-set-bassvictim-dj-set-more-207362",
+    "ticketSeller": "tixr",
+    "evidence": "Same event as row 10 (one night, one bill) -- see row 10 evidence. DJ Chaotic Ugly is a supporting act per the official feed's \"supportingText\" field."
+  },
+  {
+    "row": 13,
+    "name": "Izzy Camina",
+    "night": "Fri Sep 25",
+    "venue": "The Midway",
+    "eventPage": "https://www.axs.com/events/1617567/the-hellp-dj-set-bassvictim-dj-set-tickets",
+    "tickets": "https://www.tixr.com/groups/midwaysfgv/events/goldenvoice-presents-the-hellp-dj-set-bassvictim-dj-set-more-207362",
+    "ticketSeller": "tixr",
+    "evidence": "Same event as row 10 (one night, one bill) -- see row 10 evidence. Izzy Camina is a supporting act per the official feed's \"supportingText\" field."
+  },
+  {
+    "row": 14,
+    "name": "Boys Noize",
+    "night": "Sat Sep 26",
+    "venue": "888 Garage",
+    "eventPage": "https://www.axs.com/events/1617573/boys-noize-special-guests-tickets",
+    "tickets": "https://tixr.com/e/207359",
+    "ticketSeller": "tixr",
+    "evidence": "Official Portola Week AEG data feed (same tours.json, eventId 1617573): title \"Boys Noize & Special Guests\", billed as the \"Portola After Party\" presented by Goldenvoice, venue 888 Garage (888 Marin St, SF -- confirmed via venue record, keywords include \"888 Warehouse\"), Sat Sep 26 10pm, 21+, created/announced 2026-09-17 (matches 'added Sep 17'). Feed's raw ticketURL had a stray trailing period (\"https://tixr.com/e/207359.\"); verified the clean URL redirects (301) to a live www.tixr.com/e/207359 page."
+  },
+  {
+    "row": 15,
+    "name": "Despacio",
+    "night": "Sat & Sun",
+    "venue": "Portola festival grounds, Pier 80",
+    "eventPage": null,
+    "tickets": "https://www.axs.com/events/1434447/portola-2026-tickets?skin=portola",
+    "ticketSeller": "axs",
+    "evidence": "48hills.org's \"Our Portola Fest 2026 Hot List\" (48hills.org/2026/09/our-portola-fest-2026-hot-list/) confirms: \"don't sleep on genius 50,000-watt dance experience Despacio throughout the wild weekend\" at the main festival. No dedicated page exists on portolamusicfestival.com -- the site's lineup/stage info is rendered client-side by a JS widget (events.aegamp.com) with no discoverable per-stage URL (tried /lineup/despacio, which just falls back to homepage content, not a real page). Attending requires the general festival pass, so tickets points to the main AXS Portola 2026 ticket page rather than a Despacio-specific link."
+  }
+]

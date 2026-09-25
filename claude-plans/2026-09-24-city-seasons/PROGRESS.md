@@ -234,3 +234,21 @@ missing data.
   the page as https://claude.ai/artifact/HsB9FmNeWgAiKRXJkoLYbL (owned by
   kevn.hg@gmail.com; `build.mjs` now also writes a wrapper-free publish
   copy outside the repo).
+- ~11:00 PM PT: Kevin's ten notes on the direction page, pieced together
+  from his screenshots: `KEVIN-NOTES-ROUND1.md` (the page's login had
+  switched away from this session). At ~12:05 AM he said go: event links
+  split with the pre-Portola session (this session builds, that one
+  releases); the season becomes A's month tabs in the lineup layout, one
+  card per artist, A's next-morning Slack alert, and a YOURS tab only for
+  people with Spotify connected.
+- ~12:05 AM PT Fri: signup pages for the Ticketmaster and JamBase developer
+  keys opened in Kevin's Kevn Chrome profile; he created both accounts. The
+  keys are masked on screen and this session can only read the screen, so
+  saving them to `~/.env` waits for him to paste them.
+- ~1 AM PT: event links built on branch `feat/event-links` (worktree
+  `.claude/worktrees/event-links`, from main after v87 merged as d4669bd):
+  every Portola afters/Folsom night (72) and ACL Late night (66) carries
+  `page`, and 120 carry `tickets`; the zoom shows "Tix @ AXS · Info @
+  DoTheBay" under the place line; the validator and
+  `docs/add-a-festival.md` cover the fields; 829 unit tests green. Link
+  sources and the prep script: `data/event-links/`.
