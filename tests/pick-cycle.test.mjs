@@ -50,7 +50,7 @@ const ctx = {
   onOpenNotes: (a) => { ctx.opened.push(a); },
 };
 // The real handleTap (js/v3/app.js:136-158) + applyLocalPick (:161-166),
-// minus the migration guard / undo-toast / sync.scheduleSync (not what this
+// minus the migration guard / sync.scheduleSync (not what this
 // test is checking): advance MY level, write it into the pending change AND
 // the local doc — the same two-write shape app.js uses — then refresh every
 // matching card in the DOM. Deliberately re-queries the wall for the CURRENT

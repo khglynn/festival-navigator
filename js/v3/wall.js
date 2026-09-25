@@ -1,6 +1,6 @@
 // The wall — v3's main screen (atlas 21c/21d, lineup mode). Renders day
-// sections of aura cards from the live crew doc, owns the tap cycle with the
-// undo toast, search/sort, and the mobile dock's scrollspy.
+// sections of aura cards from the live crew doc, owns the tap cycle, the
+// toasts, search/sort, and the mobile dock's scrollspy.
 //
 // SECURITY RULE (Codex P2 gate, finding 6): every artist name, person name,
 // and note text in this file goes through textContent / createElement — no

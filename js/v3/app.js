@@ -357,7 +357,8 @@ function handleTap(artistName) {
   refreshArtistCards(artistName);
   sync.scheduleSync();
   // No undo toast when a must clears (Kevin, 2026-09-25: "unnecessary for
-  // removing a must. it's not that destructive"): one more tap brings it back.
+  // removing a must. it's not that destructive"): tapping again starts the
+  // cycle over from the first bar.
 }
 
 // recordSelection writes pending; mirror into the local doc for instant render.

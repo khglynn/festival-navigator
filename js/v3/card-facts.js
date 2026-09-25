@@ -1040,6 +1040,7 @@ export const DOOR_SETTLE_MS = 700;
 const ZOOM_DOORS = 'a.f-link, a.f-where, a.f-order, a.f-cancel';
 function unzoomInner({ instant = false, why = 'unspecified' } = {}) {
   if (!zoomed) return;
+  overlayPressAt = -Infinity; // a press on this zoom never shields the next one
   // Kevin's "every click closes the hover" journaled itself as NOTHING —
   // no throw, so one of these legitimate close paths fires wrongly on his
   // machine. Every close names its cause; only the click-adjacent ones are
@@ -1198,6 +1199,9 @@ function wireSlot(z) {
   card.addEventListener('pointerdown', () => { if (typeof performance !== 'undefined') overlayPressAt = performance.now(); });
   card.addEventListener('mousedown', (e) => {
     lastOverlayPress = Date.now();
+    // Also here: on iOS this mousedown comes when the finger LIFTS, right
+    // before the focus move, so a slow tap still lands inside the grace.
+    if (typeof performance !== 'undefined') overlayPressAt = performance.now();
     if (isOwnControl(e.target)) return;
     e.preventDefault();
   });
