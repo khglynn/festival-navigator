@@ -1,5 +1,10 @@
 # City seasons canvas — working notes (2026-09-24)
 
+Published 2026-09-24 as https://claude.ai/artifact/HsB9FmNeWgAiKRXJkoLYbL
+(owned by kevn.hg@gmail.com). Republish from this session with the same
+file path, or from anywhere with `art publish HsB9FmNeWgAiKRXJkoLYbL <file>`,
+using the wrapper-free copy `build.mjs` writes to `PUBLISH_OUT`.
+
 Brief: `BRIEF.md` beside this file. Rig forked from
 `claude-plans/2026-09-23-rating-canvas/`.
 

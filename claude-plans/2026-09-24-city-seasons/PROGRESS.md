@@ -1,16 +1,68 @@
 # City seasons: progress
 
-**last-updated: 2026-09-24 ~2:25 PM PT · status: rolling (sources study under way)**
+**last-updated: 2026-09-24 ~6:45 PM PT · status: your move (pick a direction)**
 
-*(Times here are Pacific, from this Mac's clock; you're likely in SF for
-Portola. The brief's "CT" stamps look like Pacific too.)*
+*(Times are Pacific, from this Mac's clock.)*
 
 ## For Kevin: where this stands
 
-Just started. The session opened at about 2:10 PM PT on 2026-09-24 while
-you were away. Below is my read-back of the project and five questions; each
-has a default, so the sources study keeps moving without you. Nothing is
-built and nothing will be until you pick a direction.
+You asked for a way to never miss another MUNA: Austin's shows by month,
+saved and bought through the app, plus an alert when an artist you love is
+announced here. Nothing is built into the app. What exists is the research
+and a page to choose from.
+
+1. **Why you missed MUNA.** It was announced May 8, went on sale May 14, and
+   never sold out: 134 days of notice. Ticketmaster, JamBase and Do512 listed
+   it within about a day. The listings were there; nothing told you.
+2. **Where the shows should come from.** I checked nine sources against what
+   16 Austin venues list on their own calendars (468 shows, Sep through May).
+   a. Do512 is the base: it had 84% and was wrong twice. It's an independent
+      Austin company, and its buy links already pay it a referral.
+   b. It's weaker for shows after Nov 23 (68%), so a second source is needed.
+      JamBase (independent, free developer tier) is the leading candidate;
+      together they had 93%.
+   c. Ticketmaster's free API gives presale and on-sale times for the rooms
+      it sells (Moody Center, Stubb's, Emo's and similar).
+   d. Bandsintown feeds Spotify's listings and graded well, but its API is
+      only for one artist's own site, so it's out unless they agree.
+   e. Codex reviewed the study and caught real scoring flaws; they're fixed
+      and the numbers above are the corrected ones. Full study: `STUDY.md`.
+3. **The alert.** It should check a daily Austin feed against your artists
+   (Spotify likes and follows, plus your fest picks), reading full lineups,
+   plus a short watchlist of your top artists checked through their own
+   pages. Artist pages alone don't work: they only show the next eight or so
+   dates.
+4. **The direction page:** https://claude.ai/artifact/HsB9FmNeWgAiKRXJkoLYbL
+   (lives in your kevn.hg@gmail.com login). Every card on it is the app's own
+   code with the real Austin shows.
+   a. It shows what today's app draws with Austin fed in unchanged, then three
+      ways in: **A · the month** (browse first; a Slack message the morning
+      after a match), **B · yours** (a YOURS tab of your artists' Austin
+      dates; weekly digest), **C · this week** (the next seven nights first).
+   b. Each has its Slack alert drawn on MUNA's real dates, a phone and a
+      laptop version, and a note on what it costs to build.
+   c. The builder's pick is B's YOURS tab with A's next-morning alert, with
+      YOURS as one list. I lean the same way: the alert is what saves the
+      next MUNA, and YOURS gives it somewhere to land in the app.
+5. **One decision to settle before anything ships:** picks are saved under
+   an artist's name today, so Bleachers' two Austin nights would light up
+   together. A season needs its own id per show (`THINKING.md` §2).
+
+## Need from you
+
+1. **Answer the four questions at the bottom of the direction page**, by
+   number (for example "1: B + A's alert, 2: Slack, 3: per show, 4: yes").
+   They are: which way in, where alerts land, one card per show or per
+   artist, and whether I can ask Do512 and sign up for the free keys.
+2. **If you answer 4 with yes:** the JamBase and Ticketmaster developer keys
+   need your personal email to sign up (data.jambase.com and
+   developer.ticketmaster.com), a couple of minutes each. I'll draft the
+   Do512 email for you to send; it goes out under your name, so nothing is
+   sent until you've read it.
+
+Once you've answered, I'll test the real JamBase and Ticketmaster APIs
+against this same scorer, then write the build plan. Nothing ships before
+Oct 11 (after ACL), and production promotion stays your call.
 
 ## My read-back
 
@@ -51,7 +103,7 @@ job. MUNA's show was on sale for months (the study will find exactly how
 long), which suggests the miss was about nothing telling you, more than about
 missing data.
 
-## Questions for you (each has a default I'm using until you answer)
+## Earlier questions (defaults were used; the page's "Your call" replaces them)
 
 1. **Which Austin rooms do you actually go to?** The study's ground truth is
    built from venue calendars, so the venue list shapes the answer.
@@ -172,3 +224,13 @@ missing data.
   reverted: it added 31 support acts as if they were separate shows.
 - Final numbers: Do512 84% (68% after Nov 23), Bandsintown 81%, JamBase 74%;
   Do512 + JamBase 93% (93% after Nov 23); Do512 + Bandsintown 95%.
+- ~6:30 PM PT: the canvas builder (Opus) finished: `canvas/canvas.html`
+  built from production code, checked in headless Chromium at 390 and
+  1280, no console errors, no page overflow. Its honest read is in
+  `canvas/NOTES.md`. It then stopped on a usage limit after reporting;
+  nothing was lost (its six commits are on the branch).
+- ~6:40 PM PT: I looked at the phone sections once (intro, A, B, "Your
+  call"), softened one freshness line to what was measured, and published
+  the page as https://claude.ai/artifact/HsB9FmNeWgAiKRXJkoLYbL (owned by
+  kevn.hg@gmail.com; `build.mjs` now also writes a wrapper-free publish
+  copy outside the repo).

@@ -242,4 +242,17 @@ ${runtime}
 </html>
 `;
 writeFileSync(`${HERE}canvas.html`, html);
+// The Artifact host wraps a page in its own doctype, head and body, so the
+// published copy is the same page without them (canvas.html keeps them, so a
+// local file:// check renders in standards mode, not quirks).
+const fragment = html
+  .replace(/^<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n/, '')
+  .replace('</head>\n<body>\n', '')
+  .replace(/<\/body>\n<\/html>\n$/, '');
+if (/<\/?(html|head|body)\b|<!doctype/i.test(fragment.slice(0, 2000) + fragment.slice(-200))) throw new Error('publish.html still carries a document wrapper');
+// Written outside the repo (PUBLISH_OUT, default the system temp dir): it is
+// a build product for one publish, not something to commit.
+const publishOut = process.env.PUBLISH_OUT || (await import('node:os')).tmpdir();
+writeFileSync(`${publishOut}/city-seasons-canvas.html`, fragment);
+console.log(`publish copy: ${publishOut}/city-seasons-canvas.html`);
 console.log(`canvas.html: ${(html.length / 1024).toFixed(0)} KB (bundle ${(bundle.length / 1024).toFixed(0)} KB, ${season.artists.length} shows, ${season.artists.filter((a) => a.buy).length} with the venue's own buy link, ${onSales} on-sale times)`);
