@@ -106,6 +106,13 @@ export default async function handler(req, res) {
     if (!candidate) return res.status(502).json({ error: 'Research returned no usable data — try again or add manually' });
     if (candidate.notFound) return res.status(404).json({ error: 'Could not find that festival', closest: (candidate.closest || []).slice(0, 5) });
 
+    // A show's page and ticket links are data a person checked, never something
+    // research writes: a page the model read could steer it to a look-alike
+    // ticket site that would then read "Tix @ Ticketmaster" to the whole crew
+    // (the review of the links row, 2026-09-25).
+    for (const a of Array.isArray(candidate.artists) ? candidate.artists : []) {
+      if (a && typeof a === 'object') { delete a.page; delete a.tickets; }
+    }
     const { errors, warnings } = validateFestivalDoc(candidate);
     if (errors.length) return res.status(502).json({ error: `Research result failed validation: ${errors[0]}` });
     return res.status(200).json({ candidate, warnings, sources: result.sources || [] });

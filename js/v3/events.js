@@ -512,3 +512,43 @@ export function findEventEntry(fest, name, occ) {
     && (occOf(a).stage || '') === want) || null;
 }
 
+
+// ---- A show's doors out: its page and its tickets (Kevin, 2026-09-24) ------------
+// "when it's afters or shows like this I naturally want to click through to
+// the event page. we have tix but do those always have details… and what
+// about before tix are available." So a show that is not the festival's own
+// set can carry two links, each `{ url, at }`, and the zoom says each in
+// Kevin's words ("For all of these lets do 'Tixs @ [location]' - tigher and
+// clearer"):
+//
+//   `page`    the show's own page for people — details, the whole bill, and
+//             the one place to look before tickets exist: "Info @ DoTheBay".
+//   `tickets` the buy link exactly as the listing printed it (a referral tag
+//             stays: it pays the small company that listed the show) and the
+//             seller it lands on: "Tix @ AXS".
+//
+// `at` is data, never parsed from the URL at render: a referral wrapper hides
+// the seller's domain, and a venue's domain is not its name. Both URLs must
+// be https (the validator refuses anything else). A cancelled show keeps its
+// page (what happened, refunds) and loses its tickets. When the page IS the
+// ticket page, one door says it. An entry without links has no doors, which
+// is every festival grid set.
+const httpsUrl = (u) => (typeof u === 'string' && /^https:\/\/[^\s]+$/.test(u) ? u : null);
+const linkOf = (l, kind, word) => {
+  if (!l || typeof l !== 'object' || !httpsUrl(l.url)) return null;
+  const at = typeof l.at === 'string' ? l.at.trim() : '';
+  return at ? { kind, text: `${word} @ ${at}`, url: l.url } : null;
+};
+const sameTarget = (a, b) => {
+  try {
+    const x = new URL(a), y = new URL(b);
+    return x.hostname.replace(/^www\./, '') === y.hostname.replace(/^www\./, '') && x.pathname.replace(/\/$/, '') === y.pathname.replace(/\/$/, '');
+  } catch { return false; }
+};
+export function linksOf(entry, { cancelled = false } = {}) {
+  if (!entry) return null;
+  const tix = cancelled ? null : linkOf(entry.tickets, 'tix', 'Tix');
+  const info = linkOf(entry.page, 'info', 'Info');
+  const doors = tix && info && sameTarget(tix.url, info.url) ? [tix] : [tix, info].filter(Boolean);
+  return doors.length ? doors : null;
+}
