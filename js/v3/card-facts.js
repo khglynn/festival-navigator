@@ -157,12 +157,23 @@ export function factsFor(artistName, ctx, occ = null) {
 // (Kevin's call: one pick per artist). Only a season's shows carry these; a
 // festival's zoom is exactly what it was.
 const BILL_MAX = 3;
+// The billing as the listing printed it, when it changes what the show is —
+// "ACL TV Taping: Lola Young", "Olivia Rodrigo Night", "she's green w/
+// Witches Exist & smush" (Witches Exist is the support). A billing that just
+// leads with the artist's own name ("Denis O'Donnell at Hole in the Wall")
+// says nothing the card does not, so it stays quiet. Compared folded:
+// case, accents and the curly apostrophe a source prints for a straight one.
+const plain = (s) => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[‘’]/g, "'").toLowerCase().trim();
 function billOf(entry) {
+  const lines = [];
+  if (typeof entry.billedAs === 'string' && entry.billedAs.trim() && !plain(entry.billedAs).startsWith(plain(entry.name))) lines.push(entry.billedAs.trim());
   const w = Array.isArray(entry.with) ? entry.with.filter((s) => typeof s === 'string' && s.trim()).map((s) => s.trim()) : [];
-  if (!w.length) return null;
-  const shown = w.slice(0, BILL_MAX);
-  const more = w.length - shown.length;
-  return `with ${more ? `${shown.join(', ')} +${more}` : listOf(shown)}`;
+  if (w.length) {
+    const shown = w.slice(0, BILL_MAX);
+    const more = w.length - shown.length;
+    lines.push(`with ${more ? `${shown.join(', ')} +${more}` : listOf(shown)}`);
+  }
+  return lines.length ? lines : null;
 }
 // "Fri · Oct 2 · 10 AM" in the season's own zone (Austin's on-sale is Austin's
 // 10 AM wherever you are), or null for a time that does not parse.

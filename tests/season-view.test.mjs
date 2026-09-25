@@ -60,7 +60,8 @@ const SEASON = {
       onSale: '2026-10-02T10:00:00-05:00',
       presales: [{ name: 'Old', start: '2026-09-01T10:00:00-05:00' }, { name: 'Artist Presale', start: '2026-09-30T10:00:00-05:00' }],
     }),
-    show('Sold Right Out', '2026-10-25', 'Parish', { time: '8 PM', soldOut: true, tickets: { url: 'https://www.axs.com/e/2', at: 'AXS' } }),
+    show('Sold Right Out', '2026-10-25', 'Parish', { time: '8 PM', soldOut: true, tickets: { url: 'https://www.axs.com/e/2', at: 'AXS' }, billedAs: 'ACL TV Taping: Sold Right Out' }),
+    show('Denis O\u2019Donnell', '2026-10-27', 'Hole in the Wall', { time: '9 PM', billedAs: "Denis O'Donnell at Hole in the Wall" }),
     show('On Sale Already', '2026-10-26', 'Parish', { time: '8 PM', onSale: '2026-09-01T10:00:00-05:00' }),
     show('First Of November', '2026-11-01', 'Mohawk', { time: '8 PM' }),
     show('New Year Show', '2027-01-15', 'Parish', { time: '8 PM' }),
@@ -232,11 +233,14 @@ test('the zoom: date, start and doors; the bill; the presale still ahead then th
   assert.equal(rich.when, 'Sat · Oct 24 · 8 PM · Doors 7 PM');
   assert.equal(rich.where, 'Mohawk');
   assert.equal(rich.mapUrl, 'https://maps.google.com/?q=Mohawk');
-  assert.equal(rich.bill, 'with Opener One, Opener Two, Opener Three +1');
+  assert.deepEqual(rich.bill, ['with Opener One, Opener Two, Opener Three +1']);
   assert.deepEqual(rich.sale, ['Presale Wed · Sep 30 · 10 AM', 'On sale Fri · Oct 2 · 10 AM'], 'a past presale says nothing');
   assert.deepEqual(rich.links.map((l) => l.text), ['Tix @ Ticketmaster', 'Info @ Do512']);
   assert.equal(rich.also, null);
-  assert.deepEqual(factsFor('Sold Right Out', ctx, occ('Sold Right Out')).sale, ['Sold out']);
+  const sold = factsFor('Sold Right Out', ctx, occ('Sold Right Out'));
+  assert.deepEqual(sold.sale, ['Sold out']);
+  assert.deepEqual(sold.bill, ['ACL TV Taping: Sold Right Out'], 'a billing that changes what the show is');
+  assert.equal(factsFor('Denis O\u2019Donnell', ctx, occ('Denis O\u2019Donnell')).bill, null, 'a billing that only leads with the name stays quiet');
   assert.equal(factsFor('On Sale Already', ctx, occ('On Sale Already')).sale, null, 'an on-sale in the past is not news');
   assert.equal(factsFor('Twice Band', ctx, occ('Twice Band', '2026-10-01')).also, 'Also Tue Oct 20 at Parish');
   assert.equal(factsFor('Twice Band', ctx, occ('Twice Band', '2026-10-20')).also, 'Also Thu Oct 1 at Mohawk');
