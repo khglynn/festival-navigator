@@ -502,34 +502,6 @@
       }
     },
     {
-      "name": "Eric Clapton",
-      "day": "September",
-      "date": "2026-09-25",
-      "venue": "Moody Center",
-      "with": [
-        "Trey Anastasio",
-        "Joe Bonamassa",
-        "Gary Clark Jr.",
-        "Tommy Emmanuel",
-        "Billy F Gibbons",
-        "Buddy Guy",
-        "Ben Haggard",
-        "Sierra Hull"
-      ],
-      "billedAs": "Crossroads Guitar Festival",
-      "page": {
-        "url": "https://www.jambase.com/festival/crossroads-guitar-festival-2026",
-        "at": "JamBase"
-      },
-      "tickets": {
-        "url": "https://ticketmaster.evyy.net/c/252938/264167/4272?u=https://www.ticketmaster.com/artist/768018?venueId=476228",
-        "at": "Ticketmaster"
-      },
-      "sources": {
-        "jambase": "jambase:15980365"
-      }
-    },
-    {
       "name": "Earl Poole Ball",
       "day": "September",
       "date": "2026-09-26",
@@ -626,7 +598,8 @@
       ],
       "sources": {
         "do512": "17155023",
-        "ticketmaster": "G5dIZ_6lDuKiH"
+        "ticketmaster": "G5dIZ_6lDuKiH",
+        "jambase": "jambase:15980365"
       }
     },
     {
@@ -1605,27 +1578,6 @@
       }
     },
     {
-      "name": "Don Was and the Pan-Detroit Ensemble",
-      "day": "September",
-      "date": "2026-09-28",
-      "venue": "Antone's",
-      "billedAs": "TWO NIGHT PASS: Don Was and the Pan-Detroit Ensemble",
-      "tickets": {
-        "url": "https://www.ticketmaster.com/two-night-pass-don-was-and-austin-texas-09-29-2026/event/3A006529CF1AD570",
-        "at": "Ticketmaster"
-      },
-      "onSale": "2026-09-10T22:00:00Z",
-      "presales": [
-        {
-          "name": "Two Day Pass",
-          "start": "2026-09-10T22:01:00Z"
-        }
-      ],
-      "sources": {
-        "ticketmaster": "G5dIZ_3E2kc4Y"
-      }
-    },
-    {
       "name": "Jennifer Foster and the Audacity",
       "day": "September",
       "date": "2026-09-29",
@@ -1714,9 +1666,15 @@
         "at": "Ticketmaster"
       },
       "onSale": "2026-07-24T15:00:00Z",
+      "presales": [
+        {
+          "name": "Two Day Pass",
+          "start": "2026-09-10T22:01:00Z"
+        }
+      ],
       "sources": {
         "do512": "17637360",
-        "ticketmaster": "G5dIZ_2ZOJs0n",
+        "ticketmaster": "G5dIZ_3E2kc4Y",
         "jambase": "jambase:16769573"
       }
     },
@@ -6534,31 +6492,6 @@
       }
     },
     {
-      "name": "Marilyn Manson",
-      "day": "October",
-      "date": "2026-10-20",
-      "venue": "Emo's",
-      "billedAs": "Marilyn Manson - 2 Day Ticket (10/21/26 + 10/22/26)",
-      "tickets": {
-        "url": "https://www.ticketmaster.com/marilyn-manson-2-day-ticket-102126-austin-texas-10-21-2026/event/3A0064ED8E754D7B",
-        "at": "Ticketmaster"
-      },
-      "onSale": "2026-07-24T15:00:00Z",
-      "presales": [
-        {
-          "name": "Artist Presale",
-          "start": "2026-07-22T15:00:00Z"
-        },
-        {
-          "name": "LIVE NATION PRESALE",
-          "start": "2026-07-23T15:00:00Z"
-        }
-      ],
-      "sources": {
-        "ticketmaster": "G5dIZ_CUCqfgD"
-      }
-    },
-    {
       "name": "Mac Sabbath",
       "day": "October",
       "date": "2026-10-21",
@@ -6755,7 +6688,7 @@
       ],
       "sources": {
         "do512": "17633492",
-        "ticketmaster": "G5dIZ_CUGC7Pj",
+        "ticketmaster": "G5dIZ_CUCqfgD",
         "jambase": "jambase:16779939"
       }
     },
@@ -8489,34 +8422,6 @@
       }
     },
     {
-      "name": "AHEE",
-      "day": "October",
-      "date": "2026-10-29",
-      "venue": "Travis County Exposition Center",
-      "with": [
-        "Boogie T",
-        "Crankdat",
-        "Dansyn",
-        "Disco Lines",
-        "DJ Heartstring",
-        "DRINKURWATER",
-        "Faster Horses",
-        "Green Matter"
-      ],
-      "billedAs": "Freaky Deaky",
-      "page": {
-        "url": "https://www.jambase.com/festival/freaky-deaky-2026",
-        "at": "JamBase"
-      },
-      "tickets": {
-        "url": "https://wl.eventim.us/event/Freaky-Deaky-2026/686968?afflky=DiscoDonnieFreakyDeaky",
-        "at": "Eventim"
-      },
-      "sources": {
-        "jambase": "jambase:16214691"
-      }
-    },
-    {
       "name": "The War And Treaty",
       "day": "October",
       "date": "2026-10-30",
@@ -8849,6 +8754,33 @@
       },
       "sources": {
         "do512": "17745725"
+      }
+    },
+    {
+      "name": "Freaky Deaky",
+      "day": "October",
+      "date": "2026-10-30",
+      "venue": "Travis County Exposition Center",
+      "with": [
+        "AHEE",
+        "Boogie T",
+        "Crankdat",
+        "Dansyn",
+        "Disco Lines",
+        "DJ Heartstring",
+        "DRINKURWATER",
+        "Faster Horses"
+      ],
+      "page": {
+        "url": "https://www.jambase.com/festival/freaky-deaky-2026",
+        "at": "JamBase"
+      },
+      "tickets": {
+        "url": "https://wl.eventim.us/event/Freaky-Deaky-2026/686968?afflky=DiscoDonnieFreakyDeaky",
+        "at": "Eventim"
+      },
+      "sources": {
+        "jambase": "jambase:16214691"
       }
     },
     {
@@ -9821,21 +9753,6 @@
       }
     },
     {
-      "name": "They Might Be Giants",
-      "day": "November",
-      "date": "2026-11-05",
-      "venue": "Emo's",
-      "billedAs": "TWO NIGHTS WITH THEY MIGHT BE GIANTS - 2 Day Ticket(11/6/26 + 11/7/26)",
-      "tickets": {
-        "url": "https://www.ticketmaster.com/two-nights-with-they-might-be-austin-texas-11-06-2026/event/3A0064E7CDEA9A03",
-        "at": "Ticketmaster"
-      },
-      "onSale": "2026-07-10T19:00:00Z",
-      "sources": {
-        "ticketmaster": "G5dIZ_CLuBtId"
-      }
-    },
-    {
       "name": "Lenny Pearce",
       "day": "November",
       "date": "2026-11-06",
@@ -9944,7 +9861,7 @@
       ],
       "sources": {
         "do512": "17221993",
-        "ticketmaster": "G5dIZ_FLbUxUb",
+        "ticketmaster": "G5dIZ_CLuBtId",
         "jambase": "jambase:16074318"
       }
     },
@@ -11453,63 +11370,6 @@
       }
     },
     {
-      "name": "Above & Beyond",
-      "day": "November",
-      "date": "2026-11-12",
-      "venue": "Concourse Project",
-      "with": [
-        "Brutalismus 3000",
-        "Chris Lorenzo",
-        "horsegiirL",
-        "KI/KI",
-        "Layton Giordani",
-        "Max Styler",
-        "Porter Robinson",
-        "Sara Landry"
-      ],
-      "billedAs": "Seismic Dance Event",
-      "page": {
-        "url": "https://www.jambase.com/festival/seismic-dance-event-2026",
-        "at": "JamBase"
-      },
-      "tickets": {
-        "url": "https://wl.eventim.us/event/Seismic-Dance-Event-90/672543?afflky=SeismicDanceEvent",
-        "at": "Eventim"
-      },
-      "sources": {
-        "jambase": "jambase:16389373"
-      }
-    },
-    {
-      "name": "Above & Beyond",
-      "day": "November",
-      "date": "2026-11-13",
-      "venue": "Concourse Project",
-      "time": "4 PM",
-      "with": [
-        "Brutalismus 3000",
-        "Chris Lorenzo",
-        "horsegiirL",
-        "KI/KI",
-        "Layton Giordan",
-        "Max Styler",
-        "Porter Robinson",
-        "Sara Landry"
-      ],
-      "billedAs": "Seismic Dance Event 9.0",
-      "page": {
-        "url": "https://do512.com/events/2026/11/13/seismic-dance-event-9-0-tickets",
-        "at": "Do512"
-      },
-      "tickets": {
-        "url": "https://wl.eventim.us/event/Seismic-Dance-Event-90/672543?afflky=SeismicDanceEvent",
-        "at": "Eventim"
-      },
-      "sources": {
-        "do512": "16663393"
-      }
-    },
-    {
       "name": "Earlybirds Club",
       "day": "November",
       "date": "2026-11-13",
@@ -11783,6 +11643,29 @@
       "sources": {
         "do512": "17656956",
         "jambase": "jambase:16773652"
+      }
+    },
+    {
+      "name": "dreamcastmoe",
+      "day": "November",
+      "date": "2026-11-13",
+      "venue": "Radio/East",
+      "time": "8 PM",
+      "with": [
+        "BoomBaptist",
+        "Dj Hot Donna"
+      ],
+      "billedAs": "dreamcastmoe at Radio/East",
+      "page": {
+        "url": "https://www.jambase.com/show/dreamcastmoe-radio-east-20261113",
+        "at": "JamBase"
+      },
+      "tickets": {
+        "url": "https://www.prekindle.com/promo/id/-2852527949038660395?utm_source=jambase",
+        "at": "Prekindle"
+      },
+      "sources": {
+        "jambase": "jambase:17116608"
       }
     },
     {
@@ -13752,27 +13635,6 @@
       }
     },
     {
-      "name": "Dumpstaphunk",
-      "day": "November",
-      "date": "2026-11-26",
-      "venue": "Antone's",
-      "billedAs": "Dumpstaphunk's 5th Annual Phunksgiving - Two Night Pass",
-      "tickets": {
-        "url": "https://www.ticketmaster.com/dumpstaphunks-5th-annual-phunksgiving-two-night-austin-texas-11-27-2026/event/3A006511E6B997E9",
-        "at": "Ticketmaster"
-      },
-      "onSale": "2026-09-18T15:00:00Z",
-      "presales": [
-        {
-          "name": "Two Day Pass",
-          "start": "2026-09-18T15:00:00Z"
-        }
-      ],
-      "sources": {
-        "ticketmaster": "G5dIZ_o6Jm_Lt"
-      }
-    },
-    {
       "name": "KEVONSTAGE",
       "day": "November",
       "date": "2026-11-27",
@@ -13907,12 +13769,12 @@
       "onSale": "2026-09-18T15:00:00Z",
       "presales": [
         {
-          "name": "Artist Presale",
-          "start": "2026-09-17T15:00:00Z"
+          "name": "Two Day Pass",
+          "start": "2026-09-18T15:00:00Z"
         }
       ],
       "sources": {
-        "ticketmaster": "G5dIZ_8TSAvUt",
+        "ticketmaster": "G5dIZ_o6Jm_Lt",
         "jambase": "jambase:17051288"
       }
     },
@@ -15191,34 +15053,6 @@
       }
     },
     {
-      "name": "Thundercat",
-      "day": "December",
-      "date": "2026-12-10",
-      "venue": "Radio/East",
-      "with": [
-        "54 Ultra",
-        "The Two Lips",
-        "Drugdealer",
-        "Sports",
-        "Hannah Cohen",
-        "Twen",
-        "Chinese American Bear",
-        "Mini Trees"
-      ],
-      "billedAs": "Holiday Hootenanny",
-      "page": {
-        "url": "https://www.jambase.com/festival/holiday-hootenanny-2026",
-        "at": "JamBase"
-      },
-      "tickets": {
-        "url": "https://www.prekindle.com/find-tickets/id/-2852527949096852903",
-        "at": "Prekindle"
-      },
-      "sources": {
-        "jambase": "jambase:16741673"
-      }
-    },
-    {
       "name": "Sonic Guild Ball",
       "day": "December",
       "date": "2026-12-11",
@@ -15379,6 +15213,33 @@
       "sources": {
         "do512": "17690338",
         "jambase": "jambase:16836633"
+      }
+    },
+    {
+      "name": "Holiday Hootenanny",
+      "day": "December",
+      "date": "2026-12-11",
+      "venue": "Radio/East",
+      "with": [
+        "Thundercat",
+        "54 Ultra",
+        "The Two Lips",
+        "Drugdealer",
+        "Sports",
+        "Hannah Cohen",
+        "Twen",
+        "Chinese American Bear"
+      ],
+      "page": {
+        "url": "https://www.jambase.com/festival/holiday-hootenanny-2026",
+        "at": "JamBase"
+      },
+      "tickets": {
+        "url": "https://www.prekindle.com/find-tickets/id/-2852527949096852903",
+        "at": "Prekindle"
+      },
+      "sources": {
+        "jambase": "jambase:16741673"
       }
     },
     {
@@ -17700,8 +17561,8 @@
     "Flamingo Cantina": "https://maps.google.com/?q=Flamingo+Cantina%2C+515+E.+Sixth+Street%2C+Austin%2C+TX",
     "Antone's": "https://maps.google.com/?q=Antone's+Nightclub,+305+E+5th+St,+Austin",
     "Kingdom": "https://maps.google.com/?q=Kingdom+Nightclub,+Austin",
-    "Moody Center": "https://maps.google.com/?q=Moody+Center,+2001+Robert+Dedman+Dr,+Austin",
     "Moody Amphitheater": "https://maps.google.com/?q=Moody+Amphitheater+at+Waterloo+Park,+Austin",
+    "Moody Center": "https://maps.google.com/?q=Moody+Center,+2001+Robert+Dedman+Dr,+Austin",
     "Far Out Lounge and Stage": "https://maps.google.com/?q=Far+Out+Lounge+and+Stage%2C+8504+South+Congress%2C+Austin%2C+TX",
     "Sagebrush": "https://maps.google.com/?q=Sagebrush%2C+5500+S+Congress+Ave%2C+Austin%2C+TX",
     "VINYL Beauty Bar": "https://maps.google.com/?q=VINYL+Beauty+Bar%2C+2400+East+Cesar+Chavez+Street%2C+Austin%2C+TX",
@@ -17732,8 +17593,8 @@
     "Sunset Room": "https://maps.google.com/?q=Sunset+Room%2C+310+E+3rd+St%2C+Austin%2C+TX",
     "Meridian": "https://maps.google.com/?q=Meridian%2C+200+Main+Street%2C+Austin%2C+TX",
     "304 E 3rd St": "https://maps.google.com/?q=304+E+3rd+St%2C+304+East+3rd+Street%2C+Austin%2C+TX",
-    "Travis County Exposition Center": "https://maps.google.com/?q=Travis+County+Exposition+Center%2C+7311+Decker+Lane%2C+Austin%2C+TX",
     "LifeAustin Amphitheatre": "https://maps.google.com/?q=LifeAustin+Amphitheatre%2C+8901+TX-71%2C+Austin%2C+TX",
+    "Travis County Exposition Center": "https://maps.google.com/?q=Travis+County+Exposition+Center%2C+7311+Decker+Lane%2C+Austin%2C+TX",
     "Pearl Street Co-Op": "https://maps.google.com/?q=Pearl+Street+Co-Op%2C+2000+Pearl+Street%2C+Austin%2C+TX",
     "Cathedral": "https://maps.google.com/?q=Cathedral%2C+2403+East+16th+Street%2C+Austin%2C+TX",
     "Outer Space at Inn Cahoots": "https://maps.google.com/?q=Outer+Space+at+Inn+Cahoots%2C+1221+East+6th+Street%2C+Austin%2C+TX",
@@ -17756,14 +17617,14 @@
       "https://developer.ticketmaster.com/"
     ],
     "feed": {
-      "generatedAt": "2026-09-25T20:59:41.512Z",
+      "generatedAt": "2026-09-25T21:05:27.717Z",
       "counts": {
         "do512": 403,
         "jambase": 672,
         "ticketmaster": 347,
         "jambaseCalls": 7,
-        "merged": 757,
-        "inAnotherFest": 36,
+        "merged": 751,
+        "inAnotherFest": 37,
         "movedPerJamBaseOnly": 2,
         "keptFromBefore": 0,
         "newlyUnlisted": 0
