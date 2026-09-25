@@ -14,7 +14,7 @@ import { loadPeopleFilter, savePeopleFilter, togglePerson, pruneToActive, loadFo
 import { OUT_MS, CASCADE_MS, STAGGER_MS, EASE_ARRIVE, EASE_LEAVE, EASE_SURFACE, canAnimate } from './motion.js';
 import { scrolledBefore, rememberScrolled, dayOfScrollKey, festivalClock } from './now.js';
 import { dayLabelParts } from '../time.js';
-import { disclosureFold, eqLoader, festRow, seasonsHead } from './tools.js';
+import { disclosureFold, eqLoader, festRow, seasonsHead, listHeadFor } from './tools.js';
 import { openArtistSheet, openDayNotes, openAllNotes, openFestNotes, closeSheet, refreshOpenSheet, sheetChrome, dialogize, rememberOpener, shortDayLabel } from './notes.js';
 import { renderSettings, appSettings, openSubviewByKey } from './settings.js';
 import { onStorageWriteFail, saveLS, errorText } from '../util.js';
@@ -180,7 +180,9 @@ function refreshCtx() {
 // axis is visible; notes.js reads the answer and never re-derives it.
 function festDatesOf() {
   const fest = state.fest();
-  if (!fest) return [];
+  // A city season has no date doors (its months carry no dates), so there is
+  // nothing to list — and no reason to build its model on every tap.
+  if (!fest || isSeason(fest)) return [];
   const out = [];
   const seen = new Set();
   // The fold is stripped too: a hidden day renders nothing on the wall, but a
@@ -461,10 +463,22 @@ function startClock() {
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') tickClock(); });
 }
 function tickClock(date = new Date()) {
+  // A city season's wall is "from today on": when its day turns (a phone
+  // resumed the next morning, or open past 5 AM), yesterday's shows and THIS
+  // WEEK have to go — a repaint, which holds the week you are reading. Only
+  // the day's turn repaints, never the minute.
+  const fest = state.fest();
+  const app = $('screen-app');
+  if (fest && isSeason(fest) && app && app.style.display !== 'none') {
+    const day = festivalClock(ctx.now || date, fest.timezone || null).iso;
+    if (seasonDay && day !== seasonDay) repaintWall();
+  }
   positionNowLines($('wall-root'), date);
   positionNowMarks($('wall-root'), date);
   paintNowTabs(date); // the same minute decides whether NOW is there at all
 }
+// The season day the wall was last drawn for (repaintWall writes it).
+let seasonDay = null;
 
 // ---- NOW: the jump to what is playing (Kevin, 2026-09-24) -------------------------
 // "an option to the left of the days … if you tap it goes to now. A use case
@@ -952,14 +966,17 @@ function yoursMoves(rows, before, had) {
 function renderDayNav() {
   const dock = $('dock-days');
   const rail = $('rail-days');
-  const before = [lefts(dock), lefts(rail)];
+  // Where the tabs stood, for YOURS's arrival — read only on a season: on a
+  // festival it would be a layout read on every repaint for nothing.
+  const season = isSeason(state.fest()) && !ctx.query;
+  const before = season ? [lefts(dock), lefts(rail)] : null;
   dock.textContent = '';
   rail.textContent = '';
   // The wall is painted first on every path that gets here, so it can be the
   // answer to "which days are there": while a search is on, the tabs are the
   // days it answered and nothing else.
   const tabs = dayNavOf(state.fest(), ctx, $('wall-root'));
-  if (isSeason(state.fest()) && !ctx.query) {
+  if (season) {
     const has = tabs.some((t) => t.kind === 'yours');
     const had = !!yoursPainted.get(ctx.fid);
     yoursPainted.set(ctx.fid, has);
@@ -1303,6 +1320,8 @@ function repaintWall() {
   unzoom({ instant: !!keep, why: 'wall repaint' });
   refreshCtx();
   const place = seasonPlace();
+  const fest = state.fest();
+  seasonDay = fest && isSeason(fest) ? festivalClock(ctx.now || new Date(), fest.timezone || null).iso : null;
   renderWall($('wall-root'), ctx);
   holdSeasonPlace(place);
   if (keep) {
@@ -2222,8 +2241,9 @@ function renderLanding() {
     // The seasons come after the festivals (landingPairs orders them), under
     // one small head of their own (UX.md §9), and past festivals after them
     // get theirs back.
-    if (pair.season && group !== 'season') { list.appendChild(seasonsHead()); group = 'season'; }
-    else if (!pair.season && group === 'season') { list.appendChild(seasonsHead(pair.past ? 'Past festivals' : 'Your crews')); group = 'past'; }
+    const turn = listHeadFor(group, pair);
+    if (turn.head) list.appendChild(seasonsHead(turn.head));
+    group = turn.group;
     const row = document.createElement('button');
     row.className = 'fest-row';
     row.style.width = '100%';

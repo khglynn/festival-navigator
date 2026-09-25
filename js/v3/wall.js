@@ -2146,15 +2146,27 @@ export const LOCATION_KEY = 'location:';
 // The locations the show menu has unticked, from the fold (device-local, per
 // fest — never the crew doc: hiding is the viewer's own, CLAUDE.md).
 const hiddenLocationsOf = (ctx) => new Set((ctx.folded || []).filter((k) => typeof k === 'string' && k.startsWith(LOCATION_KEY)).map((k) => k.slice(LOCATION_KEY.length)));
+//
+// Built ONCE per repaint: the wall, the tabs and the show menu all ask within
+// one repaint (it was built three times, review 2026-09-25). The memo holds
+// while every input is the same object or value — the file, the crew doc, the
+// picks and the Spotify map (refreshCtx makes those two afresh each repaint,
+// so a new repaint always builds anew), the day, the search and the fold.
+let seasonMemo = null;
 export function seasonPlanOf(fest, ctx) {
   const today = festivalClock(ctx.now || new Date(), fest.timezone || null).iso;
-  const hidden = hiddenLocationsOf(ctx);
   const q = fold((ctx.query || '').trim());
+  const key = JSON.stringify([today, q, ctx.folded || [], ctx.meName || '', ctx.fid || '']);
+  const m = seasonMemo;
+  if (m && m.fest === fest && m.doc === state.crewDoc && m.picks === ctx.picks && m.affinity === ctx.affinity && m.key === key) return m.plan;
+  const hidden = hiddenLocationsOf(ctx);
   // A search answers by location too: "mohawk" is a question a city season
   // gets, and the answer's card says where (renderSeason).
   const only = q ? (e) => fold(e.name).includes(q) || fold(venueOf(e) || '').includes(q) : null;
   const isYours = q ? null : yoursTestOf(ctx, fest);
-  return { ...seasonModelOf(fest, { today, isYours, only, hidden }), isYours, query: q, hidden };
+  const plan = { ...seasonModelOf(fest, { today, isYours, only, hidden }), isYours, query: q, hidden };
+  seasonMemo = { fest, doc: state.crewDoc, picks: ctx.picks, affinity: ctx.affinity, key, plan };
+  return plan;
 }
 
 // The show menu's rows for a season: one per location with a show from today
@@ -2172,10 +2184,11 @@ function seasonRoomsOf(fest, ctx) {
 // sheet lists no dates for a season.
 function seasonTabsOf(fest, ctx) {
   const plan = seasonPlanOf(fest, ctx);
-  const tab = (key, short, long, kind) => ({ key, dayKey: key, short, num: null, long, iso: null, dates: [], dated: true, grid: false, kind });
+  const tab = (key, short, long, kind, num = null) => ({ key, dayKey: key, short, num, long, iso: null, dates: [], dated: true, grid: false, kind });
   return [
     ...(plan.yours && plan.yours.length ? [tab(SEASON_YOURS, 'YOURS', 'YOURS', 'yours')] : []),
-    ...plan.months.map((m) => tab(m.key, m.short, m.long, 'month')),
+    // A second "SEP" a year on wears its year as the dock tab's number.
+    ...plan.months.map((m) => tab(m.key, m.short, m.long, 'month', m.num || null)),
   ];
 }
 

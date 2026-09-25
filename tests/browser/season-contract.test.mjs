@@ -46,7 +46,7 @@ const FEST = seasonShape({ today: TODAY });
 const LOVED = FEST.artists.filter((_, i) => i % 53 === 7).slice(0, 6).map((a) => a.name);
 const LOVED_AFFINITY = Object.fromEntries([...LOVED, 'Presale Darlings'].map((n, i) => [n, { songs: 2 + i, followed: i % 2 === 0 }]));
 
-async function openSeason({ width, touch = false, spotify = true }) {
+async function openSeason({ width, touch = false, spotify = true, fest = FEST, now = null }) {
   const phone = width < 720;
   const ctx = await browser.newContext({ viewport: { width, height: phone ? 844 : 800 }, hasTouch: touch, serviceWorkers: 'block' });
   const TOKEN = 'seasoncontract_0123456789'; // a made-up crew, never a real link
@@ -69,10 +69,11 @@ async function openSeason({ width, touch = false, spotify = true }) {
     : r.fulfill({ status: 503, contentType: 'application/json', body: '{}' })));
   await ctx.route('**/api/festival-add**', (r) => r.fulfill({ contentType: 'application/json', body: '{"festivals":[]}' }));
   await ctx.route('**/fn-i/**', (r) => r.fulfill({ status: 200, body: '{}' }));
-  await ctx.route('**/data/festivals/austin.json', (r) => r.fulfill({ contentType: 'application/json', body: JSON.stringify(FEST) }));
+  await ctx.route('**/data/festivals/austin.json', (r) => r.fulfill({ contentType: 'application/json', body: JSON.stringify(fest) }));
   const page = await ctx.newPage();
   const errors = [];
   page.on('pageerror', (e) => errors.push(String(e)));
+  if (now) await page.clock.setFixedTime(now);
   await page.goto(`${server.origin}/#g=${TOKEN}`, { waitUntil: 'load' });
   await page.waitForSelector('#screen-app', { state: 'visible', timeout: 20000 });
   await page.waitForFunction(() => document.querySelectorAll('#wall-root .day-block[data-kind="month"] .card').length > 100, null, { timeout: 20000 });
@@ -278,6 +279,28 @@ test('390: the fest name opens the locations — a tap hides one and the menu st
     await page.touchscreen.tap(20, 200);
     await sleep(400);
     assert.equal((await read()).open, false, 'a tap outside closes it');
+    assert.deepEqual(errors, []);
+  } finally { await ctx.close(); }
+});
+
+test('390: when Austin’s day turns (5 AM), a phone that comes back to the page drops yesterday’s shows and moves THIS WEEK', { skip }, async () => {
+  // Monday 2026-10-05, 4:58 AM in Austin: still Sunday night's festival day.
+  const fest = seasonShape({ today: '2026-10-04' });
+  const { ctx, page, errors } = await openSeason({ width: 390, touch: true, spotify: false, fest, now: new Date('2026-10-05T04:58:00-05:00') });
+  const read = () => page.evaluate(() => ({
+    sunday: [...document.querySelectorAll('#wall-root .card')].filter((c) => JSON.parse(c.dataset.occ).date === '2026-10-04').length,
+    head: document.querySelector('#wall-root .day-block[data-kind="month"] .room-head')?.textContent,
+  }));
+  try {
+    const before = await read();
+    assert.ok(before.sunday > 0, 'Sunday night is still on at 4:58 AM');
+    assert.equal(before.head, 'OCT 4This week');
+    await page.clock.setFixedTime(new Date('2026-10-05T05:02:00-05:00'));
+    await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+    await sleep(500);
+    const after = await read();
+    assert.equal(after.sunday, 0, 'yesterday is gone');
+    assert.equal(after.head, 'OCT 5 – 11This week', 'and THIS WEEK is the new week');
     assert.deepEqual(errors, []);
   } finally { await ctx.close(); }
 });

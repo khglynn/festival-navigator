@@ -15,7 +15,7 @@ import { LEVEL_LABELS_V4 } from '../parse.js';
 import { hslOf } from './palette.js';
 import { colorIndexOf, roomOf } from './wall.js';
 import { record } from '../errlog.js';
-import { runFactsOf, findEventEntry, shortDateLabel, shortDate, dateOf, venueOf, isCancelled, cancelledNames, linksOf, isSeason, weekdayOfIso } from './events.js';
+import { runFactsOf, findEventEntry, shortDateLabel, shortDate, dateOf, venueOf, isCancelled, cancelledNames, linksOf, isSeason, weekdayOfIso, entriesNamed, isUnlisted } from './events.js';
 import { festivalClock } from './now.js';
 import { GROW_MS, CONTENT_FADE_MS, OUT_MS, CASCADE_MS, STAGGER_MS, REFRESH_MS, EASE_ARRIVE, EASE_LEAVE, EASE_SURFACE, canAnimate } from './motion.js';
 import { whoSnapshot, whoMotion, whoSettle } from './who-motion.js';
@@ -179,13 +179,20 @@ function billOf(entry) {
 // 10 AM wherever you are), or null for a time that does not parse.
 // Every season card's facts ask this (factsFor is the resting card's model
 // too), so the formatter is built once per zone, never per card.
+// The sale moments are the season's clock (Austin's 10 AM is 10 AM in
+// Austin), shown to people anywhere — so the zone says itself: "10 AM CT"
+// (Intl's generic short name; an engine without it gets "CDT"-style, and one
+// without either gets the time alone).
 const saleFormats = new Map();
 const saleFormat = (timeZone) => {
   const key = timeZone || '';
   if (!saleFormats.has(key)) {
-    saleFormats.set(key, new Intl.DateTimeFormat('en-US', {
-      timeZone: timeZone || undefined, weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit',
-    }));
+    const opts = { timeZone: timeZone || undefined, weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' };
+    let f = null;
+    for (const zone of ['shortGeneric', 'short', null]) {
+      try { f = new Intl.DateTimeFormat('en-US', zone ? { ...opts, timeZoneName: zone } : opts); break; } catch { /* the next form */ }
+    }
+    saleFormats.set(key, f);
   }
   return saleFormats.get(key);
 };
@@ -194,7 +201,8 @@ function saleClock(isoStamp, timeZone) {
   if (Number.isNaN(at.getTime())) return null;
   try {
     const p = Object.fromEntries(saleFormat(timeZone).formatToParts(at).map((x) => [x.type, x.value]));
-    return { at, text: `${p.weekday} · ${p.month} ${p.day} · ${p.hour}${p.minute && p.minute !== '00' ? `:${p.minute}` : ''} ${p.dayPeriod}` };
+    const zone = timeZone && p.timeZoneName ? ` ${p.timeZoneName}` : '';
+    return { at, text: `${p.weekday} · ${p.month} ${p.day} · ${p.hour}${p.minute && p.minute !== '00' ? `:${p.minute}` : ''} ${p.dayPeriod}${zone}` };
   } catch { return null; }
 }
 // The tickets' own timeline, only while some of it is still ahead: the first
@@ -216,22 +224,12 @@ function saleOf(entry, { cancelled, now, timeZone }) {
 // The other nights by the same name still ahead — "Also Sat Oct 3 · Sun Oct 11
 // at Mohawk" — the place said only where it differs from this card's.
 const ALSO_MAX = 3;
-// The file's shows by name, built once per file: every card asks, and a scan
-// of every show per card is a season's hundreds squared.
-const byNameCache = new WeakMap();
-function showsNamed(fest, name) {
-  if (!byNameCache.has(fest)) {
-    const m = new Map();
-    for (const a of fest.artists || []) if (a && typeof a.name === 'string') (m.get(a.name) || m.set(a.name, []).get(a.name)).push(a);
-    byNameCache.set(fest, m);
-  }
-  return byNameCache.get(fest).get(name) || [];
-}
 function alsoOf(fest, entry, now) {
-  const named = showsNamed(fest, entry.name);
+  // The file's shows by that name, from the index events.js keeps per file.
+  const named = entriesNamed(fest, entry.name);
   if (named.length < 2) return null;
   const today = festivalClock(now, fest.timezone || null).iso;
-  const others = named.filter((a) => a !== entry && !isCancelled(a)
+  const others = named.filter((a) => a !== entry && !isCancelled(a) && !isUnlisted(a)
     && dateOf(a) && dateOf(a) >= today && !(dateOf(a) === dateOf(entry) && venueOf(a) === venueOf(entry)))
     .sort((a, b) => (dateOf(a) < dateOf(b) ? -1 : 1));
   if (!others.length) return null;

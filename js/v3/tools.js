@@ -64,6 +64,19 @@ export function seasonsHead(text = 'City seasons') {
   n.className = 'micro-label';
   return n;
 }
+// Which head a landingPairs row needs before it, given the group the list is
+// in: none while the list is still festivals (a list with no season has no
+// heads at all, as before), then "City seasons", then "Past festivals" for
+// archived ones, and "More" for anything else that sorts after them — a
+// crew's own (AI-added) festival or a crew this device has never opened,
+// which would otherwise read as a season or as past (review, 2026-09-25).
+export function listHeadFor(group, pair) {
+  // No season yet, no heads: a list without one reads exactly as it did.
+  if (group === 'fest' && !pair.season) return { group, head: null };
+  const next = pair.season ? 'season' : pair.past ? 'past' : 'more';
+  if (next === group || next === 'fest') return { group: next, head: null };
+  return { group: next, head: next === 'season' ? 'City seasons' : next === 'past' ? 'Past festivals' : 'More' };
+}
 
 export function subviewHead(title, onBack) {
   const head = el('div', 'display: flex; align-items: center; gap: 10px;');

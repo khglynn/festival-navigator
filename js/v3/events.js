@@ -501,10 +501,29 @@ export function runFactsOf(entry) {
 // matches the way it always did. `null` is an answer ("this show has no
 // date"), `undefined` is silence.
 const sameField = (a, b) => (a || null) === (b || null);
+// A file's entries by name, in file order, built once per file (the file
+// object is replaced whole when it changes). Every card asks for its own
+// entry, and a scan of every entry per card is a city season's hundreds
+// squared — ~560k name compares a repaint (review, 2026-09-25).
+const byNameCache = new WeakMap();
+export function entriesNamed(fest, name) {
+  if (!fest || typeof fest !== 'object') return [];
+  let m = byNameCache.get(fest);
+  if (!m) {
+    m = new Map();
+    for (const a of fest.artists || []) {
+      if (!a || typeof a.name !== 'string') continue;
+      if (!m.has(a.name)) m.set(a.name, []);
+      m.get(a.name).push(a);
+    }
+    byNameCache.set(fest, m);
+  }
+  return m.get(name) || [];
+}
 export function findEventEntry(fest, name, occ) {
   if (!occ || !fest) return null;
   const want = occ.stage || '';
-  return (fest.artists || []).find((a) => a && a.name === name
+  return entriesNamed(fest, name).find((a) => a && a.name === name
     && sameField(a.day, occ.day)
     && sameField(a.time, occ.time)
     && (occ.date === undefined || sameField(dateOf(a), occ.date))
@@ -530,6 +549,11 @@ export function findEventEntry(fest, name, occ) {
 // view lets go of what is over. Past days kept in would have landed the
 // month's tab on its first, finished week all month long.
 export const isSeason = (fest) => !!fest && fest.kind === 'season';
+// A show no source lists any more (the feed marks it `unlisted: <date>` and
+// keeps the entry, because its name is a pick key). It is not on the wall,
+// not in YOURS, not in a count and not "also" anywhere: a moved show would
+// otherwise stand twice, at its old date and its new one.
+export const isUnlisted = (e) => !!(e && e.unlisted);
 
 const MONTH_LONG = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 // The Monday on or before a date: a week on the season wall runs Monday to
@@ -571,9 +595,12 @@ export function seasonWhen(e) {
 // they don't have spotify"). `only` narrows the shows (a search).
 //
 // Returns:
-//   months  [{ key, short, long, count, weeks }] in calendar order — `key` is
-//           the month label the file wrote (the tab and jump id), `count` the
-//           shows still on in it (a cancelled one is on the wall, not on);
+//   months  [{ key, short, long, num, count, weeks }] in calendar order — `key`
+//           is the month label the file wrote (the tab and jump id; never
+//           parsed), `short`/`long` what the tabs say, read off the dates,
+//           `num` the year a dock tab wears when two months share three
+//           letters, `count` the shows still on (a cancelled one is on the
+//           wall, not on; an unlisted one is not on the wall at all);
 //   weeks   [{ key, monday, from, to, when, entries }] — Monday to Sunday,
 //           clamped to the month so a week never names another tab's dates,
 //           and to today so this week never names days the wall has let go;
@@ -586,7 +613,7 @@ export function seasonModelOf(fest, { today, isYours = null, only = null, hidden
   const on = [];
   ((fest && fest.artists) || []).forEach((e, i) => {
     const iso = dateOf(e);
-    if (!e || typeof e.name !== 'string' || !iso || iso < today) return;
+    if (!e || typeof e.name !== 'string' || !iso || iso < today || isUnlisted(e)) return;
     // A location the show menu has unticked takes its shows off the wall —
     // the months, YOURS and a search alike (viewer-side, like every fold).
     if (hidden && hidden.size && hidden.has(venueOf(e))) return;
@@ -602,7 +629,10 @@ export function seasonModelOf(fest, { today, isYours = null, only = null, hidden
   for (const s of on) {
     // The month label the file wrote is the tab (and the section key a note
     // or a pick could ever hang off); one it forgot is read off the date.
-    const key = typeof s.e.day === 'string' && s.e.day.trim() ? s.e.day.trim() : MONTH_LONG[Number(s.iso.slice(5, 7)) - 1];
+    // The label is only ever a KEY: a month a year or more out carries its
+    // year ("September 2027", the feed's monthOf), and what a tab says comes
+    // from the dates below, never from parsing the label.
+    const key = typeof s.e.day === 'string' && s.e.day.trim() ? s.e.day.trim() : `${MONTH_LONG[Number(s.iso.slice(5, 7)) - 1]} ${s.iso.slice(0, 4)}`;
     if (!months.has(key)) months.set(key, []);
     months.get(key).push(s);
   }
@@ -614,12 +644,14 @@ export function seasonModelOf(fest, { today, isYours = null, only = null, hidden
       weeks.get(monday).push(s);
     }
     const year = shows[0].iso.slice(0, 4);
+    const m = Number(shows[0].iso.slice(5, 7)) - 1;
     return {
       key,
-      short: key.slice(0, 3).toUpperCase(),
-      // A month in another year than today's says so on the rail ("JANUARY ’27");
-      // the dock's three letters stay three letters.
-      long: `${key.toUpperCase()}${year !== todayYear ? ` ’${year.slice(2)}` : ''}`,
+      // What the tabs say, from the month's own dates: "OCT" in the dock, and
+      // on the rail "JANUARY ’27" for a month in another year than today's.
+      short: MONTHS[m].toUpperCase(),
+      long: `${MONTH_LONG[m].toUpperCase()}${year !== todayYear ? ` \u2019${year.slice(2)}` : ''}`,
+      year,
       count: shows.filter((s) => !isCancelled(s.e)).length,
       first: shows[0].iso,
       weeks: [...weeks].map(([monday, list]) => {
@@ -641,6 +673,11 @@ export function seasonModelOf(fest, { today, isYours = null, only = null, hidden
       }),
     };
   }).sort((a, b) => (a.first < b.first ? -1 : a.first > b.first ? 1 : 0));
+  // Two tabs the dock would call "SEP" (this September and next) wear their
+  // year's two digits as the dock tab's small number: SEP · SEP 27.
+  for (const mo of out) {
+    if (out.some((o) => o !== mo && o.short === mo.short) && mo.year !== todayYear) mo.num = `\u2019${mo.year.slice(2)}`;
+  }
   const yours = isYours ? on.filter((s) => !isCancelled(s.e) && isYours(s.e.name)).map((s) => s.e) : null;
   return { months: out, yours, today };
 }
@@ -653,7 +690,7 @@ export function seasonLocationsOf(fest, { today } = {}) {
   for (const e of (fest && fest.artists) || []) {
     const iso = dateOf(e);
     const venue = venueOf(e);
-    if (!e || !iso || iso < today || !venue) continue;
+    if (!e || !iso || iso < today || !venue || isUnlisted(e)) continue;
     // A room whose only show was called off is still on the wall (struck
     // through), so it is still a row to untick; it counts nothing that is on.
     counts.set(venue, (counts.get(venue) || 0) + (isCancelled(e) ? 0 : 1));

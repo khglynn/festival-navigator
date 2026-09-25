@@ -31,7 +31,8 @@ const model = await import('../js/v3/model.js');
 const { FESTIVALS, FESTIVAL_INDEX, defaultFestivalId } = await import('../js/festivals.js');
 const { renderWall, refreshCard, dayNavOf, wallPlanFor, roomsOf, seasonPlanOf } = await import('../js/v3/wall.js');
 const { factsFor, sheetCard } = await import('../js/v3/card-facts.js');
-const { seasonModelOf, weekHeadOf, seasonWhen, mondayOf, isSeason } = await import('../js/v3/events.js');
+const { seasonModelOf, weekHeadOf, seasonWhen, mondayOf, isSeason, seasonLocationsOf, findEventEntry } = await import('../js/v3/events.js');
+const { listHeadFor } = await import('../js/v3/tools.js');
 const { validateFestivalDoc } = await import('../api/_lib/festival-rules.mjs');
 
 // Friday 2026-09-25, 8 PM in Austin — a show night.
@@ -237,7 +238,7 @@ test('the zoom: date, start and doors; the bill; the presale still ahead then th
   assert.equal(rich.where, 'Mohawk');
   assert.equal(rich.mapUrl, 'https://maps.google.com/?q=Mohawk');
   assert.deepEqual(rich.bill, ['with Opener One, Opener Two, Opener Three +1']);
-  assert.deepEqual(rich.sale, ['Presale Wed · Sep 30 · 10 AM', 'On sale Fri · Oct 2 · 10 AM'], 'a past presale says nothing');
+  assert.deepEqual(rich.sale, ['Presale Wed · Sep 30 · 10 AM CT', 'On sale Fri · Oct 2 · 10 AM CT'], 'a past presale says nothing; Austin\u2019s clock says its zone');
   assert.deepEqual(rich.links.map((l) => l.text), ['Tix @ Ticketmaster', 'Info @ Do512']);
   assert.equal(rich.also, null);
   const sold = factsFor('Sold Right Out', ctx, occ('Sold Right Out'));
@@ -308,4 +309,81 @@ test('lists: the season follows the upcoming festivals and precedes the past one
   } finally {
     FESTIVAL_INDEX.splice(0, FESTIVAL_INDEX.length, ...saved);
   }
+});
+
+// ---- round 2 (the review, 2026-09-25) ------------------------------------------------
+// A second season: a show no source lists any more, and a September a year on
+// that the feed labels with its year ("September 2027", season-feed.mjs monthOf).
+const FAR = {
+  ...SEASON, id: 'season-far',
+  artists: [
+    show('Moved Band', '2026-10-02', 'Mohawk', { time: '8 PM', unlisted: '2026-09-25' }), // its old date
+    show('Moved Band', '2026-10-09', 'Parish', { time: '8 PM' }),                         // its new one
+    show('Gone Quiet', '2026-10-03', 'Hole in the Wall', { time: '9 PM', unlisted: '2026-09-25' }),
+    show('This September', '2026-09-28', 'Parish', { time: '8 PM' }),
+    { ...show('Next September', '2027-09-10', 'Mohawk', { time: '8 PM' }), day: 'September 2027' },
+  ],
+};
+FESTIVAL_INDEX.push({ id: 'season-far', kind: 'season', status: 'scheduled', startsOn: '2026-09-24', name: 'Austin' });
+FESTIVALS['season-far'] = FAR;
+
+test('an unlisted show is on no wall, in no YOURS, no count, no location list and no "also"', () => {
+  const m = seasonModelOf(FAR, { today: TODAY, isYours: () => true });
+  const names = m.months.flatMap((x) => x.weeks.flatMap((w) => w.entries.map((e) => `${e.name}@${e.date}`)));
+  assert.ok(!names.includes('Moved Band@2026-10-02') && names.includes('Moved Band@2026-10-09'), 'the moved show stands once, at its new date');
+  assert.ok(!names.some((n) => n.startsWith('Gone Quiet')));
+  assert.ok(!m.yours.some((e) => e.unlisted), 'not in YOURS');
+  assert.equal(m.months.find((x) => x.key === 'October').count, 1);
+  assert.ok(!seasonLocationsOf(FAR, { today: TODAY }).some((l) => l.venue === 'Hole in the Wall'), 'a location with only unlisted shows is not a row');
+  state.setActiveFestivalId('season-far');
+  const e = FAR.artists[1];
+  const f = factsFor('Moved Band', ctxFor('season-far'), { day: e.day, stage: null, time: e.time, weekend: null, date: e.date, venue: e.venue });
+  assert.equal(f.also, null, 'the old, unlisted date is not "also"');
+});
+
+test('a month a year on carries its year in its label: its own tab, told apart from this one, never parsed as a bare month', () => {
+  const m = seasonModelOf(FAR, { today: TODAY });
+  const sep = m.months.filter((x) => x.short === 'SEP');
+  assert.deepEqual(sep.map((x) => `${x.key}|${x.long}|${x.num || ''}`), ['September|SEPTEMBER|', 'September 2027|SEPTEMBER ’27|’27']);
+  const last = m.months[m.months.length - 1];
+  assert.deepEqual(last.weeks.map((w) => weekHeadOf(w)), [{ wd: 'SEP', label: '6 – 12' }], 'its week head reads off its dates');
+  const { root } = render('season-far');
+  assert.ok(root.querySelector('.day-block[data-day="September 2027"] .card[data-artist="Next September"]'));
+  const tabs = dayNavOf(FAR, ctxFor('season-far'));
+  assert.deepEqual(tabs.filter((t) => t.short === 'SEP').map((t) => `${t.key}:${t.num || ''}`), ['September:', 'September 2027:’27'], 'the dock tells two SEPs apart');
+  // A file whose month label is missing still gets a dated key, never a bare
+  // month that a later year could collide with.
+  const bare = seasonModelOf({ ...FAR, artists: [{ ...FAR.artists[4], day: undefined }] }, { today: TODAY });
+  assert.equal(bare.months[0].key, 'September 2027');
+});
+
+test('the season plan is built once per repaint and anew the next', () => {
+  state.setActiveFestivalId('season-test');
+  const ctx = ctxFor('season-test');
+  assert.equal(seasonPlanOf(SEASON, ctx), seasonPlanOf(SEASON, ctx), 'the wall, the tabs and the menu share one build');
+  const next = { ...ctx, picks: model.picksFor(state.crewDoc, 'season-test') }; // what the next repaint's refreshCtx makes
+  assert.notEqual(seasonPlanOf(SEASON, next), seasonPlanOf(SEASON, ctx));
+  assert.notEqual(seasonPlanOf(SEASON, { ...ctx, query: 'mohawk' }).months.length, 0);
+});
+
+test('findEventEntry answers from the name index exactly as the scan did', () => {
+  const e = SEASON.artists.find((a) => a.name === 'Twice Band' && a.date === '2026-10-20');
+  const occ = { day: e.day, stage: null, time: e.time, weekend: null, date: e.date, venue: e.venue };
+  assert.equal(findEventEntry(SEASON, 'Twice Band', occ), e);
+  assert.equal(findEventEntry(SEASON, 'Nobody', occ), null);
+});
+
+test('list heads after the seasons: City seasons, then Past festivals, then More — and none on a list without a season', () => {
+  const heads = (pairs) => {
+    let group = 'fest';
+    const out = [];
+    for (const p of pairs) { const t = listHeadFor(group, p); if (t.head) out.push(t.head); group = t.group; }
+    return out;
+  };
+  const fest = { season: false, past: false };
+  const season = { season: true, past: false };
+  const past = { season: false, past: true };
+  assert.deepEqual(heads([fest, fest, past, fest]), [], 'a festival list keeps no heads');
+  assert.deepEqual(heads([fest, season, past, fest]), ['City seasons', 'Past festivals', 'More']);
+  assert.deepEqual(heads([fest, season, fest]), ['City seasons', 'More'], 'a crew’s own festival after the seasons is not a season');
 });
