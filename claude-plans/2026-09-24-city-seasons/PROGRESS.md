@@ -1,35 +1,31 @@
 # City seasons: progress
 
-**last-updated: 2026-09-25 ~2:10 PM PT · status: rolling (one small ask)**
+**last-updated: 2026-09-25 ~3:30 PM PT · status: your move (two asks)**
 
 *(Times are Pacific, from this Mac's clock.)*
 
-## For Kevin: where this stands (Fri Sep 25, afternoon)
+## For Kevin: where this stands (Fri Sep 25, ~3:30 PM PT)
 
-1. **Austin season v0 is being built for a preview link**, on branch
-   `seasons/austin-v0`. Plan, goals and live-usage rules:
-   `claude-plans/2026-09-25-season-v0/` on that branch (PLAN.md, UX.md).
-   a. **The feed is real:** 751 upcoming Austin shows at 70 locations from
-      Do512, JamBase and Ticketmaster, merged, checked and tested
-      (`scripts/season-feed.mjs`). October has ~300 shows; January to May
-      are thin because those tours are not announced yet.
-   b. **The view** (month tabs in the lineup layout, the zoom with Tix and
-      Info, YOURS for Spotify people) is being built by an Opus builder on
-      `seasons/view`; it merges back here when it is walked and green.
-   c. **The alert** is written (`scripts/season-alert.mjs`). For you today
-      it finds 7 shows: Four Tet, John Summit (Jackie Hollander on the
-      bill), Kaskade, Bob Moses, Blind Boys of Alabama (Asleep at the
-      Wheel), and ACL TV tapings of Lola Young and Bleachers.
-2. **Live usage is protected.** Production stays on v88 through Portola;
-   the preview is shown with a throwaway demo crew only, because a real
-   crew picking Austin on the preview would give its members a broken row
-   on production (UX.md, "Live usage").
+1. **Austin season v0 is built and on a preview**, all on branch
+   `seasons/austin-v0` (the view branch is folded in). CI green (unit and
+   real-browser suites). Plan and rules: `claude-plans/2026-09-25-season-v0/`
+   there (PLAN.md, UX.md, VIEW-NOTES.md).
+   a. The feed: 752 Austin shows at 70 locations from Do512, JamBase and
+      Ticketmaster (`scripts/season-feed.mjs`), every merge rule tested.
+   b. The view: months as lineups cut into weeks, YOURS for Spotify people,
+      a location filter, the zoom with Tix/Info, on-sale in CT.
+   c. The alert (`scripts/season-alert.mjs`): 7 shows for you today; the bot
+      is in #dont-miss.
+   d. An independent review found no festival regressions; its fixes are in.
+2. **Live usage:** production stays on v89 through Portola. The preview is
+   shown with the demo crew only: opening Austin in a real crew there
+   confuses that crew on production (UX.md, "Live usage").
+3. **Promotion window:** Mon Sep 28 – Thu Oct 1, on your word, before ACL.
 
 ## Need from you
 
-1. **Invite the bot to #dont-miss:** in that channel, send
-   `/invite @claudecodebridge`. Then I post the one-time Austin digest there
-   (only once you say go).
+1. **Say go** for the one-time Austin digest in #dont-miss.
+2. **Your word on promoting** in the Mon–Thu window, after Portola.
 
 ## My read-back
 
