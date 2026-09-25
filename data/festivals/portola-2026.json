@@ -1122,7 +1122,15 @@
       "doors": "10 PM",
       "close": "3 AM",
       "closeApprox": true,
-      "closeSource": "https://19hz.info/eventlisting_BayArea.php"
+      "closeSource": "https://19hz.info/eventlisting_BayArea.php",
+      "page": {
+        "url": "https://dothebay.com/events/2026/9/27/horsegiirl-vtss-mgna-crrrta-dj-set-two-shell-tickets",
+        "at": "DoTheBay"
+      },
+      "tickets": {
+        "url": "https://www.axs.com/events/1575408/horsegiirl-tickets?cid=usaffdostuff",
+        "at": "AXS"
+      }
     },
     {
       "name": "Espurr",
@@ -1133,7 +1141,15 @@
       "doors": "10 PM",
       "close": "3 AM",
       "closeApprox": true,
-      "closeSource": "https://19hz.info/eventlisting_BayArea.php"
+      "closeSource": "https://19hz.info/eventlisting_BayArea.php",
+      "page": {
+        "url": "https://dothebay.com/events/2026/9/27/horsegiirl-vtss-mgna-crrrta-dj-set-two-shell-tickets",
+        "at": "DoTheBay"
+      },
+      "tickets": {
+        "url": "https://www.axs.com/events/1575408/horsegiirl-tickets?cid=usaffdostuff",
+        "at": "AXS"
+      }
     },
     {
       "name": "New Nostalgia",
@@ -1144,7 +1160,15 @@
       "doors": "10 PM",
       "close": "3 AM",
       "closeApprox": true,
-      "closeSource": "https://19hz.info/eventlisting_BayArea.php"
+      "closeSource": "https://19hz.info/eventlisting_BayArea.php",
+      "page": {
+        "url": "https://dothebay.com/events/2026/9/27/horsegiirl-vtss-mgna-crrrta-dj-set-two-shell-tickets",
+        "at": "DoTheBay"
+      },
+      "tickets": {
+        "url": "https://www.axs.com/events/1575408/horsegiirl-tickets?cid=usaffdostuff",
+        "at": "AXS"
+      }
     },
     {
       "name": "SG Lewis",
