@@ -74,11 +74,6 @@ how we got here belongs in DEVLOG.md.
 - All Portola Week openers are in (nothing held back): Thu Club Six's
   three (PR #27) and Sun Midway's S.I.M / Espurr / New Nostalgia, the Midway
   three untimed so the four named sets keep their guesses (2026-09-25).
-- PostHog: connect Slack in project 627900 (Settings → Integrations), so the
-  new-error and came-back alerts can post to #eachie-feedback; plus four
-  calls — Sentry stays for Eachie's errors, rename that channel, the shared
-  Slack script's home (an ops/posthog folder proposed), and whether the Eachie
-  session fixes its rollup (eachie-posthog-audit.md beside BUILD.md).
 - Small call with a default: How it works dropped "White stroke = you" (you
   are never in the crew corner now). (A half-width 30-min cell hiding its
   start time once picked cannot happen in any shipped fest: ACL renders each
@@ -89,14 +84,20 @@ how we got here belongs in DEVLOG.md.
 
 ## Next, in order
 
-1. v89 before ACL (Oct 2) with the ACL prep: headliner end times (its
-   closers print only a start, so the grid draws them 60 min and NOW stops
-   counting them live early — add ends, or run a stage's last endless set to
-   the day's close), and the dock's FRI flash on open (ACL lights FRI for
-   about a second before finding SAT).
-2. Data-only pushes as drops land (standing OK: validator + freeze + tests).
+1. Kevin's next round of notes from using v89 at Portola — he is bringing
+   them to a fresh session (said 2026-09-25).
+2. ACL prep before Oct 2: headliner end times (its closers print only a
+   start, so the grid draws them 60 min and NOW stops counting them live
+   early — add ends, or run a stage's last endless set to the day's close),
+   and the dock's FRI flash on open (ACL lights FRI for about a second before
+   finding SAT).
+3. Install the app's PostHog → Slack alerts (a new error, an error that came
+   back) from `ops/posthog/` — not installed yet. Slack is connected to
+   project 627900 (2026-09-25) and Kevin's four calls are recorded in that
+   folder's README; a Pen card tracks it.
+4. Data-only pushes as drops land (standing OK: validator + freeze + tests).
    Portola Sep 26–27 (afters from Sep 24); ACL Oct 2–4 and 9–11.
-3. After Oct 11: the merged wall for two crews
+5. After Oct 11: the merged wall for two crews
    at one fest, add-a-show (`claude-plans/2026-09-02-add-a-show.md`), the
    staging site (fix or retire), the Ray draft.
 
