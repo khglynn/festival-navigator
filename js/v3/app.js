@@ -511,7 +511,7 @@ function fitNowTab(tab) {
   if (bar) bar.classList.remove('squeezed');
   if (row) row.style.minWidth = '';
   if (tab.hidden || !row || !row.children.length) return;
-  const css = getComputedStyle(row);
+  const css = window.getComputedStyle(row);
   const gap = parseFloat(css.columnGap) || 0;
   const fade = parseFloat(css.getPropertyValue('--row-fade')) || 0;
   const widest = Math.max(...[...row.children].map((t) => t.offsetWidth));
@@ -572,7 +572,7 @@ function showNowTab(tab, on) {
 // Where a person can see: under the sticky chrome — inside a grid, under its
 // pinned stage strip too — and above the dock on a phone.
 function seenBand(inGrid) {
-  const vars = getComputedStyle(document.documentElement);
+  const vars = window.getComputedStyle(document.documentElement);
   let top = parseFloat(vars.getPropertyValue('--jump-offset')) || 8;
   if (inGrid) {
     const block = inGrid.closest('.tt-block');
@@ -580,7 +580,7 @@ function seenBand(inGrid) {
     top = (parseFloat(vars.getPropertyValue('--rail-h')) || 0) + (strip ? strip.offsetHeight : 0);
   }
   const dock = $('dock');
-  const docked = dock && getComputedStyle(dock).display !== 'none' && !dock.classList.contains('hidden');
+  const docked = dock && window.getComputedStyle(dock).display !== 'none' && !dock.classList.contains('hidden');
   return { top, bottom: docked ? dock.getBoundingClientRect().top : window.innerHeight };
 }
 
