@@ -80,6 +80,9 @@ test('the sources\' spellings of a room land on one location', () => {
 test('an after-midnight start belongs to the night before', () => {
   assert.equal(nightOf('2026-10-03', '01:30'), '2026-10-02');
   assert.equal(nightOf('2026-10-03', '21:00'), '2026-10-03');
+  // A date with no clock stays on its date (JamBase's festivals, 2026-09-25).
+  assert.equal(nightOf('2026-11-13', ''), '2026-11-13');
+  assert.equal(nightOf('2026-11-13', undefined), '2026-11-13');
 });
 
 test('a ticket link names its seller, and resale sites are not sellers', () => {

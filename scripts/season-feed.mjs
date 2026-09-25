@@ -125,8 +125,11 @@ function clockOf(hhmm) {
 }
 // An after-midnight start belongs to the night before (a 1 AM set is Friday's).
 export function nightOf(dateIso, hhmm) {
-  const h = Number(String(hhmm ?? '').slice(0, 2));
-  if (!Number.isFinite(h) || h >= 5) return dateIso;
+  // No clock is no clock, never midnight: JamBase dates its festivals
+  // "2026-11-13" alone, and reading that as 00:00 moved them a day early.
+  if (!/^\d{2}:\d{2}$/.test(String(hhmm ?? ''))) return dateIso;
+  const h = Number(String(hhmm).slice(0, 2));
+  if (h >= 5) return dateIso;
   const d = new Date(`${dateIso}T12:00:00Z`); d.setUTCDate(d.getUTCDate() - 1);
   return d.toISOString().slice(0, 10);
 }
@@ -176,9 +179,12 @@ async function readDo512(problems) {
           const date = begin.slice(0, 10), hhmm = begin.slice(11, 16);
           if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) continue;
           const artists = (e.artists || []).map((a) => clean(a.title)).filter(Boolean);
+          // A festival listing is the festival, with its lineup as the bill:
+          // naming it after its first act would make Freaky Deaky "AHEE".
+          const fest = /festival/i.test(e.category_param || '') && artists.length > 2;
           shows.push({
             source: 'do512', id: String(e.id), date: nightOf(date, hhmm), time: clockOf(hhmm), venue: name,
-            title: clean(e.title), headliner: artists[0] || headlinerFromTitle(e.title), with: artists.slice(1),
+            title: clean(e.title), headliner: fest ? clean(e.title) : artists[0] || headlinerFromTitle(e.title), with: fest ? artists : artists.slice(1),
             doors: typeof e.doors === 'string' && /\d/.test(e.doors) ? e.doors : null,
             page: e.permalink ? { url: `https://do512.com${e.permalink}`, at: 'Do512' } : null,
             tickets: ticketsOf(e.buy_url), onSale: e.ticket_onsale_time || null,
@@ -205,10 +211,11 @@ async function readJamBase(key, problems) {
       const date = start.slice(0, 10), hhmm = start.slice(11, 16);
       if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) continue;
       const performers = (e.performer || []).map((p) => clean(p.name)).filter(Boolean);
+      const fest = e['@type'] === 'Festival';
       const offers = (e.offers || []).filter((o) => o && o.url && !/stubhub|vividseats|tickpick|gametime|viagogo|seatgeek/i.test(destinationOf(o.url)));
       shows.push({
         source: 'jambase', id: String(e.identifier || e['@id'] || ''), date: nightOf(date, hhmm), time: clockOf(hhmm),
-        venue: venueName(e.location?.name), address: clean(e.location?.address?.streetAddress) || null, title: clean(e.name), headliner: performers[0] || headlinerFromTitle(e.name), with: performers.slice(1),
+        venue: venueName(e.location?.name), address: clean(e.location?.address?.streetAddress) || null, title: clean(e.name), headliner: fest ? clean(e.name) : performers[0] || headlinerFromTitle(e.name), with: fest ? performers : performers.slice(1),
         doors: e.doorTime ? clockOf(String(e.doorTime).slice(11, 16)) : null,
         page: e.url && /^https:\/\//.test(e.url) ? { url: e.url, at: 'JamBase' } : null,
         tickets: offers.length ? ticketsOf(offers[0].url) : null, onSale: null,
@@ -332,6 +339,13 @@ function otherFestShows() {
   }
   return keys;
 }
+// The app's own Austin festivals by name ("Seismic Dance Event 9.0" ->
+// "seismic dance event"): a listing of the festival itself belongs there.
+function festNameKeys() {
+  const index = JSON.parse(readFileSync(join(ROOT, 'data/festivals/index.json'), 'utf8'));
+  return index.filter((f) => f.kind !== 'season' && f.status !== 'archived' && /austin/i.test(f.location || ''))
+    .map((f) => keyOf(f.name).replace(/(\s\d+)+$/, '').trim()).filter((k) => k.length >= 6);
+}
 const knownSpelling = new Map();
 const shouting = (n) => /[A-Z]{3}/.test(n) && n === n.toUpperCase();
 // Which spelling a new name takes: the app's own (another festival's), then
@@ -368,7 +382,9 @@ async function main() {
   const raw = [...do512, ...jb.shows, ...tm].filter((s) => s.date >= today && s.venue && s.headliner
     && !FESTIVAL_GROUNDS.test(s.venue) && !NOT_MUSIC.test(`${s.title} ${s.headliner}`));
   const elsewhere = otherFestShows();
-  const inOtherFest = (s) => [s.headliner, s.tmName].some((n) => n && elsewhere.has(`${s.date}|${keyOf(n)}`));
+  const festNames = festNameKeys();
+  const inOtherFest = (s) => [s.headliner, s.tmName].some((n) => n && elsewhere.has(`${s.date}|${keyOf(n)}`))
+    || festNames.some((k) => keyOf(s.title).includes(k) || keyOf(s.headliner).includes(k));
   for (const s of raw) s.headliner = tidyHeadliner(s.headliner, s.venue);
   const allMerged = mergeShows(raw);
   // JamBase alone putting an artist in one room while Do512 or Ticketmaster
