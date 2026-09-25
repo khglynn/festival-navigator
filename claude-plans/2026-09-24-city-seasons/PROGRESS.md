@@ -1,41 +1,35 @@
 # City seasons: progress
 
-**last-updated: 2026-09-25 ~1:00 AM PT · status: your move (two small asks)**
+**last-updated: 2026-09-25 ~3:15 PM PT · status: rolling (one small ask)**
 
 *(Times are Pacific, from this Mac's clock.)*
 
-## For Kevin: where this stands (morning of Fri Sep 25)
+## For Kevin: where this stands (Fri Sep 25, afternoon)
 
-1. **Event links are in the v88 gate.** Every Portola afters and Folsom night
-   and every ACL Late night now links to its event page, and to tickets where
-   they sell: "Tix @ AXS · Info @ DoTheBay" under the place in the zoom.
-   a. PR #29 (https://github.com/khglynn/festival-navigator/pull/29) is ready
-      and green. The Portola session folds it into v88 with the error
-      capture work, walks the combined build, and brings it to you for your
-      look and your go. Its cut line is noon CT today.
-   b. An independent review (Opus; Codex is out of credits until Sep 30)
-      found two things worth fixing and five small ones; all are fixed and
-      listed on the PR.
-   c. One behavior change to know: right after a pick, a tap that lands on
-      a link (because the card shifted) picks instead of opening the page.
-      Say so if you'd rather it didn't.
-2. **The season build plan is written:** `BUILD-PLAN.md` in this folder.
-   It follows your notes: month tabs laid out like the lineup view, one card
-   per artist, YOURS only with Spotify, a morning Slack message with
-   add-to-calendar, and a feed that checks itself daily. Nothing ships before
-   Oct 11.
-3. **Your notes from last night** are pieced together in
-   `KEVIN-NOTES-ROUND1.md`, with what each decided.
+1. **Austin season v0 is being built for a preview link**, on branch
+   `seasons/austin-v0`. Plan, goals and live-usage rules:
+   `claude-plans/2026-09-25-season-v0/` on that branch (PLAN.md, UX.md).
+   a. **The feed is real:** 751 upcoming Austin shows at 70 locations from
+      Do512, JamBase and Ticketmaster, merged, checked and tested
+      (`scripts/season-feed.mjs`). October has ~300 shows; January to May
+      are thin because those tours are not announced yet.
+   b. **The view** (month tabs in the lineup layout, the zoom with Tix and
+      Info, YOURS for Spotify people) is being built by an Opus builder on
+      `seasons/view`; it merges back here when it is walked and green.
+   c. **The alert** is written (`scripts/season-alert.mjs`). For you today
+      it finds 7 shows: Four Tet, John Summit (Jackie Hollander on the
+      bill), Kaskade, Bob Moses, Blind Boys of Alabama (Asleep at the
+      Wheel), and ACL TV tapings of Lola Young and Bleachers.
+2. **Live usage is protected.** Production stays on v88 through Portola;
+   the preview is shown with a throwaway demo crew only, because a real
+   crew picking Austin on the preview would give its members a broken row
+   on production (UX.md, "Live usage").
 
 ## Need from you
 
-1. **Paste the two API keys here** (Ticketmaster's "Consumer Key" from My
-   Apps, and JamBase's key from its Account page). They were masked on your
-   screen and this session can only read the screen. I'll save them to
-   `~/.env` and test each against Austin.
-2. **Name the Slack channel** in your Trimm workspace where the Austin alerts
-   should go.
-3. **Your look and go on v88** when the Portola session brings it to you.
+1. **Invite the bot to #dont-miss:** in that channel, send
+   `/invite @claudecodebridge`. Then I post the one-time Austin digest there
+   (only once you say go).
 
 ## My read-back
 
