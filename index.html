@@ -3,6 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <script>
+      // Safari on iPhone/iPad zooms into any text field whose text is under
+      // 16px and never zooms back out (Kevin, live at Portola, 2026-09-25: "I
+      // have to pinch to zoom back out"). Our fields are 12.5px by design, so
+      // on iOS only we add maximum-scale=1: Safari honours it for that
+      // auto-zoom but ignores it for pinch, so people can still zoom. Android
+      // would honour it for pinch too and lose zoom, and it never auto-zooms
+      // fields, so it never gets this. iPadOS reports a Mac, hence the touch
+      // check. css-tricks.com/16px-or-larger-text-prevents-ios-form-zoom
+      (function () {
+        try {
+          var ua = navigator.userAgent || '';
+          var ios = /iP(hone|od|ad)/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+          var vp = ios && document.querySelector('meta[name="viewport"]');
+          if (vp && !/maximum-scale/.test(vp.content)) vp.content += ', maximum-scale=1';
+        } catch (e) { /* no zoom fix is better than no page */ }
+      })();
+    </script>
     <title>Festival Navigator</title>
     <meta name="theme-color" content="#0C0A14">
     <!-- A fork sets ITS host here, once — js/spotify.js and js/v3/settings.js
