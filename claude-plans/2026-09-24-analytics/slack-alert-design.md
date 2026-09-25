@@ -218,9 +218,9 @@ each PostHog function (one per app and trigger) runs the same source with
 three inputs set: `app_label` ("Fest" or "Eachie"), `username` and
 `icon_emoji`.
 
-**Where it lives:** my lean is to commit it once as
-`ops/posthog/slack-alert.hog` in this repo, and have Eachie's docs point
-there (open question 1 in §7). It holds no secrets: the Slack token comes
+**Where it lives:** `ops/posthog/slack-alert.hog` in this repo (Kevin,
+2026-09-25: "save the config stuff here for now"; its lasting home for shared
+utilities is part of the helper reorganization). Eachie's docs point there. It holds no secrets: the Slack token comes
 from the integration input at run time.
 
 **Every construct is from a checked source:**

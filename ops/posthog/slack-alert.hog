@@ -1,0 +1,272 @@
+// slack-alert.hog: one Slack message design for Eachie and Festival Navigator.
+// Events: $error_tracking_issue_created / _reopened / _spiking,
+//         $insight_alert_firing, 'survey sent'. Anything else sends nothing.
+// Inputs: slack_workspace, channel, app_label, username, icon_emoji.
+// Design: claude-plans/2026-09-24-analytics/slack-alert-design.md (festival-navigator).
+// Rules: a line appears only when it has something to say; anything a person or an
+// error can type goes in plain_text, never mrkdwn.
+
+let app := inputs.app_label ?? project.name
+let kind := event.event
+let props := event.properties
+let blocks := []
+let note := null // the notification text
+
+// ---------- helpers ----------
+
+fun clip(v, n) {
+  if (empty(v)) {
+    return null
+  }
+  let s := trim(toString(v))
+  if (length(s) <= n) {
+    return s
+  }
+  return concat(substring(s, 1, n - 1), '…')
+}
+
+fun joinPresent(parts, sep) {
+  return arrayStringConcat(arrayFilter(x -> notEmpty(x), parts), sep)
+}
+
+// Notification text is mrkdwn, so escape what Slack treats as markup.
+fun esc(v) {
+  return replaceAll(replaceAll(replaceAll(toString(v ?? ''), '&', '&amp;'), '<', '&lt;'), '>', '&gt;')
+}
+
+// "Seen today at 9:40 PM" in the reader's own time zone.
+fun slackTime(prefix, iso) {
+  if (empty(iso)) {
+    return null
+  }
+  let dt := toDateTime(iso)
+  let ts := toInt(dt)
+  if (not (ts > 0)) {
+    return null
+  }
+  let fallback := formatDateTime(dt, '%a %b %e, %I:%i %p', 'America/Chicago')
+  return concat(prefix, ' <!date^', toString(ts), '^{date_short_pretty} at {time}|', fallback, ' CT>')
+}
+
+// "iPhone · iOS 26 · Safari 26" from PostHog's standard device keys.
+fun deviceLine(pr) {
+  let os := empty(pr.$os) ? null : trim(concat(pr.$os, ' ', toInt(pr.$os_version)))
+  let browser := empty(pr.$browser) ? null : trim(concat(pr.$browser, ' ', toInt(pr.$browser_version)))
+  return joinPresent([pr.$device, os, browser], ' · ')
+}
+
+// "at openZoom · card-facts.js:212": the in-app frame nearest the crash.
+// PostHog stores frames oldest-first (posthog-js reverses the raw stack), so the
+// crash site is the LAST frame. Reads both raw frames (function/filename/lineno)
+// and processed ones (resolved_name/source/line), then falls back to the
+// flattened in-app lists PostHog adds during processing.
+fun topFrame(pr) {
+  let frames := pr?.$exception_list?.[1]?.stacktrace?.frames ?? []
+  let inApp := arrayFilter(x -> x?.in_app == true, frames)
+  let fr := inApp?.[-1] ?? frames?.[-1]
+  let fnName := null
+  let file := null
+  let lineNo := null
+  if (notEmpty(fr)) {
+    fnName := fr.resolved_name ?? fr.function
+    file := fr.source ?? fr.filename
+    lineNo := fr.line ?? fr.lineno
+  } else {
+    fnName := pr?.$exception_functions?.[-1]
+    file := pr?.$exception_sources?.[-1]
+  }
+  if (fnName == '?' or fnName == '<anonymous>') {
+    fnName := null
+  }
+  let base := null
+  if (notEmpty(file)) {
+    base := splitByString('/', splitByString('?', toString(file))[1])[-1]
+  }
+  let loc := empty(base) ? null : (empty(lineNo) ? base : concat(base, ':', toString(lineNo)))
+  let out := joinPresent([empty(fnName) ? null : concat('at ', fnName), loc], ' · ')
+  return empty(out) ? null : out
+}
+
+fun issueUrl(pr) {
+  if (notEmpty(pr.fingerprint)) {
+    return concat(project.url, '/error_tracking/fingerprint/', encodeURLComponent(pr.fingerprint),
+      '?timestamp=', encodeURLComponent(pr.exception_timestamp ?? ''),
+      '&utm_source=alert&utm_medium=slack&utm_campaign=error_tracking_alert')
+  }
+  return concat(project.url, '/error_tracking/', event.distinct_id)
+}
+
+fun button(label, url, isMain) {
+  let b := {'type': 'button', 'text': {'type': 'plain_text', 'text': label}, 'url': url}
+  if (isMain) {
+    b['style'] := 'primary'
+  }
+  return b
+}
+
+fun header(s) {
+  return {'type': 'header', 'text': {'type': 'plain_text', 'text': clip(s, 150), 'emoji': true}}
+}
+
+fun plainSection(s) {
+  return {'type': 'section', 'text': {'type': 'plain_text', 'text': s, 'emoji': false}}
+}
+
+// ---------- §1 and §2: error issues ----------
+
+if (kind == '$error_tracking_issue_created' or kind == '$error_tracking_issue_reopened' or kind == '$error_tracking_issue_spiking') {
+  let reopened := kind == '$error_tracking_issue_reopened'
+  let spiking := kind == '$error_tracking_issue_spiking'
+  let boot := props.kind == 'boot'
+  let icon := spiking ? '📈' : (reopened ? '🔁' : (boot ? '🔴' : '🟠'))
+  let verb := spiking ? 'Spiking' : (reopened ? 'Back again' : (boot ? 'App won’t open' : 'New error'))
+  let name := clip(props.name ?? props.$exception_types?.[1] ?? 'Error', 110)
+
+  blocks := arrayPushBack(blocks, header(concat(icon, ' ', app, ' · ', verb, ': ', name)))
+
+  let countLine := null
+  if (spiking) {
+    let cur := toFloat(props.current_bucket_value)
+    let baseline := toFloat(props.computed_baseline)
+    let rate := (baseline > 0) ? concat(toString(round(cur / baseline)), '× the usual rate') : 'first spike, no baseline yet'
+    countLine := concat(toString(toInt(cur)), ' in the last 5 minutes · ', rate)
+  }
+  let bodyText := joinPresent([clip(props.description, 280), topFrame(props), countLine], '\n')
+  if (notEmpty(bodyText)) {
+    blocks := arrayPushBack(blocks, plainSection(bodyText))
+  }
+
+  let seen := slackTime(spiking ? 'Detected' : (reopened ? 'Back' : 'Seen'), props.exception_timestamp)
+  let firstSeen := reopened ? slackTime('first seen', props.first_seen) : null
+  let timeText := joinPresent([seen, firstSeen], ' · ')
+  let facts := joinPresent([props.build, deviceLine(props), props.screen ?? props.$pathname, props.member_name], ' · ')
+  let ctx := []
+  if (notEmpty(timeText)) {
+    ctx := arrayPushBack(ctx, {'type': 'mrkdwn', 'text': timeText})
+  }
+  if (notEmpty(facts)) {
+    ctx := arrayPushBack(ctx, {'type': 'plain_text', 'text': clip(facts, 300), 'emoji': false})
+  }
+  if (notEmpty(ctx)) {
+    blocks := arrayPushBack(blocks, {'type': 'context', 'elements': ctx})
+  }
+
+  let buttons := [button('Open issue', issueUrl(props), true)]
+  if (notEmpty(props.$session_id)) {
+    buttons := arrayPushBack(buttons, button('Replay', concat(project.url, '/replay/', encodeURLComponent(props.$session_id)), false))
+  }
+  blocks := arrayPushBack(blocks, {'type': 'actions', 'elements': buttons})
+
+  let said := empty(props.description) ? '' : concat(': ', esc(clip(props.description, 120)))
+  note := concat(icon, ' ', esc(app), ': ', verb, ' — ', esc(name), said)
+
+// ---------- §3: insight threshold alerts ----------
+
+} else if (kind == '$insight_alert_firing') {
+  let title := props.alert_name ?? props.insight_name ?? 'Insight alert'
+  blocks := arrayPushBack(blocks, header(concat('📊 ', app, ' · ', title)))
+
+  let bodyText := joinPresent([clip(props.breaches, 1500), clip(props.anomaly_rationale, 500)], '\n')
+  if (notEmpty(bodyText)) {
+    blocks := arrayPushBack(blocks, plainSection(bodyText))
+  }
+  if (notEmpty(props.insight_chart_url)) {
+    blocks := arrayPushBack(blocks, {'type': 'image', 'image_url': props.insight_chart_url, 'alt_text': 'Insight chart'})
+  }
+
+  let insightUrl := concat(project.url, '/insights/', props.insight_id, '?utm_source=alert&utm_medium=slack&utm_campaign=alert_check_firing')
+  let hasInvestigation := notEmpty(props.investigation_notebook_url)
+  let secondUrl := hasInvestigation ? props.investigation_notebook_url : concat(project.url, '/insights/', props.insight_id, '/alerts?alert_id=', props.alert_id, '&utm_source=alert&utm_medium=slack&utm_campaign=alert_check_firing')
+  blocks := arrayPushBack(blocks, {
+    'type': 'actions',
+    // PostHog's snooze handler finds the alert through this block_id; keep it exactly.
+    'block_id': concat('insight_alert_snooze:', props.alert_id),
+    'elements': [
+      button('Open insight', insightUrl, true),
+      button(hasInvestigation ? 'Investigation' : 'Alert settings', secondUrl, false),
+      {
+        'type': 'static_select',
+        'action_id': 'insight_alert_snooze',
+        'placeholder': {'type': 'plain_text', 'text': 'Snooze…'},
+        'options': [
+          {'text': {'type': 'plain_text', 'text': 'For 1 hour'}, 'value': concat(props.alert_id, '|1h')},
+          {'text': {'type': 'plain_text', 'text': 'For 6 hours'}, 'value': concat(props.alert_id, '|6h')},
+          {'text': {'type': 'plain_text', 'text': 'For 1 day'}, 'value': concat(props.alert_id, '|1d')},
+          {'text': {'type': 'plain_text', 'text': 'For 1 week'}, 'value': concat(props.alert_id, '|1w')},
+          {'text': {'type': 'plain_text', 'text': 'Pick a date & time…'}, 'value': concat(props.alert_id, '|custom')}
+        ]
+      }
+    ]
+  })
+  note := concat('📊 ', esc(app), ': ', esc(title))
+
+// ---------- §4: survey feedback ----------
+
+} else if (kind == 'survey sent') {
+  let answered := []
+  for (let q in props.$survey_questions ?? []) {
+    let r := q?.response
+    if (typeof(r) == 'array') {
+      r := arrayStringConcat(r, ', ')
+    }
+    if (notEmpty(r)) {
+      answered := arrayPushBack(answered, {'question': q?.question, 'answer': toString(r)})
+    }
+  }
+  if (empty(answered)) {
+    return // nothing to say: send nothing
+  }
+  let lines := []
+  for (let a in answered) {
+    if (length(answered) == 1) {
+      lines := arrayPushBack(lines, clip(a.answer, 1500))
+    } else {
+      lines := arrayPushBack(lines, concat(clip(a.question, 150) ?? '', '\n', clip(a.answer, 600)))
+    }
+  }
+
+  let identified := notEmpty(person?.properties?.email) or notEmpty(person?.properties?.name)
+  blocks := arrayPushBack(blocks, header(concat('💬 ', app, ' · ', props.$survey_name ?? 'Feedback')))
+  blocks := arrayPushBack(blocks, plainSection(arrayStringConcat(lines, '\n\n')))
+  let facts := joinPresent([identified ? person.name : 'Anonymous visitor', props.$pathname, deviceLine(props)], ' · ')
+  blocks := arrayPushBack(blocks, {'type': 'context', 'elements': [{'type': 'plain_text', 'text': clip(facts, 300), 'emoji': false}]})
+
+  let buttons := []
+  if (notEmpty(props.$session_id)) {
+    buttons := arrayPushBack(buttons, button('Replay', concat(project.url, '/replay/', encodeURLComponent(props.$session_id)), true))
+  }
+  if (identified and notEmpty(person?.url)) {
+    buttons := arrayPushBack(buttons, button('Person', person.url, empty(buttons)))
+  }
+  if (notEmpty(buttons)) {
+    blocks := arrayPushBack(blocks, {'type': 'actions', 'elements': buttons})
+  }
+  note := concat('💬 ', esc(app), ' feedback: ', esc(clip(answered[1].answer, 140)))
+
+} else {
+  return // an event this script doesn't know: send nothing rather than a blank message
+}
+
+// ---------- post (the tail of PostHog's current Slack template) ----------
+
+let payload := {'channel': inputs.channel, 'blocks': blocks, 'text': note, 'unfurl_links': false, 'unfurl_media': false}
+let granted := replaceAll(inputs.slack_workspace.scope ?? '', ' ', '')
+let canCustomize := empty(granted) or has(splitByString(',', granted), 'chat:write.customize')
+if (canCustomize and notEmpty(inputs.icon_emoji)) {
+  payload['icon_emoji'] := inputs.icon_emoji
+}
+if (canCustomize and notEmpty(inputs.username)) {
+  payload['username'] := inputs.username
+}
+
+let res := fetch('https://slack.com/api/chat.postMessage', {
+  'body': payload,
+  'method': 'POST',
+  'headers': {
+    'Authorization': f'Bearer {inputs.slack_workspace.access_token}',
+    'Content-Type': 'application/json; charset=utf-8'
+  }
+})
+if (res.status != 200 or res.body.ok == false) {
+  throw Error(f'Slack refused the message: {res.status}: {res.body}')
+}
