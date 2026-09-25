@@ -21,6 +21,20 @@ AND the person master token in its fragment, so a fork left on the upstream
 value hands its users' credentials to the upstream author's domain), and every
 on-screen string that names the host. There is no second copy to chase.
 
+**The crash-report key sits beside it** (v88):
+
+```html
+<meta name="fn-report-key" content="phc_…">
+```
+
+It's the upstream author's PostHog project key. **Empty it, or put your own
+PostHog project key there** (the `phc_…` one — a write-only key, public by
+design; a personal `phx_…` key is ignored on purpose). Left as it ships, your
+users' crash reports go to the upstream author's project. Empty, nothing
+leaves any phone, the Settings toggle disappears, and Settings → Diagnostics
+keeps working. Reports go through `/fn-i/batch`, which `vercel.json` rewrites
+to PostHog's US ingestion host; an EU project changes that one destination.
+
 `api/access.js`'s `HOST_ALLOW` is anchored to upstream hostnames too, but
 setting the `PUBLIC_BASE_URL` env var overrides it — without it the approve
 link in Slack notifications is omitted, nothing breaks.
