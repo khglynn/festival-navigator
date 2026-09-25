@@ -30,9 +30,9 @@ const state = await import('../js/state.js');
 const model = await import('../js/v3/model.js');
 const { FESTIVALS, FESTIVAL_INDEX, defaultFestivalId } = await import('../js/festivals.js');
 const { renderWall, refreshCard, dayNavOf, wallPlanFor, roomsOf, seasonPlanOf } = await import('../js/v3/wall.js');
-const { factsFor, sheetCard } = await import('../js/v3/card-facts.js');
-const { seasonModelOf, weekHeadOf, seasonWhen, mondayOf, isSeason, seasonLocationsOf, findEventEntry } = await import('../js/v3/events.js');
-const { listHeadFor } = await import('../js/v3/tools.js');
+const { factsFor, sheetCard, festPlaceLine } = await import('../js/v3/card-facts.js');
+const { seasonModelOf, weekHeadOf, seasonWhen, mondayOf, isSeason, seasonLocationsOf, findEventEntry, seasonLine, seasonLead, shelfSeasons, seasonIsOver } = await import('../js/v3/events.js');
+const { listHeadFor, appendPairs, festRow } = await import('../js/v3/tools.js');
 const { validateFestivalDoc } = await import('../api/_lib/festival-rules.mjs');
 
 // Friday 2026-09-25, 8 PM in Austin — a show night.
@@ -40,8 +40,10 @@ const NOW = new Date('2026-09-25T20:00:00-05:00');
 const TODAY = '2026-09-25';
 const show = (name, date, venue, more = {}) => ({ name, day: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'][Number(date.slice(5, 7)) - 1], date, venue, ...more });
 const SEASON = {
-  id: 'season-test', kind: 'season', name: 'Austin', year: "'26–27", subtitle: 'Winter + Spring', location: 'Austin, TX',
-  dates: 'Aug 2026 – Jan 2027', startsOn: '2026-08-01', endsOn: '2027-01-31', status: 'scheduled', timezone: 'America/Chicago', accent: '244, 114, 182', days: {},
+  // A test season a little longer than a real one's three months, so one
+  // fixture holds a month that is over, today and a month in the next year.
+  id: 'season-test', kind: 'season', name: 'Austin Test', year: "'26", location: 'Austin, TX',
+  dates: 'Aug 2026 – Jan 2027', updated: '2026-09-24', startsOn: '2026-08-01', endsOn: '2027-01-31', status: 'scheduled', timezone: 'America/Chicago', accent: '244, 114, 182', days: {},
   venues: { Mohawk: 'https://maps.google.com/?q=Mohawk' },
   artists: [
     show('Last Month', '2026-08-30', 'Parish', { time: '8 PM' }),                 // a month that is over
@@ -294,14 +296,18 @@ test('a location the show menu unticks leaves the months, YOURS and a search; ev
 
 test('lists: the season follows the upcoming festivals and precedes the past ones; it is never the default', () => {
   const index = [
-    { id: 'austin', kind: 'season', status: 'scheduled', startsOn: '2026-09-24' },
+    { id: 'austin-fall-2026', kind: 'season', status: 'scheduled', startsOn: '2026-09-01', endsOn: '2026-11-30' },
     { id: 'portola', status: 'scheduled', startsOn: '2026-09-26' },
     { id: 'acl', status: 'scheduled', startsOn: '2026-10-02' },
     { id: 'ef', status: 'archived', startsOn: '2026-06-25' },
   ];
-  const doc = { festivals: { austin: {}, portola: {}, acl: {}, ef: {} }, people: {} };
-  const pairs = model.landingPairs([{ token: 't', name: 'c' }], () => doc, index);
-  assert.deepEqual(pairs.map((p) => `${p.fid}:${p.season ? 'season' : p.past ? 'past' : 'fest'}`), ['portola:fest', 'acl:fest', 'austin:season', 'ef:past']);
+  const doc = { festivals: { 'austin-fall-2026': {}, portola: {}, acl: {}, ef: {} }, people: {} };
+  const pairs = model.landingPairs([{ token: 't', name: 'c' }], () => doc, index, { now: NOW });
+  assert.deepEqual(pairs.map((p) => `${p.fid}:${p.season ? 'season' : p.past ? 'past' : 'fest'}`), ['portola:fest', 'acl:fest', 'austin-fall-2026:season', 'ef:past']);
+  // Once its window is over it is past, like the festival it sits beside —
+  // before the feed has marked it archived.
+  const dec = model.landingPairs([{ token: 't', name: 'c' }], () => doc, index, { now: new Date('2026-12-01T12:00:00-06:00') });
+  assert.deepEqual(dec.map((p) => `${p.fid}:${p.season ? 'season' : p.past ? 'past' : 'fest'}`).slice(2), ['austin-fall-2026:past', 'ef:past']);
   const saved = FESTIVAL_INDEX.splice(0);
   try {
     FESTIVAL_INDEX.push(...index);
@@ -386,4 +392,68 @@ test('list heads after the seasons: City seasons, then Past festivals, then More
   assert.deepEqual(heads([fest, fest, past, fest]), [], 'a festival list keeps no heads');
   assert.deepEqual(heads([fest, season, past, fest]), ['City seasons', 'Past festivals', 'More']);
   assert.deepEqual(heads([fest, season, fest]), ['City seasons', 'More'], 'a crew’s own festival after the seasons is not a season');
+});
+
+// ---- round 3: a city is a run of seasons (Kevin, 2026-09-25) ---------------------------
+import { readFileSync } from 'node:fs';
+const REAL_INDEX = JSON.parse(readFileSync(new URL('../data/festivals/index.json', import.meta.url), 'utf8'));
+const CT = (iso, hm = '12:00') => new Date(`${iso}T${hm}:00-05:00`);
+
+test('the description line: its window, then when the feed last read it — today, yesterday, or the date', () => {
+  const winter = REAL_INDEX.find((f) => f.id === 'austin-winter-2027');
+  const m = { ...winter, updated: '2026-09-25', timezone: 'America/Chicago' };
+  assert.equal(seasonLine(m, CT('2026-09-25', '20:00')), 'Dec 2026 – Feb 2027 · updated today');
+  assert.equal(seasonLine(m, CT('2026-09-26', '09:00')), 'Dec 2026 – Feb 2027 · updated yesterday');
+  assert.equal(seasonLine(m, CT('2026-10-01')), 'Dec 2026 – Feb 2027 · updated Sep 25');
+  assert.equal(seasonLine(m, CT('2027-01-03')), 'Dec 2026 – Feb 2027 · updated Sep 25, 2026');
+  assert.equal(seasonLine({ ...m, status: 'archived' }, CT('2027-03-03')), 'Dec 2026 – Feb 2027', 'a season that is over is not read any more');
+  // Every place it shows says the same words: the header / Settings card
+  // line, and the Settings / add-a-fest rows.
+  const frag = festPlaceLine(m);
+  const host = document.createElement('div');
+  host.appendChild(frag);
+  assert.match(host.textContent, /^Dec 2026 – Feb 2027 · updated /);
+  assert.match(festRow(m, { onPick: () => {} }).querySelector('.fest-dates').textContent, /^Dec 2026 – Feb 2027 · updated /);
+  // A season's label is its name and year: no month from startsOn ("Dec '27").
+  assert.deepEqual(model.festLabelFor('austin-winter-2027', REAL_INDEX), { name: 'Austin Winter', year: "'27", accent: winter.accent });
+});
+
+test('the shelf: the season in progress and the one after it; later seasons tucked; a crew’s own season always shows', () => {
+  const lead = (iso) => [...seasonLead(REAL_INDEX, CT(iso)).lead].sort();
+  assert.deepEqual(lead('2026-09-25'), ['austin-fall-2026', 'austin-winter-2027'], 'Sep 25: Fall and Winter');
+  assert.deepEqual(lead('2026-12-01'), ['austin-spring-2027', 'austin-winter-2027'], 'Dec 1: Winter and Spring (Fall is over)');
+  assert.ok(seasonIsOver(REAL_INDEX.find((f) => f.id === 'austin-fall-2026'), '2026-12-01'));
+  // The landing's list for a crew that has all four, one of them with picks.
+  const doc = {
+    people: { Kevin: { colorIndex: 0 } },
+    festivals: {
+      'austin-fall-2026': { selections: {} }, 'austin-winter-2027': { selections: {} },
+      'austin-spring-2027': { selections: { Spoon: { Kevin: 2 } } }, 'austin-summer-2027': { selections: {} },
+    },
+  };
+  const pairs = model.landingPairs([{ token: 't', name: 'c' }], () => doc, REAL_INDEX, { now: CT('2026-09-25') });
+  const host = document.createElement('div');
+  const has = (p) => Object.keys(model.picksFor(doc, p.fid)).length > 0;
+  appendPairs(host, pairs, REAL_INDEX, { row: (p) => { const r = document.createElement('div'); r.className = 'row'; r.textContent = p.fid; return r; }, kept: has, now: CT('2026-09-25') });
+  const flat = [...host.children].map((n) => (n.classList.contains('row') ? n.textContent : n.className === 'micro-label' ? `[${n.textContent}]` : `<${n.querySelector('button span').textContent}>`));
+  assert.deepEqual(flat, ['[City seasons]', 'austin-fall-2026', 'austin-winter-2027', 'austin-spring-2027', '<Later seasons · 1>'], 'Spring has picks, so it shows; Summer waits');
+  // Without the picks, Spring waits too.
+  const bare = shelfSeasons(pairs, { lead: seasonLead(REAL_INDEX, CT('2026-09-25')).lead, idOf: (p) => p.fid, isSeasonItem: (p) => !!p.season });
+  assert.deepEqual(bare.later.map((p) => p.fid), ['austin-spring-2027', 'austin-summer-2027']);
+  // The tucked row opens in place and draws the rows it held.
+  const fold = host.lastElementChild;
+  fold.querySelector('button').click();
+  assert.deepEqual([...fold.querySelectorAll('.row')].map((r) => r.textContent), ['austin-summer-2027']);
+});
+
+test('a season whose window is over shows all of its shows, with no THIS WEEK; a future one is all of itself', () => {
+  state.setActiveFestivalId('season-test');
+  const after = seasonPlanOf(SEASON, ctxFor('season-test', { now: new Date('2027-03-05T12:00:00-06:00') }));
+  assert.ok(after.over);
+  assert.equal(after.months[0].key, 'August', 'from its first month');
+  assert.ok(after.months.every((m) => m.weeks.every((w) => !w.when)));
+  const before = seasonPlanOf(SEASON, ctxFor('season-test', { now: new Date('2026-07-01T12:00:00-05:00') }));
+  assert.equal(before.over, false);
+  assert.equal(before.months[0].key, 'August', 'a season still ahead opens on its first month, nothing hidden');
+  assert.equal(before.months.reduce((n, m) => n + m.weeks.reduce((k, w) => k + w.entries.length, 0), 0), SEASON.artists.length);
 });

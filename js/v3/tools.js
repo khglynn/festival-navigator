@@ -5,7 +5,8 @@ import * as model from './model.js';
 import { parseBulkLineV4, LEVEL_LABELS_V4 } from '../parse.js';
 import { renderCard, applyWeekend, wallPlanFor } from './wall.js';
 import { loadFolded } from './filters.js';
-import { approxMark, venueGroupsOf, shortDateLabel, isCancelled, occOf } from './events.js';
+import { approxMark, venueGroupsOf, shortDateLabel, isCancelled, occOf, seasonLine, seasonLead, shelfSeasons } from './events.js';
+import { canAnimate, CASCADE_MS, STAGGER_MS, OUT_MS, EASE_ARRIVE, EASE_LEAVE } from './motion.js';
 
 export const el = (tag, css, text) => {
   const n = document.createElement(tag);
@@ -36,7 +37,8 @@ export function festRow(f, { muted = false, sub, chev = false, onPick }) {
   const nm = el('span', `font-family: var(--font-display); letter-spacing: .04em; font-size: var(--fs-day); color: rgb(${f.accent || '237, 234, 244'}); white-space: nowrap;`, f.name.toUpperCase());
   nm.appendChild(el('span', 'font-size: .65em; opacity: .75;', ' ' + (f.year || '')));
   left.appendChild(nm);
-  const subEl = el('div', '', sub !== undefined ? sub : (f.dates || ''));
+  // A city season's line says its window and when it was last updated.
+  const subEl = el('div', '', sub !== undefined ? sub : (f.kind === 'season' ? seasonLine(f) : (f.dates || '')));
   subEl.className = 'fest-dates';
   left.appendChild(subEl);
   row.appendChild(left);
@@ -64,6 +66,35 @@ export function seasonsHead(text = 'City seasons') {
   n.className = 'micro-label';
   return n;
 }
+// The tucked seasons' one quiet row, "Later seasons · 2", closed until
+// tapped (Kevin, 2026-09-25: "just the next two seasons - we can have the
+// others tucked away"). `row(item)` draws each one the list's own way.
+export function laterSeasonsFold(items, row) {
+  return disclosureFold(`Later seasons · ${items.length}`, (rows) => { for (const it of items) rows.appendChild(row(it)); });
+}
+
+// A landingPairs list drawn with its heads and its shelf — the landing and
+// Settings share it. The seasons a person sees are the city's two soonest
+// (events.js seasonLead) and any `kept` (a crew already has picks or notes in
+// it); the rest wait in one "Later seasons" row at the end of the seasons.
+// `row(pair)` draws one row the list's own way.
+export function appendPairs(host, pairs, festIndex, { row, kept = () => false, now = new Date() }) {
+  const { lead } = seasonLead(festIndex, now);
+  const { later } = shelfSeasons(pairs, { lead, idOf: (p) => p.fid, isSeasonItem: (p) => !!p.season, kept });
+  const tucked = new Set(later);
+  let group = 'fest';
+  let folded = false;
+  const fold = () => { if (!folded && later.length) { host.appendChild(laterSeasonsFold(later, row)); folded = true; } };
+  for (const pair of pairs) {
+    const turn = listHeadFor(group, pair);
+    if (group === 'season' && turn.group !== 'season') fold();
+    if (turn.head) host.appendChild(seasonsHead(turn.head));
+    group = turn.group;
+    if (!tucked.has(pair)) host.appendChild(row(pair));
+  }
+  if (group === 'season') fold();
+}
+
 // Which head a landingPairs row needs before it, given the group the list is
 // in: none while the list is still festivals (a list with no season has no
 // heads at all, as before), then "City seasons", then "Past festivals" for
@@ -99,12 +130,28 @@ export function disclosureFold(label, buildRows) {
   btn.append(lbl, caret);
   const list = el('div', 'display: none; flex-direction: column; gap: 7px;');
   let built = false;
+  // It opens in place with the app's motion (2026-09-25, "Later seasons"): the
+  // rows rise in a beat apart under the row that opened them; closing is quick
+  // and plain. Instant under Reduce Motion and Low power.
+  const moves = () => canAnimate(list, { lowPower: document.body.classList.contains('low-power') });
   btn.addEventListener('click', () => {
     if (!built) { buildRows(list); built = true; }
     const open = list.style.display === 'none';
-    list.style.display = open ? 'flex' : 'none';
     caret.textContent = open ? '▾' : '▸';
     btn.setAttribute('aria-expanded', String(open));
+    if (open) {
+      list.style.display = 'flex';
+      if (moves()) {
+        [...list.children].forEach((row, i) => row.animate([{ opacity: 0, transform: 'translateY(-6px)' }, { opacity: 1, transform: 'none' }],
+          { duration: CASCADE_MS, delay: Math.min(i, 6) * STAGGER_MS, easing: EASE_ARRIVE, fill: 'backwards' }));
+      }
+      return;
+    }
+    if (!moves()) { list.style.display = 'none'; return; }
+    const a = list.animate([{ opacity: 1 }, { opacity: 0, transform: 'translateY(-4px)' }], { duration: OUT_MS, easing: EASE_LEAVE });
+    const hide = () => { if (btn.getAttribute('aria-expanded') === 'false') list.style.display = 'none'; };
+    a.onfinish = hide;
+    a.oncancel = hide;
   });
   wrap.append(btn, list);
   return wrap;

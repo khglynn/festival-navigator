@@ -39,35 +39,53 @@ const iso = (d) => d.toISOString().slice(0, 10);
 const addDays = (s, n) => { const d = new Date(`${s}T12:00:00Z`); d.setUTCDate(d.getUTCDate() + n); return iso(d); };
 const clock = (min) => { const h = Math.floor(min / 60) % 24; const m = min % 60; return `${h % 12 === 0 ? 12 : h % 12}${m ? `:${String(m).padStart(2, '0')}` : ''} ${h < 12 ? 'AM' : 'PM'}`; };
 
-// `today` is the season's first night (the feed writes from today on); the
-// months follow the measured distribution from there. `names` seeds the
-// artists with real-looking names (the seed file's, say) before the made-up
-// ones take over.
-export function seasonShape({ today = '2026-09-25', names = [], seed = 2026 } = {}) {
+// A city season is three months (Kevin, 2026-09-25: "seasons, so like winter
+// and summer and spring, not like the full year"): Fall Sep–Nov, Winter Dec–Feb
+// (named for its January), Spring Mar–May, Summer Jun–Aug. `today` picks the
+// season it falls in, and its shows run from today to the season's end, in
+// the measured density of those months (the fall's Sep 100 · Oct 396 ·
+// Nov 234; a winter's 94 · 11 · 23). `names` seeds real-looking names before
+// the made-up ones take over. The edge cases sit a few days after today, so
+// a test finds them by shape on any day in any season.
+const SEASONS = [['winter', 11], ['spring', 2], ['summer', 5], ['fall', 8]]; // first month, 0-based
+export function seasonWindowOf(today) {
+  const m = Number(today.slice(5, 7)) - 1;
+  const y = Number(today.slice(0, 4));
+  const [name, first] = m === 11 || m < 2 ? SEASONS[0] : m < 5 ? SEASONS[1] : m < 8 ? SEASONS[2] : SEASONS[3];
+  const startYear = name === 'winter' && m < 2 ? y - 1 : y;
+  const startsOn = iso(new Date(Date.UTC(startYear, first, 1, 12)));
+  const endsOn = iso(new Date(Date.UTC(startYear, first + 3, 0, 12)));
+  const label = name === 'winter' ? startYear + 1 : startYear; // Winter is named for its January
+  return { season: name, startsOn, endsOn, label };
+}
+const DENSITY = { fall: [100, 396, 234], winter: [94, 11, 23], spring: [17, 10, 3], summer: [3, 2, 1] };
+
+export function seasonShape({ today = '2026-09-25', names = [], seed = 2026, id = null } = {}) {
   const r = rng(seed);
   const pick = (arr) => arr[Math.floor(r() * arr.length)];
   const pool = [...new Set(names)];
   let made = 0;
   const nextName = () => pool.shift() || `${FIRST[made % FIRST.length]} ${SECOND[Math.floor(made++ / FIRST.length) % SECOND.length]}${made > FIRST.length * SECOND.length ? ` ${made}` : ''}`;
-  // Shows per month, from today's month on (the measured shape).
-  const perMonth = [100, 396, 234, 94, 11, 23, 17, 10, 3];
-  const start = new Date(`${today}T12:00:00Z`);
+  const win = seasonWindowOf(today);
+  const perMonth = DENSITY[win.season];
+  const first = new Date(`${win.startsOn}T12:00:00Z`);
+  const monthIso = (k, d) => iso(new Date(Date.UTC(first.getUTCFullYear(), first.getUTCMonth() + k, d, 12)));
+  const monthOfIso = (d) => MONTHS[Number(d.slice(5, 7)) - 1];
   const artists = [];
   const multi = [];
   for (const [k, n] of perMonth.entries()) {
-    const first = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth() + k, 1, 12));
-    const month = MONTHS[first.getUTCMonth()];
-    const from = k === 0 ? today : iso(first);
-    const last = iso(new Date(Date.UTC(first.getUTCFullYear(), first.getUTCMonth() + 1, 0, 12)));
+    const from = [monthIso(k, 1), today].reduce((a, b) => (b > a ? b : a));
+    const last = monthIso(k + 1, 0);
     const days = [];
     for (let d = from; d <= last; d = addDays(d, 1)) days.push(d);
+    if (!days.length) continue;
     for (let i = 0; i < n; i++) {
       // Weekends are busier: a Friday or Saturday is drawn three times as often.
       let date = pick(days);
       const wd = new Date(`${date}T12:00:00Z`).getUTCDay();
       if (wd !== 5 && wd !== 6 && r() < 0.4) date = pick(days);
       const name = nextName();
-      const e = { name, day: month, date, venue: pick(LOCATIONS) };
+      const e = { name, day: monthOfIso(date), date, venue: pick(LOCATIONS) };
       const start = 18 * 60 + Math.floor(r() * 10) * 30; // 6 PM – 10:30 PM
       if (r() < 0.8) e.time = clock(start);
       if (r() < 0.85) e.doors = clock(start - 60);
@@ -79,28 +97,36 @@ export function seasonShape({ today = '2026-09-25', names = [], seed = 2026 } = 
       if (multi.length < 107 && r() < 0.14) multi.push(e);
     }
   }
-  // 107 artists play again, a few days to a few weeks later.
+  // Artists who play again, a few days to a few weeks later, inside the window.
   for (const e of multi) {
     const again = addDays(e.date, 1 + Math.floor(r() * 20));
-    const month = MONTHS[Number(again.slice(5, 7)) - 1];
-    artists.push({ ...e, day: month, date: again, venue: r() < 0.5 ? e.venue : pick(LOCATIONS) });
+    if (again > win.endsOn) continue;
+    artists.push({ ...e, day: monthOfIso(again), date: again, venue: r() < 0.5 ? e.venue : pick(LOCATIONS) });
   }
-  // The named edge cases, placed where a test can find them by shape.
-  const oct = (d) => `${String(start.getUTCFullYear())}-10-${String(d).padStart(2, '0')}`;
-  const nine = oct(17); // a Saturday in 2026: the night with nine shows at once
-  for (let i = 0; i < 9; i++) artists.push({ name: `Ninefold ${SECOND[i]}`, day: 'October', date: nine, venue: LOCATIONS[i], time: clock(19 * 60 + i * 15), sources: ['do512'] });
-  artists.push({ name: LONG_NAME, day: 'October', date: oct(9), venue: 'ACL Live', doors: '6:30 PM', time: '8 PM', with: ['Mikaela Davis'], sources: ['do512'] });
-  artists.push({ name: 'No Clock Collective', day: 'October', date: oct(10), venue: 'Hotel Vegas', sources: ['do512'] });
-  artists.push({ name: 'Called Off Band', day: 'October', date: oct(8), venue: 'Mohawk', time: '9 PM', cancelled: { on: today, source: 'https://do512.com/', note: 'A source lists it as cancelled.' }, page: { url: 'https://do512.com/events/called-off', at: 'Do512' }, sources: ['do512'] });
-  artists.push({ name: 'Sold Right Out', day: 'October', date: oct(12), venue: 'Parish', time: '8 PM', soldOut: true, tickets: { url: 'https://www.axs.com/events/1', at: 'AXS' }, sources: ['do512'] });
+  // The named edge cases, a few days after today (never past the window's
+  // end), so the wall shows them whatever day the suite runs on.
+  const at = (n) => { const d = addDays(today, n); return d > win.endsOn ? win.endsOn : d; };
+  const nine = at(12); // the night with nine shows at once
+  for (let i = 0; i < 9; i++) artists.push({ name: `Ninefold ${SECOND[i]}`, day: monthOfIso(nine), date: nine, venue: LOCATIONS[i], time: clock(19 * 60 + i * 15), sources: ['do512'] });
+  artists.push({ name: LONG_NAME, day: monthOfIso(at(4)), date: at(4), venue: 'ACL Live', doors: '6:30 PM', time: '8 PM', with: ['Mikaela Davis'], sources: ['do512'] });
+  artists.push({ name: 'No Clock Collective', day: monthOfIso(at(5)), date: at(5), venue: 'Hotel Vegas', sources: ['do512'] });
+  artists.push({ name: 'Called Off Band', day: monthOfIso(at(3)), date: at(3), venue: 'Mohawk', time: '9 PM', cancelled: { on: today, source: 'https://do512.com/', note: 'A source lists it as cancelled.' }, page: { url: 'https://do512.com/events/called-off', at: 'Do512' }, sources: ['do512'] });
+  artists.push({ name: 'Sold Right Out', day: monthOfIso(at(7)), date: at(7), venue: 'Parish', time: '8 PM', soldOut: true, tickets: { url: 'https://www.axs.com/events/1', at: 'AXS' }, sources: ['do512'] });
   // On-sales in the future, one with presales (fields as the feed writes them).
-  artists.push({ name: 'Presale Darlings', day: 'November', date: `${start.getUTCFullYear()}-11-14`, venue: 'Moody Center', time: '8 PM', doors: '7 PM', onSale: `${today}T10:00:00-05:00`.replace(today, addDays(today, 7)), presales: [{ name: 'Artist Presale', start: `${addDays(today, 5)}T10:00:00-05:00` }, { name: 'Spotify Fans First', start: `${addDays(today, 6)}T10:00:00-05:00` }], tickets: { url: 'https://www.ticketmaster.com/event/presale', at: 'Ticketmaster' }, sources: ['ticketmaster'] });
+  artists.push({ name: 'Presale Darlings', day: monthOfIso(at(20)), date: at(20), venue: 'Moody Center', time: '8 PM', doors: '7 PM', onSale: `${addDays(today, 7)}T10:00:00-05:00`, presales: [{ name: 'Artist Presale', start: `${addDays(today, 5)}T10:00:00-05:00` }, { name: 'Spotify Fans First', start: `${addDays(today, 6)}T10:00:00-05:00` }], tickets: { url: 'https://www.ticketmaster.com/event/presale', at: 'Ticketmaster' }, sources: ['ticketmaster'] });
   artists.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
-  const dayMeta = Object.fromEntries([...new Set(artists.map((a) => a.day))].map((m) => [m, { date: `${m.slice(0, 3)} ${artists.find((a) => a.day === m).date.slice(0, 4)}` }]));
+  const monthsIn = [0, 1, 2].map((k) => monthIso(k, 1));
+  const dayMeta = Object.fromEntries(monthsIn.map((d) => [monthOfIso(d), { date: `${monthOfIso(d).slice(0, 3)} ${d.slice(0, 4)}` }]));
+  const short = (d) => monthOfIso(d).slice(0, 3);
+  const dates = win.startsOn.slice(0, 4) === win.endsOn.slice(0, 4)
+    ? `${short(win.startsOn)} – ${short(win.endsOn)} ${win.endsOn.slice(0, 4)}`
+    : `${short(win.startsOn)} ${win.startsOn.slice(0, 4)} – ${short(win.endsOn)} ${win.endsOn.slice(0, 4)}`;
+  const title = win.season[0].toUpperCase() + win.season.slice(1);
   return {
-    id: 'austin', kind: 'season', name: 'Austin', year: "'26–27", subtitle: 'Winter + Spring', location: 'Austin, TX',
-    dates: 'Sep 2026 – May 2027', startsOn: artists[0].date, endsOn: artists.at(-1).date, status: 'scheduled', timezone: 'America/Chicago', accent: '244, 114, 182',
+    id: id || `austin-${win.season}-${win.label}`, kind: 'season', name: `Austin ${title}`, year: `'${String(win.label).slice(2)}`,
+    location: 'Austin, TX', dates, startsOn: win.startsOn, endsOn: win.endsOn, updated: today,
+    status: 'scheduled', timezone: 'America/Chicago', accent: '240, 146, 76',
     artists, dayMeta, venues: { Mohawk: 'https://maps.google.com/?q=Mohawk+Austin' }, days: {},
-    meta: { note: 'tests/helpers/season-shape.mjs — shaped like the 2026-09-25 trial feed' },
+    meta: { note: 'tests/helpers/season-shape.mjs — shaped like the 2026-09-25 trial feed, one three-month season' },
   };
 }

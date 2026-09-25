@@ -55,6 +55,39 @@ here and the last commit.
 - [x] `npm test` 929/929 (1 skip) and `npm run test:browser` 187/187 on
       9615bc1 (the merged tree with every fix).
 
+### Round 3 (Kevin: seasons, not one long list — 2026-09-25 night)
+
+- [x] Fast-forwarded to 868a908: `austin.json` is gone; four season files
+      (austin-fall-2026, -winter-2027, -spring-2027, -summer-2027), each a
+      three-month window with startsOn / endsOn / updated.
+- [x] **The description line** (events.js `seasonLine`, one builder):
+      "Dec 2026 – Feb 2027 · updated Sep 25" / "updated today" / "updated
+      yesterday"; a season that is over says its window alone. It shows in:
+      (1) the wall header under the season's name (`#fest-sub`, via
+      card-facts.js `festPlaceLine`); (2) Settings' current-fest card (the
+      same `festPlaceLine`); (3) Settings' "Your festivals" rows; (4) the
+      add-a-fest / create list rows (tools.js `festRow`); (5) the landing's
+      rows, above the people. A season's label is its name and year
+      ("Austin Winter '27"): no month from startsOn, which said "Dec '27".
+- [x] **The shelf** (Kevin: "just the next two seasons - we can have the
+      others tucked away"): events.js `seasonLead` = the city's two soonest
+      live seasons (Fall + Winter on Sep 25, Winter + Spring from Dec 1), read
+      from each row's window against Austin's day; the rest sit behind one
+      "Later seasons · N" row (the disclosure fold, now with the app's
+      arrive / leave motion) — in the landing, Settings and the create list.
+      A season a crew already has picks or notes in always shows.
+- [x] A season whose window is over is past like an archived festival, even
+      before the feed marks it (landingPairs, the create list), and its wall
+      shows all of its shows with no THIS WEEK. A future season (Winter)
+      opens on its first month with nothing hidden. YOURS is per season.
+- [x] Tests: the test season is a real three-month window with a real id
+      (`seasonShape` picks the season around `today`; its edge cases sit a
+      few days after today, so the suite reads the same any day); the
+      browser contract routes its index row; new unit tests pin the line,
+      the shelf (Sep 25 / Dec 1 / a crew with Spring picks) and over seasons;
+      a browser test walks the landing's rows and Winter opening on
+      December. No code or test refers to the retired `austin` id.
+
 ## Decisions (and why)
 
 1. **The season shows from today on.** Past months drop off (brief), and so

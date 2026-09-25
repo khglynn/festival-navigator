@@ -15,7 +15,7 @@ import { LEVEL_LABELS_V4 } from '../parse.js';
 import { hslOf } from './palette.js';
 import { colorIndexOf, roomOf } from './wall.js';
 import { record } from '../errlog.js';
-import { runFactsOf, findEventEntry, shortDateLabel, shortDate, dateOf, venueOf, isCancelled, cancelledNames, linksOf, isSeason, weekdayOfIso, entriesNamed, isUnlisted } from './events.js';
+import { runFactsOf, findEventEntry, shortDateLabel, shortDate, dateOf, venueOf, isCancelled, cancelledNames, linksOf, isSeason, weekdayOfIso, entriesNamed, isUnlisted, seasonLine } from './events.js';
 import { festivalClock } from './now.js';
 import { GROW_MS, CONTENT_FADE_MS, OUT_MS, CASCADE_MS, STAGGER_MS, REFRESH_MS, EASE_ARRIVE, EASE_LEAVE, EASE_SURFACE, canAnimate } from './motion.js';
 import { whoSnapshot, whoMotion, whoSettle } from './who-motion.js';
@@ -462,6 +462,10 @@ export function placeDoor(text, url, className) {
 // and the Settings fest card, so they can never say different things.
 export function festPlaceLine(fest, className = 'fest-place') {
   const frag = document.createDocumentFragment();
+  // A city season describes itself by its window and when the feed last read
+  // it — "Dec 2026 – Feb 2027 · updated Sep 25" (events.js seasonLine, the one
+  // builder every list shares). Its name already says the city.
+  if (isSeason(fest)) { frag.append(seasonLine(fest)); return frag; }
   const bits = [];
   const [venue, ...aside] = (fest.subtitle || '').split(' · ');
   const place = venue || fest.location || '';

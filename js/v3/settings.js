@@ -13,11 +13,11 @@ import { colorIndexOf, meterChip, crewMark } from './wall.js';
 import { meterOf, whoCorner } from './aura.js';
 import { festPlaceLine } from './card-facts.js'; // the fest's place line, shared with the wall header
 import { recent as recentErrors, diagnostics, SETTINGS_KEY, reportKey, reportsOn, clearReports, noteSettings } from '../errlog.js';
-import { el, subviewHead, eqLoader, festRow, openExportLikes, openBulkPaste, openDayImage, seasonsHead, listHeadFor } from './tools.js';
+import { el, subviewHead, eqLoader, festRow, openExportLikes, openBulkPaste, openDayImage, appendPairs } from './tools.js';
 import { router } from './router.js';
 import { nameProblem, NAME_LIMITS } from '../name-rules.mjs';
 import { loadJSON, saveLS, getLS, removeLS, errorText } from '../util.js';
-import { cancelledNames, isSeason } from './events.js'; // a cancelled act never goes into a playlist (2026-09-23)
+import { cancelledNames, isSeason, seasonLine } from './events.js'; // a cancelled act never goes into a playlist (2026-09-23)
 
 // {lowPower, stayOffline, crashReports}. The key's home is js/errlog.js: the
 // crash reporter reads Off and Stay offline before any other module runs.
@@ -186,29 +186,33 @@ function festivalsSection(ctx, actions) {
   // landing rows do. Adding a fest goes to the shared multi-pick page.
   const pairs = model.landingPairs(crew.knownCrews(), state.cachedDoc, FESTIVAL_INDEX)
     .filter((p) => p.fid && !(p.token === state.getCrewToken() && p.fid === state.activeFestivalId));
-  // The seasons follow the festivals under their own small head, and past
-  // festivals after them get theirs (UX.md §9; the landing does the same).
-  let group = 'fest';
-  for (const p of pairs) {
-    const turn = listHeadFor(group, p);
-    if (turn.head) wrap.appendChild(seasonsHead(turn.head));
-    group = turn.group;
+  // The seasons follow the festivals under their own small head — the next
+  // two, and any this crew already has something in; the rest behind "Later
+  // seasons" — and past festivals after them get theirs (tools.js appendPairs,
+  // the landing's own list).
+  const docOf = (token) => (token === state.getCrewToken() ? state.crewDoc : state.cachedDoc(token));
+  const settingsRow = (p) => {
     const meta = FESTIVAL_INDEX.find((f) => f.id === p.fid)
       || { id: p.fid, name: model.festLabelFor(p.fid, FESTIVAL_INDEX).name };
     const sameCrew = p.token === state.getCrewToken();
     const picks = sameCrew ? Object.keys(model.picksFor(state.crewDoc, p.fid)).length : 0;
     const names = p.people.map((x) => x.name);
-    wrap.appendChild(festRow(meta, {
-      muted: meta.status === 'archived',
+    return festRow(meta, {
+      muted: !!p.past,
       chev: true,
       sub: [
-        meta.dates,
+        meta.kind === 'season' ? seasonLine(meta) : meta.dates,
         sameCrew && picks ? `${picks} artist${picks === 1 ? '' : 's'} picked` : '',
         !sameCrew && names.length > 1 ? names.slice(0, 3).join(', ') : '',
       ].filter(Boolean).join(' · '),
       onPick: () => (sameCrew ? actions.switchFestival(p.fid) : actions.openBoard(p.token, p.fid)),
-    }));
-  }
+    });
+  };
+  const hasSomething = (p) => {
+    const doc = docOf(p.token);
+    return !!doc && (Object.keys(model.picksFor(doc, p.fid)).length > 0 || model.totalNoteCount(doc, p.fid) > 0);
+  };
+  appendPairs(wrap, pairs, FESTIVAL_INDEX, { row: settingsRow, kept: hasSomething });
 
   const add = el('button', '', '+ Add a festival');
   add.className = 'dashed-row';
