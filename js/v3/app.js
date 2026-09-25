@@ -14,7 +14,7 @@ import { loadPeopleFilter, savePeopleFilter, togglePerson, pruneToActive, loadFo
 import { OUT_MS, CASCADE_MS, STAGGER_MS, EASE_ARRIVE, EASE_LEAVE, EASE_SURFACE, canAnimate } from './motion.js';
 import { scrolledBefore, rememberScrolled, dayOfScrollKey, festivalClock } from './now.js';
 import { dayLabelParts } from '../time.js';
-import { disclosureFold, eqLoader, festRow } from './tools.js';
+import { disclosureFold, eqLoader, festRow, seasonsHead } from './tools.js';
 import { openArtistSheet, openDayNotes, openAllNotes, openFestNotes, closeSheet, refreshOpenSheet, sheetChrome, dialogize, rememberOpener, shortDayLabel } from './notes.js';
 import { renderSettings, appSettings, openSubviewByKey } from './settings.js';
 import { onStorageWriteFail, saveLS, errorText } from '../util.js';
@@ -1383,9 +1383,13 @@ function renderCreate() {
     // cannot finish must not start (Codex reshape gate, P2). 8 leaves
     // headroom for singles in the same hour.
     goBtn.disabled = !n || n > 8;
+    // Austin alone is not "1 festival" (UX.md §6: a season says its own name).
+    const picked = FESTIVAL_INDEX.filter((f) => createSel.has(f.id));
+    const onlySeasons = picked.length && picked.every((f) => f.kind === 'season');
     goBtn.textContent = !n ? 'Pick your fests'
       : n > 8 ? '8 at a time is the max'
-        : `ADD ${n} FESTIVAL${n === 1 ? '' : 'S'} →`;
+        : onlySeasons ? `ADD ${picked.length === 1 ? picked[0].name.toUpperCase() : `${n} SEASONS`} →`
+          : `ADD ${n} FESTIVAL${n === 1 ? '' : 'S'} →`;
   };
   const pick = (f, rowEl) => {
     if (createSel.has(f.id)) createSel.delete(f.id);
@@ -1393,7 +1397,16 @@ function renderCreate() {
     rowEl.classList.toggle('sel-fest', createSel.has(f.id));
     paintGo();
   };
-  for (const f of FESTIVAL_INDEX.filter((x) => x.status !== 'archived')) {
+  // The upcoming festivals, then the city seasons under their own small head
+  // (UX.md §9) — never in the index's order, which is by start date.
+  const upcoming = FESTIVAL_INDEX.filter((x) => x.status !== 'archived');
+  const seasons = upcoming.filter((x) => x.kind === 'season');
+  for (const f of upcoming.filter((x) => x.kind !== 'season')) {
+    const rowEl = festPickRow(f, { onPick: () => pick(f, rowEl) });
+    list.appendChild(rowEl);
+  }
+  if (seasons.length) list.appendChild(seasonsHead());
+  for (const f of seasons) {
     const rowEl = festPickRow(f, { onPick: () => pick(f, rowEl) });
     list.appendChild(rowEl);
   }
@@ -2070,7 +2083,13 @@ function renderLanding() {
   const list = $('landing-fests');
   list.textContent = '';
   const crews = crew.knownCrews();
+  let group = 'fest';
   for (const pair of model.landingPairs(crews, state.cachedDoc, FESTIVAL_INDEX)) {
+    // The seasons come after the festivals (landingPairs orders them), under
+    // one small head of their own (UX.md §9), and past festivals after them
+    // get theirs back.
+    if (pair.season && group !== 'season') { list.appendChild(seasonsHead()); group = 'season'; }
+    else if (!pair.season && group === 'season') { list.appendChild(seasonsHead(pair.past ? 'Past festivals' : 'Your crews')); group = 'past'; }
     const row = document.createElement('button');
     row.className = 'fest-row';
     row.style.width = '100%';

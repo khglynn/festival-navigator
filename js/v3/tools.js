@@ -54,6 +54,17 @@ export function festRow(f, { muted = false, sub, chev = false, onPick }) {
   return row;
 }
 
+// The small head a list puts over its city seasons (2026-09-25, UX.md §9):
+// the seasons follow the festivals in every list, under their own name, so a
+// rolling "starts today" season never reads as the next festival. A list whose
+// past festivals follow its seasons closes the group with the same head saying
+// "Past festivals", or they would read as seasons.
+export function seasonsHead(text = 'City seasons') {
+  const n = el('div', 'margin-top: 6px;', text);
+  n.className = 'micro-label';
+  return n;
+}
+
 export function subviewHead(title, onBack) {
   const head = el('div', 'display: flex; align-items: center; gap: 10px;');
   const back = el('button', '', '‹'); back.className = 'back-btn';

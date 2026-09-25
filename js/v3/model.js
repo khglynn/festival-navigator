@@ -325,11 +325,17 @@ export function landingPairs(crews, docFor, festIndex) {
   // first, muted by the renderer. startsOn is an ISO string, so plain string
   // comparison sorts it — no Date parsing, no clock needed (archived status,
   // not "today", decides what counts as past).
+  // A city season (kind: 'season', 2026-09-25) sits AFTER the upcoming
+  // festivals, before the past ones, and never in date order among them: a
+  // rolling season always starts "today", so by date it would pin itself above
+  // Portola during Portola (claude-plans/2026-09-25-season-v0/UX.md §9). Its
+  // pair says `season` so a renderer can put the small head over it.
   const meta = new Map(festIndex.map((f) => [f.id, f]));
   const sortKey = (fid) => {
     const m = fid ? meta.get(fid) : null;
-    if (!m || !m.startsOn) return { past: 2, key: '' };           // uncached / custom: last
-    if (m.status === 'archived') return { past: 1, key: m.startsOn }; // past, recent first
+    if (!m || !m.startsOn) return { past: 3, key: '' };           // uncached / custom: last
+    if (m.status === 'archived') return { past: 2, key: m.startsOn }; // past, recent first
+    if (m.kind === 'season') return { past: 1, key: m.startsOn }; // seasons, after the festivals
     return { past: 0, key: m.startsOn };                          // upcoming, soonest first
   };
   const pairs = [];
@@ -341,14 +347,15 @@ export function landingPairs(crews, docFor, festIndex) {
       : [];
     if (!fids.length) { pairs.push({ token: c.token, fid: null, crewName: c.name || '', people, past: false }); continue; }
     for (const fid of fids) {
-      pairs.push({ token: c.token, fid, crewName: c.name || '', people, past: (meta.get(fid) || {}).status === 'archived' });
+      const m = meta.get(fid) || {};
+      pairs.push({ token: c.token, fid, crewName: c.name || '', people, past: m.status === 'archived', season: m.kind === 'season' && m.status !== 'archived' });
     }
   }
   return pairs.sort((a, b) => {
     const ka = sortKey(a.fid);
     const kb = sortKey(b.fid);
     if (ka.past !== kb.past) return ka.past - kb.past;
-    if (ka.past === 1) return kb.key.localeCompare(ka.key); // past: most recent first
+    if (ka.past === 2) return kb.key.localeCompare(ka.key); // past: most recent first
     return ka.key.localeCompare(kb.key);
   });
 }

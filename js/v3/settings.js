@@ -13,7 +13,7 @@ import { colorIndexOf, meterChip, crewMark } from './wall.js';
 import { meterOf, whoCorner } from './aura.js';
 import { festPlaceLine } from './card-facts.js'; // the fest's place line, shared with the wall header
 import { recent as recentErrors, diagnostics, SETTINGS_KEY, reportKey, reportsOn, clearReports, noteSettings } from '../errlog.js';
-import { el, subviewHead, eqLoader, festRow, openExportLikes, openBulkPaste, openDayImage } from './tools.js';
+import { el, subviewHead, eqLoader, festRow, openExportLikes, openBulkPaste, openDayImage, seasonsHead } from './tools.js';
 import { router } from './router.js';
 import { nameProblem, NAME_LIMITS } from '../name-rules.mjs';
 import { loadJSON, saveLS, getLS, removeLS, errorText } from '../util.js';
@@ -186,7 +186,12 @@ function festivalsSection(ctx, actions) {
   // landing rows do. Adding a fest goes to the shared multi-pick page.
   const pairs = model.landingPairs(crew.knownCrews(), state.cachedDoc, FESTIVAL_INDEX)
     .filter((p) => p.fid && !(p.token === state.getCrewToken() && p.fid === state.activeFestivalId));
+  // The seasons follow the festivals under their own small head, and past
+  // festivals after them get theirs (UX.md §9; the landing does the same).
+  let group = 'fest';
   for (const p of pairs) {
+    if (p.season && group !== 'season') { wrap.appendChild(seasonsHead()); group = 'season'; }
+    else if (!p.season && group === 'season') { wrap.appendChild(seasonsHead('Past festivals')); group = 'past'; }
     const meta = FESTIVAL_INDEX.find((f) => f.id === p.fid)
       || { id: p.fid, name: model.festLabelFor(p.fid, FESTIVAL_INDEX).name };
     const sameCrew = p.token === state.getCrewToken();
