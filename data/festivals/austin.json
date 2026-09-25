@@ -917,7 +917,7 @@
       }
     },
     {
-      "name": "SKYROCKET!",
+      "name": "Skyrocket!",
       "day": "September",
       "date": "2026-09-26",
       "venue": "3TEN",
@@ -1221,7 +1221,7 @@
       }
     },
     {
-      "name": "Hey, Nothing",
+      "name": "hey, nothing",
       "day": "September",
       "date": "2026-09-27",
       "venue": "Scoot Inn",
@@ -3730,7 +3730,7 @@
       }
     },
     {
-      "name": "Wave To Earth",
+      "name": "Wave to Earth",
       "day": "October",
       "date": "2026-10-10",
       "venue": "ACL Live",
@@ -3924,6 +3924,28 @@
       "sources": {
         "do512": "17576937",
         "jambase": "jambase:16704182"
+      }
+    },
+    {
+      "name": "Matthew Dear",
+      "day": "October",
+      "date": "2026-10-10",
+      "venue": "Kingdom",
+      "time": "10 PM",
+      "with": [
+        "Juan MacLean"
+      ],
+      "billedAs": "Matthew Dear b2b Juan Maclean",
+      "page": {
+        "url": "https://do512.com/events/2026/10/10/matthew-dear-b2b-juan-maclean-tickets",
+        "at": "Do512"
+      },
+      "tickets": {
+        "url": "https://etix.prf.hn/click/camref:1011l3GdWo/pubref:dostuff/destination:https%3A%2F%2Fwww.etix.com%2Fticket%2Fp%2F89375100%2Fmatthew-dear-b2b-juan-maclean-austin-kingdom-nightclub%3Fpartner_id%3D100",
+        "at": "Etix"
+      },
+      "sources": {
+        "do512": "17878328"
       }
     },
     {
@@ -4124,7 +4146,7 @@
       }
     },
     {
-      "name": "$UICIDEBOY$",
+      "name": "$uicideboy$",
       "day": "October",
       "date": "2026-10-13",
       "venue": "Germania Amphitheater",
@@ -10673,7 +10695,7 @@
       }
     },
     {
-      "name": "MANÁ",
+      "name": "Maná",
       "day": "November",
       "date": "2026-11-08",
       "venue": "Moody Center",
@@ -11011,7 +11033,7 @@
       }
     },
     {
-      "name": "KATSEYE",
+      "name": "Katseye",
       "day": "November",
       "date": "2026-11-10",
       "venue": "Moody Center",
@@ -11342,6 +11364,28 @@
       },
       "sources": {
         "jambase": "jambase:16413985"
+      }
+    },
+    {
+      "name": "Bebe Stockwell",
+      "day": "November",
+      "date": "2026-11-12",
+      "venue": "3TEN",
+      "time": "8 PM",
+      "with": [
+        "gabrielle hope"
+      ],
+      "billedAs": "Bebe Stockwell at 3TEN Austin City Limits Live",
+      "page": {
+        "url": "https://www.jambase.com/show/bebe-stockwell-3ten-austin-city-limits-live-20261112",
+        "at": "JamBase"
+      },
+      "tickets": {
+        "url": "https://www.axs.com/events/1447725/bebe-stockwell-tickets?cid=usaffjambase&utm_source=jambase",
+        "at": "AXS"
+      },
+      "sources": {
+        "jambase": "jambase:17116517"
       }
     },
     {
@@ -11798,7 +11842,7 @@
       }
     },
     {
-      "name": "DANNA",
+      "name": "Danna",
       "day": "November",
       "date": "2026-11-14",
       "venue": "Emo's",
@@ -11849,7 +11893,7 @@
       }
     },
     {
-      "name": "SWITCHFOOT",
+      "name": "Switchfoot",
       "day": "November",
       "date": "2026-11-14",
       "venue": "Stubb's",
@@ -15550,7 +15594,7 @@
       }
     },
     {
-      "name": "BOB MOSES",
+      "name": "Bob Moses",
       "day": "December",
       "date": "2026-12-12",
       "venue": "Concourse Project",
@@ -15573,7 +15617,7 @@
       }
     },
     {
-      "name": "GREG 99",
+      "name": "Greg 99",
       "day": "December",
       "date": "2026-12-12",
       "venue": "ROMA",
@@ -17033,7 +17077,7 @@
       }
     },
     {
-      "name": "TOBYMAC",
+      "name": "TobyMac",
       "day": "March",
       "date": "2027-03-11",
       "venue": "Moody Center",
@@ -17712,13 +17756,13 @@
       "https://developer.ticketmaster.com/"
     ],
     "feed": {
-      "generatedAt": "2026-09-25T20:54:33.531Z",
+      "generatedAt": "2026-09-25T20:59:41.512Z",
       "counts": {
-        "do512": 402,
-        "jambase": 670,
+        "do512": 403,
+        "jambase": 672,
         "ticketmaster": 347,
         "jambaseCalls": 7,
-        "merged": 755,
+        "merged": 757,
         "inAnotherFest": 36,
         "movedPerJamBaseOnly": 2,
         "keptFromBefore": 0,
