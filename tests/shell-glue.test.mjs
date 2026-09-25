@@ -7,7 +7,7 @@ import { bootShell, settle } from './helpers/shell-rig.mjs';
 const shell = await bootShell(); // no crew, no network: boot lands on the landing
 await settle(60);
 const { $, dom } = shell;
-const { showToast, showUndoToast } = await import('../js/v3/wall.js'); // the SAME instance app.js holds
+const { showToast, showActionToast } = await import('../js/v3/wall.js'); // the SAME instance app.js holds
 test.after(() => shell.close());
 
 test('the new-build notice stays until it is tapped — another toast cannot erase it', () => {
@@ -20,7 +20,7 @@ test('the new-build notice stays until it is tapped — another toast cannot era
   // Every toast shares one slot and clears it first; the notice used to be one
   // of them, and the next undo or offline line left the tab on the old build.
   showToast($('toast-root'), 'You’re offline');
-  showUndoToast($('toast-root'), 'Cleared your must for GRiZ', () => {});
+  showActionToast($('toast-root'), 'Welcome back, GRiZ.', 'Not me', () => {});
   assert.ok(notice(), 'still up after two more toasts');
 
   dom.window.dispatchEvent(new dom.window.CustomEvent('fn:new-build'));

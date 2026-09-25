@@ -7,7 +7,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   keyOf, venueName, headlinerFromTitle, tidyHeadliner, nightOf, ticketsOf,
-  nearName, mergeShows, clampName,
+  nearName, mergeShows, clampName, monthOf,
 } from '../scripts/season-feed.mjs';
 
 const show = (o) => ({ date: '2026-10-02', venue: 'Mohawk', title: o.headliner, with: [], ...o });
@@ -97,4 +97,39 @@ test('a name longer than a pick key may be is cut at a word', () => {
   assert.ok(cut.length <= 100);
   assert.ok(!cut.endsWith(' '));
   assert.equal(clampName('MUNA'), 'MUNA');
+});
+
+test('a short name is not the start of a longer one (review, 2026-09-25)', () => {
+  // "The Band" keys as "band"; "Band of Horses" in the same room that night is another act.
+  assert.equal(nearName(keyOf('The Band'), keyOf('Band of Horses')), false);
+  const out = mergeShows([
+    show({ source: 'do512', id: '1', headliner: 'The Band', time: '7 PM' }),
+    show({ source: 'ticketmaster', id: '2', headliner: 'Band of Horses', time: '10 PM' }),
+  ]);
+  assert.equal(out.length, 2);
+});
+
+test('a near spelling hours apart is another show', () => {
+  const out = mergeShows([
+    show({ source: 'do512', id: '1', headliner: 'Gable Price', time: '6 PM' }),
+    show({ source: 'jambase', id: '2', headliner: 'Gable Price And Friends', time: '10 PM' }),
+  ]);
+  assert.equal(out.length, 2);
+});
+
+test('names with no Latin letters keep keys of their own, and never an empty one', () => {
+  assert.notEqual(keyOf('坂本龍一'), '');
+  assert.notEqual(keyOf('坂本龍一'), keyOf('宇多田ヒカル'));
+  assert.equal(keyOf('!!!'), '!!!');
+  const out = mergeShows([
+    show({ source: 'do512', id: '1', headliner: '坂本龍一', time: '8 PM' }),
+    show({ source: 'ticketmaster', id: '2', headliner: '宇多田ヒカル', time: '8 PM' }),
+  ]);
+  assert.equal(out.length, 2);
+});
+
+test('a month a year or more after the season began carries its year', () => {
+  assert.equal(monthOf('2026-09-26'), 'September');
+  assert.equal(monthOf('2027-08-31'), 'August');
+  assert.equal(monthOf('2027-09-01'), 'September 2027');
 });

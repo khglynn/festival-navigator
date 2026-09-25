@@ -851,6 +851,15 @@ button.room-head { cursor: pointer; }
 .n-note { display: grid; grid-template-columns: 20px 1fr; column-gap: 10px; align-items: start;
           padding: 9px 12px 9px 10px; border-radius: 12px;
           background: radial-gradient(150% 200% at 0% 40%, var(--wash) 0%, transparent 68%); }
+/* A press-and-hold on a note reveals its actions (notes.js wireReveal). Safari
+ * started its own press-to-select instead: the words and "Edit" lit up blue
+ * and the reveal never came (Kevin on v88, 2026-09-25). The same fix as the
+ * cards: no selection, no callout — except inside an open edit field. Touch
+ * only: a mouse selects note text to copy it, and has hover for the reveal. */
+@media (pointer: coarse) {
+  .n-note { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+  .n-note textarea { -webkit-user-select: text; user-select: text; -webkit-touch-callout: default; }
+}
 .n-note .avatar { margin-top: 1px; }
 .n-reply { grid-template-columns: 16px 1fr; padding: 7px 12px 7px 10px; }
 .n-body { min-width: 0; display: flex; flex-direction: column; gap: 2px; }

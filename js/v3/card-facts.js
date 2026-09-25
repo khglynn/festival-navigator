@@ -1157,6 +1157,18 @@ function refreshZoomInner(fresh, ctx) {
 }
 
 let lastOverlayPress = 0; // a close right after an overlay press is the suspicious pattern — journal its cause
+// Safari does not focus a button or link it is pressed on, so a press on the
+// zoom's notes chip (or a door) moves focus from the card to NOWHERE, and the
+// focusout guards read "nowhere" as the person leaving — the zoom closed and
+// the chip's click landed on nothing (Kevin on v88, 2026-09-25: "clicking notes
+// was harder"; his phone's reports: two "focus left the card" closes, then the
+// notes sheet on the third tap). Focus that goes nowhere within a moment of a
+// press on the zoom is that press, not a departure. performance.now, not
+// Date.now: a pinned test clock freezes Date.
+let overlayPressAt = -Infinity;
+const OVERLAY_PRESS_GRACE_MS = 600;
+const pressedOverlayJustNow = (e) => e.relatedTarget == null
+  && typeof performance !== 'undefined' && performance.now() - overlayPressAt < OVERLAY_PRESS_GRACE_MS;
 // A door that has only just arrived under the hand is not a door yet (review
 // of the links row, 2026-09-25). A pick re-centres the zoom as its chip
 // arrives, which slides the rows up under a finger that is still tapping its
@@ -1169,6 +1181,7 @@ export const DOOR_SETTLE_MS = 700;
 const ZOOM_DOORS = 'a.f-link, a.f-where, a.f-order, a.f-cancel';
 function unzoomInner({ instant = false, why = 'unspecified' } = {}) {
   if (!zoomed) return;
+  overlayPressAt = -Infinity; // a press on this zoom never shields the next one
   // Kevin's "every click closes the hover" journaled itself as NOTHING —
   // no throw, so one of these legitimate close paths fires wrongly on his
   // machine. Every close names its cause; only the click-adjacent ones are
@@ -1324,8 +1337,12 @@ function wireSlot(z) {
   // arrives, and the pick is lost. Kevin (2026-08-31): "hover and click, it
   // closes." Cancelling mousedown's default keeps focus where it was; the
   // notes chip and the maps door keep their own defaults.
+  card.addEventListener('pointerdown', () => { if (typeof performance !== 'undefined') overlayPressAt = performance.now(); });
   card.addEventListener('mousedown', (e) => {
     lastOverlayPress = Date.now();
+    // Also here: on iOS this mousedown comes when the finger LIFTS, right
+    // before the focus move, so a slow tap still lands inside the grace.
+    if (typeof performance !== 'undefined') overlayPressAt = performance.now();
     if (isOwnControl(e.target)) return;
     e.preventDefault();
   });
@@ -1463,6 +1480,7 @@ function wireSlot(z) {
   card.addEventListener('focusout', (e) => {
     if (zoomed !== z) return;
     if (isInsideZoom(z, e.relatedTarget)) return;
+    if (pressedOverlayJustNow(e)) return;
     unzoom({ why: 'focus left the zoom' });
   });
 }
@@ -1553,6 +1571,7 @@ export function wireCardFocusZoom(el, artistName, ctx, { onOpenNotes = null, occ
   el.addEventListener('focusout', (e) => {
     if (!zoomed || zoomed.el !== el) return;
     if (isInsideZoom(zoomed, e.relatedTarget)) return;
+    if (pressedOverlayJustNow(e)) return;
     unzoom({ why: 'focus left the card' });
   });
 }

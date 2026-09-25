@@ -16167,6 +16167,29 @@
       }
     },
     {
+      "name": "The Koffin Kats",
+      "day": "January",
+      "date": "2027-01-16",
+      "venue": "Come and Take It Live",
+      "time": "6 PM",
+      "with": [
+        "The Last Gang",
+        "Hans Gruber and the Die Hards"
+      ],
+      "billedAs": "The Koffin Kats at Come and Take It Live",
+      "page": {
+        "url": "https://www.jambase.com/show/the-koffin-kats-come-and-take-it-live-20270116",
+        "at": "JamBase"
+      },
+      "tickets": {
+        "url": "https://etix.prf.hn/click/camref:1101lGKCg/destination:https://www.etix.com/ticket/p/88500105/the-koffin-kats-austin-come-and-take-it-live?utm_source=jambase",
+        "at": "Etix"
+      },
+      "sources": {
+        "jambase": "jambase:17117361"
+      }
+    },
+    {
       "name": "Cari Hutson & Good Company",
       "day": "January",
       "date": "2027-01-16",
@@ -17617,13 +17640,13 @@
       "https://developer.ticketmaster.com/"
     ],
     "feed": {
-      "generatedAt": "2026-09-25T21:05:27.717Z",
+      "generatedAt": "2026-09-25T22:03:46.836Z",
       "counts": {
         "do512": 403,
-        "jambase": 672,
+        "jambase": 673,
         "ticketmaster": 347,
         "jambaseCalls": 7,
-        "merged": 751,
+        "merged": 752,
         "inAnotherFest": 37,
         "movedPerJamBaseOnly": 2,
         "keptFromBefore": 0,

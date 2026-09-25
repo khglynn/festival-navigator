@@ -95,8 +95,13 @@ export function venueName(raw) {
 const ENT = { amp: '&', nbsp: ' ', quot: '"', '#39': "'", apos: "'" };
 const clean = (s) => String(s ?? '').replace(/&(#?\w+);/g, (_m, e) => ENT[e] ?? ' ').replace(/\s+/g, ' ').trim();
 export function keyOf(s) {
-  return ascii(clean(s)).toLowerCase().replace(/[łŁ]/g, 'l').replace(/[øØ]/g, 'o').replace(/'s\b/g, '')
-    .replace(/&/g, ' and ').replace(/[^a-z0-9]+/g, ' ').replace(/^the /, '').trim();
+  // Letters of every script count (a Japanese or Cyrillic name keeps its own
+  // key); a name with no letters at all ("!!!") keys as itself. An empty key
+  // would match every other empty key and merge unrelated acts for good.
+  const raw = ascii(clean(s)).toLowerCase();
+  const key = raw.replace(/[łŁ]/g, 'l').replace(/[øØ]/g, 'o').replace(/'s\b/g, '')
+    .replace(/&/g, ' and ').replace(/[^\p{L}\p{N}]+/gu, ' ').replace(/^the /, '').trim();
+  return key || raw.replace(/\s+/g, ' ').trim();
 }
 const PREFIX = /^\s*(official\s+\d{4}\s+acl(\s+fest)?\s+nights|[^:]{0,40}\bpresents?)\s*:\s*/i;
 export function headlinerFromTitle(title) {
@@ -267,7 +272,11 @@ const minutes = (t) => { const m = String(t || '').match(/^(\d{1,2})(?::(\d{2}))
 // Oladukun" / "Joy Oladokun"). Only ever asked about one room on one night.
 export function nearName(x, y) {
   if (!x || !y) return false;
-  if (x === y || x.startsWith(`${y} `) || y.startsWith(`${x} `)) return true;
+  if (x === y) return true;
+  // One name plus words, only when the shorter is a full name in itself:
+  // "Gable Price" / "Gable Price And Friends" yes, "Band" / "Band of Horses" no.
+  const [short, long] = x.length <= y.length ? [x, y] : [y, x];
+  if (long.startsWith(`${short} `)) return short.includes(' ') || short.length >= 8;
   if (Math.min(x.length, y.length) < 8 || Math.abs(x.length - y.length) > 2) return false;
   let row = Array.from({ length: y.length + 1 }, (_, j) => j);
   for (let i = 1; i <= x.length; i++) {
@@ -284,15 +293,19 @@ export function sameShow(a, b) {
   // start (8 PM). Only one source listing it twice means two shows (an early
   // and a late), and then the times decide.
   const sameSource = a.source === b.source || (a.sources && a.sources[b.source]);
-  if (!sameSource && nearName(keyOf(a.headliner), keyOf(b.headliner))) return true;
+  const ka = keyOf(a.headliner), kb = keyOf(b.headliner);
   const ta = minutes(a.time), tb = minutes(b.time);
+  if (!sameSource && ka === kb) return true;
+  // A near spelling is the same act only within doors-to-start of each other.
+  if (!sameSource && nearName(ka, kb) && !(ta != null && tb != null && Math.abs(ta - tb) >= 90)) return true;
   // One source listing a show twice (JamBase: "Alaska Thunderfuck" and
   // "Alaska Thunderf**k", both 8 PM): one act cannot open two shows at once.
   if (ta != null && ta === tb && nearName(keyOf(a.headliner), keyOf(b.headliner))) return true;
   if (ta != null && tb != null && Math.abs(ta - tb) >= 60) return false;
   const na = new Set([a.headliner, ...a.with].map(keyOf).filter(Boolean));
   const nb = [b.headliner, ...b.with].map(keyOf).filter(Boolean);
-  return nb.some((n) => na.has(n)) || keyOf(a.title).includes(keyOf(b.headliner)) || keyOf(b.title).includes(keyOf(a.headliner));
+  // A headliner named inside the other listing's title, never a key so short it names nothing.
+  return nb.some((n) => na.has(n)) || (kb.length >= 3 && keyOf(a.title).includes(kb)) || (ka.length >= 3 && keyOf(b.title).includes(ka));
 }
 // Which source wins each field (the study): Do512's page and links (they pay
 // Do512); Ticketmaster's artist name and on-sale times; JamBase fills gaps.
@@ -361,13 +374,22 @@ export const clampName = (n) => (n.length <= 100 ? n : n.slice(0, 100).replace(/
 
 // ---- the file --------------------------------------------------------------------
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-function monthOf(iso) { return MONTHS[Number(iso.slice(5, 7)) - 1]; }
+// Month labels are pick keys (notes hang on them) and never change. The season
+// began Sep 2026, so a month twelve or more months after that carries its year
+// ("September 2027") and never shares a tab with the September already here.
+const SEASON_START = { y: 2026, m: 9 };
+export function monthOf(iso) {
+  const y = Number(iso.slice(0, 4)), m = Number(iso.slice(5, 7));
+  const name = MONTHS[m - 1];
+  return (y - SEASON_START.y) * 12 + (m - SEASON_START.m) >= 12 ? `${name} ${y}` : name;
+}
 
 async function main() {
   const problems = [];
   const today = todayIso();
   // --fresh ignores the file on disk: only for a season nobody has picked in yet
-  // (the 2026-09-25 seed), since every name it drops must also leave the freeze.
+  // (before Austin reaches production), since every name it drops must also
+  // leave the freeze. After that, never: names are pick keys.
   const prev = !args.has('--fresh') && existsSync(OUT) ? JSON.parse(readFileSync(OUT, 'utf8')) : null;
   // --fresh starts the registry over too: with no file, no name is a pick key yet.
   const registry = !args.has('--fresh') && existsSync(REGISTRY) ? JSON.parse(readFileSync(REGISTRY, 'utf8')) : { note: '', names: {} };
@@ -394,6 +416,7 @@ async function main() {
   const moved = (s) => Object.keys(s.sources).join() === 'jambase' && trusted.has(`${s.date}|${keyOf(s.headliner)}`);
   const merged = allMerged.filter((s) => !inOtherFest(s) && !moved(s));
 
+  const before = new Map((prev?.artists || []).map((a) => [`${a.name}|${a.date}|${a.venue}`, a]));
   const entries = [];
   for (const s of merged) {
     const spelled = clampName(spellingOf(s));
@@ -411,7 +434,7 @@ async function main() {
     if (s.onSale) e.onSale = s.onSale;
     if (s.presales?.length) e.presales = s.presales.slice(0, 4);
     if (s.soldOut) e.soldOut = true;
-    if (s.cancelled) e.cancelled = { on: today, source: s.page?.url || s.tickets?.url || 'https://do512.com/', note: 'A source lists it as cancelled.' };
+    if (s.cancelled) e.cancelled = before.get(`${name}|${s.date}|${s.venue}`)?.cancelled || { on: today, source: s.page?.url || s.tickets?.url || 'https://do512.com/', note: 'A source lists it as cancelled.' };
     e.sources = s.sources;
     entries.push(e);
   }
@@ -462,6 +485,13 @@ async function main() {
   if (errors.length || range.length) { console.error('not written: fix the errors or range problems above'); process.exit(1); }
   if (DRY) { console.log('dry run: nothing written'); return; }
   writeFileSync(OUT, JSON.stringify(fest, null, 2) + '\n');
+  // The landing's date line comes from the index; keep it saying what the file holds.
+  if (!process.env.SEASON_OUT) {
+    const indexFile = join(ROOT, 'data/festivals/index.json');
+    const index = JSON.parse(readFileSync(indexFile, 'utf8'));
+    const row = index.find((f) => f.id === fest.id);
+    if (row && row.dates !== fest.dates) { row.dates = fest.dates; writeFileSync(indexFile, JSON.stringify(index, null, 2) + '\n'); }
+  }
   mkdirSync(dirname(REGISTRY), { recursive: true });
   registry.note = 'Canonical Austin season names (the pick keys) and every other spelling a source has used for them. A new spelling maps to the name already here; a name is never renamed. Written by scripts/season-feed.mjs.';
   registry.names = Object.fromEntries(Object.entries(registry.names).sort(([a], [b]) => a.localeCompare(b)));

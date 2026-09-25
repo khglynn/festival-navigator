@@ -175,8 +175,13 @@ Non-inferable facts only (the code answers everything else — read it).
   2026-09-24); note text never. Off in Settings and Stay offline are read
   inside errlog.js, so they hold even when app.js never loaded. Why each
   rule: `claude-plans/2026-09-24-analytics/BUILD.md`.
-- Deploy is gated: branch pushes = preview only; production promote is
-  Kevin's call, always.
+- Deploy is gated: branch pushes = preview only. A release reaches
+  production when CI is green on its PR head AND an independent review
+  (Codex, or an Opus reviewer while Codex is out) has run on that head with
+  its real findings fixed — then merge it yourself and verify all three hosts
+  (Kevin, 2026-09-25: "stop asking me to merge… you can just do it"). Still
+  ask when a finding is a product call he hasn't seen, or when anything
+  writes to friends' real data.
 - Adding a festival: `docs/add-a-festival.md`. Validate with
   `node scripts/validate-festivals.mjs` before committing — CI enforces it.
 - **Artist names in a live festival file are pick keys, and there is no

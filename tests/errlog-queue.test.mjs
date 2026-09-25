@@ -623,3 +623,26 @@ test('vague errors get a readable issue name; a boot crash keeps its own words',
     'Zoom closed right after a click', 'Server refused a sync', 'Network request failed', 'App code didn’t load', undefined, undefined,
   ]);
 });
+
+// Kevin's first live reports (2026-09-25) arrived as kind ‹token›: the
+// 20-character token rule ate `zoom-close-after-click`, a name the code wrote.
+test('a code-written kind keeps its words in the report; a token-shaped kind is still cut', async () => {
+  const { m, queue } = await fresh();
+  const crew = randomBytes(20).toString('base64url');
+  m.configureReports({ context: () => ({ fest: 'portola-2026' }), secrets: () => [crew] });
+  m.record('zoom-close-after-click', 'focus left the card');
+  let [q] = queue();
+  assert.equal(q.e.properties.kind, 'zoom-close-after-click');
+  assert.equal(q.e.properties.$exception_list[0].type, 'zoom-close-after-click');
+  assert.equal(q.e.properties.$issue_name, 'Zoom closed right after a click');
+  m.clearReports();
+  m.record(crew, 'a token handed over as a kind');
+  [q] = queue();
+  const wire = JSON.stringify(q);
+  assert.ok(!wire.includes(crew), 'a device secret never survives, whatever field it is in');
+  m.clearReports();
+  const stranger = randomBytes(20).toString('base64url');
+  m.record(stranger, 'someone else\'s token as a kind');
+  [q] = queue();
+  assert.ok(!JSON.stringify(q).includes(stranger), 'a token-shaped kind that is not a word name is still cut');
+});
