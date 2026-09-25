@@ -1197,6 +1197,12 @@ function wireSlot(z) {
     e.preventDefault();
     e.stopPropagation();
     if (!z.el.isConnected) return;
+    // The door took focus on its own mousedown (doors keep their default so a
+    // settled click really opens). The pick's refresh rebuilds the door row,
+    // and a focused node that vanishes reads as "focus left the zoom", which
+    // closed the zoom mid-pick (v88 walk, 2026-09-25). Hand focus back to the
+    // card first: where an ordinary pick on the zoom leaves it.
+    if (card.contains(document.activeElement)) z.el.focus({ preventScroll: true });
     z.ctx.onTap(z.artist, z.el);
   }, true);
 

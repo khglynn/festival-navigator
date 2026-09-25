@@ -122,3 +122,66 @@ test('a door a pick just slid under the pointer picks instead of opening a tab',
     assert.equal(await label(), settled, 'a settled door opens its page and picks nothing');
   } finally { await ctx.close(); }
 });
+
+// The v88 walk (2026-09-25), in the real app rather than the gallery: a door
+// takes focus on its own mousedown, and when a settle-window tap turns it into
+// a pick, the pick's refresh rebuilds the door row. The focused door vanished,
+// focusout read that as "focus left the zoom", and the zoom closed mid-pick.
+// The gallery case above never saw it (no crew, no resting-card focus). A
+// pinned clock keeps Date.now() inside the settle beat for every tap.
+test('in the app, a door tapped just after a pick picks and the zoom stays open', { skip }, async () => {
+  const { randomBytes } = await import('node:crypto');
+  const FID = 'portola-2026';
+  const CREW = randomBytes(20).toString('base64url'); // a made-up crew, never a real link
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, serviceWorkers: 'block', timezoneId: 'America/Los_Angeles' });
+  try {
+    await ctx.addInitScript(([t, f]) => {
+      localStorage.setItem('fn_crews_v3', JSON.stringify([{ token: t, name: 'Doors' }]));
+      localStorage.setItem(`fn_me_v3_${t}`, 'Kevin');
+      localStorage.setItem(`fn_crew_fest_v3_${t}`, f);
+      localStorage.setItem('fn_coach_v1', '1');
+    }, [CREW, FID]);
+    const doc = { v: 4, meta: { name: 'Doors', inviteFestId: FID }, spotify: {}, affinity: {}, people: { Kevin: { colorIndex: 0 } }, festivals: { [FID]: { selections: {} } } };
+    await ctx.route('**/api/**', (r) => r.fulfill({ status: 503, contentType: 'application/json', body: '{}' }));
+    await ctx.route('**/api/crew**', (r) => (r.request().method() === 'GET'
+      ? r.fulfill({ contentType: 'application/json', body: JSON.stringify(doc) })
+      : r.fulfill({ status: 503, contentType: 'application/json', body: '{}' })));
+    await ctx.route('**/api/festival-add**', (r) => r.fulfill({ contentType: 'application/json', body: '{"festivals":[]}' }));
+    await ctx.route('**/fn-i/**', (r) => r.fulfill({ status: 200, body: '{}' }));
+    const page = await ctx.newPage();
+    await page.clock.setFixedTime(new Date('2026-09-26T22:30:00-07:00'));
+    await page.goto(`${server.origin}/#g=${CREW}`, { waitUntil: 'load' });
+    await page.waitForFunction(() => document.querySelectorAll('#wall-root .card').length > 20, null, { timeout: 15000 });
+    const at = await page.evaluate(() => {
+      const el = document.querySelector('#wall-root .card[data-artist="Boys Noize"]');
+      el.scrollIntoView({ block: 'center' });
+      const r = el.getBoundingClientRect();
+      return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+    });
+    const cdp = await ctx.newCDPSession(page); // a real held finger: Playwright's tap cannot hold
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [at] });
+    for (let i = 0; i < 40 && !(await page.$('#zoom-layer .zoom-slot.shown')); i++) await sleep(50);
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    await cdp.detach().catch(() => {});
+    await page.waitForSelector('#zoom-layer .zoom-slot.shown', { timeout: 4000 });
+    await sleep(700);
+    const centre = (sel) => page.evaluate((s) => {
+      const r = document.querySelector(s).getBoundingClientRect();
+      return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+    }, sel);
+    const label = () => page.evaluate(() => document.querySelector('#wall-root .card[data-artist="Boys Noize"]').getAttribute('aria-label'));
+    const open = () => page.evaluate(() => !!document.querySelector('#zoom-layer .zoom-slot.shown'));
+    const n = await centre('#zoom-layer .zoom-slot.shown .f-name');
+    await page.touchscreen.tap(n.x, n.y);
+    await sleep(300);
+    const afterPick = await label();
+    assert.equal(await open(), true, 'a pick on the zoom keeps it open');
+    const d = await centre('#zoom-layer .zoom-slot.shown .f-links a.f-link');
+    await page.touchscreen.tap(d.x, d.y);
+    await sleep(300);
+    assert.notEqual(await label(), afterPick, 'the door tap picked');
+    assert.equal(await open(), true, 'and the zoom is still open');
+    const journal = await page.evaluate(() => import('/js/errlog.js').then((m) => m.recent()));
+    assert.deepEqual(journal.filter((e) => e.kind === 'zoom-close-after-click'), [], 'nothing closed the zoom');
+  } finally { await ctx.close(); }
+});
