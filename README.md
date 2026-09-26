@@ -25,7 +25,11 @@ it lives. Adding one: [`docs/add-a-festival.md`](docs/add-a-festival.md).
   street party — is a **stack of cards under the room it happens in**, in play
   order. The data's shape decides which, never a threshold. Picks carry over
   automatically because they are keyed by artist, not by slot.
-- **Tap to pick.** Levels are `picked ×1 → ×2 → ×3 → must → clear`. Everyone in
+- **Tap a card to open it; + and − pick.** On a phone a tap opens the card's
+  shelf — its facts, `−` and `+` in its bottom corners, and the crew's notes. Levels are
+  `picked ×1 → ×2 → ×3 → must`; `+` climbs and `−` steps back, never a wraparound.
+  With a mouse, hover grows the card (its notes door opens the same shelf) and a
+  click cycles `picked ×1 → ×2 → ×3 → must → clear`. Everyone in
   the crew gets a color, and overlapping picks blend on the wall so you can see
   at a glance where the crew is converging.
 - **Notes** attach to an artist, a date, or the festival itself.
@@ -56,7 +60,7 @@ gallery.html                  every card, wall and zoom state on one page; the b
 service-worker.js             offline shell; bump CACHE_VERSION on any asset change
 js/v3/app.js                  boot, wiring, screen assembly, sheets
 js/v3/wall.js                 the wall: the timetable where a grid is published, venue stacks everywhere else
-js/v3/card-facts.js           the zoom: a card grows in place into its facts (hover, hold, keyboard)
+js/v3/card-facts.js           the card's facts: the zoom (hover, keyboard) and the notes shelf's card (a tap)
 js/v3/events.js               the events model: the days, the rooms a day holds, a room's stack in play order
 js/v3/motion.js               how this app moves — the shared motion constants
 js/v3/settings.js             settings and its drills (Spotify, export, bulk paste)

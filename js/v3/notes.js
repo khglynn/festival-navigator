@@ -26,13 +26,15 @@
 // on threaded roots, where the reply count (information, not an action) lives
 // in it at rest.
 import * as state from '../state.js';
+import * as crew from '../crew.js';
 import { dayLabelParts } from '../time.js';
 import * as model from './model.js';
 import { hslOf, strokeOf } from './palette.js';
 import { colorIndexOf } from './wall.js';
-import { factsFor, sheetCard, focusQuietly } from './card-facts.js';
+import { factsFor, sheetCard, shelfStep, refreshSheetCard, focusQuietly, handNow } from './card-facts.js';
+import { GROW_MS, OUT_MS, CASCADE_MS, STAGGER_MS, EASE_SURFACE } from './motion.js';
 import { router } from './router.js';
-import { loadJSON, saveLS } from '../util.js';
+import { loadJSON, saveLS, getLS } from '../util.js';
 
 // MODEL-V4 §4 + §3a.3 (Kevin, 2026-09-17). A note is written WHERE YOU ARE
 // STANDING, and four places are standable: the festival, a date, a section on
@@ -694,13 +696,15 @@ function inlineComposer(scope, target, threadKey, ctx, ui, onChange) {
 // A guest has no composer (v92, first open): in its place, the door in —
 // the same question a tap on an artist asks. Only where the shell offers one
 // (ctx.onJoin), and never on a thread nobody writes to (a legacy key).
-function joinDoor(ctx) {
+// On an artist's shelf the door names the artist, as its − and + do (the tap
+// change, 2026-09-26): the join shelf asks "Join the plan for Robyn as…".
+function joinDoor(ctx, artist = null) {
   if (ctx.meName || typeof ctx.onJoin !== 'function') return null;
   const b = document.createElement('button');
   b.className = 'btn-ghost join-door';
   b.style.cssText = 'font-size: 12px; padding: 9px 15px; align-self: center;';
   b.textContent = 'Add yourself to write a note';
-  b.addEventListener('click', () => ctx.onJoin());
+  b.addEventListener('click', () => (artist && typeof ctx.onGuestAsk === 'function' ? ctx.onGuestAsk(artist, 'note') : ctx.onJoin()));
   return b;
 }
 
@@ -728,27 +732,12 @@ function composer(placeholder, onSave) {
   return wrap;
 }
 
+// Every sheet's head: its title and the ✕. No grabber and no drag to close
+// (Kevin, from his iPhone at Portola, 2026-09-26: "doesn't work and isn't
+// necessary" — the ✕, Escape, Back and a tap on the dimmed wall close every
+// sheet). A sheet whose head is the card (the artist's shelf) has only the
+// card's ✕. The join shelf (join-shelf.js) builds its own head.
 export function sheetChrome(sheet, titleText) {
-  const grabber = document.createElement('div');
-  grabber.className = 'grabber';
-  // The grabber advertises a swipe — so it swipes. Drag down past 70px closes.
-  let startY = null;
-  grabber.addEventListener('pointerdown', (e) => { startY = e.clientY; grabber.setPointerCapture(e.pointerId); });
-  grabber.addEventListener('pointermove', (e) => {
-    if (startY === null) return;
-    const dy = Math.max(0, e.clientY - startY);
-    sheet.style.transform = `translateY(${dy}px)`;
-  });
-  const release = (e) => {
-    if (startY === null) return;
-    const dy = e.clientY - startY;
-    startY = null;
-    sheet.style.transform = '';
-    if (dy > 70) requestSheetClose();
-  };
-  grabber.addEventListener('pointerup', release);
-  grabber.addEventListener('pointercancel', () => { startY = null; sheet.style.transform = ''; });
-
   const head = document.createElement('div');
   head.style.cssText = 'display: flex; align-items: center; gap: 9px;';
   const title = document.createElement('span');
@@ -761,17 +750,8 @@ export function sheetChrome(sheet, titleText) {
   close.textContent = '✕';
   close.addEventListener('click', requestSheetClose);
   head.append(title, close);
-  sheet.append(grabber, head);
+  sheet.append(head);
   return head;
-}
-
-// A bare grabber for sheets whose header is the card itself (the ✕ lives in
-// the card's corner there — Kevin's alignment note, 2026-08-29).
-function grabberOnly(sheet) {
-  const probe = document.createElement('div');
-  sheetChrome(probe, '');
-  const grabber = probe.querySelector('.grabber');
-  sheet.appendChild(grabber);
 }
 
 // The open sheet's repaint hook: remote syncs call refreshOpenSheet() so a
@@ -797,12 +777,179 @@ export function rememberOpener() {
   if (!document.getElementById('sheet-backdrop')) restoreFocusTo = document.activeElement;
 }
 
+// The one-time line (the tap change, 2026-09-26): a friend who learned "a tap
+// lights it" is told once, inside the first shelf a tap opens, that picking
+// moved to the + here. Only someone who has picked before (a fresh member
+// never learned the old way), only from a finger or an assistive activation
+// (a mouse click still picks), once per device. The marker is device-local
+// and try-wrapped, never in the crew doc; an older build never reads it.
+export const TAP_NEWS = 'A tap opens the card now — pick with + here.';
+const LS_TAP_NEWS = 'fn_tap_news_v1';
+let tapNewsSeen = false; // storage blocked: memory holds it for this visit
+// "Picked before" is any festival in this crew, then any other crew this
+// phone keeps — under the name this phone is in each (Sol 6's review: the
+// open festival alone missed a friend whose picks were all at another fest).
+// A few local reads, and only until the line has been shown once.
+const pickedIn = (doc, me) => !!doc && !!me && Object.values(doc.festivals || {})
+  .some((f) => Object.values((f && f.selections) || {}).some((by) => ((by || {})[me] || 0) > 0));
+export function pickedBefore(meName) {
+  if (pickedIn(state.crewDoc, meName)) return true;
+  try {
+    for (const { token } of crew.knownCrews() || []) {
+      if (!token || token === state.getCrewToken()) continue;
+      if (pickedIn(state.cachedDoc(token), crew.me(token))) return true;
+    }
+  } catch { /* storage blocked: this crew was the one to read */ }
+  return false;
+}
+function tapNews(ctx) {
+  const h = handNow();
+  if (tapNewsSeen || !ctx.meName || (h !== 'finger' && h !== 'assistive')) return null;
+  if (getLS(LS_TAP_NEWS) != null) { tapNewsSeen = true; return null; }
+  if (!pickedBefore(ctx.meName)) return null;
+  tapNewsSeen = true;
+  try { localStorage.setItem(LS_TAP_NEWS, '1'); } catch { /* memory holds it */ }
+  const line = document.createElement('div');
+  line.className = 'shelf-news';
+  line.setAttribute('role', 'note');
+  line.textContent = TAP_NEWS;
+  return line;
+}
+
 // Remove the sheet WITHOUT touching focus — this is the re-render path.
 // closeSheet() is the "we are really done here" path, and it restores.
 function teardownSheet() {
   document.getElementById('sheet-backdrop')?.remove();
   document.getElementById('artist-sheet')?.remove();
   activeSheetRepaint = null;
+  unride();
+  unride = () => {};
+}
+
+// ---- the way in and the way out (the tap change, 2026-09-26) ----------------------------
+// A finger's tap on any card opens the artist's shelf now, so this sheet is
+// the phone's most-used surface, and it moves the way the join shelf does
+// (join-shelf.js): on a phone it RISES from the bottom edge on the arrival
+// curve while the wall dims, its parts landing a beat apart, and it leaves
+// quick and plain, dropping back to the edge. A desktop's centred dialog keeps
+// its scale-fade in (v3.css sheetIn) and fades out. A re-render never arrives
+// again, and Low Power or Reduce Motion make both instant.
+// The way out drops the ids at its START, so everything that asks "is a sheet
+// up?" (closeSheet, rememberOpener, the join shelf, index.html's quiet())
+// hears "no" at once, and a new sheet opening sweeps a leaving one away.
+let sheetCtx = null; // the ctx of the sheet that is up — its Low Power decides the way out
+const leavingSheets = new Set();
+const phoneShelf = () => typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+  && !window.matchMedia('(min-width: 720px)').matches;
+
+// The keys — ONE ride for every sheet (the join shelf's, lifted here: Sol 6's
+// review of the tap change, 2026-09-26). A fixed sheet sits at the LAYOUT
+// viewport's bottom, which on iOS is behind the keyboard, so while the keys
+// are up a sheet follows the VISUAL viewport: a bottom sheet stands on the
+// keys with its height capped to what still shows (the notes shelf's sticky
+// composer, the join shelf's field and Join, stay above them); a centred
+// dialog (an iPad, ≥720) centres in what shows instead of stretching. Nothing
+// happens until the keys take more than 40px. Returns the undo; a sheet that
+// has left the page stops listening at the next viewport event anyway.
+export function rideKeys(sheet) {
+  const vv = typeof window !== 'undefined' ? window.visualViewport : null;
+  if (!vv || typeof vv.addEventListener !== 'function') return () => {};
+  const off = () => {
+    vv.removeEventListener('resize', fit);
+    vv.removeEventListener('scroll', fit);
+  };
+  function fit() {
+    if (!sheet.isConnected) { off(); return; }
+    const keys = Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop));
+    const up = keys > 40;
+    const dialog = !phoneShelf();
+    sheet.style.bottom = up && !dialog ? `${keys}px` : '';
+    sheet.style.top = up && dialog ? `${Math.round(vv.offsetTop + vv.height / 2)}px` : '';
+    // Never taller than what shows (Sol 6's re-review: a 200px floor overran
+    // an SE's view with its keys up, and a phone on its side, and clipped the
+    // sheet's top) — the margin gives way first, then the floor. max-height is
+    // the CONTENT box (a sheet is content-box, 16px of padding each way), so
+    // the padding and border come off too: framing an SE showed the sheet's
+    // top 20px off the screen when they did not.
+    let edge = 0;
+    if (up) {
+      const cs = window.getComputedStyle(sheet);
+      edge = ['paddingTop', 'paddingBottom', 'borderTopWidth', 'borderBottomWidth']
+        .reduce((n, k) => n + (Number.parseFloat(cs[k]) || 0), 0);
+    }
+    const shows = Math.round(vv.height);
+    const box = Math.min(shows, Math.max(120, shows - (dialog ? 24 : 12)));
+    sheet.style.maxHeight = up ? `${Math.max(0, Math.floor(box - edge))}px` : '';
+    // Capped, it scrolls — the join shelf is overflow: visible at rest (its
+    // chips' rings), and what the cap cut off would hang under the keys.
+    sheet.style.overflowY = up ? 'auto' : '';
+    // The field being typed in stays in what shows: a sheet that just shrank
+    // for the keys can leave it below its fold (a phone on its side).
+    const typing = document.activeElement;
+    if (up && typing && typing !== sheet && sheet.contains(typing) && typeof typing.scrollIntoView === 'function') {
+      typing.scrollIntoView({ block: 'nearest' });
+    }
+  }
+  vv.addEventListener('resize', fit);
+  vv.addEventListener('scroll', fit);
+  fit();
+  return off;
+}
+let unride = () => {};
+function sweepLeaving() {
+  for (const n of leavingSheets) n.remove();
+  leavingSheets.clear();
+}
+function arrive(sheet, backdrop, ctx, parts) {
+  if (!canAnimate(sheet, ctx) || !phoneShelf()) return;
+  sheet.classList.add('rising'); // the CSS scale-fade stands down: this is the way in
+  backdrop.animate([{ opacity: 0 }, { opacity: 1 }], { duration: GROW_MS, easing: 'ease-out', fill: 'backwards' });
+  // The box rises on the surface curve, never past its rest: a sheet this
+  // tall overshooting 4% lifted its bottom edge ~25px off the screen's for a
+  // few frames (the tap walk, 2026-09-26). The little life is its lines'.
+  sheet.animate([{ transform: 'translateY(100%)' }, { transform: 'none' }], { duration: GROW_MS, easing: EASE_SURFACE, fill: 'backwards' });
+  parts.filter(Boolean).forEach((n, i) => n.animate(
+    [{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }],
+    { duration: CASCADE_MS, delay: GROW_MS / 2 + i * STAGGER_MS, easing: EASE_ARRIVE, fill: 'backwards' },
+  ));
+}
+function leave(sheet, backdrop) {
+  sheet.removeAttribute('id');
+  backdrop.removeAttribute('id');
+  activeSheetRepaint = null;
+  unride();
+  unride = () => {};
+  sheet.style.pointerEvents = 'none';
+  backdrop.style.pointerEvents = 'none';
+  // On its way out it is no longer a dialog: nothing in it takes focus or is
+  // read out (two modals at once during a guest's handoff to the join shelf).
+  sheet.inert = true;
+  sheet.setAttribute('aria-hidden', 'true');
+  // A close during the rise leaves from wherever the rise has got to — never
+  // snapping up to the rest first (read the live values, then stop the rise).
+  const liveT = window.getComputedStyle(sheet).transform;
+  const liveO = Number.parseFloat(window.getComputedStyle(backdrop).opacity);
+  for (const a of [...sheet.getAnimations(), ...backdrop.getAnimations()]) { try { a.cancel(); } catch { /* finished */ } }
+  leavingSheets.add(sheet);
+  leavingSheets.add(backdrop);
+  let done = false;
+  const gone = () => {
+    if (done) return;
+    done = true;
+    sheet.remove();
+    backdrop.remove();
+    leavingSheets.delete(sheet);
+    leavingSheets.delete(backdrop);
+  };
+  backdrop.animate([{ opacity: Number.isFinite(liveO) ? liveO : 1 }, { opacity: 0 }], { duration: OUT_MS, easing: EASE_LEAVE, fill: 'forwards' });
+  // Where the sheet stands: a rise in flight, or its rest.
+  const from = liveT && liveT !== 'none' ? liveT : 'none';
+  const out = phoneShelf()
+    ? sheet.animate([{ transform: from }, { transform: 'translateY(100%)' }], { duration: OUT_MS, easing: EASE_LEAVE, fill: 'forwards' })
+    : sheet.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'scale(.98)' }], { duration: OUT_MS, easing: EASE_LEAVE, fill: 'forwards' });
+  out.onfinish = gone;
+  out.oncancel = gone;
+  setTimeout(gone, OUT_MS * 3 + 50); // a backgrounded tab must not leave a sheet behind
 }
 
 export function dialogize(sheet, label) {
@@ -811,14 +958,21 @@ export function dialogize(sheet, label) {
   sheet.setAttribute('aria-label', label);
   sheet.tabIndex = -1;
   requestAnimationFrame(() => sheet.focus());
+  // Tab walks the sheet's own controls in order and wraps — moved by the
+  // sheet itself, never left to the browser: Safari's Tab skips buttons unless
+  // "Press Tab to highlight each item" is on, so a trap that waited for focus
+  // to land on its last button never fired there and Tab walked out of the
+  // sheet onto the wall (the tap walk, WebKit, 2026-09-26). Links count — the
+  // shelf's card carries the map, Tix and Info doors.
   sheet.addEventListener('keydown', (e) => {
-    if (e.key !== 'Tab') return;
-    const f = [...sheet.querySelectorAll('button, input, textarea, [tabindex="0"]')].filter((n) => !n.disabled);
+    if (e.key !== 'Tab' || e.defaultPrevented) return;
+    const f = [...sheet.querySelectorAll('button, input, textarea, a[href], [tabindex="0"]')]
+      .filter((n) => !n.disabled && !n.closest('[inert]') && n.getClientRects().length);
     if (!f.length) return;
-    const first = f[0];
-    const last = f[f.length - 1];
-    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
-    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    e.preventDefault();
+    const at = f.indexOf(document.activeElement);
+    const next = e.shiftKey ? (at <= 0 ? f[f.length - 1] : f[at - 1]) : (at < 0 || at === f.length - 1 ? f[0] : f[at + 1]);
+    next.focus();
   });
 }
 
@@ -831,7 +985,10 @@ export function dialogize(sheet, label) {
 function openScopeSheet(scope, target, ctx, onChange, opts = {}) {
   const occ = opts.occ || null;
   rememberOpener();  // no-op on a re-render — the original opener is kept
+  const swapping = !!document.getElementById('artist-sheet'); // one sheet replacing another: no second arrival
+  sweepLeaving();
   teardownSheet();   // NOT closeSheet(): a re-render must not restore focus
+  sheetCtx = ctx;
   const backdrop = document.createElement('div');
   backdrop.className = 'sheet-backdrop';
   backdrop.id = 'sheet-backdrop';
@@ -848,16 +1005,34 @@ function openScopeSheet(scope, target, ctx, onChange, opts = {}) {
   const ui = { revealed: null, reply: null, justAdded: null, unfold: false, focusOwner: null, replyFocused: false };
 
   let paintHeader = () => {};
+  let headerHost = null;
   if (scope === 'artist') {
-    // The header IS the card, grown once more; the ✕ lives in its corner.
-    grabberOnly(sheet);
-    const headerHost = document.createElement('div');
+    // The header IS the card, grown once more; the ✕ lives in its corner
+    // (Kevin's alignment note, 2026-08-29), and nothing sits above it.
+    headerHost = document.createElement('div');
     sheet.appendChild(headerHost);
+    // The shelf (the tap change, Kevin 2026-09-26): the card carries the
+    // − · + row along its floor — the one place a finger picks — with your
+    // meter between them. A step redraws the card in place, with the zoom's
+    // motion, and never moves the row under the finger (refreshSheetCard).
+    // No notes chip on the header: this sheet IS the thread (§4).
+    let card = null;
+    const stepped = () => refreshSheetCard(card, factsFor(target, ctx, occ), { ...cardOpts(), ctx, scroller: sheet });
+    const cardOpts = () => ({ onClose: requestSheetClose, notesChip: false, step: shelfStep(target, ctx, stepped) });
+    // A repaint (a crew-mate's sync, a note added) redraws the card IN PLACE
+    // and instantly: a focused − or + keeps its focus and the row its place
+    // (the review of the tap change: a rebuild dropped a key's focus to <body>).
     paintHeader = () => {
-      // No notes chip on the header: this sheet IS the thread (§4).
-      headerHost.replaceChildren(sheetCard(factsFor(target, ctx, occ), { onClose: requestSheetClose, notesChip: false }));
+      if (card && card.isConnected) {
+        refreshSheetCard(card, factsFor(target, ctx, occ), { ...cardOpts(), ctx: { lowPower: true }, scroller: sheet });
+        return;
+      }
+      card = sheetCard(factsFor(target, ctx, occ), cardOpts());
+      headerHost.replaceChildren(card);
     };
     paintHeader();
+    const news = swapping ? null : tapNews(ctx);
+    if (news) sheet.appendChild(news);
   } else {
     // A day target says itself the way the wall said it; the festival says its
     // name. Neither ever shows a storage key.
@@ -892,6 +1067,9 @@ function openScopeSheet(scope, target, ctx, onChange, opts = {}) {
     paint();
     onChange();
   }) : null;
+  // The scope sheet's composer is its foot, and sticks there (v3.css
+  // .composer-foot); All notes keeps its composer at the top, in the flow.
+  if (box) box.classList.add('composer-foot');
 
   const paint = () => {
     paintHeader();
@@ -918,14 +1096,17 @@ function openScopeSheet(scope, target, ctx, onChange, opts = {}) {
     }
   };
   paint();
+  let door = null;
   if (box) sheet.appendChild(box);
-  else if (!readOnly) { const door = joinDoor(ctx); if (door) sheet.appendChild(door); }
+  else if (!readOnly) { door = joinDoor(ctx, scope === 'artist' ? target : null); if (door) sheet.appendChild(door); }
   document.body.append(backdrop, sheet);
   const spoken = scope === 'artist' ? target
     : scope === 'day' ? (opts.label || dayTargetLabel(ctx, target))
       : state.fest().name;
   dialogize(sheet, scope === 'artist' ? spoken : `${spoken} notes`);
   activeSheetRepaint = paint;
+  unride = rideKeys(sheet);
+  if (!swapping) arrive(sheet, backdrop, ctx, [headerHost || sheet.querySelector('.sheet-title'), wrap, box || door]);
 }
 
 export function openArtistSheet(artistName, ctx, onChange, occ = null) {
@@ -945,7 +1126,13 @@ export function openFestNotes(ctx, onChange) {
 
 export function closeSheet() {
   const wasOpen = document.getElementById('artist-sheet');
-  teardownSheet();
+  const back = document.getElementById('sheet-backdrop');
+  // The ctx of the sheet that is up decides Low Power; a sheet app.js built
+  // itself (share, add someone) has none here, and the body's class says it.
+  const lp = sheetCtx || { lowPower: document.body.classList.contains('low-power') };
+  if (wasOpen && back && wasOpen.isConnected && canAnimate(wasOpen, lp)) leave(wasOpen, back);
+  else teardownSheet();
+  sheetCtx = null;
   // Nothing was open, so there is nothing to restore — and crucially, nothing to
   // FORGET either. Callers open a sheet with `rememberOpener(); closeSheet();`
   // (belt-and-braces against a sheet already being up), and an unconditional
@@ -955,7 +1142,16 @@ export function closeSheet() {
   if (!wasOpen) return;
   // Quietly: a card the focus returns to must not read it as keyboard
   // navigation and grow a zoom (card-facts.js focusQuietly).
-  if (restoreFocusTo && restoreFocusTo.isConnected) focusQuietly(restoreFocusTo, {});
+  // A card replaced while the sheet was up — a pick on the shelf's − / +
+  // refreshes the wall behind it (the tap change), a crew-mate's poll repaints
+  // it — is found again by what it is: the same artist, the same occurrence.
+  let back2 = restoreFocusTo;
+  if (back2 && !back2.isConnected && back2.dataset && back2.dataset.artist) {
+    const same = [...document.querySelectorAll('#wall-root .card[data-artist]')]
+      .filter((c) => c.dataset.artist === back2.dataset.artist);
+    back2 = same.find((c) => (c.dataset.occ || '') === (back2.dataset.occ || '')) || same[0] || null;
+  }
+  if (back2 && back2.isConnected) focusQuietly(back2, {});
   restoreFocusTo = null;
 }
 
@@ -964,7 +1160,10 @@ export function closeSheet() {
 // scope sections. The empty state is an invitation, never a redirect.
 export function openAllNotes(ctx) {
   rememberOpener();
+  const swapping = !!document.getElementById('artist-sheet');
+  sweepLeaving();
   teardownSheet();
+  sheetCtx = ctx;
   const backdrop = document.createElement('div');
   backdrop.className = 'sheet-backdrop';
   backdrop.id = 'sheet-backdrop';
@@ -1072,12 +1271,11 @@ export function openAllNotes(ctx) {
     if (!any) {
       const empty = document.createElement('div');
       empty.className = 'n-empty';
-      // The gesture hint matches the device (audit 11.2): hold is the touch
-      // idiom; pointer-fine users get the hover zoom's note chip.
-      const fine = typeof window.matchMedia === 'function'
-        && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+      // One sentence for every hand (the tap change, 2026-09-26): a finger
+      // opens an artist's notes with a tap, a mouse through the zoom's note
+      // door — the copy never branches by device.
       empty.textContent = ctx.meName
-        ? `No notes yet — add the first above, or ${fine ? 'hover any artist and tap its note chip' : 'hold any artist'}.`
+        ? 'No notes yet — add the first above, or open any artist’s notes.'
         : 'No notes yet.';
       body.appendChild(empty);
     }
@@ -1086,6 +1284,8 @@ export function openAllNotes(ctx) {
   document.body.append(backdrop, sheet);
   dialogize(sheet, 'All notes');
   activeSheetRepaint = paint;
+  unride = rideKeys(sheet);
+  if (!swapping) arrive(sheet, backdrop, ctx, [...sheet.children].slice(1, 4));
 }
 
 // ---- the whisper (2026-08-29, replaces the inline bars) -----------------------------

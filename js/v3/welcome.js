@@ -70,13 +70,13 @@ export const WORDS = {
   join: 'Pick shows',            // a guest's left button, filled: the join
   line: (fest) => `This is the crew’s plan for ${fest}.`,
   colors: 'Every friend has a color — the more color on a card, the more of us want to go.',
-  memberNext: 'Tap any artist to add yours.',
+  memberNext: 'Tap any artist, then + to add yours.',
   empty: 'Nobody’s in this crew yet.',
-  emptySub: 'Tap any artist to be first — you’ll pick a name as you do.',
+  emptySub: 'Tap any artist, then + to be first — you’ll pick a name as you do.',
   nobodyPicked: 'Nobody’s picked yet.',
   startedBy: (name, fest) => `${name} started this plan for ${fest}.`,
   yours: (fest) => `Your plan for ${fest} is ready.`,
-  firstSub: 'Every friend gets a color, and a card lights up with everyone who picks it. Tap any artist to be first.',
+  firstSub: 'Every friend gets a color, and a card lights up with everyone who picks it. Tap any artist, then + to be first.',
 };
 
 export function welcomeCopy({ crewName = '', festName = '', people = [], picked = false, guest = true, meName = null } = {}) {

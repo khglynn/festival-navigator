@@ -58,3 +58,19 @@ test('a Diagnostics read never throws, even with no DOM to read', async () => {
     dom.window.matchMedia = had;
   }
 });
+
+// The tap change (2026-09-26): which hand pressed last — a finger opens a
+// card's shelf, a mouse or a key picks — as the zoom module says it on the
+// page (card-facts.js), so a "my tap picked" report carries its own evidence.
+test('Diagnostics says the hand behind the last press: null before any, then what the page says', async () => {
+  delete document.documentElement.dataset.hand;
+  delete document.documentElement.dataset.handBy;
+  let d = await diagnostics();
+  assert.equal(d.hand, null, 'no press yet: unknown, not a guess');
+  assert.equal(d.handBy, null);
+  document.documentElement.dataset.hand = 'finger';
+  document.documentElement.dataset.handBy = 'press';
+  d = await diagnostics();
+  assert.equal(d.hand, 'finger');
+  assert.equal(d.handBy, 'press', 'and what decided it (WebKit types a finger\'s click "mouse")');
+});

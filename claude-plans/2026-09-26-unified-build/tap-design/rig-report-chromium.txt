@@ -1,0 +1,81 @@
+chromium member390
+  Robyn open: {"top":204,"h":640,"cardH":164,"rowY":331,"mine":"0","minusOff":true,"plusOff":false}
+  frame chromium-390-member-robyn-open.png
+  after +: {"top":204,"h":640,"cardH":164,"rowY":331,"mine":"1","minusOff":false,"plusOff":false}
+  frame chromium-390-member-robyn-plus1.png
+  after + x4: {"top":204,"h":640,"cardH":164,"rowY":331,"mine":"4","minusOff":false,"plusOff":true}
+  frame chromium-390-member-robyn-must.png
+  frame chromium-390-member-robyn-thread-end.png
+  frame chromium-390-member-robyn-closed.png
+  Boys Noize open: {"top":575,"h":269,"cardH":157,"rowY":695,"mine":"0","minusOff":true,"plusOff":false}
+  frame chromium-390-member-boysnoize-doors.png
+  errors: none
+chromium grows390
+  Oskar open: {"top":598,"h":246,"cardH":107,"rowY":668,"mine":"0","minusOff":true,"plusOff":false}
+  frame chromium-390-member-unpicked-open.png
+  after +: {"top":569,"h":275,"cardH":136,"rowY":668,"mine":"1","minusOff":false,"plusOff":false} — row moved 0px, top rose 29px
+  frame chromium-390-member-unpicked-plus1.png
+  after −: {"top":598,"h":246,"cardH":107,"rowY":668,"mine":"0","minusOff":true,"plusOff":false} — row moved 0px from the first
+  errors: none
+chromium motion390
+  frame chromium-390-motion-arrive-0.png
+  frame chromium-390-motion-arrive-1.png
+  frame chromium-390-motion-arrive-2.png
+  frame chromium-390-motion-arrive-3.png
+  frame chromium-390-motion-arrive-4.png
+  frame chromium-390-motion-arrive-5.png
+  frame chromium-390-motion-arrive-6.png
+  frame chromium-390-motion-arrive-7.png
+  frame chromium-390-motion-plus-0.png
+  frame chromium-390-motion-plus-1.png
+  frame chromium-390-motion-plus-2.png
+  frame chromium-390-motion-plus-3.png
+  frame chromium-390-motion-plus-4.png
+  frame chromium-390-motion-plus-5.png
+  frame chromium-390-motion-plus-6.png
+  frame chromium-390-motion-plus-7.png
+  errors: none
+chromium alt390
+  ALT own line, Oskar Med K after +: {"top":532,"h":312,"cardH":173,"rowY":670,"mine":"1","minusOff":false,"plusOff":false}
+  frame chromium-390-ALT-own-line-oskar-plus1.png
+  ALT own line, Robyn after +: {"top":204,"h":640,"cardH":201,"rowY":342,"mine":"1","minusOff":false,"plusOff":false}
+  frame chromium-390-ALT-own-line-robyn-plus1.png
+chromium rise390
+  the sheet's bottom vs the screen's, every frame of the rise: min 0px, max 639.7px over 179 frames (negative = a gap under it)
+chromium se
+  SE portrait member keys 291: {"sheetTop":12,"sheetBottom":376,"field":[320,358],"keysTop":376,"maxH":"332px"} — top on screen true, above the keys true
+  frame chromium-se-portrait-member-keys.png
+  errors: none
+  SE portrait guest keys 291: {"sheetTop":109,"sheetBottom":376,"field":[254,300],"keysTop":376,"maxH":"340px"} — top on screen true, above the keys true
+  frame chromium-se-portrait-guest-keys.png
+  errors: none
+  SE landscape member keys 206: {"sheetTop":12,"sheetBottom":169,"field":[113,151],"keysTop":169,"maxH":"125px"} — top on screen true, above the keys true
+  frame chromium-se-landscape-member-keys.png
+  errors: none
+  SE landscape guest keys 206: {"sheetTop":12,"sheetBottom":169,"field":[123,169],"keysTop":169,"maxH":"133px"} — top on screen true, above the keys true
+  frame chromium-se-landscape-guest-keys.png
+  errors: none
+chromium member320
+  frame chromium-320-member-boysnoize-doors.png
+  Robyn open 320: {"top":127,"h":441,"cardH":164,"rowY":254,"mine":"0","minusOff":true,"plusOff":false}
+  frame chromium-320-member-robyn-open.png
+  after + 320: {"top":127,"h":441,"cardH":192,"rowY":254,"mine":"1","minusOff":false,"plusOff":false}
+  frame chromium-320-member-robyn-plus1.png
+  errors: none
+chromium guest390
+  guest Robyn: {"top":204,"h":640,"cardH":164,"rowY":331,"mine":"0","minusOff":false,"plusOff":false}
+  frame chromium-390-guest-robyn-open.png
+  frame chromium-390-guest-robyn-thread-end.png
+  frame chromium-390-guest-robyn-plus-asks.png
+  history after + : {"joinShelf":true} length 3
+  errors: none
+chromium keyboard390
+  frame chromium-390-member-robyn-typing.png
+  errors: none
+chromium desktop1280
+  frame chromium-1280-mouse-robyn-zoom.png
+  desktop shelf: {"top":64,"h":672,"cardH":136,"rowY":163,"mine":"0","minusOff":true,"plusOff":false}
+  frame chromium-1280-mouse-robyn-shelf.png
+  frame chromium-1280-mouse-robyn-shelf-plus1.png
+  errors: none
+writes seen (all refused): POST /api/person, POST /api/crew, POST /api/person, POST /api/person, POST /api/crew, POST /api/person, POST /api/crew, POST /api/crew, POST /api/person, POST /api/person, POST /api/person, POST /api/person, POST /api/person, POST /api/person

@@ -466,7 +466,7 @@ export function openImportSheet(opts) {
   function reviewCtx() {
     const picks = { ...ctx.picks };
     for (const [name, level] of levels) picks[name] = { ...(ctx.picks[name] || {}), [me]: level };
-    return { ...ctx, picks, filterPeople: [], onPeek: null, wireZoom: null, onOpenNotes: null, onTap: cycle };
+    return { ...ctx, picks, filterPeople: [], onHold: null, wireZoom: null, onOpenNotes: null, onTap: cycle };
   }
 
   function cycle(name) {

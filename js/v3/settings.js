@@ -433,7 +433,9 @@ function openHowItWorks(actions) {
 
   // 3-5. The card: what a tap does, and what the two corners are saying.
   // Row 3 is the card getting brighter with the REAL meter chip on it, filling
-  // a bar a tap (2026-09-23: your level is on the card now, bottom left). Row
+  // a bar a + (2026-09-23: your level is on the card now, bottom left; since
+  // the tap change, 2026-09-26, a finger's tap opens the card and its + fills
+  // the bar — rows 3 and 5 are the plan's Q2 defaults until Kevin's words). Row
   // 4 is the REAL crew marks — everyone else's, since you are on the left.
   card.appendChild(lesson((d) => {
     [0.5, 0.75, 1].forEach((a, i) => {
@@ -445,7 +447,7 @@ function openHowItWorks(actions) {
       swatch.appendChild(chip);
       d.appendChild(swatch);
     });
-  }, 'Add your color to an artist.', 'Tap it. Your bars fill each tap. 4 taps = must see.'));
+  }, 'Add your color to an artist.', 'Tap it, then +. Each + fills a bar. 4 = must see.'));
   // Kat is BOARD[6], the teal row 1's Kat chip already wears — one person,
   // one colour, on one screen.
   card.appendChild(lesson((d) => {
@@ -455,7 +457,7 @@ function openHowItWorks(actions) {
     const n = el('span', '', '2'); n.className = 'chip-notes'; n.style.height = '14px';
     const s = el('span', '', '23'); s.className = 'chip-spotify'; s.style.height = '13px'; // the green pill, never a music-note glyph
     d.append(n, s);
-  }, 'Details and notes.', 'Hold the card. Violet = crew notes; pin one to keep it on top. Green = it’s in your Spotify (connect in Settings).'));
+  }, 'Details and notes.', 'Open the card. Violet = crew notes; pin one to keep it on top. Green = it’s in your Spotify (connect in Settings).'));
 
   // 6. The wall: the one mark a card can wear that is a guess. The tilde used
   // to explain itself in a whisper under every venue night — one line of

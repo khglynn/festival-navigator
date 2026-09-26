@@ -10,7 +10,7 @@
  * 2026-09-25). A quick tap-tap on a card cycles its pick, and Safari read the
  * second tap as "zoom in here". `manipulation` allows panning and pinch-zoom
  * and drops only double-tap zoom; elements with their own touch-action (the
- * stage strip, the sheet grabber) keep theirs. The text-field zoom has its
+ * stage strip, the join shelf's grabber) keep theirs. The text-field zoom has its
  * own fix in index.html. */
 html { touch-action: manipulation; }
 
@@ -29,6 +29,10 @@ html { touch-action: manipulation; }
   padding: 9px 11px 20px; text-align: center; overflow: hidden;
   cursor: pointer; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none;
   font-family: inherit; color: inherit; /* role=button div, keyboard-first (AX-1) */
+  /* A finger's tap opens the card's shelf (the tap change, 2026-09-26): the
+   * shelf rising IS the answer, so the engine's own flash on the card (grey
+   * on iOS, blue on Android) is noise under the dimming wall. */
+  -webkit-tap-highlight-color: transparent;
 }
 .card.animated { background-size: 180% 180%; animation: gradShift 12s ease-in-out infinite; }
 .card .name { position: relative; font-weight: 700; font-size: var(--fs-card); line-height: 1.2; }
@@ -498,6 +502,8 @@ button.room-head { cursor: pointer; }
   animation: sheetIn .15s ease;
 }
 @keyframes sheetIn { from { opacity: 0; transform: scale(.98); } }
+/* Only the join shelf (join-shelf.js) still wears a grabber: every sheet built
+ * by notes.js sheetChrome dropped its own, drag and all (Kevin, 2026-09-26). */
 .sheet .grabber { width: 36px; height: 4px; border-radius: var(--r-pill);
                   background: var(--border-card); margin: 0 auto; flex: none;
                   touch-action: none; cursor: grab; padding: 6px 30px; background-clip: content-box; }
@@ -1534,6 +1540,10 @@ a.f-link:hover { border-bottom-color: rgba(255, 255, 255, .75); }
  * its content. One column, one gutter: the line, the crew's names, the field,
  * then the same two halves the welcome card ends on — Look around (quiet) on
  * the left, the answer (filled) on the right. Brand, never --fest. */
+/* Nothing in it gives up height when the keys cap the shelf (a phone on its
+ * side, notes.js rideKeys): it scrolls instead — the field squashed to 22px
+ * in the SE landscape frame (2026-09-26), the import sheet's rule. */
+.sheet.join-shelf > * { flex-shrink: 0; }
 .sheet.join-shelf { gap: 14px; padding: 8px 16px calc(16px + env(safe-area-inset-bottom, 0px));
                     max-height: 88vh; overflow: visible; animation: none; }
 .join-shelf .js-line { color: var(--text-body); font-size: 17px; font-weight: 700; line-height: 1.3;
@@ -1615,21 +1625,23 @@ a.f-link:hover { border-bottom-color: rgba(255, 255, 255, .75); }
 .zoom-card.doors .f-name,
 .zoom-card.doors .f-grown > * { max-width: min(100%, var(--zoom-col)); }
 .zoom-card.doors .f-who { contain: inline-size; align-self: center; width: 100%; }
-.zoom-card .f-chips.f-step-row { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+/* The same − and + on the notes shelf's card (the tap change, 2026-09-26),
+ * with nothing between them: they stand in its corners (.sheet-card.steps). */
+:is(.zoom-card, .sheet-card) .f-chips.f-step-row { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
                                  align-items: center; gap: 0; align-self: stretch; margin-top: auto; }
-.zoom-card .f-chips.f-step-row > .f-step {
+:is(.zoom-card, .sheet-card) .f-chips.f-step-row > .f-step {
   -webkit-appearance: none; appearance: none; position: relative; box-sizing: border-box;
   height: 44px; min-height: 44px; min-width: 0; margin: 0; padding: 0;
   display: flex; align-items: center; background: none; border: 0; border-radius: var(--r-card);
   color: var(--text-primary); cursor: pointer; -webkit-tap-highlight-color: transparent;
 }
-.zoom-card .f-chips.f-step-row > .f-step.minus { justify-content: flex-start; padding-left: 10px; }
-.zoom-card .f-chips.f-step-row > .f-step.plus { justify-content: flex-end; padding-right: 10px; }
-.zoom-card .f-step-dot { font: 500 24px/1 var(--font-ui); text-shadow: 0 1px 3px rgba(0, 0, 0, .45); transition: opacity 80ms ease; }
-.zoom-card .f-step:disabled { cursor: default; }
-.zoom-card .f-step:disabled .f-step-dot { opacity: .3; }
-.zoom-card .f-step:not(:disabled):active .f-step-dot { opacity: .6; }
-.zoom-card .f-chips.f-step-row > .f-step:focus-visible { outline: 2px solid var(--text-primary) !important; outline-offset: -2px; }
+:is(.zoom-card, .sheet-card) .f-chips.f-step-row > .f-step.minus { justify-content: flex-start; padding-left: 10px; }
+:is(.zoom-card, .sheet-card) .f-chips.f-step-row > .f-step.plus { justify-content: flex-end; padding-right: 10px; }
+:is(.zoom-card, .sheet-card) .f-step-dot { font: 500 24px/1 var(--font-ui); text-shadow: 0 1px 3px rgba(0, 0, 0, .45); transition: opacity 80ms ease; }
+:is(.zoom-card, .sheet-card) .f-step:disabled { cursor: default; }
+:is(.zoom-card, .sheet-card) .f-step:disabled .f-step-dot { opacity: .3; }
+:is(.zoom-card, .sheet-card) .f-step:not(:disabled):active .f-step-dot { opacity: .6; }
+:is(.zoom-card, .sheet-card) .f-chips.f-step-row > .f-step:focus-visible { outline: 2px solid var(--text-primary) !important; outline-offset: -2px; }
 /* The reach: out to the card's edges (the zoom's padding is 12px 14px). */
 .zoom-card .f-chips.f-step-row > .f-step.minus::after { content: ''; position: absolute; inset: -6px 0 -12px -14px; }
 .zoom-card .f-chips.f-step-row > .f-step.plus::after { content: ''; position: absolute; inset: -6px -14px -12px 0; }
@@ -1638,6 +1650,56 @@ a.f-link:hover { border-bottom-color: rgba(255, 255, 255, .75); }
  * meet it on either side. */
 .zoom-card .f-chips.f-step-row > .f-chip.notes { position: relative; } /* its own box, on a mouse too — the reach must not become the row's */
 .zoom-card .f-chips.f-step-row > .f-chip.notes::after { content: ''; position: absolute; inset: calc(50% - 22px) 0; }
+/* The shelf's − and + (the tap change, 2026-09-26). Kevin, at Portola the same
+ * day: the meter that stood between them was "a 2nd copy" of your own chip in
+ * the who-row, "and then the cards can be less tall". So the zoom's bare
+ * glyphs stand in the card's two bottom corners, level with its last line,
+ * and cost the card no line of its own (card-facts.js factsCard, .steps).
+ *   The facts stand in a centred column that clears the corners (--step-w
+ *   each side, less the card's 16px padding), so nothing a corner covers is
+ *   ever a fact or a door — and a long name clears the ✕ above it too.
+ *   Each is a real button: --step-w wide and 52px tall (the touch floor as
+ *   real height), its box running out to the card's side and bottom edges.
+ *   The glyph stands where the row's always has, 10px inside the content
+ *   edge (26px from the card's), its centre 26px above the floor — about
+ *   where the last line's centre falls, pill or text.
+ *   Out of the flow and anchored to the floor, they never move under the
+ *   finger: a step that grows the who-row grows the card upward
+ *   (refreshSheetCard). The space between them is the card's, not theirs. */
+.sheet-card.steps { --step-w: 50px; }
+.sheet-card.steps > .f-name,
+.sheet-card.steps > .f-grown { max-width: calc(100% - 2 * (var(--step-w) - 16px)); }
+.sheet-card.steps > .f-chips.f-step-row {
+  position: absolute; left: 0; right: 0; bottom: 0; margin: 0;
+  display: flex; justify-content: space-between; align-items: flex-end; pointer-events: none;
+  /* quick presses on and between − and + never start WebKit's select or callout (the prefix law) */
+  -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+.sheet-card.steps > .f-chips.f-step-row > .f-step { pointer-events: auto; flex: none; width: var(--step-w); height: 52px; }
+.sheet-card.steps > .f-chips.f-step-row > .f-step.minus { padding-left: 26px; }
+.sheet-card.steps > .f-chips.f-step-row > .f-step.plus { padding-right: 26px; }
+/* A step on the shelf (card-facts.js refreshSheetCard): the old wash thins
+ * away over the new one, and a leaving piece of the who-row is parked where it
+ * stood — the zoom's own rules (.zoom-card > .f-parked), on the sheet's card. */
+.sheet-card > .sc-wash-old { position: absolute; inset: 0; pointer-events: none; border-radius: inherit; }
+.sheet-card > .sc-wash-old.animated { background-size: 180% 180%; }
+.sheet-card > .f-parked { position: absolute; box-sizing: border-box; margin: 0; pointer-events: none; z-index: 1; }
+.sheet-card > .f-parked.f-ghost { z-index: 3; padding: 0; gap: 0; max-width: none; }
+.sheet-card > .f-ghost > * { margin: 0; }
+/* The box to write in stays in reach (the tap change): a shelf is where a
+ * finger lands on every card now, and on a long thread the composer sat after
+ * the last note, a whole scroll away. It sticks to the sheet's bottom edge on
+ * the dock's ground, clear of the home indicator, with the thread passing
+ * under it. (The sheet's own 16px padding is what the negative margins and
+ * the -16px offset give back.) */
+.sheet > .composer-wrap.composer-foot { position: sticky; bottom: -16px; z-index: 3;
+                          margin: 0 -16px -16px; padding: 10px 16px calc(14px + env(safe-area-inset-bottom, 0px));
+                          background: var(--dock); box-shadow: 0 -12px 16px -12px rgba(0, 0, 0, .55); }
+/* The shelf rises from the bottom edge in script on a phone (notes.js arrive);
+ * the dialog's CSS scale-fade stands down for it. */
+.sheet.rising { animation: none; }
+/* The one-time line under the shelf's card for a friend who learned "a tap
+ * lights it" (notes.js tapNews): quiet, centred, once. */
+.shelf-news { color: var(--text-secondary); font-size: 12px; font-weight: 600; line-height: 1.4; text-align: center; margin-top: -2px; }
 
 /* ---- import from a festival app's schedule export (2026-09-26) ---------------
  * The production sheet, grown for a small wall: its side padding is the wall's

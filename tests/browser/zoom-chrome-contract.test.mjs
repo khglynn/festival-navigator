@@ -22,10 +22,12 @@
 // arithmetic, rail + strip, the too-tall case, follow) is
 // tests/zoom-geometry.test.mjs.
 //
-// Every route: a mouse hover, a real touch hold (Chromium's touch input), and
-// the keyboard (a key, then focus). Chromium always; WebKit too, where
-// Playwright's WebKit is installed, for the mouse and the keyboard — it has no
-// real touch hold to drive. Runs with `npm run test:browser`, on the real
+// Every route a zoom still has: a mouse hover — on a plain screen and on a
+// touch screen (an iPad with a trackpad: the coarse pointer's CSS, a mouse's
+// hand) — and the keyboard (a key, then focus). A finger grows no zoom since
+// the tap change (2026-09-26): its tap opens the card's shelf, which rises
+// over the dock by design. Chromium always; WebKit for the mouse and the
+// keyboard. Runs with `npm run test:browser`, on the real
 // index.html on Portola, with a made-up crew and /api answered inside the
 // page (nothing leaves it).
 import test from 'node:test';
@@ -33,7 +35,7 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { serveStatic } from '../helpers/static-server.mjs';
-import { launchBrowser, NO_BROWSER } from '../helpers/browser.mjs';
+import { launchBrowser, launchWebkit, NO_BROWSER } from '../helpers/browser.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const FID = 'portola-2026';
@@ -42,7 +44,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const server = await serveStatic(ROOT);
 const browser = await launchBrowser();
 let webkit = null;
-try { webkit = await (await import('playwright')).webkit.launch({ headless: true }); } catch { /* not installed: those cases skip */ }
+webkit = await launchWebkit();
 test.after(async () => { if (browser) await browser.close(); if (webkit) await webkit.close(); await server.close(); });
 const skip = browser ? false : NO_BROWSER;
 const skipWebkit = webkit ? false : 'Playwright WebKit is not installed (npx playwright install webkit)';
@@ -121,15 +123,9 @@ const parkCard = (page, artist, dy, from = 'ceiling') => page.evaluate(([a, d, f
   return { x: r.left + r.width / 2, y: (top + bottom) / 2 };
 }, [artist, dy, from]);
 
-// Grow it by one route. The hold waits for the zoom rather than a fixed time
-// (the fake clock runs the page's timers late on a big wall).
+// Grow it by one route.
 async function grow(ctx, page, at, route, artist) {
-  if (route === 'touch') {
-    const cdp = await ctx.newCDPSession(page);
-    await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: at.x, y: at.y }] });
-    await page.waitForSelector('#zoom-layer .zoom-slot.shown', { timeout: 4000 });
-    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
-  } else if (route === 'mouse') {
+  if (route === 'mouse') {
     await page.mouse.move(at.x - 6, at.y + 2, { steps: 2 });
     await page.mouse.move(at.x, at.y, { steps: 2 });
   } else {
@@ -163,12 +159,11 @@ const fromItsCard = (m, what) => assert.ok(Math.abs(m.origin.x - m.cardCentre.x)
   `${what}: it still grows from its card's centre (the bloom's origin): ${JSON.stringify(m)}`);
 
 const ROUTES = [
-  [browser, '', 'mouse', skip], [browser, '', 'touch', skip], [browser, '', 'keyboard', skip],
-  [webkit, 'WebKit ', 'mouse', skipWebkit], [webkit, 'WebKit ', 'keyboard', skipWebkit],
+  [browser, '', 'mouse', skip, false], [browser, 'touch screen, ', 'mouse', skip, true], [browser, '', 'keyboard', skip, false],
+  [webkit, 'WebKit ', 'mouse', skipWebkit, false], [webkit, 'WebKit ', 'keyboard', skipWebkit, false],
 ];
 
-for (const [engine, name, route, skipIt] of ROUTES) {
-  const touch = route === 'touch';
+for (const [engine, name, route, skipIt, touch] of ROUTES) {
   test(`${name}${route}, 430×760: a card by the dock moves UP to clear it by 8px, from its own centre`, { skip: skipIt }, async () => {
     const { ctx, page } = await openWall(engine, { width: 430, height: 760, touch });
     try {

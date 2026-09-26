@@ -19,7 +19,7 @@ import { openArtistSheet, openDayNotes, openAllNotes, openFestNotes, closeSheet,
 import { renderSettings, appSettings, openSubviewByKey } from './settings.js';
 import { onStorageWriteFail, saveLS, errorText, timeoutSignal } from '../util.js';
 import { router, encodeNotesKey, decodeNotesKey } from './router.js';
-import { wireCardZoom, wireCardFocusZoom, zoomCard, unzoom, dismissZoom, zoomedCard, zoomContains, zoomSnapshot, refreshZoom, festPlaceLine, tapOpensZoom } from './card-facts.js';
+import { wireCardZoom, wireCardFocusZoom, zoomCard, unzoom, dismissZoom, zoomedCard, zoomContains, zoomSnapshot, refreshZoom, festPlaceLine, fingerHand, focusQuietly } from './card-facts.js';
 import { hookGlobalErrors, configureReports, record } from '../errlog.js';
 // The crash journal listens from the first module tick — an error during
 // boot is exactly the kind nobody can describe later (2026-08-31). index.html
@@ -125,7 +125,14 @@ const ctx = {
   now: null, // tests pin the clock; null = new Date() at render
   onTap: handleTap,
   onOpenNotes: (artist, occ = null) => {
+    // From the zoom's note door, focus goes back to the card the zoom stood
+    // on when the shelf closes — the door itself is gone by then (the tap
+    // walk, 2026-09-26: Escape left focus on <body>). Handed over quietly, so
+    // it grows no keyboard zoom, before the sheet records its opener.
+    const stood = zoomedCard();
     unzoom({ why: 'notes sheet opened', meant: true });
+    const a = document.activeElement;
+    if (stood && stood.isConnected && (!a || a === document.body || (a.closest && a.closest('#zoom-layer')))) focusQuietly(stood);
     openArtistSheet(artist, ctx, onNotesChange, occ);
     // The occurrence rides in the route key (router.encodeNotesKey — a tagged
     // payload no name can imitate), so back, forward and a refresh reopen
@@ -147,23 +154,58 @@ const ctx = {
   onNotesChange: () => onNotesChange(),
   // A guest's door in from a notes sheet (v92): the join shelf, no pick waiting.
   onJoin: () => joinFromLayer(),
-  // The zoom's door row (v92 — Kevin, 2026-09-25: "− · note · +" for
-  // everyone). A member steps their level; a guest's doors ask who they are
-  // on the shelf, naming the artist — and only + carries a pick through.
+  // − and + (v92 — Kevin, 2026-09-25): on the zoom's row and, since the tap
+  // change, on the notes shelf's card. A member steps their level; a guest's
+  // doors ask who they are on the shelf, naming the artist — and only +
+  // carries a pick through.
   onStep: (artist, dir) => stepPick(artist, dir),
   onGuestAsk: (artist, intent) => askToJoin(artist, { intent }),
-  // ---- the zoom (2026-08-29): hover with intent on a mouse, hold on touch ----
+  // ---- the zoom (2026-08-29): hover with intent on a mouse, focus on a key ----
   // wall.js hands every card here; card-facts.js owns the timing and the grow.
+  // A finger never grows a zoom: its tap opens the shelf (handleTap).
   wireZoom: (el, artist, occ) => {
     const opts = { onOpenNotes: (a) => ctx.onOpenNotes(a, occ), occ };
     wireCardZoom(el, artist, ctx, opts);
     wireCardFocusZoom(el, artist, ctx, opts);
   },
-  // A hold on touch grows the card the same way a hover does; a tap on the
-  // grown card then PICKS, like a tap on the resting one (Kevin, 2026-08-30 —
-  // one grammar on both surfaces). Tap outside, Escape or a scroll put it away.
-  onPeek: (artist, el, occ) => zoomCard(el, artist, ctx, { onOpenNotes: (a) => ctx.onOpenNotes(a, occ), source: 'touch', occ }),
+  // A HOLD is a slow tap (the long-press went with the tap change,
+  // 2026-09-26): iOS sends the click on release, and the tap opens the shelf.
+  // Where an engine turns a finger's hold into a context menu instead
+  // (Android Chrome; Chromium's touch emulation), wall.js hands the card's
+  // `contextmenu` here — the same shelf — and a click that engine may still
+  // send at the lift is eaten: it would land on the dimmed wall and close the
+  // shelf it had just opened.
+  onHold: (artist, el, occ) => { eatLiftClick(); handleTap(artist, el, occ, 'finger'); },
 };
+
+// The one click a hold's lift may still send (ctx.onHold): eaten if it comes
+// within a beat of the finger lifting, wherever it lands. Gone at the next
+// press, at that click, a beat after the lift, or — a finger held on and on —
+// after a few seconds regardless.
+// An engine that sends the menu on the RELEASE (Windows' press-and-hold) has
+// no lift still to come, so the beat also runs from the start; a key, a
+// cancelled gesture or the next press stand it down at once (the review of
+// the tap change: an Enter's click must never be eaten).
+function eatLiftClick() {
+  let beat = null;
+  const disarm = () => {
+    clearTimeout(beat);
+    clearTimeout(cap);
+    document.removeEventListener('click', eat, true);
+    document.removeEventListener('pointerup', lifted, true);
+    document.removeEventListener('pointerdown', disarm, true);
+    document.removeEventListener('pointercancel', disarm, true);
+    document.removeEventListener('keydown', disarm, true);
+  };
+  const eat = (e) => { disarm(); e.stopPropagation(); e.preventDefault(); };
+  const lifted = () => { clearTimeout(beat); beat = setTimeout(disarm, 400); };
+  const cap = setTimeout(disarm, 1500);
+  document.addEventListener('click', eat, true);
+  document.addEventListener('pointerup', lifted, true);
+  document.addEventListener('pointerdown', disarm, true);
+  document.addEventListener('pointercancel', disarm, true);
+  document.addEventListener('keydown', disarm, true);
+}
 
 // One zoom at a time, dismissed the way previews are everywhere: a tap or
 // press anywhere outside it (the resting card AND its overlay), or Escape.
@@ -173,40 +215,14 @@ const ctx = {
 // poisoned its next hover: leave the overlay, click elsewhere before the
 // grace close fires, and the first re-entry did nothing (Codex gate,
 // 2026-08-31). Escape keeps the mark — the hand is still on the card there.
+// (A finger's tap on another card used to only close a guest's finger zoom
+// and eat the click, v92. A finger grows no zoom since the tap change, so the
+// only zoom a finger can meet is a mouse's or a key's on a touch screen, and
+// its tap there means what it means anywhere: this card's shelf.)
 document.addEventListener('pointerdown', (e) => {
   if (!zoomedCard() || zoomContains(e.target)) return;
   const finger = e.pointerType && e.pointerType !== 'mouse';
   unzoom({ why: 'press outside the zoom', meant: finger });
-  // A guest's FINGER closing a zoom by tapping another card only closes it
-  // (v92, the guest shelf round — the designer's default): on a dense wall
-  // "outside" is almost always another card, and that closing tap must never
-  // open the next card's zoom. A drag that turns into a scroll sends no
-  // click, so the swallow expires on its own. Members are untouched: their
-  // tap picks, as it always has.
-  //   The swallow belongs to THIS gesture and eats only a click that lands on
-  // a card (the code map, 2026-09-26: it used to eat the first click
-  // anywhere for 700 ms, so a flick that began on a card and a quick tap on a
-  // day tab lost the tap). It is gone at the gesture's cancel (the flick
-  // became a scroll), at the next press, at the first click whatever it hit,
-  // or after 700 ms.
-  if (finger && !ctx.meName && e.target.closest && e.target.closest('#wall-root .card[data-artist]')) {
-    let timer = null;
-    const disarm = () => {
-      clearTimeout(timer);
-      document.removeEventListener('click', eat, true);
-      document.removeEventListener('pointercancel', disarm, true);
-      document.removeEventListener('pointerdown', disarm, true);
-    };
-    const eat = (ev) => {
-      disarm();
-      if (ev.target && ev.target.closest && ev.target.closest('#wall-root .card[data-artist]')) { ev.stopPropagation(); ev.preventDefault(); }
-    };
-    document.addEventListener('click', eat, true);
-    document.addEventListener('pointercancel', disarm, true);
-    // Added during this press's own dispatch, so it hears only the NEXT press.
-    document.addEventListener('pointerdown', disarm, true);
-    timer = setTimeout(disarm, 700);
-  }
 }, true);
 // Escape closes ONE layer: a live zoom eats the press before any sheet or
 // router handler sees it (capture phase) — never both in one keypress.
@@ -709,56 +725,69 @@ function refreshArtistCards(artistName) {
   positionNowMarks($('wall-root'), ctx.now || new Date());
 }
 
-function handleTap(artistName, el = null, occ = null) {
-  if (!ctx.meName) {
-    // A guest's FINGER tap on a resting card opens it (v92, the guest shelf
-    // round — Kevin: "people will try to zoom rather than pick"): the card's
-    // zoom, the same view a member gets by holding, with the same − · note · +
-    // along its floor. Touching the wall is engaging, so the welcome goes. A
-    // mouse click, the keyboard, or any of the zoom's doors asks who they are
-    // on the shelf. It used to do nothing at all.
-    if (el && el.isConnected && zoomedCard() !== el && tapOpensZoom()) {
-      if (welcomeCard()) { rememberWelcomeSeen(); dismissWelcome({ ctx }); }
-      zoomCard(el, artistName, ctx, { onOpenNotes: (a) => ctx.onOpenNotes(a, occ), source: 'tap', occ });
-      return;
-    }
-    askToJoin(artistName);
+// What a press on a card means (the tap change, Kevin 2026-09-26: "a tap on
+// mobile … shows the notes shelf (with full controls) rather than a zoom with
+// a notes button. On desktop we should keep hover with the notes button").
+//   A FINGER opens the card: ONE shelf from the bottom with its facts, the
+// − · + row and the thread — for members and guests alike. Picking lives on
+// its − and +, which step and never wrap. Touching the wall is engaging, so
+// the welcome goes.
+//   A mouse click or a key picks, as it always has: a member cycles
+// (nothing → 1 → 2 → 3 → must → nothing); a guest is asked who they are.
+//   An ASSISTIVE activation — a click with no pointer and no key of its
+// own: VoiceOver's double-tap, Switch Control — opens the shelf too, on a
+// phone and a desktop alike (Sol 6's review, 2026-09-26): the shelf's
+// labelled − · + is the better control, and a pick made unseen is the worst
+// kind.
+// `hand` is what card-facts.js clickHand says of this click (the card's own
+// keydown says 'keyboard'): the click's own pointerType where it can be
+// believed, the press it answers where it cannot — WebKit types a finger's
+// click "mouse".
+function handleTap(artistName, el = null, occ = null, hand = null) {
+  const h = hand || (fingerHand() ? 'finger' : 'mouse');
+  // Any activation from a card (el) — even a node a repaint replaced between
+  // the finger's press and its click — opens the shelf for a finger or an
+  // assistive press: they never pick by activating a card (the review of the
+  // tap change).
+  if (el && (h === 'finger' || h === 'assistive')) {
+    if (welcomeCard()) { rememberWelcomeSeen(); dismissWelcome({ ctx }); }
+    ctx.onOpenNotes(artistName, occ);
     return;
   }
-  if (ctx.migrationPending) {
-    showToast($('toast-root'), 'Updating this crew — picks unlock in a moment');
-    return;
-  }
+  if (!ctx.meName) { askToJoin(artistName); return; }
   const current = (ctx.picks[artistName] || {})[ctx.meName] || 0;
-  const next = model.nextTapLevel(current);
-  state.recordSelection(artistName, ctx.meName, next);
-  applyLocalPick(artistName, ctx.meName, next);
-  refreshCtx();
-  refreshArtistCards(artistName);
-  sync.scheduleSync();
+  setLevel(artistName, model.nextTapLevel(current));
   // No undo toast when a must clears (Kevin, 2026-09-25: "unnecessary for
   // removing a must. it's not that destructive"): tapping again starts the
   // cycle over from the first bar.
 }
 
-// − / + in the zoom's door row (v92, Kevin 2026-09-25): one level down or up
-// and never a wraparound — 0 not picked, 1–3 picked, 4 must. The tap on a
-// resting card still cycles (handleTap, as in v91); this is the zoom's
-// precise control, through the same pick path.
+// − / + (v92, Kevin 2026-09-25): one level down or up and never a wraparound
+// — 0 not picked, 1–3 picked, 4 must. On the zoom's row (a mouse, a key) and
+// on the notes shelf's card (every hand; a finger's only way to pick).
 function stepPick(artistName, dir) {
   if (!ctx.meName) { askToJoin(artistName, { intent: dir > 0 ? 'pick' : 'less' }); return; }
+  const current = (ctx.picks[artistName] || {})[ctx.meName] || 0;
+  setLevel(artistName, Math.max(0, Math.min(4, current + (dir > 0 ? 1 : -1))));
+}
+
+// The one write path for YOUR pick (the plan's §2.2, the part the tap change
+// needs): the tap cycle, − / + and the pick a guest's tap promised all land
+// here, behind the migration gate, in one order. Bulk paste and bring write
+// for a named person in a batch, and keep their own paths (REVIEW-1 #1).
+function setLevel(artistName, level) {
   if (ctx.migrationPending) {
     showToast($('toast-root'), 'Updating this crew — picks unlock in a moment');
-    return;
+    return false;
   }
   const current = (ctx.picks[artistName] || {})[ctx.meName] || 0;
-  const next = Math.max(0, Math.min(4, current + (dir > 0 ? 1 : -1)));
-  if (next === current) return;
-  state.recordSelection(artistName, ctx.meName, next);
-  applyLocalPick(artistName, ctx.meName, next);
+  if (level === current) return false;
+  state.recordSelection(artistName, ctx.meName, level);
+  applyLocalPick(artistName, ctx.meName, level);
   refreshCtx();
   refreshArtistCards(artistName);
   sync.scheduleSync();
+  return true;
 }
 
 // ---- a guest joins (v92, first open, wall first) ------------------------------------
@@ -809,7 +838,13 @@ function restorePlace(place) {
 function askToJoin(artist = null, { intent = 'pick' } = {}) {
   const token = state.getCrewToken();
   if (!token || ctx.meName) return;
-  const opener = shelfOpener(); // before the zoom and the welcome go: where focus returns
+  // Asked from the notes shelf (its − / + or its note door — the tap change):
+  // the join shelf takes the notes shelf's place AND its history entry, so
+  // "Look around" and the system Back land on the wall, never on a sheet the
+  // page no longer shows. The notes shelf drops as the question rises.
+  const layered = !!document.getElementById('artist-sheet') && !joinShelf() && `${router.top() || ''}`.startsWith('sheet:');
+  if (layered) { router.reset(); closeSheet(); }
+  const opener = shelfOpener(artist); // before the zoom and the welcome go: where focus returns
   // The question comes up over the wall, which never moves: a zoom shrinks
   // back into its card as the shelf rises, and the welcome has done its job.
   unzoom({ why: 'asked who you are', meant: true });
@@ -817,16 +852,17 @@ function askToJoin(artist = null, { intent = 'pick' } = {}) {
   rememberWelcomeSeen();
   dismissWelcome({ ctx });
   pendingJoin = { token, fid: ctx.fid, artist: intent === 'pick' ? artist : null, place: wallPlace() };
-  openJoinShelf(token, artist, intent, opener);
+  openJoinShelf(token, artist, intent, opener, { replace: layered });
 }
 // Where keyboard focus goes back to when the shelf closes: what had it (a
-// button in Settings, the dashed +), or the card a zoom's door asked about —
-// never a node on its way out (the zoom's own door, the welcome card), and
-// failing all of those the "you" slot, where the question lives.
-function shelfOpener() {
+// button in Settings, the dashed +), or the card a zoom's door (or its notes
+// shelf's door) asked about — never a node on its way out (the zoom's own
+// door, the notes shelf, the welcome card), and failing all of those the
+// "you" slot, where the question lives.
+function shelfOpener(artist = null) {
   const a = document.activeElement;
-  if (a && a !== document.body && a.isConnected && !a.closest('#zoom-layer, #welcome-card')) return a;
-  const card = zoomedCard();
+  if (a && a !== document.body && a.isConnected && !a.closest('#zoom-layer, #welcome-card, #artist-sheet, .sheet')) return a;
+  const card = zoomedCard() || (artist ? document.querySelector(`#wall-root .card[data-artist="${CSS.escape(artist)}"]`) : null);
   if (card) return card;
   const you = [$('dock-you'), $('rail-you')].find((n) => n && n.offsetParent !== null);
   return you || $('dock-you');
@@ -836,7 +872,7 @@ function shelfOpener() {
 // over the wall, asking the same question with the same answers as the join
 // screen (joinAnswers). A history entry of its own, so the system Back closes
 // it rather than leaving the app; the shelf's own ways out pop that entry.
-function openJoinShelf(token, artist, intent = 'pick', opener = null) {
+function openJoinShelf(token, artist, intent = 'pick', opener = null, { replace = false } = {}) {
   const doc = state.crewDoc || {};
   const people = Object.entries(doc.people || {}).filter(([, p]) => !(p && p.removed))
     .map(([name, p]) => { const ci = colorIndexOf(name, p); return { name, bg: hslOf(ci, 0.5), stroke: strokeOf(ci, false) }; });
@@ -856,7 +892,10 @@ function openJoinShelf(token, artist, intent = 'pick', opener = null) {
     onAnswer: (typed) => answers.answer(typed),
   });
   shelfUp = shelf;
-  try { history.pushState({ joinShelf: true }, '', location.href); } catch { /* no history: Back leaves, as before */ }
+  try {
+    if (replace) history.replaceState({ joinShelf: true }, '', location.href); // the notes shelf's entry becomes this one
+    else history.pushState({ joinShelf: true }, '', location.href);
+  } catch { /* no history: Back leaves, as before */ }
 }
 let shelfUp = null; // the join shelf's handle while it is up
 // ONE close decision for the shelf, whoever asks — Escape, the system Back,
@@ -920,7 +959,9 @@ function applyWaitingPick() {
   if (state.getCrewToken() !== w.token || ctx.fid !== w.fid || ctx.meName !== w.name) return;
   if (!document.querySelector(`#wall-root .card[data-artist="${CSS.escape(w.artist)}"]`)) return;
   if (((ctx.picks[w.artist] || {})[ctx.meName] || 0) > 0) return;
-  handleTap(w.artist);
+  // The data path, never the routing: after a finger's tap the routing would
+  // open a shelf instead of making the pick that was promised.
+  setLevel(w.artist, 1);
 }
 
 // "Look around" (the join screen's way back): onto the wall as a guest. From the wall (a tap, the +,
@@ -2483,8 +2524,8 @@ function openShareMoment() {
   const sheet = document.createElement('div');
   sheet.className = 'sheet';
   sheet.id = 'artist-sheet'; // closeSheet + the router's sheet kind own this id
-  // The shared chrome from notes.js — grabber that really swipes, title, and a
-  // real ✕. This sheet used to hand-copy the markup, which is exactly how it
+  // The shared chrome from notes.js — the title and a real ✕ (no grabber
+  // since 2026-09-26: the ✕, Escape, Back and the dimmed wall close it). This sheet used to hand-copy the markup, which is exactly how it
   // drifted into having no close button and no dialog semantics while looking
   // pixel-identical to the ones that do.
   sheetChrome(sheet, 'ONE LINK MAKES IT A CREW');
@@ -2536,7 +2577,7 @@ function openShareMoment() {
   later.textContent = 'Later';
   later.addEventListener('click', () => { if (!router.requestClose()) closeSheet(); });
   actionsRow.appendChild(later);
-  sheet.append(sub, linkRowEl, actionsRow); // chrome (grabber + title + ✕) is already on
+  sheet.append(sub, linkRowEl, actionsRow); // chrome (title + ✕) is already on
   dialogize(sheet, 'Share your crew link');
   document.body.append(backdrop, sheet);
 }
@@ -2575,7 +2616,7 @@ function openAddMember() {
   row.append(input, addBtn);
   const status = document.createElement('div');
   status.style.cssText = 'color: var(--text-tertiary); font-size: 11.5px; font-weight: 600;';
-  sheet.append(sub, row, status); // chrome (grabber + title + ✕) is already on
+  sheet.append(sub, row, status); // chrome (title + ✕) is already on
   // Recurring humans, one tap (fests × circles × you, decision 4): the people
   // from your OTHER fests — Drew doesn't get retyped a third time.
   const others = model.otherFestPeople(
@@ -2609,8 +2650,8 @@ function openAddMember() {
     renderPersonChips();
     repaintWall();
     sheet.textContent = '';
-    // Re-chrome the success state too, or it loses the ✕ and the swipe-to-close
-    // the moment it becomes the thing you are actually looking at.
+    // Re-chrome the success state too, or it loses the ✕ the moment it
+    // becomes the thing you are actually looking at.
     sheetChrome(sheet, `${canonical.toUpperCase()} IS IN`);
     const explain = document.createElement('div');
     explain.style.cssText = 'color: var(--text-secondary); font-size: 12.5px; line-height: 1.55;';
