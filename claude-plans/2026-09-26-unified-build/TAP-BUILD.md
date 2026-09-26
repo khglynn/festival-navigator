@@ -87,6 +87,18 @@ List view's cards are `renderCard` cards, so the tap reaches them with no furthe
    one-time line"). An old build never reads it; it sits unused and harmless. A re-ship after a rollback
    reads it and does not show the line twice.
 
+## Follow-ups this build leaves (for their owners)
+
+1. **fold-intent, Linux WebKit only:** "NOW tapped during a tick's fade" moves the page 1350px on Linux
+   WebKit only (CI run 36239935622, 2026-09-26); macOS WebKit and Chromium hold it. A named, dated skip
+   on Linux WebKit (e597056) keeps CI meaningful — **check on a real iPhone before trusting the skip**.
+   The coordinator carries it to the Show menu's owner.
+2. **Android's hold:** Chromium's CDP hold sends no `contextmenu` (its click comes at release), so the
+   `contextmenu` door is proven in jsdom only. One Android phone, if a friend has one.
+3. **iOS keyboard over the shelf:** the composer now sticks to the shelf's bottom edge; the notes sheet
+   has never ridden the visual viewport the way the join shelf does. Kevin's iPhone check covers it; if
+   the keys cover the box, lift the join shelf's `fitKeys` into the notes sheet (U5 owns the one ride).
+
 ## Steps (commit + push after each)
 
 1. [x] This log (e700c10).
@@ -136,3 +148,7 @@ List view's cards are `renderCard` cards, so the tap reaches them with no furthe
   "NOW tapped during a tick's fade" diverges on Linux WebKit only → a named, dated skip there, for the
   Show menu's owner. The day-row reds and shell-v4's fold tests are the base's (live/list's CI has
   them; live/v93's 4c9c7b3 already fixes the day-row ones on Linux).
+- **08:00** Coordinator: merge origin/live/v93 (it fixes the base's Linux reds). Merged (450cf01): one
+  conflict, v3.css's tail (both sides appended; kept both). The merge brought the import sheet; its review
+  cards spread the wall's ctx, so they would have inherited the hold door — nulled there and on the day
+  image's render (e399e00). import-flow now launches WebKit through the shared, required launcher.
