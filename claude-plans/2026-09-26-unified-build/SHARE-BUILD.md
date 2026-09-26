@@ -42,10 +42,10 @@ PR and merges; this branch is never stamped here.
 
 ## Steps (each a commit on live/share, pushed)
 
-- [ ] S1 the text: `planEntries` + `planText` in `js/v3/plan-rows.js`, goldens per clock
+- [x] S1 the text: `planEntries` + `planText` in `js/v3/plan-rows.js`, goldens per clock
       state (morning, NOW, tomorrow, a highlight, nothing left)
-- [ ] S2 the link: `crewLink(…, { plan: true })` → `&plan=open` last; `planFromHash`
-- [ ] S3 the plan's foot: Share / Copy, the words on the button, laptop and phone
+- [x] S2 the link: `crewLink(…, { plan: true })` → `&plan=open` last; `planFromHash`
+- [x] S3 the plan's foot: Share / Copy, the words on the button, laptop and phone
 - [ ] S4 `&plan=open` at boot, member and newcomer paths
 - [ ] S5 the welcome ✕
 - [ ] S6 the Show menu row
@@ -55,3 +55,16 @@ PR and merges; this branch is never stamped here.
       app, Sol, CI both jobs; the SHA to the coordinator
 
 ## Log
+
+1. **S1** (eedade2): `planPicks` + `planText` in plan-rows.js. A room listed
+   twice in one night (a fork into it, then the route coming back) is one line
+   at its first time: deduped by place, keeping the earliest start and the most
+   of us. Goldens for 11 AM and 9:40 PM Saturday, a highlight, and not-today.
+2. **S2** (36f128a): `crewLink(…, { plan: true })` puts `&plan=open` last, only
+   with a festival; `planFromHash` reads it.
+3. **S3**: the foot under the rows, fading with the head, inert in the peek, not
+   a drag handle. The laptop pill needed a height of its own (36px; the 44px
+   floor only reaches coarse pointers), and it follows the list rather than
+   the panel's bottom, so it reads as the plan's last line. The share marks
+   the page busy while the sheet is up (a new build waits). Walked in Chromium
+   at 390 and 1280 with the made-up nine: the text matched the 9:40 golden.
