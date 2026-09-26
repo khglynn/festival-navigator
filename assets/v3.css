@@ -1332,7 +1332,7 @@ a.f-cancel:hover { border-bottom-color: rgba(255, 255, 255, .75); }
 .card .place .pdot { display: inline-block; width: 11px; text-align: center; vertical-align: top; }
 .card .place.stacked { display: flex; flex-direction: column; align-items: center; white-space: normal; }
 .card .place.stacked .pdot { display: none; }
-.card .place.stacked .seg.lead { white-space: normal; }
+.card .place.stacked .phrase.lead { white-space: normal; }
 
 /* Under a day's timetable, from 720 up: step in by the hour rail and take the
  * clock's track gap, so column n sits under the clock's column n, as the

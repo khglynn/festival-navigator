@@ -95,6 +95,7 @@ for (const { width, engine, name, skip: why } of cases) {
         }
         if (c.segs.length > 1) {
           assert.equal(c.stacked, c.oneLineW > c.placeW + 0.5, `${c.artist}: stacked exactly when the phrases do not fit one line (${c.oneLineW} vs ${c.placeW})`);
+          assert.ok(c.segs.every((s) => !s.cut), `${c.artist}: no phrase is cut short (${c.segs.map((s) => s.text).join(' / ')})`);
           if (c.stacked) {
             stackedSeen += 1;
             assert.ok(!c.sepShown, `${c.artist}: no dot once the phrases stack`);
@@ -107,7 +108,12 @@ for (const { width, engine, name, skip: why } of cases) {
         }
         assert.ok(c.right <= g.shellRight + 0.5, `${c.artist}: nothing past the shell`);
       }
-      if (width === 320) assert.ok(stackedSeen > 0, 'a narrow phone stacks at least one place (Mayes Oyster House / Polk Gulch)');
+      if (width === 320) {
+        assert.ok(stackedSeen > 0, 'a narrow phone stacks at least one place (Mayes Oyster House / Polk Gulch)');
+        const long = g.cards.find((c) => c.segs[0] && c.segs[0].text === 'Folsom Street Community Center');
+        assert.ok(long && long.stacked && long.segs[0].lines === 2 && long.segs[1].lines === 1,
+          `a venue longer than the card wraps between its words; its area keeps a line of its own (${JSON.stringify(long && long.segs)})`);
+      }
       assert.equal(new Set(g.cards.map((c) => c.width)).size, 1, `one card width (${[...new Set(g.cards.map((c) => c.width))]})`);
       assert.deepEqual(g.heads, [true], 'every band head on its list\'s edge');
     } finally {
