@@ -262,6 +262,42 @@ ACL ones.
 Both confirm the label logic from Part 1 renders correctly in a real
 browser.
 
+## After the merge with v94 (2026-09-26, later)
+
+The coordinator merged main (v94, live) into this branch at `35cb467` and
+fixed The War on Drugs' dead Universe link at `ba0be43` (also corrected my
+note on the Fcukers/Etix link — it resolves fine, just walled to a scraper;
+kept as-is). v94 added 9 Folsom weekend parties, each its own show even
+where they share a venue with something else (Folsom's by-time layout).
+Priced these myself, no sub-agents, matching by each entry's own
+`tickets.url` (found fresh in the current data, not assumed from before):
+
+| Show | Room · time | Price | Source | Status |
+|---|---|---|---|---|
+| SXTPS: Folsom | DNA Lounge · 10 PM–2:30 AM | **$40** | DNA Lounge (seller; page IS tickets) | On sale — its own site totals it: "$32 after" + "$8" = "$40"; the $24 advance tier is struck through (gone), $44 is door |
+| GRUNT | The Stud · 9 PM–2 AM | — | none | No reliable price — RA's own $20 advance tier sold out, only RA's own resale queue remains (no listed price); the promoter's own banner still says "TIXX AVAILABLE AT THE DOOR", so not sold-out-remove either |
+| Fist Buds — Folsom Edition | Transform1060 · 12–6 PM | — | none | No reliable price — only the earlier 10am–12pm "Fisting 101" workshop portion is sold out; Fist Buds itself is on sale "online and at the door" per the seller's own banner, but no price renders in the static page (ticket tiers load client-side) |
+| CUMUNION + BEARUNION — Folsom Edition | Transform1060 · 8 PM–2 AM | **$45** | Eventbrite (seller) | On sale — $44.52, matched Sat Sep 26 8PM |
+| LateXXX | Oasis · 4–7 PM | **$24** | Eventbrite (seller) | On sale — $23.53, matched Sat Sep 26 4PM |
+| FOLSOM Princess w/ Crystal Methyd | Oasis · 9:30 PM–2 AM | **$24** | Eventbrite (seller) | On sale — "From $23.53", matched Sat Sep 26 9:30PM |
+| RATED X | City Nights SF · 9 PM | **$56** | Eventim (seller) | On sale — General $55.17 is the cheapest available tier (a "vip"-labeled sub-tier is sold out; plain VIP $67.91 is pricier and still available) |
+| NOCTURNAL EXTREME | Halcyon · 3 AM | **$59** | Eventim (seller) | On sale — the capped "General" tier is sold out, "general" $58.36 is the cheapest still-available tier |
+| LE FEMMES | The Stud · 10 PM–2 AM | **$13** | Eventbrite (seller) | On sale — "From $12.51", matched Sun Sep 27 10PM |
+
+7 priced, 2 no price found (neither sold out — both have an active path in:
+GRUNT's own door, Fist Buds' own door/online — just no number to trust).
+
+Interesting reversal from the earlier pass: **Eventim rendered fully this
+time** for RATED X and NOCTURNAL EXTREME — full itemized ticket tiers with
+per-tier availability, not walled like the ACL Ticketmaster links. Ticket
+walls aren't a fixed property of a platform; they vary by request. Applied
+with `checked: "2026-09-26"`, one script run (script:
+`apply-v94-prices.mjs`, same shape as before), validated, tested — sw-stamp
+NOT run, per instruction.
+
+**Grand totals now**: Priced 20 + 7 = **27 shows**. Sold out → removed:
+still 13 (unchanged by this batch). No price found: 38 + 2 = **40 shows**.
+
 ## After the merge with v94 (coordinator, 2026-09-26 ~1:50 AM PT)
 
 - **The War on Drugs (ACL, Oct 8, Fair Market): tickets removed.** Its link resolves (through Ticketmaster's affiliate wrapper) to `universe.com/destinationdefendermusicexperience-austin-tx`, which answers 404 — a dead link, so the Info door (Do512) is the only door (the docs' rule).

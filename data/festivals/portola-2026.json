@@ -2006,7 +2006,9 @@
       },
       "tickets": {
         "url": "https://www.eventim.us/event/Rated-X-Folsom-weekend-Sunday-night-massive-leather-event/700994",
-        "at": "Eventim"
+        "at": "Eventim",
+        "price": 56,
+        "checked": "2026-09-26"
       }
     },
     {
@@ -2022,7 +2024,9 @@
       },
       "tickets": {
         "url": "https://www.eventim.us/event/NOCTURNAL-EXTREME-Folsom-legendary-closing-party/700995",
-        "at": "Eventim"
+        "at": "Eventim",
+        "price": 59,
+        "checked": "2026-09-26"
       }
     },
     {
@@ -2086,7 +2090,9 @@
       },
       "tickets": {
         "url": "https://www.dnalounge.com/calendar/2026/09-26d.html",
-        "at": "DNA Lounge"
+        "at": "DNA Lounge",
+        "price": 40,
+        "checked": "2026-09-26"
       }
     },
     {
@@ -2170,7 +2176,9 @@
       },
       "tickets": {
         "url": "https://www.eventbrite.com/e/cumunion-bearunion-folsom-edition-tickets-1997725379387",
-        "at": "Eventbrite"
+        "at": "Eventbrite",
+        "price": 45,
+        "checked": "2026-09-26"
       }
     },
     {
@@ -2186,7 +2194,9 @@
       },
       "tickets": {
         "url": "https://www.eventbrite.com/e/latexxx-tickets-2000280354386",
-        "at": "Eventbrite"
+        "at": "Eventbrite",
+        "price": 24,
+        "checked": "2026-09-26"
       }
     },
     {
@@ -2202,7 +2212,9 @@
       },
       "tickets": {
         "url": "https://www.eventbrite.com/e/folsom-princess-w-crystal-methyd-tickets-1994876915555",
-        "at": "Eventbrite"
+        "at": "Eventbrite",
+        "price": 24,
+        "checked": "2026-09-26"
       }
     },
     {
@@ -2230,7 +2242,9 @@
       },
       "tickets": {
         "url": "https://www.eventbrite.com/e/le-femmes-folsom-edition-tickets-2000901681793",
-        "at": "Eventbrite"
+        "at": "Eventbrite",
+        "price": 13,
+        "checked": "2026-09-26"
       }
     },
     {
