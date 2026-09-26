@@ -111,3 +111,45 @@ findings fixed; an independent Sonnet walker with real input.
   the static server lacks); the rig now re-opens `/#g=…` instead of reloading.
 - The review page (my own artifact, `our-plan/review.html`, frames and clips from
   `our-plan/shots/`): ten calls with my pick marked, answers stored in its db.
+
+## Gate, round one (2026-09-26, ~6:20–7:00 AM, head 098ea40)
+
+- Unit, three clocks (UTC, Tokyo, the night clock): 1163 pass, the stamp red (expected).
+  Browser: 252/253 — the one red was real (below).
+- **A late font (WebKit).** The peek sat 27px above the dock. Holding the woff2 files
+  1.5s reproduced it 3 of 3 in WebKit, 0 of 3 in Chromium: WebKit's
+  `document.fonts` `loadingdone` arrives before the new face's layout, so the refit it
+  drove measured the fallback face. (Chromium also holds its load event for fonts
+  requested before it, which hides the case there.) The shelf now watches its own
+  boxes — `#plan`, the grabber, the head and the rows down to the tagged one — with a
+  ResizeObserver, and a refit waits for the shelf's own Web Animations to end first
+  (a ruler read mid-FLIP reads the motion). The font event no longer refits it.
+- **Codex Sol (gpt-6-sol, high), five real findings, all fixed with tests that fail
+  on the old code:**
+  1. A query cleared in the field, then the blur: the dock's NOW beside the peek's.
+     Focus and blur re-read the one-NOW rule.
+  2. A card grown on a phone pins the window's height; widened to a laptop, the panel
+     kept it. A refit on the laptop unpins and settles its state (the panel bounds the
+     zoom again).
+  3. A new answer mid-drag put the window back where the last settle left it. It is
+     held until the hand lets go, then drawn before the settle.
+  4. Stop rows were divs, unreachable by keyboard. They are buttons now
+     (`aria-expanded`), out of the Tab order in the peek; a redraw hands the focus to
+     the same stop's new row. A bare click on the peek (a screen reader's) opens it.
+  5. The open grabber bar is 13px: the head, which opens nothing and already dragged,
+     takes a tap too.
+- Two traps the button change sprang: the touch floor's `min-height` replaces a flex
+  item's content minimum, so a pinned list squeezed the NOW row from 61px to 44 (list
+  items are `flex: none` now); and Chromium moves the focus off an element the moment
+  it turns inert, so the peek's focus hand-off reads the focus first.
+- **The walker (Sonnet, real input, 16 steps):** phone 26/26 in both engines once its
+  own harness was fixed (its search tap had landed on a field scrolled off screen).
+  Laptop: the corner card was more than 40 Tabs away, after every wall card — the
+  frame now follows the day rail in the page's order (fixed at z29 under the dock's
+  30, so nothing is drawn differently), one Tab after the rail. Safari's convention
+  (Tab skips buttons without Full Keyboard Access) is kept, as for every button here.
+  Its one other red, the 20px gap reading as the card once, did not reproduce (6 of 6
+  clean on the new head); the re-walk checks it again.
+- Merged origin/main after v97 shipped (no content change: main was live/list plus
+  its merge). Head e97272f; round two (full browser suite, a Codex re-review of the
+  delta, a re-walk) next.
