@@ -16,14 +16,14 @@ import path from 'node:path';
 import { randomBytes } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { serveStatic } from '../helpers/static-server.mjs';
-import { launchBrowser, NO_BROWSER } from '../helpers/browser.mjs';
+import { launchBrowser, launchWebkit, motionDone, NO_BROWSER } from '../helpers/browser.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const server = await serveStatic(ROOT);
 const chromium = await launchBrowser();
-let webkit = null;
-try { webkit = await (await import('playwright')).webkit.launch({ headless: true }); } catch { /* not installed: that engine skips */ }
+// CI installs WebKit, and there a missing one is a failure (launchWebkit).
+const webkit = await launchWebkit();
 test.after(async () => { if (chromium) await chromium.close(); if (webkit) await webkit.close(); await server.close(); });
 const FID = 'portola-2026';
 const SAT_415 = new Date('2026-09-26T16:15:00-07:00');
@@ -151,12 +151,17 @@ for (const [name, get, width] of ENGINES) {
       await sleep(450);
       await press(page, phone, `${wrap} .view-row [data-view="board"]`);
       await sleep(900);
+      // The new view's rooms arrive from 6px below: measure once they are in.
+      // (Linux WebKit on a loaded CI runner measured Mike D mid-arrival,
+      // 45.6 -> 52, after this same 900ms; run 36247465311, 2026-09-26.)
+      await motionDone(page, { within: '#wall-root' });
       assert.ok(await page.locator('#wall-root .times-grid').count(), 'the Board');
       const onBoard = await cardTop(page, before.artist, before.occ);
       assert.ok(onBoard != null && Math.abs(onBoard - before.top) < 2, `${before.artist} held on the Board: ${before.top} → ${onBoard}`);
       assert.equal(await page.locator(door).getAttribute('aria-expanded'), 'true', 'the menu stayed up');
       await press(page, phone, `${wrap} .view-row [data-view="list"]`);
       await sleep(900);
+      await motionDone(page, { within: '#wall-root' });
       assert.equal(await page.locator('#wall-root[data-view="list"]').count(), 1, 'the List again');
       const back = await cardTop(page, before.artist, before.occ);
       assert.ok(back != null && Math.abs(back - before.top) < 2, `and held back in the List: ${before.top} → ${back}`);

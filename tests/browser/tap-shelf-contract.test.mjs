@@ -23,7 +23,7 @@ import path from 'node:path';
 import { randomBytes } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { serveStatic } from '../helpers/static-server.mjs';
-import { launchBrowser, launchWebkit, NO_BROWSER } from '../helpers/browser.mjs';
+import { launchBrowser, launchWebkit, motionDone, NO_BROWSER } from '../helpers/browser.mjs';
 import { deepMerge } from '../../js/merge.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
@@ -113,6 +113,7 @@ for (const [name, get] of ENGINES) {
       const at = await cardAt(page, 'Oskar Med K');
       await tapAt(page, at);
       await page.waitForFunction(() => !!document.querySelector('#artist-sheet .sheet-card'), null, { timeout: 4000 });
+      await motionDone(page, { within: '#artist-sheet' }); // measured at rest, never mid-arrival
       await sleep(500);
       let s = await shelf(page);
       assert.equal(s.name, 'Oskar Med K', 'the tapped card’s shelf');
@@ -132,6 +133,7 @@ for (const [name, get] of ENGINES) {
       for (const want of [1, 2, 3, 4]) {
         await tapAt(page, plusAt); // the same spot every time: the finger does not move
         await sleep(450);
+        await motionDone(page, { within: '#artist-sheet' });
         s = await shelf(page);
         assert.ok(s, `the shelf stays up (+${want})`);
         assert.equal(await level(page, 'Oskar Med K'), want, `+ ×${want}`);
@@ -152,6 +154,7 @@ for (const [name, get] of ENGINES) {
       for (const want of [3, 2, 1, 0]) {
         await tapAt(page, minusAt);
         await sleep(450);
+        await motionDone(page, { within: '#artist-sheet' });
         s = await shelf(page);
         assert.equal(await level(page, 'Oskar Med K'), want, `back to ${want}`);
         assert.ok(Math.abs(s.minus.y - rowY) <= 1.5, `the row stood still (−: ${s.minus.y - rowY}px)`);
@@ -172,6 +175,7 @@ for (const [name, get] of ENGINES) {
       // The system Back closes it too.
       await tapAt(page, await cardAt(page, 'Fcukers'));
       await page.waitForFunction(() => !!document.querySelector('#artist-sheet .sheet-card'), null, { timeout: 4000 });
+      await motionDone(page, { within: '#artist-sheet' }); // measured at rest, never mid-arrival
       await sleep(400);
       await page.goBack();
       await page.waitForFunction(() => !document.getElementById('artist-sheet'), null, { timeout: 4000 });
@@ -186,6 +190,7 @@ for (const [name, get] of ENGINES) {
       const at = await cardAt(page, 'Tove Lo');
       await tapAt(page, at);
       await page.waitForFunction(() => !!document.querySelector('#artist-sheet .sheet-card'), null, { timeout: 4000 });
+      await motionDone(page, { within: '#artist-sheet' }); // measured at rest, never mid-arrival
       await sleep(400);
       await tapAt(page, { x: 195, y: 40 }); // close on the dimmed wall
       await page.waitForFunction(() => !document.getElementById('artist-sheet'), null, { timeout: 4000 });
@@ -260,6 +265,7 @@ test('Chromium (a touch screen with a mouse): a finger opens the shelf, the mous
     const at = await cardAt(page, 'Tove Lo');
     await tapAt(page, at);
     await page.waitForFunction(() => !!document.querySelector('#artist-sheet .sheet-card'), null, { timeout: 4000 });
+    await motionDone(page, { within: '#artist-sheet' }); // measured at rest, never mid-arrival
     await sleep(400);
     assert.equal((await shelf(page)).name, 'Tove Lo', 'the finger opened the shelf (a centred dialog at this width)');
     await page.keyboard.press('Escape');
@@ -486,6 +492,7 @@ for (const [name, get] of ENGINES) {
       assert.equal(await page.locator('#wall-root[data-view="list"]').count(), 1, 'the List is up');
       await tapAt(page, await cardAt(page, 'Tove Lo'));
       await page.waitForFunction(() => !!document.querySelector('#artist-sheet .sheet-card'), null, { timeout: 4000 });
+      await motionDone(page, { within: '#artist-sheet' }); // measured at rest, never mid-arrival
       await sleep(400);
       const s = await shelf(page);
       assert.equal(s.name, 'Tove Lo');

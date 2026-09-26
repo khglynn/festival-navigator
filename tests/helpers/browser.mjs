@@ -21,6 +21,25 @@ export const NO_BROWSER = 'no browser available (npx playwright install chromium
 // a failure, never a quiet skip. Locally it is null, and those cases skip
 // with the reason. (Linux WebKit is not iOS Safari: a case that diverges gets a
 // named, dated reason in its test, never a silent skip.)
+// Wait until nothing under `within` (the whole document by default) is still
+// moving: every finite animation on the document's clock — Web Animations and
+// CSS alike — has run out. Measure a place only once it has stopped. A loaded
+// CI runner starts an arrival late: on Linux WebKit a room sat at its 6px
+// start and a shelf's step row at its 8px start well after a fixed sleep
+// (runs 36247465311 and 36247441879, 2026-09-26), where a Mac is long done.
+// Scroll-driven animations (the strip's follow) and endless ones never finish
+// and are not motion to wait for.
+export async function motionDone(page, { within = null, timeout = 6000 } = {}) {
+  await page.waitForFunction((sel) => {
+    const root = sel ? document.querySelector(sel) : null;
+    if (sel && !root) return true;
+    const list = root ? root.getAnimations({ subtree: true }) : document.getAnimations();
+    return !list.some((a) => a.timeline === document.timeline
+      && (a.playState === 'running' || a.pending)
+      && Number.isFinite(a.effect && a.effect.getComputedTiming ? a.effect.getComputedTiming().endTime : Infinity));
+  }, within, { timeout, polling: 'raf' });
+}
+
 export async function launchWebkit() {
   try {
     const { webkit } = await import('playwright');
