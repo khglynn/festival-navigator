@@ -697,7 +697,7 @@ function inlineComposer(scope, target, threadKey, ctx, ui, onChange) {
 // the same question a tap on an artist asks. Only where the shell offers one
 // (ctx.onJoin), and never on a thread nobody writes to (a legacy key).
 // On an artist's shelf the door names the artist, as its − and + do (the tap
-// change, 2026-09-26): the join shelf asks "Join the plan for Robyn as…".
+// change, 2026-09-26): the join shelf asks "Join the crew for Robyn as…".
 function joinDoor(ctx, artist = null) {
   if (ctx.meName || typeof ctx.onJoin !== 'function') return null;
   const b = document.createElement('button');

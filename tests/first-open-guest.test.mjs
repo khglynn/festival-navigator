@@ -158,9 +158,9 @@ test('the welcome card says what this is, above the dock, in C1’s words', () =
   assert.ok($('screen-app').contains(box), 'inside the wall screen — Settings and the join screen hide it with the wall');
   assert.ok(box.classList.contains('bring-offer'), 'the offer’s anatomy, above the dock');
   assert.equal(box.querySelector('.micro-label').textContent, 'The Test Crew');
-  assert.equal(box.querySelector('.bring-line').textContent, 'This is the crew’s plan for Portola.');
+  assert.equal(box.querySelector('.bring-line').textContent, 'These are the crew’s picks for Portola.');
   assert.equal(box.querySelector('.bring-sub').textContent,
-    'Every friend has a color — the more color on a card, the more of us want to go. More info', 'one line, then the link');
+    'Every friend has a color — the more color on a card, the more of us picked it. More info', 'one line, then the link');
   assert.equal(box.querySelectorAll('.avatar-cluster .avatar').length, 2, 'the crew, in their colours');
   const halves = [...box.querySelectorAll('.bring-actions button')].map((b) => b.textContent);
   assert.deepEqual(halves, ['Pick shows', 'Look around'], 'two halves: the way to pick first, on the left; the quiet way to look on the right');
