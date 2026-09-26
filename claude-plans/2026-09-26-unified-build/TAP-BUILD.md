@@ -99,11 +99,11 @@ List view's cards are `renderCard` cards, so the tap reaches them with no furthe
    has never ridden the visual viewport the way the join shelf does. Kevin's iPhone check covers it; if
    the keys cover the box, lift the join shelf's `fitKeys` into the notes sheet (U5 owns the one ride).
 
-4. **Safari's Tab skips buttons** (macOS default, without "Press Tab to highlight each item"): the
-   sheets' Tab trap (`dialogize`, and the join shelf's) waits for focus to reach its last button, which
-   Safari's Tab never lands on, so Tab walks out of any sheet into the page (the walk's item 9, WebKit).
-   Not new with the tap change — every sheet has it — but the shelf is used more now. U5's one Tab trap
-   should move focus itself from an ordered list instead of waiting at the boundary.
+4. **Safari's Tab skips buttons** (macOS default, without "Press Tab to highlight each item"): a Tab
+   trap that waits for focus to reach its last button never fires there, and Tab walked out of the sheet
+   (the walk's item 9, WebKit). Fixed for every notes sheet here (`dialogize` moves focus itself, with a
+   WebKit contract); **the join shelf's own trap still waits at the boundary** — U5's one Tab trap
+   should take `dialogize`'s.
 5. **A screen reader's activation** (VoiceOver's double-tap sends a click with no pointer press) follows
    the last real press, 'mouse' at boot: it picks, as it always has; the shelf is reachable through the
    notes chip or the zoom. Not a regression; the review suggests "a finger only if a touch press landed on
@@ -183,3 +183,10 @@ List view's cards are `renderCard` cards, so the tap reaches them with no furthe
   The walk's item 10 ("first tap after the ACL weekend jump is swallowed") was the harness: at 390 the
   SAT 10 tab sits under the fest name, the tap opened the Show menu, and by design the next card tap only
   closes it.
+- **10:10** The walk is done (`scratchpad/walk/WALK-REPORT.md`, outside the repo): 13 of 14 items PASS in
+  both engines with real input — the four ways to close, the ghost, the resting meter after a close, the
+  long thread and the first-pick growth (row 0px, sheet +29px), the guest's whole path, the hold, the iPad
+  shape, desktop and keyboard, the fest matrix (Portola grid / Afters / Folsom by time, ACL Late nights and
+  Weekend 2, Seismic), the edge cards (half off the edge, two-line name, tall set, cancelled act, above the
+  dock), Low Power + Reduce Motion (no animation on the shelf), the one-time line, keys up. The one left
+  open, Safari's Tab walking out of the shelf, is fixed now (`dialogize`), with a WebKit contract.

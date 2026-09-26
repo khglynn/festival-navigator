@@ -249,3 +249,26 @@ test('the hold\'s click-eater stands down at a key: an Enter\'s click is never e
   assert.equal(heard, 1, 'the click after a key went through');
   await closeShelf();
 });
+
+test('Tab walks the shelf\'s own controls and wraps, moved by the sheet itself (Safari\'s Tab skips buttons)', async () => {
+  await tap(cardOf('Robyn'));
+  const sheet = shelf();
+  // jsdom lays nothing out: give every control a box, as a browser would.
+  for (const n of sheet.querySelectorAll('button, input, textarea, a[href]')) n.getClientRects = () => [{}];
+  const tabKey = (shiftKey = false) => {
+    const e = new window.KeyboardEvent('keydown', { key: 'Tab', shiftKey, bubbles: true, cancelable: true });
+    (document.activeElement || sheet).dispatchEvent(e);
+    return e.defaultPrevented;
+  };
+  sheet.focus();
+  const doors = [...sheet.querySelectorAll('button, input, textarea, a[href], [tabindex="0"]')].filter((n) => !n.disabled);
+  assert.equal(tabKey(), true, 'the sheet moved focus itself');
+  assert.equal(document.activeElement, doors[0], 'from the sheet, the first control');
+  for (let i = 1; i < doors.length; i++) tabKey();
+  assert.equal(document.activeElement, doors[doors.length - 1], 'every control in order');
+  tabKey();
+  assert.equal(document.activeElement, doors[0], 'and it wraps, never out onto the wall');
+  tabKey(true);
+  assert.equal(document.activeElement, doors[doors.length - 1], 'Shift+Tab wraps back');
+  await closeShelf();
+});

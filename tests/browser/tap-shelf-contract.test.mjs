@@ -350,3 +350,51 @@ for (const [name, get] of ENGINES) {
     } finally { await ctx.close(); }
   });
 }
+
+// The real-input walk (2026-09-26, WebKit): Safari's Tab skips buttons unless
+// "Press Tab to highlight each item" is on, and the sheet's trap used to wait
+// for focus to land on its last button — so Tab walked out of the shelf onto
+// the wall. The sheet moves focus itself now: twenty Tabs never leave it.
+for (const [name, get] of ENGINES) {
+  test(`${name.split(' ')[0]}, the keyboard: Tab never walks out of the shelf, and Escape closes it`, { skip: skipFor(name, get) }, async () => {
+    const engine = get();
+    const CREW = randomBytes(20).toString('base64url'); // a made-up crew, never a real link
+    const ctx = await engine.newContext({ viewport: { width: 1280, height: 800 }, serviceWorkers: 'block', timezoneId: 'America/Los_Angeles' });
+    try {
+      await ctx.addInitScript((t) => {
+        localStorage.setItem('fn_welcome_v1', '1');
+        localStorage.setItem('fn_crews_v3', JSON.stringify([{ token: t, name: 'Tap Crew' }]));
+        localStorage.setItem(`fn_me_v3_${t}`, 'Kevin');
+        localStorage.setItem(`fn_crew_fest_v3_${t}`, 'portola-2026');
+      }, CREW);
+      const doc = { v: 4, meta: { name: 'Tap Crew', inviteFestId: FID }, spotify: {}, affinity: {}, people: { Kevin: { colorIndex: 0 } }, festivals: { [FID]: { selections: {} } } };
+      await ctx.route('**/api/**', (r) => r.fulfill({ status: 503, contentType: 'application/json', body: '{}' }));
+      await ctx.route('**/api/crew**', (r) => r.fulfill({ contentType: 'application/json', body: JSON.stringify(doc) }));
+      await ctx.route('**/api/festival-add**', (r) => r.fulfill({ contentType: 'application/json', body: '{"festivals":[]}' }));
+      await ctx.route('**/fn-i/**', (r) => r.fulfill({ status: 200, body: '{}' }));
+      const page = await ctx.newPage();
+      // No fixed clock here: Playwright's fixed clock holds requestAnimationFrame
+      // too, and the sheet takes focus in a frame (notes.js dialogize).
+      await page.goto(`${server.origin}/#g=${CREW}&f=${FID}`, { waitUntil: 'load' });
+      await page.waitForFunction(() => document.querySelectorAll('#wall-root .card').length > 20, null, { timeout: 15000 });
+      await cardAt(page, 'Tove Lo');
+      await page.keyboard.press('Escape'); // a real key: the next focus is the keyboard's
+      await page.focus('#wall-root .card[data-artist="Tove Lo"]');
+      await page.waitForSelector('#zoom-layer .zoom-slot.shown', { timeout: 4000 });
+      await page.focus('#zoom-layer .zoom-slot.shown .f-step-row .f-chip.notes');
+      await page.keyboard.press('Enter');
+      await page.waitForSelector('#artist-sheet .sheet-card .f-step.plus', { timeout: 4000 });
+      await sleep(400);
+      const inside = () => page.evaluate(() => !!document.getElementById('artist-sheet')?.contains(document.activeElement));
+      for (let i = 0; i < 20; i++) {
+        await page.keyboard.press('Tab');
+        assert.equal(await inside(), true, `Tab ${i + 1} stayed inside the shelf (on ${await page.evaluate(() => document.activeElement?.className || document.activeElement?.nodeName)})`);
+      }
+      await page.keyboard.press('Shift+Tab');
+      assert.equal(await inside(), true, 'Shift+Tab too');
+      await page.keyboard.press('Escape');
+      await page.waitForFunction(() => !document.getElementById('artist-sheet'), null, { timeout: 4000 });
+      assert.equal(await page.evaluate(() => document.activeElement?.dataset?.artist), 'Tove Lo', 'focus back on the card');
+    } finally { await ctx.close(); }
+  });
+}

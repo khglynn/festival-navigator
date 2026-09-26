@@ -909,14 +909,21 @@ export function dialogize(sheet, label) {
   sheet.setAttribute('aria-label', label);
   sheet.tabIndex = -1;
   requestAnimationFrame(() => sheet.focus());
+  // Tab walks the sheet's own controls in order and wraps — moved by the
+  // sheet itself, never left to the browser: Safari's Tab skips buttons unless
+  // "Press Tab to highlight each item" is on, so a trap that waited for focus
+  // to land on its last button never fired there and Tab walked out of the
+  // sheet onto the wall (the tap walk, WebKit, 2026-09-26). Links count — the
+  // shelf's card carries the map, Tix and Info doors.
   sheet.addEventListener('keydown', (e) => {
-    if (e.key !== 'Tab') return;
-    const f = [...sheet.querySelectorAll('button, input, textarea, [tabindex="0"]')].filter((n) => !n.disabled);
+    if (e.key !== 'Tab' || e.defaultPrevented) return;
+    const f = [...sheet.querySelectorAll('button, input, textarea, a[href], [tabindex="0"]')]
+      .filter((n) => !n.disabled && !n.closest('[inert]') && n.getClientRects().length);
     if (!f.length) return;
-    const first = f[0];
-    const last = f[f.length - 1];
-    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
-    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    e.preventDefault();
+    const at = f.indexOf(document.activeElement);
+    const next = e.shiftKey ? (at <= 0 ? f[f.length - 1] : f[at - 1]) : (at < 0 || at === f.length - 1 ? f[0] : f[at + 1]);
+    next.focus();
   });
 }
 
