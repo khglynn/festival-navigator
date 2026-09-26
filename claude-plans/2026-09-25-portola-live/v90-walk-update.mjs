@@ -134,18 +134,24 @@ try {
     await row().tap();
     const r2 = await Promise.race([
       page.waitForEvent('load', { timeout: 30000 }).then(() => 'RELOADED (should have waited)'),
-      page.waitForFunction(() => { const r = document.querySelector('#settings-root [data-update]'); return r && /ready|failed|slow|unreachable/.test(r.dataset.update); }, null, { timeout: 30000 }).then(() => 'row-settled'),
+      page.waitForFunction(() => { const r = document.querySelector('#settings-root [data-update]'); return r && /ready|held|failed|slow|unreachable/.test(r.dataset.update); }, null, { timeout: 30000 }).then(() => 'row-settled'),
     ]).catch((e) => `timeout: ${e.message}`);
     note(`9. with a Spotify scan in progress (body[data-busy]): ${r2}; row "${await words().catch(() => '?')}"; strip up: ${await page.evaluate(() => !!document.getElementById('new-build-strip')).catch(() => '?')}`);
     if (r2 === 'row-settled') {
-      await shoot('item3-3-ready.png');
+      await shoot('item3-3-held.png');
+      // A tap while the scan still runs must NOT reload (review round, 2026-09-25).
+      await row().tap();
+      await sleep(600);
+      note(`9b. tap while the scan runs: same page = ${await page.evaluate(() => window.__same === true)}; row ${await page.evaluate(() => document.querySelector('#settings-root [data-update]').dataset.update)} "${await words()}"`);
+      // The scan finishes; the first tap after it switches.
       const re = page.waitForEvent('load', { timeout: 15000 });
+      await page.evaluate(() => { delete document.body.dataset.busy; });
       await row().tap();
       await re;
       await page.waitForFunction(() => ['screen-app', 'screen-settings'].some((id) => { const n = document.getElementById(id); return n && n.style.display !== 'none' && n.getClientRects().length; }), null, { timeout: 20000 });
       if (!(await page.evaluate(() => document.getElementById('screen-settings').style.display !== 'none'))) await openSettings();
       await page.waitForFunction(() => /This phone runs v\d+/.test([...document.querySelectorAll('#settings-root .row-sub')].map((n) => n.textContent).join('|')), null, { timeout: 8000 }).catch(() => {});
-      note(`10. tapped ready → reloaded; the row now: "${await words()}"`);
+      note(`10. the scan finished, tapped → reloaded; the row now: "${await words()}"`);
     }
   }
 

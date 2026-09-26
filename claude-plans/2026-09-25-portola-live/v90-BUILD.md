@@ -250,3 +250,43 @@ up without animation today, so it is the same class of motion, not a new
 kind; sliding the remaining rooms (a FLIP in app.js toggleFoldFlow) would
 fix both and is not tonight's size. Phones never see it: only the clock's
 own room moves there, and it leaves with the room.
+
+### Review round (Codex Sol 6 on e4d40ca) — commit 8201a3a
+
+The coordinator rebased onto main and stamped (e4d40ca, v90 / 6d81a384);
+this sits on top, unstamped, for a `--keep` re-stamp.
+
+1. **(Blocker) The "ready" tap reloaded through running work.** A Spotify
+   scan marks `body[data-busy]`, and a reload throws the scan away. Now
+   (`js/v3/settings.js`, `updateRow` click handler and the `ready()` helper
+   in `checkForUpdate`): while the body is busy the row does not reload; it
+   says `held` — "v90 switches in once the Spotify scan finishes — tap again
+   then" (`BUSY_WORDS` names spotify-scan, join, create and me-link; any
+   other value reads "once what's running finishes"). The first tap after
+   the mark clears reloads. A check that ENDS ready while work runs says
+   held straight away rather than inviting a tap that will not act. The tap
+   is still the way through when a sheet keeps the glue from reloading.
+2. **(Should-fix) A failed lookup read as "no offline copy".**
+   `updateEnv().registration()` now resolves null only for a confirmed
+   absence (no worker API, or `getRegistration()` answered undefined) and
+   REJECTS when the lookup rejects, throws, or does not answer within 5 s
+   (`UPDATE_LOOKUP_MS` — the browser's own bookkeeping, not the network).
+   `checkForUpdate` turns that into its own state, `lookup-failed`:
+   "Couldn't check just now — try again in a moment". Offline still wins
+   (it is the truer reason); a strip already up still reads ready/held.
+
+**Checked.**
+- `tests/update-check.test.mjs` now 15: held at the end of a check and with
+  the strip up (named and unnamed work); the row's busy tap — no reload
+  while busy (twice), one reload on the first tap after; a rejected lookup;
+  the real `updateEnv` with a rejecting, a synchronously throwing, a hanging
+  (mock timers, 5 s) and an empty `getRegistration`, plus no worker API.
+- `tests/update-row.test.mjs`: the real shell holds a ready tap under a real
+  `body.dataset.busy = 'spotify-scan'`.
+- The real-worker walk re-run (it now derives the build from the repo:
+  v90 → v91 → v92): with the scan marked busy the row settled on held, a tap
+  during the scan stayed on the same page, and after the mark cleared the
+  next tap reloaded onto v92. Shot: `v90-shots/item3-3-held.png`.
+- Full `npm test`: 912, 910 pass, 1 skipped (DATABASE_URL-gated), 1 fail —
+  the ASSET_STAMP check again, expected: settings.js changed after the
+  stamp, and the re-stamp is the orchestrator's.
