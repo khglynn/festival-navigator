@@ -15,15 +15,14 @@ import { readFileSync } from 'node:fs';
 import { randomBytes } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { serveStatic } from '../helpers/static-server.mjs';
-import { launchBrowser, NO_BROWSER } from '../helpers/browser.mjs';
+import { launchBrowser, launchWebkit, lateStarts, motionDone, NO_BROWSER } from '../helpers/browser.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const NINE = JSON.parse(readFileSync(path.join(ROOT, 'tests/fixtures/plan-crew-nine.json'), 'utf8'));
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const server = await serveStatic(ROOT);
 const chromium = await launchBrowser();
-let webkit = null;
-try { webkit = await (await import('playwright')).webkit.launch({ headless: true }); } catch { /* not installed: that engine skips */ }
+const webkit = await launchWebkit();
 test.after(async () => { if (chromium) await chromium.close(); if (webkit) await webkit.close(); await server.close(); });
 const FID = 'portola-2026';
 const SAT_940 = new Date('2026-09-26T21:40:00-07:00'); // Dog Blood on the Pier Stage, 8 picked
@@ -35,6 +34,7 @@ async function openPhone(engine, { reduced = false, desk = false, fontDelayMs = 
     hasTouch: !desk, isMobile: !desk && engine === chromium, deviceScaleFactor: 2,
     timezoneId: 'America/Los_Angeles', serviceWorkers: 'block', reducedMotion: reduced ? 'reduce' : 'no-preference',
   });
+  await lateStarts(ctx);
   const doc = {
     v: 4, meta: { name: 'Nine', inviteFestId: FID }, spotify: {}, affinity: {},
     people: Object.fromEntries(NINE.members.map((n, i) => [n, { colorIndex: i }])),
@@ -66,9 +66,22 @@ async function openPhone(engine, { reduced = false, desk = false, fontDelayMs = 
   // A guest's peek waits under the welcome card (one thing at a time).
   await page.waitForSelector(guest ? '#welcome-card' : '#plan[data-state="peek"]:not([hidden])', { timeout: 15000 });
   const fontsAtPeek = await page.evaluate(() => document.fonts.status);
-  await sleep(900); // the peek has arrived
+  await sleep(900);
+  await motionDone(page, { within: guest ? '#welcome-card' : '#plan' }); // the peek (or the card) has arrived
   return { ctx, page, errors, fontsAtPeek };
 }
+
+// Measure the window only once it has stopped. A fixed beat after a tap or a
+// release is a guess about the machine, and CI's loaded Linux WebKit held
+// the settles on their first frame past it: the next grab was aimed at a
+// window still on its way, and the panel was read at the corner card's
+// place (runs 36266741642 and 36266745098, 2026-09-26). Every settle starts
+// in the handler of the input that asked for it, so it is already there to
+// wait for when the input returns. And the shelf's quiet time with it: the
+// click that follows a tap or a drag within that time is the same hand's,
+// and swallowed (plan-shelf.js quietUntil), so the next deliberate click
+// waits it out as a person's would.
+const settled = (page) => Promise.all([motionDone(page, { within: '#plan' }), sleep(QUIET_MS + 50)]);
 
 const geometry = (page) => page.evaluate(() => {
   const el = document.getElementById('plan');
@@ -85,6 +98,20 @@ const geometry = (page) => page.evaluate(() => {
     running: el.getAnimations({ subtree: true }).filter((a) => a.playState === 'running' && !(a instanceof CSSAnimation)).length,
   };
 });
+// Hold every motion the window starts from here on at a fraction of its
+// run (paused there), until unheld: a late frame on a loaded phone, made
+// the same on every machine. What a hand does next must start from what is
+// on screen.
+const holdSettles = (page, at) => page.evaluate((f) => {
+  const animate = Element.prototype.animate;
+  window.__unholdSettles = () => { Element.prototype.animate = animate; };
+  Element.prototype.animate = function held(...args) {
+    const a = animate.apply(this, args);
+    if (document.getElementById('plan').contains(this)) { a.pause(); a.currentTime = a.effect.getComputedTiming().duration * f; }
+    return a;
+  };
+}, at);
+const unholdSettles = (page) => page.evaluate(() => window.__unholdSettles());
 const grabAt = (page) => page.evaluate(() => {
   const g = document.querySelector('#plan .plan-grab').getBoundingClientRect();
   const el = document.getElementById('plan');
@@ -122,6 +149,7 @@ async function drag(page, from, dy, { steps = 12, stepMs = 16, holdMs = 250 } = 
 const SHELF_SRC = readFileSync(path.join(ROOT, 'js/v3/plan-shelf.js'), 'utf8');
 const FLING = Number(SHELF_SRC.match(/const FLING = ([\d.]+);/)[1]);
 const STILL_MS = Number(SHELF_SRC.match(/const still = e\.timeStamp - b\.t > (\d+);/)[1]);
+const QUIET_MS = Number(SHELF_SRC.match(/quietUntil = performance\.now\(\) \+ (\d+);/)[1]);
 const asTheShelfSees = (seen) => {
   const down = seen.findIndex((e) => e[0] === 'pointerdown');
   const up = seen.find((e) => e[0] === 'pointerup');
@@ -148,7 +176,7 @@ async function flick(page, from, dy) {
     await drag(page, from, dy, { steps: 3, stepMs: 0, holdMs: 0 });
     got = asTheShelfSees(await page.evaluate(() => window.__flick));
     if (got.flick) return got;
-    await sleep(600); // not a flick as delivered: it goes back where it began
+    await settled(page); // not a flick as delivered: it goes back where it began
   }
   assert.fail(`the machine never delivered a flick in three tries (last: ${JSON.stringify(got)})`);
 }
@@ -188,14 +216,14 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
       let from = await grabAt(page);
       const short = await drag(page, from, -from.range * 0.2);
       assert.equal(short.busy, 'plan-drag', 'the hand is down: the page is marked busy');
-      await sleep(500);
+      await settled(page);
       let g = await geometry(page);
       assert.equal(g.state, 'peek', 'short of a third: back to the peek');
       assert.equal(g.busy, null, 'and the mark is given back');
       from = await grabAt(page);
       const mid = await drag(page, from, -from.range * 0.55);
       assert.ok(mid.planTop < from.y - from.range * 0.4, `mid-drag the window follows the finger: ${JSON.stringify(mid)}`);
-      await sleep(600);
+      await settled(page);
       g = await geometry(page);
       assert.equal(g.state, 'open', 'past a third: open');
       assert.equal(g.running, 0, 'and settled');
@@ -208,7 +236,7 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
       // Back down by the grabber, past a third of the way.
       from = await grabAt(page);
       await drag(page, from, from.range * 0.5);
-      await sleep(500);
+      await settled(page);
       assert.equal((await geometry(page)).state, 'peek');
       assert.deepEqual(errors, []);
     } finally { await ctx.close(); }
@@ -221,17 +249,17 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
       // Short: 28% of the way, under the third a slow release needs, so only
       // its speed can open it — and long enough to stay fast on a slow machine.
       await flick(page, from, -from.range * 0.28);
-      await sleep(600);
+      await settled(page);
       assert.equal((await geometry(page)).state, 'open', 'a flick up opens it, short as it was');
       from = await grabAt(page);
       await flick(page, from, from.range * 0.28);
-      await sleep(500);
+      await settled(page);
       assert.equal((await geometry(page)).state, 'peek', 'a flick down closes it');
       // A tap on the peek's row: the plan opens; the wall behind hears nothing.
       const picksBefore = await page.evaluate(() => document.querySelectorAll('#wall-root .card.picked, #wall-root .card[data-level]:not([data-level="0"])').length);
       const b = await page.locator('#plan .plan-row.tagged').boundingBox();
       await page.touchscreen.tap(b.x + b.width * 0.4, b.y + b.height / 2);
-      await sleep(600);
+      await settled(page);
       assert.equal((await geometry(page)).state, 'open');
       const picksAfter = await page.evaluate(() => document.querySelectorAll('#wall-root .card.picked, #wall-root .card[data-level]:not([data-level="0"])').length);
       assert.equal(picksAfter, picksBefore, 'no pick went through the peek');
@@ -250,7 +278,7 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
       const tapGrab = async (how) => {
         const g = await grabAt(page);
         if (how === 'finger') await page.touchscreen.tap(g.x, g.y); else await page.mouse.click(g.x, g.y);
-        await sleep(700);
+        await settled(page);
         return (await geometry(page)).state;
       };
       assert.equal(await tapGrab('mouse'), 'open', 'a mouse click on the grabber opens it');
@@ -273,7 +301,7 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
     try {
       const b = await page.locator('#plan .plan-row.tagged').boundingBox();
       await page.touchscreen.tap(b.x + b.width * 0.4, b.y + b.height / 2);
-      await sleep(900);
+      await settled(page);
       const rowsBelowNow = () => page.evaluate(() => {
         const g = document.querySelector('#plan .plan-grow').getBoundingClientRect().bottom;
         return [...document.querySelectorAll('#plan .plan-row:not(.tagged):not(.earlier):not(.scattered):not(.or)')]
@@ -292,13 +320,13 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
       // The first row under the NOW card: its card fits below it.
       const n0 = await look(near.key);
       await page.mouse.click(near.x, near.y);
-      await sleep(900);
+      await settled(page);
       const n1 = await look(near.key);
       assert.ok(Math.abs(n1.top - n0.top) <= 1, `the tapped row did not move: ${JSON.stringify([n0, n1])}`);
       assert.ok(n1.cardBottom <= n1.floor + 1, 'its card is whole on screen');
       assert.deepEqual(n1.grown.sort(), ['grow|Pier Stage|1260', `grow|${near.key}`].sort(), 'and the NOW card above stayed grown');
       await page.mouse.click(near.x, near.y);
-      await sleep(900);
+      await settled(page);
       const n2 = await look(near.key);
       assert.deepEqual(n2.grown, ['grow|Pier Stage|1260'], 'the same tap folds it');
       assert.ok(Math.abs(n2.top - n0.top) <= 1, `still where it was: ${JSON.stringify([n0, n1, n2])}`);
@@ -306,12 +334,66 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
       // by the card's overflow and no more.
       const f0 = await look(far.key);
       await page.mouse.click(far.x, far.y);
-      await sleep(900);
+      await settled(page);
       const f1 = await look(far.key);
       assert.ok(f1.cardBottom <= f1.floor + 1, `a card near the bottom is shown whole: ${JSON.stringify(f1)}`);
       assert.ok(f1.top <= f0.top + 1, 'the row never moves down');
       assert.ok(Math.abs(f1.cardBottom - f1.floor) <= 2 || Math.abs(f1.top - f0.top) <= 1, `it rose just enough (its card ends at the floor): ${JSON.stringify([f0, f1])}`);
       assert.equal((await geometry(page)).state, 'open');
+      assert.deepEqual(errors, []);
+    } finally { await ctx.close(); }
+  });
+
+  // A settle still on its way when the hand comes back: the window is taken
+  // where it is on screen. Before 2026-09-26 a grab read the settle's END
+  // (the inline styles), so the window popped to where it was going and then
+  // under the finger; a tap mid-settle started the next settle from that end
+  // too. CI's loaded Linux WebKit held settles on their first frame for over
+  // half a second, which is how this was found; here each settle is held
+  // halfway (or at its start) on purpose, so the case is the same on every
+  // machine.
+  test(`${name}: a window caught mid-settle stays where it is on screen — a drag carries it from there, and a tap's settle starts there`, { skip }, async () => {
+    const { ctx, page, errors } = await openPhone(get());
+    try {
+      let g = await grabAt(page);
+      await page.mouse.click(g.x, g.y);
+      await settled(page);
+      const openTop = (await geometry(page)).planTop;
+      g = await grabAt(page);
+      // A short drag down lets go and the window settles back open — held a
+      // tenth of the way in, about half its distance (the arrival curve is
+      // quick at the start and nearly home by half time).
+      await holdSettles(page, 0.1);
+      const dragged = await drag(page, g, g.range * 0.2);
+      await unholdSettles(page);
+      const midTop = (await geometry(page)).planTop;
+      assert.ok(midTop > openTop + 4 && midTop < dragged.planTop - 4, `the settle is held on its way: ${JSON.stringify({ openTop, midTop, dragged: dragged.planTop })}`);
+      // The hand takes it there and moves 40px: the window moves 40px from where it was.
+      const h = await grabAt(page);
+      await page.mouse.move(h.x, h.y);
+      await page.mouse.down();
+      for (let k = 1; k <= 8; k++) { await page.mouse.move(h.x, h.y + 40 * (k / 8)); await sleep(16); }
+      await sleep(120);
+      const caughtTop = (await geometry(page)).planTop;
+      await page.mouse.up();
+      assert.ok(Math.abs(caughtTop - (midTop + 40)) <= 2, `the window stayed under the finger: ${JSON.stringify({ midTop, caughtTop })}`);
+      await settled(page);
+      if ((await geometry(page)).state !== 'open') { const q = await grabAt(page); await page.mouse.click(q.x, q.y); await settled(page); }
+      // A tap on the grabber closes it — held halfway; a second tap opens it
+      // again, and that settle starts where the first one was.
+      await holdSettles(page, 0.5);
+      let q = await grabAt(page);
+      await page.mouse.click(q.x, q.y);
+      await unholdSettles(page);
+      const halfTop = (await geometry(page)).planTop;
+      assert.ok(halfTop > openTop + 4, `the close is held on its way: ${JSON.stringify({ openTop, halfTop })}`);
+      await holdSettles(page, 0);
+      q = await grabAt(page);
+      await page.mouse.click(q.x, q.y);
+      await unholdSettles(page);
+      const g2 = await geometry(page);
+      assert.equal(g2.state, 'open', 'the second tap opens it');
+      assert.ok(Math.abs(g2.planTop - halfTop) <= 1, `and its settle starts where the window was: ${JSON.stringify({ halfTop, startTop: g2.planTop })}`);
       assert.deepEqual(errors, []);
     } finally { await ctx.close(); }
   });
@@ -344,6 +426,7 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
       assert.equal(fontsAtPeek, 'loading', 'the peek arrived before the fonts (the case under test)');
       await page.waitForFunction(() => document.fonts.status === 'loaded', null, { timeout: 15000 });
       await sleep(700);
+      await settled(page);
       const g = await geometry(page);
       assert.equal(g.state, 'peek');
       assert.ok(Math.abs(g.rowBottom - g.dockTop) <= 0.5, `the row ends at the dock's top edge: ${JSON.stringify(g)}`);
@@ -359,18 +442,18 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
     try {
       let g = await grabAt(page);
       await page.touchscreen.tap(g.x, g.y);
-      await sleep(700);
+      await settled(page);
       assert.equal((await geometry(page)).state, 'open');
       const head = await page.locator('#plan .plan-head .room-head .label').boundingBox();
       await page.touchscreen.tap(head.x + head.width / 2, head.y + head.height / 2);
-      await sleep(700);
+      await settled(page);
       assert.equal((await geometry(page)).state, 'peek', 'a finger on the head closes it');
       g = await grabAt(page);
       await page.mouse.click(g.x, g.y);
-      await sleep(700);
+      await settled(page);
       const x = await page.locator('#plan .plan-head .sheet-close').boundingBox();
       await page.mouse.click(x.x + x.width / 2, x.y + x.height / 2);
-      await sleep(700);
+      await settled(page);
       assert.equal((await geometry(page)).state, 'peek', 'the ✕ closes it (once, not a close and a reopen)');
       assert.deepEqual(errors, []);
     } finally { await ctx.close(); }
@@ -385,20 +468,24 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
       const before = await page.evaluate(() => ({ len: history.length, hash: location.hash }));
       const you = await page.locator('#dock-you').boundingBox();
       await page.touchscreen.tap(you.x + you.width / 2, you.y + you.height / 2);
-      await sleep(500);
       const menu = () => page.evaluate(() => {
         const pop = document.querySelector('#dock-you-wrap .hl-pop');
         return { open: document.getElementById('dock-you').getAttribute('aria-expanded') === 'true',
           shown: !!pop && getComputedStyle(pop).display !== 'none',
           acts: pop ? [...pop.querySelectorAll('[data-act]')].map((b) => b.dataset.act) : [] };
       });
+      // The menu's own motion first: a finger aimed at a row still arriving misses it.
+      await motionDone(page, { within: '#dock-you-wrap' });
       let m = await menu();
       assert.ok(m.open && m.shown, `the menu is up: ${JSON.stringify(m)}`);
       assert.deepEqual(m.acts.slice(0, 2), ['plan', 'pick-as'], 'Our picks first, above Pick as someone else');
       const row = await page.locator('#dock-you-wrap .hl-pop [data-act="plan"]').boundingBox();
       assert.ok(row && row.height >= 44, `a real row, on the touch floor: ${JSON.stringify(row)}`);
       await page.touchscreen.tap(row.x + row.width * 0.3, row.y + row.height / 2);
-      await sleep(800);
+      // Gone, not a beat: the menu's leaving is its own motion (Linux WebKit
+      // held it past 800 ms). Then the plan's rise.
+      await page.waitForFunction(() => { const p = document.querySelector('#dock-you-wrap .hl-pop'); return !p || getComputedStyle(p).display === 'none'; }, null, { timeout: 4000 }).catch(() => {});
+      await settled(page);
       m = await menu();
       assert.ok(!m.open && !m.shown, `the menu gave way: ${JSON.stringify(m)}`);
       const g = await geometry(page);
@@ -419,16 +506,17 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
     try {
       const g = await grabAt(page);
       await page.mouse.click(g.x, g.y);
-      await sleep(700);
+      await settled(page);
       const row = await page.evaluate(() => {
         const r = [...document.querySelectorAll('#plan .plan-list > button.plan-row:not(.tagged):not(.earlier)')][0].getBoundingClientRect();
         return { x: r.left + r.width * 0.4, y: r.top + 14 };
       });
       await page.mouse.click(row.x, row.y);
-      await sleep(900);
+      await settled(page);
       assert.ok(await page.evaluate(() => !!document.getElementById('plan').style.height), 'the tap pinned the window');
       await page.setViewportSize({ width: 1280, height: 800 });
       await sleep(900);
+      await settled(page);
       const wide = await page.evaluate(() => {
         const el = document.getElementById('plan');
         const r = el.getBoundingClientRect();
@@ -442,6 +530,7 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
         `a 400px panel from the rail to the bottom: ${JSON.stringify(wide)}`);
       await page.setViewportSize({ width: 390, height: 844 });
       await sleep(900);
+      await settled(page);
       const narrow = await page.evaluate(() => {
         const el = document.getElementById('plan');
         return { state: el.dataset.state, side: el.dataset.side || null, bottom: el.getBoundingClientRect().bottom, dockTop: document.getElementById('dock').getBoundingClientRect().top };
@@ -464,7 +553,7 @@ test('Chromium touch: a finger drag opens it, and a finger drag on the open list
     for (let k = 1; k <= 12; k++) { await touch('touchMove', [{ x: from.x, y: from.y + 30 - (from.range * 0.6) * (k / 12) }]); await sleep(16); }
     await sleep(250);
     await touch('touchEnd', []);
-    await sleep(600);
+    await settled(page);
     assert.equal((await geometry(page)).state, 'open');
     const list = await page.evaluate(() => {
       const l = document.querySelector('#plan .plan-list');
@@ -475,7 +564,7 @@ test('Chromium touch: a finger drag opens it, and a finger drag on the open list
       await touch('touchStart', [{ x: list.x, y: list.y }]);
       for (let k = 1; k <= 8; k++) { await touch('touchMove', [{ x: list.x, y: list.y - k * 15 }]); await sleep(16); }
       await touch('touchEnd', []);
-      await sleep(500);
+      await settled(page);
       const after = await page.evaluate(() => ({ state: document.getElementById('plan').dataset.state, top: document.querySelector('#plan .plan-list').scrollTop }));
       assert.equal(after.state, 'open', 'the list scrolled; the plan stayed open');
       assert.ok(after.top > 0, 'and the list moved');
@@ -508,7 +597,7 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
       assert.ok(bottom >= 18 && bottom <= 24, `its row sits just above the 20px gap at the bottom (${bottom})`);
       assert.equal(await page.evaluate(() => document.getElementById('rail-now').hidden), true, 'the corner says NOW: the rail steps aside');
       await page.mouse.click(row.x + row.width * 0.4, y);
-      await sleep(700);
+      await settled(page);
       const open = await page.evaluate(() => {
         const el = document.getElementById('plan');
         const r = el.getBoundingClientRect();
@@ -523,8 +612,44 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
       assert.equal(await hitPlan(page, 870, 400), false, 'and the wall beside it is the wall (no backdrop)');
       assert.equal(await page.evaluate(() => document.body.classList.contains('sheet-open') || !!document.querySelector('.sheet-backdrop')), false);
       await page.keyboard.press('Escape');
-      await sleep(600);
+      await settled(page);
       assert.equal(await page.evaluate(() => document.getElementById('plan').dataset.state), 'peek', 'Escape puts it back in the corner');
+      assert.deepEqual(errors, []);
+    } finally { await ctx.close(); }
+  });
+
+  // The laptop's mirror of the phone's mid-settle catch: a click on the card
+  // while Escape's settle is still on its way grows the panel from where the
+  // card is on screen, not from the corner it was going to.
+  test(`${name} 1280: a click while the panel is still going back to the corner grows it from where it is`, { skip }, async () => {
+    const { ctx, page, errors } = await openPhone(get(), { desk: true });
+    try {
+      const row = await page.locator('#plan .plan-row.tagged').boundingBox();
+      const cornerTop = await page.evaluate(() => { const el = document.getElementById('plan'); return new DOMMatrixReadOnly(getComputedStyle(el).transform).m42 + el.offsetTop; });
+      await page.mouse.click(row.x + row.width * 0.4, row.y + row.height / 2);
+      await settled(page);
+      const openTop = await page.evaluate(() => { const el = document.getElementById('plan'); return new DOMMatrixReadOnly(getComputedStyle(el).transform).m42 + el.offsetTop; });
+      await holdSettles(page, 0.5);
+      await page.keyboard.press('Escape');
+      await unholdSettles(page);
+      // The window's own transform, not its box: the card lifts 2px under a
+      // hovering mouse (v3.css, the separate `translate`), and the click
+      // below brings the mouse over it.
+      const lift = () => page.evaluate(() => {
+        const el = document.getElementById('plan');
+        const m = new DOMMatrixReadOnly(getComputedStyle(el).transform);
+        const r = el.getBoundingClientRect();
+        return { state: el.dataset.state, top: m.m42 + el.offsetTop, x: r.left + 60, y: r.top + 30 };
+      });
+      const half = await lift();
+      assert.equal(half.state, 'peek');
+      assert.ok(half.top > openTop + 4 && half.top < cornerTop - 4, `the way back is held halfway: ${JSON.stringify({ openTop, half: half.top, cornerTop })}`);
+      await holdSettles(page, 0);
+      await page.mouse.click(half.x, half.y);
+      await unholdSettles(page);
+      const start = await lift();
+      assert.equal(start.state, 'open', 'the click grows it again');
+      assert.ok(Math.abs(start.top - half.top) <= 1, `from where it was: ${JSON.stringify({ half: half.top, start: start.top })}`);
       assert.deepEqual(errors, []);
     } finally { await ctx.close(); }
   });
@@ -549,7 +674,6 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
   test(`${name} 390: the Spotify pill stands above the welcome card, not under it`, { skip }, async () => {
     const { ctx, page, errors } = await openPhone(get(), { guest: true });
     try {
-      await sleep(900); // the card's arrival
       const at = await pillOverCard(page);
       assert.ok(clearAbove(at), JSON.stringify(at));
       assert.deepEqual(errors, []);
@@ -562,7 +686,6 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
   test(`${name} 1280: the welcome card waits in the corner card's own box, and the plan rises in the same place when it goes`, { skip }, async () => {
     const { ctx, page, errors } = await openPhone(get(), { desk: true, guest: true });
     try {
-      await sleep(900); // the card's arrival
       const card = await page.evaluate(() => {
         const r = document.querySelector('#welcome-card .bring-card').getBoundingClientRect();
         return { right: innerWidth - r.right, bottom: innerHeight - r.bottom, width: r.width };
@@ -574,7 +697,7 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
       assert.ok(clearAbove(at), `the Spotify pill stands above the card: ${JSON.stringify(at)}`);
       await page.locator('#welcome-card button', { hasText: 'Look around' }).click();
       await page.waitForSelector('#plan[data-state="peek"]:not([hidden])', { timeout: 5000 });
-      await sleep(900);
+      await settled(page);
       const row = await page.locator('#plan .plan-row.tagged').boundingBox();
       const y = row.y + row.height / 2;
       assert.equal(await hitPlan(page, 1280 - 25, y), true, 'the corner card is where the welcome card was');
@@ -594,7 +717,7 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
     try {
       const row = await page.locator('#plan .plan-row.tagged').boundingBox();
       await page.mouse.click(row.x + row.width * 0.4, row.y + row.height / 2);
-      await sleep(700);
+      await settled(page);
       const at = await page.evaluate(() => {
         const side = document.getElementById('plan').getBoundingClientRect().left;
         const hit = [...document.querySelectorAll('#wall-root .card')].map((c) => ({ a: c.dataset.artist, r: c.getBoundingClientRect() }))
@@ -603,7 +726,8 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
       });
       assert.ok(at, 'a card beside the panel');
       await page.mouse.move(at.x, at.y, { steps: 5 });
-      await sleep(1100);
+      await page.waitForSelector('#zoom-layer .zoom-card', { timeout: 5000 }).catch(() => {});
+      await motionDone(page, { within: '#zoom-layer' });
       const z = await page.evaluate(() => { const c = document.querySelector('#zoom-layer .zoom-card'); if (!c) return null; const r = c.getBoundingClientRect(); return { left: r.left, right: r.right }; });
       assert.ok(z, 'it zoomed');
       assert.ok(z.right <= at.side - 7.5, `its right edge clears the panel by 8px: ${JSON.stringify({ z, side: at.side })}`);
@@ -626,7 +750,7 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
       assert.equal(await page.evaluate(() => document.activeElement && document.activeElement.classList.contains('plan-grab')), true,
         'the card is the next stop after the rail');
       await page.keyboard.press('Enter');
-      await sleep(700);
+      await settled(page);
       assert.equal((await geometry(page)).state, 'open');
       const focus = () => page.evaluate(() => {
         const f = document.activeElement;
@@ -643,13 +767,13 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
       assert.ok(f.ring, 'and shows the ring');
       const key = f.stop;
       await page.keyboard.press('Enter');
-      await sleep(700);
+      await settled(page);
       f = await focus();
       assert.equal(f.stop, key, 'the focus stays on the same stop');
       assert.equal(f.expanded, 'true', 'its card is grown');
       assert.equal(await page.evaluate((k) => !!document.querySelector(`#plan .plan-grow[data-stop="grow|${CSS.escape(k)}"]`), key), true);
       await page.keyboard.press('Escape');
-      await sleep(700);
+      await settled(page);
       assert.equal((await geometry(page)).state, 'peek');
       assert.equal((await focus()).grab, true, 'the focus is back on the card');
       assert.deepEqual(errors, []);
@@ -666,11 +790,12 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
     try {
       await page.evaluate(() => document.getElementById('rail-you').focus());
       await page.keyboard.press('Enter');
-      await sleep(400);
+      await motionDone(page, { within: '#rail-you-wrap' });
       assert.equal(await page.evaluate(() => document.getElementById('rail-you').getAttribute('aria-expanded')), 'true', 'the menu is open');
       await page.evaluate(() => document.querySelector('#rail-you-wrap .hl-pop [data-act="plan"]').focus());
       await page.keyboard.press('Enter');
-      await sleep(800);
+      await page.waitForFunction(() => document.getElementById('rail-you').getAttribute('aria-expanded') === 'false', null, { timeout: 4000 }).catch(() => {});
+      await settled(page);
       const at = await page.evaluate(() => {
         const el = document.getElementById('plan');
         const r = el.getBoundingClientRect();

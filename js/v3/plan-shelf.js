@@ -524,7 +524,7 @@ export function hidePlanShelf({ instant = false } = {}) { leave({ instant }); }
 function settleTo(target, { instant = false } = {}) {
   if (target === 1 && mode !== 'open') unpin();
   measure(); // the laptop's panel top follows the rail; the phone's numbers may have moved with a font
-  apply(p);
+  apply(caught());
   const from = { el: el.style.transform, clip: el.style.clipPath, body: body.style.transform, p };
   mode = target === 1 ? 'open' : 'peek';
   apply(target);
@@ -563,9 +563,9 @@ function onDown(e) {
   if (e.target.closest('.sheet-close')) return;
   if (mode !== 'open') unpin();
   measure();
-  apply(mode === 'open' ? 1 : 0);
+  apply(caught(mode === 'open' ? 1 : 0));
   const onGrab = grab.contains(e.target) || (mode === 'open' && headEl.contains(e.target));
-  drag = { id: e.pointerId, y0: e.clientY, p0: p, moved: false, onGrab, last: [{ y: e.clientY, t: e.timeStamp }] };
+  drag = { id: e.pointerId, y0: e.clientY, p0: p, wasOpen: mode === 'open', moved: false, onGrab, last: [{ y: e.clientY, t: e.timeStamp }] };
   try { el.setPointerCapture(e.pointerId); } catch { /* an old engine: the move still arrives while the finger is on the shelf */ }
   el.addEventListener('pointermove', onMove);
   el.addEventListener('pointerup', onUp);
@@ -606,12 +606,12 @@ function onUp(e) {
   // got there: the flick is the speed at the moment of release.
   const still = e.timeStamp - b.t > 80;
   const v = !still && b.t > a.t ? (a.y - b.y) / (b.t - a.t) : 0; // up is positive
-  const open = Math.abs(v) > FLING ? v > 0 : (d.p0 === 1 ? p > 1 - OPEN_AT : p > OPEN_AT);
+  const open = Math.abs(v) > FLING ? v > 0 : (d.wasOpen ? p > 1 - OPEN_AT : p > OPEN_AT);
   settleTo(open ? 1 : 0);
 }
 function onCancel(e) {
   if (!drag || (e && e.pointerId != null && e.pointerId !== drag.id)) return;
-  const back = drag.p0;
+  const back = drag.wasOpen ? 1 : 0; // p0 may be a window caught mid-settle: back to where it was going
   endDrag();
   flushHeld();
   settleTo(back); // a drag the browser took away goes back where it started
@@ -638,6 +638,37 @@ function flushHeld() {
   draw();
   measure();
 }
+// A settle still playing when a hand or a key takes the window: the window is
+// caught where it stands on screen, its motion stopped, and whatever comes
+// next starts from there — a drag under the finger, or the next settle.
+// Nothing jumps. The inline styles hold the settle's END, so reading them
+// (the old way) put a regrabbed window at its target and then under the
+// finger, a pop. A loaded phone starts a settle late, and CI's Linux WebKit
+// held a 130ms settle-back on its first frame for over half a second (runs
+// 36266741642 and 36266745098, 2026-09-26). `rest`: where the window is when
+// nothing is playing. A paused motion counts: it is on screen all the same.
+function caught(rest = p) {
+  if (!el || typeof el.getAnimations !== 'function') return rest;
+  const css = typeof window.CSSAnimation === 'function' ? window.CSSAnimation : null;
+  const showing = (a) => a.pending || a.playState === 'running' || a.playState === 'paused';
+  if (!el.getAnimations().some((a) => !(css && a instanceof css) && showing(a))) return rest;
+  const at = shownP(rest);
+  motions().forEach((a) => a.cancel());
+  return at;
+}
+// The p the window's transform shows right now (its animation included): the
+// vertical translate against its full reach — the phone's H − peekH, the
+// laptop's drop from the panel to the corner card.
+function shownP(rest) {
+  const m = /matrix(3d)?\(([^)]*)\)/.exec(window.getComputedStyle(el).transform || '');
+  if (!m || !geo) return rest;
+  const v = m[2].split(',').map(Number);
+  const ty = m[1] ? v[13] : v[5];
+  const reach = geo.desk ? geo.H - geo.cardH - GAP : geo.H - geo.peekH;
+  if (!(reach > 0) || !Number.isFinite(ty)) return rest;
+  return Math.max(0, Math.min(1, 1 - ty / reach));
+}
+
 // The window's own motion (Web Animations) — not the nodes' endless aura
 // drift, which is CSS and never ends.
 function motions() {
