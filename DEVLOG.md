@@ -2,6 +2,32 @@
 
 Newest first. One entry per meaningful unit of work.
 
+## 2026-09-26 — Portola Saturday: v92 to v102 in one day
+
+Kevin at Portola on his phone; one coordinator session released, builders
+worked in worktrees, a sibling session built Our picks. Per-release rows,
+reviews and his calls: `claude-plans/2026-09-25-portola-live/LEDGER.md`.
+
+- **Overnight (v92–v97):** the guest first open, Folsom weekend by time
+  (every verified party), ticket doors that show the price and never the
+  seller, NOW in the day row, the Show menu as a popover, Invite someone, the
+  Portola-app import, and Phase 1 of the unified build — the List view and
+  the menu bar.
+- **Daytime (v98–v102):** a phone tap opens the notes shelf (after Kevin's
+  own iPhone test), the people menu and the Invite sheet, one left edge on
+  laptops, Our picks (renamed from Our plan after a friend said her picks
+  are interest, not a promise to be there), and the Spotify playlist names.
+  Data #56 gave ACL's Late nights run times.
+- **Lessons.** (1) Cut a mechanism only after listing what reads it: cutting
+  fallback closes for ACL concerts fixed a review finding and silently
+  shortened NOW rings. (2) A sibling session's gate is not a gate until CI
+  has run it: v101 passed locally and failed four Linux WebKit tests, one a
+  real bug. (3) When review keeps finding ordering races, stop applying the
+  racing thing — the people menu's add now never applies its own server
+  answer; an ordered poll does. (4) Read festival data from `origin/main`: a
+  map built from a five-releases-old local checkout found 10 Folsom parties
+  instead of 64.
+
 ## 2026-09-24 → 26 — v87 to v91 during Portola, and the live-ops lane
 
 Moved here from NOW.md on 2026-09-26, when NOW became a cursor for the live
