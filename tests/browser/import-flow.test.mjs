@@ -22,7 +22,7 @@ import { randomBytes } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import jpeg from 'jpeg-js';
 import { serveStatic } from '../helpers/static-server.mjs';
-import { launchBrowser, NO_BROWSER } from '../helpers/browser.mjs';
+import { launchBrowser, launchWebkit, NO_BROWSER } from '../helpers/browser.mjs';
 import { deepMerge } from '../../js/merge.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
@@ -31,11 +31,8 @@ const server = await serveStatic(ROOT);
 const chromium = await launchBrowser();
 let webkit = null;
 let devices = {};
-try {
-  const pw = await import('playwright');
-  devices = pw.devices;
-  webkit = await pw.webkit.launch({ headless: true });
-} catch { /* not installed: that engine skips */ }
+devices = (await import('playwright')).devices;
+webkit = await launchWebkit(); // CI installs WebKit and requires it (tests/helpers/browser.mjs)
 test.after(async () => { if (chromium) await chromium.close(); if (webkit) await webkit.close(); await server.close(); });
 
 const FID = 'portola-2026';
