@@ -107,6 +107,10 @@ async function openApp({ width = 390, height = 844, touch = true, now = SAT_1030
   await page.goto(`${server.origin}/#g=${TOKEN}`, { waitUntil: 'load' });
   await page.waitForSelector('#screen-app', { state: 'visible', timeout: 15000 });
   await page.waitForFunction(() => document.querySelectorAll('#wall-root .card').length > 20, null, { timeout: 15000 });
+  // The fonts first: on the full Folsom wall (v94) a late font reflowed the
+  // days above Saturday's grid between one tap and the next, and two landings
+  // meant to share a height came out 3px apart. Every tap measures at rest.
+  await page.evaluate(() => document.fonts.ready);
   await sleep(600); // the day-of open's own landing
   // `doc` is the crew the route serves: change it, then `pull(page)`, and the
   // app takes it as a real remote change (a poll that repaints the wall).
