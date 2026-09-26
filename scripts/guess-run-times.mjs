@@ -39,7 +39,10 @@
 //     its posted time (a posted opener IS the first act) or doors + gap, each
 //     act after it by the support slot, and the close is a CAP (a curfew),
 //     never a target — when it binds, the headliner still plays a full set
-//     and the openers move earlier to fit, never before doors. A 7 PM-doors
+//     and the openers move earlier to fit, never before doors. Only the
+//     venue's word caps (printed, evidenced, its routine hours): the kind's
+//     fallback close is a guess that draws the window and schedules nobody.
+//     A 7 PM-doors
 //     show does not run to midnight: laid back from a 2 AM close, Palace got
 //     12:30 AM behind 7 PM doors (ACL, 2026-09-26).
 // A guess that is early costs a friend some waiting; one that is late makes
@@ -93,10 +96,10 @@ const qDown = (m) => Math.floor(m / 15) * 15;
 // onto the event is what made a routine close read as per-night proof.
 function closeFor(night, profile, kind) {
   const c = profile && profile.close ? profile.close : null;
-  if (c && c.byWeekday && c.byWeekday[night]) return { close: c.byWeekday[night], why: `venue's ${night} close` };
-  if (c && c.default) return { close: c.default, why: "venue's routine close" };
+  if (c && c.byWeekday && c.byWeekday[night]) return { close: c.byWeekday[night], why: `venue's ${night} close`, known: true };
+  if (c && c.default) return { close: c.default, why: "venue's routine close", known: true };
   const d = KIND_DEFAULTS[kind] || KIND_DEFAULTS.club;
-  return { close: d.close, why: `kind default (${kind})` };
+  return { close: d.close, why: `kind default (${kind})`, known: false };
 }
 const pick = (v, fallback) => (Number.isFinite(v) ? v : fallback);
 
@@ -112,7 +115,10 @@ export function planRun({ night, doors, close, closeApprox = false, closeSource 
   const H = pick(profile && profile.headlinerSetMin, kd.headlinerSetMin);
   const S = pick(profile && profile.supportSetMin, kd.supportSetMin);
 
-  let outClose = null, outApprox = false, outSource = null;
+  // `known`: the close is the venue's word (printed, evidenced for the night,
+  // or its routine hours) rather than the kind's fallback — only a known close
+  // may pull a concert's starts earlier; a fallback only draws the window.
+  let outClose = null, outApprox = false, outSource = null, known = true;
   if (close && !closeApprox) { outClose = close; outApprox = false; outSource = 'printed'; }
   else if (close && closeApprox && /^https:\/\//.test(closeSource || '')) {
     // An EVIDENCED guess — a listing printed an end for this very night
@@ -122,7 +128,7 @@ export function planRun({ night, doors, close, closeApprox = false, closeSource 
     outClose = close; outApprox = true; outSource = closeSource;
   } else {
     const c = closeFor(night, profile, kind);
-    outClose = c.close; outApprox = !!c.close; outSource = c.close ? c.why : null;
+    outClose = c.close; outApprox = !!c.close; outSource = c.close ? c.why : null; known = c.known;
   }
   let C = outClose ? activityMinutes(outClose) : null;
   if (Number.isFinite(C) && C <= D) C += 24 * 60; // a close "past midnight" on the same axis
@@ -141,9 +147,13 @@ export function planRun({ night, doors, close, closeApprox = false, closeSource 
     // first act's start) or doors + gap; each act after it by the support
     // slot; the close caps the headliner — who still plays a full set, the
     // openers moving earlier to fit, never before doors.
+    // A known close is a curfew the headliner's full set ends by; the kind's
+    // fallback is itself a guess, so it only keeps the closer inside the
+    // window it draws (a 9:30 PM-doors DJ night is not three half-hour sets
+    // because a hall "usually" shuts at midnight).
     const first = fixed[0] !== null ? fixed[0] : D + gap;
     let last = first + S * (n - 1);
-    if (Number.isFinite(C)) last = Math.min(last, C - H);
+    if (Number.isFinite(C)) last = Math.min(last, known ? C - H : C - MIN_SET);
     const open = fixed[0] !== null ? fixed[0] : Math.max(D, Math.min(first, last - S * (n - 1)));
     last = Math.max(last, open + (n - 1) * MIN_SET);
     starts = n === 1 ? [open] : members.map((_, i) => open + ((last - open) * i) / (n - 1));

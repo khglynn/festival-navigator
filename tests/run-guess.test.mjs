@@ -286,3 +286,19 @@ test('dated rooms write back and re-run to the same bytes', () => {
   assert.equal(applyPlans(planFestival(f, reg)), 0, 'nothing left to change');
   assert.deepEqual(f, once);
 });
+
+test('a fallback close is a guess: it draws a concert\'s window but pulls no start earlier; the venue\'s own close does', () => {
+  // Brushy Street Commons, Oct 3: Doors 9 / Show 9:30, three DJs, no published
+  // close. The hall default (12 AM) capping it made three half-hour sets.
+  const members = [{ name: '1x333', seq: 1, time: '9:30 PM', posted: true }, { name: 'Directress', seq: 2 }, { name: 'underscores', seq: 3 }];
+  const fallback = planRun({ night: 'Sat', doors: '9 PM', members, profile: hall() });
+  assert.equal(fallback.closeSource, 'kind default (hall)');
+  assert.deepEqual(fallback.times.map((t) => t.time), ['9:30 PM', '10:15 PM', '11 PM']);
+  // The same room with the venue's own midnight close: the headliner's full
+  // set ends by it, so the bill tightens.
+  const known = planRun({ night: 'Sat', doors: '9 PM', members, profile: hall({ close: { default: '12 AM' } }) });
+  assert.deepEqual(known.times.map((t) => t.time), ['9:30 PM', '10 PM', '10:30 PM']);
+  // And a fallback never lets the closer start inside the window's last half hour.
+  const late = planRun({ night: 'Sat', doors: '10 PM', members: [{ name: 'a', seq: 1 }, { name: 'b', seq: 2 }, { name: 'c', seq: 3 }, { name: 'd', seq: 4 }], profile: hall() });
+  assert.ok(late.times.at(-1).min <= 24 * 60 - 30, 'the closer starts by 11:30 PM under a 12 AM fallback');
+});
