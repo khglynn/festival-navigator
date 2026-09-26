@@ -314,6 +314,92 @@ test('the show menu: the crew deleted on the server while it is up — the fest 
   }
 });
 
+// A tick in the Show menu keeps your place (v93). The menu stays up so a
+// friend can tick several rooms; the independent walk found every tick
+// snapping the page from Saturday evening to "SAT PORTOLA · 1 PM" — 3400 ->
+// 552 -> 2812 -> 552 -> 2812 — because a fold re-landed on the top of your day.
+// Now the card at the top of what you see stays where it is on screen, tick
+// after tick, while the days above it (Thursday's and Friday's afters) go and
+// come back.
+for (const [width, height, touch] of [[390, 844, true], [1280, 800, false]]) {
+  test(`${width}: four ticks of Afters with the Show menu up — the card at the top of the screen stays put`, { skip }, async () => {
+    const ctx = await browser.newContext({ viewport: { width, height }, hasTouch: touch, serviceWorkers: 'block' });
+    await ctx.addInitScript(() => { navigator.serviceWorker.register = () => Promise.resolve({ update: () => Promise.resolve() }); });
+    const page = await ctx.newPage();
+    page.on('pageerror', (e) => { throw e; });
+    const TOKEN = 'menukeepplacecontract_012'; // a made-up crew
+    const FID = 'portola-2026';
+    try {
+      await ctx.addInitScript(([t, f]) => {
+        localStorage.setItem('fn_crews_v3', JSON.stringify([{ token: t, name: 'Contract' }]));
+        localStorage.setItem(`fn_me_v3_${t}`, 'Kevin');
+        localStorage.setItem(`fn_crew_fest_v3_${t}`, f);
+        localStorage.setItem('fn_welcome_v1', '1');
+      }, [TOKEN, FID]);
+      const doc = { v: 4, meta: { name: 'Contract', inviteFestId: FID }, spotify: {}, affinity: {}, people: { Kevin: { colorIndex: 0 } }, festivals: { [FID]: { selections: {} } } };
+      await ctx.route('**/api/crew**', (route) => route.fulfill({ contentType: 'application/json', body: JSON.stringify(doc) }));
+      await ctx.route('**/api/festival-add**', (route) => route.fulfill({ contentType: 'application/json', body: '{"festivals":[]}' }));
+      await ctx.route('**/api/person**', (route) => route.fulfill({ status: 503, contentType: 'application/json', body: '{}' }));
+      await page.clock.setFixedTime(new Date('2026-09-26T09:00:00-07:00')); // before doors: no now-line landing to move the page
+      await page.goto(`${server.origin}/#g=${TOKEN}`, { waitUntil: 'load' });
+      const door = width >= 720 ? 'rail' : 'dock';
+      await page.waitForSelector(`#${door}-fest-wrap .sort-pop`, { state: 'attached', timeout: 10000 });
+      await page.waitForFunction(() => document.querySelectorAll('#wall-root .card').length > 20);
+      // Saturday evening: Robyn's card a third of the way down the screen.
+      await page.evaluate(() => {
+        const robyn = [...document.querySelectorAll('#wall-root .day-block[data-day="Saturday"] .card')].find((c) => c.dataset.artist === 'Robyn');
+        window.scrollTo(0, robyn.getBoundingClientRect().top + scrollY - innerHeight / 3);
+      });
+      await page.waitForTimeout(500);
+      const where = () => page.evaluate(() => {
+        const robyn = [...document.querySelectorAll('#wall-root .day-block[data-day="Saturday"] .card')].find((c) => c.dataset.artist === 'Robyn');
+        return { y: Math.round(scrollY), robyn: Math.round(robyn.getBoundingClientRect().top), thursday: !!document.querySelector('#wall-root .day-block[data-day="Thursday"]') };
+      });
+      const start = await where();
+      assert.ok(start.y > 1500, `scrolled well into Saturday: ${JSON.stringify(start)}`);
+      await page.click(`#${door}-fest-link`);
+      await page.waitForSelector(`#${door}-fest-wrap .sort-pop`, { state: 'visible' });
+      const seen = [start];
+      // A real pointer at the row, once the menu has finished growing.
+      // page.click() is not used here on purpose: it retries while the menu
+      // is still animating and each retry scrolls the page to "reveal" the
+      // row, moving the wall before the tap and hiding what this measures.
+      const tapAfters = async () => {
+        const at = await page.evaluate(async (d) => {
+          const row = document.querySelector(`#${d}-fest-wrap .sort-pop [data-room="Afters"]`);
+          let last = '';
+          for (let i = 0; i < 60; i++) {
+            await new Promise((r) => requestAnimationFrame(r));
+            const r = row.getBoundingClientRect();
+            const now = `${r.left},${r.top},${r.width},${r.height}`;
+            if (now === last) return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+            last = now;
+          }
+          return null;
+        }, door);
+        assert.ok(at, 'the menu settles');
+        if (touch) await page.touchscreen.tap(at.x, at.y); else await page.mouse.click(at.x, at.y);
+      };
+      for (let tick = 0; tick < 4; tick++) {
+        await tapAfters();
+        await page.waitForTimeout(700); // the leave, the repaint, the arrival
+        seen.push(await where());
+      }
+      const said = JSON.stringify(seen);
+      assert.equal(seen[1].thursday, false, `the first tick hid Afters, and Thursday with it: ${said}`);
+      assert.notEqual(seen[1].y, start.y, `the page did move, by what left above: ${said}`);
+      for (const s of seen) assert.ok(Math.abs(s.robyn - start.robyn) <= 3, `Robyn stays where she was on screen, tick after tick: ${said}`);
+      assert.equal(await page.isVisible(`#${door}-fest-wrap .sort-pop`), true, 'and the menu is still up for the next tick');
+      await page.keyboard.press('Escape');
+      await page.waitForTimeout(500);
+      const closed = await where();
+      assert.ok(Math.abs(closed.robyn - start.robyn) <= 3, `putting the menu away keeps the place too: ${JSON.stringify(closed)}`);
+    } finally {
+      await ctx.close();
+    }
+  });
+}
+
 // The sort chip's popover (DT-7) — the same touch-floor miss the show menu's
 // rows just fixed (a click-only <li role="option"> at 32px), fixed the same
 // way: native <button role="option">. A search wall hides the control

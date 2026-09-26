@@ -217,3 +217,20 @@ switch; screenshots into `v93-shots/`. One full `npm test` at the end.
   since); `npm run test:browser` 207/207 before the new contract, which passes alone and in its
   file.
 
+- **Keeping your place across a Show tick** (the independent walker's FAIL, 2026-09-26): with
+  the menu staying up, every tick ran `landAfterFold`, which put the page on the top of your
+  day whenever it was scrolled at all — a friend in Saturday evening ticking Afters four times
+  went 3400 → 552 → 2812 → 552. Replaced for both of its callers (the menu's toggle and the
+  share link's "Show all") by anchor keeping: before the fold, the first card or room head at
+  or below the band under the chrome is noted with its screen offset (wall.js
+  `pickWallAnchor`, keys that survive a rebuild in `wallAnchors`); after the repaint the page
+  is scrolled so it stands at the same offset, or the next element after it if it left with
+  the room, or the last one left; at the top nothing moves, and with everything hidden the
+  page goes to the top. No glide. The menu's own hold (`menuY`) takes the new place, so
+  putting the menu away keeps it. The `&show=` route (applied before the first render) and the
+  day row never called it. Tests failing before / passing after: `tests/wall-anchor.test.mjs`
+  (kept; inside the hidden room → next; top stays 0; last; keys) and the browser contract
+  "four ticks of Afters", 390 and 1280 — Robyn's card within 3px through four ticks and the
+  Escape (before: 281 → 678 at 390, 267 → 707 at 1280). The contract taps with a real pointer
+  once the menu has settled: `page.click()` retried during the menu's grow and each retry
+  scrolled the page 100px to reveal the row, which is Playwright's doing, not a person's.

@@ -2463,6 +2463,55 @@ export function showActionToast(container, message, label, onAction, ms = 5000) 
   toastTimer = setTimeout(() => { container.textContent = ''; }, ms);
 }
 
+// ---- keeping your place while the wall changes shape (v93) ---------------------
+// A room folded or unfolded from the Show menu rebuilds the wall, and the
+// days above you can grow or shrink by thousands of pixels. The page keeps
+// your place: the wall element at the top of what you see — a card or a
+// room's head — stays exactly where it was on screen (Kevin's stay-open menu
+// is for ticking several rooms without losing your place; the independent
+// walk caught every tick snapping the page back to the day's 1 PM head).
+// No glide: the list changes under a page that stands still.
+//
+// Every card and head gets a key that survives the rebuild: its day, its
+// room, and for a card its artist and occurrence (an artist can play one
+// room twice; the n-th of them).
+export function wallAnchors(root) {
+  const seen = new Map();
+  return [...root.querySelectorAll('.room-head, .card[data-artist]')].map((el) => {
+    const day = (el.closest('.day-block') || {}).dataset?.day || '';
+    const room = (el.closest('.room') || {}).dataset?.room || '';
+    let key = el.classList.contains('room-head') ? `head|${day}|${room}` : `card|${day}|${room}|${el.dataset.artist}|${el.dataset.occ || ''}`;
+    const n = (seen.get(key) || 0) + 1;
+    seen.set(key, n);
+    if (n > 1) key += `|${n}`;
+    return { key, el };
+  });
+}
+// Which element holds your place: the one nearest the top of what you see,
+// at or below `bandTop` (under the sticky chrome); ties go to the first in
+// the wall's order. `items` are { key, top } in document order. Also the keys
+// after it, in order — where to hold on if it goes with a folded room. Null
+// at the top of the page (nothing to keep) or with nothing on the wall.
+export function pickWallAnchor(items, bandTop, scrollY) {
+  if (!(scrollY > 0) || !items.length) return null;
+  let at = -1;
+  items.forEach((it, i) => { if (it.top >= bandTop - 1 && (at < 0 || it.top < items[at].top)) at = i; });
+  if (at < 0) at = items.length - 1; // scrolled past everything: the last thing
+  return { key: items[at].key, top: items[at].top, after: items.slice(at + 1).map((it) => it.key) };
+}
+// After the rebuild: the anchor itself if it is still there; else the first
+// element after it that is (it went with the room you hid — the next room's
+// head, the next day's); else the last element left. Null: nothing is left.
+export function resolveWallAnchor(anchor, present) {
+  if (!anchor) return null;
+  const has = present instanceof Set ? present : new Set(present);
+  if (has.has(anchor.key)) return anchor.key;
+  const next = anchor.after.find((k) => has.has(k));
+  if (next) return next;
+  const all = [...has];
+  return all.length ? all[all.length - 1] : null;
+}
+
 // ---- day-nav scrollspy ------------------------------------------------------------
 // Where a day tab lands: its day's block (dayBlock) — on the wall, in a
 // search, and for a tab off the end of the week alike. Never a grid scroller,

@@ -9,7 +9,7 @@ import * as sync from '../sync.js';
 import * as spotify from '../spotify.js';
 import * as model from './model.js';
 import { loadFestivalIndex, loadFestival, fetchCustomFestivals, mergeCustoms, FESTIVAL_INDEX, defaultFestivalId } from '../festivals.js';
-import { renderWall, refreshCard, showToast, wireScrollspy, restDayRow, holdDayRowEdges, colorIndexOf, positionNowLines, positionNowMarks, scrollToNowLine, dayNavOf, roomsOf, cardFor, roomOf, isStripScroller, DAY_ANCHOR, festLinkLabel, nowLanding, nowStops, nowStep, nowPulseable, nowLabelOf, nowSaid, stackRowKey } from './wall.js';
+import { renderWall, refreshCard, showToast, wireScrollspy, restDayRow, holdDayRowEdges, colorIndexOf, positionNowLines, positionNowMarks, scrollToNowLine, dayNavOf, roomsOf, cardFor, roomOf, isStripScroller, DAY_ANCHOR, wallAnchors, pickWallAnchor, resolveWallAnchor, festLinkLabel, nowLanding, nowStops, nowStep, nowPulseable, nowLabelOf, nowSaid, stackRowKey } from './wall.js';
 import { loadPeopleFilter, savePeopleFilter, togglePerson, pruneToActive, loadFolded, saveFolded, applyFoldToggle, showOf, foldFromShow, showLabel, foldIsSet, showSeeded, rememberShowSeeded } from './filters.js';
 import { GROW_MS, OUT_MS, CASCADE_MS, STAGGER_MS, EASE_ARRIVE, EASE_LEAVE, EASE_SURFACE, canAnimate } from './motion.js';
 import { scrolledBefore, rememberScrolled, dayOfScrollKey, festivalClock } from './now.js';
@@ -324,8 +324,10 @@ function toggleFoldFlow(key) {
   ctx.folded = next;
   const daysAfter = planDayKeys();
   const diff = (a, b) => new Set([...a].filter((k) => !b.has(k)));
-  // Where the person is standing, read before the wall is rebuilt.
-  const standing = (document.querySelector('.day-tab.active') || {}).dataset?.day || null;
+  // Where the person is standing, read before anything moves: the element at
+  // the top of what they see (wall.js pickWallAnchor). Read now, not after the
+  // fade — a room that is leaving is lifted 4px by it.
+  const place = takeWallPlace();
   // The everything-hidden notice (wall.js) is the wall's one line when the
   // last room goes: it arrives with the beat once the week has left, and it
   // is the first thing to leave when a room comes back.
@@ -333,7 +335,7 @@ function toggleFoldFlow(key) {
   const arrive = arriveBlocks;
   const finish = () => {
     repaintWall();
-    landAfterFold(standing);
+    keepWallPlace(place);
     if (!folding) arrive(foldBlocksOf(key, diff(daysAfter, daysBefore)));
     else if (notice()) arrive([notice()]);
   };
@@ -369,34 +371,44 @@ function unfoldAll() {
   const keys = [...(ctx.folded || [])];
   if (!keys.length) return;
   const daysBefore = planDayKeys();
-  const standing = (document.querySelector('.day-tab.active') || {}).dataset?.day || null;
+  const place = takeWallPlace();
   saveFolded(ctx.fid, []);
   ctx.folded = [];
   const daysAfter = planDayKeys();
   const fresh = new Set([...daysAfter].filter((k) => !daysBefore.has(k)));
   repaintWall();
-  landAfterFold(standing);
+  keepWallPlace(place);
   arriveBlocks([...new Set(keys.flatMap((key) => foldBlocksOf(key, fresh)))]);
 }
 
-// Where the page stands after the wall changed shape under it. The day you
-// were in is still there: land on its block again (the days above it may have
-// gone, and an untouched scroll offset would be looking at somewhere else) —
-// unless you were at the top of the page, where there is nothing to keep and
-// nothing moves. The day you were in is gone: land on the first visible day,
-// which is what the open would choose, wherever you were standing (at the
-// top that is a short hop from the fest header to the first day, and it is
-// the day the dock now lights).
-function landAfterFold(standing) {
-  const tabs = dayNavOf(state.fest(), ctx, $('wall-root'));
-  const still = standing ? tabs.find((t) => (t.anchor || t.key) === standing) : null;
-  if (still && !(window.scrollY > 0)) return;
-  const day = still || defaultDayOf(tabs);
-  // Nothing left to land on — everything is hidden: the top of the page,
-  // where the wall's notice says so.
-  if (!day) { if (window.scrollY > 0) window.scrollTo({ top: 0, behavior: 'auto' }); return; }
-  const block = document.querySelector(anchorFor(day.anchor || day.key));
-  if (block) landOnDay(block);
+// Where the page stands after the wall changed shape under it (v93): where it
+// stood. The element at the top of what you saw — a card or a room's head —
+// is back at the same spot on screen, whatever the rooms above it did; if it
+// went with the room you hid, the next thing after it takes its spot; with
+// nothing left below, the last thing left does. At the top of the page
+// nothing moves, and with everything hidden the page goes to the top, where
+// the wall says so. No glide: the list changes under a page that stands
+// still. (Until v93 this landed on the top of your day whenever you were
+// scrolled at all — once per menu when a tick closed the menu, and on every
+// tick once the menu stayed up: 3400 -> 552 -> 2812 -> 552 in the walk.)
+function takeWallPlace() {
+  const bandTop = parseFloat(window.getComputedStyle(document.documentElement).getPropertyValue('--jump-offset')) || 0;
+  const items = wallAnchors($('wall-root')).map(({ key, el }) => ({ key, top: el.getBoundingClientRect().top }));
+  return pickWallAnchor(items, bandTop, window.scrollY);
+}
+function keepWallPlace(place) {
+  if (!place) return;
+  const anchors = wallAnchors($('wall-root'));
+  const key = resolveWallAnchor(place, anchors.map((a) => a.key));
+  if (!key) { if (window.scrollY > 0) window.scrollTo({ top: 0, behavior: 'auto' }); }
+  else {
+    const el = anchors.find((a) => a.key === key).el;
+    const delta = el.getBoundingClientRect().top - place.top;
+    if (Math.abs(delta) >= 1) window.scrollTo({ top: Math.max(0, window.scrollY + delta), behavior: 'auto' });
+  }
+  // The Show menu, if it is up, now holds THIS place (menuGone's hold): its
+  // own scroll listener would only hear of it a frame from now.
+  if (menuY != null) menuY = window.scrollY;
 }
 
 // ---- tap cycle -------------------------------------------------------------------
