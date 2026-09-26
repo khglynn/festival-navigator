@@ -110,8 +110,10 @@ function whoEl(people, ctx) {
 
 function whenEl({ tag = null, text = '', soft = false }) {
   const w = mk('span', 'plan-when');
-  if (tag === 'now') { const t = mk('span', 'plan-tag now'); t.append(mk('i'), 'NOW'); w.appendChild(t); }
-  if (tag === 'next') w.appendChild(mk('span', 'plan-tag next', 'NEXT'));
+  // The tag's line (.tl): the name's line, so the pill sits level with the name (v3.css).
+  const line = () => w.appendChild(mk('span', 'tl'));
+  if (tag === 'now') { const t = mk('span', 'plan-tag now'); t.append(mk('i'), 'NOW'); line().appendChild(t); }
+  if (tag === 'next') line().appendChild(mk('span', 'plan-tag next', 'NEXT'));
   if (text) w.appendChild(mk('span', 't' + (soft ? ' soft' : ''), text));
   return w;
 }

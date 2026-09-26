@@ -196,6 +196,17 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
       assert.ok(g.rowTop >= g.grabBottom - 0.5, `and starts under the grabber: ${JSON.stringify(g)}`);
       assert.ok(g.hitInRow, 'a finger on the row touches the row (nothing paints over it)');
       assert.equal(await page.locator('#plan .plan-row.tagged').getAttribute('aria-label'), 'Now: Dog Blood, Pier Stage, till 10:15 PM, 8 picked');
+      // NOW sits level with the name and its time on the place's line — the
+      // pill had hung below the name and pushed the time down (Kevin,
+      // 2026-09-26, "not slid down a bit like they are now").
+      const lines = await page.evaluate(() => {
+        const row = document.querySelector('#plan .plan-row.tagged');
+        const box = (sel) => row.querySelector(sel).getBoundingClientRect();
+        const [nm, pl, tag, t] = ['.nm', '.pl', '.plan-tag', '.plan-when .t'].map(box);
+        return { tagMid: (tag.top + tag.bottom) / 2, nmMid: (nm.top + nm.bottom) / 2, tTop: t.top, plTop: pl.top, tBottom: t.bottom, plBottom: pl.bottom };
+      });
+      assert.ok(Math.abs(lines.tagMid - lines.nmMid) <= 1, `NOW is centred on the name's line: ${JSON.stringify(lines)}`);
+      assert.ok(Math.abs(lines.tTop - lines.plTop) <= 1 && Math.abs(lines.tBottom - lines.plBottom) <= 1, `the time shares the place's line: ${JSON.stringify(lines)}`);
       // The wall's end clears the peek: scrolled to the bottom, the last room
       // ends above the peek's top.
       await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
