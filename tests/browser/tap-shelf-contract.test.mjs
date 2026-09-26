@@ -40,13 +40,14 @@ const FID = 'portola-2026';
 const ENGINES = [['WebKit (iPhone)', () => webkit], ['Chromium (touch)', () => chromium]];
 const skipFor = (name, get) => (get() ? false : (name.startsWith('WebKit') ? 'Playwright WebKit is not installed (npx playwright install webkit)' : NO_BROWSER));
 
-async function memberPhone(engine, { width = 390, height = 664, mouse = false, notes = null } = {}) {
+async function memberPhone(engine, { width = 390, height = 664, mouse = false, notes = null, view = null } = {}) {
   const CREW = randomBytes(20).toString('base64url'); // a made-up crew, never a real link
   const profile = devices['iPhone 13'] || { viewport: { width: 390, height: 664 }, hasTouch: true, isMobile: true, deviceScaleFactor: 3 };
   const opts = { ...profile, viewport: { width, height }, timezoneId: 'America/Los_Angeles', serviceWorkers: 'block' };
   delete opts.defaultBrowserType;
   if (engine !== chromium || mouse) delete opts.isMobile; // WebKit takes no isMobile; an iPad with a mouse is not "mobile"
   const ctx = await engine.newContext(opts);
+  if (view) await ctx.addInitScript((v) => { localStorage.setItem('fn_view_v1_portola-2026', v); }, view);
   await ctx.addInitScript((t) => {
     localStorage.setItem('fn_welcome_v1', '1');
     localStorage.setItem('fn_tap_news_v1', '1'); // the one-time line has its own unit case
@@ -467,6 +468,27 @@ for (const [name, get] of ENGINES) {
       await page.evaluate(() => window.__keys(0));
       await sleep(150);
       assert.ok(await page.evaluate(() => Math.abs(document.getElementById('artist-sheet').getBoundingClientRect().bottom - innerHeight) < 1), 'keys down: back on the edge');
+      assert.deepEqual(errors, []);
+    } finally { await ctx.close(); }
+  });
+}
+
+// The List view (v97, merged 2026-09-26): its rows are the wall's own cards, so
+// a tap there opens the same shelf, and its + picks.
+for (const [name, get] of ENGINES) {
+  test(`${name}: in the List view a tap opens the card's shelf, and its + picks`, { skip: skipFor(name, get) }, async () => {
+    const { ctx, page, errors } = await memberPhone(get(), { view: 'list' });
+    try {
+      assert.equal(await page.locator('#wall-root[data-view="list"]').count(), 1, 'the List is up');
+      await tapAt(page, await cardAt(page, 'Tove Lo'));
+      await page.waitForFunction(() => !!document.querySelector('#artist-sheet .sheet-card'), null, { timeout: 4000 });
+      await sleep(400);
+      const s = await shelf(page);
+      assert.equal(s.name, 'Tove Lo');
+      await tapAt(page, s.plus);
+      await sleep(400);
+      assert.equal(await level(page, 'Tove Lo'), 1, '+ picked');
+      assert.equal(await zoomUp(page), 0, 'no zoom');
       assert.deepEqual(errors, []);
     } finally { await ctx.close(); }
   });

@@ -104,10 +104,10 @@ List view's cards are `renderCard` cards, so the tap reaches them with no furthe
    (the walk's item 9, WebKit). Fixed for every notes sheet here (`dialogize` moves focus itself, with a
    WebKit contract); **the join shelf's own trap still waits at the boundary** — U5's one Tab trap
    should take `dialogize`'s.
-5. **A screen reader's activation** (VoiceOver's double-tap sends a click with no pointer press) follows
-   the last real press, 'mouse' at boot: it picks, as it always has; the shelf is reachable through the
-   notes chip or the zoom. Not a regression; the review suggests "a finger only if a touch press landed on
-   this card within a second" if it ever matters.
+5. ~~A screen reader's activation picks~~ — fixed in 0f1f258 (Sol 6's BLOCKER): a click that answers no
+   pointer press and no key opens the shelf on every screen. Still unproven on a device: whether iOS
+   VoiceOver's double-tap sends a pointer press of its own (it should not — a simulated click); Kevin's
+   iPhone check with VoiceOver on answers it, and Diagnostics' hand line says 'assistive' when it works.
 
 ## Steps (commit + push after each)
 
@@ -200,3 +200,27 @@ List view's cards are `renderCard` cards, so the tap reaches them with no furthe
   up (the box stays visible); + + + quickly (two levels, the row still under the thumb); a guest's + then
   Look around; Back from the shelf; the one-time line on his first shelf. Against the unique deployment
   URL, reading the build line.
+- **12:30 — Sol 6's round** (on db9bf2c; the coordinator relayed it):
+  1. BLOCKER, a pointerless activation picked (0f1f258): each click is judged by the press it answers
+     (card-facts.js `clickHand`) — touch/pen 'finger', mouse 'mouse', none 'assistive' (opens the shelf),
+     the browser's own click for Enter/Space on a native control 'keyboard'. Enter on a card still picks
+     through its keydown. The zoom's door-settle beat is a mouse's only now. Diagnostics says 'assistive'.
+     Three unit tests clicked a card with no press expecting a pick (events-wall's door-settle case,
+     first-open-joins-hold, shell-v4's now mark): each now makes a mouse's press first, which is what it
+     meant. New: unit (member, guest, Enter, a key's click on a button, a cancelled press) and a
+     WebKit/Chromium contract.
+  2. IMPORTANT, the composer under the iOS keyboard (da21701): one ride for every sheet, `rideKeys` in
+     notes.js (the join shelf's, lifted — not copied); a centred dialog (an iPad) centres in what the keys
+     leave. Unit with a fake visualViewport (tests/helpers/fake-keys.mjs, both shelves) and a WebKit/
+     Chromium contract on a long thread.
+  3. NIT, "picked before" (0f1f258): any festival in this crew, then this phone's other crews under its
+     name there. Unit.
+  4. The night-clock join-history failure (ce1b684): not the app — the tests. A history traversal in
+     jsdom is two 0 ms tasks (the traversal, then its popstate); a thread blocked past a fixed settle wakes
+     with the settle's timer due first and reads the page mid-traversal. Reproduced by starving the test's
+     own thread (3/3 fails in shelf-close, guest, guest-doors); the cases now wait on the popstate or the
+     state, and the in-flight join's answer waits on a gate. 0/3 after; the whole suite at night under
+     starvation: only the stamp.
+- **13:10** Merged origin/live/list (370952c = v97's 19df64b + one ledger doc) into live/tap (5b05c57),
+  clean, v97's stamp untouched. The List's rows are `renderCard` cards: a tap opens the shelf there too
+  (a WebKit/Chromium case).
