@@ -129,6 +129,17 @@ here and the last commit.
       Reduce Motion, plus two quick taps landing two seasons over; festivals
       show no chevrons.
 
+- [x] `npm test` 936/936 (1 skip); `npm run test:browser` 192/192 (166 in
+      the full run, whose browser died mid-way through now-jump.test.mjs on
+      this memory-short Mac, cascading that file; now-jump alone 52/52).
+      Stamp v90 (e713e358). Pushed once: festival-navigator-dnhhkryql-kevinhg
+      .vercel.app (from f37dddf).
+- [x] Walked the preview on the demo crew: 390 by touch, 1280 by mouse, 390
+      under Reduce Motion. Fall → › Winter (settles in ~0.5 s; ~50 ms under
+      Reduce Motion), › › to Summer (lands clean, › hidden in place), ‹ ‹ ‹
+      back to Fall. The chevrons sit at the same pixels on every season
+      (51 / 253 at 390, 139 / 1015 at 1280). No console errors.
+
 **The motion as built.** A tap on › fades the season you are reading out to
 the left — the wall 28px, the month tabs 16px, the name 8px, 130 ms, quick
 and plain — while the chevrons stay exactly where they are, the hinge of the
