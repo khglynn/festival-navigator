@@ -1473,8 +1473,8 @@
         "at": "DoTheBay"
       },
       "tickets": {
-        "url": "https://www.tixr.com/groups/midwaysf/events/xoxo-and-matin-e-presents-pervert-xxl-folsom-edition-207997",
-        "at": "Tixr"
+        "url": "https://www.xoxopresents.com/event-details/xoxo-and-matinee-presents-pervert-xxl-folsom-edition-main-event",
+        "at": "XOXO"
       }
     },
     {
@@ -1543,6 +1543,526 @@
       "page": {
         "url": "https://www.sf-eagle.com/events/disco-daddy-folsom/",
         "at": "SF Eagle"
+      }
+    },
+    {
+      "name": "GearedUp Alley Party",
+      "day": "Folsom",
+      "stage": "Fri · Mr. S Leather",
+      "night": "Fri",
+      "venue": "Mr. S Leather",
+      "time": "12 PM - 6 PM",
+      "page": {
+        "url": "https://www.mr-s-leather.com/events",
+        "at": "Mr. S Leather"
+      }
+    },
+    {
+      "name": "HUNGER",
+      "day": "Folsom",
+      "stage": "Fri · SVN West",
+      "night": "Fri",
+      "venue": "SVN West",
+      "time": "6 PM - 1 AM",
+      "page": {
+        "url": "https://www.eventbrite.com/e/hunger-tickets-1998812690564",
+        "at": "Eventbrite"
+      },
+      "tickets": {
+        "url": "https://www.eventbrite.com/e/hunger-tickets-1998812690564",
+        "at": "Eventbrite"
+      }
+    },
+    {
+      "name": "Perverts Put Out Does Folsom Street Fair!",
+      "day": "Folsom",
+      "stage": "Fri · Folsom Street Community Center",
+      "night": "Fri",
+      "venue": "Folsom Street Community Center",
+      "time": "7 PM - 9:30 PM",
+      "page": {
+        "url": "https://www.eventbrite.com/e/perverts-put-out-does-folsom-street-fair-tickets-2001093495513",
+        "at": "Eventbrite"
+      }
+    },
+    {
+      "name": "Folsom Foreplay",
+      "day": "Folsom",
+      "stage": "Fri · Kink Store",
+      "night": "Fri",
+      "venue": "Kink Store",
+      "time": "8 PM - 1 AM",
+      "page": {
+        "url": "https://forbiddentickets.com/events/twisted-windows/2026-09-25-folsom-foreplay",
+        "at": "Forbidden Tickets"
+      }
+    },
+    {
+      "name": "FOLSOM FREAK FRIDAY",
+      "day": "Folsom",
+      "stage": "Fri · Power Exchange",
+      "night": "Fri",
+      "venue": "Power Exchange",
+      "time": "9 PM - 4 AM",
+      "page": {
+        "url": "https://www.eventbrite.com/e/folsom-freak-friday-tickets-2000487133869",
+        "at": "Eventbrite"
+      },
+      "tickets": {
+        "url": "https://www.eventbrite.com/e/folsom-freak-friday-tickets-2000487133869",
+        "at": "Eventbrite"
+      }
+    },
+    {
+      "name": "CORAZON SF",
+      "day": "Folsom",
+      "stage": "Fri · Beaux",
+      "night": "Fri",
+      "venue": "Beaux",
+      "time": "9 PM - 3 AM",
+      "page": {
+        "url": "https://www.beauxsf.com/events/2026/9/25/eva-blunt-rpdr-mexico-corazn-latin-night",
+        "at": "Beaux"
+      },
+      "tickets": {
+        "url": "https://www.eventbrite.com/e/1997423812392",
+        "at": "Eventbrite"
+      }
+    },
+    {
+      "name": "Stank",
+      "day": "Folsom",
+      "stage": "Fri · Powerhouse",
+      "night": "Fri",
+      "venue": "Powerhouse",
+      "time": "9 PM - 2 AM",
+      "page": {
+        "url": "https://powerhousebar.com/event/stank/2026-09-25/",
+        "at": "Powerhouse"
+      }
+    },
+    {
+      "name": "HIT IT - FOLSOM",
+      "day": "Folsom",
+      "stage": "Fri · QBar",
+      "night": "Fri",
+      "venue": "QBar",
+      "time": "9 PM - 2 AM",
+      "page": {
+        "url": "https://www.eventbrite.com/e/hit-it-folsom-san-francisco-tickets-1996928096693",
+        "at": "Eventbrite"
+      },
+      "tickets": {
+        "url": "https://www.eventbrite.com/e/hit-it-folsom-san-francisco-tickets-1996928096693",
+        "at": "Eventbrite"
+      }
+    },
+    {
+      "name": "SayLove: Folsom Edition",
+      "day": "Folsom",
+      "stage": "Fri · TBA (SoMa)",
+      "night": "Fri",
+      "venue": "TBA (SoMa)",
+      "time": "9 PM - 2 AM",
+      "page": {
+        "url": "https://www.gracetowers.com/say-love",
+        "at": "Grace Towers"
+      }
+    },
+    {
+      "name": "PRIME - The San Francisco MEAT",
+      "day": "Folsom",
+      "stage": "Fri · Club Six",
+      "night": "Fri",
+      "venue": "Club Six",
+      "time": "10 PM - 4 AM",
+      "page": {
+        "url": "https://www.eventbrite.com/e/prime-the-san-francisco-meat-2026-tickets-1983682844788",
+        "at": "Eventbrite"
+      }
+    },
+    {
+      "name": "BOOF x SQUISH: FOLSOM",
+      "day": "Folsom",
+      "stage": "Fri · SF Mint",
+      "night": "Fri",
+      "venue": "SF Mint",
+      "time": "10 PM - 4 AM",
+      "page": {
+        "url": "https://shotgun.live/en/events/boof-folsom-2026",
+        "at": "Shotgun"
+      },
+      "tickets": {
+        "url": "https://shotgun.live/en/events/boof-folsom-2026",
+        "at": "Shotgun"
+      }
+    },
+    {
+      "name": "SUCH A GOOD GIRL",
+      "day": "Folsom",
+      "stage": "Fri · Jolene's",
+      "night": "Fri",
+      "venue": "Jolene's",
+      "time": "10 PM - 2 AM",
+      "page": {
+        "url": "https://www.jolenessf.com/event-details/such-a-good-girl-2",
+        "at": "Jolene's"
+      },
+      "tickets": {
+        "url": "https://www.jolenessf.com/event-details/such-a-good-girl-2",
+        "at": "Jolene's"
+      }
+    },
+    {
+      "name": "DAD FOLSOM FRIDAY",
+      "day": "Folsom",
+      "stage": "Fri · F8",
+      "night": "Fri",
+      "venue": "F8",
+      "time": "10 PM - 3 AM",
+      "page": {
+        "url": "https://www.eventbrite.com/e/dad-folsom-friday-sindri-stefan-ways-tickets-1997282877853",
+        "at": "Eventbrite"
+      },
+      "tickets": {
+        "url": "https://www.eventbrite.com/e/dad-folsom-friday-sindri-stefan-ways-tickets-1997282877853",
+        "at": "Eventbrite"
+      }
+    },
+    {
+      "name": "Brunch Queens — Folsom Weekend",
+      "day": "Folsom",
+      "stage": "Sat · Mayes Oyster House",
+      "night": "Sat",
+      "venue": "Mayes Oyster House",
+      "time": "11 AM - 4:30 PM",
+      "page": {
+        "url": "https://www.innovatalentagency.com/events",
+        "at": "ITA Presents"
+      },
+      "tickets": {
+        "url": "https://www.eventbrite.com/e/drag-brunch-queens-feat-ru-paul-drag-race-stars-tickets-1998435091154",
+        "at": "Eventbrite"
+      }
+    },
+    {
+      "name": "GearedUp Alley Party",
+      "day": "Folsom",
+      "stage": "Sat · Mr. S Leather",
+      "night": "Sat",
+      "venue": "Mr. S Leather",
+      "time": "12 PM - 6 PM",
+      "page": {
+        "url": "https://www.mr-s-leather.com/events",
+        "at": "Mr. S Leather"
+      }
+    },
+    {
+      "name": "Folsom Street’s Miracle Mile walking tour",
+      "day": "Folsom",
+      "stage": "Sat · Leather District Monument",
+      "night": "Sat",
+      "venue": "Leather District Monument",
+      "time": "12:30 PM - 2 PM",
+      "page": {
+        "url": "https://www.eventbrite.com/e/folsom-streets-miracle-mile-walking-tour-tickets-1998252861099",
+        "at": "Eventbrite"
+      }
+    },
+    {
+      "name": "MILKED: Folsom Edition",
+      "day": "Folsom",
+      "stage": "Sat · Stopgap",
+      "night": "Sat",
+      "venue": "Stopgap",
+      "time": "1 PM - 4 PM",
+      "page": {
+        "url": "https://forbiddentickets.com/events/guerilla-wellness/accacd7d8a",
+        "at": "Forbidden Tickets"
+      },
+      "tickets": {
+        "url": "https://forbiddentickets.com/events/guerilla-wellness/accacd7d8a",
+        "at": "Forbidden Tickets"
+      }
+    },
+    {
+      "name": "NAKED SOCIAL FOLSOM SATURDAY",
+      "day": "Folsom",
+      "stage": "Sat · The Blackdoor",
+      "night": "Sat",
+      "venue": "The Blackdoor",
+      "time": "3 PM - 7 PM",
+      "page": {
+        "url": "https://heylo.com/invite/sX5yYOMI",
+        "at": "Heylo"
+      },
+      "tickets": {
+        "url": "https://heylo.com/invite/sX5yYOMI",
+        "at": "Heylo"
+      }
+    },
+    {
+      "name": "Twisted Windows: Folsom Gala",
+      "day": "Folsom",
+      "stage": "Sat · SOMArts",
+      "night": "Sat",
+      "venue": "SOMArts",
+      "time": "7:30 PM - 12 AM",
+      "page": {
+        "url": "https://forbiddentickets.com/events/twisted-windows/2026-09-26-twisted-windows-folsom-gala",
+        "at": "Forbidden Tickets"
+      }
+    },
+    {
+      "name": "US! Folsom (Dark N Dirty) Edition",
+      "day": "Folsom",
+      "stage": "Sat · Beaux",
+      "night": "Sat",
+      "venue": "Beaux",
+      "time": "9 PM - 2 AM",
+      "page": {
+        "url": "https://www.beauxsf.com/events/2026/9/26/78x0c9d4y61rtc8o9032o82778hn9v",
+        "at": "Beaux"
+      },
+      "tickets": {
+        "url": "https://www.eventbrite.com/e/us-folsom-edition-bipoc-leather-fetish-party-at-beaux-sat-sept-26th-tickets-1999432621795",
+        "at": "Eventbrite"
+      }
+    },
+    {
+      "name": "Zoomiez",
+      "day": "Folsom",
+      "stage": "Sat · SF Mint",
+      "night": "Sat",
+      "venue": "SF Mint",
+      "time": "9 PM - 2:30 AM",
+      "page": {
+        "url": "https://shotgun.live/en/events/zoomiez",
+        "at": "Shotgun"
+      }
+    },
+    {
+      "name": "LICK IT",
+      "day": "Folsom",
+      "stage": "Sat · Powerhouse",
+      "night": "Sat",
+      "venue": "Powerhouse",
+      "time": "9 PM - 2 AM",
+      "page": {
+        "url": "https://powerhousebar.com/event/lick-it-2014-06-13-2017-07-14/2026-09-26/",
+        "at": "Powerhouse"
+      }
+    },
+    {
+      "name": "FOLSOM SLUT SATURDAY",
+      "day": "Folsom",
+      "stage": "Sat · Power Exchange",
+      "night": "Sat",
+      "venue": "Power Exchange",
+      "time": "9 PM - 5 AM",
+      "page": {
+        "url": "https://www.eventbrite.com/e/folsom-slut-saturday-tickets-1999667565518",
+        "at": "Eventbrite"
+      },
+      "tickets": {
+        "url": "https://www.eventbrite.com/e/folsom-slut-saturday-tickets-1999667565518",
+        "at": "Eventbrite"
+      }
+    },
+    {
+      "name": "CHUNK FOLSOM - Bear Playground",
+      "day": "Folsom",
+      "stage": "Sat · F8",
+      "night": "Sat",
+      "venue": "F8",
+      "time": "10 PM - 4 AM",
+      "page": {
+        "url": "https://www.chunk-party.com/event-details/chunk-folsom-bear-playground-9-26",
+        "at": "CHUNK"
+      },
+      "tickets": {
+        "url": "https://www.chunk-party.com/event-details/chunk-folsom-bear-playground-9-26",
+        "at": "CHUNK"
+      }
+    },
+    {
+      "name": "OFFICIAL KINK.COM FOLSOM PENTHOUSE PREVIEW",
+      "day": "Folsom",
+      "stage": "Sun · Kink.com Penthouse",
+      "night": "Sun",
+      "venue": "Kink.com Penthouse",
+      "time": "10 AM - 12 AM",
+      "page": {
+        "url": "https://www.eventbrite.com/e/official-kinkcom-folsom-penthouse-preview-tickets-1998995097147",
+        "at": "Eventbrite"
+      },
+      "tickets": {
+        "url": "https://www.eventbrite.com/e/official-kinkcom-folsom-penthouse-preview-tickets-1998995097147",
+        "at": "Eventbrite"
+      }
+    },
+    {
+      "name": "BOOF presents MCMLXXXV (Herrensauna)",
+      "day": "Folsom",
+      "stage": "Sun · The Foundry",
+      "night": "Sun",
+      "venue": "The Foundry",
+      "time": "11 AM - 8 PM",
+      "page": {
+        "url": "https://www.eventbrite.com/e/boof-presents-mcmlxxxv-herrensauna-at-the-foundry-folsom-street-fair-tickets-1999721840857",
+        "at": "Eventbrite"
+      },
+      "tickets": {
+        "url": "https://www.eventbrite.com/e/boof-presents-mcmlxxxv-herrensauna-at-the-foundry-folsom-street-fair-tickets-1999721840857",
+        "at": "Eventbrite"
+      }
+    },
+    {
+      "name": "Party On The Plaza: Folsom Edition",
+      "day": "Folsom",
+      "stage": "Sun · Eagle Plaza",
+      "night": "Sun",
+      "venue": "Eagle Plaza",
+      "time": "12 PM - 7 PM",
+      "page": {
+        "url": "https://sf-eagle.com/events/party-on-the-plaza-folsom-edition/",
+        "at": "SF Eagle"
+      }
+    },
+    {
+      "name": "FOLSOM SUNDAY",
+      "day": "Folsom",
+      "stage": "Sun · Oasis",
+      "night": "Sun",
+      "venue": "Oasis",
+      "time": "1 PM - 8 PM",
+      "page": {
+        "url": "https://www.eventbrite.com/e/folsom-sunday-tickets-2002103205583",
+        "at": "Eventbrite"
+      }
+    },
+    {
+      "name": "CUMUNION - FOLSOM EDITION",
+      "day": "Folsom",
+      "stage": "Sun · Transform1060",
+      "night": "Sun",
+      "venue": "Transform1060",
+      "time": "3 PM - 12 AM",
+      "page": {
+        "url": "https://www.eventbrite.com/e/cumunion-folsom-edition-tickets-1997751339033",
+        "at": "Eventbrite"
+      },
+      "tickets": {
+        "url": "https://www.eventbrite.com/e/cumunion-folsom-edition-tickets-1997751339033",
+        "at": "Eventbrite"
+      }
+    },
+    {
+      "name": "Hot Tea - Leather Edition",
+      "day": "Folsom",
+      "stage": "Sun · Audio",
+      "night": "Sun",
+      "venue": "Audio",
+      "time": "3 PM - 9 PM",
+      "page": {
+        "url": "https://www.eventbrite.com/e/hot-tea-leather-edition-2026-tickets-1986369792521",
+        "at": "Eventbrite"
+      },
+      "tickets": {
+        "url": "https://www.eventbrite.com/e/hot-tea-leather-edition-2026-tickets-1986369792521",
+        "at": "Eventbrite"
+      }
+    },
+    {
+      "name": "Kinksters Paradise",
+      "day": "Folsom",
+      "stage": "Sun · Kink Store",
+      "night": "Sun",
+      "venue": "Kink Store",
+      "time": "6 PM - 12 AM",
+      "page": {
+        "url": "https://www.eventbrite.com/e/folsom-2026-kinksters-paradise-party-at-the-kink-store-tickets-1999459417943",
+        "at": "Eventbrite"
+      },
+      "tickets": {
+        "url": "https://www.eventbrite.com/e/folsom-2026-kinksters-paradise-party-at-the-kink-store-tickets-1999459417943",
+        "at": "Eventbrite"
+      }
+    },
+    {
+      "name": "AFTER FOLSOM FREAK FEST",
+      "day": "Folsom",
+      "stage": "Sun · Power Exchange",
+      "night": "Sun",
+      "venue": "Power Exchange",
+      "time": "6 PM - 3 AM",
+      "page": {
+        "url": "https://www.eventbrite.com/e/after-folsom-freak-fest-tickets-1999729907986",
+        "at": "Eventbrite"
+      },
+      "tickets": {
+        "url": "https://www.eventbrite.com/e/after-folsom-freak-fest-tickets-1999729907986",
+        "at": "Eventbrite"
+      }
+    },
+    {
+      "name": "DETOX @ Popper Slut Sundays",
+      "day": "Folsom",
+      "stage": "Sun · Beaux",
+      "night": "Sun",
+      "venue": "Beaux",
+      "time": "7 PM - 2 AM",
+      "page": {
+        "url": "https://www.beauxsf.com/events/2026/9/27/detox-popper-slut-sundays-folsom-st-fair",
+        "at": "Beaux"
+      },
+      "tickets": {
+        "url": "https://www.eventbrite.com/e/detox-at-folsom-street-fair-after-party-sunday-sept-27th-at-beaux-in-castro-tickets-2001275176927",
+        "at": "Eventbrite"
+      }
+    },
+    {
+      "name": "screw, nut, bolt",
+      "day": "Folsom",
+      "stage": "Sun · Lone Star Saloon",
+      "night": "Sun",
+      "venue": "Lone Star Saloon",
+      "time": "9 PM - 2 AM",
+      "page": {
+        "url": "https://www.lonestarsf.com/new-events-1/2026/9/27/screw-nut-bolt",
+        "at": "Lone Star Saloon"
+      }
+    },
+    {
+      "name": "RATED X",
+      "day": "Folsom",
+      "stage": "Sun · City Nights SF",
+      "night": "Sun",
+      "venue": "City Nights SF",
+      "time": "9 PM",
+      "page": {
+        "url": "https://www.kymartinezevents.com/",
+        "at": "Ky Martinez Events"
+      },
+      "tickets": {
+        "url": "https://www.eventim.us/event/Rated-X-Folsom-weekend-Sunday-night-massive-leather-event/700994",
+        "at": "Eventim"
+      }
+    },
+    {
+      "name": "NOCTURNAL EXTREME",
+      "day": "Folsom",
+      "stage": "Sun · Halcyon",
+      "night": "Sun",
+      "venue": "Halcyon",
+      "time": "3 AM",
+      "page": {
+        "url": "https://www.kymartinezevents.com/",
+        "at": "Ky Martinez Events"
+      },
+      "tickets": {
+        "url": "https://www.eventim.us/event/NOCTURNAL-EXTREME-Folsom-legendary-closing-party/700995",
+        "at": "Eventim"
       }
     },
     {
@@ -2145,9 +2665,18 @@
       "https://www.dnalounge.com/calendar/2026/09-26a.html",
       "https://www.kymartinezevents.com/",
       "https://www.instagram.com/p/DYp0F9Py0wP/",
-      "https://www.circuitpartyinfo.com/event/aftershock-folsom-30-year-anniversary/"
+      "https://www.circuitpartyinfo.com/event/aftershock-folsom-30-year-anniversary/",
+      "https://www.mr-s-leather.com/events",
+      "https://powerhousebar.com/events/",
+      "https://www.studsf.com/calendar",
+      "https://sf-eagle.com/events/",
+      "https://www.beauxsf.com/events",
+      "https://www.lonestarsf.com/",
+      "https://www.innovatalentagency.com/events",
+      "https://forbiddentickets.com/",
+      "https://gaywhere.app/folsom"
     ],
-    "note": "SET TIMES (2026-08-27): the official Saturday/Sunday posters went up on portolamusicfestival.com/set-times (and Portola's Instagram the same afternoon). Transcribed from the 1080px official JPGs by three independent readers (two model readers + a third pass) and reconciled box-by-box; stage membership cross-checked against the four official per-stage lineup images. Doors 1 PM both days, 21+. Five columns as printed: Pier Stage, Crane Stage, Warehouse, Ship Tent, Despacio (Despacio is one continuous block: Sat 2:45-9:45 PM, Sun 3:30-10:30 PM). Kaytree (Ship Tent, Sun 1:40-2:55) was on the poster but not the earlier lineup graphic and was added to artists[] here. Poster billing that is NOT part of the pick key: Dog Blood is billed \"(Skrillex + Boys Noize)\", DJ Shadow \"celebrates 30 years of Endtroducing\", Melanie C is a DJ set, SG Lewis is live. Artist names are byte-identical to the lineup phase on purpose - picks are keyed by exact name (tests/live-pick-keys.test.mjs freezes the names the crew had already picked). Portola Week (official Goldenvoice afters program, announced 2026-08-18: 21 shows Thu Sept 24 - Sun Sept 27; presale Aug 20, general Aug 21) added as an \"Afters\" section, and Folsom Street Fair weekend as a \"Folsom\" section, 2026-08-23. Mechanism: an afters/Folsom appearance is its own entry; when the name matches a lineup artist (Overmono, Fatboy Slim, ...) the pick/aura/notes unify by exact name on purpose - one artist, one pick, cards in both sections. Night + venue ride in `stage`, hours in `time`; cards render them as a sub-label. Horse Meat Disco (the crew ask - Bearracuda Folsom Street party, confirmed Fri Sept 25, Public Works, 9 PM-3 AM, 21+, tickets sickening.events; NOTE a stale 2024 Tixr link circulates - IDs are sequential, 114080 is the 2024 edition) is day-tagged \"Afters & Folsom\" so it renders under both. Curation: title-billed artists and lineup artists get cards; supporting-roster DJs noted here instead: Rory Phillips (w/ 2manydjs), Boygirl + Femme Jatale b2b Erika (w/ Six Sex), Kaytree + a program audio loft (Public Works Sun), Kavari (The Midway Sun), Buck Wilson (Monarch Sun), Mateo Segade (HMD upstairs). Sourcing: egress-proxied research - facts come from ticketing-page titles/search listings (AXS/Eventbrite/Tixr/venue calendars) cross-checked in aggregate; HMD, fair date/hours, Magnitude, DEVIANTS, Real Bad 37, and Groove Armada (Sat, The Great Northern) were re-verified individually 2026-08-23. Times not confirmed anywhere yet: Fcukers/Chloé Caillet (Public Works Sat), Groove Armada, Max Styler/Airwolf Paradise + Azzecca (Audio) - cards carry venue only until they post (venue norm ~10 PM). DESPACIO Pier 80 Friday is limited to every-year passholders. No unofficial/renegade afters existed as of 2026-08-23 - they historically appear 2-4 weeks out; re-scan mid-September. Folsom fair stage/DJ talent also unannounced yet (folsomstreet.org posts closer in). Weekend-conflict map for planning: Fri is conflict-free (HMD night); Sat daytime Folsom events run opposite Portola day 1; Magnitude/PERVERT XXL start as day 1 ends; Sun daytime the fair runs opposite Portola day 2; DEVIANTS/Real Bad overlap the Sunday afters. UPDATE 2026-09-16 (re-scan ten days out). PIER 80 GRID: no change - the official Saturday/Sunday set-time JPGs are byte-identical to the 2026-08-27 transcription (same sizes, HTTP last-modified 2026-08-27), stage-lineup images untouched since 2026-08-14, FAQ still doors 1 PM / curfew 11 PM. PORTOLA WEEK SOURCE OF RECORD FOUND: portolamusicfestival.com/portola-week renders from Goldenvoice's own feed, aegwebprod.blob.core.windows.net/json/tours/14/11058/tours.json (18 of the 21 shows - Soulwax Thu and the Sat Public Works show live elsewhere - each with doors, show time, billing and a per-event modified stamp); cross-checked against DoTheBay's portolaweek listing and 19hz, all read 2026-09-16. CHANGED: Folsom Fri BRUT SF is 9 PM - 3 AM per DNA Lounge's own calendar page and 19hz - the 10 PM - 4 AM here was wrong. CHANGED, single-act shows (a doors time had been sitting in `time` as if it were a set start): Soulwax Thu Regency Ballroom doors 7 PM, show ~8 PM - the Regency's own site feed (aegwebprod.blob.core.windows.net/json/events/9/events.json, entry modified 2026-09-11) now bills it \"Soulwax with LAIMA, Rory Phillips\", noted not carded; Black Rave Culture Thu Club Six doors 10 PM, close ~4 AM (19hz 10pm-4am; RA's schema and the promoter's post, per data/venues, say the same); Six Sex Fri Great American Music Hall doors 8 PM, show ~9 PM per GAMH's own calendar (the Goldenvoice feed says 7/8 - the venue page wins); Neil Frances Fri and Fatboy Slim Sun at 888 Garage doors 10 PM (Goldenvoice feed), close ~2 AM (19hz), no set time printed anywhere; Groove Armada Sat The Great Northern doors 10 PM, close 3 AM (printed on its Eventbrite page, which also says SOLD OUT); Azzecca Sun Audio 9:30 PM-2 AM (its Eventbrite page; the Goldenvoice feed rounds to 10 PM). `approx` on a show time means it is the show's start, not the headliner's set. RUNS re-laid by hand from the new doors/close with the guesser's arithmetic (no script run): Fri Regency Ballroom doors 7 PM, not 8 PM - the Regency's own feed and Goldenvoice's Portola Week feed both print doors 19:00 / show 20:00 (DoTheBay's 8:00PM is the show time) - so Gelli Haha ~8 PM, Jyoty ~9:15 PM, Channel Tres ~10:30 PM; Sat Public Works close ~3 AM (19hz now prints 10pm-3am; the 2 AM before was the venue registry's routine close), so Fcukers ~1 AM. SOLD OUT as of 2026-09-16 (DoTheBay's schema.org availability; no field for it here): Sat Groove Armada, Sat jigitz (Monarch), Sat Max Styler (Audio), Sat Fcukers + Chloe Caillet (Public Works), Sun Fatboy Slim (888 Garage), Sun Silva Bumpa (Monarch), Sun Overmono + Ben UFO (Public Works); the Fri Despacio 5th Birthday at Pier 80 is marked SOLD OUT on the official page. Everything else still on sale. NOT CHANGED, on purpose: Sun The Midway stays four sets - DoTheBay's listing title now reads \"horsegiirL, VTSS, MGNA Crrrta (DJ Set), Two Shell, Kavari\" and 19hz lists the same five, but the Goldenvoice feed (entry modified 2026-08-26) still bills horsegiirL with VTSS, MGNA Crrrta (DJ Set), Two Shell, the Tixr slug that names Kavari is the one already judged stale on 2026-09-01, and the room's order is Kevin's settled read; flagged for him rather than added. DoTheBay now lists Neil Frances (DJ Set) at \"The Midway\", but the feed and 19hz (ticketed through the Midway's own Tixr group) say 888 Garage, the Midway-run room next door - kept 888 Garage. The Sat Regency (Parcels) feed entry was modified 2026-09-15 but its doors 9 PM / show 10 PM match this file. Billing extras from the feed, noted not carded: Six Sex with B0yg1rl, Femme Jatale b2b erika (GAMH doors 7, show 8); Neil Frances (DJ Set) & Friends; 2manydjs with Rory Phillips; Black Rave Culture presented by program audio with bastiengoat, DJs Who Kiss (19hz: Discnogirl b2b Buck Wilson), Rau b2b Rivs; Sun Public Works adds a Loft curated by Program Audio; MGNA Crrrta is billed (DJ Set); 19hz adds Milli Meng and Queen Out to the Sat Public Works bill (not on the ticket title - likely the loft); BRUT SF is James Hurr, Dan Darlington, Justin Nicoll. UNOFFICIAL Portola-branded parties now exist (the mid-September re-scan the note above asked for): d.tour Portola Preparty, Fri Sept 25 10pm-3am, venue TBA (Toccororo, Yuca Frita, QUEENIE, felipe d., DJ Juanny) and d.tour Portola Afterparty, Sat Sept 26 10pm-3am, venue TBA (Eera, Touching Ice, Spyder, Denpa, CSTR, Oso) - HydeFM / Mostly Cloudy / DJ Dials, per 19hz; no venue and no lineup artists, so not carded. Folsom-weekend extras on 19hz, also not carded: Tuff SF Folsom Kick Off (Thu, 1015 Folsom), Dad Folsom Friday (F8), Mull Folsom (Fri 11pm-6am, TBA; Rene Wise, Jen Cardini). BACK-TO-BACK RUNS (2026-09-01, MODEL-V3 §5): a venue-night is ONE ROOM and its artists play IN SEQUENCE. Every multi-artist venue-night in this file had all of its artists stamped with the SAME time - that is the DOORS time off the show page, not a set time - and two rooms had no time at all. So each of those twelve rooms now carries `doors` (and `close` where a page prints one), and every set in it carries a GUESSED start (`approx: true`) plus `order: {seq, of, source, confirmed:false}` recording the running order and the show page it came from. SOURCES (read 2026-09-01): DoTheBay carries Goldenvoice's official Portola Week listing, one server-rendered page per show with the billing and the doors time, and each room's `order.source` is its own page there; portolamusicfestival.com/portola-week renders its list client-side (static HTML is just an image) so it is the programme of record, not a citable door; The Midway keeps AXS event 1575408. SET TIMES are laid across the window: evenly from doors to close where the close is known, an hour apart from doors where it is not, rounded to the half hour. RUNNING ORDER follows the billing - the billed headliner closes and the rest run in descending print, so \"X with A, B\" puts B first and X last, and \"X + Y\" is a co-bill where X closes. TWO NAMES WERE ON THE BILL AND MISSING FROM THIS SECTION and were added: Buck Wilson (Sun Monarch, opens - he was only mentioned in this note's supporting-roster list before) and Kaytree (Sun Public Works, second - she already had a Sunday grid billing, and picks unify by exact name across both, the same shape VTSS and Overmono already had). The lowercase spelling \"erika b2b sfcowboy\" is KEPT against DoTheBay's \"Erika b2b SFCowboy\": it is a pick key. CLOSES: Fri The Great Northern's 2 AM is printed on its show page; the 3 AM and 2 AM on Sat Monarch, Sun Monarch and Sun Public Works come from our own 2026-08-23 research pass, which DoTheBay does not repeat; The Midway's 2 AM is OURS (`closeApprox: true`); the remaining rooms print no end at all and carry no `close`, so the zoom says \"Doors 10 PM\" rather than inventing a window. `order.confirmed` is false everywhere - a bill is not a set-time sheet. Every other event entry gained only `night` + `venue`, parsed out of `stage` (which stays, and stays authoritative - the validator errors if the two disagree). UPDATE 2026-09-23 (Skepta cancelled): Goldenvoice announced on Instagram on Mon 2026-09-21 that Skepta will no longer play Portola \"due to unforeseen circumstances\" (SF Chronicle, Zara Irshad, 2026-09-21; he also dropped CRSSD and a Boiler Room LA the same weekend). No replacement for his 6:45 PM Crane Stage slot. The official set-times page now serves 2026-Portola-SetTimes-Saturday-v2.jpg and crane-stage-26-v2.jpg (Last-Modified 2026-09-21 20:09 and 20:07 GMT; the Crane Stage lineup image simply drops Skepta; the Aug 27 Saturday JPG is unchanged beside them, and Sunday has no v2). Read from the v2 flyer, the Crane Stage is now erika b2b sfcowboy 1:30-3:10 PM (was 1:30-3:00), Tricky 3:30-4:30 (was 3:20-4:10), Nimino 4:50-5:50 (was 4:25-5:15), DJ Shadow 6:10-7:10 (was 5:30-6:30), then Fatboy Slim 7:55-9:25 and Soulwax 9:55-10:55 unchanged - the Chronicle says the same (the first three sets lengthened, DJ Shadow to 6:10). Every other Saturday column on the v2 flyer matches this file box for box. Skepta's set is OFF the grid; his artists[] entry STAYS (a frozen pick key - three of the crew picked him) with `venue: \"Crane Stage\"` and `cancelled: { on, source, note }`, so his card renders struck through in the Saturday festival room with the crew's picks still on it (docs/add-a-festival.md, \"Cancelled acts\"). UPDATE 2026-09-24 (the held-back Portola Week supports, Kevin's yes the same day): Thu Club Six now carries its whole bill from the official Goldenvoice feed (tours.json event 1579182: \"Black Rave Culture Presented by program audio\", supporting \"bastiengoat, DJs Who Kiss, Rau b2b Rivs\"; RA 2515377, the feed's ticket link, bills the same four - DJs Who Kiss is Discnogirl b2b Buck Wilson, noted not carded; Buck Wilson's own card is Sun Monarch). No page prints an order or set times, so the room is a guessed run by the one rule (the billed headliner closes, the rest in descending print: Rau b2b Rivs, DJs Who Kiss, bastiengoat, Black Rave Culture; `order.confirmed` false, source RA) timed by scripts/guess-run-times.mjs from doors 10 PM to the 19hz-printed 4 AM: ~10:30 PM, ~11:45 PM, ~1:15 AM, ~2:30 AM. Black Rave Culture had no time before, so no guess anyone planned around moved. Sun The Midway: the feed and the Midway's own Tixr page (203629, \"The Midway - RiDE\", one room for all seven) add S.I.M, Espurr and New Nostalgia (Tixr prints \"S.I.M.\"; the feed's \"S.I.M\" is the key). UPDATE 2026-09-25 (v87 live): all three are carded as untimed entries with no `order`. No page prints their order or times, and a guessed run of seven would re-lay the four named sets friends are planning around on arithmetic alone (horsegiirL ~1:30 to ~2 AM, MGNA Crrrta ~10:30 PM to ~12:15 AM), so those four keep their guesses and the three show no clock. Since v87, js/v3/events.js venueGroupsOf gives an untimed card the doors-to-close window only when nothing in its room is timed, so they never glow beside the timed sets; they stack after them, and scripts/guess-run-times.mjs leaves them alone (it only lays out entries with an `order`). Every opener Goldenvoice bills for Portola Week is now on the wall. UPDATE 2026-09-25 (three Folsom-weekend parties friends are sharing, carded the evening of Fri Sep 25; read live that evening): MÜLL - Fri, room \"TBA (SF)\", 11 PM - 6 AM. The queer underground techno party (residents Fawks and Kudeki; Rene Wise, Jen Cardini, Markie, Del and Mexican Jihad billed, noted not carded). RA event 2479736 is both its page and its ticket seller, and RA's own event data prints start 2026-09-25T23:00 and end 2026-09-26T06:00; 19hz prints the same 11pm-6am, so the 2026-09-16 line above that left \"Mull Folsom\" uncarded is superseded. The venue is unannounced: RA shows \"TBA - San Francisco\", as it has for every MÜLL event (ra.co/promoters/120252), and the address goes to ticket-holders, so the room is \"TBA (SF)\" and venues{} records it as null: every event room must be a key there (tests/portola-events.test.mjs, and the validator's zero-warning bar for this file), and a null value draws the place line with no map pin (card-facts.js), rather than a pin that opens a guessed location. Swap in a map link when someone has the address. The name keeps the promoter's umlaut (RA, Instagram, its own site); the app's search does not fold diacritics, so typing \"mull\" does not find it. Big Muscle: Bare Chest Calendar - Sat, DNA Lounge, 1 PM - 7 PM. DNA Lounge's own page (calendar/2026/09-26a) titles it \"Bare Chest Calendar: Charity Event\", presented by Big Muscle and Big Muscle Bears (their 26th annual Folsom charity event, benefiting Bare Chest Calendar and PRC); friends know it as Big Muscle, so the card leads with that and keeps this year's title after the colon. General tickets are SOLD OUT and none are sold at the door (the same page), so it has no tickets door. Aftershock - its 30th anniversary, Ky Martinez Events, City Nights SF (715 Harrison St), 3 AM - 10 AM in the small hours of SUNDAY Sep 27, before the fair: the promoter's site prints \"SEPT 27 • 03:00 AM\", its Instagram \"Sep. 27th, 2026 3am-10am\", and its Facebook \"doors will open at 3:00, right after all the Saturday night parties\". It is filed under night Sat ON PURPOSE. An event time before 9 AM reads as after midnight of the night it is filed under (js/time.js activityMinutes, through events.js parseEventTime), and the clock's day rolls over at 5 AM (js/v3/now.js), so Sat + 3 AM - 10 AM is Sun Sep 27 03:00-10:00 PT, and the card sits last in Saturday's Folsom room, after PERVERT XXL. Filed under Sun it would read as Monday 3 AM, after Real Bad. Not the same promoter's RATED X (Sun Sep 27 9 PM) or NOCTURNAL EXTREME (Mon Sep 28 3 AM). Page is the promoter's site; tickets are Eventim (GA sold out, other tiers listed). Its stack card can only glow 3-5 AM: after the 5 AM rollover the clock is on Sunday and a Saturday card does not light, the same limit PERVERT XXL's 5-6 AM tail already has. Kevin's other two asks were already carded (PERVERT XXL, Real Bad 37); Robert's house parties have no public page and are not carded."
+    "note": "SET TIMES (2026-08-27): the official Saturday/Sunday posters went up on portolamusicfestival.com/set-times (and Portola's Instagram the same afternoon). Transcribed from the 1080px official JPGs by three independent readers (two model readers + a third pass) and reconciled box-by-box; stage membership cross-checked against the four official per-stage lineup images. Doors 1 PM both days, 21+. Five columns as printed: Pier Stage, Crane Stage, Warehouse, Ship Tent, Despacio (Despacio is one continuous block: Sat 2:45-9:45 PM, Sun 3:30-10:30 PM). Kaytree (Ship Tent, Sun 1:40-2:55) was on the poster but not the earlier lineup graphic and was added to artists[] here. Poster billing that is NOT part of the pick key: Dog Blood is billed \"(Skrillex + Boys Noize)\", DJ Shadow \"celebrates 30 years of Endtroducing\", Melanie C is a DJ set, SG Lewis is live. Artist names are byte-identical to the lineup phase on purpose - picks are keyed by exact name (tests/live-pick-keys.test.mjs freezes the names the crew had already picked). Portola Week (official Goldenvoice afters program, announced 2026-08-18: 21 shows Thu Sept 24 - Sun Sept 27; presale Aug 20, general Aug 21) added as an \"Afters\" section, and Folsom Street Fair weekend as a \"Folsom\" section, 2026-08-23. Mechanism: an afters/Folsom appearance is its own entry; when the name matches a lineup artist (Overmono, Fatboy Slim, ...) the pick/aura/notes unify by exact name on purpose - one artist, one pick, cards in both sections. Night + venue ride in `stage`, hours in `time`; cards render them as a sub-label. Horse Meat Disco (the crew ask - Bearracuda Folsom Street party, confirmed Fri Sept 25, Public Works, 9 PM-3 AM, 21+, tickets sickening.events; NOTE a stale 2024 Tixr link circulates - IDs are sequential, 114080 is the 2024 edition) is day-tagged \"Afters & Folsom\" so it renders under both. Curation: title-billed artists and lineup artists get cards; supporting-roster DJs noted here instead: Rory Phillips (w/ 2manydjs), Boygirl + Femme Jatale b2b Erika (w/ Six Sex), Kaytree + a program audio loft (Public Works Sun), Kavari (The Midway Sun), Buck Wilson (Monarch Sun), Mateo Segade (HMD upstairs). Sourcing: egress-proxied research - facts come from ticketing-page titles/search listings (AXS/Eventbrite/Tixr/venue calendars) cross-checked in aggregate; HMD, fair date/hours, Magnitude, DEVIANTS, Real Bad 37, and Groove Armada (Sat, The Great Northern) were re-verified individually 2026-08-23. Times not confirmed anywhere yet: Fcukers/Chloé Caillet (Public Works Sat), Groove Armada, Max Styler/Airwolf Paradise + Azzecca (Audio) - cards carry venue only until they post (venue norm ~10 PM). DESPACIO Pier 80 Friday is limited to every-year passholders. No unofficial/renegade afters existed as of 2026-08-23 - they historically appear 2-4 weeks out; re-scan mid-September. Folsom fair stage/DJ talent also unannounced yet (folsomstreet.org posts closer in). Weekend-conflict map for planning: Fri is conflict-free (HMD night); Sat daytime Folsom events run opposite Portola day 1; Magnitude/PERVERT XXL start as day 1 ends; Sun daytime the fair runs opposite Portola day 2; DEVIANTS/Real Bad overlap the Sunday afters. UPDATE 2026-09-16 (re-scan ten days out). PIER 80 GRID: no change - the official Saturday/Sunday set-time JPGs are byte-identical to the 2026-08-27 transcription (same sizes, HTTP last-modified 2026-08-27), stage-lineup images untouched since 2026-08-14, FAQ still doors 1 PM / curfew 11 PM. PORTOLA WEEK SOURCE OF RECORD FOUND: portolamusicfestival.com/portola-week renders from Goldenvoice's own feed, aegwebprod.blob.core.windows.net/json/tours/14/11058/tours.json (18 of the 21 shows - Soulwax Thu and the Sat Public Works show live elsewhere - each with doors, show time, billing and a per-event modified stamp); cross-checked against DoTheBay's portolaweek listing and 19hz, all read 2026-09-16. CHANGED: Folsom Fri BRUT SF is 9 PM - 3 AM per DNA Lounge's own calendar page and 19hz - the 10 PM - 4 AM here was wrong. CHANGED, single-act shows (a doors time had been sitting in `time` as if it were a set start): Soulwax Thu Regency Ballroom doors 7 PM, show ~8 PM - the Regency's own site feed (aegwebprod.blob.core.windows.net/json/events/9/events.json, entry modified 2026-09-11) now bills it \"Soulwax with LAIMA, Rory Phillips\", noted not carded; Black Rave Culture Thu Club Six doors 10 PM, close ~4 AM (19hz 10pm-4am; RA's schema and the promoter's post, per data/venues, say the same); Six Sex Fri Great American Music Hall doors 8 PM, show ~9 PM per GAMH's own calendar (the Goldenvoice feed says 7/8 - the venue page wins); Neil Frances Fri and Fatboy Slim Sun at 888 Garage doors 10 PM (Goldenvoice feed), close ~2 AM (19hz), no set time printed anywhere; Groove Armada Sat The Great Northern doors 10 PM, close 3 AM (printed on its Eventbrite page, which also says SOLD OUT); Azzecca Sun Audio 9:30 PM-2 AM (its Eventbrite page; the Goldenvoice feed rounds to 10 PM). `approx` on a show time means it is the show's start, not the headliner's set. RUNS re-laid by hand from the new doors/close with the guesser's arithmetic (no script run): Fri Regency Ballroom doors 7 PM, not 8 PM - the Regency's own feed and Goldenvoice's Portola Week feed both print doors 19:00 / show 20:00 (DoTheBay's 8:00PM is the show time) - so Gelli Haha ~8 PM, Jyoty ~9:15 PM, Channel Tres ~10:30 PM; Sat Public Works close ~3 AM (19hz now prints 10pm-3am; the 2 AM before was the venue registry's routine close), so Fcukers ~1 AM. SOLD OUT as of 2026-09-16 (DoTheBay's schema.org availability; no field for it here): Sat Groove Armada, Sat jigitz (Monarch), Sat Max Styler (Audio), Sat Fcukers + Chloe Caillet (Public Works), Sun Fatboy Slim (888 Garage), Sun Silva Bumpa (Monarch), Sun Overmono + Ben UFO (Public Works); the Fri Despacio 5th Birthday at Pier 80 is marked SOLD OUT on the official page. Everything else still on sale. NOT CHANGED, on purpose: Sun The Midway stays four sets - DoTheBay's listing title now reads \"horsegiirL, VTSS, MGNA Crrrta (DJ Set), Two Shell, Kavari\" and 19hz lists the same five, but the Goldenvoice feed (entry modified 2026-08-26) still bills horsegiirL with VTSS, MGNA Crrrta (DJ Set), Two Shell, the Tixr slug that names Kavari is the one already judged stale on 2026-09-01, and the room's order is Kevin's settled read; flagged for him rather than added. DoTheBay now lists Neil Frances (DJ Set) at \"The Midway\", but the feed and 19hz (ticketed through the Midway's own Tixr group) say 888 Garage, the Midway-run room next door - kept 888 Garage. The Sat Regency (Parcels) feed entry was modified 2026-09-15 but its doors 9 PM / show 10 PM match this file. Billing extras from the feed, noted not carded: Six Sex with B0yg1rl, Femme Jatale b2b erika (GAMH doors 7, show 8); Neil Frances (DJ Set) & Friends; 2manydjs with Rory Phillips; Black Rave Culture presented by program audio with bastiengoat, DJs Who Kiss (19hz: Discnogirl b2b Buck Wilson), Rau b2b Rivs; Sun Public Works adds a Loft curated by Program Audio; MGNA Crrrta is billed (DJ Set); 19hz adds Milli Meng and Queen Out to the Sat Public Works bill (not on the ticket title - likely the loft); BRUT SF is James Hurr, Dan Darlington, Justin Nicoll. UNOFFICIAL Portola-branded parties now exist (the mid-September re-scan the note above asked for): d.tour Portola Preparty, Fri Sept 25 10pm-3am, venue TBA (Toccororo, Yuca Frita, QUEENIE, felipe d., DJ Juanny) and d.tour Portola Afterparty, Sat Sept 26 10pm-3am, venue TBA (Eera, Touching Ice, Spyder, Denpa, CSTR, Oso) - HydeFM / Mostly Cloudy / DJ Dials, per 19hz; no venue and no lineup artists, so not carded. Folsom-weekend extras on 19hz, also not carded: Tuff SF Folsom Kick Off (Thu, 1015 Folsom), Dad Folsom Friday (F8), Mull Folsom (Fri 11pm-6am, TBA; Rene Wise, Jen Cardini). BACK-TO-BACK RUNS (2026-09-01, MODEL-V3 §5): a venue-night is ONE ROOM and its artists play IN SEQUENCE. Every multi-artist venue-night in this file had all of its artists stamped with the SAME time - that is the DOORS time off the show page, not a set time - and two rooms had no time at all. So each of those twelve rooms now carries `doors` (and `close` where a page prints one), and every set in it carries a GUESSED start (`approx: true`) plus `order: {seq, of, source, confirmed:false}` recording the running order and the show page it came from. SOURCES (read 2026-09-01): DoTheBay carries Goldenvoice's official Portola Week listing, one server-rendered page per show with the billing and the doors time, and each room's `order.source` is its own page there; portolamusicfestival.com/portola-week renders its list client-side (static HTML is just an image) so it is the programme of record, not a citable door; The Midway keeps AXS event 1575408. SET TIMES are laid across the window: evenly from doors to close where the close is known, an hour apart from doors where it is not, rounded to the half hour. RUNNING ORDER follows the billing - the billed headliner closes and the rest run in descending print, so \"X with A, B\" puts B first and X last, and \"X + Y\" is a co-bill where X closes. TWO NAMES WERE ON THE BILL AND MISSING FROM THIS SECTION and were added: Buck Wilson (Sun Monarch, opens - he was only mentioned in this note's supporting-roster list before) and Kaytree (Sun Public Works, second - she already had a Sunday grid billing, and picks unify by exact name across both, the same shape VTSS and Overmono already had). The lowercase spelling \"erika b2b sfcowboy\" is KEPT against DoTheBay's \"Erika b2b SFCowboy\": it is a pick key. CLOSES: Fri The Great Northern's 2 AM is printed on its show page; the 3 AM and 2 AM on Sat Monarch, Sun Monarch and Sun Public Works come from our own 2026-08-23 research pass, which DoTheBay does not repeat; The Midway's 2 AM is OURS (`closeApprox: true`); the remaining rooms print no end at all and carry no `close`, so the zoom says \"Doors 10 PM\" rather than inventing a window. `order.confirmed` is false everywhere - a bill is not a set-time sheet. Every other event entry gained only `night` + `venue`, parsed out of `stage` (which stays, and stays authoritative - the validator errors if the two disagree). UPDATE 2026-09-23 (Skepta cancelled): Goldenvoice announced on Instagram on Mon 2026-09-21 that Skepta will no longer play Portola \"due to unforeseen circumstances\" (SF Chronicle, Zara Irshad, 2026-09-21; he also dropped CRSSD and a Boiler Room LA the same weekend). No replacement for his 6:45 PM Crane Stage slot. The official set-times page now serves 2026-Portola-SetTimes-Saturday-v2.jpg and crane-stage-26-v2.jpg (Last-Modified 2026-09-21 20:09 and 20:07 GMT; the Crane Stage lineup image simply drops Skepta; the Aug 27 Saturday JPG is unchanged beside them, and Sunday has no v2). Read from the v2 flyer, the Crane Stage is now erika b2b sfcowboy 1:30-3:10 PM (was 1:30-3:00), Tricky 3:30-4:30 (was 3:20-4:10), Nimino 4:50-5:50 (was 4:25-5:15), DJ Shadow 6:10-7:10 (was 5:30-6:30), then Fatboy Slim 7:55-9:25 and Soulwax 9:55-10:55 unchanged - the Chronicle says the same (the first three sets lengthened, DJ Shadow to 6:10). Every other Saturday column on the v2 flyer matches this file box for box. Skepta's set is OFF the grid; his artists[] entry STAYS (a frozen pick key - three of the crew picked him) with `venue: \"Crane Stage\"` and `cancelled: { on, source, note }`, so his card renders struck through in the Saturday festival room with the crew's picks still on it (docs/add-a-festival.md, \"Cancelled acts\"). UPDATE 2026-09-24 (the held-back Portola Week supports, Kevin's yes the same day): Thu Club Six now carries its whole bill from the official Goldenvoice feed (tours.json event 1579182: \"Black Rave Culture Presented by program audio\", supporting \"bastiengoat, DJs Who Kiss, Rau b2b Rivs\"; RA 2515377, the feed's ticket link, bills the same four - DJs Who Kiss is Discnogirl b2b Buck Wilson, noted not carded; Buck Wilson's own card is Sun Monarch). No page prints an order or set times, so the room is a guessed run by the one rule (the billed headliner closes, the rest in descending print: Rau b2b Rivs, DJs Who Kiss, bastiengoat, Black Rave Culture; `order.confirmed` false, source RA) timed by scripts/guess-run-times.mjs from doors 10 PM to the 19hz-printed 4 AM: ~10:30 PM, ~11:45 PM, ~1:15 AM, ~2:30 AM. Black Rave Culture had no time before, so no guess anyone planned around moved. Sun The Midway: the feed and the Midway's own Tixr page (203629, \"The Midway - RiDE\", one room for all seven) add S.I.M, Espurr and New Nostalgia (Tixr prints \"S.I.M.\"; the feed's \"S.I.M\" is the key). UPDATE 2026-09-25 (v87 live): all three are carded as untimed entries with no `order`. No page prints their order or times, and a guessed run of seven would re-lay the four named sets friends are planning around on arithmetic alone (horsegiirL ~1:30 to ~2 AM, MGNA Crrrta ~10:30 PM to ~12:15 AM), so those four keep their guesses and the three show no clock. Since v87, js/v3/events.js venueGroupsOf gives an untimed card the doors-to-close window only when nothing in its room is timed, so they never glow beside the timed sets; they stack after them, and scripts/guess-run-times.mjs leaves them alone (it only lays out entries with an `order`). Every opener Goldenvoice bills for Portola Week is now on the wall. UPDATE 2026-09-25 (three Folsom-weekend parties friends are sharing, carded the evening of Fri Sep 25; read live that evening): MÜLL - Fri, room \"TBA (SF)\", 11 PM - 6 AM. The queer underground techno party (residents Fawks and Kudeki; Rene Wise, Jen Cardini, Markie, Del and Mexican Jihad billed, noted not carded). RA event 2479736 is both its page and its ticket seller, and RA's own event data prints start 2026-09-25T23:00 and end 2026-09-26T06:00; 19hz prints the same 11pm-6am, so the 2026-09-16 line above that left \"Mull Folsom\" uncarded is superseded. The venue is unannounced: RA shows \"TBA - San Francisco\", as it has for every MÜLL event (ra.co/promoters/120252), and the address goes to ticket-holders, so the room is \"TBA (SF)\" and venues{} records it as null: every event room must be a key there (tests/portola-events.test.mjs, and the validator's zero-warning bar for this file), and a null value draws the place line with no map pin (card-facts.js), rather than a pin that opens a guessed location. Swap in a map link when someone has the address. The name keeps the promoter's umlaut (RA, Instagram, its own site); the app's search does not fold diacritics, so typing \"mull\" does not find it. Big Muscle: Bare Chest Calendar - Sat, DNA Lounge, 1 PM - 7 PM. DNA Lounge's own page (calendar/2026/09-26a) titles it \"Bare Chest Calendar: Charity Event\", presented by Big Muscle and Big Muscle Bears (their 26th annual Folsom charity event, benefiting Bare Chest Calendar and PRC); friends know it as Big Muscle, so the card leads with that and keeps this year's title after the colon. General tickets are SOLD OUT and none are sold at the door (the same page), so it has no tickets door. Aftershock - its 30th anniversary, Ky Martinez Events, City Nights SF (715 Harrison St), 3 AM - 10 AM in the small hours of SUNDAY Sep 27, before the fair: the promoter's site prints \"SEPT 27 • 03:00 AM\", its Instagram \"Sep. 27th, 2026 3am-10am\", and its Facebook \"doors will open at 3:00, right after all the Saturday night parties\". It is filed under night Sat ON PURPOSE. An event time before 9 AM reads as after midnight of the night it is filed under (js/time.js activityMinutes, through events.js parseEventTime), and the clock's day rolls over at 5 AM (js/v3/now.js), so Sat + 3 AM - 10 AM is Sun Sep 27 03:00-10:00 PT, and the card sits last in Saturday's Folsom room, after PERVERT XXL. Filed under Sun it would read as Monday 3 AM, after Real Bad. Not the same promoter's RATED X (Sun Sep 27 9 PM) or NOCTURNAL EXTREME (Mon Sep 28 3 AM). Page is the promoter's site; tickets are Eventim (GA sold out, other tiers listed). Its stack card can only glow 3-5 AM: after the 5 AM rollover the clock is on Sunday and a Saturday card does not light, the same limit PERVERT XXL's 5-6 AM tail already has. Kevin's other two asks were already carded (PERVERT XXL, Real Bad 37); Robert's house parties have no public page and are not carded. UPDATE 2026-09-25 late (every verified Folsom-weekend party, read live 10:45-11:15 PM PT). Source list: the four-sweep pick list (claude-plans/2026-09-25-portola-live/research/gay-events), each party re-opened at its own page and at the venue's or promoter's own calendar. 35 parties added (36 cards: the GearedUp Alley Party runs Fri AND Sat): Fri - GearedUp Alley Party, HUNGER, Perverts Put Out Does Folsom Street Fair!, Folsom Foreplay, FOLSOM FREAK FRIDAY, CORAZON SF, Stank, HIT IT - FOLSOM, SayLove: Folsom Edition, PRIME - The San Francisco MEAT, BOOF x SQUISH: FOLSOM, SUCH A GOOD GIRL, DAD FOLSOM FRIDAY; Sat - Brunch Queens — Folsom Weekend, GearedUp Alley Party, Folsom Street’s Miracle Mile walking tour, MILKED: Folsom Edition, NAKED SOCIAL FOLSOM SATURDAY, Twisted Windows: Folsom Gala, US! Folsom (Dark N Dirty) Edition, Zoomiez, LICK IT, FOLSOM SLUT SATURDAY, CHUNK FOLSOM - Bear Playground; Sun - OFFICIAL KINK.COM FOLSOM PENTHOUSE PREVIEW, BOOF presents MCMLXXXV (Herrensauna), Party On The Plaza: Folsom Edition, FOLSOM SUNDAY, CUMUNION - FOLSOM EDITION, Hot Tea - Leather Edition, Kinksters Paradise, AFTER FOLSOM FREAK FEST, DETOX @ Popper Slut Sundays, screw, nut, bolt, RATED X, NOCTURNAL EXTREME. NAMES are the title as the party's own page prints it (case, punctuation, special characters), with only a date or year, a venue tag or a ticket-status tag cut off (PRIME's '2026 - Limited Tix at the Door!', Hot Tea's '2026', CHUNK's '- 9/26', BOOF's 'at THE FOUNDRY - Folsom Street Fair', DETOX's '*FOLSOM ST FAIR*'); CORAZON SF, DAD FOLSOM FRIDAY and Kinksters Paradise are the party's own name without its lineup or promo tail. TIMES as posted; an end the page does not print stays unprinted (RATED X, NOCTURNAL EXTREME). NOCTURNAL EXTREME starts Mon Sep 28 at 3 AM (the promoter's own site; its Eventim listing says 2:30 AM) and is filed under night Sun on purpose, like Aftershock under Sat: before 9 AM reads as after midnight of the night it is filed under. CORRECTED against the pick list by the parties' own pages: the GearedUp Alley Party is Fri + Sat 12-6 PM (Mr. S Leather's events page), not Sat + Sun; Fist Buds is 12-6 PM (10 AM-12 PM is the sold-out Fisting 101); the Kink.com Penthouse Preview is at Kink.com's new space at 1717 Mission St, not the Kink Store; Nocturnal is 3 AM. ROOMS: Party On The Plaza is on the Eagle Plaza outside the SF Eagle, so it has its own room (Eagle Plaza) beside Disco Daddy inside. SayLove and MILKED print only 'SoMa' / 'near Mission & 9th' with the address sent to ticket holders, so their rooms (TBA (SoMa), Stopgap) are null in venues{}, like MÜLL's. HELD BACK, 18 verified parties that share a room on a night with another party (The Stud Fri/Sat/Sun, SF Eagle Fri/Sat, DNA Lounge Sat with Big Muscle, Transform1060 Sat, Oasis Sat, Powerhouse Sun): today's model makes a shared venue-night one bill with one doors time, page and ticket link, so they wait, ready, in claude-plans/2026-09-25-portola-live/folsom-shared-rooms.json for the by-time Folsom layout (v94). NOT ADDED: Rubber Kitty Folsom St. Fashion Show (its Eventbrite says Postponed), GBU SF (By Invite Only), Funkytown SF (Cat Club's monthly disco/new-wave night, not billed as queer or Folsom), CODE at The Edge (the bar says 'usually the 3rd or 4th Saturday, watch Facebook'; only an aggregator dates it Sep 26). SOLD-OUT CHECK, one time, as of 2026-09-25 11 PM PT (tickets are left off a party that is sold out with no resale, a door-only night - nothing left to sell online, however the door is - and a party that is over; the page stays): NO TICKETS DOOR (page only): Big Muscle: Bare Chest Calendar - GA and tables sold out, DNA Lounge says no tickets at the door; Real Bad 37 - realbad.org says sold out, no tickets at the door; Folsom Foreplay - sold out since Aug 17, waitlist only; Twisted Windows: Folsom Gala - sold out since Sep 15, waitlist only; Zoomiez - all four Shotgun tiers sold out, no resale or door shown; Perverts Put Out - over (Fri 7-9:30 PM), sales ended; PRIME - door only (Eventbrite: online sold out, 'limited tickets at the door'); SayLove - its Passline link now lands on Passline's home page; free or door-only by design: GearedUp Alley Party ($20 beer bust at the door), Stank, LICK IT, the walking tour (free RSVP), Party On The Plaza, FOLSOM SUNDAY (cover at the door, no presales), screw, nut, bolt, Folsom Street Fair, Disco Daddy. ON SALE: BRUT SF (DNA Lounge GA), MÜLL (RA final release; venue still TBA), Magnitude, DEVIANTS, Aftershock (Eventim: presale sold out, general and VIP Ultra on sale), PERVERT XXL (GA and VIP on xoxopresents.com; its Tixr page now says 'Sold elsewhere', so tickets now point at XOXO), HUNGER, FOLSOM FREAK FRIDAY, CORAZON SF, HIT IT - FOLSOM, BOOF x SQUISH: FOLSOM, SUCH A GOOD GIRL (presale sold out, GA on sale), DAD FOLSOM FRIDAY, Brunch Queens, MILKED (general), NAKED SOCIAL (Heylo tiers), US! Folsom, FOLSOM SLUT SATURDAY, CHUNK (tiers 2-3), the Penthouse Preview, BOOF presents MCMLXXXV, CUMUNION - FOLSOM EDITION, Hot Tea, Kinksters Paradise, AFTER FOLSOM FREAK FEST, DETOX, RATED X (Eventim), NOCTURNAL EXTREME (Eventim). UNCHANGED: Horse Meat Disco (under way; Sickening titles its listing 'TIX AT THE DOOR' but still sells Tier 3, Tier 4 and Final GA online, so it is not door-only). There is no rolling checker: this is a one-time read."
   },
   "dayMeta": {
     "Saturday": {
@@ -2177,6 +2706,29 @@
     "SF Eagle": "https://maps.google.com/?q=SF+Eagle,+398+12th+St,+San+Francisco",
     "City Nights SF": "https://maps.google.com/?q=City+Nights+SF,+715+Harrison+St,+San+Francisco",
     "TBA (SF)": null,
+    "Mr. S Leather": "https://maps.google.com/?q=Mr.+S+Leather,+385+8th+St,+San+Francisco",
+    "Folsom Street Community Center": "https://maps.google.com/?q=Folsom+Street+Community+Center,+1286+Folsom+St,+San+Francisco",
+    "Kink Store": "https://maps.google.com/?q=Kink+Store,+224+6th+St,+San+Francisco",
+    "Power Exchange": "https://maps.google.com/?q=Power+Exchange,+220+Jones+St,+San+Francisco",
+    "Beaux": "https://maps.google.com/?q=Beaux,+2344+Market+St,+San+Francisco",
+    "Powerhouse": "https://maps.google.com/?q=Powerhouse,+1347+Folsom+St,+San+Francisco",
+    "QBar": "https://maps.google.com/?q=QBar,+456+Castro+St,+San+Francisco",
+    "TBA (SoMa)": null,
+    "SF Mint": "https://maps.google.com/?q=San+Francisco+Mint,+88+5th+St,+San+Francisco",
+    "Jolene's": "https://maps.google.com/?q=Jolene's,+2700+16th+St,+San+Francisco",
+    "F8": "https://maps.google.com/?q=F8,+1192+Folsom+St,+San+Francisco",
+    "Mayes Oyster House": "https://maps.google.com/?q=Mayes+Oyster+House,+1233+Polk+St,+San+Francisco",
+    "Leather District Monument": "https://maps.google.com/?q=Leather+District+Monument,+82+Ringold+St,+San+Francisco",
+    "Stopgap": null,
+    "The Blackdoor": "https://maps.google.com/?q=The+Blackdoor,+288+7th+St,+San+Francisco",
+    "SOMArts": "https://maps.google.com/?q=SOMArts,+934+Brannan+St,+San+Francisco",
+    "Kink.com Penthouse": "https://maps.google.com/?q=1717+Mission+St,+San+Francisco",
+    "The Foundry": "https://maps.google.com/?q=The+Foundry,+1425+Folsom+St,+San+Francisco",
+    "Eagle Plaza": "https://maps.google.com/?q=Eagle+Plaza,+12th+St,+San+Francisco",
+    "Oasis": "https://maps.google.com/?q=Oasis,+298+11th+St,+San+Francisco",
+    "Transform1060": "https://maps.google.com/?q=Transform1060,+1060+Folsom+St,+San+Francisco",
+    "Lone Star Saloon": "https://maps.google.com/?q=Lone+Star+Saloon,+1354+Harrison+St,+San+Francisco",
+    "Halcyon": "https://maps.google.com/?q=Halcyon,+314+11th+St,+San+Francisco",
     "888 Garage": "https://maps.google.com/?q=888+Garage,+888+Marin+St,+San+Francisco",
     "Audio": "https://maps.google.com/?q=Audio,+316+11th+St,+San+Francisco",
     "Club Six": "https://maps.google.com/?q=Club+Six,+60+6th+St,+San+Francisco",

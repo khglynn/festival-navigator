@@ -960,6 +960,14 @@ for (const [engine, name] of [[browser, ''], [webkit, 'WebKit ']]) {
       assert.ok(rest.card.right > rest.row.right + 30, `at rest his card runs off its row: ${JSON.stringify(rest)}`);
       await watchRows(page);
       await tapNow(page, door);
+      // Judge the card at rest, not mid-pulse: NOW's pulse scales the card it
+      // lands on for ~460 ms, and a scaled card reads ~3px wider on each side.
+      // tapNow waits for the scrolling to stop; on a longer wall (the
+      // 2026-09-25 Folsom data) the pulse can still be running then.
+      await page.waitForFunction((sel) => {
+        const c = [...document.querySelector(sel).querySelectorAll('.card')].find((x) => x.dataset.artist === 'Milli Meng');
+        return Math.abs(c.getBoundingClientRect().width - c.offsetWidth) < 0.5;
+      }, AFTERS_ROW, { timeout: 3000 });
       const v = await rowView(page);
       assert.ok(v.card.left >= v.row.left - 0.5 && v.card.right <= v.row.right + 0.5, `the card is whole inside its row: ${JSON.stringify(v)}`);
       assert.ok(v.card.right <= v.innerWidth, 'and on the screen');

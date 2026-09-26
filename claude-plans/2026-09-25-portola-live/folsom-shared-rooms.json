@@ -1,0 +1,258 @@
+{
+  "readme": [
+    "18 verified Folsom-weekend parties, read live 2026-09-25 10:45-11:15 PM PT, NOT yet in data/festivals/portola-2026.json.",
+    "Each shares a venue on a night with another party. Today's model (docs/add-a-festival.md, 'A venue-night is ONE ROOM') makes that one bill: the validator warns on two timed sets in a room with no running order, tests/portola-events.test.mjs requires such a room to be a complete run with shared doors, and tests/show-links.test.mjs requires one page and ticket link per room and doors time. Separate parties with separate pages cannot pass that without losing their own links.",
+    "They belong in once the by-time Folsom layout (v94, dayMeta.Folsom.layout = 'by-time') treats each party in that section as its own show for those three checks.",
+    "To apply: append `artists` after the last Folsom entry, add `venues` to venues{}, run node scripts/freeze-pick-keys.mjs portola-2026, node scripts/validate-festivals.mjs, npm test (the Folsom counts in tests/events-model.test.mjs and tests/day-image-sections.test.mjs move by Fri +4, Sat +9, Sun +5).",
+    "Names, times, pages and ticket status: claude-plans/2026-09-25-portola-live/DATA-NOTES.md."
+  ],
+  "venues": {
+    "The Stud": "https://maps.google.com/?q=The+Stud,+1123+Folsom+St,+San+Francisco"
+  },
+  "artists": [
+    {
+      "name": "BARK BEFORE DARK",
+      "day": "Folsom",
+      "stage": "Fri · The Stud",
+      "night": "Fri",
+      "venue": "The Stud",
+      "time": "5 PM - 9 PM",
+      "page": {
+        "url": "https://www.studsf.com/calendar/2026/9/25/bark-before-dark",
+        "at": "The Stud"
+      }
+    },
+    {
+      "name": "DIRTY BOOTS: FOLSOM FRIDAY",
+      "day": "Folsom",
+      "stage": "Fri · The Stud",
+      "night": "Fri",
+      "venue": "The Stud",
+      "time": "10 PM - 2 AM",
+      "page": {
+        "url": "https://www.studsf.com/calendar/2026/9/25/dirty-boots-folsom-friday",
+        "at": "The Stud"
+      }
+    },
+    {
+      "name": "SF Queer Leather Happy Hour: Folsom Edition",
+      "day": "Folsom",
+      "stage": "Fri · SF Eagle",
+      "night": "Fri",
+      "venue": "SF Eagle",
+      "time": "6 PM - 9 PM",
+      "page": {
+        "url": "https://sf-eagle.com/events/sf-queer-leather-happy-hour-folsom-edition/",
+        "at": "SF Eagle"
+      }
+    },
+    {
+      "name": "Folsom Friday Warm-Up: Boot Camp",
+      "day": "Folsom",
+      "stage": "Fri · SF Eagle",
+      "night": "Fri",
+      "venue": "SF Eagle",
+      "time": "9 PM - 2 AM",
+      "page": {
+        "url": "https://sf-eagle.com/events/folsom-friday-warm-up-boot-camp/",
+        "at": "SF Eagle"
+      }
+    },
+    {
+      "name": "SXTPS: Folsom",
+      "day": "Folsom",
+      "stage": "Sat · DNA Lounge",
+      "night": "Sat",
+      "venue": "DNA Lounge",
+      "time": "10 PM - 2:30 AM",
+      "page": {
+        "url": "https://www.dnalounge.com/calendar/2026/09-26d.html",
+        "at": "DNA Lounge"
+      },
+      "tickets": {
+        "url": "https://www.dnalounge.com/calendar/2026/09-26d.html",
+        "at": "DNA Lounge"
+      }
+    },
+    {
+      "name": "Daddy Day Care Folsom Saturday",
+      "day": "Folsom",
+      "stage": "Sat · SF Eagle",
+      "night": "Sat",
+      "venue": "SF Eagle",
+      "time": "3 PM - 8 PM",
+      "page": {
+        "url": "https://sf-eagle.com/events/daddy-day-care-folsom-saturday/",
+        "at": "SF Eagle"
+      }
+    },
+    {
+      "name": "Folsom Saturday: Cell Blok",
+      "day": "Folsom",
+      "stage": "Sat · SF Eagle",
+      "night": "Sat",
+      "venue": "SF Eagle",
+      "time": "9 PM - 2 AM",
+      "page": {
+        "url": "https://sf-eagle.com/events/cell-blok-2/",
+        "at": "SF Eagle"
+      }
+    },
+    {
+      "name": "DREAM HOUSE",
+      "day": "Folsom",
+      "stage": "Sat · The Stud",
+      "night": "Sat",
+      "venue": "The Stud",
+      "time": "2 PM - 8 PM",
+      "page": {
+        "url": "https://www.studsf.com/calendar/2026/9/26/dream-house",
+        "at": "The Stud"
+      }
+    },
+    {
+      "name": "GRUNT",
+      "day": "Folsom",
+      "stage": "Sat · The Stud",
+      "night": "Sat",
+      "venue": "The Stud",
+      "time": "9 PM - 2 AM",
+      "page": {
+        "url": "https://www.studsf.com/calendar/2026/9/26/grunt",
+        "at": "The Stud"
+      },
+      "tickets": {
+        "url": "https://ra.co/events/2447663",
+        "at": "Resident Advisor"
+      }
+    },
+    {
+      "name": "Fist Buds - Folsom Edition",
+      "day": "Folsom",
+      "stage": "Sat · Transform1060",
+      "night": "Sat",
+      "venue": "Transform1060",
+      "time": "12 PM - 6 PM",
+      "page": {
+        "url": "https://events.humanitix.com/fisting-101-a-beginner-s-playground",
+        "at": "Humanitix"
+      },
+      "tickets": {
+        "url": "https://events.humanitix.com/fisting-101-a-beginner-s-playground",
+        "at": "Humanitix"
+      }
+    },
+    {
+      "name": "CUMUNION + BEARUNION - FOLSOM EDITION",
+      "day": "Folsom",
+      "stage": "Sat · Transform1060",
+      "night": "Sat",
+      "venue": "Transform1060",
+      "time": "8 PM - 2 AM",
+      "page": {
+        "url": "https://www.eventbrite.com/e/cumunion-bearunion-folsom-edition-tickets-1997725379387",
+        "at": "Eventbrite"
+      },
+      "tickets": {
+        "url": "https://www.eventbrite.com/e/cumunion-bearunion-folsom-edition-tickets-1997725379387",
+        "at": "Eventbrite"
+      }
+    },
+    {
+      "name": "LateXXX",
+      "day": "Folsom",
+      "stage": "Sat · Oasis",
+      "night": "Sat",
+      "venue": "Oasis",
+      "time": "4 PM - 7 PM",
+      "page": {
+        "url": "https://www.eventbrite.com/e/latexxx-tickets-2000280354386",
+        "at": "Eventbrite"
+      },
+      "tickets": {
+        "url": "https://www.eventbrite.com/e/latexxx-tickets-2000280354386",
+        "at": "Eventbrite"
+      }
+    },
+    {
+      "name": "FOLSOM Princess w/ CRYSTAL METHYD",
+      "day": "Folsom",
+      "stage": "Sat · Oasis",
+      "night": "Sat",
+      "venue": "Oasis",
+      "time": "9:30 PM - 2 AM",
+      "page": {
+        "url": "https://www.eventbrite.com/e/folsom-princess-w-crystal-methyd-tickets-1994876915555",
+        "at": "Eventbrite"
+      },
+      "tickets": {
+        "url": "https://www.eventbrite.com/e/folsom-princess-w-crystal-methyd-tickets-1994876915555",
+        "at": "Eventbrite"
+      }
+    },
+    {
+      "name": "AIRTIGHT",
+      "day": "Folsom",
+      "stage": "Sun · The Stud",
+      "night": "Sun",
+      "venue": "The Stud",
+      "time": "2 PM - 9 PM",
+      "page": {
+        "url": "https://www.studsf.com/calendar/2026/9/27/airtight",
+        "at": "The Stud"
+      }
+    },
+    {
+      "name": "LE FEMMES",
+      "day": "Folsom",
+      "stage": "Sun · The Stud",
+      "night": "Sun",
+      "venue": "The Stud",
+      "time": "10 PM - 2 AM",
+      "page": {
+        "url": "https://www.studsf.com/calendar/2026/9/27/le-femmes",
+        "at": "The Stud"
+      },
+      "tickets": {
+        "url": "https://www.eventbrite.com/e/le-femmes-folsom-edition-tickets-2000901681793",
+        "at": "Eventbrite"
+      }
+    },
+    {
+      "name": "Shirts Off Sundays",
+      "day": "Folsom",
+      "stage": "Sun · Powerhouse",
+      "night": "Sun",
+      "venue": "Powerhouse",
+      "time": "4 PM - 8 PM",
+      "page": {
+        "url": "https://powerhousebar.com/event/shirts-off-sundays/2026-09-27/",
+        "at": "Powerhouse"
+      }
+    },
+    {
+      "name": "Carne Fresca",
+      "day": "Folsom",
+      "stage": "Sun · Powerhouse",
+      "night": "Sun",
+      "venue": "Powerhouse",
+      "time": "4 PM - 8 PM",
+      "page": {
+        "url": "https://powerhousebar.com/event/carne-fresca/2026-09-27/",
+        "at": "Powerhouse"
+      }
+    },
+    {
+      "name": "Fan-Dumb",
+      "day": "Folsom",
+      "stage": "Sun · Powerhouse",
+      "night": "Sun",
+      "venue": "Powerhouse",
+      "time": "9 PM - 2 AM",
+      "page": {
+        "url": "https://powerhousebar.com/event/fan-dumb/2026-09-27/",
+        "at": "Powerhouse"
+      }
+    }
+  ]
+}

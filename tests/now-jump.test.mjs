@@ -174,12 +174,19 @@ test('just after the grid closes, the line is still drawn but the afters are the
     assert.equal(l.card, root.querySelector('.venue-grid[data-iso] .card.now'), 'the first in the wall’s order');
     root.remove();
   }
+  // Since 2026-09-25 Saturday's Folsom has daytime parties that are really on
+  // at 12:40 PM (a drag brunch from 11 AM, the Mr. S alley party from noon), so
+  // "before doors with nothing marked" hides Folsom; with it showing, those
+  // parties are the answer, not the top of a grid that has not opened.
   const early = clock(doors - 20);
-  const { root, ctx } = render(early);
+  const { root, ctx } = render(early, [], { folded: ['Folsom'] });
   assert.ok(root.querySelector('.now-line'), 'twenty minutes before doors the line is drawn');
   assert.equal(root.querySelectorAll('.venue-grid .card.now').length, 0, 'and nothing is marked');
   assert.equal(nowLanding(root, ctx, early).kind, 'line', 'so the top of the grid is the answer');
   root.remove();
+  const withFolsom = render(early);
+  assert.equal(nowLanding(withFolsom.root, withFolsom.ctx, early).kind, 'card', 'with Folsom showing, a daytime party on now is the answer');
+  withFolsom.root.remove();
 });
 
 test('outside the live window there is no NOW: a Saturday morning, a week early, a lineup fest with no clock', () => {
@@ -326,7 +333,8 @@ test('stops after the grid closes: the afters only, first NOW card first; before
   const doors = Number(probe.querySelector('.times-grid[data-iso="2026-09-26"]').dataset.startRow) * 15;
   probe.remove();
   const early = pt(`2026-09-26T${String(Math.floor((doors - 20) / 60)).padStart(2, '0')}:${String((doors - 20) % 60).padStart(2, '0')}:00`);
-  const { root: r2, ctx: c2 } = render(early);
+  // Folsom hidden: its daytime parties are really on at 12:40 PM (2026-09-25).
+  const { root: r2, ctx: c2 } = render(early, [], { folded: ['Folsom'] });
   const pre = nowStops(r2, c2, early, layout(r2));
   assert.deepEqual(pre.stops.map(namesOf), [['LINE']], 'twenty minutes before doors: the top of the grid, nothing else');
   r2.remove();
@@ -565,7 +573,8 @@ test('what NOW says: the line’s time and what crosses it, cards by name and pl
   const hh = Math.floor((doors - 20) / 60);
   const mm = (doors - 20) % 60;
   const early = pt(`2026-09-26T${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}:00`);
-  const { root: r4, ctx: c4 } = render(early);
+  // Folsom hidden: its daytime parties are really on at 12:40 PM (2026-09-25).
+  const { root: r4, ctx: c4 } = render(early, [], { folded: ['Folsom'] });
   const pre = nowStops(r4, c4, early, layout(r4));
   assert.equal(nowSaid(pre, pre.stops[0]), `Now, ${hh % 12 || 12}:${String(mm).padStart(2, '0')} ${hh < 12 ? 'AM' : 'PM'}.`, 'before doors: the time, and nothing claimed');
   r4.remove();
