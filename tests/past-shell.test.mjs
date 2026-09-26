@@ -16,10 +16,12 @@ const TOKEN = 'pastshelltesttoken_012345'; // a made-up crew, never a real link
 const FID = 'portola-2026';
 const INDEX = JSON.parse(readFileSync(join(ROOT, 'data/festivals/index.json'), 'utf8'));
 const FEST = JSON.parse(readFileSync(join(ROOT, `data/festivals/${FID}.json`), 'utf8'));
+const ACL = 'acl-2026';
+const ACL_FEST = JSON.parse(readFileSync(join(ROOT, `data/festivals/${ACL}.json`), 'utf8'));
 const json = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
 const DOC = {
   v: 4, meta: { name: 'The Crew', inviteFestId: FID }, spotify: {}, affinity: {},
-  people: { Kevin: { colorIndex: 0 } }, festivals: { [FID]: { selections: { Tricky: { Kevin: 2 } } } },
+  people: { Kevin: { colorIndex: 0 } }, festivals: { [FID]: { selections: { Tricky: { Kevin: 2 } } }, [ACL]: { selections: {} } },
 };
 const sent = [];
 async function network(url, opts = {}) {
@@ -27,6 +29,7 @@ async function network(url, opts = {}) {
   if ((opts.method || 'GET') !== 'GET') { sent.push(u); return json({ error: 'not in this test' }, 503); }
   if (u === '/data/festivals/index.json') return json(INDEX);
   if (u === `/data/festivals/${FID}.json`) return json(FEST);
+  if (u === `/data/festivals/${ACL}.json`) return json(ACL_FEST);
   if (u.startsWith('/api/crew?')) return json(DOC);
   if (u.startsWith('/api/festival-add?')) return json({ festivals: [] });
   return json({ error: 'not in this test' }, 503);
@@ -47,6 +50,7 @@ test.after(() => shell.close());
 const { $, dom } = shell;
 for (let i = 0; i < 100 && $('screen-app').style.display === 'none'; i += 1) await settle(20);
 const state = await import('../js/state.js');
+const app = await import('../js/v3/app.js'); // the SAME instance the page booted
 
 const click = (el) => el.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
 const wall = () => $('wall-root');
@@ -110,6 +114,78 @@ test('back from the lock screen an hour later: what ended folds, the rest stands
     assert.equal(sat().querySelector('.card[data-artist="Tricky"]'), null, 'Tricky ended at 4:30: folded on resume');
     assert.match(line().textContent, /^Earlier · \d+ sets$/);
     assert.notEqual(line().textContent, 'Earlier · 7 sets', 'more of the day is behind the line now');
+  } finally {
+    globalThis.Date = RealDate;
+  }
+});
+
+// ---- the import's landing (Sol's review of v97) -------------------------------------
+// After an import the wall lands on the first added pick that is on it; a
+// pick that is over is folded and not in the page, so when none is, the fold
+// holding the first one opens — that room's line, or the days line — and
+// nothing else does. (The clock here stands at 5:15 PM since the resume test.)
+const landedOn = [];
+dom.window.Element.prototype.scrollIntoView = function scrollIntoView() { landedOn.push(this.dataset.artist || this.className); };
+const daysLine = () => wall().querySelector(':scope > .past-line');
+
+test('the import lands on the first added pick that is on the wall — a folded one is skipped, nothing opens', () => {
+  landedOn.length = 0;
+  const card = app.landOnPicks(['Felly Fell', 'Fcukers']);
+  assert.equal(card && card.dataset.artist, 'Fcukers', 'Felly Fell (1:40–2:40, one set all weekend) is over and folded; Fcukers (4:40–5:30) is on');
+  assert.deepEqual(landedOn, ['Fcukers']);
+  assert.equal(line().getAttribute('aria-expanded'), 'false', 'the room stays folded');
+});
+
+test('every added pick folded: the fold holding the first one opens, and the wall lands there', () => {
+  landedOn.length = 0;
+  const card = app.landOnPicks(['Tricky', 'Felly Fell']);
+  assert.equal(card && card.dataset.artist, 'Tricky');
+  assert.deepEqual(landedOn, ['Tricky']);
+  assert.equal(line().textContent, 'Hide earlier', 'Saturday Portola\'s past is open');
+  assert.equal(daysLine().getAttribute('aria-expanded'), 'false', 'and only that fold');
+  click(line()); // fold it again for what follows
+});
+
+test('a pick on a day that is over: the days line opens, and the wall lands on it', async () => {
+  await settle(250);
+  landedOn.length = 0;
+  const card = app.landOnPicks(['Rau b2b Rivs']); // Thursday's afters
+  assert.equal(card && card.dataset.artist, 'Rau b2b Rivs');
+  assert.equal(daysLine().textContent, 'Hide earlier');
+  assert.equal(line().textContent.startsWith('Earlier'), true, 'Saturday\'s own fold stays shut');
+  click(daysLine());
+  await settle(250);
+});
+
+// ---- a festival switch is a new wall (Sol's review of v97) --------------------------
+// Only boot used to reset the past: switch away and back later and the sets
+// that ended since stayed unfolded, and an opened Earlier carried over.
+test('a completed festival switch judges the past again and forgets what was opened', async () => {
+  const until = async (ok) => { for (let i = 0; i < 200 && !ok(); i += 1) await settle(10); };
+  const RealDate = globalThis.Date;
+  click(line());
+  await settle(20);
+  assert.equal(line().textContent, 'Hide earlier', 'opened on Portola');
+  const later = RealDate.now() + 3 * 60 * 60 * 1000; // 4:15 PM + 3 h = 7:15 PM
+  class Later extends RealDate {
+    constructor(...a) { if (a.length) super(...a); else super(later); }
+    static now() { return later; }
+  }
+  globalThis.Date = Later;
+  try {
+    for (const target of [ACL, FID]) {
+      $('gear-btn').click();
+      await until(() => $('screen-settings').style.display !== 'none');
+      const row = [...$('settings-root').querySelectorAll('button.fest-row')].find((b) => (target === ACL ? /ACL/i : /Portola/i).test(b.textContent));
+      assert.ok(row, `Settings offers ${target}`);
+      row.click();
+      await until(() => $('screen-app').style.display !== 'none' && state.activeFestivalId === target);
+      await settle(40);
+    }
+    assert.equal(state.activeFestivalId, FID, 'back on Portola');
+    assert.equal(line().getAttribute('aria-expanded'), 'false', 'the Earlier opened before the switch is shut again');
+    assert.equal(sat().querySelector('.card[data-artist="Tove Lo"]'), null, 'Tove Lo (5:40–6:30) ended while we were away: folded now');
+    assert.ok(sat().querySelector('.card[data-artist="Robyn"]'), 'Robyn (7:10–8:10) is on');
   } finally {
     globalThis.Date = RealDate;
   }

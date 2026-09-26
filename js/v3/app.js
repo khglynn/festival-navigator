@@ -513,6 +513,44 @@ function recomputePast() {
   keepWallPlace(place, { byTime: true });
 }
 
+// Land on picks just made elsewhere (the schedule import, Phase 1 — Sol's
+// review of v97): the first of `names` that is on the wall, in the order
+// given. A pick that is over is folded and not in the page, so when none of
+// them is, the fold that holds the first one is opened — that room's line, or
+// the days line — and the wall lands there; nothing else opens. A pick in a
+// room the Show menu hid stays hidden: nothing is shown against a choice.
+// Returns the card it landed on, or null.
+export function landOnPicks(names) {
+  const root = $('wall-root');
+  const wanted = (names || []).filter(Boolean);
+  const cardOf = (n) => root.querySelector(`.card[data-artist="${CSS.escape(n)}"]`);
+  const land = (card) => { card.scrollIntoView({ block: 'center', behavior: 'auto' }); return card; };
+  for (const n of wanted) { const card = cardOf(n); if (card) return land(card); }
+  const shut = [...root.querySelectorAll('.past-line[aria-expanded="false"]')].map((l) => l.dataset.past);
+  if (!wanted.length || !shut.length) return null;
+  // Which fold holds it: open them all for one render to find out, then keep
+  // only that one open.
+  const was = new Set(ctx.pastOpen);
+  shut.forEach((k) => ctx.pastOpen.add(k));
+  repaintWall();
+  let key = null;
+  for (const n of wanted) {
+    const card = cardOf(n);
+    if (!card) continue;
+    const list = card.closest('.time-list[data-iso]');
+    const room = card.closest('.room');
+    key = card.closest('.day-block.past-day') ? 'days' : list && room ? `${list.dataset.iso}|${room.dataset.room}` : null;
+    if (key) break;
+  }
+  ctx.pastOpen.clear();
+  was.forEach((k) => ctx.pastOpen.add(k));
+  if (key) ctx.pastOpen.add(key);
+  repaintWall();
+  if (!key) return null;
+  for (const n of wanted) { const card = cardOf(n); if (card) return land(card); }
+  return null;
+}
+
 // ---- Board ↔ List (Phase 1, 2026-09-26) --------------------------------------------
 // The show menu's view row. The choice lands at once (memory and storage,
 // and the row's own words), then the switch is a small event (Kevin, the
@@ -558,6 +596,7 @@ function switchView(next) {
     keepWallPlace(place, { byTime: true });
     viewPlace = place ? { place, y: window.scrollY } : null;
     arriveBlocks(inView(root));
+    keepWallAddress(); // the address says the view it is showing (wallUrl)
   };
   sw.finish = finish;
   if (!canAnimate(root, ctx)) { finish(); return; }
@@ -915,8 +954,23 @@ function lookAround(token, doc) {
 // arrived with. /f/<id> is served by api/share.js online and by the worker's
 // precached shell offline (every navigation falls back to it), so a reload
 // there works in a field. The token stays in the hash, never the path.
+//
+// It carries the VIEW too (Phase 1, Sol's review of v97): `&view=list` while
+// this phone reads the festival as a List, nothing on the Board — so a link
+// copied from the bar, or sent with the browser's own Share, opens the way
+// the invite link does. Read for the festival the address names (the view is
+// per festival), never from ctx: coming back from a festival switch, ctx
+// still holds the last festival's until the repaint. "Seeded once" holds on a
+// reload of your own address because seeding asks the PHONE, not the link:
+// only a phone that has never shown this festival (festShownBefore — this
+// one has: its crew points at it) and has no seed marker is ever seeded, and
+// even then only the parts it has no choice of its own for; so the reload
+// shows no "Opened as a list." and never undoes a Board chosen since (which
+// also rewrote the address without the view).
 function wallUrl(token) {
-  return crew.crewLink(token, state.activeFestivalId);
+  const fid = state.activeFestivalId;
+  const list = !!fid && listOffered(state.fest()) && loadView(fid) === LIST;
+  return crew.crewLink(token, fid, null, null, list ? LIST : null);
 }
 
 function joinFromLayer() {
@@ -2380,17 +2434,14 @@ function openImport() {
     record: (name, level) => (state.getCrewToken() === token && state.activeFestivalId === fid && ctx.fid === fid && ctx.meName === me
       ? recordToolPick(name, me, level) : false),
     close: () => { if (!router.requestClose()) closeSheet(); },
-    done: (n, { stay = false, first = null } = {}) => {
+    done: (n, { stay = false, first = null, added = null } = {}) => {
       sync.scheduleSync();
       refreshCtx();
       if (stay) { repaintWall(); return; }
       // The picks are the point, so the wall opens on the first one added
       // (a closed Settings otherwise leaves the wall at its top — true of
       // every Settings close today, noted in IMPORT-BUILD.md).
-      const land = () => {
-        const card = first && document.querySelector(`#wall-root .card[data-artist="${CSS.escape(first)}"]`);
-        if (card) card.scrollIntoView({ block: 'center', behavior: 'auto' });
-      };
+      const land = () => landOnPicks(added && added.length ? added : [first]);
       const depth = router.depth();
       if (depth > 0) {
         // The browser restores the wall entry's own scroll just AFTER
@@ -2733,6 +2784,13 @@ function openSettings() {
       state.setActiveFestivalId(fid);
       state.ensureFestivalState(fid);
       state.setCurrentDay(null);
+      // A festival opened here is a new wall (Phase 1, Sol's review of v97):
+      // its past is judged now, nothing opened on the last one stays open, and
+      // the last one's view switch leaves no place behind. Only a switch that
+      // completed gets here — an abandoned one returned above.
+      ctx.pastAt = new Date();
+      ctx.pastOpen.clear();
+      viewPlace = null;
       // Drop the search query with the festival it belonged to. It used to
       // survive the switch, so arriving at a festival you had never searched
       // showed you "No artists match" over a full lineup — the app reporting an

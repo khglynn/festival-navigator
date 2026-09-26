@@ -47,10 +47,13 @@ test.after(() => shell.close());
 const { $, dom } = shell;
 for (let i = 0; i < 100 && $('screen-app').style.display === 'none'; i += 1) await settle(20);
 const state = await import('../js/state.js');
+const app = await import('../js/v3/app.js'); // the SAME instance the page booted
+const loc = dom.window.location;
 
 const click = (el) => el.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
 const menu = () => $('dock-fest-wrap').querySelector('.sort-pop');
 const parts = () => [...menu().children].map((li) => li.className || li.querySelector('button').className || li.querySelector('button').dataset.room);
+const wall = () => $('wall-root');
 const view = (v) => menu().querySelector(`.view-row [data-view="${v}"]`);
 
 test('the menu: Show, the rooms, a line, Board · List, a line, Settings — and no Earlier row', () => {
@@ -85,6 +88,11 @@ test('List: the wall switches behind the menu, which stays up — stored here, n
   assert.equal($('dock-fest-link').getAttribute('aria-expanded'), 'true', 'the menu stayed up');
   assert.notEqual(menu().style.display, 'none');
   assert.equal(dom.window.history.length, hist, 'no history entry');
+  // The address says the view too (Sol's review of v97): a link copied from
+  // the bar, or sent with the browser's own Share, opens as a List.
+  assert.equal(loc.pathname, `/f/${FID}`);
+  assert.ok(loc.hash.startsWith(`#g=${TOKEN}&f=${FID}`), 'the crew and the festival, as before');
+  assert.ok(loc.hash.endsWith('&view=list'), `the view rides the address, last (${loc.hash.replace(TOKEN, '<token>')})`);
   await settle(1500); // past the sync debounce (1.2 s)
   assert.deepEqual(sent.filter((u) => u.startsWith('/api/crew')), [], 'no sync call');
   assert.equal(JSON.stringify(state.crewDoc), docBefore, 'the crew document is untouched');
@@ -123,6 +131,39 @@ test('Board: back to the wall as it was, and the link says nothing', async () =>
   assert.ok($('wall-root').querySelector('.times-grid'), 'the grid is back');
   assert.equal($('wall-root').querySelector('.card.row'), null);
   assert.equal(localStorage.getItem(`fn_view_v1_${FID}`), null, 'Board is the default and stores nothing');
+  assert.equal(/[#&]view=/.test(loc.hash), false, 'and the address drops the view');
   click($('dock-fest-link'));
   await settle(20);
+});
+
+// "Seeded once" holds against your own address: seeding asks the PHONE (has
+// it shown this festival? is there a seed marker?), never the link alone.
+test('a reload of an address still saying List, on a phone that chose Board since: Board, and not a word', async () => {
+  history.replaceState(null, '', `/f/${FID}#g=${TOKEN}&f=${FID}&view=list`);
+  $('toast-root').textContent = '';
+  await app.boot();
+  for (let i = 0; i < 100 && $('screen-app').style.display === 'none'; i += 1) await settle(20);
+  await settle(40);
+  assert.equal(localStorage.getItem(`fn_view_v1_${FID}`), null, 'the choice made after the link stands');
+  assert.equal(wall().dataset.view, undefined, 'the Board');
+  assert.doesNotMatch($('toast-root').textContent, /Opened/, 'no "Opened as a list." — this phone was never a stranger to it');
+  assert.equal(/[#&]view=/.test(loc.hash), false, 'and the address is rewritten to what the phone shows');
+});
+
+test('a reload in List stays List, says nothing, and keeps the view in the address', async () => {
+  click($('dock-fest-link'));
+  click(view('list'));
+  await settle(30);
+  click($('dock-fest-link'));
+  $('toast-root').textContent = '';
+  await app.boot();
+  for (let i = 0; i < 100 && $('screen-app').style.display === 'none'; i += 1) await settle(20);
+  await settle(40);
+  assert.equal(wall().dataset.view, 'list');
+  assert.doesNotMatch($('toast-root').textContent, /Opened/);
+  assert.ok(loc.hash.endsWith('&view=list'));
+  click($('dock-fest-link'));
+  click(view('board'));
+  await settle(30);
+  click($('dock-fest-link'));
 });
