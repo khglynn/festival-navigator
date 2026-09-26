@@ -248,7 +248,7 @@ findings fixed; an independent Sonnet walker with real input.
   and the night clock (the stamp red, 1 skipped); browser 288 of 289 (the WebKit Tab
   skip), 0 failures. Sent to the coordinator with the review page republished.
 
-## Kevin's second round (answers relayed ~10:15 AM) — state when this session wrapped (~11 AM)
+## Kevin's second round (answers relayed ~10:15 AM) — the pick-up brief written at the false wrap (~10:50 AM)
 
 Kevin's answers, via the coordinator: ship as soon as the gate is clean, even Sunday, after
 the people menu; tomorrow-only peek, no history entry, tucked faces, grown cards, head tap,
@@ -292,3 +292,37 @@ crossfade and cover all as built. Four changes asked for; one is built.
    2–4, frames re-rendered; the head SHA goes to the coordinator, which merges, stamps and
    ships after the people menu. `live/people` has moved to 6178e38 since the last merge;
    merge it when the coordinator says so.
+
+## Kevin's second round, resumed (~11 AM — the wrap note was not meant for the builds)
+
+The coordinator relayed Kevin: the pasted wrap note "confused a bunch of yall"; op-ship
+stands ("ship as soon as the gate is clean, even Sunday"), released after the tap change,
+the people menu and the wall's left-edge fix. Built from the brief above:
+
+1. **A highlight filters the plan and its NOW** (0c9f85f). `hasAny` in plan.js (a stop's
+   whole timeline, a fork's peak crowd) and `peekOf(…, { people })`: NOW only for a stop
+   the highlighted people are in, else their next stop (MOST first), else their next
+   night's, else no peek. Rows, grown cards and forks none of them is in dim (`.dim` on
+   the row's content, `--plan-dim: .28`, the wall card's value; the row's own opacity stays the window's), faded in
+   place by `play()`. `paintNowTabs` lost its highlight exception: one NOW always — the
+   dock's comes back exactly when the peek is not saying NOW, as "what is on for Gus".
+   On Portola Sat 9:40 PM, Gus highlighted: NEXT The Great Northern ~1:30 AM, Dog Blood,
+   Soulwax and Public Works dim, his Warehouse and Audio forks stay bright (forks are
+   never the peek). The op-nowtab one-liner, for wherever it is shown: "Every filter
+   reaches NOW: hidden rooms never appear in the plan, and with a highlight on the plan
+   dims stops without those people and the peek names only stops they are at."
+2. **The welcome-style cards wait in the corner** (e5f3bde): on >=720px `.bring-offer`
+   (the welcome card and the bring-your-picks offer — the only floating cards; the
+   new-build notice is an inline strip, toasts stay centred) takes the corner card's box,
+   right and bottom 20px, 380px wide. The phone is unchanged (the cards already share the
+   strip above the dock with the peek). A browser test holds the box in both engines and
+   that the corner card rises in the same place. It found a WebKit notice that predates
+   this change ("ResizeObserver loop completed…" as the card leaves and the plan arrives,
+   the same with the card centred): the test filters it the way errlog.js already drops
+   it as noise.
+3. **A big name means most of us** (e5f3bde): the grown card carries its stop's tier, and
+   a SOME stop's card name is 14.5px (the SOME row's), NOW or not.
+4. Frames: P-highlight-gus-390, P-highlight-gus-open-390, D-highlight-gus-open-1280 added;
+   D-welcome-1280 shows the card in the corner. No review-page republish (Kevin: "good to
+   wrap without artifacts").
+5. Merged `origin/live/people` at 139c0a7 (e3c6b1b, clean); `origin/main` had nothing new.

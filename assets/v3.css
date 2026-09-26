@@ -1954,7 +1954,7 @@ button.plan-row { width: 100%; background: none; border: 0; font: inherit; color
 .plan-grow.some .sheet-card .f-name { font-size: 14.5px; }
 
 /* ---- the phone: the shelf that is the peek and the day ---------------------- */
-.plan-shelf { --plan-bg: var(--dock); --plan-dim: .3; position: fixed; left: 0; right: 0; bottom: var(--dock-h); z-index: 29;
+.plan-shelf { --plan-bg: var(--dock); --plan-dim: .28; position: fixed; left: 0; right: 0; bottom: var(--dock-h); z-index: 29;
               display: flex; flex-direction: column; max-height: calc(100dvh - var(--dock-h) - 56px);
               background: var(--dock); border-top: 1px solid var(--hairline); border-radius: 14px 14px 0 0;
               box-shadow: 0 -6px 18px rgba(0, 0, 0, .45); overflow: hidden; touch-action: none; }

@@ -200,6 +200,17 @@ stuff like that. Just make sure the filters for locations work apply here."
 4. Two synthetic tests pin the rule itself (a tie stays, a higher pick goes, nothing left
    goes, never back even for a must).
 
+## The highlight reaches the peek (built 2026-09-26, ~11 AM PT)
+
+Kevin, on the one-NOW call: "the filters should filter the now too." The route is still
+the whole crew's (rule 1; `planOf` takes no highlight). `hasAny(stop, people)` says whether
+a stop is one of theirs — anyone of them in its crowd at any slice of it (its timeline); a
+fork, in its peak crowd — and `peekOf(plan, fest, date, { people })` names only those:
+NOW if the current stop is theirs, else the next of theirs (MOST first), else the next
+night's, else nothing. The count on a NOW stays the crew's count at this minute. Pinned on
+Portola Sat 9:40 PM: Ana → NOW Dog Blood 8; Gus → NEXT The Great Northern 1:30 AM 4;
+nobody → null.
+
 ## Open questions (not settled here)
 
 1. *(Answered 2026-09-26 by main's #56 — the Late nights now have times; see the section

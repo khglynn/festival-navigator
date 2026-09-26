@@ -459,7 +459,7 @@ function snapshot() {
 // or forward when a highlight changes (v3.css .dim), the wall's dim in place.
 const DIMMED = ':scope > .plan-node, :scope > .plan-what, :scope > .plan-when, :scope > .plan-n, :scope > .sheet-card';
 
-const dimOf = (r) => Number(window.getComputedStyle(r).getPropertyValue('--plan-dim')) || 0.3;
+const dimOf = (r) => Number(window.getComputedStyle(r).getPropertyValue('--plan-dim')) || 0.28;
 function play(before, { duration, easing }) {
   if (!canAnimate(el, ctxRef)) return;
   const top = el.getBoundingClientRect().top;
