@@ -3,8 +3,9 @@
 // you already picked in — plans the bring-your-picks offer, and the
 // post-create "ONE LINK MAKES IT A CREW" share moment opened at the same
 // instant, covering the card: a real tap on "Bring it" hit the sheet. The
-// offer now waits for the share moment to close (Later, ✕, a swipe, the
-// backdrop), then arrives with its usual beat. Never both at once.
+// offer now waits for the share moment to close (Later, ✕, Escape, Back, the
+// backdrop — no grabber since 2026-09-26), then arrives with its usual beat.
+// Never both at once.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { bootShell, settle } from './helpers/shell-rig.mjs';
@@ -53,6 +54,8 @@ test('a second Portola crew is created: the share moment comes up — and the of
   $('create-go-multi').click();
   assert.notEqual(await within(2000, () => !!sheet()), null, 'the share moment is up');
   assert.match(sheet().textContent, /ONE LINK MAKES IT A CREW/);
+  assert.equal(sheet().querySelector('.grabber'), null, 'no grabber on it (Kevin, 2026-09-26): its ✕, Later and the dimmed wall close it');
+  assert.equal(sheet().firstElementChild.querySelector('.sheet-title')?.textContent, 'ONE LINK MAKES IT A CREW', 'its title row leads');
   await settle(150);
   assert.equal(offer(), null, 'the offer waits: never both at once');
 });

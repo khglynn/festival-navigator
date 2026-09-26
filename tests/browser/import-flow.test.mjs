@@ -166,6 +166,7 @@ for (const [name, get] of [['WebKit (iPhone)', () => webkit], ['Chromium (touch)
       await tapAt(page, await row.boundingBox());
       await page.waitForSelector('.import-sheet[data-import="choose"]', { timeout: 4000 });
       assert.equal(await page.locator('.import-sheet .sheet-title').textContent(), 'FROM THE PORTOLA APP');
+      assert.equal(await page.locator('.import-sheet .grabber').count(), 0, 'no grabber (Kevin, 2026-09-26): its ✕, Escape, Back and the dimmed wall close it');
       assert.equal(await page.locator('.import-sheet .imp-foot').isHidden(), true, 'nothing to add yet, so no button');
 
       // Hold the reader so the "reading" state is on screen for a moment.

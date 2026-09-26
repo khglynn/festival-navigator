@@ -10,7 +10,7 @@
  * 2026-09-25). A quick tap-tap on a card cycles its pick, and Safari read the
  * second tap as "zoom in here". `manipulation` allows panning and pinch-zoom
  * and drops only double-tap zoom; elements with their own touch-action (the
- * stage strip, the sheet grabber) keep theirs. The text-field zoom has its
+ * stage strip, the join shelf's grabber) keep theirs. The text-field zoom has its
  * own fix in index.html. */
 html { touch-action: manipulation; }
 
@@ -502,6 +502,8 @@ button.room-head { cursor: pointer; }
   animation: sheetIn .15s ease;
 }
 @keyframes sheetIn { from { opacity: 0; transform: scale(.98); } }
+/* Only the join shelf (join-shelf.js) still wears a grabber: every sheet built
+ * by notes.js sheetChrome dropped its own, drag and all (Kevin, 2026-09-26). */
 .sheet .grabber { width: 36px; height: 4px; border-radius: var(--r-pill);
                   background: var(--border-card); margin: 0 auto; flex: none;
                   touch-action: none; cursor: grab; padding: 6px 30px; background-clip: content-box; }

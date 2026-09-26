@@ -38,7 +38,7 @@ export const SHELF_WORDS = {
 
 const SHEET_ID = 'artist-sheet';   // the production sheet's id: closeSheet, quiet() and the waiters know it
 const BACK_ID = 'sheet-backdrop';
-const DRAG_CLOSE_PX = 70;          // the grabber's swipe, as the notes sheets have it
+const DRAG_CLOSE_PX = 70;          // the grabber's swipe (the notes sheets dropped theirs, 2026-09-26)
 const SETTLE_MS = 700;             // the dimmed wall under a just-risen shelf is not a door yet (card-facts.js DOOR_SETTLE_MS)
 
 function node(tag, cls, text) {

@@ -732,29 +732,12 @@ function composer(placeholder, onSave) {
   return wrap;
 }
 
+// Every sheet's head: its title and the ✕. No grabber and no drag to close
+// (Kevin, from his iPhone at Portola, 2026-09-26: "doesn't work and isn't
+// necessary" — the ✕, Escape, Back and a tap on the dimmed wall close every
+// sheet). A sheet whose head is the card (the artist's shelf) has only the
+// card's ✕. The join shelf (join-shelf.js) builds its own head.
 export function sheetChrome(sheet, titleText) {
-  const grabber = document.createElement('div');
-  grabber.className = 'grabber';
-  // The grabber advertises a swipe — so it swipes. Drag down past 70px closes.
-  let startY = null;
-  grabber.addEventListener('pointerdown', (e) => { startY = e.clientY; grabber.setPointerCapture(e.pointerId); });
-  grabber.addEventListener('pointermove', (e) => {
-    if (startY === null) return;
-    const dy = Math.max(0, e.clientY - startY);
-    sheet.style.transform = `translateY(${dy}px)`;
-  });
-  const release = (e) => {
-    if (startY === null) return;
-    const dy = e.clientY - startY;
-    startY = null;
-    // A drag that closes leaves the shelf where the finger let go: the way
-    // out drops it from there (closeSheet), never back up first.
-    if (dy > 70) requestSheetClose();
-    else sheet.style.transform = '';
-  };
-  grabber.addEventListener('pointerup', release);
-  grabber.addEventListener('pointercancel', () => { startY = null; sheet.style.transform = ''; });
-
   const head = document.createElement('div');
   head.style.cssText = 'display: flex; align-items: center; gap: 9px;';
   const title = document.createElement('span');
@@ -767,17 +750,8 @@ export function sheetChrome(sheet, titleText) {
   close.textContent = '✕';
   close.addEventListener('click', requestSheetClose);
   head.append(title, close);
-  sheet.append(grabber, head);
+  sheet.append(head);
   return head;
-}
-
-// A bare grabber for sheets whose header is the card itself (the ✕ lives in
-// the card's corner there — Kevin's alignment note, 2026-08-29).
-function grabberOnly(sheet) {
-  const probe = document.createElement('div');
-  sheetChrome(probe, '');
-  const grabber = probe.querySelector('.grabber');
-  sheet.appendChild(grabber);
 }
 
 // The open sheet's repaint hook: remote syncs call refreshOpenSheet() so a
@@ -968,9 +942,8 @@ function leave(sheet, backdrop) {
     leavingSheets.delete(backdrop);
   };
   backdrop.animate([{ opacity: Number.isFinite(liveO) ? liveO : 1 }, { opacity: 0 }], { duration: OUT_MS, easing: EASE_LEAVE, fill: 'forwards' });
-  // Where the sheet stands: a grabber drag's inline transform, a rise in
-  // flight, or its rest.
-  const from = sheet.style.transform || (liveT && liveT !== 'none' ? liveT : 'none');
+  // Where the sheet stands: a rise in flight, or its rest.
+  const from = liveT && liveT !== 'none' ? liveT : 'none';
   const out = phoneShelf()
     ? sheet.animate([{ transform: from }, { transform: 'translateY(100%)' }], { duration: OUT_MS, easing: EASE_LEAVE, fill: 'forwards' })
     : sheet.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'scale(.98)' }], { duration: OUT_MS, easing: EASE_LEAVE, fill: 'forwards' });
@@ -1034,8 +1007,8 @@ function openScopeSheet(scope, target, ctx, onChange, opts = {}) {
   let paintHeader = () => {};
   let headerHost = null;
   if (scope === 'artist') {
-    // The header IS the card, grown once more; the ✕ lives in its corner.
-    grabberOnly(sheet);
+    // The header IS the card, grown once more; the ✕ lives in its corner
+    // (Kevin's alignment note, 2026-08-29), and nothing sits above it.
     headerHost = document.createElement('div');
     sheet.appendChild(headerHost);
     // The shelf (the tap change, Kevin 2026-09-26): the card carries the

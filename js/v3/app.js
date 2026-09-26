@@ -2524,8 +2524,8 @@ function openShareMoment() {
   const sheet = document.createElement('div');
   sheet.className = 'sheet';
   sheet.id = 'artist-sheet'; // closeSheet + the router's sheet kind own this id
-  // The shared chrome from notes.js — grabber that really swipes, title, and a
-  // real ✕. This sheet used to hand-copy the markup, which is exactly how it
+  // The shared chrome from notes.js — the title and a real ✕ (no grabber
+  // since 2026-09-26: the ✕, Escape, Back and the dimmed wall close it). This sheet used to hand-copy the markup, which is exactly how it
   // drifted into having no close button and no dialog semantics while looking
   // pixel-identical to the ones that do.
   sheetChrome(sheet, 'ONE LINK MAKES IT A CREW');
@@ -2577,7 +2577,7 @@ function openShareMoment() {
   later.textContent = 'Later';
   later.addEventListener('click', () => { if (!router.requestClose()) closeSheet(); });
   actionsRow.appendChild(later);
-  sheet.append(sub, linkRowEl, actionsRow); // chrome (grabber + title + ✕) is already on
+  sheet.append(sub, linkRowEl, actionsRow); // chrome (title + ✕) is already on
   dialogize(sheet, 'Share your crew link');
   document.body.append(backdrop, sheet);
 }
@@ -2616,7 +2616,7 @@ function openAddMember() {
   row.append(input, addBtn);
   const status = document.createElement('div');
   status.style.cssText = 'color: var(--text-tertiary); font-size: 11.5px; font-weight: 600;';
-  sheet.append(sub, row, status); // chrome (grabber + title + ✕) is already on
+  sheet.append(sub, row, status); // chrome (title + ✕) is already on
   // Recurring humans, one tap (fests × circles × you, decision 4): the people
   // from your OTHER fests — Drew doesn't get retyped a third time.
   const others = model.otherFestPeople(
@@ -2650,8 +2650,8 @@ function openAddMember() {
     renderPersonChips();
     repaintWall();
     sheet.textContent = '';
-    // Re-chrome the success state too, or it loses the ✕ and the swipe-to-close
-    // the moment it becomes the thing you are actually looking at.
+    // Re-chrome the success state too, or it loses the ✕ the moment it
+    // becomes the thing you are actually looking at.
     sheetChrome(sheet, `${canonical.toUpperCase()} IS IN`);
     const explain = document.createElement('div');
     explain.style.cssText = 'color: var(--text-secondary); font-size: 12.5px; line-height: 1.55;';
