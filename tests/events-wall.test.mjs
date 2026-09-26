@@ -793,9 +793,11 @@ test('picks on a stack card keep cycling across the sync-echo repaint; the who-r
   // click that meant "one more bar" picks, and opens nothing (DOOR_SETTLE_MS).
   // A MOUSE's click — its press first: the beat is about a pointer (a key's or
   // an assistive activation names the door it means, card-facts.js clickHand).
-  document.dispatchEvent(new dom.window.PointerEvent('pointerdown', { bubbles: true, pointerType: 'mouse' }));
+  const door = overlay().querySelector('.f-links a.f-link');
+  door.dispatchEvent(new dom.window.PointerEvent('pointerdown', { bubbles: true, pointerType: 'mouse' }));
+  door.dispatchEvent(new dom.window.PointerEvent('pointerup', { bubbles: true, pointerType: 'mouse' }));
   const early = new dom.window.MouseEvent('click', { bubbles: true, cancelable: true });
-  overlay().querySelector('.f-links a.f-link').dispatchEvent(early);
+  door.dispatchEvent(early);
   assert.equal(level('Gelli Haha'), 1, 'a door the pick just slid under the hand picks');
   assert.ok(early.defaultPrevented, 'and does not open its page');
   // Once the zoom has settled, every door is a door again, and none picks.

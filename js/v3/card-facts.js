@@ -880,7 +880,20 @@ export const fingerHand = () => lastInput === 'pointer' && (lastPointerType === 
 // is the browser's own click for Enter or Space on a native button or link:
 // 'keyboard'. Enter or Space on a CARD picks through its keydown and never
 // clicks. Kept per event: clickHand(e), read by whoever handles that click.
-let pendingPress = null;   // the pointer press no click has answered yet: 'finger' | 'mouse'
+// A press is { hand, target, up: { target, at } | null }. A click answers it
+// only as the browser pairs them (Sol 6's re-review, 2026-09-26): the press
+// has LIFTED, recently (a mouse's click comes in the lift's own turn; WebKit's
+// synthetic click after a finger comes a moment later), and the click lands
+// where the press and the lift both were — the element, or the ancestor the
+// browser sends a click to when the press and the lift were on different
+// things. Anything else — a press abandoned without a click (a drag off the
+// window, a scrollbar), a press still held — answers nothing, so a later
+// assistive activation is never taken for that old press's hand.
+let pendingPress = null;   // the pointer press no click has answered yet
+const ANSWER_MS = 600;     // a lift older than this answers no click
+const pressAnswers = (p, e) => !!p && !!p.up && performance.now() - p.up.at <= ANSWER_MS
+  && e.target && typeof e.target.contains === 'function'
+  && e.target.contains(p.target) && e.target.contains(p.up.target);
 let keyActivation = false; // an Enter or Space whose click may still come
 const clickHands = new WeakMap();
 export function clickHand(e) {
@@ -953,12 +966,15 @@ if (typeof document !== 'undefined') {
   document.addEventListener('pointerdown', (e) => {
     lastInput = 'pointer';
     lastPointerType = e.pointerType || 'mouse';
-    pendingPress = lastPointerType === 'mouse' ? 'mouse' : 'finger';
+    pendingPress = { hand: lastPointerType === 'mouse' ? 'mouse' : 'finger', target: e.target, up: null };
     if (e.pointerType === 'mouse') touchAt = [];
     else fingerAt(e);
     sayHand();
   }, { passive: true, capture: true });
-  document.addEventListener('pointerup', (e) => { if (e.pointerType !== 'mouse') fingerAt(e); }, { passive: true, capture: true });
+  document.addEventListener('pointerup', (e) => {
+    if (e.pointerType !== 'mouse') fingerAt(e);
+    if (pendingPress) pendingPress.up = { target: e.target, at: performance.now() };
+  }, { passive: true, capture: true });
   // A press that became a scroll or a gesture answers no click.
   document.addEventListener('pointercancel', () => { pendingPress = null; }, { passive: true, capture: true });
   document.addEventListener('keydown', (e) => {
@@ -972,8 +988,8 @@ if (typeof document !== 'undefined') {
   // Space clicks a button on its keyup; after that, a click is not the key's.
   document.addEventListener('keyup', () => { if (keyActivation) setTimeout(() => { keyActivation = false; }, 0); }, { passive: true, capture: true });
   document.addEventListener('click', (e) => {
-    const h = pendingPress || (keyActivation ? 'keyboard' : 'assistive');
-    pendingPress = null;
+    const h = pressAnswers(pendingPress, e) ? pendingPress.hand : keyActivation ? 'keyboard' : 'assistive';
+    pendingPress = null; // a click ends whichever press was waiting, answered or not
     keyActivation = false;
     clickHands.set(e, h);
     if (h === 'assistive') sayHand('assistive');

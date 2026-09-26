@@ -700,6 +700,7 @@ test('the now mark survives the ticker and a pick — the shell reads the wall\'
     // A mouse's pick, press and all: a click with no press of its own is an
     // assistive activation, which opens the card instead (the tap change).
     first.dispatchEvent(new dom.window.PointerEvent('pointerdown', { bubbles: true, pointerType: 'mouse' }));
+    first.dispatchEvent(new dom.window.PointerEvent('pointerup', { bubbles: true, pointerType: 'mouse' }));
     first.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
     assert.deepEqual(marked(), playing, 'and a pick keeps every mark, the picked card included');
     const fresh = $('wall-root').querySelector(`.card[data-artist="${playing[0]}"].now`);

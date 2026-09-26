@@ -331,8 +331,9 @@ test('a press that became a scroll answers no click: the next pointerless click 
   b.click();
   assert.equal(hand, 'assistive');
   b.dispatchEvent(new window.PointerEvent('pointerdown', { bubbles: true, pointerType: 'mouse' }));
+  b.dispatchEvent(new window.PointerEvent('pointerup', { bubbles: true, pointerType: 'mouse' }));
   b.click();
-  assert.equal(hand, 'mouse', 'a click answers the press before it');
+  assert.equal(hand, 'mouse', 'a click answers the press (and lift) before it');
   b.click();
   assert.equal(hand, 'assistive', 'once: a second click has no press of its own');
   b.remove();
@@ -393,4 +394,53 @@ test('a centred dialog (an iPad, ≥720) centres in what the keys leave, never s
     window.matchMedia = mm;
   }
   await closeShelf();
+});
+
+// Sol 6's re-review (2026-09-26): a click answers only the press the browser
+// pairs it with — lifted, just now, where the press and the lift both were.
+test('an abandoned press answers no later click: the assistive activation that follows opens the shelf, never picks', async () => {
+  const before = level('Robyn');
+  const el = cardOf('Robyn');
+  // A mouse press on the card that never became a click (dragged off the
+  // window, released nowhere the page hears)…
+  el.dispatchEvent(new window.PointerEvent('pointerdown', { bubbles: true, pointerType: 'mouse' }));
+  await settle(10);
+  // …then VoiceOver's double-tap on the same card: a click, no press of its own.
+  el.click();
+  await settle(20);
+  assert.ok(shelf(), 'the shelf, not a pick: the held press answers nothing');
+  assert.equal(level('Robyn'), before, 'nothing picked unseen');
+  await closeShelf();
+  // A press that DID lift, but long ago, answers nothing either.
+  el.dispatchEvent(new window.PointerEvent('pointerdown', { bubbles: true, pointerType: 'mouse' }));
+  el.dispatchEvent(new window.PointerEvent('pointerup', { bubbles: true, pointerType: 'mouse' }));
+  const now = performance.now;
+  performance.now = () => now.call(performance) + 5000; // the click comes seconds after that lift
+  try { cardOf('Robyn').click(); } finally { performance.now = now; }
+  await settle(20);
+  assert.ok(shelf(), 'a stale lift is not this click\'s press');
+  assert.equal(level('Robyn'), before);
+  await closeShelf();
+});
+
+test('a press on one card released on another: the click goes to what holds both, and neither card opens or picks', async () => {
+  const a = cardOf('Robyn');
+  const b = cardOf('Dog Blood');
+  const ra = level('Robyn');
+  const rb = level('Dog Blood');
+  const { clickHand } = await import('../js/v3/card-facts.js');
+  a.dispatchEvent(new window.PointerEvent('pointerdown', { bubbles: true, pointerType: 'mouse' }));
+  b.dispatchEvent(new window.PointerEvent('pointerup', { bubbles: true, pointerType: 'mouse' }));
+  // The browser sends that click to the nearest thing holding both cards.
+  let common = a.parentElement;
+  while (common && !common.contains(b)) common = common.parentElement;
+  let hand = null;
+  const hear = (e) => { hand = clickHand(e); };
+  common.addEventListener('click', hear, { once: true });
+  common.click();
+  await settle(20);
+  assert.equal(hand, 'mouse', 'it is the mouse\'s click (it answers that press)');
+  assert.equal(shelf(), null, 'no shelf');
+  assert.equal(level('Robyn'), ra, 'the first card: nothing');
+  assert.equal(level('Dog Blood'), rb, 'the second card: nothing');
 });

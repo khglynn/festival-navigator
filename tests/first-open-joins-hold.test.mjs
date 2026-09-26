@@ -93,6 +93,7 @@ const typeName = (v) => { const f = shelf().querySelector('.js-field'); f.value 
 const clickCard = (artist) => {
   const c = cardOf(artist);
   c.dispatchEvent(new shell.dom.window.PointerEvent('pointerdown', { bubbles: true, pointerType: 'mouse' }));
+  c.dispatchEvent(new shell.dom.window.PointerEvent('pointerup', { bubbles: true, pointerType: 'mouse' }));
   c.click();
 };
 

@@ -107,7 +107,11 @@ const buttonNamed = (root, label) => [...root.querySelectorAll('button')].find((
 const crewWrites = (t) => writes.filter((w) => w.url.startsWith('/api/crew') && w.url.includes(t));
 // The hand behind a press (card-facts.js reads it): a mouse click asks on the
 // shelf; a finger's tap on a resting card opens its zoom first.
-const press = (el, pointerType) => el.dispatchEvent(new shell.dom.window.PointerEvent('pointerdown', { bubbles: true, pointerType }));
+// A press and its lift, as every pointer's click comes (a click answers only a press that lifted — card-facts.js clickHand).
+const press = (el, pointerType) => {
+  el.dispatchEvent(new shell.dom.window.PointerEvent('pointerdown', { bubbles: true, pointerType }));
+  el.dispatchEvent(new shell.dom.window.PointerEvent('pointerup', { bubbles: true, pointerType }));
+};
 const clickCard = (artist) => { const c = cardOf(artist); press(c, 'mouse'); c.click(); };
 const fingerTap = (el) => { press(el, 'touch'); el.click(); };
 // The join shelf.

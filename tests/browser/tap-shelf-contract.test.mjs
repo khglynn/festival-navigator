@@ -121,6 +121,10 @@ for (const [name, get] of ENGINES) {
       assert.equal(s.notesButton, false, 'no notes button of its own');
       assert.equal(await zoomUp(page), 0, 'no zoom');
       assert.equal(await level(page, 'Oskar Med K'), 0, 'a tap picks nothing');
+      // The tap's click answered the finger's press — never classed as an
+      // unpaired (assistive) activation, which would open the same shelf and
+      // hide a broken pairing (Sol 6's re-review).
+      assert.equal(await page.evaluate(() => document.documentElement.dataset.hand), 'finger', 'the click was the finger\'s');
 
       const rowY = s.plus.y;
       const plusAt = { x: s.plus.x, y: s.plus.y };
@@ -489,6 +493,45 @@ for (const [name, get] of ENGINES) {
       await sleep(400);
       assert.equal(await level(page, 'Tove Lo'), 1, '+ picked');
       assert.equal(await zoomUp(page), 0, 'no zoom');
+      assert.deepEqual(errors, []);
+    } finally { await ctx.close(); }
+  });
+}
+
+// Sol 6's re-review (2026-09-26), with real input: a mouse pressed on one
+// card and released on another sends its click to what holds both — neither
+// card opens or picks; and a press abandoned off the page, then an activation
+// with no press of its own, is never taken for that mouse (it opens the shelf).
+for (const [name, get] of ENGINES) {
+  test(`${name.split(' ')[0]}, a mouse: pressed on one card and released on another, neither opens nor picks; an abandoned press lends no hand to a later activation`, { skip: skipFor(name, get) }, async () => {
+    const { ctx, page, errors } = await memberPhone(get(), { width: 1280, height: 800, mouse: true });
+    try {
+      const a = await cardAt(page, 'Tove Lo');
+      const b = await page.evaluate(() => {
+        const el = document.querySelector('#wall-root .card[data-artist="Fcukers"]');
+        const r = el.getBoundingClientRect();
+        return { x: Math.round(r.left + r.width / 2), y: Math.round(r.top + Math.min(r.height / 2, 30)) };
+      });
+      const ta = await level(page, 'Tove Lo');
+      const tb = await level(page, 'Fcukers');
+      await page.mouse.move(a.x, a.y);
+      await page.mouse.down();
+      await page.mouse.move(b.x, b.y, { steps: 6 });
+      await page.mouse.up();
+      await sleep(500);
+      assert.equal(await page.locator('#artist-sheet').count(), 0, 'no shelf');
+      assert.equal(await level(page, 'Tove Lo'), ta, 'the card pressed: nothing');
+      assert.equal(await level(page, 'Fcukers'), tb, 'the card released on: nothing');
+      // A press on Tove Lo, dragged off the page and released out there…
+      await page.mouse.move(a.x, a.y);
+      await page.mouse.down();
+      await page.mouse.move(-40, -40, { steps: 4 });
+      await page.mouse.up();
+      await sleep(200);
+      // …then an activation with no press of its own on that card.
+      await page.evaluate(() => document.querySelector('#wall-root .card[data-artist="Tove Lo"]').click());
+      await page.waitForFunction(() => !!document.querySelector('#artist-sheet .sheet-card'), null, { timeout: 4000 });
+      assert.equal(await level(page, 'Tove Lo'), ta, 'the shelf, never a pick in that press\'s name');
       assert.deepEqual(errors, []);
     } finally { await ctx.close(); }
   });

@@ -38,6 +38,7 @@ test('a guest’s finger tap on a card takes the welcome down and opens the card
   assert.ok(document.getElementById('welcome-card'), 'the welcome is up');
   const card = document.querySelector('#wall-root .card[data-artist="Robyn"]');
   card.dispatchEvent(new shell.dom.window.PointerEvent('pointerdown', { bubbles: true, pointerType: 'touch' }));
+  card.dispatchEvent(new shell.dom.window.PointerEvent('pointerup', { bubbles: true, pointerType: 'touch' }));
   card.click();
   await settle(20);
   assert.equal(document.getElementById('welcome-card'), null, 'its words have done their job');

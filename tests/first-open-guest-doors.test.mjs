@@ -60,7 +60,11 @@ const notesShelf = () => { const s = document.getElementById('artist-sheet'); re
 const door = (sel) => notesShelf().querySelector(`.sheet-card .f-step-row > ${sel}`);
 const shelf = () => document.querySelector('.join-shelf');
 const shelfLine = () => shelf().querySelector('.js-line').textContent;
-const press = (el, pointerType) => el.dispatchEvent(new shell.dom.window.PointerEvent('pointerdown', { bubbles: true, pointerType }));
+// A press and its lift, as every pointer's click comes (a click answers only a press that lifted — card-facts.js clickHand).
+const press = (el, pointerType) => {
+  el.dispatchEvent(new shell.dom.window.PointerEvent('pointerdown', { bubbles: true, pointerType }));
+  el.dispatchEvent(new shell.dom.window.PointerEvent('pointerup', { bubbles: true, pointerType }));
+};
 const fingerTap = (el) => { press(el, 'touch'); el.click(); };
 const layers = () => (history.state && history.state.layers) || [];
 async function openCard(artist) {
