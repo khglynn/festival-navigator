@@ -15,12 +15,13 @@ import path from 'node:path';
 import { randomBytes } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { serveStatic } from '../helpers/static-server.mjs';
+import { launchWebkit } from '../helpers/browser.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const server = await serveStatic(ROOT);
 let webkit = null;
-try { webkit = await (await import('playwright')).webkit.launch({ headless: true }); } catch { /* not installed: the case skips */ }
+webkit = await launchWebkit();
 test.after(async () => { if (webkit) await webkit.close(); await server.close(); });
 
 test('WebKit: after a pick, one click on the zoom\'s notes chip opens the notes, and the zoom does not close first', { skip: webkit ? false : 'WebKit not installed' }, async () => {

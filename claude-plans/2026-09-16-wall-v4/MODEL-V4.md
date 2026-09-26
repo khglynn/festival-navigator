@@ -185,9 +185,9 @@ section says its own sub from `dayMeta[<label>].sub` if present, else nothing.
    changes, not a rethink) every row leads with what it is, then how:
    1. people chips — `Highlight a friend's picks.` / `Tap their name. Switch who you pick as in Settings.`
    2. `+ Invite someone` — `Invite your people.` / `Tap + Invite someone, or share the crew link — anyone who opens it is in, no account needed.` (the chip's words since v93, Kevin 2026-09-26 "invite, not add": it was `+ Add`)
-   3. three cards, each wearing your meter one bar fuller (2026-09-23) — `Add your color to an artist.` / `Tap it. Your bars fill each tap. 4 taps = must see.`
+   3. three cards, each wearing your meter one bar fuller (2026-09-23) — `Add your color to an artist.` / `Tap it, then +. Each + fills a bar. 4 = must see.`
    4. the who-corner marks, everyone else's (you are the meter on the left, 2026-09-23) — `Everyone else's picks land on the card.` / `Ticks are picks; a letter is a must.`
-   5. the about-corner chips — `Details and notes.` / `Hold the card. Violet = crew notes; pin one to keep it on top. Green = it's in your Spotify (connect in Settings).`
+   5. the about-corner chips — `Details and notes.` / `Open the card. Violet = crew notes; pin one to keep it on top. Green = it's in your Spotify (connect in Settings).`
    6. a run card (`Gelli Haha · ~10:30 PM`) — `**~ a guessed start time and artist order.** Based on limited intel.`
    7. the dock's fest link (`.fest-link`: the sync dot, Anton, the menu's three lines — the real component (Phase 1, 2026-09-26: the lines replaced v93's caret and the dot moved left); its label is the fixed string `ACL '26`, never the current fest's name, and inside the drill it wears `--brand`, because the fest accent's four homes do not include How it works) — `Show or hide parts of the week.` / `Tap the fest name.`
    8. the sync dot, in its three states (split from row 7 in v93: a fact of its own) — `Sync, at a glance.` / `Green dot = synced. Gray = offline (still works); red = something's wrong.`
@@ -496,6 +496,31 @@ our seasonal view". Build log:
   already shared. If the season view moves to `--col-w`, `timeGroups` is the
   shape to adopt.
 
+## 3f. A tap opens the card as a shelf, 2026-09-26 (the tap change)
+
+Kevin (2026-09-26, ~2:50 AM PT): "a tap on mobile (the one that replaced our
+long hold) show[s] the notes shelf (with full controls) rather than a zoom
+with a notes button. On desktop we should keep hover with the notes button.
+Clicking that opens the notes shelf — with no notes button."
+
+- **A finger** (the last press was touch or pen, whatever the screen width): a
+  tap on any card opens ONE shelf from the bottom — the card (name, when,
+  where, the doors out), `−` and `+` in the card's two bottom corners, level
+  with its last line (nothing between them: your level is your own chip in
+  the who-row — Kevin, 2026-09-26, the meter once there was "a 2nd copy"),
+  the thread, the composer stuck to the shelf's bottom edge. No zoom, no
+  notes button, no grabber (the ✕, Escape, Back and the dimmed wall close it).
+  `+` climbs picked ×1 → ×2 → ×3 → must and stops; `−` steps back to nothing
+  and stops. `−` and `+` never move under the finger: a first `+` that brings
+  the who-row grows the card upward. A guest's `−` / `+` / note door ask who
+  they are on the join shelf, naming the artist; only `+` carries the pick.
+  A hold is a slow tap (the long-press is gone).
+- **A mouse or a key:** unchanged. Hover (or focus) grows the zoom with its
+  `−` · note · `+`; its note door opens the same shelf; a click on a card or
+  on the zoom's body cycles the pick.
+- Build log, the product calls and the rollback:
+  `claude-plans/2026-09-26-unified-build/TAP-BUILD.md`.
+
 ## 4. Notes: artist, fest, dates (Kevin, 2026-09-17 — "a defensible MVP")
 
 Three scopes, three doors. The `+ ✎` / `n ✎` chips on the day rule and on
@@ -503,9 +528,10 @@ every section header are removed (`dayHeader` and `sectionHeader` lose their
 `onOpenNotes` option). **Section notes are gone:** no door, no whisper, no
 sheet section for `Afters` / `Folsom` / `Late nights` as targets.
 
-- *An artist:* hold (touch) or hover (mouse) the card → `+ note` on the
-  grown card; a card that already has notes also opens from its corner chip.
-  Unchanged; one thread per artist wherever they play.
+- *An artist:* a finger's tap opens the artist's shelf, the thread under the
+  card (§3f); a mouse hovers the card → `+ note` on the grown card; a card
+  that already has notes also opens from its corner chip. One thread per
+  artist wherever they play.
 - *A date:* day notes are keyed by the **ISO date** (`notes.day["2026-09-26"]`),
   a new, additive key. The wall's day rule (a real date under V4 — a grid
   day, an afters night, an ACL tab, a Late nights date-rule) carries the

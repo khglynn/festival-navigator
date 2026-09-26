@@ -386,7 +386,7 @@ async function buildDayCanvas(day, ctx, dayLabel) {
   const grid = el('div', 'display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;');
   // lowPower ctx: grain + animation lean on mix-blend / keyframes that
   // html2canvas renders unreliably — the flat aura is the honest export.
-  const exportCtx = { ...ctx, lowPower: true, onOpenNotes: null, onTap: () => {} };
+  const exportCtx = { ...ctx, lowPower: true, onOpenNotes: null, onHold: null, onTap: () => {} };
   for (const a of dayArtistsFor(day)) grid.appendChild(renderCard(a.name, exportCtx, { time: a.time, occ: a.occ }));
   node.appendChild(grid);
   node.appendChild(el('div', 'margin-top: 18px; color: #877FA4; font-size: 12px; font-weight: 700; letter-spacing: .08em;', `${state.crewName().toUpperCase()} · FESTIVAL NAVIGATOR`));

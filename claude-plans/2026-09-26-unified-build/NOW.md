@@ -1,22 +1,26 @@
 # NOW — the unified build (arc)
 
-**last-updated: 2026-09-26 5:50 AM PT · mode: arc** · plan: `PLAN.md` beside this
+**last-updated: 2026-09-26 6:50 AM PT · mode: arc** · plan: `PLAN.md` beside this
 (+ `REVIEW-1.md`, and Kevin's calls at the top of PLAN.md) · live-ops rules:
 `claude-plans/2026-09-25-portola-live/RUNBOOK.md` · started as an hg-durable-build.
 
 ## Where it stands
 
-- v96 is live (5:36 AM PT): NOW in the day row, the Show menu popover, Invite
-  someone, Portola-app import, link previews from the address bar.
-- **Phase 1 — List view + menu bar** (`live/list`, log `LIST-BUILD.md`): built,
-  review round fixed (stacked rooms' rings follow the Board's next-start rule;
-  no name clamp), main merged, stamped festival-nav-v97. Releasing now.
-- **Tap change** (`live/tap`, `TAP-BRIEF.md`): built with its review round and
-  an independent walk; waits for Kevin's iPhone test on a preview, then ships
-  alone with its rollback section.
-- **Our plan** (`live/plan`, sibling session, `OUR-PLAN-HANDOFF.md`): phone
-  peek + day plan and the laptop panel built; it hands me a gated head.
-- **People menu + Invite sheet**: brief next, after v97 ships.
+- **Phase 1 — List view + menu bar: SHIPPED** as v97 (6:42 AM PT, PR #54;
+  log `LIST-BUILD.md`). Two Sol nits and the Board's in-room fold are LEDGER
+  follow-ups.
+- **Tap change** (`live/tap`, `TAP-BRIEF.md` / `TAP-BUILD.md`): built, walked,
+  Opus-reviewed; Sol found a VoiceOver route, the composer's ride over the iOS
+  keyboard and a one-time-line nit — fixing. Then a preview with a demo crew for
+  Kevin's iPhone; ships alone after his OK.
+- **People menu + Invite sheet** (`live/people`, `PEOPLE-BRIEF.md`): building
+  (Opus); leaves a slot for Our plan's row.
+- **Our plan** (`live/plan`, sibling session, `OUR-PLAN-HANDOFF.md`): phone peek,
+  day plan and laptop panel built; its own review page for Kevin; gating.
+- **ACL prep** (`data/acl-prep`, `ACL-PREP-BRIEF.md`, round two
+  `ACL-PREP-ROUND2.md`): Late nights times; round two makes sure no guess is
+  later than the show and fixes `guess-run-times` for date-keyed sections. The
+  Zilker headliners' ends print nowhere — a code rule, decided separately.
 
 ## Order (Kevin: "smart dev order please")
 
@@ -29,6 +33,6 @@ and the moment lens; add-an-event stays banked (`claude-plans/2026-09-02-add-a-s
 
 ## Next step
 
-Push v97's PR, start Sol's re-review of the delta and an independent walker,
-merge on green, smoke. Then merge main into `live/tap` for the preview link
-Kevin tests, and write the people-menu brief.
+Tap: Sol's round → merge main → preview + demo crew → Kevin's iPhone test.
+People and Our plan: gate each as it lands, release in the order they come
+clean. ACL: review round two's rooms before merging the data.

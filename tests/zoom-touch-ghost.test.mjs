@@ -155,22 +155,24 @@ test('a desktop that never sees a finger hovers exactly as before', async () => 
   assert.equal(zoom.zoomedCard(), card);
 });
 
-test('a long-press still zooms the card the finger holds', async () => {
-  // The rule gates the MOUSE route only; the touch route is renderCard's
-  // hold timer (500ms), which a ghost never touches.
+test('a finger held on a card, then lifted, grows nothing — and its ghost at the lift point grows nothing either', async () => {
+  // The long-press went with the tap change (2026-09-26): a hold is a slow
+  // tap, and the tap opens the card's shelf (app.js), never a zoom. What is
+  // left for this module is the ghost rule, which matters more than ever: the
+  // mouse-type events WebKit sends where the finger lifted must not grow the
+  // card the finger just opened.
   const ctx = makeCtx();
-  let peeked = null;
-  ctx.onPeek = (artist, el, occ) => { peeked = el; zoom.zoomCard(el, artist, ctx, { source: 'touch', occ }); };
   const card = mountCard(ctx);
-  // jsdom has no layout: offsetParent is null for everything, which the hold
-  // timer reads as "hidden". Give this one card a parent.
+  wire(card, ctx);
   Object.defineProperty(card, 'offsetParent', { get: () => document.body });
   press(card, 'touch', 120, 300);
-  enter(card, 120, 300);
   await wait(560);
   card.dispatchEvent(pointerEvent('pointerup', { pointerType: 'touch', clientX: 120, clientY: 300 }));
-  assert.equal(peeked, card, 'the hold grew the card it was on');
-  assert.equal(zoom.zoomedCard(), card);
+  assert.equal(zoom.zoomedCard(), null, 'no long-press zoom');
+  enter(card, 120, 300);
+  move(120, 300, card);
+  await wait(INTENT);
+  assert.equal(zoom.zoomedCard(), null, 'the ghost at the lift point is not a hand');
 });
 
 void window;

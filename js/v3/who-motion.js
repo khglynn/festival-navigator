@@ -8,8 +8,9 @@
 // on every pick. This module owns ONLY the who-row's side of that: before the
 // rebuild the refresh takes `whoSnapshot(card)`; after it, `whoMotion(card,
 // before)` returns the animations, which the refresh keeps with its own (so
-// the next pick cancels them together). The bloom, the way out, hover and the
-// long-press never pass through here.
+// the next pick cancels them together). The notes shelf's card calls it the
+// same way on a − / + (card-facts.js refreshSheetCard). The bloom, the way out
+// and hover never pass through here.
 //
 // The law (2026-08-30): one rendering of every fact. A name is a fact; a chip's
 // fill is not. So a name that is still shown is FLIPped as the new row's node,

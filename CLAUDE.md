@@ -239,8 +239,21 @@ Non-inferable facts only (the code answers everything else — read it).
   hover-out could close. card-facts.js tracks the last keydown/pointerdown
   at the document (capture); `tests/zoom-modality.test.mjs` pins it and the
   real-browser contract (`npm run test:browser`, CI job `browser`) drives
-  Kevin's sequences with real input against gallery.html. The long-press
-  ignores mouse pointers for the same reason (a held button is a slow click).
+  Kevin's sequences with real input against gallery.html. What a press on
+  a card MEANS asks the same module (`clickHand(e)`, the tap change,
+  2026-09-26), which believes the click's own pointerType where engines tell
+  the truth — 'touch'/'pen' a finger, '' a key this turn or an assistive
+  activation — and never its 'mouse': WebKit types a finger's click "mouse"
+  (every iPhone; WebKit bug 324397), so a 'mouse' click, or one with no
+  pointerType (Safari before 18.2), is judged by the press it answers, per
+  pointer. A finger opens the card's notes shelf (its facts, − and + in
+  its bottom corners, the thread — the one place a finger picks); a click
+  with no pointer and no key (VoiceOver, Switch Control) opens it too; a
+  mouse click or Enter picks. Diagnostics says the hand and what decided it
+  (`hand`, `handBy`). There is no long-press: a hold is a slow tap,
+  and an engine that turns it into `contextmenu` (Android) opens the same
+  shelf. Every sheet rides the iOS keyboard through one helper, notes.js
+  `rideKeys`.
   The hover route has the mirror trap (2026-09-23): WebKit follows a touch
   tap with MOUSE-type pointer events at the spot the finger lifted — a
   click, then pointerenter on the fresh card a pick swaps in — so

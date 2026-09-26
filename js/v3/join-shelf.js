@@ -15,8 +15,9 @@
 // waiting pick — are app.js's joinAnswers, the same code the full-screen join
 // screen runs. Claiming takes two taps on purpose (the name, then "I'm Maya"):
 // one tap to claim is how friends ended up picking as somebody else.
-import { GROW_MS, OUT_MS, CASCADE_MS, STAGGER_MS, EASE_ARRIVE, EASE_LEAVE, canAnimate } from './motion.js';
+import { GROW_MS, OUT_MS, CASCADE_MS, STAGGER_MS, EASE_ARRIVE, EASE_LEAVE, EASE_SURFACE, canAnimate } from './motion.js';
 import { focusQuietly } from './card-facts.js';
+import { rideKeys } from './notes.js';
 
 // `line` names the artist the guest touched and what the tap meant: + (or a
 // card) is a pick, and the pick lands after the join; − and the notes door
@@ -44,7 +45,8 @@ export const SHELF_WORDS = {
 
 const SHEET_ID = 'artist-sheet';   // the production sheet's id: closeSheet, quiet() and the waiters know it
 const BACK_ID = 'sheet-backdrop';
-const DRAG_CLOSE_PX = 70;          // the grabber's swipe, as the notes sheets have it
+const DRAG_CLOSE_PX = 70;          // the grabber's swipe (the notes sheets dropped theirs, 2026-09-26)
+const SETTLE_MS = 700;             // the dimmed wall under a just-risen shelf is not a door yet (card-facts.js DOOR_SETTLE_MS)
 
 function node(tag, cls, text) {
   const n = document.createElement(tag);
@@ -176,27 +178,11 @@ export function showJoinShelf({ artist = null, intent = 'pick', people = [], off
 
   // ---- the keyboard ------------------------------------------------------------------
   // The names give way to the field — one sideways line instead of rows, the
-  // same height for 6 people or 12 — and the shelf rides on top of the keys:
-  // a fixed sheet sits at the LAYOUT viewport's bottom, which on iOS is
-  // behind the keyboard, so its bottom edge follows the visual viewport.
+  // same height for 6 people or 12 — and the shelf rides on top of the keys
+  // (notes.js rideKeys: one ride for every sheet, the notes shelf's too).
   field.addEventListener('focus', () => sheet.classList.add('typing'));
   field.addEventListener('blur', () => sheet.classList.remove('typing'));
-  const vv = typeof window !== 'undefined' ? window.visualViewport : null;
-  const fitKeys = () => {
-    if (!sheet.isConnected) { unfit(); return; }
-    const keys = Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop));
-    sheet.style.bottom = keys > 40 ? `${keys}px` : '';
-    sheet.style.maxHeight = keys > 40 ? `${Math.max(200, Math.round(vv.height) - 12)}px` : '';
-  };
-  const unfit = () => {
-    if (!vv) return;
-    vv.removeEventListener('resize', fitKeys);
-    vv.removeEventListener('scroll', fitKeys);
-  };
-  if (vv) {
-    vv.addEventListener('resize', fitKeys);
-    vv.addEventListener('scroll', fitKeys);
-  }
+  const unfit = rideKeys(sheet);
 
   // More names than three rows hold: a soft fade says the list goes on.
   const edge = () => namesWrap.classList.toggle('more', !sheet.classList.contains('typing')
@@ -239,7 +225,17 @@ export function showJoinShelf({ artist = null, intent = 'pick', people = [], off
     if (onLook) onLook();
   };
   look.addEventListener('click', leave);
-  back.addEventListener('click', leave);
+  // The dimmed wall is where the finger WAS a beat ago: the shelf this
+  // question replaced (a notes shelf's +, a zoom's door) stood there, and a
+  // quick second press meant for it must not drop the question it just
+  // raised (the review of the tap change: + + as a guest put the question
+  // away). The zoom's DOOR_SETTLE beat, the same still-hand law. Look around,
+  // the handle and Escape are always the way out.
+  const bornAt = typeof performance !== 'undefined' ? performance.now() : 0;
+  back.addEventListener('click', () => {
+    if (typeof performance !== 'undefined' && performance.now() - bornAt < SETTLE_MS) return;
+    leave();
+  });
   let startY = null;
   grab.addEventListener('pointerdown', (e) => { startY = e.clientY; try { grab.setPointerCapture(e.pointerId); } catch { /* synthetic */ } });
   grab.addEventListener('pointermove', (e) => {
@@ -279,7 +275,10 @@ export function showJoinShelf({ artist = null, intent = 'pick', people = [], off
   // Reduce Motion / Low Power: already there.
   if (canAnimate(sheet, ctx)) {
     back.animate([{ opacity: 0 }, { opacity: 1 }], { duration: GROW_MS, easing: 'ease-out', fill: 'backwards' });
-    sheet.animate([{ transform: 'translateY(100%)' }, { transform: 'none' }], { duration: GROW_MS, easing: EASE_ARRIVE, fill: 'backwards' });
+    // The box on the surface curve, never past its rest (an overshoot lifts
+    // its bottom edge off the screen's for a few frames); the lines keep the
+    // arrival's life — the notes shelf rises the same way (notes.js arrive).
+    sheet.animate([{ transform: 'translateY(100%)' }, { transform: 'none' }], { duration: GROW_MS, easing: EASE_SURFACE, fill: 'backwards' });
     [head, ...chips, field, actions].forEach((n, i) => n.animate(
       [{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }],
       { duration: CASCADE_MS, delay: GROW_MS / 2 + i * STAGGER_MS, easing: EASE_ARRIVE, fill: 'backwards' },
