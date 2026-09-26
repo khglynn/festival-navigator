@@ -200,3 +200,50 @@ findings fixed; an independent Sonnet walker with real input.
   menu gained Zed…": its 10ms settle after a click) with the load average at 25 from
   other sessions; that crew has no plan, so the new hook never runs there; 3 of 3
   alone and the full UTC suite again were clean.
+
+## live/people 1b678c0 and main's ACL data release #56 merged (2026-09-26, ~8:55–9:30 AM)
+
+- Merged `origin/live/people` at 1b678c0 (440c58b: one add at a time in the invite
+  sheet, no conflict, nothing of Our plan's touched) and `origin/main` at e19273c
+  (e6ded61: data release #56 — Portola's Regency rooms laid out as concerts, every ACL
+  Late night given a time, the venue registry). The arc NOW conflicted; main's text
+  kept, my line updated in place.
+- The model did not change; eight of its tests had pinned the old data. 6407881
+  re-pins each with the reason at the line: three Portola golden lines move with the
+  earlier Regency acts (Sat's Soulwax stop is now some-4, Cy leaving for Parcels at
+  10 PM); ACL has 40 Late nights rooms where it had one, and the windows test now
+  compares every ACL night (248 cards, exactly the plan's timed acts). The doors-only
+  rule moved to a synthetic festival so it stays pinned.
+- Codex (Sol, high) on 6407881: three real findings, fixed in 4971f30 — playsAt pinned
+  on the whole festival rather than a filter that repeated its own; and two overclaims
+  in the model log (Portola's Regency does open during the grid; 16 of 41 festival-date
+  Late nights acts start before the last grid window ends, not 7).
+- Found and NOT built — a product call: a Late night that starts while the grounds
+  still play sends the route across town and back (made-up crew, Sun Oct 4: Scoot Inn,
+  Tito's, Scoot Inn, T-Mobile, Scoot Inn), because rule 3 re-seats everyone at their
+  best pick every five minutes. Proposed rule and its cost: the model log's open
+  question 7; on the review page as the last call (it replaced the ACL-doors call,
+  which #56 answered).
+- Frames and both clips re-rendered on the new data (23 of 23; the day-before peek
+  says Thu ~9:30 PM, the Saturday list's Soulwax row is some-4, so the open sheet is
+  28px shorter).
+- Gate on 4971f30: unit 1199 of 1201 at three clocks (the stamp red, 1 skipped);
+  browser 287 of 289 — Our plan's Chromium flick failed with the app unchanged, at a
+  load average of 17 from other sessions (its second failure in about ten runs). The
+  cause is the harness: under `page.clock` Playwright redefines `Event.timeStamp` as
+  the fake `performance.now()` at first read, so the shelf's flick times are when each
+  listener ran, and a release landing 80 ms after the last move is a stopped hand.
+  Protocol timestamps were tried and cannot help (the clock hides them). c1b2301 makes
+  the test read back what the page's listeners saw, ask the shelf's own question of it
+  (thresholds read from plan-shelf.js), and resend a gesture the machine did not
+  deliver as a flick, up to three times; the flick is 28% of the way. An inverted flick
+  rule still fails both engines; under CPU throttling the old test failed at 8x, 10x
+  and 12x where the new one passed.
+- Codex on c1b2301: nothing real (the read-back matches the shelf's decision for these
+  gestures; a regression that stops flicks still fails). The gate on c1b2301 was
+  stopped when the coordinator said `live/people` had moved: merged 58e75fe (23bbcf2,
+  clean, openInvite and sync.js only — the menu's rebuild path untouched) and gated
+  the merged head once instead.
+- Gate on 23bbcf2 (load average up to 19 during it): unit 1203 of 1205 at UTC, Tokyo
+  and the night clock (the stamp red, 1 skipped); browser 288 of 289 (the WebKit Tab
+  skip), 0 failures. Sent to the coordinator with the review page republished.

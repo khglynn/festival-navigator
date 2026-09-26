@@ -100,7 +100,7 @@ footer{font-size:14px;color:var(--muted);display:flex;flex-direction:column;gap:
     <div class="head"><span class="sub">Festival Navigator · Sat Sep 26, morning</span></div>
     <div class="head"><span class="name"><b>Our plan</b>, built</span></div>
     <p class="lede">Your call #5 is built on the phone and the laptop. On a phone, the crew's NOW or NEXT sits just above the dock and pulls up into the whole day's plan. On a laptop it is a card in the bottom-right corner that opens into a panel beside the wall. Everything below is the real app on the real Portola lineup, with a made-up crew of nine.</p>
-    <p>It is aimed at ACL (Late nights from Tue Sep 29, Zilker Oct 2–4). The review gate has run twice: tests at three clocks, rounds of independent code review, and a real-browser walk. Since then it also opens from your avatar’s menu: “Our plan ›” is the first row below its line, as the people-menu design drew it. What it caught is under <a href="#stands">Where it stands</a>, all fixed. Eleven calls at the bottom have my pick marked. Tap to change any of them; your answers save on this page.</p>
+    <p>It is aimed at ACL (Late nights from Tue Sep 29, Zilker Oct 2–4). The review gate has run twice: tests at three clocks, rounds of independent code review, and a real-browser walk. Since then it also opens from your avatar’s menu: “Our plan ›” is the first row below its line, as the people-menu design drew it. What it caught is under <a href="#stands">Where it stands</a>, all fixed. This morning’s ACL data also landed: every Late night now has a time, so the plan can place them. That raised one new question, the last call at the bottom. Eleven calls there have my pick marked. Tap to change any of them; your answers save on this page.</p>
   </header>
 
   <section>
@@ -201,8 +201,8 @@ footer{font-size:14px;color:var(--muted);display:flex;flex-direction:column;gap:
 
 <div class="col" style="margin-top:52px">
   <section>
-    <div class="head"><span class="name">Your calls</span><span class="sub">10 · tap to answer · saved here</span></div>
-    <p class="note">Each one is built the way "my pick" says. Changing an answer changes the build.</p>
+    <div class="head"><span class="name">Your calls</span><span class="sub">11 · tap to answer · saved here</span></div>
+    <p class="note">The first ten are built the way "my pick" says; changing an answer changes the build. The last is not built yet: it waits for your answer.</p>
     <ol class="calls" id="calls"></ol>
     <div>
       <label for="note-extra" class="q" style="display:block;color:var(--ink);font-weight:600;margin-bottom:6px">Anything else</label>
@@ -214,11 +214,11 @@ footer{font-size:14px;color:var(--muted);display:flex;flex-direction:column;gap:
   </section>
 
   <section>
-    <div class="head" id="stands"><span class="name">Where it stands</span><span class="sub">branch live/plan · gated at 6930254, with the people menu merged in</span></div>
+    <div class="head" id="stands"><span class="name">Where it stands</span><span class="sub">branch live/plan · gated at 23bbcf2, with the people menu and this morning’s ACL data merged in</span></div>
     <div class="status">
-      <div><span class="k">Unit tests</span><span class="v">1181 of 1183 pass</span><span class="note">at three clocks: UTC, Tokyo, and a Portola night. 1 skipped; the 1 red is the app-cache stamp, which the release writes</span></div>
+      <div><span class="k">Unit tests</span><span class="v">1203 of 1205 pass</span><span class="note">at three clocks: UTC, Tokyo, and a Portola night. 1 skipped; the 1 red is the app-cache stamp, which the release writes</span></div>
       <div><span class="k">Real browsers</span><span class="v" id="browser-line">288 of 289 pass</span><span class="note">the whole suite in Chromium and WebKit, 27 of them Our plan's own, with real mouse, touch and keys. The 1 skipped is a keyboard test Safari can't run: it Tabs past buttons unless you turn on Full Keyboard Access</span></div>
-      <div><span class="k">Code review</span><span class="v">Codex, five rounds</span><span class="note">eight real findings, all fixed; the last round found nothing new</span></div>
+      <div><span class="k">Code review</span><span class="v">Codex, seven rounds</span><span class="note">eleven real findings, all fixed: eight in the build, and three in this morning’s test update for the new ACL and Portola data (tests that had to check more, and two numbers in my notes that were wrong). The last round found nothing</span></div>
       <div><span class="k">Walk</span><span class="v">41 of 42 pass</span><span class="note">an independent walker, real input, phone and laptop. The one miss was its own: a tap in Safari's engine that never took focus off the search field. With the field really left, it passes</span></div>
     </div>
     <p class="note">What the gate caught, all fixed, each with a test that fails without the fix:</p>
@@ -245,7 +245,7 @@ const CALLS = [
     why: 'The List view shipped this morning (v97); the tap change waits for your iPhone test and the people menu is still building, and Sunday is Portola’s last day. A new surface over the dock on the last day of a live festival is the risky order; ACL has a Late-nights week to shake it out.',
     options: [{ key: 'acl', label: 'Hold it for ACL', pick: true }, { key: 'clean', label: 'Ship as soon as the gate is clean, even Sunday' }, { key: 'change', label: 'Needs changes first (note)' }] },
   { id: 'op-before', q: 'Before a festival: the peek shows tomorrow’s first stop the day before, and nothing earlier.',
-    why: 'Wednesday shows “NEXT · Thu ~10:30 PM”; Tuesday shows no peek. A peek days out would sit over the dock with nothing to act on.',
+    why: 'Wednesday shows “NEXT · Thu ~9:30 PM”; Tuesday shows no peek. A peek days out would sit over the dock with nothing to act on.',
     options: [{ key: 'tomorrow', label: 'Tomorrow only, as built', pick: true }, { key: 'any', label: 'Show the first stop on any day before' }, { key: 'none', label: 'Nothing until the first night' }] },
   { id: 'op-back', q: 'With the plan open, Back does what it does from the wall today.',
     why: 'The plan adds no history entry, the house rule for popovers since the Show menu. With the plan open a Back does what it does from the wall today: it leaves the wall (to whatever the link was opened from; on Android it closes the app; on an iPhone opened from Messages there is usually nothing behind it). The grabber, a drag down, Escape, ✕ and the fest name all close it.',
@@ -271,9 +271,9 @@ const CALLS = [
   { id: 'op-deskcover', q: 'Laptop: the open panel covers the wall’s right 400px, with no dimming. The wall stays usable beside it.',
     why: 'Pushing the wall narrower would re-lay out every card at once, the motion the app avoids. A zoom keeps left of the panel, and the Spotify pill rides above the corner card.',
     options: [{ key: 'as-built', label: 'Cover, as built', pick: true }, { key: 'push', label: 'Push the wall narrower' }] },
-  { id: 'op-acl', q: 'ACL’s Late nights print only doors, so the plan has nothing for Tue Sep 29 or Thu Oct 1.',
-    why: '65 of 66 Late-nights shows list doors with no set time or close, so neither the wall’s now line nor the plan can place them. The fix is data: run the run-time guesser, which marks each guess approximate and lands as one reviewable diff. That belongs to the ACL prep the coordinator runs.',
-    options: [{ key: 'guess', label: 'Guess closes before Sep 29 (a reviewable diff)', pick: true }, { key: 'leave', label: 'Leave Late nights out of the plan' }] },
+  { id: 'op-trip', q: 'ACL: a Late night that starts while the festival is still playing can send the plan across town and back. Not built: your call.',
+    why: 'Every ACL Late night has a time since this morning, and 16 of the 41 Late-night sets on festival days start before the last festival set ends (most at 9 or 9:30, during the headliners; the Scoot Inn at 7 PM on Friday and Saturday). The plan puts each friend at their favourite pick every five minutes, so on the made-up crew Sunday reads Scoot Inn, then Zilker, the Scoot Inn, Zilker, the Scoot Inn again. My fix: a friend moves to another place only for a pick they want more, or when theirs has nothing left, and never goes back to a place they left that night. It changes the rule you approved, and it can move a few Portola lines, so I have not built it.',
+    options: [{ key: 'one-trip', label: 'Build it: move only for something better, never back', pick: true }, { key: 'grounds', label: 'Stay at the festival until your last set there, then go' }, { key: 'leave', label: 'Leave it as is' }] },
 ];
 const COLLECTION = 'decisions';
 const state = {};
