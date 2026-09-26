@@ -360,7 +360,12 @@ not a broken page. /api/ never served from cache.
 is silent-and-retried on the next open. The person token appears nowhere but
 the me link and the device's own storage.
 
-## F18 · Our plan — where most of us will be (Kevin's call #5, 2026-09-26)
+## F18 · Our picks — the night's route through everyone's picks (Kevin's call #5, 2026-09-26)
+
+People read it as **Our picks**, and a count as **5 picked** — the app's own
+word. It was drawn as "Our plan" and "5 of us" until a friend said "my picks
+are what I was interested in, not necessarily what I'm planning to go to"
+(Kevin, 2026-09-26). The code still calls it the plan (`js/v3/plan.js`, `#plan`).
 
 1. From everyone's picks, a route of stops through the night: at each moment
    the place with the most of us, if at least max(3, ⌈pickers / 4⌉) of us are
@@ -377,7 +382,7 @@ the me link and the device's own storage.
    grows it into a 400px panel from under the rail to the bottom, the wall still
    usable beside it (a zoom keeps left of it). A keyboard meets the card right
    after the rail.
-4. The people menu's Our plan › (F9) opens it too: the menu gives way and the
+4. The people menu's Our picks › (F9) opens it too: the menu gives way and the
    plan rises from its peek; from a keyboard the focus goes to the grabber.
 5. In the open plan a tap on a stop grows its card under it (the NOW stop's is
    grown already) and the row stays where the finger was; Enter does the same

@@ -106,7 +106,7 @@ test('the peek: one #plan before the dock, the NOW row in its window, the day be
   assert.equal(plan().compareDocumentPosition($('dock')) & dom.window.Node.DOCUMENT_POSITION_FOLLOWING, dom.window.Node.DOCUMENT_POSITION_FOLLOWING,
     'the dock comes after it');
   assert.equal(plan().parentElement.previousElementSibling, $('day-rail'), 'right after the day rail: a keyboard meets it before the wall');
-  assert.equal(tagged().getAttribute('aria-label'), 'Now: Dog Blood, Pier Stage, till 10:15 PM, 8 of us');
+  assert.equal(tagged().getAttribute('aria-label'), 'Now: Dog Blood, Pier Stage, till 10:15 PM, 8 picked');
   assert.equal(tagged().querySelector('.plan-what .nm').textContent, 'Dog Blood', 'the artist leads');
   assert.equal(tagged().querySelector('.plan-what .pl').textContent, 'Pier Stage', 'the place under it');
   assert.equal(tagged().querySelector('.plan-tag').textContent, 'NOW');
@@ -115,8 +115,8 @@ test('the peek: one #plan before the dock, the NOW row in its window, the day be
   assert.ok(others.length > 3, 'the rest of the day is laid out behind the window');
   assert.ok(others.every((r) => r.inert));
   const head = plan().querySelector('.plan-head .room-head');
-  assert.equal(head.querySelector('.name').textContent, 'SAT OUR PLAN', 'the wall’s head grammar');
-  assert.equal(head.querySelector('.sub').textContent, 'Sep 26 · 9 of us picking');
+  assert.equal(head.querySelector('.name').textContent, 'SAT OUR PICKS', 'the wall’s head grammar');
+  assert.equal(head.querySelector('.sub').textContent, 'Sep 26 · 9 picking');
 });
 
 test('one NOW: the dock’s NOW steps aside while the peek says NOW, and comes back for a NEXT', async () => {
@@ -125,7 +125,7 @@ test('one NOW: the dock’s NOW steps aside while the peek says NOW, and comes b
   setClock(SAT_11AM);
   await repaint();
   assert.equal(tagged().querySelector('.plan-tag').textContent, 'NEXT');
-  assert.match(tagged().getAttribute('aria-label'), /^Next: Tove Lo, Pier Stage, 5:40 PM, 6 of us$/);
+  assert.match(tagged().getAttribute('aria-label'), /^Next: Tove Lo, Pier Stage, 5:40 PM, 6 picked$/);
   assert.equal($('dock-now').hidden, false, 'a NEXT is not a NOW: the dock keeps its way to the now line');
   setClock(SAT_940);
   await repaint();
@@ -139,23 +139,27 @@ const pickDog = (times = 1) => {
   for (let i = 0; i < times; i++) pointerClick(dom.window, $('wall-root').querySelector('.card[data-artist="Dog Blood"]'), 'mouse', { engine: 'chromium' });
 };
 
-test('a pick counts at once: picking Dog Blood makes it nine of us on the peek', async () => {
+test('a pick counts at once: picking Dog Blood makes it nine picked on the peek', async () => {
   assert.ok($('wall-root').querySelector('.card[data-artist="Dog Blood"]'));
   pickDog();
   await settle(40);
-  assert.equal(tagged().getAttribute('aria-label'), 'Now: Dog Blood, Pier Stage, till 10:15 PM, 9 of us');
+  assert.equal(tagged().getAttribute('aria-label'), 'Now: Dog Blood, Pier Stage, till 10:15 PM, 9 picked');
   pickDog(4); // round the levels back to none
   await settle(40);
-  assert.equal(tagged().getAttribute('aria-label'), 'Now: Dog Blood, Pier Stage, till 10:15 PM, 8 of us');
+  assert.equal(tagged().getAttribute('aria-label'), 'Now: Dog Blood, Pier Stage, till 10:15 PM, 8 picked');
 });
 
 test('the grabber opens and closes it, Escape closes it, and neither writes history', async () => {
   const len = history.length;
   const hash = location.hash;
   const grab = plan().querySelector('.plan-grab');
+  assert.equal(grab.getAttribute('aria-label'), 'Open our picks', 'what people read it as: Our picks (Kevin, 2026-09-26)');
   grab.click();
   assert.equal(plan().dataset.state, 'open');
   assert.equal(grab.getAttribute('aria-expanded'), 'true');
+  assert.equal(grab.getAttribute('aria-label'), 'Close our picks');
+  assert.equal(plan().querySelector('.plan-head .sheet-close').getAttribute('aria-label'), 'Close our picks');
+  assert.equal(plan().getAttribute('aria-label'), 'Our picks');
   assert.equal(plan().querySelector('.plan-head').inert, false);
   assert.ok(tagged().nextElementSibling.classList.contains('plan-grow'), 'the NOW row’s card is grown under it in the day plan');
   document.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
@@ -235,13 +239,13 @@ test('a new answer under a hand waits for it: the drag keeps its place, and the 
   pointer('pointerdown', tagged(), 700);
   pointer('pointermove', plan(), 600); // up past the slop: open, under the finger
   assert.equal(document.body.dataset.busy, 'plan-drag');
-  pickDog(); // a pick lands mid-drag: the plan's answer changes (nine of us)
+  pickDog(); // a pick lands mid-drag: the plan's answer changes (nine picked)
   await settle(20);
-  assert.equal(tagged().getAttribute('aria-label'), 'Now: Dog Blood, Pier Stage, till 10:15 PM, 8 of us', 'the rows wait for the hand');
+  assert.equal(tagged().getAttribute('aria-label'), 'Now: Dog Blood, Pier Stage, till 10:15 PM, 8 picked', 'the rows wait for the hand');
   await new Promise((r) => setTimeout(r, 120)); // the hand stops, then lets go: no flick, the place decides
   pointer('pointerup', plan(), 600);
   assert.equal(plan().dataset.state, 'open', 'released open, where the finger had taken it');
-  assert.equal(tagged().getAttribute('aria-label'), 'Now: Dog Blood, Pier Stage, till 10:15 PM, 9 of us', 'and the answer that waited is drawn');
+  assert.equal(tagged().getAttribute('aria-label'), 'Now: Dog Blood, Pier Stage, till 10:15 PM, 9 picked', 'and the answer that waited is drawn');
   assert.equal(document.body.dataset.busy, undefined);
   await new Promise((r) => setTimeout(r, 450)); // the click that follows a drag is swallowed for a moment
   plan().querySelector('.plan-grab').click();
@@ -313,7 +317,7 @@ test('a highlight filters the plan and its NOW: the peek names only their stops,
   person('Gus').click(); // Gus is at none of the stops until the Great Northern
   await settle(40);
   assert.equal(tagged().querySelector('.plan-tag').textContent, 'NEXT');
-  assert.match(tagged().getAttribute('aria-label'), /^Next: The Great Northern, ~1:30 AM, 4 of us$/);
+  assert.match(tagged().getAttribute('aria-label'), /^Next: The Great Northern, ~1:30 AM, 4 picked$/);
   assert.equal($('dock-now').hidden, false, 'the peek is not saying NOW, so the dock’s NOW is the way to what is on for Gus');
   assert.ok(dogBlood().classList.contains('dim'), 'a stop Gus is not in steps back, as its card does');
   assert.ok(!tagged().classList.contains('dim'));
@@ -321,7 +325,7 @@ test('a highlight filters the plan and its NOW: the peek names only their stops,
   person('Gus').click();
   person('Ana').click(); // Ana is at Dog Blood
   await settle(40);
-  assert.equal(tagged().getAttribute('aria-label'), 'Now: Dog Blood, Pier Stage, till 10:15 PM, 8 of us', 'the count stays the crew’s');
+  assert.equal(tagged().getAttribute('aria-label'), 'Now: Dog Blood, Pier Stage, till 10:15 PM, 8 picked', 'the count stays the crew’s');
   assert.equal($('dock-now').hidden, true, 'one NOW, a highlight or not');
   assert.ok(!dogBlood().classList.contains('dim'));
   person('').click(); // everyone
@@ -330,10 +334,10 @@ test('a highlight filters the plan and its NOW: the peek names only their stops,
   you.click();
 });
 
-// The people menu is the other way in (the people-shelf design: "Our plan ›",
+// The people menu is the other way in (the people-shelf design: "Our picks ›",
 // first below the line). Opening a menu closes an open plan to its peek, so
 // the row always has somewhere to go; with no plan on screen it is not offered.
-test('the people menu’s Our plan row: above Pick as someone else, it gives way to the plan; Enter takes the focus along; no plan, no row', async () => {
+test('the people menu’s Our picks row: above Pick as someone else, it gives way to the plan; Enter takes the focus along; no plan, no row', async () => {
   await repaint();
   const you = $('dock-you');
   const menu = () => $('dock-you-wrap').querySelector('.hl-pop');
@@ -344,7 +348,7 @@ test('the people menu’s Our plan row: above Pick as someone else, it gives way
   assert.equal(you.getAttribute('aria-expanded'), 'true', 'the menu is open');
   assert.deepEqual([...menu().querySelectorAll('[data-act]')].map((b) => b.dataset.act), ['plan', 'pick-as', 'invite'],
     'first below the line, above Pick as someone else');
-  assert.equal(row().querySelector('.nm').textContent, 'Our plan');
+  assert.equal(row().querySelector('.nm').textContent, 'Our picks');
   assert.ok(row().classList.contains('plan'), 'the design’s tonal row');
   row().dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true, detail: 1 })); // a hand's tap
   assert.equal(you.getAttribute('aria-expanded'), 'false', 'the menu gave way');
@@ -401,9 +405,9 @@ test('the welcome card first: a guest’s peek waits under it and rises when it 
   await settle(60);
   assert.equal(document.getElementById('welcome-card'), null);
   assert.ok(showing(), 'the card gone, the peek rises');
-  assert.equal(tagged().getAttribute('aria-label'), 'Now: Dog Blood, Pier Stage, till 10:15 PM, 8 of us', 'a guest sees the crew’s plan');
+  assert.equal(tagged().getAttribute('aria-label'), 'Now: Dog Blood, Pier Stage, till 10:15 PM, 8 picked', 'a guest sees the crew’s plan');
   $('dock-you').click();
   assert.deepEqual([...$('dock-you-wrap').querySelectorAll('.hl-pop [data-act]')].map((b) => b.dataset.act), ['plan', 'join'],
-    'a guest’s menu: Our plan, then Join the crew');
+    'a guest’s menu: Our picks, then Join the crew');
   $('dock-you').click();
 });

@@ -1918,7 +1918,7 @@ a.f-link:hover { border-bottom-color: rgba(255, 255, 255, .75); }
 /* ---- OUR PLAN (2026-09-26 — Kevin's call #5; round three's design) -----------
  * Where most of us will be, as a route of stops (js/v3/plan.js), drawn as one
  * row everywhere (js/v3/plan-rows.js): the node on the path · what and where ·
- * when · how many of us. On the phone it is ONE element (#plan, plan-shelf.js)
+ * when · how many picked it. On the phone it is ONE element (#plan, plan-shelf.js)
  * laid out at its open height and shown through a window: the peek is the
  * grabber and the tagged row above the dock; dragging it up opens the day.
  * Brand only — the accent's four homes do not include this. */
@@ -1997,7 +1997,7 @@ button.plan-row { width: 100%; background: none; border: 0; font: inherit; color
 .plan-row.dim > .plan-node, .plan-row.dim > .plan-what, .plan-row.dim > .plan-when, .plan-row.dim > .plan-n,
 .plan-grow.dim > .sheet-card { opacity: var(--plan-dim); }
 
-/* 4 · how many of us */
+/* 4 · how many picked it ("5 picked") */
 .plan-n { justify-self: end; white-space: nowrap; color: var(--text-tertiary); font-size: 10px; font-weight: 700; }
 .plan-n b { font-family: var(--font-display); letter-spacing: var(--track-display); font-weight: 400; font-size: 17px;
             color: var(--text-primary); margin-right: 3px; }
