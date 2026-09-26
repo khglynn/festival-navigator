@@ -43,8 +43,8 @@ for (const n of plan.nights) {
   const route = plan.night(n.id);
   console.log(`\n== ${n.wd} ${n.id} (${route.stops} stops)`);
   for (const it of route.items) {
-    if (it.kind === 'scattered') { console.log(`   ··· ${q(it.from)}–${q(it.to)}`); continue; }
-    const what = `${it.place.place}${it.place.kind !== 'room' ? ` (${it.acts[0].name})` : ''}`;
+    if (it.kind === "scattered") { console.log(`   ··· ${q(it.from)}–${q(it.to)}${it.dropIn ? ` (drift: ${it.dropIn.place.place} ${it.dropIn.count})` : ""}`); continue; }
+    const what = `${it.place.place}${it.place.kind !== "room" ? ` (${it.place.acts[0].name})` : ""}`;
     const extra = it.kind === 'stop' ? '' : ` [${it.kind}]`;
     console.log(`   ${it.tier || ''} ${q(it.from)}–${q(it.to)} ${it.count || ''} ${what}${extra}${it.dropIn ? ' [drop-in]' : ''}  <${(it.people || []).join(',')}>`);
     const f = it.forks ? P.forkFor(it, plan.bar) : null;

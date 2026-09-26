@@ -42,9 +42,11 @@ const placeOf = (stop) => stop.place || {};
 export const kindOf = (stop) => stop.placeKind || placeOf(stop).kind || 'set';
 const actsOf = (stop) => stop.acts || placeOf(stop).acts || [];
 const whereOf = (stop) => (typeof stop.place === 'string' ? stop.place : placeOf(stop).place) || '';
-// A stop's identity across repaints: where and when it starts. The rows'
-// FLIP and the peek's window both follow a stop by this.
-export const stopKey = (stop) => `${whereOf(stop)}|${stop.from}`;
+// A stop's identity across repaints: its night, where and when it starts.
+// The rows' FLIP and the peek's window both follow a stop by this. (The
+// night joined the key in the plan-days round: the open plan now holds every
+// day, and one stage at one start on two nights is two stops.)
+export const stopKey = (stop) => `${stop.nightId || ''}|${whereOf(stop)}|${stop.from}`;
 
 // The act a node and a grown card speak for: a set's own act; in a room, the
 // headliner most of the stop's people picked (else the room's first act).
@@ -118,11 +120,22 @@ function whenEl({ tag = null, text = '', soft = false }) {
   return w;
 }
 
-function countEl(n) {
+// "5 picked" for the crew; "2 of 3" under a highlight of a few (rule 10: the
+// count is of the highlighted people); nothing for a highlight of one — every
+// row is theirs, and "1 picked" says nothing.
+function countEl(n, plan = null) {
   const c = mk('span', 'plan-n');
+  const g = plan && plan.group;
+  if (g && g.length === 1) return c;
+  if (g) { c.append(mk('b', null, String(n)), `of ${g.length}`); return c; }
   c.append(mk('b', null, String(n)), 'picked');
   return c;
 }
+const countWords = (n, plan) => {
+  const g = plan && plan.group;
+  if (g && g.length === 1) return '';
+  return g ? `${n} of ${g.length}` : `${n} picked`;
+};
 
 const approxOf = (stop, picks) => {
   if (kindOf(stop) === 'set') return false;
@@ -150,8 +163,8 @@ export function stopRow(stop, opts) {
   const text = tag === 'now' ? `till ${quietClock(tillOf(stop))}` : [dayWord, start].filter(Boolean).join(' ');
   const what = whatEl(stop, { ctx, plan, also, nightLabelOf });
   if (faces && stop.tier === 'most' && !grow) what.appendChild(whoEl(stop.people || [], ctx));
-  r.append(nodeEl(actFor(stop, ctx.picks), ctx), what, whenEl({ tag, text }), countEl(count));
-  r.setAttribute('aria-label', rowWords(stop, { ctx, tag, count, text }));
+  r.append(nodeEl(actFor(stop, ctx.picks), ctx), what, whenEl({ tag, text }), countEl(count, plan));
+  r.setAttribute('aria-label', rowWords(stop, { ctx, tag, count, text, plan }));
   r.setAttribute('aria-expanded', grow ? 'true' : 'false');
   return r;
 }
@@ -171,15 +184,15 @@ export function grownEl(stop, ctx) {
 }
 
 // What a screen reader hears for a row: the whole row as one sentence.
-function rowWords(stop, { ctx, tag, count, text }) {
+function rowWords(stop, { ctx, tag, count, text, plan = null }) {
   const room = kindOf(stop) !== 'set';
   const act = actFor(stop, ctx.picks);
   const what = room ? whereOf(stop) : (act ? `${act.name}, ${whereOf(stop)}` : whereOf(stop));
   const lead = tag === 'now' ? 'Now: ' : tag === 'next' ? 'Next: ' : '';
-  return `${lead}${what}, ${text}, ${count} picked`;
+  return [`${lead}${what}`, text, countWords(count, plan)].filter(Boolean).join(', ');
 }
 
-export function forkRow(f, stop, { ctx }) {
+export function forkRow(f, stop, { ctx, plan = null }) {
   const r = mk('div', 'plan-row or');
   r.dataset.stop = `or|${stopKey(stop)}`;
   const w = mk('span', 'plan-what');
@@ -191,30 +204,87 @@ export function forkRow(f, stop, { ctx }) {
   if (where) nm.appendChild(mk('span', 'pl-inline', ` · ${where}`));
   w.appendChild(nm);
   const later = f.from >= stop.from + 30;
-  r.append(nodeEl(null, ctx), w, whenEl({ text: later ? quietClock(f.from) : '', soft: true }), countEl(f.count));
-  r.setAttribute('aria-label', `or ${name}${where ? `, ${where}` : ''}, ${f.count} picked`);
+  r.append(nodeEl(null, ctx), w, whenEl({ text: later ? quietClock(f.from) : '', soft: true }), countEl(f.count, plan));
+  r.setAttribute('aria-label', [`or ${name}${where ? `, ${where}` : ''}`, countWords(f.count, plan)].filter(Boolean).join(', '));
   return r;
 }
 
-function scatteredRow(it) {
-  const r = mk('div', 'plan-row scattered');
-  r.dataset.stop = `scattered|${it.from}`;
+// A stretch nothing gathers the bar in. Rule 9: where a drop-in room does
+// gather it, the stretch says where we drift instead — the same quiet row,
+// a truer caption ("Between sets · Despacio"), never a stop.
+function scatteredRow(it, plan = null) {
+  const r = mk('div', 'plan-row scattered' + (it.dropIn ? ' drift' : ''));
+  r.dataset.stop = `scattered|${it.nightId || ''}|${it.from}`;
   const w = mk('span', 'plan-what');
+  if (it.dropIn) {
+    const nm = mk('span', 'nm', 'Between sets');
+    nm.append(mk('span', 'pl-inline', ` · ${whereOf(it.dropIn)} till ${quietClock(it.to)}`));
+    w.appendChild(nm);
+    r.append(mk('span', 'plan-node'), w, whenEl({ text: quietClock(it.from), soft: true }), countEl(it.dropIn.count, plan));
+    return r;
+  }
   w.appendChild(mk('span', 'nm', `Scattered till ${quietClock(it.to)}`));
   r.append(mk('span', 'plan-node'), w, whenEl({ text: quietClock(it.from), soft: true }), mk('span'));
   return r;
 }
 
+// Rule 9's quiet line, once a night: a drop-in room, its whole window, and
+// how many picked it. Not a stop — no node on the path, never the peek's row,
+// never grown — the room the afternoon happens around ("drop in till 9:45 PM").
+function dropInRow(d, { ctx, plan, nowMin = null }) {
+  const r = mk('div', 'plan-row dropin');
+  r.dataset.stop = `dropin|${stopKey(d)}`;
+  const w = mk('span', 'plan-what');
+  const act = actsOf(d)[0] || null;
+  const name = act ? act.name : whereOf(d);
+  // One line, the or line's size: the room's name, then what it is — you drop
+  // in until it closes (a room at a venue says the venue after the name).
+  const nm = mk('span', 'nm', name);
+  const where = kindOf(d) === 'set' || whereOf(d) === name ? '' : ` · ${whereOf(d)}`;
+  nm.append(mk('span', 'pl-inline', `${where} · drop in till ${quietClock(d.to)}`));
+  w.append(nm);
+  const node = mk('span', 'plan-node');
+  node.setAttribute('aria-hidden', 'true');
+  if (act) {
+    const f = factsFor(act.name, ctx, act.occ || null);
+    node.style.setProperty('--drop-bg', f.background);
+  }
+  r.append(node, w, whenEl({ text: quietClock(d.from), soft: true }), countEl(d.count, plan));
+  r.setAttribute('aria-label', [`${name}${where}, drop in ${quietClock(d.from)} till ${quietClock(d.to)}`, countWords(d.count, plan)].filter(Boolean).join(', '));
+  return r;
+}
+
+// The lighter touch's repeat (the rejected alternative, for frames): the
+// route going back to a drop-in room it already stopped at.
+function backRow(it, { plan }) {
+  const r = mk('div', 'plan-row back');
+  r.dataset.stop = `back|${stopKey(it)}`;
+  const w = mk('span', 'plan-what');
+  const nm = mk('span', 'nm');
+  nm.append(mk('i', null, 'back to'), whereOf(it));
+  w.appendChild(nm);
+  r.append(mk('span', 'plan-node'), w, whenEl({ text: quietClock(it.from), soft: true }), countEl(it.count, plan));
+  return r;
+}
+
 // Two or more stops over fold into one line — the List's grammar for the
 // past (`EARLIER · N STOPS ⌄`). It is a button: it opens in place.
-function earlierRow(n, open, onToggle) {
+function earlierRow(n, open, onToggle, days = []) {
   const r = mk('button', 'plan-row earlier');
   r.type = 'button';
   r.dataset.stop = 'earlier';
   r.setAttribute('aria-expanded', open ? 'true' : 'false');
   const w = mk('span', 'plan-what');
   const nm = mk('span', 'nm');
-  nm.append('Earlier', mk('span', 'dot', ' · '), mk('b', null, `${n} ${n === 1 ? 'stop' : 'stops'}`));
+  // The wall's own words (wall.js pastLine): "Earlier · Thu · Fri", and the
+  // same line once open reads "Hide earlier". Today's stops over ride along
+  // as a count after the days they follow.
+  if (open && days.length) nm.append('Hide earlier');
+  else {
+    nm.append('Earlier');
+    for (const d of days) nm.append(mk('span', 'dot', ' · '), mk('b', null, d));
+    if (n) nm.append(mk('span', 'dot', ' · '), mk('b', null, `${n} ${n === 1 ? 'stop' : 'stops'}`));
+  }
   w.appendChild(nm);
   const chev = mk('span', 'chev');
   chev.setAttribute('aria-hidden', 'true');
@@ -224,34 +294,33 @@ function earlierRow(n, open, onToggle) {
 }
 
 // ---- the whole day ---------------------------------------------------------------
-// `route` is plan.night(id); `peek` is peekOf's answer for this night (or
-// null); `nowMin` is the clock on this night's axis (null for a night that is
-// not tonight); `grown` is the set of stop keys whose cards are grown under
-// their rows; `highlight` is the people menu's highlight — a stop or fork
-// none of them is in steps back (`.dim`, the wall card's word for the same
-// thing), and the route itself is unchanged. Returns the list element; each
-// row carries data-stop.
-export function planList(route, { ctx, plan, peek = null, nowMin = null, grown = new Set(),
-  earlierOpen = false, onEarlier = () => {}, nightLabelOf = () => '', dayWord = '', highlight = [] } = {}) {
-  const list = mk('div', 'plan-list');
-  if (!route) return list;
-  let items = route.items;
+// One night's rows: its stops (a grown card under a tapped one), their or
+// lines, the scattered stretches, and rule 9's quiet line merged in at its
+// start. `route` is plan.night(id); `peek` is peekOf's answer (its stop is
+// tagged when it is on this night); `nowMin` is the clock on this night's
+// axis (null for a night that is not tonight) — what is over is `.past`;
+// `highlight` dims the rows none of them is in (today's model; under rule 10
+// the route is already theirs and nothing dims). Returns an array of rows.
+function dayRows(route, { ctx, plan, peek = null, nowMin = null, grown = new Set(), nightLabelOf = () => '', dayWord = '', highlight = [], skip = null } = {}) {
   const rows = [];
-  const over = nowMin == null ? [] : items.filter((i) => i.kind === 'stop' && i.to <= nowMin);
-  if (over.length > 1) {
-    rows.push(earlierRow(over.length, earlierOpen, onEarlier));
-    if (!earlierOpen) items = items.filter((i) => !over.includes(i) && !(i.kind === 'scattered' && i.to <= nowMin));
-  }
+  if (!route) return rows;
   const tagged = peek && peek.stop ? stopKey(peek.stop) : null;
+  // Rule 9's quiet line leads its day: it is the room the day happens around,
+  // not a moment in it (sorted in by its start, it landed after a long stop's
+  // or line — "or SG Lewis 4:30 PM", then "Despacio 3:30 PM").
+  const items = [...(route.dropIns || []), ...route.items];
   for (const it of items) {
-    if (it.kind === 'scattered') { rows.push(scatteredRow(it)); continue; }
+    if (skip && skip(it)) continue;
+    const past = nowMin != null && it.to <= nowMin;
+    if (it.kind === 'scattered') { const r = scatteredRow({ ...it, nightId: route.id }, plan); if (past) r.classList.add('past'); rows.push(r); continue; }
+    if (it.kind === 'dropin') { const r = dropInRow(it, { ctx, plan, nowMin }); if (past) r.classList.add('past'); rows.push(r); continue; }
+    if (it.kind === 'back') { const r = backRow(it, { plan }); if (past) r.classList.add('past'); rows.push(r); continue; }
     const key = stopKey(it);
     const tag = key === tagged ? peek.tag : null;
     const r = stopRow(it, {
       ctx, plan, tag, count: tag ? peek.count : it.count, faces: true, also: true,
       grow: grown.has(key), nightLabelOf, dayWord: tag === 'next' ? dayWord : '',
     });
-    const past = nowMin != null && it.to <= nowMin;
     const dim = !hasAny(it, highlight);
     if (past) r.classList.add('past');
     if (dim) r.classList.add('dim');
@@ -263,16 +332,146 @@ export function planList(route, { ctx, plan, peek = null, nowMin = null, grown =
     }
     const f = forkFor(it, plan.bar, tag === 'now' ? nowMin : null);
     if (f) {
-      const fr = forkRow(f, it, { ctx });
+      const fr = forkRow(f, it, { ctx, plan });
       if (past) fr.classList.add('past');
       if (!hasAny(f, highlight)) fr.classList.add('dim');
       rows.push(fr);
     }
   }
-  // The path's ends are rows' nodes; a grown card after the last row carries
-  // no path of its own (v3.css).
-  const ends = rows.filter((r) => r.classList.contains('plan-row'));
-  if (ends.length) { ends[0].classList.add('first'); ends[ends.length - 1].classList.add('last'); }
+  return rows;
+}
+
+// The path's ends are rows' nodes; a grown card after the last row carries
+// no path of its own (v3.css). One path per day: a day head ends it.
+function markEnds(rows) {
+  let run = [];
+  const flush = () => {
+    const ends = run.filter((r) => r.classList.contains('plan-row') && !r.classList.contains('dropin'));
+    if (ends.length) { ends[0].classList.add('first'); ends[ends.length - 1].classList.add('last'); }
+    run = [];
+  };
+  for (const r of rows) { if (r.classList.contains('plan-day')) flush(); else run.push(r); }
+  flush();
+}
+
+// The single day (the peek's night) with its own Earlier fold — the model
+// before the plan-days round, kept for the tests that read one night.
+export function planList(route, { ctx, plan, peek = null, nowMin = null, grown = new Set(),
+  earlierOpen = false, onEarlier = () => {}, nightLabelOf = () => '', dayWord = '', highlight = [] } = {}) {
+  const list = mk('div', 'plan-list');
+  if (!route) return list;
+  const rows = [];
+  const over = nowMin == null ? [] : route.items.filter((i) => i.kind === 'stop' && i.to <= nowMin);
+  const folding = over.length > 1 && !earlierOpen;
+  if (over.length > 1) rows.push(earlierRow(over.length, earlierOpen, onEarlier));
+  rows.push(...dayRows(route, { ctx, plan, peek, nowMin, grown, nightLabelOf, dayWord, highlight,
+    skip: folding ? (i) => i.kind !== 'dropin' && i.to <= nowMin : null }));
+  markEnds(rows);
+  rows.forEach((r) => list.appendChild(r));
+  return list;
+}
+
+// ---- every day (the plan-days round, 2026-09-26) ---------------------------------
+// Kevin: "yes focus on today but scroll to all future days and include our
+// expand past days show option." The open plan lands on the peek's night and
+// keeps going: each later night under its own day head, in date order. What
+// is before it — the nights already lived and the peek night's stops over —
+// folds behind ONE line at the top, in the wall's words ("Earlier · Thu ·
+// Fri · 2 stops", open: "Hide earlier"). The peek night's own head is the
+// shelf's head while its rows lead the list; once the past is open above it,
+// it gets an in-list head like every other day.
+//   `plan`, `peek`: as planList; `from`: the night id the list lands on (the
+//   peek's); `nowMin`: the clock on that night (null when it is not tonight);
+//   `dayOf(id)` → { weekday, sub } for a night's head; `emptyWords(route)` →
+//   the line a night with no stop shows.
+// Every row carries `data-night`, which is how the shelf knows which day is
+// at the top of the view (its head and its Share follow it).
+export function planDays(plan, { ctx, peek = null, from = null, nowMin = null, grown = new Set(), earlierOpen = false,
+  onEarlier = () => {}, nightLabelOf = () => '', dayWord = '', dayOf = () => ({}), emptyWords = () => '' } = {}) {
+  const list = mk('div', 'plan-list days');
+  if (!plan || !plan.nights || !plan.nights.length) return list;
+  const ids = plan.nights.map((n) => n.id);
+  const at = Math.max(0, ids.indexOf(from));
+  const before = ids.slice(0, at);
+  const route0 = plan.night(ids[at]);
+  const overToday = nowMin == null || !route0 ? [] : route0.items.filter((i) => i.kind === 'stop' && i.to <= nowMin);
+  const rows = [];
+  const tag = (els, id) => { for (const e of els) e.dataset.night = id; return els; };
+  const hasPast = before.length > 0 || overToday.length > 0;
+  // More than three nights behind (ACL's second weekend has nine): the
+  // line names the span, not every night — "Earlier · Sep 29 – Oct 9".
+  const pastWords = before.length > 3
+    ? [`${(dayOf(before[0]) || {}).date || nightLabelOf(before[0])} – ${(dayOf(before[before.length - 1]) || {}).date || nightLabelOf(before[before.length - 1])}`]
+    : before.map((id) => nightLabelOf(id));
+  if (hasPast) rows.push(tag([earlierRow(overToday.length, earlierOpen, onEarlier, pastWords)], before[0] || ids[at])[0]);
+  const dayHead = (id, { quietPast = false } = {}) => {
+    const d = dayOf(id) || {};
+    const h = mk('div', 'plan-day room-head');
+    const name = mk('span', 'name');
+    name.append(mk('span', 'wd', d.weekday || ''));
+    h.append(name, mk('span', 'sub', d.date || ''), mk('span', 'line'));
+    if (quietPast) h.classList.add('past');
+    h.dataset.stop = `day|${id}`;
+    return h;
+  };
+  const emptyRow = (route) => {
+    const r = mk('div', 'plan-row empty');
+    r.dataset.stop = `empty|${route.id}`;
+    const w = mk('span', 'plan-what');
+    w.appendChild(mk('span', 'nm', emptyWords(route)));
+    r.append(mk('span', 'plan-node'), w, mk('span'), mk('span'));
+    return r;
+  };
+  const night = (id, { head, past = false, clock = null, fold = false }) => {
+    const route = plan.night(id);
+    if (!route) return;
+    const out = [];
+    if (head) out.push(dayHead(id, { quietPast: past }));
+    const body = dayRows(route, { ctx, plan, peek, nowMin: past ? Infinity : clock, grown, nightLabelOf, dayWord,
+      skip: fold ? (i) => i.to <= clock : null });
+    if (past) body.forEach((r) => r.classList.add('past'));
+    if (!route.stops) {
+      const e = emptyRow(route);
+      if (past) e.classList.add('past');
+      // The quiet drop-in line (if any) stays; the empty line says why there
+      // is no stop.
+      body.push(e);
+    }
+    out.push(...body);
+    rows.push(...tag(out, id));
+  };
+  // Nights after the landing one. A run of nights with nothing to show and
+  // the same reason (ACL's Mon and Tue between weekends) is ONE head and one
+  // line — "MON · TUE  OCT 5 – 6", "Nothing picked yet" — not a ladder of
+  // empty days.
+  const bare = (id) => { const r = plan.night(id); return r && !r.stops && !(r.dropIns || []).length ? r.why : null; };
+  const emptyRun = (run) => {
+    const first = dayOf(run[0]) || {};
+    const last = dayOf(run[run.length - 1]) || {};
+    const h = mk('div', 'plan-day room-head');
+    const name = mk('span', 'name');
+    name.append(mk('span', 'wd', run.map((id) => (dayOf(id) || {}).weekday || '').join(' · ')));
+    // "Oct 5 – 6"; across a month, "Sep 30 – Oct 1".
+    const [m1] = (first.date || '').split(' ');
+    const [m2, d2] = (last.date || '').split(' ');
+    const span = first.date && last.date ? `${first.date} – ${m1 === m2 ? d2 : last.date}` : '';
+    h.append(name, mk('span', 'sub', span), mk('span', 'line'));
+    h.dataset.stop = `day|${run[0]}`;
+    const e = emptyRow(plan.night(run[0]));
+    rows.push(...tag([h, e], run[0]));
+    for (const id of run.slice(1)) tag([], id);
+  };
+  if (earlierOpen) for (const id of before) night(id, { head: true, past: true });
+  night(ids[at], { head: earlierOpen && before.length > 0, clock: nowMin, fold: !earlierOpen && overToday.length > 0 });
+  const later = ids.slice(at + 1);
+  for (let i = 0; i < later.length; i++) {
+    const why = bare(later[i]);
+    let j = i;
+    while (why && j + 1 < later.length && bare(later[j + 1]) === why) j++;
+    if (j > i) { emptyRun(later.slice(i, j + 1)); i = j; continue; }
+    night(later[i], { head: true });
+  }
+  markEnds(rows);
   rows.forEach((r) => list.appendChild(r));
   return list;
 }
@@ -350,7 +549,10 @@ export function planPicks(route, { ctx, plan, nowMin = null, highlight = [], lim
 // nights share a weekday); `today`: the plan is tonight's, so the list runs
 // from now; `link`: the crew link that opens on the plan.
 export function planText(route, { ctx, plan, nowMin = null, highlight = [], fest = '', day = '', today = false, link = '' } = {}) {
-  const head = `Our crew's main picks for ${[day, fest].filter(Boolean).join(' ')}${today ? ', now till end of day' : ''}`;
+  // Under a highlight (rule 10) the lines are those people's, and still no
+  // name leaves the phone: "our" is whoever is sharing with whom.
+  const whose = plan && plan.group ? 'Our picks' : "Our crew's main picks";
+  const head = `${whose} for ${[day, fest].filter(Boolean).join(' ')}${today ? ', now till end of day' : ''}`;
   const parts = [head];
   const picks = planPicks(route, { ctx, plan, nowMin, highlight });
   if (picks.length) parts.push(picks.map((x) => x.line).join('\n'));

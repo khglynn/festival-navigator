@@ -2040,6 +2040,35 @@ button.plan-row { width: 100%; background: none; border: 0; font: inherit; color
 .plan-tag.now i { width: 4px; height: 4px; border-radius: var(--r-pill); background: var(--page); }
 .plan-tag.next { color: var(--tonal-text); box-shadow: inset 0 0 0 1px rgba(var(--brand), .55); }
 .plan-row.past { opacity: .42; }
+/* ---- the plan-days round (2026-09-26, design branch) ----------------------
+ * Every day in the open plan: an in-list day head per night after the one the
+ * list lands on (the wall's head grammar, the weekday in the header colour,
+ * the date in the sub); a night with no stop says why in one quiet line;
+ * rule 9's drop-in room is one quiet line a night; a gap it fills says so. */
+.plan-day { padding: 16px 0 4px; }
+.plan-day .wd { color: var(--text-header); }
+.plan-day.past { opacity: .42; }
+.plan-row.empty .plan-what .nm { font: var(--plan-line); color: var(--text-tertiary); font-style: italic; }
+.plan-row.empty .plan-node { visibility: hidden; }
+.plan-row.empty::before { display: none; }
+/* The drop-in room: a quiet line with a ring of its own colour, beside the
+ * path rather than on it — the rail runs through, the ring is hollow. */
+.plan-row.dropin { --plan-nm: 13px; }
+.plan-row.dropin .plan-what .nm { font-weight: 600; color: var(--text-body); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.plan-row.dropin .plan-what .nm .pl-inline { color: var(--text-tertiary); font: var(--plan-line); }
+.plan-row.dropin .plan-node { width: 9px; height: 9px; margin-top: 4px; background: var(--plan-bg, var(--dock)) !important;
+                              box-shadow: 0 0 0 1.5px rgba(var(--brand), .45), 0 0 0 4px var(--plan-bg, var(--dock)); }
+.plan-row.dropin .plan-node::after { content: ''; position: absolute; inset: 2px; border-radius: inherit; background: var(--drop-bg, none); opacity: .8; }
+.plan-row.dropin .plan-n b { font-size: 14px; color: var(--text-body); }
+.plan-row.scattered.drift .plan-what .nm { font-style: normal; }
+.plan-row.scattered.drift .plan-what .nm .pl-inline { color: var(--text-tertiary); font: var(--plan-line); }
+.plan-row.scattered.drift .plan-n b { font-size: 14px; color: var(--text-body); }
+.plan-row.back { --plan-nm: 13px; }
+.plan-row.back .plan-what .nm { font-weight: 600; color: var(--text-body); }
+.plan-row.back .plan-what .nm i { font-style: italic; color: var(--text-tertiary); font-weight: 600; margin-right: 4px; }
+.plan-row.back .plan-node { width: 7px; height: 7px; margin-top: 5px; background: var(--plan-bg, var(--dock));
+                            box-shadow: 0 0 0 1.5px rgba(var(--brand), .45), 0 0 0 4px var(--plan-bg, var(--dock)); }
+.plan-row.back .plan-n b { font-size: 14px; color: var(--text-body); }
 /* A highlight (the people menu's "just Ross") dims the stops and forks none
  * of them is in — the wall card's .dim, on the row's CONTENT: the row's own
  * opacity belongs to the peek's window and to .past, and the path through the
