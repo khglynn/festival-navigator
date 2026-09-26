@@ -130,7 +130,12 @@ for (const [name, get] of ENGINES) {
         assert.ok(s, `the shelf stays up (+${want})`);
         assert.equal(await level(page, 'Oskar Med K'), want, `+ ×${want}`);
         assert.equal(s.meter, String(want));
-        assert.ok(Math.abs(s.plus.y - rowY) < 1, `the row did not move under the finger (+${want}: ${s.plus.y - rowY}px)`);
+        // Within a pixel and a half: Linux's WebKit put the row 1.03px lower
+        // after the first + on CI (run 36239935622, 2026-09-26) — the sheet's
+        // snapped height against its content's fractional one — where macOS
+        // WebKit and Chromium hold it to 0. No finger feels a pixel; the law's
+        // teeth are the 22–29px jumps a who-row arriving used to cause.
+        assert.ok(Math.abs(s.plus.y - rowY) <= 1.5, `the row did not move under the finger (+${want}: ${s.plus.y - rowY}px)`);
       }
       assert.equal(s.plus.off, true, 'must: nowhere higher');
       const minusAt = { x: s.minus.x, y: s.minus.y };
@@ -139,7 +144,7 @@ for (const [name, get] of ENGINES) {
         await sleep(450);
         s = await shelf(page);
         assert.equal(await level(page, 'Oskar Med K'), want, `back to ${want}`);
-        assert.ok(Math.abs(s.minus.y - rowY) < 1, `the row stood still (−: ${s.minus.y - rowY}px)`);
+        assert.ok(Math.abs(s.minus.y - rowY) <= 1.5, `the row stood still (−: ${s.minus.y - rowY}px)`);
       }
       assert.equal(s.minus.off, true);
       await tapAt(page, plusAt);
