@@ -1,0 +1,84 @@
+/* Show menu: View + Past, and the past fold — design prototype (2026-09-26,
+ * over v93). Tokens only; the menu rows are the Show menu's own (.sort-pop). */
+
+/* ---- the menu ---------------------------------------------------------- */
+/* Variant "rows": View and Past are two rows of bare words — the row's name
+ * in the label grey where a room's check would be, then the two choices as
+ * plain words. The chosen word is brand (the menu's own "selected", exactly
+ * like a checked room's text); the other is the secondary grey. No pill, no
+ * box, no segmented track. Each word is its own button (44px floor). */
+.mp-pop .mp-seg { display: flex; align-items: center; gap: 2px; padding: 0 0 0 11px; }
+.mp-pop .mp-seg .mp-name { width: 44px; flex: none; color: var(--text-secondary); font-size: 10px; font-weight: 800;
+                           letter-spacing: var(--track-label); text-transform: uppercase; }
+.mp-pop .mp-opt { flex: 1 1 0; display: inline-flex; align-items: center; justify-content: flex-start; gap: 6px;
+                  padding: 8px 9px; border-radius: 8px; background: none; border: 0; font-family: inherit;
+                  color: var(--text-secondary); font-size: 13px; font-weight: 600; cursor: pointer; width: auto; }
+.mp-pop .mp-opt[aria-selected="true"] { color: rgb(var(--brand)); }
+.mp-pop .mp-opt svg { flex: none; }
+/* Variant "room": View is one row of two glyph+word choices, starting in the
+ * check column so the words line up with the rooms'. */
+.mp-room .mp-view { padding-left: 0; }
+.mp-room .mp-view .mp-opt { padding-left: 11px; }
+.mp-room .mp-past { }
+
+/* ---- the fold ------------------------------------------------------------ */
+/* One primitive everywhere: what is over, collapsed to a PEEK of its last
+ * row, fading in from nothing at the top — "a scroll to the top cuts off with
+ * a gradient". The line that opens it sits over the faded part. */
+.mp-cut { position: relative; }
+.mp-fold { position: relative; display: flex; isolation: isolate; flex-direction: column; justify-content: flex-end;
+           max-height: var(--peek); overflow: clip;
+           -webkit-mask-image: linear-gradient(to bottom, transparent 0, rgba(0,0,0,.18) 45%, rgba(0,0,0,.55) 100%);
+                   mask-image: linear-gradient(to bottom, transparent 0, rgba(0,0,0,.18) 45%, rgba(0,0,0,.55) 100%); }
+.mp-fold.open { max-height: none; -webkit-mask-image: none; mask-image: none; }
+.mp-fold-body { flex: none; }
+.mp-fold .band-grid { margin-bottom: 0; }
+.mp-fold.col { margin-bottom: 0; }
+
+/* The door: the section micro-label (10px/800/--track-label, secondary),
+ * bare — no chip — with the app's caret after it. It is a real button, so the
+ * 44px floor holds; its hit spans the peek. */
+.mp-door { position: absolute; z-index: 3; left: 0; right: 0; top: 0; width: 100%; box-sizing: border-box; height: 44px; min-height: 44px;
+           display: flex; align-items: center; gap: 6px; padding: 0 0 0 2px; background: none; border: 0;
+           font-family: var(--font-ui); cursor: pointer; text-align: left;
+           color: var(--text-secondary); font-size: 10px; font-weight: 800; letter-spacing: var(--track-label); text-transform: uppercase; }
+.mp-door .mp-caret { font-size: 11px; letter-spacing: 0; color: var(--text-tertiary); transform: rotate(180deg) translateY(-1px); }
+.mp-door[aria-expanded="true"] .mp-caret { transform: translateY(1px); }
+.mp-door.static { position: static; margin: -8px 0 -6px; }
+.mp-door .mp-count { color: var(--text-tertiary); }
+.mp-cut > .mp-door { position: static; margin: -8px 0 -6px; }
+/* A list's peek is a whole row, so it fades further: from nothing to a
+ * ghost of itself (.5), never as bright as what is on. */
+.time-list .mp-fold { -webkit-mask-image: linear-gradient(to bottom, transparent 0, rgba(0,0,0,.2) 35%, rgba(0,0,0,.5) 100%);
+                              mask-image: linear-gradient(to bottom, transparent 0, rgba(0,0,0,.2) 35%, rgba(0,0,0,.5) 100%); }
+.mp-over .mp-fold { max-height: 0; }
+.mp-over .mp-fold.open { max-height: none; }
+.mp-fold.open + .x, .mp-cut:has(.mp-fold.open) > .mp-door { position: static; }
+.mp-door.stacks { position: static; height: 44px; margin: -6px 0 -4px; }
+
+/* The grid's cut: the clip holds the page's place, the mask fades the 40px
+ * of grid that show above the cut. */
+.mp-gridclip { position: relative; }
+.mp-gridclip > .mp-mask { overflow: clip; display: flow-root; } /* flow-root: overflow:clip makes no BFC, so the negative margin would collapse straight through it */
+.mp-gridclip.cut > .mp-mask { -webkit-mask-image: linear-gradient(to bottom, transparent 0, rgba(0,0,0,.18) 20px, rgba(0,0,0,.6) 38px, #000 44px);
+                                      mask-image: linear-gradient(to bottom, transparent 0, rgba(0,0,0,.18) 20px, rgba(0,0,0,.6) 38px, #000 44px); }
+.mp-gridclip > .mp-door { position: static; margin: -6px 0 -8px; padding-left: calc(var(--hour-rail-w) + 2px); }
+.mp-gridclip.mid > .mp-mask { opacity: 1; }
+/* A set the cut crosses keeps its name in view. */
+.card.mp-cross > * { transform: translateY(var(--mp-shift)); }
+
+/* Whole days over: the top of the wall. */
+.mp-days { margin: -6px 0 4px; }
+.mp-days .mp-fold { margin-top: 0; }
+
+/* Frame captions (design only). */
+.mp-capt { position: fixed; top: 6px; right: 8px; z-index: 80; color: var(--text-tertiary); font-size: 9px; font-weight: 800;
+           letter-spacing: .12em; text-transform: uppercase; background: rgba(12, 10, 20, .85); padding: 2px 6px; border-radius: 4px; }
+/* The line for whole days over: no peek (a stray card bottom read as a
+ * broken box) — the door and a hairline rule, the band heads' own shape. */
+.mp-days .mp-door { position: static; }
+.mp-days .mp-fold { max-height: 0; }
+.mp-days .mp-fold.open { max-height: none; }
+.mp-door .mp-rule { flex: 1 1 0; height: 1px; margin-left: 4px; background: var(--hairline); }
+/* Open, the line stands above what it opened and overlaps nothing. */
+.mp-gridclip > .mp-door.static, .mp-door.static[aria-expanded="true"] { margin: -6px 0 0; }
