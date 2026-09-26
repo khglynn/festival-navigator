@@ -140,6 +140,51 @@ def link_for(a):
     p = a.get("page") or {}
     return p.get("url", "")
 
+# ---- prices (added 2026-09-26 PM, Kevin: "can you add prices please?") ----
+# The festival file carries the cheapest ticket on sale when it was checked
+# (tickets.price + tickets.checked, the v95 check early Sat Sep 26). Sold-out
+# shows had their tickets link removed, so "sold out" lives only in
+# TIX-PRICES.md beside this folder; read it from there. Acts in one show
+# share its page link, so a price or a sell-out applies to every act on it.
+TIX_MD = os.path.join(MAPS_DIR, "..", "TIX-PRICES.md")
+SOLD_NAMES = set()
+_section = ""
+for line in open(TIX_MD, encoding="utf-8").read().splitlines():
+    if line.startswith("#"):
+        _section = line
+    # Portola's own tables only: ACL's Late nights sold out an "Underscores"
+    # show too, and a name match across festivals would mark the wrong act.
+    if "Portola" not in _section:
+        continue
+    if line.startswith("|") and "Sold out" in line and "removed" in line:
+        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        show = cells[1] if re.match(r"^\d+/\d+$", cells[0]) else cells[0]
+        for part in show.split("+"):
+            SOLD_NAMES.add(re.sub(r"\s*\(.*?\)\s*", "", part).strip().lower())
+
+by_page = {}
+for a in artists:
+    url = (a.get("page") or {}).get("url")
+    if url:
+        by_page.setdefault(url, []).append(a)
+
+def price_for(a):
+    url = (a.get("page") or {}).get("url")
+    group = by_page.get(url, [a]) if url else [a]
+    prices = [g["tickets"]["price"] for g in group
+              if isinstance(g.get("tickets"), dict)
+              and isinstance(g["tickets"].get("price"), int)
+              and g["tickets"].get("checked")
+              and 0 <= g["tickets"]["price"] <= 2000]
+    if prices:
+        p = min(prices)
+        return "Free" if p == 0 else f"${p}"
+    if any(g["name"].lower() in SOLD_NAMES for g in group):
+        return "Sold out"
+    if any(isinstance(g.get("tickets"), dict) for g in group):
+        return "Tix, price not found"
+    return "No online tix"
+
 rows_by_file = {}   # filename -> list of row dicts
 doubtful = []
 tba_events = []
@@ -162,6 +207,7 @@ def add_row(fname, a, band):
         return
     rows_by_file.setdefault(fname, []).append({
         "Name": a["name"],
+        "Price": price_for(a),
         "Venue": a["venue"],
         "Address": addr,
         "Start": start_str,
@@ -211,7 +257,7 @@ for fname in ordered_names:
     # sort by start time for readability: night order already fixed by file
     path = os.path.join(OUT, fname + ".csv")
     with open(path, "w", newline="", encoding="utf-8") as f:
-        w = csv.DictWriter(f, fieldnames=["Name", "Venue", "Address", "Start", "End", "Time band", "Link"])
+        w = csv.DictWriter(f, fieldnames=["Name", "Price", "Start", "End", "Venue", "Address", "Time band", "Link"])
         w.writeheader()
         for r in rows:
             w.writerow(r)

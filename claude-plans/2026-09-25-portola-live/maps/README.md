@@ -65,6 +65,13 @@ the total row count above (verified against every file's `wc -l`).
 
 - **Name** — the party or artist/act name, exactly as the source (and, for
   Folsom-weekend parties, the party's own event page) prints it.
+- **Price** — the cheapest ticket on sale when it was checked (the festival
+  file's `tickets.price` and `checked` date; most were checked early Sat Sep 26,
+  so a price can have moved since). "Sold out" comes from `TIX-PRICES.md`
+  beside this folder (a sold-out show had its tickets link removed). "Tix,
+  price not found" means a tickets link exists but no price could be read;
+  "No online tix" means there is no tickets link at all (often door or free).
+  Acts in one show share its price.
 - **Venue** — venue name.
 - **Address** — street address for geocoding (source noted below).
 - **Start** — the app's start time; a leading `~` means the source data
