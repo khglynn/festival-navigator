@@ -14,7 +14,7 @@
 // No DOM, no state: the wall, the day tabs, the zoom's facts, the day-image
 // export and the tests all read the same answers from here.
 import { activityMinutes, dayLabelParts } from '../time.js';
-import { dayIsoOf } from './now.js';
+import { dayIsoOf, wallClock } from './now.js';
 
 export const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const LONG = { Mon: 'Monday', Tue: 'Tuesday', Wed: 'Wednesday', Thu: 'Thursday', Fri: 'Friday', Sat: 'Saturday', Sun: 'Sunday' };
@@ -549,6 +549,68 @@ export function findEventEntry(fest, name, occ) {
 // view lets go of what is over. Past days kept in would have landed the
 // month's tab on its first, finished week all month long.
 export const isSeason = (fest) => !!fest && fest.kind === 'season';
+// A season's description line (Kevin, 2026-09-25: "In that top description
+// line, we have when it was last updated"): its window, then when the feed
+// last read it — "Dec 2026 – Feb 2027 · updated Sep 25", "… · updated today",
+// "… · updated yesterday". ONE builder for every place a season describes
+// itself (the wall header, the Settings card, the Settings and add-a-fest
+// rows, the landing row), from a file or an index row alike. Today is read in
+// the season's own zone where the file says it (an index row does not; the
+// phone's day is right but for the hours around midnight). A season that is
+// over says its window alone: nobody reads it any more.
+export function seasonUpdated(meta, now = new Date()) {
+  if (!meta || typeof meta.updated !== 'string' || !ISO_RE.test(meta.updated) || meta.status === 'archived') return '';
+  const today = festivalClockDay(now, meta.timezone || null);
+  if (meta.updated === today) return 'updated today';
+  if (meta.updated === isoPlusDays(today, -1)) return 'updated yesterday';
+  const year = meta.updated.slice(0, 4);
+  return `updated ${shortDate(meta.updated)}${year !== today.slice(0, 4) ? `, ${year}` : ''}`;
+}
+export function seasonLine(meta, now = new Date()) {
+  if (!meta) return '';
+  return [meta.dates, seasonUpdated(meta, now)].filter(Boolean).join(' · ');
+}
+// ---- which seasons a list shows (Kevin, 2026-09-25) ----------------------------------
+// "we can show in the app just the next two seasons - we can have the others
+// tucked away." A city is a run of seasons (austin-fall-2026, -winter-2027 …),
+// each a festival entry with a window. A season whose window is over is past,
+// like a festival that happened — archived by the feed, or over by the
+// calendar before the feed has run. Of the rest, the two soonest (the one in
+// progress and the one after it: Fall and Winter on Sep 25, Winter and Spring
+// from Dec 1) lead; the others are tucked behind one quiet row — except one a
+// crew already has something in, which a renderer keeps out (it is theirs).
+// Read off each row's window against the city's today, never off its id.
+export const seasonIsOver = (row, today) => !!row && row.kind === 'season'
+  && (row.status === 'archived' || (typeof row.endsOn === 'string' && ISO_RE.test(row.endsOn) && row.endsOn < today));
+export function cityToday(rows, now = new Date()) {
+  const tz = ((rows || []).find((r) => r && r.kind === 'season' && r.timezone) || {}).timezone || null;
+  return festivalClockDay(now, tz);
+}
+export function seasonLead(rows, now = new Date()) {
+  const today = cityToday(rows, now);
+  const live = (rows || []).filter((r) => r && r.kind === 'season' && !seasonIsOver(r, today))
+    .sort((a, b) => String(a.startsOn || '').localeCompare(String(b.startsOn || '')) || String(a.id).localeCompare(String(b.id)));
+  return { today, lead: new Set(live.slice(0, 2).map((r) => r.id)) };
+}
+// A list split for its shelf: the items a person sees (every non-season item,
+// the lead seasons, and any season `kept` says is theirs), and the seasons
+// tucked behind "Later seasons". Order is kept; `idOf` reads an item's id and
+// `isSeasonItem` says whether it is a live season at all.
+export function shelfSeasons(items, { lead, idOf = (x) => x.id, isSeasonItem, kept = () => false }) {
+  const shown = [];
+  const later = [];
+  for (const it of items || []) {
+    if (!isSeasonItem(it) || lead.has(idOf(it)) || kept(it)) shown.push(it);
+    else later.push(it);
+  }
+  return { shown, later };
+}
+// The calendar day it is in a zone — midnight to midnight, not the wall's
+// 5 AM festival day: "updated today" is about the calendar.
+function festivalClockDay(now, timeZone) {
+  const p = wallClock(now, timeZone);
+  return `${p.y}-${String(p.mo).padStart(2, '0')}-${String(p.d).padStart(2, '0')}`;
+}
 // A show no source lists any more (the feed marks it `unlisted: <date>` and
 // keeps the entry, because its name is a pick key). It is not on the wall,
 // not in YOURS, not in a count and not "also" anywhere: a moved show would

@@ -19,7 +19,7 @@ import { nowOnDay, nowOffsetPx, clockLabel, festivalClock } from './now.js';
 import { eventModelOf, venueGroupsOf, dateRuleLabel, occOf, hourLabelOf, approxMark, parseEventTime, weekdayOfIso, shortDate } from './events.js';
 import { reduced, canAnimate, GROW_MS, OUT_MS, STAGGER_MS, EASE_ARRIVE, EASE_SURFACE } from './motion.js';
 import { isCancelled } from './events.js'; // a cancelled act (2026-09-23) — its own line, so the list above can grow without a merge
-import { isSeason, seasonModelOf, seasonWhen, weekHeadOf, venueOf, seasonLocationsOf } from './events.js'; // a city season (2026-09-25)
+import { isSeason, seasonModelOf, seasonWhen, weekHeadOf, venueOf, seasonLocationsOf, seasonIsOver } from './events.js'; // a city season (2026-09-25)
 
 // ---- person -> board color ---------------------------------------------------
 // v4 people carry colorIndex. Legacy people carry a "R, G, B" string from the
@@ -2164,7 +2164,12 @@ export function seasonPlanOf(fest, ctx) {
   // gets, and the answer's card says where (renderSeason).
   const only = q ? (e) => fold(e.name).includes(q) || fold(venueOf(e) || '').includes(q) : null;
   const isYours = q ? null : yoursTestOf(ctx, fest);
-  const plan = { ...seasonModelOf(fest, { today, isYours, only, hidden }), isYours, query: q, hidden };
+  // A season whose window is over is a record, like a festival that
+  // happened: all of its shows, from its first week (and no THIS WEEK). One
+  // still running or still ahead is from today on — a future one (Winter, on
+  // Sep 25) is then all of itself, from its first month.
+  const over = seasonIsOver(fest, today);
+  const plan = { ...seasonModelOf(fest, { today: over ? '' : today, isYours: over ? null : isYours, only, hidden }), isYours, query: q, hidden, over };
   seasonMemo = { fest, doc: state.crewDoc, picks: ctx.picks, affinity: ctx.affinity, key, plan };
   return plan;
 }
@@ -2174,7 +2179,7 @@ export function seasonPlanOf(fest, ctx) {
 // offer a hidden one back. One location has nothing to choose between.
 function seasonRoomsOf(fest, ctx) {
   const today = festivalClock(ctx.now || new Date(), fest.timezone || null).iso;
-  const rows = seasonLocationsOf(fest, { today }).map(({ venue, count }) => ({ key: `${LOCATION_KEY}${venue}`, label: venue, count }));
+  const rows = seasonLocationsOf(fest, { today: seasonIsOver(fest, today) ? '' : today }).map(({ venue, count }) => ({ key: `${LOCATION_KEY}${venue}`, label: venue, count }));
   return rows.length > 1 ? rows : [];
 }
 

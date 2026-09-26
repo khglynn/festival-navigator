@@ -14,6 +14,7 @@
 // clock instead, and every assertion is a rule, never a date.
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { serveStatic } from '../helpers/static-server.mjs';
@@ -40,7 +41,16 @@ test.after(async () => { if (browser) await browser.close(); await server.close(
 const skip = browser ? false : NO_BROWSER;
 
 const TODAY = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Chicago', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+// The season in progress around the REAL today — Fall on Sep 25, Winter from
+// Dec 1 — under its real id, with the index row it would have (routed below),
+// so the suite reads the same on any day of the year.
 const FEST = seasonShape({ today: TODAY });
+const ON_WALL = (fest, today) => fest.artists.filter((a) => a.date >= today && !a.unlisted).length;
+const INDEX = JSON.parse(fs.readFileSync(path.join(ROOT, 'data/festivals/index.json'), 'utf8'));
+const indexWith = (fest) => [
+  ...INDEX.filter((f) => f.id !== fest.id),
+  { id: fest.id, kind: 'season', name: fest.name, year: fest.year, startsOn: fest.startsOn, endsOn: fest.endsOn, status: 'scheduled', dates: fest.dates, updated: fest.updated, location: fest.location, accent: fest.accent },
+];
 // Kevin's Spotify knows a handful of the season's artists; he picked one more
 // at another fest in this crew.
 const LOVED = FEST.artists.filter((_, i) => i % 53 === 7).slice(0, 6).map((a) => a.name);
@@ -50,18 +60,18 @@ async function openSeason({ width, touch = false, spotify = true, fest = FEST, n
   const phone = width < 720;
   const ctx = await browser.newContext({ viewport: { width, height: phone ? 844 : 800 }, hasTouch: touch, serviceWorkers: 'block' });
   const TOKEN = 'seasoncontract_0123456789'; // a made-up crew, never a real link
-  await ctx.addInitScript(([t]) => {
+  await ctx.addInitScript(([t, f]) => {
     navigator.serviceWorker.register = () => Promise.resolve({ update: () => Promise.resolve() });
     localStorage.setItem('fn_crews_v3', JSON.stringify([{ token: t, name: 'Season' }]));
     localStorage.setItem(`fn_me_v3_${t}`, 'Kevin');
-    localStorage.setItem(`fn_crew_fest_v3_${t}`, 'austin');
+    localStorage.setItem(`fn_crew_fest_v3_${t}`, f);
     localStorage.setItem('fn_coach_v1', '1');
-  }, [TOKEN]);
+  }, [TOKEN, fest.id]);
   const doc = {
-    v: 4, meta: { name: 'Season', inviteFestId: 'austin' }, spotify: {},
+    v: 4, meta: { name: 'Season', inviteFestId: fest.id }, spotify: {},
     affinity: spotify ? { Kevin: LOVED_AFFINITY } : {},
     people: { Kevin: { colorIndex: 0 }, Kat: { colorIndex: 2 } },
-    festivals: { austin: { selections: { 'Presale Darlings': { Kat: 2 } } }, 'portola-2026': { selections: { [FEST.artists[2].name]: { Kevin: 3 } } } },
+    festivals: { [fest.id]: { selections: { 'Presale Darlings': { Kat: 2 } } }, 'portola-2026': { selections: { [FEST.artists[2].name]: { Kevin: 3 } } } },
   };
   await ctx.route('**/api/**', (r) => r.fulfill({ status: 503, contentType: 'application/json', body: '{}' }));
   await ctx.route('**/api/crew**', (r) => (r.request().method() === 'GET'
@@ -69,14 +79,16 @@ async function openSeason({ width, touch = false, spotify = true, fest = FEST, n
     : r.fulfill({ status: 503, contentType: 'application/json', body: '{}' })));
   await ctx.route('**/api/festival-add**', (r) => r.fulfill({ contentType: 'application/json', body: '{"festivals":[]}' }));
   await ctx.route('**/fn-i/**', (r) => r.fulfill({ status: 200, body: '{}' }));
-  await ctx.route('**/data/festivals/austin.json', (r) => r.fulfill({ contentType: 'application/json', body: JSON.stringify(fest) }));
+  await ctx.route(`**/data/festivals/${fest.id}.json`, (r) => r.fulfill({ contentType: 'application/json', body: JSON.stringify(fest) }));
+  await ctx.route('**/data/festivals/index.json', (r) => r.fulfill({ contentType: 'application/json', body: JSON.stringify(indexWith(fest)) }));
   const page = await ctx.newPage();
   const errors = [];
   page.on('pageerror', (e) => errors.push(String(e)));
   if (now) await page.clock.setFixedTime(now);
   await page.goto(`${server.origin}/#g=${TOKEN}`, { waitUntil: 'load' });
   await page.waitForSelector('#screen-app', { state: 'visible', timeout: 20000 });
-  await page.waitForFunction(() => document.querySelectorAll('#wall-root .day-block[data-kind="month"] .card').length > 100, null, { timeout: 20000 });
+  const expected = now ? 1 : Math.min(ON_WALL(fest, TODAY), 20);
+  await page.waitForFunction((n) => document.querySelectorAll('#wall-root .day-block[data-kind="month"] .card').length >= n, expected, { timeout: 20000 });
   await sleep(700); // the open's landing and the scrollspy's frame
   return { ctx, page, errors };
 }
@@ -86,7 +98,9 @@ const survey = (page) => page.evaluate(() => {
   const offset = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--jump-offset')) || 8;
   const month = document.querySelector('#wall-root .day-block[data-kind="month"]');
   const firstWeek = month.querySelector('.room');
-  const grid = month.querySelector('.wall-grid');
+  // The fullest week's grid: a row across is only a row where there are
+  // cards enough to fill one.
+  const grid = [...document.querySelectorAll('#wall-root .day-block[data-kind="month"] .wall-grid')].sort((a, b) => b.children.length - a.children.length)[0];
   const cards = [...grid.children];
   const top = cards[0].getBoundingClientRect().top;
   const row = cards.filter((c) => Math.abs(c.getBoundingClientRect().top - top) < 1);
@@ -144,7 +158,8 @@ for (const [width, touch, perRow] of [[390, true, 2], [1280, false, 5]]) {
         assert.ok(occ.date >= last, `date order: ${occ.date} after ${last}`);
         last = occ.date;
       }
-      assert.ok(s.labels[0].occ.date >= TODAY.slice(0, 8) + '01' && s.labels.length > 400, `the season's months are on the wall (${s.labels.length} cards)`);
+      assert.ok(s.labels[0].occ.date >= TODAY, 'nothing before today');
+      assert.equal(s.labels.length, ON_WALL(FEST, TODAY), 'every show of the season from today on is on the wall');
       assert.deepEqual(errors, []);
     } finally { await ctx.close(); }
   });
@@ -301,6 +316,70 @@ test('390: when Austin’s day turns (5 AM), a phone that comes back to the page
     const after = await read();
     assert.equal(after.sunday, 0, 'yesterday is gone');
     assert.equal(after.head, 'OCT 5 – 11This week', 'and THIS WEEK is the new week');
+    assert.deepEqual(errors, []);
+  } finally { await ctx.close(); }
+});
+
+// ---- the city's run of seasons (Kevin, 2026-09-25), on the REAL files ------------------
+test('390: the landing lists the next two Austin seasons with their updated lines, tucks the rest, and a future season opens on its first month', { skip }, async () => {
+  const { seasonLead, seasonIsOver } = await import('../../js/v3/events.js');
+  const seasons = INDEX.filter((f) => f.kind === 'season');
+  const { lead, today } = seasonLead(INDEX);
+  const live = seasons.filter((f) => !seasonIsOver(f, today));
+  const winter = JSON.parse(fs.readFileSync(path.join(ROOT, 'data/festivals/austin-winter-2027.json'), 'utf8'));
+  const TOKEN = 'seasonlanding_0123456789';
+  const doc = {
+    v: 4, meta: { name: 'Seasons', inviteFestId: 'austin-winter-2027' }, spotify: {},
+    affinity: { Kevin: Object.fromEntries(winter.artists.slice(0, 4).map((a) => [a.name, { songs: 3 }])) },
+    people: { Kevin: { colorIndex: 0 } },
+    festivals: Object.fromEntries(seasons.map((f) => [f.id, { selections: {} }])),
+  };
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, serviceWorkers: 'block' });
+  await ctx.addInitScript(([t, d]) => {
+    navigator.serviceWorker.register = () => Promise.resolve({ update: () => Promise.resolve() });
+    localStorage.setItem('fn_crews_v3', JSON.stringify([{ token: t, name: 'Seasons' }]));
+    localStorage.setItem(`fn_me_v3_${t}`, 'Kevin');
+    localStorage.setItem(`fn_crew_doc_v3_${t}`, JSON.stringify(d));
+    localStorage.setItem(`fn_crew_fest_v3_${t}`, 'austin-winter-2027');
+    localStorage.setItem('fn_coach_v1', '1');
+  }, [TOKEN, doc]);
+  await ctx.route('**/api/**', (r) => r.fulfill({ status: 503, contentType: 'application/json', body: '{}' }));
+  await ctx.route('**/api/crew**', (r) => r.fulfill({ contentType: 'application/json', body: JSON.stringify(doc) }));
+  await ctx.route('**/fn-i/**', (r) => r.fulfill({ status: 200, body: '{}' }));
+  const page = await ctx.newPage();
+  const errors = [];
+  page.on('pageerror', (e) => errors.push(String(e)));
+  try {
+    await page.goto(`${server.origin}/`, { waitUntil: 'load' });
+    await page.waitForFunction(() => document.querySelectorAll('#landing-fests .fest-row').length > 0, null, { timeout: 15000 });
+    const list = await page.evaluate(() => [...document.getElementById('landing-fests').children].map((n) => (n.classList.contains('micro-label') ? { head: n.textContent }
+      : n.classList.contains('fest-row') ? { name: n.querySelector('.fest-name').textContent, lines: [...n.querySelectorAll('.fest-dates')].map((d) => d.textContent) }
+        : { fold: n.querySelector('button').textContent })));
+    assert.equal(list[0].head, 'City seasons');
+    const rows = list.filter((x) => x.name);
+    assert.deepEqual(rows.map((r) => r.name.replace(/\s+'\d\d$/, '').replace(/ '\d\d$/, '')).map((n) => n.trim()), live.filter((f) => lead.has(f.id)).map((f) => f.name), 'the two soonest seasons, soonest first');
+    for (const r of rows) assert.match(r.lines[0], /^[A-Z][a-z]{2}( \d{4})? – [A-Z][a-z]{2} \d{4} · updated (today|yesterday|[A-Z][a-z]{2} \d{1,2}(, \d{4})?)$/, `"${r.lines[0]}" is the window and when it was updated`);
+    const later = live.length - lead.size;
+    if (later) assert.match(list.at(-1).fold, new RegExp(`^Later seasons · ${later}`), 'the rest wait behind one row');
+    // Winter: still ahead (or running) — it opens on its first month still on, nothing before today hidden but that.
+    await page.goto(`${server.origin}/#g=${TOKEN}`, { waitUntil: 'load' });
+    await page.waitForFunction(() => document.querySelectorAll('#wall-root .day-block[data-kind="month"] .card').length > 0, null, { timeout: 15000 });
+    await sleep(600);
+    const w = await page.evaluate(() => ({
+      first: document.querySelector('#wall-root .day-block[data-kind="month"]').dataset.day,
+      cards: document.querySelectorAll('#wall-root .day-block[data-kind="month"] .card').length,
+      yours: document.querySelectorAll('#wall-root .day-block[data-day="yours"] .card').length,
+      sub: document.getElementById('fest-sub').textContent,
+      name: document.getElementById('fest-name').textContent,
+      tabs: [...document.querySelectorAll('#dock-days .day-tab')].map((t) => t.textContent),
+    }));
+    const onWall = winter.artists.filter((a) => a.date >= today && !a.unlisted);
+    assert.equal(w.cards, onWall.length, 'every Winter show still ahead is on the wall');
+    assert.equal(w.first, onWall.map((a) => a.day)[0], `it opens on its first month (${w.first})`);
+    assert.equal(w.name, 'AUSTIN WINTER');
+    assert.match(w.sub, /^Dec 2026 – Feb 2027 · updated /, 'the header is the description line');
+    assert.ok(w.yours > 0, 'YOURS is this season’s');
+    assert.ok(w.tabs.length <= 4, `YOURS and at most its three months: ${w.tabs}`);
     assert.deepEqual(errors, []);
   } finally { await ctx.close(); }
 });

@@ -14,14 +14,14 @@ import { loadPeopleFilter, savePeopleFilter, togglePerson, pruneToActive, loadFo
 import { OUT_MS, CASCADE_MS, STAGGER_MS, EASE_ARRIVE, EASE_LEAVE, EASE_SURFACE, canAnimate } from './motion.js';
 import { scrolledBefore, rememberScrolled, dayOfScrollKey, festivalClock } from './now.js';
 import { dayLabelParts } from '../time.js';
-import { disclosureFold, eqLoader, festRow, seasonsHead, listHeadFor } from './tools.js';
+import { disclosureFold, eqLoader, festRow, seasonsHead, appendPairs, laterSeasonsFold } from './tools.js';
 import { openArtistSheet, openDayNotes, openAllNotes, openFestNotes, closeSheet, refreshOpenSheet, sheetChrome, dialogize, rememberOpener, shortDayLabel } from './notes.js';
 import { renderSettings, appSettings, openSubviewByKey } from './settings.js';
 import { onStorageWriteFail, saveLS, errorText } from '../util.js';
 import { router, encodeNotesKey, decodeNotesKey } from './router.js';
 import { wireCardZoom, wireCardFocusZoom, zoomCard, unzoom, dismissZoom, zoomedCard, zoomContains, zoomSnapshot, refreshZoom, festPlaceLine } from './card-facts.js';
 import { hookGlobalErrors, configureReports, record } from '../errlog.js';
-import { isSeason } from './events.js'; // a city season (2026-09-25)
+import { isSeason, seasonLine, seasonLead, seasonIsOver } from './events.js'; // a city season (2026-09-25)
 // The crash journal listens from the first module tick — an error during
 // boot is exactly the kind nobody can describe later (2026-08-31). index.html
 // hooks it earlier still, from a module script of its own; this second call
@@ -1552,21 +1552,23 @@ function renderCreate() {
   };
   // The upcoming festivals, then the city seasons under their own small head
   // (UX.md §9) — never in the index's order, which is by start date.
-  const upcoming = FESTIVAL_INDEX.filter((x) => x.status !== 'archived');
-  const seasons = upcoming.filter((x) => x.kind === 'season');
-  for (const f of upcoming.filter((x) => x.kind !== 'season')) {
-    const rowEl = festPickRow(f, { onPick: () => pick(f, rowEl) });
-    list.appendChild(rowEl);
-  }
+  // Of the seasons, only the city's next two show; the rest wait in one
+  // "Later seasons" row (Kevin, 2026-09-25), soonest first. A season whose
+  // window is over is a past festival, even before the feed has marked it.
+  const { today, lead } = seasonLead(FESTIVAL_INDEX);
+  const isPast = (x) => x.status === 'archived' || seasonIsOver(x, today);
+  const upcoming = FESTIVAL_INDEX.filter((x) => !isPast(x));
+  const seasons = upcoming.filter((x) => x.kind === 'season').sort((a, b) => String(a.startsOn).localeCompare(String(b.startsOn)));
+  const seasonRow = (f) => { const rowEl = festPickRow(f, { onPick: () => pick(f, rowEl) }); return rowEl; };
+  for (const f of upcoming.filter((x) => x.kind !== 'season')) list.appendChild(seasonRow(f));
   if (seasons.length) list.appendChild(seasonsHead());
-  for (const f of seasons) {
-    const rowEl = festPickRow(f, { onPick: () => pick(f, rowEl) });
-    list.appendChild(rowEl);
-  }
+  for (const f of seasons.filter((x) => lead.has(x.id))) list.appendChild(seasonRow(f));
+  const later = seasons.filter((x) => !lead.has(x.id));
+  if (later.length) list.appendChild(laterSeasonsFold(later, seasonRow));
   // Past festivals stay reachable (spec F2/F12) but folded: full-size rows
   // gave history the same weight as the fests you'd actually plan — the
   // wrong emphasis on the doorway screen (Kevin note 8).
-  const past = FESTIVAL_INDEX.filter((x) => x.status === 'archived');
+  const past = FESTIVAL_INDEX.filter(isPast);
   if (past.length) {
     list.appendChild(disclosureFold(`Past festivals · ${past.length}`, (rows) => {
       for (const f of past) {
@@ -2236,14 +2238,10 @@ function renderLanding() {
   const list = $('landing-fests');
   list.textContent = '';
   const crews = crew.knownCrews();
-  let group = 'fest';
-  for (const pair of model.landingPairs(crews, state.cachedDoc, FESTIVAL_INDEX)) {
-    // The seasons come after the festivals (landingPairs orders them), under
-    // one small head of their own (UX.md §9), and past festivals after them
-    // get theirs back.
-    const turn = listHeadFor(group, pair);
-    if (turn.head) list.appendChild(seasonsHead(turn.head));
-    group = turn.group;
+  // One row per (crew, fest) pair. The seasons come after the festivals
+  // (landingPairs orders them) under their own small head, only the next two
+  // unless a crew already has something in one (tools.js appendPairs).
+  const landingRow = (pair) => {
     const row = document.createElement('button');
     row.className = 'fest-row';
     row.style.width = '100%';
@@ -2275,6 +2273,15 @@ function renderLanding() {
         ? names.slice(0, 3).join(', ') + (names.length > 3 ? ` +${names.length - 3}` : '')
         : 'just you — add your people inside')
       : 'tap to open';
+    // A city season says its window and when it was last updated, above the
+    // people (UX.md, 2026-09-25: the description line).
+    const seasonMeta = pair.fid ? FESTIVAL_INDEX.find((f) => f.id === pair.fid && f.kind === 'season') : null;
+    if (seasonMeta) {
+      const when = document.createElement('div');
+      when.className = 'fest-dates';
+      when.textContent = seasonLine(seasonMeta);
+      left.appendChild(when);
+    }
     left.appendChild(sub);
     const cluster = document.createElement('span');
     cluster.className = 'avatar-cluster';
@@ -2320,8 +2327,13 @@ function renderLanding() {
       location.hash = `#g=${pair.token}`;
       boot();
     });
-    list.appendChild(row);
-  }
+    return row;
+  };
+  const hasSomething = (pair) => {
+    const doc = state.cachedDoc(pair.token);
+    return !!doc && (Object.keys(model.picksFor(doc, pair.fid)).length > 0 || model.totalNoteCount(doc, pair.fid) > 0);
+  };
+  appendPairs(list, model.landingPairs(crews, state.cachedDoc, FESTIVAL_INDEX), FESTIVAL_INDEX, { row: landingRow, kept: hasSomething });
   $('landing-empty').style.display = crews.length ? 'none' : '';
 }
 

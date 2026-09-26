@@ -16,6 +16,8 @@
 // migrated doc in the migrate-race window, and reading it as 0 would eat
 // the pick.
 
+import { seasonIsOver, cityToday } from './events.js'; // city seasons (2026-09-25)
+
 const LEGACY_MAP = { 0: 0, 1: 1, 2: 2, 3: 4, 4: 4 };
 
 export function docVersion(doc) {
@@ -319,7 +321,7 @@ export function sortWithPins(notes, pinnedIds) {
 // merged-board arc. A crew whose doc was never cached can't name its fests
 // and falls back to a single crew-named row (fid null).
 
-export function landingPairs(crews, docFor, festIndex) {
+export function landingPairs(crews, docFor, festIndex, { now = new Date() } = {}) {
   // Date order, not index order (Kevin, 2026-07-14: "sort by and show dates").
   // Upcoming fests soonest-first; archived ones sink below, most recent
   // first, muted by the renderer. startsOn is an ISO string, so plain string
@@ -330,11 +332,16 @@ export function landingPairs(crews, docFor, festIndex) {
   // rolling season always starts "today", so by date it would pin itself above
   // Portola during Portola (claude-plans/2026-09-25-season-v0/UX.md §9). Its
   // pair says `season` so a renderer can put the small head over it.
+  // A season whose window is over is past like an archived festival, even
+  // before the feed has marked it (events.js seasonIsOver; Kevin: "they get
+  // archived after they're over, just like festivals").
   const meta = new Map(festIndex.map((f) => [f.id, f]));
+  const today = cityToday(festIndex, now);
+  const isPast = (m) => m.status === 'archived' || seasonIsOver(m, today);
   const sortKey = (fid) => {
     const m = fid ? meta.get(fid) : null;
     if (!m || !m.startsOn) return { past: 3, key: '' };           // uncached / custom: last
-    if (m.status === 'archived') return { past: 2, key: m.startsOn }; // past, recent first
+    if (isPast(m)) return { past: 2, key: m.startsOn };            // past, recent first
     if (m.kind === 'season') return { past: 1, key: m.startsOn }; // seasons, after the festivals
     return { past: 0, key: m.startsOn };                          // upcoming, soonest first
   };
@@ -348,7 +355,7 @@ export function landingPairs(crews, docFor, festIndex) {
     if (!fids.length) { pairs.push({ token: c.token, fid: null, crewName: c.name || '', people, past: false }); continue; }
     for (const fid of fids) {
       const m = meta.get(fid) || {};
-      pairs.push({ token: c.token, fid, crewName: c.name || '', people, past: m.status === 'archived', season: m.kind === 'season' && m.status !== 'archived' });
+      pairs.push({ token: c.token, fid, crewName: c.name || '', people, past: isPast(m), season: m.kind === 'season' && !isPast(m) });
     }
   }
   return pairs.sort((a, b) => {
@@ -371,7 +378,9 @@ export function festLabelFor(fid, festIndex) {
   if (meta) {
     // "Sep '26" beside the name — "I just want to know WHEN when looking at
     // lists" (Kevin, 2026-07-14). Month from startsOn, year as already styled.
-    const month = meta.startsOn ? MONTHS[Number(meta.startsOn.slice(5, 7)) - 1] : '';
+    // A city season's name already says when ("Austin Winter '27"); a month
+    // from its startsOn would say "Dec '27" for a winter that starts in 2026.
+    const month = meta.startsOn && meta.kind !== 'season' ? MONTHS[Number(meta.startsOn.slice(5, 7)) - 1] : '';
     const year = [month, meta.year || ''].filter(Boolean).join(' ');
     return { name: meta.name, year, accent: meta.accent || null };
   }
