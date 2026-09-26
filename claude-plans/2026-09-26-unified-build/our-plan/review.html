@@ -100,7 +100,7 @@ footer{font-size:14px;color:var(--muted);display:flex;flex-direction:column;gap:
     <div class="head"><span class="sub">Festival Navigator · Sat Sep 26, morning</span></div>
     <div class="head"><span class="name"><b>Our plan</b>, built</span></div>
     <p class="lede">Your call #5 is built on the phone and the laptop. On a phone, the crew's NOW or NEXT sits just above the dock and pulls up into the whole day's plan. On a laptop it is a card in the bottom-right corner that opens into a panel beside the wall. Everything below is the real app on the real Portola lineup, with a made-up crew of nine.</p>
-    <p>It is aimed at ACL (Late nights from Tue Sep 29, Zilker Oct 2–4). The review gate has run twice: tests at three clocks, two rounds of independent code review, and a real-browser walk. What it caught is under <a href="#stands">Where it stands</a>, all fixed. Eleven calls at the bottom have my pick marked. Tap to change any of them; your answers save on this page.</p>
+    <p>It is aimed at ACL (Late nights from Tue Sep 29, Zilker Oct 2–4). The review gate has run twice: tests at three clocks, rounds of independent code review, and a real-browser walk. Since then it also opens from your avatar’s menu: “Our plan ›” is the first row below its line, as the people-menu design drew it. What it caught is under <a href="#stands">Where it stands</a>, all fixed. Eleven calls at the bottom have my pick marked. Tap to change any of them; your answers save on this page.</p>
   </header>
 
   <section>
@@ -214,11 +214,11 @@ footer{font-size:14px;color:var(--muted);display:flex;flex-direction:column;gap:
   </section>
 
   <section>
-    <div class="head" id="stands"><span class="name">Where it stands</span><span class="sub">branch live/plan · gated at 666cc6f</span></div>
+    <div class="head" id="stands"><span class="name">Where it stands</span><span class="sub">branch live/plan · gated at 6930254, with the people menu merged in</span></div>
     <div class="status">
-      <div><span class="k">Unit tests</span><span class="v">1168 of 1170 pass</span><span class="note">at three clocks: UTC, Tokyo, and a Portola night. 1 skipped; the 1 red is the app-cache stamp, which the release writes</span></div>
-      <div><span class="k">Real browsers</span><span class="v" id="browser-line">260 of 261 pass</span><span class="note">the whole suite in Chromium and WebKit, 25 of them Our plan's own, with real mouse, touch and keys. The 1 skipped is a keyboard test Safari can't run: it Tabs past buttons unless you turn on Full Keyboard Access</span></div>
-      <div><span class="k">Code review</span><span class="v">Codex, three rounds</span><span class="note">seven real findings, all fixed; the last round found nothing new</span></div>
+      <div><span class="k">Unit tests</span><span class="v">1181 of 1183 pass</span><span class="note">at three clocks: UTC, Tokyo, and a Portola night. 1 skipped; the 1 red is the app-cache stamp, which the release writes</span></div>
+      <div><span class="k">Real browsers</span><span class="v" id="browser-line">288 of 289 pass</span><span class="note">the whole suite in Chromium and WebKit, 27 of them Our plan's own, with real mouse, touch and keys. The 1 skipped is a keyboard test Safari can't run: it Tabs past buttons unless you turn on Full Keyboard Access</span></div>
+      <div><span class="k">Code review</span><span class="v">Codex, five rounds</span><span class="note">eight real findings, all fixed; the last round found nothing new</span></div>
       <div><span class="k">Walk</span><span class="v">41 of 42 pass</span><span class="note">an independent walker, real input, phone and laptop. The one miss was its own: a tap in Safari's engine that never took focus off the search field. With the field really left, it passes</span></div>
     </div>
     <p class="note">What the gate caught, all fixed, each with a test that fails without the fix:</p>
@@ -229,6 +229,7 @@ footer{font-size:14px;color:var(--muted);display:flex;flex-direction:column;gap:
       <li>A card grown on a phone, then the window widened to a laptop, left the panel short of the bottom.</li>
       <li>A keyboard couldn't reach the stops in the laptop panel, and the corner card was 40+ Tabs away behind every wall card. It now comes right after the day rail, and Enter grows a stop's card.</li>
       <li>The open grabber bar was a 13px target. The head takes the tap too (a call above).</li>
+      <li>The avatar menu’s “Our plan” row could outlive the plan: left open past the night’s last stop, it offered a plan that was gone. It now comes and goes with the plan.</li>
     </ol>
   </section>
 

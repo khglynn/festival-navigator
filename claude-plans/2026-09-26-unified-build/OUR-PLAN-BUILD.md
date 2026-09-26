@@ -176,3 +176,27 @@ findings fixed; an independent Sonnet walker with real input.
 - Main's docs after v97 merged (666cc6f, no code). On that head: unit 1168 of 1170 at
   UTC, Tokyo and the night clock (1 skipped; the red is the stamp, the coordinator's);
   browser 260 of 261, the skip being the Chromium-only keyboard test.
+
+## The people menu merged, and its "Our plan ›" row (2026-09-26, ~8:20–8:50 AM)
+
+- `live/people` (b78b274) merged in (b008b1d). One conflict, app.js's dock wiring:
+  Our plan's search focus/blur (they re-read the one-NOW rule) and its welcome-card
+  watcher kept; the you-slot is the people menu's (Jump to top retired there).
+- The row (f449d52): "Our plan ›" in tonal text, first below the menu's line, above
+  Pick as someone else / Join the crew — the people-shelf design. Offered only while
+  a plan is on screen (`planHere()` in plan-shelf.js; passed as null otherwise, so the
+  menu's signature redraws). A tap closes the menu and the plan rises from its peek;
+  on the laptop the corner card grows into the panel. A click with no pointer behind
+  it (Enter, Space, a screen reader: `detail === 0`) takes the focus to the grabber.
+  docs/user-flows.md gains F18 (Our plan) and F9 names the row.
+- Codex on f449d52, one real finding: the row was decided when the menu was drawn, so
+  a plan that left under an open menu left a row that opened nothing (and one that
+  arrived left none). paintPlan redraws the menu when `planHere()` changes; a redraw
+  now hands a keyboard's focus to the same row, else the first (a crew change dropped
+  it to the page too). Fixed in 6930254 with tests that fail without each half;
+  Codex's confirmation found nothing new.
+- Gate on 6930254: unit 1181 of 1183 at UTC, Tokyo and the night clock (the stamp red,
+  1 skipped); browser 288 of 289. One UTC run also failed a people-menu test ("the
+  menu gained Zed…": its 10ms settle after a click) with the load average at 25 from
+  other sessions; that crew has no plan, so the new hook never runs there; 3 of 3
+  alone and the full UTC suite again were clean.

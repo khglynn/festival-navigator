@@ -16,11 +16,11 @@
 - **People menu + Invite sheet** (`live/people`, `PEOPLE-BRIEF.md`): building
   (Opus); leaves a slot for Our plan's row.
 - **Our plan** (`live/plan`, sibling session, `OUR-PLAN-HANDOFF.md`, log
-  `OUR-PLAN-BUILD.md`; 7:40 AM): GATED at 8b3485b and handed to the coordinator
-  (unit 1168/1170 at three clocks, browser 260/261, Codex clean after seven fixes,
-  walk 41/42 with the one red the walker's own). Held off production until Kevin
-  answers "when should it reach friends?" on its review page (recommended: ACL).
-  Next: merge `live/people` when it lands and fill the "Our plan ›" row.
+  `OUR-PLAN-BUILD.md`; 8:50 AM): gated with `live/people` merged in and the
+  menu's "Our plan ›" row filled (unit 1181/1183 at three clocks, browser
+  288/289, Codex clean after eight fixes); head sent to the coordinator for the
+  combined preview. Held off production until Kevin answers "when should it
+  reach friends?" on its review page (recommended: ACL).
 - **ACL prep** (`data/acl-prep`, `ACL-PREP-BRIEF.md`, round two
   `ACL-PREP-ROUND2.md`): Late nights times; round two makes sure no guess is
   later than the show and fixes `guess-run-times` for date-keyed sections. The
