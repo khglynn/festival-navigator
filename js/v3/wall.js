@@ -20,6 +20,7 @@ import { nowOnDay, nowOffsetPx, clockLabel, festivalClock } from './now.js';
 import { eventModelOf, venueGroupsOf, dateRuleLabel, occOf, hourLabelOf, approxMark, parseEventTime, weekdayOfIso, shortDate } from './events.js';
 import { reduced, canAnimate, GROW_MS, OUT_MS, STAGGER_MS, EASE_ARRIVE, EASE_SURFACE } from './motion.js';
 import { isCancelled } from './events.js'; // a cancelled act (2026-09-23) — its own line, so the list above can grow without a merge
+import { searchFold } from '../fold.mjs'; // one fold for every search and the schedule import (2026-09-26)
 
 // ---- person -> board color ---------------------------------------------------
 // v4 people carry colorIndex. Legacy people carry a "R, G, B" string from the
@@ -873,23 +874,12 @@ function dayRuleSub(meta) {
 }
 
 // ---- search / sort / weekend -----------------------------------------------------
-// Fold both sides of a search, never a stored name (names are pick keys): so
-// "tiesto" finds Tiësto, "mull" finds MÜLL, "chloe" finds Chloé Caillet, and
-// the other way round — nobody hunts for the ë on a phone keyboard in a
-// field. NFD splits an accented letter into letter + mark and the marks go;
-// the letters NFD leaves whole (a stroke or a ligature, not a mark: CØNTRA,
-// Łaszewo, DØMINA) get their plain spelling from FOLD_LETTERS. And iOS types
-// a curly ’ for ' (Smart Punctuation), so "it’s murph" finds It's Murph.
+// Fold both sides of a search, never a stored name (names are pick keys) —
+// the fold itself lives in js/fold.mjs, shared with the schedule import.
 // Every search in the app matches through searchMatches — there were two,
 // and the scheduled-fest one (Portola's) had never folded at all (v91,
 // 2026-09-25: friends at Portola typed "mull" and found nothing).
-const FOLD_LETTERS = { 'ø': 'o', 'ł': 'l', 'đ': 'd', 'ð': 'd', 'ħ': 'h', 'ı': 'i', 'ß': 'ss', 'æ': 'ae', 'œ': 'oe', 'þ': 'th' };
-export function searchFold(s) {
-  return String(s ?? '').toLowerCase().normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[øłđðħıßæœþ]/g, (c) => FOLD_LETTERS[c])
-    .replace(/[\u2018\u2019\u02bc]/g, "'");
-}
+export { searchFold };
 // The one match every search uses: does this name answer this query? An
 // empty (or all-space) query answers everything.
 export function searchMatches(name, query) {
@@ -2607,6 +2597,55 @@ export function showActionToast(container, message, label, onAction, ms = 5000) 
   toastTimer = setTimeout(() => { container.textContent = ''; }, ms);
 }
 
+// ---- keeping your place while the wall changes shape (v93) ---------------------
+// A room folded or unfolded from the Show menu rebuilds the wall, and the
+// days above you can grow or shrink by thousands of pixels. The page keeps
+// your place: the wall element at the top of what you see — a card or a
+// room's head — stays exactly where it was on screen (Kevin's stay-open menu
+// is for ticking several rooms without losing your place; the independent
+// walk caught every tick snapping the page back to the day's 1 PM head).
+// No glide: the list changes under a page that stands still.
+//
+// Every card and head gets a key that survives the rebuild: its day, its
+// room, and for a card its artist and occurrence (an artist can play one
+// room twice; the n-th of them).
+export function wallAnchors(root) {
+  const seen = new Map();
+  return [...root.querySelectorAll('.room-head, .card[data-artist]')].map((el) => {
+    const day = (el.closest('.day-block') || {}).dataset?.day || '';
+    const room = (el.closest('.room') || {}).dataset?.room || '';
+    let key = el.classList.contains('room-head') ? `head|${day}|${room}` : `card|${day}|${room}|${el.dataset.artist}|${el.dataset.occ || ''}`;
+    const n = (seen.get(key) || 0) + 1;
+    seen.set(key, n);
+    if (n > 1) key += `|${n}`;
+    return { key, el };
+  });
+}
+// Which element holds your place: the one nearest the top of what you see,
+// at or below `bandTop` (under the sticky chrome); ties go to the first in
+// the wall's order. `items` are { key, top } in document order. Also the keys
+// after it, in order — where to hold on if it goes with a folded room. Null
+// at the top of the page (nothing to keep) or with nothing on the wall.
+export function pickWallAnchor(items, bandTop, scrollY) {
+  if (!(scrollY > 0) || !items.length) return null;
+  let at = -1;
+  items.forEach((it, i) => { if (it.top >= bandTop - 1 && (at < 0 || it.top < items[at].top)) at = i; });
+  if (at < 0) at = items.length - 1; // scrolled past everything: the last thing
+  return { key: items[at].key, top: items[at].top, after: items.slice(at + 1).map((it) => it.key) };
+}
+// After the rebuild: the anchor itself if it is still there; else the first
+// element after it that is (it went with the room you hid — the next room's
+// head, the next day's); else the last element left. Null: nothing is left.
+export function resolveWallAnchor(anchor, present) {
+  if (!anchor) return null;
+  const has = present instanceof Set ? present : new Set(present);
+  if (has.has(anchor.key)) return anchor.key;
+  const next = anchor.after.find((k) => has.has(k));
+  if (next) return next;
+  const all = [...has];
+  return all.length ? all[all.length - 1] : null;
+}
+
 // ---- day-nav scrollspy ------------------------------------------------------------
 // Where a day tab lands: its day's block (dayBlock) — on the wall, in a
 // search, and for a tab off the end of the week alike. Never a grid scroller,
@@ -2616,6 +2655,170 @@ export const DAY_ANCHOR = '.day-block[data-day]';
 // are standing in. A jump lands its block AT the offset on Chromium and about
 // 24px below it on WebKit; both are the same arrival.
 const LANDED_WITHIN = 32;
+
+// ---- where a day row rests (v93) ----------------------------------------------------
+// A day row that cannot show every tab scrolls (Portola's four days and NOW
+// overflow a phone's dock; ACL's seven overflow everything short of a
+// desktop), and where it comes to rest is one rule for the dock and the rail:
+//   1. the day you are standing in is whole — the scrollspy's promise;
+//   2. while something is live, NOW is whole, and so is the day it follows
+//      (Kevin, 2026-09-25, D1: NOW is a tab in the row, right after the day
+//      that is live — "SAT · NOW" — never pinned, never shrunk to a dot);
+//   3. no tab shows as a sliver: a tab past an edge shows all but a sliver
+//      of itself, or nothing but a hint inside the fade (the "RI | SAT | S"
+//      that v91's dock left at 320, and the "HU" of THU at 430);
+//   4. the tabs of rules 1-2 stay clear of the edge fades where the room
+//      allows (a whole tab dimmed at its edge still reads; a sliver never
+//      does, so 3 outranks 4);
+//   5. and, of what is left, the row sits closest to centring those tabs.
+// Each rule outranks the ones after it, so a narrow row gives up centring
+// before a fade, a fade before a sliver, NOW before the day you are in.
+// That is how 390 comes to show FRI SAT NOW SUN and 320 exactly SAT NOW,
+// with no fest name giving way anywhere. Pure (numbers in, a scrollLeft out)
+// so the rule is testable without a layout engine: `items` are the row's
+// visible tabs in order, `x` and `w` in the row's scroll coordinates;
+// `active`, `now`, `live` are indexes into them, or -1.
+const EDGE_HINT = 6; // px: at most this much of a tab may show past an edge, or be cut off at one
+// Layout positions are whole pixels and the scroll range rounds on its own,
+// so a tab that ends exactly at the row's end can read half a pixel past it
+// (NOW after SUN at 320 did, and the row hid it). A pixel of slack is not a
+// pixel anyone sees.
+const WHOLE_SLACK = 1;
+export function restingLeft({ items, width, max, fade = 0, active = -1, now = -1, live = -1 }) {
+  if (!(max > 0.5) || !items.length) return 0;
+  const focus = [...new Set([active, live, now].filter((i) => i >= 0 && items[i]))];
+  const lo = focus.length ? Math.min(...focus.map((i) => items[i].x)) : 0;
+  const hi = focus.length ? Math.max(...focus.map((i) => items[i].x + items[i].w)) : 0;
+  const ideal = focus.length ? Math.max(0, Math.min(max, (lo + hi - width) / 2)) : 0;
+  const whole = (i, L) => i < 0 || !items[i] || (items[i].x >= L - WHOLE_SLACK && items[i].x + items[i].w <= L + width + WHOLE_SLACK);
+  const cost = (L) => {
+    // A fade is drawn only on a side that has more past it (markDayRow).
+    const fl = L > 0.5 ? fade : 0;
+    const fr = L < max - 0.5 ? fade : 0;
+    let faded = 0;
+    for (const i of focus) {
+      if (!whole(i, L)) continue;
+      faded += Math.max(0, L + fl - items[i].x) + Math.max(0, items[i].x + items[i].w - (L + width - fr));
+    }
+    let slivers = 0;
+    for (const it of items) {
+      const seen = Math.max(0, Math.min(it.x + it.w, L + width) - Math.max(it.x, L));
+      const cut = it.w - seen;
+      if (seen > EDGE_HINT && cut > EDGE_HINT) slivers += Math.min(seen, cut);
+    }
+    return [whole(active, L) ? 0 : 1, whole(now, L) ? 0 : 1, whole(live, L) ? 0 : 1, slivers, faded, Math.abs(L - ideal)];
+  };
+  const better = (a, b) => {
+    for (let k = 0; k < a.length; k++) if (Math.abs(a[k] - b[k]) > 1e-6) return a[k] < b[k];
+    return false;
+  };
+  let best = null;
+  for (let s = 0, top = Math.ceil(max); s <= top; s++) {
+    const L = Math.min(s, max);
+    const c = cost(L);
+    if (!best || better(c, best.c)) best = { L, c };
+  }
+  return best.L;
+}
+
+// The row as those numbers. NOW counts as the focus only while it is staying:
+// a NOW on its way out still takes its room until it is gone (app.js), but
+// the row is already resting for the day you are in.
+// Layout positions, not rects — and the scroll range from them too, not
+// from scrollWidth: the tabs can be mid-slide (a FLIP transform, app.js
+// slideTabs), a rect would aim at the transformed box, and a transformed tab
+// moves the edge of what the row can scroll (NOW's arrival shrank it 2px at
+// 320, and the row rested 2px short of the end; a slide that ended left the
+// edge fades on a row that fits).
+const rowTabs = (c) => [...c.children].filter((k) => !k.hidden);
+const rowItems = (c, kids = rowTabs(c)) => kids.map((t) => ({
+  x: t.offsetParent === c ? t.offsetLeft : t.offsetLeft - c.offsetLeft - c.clientLeft,
+  w: t.offsetWidth,
+}));
+const rowMax = (c, items = rowItems(c)) => Math.max(0, items.reduce((e, it) => Math.max(e, it.x + it.w), 0) - c.clientWidth);
+function dayRowGeometry(c) {
+  const kids = rowTabs(c);
+  const items = rowItems(c, kids);
+  const now = kids.findIndex((k) => k.classList.contains('now-tab') && !k.dataset.leaving);
+  const live = now > 0 && kids[now - 1].classList.contains('day-tab') ? now - 1 : -1;
+  return {
+    items,
+    width: c.clientWidth,
+    max: rowMax(c, items),
+    fade: parseFloat(window.getComputedStyle(c).getPropertyValue('--row-fade')) || 0,
+    active: kids.findIndex((k) => k.classList.contains('day-tab') && k.classList.contains('active')),
+    now,
+    live: now >= 0 ? live : -1,
+  };
+}
+
+// The eye is told there is more, on the side there is more ON: a row that
+// fits is never dimmed, and the end of the row is never dimmed once you are
+// at it — which matters, because the tab you are standing in is often the
+// last one.
+export function markDayRow(c) {
+  const max = rowMax(c);
+  const over = max > 1;
+  const held = heldEdges.get(c) || [];
+  c.classList.toggle('overflowing', over || held.includes('overflowing'));
+  c.classList.toggle('more-left', (over && c.scrollLeft > 1) || held.includes('more-left'));
+  c.classList.toggle('more-right', (over && c.scrollLeft < max - 1) || held.includes('more-right'));
+}
+// While tabs slide (app.js slideTabs), the row keeps the edge fades it had
+// before the change as well as the ones it has now, so a tab sliding in from
+// past an edge (THU, when NOW leaves at 390) comes out of a fade instead of a
+// hard cut. `settled` resolves when the tabs land; the fades are read afresh
+// then. The row's own scroll events re-mark it meanwhile, which is why the
+// hold lives here and not in the classes.
+const heldEdges = new WeakMap();
+export function holdDayRowEdges(c, edges, settled) {
+  heldEdges.set(c, edges);
+  markDayRow(c);
+  settled.then(() => {
+    if (heldEdges.get(c) === edges) heldEdges.delete(c);
+    markDayRow(c);
+  });
+}
+
+// A row that nearly fits, fits: before it scrolls, the air between its tabs
+// tightens, from the row's --gap down to its --gap-min (v3.css). Portola's
+// four days and NOW overflow a 430 dock by about 35px, and every scroll of
+// that row left some of THU at the edge (the Pro Max phones, the whole
+// weekend); four days overflow 375 by about 15px. Past what the gaps can
+// give, the row scrolls at its full gap.
+function fitDayRowGap(c) {
+  c.style.removeProperty('--gap');
+  // Only a row that really overflows at its full gap (the rail's row is as
+  // wide as its tabs, so for it "over" would only ever be rounding — and
+  // fitting to rounding would shrink it into a loop). The end mark holds the
+  // range at the layout's end while tabs slide, so a slide never hides one.
+  if (!(c.scrollWidth - c.clientWidth > 1)) return;
+  const css = window.getComputedStyle(c);
+  const gap = parseFloat(css.getPropertyValue('--gap'));
+  const min = parseFloat(css.getPropertyValue('--gap-min'));
+  const kids = rowTabs(c);
+  const n = kids.length - 1;
+  if (!(gap > min) || n < 1) return;
+  // How much, from layout: offsets are whole pixels and never moved by a
+  // slide's transform (scrollWidth is, mid-slide — review, 2026-09-25), and a
+  // tab's invisible touch reach past the last box is not worth a gap. A
+  // quarter pixel spare per gap for the text's fractions.
+  const over = kids.reduce((w, k) => w + k.offsetWidth, 0) + n * gap - c.clientWidth;
+  if (over > 0 && over <= n * (gap - min)) c.style.setProperty('--gap', `${Math.max(min, gap - over / n - 0.25)}px`);
+}
+
+// Bring a day row to rest. The ROW scrolls, never the page (it is not ours to
+// scroll). `behavior` is 'smooth' for the glide a day change earns and
+// 'auto' where the move is carried some other way (app.js slides the tabs
+// themselves when NOW comes or goes) or needs none (a rebuild, a late font).
+export function restDayRow(c, behavior = 'auto') {
+  if (!c) return;
+  fitDayRowGap(c);
+  const left = restingLeft(dayRowGeometry(c));
+  if (typeof c.scrollTo === 'function') c.scrollTo({ left, behavior });
+  else c.scrollLeft = left;
+  markDayRow(c);
+}
 // One rule drives every tab container (mobile dock + desktop rail): the
 // active day is a single fact rendered in two places.
 export function wireScrollspy(containers, wallRoot) {
@@ -2634,19 +2837,8 @@ export function wireScrollspy(containers, wallRoot) {
   // in has to be IN it: ACL's seven tabs leave four off the end of a phone
   // dock, and the row stayed where it was, so it showed FRI 2 / SAT 3 while
   // the wall was in LATE NIGHTS (real-browser walk, 2026-09-17). This is the
-  // one place the active day changes, so it is the one place the row moves.
-  // The ROW scrolls, never the page (it is not ours to scroll), to a spot
-  // worked out from layout positions, not rects: the tabs can be mid-slide
-  // while NOW arrives or leaves (a transform, app.js slideTabs), and
-  // scrollIntoView would aim at the transformed box.
-  const centre = (t, behavior) => {
-    const c = t.parentElement;
-    if (!c) return;
-    const x = t.offsetParent === c ? t.offsetLeft : t.offsetLeft - c.offsetLeft - c.clientLeft;
-    const left = Math.max(0, Math.min(x - (c.clientWidth - t.offsetWidth) / 2, c.scrollWidth - c.clientWidth));
-    if (typeof c.scrollTo === 'function') c.scrollTo({ left, behavior });
-    else c.scrollLeft = left;
-  };
+  // one place the active day changes, so it is the one place the row glides;
+  // where it comes to rest is restDayRow's rule (NOW's pair included).
   let active = null;
   const setActive = (day) => {
     if (day === active) return;
@@ -2657,21 +2849,10 @@ export function wireScrollspy(containers, wallRoot) {
       t.classList.toggle('active', on);
       if (on) t.setAttribute('aria-current', 'true');
       else t.removeAttribute('aria-current');
-      if (on) centre(t, glide ? 'smooth' : 'auto');
     });
+    for (const c of list) restDayRow(c, glide ? 'smooth' : 'auto');
   };
-  // …and the eye is told there is more, on the side there is more ON: a row
-  // that fits is never dimmed, and the end of the row is never dimmed once you
-  // are at it — which matters, because the tab you are standing in is often
-  // the last one.
-  const markOverflow = () => {
-    for (const c of list) {
-      const over = c.scrollWidth - c.clientWidth > 1;
-      c.classList.toggle('overflowing', over);
-      c.classList.toggle('more-left', over && c.scrollLeft > 1);
-      c.classList.toggle('more-right', over && c.scrollLeft < c.scrollWidth - c.clientWidth - 1);
-    }
-  };
+  const markOverflow = () => { for (const c of list) markDayRow(c); };
   markOverflow();
   for (const c of list) c.addEventListener('scroll', markOverflow, { passive: true });
 
@@ -2738,22 +2919,18 @@ export function wireScrollspy(containers, wallRoot) {
   // naming a day you scrolled past three screens ago.
   const onResize = () => { markOverflow(); syncFromGeometry(); };
   window.addEventListener('resize', onResize);
-  // The row can change width with the window standing still: NOW arrives
-  // before the days and leaves again (app.js, 2026-09-24). Its edges are
-  // re-read then, and a row that has just started to overflow keeps the day
-  // you are in on screen.
+  // The row can change width with the window standing still (a rotation, the
+  // dock's fest name drawn in its late font). Its gaps and edges are re-read
+  // then, and the row comes to rest again at once — not only when the day
+  // you are in is clipped: a glide setActive started was aimed for the old
+  // width, and an instant scroll aborts it (CSSOM View: a new scroll aborts
+  // any smooth one).
   let rows = null;
   if (typeof ResizeObserver === 'function') {
     rows = new ResizeObserver(() => {
-      // A row that changed width (NOW came or went, a rotation) and scrolls
-      // centres the day you are in again, at once — not only when it is
-      // clipped: a glide setActive started was aimed for the old width, and
-      // an instant scroll aborts it (CSSOM View: a new scroll aborts any
-      // smooth one).
-      for (const c of list) {
-        const on = [...c.querySelectorAll('.day-tab')].find((t) => t.dataset.day === active);
-        if (on && c.scrollWidth - c.clientWidth > 1) centre(on, 'auto');
-      }
+      // Every row, fitting or not: one that was tightened to fit may have
+      // room to breathe again.
+      for (const c of list) restDayRow(c, 'auto');
       markOverflow();
     });
     for (const c of list) rows.observe(c);

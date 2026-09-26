@@ -417,7 +417,7 @@ const tb = document.getElementById('toolbar-chips');
 for (const person of [K, M, J, S]) tb.appendChild(chipFor(person));
 const add = document.createElement('button');
 add.className = 'person-chip add';
-add.textContent = '+';
+add.textContent = '+ Invite someone'; // the real chip's words (v93)
 tb.appendChild(add);
 const sc = document.getElementById('settings-chips');
 for (const person of [K, M, J, S]) sc.appendChild(chipFor(person));

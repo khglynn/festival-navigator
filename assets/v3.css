@@ -206,7 +206,7 @@ html { touch-action: manipulation; }
 .welcome-head .micro-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .welcome-head .avatar { width: 20px; height: 20px; font-size: 8.5px; }
 .welcome-head .avatar-cluster .avatar + .avatar { margin-left: -5px; }
-.welcome-head .avatar.more { background: var(--card); border: 1px dashed var(--border-emphasis); color: var(--text-secondary); font-size: 7.5px; }
+.welcome-head .avatar.more { background: var(--card); border: 1px solid var(--border-emphasis); color: var(--text-secondary); font-size: 7.5px; } /* +n more of the crew: solid, like a card's +n — dashed means "add" */
 .welcome-card .bring-line { font-size: 14px; }
 .welcome-card .bring-sub { color: var(--text-secondary); font-size: 12px; line-height: 1.5; margin-top: 4px; }
 /* The card's choice is two doors of one width (the guest shelf round,
@@ -234,8 +234,12 @@ html { touch-action: manipulation; }
                 letter-spacing: .06em; color: var(--text-tertiary); border: 1px solid var(--border-card);
                 border-radius: var(--r-pill); padding: 1px 5px; background: rgba(10, 8, 18, .6); }
 /* The '+n' ghost only appears over saturated multi-person auras (3+ pickers)
- * — it gets the same white-on-scrim treatment as every other mark (audit 8.1). */
-.mark.ghost { border: 1px dashed rgba(255, 255, 255, .55); background: rgba(12, 10, 20, .55);
+ * — it gets the same white-on-scrim treatment as every other mark (audit 8.1).
+ * Its ring is solid (v93): in this app a dashed edge only ever means "add"
+ * (the people row's + Invite someone, a guest's + in the dock, + Add a
+ * festival), and +n is people already here. Same 1px, so the corners' width
+ * table (aura.js) is unchanged. */
+.mark.ghost { border: 1px solid rgba(255, 255, 255, .55); background: rgba(12, 10, 20, .55);
               color: #fff; padding: 0 4px; font-size: 7.5px; }
 
 /* ---- people ----------------------------------------------------------------- */
@@ -249,8 +253,14 @@ html { touch-action: manipulation; }
  * looked exactly like the two chips that DO something and silently did nothing
  * when tapped. Same component, honest about which job it is doing here. */
 .person-chip.static { cursor: default; }
-.person-chip.add { background: transparent; border: 1.5px dashed var(--border-emphasis);
-                   color: var(--text-secondary); padding: 4px 10px; }
+/* The add chip is a name chip's box with a dashed edge — the same 1px and
+ * the same padding, so alone on a line (six people at 390) it stands exactly
+ * as tall as the names on every engine (a 1.5px edge drew as 1px in Chromium
+ * and not in WebKit, and the chip came out a pixel or two short). How it
+ * works draws it the same way. "+ Invite someone" is one thing; it moves to the
+ * next line whole. */
+.person-chip.add { background: transparent; border: 1px dashed var(--border-emphasis);
+                   color: var(--text-secondary); padding: 5px 12px; white-space: nowrap; }
 .avatar { width: 17px; height: 17px; border-radius: var(--r-pill); color: #fff; font-size: 8px;
           font-weight: 800; display: inline-flex; align-items: center; justify-content: center; flex: none; }
 .avatar-cluster { display: inline-flex; }
@@ -295,8 +305,12 @@ html { touch-action: manipulation; }
   background: none; border: 0; text-align: left; font-family: inherit;
   color: var(--text-body); font-size: 13px; font-weight: 600; cursor: pointer;
 }
-.sort-pop [role="option"]:hover, .sort-pop [role="option"].kb-active {
-  background: rgba(255, 255, 255, .08);
+.sort-pop [role="option"].kb-active { background: rgba(255, 255, 255, .08); }
+/* Hover only where there is a pointer that hovers: a finger's tap leaves
+ * :hover stuck on the row it touched, and that grey reads as the row being
+ * the choice the next time the menu opens (v93). */
+@media (hover: hover) {
+  .sort-pop [role="option"]:hover { background: rgba(255, 255, 255, .08); }
 }
 /* Brand, not fest accent: a selected sort option is app chrome. The accent is
  * reserved for fest name / active day tab / stage headers / current-fest border. */
@@ -304,13 +318,23 @@ html { touch-action: manipulation; }
 .sort-pop .check { width: 12px; flex: none; font-size: 11px; }
 
 /* The show menu (MODEL-V4 §3.1) is this same popover with three parts the
- * sort chip never needed: a head, a divider, and Settings at the end. */
-.sort-pop .pop-head {
-  padding: 5px 11px 6px; color: var(--text-tertiary);
-  font-size: 10px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase;
+ * sort chip never needed: a label, a divider, and Settings at the end.
+ *
+ * A menu's label (v93, Kevin: a small "Show" at the top, not a title): ONE
+ * class for every menu that names itself — the Show menu now, the Highlight
+ * menu from the avatar next. The app's section micro-label (10px / 800 /
+ * --track-label, the room heads' letter-spaced sub line), in the secondary
+ * grey, lined up with the rows' check column. */
+.menu-label {
+  display: block; padding: 5px 11px 6px; color: var(--text-secondary);
+  font-size: 10px; font-weight: 800; letter-spacing: var(--track-label); text-transform: uppercase;
 }
 .sort-pop .pop-div { height: 1px; margin: 5px 7px; background: var(--hairline); }
 .sort-pop .chev { color: var(--text-tertiary); margin-left: auto; padding-left: 10px; }
+/* Settings wears the header's gear in the check column (v93), so its word
+ * lines up with the rooms' names above it. */
+.sort-pop .settings .check { display: inline-flex; align-items: center; color: var(--text-secondary); }
+.sort-pop .settings .gear { display: block; }
 /* The dock is fixed to the bottom of the phone, so a popover it carries opens
  * UPWARD — downward is off the screen. The rail's is at the top of the page
  * and keeps the default. One rule, on the one bottom-anchored wrap. The
@@ -419,7 +443,8 @@ button.room-head { cursor: pointer; }
    * vocabulary, two positions. */
   .day-rail .you { width: 26px; height: 26px; font-size: 10px; position: relative; }
   .day-rail .fest-link { margin-left: auto; }
-  .day-rail .rail-days { display: flex; gap: 20px; overflow-x: auto; }
+  /* --gap-min: a row that nearly fits tightens to fit (wall.js fitDayRowGap). */
+  .day-rail .rail-days { display: flex; --gap: 20px; --gap-min: 14px; gap: var(--gap); overflow-x: auto; }
   .day-rail .day-tab {
     font-family: var(--font-display); letter-spacing: var(--track-label);
     font-size: var(--fs-micro); text-transform: uppercase;
@@ -499,14 +524,22 @@ button.room-head { cursor: pointer; }
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
   background: var(--dock); border-top: 1px solid var(--hairline);
   padding: 9px 16px calc(9px + env(safe-area-inset-bottom));
-  display: flex; align-items: center; gap: 14px;
+  /* 10px, not 14 (v93): the fest name's menu caret costs the day row 8px,
+   * and the row's two gaps give exactly that back — so the D1 frames hold
+   * (390 FRI SAT NOW SUN, 320 SAT NOW, Sunday at 390 with no fragment of FRI
+   * at the edge), and ACL's long name still leaves the day you are in whole
+   * at 320 where Linux and Android draw Inter wide. The row's edge fades
+   * keep the air the eye reads between the parts. */
+  display: flex; align-items: center; gap: 10px;
 }
 .dock .you { width: 26px; height: 26px; font-size: 10px; position: relative; }
+
 /* Centered when they fit, scrollable from the START when they don't — plain
- * justify-content:center clips the first tabs unreachably at 390px (AX-6). */
-.dock .days { flex: 1; display: flex; gap: 24px; overflow-x: auto; }
-.dock .day-tab:first-child { margin-left: auto; }
-.dock .day-tab:last-child { margin-right: auto; }
+ * justify-content:center clips the first tabs unreachably at 390px (AX-6).
+ * Whatever is first and last: NOW can be the last tab (SUN · NOW). */
+.dock .days { flex: 1; display: flex; --gap: 24px; --gap-min: 15px; gap: var(--gap); overflow-x: auto; }
+.dock .days > :first-child { margin-left: auto; }
+.dock .days > :last-child { margin-right: auto; }
 /* More days than fit (ACL's seven on a 152px row): the row has always
  * scrolled, but nothing said so and nothing kept the day you were in on
  * screen. wall.js scrolls the active tab to the middle; this is the other
@@ -518,10 +551,18 @@ button.room-head { cursor: pointer; }
   -webkit-mask-image: linear-gradient(to right, transparent 0, #000 var(--fade-l), #000 calc(100% - var(--fade-r)), transparent 100%);
   mask-image: linear-gradient(to right, transparent 0, #000 var(--fade-l), #000 calc(100% - var(--fade-r)), transparent 100%);
 }
+/* A tab mid-slide (app.js slideTabs, a transform) counts toward how far its
+ * row can scroll, so one sliding in from the left edge of its end place
+ * would shrink the row's range and the browser would pull a row resting at
+ * its end short by that much, for good. A zero-width mark after the last
+ * tab holds the range at the layout's end; its margin takes back the gap it
+ * would otherwise add. */
+.dock .days::after, .day-rail .rail-days::after { content: ''; flex: none; width: 0; margin-left: calc(-1 * var(--gap)); }
 /* Each edge fades only while there is something past it, so the last tab —
  * often the one you are standing in — is never the dim one. */
-/* How far a clipped edge fades: one number, which app.js fitNowTab reads too
- * (a neighbour day is only seen once it clears the gap AND the fade). */
+/* How far a clipped edge fades: one number, which wall.js restingLeft reads
+ * too (the tabs it keeps whole stay clear of it; a tab past an edge shows
+ * nothing there but a hint). */
 .dock .days, .day-rail .rail-days { --row-fade: 18px; }
 .dock .days.more-left, .day-rail .rail-days.more-left { --fade-l: var(--row-fade); }
 .dock .days.more-right, .day-rail .rail-days.more-right { --fade-r: var(--row-fade); }
@@ -603,10 +644,13 @@ button.room-head { cursor: pointer; }
   .dock .day-tab::after, .day-rail .day-tab::after, .now-tab::after {
     content: ''; position: absolute; inset: -14px -2px;
   }
-  /* NOW down to its dot is 17px wide: it takes the gap on its right (the
-   * days' own reach is 2px) but not on its left, where the avatar's reach
-   * already is. */
-  .now-tab.compact::after { inset: -14px -10px -14px -2px; }
+  /* The day rows scroll sideways, and a scroller clips — hit-testing
+   * included — so the tabs' borrowed 14px above and below were cut off at
+   * the row's edge: NOW (in the row since v93) and every day tab answered a
+   * tap only on their ~20px of text (review, 2026-09-25). The row takes the
+   * reach inside its own box and gives it back in margin, so the dock does
+   * not grow by a pixel. */
+  .dock .days, .day-rail .rail-days { padding-block: 14px; margin-block: -14px; }
   /* Narrow glyph controls are 17-28px WIDE, so a tall-but-thin target is still a
    * miss — and they are isolated, so they can take the horizontal room.
    * `button.avatar` on purpose: the avatars inside cards are spans, and giving
@@ -629,8 +673,9 @@ button.room-head { cursor: pointer; }
   .card button::after { content: none; }
 }
 /* NOW (2026-09-24, Kevin: "where is ross likely right now"): the jump to
- * what is playing, before the day tabs in the dock and the rail — in each
- * one's own day-tab type, so it reads as one of the row, but in the now
+ * what is playing — since v93 a tab in the day row itself, right after the
+ * day that is live (SAT · NOW), in the dock and the rail. It wears each row's
+ * own day-tab type and box, so it reads as one of the row, but in the now
  * line's violet (brand, never the fest accent: it is app chrome), with a live
  * dot that breathes. The motion kill rules make the dot still under Reduce
  * Motion and Low Power, which is what they are for. It is only there while
@@ -642,21 +687,7 @@ button.room-head { cursor: pointer; }
 .now-tab .live { width: 5px; height: 5px; border-radius: var(--r-pill); background: rgb(var(--brand));
                  box-shadow: 0 0 5px rgba(var(--brand), .8); animation: now-live 2.4s ease-in-out infinite; }
 @keyframes now-live { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
-/* Where the days would lose the day you are in (app.js fitNowTab — a long
- * fest name on a 320 dock), NOW keeps only its dot, in a faint ring so it
- * still reads as something to tap rather than a stray pixel. */
-.now-tab.compact { width: 17px; height: 17px; padding: 0; justify-content: center; gap: 0;
-                   border: 1.5px solid rgba(var(--brand), .45); border-radius: var(--r-pill); }
-.now-tab.compact .word { display: none; }
-.now-tab.compact .live { width: 7px; height: 7px; }
 .dock .now-tab { font-family: var(--font-ui); font-weight: 800; font-size: 12px; }
-/* The last resort (app.js fitNowTab): even beside NOW's dot the days are
- * narrower than one tab, so they claim their widest and the fest name gives
- * way with an ellipsis. !important only to out-rank the wrap's inline
- * `flex: none` in index.html, which every other state keeps. */
-.dock.squeezed #dock-fest-wrap { flex: 0 1 auto !important; min-width: 0; }
-.dock.squeezed .fest-link { flex: 0 1 auto; max-width: 100%; min-width: 0; }
-.dock.squeezed .fest-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .day-rail .now-tab { font-family: var(--font-display); letter-spacing: var(--track-label);
                      font-size: var(--fs-micro); text-transform: uppercase; padding: 2px 0 3px; }
 .dock .day-tab .num { font-size: 9px; font-weight: 600; margin-left: 2px; }
@@ -666,6 +697,20 @@ button.room-head { cursor: pointer; }
              border: none; cursor: pointer; flex: none; }
 .fest-link .fest-name { font-family: var(--font-display); letter-spacing: .04em;
                         font-size: 13px; color: rgb(var(--fest)); }
+/* A button that opens a menu says so, quietly (v93, Kevin): a small caret
+ * right after its words, pointing the way the menu opens — up from the dock,
+ * down from the rail (`.down`). ONE class for every such button: the fest
+ * name now, the avatar's Highlight menu next. It is part of the button (no
+ * hit target of its own), in the secondary grey, drawn to the height of the
+ * name's capitals, and only there while the button really opens a menu — a
+ * one-room fest's name goes straight to Settings, and says nothing. Its
+ * negative margins keep it close to the words it belongs to, and cost the day
+ * row beside it as little room as they can. */
+.menu-caret { display: inline-block; flex: none; width: 5px; height: 5px; margin: 0 -1px 0 -3px;
+              border: solid var(--text-secondary); border-width: 1.5px 0 0 1.5px;
+              transform: translateY(1.5px) rotate(45deg); }
+.menu-caret.down { transform: translateY(-1.5px) rotate(225deg); }
+button:not([aria-haspopup]) > .menu-caret { display: none; }
 .you-avatar { border: 1.5px solid #fff; background: none; cursor: pointer; padding: 0; }
 /* A guest's "you" (v92): the avatar's place, empty and asking — a dashed
  * ring and a +, in brand (it is about a person, never the festival). It is
@@ -1482,3 +1527,84 @@ a.f-link:hover { border-bottom-color: rgba(255, 255, 255, .75); }
  * meet it on either side. */
 .zoom-card .f-chips.f-step-row > .f-chip.notes { position: relative; } /* its own box, on a mouse too — the reach must not become the row's */
 .zoom-card .f-chips.f-step-row > .f-chip.notes::after { content: ''; position: absolute; inset: calc(50% - 22px) 0; }
+
+/* ---- import from a festival app's schedule export (2026-09-26) ---------------
+ * The production sheet, grown for a small wall: its side padding is the wall's
+ * own gutter, so two --col-w cards sit across a phone exactly as they do on
+ * the wall, and from 720 the dialog is as wide as three of them. The images
+ * sit in a row at the top (9:16, like the export), each captioned with what
+ * it was read as; the days' cards arrive under them; one button at the foot.
+ * Brand where anything wants to look "ours", never --fest. */
+.sheet.import-sheet { max-height: 88vh; gap: 12px;
+                      padding: 8px var(--sp-gutter) 0; }
+/* Nothing in it gives up height to fit: the sheet scrolls instead. (The image
+ * row is a sideways scroller, so its min-height is 0 and it was the first
+ * thing a full sheet squeezed flat.) */
+.sheet.import-sheet > * { flex-shrink: 0; }
+@media (min-width: 720px) {
+  .sheet.import-sheet { width: min(calc(3 * var(--col-w) + 2 * var(--col-gap) + 40px), 92vw); padding: 16px 20px 0; }
+}
+.import-sheet .imp-lede { margin: 0; overflow: hidden; color: var(--text-secondary); font-size: 12.5px; font-weight: 600; line-height: 1.5; }
+.import-sheet .imp-input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+/* The images. Before the first choice the dashed "+" is the whole row: the
+ * one thing to do here. After it, the "+" is one more tile at the row's end. */
+.import-sheet .imp-shots { display: flex; gap: 10px; overflow-x: auto; padding: 2px; margin: -2px;
+                           scrollbar-width: none; overscroll-behavior-x: contain; }
+.import-sheet .imp-shots::-webkit-scrollbar { display: none; }
+.import-sheet .imp-add { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+                         height: 112px; background: transparent; border: 1.5px dashed var(--border-emphasis);
+                         border-radius: var(--r-settings); color: var(--text-secondary); cursor: pointer; font-family: inherit;
+                         -webkit-tap-highlight-color: transparent; }
+.import-sheet .imp-add:active { border-color: rgba(var(--brand), .6); }
+.import-sheet .imp-add-glyph { font: 300 28px/1 var(--font-ui); color: var(--text-header); }
+.import-sheet .imp-add-word { font-size: 13px; font-weight: 700; }
+.import-sheet .imp-shots.has-shots .imp-add { flex: none; width: 64px; height: 114px; border-radius: var(--r-card); align-self: flex-start; }
+.import-sheet .imp-shots.has-shots .imp-add-glyph { font-size: 22px; }
+.import-sheet .imp-shots.has-shots .imp-add-word { font-size: 10.5px; }
+.import-sheet .imp-shot { flex: none; width: 64px; display: flex; flex-direction: column; gap: 6px; }
+.import-sheet .imp-shot-face { display: block; width: 64px; height: 114px; min-height: 0; padding: 0; overflow: hidden;
+                               background: var(--card); border: 1px solid var(--hairline); border-radius: var(--r-card);
+                               cursor: default; -webkit-tap-highlight-color: transparent; }
+.import-sheet .imp-shot-face img { display: block; width: 100%; height: 100%; object-fit: cover; transition: opacity .2s ease; }
+.import-sheet .imp-shot[data-state="reading"] .imp-shot-face img { opacity: .55; }
+.import-sheet .imp-shot[data-state="error"] .imp-shot-face { border-color: rgba(248, 113, 113, .55); cursor: pointer; }
+/* No signal is a state, not a fault: gray, like the sync dot's offline. */
+.import-sheet .imp-shot[data-error="offline"] .imp-shot-face,
+.import-sheet .imp-shot[data-error="stay"] .imp-shot-face { border-color: var(--border-emphasis); }
+.import-sheet .imp-shot[data-state="error"] .imp-shot-face img,
+.import-sheet .imp-shot[data-state="empty"] .imp-shot-face img { opacity: .4; }
+.import-sheet .imp-shot-cap { display: flex; flex-direction: column; gap: 1px; min-height: 28px;
+                              color: var(--text-tertiary); font-size: 10.5px; font-weight: 700; line-height: 1.25; }
+.import-sheet .imp-shot-cap .eq-loader { height: 10px; }
+.import-sheet .imp-shot-day { font-family: var(--font-display); letter-spacing: var(--track-display); font-size: 14px; font-weight: 400;
+                              color: var(--text-header); line-height: 1.1; }
+.import-sheet .imp-shot-n.err { color: var(--danger); }
+.import-sheet .imp-shots-note:empty { display: none; }
+/* Heard, not seen: what each read found, for a screen reader. */
+.import-sheet .imp-heard { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+/* The days: each one's head, its cards (the wall's own, --col-w wide), and
+ * the lines under it. */
+.import-sheet .imp-days { display: flex; flex-direction: column; gap: 20px; }
+.import-sheet .imp-days:empty { display: none; }
+.import-sheet .imp-day-head { display: flex; align-items: baseline; gap: 8px; margin-bottom: 8px; }
+.import-sheet .imp-day-title { margin: 0; font-family: var(--font-display); font-weight: 400; letter-spacing: var(--track-display);
+                               font-size: var(--fs-day); color: var(--text-header); }
+.import-sheet .imp-day-sub { color: var(--text-tertiary); font-size: 11px; font-weight: 700; }
+.import-sheet .imp-grid { display: grid; grid-template-columns: repeat(auto-fill, var(--col-w)); gap: var(--col-gap); }
+.import-sheet .imp-notes { display: flex; flex-direction: column; gap: 5px; margin-top: 9px; }
+.import-sheet .imp-note { margin: 0; color: var(--text-tertiary); font-size: 11.5px; font-weight: 600; line-height: 1.45; }
+.import-sheet .imp-kept { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; }
+.import-sheet .imp-kept-label { color: var(--text-secondary); }
+.import-sheet .imp-kept-item { display: inline-flex; align-items: center; gap: 6px; color: var(--text-body); }
+/* The foot rides the sheet's bottom edge while the days scroll under it. */
+.import-sheet .imp-foot { position: sticky; bottom: 0; z-index: 2; display: flex; flex-direction: column; gap: 7px;
+                          margin: 0 calc(-1 * var(--sp-gutter)); padding: 14px var(--sp-gutter) calc(14px + env(safe-area-inset-bottom, 0px));
+                          background: linear-gradient(to bottom, rgba(10, 8, 18, 0), var(--dock) 14px); }
+@media (min-width: 720px) {
+  .import-sheet .imp-foot { margin: 0 -20px; padding: 14px 20px 18px; }
+}
+.import-sheet .imp-foot[hidden] { display: none; }
+.import-sheet .imp-go { width: 100%; min-height: 46px; padding: 12px; font-size: 14px; font-family: inherit; }
+.import-sheet .imp-go:disabled { opacity: .45; cursor: default; }
+.import-sheet .imp-status { color: var(--text-secondary); font-size: 11.5px; font-weight: 600; line-height: 1.45; }
+.import-sheet .imp-status:empty { display: none; }

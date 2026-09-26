@@ -58,9 +58,9 @@ back to one crew-named "tap to open" row.
 **Expected:** no people questions anywhere in this flow; apostrophes stripped
 from generated crew names; selection survives entering the name step.
 
-## F2b · Add people on a fest (+ Add)
+## F2b · Invite people on a fest (+ Invite someone)
 
-1. Wall → **+ Add** → type a name, or one-tap a chip under "From your other
+1. Wall → **+ Invite someone** → type a name, or one-tap a chip under "From your other
    fests" (active people from every other circle this device knows, deduped,
    minus you and existing members).
 2. Success mints the person's claim link (&me=) — placeholder until opened.
@@ -140,7 +140,12 @@ viewport (no vast dead space on desktop).
    and a day with nothing visible left on it has no rule and no tab (never
    an empty shell). Remembered per fest, on this device only, and it is the
    ONE way to hide a part of the week; the menu still lists every room, which
-   is where the state is visible.
+   is where the state is visible. The menu stays open while you tick rooms
+   (the wall changes behind it, and what was at the top of the screen stays
+   there); a tap outside, Escape or the fest name again puts it away, and a
+   Back goes where Back always went, taking the menu with it. A tap outside
+   on a card only puts it away — never a pick; on a control (a day tab, NOW,
+   the +, Notes) it puts it away and does what that control does.
    A fest with one room goes straight to Settings, as it always did.
 8. **A dated section is its own tab** after the days (LATE NIGHTS), ruled by
    date (TUE · SEP 29) with its venue groups under each rule. Its cards pick

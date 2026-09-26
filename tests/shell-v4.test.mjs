@@ -49,6 +49,7 @@ for (let i = 0; i < 100 && $('screen-app').style.display === 'none'; i += 1) awa
 
 const app = await import('../js/v3/app.js'); // the SAME instance the page booted
 const filters = await import('../js/v3/filters.js');
+const state = await import('../js/state.js'); // the SAME instance: its pendingChanges are the page's
 
 const click = (el) => el.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
 const menu = (which) => $(`${which}-fest-wrap`).querySelector('.sort-pop');
@@ -122,7 +123,7 @@ test('the fest name opens the show menu: Show, a row per room, then Settings', (
     const pop = menu(which);
     assert.ok(pop, `${which}: the popover is hung in the wrap`);
     assert.equal(pop.style.display, 'none', 'closed until it is asked for');
-    assert.equal(pop.querySelector('.pop-head').textContent, 'Show');
+    assert.equal(pop.querySelector('.menu-label').textContent, 'Show', 'the menu\'s small label (one class, for every menu that names itself)');
     assert.deepEqual(rows(which), [
       [':fest', '✓Portola', 'true'],
       ['Afters', '✓Afters', 'true'],
@@ -156,27 +157,201 @@ test('the show menu\'s rows are real buttons, and still options in the listbox',
   assert.equal(dom.window.document.activeElement, row, 'a keyboard can stand on a row');
 });
 
-test('a tap opens it, Escape closes it, and a tap outside closes it', () => {
+// v93 (Kevin): the menu stays up while you choose, so it has ways out of its
+// own — a tap outside, Escape, the fest name again. It is a popover, not a
+// place: opening it makes no history entry, and a Back with it open does
+// what Back does, with the menu gone.
+const escape = () => dom.window.document.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+// A traversal lands when its popstate does — waited for, never guessed at: a
+// fixed 40 ms held by daylight, and on a loaded runner at night (a live wall
+// is more work per task) jsdom's traversal landed after it (v96, CI).
+const traverse = (go) => new Promise((resolve) => {
+  const timer = setTimeout(resolve, 3000);
+  dom.window.addEventListener('popstate', () => { clearTimeout(timer); setTimeout(resolve, 0); }, { once: true });
+  go();
+});
+test('a tap opens it; Escape, a tap outside and the fest name again each close it; opening it makes no history entry', async () => {
   const link = $('dock-fest-link');
   const pop = menu('dock');
-  click(link);
-  assert.equal(pop.style.display, '', 'open');
-  assert.equal(link.getAttribute('aria-expanded'), 'true');
-  dom.window.document.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
-  assert.equal(link.getAttribute('aria-expanded'), 'false', 'Escape takes the popover, not a history layer');
-  assert.equal($('screen-app').style.display, '', 'and nothing under it moved');
-
-  click(link);
-  assert.equal(link.getAttribute('aria-expanded'), 'true');
-  click($('wall-root'));
-  assert.equal(link.getAttribute('aria-expanded'), 'false', 'a tap outside closes it');
-
-  click(link);
-  click(link);
-  assert.equal(link.getAttribute('aria-expanded'), 'false', 'and the fest name toggles it');
+  const h = dom.window.history;
+  const ways = {
+    Escape: () => escape(),
+    'a tap outside': () => click($('wall-root')),
+    'the fest name again': () => click(link),
+  };
+  const start = h.length;
+  const found = JSON.stringify(h.state);
+  for (const [way, go] of Object.entries(ways)) {
+    click(link);
+    assert.equal(pop.style.display, '', `${way}: open`);
+    assert.equal(link.getAttribute('aria-expanded'), 'true');
+    assert.equal(h.length, start, `${way}: no history entry of its own`);
+    go();
+    await settle(30);
+    assert.equal(link.getAttribute('aria-expanded'), 'false', `${way} closes it`);
+    assert.equal(pop.style.display, 'none');
+    assert.equal(JSON.stringify(h.state), found, `${way}: history as it was`);
+    assert.equal($('screen-app').style.display, '', 'and nothing under it moved');
+  }
+  assert.equal(h.length, start);
 });
 
-test('unchecking a room hides it on every day — the show menu is the one door', () => {
+test('Back with the menu up does what Back does, and the menu, its busy flag and nothing else go with it', async () => {
+  const h = dom.window.history;
+  h.pushState(null, ''); // a step the app could go back to, the wall's own address
+  const start = h.length;
+  click($('dock-fest-link'));
+  assert.equal($('dock-fest-link').getAttribute('aria-expanded'), 'true');
+  assert.equal(dom.window.document.body.dataset.busy, 'show-menu', 'busy while it is up');
+  assert.equal(h.length, start, 'opening it pushed nothing');
+  await traverse(() => h.back());
+  assert.equal($('dock-fest-link').getAttribute('aria-expanded'), 'false', 'the menu went with the step');
+  assert.equal(menu('dock').style.display, 'none');
+  assert.equal(dom.window.document.body.dataset.busy, undefined, 'and gave the reload back');
+  assert.equal($('screen-app').style.display, '', 'still the wall');
+});
+
+// With the menu up, the tap that puts it away is often a tap on the wall —
+// and a card under that tap must not hear it: a pick under your name on the
+// way out of a menu is a write nobody meant.
+test('a tap outside the open menu only closes it: the card under the tap is not picked', async () => {
+  const card = $('wall-root').querySelector('.card[data-artist]');
+  const pending = () => JSON.stringify(state.pendingChanges);
+  const before = pending();
+  let heard = 0;
+  // Heard at the card and stopped there (capture, at the target): this test
+  // proves the tap reaches the card once the menu is away, and must not make
+  // a real pick doing it — a pick is a sync push 1.2 s later whose answer
+  // repaints the wall, and on a loaded runner it landed inside the fold tests
+  // below and took their arrivals with it (v96, CI).
+  const hear = (e) => { heard += 1; e.stopImmediatePropagation(); };
+  card.addEventListener('click', hear, true);
+  try {
+    click($('dock-fest-link'));
+    click(card);
+    await settle(30);
+    assert.equal(heard, 0, 'the card never heard the tap');
+    assert.equal($('dock-fest-link').getAttribute('aria-expanded'), 'false', 'the menu closed');
+    click(card);
+    assert.equal(heard, 1, 'and with the menu away, the next tap is the card\'s');
+    assert.equal(pending(), before, 'and no write is left behind for a later test to trip over');
+  } finally {
+    card.removeEventListener('click', hear, true);
+  }
+});
+
+// Anything else outside does what it was aimed at, on the same tap — a day
+// tab here; a tap on an icon (the header's gear, its <svg>) reaches its
+// button; a card grown in the zoom is a card, and only closes the menu.
+test('a tap outside on a day tab or the gear closes the menu and still does its job; a grown card only closes it', async () => {
+  const tab = $('dock-days').querySelector('.day-tab[data-day="Friday"]');
+  let heard = 0;
+  const hear = () => { heard += 1; };
+  tab.addEventListener('click', hear);
+  const gearPath = $('gear-btn').querySelector('path');
+  let gearHeard = 0;
+  const hearGear = (e) => { gearHeard += 1; e.stopImmediatePropagation(); };
+  $('gear-btn').addEventListener('click', hearGear, true);
+  const layer = dom.window.document.createElement('div');
+  layer.id = 'zoom-layer';
+  const grown = dom.window.document.createElement('div');
+  layer.appendChild(grown);
+  dom.window.document.body.appendChild(layer);
+  let grownHeard = 0;
+  grown.addEventListener('click', () => { grownHeard += 1; });
+  try {
+    click($('dock-fest-link'));
+    click(tab);
+    assert.equal($('dock-fest-link').getAttribute('aria-expanded'), 'false', 'the menu closed');
+    assert.equal(heard, 1, 'and the tab heard its tap, once');
+    click($('dock-fest-link'));
+    gearPath.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
+    assert.equal($('dock-fest-link').getAttribute('aria-expanded'), 'false');
+    assert.equal(gearHeard, 1, 'the gear heard the tap its icon took');
+    click($('dock-fest-link'));
+    click(grown);
+    assert.equal($('dock-fest-link').getAttribute('aria-expanded'), 'false', 'the grown card closed the menu');
+    assert.equal(grownHeard, 0, 'and never heard the tap');
+  } finally {
+    tab.removeEventListener('click', hear);
+    $('gear-btn').removeEventListener('click', hearGear, true);
+    layer.remove();
+  }
+});
+
+test('the menu holds a new build\'s reload while it is up, and never takes another flow\'s flag', async () => {
+  click($('dock-fest-link'));
+  assert.equal(dom.window.document.body.dataset.busy, 'show-menu');
+  escape();
+  assert.equal(dom.window.document.body.dataset.busy, undefined);
+  dom.window.document.body.dataset.busy = 'spotify-scan';
+  try {
+    click($('dock-fest-link'));
+    escape();
+    assert.equal(dom.window.document.body.dataset.busy, 'spotify-scan', 'another flow\'s busy flag is left alone');
+  } finally {
+    delete dom.window.document.body.dataset.busy;
+  }
+});
+
+test('Settings from the menu: the menu goes, Settings takes one entry, and Back lands on the wall with no menu', async () => {
+  const h = dom.window.history;
+  const start = h.length;
+  const found = JSON.stringify(h.state);
+  click($('dock-fest-link'));
+  click(menu('dock').querySelector('.settings'));
+  await settle(30);
+  assert.notEqual($('screen-settings').style.display, 'none', 'Settings is open');
+  assert.equal(menu('dock').style.display, 'none', 'the menu is gone');
+  assert.deepEqual(h.state, { layers: ['settings'] });
+  assert.ok(h.length <= start + 1, 'one entry, Settings\' own — none for the menu');
+  await traverse(() => h.back());
+  assert.equal($('screen-app').style.display, '', 'Back: the wall');
+  assert.equal(JSON.stringify(h.state), found);
+  assert.equal($('dock-fest-link').getAttribute('aria-expanded'), 'false', 'and no menu comes back with it');
+});
+
+// A button that opens a menu says so, quietly (v93, Kevin): a caret right
+// after the fest name, pointing the way its menu opens — up from the dock,
+// down from the rail — part of the button, and shown only while the name
+// opens a menu (a one-room fest's name goes straight to Settings). One class,
+// for the avatar's Highlight menu to wear next.
+test('the fest name carries a menu caret after its words: up in the dock, down in the rail, only while it opens a menu', () => {
+  for (const [door, down] of [['dock', false], ['rail', true]]) {
+    const link = $(`${door}-fest-link`);
+    const kids = [...link.children].map((k) => k.className.split(' ')[0]);
+    assert.deepEqual(kids.slice(0, 3), ['fest-name', 'menu-caret', 'sync-dot'], `${door}: the name, its caret, then the dot`);
+    const caret = link.querySelector('.menu-caret');
+    assert.equal(caret.classList.contains('down'), down, `${door}: it points the way the menu opens`);
+    assert.equal(caret.getAttribute('aria-hidden'), 'true', 'a picture, not a second name for the button');
+    assert.equal(link.getAttribute('aria-haspopup'), 'listbox', 'Portola has rooms, so the name opens a menu');
+  }
+  const css = readFileSync(join(ROOT, 'assets/v3.css'), 'utf8');
+  assert.match(css, /\.menu-caret \{[^}]*border: solid var\(--text-secondary\)/, 'drawn in the secondary grey');
+  assert.match(css, /button:not\(\[aria-haspopup\]\) > \.menu-caret \{ display: none; \}/, 'and gone where the button opens no menu');
+});
+
+test('the Settings row wears the header\'s gear, left of its word, and it is only decoration', () => {
+  for (const which of ['dock', 'rail']) {
+    const row = menu(which).querySelector('.settings');
+    const [check, word] = row.children;
+    const gear = check.querySelector('svg.gear');
+    assert.ok(gear, `${which}: a gear in the check column`);
+    assert.equal(word.textContent, 'Settings', 'then the word');
+    assert.equal(check.getAttribute('aria-hidden'), 'true', 'read as "Settings", never as a picture');
+    assert.equal(gear.getAttribute('stroke'), 'currentColor', 'coloured by the stylesheet');
+    const header = $('gear-btn').querySelector('path').getAttribute('d');
+    assert.equal(gear.querySelector('path').getAttribute('d'), header, 'the header\'s own gear, not a lookalike');
+    assert.equal(gear.getAttribute('width'), '12', 'at the size of the row\'s check');
+  }
+  const css = readFileSync(join(ROOT, 'assets/v3.css'), 'utf8');
+  assert.match(css, /\.sort-pop \.settings \.check \{[^}]*color: var\(--text-secondary\)/, 'in the secondary text colour');
+  // The menu's label (Kevin, v93): small, letter-spaced, the secondary grey —
+  // a label, not a title — and one class the next menu can wear.
+  assert.match(css, /\.menu-label \{[^}]*color: var\(--text-secondary\)[^}]*letter-spacing: var\(--track-label\)[^}]*text-transform: uppercase/, 'the label is the app\'s micro-label');
+});
+
+test('unchecking a room hides it on every day — the show menu is the one door', async () => {
   const stored = () => globalThis.localStorage.getItem(`fn_fold_v1_${FID}`);
   const row = (key) => [...menu('dock').querySelectorAll('[data-room]')].find((r) => r.dataset.room === key);
 
@@ -186,15 +361,15 @@ test('unchecking a room hides it on every day — the show menu is the one door'
   click($('dock-fest-link'));
   click(row('Folsom'));
   assert.equal(stored(), '["Folsom"]', 'device-local, per fest — never the crew doc');
-  assert.equal(menu('dock').style.display, 'none', 'a row tap closes the menu');
+  assert.equal(menu('dock').style.display, '', 'the menu stays up for the next one (v93)');
+  assert.equal($('dock-fest-link').getAttribute('aria-expanded'), 'true');
   assert.deepEqual(rows('dock').map((r) => r[2]), ['true', 'true', 'false'], 'and the menu says so');
   assert.deepEqual(rows('rail').map((r) => r[2]), ['true', 'true', 'false'], 'in both doors');
   assert.deepEqual(wall(), ['Afters', ':fest'], 'the wall repainted: Folsom renders nothing');
   assert.deepEqual(tabs(), ['Thursday', 'Friday', 'Saturday', 'Sunday'], 'the afters still play every night');
 
-  // A second room: each tap applies before the next reads, so nothing is lost
-  // between two taps in a row.
-  click($('dock-fest-link'));
+  // A second room, from the same open menu: each tap applies before the next
+  // reads, so nothing is lost between two taps in a row.
   click(row('Afters'));
   assert.equal(stored(), '["Folsom","Afters"]');
   assert.deepEqual(rows('dock').map((r) => r[2]), ['true', 'false', 'false']);
@@ -202,14 +377,16 @@ test('unchecking a room hides it on every day — the show menu is the one door'
   assert.deepEqual(tabs(), ['Saturday', 'Sunday'], 'Thursday and Friday have nothing visible, so they have no tab (Kevin: "not empty shells")');
   assert.deepEqual(rows('dock').map((r) => r[0]), [':fest', 'Afters', 'Folsom'], 'the menu still offers every room — that is where the state is visible');
 
-  // And back — tapping a folded room's row unfolds it.
-  click($('dock-fest-link'));
+  // And back — tapping a folded room's row unfolds it. Still the one menu.
   click(row('Afters'));
-  click($('dock-fest-link'));
   click(row('Folsom'));
   assert.equal(stored(), null, 'nothing folded = nothing stored');
   assert.deepEqual(rows('dock').map((r) => r[2]), ['true', 'true', 'true']);
   assert.deepEqual(tabs(), ['Thursday', 'Friday', 'Saturday', 'Sunday'], 'and Thursday is back');
+  assert.equal(menu('dock').style.display, '', 'four taps, and the menu never went away');
+  escape();
+  await settle(30);
+  assert.equal(menu('dock').style.display, 'none');
 });
 
 test('a fold moves the days that go with it: a room and the day it emptied leave together, and come back together', async () => {
@@ -237,6 +414,7 @@ test('a fold moves the days that go with it: a room and the day it emptied leave
   // The wall's blocks only: the menu's own close is a motion too, and not this one.
   const take = (out) => { const got = moved.filter((m) => m.out === out && $('wall-root').contains(m.el)).map(name); moved.length = 0; return got; };
   try {
+    // One open menu for all four taps (v93: it stays up while you choose).
     click($('dock-fest-link'));
     click(row('Afters'));
     assert.deepEqual(take(true), ['day:Thursday', 'room:Afters', 'room:Afters', 'room:Afters'], 'Thursday leaves whole, its only room inside it; the other nights keep their day');
@@ -244,24 +422,23 @@ test('a fold moves the days that go with it: a room and the day it emptied leave
     await settle(30);
     assert.deepEqual(tabs(), ['Friday', 'Saturday', 'Sunday'], 'and then Thursday is gone');
 
-    click($('dock-fest-link'));
     click(row('Folsom'));
     assert.deepEqual(take(true), ['day:Friday', 'room:Folsom', 'room:Folsom'], 'now Friday goes with Folsom, as one block');
     await settle(30);
     assert.deepEqual(tabs(), ['Saturday', 'Sunday']);
 
-    click($('dock-fest-link'));
     click(row('Afters'));
     await settle(30);
     assert.deepEqual(take(false), ['day:Thursday', 'day:Friday', 'room:Afters', 'room:Afters'], 'Thursday and Friday arrive whole with Afters, in the wall\'s order');
     assert.deepEqual(tabs(), ['Thursday', 'Friday', 'Saturday', 'Sunday']);
 
-    click($('dock-fest-link'));
     click(row('Folsom'));
     await settle(30);
     assert.deepEqual(take(false), ['room:Folsom', 'room:Folsom', 'room:Folsom'], 'a room whose nights were all still there arrives alone');
     assert.equal(globalThis.localStorage.getItem(`fn_fold_v1_${FID}`), null);
   } finally {
+    escape();
+    await settle(30);
     delete Proto.animate;
     filters.saveFolded(FID, []);
   }
@@ -285,14 +462,13 @@ test('hiding the last room: the notice arrives with the beat, and leaves when a 
   const notice = () => $('wall-root').querySelector('.wall-empty');
   const take = (out) => { const got = moved.filter((m) => m.out === out && $('wall-root').contains(m.el)).map((m) => (m.el.classList.contains('wall-empty') ? 'notice' : m.el.classList.contains('day-block') ? `day:${m.el.dataset.day}` : `room:${m.el.dataset.room}`)); moved.length = 0; return got; };
   try {
+    click($('dock-fest-link'));
     for (const key of ['Afters', 'Folsom']) {
-      click($('dock-fest-link'));
       click(row(key));
       await settle(30);
     }
     moved.length = 0;
     assert.equal(notice(), null, 'Portola still plays Saturday and Sunday');
-    click($('dock-fest-link'));
     click(row(':fest'));
     assert.deepEqual(take(true), ['day:Saturday', 'day:Sunday'], 'the last two days leave whole');
     await settle(30);
@@ -300,8 +476,9 @@ test('hiding the last room: the notice arrives with the beat, and leaves when a 
     assert.deepEqual(tabs(), [], 'no day, no tab — the 09-17 rule stands');
     assert.deepEqual(take(false), ['notice'], 'the notice arrives with the beat');
     assert.ok(notice().textContent.includes('PORTOLA \'26'), 'naming the door by the words on it');
+    assert.equal(menu('dock').style.display, '', 'and the menu is still up, every room unchecked, to bring one back');
+    assert.deepEqual(rows('dock').map((r) => r[2]), ['false', 'false', 'false']);
 
-    click($('dock-fest-link'));
     click(row('Afters'));
     assert.deepEqual(take(true), ['notice'], 'the first room back takes the notice away first');
     await settle(30);
@@ -309,7 +486,6 @@ test('hiding the last room: the notice arrives with the beat, and leaves when a 
     assert.deepEqual(tabs(), ['Thursday', 'Friday', 'Saturday', 'Sunday']);
     assert.deepEqual(take(false), ['day:Thursday', 'day:Friday', 'day:Saturday', 'day:Sunday'], 'and the week arrives, in its order');
     for (const key of ['Folsom', ':fest']) {
-      click($('dock-fest-link'));
       click(row(key));
       await settle(30);
     }
@@ -319,10 +495,11 @@ test('hiding the last room: the notice arrives with the beat, and leaves when a 
     // Whatever an early failure left hidden comes back through the menu, so
     // the tests after this one see the whole week.
     for (const key of JSON.parse(globalThis.localStorage.getItem(`fn_fold_v1_${FID}`) || '[]')) {
-      click($('dock-fest-link'));
       click(row(key));
       await settle(30);
     }
+    escape();
+    await settle(30);
     filters.saveFolded(FID, []);
   }
 });
@@ -583,18 +760,23 @@ test('the show menu names every room the wall shows — ACL\'s dated section inc
 // ---- How it works (MODEL-V4 §3a.4, ship round 2026-09-17) -----------------------------
 // Rendered by the real Settings on the real shell, with Portola open — so the
 // fixed label is proven fixed against a fest that is not ACL.
-test('How it works: eight rows, the fest link says ACL \'26 whatever fest is open, wears brand not the accent, and no picture can leave its cell', () => {
+test('How it works: nine rows, the fest link says ACL \'26 whatever fest is open, wears brand not the accent, and no picture can leave its cell', () => {
   click($('gear-btn'));
   const how = [...$('screen-settings').querySelectorAll('button')].find((b) => (b.querySelector('.row-title') || {}).textContent === 'How it works');
   assert.ok(how, 'the row that opens the drill');
   click(how);
   const sub = $('settings-subview');
   const rows = [...sub.querySelectorAll('.settings-card > div')];
-  assert.equal(rows.length, 8, 'eight rows — the stage row went with stage solo');
+  assert.equal(rows.length, 9, 'nine rows — the stage row went with stage solo; the dot took one of its own (v93)');
   const link = sub.querySelector('.fest-link');
   assert.ok(link && link.tagName === 'SPAN', 'the real component, as a picture');
   assert.equal(link.querySelector('.fest-name').textContent, "ACL '26", 'the one coded-in name, with Portola open');
   assert.ok(link.querySelector('.sync-dot'), 'and the dot beside it');
+  assert.ok(link.querySelector('.menu-caret'), 'with the caret the real one wears while it opens a menu (v93)');
+  // The dot's own row: the real dot in its three states (v93).
+  const dotRow = rows.find((r) => /Sync, at a glance\./.test(r.textContent));
+  assert.ok(dotRow, 'the dot has a row of its own');
+  assert.deepEqual([...dotRow.firstElementChild.querySelectorAll('.sync-dot')].map((d) => d.className), ['sync-dot', 'sync-dot sync-offline', 'sync-dot sync-error']);
   assert.equal(link.style.getPropertyValue('--fest'), 'var(--brand)', 'the accent re-scoped to brand on the picture — the drill is not one of the accent\'s four homes');
   for (const row of rows) {
     const cell = row.firstElementChild;
@@ -602,6 +784,12 @@ test('How it works: eight rows, the fest link says ACL \'26 whatever fest is ope
     assert.equal(cell.style.overflow, 'hidden', 'and clips what does not fit');
   }
   assert.match(sub.textContent, /red = something’s wrong\./, 'red means something is wrong, not that the reader is needed');
+  // The last row's gear is the header's own SVG, never the "⚙" glyph (iOS
+  // can draw it as a colour emoji — v93).
+  const gear = rows.at(-1).firstElementChild.querySelector('svg.gear');
+  assert.ok(gear, 'the gear is a picture of the real one');
+  assert.equal(gear.querySelector('path').getAttribute('d'), $('gear-btn').querySelector('path').getAttribute('d'));
+  assert.doesNotMatch(sub.textContent, /\u2699/, 'no gear glyph anywhere in the drill');
   assert.doesNotMatch(sub.textContent, /Tap a stage/, 'no stage lesson');
   // Back out, so the tests after this one find the wall.
   dom.window.history.back();
@@ -617,7 +805,7 @@ test('How it works: eight rows, the fest link says ACL \'26 whatever fest is ope
 test('every class this shell writes for visual effect has a rule in v3.css', () => {
   const css = readFileSync(join(ROOT, 'assets/v3.css'), 'utf8');
   for (const sel of [
-    '.sort-pop .pop-head',   // the show menu's "Show"
+    '.menu-label {',         // the show menu's "Show" (and the menus to come)
     '.sort-pop .pop-div',    // the divider before Settings
     '.sort-pop .chev',       // the › on the Settings row
     '.card.now',             // the now mark's ring

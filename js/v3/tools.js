@@ -8,6 +8,28 @@ import { loadFolded } from './filters.js';
 import { approxMark, venueGroupsOf, shortDateLabel, isCancelled, occOf } from './events.js';
 import { BY_TIME, sectionLayoutOf, timeBandsOf } from './events.js'; // the list by time (v94)
 
+// The header's own gear (index.html, #gear-btn), for anywhere else Settings
+// is named: the show menu's Settings row and How it works' last row (v93). A
+// real SVG, never the "⚙" glyph, which iOS may draw as a colour emoji.
+// currentColor: each place's stylesheet colours it; `size` is the text's.
+const GEAR_PATH = 'M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.01a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.01a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.01a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z';
+export function gearIcon(size = 12) {
+  const NS = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(NS, 'svg');
+  svg.setAttribute('class', 'gear');
+  svg.setAttribute('viewBox', '0 0 24 24');
+  svg.setAttribute('width', String(size)); svg.setAttribute('height', String(size));
+  svg.setAttribute('fill', 'none'); svg.setAttribute('stroke', 'currentColor');
+  svg.setAttribute('stroke-width', size >= 16 ? '2' : '2.4'); svg.setAttribute('stroke-linecap', 'round');
+  svg.setAttribute('aria-hidden', 'true');
+  const hub = document.createElementNS(NS, 'circle');
+  hub.setAttribute('cx', '12'); hub.setAttribute('cy', '12'); hub.setAttribute('r', '3');
+  const teeth = document.createElementNS(NS, 'path');
+  teeth.setAttribute('d', GEAR_PATH);
+  svg.append(hub, teeth);
+  return svg;
+}
+
 export const el = (tag, css, text) => {
   const n = document.createElement(tag);
   if (css) n.style.cssText = css;

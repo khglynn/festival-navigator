@@ -200,7 +200,7 @@ function chipWidth(c, g, s) {
   const count = s.spotCount ? textWidth(c.label, g.font) : 0;
   return g.chip + count + (c.followed ? FLAG + (count ? GAP : 0) : 0);
 }
-// The ghost: 7.5px type in 4px padding and a dashed 1px edge, cell or not.
+// The ghost: 7.5px type in 4px padding and a 1px ring, cell or not.
 const markWidth = (m) => (m.kind === 'ghost' ? 10 + textWidth(m.label, 7.5) : MARK[m.kind]);
 
 // Centred text can sit down in the corners' band of a short timetable cell

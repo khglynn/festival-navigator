@@ -256,12 +256,19 @@ test('every room hidden from the show menu: a quiet notice that names the door, 
       page.on('pageerror', (e) => { throw e; });
       await page.goto(`${server.origin}/#g=${TOKEN}`, { waitUntil: 'load' });
       await page.waitForSelector(`#${door}-fest-wrap .sort-pop`, { state: 'attached', timeout: 15000 });
+      // The menu stays up while you choose (v93): the fest name opens it once,
+      // and each row after that is one more tap.
+      const menuOpen = () => page.locator(`#${door}-fest-wrap .sort-pop`).isVisible();
       const hide = async (key) => {
-        await page.click(`#${door}-fest-link`);
+        if (!(await menuOpen())) await page.click(`#${door}-fest-link`);
         await page.locator(`#${door}-fest-wrap .sort-pop [data-room="${key}"]`).click();
         await sleep(600); // the leave, the repaint, the arrival
       };
       for (const key of ['Afters', 'Folsom', ':fest']) await hide(key);
+      assert.equal(await menuOpen(), true, `${width}px: three rooms, and the menu stayed up for all of them`);
+      await page.keyboard.press('Escape');
+      await sleep(400);
+      assert.equal(await menuOpen(), false, 'Escape puts it away');
       const blank = await page.evaluate(() => {
         const n = document.querySelector('#wall-root .wall-empty');
         return {

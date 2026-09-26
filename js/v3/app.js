@@ -9,12 +9,12 @@ import * as sync from '../sync.js';
 import * as spotify from '../spotify.js';
 import * as model from './model.js';
 import { loadFestivalIndex, loadFestival, fetchCustomFestivals, mergeCustoms, FESTIVAL_INDEX, defaultFestivalId } from '../festivals.js';
-import { renderWall, refreshCard, showToast, wireScrollspy, colorIndexOf, positionNowLines, positionNowMarks, scrollToNowLine, dayNavOf, roomsOf, cardFor, roomOf, isStripScroller, DAY_ANCHOR, festLinkLabel, nowLanding, nowStops, nowStep, nowPulseable, nowLabelOf, nowSaid, stackRowKey } from './wall.js';
+import { renderWall, refreshCard, showToast, wireScrollspy, restDayRow, holdDayRowEdges, colorIndexOf, positionNowLines, positionNowMarks, scrollToNowLine, dayNavOf, roomsOf, cardFor, roomOf, isStripScroller, DAY_ANCHOR, wallAnchors, pickWallAnchor, resolveWallAnchor, festLinkLabel, nowLanding, nowStops, nowStep, nowPulseable, nowLabelOf, nowSaid, stackRowKey } from './wall.js';
 import { loadPeopleFilter, savePeopleFilter, togglePerson, pruneToActive, loadFolded, saveFolded, applyFoldToggle, showOf, foldFromShow, showLabel, foldIsSet, showSeeded, rememberShowSeeded } from './filters.js';
 import { GROW_MS, OUT_MS, CASCADE_MS, STAGGER_MS, EASE_ARRIVE, EASE_LEAVE, EASE_SURFACE, canAnimate } from './motion.js';
 import { scrolledBefore, rememberScrolled, dayOfScrollKey, festivalClock } from './now.js';
 import { dayLabelParts } from '../time.js';
-import { disclosureFold, eqLoader, festRow } from './tools.js';
+import { disclosureFold, eqLoader, festRow, gearIcon } from './tools.js';
 import { openArtistSheet, openDayNotes, openAllNotes, openFestNotes, closeSheet, refreshOpenSheet, sheetChrome, dialogize, rememberOpener, shortDayLabel } from './notes.js';
 import { renderSettings, appSettings, openSubviewByKey } from './settings.js';
 import { onStorageWriteFail, saveLS, errorText, timeoutSignal } from '../util.js';
@@ -64,6 +64,7 @@ import { hslOf, strokeOf, nextColorIndex } from './palette.js';
 // open, and the one-time offer to bring your picks from another crew.
 import { planBringPicks, bringFromSource, bringOfferCopy, bringDoneLine, bringAnswered, rememberBringAnswer, showBringOffer, settleBringOffer, dismissBringOffer, bringOfferCard } from './crew-entry.js';
 import { showActionToast } from './wall.js';
+import { openImportSheet } from './import.js'; // picks from a festival app's schedule export (2026-09-26)
 // First open, wall first (v92, 2026-09-25): a guest's welcome, once per phone.
 import { welcomeCopy, welcomeSeen, rememberWelcomeSeen, joinedWelcomeSeen, rememberJoinedWelcomeSeen, showWelcome, dismissWelcome, welcomeCard, WORDS } from './welcome.js';
 // The guest shelf round (v92, 2026-09-25): a guest is asked on a shelf over the wall.
@@ -312,10 +313,15 @@ export function roomsOnWall() {
 // instant under Low Power and reduced motion. The repaint is the wall's own
 // path — the days and their tabs are re-read from the plan, so a day with
 // nothing visible left goes with its rooms.
+// A fold whose room is still on its way out: at most one. Whatever wants the
+// page next — the next tick, NOW, a day tab — finishes it first (settleFold),
+// so it acts on the wall as it will be and nothing lands on the page after it.
+let pendingFold = null; // { finish }
+function settleFold() { if (pendingFold) pendingFold.finish(); }
 function toggleFoldFlow(key) {
+  settleFold();
   // The setting lands NOW — memory, storage and ctx; only the room's leaving
-  // is deferred. A second tap during the fade reads this one, never the
-  // state before it.
+  // is deferred.
   const { next, folding } = applyFoldToggle(ctx.fid, ctx.folded || [], key);
   // The days before and after, from the plan: what the fold takes with it
   // (a day whose last visible room went; a weekend's three days) and what it
@@ -324,32 +330,52 @@ function toggleFoldFlow(key) {
   ctx.folded = next;
   const daysAfter = planDayKeys();
   const diff = (a, b) => new Set([...a].filter((k) => !b.has(k)));
-  // Where the person is standing, read before the wall is rebuilt.
-  const standing = (document.querySelector('.day-tab.active') || {}).dataset?.day || null;
+  // Where the person is standing, read before anything moves: the element at
+  // the top of what they see (wall.js pickWallAnchor). Read now, not after the
+  // fade — a room that is leaving is lifted 4px by it.
+  let place = takeWallPlace();
+  const tookAt = window.scrollY;
   // The everything-hidden notice (wall.js) is the wall's one line when the
   // last room goes: it arrives with the beat once the week has left, and it
   // is the first thing to leave when a room comes back.
   const notice = () => $('wall-root').querySelector(':scope > .wall-empty');
   const arrive = arriveBlocks;
+  const anims = [];
+  let done = false;
+  const fold = {};
   const finish = () => {
+    if (done) return;
+    done = true;
+    if (pendingFold === fold) pendingFold = null;
+    // A newer scroll wins (Sol 6's re-review): the page moved since the place
+    // was read — a hand scroll during the fade — so the place is read again,
+    // where the person is now, with the leaving rooms put back at rest first
+    // so their lift does not count. Keeping the old place would pull the page
+    // back from where they scrolled.
+    if (Math.abs(window.scrollY - tookAt) >= 1) {
+      for (const a of anims) { a.onfinish = null; a.oncancel = null; try { a.cancel(); } catch { /* done */ } }
+      place = takeWallPlace();
+    }
     repaintWall();
-    landAfterFold(standing);
+    keepWallPlace(place);
     if (!folding) arrive(foldBlocksOf(key, diff(daysAfter, daysBefore)));
     else if (notice()) arrive([notice()]);
   };
+  fold.finish = finish;
   const leaving = (folding ? foldBlocksOf(key, diff(daysBefore, daysAfter)) : [notice()].filter(Boolean))
     .filter((block) => canAnimate(block, ctx));
   if (!leaving.length) { finish(); return; }
+  pendingFold = fold;
   let pending = leaving.length;
-  let done = false;
-  const settle = () => { if (done) return; pending -= 1; if (pending <= 0) { done = true; finish(); } };
+  const settle = () => { pending -= 1; if (pending <= 0) finish(); };
   for (const room of leaving) {
     const a = room.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateY(-4px)' }],
       { duration: OUT_MS, easing: EASE_LEAVE, fill: 'forwards' });
     a.onfinish = settle;
     a.oncancel = settle;
+    anims.push(a);
   }
-  setTimeout(() => { if (!done) { done = true; finish(); } }, OUT_MS * 3 + 50); // a backgrounded tab must not hang the fold
+  setTimeout(finish, OUT_MS * 3 + 50); // a backgrounded tab must not hang the fold
 }
 
 // A room coming back arrives with the usual beat (the fold flow's way in).
@@ -366,37 +392,52 @@ function arriveBlocks(blocks) {
 // Nothing leaves, so there is nothing to wait for: the wall repaints, the
 // page stays on the day it was on, and what came back arrives with the beat.
 function unfoldAll() {
+  settleFold();
   const keys = [...(ctx.folded || [])];
   if (!keys.length) return;
   const daysBefore = planDayKeys();
-  const standing = (document.querySelector('.day-tab.active') || {}).dataset?.day || null;
+  const place = takeWallPlace();
   saveFolded(ctx.fid, []);
   ctx.folded = [];
   const daysAfter = planDayKeys();
   const fresh = new Set([...daysAfter].filter((k) => !daysBefore.has(k)));
   repaintWall();
-  landAfterFold(standing);
+  keepWallPlace(place);
   arriveBlocks([...new Set(keys.flatMap((key) => foldBlocksOf(key, fresh)))]);
 }
 
-// Where the page stands after the wall changed shape under it. The day you
-// were in is still there: land on its block again (the days above it may have
-// gone, and an untouched scroll offset would be looking at somewhere else) —
-// unless you were at the top of the page, where there is nothing to keep and
-// nothing moves. The day you were in is gone: land on the first visible day,
-// which is what the open would choose, wherever you were standing (at the
-// top that is a short hop from the fest header to the first day, and it is
-// the day the dock now lights).
-function landAfterFold(standing) {
-  const tabs = dayNavOf(state.fest(), ctx, $('wall-root'));
-  const still = standing ? tabs.find((t) => (t.anchor || t.key) === standing) : null;
-  if (still && !(window.scrollY > 0)) return;
-  const day = still || defaultDayOf(tabs);
-  // Nothing left to land on — everything is hidden: the top of the page,
-  // where the wall's notice says so.
-  if (!day) { if (window.scrollY > 0) window.scrollTo({ top: 0, behavior: 'auto' }); return; }
-  const block = document.querySelector(anchorFor(day.anchor || day.key));
-  if (block) landOnDay(block);
+// Where the page stands after the wall changed shape under it (v93): where it
+// stood. The element at the top of what you saw — a card or a room's head —
+// is back at the same spot on screen, whatever the rooms above it did; if it
+// went with the room you hid, the next thing after it takes its spot; with
+// nothing left below, the last thing left does. At the top of the page
+// nothing moves, and with everything hidden the page goes to the top, where
+// the wall says so. No glide: the list changes under a page that stands
+// still. (Until v93 this landed on the top of your day whenever you were
+// scrolled at all — once per menu when a tick closed the menu, and on every
+// tick once the menu stayed up: 3400 -> 552 -> 2812 -> 552 in the walk.)
+function takeWallPlace() {
+  const bandTop = parseFloat(window.getComputedStyle(document.documentElement).getPropertyValue('--jump-offset')) || 0;
+  const items = wallAnchors($('wall-root')).map(({ key, el }) => ({ key, top: el.getBoundingClientRect().top }));
+  return pickWallAnchor(items, bandTop, window.scrollY);
+}
+function keepWallPlace(place) {
+  if (!place) return;
+  const was = window.scrollY;
+  const anchors = wallAnchors($('wall-root'));
+  const key = resolveWallAnchor(place, anchors.map((a) => a.key));
+  if (!key) { if (window.scrollY > 0) window.scrollTo({ top: 0, behavior: 'auto' }); }
+  else {
+    const el = anchors.find((a) => a.key === key).el;
+    const delta = el.getBoundingClientRect().top - place.top;
+    if (Math.abs(delta) >= 1) window.scrollTo({ top: Math.max(0, window.scrollY + delta), behavior: 'auto' });
+  }
+  // NOW's "still there" is measured in page offsets, and the page's offsets
+  // just moved under a view that did not: where the last NOW left the page
+  // moves with them, so the next NOW tap goes on to the next stop rather
+  // than starting over (Sol 6's re-review).
+  const moved = window.scrollY - was;
+  if (nowCycle && Math.abs(moved) >= 1) nowCycle.y += moved;
 }
 
 // ---- tap cycle -------------------------------------------------------------------
@@ -660,9 +701,22 @@ function lookAround(token, doc) {
 // The layer is dropped from the model first (its history entry stays, and
 // reconciles to nothing), so "Look around" comes back to the wall, never to
 // a layer the history no longer holds.
+// The wall's own address keeps the festival in its path (/f/<fest>#g=…), the
+// same shape a share link has (crew.js crewLink), so a link copied from the
+// address bar or sent from the browser's share button previews as that
+// festival ("Portola '26", its image) instead of the bare app (Kevin, 2026-09-26:
+// a link he sent from the address bar previewed as plain "Festival Navigator").
+// The rewrite had written `/#g=` since July, dropping the /f/ path a share link
+// arrived with. /f/<id> is served by api/share.js online and by the worker's
+// precached shell offline (every navigation falls back to it), so a reload
+// there works in a field. The token stays in the hash, never the path.
+function wallUrl(token) {
+  return crew.crewLink(token, state.activeFestivalId);
+}
+
 function joinFromLayer() {
   router.reset();
-  history.replaceState(null, '', `/#g=${state.getCrewToken()}`);
+  history.replaceState(null, '', wallUrl(state.getCrewToken()));
   closeSheet();
   show('screen-app');
   askToJoin(null);
@@ -745,12 +799,15 @@ function renderPersonChips() {
     row.appendChild(all);
   }
   // Add-on-their-behalf lives right where the crew is visible (note 5) —
-  // only for claimed devices; a spectator can't grow the crew.
+  // only for claimed devices; a spectator can't grow the crew. The plus says
+  // what it does (v93, Kevin: "Invite someone I think, not add someone"): a
+  // bare "+ Add" beside a row of names could as well have meant a pick, a
+  // note or a festival — and what it hands you is their invite link.
   if (ctx.meName) {
     const add = document.createElement('button');
     add.className = 'person-chip add';
-    add.textContent = '+ Add';
-    add.setAttribute('aria-label', 'Add someone to the crew');
+    add.textContent = '+ Invite someone';
+    add.setAttribute('aria-label', 'Invite someone to the crew');
     add.style.cursor = 'pointer';
     add.addEventListener('click', () => { openAddMember(); router.push('sheet:add-member'); });
     row.appendChild(add);
@@ -779,6 +836,10 @@ function startClock() {
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') tickClock(); });
 }
 function tickClock(date = new Date()) {
+  // A 'show-menu' busy flag with no menu open is a leftover (it would hold
+  // every new build's reload on this phone for good): given back here, at the
+  // minute tick and whenever the page is shown again.
+  if (document.body.dataset.busy === 'show-menu' && !openMenu) delete document.body.dataset.busy;
   positionNowLines($('wall-root'), date);
   positionNowMarks($('wall-root'), date);
   paintNowTabs(date); // the same minute decides whether NOW is there at all
@@ -788,92 +849,124 @@ function tickClock(date = new Date()) {
 // "an option to the left of the days … if you tap it goes to now. A use case
 // I'm thinking about is like 'where is ross likely right now' — tapping ross
 // on the top to highlight him and then clicking something in the scroll to
-// time bar." NOW sits before the day tabs in the dock and the rail, in the
-// now line's violet with a live dot, and only while something is live on the
-// wall you are looking at: a now line on today's grid or a NOW mark on a
-// stack (wall.js nowLanding decides what, and whether). It is not a day, so
-// the scrollspy never lights it; it arrives with the beat and leaves quick
-// and plain, and the days beside it slide to make room.
-const NOW_TABS = ['dock-now', 'rail-now'];
-function paintNowTabs(date = ctx.now || new Date()) {
-  const live = !!nowLanding($('wall-root'), ctx, date);
-  for (const id of NOW_TABS) { showNowTab($(id), live); fitNowTab($(id)); }
-}
-// The days keep room for the day you are in AND a glimpse of the days either
-// side — the glimpse is what says the row scrolls. On a phone the dock's days
-// row already scrolls (Portola's four overflow a 390 dock by a few px), and
-// NOW narrows it further. With the day you are in centred, a neighbour shows
-// only once the room beside it clears the gap between tabs AND the edge fade
-// (the first cut counted neither and kept NOW's word with one lone day
-// showing: Portola at 320, ACL at 375 — review, 2026-09-24). Where the row is
-// shorter than that, NOW keeps only its live dot — still a button, still named
-// "Jump to what is playing now". Gap and fade are read from the row's own CSS
-// (`--row-fade` is the number the fade itself uses). Measured in the full form
-// every time, so the answer never feeds on itself.
+// time bar." NOW is in the now line's violet with a live dot (brand, never
+// the fest accent: it is app chrome), and only there while something is live
+// on the wall you are looking at: a now line on today's grid or a NOW mark on
+// a stack (wall.js nowLanding decides what, and whether). It is not a day, so
+// the scrollspy never lights it.
 //
-// And the last resort: where even beside the dot the row is narrower than one
-// day (ACL's long name at 320 wherever Inter draws wide — Linux CI measured a
-// 36px row for a ~40px tab, 2026-09-24; Android draws like Linux), the row
-// claims its widest tab and the fest name gives way with an ellipsis. The
-// day you are in is never what NOW squeezes out.
-function fitNowTab(tab) {
-  if (!tab) return;
-  const bar = tab.parentElement;
-  const row = tab.nextElementSibling;
-  tab.classList.remove('compact');
-  if (bar) bar.classList.remove('squeezed');
-  if (row) row.style.minWidth = '';
-  if (tab.hidden || !row || !row.children.length) return;
-  const css = window.getComputedStyle(row);
-  const gap = parseFloat(css.columnGap) || 0;
-  const fade = parseFloat(css.getPropertyValue('--row-fade')) || 0;
-  const widest = Math.max(...[...row.children].map((t) => t.offsetWidth));
-  if (row.clientWidth >= Math.min(row.scrollWidth, widest + 2 * (gap + fade))) return;
-  tab.classList.add('compact');
-  if (row.clientWidth < Math.min(row.scrollWidth, widest) && bar) {
-    row.style.minWidth = `${widest}px`;
-    bar.classList.add('squeezed');
-  }
+// WHERE (v93, Kevin, 2026-09-25 — D1): NOW is a tab in the day row itself,
+// right after the day that is live, `SAT · NOW`, in the dock and the rail
+// alike. v90 pinned it before the days, and the pin cost the days their room:
+// at 390 THU scrolled off, and at 320 NOW shrank to a ringed dot beside day
+// slivers, "RI | SAT | S" ("making it a dot is a bit too clever"). In the row
+// it takes no room from anything, and the row's resting rule (wall.js
+// restingLeft) keeps the pair in view: 390 shows FRI SAT NOW SUN, 320 SAT NOW,
+// and the fest name never gives way. The day it follows is the day of what a
+// tap would land on. Nothing live, it waits hidden where index.html put it,
+// just outside the row, and a rebuilt row (every repaint) gets it back in
+// place without a flicker.
+const NOW_DOORS = [['dock-now', 'dock-days'], ['rail-now', 'rail-days']];
+function paintNowTabs(date = ctx.now || new Date()) {
+  const landing = nowLanding($('wall-root'), ctx, date);
+  const at = landing && (landing.card || landing.line);
+  const block = at ? at.closest(DAY_ANCHOR) : null;
+  const day = landing ? (block ? block.dataset.day : '') : null;
+  for (const [tab, row] of NOW_DOORS) showNowTab($(tab), $(row), day);
 }
-// The day tabs beside a NOW that came or went slide from where they were (a
-// FLIP: transform only, the layout is already done). Tab by tab, not the
-// row: the dock centres a row that fits, so its tabs move by HALF the space
-// NOW took, and a row-wide slide would jump before it glided.
-const tabLefts = (row) => new Map(row ? [...row.children].map((t) => [t, t.getBoundingClientRect().left]) : []);
-function slideTabs(before) {
-  for (const [t, left] of before) {
-    if (!t.isConnected || !canAnimate(t, ctx)) continue;
-    const dx = left - t.getBoundingClientRect().left;
-    if (Math.abs(dx) >= 1) t.animate([{ transform: `translateX(${dx}px)` }, { transform: 'none' }], { duration: CASCADE_MS, easing: EASE_ARRIVE });
-  }
+// The day tab NOW follows: the live day's, else none (the row's start).
+const liveTabIn = (row, day) => [...row.children].find((t) => t.classList.contains('day-tab') && t.dataset.day === day) || null;
+const inPlace = (tab, row, after) => tab.parentElement === row && (after ? tab.previousElementSibling === after : !tab.previousElementSibling);
+function placeNowTab(tab, row, after) {
+  if (after) after.after(tab);
+  else row.prepend(tab);
 }
-function showNowTab(tab, on) {
-  if (!tab) return;
-  const shown = !tab.hidden && !tab.dataset.leaving;
-  if (on === shown) return;
-  const row = tab.nextElementSibling;
-  if (on) {
+// NOW's parking place: just before the row, hidden (renderDayNav rebuilds the
+// row from nothing, and must not take NOW with it). A leave cut short by the
+// rebuild finishes at once — its motion belonged to tabs that are gone.
+function parkNowTab(tab, row) {
+  if (!tab || !row || tab.parentElement !== row) return;
+  if (tab.dataset.leaving) {
     delete tab.dataset.leaving;
-    if (tab.getAnimations) tab.getAnimations().forEach((a) => a.cancel()); // a leave cut short
+    tab.hidden = true;
+    if (tab.getAnimations) tab.getAnimations().forEach((a) => a.cancel());
+  }
+  row.before(tab);
+}
+// Everything in a row that NOW changes slides from where it was to where it
+// lands (a FLIP: transform only, the layout and the row's new resting scroll
+// are already done). Tab by tab, never the row: the row that fits is centred
+// by its margins and the row that scrolls re-rests, so each tab moves its own
+// distance — the pair gliding to the middle, the days after NOW making room.
+const tabLefts = (row) => new Map(row ? [...row.children].map((t) => [t, t.getBoundingClientRect().left]) : []);
+const EDGES = ['overflowing', 'more-left', 'more-right'];
+// `edges`: the row's edge fades before the change, held through the slide
+// (wall.js holdDayRowEdges).
+function slideTabs(row, before, edges, { out = false } = {}) {
+  const slides = [];
+  for (const [t, left] of before) {
+    if (!t.isConnected || t.hidden) continue;
+    const dx = left - t.getBoundingClientRect().left;
+    if (Math.abs(dx) < 1 || !canAnimate(t, ctx)) continue;
+    // The way in has the arrival's touch of overshoot; the room closing up
+    // after NOW has gone is the way out, crisp and plain.
+    slides.push(t.animate([{ transform: `translateX(${dx}px)` }, { transform: 'none' }],
+      { duration: CASCADE_MS, easing: out ? EASE_SURFACE : EASE_ARRIVE }));
+  }
+  if (slides.length) holdDayRowEdges(row, edges, Promise.all(slides.map((a) => Promise.resolve(a && a.finished).catch(() => {}))));
+}
+const edgesOf = (row) => EDGES.filter((k) => row.classList.contains(k));
+// `day`: the live day's key (NOW belongs after its tab), '' (live, but on no
+// day the row lists: the row's start), or null (nothing live).
+function showNowTab(tab, row, day) {
+  if (!tab || !row) return;
+  const shown = !tab.hidden && !tab.dataset.leaving;
+  if (day != null) {
+    const after = liveTabIn(row, day);
+    if (shown && inPlace(tab, row, after)) return;
+    if (shown && tab.parentElement !== row) {
+      // Parked by a rebuild: the tabs beside it are new, so nothing slides.
+      placeNowTab(tab, row, after);
+      restDayRow(row);
+      return;
+    }
+    // Arriving (or coming back while leaving), or moving to another day.
+    const arriving = !shown;
+    if (arriving) {
+      delete tab.dataset.leaving;
+      if (tab.getAnimations) tab.getAnimations().forEach((a) => a.cancel()); // a leave cut short
+    }
     const before = tabLefts(row);
+    const edges = edgesOf(row);
+    if (arriving) before.delete(tab); // it arrives by its own motion, below
+    placeNowTab(tab, row, after);
     tab.hidden = false;
-    fitNowTab(tab);
-    slideTabs(before);
-    if (canAnimate(tab, ctx)) {
+    restDayRow(row);
+    slideTabs(row, before, edges);
+    if (arriving && canAnimate(tab, ctx)) {
+      // It fades in from 6px left, in its own place, a beat after the tabs
+      // start to move — the day it follows slides out of that place on the
+      // way to the middle (filmed at a tenth of the speed: a NOW that rode
+      // with its day started out on top of SUN).
       tab.animate([{ opacity: 0, transform: 'translateX(-6px)' }, { opacity: 1, transform: 'none' }],
         { duration: CASCADE_MS, delay: STAGGER_MS, easing: EASE_ARRIVE, fill: 'backwards' });
     }
     return;
   }
+  if (!shown) return;
+  if (tab.parentElement !== row) { tab.hidden = true; return; } // parked: nothing to leave from
   tab.dataset.leaving = '1';
   const gone = () => {
     if (!tab.dataset.leaving) return; // it came back while leaving
     delete tab.dataset.leaving;
     const before = tabLefts(row);
+    const edges = edgesOf(row);
+    before.delete(tab);
     tab.hidden = true;
-    fitNowTab(tab); // gone: whatever room it took is given back
+    row.before(tab);
     if (tab.getAnimations) tab.getAnimations().forEach((a) => a.cancel());
-    slideTabs(before);
+    restDayRow(row);
+    slideTabs(row, before, edges, { out: true });
   };
   if (!canAnimate(tab, ctx)) { gone(); return; }
   const a = tab.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateX(-6px)' }],
@@ -977,6 +1070,7 @@ const pageGeo = (root) => ({
   },
 });
 function jumpToNow() {
+  settleFold(); // a room still leaving goes now: NOW lands on the wall as it will be
   const seq = ++nowSeq;
   const root = $('wall-root');
   const geo = pageGeo(root);
@@ -1294,6 +1388,12 @@ export function dayTab({ key, num = null, anchor = null }, label, { withNum = fa
 function renderDayNav() {
   const dock = $('dock-days');
   const rail = $('rail-days');
+  // Every repaint comes through here (a friend's pick on the poll, a
+  // highlight), so the rebuilt rows start where the old ones rested, and NOW
+  // is lifted out before the old tabs go — back in its place below, with
+  // nothing on screen having moved.
+  const focused = NOW_DOORS.map(([tab]) => document.activeElement === $(tab)); // a keyboard on NOW keeps it
+  const rested = NOW_DOORS.map(([tab, row]) => { parkNowTab($(tab), $(row)); return $(row).scrollLeft; });
   dock.textContent = '';
   rail.textContent = '';
   // The wall is painted first on every path that gets here, so it can be the
@@ -1302,6 +1402,7 @@ function renderDayNav() {
   for (const day of dayNavOf(state.fest(), ctx, $('wall-root'))) {
     const at = day.anchor || day.key;
     const jump = () => {
+      settleFold(); // a room still leaving goes now: the day lands on the wall as it will be
       const target = document.querySelector(anchorFor(at));
       if (target) target.scrollIntoView({ behavior: ctx.lowPower ? 'auto' : 'smooth', block: 'start' });
     };
@@ -1310,11 +1411,18 @@ function renderDayNav() {
       host.appendChild(tab);
     }
   }
+  NOW_DOORS.forEach(([, row], i) => { $(row).scrollLeft = rested[i]; });
   unspy();
   unspy = wireScrollspy([dock, rail], $('wall-root'));
   // NOW rides with the tabs: it is there exactly while this wall has
   // something live (a repaint, a search, a hidden room can all change that).
   paintNowTabs();
+  // Moving NOW out and back in drops focus; someone walking NOW's stops on a
+  // keyboard must not lose their place to the 25 s poll's repaint.
+  NOW_DOORS.forEach(([tab], i) => {
+    const t = $(tab);
+    if (focused[i] && !t.hidden && document.activeElement !== t) t.focus({ preventScroll: true });
+  });
 }
 
 // ---- the show menu (MODEL-V4 §3.1) ------------------------------------------------
@@ -1328,6 +1436,15 @@ function renderDayNav() {
 // The sort chip's popover component, reused (`.sort-wrap` + `.sort-pop`) —
 // one control vocabulary. On the phone it opens upward above the dock; on
 // desktop it hangs under the rail (both from the CSS).
+//
+// It STAYS OPEN while you choose (v93, Kevin: tick a room, the wall changes
+// behind it, tick another). It closes on a tap outside it, on Escape and on
+// the fest name again — and it is a popover, not a place: it has no history
+// entry. A Back with it open does what Back always did, and the menu goes
+// with the page (popstate, pagehide, any screen but the wall, a boot). A
+// menu that Back itself closes — an entry of its own — was built and cut in
+// v93 (four review rounds on its history); it is banked in the v93 Log for
+// the unified build's shelf primitive.
 const SHOW_MENUS = [['dock-fest-wrap', 'dock-fest-link'], ['rail-fest-wrap', 'rail-fest-link']];
 let openMenu = null;
 
@@ -1360,6 +1477,10 @@ function closeShowMenu({ instant = false } = {}) {
   const { pop, link, bar } = openMenu;
   openMenu = null;
   link.setAttribute('aria-expanded', 'false');
+  if (document.body.dataset.busy === 'show-menu') delete document.body.dataset.busy;
+  // A keyboard standing on a row goes back to the fest name that opened the
+  // menu, not to the top of the page (Escape from a row is the usual way out).
+  if (pop.contains(document.activeElement)) link.focus({ preventScroll: true });
   settleMenuExit(); // an earlier menu still fading ends now
   // The way out is quick and plain.
   if (instant || !canAnimate(pop, ctx)) { hideShowMenu(pop, bar); return; }
@@ -1391,6 +1512,10 @@ function openShowMenu(wrap, link, pop) {
     pop.animate([{ opacity: 0, transform: 'translateY(4px)' }, { opacity: 1, transform: 'translateY(0)' }],
       { duration: CASCADE_MS, easing: EASE_ARRIVE, fill: 'backwards' });
   }
+  // Busy while you choose (index.html's quiet()): a new build's reload must
+  // not pull the menu out from under a tick. The flag is shared — only taken
+  // when free, only given back when it is the menu's (closeShowMenu).
+  if (!document.body.dataset.busy) document.body.dataset.busy = 'show-menu';
 }
 
 // A row is a native <button>, which is where its keyboard and its 44px floor
@@ -1409,7 +1534,11 @@ function showMenuRow(label, { key = null, on = null, settings = false } = {}) {
   if (settings) row.className = 'settings';
   const check = document.createElement('span');
   check.className = 'check';
-  check.textContent = on ? '✓' : '';
+  // The Settings row's gear (v93, Kevin: "a little gear to the left of the
+  // settings line"), in the check column, so "Settings" lines up with the
+  // room names above it.
+  if (settings) check.appendChild(gearIcon());
+  else check.textContent = on ? '✓' : '';
   check.setAttribute('aria-hidden', 'true');
   const text = document.createElement('span');
   text.textContent = label;
@@ -1433,15 +1562,21 @@ function buildShowMenu(rooms, folded) {
   pop.dataset.rooms = rooms.map((r) => r.key).join('|');
   pop.style.display = 'none';
   const head = document.createElement('li');
-  head.className = 'pop-head';
+  head.className = 'menu-label';
   head.setAttribute('role', 'presentation');
   head.textContent = 'Show';
   pop.appendChild(head);
   for (const room of rooms) {
     const row = showMenuRow(room.label, { key: room.key, on: !folded.has(room.key) });
-    // A row tap closes the menu and moves the room — the fold flow owns the
-    // motion from there, on every day at once.
-    row.addEventListener('click', () => { closeShowMenu(); toggleFoldFlow(room.key); });
+    // A row tap moves the room and the menu stays up for the next one (v93):
+    // its check turns at once, and the fold flow owns the wall's motion
+    // behind it, on every day at once, keeping your place.
+    row.addEventListener('click', () => {
+      const on = row.getAttribute('aria-selected') !== 'true';
+      row.setAttribute('aria-selected', on ? 'true' : 'false');
+      row.querySelector('.check').textContent = on ? '✓' : '';
+      toggleFoldFlow(room.key);
+    });
     pop.appendChild(row.parentElement);
   }
   const divider = document.createElement('li');
@@ -1637,6 +1772,9 @@ function showNewBuildStrip() {
 const SCREENS = ['screen-landing', 'screen-join', 'screen-create', 'screen-app', 'screen-settings', 'screen-badlink', 'screen-error'];
 function show(screen) {
   $('screen-boot')?.remove(); // the cold-open loader's job ends with the first screen
+  // The Show menu belongs to the wall's screen, and goes with it: left open,
+  // it came back up over the wall the next time that screen showed.
+  if (screen !== 'screen-app') closeShowMenu({ instant: true });
   for (const id of SCREENS) {
     $(id).style.display = id === screen ? '' : 'none';
   }
@@ -1676,7 +1814,7 @@ function festPickRow(f, { muted = false, onPick }) {
 // Multi-pick (fests × circles × you, decision 2): tap toggles a fest into the
 // selection, one button creates a board per fest. "Add all the fests I'm
 // going to, then quickly add people to them" — the people step is gone from
-// here entirely; people questions live on each fest's + Add.
+// here entirely; people questions live on each fest's + Invite someone.
 const createSel = new Set();
 function renderCreate() {
   show('screen-create');
@@ -1924,6 +2062,76 @@ function seedShowOnce(fid, slugs) {
   return showLabel(rooms, folded);
 }
 
+// ---- import from a festival app's schedule export (2026-09-26) ----------------------
+// A pick a Settings tool makes — Bulk paste, the schedule import — goes the
+// way a tap's does: the same migration gate (nothing counts while a legacy
+// crew is being updated, and the tool says so), the same pending write and
+// local mirror. The caller schedules the sync once, after its whole batch.
+function recordToolPick(artist, person, level) {
+  if (ctx.migrationPending) return false; // same gate as handleTap
+  state.recordSelection(artist, person, level);
+  applyLocalPick(artist, person, level);
+  return true;
+}
+
+// The sheet (js/v3/import.js) reads the images, lands the levels, and hands
+// back only the picks the person chose, for them alone. Once they are added:
+// one sync, then the wall — every layer down at once (history.go through
+// the router's own stack, so Back never lands on a dead Settings) — and a
+// line saying what happened. False when there is nothing to open (a guest,
+// a festival with no lineup yet).
+function openImport() {
+  refreshCtx();
+  const fest = state.fest();
+  const token = state.getCrewToken();
+  if (!ctx.meName || !token || !fest || !(fest.artists || []).length) return false;
+  const me = ctx.meName;
+  const fid = ctx.fid;
+  openImportSheet({
+    ctx, fest, token, me,
+    // Only ever the person importing, and only on the festival it opened on.
+    record: (name, level) => (state.getCrewToken() === token && state.activeFestivalId === fid && ctx.fid === fid && ctx.meName === me
+      ? recordToolPick(name, me, level) : false),
+    close: () => { if (!router.requestClose()) closeSheet(); },
+    done: (n, { stay = false, first = null } = {}) => {
+      sync.scheduleSync();
+      refreshCtx();
+      if (stay) { repaintWall(); return; }
+      // The picks are the point, so the wall opens on the first one added
+      // (a closed Settings otherwise leaves the wall at its top — true of
+      // every Settings close today, noted in IMPORT-BUILD.md).
+      const land = () => {
+        const card = first && document.querySelector(`#wall-root .card[data-artist="${CSS.escape(first)}"]`);
+        if (card) card.scrollIntoView({ block: 'center', behavior: 'auto' });
+      };
+      const depth = router.depth();
+      if (depth > 0) {
+        // The browser restores the wall entry's own scroll just AFTER
+        // popstate (a scroll to its top, measured 2026-09-26), undoing a
+        // scroll made in the handler. So the landing rides that restoring
+        // scroll event — it runs before the frame paints, so the top of the
+        // wall is never shown — with a timer behind it for an engine that
+        // restores nothing.
+        // One landing, never two (a second would yank someone already
+        // scrolling), and a listener that outlives a traversal that never
+        // came is dropped rather than left for some later Back.
+        let timer = 0;
+        const once = () => { clearTimeout(timer); land(); };
+        const onPop = () => {
+          clearTimeout(forget);
+          window.addEventListener('scroll', once, { once: true, passive: true });
+          timer = setTimeout(() => { window.removeEventListener('scroll', once); land(); }, 350);
+        };
+        const forget = setTimeout(() => window.removeEventListener('popstate', onPop), 1500);
+        window.addEventListener('popstate', onPop, { once: true });
+        history.go(-depth);
+      } else { closeSheet(); if ($('screen-settings').style.display !== 'none') closeSettings(); else repaintWall(); land(); }
+      showToast($('toast-root'), `Added ${n} pick${n === 1 ? '' : 's'} from your ${fest.name} schedule.`, 5000);
+    },
+  });
+  return true;
+}
+
 // ---- the share moment (FLOW-7/FLOW-12) ----------------------------------------------
 // One centered dialog right after create (and re-openable from Settings):
 // the link is VISIBLE — share sheets fail silently, a printed URL never does.
@@ -2011,7 +2219,7 @@ function openAddMember() {
   const sheet = document.createElement('div');
   sheet.className = 'sheet';
   sheet.id = 'artist-sheet'; // closeSheet + the router's sheet kind own this id
-  sheetChrome(sheet, 'ADD SOMEONE'); // one sheet anatomy, everywhere (see openShareMoment)
+  sheetChrome(sheet, 'INVITE SOMEONE'); // one sheet anatomy, everywhere (see openShareMoment)
   const sub = document.createElement('div');
   sub.style.cssText = 'color: var(--text-secondary); font-size: 12.5px; line-height: 1.55;';
   sub.textContent = 'Pick for them until they open their link.';
@@ -2054,7 +2262,7 @@ function openAddMember() {
     pickWrap.append(pickLabel, chips);
     sheet.appendChild(pickWrap);
   }
-  dialogize(sheet, 'Add someone to the crew');
+  dialogize(sheet, 'Invite someone to the crew');
   document.body.append(backdrop, sheet);
   input.focus();
 
@@ -2193,7 +2401,22 @@ let settingsActions = null;
 // fresh open.
 // A welcome that could not show (a refresh restored Settings over the wall)
 // gets its turn here, v92; the offer still waits for its "Got it".
-function closeSettings() { show('screen-app'); repaintWall(); maybeOpenOnDay(); safely('welcome', maybeWelcome); }
+function closeSettings() { show('screen-app'); keepWallAddress(); repaintWall(); maybeOpenOnDay(); safely('welcome', maybeWelcome); }
+// The wall's address follows its festival (v96 — Sol's review of 3599950):
+// a festival switched in Settings is no boot, so nothing rewrote the address,
+// and it kept the old one — a link copied from the bar previewed the old
+// festival, and a reload went back to it (the address's &f= is a hint, and a
+// hint wins at boot). Rewritten here, as the wall comes back: by then the
+// Settings entry is gone and the page stands on the wall's own entry (and on
+// any other layer's, the address is the wall's too). Its state is kept.
+function keepWallAddress() {
+  const token = state.getCrewToken();
+  if (!token) return;
+  try {
+    const url = wallUrl(token);
+    if (url !== location.href) history.replaceState(history.state, '', url);
+  } catch { /* an address this history will not take: the next boot writes it */ }
+}
 
 function openSettings() {
   closeSheet();
@@ -2204,12 +2427,22 @@ function openSettings() {
     rerender: openSettings,
     switchFestival: async (fid) => {
       // Load BEFORE persisting the switch: an offline device must never be
-      // left pointing at a festival it cannot render (CORE-12).
+      // left pointing at a festival it cannot render (CORE-12). The load is a
+      // wait, and the person can leave meanwhile ("Switch crew", another
+      // festival's board, a link): a switch that finds its Settings gone, its
+      // crew changed or a newer boot does nothing at all — no festival saved,
+      // no wall over the fest list, no address written (Sol's review of
+      // 688d9b1: the old crew's wall came up over the list at "/").
+      const token = state.getCrewToken();
+      const gen = bootGeneration;
+      const stillHere = () => state.getCrewToken() === token && bootGeneration === gen
+        && $('screen-settings').style.display !== 'none';
       try { await loadFestival(fid); }
       catch {
-        showToast($('toast-root'), 'Can’t open that festival offline yet — it loads once you’re back online.');
+        if (stillHere()) showToast($('toast-root'), 'Can’t open that festival offline yet — it loads once you’re back online.');
         return;
       }
+      if (!stillHere()) return;
       state.setActiveFestivalId(fid);
       state.ensureFestivalState(fid);
       state.setCurrentDay(null);
@@ -2249,13 +2482,11 @@ function openSettings() {
       const gen = bootGeneration;
       if (token) freshenFromNetwork(token, () => loadFestivalIndex().catch(() => { /* the cached list stays */ }), () => gen === bootGeneration);
     },
-    recordPick: (artist, person, level) => {
-      if (ctx.migrationPending) return false; // same gate as handleTap (bulk paste path)
-      state.recordSelection(artist, person, level);
-      applyLocalPick(artist, person, level);
-      return true;
-    },
+    recordPick: (artist, person, level) => recordToolPick(artist, person, level),
     afterBulk: () => { sync.scheduleSync(); refreshCtx(); },
+    // Import from the festival app's schedule export (2026-09-26): a sheet
+    // over Settings, a history entry of its own like every sheet.
+    openImport: () => { if (openImport()) router.push('sheet:import'); },
     // Every link Settings hands out carries this phone's view (v92, SD1), and
     // says so in one line.
     inviteLink: (meName = null) => inviteLink(meName),
@@ -3077,7 +3308,7 @@ async function enterApp(token, doc, current = () => true, customs = fetchCustomF
   repaintWall();
   maybeOpenOnDay();
   startClock();
-  history.replaceState(savedLayers ? { layers: savedLayers } : null, '', `/#g=${token}`);
+  history.replaceState(savedLayers ? { layers: savedLayers } : null, '', wallUrl(token));
   sync.pollSync();
   router.reset();
   if (savedLayers) router.restore(savedLayers);
@@ -3273,6 +3504,7 @@ let pendingMeHint = null; // &me= from a personal invite link, consumed by rende
 let pendingShowHint = null; // &show= — the view a share link carries (v92), consumed by enterApp
 let pendingSpotifyOpen = false; // &sp=1 from the canonical-domain hop (SPOT-1)
 export async function boot() {
+  closeShowMenu({ instant: true }); // a boot rebuilds the wall: a menu over the old one goes with it
   const gen = ++bootGeneration;
   const current = () => gen === bootGeneration;
   const isFirst = firstBoot;
@@ -3478,6 +3710,7 @@ export function init() {
     if (key === 'sheet:all') openAllNotes(ctx);
     else if (key === 'sheet:share') openShareMoment();
     else if (key === 'sheet:add-member') { if (ctx.meName) openAddMember(); } // a guest adds nobody (v92)
+    else if (key === 'sheet:import') openImport(); // your picks only: a member's sheet (it opens nothing for a guest)
     else if (key === 'sheet:fest') openFestNotes(ctx, onNotesChange);
     else if (key.startsWith('sheet:day:')) openDayNotes(key.slice('sheet:day:'.length), null, ctx, onNotesChange);
     else if (key.startsWith('sheet:notes:')) {
@@ -3501,17 +3734,17 @@ export function init() {
     renderDayNav(); // scrollspy re-wires against the filtered day blocks (gate F8)
     measureStickyChrome(); // search mode drops the stage strip — jump offset shrinks
   });
-  // A late font changes how wide the fest name and the days draw, so NOW
-  // re-reads the room it has (the corners' refit does the same, wall.js).
+  // A late font changes how wide the days and NOW draw, and so where their
+  // row rests (the corners' refit does the same, wall.js). The row's own box
+  // may not change size, so its resize watch would not see it.
   if (document.fonts && typeof document.fonts.addEventListener === 'function') {
-    document.fonts.addEventListener('loadingdone', () => NOW_TABS.forEach((id) => fitNowTab($(id))));
+    document.fonts.addEventListener('loadingdone', () => NOW_DOORS.forEach(([, row]) => restDayRow($(row))));
   }
   let resizeTimer = null;
   window.addEventListener('resize', () => {
     clearTimeout(resizeTimer);
     resizeTimer = setTimeout(() => {
       measureStickyChrome();
-      NOW_TABS.forEach((id) => fitNowTab($(id))); // a rotation changes the room the days have
       // Each scroller clamps its own scrollLeft during a resize, which can
       // desync the mirrored columns from the strip (Kevin's wide-screen
       // wonk screenshot, 2026-07-12) — re-mirror each group to its first.
@@ -3538,7 +3771,7 @@ export function init() {
   const youTap = () => (!ctx.meName && state.getCrewToken() ? askToJoin(null) : jumpTop());
   $('dock-you').addEventListener('click', youTap);
   $('rail-you').addEventListener('click', youTap);
-  for (const id of NOW_TABS) $(id).addEventListener('click', jumpToNow);
+  for (const [id] of NOW_DOORS) $(id).addEventListener('click', jumpToNow);
   const openSettingsLayer = () => { openSettings(); router.push('settings'); };
   $('gear-btn').addEventListener('click', openSettingsLayer);
   // The fest name opens the show menu when the fest has rooms to choose
@@ -3552,10 +3785,23 @@ export function init() {
       else openShowMenu(wrap, $(linkId), pop);
     });
   }
-  // A tap outside closes it, like every other popover in the app.
+  // A tap outside closes it, like every other popover in the app, and the tap
+  // still does its job (a day tab, NOW, the +, Notes) — except on a card, the
+  // rule a guest's close-tap follows (v92): the menu stays up while you
+  // choose, so the tap that puts it away is often a tap on the wall, and a
+  // pick under your name on the way out is a write nobody meant. A card on
+  // the wall or grown in the zoom only closes the menu.
   document.addEventListener('click', (e) => {
-    if (openMenu && !openMenu.wrap.contains(e.target)) closeShowMenu();
-  });
+    if (!openMenu || openMenu.wrap.contains(e.target)) return;
+    const onCard = e.target.closest && e.target.closest('#wall-root .card, #zoom-layer');
+    closeShowMenu();
+    if (onCard) { e.stopPropagation(); e.preventDefault(); }
+  }, true);
+  // It is not a history layer: a Back or Forward with it open goes where it
+  // always did, and the menu goes with the page — as it does when the page
+  // is put away.
+  window.addEventListener('popstate', () => closeShowMenu({ instant: true }));
+  window.addEventListener('pagehide', () => closeShowMenu({ instant: true }));
   $('fest-list-btn').addEventListener('click', goToFestList);
   $('notes-chip').addEventListener('click', () => { refreshCtx(); openAllNotes(ctx); router.push('sheet:all'); });
   $('create-go-btn').addEventListener('click', () => batchCreateFlow($('create-name-input').value.trim()));

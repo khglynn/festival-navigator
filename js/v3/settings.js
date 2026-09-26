@@ -13,7 +13,7 @@ import { colorIndexOf, meterChip, crewMark } from './wall.js';
 import { meterOf, whoCorner } from './aura.js';
 import { festPlaceLine } from './card-facts.js'; // the fest's place line, shared with the wall header
 import { recent as recentErrors, diagnostics, SETTINGS_KEY, reportKey, reportsOn, clearReports, noteSettings, pageBuild } from '../errlog.js';
-import { el, subviewHead, eqLoader, festRow, openExportLikes, openBulkPaste, openDayImage } from './tools.js';
+import { el, subviewHead, eqLoader, festRow, openExportLikes, openBulkPaste, openDayImage, gearIcon } from './tools.js';
 import { router } from './router.js';
 import { nameProblem, NAME_LIMITS } from '../name-rules.mjs';
 import { loadJSON, saveLS, getLS, removeLS, errorText } from '../util.js';
@@ -376,9 +376,12 @@ function festLinkDemo() {
   link.style.setProperty('--fest', 'var(--brand)');
   const n = el('span', 'font-size: 11px;', "ACL '26");
   n.className = 'fest-name';
+  // The caret the real one wears while it opens a menu (v93).
+  const caret = el('span');
+  caret.className = 'menu-caret';
   const dot = el('span');
   dot.className = 'sync-dot';
-  link.append(n, dot);
+  link.append(n, caret, dot);
   return link;
 }
 
@@ -424,10 +427,10 @@ function openHowItWorks(actions) {
   // 1-2. The people: whose picks you are looking at, and how someone joins.
   card.appendChild(lesson((d) => {
     d.append(chipDemo('Kat', { ring: true }), chipDemo('Drew', { faded: true }));
-  }, 'Tap a name to highlight their picks.', 'Switch who you are picking as in Settings.'));
+  }, 'Highlight a friend’s picks.', 'Tap their name. Switch who you pick as in Settings.'));
   card.appendChild(lesson((d) => {
-    d.append(chipDemo('+ Add', { dashed: true }));
-  }, 'Add your people with + Add,', 'or share the crew link — anyone who opens it is in, no account needed.'));
+    d.append(chipDemo('+ Invite someone', { dashed: true }));
+  }, 'Invite your people.', 'Tap + Invite someone, or share the crew link — anyone who opens it is in, no account needed.'));
 
   // 3-5. The card: what a tap does, and what the two corners are saying.
   // Row 3 is the card getting brighter with the REAL meter chip on it, filling
@@ -443,7 +446,7 @@ function openHowItWorks(actions) {
       swatch.appendChild(chip);
       d.appendChild(swatch);
     });
-  }, 'Tap an artist to add your color.', 'Your bars fill each tap. 4 taps = must see.'));
+  }, 'Add your color to an artist.', 'Tap it. Your bars fill each tap. 4 taps = must see.'));
   // Kat is BOARD[6], the teal row 1's Kat chip already wears — one person,
   // one colour, on one screen.
   card.appendChild(lesson((d) => {
@@ -453,7 +456,7 @@ function openHowItWorks(actions) {
     const n = el('span', '', '2'); n.className = 'chip-notes'; n.style.height = '14px';
     const s = el('span', '', '23'); s.className = 'chip-spotify'; s.style.height = '13px'; // the green pill, never a music-note glyph
     d.append(n, s);
-  }, 'Hold for details.', 'Violet = crew notes; pin one to keep it on top. Green = it’s in your Spotify (connect in Settings).'));
+  }, 'Details and notes.', 'Hold the card. Violet = crew notes; pin one to keep it on top. Green = it’s in your Spotify (connect in Settings).'));
 
   // 6. The wall: the one mark a card can wear that is a guess. The tilde used
   // to explain itself in a whisper under every venue night — one line of
@@ -467,13 +470,26 @@ function openHowItWorks(actions) {
     d.appendChild(chip);
   }, '~ a guessed start time and artist order.', 'Based on limited intel.'));
 
-  // 7-8. The dock: the fest link (the show menu, MODEL-V4 §3.1, and the sync
-  // dot — one component, so one row, with both facts), and the gear.
+  // 7-9. The dock: the fest link (the show menu, MODEL-V4 §3.1 — the real
+  // component, caret and dot), then the dot's own row (v93, Kevin: every row
+  // leads with the feature, and the dot's colours are a fact of their own, so
+  // they no longer ride on the menu's row — drawn as the real dot, in its
+  // three states), and the gear.
   card.appendChild(lesson((d) => {
     d.appendChild(festLinkDemo());
-  }, 'Tap the fest name to show or hide parts of the week.', 'Green dot = synced. Gray = offline (still works); red = something’s wrong.'));
+  }, 'Show or hide parts of the week.', 'Tap the fest name.'));
   card.appendChild(lesson((d) => {
-    const gear = el('span', 'color: var(--text-secondary); font-size: 16px;', '⚙');
+    for (const state of ['', 'sync-offline', 'sync-error']) {
+      const dot = el('span', 'margin: 0 2px;');
+      dot.className = `sync-dot ${state}`.trim();
+      d.appendChild(dot);
+    }
+  }, 'Sync, at a glance.', 'Green dot = synced. Gray = offline (still works); red = something’s wrong.'));
+  card.appendChild(lesson((d) => {
+    // The header's own gear, drawn at the glyph's old size (v93: the "⚙"
+    // glyph could come out as a colour emoji on iOS).
+    const gear = el('span', 'color: var(--text-secondary); display: inline-flex;');
+    gear.appendChild(gearIcon(16));
     d.appendChild(gear);
   }, 'Switch fests and more in Settings.', ''));
   col.appendChild(card);
@@ -566,7 +582,7 @@ function crewSection(ctx, actions) {
     chips.appendChild(chip);
   }
   if (ctx.meName && actions.addMember) {
-    const add = el('button', 'cursor: pointer;', '+ Add someone');
+    const add = el('button', 'cursor: pointer;', '+ Invite someone');
     add.className = 'person-chip add';
     add.addEventListener('click', actions.addMember);
     chips.appendChild(add);
@@ -821,6 +837,14 @@ export function renderSettings(root, ctx, actions) {
   }
   // Bulk paste writes picks under the names it reads — a member's tool (v92).
   if (ctx.meName) list.appendChild(linkRow('Bulk paste picks', () => openSub('sub:bulk')));
+  // Its neighbour (2026-09-26): picks read from the festival app's own
+  // schedule export — a sheet over Settings (js/v3/import.js), for YOUR
+  // picks only, so a member's tool too. Named for the festival on screen: the
+  // export being read is that festival's app's.
+  const fest = state.fest();
+  if (ctx.meName && actions.openImport && fest && (fest.artists || []).length) {
+    list.appendChild(linkRow(`Import from the ${fest.name} app`, () => actions.openImport()));
+  }
   list.appendChild(linkRow('Export picks', () => openSub('sub:export')));
   list.appendChild(linkRow('Day image', () => openSub('sub:day-image')));
   // Which build this phone runs, and the way to a newer one (v90) — beside
