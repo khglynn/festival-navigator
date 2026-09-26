@@ -126,3 +126,20 @@ switch; screenshots into `v93-shots/`. One full `npm test` at the end.
   3. Escape: `if (openMenu) { leaveShowMenu(); return; }` then v92's `if (leaveShelf('escape')) return;`.
   v92's `tests/browser/show-menu-stacking.test.mjs` should pass as written (its synthetic
   `dock-you.click()` is held, the menu's entry goes, then the + opens the shelf).
+- **"Show" label** (43f80d1, coordinator from Kevin): the menu's head becomes one reusable
+  class, `.menu-label` — 10px/800/`--track-label`/uppercase in `--text-secondary`, lined up
+  with the check column — for the Highlight menu to wear too. Shots: `menu-open-390.png`,
+  `menu-open-320.png`, `sheet-menu-label.png`.
+- **Verified** (on 43f80d1's code, before the label): full `npm test` 990/992 in local time,
+  with `NIGHT_CLOCK=2026-09-27T05:30:00Z`, and in `TZ=Asia/Tokyo` — the one failure each time
+  is the asset stamp (the orchestrator's; a temporary `--keep` restamp passes
+  app-shell-complete + sw-stamp, then restored from a copy), one skipped. `npm run
+  test:browser` 190/191: the one failure is `zoom-notes-chip` "WebKit: after a pick, one click
+  on the zoom's notes chip…", which fails identically on v92's abe7205 (an exported copy) and
+  passes on v92's current head b29aac0 — pre-existing, fixed upstream. The NOW "card is
+  replaced mid-glide" case flaked once under full-suite load and passes on its own.
+- Walk (`node claude-plans/2026-09-25-portola-live/v93-walk.mjs [rest|motion|tap|menu|people]`,
+  shots in `v93-shots/`, git-ignored): rest at 320/375/390/430/1280 for Sat live, nothing live,
+  Sun live, Thu live, ACL; motion arrive/leave at 390/320 filmed at 0.1x plus Reduce Motion;
+  NOW tap + day switch at 390/320/1280; the menu at 390/320/1280; the people row + Robyn's +n
+  at 390/320; the welcome card's +4 (guest).
