@@ -422,6 +422,15 @@ function buildReady() {
   });
 }
 
+// The build THIS page runs ("v89"), or null when nothing can say. Read-only:
+// Settings' "Get the latest version" row names it (v90). Nothing leaves the
+// phone for it. With reports off the question is asked now rather than at
+// boot, so a page a newer worker has already taken over (the new-build strip
+// is up) may hear the newer worker's answer — the row reads the strip first.
+export function pageBuild() {
+  return buildReady().then(() => (buildInfo && buildInfo.build) || null);
+}
+
 // ---- identity -----------------------------------------------------------------
 function uuid() {
   let c = null;

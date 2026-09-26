@@ -12,7 +12,7 @@ import { BOARD, hslOf, strokeOf } from './palette.js';
 import { colorIndexOf, meterChip, crewMark } from './wall.js';
 import { meterOf, whoCorner } from './aura.js';
 import { festPlaceLine } from './card-facts.js'; // the fest's place line, shared with the wall header
-import { recent as recentErrors, diagnostics, SETTINGS_KEY, reportKey, reportsOn, clearReports, noteSettings } from '../errlog.js';
+import { recent as recentErrors, diagnostics, SETTINGS_KEY, reportKey, reportsOn, clearReports, noteSettings, pageBuild } from '../errlog.js';
 import { el, subviewHead, eqLoader, festRow, openExportLikes, openBulkPaste, openDayImage } from './tools.js';
 import { router } from './router.js';
 import { nameProblem, NAME_LIMITS } from '../name-rules.mjs';
@@ -802,6 +802,7 @@ export function renderSettings(root, ctx, actions) {
   // The crash journal's one door (2026-08-31): a tap copies a shareable dump
   // (build, device, the last 20 recorded errors — never anything private).
   // Exists so "it broke on my phone" can travel as text instead of a video.
+  list.appendChild(updateRow());
   const errCount = recentErrors().length;
   const diagRow = linkRow(errCount ? `Diagnostics · ${errCount} recent error${errCount === 1 ? '' : 's'}` : 'Diagnostics', async () => {
     const t = diagRow.querySelector('.row-title');
@@ -820,6 +821,182 @@ export function renderSettings(root, ctx, actions) {
   main.appendChild(list);
 
   root.append(sub, main);
+}
+
+// ---- get the latest version (v90, Kevin at Portola, 2026-09-25) --------------------
+// Kevin's iPhone kept the old build ("there's just a refresh button") and a
+// private tab — which loses who you are — was the only way to the new one.
+// This row says which build this phone runs and, on a tap, asks for a newer
+// one through the machinery that already carries every release: the worker
+// registration's own update(). A newer worker installs, takes over, and
+// index.html's glue reloads the page the moment nothing is in progress (or
+// puts up the new-build strip). The row only calls it and says what happened.
+//
+// It never clears a cache or touches storage. Deleting the running worker's
+// shell leaves a phone with no offline app until a new worker installs — at
+// Pier 80 that is exactly when installs fail — and the data cache is every
+// festival this phone can open offline. The worker's own activate already
+// removes old shells (v90 build log, item 3).
+const UPDATE_CHECK_MS = 15000;    // reg.update() on a network that hangs
+const UPDATE_DOWNLOAD_MS = 60000; // a new worker's install: the whole shell
+const UPDATE_SWITCH_MS = 1500;    // the glue's reload, if nothing is in progress
+
+// What the row's second line says, in each state.
+export function updateWords({ state, page = null, next = null }) {
+  switch (state) {
+    case 'checking': return 'Checking…';
+    case 'latest': return page ? `You’re on the latest — ${page}` : 'You’re on the latest version';
+    case 'downloading': return 'Downloading the new version…';
+    case 'switching': return 'Got it — switching over…';
+    case 'ready': return `${next || 'The new version'} is ready — tap to use it`;
+    case 'slow': return 'Still downloading — it switches over by itself when it’s done';
+    case 'offline': return page ? `You’re offline — this phone keeps ${page} until you have signal` : 'You’re offline — try again when you have signal';
+    case 'unreachable': return 'Couldn’t check — try again with more signal';
+    case 'failed': return 'Couldn’t download it — try again with more signal';
+    case 'no-worker': return 'This browser keeps no offline copy, so a reload always gets the latest';
+    default: return page ? `This phone runs ${page}` : 'Checks for a newer version of the app';
+  }
+}
+
+const within = (promise, ms, fallback) => new Promise((resolve, reject) => {
+  const t = setTimeout(() => resolve(fallback), ms);
+  Promise.resolve(promise).then((v) => { clearTimeout(t); resolve(v); }, (e) => { clearTimeout(t); reject(e); });
+});
+
+// A worker's own answer to "which build are you?" (service-worker.js answers
+// the page that asked); null when it is too old to answer or does not.
+function askWorkerBuild(worker, container, ms = 3000) {
+  return new Promise((resolve) => {
+    if (!worker || !container) { resolve(null); return; }
+    let done = false;
+    const finish = (v) => {
+      if (done) return;
+      done = true;
+      try { container.removeEventListener('message', hear); } catch { /* gone */ }
+      resolve(v);
+    };
+    const hear = (e) => {
+      const d = e && e.data;
+      if (!d || typeof d.fnBuild !== 'string') return;
+      const m = /^festival-nav-(v\d+)$/.exec(d.fnBuild);
+      finish(m ? m[1] : null);
+    };
+    try {
+      container.addEventListener('message', hear);
+      if (typeof container.startMessages === 'function') container.startMessages();
+      worker.postMessage({ fn: 'build?' });
+    } catch { finish(null); return; }
+    setTimeout(() => finish(null), ms);
+  });
+}
+
+// A new worker's install, to its end: 'activated', 'redundant' (it failed),
+// or 'timeout' while it is still going.
+function workerSettles(worker, ms) {
+  return new Promise((resolve) => {
+    const now = () => worker.state === 'activated' || worker.state === 'redundant';
+    if (now()) { resolve(worker.state); return; }
+    const t = setTimeout(() => { worker.removeEventListener('statechange', on); resolve('timeout'); }, ms);
+    const on = () => {
+      if (!now()) return;
+      clearTimeout(t);
+      worker.removeEventListener('statechange', on);
+      resolve(worker.state);
+    };
+    worker.addEventListener('statechange', on);
+  });
+}
+
+// The real page's side of the check. Every DOM global is called through an
+// arrow, never stored bare (a stored location.reload throws "Illegal
+// invocation" in every browser and nothing in Node).
+function updateEnv() {
+  let container = null;
+  try { container = (window.navigator && window.navigator.serviceWorker) || null; } catch { container = null; }
+  return {
+    online: () => { try { return window.navigator.onLine !== false; } catch { return true; } },
+    registration: async () => {
+      if (!container || typeof container.getRegistration !== 'function') return null;
+      try { return (await within(container.getRegistration(), UPDATE_CHECK_MS, null)) || null; } catch { return null; }
+    },
+    pageBuild: () => pageBuild(),
+    activeBuild: (reg) => askWorkerBuild(reg && reg.active, container),
+    // The glue's own word that this page runs an older build than the worker
+    // now in charge: it put up the new-build strip (app.js showNewBuildStrip).
+    behind: () => !!document.getElementById('new-build-strip'),
+    settles: (worker, ms) => workerSettles(worker, ms),
+    sleep: (ms) => new Promise((r) => setTimeout(r, ms)),
+    reload: () => window.location.reload(),
+  };
+}
+
+// One check, start to finish; `say` hears every state on the way. Returns
+// the last one. Nothing here reloads the page: a newer worker taking over is
+// what does that, through index.html's glue, or a second tap on "ready".
+export async function checkForUpdate(env, say = () => {}) {
+  const step = (s) => { say(s); return s; };
+  // The page's build first: it settles before any other worker is asked
+  // "which build?", so their answers can never be mistaken for this page's.
+  const page = await env.pageBuild();
+  const reg = await env.registration();
+  // Already downloaded, this page just has not switched: no network needed.
+  if (env.behind()) return step({ state: 'ready', page, next: reg ? await env.activeBuild(reg) : null });
+  if (!env.online()) return step({ state: 'offline', page });
+  if (!reg) return step({ state: 'no-worker', page });
+  step({ state: 'checking', page });
+  try {
+    const answered = await within(reg.update().then(() => true), UPDATE_CHECK_MS, false);
+    if (!answered) return step({ state: 'unreachable', page });
+  } catch {
+    return step({ state: 'unreachable', page });
+  }
+  const incoming = reg.installing || reg.waiting;
+  if (incoming) {
+    step({ state: 'downloading', page });
+    const end = await env.settles(incoming, UPDATE_DOWNLOAD_MS);
+    if (end === 'redundant') return step({ state: 'failed', page });
+    if (end === 'timeout') return step({ state: 'slow', page });
+    step({ state: 'switching', page });
+    await env.sleep(UPDATE_SWITCH_MS); // the glue reloads here unless something is in progress
+  }
+  // Behind with no strip is a page no worker controlled when it loaded (the
+  // glue lets the first worker's claim pass without a reload). A misread
+  // page build lands here too, and costs one reload onto the same build.
+  const active = await env.activeBuild(reg);
+  if (env.behind() || (page && active && active !== page)) return step({ state: 'ready', page, next: active });
+  return step({ state: 'latest', page: page || active });
+}
+
+// The row: a real button (the 44px floor comes from being one), its words in
+// the second line, which is a live region so a screen reader hears each state.
+function updateRow(envOf = updateEnv) {
+  const row = el('button');
+  row.className = 'list-row';
+  row.style.cssText = 'cursor: pointer; width: 100%; background: none; border: none; border-bottom: 1px solid var(--hairline); font: inherit; text-align: left; color: inherit;';
+  row.dataset.update = 'idle';
+  const left = el('span', 'flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px;');
+  const t = el('span', '', 'Get the latest version'); t.className = 'row-title';
+  const sub = el('span', '', updateWords({ state: 'idle' })); sub.className = 'row-sub';
+  sub.setAttribute('aria-live', 'polite');
+  left.append(t, sub);
+  row.appendChild(left);
+  let last = { state: 'idle', page: null };
+  let running = false;
+  const show = (s) => {
+    last = s;
+    row.dataset.update = s.state;
+    sub.textContent = updateWords(s);
+  };
+  pageBuild().then((page) => { if (last.state === 'idle') show({ state: 'idle', page }); }, () => {});
+  row.addEventListener('click', async () => {
+    if (running) return;
+    const env = envOf();
+    // The second tap on "ready" is the strip's own Refresh: the person asked.
+    if (last.state === 'ready') { env.reload(); return; }
+    running = true;
+    try { await checkForUpdate(env, show); } catch { show({ state: 'unreachable', page: last.page }); } finally { running = false; }
+  });
+  return row;
 }
 
 // Open a settings drill by its router key — the one entry point both the
