@@ -40,10 +40,14 @@ export function rememberWelcomeSeen() {
 // its faces, so the line can say "the crew's plan" and stay one line. A
 // guest adds themselves; a member already has a colour, so they add theirs.
 // "Want to go", never "going": a pick is interest, not a ticket.
+//
+// A guest also gets Kevin's right-hand door (2026-09-25, 7:55 PM: "a right
+// justified button in there to pick with the crew") — for friends who already
+// know they want to pick. A member is already picking, so theirs has none.
 export function welcomeCopy({ crewName = '', festName = '', people = [], picked = false, guest = true } = {}) {
   const fest = festName || 'this festival';
   const label = crewName || 'Your crew';
-  const buttons = { yes: 'Got it', more: 'How it works' };
+  const buttons = { yes: 'Got it', more: 'How it works', join: guest ? 'Pick with the crew' : null };
   if (!people.length) {
     return { label, line: 'Nobody’s in this crew yet.', sub: 'Tap any artist to be first — you’ll pick a name as you do.', ...buttons };
   }
@@ -114,7 +118,7 @@ function unwatchToasts() {
   if (toastWatch) { toastWatch.disconnect(); toastWatch = null; }
 }
 
-export function showWelcome(host, { copy, faces = [], ctx = null, onGotIt, onHow }) {
+export function showWelcome(host, { copy, faces = [], ctx = null, onGotIt, onHow, onJoin }) {
   dismissWelcome({ instant: true });
   const box = node('div', 'bring-offer welcome-offer');
   box.id = CARD_ID;
@@ -131,6 +135,11 @@ export function showWelcome(host, { copy, faces = [], ctx = null, onGotIt, onHow
   const yes = node('button', 'btn-tonal', copy.yes);
   const more = node('button', 'btn-ghost', copy.more);
   actions.append(yes, more);
+  // The quiet ways to look stay on the left, as the frame drew them; the way
+  // to pick sits on the right (it wraps under them on a 320 phone, still to
+  // the right).
+  const join = copy.join && onJoin ? node('button', 'btn-tonal welcome-join', copy.join) : null;
+  if (join) actions.append(join);
   card.append(head, text, actions);
   box.appendChild(card);
   host.appendChild(box);
@@ -150,7 +159,7 @@ export function showWelcome(host, { copy, faces = [], ctx = null, onGotIt, onHow
       { duration: CASCADE_MS, delay: ARRIVE_DELAY_MS + GROW_MS / 2 + i * STAGGER_MS * 2, easing: EASE_ARRIVE, fill: 'backwards' },
     ));
     const after = ARRIVE_DELAY_MS + GROW_MS / 2 + people.length * STAGGER_MS * 2;
-    [yes, more].forEach((b, i) => b.animate(
+    [yes, more, join].filter(Boolean).forEach((b, i) => b.animate(
       [{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }],
       { duration: CASCADE_MS, delay: after + i * STAGGER_MS, easing: EASE_ARRIVE, fill: 'backwards' },
     ));
@@ -165,6 +174,9 @@ export function showWelcome(host, { copy, faces = [], ctx = null, onGotIt, onHow
   // and coming back finds it still there for "Got it" — which is also the
   // moment anything waiting behind it (the bring-your-picks offer) may ask.
   more.addEventListener('click', () => { if (onHow) onHow(); });
+  // "Pick with the crew": the ordinary join, with nothing waiting — the app
+  // marks the welcome read and takes the card down on the way (askToJoin).
+  if (join) join.addEventListener('click', () => onJoin());
   return box;
 }
 

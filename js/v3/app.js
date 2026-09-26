@@ -2392,6 +2392,7 @@ function maybeWelcome() {
   showWelcome($('screen-app'), {
     copy, faces, ctx,
     onGotIt: () => { pulseJoinRing(); maybeOfferBringPicks(); },
+    onJoin: () => askToJoin(null),
     onHow: () => {
       openSettings();
       router.push('settings');

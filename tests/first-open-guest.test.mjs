@@ -116,6 +116,24 @@ test('the welcome card says what this is, above the dock, in C1’s words', () =
     'Every friend has a color — the more color on a card, the more of us want to go. Tap any artist to add yourself.');
   assert.equal(box.querySelectorAll('.avatar-cluster .avatar').length, 2, 'the crew, in their colours');
   assert.ok(buttonNamed(box, 'Got it') && buttonNamed(box, 'How it works'));
+  const pick = buttonNamed(box, 'Pick with the crew');
+  assert.ok(pick, 'Kevin’s right-hand door, for a friend who already knows they want to pick');
+  assert.equal(box.querySelector('.bring-actions').lastElementChild, pick, 'after the two ways to look — the right side');
+  assert.ok(pick.classList.contains('welcome-join'));
+});
+
+test('"Pick with the crew" is the ordinary join, with nothing waiting — and still writes nothing', async () => {
+  buttonNamed(welcome(), 'Pick with the crew').click();
+  assert.deepEqual(shown(), ['screen-join']);
+  assert.equal($('join-for').style.display, 'none', 'no artist waiting');
+  assert.equal(localStorage.getItem('fn_welcome_v1'), '1', 'the welcome has been read');
+  $('join-look').click();
+  await settle(40);
+  assert.deepEqual(shown(), ['screen-app']);
+  assert.equal(welcome(), null, 'and it does not come back');
+  assert.deepEqual(writes, []);
+  // The next test reads the old storage: the welcome not yet seen.
+  localStorage.removeItem('fn_welcome_v1');
 });
 
 test('a guest’s tap on an artist asks who they are, naming the artist — and still writes nothing', () => {

@@ -209,6 +209,11 @@ html { touch-action: manipulation; }
 .welcome-head .avatar.more { background: var(--card); border: 1px dashed var(--border-emphasis); color: var(--text-secondary); font-size: 7.5px; }
 .welcome-card .bring-line { font-size: 14px; }
 .welcome-card .bring-sub { color: var(--text-secondary); font-size: 12px; line-height: 1.5; margin-top: 4px; }
+/* Kevin's right-hand door for a guest (2026-09-25): "Pick with the crew" sits
+ * on the right; where the row is too narrow (320) it wraps under Got it and
+ * How it works, and auto margin keeps it right. */
+.welcome-card .bring-actions { flex-wrap: wrap; }
+.welcome-card .welcome-join { margin-left: auto; }
 /* A toast's one action never breaks across lines: the toast shrinks to half
  * the viewport (left: 50%), and "Not me" (the recognized-entry door) stacked
  * as "Not / me" on a 390px phone (walk, 2026-09-23). */

@@ -64,6 +64,7 @@ test('a recognized member is welcomed once too — in a member’s words — and
   assert.ok(box, 'the welcome is up');
   assert.match(box.querySelector('.bring-sub').textContent, /Tap any artist to add yours\.$/, 'a member adds theirs');
   assert.equal(offer(), null, 'the offer does not ask before the welcome has been read');
+  assert.equal(buttonNamed(box, 'Pick with the crew'), undefined, 'a member is already picking: no door to join');
 });
 
 test('"Got it": the welcome goes, remembered on this phone, and the offer asks', async () => {
@@ -85,6 +86,9 @@ test('the words for the other crews a friend can open onto', () => {
   assert.equal(welcomeCopy({ ...base, people: ['Kevin', 'Maya'], picked: false }).line, 'This is the crew’s plan for Portola. Nobody’s picked yet.');
   assert.match(welcomeCopy({ ...base, people: ['Kevin'], picked: false }).sub, /Tap any artist to be first\.$/);
   assert.equal(welcomeCopy({ ...base, people: ['Kevin'], picked: true }).label, 'Portola 26');
+  assert.equal(welcomeCopy({ ...base, people: ['Kevin'], picked: true, guest: true }).join, 'Pick with the crew');
+  assert.equal(welcomeCopy({ ...base, people: [], guest: true }).join, 'Pick with the crew', 'an empty crew too: someone has to be first');
+  assert.equal(welcomeCopy({ ...base, people: ['Kevin'], picked: true, guest: false }).join, null);
   assert.doesNotMatch(JSON.stringify(welcomeCopy({ ...base, people: ['Kevin'], picked: true })), /going\b|must see/i,
     'a pick is interest, not a ticket');
 });

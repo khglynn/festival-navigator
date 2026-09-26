@@ -209,3 +209,16 @@ keeping the whole hash, QR, and warm open for returning guests.
 guest reads the join screen with an empty name field — the page reloads onto
 the guest wall and the waiting tap is gone (they tap again). Marking that
 busy would touch the update machinery, which this build leaves alone.
+
+**~9:25 PM — Kevin's button (relayed 7:55 PM note).** "Let's add a right
+justified button in there to pick with the crew." Built: **Pick with the
+crew**, `btn-tonal`, the last child of the card's action row with
+`margin-left: auto` — Got it · How it works stay on the left as F2a drew them.
+Guests only: a member is already picking, so their card has no such door.
+It is `askToJoin(null)` — the ordinary join screen, nothing waiting, the
+welcome marked read. Measured in the walk: at 390 all three sit on one row
+(Pick with the crew 223–363 in a card ending at 378); at 320 the row wraps and
+the button sits alone on the second line, still right (153–293 of 308); all
+three 44px. Tests: the guest file checks it is the right-hand door and opens
+the join with nothing waiting and no writes; the member test checks a member
+has none; the copy test covers the empty crew.

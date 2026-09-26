@@ -142,6 +142,9 @@ for (const [W, H] of [[390, 844], [320, 568]]) {
     note(`welcome card box ${JSON.stringify(card)}; dock top ${dock.y}; gap ${Math.round(dock.y - (card.y + card.height))}px; fits width: ${card.x >= 0 && card.x + card.width <= W}`);
     const btns = await page.locator('#welcome-card button').evaluateAll((bs) => bs.map((b) => [b.textContent, Math.round(b.getBoundingClientRect().height)]));
     note(`buttons (label, height): ${JSON.stringify(btns)}`);
+    const rects = await page.locator('#welcome-card .bring-actions button').evaluateAll((bs) => bs.map((b) => { const r = b.getBoundingClientRect(); return [b.textContent, Math.round(r.left), Math.round(r.top), Math.round(r.right)]; }));
+    const cardR = await page.locator('#welcome-card .bring-card').evaluate((n) => { const r = n.getBoundingClientRect(); return Math.round(r.right); });
+    note(`buttons (label, left, top, right) ${JSON.stringify(rects)}; card right ${cardR}`);
     note(`writes: ${JSON.stringify(writes)}`);
     await shot(page, `${tag}-01-guest-welcome.png`);
     // Got it: the card leaves, the + pulses.
