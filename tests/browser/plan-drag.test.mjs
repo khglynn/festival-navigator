@@ -28,7 +28,7 @@ test.after(async () => { if (chromium) await chromium.close(); if (webkit) await
 const FID = 'portola-2026';
 const SAT_940 = new Date('2026-09-26T21:40:00-07:00'); // Dog Blood on the Pier Stage, 8 of us
 
-async function openPhone(engine, { reduced = false, desk = false } = {}) {
+async function openPhone(engine, { reduced = false, desk = false, fontDelayMs = 0 } = {}) {
   const CREW = randomBytes(20).toString('base64url'); // made up, never a real link
   const ctx = await engine.newContext({
     viewport: desk ? { width: 1280, height: 800 } : { width: 390, height: 844 },
@@ -46,6 +46,9 @@ async function openPhone(engine, { reduced = false, desk = false } = {}) {
     : r.fulfill({ status: 503, contentType: 'application/json', body: '{}' })));
   await ctx.route('**/api/festival-add**', (r) => r.fulfill({ contentType: 'application/json', body: '{"festivals":[]}' }));
   await ctx.route('**/fn-i/**', (r) => r.fulfill({ status: 200, body: '{}' }));
+  // A slow network's fonts: the peek is measured in the fallback face, and
+  // the real one lands after it (the stylesheet itself is not held).
+  if (fontDelayMs) await ctx.route('**/assets/fonts/*.woff2', async (r) => { await sleep(fontDelayMs); await r.continue(); });
   await ctx.addInitScript(([t]) => {
     localStorage.setItem('fn_crews_v3', JSON.stringify([{ token: t, name: 'Nine' }]));
     localStorage.setItem(`fn_me_v3_${t}`, 'Gus');
@@ -57,10 +60,13 @@ async function openPhone(engine, { reduced = false, desk = false } = {}) {
   const errors = [];
   page.on('pageerror', (e) => errors.push(String(e)));
   await page.clock.setFixedTime(SAT_940);
-  await page.goto(`${server.origin}/#g=${CREW}&f=${FID}`, { waitUntil: 'load' });
+  // A held font holds Chromium's load event too (fonts requested before it
+  // count), so that case waits only for the document.
+  await page.goto(`${server.origin}/#g=${CREW}&f=${FID}`, { waitUntil: fontDelayMs ? 'domcontentloaded' : 'load' });
   await page.waitForSelector('#plan[data-state="peek"]:not([hidden])', { timeout: 15000 });
+  const fontsAtPeek = await page.evaluate(() => document.fonts.status);
   await sleep(900); // the peek has arrived
-  return { ctx, page, errors };
+  return { ctx, page, errors, fontsAtPeek };
 }
 
 const geometry = (page) => page.evaluate(() => {
@@ -273,6 +279,96 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
   });
 }
 
+for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit]]) {
+  const skip = get() ? false : (name === 'WebKit' ? 'WebKit not installed' : NO_BROWSER);
+
+  // The window's numbers are measured from its boxes, and a late font resizes
+  // them. WebKit's `loadingdone` came before the font's layout did, so the
+  // refit it drove measured the old face and the peek sat 27px above the
+  // dock — every time the fonts were slower than the first paint
+  // (2026-09-26). The shelf watches its own boxes now.
+  test(`${name}: a late font — the peek measures again from its own boxes, and its row still ends on the dock`, { skip }, async () => {
+    const { ctx, page, errors, fontsAtPeek } = await openPhone(get(), { fontDelayMs: 2500 });
+    try {
+      assert.equal(fontsAtPeek, 'loading', 'the peek arrived before the fonts (the case under test)');
+      await page.waitForFunction(() => document.fonts.status === 'loaded', null, { timeout: 15000 });
+      await sleep(700);
+      const g = await geometry(page);
+      assert.equal(g.state, 'peek');
+      assert.ok(Math.abs(g.rowBottom - g.dockTop) <= 0.5, `the row ends at the dock's top edge: ${JSON.stringify(g)}`);
+      assert.ok(g.rowTop >= g.grabBottom - 0.5, `and starts under the grabber: ${JSON.stringify(g)}`);
+      assert.deepEqual(errors, []);
+    } finally { await ctx.close(); }
+  });
+
+  // The open plan's handle is its grabber and its head together: the bar is
+  // 13px tall, and the head (which opens nothing of its own) already drags.
+  test(`${name}: in the open plan a tap on the head closes it, like the grabber; the ✕ still closes it`, { skip }, async () => {
+    const { ctx, page, errors } = await openPhone(get());
+    try {
+      let g = await grabAt(page);
+      await page.touchscreen.tap(g.x, g.y);
+      await sleep(700);
+      assert.equal((await geometry(page)).state, 'open');
+      const head = await page.locator('#plan .plan-head .room-head .label').boundingBox();
+      await page.touchscreen.tap(head.x + head.width / 2, head.y + head.height / 2);
+      await sleep(700);
+      assert.equal((await geometry(page)).state, 'peek', 'a finger on the head closes it');
+      g = await grabAt(page);
+      await page.mouse.click(g.x, g.y);
+      await sleep(700);
+      const x = await page.locator('#plan .plan-head .sheet-close').boundingBox();
+      await page.mouse.click(x.x + x.width / 2, x.y + x.height / 2);
+      await sleep(700);
+      assert.equal((await geometry(page)).state, 'peek', 'the ✕ closes it (once, not a close and a reopen)');
+      assert.deepEqual(errors, []);
+    } finally { await ctx.close(); }
+  });
+
+  // A tap pins the phone's open window at its height (so the tapped row stays
+  // put); that pin is the phone's. Widened to a laptop, the panel reaches the
+  // bottom again and is the panel (it bounds the zoom); narrowed back, the
+  // open plan stands on the dock.
+  test(`${name}: a card grown in the open plan, then the window widened to a laptop and back — the panel is whole, then the plan`, { skip }, async () => {
+    const { ctx, page, errors } = await openPhone(get());
+    try {
+      const g = await grabAt(page);
+      await page.mouse.click(g.x, g.y);
+      await sleep(700);
+      const row = await page.evaluate(() => {
+        const r = [...document.querySelectorAll('#plan .plan-list > button.plan-row:not(.tagged):not(.earlier)')][0].getBoundingClientRect();
+        return { x: r.left + r.width * 0.4, y: r.top + 14 };
+      });
+      await page.mouse.click(row.x, row.y);
+      await sleep(900);
+      assert.ok(await page.evaluate(() => !!document.getElementById('plan').style.height), 'the tap pinned the window');
+      await page.setViewportSize({ width: 1280, height: 800 });
+      await sleep(900);
+      const wide = await page.evaluate(() => {
+        const el = document.getElementById('plan');
+        const r = el.getBoundingClientRect();
+        const rail = document.getElementById('day-rail').getBoundingClientRect();
+        return { state: el.dataset.state, side: el.dataset.side || null, top: r.top, bottom: r.bottom, width: r.width, railBottom: rail.bottom, pinned: el.style.height };
+      });
+      assert.equal(wide.state, 'open');
+      assert.equal(wide.side, 'open', 'it is the panel: the zoom keeps left of it');
+      assert.equal(wide.pinned, '', 'the phone\'s pin is gone');
+      assert.ok(Math.abs(wide.top - wide.railBottom) <= 1 && Math.abs(wide.bottom - 800) <= 1 && Math.abs(wide.width - 400) <= 1,
+        `a 400px panel from the rail to the bottom: ${JSON.stringify(wide)}`);
+      await page.setViewportSize({ width: 390, height: 844 });
+      await sleep(900);
+      const narrow = await page.evaluate(() => {
+        const el = document.getElementById('plan');
+        return { state: el.dataset.state, side: el.dataset.side || null, bottom: el.getBoundingClientRect().bottom, dockTop: document.getElementById('dock').getBoundingClientRect().top };
+      });
+      assert.equal(narrow.state, 'open');
+      assert.equal(narrow.side, null, 'no panel on a phone');
+      assert.ok(Math.abs(narrow.bottom - narrow.dockTop) <= 0.5, `the open plan stands on the dock: ${JSON.stringify(narrow)}`);
+      assert.deepEqual(errors, []);
+    } finally { await ctx.close(); }
+  });
+}
+
 test('Chromium touch: a finger drag opens it, and a finger drag on the open list scrolls the list, never the plan', { skip: chromium ? false : NO_BROWSER }, async () => {
   const { ctx, page, errors } = await openPhone(chromium);
   try {
@@ -366,6 +462,44 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
       const z = await page.evaluate(() => { const c = document.querySelector('#zoom-layer .zoom-card'); if (!c) return null; const r = c.getBoundingClientRect(); return { left: r.left, right: r.right }; });
       assert.ok(z, 'it zoomed');
       assert.ok(z.right <= at.side - 7.5, `its right edge clears the panel by 8px: ${JSON.stringify({ z, side: at.side })}`);
+      assert.deepEqual(errors, []);
+    } finally { await ctx.close(); }
+  });
+
+  // A keyboard reaches everything a pointer does: the card (a button), then
+  // the panel's stops (buttons while it is open), Enter growing a card with
+  // the focus kept on its row; Escape back to the card.
+  test(`${name} 1280: a keyboard opens the card, Tabs to a stop, grows its card with Enter, and Escape puts the focus back on the card`, { skip }, async () => {
+    const { ctx, page, errors } = await openPhone(get(), { desk: true });
+    try {
+      await page.evaluate(() => document.querySelector('#plan .plan-grab').focus());
+      await page.keyboard.press('Enter');
+      await sleep(700);
+      assert.equal((await geometry(page)).state, 'open');
+      const focus = () => page.evaluate(() => {
+        const f = document.activeElement;
+        return { stop: (f && f.dataset && f.dataset.stop) || null, expanded: f && f.getAttribute('aria-expanded'), grab: !!(f && f.classList.contains('plan-grab')),
+          tagged: !!(f && f.classList.contains('tagged')), ring: !!(f && f.matches(':focus-visible')) };
+      });
+      let f = null;
+      for (let k = 0; k < 8; k++) {
+        await page.keyboard.press('Tab');
+        f = await focus();
+        if (f.stop && f.stop !== 'earlier' && !f.tagged && !f.stop.includes('|grow')) break;
+      }
+      assert.ok(f && f.stop && f.expanded === 'false', `Tab reaches a folded stop in the panel: ${JSON.stringify(f)}`);
+      assert.ok(f.ring, 'and shows the ring');
+      const key = f.stop;
+      await page.keyboard.press('Enter');
+      await sleep(700);
+      f = await focus();
+      assert.equal(f.stop, key, 'the focus stays on the same stop');
+      assert.equal(f.expanded, 'true', 'its card is grown');
+      assert.equal(await page.evaluate((k) => !!document.querySelector(`#plan .plan-grow[data-stop="grow|${CSS.escape(k)}"]`), key), true);
+      await page.keyboard.press('Escape');
+      await sleep(700);
+      assert.equal((await geometry(page)).state, 'peek');
+      assert.equal((await focus()).grab, true, 'the focus is back on the card');
       assert.deepEqual(errors, []);
     } finally { await ctx.close(); }
   });

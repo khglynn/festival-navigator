@@ -1729,10 +1729,19 @@ a.f-link:hover { border-bottom-color: rgba(255, 255, 255, .75); }
  * grabber and the tagged row above the dock; dragging it up opens the day.
  * Brand only — the accent's four homes do not include this. */
 .plan-list { position: relative; display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+/* Rows keep their height: a full list scrolls, it never squeezes. (A stop row
+ * is a button, and the touch floor's min-height replaces the flex item's
+ * content minimum — a pinned window squeezed the NOW row from 61px to 44 and
+ * its text spilled over the card under it, 2026-09-26.) */
+.plan-list > * { flex: none; }
 .plan-row { position: relative; display: grid; min-width: 0; align-items: baseline;
             grid-template-columns: var(--plan-nw) minmax(0, 1fr) var(--plan-ww) var(--plan-cw);
             column-gap: var(--plan-gap); padding: 8px 0; text-align: left; }
 button.plan-row { width: 100%; background: none; border: 0; font: inherit; color: inherit; cursor: pointer; }
+/* A keyboard's ring sits inside the list's clip. The peek's row is a window
+ * onto a row, not a control: the grab hand is the shelf's there. */
+.plan-row:focus-visible { outline-offset: -2px; border-radius: 8px; }
+.plan-shelf[data-state="peek"] button.plan-row { cursor: inherit; }
 /* The path: one rail through every node, from the first row to the last. */
 .plan-row::before, .plan-grow::before { content: ''; position: absolute; top: 0; bottom: 0; width: 2px; border-radius: 1px;
                                          left: calc(var(--plan-nw) / 2 - 1px); background: rgba(var(--brand), .26); }
@@ -1850,6 +1859,7 @@ button.plan-row { width: 100%; background: none; border: 0; font: inherit; color
    * window's transform; the panel does not lift). */
   .plan-frame[data-state="peek"]:hover { --plan-edge: rgba(var(--brand), .6); }
   .plan-frame[data-state="peek"]:hover > .plan-shelf { translate: 0 -2px; }
+  .plan-frame[data-state="peek"] > .plan-shelf { cursor: pointer; } /* the card is one button (plan-shelf.js onClickPeek) */
   .plan-grab { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: 10px;
                min-height: 42px; padding: 8px 24px 7px; border-bottom: 1px solid var(--hairline); cursor: pointer;
                text-align: left; font: inherit; color: inherit; }

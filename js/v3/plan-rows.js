@@ -134,7 +134,10 @@ const approxOf = (stop, picks) => {
 export function stopRow(stop, opts) {
   const { ctx, plan, tag = null, count = stop.count, faces = false, also = false, grow = false,
     dayWord = '', nightLabelOf = () => '' } = opts;
-  const r = mk('div', `plan-row ${stop.tier}` + (tag === 'now' ? ' live' : ''));
+  // A button: in the open plan a stop row grows its card under it — a tap,
+  // Enter or Space, and the touch floor's 44px (the Earlier line's form).
+  const r = mk('button', `plan-row ${stop.tier}` + (tag === 'now' ? ' live' : ''));
+  r.type = 'button';
   r.dataset.stop = stopKey(stop);
   if (tag) r.dataset.tag = tag;
   const start = `${approxOf(stop, ctx.picks) ? '~' : ''}${quietClock(stop.from)}`;
@@ -143,6 +146,7 @@ export function stopRow(stop, opts) {
   if (faces && stop.tier === 'most' && !grow) what.appendChild(whoEl(stop.people || [], ctx));
   r.append(nodeEl(actFor(stop, ctx.picks), ctx), what, whenEl({ tag, text }), countEl(count));
   r.setAttribute('aria-label', rowWords(stop, { ctx, tag, count, text }));
+  r.setAttribute('aria-expanded', grow ? 'true' : 'false');
   return r;
 }
 

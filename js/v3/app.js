@@ -4214,9 +4214,10 @@ export function init() {
   });
   // A late font changes how wide the days and NOW draw, and so where their
   // row rests (the corners' refit does the same, wall.js). The row's own box
-  // may not change size, so its resize watch would not see it.
+  // may not change size, so its resize watch would not see it. (Our plan
+  // watches its own boxes: WebKit's event came before the font's layout.)
   if (document.fonts && typeof document.fonts.addEventListener === 'function') {
-    document.fonts.addEventListener('loadingdone', () => { NOW_DOORS.forEach(([, row]) => restDayRow($(row))); refitPlanShelf(); });
+    document.fonts.addEventListener('loadingdone', () => { NOW_DOORS.forEach(([, row]) => restDayRow($(row))); });
   }
   // The dock's height moves on its own — a late font, the NOW tab stepping
   // aside for the peek, whatever the dock comes to hold — and the plan stands
@@ -4253,9 +4254,12 @@ export function init() {
   $('sort-control').appendChild(sortCtl.el);
   const dock = $('dock');
   // The search field hides the dock while it has focus (the keyboard is up)
-  // and Our plan's peek with it; blur brings both back.
-  $('search-input').addEventListener('focus', () => { dock.classList.add('hidden'); $('screen-app').classList.add('searching'); });
-  $('search-input').addEventListener('blur', () => { dock.classList.remove('hidden'); $('screen-app').classList.remove('searching'); measureFoot(); });
+  // and Our plan's peek with it; blur brings both back. Each is a change in
+  // whether the peek's NOW can be seen, so the one-NOW rule reads it again —
+  // or a query cleared in the field left the dock's NOW beside the peek's
+  // after the blur (Codex, 2026-09-26).
+  $('search-input').addEventListener('focus', () => { dock.classList.add('hidden'); $('screen-app').classList.add('searching'); paintNowTabs(); });
+  $('search-input').addEventListener('blur', () => { dock.classList.remove('hidden'); $('screen-app').classList.remove('searching'); measureFoot(); paintNowTabs(); });
   // Our plan waits for the card above the dock — the welcome, the bring-your-
   // picks offer — and rises when it has gone (one thing at a time down there).
   // Both mount into #screen-app and leave by being removed, so their coming

@@ -194,6 +194,78 @@ test('a search puts the peek away (the search wall has no clock); clearing it br
   assert.equal(plan().dataset.state, 'peek', 'it comes back as the peek, never open');
 });
 
+test('one NOW through a search: a query cleared in the field, then the blur — the dock’s NOW steps aside again', async () => {
+  await repaint();
+  assert.equal($('dock-now').hidden, true, 'the peek’s NOW is the one NOW');
+  search.focus();
+  search.value = 'dog';
+  search.dispatchEvent(new dom.window.Event('input'));
+  await settle(20);
+  search.value = '';
+  search.dispatchEvent(new dom.window.Event('input'));
+  await settle(20);
+  search.blur();
+  await settle(20);
+  assert.equal(showing(), true);
+  assert.equal($('dock-now').hidden, true, 'the peek is back with its NOW: the dock does not say it too');
+});
+
+// A pointer, as jsdom can make one: no layout (the window's numbers are all
+// 0, so any travel past the slop reads as all the way), no capture.
+const pointer = (type, target, y) => target.dispatchEvent(new dom.window.PointerEvent(type, { pointerId: 7, clientY: y, button: 0, bubbles: true }));
+
+test('a new answer under a hand waits for it: the drag keeps its place, and the release decides from where the finger is', async () => {
+  await repaint();
+  assert.equal(plan().dataset.state, 'peek');
+  pointer('pointerdown', tagged(), 700);
+  pointer('pointermove', plan(), 600); // up past the slop: open, under the finger
+  assert.equal(document.body.dataset.busy, 'plan-drag');
+  const card = $('wall-root').querySelector('.card[data-artist="Dog Blood"]');
+  card.click(); // a pick lands mid-drag: the plan's answer changes (nine of us)
+  await settle(20);
+  assert.equal(tagged().getAttribute('aria-label'), 'Now: Dog Blood, Pier Stage, till 10:15 PM, 8 of us', 'the rows wait for the hand');
+  await new Promise((r) => setTimeout(r, 120)); // the hand stops, then lets go: no flick, the place decides
+  pointer('pointerup', plan(), 600);
+  assert.equal(plan().dataset.state, 'open', 'released open, where the finger had taken it');
+  assert.equal(tagged().getAttribute('aria-label'), 'Now: Dog Blood, Pier Stage, till 10:15 PM, 9 of us', 'and the answer that waited is drawn');
+  assert.equal(document.body.dataset.busy, undefined);
+  await new Promise((r) => setTimeout(r, 450)); // the click that follows a drag is swallowed for a moment
+  plan().querySelector('.plan-grab').click();
+  card.click(); card.click(); card.click(); card.click(); // round the levels back to none
+  await settle(40);
+  assert.equal(plan().dataset.state, 'peek');
+});
+
+test('a keyboard: stop rows are buttons in the open plan and not in the peek; Enter grows a card and the focus stays on its row', async () => {
+  await repaint();
+  const stops = () => [...plan().querySelectorAll('.plan-list > button.plan-row:not(.earlier)')];
+  assert.ok(stops().length > 3);
+  assert.ok(stops().every((r) => r.tabIndex === -1), 'the peek is a window, not a set of controls');
+  plan().querySelector('.plan-grab').click();
+  assert.ok(stops().every((r) => r.tabIndex === 0), 'open: every stop is a tab stop');
+  const row = stops().find((r) => !r.classList.contains('tagged'));
+  const key = row.dataset.stop;
+  assert.equal(row.getAttribute('aria-expanded'), 'false');
+  row.focus();
+  row.click(); // Enter and Space on a button are its click
+  const again = plan().querySelector(`.plan-row[data-stop="${CSS.escape(key)}"]`);
+  assert.equal(again.getAttribute('aria-expanded'), 'true');
+  assert.equal(document.activeElement, again, 'the new row for the same stop has the focus');
+  again.click();
+  assert.equal(plan().querySelector(`.plan-row[data-stop="${CSS.escape(key)}"]`).getAttribute('aria-expanded'), 'false');
+  document.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+  assert.equal(plan().dataset.state, 'peek');
+  assert.equal(document.activeElement, plan().querySelector('.plan-grab'), 'a focus the peek hides goes to the grabber');
+});
+
+test('a click with no hand behind it opens the peek (a screen reader’s activation), and the plan’s own taps are not doubled', async () => {
+  await repaint();
+  tagged().click();
+  assert.equal(plan().dataset.state, 'open');
+  plan().querySelector('.plan-grab').click();
+  assert.equal(plan().dataset.state, 'peek');
+});
+
 test('nothing two days before the festival; the day before, tomorrow’s first stop with its weekday', async () => {
   setClock(TUE_NOON);
   await repaint();

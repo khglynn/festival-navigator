@@ -74,6 +74,8 @@ let drag = null;
 let leaving = null;  // { timer } while the shelf drops out of sight
 let arrival = null;  // the arrival's animation, while it plays
 let quietUntil = 0;  // the click that follows a drag or a peek tap is not a second tap
+let held = false;    // an answer that came in under a hand: drawn when it lets go
+let watch = null;    // the boxes the window's numbers come from (watchBoxes)
 
 export const planShelf = () => el;
 export const planIsOpen = () => mode === 'open';
@@ -154,6 +156,7 @@ function build(host) {
   });
   el.addEventListener('pointerdown', onDown);
   el.addEventListener('click', onClickPeek, true);
+  if (typeof window.ResizeObserver === 'function') watch = new window.ResizeObserver(() => refitPlanShelf());
   // The panel's top follows the day rail's bottom, which moves while the rail
   // is still under the header (it pins at the top after that).
   window.addEventListener('scroll', onScroll, { passive: true });
@@ -190,6 +193,10 @@ export function paintPlanShelf(host, ctx, answer) {
   const arriving = mode === 'gone' || !!leaving;
   data = answer;
   if (!arriving && next === sig) return;
+  // A hand on the window: a repaint would put the window back where the
+  // last settle left it, out from under the finger, and the release would
+  // then decide from there. The rows wait for the hand (flushHeld).
+  if (drag && !arriving) { held = true; return; }
   sig = next;
   if (arriving) {
     cancelLeave();
@@ -233,12 +240,21 @@ function draw() {
   });
   list.addEventListener('click', onRowTap);
   // A new list element starts at the top: an open list someone had scrolled
-  // keeps its place across a tick, a pick or a tap.
+  // keeps its place across a tick, a pick or a tap. A row with the focus
+  // hands it to the same stop's new row — a keyboard growing a card, or
+  // resting on a row through the minute's repaint, keeps its place.
   const keep = mode === 'open' ? listEl.scrollTop : 0;
+  const f = document.activeElement;
+  const focused = f && f !== listEl && listEl.contains(f) && f.dataset.stop ? f.dataset.stop : null;
   listEl.replaceWith(list);
   listEl = list;
   if (keep) { list.classList.add('scrolls'); list.scrollTop = keep; }
   listEl.querySelectorAll('.plan-row[data-tag]').forEach((r) => r.classList.add('tagged'));
+  if (focused) {
+    const again = [...list.children].find((r) => r.dataset.stop === focused);
+    if (again) again.focus({ preventScroll: true });
+  }
+  watchBoxes();
   el.dataset.tag = a.peek.tag;
   grab.setAttribute('aria-label', mode === 'open' ? 'Close the plan' : `Open the day's plan`);
   grab.setAttribute('aria-expanded', mode === 'open' ? 'true' : 'false');
@@ -316,14 +332,21 @@ function settleState() {
   frame.dataset.state = mode;
   if (geo && geo.desk && mode === 'open') el.dataset.side = 'open'; else delete el.dataset.side;
   el.classList.remove('opening');
+  // Read before anything turns inert: Chromium moves a focus off an element
+  // the moment it becomes inert, and the hand-off below would find the body.
+  const f = document.activeElement;
   // What the peek hides is not there for a keyboard or a screen reader either.
   const peek = mode !== 'open';
   headEl.inert = peek;
-  for (const r of listEl.children) r.inert = peek && !r.classList.contains('tagged');
+  for (const r of listEl.children) {
+    r.inert = peek && !r.classList.contains('tagged');
+    // A row is a control in the open plan (Enter grows its card), and the
+    // peek's row is not one: the grabber is the keyboard's way in.
+    if (r.tagName === 'BUTTON') r.tabIndex = peek ? -1 : 0;
+  }
   listEl.classList.toggle('scrolls', !peek);
   if (peek) listEl.scrollTop = 0;
   // A focused ✕ or row that the peek just hid hands its focus to the grabber.
-  const f = document.activeElement;
   if (peek && f && f !== grab && el.contains(f)) grab.focus({ preventScroll: true });
   grab.setAttribute('aria-label', peek ? `Open the day's plan` : 'Close the plan');
   grab.setAttribute('aria-expanded', peek ? 'false' : 'true');
@@ -356,7 +379,7 @@ function leave({ instant = false } = {}) {
     cancelLeave();
     const f = document.activeElement;
     if (f && el.contains(f)) f.blur();
-    el.hidden = true; mode = 'gone'; sig = ''; data = null; grown = null; earlierOpen = false; nightId = '';
+    el.hidden = true; mode = 'gone'; sig = ''; data = null; grown = null; earlierOpen = false; nightId = ''; held = false;
     frame.dataset.state = 'gone'; delete el.dataset.side;
     document.documentElement.style.removeProperty('--plan-corner-h');
     measureFoot();
@@ -446,6 +469,7 @@ export function closePlan({ instant = false } = {}) {
 export function dropPlan() {
   if (!el) return;
   endDrag();
+  flushHeld();
   if (mode === 'open') settleTo(0, { instant: true });
 }
 export function hidePlanShelf({ instant = false } = {}) { leave({ instant }); }
@@ -482,7 +506,8 @@ function settleTo(target, { instant = false } = {}) {
 
 // ---- the drag (storyboard 4) --------------------------------------------------------
 // A finger (or a mouse) on the peek anywhere, or on the open plan's grabber
-// and head: the window follows it with inline transforms — direct
+// and head — one handle, for a tap as for a drag: the grabber bar alone is
+// 13px tall, and the head opens nothing of its own — and the window follows it with inline transforms — direct
 // manipulation, which Reduce Motion and Low Power keep (only the settle after
 // it is instant there). The page is marked busy while a finger is down, so a
 // new build never reloads under the hand (the Show menu's rule: take the slot
@@ -496,7 +521,8 @@ function onDown(e) {
   if (mode !== 'open') unpin();
   measure();
   apply(mode === 'open' ? 1 : 0);
-  drag = { id: e.pointerId, y0: e.clientY, p0: p, moved: false, onGrab: grab.contains(e.target), last: [{ y: e.clientY, t: e.timeStamp }] };
+  const onGrab = grab.contains(e.target) || (mode === 'open' && headEl.contains(e.target));
+  drag = { id: e.pointerId, y0: e.clientY, p0: p, moved: false, onGrab, last: [{ y: e.clientY, t: e.timeStamp }] };
   try { el.setPointerCapture(e.pointerId); } catch { /* an old engine: the move still arrives while the finger is on the shelf */ }
   el.addEventListener('pointermove', onMove);
   el.addEventListener('pointerup', onUp);
@@ -510,7 +536,7 @@ function onMove(e) {
   if (!drag.moved && Math.abs(dy) < TAP_SLOP) return;
   if (!drag.moved) {
     drag.moved = true;
-    el.getAnimations({ subtree: true }).forEach((a) => a.cancel());
+    motions().forEach((a) => a.cancel());
   }
   const range = Math.max(1, geo.H - geo.peekH);
   apply(drag.p0 + dy / range);
@@ -522,8 +548,9 @@ function onUp(e) {
   if (!drag || e.pointerId !== drag.id) return;
   const d = drag;
   endDrag();
+  flushHeld();
   if (!d.moved) {
-    // A tap: on the grabber it opens or closes; anywhere else on the peek it
+    // A tap: on the handle it opens or closes; anywhere else on the peek it
     // opens. Either way the click that follows, wherever it lands, is
     // swallowed.
     if (d.onGrab) { quietUntil = performance.now() + 400; toggle(); } else if (mode !== 'open') { quietUntil = performance.now() + 400; openPlan(); }
@@ -543,6 +570,7 @@ function onCancel(e) {
   if (!drag || (e && e.pointerId != null && e.pointerId !== drag.id)) return;
   const back = drag.p0;
   endDrag();
+  flushHeld();
   settleTo(back); // a drag the browser took away goes back where it started
 }
 function endDrag() {
@@ -557,6 +585,23 @@ function endDrag() {
 // The minute tick sweeps a busy flag with no finger behind it (app.js).
 export const planDragging = () => !!drag;
 const quiet = () => performance.now() < quietUntil;
+// The answer that waited for the hand: drawn now, with no motion of its own
+// — the settle that follows moves the window, and its rows with it.
+function flushHeld() {
+  if (!held) return;
+  held = false;
+  if (!data || mode === 'gone') return;
+  sig = signature(data);
+  draw();
+  measure();
+}
+// The window's own motion (Web Animations) — not the nodes' endless aura
+// drift, which is CSS and never ends.
+function motions() {
+  if (!el || typeof el.getAnimations !== 'function') return [];
+  const css = typeof window.CSSAnimation === 'function' ? window.CSSAnimation : null;
+  return el.getAnimations({ subtree: true }).filter((a) => !(css && a instanceof css));
+}
 
 // Nothing under the peek's window is a control of its own: a tap there opens
 // the plan (onUp), and its click — and any click just after a drag — never
@@ -565,8 +610,10 @@ function onClickPeek(e) {
   if (grab.contains(e.target) && !quiet()) return;
   if (mode !== 'open' || quiet()) {
     e.stopPropagation(); e.preventDefault();
-    // The laptop's card is one button: a click anywhere on it opens it.
-    if (mode === 'peek' && !leaving && geo && geo.desk && !quiet()) openPlan();
+    // A click with no hand of ours behind it opens it: the laptop's card is
+    // one button, and a screen reader's activation arrives as a bare click.
+    // (A finger's tap was taken where it lifted; its click is quiet.)
+    if (mode === 'peek' && !leaving && !quiet()) openPlan();
   }
 }
 
@@ -647,11 +694,39 @@ function unpin() {
 
 // A rotation, a resize or a late font changes the window's numbers: measure
 // again and put the window back where it was (no motion — nothing moved but
-// the ruler).
+// the ruler). Rows in motion move without resizing, and a ruler read
+// mid-motion reads the motion: a refit waits for the window to be still. A
+// tap's pinned height is the phone's: a window that has become the laptop's
+// panel reaches the bottom again, and its state follows the layout (the
+// panel bounds the zoom only while it is one).
+let refitQueued = false;
 export function refitPlanShelf() {
-  if (!el || mode === 'gone' || leaving || drag) return;
-  if (mode !== 'open') unpin();
+  if (!el || mode === 'gone' || leaving || drag || refitQueued) return;
+  const moving = motions().filter((a) => a.playState === 'running'
+    && !(a.effect && a.effect.getComputedTiming && a.effect.getComputedTiming().endTime === Infinity));
+  if (moving.length) {
+    refitQueued = true;
+    Promise.all(moving.map((a) => a.finished.catch(() => {}))).then(() => { refitQueued = false; refitPlanShelf(); });
+    return;
+  }
+  if (mode !== 'open' || isDesk()) unpin();
   measure();
   apply(mode === 'open' ? 1 : 0);
-  measureFoot();
+  settleState();
 }
+
+// The window's numbers come from its boxes, so whatever resizes one refits
+// it: a late font (WebKit's `loadingdone` came before the font's layout did,
+// and the peek sat 27px above the dock, 2026-09-26), a name that wraps, the
+// laptop's layout. Everything above the tagged row counts — its place in the
+// body is the rows' shift.
+function watchBoxes() {
+  if (!watch) return;
+  watch.disconnect();
+  for (const n of [el, grab, headEl]) watch.observe(n);
+  for (const r of listEl.children) {
+    watch.observe(r);
+    if (r.classList.contains('tagged')) break;
+  }
+}
+
