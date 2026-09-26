@@ -1046,7 +1046,10 @@ export function openFestNotes(ctx, onChange) {
 export function closeSheet() {
   const wasOpen = document.getElementById('artist-sheet');
   const back = document.getElementById('sheet-backdrop');
-  if (wasOpen && back && wasOpen.isConnected && canAnimate(wasOpen, sheetCtx)) leave(wasOpen, back);
+  // The ctx of the sheet that is up decides Low Power; a sheet app.js built
+  // itself (share, add someone) has none here, and the body's class says it.
+  const lp = sheetCtx || { lowPower: document.body.classList.contains('low-power') };
+  if (wasOpen && back && wasOpen.isConnected && canAnimate(wasOpen, lp)) leave(wasOpen, back);
   else teardownSheet();
   sheetCtx = null;
   // Nothing was open, so there is nothing to restore — and crucially, nothing to
