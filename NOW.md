@@ -7,17 +7,23 @@ how we got here belongs in DEVLOG.md.
 
 ## Live on production
 
-- **v89, from `main`** (PR #33, merged 2026-09-25 2:50 PM PT) on fest /
-  festival / crew.kevinhg.com — confirmed on all three hosts at 2:52 PM PT
-  (festival-nav-v89, ASSET_STAMP 4ad32b2f). The first release shipped under
-  Kevin's standing rule: CI green plus a clean independent review, no ask
-  (CLAUDE.md, "Deploy is gated"). v88 (release PR #31) went out at 1:20 PM.
+- **v90, from `main`** (PR #38, merged 2026-09-25 6:32 PM PT) on fest /
+  festival / crew.kevinhg.com — confirmed by `ops/prod-smoke.mjs` at 6:33 PM
+  PT (festival-nav-v90, ASSET_STAMP aa9f98ba; all three hosts, every APP_CORE
+  file identical, landing + gallery clean in iPhone WebKit, worker installs).
+  Kevin's first Portola notes: stacks under a clock line up with its
+  columns (desktop; on a phone only the timetable's leftovers step in), the
+  notes button matches the search field, Settings → "Get the latest
+  version". Gated by CI, Codex Sol 6 (two rounds) and a real-browser walk.
+  v89 (PR #33) went out at 2:50 PM.
 - **Data** (merged under the standing data-only OK): the 2026-09-23 re-read
   (PR #23 — the two Portola Week nights added Sep 17, 21 billed openers, ACL
   Fest Nights per the 9.21 graphic); Thu Club Six's three openers as a
   guessed run (2026-09-24, PR #27); Sun Midway's S.I.M / Espurr / New
   Nostalgia on the bill, untimed (2026-09-25). Every opener in the official
-  Portola Week feed is now on the wall.
+  Portola Week feed is now on the wall. Folsom weekend: MÜLL (Fri 11 PM, venue
+  TBA), Big Muscle: Bare Chest Calendar (Sat 1–7 PM, DNA Lounge) and
+  Aftershock (filed Sat night, 3–10 AM Sunday) (PR #40, 2026-09-25).
 
 ## Happening now
 
@@ -86,11 +92,12 @@ how we got here belongs in DEVLOG.md.
 
 1. Portola live ops (from 2026-09-25 evening): one session ships friends'
    feedback while Kevin is on his phone, by
-   `claude-plans/2026-09-25-portola-live/RUNBOOK.md` (lanes, ship, undo, red
-   lines); items, releases and the Codex model comparison are in the
-   LEDGER beside it. Round 1: v90 (stack alignment, taller notes button, a
-   get-latest control) in build; OURS and first-open designs out for Kevin's
-   review; Folsom-weekend events being researched.
+   `claude-plans/2026-09-25-portola-live/RUNBOOK.md`; items, releases and the
+   Codex model comparison are in the LEDGER beside it. Waiting on Kevin: the
+   round-one review page (OURS directions, first-open flow and copy) and the
+   Folsom-weekend party pick list — both artifacts linked in the LEDGER.
+   Next build: his picks, plus the phone afters lining up (a sideways
+   scroll, as he described) and accent-free search ("mull" finds MÜLL).
 2. ACL prep before Oct 2: headliner end times (its closers print only a
    start, so the grid draws them 60 min and NOW stops counting them live
    early — add ends, or run a stage's last endless set to the day's close),

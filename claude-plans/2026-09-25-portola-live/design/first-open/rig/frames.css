@@ -1,0 +1,97 @@
+/* First-open design frames (2026-09-25). New components only, built from the
+ * v3 tokens — no new colours, no new radii. Injected over the real app (real
+ * v3-tokens.css + v3.css underneath), so every existing component in a frame
+ * is the production one. Prefix fo- = "first open". Brand (never --fest) for
+ * anything selected or "ours"; --fest appears only on the fest name. */
+
+/* The door screen (F1) and the story (F3) share the entry-screen column. */
+.fo-col { max-width: 480px; width: 100%; box-sizing: border-box; margin: auto;
+          display: flex; flex-direction: column; gap: 14px; padding: 26px 20px 28px; }
+.fo-mark { font-family: var(--font-display); letter-spacing: .06em; font-size: 14px; text-align: center; color: #fff; }
+.fo-center { text-align: center; }
+.fo-lead { color: var(--text-secondary); font-size: 13px; line-height: 1.55; text-align: center; }
+.fo-lead strong { color: var(--text-body); font-weight: 700; }
+.fo-whisper { color: var(--text-tertiary); font-size: 11.5px; font-weight: 600; line-height: 1.5; text-align: center; }
+.fo-link { background: none; border: none; padding: 0; cursor: pointer; color: var(--tonal-text);
+           font-size: 12px; font-weight: 700; text-decoration: underline; text-underline-offset: 2px; }
+
+/* The crew, in their colours: a roster row that says who is here. */
+.fo-crew { display: flex; align-items: center; justify-content: center; gap: 10px; }
+.fo-crew .avatar-cluster .avatar { width: 26px; height: 26px; font-size: 10.5px; }
+.fo-crew .avatar-cluster .avatar + .avatar { margin-left: -6px; }
+.fo-crew .who { color: var(--text-body); font-size: 12.5px; font-weight: 700; }
+.fo-crew .who .n { color: var(--text-tertiary); font-weight: 600; }
+
+/* The preview: three real cards, the crew's most-picked sets. */
+.fo-preview { background: var(--card); border: 1px solid var(--border-card); border-radius: var(--r-settings);
+              padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+.fo-preview .row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.fo-preview .card { min-height: 78px; padding: 8px 6px 20px; }
+.fo-preview .card .name { font-size: 12.5px; }
+.fo-preview .cap { display: flex; align-items: baseline; justify-content: space-between; }
+
+/* Name chips on the door: the roster IS the "tap your name" list. */
+.fo-names { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+.fo-names .person-chip { font-size: 12.5px; padding: 7px 14px; }
+
+/* The guest's door on the dock: the "you" slot, empty, asking. */
+.fo-join-ring { border: 1.5px dashed rgba(var(--brand), .85) !important; background: none !important;
+                color: rgb(var(--brand)) !important; font-size: 15px !important; font-weight: 700 !important; }
+
+/* Welcome card (F2): the bring-offer anatomy (.bring-offer/.bring-card) with a
+ * crew row on top. Nothing new about its motion: it arrives like the offer. */
+.fo-welcome .crewrow { display: flex; align-items: center; gap: 9px; }
+.fo-welcome .crewrow .avatar { width: 20px; height: 20px; font-size: 8.5px; }
+.fo-welcome .crewrow .avatar + .avatar { margin-left: -5px; }
+.fo-welcome .bring-line { font-size: 14px; }
+
+/* How it works, short (the "More"). Real components drawn small, like 21i. */
+.fo-how { display: flex; flex-direction: column; gap: 11px; }
+.fo-how .r { display: flex; align-items: center; gap: 12px; }
+.fo-how .demo { width: 92px; flex: none; min-width: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; gap: 3px; }
+.fo-how .t { color: var(--text-secondary); font-size: 12px; font-weight: 600; line-height: 1.45; flex: 1; }
+.fo-how .t strong { color: #fff; }
+.fo-how .swatch { position: relative; flex: 1; height: 28px; border-radius: 6px; border: 1px solid var(--hairline); overflow: hidden; }
+
+/* Share sheet rooms: what the link opens on. Brand = chosen. */
+.fo-rooms { display: flex; flex-wrap: wrap; gap: 7px; }
+.fo-room { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 700;
+           padding: 8px 14px; border-radius: var(--r-pill); cursor: pointer; color: var(--text-secondary);
+           background: transparent; border: 1.5px dashed var(--border-emphasis); }
+.fo-room[aria-pressed="true"] { color: #fff; border: 1.5px solid rgba(var(--brand), .75); background: rgba(var(--brand), .16); }
+.fo-room .tick { font-size: 11px; color: rgb(var(--brand)); }
+.fo-linkbox { flex: 1; min-width: 0; background: var(--card); border: 1px solid var(--border-input); border-radius: var(--r-card);
+              padding: 9px 12px; color: var(--text-body); font-size: 12px; line-height: 1.45; font-family: var(--font-ui);
+              overflow-wrap: anywhere; }
+.fo-linkbox .hl { color: var(--tonal-text); }
+
+/* The story (F3): progress, a stage for the picture, words, doors. */
+.fo-dots { display: flex; gap: 6px; justify-content: center; }
+.fo-dots span { width: 22px; height: 3px; border-radius: 2px; background: var(--border-card); }
+.fo-dots span.on { background: rgb(var(--brand)); }
+.fo-stage { min-height: 250px; display: flex; align-items: center; justify-content: center; }
+.fo-big-crew { display: grid; grid-template-columns: repeat(3, 64px); justify-content: center; gap: 14px 18px; }
+.fo-big-crew .p { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+.fo-big-crew .avatar { width: 46px; height: 46px; font-size: 17px; }
+.fo-big-crew .nm { color: var(--text-body); font-size: 11.5px; font-weight: 700; }
+.fo-grow { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: 100%; }
+.fo-grow .card { min-height: 110px; }
+.fo-grow .lab { color: var(--text-tertiary); font-size: 11px; font-weight: 700; text-align: center; margin-top: 6px; }
+.fo-taps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; width: 100%; }
+.fo-taps .card { min-height: 92px; padding: 8px 5px 22px; }
+.fo-taps .card .name { font-size: 12px; }
+.fo-taps .lab { color: var(--text-tertiary); font-size: 10.5px; font-weight: 700; text-align: center; margin-top: 6px; }
+.fo-2l { white-space: pre-line; }
+.fo-h { font-family: var(--font-display); letter-spacing: .04em; font-size: 30px; line-height: 1.05; color: #fff; text-align: center; }
+
+/* Landing: the paste field, and the quiet my-link row. */
+.fo-field { flex: 1; min-width: 0; background: var(--page); border: 1px solid var(--border-input); border-radius: 9px;
+            padding: 12px 13px; color: #fff; font-size: 14px; font-family: var(--font-ui); }
+.fo-quiet { display: flex; align-items: center; gap: 10px; padding: 11px 13px; border: 1px solid var(--hairline);
+            border-radius: var(--r-settings); }
+.fo-quiet .t { flex: 1; color: var(--text-tertiary); font-size: 11.5px; font-weight: 600; line-height: 1.45; }
+.fo-quiet .t strong { color: var(--text-body); }
+
+/* A frame caption, outside the phone's real content: never shipped. */
+.fo-caption { position: fixed; top: 6px; right: 8px; z-index: 99; font: 700 9px/1 var(--font-ui); letter-spacing: .08em;
+              color: rgba(255,255,255,.35); text-transform: uppercase; pointer-events: none; }

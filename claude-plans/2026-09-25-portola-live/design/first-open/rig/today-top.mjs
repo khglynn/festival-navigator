@@ -1,0 +1,13 @@
+import { startRig, seed, TOKEN, FID, OUT, sleep } from './rig.mjs';
+const rig = await startRig();
+const { ctx, page, errors } = await rig.phone({ init: seed.claimed('Maya') });
+await page.goto(`${rig.server.origin}/#g=${TOKEN}&f=${FID}`, { waitUntil: 'load' });
+await page.waitForSelector('#coach-mark', { state: 'attached', timeout: 15000 });
+await sleep(900);
+const y1 = await page.evaluate(() => window.scrollY);
+const coachTop = await page.evaluate(() => document.getElementById('coach-mark').getBoundingClientRect().top + window.scrollY);
+await page.evaluate(() => window.scrollTo(0, 0));
+await sleep(400);
+await page.screenshot({ path: `${OUT}/today/t4b-first-wall-top.png` });
+console.log(JSON.stringify({ scrollYOnOpen: y1, coachMarkDocTop: coachTop, errors }));
+await ctx.close(); await rig.close();
