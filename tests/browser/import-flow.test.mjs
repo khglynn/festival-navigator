@@ -247,6 +247,13 @@ for (const [name, get] of [['WebKit (iPhone)', () => webkit], ['Chromium (touch)
           assert.deepEqual(Object.keys(byP), ['Kevin'], 'only your own picks are ever written');
         }
       }
+      // The wall opens on the first set added, not at its top.
+      await sleep(300);
+      const first = await page.evaluate(() => {
+        const r = document.querySelector('#wall-root .card[data-artist="Ranger Trucco b2b Alisha"]').getBoundingClientRect();
+        return { top: r.top, bottom: r.bottom, h: innerHeight };
+      });
+      assert.ok(first.top >= 0 && first.bottom <= first.h, `the first added card is on screen (${JSON.stringify(first)})`);
       // And the wall wears them.
       assert.equal(await page.evaluate(() => document.querySelector('#wall-root .card[data-artist="Overmono"] > .corner-about > .chip-meter')?.dataset.level), '4');
       assert.deepEqual(errors, []);

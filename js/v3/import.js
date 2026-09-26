@@ -25,7 +25,7 @@ import { sheetChrome, dialogize, rememberOpener, closeSheet } from './notes.js';
 import { eqLoader } from './tools.js';
 import { appSettings } from './settings.js';
 import { lineupIndex, matchRead, startLevel, picksToWrite } from './import-match.js';
-import { canAnimate, GROW_MS, STAGGER_MS, CASCADE_MS, EASE_ARRIVE } from './motion.js';
+import { canAnimate, GROW_MS, OUT_MS, STAGGER_MS, CASCADE_MS, EASE_ARRIVE, EASE_SURFACE } from './motion.js';
 import { record } from '../errlog.js';
 
 const MAX_IMAGES = 8;          // a festival is a few days; this is a quota guard, not a design
@@ -248,6 +248,7 @@ export function openImportSheet(opts) {
       : '';
     if (!fresh.length) return;
     sheet.dataset.import = 'reading';
+    if (!shotsRow.classList.contains('has-shots')) ledeLeaves();
     shotsRow.classList.add('has-shots');
     addWord.textContent = 'More';
     fresh.forEach((s, i) => {
@@ -262,6 +263,24 @@ export function openImportSheet(opts) {
     });
     paintFoot();
     pump();
+  }
+
+  // The instruction has done its job once images are chosen: the images
+  // themselves say what this is now. It goes quick and plain, closing its
+  // space rather than leaving a hole (nothing vanishes in place).
+  function ledeLeaves() {
+    if (!lede.isConnected) return;
+    if (!canAnimate(lede, ctx)) { lede.remove(); return; }
+    const h = lede.getBoundingClientRect().height;
+    const out = lede.animate([
+      { opacity: 1, height: `${h}px`, marginBottom: '0px' },
+      { opacity: 0, height: '0px', marginBottom: '-12px' },
+    ], { duration: OUT_MS, easing: EASE_SURFACE, fill: 'forwards' });
+    let gone = false;
+    const finish = () => { if (!gone) { gone = true; lede.remove(); } };
+    out.onfinish = finish;
+    out.oncancel = finish;
+    setTimeout(finish, OUT_MS * 4 + 80);
   }
 
   function shotTile(s) {
@@ -297,6 +316,7 @@ export function openImportSheet(opts) {
   function paintShot(s, tile = s.tile) {
     if (!tile) return;
     tile.dataset.state = s.state;
+    if (s.state === 'error') tile.dataset.error = s.error; else delete tile.dataset.error;
     const cap = tile._cap;
     cap.textContent = '';
     const face = tile._face;
@@ -495,7 +515,7 @@ export function openImportSheet(opts) {
 
   function entries() {
     const out = [];
-    for (const g of groups.values()) for (const h of g.matched.values()) out.push({ name: h.name, already: h.already, level: h.already ? 0 : levels.get(h.name) });
+    for (const g of [...groups.values()].sort((a, b) => a.order - b.order)) for (const h of g.matched.values()) out.push({ name: h.name, already: h.already, level: h.already ? 0 : levels.get(h.name) });
     return out;
   }
 
@@ -539,7 +559,7 @@ export function openImportSheet(opts) {
     }
     closed = true;
     cleanup();
-    opts.done(n);
+    opts.done(n, { first: writes[0] ? writes[0].name : null });
   });
 
   function cleanup() {

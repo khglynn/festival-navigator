@@ -1955,13 +1955,32 @@ function openImport() {
     // Only ever the person importing, and only on the festival it opened on.
     record: (name, level) => (ctx.fid === fid && ctx.meName === me ? recordToolPick(name, me, level) : false),
     close: () => { if (!router.requestClose()) closeSheet(); },
-    done: (n, { stay = false } = {}) => {
+    done: (n, { stay = false, first = null } = {}) => {
       sync.scheduleSync();
       refreshCtx();
       if (stay) { repaintWall(); return; }
+      // The picks are the point, so the wall opens on the first one added
+      // (a closed Settings otherwise leaves the wall at its top — true of
+      // every Settings close today, noted in IMPORT-BUILD.md).
+      const land = () => {
+        const card = first && document.querySelector(`#wall-root .card[data-artist="${CSS.escape(first)}"]`);
+        if (card) card.scrollIntoView({ block: 'center', behavior: 'auto' });
+      };
       const depth = router.depth();
-      if (depth > 0) history.go(-depth);
-      else { closeSheet(); if ($('screen-settings').style.display !== 'none') closeSettings(); else repaintWall(); }
+      if (depth > 0) {
+        // The browser restores the wall entry's own scroll just AFTER
+        // popstate (a scroll to its top, measured 2026-09-26), undoing a
+        // scroll made in the handler. So the landing rides that restoring
+        // scroll event — it runs before the frame paints, so the top of the
+        // wall is never shown — with a timer behind it for an engine that
+        // restores nothing.
+        window.addEventListener('popstate', () => {
+          const once = () => land();
+          window.addEventListener('scroll', once, { once: true, passive: true });
+          setTimeout(() => { window.removeEventListener('scroll', once); land(); }, 350);
+        }, { once: true });
+        history.go(-depth);
+      } else { closeSheet(); if ($('screen-settings').style.display !== 'none') closeSettings(); else repaintWall(); land(); }
       showToast($('toast-root'), `Added ${n} pick${n === 1 ? '' : 's'} from your ${fest.name} schedule.`, 5000);
     },
   });
