@@ -79,7 +79,7 @@ the file, and all 11 got the sold-out check.
 |---|---|---|
 | BRUT SF | kept | on sale (DNA Lounge GA) |
 | MÜLL | kept | on sale, RA final release; venue still "TBA - San Francisco" |
-| Horse Meat Disco | kept (unchanged) | under way; Sickening titles its listing "TIX AT THE DOOR" but still sells three tiers online, so not door-only |
+| Horse Meat Disco | **changed to Sickening** | under way; Bearracuda's own seller still sells three tiers online (listing titled "TIX AT THE DOOR", but not door-only). The Tixr page it pointed at sells nothing for this party; it stays as the page |
 | Big Muscle: Bare Chest Calendar | none (unchanged) | **sold out**, DNA Lounge says no tickets at the door |
 | Magnitude | kept | on sale |
 | PERVERT XXL | **changed to XOXO** | on sale at xoxopresents.com; the Tixr page it pointed to now says "Sold elsewhere" |
