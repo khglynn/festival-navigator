@@ -21,8 +21,10 @@ API block exists as written. These are the choices the brief left open, and the 
    - each `nights[]` entry and each `night(id)` result carries `wd` ('Tue' — from the ISO date
      when there is one; a Late-nights-only date has no week day to borrow it from).
    - `playsAt` entries: `{ nightId, place, from, kind, play, shown }` (`play` = the rule-5
-     identity, decision 6).
-   - `alsoAt` entries: `{ act, nightId, place, from, kind, play, shown }`.
+     identity, decision 6). Here `place` is the stage or venue NAME (a string), unlike
+     `stop.place` — an entry points at a play, not at a routed place.
+   - `alsoAt` entries: `{ act, nightId, place, from, kind, play, shown }` (`place` a name, as
+     in `playsAt`).
    - each act: `{ name, from, to, time, approx, occ, play, section }` — `section` is the section
      or extra key whose list gave the act its window (null for a grid set).
 3. **Under three of us (`available: false`)**: `nights: []`, `night(id)` → null, `playsAt` an
@@ -43,9 +45,10 @@ prototype did).
   Fri 2, Sat 12, Sun 11 stops (13 with Folsom hidden); Tove Lo 5:40 PM 6, Robyn 7:10 PM 7,
   Dog Blood 9 PM 8; Mochakk from 5:35 PM with Folsom hidden. The test asserts every stop's
   tier, from, to, count and place.
-- **Suite, on committed HEAD 370e993, in a clean `git archive` copy** (so the orchestrator's
+- **Suite, on committed HEAD 5d283c5, in a clean `git archive` copy** (so the orchestrator's
   uncommitted UI work in the shared worktree is not in it): `npm test` 1105 pass / 1 fail /
-  1 skipped; `TZ=Asia/Tokyo npm test` the same; the NIGHT_CLOCK run the same. The one fail is
+  1 skipped; `TZ=Asia/Tokyo npm test` the same; the NIGHT_CLOCK run the same (first run on
+  370e993 gave the identical counts; 5d283c5 only removed two internal fields nothing read). The one fail is
   `app-shell-complete`'s stamp check (red on purpose); the skip is `db-concurrency` (needs
   DATABASE_URL). 1070 baseline + 35 new = 1105.
 - **Mutation check** (in the scratch copy, never the shared tree): 16 deliberate breaks of
