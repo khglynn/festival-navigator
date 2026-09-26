@@ -68,3 +68,13 @@ test('a 1 AM set filed under the night before goes on the calendar the next morn
   const u = new URL(calendarUrl({ name: 'Late Set', venue: 'Kingdom', date: '2026-10-02', time: '1 AM' }, 'Kingdom, Austin, TX'));
   assert.equal(u.searchParams.get('dates').slice(0, 16), '20261003T060000Z');
 });
+
+test('more loved shows than Slack can carry: 16 go out and the rest are counted', () => {
+  const many = { name: 'Austin', artists: Array.from({ length: 20 }, (_, i) => ({ name: `Band ${i}`, date: `2026-10-${String(i + 1).padStart(2, '0')}`, time: '8 PM', venue: 'Mohawk' })) };
+  const love = many.artists.map((a) => ({ name: a.name, why: 'x' }));
+  const msg = buildMessage(many, matchShows(many, love, '2026-09-25'), new Date('2026-09-25T12:00:00Z'));
+  assert.ok(msg.blocks.length <= 50, `${msg.blocks.length} blocks`);
+  assert.equal(msg.blocks.filter((b) => b.type === 'section').length, 16);
+  assert.match(msg.blocks.at(-1).elements[0].text, /^\+4 more/);
+  assert.match(msg.blocks[0].text.text, /20 shows/);
+});

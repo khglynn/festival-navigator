@@ -71,3 +71,15 @@ A festival file with no grid (`days: {}`) and one extra field:
   in `VIEW-BRIEF.md` beside this file. It merges back here.
 - **Release:** a preview link for Kevin; production only on his word, and not
   during a festival weekend's code freeze unless he says so.
+
+## Running the feed (2026-09-25, after the second review)
+
+A feed run is a release. It rewrites `data/festivals/index.json` (each
+season's `updated` day), which is part of the service worker's cached app
+shell, so every run is followed by `node scripts/sw-stamp.mjs`, the tests and
+a PR, and a new build reaches every phone. Two rules follow: never run it
+for production on a festival weekend (the reload strip would land in front
+of everyone at the festival), and `--fresh` is refused by the script once a
+season is frozen. A missing API key stops the run unless the source is
+skipped on purpose (`--no-jambase`, `--no-ticketmaster`). When the feed goes
+on a schedule (after Oct 11), move `updated` out of the app shell first.

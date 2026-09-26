@@ -51,6 +51,13 @@ for (const file of files) {
   // that already differ in punctuation, and nothing reads them as data.
   else {
     if (listed.status !== fest.status) errors.push(`${file}: status ${JSON.stringify(fest.status)} but index.json says ${JSON.stringify(listed.status)} — the landing reads index.json; change both`);
+    // A season's row is behaviour too: the lists pick the season in progress
+    // and the next one from these fields, in the season's own time zone.
+    if (fest.kind === 'season' || listed.kind === 'season') {
+      for (const k of ['kind', 'startsOn', 'endsOn', 'timezone']) {
+        if (listed[k] !== fest[k]) errors.push(`${file}: ${k} ${JSON.stringify(fest[k])} but index.json says ${JSON.stringify(listed[k])} — the lists read index.json; change both`);
+      }
+    }
     for (const k of ['name', 'accent']) {
       if (listed[k] !== fest[k]) warnings.push(`${file}: ${k} ${JSON.stringify(fest[k])} but index.json says ${JSON.stringify(listed[k])}`);
     }

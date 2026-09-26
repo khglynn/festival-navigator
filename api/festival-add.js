@@ -113,6 +113,10 @@ export default async function handler(req, res) {
     for (const a of Array.isArray(candidate.artists) ? candidate.artists : []) {
       if (a && typeof a === 'object') { delete a.page; delete a.tickets; }
     }
+    // Research finds festivals; a city season only ever comes from the season
+    // feed. A stray `kind` from the model would fail validation or, worse,
+    // make a festival render as a season.
+    if (candidate && typeof candidate === 'object') delete candidate.kind;
     const { errors, warnings } = validateFestivalDoc(candidate);
     if (errors.length) return res.status(502).json({ error: `Research result failed validation: ${errors[0]}` });
     return res.status(200).json({ candidate, warnings, sources: result.sources || [] });

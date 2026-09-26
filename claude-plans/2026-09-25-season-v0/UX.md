@@ -81,7 +81,8 @@ Kevin, same evening: "we can show in the app just the next two seasons -
 we can have the others tucked away." The lists show the season in progress
 plus the one after it (on Sep 25: Fall '26 and Winter '27; from Dec 1:
 Winter and Spring). Later seasons sit behind one collapsed "Later seasons"
-row; a season the crew already has always shows; archived seasons go with
+row; a season the crew has picks or notes in always shows (merely opening one
+adds it to the crew's document, so opening alone does not count); archived seasons go with
 the past festivals. The alert still reads every season, so a show announced
 far ahead is still caught.
 

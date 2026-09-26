@@ -1,11 +1,17 @@
 #!/usr/bin/env node
 // The Austin season feed (v0, 2026-09-25): reads Do512, JamBase and
-// Ticketmaster, merges them into one festival-shaped file the app renders as
-// a season (claude-plans/2026-09-25-season-v0/PLAN.md), and writes
-// data/festivals/austin.json. Run by hand for now:
+// Ticketmaster, merges them, and writes one festival file per season
+// (data/festivals/austin-<fall|winter|spring|summer>-<year>.json), their
+// index rows and their frozen names (claude-plans/2026-09-25-season-v0/PLAN.md,
+// UX.md "Seasons"). Run by hand for now:
 //
 //   set -a; source ~/.env; set +a        # JAMBASE_API_KEY, TICKETMASTER_API_KEY
 //   node scripts/season-feed.mjs [--dry] [--fresh] [--no-jambase] [--no-ticketmaster]
+//
+// A run is a release: it rewrites index.json, which is part of the cached app
+// shell, so follow it with `node scripts/sw-stamp.mjs`, the tests and a PR,
+// and never on a festival weekend (a new build puts the reload strip in front
+// of everyone at the festival).
 //
 // Why these three (the sources study, claude-plans/2026-09-24-city-seasons/STUDY.md):
 // Do512 had 84% of the shows at our venues and was wrong twice, and its buy
@@ -416,6 +422,20 @@ async function main() {
   const fresh = args.has('--fresh');
   const index = JSON.parse(readFileSync(join(FEST_DIR, 'index.json'), 'utf8'));
   const isCitySeason = (row) => row.kind === 'season' && row.id.startsWith(`${CITY.id}-`);
+  const fixture = JSON.parse(readFileSync(FREEZE, 'utf8'));
+  // --fresh drops every name a season file holds, so it is refused once any
+  // season is frozen: taking a season out of the freeze by hand is the
+  // decision to orphan its picks, and this script never makes it.
+  const frozenSeasons = Object.keys(fixture.festivals || {}).filter((id) => id.startsWith(`${CITY.id}-`));
+  if (fresh && frozenSeasons.length && !TRIAL) {
+    console.error(`--fresh refused: ${frozenSeasons.join(', ')} ${frozenSeasons.length === 1 ? 'is' : 'are'} frozen (crews pick in them). Run without --fresh.`);
+    process.exit(2);
+  }
+  // A source with no key is a source silently missing, which would mark its
+  // shows unlisted and drop every on-sale time: name it or skip it on purpose.
+  for (const [flag, envKey] of [['--no-jambase', 'JAMBASE_API_KEY'], ['--no-ticketmaster', 'TICKETMASTER_API_KEY']]) {
+    if (!args.has(flag) && !process.env[envKey]) { console.error(`${envKey} is not set: load ~/.env, or pass ${flag} to run without it`); process.exit(2); }
+  }
   // --fresh ignores the files on disk: only while no season has reached
   // production, since every name it drops must also leave the freeze. After
   // that, never: names are pick keys.
@@ -435,8 +455,8 @@ async function main() {
   for (const a of prevShows) if (!aliasToName.has(keyOf(a.name))) aliasToName.set(keyOf(a.name), a.name);
 
   const do512 = await readDo512(problems);
-  const jb = args.has('--no-jambase') || !process.env.JAMBASE_API_KEY ? { shows: [], calls: 0 } : await readJamBase(process.env.JAMBASE_API_KEY, problems);
-  const tm = args.has('--no-ticketmaster') || !process.env.TICKETMASTER_API_KEY ? [] : await readTicketmaster(process.env.TICKETMASTER_API_KEY, problems);
+  const jb = args.has('--no-jambase') ? { shows: [], calls: 0 } : await readJamBase(process.env.JAMBASE_API_KEY, problems);
+  const tm = args.has('--no-ticketmaster') ? [] : await readTicketmaster(process.env.TICKETMASTER_API_KEY, problems);
   const raw = [...do512, ...jb.shows, ...tm].filter((s) => s.date >= today && s.venue && s.headliner
     && !FESTIVAL_GROUNDS.test(s.venue) && !NOT_MUSIC.test(`${s.title} ${s.headliner}`));
   const elsewhere = otherFestShows();
@@ -481,7 +501,10 @@ async function main() {
   for (const a of prevShows) {
     if (seen.has(`${a.name}|${a.date}|${a.venue}`)) continue;
     const e = { ...a };
-    if (a.date >= today && !a.unlisted) { e.unlisted = today; unlisted++; }
+    // Sources drop a show once it starts, so tonight's show going quiet
+    // means nothing; only a show still ahead has been taken down.
+    if (a.date > today && !a.unlisted) { e.unlisted = today; unlisted++; }
+    if (a.date === today && a.unlisted === today) delete e.unlisted;
     entries.push(e); kept++;
   }
   entries.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : (minutes(a.time) ?? 1440) - (minutes(b.time) ?? 1440) || a.venue.localeCompare(b.venue)));
@@ -528,6 +551,8 @@ async function main() {
   if (future.length < 200 || future.length > 6000) range.push(`${future.length} upcoming shows is outside 200–6000`);
   if (next90.length < 100) range.push(`only ${next90.length} shows in the next 90 days`);
   if (!do512.length) range.push('Do512 returned nothing');
+  if (!args.has('--no-jambase') && !jb.shows.length) range.push('JamBase returned nothing');
+  if (!args.has('--no-ticketmaster') && !tm.length) range.push('Ticketmaster returned nothing');
   if (unlisted > 150) range.push(`${unlisted} shows vanished from every source at once — a source is probably broken`);
   const errors = [], warnings = [];
   for (const f of files) {
@@ -536,6 +561,14 @@ async function main() {
   }
   const report = { counts, upcoming: future.length, next90: next90.length, seasons: Object.fromEntries(files.map((f) => [f.id, f.artists.length])), problems, range, errors: errors.slice(0, 10), warnings: warnings.length };
   console.log(JSON.stringify(report, null, 1));
+  // Names only grow: a season whose frozen names this run no longer has
+  // stops the run before anything is written.
+  const nextFreeze = new Map(files.map((f) => [f.id, freezeFestival(f, today)]));
+  for (const [id, next] of TRIAL ? [] : nextFreeze) {
+    const old = fixture.festivals[id];
+    const gone = old ? old.names.filter((n) => !next.names.includes(n)) : [];
+    if (gone.length) errors.push(`${id}: frozen names missing from this run: ${gone.slice(0, 5).join(', ')}`);
+  }
   if (errors.length || range.length) { console.error('not written: fix the errors or range problems above'); process.exit(1); }
   if (DRY) { console.log('dry run: nothing written'); return; }
 
@@ -555,11 +588,9 @@ async function main() {
     writeFileSync(join(FEST_DIR, 'index.json'), JSON.stringify(rest, null, 2) + '\n');
     // A season is in the freeze from its first run: every name only ever
     // grows (the freeze refuses a drop), and CI wants every listed season frozen.
-    const fixture = JSON.parse(readFileSync(FREEZE, 'utf8'));
     for (const f of files) {
-      const next = freezeFestival(f, today);
+      const next = nextFreeze.get(f.id);
       const old = fixture.festivals[f.id];
-      if (old && old.names.some((n) => !next.names.includes(n))) { console.error(`${f.id}: a frozen name is missing; not refreezing`); process.exit(1); }
       fixture.festivals[f.id] = old ? { ...next, frozenAt: old.frozenAt } : next;
     }
     writeFileSync(FREEZE, JSON.stringify(fixture, null, 2) + '\n');
@@ -570,6 +601,7 @@ async function main() {
   for (const e of entries) registry.names[e.name] ||= [];
   writeFileSync(REGISTRY, JSON.stringify(registry, null, 1) + '\n');
   console.log(`wrote ${files.map((f) => `${f.id} (${f.artists.length})`).join(', ')} and ${REGISTRY}`);
+  if (!TRIAL) console.log('next: node scripts/sw-stamp.mjs && npm test, then a PR (index.json is in the cached app shell); never on a festival weekend');
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) main().catch((e) => { console.error(e); process.exit(1); });

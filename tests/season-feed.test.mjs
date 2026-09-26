@@ -1,6 +1,6 @@
 // The Austin season feed's judgment calls (2026-09-25), each pinned to the
 // real listing that taught it. The feed (scripts/season-feed.mjs) merges
-// Do512, JamBase and Ticketmaster into data/festivals/austin.json, and every
+// Do512, JamBase and Ticketmaster into one file per Austin season, and every
 // name it writes becomes a pick key that can never be renamed, so a wrong
 // merge or a wrong split is permanent. These run offline: no source is read.
 import test from 'node:test';

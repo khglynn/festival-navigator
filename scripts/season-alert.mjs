@@ -91,9 +91,13 @@ const token = (iso, fallback) => {
   return Number.isFinite(t) ? `<!date^${Math.floor(t / 1000)}^{date_short_pretty} at {time}|${esc(fallback)}>` : null;
 };
 
-export function buildMessage(fest, matches, now = new Date()) {
-  if (!matches.length) return null; // no message beats an empty one
-  const n = matches.length;
+// Slack takes at most 50 blocks: a header, three per show and a closing line
+// leave room for 16 shows; the rest are counted, never silently dropped.
+const MAX_SHOWS = 16;
+export function buildMessage(fest, allMatches, now = new Date()) {
+  if (!allMatches.length) return null; // no message beats an empty one
+  const n = allMatches.length;
+  const matches = allMatches.slice(0, MAX_SHOWS);
   const title = `Festival Navigator · ${fest.name}: ${n} show${n === 1 ? '' : 's'} by artists you love`;
   const blocks = [{ type: 'header', text: { type: 'plain_text', text: title.slice(0, 150) } }];
   matches.forEach(({ show, why, via }, i) => {
@@ -119,6 +123,7 @@ export function buildMessage(fest, matches, now = new Date()) {
     doors.push(button('cal', 'Add to calendar', calendarUrl(show, `${show.venue}, Austin, TX`)));
     blocks.push({ type: 'actions', elements: doors });
   });
+  if (n > matches.length) blocks.push({ type: 'context', elements: [{ type: 'mrkdwn', text: `+${n - matches.length} more later in the season` }] });
   const first = matches[0].show;
   const text = `Festival Navigator · ${fest.name}: ${esc(first.name)} ${DAY.format(new Date(`${first.date}T12:00:00Z`))}${n > 1 ? ` and ${n - 1} more` : ''} by artists you love`;
   return { text, blocks, unfurl_links: false, unfurl_media: false };

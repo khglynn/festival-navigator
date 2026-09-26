@@ -84,17 +84,16 @@
       "with": [
         "Saint Agnes"
       ],
-      "billedAs": "The Rasmus w/ Saint Agnes",
+      "billedAs": "The Rasmus at Come and Take It Live",
       "page": {
         "url": "https://www.jambase.com/show/the-rasmus-come-and-take-it-live-20260925",
         "at": "JamBase"
       },
       "tickets": {
-        "url": "https://www.ticketmaster.com/event/Z7r9jZ1A7J7F-",
-        "at": "Ticketmaster"
+        "url": "https://etix.prf.hn/click/camref:1101lGKCg/destination:https://www.etix.com/ticket/p/39283226/the-rasmus-austin-come-and-take-it-live?utm_source=jambase",
+        "at": "Etix"
       },
       "sources": {
-        "ticketmaster": "Z7r9jZ1A7J7F-",
         "jambase": "jambase:16699477"
       }
     },
@@ -119,7 +118,6 @@
       },
       "sources": {
         "do512": "17464158",
-        "ticketmaster": "Z7r9jZ1A7JaFN",
         "jambase": "jambase:16202916"
       }
     },
@@ -2135,6 +2133,20 @@
       },
       "sources": {
         "jambase": "jambase:16857019"
+      }
+    },
+    {
+      "name": "The Blues Specialists",
+      "day": "October",
+      "date": "2026-10-02",
+      "venue": "Continental Club",
+      "time": "6:30 PM",
+      "page": {
+        "url": "https://do512.com/events/weekly/fri/the-blues-specialists-1728003775",
+        "at": "Do512"
+      },
+      "sources": {
+        "do512": "15269841"
       }
     },
     {
@@ -14238,16 +14250,16 @@
       "https://developer.ticketmaster.com/"
     ],
     "feed": {
-      "generatedAt": "2026-09-25T23:45:16.542Z",
+      "generatedAt": "2026-09-26T00:33:44.462Z",
       "counts": {
         "do512": 403,
         "jambase": 673,
-        "ticketmaster": 347,
+        "ticketmaster": 345,
         "jambaseCalls": 7,
         "merged": 752,
         "inAnotherFest": 37,
         "movedPerJamBaseOnly": 2,
-        "keptFromBefore": 0,
+        "keptFromBefore": 1,
         "newlyUnlisted": 0
       },
       "problems": []

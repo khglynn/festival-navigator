@@ -707,16 +707,16 @@
       "https://developer.ticketmaster.com/"
     ],
     "feed": {
-      "generatedAt": "2026-09-25T23:45:16.542Z",
+      "generatedAt": "2026-09-26T00:33:44.462Z",
       "counts": {
         "do512": 403,
         "jambase": 673,
-        "ticketmaster": 347,
+        "ticketmaster": 345,
         "jambaseCalls": 7,
         "merged": 752,
         "inAnotherFest": 37,
         "movedPerJamBaseOnly": 2,
-        "keptFromBefore": 0,
+        "keptFromBefore": 1,
         "newlyUnlisted": 0
       },
       "problems": []
