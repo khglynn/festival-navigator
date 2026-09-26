@@ -165,12 +165,15 @@ switch; screenshots into `v93-shots/`. One full `npm test` at the end.
   and left the app (bd04a2c) — pinned in the browser contract.
 - **Caret + How it works** (8242f72, from Kevin): `.menu-caret` (reusable; `.down` for the
   rail), after the fest name, part of the button, --text-secondary, hidden where the name
-  opens no menu (EDC Orlando). It costs the row 8px: 390 still FRI SAT NOW SUN, 320 SAT NOW,
-  375 FRI SAT NOW; `--gap-min` 16 -> 15 keeps 430 at all five; under 360px the dock's gap is
-  10px so ACL at 320 keeps SAT 3 whole where Inter draws wide. How it works: nine rows, each
+  opens no menu (EDC Orlando). It costs the day row 8px, and the final sheet showed what
+  that did — Sunday at 390 left a fragment of FRI at the edge — so the dock's three parts now
+  sit 10px apart (was 14), which gives exactly the 8px back: every D1 frame is back to its
+  pre-caret numbers, and ACL at 320 keeps SAT 3 whole where Inter draws wide. `--gap-min`
+  is 15 (the near-fit floor). How it works: nine rows, each
   "feature. how." (MODEL-V4 §3a.4 and the docs-truth pin follow); the dot's own row draws the
   real `.sync-dot` in its three states. Shot: `how-it-works-390.png` (and 320).
-- **Final verification** (19a261d): `npm test` 993/994 — the stamp only (one run of three also
+- **Final verification** (19a261d; the dock gap commit after it re-ran the dock and shell
+  browser contracts 66/66 and `npm test` 993/994, the stamp only): `npm test` 993/994 — the stamp only (one run of three also
   flaked `shell-v4` "hiding the last room" under full-suite load; 5/5 alone, 0 in the other
   runs); with `NIGHT_CLOCK` the same. `npm run test:browser` 194/195 — only the pre-existing
   WebKit notes-chip case, fixed on v92's head. The whole walk re-run (40 scenarios, no page
