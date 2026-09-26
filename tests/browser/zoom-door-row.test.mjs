@@ -69,6 +69,10 @@ async function grow(ctx, page, artist, touch) {
     const cdp = await ctx.newCDPSession(page);
     await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: at.x, y: at.y }] });
     await sleep(650);
+    // Hold until the card grows, as a finger does (zoom-chips-contract's holdOpen
+    // says why: under page.clock the long-press timer can run late on a big
+    // wall, and a lift at 650ms then reads as a tap — CI hit it on v94/v95).
+    for (let i = 0; i < 40 && !(await page.$('#zoom-layer .zoom-slot.shown')); i++) await sleep(50);
     await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
   } else {
     await page.mouse.move(at.x - 40, at.y - 40);
@@ -263,6 +267,10 @@ for (const size of [SIZES[0], SIZES[1]]) {
       const cdp = await ctx.newCDPSession(page);
       await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: at.x, y: at.y }] });
       await sleep(650);
+      // Hold until the card grows, as a finger does (zoom-chips-contract's holdOpen
+      // says why: under page.clock the long-press timer can run late on a big
+      // wall, and a lift at 650ms then reads as a tap — CI hit it on v94/v95).
+      for (let i = 0; i < 40 && !(await page.$('#zoom-layer .zoom-slot.shown')); i++) await sleep(50);
       await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
       await page.waitForSelector('#zoom-layer .zoom-slot.shown', { timeout: 4000 });
       await sleep(800);
@@ -323,6 +331,10 @@ async function holdOpen(ctx, page, artist = CARDS[0]) {
   const cdp = await ctx.newCDPSession(page);
   await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: at.x, y: at.y }] });
   await sleep(650);
+  // Hold until the card grows, as a finger does (zoom-chips-contract's holdOpen
+  // says why: under page.clock the long-press timer can run late on a big
+  // wall, and a lift at 650ms then reads as a tap — CI hit it on v94/v95).
+  for (let i = 0; i < 40 && !(await page.$('#zoom-layer .zoom-slot.shown')); i++) await sleep(50);
   await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
   await page.waitForSelector('#zoom-layer .zoom-slot.shown', { timeout: 4000 });
   await sleep(800);
