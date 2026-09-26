@@ -20,9 +20,10 @@ the file, and all 11 got the sold-out check.
    night before (checked with `js/time.js` `activityMinutes`: before 9 AM counts as
    after midnight of the night the party is filed under). No Monday day or section exists.
 3. **Times** are as posted. An end the page doesn't print stays unprinted.
-4. **Tickets** stay off a party only when it is sold out with no resale and no door sale,
-   when there is nothing left to sell (the party is over, or the link is dead), or when
-   the party is free or door-only by design. The page link always stays.
+4. **Tickets** stay off a party that is sold out with no resale, a **door-only** night
+   (nothing left to sell online, whether by design or because online sold out and the door
+   still sells, per `docs/add-a-festival.md`; Kevin's call via the coordinator, 2026-09-25),
+   a party that is over, and a dead link. The page link always stays.
 
 ## Re-filed to the night before
 
@@ -44,7 +45,7 @@ the file, and all 11 got the sold-out check.
 | Stank | Fri | 9 PM – 2 AM | Powerhouse | none | bar night |
 | HIT IT - FOLSOM | Fri | 9 PM – 2 AM | QBar | Eventbrite | on sale |
 | SayLove: Folsom Edition | Fri | 9 PM – 2 AM | TBA (SoMa), no map | none | ticket link now lands on Passline's home page |
-| PRIME - The San Francisco MEAT | Fri | 10 PM – 4 AM | Club Six | Eventbrite | **online sold out**, limited tickets at the door |
+| PRIME - The San Francisco MEAT | Fri | 10 PM – 4 AM | Club Six | none | **door only**: online sold out, limited tickets at the door |
 | BOOF x SQUISH: FOLSOM | Fri | 10 PM – 4 AM | SF Mint | Shotgun | on sale |
 | SUCH A GOOD GIRL | Fri | 10 PM – 2 AM | Jolene's | Jolene's | presale sold out, GA on sale |
 | DAD FOLSOM FRIDAY | Fri | 10 PM – 3 AM | F8 | Eventbrite | on sale |
@@ -78,7 +79,7 @@ the file, and all 11 got the sold-out check.
 |---|---|---|
 | BRUT SF | kept | on sale (DNA Lounge GA) |
 | MÜLL | kept | on sale, RA final release; venue still "TBA - San Francisco" |
-| Horse Meat Disco | kept (unchanged) | under way; Sickening now titles its listing "TIX AT THE DOOR" |
+| Horse Meat Disco | kept (unchanged) | under way; Sickening titles its listing "TIX AT THE DOOR" but still sells three tiers online, so not door-only |
 | Big Muscle: Bare Chest Calendar | none (unchanged) | **sold out**, DNA Lounge says no tickets at the door |
 | Magnitude | kept | on sale |
 | PERVERT XXL | **changed to XOXO** | on sale at xoxopresents.com; the Tixr page it pointed to now says "Sold elsewhere" |
@@ -151,7 +152,7 @@ splice gives 0 errors and exactly the 9 shared-room warnings.
 4. **HIT IT - FOLSOM.** The title is "HIT IT - FOLSOM - SAN FRANCISCO".
 5. **BOOF x SQUISH: FOLSOM** is the promoter's own styling. Shotgun re-cases it as "Boof X Squish: Folsom @ Sf Mint".
 6. **Folsom Street’s Miracle Mile walking tour** keeps the page's curly apostrophe (’).
-   Searching "street's" with a straight apostrophe may not find it; "miracle" will.
+   Settled: v91's search folds ’ to ', so a straight apostrophe finds it.
 7. All-caps names (HUNGER, OFFICIAL KINK.COM FOLSOM PENTHOUSE PREVIEW, RATED X,
    NOCTURNAL EXTREME, …) are printed that way. Aftershock, already in the file, was title-cased
    by an earlier pass, so the Ky Martinez trio doesn't match in style.
