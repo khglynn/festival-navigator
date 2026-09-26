@@ -10,8 +10,8 @@ import * as spotify from '../spotify.js';
 import * as model from './model.js';
 import { loadFestivalIndex, loadFestival, fetchCustomFestivals, mergeCustoms, FESTIVAL_INDEX, defaultFestivalId } from '../festivals.js';
 import { renderWall, refreshCard, showToast, wireScrollspy, colorIndexOf, positionNowLines, positionNowMarks, scrollToNowLine, dayNavOf, roomsOf, cardFor, roomOf, isStripScroller, DAY_ANCHOR, festLinkLabel, nowLanding, nowStops, nowStep, nowPulseable, nowLabelOf, nowSaid, stackRowKey } from './wall.js';
-import { loadPeopleFilter, savePeopleFilter, togglePerson, pruneToActive, loadFolded, applyFoldToggle } from './filters.js';
-import { OUT_MS, CASCADE_MS, STAGGER_MS, EASE_ARRIVE, EASE_LEAVE, EASE_SURFACE, canAnimate } from './motion.js';
+import { loadPeopleFilter, savePeopleFilter, togglePerson, pruneToActive, loadFolded, saveFolded, applyFoldToggle, showOf, foldFromShow, showLabel, foldIsSet, showSeeded, rememberShowSeeded } from './filters.js';
+import { GROW_MS, OUT_MS, CASCADE_MS, STAGGER_MS, EASE_ARRIVE, EASE_LEAVE, EASE_SURFACE, canAnimate } from './motion.js';
 import { scrolledBefore, rememberScrolled, dayOfScrollKey, festivalClock } from './now.js';
 import { dayLabelParts } from '../time.js';
 import { disclosureFold, eqLoader, festRow } from './tools.js';
@@ -64,6 +64,8 @@ import { hslOf, strokeOf, nextColorIndex } from './palette.js';
 // open, and the one-time offer to bring your picks from another crew.
 import { planBringPicks, bringFromSource, bringOfferCopy, bringDoneLine, bringAnswered, rememberBringAnswer, showBringOffer, settleBringOffer, dismissBringOffer, bringOfferCard } from './crew-entry.js';
 import { showActionToast } from './wall.js';
+// First open, wall first (v92, 2026-09-25): a guest's welcome, once per phone.
+import { welcomeCopy, welcomeSeen, rememberWelcomeSeen, showWelcome, dismissWelcome, welcomeCard } from './welcome.js';
 // The warm open (2026-09-23): paint from what this phone holds, freshen after.
 import { festivalIndexFromCache, festivalFromCache, fetchFestivalFile, cachedCustomFestivals } from '../festivals.js';
 import { getLS } from '../util.js';
@@ -272,11 +274,7 @@ function toggleFoldFlow(key) {
   // last room goes: it arrives with the beat once the week has left, and it
   // is the first thing to leave when a room comes back.
   const notice = () => $('wall-root').querySelector(':scope > .wall-empty');
-  const arrive = (blocks) => blocks.forEach((block, i) => {
-    if (!canAnimate(block, ctx)) return;
-    block.animate([{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }],
-      { duration: CASCADE_MS, delay: i * STAGGER_MS, easing: EASE_ARRIVE, fill: 'backwards' });
-  });
+  const arrive = arriveBlocks;
   const finish = () => {
     repaintWall();
     landAfterFold(standing);
@@ -296,6 +294,33 @@ function toggleFoldFlow(key) {
     a.oncancel = settle;
   }
   setTimeout(() => { if (!done) { done = true; finish(); } }, OUT_MS * 3 + 50); // a backgrounded tab must not hang the fold
+}
+
+// A room coming back arrives with the usual beat (the fold flow's way in).
+function arriveBlocks(blocks) {
+  blocks.forEach((block, i) => {
+    if (!canAnimate(block, ctx)) return;
+    block.animate([{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }],
+      { duration: CASCADE_MS, delay: i * STAGGER_MS, easing: EASE_ARRIVE, fill: 'backwards' });
+  });
+}
+
+// "Show all" (v92): the toast a share link's starting view leaves behind
+// brings every room back at once — the fold flow's way back, for all of them.
+// Nothing leaves, so there is nothing to wait for: the wall repaints, the
+// page stays on the day it was on, and what came back arrives with the beat.
+function unfoldAll() {
+  const keys = [...(ctx.folded || [])];
+  if (!keys.length) return;
+  const daysBefore = planDayKeys();
+  const standing = (document.querySelector('.day-tab.active') || {}).dataset?.day || null;
+  saveFolded(ctx.fid, []);
+  ctx.folded = [];
+  const daysAfter = planDayKeys();
+  const fresh = new Set([...daysAfter].filter((k) => !daysBefore.has(k)));
+  repaintWall();
+  landAfterFold(standing);
+  arriveBlocks([...new Set(keys.flatMap((key) => foldBlocksOf(key, fresh)))]);
 }
 
 // Where the page stands after the wall changed shape under it. The day you
@@ -344,7 +369,9 @@ function refreshArtistCards(artistName) {
 }
 
 function handleTap(artistName) {
-  if (!ctx.meName) return;
+  // A guest's tap is the moment to ask who they are (v92): it used to do
+  // nothing at all, silently — the one hole a nameless viewer had.
+  if (!ctx.meName) { askToJoin(artistName); return; }
   if (ctx.migrationPending) {
     showToast($('toast-root'), 'Updating this crew — picks unlock in a moment');
     return;
@@ -359,6 +386,96 @@ function handleTap(artistName) {
   // No undo toast when a must clears (Kevin, 2026-09-25: "unnecessary for
   // removing a must. it's not that destructive"): tapping again starts the
   // cycle over from the first bar.
+}
+
+// ---- a guest joins (v92, first open, wall first) ------------------------------------
+// A crew link on a phone the crew does not know opens the wall as a guest,
+// and the name is asked only when it is needed: a tap on an artist (that
+// artist becomes their pick), the dashed + in the dock, "Add yourself" in
+// Settings. Tonight the question is today's join screen — the sheet over the
+// wall (F2c) is after Portola — so the wall is left and come back to, and
+// where the person was standing comes back with it: the page, and each
+// timetable's sideways scroll (a hidden wall can forget both).
+let pendingJoin = null; // { token, fid, artist, place } while the join screen asks for a guest
+
+function wallPlace() {
+  const lefts = new Map();
+  for (const s of document.querySelectorAll('#wall-root .times-scroll')) {
+    if (isStripScroller(s)) continue; // the strip follows its grid; it is never scrolled itself
+    const key = s.dataset.sync || '*';
+    if (!lefts.has(key)) lefts.set(key, s.scrollLeft);
+  }
+  return { y: window.scrollY || window.pageYOffset || 0, lefts };
+}
+
+function restorePlace(place) {
+  if (!place) return;
+  for (const s of document.querySelectorAll('#wall-root .times-scroll')) {
+    if (isStripScroller(s)) continue;
+    const left = place.lefts.get(s.dataset.sync || '*');
+    if (left != null && s.scrollLeft !== left) s.scrollLeft = left;
+  }
+  window.scrollTo({ top: place.y, behavior: 'auto' });
+}
+
+function askToJoin(artist = null) {
+  const token = state.getCrewToken();
+  if (!token || ctx.meName) return;
+  // The wall is about to be left: nothing grown or open may ride along.
+  unzoom({ instant: true, why: 'asked who you are' });
+  closeShowMenu({ instant: true });
+  // Asking is engaging: the welcome's words have done their job.
+  rememberWelcomeSeen();
+  dismissWelcome({ instant: true });
+  pendingJoin = { token, fid: ctx.fid, artist, place: wallPlace() };
+  renderJoin(token, state.crewDoc, { artist });
+}
+
+// After a join from the wall: back where they were standing, and the artist
+// they tapped becomes their pick through the ordinary pick path — only where
+// that is still true (same crew and festival, picks writable, the card still
+// on the wall) and only from nothing: someone who tapped their own name in
+// already has a level there, and a tap would move it.
+function finishJoin(token) {
+  const p = pendingJoin;
+  pendingJoin = null;
+  if (!p || p.token !== token || state.getCrewToken() !== token || !ctx.meName) return;
+  if (p.fid !== ctx.fid) return;
+  restorePlace(p.place);
+  if (!p.artist || ctx.migrationPending) return;
+  if (!document.querySelector(`#wall-root .card[data-artist="${CSS.escape(p.artist)}"]`)) return;
+  if (((ctx.picks[p.artist] || {})[ctx.meName] || 0) > 0) return;
+  handleTap(p.artist);
+}
+
+// "Just looking": back onto the wall as a guest. From the wall (a tap, the +,
+// Settings) the wall is still behind the join screen — show it again where it
+// was. From anywhere else (a personal link, "Not me") enter the crew fresh.
+function lookAround(token, doc) {
+  const p = pendingJoin;
+  pendingJoin = null;
+  if (p && p.token === token && state.getCrewToken() === token && !crew.me(token)) {
+    show('screen-app');
+    refreshCtx();
+    renderPersonChips();
+    renderYou();
+    repaintWall();
+    restorePlace(p.place);
+    return;
+  }
+  enterApp(token, doc).catch((e) => { record('join:look', e); renderFatal(); });
+}
+
+// The dashed + where a guest's avatar will be: one soft pulse after "Got it",
+// so the eye learns where the door is. Instant-off under Low Power and
+// reduced motion, like every motion here.
+function pulseJoinRing() {
+  for (const id of ['dock-you', 'rail-you']) {
+    const ring = $(id);
+    if (!ring || !ring.classList.contains('guest') || !canAnimate(ring, ctx)) continue;
+    ring.animate([{ transform: 'none' }, { transform: 'scale(1.22)' }, { transform: 'none' }],
+      { duration: 520, delay: OUT_MS, easing: EASE_ARRIVE });
+  }
 }
 
 // recordSelection writes pending; mirror into the local doc for instant render.
@@ -879,17 +996,35 @@ function switchIdentity(name) {
 
 // Paints BOTH "you" avatars — mobile dock and desktop day rail — from the
 // same identity fact (unified chrome, note 1.1).
+// A guest's slot is a dashed + (v92): the standing door to join — the
+// avatar's place, empty and asking. On join the + gives way to the letter.
 function renderYou() {
+  const guest = !ctx.meName && !!state.getCrewToken();
   for (const id of ['dock-you', 'rail-you']) {
     const you = $(id);
+    const wasGuest = you.classList.contains('guest');
     you.textContent = '';
-    if (!ctx.meName) continue;
+    you.classList.toggle('guest', guest);
+    if (!ctx.meName) {
+      // No name: nothing of the last person's colour stays behind.
+      you.style.background = '';
+      you.removeAttribute('title');
+      if (guest) you.textContent = '+';
+      you.setAttribute('aria-label', guest ? 'Add yourself to the crew' : 'Jump to top');
+      continue;
+    }
     const p = state.people()[ctx.meName];
     const ci = colorIndexOf(ctx.meName, p);
     you.style.background = hslOf(ci, 0.5);
     you.textContent = ctx.meName.charAt(0).toUpperCase();
     you.title = ctx.meName;
     you.setAttribute('aria-label', `${ctx.meName} — jump to top`);
+    // The + becoming you is a small event: the letter grows in where the
+    // ring was, rather than swapping under the eye.
+    if (wasGuest && canAnimate(you, ctx)) {
+      you.animate([{ opacity: 0, transform: 'scale(.6)' }, { opacity: 1, transform: 'none' }],
+        { duration: GROW_MS, easing: EASE_ARRIVE });
+    }
   }
 }
 
@@ -1135,45 +1270,13 @@ function repaintWall() {
   $('sort-control').style.display = scheduled ? 'none' : '';
   updateMigrationBanner();
   updateArchiveNote();
-  maybeShowCoachMark();
   measureStickyChrome();
 }
 
-// First-wall coach mark (CT-1): the pick mechanic and long-press are
-// un-inferable — one dismissible line, once per device, pointing at the
-// full legend for more.
-const LS_COACH = 'fn_coach_v1';
-function maybeShowCoachMark() {
-  if (document.getElementById('coach-mark')) return;
-  try { if (localStorage.getItem(LS_COACH)) return; } catch { return; }
-  if (!ctx.meName) return;
-  const bar = document.createElement('div');
-  bar.id = 'coach-mark';
-  bar.style.cssText = 'display: flex; align-items: center; gap: 10px; margin-top: 11px; padding: 10px 13px; border: 1px solid var(--notes-chip-stroke); border-radius: var(--r-row); background: rgba(139, 123, 255, .07);';
-  const msg = document.createElement('span');
-  msg.style.cssText = 'flex: 1; color: var(--text-body); font-size: 12px; font-weight: 600; line-height: 1.45;';
-  msg.append('Tap artists to add your color. 4 taps = must see. Hold for details. Tap a name to highlight their picks. ');
-  const how = document.createElement('button');
-  how.style.cssText = 'background: none; border: none; padding: 0; cursor: pointer; color: var(--notes-chip-text); font-size: 12px; font-weight: 700; text-decoration: underline; text-underline-offset: 2px;';
-  how.textContent = 'How it works';
-  how.addEventListener('click', () => {
-    openSettings();
-    router.push('settings');
-    openSubviewByKey('sub:how', ctx, settingsActions);
-    router.push('sub:how');
-  });
-  msg.appendChild(how);
-  const dismiss = document.createElement('button');
-  dismiss.setAttribute('aria-label', 'Dismiss');
-  dismiss.style.cssText = 'background: none; border: none; cursor: pointer; color: var(--text-tertiary); font-size: 13px; flex: none; padding: 2px 4px;';
-  dismiss.textContent = '✕';
-  dismiss.addEventListener('click', () => {
-    try { localStorage.setItem(LS_COACH, '1'); } catch { /* private mode */ }
-    bar.remove();
-  });
-  bar.append(msg, dismiss);
-  insertStrip(bar);
-}
+// The first-wall coach mark (CT-1) lived here until v92: one strip in the
+// toolbar, which the day-of open scrolled out of sight before anyone read it
+// (design brief §1.6, measured). The welcome card above the dock
+// (welcome.js, maybeWelcome) says it instead, where the thumb is.
 
 // An archived fest reads as a memory, not a live plan (ST-5).
 //
@@ -1473,7 +1576,8 @@ async function batchCreateFlow(myName) {
         sync.scheduleSync();
         openShareMoment();
         router.push('sheet:share');
-        maybeOfferBringPicks(); // waits for the share moment to close — never both at once
+        maybeWelcome(); // waits for the share moment to close — one thing at a time
+        maybeOfferBringPicks(); // and this waits for the welcome, when there is one
       } catch {
         history.replaceState(null, '', '/');
         renderLanding();
@@ -1499,6 +1603,49 @@ async function batchCreateFlow(myName) {
 }
 
 
+// ---- what a link sent from here opens on (v92, SD1) ---------------------------------
+// A share link carries the sharer's current view: the rooms this phone is
+// showing, as `&show=` beside `g=` (filters.js showOf, crew.js crewLink).
+// Everything showing sends no view at all. Whoever receives it gets it once,
+// on a phone that has never shown this festival (seedShowOnce) — and every
+// place that hands out a link says so in one line, because someone who hid
+// Folsom for themselves would otherwise send it hidden without knowing.
+function shareView() {
+  const rooms = roomsOnWall();
+  const folded = ctx.folded || [];
+  const show = showOf(rooms, folded);
+  return show ? { show, label: showLabel(rooms, folded) } : null;
+}
+function inviteLink(meName = null) {
+  const view = shareView();
+  return crew.crewLink(state.getCrewToken(), state.activeFestivalId, meName, view ? view.show : null);
+}
+function inviteViewLine() {
+  const view = shareView();
+  return view ? `Opens on ${view.label} — what you’re showing now.` : '';
+}
+
+// The other end of a link's view: has this phone shown this festival before —
+// any crew it knew, pointed at it? Then its own view of the festival is its
+// choice (even "everything", which stores nothing), and a link never moves it.
+function festShownBefore(fid) {
+  return crew.knownCrews().some((c) => c && c.token && getLS(state.LS.fest(c.token)) === fid);
+}
+
+// Seed THIS phone's fold from a link's view, once per festival: viewer-side
+// by law (filters.js — never the crew doc), never over a fold of its own,
+// never a view that would hide every room, and only rooms this festival file
+// knows. Returns the words for what it opened on, or null when it did nothing.
+function seedShowOnce(fid, slugs) {
+  if (foldIsSet(fid) || showSeeded(fid)) return null;
+  const rooms = roomsOf(state.fest(), ctx);
+  const folded = foldFromShow(rooms, slugs);
+  if (!folded) return null;
+  saveFolded(fid, folded);
+  rememberShowSeeded(fid);
+  return showLabel(rooms, folded);
+}
+
 // ---- the share moment (FLOW-7/FLOW-12) ----------------------------------------------
 // One centered dialog right after create (and re-openable from Settings):
 // the link is VISIBLE — share sheets fail silently, a printed URL never does.
@@ -1520,8 +1667,12 @@ function openShareMoment() {
   const sub = document.createElement('div');
   sub.style.cssText = 'color: var(--text-secondary); font-size: 12.5px; line-height: 1.55;';
   sub.textContent = `Opens straight into ${state.crewName()}. No accounts needed.`;
-  const link = crew.crewLink(state.getCrewToken(), state.activeFestivalId);
-  if ((state.crewDoc.meta || {}).inviteFestId !== state.activeFestivalId) {
+  const viewLine = inviteViewLine();
+  if (viewLine) sub.append(document.createElement('br'), viewLine);
+  const link = inviteLink();
+  // Only a member stamps the crew's invite festival: a guest writes nothing
+  // into the crew until they join (v92).
+  if (ctx.meName && (state.crewDoc.meta || {}).inviteFestId !== state.activeFestivalId) {
     state.recordInviteFest(state.activeFestivalId);
     sync.scheduleSync();
   }
@@ -1550,7 +1701,7 @@ function openShareMoment() {
     shareBtn.style.cssText = 'flex: 1; font-size: 13px; padding: 11px;';
     shareBtn.textContent = 'Share the link';
     shareBtn.addEventListener('click', async () => {
-      try { await navigator.share({ title: 'Festival Navigator', url: link }); }
+      try { await navigator.share({ title: 'Festival Navigator', text: crew.inviteText((state.fest() || {}).name), url: link }); }
       catch { /* dismissed — the visible link is the fallback */ }
     });
     actionsRow.appendChild(shareBtn);
@@ -1640,7 +1791,7 @@ function openAddMember() {
     const explain = document.createElement('div');
     explain.style.cssText = 'color: var(--text-secondary); font-size: 12.5px; line-height: 1.55;';
     explain.textContent = `Send ${canonical} this link. Opening it makes the picks theirs.`;
-    const link = crew.crewLink(state.getCrewToken(), state.activeFestivalId, canonical);
+    const link = inviteLink(canonical); // a personal link carries the sharer's view too (v92)
     const linkRowEl = document.createElement('div');
     linkRowEl.style.cssText = 'display: flex; gap: 8px; align-items: center;';
     const linkBox = document.createElement('input');
@@ -1825,6 +1976,19 @@ function openSettings() {
       return true;
     },
     afterBulk: () => { sync.scheduleSync(); refreshCtx(); },
+    // Every link Settings hands out carries this phone's view (v92, SD1), and
+    // says so in one line.
+    inviteLink: (meName = null) => inviteLink(meName),
+    inviteViewLine: () => inviteViewLine(),
+    // A guest's "Add yourself" (v92): the join screen, from Settings. The
+    // settings layer is dropped from the model first — "Just looking" comes
+    // back to the wall, never to a Settings the history no longer holds.
+    join: () => {
+      router.reset();
+      history.replaceState(null, '', `/#g=${state.getCrewToken()}`);
+      show('screen-app');
+      askToJoin(null);
+    },
     // FLOW-8: identity change is an explicit, named action — never a chip tap.
     switchIdentity: (name) => switchIdentity(name),
     // Add-on-their-behalf (note 5): the sheet opens OVER settings.
@@ -2162,6 +2326,9 @@ function maybeOfferBringPicks() {
   if (standing && standing.dataset.key !== key) dismissBringOffer({ instant: true });
   if (!token || !fid || !ctx.meName || ctx.migrationPending || bringAnswered(token, fid)) return;
   if (bringOfferCard()) return; // already asking, here
+  // The welcome goes first, once per phone (v92): until it has been read,
+  // the offer does not ask — the welcome's "Got it" asks it.
+  if (!welcomeSeen()) return;
   if (document.getElementById('artist-sheet')) { offerWhenSheetCloses(); return; }
   const plan = planBringPicks(bringContext());
   if (!plan) return;
@@ -2192,6 +2359,48 @@ function offerWhenSheetCloses() {
     maybeOfferBringPicks();
   });
   offerWaiter.observe(document.body, { childList: true });
+}
+
+// ---- the welcome (v92) ------------------------------------------------------------
+// Once per phone, on the first crew wall this phone opens — guest or member.
+// Like the offer it waits for an open sheet (the create flow's share moment),
+// then arrives with its beat; "Got it" is when the offer may ask.
+let welcomeWaiter = null;
+function maybeWelcome() {
+  if (welcomeSeen() || welcomeCard() || !state.getCrewToken()) return;
+  if ($('screen-app').style.display === 'none') return;
+  if (document.getElementById('artist-sheet')) { welcomeWhenSheetCloses(); return; }
+  const people = state.activePeople();
+  const picked = Object.keys(model.picksFor(state.crewDoc, ctx.fid)).length > 0;
+  const copy = welcomeCopy({
+    crewName: state.crewName(), festName: (state.fest() || {}).name,
+    people: people.map(([n]) => n), picked, guest: !ctx.meName,
+  });
+  const faces = people.map(([name, p]) => {
+    const ci = colorIndexOf(name, p);
+    return { name, bg: hslOf(ci, 0.5), stroke: strokeOf(ci, name === ctx.meName) };
+  });
+  showWelcome($('screen-app'), {
+    copy, faces, ctx,
+    onGotIt: () => { pulseJoinRing(); maybeOfferBringPicks(); },
+    onHow: () => {
+      openSettings();
+      router.push('settings');
+      openSubviewByKey('sub:how', ctx, settingsActions);
+      router.push('sub:how');
+    },
+  });
+}
+function welcomeWhenSheetCloses() {
+  const Observer = typeof window !== 'undefined' ? window.MutationObserver : undefined;
+  if (welcomeWaiter || typeof Observer !== 'function') return;
+  welcomeWaiter = new Observer(() => {
+    if (document.getElementById('artist-sheet')) return;
+    welcomeWaiter.disconnect();
+    welcomeWaiter = null;
+    maybeWelcome();
+  });
+  welcomeWaiter.observe(document.body, { childList: true });
 }
 
 // Someone else is picking on this phone now (Settings → You, a rename): the
@@ -2236,8 +2445,26 @@ function bringPicksHere(key) {
   settleBringOffer(bringDoneLine(tap.count), { ctx });
 }
 
-function renderJoin(token, doc) {
+// `artist` (v92): a guest tapped this artist on the wall — the screen says
+// the pick is waiting behind the answer, and finishJoin makes it. Every way
+// in ends in finishJoin, which does nothing when no guest was asking.
+function renderJoin(token, doc, { artist = null } = {}) {
   show('screen-join');
+  const forLine = $('join-for');
+  if (forLine) {
+    forLine.textContent = artist ? `Pick ${artist} as…` : '';
+    forLine.style.display = artist ? '' : 'none';
+  }
+  // "Just looking" (v92): the way onto the wall without a name, from every
+  // join screen — the old one (a personal link, "Not me") included.
+  const look = $('join-look');
+  if (look) look.onclick = () => lookAround(token, doc);
+  // Never throws into the join's own error path: a failed pick after a good
+  // join must not be mistaken for a failed join (the offline branch below
+  // would record the person a second time).
+  const entered = (entering) => Promise.resolve(entering).then(() => {
+    try { finishJoin(token); } catch (e) { record('join:finish', e); }
+  });
   // The invite names the FESTIVAL (FLOW-10) — the fest is why you came; the
   // crew is who with. Fest context comes from the link's &f= or the doc stamp.
   const hintId = pendingFestHint || (doc.meta && doc.meta.inviteFestId) || null;
@@ -2284,7 +2511,7 @@ function renderJoin(token, doc) {
       hint.textContent = 'this link is yours';
       row.appendChild(hint);
     }
-    row.addEventListener('click', () => { crew.setMe(token, name); enterApp(token, doc); });
+    row.addEventListener('click', () => { crew.setMe(token, name); entered(enterApp(token, doc)); });
     list.appendChild(row);
   }
   $('join-add-btn').onclick = async () => {
@@ -2298,7 +2525,7 @@ function renderJoin(token, doc) {
     // "drew" typing in must claim Drew, never fork a second member.
     const existingEntry = Object.entries(doc.people || {})
       .find(([n, p]) => n.toLowerCase() === name.toLowerCase() && p && !p.removed);
-    if (existingEntry) { crew.setMe(token, existingEntry[0]); enterApp(token, doc); return; }
+    if (existingEntry) { crew.setMe(token, existingEntry[0]); entered(enterApp(token, doc)); return; }
     const btn = $('join-add-btn');
     btn.disabled = true;
     status.textContent = '';
@@ -2329,13 +2556,13 @@ function renderJoin(token, doc) {
       }
       const merged = await res.json();
       crew.setMe(token, name);
-      await enterApp(token, merged);
+      await entered(enterApp(token, merged));
     } catch {
       // Network failure: offline-first join, sync catches up (old behavior).
       state.activateCrew(token, doc, festHint);
       state.recordPerson(name, person);
       crew.setMe(token, name);
-      enterApp(token, state.crewDoc);
+      entered(enterApp(token, state.crewDoc));
       sync.scheduleSync();
     } finally {
       delete document.body.dataset.busy;
@@ -2390,13 +2617,25 @@ async function stampIdentity(token, current = () => true, { renameFrom = null } 
 // network, and nothing re-decides the festival (see boot's warm open).
 async function enterApp(token, doc, current = () => true, customs = fetchCustomFestivals(token), { recognized = null, warm = null, holdOffer = false } = {}) {
   dismissBringOffer({ instant: true }); // an offer is about the crew it was made in — never the next one
+  dismissWelcome({ instant: true });    // nor does a card from one crew sit over the next
+  // A share link's starting view (v92): consumed once, like the fest hint,
+  // and only ever for a phone that has never shown the link's festival — read
+  // before this entry remembers anything about it.
+  const showHint = pendingShowHint;
+  pendingShowHint = null;
+  const showFor = showHint && pendingFestHint && !festShownBefore(pendingFestHint) ? pendingFestHint : null;
   crew.setActiveCrew(token);
   crew.rememberCrew(token, (doc.meta && doc.meta.name) || '');
   mergeCustoms(await customs); // crew-private fests join the catalog first
   if (!current()) return;
   // Invite festival context (FLOW-1): the link's &f= wins (freshest), then the
   // doc's stamp. Consumed once — only fills the void on a fest-less device.
-  const festHint = pendingFestHint || (doc.meta && doc.meta.inviteFestId) || null;
+  // A guest (v92) with neither — an old link, an old doc — lands where the
+  // crew's picks are rather than on the catalog's default, which is also a
+  // festival the crew may not have (and opening one records it in the doc).
+  const festHint = pendingFestHint || (doc.meta && doc.meta.inviteFestId)
+    || (crew.me(token) ? null : model.busiestFestival(doc, FESTIVAL_INDEX.map((f) => f.id)))
+    || null;
   pendingFestHint = null;
   state.activateCrew(token, doc, festHint, { festival: warm ? warm.fid : null });
   // Backfill (audit re-run finding): crews older than the fix never got the
@@ -2470,6 +2709,9 @@ async function enterApp(token, doc, current = () => true, customs = fetchCustomF
   // here made one Back collapse the whole restored stack and killed Forward
   // (Codex trailing review, P1, reproduced).
   const savedLayers = (history.state && history.state.layers) || null;
+  // Seeded BEFORE the first paint, so the wall opens already on the view the
+  // link carried — nothing folds away under the person's eyes.
+  const opened = showFor && state.activeFestivalId === showFor ? seedShowOnce(showFor, showHint) : null;
   show('screen-app');
   applyFestTheme();
   refreshCtx();
@@ -2498,11 +2740,15 @@ async function enterApp(token, doc, current = () => true, customs = fetchCustomF
   stampIdentity(token, current).then(() => {
     if (!holdOffer && current() && state.getCrewToken() === token) maybeOfferBringPicks();
   });
+  // Said once, on arrival, with the one door back to everything (v92). A
+  // recognized phone's "Not me" outranks it — the next line replaces it.
+  if (opened) showActionToast($('toast-root'), `Opened on ${opened}.`, 'Show all', unfoldAll, 6000);
   if (recognized) welcomeRecognized(token, recognized);
-  // After the welcome: the card steps up over its toast. `holdOffer`: the
-  // caller is about to open a sheet (the create flow's share moment), and
-  // asks for the offer itself once that sheet is up, so it waits for it.
-  if (!holdOffer) maybeOfferBringPicks();
+  // After the toasts: the cards step up over them. `holdOffer`: the caller is
+  // about to open a sheet (the create flow's share moment), and asks for the
+  // welcome and the offer itself once that sheet is up, so they wait for it.
+  // The welcome first — the offer never asks before it has been read.
+  if (!holdOffer) { maybeWelcome(); maybeOfferBringPicks(); }
   // A hop from an alias domain mid-Spotify-setup (SPOT-1): reopen the drill
   // so the member lands exactly where they left off.
   if (pendingSpotifyOpen) {
@@ -2658,6 +2904,7 @@ let bootGeneration = 0;
 let firstBoot = true; // cold start resumes the active crew; later boots don't (note 2)
 let pendingFestHint = null; // &f= from the opened invite link, consumed by enterApp
 let pendingMeHint = null; // &me= from a personal invite link, consumed by renderJoin
+let pendingShowHint = null; // &show= — the view a share link carries (v92), consumed by enterApp
 let pendingSpotifyOpen = false; // &sp=1 from the canonical-domain hop (SPOT-1)
 export async function boot() {
   const gen = ++bootGeneration;
@@ -2668,6 +2915,8 @@ export async function boot() {
   // Capture before any await: enterApp's replaceState strips the hash to #g=.
   pendingFestHint = crew.festFromHash();
   pendingMeHint = crew.meFromHash();
+  pendingShowHint = crew.showFromHash();
+  pendingJoin = null; // a guest's question belongs to the wall it was asked on
   // sp=1 -> reopen the drill. sp=connect -> reopen it AND continue the connect
   // the person already asked for on the other host.
   const spMatch = /[#&]sp=(connect|1)(?:&|$)/.exec(location.hash || '');
@@ -2784,8 +3033,14 @@ export async function boot() {
     let recognized = null;
     if (!crew.me(token)) {
       recognized = recognizeOnOpen(token, doc);
-      if (!recognized) { renderJoin(token, doc); return; }
-      crew.setMe(token, recognized);
+      if (recognized) crew.setMe(token, recognized);
+      // Wall first (v92): a phone the crew does not know opens onto the wall
+      // as a guest, and is asked its name when it taps an artist. Two still
+      // ask first, as they always did: a personal link (it names who it is
+      // for — "this link is yours"), and a phone that IS in the crew but
+      // cannot be told which member (walking it in as a guest would read as
+      // the app forgetting it).
+      else if (pendingMeHint || crew.personInCrew(crew.myPerson(), token, doc)) { renderJoin(token, doc); return; }
     }
     await enterApp(token, doc, current, customs, { recognized });
   } catch (e) {
@@ -2897,8 +3152,10 @@ export function init() {
   $('search-input').addEventListener('focus', () => dock.classList.add('hidden'));
   $('search-input').addEventListener('blur', () => dock.classList.remove('hidden'));
   const jumpTop = () => window.scrollTo({ top: 0, behavior: ctx.lowPower ? 'auto' : 'smooth' });
-  $('dock-you').addEventListener('click', jumpTop);
-  $('rail-you').addEventListener('click', jumpTop);
+  // The "you" slot jumps to the top — or, for a guest, is the door to join (v92).
+  const youTap = () => (!ctx.meName && state.getCrewToken() ? askToJoin(null) : jumpTop());
+  $('dock-you').addEventListener('click', youTap);
+  $('rail-you').addEventListener('click', youTap);
   for (const id of NOW_TABS) $(id).addEventListener('click', jumpToNow);
   const openSettingsLayer = () => { openSettings(); router.push('settings'); };
   $('gear-btn').addEventListener('click', openSettingsLayer);

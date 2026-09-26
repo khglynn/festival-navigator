@@ -32,7 +32,7 @@ test('WebKit: after a pick, one click on the zoom\'s notes chip opens the notes,
       localStorage.setItem('fn_crews_v3', JSON.stringify([{ token: t, name: 'Chip' }]));
       localStorage.setItem(`fn_me_v3_${t}`, 'Kevin');
       localStorage.setItem(`fn_crew_fest_v3_${t}`, f);
-      localStorage.setItem('fn_coach_v1', '1');
+      localStorage.setItem('fn_welcome_v1', '1');
     }, [CREW, FID]);
     const doc = { v: 4, meta: { name: 'Chip', inviteFestId: FID }, spotify: {}, affinity: {}, people: { Kevin: { colorIndex: 0 } }, festivals: { [FID]: { selections: {} } } };
     await ctx.route('**/api/**', (r) => r.fulfill({ status: 503, contentType: 'application/json', body: '{}' }));

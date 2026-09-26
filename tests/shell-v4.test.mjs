@@ -39,7 +39,7 @@ const shell = await bootShell({
     fn_crews_v3: JSON.stringify([{ token: TOKEN, name: 'The Crew' }]),
     [`fn_me_v3_${TOKEN}`]: 'Kevin',
     [`fn_crew_fest_v3_${TOKEN}`]: FID,
-    fn_coach_v1: '1', // the coach mark is not what this file is about
+    fn_welcome_v1: '1', // the welcome card is not what this file is about
   },
   fetch: network,
 });
