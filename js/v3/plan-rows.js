@@ -215,8 +215,9 @@ function earlierRow(n, open, onToggle) {
 // ---- the whole day ---------------------------------------------------------------
 // `route` is plan.night(id); `peek` is peekOf's answer for this night (or
 // null); `nowMin` is the clock on this night's axis (null for a night that is
-// not tonight). Returns the list element; each row carries data-stop.
-export function planList(route, { ctx, plan, peek = null, nowMin = null, grown = null,
+// not tonight); `grown` is the set of stop keys whose cards are grown under
+// their rows. Returns the list element; each row carries data-stop.
+export function planList(route, { ctx, plan, peek = null, nowMin = null, grown = new Set(),
   earlierOpen = false, onEarlier = () => {}, nightLabelOf = () => '', dayWord = '' } = {}) {
   const list = mk('div', 'plan-list');
   if (!route) return list;
@@ -234,12 +235,12 @@ export function planList(route, { ctx, plan, peek = null, nowMin = null, grown =
     const tag = key === tagged ? peek.tag : null;
     const r = stopRow(it, {
       ctx, plan, tag, count: tag ? peek.count : it.count, faces: true, also: true,
-      grow: grown === key, nightLabelOf, dayWord: tag === 'next' ? dayWord : '',
+      grow: grown.has(key), nightLabelOf, dayWord: tag === 'next' ? dayWord : '',
     });
     const past = nowMin != null && it.to <= nowMin;
     if (past) r.classList.add('past');
     rows.push(r);
-    if (grown === key) rows.push(grownEl(it, ctx));
+    if (grown.has(key)) rows.push(grownEl(it, ctx));
     const f = forkFor(it, plan.bar, tag === 'now' ? nowMin : null);
     if (f) {
       const fr = forkRow(f, it, { ctx });

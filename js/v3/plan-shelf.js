@@ -56,11 +56,18 @@ let sig = '';        // what that answer drew, to skip repaints that change noth
 let mode = 'gone';   // 'gone' | 'peek' | 'open'
 let p = 0;           // 0 peek … 1 open, while a drag or a settle is in flight
 let geo = null;      // { H, peekH, shift } measured after every draw
-// Whose card is grown under its row: null = the default (the NOW row's), ''
-// = none (a person folded NOW's), else a stop key (a row a person tapped).
-// It survives closing — the card waits below the peek's window — and resets
-// when the shelf leaves.
+// Whose cards are grown under their rows: null = the default (the NOW row's
+// alone), else the set of stop keys a person left grown (NOW's included until
+// they fold it). A set, so a tap never folds a card above the row it grew: a
+// row stays under the finger, and only the rows below make room
+// (storyboard 8). It survives closing — the cards wait below the peek's
+// window — and resets on another night or when the shelf leaves.
 let grown = null;
+const grownNow = () => {
+  if (grown) return grown;
+  const nowKey = data && data.peek.tag === 'now' ? stopKey(data.peek.stop) : null;
+  return new Set(nowKey ? [nowKey] : []);
+};
 let earlierOpen = false;
 let nightId = '';    // `${fid}|${route id}` of the day the rows are drawn for
 let drag = null;
@@ -135,10 +142,15 @@ function build(host) {
   const dock = document.getElementById('dock');
   if (dock && dock.parentElement === host) host.insertBefore(frame, dock);
   else host.appendChild(frame);
+  // The grabber's click is the keyboard's (Enter, Space) and a script's. A
+  // pointer's tap on it is handled where the pointer lifts (onUp): the drag
+  // captures the pointer, and a captured mouse's click lands on the shelf
+  // itself, never on the grabber (Chromium, 2026-09-26: a mouse could not
+  // open or close the plan from its handle).
   grab.addEventListener('click', (e) => {
     e.preventDefault();
-    if (quiet()) return; // the end of a drag is not a tap
-    if (mode === 'open') closePlan(); else openPlan();
+    if (quiet()) return; // the tap that onUp already took, or the end of a drag
+    toggle();
   });
   el.addEventListener('pointerdown', onDown);
   el.addEventListener('click', onClickPeek, true);
@@ -193,7 +205,7 @@ export function paintPlanShelf(host, ctx, answer) {
 function signature(a) {
   const rows = a.route ? a.route.items.map((i) => `${i.kind}:${i.from}-${i.to}:${i.count || ''}:${i.tier || ''}`).join(',') : '';
   const over = a.nowMin == null || !a.route ? '' : a.route.items.filter((i) => i.to <= a.nowMin).length;
-  return [a.gen, a.route && a.route.id, a.peek.tag, stopKey(a.peek.stop), a.peek.count, a.dayWord, over, rows, grown, earlierOpen].join('|');
+  return [a.gen, a.route && a.route.id, a.peek.tag, stopKey(a.peek.stop), a.peek.count, a.dayWord, over, rows, grown ? [...grown].sort().join(',') : '*', earlierOpen].join('|');
 }
 
 function draw() {
@@ -212,17 +224,20 @@ function draw() {
   corner.c.textContent = `· ${a.weekday} · ${a.plan.us.length} of us`.toUpperCase();
   corner.head.textContent = '';
   for (const n of head.childNodes) corner.head.appendChild(n.cloneNode(true));
-  // The NOW row's card is always grown in the day plan (the approved frame);
-  // a tapped row's too. It sits under its row, so the peek's window (the row
-  // alone) never includes it.
-  const nowKey = a.peek.tag === 'now' ? stopKey(a.peek.stop) : null;
+  // The NOW row's card is grown in the day plan until a person folds it (the
+  // approved frame); a tapped row's too. Each sits under its row, so the
+  // peek's window (the row alone) never includes one.
   const list = planList(a.route, {
-    ctx, plan: a.plan, peek: a.peek, nowMin: a.nowMin, grown: grown === null ? nowKey : grown,
+    ctx, plan: a.plan, peek: a.peek, nowMin: a.nowMin, grown: grownNow(),
     earlierOpen, onEarlier: toggleEarlier, nightLabelOf: a.nightLabelOf, dayWord: a.dayWord,
   });
   list.addEventListener('click', onRowTap);
+  // A new list element starts at the top: an open list someone had scrolled
+  // keeps its place across a tick, a pick or a tap.
+  const keep = mode === 'open' ? listEl.scrollTop : 0;
   listEl.replaceWith(list);
   listEl = list;
+  if (keep) { list.classList.add('scrolls'); list.scrollTop = keep; }
   listEl.querySelectorAll('.plan-row[data-tag]').forEach((r) => r.classList.add('tagged'));
   el.dataset.tag = a.peek.tag;
   grab.setAttribute('aria-label', mode === 'open' ? 'Close the plan' : `Open the day's plan`);
@@ -317,6 +332,7 @@ function settleState() {
 function arrive() {
   el.hidden = false;
   mode = 'peek';
+  unpin();
   measure();
   apply(0);
   settleState();
@@ -414,6 +430,7 @@ function play(before, { duration, easing }) {
 }
 
 // ---- opening and closing --------------------------------------------------------
+function toggle() { if (mode === 'open') closePlan(); else openPlan(); }
 export function openPlan({ instant = false } = {}) {
   if (!el || mode === 'gone' || leaving) return;
   settleTo(1, { instant });
@@ -435,6 +452,7 @@ export function hidePlanShelf({ instant = false } = {}) { leave({ instant }); }
 // state at once and the animation plays from where it was — so an animation
 // that never finishes still leaves the right state behind.
 function settleTo(target, { instant = false } = {}) {
+  if (target === 1 && mode !== 'open') unpin();
   measure(); // the laptop's panel top follows the rail; the phone's numbers may have moved with a font
   apply(p);
   const from = { el: el.style.transform, clip: el.style.clipPath, body: body.style.transform, p };
@@ -472,6 +490,7 @@ function onDown(e) {
   const inList = listEl.contains(e.target);
   if (mode === 'open' && inList) return; // the open list scrolls; the grabber and the head drag
   if (e.target.closest('.sheet-close')) return;
+  if (mode !== 'open') unpin();
   measure();
   apply(mode === 'open' ? 1 : 0);
   drag = { id: e.pointerId, y0: e.clientY, p0: p, moved: false, onGrab: grab.contains(e.target), last: [{ y: e.clientY, t: e.timeStamp }] };
@@ -501,9 +520,10 @@ function onUp(e) {
   const d = drag;
   endDrag();
   if (!d.moved) {
-    // A tap: the grabber's is its own click (the keyboard's too); anywhere
-    // else on the peek opens it, and the click that follows is swallowed.
-    if (!d.onGrab && mode !== 'open') { quietUntil = performance.now() + 400; openPlan(); }
+    // A tap: on the grabber it opens or closes; anywhere else on the peek it
+    // opens. Either way the click that follows, wherever it lands, is
+    // swallowed.
+    if (d.onGrab) { quietUntil = performance.now() + 400; toggle(); } else if (mode !== 'open') { quietUntil = performance.now() + 400; openPlan(); }
     return;
   }
   quietUntil = performance.now() + 400;
@@ -549,31 +569,77 @@ function onClickPeek(e) {
 
 // ---- inside the open plan ----------------------------------------------------------
 // A row tap grows that stop's card under it, and the rows below make room;
-// the same tap folds it again. (The NOW row's card is grown by itself.)
+// the same tap folds it again. Another row's grown card stays as it is. (The
+// NOW row's card is grown by itself.)
 function onRowTap(e) {
   if (mode !== 'open') return;
   const row = e.target.closest('.plan-row');
   if (!row || row.classList.contains('earlier') || row.classList.contains('scattered') || row.classList.contains('or')) return;
   if (e.target.closest('.plan-grow')) return;
   const key = row.dataset.stop;
-  const nowKey = data.peek.tag === 'now' ? stopKey(data.peek.stop) : null;
-  const current = grown === null ? nowKey : grown;
-  grown = current === key ? '' : key;
-  relayout();
+  const next = new Set(grownNow());
+  if (next.has(key)) next.delete(key); else next.add(key);
+  grown = next;
+  relayout(key, next.has(key));
 }
 function toggleEarlier() {
   if (mode !== 'open') return;
   earlierOpen = !earlierOpen;
-  relayout();
+  relayout(null, false);
 }
-function relayout() {
+// A tap inside the open plan changes what is under one row (its card, or
+// the earlier stops under the Earlier line). That row stays where the finger
+// is: the window keeps its height and the rows below make room, scrolling
+// out of sight at the bottom (storyboard 8). Only a grown card that would be
+// cut off by the bottom edge moves things — the window grows toward its cap,
+// then the list scrolls, by just enough to show the whole card. (Growing the
+// window with its content, as it did first, slid the tapped row up by a
+// card's height under the finger.)
+function relayout(key, reveal) {
   const before = snapshot();
+  if (!geo.desk) pin(el.getBoundingClientRect().height); // the laptop's panel is full height already
   sig = signature(data);
   draw();
   measure();
   apply(1);
   settleState();
+  if (reveal) showGrown(key);
   play(before, { duration: GROW_MS, easing: EASE_ARRIVE });
+}
+function showGrown(key) {
+  const card = [...listEl.children].find((n) => n.dataset.stop === `grow|${key}`);
+  const row = card && card.previousElementSibling;
+  if (!row) return;
+  const floor = () => listEl.getBoundingClientRect().bottom - (parseFloat(window.getComputedStyle(listEl).paddingBottom) || 0);
+  let over = card.getBoundingClientRect().bottom - floor();
+  if (over <= 0.5) return;
+  if (!geo.desk) {
+    const cap = parseFloat(window.getComputedStyle(el).maxHeight) || Infinity;
+    const grow = Math.max(0, Math.min(over, cap - geo.H));
+    if (grow > 0.5) {
+      pin(geo.H + grow);
+      measure();
+      apply(1);
+      over = card.getBoundingClientRect().bottom - floor();
+    }
+  }
+  if (over > 0.5) {
+    // Never past the row itself: a card taller than the window starts under its row.
+    const room = row.getBoundingClientRect().top - listEl.getBoundingClientRect().top;
+    listEl.scrollTop += Math.max(0, Math.min(over, room));
+  }
+}
+// The height a tap pinned lasts while the plan is open; a plan that opens
+// again (from the peek, where no one can see the window's height) opens to
+// its rows.
+// A box's height, border included (the shelf's top hairline would otherwise
+// add a pixel at every pin).
+function pin(h) {
+  el.style.boxSizing = 'border-box';
+  el.style.height = `${h}px`;
+}
+function unpin() {
+  if (el && el.style.height) { el.style.height = ''; el.style.boxSizing = ''; }
 }
 
 // A rotation, a resize or a late font changes the window's numbers: measure
@@ -581,6 +647,7 @@ function relayout() {
 // the ruler).
 export function refitPlanShelf() {
   if (!el || mode === 'gone' || leaving || drag) return;
+  if (mode !== 'open') unpin();
   measure();
   apply(mode === 'open' ? 1 : 0);
   measureFoot();

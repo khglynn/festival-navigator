@@ -160,7 +160,7 @@ test('the grabber opens and closes it, Escape closes it, and neither writes hist
   assert.equal(location.hash, hash);
 });
 
-test('a row tap grows that stop’s card under it, and the same tap folds it', async () => {
+test('a row tap grows that stop’s card under it, leaves the NOW card grown, and the same tap folds it', async () => {
   plan().querySelector('.plan-grab').click();
   const row = [...plan().querySelectorAll('.plan-row')].find((r) => r.dataset.stop && !r.classList.contains('tagged')
     && !r.classList.contains('earlier') && !r.classList.contains('or') && !r.classList.contains('scattered'));
@@ -168,12 +168,18 @@ test('a row tap grows that stop’s card under it, and the same tap folds it', a
   row.querySelector('.plan-what').click();
   const again = plan().querySelector(`.plan-row[data-stop="${CSS.escape(key)}"]`);
   assert.ok(again.nextElementSibling && again.nextElementSibling.classList.contains('plan-grow'), 'its card, as the next sibling');
-  assert.equal(plan().querySelectorAll('.plan-grow').length, 1, 'one grown card at a time');
+  assert.ok(tagged().nextElementSibling.classList.contains('plan-grow'), 'the NOW card stays grown: a tap never folds a card elsewhere (storyboard 8)');
+  assert.equal(plan().querySelectorAll('.plan-grow').length, 2);
   again.querySelector('.plan-what').click();
   const folded = plan().querySelector(`.plan-row[data-stop="${CSS.escape(key)}"]`);
   assert.ok(!folded.nextElementSibling || !folded.nextElementSibling.classList.contains('plan-grow'));
+  tagged().querySelector('.plan-what').click();
+  assert.equal(plan().querySelectorAll('.plan-grow').length, 0, 'the NOW card folds by its own row');
   plan().querySelector('.plan-grab').click();
   assert.equal(plan().dataset.state, 'peek');
+  plan().querySelector('.plan-grab').click();
+  assert.equal(plan().querySelectorAll('.plan-grow').length, 0, 'and stays folded when the plan opens again');
+  plan().querySelector('.plan-grab').click();
 });
 
 test('a search puts the peek away (the search wall has no clock); clearing it brings it back', async () => {

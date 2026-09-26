@@ -176,6 +176,82 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
     } finally { await ctx.close(); }
   });
 
+  // The grabber's tap is taken where the pointer lifts: the drag captures the
+  // pointer, and a captured mouse's click lands on the shelf, not on the
+  // grabber — before 2026-09-26 a mouse could neither open nor close the plan
+  // by its handle, and only a finger worked (in Chromium).
+  test(`${name}: a tap on the grabber, by mouse or by finger, opens it and closes it — once each`, { skip }, async () => {
+    const { ctx, page, errors } = await openPhone(get());
+    try {
+      const tapGrab = async (how) => {
+        const g = await grabAt(page);
+        if (how === 'finger') await page.touchscreen.tap(g.x, g.y); else await page.mouse.click(g.x, g.y);
+        await sleep(700);
+        return (await geometry(page)).state;
+      };
+      assert.equal(await tapGrab('mouse'), 'open', 'a mouse click on the grabber opens it');
+      assert.equal(await tapGrab('mouse'), 'peek', 'and closes it');
+      assert.equal(await tapGrab('finger'), 'open', 'a finger tap opens it');
+      assert.equal(await tapGrab('finger'), 'peek', 'and closes it');
+      assert.equal((await geometry(page)).busy, null);
+      assert.deepEqual(errors, []);
+    } finally { await ctx.close(); }
+  });
+
+  // Storyboard 8: a row tap grows that row's card and only the rows below make
+  // room. Two ways it went wrong first: folding the NOW card above to grow the
+  // tapped one, and the window growing with its content — each slid the tapped
+  // row up by a card's height under the finger. Now the row stays put while
+  // its card fits below it, and moves only as far as needed to show a card the
+  // bottom edge would cut off.
+  test(`${name}: a row tap grows its card where the finger is — still while it fits, and only as far as needed when it doesn't`, { skip }, async () => {
+    const { ctx, page, errors } = await openPhone(get());
+    try {
+      const b = await page.locator('#plan .plan-row.tagged').boundingBox();
+      await page.touchscreen.tap(b.x + b.width * 0.4, b.y + b.height / 2);
+      await sleep(900);
+      const rowsBelowNow = () => page.evaluate(() => {
+        const g = document.querySelector('#plan .plan-grow').getBoundingClientRect().bottom;
+        return [...document.querySelectorAll('#plan .plan-row:not(.tagged):not(.earlier):not(.scattered):not(.or)')]
+          .filter((r) => r.getBoundingClientRect().top >= g - 1)
+          .map((r) => { const q = r.getBoundingClientRect(); return { key: r.dataset.stop, x: q.left + q.width * 0.4, y: q.top + 14 }; });
+      });
+      const look = (key) => page.evaluate((k) => {
+        const row = document.querySelector(`#plan .plan-row[data-stop="${CSS.escape(k)}"]`);
+        const card = document.querySelector(`#plan .plan-grow[data-stop="grow|${CSS.escape(k)}"]`);
+        const list = document.querySelector('#plan .plan-list');
+        const floor = list.getBoundingClientRect().bottom - parseFloat(getComputedStyle(list).paddingBottom);
+        return { top: row.getBoundingClientRect().top, cardBottom: card ? card.getBoundingClientRect().bottom : null, floor,
+          grown: [...document.querySelectorAll('#plan .plan-grow')].map((g) => g.dataset.stop) };
+      }, key);
+      const [near, , far] = await rowsBelowNow();
+      // The first row under the NOW card: its card fits below it.
+      const n0 = await look(near.key);
+      await page.mouse.click(near.x, near.y);
+      await sleep(900);
+      const n1 = await look(near.key);
+      assert.ok(Math.abs(n1.top - n0.top) <= 1, `the tapped row did not move: ${JSON.stringify([n0, n1])}`);
+      assert.ok(n1.cardBottom <= n1.floor + 1, 'its card is whole on screen');
+      assert.deepEqual(n1.grown.sort(), ['grow|Pier Stage|1260', `grow|${near.key}`].sort(), 'and the NOW card above stayed grown');
+      await page.mouse.click(near.x, near.y);
+      await sleep(900);
+      const n2 = await look(near.key);
+      assert.deepEqual(n2.grown, ['grow|Pier Stage|1260'], 'the same tap folds it');
+      assert.ok(Math.abs(n2.top - n0.top) <= 1, `still where it was: ${JSON.stringify([n0, n1, n2])}`);
+      // A row low in the window: its card would be cut off, so the row rises —
+      // by the card's overflow and no more.
+      const f0 = await look(far.key);
+      await page.mouse.click(far.x, far.y);
+      await sleep(900);
+      const f1 = await look(far.key);
+      assert.ok(f1.cardBottom <= f1.floor + 1, `a card near the bottom is shown whole: ${JSON.stringify(f1)}`);
+      assert.ok(f1.top <= f0.top + 1, 'the row never moves down');
+      assert.ok(Math.abs(f1.cardBottom - f1.floor) <= 2 || Math.abs(f1.top - f0.top) <= 1, `it rose just enough (its card ends at the floor): ${JSON.stringify([f0, f1])}`);
+      assert.equal((await geometry(page)).state, 'open');
+      assert.deepEqual(errors, []);
+    } finally { await ctx.close(); }
+  });
+
   test(`${name}, Reduce Motion: the settle after a drag is instant; the drag itself still follows the finger`, { skip }, async () => {
     const { ctx, page, errors } = await openPhone(get(), { reduced: true });
     try {
