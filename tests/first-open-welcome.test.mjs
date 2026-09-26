@@ -114,8 +114,9 @@ test('someone who has just joined under a new name is new: the card, in a member
   assert.equal($('dock-you').textContent, 'A');
   const box = welcome();
   assert.ok(box, 'the welcome, for someone new');
-  assert.match(box.querySelector('.bring-sub').textContent, /Tap any artist to add yours\.$/);
-  assert.ok(buttonNamed(box, 'Got it') && buttonNamed(box, 'How it works'));
+  assert.match(box.querySelector(".bring-sub").textContent, /Tap any artist to add yours\. More info$/);
+  assert.deepEqual([...box.querySelectorAll('.bring-actions button')].map((b) => b.textContent), ['Got it'], 'one door, full width');
+  assert.equal(box.querySelector('.bring-sub .welcome-more').textContent, 'More info');
   assert.equal(buttonNamed(box, 'Pick shows'), undefined, 'already joined: no door to join');
   buttonNamed(box, 'Got it').click();
   await settle(20);
@@ -127,6 +128,7 @@ test('the words: one table, a clear choice for a guest, and the crews a friend c
   const base = { crewName: 'Portola 26', festName: 'Portola' };
   const guest = welcomeCopy({ ...base, people: ['Kevin'], picked: true, guest: true });
   assert.deepEqual([guest.yes, guest.more, guest.join], [WORDS.look, WORDS.how, WORDS.join]);
+  assert.equal(guest.more, 'More info', 'the explanation’s last words (Kevin, the guest shelf round)');
   assert.deepEqual([guest.yes, guest.join], ['Look around', 'Pick shows']);
   assert.equal(guest.sub, 'Every friend has a color — the more color on a card, the more of us want to go.', 'the buttons say the choice');
   const member = welcomeCopy({ ...base, people: ['Kevin'], picked: true, guest: false });

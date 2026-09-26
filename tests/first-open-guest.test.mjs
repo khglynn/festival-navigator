@@ -5,9 +5,10 @@
 //   no "who are you?" list — with a welcome card above the dock saying what
 //   this is, once per phone;
 //
-//   a guest's first tap on an artist is the moment the name is asked (today's
-//   join screen, now saying which artist), and on join that artist becomes
-//   their pick through the ordinary pick path; "Look around" goes back;
+//   a guest's FINGER tap on a card opens it (its zoom, with "+ note" and "Pick
+//   shows"); a click, or Pick shows, asks who they are on a shelf over the
+//   wall that never moves (the guest shelf round), and on join the artist
+//   becomes their pick through the ordinary pick path; "Look around" drops it;
 //
 //   the dock's empty "you" slot is a dashed + that asks the same question;
 //
@@ -102,6 +103,19 @@ const welcome = () => document.getElementById('welcome-card');
 const cardOf = (artist) => document.querySelector(`#wall-root .card[data-artist="${artist}"]`);
 const buttonNamed = (root, label) => [...root.querySelectorAll('button')].find((b) => b.textContent === label);
 const crewWrites = (t) => writes.filter((w) => w.url.startsWith('/api/crew') && w.url.includes(t));
+// The hand behind a press (card-facts.js reads it): a mouse click asks on the
+// shelf; a finger's tap on a resting card opens its zoom first.
+const press = (el, pointerType) => el.dispatchEvent(new shell.dom.window.PointerEvent('pointerdown', { bubbles: true, pointerType }));
+const clickCard = (artist) => { const c = cardOf(artist); press(c, 'mouse'); c.click(); };
+const fingerTap = (el) => { press(el, 'touch'); el.click(); };
+// The join shelf.
+const shelf = () => document.querySelector('.join-shelf');
+const shelfLine = () => shelf().querySelector('.js-line').textContent;
+const shelfChip = (name) => [...shelf().querySelectorAll('.js-name')].find((b) => b.dataset.name === name);
+const shelfGo = () => shelf().querySelector('.js-go');
+const shelfLook = () => shelf().querySelector('.js-look');
+const typeName = (v) => { const f = shelf().querySelector('.js-field'); f.value = v; f.dispatchEvent(new shell.dom.window.Event('input')); };
+async function lookAround() { shelfLook().click(); await settle(40); }
 async function open(hash) {
   location.hash = hash;
   await settle(120);
@@ -135,44 +149,99 @@ test('the welcome card says what this is, above the dock, in C1’s words', () =
   assert.equal(box.querySelector('.micro-label').textContent, 'The Test Crew');
   assert.equal(box.querySelector('.bring-line').textContent, 'This is the crew’s plan for Portola.');
   assert.equal(box.querySelector('.bring-sub').textContent,
-    'Every friend has a color — the more color on a card, the more of us want to go.', 'one line: the buttons say the choice');
+    'Every friend has a color — the more color on a card, the more of us want to go. More info', 'one line, then the link');
   assert.equal(box.querySelectorAll('.avatar-cluster .avatar').length, 2, 'the crew, in their colours');
-  assert.ok(buttonNamed(box, 'Look around') && buttonNamed(box, 'How it works'), 'the quiet way to look, on the left');
-  const pick = buttonNamed(box, 'Pick shows');
-  assert.ok(pick, 'Kevin’s right-hand door, for a friend who already knows they want to pick');
-  assert.equal(box.querySelector('.bring-actions').lastElementChild, pick, 'after the two ways to look — the right side');
-  assert.ok(pick.classList.contains('welcome-join'));
+  const halves = [...box.querySelectorAll('.bring-actions button')].map((b) => b.textContent);
+  assert.deepEqual(halves, ['Look around', 'Pick shows'], 'two halves: the quiet way to look, then the way to pick');
+  assert.ok(box.querySelector('.bring-actions .btn-ghost').textContent === 'Look around', 'looking is the outlined one');
+  assert.ok(buttonNamed(box, 'Pick shows').classList.contains('btn-tonal'), 'picking is the filled one');
+  const more = box.querySelector('.bring-sub .welcome-more');
+  assert.ok(more, 'More info ends the explanation line');
+  assert.equal(more.textContent, 'More info');
+  assert.equal(more.tagName, 'BUTTON', 'a real button, drawn as a link');
 });
 
-test('"Pick shows" is the ordinary join, with nothing waiting — and still writes nothing', async () => {
+test('"Pick shows" on the welcome asks on the shelf, over the wall — nothing waiting, nothing written', async () => {
   buttonNamed(welcome(), 'Pick shows').click();
-  assert.deepEqual(shown(), ['screen-join']);
-  assert.equal($('join-for').style.display, 'none', 'no artist waiting');
+  await settle(10);
+  assert.deepEqual(shown(), ['screen-app'], 'the wall stays; nothing takes over the screen');
+  assert.ok(shelf(), 'the shelf is up');
+  assert.equal(shelf().id, 'artist-sheet', 'the production sheet (its id is the one every closing path knows)');
+  assert.ok(document.getElementById('sheet-backdrop'), 'the wall dimmed behind it');
+  assert.equal(shelfLine(), 'Pick shows as…', 'no artist waiting');
   assert.equal(localStorage.getItem('fn_welcome_v1'), '1', 'the welcome has been read');
-  $('join-look').click();
-  await settle(40);
-  assert.deepEqual(shown(), ['screen-app']);
-  assert.equal(welcome(), null, 'and it does not come back');
+  assert.equal(history.state && history.state.joinShelf, true, 'a history entry, so Back closes it');
+  await lookAround();
+  assert.equal(shelf(), null, 'Look around takes it down');
+  assert.equal(document.getElementById('sheet-backdrop'), null);
+  assert.equal(welcome(), null, 'and the welcome does not come back');
   assert.deepEqual(writes, []);
   // The next test reads the old storage: the welcome not yet seen.
   localStorage.removeItem('fn_welcome_v1');
 });
 
-test('a guest’s tap on an artist asks who they are, naming the artist — and still writes nothing', () => {
-  cardOf('Robyn').click();
-  assert.deepEqual(shown(), ['screen-join']);
-  assert.equal($('join-for').textContent, 'Pick Robyn as…');
-  assert.notEqual($('join-for').style.display, 'none');
-  assert.ok($('join-look'), 'with a way back');
-  assert.equal($('join-look').textContent, 'Look around', 'in the welcome card’s words');
-  assert.match($('join-people').textContent, /Kevin/, 'the crew’s names, to tap');
-  assert.equal(localStorage.getItem('fn_welcome_v1'), '1', 'asking was engaging: the welcome has done its job');
+test('a guest’s finger tap on a card opens it — + note and Pick shows inside — and writes nothing', async () => {
+  fingerTap(cardOf('Robyn'));
+  await settle(10);
+  const zoom = document.querySelector('#zoom-layer .zoom-card');
+  assert.ok(zoom, 'the card’s zoom, the view a member gets by holding');
+  assert.equal(shelf(), null, 'nothing asked yet: a tap looks');
+  const buttons = [...zoom.querySelectorAll('button')].map((b) => b.textContent);
+  assert.deepEqual(buttons, ['+ note', 'Pick shows']);
+  // (a tap taking the welcome down: first-open-tap-welcome.test.mjs, where it is up)
+  // A tap on the zoom's body does nothing for a guest: reading never asks by accident.
+  zoom.click();
+  await settle(10);
+  assert.equal(shelf(), null);
   assert.deepEqual(writes, []);
 });
 
-test('"Look around" goes back to the wall, still a guest, the welcome not coming back', async () => {
-  $('join-look').click();
-  await settle(40);
+test('with a card open, a guest finger’s tap on another card only closes it — it never opens the next one', async () => {
+  const other = cardOf('Dog Blood');
+  press(other, 'touch'); // the app's outside-press rule runs on this pointerdown
+  other.click();
+  await settle(10);
+  assert.equal(document.querySelector('#zoom-layer .zoom-card'), null, 'closed');
+  assert.equal(shelf(), null, 'and nothing asked');
+  fingerTap(cardOf('Robyn')); // the next tap opens again
+  await settle(10);
+  assert.ok(document.querySelector('#zoom-layer .zoom-card'), 'a fresh tap opens a card');
+});
+
+test('Pick shows in the zoom asks on the shelf, naming the artist; the zoom goes back into its card', async () => {
+  const pick = document.querySelector('#zoom-layer .f-pick');
+  pick.dispatchEvent(new shell.dom.window.MouseEvent('mousedown', { bubbles: true })); // a real press on the overlay
+  pick.click();
+  await settle(10);
+  const { recent } = await import('../js/errlog.js');
+  assert.ok(!recent().some((r) => JSON.stringify(r).includes('zoom-close-after-click')),
+    'a close that IS the press’s purpose is not journaled as a surprise (the false report the design rig found)');
+  assert.equal(document.querySelector('#zoom-layer .zoom-card'), null, 'the zoom is put away');
+  assert.ok(shelf());
+  assert.equal(shelfLine(), 'Pick Robyn as…');
+  assert.deepEqual([...shelf().querySelectorAll('.js-name')].map((b) => b.dataset.name), ['Kevin', 'Maya'], 'the crew’s names, to tap');
+  assert.equal(shelfGo().textContent, 'Join');
+  assert.equal(shelfGo().disabled, true, 'nothing chosen: nothing to answer');
+  assert.equal(shelfLook().textContent, 'Look around', 'in the welcome card’s words');
+});
+
+test('claiming takes two taps: the name, then "I’m Maya" — and a typed name reads as what it will do', () => {
+  shelfChip('Maya').click();
+  assert.equal(shelfGo().textContent, 'I’m Maya');
+  assert.equal(shelfChip('Maya').getAttribute('aria-pressed'), 'true');
+  assert.ok(shelfChip('Kevin').classList.contains('off'), 'the others step back');
+  assert.equal(crew.me(GUEST), null, 'a tap on a name claims nothing on its own');
+  typeName('Sam');
+  assert.equal(shelfGo().textContent, 'Join as Sam', 'a new name');
+  typeName('maya');
+  assert.equal(shelfGo().textContent, 'I’m Maya', 'an existing name, any capitalisation, is a claim');
+  assert.ok(shelfChip('Maya').classList.contains('on'));
+  assert.deepEqual(writes, []);
+});
+
+test('"Look around" drops the question — still a guest, the wall unchanged, nothing written', async () => {
+  await lookAround();
+  assert.equal(shelf(), null);
   assert.deepEqual(shown(), ['screen-app']);
   assert.equal(crew.me(GUEST), null);
   assert.equal(welcome(), null, 'read once, gone');
@@ -180,12 +249,23 @@ test('"Look around" goes back to the wall, still a guest, the welcome not coming
   assert.deepEqual(writes, []);
 });
 
-test('the dashed + opens the same question, with no artist waiting', async () => {
+test('the dashed + opens the same shelf, with no artist waiting', async () => {
   $('dock-you').click();
-  assert.deepEqual(shown(), ['screen-join']);
-  assert.equal($('join-for').style.display, 'none', 'no "Pick … as" without a tap');
-  $('join-look').click();
-  await settle(40);
+  await settle(10);
+  assert.ok(shelf());
+  assert.equal(shelfLine(), 'Pick shows as…');
+  await lookAround();
+  assert.equal(shelf(), null);
+});
+
+test('the system Back takes the shelf down', async () => {
+  clickCard('Robyn');
+  await settle(10);
+  assert.ok(shelf(), 'a click (desktop) asks on the shelf directly');
+  assert.equal(shelfLine(), 'Pick Robyn as…');
+  history.back();
+  await settle(60);
+  assert.equal(shelf(), null, 'Back closes it, rather than leaving the app');
   assert.deepEqual(shown(), ['screen-app']);
 });
 
@@ -202,11 +282,10 @@ test('a notes sheet, as a guest: read-only, with the door in where the composer 
   assert.equal(door.textContent, 'Add yourself to write a note');
   door.click();
   await settle(20);
-  assert.deepEqual(shown(), ['screen-join']);
-  assert.equal(document.getElementById('artist-sheet'), null, 'the sheet went with the wall');
-  assert.equal($('join-for').style.display, 'none');
-  $('join-look').click();
-  await settle(40);
+  assert.ok(shelf(), 'the shelf, in the notes sheet’s place');
+  assert.equal(document.querySelectorAll('.sheet').length, 1, 'one sheet at a time');
+  assert.equal(shelfLine(), 'Pick shows as…');
+  await lookAround();
   assert.deepEqual(shown(), ['screen-app']);
   assert.deepEqual(writes, []);
 });
@@ -225,20 +304,24 @@ test('Settings, as a guest: no door writes into the crew, and You says how to jo
   assert.ok(buttonNamed(root, 'How it works') || [...root.querySelectorAll('.row-title')].some((t) => t.textContent === 'How it works'));
   buttonNamed(root, 'Add yourself').click();
   await settle(20);
-  assert.deepEqual(shown(), ['screen-join'], 'the same join screen');
-  $('join-look').click();
-  await settle(40);
-  assert.deepEqual(shown(), ['screen-app'], '"Look around" comes back to the wall, not to Settings');
+  assert.deepEqual(shown(), ['screen-app'], 'back on the wall');
+  assert.ok(shelf(), 'with the same shelf over it');
+  await lookAround();
+  assert.deepEqual(shown(), ['screen-app'], '"Look around" leaves the wall, not Settings');
   assert.deepEqual(writes, []);
 });
 
 test('joining from a tap: one POST for the person, and the tapped artist is their first pick', async () => {
-  cardOf('Kettama').click();
-  assert.equal($('join-for').textContent, 'Pick Kettama as…');
-  $('join-name-input').value = 'Sam';
-  $('join-add-btn').click();
+  fingerTap(cardOf('Kettama'));
+  await settle(10);
+  document.querySelector('#zoom-layer .f-pick').click();
+  await settle(10);
+  assert.equal(shelfLine(), 'Pick Kettama as…');
+  typeName('Sam');
+  shelfGo().click();
   await settle(160);
   assert.deepEqual(shown(), ['screen-app']);
+  assert.equal(shelf(), null, 'the shelf went back down');
   assert.equal(crew.me(GUEST), 'Sam');
   const joins = crewWrites(GUEST);
   assert.ok(joins.length >= 1);
@@ -264,9 +347,10 @@ test('tapping your own name in keeps what you had: a pick already there is never
   await open(`#g=${CLAIM}`);
   assert.deepEqual(shown(), ['screen-app'], 'a crew this phone’s person is not in: a guest again');
   assert.equal(crew.me(CLAIM), null);
-  cardOf('Robyn').click();
-  const kevin = [...$('join-people').querySelectorAll('button')].find((b) => /Kevin/.test(b.textContent));
-  kevin.click();
+  clickCard('Robyn');
+  await settle(10);
+  shelfChip('Kevin').click();
+  shelfGo().click(); // "I'm Kevin"
   await settle(160);
   assert.equal(crew.me(CLAIM), 'Kevin');
   assert.equal(state.crewDoc.festivals[FID].selections.Robyn.Kevin, 2, 'Kevin’s 2 stays a 2 — the waiting tap never cycles it');
@@ -289,11 +373,12 @@ test('a guest shares the link it holds, and never stamps the crew’s invite fes
 test('a crew with nobody in it: the wall, and a tap asks for a first name', async () => {
   await open(`#g=${EMPTY}&f=${FID}`);
   assert.deepEqual(shown(), ['screen-app']);
-  cardOf('Robyn').click();
-  assert.deepEqual(shown(), ['screen-join']);
-  assert.equal($('join-people').children.length, 0, 'no names to tap — just the new-name field');
-  $('join-look').click();
-  await settle(40);
+  clickCard('Robyn');
+  await settle(10);
+  assert.ok(shelf());
+  assert.equal(shelf().querySelectorAll('.js-name').length, 0, 'no names to tap — just the new-name field');
+  assert.equal(shelf().querySelector('.js-names-wrap').hidden, true);
+  await lookAround();
   assert.deepEqual(crewWrites(EMPTY), []);
 });
 
@@ -318,12 +403,14 @@ test('a guest with no festival in the link or the crew lands where the crew is �
   assert.equal(state.activeFestivalId, 'acl-2026');
   assert.equal(state.pendingChanges.festivals, undefined, 'no festival membership queued');
   assert.deepEqual(crewWrites(ACLONLY), [], 'nothing sent to the crew at all');
-  // And a tap asks in that festival's name, not a stamp's or a default's.
-  document.querySelector('#wall-root .card[data-artist]').click();
-  assert.deepEqual(shown(), ['screen-join']);
-  assert.match($('join-fest-name').textContent, /^ACL/);
-  $('join-look').click();
-  await settle(40);
+  // And a tap asks over THIS festival's wall.
+  const first = document.querySelector('#wall-root .card[data-artist]');
+  press(first, 'mouse');
+  first.click();
+  await settle(10);
+  assert.ok(shelf());
+  assert.equal(state.activeFestivalId, 'acl-2026', 'the wall under the shelf is still ACL');
+  await lookAround();
 });
 
 test('a guest never asks for a legacy crew’s one-shot migration — that is a write; joining runs it', async () => {
@@ -378,16 +465,19 @@ test('a guest on a crew without the link’s festival row renders it and records
 
 test('one answer at a time: a slow join is not overtaken by a tap on someone else’s name', async () => {
   await open(`#g=${SLOW}&f=${FID}`);
-  cardOf('Robyn').click();
-  assert.equal($('join-for').textContent, 'Pick Robyn as…');
-  $('join-name-input').value = 'Sam';
-  $('join-add-btn').click(); // the POST takes 400 ms
+  clickCard('Robyn');
+  await settle(10);
+  assert.equal(shelfLine(), 'Pick Robyn as…');
+  typeName('Sam');
+  shelfGo().click(); // the POST takes 400 ms
   await settle(20);
-  const kevin = [...$('join-people').querySelectorAll('button')].find((b) => /Kevin/.test(b.textContent));
+  const kevin = shelfChip('Kevin');
   assert.equal(kevin.disabled, true, 'every other answer waits');
-  assert.equal($('join-look').disabled, true);
+  assert.equal(shelfLook().disabled, true);
+  assert.equal(shelfGo().disabled, true);
   kevin.click();
-  $('join-add-btn').click();
+  shelfGo().click();
+  document.getElementById('sheet-backdrop').click(); // the dimmed wall does not drop a settling answer either
   await settle(700);
   assert.equal(crew.me(SLOW), 'Sam', 'the answer that was given');
   const robyn = state.crewDoc.festivals[FID].selections.Robyn || {};
@@ -400,9 +490,10 @@ test('the promised pick waits for a legacy crew’s update — kept, not dropped
   await open(`#g=${MIGR}&f=${FID}`);
   assert.deepEqual(shown(), ['screen-app']);
   assert.deepEqual(crewWrites(MIGR), [], 'a guest never asks for the update');
-  cardOf('Robyn').click();
-  $('join-name-input').value = 'Tia';
-  $('join-add-btn').click();
+  clickCard('Robyn');
+  await settle(10);
+  typeName('Tia');
+  shelfGo().click();
   await settle(200);
   assert.equal(crew.me(MIGR), 'Tia');
   assert.ok(crewWrites(MIGR).some((w) => /op=migrate/.test(w.url)), 'the member asks for the update — and it fails');

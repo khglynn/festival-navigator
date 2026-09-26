@@ -85,6 +85,16 @@ const SCREENS = ['screen-landing', 'screen-join', 'screen-create', 'screen-app',
 const shownScreens = () => SCREENS.filter((id) => $(id).style.display !== 'none');
 const crewWrites = (t) => writes.filter((w) => w.url.startsWith('/api/crew') && w.url.includes(t));
 async function open(hash) { location.hash = hash; await settle(160); }
+// The join shelf (a guest is asked over the wall).
+const shelf = () => document.querySelector('.join-shelf');
+const shelfChip = (name) => [...shelf().querySelectorAll('.js-name')].find((b) => b.dataset.name === name);
+const shelfGo = () => shelf().querySelector('.js-go');
+const typeName = (v) => { const f = shelf().querySelector('.js-field'); f.value = v; f.dispatchEvent(new shell.dom.window.Event('input')); };
+const clickCard = (artist) => {
+  const c = cardOf(artist);
+  c.dispatchEvent(new shell.dom.window.PointerEvent('pointerdown', { bubbles: true, pointerType: 'mouse' }));
+  c.click();
+};
 
 await settle(160);
 
@@ -111,16 +121,18 @@ test('a member whose storage reads start failing after the wall painted keeps th
 test('an offline join is entered with the doors held — no second answer takes the promised pick', async () => {
   await open(`#g=${OFFL}&f=${FID}`);
   assert.equal(crew.me(OFFL), null, 'a guest');
-  cardOf('Robyn').click();
-  assert.notEqual($('screen-join').style.display, 'none', 'the question is up');
-  $('join-name-input').value = 'Sam';
+  clickCard('Robyn');
+  await settle(10);
+  assert.ok(shelf(), 'the question is up');
+  typeName('Sam');
   slowEntry = true;
-  $('join-add-btn').click(); // the POST fails at once; entry takes ~300 ms
+  shelfGo().click(); // the POST fails at once; entry takes ~300 ms
   await settle(60);
-  assert.notEqual($('screen-join').style.display, 'none', 'still entering');
-  const kevin = [...$('join-people').querySelectorAll('button')].find((b) => /Kevin/.test(b.textContent));
+  assert.ok(shelf(), 'still entering');
+  const kevin = shelfChip('Kevin');
   assert.equal(kevin.disabled, true, 'still held while the offline entry runs');
   kevin.click();
+  shelfGo().click();
   await settle(600);
   slowEntry = false;
   assert.equal(crew.me(OFFL), 'Sam');
@@ -132,13 +144,15 @@ test('an offline join is entered with the doors held — no second answer takes 
 
 test('a join that never answers is let go at the deadline: the doors open and the person is in on this phone', async () => {
   await open(`#g=${HANG}&f=${FID}`);
-  cardOf('Robyn').click();
-  $('join-name-input').value = 'Tia';
-  $('join-add-btn').click();
+  clickCard('Robyn');
+  await settle(10);
+  typeName('Tia');
+  const go = shelfGo();
+  go.click();
   await settle(200);
-  assert.equal($('join-add-btn').disabled, true, 'waiting on the answer');
+  assert.equal(go.disabled, true, 'waiting on the answer');
   await settle(12500); // JOIN_DEADLINE_MS (12 s) and a beat
-  assert.equal($('join-add-btn').disabled, false, 'never held shut for good');
+  assert.equal(shelf(), null, 'never held shut for good: the shelf went down and the wall is theirs');
   assert.equal(crew.me(HANG), 'Tia', 'in on this phone');
   assert.equal(state.crewDoc.festivals[FID].selections.Robyn.Tia, 1, 'with Robyn, as promised');
   assert.match($('toast-root').textContent, /You’re in on this phone/);
