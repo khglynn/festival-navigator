@@ -1984,7 +1984,26 @@ function settleMenuExit() {
   x.anim.onfinish = null;
   x.anim.oncancel = null;
   try { x.anim.cancel(); } catch { /* already done */ }
+  x.unguard();
   hideShowMenu(x.pop, x.bar);
+}
+
+// The fade's footprint eats taps (2026-09-26, after the tap change): with the
+// rows gone quiet, a quick second tap where a row had been fell through to
+// the card beneath — which now opens its shelf — so the place the menu is
+// still visibly leaving from takes no tap at all until it has gone.
+function guardFade(pop) {
+  const r = pop.getBoundingClientRect();
+  if (!r.width || !r.height) return () => {}; // nothing drawn, nothing to guard
+  const door = pop.parentElement; // the menu's own wrap: its door reopens it, never eaten
+  const eat = (e) => {
+    if (door && e.target instanceof Node && door.contains(e.target) && !pop.contains(e.target)) return;
+    if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) return;
+    e.preventDefault();
+    e.stopPropagation();
+  };
+  document.addEventListener('click', eat, true);
+  return () => document.removeEventListener('click', eat, true);
 }
 
 function closeShowMenu({ instant = false } = {}) {
@@ -2011,9 +2030,9 @@ function closeShowMenu({ instant = false } = {}) {
   if (instant || !canAnimate(pop, ctx)) { hideShowMenu(pop, bar); return; }
   const anim = pop.animate([{ opacity: 1, transform: 'translateY(0)' }, { opacity: 0, transform: 'translateY(4px)' }],
     { duration: OUT_MS, easing: EASE_LEAVE });
-  const exit = { pop, bar, anim };
+  const exit = { pop, bar, anim, unguard: guardFade(pop) };
   menuExit = exit;
-  const done = () => { if (menuExit !== exit) return; menuExit = null; hideShowMenu(pop, bar); };
+  const done = () => { if (menuExit !== exit) return; menuExit = null; exit.unguard(); hideShowMenu(pop, bar); };
   anim.onfinish = done;
   anim.oncancel = done;
 }
