@@ -2086,6 +2086,7 @@ function pillCap(wrap, row, n) {
 function openHighlight(wrap) {
   const you = wrap.querySelector(':scope > .you-avatar');
   const from = faceRects(wrap); // opened from the pill: the faces travel back up
+  refreshCtx(); // the crew as it is now: someone who left has no row, and their highlight is let go
   paintHighlight();
   const pop = hlPop(wrap);
   if (!you || !pop) return;
