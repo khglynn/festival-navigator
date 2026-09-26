@@ -409,10 +409,29 @@ export function planOf(fest, { picks = {}, members = [], folded = [] } = {}) {
   const doubled = new Set([...plays].filter(([, list]) => new Set(list.map((o) => o.play)).size > 1).map(([name]) => name));
   const playsAt = new Map([...plays].filter(([name]) => doubled.has(name)));
 
-  // A night with nothing shown on it is not a night in the plan (the wall has
-  // no tab for it either).
-  const nights = ordered.filter((n) => n.places.some((p) => p.shown))
-    .map((n) => ({ id: n.id, iso: n.iso, wd: n.wd, days: n.days, extraKeys: [...new Set(n.extraKeys)] }));
+  // The nights are the dates the SHOWN wall has a timetable or a room on —
+  // a grid day, a section's night, a dated extra's date, the fold applied —
+  // whether or not anything there is on a clock (ACL's Late nights print
+  // doors only: the date is a night with no stops, and says so, rather than
+  // vanishing). A lineup's billing day is not a night (no grid, no rooms:
+  // nothing to be at), and a date whose every room is hidden is not a night
+  // (the wall has no tab for it either).
+  const shownDays = new Map();
+  const shownExtras = new Map();
+  for (const d of shown.model.days) {
+    if (!((shown.festRoom && d.grid) || shown.model.sections.some((s) => s.byDay.has(d.key)))) continue;
+    const id = d.iso || d.key;
+    if (!shownDays.has(id)) shownDays.set(id, []);
+    shownDays.get(id).push(d);
+  }
+  for (const e of shown.model.extras) {
+    for (const iso of (e.byDate ? e.byDate.keys() : [])) {
+      if (!shownExtras.has(iso)) shownExtras.set(iso, []);
+      shownExtras.get(iso).push(e.key);
+    }
+  }
+  const nights = ordered.filter((n) => shownDays.has(n.id) || shownExtras.has(n.id))
+    .map((n) => ({ id: n.id, iso: n.iso, wd: n.wd, days: shownDays.get(n.id) || [], extraKeys: shownExtras.get(n.id) || [] }));
   const listed = new Set(nights.map((n) => n.id));
   const memo = new Map();
   const night = (id) => {
