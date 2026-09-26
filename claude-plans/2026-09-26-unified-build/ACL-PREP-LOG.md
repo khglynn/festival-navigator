@@ -250,7 +250,7 @@ states an end time, would do it; general "festival hours" should not).
 ## Commits
 
 1. `9c18ce9` — freeze pick keys, start this log.
-2. (this step) — `order` + printed/guessed `time`/`close` on all 66 Late
+2. `1cf5808` — `order` + printed/guessed `time`/`close` on all 66 Late
    nights entries; 12 new venue registry entries in
    `data/venues/index.json`.
 
