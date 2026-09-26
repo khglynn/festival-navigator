@@ -722,3 +722,21 @@ test('the menu gained Zed in place, and a crew-mate who left is gone from it and
   row('Zed').click();
   await closeMenu();
 });
+
+test('closing the Invite sheet after an add hands focus back to + Invite someone — the chip the add redrew, never the page', async () => {
+  const chip = () => document.querySelector('.person-chip.add');
+  const opener = chip();
+  assert.ok(opener, 'the people row’s + Invite someone');
+  opener.focus();
+  opener.click();
+  await settle(20);
+  const sheet = document.querySelector('#artist-sheet.invite-sheet');
+  sheet.querySelector('.inv-name input').value = 'Yan';
+  sheet.querySelector('.inv-add').click();
+  await until(() => /YAN IS IN/.test(document.querySelector('#artist-sheet .sheet-title')?.textContent || ''), 'Yan’s answer');
+  await until(() => state.people().Yan && chip() !== opener, 'the poll brings Yan and the row is redrawn');
+  assert.equal(opener.isConnected, false, 'the chip that opened the sheet is gone');
+  escape();
+  await sheetClosed();
+  assert.equal(document.activeElement, chip(), 'focus lands on the new + Invite someone, not <body>');
+});

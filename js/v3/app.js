@@ -1145,6 +1145,7 @@ function renderPersonChips() {
     add.className = 'person-chip add';
     add.textContent = '+ Invite someone';
     add.setAttribute('aria-label', 'Invite someone to the crew');
+    add.dataset.restore = 'invite'; // redrawn when an add lands: focus finds the new one (notes.js)
     add.style.cursor = 'pointer';
     add.addEventListener('click', () => { openAddMember(); router.push('sheet:add-member'); });
     row.appendChild(add);
