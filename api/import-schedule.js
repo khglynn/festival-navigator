@@ -105,7 +105,10 @@ const clean = (v, max) => {
 export function shapeRead(parsed) {
   if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null;
   const items = [];
-  for (const it of Array.isArray(parsed.items) ? parsed.items : []) {
+  // A model that says "not a schedule" and lists names anyway (a lineup
+  // poster, a flyer) is taken at its word: nothing to import.
+  const listed = parsed.isSchedule === false ? [] : (Array.isArray(parsed.items) ? parsed.items : []);
+  for (const it of listed) {
     if (!it || typeof it !== 'object') continue;
     const name = clean(it.name, 120);
     if (!name) continue;

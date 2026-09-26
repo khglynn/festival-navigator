@@ -1535,6 +1535,8 @@ a.f-link:hover { border-bottom-color: rgba(255, 255, 255, .75); }
                               color: var(--text-header); line-height: 1.1; }
 .import-sheet .imp-shot-n.err { color: var(--danger); }
 .import-sheet .imp-shots-note:empty { display: none; }
+/* Heard, not seen: what each read found, for a screen reader. */
+.import-sheet .imp-heard { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 /* The days: each one's head, its cards (the wall's own, --col-w wide), and
  * the lines under it. */
 .import-sheet .imp-days { display: flex; flex-direction: column; gap: 20px; }

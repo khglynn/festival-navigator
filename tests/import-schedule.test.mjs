@@ -174,6 +174,7 @@ test('the model\'s answer is data: shaped, cleaned, capped', () => {
   const many = shapeRead({ items: Array.from({ length: 200 }, (_, i) => ({ name: `A${i}` })) });
   assert.equal(many.items.length, 60);
   assert.deepEqual(shapeRead({ isSchedule: false, items: [] }), { festival: null, day: null, items: [] });
+  assert.deepEqual(shapeRead({ isSchedule: false, day: 'Saturday', items: [{ name: 'Robyn' }] }).items, [], 'not a schedule: its names are not imported');
 });
 
 // ---- guard.mjs callGemini: the text-only request is unchanged -----------------

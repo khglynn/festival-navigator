@@ -292,3 +292,32 @@ test('Chromium: a failed read is its own retry; closing the sheet writes nothing
     assert.deepEqual(errors, []);
   } finally { await ctx.close(); }
 });
+
+// The review's P2 (2026-09-26): taking the sheet down while an image is
+// being read must stop the upload, not let it run on to the model.
+test('Chromium: the ✕ mid-read cancels the upload, and nothing is written', { skip: chromium ? false : NO_BROWSER }, async () => {
+  const { ctx, page, errors, writes, reader } = await memberPhone(chromium);
+  try {
+    const failed = [];
+    page.on('requestfailed', (r) => { if (r.url().includes('/api/import-schedule')) failed.push(r.failure() && r.failure().errorText); });
+    let release;
+    reader.hold = new Promise((r) => { release = r; });
+    await tapSel(page, '#gear-btn');
+    await page.waitForSelector('#settings-main', { state: 'visible' });
+    const row = page.locator('#settings-main .list-row', { hasText: 'Import from the Portola app' });
+    await row.scrollIntoViewIfNeeded();
+    await tapAt(page, await row.boundingBox());
+    await page.waitForSelector('.import-sheet');
+    await page.setInputFiles('.import-sheet .imp-input', [{ name: 'sun.jpg', mimeType: 'image/jpeg', buffer: SUN_IMG }]);
+    await page.waitForSelector('.import-sheet .imp-shot[data-state="reading"]');
+    await sleep(300); // the request is out and held
+    await tapSel(page, '.import-sheet .sheet-close');
+    await page.waitForSelector('.import-sheet', { state: 'detached', timeout: 4000 });
+    for (let i = 0; i < 30 && !failed.length; i++) await sleep(100);
+    release();
+    assert.equal(failed.length, 1, 'the upload was cancelled');
+    await sleep(1600);
+    assert.equal(writes.length, 0);
+    assert.deepEqual(errors, []);
+  } finally { await ctx.close(); }
+});

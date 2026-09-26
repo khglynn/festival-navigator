@@ -1953,7 +1953,8 @@ function openImport() {
   openImportSheet({
     ctx, fest, token, me,
     // Only ever the person importing, and only on the festival it opened on.
-    record: (name, level) => (ctx.fid === fid && ctx.meName === me ? recordToolPick(name, me, level) : false),
+    record: (name, level) => (state.getCrewToken() === token && state.activeFestivalId === fid && ctx.fid === fid && ctx.meName === me
+      ? recordToolPick(name, me, level) : false),
     close: () => { if (!router.requestClose()) closeSheet(); },
     done: (n, { stay = false, first = null } = {}) => {
       sync.scheduleSync();
@@ -1974,11 +1975,18 @@ function openImport() {
         // scroll event — it runs before the frame paints, so the top of the
         // wall is never shown — with a timer behind it for an engine that
         // restores nothing.
-        window.addEventListener('popstate', () => {
-          const once = () => land();
+        // One landing, never two (a second would yank someone already
+        // scrolling), and a listener that outlives a traversal that never
+        // came is dropped rather than left for some later Back.
+        let timer = 0;
+        const once = () => { clearTimeout(timer); land(); };
+        const onPop = () => {
+          clearTimeout(forget);
           window.addEventListener('scroll', once, { once: true, passive: true });
-          setTimeout(() => { window.removeEventListener('scroll', once); land(); }, 350);
-        }, { once: true });
+          timer = setTimeout(() => { window.removeEventListener('scroll', once); land(); }, 350);
+        };
+        const forget = setTimeout(() => window.removeEventListener('popstate', onPop), 1500);
+        window.addEventListener('popstate', onPop, { once: true });
         history.go(-depth);
       } else { closeSheet(); if ($('screen-settings').style.display !== 'none') closeSettings(); else repaintWall(); land(); }
       showToast($('toast-root'), `Added ${n} pick${n === 1 ? '' : 's'} from your ${fest.name} schedule.`, 5000);

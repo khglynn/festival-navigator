@@ -30,7 +30,7 @@ import { record } from '../errlog.js';
 
 const MAX_IMAGES = 8;          // a festival is a few days; this is a quota guard, not a design
 const MAX_W = 1080;            // the export's own width: sharp enough to read, small to send
-const MAX_H = 4096;            // a long scrolling screenshot keeps its width
+const MAX_H = 4096;            // a long scrolling screenshot is kept under iOS's canvas ceiling
 const JPEG_QUALITY = 0.85;
 const MAX_SEND_BYTES = 3 * 1024 * 1024; // api/import-schedule.js MAX_IMAGE_BYTES
 const READ_TIMEOUT_MS = 45000; // an upload on one bar plus ~6 s of reading
@@ -77,28 +77,37 @@ export async function imagePayload(file) {
   try { src = await decode(file); } catch { src = null; }
   const w = src ? (src.width || src.naturalWidth || 0) : 0;
   const h = src ? (src.height || src.naturalHeight || 0) : 0;
+  // A decoded bitmap holds its pixels until closed — on every path, or iOS's
+  // image memory runs out a few imports in.
+  const release = () => { if (src && typeof src.close === 'function') { try { src.close(); } catch { /* closed */ } } };
   if (w > 0 && h > 0) {
     const k = Math.min(1, MAX_W / w, MAX_H / h);
     const canvas = document.createElement('canvas');
     canvas.width = Math.max(1, Math.round(w * k));
     canvas.height = Math.max(1, Math.round(h * k));
     const g = canvas.getContext('2d');
+    let blob = null;
     if (g) {
       g.drawImage(src, 0, 0, canvas.width, canvas.height);
-      if (typeof src.close === 'function') src.close();
-      const blob = await new Promise((resolve) => {
+      release();
+      blob = await new Promise((resolve) => {
         try { canvas.toBlob((b) => resolve(b), 'image/jpeg', JPEG_QUALITY); } catch { resolve(null); }
       });
-      if (blob && blob.size) return dataUrlOf(blob);
     }
-  }
+    release();
+    canvas.width = 0; // hand the canvas's memory back now (iOS counts it until GC)
+    canvas.height = 0;
+    if (blob && blob.size) return dataUrlOf(blob);
+  } else release();
   if (/^image\/(jpeg|png|webp|heic|heif)$/.test(file.type || '') && file.size <= MAX_SEND_BYTES) return dataUrlOf(file);
   throw Object.assign(new Error('unreadable image'), { code: 'decode' });
 }
 
 // One image to the reader. Resolves {read} or {error: <code>}; never throws.
+// The ones a tap can fix by trying again; the rest need something else.
+const RETRY = new Set(['offline', 'slow', 'busy', 'failed']);
 const ERRORS = {
-  offline: 'Needs signal',
+  offline: 'No signal — tap to retry',
   stay: 'Stay offline is on',
   decode: 'Can’t open this image',
   big: 'Too big to send',
@@ -107,13 +116,27 @@ const ERRORS = {
   busy: 'Busy — tap to retry',
   failed: 'Couldn’t read — tap to retry',
 };
-export async function readImage(file, token, { fetchImpl = (...a) => fetch(...a) } = {}) {
+// `signal`: the sheet's own — its close cancels the upload mid-flight.
+export async function readImage(file, token, { fetchImpl = (...a) => fetch(...a), signal = null } = {}) {
   if (appSettings().stayOffline) return { error: 'stay' };
   if (typeof navigator !== 'undefined' && navigator.onLine === false) return { error: 'offline' };
-  let image;
-  try { image = await imagePayload(file); } catch (e) { return { error: e && e.code === 'decode' ? 'decode' : 'failed' }; }
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), READ_TIMEOUT_MS);
+  const stop = () => ctrl.abort();
+  if (signal) { if (signal.aborted) stop(); else signal.addEventListener('abort', stop, { once: true }); }
+  // The shrinking is inside the same clock as the upload: a decode or a
+  // toBlob that never calls back must not leave a tile reading forever.
+  let image;
+  try {
+    image = await Promise.race([
+      imagePayload(file),
+      new Promise((_, reject) => ctrl.signal.addEventListener('abort', () => reject(Object.assign(new Error('aborted'), { name: 'AbortError' })), { once: true })),
+    ]);
+  } catch (e) {
+    clearTimeout(timer);
+    if (signal) signal.removeEventListener('abort', stop);
+    return { error: e && e.code === 'decode' ? 'decode' : (e && e.name === 'AbortError' ? 'slow' : 'failed') };
+  }
   try {
     const res = await fetchImpl('/api/import-schedule', {
       method: 'POST',
@@ -136,6 +159,7 @@ export async function readImage(file, token, { fetchImpl = (...a) => fetch(...a)
     return { error: e && e.name === 'AbortError' ? 'slow' : 'failed' };
   } finally {
     clearTimeout(timer);
+    if (signal) signal.removeEventListener('abort', stop);
   }
 }
 
@@ -144,7 +168,10 @@ export async function readImage(file, token, { fetchImpl = (...a) => fetch(...a)
 //         read? (tests pass a stub reader) }
 export function openImportSheet(opts) {
   const { ctx, fest, token, me } = opts;
-  const readOne = opts.read || ((file) => readImage(file, token));
+  // One controller per sheet: however the sheet goes (✕, Back, the backdrop,
+  // a crew switch), its reads stop uploading and its previews are released.
+  const life = new AbortController();
+  const readOne = opts.read || ((file) => readImage(file, token, { signal: life.signal }));
   const index = lineupIndex(fest);
   const festDays = Object.keys(fest.days || {});
   // The picks you had when the sheet opened, by name; re-read at Add.
@@ -166,6 +193,7 @@ export function openImportSheet(opts) {
   // two images (Despacio plays both days) is one pick and one level.
   const levels = new Map();
   let closed = false;
+  let undated = 0;
   let queue = [];
   let running = 0;
 
@@ -174,6 +202,8 @@ export function openImportSheet(opts) {
   const backdrop = el('div', 'sheet-backdrop');
   backdrop.id = 'sheet-backdrop';
   backdrop.addEventListener('click', () => opts.close());
+  // A file dropped just off the sheet must not navigate the app away to it.
+  for (const t of ['dragover', 'drop']) backdrop.addEventListener(t, (e) => e.preventDefault());
   const sheet = el('div', 'sheet import-sheet');
   sheet.id = 'artist-sheet'; // closeSheet + the router's sheet kind own this id
   sheet.dataset.import = 'choose';
@@ -192,7 +222,6 @@ export function openImportSheet(opts) {
   // The row of images, and the dashed "+" that asks for more. Before the
   // first choice the "+" is the whole width: the one thing to do here.
   const shotsRow = el('div', 'imp-shots');
-  shotsRow.setAttribute('role', 'list');
   const add = el('button', 'imp-add');
   add.type = 'button';
   const addGlyph = el('span', 'imp-add-glyph', '+');
@@ -205,6 +234,9 @@ export function openImportSheet(opts) {
 
   const shotsNote = el('div', 'imp-note imp-shots-note');
   shotsNote.setAttribute('aria-live', 'polite');
+  // What each read found, said once to a screen reader (the tiles say it by eye).
+  const heard = el('div', 'imp-heard');
+  heard.setAttribute('aria-live', 'polite');
   const days = el('div', 'imp-days');
   const foot = el('div', 'imp-foot');
   const go = el('button', 'btn-tonal imp-go');
@@ -213,9 +245,15 @@ export function openImportSheet(opts) {
   const status = el('div', 'imp-status');
   status.setAttribute('aria-live', 'polite');
   foot.append(status, go);
-  sheet.append(lede, input, shotsRow, shotsNote, days, foot);
+  sheet.append(lede, input, shotsRow, shotsNote, heard, days, foot);
   dialogize(sheet, `Import from the ${fest.name} app`);
   document.body.append(backdrop, sheet);
+  // Noticed from here, whoever takes the sheet down (closeSheet has one
+  // teardown for every sheet): the body loses it, and the import ends.
+  const watch = typeof window.MutationObserver === 'function'
+    ? new window.MutationObserver(() => { if (!sheet.isConnected) end(); })
+    : null;
+  if (watch) watch.observe(document.body, { childList: true });
 
   // Drop images on the sheet (a laptop): the same as choosing them.
   sheet.addEventListener('dragover', (e) => { if (e.dataTransfer && [...(e.dataTransfer.types || [])].includes('Files')) e.preventDefault(); });
@@ -268,16 +306,28 @@ export function openImportSheet(opts) {
   // The instruction has done its job once images are chosen: the images
   // themselves say what this is now. It goes quick and plain, closing its
   // space rather than leaving a hole (nothing vanishes in place).
+  // Transforms and opacity only: the line steps out of the flow at once,
+  // a copy of it fades where it stood, and what was under it slides up into
+  // the room it left (the meter's own leaving pattern, wall.js meterLeaves).
   function ledeLeaves() {
     if (!lede.isConnected) return;
     if (!canAnimate(lede, ctx)) { lede.remove(); return; }
-    const h = lede.getBoundingClientRect().height;
-    const out = lede.animate([
-      { opacity: 1, height: `${h}px`, marginBottom: '0px' },
-      { opacity: 0, height: '0px', marginBottom: '-12px' },
-    ], { duration: OUT_MS, easing: EASE_SURFACE, fill: 'forwards' });
+    const top = lede.offsetTop;
+    const left = lede.offsetLeft;
+    const width = lede.offsetWidth;
+    const below = [shotsRow, shotsNote, heard, days].filter((n) => n.isConnected);
+    const was = new Map(below.map((n) => [n, n.getBoundingClientRect().top]));
+    const ghost = lede.cloneNode(true);
+    ghost.setAttribute('aria-hidden', 'true');
+    ghost.style.cssText = `position: absolute; top: ${top}px; left: ${left}px; width: ${width}px; pointer-events: none;`;
+    lede.replaceWith(ghost);
+    for (const n of below) {
+      const dy = was.get(n) - n.getBoundingClientRect().top;
+      if (Math.abs(dy) > 0.5) n.animate([{ transform: `translateY(${dy}px)` }, { transform: 'none' }], { duration: GROW_MS, easing: EASE_ARRIVE });
+    }
+    const out = ghost.animate([{ opacity: 1 }, { opacity: 0 }], { duration: OUT_MS, easing: EASE_SURFACE, fill: 'forwards' });
     let gone = false;
-    const finish = () => { if (!gone) { gone = true; lede.remove(); } };
+    const finish = () => { if (!gone) { gone = true; ghost.remove(); } };
     out.onfinish = finish;
     out.oncancel = finish;
     setTimeout(finish, OUT_MS * 4 + 80);
@@ -285,19 +335,21 @@ export function openImportSheet(opts) {
 
   function shotTile(s) {
     const tile = el('div', 'imp-shot');
-    tile.setAttribute('role', 'listitem');
     const face = el('button', 'imp-shot-face');
     face.type = 'button';
     try { s.url = URL.createObjectURL(s.file); } catch { s.url = null; }
     if (s.url) {
       const img = document.createElement('img');
       img.alt = '';
+      // The picture is decoded once drawn; the URL can go then (a sheet that
+      // never closes cleanly still leaks nothing).
+      img.onload = () => { if (s.url) { try { URL.revokeObjectURL(s.url); } catch { /* gone */ } s.url = null; } };
       img.src = s.url;
       face.appendChild(img);
     }
     // A tile that failed is its own retry.
     face.addEventListener('click', () => {
-      if (s.state !== 'error' || closed) return;
+      if (s.state !== 'error' || !RETRY.has(s.error) || closed) return;
       s.state = 'reading';
       s.error = null;
       paintShot(s);
@@ -320,7 +372,7 @@ export function openImportSheet(opts) {
     const cap = tile._cap;
     cap.textContent = '';
     const face = tile._face;
-    face.disabled = s.state !== 'error';
+    face.disabled = !(s.state === 'error' && RETRY.has(s.error));
     if (s.state === 'reading') {
       cap.appendChild(eqLoader('Reading'));
       face.setAttribute('aria-label', `${s.file.name || 'Image'}: reading`);
@@ -335,7 +387,7 @@ export function openImportSheet(opts) {
     } else {
       // Offline is a state, not a fault (gray, like the sync dot); the rest need you.
       cap.appendChild(el('span', s.error === 'offline' || s.error === 'stay' ? 'imp-shot-n' : 'imp-shot-n err', ERRORS[s.error] || ERRORS.failed));
-      face.setAttribute('aria-label', `${s.file.name || 'Image'}: ${ERRORS[s.error] || ERRORS.failed}${s.error === 'decode' || s.error === 'big' || s.error === 'stay' || s.error === 'crew' ? '' : ' — tap to retry'}`);
+      face.setAttribute('aria-label', `${s.file.name || 'Image'}: ${ERRORS[s.error] || ERRORS.failed}${RETRY.has(s.error) ? ' — tap to retry' : ''}`);
     }
   }
 
@@ -358,7 +410,7 @@ export function openImportSheet(opts) {
   function landed(s, out) {
     // The router took the sheet down (✕, Back, the backdrop) while this image
     // was being read: the answer is dropped, and so are the image previews.
-    if (!sheet.isConnected) { closed = true; cleanup(); return; }
+    if (!sheet.isConnected) { end(); return; }
     if (out.error) {
       s.state = 'error';
       s.error = out.error;
@@ -376,13 +428,15 @@ export function openImportSheet(opts) {
       ? `${empties === 1 ? 'One image' : `${empties} images`} had no sets on ${empties === 1 ? 'it' : 'them'} — is ${empties === 1 ? 'it' : 'each'} the ${fest.name} app’s schedule export?`
       : '';
     if (s.state === 'read') paintGroup(s.group, true);
+    if (s.state === 'read') heard.textContent = `${s.group.label}: ${s.read.items.length} set${s.read.items.length === 1 ? '' : 's'} read.`;
+    else if (s.state === 'error') heard.textContent = `An image: ${ERRORS[s.error] || ERRORS.failed}.`;
     paintFoot();
   }
 
   // A read joins the group for its day: two images of one day are one day.
   function fold(read) {
     const m = matchRead(index, read);
-    const key = m.day || (m.label ? `printed:${m.label.toLowerCase()}` : `image:${shots.length}`);
+    const key = m.day || (m.label ? `printed:${m.label.toLowerCase()}` : `image:${++undated}`);
     let g = groups.get(key);
     if (!g) {
       const order = m.day ? festDays.indexOf(m.day) : festDays.length + groups.size;
@@ -546,34 +600,54 @@ export function openImportSheet(opts) {
     // opened is yours, and the import never lowers it.
     const now = mineNow();
     const writes = picksToWrite(entries()).filter((w) => !(now.get(w.name) > 0));
+    if (!writes.length) {
+      // Everything left was picked meanwhile (another phone, a sync): say
+      // so and show it as yours, rather than "Added 0 picks".
+      takeAlready(now);
+      status.textContent = 'These are on your list already — picked since you opened this.';
+      return;
+    }
     let n = 0;
     for (const w of writes) {
       if (opts.record(w.name, w.level) === false) {
         status.textContent = n
           ? `Added ${n}, then this crew started updating — try the rest again in a moment.`
           : 'This crew is still updating — nothing was added. Try again in a moment.';
-        if (n) opts.done(n, { stay: true });
+        if (n) { opts.done(n, { stay: true }); takeAlready(mineNow()); }
         return;
       }
       n++;
     }
-    closed = true;
-    cleanup();
+    end();
     opts.done(n, { first: writes[0] ? writes[0].name : null });
   });
 
-  function cleanup() {
-    for (const s of shots) if (s.url) { try { URL.revokeObjectURL(s.url); } catch { /* already gone */ } }
+  // Picks that became yours while the sheet was open move to "Already yours".
+  function takeAlready(now) {
+    for (const g of groups.values()) {
+      let moved = false;
+      for (const h of g.matched.values()) {
+        const cur = now.get(h.name) || 0;
+        if (!h.already && cur > 0) { h.already = true; h.current = cur; moved = true; }
+      }
+      if (moved && g.node) paintGroup(g, false);
+    }
+    paintFoot();
+  }
+
+  // The import is over — added, or the sheet taken down any way at all:
+  // uploads in flight stop, nothing still queued starts, previews go.
+  function end() {
+    if (closed) return;
+    closed = true;
     queue = [];
+    try { life.abort(); } catch { /* already */ }
+    if (watch) watch.disconnect();
+    for (const s of shots) if (s.url) { try { URL.revokeObjectURL(s.url); } catch { /* already gone */ } s.url = null; }
   }
 
   paintFoot();
-  return {
-    // The router closed the sheet (✕, Back, the backdrop): reads still in
-    // flight are dropped when they land.
-    closed: () => { closed = true; cleanup(); },
-    take,
-  };
+  return { end, take };
 }
 
 function sameFest(printed, name) {

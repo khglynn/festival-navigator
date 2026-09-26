@@ -118,7 +118,7 @@ one; the endpoint writes nothing), from the main checkout:
 curl` silently creates a "Protection Bypass for Automation" secret on the
 project; this lane revoked the one it created (0 remain, as before).
 
-## Tests (at 67e4619 + this log)
+## Tests (after the review round)
 
 - Unit, UTC / TZ=Asia/Tokyo / night clock: 1042 tests, 1040 pass, 1 skipped,
   1 fail in each — the service-worker stamp (APP_CORE changed; the
@@ -126,10 +126,11 @@ project; this lane revoked the one it created (0 remain, as before).
   ("Escape and Back while a join is in flight", timing under load): 5/5 pass
   alone, 3/3 on base, clean on the next full run.
 - `node scripts/validate-festivals.mjs`: 0 errors.
-- Browser suite: 213/213 (Chromium + WebKit), incl. the new
+- Browser suite: 214/214 (Chromium + WebKit), incl. the new
   `tests/browser/import-flow.test.mjs` (both engines: header token, 1080px
   send, level cycle, already-yours untouched, only Kevin's keys written,
-  wall lands on the first pick; plus retry-a-failed-tile and ✕ writes nothing).
+  wall lands on the first pick; plus retry-a-failed-tile, ✕ writes nothing,
+  and ✕ mid-read cancels the upload).
 - New unit files: `tests/import-match.test.mjs` (13), `tests/import-schedule.test.mjs` (12).
 
 ## Frames — `claude-plans/2026-09-25-portola-live/v97-shots/` (git-ignored)
@@ -140,6 +141,37 @@ project; this lane revoked the one it created (0 remain, as before).
 set, already-yours at 1), `08-nothing-new`, `09-failed-and-empty`,
 `10-offline`, `11-proposed-second-door`. Regenerate:
 `IMPORT_SAMPLES=<dir with the two exports> node claude-plans/2026-09-25-portola-live/import-walk.mjs`.
+
+## Independent review (Opus, read-only, on 38aaeb8) — no P1s
+
+Every finding was checked against the code before acting; all fixed except
+the last, which is a product call:
+
+1. **P2 — closing the sheet did not stop reads, and previews leaked.** One
+   AbortController per sheet; a MutationObserver notices the sheet leaving
+   however it goes (✕, Back, backdrop, crew switch) and aborts uploads,
+   drops the queue, releases previews; each preview URL is also released as
+   soon as its tile draws. Pinned: "✕ mid-read cancels the upload".
+2. P3 — the landing's timer could land twice (yank a scroll) and a stranded
+   popstate listener could fire on a later Back: one landing, listener
+   dropped after 1.5 s.
+3. P3 — the shrink step sat outside the 45 s clock, a bitmap was not closed
+   on one path, canvases held memory: all inside the clock now, closed on
+   every path, canvas zeroed after encoding.
+4. P3 — `isSchedule: false` with names listed (a lineup poster) now imports
+   nothing (endpoint + test).
+5. P3 — undated images each get their own group; "Added 0 picks" can no
+   longer happen (picked-meanwhile sets move to "Already yours" with a line);
+   the record belt also checks the crew token and the active festival;
+   the instruction leaves by opacity and transform only (a fading copy, the
+   rest slides up — the meter's leaving pattern); a drop just off the sheet
+   no longer navigates away; only retryable errors retry (offline now says
+   "No signal — tap to retry"); reads are announced to screen readers; the
+   bogus list roles are gone.
+6. **Open, product call:** the Settings door shows on every festival with a
+   lineup, and only Portola's app is known to export. Options: Portola only
+   (a per-festival flag in the fest file — a data change, needs the call),
+   or keep it everywhere (the reader reads any schedule screenshot).
 
 ## Found, not changed (pre-existing)
 
