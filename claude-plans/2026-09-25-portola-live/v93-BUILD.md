@@ -280,3 +280,27 @@ switch; screenshots into `v93-shots/`. One full `npm test` at the end.
 - Verified on cbe99e4: `npm test` 1057 pass, the stamp the only failure; `npm run test:browser`
   235/235 (an earlier full run had two WebKit tests time out together at 32 s under load —
   each passes alone twice, and the next full run was clean).
+- **The Show menu's history is cut; the stay-open menu stays** (2026-09-26, the coordinator
+  after Sol 6's fourth round on e3c20d5; revised on Kevin's push-back). Removed: `js/v3/nav.js`
+  and the numbered-history / step-on machinery (reverted, c93e2e3); the menu's `menu:` router
+  layer, `router.forget`, `leaveShowMenu` / `menuGone` / `offWall` / `arrivedAt`, the dead-entry
+  stepping, the tap replay, the menu's scroll hold; `router.js` is main's again. Kept: the menu
+  stays up across ticks and closes on a tap outside (a card only closes it; a control acts
+  too), Escape and the fest name — it is a popover with NO history entry: opening it pushes
+  nothing, and a Back, a pagehide, any screen but the wall or a boot takes it away. Its busy
+  flag holds a new build's reload while it is up (and the minute tick clears a stale one).
+  Kept too: the anchor fold and the next-intent fix, the NOW tab, + Invite someone, the solid
+  ring, the caret, the gear, the "Show" label, How it works.
+- **Banked for the unified build's shelf primitive** (a surface Back closes, with an entry of
+  its own). Cherry-pick, in order: 96c8593 (the menu's entry; Back closes it), f332342 (every
+  way out takes the entry back first; the tap replay), bd04a2c (one way out at a time),
+  a61144a (review round: replay behind icons, busy flag, refresh), 584edf4 (goes with its
+  screen; `router.forget`), c18e9b3 (a switch takes the entry back first), 48a2274 (every
+  entry numbered in `js/v3/nav.js`; an arrival that changes nothing is passed the same way;
+  the join and "Add yourself" stop leaving a second wall entry; its contract
+  `tests/browser/show-menu-history.test.mjs`). Acceptance tests are Sol's three findings on
+  e3c20d5: (1) two visits to the same crew are two real places (they differ in scroll), so a
+  "changes nothing" skip must never pass a real wall entry, land on the fest list for it, or
+  cross out of the app (no cross-document step); (2) history already on friends' phones has
+  no numbers, and an identical same-URL wall entry there must still never eat a Back; (3) the
+  native "Add a Festival" link (index.html) must be numbered like every other entry.

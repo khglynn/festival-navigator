@@ -227,17 +227,21 @@ a tap outside and a row tap all close it; the way in has the beat, the way
 out is quick.
 
 **Since v93 (Kevin, 2026-09-25):** the menu stays up while you choose — a
-row tap toggles its room, the wall changes behind it, and the menu waits
-for the next. The card or room head at the top of what you see stays where
-it was on screen through every tick (the next one after it, if it left with
-the room). It closes on a tap or click outside it (on a card that is all it
-does — never a pick; on a control, the control acts too), on Escape, on the
-fest name again, and on Back — it holds a history entry of its own (the
-router's `menu:` layer, carrying the menu's id) that each way out takes
-back, and that Settings takes over, so history ends as the menu found it.
-When its screen goes with the menu up (a crew deleted on the server, a crew
-opened over it), that entry opens nothing and never costs a Back.
-`Settings` wears the header's gear in the check column.
+row tap toggles its room, the wall changes behind it, and the menu waits for
+the next. The card or room head at the top of what you see stays where it was
+on screen through every tick (the next one after it, if it left with the
+room), and anything newer wins over a fold's fade (a scroll during it, NOW, a
+day tab). It closes on a tap or click outside it (on a card that is all it
+does — never a pick; on a control, the control acts too), on Escape and on the
+fest name again. It is a popover, not a place: it has no history entry of its
+own, so a Back with it up goes where Back always went and the menu goes with
+the page, as it does with any screen but the wall and with a boot. While it is
+up it holds a new build's reload (`body[data-busy]`). A menu that Back itself
+closes was built and cut in v93 (four review rounds on its history) and is
+banked for the unified build's shelf primitive
+(`claude-plans/2026-09-25-portola-live/v93-BUILD.md`). `Settings` wears the
+header's gear in the check column; the menu's `Show` is the `.menu-label`
+class.
 
 **Since the ship round (2026-09-17):**
 - **A hidden part renders nothing.** No header, no quiet label, no whisper,

@@ -142,10 +142,10 @@ viewport (no vast dead space on desktop).
    ONE way to hide a part of the week; the menu still lists every room, which
    is where the state is visible. The menu stays open while you tick rooms
    (the wall changes behind it, and what was at the top of the screen stays
-   there); a tap outside, Escape, the fest name again or Back puts it away.
-   A tap outside on a card only puts it away — never a pick; on a control (a
-   day tab, NOW, the +, Notes) it puts it away and does what that control
-   does.
+   there); a tap outside, Escape or the fest name again puts it away, and a
+   Back goes where Back always went, taking the menu with it. A tap outside
+   on a card only puts it away — never a pick; on a control (a day tab, NOW,
+   the +, Notes) it puts it away and does what that control does.
    A fest with one room goes straight to Settings, as it always did.
 8. **A dated section is its own tab** after the days (LATE NIGHTS), ruled by
    date (TUE · SEP 29) with its venue groups under each rule. Its cards pick
