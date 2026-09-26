@@ -20,6 +20,9 @@ each table; the rules live in RUNBOOK.md.
 
 | Version | What | PR | Rollback target | Shipped | Verified |
 |---|---|---|---|---|---|
+| v95 | ticket doors read Tix / Tix $69 / Tix free / Info, never the seller; a one-time price + sold-out check (27 priced, 13 sold out → Info only, 40 bare Tix; resale sites never used) | #49 | `dpl_Y7BdTNbi4gpNXF5JVMgnXqYRbcTy` (`kgz0o4y3l`, v94) | 2026-09-26 2:12 AM | smoke 2:14 AM PASS (first run: one transient fonts.css fetch error on one host; rerun clean); prod JSON: PERVERT XXL 154, Magnitude 111 |
+| v94 | Folsom weekend by time (declared `layout: by-time`), every verified party (64 entries / 65 cards), NOW rings to each party's own end across the 5 AM rollover (stacks too) | #48 | `dpl_EDA2vjKpcVWde2e8g8MF7mRziMDM` (`4x6htg8zq`, v92) | 2026-09-26 1:44 AM | smoke 1:44 AM PASS; prod Portola 195 entries, Folsom 64; local browser 210/210 incl. WebKit. Ships before live/v93, so the build skips v93 |
+| v92 | guest first open: wall first, welcome card, join shelf, bare − · note · + zoom row; zoom text pairs + centred column, refit on resize/fonts | #43 | `dpl_o6xpnbLTxuMN9NJqQajcqLsdCZDG` (`jcq5094s8`, v91 + #47 docs) | 2026-09-26 1:26 AM | smoke 1:27 AM PASS (festival-nav-v92 / e82e2e1c) |
 | v91 | phone afters line up under the timetable and scroll sideways; NOW slides a row to show its card; search ignores accents | #42 | `dpl_GjVVNR99hLMhjup6GX6BScTYFji1` (`fu3rtu01e`, v90) | 2026-09-25 7:59 PM | smoke 8:01 PM PASS (first run caught fest.kevinhg.com a few seconds behind the other two; rerun clean) |
 | v90 | stack alignment under a clock, taller notes button, Get the latest version | #38 | `dpl_3gWy9wgXFV6iBQ4QtSecFML7xevW` (`97fdiul11`: v89 code + the #40 parties) | 2026-09-25 6:32 PM | smoke 6:33 PM PASS: v90/aa9f98ba on 3 hosts, 38 APP_CORE files identical, worker installs |
 | data | MÜLL, Big Muscle: Bare Chest Calendar, Aftershock | #40 | n/a (data only) | 2026-09-25 6:24 PM | JSON on all 3 hosts carries the three names |
@@ -42,6 +45,14 @@ each table; the rules live in RUNBOOK.md.
 | 963e599 | v92 reshaped flow (guest shelf, − · note · + row) | Sol 6 · xhigh | ~4 | 2 blockers (Escape/Back during an in-flight join; a stale shelf history entry) + focus return | — |
 | PLAN.md | unified build plan | Sol 6 · xhigh | ~4 | 8 real (bulk/bring writer needs a person + batch; plan cache must invalidate on picks; join-shelf history cases; real-iPhone gate; liveWindowOf is a behaviour change; peek visibility under search/desktop; Show-menu fix already in v92; rollback wording) | → REVIEW-1.md beside the plan |
 
+| a73df70 | v92 re-review | Sol 6 · high | ~6 | 1 IMPORTANT (zoom text pairs never refit on resize / late fonts) | — |
+| 623a50b | v92 refit fix | Sol 6 · high | ~4 | 0 blocking; 2 minors (transform origin mid-bloom; double relayout in one frame) → follow-ups | — |
+| 2cb7a32 | v94 Folsom by time | Sol 6 · xhigh | ~10 | 1 real BLOCKER: NOW rings dropped at the 5 AM rollover for parties still open (Aftershock to 10 AM) — stacks had it too | — |
+| 3d114ad · 937f417 | v94 5 AM fix; merge with v92 | Sol 6 · xhigh / high | ~8 / ~8 | 0 / 0 | — |
+| 33164a3 | v93 merged with v92 | Sol 6 · xhigh | ~9 | 1 BLOCKER: a crew 404 with the Show menu open left body[data-busy] set (blocks every update reload) | — |
+| 7332366 · c8230b1 | v93 retire fix; history rework + anchor | Sol 6 · high / xhigh | ~6 / ~12 | 1 BLOCKER each: dead duplicate history entries (a Back that does nothing); then join-shelf duplicates + URL-only skipping; 1 IMPORTANT (an interrupted fold overrides a newer jump) | the independent walker caught the menu-tick jump to the day's top |
+| ba0be43 · 8ba6c49 · d4c928f | v95 ticket prices | Sol 6 · high / high / medium | ~5 / ~2 / ~2 | 1 IMPORTANT (a cached price without its date, or $2001, rendered), then unreal dates, then the year range — each fixed | — |
+
 ### Model comparison so far (Kevin's ask)
 
 One head (ef717ba, #37) reviewed by all three with the same prompt at xhigh: **Sol 6** was fastest (5.8 min) and found the most (7 real); **Astra 6** (8.5 min) found 5, one unique (an invalid query) and caught the worker-install gap on its first pass, reproducing two findings with probes; **Terra 5.6** (10.9 min) found 7, three unique — including the most important one of the round (a 4xx/5xx the app swallows passing the smoke) — and its own `sw-stamp --help` performed a real bump. Every model missed things another caught. Working read: Sol 6 as the gate is sound; a second model on high-stakes heads (the gesture release, Our plan) is worth its usage. Sol 6 then gated every release that night and caught a real blocker on four of six heads.
@@ -62,3 +73,14 @@ One head (ef717ba, #37) reviewed by all three with the same prompt at xhigh: **S
 8. **People menu (unified build, after the shelf primitive):** the left twin of Show — avatar pill → Highlight menu (crew multi-select, Our plan row, Pick as someone else, + Add someone). "+ Add someone" opens a shelf with the crew link first (Copy / Share), then a name, then other fests. Full text in the unified PLAN.md ("Kevin's calls after the plan", item 2).
 9. **Menus announce themselves (v93):** a small caret after the fest name says it opens a menu; How it works stays feature-first (what it does, then how) — no "tap the …" rows, and the box is not rethought. The gear is an SVG, never the ⚙ glyph (iOS can draw it as an emoji).
 10. **Ticket doors show the price, never the seller:** "Just tix if we don't know price or Tix $69" — because "some of these events are expensive". Info doors lose the site name too, so the two read alike (flag it back if Kevin wants `Info @ DoTheBay` kept). Label + a one-time price check (Portola Sat/Sun, ACL Late nights; sold-out shows lose their Tix door) on `data/tix-prices`: `TIX-PRICES-BRIEF.md` beside this file. Rides the next release after it lands.
+11. **"Invite someone", not "Add someone"** (12:28 AM) — the chip, its sheet and How it works say Invite (v93; the sheet's own button still says Add, since that tap adds the name and then shows their link).
+12. *(A default shipped in v94, not yet Kevin's call:)* **Folsom on a phone keeps its own two columns** under the Portola timetable (a time list is read across, so stepping in under the clock would hide half of every pair); flipping to the stepped-in version is one CSS block.
+
+## Follow-ups found tonight (not blocking; for the unified build's U0 / sweep)
+
+1. **A hold in the first seconds of a first open can be lost** — the first-boot identity round trip repaints the wall and replaces the card under the finger (the v95 walker, 2026-09-26). Keep the card node, or re-arm the hold on the replacement.
+2. **Error reports don't name the build** when no service worker controls the page (every report tonight had `build: null`, `sw: "none"`): fall back to the page's own version.
+3. **"Zoom closed right after a click: notes sheet opened"** is the intended close when the note chip opens notes — stop reporting that reason as a warning.
+4. v92 minors (Sol): a resize mid-bloom can shift the bloom's origin; a font load and a resize in the same frame can relayout twice.
+5. Tests: a shared real-hold helper for every browser test (hold until the zoom stands — five files still hold a fixed 650 ms under page.clock); the CDP flick must end without a fling before a quick tap.
+6. Folsom neighbourhoods: the pick list has one for every party; the data has none — offered to Kevin.
