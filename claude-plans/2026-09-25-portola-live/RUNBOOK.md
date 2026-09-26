@@ -100,11 +100,13 @@ new; festival data that only adds (validator + freeze + CI).
    allows it: reports are queued while offline and never sent with
    reporting off or Stay offline on, so a quiet dashboard is not proof of
    no errors.
-2. Reading it: the PostHog MCP's active project is global and another
-   session uses it, so do not switch it. A personal API key scoped to 627900
-   in `~/.env` unblocks queries and the Slack alert install (both drafted in
-   `research/observability.md`). Until then, ask Kevin what the phone's
-   Settings → Diagnostics build line says.
+2. Reading it: never switch the PostHog MCP's active project (it is
+   global). Use the REST API with `POSTHOG_API_KEY` from `~/.env` (reads
+   project 627900: `POST /api/projects/627900/query/` with HogQL); the key
+   with hog_function:write is `POSTHOG_API_KEY_FESTNAV` (also Keychain
+   `posthog-festnav-hogwrite`). Queries in `research/observability.md`
+   (the first one's fixed). After a ship: exceptions by build since the
+   merge time; zero is only meaningful if phones are online.
 
 ## Reviewer comparison (Kevin's ask)
 

@@ -16,6 +16,7 @@
 // screen runs. Claiming takes two taps on purpose (the name, then "I'm Maya"):
 // one tap to claim is how friends ended up picking as somebody else.
 import { GROW_MS, OUT_MS, CASCADE_MS, STAGGER_MS, EASE_ARRIVE, EASE_LEAVE, canAnimate } from './motion.js';
+import { focusQuietly } from './card-facts.js';
 
 // `line` names the artist the guest touched and what the tap meant: + (or a
 // card) is a pick, and the pick lands after the join; − and the notes door
@@ -201,7 +202,8 @@ export function showJoinShelf({ artist = null, intent = 'pick', people = [], off
     // Focus goes back where it came from — only if it is still inside the
     // shelf (a close that the person started elsewhere keeps their focus).
     if (sheet.contains(document.activeElement) || document.activeElement === document.body) {
-      if (opener && opener.isConnected) { try { opener.focus({ preventScroll: true }); } catch { /* not focusable */ } }
+      // Quietly: handed back, never read as keyboard navigation (card-facts.js).
+      if (opener && opener.isConnected) focusQuietly(opener);
     }
     const gone = () => { sheet.remove(); back.remove(); };
     if (instant || !canAnimate(sheet, ctx)) { gone(); return; }

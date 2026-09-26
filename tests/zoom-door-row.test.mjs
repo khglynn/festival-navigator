@@ -132,14 +132,21 @@ test('Tab walks the live doors in order, skipping one with nowhere to go', async
 });
 
 test('the note door opens the notes, as the chip did', async () => {
+  cardOf('Robyn').focus(); // the card the notes sheet will hand focus back to
   zoomCard().querySelector('button.f-chip.notes').click();
   await settle(20);
   const sheet = document.getElementById('artist-sheet');
   assert.ok(sheet && !sheet.classList.contains('join-shelf'), 'the notes sheet');
   assert.ok(sheet.querySelector('.composer, textarea'), 'with a composer: a member writes');
   assert.equal(zoomCard(), null, 'the zoom went back into its card');
-  history.back();
-  await settle(60);
+  // Escape closes it (a real key: the zoom module now believes the keyboard
+  // is driving) and focus goes back to the card — quietly: no zoom grows on
+  // a focus the app handed back (the independent walk of b29aac0).
+  document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+  await settle(80);
+  assert.equal(document.getElementById('artist-sheet'), null, 'Escape closed the notes');
+  assert.equal(document.activeElement, cardOf('Robyn'), 'focus is back on the card');
+  assert.equal(zoomCard(), null, 'and no zoom grew there');
 });
 
 test('a tap on a RESTING card still cycles, as in v91 — including must back to nothing', async () => {

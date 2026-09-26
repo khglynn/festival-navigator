@@ -1,0 +1,44 @@
+/* People behind your avatar — design prototype styles (2026-09-25, on v92).
+ * Tokens only. The left menu IS the right menu's component (.sort-pop, its
+ * head, rows, check column, divider and chevrons, all from v3.css); these
+ * rules only anchor it at the avatar and give a person's row its colour mark. */
+
+/* The avatar's wrap, like the fest name's (.sort-wrap): the menu opens
+ * UPWARD from the dock, its LEFT edge on the avatar's left edge — the mirror
+ * of the Show menu, whose right edge is on the fest name's right edge. */
+.dock .hl-wrap { position: relative; flex: none; display: inline-flex; }
+.dock .hl-wrap .sort-pop { left: 0; right: auto; top: auto; bottom: calc(100% + 8px); z-index: 35; }
+.hl-pop { min-width: 212px; max-height: calc(100vh - 130px); overflow-y: auto; }
+.hl-pop .nm { white-space: nowrap; }
+/* A person's mark sits in the check column: their colour as a ring, filled
+ * with a check when they are highlighted. Everyone keeps the plain ✓. */
+.hl-pop .check .mark { width: 12px; height: 12px; border-radius: var(--r-pill); box-sizing: border-box;
+                       display: inline-flex; align-items: center; justify-content: center;
+                       border: 1.5px solid var(--c); font-size: 8px; line-height: 1; font-weight: 900; color: #fff; }
+.hl-pop .check .mark.on { background: var(--c); }
+.hl-pop .you { color: var(--text-tertiary); font-weight: 600; margin-left: 6px; } /* inside the name: one baseline */
+.hl-pop [aria-selected="true"] .you { color: rgba(var(--brand), .7); }
+/* The way into Our plan: the first action, in the brand's tonal text. */
+.hl-pop .act.plan { color: var(--tonal-text); }
+.hl-pop .check.plus { color: var(--text-secondary); font-size: 13px; font-weight: 700; text-align: center; }
+/* While its menu is open, the avatar wears the brand ring (a door that is open). */
+#dock-you.open { box-shadow: 0 0 0 2px var(--dock), 0 0 0 3.5px rgb(var(--brand)); }
+
+/* Highlight on, menu closed: the avatar's slot becomes the highlighted faces
+ * and a ✕, one pill. The faces open the menu; the ✕ clears, in one tap. */
+.hl-pill { flex: none; display: inline-flex; align-items: center; height: 30px; padding: 0 2px 0 3px; box-sizing: border-box;
+           border-radius: var(--r-pill); border: 1.5px solid rgb(var(--brand)); background: rgba(var(--brand), .14); }
+.hl-pill .faces { display: inline-flex; background: none; border: 0; padding: 0; cursor: pointer; }
+.hl-pill .faces .avatar { width: 22px; height: 22px; font-size: 9px; box-shadow: 0 0 0 1.5px var(--dock); }
+.hl-pill .faces .avatar + .avatar { margin-left: -7px; }
+.hl-pill .x { width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; padding: 0;
+              background: none; border: 0; color: var(--tonal-text); font-size: 11px; font-weight: 800; cursor: pointer; }
+
+/* After: on a phone the people row leaves the top of the wall (their door is
+ * the avatar now). Desktop keeps it. */
+@media (max-width: 719px) {
+  .ps-after #person-chips, .ps-after .toolbar-divider { display: none !important; }
+}
+/* Frame captions (design only). */
+.ps-cap { position: fixed; top: 6px; right: 8px; z-index: 80; color: var(--text-tertiary); font-size: 9px; font-weight: 800;
+          letter-spacing: .12em; text-transform: uppercase; background: rgba(12, 10, 20, .85); padding: 2px 6px; border-radius: 4px; }

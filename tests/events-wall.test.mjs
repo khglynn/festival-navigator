@@ -747,6 +747,8 @@ function appMirror(fid) {
 }
 const hoverEnter = (node) => node.dispatchEvent(new dom.window.PointerEvent('pointerenter', { bubbles: false, pointerType: 'mouse' }));
 const overlay = () => document.querySelector('#zoom-layer .zoom-card');
+// WHERE and the doors out are one PAIR since 2026-09-26 (one line where they
+// fit, stacked where not — card-facts.js fitPairs), so they count as one row.
 const rowsOf = (card) => [...card.querySelector('.f-grown').children].map((c) => c.className.split(' ')[0]);
 
 test('picks on a stack card keep cycling across the sync-echo repaint; the who-row appears only when there are people; the venue and link doors never pick', async () => {
@@ -759,27 +761,27 @@ test('picks on a stack card keep cycling across the sync-echo repaint; the who-r
   hoverEnter(runCard);
   await new Promise((r) => setTimeout(r, facts.ZOOM_IN_MS + 40));
   assert.equal(facts.zoomedCard(), runCard, 'the hover grew the run card');
-  assert.deepEqual(rowsOf(overlay()), ['f-sub', 'f-where', 'f-links', 'f-chips'], 'unpicked: no who-row, no hole');
+  assert.deepEqual(rowsOf(overlay()), ['f-sub', 'f-pair', 'f-chips'], 'unpicked: no who-row, no hole');
   assert.equal(overlay().querySelector('a.f-where').textContent, 'Regency Ballroom', 'the venue is a map door');
   // The show's doors out (2026-09-24): tickets first, then its page.
   assert.deepEqual([...overlay().querySelectorAll('.f-links a.f-link')].map((a) => a.textContent), ['Tix @ AXS', 'Info @ DoTheBay']);
   assert.ok([...overlay().querySelectorAll('.f-links a.f-link')].every((a) => a.target === '_blank' && a.href.startsWith('https://')), 'each opens its page in a new tab');
   click(overlay().querySelector('.f-name'));
   assert.equal(level('Gelli Haha'), 1, 'click 1 picks');
-  assert.deepEqual(rowsOf(overlay()), ['f-sub', 'f-where', 'f-links', 'f-who', 'f-chips'], 'your chip arrived and its neighbours made room');
+  assert.deepEqual(rowsOf(overlay()), ['f-sub', 'f-pair', 'f-who', 'f-chips'], 'your chip arrived and its neighbours made room');
   assert.equal(overlay().querySelector('.f-who .f-pill.you').textContent, 'You');
   assert.equal(overlay().querySelector('.f-who .f-pill.you').getAttribute('aria-label'), 'Picked: You', 'alone at one bar: your own chip');
   repaintWall();
   const back = facts.zoomedCard();
   assert.ok(back && back.isConnected && back.dataset.artist === 'Gelli Haha' && back.closest('.stack'),
     'restored onto the fresh run card, not the Saturday grid billing of the same name');
-  assert.deepEqual(rowsOf(overlay()), ['f-sub', 'f-where', 'f-links', 'f-who', 'f-chips'], 'the restore rebuilt the same rows');
+  assert.deepEqual(rowsOf(overlay()), ['f-sub', 'f-pair', 'f-who', 'f-chips'], 'the restore rebuilt the same rows');
   for (const want of [2, 3, 4, 0]) {
     click(overlay().querySelector('.f-name'));
     assert.equal(level('Gelli Haha'), want, `the next click on the overlay took the pick to ${want}`);
     assert.ok(facts.zoomedCard() && facts.zoomedCard().isConnected, 'the zoom rode the refreshed run card');
   }
-  assert.deepEqual(rowsOf(overlay()), ['f-sub', 'f-where', 'f-links', 'f-chips'], 'cleared: the who-row is gone again and the rows close up');
+  assert.deepEqual(rowsOf(overlay()), ['f-sub', 'f-pair', 'f-chips'], 'cleared: the who-row is gone again and the rows close up');
   assert.deepEqual(ctx.taps, ['Gelli Haha', 'Gelli Haha', 'Gelli Haha', 'Gelli Haha', 'Gelli Haha']);
   const gridCell = root.querySelector('.room[data-room=":fest"] .card.cell[data-artist="Gelli Haha"]');
   assert.ok(gridCell.getAttribute('aria-label').startsWith('Gelli Haha — not picked'));

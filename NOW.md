@@ -1,117 +1,70 @@
 # NOW — festival-navigator
 
-**last-updated: 2026-09-25 (v89 live) · mode: live**
+**last-updated: 2026-09-26 12:40 AM PT (v91 live; v92–v94 in flight) · mode: live**
 
 Where things stand, on one screen. Change stale lines in place; the story of
 how we got here belongs in DEVLOG.md.
 
 ## Live on production
 
-- **v90, from `main`** (PR #38, merged 2026-09-25 6:32 PM PT) on fest /
-  festival / crew.kevinhg.com — confirmed by `ops/prod-smoke.mjs` at 6:33 PM
-  PT (festival-nav-v90, ASSET_STAMP aa9f98ba; all three hosts, every APP_CORE
-  file identical, landing + gallery clean in iPhone WebKit, worker installs).
-  Kevin's first Portola notes: stacks under a clock line up with its
-  columns (desktop; on a phone only the timetable's leftovers step in), the
-  notes button matches the search field, Settings → "Get the latest
-  version". Gated by CI, Codex Sol 6 (two rounds) and a real-browser walk.
-  v89 (PR #33) went out at 2:50 PM.
-- **Data** (merged under the standing data-only OK): the 2026-09-23 re-read
-  (PR #23 — the two Portola Week nights added Sep 17, 21 billed openers, ACL
-  Fest Nights per the 9.21 graphic); Thu Club Six's three openers as a
-  guessed run (2026-09-24, PR #27); Sun Midway's S.I.M / Espurr / New
-  Nostalgia on the bill, untimed (2026-09-25). Every opener in the official
-  Portola Week feed is now on the wall. Folsom weekend: MÜLL (Fri 11 PM, venue
-  TBA), Big Muscle: Bare Chest Calendar (Sat 1–7 PM, DNA Lounge) and
-  Aftershock (filed Sat night, 3–10 AM Sunday) (PR #40, 2026-09-25).
+- **v91, from `main`** (PR #42, merged 2026-09-25 7:59 PM PT) on fest /
+  festival / crew.kevinhg.com — `ops/prod-smoke.mjs` PASS at 8:01 PM
+  (festival-nav-v91, ASSET_STAMP c01adb1c). What v87–v91 carry, and how the
+  live lane ships: DEVLOG.md, 2026-09-24 → 26.
+- **Alerts:** PostHog → Slack for a new error and one that came back (#45,
+  #46; `ops/posthog/`), each saying what the error means in plain words.
+- **Data:** every Portola Week opener in the official feed; Folsom so far is
+  MÜLL, Big Muscle, Aftershock (PR #40) plus the parties that were already in.
 
-## Happening now
+## In flight (Portola live ops, 2026-09-26)
 
-- What v87 carries: the NOW jump — a NOW tab before the day tabs while
-  something is live; taps go down the page stop by stop and wrap; with a
-  person highlighted, only their live picks (MODEL-V4 §3d) —
-  `claude-plans/2026-09-24-now-jump-build.md`; the full-width now line; the
-  zoom that clears the sticky rail and stage strip as well as the dock —
-  `claude-plans/2026-09-24-zoom-chrome-build.md`; and an untimed act in a
-  timed room is never lit as playing.
-- What v88 carries: event-page and ticket doors in the zoom for every
-  afters, Folsom and Late-nights show ("Event pages and tickets" in
-  `docs/add-a-festival.md`); the app reporting its own errors to the PostHog
-  project "Festival Navigator" (627900) through `js/errlog.js`, crew links
-  and notes scrubbed, a Settings switch —
-  `claude-plans/2026-09-24-analytics/BUILD.md` (design, Eachie audit and the
-  shared Slack message design beside it); no zoom-on-focus on iPhone (iOS
-  alone gets `maximum-scale=1`), no double-tap zoom, the search box shaped
-  like a text field (Kevin, live at Portola). Walked in a real browser; the
-  walk's one bug (a door tapped in the settle beat closed the zoom) is fixed.
-  Kevin checked it live: no zoom anywhere when typing.
-- What v89 carries (Kevin's v88 feedback, 2026-09-25): the zoom's notes chip
-  opens on the first tap on iPhone (Safari's unfocused button had sent focus
-  nowhere and closed the zoom — diagnosed from his phone's own PostHog
-  reports); holding a note reveals its actions instead of selecting text on
-  touch (so note text can't be copied on a phone — offered back on a second
-  hold if Kevin wants it); no undo toast when a must clears; error kinds read
-  as words in PostHog.
-- What v86 carries, each with its spec or build log in `claude-plans/`:
-  1. One line per room (`SAT PORTOLA`, `SAT AFTERS`, `TUE LATE NIGHTS`),
-     `.day-block` per day — `claude-plans/2026-09-23-one-line-heads.md`.
-  2. Cancelled acts (`artists[].cancelled`), Skepta off Portola Saturday —
-     `claude-plans/2026-09-23-cancelled-acts-build.md`.
-  3. Your level meter chip (lower left, 1–3 bars then MUST); the crew corner
-     never counts you; the fit measures what rendered —
-     `claude-plans/2026-09-23-meter-build.md`.
-  4. The zoom's who-row as blended level chips with first names, and their
-     split / merge / carry motion — `claude-plans/2026-09-23-zoom-chips-build.md`,
-     `claude-plans/2026-09-23-zoom-chips-motion.md`.
-  5. The strict warm open (~1.6 s on a hanging network, was ~16 s),
-     recognize-you, bring-your-picks, Spotify progress, sync-dot honesty,
-     shorter share copy — `claude-plans/2026-09-23-crew-join-build.md`.
-  6. The strip rides its timeline under Reduce Motion / Low power; a Late
-     nights date counts as today; the everything-hidden notice; the WebKit
-     tap-ghost zoom fix.
-- v86 was checked before ship: 783 unit tests (two timezones), 95 browser
-  tests in CI (the meter and zoom-chip contracts on every shipped fest), four
-  Codex rounds plus Opus reviews once Codex ran out of credits (until Sep
-  29), five real-engine walks, Kevin's own look on a local build. Not on a
-  physical iPhone before ship.
+One session runs this lane (Kevin closed the others; city seasons is paused on
+its branches — leave them). Rules: `claude-plans/2026-09-25-portola-live/RUNBOOK.md`.
+Kevin's calls, releases and reviews: the LEDGER beside it — read "Kevin's
+calls" first. Each release ships on CI green + a Sol 6 review + a real-browser
+walk + prod smoke, in this order:
+
+1. **v92** (`live/v92`, PR #43): a guest lands on the wall with a welcome
+   card; joining is a shelf; the zoom's bare − · note · + row for everyone;
+   zoom text never breaks inside an item. Last fixes in, then re-stamp, re-gate,
+   merge.
+2. **v93** (`live/v93`): NOW as a tab beside the live day, + Add someone, a
+   solid ring on the +n overflow, the Show menu stays open, a gear on
+   Settings, a caret after the fest name. Built on an older base; rebase onto
+   main after v92 using the five hunks in its build log's "Rebasing onto v92".
+3. **v94** (`live/v94` + `data/folsom-all`): Folsom by time (declared in the
+   data) and every verified Folsom-weekend party.
+4. **Ticket prices** (`data/tix-prices`): doors read `Tix` / `Tix $69` /
+   `Info`, never the seller; a one-time price and sold-out check for Portola
+   Sat/Sun and ACL Late nights. Rides the first release after it lands.
+
+Then the unified build (`claude-plans/2026-09-26-unified-build/PLAN.md` +
+REVIEW-1.md + the calls added at its top): ordered by build quality, not the
+calendar.
 
 ## Open with Kevin
 
-- All Portola Week openers are in (nothing held back): Thu Club Six's
-  three (PR #27) and Sun Midway's S.I.M / Espurr / New Nostalgia, the Midway
-  three untimed so the four named sets keep their guesses (2026-09-25).
 - Small call with a default: How it works dropped "White stroke = you" (you
-  are never in the crew corner now). (A half-width 30-min cell hiding its
-  start time once picked cannot happen in any shipped fest: ACL renders each
-  weekend as its own day, so it has no lane-split cells — checked 2026-09-24.)
+  are never in the crew corner now).
 - If a phone tap ever grows a card on a real iPhone: gate hover arming on
   `(any-hover: hover)` — card-facts.js deliberately avoids media queries, so
   that is Kevin's call.
 
-## Next, in order
+## Next, after the live lane
 
-1. Portola live ops (from 2026-09-25 evening): one session ships friends'
-   feedback while Kevin is on his phone, by
-   `claude-plans/2026-09-25-portola-live/RUNBOOK.md`; items, releases and the
-   Codex model comparison are in the LEDGER beside it. Waiting on Kevin: the
-   round-one review page (OURS directions, first-open flow and copy) and the
-   Folsom-weekend party pick list — both artifacts linked in the LEDGER.
-   Next build: his picks, plus the phone afters lining up (a sideways
-   scroll, as he described) and accent-free search ("mull" finds MÜLL).
-2. ACL prep before Oct 2: headliner end times (its closers print only a
+1. ACL prep before Oct 2: headliner end times (its closers print only a
    start, so the grid draws them 60 min and NOW stops counting them live
    early — add ends, or run a stage's last endless set to the day's close),
    and the dock's FRI flash on open (ACL lights FRI for about a second before
    finding SAT).
-3. Install the app's PostHog → Slack alerts (a new error, an error that came
-   back) from `ops/posthog/` — not installed yet. Slack is connected to
-   project 627900 (2026-09-25) and Kevin's four calls are recorded in that
-   folder's README; a Pen card tracks it.
-4. Data-only pushes as drops land (standing OK: validator + freeze + tests).
-   Portola Sep 26–27 (afters from Sep 24); ACL Oct 2–4 and 9–11.
-5. After Oct 11: the merged wall for two crews
-   at one fest, add-a-show (`claude-plans/2026-09-02-add-a-show.md`), the
-   staging site (fix or retire), the Ray draft.
+2. After Portola: self-recovery when a phone boots a months-old cached module
+   beside new ones (one iPhone, `js/time.js`, SyntaxError, 3:47 PM Sep 25) —
+   update-machinery work; and a guard against a sync push to the wrong crew.
+3. Data-only pushes as drops land (standing OK: validator + freeze + tests).
+   ACL Oct 2–4 and 9–11.
+4. After Oct 11: the merged wall for two crews at one fest, add-a-show
+   (`claude-plans/2026-09-02-add-a-show.md`), the staging site (fix or
+   retire), the Ray draft.
 
 ## Banked, not built
 

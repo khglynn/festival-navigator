@@ -337,6 +337,14 @@ test('joining from a tap: one POST for the person, and the + they tapped is thei
     'through the ordinary pick path — queued (or already pushed) like any tap');
   assert.equal($('dock-you').textContent, 'S', 'the + became Sam');
   assert.ok(!$('dock-you').classList.contains('guest'));
+  // The just-joined welcome (the independent walk of b29aac0): the guest card
+  // was read before the join could land, and this one has its own marker —
+  // it is where Sam learns that a tap now picks.
+  const card = welcome();
+  assert.ok(card, 'the just-joined welcome is up');
+  assert.match(card.querySelector('.bring-sub').textContent, /Tap any artist to add yours/);
+  assert.deepEqual([...card.querySelectorAll('.bring-actions button')].map((b) => b.textContent), ['Got it'], 'a member’s one door');
+  assert.equal(localStorage.getItem('fn_welcome_joined_v1'), '1', 'once per phone: shown is seen');
 });
 
 test('the next open walks Sam straight in — claimed, no question, no welcome', async () => {

@@ -1,0 +1,14 @@
+
+== 390 real data, by time
+fri: {"cards":20,"lefts":[14,198],"rights":[192,376],"widths":[178],"heads":[14],"roomHead":14,"vw":390,"overflow":0,"bands":["Daytime:1","Evening:5","9 PM:8","10 PM:5","Late:1"],"now":16,"rowGaps":[6],"clockCols":[]}
+sat: {"cards":24,"lefts":[14,198],"rights":[192,376],"widths":[178],"heads":[14],"roomHead":14,"vw":390,"overflow":0,"bands":["Daytime:10","Evening:2","9 PM:8","10 PM:3","After-hours:1"],"now":0,"rowGaps":[6],"clockCols":[54,236,418,600,782]}
+sun: {"cards":21,"lefts":[14,198],"rights":[192,376],"widths":[178],"heads":[14],"roomHead":14,"vw":390,"overflow":0,"bands":["Daytime:10","Evening:6","9 PM:3","10 PM:1","After-hours:1"],"now":0,"rowGaps":[6],"clockCols":[54,236,418,600,782]}
+B: {"lefts":[54,236],"rights":[232,414],"vw":390,"scrolls":38}
+errors []
+
+== 320 real data, by time
+fri: {"cards":20,"lefts":[14,163],"rights":[157,306],"widths":[143],"heads":[14],"roomHead":14,"vw":320,"overflow":0,"bands":["Daytime:1","Evening:5","9 PM:8","10 PM:5","Late:1"],"now":16,"rowGaps":[6],"clockCols":[]}
+sat: {"cards":24,"lefts":[14,163],"rights":[157,306],"widths":[143],"heads":[14],"roomHead":14,"vw":320,"overflow":0,"bands":["Daytime:10","Evening:2","9 PM:8","10 PM:3","After-hours:1"],"now":0,"rowGaps":[6],"clockCols":[54,201,348,495,642]}
+sun: {"cards":21,"lefts":[14,163],"rights":[157,306],"widths":[143],"heads":[14],"roomHead":14,"vw":320,"overflow":0,"bands":["Daytime:10","Evening:6","9 PM:3","10 PM:1","After-hours:1"],"now":0,"rowGaps":[6],"clockCols":[54,201,348,495,642]}
+B: {"lefts":[54,201],"rights":[197,344],"vw":320,"scrolls":38}
+errors []

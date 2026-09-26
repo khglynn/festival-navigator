@@ -700,6 +700,9 @@ for (const [W, H] of [[390, 844], [320, 568]]) {
     const after = await place(page);
     note(`joined: me ${await page.evaluate(() => localStorage.getItem(Object.keys(localStorage).find((k) => k.startsWith('fn_me_v3_'))))}; shelf gone ${!(await page.locator('.join-shelf').count())}; place same ${JSON.stringify(before) === JSON.stringify(after)} (${JSON.stringify(before)} → ${JSON.stringify(after)})`);
     note(`Kettama now ${JSON.stringify(await page.evaluate(async () => (await import('/js/state.js')).crewDoc.festivals['portola-2026'].selections.Kettama))}; dock "${await page.locator('#dock-you').textContent()}"`);
+    note(`just-joined welcome: ${await page.locator('#welcome-card').count() ? JSON.stringify([await page.locator('#welcome-card .bring-sub').textContent(), await page.locator('#welcome-card .bring-actions button').allTextContents()]) : 'NONE'}`);
+    await page.locator('#welcome-card .bring-actions button').first().tap().catch(() => {}); // Got it
+    await sleep(500);
     await shot(page, `${tag}-25-shelf-joined.png`);
     await sleep(1500);
     note(`writes (${writes.length}): ${JSON.stringify(writes)}; errors: ${JSON.stringify(errors)}`);
@@ -783,7 +786,7 @@ for (const [W, H] of [[390, 844], [320, 568]]) {
     await hold(ctx, page, '#wall-root .card[data-artist="Femme Jatale b2b erika"]');
     const g = await zoomGeometry(page);
     note(`crowded ${W}: ${JSON.stringify(g)}`);
-    note(`  clear of the dock: ${g.dockTop === null || g.card.b <= g.dockTop} (zoom bottom ${g.card.b}, dock top ${g.dockTop}); clear of the chrome: ${g.chromeBottom === null || g.card.t >= g.chromeBottom} (zoom top ${g.card.t}, chrome ${g.chromeBottom}); overlaps ${g.overlaps.length}; clipped ${g.clipped.length}; doors all reachable ${g.doors.every((d) => d[1])}; row ≥44 ${g.doors.slice(-3).every((d) => d[2] >= 44)}`);
+    note(`  clear of the dock: ${g.dockTop === null || g.card.b <= g.dockTop} (zoom bottom ${g.card.b}, dock top ${g.dockTop}); clear of the chrome: ${g.chromeBottom === null || g.card.t >= g.chromeBottom} (zoom top ${g.card.t}, chrome ${g.chromeBottom}); overlaps ${g.overlaps.length}; clipped ${g.clipped.length}; doors all reachable ${g.doors.every((d) => d[1])}; − and + 44px tall ${[g.doors[g.doors.length - 3], g.doors[g.doors.length - 1]].every((d) => d[2] >= 44)} (the chip draws 30px and its target is the row's 44 — pinned in tests/browser/zoom-door-row.test.mjs)`);
     await shot(page, `${tag}-35-crowded-real-card.png`);
     note(`errors: ${JSON.stringify(errors)}`);
     await ctx.close();

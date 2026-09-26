@@ -533,3 +533,99 @@ empty note chip.
 Verified: `npm test` 988/990 in UTC, Tokyo and on the night clock (the stamp
 the only failure, one skip); browser suite 197/197; the full walk, 31
 scenarios, no failures, no page errors.
+
+**Three from the code map (run on abe7205), folded in.**
+1. **The dock's Show menu opened UNDER the welcome card.** The dock is a
+   stacking context (fixed, z30), so its upward menu painted at 30, below the
+   welcome card and the bring-picks offer (z38): with the welcome up, a finger
+   in the overlap touched the card. While its menu is open the bar (dock or
+   day rail) now stands at z39 — above those cards and a zoom (36), below
+   sheets and toasts — and steps back once the menu has gone. The join shelf:
+   opening it puts an open menu away, and with it up the fest name is behind
+   its dimmed wall. `tests/browser/show-menu-stacking.test.mjs`, Chromium and
+   WebKit; without the fix both engines hit the card ("Every friend has a c…").
+2. **The close-tap's swallow ate the first click anywhere for 700 ms**, so a
+   flick that began on a card and a quick tap on a day tab lost the tap. It
+   now belongs to its own gesture: it eats only a click that lands on a card,
+   and is gone at the gesture's cancel (a flick), at the next press, at the
+   first click, or at 700 ms. jsdom tests in
+   `tests/first-open-guest-doors.test.mjs` and the real-engine walk below;
+   the old code fails both.
+3. **The guest tap route in a real engine.** Playwright's WebKit with an
+   iPhone profile sends a tap as TOUCH pointerdown/pointerup and a MOUSE
+   click — a real iPhone's shape (checked 2026-09-26) — so
+   `tests/browser/guest-tap-route.test.mjs` runs there, and in Chromium with
+   touch for CI: a tap opens the card and picks nothing, + asks on the shelf
+   ("Pick Tove Lo as…"), Look around takes it down, a tap on another card
+   only closes, a flick then a quick tap on the dock still lands, nothing is
+   written. (A trap on the way, not a bug: while the dock's day row is still
+   gliding to centre its active day, WebKit takes a tap on it as the finger
+   stopping that scroll, as an iPhone does; 2 s later the same tap lands.)
+
+**The independent walk of b29aac0 (WebKit, iPhone profile, real input): two
+failures, root-caused by the walker, fixed.**
+1. **Escape over the shelf regrew the zoom it had just closed.** The shelf
+   hands focus back to the card whose + opened it; the Escape keydown had set
+   card-facts' lastInput to 'keyboard', so the keyboard route read the
+   returning focus as navigation and grew a fresh zoom within 50 ms — the
+   click · Escape · click class again. Root fix: card-facts `focusQuietly` —
+   a focus the app hands back is never keyboard navigation, and the route
+   ignores it. Used by the shelf's close and by the notes sheet's close (the
+   same trap, reproduced in its test: note door → Escape regrew the zoom).
+   Settings restores no focus to a card. A Back (no key) was already fine.
+2. **The just-joined welcome never showed.** The guest card is marked read
+   the moment a guest touches the wall or asks to join — always before the
+   join lands — and the just-joined card shared that marker. It has its own
+   now (`fn_welcome_joined_v1`): once per phone, after a fresh join, marked
+   when it shows; never for someone who took their own existing name.
+Tests: `first-open-shelf-close` (Escape over a shelf a zoom's + opened),
+`zoom-door-row` (note door → Escape), `first-open-guest` (the shelf join
+brings the card), `first-open-welcome` (claiming an existing name: neither
+marker); each fails with its fix removed. Real input:
+`tests/browser/guest-tap-route.test.mjs` now presses a real Escape over the
+shelf and joins from it, in WebKit (iPhone) and Chromium.
+
+**Kevin on the phone renders: the zoom's text (now that a finger's zoom is
+full width).**
+1. **Never a break inside a statement.** Every statement — the window, the
+   order, the place with its pin, "Tix @ AXS", "Info @ DoTheBay" — is
+   nowrap, and Tix · Info are one unit. The statements come in PAIRS (the
+   window · the order; the place · the doors out): a pair is one line
+   wherever it fits the column and stacks where it does not, so a line
+   never breaks between words and never leaves a separator at its end
+   (card-facts.js `fitPairs`: put on one line, read, fall back — run where
+   the zoom lays itself out). At 390 the crowded card went from four meta
+   rows to three ("Fri · Runs 8 PM – ~12 AM · Guessing they're 1st of 3" on
+   one line; the place over "Tix @ AXS · Info @ DoTheBay"); at 320 the pair
+   stacks as before.
+2. **A centred middle column.** The name, the facts, the doors out and the
+   who-row stand in a column at most `--zoom-col` wide (v3-tokens.css,
+   300px); only the − and + reach the zoom's edges. Where the number comes
+   from: the width of a set's two statements on one line (136 + 137px plus
+   the separator, 291px in Inter at 11.5px), so they share a line on a 390
+   phone — about 16px in from each side of the zoom's content. The cost:
+   the crowded who-row wraps its fourth chip at 390 (it spanned edge to
+   edge before).
+Pinned in `tests/browser/zoom-door-row.test.mjs` (every statement one line,
+a pair's separator only when it is one line, the window and order share a
+line at 390, the middle within the column and centred); each fails with its
+rule removed.
+
+**Re-review of a73df70 (Sol 6): the pairs were fitted only on open and
+refresh — fixed.** A rotation, a resized window or Inter landing after the
+zoom opened left a pair in the layout it was opened with (and on a narrower
+screen the zoom kept its old width and ran off the edge). Now the standing
+zoom is laid out again from its rules — size, pairs, place — on resize (the
+scroll follower's frame, one pass) and when fonts finish loading
+(`document.fonts` 'loadingdone' and `ready`, guarded where there is no
+`document.fonts`; nothing at all with no zoom open; one pass per frame).
+Tests in `tests/browser/zoom-door-row.test.mjs`, each red without its half:
+(1) the crowded card open at 390, the screen narrowed to 330 — the zoom
+refits inside it and the window · order pair restacks, then shares a line
+again back at 390; (2) the font case, measured rather than assumed: the
+pair's one-line width in the fallback font (300px here) and in Inter
+(290px), a screen whose column sits between them (295px), the zoom opened
+while Inter's file is held back, then Inter released — the pair goes to one
+line. The guest-route browser test's crew stub now merges writes like the
+real server (a fixed doc erased the join's pick on its own echo — a flake,
+not the app).

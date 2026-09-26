@@ -444,6 +444,55 @@ const orderDoor = (order) => sourceDoor(order, 'f-order', 'open where the order 
 // "Tix @ AXS · Info @ DoTheBay": the show's doors out, one row under WHERE.
 // Each is a sourceDoor, so a click opens the page and never reaches the
 // card's pick (a click on the zoom picks, by design).
+// A pair's separator: shown only when the pair sits on one line.
+function pairSep() {
+  const dot = document.createElement('span');
+  dot.className = 'f-sep';
+  dot.textContent = '·';
+  dot.setAttribute('aria-hidden', 'true');
+  return dot;
+}
+
+// Each pair (the window · the order; the place · the doors out) goes on ONE
+// line where it fits the card's column, and stacks where it does not — never
+// wrapping inside an item, never leaving a separator at a line's end. Tried
+// on one line, then read: one layout to write, one to read, one to settle.
+// Runs wherever the zoom lays itself out (a bloom, a refresh). A sheet's card
+// never runs it and keeps the stacked form.
+function fitPairs(root) {
+  const pairs = [...root.querySelectorAll('.f-pair')];
+  if (!pairs.length) return;
+  for (const p of pairs) p.classList.add('inline');
+  const over = pairs.filter((p) => p.scrollWidth > p.clientWidth + 0.5);
+  for (const p of over) p.classList.remove('inline');
+}
+
+// The standing zoom, laid out again from its rules: its size (the screen's
+// width decides a finger's zoom), its pairs, its place. For what changes the
+// measures under an open zoom — the viewport (a rotation, a resized window)
+// and a late font (Inter landing after the zoom opened draws every
+// statement wider; wall.js refits its cards for the same reason). One pass
+// per frame, and nothing at all with no zoom open.
+function relayoutZoom(z) {
+  if (zoomed !== z || !z.el.isConnected) return;
+  sizeSlot(z.slot, rect(z.el), doorsOf(z));
+  fitPairs(z.card);
+  place(z.slot, z.el);
+}
+let fontRaf = 0;
+function refitForFonts() {
+  if (!zoomed || fontRaf) return;
+  fontRaf = requestAnimationFrame(() => { fontRaf = 0; if (zoomed) relayoutZoom(zoomed); });
+}
+let fontsWatched = false;
+function watchFonts() {
+  if (fontsWatched || typeof document === 'undefined' || !document.fonts) return;
+  fontsWatched = true;
+  const f = document.fonts;
+  if (typeof f.addEventListener === 'function') f.addEventListener('loadingdone', refitForFonts);
+  if (f.ready && typeof f.ready.then === 'function') f.ready.then(refitForFonts, () => {});
+}
+
 function linksRow(links) {
   const row = document.createElement('div');
   row.className = 'f-links';
@@ -482,21 +531,33 @@ function grownBlock(facts, { onOpenNotes = null, notesChip = true, doorsBelow = 
         sub.appendChild(note);
       }
     } else if (facts.order) {
-      // Two lines in ONE .f-sub (the window, then the order): the bloom's
-      // cascade and the refresh bookkeeping below both key on a single
-      // WHEN element, so the pair travels as one piece.
-      sub.classList.add('f-stack');
+      // The window and the order in ONE .f-sub (the bloom's cascade and the
+      // refresh bookkeeping both key on a single WHEN element, so the pair
+      // travels as one piece) — a PAIR: one line when both fit, stacked
+      // when they do not, never broken inside either (fitPairs).
+      sub.classList.add('f-stack', 'f-pair');
       const line = document.createElement('span');
       line.className = 'f-when';
       line.textContent = facts.when;
-      sub.append(line, orderDoor(facts.order));
+      sub.append(line, pairSep(), orderDoor(facts.order));
     } else {
       sub.textContent = facts.when;
     }
     grown.appendChild(sub);
   }
-  if (facts.where) grown.appendChild(placeDoor(facts.where, facts.mapUrl, 'f-where'));
-  if (facts.links) grown.appendChild(linksRow(facts.links));
+  // WHERE and the show's doors out: a pair too (the place, then Tix · Info as
+  // one unit that never splits), one line where they fit (Kevin, 2026-09-26:
+  // "never line-break inside a statement… don't stack four items just
+  // because we allowed multiple rows").
+  const where = facts.where ? placeDoor(facts.where, facts.mapUrl, 'f-where') : null;
+  const links = facts.links ? linksRow(facts.links) : null;
+  if (where && links) {
+    const pair = document.createElement('div');
+    pair.className = 'f-pair f-place';
+    pair.append(where, pairSep(), links);
+    grown.appendChild(pair);
+  } else if (where) grown.appendChild(where);
+  else if (links) grown.appendChild(links);
   // The who-row only when there are people: a pill arriving after a tap
   // slides in and its neighbours make room (the designed event). A reserved
   // empty row was tried on 2026-09-01 to keep the venue door from sliding
@@ -966,6 +1027,8 @@ function zoomCardInner(el, artistName, ctx, { onOpenNotes = null, source = 'mous
   const r0 = rect(el);
   sizeSlot(slot, r0, doors);
   zoomLayer().appendChild(slot);
+  fitPairs(card);
+  watchFonts();
   const { r1 } = place(slot, el);
   el.classList.add('zoom-source'); // the resting CONTENT steps back; its wash stays
   zoomed = z;
@@ -1101,6 +1164,7 @@ function refreshZoomInner(fresh, ctx) {
   const doors = doorsOf(z);
   z.card.classList.toggle('doors', !!doors);
   sizeSlot(z.slot, rect(fresh), doors);
+  fitPairs(z.card);
   place(z.slot, fresh, { floorAt: doors && hadDoors && slotBefore ? slotBefore.bottom : null });
   if (!animate) return;
 
@@ -1431,6 +1495,7 @@ function wireSlot(z) {
   // Capture phase so an inner scroller's scroll (which does not bubble) is
   // heard too; rAF-throttled, one re-place per frame.
   let followRaf = 0;
+  let refitNext = false; // the viewport changed: size and pairs are measured again, not just the place
   const follow = () => {
     followRaf = 0;
     if (zoomed !== z) return;
@@ -1448,15 +1513,20 @@ function wireSlot(z) {
       unzoom({ instant: true, why: 'card scrolled under the sticky chrome' });
       return;
     }
+    // A rotation or a resized window changes what the zoom may be (a finger's
+    // zoom is as wide as the screen allows) and so what its pairs fit — the
+    // re-review of a73df70: a pair kept the layout it was opened with.
+    if (refitNext) { refitNext = false; relayoutZoom(z); return; }
     place(z.slot, z.el);
   };
   const onScroll = () => { if (!followRaf) followRaf = requestAnimationFrame(follow); };
+  const onResize = () => { refitNext = true; onScroll(); };
   window.addEventListener('scroll', onScroll, { passive: true, capture: true });
-  window.addEventListener('resize', onScroll);
+  window.addEventListener('resize', onResize);
   z.cleanup.push(() => {
     if (followRaf) cancelAnimationFrame(followRaf);
     window.removeEventListener('scroll', onScroll, true);
-    window.removeEventListener('resize', onScroll);
+    window.removeEventListener('resize', onResize);
   });
 
   // Keyboard: Tab from the zoomed card reaches the notes chip inside the
@@ -1568,9 +1638,25 @@ export function wireCardZoom(el, artistName, ctx, { onOpenNotes = null, occ = nu
 // Keyboard route (2026-08-29): focusing a card grows it too, so Tab reaches
 // the notes chip inside — the door to a FIRST note needs no pointer at all.
 // focusout only unzooms when focus truly left the card and its overlay.
+// A focus the APP hands back — a layer closing and returning focus to what
+// opened it (the join shelf, a notes sheet) — is not the person navigating.
+// The keyboard route below grows a card on keyboard focus, and the Escape that
+// closed the layer had just set lastInput to 'keyboard', so the returning
+// focus grew a fresh zoom over the card the person had just left (the
+// independent walk of b29aac0 — the same class as click · Escape · click).
+// Every programmatic return goes through here; the route ignores it. A Back
+// with no key pressed was already fine and stays so.
+let quietFocus = null;
+export function focusQuietly(el, opts = { preventScroll: true }) {
+  if (!el || typeof el.focus !== 'function') return;
+  quietFocus = el;
+  try { el.focus(opts); } catch { /* not focusable */ } finally { quietFocus = null; }
+}
+
 export function wireCardFocusZoom(el, artistName, ctx, { onOpenNotes = null, occ = null } = {}) {
   el.addEventListener('focusin', () => {
     if (zoomed && zoomed.el === el) return;
+    if (quietFocus && (quietFocus === el || el.contains(quietFocus))) return; // handed back, not navigated to
     // The stay-away mark is a MOUSE rule and deliberately not read here — Tab
     // is fresh intent, and gating it made keyboard growth look off-by-one-card
     // (real-browser walk, 2026-08-30).

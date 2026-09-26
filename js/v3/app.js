@@ -65,7 +65,7 @@ import { hslOf, strokeOf, nextColorIndex } from './palette.js';
 import { planBringPicks, bringFromSource, bringOfferCopy, bringDoneLine, bringAnswered, rememberBringAnswer, showBringOffer, settleBringOffer, dismissBringOffer, bringOfferCard } from './crew-entry.js';
 import { showActionToast } from './wall.js';
 // First open, wall first (v92, 2026-09-25): a guest's welcome, once per phone.
-import { welcomeCopy, welcomeSeen, rememberWelcomeSeen, showWelcome, dismissWelcome, welcomeCard, WORDS } from './welcome.js';
+import { welcomeCopy, welcomeSeen, rememberWelcomeSeen, joinedWelcomeSeen, rememberJoinedWelcomeSeen, showWelcome, dismissWelcome, welcomeCard, WORDS } from './welcome.js';
 // The guest shelf round (v92, 2026-09-25): a guest is asked on a shelf over the wall.
 import { showJoinShelf, joinShelf } from './join-shelf.js';
 // The warm open (2026-09-23): paint from what this phone holds, freshen after.
@@ -168,10 +168,29 @@ document.addEventListener('pointerdown', (e) => {
   // open the next card's zoom. A drag that turns into a scroll sends no
   // click, so the swallow expires on its own. Members are untouched: their
   // tap picks, as it always has.
+  //   The swallow belongs to THIS gesture and eats only a click that lands on
+  // a card (the code map, 2026-09-26: it used to eat the first click
+  // anywhere for 700 ms, so a flick that began on a card and a quick tap on a
+  // day tab lost the tap). It is gone at the gesture's cancel (the flick
+  // became a scroll), at the next press, at the first click whatever it hit,
+  // or after 700 ms.
   if (finger && !ctx.meName && e.target.closest && e.target.closest('#wall-root .card[data-artist]')) {
-    const eat = (ev) => { ev.stopPropagation(); ev.preventDefault(); };
-    document.addEventListener('click', eat, { capture: true, once: true });
-    setTimeout(() => document.removeEventListener('click', eat, true), 700);
+    let timer = null;
+    const disarm = () => {
+      clearTimeout(timer);
+      document.removeEventListener('click', eat, true);
+      document.removeEventListener('pointercancel', disarm, true);
+      document.removeEventListener('pointerdown', disarm, true);
+    };
+    const eat = (ev) => {
+      disarm();
+      if (ev.target && ev.target.closest && ev.target.closest('#wall-root .card[data-artist]')) { ev.stopPropagation(); ev.preventDefault(); }
+    };
+    document.addEventListener('click', eat, true);
+    document.addEventListener('pointercancel', disarm, true);
+    // Added during this press's own dispatch, so it hears only the NEXT press.
+    document.addEventListener('pointerdown', disarm, true);
+    timer = setTimeout(disarm, 700);
   }
 }, true);
 // Escape closes ONE layer: a live zoom eats the press before any sheet or
@@ -1312,23 +1331,59 @@ function renderDayNav() {
 const SHOW_MENUS = [['dock-fest-wrap', 'dock-fest-link'], ['rail-fest-wrap', 'rail-fest-link']];
 let openMenu = null;
 
+// A menu on its way out (the fade after a close): at most one. Its end hides
+// the menu and lets its bar step back — unless that same menu is open again
+// by then. Closed and reopened inside the 130 ms fade, the old fade's end used
+// to hide the NEW menu while aria-expanded said open and the dock stayed
+// raised (the re-review of b29aac0). Now a fade ends early the moment the
+// menu is reopened (or another fade starts), and its end never touches the
+// menu that is open.
+let menuExit = null; // { pop, bar, anim }
+function hideShowMenu(pop, bar) {
+  if (!(openMenu && openMenu.pop === pop)) pop.style.display = 'none';
+  if (bar && !(openMenu && openMenu.bar === bar)) bar.classList.remove('menu-up');
+}
+function settleMenuExit() {
+  const x = menuExit;
+  if (!x) return;
+  menuExit = null;
+  x.anim.onfinish = null;
+  x.anim.oncancel = null;
+  try { x.anim.cancel(); } catch { /* already done */ }
+  hideShowMenu(x.pop, x.bar);
+}
+
 function closeShowMenu({ instant = false } = {}) {
-  if (!openMenu) return;
-  const { pop, link } = openMenu;
+  // Nothing open: an instant close still ends a fade in flight (a crew switch,
+  // the shelf rising), so the bar is never left raised behind it.
+  if (!openMenu) { if (instant) settleMenuExit(); return; }
+  const { pop, link, bar } = openMenu;
   openMenu = null;
   link.setAttribute('aria-expanded', 'false');
-  const hide = () => { pop.style.display = 'none'; };
+  settleMenuExit(); // an earlier menu still fading ends now
   // The way out is quick and plain.
-  if (instant || !canAnimate(pop, ctx)) { hide(); return; }
-  const a = pop.animate([{ opacity: 1, transform: 'translateY(0)' }, { opacity: 0, transform: 'translateY(4px)' }],
+  if (instant || !canAnimate(pop, ctx)) { hideShowMenu(pop, bar); return; }
+  const anim = pop.animate([{ opacity: 1, transform: 'translateY(0)' }, { opacity: 0, transform: 'translateY(4px)' }],
     { duration: OUT_MS, easing: EASE_LEAVE });
-  a.onfinish = hide;
-  a.oncancel = hide;
+  const exit = { pop, bar, anim };
+  menuExit = exit;
+  const done = () => { if (menuExit !== exit) return; menuExit = null; hideShowMenu(pop, bar); };
+  anim.onfinish = done;
+  anim.oncancel = done;
 }
 
 function openShowMenu(wrap, link, pop) {
   closeShowMenu({ instant: true });
-  openMenu = { wrap, link, pop };
+  settleMenuExit(); // reopened mid-fade: that fade ends here, before this open, so it can never hide it
+  // The bar the menu lives in (the dock, the day rail) is a stacking context:
+  // its menu paints at the bar's own level, which put the dock's upward menu
+  // UNDER the welcome card and the bring-picks offer (z38) — a guest tapping
+  // the fest name with the welcome up got a menu they could not use (the
+  // code map, 2026-09-26). While the menu is up the bar stands above them
+  // (v3.css .menu-up); it steps back once the menu has gone.
+  const bar = wrap.closest('.dock, .day-rail');
+  if (bar) bar.classList.add('menu-up');
+  openMenu = { wrap, link, pop, bar };
   pop.style.display = '';
   link.setAttribute('aria-expanded', 'true');
   // The way in has the beat.
@@ -1404,6 +1459,14 @@ function buildShowMenu(rooms, folded) {
   return pop;
 }
 
+// A menu leaving the page (its rooms changed): closed and its fade ended
+// first, so neither an open state nor a raised bar outlives it.
+function dropShowMenu(pop) {
+  if (openMenu && openMenu.pop === pop) closeShowMenu({ instant: true });
+  if (menuExit && menuExit.pop === pop) settleMenuExit();
+  pop.remove();
+}
+
 function paintShowMenus() {
   // A search wall has no rooms, and the fest name must not change what it
   // does while someone is typing — the festival's rooms are the same rooms.
@@ -1417,7 +1480,7 @@ function paintShowMenus() {
     if (!wrap || !link) continue;
     const existing = wrap.querySelector('.sort-pop');
     if (rooms.length < 2) {
-      if (existing) { if (openMenu && openMenu.pop === existing) closeShowMenu({ instant: true }); existing.remove(); }
+      if (existing) dropShowMenu(existing);
       link.removeAttribute('aria-haspopup');
       link.removeAttribute('aria-expanded');
       link.setAttribute('aria-label', 'Open settings');
@@ -1435,7 +1498,7 @@ function paintShowMenus() {
       }
       continue;
     }
-    if (existing) { if (openMenu && openMenu.pop === existing) closeShowMenu({ instant: true }); existing.remove(); }
+    if (existing) dropShowMenu(existing);
     link.setAttribute('aria-expanded', 'false');
     wrap.appendChild(buildShowMenu(rooms, folded));
   }
@@ -2543,7 +2606,7 @@ function maybeOfferBringPicks() {
   // for someone new here, the offer does not ask — the welcome's left button
   // asks it. A member who knows the crew never has one, so theirs asks as in
   // v91.
-  if (welcomeCard() || (welcomeHere && !welcomeSeen())) return;
+  if (welcomeCard() || welcomeDue()) return;
   if (document.getElementById('artist-sheet')) { offerWhenSheetCloses(); return; }
   const plan = planBringPicks(bringContext());
   if (!plan) return;
@@ -2577,13 +2640,17 @@ function offerWhenSheetCloses() {
 }
 
 // ---- the welcome (v92) ------------------------------------------------------------
-// Once per phone, for someone new here only: a guest, or someone who has just
-// joined (welcomeHere, set by enterApp). Like the offer it waits for an open
-// sheet, then arrives with its beat; its left button is when the offer may ask.
+// For someone new here only, each card once per phone: a guest's ('guest'),
+// and a fresh join's ('joined' — a name new to the crew, never someone who
+// took their own existing name). Two markers, because the guest card is read
+// before any join can land (welcome.js). Like the offer it waits for an open
+// sheet, then arrives with its beat; its button is when the offer may ask.
 let welcomeWaiter = null;
-let welcomeHere = false; // this entry is someone new: a guest, or the join screen's answer
+let welcomeHere = null; // 'guest' | 'joined' | null — who this entry is, set by enterApp
+const welcomeDue = () => (welcomeHere === 'guest' ? !welcomeSeen()
+  : welcomeHere === 'joined' ? !joinedWelcomeSeen() : false);
 function maybeWelcome() {
-  if (!welcomeHere || welcomeSeen() || welcomeCard() || !state.getCrewToken()) return;
+  if (!welcomeDue() || welcomeCard() || !state.getCrewToken()) return;
   if ($('screen-app').style.display === 'none') return;
   if (document.getElementById('artist-sheet')) { welcomeWhenSheetCloses(); return; }
   const people = state.activePeople();
@@ -2596,6 +2663,7 @@ function maybeWelcome() {
     const ci = colorIndexOf(name, p);
     return { name, bg: hslOf(ci, 0.5), stroke: strokeOf(ci, name === ctx.meName) };
   });
+  if (welcomeHere === 'joined') rememberJoinedWelcomeSeen(); // once: shown is seen
   showWelcome($('screen-app'), {
     copy, faces, ctx,
     onGotIt: () => { pulseJoinRing(); maybeOfferBringPicks(); },
@@ -2898,7 +2966,7 @@ async function enterApp(token, doc, current = () => true, customs = fetchCustomF
   guestOf = member || crew.me(token) ? null : token;
   dismissBringOffer({ instant: true }); // an offer is about the crew it was made in — never the next one
   dismissWelcome({ instant: true });    // nor does a card from one crew sit over the next
-  welcomeHere = false;                  // decided below, once the name is known
+  welcomeHere = null;                   // decided below, once the name is known
   // A share link's starting view (v92): consumed once, like the fest hint,
   // and only ever for a phone that has never shown the link's festival — read
   // before this entry remembers anything about it.
@@ -3003,7 +3071,7 @@ async function enterApp(token, doc, current = () => true, customs = fetchCustomF
   refreshCtx();
   // New here (v92): a guest, or the join screen's answer. A phone that knows
   // you or recognizes you lands as it did in v91, with no card.
-  welcomeHere = !ctx.meName || joined;
+  welcomeHere = !ctx.meName ? 'guest' : joined ? 'joined' : null;
   renderPersonChips();
   renderYou();
   repaintWall();

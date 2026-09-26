@@ -91,6 +91,24 @@ test('closing the shelf gives focus back to what opened it', async () => {
   assert.equal(document.activeElement, you(), 'Look around: the same');
 });
 
+test('Escape over a shelf a zoom’s + opened hands focus back to the card — and grows no zoom there', async () => {
+  if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); // a finger focuses nothing (iOS)
+  const card = document.querySelector('#wall-root .card[data-artist="Robyn"]');
+  card.dispatchEvent(new window.PointerEvent('pointerdown', { bubbles: true, pointerType: 'touch' }));
+  card.click(); // a guest's finger: the card's zoom
+  await settle(10);
+  assert.ok(document.querySelector('#zoom-layer .zoom-card'), 'the zoom is up');
+  document.querySelector('#zoom-layer .f-step.plus').click();
+  await settle(20);
+  assert.ok(shelf(), 'the shelf is up');
+  escape(); // a real key: card-facts now believes the last input was the keyboard
+  await settle(80);
+  assert.equal(shelf(), null, 'Escape took the shelf down');
+  assert.equal(document.activeElement, document.querySelector('#wall-root .card[data-artist="Robyn"]'), 'focus is back on the card');
+  assert.equal(document.querySelector('#zoom-layer .zoom-card'), null,
+    'and no zoom grew there: a focus handed back is not keyboard navigation (it used to reopen within 50 ms)');
+});
+
 test('Tab never walks out of the shelf — not even from the shelf itself, where focus starts', async () => {
   await openFromYou();
   await settle(20);
