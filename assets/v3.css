@@ -1541,7 +1541,11 @@ a.f-link:hover { border-bottom-color: rgba(255, 255, 255, .75); }
  * display face) drawn at twice its size, so each + visibly fills a bar. With
  * nothing picked, and for a guest, it is the same chip hollow. Never --brand,
  * never --fest. */
-.sheet-card .f-chips.f-step-row { margin-top: 1px; }
+/* The middle third is a fixed width that holds the meter at its widest (MUST),
+ * so a step to must never re-divides the row: − and + keep their boxes, not
+ * just their glyphs (the tap walk, 2026-09-26 — at must the +'s box lost 6px). */
+.sheet-card .f-chips.f-step-row { margin-top: 1px; grid-template-columns: minmax(0, 1fr) 72px minmax(0, 1fr); }
+.sheet-card .f-chips.f-step-row > .f-meter { justify-self: center; }
 .sheet-card .f-chips.f-step-row > .f-step.minus::after { content: ''; position: absolute; inset: -6px 0 -17px -16px; }
 .sheet-card .f-chips.f-step-row > .f-step.plus::after { content: ''; position: absolute; inset: -6px -16px -17px 0; }
 .sheet-card .f-meter { display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box;

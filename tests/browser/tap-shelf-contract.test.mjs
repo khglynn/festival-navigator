@@ -123,6 +123,7 @@ for (const [name, get] of ENGINES) {
 
       const rowY = s.plus.y;
       const plusAt = { x: s.plus.x, y: s.plus.y };
+      const minusX = s.minus.x;
       for (const want of [1, 2, 3, 4]) {
         await tapAt(page, plusAt); // the same spot every time: the finger does not move
         await sleep(450);
@@ -136,6 +137,10 @@ for (const [name, get] of ENGINES) {
         // WebKit and Chromium hold it to 0. No finger feels a pixel; the law's
         // teeth are the 22–29px jumps a who-row arriving used to cause.
         assert.ok(Math.abs(s.plus.y - rowY) <= 1.5, `the row did not move under the finger (+${want}: ${s.plus.y - rowY}px)`);
+        // Nor sideways: the meter's MUST is wider than its bars, and a middle
+        // that sized to it re-divided the row at must (the tap walk).
+        assert.ok(Math.abs(s.plus.x - plusAt.x) <= 1.5 && Math.abs(s.minus.x - minusX) <= 1.5,
+          `− and + kept their boxes (+${want}: +${(s.plus.x - plusAt.x).toFixed(1)}px, −${(s.minus.x - minusX).toFixed(1)}px)`);
       }
       assert.equal(s.plus.off, true, 'must: nowhere higher');
       const minusAt = { x: s.minus.x, y: s.minus.y };
