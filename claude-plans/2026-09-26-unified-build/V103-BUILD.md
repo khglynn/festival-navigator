@@ -13,8 +13,14 @@ dies, this file and the branch are the handoff.*
 - [x] 1. NOW the first item of the day row, one place whatever the day — see "Step 1" below
 - [x] 2. the List filters by highlight — see "Step 2" below
 - [x] 3. the crew playlist's top songs: paced, backed off, counted, said — see "Step 3" below
-- [ ] frames 390 / 320 / 1280, Portola and ACL, looked at
-- [ ] npm test at UTC, Tokyo, NIGHT_CLOCK; `npm run test:browser`; CI green on both jobs
+- [x] frames 390 / 320 / 1280, Portola and ACL, looked at (`v103-shots/`, git-ignored;
+      rendered by `v103-rig.mjs`, `v103-film.mjs`, `v103-spotify-walk.mjs`)
+- [x] gate at 0c256a6: npm test at UTC / Asia/Tokyo / the night clock 1274 of 1277
+      each, the one red the SW stamp (with a temporary local `--keep` stamp,
+      restored after: 1275 of 1277, 0 fail, at all three); validate-festivals 0
+      errors; `npm audit --omit=dev --audit-level=high` 0; CI 36280202963:
+      **browser green** (Linux Chromium + WebKit), checks red on the stamp only
+      (so CI's Tokyo / night / audit steps never ran there — run locally above)
 
 ## The plan, per ask
 
@@ -213,6 +219,11 @@ the top-up's own note, and a re-render mid-run — call 3b).
 
 ## The gate, as it runs (reds read by name)
 
+- CI 36280202963 (0c256a6): browser **success**; checks red on the stamp only.
+- CI 36279004159 (464ed69): the three reds below fixed; one WebKit red once —
+  `WebKit 320: Ross highlighted — NOW slides SAT AFTERS … just enough` read the
+  stack row at 38 of 41 (its glide not done); it passed in every run before
+  and after and three times locally, so it is logged as a flake, not fixed.
 - Node, three clocks, at 6f77de1: 1273 / 1276 each (UTC, Asia/Tokyo, the night
   clock); the one red is the service-worker stamp (not stamped, by the brief);
   one skipped, one todo (the banked offline-add casing). validate-festivals: 0 errors.
