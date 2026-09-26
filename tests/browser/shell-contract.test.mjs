@@ -538,7 +538,8 @@ test('the show menu: opening it pushes nothing; Back with it up leaves no menu a
     await page.waitForTimeout(900);
     await wall();
     const back = await state();
-    assert.equal(back.url, `#g=${OTHER}`, 'one Back: the crew before, as Back always did');
+    const crewOf = (hash) => (/[#&]g=([^&]+)/.exec(hash) || [])[1];
+    assert.equal(crewOf(back.url), OTHER, `one Back: the crew before, as Back always did: ${back.url}`);
     assert.deepEqual([back.menu, back.shown, back.busy], ['false', 'none', null], 'with no menu and no busy flag left behind');
 
     await page.evaluate(() => history.forward());
@@ -554,7 +555,7 @@ test('the show menu: opening it pushes nothing; Back with it up leaves no menu a
     await page.evaluate(() => history.back());
     await page.waitForTimeout(900);
     await wall();
-    assert.equal((await state()).url, `#g=${OTHER}`, 'and Back from the fest list is the crew before');
+    assert.equal(crewOf((await state()).url), OTHER, 'and Back from the fest list is the crew before');
   } finally {
     await ctx.close();
   }

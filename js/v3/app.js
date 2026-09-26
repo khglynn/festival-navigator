@@ -64,6 +64,7 @@ import { hslOf, strokeOf, nextColorIndex } from './palette.js';
 // open, and the one-time offer to bring your picks from another crew.
 import { planBringPicks, bringFromSource, bringOfferCopy, bringDoneLine, bringAnswered, rememberBringAnswer, showBringOffer, settleBringOffer, dismissBringOffer, bringOfferCard } from './crew-entry.js';
 import { showActionToast } from './wall.js';
+import { openImportSheet } from './import.js'; // picks from a festival app's schedule export (2026-09-26)
 // First open, wall first (v92, 2026-09-25): a guest's welcome, once per phone.
 import { welcomeCopy, welcomeSeen, rememberWelcomeSeen, joinedWelcomeSeen, rememberJoinedWelcomeSeen, showWelcome, dismissWelcome, welcomeCard, WORDS } from './welcome.js';
 // The guest shelf round (v92, 2026-09-25): a guest is asked on a shelf over the wall.
@@ -905,9 +906,22 @@ function lookAround(token, doc) {
 // The layer is dropped from the model first (its history entry stays, and
 // reconciles to nothing), so "Look around" comes back to the wall, never to
 // a layer the history no longer holds.
+// The wall's own address keeps the festival in its path (/f/<fest>#g=…), the
+// same shape a share link has (crew.js crewLink), so a link copied from the
+// address bar or sent from the browser's share button previews as that
+// festival ("Portola '26", its image) instead of the bare app (Kevin, 2026-09-26:
+// a link he sent from the address bar previewed as plain "Festival Navigator").
+// The rewrite had written `/#g=` since July, dropping the /f/ path a share link
+// arrived with. /f/<id> is served by api/share.js online and by the worker's
+// precached shell offline (every navigation falls back to it), so a reload
+// there works in a field. The token stays in the hash, never the path.
+function wallUrl(token) {
+  return crew.crewLink(token, state.activeFestivalId);
+}
+
 function joinFromLayer() {
   router.reset();
-  history.replaceState(null, '', `/#g=${state.getCrewToken()}`);
+  history.replaceState(null, '', wallUrl(state.getCrewToken()));
   closeSheet();
   show('screen-app');
   askToJoin(null);
@@ -2335,6 +2349,76 @@ function seedViewOnce(fid, { show = null, view = null } = {}) {
   return { rooms, list };
 }
 
+// ---- import from a festival app's schedule export (2026-09-26) ----------------------
+// A pick a Settings tool makes — Bulk paste, the schedule import — goes the
+// way a tap's does: the same migration gate (nothing counts while a legacy
+// crew is being updated, and the tool says so), the same pending write and
+// local mirror. The caller schedules the sync once, after its whole batch.
+function recordToolPick(artist, person, level) {
+  if (ctx.migrationPending) return false; // same gate as handleTap
+  state.recordSelection(artist, person, level);
+  applyLocalPick(artist, person, level);
+  return true;
+}
+
+// The sheet (js/v3/import.js) reads the images, lands the levels, and hands
+// back only the picks the person chose, for them alone. Once they are added:
+// one sync, then the wall — every layer down at once (history.go through
+// the router's own stack, so Back never lands on a dead Settings) — and a
+// line saying what happened. False when there is nothing to open (a guest,
+// a festival with no lineup yet).
+function openImport() {
+  refreshCtx();
+  const fest = state.fest();
+  const token = state.getCrewToken();
+  if (!ctx.meName || !token || !fest || !(fest.artists || []).length) return false;
+  const me = ctx.meName;
+  const fid = ctx.fid;
+  openImportSheet({
+    ctx, fest, token, me,
+    // Only ever the person importing, and only on the festival it opened on.
+    record: (name, level) => (state.getCrewToken() === token && state.activeFestivalId === fid && ctx.fid === fid && ctx.meName === me
+      ? recordToolPick(name, me, level) : false),
+    close: () => { if (!router.requestClose()) closeSheet(); },
+    done: (n, { stay = false, first = null } = {}) => {
+      sync.scheduleSync();
+      refreshCtx();
+      if (stay) { repaintWall(); return; }
+      // The picks are the point, so the wall opens on the first one added
+      // (a closed Settings otherwise leaves the wall at its top — true of
+      // every Settings close today, noted in IMPORT-BUILD.md).
+      const land = () => {
+        const card = first && document.querySelector(`#wall-root .card[data-artist="${CSS.escape(first)}"]`);
+        if (card) card.scrollIntoView({ block: 'center', behavior: 'auto' });
+      };
+      const depth = router.depth();
+      if (depth > 0) {
+        // The browser restores the wall entry's own scroll just AFTER
+        // popstate (a scroll to its top, measured 2026-09-26), undoing a
+        // scroll made in the handler. So the landing rides that restoring
+        // scroll event — it runs before the frame paints, so the top of the
+        // wall is never shown — with a timer behind it for an engine that
+        // restores nothing.
+        // One landing, never two (a second would yank someone already
+        // scrolling), and a listener that outlives a traversal that never
+        // came is dropped rather than left for some later Back.
+        let timer = 0;
+        const once = () => { clearTimeout(timer); land(); };
+        const onPop = () => {
+          clearTimeout(forget);
+          window.addEventListener('scroll', once, { once: true, passive: true });
+          timer = setTimeout(() => { window.removeEventListener('scroll', once); land(); }, 350);
+        };
+        const forget = setTimeout(() => window.removeEventListener('popstate', onPop), 1500);
+        window.addEventListener('popstate', onPop, { once: true });
+        history.go(-depth);
+      } else { closeSheet(); if ($('screen-settings').style.display !== 'none') closeSettings(); else repaintWall(); land(); }
+      showToast($('toast-root'), `Added ${n} pick${n === 1 ? '' : 's'} from your ${fest.name} schedule.`, 5000);
+    },
+  });
+  return true;
+}
+
 // ---- the share moment (FLOW-7/FLOW-12) ----------------------------------------------
 // One centered dialog right after create (and re-openable from Settings):
 // the link is VISIBLE — share sheets fail silently, a printed URL never does.
@@ -2660,13 +2744,11 @@ function openSettings() {
       const gen = bootGeneration;
       if (token) freshenFromNetwork(token, () => loadFestivalIndex().catch(() => { /* the cached list stays */ }), () => gen === bootGeneration);
     },
-    recordPick: (artist, person, level) => {
-      if (ctx.migrationPending) return false; // same gate as handleTap (bulk paste path)
-      state.recordSelection(artist, person, level);
-      applyLocalPick(artist, person, level);
-      return true;
-    },
+    recordPick: (artist, person, level) => recordToolPick(artist, person, level),
     afterBulk: () => { sync.scheduleSync(); refreshCtx(); },
+    // Import from the festival app's schedule export (2026-09-26): a sheet
+    // over Settings, a history entry of its own like every sheet.
+    openImport: () => { if (openImport()) router.push('sheet:import'); },
     // Every link Settings hands out carries this phone's view (v92, SD1), and
     // says so in one line.
     inviteLink: (meName = null) => inviteLink(meName),
@@ -3494,7 +3576,7 @@ async function enterApp(token, doc, current = () => true, customs = fetchCustomF
   repaintWall();
   maybeOpenOnDay();
   startClock();
-  history.replaceState(savedLayers ? { layers: savedLayers } : null, '', `/#g=${token}`);
+  history.replaceState(savedLayers ? { layers: savedLayers } : null, '', wallUrl(token));
   sync.pollSync();
   router.reset();
   if (savedLayers) router.restore(savedLayers);
@@ -3903,6 +3985,7 @@ export function init() {
     if (key === 'sheet:all') openAllNotes(ctx);
     else if (key === 'sheet:share') openShareMoment();
     else if (key === 'sheet:add-member') { if (ctx.meName) openAddMember(); } // a guest adds nobody (v92)
+    else if (key === 'sheet:import') openImport(); // your picks only: a member's sheet (it opens nothing for a guest)
     else if (key === 'sheet:fest') openFestNotes(ctx, onNotesChange);
     else if (key.startsWith('sheet:day:')) openDayNotes(key.slice('sheet:day:'.length), null, ctx, onNotesChange);
     else if (key.startsWith('sheet:notes:')) {
