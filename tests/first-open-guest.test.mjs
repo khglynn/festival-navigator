@@ -118,7 +118,17 @@ const shelfChip = (name) => [...shelf().querySelectorAll('.js-name')].find((b) =
 const shelfGo = () => shelf().querySelector('.js-go');
 const shelfLook = () => shelf().querySelector('.js-look');
 const typeName = (v) => { const f = shelf().querySelector('.js-field'); f.value = v; f.dispatchEvent(new shell.dom.window.Event('input')); };
-async function lookAround() { shelfLook().click(); await settle(40); }
+// "Look around" pops the shelf's history entry, and the popstate that follows
+// closes any menu that is up (a menu goes with the page on a Back). Wait for
+// that traversal to land, not a fixed time: on a loaded machine it landed
+// after the next test's tap on the +, and closed the menu that tap had just
+// opened (Sol's night-clock run of b78b274; forced here by not waiting at
+// all). A person cannot tap inside that one task.
+async function lookAround() {
+  shelfLook().click();
+  for (let i = 0; i < 400 && history.state && history.state.joinShelf; i++) await settle(5);
+  await settle(10);
+}
 async function open(hash) {
   location.hash = hash;
   await settle(120);

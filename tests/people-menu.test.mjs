@@ -45,10 +45,13 @@ const SERVER = {
 };
 const OTHER_DOC = {
   v: 4, meta: { name: 'ACL Crew' }, spotify: {}, affinity: {},
-  people: { Ana: { colorIndex: 0 }, Drew: { colorIndex: 4 } }, festivals: {},
+  people: { Ana: { colorIndex: 0 }, Drew: { colorIndex: 4 }, Kat: { colorIndex: 5 } }, festivals: {},
 };
 
 const writes = []; // every non-GET request
+// A crew POST can be held until the test lets it answer (two quick adds).
+let holdPosts = false;
+const heldPosts = [];
 const json = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
 async function network(url, opts = {}) {
   const u = String(url);
@@ -60,6 +63,7 @@ async function network(url, opts = {}) {
   if (u.startsWith('/api/crew?')) {
     const t = new URL(u, 'https://x').searchParams.get('t');
     if (!SERVER[t]) return json({ error: 'Crew not found' }, 404);
+    if (method !== 'GET' && holdPosts) await new Promise((r) => heldPosts.push(r));
     if (method !== 'GET') SERVER[t] = deepMerge(SERVER[t], JSON.parse(opts.body).data || {});
     return json(SERVER[t]);
   }
@@ -101,6 +105,14 @@ async function openMenu() {
   assert.ok(isOpen(), 'the menu is open');
 }
 async function closeMenu() { if (isOpen()) { escape(); await settle(10); } }
+// The join shelf's ways out pop its history entry, and the popstate that
+// follows closes any menu that is up: wait for that traversal to land before
+// the next tap, never a fixed time (a loaded machine lands it late — see
+// first-open-guest.test.mjs lookAround).
+async function historySettled() {
+  for (let i = 0; i < 400 && window.history.state && window.history.state.joinShelf; i++) await settle(5);
+  await settle(10);
+}
 
 test('the avatar opens HIGHLIGHT, the Show menu’s twin: its label, Everyone, the crew with you marked, a line, then the ways on', async () => {
   assert.deepEqual([...document.querySelectorAll('#dock-you, #rail-you')].map((b) => b.getAttribute('aria-haspopup')), ['listbox', 'listbox']);
@@ -257,7 +269,7 @@ test('Pick as someone else: the join shelf in a member’s words — your chip s
   assert.equal(go.textContent, 'I’m Ben');
   assert.equal(crew.me(CREW), 'Ana', 'one tap switches nobody');
   go.click();
-  await settle(60);
+  await historySettled();
   assert.equal(crew.me(CREW), 'Ben', 'the second tap does');
   assert.equal(shelf(), null);
   assert.equal($('dock-you').textContent, 'B');
@@ -269,14 +281,14 @@ test('Pick as someone else: the join shelf in a member’s words — your chip s
   await settle(20);
   shelf().querySelector('.js-name[data-name="Ana"]').click();
   shelf().querySelector('.js-look').click(); // Stay Ben
-  await settle(60);
+  await historySettled();
   assert.equal(crew.me(CREW), 'Ben', 'Stay changes nothing');
   await openMenu();
   action('pick-as').click();
   await settle(20);
   shelf().querySelector('.js-name[data-name="Ana"]').click();
   shelf().querySelector('.js-go').click();
-  await settle(60);
+  await historySettled();
   assert.equal(crew.me(CREW), 'Ana');
   assert.equal(writes.filter((w) => w.url.startsWith('/api/crew')).length, 0, 'picking as someone is this phone’s own choice: nothing sent');
 });
@@ -289,7 +301,7 @@ test('Pick as someone else never switches to someone removed while the shelf was
   const saved = state.crewDoc.people.Cy;
   state.applyRemoteDoc(deepMerge(state.crewDoc, { people: { Cy: { removed: true } } })); // another phone removes her
   shelf().querySelector('.js-go').click();
-  await settle(60);
+  await historySettled();
   assert.equal(crew.me(CREW), 'Ana', 'still Ana: Cy is nobody to be now');
   assert.equal(shelf(), null, 'the shelf went down all the same');
   state.applyRemoteDoc(deepMerge(state.crewDoc, { people: { Cy: { ...saved, removed: false } } })); // back for the tests below
@@ -311,7 +323,7 @@ test('+ Invite someone: one sheet — the crew link first (Copy), then a name, t
   const link = sheet.querySelector('.inv-link input');
   assert.match(link.value, new RegExp(`#g=${CREW}`), 'the crew link, visible');
   assert.ok(sheet.querySelector('.inv-link .inv-copy'), 'Copy beside it');
-  assert.deepEqual([...sheet.querySelectorAll('.inv-others button')].map((b) => b.textContent), ['+ Drew'], 'Drew from your other crew; Ana is you');
+  assert.deepEqual([...sheet.querySelectorAll('.inv-others button')].map((b) => b.textContent), ['+ Drew', '+ Kat'], 'Drew and Kat from your other crew; Ana is you');
   assert.notEqual(document.activeElement, sheet.querySelector('.inv-name input'), 'the name field waits: a keyboard would cover the link');
   assert.equal(sheet.querySelector('.inv-sub').textContent.startsWith('Opens straight into Menu Crew.'), true);
 });
@@ -335,6 +347,69 @@ test('Add by name is server-first and ends on their own link; a name already her
   assert.match(done.querySelector('.inv-link input').value, /me=Zed/, 'their own link');
   assert.ok(state.people().Zed, 'and Zed is in the crew here');
   done.querySelector('.inv-done').click();
+  await settle(40);
+});
+
+test('one add at a time: a chip, then Enter, then another chip while the first is on its way — one POST, and the link is the first one’s', async () => {
+  await openMenu();
+  action('invite').click();
+  await settle(20);
+  let sheet = document.querySelector('#artist-sheet.invite-sheet');
+  const input = sheet.querySelector('.inv-name input');
+  const chip = (n) => [...sheet.querySelectorAll('.inv-others button')].find((b) => b.textContent === `+ ${n}`);
+  const posts = () => writes.filter((w) => w.method === 'POST' && w.url.startsWith('/api/crew')).length;
+  const before = posts();
+  holdPosts = true;
+  chip('Drew').click();
+  await settle(5);
+  assert.equal(posts(), before + 1, 'Drew is on its way');
+  input.value = 'Kat';
+  input.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+  chip('Kat').click();
+  await settle(20);
+  assert.equal(posts(), before + 1, 'Enter and a second chip started nothing');
+  assert.equal(sheet.querySelector('.inv-add').disabled, true, 'Add waits');
+  assert.equal(chip('Kat').disabled, true, 'the other chips wait');
+  assert.equal(input.readOnly, true, 'the field waits, keeping its focus');
+  holdPosts = false;
+  heldPosts.splice(0).forEach((r) => r());
+  await settle(80);
+  sheet = document.querySelector('#artist-sheet');
+  assert.equal(sheet.querySelector('.sheet-title').textContent, 'DREW IS IN');
+  assert.match(sheet.querySelector('.inv-link input').value, /me=Drew/, 'Drew’s own link');
+  assert.ok(state.people().Drew, 'Drew is in the crew');
+  assert.equal(state.people().Kat, undefined, 'and Kat, never sent, is not');
+  sheet.querySelector('.inv-done').click();
+  await settle(40);
+});
+
+test('one add at a time, the other way round: a typed name and Enter, then a chip and the Add button — one POST, the typed one’s link', async () => {
+  await openMenu();
+  action('invite').click();
+  await settle(20);
+  let sheet = document.querySelector('#artist-sheet.invite-sheet');
+  const input = sheet.querySelector('.inv-name input');
+  const posts = () => writes.filter((w) => w.method === 'POST' && w.url.startsWith('/api/crew'));
+  const before = posts().length;
+  holdPosts = true;
+  input.value = 'Lu';
+  input.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+  await settle(5);
+  const kat = [...sheet.querySelectorAll('.inv-others button')].find((b) => b.textContent === '+ Kat');
+  kat.click();
+  sheet.querySelector('.inv-add').click();
+  input.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+  await settle(20);
+  assert.equal(posts().length, before + 1, 'one POST');
+  assert.ok(posts()[before].body.data.people.Lu, 'Lu’s');
+  holdPosts = false;
+  heldPosts.splice(0).forEach((r) => r());
+  await settle(80);
+  sheet = document.querySelector('#artist-sheet');
+  assert.equal(sheet.querySelector('.sheet-title').textContent, 'LU IS IN');
+  assert.match(sheet.querySelector('.inv-link input').value, /me=Lu/);
+  assert.equal(state.people().Kat, undefined);
+  sheet.querySelector('.inv-done').click();
   await settle(40);
 });
 

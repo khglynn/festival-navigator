@@ -3000,7 +3000,7 @@ function openInvite({ moment = false } = {}) {
       const chip = document.createElement('button');
       chip.className = 'btn-tonal';
       chip.textContent = `+ ${name}`;
-      chip.addEventListener('click', () => { input.value = name; doAdd(); });
+      chip.addEventListener('click', () => { if (adding) return; input.value = name; doAdd(); });
       chips.appendChild(chip);
     }
     pickWrap.append(pickLabel, chips);
@@ -3035,7 +3035,20 @@ function openInvite({ moment = false } = {}) {
     sheet.append(explain, inviteLinkRow(theirs, `${canonical}'s personal invite link`), done);
   };
 
+  // ONE add at a time (Sol's review of b78b274, carried over from the old
+  // add sheet): the button waited for its answer, but a chip or Enter could
+  // start a second POST, and two answers arriving out of order let the older
+  // one replace the crew view and the success sheet show the wrong person's
+  // link. Every way in — the button, Enter, the chips — waits for the answer.
+  let adding = false;
+  const setAdding = (on) => {
+    adding = on;
+    addBtn.disabled = on;
+    input.readOnly = on; // not disabled: the field keeps its focus and the keyboard stays up
+    for (const b of sheet.querySelectorAll('.inv-others button')) b.disabled = on;
+  };
   const doAdd = async () => {
+    if (adding) return;
     const name = input.value.trim();
     const problem = nameProblem(name);
     if (problem) { status.textContent = problem; return; }
@@ -3055,7 +3068,7 @@ function openInvite({ moment = false } = {}) {
     const canonical = removedMatch ? removedMatch[0] : name;
     const taken = Object.values(people).map((p) => p.colorIndex).filter(Number.isInteger);
     const person = { colorIndex: nextColorIndex(taken), removed: false };
-    addBtn.disabled = true;
+    setAdding(true);
     status.textContent = '';
     status.appendChild(eqLoader(`Adding ${canonical}…`));
     try {
@@ -3086,7 +3099,7 @@ function openInvite({ moment = false } = {}) {
       sync.scheduleSync();
       succeed(canonical);
     } finally {
-      addBtn.disabled = false;
+      setAdding(false);
     }
   };
   addBtn.addEventListener('click', doAdd);
