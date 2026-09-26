@@ -81,22 +81,28 @@ const { $ } = shell;
 const state = await import('../js/state.js');
 const crew = await import('../js/crew.js');
 const cardOf = (artist) => document.querySelector(`#wall-root .card[data-artist="${artist}"]`);
+const SCREENS = ['screen-landing', 'screen-join', 'screen-create', 'screen-app', 'screen-settings', 'screen-badlink', 'screen-error'];
+const shownScreens = () => SCREENS.filter((id) => $(id).style.display !== 'none');
 const crewWrites = (t) => writes.filter((w) => w.url.startsWith('/api/crew') && w.url.includes(t));
 async function open(hash) { location.hash = hash; await settle(160); }
 
 await settle(160);
 
-test('a member whose storage reads start failing after the wall painted still sends their pick', async () => {
+test('a member whose storage reads start failing after the wall painted keeps their name and keeps picking — and every pick sends', async () => {
   assert.equal($('dock-you').textContent, 'K', 'Kevin’s wall');
   const getItem = localStorage.getItem;
   localStorage.getItem = () => { throw new Error('SecurityError: storage went away'); };
   try {
     cardOf('Soulwax').click();
+    assert.equal(crew.me(MEMBER), 'Kevin', 'a failed read answers with the name this page knows');
+    assert.equal($('dock-you').textContent, 'K', 'still Kevin on the wall after the repaint');
+    assert.ok(!$('dock-you').classList.contains('guest'), 'never turned into a guest');
+    cardOf('Soulwax').click(); // and keeps picking: the second tap is a 2
+    assert.deepEqual(shownScreens(), ['screen-app'], 'no join screen');
     await settle(1500); // past the push debounce
-    const sent = crewWrites(MEMBER).find((w) => w.body && w.body.data && w.body.data.festivals);
-    assert.ok(sent, 'the pick left the phone');
-    assert.equal(sent.body.data.festivals[FID].selections.Soulwax.Kevin, 1);
-    assert.equal(SERVER[MEMBER].festivals[FID].selections.Soulwax.Kevin, 1, 'and the crew has it');
+    const sent = crewWrites(MEMBER).filter((w) => w.body && w.body.data && w.body.data.festivals);
+    assert.ok(sent.length, 'the picks left the phone');
+    assert.equal(SERVER[MEMBER].festivals[FID].selections.Soulwax.Kevin, 2, 'and the crew has both taps');
   } finally {
     localStorage.getItem = getItem;
   }

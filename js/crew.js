@@ -27,6 +27,7 @@ export function rememberCrew(token, name) {
 
 export function forgetCrew(token) {
   saveLS(K.crews, JSON.stringify(knownCrews().filter((c) => c.token !== token)));
+  meSeen.delete(token);
   removeLS(K.me(token));
   if (activeCrewToken() === token) removeLS(K.active);
 }
@@ -34,11 +35,23 @@ export function forgetCrew(token) {
 export function activeCrewToken() { return getLS(K.active) || null; }
 export function setActiveCrew(token) { saveLS(K.active, token); }
 
-export function me(token) { return getLS(K.me(token)) || null; }
-export function setMe(token, name) { saveLS(K.me(token), name); }
+// Who I am in each crew, as this page last read or set it (v92, review round
+// 3). A storage read that FAILS (a store that starts refusing mid-session)
+// answers with the remembered name instead of "nobody" — a member keeps their
+// name on the wall and keeps picking. Only a read that succeeds and finds
+// nothing means nobody; setMe and clearMe keep the memory in step.
+const meSeen = new Map();
+export function me(token) {
+  let name;
+  try { name = localStorage.getItem(K.me(token)); }
+  catch { return meSeen.get(token) || null; }
+  if (name) meSeen.set(token, name); else meSeen.delete(token);
+  return name || null;
+}
+export function setMe(token, name) { meSeen.set(token, name); saveLS(K.me(token), name); }
 // "Not me" after a recognized entry: forget the claim on this device only —
 // the crew stays remembered, and the join screen asks again.
-export function clearMe(token) { removeLS(K.me(token)); }
+export function clearMe(token) { meSeen.delete(token); removeLS(K.me(token)); }
 
 // The token riding in the URL hash (#g=...), i.e. an opened share link.
 export function tokenFromHash() {
