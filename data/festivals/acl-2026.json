@@ -782,10 +782,6 @@
       "page": {
         "url": "https://do512.com/events/2026/10/1/the-chainsmokers-tickets",
         "at": "Do512"
-      },
-      "tickets": {
-        "url": "https://wl.eventim.us/event/Official-2026-ACL-Fest-Nights-The-Chainsmokers/701286?afflky=TheConcourseProject",
-        "at": "Eventim"
       }
     },
     {
@@ -798,10 +794,6 @@
       "page": {
         "url": "https://do512.com/events/2026/10/1/the-chainsmokers-tickets",
         "at": "Do512"
-      },
-      "tickets": {
-        "url": "https://wl.eventim.us/event/Official-2026-ACL-Fest-Nights-The-Chainsmokers/701286?afflky=TheConcourseProject",
-        "at": "Eventim"
       }
     },
     {
@@ -929,7 +921,9 @@
       },
       "tickets": {
         "url": "https://www.eventim.us/event/Official-2026-ACL-Fest-Nights-Hunx-and-His-Punx/700544",
-        "at": "Eventim"
+        "at": "Eventim",
+        "price": 29,
+        "checked": "2026-09-26"
       }
     },
     {
@@ -945,7 +939,9 @@
       },
       "tickets": {
         "url": "https://www.eventim.us/event/Official-2026-ACL-Fest-Nights-Hunx-and-His-Punx/700544",
-        "at": "Eventim"
+        "at": "Eventim",
+        "price": 29,
+        "checked": "2026-09-26"
       }
     },
     {
@@ -977,7 +973,9 @@
       },
       "tickets": {
         "url": "https://wl.eventim.us/event/Official-2026-ACL-Fest-Nights-Steve-Aoki/701292?afflky=TheConcourseProject",
-        "at": "Eventim"
+        "at": "Eventim",
+        "price": 70,
+        "checked": "2026-09-26"
       }
     },
     {
@@ -993,7 +991,9 @@
       },
       "tickets": {
         "url": "https://wl.eventim.us/event/Official-2026-ACL-Fest-Nights-Steve-Aoki/701292?afflky=TheConcourseProject",
-        "at": "Eventim"
+        "at": "Eventim",
+        "price": 70,
+        "checked": "2026-09-26"
       }
     },
     {
@@ -1009,7 +1009,9 @@
       },
       "tickets": {
         "url": "https://wl.eventim.us/event/Official-2026-ACL-Fest-Nights-Steve-Aoki/701292?afflky=TheConcourseProject",
-        "at": "Eventim"
+        "at": "Eventim",
+        "price": 70,
+        "checked": "2026-09-26"
       }
     },
     {
@@ -1038,10 +1040,6 @@
       "page": {
         "url": "https://do512.com/events/2026/10/2/rebecca-black-dj-set-tickets",
         "at": "Do512"
-      },
-      "tickets": {
-        "url": "https://wl.eventim.us/event/official-2026-acl-fest-nights-rebecca-black-at-dmc-or-atx/702467?afflky=DevilMayCare",
-        "at": "Eventim"
       }
     },
     {
@@ -1054,10 +1052,6 @@
       "page": {
         "url": "https://do512.com/events/2026/10/2/rebecca-black-dj-set-tickets",
         "at": "Do512"
-      },
-      "tickets": {
-        "url": "https://wl.eventim.us/event/official-2026-acl-fest-nights-rebecca-black-at-dmc-or-atx/702467?afflky=DevilMayCare",
-        "at": "Eventim"
       }
     },
     {
@@ -1166,10 +1160,6 @@
       "page": {
         "url": "https://do512.com/events/2026/10/3/its-murph-w-nate-band-dazzle-camouflage-tickets",
         "at": "Do512"
-      },
-      "tickets": {
-        "url": "https://wl.eventim.us/event/Official-2026-ACL-Fest-Nights-its-murph/701295?afflky=TheConcourseProject",
-        "at": "Eventim"
       }
     },
     {
@@ -1182,10 +1172,6 @@
       "page": {
         "url": "https://do512.com/events/2026/10/3/its-murph-w-nate-band-dazzle-camouflage-tickets",
         "at": "Do512"
-      },
-      "tickets": {
-        "url": "https://wl.eventim.us/event/Official-2026-ACL-Fest-Nights-its-murph/701295?afflky=TheConcourseProject",
-        "at": "Eventim"
       }
     },
     {
@@ -1198,10 +1184,6 @@
       "page": {
         "url": "https://do512.com/events/2026/10/3/its-murph-w-nate-band-dazzle-camouflage-tickets",
         "at": "Do512"
-      },
-      "tickets": {
-        "url": "https://wl.eventim.us/event/Official-2026-ACL-Fest-Nights-its-murph/701295?afflky=TheConcourseProject",
-        "at": "Eventim"
       }
     },
     {
@@ -1214,10 +1196,6 @@
       "page": {
         "url": "https://do512.com/events/2026/10/3/underscores-dj-set-w-directress-1x333-tickets",
         "at": "Do512"
-      },
-      "tickets": {
-        "url": "https://www.eventim.us/event/Official-2026-ACL-Fest-Nights-underscores-DJ-Set/700550",
-        "at": "Eventim"
       }
     },
     {
@@ -1230,10 +1208,6 @@
       "page": {
         "url": "https://do512.com/events/2026/10/3/underscores-dj-set-w-directress-1x333-tickets",
         "at": "Do512"
-      },
-      "tickets": {
-        "url": "https://www.eventim.us/event/Official-2026-ACL-Fest-Nights-underscores-DJ-Set/700550",
-        "at": "Eventim"
       }
     },
     {
@@ -1246,10 +1220,6 @@
       "page": {
         "url": "https://do512.com/events/2026/10/3/underscores-dj-set-w-directress-1x333-tickets",
         "at": "Do512"
-      },
-      "tickets": {
-        "url": "https://www.eventim.us/event/Official-2026-ACL-Fest-Nights-underscores-DJ-Set/700550",
-        "at": "Eventim"
       }
     },
     {
@@ -1377,7 +1347,9 @@
       },
       "tickets": {
         "url": "https://www.eventim.us/event/Official-2026-ACL-Nights-LP/702361",
-        "at": "Eventim"
+        "at": "Eventim",
+        "price": 54,
+        "checked": "2026-09-26"
       }
     },
     {
@@ -1457,7 +1429,9 @@
       },
       "tickets": {
         "url": "https://www.eventim.us/event/Official-2026-ACL-Fest-Nights-Arcy-Drive/700553",
-        "at": "Eventim"
+        "at": "Eventim",
+        "price": 32,
+        "checked": "2026-09-26"
       }
     },
     {
@@ -1473,7 +1447,9 @@
       },
       "tickets": {
         "url": "https://www.eventim.us/event/Official-2026-ACL-Fest-Nights-Arcy-Drive/700553",
-        "at": "Eventim"
+        "at": "Eventim",
+        "price": 32,
+        "checked": "2026-09-26"
       }
     },
     {
@@ -1569,7 +1545,9 @@
       },
       "tickets": {
         "url": "https://wl.eventim.us/event/Official-2026-ACL-Fest-Nights-Yousuke-Yukimatsu/701792?afflky=TheConcourseProject",
-        "at": "Eventim"
+        "at": "Eventim",
+        "price": 65,
+        "checked": "2026-09-26"
       }
     },
     {
@@ -1585,7 +1563,9 @@
       },
       "tickets": {
         "url": "https://consumer.pxf.io/APvP5J?u=https%3A%2F%2Fwww.eventbrite.com%2Fe%2Fjess-williamson-tickets-1998237458028%3Faff%3Doddtdtcreator",
-        "at": "Eventbrite"
+        "at": "Eventbrite",
+        "price": 37,
+        "checked": "2026-09-26"
       }
     },
     {
@@ -1614,10 +1594,6 @@
       "page": {
         "url": "https://do512.com/events/2026/10/9/bunt-w-dj-bad-apple-tickets",
         "at": "Do512"
-      },
-      "tickets": {
-        "url": "https://wl.eventim.us/event/Official-2026-ACL-Fest-Nights-BUNT/701303?afflky=TheConcourseProject",
-        "at": "Eventim"
       }
     },
     {
@@ -1630,10 +1606,6 @@
       "page": {
         "url": "https://do512.com/events/2026/10/9/bunt-w-dj-bad-apple-tickets",
         "at": "Do512"
-      },
-      "tickets": {
-        "url": "https://wl.eventim.us/event/Official-2026-ACL-Fest-Nights-BUNT/701303?afflky=TheConcourseProject",
-        "at": "Eventim"
       }
     },
     {
