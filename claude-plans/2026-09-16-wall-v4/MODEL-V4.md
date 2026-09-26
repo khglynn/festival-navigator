@@ -173,15 +173,18 @@ section says its own sub from `dayMeta[<label>].sub` if present, else nothing.
    taps replace the fold taps — no new control appears.
 4. **How it works** is grouped the way the screen reads. Rows, in order,
    each drawn with the REAL component (never a re-drawn lookalike):
-   1. people chips — `Tap a name to highlight their picks.` / `Switch who you are picking as in Settings.`
-   2. `+ Add someone` — `Add your people with + Add someone,` / `or share the crew link — anyone who opens it is in, no account needed.` (the chip's words since v93, 2026-09-25: it was `+ Add`)
-   3. three cards, each wearing your meter one bar fuller (2026-09-23) — `Tap an artist to add your color.` / `Your bars fill each tap. 4 taps = must see.`
+   Since v93 (Kevin, 2026-09-25: "feature first, then how" — small wording
+   changes, not a rethink) every row leads with what it is, then how:
+   1. people chips — `Highlight a friend's picks.` / `Tap their name. Switch who you pick as in Settings.`
+   2. `+ Add someone` — `Add your people.` / `Tap + Add someone, or share the crew link — anyone who opens it is in, no account needed.` (the chip's words since v93: it was `+ Add`)
+   3. three cards, each wearing your meter one bar fuller (2026-09-23) — `Add your color to an artist.` / `Tap it. Your bars fill each tap. 4 taps = must see.`
    4. the who-corner marks, everyone else's (you are the meter on the left, 2026-09-23) — `Everyone else's picks land on the card.` / `Ticks are picks; a letter is a must.`
-   5. the about-corner chips — `Hold for details.` / `Violet = crew notes; pin one to keep it on top. Green = it's in your Spotify (connect in Settings).`
+   5. the about-corner chips — `Details and notes.` / `Hold the card. Violet = crew notes; pin one to keep it on top. Green = it's in your Spotify (connect in Settings).`
    6. a run card (`Gelli Haha · ~10:30 PM`) — `**~ a guessed start time and artist order.** Based on limited intel.`
-   7. the dock's fest link (`.fest-link`: Anton, the sync dot — ONE row, the real component; its label is the fixed string `ACL '26`, never the current fest's name, and inside the drill it wears `--brand`, because the fest accent's four homes do not include How it works) — `Tap the fest name to show or hide parts of the week.` / `Green dot = synced. Gray = offline (still works); red = something's wrong.`
-   8. the gear — `Switch fests and more in Settings.`
-   Kevin, 2026-09-17: the fest name and its dot were drawn twice, differently, five rows apart ("PORTOLA '26 ▾" in the body face and "PORTOLA '26 ●"); once, together, as the component. Eight rows since the ship round (the stage row went with stage solo); red means something needs Kevin, not the reader — "just say something's wrong"; and every picture's cell is `min-width: 0; overflow: hidden`, so no label can escape at 390.
+   7. the dock's fest link (`.fest-link`: Anton, its menu caret, the sync dot — the real component; its label is the fixed string `ACL '26`, never the current fest's name, and inside the drill it wears `--brand`, because the fest accent's four homes do not include How it works) — `Show or hide parts of the week.` / `Tap the fest name.`
+   8. the sync dot, in its three states (split from row 7 in v93: a fact of its own) — `Sync, at a glance.` / `Green dot = synced. Gray = offline (still works); red = something's wrong.`
+   9. the gear — `Switch fests and more in Settings.`
+   Kevin, 2026-09-17: the fest name and its dot were drawn twice, differently, five rows apart ("PORTOLA '26 ▾" in the body face and "PORTOLA '26 ●"); once, together, as the component. Eight rows since the ship round (the stage row went with stage solo; nine since v93, when the dot took a row of its own); red means something needs Kevin, not the reader — "just say something's wrong"; and every picture's cell is `min-width: 0; overflow: hidden`, so no label can escape at 390.
 5. Sort options inside the show menu for every fest: banked in hg-pen, not
    built (Kevin: "unless it's easy to knock out" — it is not: the old sort
    applies to the lineup-only wall; stacks and grids need their own think).

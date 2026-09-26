@@ -359,6 +359,24 @@ for (const width of [390, 320]) {
   });
 }
 
+// ---- Settings → How it works (feature first, then how; the dot's own row) -----------------
+for (const width of [390, 320]) {
+  await scenario(`how ${width}`, async () => {
+    const o = await open({ width, at: AT.sat9am });
+    const { page } = o;
+    await page.locator('#gear-btn').click();
+    await page.waitForSelector('#screen-settings', { state: 'visible' });
+    await page.getByText('How it works', { exact: true }).first().click();
+    await sleep(600);
+    const rows = await page.evaluate(() => [...document.querySelectorAll('#settings-subview .settings-card > div')].map((r) => r.innerText.replace(/\s+/g, ' ').trim()));
+    note(rows.map((r, i) => `  ${i + 1}. ${r}`).join('\n'));
+    const escapes = await page.evaluate(() => [...document.querySelectorAll('#settings-subview .settings-card > div > div:first-child')].some((d) => d.scrollWidth > d.clientWidth + 1));
+    note(`a picture wider than its cell: ${escapes}`);
+    await page.screenshot({ path: path.join(OUT, `how-it-works-${width}.png`), fullPage: true });
+    await done(o);
+  });
+}
+
 fs.writeFileSync(path.join(OUT, 'report.txt'), report.join('\n') + '\n');
 await browser.close();
 server.close();

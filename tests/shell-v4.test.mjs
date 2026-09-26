@@ -320,6 +320,26 @@ test('Settings from the menu: one entry for Settings where the menu\'s was, and 
   assert.equal($('dock-fest-link').getAttribute('aria-expanded'), 'false', 'and no menu comes back with it');
 });
 
+// A button that opens a menu says so, quietly (v93, Kevin): a caret right
+// after the fest name, pointing the way its menu opens — up from the dock,
+// down from the rail — part of the button, and shown only while the name
+// opens a menu (a one-room fest's name goes straight to Settings). One class,
+// for the avatar's Highlight menu to wear next.
+test('the fest name carries a menu caret after its words: up in the dock, down in the rail, only while it opens a menu', () => {
+  for (const [door, down] of [['dock', false], ['rail', true]]) {
+    const link = $(`${door}-fest-link`);
+    const kids = [...link.children].map((k) => k.className.split(' ')[0]);
+    assert.deepEqual(kids.slice(0, 3), ['fest-name', 'menu-caret', 'sync-dot'], `${door}: the name, its caret, then the dot`);
+    const caret = link.querySelector('.menu-caret');
+    assert.equal(caret.classList.contains('down'), down, `${door}: it points the way the menu opens`);
+    assert.equal(caret.getAttribute('aria-hidden'), 'true', 'a picture, not a second name for the button');
+    assert.equal(link.getAttribute('aria-haspopup'), 'listbox', 'Portola has rooms, so the name opens a menu');
+  }
+  const css = readFileSync(join(ROOT, 'assets/v3.css'), 'utf8');
+  assert.match(css, /\.menu-caret \{[^}]*border: solid var\(--text-secondary\)/, 'drawn in the secondary grey');
+  assert.match(css, /button:not\(\[aria-haspopup\]\) > \.menu-caret \{ display: none; \}/, 'and gone where the button opens no menu');
+});
+
 test('the Settings row wears the header\'s gear, left of its word, and it is only decoration', () => {
   for (const which of ['dock', 'rail']) {
     const row = menu(which).querySelector('.settings');
@@ -747,18 +767,23 @@ test('the show menu names every room the wall shows — ACL\'s dated section inc
 // ---- How it works (MODEL-V4 §3a.4, ship round 2026-09-17) -----------------------------
 // Rendered by the real Settings on the real shell, with Portola open — so the
 // fixed label is proven fixed against a fest that is not ACL.
-test('How it works: eight rows, the fest link says ACL \'26 whatever fest is open, wears brand not the accent, and no picture can leave its cell', () => {
+test('How it works: nine rows, the fest link says ACL \'26 whatever fest is open, wears brand not the accent, and no picture can leave its cell', () => {
   click($('gear-btn'));
   const how = [...$('screen-settings').querySelectorAll('button')].find((b) => (b.querySelector('.row-title') || {}).textContent === 'How it works');
   assert.ok(how, 'the row that opens the drill');
   click(how);
   const sub = $('settings-subview');
   const rows = [...sub.querySelectorAll('.settings-card > div')];
-  assert.equal(rows.length, 8, 'eight rows — the stage row went with stage solo');
+  assert.equal(rows.length, 9, 'nine rows — the stage row went with stage solo; the dot took one of its own (v93)');
   const link = sub.querySelector('.fest-link');
   assert.ok(link && link.tagName === 'SPAN', 'the real component, as a picture');
   assert.equal(link.querySelector('.fest-name').textContent, "ACL '26", 'the one coded-in name, with Portola open');
   assert.ok(link.querySelector('.sync-dot'), 'and the dot beside it');
+  assert.ok(link.querySelector('.menu-caret'), 'with the caret the real one wears while it opens a menu (v93)');
+  // The dot's own row: the real dot in its three states (v93).
+  const dotRow = rows.find((r) => /Sync, at a glance\./.test(r.textContent));
+  assert.ok(dotRow, 'the dot has a row of its own');
+  assert.deepEqual([...dotRow.firstElementChild.querySelectorAll('.sync-dot')].map((d) => d.className), ['sync-dot', 'sync-dot sync-offline', 'sync-dot sync-error']);
   assert.equal(link.style.getPropertyValue('--fest'), 'var(--brand)', 'the accent re-scoped to brand on the picture — the drill is not one of the accent\'s four homes');
   for (const row of rows) {
     const cell = row.firstElementChild;

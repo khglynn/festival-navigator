@@ -521,10 +521,16 @@ button.room-head { cursor: pointer; }
   display: flex; align-items: center; gap: 14px;
 }
 .dock .you { width: 26px; height: 26px; font-size: 10px; position: relative; }
+/* The narrowest phones (under 360: the first iPhone SE's 320) give the day
+ * row back what the fest name's menu caret costs it (v93): the dock's three
+ * parts sit 4px closer, so ACL's long name still leaves room for the day you
+ * are in, where Linux and Android draw Inter wide — and the name never gives
+ * way. */
+@media (max-width: 359px) { .dock { gap: 10px; } }
 /* Centered when they fit, scrollable from the START when they don't — plain
  * justify-content:center clips the first tabs unreachably at 390px (AX-6).
  * Whatever is first and last: NOW can be the last tab (SUN · NOW). */
-.dock .days { flex: 1; display: flex; --gap: 24px; --gap-min: 16px; gap: var(--gap); overflow-x: auto; }
+.dock .days { flex: 1; display: flex; --gap: 24px; --gap-min: 15px; gap: var(--gap); overflow-x: auto; }
 .dock .days > :first-child { margin-left: auto; }
 .dock .days > :last-child { margin-right: auto; }
 /* More days than fit (ACL's seven on a 152px row): the row has always
@@ -684,6 +690,20 @@ button.room-head { cursor: pointer; }
              border: none; cursor: pointer; flex: none; }
 .fest-link .fest-name { font-family: var(--font-display); letter-spacing: .04em;
                         font-size: 13px; color: rgb(var(--fest)); }
+/* A button that opens a menu says so, quietly (v93, Kevin): a small caret
+ * right after its words, pointing the way the menu opens — up from the dock,
+ * down from the rail (`.down`). ONE class for every such button: the fest
+ * name now, the avatar's Highlight menu next. It is part of the button (no
+ * hit target of its own), in the secondary grey, drawn to the height of the
+ * name's capitals, and only there while the button really opens a menu — a
+ * one-room fest's name goes straight to Settings, and says nothing. Its
+ * negative margins keep it close to the words it belongs to, and cost the day
+ * row beside it as little room as they can. */
+.menu-caret { display: inline-block; flex: none; width: 5px; height: 5px; margin: 0 -1px 0 -3px;
+              border: solid var(--text-secondary); border-width: 1.5px 0 0 1.5px;
+              transform: translateY(1.5px) rotate(45deg); }
+.menu-caret.down { transform: translateY(-1.5px) rotate(225deg); }
+button:not([aria-haspopup]) > .menu-caret { display: none; }
 .you-avatar { border: 1.5px solid #fff; background: none; cursor: pointer; padding: 0; }
 /* A guest's "you" (v92): the avatar's place, empty and asking — a dashed
  * ring and a +, in brand (it is about a person, never the festival). It is

@@ -169,18 +169,19 @@ test('every repo path NOW.md and CLAUDE.md cite in backticks exists', () => {
 // in a repo to "improve" in passing, and an order is the easiest thing to lose
 // while moving a row; this holds both. Same forcing function the rest of this
 // file applies to the README.
-test('Settings → How it works says Kevin\u2019s eight rows, word for word and in his order', () => {
+test('Settings → How it works says Kevin\u2019s rows, word for word and in his order', () => {
   const settings = read('js/v3/settings.js');
   const flat = (t) => t.replace(/[\u2018\u2019]/g, "'").replace(/\s+/g, ' ');
   const spec = flat(read('claude-plans/2026-09-16-wall-v4/MODEL-V4.md'));
   const rows = [
-    ['Tap a name to highlight their picks.', 'Switch who you are picking as in Settings.'],
-    ['Add your people with + Add someone,', 'or share the crew link \u2014 anyone who opens it is in, no account needed.'],
-    ['Tap an artist to add your color.', 'Your bars fill each tap. 4 taps = must see.'],
+    ['Highlight a friend\u2019s picks.', 'Tap their name. Switch who you pick as in Settings.'],
+    ['Add your people.', 'Tap + Add someone, or share the crew link \u2014 anyone who opens it is in, no account needed.'],
+    ['Add your color to an artist.', 'Tap it. Your bars fill each tap. 4 taps = must see.'],
     ['Everyone else\u2019s picks land on the card.', 'Ticks are picks; a letter is a must.'],
-    ['Hold for details.', 'Violet = crew notes; pin one to keep it on top. Green = it\u2019s in your Spotify (connect in Settings).'],
+    ['Details and notes.', 'Hold the card. Violet = crew notes; pin one to keep it on top. Green = it\u2019s in your Spotify (connect in Settings).'],
     ['~ a guessed start time and artist order.', 'Based on limited intel.'],
-    ['Tap the fest name to show or hide parts of the week.', 'Green dot = synced. Gray = offline (still works); red = something\u2019s wrong.'],
+    ['Show or hide parts of the week.', 'Tap the fest name.'],
+    ['Sync, at a glance.', 'Green dot = synced. Gray = offline (still works); red = something\u2019s wrong.'],
     ['Switch fests and more in Settings.', ''],
   ];
   let at = -1;
