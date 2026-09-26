@@ -700,9 +700,22 @@ function lookAround(token, doc) {
 // The layer is dropped from the model first (its history entry stays, and
 // reconciles to nothing), so "Look around" comes back to the wall, never to
 // a layer the history no longer holds.
+// The wall's own address keeps the festival in its path (/f/<fest>#g=…), the
+// same shape a share link has (crew.js crewLink), so a link copied from the
+// address bar or sent from the browser's share button previews as that
+// festival ("Portola '26", its image) instead of the bare app (Kevin, 2026-09-26:
+// a link he sent from the address bar previewed as plain "Festival Navigator").
+// The rewrite had written `/#g=` since July, dropping the /f/ path a share link
+// arrived with. /f/<id> is served by api/share.js online and by the worker's
+// precached shell offline (every navigation falls back to it), so a reload
+// there works in a field. The token stays in the hash, never the path.
+function wallUrl(token) {
+  return crew.crewLink(token, state.activeFestivalId);
+}
+
 function joinFromLayer() {
   router.reset();
-  history.replaceState(null, '', `/#g=${state.getCrewToken()}`);
+  history.replaceState(null, '', wallUrl(state.getCrewToken()));
   closeSheet();
   show('screen-app');
   askToJoin(null);
@@ -3201,7 +3214,7 @@ async function enterApp(token, doc, current = () => true, customs = fetchCustomF
   repaintWall();
   maybeOpenOnDay();
   startClock();
-  history.replaceState(savedLayers ? { layers: savedLayers } : null, '', `/#g=${token}`);
+  history.replaceState(savedLayers ? { layers: savedLayers } : null, '', wallUrl(token));
   sync.pollSync();
   router.reset();
   if (savedLayers) router.restore(savedLayers);
