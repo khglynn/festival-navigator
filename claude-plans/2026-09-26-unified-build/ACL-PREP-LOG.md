@@ -1,0 +1,879 @@
+# ACL prep — working log (2026-09-26)
+
+Branch `data/acl-prep`, worktree `.claude/worktrees/acl-prep`. Following
+`ACL-PREP-BRIEF.md` in this folder. Data files only — no code changes.
+
+## Step 0 — freeze pick keys
+
+`node scripts/freeze-pick-keys.mjs acl-2026` — 148 names, 4 day labels frozen,
+0 new names (re-stamped `frozenAt` 2026-09-23 → 2026-09-26 only; no rename, no
+add/remove). Safe to proceed with time edits. Re-ran the freeze test after
+every later step below — stayed green throughout (no artist name or day label
+ever touched).
+
+## A tooling gap found early: `guess-run-times.mjs` can't see Late nights
+
+The script's `runsOf()` groups artists by `${a.night}|${a.venue}` — it never
+looks at `a.date`. ACL's "Late nights" section is a **dated** section
+(MODEL-V4: it runs Sep 29–Oct 10, more than a week, so its entries carry
+`date`, never `night` — see `docs/add-a-festival.md` "Event fields" and the
+repo CLAUDE.md's wall-v4 bullet). A dry run of
+`node scripts/guess-run-times.mjs acl-2026` against the untouched file printed
+nothing at all — not an error, just zero runs found, because every Late
+nights entry has `night: undefined` and `!night` short-circuits `runsOf`'s
+loop before it ever looks at `date`.
+
+This is a real script gap for dated sections, not a data mistake, and it is
+out of scope to fix (brief: "no code changes" — the coordinator should look at
+teaching `runsOf` to fall back to `a.date` when `a.night` is absent, the same
+way `planFestival`/`applyPlans` are otherwise date-agnostic). Rather than
+patch the script, I reused its actual exported `planRun` function unchanged
+(same algorithm, same rounding, same fallback rules) from a throwaway script
+in my scratchpad, just grouping runs by `date+venue` instead of `night+venue`.
+Every guessed time below came from that real function, not a hand-rolled
+substitute.
+
+## Gap 1 — Late nights (66 `artists[]` entries, 12 venues, 40 event pages)
+
+### Step 1 — billing order
+
+Do512's own titles already print each show's billing (headliner first, e.g.
+"Steve Aoki (Dim Mak 30) w/ Elephante b2b Riot Ten"). Per
+`docs/add-a-festival.md` ("The order follows the billing: the billed
+headliner closes and the rest run in descending print"), I reversed that
+print order into `order.seq`/`order.of` for every Late nights entry (headliner
+= highest seq/closes, last-billed opener = seq 1), sourced to each entry's own
+`page.url`. 66/66 entries got an order assignment in this first pass.
+
+The validator then caught something real: **a run of one act cannot carry
+`order`** ("order.of must be a whole number of 2 or more — a run of one is
+not a run", and `docs/add-a-festival.md` says the same: "A room with one act
+may carry doors, a close, and a guessed time, but no order"). 17 of the 40
+shows are single-act (Villanelle, Night Tapes, Grocery Bag, Almost Heaven,
+Ryan Beatty, Suki Waterhouse, LP, Annie DiRusso, The War on Drugs, Sunday
+(1994), Yousuke Yukimatsu, Jess Williamson/Continental, Noga Erez, Rodrigo y
+Gabriela, Claire Rosinkranz, Fcukers/Devil May Care 10/10, Montclair). I kept
+`order` on them just long enough to run `planRun` (which handles n=1 fine —
+`starts=[first]`), then stripped `order` back off those 17 once they had a
+computed `time`/`close`. `node scripts/validate-festivals.mjs` is 0 errors
+with this shape.
+
+### Step 2 — printed times, per venue
+
+For each show, I read the page already on the artist entry (`page.url`,
+mostly Do512), then the venue's own ticket-platform page (Ticketmaster, AXS,
+Eventim, Etix, Eventbrite, SeeTickets) and the venue's own website, looking
+for a printed time distinct from doors.
+
+**Do512 and AXS print doors only, never a set time** (confirmed across ~15
+pages spot-checked — Fcukers/Total Wife, Brandon Flowers/Jess Williamson,
+Palace, Montclair, The Chainsmokers, Finn Wolfhard/Malcy, Bleachers/This Is
+Lorelei, Villanelle, BUNT./Sarah Pederzani, Hunx and His Punx/CorMae, and the
+AXS pages for 3TEN). Ticketmaster event pages 401'd on every attempt (basic
+and stealth proxy both) — a hard wall, not a fluke; no Ticketmaster-hosted
+show got anything beyond its Do512 doors time from the ticket page itself.
+
+**Real finds, each a printed time distinct from a guess:**
+
+- **Stubb's** (amphitheater) and **Stubb's Indoors**: the venue's own
+  `stubbsaustin.com/concert-calendar/` widget embeds a per-event `displayTime`
+  (`aria-label="<title>|<date>|<time>"`) sourced from each show's own
+  `stubbsaustin.com/tm-event/<slug>/` page — a genuinely distinct field from
+  doors, not a repeat. Two of five Indoors shows differed from the recorded
+  doors value outright: **Grocery Bag** (doors 10 PM → Show 10:30 PM) and
+  **Sunday (1994)** (doors 8 PM → Show 9 PM). The other three Indoors shows
+  (Montclair, Almost Heaven, Annie DiRusso) and all four amphitheater
+  first-acts (Jess Williamson, This Is Lorelei, Velvet Trip, Leon Knight)
+  matched their doors value exactly but are still recorded as posted `time`
+  from this source (it's the venue's own listing, not an inferred repeat).
+  Also pulled the FAQ's two general facts into the registry: standard doors
+  are 7 PM, "show times usually begin an hour after doors," and the **indoor**
+  stage has a hard 1:45 AM curfew every night (the amphitheater has no
+  published close, kept null).
+- **The Continental Club** (Jess Williamson, 10/8): Eventbrite's own event
+  page prints "Thursday, October 8 · 10 PM – 11:30 PM" and the body text says
+  "@10pm ... Doors open @9pm" — a real printed start **and** end, both
+  recorded with no `approx`.
+- **Devil May Care** (Rebecca Black 10/2, Fcukers 10/10): each show's own
+  Eventim/SeeTickets ticket page prints "Doors: 10:00PM | Show: 11:45PM |
+  Ends: 2:00AM" — identical on both nights. Recorded as printed `time` and
+  `close` (Fcukers already had `close: "2 AM"` in the file from an earlier
+  pass; Rebecca Black's was added to match).
+- **Mohawk Austin** (Total Wife, 9/29): mohawkaustin.com's own site lists
+  "Fcukers / Total Wife / 8pm" and Etix's ticket page for the same show prints
+  "September 29, 2026 8:00 PM / Doors Open: 7:00 PM" — two independent venue-
+  adjacent sources agreeing on the same distinct show time.
+- **Brushy Street Commons** (CorMae 10/2, Common People 10/8, LP 10/5):
+  Eventim's ticket pages print "Doors: X:00pm / Show: Y:00pm" — a consistent
+  60-minute gap across all three, used for the opening act's posted time.
+- **The Concourse Project** (Riot Ten 10/2, Yousuke Yukimatsu 10/8): Eventim
+  prints "Show: 9:00PM" (== doors) on both — DJ-club format, no gap.
+
+18 posted times total (4 close values among them) came from these direct
+sources; the rest of the 66 entries got a `time` computed by `planRun` from
+doors + the venue registry below, marked `approx: true`.
+
+### Step 3 — venue registry (`data/venues/index.json`)
+
+Added 12 new venues in the existing `venues-v1` shape. Summary (full sources
+and verbatim quotes are in the file itself):
+
+| Venue | doors→first-act | close | confidence |
+|---|---|---|---|
+| The Concourse Project | 0 min (DJ format) | 2 AM (venue routine, Eventim boilerplate on 2 different listings) | medium |
+| Stubb's (amphitheater) | 60 min (FAQ) | **null** — FAQ's 1:45 AM curfew is stated for the indoor stage only | unknown |
+| Stubb's Indoors | null — real gap varied 0/30/60 min across 5 shows, a single number would misrepresent it | 1:45 AM (FAQ, direct quote) | high |
+| Emo's | 60 min (Reddit anecdote, corroborated by the venue's own calendar matching doors=show on 5 real ACL shows) | null — nothing published | unknown |
+| Historic Scoot Inn | 60 min (Ticket Fairy) | null — nothing published | unknown |
+| Antone's | 60 min (venue's own Ticketmaster calendar, 4 real bookings, exact 60-min gap every time) | 12 AM (Yelp business hours; the venue's own "LATE:" series runs past this, noted as an exception) | medium |
+| 3TEN | 60 min (AXS: doors 8 PM, show 9 PM for Villanelle) | null | unknown |
+| Devil May Care | 105 min / 135-min set (both printed, see Step 2) | 2 AM (printed on both shows) | medium |
+| Mohawk Austin | 60 min (Yelp + venue's own site + Etix) | 12 AM default / 1 AM late (Yelp; noise-curfew variable) | medium |
+| Fair Market | null — one-off warehouse event space, no routine hours exist; aggregator claims (SeatGeek 90min-2hr vs VividSeats 60-90min) actively contradict each other, so both dropped rather than averaged | null | unknown |
+| The Continental Club | 60 min (Eventbrite, the one show here) | null (its own public calendar shows two sets/night but never prints a close) | unknown |
+| Brushy Street Commons | 60 min (3 separate Eventim listings, exact match every time) | null | unknown |
+
+Where I had nothing, I left it `null` with a note rather than invent a number
+— the per-kind fallback in `guess-run-times.mjs` (`KIND_DEFAULTS`) covers the
+gap and marks everything it touches `approx: true`.
+
+### Step 4 — running the plan, then `--write`
+
+Dry run first (`planRun` reused as above), read every room, then wrote. Full
+before/after table is reproducible from git history; spot highlights:
+
+- **Steve Aoki run** (Concourse, doors 9 PM, close 2 AM guessed): Riot Ten
+  (posted 9 PM) → Elephante 10:45 PM → Steve Aoki 12:30 AM. The closing set
+  runs exactly to the 2 AM close by design (fair-share spacing).
+- **Fair Market / The War on Drugs**: single act, no venue data at all, so it
+  fell to the hall `KIND_DEFAULTS` (doors+60 min start, 12 AM close) — both
+  marked `approx: true`. Flagging this one specifically: it's the fallback
+  working as designed on a genuine unknown, not a researched number, and
+  worth a second look if anyone finds Fair Market's real hours later.
+
+### A guessed room that looked off, and what I did
+
+**Devil May Care, Rebecca Black night (10/2).** The registry's 105-minute
+doors-to-show gap (sourced from Rebecca Black's and Fcukers' own *single-act*
+printed pages) doesn't fit this specific night, which has TWO acts (Bambi
+opens, Rebecca Black closes). Applied mechanically, `planRun` put Bambi's
+guessed slot at 11:45 PM — the same clock time as Rebecca Black's own printed,
+posted 11:45 PM start. That's the exact "a time repeated on every act is
+probably a doors time mistranscribed into set-time" smell the validator
+watches for, except here it's the *guesser* colliding with a *posted* time it
+correctly left untouched. I hand-corrected Bambi to **10:30 PM** (30 min
+after doors, ~75 min ahead of Rebecca Black), kept `approx: true`. Everywhere
+else I checked a posted opener against its guessed headliner (Brandon
+Flowers/Jess Williamson, Bleachers/This Is Lorelei, Parcels/Velvet Trip, Lola
+Young/Leon Knight, Mohawk's Fcukers/Total Wife, Brushy's Hunx and His
+Punx/CorMae) — no other collision; the guessed headliner always lands safely
+later than the posted opener.
+
+### Checks
+
+- `node scripts/validate-festivals.mjs`: 0 errors (2 pre-existing warnings
+  unrelated to Late nights: a Sunday-grid billing note and the empty
+  Tomorrowland Winter file — not touched).
+- `node --test tests/live-pick-keys.test.mjs`: green, 148 names / 4 day
+  labels, byte-for-byte.
+- `npm test`: **5 failures**, all the same root cause — snapshot-style tests
+  that read the real `acl-2026.json` "as shipped" and hardcoded the *pre-fix*
+  doors-only render for two specific shows (Stubb's/Brandon Flowers Thu Oct 1,
+  Continental Club/Jess Williamson Thu Oct 8) as their expected string. Now
+  that those two shows correctly carry real times (and Jess Williamson a real
+  close), the rendered string changed from `"Doors 9:30 PM"` /
+  `"Doors 7 PM"`-style strings to `"Runs 9:30 PM – 11:30 PM"` / `"7 PM"`
+  (with a room label) — which is the intended, correct consequence of fixing
+  Gap 1, not a regression. The five tests:
+  `tests/dated-occurrence.test.mjs` ("occOf carries the date and the venue…",
+  "factsFor tells each late night its own truth…", "the artist sheet's header
+  for a dated occurrence…"), `tests/day-image-sections.test.mjs` ("a dated
+  section exports with its dates: ACL Late nights, as shipped"),
+  `tests/two-weekend-schedule.test.mjs` ("ACL as shipped: searching finds a
+  Weekend 2 headliner…"). Since this branch is data-only, I did not touch the
+  test files — they need a one-line snapshot update from whoever has code
+  latitude on this branch (the new expected strings are visible in the diff
+  each test prints).
+
+## Gap 2 — Zilker headliner ends
+
+Seven grid slots print a start with no end (the same headliner appears twice
+under different weekend tags where untagged):
+
+| Day | Stage | Weekend | Headliner | Start |
+|---|---|---|---|---|
+| Friday | T-Mobile | W1 | Skrillex | 8:15 PM |
+| Friday | T-Mobile | W2 | Kings of Leon | 8:15 PM |
+| Friday | American Express | both | Charli xcx | 8:40 PM |
+| Saturday | T-Mobile | both | Lorde | 8:15 PM |
+| Saturday | American Express | both | RÜFÜS DU SOL | 8:30 PM |
+| Sunday | T-Mobile | both | The xx | 8:30 PM |
+| Sunday | American Express | both | Twenty One Pilots | 8:30 PM |
+
+Searched: the official festival site and its support FAQ, the SeatGeek and
+OneStoWatch/press "full schedule" write-ups, austintexas.org's visitor guide,
+a parking-guide blog, Instagram/Facebook official posts, Reddit's
+schedule-release thread, KLBJ, and CultureMap Austin's schedule-reveal
+article (its page didn't render past nav/header — 404-adjacent JS shell, no
+usable body).
+
+**What every source actually prints:** a start time for each headliner
+(matching what's already in the file) and, separately, the **festival's own
+gate/operating hours** — never a sentence tying a specific artist to a
+specific end clock time. The official source
+(`support.aclfestival.com/hc/en-us/articles/4405406283924`) states plainly:
+"The festival's scheduled entrances/gates/doors open and close each day at
+the following times" — **12pm–10pm for all six days, both weekends** (Fri/Sat/
+Sun × W1/W2, uniformly). Three more independent sources corroborate "10 p.m.
+each day" for all three days (austintexas.org: "10 a.m. to 10 p.m. each day";
+swvl.com's ACL parking guide: "runs Friday through Sunday from 10 a.m. to 10
+p.m. each day"; ACL's own Instagram/Facebook 25th-anniversary posts: "from
+noon to 10 p.m. each day"). One outlier contradicts this — onestowatch.com's
+"Weekend One" guide claims Saturday/Sunday hours are "11 a.m. to 9 p.m." (a 9
+PM close) — but that's a single unofficial aggregator against four sources
+including the festival's own FAQ, and a 9 PM close would give Saturday's
+Lorde only 45 minutes and RÜFÜS DU SOL only 30 minutes before "close" —
+physically implausible for closing headliner sets, which is a good sign that
+number is simply wrong, not that 10 PM is.
+
+**I did not write any of the seven ends.** "Gates open/close at 10 PM" is the
+festival's operating hours, not a sentence that says "Skrillex plays until
+10:00 PM" — the closest thing to a source I found, but still an inference
+from park hours rather than a printed set end, and the brief is explicit
+twice over: never guess a headliner's end, leave it and report it when no
+source prints one. All seven headliner grid entries are unchanged from
+before this branch (`time` is still start-only, e.g. `"8:15 PM"`); Gap 2 is
+**not fixed** — see the report for what's needed to close it (an ACL app
+screenshot of the actual per-slot grid, or a press piece that explicitly
+states an end time, would do it; general "festival hours" should not).
+
+## Commits
+
+1. `9c18ce9` — freeze pick keys, start this log.
+2. `1cf5808` — `order` + printed/guessed `time`/`close` on all 66 Late
+   nights entries; 12 new venue registry entries in
+   `data/venues/index.json`.
+
+Every diff scanned for `#g=<token>` before staging (`git diff --cached | grep
+-oE '#g=[A-Za-z0-9_-]{10,}'`) — clean both times.
+
+---
+
+# Round two (2026-09-26) — no guess later than the show, the tool groups by date, the suite green
+
+Following `ACL-PREP-ROUND2.md`. Worked in the same worktree/branch. Order of
+work differs from the brief's numbering on purpose: the tool first (step A),
+because every re-run below needs it; then the data (step B); then the tests
+(step C).
+
+## Step A — the tool (`scripts/guess-run-times.mjs`)
+
+**What was wrong, beyond the brief's gap.** Three things, not one:
+
+1. `runsOf()` keyed rooms by `night|venue`, so a dated section (Late nights)
+   produced zero rooms — the gap round one reported.
+2. It only took entries with an `order`, and the validator forbids an order
+   on a one-act room, so even with dates it could never reproduce the 8
+   single-act guesses round one wrote (Villanelle, Night Tapes, Suki, Ryan
+   Beatty, War on Drugs, Rodrigo y Gabriela, Noga Erez, Claire Rosinkranz).
+3. The deeper one, and the actual cause of the dangerous guesses: `planRun`
+   laid EVERY room back from its close (closer = close − headliner set). That
+   is right for a club night that runs to the close, and wrong for a concert
+   bill, which ends when its headliner does. With a 2 AM fallback close it put
+   Palace at 12:30 AM behind 7 PM doors; fixing only the registry's closes
+   would not have fixed it, because one venue hosts 7 PM and 9 PM doors shows
+   and a single close cannot serve both.
+
+**What changed.**
+
+- A room = one section, one `night` or one `date`, one venue — read with the
+  app's own `nightOf` / `dateOf` / `venueOf` (events.js), so the tool and the
+  wall cannot disagree. A dated room reads the registry's by-weekday close
+  through the weekday of its date. By-time sections (Folsom) have no rooms.
+- A room of one act that already has a time is a run of one (re-laid, never
+  numbered). A timeless room stays timeless (MODEL-V3 §5, TIME TBA) — that is
+  what keeps Portola's Boys Noize (doors, a printed close, no time) from
+  getting a 10:15 PM guess on a re-run.
+- Two shapes, chosen by the registry's new optional `shape`, else by `kind`
+  (club/bar → club, hall/outdoor → concert):
+  - **club**: unchanged — first act at doors + gap, closer ends at the close.
+  - **concert**: the first act at its posted time (a posted opener IS the first
+    act) or doors + gap; each act after it by the support slot; the close is a
+    CAP — when it binds (a curfew), the headliner still plays a full set and
+    the openers move earlier, never before doors. This is the shape that errs
+    early.
+- A posted set is a fixed point for every shape: a guess never lands on or
+  past a posted set that follows it (k guesses before it sit at least k half
+  hours ahead). This is the Bambi collision, now impossible by construction;
+  the plan prints a warning if posted sets leave no room.
+
+**Disagreeing with the brief, gently:** it framed the tool gap as grouping
+only. Grouping alone would have made the tool reproduce round one's late
+guesses faithfully. The shape rule is the fix for section 1 of the brief.
+
+**Portola stays byte-identical, on purpose.** Portola is live today (Sat Sep
+26) and not in this round's scope. Its three Regency Ballroom rooms are `hall`,
+so the concert shape would move them (Thu Soulwax 10:30 → 9:30 PM, Fri Channel
+Tres 10:30 → 9:30 PM, **Sat Parcels 10:45 → 10 PM — tonight**). I pinned
+Regency's registry entry to `"shape": "club"` with a dated note so
+`tests/portola-events.test.mjs` ("the guessed times are DERIVED") keeps holding
+Portola to exactly what the tool writes. Dry run of `portola-2026` before and
+after the change: identical plans. **Whether tonight's Parcels guess should move
+earlier is a live, friend-facing call for Kevin** — flagged in the report.
+
+**Tests** (`tests/run-guess.test.mjs`, 10 new, all 14 old ones unchanged and
+green): date + venue grouping and weekday close; run of one vs timeless vs
+unnumbered pair; by-time sections skipped; concert follows its posted opener
+(Palace 8:45 PM, where the club shape gives 12:30 AM); a curfew caps a concert
+and pulls the opener earlier but never before doors; the posted fixed point
+(Bambi at 11:15 PM with round one's 105-minute gap, 10:30 PM once the gap is
+read correctly); a club night with a 2-hour headliner at a 2 AM room → 12 AM;
+the shape pin; dated rooms write back and re-run to the same bytes.
+
+Docs kept true: the tool paragraph in `docs/add-a-festival.md` and the README
+script line (both describe the tool; a scope note, since the brief listed
+data + script + tests).
+
+## Step B — the rooms (`data/venues/index.json`, `data/festivals/acl-2026.json`)
+
+Read every one of the 40 rooms. Sources: each venue's OWN event data first
+(Live Nation's embedded data behind emosaustin.com / scootinnaustin.com,
+antonesnightclub.com and stubbsaustin.com event pages, acllive.com, the
+Concourse / Brushy / Devil May Care ticket pages), Ticketmaster's event text
+where its page refuses scrapers (read through search), city code for curfews,
+and — for the Concourse only — community reports of when headliners go on.
+Full quotes are in each registry entry's `sources` / `setSources`.
+
+### The finding that changed the most rooms: "Show" is the first act
+
+Every venue here prints a Doors time and a Show time, and the Show time is
+when the FIRST act goes on. Round one had most of these as guesses; 18 are now
+posted from the venue's own print (36 posted in all, 30 guesses). Two of round
+one's "posted" readings were wrong the other way:
+
+- **Stubb's concert calendar prints DOORS, not show.** Its one time per show is
+  labelled "Doors:" on the calendar; Ticketmaster prints "Doors: 7:00pm Show:
+  8:00pm" (Brandon Flowers, Bleachers, Lola Young) and "Doors 8 / Show 9"
+  (Parcels). So the amphitheater openers move 7 → 8 PM (Parcels' 8 → 9 PM),
+  and the Stubb's Indoors shows move to their printed Show: Montclair 10:30,
+  Grocery Bag 11, Almost Heaven 11:30, Annie DiRusso 10:30. These move LATER,
+  deliberately: they are the venue's printed start, replacing a doors time.
+- **Sunday (1994)** "9 PM" is its show start, but its page bills an opener we do
+  not carry ("With Semiwestern"), so it is a guess (~9 PM, the opener's start).
+
+### Per venue — what changed and the evidence
+
+| Venue | kind/shape | close | gap / sets | Evidence (verbatim in the registry) |
+|---|---|---|---|---|
+| **Emo's** | club → **hall** (concert) | 2 AM fallback → unknown (hall fallback ~12 AM draws the window, schedules nobody) | gap 60 | emosaustin.com event data: Palace "Doors: 7:00pm Show: 8:00pm" (lineup Palace, The 4411); BUNT./Levity/Suki/RyG "Doors: 9:00pm Show: 10:00pm". Its own IG shows 9 PM-doors DJ nights running to 2 AM, concerts end in the evening — no single close fits both, so none. |
+| **Brushy Street Commons** | club → **hall** | unknown | gap 60 (30 on the DJ night) | brushystreet.com: "Located within the sound stage of the historic 501 Studios building" — **indoor** (the brief called it outdoor; it is not, so no outdoor curfew). Eventim: Hunx "Doors 9 / Show 10", Arcy Drive "Doors 7 / Show 8", underscores DJ set "Doors 9:00pm Show: 9:30pm". |
+| **3TEN** | club → **hall** | unknown | gap 60 | acllive.com: Villanelle, Łaszewo, Claire Rosinkranz all "Showtimes … 9:00PM" (AXS: doors 8). Claire's page bills "with Abby Powledge" (not in our lineup). |
+| **Antone's** | club → **hall** | 12 AM (Yelp, kept) | gap 60 | Its own pages: World Famous Pets w/ Elijah Delgado "8:00pm (Doors: 7:00pm)"; Night Tapes "10:00pm (Doors: 9:00pm)"; Rochelle Jordan w/ Stefon Osae "10:00pm (Doors: 9:00pm)"; Don West w/ Kesmar "10:00pm (Doors: 9:00pm)". |
+| **Mohawk Austin** | club → **hall** | 12 AM (Yelp, kept) | gap 60 | A concert venue ("music starts at 8p and goes to 10:30p-1a"); the Fcukers night is indoor. |
+| **Stubb's** (amphitheater) | outdoor (concert) | none → **Red River curfew by weekday** (Sun–Wed 10:30 PM, Thu 12 AM, Fri/Sat 1 AM; Austin Code 9-2-30(A)(4), 2018 ordinance text, adoption not re-verified — Tue is 10:30 PM under the general rule too) | gap 60 | FAQ "an hour after doors"; Ticketmaster Doors/Show above. Per night, tighter: the indoor wristband after-shows open at 10 PM Thu (Montclair, "Free with wristband from Brandon Flowers"), 10:30 PM Fri (Grocery Bag, Bleachers), 11 PM Sat (Almost Heaven, Parcels) — written as an EVIDENCED close (`closeApprox` + that page's https link) on those three nights. |
+| **Stubb's Indoors** | hall | 1:45 AM (FAQ, kept) | gap null (30 on four pages, 60 on two) | Each show's own page: Montclair "Doors: 10:00PM. Show: 10:30PM." (Ticketmaster: Doors 9:30), Grocery Bag "Doors: 10:30pm Show: 11:00pm" (Ticketmaster copies: Doors 10), Almost Heaven "Doors: 11:00PM. Show: 11:30PM." (an older Ticketmaster copy: Show 12 AM), Annie DiRusso "Doors 10 / Show 10:30", Sunday (1994) "Doors: 8:00PM. Show: 9:00PM … With Semiwestern". Where two sources disagree, the earlier time is kept. |
+| **Historic Scoot Inn** | outdoor (concert) | none → **city outdoor curfew by weekday** (Sun–Wed 10:30 PM, Thu 11 PM, Fri/Sat 12 AM; Austin Code 9-2-30(A)(1)) | gap 60 | scootinnaustin.com event data: Finn Wolfhard/Malcy and CMAT/Fancy Hagood "Doors 6 / Show 7"; Saint Motel/The 4411 "Doors 5 / Show 6"; Noga Erez "Doors 7 / Show 8:30"; Ryan Beatty "Doors 5 / Show 6" with girlsweetvoiced (not in our lineup). |
+| **The Concourse Project** | club | 2 AM, now **printed** per night | gap 0, **headliner 120** (was the 90 default) | Each night's own ticket page: "Show: 9:00PM" and "18+ Welcome // 9pm - 2am" (Chainsmokers, Aoki, it's murph, Yukimatsu, BUNT.). Headliners: r/concourseproject "Headliners go on at midnight unless otherwise stated"; r/Austin "Sets at Concourse usually start at 12:00 or so and go until 2:00"; r/ZedsDeadFam "typically midnight. Maybe 12:15-30"; the venue's own 2023 post shows a headliner from 11:30 PM on an extended night. |
+| **Devil May Care** | bar (club) | 2 AM printed (kept) | gap **105 → null** (bar default 30), headliner 135 | The 105 minutes was each night's printed "Show: 11:45PM" — the HEADLINER's start, not the first act's. |
+| **Fair Market** | hall | unknown | — | Universe ticket page: sponsor event "Thu, Oct 8, 2026 at 6:00 PM", no set time or end. |
+| **The Continental Club** | club → hall | none | — | Its own Eventbrite: "@10pm … Doors open @9pm" → doors 9:30 → **9 PM**. |
+| **Regency Ballroom** (Portola) | hall, **shape pinned to club** | — | — | Keeps Portola's live file exactly what the tool writes (step A). |
+
+### Every room whose guess moved (round one → round two)
+
+All earlier. (Posted-time corrections are in the table further down.)
+
+- Emo's: **Palace ~12:30 AM → ~8:45 PM** (Oct 1), **BUNT. ~12:30 AM → ~10:45 PM** (Oct 2), **Levity ~12:30 AM → ~10:45 PM** (Oct 3).
+- Brushy Street Commons: **Hunx and his Punx ~12:30 AM → ~10:45 PM** (Oct 2); underscores night (Oct 3) Directress ~11:15 → ~10:15 PM, **Underscores ~12:30 AM → ~11 PM**; **Arcy Drive ~12:30 AM → ~8:45 PM** (Oct 8, 7 PM doors).
+- 3TEN: **Łaszewo ~12:30 AM → ~9:45 PM** (Oct 8).
+- Mohawk Austin: **Fcukers ~10:30 → ~8:45 PM** (Sep 29, 8 PM opener).
+- Antone's: **World Famous Pets ~10:30 → ~8:45 PM** (Oct 8, 8 PM opener); Rochelle Jordan ~10:45 → ~10:30 PM; Don West ~10:45 → ~10:30 PM (the venue's midnight close caps a 90-minute headliner).
+- Stubb's: **Brandon Flowers ~9 → ~8:30 PM** (the outdoor show is over by the 10 PM after-show); **Parcels ~10 → ~9:30 PM** (over by 11).
+- The Concourse Project: **The Chainsmokers, Steve Aoki, It's Murph, BUNT. (Oct 9) ~12:30 → ~12 AM**; Elephante and Nate Band ~10:45 → ~10:30 PM. The brief expected the Concourse might be right as it was; the evidence says its headliners go on at midnight, so 12:30 was 30 minutes late.
+
+### Rooms left as they were, and why
+
+- Devil May Care (both nights): Rebecca Black 11:45 PM and Fcukers 11:45 PM are printed; Bambi ~10:30 PM is now **the tool's** answer (bar gap 30, headliner 135), not a hand edit — a re-run cannot undo it.
+- Stubb's Bleachers ~9 PM and Lola Young ~9 PM: the curfew (10:30 PM) and the forward rule agree.
+- Historic Scoot Inn Finn Wolfhard ~8, CMAT ~8, Saint Motel ~7 PM: an hour after a printed 7 PM (6 PM) show, well inside the curfew.
+- Single acts left on doors + gap because an opener we do not carry is billed (so the guess marks the opener's start — early, the safe side): Ryan Beatty ~6 PM (girlsweetvoiced), Claire Rosinkranz ~9 PM (Abby Powledge), Sunday (1994) ~9 PM (Semiwestern). Night Tapes is posted at 10 PM from Antone's own page, which bills it alone; Do512 bills "w/ Alice Rivers", so Night Tapes may go on later — again the safe side.
+- The War on Drugs ~7 PM: nothing printed beyond a 6 PM event start; an hour later is the earliest likely.
+- Jess Williamson at the Continental Club (10 PM – 11:30 PM printed) and Yukimatsu (9 PM printed): posted, untouched.
+
+### Closes
+
+A guessed close left in a room where every set is now posted could never be
+refreshed (the tool leaves such rooms alone), so I removed those rather than
+leave an orphan: Suki Waterhouse and Rodrigo y Gabriela (Emo's, "kind default
+(club)" 2 AM), Villanelle (3TEN, same), Night Tapes (Antone's routine 12 AM).
+Those rooms read "Doors 9 PM" in the zoom — no invented window.
+
+### Checks
+
+- `node scripts/guess-run-times.mjs acl-2026 --write` → 46 changes; a second
+  `--write` → **0 changes** (the file is exactly what the tool writes; Bambi
+  included).
+- `node scripts/validate-festivals.mjs` → 0 errors.
+- The validator's run checks never see a dated room (its room key needs a
+  `night`) — **a gap worth fixing in the validator**, out of this round's
+  scope. I ran the same invariants by hand on all 40 rooms / 66 sets (shared
+  doors/close, distinct seq, `of` = room size, clock agrees with order, 30
+  minutes apart, every set inside doors → close, no order on one act): 0
+  problems.
+- Pick keys: 148 names byte-identical (no name touched); freeze test green.
+- Round one did NOT reorder `artists[]` (the brief's worry): array order and
+  every name are identical to main; its "apply-order" step only added `order`.
+
+### Full table — every Late nights set, round one → round two
+
+`~` = guess. Bold = changed.
+
+| Date | Venue | Act | Doors | Set (r1 → r2) | Close (r1 → r2) |
+|---|---|---|---|---|---|
+| 09-29 | Mohawk Austin | Total Wife | 7 PM | 8 PM | ~12 AM |
+| 09-29 | Mohawk Austin | Fcukers | 7 PM | ~10:30 PM → **~8:45 PM** | ~12 AM |
+| 10-01 | Emo's | The 4411 | 7 PM | ~8 PM → **8 PM** | ~2 AM → ~12 AM |
+| 10-01 | Emo's | Palace | 7 PM | ~12:30 AM → **~8:45 PM** | ~2 AM → ~12 AM |
+| 10-01 | Stubb's | Jess Williamson | 7 PM | 7 PM → **8 PM** | — → ~10 PM |
+| 10-01 | Stubb's | Brandon Flowers | 7 PM | ~9 PM → **~8:30 PM** | — → ~10 PM |
+| 10-01 | Stubb's Indoors | Montclair | 9:30 PM | 9:30 PM → **10:30 PM** | — |
+| 10-01 | The Concourse Project | Austin Ashtin | 9 PM | ~9 PM → **9 PM** | ~2 AM → 2 AM |
+| 10-01 | The Concourse Project | The Chainsmokers | 9 PM | ~12:30 AM → **~12 AM** | ~2 AM → 2 AM |
+| 10-02 | 3TEN | Villanelle | 8 PM | ~9 PM → **9 PM** | ~2 AM → — |
+| 10-02 | Antone's | Night Tapes | 9 PM | ~10 PM → **10 PM** | ~12 AM → — |
+| 10-02 | Brushy Street Commons | CorMae | 9 PM | 10 PM | ~2 AM → ~12 AM |
+| 10-02 | Brushy Street Commons | Hunx and his Punx | 9 PM | ~12:30 AM → **~10:45 PM** | ~2 AM → ~12 AM |
+| 10-02 | Devil May Care | Bambi | 10 PM | ~10:30 PM | 2 AM |
+| 10-02 | Devil May Care | Rebecca Black | 10 PM | 11:45 PM | 2 AM |
+| 10-02 | Emo's | Sarah Pederzani | 9 PM | ~10 PM → **10 PM** | ~2 AM → ~12 AM |
+| 10-02 | Emo's | BUNT. | 9 PM | ~12:30 AM → **~10:45 PM** | ~2 AM → ~12 AM |
+| 10-02 | Historic Scoot Inn | Malcy | 6 PM | ~7 PM → **7 PM** | — → ~12 AM |
+| 10-02 | Historic Scoot Inn | Finn Wolfhard | 6 PM | ~8 PM | — → ~12 AM |
+| 10-02 | Stubb's | This Is Lorelei | 7 PM | 7 PM → **8 PM** | — → ~10:30 PM |
+| 10-02 | Stubb's | Bleachers | 7 PM | ~9 PM | — → ~10:30 PM |
+| 10-02 | Stubb's Indoors | Grocery Bag | 10 PM | 10:30 PM → **11 PM** | — |
+| 10-02 | The Concourse Project | Riot Ten | 9 PM | 9 PM | ~2 AM → 2 AM |
+| 10-02 | The Concourse Project | Elephante | 9 PM | ~10:45 PM → **~10:30 PM** | ~2 AM → 2 AM |
+| 10-02 | The Concourse Project | Steve Aoki | 9 PM | ~12:30 AM → **~12 AM** | ~2 AM → 2 AM |
+| 10-03 | Brushy Street Commons | 1x333 | 9 PM | ~10 PM → **9:30 PM** | ~2 AM → ~12 AM |
+| 10-03 | Brushy Street Commons | Directress | 9 PM | ~11:15 PM → **~10:15 PM** | ~2 AM → ~12 AM |
+| 10-03 | Brushy Street Commons | Underscores | 9 PM | ~12:30 AM → **~11 PM** | ~2 AM → ~12 AM |
+| 10-03 | Emo's | Untitld | 9 PM | ~10 PM → **10 PM** | ~2 AM → ~12 AM |
+| 10-03 | Emo's | Levity | 9 PM | ~12:30 AM → **~10:45 PM** | ~2 AM → ~12 AM |
+| 10-03 | Historic Scoot Inn | Fancy Hagood | 6 PM | ~7 PM → **7 PM** | — → ~12 AM |
+| 10-03 | Historic Scoot Inn | CMAT | 6 PM | ~8 PM | — → ~12 AM |
+| 10-03 | Stubb's | Velvet Trip | 8 PM | 8 PM → **9 PM** | — → ~11 PM |
+| 10-03 | Stubb's | Parcels | 8 PM | ~10 PM → **~9:30 PM** | — → ~11 PM |
+| 10-03 | Stubb's Indoors | Almost Heaven | 11 PM | 11 PM → **11:30 PM** | — |
+| 10-03 | The Concourse Project | Dazzle Camouflage | 9 PM | ~9 PM → **9 PM** | ~2 AM → 2 AM |
+| 10-03 | The Concourse Project | Nate Band | 9 PM | ~10:45 PM → **~10:30 PM** | ~2 AM → 2 AM |
+| 10-03 | The Concourse Project | It's Murph | 9 PM | ~12:30 AM → **~12 AM** | ~2 AM → 2 AM |
+| 10-04 | Antone's | Stefon Osae | 9 PM | ~10 PM → **10 PM** | ~12 AM |
+| 10-04 | Antone's | Rochelle Jordan | 9 PM | ~10:45 PM → **~10:30 PM** | ~12 AM |
+| 10-04 | Emo's | Suki Waterhouse | 9 PM | ~10 PM → **10 PM** | ~2 AM → — |
+| 10-04 | Historic Scoot Inn | Ryan Beatty | 5 PM | ~6 PM | — → ~10:30 PM |
+| 10-05 | Brushy Street Commons | LP | 7 PM | 8 PM | — |
+| 10-05 | Historic Scoot Inn | The 4411 | 5 PM | ~6 PM → **6 PM** | — → ~10:30 PM |
+| 10-05 | Historic Scoot Inn | Saint Motel | 5 PM | ~7 PM | — → ~10:30 PM |
+| 10-06 | Stubb's | Leon Knight | 7 PM | 7 PM → **8 PM** | — → ~10:30 PM |
+| 10-06 | Stubb's | Lola Young | 7 PM | ~9 PM | — → ~10:30 PM |
+| 10-06 | Stubb's Indoors | Annie DiRusso | 10 PM | 10 PM → **10:30 PM** | — |
+| 10-08 | 3TEN | Left Lucid | 8 PM | ~9 PM → **9 PM** | ~2 AM → ~12 AM |
+| 10-08 | 3TEN | Łaszewo | 8 PM | ~12:30 AM → **~9:45 PM** | ~2 AM → ~12 AM |
+| 10-08 | Antone's | Elijah Delgado | 7 PM | ~8 PM → **8 PM** | ~12 AM |
+| 10-08 | Antone's | World Famous Pets | 7 PM | ~10:30 PM → **~8:45 PM** | ~12 AM |
+| 10-08 | Brushy Street Commons | Common People | 7 PM | 8 PM | ~2 AM → ~12 AM |
+| 10-08 | Brushy Street Commons | Arcy Drive | 7 PM | ~12:30 AM → **~8:45 PM** | ~2 AM → ~12 AM |
+| 10-08 | Fair Market | The War on Drugs | 6 PM | ~7 PM | ~12 AM |
+| 10-08 | Stubb's Indoors | Sunday (1994) | 8 PM | 9 PM → **~9 PM** | — → ~1:45 AM |
+| 10-08 | The Concourse Project | ¥ØU$UK€ ¥UK1MAT$U | 9 PM | 9 PM | — → 2 AM |
+| 10-08 | The Continental Club | Jess Williamson | 9:30 PM → **9 PM** | 10 PM | 11:30 PM |
+| 10-09 | Emo's | Rodrigo y Gabriela | 9 PM | ~10 PM → **10 PM** | ~2 AM → — |
+| 10-09 | Historic Scoot Inn | Noga Erez | 7 PM | ~8 PM → **8:30 PM** | — |
+| 10-09 | The Concourse Project | DJ Bad Apple | 9 PM | ~9 PM → **9 PM** | ~2 AM → 2 AM |
+| 10-09 | The Concourse Project | BUNT. | 9 PM | ~12:30 AM → **~12 AM** | ~2 AM → 2 AM |
+| 10-10 | 3TEN | Claire Rosinkranz | 8 PM | ~9 PM | ~2 AM → ~12 AM |
+| 10-10 | Antone's | Kesmar | 9 PM | ~10 PM → **10 PM** | ~12 AM |
+| 10-10 | Antone's | Don West | 9 PM | ~10:45 PM → **~10:30 PM** | ~12 AM |
+| 10-10 | Devil May Care | Fcukers | 10 PM | 11:45 PM | 2 AM |
+
+## Step C — the five red tests
+
+All five asserted the OLD data (doors only, no clock on the two Jess
+Williamson nights, no close), and none of them protected something the data
+change broke. Each now asserts the shipped data, with a line saying why:
+
+1. `occOf carries the date and the venue…` (tests/dated-occurrence.test.mjs):
+   expected `time: null` on both of Jess Williamson's nights. Old data: they
+   now carry their printed starts (Stubb's 8 PM show, the Continental Club's
+   10 PM). What the test protects — two late nights are two occurrences,
+   by date and venue — still holds.
+2. `factsFor tells each late night its own truth…`: expected "Doors 7 PM" /
+   "Doors 9:30 PM" / "Doors 9 PM" ×2. Old data: rooms with a close now read
+   as a window — "Runs 7 PM – ~10 PM" (Stubb's, evidenced close, tilde),
+   "Runs 9 PM – 11:30 PM" (Continental, printed; doors corrected to 9 PM),
+   "Runs 9 PM – ~12 AM" (Emo's, hall fallback, tilde), "Runs 9 PM – 2 AM"
+   (Concourse, printed). The right venue / map door / date per night: intact.
+3. `the artist sheet's header for a dated occurrence…`: the same Continental
+   Club string ("Doors 9:30 PM" → "Runs 9 PM – 11:30 PM"). Old data.
+4. `a dated section exports with its dates: ACL Late nights, as shipped`
+   (tests/day-image-sections.test.mjs): rows "Thu · Oct 1 · Stubb's" now end
+   "· 8 PM" / "· 10 PM" because the sets have times. Old data; every row still
+   leads with its date and names its own room.
+5. `ACL as shipped: searching finds a Weekend 2 headliner…`
+   (tests/two-weekend-schedule.test.mjs): a late card's `data-time` is now
+   "8 PM\nStubb's" rather than the bare venue. Old data; the search, the
+   date heads and the one-tab axis all still pass.
+
+Play order, search and pick keys: round one never reordered `artists[]`
+(identical to main) — it added `order` objects, which my room check shows
+agree with the clock in all 40 rooms; search finds the late nights under
+their dates (test 5); 148 pick keys byte-identical (freeze test green).
+
+**One FYI the probe turned up (code, not in scope):** `findEventEntry` matches
+an occurrence on its `time`. A notes sheet restored from a history entry
+written BEFORE this data drop carries the old time and no longer finds its
+show, so its header prints the stale clock without a tilde — for Palace,
+"Thu · Oct 1 · 12:30 AM", the very late guess this round removed. The wall
+re-renders from data and is fine. Suggest: for dated/venue entries, match on
+name + date + venue and let `time` go (a guessed time is designed to move).
+
+## Checks before reporting
+
+- `node scripts/validate-festivals.mjs`: 0 errors (2 unrelated warnings).
+- `npm test`: 1,081 pass / 0 fail at the default clock, at `TZ=Asia/Tokyo`,
+  and at `NIGHT_CLOCK=2026-09-27T04:30:00Z` (+ night-clock import).
+- `node scripts/guess-run-times.mjs acl-2026 --write` twice: 0 changes on the
+  second — every Late nights time is reproducible by the tool.
+- `node scripts/guess-run-times.mjs portola-2026`: identical plan to before
+  this round (Regency pinned; Boys Noize stays timeless).
+
+## Commits (round two)
+
+1. `6be721e` — scripts: rooms by date, concerts laid forward, posted sets as
+   fixed points; Regency pinned; 10 unit tests; docs line kept true.
+2. `5de3639` — scripts: a fallback close draws a concert's window but
+   schedules nobody (+1 test).
+3. `befa69a` — data: registry corrections with sources; posted Show times;
+   Stubb's/Scoot curfews and after-show closes; tool-written guesses.
+4. `d7f4748` — tests: the five as-shipped expectations; this log.
+
+---
+
+# Round three (2026-09-26) — the review of 09d0bbe
+
+The coordinator took round two to PR #56, dropped the Regency pin (942df00,
+Portola's Regency rooms now concerts: tonight's Parcels ~10 PM) and merged
+main (09d0bbe). A Sol 6 review found no blocker and three accuracy issues.
+Baseline before this round: `guess-run-times.mjs` on acl-2026 and
+portola-2026 both propose 0 changes (each file is what the tool writes).
+
+## Issue 2 — a fallback close was still scheduling concerts (script)
+
+The review was right. The concert branch capped the closer at "fallback − 30
+min" and laid the openers back from it, so with 10 PM doors, four acts and
+the hall's guessed midnight the bill came out 10 / 10:30 / 11 / 11:30 PM, and
+my own test asserted that. That contradicted the rule it was meant to
+express.
+
+Now only a KNOWN close (printed, evidenced for the night, or the venue's
+registry hours) caps a concert. The kind's fallback moves nobody: the bill is
+laid as if it were not there (11 PM / 11:45 / 12:30 AM / 1:15 AM, the same
+bill a room with no close gets). When that bill's closer would have under
+half an hour inside the fallback window, the fallback is wrong for this night
+and no close is written. `applyPlans` now takes a guessed close off the room
+when the plan has none, so a re-run reproduces the file; a printed or
+evidenced close never takes that path.
+
+Tests: the flagged test now asserts the right behaviour (the four-act bill,
+identical to a closeless room's, and no close written); a new one checks
+that a stale guessed close is removed, the re-run is byte-stable, and a
+printed close is never touched. Moves: none. Both shipped files still
+propose 0 changes, because no real room had its fallback binding.
+
+## Issue 1 — Stubb's outdoor closes were labelled as printed evidence (data + script)
+
+The review was right. The Montclair, Grocery Bag and Almost Heaven pages print
+the INDOOR after-show's doors and show. That the amphitheater is over by then
+is my inference, and giving those closes the after-show's https URL as
+`closeSource` made an inference read as "a page printed this night's end",
+which is the exact misuse the CLAUDE.md close bullet names.
+
+The inference still has to be reproducible, and a non-URL `closeSource` makes
+the next run re-read the registry. So it now lives there as the registry's
+most specific rule, `close.byDate` on Stubb's (`2026-10-01` 10 PM,
+`2026-10-02` 10:30 PM, `2026-10-03` 11 PM). The three after-show pages are in
+its `close.sources` with their quotes, and the note says plainly that these
+are inferred. The tool reads a date's close before the weekday's
+(`closeFor`, `planRun({ date })`, `planFestival` passes the room's date). The
+events now carry `closeApprox: true` and a `closeSource` naming the rule:
+"venue's 2026-10-01 close".
+
+Moves: none. The same three closes and the same times (Brandon Flowers ~8:30,
+Bleachers ~9, Parcels ~9:30); only the six labels changed. A second `--write`
+makes 0 changes. Test: a date's close beats the weekday's and names the rule,
+another Thursday reads the weekday, and an old URL-labelled close is
+rewritten to the rule and re-runs byte-stable. Docs line on where closes
+come from updated.
+
+## Issue 3 — Yukimatsu, and the one-act rule (data + test)
+
+**Yousuke Yukimatsu is now a guess.** The Concourse page's "Show: 9:00PM" for
+a 9 PM – 2 AM night is the room opening, the same minute as doors, not a set
+time; a lone headliner at a five-hour club night need not play from the
+opening. Same 9 PM, now with its tilde; the printed 2 AM close stands.
+
+**The one-act rule, decided with the safety principle:** a lone billed act
+is guessed at its FIRST-ACT time, in either shape: doors + the venue's gap,
+or earlier if a known curfew leaves no full set after it. It is never
+guessed as close − headliner set. As a guess Yukimatsu would have read
+midnight, the late kind. The tool already did this (`n === 1` takes the
+first act's start in both branches), but nothing pinned it, so a new test
+does: a lone act at a 9 PM – 2 AM club with a 2-hour headliner → 9 PM, not 12
+AM; an outdoor lone act → doors + gap, or curfew − set when that is sooner;
+and the Yukimatsu entry re-lays to itself.
+
+**Where the rule matters, room by room (17 one-act rooms):**
+- Guesses, all at their first-act time already: Ryan Beatty ~6 PM, Claire
+  Rosinkranz ~9 PM, Sunday (1994) ~9 PM (each also has an unbilled opener,
+  so the act itself is later — the safe side), Yukimatsu ~9 PM. Also The War
+  on Drugs ~7 PM: the only printed time is the 6 PM event start, labelled
+  doors, so doors + gap is its first-act time. This is the one judgment
+  call; 6 PM would be the "plays from the moment the room opens" reading.
+- Kept posted, and why the line is drawn here: each of these pages prints a
+  Show time DISTINCT from doors (30 minutes to 1 hour 45 later) for a show
+  that bills that act alone. That is a performance start, not a room
+  opening: Montclair 10:30, Grocery Bag 11, Almost Heaven 11:30, Annie DiRusso
+  10:30 (Stubb's Indoors), Villanelle 9 (3TEN), Night Tapes 10 (Antone's), Suki
+  Waterhouse 10 and Rodrigo y Gabriela 10 (Emo's), LP 8 (Brushy), Noga Erez
+  8:30 (Scoot Inn), Fcukers 11:45 (Devil May Care, "Doors 10 | Show 11:45 |
+  Ends 2"), Jess Williamson 10 – 11:30 (Continental Club, "album release!
+  @10pm"). If an unannounced opener appears, the act goes on later, which
+  is the safe side.
+- If the coordinator wants these as guesses too, it needs a `show` field on
+  the event, so the tool can lay a lone act at its printed show time.
+  Without it, the tool would re-lay Almost Heaven at doors + 60 = 12 AM and
+  Annie DiRusso at 11 PM, both LATER than their printed 11:30 and 10:30.
+  That is a schema change (the validator does not know the field), so I
+  have not made it.
+
+**Rooms moved: none.** Yukimatsu gains a tilde at the same 9 PM; no other time
+or close changes. Multi-act rooms keep their posted openers (as asked:
+everything else as is). The same "Show = the first act" reading applies
+there, and at the Concourse the posted openers' 9 PM is also the room
+opening. For a multi-act club night, though, the first billed DJ is the one
+playing when doors open.
+
+## Round three — checks and commits
+
+- `node scripts/validate-festivals.mjs`: 0 errors (2 unrelated warnings).
+- `guess-run-times.mjs` on acl-2026 and portola-2026: 0 proposed changes
+  each (both files are exactly what the tool writes); Portola's file is
+  untouched by this round.
+- Dated-room invariants (40 rooms): 0 problems; no event carries a URL
+  `closeSource` any more.
+- `npm test`: 1,134 pass / 0 fail at the default clock, `TZ=Asia/Tokyo`, and
+  `NIGHT_CLOCK=2026-09-27T04:30:00Z` with the night-clock import.
+
+Commits: `93a655f` (issue 2, script + tests), `7108e4e` (issue 1, registry
+by-date close + script + test + docs line), `21c6fa9` (issue 3, Yukimatsu +
+one-act test), then this log entry.
+
+---
+
+# Round four (2026-09-26) — cut, not patched: third pass on the same mechanism
+
+**What the re-review of ea9f5a3 found:** #1 and #3 fixed, idempotent, nothing
+later. But the round-three patch removed a concert's fallback close only when
+its closer had under 30 minutes before it, while the planned headliner set is
+90. So Emo's BUNT. (~10:45 PM) and Brushy's Underscores (~11 PM) kept a guessed
+midnight close their own planned sets run past, and the now ring would have
+stopped mid-set.
+
+**Why a cut, not a fourth patch.** Rounds two, three and this one each found
+a hole in the same place: a guessed (kind-default) close written on a
+concert. For a concert that value is never an anchor, only a guessed end, so
+every rule that tried to "use it a little" produced another way for it to be
+wrong. The feature is the curfew, and it keeps its behaviour; the mechanism
+that kept producing holes is the fallback close on concerts, and it is gone.
+
+**The rule now:** a concert room (hall/outdoor, or `shape: "concert"`) never
+gets a fallback close written. Only a known close is ever written on a
+concert: one printed for the night, one evidenced for the night, or the
+venue's own registry hours (by date, weekday, or default). Clubs keep their
+fallback, because a night that runs to the close is laid back from it.
+`applyPlans` takes any fallback close off a concert room; printed closes and
+posted times are untouched as before. The round-three "drop it if the closer
+doesn't fit" block is deleted, and so is the concert branch's use of `known`.
+One test asserts it directly ("a concert never carries a fallback close"):
+hall and outdoor write none, the venue's hours are written, a printed close
+stays printed, a club keeps its fallback and is laid back from it, and a
+fallback an earlier run wrote comes off a concert room with its times
+unmoved.
+
+**`--write` on both festivals: closes only, no time moved.**
+- ACL: 17 entries in 9 rooms lost a guessed "~12 AM (kind default (hall))":
+  Emo's Oct 1 (Palace, The 4411), Oct 2 (BUNT., Sarah Pederzani), Oct 3
+  (Levity, Untitld); Brushy Street Commons Oct 2 (Hunx and his Punx,
+  CorMae), Oct 3 (Underscores, Directress, 1x333), Oct 8 (Arcy Drive, Common
+  People); 3TEN Oct 8 (Łaszewo, Left Lucid), Oct 10 (Claire Rosinkranz);
+  Fair Market Oct 8 (The War on Drugs).
+- Portola: 11 entries in 4 rooms lost the same: Regency Ballroom Thu, Fri,
+  Sat and Great American Music Hall Fri.
+- Checked field by field against the files before the write: no `time`,
+  `approx`, `doors`, `order` or any other field changed; the only other diff
+  lines are trailing commas. A second `--write` on each: 0 changes.
+- What friends see: those rooms' heads and zooms say "Doors 9 PM" rather than
+  "Runs 9 PM – ~12 AM", and their last set's ring runs the app's usual hour
+  past its start instead of stopping at a midnight nobody printed.
+
+**Tests changed because they asserted the old data or the old rule:**
+- `tests/run-guess.test.mjs`: three asserted a fallback close on a concert
+  (the three-act hall, Palace's room, Brushy's fallback case). They now assert
+  none; the new test above.
+- `tests/events-model.test.mjs` ("venueGroupsOf on Portola Friday") and
+  `tests/events-wall.test.mjs` ("one room, one stack"): both built Regency's
+  head as `Doors … · ~<close>`, so they assumed Regency carried a guessed
+  close. Now `Doors 7 PM`, and the model test asserts there is no close. The
+  tilde on a guessed close stays pinned by fixtures (`events-model` line 120,
+  `cancelled-acts` line 219).
+- `tests/dated-occurrence.test.mjs`: Emo's BUNT. night "Runs 9 PM – ~12 AM"
+  → "Doors 9 PM".
+
+Docs line (`docs/add-a-festival.md`) says a concert carries only a close the
+venue gave.
+
+**Checks:** validator 0 errors; both festivals re-run to 0 changes; `npm test`
+1,135 pass / 0 fail at the default clock, `TZ=Asia/Tokyo` and `NIGHT_CLOCK`.
+
+---
+
+# Round five (2026-09-26) — a concert's close is a window, not a curfew and not nothing
+
+**Why round four was wrong.** Round four wrote no close at all on a concert
+with no known close. With no close, a room's last card falls back to the
+app's one-hour NOW window (`js/v3/events.js` venueGroupsOf: next start, else
+a printed end, else the room's close, else start + 60). So 12 of the 13
+affected rooms stopped their ring EARLIER than before: BUNT. at 11:45 PM
+instead of midnight, The War on Drugs at 8 PM though a headliner from a 7 PM
+guess plays to 8:30 at least, and tonight's Parcels (Portola) would have gone
+dark at 11 PM. A ring that switches off while the act may still be on is the
+late-for-friends direction, the one this whole job exists to avoid. The cut
+removed the right mechanism (a guessed close pulling starts) along with the
+wrong one (having any outer edge at all).
+
+**The rule now (the coordinator's call, stated as a rule rather than a
+patch):** a concert room with no KNOWN close gets a WINDOW close, the later
+of the kind's default close and the closer's planned start + its headliner
+set. It is written with `closeApprox` and a `closeSource` naming the rule:
+- "kind default (hall)" when the default is later;
+- "kind default (hall), stretched to the headliner's set" when the set is;
+- "the headliner's set (outdoor)" when the kind has no default.
+
+It is only a generous outer edge for the room's window and the last card's
+ring: it schedules nobody (round two's fix stays: starts come only from
+doors, gaps, set lengths and known closes), and a known close (printed,
+evidenced for the night, the venue's registry hours) always wins. Clubs are
+unchanged.
+
+**Sol's minor:** `planFestival` skipped rooms whose every time was posted, so
+a stale guessed close written by an older rule survived there. Those rooms
+are now planned for their CLOSE only: every time is a posted fixed point and
+stays untouched, a printed or evidenced close is kept, and anything else is
+brought to the rule. (The old test "a room where every set is posted is left
+alone entirely" now asserts that its times and printed close are untouched
+and that nothing moves.)
+
+**Tests:**
+1. The window rule: the default wins when later (Palace, 8:45 + 90 = 10:15 PM <
+   midnight); the headliner's set stretches it when later (BUNT., 10:45 PM + 90
+   = ~12:15 AM); a known close wins and is a curfew; nothing is scheduled by it
+   (the same times as a room with no close of any kind); a lone act (War on
+   Drugs ~7 PM → window 12 AM); clubs unchanged.
+2. The all-posted cleanup: a stale club fallback on Suki → the concert window;
+   Rodrigo y Gabriela (no close) → the window; Fcukers' printed 2 AM and posted
+   11:45 untouched.
+3. Byte-stable re-run.
+
+Round four's rewrites of the Portola tests (`events-model`, `events-wall`) are
+reversed to round three's form, which reads Regency's `~<close>` window off
+the file; `dated-occurrence` now reads BUNT.'s night as "Runs 9 PM – ~12:15
+AM". Docs line updated to the window rule.
+
+**`--write` on both festivals:** only closes change (checked field by field: no
+`time`, `approx`, `doors`, `order` or other field moved). A second write
+changes nothing on either. **Portola's closes are now identical to main's in
+every room.** Tonight's Parcels keeps ~10 PM with a ~12 AM window ("kind
+default (hall)"), as do Velvet Trip's and the rest of Regency's and Great
+American Music Hall's rooms. **Every one of ACL's 40 Late nights rooms now
+carries a close**, so no ring falls back to one hour.
+
+What moved against round three (the last reviewed state before the cut):
+- Stretched past midnight by the headliner's own planned set: Emo's BUNT.
+  and Levity ~12:15 AM, Brushy Hunx ~12:15 AM, Brushy Underscores ~12:30 AM.
+- All-posted rooms that had no close now carry the rule's:
+  - Stubb's Indoors (Montclair, Grocery Bag, Almost Heaven, Annie DiRusso):
+    the venue's 1:45 AM curfew.
+  - Villanelle, Suki Waterhouse, Rodrigo y Gabriela, LP: the ~12 AM window.
+  - Night Tapes: Antone's midnight.
+  - Noga Erez: Scoot Inn's Friday curfew (12 AM).
+- Everything else as in round three.
+
+## Close table — every Late nights room against main's file and round three
+
+ACL's rooms all differ from main by construction: main's Late nights carried
+no times or closes. Portola: 0 rooms differ from main or round three.
+
+
+### acl-2026 — room closes: main → round three (ea9f5a3) → now
+| Room | Last set now | main | round three | now |
+|---|---|---|---|---|
+| 2026-09-29 · Mohawk Austin | Fcukers ~8:45 PM | — | ~12 AM (venue's routine close) | **~12 AM (venue's routine close)** |
+| 2026-10-01 · Emo's | Palace ~8:45 PM | — | ~12 AM (kind default (hall)) | **~12 AM (kind default (hall))** |
+| 2026-10-01 · Stubb's | Brandon Flowers ~8:30 PM | — | ~10 PM (venue's 2026-10-01 close) | **~10 PM (venue's 2026-10-01 close)** |
+| 2026-10-01 · Stubb's Indoors | Montclair 10:30 PM | — | — | **~1:45 AM (venue's routine close)** |
+| 2026-10-01 · The Concourse Project | The Chainsmokers ~12 AM | — | 2 AM | **2 AM** |
+| 2026-10-02 · 3TEN | Villanelle 9 PM | — | — | **~12 AM (kind default (hall))** |
+| 2026-10-02 · Antone's | Night Tapes 10 PM | — | — | **~12 AM (venue's routine close)** |
+| 2026-10-02 · Brushy Street Commons | Hunx and his Punx ~10:45 PM | — | ~12 AM (kind default (hall)) | **~12:15 AM (kind default (hall), stretched to the headliner's set)** |
+| 2026-10-02 · Devil May Care | Rebecca Black 11:45 PM | — | 2 AM | **2 AM** |
+| 2026-10-02 · Emo's | BUNT. ~10:45 PM | — | ~12 AM (kind default (hall)) | **~12:15 AM (kind default (hall), stretched to the headliner's set)** |
+| 2026-10-02 · Historic Scoot Inn | Finn Wolfhard ~8 PM | — | ~12 AM (venue's Fri close) | **~12 AM (venue's Fri close)** |
+| 2026-10-02 · Stubb's | Bleachers ~9 PM | — | ~10:30 PM (venue's 2026-10-02 close) | **~10:30 PM (venue's 2026-10-02 close)** |
+| 2026-10-02 · Stubb's Indoors | Grocery Bag 11 PM | — | — | **~1:45 AM (venue's routine close)** |
+| 2026-10-02 · The Concourse Project | Steve Aoki ~12 AM | — | 2 AM | **2 AM** |
+| 2026-10-03 · Brushy Street Commons | Underscores ~11 PM | — | ~12 AM (kind default (hall)) | **~12:30 AM (kind default (hall), stretched to the headliner's set)** |
+| 2026-10-03 · Emo's | Levity ~10:45 PM | — | ~12 AM (kind default (hall)) | **~12:15 AM (kind default (hall), stretched to the headliner's set)** |
+| 2026-10-03 · Historic Scoot Inn | CMAT ~8 PM | — | ~12 AM (venue's Sat close) | **~12 AM (venue's Sat close)** |
+| 2026-10-03 · Stubb's | Parcels ~9:30 PM | — | ~11 PM (venue's 2026-10-03 close) | **~11 PM (venue's 2026-10-03 close)** |
+| 2026-10-03 · Stubb's Indoors | Almost Heaven 11:30 PM | — | — | **~1:45 AM (venue's routine close)** |
+| 2026-10-03 · The Concourse Project | It's Murph ~12 AM | — | 2 AM | **2 AM** |
+| 2026-10-04 · Antone's | Rochelle Jordan ~10:30 PM | — | ~12 AM (venue's routine close) | **~12 AM (venue's routine close)** |
+| 2026-10-04 · Emo's | Suki Waterhouse 10 PM | — | — | **~12 AM (kind default (hall))** |
+| 2026-10-04 · Historic Scoot Inn | Ryan Beatty ~6 PM | — | ~10:30 PM (venue's Sun close) | **~10:30 PM (venue's Sun close)** |
+| 2026-10-05 · Brushy Street Commons | LP 8 PM | — | — | **~12 AM (kind default (hall))** |
+| 2026-10-05 · Historic Scoot Inn | Saint Motel ~7 PM | — | ~10:30 PM (venue's Mon close) | **~10:30 PM (venue's Mon close)** |
+| 2026-10-06 · Stubb's | Lola Young ~9 PM | — | ~10:30 PM (venue's Tue close) | **~10:30 PM (venue's Tue close)** |
+| 2026-10-06 · Stubb's Indoors | Annie DiRusso 10:30 PM | — | — | **~1:45 AM (venue's routine close)** |
+| 2026-10-08 · 3TEN | Łaszewo ~9:45 PM | — | ~12 AM (kind default (hall)) | **~12 AM (kind default (hall))** |
+| 2026-10-08 · Antone's | World Famous Pets ~8:45 PM | — | ~12 AM (venue's routine close) | **~12 AM (venue's routine close)** |
+| 2026-10-08 · Brushy Street Commons | Arcy Drive ~8:45 PM | — | ~12 AM (kind default (hall)) | **~12 AM (kind default (hall))** |
+| 2026-10-08 · Fair Market | The War on Drugs ~7 PM | — | ~12 AM (kind default (hall)) | **~12 AM (kind default (hall))** |
+| 2026-10-08 · Stubb's Indoors | Sunday (1994) ~9 PM | — | ~1:45 AM (venue's routine close) | **~1:45 AM (venue's routine close)** |
+| 2026-10-08 · The Concourse Project | ¥ØU$UK€ ¥UK1MAT$U ~9 PM | — | 2 AM | **2 AM** |
+| 2026-10-08 · The Continental Club | Jess Williamson 10 PM | — | 11:30 PM | **11:30 PM** |
+| 2026-10-09 · Emo's | Rodrigo y Gabriela 10 PM | — | — | **~12 AM (kind default (hall))** |
+| 2026-10-09 · Historic Scoot Inn | Noga Erez 8:30 PM | — | — | **~12 AM (venue's Fri close)** |
+| 2026-10-09 · The Concourse Project | BUNT. ~12 AM | — | 2 AM | **2 AM** |
+| 2026-10-10 · 3TEN | Claire Rosinkranz ~9 PM | — | ~12 AM (kind default (hall)) | **~12 AM (kind default (hall))** |
+| 2026-10-10 · Antone's | Don West ~10:30 PM | — | ~12 AM (venue's routine close) | **~12 AM (venue's routine close)** |
+(39 rooms whose close differs from main or round three; rooms identical in all three omitted)
+
+### portola-2026 — room closes: main → round three (ea9f5a3) → now
+| Room | Last set now | main | round three | now |
+|---|---|---|---|---|
+(0 rooms whose close differs from main or round three; rooms identical in all three omitted)
+
+**Checks:** validator 0 errors; both festivals re-run to 0 changes; dated-room
+invariants on 40 rooms, 0 problems, every room with a close; `npm test` 1,136
+pass / 0 fail at the default clock, `TZ=Asia/Tokyo` and `NIGHT_CLOCK`.

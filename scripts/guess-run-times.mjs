@@ -11,27 +11,69 @@
 //   · the event's own doors (required) and a close — kept when a page
 //     printed it (no `closeApprox`) or printed it for THIS night (a
 //     `closeApprox` whose `closeSource` is an https link: 19hz's "10pm-3am"),
-//   · data/venues/index.json — the venue's routine close (by weekday, then
-//     default), its doors-to-first-act gap, its headliner/support set lengths,
+//   · data/venues/index.json — the venue's close (for one date, by weekday,
+//     then default), its doors-to-first-act gap, its headliner/support set lengths,
 //   · a per-kind fallback (KIND_DEFAULTS) when the registry has nothing.
 // A close from the registry or the fallback is written with `closeApprox:
 // true` and a `closeSource` that names the rule, never a URL — so the next
 // run re-reads the registry instead of mistaking its own guess for a page.
-// Shape of a run: first act = doors + gap; the closer ends at the close;
-// the acts between are spread evenly; everything on the quarter hour, and
-// nobody gets less than thirty minutes. Written back as each guessed set's
-// `time` (with `approx: true`), and the close on every member of the room.
+//
+// A ROOM is one venue on one night of one section: a weekday section groups
+// by night + venue, a dated one (ACL's Late nights, Sep 29 – Oct 10) by date +
+// venue — the same identity the wall and the zoom read (events.js nightOf /
+// dateOf / venueOf). A room whose sets carry an `order` is a run. A room of
+// ONE act whose set already has a time is a run of one (the validator forbids
+// an order on it — nothing to sequence — but its guess is re-laid here like
+// any other, so a re-run reproduces it); a room with no clock at all stays
+// timeless (MODEL-V3 §5 — TIME TBA; give it a time marked approx to opt in).
+// A room of two or more with no order is not guessed: the validator already
+// says it cannot tell who is on when. A by-time section (dayMeta layout) has
+// no rooms at all — each party is its own show.
+//
+// The SHAPE of a night — the registry's `shape`, else what its `kind` says
+// (club / bar → "club", hall / outdoor → "concert"):
+//   · club — a night that runs to the close (a DJ bill): the first act at
+//     doors + gap, the closer ends at the close, the acts between spread
+//     evenly, and nobody gets under thirty minutes;
+//   · concert — a bill that ends when its headliner does: the first act at
+//     its posted time (a posted opener IS the first act) or doors + gap, each
+//     act after it by the support slot, and the close is a CAP (a curfew),
+//     never a target — when it binds, the headliner still plays a full set
+//     and the openers move earlier to fit, never before doors. Only the
+//     venue's word (printed, evidenced, its registry hours) is a curfew.
+//     With none, a concert gets a WINDOW close — the later of the kind's
+//     default and the closer's planned start + its headliner set — a
+//     generous outer edge for the ring that schedules nobody. A 7 PM-doors
+//     show does not run to midnight: laid back from a 2 AM close, Palace got
+//     12:30 AM behind 7 PM doors (ACL, 2026-09-26).
+// A guess that is early costs a friend some waiting; one that is late makes
+// them miss the act — the concert shape is the one that errs early.
 // A set with a time and no `approx` is POSTED: its time is never touched,
-// and a room where every set is posted is skipped. (`closeSource` is
-// provenance for whoever reads the file; nothing in js/ renders it.)
+// it is a fixed point the guesses around it respect (a guess never lands on
+// or past a posted set that follows it); a room where every set is posted
+// keeps every time and only has its close brought to the rules (a printed
+// one is kept). Everything is on the quarter hour. Written back as each guessed
+// set's `time` (with `approx: true`), and the close on every member of the
+// room. (`closeSource` is provenance for whoever reads the file; nothing in
+// js/ renders it.)
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { activityMinutes } from '../js/time.js';
+import { nightOf, dateOf, venueOf, showsOnItsOwn } from '../js/v3/events.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
-// What a room of this kind usually does when the registry cannot say.
+// A concert bill ends when its headliner does; a club night runs to the close.
+// The registry may say which outright (`shape`); otherwise the kind decides.
+const CONCERT_KINDS = new Set(['hall', 'outdoor']);
+export const shapeOf = (profile, kind) => (profile && (profile.shape === 'concert' || profile.shape === 'club')
+  ? profile.shape
+  : CONCERT_KINDS.has(kind) ? 'concert' : 'club');
+
+// What a room of this kind usually does when the registry cannot say. A
+// club night is laid back from its `close`; a concert only uses it as one
+// side of its window close (see planRun) — it schedules no concert.
 export const KIND_DEFAULTS = {
   club: { close: '2 AM', doorsToFirstActMin: 30, headlinerSetMin: 90, supportSetMin: 60 },
   hall: { close: '12 AM', doorsToFirstActMin: 60, headlinerSetMin: 90, supportSetMin: 45 },
@@ -51,22 +93,28 @@ export function clockOf(mins) {
   return `${h12}${m ? `:${String(m).padStart(2, '0')}` : ''} ${h24 < 12 ? 'AM' : 'PM'}`;
 }
 const q = (m) => Math.round(m / 15) * 15;
+const qDown = (m) => Math.floor(m / 15) * 15;
 
 // The registry's close for a night, and the rule that gave it. The registry
 // keeps its own sources (data/venues/index.json); copying one of its URLs
 // onto the event is what made a routine close read as per-night proof.
-function closeFor(night, profile, kind) {
+// A close for one DATE is the registry's most specific rule: a night the
+// venue's own schedule shows ending early (Stubb's amphitheater on ACL
+// nights, where the indoor after-show opens) — an inference the registry
+// keeps its sources for, so the event names the rule and a re-run re-reads it.
+function closeFor(night, profile, kind, date = null) {
   const c = profile && profile.close ? profile.close : null;
-  if (c && c.byWeekday && c.byWeekday[night]) return { close: c.byWeekday[night], why: `venue's ${night} close` };
-  if (c && c.default) return { close: c.default, why: "venue's routine close" };
+  if (c && date && c.byDate && c.byDate[date]) return { close: c.byDate[date], why: `venue's ${date} close`, known: true };
+  if (c && c.byWeekday && c.byWeekday[night]) return { close: c.byWeekday[night], why: `venue's ${night} close`, known: true };
+  if (c && c.default) return { close: c.default, why: "venue's routine close", known: true };
   const d = KIND_DEFAULTS[kind] || KIND_DEFAULTS.club;
-  return { close: d.close, why: `kind default (${kind})` };
+  return { close: d.close, why: `kind default (${kind})`, known: false };
 }
 const pick = (v, fallback) => (Number.isFinite(v) ? v : fallback);
 
 // One run. `members` sorted by seq; a member with `posted: true` keeps its
 // own time. Returns null when nothing can be planned.
-export function planRun({ night, doors, close, closeApprox = false, closeSource = null, members, profile }) {
+export function planRun({ night, date = null, doors, close, closeApprox = false, closeSource = null, members, profile }) {
   if (!doors || !members || !members.length) return null;
   const D = activityMinutes(doors);
   if (!Number.isFinite(D)) return null;
@@ -76,7 +124,9 @@ export function planRun({ night, doors, close, closeApprox = false, closeSource 
   const H = pick(profile && profile.headlinerSetMin, kd.headlinerSetMin);
   const S = pick(profile && profile.supportSetMin, kd.supportSetMin);
 
-  let outClose = null, outApprox = false, outSource = null;
+  // `known`: the close is the venue's word (printed, evidenced for the night,
+  // or its registry hours) rather than the kind's fallback.
+  let outClose = null, outApprox = false, outSource = null, known = true;
   if (close && !closeApprox) { outClose = close; outApprox = false; outSource = 'printed'; }
   else if (close && closeApprox && /^https:\/\//.test(closeSource || '')) {
     // An EVIDENCED guess — a listing printed an end for this very night
@@ -85,16 +135,45 @@ export function planRun({ night, doors, close, closeApprox = false, closeSource 
     // source, keep the guess note.
     outClose = close; outApprox = true; outSource = closeSource;
   } else {
-    const c = closeFor(night, profile, kind);
-    outClose = c.close; outApprox = !!c.close; outSource = c.close ? c.why : null;
+    const c = closeFor(night, profile, kind, date);
+    outClose = c.close; outApprox = !!c.close; outSource = c.close ? c.why : null; known = c.known;
+  }
+  // A concert's close is a curfew only when it is the venue's word. With no
+  // known close, the kind's default is NOT a curfew and schedules nobody: it
+  // is held aside here and becomes one side of the room's WINDOW close once
+  // the bill is laid (below). A club keeps its fallback as its anchor.
+  const shape = shapeOf(profile, kind);
+  let windowFloor = null;
+  if (shape === 'concert' && !known) {
+    windowFloor = outClose;
+    outClose = null; outApprox = false; outSource = null;
   }
   let C = outClose ? activityMinutes(outClose) : null;
   if (Number.isFinite(C) && C <= D) C += 24 * 60; // a close "past midnight" on the same axis
 
   const n = members.length;
-  const first = D + gap;
+  // A posted set is a fixed point on the clock: its own time, never a guess.
+  const fixed = members.map((m) => {
+    if (!m.posted || !m.time) return null;
+    const t = activityMinutes(m.time);
+    return Number.isFinite(t) ? t : null;
+  });
   let starts;
-  if (Number.isFinite(C)) {
+  if (shape === 'concert') {
+    // A concert bill: the first act at its posted time (a posted opener IS the
+    // first act's start) or doors + gap; each act after it by the support
+    // slot; the close caps the headliner — who still plays a full set, the
+    // openers moving earlier to fit, never before doors.
+    // A concert's close, when it has one, is the venue's word (see above),
+    // so it is a curfew the headliner's full set ends by.
+    const first = fixed[0] !== null ? fixed[0] : D + gap;
+    let last = first + S * (n - 1);
+    if (Number.isFinite(C)) last = Math.min(last, C - H);
+    const open = fixed[0] !== null ? fixed[0] : Math.max(D, Math.min(first, last - S * (n - 1)));
+    last = Math.max(last, open + (n - 1) * MIN_SET);
+    starts = n === 1 ? [open] : members.map((_, i) => open + ((last - open) * i) / (n - 1));
+  } else if (Number.isFinite(C)) {
+    const first = D + gap;
     // A fair share: the closer's set shrinks (never below an hour) before
     // any support is squeezed under 45 minutes — a two-hour closing set on
     // a four-act bill was leaving three half-hour openers.
@@ -111,20 +190,56 @@ export function planRun({ night, doors, close, closeApprox = false, closeSource 
       starts = members.map((_, i) => f + slot * i);
     }
   } else {
-    starts = members.map((_, i) => first + S * i);
+    starts = members.map((_, i) => D + gap + S * i);
   }
-  // On the quarter hour, strictly increasing, thirty minutes apart at least.
+  // On the quarter hour, strictly increasing, thirty minutes apart at least —
+  // and a guess never lands on or past a posted set that follows it: with k
+  // guesses still to place before that set, the guess starts k half-hours
+  // ahead of it at the latest. (Devil May Care, 2026-09-26: a registry gap
+  // put Bambi's guess ON Rebecca Black's posted 11:45 PM.) When the posted
+  // sets leave no room for thirty-minute slots, the plan says so.
   const rounded = [];
-  for (const s of starts) {
-    let m = q(s);
+  const warnings = [];
+  for (let i = 0; i < n; i++) {
+    if (fixed[i] !== null) {
+      if (rounded.length && fixed[i] <= rounded[rounded.length - 1]) warnings.push(`${members[i].name}'s posted ${members[i].time} is not after the set before it`);
+      rounded.push(fixed[i]);
+      continue;
+    }
+    let m = q(starts[i]);
     if (rounded.length && m - rounded[rounded.length - 1] < MIN_SET) m = rounded[rounded.length - 1] + MIN_SET;
+    const j = fixed.findIndex((v, k) => k > i && v !== null);
+    if (j > -1) {
+      const ceiling = qDown(fixed[j] - (j - i) * MIN_SET);
+      if (m > ceiling) {
+        m = Math.max(ceiling, D);
+        if (rounded.length && m - rounded[rounded.length - 1] < MIN_SET) warnings.push(`no thirty-minute slot for ${members[i].name} between the posted sets`);
+      }
+    }
     rounded.push(m);
+  }
+  // The WINDOW close of a concert with no known close (round five, 2026-09-26):
+  // the later of the kind's default and the closer's planned start + its
+  // headliner set, as a guess naming the rule. It is only the outer edge of the
+  // room's window and of the last card's ring — never a curfew, never an
+  // input to any start above. Why: with no close at all the last card's ring
+  // falls back to one hour (events.js venueGroupsOf), which switched off while
+  // the act could still be on (BUNT. at 11:45 PM, tonight's Parcels at 11) —
+  // the late-for-friends direction; and a bare kind default can end before
+  // the closer's own planned set does (round four's review).
+  if (shape === 'concert' && !known) {
+    const setEnd = rounded[n - 1] + H;
+    let floor = windowFloor ? activityMinutes(windowFloor) : null;
+    if (Number.isFinite(floor) && floor <= D) floor += 24 * 60;
+    if (Number.isFinite(floor) && floor >= setEnd) { outClose = windowFloor; outSource = `kind default (${kind})`; }
+    else { outClose = clockOf(setEnd); outSource = Number.isFinite(floor) ? `kind default (${kind}), stretched to the headliner's set` : `the headliner's set (${kind})`; }
+    outApprox = true;
   }
   const times = members.map((mem, i) => {
     const time = mem.posted ? mem.time : clockOf(rounded[i]);
     return { name: mem.name, seq: mem.seq, min: rounded[i], time, was: mem.time || null, changed: (mem.time || null) !== time, posted: !!mem.posted };
   });
-  return { close: outClose, closeApprox: outApprox, closeSource: outSource, kind, gap, H, S, times };
+  return { close: outClose, closeApprox: outApprox, closeSource: outSource, kind, shape, gap, H, S, times, warnings };
 }
 
 // ---- the file ------------------------------------------------------------------
@@ -133,20 +248,39 @@ export function loadRegistry() {
   if (!fs.existsSync(p)) return { venues: {} };
   return JSON.parse(fs.readFileSync(p, 'utf8'));
 }
+// The weekday of an ISO date, in the file's own labels — a dated room reads
+// the registry's by-weekday close the way a weekday room does.
+const WEEKDAY_OF = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+export const weekdayOfIso = (iso) => WEEKDAY_OF[new Date(`${iso}T12:00:00Z`).getUTCDay()];
+
+// The room a set plays in (see the header): one section, one night or date,
+// one venue. The file's own readers decide, so the tool and the wall can
+// never disagree about which sets share a room.
+export function roomOf(a) {
+  const date = dateOf(a);
+  const night = nightOf(a) || (date ? weekdayOfIso(date) : null);
+  const venue = venueOf(a);
+  if (!night || !venue) return null;
+  return { key: `${a.day || ''}|${date || night}|${venue}`, night, date, venue };
+}
+const seqOf = (a) => (a.order && Number.isInteger(a.order.seq) ? a.order.seq : 1);
 export function runsOf(fest) {
-  const groups = new Map();
+  const rooms = new Map();
   for (const a of fest.artists || []) {
-    if (!a.order || !Number.isInteger(a.order.seq)) continue;
-    if (a.cancelled) continue; // a cancelled show takes no slot in the run (docs/add-a-festival.md, "Cancelled acts")
-    const night = a.night || (typeof a.stage === 'string' && a.stage.includes(' · ') ? a.stage.split(' · ')[0] : null);
-    const venue = a.venue || (typeof a.stage === 'string' && a.stage.includes(' · ') ? a.stage.split(' · ').slice(1).join(' · ') : null);
-    if (!night || !venue) continue;
-    const key = `${night}|${venue}`;
-    if (!groups.has(key)) groups.set(key, { night, venue, members: [] });
-    groups.get(key).members.push(a);
+    if (!a || a.cancelled) continue; // a cancelled show takes no slot in the run (docs/add-a-festival.md, "Cancelled acts")
+    if (showsOnItsOwn(fest, a)) continue; // a by-time section has no rooms
+    const room = roomOf(a);
+    if (!room) continue;
+    if (!rooms.has(room.key)) rooms.set(room.key, { night: room.night, date: room.date, venue: room.venue, members: [] });
+    rooms.get(room.key).members.push(a);
   }
-  for (const g of groups.values()) g.members.sort((x, y) => x.order.seq - y.order.seq);
-  return [...groups.values()];
+  const runs = [];
+  for (const r of rooms.values()) {
+    const numbered = r.members.filter((a) => a.order && Number.isInteger(a.order.seq));
+    if (numbered.length) runs.push({ ...r, members: numbered.sort((x, y) => x.order.seq - y.order.seq) });
+    else if (r.members.length === 1 && r.members[0].time) runs.push(r); // a run of one; a timeless room stays timeless
+  }
+  return runs;
 }
 // A set with a time the venue gave us, not one we guessed.
 const isPosted = (m) => !!m.time && m.approx !== true;
@@ -155,16 +289,20 @@ export function planFestival(fest, registry) {
   for (const run of runsOf(fest)) {
     const profile = registry.venues[run.venue] || null;
     const doors = run.members.find((m) => m.doors)?.doors || null;
-    if (run.members.every(isPosted)) { out.push({ ...run, doors, profile: !!profile, plan: null, allPosted: true }); continue; }
+    // A room whose every set is posted has no time to guess — its times are
+    // fixed points and stay exactly as they are — but its CLOSE still follows
+    // the rules: a printed or evidenced close is kept, a stale guess is
+    // re-derived (Sol, round five: stale guessed closes survived here).
+    const allPosted = run.members.every(isPosted);
     const printed = run.members.find((m) => m.close && m.closeApprox !== true);
     const evidenced = !printed && run.members.find((m) => m.close && m.closeApprox === true && /^https:\/\//.test(m.closeSource || ''));
     const known = printed || evidenced || null;
     const plan = planRun({
-      night: run.night, doors,
+      night: run.night, date: run.date || null, doors,
       close: known ? known.close : null, closeApprox: !printed, closeSource: evidenced ? evidenced.closeSource : null,
-      members: run.members.map((m) => ({ name: m.name, seq: m.order.seq, time: m.time || null, posted: isPosted(m) })), profile,
+      members: run.members.map((m) => ({ name: m.name, seq: seqOf(m), time: m.time || null, posted: isPosted(m) })), profile,
     });
-    out.push({ ...run, doors, profile: !!profile, plan });
+    out.push({ ...run, doors, profile: !!profile, plan, allPosted });
   }
   return out;
 }
@@ -182,6 +320,10 @@ export function applyPlans(plans) {
         if (m.close !== plan.close || (m.closeApprox === true) !== plan.closeApprox) changed += 1;
         m.close = plan.close;
         if (plan.closeApprox) { m.closeApprox = true; m.closeSource = plan.closeSource; } else { delete m.closeApprox; delete m.closeSource; }
+      } else if (m.closeApprox === true) {
+        // No close this time: a close we guessed before goes (a printed or
+        // evidenced one never reaches here — the plan keeps those).
+        delete m.close; delete m.closeApprox; delete m.closeSource; changed += 1;
       }
     }
   }
@@ -195,10 +337,12 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   const fest = JSON.parse(fs.readFileSync(file, 'utf8'));
   const plans = planFestival(fest, loadRegistry());
   for (const p of plans) {
-    if (!p.plan) { console.log(`\n${p.night} · ${p.venue}: ${p.allPosted ? 'every set is posted — left alone' : 'no doors — nothing to plan'}`); continue; }
+    const where = `${p.date ? `${p.night} ${p.date}` : p.night} · ${p.venue}`;
+    if (!p.plan) { console.log(`\n${where}: no doors — nothing to plan`); continue; }
     const { plan } = p;
-    console.log(`\n${p.night} · ${p.venue}  doors ${p.doors} → close ${plan.close || '?'}${plan.closeApprox ? ' (guess: ' + plan.closeSource + ')' : ' (printed)'}  [${plan.kind}${p.profile ? '' : ', no registry entry'}; gap ${plan.gap}m, headliner ${plan.H}m]`);
+    console.log(`\n${where}  doors ${p.doors} → close ${plan.close || '?'}${!plan.close ? ' (none known)' : plan.closeApprox ? ' (guess: ' + plan.closeSource + ')' : ' (printed)'}  [${plan.kind}, ${plan.shape}${p.profile ? '' : ', no registry entry'}; gap ${plan.gap}m, headliner ${plan.H}m, support ${plan.S}m]`);
     for (const t of plan.times) console.log(`   ${String(t.seq).padStart(2)}. ${t.name.padEnd(24)} ${t.was ? t.was.padEnd(9) : '—'.padEnd(9)} → ${t.time}${t.posted ? '  (posted)' : t.changed ? '' : '  (same)'}`);
+    for (const w of plan.warnings || []) console.log(`   ! ${w}`);
   }
   if (flag === '--write') {
     const n = applyPlans(plans);
