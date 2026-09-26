@@ -1,46 +1,38 @@
 # NOW — festival-navigator
 
-**last-updated: 2026-09-26 12:40 AM PT (v91 live; v92–v94 in flight) · mode: live**
+**last-updated: 2026-09-26 2:20 AM PT (v95 live; v93 in flight as v96) · mode: live**
 
 Where things stand, on one screen. Change stale lines in place; the story of
 how we got here belongs in DEVLOG.md.
 
 ## Live on production
 
-- **v91, from `main`** (PR #42, merged 2026-09-25 7:59 PM PT) on fest /
-  festival / crew.kevinhg.com — `ops/prod-smoke.mjs` PASS at 8:01 PM
-  (festival-nav-v91, ASSET_STAMP c01adb1c). What v87–v91 carry, and how the
-  live lane ships: DEVLOG.md, 2026-09-24 → 26.
-- **Alerts:** PostHog → Slack for a new error and one that came back (#45,
-  #46; `ops/posthog/`), each saying what the error means in plain words.
-- **Data:** every Portola Week opener in the official feed; Folsom so far is
-  MÜLL, Big Muscle, Aftershock (PR #40) plus the parties that were already in.
+- **v95, from `main`** (PR #49, merged 2026-09-26 2:12 AM PT) on fest /
+  festival / crew.kevinhg.com — `ops/prod-smoke.mjs` PASS (festival-nav-v95 /
+  376ec98a). Tonight's releases, in order: v92 (1:26 AM — a guest's first
+  open: wall first, join shelf, the − · note · + zoom row), v94 (1:44 AM —
+  Folsom weekend by time, every verified party, NOW to each party's own
+  end), v95 (2:12 AM — ticket doors say the price, never the seller). What
+  each carries and how it was checked: the LEDGER below.
+- **Alerts:** PostHog → Slack for a new error and one that came back
+  (`ops/posthog/`), each saying what the error means in plain words.
 
 ## In flight (Portola live ops, 2026-09-26)
 
-One session runs this lane (Kevin closed the others; city seasons is paused on
-its branches — leave them). Rules: `claude-plans/2026-09-25-portola-live/RUNBOOK.md`.
-Kevin's calls, releases and reviews: the LEDGER beside it — read "Kevin's
-calls" first. Each release ships on CI green + a Sol 6 review + a real-browser
-walk + prod smoke, in this order:
+One session runs this lane (city seasons is paused on its branches — leave
+them). Rules: `claude-plans/2026-09-25-portola-live/RUNBOOK.md`. Kevin's
+calls, releases and reviews: the LEDGER beside it — read "Kevin's calls"
+first. A release ships on CI green + a Sol 6 review + a real-browser walk +
+prod smoke.
 
-1. **v92** (`live/v92`, PR #43): a guest lands on the wall with a welcome
-   card; joining is a shelf; the zoom's bare − · note · + row for everyone;
-   zoom text never breaks inside an item. Last fixes in, then re-stamp, re-gate,
-   merge.
-2. **v93** (`live/v93`): NOW as a tab beside the live day, + Add someone, a
-   solid ring on the +n overflow, the Show menu stays open, a gear on
-   Settings, a caret after the fest name. Built on an older base; rebase onto
-   main after v92 using the five hunks in its build log's "Rebasing onto v92".
-3. **v94** (`live/v94` + `data/folsom-all`): Folsom by time (declared in the
-   data) and every verified Folsom-weekend party.
-4. **Ticket prices** (`data/tix-prices`): doors read `Tix` / `Tix $69` /
-   `Info`, never the seller; a one-time price and sold-out check for Portola
-   Sat/Sun and ACL Late nights. Rides the first release after it lands.
-
-Then the unified build (`claude-plans/2026-09-26-unified-build/PLAN.md` +
-REVIEW-1.md + the calls added at its top): ordered by build quality, not the
-calendar.
+1. **v93 → ships as build v96** (`live/v93`, main merged in): NOW as a tab
+   in the day row, the Show menu staying open across ticks (a tick keeps
+   your place), "+ Invite someone", the caret and gear. Its menu's own
+   history entry is the last open problem (Sol found Back holes twice);
+   fallback if it can't be made airtight: the menu closes on each tick as
+   before, and the multi-toggle menu moves to the unified build.
+2. Then the unified build (`claude-plans/2026-09-26-unified-build/PLAN.md` +
+   REVIEW-1.md + the calls at its top), ordered by build quality.
 
 ## Open with Kevin
 
@@ -52,6 +44,9 @@ calendar.
 
 ## Next, after the live lane
 
+0. Tonight's non-blocking follow-ups: the LEDGER's "Follow-ups found
+   tonight" (a hold lost to the first-boot repaint, reports with no build,
+   test hold helpers).
 1. ACL prep before Oct 2: headliner end times (its closers print only a
    start, so the grid draws them 60 min and NOW stops counting them live
    early — add ends, or run a stage's last endless set to the day's close),
