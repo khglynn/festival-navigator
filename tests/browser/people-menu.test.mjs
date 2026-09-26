@@ -257,6 +257,9 @@ for (const [name, get, width, wide = null] of ENGINES) {
       s = await menuState(page, bar);
       assert.deepEqual([s.open, s.slot, s.selected], [true, 'avatar', ['Ben', 'Cy']], 'the faces reopened it');
       await press(`#${bar}-you`);
+      // Wait for the close to land, not press's fixed beat: Linux WebKit under
+      // load read the menu still open (CI runs on PR #60, 2026-09-26).
+      await page.waitForFunction((b) => { const p = document.querySelector(`#${b}-you-wrap .hl-pop`); return !p || getComputedStyle(p).display === 'none'; }, bar, { timeout: 4000 }).catch(() => {});
       s = await menuState(page, bar);
       assert.deepEqual([s.open, s.slot], [false, 'pill'], 'the avatar again put it away');
       // Escape too.
