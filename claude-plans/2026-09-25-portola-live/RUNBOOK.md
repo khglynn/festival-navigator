@@ -23,9 +23,10 @@ Evidence for every rule is in `research/` beside this file.
 
 1. Build on `live/vNN`; client-only unless Kevin has made the call (red
    lines below). Commit as you go; a branch push is a preview only.
-2. Pre-flight: record the rollback target (the newest production deployment,
-   `vercel ls festival-navigator --prod --scope kevinhg 2>/dev/null | head -1`)
-   in the PR body. If the release is anywhere near data, take a Neon branch
+2. Pre-flight: record the rollback target — the deployment actually serving
+   the live domains, `vercel inspect https://fest.kevinhg.com --scope
+   kevinhg` (its `id` and `url`), not the newest production build, which
+   after a rollback may never have gone live — in the PR body. If the release is anywhere near data, take a Neon branch
    first: `create_branch {project_id: floral-meadow-70237530, name:
    backup-<date>-pre-vNN, no_compute: true}` (point-in-time restore only
    reaches back 24 h; there are no snapshots).
@@ -42,14 +43,19 @@ Evidence for every rule is in `research/` beside this file.
 6. Independent review on the exact head: Codex **Sol 6** (`gpt-6-sol`,
    xhigh) through `codex-run.sh`, in a detached worktree at the head sha
    with `node_modules` symlinked. Fix real findings, re-stamp `--keep`,
-   loop to 4. Visual changes also get a real-browser walk (a Sonnet
-   teammate, phone viewport, real input) of the states they touch.
+   loop to 4. Every release also gets a real-browser walk (a Sonnet
+   teammate, phone viewport, real input) of the states it touches —
+   CLAUDE.md asks for one before any promote, visual or not.
 7. Merge yourself (`gh pr merge --merge`) — Kevin's standing rule — unless a
    finding is a product call he hasn't seen or it touches friends' data.
-8. Verify: wait for main's CI, then `node ops/prod-smoke.mjs` (all three
-   hosts serve the new build, the landing and gallery boot in iPhone WebKit
-   with no errors, read-only; ~12 s). Then watch errors for 15 min
-   (PostHog project 627900 — see Observability).
+8. Verify: wait for main's CI, then run `node ops/prod-smoke.mjs` **from
+   the release worktree** (it expects that checkout's CACHE_VERSION and
+   ASSET_STAMP; elsewhere pass them: `node ops/prod-smoke.mjs
+   https://fest.kevinhg.com festival-nav-vNN <stamp>`). It checks all three
+   hosts serve identical bytes of the new build and boots every host's
+   landing plus gallery.html in iPhone WebKit with no errors, blocking every
+   write, telemetry call and service worker; ~18 s. Then watch errors for
+   15 min (PostHog project 627900 — see Observability).
 9. Tell Kevin in one short message: what changed, what to try, "say roll
    back to undo". Update NOW.md and the LEDGER.
 
@@ -85,8 +91,11 @@ new; festival data that only adds (validator + freeze + CI).
 
 ## Observability
 
-1. Every phone error reaches PostHog project 627900 through `js/errlog.js`
-   with build, screen, sync state, and the member's name and pid.
+1. Phone errors reach PostHog project 627900 through `js/errlog.js` with
+   build, screen, sync state, and the member's name and pid — when the phone
+   allows it: reports are queued while offline and never sent with
+   reporting off or Stay offline on, so a quiet dashboard is not proof of
+   no errors.
 2. Reading it: the PostHog MCP's active project is global and another
    session uses it, so do not switch it. A personal API key scoped to 627900
    in `~/.env` unblocks queries and the Slack alert install (both drafted in
