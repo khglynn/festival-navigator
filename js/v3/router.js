@@ -9,6 +9,8 @@
 // Pure stack math is exported for node tests; createRouter takes any
 // history-like object so tests can drive it without a browser.
 
+import { navHistory } from './nav.js';
+
 // Deepest-shared-prefix diff: which layers close (top first) and open
 // (bottom first) to get from one stack to another.
 // The artist-notes sheet key carries the OCCURRENCE (which set an artist
@@ -74,23 +76,19 @@ export function createRouter(hist) {
     // closed here, by whatever replaced it — Settings from its last row, a
     // sheet from a card's zoom — so its entry becomes that layer's, and Back
     // from there lands on the wall, never on a menu that is no longer open.
-    //   `extra` rides on the new entry beside its layers — the show menu's id
-    // (v93), so a later arrival there can tell that menu from one that has
-    // since gone. An entry a layer takes over is that layer's, and carries
-    // only what that layer gave it.
-    push(key, extra = null) {
+    push(key) {
       if (navigating) return;
       const top = stack[stack.length - 1];
       if (top === key) return;
       if (top && (top.startsWith('sheet:') || top.startsWith('menu:'))) {
         stack[stack.length - 1] = key;
-        hist.replaceState({ ...(extra || {}), layers: [...stack] }, '');
+        hist.replaceState({ layers: [...stack] }, '');
         if (top.startsWith('menu:')) {
           try { kindOf(top)?.close(top); } catch (e) { console.warn('layer close failed:', top, e); }
         }
       } else {
         stack.push(key);
-        hist.pushState({ ...(extra || {}), layers: [...stack] }, '');
+        hist.pushState({ layers: [...stack] }, '');
       }
     },
 
@@ -108,13 +106,12 @@ export function createRouter(hist) {
     reset() { stack = []; },
 
     // A layer that went away with its screen and could not take its entry
-    // back first (the show menu, v93, when the URL has already moved or the
-    // screen changed in place): out of the model, and out of the layers of
-    // the entry the page stands on when that entry names it — never by a
+    // back first (the show menu, v93, when the address has already moved or
+    // the screen changed in place): out of the model, and out of the layers
+    // of the entry the page stands on when that entry names it — never by a
     // traversal, which could move the app off the screen it is going to. The
-    // entry's other fields stay (the menu's id): that is how an arrival there
-    // later knows the menu it named is gone (app.js arrivedAt). Returns
-    // whether the model held it.
+    // entry's other fields stay (its number and id, nav.js). Returns whether
+    // the model held it.
     forget(key) {
       const i = stack.lastIndexOf(key);
       if (i === -1) return false;
@@ -141,4 +138,5 @@ export function createRouter(hist) {
 
 // The app's singleton, bound to real browser history. Guarded so node tests
 // can import the module's pure parts.
-export const router = typeof window !== 'undefined' ? createRouter(window.history) : null;
+// It writes through nav.js, so every entry it makes is numbered (v93).
+export const router = navHistory ? createRouter(navHistory) : null;

@@ -68,6 +68,7 @@ import { showActionToast } from './wall.js';
 import { welcomeCopy, welcomeSeen, rememberWelcomeSeen, joinedWelcomeSeen, rememberJoinedWelcomeSeen, showWelcome, dismissWelcome, welcomeCard, WORDS } from './welcome.js';
 // The guest shelf round (v92, 2026-09-25): a guest is asked on a shelf over the wall.
 import { showJoinShelf, joinShelf } from './join-shelf.js';
+import { nav } from './nav.js';
 // The warm open (2026-09-23): paint from what this phone holds, freshen after.
 import { festivalIndexFromCache, festivalFromCache, fetchFestivalFile, cachedCustomFestivals } from '../festivals.js';
 import { getLS } from '../util.js';
@@ -576,7 +577,7 @@ function openJoinShelf(token, artist, intent = 'pick', opener = null) {
     hold: (on) => { if (shelf) shelf.setBusy(on); },
     say: (x) => { if (shelf) shelf.say(x); },
     // In: the shelf goes back down, then the pick lands on the card it named.
-    entered: () => { if (shelf) shelf.close(); dropShelfEntry(); },
+    entered: () => { if (shelf) shelf.close(); popShelfEntry(); },
   });
   shelf = showJoinShelf({
     artist, intent, people, offline, ctx, opener,
@@ -585,9 +586,13 @@ function openJoinShelf(token, artist, intent = 'pick', opener = null) {
     onAnswer: (typed) => answers.answer(typed),
   });
   shelfUp = shelf;
-  try { history.pushState({ joinShelf: true }, '', location.href); } catch { /* no history: Back leaves, as before */ }
+  pushShelfEntry();
 }
 let shelfUp = null; // the join shelf's handle while it is up
+let shelfEntryId = null; // the id of the history entry the shelf stands on (nav.js)
+function pushShelfEntry() {
+  try { shelfEntryId = nav.push({ joinShelf: true }).id; } catch { /* no history: Back leaves, as before */ }
+}
 // ONE close decision for the shelf, whoever asks — Escape, the system Back,
 // or its own ways out (review of 963e599: Escape mid-join took the shelf down
 // and the late answer joined Ana behind the person's back; Escape left the
@@ -603,7 +608,7 @@ function leaveShelf(via = 'escape') {
   if (shelf.isBusy()) {
     // Back already took the entry: put it back, so the history still says
     // "the shelf is up" and the next Back (after the answer) behaves.
-    if (via === 'back') { try { history.pushState({ joinShelf: true }, '', location.href); } catch { /* no history */ } }
+    if (via === 'back') pushShelfEntry();
     return true;
   }
   shelf.leave();
@@ -612,13 +617,15 @@ function leaveShelf(via = 'escape') {
   return true;
 }
 // The shelf's history entry, popped by its own ways out (Look around, the
-// wall, the handle) so Back never lands on a dead step. After a join, the
-// entry is already the wall's (enterApp rewrote it) and is left alone.
+// wall, the handle) so Back never lands on a dead step — and after a join too
+// (v93 — Sol 6): the join's enterApp rewrote the entry as the wall's, which
+// left two wall entries with one address and nothing between them, a Back
+// that did nothing. It is taken back like any other way out; the wall entry
+// behind it is the same wall.
 function popShelfEntry() {
-  if (history.state && history.state.joinShelf) history.back();
-}
-function dropShelfEntry() {
-  if (history.state && history.state.joinShelf) history.replaceState(null, '', location.href);
+  const st = history.state;
+  if (st && (st.joinShelf || (shelfEntryId && st.id === shelfEntryId))) nav.back();
+  shelfEntryId = null;
 }
 
 // After a join from the wall: back where they were standing, and the artist
@@ -671,15 +678,20 @@ function lookAround(token, doc) {
 }
 
 // "Add yourself" from inside a layer — Settings → You, a notes sheet's door.
-// The layer is dropped from the model first (its history entry stays, and
-// reconciles to nothing), so "Look around" comes back to the wall, never to
-// a layer the history no longer holds.
+// The layers' entries are taken back first (v93 — Sol 6: rewriting the top
+// one as the wall's left two wall entries with one address), so the shelf
+// stands on the wall's own entry and "Look around" comes back to the wall,
+// never to a layer the history no longer holds.
 function joinFromLayer() {
-  router.reset();
-  history.replaceState(null, '', `/#g=${state.getCrewToken()}`);
-  closeSheet();
-  show('screen-app');
-  askToJoin(null);
+  const ask = () => { router.reset(); closeSheet(); show('screen-app'); askToJoin(null); };
+  const open = router.current();
+  const st = history.state;
+  const inStep = !!st && Array.isArray(st.layers) && st.layers.length === open.length && st.layers.every((k, i) => k === open[i]);
+  if (open.length && inStep) { nav.back(open.length, ask); return; }
+  // History and the layers disagree (never in practice): no traversal can be
+  // trusted to land on the wall, so the entry becomes the wall's, as it was.
+  if (open.length) nav.replace({}, `/#g=${state.getCrewToken()}`);
+  ask();
 }
 
 // The dashed + where a guest's avatar will be: one soft pulse after "Got it",
@@ -1418,18 +1430,15 @@ let menuY = null;
 let afterMenu = null; // what a way out does once the menu's entry is gone
 let menuLeaving = null; // a way out under way: its fallback timer
 const trackMenuY = () => { menuY = window.scrollY; };
-// Which menu a history entry names (v93 — Sol 6's re-review). Every menu that
-// opens gets an id, carried on its entry. Two are alive: the one that is open,
-// and the one Back just put away while its wall is still on screen (Forward
-// opens that one again). Any other entry that names a menu is dead — its
-// screen went away with the menu up (a crew opened over it, a crew deleted
-// under it) — and arrivedAt makes sure it never costs a Back.
-const MENU_DOC = Math.random().toString(36).slice(2, 8); // this page load's: an entry from before a refresh never matches
-let menuCount = 0;
-let openMenuId = null;
-let liveMenuId = null;
-let reopenMenuId = null; // from the popstate that found a live entry to the menu layer's opener
-let deadHere = null; // the URL of the dead menu entry the page stands on, while it does
+// Which menu a history entry is (v93 — Sol 6's re-review): the entry's own id
+// (nav.js). Two are alive: the one that is open, and the one Back just put
+// away, while the wall it was put away on is still on screen — Forward opens
+// that one again. Any other entry naming a menu names one that went with its
+// screen (a crew opened over it, a crew deleted under it): arriving there
+// opens nothing (arrival), and onPopState passes it if nothing else changes.
+let openMenuId = null; // the open menu's entry
+let liveMenu = null; // { id, url }: the menu Back put away, while it can come back
+let reopenMenuId = null; // from the popstate that found it alive, to the menu layer's opener
 
 // A menu on its way out (the fade after a close): at most one. Its end hides
 // the menu and lets its bar step back — unless that same menu is open again
@@ -1504,27 +1513,23 @@ function openShowMenu(wrap, link, pop, id = null) {
   // a new build's reload must not pull it out from under a tick. The flag is
   // shared — only taken when free, only given back when it is the menu's.
   if (!document.body.dataset.busy) document.body.dataset.busy = 'show-menu';
-  liveMenuId = null;
-  deadHere = null;
-  openMenuId = id || `${MENU_DOC}:${++menuCount}`;
-  if (!id) router.push(MENU_LAYER, { menu: openMenuId });
+  liveMenu = null;
+  if (id) openMenuId = id;
+  else { router.push(MENU_LAYER); openMenuId = (history.state && history.state.id) || null; }
 }
 // The Show menu goes with its screen (v93 — Sol 6's review): any screen but
 // the wall and a boot (which rebuilds the wall) retire an open menu at once —
 // closed, its scroll hold and its way-out state let go, its busy flag given
 // back, its layer out of the router — and no menu is alive any more, so no
 // entry can open one again. A switch that can wait a frame takes the menu's
-// entry back before it runs (offWall — the crew deleted on the server); this
-// is for the ones that cannot: a boot on a URL that has already moved (a
-// crew opened over the menu) and whatever else changes screens. Retired where
-// it stands — the page on the menu's own entry, which now shows exactly what
-// the wall's entry behind it does — the next Back would cross between the
-// two and show nothing, so arrivedAt lets that Back keep going.
+// entry back before it runs (offWall — the crew deleted on the server; boot
+// does the same when the page still stands on it); this is for the ones that
+// cannot: a boot on an address that has already moved (a crew opened over
+// the menu) and whatever else changes screens. An entry left naming it is
+// passed by onPopState whenever arriving there would change nothing.
 function retireShowMenu() {
-  const id = openMenuId;
   openMenuId = null;
-  liveMenuId = null;
-  if (id && history.state && history.state.menu === id) deadHere = location.href;
+  liveMenu = null;
   clearTimeout(menuLeaving);
   menuLeaving = null;
   afterMenu = null;
@@ -1544,7 +1549,10 @@ function retireShowMenu() {
 function leaveShowMenu(then = null) {
   if (!openMenu || menuLeaving) return;
   afterMenu = then;
-  if (router.top() === MENU_LAYER && router.requestClose()) {
+  // Only from its own entry: once the address has moved on (a link opened
+  // over it), a Back would go somewhere else entirely.
+  const onItsEntry = !!openMenuId && !!history.state && history.state.id === openMenuId;
+  if (onItsEntry && router.top() === MENU_LAYER && router.requestClose()) {
     menuLeaving = setTimeout(() => { if (menuLeaving) menuGone(); }, 1000);
     return;
   }
@@ -1555,10 +1563,13 @@ function leaveShowMenu(then = null) {
 // it is — now, and once more at the next frame in case the engine restores
 // the scroll late — and only then does the way out do its own thing, so a
 // day tab's glide is never cut short by the hold.
-function menuGone() {
+// `back`: Back took its entry (a popstate onto the wall's): the entry is ahead
+// now, and Forward, on this same wall, opens it again. Any other way it goes
+// (a layer took its entry over, a way out whose pop never came) it is gone.
+function menuGone({ back = false } = {}) {
   clearTimeout(menuLeaving);
   menuLeaving = null;
-  liveMenuId = openMenuId; // its entry is ahead now: Forward, on this wall, opens it again
+  liveMenu = back && openMenuId ? { id: openMenuId, url: nav.here() } : null;
   openMenuId = null;
   closeShowMenu();
   window.removeEventListener('scroll', trackMenuY);
@@ -1580,29 +1591,49 @@ function offWall(fn) {
   if (menuLeaving) { const before = afterMenu; afterMenu = () => { if (before) before(); fn(); }; return; }
   leaveShowMenu(fn);
 }
-// Where a Back or Forward arrived, as the router should see it (v93 — Sol 6's
-// re-review). An entry naming a menu that is not alive opens nothing: the page
-// shows the screen that entry belongs to, and it marks where the page stands.
-// From there a Back lands on the wall's entry behind it — the same URL, the
-// same screen, a press that would show nothing — so it goes on one more.
-// Arriving on it from another URL (Back from a crew opened over the menu)
-// steps on at once: the hashchange handler.
-function arrivedAt(st) {
-  const left = deadHere;
-  deadHere = null;
-  const id = st && st.menu;
-  if (id) {
-    const layers = Array.isArray(st.layers) ? st.layers : [];
-    const isMenu = (k) => String(k).startsWith('menu:');
-    if (id === liveMenuId && layers.some(isMenu) && $('screen-app').style.display !== 'none') {
-      reopenMenuId = id;
-      return st;
-    }
-    deadHere = location.href;
-    return { ...st, layers: layers.filter((k) => !isMenu(k)) };
-  }
-  if (left && left === location.href) history.back();
-  return st;
+// An arrived entry as the router should see it (v93): a menu layer it names
+// opens only when that menu is alive — the one Back put away, on the wall it
+// was put away on, which is still the screen. Any other is dropped: its menu
+// went with its screen.
+function arrival(st) {
+  const layers = st && Array.isArray(st.layers) ? st.layers : [];
+  const isMenu = (k) => String(k).startsWith('menu:');
+  if (!layers.some(isMenu)) return st;
+  const alive = !!liveMenu && st.id === liveMenu.id && nav.here() === liveMenu.url && $('screen-app').style.display !== 'none';
+  if (alive) { reopenMenuId = st.id; return st; }
+  return { ...st, layers: layers.filter((k) => !isMenu(k)) };
+}
+// Would arriving on this entry change anything on screen? Only three things
+// can: the address (a boot), the layers (the router), and the join shelf,
+// which any arrival takes down.
+function changesNothing(st) {
+  const layers = (st && Array.isArray(st.layers)) ? st.layers : [];
+  const open = router.current();
+  const sameLayers = layers.length === open.length && layers.every((k, i) => k === open[i]);
+  const shelfOpen = !!shelfUp && !shelfUp.isClosed();
+  return nav.here() === nav.shownUrl() && sameLayers && !shelfOpen;
+}
+// Every Back and Forward (v93 — Sol 6's re-review). Which way it went is
+// certain (nav.js: every entry this app writes is numbered in order). An
+// arrival that would change nothing on screen — a menu whose screen went
+// with it, a shelf entry left by an old build, a second wall entry for the
+// same address — is passed, one more the same way, and only while arrivals
+// change nothing: the first that shows something is where the press lands.
+// A traversal the app asked for (taking a menu's or the shelf's entry back)
+// is applied as it is. So no press is spent on nothing, and none goes further
+// than the run of entries that change nothing.
+let popping = false; // a popstate is being applied: a menu the router closes went by Back
+function onPopState(e) {
+  const st = e.state;
+  const { dir, own } = nav.arrive(st);
+  const seen = arrival(st);
+  if (!own && dir !== 0 && changesNothing(seen)) { nav.step(dir); return; }
+  popping = true;
+  try { router.onPopState(seen); } finally { popping = false; }
+  // The system Back with the join shelf up takes the shelf down (v92): the
+  // question is dropped, the wall is where it was.
+  if (!(st && st.joinShelf) && !leaveShelf('back') && joinShelf()) { pendingJoin = null; closeSheet(); }
+  nav.applied(own);
 }
 
 
@@ -2067,7 +2098,7 @@ async function batchCreateFlow(myName) {
         router.push('sheet:share');
         maybeOfferBringPicks(); // waits for the share moment to close — never both at once
       } catch {
-        history.replaceState(null, '', '/');
+        nav.replace({}, '/');
         renderLanding();
         showToast($('toast-root'), 'Board created — it couldn’t open just now, but it’s on your list.', 6000);
       }
@@ -2075,7 +2106,7 @@ async function batchCreateFlow(myName) {
     }
     // Several boards born: land on the festival list where they all are —
     // "add all the fests I'm going to, then quickly add people to them."
-    history.replaceState(null, '', '/');
+    nav.replace({}, '/');
     renderLanding();
     const unstamped = made.filter((m) => !m.stamped).length;
     let note = failed
@@ -2401,7 +2432,7 @@ function openAddMember() {
 function goToFestList() {
   closeSheet();
   router.reset();
-  history.pushState(null, '', '/');
+  nav.push({}, '/');
   renderLanding();
 }
 
@@ -2499,13 +2530,14 @@ function openSettings() {
     // FLOW-6: the landing is the crew switcher; the current crew stays remembered.
     switchCrew: () => {
       router.reset();
-      history.replaceState(null, '', '/');
+      nav.replace({}, '/');
       renderLanding();
     },
     // Fest-first: settings lists YOUR boards; adding goes to the shared
     // multi-pick page, and a board in another circle opens like a landing row.
     addFestival: () => {
       router.reset();
+      nav.expectFresh();
       location.hash = '#new';
       boot();
     },
@@ -2518,6 +2550,7 @@ function openSettings() {
         return;
       }
       router.reset();
+      nav.expectFresh();
       location.hash = `#g=${token}`;
       boot();
     },
@@ -2525,7 +2558,7 @@ function openSettings() {
       const t = state.getCrewToken();
       crew.forgetCrew(t);
       router.reset();
-      history.replaceState(null, '', '/');
+      nav.replace({}, '/');
       renderLanding();
       showToast($('toast-root'), 'Crew forgotten on this device — the invite link gets you back in.', 6000);
     },
@@ -2760,6 +2793,7 @@ function renderLanding() {
           return;
         }
       }
+      nav.expectFresh();
       location.hash = `#g=${pair.token}`;
       boot();
     });
@@ -3291,9 +3325,9 @@ async function enterApp(token, doc, current = () => true, customs = fetchCustomF
   // here made one Back collapse the whole restored stack and killed Forward
   // (Codex trailing review, P1, reproduced).
   // A refresh reopens the layers it had — never the show menu (v93): a menu
-  // is a moment, not a place, and its entry's neighbours belong to the page
-  // before the refresh. The page stands on that entry as a dead one instead
-  // (boot marks it), so the next Back leaves the wall.
+  // is a moment, not a place. Its entry becomes the wall's, and a Back from
+  // it passes the wall's own entry behind it (onPopState), which is the same
+  // screen.
   const kept = ((history.state && history.state.layers) || []).filter((k) => !String(k).startsWith('menu:'));
   const savedLayers = kept.length ? kept : null;
   // Seeded BEFORE the first paint, so the wall opens already on the view the
@@ -3310,11 +3344,7 @@ async function enterApp(token, doc, current = () => true, customs = fetchCustomF
   repaintWall();
   maybeOpenOnDay();
   startClock();
-  // An entry that named a menu keeps the menu's id (v93): the menu is gone,
-  // and the id is how an arrival here later knows it (arrivedAt).
-  const carried = history.state && history.state.menu;
-  const entry = savedLayers ? { layers: savedLayers } : null;
-  history.replaceState(carried ? { ...(entry || { layers: [] }), menu: carried } : entry, '', `/#g=${token}`);
+  nav.replace(savedLayers ? { layers: savedLayers } : {}, `/#g=${token}`);
   sync.pollSync();
   router.reset();
   if (savedLayers) router.restore(savedLayers);
@@ -3486,9 +3516,9 @@ function renderBadLink(token, { gone, malformed }) {
     if (!m) { $('badlink-status').textContent = 'That doesn’t look like a crew link — it has a #g= part.'; return; }
     const target = `#g=${m[1]}`;
     if (location.hash === target) boot();
-    else location.hash = target; // hashchange boots
+    else { nav.expectFresh(); location.hash = target; } // hashchange boots
   };
-  $('badlink-home').onclick = () => { history.replaceState(null, '', '/'); renderLanding(); };
+  $('badlink-home').onclick = () => { nav.replace({}, '/'); renderLanding(); };
 }
 
 // The last-resort screen (FLOW-4): an exception escaping boot/enterApp used
@@ -3498,7 +3528,7 @@ function renderFatal() {
     show('screen-error');
     document.title = 'Festival Navigator';
     $('error-retry').onclick = () => location.reload();
-    $('error-home').onclick = () => { history.replaceState(null, '', '/'); renderLanding(); };
+    $('error-home').onclick = () => { nav.replace({}, '/'); renderLanding(); };
   } catch { /* even the error screen failed — nothing safe left to render */ }
 }
 
@@ -3510,14 +3540,18 @@ let pendingMeHint = null; // &me= from a personal invite link, consumed by rende
 let pendingShowHint = null; // &show= — the view a share link carries (v92), consumed by enterApp
 let pendingSpotifyOpen = false; // &sp=1 from the canonical-domain hop (SPOT-1)
 export async function boot() {
-  retireShowMenu(); // a boot rebuilds the wall: a menu over the old one goes with it
+  // A boot rebuilds the wall: a menu over the old one goes with it. Standing
+  // on its own entry (a boot the app runs in place), that entry goes back
+  // first, as any way out takes it — so the page never ends on a second entry
+  // for the same wall. Anywhere else (a link opened over it) it is retired.
+  if (openMenu && openMenuId && history.state && history.state.id === openMenuId) {
+    await new Promise((resolve) => offWall(resolve));
+  }
+  retireShowMenu();
   const gen = ++bootGeneration;
   const current = () => gen === bootGeneration;
   const isFirst = firstBoot;
   firstBoot = false;
-  // A page loaded on a menu's entry (a refresh with the Show menu up) stands
-  // on a dead one: the next Back must not stop between it and the wall's.
-  if (isFirst && history.state && history.state.menu) deadHere = location.href;
   router.reset();
   // Capture before any await: enterApp's replaceState strips the hash to #g=.
   pendingFestHint = crew.festFromHash();
@@ -3538,7 +3572,7 @@ export async function boot() {
   const personLinkBroken = crew.hashHasBrokenPersonLink();
   const hopCrewToken = personToken ? crew.tokenFromHash() : null;
   if (personToken || personLinkBroken) {
-    history.replaceState(null, '', hopCrewToken ? `/#g=${hopCrewToken}` : '/');
+    nav.replace({}, hopCrewToken ? `/#g=${hopCrewToken}` : '/');
   }
   try {
     // The catalog leaves now and nothing waits on it alone: a crew boot sends
@@ -3669,6 +3703,7 @@ function repaintFromRemote() { repaintWall(); renderPersonChips(); renderYou(); 
 
 // ---- wiring ----------------------------------------------------------------------
 export function init() {
+  nav.stampHere(); // the entry the app opened on is numbered too (nav.js)
   sync.initSync({
     onRemoteChange: repaintFromRemote,
     onCrewGone: (token) => {
@@ -3734,7 +3769,7 @@ export function init() {
   }, () => closeSheet());
   // The show menu (v93): Back closes it; Forward opens it again, in the door
   // this screen has (the rail from 720px), while the wall it was put away
-  // from is still on screen. Only a menu arrivedAt found alive opens
+  // from is still on screen. Only a menu `arrival` found alive opens
   // (reopenMenuId): an entry whose menu went with its screen opens nothing.
   router.registerKind('menu:', () => {
     const id = reopenMenuId;
@@ -3743,16 +3778,8 @@ export function init() {
     const [wrapId, linkId] = SHOW_MENUS[window.innerWidth >= 720 ? 1 : 0];
     const pop = $(wrapId) && $(wrapId).querySelector('.sort-pop');
     if (pop && !(openMenu && openMenu.pop === pop)) openShowMenu($(wrapId), $(linkId), pop, id);
-  }, () => menuGone());
-  window.addEventListener('popstate', (e) => router.onPopState(arrivedAt(e.state)));
-  // The system Back with the join shelf up takes the shelf down (v92): the
-  // question is dropped, the wall is where it was.
-  window.addEventListener('popstate', (e) => {
-    if (e.state && e.state.joinShelf) return;
-    if (leaveShelf('back')) return;
-    // A shelf this module no longer holds (never in practice): take it down.
-    if (joinShelf()) { pendingJoin = null; closeSheet(); }
-  });
+  }, () => menuGone({ back: popping }));
+  window.addEventListener('popstate', onPopState);
   $('search-input').addEventListener('input', (e) => {
     ctx.query = e.target.value;
     unzoom({ instant: true, why: 'wall switched' });
@@ -3839,7 +3866,7 @@ export function init() {
   $('fest-list-btn').addEventListener('click', goToFestList);
   $('notes-chip').addEventListener('click', () => { refreshCtx(); openAllNotes(ctx); router.push('sheet:all'); });
   $('create-go-btn').addEventListener('click', () => batchCreateFlow($('create-name-input').value.trim()));
-  $('create-back').addEventListener('click', () => { history.replaceState(null, '', '/'); renderLanding(); });
+  $('create-back').addEventListener('click', () => { nav.replace({}, '/'); renderLanding(); });
   $('create-back-2').addEventListener('click', () => renderCreate());
   // Enter submits every entry form (FLOW-13) — the keyboard's Go button on
   // mobile is the same event.
@@ -3883,7 +3910,7 @@ export function init() {
   // over the menu (v93): the wall's entry behind it is the same screen, so the
   // page steps onto it now, and the next Back leaves this crew as it should.
   window.addEventListener('hashchange', () => {
-    if (deadHere && deadHere === location.href) { deadHere = null; history.back(); } else deadHere = null;
+    nav.seen(); // a new entry (a link opened into the tab) is numbered as the newest
     closeSheet();
     boot();
   });

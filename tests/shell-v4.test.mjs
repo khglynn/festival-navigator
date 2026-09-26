@@ -178,7 +178,8 @@ test('a tap opens it; Escape, a tap outside, the fest name again and Back each c
     assert.equal(pop.style.display, '', `${way}: open`);
     assert.equal(link.getAttribute('aria-expanded'), 'true');
     assert.deepEqual(h.state.layers, ['menu:show'], `${way}: the menu stands on a history entry of its own`);
-    assert.equal(typeof h.state.menu, 'string', `${way}: which names this menu, by its id`);
+    assert.equal(h.state.kind, 'menu', `${way}: numbered and named as the menu's (nav.js)`);
+    assert.ok(Number.isFinite(h.state.idx) && typeof h.state.id === 'string');
     go();
     await settle(30);
     assert.equal(link.getAttribute('aria-expanded'), 'false', `${way} closes it`);
@@ -227,7 +228,8 @@ test('a tap outside on a day tab closes the menu, and the tab still does its job
     await settle(40);
     assert.equal($('dock-fest-link').getAttribute('aria-expanded'), 'false', 'the menu closed');
     assert.equal(heard, 1, 'and then the tab heard its tap, once');
-    assert.deepEqual(dom.window.history.state, null, 'on the entry the menu found');
+    const st = dom.window.history.state;
+    assert.ok(!st || ((!st.layers || !st.layers.length) && st.kind !== 'menu'), `on the entry the menu found: ${JSON.stringify(st)}`);
   } finally {
     tab.removeEventListener('click', hear);
   }
@@ -312,7 +314,7 @@ test('Settings from the menu: one entry for Settings where the menu\'s was, and 
   await settle(30);
   assert.notEqual($('screen-settings').style.display, 'none', 'Settings is open');
   assert.equal(menu('dock').style.display, 'none', 'the menu is gone');
-  assert.deepEqual(h.state, { layers: ['settings'] }, 'Settings stands where the menu\'s entry was');
+  assert.deepEqual([h.state.layers, h.state.kind], [['settings'], 'settings'], 'Settings stands where the menu\'s entry was');
   assert.ok(h.length <= start + 1, 'one entry, not two');
   h.back();
   await settle(30);
