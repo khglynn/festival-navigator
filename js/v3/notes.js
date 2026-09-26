@@ -30,7 +30,8 @@ import { dayLabelParts } from '../time.js';
 import * as model from './model.js';
 import { hslOf, strokeOf } from './palette.js';
 import { colorIndexOf } from './wall.js';
-import { factsFor, sheetCard, focusQuietly } from './card-facts.js';
+import { factsFor, sheetCard, shelfStep, refreshSheetCard, focusQuietly } from './card-facts.js';
+import { GROW_MS, OUT_MS, CASCADE_MS, STAGGER_MS } from './motion.js';
 import { router } from './router.js';
 import { loadJSON, saveLS } from '../util.js';
 
@@ -694,13 +695,15 @@ function inlineComposer(scope, target, threadKey, ctx, ui, onChange) {
 // A guest has no composer (v92, first open): in its place, the door in —
 // the same question a tap on an artist asks. Only where the shell offers one
 // (ctx.onJoin), and never on a thread nobody writes to (a legacy key).
-function joinDoor(ctx) {
+// On an artist's shelf the door names the artist, as its − and + do (the tap
+// change, 2026-09-26): the join shelf asks "Join the plan for Robyn as…".
+function joinDoor(ctx, artist = null) {
   if (ctx.meName || typeof ctx.onJoin !== 'function') return null;
   const b = document.createElement('button');
   b.className = 'btn-ghost join-door';
   b.style.cssText = 'font-size: 12px; padding: 9px 15px; align-self: center;';
   b.textContent = 'Add yourself to write a note';
-  b.addEventListener('click', () => ctx.onJoin());
+  b.addEventListener('click', () => (artist && typeof ctx.onGuestAsk === 'function' ? ctx.onGuestAsk(artist, 'note') : ctx.onJoin()));
   return b;
 }
 
@@ -743,8 +746,10 @@ export function sheetChrome(sheet, titleText) {
     if (startY === null) return;
     const dy = e.clientY - startY;
     startY = null;
-    sheet.style.transform = '';
+    // A drag that closes leaves the shelf where the finger let go: the way
+    // out drops it from there (closeSheet), never back up first.
     if (dy > 70) requestSheetClose();
+    else sheet.style.transform = '';
   };
   grabber.addEventListener('pointerup', release);
   grabber.addEventListener('pointercancel', () => { startY = null; sheet.style.transform = ''; });
@@ -805,6 +810,62 @@ function teardownSheet() {
   activeSheetRepaint = null;
 }
 
+// ---- the way in and the way out (the tap change, 2026-09-26) ----------------------------
+// A finger's tap on any card opens the artist's shelf now, so this sheet is
+// the phone's most-used surface, and it moves the way the join shelf does
+// (join-shelf.js): on a phone it RISES from the bottom edge on the arrival
+// curve while the wall dims, its parts landing a beat apart, and it leaves
+// quick and plain, dropping back to the edge. A desktop's centred dialog keeps
+// its scale-fade in (v3.css sheetIn) and fades out. A re-render never arrives
+// again, and Low Power or Reduce Motion make both instant.
+// The way out drops the ids at its START, so everything that asks "is a sheet
+// up?" (closeSheet, rememberOpener, the join shelf, index.html's quiet())
+// hears "no" at once, and a new sheet opening sweeps a leaving one away.
+let sheetCtx = null; // the ctx of the sheet that is up — its Low Power decides the way out
+const leavingSheets = new Set();
+const phoneShelf = () => typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+  && !window.matchMedia('(min-width: 720px)').matches;
+function sweepLeaving() {
+  for (const n of leavingSheets) n.remove();
+  leavingSheets.clear();
+}
+function arrive(sheet, backdrop, ctx, parts) {
+  if (!canAnimate(sheet, ctx) || !phoneShelf()) return;
+  sheet.classList.add('rising'); // the CSS scale-fade stands down: this is the way in
+  backdrop.animate([{ opacity: 0 }, { opacity: 1 }], { duration: GROW_MS, easing: 'ease-out', fill: 'backwards' });
+  sheet.animate([{ transform: 'translateY(100%)' }, { transform: 'none' }], { duration: GROW_MS, easing: EASE_ARRIVE, fill: 'backwards' });
+  parts.filter(Boolean).forEach((n, i) => n.animate(
+    [{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }],
+    { duration: CASCADE_MS, delay: GROW_MS / 2 + i * STAGGER_MS, easing: EASE_ARRIVE, fill: 'backwards' },
+  ));
+}
+function leave(sheet, backdrop) {
+  sheet.removeAttribute('id');
+  backdrop.removeAttribute('id');
+  activeSheetRepaint = null;
+  sheet.style.pointerEvents = 'none';
+  backdrop.style.pointerEvents = 'none';
+  leavingSheets.add(sheet);
+  leavingSheets.add(backdrop);
+  let done = false;
+  const gone = () => {
+    if (done) return;
+    done = true;
+    sheet.remove();
+    backdrop.remove();
+    leavingSheets.delete(sheet);
+    leavingSheets.delete(backdrop);
+  };
+  backdrop.animate([{ opacity: 1 }, { opacity: 0 }], { duration: OUT_MS, easing: EASE_LEAVE, fill: 'forwards' });
+  const from = sheet.style.transform || 'none'; // a grabber drag lets go where it was
+  const out = phoneShelf()
+    ? sheet.animate([{ transform: from }, { transform: 'translateY(100%)' }], { duration: OUT_MS, easing: EASE_LEAVE, fill: 'forwards' })
+    : sheet.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'scale(.98)' }], { duration: OUT_MS, easing: EASE_LEAVE, fill: 'forwards' });
+  out.onfinish = gone;
+  out.oncancel = gone;
+  setTimeout(gone, OUT_MS * 3 + 50); // a backgrounded tab must not leave a sheet behind
+}
+
 export function dialogize(sheet, label) {
   sheet.setAttribute('role', 'dialog');
   sheet.setAttribute('aria-modal', 'true');
@@ -831,7 +892,10 @@ export function dialogize(sheet, label) {
 function openScopeSheet(scope, target, ctx, onChange, opts = {}) {
   const occ = opts.occ || null;
   rememberOpener();  // no-op on a re-render — the original opener is kept
+  const swapping = !!document.getElementById('artist-sheet'); // one sheet replacing another: no second arrival
+  sweepLeaving();
   teardownSheet();   // NOT closeSheet(): a re-render must not restore focus
+  sheetCtx = ctx;
   const backdrop = document.createElement('div');
   backdrop.className = 'sheet-backdrop';
   backdrop.id = 'sheet-backdrop';
@@ -848,14 +912,23 @@ function openScopeSheet(scope, target, ctx, onChange, opts = {}) {
   const ui = { revealed: null, reply: null, justAdded: null, unfold: false, focusOwner: null, replyFocused: false };
 
   let paintHeader = () => {};
+  let headerHost = null;
   if (scope === 'artist') {
     // The header IS the card, grown once more; the ✕ lives in its corner.
     grabberOnly(sheet);
-    const headerHost = document.createElement('div');
+    headerHost = document.createElement('div');
     sheet.appendChild(headerHost);
+    // The shelf (the tap change, Kevin 2026-09-26): the card carries the
+    // − · + row along its floor — the one place a finger picks — with your
+    // meter between them. A step redraws the card in place, with the zoom's
+    // motion, and never moves the row under the finger (refreshSheetCard).
+    // No notes chip on the header: this sheet IS the thread (§4).
+    let card = null;
+    const stepped = () => refreshSheetCard(card, factsFor(target, ctx, occ), { ...cardOpts(), ctx, scroller: sheet });
+    const cardOpts = () => ({ onClose: requestSheetClose, notesChip: false, step: shelfStep(target, ctx, stepped) });
     paintHeader = () => {
-      // No notes chip on the header: this sheet IS the thread (§4).
-      headerHost.replaceChildren(sheetCard(factsFor(target, ctx, occ), { onClose: requestSheetClose, notesChip: false }));
+      card = sheetCard(factsFor(target, ctx, occ), cardOpts());
+      headerHost.replaceChildren(card);
     };
     paintHeader();
   } else {
@@ -918,14 +991,16 @@ function openScopeSheet(scope, target, ctx, onChange, opts = {}) {
     }
   };
   paint();
+  let door = null;
   if (box) sheet.appendChild(box);
-  else if (!readOnly) { const door = joinDoor(ctx); if (door) sheet.appendChild(door); }
+  else if (!readOnly) { door = joinDoor(ctx, scope === 'artist' ? target : null); if (door) sheet.appendChild(door); }
   document.body.append(backdrop, sheet);
   const spoken = scope === 'artist' ? target
     : scope === 'day' ? (opts.label || dayTargetLabel(ctx, target))
       : state.fest().name;
   dialogize(sheet, scope === 'artist' ? spoken : `${spoken} notes`);
   activeSheetRepaint = paint;
+  if (!swapping) arrive(sheet, backdrop, ctx, [headerHost || sheet.querySelector('.sheet-title'), wrap, box || door]);
 }
 
 export function openArtistSheet(artistName, ctx, onChange, occ = null) {
@@ -945,7 +1020,10 @@ export function openFestNotes(ctx, onChange) {
 
 export function closeSheet() {
   const wasOpen = document.getElementById('artist-sheet');
-  teardownSheet();
+  const back = document.getElementById('sheet-backdrop');
+  if (wasOpen && back && wasOpen.isConnected && canAnimate(wasOpen, sheetCtx)) leave(wasOpen, back);
+  else teardownSheet();
+  sheetCtx = null;
   // Nothing was open, so there is nothing to restore — and crucially, nothing to
   // FORGET either. Callers open a sheet with `rememberOpener(); closeSheet();`
   // (belt-and-braces against a sheet already being up), and an unconditional
@@ -964,7 +1042,10 @@ export function closeSheet() {
 // scope sections. The empty state is an invitation, never a redirect.
 export function openAllNotes(ctx) {
   rememberOpener();
+  const swapping = !!document.getElementById('artist-sheet');
+  sweepLeaving();
   teardownSheet();
+  sheetCtx = ctx;
   const backdrop = document.createElement('div');
   backdrop.className = 'sheet-backdrop';
   backdrop.id = 'sheet-backdrop';
@@ -1072,12 +1153,11 @@ export function openAllNotes(ctx) {
     if (!any) {
       const empty = document.createElement('div');
       empty.className = 'n-empty';
-      // The gesture hint matches the device (audit 11.2): hold is the touch
-      // idiom; pointer-fine users get the hover zoom's note chip.
-      const fine = typeof window.matchMedia === 'function'
-        && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+      // One sentence for every hand (the tap change, 2026-09-26): a finger
+      // opens an artist's notes with a tap, a mouse through the zoom's note
+      // door — the copy never branches by device.
       empty.textContent = ctx.meName
-        ? `No notes yet — add the first above, or ${fine ? 'hover any artist and tap its note chip' : 'hold any artist'}.`
+        ? 'No notes yet — add the first above, or open any artist’s notes.'
         : 'No notes yet.';
       body.appendChild(empty);
     }
@@ -1086,6 +1166,7 @@ export function openAllNotes(ctx) {
   document.body.append(backdrop, sheet);
   dialogize(sheet, 'All notes');
   activeSheetRepaint = paint;
+  if (!swapping) arrive(sheet, backdrop, ctx, [...sheet.children].slice(1, 4));
 }
 
 // ---- the whisper (2026-08-29, replaces the inline bars) -----------------------------

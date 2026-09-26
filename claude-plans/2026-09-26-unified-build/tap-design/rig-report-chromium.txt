@@ -1,0 +1,61 @@
+chromium member390
+  Robyn open: {"top":204,"h":640,"rowY":374,"meter":"0","minusOff":true,"plusOff":false}
+  frame chromium-390-member-robyn-open.png
+  after +: {"top":204,"h":640,"rowY":374,"meter":"1","minusOff":false,"plusOff":false}
+  frame chromium-390-member-robyn-plus1.png
+  after + x4: {"top":204,"h":640,"rowY":374,"meter":"4","minusOff":false,"plusOff":true}
+  frame chromium-390-member-robyn-must.png
+  frame chromium-390-member-robyn-thread-end.png
+  frame chromium-390-member-robyn-closed.png
+  Boys Noize open: {"top":495,"h":349,"rowY":686,"meter":"0","minusOff":true,"plusOff":false}
+  frame chromium-390-member-boysnoize-doors.png
+  errors: none
+chromium grows390
+  Oskar open: {"top":545,"h":299,"rowY":686,"meter":"0","minusOff":true,"plusOff":false}
+  frame chromium-390-member-unpicked-open.png
+  after +: {"top":516,"h":328,"rowY":686,"meter":"1","minusOff":false,"plusOff":false} — row moved 0px, top rose 29px
+  frame chromium-390-member-unpicked-plus1.png
+  after −: {"top":545,"h":299,"rowY":686,"meter":"0","minusOff":true,"plusOff":false} — row moved 0px from the first
+  errors: none
+chromium motion390
+  frame chromium-390-motion-arrive-0.png
+  frame chromium-390-motion-arrive-1.png
+  frame chromium-390-motion-arrive-2.png
+  frame chromium-390-motion-arrive-3.png
+  frame chromium-390-motion-arrive-4.png
+  frame chromium-390-motion-arrive-5.png
+  frame chromium-390-motion-arrive-6.png
+  frame chromium-390-motion-arrive-7.png
+  frame chromium-390-motion-plus-0.png
+  frame chromium-390-motion-plus-1.png
+  frame chromium-390-motion-plus-2.png
+  frame chromium-390-motion-plus-3.png
+  frame chromium-390-motion-plus-4.png
+  frame chromium-390-motion-plus-5.png
+  frame chromium-390-motion-plus-6.png
+  frame chromium-390-motion-plus-7.png
+  errors: none
+chromium member320
+  frame chromium-320-member-boysnoize-doors.png
+  Robyn open 320: {"top":127,"h":441,"rowY":325,"meter":"0","minusOff":true,"plusOff":false}
+  frame chromium-320-member-robyn-open.png
+  after + 320: {"top":127,"h":441,"rowY":325,"meter":"1","minusOff":false,"plusOff":false}
+  frame chromium-320-member-robyn-plus1.png
+  errors: none
+chromium guest390
+  guest Robyn: {"top":204,"h":640,"rowY":374,"meter":"0","minusOff":false,"plusOff":false}
+  frame chromium-390-guest-robyn-open.png
+  frame chromium-390-guest-robyn-thread-end.png
+  frame chromium-390-guest-robyn-plus-asks.png
+  history after + : {"joinShelf":true} length 3
+  errors: none
+chromium keyboard390
+  frame chromium-390-member-robyn-typing.png
+  errors: none
+chromium desktop1280
+  frame chromium-1280-mouse-robyn-zoom.png
+  desktop shelf: {"top":64,"h":672,"rowY":206,"meter":"0","minusOff":true,"plusOff":false}
+  frame chromium-1280-mouse-robyn-shelf.png
+  frame chromium-1280-mouse-robyn-shelf-plus1.png
+  errors: none
+writes seen (all refused): POST /api/person, POST /api/crew, POST /api/person, POST /api/person, POST /api/crew, POST /api/person, POST /api/person, POST /api/person

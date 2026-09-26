@@ -29,6 +29,10 @@ html { touch-action: manipulation; }
   padding: 9px 11px 20px; text-align: center; overflow: hidden;
   cursor: pointer; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none;
   font-family: inherit; color: inherit; /* role=button div, keyboard-first (AX-1) */
+  /* A finger's tap opens the card's shelf (the tap change, 2026-09-26): the
+   * shelf rising IS the answer, so the engine's own flash on the card (grey
+   * on iOS, blue on Android) is noise under the dimming wall. */
+  -webkit-tap-highlight-color: transparent;
 }
 .card.animated { background-size: 180% 180%; animation: gradShift 12s ease-in-out infinite; }
 .card .name { position: relative; font-weight: 700; font-size: var(--fs-card); line-height: 1.2; }
@@ -1504,21 +1508,23 @@ a.f-link:hover { border-bottom-color: rgba(255, 255, 255, .75); }
 .zoom-card.doors .f-name,
 .zoom-card.doors .f-grown > * { max-width: min(100%, var(--zoom-col)); }
 .zoom-card.doors .f-who { contain: inline-size; align-self: center; width: 100%; }
-.zoom-card .f-chips.f-step-row { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+/* The same row on the notes shelf's card (the tap change, 2026-09-26), with
+ * YOUR meter where the zoom has its notes door (.f-meter below). */
+:is(.zoom-card, .sheet-card) .f-chips.f-step-row { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
                                  align-items: center; gap: 0; align-self: stretch; margin-top: auto; }
-.zoom-card .f-chips.f-step-row > .f-step {
+:is(.zoom-card, .sheet-card) .f-chips.f-step-row > .f-step {
   -webkit-appearance: none; appearance: none; position: relative; box-sizing: border-box;
   height: 44px; min-height: 44px; min-width: 0; margin: 0; padding: 0;
   display: flex; align-items: center; background: none; border: 0; border-radius: var(--r-card);
   color: var(--text-primary); cursor: pointer; -webkit-tap-highlight-color: transparent;
 }
-.zoom-card .f-chips.f-step-row > .f-step.minus { justify-content: flex-start; padding-left: 10px; }
-.zoom-card .f-chips.f-step-row > .f-step.plus { justify-content: flex-end; padding-right: 10px; }
-.zoom-card .f-step-dot { font: 500 24px/1 var(--font-ui); text-shadow: 0 1px 3px rgba(0, 0, 0, .45); transition: opacity 80ms ease; }
-.zoom-card .f-step:disabled { cursor: default; }
-.zoom-card .f-step:disabled .f-step-dot { opacity: .3; }
-.zoom-card .f-step:not(:disabled):active .f-step-dot { opacity: .6; }
-.zoom-card .f-chips.f-step-row > .f-step:focus-visible { outline: 2px solid var(--text-primary) !important; outline-offset: -2px; }
+:is(.zoom-card, .sheet-card) .f-chips.f-step-row > .f-step.minus { justify-content: flex-start; padding-left: 10px; }
+:is(.zoom-card, .sheet-card) .f-chips.f-step-row > .f-step.plus { justify-content: flex-end; padding-right: 10px; }
+:is(.zoom-card, .sheet-card) .f-step-dot { font: 500 24px/1 var(--font-ui); text-shadow: 0 1px 3px rgba(0, 0, 0, .45); transition: opacity 80ms ease; }
+:is(.zoom-card, .sheet-card) .f-step:disabled { cursor: default; }
+:is(.zoom-card, .sheet-card) .f-step:disabled .f-step-dot { opacity: .3; }
+:is(.zoom-card, .sheet-card) .f-step:not(:disabled):active .f-step-dot { opacity: .6; }
+:is(.zoom-card, .sheet-card) .f-chips.f-step-row > .f-step:focus-visible { outline: 2px solid var(--text-primary) !important; outline-offset: -2px; }
 /* The reach: out to the card's edges (the zoom's padding is 12px 14px). */
 .zoom-card .f-chips.f-step-row > .f-step.minus::after { content: ''; position: absolute; inset: -6px 0 -12px -14px; }
 .zoom-card .f-chips.f-step-row > .f-step.plus::after { content: ''; position: absolute; inset: -6px -14px -12px 0; }
@@ -1527,3 +1533,46 @@ a.f-link:hover { border-bottom-color: rgba(255, 255, 255, .75); }
  * meet it on either side. */
 .zoom-card .f-chips.f-step-row > .f-chip.notes { position: relative; } /* its own box, on a mouse too — the reach must not become the row's */
 .zoom-card .f-chips.f-step-row > .f-chip.notes::after { content: ''; position: absolute; inset: calc(50% - 22px) 0; }
+/* The shelf's row (the tap change, 2026-09-26 — card-facts.js stepRow with
+ * meterMiddle): the zoom's bare − and + on the card's floor, their reach out
+ * to the card's own edges (its padding is 16px 16px 17px), and between them
+ * YOUR meter — the resting card's corner chip (.chip-meter: your colour at .5,
+ * the white edge that means you, three bars lit one per +, then MUST in the
+ * display face) drawn at twice its size, so each + visibly fills a bar. With
+ * nothing picked, and for a guest, it is the same chip hollow. Never --brand,
+ * never --fest. */
+.sheet-card .f-chips.f-step-row { margin-top: 1px; }
+.sheet-card .f-chips.f-step-row > .f-step.minus::after { content: ''; position: absolute; inset: -6px 0 -17px -16px; }
+.sheet-card .f-chips.f-step-row > .f-step.plus::after { content: ''; position: absolute; inset: -6px -16px -17px 0; }
+.sheet-card .f-meter { display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box;
+                       height: 24px; min-width: 42px; padding: 0 11px; border-radius: var(--r-pill);
+                       border: 1.5px solid #fff; color: #fff; line-height: 1; }
+.sheet-card .f-meter.empty { background: rgba(12, 10, 20, .3); border-color: rgba(255, 255, 255, .3); }
+.sheet-card .f-meter.empty .bar { opacity: .24; }
+.sheet-card .f-meter .bars { display: inline-flex; align-items: flex-end; gap: 3px; height: 13px; }
+.sheet-card .f-meter .bar { width: 4px; border-radius: 1.5px; background: #fff; opacity: .3; transform-origin: 50% 100%; }
+.sheet-card .f-meter .bar.on { opacity: 1; }
+.sheet-card .f-meter .bar:nth-child(1) { height: 5px; }
+.sheet-card .f-meter .bar:nth-child(2) { height: 9px; }
+.sheet-card .f-meter .bar:nth-child(3) { height: 13px; }
+.sheet-card .f-meter .must { display: block; font-family: var(--font-display); font-size: 13px; letter-spacing: var(--track-display); line-height: 1; }
+/* A step on the shelf (card-facts.js refreshSheetCard): the old wash thins
+ * away over the new one, and a leaving piece of the who-row is parked where it
+ * stood — the zoom's own rules (.zoom-card > .f-parked), on the sheet's card. */
+.sheet-card > .sc-wash-old { position: absolute; inset: 0; pointer-events: none; border-radius: inherit; }
+.sheet-card > .sc-wash-old.animated { background-size: 180% 180%; }
+.sheet-card > .f-parked { position: absolute; box-sizing: border-box; margin: 0; pointer-events: none; z-index: 1; }
+.sheet-card > .f-parked.f-ghost { z-index: 3; padding: 0; gap: 0; max-width: none; }
+.sheet-card > .f-ghost > * { margin: 0; }
+/* The box to write in stays in reach (the tap change): a shelf is where a
+ * finger lands on every card now, and on a long thread the composer sat after
+ * the last note, a whole scroll away. It sticks to the sheet's bottom edge on
+ * the dock's ground, clear of the home indicator, with the thread passing
+ * under it. (The sheet's own 16px padding is what the negative margins and
+ * the -16px offset give back.) */
+.sheet > .composer-wrap { position: sticky; bottom: -16px; z-index: 3;
+                          margin: 0 -16px -16px; padding: 10px 16px calc(14px + env(safe-area-inset-bottom, 0px));
+                          background: var(--dock); box-shadow: 0 -12px 16px -12px rgba(0, 0, 0, .55); }
+/* The shelf rises from the bottom edge in script on a phone (notes.js arrive);
+ * the dialog's CSS scale-fade stands down for it. */
+.sheet.rising { animation: none; }

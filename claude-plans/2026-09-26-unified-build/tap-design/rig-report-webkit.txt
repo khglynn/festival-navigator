@@ -1,0 +1,44 @@
+webkit member390
+  Robyn open: {"top":204,"h":640,"rowY":373,"meter":"0","minusOff":true,"plusOff":false}
+  frame webkit-390-member-robyn-open.png
+  after +: {"top":204,"h":640,"rowY":373,"meter":"1","minusOff":false,"plusOff":false}
+  frame webkit-390-member-robyn-plus1.png
+  after + x4: {"top":204,"h":640,"rowY":373,"meter":"4","minusOff":false,"plusOff":true}
+  frame webkit-390-member-robyn-must.png
+  frame webkit-390-member-robyn-thread-end.png
+  frame webkit-390-member-robyn-closed.png
+  Boys Noize open: {"top":496,"h":348,"rowY":686,"meter":"0","minusOff":true,"plusOff":false}
+  frame webkit-390-member-boysnoize-doors.png
+  errors: none
+webkit grows390
+  Oskar open: {"top":546,"h":298,"rowY":686,"meter":"0","minusOff":true,"plusOff":false}
+  frame webkit-390-member-unpicked-open.png
+  after +: {"top":517,"h":327,"rowY":686,"meter":"1","minusOff":false,"plusOff":false} — row moved 0px, top rose 29px
+  frame webkit-390-member-unpicked-plus1.png
+  after −: {"top":546,"h":298,"rowY":686,"meter":"0","minusOff":true,"plusOff":false} — row moved 0px from the first
+  errors: none
+webkit motion390
+webkit member320
+  frame webkit-320-member-boysnoize-doors.png
+  Robyn open 320: {"top":127,"h":441,"rowY":324,"meter":"0","minusOff":true,"plusOff":false}
+  frame webkit-320-member-robyn-open.png
+  after + 320: {"top":127,"h":441,"rowY":324,"meter":"1","minusOff":false,"plusOff":false}
+  frame webkit-320-member-robyn-plus1.png
+  errors: none
+webkit guest390
+  guest Robyn: {"top":204,"h":640,"rowY":373,"meter":"0","minusOff":false,"plusOff":false}
+  frame webkit-390-guest-robyn-open.png
+  frame webkit-390-guest-robyn-thread-end.png
+  frame webkit-390-guest-robyn-plus-asks.png
+  history after + : {"joinShelf":true} length 3
+  errors: none
+webkit keyboard390
+  frame webkit-390-member-robyn-typing.png
+  errors: none
+webkit desktop1280
+  frame webkit-1280-mouse-robyn-zoom.png
+  desktop shelf: {"top":64,"h":672,"rowY":205,"meter":"0","minusOff":true,"plusOff":false}
+  frame webkit-1280-mouse-robyn-shelf.png
+  frame webkit-1280-mouse-robyn-shelf-plus1.png
+  errors: none
+writes seen (all refused): POST /api/person, POST /api/crew, POST /api/person, POST /api/person, POST /api/person, POST /api/person
