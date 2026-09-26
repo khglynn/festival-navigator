@@ -61,6 +61,24 @@ having under test anyway); and "whole" was read from fractional rects at 1px whe
 with the pill folded to exactly the avatar's width, so the row was as it is with no highlight at all.
 The tolerance is now the row's own (two pixels in rects).
 
+## Sol's release review of `b78b274` (2026-09-26)
+
+1. **IMPORTANT — two adds could race** (carried over from the old add sheet): Add waited for its
+   answer, but a chip or Enter started a second POST, and out-of-order answers could let the older one
+   replace the crew view and the success sheet show the wrong person's link. Fixed: one add at a time —
+   the button, Enter and every chip wait for the answer (the field goes read-only, not disabled, so it
+   keeps focus and the keyboard). `tests/people-menu.test.mjs` holds the POST open and tries chip →
+   Enter → chip, and typed name + Enter → chip → Add: one POST, the first one's link, the other never
+   added — and fails without the guard (a second POST).
+2. **A night-clock flake** (guest menu "the menu is open", passed alone and on a rerun): the popstate
+   from the previous test's "Look around" (the shelf pops its own history entry) landed after the next
+   test tapped the +, and closed the menu it had just opened — menus go with the page on any popstate,
+   by law. Reproduced exactly by not waiting for that traversal. Harness-only: the traversal is one task
+   after the tap on Look around, far inside a human's next tap, and the app adds no history special case
+   mid-release (CLAUDE.md, "Browser history is shared state"). The tests now wait for the traversal
+   to land (`lookAround`, `historySettled`), never a fixed time; 3× under the night clock with eight
+   CPU hogs, unit and browser guest cases, all green.
+
 ## For whoever merges this with live/tap and live/plan
 
 1. `js/v3/app.js`: `shelfOpener()`'s last lines (one line changed here; live/tap edits a line
