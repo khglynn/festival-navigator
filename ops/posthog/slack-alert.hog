@@ -50,9 +50,18 @@ fun slackTime(prefix, iso) {
 
 // "iPhone · iOS 26 · Safari 26" from PostHog's standard device keys.
 fun deviceLine(pr) {
-  let os := empty(pr.$os) ? null : trim(concat(pr.$os, ' ', toInt(pr.$os_version)))
-  let browser := empty(pr.$browser) ? null : trim(concat(pr.$browser, ' ', toInt(pr.$browser_version)))
-  return joinPresent([pr.$device, os, browser], ' · ')
+  // Error-issue events (kind = $error_tracking_issue_created/_reopened) nest the raw
+  // exception's own properties under exception_props (PostHog copies the whole captured
+  // event there, not spread onto the top level). Survey events never set exception_props,
+  // so this falls through to the plain top-level reads unchanged.
+  let device := pr?.exception_props?.$device ?? pr.$device
+  let osName := pr?.exception_props?.$os ?? pr.$os
+  let osVersion := pr?.exception_props?.$os_version ?? pr.$os_version
+  let browserName := pr?.exception_props?.$browser ?? pr.$browser
+  let browserVersion := pr?.exception_props?.$browser_version ?? pr.$browser_version
+  let os := empty(osName) ? null : trim(concat(osName, ' ', toInt(osVersion)))
+  let browser := empty(browserName) ? null : trim(concat(browserName, ' ', toInt(browserVersion)))
+  return joinPresent([device, os, browser], ' · ')
 }
 
 // "at openZoom · card-facts.js:212": the in-app frame nearest the crash.
@@ -61,7 +70,8 @@ fun deviceLine(pr) {
 // and processed ones (resolved_name/source/line), then falls back to the
 // flattened in-app lists PostHog adds during processing.
 fun topFrame(pr) {
-  let frames := pr?.$exception_list?.[1]?.stacktrace?.frames ?? []
+  // Same exception_props nesting as deviceLine() above.
+  let frames := pr?.exception_props?.$exception_list?.[1]?.stacktrace?.frames ?? pr?.$exception_list?.[1]?.stacktrace?.frames ?? []
   let inApp := arrayFilter(x -> x?.in_app == true, frames)
   let fr := inApp?.[-1] ?? frames?.[-1]
   let fnName := null
@@ -72,8 +82,8 @@ fun topFrame(pr) {
     file := fr.source ?? fr.filename
     lineNo := fr.line ?? fr.lineno
   } else {
-    fnName := pr?.$exception_functions?.[-1]
-    file := pr?.$exception_sources?.[-1]
+    fnName := pr?.exception_props?.$exception_functions?.[-1] ?? pr?.$exception_functions?.[-1]
+    file := pr?.exception_props?.$exception_sources?.[-1] ?? pr?.$exception_sources?.[-1]
   }
   if (fnName == '?' or fnName == '<anonymous>') {
     fnName := null
@@ -112,15 +122,82 @@ fun plainSection(s) {
   return {'type': 'section', 'text': {'type': 'plain_text', 'text': s, 'emoji': false}}
 }
 
+// "What it means" for a non-developer, Fest only (the kind vocabulary below is
+// festival-navigator's own code paths — js/errlog.js, js/v3/app.js, js/v3/card-facts.js,
+// js/sync.js — meaningless for Eachie, so this whole feature is gated off app_label/
+// exception_props). No LLM, no lookup service: a small table, checked once per message.
+// Kevin, 2026-09-26: "can the error include semantic meaning... the simple way."
+fun hasText(haystack, needle) {
+  return notEmpty(haystack) and position(haystack, needle) > 0
+}
+
+fun hasAny(haystack, needles) {
+  for (let n in needles) {
+    if (hasText(haystack, n)) {
+      return true
+    }
+  }
+  return false
+}
+
+// The message (`props.description`, the exception's own text) says more than the kind
+// alone when kind is a generic catch-all ('error', 'promise') or a real Error was thrown
+// during boot/a module load. Order matters: first match wins. No match, no line — never a
+// guess (Kevin's rule).
+fun messageMeaning(text) {
+  if (empty(text)) {
+    return null
+  }
+  if (hasText(text, 'Importing binding name')) {
+    return 'This phone loaded an old copy of part of the app next to new parts. It usually fixes itself when the app is reopened.'
+  }
+  if (hasText(text, 'Unexpected token') and hasText(text, '<')) {
+    return 'The phone tried to load part of the app and got a web page instead of code — usually a bad or missing deploy file. Often fixes itself on reopen; tell Claude if it doesn’t.'
+  }
+  if (hasAny(text, ['QuotaExceededError', 'exceeded the quota', 'quota has been exceeded'])) {
+    return 'This phone’s storage is full or restricted, so saving locally is failing. Reopening won’t fix it — the phone needs space freed up or site data allowed.'
+  }
+  if (hasText(text, 'SecurityError')) {
+    return 'This phone has blocked the app from using its local storage (a browser privacy setting). Some things may not save until that’s allowed.'
+  }
+  if (hasText(text, 'Illegal invocation')) {
+    return 'A browser method was called in a way it doesn’t allow — a code issue, not something the person did. Tell Claude.'
+  }
+  if (hasAny(text, ['Failed to fetch', 'Load failed', 'NetworkError when attempting to fetch resource', 'The network connection was lost', 'The Internet connection appears to be offline'])) {
+    return 'The phone couldn’t reach the server — usually a bad signal or the phone going offline. Not harmful; it’ll catch up once the connection’s back.'
+  }
+  return null
+}
+
+// One line per kind the app actually sends (js/errlog.js's hookGlobalErrors, plus every
+// record() call site: js/sync.js, js/v3/app.js, js/v3/card-facts.js) — checked 2026-09-26.
+// A kind not in this table (or a future new one) gets no meaning line, same as an
+// unmatched message: no guess.
+let KIND_MEANINGS := {
+  'boot': 'The app couldn’t open on this phone. Serious — tell Claude.',
+  'boot:superseded': 'The app failed to open once, but a newer version took over first — nobody saw a broken screen. Not urgent unless it keeps happening.',
+  'module-load': 'Part of the app didn’t load, usually right after a new release. Often fixes itself on reopen; tell Claude if it keeps happening.',
+  'error': 'Something broke while using the app. Worth a look, especially if it repeats.',
+  'promise': 'A background task failed quietly — the person may not have noticed anything. Worth a look if it repeats.',
+  'sync:blocked': 'The server refused to save picks — they stay on the phone but won’t reach the crew until this clears. Worth a look; not the whole app down.',
+  'zoom-close-after-click': 'A card’s details closed right after a tap. Annoying, not harmful.',
+  'zoom:grow': 'Opening a card’s zoomed details failed and was cleaned up automatically. Annoying, not harmful.',
+  'zoom:refresh': 'Updating an open card’s zoomed details failed and was cleaned up automatically. Annoying, not harmful.',
+  'zoom:shrink': 'Closing a card’s zoomed details failed and was cleaned up automatically. Annoying, not harmful.',
+  'warm-open:catalog': 'A background attempt to preload the festival list failed; the phone just fetches it the normal way instead. Not noticeable, not harmful.',
+  'warm-open:fest-file': 'A background attempt to preload this festival’s schedule failed; the phone just fetches it the normal way instead. Not noticeable, not harmful.'
+}
+
 // ---------- §1 and §2: error issues ----------
 
 if (kind == '$error_tracking_issue_created' or kind == '$error_tracking_issue_reopened' or kind == '$error_tracking_issue_spiking') {
   let reopened := kind == '$error_tracking_issue_reopened'
   let spiking := kind == '$error_tracking_issue_spiking'
-  let boot := props.kind == 'boot'
+  let kindValue := props.exception_props?.kind ?? props.kind
+  let boot := kindValue == 'boot'
   let icon := spiking ? '📈' : (reopened ? '🔁' : (boot ? '🔴' : '🟠'))
   let verb := spiking ? 'Spiking' : (reopened ? 'Back again' : (boot ? 'App won’t open' : 'New error'))
-  let name := clip(props.name ?? props.$exception_types?.[1] ?? 'Error', 110)
+  let name := clip(props.name ?? props.exception_props?.$exception_types?.[1] ?? props.$exception_types?.[1] ?? 'Error', 110)
 
   blocks := arrayPushBack(blocks, header(concat(icon, ' ', app, ' · ', verb, ': ', name)))
 
@@ -131,7 +208,13 @@ if (kind == '$error_tracking_issue_created' or kind == '$error_tracking_issue_re
     let rate := (baseline > 0) ? concat(toString(round(cur / baseline)), '× the usual rate') : 'first spike, no baseline yet'
     countLine := concat(toString(toInt(cur)), ' in the last 5 minutes · ', rate)
   }
-  let bodyText := joinPresent([clip(props.description, 280), topFrame(props), countLine], '\n')
+  let isFestAlert := (app == 'Fest') or notEmpty(props.exception_props)
+  let meaning := null
+  if (isFestAlert) {
+    meaning := kindValue == 'boot' ? KIND_MEANINGS.boot : (messageMeaning(props.description) ?? KIND_MEANINGS[kindValue])
+  }
+  let meaningLine := empty(meaning) ? null : concat('What it means: ', meaning)
+  let bodyText := joinPresent([clip(props.description, 280), meaningLine, topFrame(props), countLine], '\n')
   if (notEmpty(bodyText)) {
     blocks := arrayPushBack(blocks, plainSection(bodyText))
   }
@@ -139,7 +222,12 @@ if (kind == '$error_tracking_issue_created' or kind == '$error_tracking_issue_re
   let seen := slackTime(spiking ? 'Detected' : (reopened ? 'Back' : 'Seen'), props.exception_timestamp)
   let firstSeen := reopened ? slackTime('first seen', props.first_seen) : null
   let timeText := joinPresent([seen, firstSeen], ' · ')
-  let facts := joinPresent([props.build, deviceLine(props), props.screen ?? props.$pathname, props.member_name], ' · ')
+  let facts := joinPresent([
+    props.exception_props?.build ?? props.build,
+    deviceLine(props),
+    props.exception_props?.screen ?? props.screen ?? props.$pathname,
+    props.exception_props?.member_name ?? props.member_name
+  ], ' · ')
   let ctx := []
   if (notEmpty(timeText)) {
     ctx := arrayPushBack(ctx, {'type': 'mrkdwn', 'text': timeText})

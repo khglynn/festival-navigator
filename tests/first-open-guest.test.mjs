@@ -5,10 +5,11 @@
 //   no "who are you?" list — with a welcome card above the dock saying what
 //   this is, once per phone;
 //
-//   a guest's FINGER tap on a card opens it (its zoom, with "+ note" and "Pick
-//   shows"); a click, or Pick shows, asks who they are on a shelf over the
-//   wall that never moves (the guest shelf round), and on join the artist
-//   becomes their pick through the ordinary pick path; "Look around" drops it;
+//   a guest's FINGER tap on a card opens it (its zoom, with the same − · note
+//   · + a member's has); a click, or any of those doors, asks who they are on
+//   a shelf over the wall that never moves (the guest shelf round), and on
+//   join a + (or a click) becomes their pick through the ordinary pick path
+//   while − and the notes door just join; "Look around" drops it;
 //
 //   the dock's empty "you" slot is a dashed + that asks the same question;
 //
@@ -152,7 +153,7 @@ test('the welcome card says what this is, above the dock, in C1’s words', () =
     'Every friend has a color — the more color on a card, the more of us want to go. More info', 'one line, then the link');
   assert.equal(box.querySelectorAll('.avatar-cluster .avatar').length, 2, 'the crew, in their colours');
   const halves = [...box.querySelectorAll('.bring-actions button')].map((b) => b.textContent);
-  assert.deepEqual(halves, ['Look around', 'Pick shows'], 'two halves: the quiet way to look, then the way to pick');
+  assert.deepEqual(halves, ['Pick shows', 'Look around'], 'two halves: the way to pick first, on the left; the quiet way to look on the right');
   assert.ok(box.querySelector('.bring-actions .btn-ghost').textContent === 'Look around', 'looking is the outlined one');
   assert.ok(buttonNamed(box, 'Pick shows').classList.contains('btn-tonal'), 'picking is the filled one');
   const more = box.querySelector('.bring-sub .welcome-more');
@@ -180,14 +181,17 @@ test('"Pick shows" on the welcome asks on the shelf, over the wall — nothing w
   localStorage.removeItem('fn_welcome_v1');
 });
 
-test('a guest’s finger tap on a card opens it — + note and Pick shows inside — and writes nothing', async () => {
+test('a guest’s finger tap on a card opens it — − · note · + along its floor — and writes nothing', async () => {
   fingerTap(cardOf('Robyn'));
   await settle(10);
   const zoom = document.querySelector('#zoom-layer .zoom-card');
   assert.ok(zoom, 'the card’s zoom, the view a member gets by holding');
   assert.equal(shelf(), null, 'nothing asked yet: a tap looks');
-  const buttons = [...zoom.querySelectorAll('button')].map((b) => b.textContent);
-  assert.deepEqual(buttons, ['+ note', 'Pick shows']);
+  const doors = [...zoom.querySelectorAll('.f-step-row > *')];
+  assert.deepEqual(doors.map((b) => b.textContent), ['−', '+ note', '+'], 'the same three doors a member gets');
+  assert.ok(doors.every((b) => b.tagName === 'BUTTON' && !b.disabled), 'all three live: each one asks who you are');
+  assert.equal(zoom.lastElementChild, zoom.querySelector('.f-step-row'), 'the row is the card’s floor');
+  assert.equal(zoom.querySelector('.f-pick'), null, 'no special Pick shows button any more');
   // (a tap taking the welcome down: first-open-tap-welcome.test.mjs, where it is up)
   // A tap on the zoom's body does nothing for a guest: reading never asks by accident.
   zoom.click();
@@ -208,8 +212,8 @@ test('with a card open, a guest finger’s tap on another card only closes it �
   assert.ok(document.querySelector('#zoom-layer .zoom-card'), 'a fresh tap opens a card');
 });
 
-test('Pick shows in the zoom asks on the shelf, naming the artist; the zoom goes back into its card', async () => {
-  const pick = document.querySelector('#zoom-layer .f-pick');
+test('+ in the zoom asks on the shelf, naming the artist; the zoom goes back into its card', async () => {
+  const pick = document.querySelector('#zoom-layer .f-step.plus');
   pick.dispatchEvent(new shell.dom.window.MouseEvent('mousedown', { bubbles: true })); // a real press on the overlay
   pick.click();
   await settle(10);
@@ -223,6 +227,7 @@ test('Pick shows in the zoom asks on the shelf, naming the artist; the zoom goes
   assert.equal(shelfGo().textContent, 'Join');
   assert.equal(shelfGo().disabled, true, 'nothing chosen: nothing to answer');
   assert.equal(shelfLook().textContent, 'Look around', 'in the welcome card’s words');
+  assert.equal(shelf().querySelector('.js-field').placeholder, 'Add your name', 'Kevin’s words (2026-09-25)');
 });
 
 test('claiming takes two taps: the name, then "I’m Maya" — and a typed name reads as what it will do', () => {
@@ -311,10 +316,10 @@ test('Settings, as a guest: no door writes into the crew, and You says how to jo
   assert.deepEqual(writes, []);
 });
 
-test('joining from a tap: one POST for the person, and the tapped artist is their first pick', async () => {
+test('joining from a tap: one POST for the person, and the + they tapped is their first pick', async () => {
   fingerTap(cardOf('Kettama'));
   await settle(10);
-  document.querySelector('#zoom-layer .f-pick').click();
+  document.querySelector('#zoom-layer .f-step.plus').click();
   await settle(10);
   assert.equal(shelfLine(), 'Pick Kettama as…');
   typeName('Sam');
@@ -332,6 +337,14 @@ test('joining from a tap: one POST for the person, and the tapped artist is thei
     'through the ordinary pick path — queued (or already pushed) like any tap');
   assert.equal($('dock-you').textContent, 'S', 'the + became Sam');
   assert.ok(!$('dock-you').classList.contains('guest'));
+  // The just-joined welcome (the independent walk of b29aac0): the guest card
+  // was read before the join could land, and this one has its own marker —
+  // it is where Sam learns that a tap now picks.
+  const card = welcome();
+  assert.ok(card, 'the just-joined welcome is up');
+  assert.match(card.querySelector('.bring-sub').textContent, /Tap any artist to add yours/);
+  assert.deepEqual([...card.querySelectorAll('.bring-actions button')].map((b) => b.textContent), ['Got it'], 'a member’s one door');
+  assert.equal(localStorage.getItem('fn_welcome_joined_v1'), '1', 'once per phone: shown is seen');
 });
 
 test('the next open walks Sam straight in — claimed, no question, no welcome', async () => {

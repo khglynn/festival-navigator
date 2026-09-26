@@ -38,20 +38,36 @@ export function rememberWelcomeSeen() {
   try { localStorage.setItem(LS_WELCOME, '1'); } catch { /* memory holds it for this visit */ }
 }
 
+// The just-joined card has its OWN marker (the independent walk of b29aac0):
+// the guest card is marked read the moment a guest touches the wall or asks
+// to join — always before the join lands — so sharing one marker meant the
+// card a new member most needs ("tap any artist to add yours", now that a tap
+// picks) could never show. It shows once per phone, after a fresh join.
+const LS_JOINED = 'fn_welcome_joined_v1';
+let joinedSeenHere = false;
+export function joinedWelcomeSeen() {
+  return joinedSeenHere || getLS(LS_JOINED) != null;
+}
+export function rememberJoinedWelcomeSeen() {
+  joinedSeenHere = true;
+  try { localStorage.setItem(LS_JOINED, '1'); } catch { /* memory holds it for this visit */ }
+}
+
 // ---- the words -------------------------------------------------------------------
 // EVERY word the card says lives in WORDS — one edit here and nowhere else;
 // the join screen's way back reads WORDS.look too. Kevin's words (review
-// page, 2026-09-25): the buttons say the choice — "Look around" (left, the
-// quiet way, same as dismissing) or "Pick shows" (right, the join) — so a
+// page, 2026-09-25): the buttons say the choice — "Pick shows" (left, the
+// join, filled) or "Look around" (right, the quiet way, same as dismissing;
+// flipped the same day from the round-3 frames) — so a
 // guest's body is the one line about colour. The crew's name rides the label beside its faces, so the line can
 // say "the crew's plan" and stay one line. "Want to go", never "going": a
 // pick is interest, not a ticket. A member who has just joined already has a
-// colour — their card has no join, "Got it" on the left, and a line on how to pick.
+// colour — their card has no join, "Got it" its one button, and a line on how to pick.
 export const WORDS = {
-  look: 'Look around',           // a guest's left button (and the join screen's way back)
-  gotIt: 'Got it',               // a fresh member's left button
+  look: 'Look around',           // a guest's right-hand button, the quiet one (and the join screen's way back)
+  gotIt: 'Got it',               // a fresh member's one button
   how: 'More info',              // the explanation's last words, drawn as a link (Kevin, the guest shelf round)
-  join: 'Pick shows',            // a guest's right-hand button: the join
+  join: 'Pick shows',            // a guest's left button, filled: the join
   line: (fest) => `This is the crew’s plan for ${fest}.`,
   colors: 'Every friend has a color — the more color on a card, the more of us want to go.',
   memberNext: 'Tap any artist to add yours.',
@@ -154,12 +170,14 @@ export function showWelcome(host, { copy, faces = [], ctx = null, onGotIt, onHow
   sub.appendChild(more);
   text.append(node('div', 'bring-line', copy.line), sub);
   const actions = node('div', 'bring-actions');
-  // Two halves: the quiet way to look on the left, outlined; the way to pick
-  // on the right, filled. A member who has just joined has the one door.
+  // Two halves: the way to pick on the LEFT, filled — the main action, where
+  // the eye starts — and the quiet way to look on the right, outlined (Kevin,
+  // 2026-09-25, flipping the round-3 frames). A member who has just joined
+  // has the one door.
   const join = copy.join && onJoin ? node('button', 'btn-tonal welcome-join', copy.join) : null;
   const yes = node('button', join ? 'btn-ghost' : 'btn-tonal', copy.yes);
-  actions.append(yes);
   if (join) actions.append(join);
+  actions.append(yes);
   card.append(head, text, actions);
   box.appendChild(card);
   host.appendChild(box);
@@ -179,19 +197,19 @@ export function showWelcome(host, { copy, faces = [], ctx = null, onGotIt, onHow
       { duration: CASCADE_MS, delay: ARRIVE_DELAY_MS + GROW_MS / 2 + i * STAGGER_MS * 2, easing: EASE_ARRIVE, fill: 'backwards' },
     ));
     const after = ARRIVE_DELAY_MS + GROW_MS / 2 + people.length * STAGGER_MS * 2;
-    [yes, join].filter(Boolean).forEach((b, i) => b.animate(
+    [join, yes].filter(Boolean).forEach((b, i) => b.animate(
       [{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }],
       { duration: CASCADE_MS, delay: after + i * STAGGER_MS, easing: EASE_ARRIVE, fill: 'backwards' },
     ));
   }
 
   yes.addEventListener('click', () => {
-    rememberWelcomeSeen();
+    rememberWelcomeSeen(); // the guest card's marker (a member knows the app now too); the just-joined card was marked when it showed
     dismissWelcome({ ctx });
     if (onGotIt) onGotIt();
   });
   // More info (the How it works page) leaves the card where it is: Settings hides it with the wall,
-  // and coming back finds it still there for its left button — which is also the
+  // and coming back finds it still there for its quiet button — which is also the
   // moment anything waiting behind it (the bring-your-picks offer) may ask.
   more.addEventListener('click', () => { if (onHow) onHow(); });
   // "Pick shows": the ordinary join, with nothing waiting — the app

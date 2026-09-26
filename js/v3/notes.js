@@ -30,7 +30,7 @@ import { dayLabelParts } from '../time.js';
 import * as model from './model.js';
 import { hslOf, strokeOf } from './palette.js';
 import { colorIndexOf } from './wall.js';
-import { factsFor, sheetCard } from './card-facts.js';
+import { factsFor, sheetCard, focusQuietly } from './card-facts.js';
 import { router } from './router.js';
 import { loadJSON, saveLS } from '../util.js';
 
@@ -953,7 +953,9 @@ export function closeSheet() {
   // captured. Caught on staging: the ✕ closed the sheet and focus fell to <body>
   // even though every piece of the fix was in place (finish pass, 2026-07-12).
   if (!wasOpen) return;
-  if (restoreFocusTo && restoreFocusTo.isConnected) restoreFocusTo.focus();
+  // Quietly: a card the focus returns to must not read it as keyboard
+  // navigation and grow a zoom (card-facts.js focusQuietly).
+  if (restoreFocusTo && restoreFocusTo.isConnected) focusQuietly(restoreFocusTo, {});
   restoreFocusTo = null;
 }
 

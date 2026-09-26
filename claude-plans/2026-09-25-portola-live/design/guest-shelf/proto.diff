@@ -1,0 +1,565 @@
+--- a/js/v3/welcome.js
++++ b/js/v3/welcome.js
+@@ -50,7 +50,7 @@
+ export const WORDS = {
+   look: 'Look around',           // a guest's left button (and the join screen's way back)
+   gotIt: 'Got it',               // a fresh member's left button
+-  how: 'How it works',
++  how: 'More info',              // Kevin, 2026-09-25 (was How it works); a link at the end of the line
+   join: 'Pick shows',            // a guest's right-hand button: the join
+   line: (fest) => `This is the crew’s plan for ${fest}.`,
+   colors: 'Every friend has a color — the more color on a card, the more of us want to go.',
+@@ -146,16 +146,21 @@
+   if (cluster) head.appendChild(cluster);
+   head.appendChild(node('span', 'micro-label', copy.label));
+   const text = node('div', 'bring-text');
+-  text.append(node('div', 'bring-line', copy.line), node('div', 'bring-sub', copy.sub));
++  // "More info" is the last words of the explanation, not a third button: the
++  // card's choice is two doors of one width (guest-shelf round, 2026-09-25).
++  const sub = node('div', 'bring-sub', copy.sub + ' ');
++  const more = node('button', 'welcome-more', copy.more);
++  sub.appendChild(more);
++  text.append(node('div', 'bring-line', copy.line), sub);
+   const actions = node('div', 'bring-actions');
+-  const yes = node('button', 'btn-tonal', copy.yes);
+-  const more = node('button', 'btn-ghost', copy.more);
+-  actions.append(yes, more);
+-  // The quiet ways to look stay on the left, as the frame drew them; the way
+-  // to join and pick sits on the right (it wraps under them on a 320 phone,
+-  // still to the right).
++  // Two halves: the quiet way to look on the left, the way to pick filled on
++  // the right. A fresh member has only the one (Got it), full width.
++  // Kevin (2026-09-25, button study): the primary on the LEFT — Pick shows,
++  // then Look around.
++  const yes = node('button', copy.join && onJoin ? 'btn-ghost' : 'btn-tonal', copy.yes);
+   const join = copy.join && onJoin ? node('button', 'btn-tonal welcome-join', copy.join) : null;
+   if (join) actions.append(join);
++  actions.append(yes);
+   card.append(head, text, actions);
+   box.appendChild(card);
+   host.appendChild(box);
+@@ -175,7 +180,7 @@
+       { duration: CASCADE_MS, delay: ARRIVE_DELAY_MS + GROW_MS / 2 + i * STAGGER_MS * 2, easing: EASE_ARRIVE, fill: 'backwards' },
+     ));
+     const after = ARRIVE_DELAY_MS + GROW_MS / 2 + people.length * STAGGER_MS * 2;
+-    [yes, more, join].filter(Boolean).forEach((b, i) => b.animate(
++    [join, yes].filter(Boolean).forEach((b, i) => b.animate(
+       [{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }],
+       { duration: CASCADE_MS, delay: after + i * STAGGER_MS, easing: EASE_ARRIVE, fill: 'backwards' },
+     ));
+--- a/js/v3/app.js
++++ b/js/v3/app.js
+@@ -19,7 +19,7 @@
+ import { renderSettings, appSettings, openSubviewByKey } from './settings.js';
+ import { onStorageWriteFail, saveLS, errorText } from '../util.js';
+ import { router, encodeNotesKey, decodeNotesKey } from './router.js';
+-import { wireCardZoom, wireCardFocusZoom, zoomCard, unzoom, dismissZoom, zoomedCard, zoomContains, zoomSnapshot, refreshZoom, festPlaceLine } from './card-facts.js';
++import { wireCardZoom, wireCardFocusZoom, zoomCard, unzoom, dismissZoom, zoomedCard, zoomContains, zoomSnapshot, refreshZoom, festPlaceLine, tapOpensZoom } from './card-facts.js';
+ import { hookGlobalErrors, configureReports, record } from '../errlog.js';
+ // The crash journal listens from the first module tick — an error during
+ // boot is exactly the kind nobody can describe later (2026-08-31). index.html
+@@ -66,6 +66,7 @@
+ import { showActionToast } from './wall.js';
+ // First open, wall first (v92, 2026-09-25): a guest's welcome, once per phone.
+ import { welcomeCopy, welcomeSeen, rememberWelcomeSeen, showWelcome, dismissWelcome, welcomeCard, WORDS } from './welcome.js';
++import { showJoinShelf, closeJoinShelf } from './join-shelf.js';
+ // The warm open (2026-09-23): paint from what this phone holds, freshen after.
+ import { festivalIndexFromCache, festivalFromCache, fetchFestivalFile, cachedCustomFestivals } from '../festivals.js';
+ import { getLS } from '../util.js';
+@@ -102,6 +103,7 @@
+   folded: [],
+   now: null, // tests pin the clock; null = new Date() at render
+   onTap: handleTap,
++  onStep: (artist, el, delta) => stepPick(artist, el, delta),
+   onOpenNotes: (artist, occ = null) => {
+     unzoom({ why: 'notes sheet opened' });
+     openArtistSheet(artist, ctx, onNotesChange, occ);
+@@ -147,7 +149,17 @@
+ // grace close fires, and the first re-entry did nothing (Codex gate,
+ // 2026-08-31). Escape keeps the mark — the hand is still on the card there.
+ document.addEventListener('pointerdown', (e) => {
+-  if (zoomedCard() && !zoomContains(e.target)) unzoom({ why: 'press outside the zoom' });
++  if (!zoomedCard() || zoomContains(e.target)) return;
++  unzoom({ why: 'press outside the zoom' });
++  // PROTOTYPE (guest-shelf round): a FINGER's press outside that lands on
++  // another card only closes — it neither opens that card's zoom nor picks it.
++  // On a dense wall "outside" is almost always another card. A drag that
++  // becomes a scroll sends no click, so the swallow expires on its own.
++  if (e.pointerType !== 'mouse' && e.target.closest && e.target.closest('#wall-root .card[data-artist]')) {
++    const eat = (ev) => { ev.stopPropagation(); ev.preventDefault(); };
++    document.addEventListener('click', eat, { capture: true, once: true });
++    setTimeout(() => document.removeEventListener('click', eat, true), 700);
++  }
+ }, true);
+ // Escape closes ONE layer: a live zoom eats the press before any sheet or
+ // router handler sees it (capture phase) — never both in one keypress.
+@@ -380,9 +392,18 @@
+   positionNowMarks($('wall-root'), ctx.now || new Date());
+ }
+ 
+-function handleTap(artistName) {
+-  // A guest's tap is the moment to ask who they are (v92): it used to do
+-  // nothing at all, silently — the one hole a nameless viewer had.
++function handleTap(artistName, el = null, occ = null) {
++  // PROTOTYPE (guest-shelf round, Kevin 2026-09-25: "the mobile interaction
++  // patterns should always be different than desktop"). A FINGER's tap on a
++  // resting card opens its zoom — for everyone; picking happens inside it
++  // (− notes +, or Pick shows for a guest). Decided by the hand, not the
++  // screen: an iPad with a mouse picks on click like a desktop.
++  if (el && el.isConnected && zoomedCard() !== el && tapOpensZoom()) {
++    if (!ctx.meName && welcomeCard()) { rememberWelcomeSeen(); dismissWelcome({ ctx }); }
++    zoomCard(el, artistName, ctx, { onOpenNotes: (a) => ctx.onOpenNotes(a, occ), source: 'tap', occ });
++    return;
++  }
++  // A guest's click (desktop) or Pick shows: ask who they are — the shelf.
+   if (!ctx.meName) { askToJoin(artistName); return; }
+   if (ctx.migrationPending) {
+     showToast($('toast-root'), 'Updating this crew — picks unlock in a moment');
+@@ -400,6 +421,21 @@
+   // cycle over from the first bar.
+ }
+ 
++// − / + in a finger's zoom: one level down or up, never wrapping — 0 is not
++// picked, 1–3 picked, 4 must (PROTOTYPE, guest-shelf round).
++function stepPick(artistName, el, delta) {
++  if (!ctx.meName) { askToJoin(artistName); return; }
++  if (ctx.migrationPending) { showToast($('toast-root'), 'Updating this crew — picks unlock in a moment'); return; }
++  const current = (ctx.picks[artistName] || {})[ctx.meName] || 0;
++  const next = Math.max(0, Math.min(4, current + delta));
++  if (next === current) return;
++  state.recordSelection(artistName, ctx.meName, next);
++  applyLocalPick(artistName, ctx.meName, next);
++  refreshCtx();
++  refreshArtistCards(artistName);
++  sync.scheduleSync();
++}
++
+ // ---- a guest joins (v92, first open, wall first) ------------------------------------
+ // A crew link on a phone the crew does not know opens the wall as a guest,
+ // and the name is asked only when it is needed: a tap on an artist (that
+@@ -448,7 +484,15 @@
+   rememberWelcomeSeen();
+   dismissWelcome({ instant: true });
+   pendingJoin = { token, fid: ctx.fid, artist, place: wallPlace() };
+-  renderJoin(token, state.crewDoc, { artist, fid: ctx.fid });
++  // PROTOTYPE (guest-shelf round): the shelf over the wall, not the screen.
++  // `window.__shelfOffline` lets the design rig draw the offline state.
++  const doc = state.crewDoc || {};
++  const people = Object.entries(doc.people || {}).filter(([, p]) => !(p && p.removed))
++    .map(([name, p]) => { const ci = colorIndexOf(name, p); return { name, bg: hslOf(ci, 0.5), stroke: strokeOf(ci, false) }; });
++  showJoinShelf({
++    artist, people, ctx, offline: !!window.__shelfOffline || (typeof navigator !== 'undefined' && navigator.onLine === false),
++    onLook: () => { pendingJoin = null; },
++  });
+ }
+ 
+ // After a join from the wall: back where they were standing, and the artist
+--- a/js/v3/card-facts.js
++++ b/js/v3/card-facts.js
+@@ -288,7 +288,7 @@
+ 
+ // The chips line: the SAME notes door the resting card carries (grown), and
+ // the Spotify chip with its flag sitting left of the word "following".
+-export function factChips(facts, { onOpenNotes = null, notesChip = true } = {}) {
++export function factChips(facts, { onOpenNotes = null, notesChip = true, onPick = null, step = null } = {}) {
+   const row = document.createElement('div');
+   row.className = 'f-chips';
+   if (!notesChip) { if (facts.spotify) spotChip(row, facts); return row; }
+@@ -301,6 +301,42 @@
+       : `Add a note for ${facts.name}`);
+     notes.addEventListener('click', (e) => { e.stopPropagation(); onOpenNotes(facts.name); });
+   }
++  // A finger's zoom (guest-shelf round, 2026-09-25 — PROTOTYPE): picking
++  // happens HERE, with a − and a + either side of the notes door. Each side
++  // is a whole third of the row (no dead gap between the three doors), its
++  // circle drawn at the side's centre. A guest has no level to step: the same
++  // place holds "Pick shows", which asks who they are.
++  if (step) {
++    row.classList.add('f-step-row');
++    row.dataset.level = String(step.level);
++    const side = (dir) => {
++      const b = document.createElement('button');
++      b.className = `f-step ${dir < 0 ? 'minus' : 'plus'}`;
++      const off = dir < 0 ? step.level <= 0 : step.level >= 4;
++      b.disabled = off;
++      b.setAttribute('aria-label', dir < 0 ? `Less for ${facts.name}` : (step.level >= 3 ? `Must for ${facts.name}` : `More for ${facts.name}`));
++      const dot = document.createElement('span');
++      dot.className = 'f-step-dot';
++      dot.textContent = dir < 0 ? '−' : '+';
++      b.appendChild(dot);
++      b.addEventListener('click', (e) => { e.stopPropagation(); if (!b.disabled) step.onStep(dir); });
++      return b;
++    };
++    row.append(side(-1), notes, side(1));
++    if (facts.spotify) spotChip(row, facts);
++    return row;
++  }
++  if (onPick) {
++    row.classList.add('f-guest-row');
++    const pick = document.createElement('button');
++    pick.className = 'f-pick';
++    pick.textContent = 'Pick shows';
++    pick.setAttribute('aria-label', `Pick ${facts.name}`);
++    pick.addEventListener('click', (e) => { e.stopPropagation(); onPick(facts.name); });
++    row.append(notes, pick);
++    if (facts.spotify) spotChip(row, facts);
++    return row;
++  }
+   row.appendChild(notes);
+   if (facts.spotify) spotChip(row, facts);
+   return row;
+@@ -407,7 +443,7 @@
+   return row;
+ }
+ 
+-function grownBlock(facts, { onOpenNotes = null, notesChip = true } = {}) {
++function grownBlock(facts, { onOpenNotes = null, notesChip = true, onPick = null, step = null } = {}) {
+   const grown = document.createElement('div');
+   grown.className = 'f-grown';
+   if (facts.when) {
+@@ -451,7 +487,7 @@
+   // every UNPICKED grown card — the common view. Reverted; the still-hand
+   // answer belongs to the zoom's placement (PROGRESS, round-2 follow-up).
+   if (facts.people.length) grown.appendChild(whoPills(facts));
+-  const chips = factChips(facts, { onOpenNotes, notesChip });
++  const chips = factChips(facts, { onOpenNotes, notesChip, onPick, step });
+   if (chips.childNodes.length) grown.appendChild(chips);
+   return grown;
+ }
+@@ -569,6 +605,10 @@
+ // Capture phase, so a handler that stops propagation cannot blind it; a lone
+ // modifier (Cmd-Tab back into the window) says nothing and is ignored.
+ let lastInput = 'pointer';
++// PROTOTYPE (guest-shelf round): the hand behind the last press. A finger's
++// tap on a card opens the zoom; a mouse's click still picks (desktop as is).
++let lastPointerType = 'mouse';
++export const tapOpensZoom = () => lastInput === 'pointer' && (lastPointerType === 'touch' || lastPointerType === 'pen');
+ const MODIFIER_KEYS = new Set(['Shift', 'Control', 'Alt', 'Meta', 'CapsLock', 'Fn', 'AltGraph', 'OS', 'Hyper', 'Super', 'Symbol', 'NumLock', 'ScrollLock']);
+ // A finger leaves a GHOST of a mouse where it lifted (2026-09-23). WebKit
+ // follows a touch tap with a click whose pointerType is "mouse", and when the
+@@ -618,6 +658,7 @@
+   }, { passive: true, capture: true });
+   document.addEventListener('pointerdown', (e) => {
+     lastInput = 'pointer';
++    lastPointerType = e.pointerType || 'mouse';
+     if (e.pointerType === 'mouse') touchAt = [];
+     else fingerAt(e);
+   }, { passive: true, capture: true });
+@@ -782,7 +823,11 @@
+   const name = document.createElement('div');
+   name.className = 'f-name' + (facts.cancelled ? ' struck' : '');
+   name.textContent = facts.name;
+-  const grown = grownBlock(facts, { onOpenNotes: z.onOpenNotes });
++  const guest = z.ctx && !z.ctx.meName;
++  const finger = z.source === 'touch' || z.source === 'tap';
++  const level = guest ? 0 : ((z.ctx.picks[z.artist] || {})[z.ctx.meName] || 0);
++  const step = finger && !guest && z.ctx.onStep ? { level, onStep: (d) => z.ctx.onStep(z.artist, z.el, d) } : null;
++  const grown = grownBlock(facts, { onOpenNotes: z.onOpenNotes, onPick: guest ? () => z.ctx.onTap(z.artist, z.el) : null, step });
+   return [surface, name, grown];
+ }
+ 
+@@ -1210,6 +1255,7 @@
+   // so it runs before the door's own click (which stops the event there).
+   card.addEventListener('click', (e) => {
+     if (zoomed !== z || !z.refreshedAt || Date.now() - z.refreshedAt >= DOOR_SETTLE_MS) return;
++    if (z.source === 'touch' || z.source === 'tap') return; // PROTOTYPE: no door-slid pick for a finger
+     if (!e.target.closest?.(ZOOM_DOORS)) return;
+     e.preventDefault();
+     e.stopPropagation();
+@@ -1228,6 +1274,7 @@
+   card.addEventListener('click', (e) => {
+     if (zoomed !== z) return;
+     if (isOwnControl(e.target)) return;
++    if (z.source === 'touch' || z.source === 'tap') return; // PROTOTYPE: a finger picks with − / +, never the body
+     if (!z.el.isConnected) { unzoom({ instant: true, why: 'clicked a card that left the DOM' }); return; }
+     z.ctx.onTap(z.artist, z.el);
+   });
+--- a/js/v3/wall.js
++++ b/js/v3/wall.js
+@@ -187,7 +187,7 @@
+     // means pick. (The 2026-08-29 version excluded a whole grown block here,
+     // which is how a zoomed card stopped taking picks.)
+     if (e.target !== el && e.target.closest && e.target.closest('button')) return;
+-    ctx.onTap(artistName, el);
++    ctx.onTap(artistName, el, opts.occ || null);
+   });
+   if (ctx.wireZoom) ctx.wireZoom(el, artistName, opts.occ || null);
+   watchFit(el);
+--- a/assets/v3.css
++++ b/assets/v3.css
+@@ -209,11 +209,17 @@
+ .welcome-head .avatar.more { background: var(--card); border: 1px dashed var(--border-emphasis); color: var(--text-secondary); font-size: 7.5px; }
+ .welcome-card .bring-line { font-size: 14px; }
+ .welcome-card .bring-sub { color: var(--text-secondary); font-size: 12px; line-height: 1.5; margin-top: 4px; }
+-/* Kevin's right-hand door for a guest (2026-09-25): "Pick shows" sits
+- * on the right; where the row is too narrow (320) it wraps under Look around and
+- * How it works, and auto margin keeps it right. */
+-.welcome-card .bring-actions { flex-wrap: wrap; }
+-.welcome-card .welcome-join { margin-left: auto; }
++/* The card's choice is two doors of one width (guest-shelf round, 2026-09-25):
++ * Look around (quiet, outlined) on the left, Pick shows (filled) on the right,
++ * the same two halves at 320 and 390. "More info" is the explanation's last
++ * words — a real button drawn as a link, its 44px reach borrowed around it. */
++.welcome-card .bring-actions { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 8px; }
++.welcome-card .bring-actions .btn-tonal,
++.welcome-card .bring-actions .btn-ghost { font-size: 13px; padding: 11px 12px; white-space: nowrap; }
++.welcome-more { display: inline; background: none; border: 0; padding: 0; margin: 0; cursor: pointer;
++                font: inherit; font-weight: 700; color: var(--tonal-text); white-space: nowrap;
++                position: relative; min-height: 0; }
++.welcome-more::after { content: ''; position: absolute; inset: -14px -8px; }
+ /* A toast's one action never breaks across lines: the toast shrinks to half
+  * the viewport (left: 50%), and "Not me" (the recognized-entry door) stacked
+  * as "Not / me" on a 390px phone (walk, 2026-09-23). */
+@@ -1302,3 +1308,90 @@
+ .f-links .f-dot { color: rgba(255, 255, 255, .45); }
+ a.f-link { color: #fff; text-decoration: none; border-bottom: 1px solid rgba(255, 255, 255, .35); padding-bottom: 1px; }
+ a.f-link:hover { border-bottom-color: rgba(255, 255, 255, .75); }
++
++
++/* ---- the join shelf (guest-shelf round, 2026-09-25 — PROTOTYPE) ----------------
++ * The production sheet (grabber, --r-sheet, dock ground, .45 backdrop) sized to
++ * its content. One column, one gutter: the line, the crew's names, the field,
++ * then the same two halves the welcome card ends on — Look around (quiet) on
++ * the left, the answer (filled) on the right. Brand, never --fest. */
++.sheet.join-shelf { gap: 14px; padding: 8px 16px calc(16px + env(safe-area-inset-bottom, 0px));
++                    max-height: 88vh; overflow: visible; animation: none; }
++.join-shelf .js-line { color: var(--text-body); font-size: 17px; font-weight: 700; line-height: 1.3;
++                       text-wrap: balance; overflow-wrap: anywhere; }
++.join-shelf .js-line b { color: #fff; font-weight: 800; }
++.join-shelf .js-sub { color: var(--text-secondary); font-size: 12.5px; font-weight: 600; line-height: 1.45; margin-top: 3px; }
++.join-shelf .js-sub.offline { color: var(--text-tertiary); }
++.join-shelf .js-sub.offline::before { content: ''; display: inline-block; width: 7px; height: 7px; margin-right: 7px;
++                                      border-radius: var(--r-pill); background: var(--sync-offline); vertical-align: 1px; }
++/* The names: the wall's own person chips, a size up, wrapping; three rows at
++ * most, then they scroll inside (a crew of 12 on a 320 phone). */
++.join-shelf .js-names-wrap { position: relative; }
++.join-shelf .js-names { display: flex; flex-wrap: wrap; gap: 8px; max-height: calc(3.5 * 36px + 3 * 8px + 4px);
++                        padding: 4px; margin: -4px;
++                        overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none; }
++.join-shelf .js-names::-webkit-scrollbar { display: none; }
++.join-shelf .js-names-wrap.more::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 18px;
++                                         background: linear-gradient(to bottom, transparent, var(--dock)); pointer-events: none; }
++.join-shelf .js-name { display: inline-flex; align-items: center; gap: 7px; height: 36px; min-height: 36px;
++                       padding: 0 14px 0 5px; font-size: 13.5px; font-weight: 700; white-space: nowrap;
++                       transition: opacity .18s ease, box-shadow .18s ease; }
++.join-shelf .js-initial { width: 26px; height: 26px; border-radius: var(--r-pill); display: inline-flex;
++                          align-items: center; justify-content: center; font-size: 11px; font-weight: 800;
++                          background: rgba(0, 0, 0, .28); }
++.join-shelf .js-name.on { box-shadow: 0 0 0 2px var(--dock), 0 0 0 4px #fff; }
++.join-shelf .js-name.off { opacity: .4; }
++/* The field wears the text fields' shape (8px corners, the input border). */
++.join-shelf .js-field { width: 100%; box-sizing: border-box; height: 46px; padding: 0 14px;
++                        background: var(--page); border: 1px solid var(--border-input); border-radius: var(--r-card);
++                        color: var(--text-primary); font: 600 16px var(--font-ui); outline: none; }
++.join-shelf .js-field::placeholder { color: var(--text-tertiary); font-weight: 500; }
++.join-shelf .js-field:focus { border-color: transparent; } /* the app's focus ring (tokens) is the one line */
++.join-shelf .js-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
++.join-shelf .js-actions .btn-tonal,
++.join-shelf .js-actions .btn-ghost { font-size: 13.5px; padding: 12px 12px; min-height: 46px;
++                                     white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
++.join-shelf .js-go:disabled { opacity: .55; cursor: default; }
++/* Typing: the names give way to the field — one sideways line, same height for
++ * 6 people or 12, so the field and both answers stay above the keys at 320. */
++.join-shelf.typing .js-names { flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; max-height: none;
++                               -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent);
++                               mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent); }
++.join-shelf.typing .js-name { flex: none; }
++/* ≥720 the sheet is a centred dialog already (.sheet above). */
++
++/* A finger's zoom (PROTOTYPE): − notes + across the whole width. Each side
++ * is a third of the row and 56px tall — the whole third is the door, so
++ * there is no dead gap between − , notes and + (the circle is only where the
++ * eye goes). Scrim + hairline so the circles read on any wash; + is the
++ * filled one (the way up), − the outline. At 0 the − rests, at must the +. */
++.zoom-card .f-chips.f-step-row { display: grid; grid-template-columns: 1fr auto 1fr; align-items: stretch;
++                                 justify-items: stretch; gap: 0; align-self: stretch; margin: 0 -14px -12px; }
++.zoom-card .f-grown:has(.f-step-row) { align-self: stretch; }
++@media (pointer: coarse) { .zoom-card .f-step-row .f-chip.notes::after { inset: -11px 0; } }
++.f-step { display: flex; align-items: center; justify-content: center; min-height: 56px; padding: 0;
++          position: relative; z-index: 1;
++          background: none; border: 0; cursor: pointer; color: #fff; font-family: inherit;
++          -webkit-tap-highlight-color: transparent; }
++.f-step-dot { width: 40px; height: 40px; border-radius: var(--r-pill); display: inline-flex; align-items: center;
++              justify-content: center; font-size: 24px; font-weight: 500; line-height: 1;
++              background: rgba(12, 10, 20, .5); border: 1px solid rgba(255, 255, 255, .55);
++              transition: transform .12s ease, opacity .18s ease; }
++.f-step.plus .f-step-dot { background: #fff; color: #120E1E; border-color: #fff; }
++.f-step:active .f-step-dot { transform: scale(.9); }
++.f-step:disabled { cursor: default; }
++.f-step:disabled .f-step-dot { opacity: .3; }
++/* The circles sit beside the notes door (the trio reads as one control);
++ * each side's reach runs out to the card's edge. */
++.f-step.minus { justify-content: flex-end; padding-right: 10px; }
++.f-step.plus { justify-content: flex-start; padding-left: 10px; }
++.zoom-card .f-step-row .f-chip.notes,
++.zoom-card .f-guest-row .f-chip.notes { align-self: center; height: 34px; padding: 0 14px; font-size: 12px; }
++/* A guest's zoom: the stepper's place holds the notes door and Pick shows. */
++.zoom-card .f-chips.f-guest-row { gap: 10px; }
++.f-pick { height: 40px; min-height: 40px; padding: 0 20px; border-radius: var(--r-pill); border: 0; cursor: pointer;
++          background: #fff; color: #120E1E; font: 800 13px var(--font-ui); position: relative; }
++.f-pick::after { content: ''; position: absolute; inset: -8px -6px; }
++/* The shelf's name chips are 36px and 8px apart: the wall chips' borrowed
++ * 14px reach would land on the next row's name. Their own box is the target. */
++@media (pointer: coarse) { .join-shelf .js-name::after { inset: -4px -4px; } }
+--- a/js/v3/join-shelf.js
++++ b/js/v3/join-shelf.js
+@@ -0,0 +1,159 @@
++// The join shelf (design round "guest-shelf", 2026-09-25 — PROTOTYPE).
++//
++// A guest who wants to pick is asked who they are on a shelf that rises over
++// the wall, never a screen that replaces it: the wall stays where it was
++// (dimmed, behind), so "Look around" is just the shelf going back down, and a
++// join lands the pick on a card you can still see. The production sheet's
++// anatomy (grabber, 20px top corners, dock ground, .45 backdrop) — the same
++// family as every footer shelf in the app.
++//
++// Prototype scope: the rendering and every state the frames show (names,
++// a name tapped, a name typed, a new name, offline, the keyboard). The
++// answers themselves (claim / join / offline join / the waiting pick) are
++// renderJoin's code in app.js, to be moved here unchanged — not rewritten.
++import { GROW_MS, OUT_MS, CASCADE_MS, STAGGER_MS, EASE_ARRIVE, EASE_LEAVE, canAnimate } from './motion.js';
++
++export const SHELF_WORDS = {
++  line: (artist) => (artist ? ['Pick ', artist, ' as…'] : ['Pick shows as…']),
++  sub: 'Tap your name, or add yourself.',
++  subOffline: 'You’re offline — join anyway, it sends when you’re back.',
++  field: 'Add your name',
++  look: 'Look around',
++  join: 'Join',
++  joinAs: (name) => `Join as ${name}`,
++  claim: (name) => `I’m ${name}`,
++};
++
++const ID = 'join-shelf';
++function node(tag, cls, text) {
++  const n = document.createElement(tag);
++  if (cls) n.className = cls;
++  if (text != null) n.textContent = text;
++  return n;
++}
++
++export function joinShelf() { return document.getElementById(ID); }
++
++// people: [{ name, bg, stroke }] in the crew's order.
++export function showJoinShelf({ artist = null, people = [], offline = false, ctx = null, onLook, onClaim, onJoin } = {}) {
++  closeJoinShelf({ instant: true });
++  const back = node('div', 'sheet-backdrop join-backdrop');
++  const sheet = node('div', 'sheet join-shelf');
++  sheet.id = ID;
++  sheet.setAttribute('role', 'dialog');
++  sheet.setAttribute('aria-label', artist ? `Pick ${artist} as` : 'Pick shows as');
++  const grab = node('div', 'grabber');
++
++  const head = node('div', 'js-head');
++  const line = node('div', 'js-line');
++  const parts = SHELF_WORDS.line(artist);
++  if (artist) line.append(parts[0], node('b', null, parts[1]), parts[2]);
++  else line.textContent = parts[0];
++  const sub = node('div', 'js-sub' + (offline ? ' offline' : ''), offline ? SHELF_WORDS.subOffline : SHELF_WORDS.sub);
++  head.append(line, sub);
++
++  const names = node('div', 'js-names');
++  names.setAttribute('role', 'group');
++  names.setAttribute('aria-label', 'The crew');
++  const chips = people.map((p) => {
++    const b = node('button', 'person-chip js-name');
++    b.style.background = p.bg;
++    b.style.border = `1px solid ${p.stroke}`;
++    b.dataset.name = p.name;
++    b.append(node('span', 'js-initial', p.name.charAt(0).toUpperCase()), node('span', 'js-nm', p.name));
++    names.appendChild(b);
++    return b;
++  });
++  const namesWrap = node('div', 'js-names-wrap');
++  namesWrap.appendChild(names);
++
++  const field = node('input', 'js-field');
++  field.maxLength = 24;
++  field.placeholder = SHELF_WORDS.field;
++  field.setAttribute('aria-label', 'Your name');
++  field.autocomplete = 'off';
++  field.setAttribute('autocapitalize', 'words');
++  field.setAttribute('enterkeyhint', 'go');
++
++  const actions = node('div', 'js-actions');
++  const look = node('button', 'btn-ghost', SHELF_WORDS.look);
++  const go = node('button', 'btn-tonal js-go', SHELF_WORDS.join);
++  actions.append(go, look); // the answer first (left), Look around second — the welcome card's order
++
++  sheet.append(grab, head, namesWrap, field, actions);
++  document.body.append(back, sheet);
++
++  // ---- state: nobody, a name tapped, a name typed ----------------------------
++  let chosen = null; // a crew name, tapped or typed
++  const paint = () => {
++    const typed = field.value.trim();
++    const match = typed ? people.find((p) => p.name.toLowerCase() === typed.toLowerCase()) : null;
++    const who = chosen || (match && match.name) || null;
++    for (const c of chips) {
++      c.classList.toggle('on', c.dataset.name === who);
++      c.classList.toggle('off', !!who && c.dataset.name !== who);
++      c.setAttribute('aria-pressed', c.dataset.name === who ? 'true' : 'false');
++    }
++    if (who) { go.textContent = SHELF_WORDS.claim(who); go.disabled = false; }
++    else if (typed) { go.textContent = SHELF_WORDS.joinAs(typed); go.disabled = false; }
++    else { go.textContent = SHELF_WORDS.join; go.disabled = true; }
++  };
++  chips.forEach((c) => c.addEventListener('click', () => {
++    chosen = chosen === c.dataset.name ? null : c.dataset.name;
++    if (chosen) field.value = '';
++    paint();
++  }));
++  field.addEventListener('input', () => { chosen = null; paint(); });
++  // The keyboard: the names give way to the field — one sideways line instead
++  // of rows, so the field and both answers stay above the keys at 320.
++  field.addEventListener('focus', () => sheet.classList.add('typing'));
++  field.addEventListener('blur', () => sheet.classList.remove('typing'));
++  paint();
++  // More names than three rows hold: a soft fade says the list goes on.
++  const edge = () => namesWrap.classList.toggle('more', !sheet.classList.contains('typing')
++    && names.scrollHeight - names.clientHeight - names.scrollTop > 2);
++  names.addEventListener('scroll', edge, { passive: true });
++  field.addEventListener('focus', edge);
++  field.addEventListener('blur', edge);
++  requestAnimationFrame(edge);
++  setTimeout(edge, GROW_MS + CASCADE_MS + STAGGER_MS * (people.length + 3)); // after the names have landed (their arrival rides a 6px rise)
++
++  const leave = () => { closeJoinShelf({ ctx }); if (onLook) onLook(); };
++  look.addEventListener('click', leave);
++  back.addEventListener('click', leave);
++  go.addEventListener('click', () => {
++    const typed = field.value.trim();
++    const match = typed ? people.find((p) => p.name.toLowerCase() === typed.toLowerCase()) : null;
++    const who = chosen || (match && match.name);
++    if (who) { if (onClaim) onClaim(who); } else if (typed && onJoin) onJoin(typed);
++  });
++
++  // The way in: the wall dims, the shelf rises from the bottom edge on the
++  // arrival curve, then its lines land a beat apart and the names arrive one
++  // after another. Reduce Motion / Low Power: already there.
++  if (canAnimate(sheet, ctx)) {
++    back.animate([{ opacity: 0 }, { opacity: 1 }], { duration: GROW_MS, easing: 'ease-out', fill: 'backwards' });
++    sheet.animate([{ transform: 'translateY(100%)' }, { transform: 'none' }], { duration: GROW_MS, easing: EASE_ARRIVE, fill: 'backwards' });
++    const seq = [head, ...chips, field, actions];
++    seq.forEach((n, i) => n.animate(
++      [{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }],
++      { duration: CASCADE_MS, delay: GROW_MS / 2 + i * STAGGER_MS, easing: EASE_ARRIVE, fill: 'backwards' },
++    ));
++  }
++  return sheet;
++}
++
++// The way out is quick and plain: the shelf drops, the backdrop lifts, the
++// wall underneath never moved.
++export function closeJoinShelf({ instant = false, ctx = null } = {}) {
++  const sheet = joinShelf();
++  if (!sheet) return;
++  sheet.removeAttribute('id');
++  const back = sheet.previousElementSibling && sheet.previousElementSibling.classList.contains('join-backdrop') ? sheet.previousElementSibling : null;
++  const gone = () => { sheet.remove(); if (back) back.remove(); };
++  if (instant || !canAnimate(sheet, ctx)) { gone(); return; }
++  sheet.style.pointerEvents = 'none';
++  if (back) back.animate([{ opacity: 1 }, { opacity: 0 }], { duration: OUT_MS, easing: EASE_LEAVE, fill: 'forwards' });
++  const out = sheet.animate([{ transform: 'none' }, { transform: 'translateY(100%)' }], { duration: OUT_MS, easing: EASE_LEAVE, fill: 'forwards' });
++  out.onfinish = gone;
++}

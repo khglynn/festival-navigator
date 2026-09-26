@@ -447,3 +447,166 @@ the stamp the only failure; `npm run test:browser` 191/191; the walk: the
 guest `390 14` request log 0 writes (an earlier owner's pick still queued,
 real `sendBeacon` fired), guest 390 0 writes, join as Sam today's four
 writes, members no card and the same landing.
+
+**Round 3 accepted — A and B (commits e1504d1, 99a8aa2, abe7205).**
+A: `crew.me` keeps a per-page memory of the name it last read, so a member
+whose storage fails mid-session keeps their name on the wall and keeps
+picking (test: storage throws after paint → the tap still sends). B: the
+guest shelf — a guest's finger tap opens the card's zoom, a tap on another
+card only closes it, the join asks on a shelf over the wall (the production
+bottom sheet, its own history entry so Back closes it, keyboard-aware), two
+taps to claim a name, every join safety carried over (`joinAnswers`, shared
+with the full join screen, which stays for personal links, the ambiguous
+person and Not me).
+
+**Kevin's round-3 frame changes (relayed 2026-09-25, late), then the button
+study, then Kevin on the study.** Where it landed:
+1. **The zoom's door row, for everyone:** a bare − at the far left, a bare +
+   at the far right, and the notes chip between them exactly as the zoom has
+   always drawn it ("+ note" / "2 notes"). No shape, no container — Kevin on
+   the study's segmented pill: "all misaligned and jacked and too much in the
+   middle… I like the left and right just − + no button shape." The glyphs
+   stand on the zoom's content edges (the who-row's edges); their invisible
+   targets own everything left and right of the chip, out to the card's edges
+   and bottom, 44px tall; the chip is its own 44px target. 24px glyphs with a
+   soft shadow; at a limit (− at nothing, + at must) the glyph dims in place.
+   It is the card's floor (the name and facts stay centred above it).
+2. **Members:** + raises 1→2→3→must and stops; − lowers to not picked and
+   stops (`stepPick`, the ordinary pick path, sync unchanged). The note door
+   is the notes chip (v89's first-tap fix untouched; its WebKit test now
+   detects the sheet by id instead of a journal line the meant-close no
+   longer writes). A tap on a RESTING card still cycles exactly as v91.
+3. **Guests:** the same row. −, + and an EMPTY note door open the join shelf
+   naming the artist; only + carries the pick through the join ("Pick X as…"
+   vs "Join the plan for X as…"). Judgment call, flagged: a note door that
+   HAS notes opens them to read (the sheet's own "Add yourself" door waits
+   under them) rather than asking — reading is what looking around is for.
+4. **Desktop:** the row is in hover zooms too; click-to-pick on the wall is
+   unchanged; Tab walks the live doors in order.
+5. **A step never moves the doors (found by the walk):** a pick widened the
+   zoom and slid the + 22px sideways between two taps. Now the who-row wraps
+   inside the width the rest of the card sets (`contain: inline-size`), a
+   finger's zoom is as wide as the screen allows, and a step's refresh holds
+   the zoom by its floor. Pinned in the browser suite on a card built to
+   bite (gallery 20c); removing the rule turns it red.
+6. **Welcome card:** Pick shows (filled) LEFT, Look around (outlined) right,
+   More info ends the line. **Shelf:** "Add your name"; Join as Sam LEFT, Look
+   around right. Both with the app's existing button styles (the study's
+   restyle was dropped with it; its tokens were never kept).
+7. **Crowded card:** Femme Jatale b2b erika (Portola's own entry: doors, the
+   order door, map, Tix and Info) with a crowd at every level, notes and
+   Spotify, plus the same show under a two-line bill — gallery.html 20a/20b,
+   and `tests/browser/zoom-door-row.test.mjs` grows them at 390, 320 (hold)
+   and 1280 (hover): nothing clipped, nothing overlapping, every door the
+   thing under its centre, the reach at the card's edges.
+Verified so far: `npm test` 984/986 (the stamp and one skip), browser suite
+197/197; walk 22/23/24/25 (member + + −, must stops, note opens notes, a
+resting tap still cycles; crowded at 390/320/1280 no overlap, no clip, clear
+of the dock; guest + → "Pick Tove Lo as…"; guests 0 writes).
+
+**Kevin: "bring the buttons in a smidge from the edges."** The − and + glyphs
+now stand 10px inside the zoom's content edges on every card and width (390:
+− glyph 32–48, + glyph 328–344 in a 22–354 content box; 320: 32–48 and
+272–288; 1280: 10px in, too), centred on the note chip; their invisible
+targets still run out to the card's edges and bottom. Pinned in
+`tests/browser/zoom-door-row.test.mjs`.
+
+**Independent review of 963e599 (Codex, xhigh): two blockers, one important —
+fixed.** (1) Escape or Back could take the shelf down while a join was in
+flight, and the late answer joined the person behind their back. Now ONE
+close decision (`leaveShelf`) answers Escape, the system Back and the shelf's
+own ways out: while an answer is in flight nothing closes it (a Back puts its
+history entry back, so history still says the shelf is up), and the answer
+lands the person. (2) Escape left the shelf's history entry behind, so a later
+Back landed on it with a reopened shelf still up; every close now consumes the
+entry exactly once. (3) Closing the shelf dropped focus to the page: focus now
+goes back to what opened it (the + in the dock, a Settings button, or the card
+a zoom's door asked about), and Tab never walks out of the shelf — not even
+Shift+Tab from the shelf itself, where focus starts. Tests:
+`tests/first-open-shelf-close.test.mjs` (Escape-then-reopen-then-Back,
+focus return, the Tab trap, Escape and Back mid-join); each fix was broken on
+purpose and its test went red.
+**Deliberate, and accepted by the orchestrator:** a guest's note chip that
+already HAS notes opens them to read (with "Add yourself" under them) instead
+of asking — the brief's "any of the three opens the join" is met by −, + and an
+empty note chip.
+Verified: `npm test` 988/990 in UTC, Tokyo and on the night clock (the stamp
+the only failure, one skip); browser suite 197/197; the full walk, 31
+scenarios, no failures, no page errors.
+
+**Three from the code map (run on abe7205), folded in.**
+1. **The dock's Show menu opened UNDER the welcome card.** The dock is a
+   stacking context (fixed, z30), so its upward menu painted at 30, below the
+   welcome card and the bring-picks offer (z38): with the welcome up, a finger
+   in the overlap touched the card. While its menu is open the bar (dock or
+   day rail) now stands at z39 — above those cards and a zoom (36), below
+   sheets and toasts — and steps back once the menu has gone. The join shelf:
+   opening it puts an open menu away, and with it up the fest name is behind
+   its dimmed wall. `tests/browser/show-menu-stacking.test.mjs`, Chromium and
+   WebKit; without the fix both engines hit the card ("Every friend has a c…").
+2. **The close-tap's swallow ate the first click anywhere for 700 ms**, so a
+   flick that began on a card and a quick tap on a day tab lost the tap. It
+   now belongs to its own gesture: it eats only a click that lands on a card,
+   and is gone at the gesture's cancel (a flick), at the next press, at the
+   first click, or at 700 ms. jsdom tests in
+   `tests/first-open-guest-doors.test.mjs` and the real-engine walk below;
+   the old code fails both.
+3. **The guest tap route in a real engine.** Playwright's WebKit with an
+   iPhone profile sends a tap as TOUCH pointerdown/pointerup and a MOUSE
+   click — a real iPhone's shape (checked 2026-09-26) — so
+   `tests/browser/guest-tap-route.test.mjs` runs there, and in Chromium with
+   touch for CI: a tap opens the card and picks nothing, + asks on the shelf
+   ("Pick Tove Lo as…"), Look around takes it down, a tap on another card
+   only closes, a flick then a quick tap on the dock still lands, nothing is
+   written. (A trap on the way, not a bug: while the dock's day row is still
+   gliding to centre its active day, WebKit takes a tap on it as the finger
+   stopping that scroll, as an iPhone does; 2 s later the same tap lands.)
+
+**The independent walk of b29aac0 (WebKit, iPhone profile, real input): two
+failures, root-caused by the walker, fixed.**
+1. **Escape over the shelf regrew the zoom it had just closed.** The shelf
+   hands focus back to the card whose + opened it; the Escape keydown had set
+   card-facts' lastInput to 'keyboard', so the keyboard route read the
+   returning focus as navigation and grew a fresh zoom within 50 ms — the
+   click · Escape · click class again. Root fix: card-facts `focusQuietly` —
+   a focus the app hands back is never keyboard navigation, and the route
+   ignores it. Used by the shelf's close and by the notes sheet's close (the
+   same trap, reproduced in its test: note door → Escape regrew the zoom).
+   Settings restores no focus to a card. A Back (no key) was already fine.
+2. **The just-joined welcome never showed.** The guest card is marked read
+   the moment a guest touches the wall or asks to join — always before the
+   join lands — and the just-joined card shared that marker. It has its own
+   now (`fn_welcome_joined_v1`): once per phone, after a fresh join, marked
+   when it shows; never for someone who took their own existing name.
+Tests: `first-open-shelf-close` (Escape over a shelf a zoom's + opened),
+`zoom-door-row` (note door → Escape), `first-open-guest` (the shelf join
+brings the card), `first-open-welcome` (claiming an existing name: neither
+marker); each fails with its fix removed. Real input:
+`tests/browser/guest-tap-route.test.mjs` now presses a real Escape over the
+shelf and joins from it, in WebKit (iPhone) and Chromium.
+
+**Kevin on the phone renders: the zoom's text (now that a finger's zoom is
+full width).**
+1. **Never a break inside a statement.** Every statement — the window, the
+   order, the place with its pin, "Tix @ AXS", "Info @ DoTheBay" — is
+   nowrap, and Tix · Info are one unit. The statements come in PAIRS (the
+   window · the order; the place · the doors out): a pair is one line
+   wherever it fits the column and stacks where it does not, so a line
+   never breaks between words and never leaves a separator at its end
+   (card-facts.js `fitPairs`: put on one line, read, fall back — run where
+   the zoom lays itself out). At 390 the crowded card went from four meta
+   rows to three ("Fri · Runs 8 PM – ~12 AM · Guessing they're 1st of 3" on
+   one line; the place over "Tix @ AXS · Info @ DoTheBay"); at 320 the pair
+   stacks as before.
+2. **A centred middle column.** The name, the facts, the doors out and the
+   who-row stand in a column at most `--zoom-col` wide (v3-tokens.css,
+   300px); only the − and + reach the zoom's edges. Where the number comes
+   from: the width of a set's two statements on one line (136 + 137px plus
+   the separator, 291px in Inter at 11.5px), so they share a line on a 390
+   phone — about 16px in from each side of the zoom's content. The cost:
+   the crowded who-row wraps its fourth chip at 390 (it spanned edge to
+   edge before).
+Pinned in `tests/browser/zoom-door-row.test.mjs` (every statement one line,
+a pair's separator only when it is one line, the window and order share a
+line at 390, the middle within the column and centred); each fails with its
+rule removed.

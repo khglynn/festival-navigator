@@ -16,12 +16,19 @@
 // screen runs. Claiming takes two taps on purpose (the name, then "I'm Maya"):
 // one tap to claim is how friends ended up picking as somebody else.
 import { GROW_MS, OUT_MS, CASCADE_MS, STAGGER_MS, EASE_ARRIVE, EASE_LEAVE, canAnimate } from './motion.js';
+import { focusQuietly } from './card-facts.js';
 
+// `line` names the artist the guest touched and what the tap meant: + (or a
+// card) is a pick, and the pick lands after the join; − and the notes door
+// only join, so their line promises nothing more (Kevin, 2026-09-25).
 export const SHELF_WORDS = {
-  line: (artist) => (artist ? ['Pick ', artist, ' as…'] : ['Pick shows as…']),
+  line: (artist, intent = 'pick') => (!artist ? ['Pick shows as…']
+    : intent === 'pick' ? ['Pick ', artist, ' as…']
+      : ['Join the plan for ', artist, ' as…']),
+  label: (artist, intent = 'pick') => SHELF_WORDS.line(artist, intent).join('').replace(/…$/, ''),
   sub: 'Tap your name, or add yourself.',
   subOffline: 'You’re offline — join anyway, it sends when you’re back.',
-  field: 'New here? Your name',
+  field: 'Add your name',
   look: 'Look around',
   join: 'Join',
   joinAs: (name) => `Join as ${name}`,
@@ -47,7 +54,9 @@ export function joinShelf() {
 // people: [{ name, bg, stroke }] in the crew's order. Returns the shelf's
 // handle: setBusy(on) holds every door while an answer settles, say(text or
 // node) writes the status line, close({ instant }) takes it down.
-export function showJoinShelf({ artist = null, people = [], offline = false, ctx = null, onLook, onClaim, onAnswer } = {}) {
+// `opener`: where keyboard focus goes back to when the shelf closes (the
+// review of 963e599: closing it dropped focus to <body>).
+export function showJoinShelf({ artist = null, intent = 'pick', people = [], offline = false, ctx = null, opener = null, onLook, onClaim, onAnswer } = {}) {
   document.getElementById(SHEET_ID)?.remove();
   document.getElementById(BACK_ID)?.remove();
   const back = node('div', 'sheet-backdrop join-backdrop');
@@ -56,13 +65,13 @@ export function showJoinShelf({ artist = null, people = [], offline = false, ctx
   sheet.id = SHEET_ID;
   sheet.setAttribute('role', 'dialog');
   sheet.setAttribute('aria-modal', 'true');
-  sheet.setAttribute('aria-label', artist ? `Pick ${artist} as` : 'Pick shows as');
+  sheet.setAttribute('aria-label', SHELF_WORDS.label(artist, intent));
   sheet.tabIndex = -1;
   const grab = node('div', 'grabber');
 
   const head = node('div', 'js-head');
   const line = node('div', 'js-line');
-  const parts = SHELF_WORDS.line(artist);
+  const parts = SHELF_WORDS.line(artist, intent);
   if (artist) line.append(parts[0], node('b', null, parts[1]), parts[2]);
   else line.textContent = parts[0];
   const sub = node('div', 'js-sub' + (offline ? ' offline' : ''), offline ? SHELF_WORDS.subOffline : SHELF_WORDS.sub);
@@ -96,10 +105,12 @@ export function showJoinShelf({ artist = null, people = [], offline = false, ctx
   const status = node('div', 'js-status');
   status.setAttribute('aria-live', 'polite');
 
+  // The answer first, on the left — "Join as Sam" — and the quiet way out on
+  // the right: the welcome card's order (Kevin, 2026-09-25).
   const actions = node('div', 'js-actions');
   const look = node('button', 'btn-ghost js-look', SHELF_WORDS.look);
   const go = node('button', 'btn-tonal js-go', SHELF_WORDS.join);
-  actions.append(look, go);
+  actions.append(go, look);
 
   sheet.append(grab, head, namesWrap, field, status, actions);
   document.body.append(back, sheet);
@@ -188,6 +199,12 @@ export function showJoinShelf({ artist = null, people = [], offline = false, ctx
     unfit();
     sheet.removeAttribute('id');
     back.removeAttribute('id');
+    // Focus goes back where it came from — only if it is still inside the
+    // shelf (a close that the person started elsewhere keeps their focus).
+    if (sheet.contains(document.activeElement) || document.activeElement === document.body) {
+      // Quietly: handed back, never read as keyboard navigation (card-facts.js).
+      if (opener && opener.isConnected) focusQuietly(opener);
+    }
     const gone = () => { sheet.remove(); back.remove(); };
     if (instant || !canAnimate(sheet, ctx)) { gone(); return; }
     sheet.style.pointerEvents = 'none';
@@ -224,15 +241,20 @@ export function showJoinShelf({ artist = null, people = [], offline = false, ctx
   grab.addEventListener('pointerup', release);
   grab.addEventListener('pointercancel', () => { startY = null; sheet.style.transform = ''; });
 
-  // Tab stays inside the shelf while it is up (the sheets' dialog rule).
+  // Tab stays inside the shelf while it is up (the sheets' dialog rule) —
+  // from the shelf itself, where focus starts, too: Shift+Tab from there used
+  // to walk out onto the wall behind (the review of 963e599). While an answer
+  // settles every door is disabled, and Tab stays put.
   sheet.addEventListener('keydown', (e) => {
     if (e.key !== 'Tab') return;
     const f = [...sheet.querySelectorAll('button, input')].filter((n) => !n.disabled);
-    if (!f.length) return;
+    if (!f.length) { e.preventDefault(); return; }
     const first = f[0];
     const last = f[f.length - 1];
-    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
-    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    const at = f.indexOf(document.activeElement);
+    if (at < 0) { e.preventDefault(); (e.shiftKey ? last : first).focus(); return; }
+    if (e.shiftKey && at === 0) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && at === f.length - 1) { e.preventDefault(); first.focus(); }
   });
   requestAnimationFrame(() => { if (!closed) sheet.focus({ preventScroll: true }); });
 
@@ -252,6 +274,11 @@ export function showJoinShelf({ artist = null, people = [], offline = false, ctx
   return {
     sheet,
     setBusy(on) { busy = !!on; paint(); },
+    isBusy: () => busy,
+    // The one close decision every way out shares (app.js leaveShelf):
+    // refused while an answer is in flight — that answer decides where this
+    // goes. True when the shelf went down.
+    leave() { if (busy || closed) return false; close(); return true; },
     say(x) {
       if (x == null || typeof x === 'string') status.textContent = x || '';
       else status.replaceChildren(x);
