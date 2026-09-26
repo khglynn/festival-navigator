@@ -536,7 +536,8 @@ test('placement: with nowhere to stay, the later start (the set that just began)
 
 // Rule 3's trip (Kevin, 2026-09-26): a body changes site — the grounds, or one
 // venue — only for a pick it wants more than anything still to come where it
-// is, or once nothing of its own is left there; and never goes back.
+// is and would catch, or once nothing of its own is left there; and never
+// goes back.
 test('the trip: nobody leaves the grounds for a room they want no more than a set still to come', () => {
   const room = (name, time) => ({ name, day: 'Afters', night: 'Sat', venue: 'Club', time, doors: '8 PM', close: '1 AM' });
   const fest = synth({ sat: [set('Early', 'X', '6:00 PM - 7:00 PM'), set('Late', 'X', '10:00 PM - 11:00 PM')], artists: [room('Clubber', '8:00 PM')] });
@@ -552,13 +553,38 @@ test('the trip: nobody leaves the grounds for a room they want no more than a se
   assert.deepEqual(rows(done, SATD), ['most 6 PM–7 PM 3 X (Early)', '··· 7 PM–8 PM', 'most 8 PM–1 AM 3 Club']);
 });
 
-test('the trip: a site left tonight is never gone back to, even for a must', () => {
-  const room = (name, time) => ({ name, day: 'Afters', night: 'Sat', venue: 'Club', time, doors: '6 PM', close: '8 PM' });
-  const fest = synth({ sat: [set('Main', 'X', '7:00 PM - 8:00 PM'), set('Closer', 'X', '9:00 PM - 10:00 PM')], artists: [room('Opener', '6:00 PM')] });
-  // Opener pulls them off the grounds at 6 (nothing of theirs is live there);
-  // Main at 7 is wanted more (4), so they leave the Club; the Club is gone.
-  const plan = planFor(fest, { Opener: lv(2, 'Ana', 'Ben', 'Cy'), Main: lv(4, 'Ana', 'Ben', 'Cy'), Closer: lv(3, 'Ana', 'Ben', 'Cy') });
+test('the trip: a site left tonight is never gone back to', () => {
+  const room = (name, time) => ({ name, day: 'Afters', night: 'Sat', venue: 'Club', time, doors: '6 PM', close: '10 PM' });
+  const fest = synth({ sat: [set('Main', 'X', '7:00 PM - 8:00 PM'), set('Closer', 'X', '9:00 PM - 10:00 PM')], artists: [room('Opener', '6:00 PM'), room('Nightcap', '8:00 PM')] });
+  // Opener seats them at the Club at 6 (nothing of theirs is live on the
+  // grounds); Main at 7 is wanted more (4) than anything still to come there
+  // (Nightcap, 3), so they leave. At 8 Nightcap (3) is wanted more than
+  // anything left on the grounds (Closer, 2) and is only starting — every
+  // other rule would take them back. The Club is gone: they wait for Closer.
+  const plan = planFor(fest, { Opener: lv(2, 'Ana', 'Ben', 'Cy'), Nightcap: lv(3, 'Ana', 'Ben', 'Cy'), Main: lv(4, 'Ana', 'Ben', 'Cy'), Closer: lv(2, 'Ana', 'Ben', 'Cy') });
   assert.deepEqual(rows(plan, SATD), ['most 6 PM–7 PM 3 Club', 'most 7 PM–8 PM 3 X (Main)', '··· 8 PM–9 PM', 'most 9 PM–10 PM 3 X (Closer)']);
+});
+
+test('the trip: a must that is over no longer holds anyone in a room', () => {
+  // Codex, 2026-09-26: a room holds a body from its first pick to its last,
+  // but what it weighs against a move is only what is not over yet.
+  const room = (name, time) => ({ name, day: 'Afters', night: 'Sat', venue: 'Club', time, doors: '6 PM', close: '10 PM' });
+  const fest = synth({ sat: [set('Headline', 'X', '8:00 PM - 9:00 PM')], artists: [room('Star', '6:00 PM'), room('Nobody', '7:00 PM'), room('Filler', '9:00 PM')] });
+  const plan = planFor(fest, { Star: lv(4, 'Ana', 'Ben', 'Cy'), Filler: lv(2, 'Ana', 'Ben', 'Cy'), Headline: lv(3, 'Ana', 'Ben', 'Cy') });
+  assert.deepEqual(rows(plan, SATD), ['most 6 PM–8 PM 3 Club', 'most 8 PM–9 PM 3 X (Headline)']);
+});
+
+test('the trip: never for the tail of a set long under way — only for one they would catch', () => {
+  const room = (name, time) => ({ name, day: 'Afters', night: 'Sat', venue: 'Club', time, doors: '8 PM', close: '12 AM' });
+  const artists = [room('Opener', '8:00 PM'), room('Nobody', '9:00 PM'), room('Late', '11:00 PM')];
+  const picks = { Opener: lv(3, 'Ana', 'Ben', 'Cy'), Late: lv(1, 'Ana', 'Ben', 'Cy'), Long: lv(2, 'Ana', 'Ben', 'Cy') };
+  // At 9 the Club has only Late (1) to come, and Long (2) is wanted more —
+  // but it began an hour ago: they stay for Late.
+  const tail = planFor(synth({ sat: [set('Long', 'X', '8:00 PM - 10:00 PM')], artists }), picks);
+  assert.deepEqual(rows(tail, SATD), ['most 8 PM–12 AM 3 Club']);
+  // The same set starting at 9 is one they would catch, and they go.
+  const fresh = planFor(synth({ sat: [set('Long', 'X', '9:00 PM - 10:00 PM')], artists }), picks);
+  assert.deepEqual(rows(fresh, SATD), ['most 8 PM–9 PM 3 Club', 'most 9 PM–10 PM 3 X (Long)']);
 });
 
 test('route: a stop under 15 minutes folds into the stop before it; a blip with nothing before it is nothing', () => {

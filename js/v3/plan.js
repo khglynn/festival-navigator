@@ -25,8 +25,9 @@
 //      where they already were, then to the set that just began. A body
 //      crosses town at most once per site (Kevin, 2026-09-26, "move only for
 //      something better, never back"): a person changes SITE — the grounds,
-//      or one venue — only for a pick they want more than anything still to
-//      come where they are, or once nothing of theirs is left there, and never
+//      or one venue — only for a pick they want more than anything of theirs
+//      not yet over where they are, and would catch (not the tail of a set
+//      long under way), or once nothing of theirs is left there; and never
 //      goes back to a site they left that night.
 //   4. A PLACE is a grid set (one stage, one set), a ROOM (a venue on a night,
 //      where you arrive for your first pick and stay through your last), or a
@@ -270,9 +271,9 @@ function roomsAndParties(night, shownKeys) {
 }
 
 // ---- who is where ------------------------------------------------------------------
-// For one person, the stretch of a place they would be at, and how much they
-// want it (their highest level there). Null when the place has nothing of
-// theirs. `sure` is false when every act of theirs here also plays elsewhere.
+// For one person, the stretch of a place they would be at, and their picks
+// in it (`acts`: each one's window and level). Null when the place has nothing
+// of theirs. `sure` is false when every act of theirs here also plays elsewhere.
 function stretchFor(place, person, picks, doubled) {
   const lv = (name) => ((picks[name] || {})[person]) || 0;
   const mine = place.acts.filter((a) => lv(a.name) > 0);
@@ -280,8 +281,22 @@ function stretchFor(place, person, picks, doubled) {
   const sure = mine.some((a) => !doubled.has(a.name));
   const from = Math.min(...mine.map((a) => (a.from ?? place.start)));
   const to = Math.max(...mine.map((a) => (a.to ?? place.end)));
-  return { from, to, level: Math.max(...mine.map((a) => lv(a.name))), sure };
+  return { from, to, acts: mine.map((a) => ({ from: a.from ?? place.start, to: a.to ?? place.end, level: lv(a.name) })), sure };
 }
+
+// How much a person wants a stretch at minute t: the most they want anything
+// of theirs there that is not over yet. A room holds them from their first
+// pick to their last (rule 4), but a must that has finished no longer weighs
+// against a move (Codex, 2026-09-26: a 6 PM must kept a crew in a Club past a
+// set they wanted more than the Club's late level-2 act).
+const levelAt = (s, t) => s.acts.reduce((most, a) => (a.to > t && a.level > most ? a.level : most), 0);
+
+// Whether a pick elsewhere is worth leaving a site for, never to come back:
+// one wanted more than anything still to come there, and one they would
+// catch — it has not started, or began less than a changeover ago. The tail
+// of a set long under way is not worth the trip; once nothing of theirs is
+// left where they are, anything live is.
+const worthTheTrip = (s, t, ahead) => s.acts.some((a) => a.to > t && a.level > ahead && (ahead === 0 || a.from > t - CHANGEOVER));
 
 // A SITE is where a body is: the festival's grounds (every grid set and every
 // stray of the festival's own), or one venue (its room or its parties).
@@ -306,15 +321,14 @@ function slicesOf(here, us, picks, doubled, bar) {
   const was = new Map();
   // Rule 3's trip: the site each person is at, and the sites they have left
   // tonight. What a person would give up by leaving is the most they want
-  // anything still to come at their site (a room's stretch runs to its last
-  // pick, so it counts until then).
+  // anything of theirs at their site that is not over yet (levelAt).
   const siteNow = new Map();
   const left = new Map(us.map((person) => [person, new Set()]));
   const aheadAt = (person, site, t) => {
     let most = 0;
     here.forEach((p, i) => {
       if (siteOf(p) !== site) return;
-      for (const s of stretches[i]) if (s.person === person && s.to > t && s.level > most) most = s.level;
+      for (const s of stretches[i]) if (s.person === person) most = Math.max(most, levelAt(s, t));
     });
     return most;
   };
@@ -330,10 +344,11 @@ function slicesOf(here, us, picks, doubled, bar) {
         const s = live[i].find((x) => x.person === person);
         if (!s) return;
         const site = siteOf(p);
+        const level = levelAt(s, t);
         if (gone.has(site)) return; // never back to a site left tonight
-        if (cur != null && site !== cur && s.level <= ahead) return; // moves only for a pick wanted more
-        const key = [s.level, live[i].length, was.get(person) === p.id ? 1 : 0, p.start];
-        if (!best || cmp(key, best.key) > 0) best = { p, key, level: s.level, sure: s.sure };
+        if (cur != null && site !== cur && !worthTheTrip(s, t, ahead)) return;
+        const key = [level, live[i].length, was.get(person) === p.id ? 1 : 0, p.start];
+        if (!best || cmp(key, best.key) > 0) best = { p, key, level, sure: s.sure };
       });
       if (!best) continue;
       at.set(person, best);

@@ -176,9 +176,9 @@ stuff like that. Just make sure the filters for locations work apply here."
 1. **The rule** (`slicesOf` in `js/v3/plan.js`): a SITE is the grounds (every grid set and
    stray of the festival's own) or one venue (its room or its parties). Within a site,
    rule 3 is unchanged. A person changes site only for a live pick at a level above the
-   most they want anything still to come at their site (a room's stretch runs to their
-   last pick there), or once nothing of theirs is left there; and a site they left that
-   night is never a candidate again. A person's first site is simply their first live pick.
+   most they want anything of theirs not yet over at their site, and one they would catch
+   (item 5), or once nothing of theirs is left there; and a site they left that night is
+   never a candidate again. A person's first site is simply their first live pick.
 2. **What moved on the made-up crews** (each re-pinned with its reason in
    `tests/plan-model.test.mjs`):
    a. Portola Sat: Cy stays at Parcels (3) to its end instead of leaving at 10:30 for
@@ -194,11 +194,27 @@ stuff like that. Just make sure the filters for locations work apply here."
    d. Hiding W1 now leaves Sun Oct 4 as a night with no stop (it had three Scoot Inn stops).
 3. **The location filters** (Kevin's condition): hidden rooms still never appear as a
    stop, fork, count or "also" (rule 8), and bodies are still seated on the whole festival
-   first, so hiding a room never re-seats its crowd somewhere you can see. The trip makes
-   hidden rooms pull fewer people off the grounds, never more: a hidden Late night takes
-   someone away only if they want it more than everything still to come at Zilker.
-4. Two synthetic tests pin the rule itself (a tie stays, a higher pick goes, nothing left
-   goes, never back even for a must).
+   first, so hiding a room never re-seats its crowd somewhere you can see. The trip runs
+   in that seating, before the fold: a hidden Late night takes someone off Zilker (or keeps
+   them from it) on exactly the terms a shown one would, and hiding it changes only what
+   the plan shows, never where anyone is. (An earlier line here said hidden rooms "pull
+   fewer people off the grounds, never more" — Sol: people who start the night at a hidden
+   room can be held there by it, so no direction holds.)
+4. Synthetic tests pin the rule itself: a tie stays, a higher pick goes, nothing left
+   goes; never back (with a pick at the old site that every other rule would go back
+   for); a must that is over holds nobody; never for a tail. Each fails with its own
+   clause removed (checked by hand, 2026-09-26).
+5. **Sol's round** (11:10 AM). What a site weighs against a move was a stretch's level —
+   the most a person wants anything there — held until their last pick there ended, so a
+   6 PM must kept a crew in a Club past an 8 PM set they wanted more than the Club's late
+   level 2. Now it is `levelAt`: the most they want anything there that is not over yet
+   (a room still holds a body from its first pick to its last, rule 4). Weighing that
+   alone on Portola sent Ivy from Public Works (after Milli Meng, 2) to the last 15 minutes
+   of Parcels (2, running since 10 PM) and stranded her before Fcukers — so a trip is also
+   only for a pick they would catch: not started, or begun less than a changeover (20
+   minutes) ago; once nothing of theirs is left where they are, anything live will do.
+   Net on the made-up crews: no line moves; Ben now leaves Audio's Airwolf Paradise (1)
+   for Chloé Caillet (3) at Public Works at 11:45 PM, where he used to arrive at 12:40.
 
 ## The highlight reaches the peek (built 2026-09-26, ~11 AM PT)
 
