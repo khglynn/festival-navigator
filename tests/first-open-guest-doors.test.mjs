@@ -151,6 +151,24 @@ test('a guest\'s assistive activation (a click with no press of its own) opens t
   assert.deepEqual(writes, []);
 });
 
+test('the join shelf rides the keys through the same helper as the notes shelf, and stops when it goes', async () => {
+  const { fakeKeys } = await import('./helpers/fake-keys.mjs');
+  const kb = fakeKeys(shell.dom.window);
+  await openCard('Robyn');
+  assert.equal(kb.listening(), 2, 'the notes shelf rides');
+  door('.f-step.minus').click();
+  await settle(10);
+  assert.ok(shelf(), 'the question took its place');
+  assert.equal(kb.listening(), 2, 'the notes shelf let go; the question rides');
+  kb.keys(300);
+  assert.equal(shelf().style.bottom, '300px', 'the question stands on the keys');
+  assert.equal(shelf().style.maxHeight, `${Math.max(200, window.innerHeight - 300 - 12)}px`);
+  kb.keys(0);
+  await lookAround();
+  assert.equal(kb.listening(), 0, 'gone, and not listening');
+  assert.deepEqual(writes, []);
+});
+
 test('joining from − joins, and picks nothing', async () => {
   await openCard('Robyn');
   door('.f-step.minus').click();

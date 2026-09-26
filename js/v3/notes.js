@@ -848,6 +848,8 @@ function teardownSheet() {
   document.getElementById('sheet-backdrop')?.remove();
   document.getElementById('artist-sheet')?.remove();
   activeSheetRepaint = null;
+  unride();
+  unride = () => {};
 }
 
 // ---- the way in and the way out (the tap change, 2026-09-26) ----------------------------
@@ -865,6 +867,38 @@ let sheetCtx = null; // the ctx of the sheet that is up — its Low Power decide
 const leavingSheets = new Set();
 const phoneShelf = () => typeof window !== 'undefined' && typeof window.matchMedia === 'function'
   && !window.matchMedia('(min-width: 720px)').matches;
+
+// The keys — ONE ride for every sheet (the join shelf's, lifted here: Sol 6's
+// review of the tap change, 2026-09-26). A fixed sheet sits at the LAYOUT
+// viewport's bottom, which on iOS is behind the keyboard, so while the keys
+// are up a sheet follows the VISUAL viewport: a bottom sheet stands on the
+// keys with its height capped to what still shows (the notes shelf's sticky
+// composer, the join shelf's field and Join, stay above them); a centred
+// dialog (an iPad, ≥720) centres in what shows instead of stretching. Nothing
+// happens until the keys take more than 40px. Returns the undo; a sheet that
+// has left the page stops listening at the next viewport event anyway.
+export function rideKeys(sheet) {
+  const vv = typeof window !== 'undefined' ? window.visualViewport : null;
+  if (!vv || typeof vv.addEventListener !== 'function') return () => {};
+  const off = () => {
+    vv.removeEventListener('resize', fit);
+    vv.removeEventListener('scroll', fit);
+  };
+  function fit() {
+    if (!sheet.isConnected) { off(); return; }
+    const keys = Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop));
+    const up = keys > 40;
+    const dialog = !phoneShelf();
+    sheet.style.bottom = up && !dialog ? `${keys}px` : '';
+    sheet.style.top = up && dialog ? `${Math.round(vv.offsetTop + vv.height / 2)}px` : '';
+    sheet.style.maxHeight = up ? `${Math.max(200, Math.round(vv.height) - (dialog ? 24 : 12))}px` : '';
+  }
+  vv.addEventListener('resize', fit);
+  vv.addEventListener('scroll', fit);
+  fit();
+  return off;
+}
+let unride = () => {};
 function sweepLeaving() {
   for (const n of leavingSheets) n.remove();
   leavingSheets.clear();
@@ -886,6 +920,8 @@ function leave(sheet, backdrop) {
   sheet.removeAttribute('id');
   backdrop.removeAttribute('id');
   activeSheetRepaint = null;
+  unride();
+  unride = () => {};
   sheet.style.pointerEvents = 'none';
   backdrop.style.pointerEvents = 'none';
   // On its way out it is no longer a dialog: nothing in it takes focus or is
@@ -1073,6 +1109,7 @@ function openScopeSheet(scope, target, ctx, onChange, opts = {}) {
       : state.fest().name;
   dialogize(sheet, scope === 'artist' ? spoken : `${spoken} notes`);
   activeSheetRepaint = paint;
+  unride = rideKeys(sheet);
   if (!swapping) arrive(sheet, backdrop, ctx, [headerHost || sheet.querySelector('.sheet-title'), wrap, box || door]);
 }
 
@@ -1251,6 +1288,7 @@ export function openAllNotes(ctx) {
   document.body.append(backdrop, sheet);
   dialogize(sheet, 'All notes');
   activeSheetRepaint = paint;
+  unride = rideKeys(sheet);
   if (!swapping) arrive(sheet, backdrop, ctx, [...sheet.children].slice(1, 4));
 }
 

@@ -354,3 +354,43 @@ test('"picked before" is any festival in this crew, then this phone\'s other cre
   localStorage.setItem(`fn_me_v3_${OTHER}`, 'Bea');
   assert.equal(pickedBefore('Zed'), false, 'someone else\'s pick there is not yours');
 });
+
+// Sol 6's review (2026-09-26): the shelf rides the keys the way the join shelf
+// always has — one helper for both (notes.js rideKeys), so its sticky composer
+// stays above an iPhone's keyboard.
+test('with the keys up the shelf stands on them, its height capped to what shows; keys down, it is back; closed, it stops riding', async () => {
+  const { fakeKeys } = await import('./helpers/fake-keys.mjs');
+  const kb = fakeKeys(window);
+  await tap(cardOf('Robyn'));
+  const sheet = shelf();
+  assert.equal(kb.listening(), 2, 'the open shelf listens to the viewport (resize and scroll)');
+  kb.keys(336);
+  assert.equal(sheet.style.bottom, '336px', 'it stands on the keys');
+  assert.equal(sheet.style.maxHeight, `${Math.max(200, window.innerHeight - 336 - 12)}px`, 'no taller than what still shows');
+  assert.ok(sheet.querySelector('.composer-wrap.composer-foot'), 'its foot is the composer, which sticks to that bottom edge');
+  kb.keys(0);
+  assert.equal(sheet.style.bottom, '', 'keys down: back on the screen\'s edge');
+  assert.equal(sheet.style.maxHeight, '');
+  await closeShelf();
+  assert.equal(kb.listening(), 0, 'a closed shelf stops riding');
+});
+
+test('a centred dialog (an iPad, ≥720) centres in what the keys leave, never stretches', async () => {
+  const { fakeKeys } = await import('./helpers/fake-keys.mjs');
+  const kb = fakeKeys(window);
+  const mm = window.matchMedia;
+  window.matchMedia = (q) => ({ matches: /min-width:\s*720px/.test(q), addEventListener() {}, removeEventListener() {} });
+  try {
+    await tap(cardOf('Robyn'));
+    const sheet = shelf();
+    kb.keys(400);
+    assert.equal(sheet.style.bottom, '', 'no bottom: a dialog is centred, and a bottom would stretch it');
+    assert.equal(sheet.style.top, `${Math.round((window.innerHeight - 400) / 2)}px`, 'centred in what shows');
+    assert.equal(sheet.style.maxHeight, `${Math.max(200, window.innerHeight - 400 - 24)}px`);
+    kb.keys(0);
+    assert.equal(sheet.style.top, '');
+  } finally {
+    window.matchMedia = mm;
+  }
+  await closeShelf();
+});

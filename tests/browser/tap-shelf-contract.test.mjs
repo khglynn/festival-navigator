@@ -40,7 +40,7 @@ const FID = 'portola-2026';
 const ENGINES = [['WebKit (iPhone)', () => webkit], ['Chromium (touch)', () => chromium]];
 const skipFor = (name, get) => (get() ? false : (name.startsWith('WebKit') ? 'Playwright WebKit is not installed (npx playwright install webkit)' : NO_BROWSER));
 
-async function memberPhone(engine, { width = 390, height = 664, mouse = false } = {}) {
+async function memberPhone(engine, { width = 390, height = 664, mouse = false, notes = null } = {}) {
   const CREW = randomBytes(20).toString('base64url'); // a made-up crew, never a real link
   const profile = devices['iPhone 13'] || { viewport: { width: 390, height: 664 }, hasTouch: true, isMobile: true, deviceScaleFactor: 3 };
   const opts = { ...profile, viewport: { width, height }, timezoneId: 'America/Los_Angeles', serviceWorkers: 'block' };
@@ -57,7 +57,7 @@ async function memberPhone(engine, { width = 390, height = 664, mouse = false } 
   let crewDoc = {
     v: 4, meta: { name: 'Tap Crew', inviteFestId: FID }, spotify: {}, affinity: {},
     people: { Kevin: { colorIndex: 0 }, Maya: { colorIndex: 3 } },
-    festivals: { [FID]: { selections: { Fcukers: { Maya: 2 } } } },
+    festivals: { [FID]: { selections: { Fcukers: { Maya: 2 } }, ...(notes ? { notes } : {}) } },
   };
   const writes = [];
   await ctx.route('**/api/**', (r) => r.fulfill({ status: 503, contentType: 'application/json', body: '{}' }));
@@ -419,6 +419,54 @@ for (const [name, get] of ENGINES) {
       assert.equal((await shelf(page)).name, 'Tove Lo');
       assert.equal(await level(page, 'Tove Lo'), before, 'nothing picked');
       assert.equal(await page.evaluate(() => document.documentElement.dataset.hand), 'assistive');
+      assert.deepEqual(errors, []);
+    } finally { await ctx.close(); }
+  });
+}
+
+// Sol 6's review (2026-09-26): the composer under the iOS keyboard. No engine
+// here draws a phone keyboard, so the page's visualViewport is swapped for one
+// the test shrinks (the v92 walk's rig, tests/helpers/fake-keys.mjs's shape):
+// the shelf's OWN listener (notes.js rideKeys, the join shelf's too) must keep
+// the box you type in — and what you typed — above the keys, on a long thread.
+for (const [name, get] of ENGINES) {
+  test(`${name}: with the keys up, the shelf's composer and what you type stay above them`, { skip: skipFor(name, get) }, async () => {
+    // A long thread: the shelf is at its full height, so the cap and the
+    // sticky foot are what keep the box in view.
+    const thread = Object.fromEntries(Array.from({ length: 10 }, (_, i) => {
+      const ts = new Date(Date.UTC(2026, 8, 26, 18, i * 3)).toISOString();
+      return [`Maya.${Date.parse(ts)}.k${i}`, { author: 'Maya', ts, text: `Note ${i + 1}: meet by the sound booth before the set, bring water.` }];
+    }));
+    const { ctx, page, errors } = await memberPhone(get(), { height: 844, notes: { artist: { 'Tove Lo': thread } } });
+    try {
+      await page.evaluate(() => {
+        const et = new EventTarget();
+        const vv = { offsetTop: 0, offsetLeft: 0, pageTop: 0, scale: 1, kb: 0,
+          get width() { return innerWidth; }, get height() { return innerHeight - vv.kb; },
+          addEventListener: (...a) => et.addEventListener(...a), removeEventListener: (...a) => et.removeEventListener(...a) };
+        Object.defineProperty(window, 'visualViewport', { configurable: true, get: () => vv });
+        window.__keys = (kb) => { vv.kb = kb; et.dispatchEvent(new Event('resize')); };
+      });
+      await tapAt(page, await cardAt(page, 'Tove Lo'));
+      await page.waitForSelector('#artist-sheet .composer-foot textarea', { timeout: 4000 });
+      await sleep(400);
+      assert.ok(await page.evaluate(() => document.querySelectorAll('#artist-sheet .n-list .n-thread, #artist-sheet .n-list [data-note]').length >= 1 || document.getElementById('artist-sheet').textContent.includes('Note 10')), 'the thread is on the shelf');
+      await page.locator('#artist-sheet .composer-foot textarea').tap();
+      await page.keyboard.type('Pier by 6:45');
+      await page.evaluate(() => window.__keys(336)); // an iPhone's keys at 390×844
+      await sleep(250);
+      const m = await page.evaluate(() => {
+        const s = document.getElementById('artist-sheet');
+        const box = s.querySelector('.composer-foot textarea').getBoundingClientRect();
+        const save = s.querySelector('.composer-foot .btn-tonal').getBoundingClientRect();
+        return { sheetBottom: s.getBoundingClientRect().bottom, keysTop: innerHeight - 336, box: box.bottom, save: save.bottom, typed: s.querySelector('.composer-foot textarea').value };
+      });
+      assert.ok(m.sheetBottom <= m.keysTop + 1, `the shelf stands on the keys (${JSON.stringify(m)})`);
+      assert.ok(m.box <= m.keysTop && m.save <= m.keysTop, `the box and Save are above them (${JSON.stringify(m)})`);
+      assert.equal(m.typed, 'Pier by 6:45');
+      await page.evaluate(() => window.__keys(0));
+      await sleep(150);
+      assert.ok(await page.evaluate(() => Math.abs(document.getElementById('artist-sheet').getBoundingClientRect().bottom - innerHeight) < 1), 'keys down: back on the edge');
       assert.deepEqual(errors, []);
     } finally { await ctx.close(); }
   });

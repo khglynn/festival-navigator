@@ -17,6 +17,7 @@
 // one tap to claim is how friends ended up picking as somebody else.
 import { GROW_MS, OUT_MS, CASCADE_MS, STAGGER_MS, EASE_ARRIVE, EASE_LEAVE, EASE_SURFACE, canAnimate } from './motion.js';
 import { focusQuietly } from './card-facts.js';
+import { rideKeys } from './notes.js';
 
 // `line` names the artist the guest touched and what the tap meant: + (or a
 // card) is a pick, and the pick lands after the join; − and the notes door
@@ -162,27 +163,11 @@ export function showJoinShelf({ artist = null, intent = 'pick', people = [], off
 
   // ---- the keyboard ------------------------------------------------------------------
   // The names give way to the field — one sideways line instead of rows, the
-  // same height for 6 people or 12 — and the shelf rides on top of the keys:
-  // a fixed sheet sits at the LAYOUT viewport's bottom, which on iOS is
-  // behind the keyboard, so its bottom edge follows the visual viewport.
+  // same height for 6 people or 12 — and the shelf rides on top of the keys
+  // (notes.js rideKeys: one ride for every sheet, the notes shelf's too).
   field.addEventListener('focus', () => sheet.classList.add('typing'));
   field.addEventListener('blur', () => sheet.classList.remove('typing'));
-  const vv = typeof window !== 'undefined' ? window.visualViewport : null;
-  const fitKeys = () => {
-    if (!sheet.isConnected) { unfit(); return; }
-    const keys = Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop));
-    sheet.style.bottom = keys > 40 ? `${keys}px` : '';
-    sheet.style.maxHeight = keys > 40 ? `${Math.max(200, Math.round(vv.height) - 12)}px` : '';
-  };
-  const unfit = () => {
-    if (!vv) return;
-    vv.removeEventListener('resize', fitKeys);
-    vv.removeEventListener('scroll', fitKeys);
-  };
-  if (vv) {
-    vv.addEventListener('resize', fitKeys);
-    vv.addEventListener('scroll', fitKeys);
-  }
+  const unfit = rideKeys(sheet);
 
   // More names than three rows hold: a soft fade says the list goes on.
   const edge = () => namesWrap.classList.toggle('more', !sheet.classList.contains('typing')
