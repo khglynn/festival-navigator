@@ -524,12 +524,19 @@ function recomputePast() {
 // The menu stays up behind it (v93's popover), for the next choice.
 let pendingView = null; // { finish } while the old wall is fading
 function settleView() { if (pendingView) pendingView.finish(); }
+// The place the last switch held, and where the page stood after it. Flipping
+// Board · List · Board without scrolling in between comes back EXACTLY: each
+// switch reusing the first one's place, rather than re-reading "the card at
+// the top" of a view whose top card is a different set at nearly the same
+// time (the round trip drifted ~60px in the browser contract before this).
+// Any scroll since, and the place is read again, where you are.
+let viewPlace = null; // { place, y }
 function switchView(next) {
   settleFold();
   settleView();
   if (ctx.view === next || !listOffered(state.fest())) return;
   const root = $('wall-root');
-  let place = takeWallPlace();
+  let place = viewPlace && Math.abs(window.scrollY - viewPlace.y) < 1 ? viewPlace.place : takeWallPlace();
   const tookAt = window.scrollY;
   saveView(ctx.fid, next);
   ctx.view = next;
@@ -548,6 +555,7 @@ function switchView(next) {
     repaintWall();
     if (fade) { fade.onfinish = null; fade.oncancel = null; try { fade.cancel(); } catch { /* done */ } }
     keepWallPlace(place, { byTime: true });
+    viewPlace = place ? { place, y: window.scrollY } : null;
     arriveBlocks(inView(root));
   };
   sw.finish = finish;

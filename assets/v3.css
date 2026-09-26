@@ -532,14 +532,22 @@ button.room-head { cursor: pointer; }
 .dock {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
   background: var(--dock); border-top: 1px solid var(--hairline);
-  padding: 9px 16px calc(9px + env(safe-area-inset-bottom));
+  /* The sides are the wall's own gutter (--sp-gutter, 14px on every phone),
+   * not 16: the dock's avatar and fest name now line up with the room heads'
+   * and the cards' edges above them, and the 4px it returns go to the day row
+   * — the menu bar's three lines cost it about 11px (Phase 1, 2026-09-26). */
+  padding: 9px var(--sp-gutter) calc(9px + env(safe-area-inset-bottom));
   /* 10px, not 14 (v93): the fest name's menu caret costs the day row 8px,
    * and the row's two gaps give exactly that back — so the D1 frames hold
    * (390 FRI SAT NOW SUN, 320 SAT NOW, Sunday at 390 with no fragment of FRI
    * at the edge), and ACL's long name still leaves the day you are in whole
    * at 320 where Linux and Android draw Inter wide. The row's edge fades
-   * keep the air the eye reads between the parts. */
-  display: flex; align-items: center; gap: 10px;
+   * keep the air the eye reads between the parts. 9px, not 10 (Phase 1):
+   * the menu bar's three lines cost the row ~11px; the gutter above returns
+   * 4, the fest link's own gap 2, these two gaps 2 — and ACL's long name
+   * still leaves the day you are in whole at 320 with Linux-wide glyphs
+   * (tests/browser/now-jump.test.mjs). */
+  display: flex; align-items: center; gap: 9px;
 }
 .dock .you { width: 26px; height: 26px; font-size: 10px; position: relative; }
 
@@ -702,7 +710,7 @@ button.room-head { cursor: pointer; }
 .dock .day-tab .num { font-size: 9px; font-weight: 600; margin-left: 2px; }
 .dock .day-tab.active { color: rgb(var(--fest)); font-weight: 800; border-bottom-color: rgb(var(--fest)); }
 /* Shared between dock and day rail (one component, two positions). */
-.fest-link { display: inline-flex; align-items: center; gap: 6px; background: none;
+.fest-link { display: inline-flex; align-items: center; gap: 5px; background: none;
              border: none; cursor: pointer; flex: none; }
 .fest-link .fest-name { font-family: var(--font-display); letter-spacing: .04em;
                         font-size: 13px; color: rgb(var(--fest)); }
@@ -1489,7 +1497,9 @@ a.f-cancel:hover { border-bottom-color: rgba(255, 255, 255, .75); }
              background: linear-gradient(to right, transparent, var(--hairline) 12px); }
 @media (hover: hover) { .past-line:hover { color: var(--text-body); } }
 .past-line:active { opacity: .6; }
-.time-list.has-past > .time-band:first-of-type { margin-top: 0; }
+/* (Out-ranks the first band's tuck under the room head: that -8px pulled the
+ * band up over the line's bottom edge, and a tap there hit the band head.) */
+.room > .time-list.rows.has-past > .time-band:first-of-type { margin-top: 0; }
 .time-list.rows > .past-line + .time-band > .band-head { min-height: 20px; }
 /* The days line at the top of the wall abuts the first day's head (a note
  * door): the wall's 13px gap is given back, never more. */
