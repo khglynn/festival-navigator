@@ -403,3 +403,47 @@ failure (yours); `npm run test:browser` 191/191; the walk: the new `390 14`
 wait, `pagehide` with a real `sendBeacon`) — **the rig's request log shows 0
 writes**, the old pick still queued, the dot online; guest at 390/320: 0
 writes; join as Sam: today's four writes only; members: no card.
+
+**~12:55 AM Sat — Codex Sol 6 re-review of 1c1bf37: round 2 confirmed; one
+new blocker, three should-fixes. On hold for Kevin's guest-flow redesign
+anyway; fixed now.**
+1. **Blocker — member writes could silently stop.** The write rule was
+   derived from `crew.me()`, a storage read that answers null when storage
+   fails — so a member whose storage started failing after the wall painted
+   queued picks that never sent, with the dot saying online. Now "guest" is a
+   FACT about the session: `guestOf`, set once when the session enters a crew
+   (`enterApp`, where one read decides guest or member — before activation,
+   which asks it) and by "Not me", cleared by any join (`member: true`, so a
+   join whose storage write did not land is still a member). The rule reads
+   only that fact: fail-open for members. Test: Kevin's wall paints, then
+   `localStorage.getItem` starts throwing; he taps Soulwax → the pick leaves
+   the phone and the crew has it. Mutation: putting the storage-derived rule
+   back turns it red.
+   (Seen on the way, not changed: `ctx.meName` is still re-read from storage
+   on every repaint, so after a storage failure the wall itself forgets the
+   name — the same in v91, where taps then did nothing. A per-page memory of
+   the last name `crew.me` read would fix both; say if you want it.)
+2. **Should-fix — a join could wait forever.** The join POST carries a 12 s
+   deadline (`JOIN_DEADLINE_MS`; the abort also bounds the response read).
+   Past it, it is the network failure it is: the offline join — the doors
+   open, the person is in on this phone, and a toast says so plainly: "You're
+   in on this phone — the crew sees you once there's signal." Test: a POST
+   that never settles → at 12.5 s the doors are open, Tia is in, Robyn is
+   hers, the toast is up.
+3. **Should-fix — the offline join could be overtaken.** Its entry is now
+   awaited inside the held doors (they open only once entry has settled).
+   Test: the POST fails at once, entry takes 300 ms, Kevin's row is still
+   disabled at 60 ms, Sam gets Robyn and Kevin's own level is untouched.
+   Mutation: un-awaiting it turns it red.
+4. **Should-fix, ACCEPTED — the waiting pick is memory only.** It is only
+   ever held across a failed one-shot migration, i.e. a guest joining a crew
+   still on the v3 pick format that nobody has opened since v4 shipped, then
+   reloading before the retry lands. Every Portola crew was born v4. Keeping
+   it across a reload would mean a new stored record (sessionStorage) with
+   its own guards for a path that cannot occur this weekend; the cost of the
+   miss is one re-tap. Revisit with the redesign if it moves the join.
+Verified: full `npm test` in UTC, Tokyo and the night clock — 967 pass each,
+the stamp the only failure; `npm run test:browser` 191/191; the walk: the
+guest `390 14` request log 0 writes (an earlier owner's pick still queued,
+real `sendBeacon` fired), guest 390 0 writes, join as Sam today's four
+writes, members no card and the same landing.

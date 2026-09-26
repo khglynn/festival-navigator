@@ -17,7 +17,7 @@ import { dayLabelParts } from '../time.js';
 import { disclosureFold, eqLoader, festRow } from './tools.js';
 import { openArtistSheet, openDayNotes, openAllNotes, openFestNotes, closeSheet, refreshOpenSheet, sheetChrome, dialogize, rememberOpener, shortDayLabel } from './notes.js';
 import { renderSettings, appSettings, openSubviewByKey } from './settings.js';
-import { onStorageWriteFail, saveLS, errorText } from '../util.js';
+import { onStorageWriteFail, saveLS, errorText, timeoutSignal } from '../util.js';
 import { router, encodeNotesKey, decodeNotesKey } from './router.js';
 import { wireCardZoom, wireCardFocusZoom, zoomCard, unzoom, dismissZoom, zoomedCard, zoomContains, zoomSnapshot, refreshZoom, festPlaceLine } from './card-facts.js';
 import { hookGlobalErrors, configureReports, record } from '../errlog.js';
@@ -72,15 +72,20 @@ import { getLS } from '../util.js';
 
 const $ = (id) => document.getElementById(id);
 
-// Who may write into the crew on screen (v92): a phone that holds a name in
-// it. A guest reads — polls, sees the crew move — and never writes: no
-// festival row queued, nothing sent, and any edits already queued on this
-// phone (an earlier owner's) left untouched for their owner (state.js
-// mayWrite; sync.js asks it before every send).
-state.setWritePolicy(() => {
-  const token = state.getCrewToken();
-  return !!(token && crew.me(token));
-});
+// Who may write into the crew on screen (v92). A guest reads — polls, sees
+// the crew move — and never writes: no festival row queued, nothing sent, and
+// any edits already queued on this phone (an earlier owner's) left untouched
+// for their owner (state.js mayWrite; sync.js asks it before every send).
+//
+// "Guest" is a FACT about this session, set once at the moment it entered the
+// crew as one (enterApp, "Not me") and cleared by any join — never re-read
+// from storage (review round 3, 2026-09-26). A storage read that starts
+// failing after a member's wall painted answers "no name", and a rule derived
+// from it silently stopped that member's picks from sending while the dot
+// said online. Fail-open for members: only a session that entered as a guest
+// is ever held back.
+let guestOf = null; // the crew token this session is a guest in, or null
+state.setWritePolicy(() => !(guestOf && guestOf === state.getCrewToken()));
 
 // ---- view context ---------------------------------------------------------------
 const ctx = {
@@ -409,6 +414,10 @@ function handleTap(artistName) {
 // where the person was standing comes back with it: the page, and each
 // timetable's sideways scroll (a hidden wall can forget both).
 let pendingJoin = null; // { token, fid, artist, place } while the join screen asks for a guest
+// How long a join's POST may take, response included, before it is treated as
+// the network failure it is (the offline join). Longer than a boot fetch
+// (8 s): a join is a write, and a slow yes is worth waiting a little for.
+const JOIN_DEADLINE_MS = 12000;
 
 function wallPlace() {
   const lefts = new Map();
@@ -2352,6 +2361,7 @@ function welcomeRecognized(token, name) {
 function notMe(token) {
   if (state.getCrewToken() !== token) return; // the toast outlived its crew
   crew.clearMe(token);
+  guestOf = token; // nobody's name is on this phone here now: it reads, it does not send
   withdrawBringOffer();
   refreshCtx();
   renderPersonChips();
@@ -2549,7 +2559,8 @@ function renderJoin(token, doc, { artist = null, fid = null } = {}) {
     hold(true);
     const claim = takeQuestion();
     crew.setMe(token, name);
-    entered(enterApp(token, doc), claim, name).finally(() => hold(false));
+    guestOf = null;
+    entered(enterApp(token, doc, undefined, undefined, { member: true }), claim, name).finally(() => hold(false));
   };
   // The invite names the FESTIVAL (FLOW-10) — the fest is why you came; the
   // crew is who with. Fest context comes from the link's &f= or the doc stamp.
@@ -2633,10 +2644,15 @@ function renderJoin(token, doc, { artist = null, fid = null } = {}) {
       // The first write happens BEFORE entry (FLOW-5): if the server says no
       // (people cap, doc size), the joiner hears it here — not as a forever-
       // gray sync dot after picking twenty artists that never left the phone.
+      // A deadline (review round 3): a request that never settles — one bar
+      // of signal, or a page backgrounded mid-join — used to hold every door
+      // on this screen shut for good. The signal bounds the response read too.
+      // Past it, this is the network failure it is: the offline join below.
       const res = await fetch(`/api/crew?t=${encodeURIComponent(token)}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ data: { people: { [name]: person } }, sv: 4 }),
+        signal: timeoutSignal(JOIN_DEADLINE_MS),
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
@@ -2646,16 +2662,26 @@ function renderJoin(token, doc, { artist = null, fid = null } = {}) {
       }
       const merged = await res.json();
       crew.setMe(token, name);
+      guestOf = null;
       // A name new to the crew: someone new here, who gets the welcome.
-      await entered(enterApp(token, merged, undefined, undefined, { joined: true }), claim, name);
+      await entered(enterApp(token, merged, undefined, undefined, { joined: true, member: true }), claim, name);
     } catch {
-      // Network failure: offline-first join, sync catches up (old behavior).
-      // The name is set first, so the crew is theirs to write to from here.
+      // Network failure (or no answer by the deadline): offline-first join,
+      // sync catches up (old behavior). The name is set first, so the crew is
+      // theirs to write to from here. Awaited, with the doors held, so no
+      // second answer can land while this one is still entering (review
+      // round 3). And said plainly: the crew hasn't seen them yet.
       crew.setMe(token, name);
+      guestOf = null;
       state.activateCrew(token, doc, festHint);
       state.recordPerson(name, person);
-      entered(enterApp(token, state.crewDoc, undefined, undefined, { joined: true }), claim, name);
+      try {
+        await entered(enterApp(token, state.crewDoc, undefined, undefined, { joined: true, member: true }), claim, name);
+      } catch (e) { record('join:offline', e); }
       sync.scheduleSync();
+      if (state.getCrewToken() === token && ctx.meName === name) {
+        showToast($('toast-root'), 'You’re in on this phone — the crew sees you once there’s signal.', 6000);
+      }
     } finally {
       delete document.body.dataset.busy;
       hold(false);
@@ -2709,7 +2735,12 @@ async function stampIdentity(token, current = () => true, { renameFrom = null } 
 // network, and nothing re-decides the festival (see boot's warm open).
 // `joined` (v92): this entry is the join screen's answer — someone new to the
 // crew, who gets the welcome (once per phone) like a guest does.
-async function enterApp(token, doc, current = () => true, customs = fetchCustomFestivals(token), { recognized = null, warm = null, holdOffer = false, joined = false } = {}) {
+async function enterApp(token, doc, current = () => true, customs = fetchCustomFestivals(token), { recognized = null, warm = null, holdOffer = false, joined = false, member = false } = {}) {
+  // Guest or member, decided ONCE, here, for this session in this crew — read
+  // before activation, which asks it (a guest queues no festival row).
+  // `member`: the caller has just set this phone's name (a join), and a
+  // storage write that did not land must not make them a guest.
+  guestOf = member || crew.me(token) ? null : token;
   dismissBringOffer({ instant: true }); // an offer is about the crew it was made in — never the next one
   dismissWelcome({ instant: true });    // nor does a card from one crew sit over the next
   welcomeHere = false;                  // decided below, once the name is known
