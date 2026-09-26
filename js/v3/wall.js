@@ -20,6 +20,7 @@ import { nowOnDay, nowOffsetPx, clockLabel, festivalClock } from './now.js';
 import { eventModelOf, venueGroupsOf, dateRuleLabel, occOf, hourLabelOf, approxMark, parseEventTime, weekdayOfIso, shortDate } from './events.js';
 import { reduced, canAnimate, GROW_MS, OUT_MS, STAGGER_MS, EASE_ARRIVE, EASE_SURFACE } from './motion.js';
 import { isCancelled } from './events.js'; // a cancelled act (2026-09-23) — its own line, so the list above can grow without a merge
+import { isRunMember } from './events.js'; // the List (Phase 1): a run member's time line says its start
 
 // ---- person -> board color ---------------------------------------------------
 // v4 people carry colorIndex. Legacy people carry a "R, G, B" string from the
@@ -56,7 +57,7 @@ export function renderCard(artistName, ctx, opts = {}) {
   const facts = factsFor(artistName, ctx, opts.occ || null);
   const people = facts.people;
   const el = document.createElement('div');
-  el.className = 'card' + (opts.cell ? ' cell' : '') + ((opts.time || opts.place) && !opts.cell ? ' timed' : '');
+  el.className = 'card' + (opts.cell ? ' cell' : '') + (opts.row ? ' row' : '') + ((opts.time || opts.place) && !opts.cell && !opts.row ? ' timed' : '');
   // A cancelled act (2026-09-23) is a card like any other — it picks, zooms
   // and carries the crew's marks — worn quieter and struck through (v3.css
   // .card.cancelled). The caller says "Cancelled" where the time goes.
@@ -453,7 +454,8 @@ const SEP_W = 11;
 function fitPlaces(cards) {
   const answers = [];
   for (const el of cards) {
-    const p = el.isConnected ? el.querySelector(':scope > .place') : null;
+    // A row's place is one line that ellipsizes (v3.css .card.row): nothing to stack.
+    const p = el.isConnected && !el.classList.contains('row') ? el.querySelector(':scope > .place') : null;
     const segs = p ? p.querySelectorAll(':scope > .phrase') : [];
     if (segs.length < 2 || !p.clientWidth) continue;
     const need = [...segs].reduce((w, s) => w + s.scrollWidth, 0) + SEP_W * (segs.length - 1);
@@ -523,6 +525,7 @@ const PLACEMENT_PROPS = ['grid-column', 'grid-row', 'width', 'margin-left', 'min
 export function refreshCard(el, artistName, ctx, { onSwap = null } = {}) {
   const fresh = renderCard(artistName, ctx, {
     cell: el.classList.contains('cell'),
+    row: el.classList.contains('row'),
     time: el.dataset.time || undefined,
     place: el.dataset.place ? JSON.parse(el.dataset.place) : undefined,
     tag: el.dataset.tag || undefined,
@@ -1439,6 +1442,14 @@ function roomsIn(fest, { days, sections, extras, looseNoDay }, weekends) {
   return rooms;
 }
 
+// Whether this festival can be read as a List (Phase 1, 2026-09-26): only
+// where something has a clock to list by — a festival that publishes a stage
+// grid. A lineup (no days at all) is one list already, with no times to put
+// in order, so it has only its board and the menu offers no view there.
+export function listOffered(fest) {
+  return !!(fest && fest.days && Object.keys(fest.days).length);
+}
+
 // The words on the fest link at the end of the dock (phone) and the rail
 // (desktop) — the show menu's door. One builder, because the wall names that
 // door when everything is hidden and must say exactly what is written on it.
@@ -1653,9 +1664,14 @@ export function venueGroups(root, entries, ctx, { day = null, fest = null, fallb
 // "9:30 PM – ~2 AM", the stacks' sub line said on the card, since no venue
 // head sits above it; else the doors; else nothing. The place is its own
 // line of phrases (renderCard `place`): the venue, then the area.
+// A member of a RUN (an afters room's line-up, `order`) says its start and no
+// more — "~10:30 PM", never "~10:30 PM – 3 AM": 3 AM is the room's close, not
+// the set's end (round five, direction a: Milli Meng read "~10:30 PM – 3 AM"
+// once Afters was read by time). v94's line was written for Folsom, where
+// every room is one party and its close IS the party's end, and it still is.
 const byTimeWhen = (m) => {
   const e = m.e;
-  const close = typeof e.close === 'string' && e.close ? `${e.closeApprox === true ? '~' : ''}${e.close}` : null;
+  const close = typeof e.close === 'string' && e.close && !isRunMember(e) ? `${e.closeApprox === true ? '~' : ''}${e.close}` : null;
   const when = m.cancelled ? 'Cancelled'
     : m.endStr ? timeRange(e.time)
       : m.startStr ? [approxMark(e, m.startStr), close].filter(Boolean).join(' – ')
@@ -1663,13 +1679,25 @@ const byTimeWhen = (m) => {
   return when || undefined;
 };
 const byTimePlace = (m) => [m.venue, areaOf(m.e)].filter(Boolean);
-export function timeGroups(root, entries, ctx, { day = null, fest = null, fallbackVenue = null, clock = null } = {}) {
-  const list = mk('div', 'time-list');
+// A ROW's place (the List): the same phrases, except that a place which only
+// repeats the card's own name says nothing (Despacio on the Despacio stage),
+// and neither does the festival's own site under the festival's head (a
+// billed name with no set yet is at Pier 80 — the head above already says so).
+const rowPlace = (m, siteName) => [m.venue === siteName ? null : m.venue, areaOf(m.e)]
+  .filter((p) => p && p !== m.e.name);
+//
+// `ladder` and `row` are the List's (Phase 1, 2026-09-26): 'hours' for a room
+// of sets, the night ladder for a section that declared it; `row` draws each
+// card full width, one to a row (.time-list.rows, v3.css). A festival-grid set
+// carries the grid's own occurrence (`gridOcc`), so its zoom, its notes and a
+// zoom kept across a repaint are the grid cell's, whichever view drew it.
+export function timeGroups(root, entries, ctx, { day = null, fest = null, fallbackVenue = null, clock = null, ladder = 'night', row = false } = {}) {
+  const list = mk('div', row ? 'time-list rows' : 'time-list');
   if (day && day.iso) list.dataset.iso = day.iso;
   if (fest && fest.timezone) list.dataset.tz = fest.timezone;
   if (clock) list.dataset.clock = clock;
   let shown = 0;
-  for (const band of timeBandsOf(entries, { fallbackVenue })) {
+  for (const band of timeBandsOf(entries, { fallbackVenue, ladder })) {
     const b = mk('div', 'time-band');
     b.dataset.band = band.key;
     const head = mk('div', 'band-head');
@@ -1678,7 +1706,8 @@ export function timeGroups(root, entries, ctx, { day = null, fest = null, fallba
     grid.setAttribute('role', 'group');
     grid.setAttribute('aria-label', band.label);
     for (const m of band.members) {
-      const card = renderCard(m.e.name, ctx, { time: byTimeWhen(m), place: byTimePlace(m), occ: occOf(m.e) });
+      const place = row ? rowPlace(m, fallbackVenue) : byTimePlace(m);
+      const card = renderCard(m.e.name, ctx, { time: byTimeWhen(m), place: place.length ? place : undefined, occ: m.e.gridOcc || occOf(m.e), row });
       if (m.nowFrom != null && m.nowTo != null) {
         card.dataset.nowFrom = String(m.nowFrom);
         card.dataset.nowTo = String(m.nowTo);
@@ -1693,9 +1722,32 @@ export function timeGroups(root, entries, ctx, { day = null, fest = null, fallba
   root.appendChild(list);
   return shown;
 }
-// Where a section's cards go: its declared layout, else the stacks.
-function sectionBody(fest, key) {
+// Where a section's cards go: its declared layout, else the stacks. In the
+// List every room is a time list of rows: a section that declared by-time
+// keeps its night ladder, every other room reads on hours (events.js).
+function sectionBody(fest, key, ctx = {}) {
+  if (ctx.view === 'list') {
+    const ladder = sectionLayoutOf(fest, key) === BY_TIME ? 'night' : 'hours';
+    return (root, entries, c, opts = {}) => timeGroups(root, entries, c, { ...opts, clock: null, ladder, row: true });
+  }
   return sectionLayoutOf(fest, key) === BY_TIME ? timeGroups : venueGroups;
+}
+// The short name a Portola stage goes by on a row: "Pier" for "Pier Stage" —
+// the one word every stage shares says nothing (round five, direction a).
+const shortStage = (s) => String(s || '').replace(/\s+stage$/i, '').trim() || null;
+// The festival's own room in the List: every set of the day's grid, as a
+// by-time entry under its stage's short name with the grid cell's own
+// occurrence and now window, then whatever of the festival's is not on the
+// grid (festRoomExtras: a stray stage, a name billed with no set, an activity).
+function festRoomListEntries(fest, day, layout) {
+  const sets = state.getDayArtists(day.dayKey, day.weekend)
+    .filter((a) => layout.stages.indexOf(a.stage) !== -1)
+    .map((a) => ({
+      name: a.name, day: day.dayKey, venue: shortStage(a.stage), time: a.time || null,
+      liveFrom: a.startMin, liveTo: a.endMin ?? a.startMin + 60, // the grid cell's own window (renderScheduledDayBody)
+      gridOcc: { day: day.dayKey, stage: a.stage || null, time: a.time || null, weekend: a.weekend || null },
+    }));
+  return [...sets, ...festRoomExtras(fest, day, layout)];
 }
 // Where the now mark lives: a stack's grid or a time list, each carrying its
 // date (and the festival's zone) for the ticker.
@@ -2263,7 +2315,9 @@ function renderComposed(root, ctx, fest, { model: plan, scheduled, festRoom }) {
       const door = dateDoor(ctx, day.iso, dayLabelParts(day.dayKey).head);
       room.appendChild(head(fest.name, festRoomSub(fest), door));
       if (door) dayNoteWhisper(room, day.iso, door.aria, ctx);
-      if (day.grid) {
+      if (day.grid && ctx.view === 'list') {
+        timeGroups(room, festRoomListEntries(fest, day, layout), ctx, { day, fest, fallbackVenue: festRoomSub(fest), ladder: 'hours', row: true });
+      } else if (day.grid) {
         const extras = festRoomExtras(fest, day, layout);
         clocked = renderScheduledDayBody(room, day.dayKey, ctx, layout, day.weekend, { strip: true });
         if (extras.length) venueGroups(room, extras, ctx, { day, fest, fallbackVenue: festRoomSub(fest), clock: clocked ? 'room' : null });
@@ -2285,7 +2339,7 @@ function renderComposed(root, ctx, fest, { model: plan, scheduled, festRoom }) {
       const label = target ? dayTargetLabel(ctx, target, dayLabelParts(day.dayKey).head) : null;
       room.appendChild(head(sec.label, sectionSub(fest, sec), target ? { onOpen: () => ctx.onOpenDayNotes(target, label), aria: label } : null));
       if (target) dayNoteWhisper(room, target, label, ctx);
-      sectionBody(fest, sec.key)(room, list, ctx, { day, fest, clock: clocked ? 'day' : null });
+      sectionBody(fest, sec.key, ctx)(room, list, ctx, { day, fest, clock: clocked ? 'day' : null });
       block.appendChild(room);
     }
     root.appendChild(block);
@@ -2343,7 +2397,7 @@ function renderExtra(root, ctx, fest, extra) {
   if (!extra.byDate) {
     const room = roomBlock(extra.key);
     room.appendChild(roomHead({ label: extra.label, sub: ownSub }));
-    sectionBody(fest, extra.key)(room, extra.entries || [], ctx, { fest });
+    sectionBody(fest, extra.key, ctx)(room, extra.entries || [], ctx, { fest });
     block.appendChild(room);
   } else {
     for (const [iso, list] of extra.byDate) {
@@ -2353,7 +2407,7 @@ function renderExtra(root, ctx, fest, extra) {
       const wd = weekdayOfIso(iso);
       room.appendChild(roomHead({ weekday: wd ? wd.toUpperCase() : null, label: extra.label, sub: joinSub(shortDate(iso), ownSub), ...(door || {}) }));
       if (door) dayNoteWhisper(room, iso, door.aria, ctx);
-      sectionBody(fest, extra.key)(room, list, ctx, { day: { iso }, fest });
+      sectionBody(fest, extra.key, ctx)(room, list, ctx, { day: { iso }, fest });
       block.appendChild(room);
     }
   }
@@ -2435,6 +2489,10 @@ function renderWallInner(root, ctx) {
   root.textContent = '';
   const fest = state.fest();
   const scheduled = fest.days && Object.keys(fest.days).length;
+  // Which view this wall is (Phase 1): v3.css draws the List's one reading
+  // column from it. A search is a list of answers either way.
+  if (ctx.view === 'list' && scheduled && !ctx.query) root.dataset.view = 'list';
+  else delete root.dataset.view;
 
   // The composed wall (MODEL-V4, 2026-09-16): a week of days, each holding
   // its rooms. One path for every fest that has days at all — a search and a

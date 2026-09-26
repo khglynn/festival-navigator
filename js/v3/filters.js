@@ -207,3 +207,52 @@ export function rememberShowSeeded(fid) {
   seededHere.add(fid);
   try { localStorage.setItem(LS_SEEDED(fid), '1'); } catch { /* memory holds it for this visit */ }
 }
+
+// ---- the view: Board or List (Phase 1, 2026-09-26) ----------------------------------
+// Kevin, from Portola: "our menu that holds the locations 'show' options gets
+// … view as list vs board (share and reload saves that selection)". Board is
+// the wall as it has always been — stage columns on a clock, stacks under
+// their venues; List reads every room by time, one card to a row. Which one
+// is a VIEWER's choice, so it follows the fold's law exactly: per phone, per
+// festival (a view is a view OF a festival — someone can keep Portola as a
+// list while it is live and still plan ACL on its board), memory the truth
+// for the life of the page, localStorage the copy, never the crew doc.
+// Board is the default and stores nothing: choosing it removes the key.
+//
+// The write is a raw guarded one, not saveLS: a refused view is not a lost
+// pick, and must not raise the "storage is full, picks can't be saved" toast
+// that exists for those (the seeded marker's rule, below).
+export const BOARD = 'board';
+export const LIST = 'list';
+const LS_VIEW = (fid) => `fn_view_v1_${fid}`;
+const viewMemory = new Map();
+const viewMemoryWins = new Set(); // the fold's memoryWins, for the view
+const asView = (v) => (v === LIST ? LIST : BOARD);
+
+export function loadView(fid) {
+  if (viewMemoryWins.has(fid) && viewMemory.has(fid)) return viewMemory.get(fid);
+  const raw = getLS(LS_VIEW(fid));
+  if (raw != null) {
+    const v = asView(raw);
+    viewMemory.set(fid, v);
+    return v;
+  }
+  return viewMemory.get(fid) || BOARD;
+}
+export function saveView(fid, view) {
+  const v = asView(view);
+  viewMemory.set(fid, v);
+  try {
+    if (v === LIST) localStorage.setItem(LS_VIEW(fid), LIST);
+    else localStorage.removeItem(LS_VIEW(fid));
+  } catch { /* memory holds it for this visit */ }
+  const landed = v === LIST ? getLS(LS_VIEW(fid)) === LIST : getLS(LS_VIEW(fid)) == null;
+  if (landed) viewMemoryWins.delete(fid); else viewMemoryWins.add(fid);
+}
+// Has this phone chosen a view of this festival? A stored List is a choice;
+// Board stores nothing, which reads the same as never having chosen — the
+// seeding below asks this, and the phone-has-shown-it test in app.js covers
+// the rest (the fold's own reasoning, foldIsSet).
+export function viewIsSet(fid) {
+  return getLS(LS_VIEW(fid)) != null || (viewMemoryWins.has(fid) && viewMemory.get(fid) === LIST);
+}
