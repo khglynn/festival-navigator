@@ -16,12 +16,14 @@
 - **People menu + Invite sheet** (`live/people`, `PEOPLE-BRIEF.md`): building
   (Opus); leaves a slot for Our plan's row.
 - **Our plan** (`live/plan`, sibling session, `OUR-PLAN-HANDOFF.md`, log
-  `OUR-PLAN-BUILD.md`; 12:35 PM PT): renamed for Kevin — "Our picks", "5
-  picked" — and gated at 06f0eb9 (live/people 117c833 in), sent. The Share
-  design round is out: frames and five calls on a review page (link in
-  `share-design/DESIGN.md` on `live/plan-share`), my picks marked; no build
-  until Kevin answers. One product call banked: a tap on a card grown inside
-  the plan.
+  `OUR-PLAN-BUILD.md`; afternoon): shipping as "Our picks" in PR #60 (v101),
+  held on Linux WebKit browser reds. Cause: a loaded CI runner starts
+  animations late, so tests measured the panel mid-move — and one real app
+  flaw, the window popping when grabbed mid-settle. Both fixed on
+  `live/plan` (b712de5), sent to the coordinator for release/our-plan's CI
+  (`LATE_ANIMATIONS_MS` reproduces it on a Mac). The Share design waits on
+  Kevin's answers (review page linked in `share-design/DESIGN.md` on
+  `live/plan-share`).
 - **ACL prep** (`data/acl-prep`, `ACL-PREP-BRIEF.md`, round two
   `ACL-PREP-ROUND2.md`): Late nights times; round two makes sure no guess is
   later than the show and fixes `guess-run-times` for date-keyed sections. The
