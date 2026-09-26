@@ -317,10 +317,16 @@ html { touch-action: manipulation; }
 .sort-pop .check { width: 12px; flex: none; font-size: 11px; }
 
 /* The show menu (MODEL-V4 §3.1) is this same popover with three parts the
- * sort chip never needed: a head, a divider, and Settings at the end. */
-.sort-pop .pop-head {
-  padding: 5px 11px 6px; color: var(--text-tertiary);
-  font-size: 10px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase;
+ * sort chip never needed: a label, a divider, and Settings at the end.
+ *
+ * A menu's label (v93, Kevin: a small "Show" at the top, not a title): ONE
+ * class for every menu that names itself — the Show menu now, the Highlight
+ * menu from the avatar next. The app's section micro-label (10px / 800 /
+ * --track-label, the room heads' letter-spaced sub line), in the secondary
+ * grey, lined up with the rows' check column. */
+.menu-label {
+  display: block; padding: 5px 11px 6px; color: var(--text-secondary);
+  font-size: 10px; font-weight: 800; letter-spacing: var(--track-label); text-transform: uppercase;
 }
 .sort-pop .pop-div { height: 1px; margin: 5px 7px; background: var(--hairline); }
 .sort-pop .chev { color: var(--text-tertiary); margin-left: auto; padding-left: 10px; }

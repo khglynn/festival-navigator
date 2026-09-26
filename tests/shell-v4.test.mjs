@@ -122,7 +122,7 @@ test('the fest name opens the show menu: Show, a row per room, then Settings', (
     const pop = menu(which);
     assert.ok(pop, `${which}: the popover is hung in the wrap`);
     assert.equal(pop.style.display, 'none', 'closed until it is asked for');
-    assert.equal(pop.querySelector('.pop-head').textContent, 'Show');
+    assert.equal(pop.querySelector('.menu-label').textContent, 'Show', 'the menu\'s small label (one class, for every menu that names itself)');
     assert.deepEqual(rows(which), [
       [':fest', '✓Portola', 'true'],
       ['Afters', '✓Afters', 'true'],
@@ -267,6 +267,9 @@ test('the Settings row wears the header\'s gear, left of its word, and it is onl
   }
   const css = readFileSync(join(ROOT, 'assets/v3.css'), 'utf8');
   assert.match(css, /\.sort-pop \.settings \.check \{[^}]*color: var\(--text-secondary\)/, 'in the secondary text colour');
+  // The menu's label (Kevin, v93): small, letter-spaced, the secondary grey —
+  // a label, not a title — and one class the next menu can wear.
+  assert.match(css, /\.menu-label \{[^}]*color: var\(--text-secondary\)[^}]*letter-spacing: var\(--track-label\)[^}]*text-transform: uppercase/, 'the label is the app\'s micro-label');
 });
 
 test('unchecking a room hides it on every day — the show menu is the one door', async () => {
@@ -710,7 +713,7 @@ test('How it works: eight rows, the fest link says ACL \'26 whatever fest is ope
 test('every class this shell writes for visual effect has a rule in v3.css', () => {
   const css = readFileSync(join(ROOT, 'assets/v3.css'), 'utf8');
   for (const sel of [
-    '.sort-pop .pop-head',   // the show menu's "Show"
+    '.menu-label {',         // the show menu's "Show" (and the menus to come)
     '.sort-pop .pop-div',    // the divider before Settings
     '.sort-pop .chev',       // the › on the Settings row
     '.card.now',             // the now mark's ring

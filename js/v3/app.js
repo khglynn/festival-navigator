@@ -1418,7 +1418,7 @@ function buildShowMenu(rooms, folded) {
   pop.dataset.rooms = rooms.map((r) => r.key).join('|');
   pop.style.display = 'none';
   const head = document.createElement('li');
-  head.className = 'pop-head';
+  head.className = 'menu-label';
   head.setAttribute('role', 'presentation');
   head.textContent = 'Show';
   pop.appendChild(head);
