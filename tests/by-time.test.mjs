@@ -31,7 +31,8 @@ const state = await import('../js/state.js');
 const model = await import('../js/v3/model.js');
 const { FESTIVALS, FESTIVAL_INDEX } = await import('../js/festivals.js');
 const { renderWall, refreshCard, positionNowMarks, roomsOf } = await import('../js/v3/wall.js');
-const { sectionLayoutOf, timeBandsOf, bandOf, TIME_BANDS, venueGroupsOf, occOf, BY_TIME, BY_VENUE, LAYOUTS } = await import('../js/v3/events.js');
+const { sectionLayoutOf, timeBandsOf, bandOf, TIME_BANDS, venueGroupsOf, occOf, BY_TIME, BY_VENUE, LAYOUTS, showsOnItsOwn, linksOf } = await import('../js/v3/events.js');
+const { factsFor } = await import('../js/v3/card-facts.js');
 const { foldFromShow } = await import('../js/v3/filters.js');
 const { dayArtistsFor } = await import('../js/v3/tools.js');
 const { validateFestivalDoc } = await import('../api/_lib/festival-rules.mjs');
@@ -316,6 +317,48 @@ test("Portola's real Folsom entries, declared by time: every Folsom night is a t
   }
   assert.equal(cards, folsom.length, 'one card per Folsom entry (Horse Meat Disco\'s included)');
   assert.deepEqual(validateFestivalDoc(FESTIVALS['portola-by-time']).errors, [], 'the declaration validates on the real file');
+});
+
+test('a party in a by-time section is its own show; a combined label still has a room where its other part is stacks', () => {
+  assert.equal(showsOnItsOwn(FEST, { day: 'Parties' }), true);
+  assert.equal(showsOnItsOwn(FEST, { day: 'Afters' }), false);
+  assert.equal(showsOnItsOwn(FEST, { day: 'Afters & Parties' }), false, 'its Afters room still holds it to the room rules');
+  assert.equal(showsOnItsOwn(withMeta({ Afters: { date: 'Sep 24-27', layout: 'by-time' } }), { day: 'Afters & Parties' }), true);
+  assert.equal(showsOnItsOwn(FEST, { day: 'Saturday' }), false);
+  assert.equal(showsOnItsOwn(FEST, {}), false);
+});
+
+test("Portola's Folsom: in a venue that hosts several parties a night, each card opens its OWN doors — its page, its tickets", () => {
+  const fest = portolaFile;
+  assert.equal(sectionLayoutOf(fest, 'Folsom'), BY_TIME, 'the file declares Folsom by time');
+  const shared = new Map();
+  for (const a of fest.artists) {
+    if (a.day !== 'Folsom' || a.cancelled) continue;
+    const k = `${a.night}|${a.venue}`;
+    if (!shared.has(k)) shared.set(k, []);
+    shared.get(k).push(a);
+  }
+  const rooms = [...shared].filter(([, list]) => list.length > 1);
+  assert.ok(rooms.length >= 5, `several venue-nights host more than one party (${rooms.map(([k]) => k).join(', ')})`);
+  FESTIVALS['portola-2026'] = fest;
+  if (!FESTIVAL_INDEX.some((f) => f.id === 'portola-2026')) FESTIVAL_INDEX.push({ id: 'portola-2026', status: 'scheduled' });
+  const { root, ctx } = render('portola-2026');
+  const dayOf = { Fri: 'Friday', Sat: 'Saturday', Sun: 'Sunday' };
+  let differ = 0;
+  for (const [k, list] of rooms) {
+    const [night] = k.split('|');
+    const room = roomOf(root, dayOf[night], 'Folsom');
+    const doors = list.map((a) => {
+      const card = [...room.querySelectorAll('.card')].find((c) => c.dataset.artist === a.name);
+      assert.ok(card, `${a.name} has its own card`);
+      const facts = factsFor(a.name, ctx, JSON.parse(card.dataset.occ));
+      assert.deepEqual(facts.links, linksOf(a), `${a.name}: the zoom's doors are its own`);
+      return JSON.stringify(facts.links);
+    });
+    if (new Set(doors).size > 1) differ += 1;
+  }
+  assert.ok(differ >= 1, 'and where the parties publish different pages, the doors differ (Sat Transform1060: Humanitix, Eventbrite)');
+  assert.equal(validateFestivalDoc(fest, { filename: 'portola-2026.json' }).warnings.length, 0, 'no room warnings: each party is its own show');
 });
 
 // ---- the validator ------------------------------------------------------------------------

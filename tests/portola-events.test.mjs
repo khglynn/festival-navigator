@@ -36,6 +36,7 @@ const { renderWall } = await import('../js/v3/wall.js');
 const { validateFestivalDoc } = await import('../api/_lib/festival-rules.mjs');
 const { frozenKeyProblems } = await import('../api/_lib/pick-keys.mjs');
 const { timeToMinutes } = await import('../js/time.js');
+const { showsOnItsOwn } = await import('../js/v3/events.js');
 const { planFestival, loadRegistry } = await import('../scripts/guess-run-times.mjs');
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -55,10 +56,14 @@ const midway = midwayAll.filter((a) => a.order);
 const midwayBilled = midwayAll.filter((a) => !a.order);
 const clone = (x) => JSON.parse(JSON.stringify(x));
 // Every venue-night in the file, however many acts are in it.
+// A ROOM: one venue on one night, where the acts are one show. A party in a
+// section read by time (v94, Folsom) is its own show and is in no room
+// (events.js showsOnItsOwn), so the room rules below never reach it.
 const roomsOf = (fest) => {
   const rooms = new Map();
   for (const a of fest.artists) {
     if (typeof a.stage !== 'string' || !a.stage.includes(' · ')) continue;
+    if (showsOnItsOwn(fest, a)) continue;
     const { night, venue } = splitStage(a.stage);
     const k = `${a.day}|${night}|${venue}`;
     if (!rooms.has(k)) rooms.set(k, []);

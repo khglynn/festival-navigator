@@ -2,7 +2,7 @@
 // consumed by BOTH scripts/validate-festivals.mjs (CI) and api/festival-add.js
 // (LLM-researched candidates). If a rule changes, it changes here once.
 import { timeToMinutes, computeDayArtists } from '../../js/time.js';
-import { parseEventTime, shortDate, LAYOUTS, BY_TIME } from '../../js/v3/events.js';
+import { parseEventTime, shortDate, LAYOUTS, BY_TIME, showsOnItsOwn } from '../../js/v3/events.js';
 import { safeKey, FORBIDDEN_KEYS } from './crew-shared.mjs';
 
 export const SLUG_RE = /^[a-z0-9-]{1,64}$/;
@@ -105,11 +105,9 @@ function checkEventFields(fest, err, warn) {
   // day tabs AND on its own tab is half a wall in each place.
   const sectionAxis = new Map();
   // A by-time section (checkLayouts) draws no rooms: its parties line up by
-  // the clock, each its own card, so two parties in one venue on one night
-  // are two parties, not a run missing its order.
-  const byTime = new Set(Object.entries(plain(fest.dayMeta) ? fest.dayMeta : {})
-    .filter(([, m]) => plain(m) && m.layout === BY_TIME).map(([k]) => k));
-  const inRoomsOnly = (day) => typeof day === 'string' && dayParts(day).some((p) => !byTime.has(p));
+  // the clock, each its own show (events.js showsOnItsOwn — how the validator
+  // knows is the section's own `dayMeta.layout`), so two parties in one venue
+  // on one night are two parties, not a run missing its order.
 
   artists.forEach((a, i) => {
     if (!plain(a)) return;
@@ -219,7 +217,7 @@ function checkEventFields(fest, err, warn) {
   // renders it, it just cannot tell anyone who is on when.
   for (const [key, sets] of rooms) {
     if (sets.length < 2 || sets.every((a) => a.order !== undefined)) continue;
-    if (!inRoomsOnly(sets[0].day)) continue;
+    if (showsOnItsOwn(fest, sets[0])) continue;
     const where = safeKey(key.replace(/\|/g, ' · '));
     const starts = new Set(sets.map((a) => startOf(a.time)));
     warn(starts.size === 1

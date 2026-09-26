@@ -328,6 +328,19 @@ export function sectionLayoutOf(fest, key) {
   return meta && meta.layout === BY_TIME ? BY_TIME : BY_VENUE;
 }
 
+// Where every room an entry sits in reads by time, each party there is ITS
+// OWN SHOW (v94): its own start, its own page and ticket link, never a run.
+// So the rules that make a ROOM one show — a timed room needs a running order,
+// one venue-night is one bill with one page and one ticket link — do not reach
+// it. The validator (festival-rules.mjs) and the file's own tests ask this one
+// question, so they cannot drift apart. A combined label ("Afters & Folsom")
+// still has a room in Afters, and the room's rules still hold it there.
+const DAY_PARTS = /\s*[&+/]\s*|\s+and\s+/i;
+export function showsOnItsOwn(fest, entry) {
+  const parts = String((entry && entry.day) || '').split(DAY_PARTS).map((s) => s.trim()).filter(Boolean);
+  return parts.length > 0 && parts.every((p) => sectionLayoutOf(fest, p) === BY_TIME);
+}
+
 // The bands, on the festival-day clock (9 AM starts the day; activityMinutes).
 // Fixed boundaries, never fitted to the data, so a night with two parties
 // reads the same way as a night with twenty-six: a band with nothing in it is
