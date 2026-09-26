@@ -2430,7 +2430,9 @@ function pillCap(wrap, row, n) {
   const room = row.clientWidth + wrap.getBoundingClientRect().width; // the row and the slot share this width
   const tabs = [...row.children].filter((t) => !t.hidden);
   const active = tabs.find((t) => t.classList.contains('day-tab') && t.classList.contains('active')) || null;
-  const now = tabs.find((t) => t.classList.contains('now-tab') && !t.dataset.leaving) || null;
+  // A NOW on its way out still takes its room until it is gone — the pill
+  // refits the moment it is (the watch on NOW's `hidden`, below in wire-up).
+  const now = tabs.find((t) => t.classList.contains('now-tab')) || null;
   const gap = parseFloat(window.getComputedStyle(row).columnGap) || 0;
   const need = (active ? active.offsetWidth : 0) + (now ? now.offsetWidth + (active ? gap : 0) : 0);
   for (let k = PILL_FACES; k >= 1; k -= 1) if (pillWidth(Math.min(k, n)) + need <= room) return k;
@@ -4816,11 +4818,16 @@ export function init() {
   // under it: NOW arrives or leaves on the minute tick, a repaint rebuilds
   // the tabs, a phone turns. Each refits a pill that is up (Codex's review of
   // a1612a0: NOW arriving after a three-disc pill could not be whole at 320).
+  // NOW's coming and going is its `hidden` since v103 (it never leaves the
+  // row), so that is watched as well as the row's children — without it a
+  // pill kept the room NOW had asked for after NOW had gone, and the other way
+  // round (the CI red of v103's first head).
   const refitPill = () => { if ((ctx.filterPeople || []).length) paintSlots(); };
   const Watch = typeof window !== 'undefined' ? window.MutationObserver : undefined;
   if (typeof Watch === 'function') {
     const rows = new Watch(refitPill);
     for (const [, , rowId] of YOU_SLOTS) if ($(rowId)) rows.observe($(rowId), { childList: true });
+    for (const [id] of NOW_DOORS) if ($(id)) rows.observe($(id), { attributes: true, attributeFilter: ['hidden'] });
   }
   let refitTimer = 0;
   window.addEventListener('resize', () => { clearTimeout(refitTimer); refitTimer = setTimeout(refitPill, 160); });

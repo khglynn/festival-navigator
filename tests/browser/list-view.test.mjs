@@ -16,7 +16,7 @@ import path from 'node:path';
 import { randomBytes } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { serveStatic } from '../helpers/static-server.mjs';
-import { launchBrowser, launchWebkit, motionDone, NO_BROWSER } from '../helpers/browser.mjs';
+import { launchBrowser, launchWebkit, motionDone, NO_BROWSER, nowInView } from '../helpers/browser.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -215,6 +215,10 @@ for (const [name, get, width] of ENGINES) {
       await sleep(500);
       const now = width < 720 ? '#dock-now' : '#rail-now';
       assert.equal(await page.locator(now).isVisible(), true, 'NOW is in the day row while sets are on');
+      // A phone's row can rest with NOW past its left edge (v103): the row to
+      // its start first, as a finger's swipe would, so the tap lands on NOW
+      // and not on the avatar beside the row.
+      await nowInView(page, width < 720 ? 'dock' : 'rail');
       await press(page, phone, now);
       await sleep(1600);
       const seen = await page.evaluate(() => {

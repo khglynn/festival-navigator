@@ -211,6 +211,43 @@ count; Retry-After parsing), `tests/spotify-playlist-ui.test.mjs` (the real
 drill: the Make line, the ledger, Add new picks trying exactly the missed ones,
 the top-up's own note, and a re-render mid-run — call 3b).
 
+## The gate, as it runs (reds read by name)
+
+- Node, three clocks, at 6f77de1: 1273 / 1276 each (UTC, Asia/Tokyo, the night
+  clock); the one red is the service-worker stamp (not stamped, by the brief);
+  one skipped, one todo (the banked offline-add casing). validate-festivals: 0 errors.
+- CI 36276281144 (f3259ae), 36277438452 (4b7f92d), 36278032908 (6f77de1) —
+  `checks` red on the stamp only; `browser` red on:
+  1. **`acl-2026 at 430: the row's contract` (every run, Linux):** "SAT3*:45/46"
+     — the day you are in cut 1.3px. With NOW leading, NOW…SAT 3 came one
+     pixel wider than the row, and `restingLeft`'s pixel of slack (meant for
+     rounding at the row's END) called SAT 3 whole inside the row, where its
+     sub-pixel width cut it further. Fixed: the slack applies only at the
+     row's two ends; a new pure test pins it (red under the old rule).
+  2. **`Chromium 320: the pill refits when NOW leaves the day row`** (runs 1
+     and 3, and once in my full local suite; never alone, throttled 6x, or six
+     copies at once, even instrumented): after NOW left, the row rested at 0
+     with SAT past its right edge. What v103 had changed under it: the pill
+     used to refit when NOW LEFT THE ROW (a childList mutation), and NOW no
+     longer leaves the row — it only hides — so the refit after NOW had gone
+     never came; and `pillCap` had stopped counting a NOW on its way out,
+     which moved the refit earlier, into NOW's leave. Both put back: the
+     pill's watch now also observes NOW's `hidden`, and a leaving NOW keeps its
+     room until it is gone (as `dayRowGeometry` already said) — v102's
+     sequence of events exactly. (Ruled out by a probe: a same-place scrollTo
+     does abort a smooth glide in both engines, so it is not a no-op race.)
+     Watching CI for it; not claimed fixed until CI says so.
+  3. **`WebKit 390: NOW is the day row's first item … a tap lands`** (runs 1
+     and 2, Linux WebKit): the page never moved, so the tap missed NOW. At 390
+     on Saturday NOW rests past the edge and the test let Playwright's click
+     scroll the row to it. A new helper, `tests/helpers/browser.mjs
+     nowInView`, brings the row to its start first (the swipe's stand-in — the
+     swipe itself has its own real-touch test) and waits for NOW whole and
+     still; every NOW tap in the now-jump contract uses it. It also caught a
+     test that had been passing for the wrong reason: the List's "NOW lands on
+     a row" at 390 tapped NOW's centre past the row's edge — the avatar — and
+     passed because rows were already ringed at the top.
+
 ## Calls (the brief left these open)
 
 **1a. When NOW and the day you are in cannot both show, the row centres on the

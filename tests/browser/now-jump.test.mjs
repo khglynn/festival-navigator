@@ -13,7 +13,7 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { serveStatic } from '../helpers/static-server.mjs';
-import { launchBrowser, launchWebkit, NO_BROWSER } from '../helpers/browser.mjs';
+import { launchBrowser, launchWebkit, NO_BROWSER, nowInView } from '../helpers/browser.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -159,6 +159,7 @@ const settled = (page) => page.evaluate(() => new Promise((resolve) => {
   requestAnimationFrame(step);
 }));
 const tapNow = async (page, door) => {
+  await nowInView(page, door); // on a phone NOW can rest past the row's edge (v103)
   await page.locator(`#${door}-now`).click();
   await sleep(150); // the glide starts
   await settled(page);
@@ -255,7 +256,8 @@ for (const [width, height, touch, engine, name] of [[390, 844, true, browser, ''
       await page.mouse.move(8, 8);
       await sleep(1000); // the zoom's grace close, and the first landing's pulse, are over
       const y = await page.evaluate(() => scrollY);
-      await page.locator(`#${door}-now`).click();
+      await nowInView(page, door);
+    await page.locator(`#${door}-now`).click();
       await sleep(80);
       const again = await page.evaluate(() => {
         const c = [...document.querySelectorAll('#wall-root .room[data-room="Afters"] .card')].find((x) => x.dataset.artist === 'Milli Meng');
@@ -339,7 +341,8 @@ for (const [who, says] of [['Kat', 'Nothing of Kat’s is on right now — here�
       await highlight(page, who);
       await page.evaluate(() => window.scrollTo(0, 0));
       await sleep(150);
-      await page.locator(`#${door}-now`).click();
+      await nowInView(page, door);
+    await page.locator(`#${door}-now`).click();
       await sleep(150);
       await settled(page);
       await sleep(900); // past the 750 ms pulse fallback
@@ -375,6 +378,7 @@ test('390: the card is replaced mid-glide — the fresh one pulses, and no scrol
     const scrollends = async () => (await cdp.send('DOMDebugger.getEventListeners', { objectId: result.objectId }))
       .listeners.filter((l) => l.type === 'scrollend').length;
     const before = await scrollends();
+    await nowInView(page, door);
     await page.locator(`#${door}-now`).click();
     const swapped = await page.evaluate(() => {
       const old = [...document.querySelectorAll('#wall-root .room[data-room="Afters"] .card')].find((c) => c.dataset.artist === 'Milli Meng');
@@ -438,6 +442,7 @@ const place = (page) => page.evaluate(() => `${Math.round(scrollY)}|${[...docume
 // window, for the checks that nothing pulses. Every wait is polled from here
 // in real time — the page's own timers run on the pinned clock.
 const tapAndLook = async (page, door, { pulse = 'maybe' } = {}) => {
+  await nowInView(page, door);
   await page.evaluate(() => { window.__pulses = []; });
   const from = await place(page);
   await page.locator(`#${door}-now`).click();
@@ -688,6 +693,7 @@ test('390: Ross drops the pick NOW is gliding to — the dimmed card does not pu
         });
       }, { once: true });
     });
+    await nowInView(page, door);
     await page.locator(`#${door}-now`).click();
     for (let t = 0; t < 30 && !(await page.evaluate(() => window.__pulled)); t++) await sleep(50);
     await settled(page);
@@ -811,6 +817,7 @@ test('Reduce Motion: NOW lands at once and nothing pulses; the live dot is still
     await highlight(page, 'Ross');
     await page.evaluate(() => window.scrollTo(0, 0));
     await sleep(100);
+    await nowInView(page, door);
     await page.locator(`#${door}-now`).click();
     await sleep(60);
     const r = await page.evaluate((d) => {
@@ -1202,6 +1209,7 @@ test('320, Reduce Motion: NOW brings the right-hand afters card in at once', { s
     await page.evaluate(() => window.scrollTo(0, 0));
     await sleep(200);
     await watchRows(page);
+    await nowInView(page, door);
     await page.locator(`#${door}-now`).click();
     await sleep(60);
     const v = await rowView(page);

@@ -2933,7 +2933,10 @@ const EDGE_HINT = 6; // px: at most this much of a tab may show past an edge, or
 // Layout positions are whole pixels and the scroll range rounds on its own,
 // so a tab that ends exactly at the row's end can read half a pixel past it
 // (NOW after SUN at 320 did, and the row hid it). A pixel of slack is not a
-// pixel anyone sees.
+// pixel anyone sees — at the row's two ENDS, where the rounding is. Inside the
+// row a tab at the edge is cut by whatever the slack forgives plus its own
+// sub-pixel width, which on Linux put ACL's SAT 3 1.3px short at 430 once NOW
+// led the row (CI, v103): no slack there.
 const WHOLE_SLACK = 1;
 export function restingLeft({ items, width, max, fade = 0, active = -1, now = -1 }) {
   if (!(max > 0.5) || !items.length) return 0;
@@ -2945,12 +2948,19 @@ export function restingLeft({ items, width, max, fade = 0, active = -1, now = -1
   // and a sliver of SUN at the right; centring on the day alone rests the row
   // on whole days, with NOW past the edge where the fade says there is more.
   const span = (ids) => Math.max(...ids.map((i) => items[i].x + items[i].w)) - Math.min(...ids.map((i) => items[i].x));
+  const end = Math.max(...items.map((it) => it.x + it.w));
   const focus = active >= 0 && items[active] ? [active] : [];
-  if (now >= 0 && items[now] && now !== active && (!focus.length || span([...focus, now]) <= width + WHOLE_SLACK)) focus.push(now);
+  if (now >= 0 && items[now] && now !== active && (!focus.length || span([...focus, now]) <= width)) focus.push(now);
   const lo = focus.length ? Math.min(...focus.map((i) => items[i].x)) : 0;
   const hi = focus.length ? Math.max(...focus.map((i) => items[i].x + items[i].w)) : 0;
   const ideal = focus.length ? Math.max(0, Math.min(max, (lo + hi - width) / 2)) : 0;
-  const whole = (i, L) => i < 0 || !items[i] || (items[i].x >= L - WHOLE_SLACK && items[i].x + items[i].w <= L + width + WHOLE_SLACK);
+  const whole = (i, L) => {
+    if (i < 0 || !items[i]) return true;
+    const it = items[i];
+    const sl = it.x <= WHOLE_SLACK ? WHOLE_SLACK : 0; // the row's start
+    const sr = it.x + it.w >= end - WHOLE_SLACK ? WHOLE_SLACK : 0; // the row's end
+    return it.x >= L - sl && it.x + it.w <= L + width + sr;
+  };
   const cost = (L) => {
     // A fade is drawn only on a side that has more past it (markDayRow).
     const fl = L > 0.5 ? fade : 0;

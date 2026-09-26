@@ -169,6 +169,15 @@ test('a tab that ends half a pixel past the scroll range is still whole (widths 
   assert.ok(seen(items[4], L, 143) >= 38 - 1, 'SUN whole');
 });
 
+test('inside the row there is no pixel of slack: the day you are in is never cut, even by one (ACL at 430 on Linux, CI v103)', () => {
+  // NOW 43, FRI 2 39, SAT 3 46, SUN 4 47 … — NOW to SAT 3 is one pixel wider than the row.
+  const items = [{ x: 0, w: 43 }, { x: 60, w: 39 }, { x: 116, w: 46 }, { x: 179, w: 47 }, { x: 243, w: 39 }];
+  const width = 161;
+  const L = restingLeft({ items, width, max: 282 - width, fade: 18, active: 2, now: 0 });
+  assert.equal(seen(items[2], L, width), 46, `SAT 3 whole to the pixel: rested at ${L}`);
+  assert.ok(seen(items[0], L, width) >= 42, 'and NOW whole within the pixel the row’s start forgives');
+});
+
 test('a row that fits does not scroll', () => {
   assert.equal(restingLeft({ items: row(DAYS), width: 253, max: 0, fade: 18, active: 2 }), 0);
   assert.equal(restingLeft({ items: row(LIVE), width: 300, max: 0, fade: 18, active: 3, now: 0 }), 0);

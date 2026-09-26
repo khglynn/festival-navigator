@@ -93,3 +93,33 @@ export async function launchWebkit() {
     return null;
   }
 }
+
+// NOW is the day row's FIRST item (v103), and on a phone it can rest past the
+// row's left edge — where a person swipes the row to its start before tapping
+// it (tests/browser/now-jump.test.mjs proves that swipe with real touches).
+// For the tests whose subject is what a tap on NOW does, this is that swipe's
+// stand-in: the row to its start, then wait until NOW is whole and the row is
+// still, so the tap that follows lands on NOW and not where it was a frame
+// ago (Linux WebKit's taps missed it, v103's first CI runs).
+export async function nowInView(page, door = 'dock') {
+  await page.evaluate((d) => {
+    const row = document.getElementById(`${d}-days`);
+    const now = document.getElementById(`${d}-now`);
+    if (!row || !now || now.hidden) return;
+    const r = row.getBoundingClientRect();
+    const b = now.getBoundingClientRect();
+    if (b.left < r.left - 0.5 || b.right > r.right + 0.5) row.scrollTo({ left: 0, behavior: 'auto' });
+  }, door);
+  await page.waitForFunction((d) => {
+    const row = document.getElementById(`${d}-days`);
+    const now = document.getElementById(`${d}-now`);
+    if (!row || !now || now.hidden) return true;
+    const r = row.getBoundingClientRect();
+    const b = now.getBoundingClientRect();
+    const w = window.__nowStill || (window.__nowStill = { left: NaN, n: 0 });
+    if (row.scrollLeft !== w.left) { w.left = row.scrollLeft; w.n = 0; return false; }
+    w.n += 1;
+    return w.n >= 3 && b.left >= r.left - 0.5 && b.right <= r.right + 0.5;
+  }, door, { timeout: 4000, polling: 50 }).catch(() => {});
+  await page.evaluate(() => { delete window.__nowStill; });
+}
