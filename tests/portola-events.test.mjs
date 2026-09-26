@@ -378,7 +378,9 @@ test('the wall renders every Midway set in its run, the tilde exactly where the 
   assert.equal(afters.querySelectorAll('.sec-whisper').length, 0,
     'the inline tilde whisper is gone — How it works explains it once (Kevin, 2026-09-17)');
   const hmd = [...root.querySelectorAll('.card')].filter((c) => c.dataset.artist === 'Horse Meat Disco');
-  assert.deepEqual(hmd.map((c) => [c.closest('.room').dataset.room, c.querySelector('.time')?.textContent]),
+  // The window is the time label's first line: a by-time Folsom card (v94)
+  // says its place on a second one.
+  assert.deepEqual(hmd.map((c) => [c.closest('.room').dataset.room, c.querySelector('.time')?.textContent.split('\n')[0]]),
     [['Afters', '9 PM – 3 AM'], ['Folsom', '9 PM – 3 AM']],
     'Friday: one show, two rooms, the same printed window on both cards');
   root.remove();

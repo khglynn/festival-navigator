@@ -231,7 +231,18 @@ const layout = (root, { band = { top: 40, bottom: 800 }, scrollY = 0, perRow = 2
   const line = root.querySelector('.times-grid .now-line');
   if (line) box.set(line, { top: 1000, bottom: 1002, left: 60 });
   let y = 2000;
-  for (const vg of root.querySelectorAll('.venue-grid[data-iso]')) {
+  for (const vg of root.querySelectorAll('.venue-grid[data-iso], .time-list[data-iso]')) {
+    // A time list (v94 — a section read by time): its cards wrap `perRow`
+    // across in wall order, a row every 160px.
+    if (vg.classList.contains('time-list')) {
+      const cards = [...vg.querySelectorAll('.card')];
+      cards.forEach((c, i) => {
+        const top = y + Math.floor(i / perRow) * 160;
+        box.set(c, { top, bottom: top + 150, left: 16 + (i % perRow) * 180 });
+      });
+      y += Math.ceil(cards.length / perRow) * 160 + 200;
+      continue;
+    }
     const groups = [...vg.querySelectorAll('.venue-group')];
     const rows = Math.ceil(groups.length / perRow);
     groups.forEach((g, i) => {
@@ -268,7 +279,7 @@ test('stops, nobody highlighted: the line, then each row of afters top to bottom
   assert.deepEqual(targets, [...targets].sort((x, y) => x - y), 'top to bottom');
   for (let i = 1; i < targets.length; i++) assert.ok(targets[i] - targets[i - 1] > 400, 'every next stop really moves the page');
   // Two venues a row: the first row's live cards are one stop.
-  const all = [...root.querySelectorAll('.venue-grid[data-iso] .card.now')];
+  const all = [...root.querySelectorAll('.venue-grid[data-iso] .card.now, .time-list[data-iso] .card.now')];
   assert.equal(plan.stops.reduce((n, st) => n + st.members.filter((m) => m.card).length, 0), all.length, 'every NOW card is somewhere, once');
   assert.ok(plan.stops.some((st) => st.members.length > 1), 'and side by side is one stop, not two taps that go nowhere');
   root.remove();
@@ -508,7 +519,7 @@ test('stops: a show that renders in two rooms is one stop member, not two taps',
   const at = pt('2026-09-25T23:30:00');
   for (const people of [[], ['Ross']]) {
     const { root, ctx } = render(at, people, people.length ? { picks: { 'Horse Meat Disco': { Ross: 4 } } } : {});
-    const hmd = [...root.querySelectorAll('.venue-grid[data-iso] .card.now')].filter((c) => c.dataset.artist === 'Horse Meat Disco');
+    const hmd = [...root.querySelectorAll('.venue-grid[data-iso] .card.now, .time-list[data-iso] .card.now')].filter((c) => c.dataset.artist === 'Horse Meat Disco');
     assert.equal(hmd.length, 2, 'two cards, one in each room');
     assert.equal(hmd[0].dataset.occ, hmd[1].dataset.occ, 'one occurrence');
     assert.notEqual(roomOf(hmd[0]), roomOf(hmd[1]), 'two rooms');

@@ -167,7 +167,8 @@ const state = (page) => page.evaluate((sel) => {
   const tt = (day) => document.querySelector(`#wall-root .day-block[data-day="${day}"] .tt-block .times-wrap:not(.stage-strip) .times-scroll`);
   const folsom = document.querySelector('#wall-root .day-block[data-day="Saturday"] .room[data-room="Folsom"] .stack-scroll');
   return {
-    y: scrollY, row: document.querySelector(sel).scrollLeft, folsom: folsom.scrollLeft,
+    // (A by-time SAT FOLSOM, v94, is no row at all: nothing to move.)
+    y: scrollY, row: document.querySelector(sel).scrollLeft, folsom: folsom ? folsom.scrollLeft : 0,
     sat: tt('Saturday').scrollLeft, sun: tt('Sunday').scrollLeft,
     strip: new DOMMatrix(getComputedStyle(document.querySelector('#wall-root .day-block[data-day="Saturday"] .stage-strip .times-grid')).transform).m41,
   };

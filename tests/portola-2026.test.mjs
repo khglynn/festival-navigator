@@ -22,6 +22,7 @@ const { FESTIVAL_INDEX } = await import('../js/festivals.js');
 const { renderWall } = await import('../js/v3/wall.js');
 const { validateFestivalDoc } = await import('../api/_lib/festival-rules.mjs');
 const { timeToMinutes } = await import('../js/time.js');
+const { sectionLayoutOf, BY_TIME } = await import('../js/v3/events.js');
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const portola = JSON.parse(readFileSync(join(ROOT, 'data/festivals/portola-2026.json'), 'utf8'));
@@ -111,7 +112,12 @@ test('portola-2026: the wall is day-first — THU FRI SAT SUN, the grid inside i
   const hmd = [...root.querySelectorAll('.card')].filter((c) => c.dataset.artist === 'Horse Meat Disco');
   assert.equal(hmd.length, 2, 'Horse Meat Disco under Friday\'s Afters AND Friday\'s Folsom');
   assert.deepEqual(hmd.map((c) => c.closest('.room').dataset.room), ['Afters', 'Folsom']);
-  assert.equal(hmd[1].dataset.time, '9 PM – 3 AM', 'a Folsom card says the time only — the venue heads its group');
+  // As stacks, the venue heads its group and the card says the time only; as a
+  // by-time list (v94, once the file declares it) the card says its place too.
+  const hmdEntry = portola.artists.find((a) => a.name === 'Horse Meat Disco');
+  assert.equal(hmd[1].dataset.time, sectionLayoutOf(portola, 'Folsom') === BY_TIME
+    ? `9 PM – 3 AM\n${[hmdEntry.venue, hmdEntry.area].filter(Boolean).join(' · ')}`
+    : '9 PM – 3 AM', 'a Folsom card says its time, and its place when no venue head says it');
   root.remove();
 });
 

@@ -504,7 +504,7 @@ test('the now mark survives the ticker and a pick — the shell reads the wall\'
       const card = $('wall-root').querySelector(`.card.now[data-artist="${name}"]`);
       assert.equal(card.querySelector('.now-label'), null, 'the ring is the mark — no tag in the corner');
       assert.ok(card.getAttribute('aria-label').endsWith(', playing now'), 'and its name says so');
-      assert.ok(card.closest('.venue-grid[data-iso]'), 'a mark only ever lives on a stack card');
+      assert.ok(card.closest('.venue-grid[data-iso], .time-list[data-iso]'), 'a mark only ever lives on a stack card (or a by-time card, v94)');
     }
 
     tick();
