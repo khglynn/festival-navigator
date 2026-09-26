@@ -434,7 +434,8 @@ html { touch-action: manipulation; }
 /* The Invite sheet (2026-09-26): one sheet, crew link first, then a name,
  * then the people from your other fests (app.js openInvite). The looks are
  * the two sheets' it replaced, moved out of inline styles. */
-.invite-sheet .inv-sub { color: var(--text-secondary); font-size: 12.5px; line-height: 1.55; }
+/* pretty: no one-word last line at 320 ("going.", "needed."); a plain wrap where unsupported. */
+.invite-sheet .inv-sub { color: var(--text-secondary); font-size: 12.5px; line-height: 1.55; text-wrap: pretty; }
 .invite-sheet .inv-link, .invite-sheet .inv-name { display: flex; gap: 8px; align-items: center; }
 .invite-sheet .inv-link input { flex: 1; min-width: 0; background: var(--card); border: 1px solid var(--border-input);
                                 border-radius: var(--r-card); padding: 10px 12px; color: var(--text-body);

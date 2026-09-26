@@ -354,9 +354,14 @@ test('+ Invite someone: one sheet — the crew link first (Copy), then a name, t
   assert.deepEqual([...sheet.querySelectorAll('.inv-others button')].map((b) => b.textContent), ['+ Drew', '+ Kat'], 'Drew and Kat from your other crew; Ana is you');
   assert.notEqual(document.activeElement, sheet.querySelector('.inv-name input'), 'the name field waits: a keyboard would cover the link');
   assert.equal(sheet.querySelector('.inv-sub').textContent.startsWith('Opens straight into Menu Crew.'), true);
+  // Adding by name is a whole thing on its own (Kevin, 2026-09-26: "a note for
+  // us that they're going there") — a peer of the link, not a wait until they join.
+  const byName = sheet.querySelector('.inv-name').parentElement;
+  assert.equal(byName.querySelector('.micro-label').textContent, 'Or add a friend');
+  assert.equal(byName.querySelector('.inv-sub').textContent, 'You pick for them; the crew sees where they’re going.');
 });
 
-test('Add by name is server-first and ends on their own link; a name already here is said, not sent', async () => {
+test('Or add a friend: server-first, and it ends on their own link, for if they ever want to pick; a name already here is said, not sent', async () => {
   const sheet = document.querySelector('#artist-sheet.invite-sheet');
   const input = sheet.querySelector('.inv-name input');
   input.value = 'ben';
@@ -373,6 +378,7 @@ test('Add by name is server-first and ends on their own link; a name already her
   const done = document.querySelector('#artist-sheet');
   assert.equal(done.querySelector('.sheet-title').textContent, 'ZED IS IN');
   assert.match(done.querySelector('.inv-link input').value, /me=Zed/, 'their own link');
+  assert.equal(done.querySelector('.inv-sub').textContent, 'If Zed ever wants to pick, send this link. Opening it makes the picks theirs.', 'done as it stands; the link is an if-ever');
   // The doc comes the ordered way (sync.afterServerWrite's poll), not from the answer.
   await until(() => state.people().Zed, 'Zed, brought by the poll');
   done.querySelector('.inv-done').click();
@@ -587,7 +593,7 @@ test('under Stay offline an add sends nothing: it is kept here as a pending edit
     await answered('Vic');
     assert.equal(postsNow(), before, 'no POST under Stay offline');
     const sheet = document.querySelector('#artist-sheet');
-    assert.match(sheet.querySelector('.inv-sub').textContent, /once this phone is online again/);
+    assert.equal(sheet.querySelector('.inv-sub').textContent, 'The crew sees Vic once this phone is online again. If Vic ever wants to pick, send this link. Opening it makes the picks theirs.');
     assert.match(sheet.querySelector('.inv-link input').value, /me=Vic/, 'his link all the same');
     assert.ok(state.people().Vic, 'Vic is here at once');
     assert.ok(((state.pendingChanges || {}).people || {}).Vic, 'as a pending edit, for sync to send');

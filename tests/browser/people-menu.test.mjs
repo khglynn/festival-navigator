@@ -306,7 +306,7 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
     } finally { await ctx.close(); }
   });
 
-  test(`${name} 390: + Invite someone — the crew link first; Copy, Share, then Add by name ends on their own link`, { skip }, async () => {
+  test(`${name} 390: + Invite someone — the crew link first; Copy, Share, then Or add a friend ends on their own link`, { skip }, async () => {
     const { ctx, page, errors, posts, press } = await openApp(get(), { width: 390 });
     try {
       if (name === 'Chromium') await ctx.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: server.origin });
@@ -325,6 +325,7 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
       const shared = await page.evaluate(() => window.__shared);
       assert.equal(shared.length, 1, 'the share sheet was asked');
       assert.equal(shared[0].url, link, 'with the crew link');
+      assert.equal(await page.locator('.invite-sheet .inv-section .micro-label').first().textContent(), 'Or add a friend', 'a peer of the link');
       await press('.invite-sheet .inv-name input');
       await page.keyboard.type('Zed');
       await press('.invite-sheet .inv-add');
@@ -332,6 +333,7 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
       assert.equal(posts.length, 1, 'one request: the server heard it first');
       assert.ok(posts[0].data.people.Zed, 'with Zed');
       assert.match(await page.locator('.invite-sheet .inv-link input').inputValue(), /me=Zed/, 'his own link');
+      assert.equal(await page.locator('.invite-sheet .inv-sub').first().textContent(), 'If Zed ever wants to pick, send this link. Opening it makes the picks theirs.', 'done as it stands; the link is an if-ever');
       await press('.invite-sheet .inv-done');
       await page.waitForFunction(() => !document.querySelector('.invite-sheet'), null, { timeout: 3000 });
       await press('#dock-you');

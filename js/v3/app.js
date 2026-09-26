@@ -2735,15 +2735,26 @@ function openImport() {
 function openShareMoment() { openInvite({ moment: true }); }
 function openAddMember() { openInvite(); }
 
+// The words (copy pass 2026-09-26, Kevin: "Sometimes picking as someone is a
+// stop gap but an end state… a note for us that they're going there"). Adding
+// someone by name is a whole thing on its own — a friend the crew picks for,
+// who may never open the app — not a waiting room until they join, so the
+// section is a peer of the link ("Invite someone… or add a friend"), and
+// their link is an "if ever", said where the link is. The title stays the
+// door's name (+ Invite someone, Kevin's word over "Add", v93).
 const INVITE_WORDS = {
   title: 'INVITE SOMEONE',
   momentTitle: 'ONE LINK MAKES IT A CREW',
   opens: (crewName) => `Opens straight into ${crewName}. No accounts needed.`,
   share: 'Share the link',
-  byName: 'Add by name',
-  byNameSub: 'Pick for them until they open their link.',
+  byName: 'Or add a friend',
+  byNameSub: 'You pick for them; the crew sees where they’re going.',
   field: 'Their name',
   others: 'From your other fests',
+  // Settings → Crew says the same sentence for a friend with no link opened
+  // yet (tests/share-copy.test.mjs holds the two together).
+  claim: (who) => `If ${who} ever wants to pick, send this link. Opening it makes the picks theirs.`,
+  notYet: (who) => `The crew sees ${who} once this phone is online again.`,
 };
 
 function inviteLinkRow(link, label) {
@@ -2818,12 +2829,14 @@ function openInvite({ moment = false } = {}) {
   document.body.append(backdrop, sheet);
   if (!member) return;
 
-  // 2. A name: someone without the link yet — a shared phone, a friend who
-  // is not on their phone. Server-first like the join screen (FLOW-5), so the
-  // people cap answers here; offline falls back to the local doc + sync.
-  // Success mints the per-person claim link (&me=): opening it lands them on
-  // their circle with every pick already theirs. Not focused on open: the
-  // keyboard would cover the link, which comes first.
+  // 2. A name: a friend the crew picks for — one who may never open the app
+  // (Kevin's Folsom friends: "just a note for us that they're going there"),
+  // a shared phone, a friend not on their phone. Complete as it stands.
+  // Server-first like the join screen (FLOW-5), so the people cap answers
+  // here; offline falls back to the local doc + sync. Success mints the
+  // per-person claim link (&me=), for if they ever want it: opening it lands
+  // them on their circle with every pick already theirs. Not focused on open:
+  // the keyboard would cover the link, which comes first.
   const token = state.getCrewToken();
   const byName = document.createElement('div');
   byName.className = 'inv-section';
@@ -2882,11 +2895,12 @@ function openInvite({ moment = false } = {}) {
     sheetChrome(sheet, `${canonical.toUpperCase()} IS IN`);
     const explain = document.createElement('div');
     explain.className = 'inv-sub';
-    // Kept on this phone for now (offline, or Stay offline): the crew hears
-    // of them when the phone sends again, and the line says so.
+    // Done as it stands: the link is for if they ever want to pick. Kept on
+    // this phone for now (offline, or Stay offline): the crew hears of them
+    // when the phone sends again, and the line says so first.
     explain.textContent = offline
-      ? `Send ${canonical} this link. Opening it makes the picks theirs — once this phone is online again.`
-      : `Send ${canonical} this link. Opening it makes the picks theirs.`;
+      ? `${INVITE_WORDS.notYet(canonical)} ${INVITE_WORDS.claim(canonical)}`
+      : INVITE_WORDS.claim(canonical);
     const theirs = inviteLink(canonical); // a personal link carries the sharer's view too (v92)
     const done = document.createElement('div');
     done.className = 'inv-actions';
