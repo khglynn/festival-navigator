@@ -21,7 +21,7 @@
   and a link that opens on the plan), `&plan=open`, the welcome card's ✕, the
   Show menu's "Share the crew link", and the window's banked catches (a touch
   mid-arrival, a grab mid-slide, a font landing mid-arrival). Gated at
-  f7a3d25 (5:10 PM PT: Sol's six findings fixed, a walker 15 of 16 with the
+  f7a3d25 (4:40 PM PT: Sol's six findings fixed, a walker 15 of 16 with the
   16th the harness, CI's browser job green on Linux) and handed to the
   coordinator to stamp and release after Kevin's look. Next, Kevin's new
   set, in a design round on `live/plan-days-design`: Despacio crowding the
