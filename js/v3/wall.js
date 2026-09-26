@@ -1778,6 +1778,138 @@ export function nightMinutes(iso, clock) {
   const days = Math.round((Date.parse(`${clock.iso}T00:00:00Z`) - Date.parse(`${iso}T00:00:00Z`)) / 86400000);
   return days === 0 || days === 1 ? clock.minutes + days * 24 * 60 : null;
 }
+// ---- THE PAST (Phase 1, 2026-09-26) -----------------------------------------------
+// Kevin: "Hide vs show stuff that's past — like a scroll to the top cuts off
+// … not a long way back", and on the round: "just default to hide with this
+// little expand option that flips into a hide option. love."
+//
+// OVER is one rule, the NOW ring's own window (m-menu-past-persist §3): a
+// card is over exactly when its ring can never light again. Every card
+// already carries its window on its OWN night's clock (`data-now-from/to`,
+// on its host's `data-iso`), so the rule reads what was drawn:
+//   · `days` = the clock's festival day minus the host's night, in days;
+//   · the NIGHT is over when days ≥ 2, or days ≥ 1 and every card on it that
+//     has a window is over — which is what carries the 5 AM rollover: at 6 AM
+//     Sunday Saturday's grid (closed at 10 PM) is over, and Saturday's Folsom
+//     is not while Aftershock (3–10 AM) plays;
+//   · a CARD is over when its night is, or when it has a window and the clock
+//     on that night has reached its end. A card with no window (no clock, a
+//     cancelled act) is over only when its night is. Before the night (days
+//     < 0) nothing is.
+// `windows`: [{ from, to } | null] per card, in the night's minutes.
+export function pastOf(iso, windows, clock) {
+  const none = { nightOver: false, over: windows.map(() => false) };
+  if (!iso || !clock) return none;
+  const days = Math.round((Date.parse(`${clock.iso}T00:00:00Z`) - Date.parse(`${iso}T00:00:00Z`)) / 86400000);
+  if (!(days >= 0)) return none;
+  const at = nightMinutes(iso, clock);
+  const ended = (w) => !!w && at != null && at >= w.to;
+  const timed = windows.filter(Boolean);
+  const nightOver = days >= 2 || (days >= 1 && timed.every(ended));
+  return { nightOver, over: windows.map((w) => nightOver || ended(w)) };
+}
+// Where the past is read on the wall: every host of cards that carries its
+// night — a grid, a stack grid, a time list.
+const PAST_HOSTS = '.times-grid[data-iso], .venue-grid[data-iso], .time-list[data-iso]';
+const windowOf = (card) => (card.dataset.nowFrom != null && card.dataset.nowTo != null
+  ? { from: Number(card.dataset.nowFrom), to: Number(card.dataset.nowTo) } : null);
+// Every card of a room, and whether each is over — null when the room holds a
+// card no host can place in time (a lineup day's billing): nothing to judge.
+function roomPast(room, date) {
+  const cards = [...room.querySelectorAll('.card[data-artist]')];
+  if (!cards.length) return null;
+  const overs = new Map();
+  for (const host of room.querySelectorAll(PAST_HOSTS)) {
+    const list = [...host.querySelectorAll('.card[data-artist]')];
+    const { over } = pastOf(host.dataset.iso, list.map(windowOf), festivalClock(date, host.dataset.tz || null));
+    list.forEach((c, i) => overs.set(c, over[i]));
+  }
+  if (cards.some((c) => !overs.has(c))) return null;
+  return { cards, overs, all: cards.every((c) => overs.get(c)) };
+}
+// The door: one quiet line, the section micro-label with the app's caret and
+// the band heads' hairline — "EARLIER · 7 SETS ⌄", and once tapped the SAME
+// line in the same spot reads "HIDE EARLIER ⌃". A bare <button
+// aria-expanded> (the 44px floor comes with it); `data-past` is its key, so
+// the shell can find it again after a repaint and hold it under the finger.
+function pastLine(key, open, words, ctx) {
+  const line = mk('button', 'past-line');
+  line.type = 'button';
+  line.dataset.past = key;
+  line.setAttribute('aria-expanded', open ? 'true' : 'false');
+  const caret = mk('span', 'past-caret');
+  caret.setAttribute('aria-hidden', 'true');
+  line.append(mk('span', 'past-label', open ? 'Hide earlier' : words), caret, mk('span', 'past-rule'));
+  if (ctx.onPast) line.addEventListener('click', () => ctx.onPast(key));
+  return line;
+}
+// The noun a room's line counts in: parties in a section that reads by time
+// (Folsom's one-party rooms), sets everywhere else.
+function pastNoun(room, n) {
+  const fest = state.fest();
+  const [one, many] = room.dataset.room && sectionLayoutOf(fest, room.dataset.room) === BY_TIME ? ['party', 'parties'] : ['set', 'sets'];
+  return `${n} ${n === 1 ? one : many}`;
+}
+// The pass, after the wall is drawn (renderComposed). `ctx.pastAt` is the
+// clock the fold was last judged at — held still between the moments the
+// shell recomputes it (a boot, a resume, the festival day turning), so a set
+// that ends while you are reading never vanishes under your thumb; a render
+// with none judges at `ctx.now` (the tests). `ctx.pastOpen` holds what this
+// page opened (`<iso>|<room>`, or 'days') — memory only, never stored: a
+// reveal was a moment, not a choice, and a reload folds the past again.
+//   1. Whole days over, in both views, leave behind ONE line at the top of
+//      the wall ("EARLIER · THU · FRI"), where the scroll to the top now ends.
+//      A festival that is over from end to end folds nothing: it is a record,
+//      read whole, and one line for all of it would be a blank wall.
+//   2. In the List, each room of a day that is not over folds what of it is
+//      over behind its own line, above its bands; a band the fold empties
+//      goes with it. The Board keeps its rooms whole (the grid's cut is not
+//      built — LIST-BUILD.md, call 2).
+function foldPast(root, ctx, { days, weekends }) {
+  const date = ctx.pastAt || ctx.now || new Date();
+  const open = ctx.pastOpen || new Set();
+  const blocks = [...root.querySelectorAll(':scope > .day-block')];
+  const judged = new Map(); // room → roomPast
+  const dayOver = (block) => {
+    const rooms = [...block.querySelectorAll(':scope > .room')];
+    if (!rooms.length) return false;
+    return rooms.every((room) => {
+      const p = roomPast(room, date);
+      judged.set(room, p);
+      return !!p && p.all;
+    });
+  };
+  const over = blocks.filter(dayOver);
+  if (over.length === blocks.length) return; // over from end to end: a record, read whole
+  if (over.length) {
+    const daysOpen = open.has('days');
+    const twoWeekends = (weekends || [null]).length > 1;
+    const tabs = new Map(days.map((d) => [d.key, twoWeekends && d.num ? `${d.short} ${d.num}` : d.short]));
+    const names = over.map((b) => tabs.get(b.dataset.day) || String(b.dataset.day || '').slice(0, 3).toUpperCase());
+    over[0].before(pastLine('days', daysOpen, `Earlier · ${names.join(' · ')}`, ctx));
+    if (!daysOpen) over.forEach((b) => b.remove());
+    else over.forEach((b) => b.classList.add('past-day')); // what the fold's motion moves (app.js togglePast)
+  }
+  if (ctx.view !== 'list') return;
+  for (const block of blocks) {
+    if (over.includes(block)) continue; // an opened day that is over is shown whole
+    for (const room of block.querySelectorAll(':scope > .room')) {
+      const p = judged.has(room) ? judged.get(room) : roomPast(room, date);
+      const list = room.querySelector(':scope > .time-list[data-iso]');
+      if (!p || !list) continue;
+      const past = p.cards.filter((c) => p.overs.get(c));
+      if (!past.length) continue;
+      const key = `${list.dataset.iso}|${room.dataset.room}`;
+      const isOpen = open.has(key);
+      list.classList.add('has-past');
+      list.prepend(pastLine(key, isOpen, `Earlier · ${pastNoun(room, past.length)}`, ctx));
+      if (isOpen) { past.forEach((c) => c.classList.add('past')); continue; }
+      past.forEach((c) => c.remove());
+      for (const band of list.querySelectorAll(':scope > .time-band')) if (!band.querySelector('.card')) band.remove();
+    }
+  }
+}
+
 export function positionNowMarks(root, date = new Date()) {
   const here = root.matches && root.matches(NOW_HOSTS) ? [root] : [];
   for (const grid of [...here, ...root.querySelectorAll(NOW_HOSTS)]) {
@@ -2282,7 +2414,7 @@ function festRoomExtras(fest, day, layout) {
 
 // The plan already holds only what is visible (wallPlanFor applies the fold):
 // every day here has something to show, every section and extra here is on.
-function renderComposed(root, ctx, fest, { model: plan, scheduled, festRoom }) {
+function renderComposed(root, ctx, fest, { model: plan, scheduled, festRoom, weekends = [null] }) {
   const layout = scheduled ? computeTimesLayout(fest) : null;
 
   // A lineup wall's day-less block (THE LINEUP) leads, as it always has.
@@ -2350,6 +2482,7 @@ function renderComposed(root, ctx, fest, { model: plan, scheduled, festRoom }) {
   for (const extra of plan.extras) renderExtra(root, ctx, fest, extra);
 
   if (nothingVisible({ model: plan })) allHiddenNotice(root, fest);
+  else foldPast(root, ctx, { days: plan.days, weekends });
 
   // A scheduled fest's day-less names that sit on no grid.
   if (scheduled && plan.looseNoDay.length) {
@@ -2974,7 +3107,11 @@ export function wireScrollspy(containers, wallRoot) {
     // drops the stage strip, so the first read can be against the old
     // offset (Codex round 4, 2026-08-27).
     if (typeof requestAnimationFrame === 'function') frame = requestAnimationFrame(syncFromGeometry);
-  } else setActive(tabs[0].dataset.day);
+  } else setActive((headers[0] || tabs[0]).dataset.day);
+  // (At the top of the page the first day ON THE WALL is the one you are in —
+  // not the first tab: a day that is over keeps its tab in the row while its
+  // block waits behind the days line (Phase 1), and THU lit over SAT PORTOLA
+  // would be a lie.)
   const onScroll = () => {
     if (ticking) return;
     ticking = true;

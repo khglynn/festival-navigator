@@ -123,6 +123,17 @@ export const FRAMES = [
   { id: 'menu-open-320', now: PT('2026-09-26T16:15:00'), width: 320, at: room('Saturday', ':fest'), act: (p) => tap(p, '#dock-fest-link') },
   { id: 'menu-open-1280', now: PT('2026-09-26T16:15:00'), width: 1280, height: 900, at: room('Saturday', ':fest'), act: (p) => click(p, '#rail-fest-link') },
   { id: 'menu-board-390', view: 'board', now: PT('2026-09-26T16:15:00'), width: 390, at: room('Saturday', ':fest'), act: (p) => tap(p, '#dock-fest-link') },
+  { id: 'past-top-390', now: PT('2026-09-26T16:15:00'), width: 390, at: 'top' },
+  { id: 'past-top-320', now: PT('2026-09-26T16:15:00'), width: 320, at: 'top' },
+  { id: 'past-top-1280', now: PT('2026-09-26T16:15:00'), width: 1280, height: 900, at: 'top' },
+  { id: 'past-board-top-390', view: 'board', now: PT('2026-09-26T16:15:00'), width: 390, at: 'top' },
+  { id: 'past-board-top-1280', view: 'board', now: PT('2026-09-26T16:15:00'), width: 1280, height: 900, at: 'top' },
+  { id: 'past-open-390', now: PT('2026-09-26T16:15:00'), width: 390, at: room('Saturday', ':fest'), act: (p) => tap(p, `${room('Saturday', ':fest')} .past-line`) },
+  { id: 'past-open-1280', now: PT('2026-09-26T16:15:00'), width: 1280, height: 900, at: room('Saturday', ':fest'), act: (p) => click(p, `${room('Saturday', ':fest')} .past-line`) },
+  { id: 'past-days-open-390', now: PT('2026-09-26T16:15:00'), width: 390, at: 'top', act: (p) => tap(p, '#wall-root > .past-line') },
+  { id: 'past-6am-sun-390', now: PT('2026-09-27T06:00:00'), width: 390, at: 'top' },
+  { id: 'past-6am-sun-folsom-390', now: PT('2026-09-27T06:00:00'), width: 390, at: room('Saturday', 'Folsom') },
+  { id: 'past-930pm-afters-390', now: PT('2026-09-26T21:30:00'), width: 390, at: room('Saturday', 'Afters') },
   { id: 'dock-closed-390', now: PT('2026-09-26T16:15:00'), width: 390, at: room('Saturday', ':fest'), clip: 'dock' },
   { id: 'dock-closed-320', now: PT('2026-09-26T16:15:00'), width: 320, at: room('Saturday', ':fest'), clip: 'dock' },
 ];
@@ -147,7 +158,8 @@ export async function renderFrames(prefixes = []) {
       for (const f of FRAMES.filter((x) => want(x.id))) {
         const { ctx, page, errors } = await openApp(rig, { now: f.now, width: f.width, height: f.height || (f.width >= 720 ? 900 : 844), view: f.view || 'list', fid: f.fid });
         try {
-          if (f.at) await scrollTo(page, f.at);
+          if (f.at === 'top') { await page.evaluate(() => window.scrollTo(0, 0)); await sleep(900); }
+          else if (f.at) await scrollTo(page, f.at);
           if (f.act) await f.act(page);
           let opts = f.full ? { fullPage: true } : {};
           if (f.clip === 'dock') {

@@ -113,6 +113,14 @@ const ctx = {
   // the Board · List row in the show menu. A fest with no clock has nothing
   // to list by time, so it is always the board there (wall.js listOffered).
   view: BOARD,
+  // The past (Phase 1): the clock the fold was last judged at (wall.js
+  // foldPast), held still between the moments recomputePast moves it — a
+  // boot, a resume, the festival day turning, a NOW tap long after — and what
+  // this page has opened (`<iso>|<room>`, 'days'). Memory only: a reveal was
+  // a moment, not a choice, and a reload folds the past again.
+  pastAt: null,
+  pastOpen: new Set(),
+  onPast: (key) => togglePast(key),
   now: null, // tests pin the clock; null = new Date() at render
   onTap: handleTap,
   onOpenNotes: (artist, occ = null) => {
@@ -410,6 +418,98 @@ function unfoldAll() {
   repaintWall();
   keepWallPlace(place);
   arriveBlocks([...new Set(keys.flatMap((key) => foldBlocksOf(key, fresh)))]);
+}
+
+// ---- the past: one line that flips (Phase 1, 2026-09-26) ---------------------------
+// A tap on "EARLIER · 7 SETS" brings that room's past back into its bands,
+// for this page only; the same line, in the same spot, now reads "HIDE
+// EARLIER" — and a tap folds it again. THE LINE HOLDS STILL under the finger
+// both ways (so the flip is a flip, and a second tap needs no aim): opening,
+// the past comes down out of it — the cards arrive with the beat, 30 ms apart,
+// nearest the line first — and the words cross-fade as the caret turns;
+// folding is quick and plain, the past fades and the rows close up under the
+// line. The days line at the top of the wall does the same with whole days.
+// Low Power and Reduce Motion: instant, the line still held.
+let pendingPast = null; // { finish } while a fold's past is fading
+function settlePast() { if (pendingPast) pendingPast.finish(); }
+const PAST_STAGGER_MS = 30;
+function togglePast(key) {
+  settleFold();
+  settleView();
+  settlePast();
+  const root = $('wall-root');
+  const lineOf = () => root.querySelector(`.past-line[data-past="${CSS.escape(key)}"]`);
+  const line = lineOf();
+  if (!line) return;
+  const opening = !ctx.pastOpen.has(key);
+  const top = line.getBoundingClientRect().top;
+  const focused = document.activeElement === line;
+  // What the line holds back: whole days (the days line) or a room's cards.
+  const pastOf = () => (key === 'days'
+    ? [...root.querySelectorAll(':scope > .day-block.past-day')]
+    : [...((lineOf() || { parentElement: null }).parentElement || root).querySelectorAll('.card.past')]);
+  const land = () => {
+    const l = lineOf();
+    if (!l) return null;
+    const d = l.getBoundingClientRect().top - top;
+    if (Math.abs(d) >= 1) window.scrollTo({ top: Math.max(0, window.scrollY + d), behavior: 'auto' });
+    if (focused) l.focus({ preventScroll: true });
+    if (canAnimate(l, ctx)) {
+      l.querySelector('.past-label').animate([{ opacity: 0, transform: 'translateY(3px)' }, { opacity: 1, transform: 'none' }],
+        { duration: CASCADE_MS, easing: EASE_ARRIVE });
+    }
+    return l;
+  };
+  if (opening) {
+    ctx.pastOpen.add(key);
+    repaintWall();
+    const l = land();
+    if (!l || !canAnimate(l, ctx)) return;
+    pastOf().forEach((el, i) => el.animate([{ opacity: 0, transform: 'translateY(-8px)' }, { opacity: 1, transform: 'none' }],
+      { duration: CASCADE_MS, delay: Math.min(i, 12) * PAST_STAGGER_MS, easing: EASE_ARRIVE, fill: 'backwards' }));
+    return;
+  }
+  const leaving = pastOf().filter((el) => canAnimate(el, ctx));
+  let done = false;
+  const fold = {};
+  const finish = () => {
+    if (done) return;
+    done = true;
+    if (pendingPast === fold) pendingPast = null;
+    if (document.body.dataset.busy === 'past') delete document.body.dataset.busy;
+    ctx.pastOpen.delete(key);
+    repaintWall();
+    land();
+  };
+  fold.finish = finish;
+  if (!leaving.length) { finish(); return; }
+  pendingPast = fold;
+  // Busy while it fades (index.html quiet()): a new build's reload must not
+  // land in the middle of it.
+  if (!document.body.dataset.busy) document.body.dataset.busy = 'past';
+  let pending = leaving.length;
+  const settle = () => { pending -= 1; if (pending <= 0) finish(); };
+  for (const el of leaving) {
+    const a = el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: OUT_MS, easing: EASE_LEAVE, fill: 'forwards' });
+    a.onfinish = settle;
+    a.oncancel = settle;
+  }
+  setTimeout(finish, OUT_MS * 3 + 50); // a backgrounded tab must not hang the fold
+}
+// Judge the past again, now, holding the page by time: a set that ended
+// while the phone was locked folds away, and the set at the top of what you
+// saw — or the nearest one after it — stays where it was on screen. Only
+// when nothing is in progress: a zoom, a sheet, the menu or a fold in flight
+// keep the wall as it is until the next chance.
+function pastMayMove() {
+  return $('screen-app').style.display !== 'none' && !ctx.query && !document.body.dataset.busy
+    && !zoomedCard() && !document.getElementById('artist-sheet') && !pendingFold && !pendingView && !pendingPast;
+}
+function recomputePast() {
+  ctx.pastAt = new Date();
+  const place = takeWallPlace();
+  repaintWall();
+  keepWallPlace(place, { byTime: true });
 }
 
 // ---- Board ↔ List (Phase 1, 2026-09-26) --------------------------------------------
@@ -916,9 +1016,20 @@ let clockTimer = null;
 function startClock() {
   if (clockTimer) return;
   clockTimer = setInterval(tickClock, 60 * 1000);
-  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') tickClock(); });
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'visible') return;
+    // Back from the lock screen: the past is judged again (Phase 1) — the
+    // sets that ended while the phone slept fold, the page held by time.
+    if (state.getCrewToken() && pastMayMove()) recomputePast();
+    tickClock();
+  });
 }
 function tickClock(date = new Date()) {
+  // The festival day turned (5 AM) under an open page: judge the past again.
+  // The minute tick itself never moves it — a set that ends while you read
+  // stays where it is until one of the fold's own moments.
+  const tz = (state.fest() || {}).timezone || null;
+  if (ctx.pastAt && !ctx.now && festivalClock(date, tz).iso !== festivalClock(ctx.pastAt, tz).iso && pastMayMove()) recomputePast();
   // A 'show-menu' busy flag with no menu open is a leftover (it would hold
   // every new build's reload on this phone for good): given back here, at the
   // minute tick and whenever the page is shown again.
@@ -1154,6 +1265,11 @@ const pageGeo = (root) => ({
 });
 function jumpToNow() {
   settleFold(); // a room still leaving goes now: NOW lands on the wall as it will be
+  settleView();
+  settlePast();
+  // A NOW tap long after the past was judged (Phase 1): judge it first, so
+  // NOW lands on the wall as it is now, not with an hour of ended sets above.
+  if (ctx.pastAt && !ctx.now && Date.now() - ctx.pastAt.getTime() > 5 * 60 * 1000 && pastMayMove()) recomputePast();
   const seq = ++nowSeq;
   const root = $('wall-root');
   const geo = pageGeo(root);
@@ -1486,7 +1602,16 @@ function renderDayNav() {
     const at = day.anchor || day.key;
     const jump = () => {
       settleFold(); // a room still leaving goes now: the day lands on the wall as it will be
-      const target = document.querySelector(anchorFor(at));
+      settleView();
+      settlePast();
+      let target = document.querySelector(anchorFor(at));
+      // A day that is over sits behind the days line (Phase 1): its tab stays
+      // in the row (it is navigation), and a tap opens the line and lands.
+      if (!target && $('wall-root').querySelector(':scope > .past-line[data-past="days"]')) {
+        ctx.pastOpen.add('days');
+        repaintWall();
+        target = document.querySelector(anchorFor(at));
+      }
       if (target) target.scrollIntoView({ behavior: ctx.lowPower ? 'auto' : 'smooth', block: 'start' });
     };
     for (const [host, tab] of [[dock, dayTab(day, day.short, { withNum: true })], [rail, dayTab(day, day.long)]]) {
@@ -3349,6 +3474,10 @@ async function enterApp(token, doc, current = () => true, customs = fetchCustomF
   show('screen-app');
   applyFestTheme();
   refreshCtx();
+  // The past is judged at the first paint (Phase 1), and nothing this page
+  // opened in another crew stays open in this one.
+  ctx.pastAt = new Date();
+  ctx.pastOpen.clear();
   // New here (v92): a guest, or the join screen's answer. A phone that knows
   // you or recognizes you lands as it did in v91, with no card.
   welcomeHere = !ctx.meName ? 'guest' : joined ? 'joined' : null;

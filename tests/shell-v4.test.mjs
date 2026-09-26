@@ -42,6 +42,9 @@ const shell = await bootShell({
     fn_welcome_v1: '1', // the welcome card is not what this file is about
   },
   fetch: network,
+  // The week's shape, not the hour: a week before Portola, so every day is
+  // on the wall whenever this runs (the now-mark tests below pin their own).
+  now: '2026-09-19T19:00:00Z',
 });
 test.after(() => shell.close());
 const { $, dom } = shell;

@@ -1466,6 +1466,35 @@ a.f-cancel:hover { border-bottom-color: rgba(255, 255, 255, .75); }
 .card.row .corner-about { grid-area: about; position: relative; inset: auto; margin-left: 12px; }
 .card.row .corner-who { grid-area: who; position: relative; inset: auto; margin-left: 6px; }
 
+/* THE PAST (Phase 1, wall.js foldPast): folded by default behind one quiet
+ * line — the app's section micro-label, a caret, the band heads' hairline —
+ * that reads "EARLIER · 7 SETS ⌄" and, tapped, flips in the same spot to
+ * "HIDE EARLIER ⌃". A bare button (the 44px floor comes with it), no chip.
+ * In a List room it heads the time list; whole days over leave one at the
+ * top of the wall. It keeps its whole 44px and OVERLAPS NOTHING: the riff's
+ * prototype pulled the band head up over the line's lower half, and a real
+ * finger on the line's middle hit the band head instead (the frames rig,
+ * 2026-09-26 — `element.click()` never notices). So the line abuts the room
+ * above it (the room's own 9px, given back) and the first band head under it
+ * gives up its empty top instead, which lands the words where the riff's
+ * frames drew them (Kevin approved those) to within a few pixels. */
+.past-line { display: flex; align-items: center; gap: 7px; width: 100%; min-height: 44px; padding: 0; margin: -9px 0 0;
+             background: none; border: 0; cursor: pointer; font-family: var(--font-ui); text-align: left;
+             color: var(--text-secondary); font-size: 10px; font-weight: 800; letter-spacing: var(--track-label);
+             text-transform: uppercase; line-height: 1; -webkit-tap-highlight-color: transparent; }
+.past-caret { flex: none; width: 5px; height: 5px; margin: 0 1px; border: solid var(--text-tertiary);
+              border-width: 1.5px 0 0 1.5px; transform: translateY(-1.5px) rotate(225deg); transition: transform .12s ease; }
+.past-line[aria-expanded="true"] .past-caret { transform: translateY(1.5px) rotate(45deg); }
+.past-rule { flex: 1 1 0; min-width: 0; height: 1px; margin-left: 3px;
+             background: linear-gradient(to right, transparent, var(--hairline) 12px); }
+@media (hover: hover) { .past-line:hover { color: var(--text-body); } }
+.past-line:active { opacity: .6; }
+.time-list.has-past > .time-band:first-of-type { margin-top: 0; }
+.time-list.rows > .past-line + .time-band > .band-head { min-height: 20px; }
+/* The days line at the top of the wall abuts the first day's head (a note
+ * door): the wall's 13px gap is given back, never more. */
+#wall-root > .past-line { margin: -10px 0 -13px; }
+
 /* The zoom's WHEN for a back-to-back run (MODEL-V3 §5): two statements in
  * one piece — the venue's window, then the order as a door to the poster. */
 .f-sub.f-stack { flex-direction: column; gap: 3px; }
