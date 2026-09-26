@@ -1,18 +1,16 @@
-// One thing at a time at the bottom of the screen (WebKit walk, iPhone 15,
-// 2026-09-23). Adding Portola again from Home — a second crew at a festival
-// you already picked in — plans the bring-your-picks offer, and the
-// post-create "ONE LINK MAKES IT A CREW" share moment opened at the same
-// instant, covering the card: a real tap on "Bring it" hit the sheet. The
-// offer now waits for the share moment to close (Later, ✕, a swipe, the
-// backdrop), then arrives with its usual beat. Never both at once.
+// A creator is not new here (v92, Kevin 2026-09-25: the welcome card is for
+// new people only). A phone that has never been welcomed creates a second
+// Portola crew: the share moment comes up, and when it closes the
+// bring-your-picks offer asks — exactly as in v91, with no welcome card in
+// between, even though this phone has never seen one.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { bootShell, settle } from './helpers/shell-rig.mjs';
 import { FID, INDEX, FEST, crewDoc, json, within } from './helpers/warm-rig.mjs';
 
-const ROSS = 'bringaftershare_ross_0123'; // made-up crews, never real links
-const NEW = 'bringaftershare_new_01234';
-const PID = 'pid_share_0001';
+const ROSS = 'firstopenshare_ross_0123'; // made-up crews, never real links
+const NEW = 'firstopenshare_new_01234';
+const PID = 'pid_firstopen_share';
 const ROSS_DOC = crewDoc({ Kev: { colorIndex: 0, pid: PID }, Ross: { colorIndex: 3 } }, { Robyn: { Kev: 4 }, Soulwax: { Kev: 1 } });
 const NEW_DOC = { ...crewDoc({ Kevin: { colorIndex: 0, pid: PID } }, {}), meta: { name: 'Portola 2026', inviteFestId: FID } };
 
@@ -34,7 +32,7 @@ async function network(url, opts = {}) {
 const shell = await bootShell({
   url: 'https://fest.kevinhg.com/#new',
   storage: {
-    fn_person_v1: JSON.stringify({ token: 'personshare_token_0123456', id: PID, name: 'Kevin', crews: {} }),
+    fn_person_v1: JSON.stringify({ token: 'personfirstshare_token_012', id: PID, name: 'Kevin', crews: {} }),
     fn_crews_v3: JSON.stringify([{ token: ROSS, name: '' }]),
     [`fn_me_v3_${ROSS}`]: 'Kev',
     [`fn_crew_doc_v3_${ROSS}`]: JSON.stringify(ROSS_DOC),
@@ -44,23 +42,28 @@ const shell = await bootShell({
 test.after(() => shell.close());
 const { $ } = shell;
 const offer = () => document.getElementById('bring-offer');
+const welcome = () => document.getElementById('welcome-card');
 const sheet = () => document.getElementById('artist-sheet');
+const buttonNamed = (root, label) => [...root.querySelectorAll('button')].find((b) => b.textContent === label);
 
-test('a second Portola crew is created: the share moment comes up — and the offer does not come up under it', async () => {
-  await settle(60);
+await settle(60);
+
+test('the share moment comes up first — no welcome and no offer under it', async () => {
   const portola = [...$('create-fests').querySelectorAll('button')].find((b) => /^PORTOLA/.test(b.textContent));
   portola.click();
   $('create-go-multi').click();
   assert.notEqual(await within(2000, () => !!sheet()), null, 'the share moment is up');
-  assert.match(sheet().textContent, /ONE LINK MAKES IT A CREW/);
   await settle(150);
-  assert.equal(offer(), null, 'the offer waits: never both at once');
+  assert.equal(welcome(), null);
+  assert.equal(offer(), null, 'the offer waits for the sheet');
 });
 
-test('the share moment closes (Later): the offer arrives', async () => {
-  const later = [...sheet().querySelectorAll('button')].find((b) => b.textContent === 'Later');
-  later.click();
+test('the share moment closes: the offer asks, and no welcome card ever comes', async () => {
+  buttonNamed(sheet(), 'Later').click();
   assert.notEqual(await within(1500, () => !sheet()), null, 'the sheet is gone');
-  assert.notEqual(await within(1500, () => !!offer()), null, 'and the offer arrives');
+  assert.notEqual(await within(1500, () => !!offer()), null, 'the offer arrives, as in v91');
   assert.match(offer().querySelector('.bring-line').textContent, /from your crew with Ross\?/);
+  await settle(200);
+  assert.equal(welcome(), null, 'a creator knows the crew: no welcome');
+  assert.equal(localStorage.getItem('fn_welcome_v1'), null);
 });

@@ -70,13 +70,29 @@ from generated crew names; selection survives entering the name step.
 their jobs distinct (circle link = joins the cluster; name link = becomes
 that person).
 
-## F3 · Join via shared link
+## F3 · Join via shared link (wall first, v92 — 2026-09-25)
 
-1. Open a shared `#g=<token>` link → join screen shows crew + fest context.
-2. Claim a name (new member) or tap an existing name (returning member).
-3. Land on the wall with your identity + color assigned.
-**Expected:** joining is one open + one tap; no account, no password; a
-returning member on a new device recognizes themselves in one glance.
+1. Open a shared `#g=<token>` link on a phone the crew does not know → the
+   WALL, as a guest: nobody selected, the dock's "you" slot a dashed +, and
+   (once per phone) a welcome card above the dock — whose plan this is, and
+   that more color on a card means more of the crew wants to go. Got it ·
+   How it works.
+2. Look around: tap names to see their picks, hold a card for details. A
+   guest writes nothing into the crew.
+3. Tap an artist (or the +, or Settings → You → Add yourself, or a notes
+   sheet's "Add yourself to write a note") → the join screen, saying "Pick
+   <artist> as…" when an artist is waiting. Claim a name or add yourself; the
+   artist becomes your pick (only from nothing — a claimed name keeps its own
+   level). "Just looking" goes back to the wall where you were.
+4. Still asked first, as before: a personal link (`&me=`, "this link is
+   yours"), and a phone whose person is in the crew ambiguously. A recognized
+   phone (its pid on one member) walks straight in, "Welcome back · Not me".
+5. A link can carry the sharer's view (`&show=fest,afters`): a phone that has
+   never shown that festival opens on it once ("Opened on Folsom. · Show
+   all"); it is never written to the crew and never overrides a view.
+**Expected:** a looker gets there in zero taps and a picker in one tap plus a
+name; no account, no password; a returning member on a new device recognizes
+themselves in one glance.
 
 ## F4 · The wall — lineup view (unscheduled fests)
 

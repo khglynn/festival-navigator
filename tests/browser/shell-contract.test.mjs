@@ -149,7 +149,7 @@ test('the show menu\'s rows are worked by a keyboard, and clear the 44px floor o
       localStorage.setItem('fn_crews_v3', JSON.stringify([{ token: t, name: 'Contract' }]));
       localStorage.setItem(`fn_me_v3_${t}`, 'Kevin');
       localStorage.setItem(`fn_crew_fest_v3_${t}`, f);
-      localStorage.setItem('fn_coach_v1', '1'); // the coach mark is not what this is about
+      localStorage.setItem('fn_welcome_v1', '1'); // the welcome card is not what this is about
     }, [TOKEN, FID]);
     const doc = { v: 4, meta: { name: 'Contract', inviteFestId: FID }, spotify: {}, affinity: {}, people: { Kevin: { colorIndex: 0 } }, festivals: { [FID]: { selections: {} } } };
     await ctx.route('**/api/crew**', (route) => route.fulfill({ contentType: 'application/json', body: JSON.stringify(doc) }));
@@ -207,7 +207,7 @@ test('the sort popover\'s rows clear the 44px floor on a phone, and the chip\'s 
       localStorage.setItem('fn_crews_v3', JSON.stringify([{ token: t, name: 'Contract' }]));
       localStorage.setItem(`fn_me_v3_${t}`, 'Kevin');
       localStorage.setItem(`fn_crew_fest_v3_${t}`, f);
-      localStorage.setItem('fn_coach_v1', '1'); // the coach mark is not what this is about
+      localStorage.setItem('fn_welcome_v1', '1'); // the welcome card is not what this is about
     }, [TOKEN, FID]);
     const doc = { v: 4, meta: { name: 'Contract', inviteFestId: FID }, spotify: {}, affinity: {}, people: { Kevin: { colorIndex: 0 } }, festivals: { [FID]: { selections: {} } } };
     await ctx.route('**/api/crew**', (route) => route.fulfill({ contentType: 'application/json', body: JSON.stringify(doc) }));
@@ -269,7 +269,7 @@ test('seven tabs on a phone: the day you are in is in the row, and the clipped e
       localStorage.setItem('fn_crews_v3', JSON.stringify([{ token: t, name: 'Contract' }]));
       localStorage.setItem(`fn_me_v3_${t}`, 'Kevin');
       localStorage.setItem(`fn_crew_fest_v3_${t}`, f);
-      localStorage.setItem('fn_coach_v1', '1');
+      localStorage.setItem('fn_welcome_v1', '1');
     }, [TOKEN, FID]);
     const doc = { v: 4, meta: { name: 'Contract', inviteFestId: FID }, spotify: {}, affinity: {}, people: { Kevin: { colorIndex: 0 } }, festivals: { [FID]: { selections: {} } } };
     await ctx.route('**/api/crew**', (route) => route.fulfill({ contentType: 'application/json', body: JSON.stringify(doc) }));
@@ -330,7 +330,7 @@ test('Diagnostics names the motion settings and the strip route; Reduce Motion s
         localStorage.setItem('fn_crews_v3', JSON.stringify([{ token: t, name: 'Contract' }]));
         localStorage.setItem(`fn_me_v3_${t}`, 'Kevin');
         localStorage.setItem(`fn_crew_fest_v3_${t}`, f);
-        localStorage.setItem('fn_coach_v1', '1');
+        localStorage.setItem('fn_welcome_v1', '1');
       }, [TOKEN, FID]);
       const doc = { v: 4, meta: { name: 'Contract', inviteFestId: FID }, spotify: {}, affinity: {}, people: { Kevin: { colorIndex: 0 } }, festivals: { [FID]: { selections: {} } } };
       await ctx.route('**/api/crew**', (route) => route.fulfill({ contentType: 'application/json', body: JSON.stringify(doc) }));
@@ -370,7 +370,7 @@ test('the notes button is the search field\'s height beside it, on a phone and o
         localStorage.setItem('fn_crews_v3', JSON.stringify([{ token: t, name: 'Contract' }]));
         localStorage.setItem(`fn_me_v3_${t}`, 'Kevin');
         localStorage.setItem(`fn_crew_fest_v3_${t}`, f);
-        localStorage.setItem('fn_coach_v1', '1');
+        localStorage.setItem('fn_welcome_v1', '1');
       }, [TOKEN, FID]);
       const doc = { v: 4, meta: { name: 'Contract', inviteFestId: FID }, spotify: {}, affinity: {}, people, festivals: { [FID]: { selections: {} } } };
       await ctx.route('**/api/crew**', (route) => route.fulfill({ contentType: 'application/json', body: JSON.stringify(doc) }));

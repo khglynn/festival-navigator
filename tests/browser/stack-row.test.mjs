@@ -42,7 +42,7 @@ async function open(width, { touch = true, engine = browser } = {}) {
     localStorage.setItem('fn_crews_v3', JSON.stringify([{ token: t, name: 'Contract' }]));
     localStorage.setItem(`fn_me_v3_${t}`, 'Kevin');
     localStorage.setItem(`fn_crew_fest_v3_${t}`, f);
-    localStorage.setItem('fn_coach_v1', '1');
+    localStorage.setItem('fn_welcome_v1', '1'); // the welcome card (v92) is not what this file is about
   }, [TOKEN, FID]);
   const doc = {
     v: 4, meta: { name: 'Contract', inviteFestId: FID }, spotify: {}, affinity: {},

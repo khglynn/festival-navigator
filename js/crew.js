@@ -27,6 +27,7 @@ export function rememberCrew(token, name) {
 
 export function forgetCrew(token) {
   saveLS(K.crews, JSON.stringify(knownCrews().filter((c) => c.token !== token)));
+  meSeen.delete(token);
   removeLS(K.me(token));
   if (activeCrewToken() === token) removeLS(K.active);
 }
@@ -34,11 +35,23 @@ export function forgetCrew(token) {
 export function activeCrewToken() { return getLS(K.active) || null; }
 export function setActiveCrew(token) { saveLS(K.active, token); }
 
-export function me(token) { return getLS(K.me(token)) || null; }
-export function setMe(token, name) { saveLS(K.me(token), name); }
+// Who I am in each crew, as this page last read or set it (v92, review round
+// 3). A storage read that FAILS (a store that starts refusing mid-session)
+// answers with the remembered name instead of "nobody" — a member keeps their
+// name on the wall and keeps picking. Only a read that succeeds and finds
+// nothing means nobody; setMe and clearMe keep the memory in step.
+const meSeen = new Map();
+export function me(token) {
+  let name;
+  try { name = localStorage.getItem(K.me(token)); }
+  catch { return meSeen.get(token) || null; }
+  if (name) meSeen.set(token, name); else meSeen.delete(token);
+  return name || null;
+}
+export function setMe(token, name) { meSeen.set(token, name); saveLS(K.me(token), name); }
 // "Not me" after a recognized entry: forget the claim on this device only —
 // the crew stays remembered, and the join screen asks again.
-export function clearMe(token) { removeLS(K.me(token)); }
+export function clearMe(token) { meSeen.delete(token); removeLS(K.me(token)); }
 
 // The token riding in the URL hash (#g=...), i.e. an opened share link.
 export function tokenFromHash() {
@@ -75,7 +88,7 @@ const FEST_ID_RE = /^[a-z0-9-]{1,64}$/;
 // (`meName`) additionally carries WHO it's for: someone added on another
 // member's phone opens their link and lands on their own circle, picks
 // already theirs (Kevin note 5, 2026-07-12).
-export function crewLink(token, festId, meName) {
+export function crewLink(token, festId, meName, show = null) {
   const ok = Boolean(festId) && FEST_ID_RE.test(festId);
   // A fest-scoped share link puts the festival in the PATH:
   //   https://fest.kevinhg.com/f/edc-orlando-2026#g=<token>&f=edc-orlando-2026
@@ -105,7 +118,36 @@ export function crewLink(token, festId, meName) {
   const base = ok ? `${location.origin}/f/${festId}` : `${location.origin}/`;
   const f = ok ? `&f=${festId}` : '';
   const m = meName ? `&me=${encodeURIComponent(meName)}` : '';
-  return `${base}#g=${token}${f}${m}`;
+  // The sharer's view (v92): which rooms the link opens on, as slugs
+  // (filters.js roomSlug). Only beside a festival — a view is a view OF one —
+  // and last, so every older parser still reads the parts before it.
+  const slugs = ok && Array.isArray(show) ? show.filter((s) => SHOW_SLUG_RE.test(s)) : [];
+  const v = slugs.length ? `&show=${slugs.join(',')}` : '';
+  return `${base}#g=${token}${f}${m}${v}`;
+}
+
+const SHOW_SLUG_RE = /^[a-z0-9-]{1,40}$/;
+
+// The one line an invite carries beside its link (v92): the chat bubble says
+// what this is before anyone opens it — the cheapest fix for "it's not clear
+// what this is" (design brief §6, Codex's wording, trimmed). Both invite
+// shares send it: the share moment and Settings' Share invite.
+export function inviteText(festName) {
+  const fest = festName ? ` for ${festName}` : '';
+  return `Come see what we’ve picked${fest}. You can just look, or add yourself and pick with us.`;
+}
+
+// The starting view riding a share link (#g=…&f=…&show=fest,afters). Read at
+// boot, BEFORE enterApp's replaceState strips the hash down to #g=. A list of
+// slugs, or null; anything that is not a slug is dropped, never guessed at.
+// Only a view — app.js decides whether it may seed this phone's fold.
+export function showFromHash() {
+  const m = (location.hash || '').match(/[#&]show=([^&]*)/);
+  if (!m) return null;
+  let raw = m[1];
+  try { raw = decodeURIComponent(raw); } catch { /* keep it as sent */ }
+  const slugs = [...new Set(raw.split(',').map((s) => s.trim().toLowerCase()).filter((s) => SHOW_SLUG_RE.test(s)))];
+  return slugs.length ? slugs.slice(0, 12) : null;
 }
 
 
@@ -291,6 +333,21 @@ export function recognizedMember(person, crewToken, doc) {
   const claim = (person.crews || {})[crewToken];
   if (claim && claim.name && claim.name !== mine[0] && active(claim.name)) return null;
   return mine[0];
+}
+
+// Is this device's person IN this crew, whether or not recognizedMember can
+// say who (v92, 2026-09-25)? The pid on any active member, or the record's
+// own mirror naming an active member. Wall first opens a crew the phone does
+// not know as a guest; a phone that IS in the crew, ambiguously (two members
+// wearing its pid, a mirror naming another name), still gets the question —
+// walking it in as a guest would read as the app forgetting it. Read-only.
+export function personInCrew(person, crewToken, doc) {
+  if (!person || !doc) return false;
+  const people = doc.people || {};
+  const active = (n) => !!people[n] && !people[n].removed;
+  if (person.id && Object.keys(people).some((n) => active(n) && people[n].pid === person.id)) return true;
+  const claim = (person.crews || {})[crewToken];
+  return !!(claim && claim.name && active(claim.name));
 }
 
 // Record "in this crew I am <name>" on the person doc. Idempotent via the

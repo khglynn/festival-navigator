@@ -99,6 +99,16 @@
    * rule written to end them. `--sp-gutter` is already a vw clamp, and the
    * shell's own padding is this same arithmetic (see `.times-wrap`). */
   --col-gap: 6px;
+  /* The zoom's middle column (v92, Kevin 2026-09-26: "the max width of the
+   * stuff in the middle should be a little more narrow"): the name, the
+   * facts, the doors out and the who-row stand in a centred column this wide
+   * at most, while a finger's full-width zoom gives its extra width to the −
+   * and + at the edges. Measured, not picked: it is the width of a set's two
+   * statements on one line — its window and its order, "Fri · Runs 8 PM –
+   * ~12 AM · Guessing they’re 1st of 3", 291px in Inter at 11.5px — so the
+   * pair shares a line on a 390 phone, ~16px in from each side of the zoom's
+   * content, and stacks only where the screen is narrower. */
+  --zoom-col: 300px;
   --col-w: calc((100vw - 2 * var(--sp-gutter) - var(--col-gap)) / 2);
   /* The CLOCK's geometry (a festival day's timetable): the hour rail at its
    * left and the gap between its tracks. Named because a card stack under a

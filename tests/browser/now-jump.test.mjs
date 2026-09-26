@@ -61,7 +61,7 @@ async function openApp({ width = 390, height = 844, touch = true, now = SAT_1030
     localStorage.setItem('fn_crews_v3', JSON.stringify([{ token: t, name: 'Now' }]));
     localStorage.setItem(`fn_me_v3_${t}`, 'Kevin');
     localStorage.setItem(`fn_crew_fest_v3_${t}`, f);
-    localStorage.setItem('fn_coach_v1', '1');
+    localStorage.setItem('fn_welcome_v1', '1');
     if (folded) localStorage.setItem(`fn_fold_v1_${f}`, JSON.stringify(folded));
     // Every scroll the app asks of the dock's days row, for a failure message.
     window.__rowLog = [];

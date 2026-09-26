@@ -292,17 +292,65 @@ export function factChips(facts, { onOpenNotes = null, notesChip = true } = {}) 
   const row = document.createElement('div');
   row.className = 'f-chips';
   if (!notesChip) { if (facts.spotify) spotChip(row, facts); return row; }
+  row.appendChild(notesDoor(facts, onOpenNotes, '+ note'));
+  if (facts.spotify) spotChip(row, facts);
+  return row;
+}
+
+// The notes door: a button when there is somewhere to go, a span otherwise.
+// It stays `button.f-chip.notes` wherever it stands — the zoom's Tab handoff,
+// the refresh's slide and the v89 first-tap fix all find it by that.
+function notesDoor(facts, onOpenNotes, emptyLabel) {
   const notes = document.createElement(onOpenNotes ? 'button' : 'span');
   notes.className = 'f-chip notes';
-  notes.textContent = facts.noteCount ? `${facts.noteCount} note${facts.noteCount === 1 ? '' : 's'}` : '+ note';
+  notes.textContent = facts.noteCount ? `${facts.noteCount} note${facts.noteCount === 1 ? '' : 's'}` : emptyLabel;
   if (onOpenNotes) {
+    notes.type = 'button';
     notes.setAttribute('aria-label', facts.noteCount
       ? `${facts.noteCount} note${facts.noteCount === 1 ? '' : 's'} for ${facts.name}`
       : `Add a note for ${facts.name}`);
     notes.addEventListener('click', (e) => { e.stopPropagation(); onOpenNotes(facts.name); });
   }
-  row.appendChild(notes);
-  if (facts.spotify) spotChip(row, facts);
+  return notes;
+}
+
+// The zoom's own row (v92 — Kevin, 2026-09-25): [ − | + note | + ], the same
+// three doors for everyone, on every hand — one segmented pill (the button
+// study's winner, v3.css .f-step-row), each a third whose reach runs out to
+// the card's edges, so there is no dead gap and no miss that lands on the
+// card behind.
+//   A member steps their level: + raises it through picked 1–3 to must and
+//   stops there, − lowers it toward not picked and stops there — never a
+//   wraparound, which is the tap cycle's job on the resting card (unchanged).
+//   A door with nowhere to go is disabled, not hidden, so the row never
+//   reflows under a thumb that is still tapping.
+//   A guest has no level: all three ask who they are (the join shelf naming
+//   the artist), and only + carries a pick through the join.
+// step: { level, guest, onStep(dir) }
+export const STEP_WORDS = {
+  less: (name) => `Less for ${name}`,
+  more: (name) => `More for ${name}`,
+  must: (name) => `Must for ${name}`,
+  note: '+ note', // the same words as the notes chip everywhere else ("2 notes" once there are some)
+};
+function stepRow(facts, { onOpenNotes = null, step }) {
+  const row = document.createElement('div');
+  row.className = 'f-chips f-step-row';
+  const side = (dir) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = `f-step ${dir < 0 ? 'minus' : 'plus'}`;
+    b.disabled = !step.guest && (dir < 0 ? step.level <= 0 : step.level >= 4);
+    b.setAttribute('aria-label', dir < 0 ? STEP_WORDS.less(facts.name)
+      : (!step.guest && step.level >= 3 ? STEP_WORDS.must(facts.name) : STEP_WORDS.more(facts.name)));
+    const glyph = document.createElement('span');
+    glyph.className = 'f-step-dot'; // the glyph dims when the door has nowhere to go; the third keeps its place
+    glyph.textContent = dir < 0 ? '\u2212' : '+';
+    b.appendChild(glyph);
+    b.addEventListener('click', (e) => { e.stopPropagation(); if (!b.disabled) step.onStep(dir); });
+    return b;
+  };
+  row.append(side(-1), notesDoor(facts, onOpenNotes, STEP_WORDS.note), side(1));
   return row;
 }
 
@@ -391,6 +439,55 @@ const orderDoor = (order) => sourceDoor(order, 'f-order', 'open where the order 
 // "Tix @ AXS · Info @ DoTheBay": the show's doors out, one row under WHERE.
 // Each is a sourceDoor, so a click opens the page and never reaches the
 // card's pick (a click on the zoom picks, by design).
+// A pair's separator: shown only when the pair sits on one line.
+function pairSep() {
+  const dot = document.createElement('span');
+  dot.className = 'f-sep';
+  dot.textContent = '·';
+  dot.setAttribute('aria-hidden', 'true');
+  return dot;
+}
+
+// Each pair (the window · the order; the place · the doors out) goes on ONE
+// line where it fits the card's column, and stacks where it does not — never
+// wrapping inside an item, never leaving a separator at a line's end. Tried
+// on one line, then read: one layout to write, one to read, one to settle.
+// Runs wherever the zoom lays itself out (a bloom, a refresh). A sheet's card
+// never runs it and keeps the stacked form.
+function fitPairs(root) {
+  const pairs = [...root.querySelectorAll('.f-pair')];
+  if (!pairs.length) return;
+  for (const p of pairs) p.classList.add('inline');
+  const over = pairs.filter((p) => p.scrollWidth > p.clientWidth + 0.5);
+  for (const p of over) p.classList.remove('inline');
+}
+
+// The standing zoom, laid out again from its rules: its size (the screen's
+// width decides a finger's zoom), its pairs, its place. For what changes the
+// measures under an open zoom — the viewport (a rotation, a resized window)
+// and a late font (Inter landing after the zoom opened draws every
+// statement wider; wall.js refits its cards for the same reason). One pass
+// per frame, and nothing at all with no zoom open.
+function relayoutZoom(z) {
+  if (zoomed !== z || !z.el.isConnected) return;
+  sizeSlot(z.slot, rect(z.el), doorsOf(z));
+  fitPairs(z.card);
+  place(z.slot, z.el);
+}
+let fontRaf = 0;
+function refitForFonts() {
+  if (!zoomed || fontRaf) return;
+  fontRaf = requestAnimationFrame(() => { fontRaf = 0; if (zoomed) relayoutZoom(zoomed); });
+}
+let fontsWatched = false;
+function watchFonts() {
+  if (fontsWatched || typeof document === 'undefined' || !document.fonts) return;
+  fontsWatched = true;
+  const f = document.fonts;
+  if (typeof f.addEventListener === 'function') f.addEventListener('loadingdone', refitForFonts);
+  if (f.ready && typeof f.ready.then === 'function') f.ready.then(refitForFonts, () => {});
+}
+
 function linksRow(links) {
   const row = document.createElement('div');
   row.className = 'f-links';
@@ -407,7 +504,7 @@ function linksRow(links) {
   return row;
 }
 
-function grownBlock(facts, { onOpenNotes = null, notesChip = true } = {}) {
+function grownBlock(facts, { onOpenNotes = null, notesChip = true, doorsBelow = false } = {}) {
   const grown = document.createElement('div');
   grown.className = 'f-grown';
   if (facts.when) {
@@ -429,21 +526,33 @@ function grownBlock(facts, { onOpenNotes = null, notesChip = true } = {}) {
         sub.appendChild(note);
       }
     } else if (facts.order) {
-      // Two lines in ONE .f-sub (the window, then the order): the bloom's
-      // cascade and the refresh bookkeeping below both key on a single
-      // WHEN element, so the pair travels as one piece.
-      sub.classList.add('f-stack');
+      // The window and the order in ONE .f-sub (the bloom's cascade and the
+      // refresh bookkeeping both key on a single WHEN element, so the pair
+      // travels as one piece) — a PAIR: one line when both fit, stacked
+      // when they do not, never broken inside either (fitPairs).
+      sub.classList.add('f-stack', 'f-pair');
       const line = document.createElement('span');
       line.className = 'f-when';
       line.textContent = facts.when;
-      sub.append(line, orderDoor(facts.order));
+      sub.append(line, pairSep(), orderDoor(facts.order));
     } else {
       sub.textContent = facts.when;
     }
     grown.appendChild(sub);
   }
-  if (facts.where) grown.appendChild(placeDoor(facts.where, facts.mapUrl, 'f-where'));
-  if (facts.links) grown.appendChild(linksRow(facts.links));
+  // WHERE and the show's doors out: a pair too (the place, then Tix · Info as
+  // one unit that never splits), one line where they fit (Kevin, 2026-09-26:
+  // "never line-break inside a statement… don't stack four items just
+  // because we allowed multiple rows").
+  const where = facts.where ? placeDoor(facts.where, facts.mapUrl, 'f-where') : null;
+  const links = facts.links ? linksRow(facts.links) : null;
+  if (where && links) {
+    const pair = document.createElement('div');
+    pair.className = 'f-pair f-place';
+    pair.append(where, pairSep(), links);
+    grown.appendChild(pair);
+  } else if (where) grown.appendChild(where);
+  else if (links) grown.appendChild(links);
   // The who-row only when there are people: a pill arriving after a tap
   // slides in and its neighbours make room (the designed event). A reserved
   // empty row was tried on 2026-09-01 to keep the venue door from sliding
@@ -451,7 +560,9 @@ function grownBlock(facts, { onOpenNotes = null, notesChip = true } = {}) {
   // every UNPICKED grown card — the common view. Reverted; the still-hand
   // answer belongs to the zoom's placement (PROGRESS, round-2 follow-up).
   if (facts.people.length) grown.appendChild(whoPills(facts));
-  const chips = factChips(facts, { onOpenNotes, notesChip });
+  // In a zoom with its door row the notes door lives in that row (stepRow,
+  // the card's floor); the Spotify chip is a fact and stays up here.
+  const chips = factChips(facts, { onOpenNotes, notesChip: notesChip && !doorsBelow });
   if (chips.childNodes.length) grown.appendChild(chips);
   return grown;
 }
@@ -530,6 +641,7 @@ export const ZOOM_IN_MS = 200;   // hover intent — open slower than you close 
 export const ZOOM_OUT_MS = 260;  // hover-out grace before the close
 const RADIUS = 8; // --r-card
 const MIN_W = 216, MAX_W = 360, MIN_H = 132;
+const DOORS_MIN_W = 288; // with the door row: thirds of 96px at the least
 
 let zoomed = null;      // { el, artist, ctx, occ, source, onOpenNotes, slot, card, anims, cleanup }
 let dismissedKey = null; // a zoom put away on purpose: its card's identity, until the mouse is elsewhere
@@ -569,6 +681,12 @@ const stillHand = (e) => !!lastMouse && Math.abs(e.clientX - lastMouse.x) < 0.5 
 // Capture phase, so a handler that stops propagation cannot blind it; a lone
 // modifier (Cmd-Tab back into the window) says nothing and is ignored.
 let lastInput = 'pointer';
+// The hand behind the last press (v92, the guest shelf round): a guest's
+// FINGER tap on a card opens its zoom, a mouse click goes straight to the
+// join (desktop as is). Decided by the hand, not the screen width — an iPad
+// with a mouse behaves like a desktop.
+let lastPointerType = 'mouse';
+export const tapOpensZoom = () => lastInput === 'pointer' && (lastPointerType === 'touch' || lastPointerType === 'pen');
 const MODIFIER_KEYS = new Set(['Shift', 'Control', 'Alt', 'Meta', 'CapsLock', 'Fn', 'AltGraph', 'OS', 'Hyper', 'Super', 'Symbol', 'NumLock', 'ScrollLock']);
 // A finger leaves a GHOST of a mouse where it lifted (2026-09-23). WebKit
 // follows a touch tap with a click whose pointerType is "mouse", and when the
@@ -618,6 +736,7 @@ if (typeof document !== 'undefined') {
   }, { passive: true, capture: true });
   document.addEventListener('pointerdown', (e) => {
     lastInput = 'pointer';
+    lastPointerType = e.pointerType || 'mouse';
     if (e.pointerType === 'mouse') touchAt = [];
     else fingerAt(e);
   }, { passive: true, capture: true });
@@ -746,7 +865,10 @@ function chromeCeiling(el) {
 // screen's own top and bottom edges move nothing. Either way the bloom's
 // origin is the card's own centre (originFor, from the box returned here),
 // so a moved zoom still grows out of its card, as it does at the side edges.
-function place(slot, el) {
+// `floorAt`: keep the zoom's bottom edge there (a step's refresh — the door
+// row is the card's floor, and a step never moves it); the dock and the
+// chrome still win.
+function place(slot, el, { floorAt = null } = {}) {
   const r0 = rect(el);
   // The overlay's own LAYOUT size, not its on-screen box: follow() re-places
   // it on every scroll, including mid-bloom, when the box is still scaled
@@ -758,7 +880,7 @@ function place(slot, el) {
   const w = slot.offsetWidth || b.width, h = slot.offsetHeight || b.height;
   const vw = window.innerWidth;
   let left = Math.round(r0.left + r0.width / 2 - w / 2);
-  let top = Math.round(r0.top + r0.height / 2 - h / 2);
+  let top = floorAt !== null && Number.isFinite(floorAt) ? Math.round(floorAt - h) : Math.round(r0.top + r0.height / 2 - h / 2);
   left = Math.max(8, Math.min(left, vw - 8 - w));
   const floor = dockTop();
   const ceiling = chromeCeiling(el);
@@ -782,20 +904,84 @@ function buildParts(z, facts) {
   const name = document.createElement('div');
   name.className = 'f-name' + (facts.cancelled ? ' struck' : '');
   name.textContent = facts.name;
-  const grown = grownBlock(facts, { onOpenNotes: z.onOpenNotes });
-  return [surface, name, grown];
+  const step = stepFor(z);
+  const onOpenNotes = notesFor(z, facts);
+  const grown = grownBlock(facts, { onOpenNotes, doorsBelow: !!step });
+  if (!step) return [surface, name, grown];
+  // The door row is the card's floor, a part of its own: the name and the
+  // facts stay centred in the room above it however tall the card grows.
+  name.classList.add('over-doors');
+  return [surface, name, grown, stepRow(facts, { onOpenNotes, step })];
+}
+
+// The zoom's − · note · + (stepRow). A member steps through ctx.onStep; a
+// guest's doors ask who they are through ctx.onGuestAsk, naming what the tap
+// meant ('pick' for +, 'less' for −, 'note'). A zoom whose ctx offers
+// neither (a sheet's own card, an older host) keeps the plain chips line.
+function stepFor(z) {
+  const c = z.ctx;
+  if (!c) return null;
+  if (!c.meName) {
+    if (!c.onGuestAsk) return null;
+    return { guest: true, level: 0, onStep: (dir) => c.onGuestAsk(z.artist, dir > 0 ? 'pick' : 'less') };
+  }
+  if (!c.onStep) return null;
+  const level = (c.picks && c.picks[z.artist] || {})[c.meName] || 0;
+  return {
+    guest: false,
+    level,
+    onStep: (dir) => {
+      if (!z.el.isConnected) return;
+      // The step rebuilds the row it was pressed in. A door that took focus
+      // on its press and then vanishes reads as focus leaving the zoom, which
+      // closed it mid-pick once already (the links row, v88 walk): hand focus
+      // to the resting card first, where an ordinary pick leaves it — and a
+      // keyboard's focus comes back to the same door in the new row.
+      const held = z.card.contains(document.activeElement);
+      if (held) z.el.focus({ preventScroll: true });
+      c.onStep(z.artist, dir);
+      if (held && lastInput === 'keyboard' && zoomed === z) {
+        const again = z.card.querySelector(`.f-step.${dir < 0 ? 'minus' : 'plus'}:not([disabled])`);
+        if (again) again.focus({ preventScroll: true });
+      }
+    },
+  };
+}
+// A guest's notes door: an EMPTY one asks who they are (there is nothing to
+// read, and writing is what joining is for); one with notes opens them to
+// read, with the sheet's own "Add yourself" door waiting under them.
+function notesFor(z, facts) {
+  const c = z.ctx;
+  if (c && !c.meName && c.onGuestAsk && !facts.noteCount) return () => c.onGuestAsk(z.artist, 'note');
+  return z.onOpenNotes;
 }
 
 // The overlay never grows smaller than the card it grows out of.
-function sizeSlot(slot, r0) {
-  slot.style.minWidth = `${Math.max(MIN_W, Math.ceil(r0.width))}px`;
+// `doors`: the zoom carries the − · note · + row — 'finger' when a finger
+// opened it (a hold, a guest's tap), 'hand' for a mouse or a key.
+function sizeSlot(slot, r0, doors = null) {
   // Never wider than the screen with its 8px margins (a 320px phone — an SE,
   // or a mini under Display Zoom — lost the right 48px of a busy zoom), but
   // never narrower than the card it grows out of. The viewport is the same
   // read place() already makes; nothing inside the card is measured.
   const vw = typeof window !== 'undefined' && window.innerWidth ? window.innerWidth - 16 : MAX_W;
-  slot.style.maxWidth = `${Math.max(Math.min(MAX_W, vw), Math.ceil(r0.width))}px`;
+  const most = Math.max(Math.min(MAX_W, vw), Math.ceil(r0.width));
+  // A step must never move the doors under the hand that is stepping (the
+  // still-hand law: content that moved decides nothing). The who-row is the
+  // only row a pick changes, so with the door row it no longer sets the
+  // zoom's width (v3.css .zoom-card.doors) — and under a finger the zoom is
+  // simply as wide as the screen allows, the widest thirds a thumb can get.
+  // Measured before this rule: a pick widened the zoom and slid the + 22px
+  // sideways between two taps (390 walk, 2026-09-25).
+  const least = doors === 'finger' ? most : Math.min(most, Math.max(doors ? DOORS_MIN_W : MIN_W, Math.ceil(r0.width)));
+  slot.style.minWidth = `${least}px`;
+  slot.style.maxWidth = `${most}px`;
   slot.style.minHeight = `${Math.max(MIN_H, Math.ceil(r0.height))}px`;
+}
+// What a zoom's door row asks of its box (sizeSlot): null without one.
+function doorsOf(z) {
+  if (!z.card.querySelector('.f-step-row')) return null;
+  return z.source === 'touch' || z.source === 'tap' ? 'finger' : 'hand';
 }
 
 // Where the resting card's centre sits inside the overlay's box — the
@@ -828,12 +1014,16 @@ function zoomCardInner(el, artistName, ctx, { onOpenNotes = null, source = 'mous
   slot.appendChild(card);
   const z = { el, artist: artistName, ctx, occ, source, onOpenNotes, slot, card, anims: [], cleanup: [] };
   card.append(...buildParts(z, facts));
+  const doors = doorsOf(z);
+  card.classList.toggle('doors', !!doors);
 
   // The ONE read of the resting card: its box. Then the writes.
   const animate = !instant && canAnimate(card, ctx);
   const r0 = rect(el);
-  sizeSlot(slot, r0);
+  sizeSlot(slot, r0, doors);
   zoomLayer().appendChild(slot);
+  fitPairs(card);
+  watchFonts();
   const { r1 } = place(slot, el);
   el.classList.add('zoom-source'); // the resting CONTENT steps back; its wash stays
   zoomed = z;
@@ -886,7 +1076,11 @@ function zoomCardInner(el, artistName, ctx, { onOpenNotes = null, source = 'mous
   if (where) arrive(where, 0, 6, CONTENT_FADE_MS + 35);
   if (links) arrive(links, 0, 6, CONTENT_FADE_MS + 45);
   [...card.querySelectorAll('.f-pill')].forEach((p, i) => arrive(p, 14, 0, CONTENT_FADE_MS + 55 + i * (STAGGER_MS - 2)));
-  [...card.querySelectorAll('.f-chip')].forEach((c, i) => arrive(c, -14, 0, CONTENT_FADE_MS + 55 + i * STAGGER_MS));
+  const chips = [...card.querySelectorAll('.f-chip')].filter((c) => !c.closest('.f-step-row'));
+  chips.forEach((c, i) => arrive(c, -14, 0, CONTENT_FADE_MS + 55 + i * STAGGER_MS));
+  // The doors rise as one row, last: they are the card's floor, not a fact.
+  const steps = card.querySelector('.f-step-row');
+  if (steps) arrive(steps, 0, 6, CONTENT_FADE_MS + 55 + chips.length * STAGGER_MS + 20);
   z.anims = anims;
   return facts;
 }
@@ -916,13 +1110,16 @@ function zoomCardInner(el, artistName, ctx, { onOpenNotes = null, source = 'mous
 // names move between them as themselves, so it reconciles itself
 // (who-motion.js, storyboard claude-plans/2026-09-23-zoom-chips-motion.md);
 // the refresh below only hands it a before-snapshot and keeps its animations.
-const REFRESH_PART_SEL = '.f-name, .f-sub, .f-where, .f-links, .f-chip.notes, .f-chip.spot';
+// The zoom's door row (− · note · +) moves as ONE part: its notes door rides
+// the row and is never matched on its own, or it would slide twice.
+const REFRESH_PART_SEL = '.f-name, .f-sub, .f-where, .f-links, .f-step-row, .f-chip.notes, .f-chip.spot';
 function partKey(el) {
   if (el.classList.contains('f-name')) return 'name';
   if (el.classList.contains('f-sub')) return 'sub';
   if (el.classList.contains('f-where')) return 'where';
   if (el.classList.contains('f-links')) return 'links';
-  if (el.classList.contains('notes')) return 'notes';
+  if (el.classList.contains('f-step-row')) return 'steps';
+  if (el.classList.contains('notes')) return el.closest('.f-step-row') ? null : 'notes';
   if (el.classList.contains('spot')) return 'spot';
   return null;
 }
@@ -953,12 +1150,17 @@ function refreshZoomInner(fresh, ctx) {
   // READS: where everything was.
   const before = animate ? snapshotParts(z.card) : null;
   const whoBefore = animate ? whoSnapshot(z.card) : null;
-  const slotBefore = animate ? rect(z.slot) : null;
+  const hadDoors = !!z.card.querySelector('.f-step-row');
+  const slotBefore = animate || hadDoors ? rect(z.slot) : null;
   const oldSurface = z.card.querySelector('.z-surface');
-  // WRITES: the new parts, the box re-centred.
+  // WRITES: the new parts, the box re-centred — or, with the door row, held
+  // by its floor, so the doors stay under the hand that is stepping.
   z.card.replaceChildren(...buildParts(z, facts));
-  sizeSlot(z.slot, rect(fresh));
-  place(z.slot, fresh);
+  const doors = doorsOf(z);
+  z.card.classList.toggle('doors', !!doors);
+  sizeSlot(z.slot, rect(fresh), doors);
+  fitPairs(z.card);
+  place(z.slot, fresh, { floorAt: doors && hadDoors && slotBefore ? slotBefore.bottom : null });
   if (!animate) return;
 
   // READS again (one layout): where everything is now.
@@ -996,7 +1198,8 @@ function refreshZoomInner(fresh, ctx) {
   let arrivals = 0;
   for (const el of z.card.querySelectorAll(REFRESH_PART_SEL)) {
     const k = partKey(el);
-    const was = k ? before.get(k) : null;
+    if (!k) continue; // rides a part that moves it (the door row's notes)
+    const was = before.get(k);
     const now = rect(el);
     if (was && now.width && now.height) {
       const a = mid(was.rect), b = mid(now);
@@ -1038,14 +1241,17 @@ const pressedOverlayJustNow = (e) => e.relatedTarget == null
 // decides nothing.
 export const DOOR_SETTLE_MS = 700;
 const ZOOM_DOORS = 'a.f-link, a.f-where, a.f-order, a.f-cancel';
-function unzoomInner({ instant = false, why = 'unspecified' } = {}) {
+function unzoomInner({ instant = false, why = 'unspecified', meant = false } = {}) {
   if (!zoomed) return;
   overlayPressAt = -Infinity; // a press on this zoom never shields the next one
   // Kevin's "every click closes the hover" journaled itself as NOTHING —
   // no throw, so one of these legitimate close paths fires wrongly on his
   // machine. Every close names its cause; only the click-adjacent ones are
-  // worth the journal's 20 slots (2026-08-31).
-  if (Date.now() - lastOverlayPress < 1000) record('zoom-close-after-click', why);
+  // worth the journal's 20 slots (2026-08-31). `meant`: this close IS the
+  // press's purpose (the notes door opening its sheet, a guest's door asking
+  // who you are, a finger's tap outside) — journaling those filled the queue
+  // with false alarms in the guest shelf round's rig (2026-09-25).
+  if (!meant && Date.now() - lastOverlayPress < 1000) record('zoom-close-after-click', why);
   const z = zoomed;
   zoomed = null;
   const animate = !instant && z.el.isConnected && canAnimate(z.card, z.ctx);
@@ -1228,6 +1434,10 @@ function wireSlot(z) {
   card.addEventListener('click', (e) => {
     if (zoomed !== z) return;
     if (isOwnControl(e.target)) return;
+    // A guest's finger zoom is for reading: its body does nothing, so a look
+    // never turns into a question by accident — its door row is the way in
+    // (v92, the guest shelf round). A member's zoom picks, as it always has.
+    if (z.ctx && !z.ctx.meName && (z.source === 'tap' || z.source === 'touch')) return;
     if (!z.el.isConnected) { unzoom({ instant: true, why: 'clicked a card that left the DOM' }); return; }
     z.ctx.onTap(z.artist, z.el);
   });
@@ -1280,6 +1490,7 @@ function wireSlot(z) {
   // Capture phase so an inner scroller's scroll (which does not bubble) is
   // heard too; rAF-throttled, one re-place per frame.
   let followRaf = 0;
+  let refitNext = false; // the viewport changed: size and pairs are measured again, not just the place
   const follow = () => {
     followRaf = 0;
     if (zoomed !== z) return;
@@ -1297,15 +1508,20 @@ function wireSlot(z) {
       unzoom({ instant: true, why: 'card scrolled under the sticky chrome' });
       return;
     }
+    // A rotation or a resized window changes what the zoom may be (a finger's
+    // zoom is as wide as the screen allows) and so what its pairs fit — the
+    // re-review of a73df70: a pair kept the layout it was opened with.
+    if (refitNext) { refitNext = false; relayoutZoom(z); return; }
     place(z.slot, z.el);
   };
   const onScroll = () => { if (!followRaf) followRaf = requestAnimationFrame(follow); };
+  const onResize = () => { refitNext = true; onScroll(); };
   window.addEventListener('scroll', onScroll, { passive: true, capture: true });
-  window.addEventListener('resize', onScroll);
+  window.addEventListener('resize', onResize);
   z.cleanup.push(() => {
     if (followRaf) cancelAnimationFrame(followRaf);
     window.removeEventListener('scroll', onScroll, true);
-    window.removeEventListener('resize', onScroll);
+    window.removeEventListener('resize', onResize);
   });
 
   // Keyboard: Tab from the zoomed card reaches the notes chip inside the
@@ -1322,14 +1538,19 @@ function wireSlot(z) {
   // nothing else claims Tab today (notes.js's is scoped to a sheet, and a sheet
   // and a zoom cannot coexist), but a future global keyboard layer would lose
   // Tab to a standing zoom and should know that from here.
+  // With the door row (− · note · +) Tab walks its live doors in order; a
+  // door with nowhere to go (disabled) is skipped, so a card you have not
+  // picked still reaches its notes door first.
   const onTabKey = (e) => {
     if (e.key !== 'Tab' || zoomed !== z) return;
-    const chip = card.querySelector('button.f-chip.notes');
-    if (!chip) return; // no onOpenNotes: the chip is a span, and both routes go inert
-    if (e.target === z.el && !e.shiftKey) { e.preventDefault(); chip.focus(); return; }
-    if (e.target !== chip) return;
+    const doors = [...card.querySelectorAll('.f-step-row > button:not([disabled]), button.f-chip.notes')];
+    if (!doors.length) return; // no onOpenNotes and no row: the chip is a span, and both routes go inert
+    if (e.target === z.el && !e.shiftKey) { e.preventDefault(); doors[0].focus(); return; }
+    const i = doors.indexOf(e.target);
+    if (i < 0) return;
     e.preventDefault();
-    if (e.shiftKey) { z.el.focus(); return; }
+    if (e.shiftKey) { (i > 0 ? doors[i - 1] : z.el).focus(); return; }
+    if (i < doors.length - 1) { doors[i + 1].focus(); return; }
     const next = nextFocusableAfter(z.el);
     unzoom({ why: 'Tab moved on' });
     if (next) next.focus();
@@ -1412,9 +1633,25 @@ export function wireCardZoom(el, artistName, ctx, { onOpenNotes = null, occ = nu
 // Keyboard route (2026-08-29): focusing a card grows it too, so Tab reaches
 // the notes chip inside — the door to a FIRST note needs no pointer at all.
 // focusout only unzooms when focus truly left the card and its overlay.
+// A focus the APP hands back — a layer closing and returning focus to what
+// opened it (the join shelf, a notes sheet) — is not the person navigating.
+// The keyboard route below grows a card on keyboard focus, and the Escape that
+// closed the layer had just set lastInput to 'keyboard', so the returning
+// focus grew a fresh zoom over the card the person had just left (the
+// independent walk of b29aac0 — the same class as click · Escape · click).
+// Every programmatic return goes through here; the route ignores it. A Back
+// with no key pressed was already fine and stays so.
+let quietFocus = null;
+export function focusQuietly(el, opts = { preventScroll: true }) {
+  if (!el || typeof el.focus !== 'function') return;
+  quietFocus = el;
+  try { el.focus(opts); } catch { /* not focusable */ } finally { quietFocus = null; }
+}
+
 export function wireCardFocusZoom(el, artistName, ctx, { onOpenNotes = null, occ = null } = {}) {
   el.addEventListener('focusin', () => {
     if (zoomed && zoomed.el === el) return;
+    if (quietFocus && (quietFocus === el || el.contains(quietFocus))) return; // handed back, not navigated to
     // The stay-away mark is a MOUSE rule and deliberately not read here — Tab
     // is fresh intent, and gating it made keyboard growth look off-by-one-card
     // (real-browser walk, 2026-08-30).

@@ -145,8 +145,12 @@ function currentFestCard(ctx, actions) {
     // The invite carries the fest being shared (FLOW-1): &f= on the link for
     // this invite, meta.inviteFestId in the doc for links already out there.
     const fid = state.activeFestivalId;
-    const link = crew.crewLink(state.getCrewToken(), fid);
-    if ((state.crewDoc.meta || {}).inviteFestId !== fid) {
+    // The link carries this phone's view (v92, SD1) — the line under the
+    // invite link below says which.
+    const link = actions.inviteLink ? actions.inviteLink() : crew.crewLink(state.getCrewToken(), fid);
+    // A guest shares the link it holds, and writes nothing into the crew
+    // until it joins (v92): the invite-festival stamp is a member's.
+    if (ctx.meName && (state.crewDoc.meta || {}).inviteFestId !== fid) {
       state.recordInviteFest(fid);
       actions.afterBulk(); // schedules the sync push
     }
@@ -155,7 +159,7 @@ function currentFestCard(ctx, actions) {
       catch { share.textContent = 'See the link below'; setTimeout(() => { share.textContent = 'Share invite'; }, 2500); }
     };
     try {
-      if (navigator.share) await navigator.share({ title: 'Festival Navigator', url: link });
+      if (navigator.share) await navigator.share({ title: 'Festival Navigator', text: crew.inviteText((state.fest() || {}).name), url: link });
       else await copyFallback();
     } catch (e) {
       // A dismissed share sheet is a choice; anything else falls back to the
@@ -211,11 +215,15 @@ function festivalsSection(ctx, actions) {
 
   // The AI/custom add keeps its own quiet door — it is the ONLY path for a
   // fest that isn't in the catalog, and it lands on THIS board's circle.
-  const custom = el('button', 'font-size: 11.5px; padding: 8px 12px; align-self: center;',
-    'Fest not in the catalog? Research + add it to this board');
-  custom.className = 'btn-ghost';
-  custom.addEventListener('click', () => { openSubviewByKey('sub:add-fest', ctx, actions); router.push('sub:add-fest'); });
-  wrap.appendChild(custom);
+  // A member's door only (v92): it writes a festival into THIS crew, and a
+  // guest writes nothing into a crew until it joins.
+  if (ctx.meName) {
+    const custom = el('button', 'font-size: 11.5px; padding: 8px 12px; align-self: center;',
+      'Fest not in the catalog? Research + add it to this board');
+    custom.className = 'btn-ghost';
+    custom.addEventListener('click', () => { openSubviewByKey('sub:add-fest', ctx, actions); router.push('sub:add-fest'); });
+    wrap.appendChild(custom);
+  }
   return wrap;
 }
 
@@ -484,7 +492,8 @@ function crewSection(ctx, actions) {
   const nm = el('span', 'color: #fff; font-weight: 800; font-size: 15px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis;', state.crewName());
   const renameBtn = el('button', 'font-size: 11.5px; padding: 6px 12px; flex: none;', 'Rename');
   renameBtn.className = 'btn-ghost';
-  nameRow.append(nm, renameBtn);
+  nameRow.append(nm);
+  if (ctx.meName) nameRow.append(renameBtn); // a guest renames nothing (v92)
   card.appendChild(nameRow);
   const renameHost = el('div');
   card.appendChild(renameHost);
@@ -529,7 +538,7 @@ function crewSection(ctx, actions) {
     chip.style.padding = '4px 11px';
     chip.addEventListener('click', () => {
       memberLinkHost.textContent = '';
-      const mLink = crew.crewLink(state.getCrewToken(), state.activeFestivalId, name);
+      const mLink = actions.inviteLink ? actions.inviteLink(name) : crew.crewLink(state.getCrewToken(), state.activeFestivalId, name);
       const mRow = el('div', 'display: flex; gap: 8px; align-items: center;');
       const mBox = el('input');
       mBox.readOnly = true;
@@ -567,7 +576,7 @@ function crewSection(ctx, actions) {
 
   // The invite link, always visible (FLOW-12): share sheets fail silently,
   // a printed URL never does.
-  const link = crew.crewLink(state.getCrewToken(), state.activeFestivalId);
+  const link = actions.inviteLink ? actions.inviteLink() : crew.crewLink(state.getCrewToken(), state.activeFestivalId);
   const linkRowEl = el('div', 'display: flex; gap: 8px; align-items: center;');
   const linkBox = el('input');
   linkBox.readOnly = true;
@@ -586,6 +595,9 @@ function crewSection(ctx, actions) {
   // Two links, two jobs — say which one this is (me-link build, 2026-07-13).
   card.appendChild(el('div', 'color: var(--text-tertiary); font-size: 10.5px; font-weight: 600; line-height: 1.45;',
     'Anyone with this link joins the crew. Your own link (My link) is on the home page.'));
+  // The view every link here carries (v92, SD1), said where the links are.
+  const viewLine = actions.inviteViewLine ? actions.inviteViewLine() : '';
+  if (viewLine) card.appendChild(el('div', 'color: var(--text-secondary); font-size: 10.5px; font-weight: 600; line-height: 1.45;', viewLine));
   card.appendChild(status);
   wrap.appendChild(card);
 
@@ -626,7 +638,16 @@ function youSection(ctx, actions) {
   card.className = 'settings-card';
   card.style.cssText += 'display: flex; flex-direction: column; gap: 11px;';
   if (!ctx.meName) {
-    card.appendChild(el('span', 'color: var(--text-tertiary); font-size: 12px; font-weight: 600;', 'Open your crew link to claim a name.'));
+    // A guest (v92): looking without a name. The door in is right here —
+    // the same join screen a tap on an artist opens.
+    card.appendChild(el('span', 'color: var(--text-secondary); font-size: 12px; font-weight: 600; line-height: 1.5;',
+      'You’re just looking. Add yourself to pick with the crew — no account, just a name.'));
+    if (actions.join) {
+      const add = el('button', 'font-size: 12.5px; padding: 9px 16px; align-self: flex-start;', 'Add yourself');
+      add.className = 'btn-tonal';
+      add.addEventListener('click', actions.join);
+      card.appendChild(add);
+    }
     wrap.appendChild(card);
     return wrap;
   }
@@ -771,7 +792,9 @@ export function renderSettings(root, ctx, actions) {
   if (lib) sp.appendChild(el('div', 'color: var(--text-secondary); font-size: 12px; font-weight: 600;', `${Object.keys(lib.artists || {}).length.toLocaleString()} artists in your library`));
   const openSub = (key) => { openSubviewByKey(key, ctx, actions); router.push(key); };
   sp.addEventListener('click', () => openSub('sub:spotify'));
-  main.appendChild(sp);
+  // Spotify badges YOUR picks and records the crew's Spotify app on first
+  // connect — nothing a guest has, nothing a guest writes (v92).
+  if (ctx.meName) main.appendChild(sp);
 
   main.appendChild(microLabel('App'));
   const list = el('div'); list.className = 'settings-list';
@@ -796,7 +819,8 @@ export function renderSettings(root, ctx, actions) {
       if (!on) clearReports();
     }));
   }
-  list.appendChild(linkRow('Bulk paste picks', () => openSub('sub:bulk')));
+  // Bulk paste writes picks under the names it reads — a member's tool (v92).
+  if (ctx.meName) list.appendChild(linkRow('Bulk paste picks', () => openSub('sub:bulk')));
   list.appendChild(linkRow('Export picks', () => openSub('sub:export')));
   list.appendChild(linkRow('Day image', () => openSub('sub:day-image')));
   // Which build this phone runs, and the way to a newer one (v90) — beside
