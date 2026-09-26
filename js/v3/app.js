@@ -60,7 +60,7 @@ import { createSortControl } from './sort-control.js';
 // The people menu (2026-09-26): your avatar opens Highlight, the twin of Show.
 import { buildHighlightMenu, paintHighlightMenu, ensurePill, setSlot, markRects, marksFromFaces, faceRects, PEOPLE_WORDS, PILL_FACES, pillWidth } from './people-menu.js';
 import { passesPeople } from './filters.js';
-import { nameProblem } from '../name-rules.mjs';
+import { nameProblem, ACTIVE_PEOPLE_MAX } from '../name-rules.mjs';
 import { startFavicon, stopFavicon } from './favicon.js';
 import { hslOf, strokeOf, nextColorIndex } from './palette.js';
 // Entering a crew you already have a life in (2026-09-23): recognized on
@@ -2996,20 +2996,30 @@ function addPerson(token, canonical, person) {
     }
   };
   // The offline path: a local pending edit, pushed by sync when this phone
-  // sends again (idempotent with a copy the server may already have).
+  // sends again. Local-only, so the people cap is checked here, the way the
+  // server would have (the server's own words), before a link is promised.
+  // The local entry is merged, never replaced: bringing back a removed member
+  // keeps their pid (the old replacement dropped it — Sol, 0e51b06).
   const keepHere = () => {
+    const active = new Set(state.activePeople().map(([n]) => n.toLowerCase()));
+    for (const a of addedNotYetHere(token)) active.add(a.name.toLowerCase());
+    if (!active.has(canonical.toLowerCase()) && active.size + 1 > ACTIVE_PEOPLE_MAX) {
+      finish({ ok: false, message: `This crew is full (${ACTIVE_PEOPLE_MAX} people max).` });
+      return;
+    }
     state.recordPerson(canonical, person);
-    state.crewDoc.people[canonical] = person;
+    state.crewDoc.people[canonical] = { ...(state.crewDoc.people[canonical] || {}), ...person };
     state.persist();
     sync.scheduleSync();
     refreshCtx(); renderPersonChips(); repaintWall();
+    finish({ ok: true, canonical, offline: true });
   };
   // Stay offline means this phone sends nothing: no POST at all — the add is
   // the offline one (Sol's re-review of 58e75fe: it POSTed, said IS IN, and
   // the ordered poll never ran under the setting, so the server had the
   // person and this phone did not).
   if (sync.stayingOffline()) {
-    Promise.resolve().then(() => { keepHere(); finish({ ok: true, canonical, offline: true }); }); // after the sheet is listening
+    Promise.resolve().then(keepHere); // after the sheet is listening
     return add;
   }
   const deadline = timeoutSignal(ADD_DEADLINE_MS);
@@ -3029,15 +3039,16 @@ function addPerson(token, canonical, person) {
         return;
       }
       if (state.getCrewToken() !== token) { finish({ gone: true }); return; }
-      // Stay offline switched on while this was out: the ordered poll will
-      // not run under it, so the person is kept here as a pending edit
-      // (the server already has them; the push, when it comes, is the same).
-      if (sync.stayingOffline()) { keepHere(); finish({ ok: true, canonical, offline: true }); return; }
       const mine = addedHere.get(token) || new Map();
       mine.set(canonical.toLowerCase(), { name: canonical, person });
       addedHere.set(token, mine);
-      finish({ ok: true, canonical });
-      sync.afterServerWrite(); // the doc, the ordered way
+      // Stay offline switched on while this was out: the server has the
+      // person, and nothing is queued here — a pending copy could bring back
+      // someone another phone then removes, or undo a newer colour (Sol,
+      // 0e51b06). The sheet says the crew arrives once the phone is online
+      // again, and the ordered poll brings them when sync resumes.
+      finish({ ok: true, canonical, offline: sync.stayingOffline() });
+      sync.afterServerWrite(); // the doc, the ordered way (it waits under Stay offline)
     } catch {
       if (state.getCrewToken() !== token) { finish({ gone: true }); return; }
       if (deadline && deadline.aborted) {
@@ -3046,7 +3057,6 @@ function addPerson(token, canonical, person) {
       }
       // Offline: local-first add, sync catches up — same as every pick.
       keepHere();
-      finish({ ok: true, canonical, offline: true });
     }
   })();
   return add;

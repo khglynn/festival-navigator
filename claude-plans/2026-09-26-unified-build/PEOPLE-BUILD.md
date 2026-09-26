@@ -133,7 +133,7 @@ beside the sync engine and outside its ordering (the old add sheet did it since 
 | The Invite sheet's own checks ("already in this crew", the next person's colour) | people the server has that this phone does not yet | `addedNotYetHere` — memory of names answered, pruned when the poll lands; never written to the doc |
 | "From your other fests" chips | who is already here | `state.people()`; a just-added one still showing is caught by the check above |
 | The invite-festival stamp | `meta.inviteFestId` | read at sheet open; untouched by adds |
-| Sync's pending overlay | — | an online add never touches it; offline and Stay-offline adds go through it (`recordPerson`), and so does an add whose answer lands after Stay offline went on |
+| Sync's pending overlay | — | an online add never touches it; offline and Stay-offline adds go through it (`recordPerson`, after the people-cap check); an add whose answer lands after Stay offline went on queues nothing |
 | Settings → Crew (member chips, their links) | `activePeople()` | read when Settings renders (as for any remote change) |
 | The wall (marks, auras) | picks | a new person has none |
 
@@ -164,6 +164,43 @@ person). Two left, both fixed:
    already has one (`removed: true`), so a sheet reopened before the poll landed let the same add go
    twice. It prunes only when the local entry is the active person. Test: bring back a removed member,
    reopen before the poll — "Mo is already in this crew.", no second POST (red without the fix).
+
+## Sol on `0e51b06`, and the release rule: no worse than production, cheap and certain fixes, the rest banked
+
+Production's add today (`main`, `openAddMember`) applies the server's doc directly, POSTs under Stay
+offline, and its offline branch writes a local person keyed by the local copy's casing with no cap
+check. So several late findings are pre-existing flaws of the offline add path — sync-engine design
+work, not this release's. The rule the coordinator set: the add path must be no worse than production
+anywhere; fix what is cheap and certain; bank the rest with acceptance tests.
+
+1. **P1, cut (it came from the mid-flight instruction of the round before):** when Stay offline goes on
+   while an add is out and the add SUCCEEDS, nothing is queued here any more — a pending copy could
+   bring back a person another phone then removes, or undo a newer colour. The server has the person;
+   the sheet shows the same "once this phone is online again" line, and the ordered path brings them
+   when sync resumes (switching the setting off pushes, and the push's answer is the crew doc). The
+   local write that REPLACED an entry (dropping an existing pid) now merges into it. Tests: the
+   mid-flight success queues nothing and a later removal by another phone stands; a local-only add of a
+   removed member keeps their pid. Each red without its fix.
+2. **P2, cheap:** a local-only add (offline, Stay offline) checks the active count against the people cap
+   first and says "This crew is full (24 people max)." — the server's words — instead of promising a
+   link. The cap is now one shared number, `ACTIVE_PEOPLE_MAX` in `js/name-rules.mjs`, which the server's
+   `LIMITS.activePeople` reads (the same way the name rules are shared). Test: a full crew under Stay
+   offline — the words, nothing queued, the entries live again (red without the check).
+3. **P1 about casing — BANKED (pre-existing):** an offline add of "drew" while the server already has
+   "Drew" queues `people.drew`; the merge refuses two names that differ only by case (400, "Someone in
+   the crew already has that name"), sync.js treats that as a deterministic refusal, and the phone's
+   sync is **blocked** until a new edit. **Today's production has the same exposure** — confirmed in
+   `origin/main` `js/v3/app.js` (`openAddMember`'s catch: `state.recordPerson(canonical, person)` with
+   `canonical` from the local copy's casing, no reconciliation), and `api/crew.js` returns that 400.
+   Not redesigned now.
+
+## Follow-ups (banked, with acceptance tests)
+
+1. **A pending add whose name matches a server person case-insensitively reconciles to the server's key
+   and never blocks sync.** `tests/offline-add-casing.test.mjs` — written, runs as a TODO (it fails today,
+   reproducing the block: pending `drew`, sync blocked), and does not fail the suite. The fix is in the
+   sync engine (reconcile a pending person against the server's names before or on a 400), not the
+   Invite sheet.
 
 ## For whoever merges this with live/tap and live/plan
 

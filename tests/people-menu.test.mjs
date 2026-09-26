@@ -597,19 +597,59 @@ test('under Stay offline an add sends nothing: it is kept here as a pending edit
   assert.ok(SERVER[CREW].people.Vic, 'the crew has him');
 });
 
-test('Stay offline switched on while an add is out: its answer keeps the person here as a pending edit, so this phone is not left behind', async () => {
+test('Stay offline switched on while an add is out and it succeeds: nothing is queued here — the server has the person, and sync brings them when it resumes', async () => {
   await addNamed('Wes', { holdAnswer: true }); // out, and the server has him
   sync.setStayOffline(true);
   try {
     holdPosts = false;
     heldPosts.splice(0).forEach((r) => r());
     await answered('Wes');
-    assert.ok(state.people().Wes, 'Wes is here, though no poll runs under the setting');
-    assert.ok(((state.pendingChanges || {}).people || {}).Wes, 'kept as a pending edit (the same as the server’s copy)');
-    assert.match(document.querySelector('#artist-sheet .inv-sub').textContent, /once this phone is online again/);
+    assert.match(document.querySelector('#artist-sheet .inv-sub').textContent, /once this phone is online again/, 'the sheet says so');
+    assert.equal(((state.pendingChanges || {}).people || {}).Wes, undefined, 'no pending copy (it could bring back someone another phone removes, or undo a newer colour)');
+    assert.equal(state.people().Wes, undefined, 'and no local write: the ordered path brings him');
+    await doneWithSheet();
+    // Another phone removes Wes before this one sends again: nothing here brings him back.
+    SERVER[CREW] = deepMerge(SERVER[CREW], { people: { Wes: { removed: true } } });
+  } finally { await settleSync(); } // what switching the setting off does (app.js onStayOffline → pushSync)
+  assert.ok(state.people().Wes, 'the crew doc arrived the ordered way');
+  assert.equal(state.people().Wes.removed, true, 'with the other phone’s removal standing');
+});
+
+test('a local-only add checks the people cap first: a full crew says so instead of promising a link', async () => {
+  const fill = {};
+  const active = () => state.activePeople().length;
+  for (let i = 0; active() + Object.keys(fill).length < 24; i += 1) fill[`Fill${i}`] = { colorIndex: 0 };
+  state.applyRemoteDoc(deepMerge(state.crewDoc, { people: fill })); // 24 active, as this phone knows it
+  assert.equal(active(), 24);
+  sync.setStayOffline(true);
+  try {
+    await addNamed('Yan');
+    await settle(20);
+    const sheet = document.querySelector('#artist-sheet.invite-sheet');
+    assert.equal(sheet.querySelector('.inv-status').textContent, 'This crew is full (24 people max).', 'the server’s own words');
+    assert.equal(state.people().Yan, undefined);
+    assert.equal(((state.pendingChanges || {}).people || {}).Yan, undefined, 'nothing queued');
+    assert.equal(sheet.querySelector('.inv-add').disabled, false, 'the entries are live again');
+    document.querySelector('#artist-sheet .sheet-close').click();
+    await sheetClosed();
+  } finally { await settleSync(); } // the crew as the server has it again (the fill was this phone's alone)
+  assert.equal(state.people().Fill0, undefined);
+});
+
+test('a local-only add of a removed member merges into their entry: their pid is kept', async () => {
+  const pid = 'pidolitest0001';
+  SERVER[CREW] = deepMerge(SERVER[CREW], { people: { Oli: { colorIndex: 13, removed: true, pid } } });
+  await sync.pollSync();
+  assert.equal(state.people().Oli.pid, pid);
+  sync.setStayOffline(true);
+  try {
+    await addNamed('Oli');
+    await answered('Oli');
+    assert.equal(state.people().Oli.removed, false, 'back');
+    assert.equal(state.people().Oli.pid, pid, 'with the pid their claim link needs');
     await doneWithSheet();
   } finally { await settleSync(); }
-  assert.equal(SERVER[CREW].people.Wes.removed, false, 'the push, when it came, changed nothing on the server');
+  assert.equal(SERVER[CREW].people.Oli.pid, pid, 'and the server’s copy keeps it too');
 });
 
 test('bringing back a removed member: a reopened sheet before the poll lands still knows the add is done — no second POST', async () => {
