@@ -1515,6 +1515,16 @@ const stackTime = (m) => {
 // the stacks are the clock's own room (a cancelled act, a set off the
 // columns, a name with no time yet), 'day' when they are another room on that
 // day (SAT AFTERS). How far each one moves is v3.css's call.
+//
+// A clocked row also sits in its own sideways scroller, `.stack-scroll` (v91):
+// on a phone the rail's 40px is lead space inside it — the columns start
+// where the clock's do and keep their full width, and the lead scrolls away
+// under a swipe (Kevin: "a little bit of extra padding that obviously scrolls
+// away if you left scroll"). One scroller per room on a day, never per day:
+// the room's head between two rooms is a door and stays put. It is not a
+// `.times-scroll` on purpose — nothing that mirrors the timetable's position
+// may take it for one; its own position survives a repaint by its own key
+// (stackRowKey). From 720 up it is an ordinary box (v3.css).
 export function venueGroups(root, entries, ctx, { day = null, fest = null, fallbackVenue = null, clock = null } = {}) {
   const grid = mk('div', 'venue-grid');
   if (day && day.iso) grid.dataset.iso = day.iso;
@@ -1550,7 +1560,16 @@ export function venueGroups(root, entries, ctx, { day = null, fest = null, fallb
     grid.appendChild(group);
   }
   if (!shown) return 0;
-  root.appendChild(grid);
+  if (clock) {
+    // How many columns the row asks for is v3.css's to decide; one venue
+    // fits the phone beside the lead space and never scrolls.
+    grid.dataset.venues = String(groups.length);
+    const row = mk('div', 'stack-scroll');
+    row.appendChild(grid);
+    root.appendChild(row);
+  } else {
+    root.appendChild(grid);
+  }
   return shown;
 }
 
@@ -2135,6 +2154,16 @@ function renderExtra(root, ctx, fest, extra) {
 // The repaint boundary preserves ephemeral client state (audit Class 1): a
 // remote sync tearing down #wall-root must never cost the user their scroll
 // position or a half-typed note. Harvest before teardown, restore after.
+// A stack row's sideways position belongs to that row alone — no other
+// scroller shares it — so it is kept by where the row stands: its day, its
+// room, and which of that room's rows it is.
+function stackRowKey(row) {
+  const room = row.closest('.room');
+  const rows = room ? [...room.querySelectorAll('.stack-scroll')] : [row];
+  const day = row.closest('.day-block');
+  return `${day ? day.dataset.day : ''}|${room ? room.dataset.room : ''}|${rows.indexOf(row)}`;
+}
+
 function harvestEphemera(root) {
   const scrolls = new Map();
   // Every timetable scroller mirrors one shared position within its sync
@@ -2142,6 +2171,12 @@ function harvestEphemera(root) {
   for (const s of root.querySelectorAll('.times-scroll')) {
     const key = s.dataset.sync || '*';
     if (!scrolls.has(key) && s.scrollLeft) scrolls.set(key, s.scrollLeft);
+  }
+  // A crew-mate's pick repaints the wall; a phone that had swiped SAT AFTERS
+  // sideways must not have it snap back under its thumb.
+  const rows = new Map();
+  for (const s of root.querySelectorAll('.stack-scroll')) {
+    if (s.scrollLeft) rows.set(stackRowKey(s), s.scrollLeft);
   }
   const drafts = new Map();
   for (const input of root.querySelectorAll('.composer input[data-draft-key]')) {
@@ -2153,13 +2188,17 @@ function harvestEphemera(root) {
       });
     }
   }
-  return { scrolls, drafts };
+  return { scrolls, rows, drafts };
 }
 
-function restoreEphemera(root, { scrolls, drafts }) {
+function restoreEphemera(root, { scrolls, rows, drafts }) {
   for (const s of root.querySelectorAll('.times-scroll')) {
     if (isStripScroller(s)) continue; // the strip follows its grid; it is never scrolled itself
     const left = scrolls.get(s.dataset.sync || '*');
+    if (left) s.scrollLeft = left;
+  }
+  for (const s of root.querySelectorAll('.stack-scroll')) {
+    const left = rows.get(stackRowKey(s));
     if (left) s.scrollLeft = left;
   }
   for (const input of root.querySelectorAll('.composer input[data-draft-key]')) {
