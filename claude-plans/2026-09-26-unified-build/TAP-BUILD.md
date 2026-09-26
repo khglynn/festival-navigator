@@ -228,3 +228,20 @@ List view's cards are `renderCard` cards, so the tap reaches them with no furthe
   (28cc51c, the same tree as 9e70120: main held nothing live/list had not). Gate on that tree: `npm test`
   1138/1139 at all three clocks (only the SW stamp), validate-festivals 0 errors, `test:browser` 269/269
   locally; CI run 36246098584 browser green (261, 2 named skips), checks red only on the stamp.
+- **14:40 — Sol 6's re-review of 83b4065** (the coordinator's v98 stamp): the three earlier findings
+  confirmed fixed. Two more, fixed:
+  1. IMPORTANT (0e11d14): a press stayed pending after its lift when no click came, so a later
+     pointerless activation took its hand ('mouse' → picked unseen). A click now answers only the press
+     the browser pairs it with: lifted, within 600 ms, and where the press and the lift both were (the
+     element, or the ancestor that holds both). Tests: the abandoned press, a stale lift, a press
+     released on another card (unit); a real mouse pressed on one card and released on another, and a
+     press dragged off the page before an activation (WebKit + Chromium); the tap contract asserts a real
+     tap's click is paired as the finger's (an unpaired one opens the same shelf and would hide a broken
+     pairing). Eight test helpers gained the lift every real pointer click has.
+  2. NIT (269959f): the keyboard ride's 200px floor could overrun an SE's view; it is never taller than
+     what shows now. Framing an SE in WebKit (tap-design/rig.mjs `se`) found two more: max-height is the
+     sheet's content box, so its 32px of padding pushed the top 20px off the screen (now subtracted); and
+     the join shelf, overflow: visible at rest, squashed and then hid its field under the keys on its
+     side (a capped sheet scrolls now, keeps the focused field in view, and the join shelf's parts no
+     longer shrink). Frames: `tap-design/frames/contact-webkit-se-keys.png` (SE portrait and on its side,
+     member and guest). Unit + WebKit/Chromium contracts at 375×667 and 667×375.

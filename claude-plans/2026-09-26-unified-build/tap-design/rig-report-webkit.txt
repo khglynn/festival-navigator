@@ -1,48 +1,16 @@
-webkit member390
-  Robyn open: {"top":204,"h":640,"rowY":373,"meter":"0","minusOff":true,"plusOff":false}
-  frame webkit-390-member-robyn-open.png
-  after +: {"top":204,"h":640,"rowY":373,"meter":"1","minusOff":false,"plusOff":false}
-  frame webkit-390-member-robyn-plus1.png
-  after + x4: {"top":204,"h":640,"rowY":373,"meter":"4","minusOff":false,"plusOff":true}
-  frame webkit-390-member-robyn-must.png
-  frame webkit-390-member-robyn-thread-end.png
-  frame webkit-390-member-robyn-closed.png
-  Boys Noize open: {"top":496,"h":348,"rowY":686,"meter":"0","minusOff":true,"plusOff":false}
-  frame webkit-390-member-boysnoize-doors.png
-  errors: none
-webkit grows390
-  Oskar open: {"top":520,"h":324,"rowY":660,"meter":"0","minusOff":true,"plusOff":false}
-  frame webkit-390-member-unpicked-open.png
-  after +: {"top":491,"h":353,"rowY":660,"meter":"1","minusOff":false,"plusOff":false} — row moved 0px, top rose 29px
-  frame webkit-390-member-unpicked-plus1.png
-  after −: {"top":520,"h":324,"rowY":660,"meter":"0","minusOff":true,"plusOff":false} — row moved 0px from the first
-  errors: none
-webkit motion390
-webkit alt390
-  frame webkit-390-ALT-no-meter-plus2.png
 webkit rise390
-  the sheet's bottom vs the screen's, every frame of the rise: min 0px, max 639.5px over 91 frames (negative = a gap under it)
-webkit member320
-  frame webkit-320-member-boysnoize-doors.png
-  Robyn open 320: {"top":127,"h":441,"rowY":324,"meter":"0","minusOff":true,"plusOff":false}
-  frame webkit-320-member-robyn-open.png
-  after + 320: {"top":127,"h":441,"rowY":324,"meter":"1","minusOff":false,"plusOff":false}
-  frame webkit-320-member-robyn-plus1.png
+  the sheet's bottom vs the screen's, every frame of the rise: min 0px, max 616.1px over 90 frames (negative = a gap under it)
+webkit se
+  SE portrait member keys 291: {"sheetTop":12,"sheetBottom":376,"field":[320,358],"keysTop":376,"maxH":"332px"} — top on screen true, above the keys true
+  frame webkit-se-portrait-member-keys.png
   errors: none
-webkit guest390
-  guest Robyn: {"top":204,"h":640,"rowY":373,"meter":"0","minusOff":false,"plusOff":false}
-  frame webkit-390-guest-robyn-open.png
-  frame webkit-390-guest-robyn-thread-end.png
-  frame webkit-390-guest-robyn-plus-asks.png
-  history after + : {"joinShelf":true} length 3
+  SE portrait guest keys 291: {"sheetTop":109,"sheetBottom":376,"field":[254,300],"keysTop":376,"maxH":"340px"} — top on screen true, above the keys true
+  frame webkit-se-portrait-guest-keys.png
   errors: none
-webkit keyboard390
-  frame webkit-390-member-robyn-typing.png
+  SE landscape member keys 206: {"sheetTop":12,"sheetBottom":169,"field":[113,151],"keysTop":169,"maxH":"125px"} — top on screen true, above the keys true
+  frame webkit-se-landscape-member-keys.png
   errors: none
-webkit desktop1280
-  frame webkit-1280-mouse-robyn-zoom.png
-  desktop shelf: {"top":64,"h":672,"rowY":205,"meter":"0","minusOff":true,"plusOff":false}
-  frame webkit-1280-mouse-robyn-shelf.png
-  frame webkit-1280-mouse-robyn-shelf-plus1.png
+  SE landscape guest keys 206: {"sheetTop":12,"sheetBottom":169,"field":[123,169],"keysTop":169,"maxH":"133px"} — top on screen true, above the keys true
+  frame webkit-se-landscape-guest-keys.png
   errors: none
-writes seen (all refused): POST /api/person, POST /api/crew, POST /api/person, POST /api/person, POST /api/person, POST /api/person, POST /api/person, POST /api/person
+writes seen (all refused): POST /api/person, POST /api/person, POST /api/person
