@@ -261,3 +261,9 @@ ACL ones.
 
 Both confirm the label logic from Part 1 renders correctly in a real
 browser.
+
+## After the merge with v94 (coordinator, 2026-09-26 ~1:50 AM PT)
+
+- **The War on Drugs (ACL, Oct 8, Fair Market): tickets removed.** Its link resolves (through Ticketmaster's affiliate wrapper) to `universe.com/destinationdefendermusicexperience-austin-tx`, which answers 404 — a dead link, so the Info door (Do512) is the only door (the docs' rule).
+- **Fcukers + Total Wife (ACL, Sep 29): kept.** The Etix link resolves to the Etix event page (HTTP 202, Etix's bot answer — not a 404), so it is live; it just has no readable price.
+- v94 added nine Saturday/Sunday Folsom parties after this pass's base (the shared-room parties). They get their own check below.
