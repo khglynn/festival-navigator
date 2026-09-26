@@ -275,4 +275,41 @@ List view's cards are `renderCard` cards, so the tap reaches them with no furthe
   touch-ghost, show-links and zoom-chips-contract. Six files 3/3 at three-way load locally. One
   unrelated local flake seen once in a full run and not since (0/3 alone): now-jump's "Ross highlighted"
   read the row at 38 of 40 mid-glide (Chromium, v91's NOW slide) — for the NOW owner if CI ever shows it.
+- **16:30 — Sol 6's third review of the hand: cut, not patched** (e166b2a, stamp 9b865e6). Finding
+  (IMPORTANT): the one pending press took any pointer's lift, so finger down → mouse down → finger up
+  classed the finger's click 'mouse' and picked. Third round on inferring a click's hand from the presses
+  around it, so the coordinator asked to cut that and read the hand from the click itself
+  (`pointerType`, a PointerEvent since Chrome 92, Firefox 129, Safari 18.2).
+  **Where the plan was wrong, and what I did instead.** A click's `pointerType` is the truth for
+  'touch', 'pen' and '' in every engine, and a lie for 'mouse' on WebKit — the iPhone's engine. WebKit
+  types the click after a finger's tap "mouse" on the mouse's pointer id: measured in Playwright's
+  WebKit today (pointerdown/up "touch" id 0, then click "mouse" id 1; Chromium's is "touch" on the
+  touch's id), and on a real iPad in WebKit bug 324397 (2026-09-16, a WebKit engineer's log: "every
+  other input event on the page carries pointerType=touch, and only the click and the mouseout that
+  follows it say mouse"). Reading 'mouse' as a mouse would have turned every iPhone tap into a pick —
+  the one outcome the tap change exists to prevent. So:
+  1. The click decides wherever it can be believed: 'touch'/'pen' → finger; '' → keyboard when an Enter
+     or Space on this element led to it in the same turn, else assistive.
+  2. A 'mouse' click — and a click with no pointerType (iOS/Safari 18.1 and earlier, Firefox 128 and
+     earlier: MDN's compat table) — is judged by the press it answers, and that mechanism is rebuilt
+     rather than patched: presses kept per pointerId, a lift finishes only its own pointer's press, the
+     latest lift that the click holds wins, a click spends it, an unanswered 'mouse' click opens the
+     shelf (never writes). The single pending press is gone. Not keyed on the click's pointerId, because
+     WebKit's click after a finger carries the mouse's id.
+  3. Diagnostics now says what decided the hand (`handBy`: type / press / key / none), so a "my tap
+     picked" paste says whether the click's word or a press decided.
+  Tests: unit — the hybrid (finger down, mouse down, finger up) typed both ways, then the mouse's own
+  click still picks; every type (touch, pen, '', '' after Enter this turn, Space on keyup, a key on
+  another element, 'mouse' after a mouse / a finger / a pen / nothing / a held press / another element's
+  lift / two lifts, and no pointerType at all); Chromium's tap by type. `tests/helpers/pointer-click.mjs`
+  types clicks as each engine does — jsdom 30's `el.click()` sends pointerType '' like every browser,
+  so seven test files moved onto it. Real input, both engines: the tap contract asserts the class and
+  what decided it (Chromium: finger by type; WebKit: finger by press, logged so a WebKit that starts
+  telling the truth shows as 'type'), mouse clicks as mouse by press, `el.click()` as assistive by type,
+  and a new case holds a real mouse button down on a card while a finger taps it — the finger's click
+  opens the shelf and nothing is picked, in both. Kept as is: `touchAt` (hover, not clicks) and the
+  contextmenu door (it only opens the shelf, never writes).
+  Gate on 9b865e6: `npm test` 1145/1146 at all three clocks (1 skip), `test:browser` 279/279,
+  validate-festivals 0 errors. One Chromium keys-up case failed once in a full-file local run and not in
+  2 full-file reruns or 6 parallel runs (typing into the composer); watching it on CI.
 
