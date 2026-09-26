@@ -19,7 +19,7 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { serveStatic } from '../helpers/static-server.mjs';
-import { launchBrowser, NO_BROWSER, REQUIRED } from '../helpers/browser.mjs';
+import { launchBrowser, launchWebkit, NO_BROWSER } from '../helpers/browser.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const OPEN_MS = 700; // ZOOM_IN_MS (200) + the bloom, with room for a slow engine
@@ -28,7 +28,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const server = await serveStatic(ROOT);
 const browser = await launchBrowser();
 let webkit = null;
-try { webkit = await (await import('playwright')).webkit.launch({ headless: true }); } catch (e) { if (REQUIRED) throw e; /* not installed here: that half skips */ }
+webkit = await launchWebkit();
 test.after(async () => {
   if (browser) await browser.close();
   if (webkit) await webkit.close();

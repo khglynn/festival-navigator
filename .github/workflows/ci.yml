@@ -37,6 +37,11 @@ jobs:
   # jsdom suite cannot see boundary events, removal blurs or focus heuristics,
   # and that is where the card zoom kept breaking with a green suite
   # (2026-08-29 → 09-01). A separate job so the offline suite stays fast.
+  # WebKit too (U0 of the unified build, 2026-09-26): iPhones are WebKit, and
+  # the tap contract (a finger's tap opens the card's shelf) is only proven
+  # where WebKit's touch tap — touch pointerdown, then a MOUSE-type click —
+  # really runs. Under BROWSER_TEST_REQUIRED a missing WebKit fails the job
+  # (tests/helpers/browser.mjs launchWebkit) instead of skipping.
   browser:
     runs-on: ubuntu-latest
     steps:
@@ -46,5 +51,5 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - run: npx playwright install --with-deps chromium
+      - run: npx playwright install --with-deps chromium webkit
       - run: npm run test:browser

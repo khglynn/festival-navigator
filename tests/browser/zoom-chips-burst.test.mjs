@@ -1,5 +1,9 @@
-// The who-chips under a thumb that will not wait (2026-09-24): real taps on
-// the grown card, far faster than the 300ms move, in a real engine.
+// The who-chips under a thumb that will not wait (2026-09-24): real presses,
+// far faster than the 300ms move, in a real engine. Since the tap change
+// (2026-09-26) a finger picks on the SHELF its tap opens (− and + on the
+// card's floor, the same who-row and motion — card-facts.js refreshSheetCard),
+// and a mouse picks by clicking the grown zoom: each law runs where its
+// gesture now lives.
 //
 // The Node suite pins the motion's mechanics, but its animations are a
 // recorder: nothing plays, nothing is painted, and until 2026-09-24 its
@@ -9,16 +13,18 @@
 // just left — which an independent review found in Chromium and WebKit. So
 // the burst lives here, where frames are real:
 //
-//   1. A burst of ten taps 40–90ms apart, never letting a move finish: on
+//   1. A burst of ten presses 40–90ms apart, never letting a move finish —
+//      a finger's + and − on the shelf, and a mouse's clicks on the zoom: on
 //      every painted frame nobody is rendered twice (live or parked); once it
-//      settles, nothing temporary is left, no clip stays lifted, nothing in
-//      the zoom is still animating, and the row agrees with the card.
+//      settles, nothing temporary is left, no clip stays lifted, nothing is
+//      still animating, and the row agrees with the card.
 //   2. Clear, then re-pick while your name is still stepping away (held,
 //      so any machine hits the race) and at 0, 40 and 80ms: the new level
 //      grows in where the row makes room (storyboard case 5), never out of
-//      the chip you left.
+//      the chip you left. The cycle's clear (MUST → nothing in one press) is
+//      a mouse's click on the zoom.
 //   3. A cut-off name stays cut off while it slides (it used to draw in full
-//      for the 300ms of the move, then snap back to "…").
+//      for the 300ms of the move, then snap back to "…") — on the shelf.
 //
 // Storyboard: claude-plans/2026-09-23-zoom-chips-motion.md. The layout
 // contract (widths, descenders, 320, a pick's first frame) is its sibling,
@@ -53,8 +59,8 @@ const doc = () => ({
   festivals: { [FID]: { selections: { Robyn: ROBYN, Soulwax: SOULWAX } } },
 });
 
-async function openWall({ width = 390, height = 844 } = {}) {
-  const ctx = await browser.newContext({ viewport: { width, height }, hasTouch: true, isMobile: true, serviceWorkers: 'block' });
+async function openWall({ width = 390, height = 844, touch = true } = {}) {
+  const ctx = await browser.newContext({ viewport: { width, height }, hasTouch: touch, isMobile: touch, serviceWorkers: 'block' });
   const TOKEN = 'chipsburst_0123456789abc'; // a made-up crew, never a real link
   await ctx.addInitScript(([t, f]) => {
     navigator.serviceWorker.register = () => Promise.resolve({ update: () => Promise.resolve() });
@@ -81,48 +87,59 @@ async function openWall({ width = 390, height = 844 } = {}) {
   return { ctx, page };
 }
 
-// A real hold on an artist's resting card (the long-press ignores mouse
-// pointers by design); returns the touch channel the taps go through.
-async function holdOpen(ctx, page, artist) {
+const SHELF = '#artist-sheet .sheet-card';
+const ZOOM = '#zoom-layer .zoom-slot.shown .zoom-card';
+
+// A finger's tap on an artist's resting card: its shelf, settled. Returns the
+// touch channel the presses go through.
+async function shelfOpen(ctx, page, artist) {
   const at = await page.evaluate((a) => {
     const el = [...document.querySelectorAll('#wall-root .card')].find((c) => c.dataset.artist === a);
     el.scrollIntoView({ block: 'center' });
     const r = el.getBoundingClientRect();
+    return { x: r.left + r.width / 2, y: r.top + Math.min(r.height / 2, 24) };
+  }, artist);
+  await sleep(200);
+  await page.touchscreen.tap(Math.round(at.x), Math.round(at.y));
+  await page.waitForSelector(`${SHELF} .f-who`, { timeout: 4000 });
+  await sleep(700);
+  return ctx.newCDPSession(page);
+}
+// A mouse coming to rest on the card: the zoom, settled.
+async function hoverOpen(page, artist) {
+  const at = await page.evaluate((a) => {
+    const el = [...document.querySelectorAll('#wall-root .card')].find((c) => c.dataset.artist === a);
+    el.scrollIntoView({ block: 'center', inline: 'center' });
+    const r = el.getBoundingClientRect();
     return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
   }, artist);
   await sleep(200);
-  const cdp = await ctx.newCDPSession(page);
-  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: at.x, y: at.y }] });
-  await sleep(650);
-  // Hold until the card grows, as a finger does (zoom-chips-contract's holdOpen
-  // says why: under page.clock the long-press timer can run late on a big
-  // wall, and a lift at 650ms then reads as a tap — CI hit it on v94/v95).
-  for (let i = 0; i < 40 && !(await page.$('#zoom-layer .zoom-slot.shown')); i++) await sleep(50);
-  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
-  await page.waitForSelector('#zoom-layer .zoom-slot.shown .f-who', { timeout: 4000 });
+  await page.mouse.move(at.x, at.y, { steps: 8 });
+  await page.waitForSelector(`${ZOOM} .f-who`, { timeout: 4000 });
   await sleep(700);
-  return cdp;
 }
 
-// One quick finger tap on the grown card's title (a pick). Straight through
-// the touch channel: a Playwright locator tap waits for the element to be
-// stable, which a card mid-move never is.
-async function tap(page, cdp) {
-  const at = await page.evaluate(() => {
-    const r = document.querySelector('#zoom-layer .zoom-slot.shown .zoom-card .f-name').getBoundingClientRect();
-    return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
-  });
-  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: at.x, y: at.y }] });
-  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+// One quick press, straight through the input layer (a locator waits for the
+// element to be stable, which a card mid-move never is): a finger on the
+// shelf's + or −, or a mouse click on the zoom's title (the cycle).
+async function press(page, how) {
+  if (how.cdp) {
+    const at = await page.evaluate((sel) => { const r = document.querySelector(sel).getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; }, `${SHELF} .f-step.${how.side}`);
+    await how.cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: at.x, y: at.y }] });
+    await how.cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    return;
+  }
+  const at = await page.evaluate((sel) => { const r = document.querySelector(sel).getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; }, `${ZOOM} .f-name`);
+  await page.mouse.click(at.x, at.y);
 }
 
 // Every painted frame: who is rendered where. A person twice LIVE, or live
 // and parked at once, breaks the law (one rendering of every fact).
-const startSampler = (page) => page.evaluate(() => {
+const startSampler = (page, scope) => page.evaluate((sc) => {
   window.__frames = [];
   window.__sampling = true;
   const tick = () => {
-    const card = document.querySelector('#zoom-layer .zoom-slot.shown .zoom-card');
+    const card = document.querySelector(sc);
     if (card) {
       const live = {}, parked = {};
       for (const nm of card.querySelectorAll('.f-nm[data-person]')) {
@@ -139,11 +156,11 @@ const startSampler = (page) => page.evaluate(() => {
     if (window.__sampling) requestAnimationFrame(tick);
   };
   requestAnimationFrame(tick);
-});
+}, scope);
 const stopSampler = (page) => page.evaluate(() => { window.__sampling = false; return window.__frames; });
 
-const settledState = (page, artist) => page.evaluate((a) => {
-  const card = document.querySelector('#zoom-layer .zoom-slot.shown .zoom-card');
+const settledState = (page, artist, scope = ZOOM) => page.evaluate(([a, sc]) => {
+  const card = document.querySelector(sc);
   const resting = [...document.querySelectorAll('#wall-root .card')].find((c) => c.dataset.artist === a);
   const you = card.querySelector('.f-who .f-pill.you');
   const names = [...card.querySelectorAll('.f-nm[data-person]')].map((n) => n.dataset.person);
@@ -151,45 +168,64 @@ const settledState = (page, artist) => page.evaluate((a) => {
     temp: [...card.querySelectorAll('.f-parked, .f-bud, .f-fill .f-fill, .f-travel, .f-carrying')].map((n) => n.className),
     lifted: [...card.querySelectorAll('.f-names')].filter((n) => n.style.overflow).length,
     running: document.getAnimations().filter((x) => !(x instanceof CSSAnimation) && x.playState === 'running'
-      && x.effect && x.effect.target && x.effect.target.closest && x.effect.target.closest('#zoom-layer')).length,
+      && x.effect && x.effect.target && x.effect.target.closest && x.effect.target.closest(sc)).length,
     names, unique: new Set(names).size === names.length,
     youLevel: you ? you.dataset.level : null,
     restingLabel: resting.getAttribute('aria-label'),
   };
-}, artist);
+}, [artist, scope]);
 
 // The resting card's label says your level in words; the zoom's row must agree.
 const WORDS = { null: 'not picked', 1: 'picked', 2: 'picked ×2', 3: 'picked ×3', 4: 'must' };
 function assertSettled(s, what) {
   assert.deepEqual(s.temp, [], `${what}: nothing temporary is left once it settles`);
   assert.equal(s.lifted, 0, `${what}: every lifted clip is put back`);
-  assert.equal(s.running, 0, `${what}: nothing in the zoom is still animating`);
+  assert.equal(s.running, 0, `${what}: nothing in the card is still animating`);
   assert.ok(s.unique, `${what}: one rendering of every person (${s.names})`);
   const words = WORDS[s.youLevel];
   assert.ok(new RegExp(` — ${words.replace('×', '\\u00d7')}(,|$)`).test(s.restingLabel),
-    `${what}: the zoom's row agrees with the card (you at ${s.youLevel}; card says "${s.restingLabel}")`);
+    `${what}: the grown row agrees with the resting card (you at ${s.youLevel}; card says "${s.restingLabel}")`);
 }
 
 const GAPS = [40, 90, 55, 70, 40, 85, 60, 45, 90, 50]; // ten taps, never a move's 300ms apart
 
+// A finger's + and − alternate (+ alone stalls at must): the same presses
+// on every run, a spent door simply doing nothing.
+const SIDES = ['plus', 'plus', 'minus', 'plus', 'plus', 'minus', 'minus', 'plus', 'minus', 'plus'];
 for (const [artist, width, height] of [['Soulwax', 390, 844], ['Robyn', 320, 640]]) {
-  test(`a burst of ten taps 40–90ms apart on ${artist} at ${width}: never a person twice on any frame, nothing left once it settles`, { skip }, async () => {
+  test(`a finger's burst of ten + / − 40–90ms apart on ${artist}'s shelf at ${width}: never a person twice on any frame, nothing left once it settles`, { skip }, async () => {
     const { ctx, page } = await openWall({ width, height });
     try {
-      const cdp = await holdOpen(ctx, page, artist);
-      await startSampler(page);
-      for (const gap of GAPS) { await tap(page, cdp); await sleep(gap); }
+      const cdp = await shelfOpen(ctx, page, artist);
+      await startSampler(page, SHELF);
+      for (let i = 0; i < GAPS.length; i++) { await press(page, { cdp, side: SIDES[i] }); await sleep(GAPS[i]); }
       await sleep(900);
       const frames = await stopSampler(page);
       assert.ok(frames.length >= 20, `sampled the burst frame by frame (${frames.length} frames)`);
       const bad = frames.map((f, i) => [i, f]).filter(([, f]) => f.length);
       assert.deepEqual(bad, [], 'on every frame, nobody is rendered twice — live or parked');
-      assertSettled(await settledState(page, artist), `${artist} at ${width}`);
+      assertSettled(await settledState(page, artist, SHELF), `${artist}'s shelf at ${width}`);
     } finally {
       await ctx.close();
     }
   });
 }
+test('a mouse\'s burst of ten clicks 40–90ms apart on Soulwax\'s zoom at 1280: never a person twice on any frame, nothing left once it settles', { skip }, async () => {
+  const { ctx, page } = await openWall({ width: 1280, height: 800, touch: false });
+  try {
+    await hoverOpen(page, 'Soulwax');
+    await startSampler(page, ZOOM);
+    for (const gap of GAPS) { await press(page, {}); await sleep(gap); }
+    await sleep(900);
+    const frames = await stopSampler(page);
+    assert.ok(frames.length >= 20, `sampled the burst frame by frame (${frames.length} frames)`);
+    const bad = frames.map((f, i) => [i, f]).filter(([, f]) => f.length);
+    assert.deepEqual(bad, [], 'on every frame, nobody is rendered twice — live or parked');
+    assertSettled(await settledState(page, 'Soulwax', ZOOM), 'Soulwax\'s zoom at 1280');
+  } finally {
+    await ctx.close();
+  }
+});
 
 // Storyboard case 6 then case 5, fast. At MUST beside Nhu, clear, then
 // re-pick while your name is still stepping away inside Nhu's chip: the ×1
@@ -237,10 +273,10 @@ for (const when of ['held', 0, 40, 80]) {
     ? 'clear, then re-pick while the leaving name is still parked (the clear\'s move held): the new level grows in where the row makes room — never out of the chip you left'
     : `clear, then re-pick ${when}ms later: the new level grows in where the row makes room — never out of the chip you left`;
   test(title, { skip }, async () => {
-    const { ctx, page } = await openWall();
+    const { ctx, page } = await openWall({ width: 1280, height: 800, touch: false });
     try {
-      const cdp = await holdOpen(ctx, page, 'Soulwax');
-      for (let i = 0; i < 3; i++) { await tap(page, cdp); await sleep(450); } // 1 → 4: MUST beside Nhu
+      await hoverOpen(page, 'Soulwax');
+      for (let i = 0; i < 3; i++) { await press(page, {}); await sleep(450); } // 1 → 4: MUST beside Nhu
       let s = await settledState(page, 'Soulwax');
       assert.equal(s.youLevel, '4', 'set up: you are at MUST, beside Nhu');
       if (held) {
@@ -258,7 +294,7 @@ for (const when of ['held', 0, 40, 80]) {
           });
         });
       }
-      await tap(page, cdp); // MUST → nothing: your name steps away inside Nhu's chip
+      await press(page, {}); // MUST → nothing: your name steps away inside Nhu's chip
       if (held) {
         await page.evaluate(() => window.__cleared);
         const parked = await page.evaluate(() => document.querySelectorAll('#zoom-layer .zoom-card .f-pill[data-level="4"] > .f-nm.f-parked').length);
@@ -267,7 +303,7 @@ for (const when of ['held', 0, 40, 80]) {
         await sleep(when);
       }
       await repickFirstFrame(page);
-      await tap(page, cdp); // nothing → ×1: nobody was at ×1
+      await press(page, {}); // nothing → ×1: nobody was at ×1
       const f = await Promise.race([
         page.evaluate(() => window.__first),
         sleep(4000).then(() => null),
@@ -296,9 +332,9 @@ for (const when of ['held', 0, 40, 80]) {
 test('a cut-off name stays cut off while it slides, and a crossing name\'s bud sits inside its own clip', { skip }, async () => {
   const { ctx, page } = await openWall();
   try {
-    const cdp = await holdOpen(ctx, page, 'Robyn');
-    await page.evaluate((long) => {
-      const card = document.querySelector('#zoom-layer .zoom-slot.shown .zoom-card');
+    const cdp = await shelfOpen(ctx, page, 'Robyn');
+    await page.evaluate(([long, sc]) => {
+      const card = document.querySelector(sc);
       window.__mid = new Promise((res) => {
         const mo = new MutationObserver(() => {
           mo.disconnect();
@@ -321,8 +357,8 @@ test('a cut-off name stays cut off while it slides, and a crossing name\'s bud s
         });
         mo.observe(card, { childList: true });
       });
-    }, LONG);
-    await tap(page, cdp); // you ×2 → ×3: the long name takes the ×2 chip's lead
+    }, [LONG, SHELF]);
+    await press(page, { cdp, side: 'plus' }); // you ×2 → ×3: the long name takes the ×2 chip's lead
     const mid = await page.evaluate(() => window.__mid);
     assert.ok(mid.long && mid.long.travel, `the long name is in flight (${JSON.stringify(mid.long)})`);
     assert.ok(mid.long.cut, 'and it is cut off (the ellipsis)');
