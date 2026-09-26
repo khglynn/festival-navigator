@@ -39,21 +39,21 @@ export function rememberWelcomeSeen() {
 }
 
 // ---- the words -------------------------------------------------------------------
-// EVERY word the card says lives in WORDS, so Kevin's pick (still open,
-// 2026-09-25) is one edit here and nowhere else. The two paths read as a
-// choice: look (left, the quiet way, same as dismissing) or join to pick
-// (right). The crew's name rides the label beside its faces, so the line can
+// EVERY word the card says lives in WORDS — one edit here and nowhere else;
+// the join screen's way back reads WORDS.look too. Kevin's words (review
+// page, 2026-09-25): the buttons say the choice — "Look around" (left, the
+// quiet way, same as dismissing) or "Pick shows" (right, the join) — so a
+// guest's body is the one line about colour. The crew's name rides the label beside its faces, so the line can
 // say "the crew's plan" and stay one line. "Want to go", never "going": a
 // pick is interest, not a ticket. A member who has just joined already has a
-// colour — their card has no join, and "Got it" instead of "Just looking".
+// colour — their card has no join, "Got it" on the left, and a line on how to pick.
 export const WORDS = {
-  look: 'Just looking',          // a guest's left button: dismiss, look around
+  look: 'Look around',           // a guest's left button (and the join screen's way back)
   gotIt: 'Got it',               // a fresh member's left button
   how: 'How it works',
-  join: 'Join to pick',          // a guest's right-hand button (Kevin's door)
+  join: 'Pick shows',            // a guest's right-hand button: the join
   line: (fest) => `This is the crew’s plan for ${fest}.`,
   colors: 'Every friend has a color — the more color on a card, the more of us want to go.',
-  guestNext: 'Look around, or join to add your own picks.',
   memberNext: 'Tap any artist to add yours.',
   empty: 'Nobody’s in this crew yet.',
   emptySub: 'Tap any artist to be first — you’ll pick a name as you do.',
@@ -78,7 +78,7 @@ export function welcomeCopy({ crewName = '', festName = '', people = [], picked 
         : WORDS.line(fest);
     return { label, line: `${who} ${WORDS.nobodyPicked}`, sub: WORDS.firstSub, ...buttons };
   }
-  return { label, line: WORDS.line(fest), sub: `${WORDS.colors} ${guest ? WORDS.guestNext : WORDS.memberNext}`, ...buttons };
+  return { label, line: WORDS.line(fest), sub: guest ? WORDS.colors : `${WORDS.colors} ${WORDS.memberNext}`, ...buttons };
 }
 
 // ---- the card --------------------------------------------------------------------
@@ -190,7 +190,7 @@ export function showWelcome(host, { copy, faces = [], ctx = null, onGotIt, onHow
   // and coming back finds it still there for its left button — which is also the
   // moment anything waiting behind it (the bring-your-picks offer) may ask.
   more.addEventListener('click', () => { if (onHow) onHow(); });
-  // "Join to pick": the ordinary join, with nothing waiting — the app
+  // "Pick shows": the ordinary join, with nothing waiting — the app
   // marks the welcome read and takes the card down on the way (askToJoin).
   if (join) join.addEventListener('click', () => onJoin());
   return box;

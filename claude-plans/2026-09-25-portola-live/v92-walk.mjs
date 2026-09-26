@@ -91,10 +91,13 @@ const report = [];
 const note = (s) => { report.push(s); console.log(s); };
 const SAT_315PM = '2026-09-26T22:15:00Z'; // Portola Saturday, 3:15 PM PT — the day-of open
 
-async function phone({ width = 390, height = 844, reduce = false, clock = SAT_315PM, init = null } = {}) {
+async function phone({ width = 390, height = 844, reduce = false, clock = SAT_315PM, init = null, video = null } = {}) {
   const ctx = await browser.newContext({
     viewport: { width, height }, deviceScaleFactor: 2, hasTouch: true, isMobile: true,
     serviceWorkers: 'block', reducedMotion: reduce ? 'reduce' : 'no-preference',
+    // At the viewport's own size: a larger size does not scale the page up, it
+    // pads it into the top-left corner of a grey canvas.
+    ...(video ? { recordVideo: { dir: video, size: { width, height } } } : {}),
   });
   if (clock) await ctx.addInitScript((t) => {
     const T0 = new Date(t).getTime(); const start = Date.now(); const RealDate = Date;
@@ -448,6 +451,48 @@ await scenario('390 12 a phone afters row (v91) scrolled sideways comes back whe
   await shot(page, '390-19-stack-row-kept.png');
   note(`writes: ${JSON.stringify(writes)}; errors: ${JSON.stringify(errors)}`);
   await ctx.close();
+});
+
+await scenario('390 13 recording: a guest lands, the card arrives, taps an artist, looks around', async () => {
+  resetDocs(); writes.length = 0;
+  const dir = path.join(OUT, 'video-tmp');
+  fs.rmSync(dir, { recursive: true, force: true });
+  // Recording-only: a soft ring where the finger lands, so a viewer can see
+  // the taps. Never part of the app.
+  const touches = { fn: () => {
+    addEventListener('pointerdown', (e) => {
+      const r = document.createElement('div');
+      r.style.cssText = `position:fixed;left:${e.clientX - 22}px;top:${e.clientY - 22}px;width:44px;height:44px;border-radius:50%;border:2px solid rgba(255,255,255,.85);background:rgba(255,255,255,.18);z-index:99999;pointer-events:none;transition:opacity .5s ease, transform .5s ease;`;
+      document.documentElement.appendChild(r);
+      requestAnimationFrame(() => requestAnimationFrame(() => { r.style.opacity = '0'; r.style.transform = 'scale(1.5)'; }));
+      setTimeout(() => r.remove(), 700);
+    }, true);
+  }, arg: null };
+  const { ctx, page, errors } = await phone({ video: dir, init: touches });
+  const t0 = Date.now();
+  await page.goto(`${origin}/f/${FID}#g=${T.crew}&f=${FID}`, { waitUntil: 'load' });
+  await page.waitForSelector('#screen-app', { state: 'visible', timeout: 20000 });
+  const wallAt = (Date.now() - t0) / 1000;
+  await page.waitForSelector('#welcome-card', { timeout: 5000 });
+  await sleep(2600);                                           // the card arrives; read it
+  await page.locator('#wall-root .card[data-artist="Fcukers"]').first().tap();
+  await page.waitForSelector('#screen-join', { state: 'visible' });
+  await sleep(2600);                                           // "Pick Fcukers as…"
+  await page.locator('#join-look').tap();
+  await page.waitForSelector('#screen-app', { state: 'visible' });
+  await sleep(2400);                                           // back on the wall, where they were
+  const end = (Date.now() - t0) / 1000;
+  const video = page.video();
+  await ctx.close();
+  const raw = await video.path();
+  const start = Math.max(0, wallAt - 0.4);
+  const dur = Math.min(15, end - start);
+  const mp4 = path.join(OUT, 'v92-guest-first-open-390.mp4');
+  const { execFileSync } = await import('node:child_process');
+  execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-ss', start.toFixed(2), '-i', raw, '-t', dur.toFixed(2),
+    '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-crf', '20', '-movflags', '+faststart', mp4]);
+  fs.rmSync(dir, { recursive: true, force: true });
+  note(`recording: ${mp4} (${dur.toFixed(1)} s from the wall's first paint); writes ${JSON.stringify(writes)}; errors ${JSON.stringify(errors)}`);
 });
 
 await browser.close();

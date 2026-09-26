@@ -65,7 +65,7 @@ import { hslOf, strokeOf, nextColorIndex } from './palette.js';
 import { planBringPicks, bringFromSource, bringOfferCopy, bringDoneLine, bringAnswered, rememberBringAnswer, showBringOffer, settleBringOffer, dismissBringOffer, bringOfferCard } from './crew-entry.js';
 import { showActionToast } from './wall.js';
 // First open, wall first (v92, 2026-09-25): a guest's welcome, once per phone.
-import { welcomeCopy, welcomeSeen, rememberWelcomeSeen, showWelcome, dismissWelcome, welcomeCard } from './welcome.js';
+import { welcomeCopy, welcomeSeen, rememberWelcomeSeen, showWelcome, dismissWelcome, welcomeCard, WORDS } from './welcome.js';
 // The warm open (2026-09-23): paint from what this phone holds, freshen after.
 import { festivalIndexFromCache, festivalFromCache, fetchFestivalFile, cachedCustomFestivals } from '../festivals.js';
 import { getLS } from '../util.js';
@@ -458,7 +458,7 @@ function finishJoin(token) {
   handleTap(p.artist);
 }
 
-// "Just looking": back onto the wall as a guest. From the wall (a tap, the +,
+// "Look around" (the join screen's way back): onto the wall as a guest. From the wall (a tap, the +,
 // Settings) the wall is still behind the join screen — show it again where it
 // was. From anywhere else (a personal link, "Not me") enter the crew fresh.
 function lookAround(token, doc) {
@@ -478,7 +478,7 @@ function lookAround(token, doc) {
 
 // "Add yourself" from inside a layer — Settings → You, a notes sheet's door.
 // The layer is dropped from the model first (its history entry stays, and
-// reconciles to nothing), so "Just looking" comes back to the wall, never to
+// reconciles to nothing), so "Look around" comes back to the wall, never to
 // a layer the history no longer holds.
 function joinFromLayer() {
   router.reset();
@@ -2022,7 +2022,7 @@ function openSettings() {
     inviteLink: (meName = null) => inviteLink(meName),
     inviteViewLine: () => inviteViewLine(),
     // A guest's "Add yourself" (v92): the join screen, from Settings. The
-    // settings layer is dropped from the model first — "Just looking" comes
+    // settings layer is dropped from the model first — "Look around" comes
     // back to the wall, never to a Settings the history no longer holds.
     join: () => joinFromLayer(),
     // FLOW-8: identity change is an explicit, named action — never a chip tap.
@@ -2495,10 +2495,13 @@ function renderJoin(token, doc, { artist = null, fid = null } = {}) {
     forLine.textContent = artist ? `Pick ${artist} as…` : '';
     forLine.style.display = artist ? '' : 'none';
   }
-  // "Just looking" (v92): the way onto the wall without a name, from every
+  // "Look around" (v92): the way onto the wall without a name, from every
   // join screen — the old one (a personal link, "Not me") included.
   const look = $('join-look');
-  if (look) look.onclick = () => lookAround(token, doc);
+  if (look) {
+    look.textContent = WORDS.look; // the welcome card's words for looking (welcome.js)
+    look.onclick = () => lookAround(token, doc);
+  }
   // Never throws into the join's own error path: a failed pick after a good
   // join must not be mistaken for a failed join (the offline branch below
   // would record the person a second time).
@@ -2569,7 +2572,7 @@ function renderJoin(token, doc, { artist = null, fid = null } = {}) {
     if (existingEntry) { crew.setMe(token, existingEntry[0]); entered(enterApp(token, doc, undefined, undefined, { joined: true })); return; }
     const btn = $('join-add-btn');
     btn.disabled = true;
-    // The answer decides where this goes: "Just looking" waits for it (a join
+    // The answer decides where this goes: "Look around" waits for it (a join
     // the server already took would land anyway, minus the waiting pick).
     const lookBtn = $('join-look');
     if (lookBtn) lookBtn.disabled = true;

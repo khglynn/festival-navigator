@@ -7,7 +7,7 @@
 //
 //   a guest's first tap on an artist is the moment the name is asked (today's
 //   join screen, now saying which artist), and on join that artist becomes
-//   their pick through the ordinary pick path; "Just looking" goes back;
+//   their pick through the ordinary pick path; "Look around" goes back;
 //
 //   the dock's empty "you" slot is a dashed + that asks the same question;
 //
@@ -124,17 +124,17 @@ test('the welcome card says what this is, above the dock, in C1’s words', () =
   assert.equal(box.querySelector('.micro-label').textContent, 'The Test Crew');
   assert.equal(box.querySelector('.bring-line').textContent, 'This is the crew’s plan for Portola.');
   assert.equal(box.querySelector('.bring-sub').textContent,
-    'Every friend has a color — the more color on a card, the more of us want to go. Look around, or join to add your own picks.');
+    'Every friend has a color — the more color on a card, the more of us want to go.', 'one line: the buttons say the choice');
   assert.equal(box.querySelectorAll('.avatar-cluster .avatar').length, 2, 'the crew, in their colours');
-  assert.ok(buttonNamed(box, 'Just looking') && buttonNamed(box, 'How it works'), 'the quiet way to look, on the left');
-  const pick = buttonNamed(box, 'Join to pick');
+  assert.ok(buttonNamed(box, 'Look around') && buttonNamed(box, 'How it works'), 'the quiet way to look, on the left');
+  const pick = buttonNamed(box, 'Pick shows');
   assert.ok(pick, 'Kevin’s right-hand door, for a friend who already knows they want to pick');
   assert.equal(box.querySelector('.bring-actions').lastElementChild, pick, 'after the two ways to look — the right side');
   assert.ok(pick.classList.contains('welcome-join'));
 });
 
-test('"Join to pick" is the ordinary join, with nothing waiting — and still writes nothing', async () => {
-  buttonNamed(welcome(), 'Join to pick').click();
+test('"Pick shows" is the ordinary join, with nothing waiting — and still writes nothing', async () => {
+  buttonNamed(welcome(), 'Pick shows').click();
   assert.deepEqual(shown(), ['screen-join']);
   assert.equal($('join-for').style.display, 'none', 'no artist waiting');
   assert.equal(localStorage.getItem('fn_welcome_v1'), '1', 'the welcome has been read');
@@ -153,12 +153,13 @@ test('a guest’s tap on an artist asks who they are, naming the artist — and 
   assert.equal($('join-for').textContent, 'Pick Robyn as…');
   assert.notEqual($('join-for').style.display, 'none');
   assert.ok($('join-look'), 'with a way back');
+  assert.equal($('join-look').textContent, 'Look around', 'in the welcome card’s words');
   assert.match($('join-people').textContent, /Kevin/, 'the crew’s names, to tap');
   assert.equal(localStorage.getItem('fn_welcome_v1'), '1', 'asking was engaging: the welcome has done its job');
   assert.deepEqual(writes, []);
 });
 
-test('"Just looking" goes back to the wall, still a guest, the welcome not coming back', async () => {
+test('"Look around" goes back to the wall, still a guest, the welcome not coming back', async () => {
   $('join-look').click();
   await settle(40);
   assert.deepEqual(shown(), ['screen-app']);
@@ -216,7 +217,7 @@ test('Settings, as a guest: no door writes into the crew, and You says how to jo
   assert.deepEqual(shown(), ['screen-join'], 'the same join screen');
   $('join-look').click();
   await settle(40);
-  assert.deepEqual(shown(), ['screen-app'], '"Just looking" comes back to the wall, not to Settings');
+  assert.deepEqual(shown(), ['screen-app'], '"Look around" comes back to the wall, not to Settings');
   assert.deepEqual(writes, []);
 });
 
@@ -285,7 +286,7 @@ test('a crew with nobody in it: the wall, and a tap asks for a first name', asyn
   assert.deepEqual(crewWrites(EMPTY), []);
 });
 
-test('a personal link still asks first ("this link is yours"), and "Just looking" walks in as a guest', async () => {
+test('a personal link still asks first ("this link is yours"), and "Look around" walks in as a guest', async () => {
   await open(`#g=${MINE}&f=${FID}&me=Drew`);
   assert.deepEqual(shown(), ['screen-join']);
   assert.match($('join-people').textContent, /this link is yours/);

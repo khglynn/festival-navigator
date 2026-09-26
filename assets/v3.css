@@ -209,8 +209,8 @@ html { touch-action: manipulation; }
 .welcome-head .avatar.more { background: var(--card); border: 1px dashed var(--border-emphasis); color: var(--text-secondary); font-size: 7.5px; }
 .welcome-card .bring-line { font-size: 14px; }
 .welcome-card .bring-sub { color: var(--text-secondary); font-size: 12px; line-height: 1.5; margin-top: 4px; }
-/* Kevin's right-hand door for a guest (2026-09-25): "Pick with the crew" sits
- * on the right; where the row is too narrow (320) it wraps under Got it and
+/* Kevin's right-hand door for a guest (2026-09-25): "Pick shows" sits
+ * on the right; where the row is too narrow (320) it wraps under Look around and
  * How it works, and auto margin keeps it right. */
 .welcome-card .bring-actions { flex-wrap: wrap; }
 .welcome-card .welcome-join { margin-left: auto; }

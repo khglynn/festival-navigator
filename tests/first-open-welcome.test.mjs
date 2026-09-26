@@ -96,7 +96,7 @@ test('someone who has just joined is new: the card, in a member’s words, with 
   assert.ok(box, 'the welcome, for the newly joined');
   assert.match(box.querySelector('.bring-sub').textContent, /Tap any artist to add yours\.$/);
   assert.ok(buttonNamed(box, 'Got it') && buttonNamed(box, 'How it works'));
-  assert.equal(buttonNamed(box, 'Join to pick'), undefined, 'already joined: no door to join');
+  assert.equal(buttonNamed(box, 'Pick shows'), undefined, 'already joined: no door to join');
   buttonNamed(box, 'Got it').click();
   await settle(20);
   assert.equal(welcome(), null);
@@ -107,15 +107,15 @@ test('the words: one table, a clear choice for a guest, and the crews a friend c
   const base = { crewName: 'Portola 26', festName: 'Portola' };
   const guest = welcomeCopy({ ...base, people: ['Kevin'], picked: true, guest: true });
   assert.deepEqual([guest.yes, guest.more, guest.join], [WORDS.look, WORDS.how, WORDS.join]);
-  assert.deepEqual([guest.yes, guest.join], ['Just looking', 'Join to pick']);
-  assert.equal(guest.sub, 'Every friend has a color — the more color on a card, the more of us want to go. Look around, or join to add your own picks.');
+  assert.deepEqual([guest.yes, guest.join], ['Look around', 'Pick shows']);
+  assert.equal(guest.sub, 'Every friend has a color — the more color on a card, the more of us want to go.', 'the buttons say the choice');
   const member = welcomeCopy({ ...base, people: ['Kevin'], picked: true, guest: false });
   assert.deepEqual([member.yes, member.join], ['Got it', null]);
   assert.deepEqual(
     [welcomeCopy({ ...base, people: [] }).line, welcomeCopy({ ...base, people: [] }).sub],
     ['Nobody’s in this crew yet.', 'Tap any artist to be first — you’ll pick a name as you do.'],
   );
-  assert.equal(welcomeCopy({ ...base, people: [], guest: true }).join, 'Join to pick', 'an empty crew too: someone has to be first');
+  assert.equal(welcomeCopy({ ...base, people: [], guest: true }).join, 'Pick shows', 'an empty crew too: someone has to be first');
   assert.equal(welcomeCopy({ ...base, people: ['Kevin'], picked: false }).line, 'Kevin started this plan for Portola. Nobody’s picked yet.');
   assert.equal(welcomeCopy({ ...base, people: ['Kevin', 'Maya'], picked: false }).line, 'This is the crew’s plan for Portola. Nobody’s picked yet.');
   assert.equal(welcomeCopy({ ...base, people: ['Kevin'], picked: false, guest: false, meName: 'Kevin' }).line,

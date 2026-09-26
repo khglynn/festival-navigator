@@ -326,3 +326,23 @@ v92 does not ship until he has seen it and we are aligned.**
 3. Moving the creator's share sheet and the My link card: left out, as asked.
 Verified: first-open + member offer tests 68/68; full `npm test` 960/961
 (the stamp only); walks at 390/320 for guest, returning member, recognized.
+
+**~11:20 PM — Kevin picked the words.** Left **Look around** (dismiss and
+look), **How it works** beside it, right-aligned **Pick shows** (the join).
+The buttons say the choice, so a guest's body is one line: "Every friend has
+a color — the more color on a card, the more of us want to go." All in
+`WORDS` (`js/v3/welcome.js`); the join screen's way back now reads
+`WORDS.look` too ("Look around", was "Just looking"), so the two never drift.
+A member who has just joined keeps "Got it" and "Tap any artist to add
+yours" (no choice to make). Settings' "You're just looking… Add yourself"
+row describes a state rather than offering the choice, so it stays.
+Fit (walk): 390 — one row, Look around 27–135, How it works 143–247, Pick
+shows 263–363 in a card ending at 378; 320 — Pick shows wraps to its own row,
+right-aligned (193–293 of 308). All 44px.
+**Recording**: `v92-shots/v92-guest-first-open-390.mp4` — 8 s, 390×844, 25
+fps, motion on, Saturday 3:15 PM: land → the card rises, the faces arrive one
+by one, then the buttons → tap Fcukers (a recording-only ring shows the
+finger) → "Pick Fcukers as…" → Look around → back on the wall. Made by the
+walk's `390 13` scenario (Playwright video + ffmpeg). Note for the motion
+review: with six faces the buttons land ~0.84 s after mount, about a quarter
+second after the card itself — the "beat between arrivals" as designed.
