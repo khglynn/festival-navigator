@@ -261,7 +261,37 @@ async function touchWalk() {
   }
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url) && label === 'touch') {
+// ---- the NOW walk (`now`): Saturday night, the rows' NOW marks and the NOW tab --
+async function nowWalk() {
+  const { ctx, page } = await openPhone(390, { now: '2026-09-26T23:55:00-07:00' });
+  try {
+    note(`\n== NOW walk @ 390, Sat Sep 26 11:55 PM PT`);
+    const marks = () => page.evaluate(() => [...document.querySelectorAll('#wall-root .stack-scroll .card.now')].map((c) => {
+      const row = c.closest('.stack-scroll'), r = c.getBoundingClientRect(), b = row.getBoundingClientRect();
+      return `${c.closest('.room').dataset.room}:${c.dataset.artist} x=${Math.round(r.left)}..${Math.round(r.right)} (row ${Math.round(b.left)}..${Math.round(b.right)}, ${Math.round(r.bottom)} vs row bottom ${Math.round(b.bottom)})`;
+    }));
+    note(`NOW cards in clocked rows: ${(await marks()).join(' | ') || 'none'}`);
+    await shootRoom(page, 'Saturday', 'Afters', 'now-390-sat-afters.png');
+    await page.tap('#dock-now');
+    await sleep(1600);
+    note(`after one NOW tap: scrollY=${await page.evaluate(() => Math.round(scrollY))}`);
+    await page.screenshot({ path: path.join(OUT, 'now-390-after-tap.png') });
+    await page.tap('#dock-now');
+    await sleep(1600);
+    note(`after a second NOW tap: scrollY=${await page.evaluate(() => Math.round(scrollY))}`);
+    await page.screenshot({ path: path.join(OUT, 'now-390-after-tap2.png') });
+  } finally {
+    await ctx.close();
+  }
+}
+
+if (process.argv[1] === fileURLToPath(import.meta.url) && label === 'now') {
+  try { await nowWalk(); } finally {
+    fs.writeFileSync(path.join(OUT, 'now-walk.txt'), report.join('\n') + '\n');
+    await browser.close();
+    await server.close();
+  }
+} else if (process.argv[1] === fileURLToPath(import.meta.url) && label === 'touch') {
   try { await touchWalk(); } finally {
     fs.writeFileSync(path.join(OUT, 'touch-walk.txt'), report.join('\n') + '\n');
     await browser.close();

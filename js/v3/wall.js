@@ -2151,9 +2151,6 @@ function renderExtra(root, ctx, fest, extra) {
 }
 
 // ---- the wall ------------------------------------------------------------------
-// The repaint boundary preserves ephemeral client state (audit Class 1): a
-// remote sync tearing down #wall-root must never cost the user their scroll
-// position or a half-typed note. Harvest before teardown, restore after.
 // A stack row's sideways position belongs to that row alone — no other
 // scroller shares it — so it is kept by where the row stands: its day, its
 // room, and which of that room's rows it is.
@@ -2164,6 +2161,9 @@ function stackRowKey(row) {
   return `${day ? day.dataset.day : ''}|${room ? room.dataset.room : ''}|${rows.indexOf(row)}`;
 }
 
+// The repaint boundary preserves ephemeral client state (audit Class 1): a
+// remote sync tearing down #wall-root must never cost the user their scroll
+// position or a half-typed note. Harvest before teardown, restore after.
 function harvestEphemera(root) {
   const scrolls = new Map();
   // Every timetable scroller mirrors one shared position within its sync
