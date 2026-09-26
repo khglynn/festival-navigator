@@ -303,16 +303,23 @@ function checkCancelled(fest, err) {
 
 // ---------------------------------------------------------------------------
 // A show's doors out (2026-09-24, Kevin: "when it's afters or shows like this
-// I naturally want to click through to the event page"). An artists[] entry
-// may carry
-//   page:    { url: "https://…", at: "DoTheBay" }   the show's own page
-//   tickets: { url: "https://…", at: "AXS" }        where to buy
-// and the zoom reads them as "Info @ DoTheBay" and "Tix @ AXS" (events.js
-// linksOf). `at` is a short name a person recognises, written as data because
-// a referral wrapper hides the seller's domain. Both URLs must be https: the
-// app is served over it, and a door that opens an insecure page is a door
-// the browser may refuse. The shape is small, so an unknown key is an error.
+// I naturally want to click through to the event page"; prices 2026-09-26).
+// An artists[] entry may carry
+//   page:    { url: "https://…", at: "DoTheBay" }                                 the show's own page
+//   tickets: { url: "https://…", at: "AXS", price: 69, checked: "2026-09-26" }    where to buy
+// and the zoom reads them as "Info" and "Tix $69" (events.js linksOf) —
+// never the seller's name (Kevin, 2026-09-26: "I actually think we never need
+// to see the name of the site where the tix are sold… Just tix if we don't
+// know price or Tix $69 for example… some of these events are expensive").
+// `at` is still required on both — it is provenance, written as data because
+// a referral wrapper hides the seller's domain, even though the zoom no
+// longer shows it. Both URLs must be https: the app is served over it, and a
+// door that opens an insecure page is a door the browser may refuse. The
+// shape is small, so an unknown key is an error; `tickets` alone may also
+// carry `price` (whole US dollars, 0 meaning free) and `checked` (the
+// YYYY-MM-DD date it was read), always together.
 const LINK_KEYS = new Set(['url', 'at']);
+const TICKET_KEYS = new Set([...LINK_KEYS, 'price', 'checked']);
 function checkLinks(fest, err) {
   const plain = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
   const gridDays = plain(fest.days) ? Object.keys(fest.days).map((d) => d.toLowerCase()) : [];
@@ -328,12 +335,23 @@ function checkLinks(fest, err) {
       if (onGrid) { err(`${at}: a festival set carries no ${field} — the doors belong to shows in a section (afters, late nights)`); continue; }
       const l = a[field];
       if (!plain(l)) { err(`${at} must be an object { url, at }`); continue; }
+      const allowed = field === 'tickets' ? TICKET_KEYS : LINK_KEYS;
       for (const k of Object.keys(l)) {
-        if (!LINK_KEYS.has(k)) err(`${at}.${safeKey(k)} is not a field — ${field} carries url and at`);
+        if (!allowed.has(k)) err(`${at}.${safeKey(k)} is not a field — ${field} carries ${field === 'tickets' ? 'url, at, price and checked' : 'url and at'}`);
       }
       if (typeof l.url !== 'string' || !/^https:\/\/[^\s]+$/.test(l.url)) err(`${at}.url must be an https URL — the zoom's line is a door to it`);
       if (typeof l.at !== 'string' || !l.at.trim() || l.at.length > 24 || /[\x00-\x1f\x7f]/.test(l.at)) {
         err(`${at}.at must name the site in a few words (24 chars at most), e.g. "DoTheBay" or "AXS"`);
+      }
+      if (field === 'tickets') {
+        const hasPrice = l.price !== undefined;
+        const hasChecked = l.checked !== undefined;
+        if (hasPrice !== hasChecked) {
+          err(`${at}: price and checked travel together — one with no other is not enough to show a price`);
+        } else if (hasPrice) {
+          if (!Number.isInteger(l.price) || l.price < 0 || l.price > 2000) err(`${at}.price must be a whole number 0–2000 US dollars (got ${JSON.stringify(safeKey(l.price))})`);
+          if (!realDate(l.checked)) err(`${at}.checked must be the real YYYY-MM-DD date the price was read (got ${JSON.stringify(safeKey(l.checked))})`);
+        }
       }
     }
   });

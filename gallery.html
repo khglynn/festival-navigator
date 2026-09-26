@@ -865,8 +865,10 @@ FESTIVALS[EFID] = {
     // Cancelled with links: the page stays (what happened), the tickets door goes.
     { name: 'No Show', ...room('Fri', 'The Basement', { time: '9 PM', cancelled: { on: '2026-09-22', source: 'https://example.test/the-report' }, page: { url: 'https://example.test/no-show', at: 'DoTheBay' }, tickets: { url: 'https://example.test/buy/no-show', at: 'Tixr' } }) },
     // Friday afters: two un-numbered rooms (three at 8 PM, two at 10 PM — the pre-research state), a tall set, a timeless one.
-    // A show's doors out (2026-09-24): "Tix @ AXS · Info @ DoTheBay" under the place.
-    { name: 'Channel Tres', ...room('Fri', 'The Ballroom', { time: '8 PM', page: { url: 'https://example.test/channel-tres', at: 'DoTheBay' }, tickets: { url: 'https://example.test/buy/channel-tres', at: 'AXS' } }) },
+    // A show's doors out (2026-09-24; prices 2026-09-26): "Tix $45 · Info"
+    // under the place — never the seller's name. Channel Tres carries a
+    // price (a priced door); Overmono below carries none (a bare "Tix").
+    { name: 'Channel Tres', ...room('Fri', 'The Ballroom', { time: '8 PM', page: { url: 'https://example.test/channel-tres', at: 'DoTheBay' }, tickets: { url: 'https://example.test/buy/channel-tres', at: 'AXS', price: 45, checked: '2026-09-26' } }) },
     { name: 'Jyoty', ...room('Fri', 'The Ballroom', { time: '8 PM' }) },
     { name: 'Gelli Haha', ...room('Fri', 'The Ballroom', { time: '8 PM' }) },
     { name: 'Sam Alfred', ...room('Fri', 'The Basement', { time: '10 PM' }) },

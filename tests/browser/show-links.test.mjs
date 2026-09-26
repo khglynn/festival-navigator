@@ -1,6 +1,6 @@
-// A show's doors out, in a real browser (2026-09-24). The zoom of an afters
-// card reads "Tix @ AXS · Info @ DoTheBay" on one line under the place, at a
-// phone's width and a laptop's; a real mouse click on a door opens its page in
+// A show's doors out, in a real browser (2026-09-24; prices 2026-09-26). The
+// zoom of an afters card reads "Tix $45 · Info" on one line under the
+// place — never the seller's name; a real mouse click on a door opens its page in
 // a new tab and never picks (a click on the zoom picks, by design, so the door
 // must stop the click). The jsdom twin is tests/show-links.test.mjs and the
 // no-pick case in tests/events-wall.test.mjs; this is the one that sees the
@@ -38,10 +38,10 @@ for (const width of [390, 1280]) {
       await page.goto(`${server.origin}/gallery.html`);
       await page.evaluate(() => document.fonts.ready);
       const cases = [
-        ['Channel Tres', ['Tix @ AXS', 'Info @ DoTheBay']],
-        ['Overmono', ['Tix @ Ticketmaster', 'Info @ Do512']],
-        ['DEVIANTS', ['Tix @ Eventbrite']],
-        ['No Show', ['Info @ DoTheBay']],
+        ['Channel Tres', ['Tix $45', 'Info']],
+        ['Overmono', ['Tix', 'Info']],
+        ['DEVIANTS', ['Tix']],
+        ['No Show', ['Info']],
       ];
       for (const [name, want] of cases) {
         const z = await zoomOf(page, name);
