@@ -87,3 +87,42 @@ switch; screenshots into `v93-shots/`. One full `npm test` at the end.
   made consistent), `tests/router.test.mjs` +2 (menu layer), `tests/shell-v4.test.mjs` (menu
   stays up; four ways out + history; outside tap reaches no card; Settings takes the entry;
   the gear). Next: pure `restingLeft` cases, the browser NOW tests that pinned the dot.
+- **Tests pinned** (30119ee): `tests/day-row.test.mjs` (new) — `restingLeft` in Chromium's
+  numbers (390 FRI SAT NOW SUN, 320 SAT NOW, last day, Thursday, the day you are in outranks
+  NOW, ACL 320, the half-pixel slack) plus a property check over every dock row 90-290px:
+  whenever a place with no sliver is as whole, the rule picks one. It caught a wrong order
+  (fade clearance above no-sliver); fixed: no sliver outranks clearance. The shell half boots
+  the real app on a pinned Saturday night: NOW in the row after SAT (dock and rail), back in
+  place after a repaint, parked outside the row when nothing is live, after SUN on Sunday.
+  `tests/browser/now-jump.test.mjs`: "NOW sits before the days" -> "in the row after the live
+  day"; the ACL-305 squeeze test -> "the fest name never gives way"; the 320 overlap test;
+  the dot/word matrix -> the D1 matrix (Portola 430/390/375/320 exact rows, ACL contract, each
+  also with Linux-wide glyphs); new: the clock brings NOW in and out (motion on: 6px fade-in
+  and tab slides, transforms/opacity only; Reduce Motion: no animation). Tests wait for today
+  lit and the row at rest (under the pinned clock the scrollspy lights late, then glides).
+- **Add chip box** (674bbe2): 1px dashed + the name chip's padding, so alone on its line (six
+  people at 390) it is 24px like the names (Chromium drew the 1.5px edge as 1px).
+- **Show menu, second cut** (5f5162d, f332342) — two real bugs found in a browser and fixed:
+  (1) popping the menu's history entry restored the page to where it stood at open (the wall
+  scrolls behind the menu: Escape/Back/tap-outside yanked 2500 -> 1000, both engines); the menu
+  tracks the page's place and holds it through the pop. (2) Swallowing every outside tap made
+  the dock's + need two taps (v92 has since made a close-tap eat only a card's click), and a
+  tap that opened a layer before the entry was gone would be popped by the menu's own Back.
+  Now every way out takes the entry back first, holds the page, then gives the tap to its
+  target (a card never hears it); Settings opens after, so Back from Settings lands where you
+  were; a guest's + opens the shelf on one tap with its entry where the menu's was. Escape from
+  a row returns focus to the fest name. Probed in Chromium and WebKit: every way out 2500 ->
+  2500, FRI tab -> Friday in one tap, Settings -> Back -> 2500, history never grows past +1.
+- **Rebasing onto v92** — v92 has moved past abe7205 (now b29aac0) and touched the same
+  functions, so it is no longer a clean rebase. My `git rebase` was refused by the harness as
+  destructive; I did not force it. `git merge-tree` (read-only) shows three hunks, all in
+  `js/v3/app.js`, resolution:
+  1. `askToJoin(artist, { intent })`: put v93's guard first —
+     `if (openMenu) { leaveShowMenu(() => askToJoin(artist, { intent })); return; }` — then v92's
+     `const opener = shelfOpener();` (v92's later `closeShowMenu({ instant: true })` is then a
+     harmless no-op; drop it or keep it).
+  2. `closeShowMenu`: keep v93's focus return, and merge the two `hide`s —
+     `const hide = () => { if (openMenu && openMenu.pop === pop) return; pop.style.display = 'none'; if (bar && !(openMenu && openMenu.bar === bar)) bar.classList.remove('menu-up'); };`
+  3. Escape: `if (openMenu) { leaveShowMenu(); return; }` then v92's `if (leaveShelf('escape')) return;`.
+  v92's `tests/browser/show-menu-stacking.test.mjs` should pass as written (its synthetic
+  `dock-you.click()` is held, the menu's entry goes, then the + opens the shelf).
