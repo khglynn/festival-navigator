@@ -20,12 +20,14 @@
   `SHARE-BUILD.md`): the open plan's "Share our picks" (the day as five lines
   and a link that opens on the plan), `&plan=open`, the welcome card's ✕, the
   Show menu's "Share the crew link", and the window's banked catches (a touch
-  mid-arrival, a grab mid-slide, a font landing mid-arrival). All of it is
-  built and tested (3:30 PM PT); the gate (a walker, Sol, CI on Linux) is
-  running, then the SHA to the coordinator. Next for that session, Kevin's
-  new set: Despacio crowding the route, the open plan scrolling on to future
-  days (past days folded), and the Show and people menus working while it
-  is open, a highlight filtering the route. A design round comes first.
+  mid-arrival, a grab mid-slide, a font landing mid-arrival). Gated at
+  f7a3d25 (5:10 PM PT: Sol's six findings fixed, a walker 15 of 16 with the
+  16th the harness, CI's browser job green on Linux) and handed to the
+  coordinator to stamp and release after Kevin's look. Next, Kevin's new
+  set, in a design round on `live/plan-days-design`: Despacio crowding the
+  route, the open plan scrolling on to future days (past days folded), and
+  the Show and people menus working while it is open, a highlight filtering
+  the route.
 - **ACL prep** (`data/acl-prep`, `ACL-PREP-BRIEF.md`, round two
   `ACL-PREP-ROUND2.md`): Late nights times; round two makes sure no guess is
   later than the show and fixes `guess-run-times` for date-keyed sections. The
