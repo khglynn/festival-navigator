@@ -245,6 +245,64 @@ const flows = {
     say(`  the sheet's bottom vs the screen's, every frame of the rise: min ${Math.min(...b)}px, max ${Math.max(...b)}px over ${b.length} frames (negative = a gap under it)`);
     await ctx.close();
   },
+  // An SE with its keys up (Sol 6's re-review): portrait and on its side, the
+  // member's shelf on a long thread and a guest's question — the page's
+  // visualViewport swapped for one the rig shrinks (the v92 walk's way), the
+  // keys drawn only for the picture. The sheet's own listener (notes.js
+  // rideKeys) moves it.
+  async se() {
+    const shapes = [['portrait', 375, 667, 291], ['landscape', 667, 375, 206]];
+    for (const [shape, width, height, kb] of shapes) {
+      for (const guest of [false, true]) {
+        const { ctx, page, errors } = await open({ width, height, touch: true, guest });
+        await page.evaluate(() => {
+          const et = new EventTarget();
+          const vv = { offsetTop: 0, offsetLeft: 0, pageTop: 0, scale: 1, kb: 0,
+            get width() { return innerWidth; }, get height() { return innerHeight - vv.kb; },
+            addEventListener: (...a) => et.addEventListener(...a), removeEventListener: (...a) => et.removeEventListener(...a) };
+          Object.defineProperty(window, 'visualViewport', { configurable: true, get: () => vv });
+          window.__keys = (n) => {
+            vv.kb = n; et.dispatchEvent(new Event('resize'));
+            document.getElementById('kb-mock')?.remove();
+            if (!n) return;
+            const k = document.createElement('div');
+            k.id = 'kb-mock';
+            k.style.cssText = `position:fixed;left:0;right:0;bottom:0;height:${n}px;z-index:100;background:#2C2C2E;display:flex;flex-direction:column;justify-content:center;gap:9px;padding:6px 3px;box-sizing:border-box;font:500 20px -apple-system,system-ui,sans-serif;color:#fff;`;
+            for (const r of ['qwertyuiop', 'asdfghjkl', 'zxcvbnm']) {
+              const row = document.createElement('div');
+              row.style.cssText = 'display:flex;justify-content:center;gap:5px;';
+              for (const ch of r) { const key = document.createElement('span'); key.textContent = ch; key.style.cssText = 'flex:1;max-width:34px;height:38px;border-radius:5px;background:#6B6B70;display:flex;align-items:center;justify-content:center;'; row.appendChild(key); }
+              k.appendChild(row);
+            }
+            document.body.appendChild(k);
+          };
+        });
+        await tapCard(page, 'Robyn');
+        if (guest) {
+          await tapIn(page, '#artist-sheet .sheet-card .f-step.plus');
+          await page.locator('.join-shelf .js-field').tap();
+          await page.keyboard.type('Sam');
+        } else {
+          await page.evaluate(() => document.querySelector('#artist-sheet .composer-foot textarea').scrollIntoView({ block: 'nearest' }));
+          await page.locator('#artist-sheet .composer-foot textarea').tap();
+          await page.keyboard.type('Pier by 6:45, flags up');
+        }
+        await page.evaluate((n) => window.__keys(n), kb);
+        await sleep(400);
+        const m = await page.evaluate(() => {
+          const s = document.querySelector('.join-shelf') || document.getElementById('artist-sheet');
+          const r = s.getBoundingClientRect();
+          const f = s.querySelector('.js-field, .composer-foot textarea').getBoundingClientRect();
+          const keysTop = document.getElementById('kb-mock').getBoundingClientRect().top;
+          return { sheetTop: Math.round(r.top), sheetBottom: Math.round(r.bottom), field: [Math.round(f.top), Math.round(f.bottom)], keysTop: Math.round(keysTop), maxH: s.style.maxHeight };
+        });
+        say(`  SE ${shape} ${guest ? 'guest' : 'member'} keys ${kb}: ${JSON.stringify(m)} — top on screen ${m.sheetTop >= 0}, above the keys ${m.sheetBottom <= m.keysTop + 1 && m.field[1] <= m.keysTop}`);
+        await shot(page, `${ENGINE}-se-${shape}-${guest ? 'guest' : 'member'}-keys`);
+        say(`  errors: ${errors.length ? errors.join(' | ') : 'none'}`);
+        await ctx.close();
+      }
+    }
+  },
   async member320() {
     const { ctx, page, errors } = await open({ width: 320, height: 568, touch: true });
     await tapCard(page, 'Boys Noize');

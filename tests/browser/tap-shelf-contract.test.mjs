@@ -536,3 +536,47 @@ for (const [name, get] of ENGINES) {
     } finally { await ctx.close(); }
   });
 }
+
+// Sol 6's re-review (2026-09-26): a short screen with a tall keyboard — an SE
+// (375×667, keys 291) and on its side (667×375, keys 206). The capped shelf is
+// never taller than what shows (its padding counted), so its top stays on the
+// screen, and the box you type in stays above the keys.
+for (const [name, get] of ENGINES) {
+  for (const [shape, width, height, kb] of [['SE', 375, 667, 291], ['SE on its side', 667, 375, 206]]) {
+    test(`${name}: ${shape} with the keys up — the shelf's top stays on the screen and the box above the keys`, { skip: skipFor(name, get) }, async () => {
+      const thread = Object.fromEntries(Array.from({ length: 8 }, (_, i) => {
+        const ts = new Date(Date.UTC(2026, 8, 26, 18, i * 3)).toISOString();
+        return [`Maya.${Date.parse(ts)}.s${i}`, { author: 'Maya', ts, text: `Note ${i + 1}: meet by the sound booth before the set.` }];
+      }));
+      const { ctx, page, errors } = await memberPhone(get(), { width, height, notes: { artist: { 'Tove Lo': thread } } });
+      try {
+        await page.evaluate(() => {
+          const et = new EventTarget();
+          const vv = { offsetTop: 0, offsetLeft: 0, pageTop: 0, scale: 1, kb: 0,
+            get width() { return innerWidth; }, get height() { return innerHeight - vv.kb; },
+            addEventListener: (...a) => et.addEventListener(...a), removeEventListener: (...a) => et.removeEventListener(...a) };
+          Object.defineProperty(window, 'visualViewport', { configurable: true, get: () => vv });
+          window.__keys = (n) => { vv.kb = n; et.dispatchEvent(new Event('resize')); };
+        });
+        await tapAt(page, await cardAt(page, 'Tove Lo'));
+        await page.waitForSelector('#artist-sheet .composer-foot textarea', { timeout: 4000 });
+        await sleep(400);
+        await page.evaluate(() => document.querySelector('#artist-sheet .composer-foot textarea').scrollIntoView({ block: 'nearest' }));
+        await page.locator('#artist-sheet .composer-foot textarea').tap();
+        await page.keyboard.type('Pier by 6:45');
+        await page.evaluate((n) => window.__keys(n), kb);
+        await sleep(250);
+        const m = await page.evaluate((n) => {
+          const s = document.getElementById('artist-sheet');
+          const r = s.getBoundingClientRect();
+          const box = s.querySelector('.composer-foot textarea').getBoundingClientRect();
+          return { top: r.top, bottom: r.bottom, box: [box.top, box.bottom], keysTop: innerHeight - n };
+        }, kb);
+        assert.ok(m.top >= 0, `the shelf's top is on the screen (${JSON.stringify(m)})`);
+        assert.ok(m.bottom <= m.keysTop + 1, `it stands on the keys (${JSON.stringify(m)})`);
+        assert.ok(m.box[0] >= m.top && m.box[1] <= m.keysTop, `the box is inside it, above the keys (${JSON.stringify(m)})`);
+        assert.deepEqual(errors, []);
+      } finally { await ctx.close(); }
+    });
+  }
+}

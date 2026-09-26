@@ -168,7 +168,9 @@ test('the join shelf rides the keys through the same helper as the notes shelf, 
   assert.equal(kb.listening(), 2, 'the notes shelf let go; the question rides');
   kb.keys(300);
   assert.equal(shelf().style.bottom, '300px', 'the question stands on the keys');
-  assert.equal(shelf().style.maxHeight, `${Math.max(200, window.innerHeight - 300 - 12)}px`);
+  const cs = window.getComputedStyle(shelf());
+  const edge = ['paddingTop', 'paddingBottom', 'borderTopWidth', 'borderBottomWidth'].reduce((n, k) => n + (Number.parseFloat(cs[k]) || 0), 0);
+  assert.equal(shelf().style.maxHeight, `${Math.floor(window.innerHeight - 300 - 12 - edge)}px`, 'its content box, padding counted');
   kb.keys(0);
   await lookAround();
   assert.equal(kb.listening(), 0, 'gone, and not listening');

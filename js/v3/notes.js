@@ -891,7 +891,30 @@ export function rideKeys(sheet) {
     const dialog = !phoneShelf();
     sheet.style.bottom = up && !dialog ? `${keys}px` : '';
     sheet.style.top = up && dialog ? `${Math.round(vv.offsetTop + vv.height / 2)}px` : '';
-    sheet.style.maxHeight = up ? `${Math.max(200, Math.round(vv.height) - (dialog ? 24 : 12))}px` : '';
+    // Never taller than what shows (Sol 6's re-review: a 200px floor overran
+    // an SE's view with its keys up, and a phone on its side, and clipped the
+    // sheet's top) — the margin gives way first, then the floor. max-height is
+    // the CONTENT box (a sheet is content-box, 16px of padding each way), so
+    // the padding and border come off too: framing an SE showed the sheet's
+    // top 20px off the screen when they did not.
+    let edge = 0;
+    if (up) {
+      const cs = window.getComputedStyle(sheet);
+      edge = ['paddingTop', 'paddingBottom', 'borderTopWidth', 'borderBottomWidth']
+        .reduce((n, k) => n + (Number.parseFloat(cs[k]) || 0), 0);
+    }
+    const shows = Math.round(vv.height);
+    const box = Math.min(shows, Math.max(120, shows - (dialog ? 24 : 12)));
+    sheet.style.maxHeight = up ? `${Math.max(0, Math.floor(box - edge))}px` : '';
+    // Capped, it scrolls — the join shelf is overflow: visible at rest (its
+    // chips' rings), and what the cap cut off would hang under the keys.
+    sheet.style.overflowY = up ? 'auto' : '';
+    // The field being typed in stays in what shows: a sheet that just shrank
+    // for the keys can leave it below its fold (a phone on its side).
+    const typing = document.activeElement;
+    if (up && typing && typing !== sheet && sheet.contains(typing) && typeof typing.scrollIntoView === 'function') {
+      typing.scrollIntoView({ block: 'nearest' });
+    }
   }
   vv.addEventListener('resize', fit);
   vv.addEventListener('scroll', fit);

@@ -356,6 +356,9 @@ test('"picked before" is any festival in this crew, then this phone\'s other cre
   assert.equal(pickedBefore('Zed'), false, 'someone else\'s pick there is not yours');
 });
 
+// max-height is the sheet's CONTENT box: its padding and border come off what shows.
+const edgeOf = (el) => { const cs = window.getComputedStyle(el); return ['paddingTop', 'paddingBottom', 'borderTopWidth', 'borderBottomWidth'].reduce((n, k) => n + (Number.parseFloat(cs[k]) || 0), 0); };
+
 // Sol 6's review (2026-09-26): the shelf rides the keys the way the join shelf
 // always has — one helper for both (notes.js rideKeys), so its sticky composer
 // stays above an iPhone's keyboard.
@@ -367,9 +370,11 @@ test('with the keys up the shelf stands on them, its height capped to what shows
   assert.equal(kb.listening(), 2, 'the open shelf listens to the viewport (resize and scroll)');
   kb.keys(336);
   assert.equal(sheet.style.bottom, '336px', 'it stands on the keys');
-  assert.equal(sheet.style.maxHeight, `${Math.max(200, window.innerHeight - 336 - 12)}px`, 'no taller than what still shows');
+  assert.equal(sheet.style.maxHeight, `${Math.floor(window.innerHeight - 336 - 12 - edgeOf(sheet))}px`, 'no taller than what still shows (its padding counted)');
   assert.ok(sheet.querySelector('.composer-wrap.composer-foot'), 'its foot is the composer, which sticks to that bottom edge');
+  assert.equal(sheet.style.overflowY, 'auto', 'capped, it scrolls (the join shelf is overflow: visible at rest)');
   kb.keys(0);
+  assert.equal(sheet.style.overflowY, '', 'and not once the keys are down');
   assert.equal(sheet.style.bottom, '', 'keys down: back on the screen\'s edge');
   assert.equal(sheet.style.maxHeight, '');
   await closeShelf();
@@ -387,7 +392,7 @@ test('a centred dialog (an iPad, ≥720) centres in what the keys leave, never s
     kb.keys(400);
     assert.equal(sheet.style.bottom, '', 'no bottom: a dialog is centred, and a bottom would stretch it');
     assert.equal(sheet.style.top, `${Math.round((window.innerHeight - 400) / 2)}px`, 'centred in what shows');
-    assert.equal(sheet.style.maxHeight, `${Math.max(200, window.innerHeight - 400 - 24)}px`);
+    assert.equal(sheet.style.maxHeight, `${Math.floor(window.innerHeight - 400 - 24 - edgeOf(sheet))}px`);
     kb.keys(0);
     assert.equal(sheet.style.top, '');
   } finally {
@@ -443,4 +448,26 @@ test('a press on one card released on another: the click goes to what holds both
   assert.equal(shelf(), null, 'no shelf');
   assert.equal(level('Robyn'), ra, 'the first card: nothing');
   assert.equal(level('Dog Blood'), rb, 'the second card: nothing');
+});
+
+// Sol 6's re-review (2026-09-26): with a tall keyboard on a short screen (an
+// SE; any phone on its side) what shows can be less than the old 200px floor,
+// and a floor that overran it clipped the sheet's top. Never taller than what
+// shows.
+test('with keys that leave little room, the shelf is never taller than what shows', async () => {
+  const { fakeKeys } = await import('./helpers/fake-keys.mjs');
+  const kb = fakeKeys(window);
+  await tap(cardOf('Robyn'));
+  const sheet = shelf();
+  const shows = (keys) => window.innerHeight - keys;
+  for (const keys of [window.innerHeight - 180, window.innerHeight - 130, window.innerHeight - 90]) {
+    kb.keys(keys);
+    const max = Number.parseFloat(sheet.style.maxHeight) + edgeOf(sheet); // the whole box, padding and all
+    assert.ok(max <= shows(keys), `keys ${keys}: ${max}px fits in the ${shows(keys)}px that shows`);
+    assert.equal(sheet.style.bottom, `${keys}px`, 'standing on the keys');
+  }
+  kb.keys(window.innerHeight - 180);
+  assert.equal(sheet.style.maxHeight, `${Math.floor(168 - edgeOf(sheet))}px`, 'with room, the 12px margin stands');
+  kb.keys(0);
+  await closeShelf();
 });

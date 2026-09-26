@@ -1538,6 +1538,10 @@ a.f-link:hover { border-bottom-color: rgba(255, 255, 255, .75); }
  * its content. One column, one gutter: the line, the crew's names, the field,
  * then the same two halves the welcome card ends on — Look around (quiet) on
  * the left, the answer (filled) on the right. Brand, never --fest. */
+/* Nothing in it gives up height when the keys cap the shelf (a phone on its
+ * side, notes.js rideKeys): it scrolls instead — the field squashed to 22px
+ * in the SE landscape frame (2026-09-26), the import sheet's rule. */
+.sheet.join-shelf > * { flex-shrink: 0; }
 .sheet.join-shelf { gap: 14px; padding: 8px 16px calc(16px + env(safe-area-inset-bottom, 0px));
                     max-height: 88vh; overflow: visible; animation: none; }
 .join-shelf .js-line { color: var(--text-body); font-size: 17px; font-weight: 700; line-height: 1.3;

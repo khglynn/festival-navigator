@@ -240,12 +240,16 @@ Non-inferable facts only (the code answers everything else — read it).
   at the document (capture); `tests/zoom-modality.test.mjs` pins it and the
   real-browser contract (`npm run test:browser`, CI job `browser`) drives
   Kevin's sequences with real input against gallery.html. What a press on
-  a card MEANS asks the same tracker (`fingerHand()`, the tap change,
-  2026-09-26), never the click's own pointerType: a finger opens the card's
-  notes shelf (its facts, − · your meter · +, the thread — the one place a
-  finger picks), a mouse click or a key picks. There is no long-press: a
-  hold is a slow tap, and an engine that turns it into `contextmenu`
-  (Android) opens the same shelf.
+  a card MEANS asks the same module (`clickHand(e)`, the tap change,
+  2026-09-26), never the click's own pointerType: each click is paired with
+  the press the browser pairs it with (lifted, just now, where the press and
+  the lift both were). A finger opens the card's notes shelf (its facts,
+  − · your meter · +, the thread — the one place a finger picks); a click
+  with no press of its own (VoiceOver, Switch Control) opens it too; a
+  mouse click or Enter picks. There is no long-press: a hold is a slow tap,
+  and an engine that turns it into `contextmenu` (Android) opens the same
+  shelf. Every sheet rides the iOS keyboard through one helper, notes.js
+  `rideKeys`.
   The hover route has the mirror trap (2026-09-23): WebKit follows a touch
   tap with MOUSE-type pointer events at the spot the finger lifted — a
   click, then pointerenter on the fresh card a pick swaps in — so
