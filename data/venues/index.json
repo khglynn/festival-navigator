@@ -5,7 +5,6 @@
     "Regency Ballroom": {
       "city": "San Francisco",
       "kind": "hall",
-      "shape": "club",
       "site": "https://www.theregencyballroom.com/",
       "close": {
         "default": null,
@@ -39,7 +38,7 @@
           "quote": "SAT, 13 JUN 2026 at 08:00PM PDT ... Doors Open: 07:00PM"
         }
       ],
-      "notes": "No published close anywhere — not the venue FAQ, not its tech rider (a DAYTIME 5 PM weekday sound curfew only), not 15+ listings. Doors open one hour before showtime per the venue's own FAQ. The guesser falls back to the hall default (12 AM) and marks it. Shape pinned to \"club\" (laid back from the close) on 2026-09-26 so Portola 2026's live file stays exactly what the guesser writes: as a hall it would take the concert shape (headliner a support slot after the opener, the close only a cap), which moves Thu Soulwax and Fri Channel Tres from 10:30 to 9:30 PM and Sat Parcels from 10:45 to 10 PM. Whether Portola's Regency rooms should move is a call for Kevin (claude-plans/2026-09-26-unified-build/ACL-PREP-LOG.md, round two); drop this pin after the fest."
+      "notes": "No published close anywhere — not the venue FAQ, not its tech rider (a DAYTIME 5 PM weekday sound curfew only), not 15+ listings. Doors open one hour before showtime per the venue's own FAQ. The guesser falls back to the hall default (12 AM) and marks it. Laid out as a concert since 2026-09-26 (round two of ACL prep): the opener at its posted time, the headliner a support slot after it, the close only a cap — so no guess lands later than the show. That moved Portola's Sat Parcels from ~10:45 to ~10 PM (AXS: doors 9 PM, the event 10 PM; Velvet Trip opens at 9:15) and the past Thu/Fri rooms from 10:30 to 9:30 PM."
     },
     "Monarch": {
       "city": "San Francisco",
