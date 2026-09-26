@@ -320,33 +320,60 @@ test('390: when Austin’s day turns (5 AM), a phone that comes back to the page
   } finally { await ctx.close(); }
 });
 
-// ---- the city's run of seasons (Kevin, 2026-09-25), on the REAL files ------------------
+// ---- the city's run of seasons (Kevin, 2026-09-25), on the real files, pinned ----------
+// The live index changes under the feed (the first run after Nov 30 archives
+// Fall) and the real clock walks past Winter, so these read a FIXED snapshot of
+// the city's index rows, the season files as they are but held to that
+// snapshot's status, and a page clock pinned to Fri 2026-09-25, 8 PM in Austin
+// (the review, round 2).
+const PINNED = new Date('2026-09-25T20:00:00-05:00');
+const PINNED_TODAY = '2026-09-25';
+const SNAPSHOT = [
+  { id: 'austin-fall-2026', kind: 'season', name: 'Austin Fall', year: "'26", startsOn: '2026-09-01', endsOn: '2026-11-30', status: 'scheduled', dates: 'Sep – Nov 2026', updated: '2026-09-25', location: 'Austin, TX', timezone: 'America/Chicago', accent: '240, 146, 76' },
+  { id: 'austin-winter-2027', kind: 'season', name: 'Austin Winter', year: "'27", startsOn: '2026-12-01', endsOn: '2027-02-28', status: 'scheduled', dates: 'Dec 2026 – Feb 2027', updated: '2026-09-25', location: 'Austin, TX', timezone: 'America/Chicago', accent: '125, 196, 255' },
+  { id: 'austin-spring-2027', kind: 'season', name: 'Austin Spring', year: "'27", startsOn: '2027-03-01', endsOn: '2027-05-31', status: 'scheduled', dates: 'Mar – May 2027', updated: '2026-09-25', location: 'Austin, TX', timezone: 'America/Chicago', accent: '244, 114, 182' },
+  { id: 'austin-summer-2027', kind: 'season', name: 'Austin Summer', year: "'27", startsOn: '2027-06-01', endsOn: '2027-08-31', status: 'scheduled', dates: 'Jun – Aug 2027', updated: '2026-09-25', location: 'Austin, TX', timezone: 'America/Chicago', accent: '250, 204, 90' },
+];
+const pinnedIndex = () => [...INDEX.filter((f) => f.kind !== 'season'), ...SNAPSHOT];
+// A season file as the snapshot knows it: its shows as the feed wrote them,
+// its status and updated day the snapshot's.
+const pinnedFile = (id) => {
+  const f = JSON.parse(fs.readFileSync(path.join(ROOT, `data/festivals/${id}.json`), 'utf8'));
+  const row = SNAPSHOT.find((r) => r.id === id);
+  return { ...f, status: row.status, updated: row.updated, startsOn: row.startsOn, endsOn: row.endsOn, dates: row.dates };
+};
+async function pinnedContext({ width, touch, doc, token, fest, reducedMotion = 'no-preference' }) {
+  const ctx = await browser.newContext({ viewport: { width, height: width < 720 ? 844 : 800 }, hasTouch: touch, serviceWorkers: 'block', reducedMotion });
+  await ctx.addInitScript(([t, d, f]) => {
+    navigator.serviceWorker.register = () => Promise.resolve({ update: () => Promise.resolve() });
+    localStorage.setItem('fn_crews_v3', JSON.stringify([{ token: t, name: 'Seasons' }]));
+    localStorage.setItem(`fn_me_v3_${t}`, 'Kevin');
+    localStorage.setItem(`fn_crew_doc_v3_${t}`, JSON.stringify(d));
+    if (!localStorage.getItem(`fn_crew_fest_v3_${t}`)) localStorage.setItem(`fn_crew_fest_v3_${t}`, f);
+    localStorage.setItem('fn_coach_v1', '1');
+  }, [token, doc, fest]);
+  await ctx.route('**/api/**', (r) => r.fulfill({ status: 503, contentType: 'application/json', body: '{}' }));
+  await ctx.route('**/api/crew**', (r) => (r.request().method() === 'GET'
+    ? r.fulfill({ contentType: 'application/json', body: JSON.stringify(doc) })
+    : r.fulfill({ status: 503, contentType: 'application/json', body: '{}' })));
+  await ctx.route('**/fn-i/**', (r) => r.fulfill({ status: 200, body: '{}' }));
+  await ctx.route('**/data/festivals/index.json', (r) => r.fulfill({ contentType: 'application/json', body: JSON.stringify(pinnedIndex()) }));
+  for (const row of SNAPSHOT) await ctx.route(`**/data/festivals/${row.id}.json`, (r) => r.fulfill({ contentType: 'application/json', body: JSON.stringify(pinnedFile(row.id)) }));
+  const page = await ctx.newPage();
+  await page.clock.setFixedTime(PINNED);
+  return { ctx, page };
+}
+
 test('390: the landing lists the next two Austin seasons with their updated lines, tucks the rest, and a future season opens on its first month', { skip }, async () => {
-  const { seasonLead, seasonIsOver } = await import('../../js/v3/events.js');
-  const seasons = INDEX.filter((f) => f.kind === 'season');
-  const { lead, today } = seasonLead(INDEX);
-  const live = seasons.filter((f) => !seasonIsOver(f, today));
-  const winter = JSON.parse(fs.readFileSync(path.join(ROOT, 'data/festivals/austin-winter-2027.json'), 'utf8'));
+  const winter = pinnedFile('austin-winter-2027');
   const TOKEN = 'seasonlanding_0123456789';
   const doc = {
     v: 4, meta: { name: 'Seasons', inviteFestId: 'austin-winter-2027' }, spotify: {},
     affinity: { Kevin: Object.fromEntries(winter.artists.slice(0, 4).map((a) => [a.name, { songs: 3 }])) },
     people: { Kevin: { colorIndex: 0 } },
-    festivals: Object.fromEntries(seasons.map((f) => [f.id, { selections: {} }])),
+    festivals: Object.fromEntries(SNAPSHOT.map((f) => [f.id, { selections: {} }])),
   };
-  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, serviceWorkers: 'block' });
-  await ctx.addInitScript(([t, d]) => {
-    navigator.serviceWorker.register = () => Promise.resolve({ update: () => Promise.resolve() });
-    localStorage.setItem('fn_crews_v3', JSON.stringify([{ token: t, name: 'Seasons' }]));
-    localStorage.setItem(`fn_me_v3_${t}`, 'Kevin');
-    localStorage.setItem(`fn_crew_doc_v3_${t}`, JSON.stringify(d));
-    localStorage.setItem(`fn_crew_fest_v3_${t}`, 'austin-winter-2027');
-    localStorage.setItem('fn_coach_v1', '1');
-  }, [TOKEN, doc]);
-  await ctx.route('**/api/**', (r) => r.fulfill({ status: 503, contentType: 'application/json', body: '{}' }));
-  await ctx.route('**/api/crew**', (r) => r.fulfill({ contentType: 'application/json', body: JSON.stringify(doc) }));
-  await ctx.route('**/fn-i/**', (r) => r.fulfill({ status: 200, body: '{}' }));
-  const page = await ctx.newPage();
+  const { ctx, page } = await pinnedContext({ width: 390, touch: true, doc, token: TOKEN, fest: 'austin-winter-2027' });
   const errors = [];
   page.on('pageerror', (e) => errors.push(String(e)));
   try {
@@ -355,13 +382,10 @@ test('390: the landing lists the next two Austin seasons with their updated line
     const list = await page.evaluate(() => [...document.getElementById('landing-fests').children].map((n) => (n.classList.contains('micro-label') ? { head: n.textContent }
       : n.classList.contains('fest-row') ? { name: n.querySelector('.fest-name').textContent, lines: [...n.querySelectorAll('.fest-dates')].map((d) => d.textContent) }
         : { fold: n.querySelector('button').textContent })));
-    assert.equal(list[0].head, 'City seasons');
-    const rows = list.filter((x) => x.name);
-    assert.deepEqual(rows.map((r) => r.name.replace(/\s+'\d\d$/, '').replace(/ '\d\d$/, '')).map((n) => n.trim()), live.filter((f) => lead.has(f.id)).map((f) => f.name), 'the two soonest seasons, soonest first');
-    for (const r of rows) assert.match(r.lines[0], /^[A-Z][a-z]{2}( \d{4})? – [A-Z][a-z]{2} \d{4} · updated (today|yesterday|[A-Z][a-z]{2} \d{1,2}(, \d{4})?)$/, `"${r.lines[0]}" is the window and when it was updated`);
-    const later = live.length - lead.size;
-    if (later) assert.match(list.at(-1).fold, new RegExp(`^Later seasons · ${later}`), 'the rest wait behind one row');
-    // Winter: still ahead (or running) — it opens on its first month still on, nothing before today hidden but that.
+    assert.deepEqual(list.map((x) => x.head || (x.name && x.name.replace(/\s*'\d\d$/, '')) || x.fold.replace(/\s*[▸▾]$/, '')),
+      ['City seasons', 'Austin Fall', 'Austin Winter', 'Later seasons · 2'], 'Sep 25: Fall and Winter, the rest tucked');
+    assert.deepEqual(list.filter((x) => x.name).map((x) => x.lines[0]), ['Sep – Nov 2026 · updated today', 'Dec 2026 – Feb 2027 · updated today']);
+    // Winter: ahead of today, so all of it, from its first month.
     await page.goto(`${server.origin}/#g=${TOKEN}`, { waitUntil: 'load' });
     await page.waitForFunction(() => document.querySelectorAll('#wall-root .day-block[data-kind="month"] .card').length > 0, null, { timeout: 15000 });
     await sleep(600);
@@ -371,15 +395,113 @@ test('390: the landing lists the next two Austin seasons with their updated line
       yours: document.querySelectorAll('#wall-root .day-block[data-day="yours"] .card').length,
       sub: document.getElementById('fest-sub').textContent,
       name: document.getElementById('fest-name').textContent,
-      tabs: [...document.querySelectorAll('#dock-days .day-tab')].map((t) => t.textContent),
+      tabs: [...document.querySelectorAll('#dock-days .day-tab')].map((t) => t.dataset.day),
     }));
-    const onWall = winter.artists.filter((a) => a.date >= today && !a.unlisted);
-    assert.equal(w.cards, onWall.length, 'every Winter show still ahead is on the wall');
-    assert.equal(w.first, onWall.map((a) => a.day)[0], `it opens on its first month (${w.first})`);
+    assert.equal(w.cards, winter.artists.filter((a) => !a.unlisted).length, 'every Winter show is on the wall');
+    assert.equal(w.first, 'December', 'it opens on its first month');
     assert.equal(w.name, 'AUSTIN WINTER');
-    assert.match(w.sub, /^Dec 2026 – Feb 2027 · updated /, 'the header is the description line');
+    assert.equal(w.sub, 'Dec 2026 – Feb 2027 · updated today', 'the header is the description line');
     assert.ok(w.yours > 0, 'YOURS is this season’s');
-    assert.ok(w.tabs.length <= 4, `YOURS and at most its three months: ${w.tabs}`);
+    assert.deepEqual(w.tabs, ['yours', 'December', 'January', 'February']);
     assert.deepEqual(errors, []);
   } finally { await ctx.close(); }
+});
+
+// Kevin, 2026-09-25: "little chevron style to the left and right of our months
+// list … we can just slide over into the next season." Real pointer input on
+// the chevrons (a finger on the dock, a mouse on the rail), then what a person
+// sees when it settles: the season, its months, its first month on the wall,
+// and chevrons that say where they go — hidden, in place, where there is none.
+for (const [width, touch, where, reducedMotion] of [[390, true, 'dock', 'no-preference'], [1280, false, 'rail', 'no-preference'], [390, true, 'dock', 'reduce']]) {
+  test(`${width}${reducedMotion === 'reduce' ? ' (Reduce Motion)' : ''}: › turns Fall into Winter and ‹ turns it back; the chevrons say where they go and hold their place`, { skip }, async () => {
+    const TOKEN = 'seasonsteps_0123456789ab';
+    const doc = { v: 4, meta: { name: 'Seasons', inviteFestId: 'austin-fall-2026' }, spotify: {}, affinity: {}, people: { Kevin: { colorIndex: 0 } }, festivals: { 'austin-fall-2026': { selections: {} } } };
+    const { ctx, page } = await pinnedContext({ width, touch, doc, token: TOKEN, fest: 'austin-fall-2026', reducedMotion });
+    const errors = [];
+    page.on('pageerror', (e) => errors.push(String(e)));
+    const read = () => page.evaluate((w) => {
+      const b = (dir) => { const e = document.getElementById(`${w}-season-${dir}`); const r = e.getBoundingClientRect(); return { shown: !e.hidden && getComputedStyle(e).visibility === 'visible', label: e.getAttribute('aria-label'), x: Math.round(r.left), w: Math.round(r.width) }; };
+      const cards = [...document.querySelectorAll('#wall-root .day-block[data-kind="month"] .card')].map((c) => JSON.parse(c.dataset.occ).date);
+      return {
+        name: document.getElementById('fest-name').textContent,
+        tabs: [...document.querySelectorAll(`#${w}-days .day-tab`)].map((t) => t.dataset.day),
+        first: (document.querySelector('#wall-root .day-block[data-kind="month"]') || {}).dataset?.day || null,
+        lo: cards.reduce((a, d) => (a && a < d ? a : d), ''), hi: cards.reduce((a, d) => (a > d ? a : d), ''),
+        prev: b('prev'), next: b('next'),
+        moving: document.getAnimations().filter((a) => a.playState === 'running').length,
+      };
+    }, where);
+    const press = async (dir) => {
+      const r = await page.locator(`#${where}-season-${dir}`).boundingBox();
+      if (touch) await page.touchscreen.tap(r.x + r.width / 2, r.y + r.height / 2);
+      else await page.mouse.click(r.x + r.width / 2, r.y + r.height / 2);
+    };
+    const landed = async (name) => {
+      for (let i = 0; i < 60; i++) {
+        const s = await read();
+        if (s.name === name && !s.moving) return s;
+        await sleep(50);
+      }
+      return read();
+    };
+    try {
+      await page.goto(`${server.origin}/#g=${TOKEN}`, { waitUntil: 'load' });
+      await page.waitForFunction(() => document.querySelectorAll('#wall-root .day-block[data-kind="month"] .card').length > 0, null, { timeout: 15000 });
+      await sleep(600);
+      const fall = await read();
+      assert.equal(fall.name, 'AUSTIN FALL');
+      assert.equal(fall.prev.shown, false, 'nothing before Fall in the snapshot: ‹ hidden');
+      assert.ok(fall.prev.w > 0, '— but it keeps its place');
+      assert.equal(fall.next.label, "Next season: Austin Winter '27");
+      await press('next');
+      const winter = await landed('AUSTIN WINTER');
+      assert.equal(winter.name, 'AUSTIN WINTER');
+      assert.deepEqual(winter.tabs.filter((t) => t !== 'yours'), ['December', 'January', 'February'], 'Winter’s months');
+      assert.equal(winter.first, 'December', 'its first month on the wall');
+      assert.ok(winter.lo >= '2026-12-01' && winter.hi <= '2027-02-28', `only Winter’s shows (${winter.lo} … ${winter.hi})`);
+      assert.equal(winter.prev.label, "Previous season: Austin Fall '26");
+      assert.equal(winter.next.label, "Next season: Austin Spring '27");
+      assert.ok(winter.prev.shown && winter.next.shown);
+      assert.equal(winter.next.x, fall.next.x, 'the › did not move under the thumb');
+      assert.equal(winter.prev.x, fall.prev.x);
+      await press('prev');
+      const back = await landed('AUSTIN FALL');
+      assert.deepEqual(back.tabs.filter((t) => t !== 'yours'), ['September', 'October', 'November']);
+      assert.ok(back.lo >= PINNED_TODAY && back.hi <= '2026-11-30', 'Fall from today');
+      assert.equal(back.prev.shown, false);
+      // Two quick taps land cleanly two seasons over: never a half-drawn wall.
+      await press('next');
+      await sleep(40);
+      await press('next');
+      const spring = await landed('AUSTIN SPRING');
+      assert.equal(spring.name, 'AUSTIN SPRING');
+      assert.ok(spring.lo >= '2027-03-01' && spring.hi <= '2027-05-31', 'the wall is Spring’s, whole');
+      assert.deepEqual(spring.tabs.filter((t) => t !== 'yours'), [...new Set(pinnedFile('austin-spring-2027').artists.map((a) => a.day))]);
+      assert.deepEqual(errors, []);
+    } finally { await ctx.close(); }
+  });
+}
+
+test('a festival never shows the season chevrons', { skip }, async () => {
+  const { ctx, page } = await openSeason({ width: 390, touch: true }).catch(() => ({}));
+  if (ctx) await ctx.close();
+  const c = await browser.newContext({ viewport: { width: 1280, height: 800 }, serviceWorkers: 'block' });
+  const T = 'festnochevrons_012345678';
+  await c.addInitScript(([t]) => {
+    navigator.serviceWorker.register = () => Promise.resolve({ update: () => Promise.resolve() });
+    localStorage.setItem('fn_crews_v3', JSON.stringify([{ token: t, name: 'F' }]));
+    localStorage.setItem(`fn_me_v3_${t}`, 'Kevin');
+    localStorage.setItem(`fn_crew_fest_v3_${t}`, 'portola-2026');
+    localStorage.setItem('fn_coach_v1', '1');
+  }, [T]);
+  const doc = { v: 4, meta: { name: 'F' }, spotify: {}, affinity: {}, people: { Kevin: { colorIndex: 0 } }, festivals: { 'portola-2026': { selections: {} } } };
+  await c.route('**/api/**', (r) => r.fulfill({ status: 503, contentType: 'application/json', body: '{}' }));
+  await c.route('**/api/crew**', (r) => r.fulfill({ contentType: 'application/json', body: JSON.stringify(doc) }));
+  const p = await c.newPage();
+  try {
+    await p.goto(`${server.origin}/#g=${T}`, { waitUntil: 'load' });
+    await p.waitForFunction(() => document.querySelectorAll('#wall-root .card').length > 0, null, { timeout: 15000 });
+    const shown = await p.evaluate(() => [...document.querySelectorAll('.season-step')].map((e) => !e.hidden && e.getClientRects().length > 0));
+    assert.deepEqual(shown, [false, false, false, false]);
+  } finally { await c.close(); }
 });

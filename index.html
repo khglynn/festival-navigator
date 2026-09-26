@@ -215,8 +215,14 @@
           <!-- NOW (2026-09-24): the jump to what is playing, while something
                is (app.js paintNowTabs / jumpToNow). Not a day: the scrollspy
                never lights it. -->
+          <!-- A city season's previous / next season (2026-09-25, app.js
+               paintSeasonSteps): chevrons at the ends of the months, outside
+               the row that scrolls. ‹ sits before NOW so NOW's own neighbour
+               stays the days row (app.js fitNowTab). Festivals never show them. -->
+          <button class="season-step prev" id="rail-season-prev" type="button" hidden><svg viewBox="0 0 10 16" aria-hidden="true"><path d="M8 2 2 8l6 6"/></svg></button>
           <button class="now-tab" id="rail-now" type="button" aria-label="Jump to what is playing now" hidden><span class="live" aria-hidden="true"></span><span class="word">NOW</span></button>
           <span class="rail-days" id="rail-days"></span>
+          <button class="season-step next" id="rail-season-next" type="button" hidden><svg viewBox="0 0 10 16" aria-hidden="true"><path d="m2 2 6 6-6 6"/></svg></button>
           <!-- The fest name is the show menu's door (MODEL-V4 §3.1) — app.js
                hangs the popover in this wrap when the fest has more than one
                room, and the tap goes straight to Settings when it has one. -->
@@ -234,8 +240,10 @@
       <!-- Mobile dock (atlas 21c) -->
       <div class="dock" id="dock">
         <button class="avatar you you-avatar" id="dock-you" aria-label="Jump to top"></button>
+        <button class="season-step prev" id="dock-season-prev" type="button" hidden><svg viewBox="0 0 10 16" aria-hidden="true"><path d="M8 2 2 8l6 6"/></svg></button>
         <button class="now-tab" id="dock-now" type="button" aria-label="Jump to what is playing now" hidden><span class="live" aria-hidden="true"></span><span class="word">NOW</span></button>
         <span class="days" id="dock-days"></span>
+        <button class="season-step next" id="dock-season-next" type="button" hidden><svg viewBox="0 0 10 16" aria-hidden="true"><path d="m2 2 6 6-6 6"/></svg></button>
         <span class="sort-wrap" id="dock-fest-wrap" style="flex: none;">
           <button class="fest-link" id="dock-fest-link" aria-label="Open settings">
             <span class="fest-name" id="dock-fest-name"></span>

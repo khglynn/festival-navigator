@@ -31,7 +31,7 @@ const model = await import('../js/v3/model.js');
 const { FESTIVALS, FESTIVAL_INDEX, defaultFestivalId } = await import('../js/festivals.js');
 const { renderWall, refreshCard, dayNavOf, wallPlanFor, roomsOf, seasonPlanOf } = await import('../js/v3/wall.js');
 const { factsFor, sheetCard, festPlaceLine } = await import('../js/v3/card-facts.js');
-const { seasonModelOf, weekHeadOf, seasonWhen, mondayOf, isSeason, seasonLocationsOf, findEventEntry, seasonLine, seasonLead, shelfSeasons, seasonIsOver } = await import('../js/v3/events.js');
+const { seasonModelOf, weekHeadOf, seasonWhen, mondayOf, isSeason, seasonLocationsOf, findEventEntry, seasonLine, seasonLead, shelfSeasons, seasonIsOver, seasonNeighbours } = await import('../js/v3/events.js');
 const { listHeadFor, appendPairs, festRow } = await import('../js/v3/tools.js');
 const { validateFestivalDoc } = await import('../api/_lib/festival-rules.mjs');
 
@@ -319,7 +319,8 @@ test('lists: the season follows the upcoming festivals and precedes the past one
 
 // ---- round 2 (the review, 2026-09-25) ------------------------------------------------
 // A second season: a show no source lists any more, and a September a year on
-// that the feed labels with its year ("September 2027", season-feed.mjs monthOf).
+// under a label that is not a bare month name ("September 2027") — the model
+// keys by the label and reads what a tab says off the dates.
 const FAR = {
   ...SEASON, id: 'season-far',
   artists: [
@@ -395,8 +396,17 @@ test('list heads after the seasons: City seasons, then Past festivals, then More
 });
 
 // ---- round 3: a city is a run of seasons (Kevin, 2026-09-25) ---------------------------
-import { readFileSync } from 'node:fs';
-const REAL_INDEX = JSON.parse(readFileSync(new URL('../data/festivals/index.json', import.meta.url), 'utf8'));
+// A fixed snapshot of the city's index rows as of 2026-09-25 (the review,
+// round 2: the live index.json changes under the feed — the first run on or
+// after Dec 1 archives Fall — so a test that read it would go red by itself).
+const REAL_INDEX = [
+  { id: 'portola-2026', name: 'Portola', year: "'26", startsOn: '2026-09-26', status: 'scheduled', dates: 'September 26–27, 2026', location: 'San Francisco, CA', accent: '56, 189, 248' },
+  { id: 'austin-fall-2026', kind: 'season', name: 'Austin Fall', year: "'26", startsOn: '2026-09-01', endsOn: '2026-11-30', status: 'scheduled', dates: 'Sep – Nov 2026', updated: '2026-09-25', location: 'Austin, TX', timezone: 'America/Chicago', accent: '240, 146, 76' },
+  { id: 'austin-winter-2027', kind: 'season', name: 'Austin Winter', year: "'27", startsOn: '2026-12-01', endsOn: '2027-02-28', status: 'scheduled', dates: 'Dec 2026 – Feb 2027', updated: '2026-09-25', location: 'Austin, TX', timezone: 'America/Chicago', accent: '125, 196, 255' },
+  { id: 'austin-spring-2027', kind: 'season', name: 'Austin Spring', year: "'27", startsOn: '2027-03-01', endsOn: '2027-05-31', status: 'scheduled', dates: 'Mar – May 2027', updated: '2026-09-25', location: 'Austin, TX', timezone: 'America/Chicago', accent: '244, 114, 182' },
+  { id: 'austin-summer-2027', kind: 'season', name: 'Austin Summer', year: "'27", startsOn: '2027-06-01', endsOn: '2027-08-31', status: 'scheduled', dates: 'Jun – Aug 2027', updated: '2026-09-25', location: 'Austin, TX', timezone: 'America/Chicago', accent: '250, 204, 90' },
+  { id: 'electric-forest-2026', name: 'Electric Forest', year: "'26", startsOn: '2026-06-25', status: 'archived', dates: 'Jun 25–28', location: 'Rothbury, MI', accent: '16, 185, 129' },
+];
 const CT = (iso, hm = '12:00') => new Date(`${iso}T${hm}:00-05:00`);
 
 test('the description line: its window, then when the feed last read it — today, yesterday, or the date', () => {
@@ -407,6 +417,7 @@ test('the description line: its window, then when the feed last read it — toda
   assert.equal(seasonLine(m, CT('2026-10-01')), 'Dec 2026 – Feb 2027 · updated Sep 25');
   assert.equal(seasonLine(m, CT('2027-01-03')), 'Dec 2026 – Feb 2027 · updated Sep 25, 2026');
   assert.equal(seasonLine({ ...m, status: 'archived' }, CT('2027-03-03')), 'Dec 2026 – Feb 2027', 'a season that is over is not read any more');
+  assert.equal(seasonLine(m, CT('2027-03-03')), 'Dec 2026 – Feb 2027', '— over by its window, before the feed has marked it archived');
   // Every place it shows says the same words: the header / Settings card
   // line, and the Settings / add-a-fest rows.
   const frag = festPlaceLine(m);
@@ -456,4 +467,26 @@ test('a season whose window is over shows all of its shows, with no THIS WEEK; a
   assert.equal(before.over, false);
   assert.equal(before.months[0].key, 'August', 'a season still ahead opens on its first month, nothing hidden');
   assert.equal(before.months.reduce((n, m) => n + m.weeks.reduce((k, w) => k + w.entries.length, 0), 0), SEASON.artists.length);
+});
+
+// ---- round 4: previous / next season (Kevin, 2026-09-25) ---------------------------------
+test('a season’s neighbours: the city’s seasons in date order, every one; a gap is skipped, the ends have none, a festival has none', () => {
+  const rows = [
+    ...REAL_INDEX,
+    { id: 'austin-fall-2025', kind: 'season', name: 'Austin Fall', year: "'25", startsOn: '2025-09-01', endsOn: '2025-11-30', status: 'archived', location: 'Austin, TX' },
+    // Another city's season never joins Austin's run.
+    { id: 'sf-fall-2026', kind: 'season', name: 'SF Fall', year: "'26", startsOn: '2026-09-01', endsOn: '2026-11-30', status: 'scheduled', location: 'San Francisco, CA' },
+  ];
+  const n = (id, list = rows) => { const x = seasonNeighbours(list, id); return [x.prev && x.prev.id, x.next && x.next.id]; };
+  assert.deepEqual(n('austin-fall-2025'), [null, 'austin-fall-2026'], 'the first: nothing before; an archived season is still on the road');
+  assert.deepEqual(n('austin-fall-2026'), ['austin-fall-2025', 'austin-winter-2027']);
+  assert.deepEqual(n('austin-spring-2027'), ['austin-winter-2027', 'austin-summer-2027'], 'tucked seasons are travelled through');
+  assert.deepEqual(n('austin-summer-2027'), ['austin-spring-2027', null], 'the last: nothing after');
+  // A gap (no Winter file this year): Fall's next is Spring.
+  assert.deepEqual(n('austin-fall-2026', rows.filter((r) => r.id !== 'austin-winter-2027')), ['austin-fall-2025', 'austin-spring-2027']);
+  assert.deepEqual(n('sf-fall-2026'), [null, null], 'a city of one season');
+  assert.deepEqual(n('portola-2026'), [null, null], 'a festival has none');
+  assert.deepEqual(n('nobody'), [null, null]);
+  // Index order does not matter: the dates do.
+  assert.deepEqual(n('austin-fall-2026', [...rows].reverse()), ['austin-fall-2025', 'austin-winter-2027']);
 });

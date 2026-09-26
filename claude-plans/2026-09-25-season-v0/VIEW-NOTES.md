@@ -103,6 +103,59 @@ here and the last commit.
       2" (opens to Spring, Summer); Winter from its row opens on December
       (DEC 1 – 6) under YOURS (3), tabs YOURS DEC JAN FEB. No console errors.
 
+### Round 4 (Kevin: previous / next season — 2026-09-25 late)
+
+- [x] Fast-forwarded to 2a04adb (index rows carry `timezone`).
+- [x] Chevrons ‹ › flank the months in the dock and the rail, outside the
+      scrolling row (‹ before NOW, so NOW's neighbour is still the days row).
+      No words; aria-label + title "Next season: Austin Winter '27". A
+      direction with no season keeps its space (visibility); festivals never
+      show them. Borrowed 44px (inset ::after), not real height: 44px would
+      make the dock 18px taller — the glyph-button rule in v3.css.
+- [x] events.js `seasonNeighbours`: the city's seasons (same `location`, kind
+      season) in startsOn order, every one — tucked and archived too.
+- [x] The slide (storyboard: `SLIDE-STORYBOARD.md`), see the account below.
+- [x] Holding still: the dock and rail name hold the city's widest name, and
+      on a season the rail's months row fills the line, so neither chevron
+      moves between seasons (measured: › at 253px on every season at 390,
+      1015px at 1280). The dock names just the season ("WINTER '27"; the
+      header says Austin), and a season's dock tabs sit 18px apart: with the
+      full name the dock showed one month.
+- [x] The review's view-side items: the shelf unit test and the browser
+      landing walk read a fixed snapshot of the index rows with a pinned
+      clock; a season over by its window says no "updated"; stale comments.
+- [x] Tests: neighbour order (gap, ends, other city, festival); a browser
+      test taps › and ‹ with real touch (390), real mouse (1280) and under
+      Reduce Motion, plus two quick taps landing two seasons over; festivals
+      show no chevrons.
+
+- [x] `npm test` 936/936 (1 skip); `npm run test:browser` 192/192 (166 in
+      the full run, whose browser died mid-way through now-jump.test.mjs on
+      this memory-short Mac, cascading that file; now-jump alone 52/52).
+      Stamp v90 (e713e358). Pushed once: festival-navigator-dnhhkryql-kevinhg
+      .vercel.app (from f37dddf).
+- [x] Walked the preview on the demo crew: 390 by touch, 1280 by mouse, 390
+      under Reduce Motion. Fall → › Winter (settles in ~0.5 s; ~50 ms under
+      Reduce Motion), › › to Summer (lands clean, › hidden in place), ‹ ‹ ‹
+      back to Fall. The chevrons sit at the same pixels on every season
+      (51 / 253 at 390, 139 / 1015 at 1280). No console errors.
+
+**The motion as built.** A tap on › fades the season you are reading out to
+the left — the wall 28px, the month tabs 16px, the name 8px, 130 ms, quick
+and plain — while the chevrons stay exactly where they are, the hinge of the
+page. At the one frame where nothing is visible the next season is swapped in:
+its accent, its months, its wall, and the scroll set to its first month (at
+the top of the page it stays at the top). Then it arrives from the right: the
+wall from 36px over 280 ms with the app's small overshoot, the months 30 ms
+behind it, the name 30 ms after that, and a ‹ that has just gained somewhere
+to go fades in last. About 410 ms end to end; ‹ is the mirror. The neighbour
+files are fetched as soon as a season paints, so a turn never waits. A second
+tap during a turn is kept and runs when this one lands (two quick › taps land
+two seasons over, through two whole turns). Reduce Motion and Low Power swap
+instantly. Watched at 25% speed at 390 and 1280; the first cut cut its exit
+short under slow motion (a wall-clock guard), now it waits for the
+animations, or for the tab being hidden.
+
 ## Decisions (and why)
 
 1. **The season shows from today on.** Past months drop off (brief), and so

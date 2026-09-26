@@ -555,12 +555,14 @@ export const isSeason = (fest) => !!fest && fest.kind === 'season';
 // "… · updated yesterday". ONE builder for every place a season describes
 // itself (the wall header, the Settings card, the Settings and add-a-fest
 // rows, the landing row), from a file or an index row alike. Today is read in
-// the season's own zone where the file says it (an index row does not; the
-// phone's day is right but for the hours around midnight). A season that is
-// over says its window alone: nobody reads it any more.
+// the season's own zone (the file and its index row both carry `timezone`;
+// without one, the phone's day). A season that is over — archived, or its
+// window past before the feed has marked it — says its window alone: nobody
+// reads it any more.
 export function seasonUpdated(meta, now = new Date()) {
-  if (!meta || typeof meta.updated !== 'string' || !ISO_RE.test(meta.updated) || meta.status === 'archived') return '';
+  if (!meta || typeof meta.updated !== 'string' || !ISO_RE.test(meta.updated)) return '';
   const today = festivalClockDay(now, meta.timezone || null);
+  if (seasonIsOver({ ...meta, kind: 'season' }, today)) return '';
   if (meta.updated === today) return 'updated today';
   if (meta.updated === isoPlusDays(today, -1)) return 'updated yesterday';
   const year = meta.updated.slice(0, 4);
@@ -591,6 +593,22 @@ export function seasonLead(rows, now = new Date()) {
   const live = (rows || []).filter((r) => r && r.kind === 'season' && !seasonIsOver(r, today))
     .sort((a, b) => String(a.startsOn || '').localeCompare(String(b.startsOn || '')) || String(a.id).localeCompare(String(b.id)));
   return { today, lead: new Set(live.slice(0, 2).map((r) => r.id)) };
+}
+// A season's neighbours, for the chevrons beside its months (Kevin,
+// 2026-09-25: "a next season, previous season thing … little arrows on the
+// left or right of the months"). The city's seasons in date order — every one,
+// tucked or over: the tuck is for the lists, not for travel — read off the
+// index rows (kind season, the same city, startsOn order), never by building
+// an id. The city is the row's `location` ("Austin, TX"); a row without one
+// falls back to its id's first word. A festival has no neighbours.
+const cityOf = (r) => (r && (r.location || String(r.id || '').split('-')[0])) || '';
+export function seasonNeighbours(rows, fid) {
+  const me = (rows || []).find((r) => r && r.id === fid);
+  if (!me || me.kind !== 'season') return { prev: null, next: null };
+  const run = rows.filter((r) => r && r.kind === 'season' && cityOf(r) === cityOf(me))
+    .sort((a, b) => String(a.startsOn || '').localeCompare(String(b.startsOn || '')) || String(a.id).localeCompare(String(b.id)));
+  const i = run.indexOf(me);
+  return { prev: run[i - 1] || null, next: run[i + 1] || null };
 }
 // A list split for its shelf: the items a person sees (every non-season item,
 // the lead seasons, and any season `kept` says is theirs), and the seasons
@@ -691,9 +709,9 @@ export function seasonModelOf(fest, { today, isYours = null, only = null, hidden
   for (const s of on) {
     // The month label the file wrote is the tab (and the section key a note
     // or a pick could ever hang off); one it forgot is read off the date.
-    // The label is only ever a KEY: a month a year or more out carries its
-    // year ("September 2027", the feed's monthOf), and what a tab says comes
-    // from the dates below, never from parsing the label.
+    // The label is only ever a KEY, never parsed: what a tab says comes from
+    // the dates below, so a label that is not a bare month name ("September
+    // 2027", a file that runs past a year) still gets a tab of its own.
     const key = typeof s.e.day === 'string' && s.e.day.trim() ? s.e.day.trim() : `${MONTH_LONG[Number(s.iso.slice(5, 7)) - 1]} ${s.iso.slice(0, 4)}`;
     if (!months.has(key)) months.set(key, []);
     months.get(key).push(s);
