@@ -1061,7 +1061,16 @@ export function closeSheet() {
   if (!wasOpen) return;
   // Quietly: a card the focus returns to must not read it as keyboard
   // navigation and grow a zoom (card-facts.js focusQuietly).
-  if (restoreFocusTo && restoreFocusTo.isConnected) focusQuietly(restoreFocusTo, {});
+  // A card replaced while the sheet was up — a pick on the shelf's − / +
+  // refreshes the wall behind it (the tap change), a crew-mate's poll repaints
+  // it — is found again by what it is: the same artist, the same occurrence.
+  let back2 = restoreFocusTo;
+  if (back2 && !back2.isConnected && back2.dataset && back2.dataset.artist) {
+    const same = [...document.querySelectorAll('#wall-root .card[data-artist]')]
+      .filter((c) => c.dataset.artist === back2.dataset.artist);
+    back2 = same.find((c) => (c.dataset.occ || '') === (back2.dataset.occ || '')) || same[0] || null;
+  }
+  if (back2 && back2.isConnected) focusQuietly(back2, {});
   restoreFocusTo = null;
 }
 

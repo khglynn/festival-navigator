@@ -199,6 +199,7 @@ test('Escape closes the shelf and hands focus back to the card — growing no zo
   document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
   await settle(80);
   assert.equal(shelf(), null, 'Escape closed it');
+  assert.equal(document.activeElement, cardOf('Robyn'), 'focus is back on the card — the fresh one the pick put in the old one\'s place');
   assert.equal(document.querySelector('#zoom-layer .zoom-card'), null, 'no zoom grew on the handed-back focus');
   assert.equal(level('Robyn'), 1);
 });
