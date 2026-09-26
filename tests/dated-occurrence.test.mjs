@@ -152,9 +152,10 @@ test('factsFor tells each late night its own truth: the right venue, the right d
 
   const b2 = facts.factsFor('BUNT.', ctx, occOf(BUNT_2));
   const b9 = facts.factsFor('BUNT.', ctx, occOf(BUNT_9));
-  // Emo's has no published close, so the hall's fallback draws the window with
-  // a tilde; the Concourse prints its 9 PM – 2 AM on the night's own ticket page.
-  assert.equal(b2.when, 'Fri · Oct 2 · Runs 9 PM – ~12 AM');
+  // Emo's publishes no close and a concert never carries a fallback one, so
+  // its night says its doors; the Concourse prints its 9 PM – 2 AM on the
+  // night's own ticket page.
+  assert.equal(b2.when, 'Fri · Oct 2 · Doors 9 PM');
   assert.equal(b2.where, 'Emo\'s');
   assert.equal(b9.when, 'Fri · Oct 9 · Runs 9 PM – 2 AM');
   assert.equal(b9.where, 'The Concourse Project');

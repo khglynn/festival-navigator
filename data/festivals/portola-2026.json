@@ -283,9 +283,6 @@
         "source": "https://www.axs.com/events/1570048/soulwax-tickets",
         "confirmed": false
       },
-      "close": "12 AM",
-      "closeApprox": true,
-      "closeSource": "kind default (hall)",
       "page": {
         "url": "https://dothebay.com/events/2026/9/24/soulwax-tickets",
         "at": "DoTheBay"
@@ -431,9 +428,6 @@
       "time": "9:30 PM",
       "approx": true,
       "doors": "7 PM",
-      "close": "12 AM",
-      "closeApprox": true,
-      "closeSource": "kind default (hall)",
       "order": {
         "seq": 3,
         "of": 3,
@@ -458,9 +452,6 @@
       "time": "8:45 PM",
       "approx": true,
       "doors": "7 PM",
-      "close": "12 AM",
-      "closeApprox": true,
-      "closeSource": "kind default (hall)",
       "order": {
         "seq": 2,
         "of": 3,
@@ -485,9 +476,6 @@
       "time": "8 PM",
       "approx": true,
       "doors": "7 PM",
-      "close": "12 AM",
-      "closeApprox": true,
-      "closeSource": "kind default (hall)",
       "order": {
         "seq": 1,
         "of": 3,
@@ -518,9 +506,6 @@
         "source": "https://www.eventim.us/event/six-sex/702210",
         "confirmed": false
       },
-      "close": "12 AM",
-      "closeApprox": true,
-      "closeSource": "kind default (hall)",
       "page": {
         "url": "https://dothebay.com/events/2026/9/25/six-sex-tickets",
         "at": "DoTheBay"
@@ -724,9 +709,6 @@
       "time": "10 PM",
       "approx": true,
       "doors": "9 PM",
-      "close": "12 AM",
-      "closeApprox": true,
-      "closeSource": "kind default (hall)",
       "order": {
         "seq": 2,
         "of": 2,
@@ -746,9 +728,6 @@
       "venue": "Regency Ballroom",
       "time": "9:15 PM",
       "doors": "9 PM",
-      "close": "12 AM",
-      "closeApprox": true,
-      "closeSource": "kind default (hall)",
       "order": {
         "seq": 1,
         "of": 2,
@@ -2298,9 +2277,6 @@
       },
       "time": "8:45 PM",
       "approx": true,
-      "close": "12 AM",
-      "closeApprox": true,
-      "closeSource": "kind default (hall)",
       "page": {
         "url": "https://dothebay.com/events/2026/9/24/soulwax-tickets",
         "at": "DoTheBay"
@@ -2321,9 +2297,6 @@
       },
       "time": "8 PM",
       "approx": true,
-      "close": "12 AM",
-      "closeApprox": true,
-      "closeSource": "kind default (hall)",
       "page": {
         "url": "https://dothebay.com/events/2026/9/24/soulwax-tickets",
         "at": "DoTheBay"
@@ -2344,9 +2317,6 @@
       },
       "time": "9:45 PM",
       "approx": true,
-      "close": "12 AM",
-      "closeApprox": true,
-      "closeSource": "kind default (hall)",
       "page": {
         "url": "https://dothebay.com/events/2026/9/25/six-sex-tickets",
         "at": "DoTheBay"
@@ -2371,9 +2341,6 @@
       },
       "time": "9 PM",
       "approx": true,
-      "close": "12 AM",
-      "closeApprox": true,
-      "closeSource": "kind default (hall)",
       "page": {
         "url": "https://dothebay.com/events/2026/9/25/six-sex-tickets",
         "at": "DoTheBay"

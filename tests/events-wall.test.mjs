@@ -251,7 +251,8 @@ test('one room, one stack: every venue-night reads top to bottom and nothing ove
   const file = afters('Fri').filter((a) => a.venue === 'Regency Ballroom').sort((a, b) => a.order.seq - b.order.seq);
   assert.deepEqual(regency[2].map(([n]) => n), file.map((a) => a.name));
   assert.deepEqual(regency[2].map(([, t]) => t), file.map((a) => `${a.approx ? '~' : ''}${a.time}`));
-  assert.equal(regency[1], `Doors ${file[0].doors} · ~${file[0].close}`);
+  // A concert with no published close carries none, so the head is its doors.
+  assert.equal(regency[1], `Doors ${file[0].doors}`);
   assert.ok([...fri.querySelectorAll('.card')].every((c) => c.getAttribute('role') === 'button'));
 });
 

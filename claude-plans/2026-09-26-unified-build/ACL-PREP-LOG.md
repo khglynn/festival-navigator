@@ -678,3 +678,70 @@ playing when doors open.
 Commits: `93a655f` (issue 2, script + tests), `7108e4e` (issue 1, registry
 by-date close + script + test + docs line), `21c6fa9` (issue 3, Yukimatsu +
 one-act test), then this log entry.
+
+---
+
+# Round four (2026-09-26) — cut, not patched: third pass on the same mechanism
+
+**What the re-review of ea9f5a3 found:** #1 and #3 fixed, idempotent, nothing
+later. But the round-three patch removed a concert's fallback close only when
+its closer had under 30 minutes before it, while the planned headliner set is
+90. So Emo's BUNT. (~10:45 PM) and Brushy's Underscores (~11 PM) kept a guessed
+midnight close their own planned sets run past, and the now ring would have
+stopped mid-set.
+
+**Why a cut, not a fourth patch.** Rounds two, three and this one each found
+a hole in the same place: a guessed (kind-default) close written on a
+concert. For a concert that value is never an anchor, only a guessed end, so
+every rule that tried to "use it a little" produced another way for it to be
+wrong. The feature is the curfew, and it keeps its behaviour; the mechanism
+that kept producing holes is the fallback close on concerts, and it is gone.
+
+**The rule now:** a concert room (hall/outdoor, or `shape: "concert"`) never
+gets a fallback close written. Only a known close is ever written on a
+concert: one printed for the night, one evidenced for the night, or the
+venue's own registry hours (by date, weekday, or default). Clubs keep their
+fallback, because a night that runs to the close is laid back from it.
+`applyPlans` takes any fallback close off a concert room; printed closes and
+posted times are untouched as before. The round-three "drop it if the closer
+doesn't fit" block is deleted, and so is the concert branch's use of `known`.
+One test asserts it directly ("a concert never carries a fallback close"):
+hall and outdoor write none, the venue's hours are written, a printed close
+stays printed, a club keeps its fallback and is laid back from it, and a
+fallback an earlier run wrote comes off a concert room with its times
+unmoved.
+
+**`--write` on both festivals: closes only, no time moved.**
+- ACL: 17 entries in 9 rooms lost a guessed "~12 AM (kind default (hall))":
+  Emo's Oct 1 (Palace, The 4411), Oct 2 (BUNT., Sarah Pederzani), Oct 3
+  (Levity, Untitld); Brushy Street Commons Oct 2 (Hunx and his Punx,
+  CorMae), Oct 3 (Underscores, Directress, 1x333), Oct 8 (Arcy Drive, Common
+  People); 3TEN Oct 8 (Łaszewo, Left Lucid), Oct 10 (Claire Rosinkranz);
+  Fair Market Oct 8 (The War on Drugs).
+- Portola: 11 entries in 4 rooms lost the same: Regency Ballroom Thu, Fri,
+  Sat and Great American Music Hall Fri.
+- Checked field by field against the files before the write: no `time`,
+  `approx`, `doors`, `order` or any other field changed; the only other diff
+  lines are trailing commas. A second `--write` on each: 0 changes.
+- What friends see: those rooms' heads and zooms say "Doors 9 PM" rather than
+  "Runs 9 PM – ~12 AM", and their last set's ring runs the app's usual hour
+  past its start instead of stopping at a midnight nobody printed.
+
+**Tests changed because they asserted the old data or the old rule:**
+- `tests/run-guess.test.mjs`: three asserted a fallback close on a concert
+  (the three-act hall, Palace's room, Brushy's fallback case). They now assert
+  none; the new test above.
+- `tests/events-model.test.mjs` ("venueGroupsOf on Portola Friday") and
+  `tests/events-wall.test.mjs` ("one room, one stack"): both built Regency's
+  head as `Doors … · ~<close>`, so they assumed Regency carried a guessed
+  close. Now `Doors 7 PM`, and the model test asserts there is no close. The
+  tilde on a guessed close stays pinned by fixtures (`events-model` line 120,
+  `cancelled-acts` line 219).
+- `tests/dated-occurrence.test.mjs`: Emo's BUNT. night "Runs 9 PM – ~12 AM"
+  → "Doors 9 PM".
+
+Docs line (`docs/add-a-festival.md`) says a concert carries only a close the
+venue gave.
+
+**Checks:** validator 0 errors; both festivals re-run to 0 changes; `npm test`
+1,135 pass / 0 fail at the default clock, `TZ=Asia/Tokyo` and `NIGHT_CLOCK`.
