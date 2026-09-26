@@ -2164,7 +2164,8 @@
       "date": "Sep 24-27"
     },
     "Folsom": {
-      "date": "Sep 25-27"
+      "date": "Sep 25-27",
+      "layout": "by-time"
     }
   },
   "venues": {
