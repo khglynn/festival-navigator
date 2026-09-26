@@ -138,11 +138,15 @@ function build(host) {
   body.append(headEl, listEl);
   el.append(grab, body);
   frame.appendChild(el);
-  // Before the dock, so the dock (later in the DOM, z30 over this z29) paints
-  // over the part of the plan that waits below its top edge. (The frame is
-  // display:contents on a phone: #plan is the box there.)
+  // Right after the day rail in the page's order, so a keyboard meets the
+  // plan just after NOW and before the wall's hundred cards (at the end, the
+  // laptop's corner card was 40+ Tabs away, 2026-09-26). Where it is drawn is
+  // the z-index's business: fixed at z29, under the dock's z30, whatever the
+  // order. (The frame is display:contents on a phone: #plan is the box there.)
+  const rail = document.getElementById('day-rail');
   const dock = document.getElementById('dock');
-  if (dock && dock.parentElement === host) host.insertBefore(frame, dock);
+  if (rail && host.contains(rail)) rail.after(frame);
+  else if (dock && dock.parentElement === host) host.insertBefore(frame, dock);
   else host.appendChild(frame);
   // The grabber's click is the keyboard's (Enter, Space) and a script's. A
   // pointer's tap on it is handled where the pointer lifts (onUp): the drag
@@ -341,8 +345,11 @@ function settleState() {
   for (const r of listEl.children) {
     r.inert = peek && !r.classList.contains('tagged');
     // A row is a control in the open plan (Enter grows its card), and the
-    // peek's row is not one: the grabber is the keyboard's way in.
-    if (r.tagName === 'BUTTON') r.tabIndex = peek ? -1 : 0;
+    // peek's row is not one: the grabber is the keyboard's way in. Open, it
+    // is a plain button again — Safari Tabs to buttons only with Full
+    // Keyboard Access on, like every other button in the app.
+    if (r.tagName !== 'BUTTON') continue;
+    if (peek) r.tabIndex = -1; else r.removeAttribute('tabindex');
   }
   listEl.classList.toggle('scrolls', !peek);
   if (peek) listEl.scrollTop = 0;

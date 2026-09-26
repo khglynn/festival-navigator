@@ -468,11 +468,18 @@ for (const [name, get] of [['Chromium', () => chromium], ['WebKit', () => webkit
 
   // A keyboard reaches everything a pointer does: the card (a button), then
   // the panel's stops (buttons while it is open), Enter growing a card with
-  // the focus kept on its row; Escape back to the card.
-  test(`${name} 1280: a keyboard opens the card, Tabs to a stop, grows its card with Enter, and Escape puts the focus back on the card`, { skip }, async () => {
+  // the focus kept on its row; Escape back to the card. Chromium only: WebKit
+  // keeps Safari's convention (Tab skips buttons unless Full Keyboard Access
+  // is on), as it does for every button in the app.
+  test(`${name} 1280: a keyboard reaches the card just after the rail, opens it, Tabs to a stop, grows its card with Enter, and Escape puts the focus back on the card`, { skip: skip || (name === 'WebKit' && 'Safari Tabs past buttons by default') }, async () => {
     const { ctx, page, errors } = await openPhone(get(), { desk: true });
     try {
-      await page.evaluate(() => document.querySelector('#plan .plan-grab').focus());
+      // It comes right after the rail: one Tab from the rail's last control,
+      // not the wall's hundred cards later.
+      await page.evaluate(() => document.getElementById('rail-fest-link').focus());
+      await page.keyboard.press('Tab');
+      assert.equal(await page.evaluate(() => document.activeElement && document.activeElement.classList.contains('plan-grab')), true,
+        'the card is the next stop after the rail');
       await page.keyboard.press('Enter');
       await sleep(700);
       assert.equal((await geometry(page)).state, 'open');

@@ -103,7 +103,8 @@ test('the peek: one #plan before the dock, the NOW row in its window, the day be
   assert.ok(showing(), 'a festival night with stops has a peek');
   assert.equal(plan().dataset.state, 'peek');
   assert.equal(plan().compareDocumentPosition($('dock')) & dom.window.Node.DOCUMENT_POSITION_FOLLOWING, dom.window.Node.DOCUMENT_POSITION_FOLLOWING,
-    'the dock comes after it, so the dock paints over what waits below its edge');
+    'the dock comes after it');
+  assert.equal(plan().parentElement.previousElementSibling, $('day-rail'), 'right after the day rail: a keyboard meets it before the wall');
   assert.equal(tagged().getAttribute('aria-label'), 'Now: Dog Blood, Pier Stage, till 10:15 PM, 8 of us');
   assert.equal(tagged().querySelector('.plan-what .nm').textContent, 'Dog Blood', 'the artist leads');
   assert.equal(tagged().querySelector('.plan-what .pl').textContent, 'Pier Stage', 'the place under it');
@@ -242,7 +243,7 @@ test('a keyboard: stop rows are buttons in the open plan and not in the peek; En
   assert.ok(stops().length > 3);
   assert.ok(stops().every((r) => r.tabIndex === -1), 'the peek is a window, not a set of controls');
   plan().querySelector('.plan-grab').click();
-  assert.ok(stops().every((r) => r.tabIndex === 0), 'open: every stop is a tab stop');
+  assert.ok(stops().every((r) => r.tabIndex === 0 && !r.hasAttribute('tabindex')), 'open: every stop is a plain button, a tab stop');
   const row = stops().find((r) => !r.classList.contains('tagged'));
   const key = row.dataset.stop;
   assert.equal(row.getAttribute('aria-expanded'), 'false');
