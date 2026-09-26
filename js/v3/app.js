@@ -2427,12 +2427,22 @@ function openSettings() {
     rerender: openSettings,
     switchFestival: async (fid) => {
       // Load BEFORE persisting the switch: an offline device must never be
-      // left pointing at a festival it cannot render (CORE-12).
+      // left pointing at a festival it cannot render (CORE-12). The load is a
+      // wait, and the person can leave meanwhile ("Switch crew", another
+      // festival's board, a link): a switch that finds its Settings gone, its
+      // crew changed or a newer boot does nothing at all — no festival saved,
+      // no wall over the fest list, no address written (Sol's review of
+      // 688d9b1: the old crew's wall came up over the list at "/").
+      const token = state.getCrewToken();
+      const gen = bootGeneration;
+      const stillHere = () => state.getCrewToken() === token && bootGeneration === gen
+        && $('screen-settings').style.display !== 'none';
       try { await loadFestival(fid); }
       catch {
-        showToast($('toast-root'), 'Can’t open that festival offline yet — it loads once you’re back online.');
+        if (stillHere()) showToast($('toast-root'), 'Can’t open that festival offline yet — it loads once you’re back online.');
         return;
       }
+      if (!stillHere()) return;
       state.setActiveFestivalId(fid);
       state.ensureFestivalState(fid);
       state.setCurrentDay(null);
