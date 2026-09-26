@@ -17,9 +17,42 @@ This file is the record if the build dies: read "Where it stands" first.
 4. Step 3 — `tests/people-menu.test.mjs` (jsdom, 11) (`9904644`); `tests/browser/people-menu.test.mjs`
    (real input, Chromium + WebKit, 15) and the WebKit empty-tap fix both menus needed (`ef64dc1`).
 5. `origin/main` (v97, `efeebd0`) merged in, clean (`0345d7b`). Stale docs swept (user-flows F2b/F9,
-   comments).
-6. Unit suite: green in UTC, Tokyo and the night clock except the SW stamp test, red on purpose (the
-   brief: no stamp; the release stamps). Browser suite: see the log.
+   comments) (`a1612a0`).
+6. The review round (below): four fixes (`449a838`); Codex's re-review of `449a838`: no findings.
+7. **Done, for the release to take** (head `f9dca00` or later). Final numbers on that head:
+   a. `npm test` — 1,134 tests, 1,132 pass, 1 skipped, 1 fail in UTC, `TZ=Asia/Tokyo` and the night
+      clock alike: the SW stamp test, red on purpose (no stamp here; the release stamps).
+   b. `npm run test:browser` — 253/253 (17 of them `tests/browser/people-menu.test.mjs`, Chromium +
+      WebKit, finger and mouse).
+   c. Frames: `people-shots/` (git-ignored; `node claude-plans/2026-09-26-unified-build/people-rig.mjs
+      frames` and `… slowmo 390|320` rebuild them). Contact sheets: `sheet-390.png`, `sheet-320.png`,
+      `sheet-1280b.png`, `sheet-edges.png`, `sheet-flows.png`; slow motion: `slow-*-390.png`,
+      `slow-*-320.png`.
+
+## For whoever merges this with live/tap and live/plan
+
+1. `js/v3/app.js`: `shelfOpener()`'s last lines (one line changed here; live/tap edits a line
+   nearby), and the avatar wiring in `init()` (the jumpTop/youTap lines were replaced; live/plan's
+   search-field hunk sits just above them). `openShowMenu` gained an `onClose` option and
+   `catchStrayTaps(true)` — live/plan adds `closePlan()` at its top; both belong.
+2. `js/v3/join-shelf.js`: additive (a `me` option and member words); live/tap changes the backdrop's
+   settle and the rise curve — no overlap in lines, but the same function.
+3. Tests touched by both: `first-open-guest`, `first-open-shelf-close`, `show-menu-stacking`,
+   `now-jump` (its phone `highlight()` helper now uses the menu).
+4. **Our plan's row**: `peopleMenuPlanRow()` in app.js returns null; return
+   `people-menu.js menuActionRow({ label: 'Our plan', chev: true, act: 'plan', cls: 'plan' })` wired
+   to open the plan, and it lands above Pick as someone else / Join the crew (tonal text is the
+   design's — add `.hl-pop .hl-act.plan { color: var(--tonal-text); }`).
+
+## Follow-ups (not blocking)
+
+1. index.html's new-build check calls `reg.update()` on every page show; with the worker blocked (the
+   browser harnesses) there is no `reg`, and it throws. Harness-only, but a `reg &&` would make every
+   test that shows the page again quieter.
+2. How it works: Kevin's row "Tap their name. Switch who you pick as in Settings." is still true but no
+   longer where a phone looks first — suggest "Tap your avatar, then their name." (his words to change).
+3. A real-iPhone check of the empty-space tap (call 14): WebKit in Playwright reproduces the missing
+   click and the fix; Safari on a phone is the one that matters.
 
 ## The review round (Codex, on `a1612a0`, 2026-09-26)
 
