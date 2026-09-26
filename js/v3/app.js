@@ -2401,7 +2401,22 @@ let settingsActions = null;
 // fresh open.
 // A welcome that could not show (a refresh restored Settings over the wall)
 // gets its turn here, v92; the offer still waits for its "Got it".
-function closeSettings() { show('screen-app'); repaintWall(); maybeOpenOnDay(); safely('welcome', maybeWelcome); }
+function closeSettings() { show('screen-app'); keepWallAddress(); repaintWall(); maybeOpenOnDay(); safely('welcome', maybeWelcome); }
+// The wall's address follows its festival (v96 — Sol's review of 3599950):
+// a festival switched in Settings is no boot, so nothing rewrote the address,
+// and it kept the old one — a link copied from the bar previewed the old
+// festival, and a reload went back to it (the address's &f= is a hint, and a
+// hint wins at boot). Rewritten here, as the wall comes back: by then the
+// Settings entry is gone and the page stands on the wall's own entry (and on
+// any other layer's, the address is the wall's too). Its state is kept.
+function keepWallAddress() {
+  const token = state.getCrewToken();
+  if (!token) return;
+  try {
+    const url = wallUrl(token);
+    if (url !== location.href) history.replaceState(history.state, '', url);
+  } catch { /* an address this history will not take: the next boot writes it */ }
+}
 
 function openSettings() {
   closeSheet();

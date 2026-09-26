@@ -557,3 +557,43 @@ test('the show menu: opening it pushes nothing; Back with it up leaves no menu a
     await ctx.close();
   }
 });
+
+// The wall's address follows its festival (v96 — Sol's review of 3599950, and
+// the independent walk): a festival switched in Settings left the address on
+// the old one, so a reload bounced the phone back to it (the address's &f= is
+// a hint, and a hint wins at boot). In a real engine: switch, close, reload.
+test('a festival switched in Settings moves the address, and a reload stays on it', { skip }, async () => {
+  const { ctx, page } = await phone();
+  const TOKEN = 'festswitchreloadcontract1'; // a made-up crew
+  try {
+    await ctx.addInitScript(([t]) => {
+      localStorage.setItem('fn_crews_v3', JSON.stringify([{ token: t, name: 'Two Fests' }]));
+      localStorage.setItem(`fn_me_v3_${t}`, 'Kevin');
+      localStorage.setItem('fn_welcome_v1', '1');
+    }, [TOKEN]);
+    const doc = { v: 4, meta: { name: 'Two Fests', inviteFestId: 'portola-2026' }, spotify: {}, affinity: {}, people: { Kevin: { colorIndex: 0 } }, festivals: { 'portola-2026': { selections: {} }, 'acl-2026': { selections: {} } } };
+    await ctx.route('**/api/crew**', (route) => route.fulfill({ contentType: 'application/json', body: JSON.stringify(doc) }));
+    await ctx.route('**/api/festival-add**', (route) => route.fulfill({ contentType: 'application/json', body: '{"festivals":[]}' }));
+    await ctx.route('**/api/person**', (route) => route.fulfill({ status: 503, contentType: 'application/json', body: '{}' }));
+    // /f/<fest> is api/share.js's in production: the app's shell, with that
+    // festival's preview tags. Here, the shell.
+    await ctx.route(/\/f\/[a-z0-9-]+$/, async (route) => route.fulfill({ response: await route.fetch({ url: `${server.origin}/` }) }));
+    await page.goto(`${server.origin}/f/portola-2026#g=${TOKEN}&f=portola-2026`, { waitUntil: 'load' });
+    await page.waitForSelector('#screen-app', { state: 'visible', timeout: 10000 });
+    await page.click('#gear-btn');
+    await page.waitForSelector('#screen-settings', { state: 'visible' });
+    await page.locator('#settings-root button.fest-row', { hasText: /ACL/i }).first().click();
+    await page.waitForSelector('#screen-app', { state: 'visible' });
+    await page.waitForFunction(() => location.pathname === '/f/acl-2026', null, { timeout: 5000 }).catch(() => {});
+    const url = new URL(page.url());
+    assert.equal(url.pathname, '/f/acl-2026', `the address follows the switch: ${page.url()}`);
+    assert.match(url.hash, /&f=acl-2026/, 'the app\'s own copy too');
+    await page.reload({ waitUntil: 'load' });
+    await page.waitForSelector('#screen-app', { state: 'visible', timeout: 10000 });
+    await page.waitForTimeout(400);
+    assert.match(await page.textContent('#dock-fest-name'), /ACL/i, 'a reload stays on ACL');
+    assert.equal(new URL(page.url()).pathname, '/f/acl-2026');
+  } finally {
+    await ctx.close();
+  }
+});
