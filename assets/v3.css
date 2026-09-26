@@ -518,15 +518,16 @@ button.room-head { cursor: pointer; }
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
   background: var(--dock); border-top: 1px solid var(--hairline);
   padding: 9px 16px calc(9px + env(safe-area-inset-bottom));
-  display: flex; align-items: center; gap: 14px;
+  /* 10px, not 14 (v93): the fest name's menu caret costs the day row 8px,
+   * and the row's two gaps give exactly that back — so the D1 frames hold
+   * (390 FRI SAT NOW SUN, 320 SAT NOW, Sunday at 390 with no fragment of FRI
+   * at the edge), and ACL's long name still leaves the day you are in whole
+   * at 320 where Linux and Android draw Inter wide. The row's edge fades
+   * keep the air the eye reads between the parts. */
+  display: flex; align-items: center; gap: 10px;
 }
 .dock .you { width: 26px; height: 26px; font-size: 10px; position: relative; }
-/* The narrowest phones (under 360: the first iPhone SE's 320) give the day
- * row back what the fest name's menu caret costs it (v93): the dock's three
- * parts sit 4px closer, so ACL's long name still leaves room for the day you
- * are in, where Linux and Android draw Inter wide — and the name never gives
- * way. */
-@media (max-width: 359px) { .dock { gap: 10px; } }
+
 /* Centered when they fit, scrollable from the START when they don't — plain
  * justify-content:center clips the first tabs unreachably at 390px (AX-6).
  * Whatever is first and last: NOW can be the last tab (SUN · NOW). */
