@@ -339,8 +339,10 @@ combined card eats the crew's picks.
   one `date` in a dated section. For every room with an `order` — and every
   one-act room that already has a time — it lays the bill from `doors`
   against the close (the printed close; else one a listing printed for that
-  night, `closeApprox` with its https `closeSource`; else the venue's routine
-  close from `data/venues/index.json`) and marks each guess `approx: true`.
+  night, `closeApprox` with its https `closeSource`; else the venue's close
+  from `data/venues/index.json` — for that date, that weekday, or by default —
+  which the event names by rule, never by URL) and marks each guess
+  `approx: true`.
   How it lays the bill depends on the room: a club night runs back from the
   close, a concert (a hall or outdoor venue — the registry's `kind`, or its
   `shape`) runs forward from the first act and treats the close as a curfew,

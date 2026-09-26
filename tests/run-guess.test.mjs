@@ -325,3 +325,30 @@ test('a guessed close the plan no longer has is taken off the room; a printed on
   applyPlans(planFestival(g, reg));
   assert.ok(g.artists.every((a) => a.close === '2 AM' && a.closeApprox === undefined));
 });
+
+test('a close for one date is the registry\'s most specific rule, and the event names the rule — never the URL behind it', () => {
+  // Stubb's amphitheater, Oct 1: the indoor after-show opens at 10 PM, so the
+  // outdoor show is over by then. That is an inference from another show's
+  // page, not a printed end: the registry keeps the page as its source, the
+  // event says which rule gave the close (CLAUDE.md, run guesses).
+  const afterShow = 'https://stubbsaustin.com/tm-event/official-2026-acl-nights-montclair/';
+  const profile = { kind: 'outdoor', close: { default: null, byWeekday: { Thu: '12 AM' }, byDate: { '2026-10-01': '10 PM' }, sources: [{ url: afterShow, quote: 'Doors: 10:00PM. Show: 10:30PM. Free with wristband from Brandon Flowers' }] }, doorsToFirstActMin: 60, headlinerSetMin: null, supportSetMin: null };
+  const members = [{ name: 'Jess Williamson', seq: 1, time: '8 PM', posted: true }, { name: 'Brandon Flowers', seq: 2 }];
+  const oct1 = planRun({ night: 'Thu', date: '2026-10-01', doors: '7 PM', members, profile });
+  assert.deepEqual([oct1.close, oct1.closeApprox, oct1.closeSource], ['10 PM', true, "venue's 2026-10-01 close"]);
+  assert.equal(oct1.times[1].time, '8:30 PM', 'a full set before the after-show opens');
+  // Another Thursday is just a Thursday.
+  const oct8 = planRun({ night: 'Thu', date: '2026-10-08', doors: '7 PM', members, profile });
+  assert.equal(oct8.close, '12 AM');
+  // Through the file: an old evidenced close carrying the page's URL is not
+  // what the tool writes — it names the rule, and re-runs to the same bytes.
+  const f = lateFest(
+    dated('Jess Williamson', '2026-10-01', "Stubb's", { doors: '7 PM', time: '8 PM', order: { seq: 1, of: 2, source: SRC, confirmed: false } }),
+    dated('Brandon Flowers', '2026-10-01', "Stubb's", { doors: '7 PM', order: { seq: 2, of: 2, source: SRC, confirmed: false } }),
+  );
+  const reg = { venues: { "Stubb's": profile } };
+  applyPlans(planFestival(f, reg));
+  assert.ok(f.artists.every((a) => a.close === '10 PM' && a.closeApprox === true && a.closeSource === "venue's 2026-10-01 close"));
+  assert.ok(f.artists.every((a) => !/^https:/.test(a.closeSource)), 'never the URL');
+  assert.equal(applyPlans(planFestival(f, reg)), 0);
+});

@@ -11,8 +11,8 @@
 //   · the event's own doors (required) and a close — kept when a page
 //     printed it (no `closeApprox`) or printed it for THIS night (a
 //     `closeApprox` whose `closeSource` is an https link: 19hz's "10pm-3am"),
-//   · data/venues/index.json — the venue's routine close (by weekday, then
-//     default), its doors-to-first-act gap, its headliner/support set lengths,
+//   · data/venues/index.json — the venue's close (for one date, by weekday,
+//     then default), its doors-to-first-act gap, its headliner/support set lengths,
 //   · a per-kind fallback (KIND_DEFAULTS) when the registry has nothing.
 // A close from the registry or the fallback is written with `closeApprox:
 // true` and a `closeSource` that names the rule, never a URL — so the next
@@ -95,8 +95,13 @@ const qDown = (m) => Math.floor(m / 15) * 15;
 // The registry's close for a night, and the rule that gave it. The registry
 // keeps its own sources (data/venues/index.json); copying one of its URLs
 // onto the event is what made a routine close read as per-night proof.
-function closeFor(night, profile, kind) {
+// A close for one DATE is the registry's most specific rule: a night the
+// venue's own schedule shows ending early (Stubb's amphitheater on ACL
+// nights, where the indoor after-show opens) — an inference the registry
+// keeps its sources for, so the event names the rule and a re-run re-reads it.
+function closeFor(night, profile, kind, date = null) {
   const c = profile && profile.close ? profile.close : null;
+  if (c && date && c.byDate && c.byDate[date]) return { close: c.byDate[date], why: `venue's ${date} close`, known: true };
   if (c && c.byWeekday && c.byWeekday[night]) return { close: c.byWeekday[night], why: `venue's ${night} close`, known: true };
   if (c && c.default) return { close: c.default, why: "venue's routine close", known: true };
   const d = KIND_DEFAULTS[kind] || KIND_DEFAULTS.club;
@@ -106,7 +111,7 @@ const pick = (v, fallback) => (Number.isFinite(v) ? v : fallback);
 
 // One run. `members` sorted by seq; a member with `posted: true` keeps its
 // own time. Returns null when nothing can be planned.
-export function planRun({ night, doors, close, closeApprox = false, closeSource = null, members, profile }) {
+export function planRun({ night, date = null, doors, close, closeApprox = false, closeSource = null, members, profile }) {
   if (!doors || !members || !members.length) return null;
   const D = activityMinutes(doors);
   if (!Number.isFinite(D)) return null;
@@ -128,7 +133,7 @@ export function planRun({ night, doors, close, closeApprox = false, closeSource 
     // source, keep the guess note.
     outClose = close; outApprox = true; outSource = closeSource;
   } else {
-    const c = closeFor(night, profile, kind);
+    const c = closeFor(night, profile, kind, date);
     outClose = c.close; outApprox = !!c.close; outSource = c.close ? c.why : null; known = c.known;
   }
   let C = outClose ? activityMinutes(outClose) : null;
@@ -272,7 +277,7 @@ export function planFestival(fest, registry) {
     const evidenced = !printed && run.members.find((m) => m.close && m.closeApprox === true && /^https:\/\//.test(m.closeSource || ''));
     const known = printed || evidenced || null;
     const plan = planRun({
-      night: run.night, doors,
+      night: run.night, date: run.date || null, doors,
       close: known ? known.close : null, closeApprox: !printed, closeSource: evidenced ? evidenced.closeSource : null,
       members: run.members.map((m) => ({ name: m.name, seq: seqOf(m), time: m.time || null, posted: isPosted(m) })), profile,
     });

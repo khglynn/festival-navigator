@@ -590,3 +590,28 @@ identical to a closeless room's, and no close written); a new one checks
 that a stale guessed close is removed, the re-run is byte-stable, and a
 printed close is never touched. Moves: none. Both shipped files still
 propose 0 changes, because no real room had its fallback binding.
+
+## Issue 1 — Stubb's outdoor closes were labelled as printed evidence (data + script)
+
+The review was right. The Montclair, Grocery Bag and Almost Heaven pages print
+the INDOOR after-show's doors and show. That the amphitheater is over by then
+is my inference, and giving those closes the after-show's https URL as
+`closeSource` made an inference read as "a page printed this night's end",
+which is the exact misuse the CLAUDE.md close bullet names.
+
+The inference still has to be reproducible, and a non-URL `closeSource` makes
+the next run re-read the registry. So it now lives there as the registry's
+most specific rule, `close.byDate` on Stubb's (`2026-10-01` 10 PM,
+`2026-10-02` 10:30 PM, `2026-10-03` 11 PM). The three after-show pages are in
+its `close.sources` with their quotes, and the note says plainly that these
+are inferred. The tool reads a date's close before the weekday's
+(`closeFor`, `planRun({ date })`, `planFestival` passes the room's date). The
+events now carry `closeApprox: true` and a `closeSource` naming the rule:
+"venue's 2026-10-01 close".
+
+Moves: none. The same three closes and the same times (Brandon Flowers ~8:30,
+Bleachers ~9, Parcels ~9:30); only the six labels changed. A second `--write`
+makes 0 changes. Test: a date's close beats the weekday's and names the rule,
+another Thursday reads the weekday, and an old URL-labelled close is
+rewritten to the rule and re-runs byte-stable. Docs line on where closes
+come from updated.

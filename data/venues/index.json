@@ -579,6 +579,11 @@
           "Fri": "1 AM",
           "Sat": "1 AM"
         },
+        "byDate": {
+          "2026-10-01": "10 PM",
+          "2026-10-02": "10:30 PM",
+          "2026-10-03": "11 PM"
+        },
         "late": null,
         "confidence": "medium",
         "sources": [
@@ -589,6 +594,18 @@
           {
             "url": "https://services.austintexas.gov/edims/document.cfm?id=296553",
             "quote": "§ 9-2-30 (A)(4): Up to 85 decibels at an outdoor music venue located in the Red River Cultural District, between 10:00 a.m. and: (a) 10:30 p.m. on Sunday through Wednesday; (b) 12:00 midnight on Thursday; or (c) 1:00 a.m. on Friday or Saturday."
+          },
+          {
+            "url": "https://stubbsaustin.com/tm-event/official-2026-acl-nights-montclair/",
+            "quote": "All Ages Welcome. Doors: 10:00PM. Show: 10:30PM. Free with wristband from Brandon Flowers *Capacity Permitting* (the INDOOR after-show; its doors are the byDate 2026-10-01 close, inferred)"
+          },
+          {
+            "url": "https://stubbsaustin.com/tm-event/official-2026-acl-nights-grocery-bag/",
+            "quote": "All Ages Welcome! Doors: 10:30pm Show: 11:00pm Free with wristband from Bleachers *Capacity Permitting* (the byDate 2026-10-02 close, inferred)"
+          },
+          {
+            "url": "https://stubbsaustin.com/tm-event/official-2026-acl-nights-almost-heaven/",
+            "quote": "All Ages Welcome. Doors: 11:00PM. Show: 11:30PM. Free with wristband from Parcels *Capacity Permitting* (the byDate 2026-10-03 close, inferred)"
           }
         ]
       },
@@ -613,7 +630,7 @@
           "quote": "with Brandon Flowers, Jess Williamson / Doors: 7:00 pm (the calendar's one time per show is labelled DOORS)"
         }
       ],
-      "notes": "The outdoor Waller Creek Amphitheater. A concert: doors, the opener an hour later (FAQ; Ticketmaster prints Doors 7 / Show 8 for Brandon Flowers, Bleachers and Lola Young, Doors 8 / Show 9 for Parcels), the headliner after it. It sits in the Red River Cultural District, whose outdoor sound curfew is the by-weekday close here (Austin Code 9-2-30(A)(4), from the 2018 ordinance text; adoption not re-verified, and Tuesday is 10:30 PM under the general rule too). Tighter still on ACL nights: the indoor stage's wristband after-shows open at 10 PM (Thu, after Brandon Flowers), 10:30 PM (Fri, after Bleachers) and 11 PM (Sat, after Parcels), so each of those nights carries that end as an evidenced close linked to the after-show's own page. Round one read the concert calendar's single time as a \"Show\" time; it is labelled Doors, so the openers' 7 PM \"posted\" times were doors times, corrected to the printed show times in round two (2026-09-26)."
+      "notes": "The outdoor Waller Creek Amphitheater. A concert: doors, the opener an hour later (FAQ; Ticketmaster prints Doors 7 / Show 8 for Brandon Flowers, Bleachers and Lola Young, Doors 8 / Show 9 for Parcels), the headliner after it. It sits in the Red River Cultural District, whose outdoor sound curfew is the by-weekday close here (Austin Code 9-2-30(A)(4), from the 2018 ordinance text; adoption not re-verified, and Tuesday is 10:30 PM under the general rule too). Tighter still on three ACL nights, by INFERENCE (close.byDate): the indoor stage's wristband after-shows open at 10 PM (Thu Oct 1, after Brandon Flowers), 10:30 PM (Fri Oct 2, after Bleachers) and 11 PM (Sat Oct 3, after Parcels), and a wristband show for the outdoor crowd opening then means the outdoor show is over by then. No page prints the amphitheater's end, so these are the registry's rule (sources above), and the events name the rule — \"venue's <date> close\" — never the after-show's URL (round three, 2026-09-26, after review of 09d0bbe). Round one read the concert calendar's single time as a \"Show\" time; it is labelled Doors, so the openers' 7 PM \"posted\" times were doors times, corrected to the printed show times in round two (2026-09-26)."
     },
     "Stubb's Indoors": {
       "city": "Austin",
