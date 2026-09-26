@@ -286,13 +286,15 @@ for (const width of [390, 320, 1280]) {
       });
       const r = c.getBoundingClientRect();
       const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
-      return { artist: c.dataset.artist, x: r.left + r.width / 2, y: r.top + r.height / 2, html: c.outerHTML, onCard: c.contains(hit) };
+      // Your level is what a pick changes (the meter in the card's left corner);
+      // a mouse's hover grows the zoom, which is not a pick.
+      return { artist: c.dataset.artist, x: r.left + r.width / 2, y: r.top + r.height / 2, html: (c.querySelector('.corner-about') || {}).outerHTML || '', onCard: c.contains(hit) };
     }, door);
     if (width >= 720) await page.mouse.click(target.x, target.y);
     else await page.touchscreen.tap(target.x, target.y);
     await sleep(600);
-    const after = await page.evaluate((a) => document.querySelector(`#wall-root .card[data-artist="${a}"]`).outerHTML, target.artist);
-    note(`tap outside on ${target.artist} (on the card: ${target.onCard}): ${JSON.stringify(await state())}; the card unchanged: ${target.html === after}`);
+    const after = await page.evaluate((a) => (document.querySelector(`#wall-root .card[data-artist="${a}"] .corner-about`) || {}).outerHTML || '', target.artist);
+    note(`tap outside on ${target.artist} (on the card: ${target.onCard}): ${JSON.stringify(await state())}; not picked: ${target.html === after}`);
     // Escape and Back.
     await tap(link); await sleep(400);
     await page.keyboard.press('Escape'); await sleep(500);
